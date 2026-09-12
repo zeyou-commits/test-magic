@@ -145,5 +145,87 @@
   body {
     background-color: var(--color-background);
     color: var(--color-foreground);
+    font-family: var(--font-sans);
+  }
+
+  h1,
+  h2,
+  h3,
+  h4 {
+    font-family: var(--font-display);
+    letter-spacing: -0.01em;
   }
 }
+
+/* Carte : libellés de ports indépendants des coordonnées GPS */
+.port-marker {
+  position: relative;
+  width: 0;
+  height: 0;
+}
+
+.port-marker__dot {
+  position: absolute;
+  left: -7px;
+  top: -7px;
+  width: 14px;
+  height: 14px;
+  border-radius: 9999px;
+  border: 2px solid var(--color-background);
+  background: var(--color-primary);
+  box-shadow: 0 1px 4px oklch(0.24 0.045 250 / 35%);
+  cursor: pointer;
+  transition:
+    transform 0.15s ease,
+    background 0.15s ease;
+}
+
+.port-marker[data-active="true"] .port-marker__dot {
+  background: var(--color-accent);
+  transform: scale(1.35);
+}
+
+.port-marker__label {
+  position: absolute;
+  white-space: nowrap;
+  font-family: var(--font-display);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--color-foreground);
+  background: oklch(1 0 0 / 78%);
+  padding: 1px 5px;
+  border-radius: 4px;
+  cursor: pointer;
+  pointer-events: auto;
+}
+
+.port-marker[data-dimmed="true"] {
+  opacity: 0.45;
+}
+
+.duration-badge {
+  font-family: var(--font-display);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--color-primary);
+  background: oklch(1 0 0 / 88%);
+  border: 1px solid var(--color-border);
+  border-radius: 9999px;
+  padding: 1px 7px;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.duration-badge[data-active="true"] {
+  color: var(--color-accent-foreground);
+  background: var(--color-accent);
+  border-color: var(--color-accent);
+}
+
+.maplibregl-ctrl-attrib {
+  font-size: 10px;
+}
+

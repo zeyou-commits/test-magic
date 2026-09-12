@@ -9,3 +9,4 @@
 - [x] 7. Comptes (e-mail + Google, session, rôles)
 - [x] 8. Avis, notes, signalements (en attente de modération)
 - [x] 9. Back-office et modération
+- [x] 10. Lisibilité de la carte (liaisons visibles, libellés épurés, Algérie mise en évidence)

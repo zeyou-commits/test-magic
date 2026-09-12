@@ -10,6 +10,7 @@ import {
 import "maplibre-gl/dist/maplibre-gl.css";
 import type { Port, RouteLine, Selection } from "@/lib/ferry/types";
 import { formatDuration } from "@/lib/ferry/format";
+import { algeriaGeoJson } from "@/lib/ferry/algeriaGeoJson";
 
 interface FerryMapProps {
   ports: Port[];
@@ -21,6 +22,19 @@ interface FerryMapProps {
 }
 
 const MAP_STYLE = "https://tiles.openfreemap.org/styles/positron";
+
+function mapColor(token: string) {
+  const cssColor = getComputedStyle(document.documentElement).getPropertyValue(token).trim();
+  const canvas = document.createElement("canvas");
+  canvas.width = 1;
+  canvas.height = 1;
+  const context = canvas.getContext("2d");
+  if (!context) return "rgb(0, 91, 134)";
+  context.fillStyle = cssColor;
+  context.fillRect(0, 0, 1, 1);
+  const [red, green, blue] = context.getImageData(0, 0, 1, 1).data;
+  return `rgb(${red}, ${green}, ${blue})`;
+}
 
 function routeFeatures(
   routes: RouteLine[],
@@ -60,6 +74,15 @@ const anchorStyles: Record<string, Partial<CSSStyleDeclaration>> = {
   bottom: { transform: "translateX(-50%)", left: "0", top: "12px" },
 };
 
+const portLabelPlacements: Record<string, Partial<CSSStyleDeclaration>> = {
+  Marseille: { left: "12px", top: "-24px" },
+  Sète: { right: "12px", top: "2px" },
+  Alger: { transform: "translateX(-50%)", left: "0", top: "12px" },
+  Béjaïa: { transform: "translateX(-50%)", left: "0", top: "12px" },
+  Skikda: { right: "12px", top: "-24px" },
+  Annaba: { left: "12px", top: "6px" },
+};
+
 export default function FerryMap({
   ports,
   routes,
@@ -89,24 +112,71 @@ export default function FerryMap({
     mapRef.current = map;
 
     map.on("load", () => {
+      [
+        "label_other",
+        "label_village",
+        "label_town",
+        "label_city",
+        "label_city_capital",
+        "label_country_1",
+        "label_country_2",
+        "label_country_3",
+      ].forEach((layerId) => {
+        if (map.getLayer(layerId)) map.setLayoutProperty(layerId, "visibility", "none");
+      });
+
+      map.addSource("algeria-highlight", {
+        type: "geojson",
+        data: algeriaGeoJson,
+      });
+      map.addLayer({
+        id: "algeria-highlight-fill",
+        type: "fill",
+        source: "algeria-highlight",
+        paint: {
+          "fill-color": mapColor("--map-country-highlight"),
+          "fill-opacity": 0.28,
+        },
+      });
+      map.addLayer({
+        id: "algeria-highlight-outline",
+        type: "line",
+        source: "algeria-highlight",
+        paint: {
+          "line-color": mapColor("--map-country-outline"),
+          "line-width": 1.5,
+          "line-opacity": 0.7,
+        },
+      });
       map.addSource("ferry-routes", {
         type: "geojson",
         data: { type: "FeatureCollection", features: [] },
       });
       map.addLayer({
+        id: "ferry-routes-casing",
+        type: "line",
+        source: "ferry-routes",
+        layout: { "line-cap": "round", "line-join": "round" },
+        paint: {
+          "line-color": mapColor("--map-route-casing"),
+          "line-width": ["case", ["get", "selected"], 7, 5],
+          "line-opacity": ["case", ["get", "dimmed"], 0.18, 0.82],
+        },
+      });
+      map.addLayer({
         id: "ferry-routes-line",
         type: "line",
         source: "ferry-routes",
-        layout: { "line-cap": "round" },
+        layout: { "line-cap": "round", "line-join": "round" },
         paint: {
           "line-color": [
             "case",
             ["get", "selected"],
-            "oklch(0.68 0.145 55)",
-            "oklch(0.42 0.105 238)",
+            mapColor("--map-route-selected"),
+            mapColor("--map-route"),
           ],
-          "line-width": ["case", ["get", "selected"], 3.4, 1.8],
-          "line-opacity": ["case", ["get", "dimmed"], 0.28, 0.85],
+          "line-width": ["case", ["get", "selected"], 4.5, 3],
+          "line-opacity": ["case", ["get", "dimmed"], 0.25, 1],
         },
       });
       map.on("click", "ferry-routes-line", (event: MapLayerMouseEvent) => {
@@ -168,9 +238,10 @@ export default function FerryMap({
         dot.addEventListener("click", select);
         label.addEventListener("click", select);
 
-        Object.assign(label.style, anchorStyles[port.label_anchor] ?? anchorStyles["left"]);
-        label.style.marginLeft = `${port.label_offset_x}px`;
-        label.style.marginTop = `${port.label_offset_y}px`;
+        Object.assign(
+          label.style,
+          portLabelPlacements[port.name] ?? anchorStyles[port.label_anchor] ?? anchorStyles["left"],
+        );
 
         marker = new Marker({ element: el })
           .setLngLat([port.longitude, port.latitude])

@@ -1,0 +1,118 @@
+import { queryOptions } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import type {
+  Company,
+  Departure,
+  Port,
+  PortReview,
+  RatingCriterion,
+  RouteLine,
+  Schedule,
+  Vessel,
+} from "./types";
+
+function unwrap<T>(result: { data: unknown; error: { message: string } | null }): T {
+  if (result.error) throw new Error(result.error.message);
+  return (result.data ?? []) as T;
+}
+
+export const portsQuery = queryOptions({
+  queryKey: ["ports"],
+  queryFn: async () =>
+    unwrap<Port[]>(await supabase.from("ports").select("*").order("name")),
+  staleTime: 5 * 60 * 1000,
+});
+
+export const companiesQuery = queryOptions({
+  queryKey: ["companies"],
+  queryFn: async () =>
+    unwrap<Company[]>(await supabase.from("companies").select("*").order("name")),
+  staleTime: 5 * 60 * 1000,
+});
+
+export const vesselsQuery = queryOptions({
+  queryKey: ["vessels"],
+  queryFn: async () =>
+    unwrap<Vessel[]>(await supabase.from("vessels").select("*").order("name")),
+  staleTime: 5 * 60 * 1000,
+});
+
+export const routesQuery = queryOptions({
+  queryKey: ["routes"],
+  queryFn: async (): Promise<RouteLine[]> => {
+    const rows = unwrap<Array<Record<string, unknown>>>(
+      await supabase.from("routes").select("*, route_operators(company_id)"),
+    );
+    return rows.map((row) => ({
+      ...(row as unknown as RouteLine),
+      company_ids: ((row["route_operators"] as Array<{ company_id: string }>) ?? []).map(
+        (o) => o.company_id,
+      ),
+    }));
+  },
+  staleTime: 5 * 60 * 1000,
+});
+
+export const schedulesQuery = queryOptions({
+  queryKey: ["schedules"],
+  queryFn: async () =>
+    unwrap<Schedule[]>(await supabase.from("schedules").select("*").order("departure_time")),
+  staleTime: 5 * 60 * 1000,
+});
+
+export function upcomingDeparturesQuery(limit = 300) {
+  return queryOptions({
+    queryKey: ["departures", "upcoming", limit],
+    queryFn: async () =>
+      unwrap<Departure[]>(
+        await supabase
+          .from("departures")
+          .select("*")
+          .gte("departure_at", new Date().toISOString())
+          .order("departure_at")
+          .limit(limit),
+      ),
+    staleTime: 60 * 1000,
+  });
+}
+
+export const ratingCriteriaQuery = queryOptions({
+  queryKey: ["rating_criteria"],
+  queryFn: async () =>
+    unwrap<RatingCriterion[]>(
+      await supabase
+        .from("rating_criteria")
+        .select("*")
+        .eq("status", "active")
+        .order("sort_order"),
+    ),
+  staleTime: 10 * 60 * 1000,
+});
+
+export interface PublishedReview extends PortReview {
+  ratings: Array<{ criterion_id: string; score: number }>;
+  author: string | null;
+}
+
+export function portReviewsQuery(portId: string) {
+  return queryOptions({
+    queryKey: ["port_reviews", portId],
+    queryFn: async (): Promise<PublishedReview[]> => {
+      const rows = unwrap<Array<Record<string, unknown>>>(
+        await supabase
+          .from("port_reviews")
+          .select("*, review_ratings(criterion_id, score), profiles:user_id(display_name)")
+          .eq("port_id", portId)
+          .eq("status", "published")
+          .order("created_at", { ascending: false }),
+      );
+      return rows.map((row) => ({
+        ...(row as unknown as PortReview),
+        ratings: (row["review_ratings"] as Array<{ criterion_id: string; score: number }>) ?? [],
+        author:
+          (row["profiles"] as { display_name: string | null } | null)?.display_name ?? null,
+      }));
+    },
+    staleTime: 60 * 1000,
+  });
+}

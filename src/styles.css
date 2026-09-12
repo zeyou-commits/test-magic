@@ -91,6 +91,11 @@
   --chart-4: oklch(0.6 0.1 280);
   --chart-5: oklch(0.5 0.09 200);
   --sea: oklch(0.9 0.03 225);
+  --map-country-highlight: oklch(0.72 0.105 145);
+  --map-country-outline: oklch(0.43 0.12 150);
+  --map-route: oklch(0.42 0.14 238);
+  --map-route-selected: oklch(0.68 0.145 55);
+  --map-route-casing: oklch(0.985 0.008 85);
   --sidebar: oklch(0.99 0.006 85);
   --sidebar-foreground: oklch(0.24 0.045 250);
   --sidebar-primary: oklch(0.42 0.105 238);
@@ -171,9 +176,9 @@
   width: 14px;
   height: 14px;
   border-radius: 9999px;
-  border: 2px solid var(--color-background);
+  border: 2px solid var(--color-card);
   background: var(--color-primary);
-  box-shadow: 0 1px 4px oklch(0.24 0.045 250 / 35%);
+  box-shadow: 0 1px 4px color-mix(in oklab, var(--color-foreground) 35%, transparent);
   cursor: pointer;
   transition:
     transform 0.15s ease,
@@ -189,14 +194,17 @@
   position: absolute;
   white-space: nowrap;
   font-family: var(--font-display);
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: 0.04em;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0;
   text-transform: uppercase;
   color: var(--color-foreground);
-  background: oklch(1 0 0 / 78%);
-  padding: 1px 5px;
-  border-radius: 4px;
+  text-shadow:
+    0 1px 0 var(--color-card),
+    1px 0 0 var(--color-card),
+    -1px 0 0 var(--color-card),
+    0 -1px 0 var(--color-card),
+    0 0 4px var(--color-card);
   cursor: pointer;
   pointer-events: auto;
 }
@@ -209,7 +217,7 @@
   font-family: var(--font-display);
   font-size: 10px;
   font-weight: 600;
-  letter-spacing: 0.02em;
+  letter-spacing: 0;
   color: var(--color-primary);
   background: oklch(1 0 0 / 88%);
   border: 1px solid var(--color-border);

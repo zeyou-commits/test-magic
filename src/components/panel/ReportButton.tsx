@@ -46,15 +46,17 @@ export function ReportButton({
 
   const submit = useMutation({
     mutationFn: async () => {
+      if (!user) throw new Error("Connectez-vous pour envoyer un signalement.");
       const { error } = await supabase.from("reports").insert({
         target_type: targetType,
         target_id: targetId,
         reason,
         details: details.trim() || null,
-        reporter_id: user?.id ?? null,
+        reporter_id: user.id,
       });
       if (error) throw new Error(error.message);
     },
+
     onSuccess: () => {
       setOpen(false);
       setDetails("");

@@ -1,5 +1,12 @@
 import { useEffect, useRef } from "react";
-import maplibregl, { type Map as MapLibreMap, Marker } from "maplibre-gl";
+import {
+  Map as MapLibreMap,
+  Marker,
+  NavigationControl,
+  type GeoJSONSource,
+  type MapLayerMouseEvent,
+  type MapMouseEvent,
+} from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
 import type { Port, RouteLine, Selection } from "@/lib/ferry/types";
 import { formatDuration } from "@/lib/ferry/format";
@@ -43,8 +50,15 @@ function routeFeatures(
         },
       };
     })
-    .filter((f): f is NonNullable<typeof f> => f !== null);
+    .filter((feature): feature is NonNullable<typeof feature> => feature !== null);
 }
+
+const anchorStyles: Record<string, Partial<CSSStyleDeclaration>> = {
+  left: { right: "12px", top: "-9px" },
+  right: { left: "12px", top: "-9px" },
+  top: { transform: "translateX(-50%)", left: "0", bottom: "12px" },
+  bottom: { transform: "translateX(-50%)", left: "0", top: "12px" },
+};
 
 export default function FerryMap({
   ports,
@@ -64,14 +78,14 @@ export default function FerryMap({
 
   useEffect(() => {
     if (!containerRef.current || mapRef.current) return;
-    const map = new maplibregl.Map({
+    const map = new MapLibreMap({
       container: containerRef.current,
       style: MAP_STYLE,
       center: [2.6, 39.4],
       zoom: 4.6,
       attributionControl: { compact: true },
     });
-    map.addControl(new maplibregl.NavigationControl({ showCompass: false }), "top-right");
+    map.addControl(new NavigationControl({ showCompass: false }), "top-right");
     mapRef.current = map;
 
     map.on("load", () => {
@@ -95,7 +109,7 @@ export default function FerryMap({
           "line-opacity": ["case", ["get", "dimmed"], 0.28, 0.85],
         },
       });
-      map.on("click", "ferry-routes-line", (event) => {
+      map.on("click", "ferry-routes-line", (event: MapLayerMouseEvent) => {
         const id = event.features?.[0]?.properties?.["id"];
         if (typeof id === "string") selectRef.current({ type: "route", id });
       });
@@ -105,7 +119,7 @@ export default function FerryMap({
       map.on("mouseleave", "ferry-routes-line", () => {
         map.getCanvas().style.cursor = "";
       });
-      map.on("click", (event) => {
+      map.on("click", (event: MapMouseEvent) => {
         const hits = map.queryRenderedFeatures(event.point, { layers: ["ferry-routes-line"] });
         if (hits.length === 0) selectRef.current(null);
       });
@@ -124,7 +138,7 @@ export default function FerryMap({
     };
   }, []);
 
-  // Port markers: GPS position from data, label placement handled separately.
+  // Port markers: GPS position comes from the data, label placement is separate.
   useEffect(() => {
     const map = mapRef.current;
     if (!map) return;
@@ -132,8 +146,11 @@ export default function FerryMap({
     const dimming = highlightedPortIds.length > 0;
 
     ports.forEach((port) => {
-      let marker = portMarkersRef.current.get(port.id);
-      if (!marker) {
+      const existing = portMarkersRef.current.get(port.id);
+      let marker: Marker;
+      if (existing) {
+        marker = existing;
+      } else {
         const el = document.createElement("div");
         el.className = "port-marker";
         const dot = document.createElement("button");
@@ -151,18 +168,11 @@ export default function FerryMap({
         dot.addEventListener("click", select);
         label.addEventListener("click", select);
 
-        // Label offsets are data-driven and never alter the GPS coordinates.
-        const anchorStyles: Record<string, Partial<CSSStyleDeclaration>> = {
-          left: { right: "12px", top: "-9px" },
-          right: { left: "12px", top: "-9px" },
-          top: { transform: "translateX(-50%)", left: "0", bottom: "12px" },
-          bottom: { transform: "translateX(-50%)", left: "0", top: "12px" },
-        };
         Object.assign(label.style, anchorStyles[port.label_anchor] ?? anchorStyles["left"]);
         label.style.marginLeft = `${port.label_offset_x}px`;
         label.style.marginTop = `${port.label_offset_y}px`;
 
-        marker = new maplibregl.Marker({ element: el })
+        marker = new Marker({ element: el })
           .setLngLat([port.longitude, port.latitude])
           .addTo(map);
         portMarkersRef.current.set(port.id, marker);
@@ -173,23 +183,23 @@ export default function FerryMap({
     });
 
     portMarkersRef.current.forEach((marker, id) => {
-      if (!ports.some((p) => p.id === id)) {
+      if (!ports.some((port) => port.id === id)) {
         marker.remove();
         portMarkersRef.current.delete(id);
       }
     });
   }, [ports, highlightedPortIds]);
 
-  // Route lines + duration badges
+  // Route lines + discreet duration badges
   useEffect(() => {
     const map = mapRef.current;
     if (!map) return;
-    const portMap = new Map(ports.map((p) => [p.id, p]));
+    const portMap = new Map(ports.map((port) => [port.id, port]));
     const visible = new Set(visibleRouteIds);
     const selectedRouteId = selection?.type === "route" ? selection.id : null;
 
     const apply = () => {
-      const source = map.getSource("ferry-routes") as maplibregl.GeoJSONSource | undefined;
+      const source = map.getSource("ferry-routes") as GeoJSONSource | undefined;
       if (!source) return;
       source.setData({
         type: "FeatureCollection",
@@ -203,8 +213,16 @@ export default function FerryMap({
         const to = portMap.get(route.arrival_port_id);
         if (!from || !to || !route.typical_duration_minutes) return;
         keep.add(route.id);
-        let marker = badgeMarkersRef.current.get(route.id);
-        if (!marker) {
+        const midpoint: [number, number] = [
+          (from.longitude + to.longitude) / 2,
+          (from.latitude + to.latitude) / 2,
+        ];
+        const existing = badgeMarkersRef.current.get(route.id);
+        let marker: Marker;
+        if (existing) {
+          marker = existing;
+          marker.setLngLat(midpoint);
+        } else {
           const el = document.createElement("button");
           el.type = "button";
           el.className = "duration-badge";
@@ -213,23 +231,12 @@ export default function FerryMap({
             event.stopPropagation();
             selectRef.current({ type: "route", id: route.id });
           });
-          marker = new maplibregl.Marker({ element: el })
-            .setLngLat([
-              (from.longitude + to.longitude) / 2,
-              (from.latitude + to.latitude) / 2,
-            ])
-            .addTo(map);
+          marker = new Marker({ element: el }).setLngLat(midpoint).addTo(map);
           badgeMarkersRef.current.set(route.id, marker);
-        } else {
-          marker.setLngLat([
-            (from.longitude + to.longitude) / 2,
-            (from.latitude + to.latitude) / 2,
-          ]);
         }
         const element = marker.getElement();
         element.dataset["active"] = String(selectedRouteId === route.id);
-        element.style.opacity =
-          selectedRouteId && selectedRouteId !== route.id ? "0.35" : "1";
+        element.style.opacity = selectedRouteId && selectedRouteId !== route.id ? "0.35" : "1";
       });
 
       badgeMarkersRef.current.forEach((marker, id) => {
@@ -244,7 +251,6 @@ export default function FerryMap({
     else map.once("load", apply);
   }, [routes, ports, visibleRouteIds, selection]);
 
-  // Duration badges stay discreet: hidden when zoomed far out.
   useEffect(() => {
     const map = mapRef.current;
     if (!map) return;
@@ -261,19 +267,19 @@ export default function FerryMap({
     };
   }, []);
 
-  // Recentre on the selected route or port without losing map context.
+  // Recentre on the selection without hiding the map.
   useEffect(() => {
     const map = mapRef.current;
     if (!map || !selection) return;
     if (selection.type === "port") {
-      const port = ports.find((p) => p.id === selection.id);
+      const port = ports.find((item) => item.id === selection.id);
       if (port) map.easeTo({ center: [port.longitude, port.latitude], duration: 600 });
       return;
     }
     if (selection.type === "route") {
-      const route = routes.find((r) => r.id === selection.id);
-      const from = ports.find((p) => p.id === route?.departure_port_id);
-      const to = ports.find((p) => p.id === route?.arrival_port_id);
+      const route = routes.find((item) => item.id === selection.id);
+      const from = ports.find((item) => item.id === route?.departure_port_id);
+      const to = ports.find((item) => item.id === route?.arrival_port_id);
       if (from && to) {
         map.fitBounds(
           [

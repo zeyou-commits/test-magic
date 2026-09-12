@@ -113,10 +113,11 @@ Quatre notions séparées : la **ligne** (permanent), le **calendrier** (règle 
 ## H. Roadmap technique
 
 1. **Fondations données** — Cloud activé, tables, règles d'accès, jeu de démonstration (11 ports, quelques compagnies, navires, lignes, départs). Terminé quand les données sont lisibles et clairement étiquetées « démonstration ».
-2. **Carte** — carte plein écran, fond de carte, zoom/déplacement, responsive. Terminé quand la carte domine l'écran sur desktop et mobile.
+2. **Écran carte** — carte plein écran + volet gauche vide, état de sélection en place, panneau inférieur sur mobile. Terminé quand la carte domine l'écran sur desktop et mobile.
 3. **Ports, lignes, durées** — marqueurs aux coordonnées réelles, labels indépendants avec décalages, tracés et badges de durée. Terminé quand aucun label ne se chevauche et que les durées sont lisibles.
-4. **Fiche port** — destinations, compagnies, prochains départs, infos utiles ; popup desktop / bottom sheet mobile.
-5. **Sidebar et filtres** — recherche et filtres (départ, arrivée, compagnie, date, navire) mettant la carte à jour instantanément.
+4. **Volet contextuel** — vues Détail du port et Détail de la ligne dans le même volet, mise en évidence sur la carte, bouton « ← Retour / Explorer ». Terminé quand aucune popup lourde n'est nécessaire.
+5. **Vue Explorer** — recherche et filtres (départ, arrivée, compagnie, date, navire) mettant la carte à jour instantanément.
+
 6. **Calendriers et départs** — génération des départs, statuts, source et fraîcheur affichés.
 7. **Comptes** — Google + e-mail, session, rôles.
 8. **Avis, notes, signalements** — dépôt en attente de modération, agrégation à l'affichage.

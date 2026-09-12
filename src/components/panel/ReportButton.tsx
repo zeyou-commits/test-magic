@@ -51,9 +51,10 @@ export function ReportButton({
         target_type: targetType,
         target_id: targetId,
         reason,
-        details: details.trim() || null,
+        message: details.trim() || null,
         reporter_id: user.id,
       });
+
       if (error) throw new Error(error.message);
     },
 

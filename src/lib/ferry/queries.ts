@@ -101,18 +101,25 @@ export function portReviewsQuery(portId: string) {
       const rows = unwrap<Array<Record<string, unknown>>>(
         await supabase
           .from("port_reviews")
-          .select("*, review_ratings(criterion_id, score), profiles:user_id(display_name)")
+          .select("*, review_ratings(criterion_id, score)")
           .eq("port_id", portId)
           .eq("status", "published")
           .order("created_at", { ascending: false }),
       );
+      const userIds = [...new Set(rows.map((row) => row["user_id"] as string))];
+      const profiles = userIds.length
+        ? unwrap<Array<{ id: string; display_name: string | null }>>(
+            await supabase.from("profiles").select("id, display_name").in("id", userIds),
+          )
+        : [];
+      const names = new Map(profiles.map((profile) => [profile.id, profile.display_name]));
       return rows.map((row) => ({
         ...(row as unknown as PortReview),
         ratings: (row["review_ratings"] as Array<{ criterion_id: string; score: number }>) ?? [],
-        author:
-          (row["profiles"] as { display_name: string | null } | null)?.display_name ?? null,
+        author: names.get(row["user_id"] as string) ?? null,
       }));
     },
     staleTime: 60 * 1000,
   });
 }
+

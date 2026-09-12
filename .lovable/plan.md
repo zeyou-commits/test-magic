@@ -47,12 +47,41 @@ Tables principales :
 
 Toutes les données de démonstration sont marquées comme telles (`is_demo`) et l'interface affiche clairement « données de démonstration » tant qu'un horaire n'est pas vérifié.
 
-## C. Architecture frontend
+## C. Modèle d'interaction (principe verrouillé : la carte est le produit)
 
-- Interface publique : page carte (accueil), fiche port, fiche ligne, page connexion, page compte.
-- Back-office (accès admin) : tableau de bord, ports, lignes, calendriers, départs, compagnies, navires, avis, signalements, utilisateurs, sources/qualité, historique de modération.
-- Composants : coquille carte, sidebar (recherche + filtres), fiche port (popup desktop / bottom sheet mobile), badges de durée, listes de départs, états vides et de chargement.
-- Séparation stricte : données ← accès aux données ← logique métier ← logique carte ← composants UI.
+L'application n'est pas un site à pages : c'est **un seul écran en deux zones** — volet gauche + carte plein écran — et la carte ne disparaît jamais.
+
+```text
+┌──────────────┬─────────────────────────────────┐
+│ VOLET        │                                 │
+│ 320–420 px   │        CARTE (dominante)        │
+│ scroll       │        toute la hauteur         │
+│ indépendant  │                                 │
+└──────────────┴─────────────────────────────────┘
+```
+
+Un unique volet, plusieurs états pilotés par une seule notion de **sélection courante** (type + identifiant : port, ligne, compagnie, navire, départ) :
+
+- **Aucune sélection → Explorer** : recherche, port de départ, port d'arrivée, date, compagnie, navire, autres filtres, et liste des lignes/résultats correspondants. Chaque changement met la carte à jour immédiatement, sans bouton « Appliquer ».
+- **Port sélectionné → Détail du port** : destinations, compagnies, prochains départs (date, heure, ligne, durée, navire), informations utiles, avis et notes, signalement d'information.
+- **Ligne sélectionnée → Détail de la ligne** : durée indicative, compagnies, navires, prochains départs, calendrier, statut, source et fraîcheur.
+- **Compagnie / navire / départ sélectionnés → Détail correspondant.**
+- Toujours un bouton clair **« ← Retour / Explorer »** pour revenir aux filtres.
+
+Règles associées :
+
+- Pas d'empilement de couches : pas de sidebar + popup + modal de détail. Sur la carte, seule une infobulle légère au survol est autorisée, jamais en remplacement du volet.
+- Le contenu du volet est rendu par un composant unique qui choisit l'affichage selon le type sélectionné — pas une logique séparée par interaction.
+- Sélectionner un objet met aussi la carte en cohérence : élément mis en évidence, autres atténués, ports concernés soulignés.
+- Des pages dédiées peuvent exister plus tard pour le référencement ou des contenus approfondis, mais elles ne sont pas le parcours principal.
+- **Mobile** : même logique fonctionnelle, présentation en panneau inférieur à trois hauteurs (réduit = carte quasi plein écran, intermédiaire = filtres ou infos principales, développé = détail complet). Un clic sur un port ouvre son détail dans ce panneau sans masquer la carte.
+
+## C bis. Organisation frontend
+
+- Écran principal (accueil) : volet + carte. Pages annexes minimales : connexion, compte.
+- Back-office (accès admin, hors écran carte) : tableau de bord, ports, lignes, calendriers, départs, compagnies, navires, avis, signalements, utilisateurs, sources/qualité, historique de modération.
+- Composants : coquille carte, volet contextuel + ses vues (explorer, port, ligne, compagnie, navire, départ), badges de durée, listes de départs, états vides et de chargement.
+- Séparation stricte : données ← accès aux données ← logique métier ← logique carte ← état de sélection/filtres ← composants UI.
 
 ## D. Architecture cartographique
 
@@ -60,8 +89,9 @@ Toutes les données de démonstration sont marquées comme telles (`is_demo`) et
 - Le placement des labels est un système séparé : ancre + décalage x/y stockés par port (européens à gauche, algériens en dessous, décalages spécifiques pour Marseille et Sète), ajustables en base sans toucher au code.
 - Lignes maritimes tracées en couches vectorielles ; la sélection met la ligne en avant, atténue les autres et met en valeur les deux ports.
 - Badge de durée positionné au milieu du tracé, discret, masqué automatiquement aux zooms trop faibles pour éviter la surcharge.
-- Les filtres agissent sur les données affichées, sans bouton « Appliquer ».
+- Les filtres et la sélection proviennent d'un état partagé unique consommé à la fois par la carte et par le volet.
 - Mobile : carte plein écran, panneau inférieur repliable, zones tactiles agrandies.
+
 
 ## E. Calendriers
 

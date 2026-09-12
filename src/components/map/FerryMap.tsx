@@ -292,5 +292,8 @@ export default function FerryMap({
     }
   }, [selection, ports, routes]);
 
-  return <div ref={containerRef} className="absolute inset-0" />;
+  // NB : maplibre-gl.css force `position: relative` sur `.maplibregl-map`,
+  // donc on dimensionne le conteneur en h/w plutôt qu'avec inset-0.
+  return <div ref={containerRef} className="h-full w-full" />;
+
 }

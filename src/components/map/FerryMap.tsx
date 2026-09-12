@@ -74,6 +74,15 @@ const anchorStyles: Record<string, Partial<CSSStyleDeclaration>> = {
   bottom: { transform: "translateX(-50%)", left: "0", top: "12px" },
 };
 
+const portLabelPlacements: Record<string, Partial<CSSStyleDeclaration>> = {
+  Marseille: { left: "12px", top: "-24px" },
+  Sète: { right: "12px", top: "2px" },
+  Alger: { transform: "translateX(-50%)", left: "0", top: "12px" },
+  Béjaïa: { transform: "translateX(-50%)", left: "0", top: "12px" },
+  Skikda: { right: "12px", top: "-24px" },
+  Annaba: { left: "12px", top: "6px" },
+};
+
 export default function FerryMap({
   ports,
   routes,
@@ -103,11 +112,18 @@ export default function FerryMap({
     mapRef.current = map;
 
     map.on("load", () => {
-      ["label_other", "label_village", "label_town", "label_city", "label_city_capital"].forEach(
-        (layerId) => {
-          if (map.getLayer(layerId)) map.setLayoutProperty(layerId, "visibility", "none");
-        },
-      );
+      [
+        "label_other",
+        "label_village",
+        "label_town",
+        "label_city",
+        "label_city_capital",
+        "label_country_1",
+        "label_country_2",
+        "label_country_3",
+      ].forEach((layerId) => {
+        if (map.getLayer(layerId)) map.setLayoutProperty(layerId, "visibility", "none");
+      });
 
       map.addSource("algeria-highlight", {
         type: "geojson",
@@ -222,9 +238,10 @@ export default function FerryMap({
         dot.addEventListener("click", select);
         label.addEventListener("click", select);
 
-        Object.assign(label.style, anchorStyles[port.label_anchor] ?? anchorStyles["left"]);
-        label.style.marginLeft = `${Math.round(port.label_offset_x * 0.35)}px`;
-        label.style.marginTop = `${Math.round(port.label_offset_y * 0.35)}px`;
+        Object.assign(
+          label.style,
+          portLabelPlacements[port.name] ?? anchorStyles[port.label_anchor] ?? anchorStyles["left"],
+        );
 
         marker = new Marker({ element: el })
           .setLngLat([port.longitude, port.latitude])

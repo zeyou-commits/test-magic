@@ -10,12 +10,15 @@ import {
 import "maplibre-gl/dist/maplibre-gl.css";
 import type { Port, RouteLine, Selection } from "@/lib/ferry/types";
 import { formatDuration } from "@/lib/ferry/format";
+import { portColor } from "@/lib/ferry/colors";
 import { algeriaGeoJson } from "@/lib/ferry/algeriaGeoJson";
 
 interface FerryMapProps {
   ports: Port[];
   routes: RouteLine[];
   visibleRouteIds: string[];
+  /** Lignes mises en avant : les autres sont grisées. Vide = toutes au même niveau. */
+  focusRouteIds: string[];
   selection: Selection | null;
   highlightedPortIds: string[];
   onSelect: (selection: Selection | null) => void;
@@ -40,6 +43,7 @@ function routeFeatures(
   routes: RouteLine[],
   ports: Map<string, Port>,
   visible: Set<string>,
+  focus: Set<string>,
   selectedRouteId: string | null,
 ) {
   return routes
@@ -48,12 +52,17 @@ function routeFeatures(
       const from = ports.get(route.departure_port_id);
       const to = ports.get(route.arrival_port_id);
       if (!from || !to) return null;
+      const dimmed = focus.size > 0 && !focus.has(route.id);
       return {
         type: "Feature" as const,
         properties: {
           id: route.id,
+          color: portColor(from.slug),
+          label: route.typical_duration_minutes
+            ? formatDuration(route.typical_duration_minutes)
+            : "",
           selected: selectedRouteId === route.id,
-          dimmed: selectedRouteId !== null && selectedRouteId !== route.id,
+          dimmed,
         },
         geometry: {
           type: "LineString" as const,
@@ -87,6 +96,7 @@ export default function FerryMap({
   ports,
   routes,
   visibleRouteIds,
+  focusRouteIds,
   selection,
   highlightedPortIds,
   onSelect,
@@ -95,7 +105,6 @@ export default function FerryMap({
   const mapRef = useRef<MapLibreMap | null>(null);
   const readyRef = useRef(false);
   const portMarkersRef = useRef<Map<string, Marker>>(new Map());
-  const badgeMarkersRef = useRef<Map<string, Marker>>(new Map());
   const selectRef = useRef(onSelect);
   selectRef.current = onSelect;
 
@@ -160,7 +169,7 @@ export default function FerryMap({
         paint: {
           "line-color": mapColor("--map-route-casing"),
           "line-width": ["case", ["get", "selected"], 7, 5],
-          "line-opacity": ["case", ["get", "dimmed"], 0.18, 0.82],
+          "line-opacity": ["case", ["get", "dimmed"], 0.1, 0.8],
         },
       });
       map.addLayer({
@@ -169,20 +178,42 @@ export default function FerryMap({
         source: "ferry-routes",
         layout: { "line-cap": "round", "line-join": "round" },
         paint: {
-          "line-color": [
-            "case",
-            ["get", "selected"],
-            mapColor("--map-route-selected"),
-            mapColor("--map-route"),
-          ],
+          "line-color": ["get", "color"],
           "line-width": ["case", ["get", "selected"], 4.5, 3],
-          "line-opacity": ["case", ["get", "dimmed"], 0.25, 1],
+          "line-opacity": ["case", ["get", "dimmed"], 0.16, 1],
         },
       });
-      map.on("click", "ferry-routes-line", (event: MapLayerMouseEvent) => {
+      // Durée écrite le long de la ligne, sans pastille.
+      map.addLayer({
+        id: "ferry-routes-duration",
+        type: "symbol",
+        source: "ferry-routes",
+        minzoom: 4.2,
+        layout: {
+          "symbol-placement": "line-center",
+          "text-field": ["get", "label"],
+          "text-font": ["Noto Sans Bold"],
+          "text-size": 11,
+          "text-letter-spacing": 0.04,
+          "text-rotation-alignment": "map",
+          "text-pitch-alignment": "viewport",
+          "text-keep-upright": true,
+          "text-offset": [0, -0.8],
+          "text-allow-overlap": false,
+        },
+        paint: {
+          "text-color": ["get", "color"],
+          "text-halo-color": mapColor("--map-route-casing"),
+          "text-halo-width": 1.2,
+          "text-opacity": ["case", ["get", "dimmed"], 0.2, 1],
+        },
+      });
+      const pickRoute = (event: MapLayerMouseEvent) => {
         const id = event.features?.[0]?.properties?.["id"];
         if (typeof id === "string") selectRef.current({ type: "route", id });
-      });
+      };
+      map.on("click", "ferry-routes-line", pickRoute);
+      map.on("click", "ferry-routes-duration", pickRoute);
       map.on("mouseenter", "ferry-routes-line", () => {
         map.getCanvas().style.cursor = "pointer";
       });
@@ -190,7 +221,9 @@ export default function FerryMap({
         map.getCanvas().style.cursor = "";
       });
       map.on("click", (event: MapMouseEvent) => {
-        const hits = map.queryRenderedFeatures(event.point, { layers: ["ferry-routes-line"] });
+        const hits = map.queryRenderedFeatures(event.point, {
+          layers: ["ferry-routes-line", "ferry-routes-duration"],
+        });
         if (hits.length === 0) selectRef.current(null);
       });
       readyRef.current = true;
@@ -201,8 +234,6 @@ export default function FerryMap({
       readyRef.current = false;
       portMarkersRef.current.forEach((marker) => marker.remove());
       portMarkersRef.current.clear();
-      badgeMarkersRef.current.forEach((marker) => marker.remove());
-      badgeMarkersRef.current.clear();
       map.remove();
       mapRef.current = null;
     };
@@ -223,6 +254,7 @@ export default function FerryMap({
       } else {
         const el = document.createElement("div");
         el.className = "port-marker";
+        el.style.setProperty("--port-color", portColor(port.slug));
         const dot = document.createElement("button");
         dot.type = "button";
         dot.className = "port-marker__dot";
@@ -261,12 +293,13 @@ export default function FerryMap({
     });
   }, [ports, highlightedPortIds]);
 
-  // Route lines + discreet duration badges
+  // Route lines + durations along each line
   useEffect(() => {
     const map = mapRef.current;
     if (!map) return;
     const portMap = new Map(ports.map((port) => [port.id, port]));
     const visible = new Set(visibleRouteIds);
+    const focus = new Set(focusRouteIds);
     const selectedRouteId = selection?.type === "route" ? selection.id : null;
 
     const apply = () => {
@@ -274,69 +307,13 @@ export default function FerryMap({
       if (!source) return;
       source.setData({
         type: "FeatureCollection",
-        features: routeFeatures(routes, portMap, visible, selectedRouteId),
-      });
-
-      const keep = new Set<string>();
-      routes.forEach((route) => {
-        if (!visible.has(route.id)) return;
-        const from = portMap.get(route.departure_port_id);
-        const to = portMap.get(route.arrival_port_id);
-        if (!from || !to || !route.typical_duration_minutes) return;
-        keep.add(route.id);
-        const midpoint: [number, number] = [
-          (from.longitude + to.longitude) / 2,
-          (from.latitude + to.latitude) / 2,
-        ];
-        const existing = badgeMarkersRef.current.get(route.id);
-        let marker: Marker;
-        if (existing) {
-          marker = existing;
-          marker.setLngLat(midpoint);
-        } else {
-          const el = document.createElement("button");
-          el.type = "button";
-          el.className = "duration-badge";
-          el.textContent = formatDuration(route.typical_duration_minutes);
-          el.addEventListener("click", (event) => {
-            event.stopPropagation();
-            selectRef.current({ type: "route", id: route.id });
-          });
-          marker = new Marker({ element: el }).setLngLat(midpoint).addTo(map);
-          badgeMarkersRef.current.set(route.id, marker);
-        }
-        const element = marker.getElement();
-        element.dataset["active"] = String(selectedRouteId === route.id);
-        element.style.opacity = selectedRouteId && selectedRouteId !== route.id ? "0.35" : "1";
-      });
-
-      badgeMarkersRef.current.forEach((marker, id) => {
-        if (!keep.has(id)) {
-          marker.remove();
-          badgeMarkersRef.current.delete(id);
-        }
+        features: routeFeatures(routes, portMap, visible, focus, selectedRouteId),
       });
     };
 
     if (readyRef.current) apply();
     else map.once("load", apply);
-  }, [routes, ports, visibleRouteIds, selection]);
-
-  useEffect(() => {
-    const map = mapRef.current;
-    if (!map) return;
-    const update = () => {
-      const hide = map.getZoom() < 4.2;
-      badgeMarkersRef.current.forEach((marker) => {
-        marker.getElement().style.display = hide ? "none" : "";
-      });
-    };
-    map.on("zoom", update);
-    update();
-    return () => {
-      map.off("zoom", update);
-    };
-  }, []);
+  }, [routes, ports, visibleRouteIds, focusRouteIds, selection]);
 
   // Recentre on the selection without hiding the map.
   useEffect(() => {
@@ -366,5 +343,4 @@ export default function FerryMap({
   // NB : maplibre-gl.css force `position: relative` sur `.maplibregl-map`,
   // donc on dimensionne le conteneur en h/w plutôt qu'avec inset-0.
   return <div ref={containerRef} className="h-full w-full" />;
-
 }

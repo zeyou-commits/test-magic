@@ -16,6 +16,10 @@ import { algeriaGeoJson } from "@/lib/ferry/algeriaGeoJson";
 export interface PortMeta {
   /** Nombre de lignes visibles au départ ou à l'arrivée de ce port. */
   routes: number;
+  /** Compagnies desservant ce port. */
+  companies: string[];
+  /** Navires connus sur les départs de ce port. */
+  vessels: string[];
   /** Prochain départ connu, déjà formaté. */
   nextDeparture: string | null;
   /** Destination du prochain départ. */
@@ -326,6 +330,22 @@ export default function FerryMap({
         lines.textContent =
           count === 0 ? "Aucune ligne visible" : count === 1 ? "1 ligne" : `${count} lignes`;
         tip.append(lines);
+        if (meta?.companies?.length) {
+          const companies = document.createElement("p");
+          companies.className = "port-tip__meta";
+          companies.textContent = `Compagnies : ${meta.companies.slice(0, 3).join(", ")}${
+            meta.companies.length > 3 ? ` +${meta.companies.length - 3}` : ""
+          }`;
+          tip.append(companies);
+        }
+        if (meta?.vessels?.length) {
+          const vessels = document.createElement("p");
+          vessels.className = "port-tip__meta";
+          vessels.textContent = `Navires : ${meta.vessels.slice(0, 3).join(", ")}${
+            meta.vessels.length > 3 ? ` +${meta.vessels.length - 3}` : ""
+          }`;
+          tip.append(vessels);
+        }
         const next = document.createElement("p");
         next.className = "port-tip__next";
         next.textContent = meta?.nextDeparture

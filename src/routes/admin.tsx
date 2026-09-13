@@ -841,14 +841,30 @@ function DataAdmin() {
   const affectedDepartures = departures.filter(
     (item) => item.departure_at >= `${fromDate}T00:00:00`,
   );
-  // Après un import, un port sans aucune ligne active n'apporte rien à la carte.
-  const idlePorts = ports.filter(
-    (port) =>
-      port.status === "active" &&
-      !activeRoutes.some(
+  // Après un import, un port n'apporte rien à la carte s'il n'a aucune ligne active
+  // OU si aucune de ses lignes ne reçoit de départ dans la nouvelle saison.
+  const idlePorts = ports
+    .filter((port) => port.status === "active")
+    .map((port) => {
+      const portRoutes = activeRoutes.filter(
         (route) => route.departure_port_id === port.id || route.arrival_port_id === port.id,
-      ),
-  );
+      );
+      const routeIds = new Set(portRoutes.map((route) => route.id));
+      const hasDeparture = departures.some(
+        (departure) => routeIds.has(departure.route_id) && departure.status !== "cancelled",
+      );
+      const hasSchedule = activeSchedules.some((schedule) => routeIds.has(schedule.route_id));
+      return {
+        port,
+        reason:
+          portRoutes.length === 0
+            ? "aucune ligne active"
+            : !hasDeparture && !hasSchedule
+              ? "aucun départ ni calendrier dans la nouvelle saison"
+              : null,
+      };
+    })
+    .filter((item): item is { port: (typeof ports)[number]; reason: string } => item.reason !== null);
 
   const closePort = useMutation({
     mutationFn: async (id: string) => {
@@ -1015,23 +1031,25 @@ function DataAdmin() {
       </Panel>
 
       <Panel>
-        <h2 className="text-sm font-semibold">Ports sans ligne active</h2>
+        <h2 className="text-sm font-semibold">Ports sans traversée</h2>
         {idlePorts.length === 0 ? (
           <p className="mt-1 text-xs text-muted-foreground">
-            Tous les ports ouverts desservent au moins une ligne active.
+            Tous les ports ouverts desservent au moins une ligne avec des départs.
           </p>
         ) : (
           <>
             <p className="mt-1 text-xs text-muted-foreground">
-              Ces ports sont visibles sur la carte mais ne desservent plus aucune ligne. Vous pouvez
-              les fermer temporairement, le temps de recevoir leurs horaires.
+              Ces ports restent visibles sur la carte alors qu'ils n'ont plus de traversée
+              programmée. Vous pouvez les fermer temporairement, le temps de recevoir leurs
+              horaires.
             </p>
             <ul className="mt-3 space-y-2">
-              {idlePorts.map((port) => (
+              {idlePorts.map(({ port, reason }) => (
                 <li key={port.id} className="flex items-center justify-between gap-2 text-xs">
                   <span>
                     {port.name}
                     {port.country_name ? ` · ${port.country_name}` : ""}
+                    <span className="text-muted-foreground"> — {reason}</span>
                   </span>
                   <Button
                     size="sm"

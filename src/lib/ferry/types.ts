@@ -64,6 +64,7 @@ export interface RouteLine {
   distance_km: number | null;
   status: EntityStatus;
   notes: string | null;
+  color: string | null;
   is_demo: boolean;
   company_ids: string[];
 }

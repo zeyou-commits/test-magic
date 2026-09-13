@@ -26,3 +26,11 @@ function hash(value: string) {
 export function portColor(slug: string): string {
   return palette[hash(slug) % palette.length] as string;
 }
+
+/** Palette proposée dans le back-office pour colorer une ligne. */
+export const routePalette = palette;
+
+/** Couleur d'une ligne : celle choisie par l'admin, sinon celle du port de départ. */
+export function routeColor(color: string | null | undefined, departurePortSlug: string): string {
+  return color && color.trim() ? color.trim() : portColor(departurePortSlug);
+}

@@ -48,7 +48,11 @@ function Index() {
         .toLowerCase()
         .includes(term);
     };
+    // Un port fermé temporairement : ses lignes disparaissent de la carte.
+    const portOpen = (id: string) =>
+      ports.find((item) => item.id === id)?.status === "active";
     return routes.filter((route) => {
+      if (!portOpen(route.departure_port_id) || !portOpen(route.arrival_port_id)) return false;
       if (filters.departurePortId && route.departure_port_id !== filters.departurePortId)
         return false;
       if (filters.arrivalPortId && route.arrival_port_id !== filters.arrivalPortId) return false;

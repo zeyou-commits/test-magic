@@ -468,6 +468,7 @@ export type Database = {
       routes: {
         Row: {
           arrival_port_id: string
+          color: string | null
           created_at: string
           departure_port_id: string
           distance_km: number | null
@@ -481,6 +482,7 @@ export type Database = {
         }
         Insert: {
           arrival_port_id: string
+          color?: string | null
           created_at?: string
           departure_port_id: string
           distance_km?: number | null
@@ -494,6 +496,7 @@ export type Database = {
         }
         Update: {
           arrival_port_id?: string
+          color?: string | null
           created_at?: string
           departure_port_id?: string
           distance_km?: number | null

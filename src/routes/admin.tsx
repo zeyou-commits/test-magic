@@ -363,46 +363,274 @@ function DeparturesAdmin() {
   );
 }
 
+const emptyDraft = {
+  route_id: "",
+  company_id: "",
+  default_vessel_id: "",
+  departure_time: "08:00",
+  duration_minutes: 600,
+  weekdays: [] as number[],
+  valid_from: new Date().toISOString().slice(0, 10),
+  valid_to: "",
+  source_name: "",
+  source_url: "",
+};
+
 function SchedulesAdmin() {
   const queryClient = useQueryClient();
   const { data: schedules = [] } = useQuery(schedulesQuery);
   const { data: routes = [] } = useQuery(routesQuery);
   const { data: ports = [] } = useQuery(portsQuery);
-  const [editing, setEditing] = useState<Record<string, string>>({});
+  const { data: companies = [] } = useQuery(companiesQuery);
+  const { data: vessels = [] } = useQuery(vesselsQuery);
+  const [draft, setDraft] = useState(emptyDraft);
+  const [editingId, setEditingId] = useState<string | null>(null);
 
-  const update = useMutation({
-    mutationFn: async ({ id, time }: { id: string; time: string }) => {
-      const { error } = await supabase
-        .from("schedules")
-        .update({
-          departure_time: time,
-          reliability: "verified",
-          last_verified_at: new Date().toISOString(),
-        })
-        .eq("id", id);
+  const portName = (id: string) => ports.find((port) => port.id === id)?.name ?? "—";
+  const routeLabel = (id: string) => {
+    const route = routes.find((item) => item.id === id);
+    if (!route) return "—";
+    return `${portName(route.departure_port_id)} → ${portName(route.arrival_port_id)}`;
+  };
+
+  const invalidate = () => {
+    queryClient.invalidateQueries({ queryKey: ["schedules"] });
+    queryClient.invalidateQueries({ queryKey: ["departures"] });
+  };
+
+  const save = useMutation({
+    mutationFn: async () => {
+      if (!draft.route_id || !draft.company_id) throw new Error("Choisissez une ligne et une compagnie.");
+      if (draft.weekdays.length === 0) throw new Error("Choisissez au moins un jour.");
+      const values = {
+        route_id: draft.route_id,
+        company_id: draft.company_id,
+        default_vessel_id: draft.default_vessel_id || null,
+        departure_time: `${draft.departure_time}:00`,
+        duration_minutes: Number(draft.duration_minutes),
+        weekdays: draft.weekdays.slice().sort((a, b) => a - b),
+        valid_from: draft.valid_from,
+        valid_to: draft.valid_to || null,
+        source_name: draft.source_name || null,
+        source_url: draft.source_url || null,
+        reliability: "verified" as const,
+        last_verified_at: new Date().toISOString(),
+        status: "active" as const,
+      };
+      const { error } = editingId
+        ? await supabase.from("schedules").update(values).eq("id", editingId)
+        : await supabase.from("schedules").insert(values);
       if (error) throw new Error(error.message);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["schedules"] });
-      toast.success("Calendrier mis à jour.");
+      invalidate();
+      setDraft(emptyDraft);
+      setEditingId(null);
+      toast.success(editingId ? "Calendrier modifié." : "Calendrier ajouté.");
     },
     onError: (error: Error) => toast.error(error.message),
   });
 
-  const portName = (id: string) => ports.find((port) => port.id === id)?.name ?? "—";
+  const remove = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("schedules").delete().eq("id", id);
+      if (error) throw new Error(error.message);
+    },
+    onSuccess: () => {
+      invalidate();
+      toast.success("Calendrier supprimé.");
+    },
+    onError: (error: Error) => toast.error(error.message),
+  });
+
+  // Génère les départs des 60 prochains jours à partir d'un calendrier.
+  const generate = useMutation({
+    mutationFn: async (scheduleId: string) => {
+      const schedule = schedules.find((item) => item.id === scheduleId);
+      if (!schedule) throw new Error("Calendrier introuvable.");
+      const today = new Date();
+      const rows: Array<Record<string, unknown>> = [];
+      for (let offset = 0; offset < 60; offset += 1) {
+        const day = new Date(today);
+        day.setUTCDate(day.getUTCDate() + offset);
+        const isoDate = day.toISOString().slice(0, 10);
+        const weekday = ((day.getUTCDay() + 6) % 7) + 1; // 1 = lundi
+        if (!schedule.weekdays.includes(weekday)) continue;
+        if (isoDate < schedule.valid_from) continue;
+        if (schedule.valid_to && isoDate > schedule.valid_to) continue;
+        const departureAt = new Date(`${isoDate}T${schedule.departure_time}Z`);
+        rows.push({
+          route_id: schedule.route_id,
+          company_id: schedule.company_id,
+          vessel_id: schedule.default_vessel_id,
+          schedule_id: schedule.id,
+          departure_at: departureAt.toISOString(),
+          arrival_at: new Date(
+            departureAt.getTime() + schedule.duration_minutes * 60000,
+          ).toISOString(),
+          duration_minutes: schedule.duration_minutes,
+          status: "scheduled",
+          reliability: schedule.reliability,
+          source_name: schedule.source_name,
+          source_url: schedule.source_url,
+          last_verified_at: new Date().toISOString(),
+        });
+      }
+      const { error: deleteError } = await supabase
+        .from("departures")
+        .delete()
+        .eq("schedule_id", schedule.id)
+        .gte("departure_at", new Date().toISOString());
+      if (deleteError) throw new Error(deleteError.message);
+      if (rows.length === 0) return 0;
+      const { error } = await supabase.from("departures").insert(rows as never);
+      if (error) throw new Error(error.message);
+      return rows.length;
+    },
+    onSuccess: (count) => {
+      invalidate();
+      toast.success(`${count} départ(s) généré(s).`);
+    },
+    onError: (error: Error) => toast.error(error.message),
+  });
+
+  const toggleDay = (day: number) =>
+    setDraft((prev) => ({
+      ...prev,
+      weekdays: prev.weekdays.includes(day)
+        ? prev.weekdays.filter((value) => value !== day)
+        : [...prev.weekdays, day],
+    }));
 
   return (
-    <Panel>
-      <ul className="divide-y divide-border">
-        {schedules.map((schedule) => {
-          const route = routes.find((item) => item.id === schedule.route_id);
-          return (
+    <>
+      <Panel>
+        <h2 className="text-sm font-semibold">
+          {editingId ? "Modifier le calendrier" : "Nouveau calendrier de traversées"}
+        </h2>
+        <div className="mt-3 grid gap-3 sm:grid-cols-2">
+          <Field label="Ligne">
+            <NativeSelect
+              value={draft.route_id}
+              onChange={(value) => setDraft((prev) => ({ ...prev, route_id: value }))}
+              options={routes.map((route) => ({ value: route.id, label: routeLabel(route.id) }))}
+            />
+          </Field>
+          <Field label="Compagnie">
+            <NativeSelect
+              value={draft.company_id}
+              onChange={(value) => setDraft((prev) => ({ ...prev, company_id: value }))}
+              options={companies.map((company) => ({ value: company.id, label: company.name }))}
+            />
+          </Field>
+          <Field label="Navire (facultatif)">
+            <NativeSelect
+              value={draft.default_vessel_id}
+              onChange={(value) => setDraft((prev) => ({ ...prev, default_vessel_id: value }))}
+              options={vessels.map((vessel) => ({ value: vessel.id, label: vessel.name }))}
+            />
+          </Field>
+          <Field label="Heure de départ">
+            <Input
+              type="time"
+              value={draft.departure_time}
+              onChange={(event) =>
+                setDraft((prev) => ({ ...prev, departure_time: event.target.value }))
+              }
+            />
+          </Field>
+          <Field label="Durée (minutes)">
+            <Input
+              type="number"
+              min={30}
+              value={draft.duration_minutes}
+              onChange={(event) =>
+                setDraft((prev) => ({ ...prev, duration_minutes: Number(event.target.value) }))
+              }
+            />
+          </Field>
+          <Field label="Valide du">
+            <Input
+              type="date"
+              value={draft.valid_from}
+              onChange={(event) =>
+                setDraft((prev) => ({ ...prev, valid_from: event.target.value }))
+              }
+            />
+          </Field>
+          <Field label="Valide jusqu'au (facultatif)">
+            <Input
+              type="date"
+              value={draft.valid_to}
+              onChange={(event) => setDraft((prev) => ({ ...prev, valid_to: event.target.value }))}
+            />
+          </Field>
+          <Field label="Source de l'information">
+            <Input
+              value={draft.source_name}
+              placeholder="Site officiel de la compagnie"
+              onChange={(event) =>
+                setDraft((prev) => ({ ...prev, source_name: event.target.value }))
+              }
+            />
+          </Field>
+          <Field label="Lien de la source">
+            <Input
+              value={draft.source_url}
+              placeholder="https://…"
+              onChange={(event) =>
+                setDraft((prev) => ({ ...prev, source_url: event.target.value }))
+              }
+            />
+          </Field>
+        </div>
+        <div className="mt-3">
+          <p className="text-xs font-medium text-muted-foreground">Jours de départ</p>
+          <div className="mt-2 flex flex-wrap gap-2">
+            {weekdayLabels.map((label, index) => {
+              const day = index + 1;
+              const active = draft.weekdays.includes(day);
+              return (
+                <Button
+                  key={label}
+                  type="button"
+                  size="sm"
+                  variant={active ? "default" : "outline"}
+                  onClick={() => toggleDay(day)}
+                >
+                  {label}
+                </Button>
+              );
+            })}
+          </div>
+        </div>
+        <div className="mt-4 flex gap-2">
+          <Button size="sm" disabled={save.isPending} onClick={() => save.mutate()}>
+            {editingId ? "Enregistrer les modifications" : "Ajouter le calendrier"}
+          </Button>
+          {editingId ? (
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={() => {
+                setEditingId(null);
+                setDraft(emptyDraft);
+              }}
+            >
+              Annuler
+            </Button>
+          ) : null}
+        </div>
+      </Panel>
+
+      <Panel>
+        <h2 className="text-sm font-semibold">Calendriers existants</h2>
+        <ul className="divide-y divide-border">
+          {schedules.map((schedule) => (
             <li key={schedule.id} className="flex flex-wrap items-center gap-3 py-3">
               <div className="min-w-0 flex-1">
                 <p className="text-sm font-medium">
-                  {route
-                    ? `${portName(route.departure_port_id)} → ${portName(route.arrival_port_id)}`
-                    : "—"}
+                  {routeLabel(schedule.route_id)} · {schedule.departure_time.slice(0, 5)}
                 </p>
                 <p className="text-xs text-muted-foreground">
                   {schedule.weekdays
@@ -412,32 +640,79 @@ function SchedulesAdmin() {
                   · {formatDuration(schedule.duration_minutes)} · {schedule.reliability}
                 </p>
               </div>
-              <div className="flex items-center gap-2">
-                <Input
-                  type="time"
-                  className="w-28"
-                  value={editing[schedule.id] ?? schedule.departure_time.slice(0, 5)}
-                  onChange={(event) =>
-                    setEditing((prev) => ({ ...prev, [schedule.id]: event.target.value }))
-                  }
-                />
+              <div className="flex flex-wrap gap-2">
                 <Button
                   size="sm"
-                  onClick={() =>
-                    update.mutate({
-                      id: schedule.id,
-                      time: `${editing[schedule.id] ?? schedule.departure_time.slice(0, 5)}:00`,
-                    })
-                  }
+                  variant="outline"
+                  onClick={() => {
+                    setEditingId(schedule.id);
+                    setDraft({
+                      route_id: schedule.route_id,
+                      company_id: schedule.company_id,
+                      default_vessel_id: schedule.default_vessel_id ?? "",
+                      departure_time: schedule.departure_time.slice(0, 5),
+                      duration_minutes: schedule.duration_minutes,
+                      weekdays: schedule.weekdays,
+                      valid_from: schedule.valid_from,
+                      valid_to: schedule.valid_to ?? "",
+                      source_name: schedule.source_name ?? "",
+                      source_url: schedule.source_url ?? "",
+                    });
+                  }}
                 >
-                  Enregistrer
+                  Modifier
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  disabled={generate.isPending}
+                  onClick={() => generate.mutate(schedule.id)}
+                >
+                  Générer les départs
+                </Button>
+                <Button size="sm" variant="ghost" onClick={() => remove.mutate(schedule.id)}>
+                  Supprimer
                 </Button>
               </div>
             </li>
-          );
-        })}
-      </ul>
-    </Panel>
+          ))}
+        </ul>
+      </Panel>
+    </>
+  );
+}
+
+function Field({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <label className="grid gap-1.5 text-xs font-medium text-muted-foreground">
+      {label}
+      {children}
+    </label>
+  );
+}
+
+function NativeSelect({
+  value,
+  onChange,
+  options,
+}: {
+  value: string;
+  onChange: (value: string) => void;
+  options: Array<{ value: string; label: string }>;
+}) {
+  return (
+    <select
+      value={value}
+      onChange={(event) => onChange(event.target.value)}
+      className="h-9 w-full rounded-md border border-input bg-transparent px-2 text-sm text-foreground"
+    >
+      <option value="">— Choisir —</option>
+      {options.map((option) => (
+        <option key={option.value} value={option.value}>
+          {option.label}
+        </option>
+      ))}
+    </select>
   );
 }
 

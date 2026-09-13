@@ -33,7 +33,7 @@ export const Route = createFileRoute("/")({
 function Index() {
   const [selection, setSelection] = useState<Selection | null>(null);
   const [filters, setFilters] = useState<Filters>(emptyFilters);
-  const { user, isAdmin, signOut } = useAuth();
+  const { isAdmin } = useAuth();
 
   const { data: ports = [] } = useQuery(portsQuery);
   const { data: routes = [] } = useQuery(routesQuery);

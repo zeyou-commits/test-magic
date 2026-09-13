@@ -149,20 +149,29 @@ function Index() {
         const vessel = departure.vessel_id ? vesselName.get(departure.vessel_id) : null;
         if (vessel) vesselNames.add(vessel);
       });
-      const next = departures.find((departure) => {
+      const portDepartures = departures.filter((departure) => {
         if (!visibleIds.has(departure.route_id)) return false;
         const route = routes.find((item) => item.id === departure.route_id);
         return route?.departure_port_id === port.id && departure.status !== "cancelled";
       });
-      const nextRoute = next ? routes.find((item) => item.id === next.route_id) : undefined;
+      const toName = (departure: (typeof portDepartures)[number]) => {
+        const route = routes.find((item) => item.id === departure.route_id);
+        return route
+          ? (ports.find((item) => item.id === route.arrival_port_id)?.name ?? null)
+          : null;
+      };
+      const next = portDepartures[0];
       meta[port.id] = {
         routes: portRoutes.length,
         companies: [...companyNames].sort(),
         vessels: [...vesselNames].sort(),
         nextDeparture: next ? formatDateTime(next.departure_at) : null,
-        nextTo: nextRoute
-          ? ports.find((item) => item.id === nextRoute.arrival_port_id)?.name ?? null
-          : null,
+        nextTo: next ? toName(next) : null,
+        upcoming: portDepartures.slice(0, 3).map((departure) => ({
+          label: formatDateTime(departure.departure_at),
+          to: toName(departure),
+        })),
+        hasMore: portDepartures.length > 3,
       };
     });
     return meta;

@@ -102,21 +102,13 @@ function Index() {
             Traversées vers l'Algérie
           </span>
         </Link>
-        <nav className="flex items-center gap-1">
+        <nav className="flex items-center gap-2">
           {isAdmin ? (
             <Button asChild variant="ghost" size="sm">
               <Link to="/admin">Back-office</Link>
             </Button>
           ) : null}
-          {user ? (
-            <Button variant="ghost" size="sm" onClick={() => signOut()}>
-              Se déconnecter
-            </Button>
-          ) : (
-            <Button asChild variant="outline" size="sm">
-              <Link to="/auth">Se connecter</Link>
-            </Button>
-          )}
+          <UserMenu />
         </nav>
       </header>
 

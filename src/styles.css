@@ -186,8 +186,8 @@
 }
 
 .port-marker[data-active="true"] .port-marker__dot {
-  background: var(--color-accent);
-  transform: scale(1.35);
+  transform: scale(1.4);
+  box-shadow: 0 0 0 4px color-mix(in oklab, var(--port-color, var(--color-primary)) 30%, transparent);
 }
 
 .port-marker__label {
@@ -211,26 +211,6 @@
 
 .port-marker[data-dimmed="true"] {
   opacity: 0.45;
-}
-
-.duration-badge {
-  font-family: var(--font-display);
-  font-size: 10px;
-  font-weight: 600;
-  letter-spacing: 0;
-  color: var(--color-primary);
-  background: oklch(1 0 0 / 88%);
-  border: 1px solid var(--color-border);
-  border-radius: 9999px;
-  padding: 1px 7px;
-  white-space: nowrap;
-  cursor: pointer;
-}
-
-.duration-badge[data-active="true"] {
-  color: var(--color-accent-foreground);
-  background: var(--color-accent);
-  border-color: var(--color-accent);
 }
 
 .maplibregl-ctrl-attrib {

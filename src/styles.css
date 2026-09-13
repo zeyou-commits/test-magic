@@ -177,7 +177,7 @@
   height: 14px;
   border-radius: 9999px;
   border: 2px solid var(--color-card);
-  background: var(--color-primary);
+  background: var(--port-color, var(--color-primary));
   box-shadow: 0 1px 4px color-mix(in oklab, var(--color-foreground) 35%, transparent);
   cursor: pointer;
   transition:

@@ -3,9 +3,12 @@ import { ClientOnly, createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { SidePanel } from "@/components/panel/SidePanel";
 import { UserMenu } from "@/components/layout/UserMenu";
+import { BrandMark } from "@/components/layout/BrandMark";
 import { useAuth } from "@/hooks/useAuth";
 import { portsQuery, routesQuery, upcomingDeparturesQuery } from "@/lib/ferry/queries";
+import { formatDateTime } from "@/lib/ferry/format";
 import { emptyFilters, type Filters, type Selection } from "@/lib/ferry/types";
+import type { PortMeta } from "@/components/map/FerryMap";
 import { Button } from "@/components/ui/button";
 
 const FerryMap = lazy(() => import("@/components/map/FerryMap"));
@@ -13,13 +16,13 @@ const FerryMap = lazy(() => import("@/components/map/FerryMap"));
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "FerryDZ — Carte des ferries vers l'Algérie" },
+      { title: "Batogo — Carte des ferries vers l'Algérie" },
       {
         name: "description",
         content:
-          "Explorez sur une carte les ports, lignes maritimes, durées de traversée et prochains départs vers l'Algérie.",
+          "Explorez sur une carte interactive les ports, lignes maritimes, durées de traversée et prochains départs vers l'Algérie.",
       },
-      { property: "og:title", content: "FerryDZ — Carte des ferries vers l'Algérie" },
+      { property: "og:title", content: "Batogo — Carte des ferries vers l'Algérie" },
       {
         property: "og:description",
         content:
@@ -111,18 +114,76 @@ function Index() {
     return [];
   }, [selection, routes]);
 
+  // Infobulle de survol : lignes visibles et prochain départ connu.
+  const portMeta = useMemo(() => {
+    const meta: Record<string, PortMeta> = {};
+    const visibleIds = new Set(visibleRoutes.map((route) => route.id));
+    ports.forEach((port) => {
+      const count = visibleRoutes.filter(
+        (route) =>
+          route.departure_port_id === port.id || route.arrival_port_id === port.id,
+      ).length;
+      const next = departures.find((departure) => {
+        if (!visibleIds.has(departure.route_id)) return false;
+        const route = routes.find((item) => item.id === departure.route_id);
+        return route?.departure_port_id === port.id && departure.status !== "cancelled";
+      });
+      const nextRoute = next ? routes.find((item) => item.id === next.route_id) : undefined;
+      meta[port.id] = {
+        routes: count,
+        nextDeparture: next ? formatDateTime(next.departure_at) : null,
+        nextTo: nextRoute
+          ? ports.find((item) => item.id === nextRoute.arrival_port_id)?.name ?? null
+          : null,
+      };
+    });
+    return meta;
+  }, [ports, routes, visibleRoutes, departures]);
+
   return (
     <div className="flex h-dvh flex-col overflow-hidden bg-background">
-      <header className="flex items-center justify-between gap-3 border-b border-border bg-card px-4 py-2.5">
-        <Link to="/" className="flex items-baseline gap-2">
-          <span className="font-display text-lg font-bold tracking-tight">FerryDZ</span>
-          <span className="hidden text-xs text-muted-foreground sm:inline">
-            Traversées vers l'Algérie
+      <header className="relative z-20 flex items-center justify-between gap-3 border-b border-border bg-[image:var(--gradient-header)] px-4 py-2.5 text-primary-foreground">
+        <Link to="/" className="flex items-center gap-2.5">
+          <BrandMark className="size-8" />
+          <span className="flex flex-col leading-none">
+            <span className="font-display text-lg font-bold tracking-tight">Batogo</span>
+            <span className="hidden text-[11px] text-primary-foreground/70 sm:inline">
+              Traversées en ferry vers l'Algérie
+            </span>
           </span>
         </Link>
-        <nav className="flex items-center gap-2">
+        <nav className="flex items-center gap-1">
+          <Button
+            asChild
+            variant="ghost"
+            size="sm"
+            className="hidden text-primary-foreground hover:bg-primary-foreground/10 hover:text-primary-foreground sm:inline-flex"
+          >
+            <Link to="/horaires">Horaires</Link>
+          </Button>
+          <Button
+            asChild
+            variant="ghost"
+            size="sm"
+            className="hidden text-primary-foreground hover:bg-primary-foreground/10 hover:text-primary-foreground sm:inline-flex"
+          >
+            <Link to="/ports">Ports</Link>
+          </Button>
+          <Button
+            asChild
+            variant="ghost"
+            size="sm"
+            className="hidden text-primary-foreground hover:bg-primary-foreground/10 hover:text-primary-foreground sm:inline-flex"
+          >
+            <Link to="/guide">Guide</Link>
+          </Button>
           {isAdmin ? (
-            <Button asChild variant="ghost" size="sm">
+            <Button
+              asChild
+              variant="ghost"
+              size="sm"
+              className="text-primary-foreground hover:bg-primary-foreground/10 hover:text-primary-foreground"
+            >
               <Link to="/admin">Back-office</Link>
             </Button>
           ) : null}
@@ -131,7 +192,7 @@ function Index() {
       </header>
 
       <div className="flex min-h-0 flex-1 flex-col-reverse md:flex-row">
-        <aside className="h-[48vh] w-full shrink-0 border-t border-border md:h-auto md:w-[380px] md:border-r md:border-t-0">
+        <aside className="h-[48vh] w-full shrink-0 border-t border-border shadow-[var(--shadow-panel)] md:h-auto md:w-[390px] md:border-r md:border-t-0">
           <SidePanel
             selection={selection}
             onSelect={setSelection}
@@ -150,6 +211,7 @@ function Index() {
                 focusRouteIds={focusRouteIds}
                 selection={selection}
                 highlightedPortIds={highlightedPortIds}
+                portMeta={portMeta}
                 onSelect={setSelection}
               />
             </Suspense>
@@ -162,8 +224,8 @@ function Index() {
 
 function MapFallback() {
   return (
-    <div className="absolute inset-0 grid place-items-center text-sm text-muted-foreground">
-      Chargement de la carte…
+    <div className="absolute inset-0 grid place-items-center gap-2 text-sm text-muted-foreground">
+      <span className="animate-pulse font-display font-semibold">Chargement de la carte…</span>
     </div>
   );
 }

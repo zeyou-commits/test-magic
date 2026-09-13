@@ -1651,21 +1651,33 @@ function RoutesAdmin() {
 
 // ---------------------------------------------------------------- Import Excel
 
-interface ImportRow {
+// Chaque ligne du fichier devient une ligne modifiable avant validation finale.
+interface ImportDraftRow {
+  key: string;
   line: number;
-  error?: string;
-  values?: Record<string, unknown>;
-  label: string;
+  date: string;
+  departure_time: string;
+  arrival_time: string;
+  departure_port_id: string;
+  arrival_port_id: string;
+  company_id: string;
+  vessel_id: string;
+  status: "scheduled" | "modified" | "cancelled";
+  rawLabel: string;
 }
 
 const importColumns = [
   ["date", "Date du départ, au format AAAA-MM-JJ (ex. 2026-10-05)"],
   ["heure", "Heure de départ, format HH:MM sur 24 h (ex. 18:30)"],
+  ["heure_arrivee", "Heure d'arrivée théorique, format HH:MM (le lendemain est déduit tout seul)"],
   ["port_depart", "Nom exact du port de départ (ex. Alger)"],
   ["port_arrivee", "Nom exact du port d'arrivée (ex. Marseille)"],
   ["compagnie", "Nom exact de la compagnie (ex. Algérie Ferries)"],
   ["navire", "Facultatif — nom exact du navire"],
-  ["duree_minutes", "Facultatif — durée en minutes ; sinon la durée de la ligne est utilisée"],
+  [
+    "duree_minutes",
+    "Facultatif — durée en minutes ; utilisée si l'heure d'arrivée est absente",
+  ],
   ["statut", "Facultatif — prevu, modifie ou annule (par défaut : prevu)"],
 ];
 
@@ -1681,6 +1693,12 @@ const importStatusMap: Record<string, "scheduled" | "modified" | "cancelled"> = 
   cancelled: "cancelled",
 };
 
+const importStatusOptions = [
+  { value: "scheduled", label: "Prévu" },
+  { value: "modified", label: "Modifié" },
+  { value: "cancelled", label: "Annulé" },
+];
+
 function normalize(value: unknown) {
   return String(value ?? "")
     .normalize("NFD")
@@ -1695,18 +1713,66 @@ function ImportAdmin() {
   const { data: routes = [] } = useQuery(adminRoutesQuery);
   const { data: companies = [] } = useQuery(companiesQuery);
   const { data: vessels = [] } = useQuery(vesselsQuery);
-  const [rows, setRows] = useState<ImportRow[]>([]);
+  const [rows, setRows] = useState<ImportDraftRow[]>([]);
   const [fileName, setFileName] = useState("");
   const [parsing, setParsing] = useState(false);
 
+  const portOptions = ports.map((port) => ({ value: port.id, label: port.name }));
+  const companyOptions = companies.map((company) => ({
+    value: company.id,
+    label: company.name,
+  }));
+  const vesselOptions = vessels.map((vessel) => ({ value: vessel.id, label: vessel.name }));
+
   const findPort = (value: unknown) => {
     const needle = normalize(value);
+    if (!needle) return undefined;
     return ports.find(
       (port) =>
         normalize(port.name) === needle ||
         normalize(port.slug) === needle ||
         normalize(port.city) === needle,
     );
+  };
+
+  // Contrôle d'une ligne : renvoie soit une erreur lisible, soit les valeurs à enregistrer.
+  const check = (row: ImportDraftRow): { error: string } | { values: Record<string, unknown> } => {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(row.date)) return { error: "Date invalide (AAAA-MM-JJ)." };
+    if (timeToMinutes(row.departure_time) === null) return { error: "Heure de départ invalide." };
+    if (timeToMinutes(row.arrival_time) === null)
+      return { error: "Heure d'arrivée théorique invalide." };
+    if (!row.departure_port_id) return { error: "Port de départ à choisir." };
+    if (!row.arrival_port_id) return { error: "Port d'arrivée à choisir." };
+    if (row.departure_port_id === row.arrival_port_id)
+      return { error: "Les deux ports doivent être différents." };
+    if (!row.company_id) return { error: "Compagnie à choisir." };
+    const route = routes.find(
+      (item) =>
+        item.departure_port_id === row.departure_port_id &&
+        item.arrival_port_id === row.arrival_port_id,
+    );
+    if (!route)
+      return {
+        error: "Aucune ligne existante entre ces deux ports : créez-la dans l'onglet « Lignes ».",
+      };
+    const duration = durationBetweenTimes(row.departure_time, row.arrival_time);
+    if (!duration) return { error: "Durée théorique impossible à calculer." };
+    const departureAt = new Date(`${row.date}T${row.departure_time.padStart(5, "0")}:00Z`);
+    if (Number.isNaN(departureAt.getTime())) return { error: "Date et heure illisibles." };
+    return {
+      values: {
+        route_id: route.id,
+        company_id: row.company_id,
+        vessel_id: row.vessel_id || null,
+        departure_at: departureAt.toISOString(),
+        arrival_at: new Date(departureAt.getTime() + duration * 60000).toISOString(),
+        duration_minutes: duration,
+        status: row.status,
+        reliability: "verified",
+        source_name: fileName ? `Import Excel — ${fileName}` : "Import Excel",
+        last_verified_at: new Date().toISOString(),
+      },
+    };
   };
 
   const parseFile = async (file: File) => {
@@ -1719,14 +1785,13 @@ function ImportAdmin() {
       const sheet = sheetName ? workbook.Sheets[sheetName] : undefined;
       if (!sheet) throw new Error("Le fichier ne contient aucune feuille.");
       const raw = XLSX.utils.sheet_to_json<Record<string, unknown>>(sheet, { raw: false });
-      const parsed: ImportRow[] = raw.map((entry, index) => {
-        const line = index + 2;
+      const parsed: ImportDraftRow[] = raw.map((entry, index) => {
         const get = (key: string) => {
           const found = Object.keys(entry).find((column) => normalize(column) === key);
           return found ? entry[found] : undefined;
         };
         const date = String(get("date") ?? "").trim();
-        const time = String(get("heure") ?? "").trim();
+        const departureTime = String(get("heure") ?? "").trim().slice(0, 5);
         const from = findPort(get("port_depart"));
         const to = findPort(get("port_arrivee"));
         const companyNeedle = normalize(get("compagnie"));
@@ -1736,52 +1801,41 @@ function ImportAdmin() {
         const vesselNeedle = normalize(get("navire"));
         const vessel = vesselNeedle
           ? vessels.find(
-              (item) => normalize(item.name) === vesselNeedle || normalize(item.slug) === vesselNeedle,
+              (item) =>
+                normalize(item.name) === vesselNeedle || normalize(item.slug) === vesselNeedle,
             )
           : undefined;
-        const label = `${date} ${time} · ${String(get("port_depart") ?? "?")} → ${String(
-          get("port_arrivee") ?? "?",
-        )}`;
-        if (!/^\d{4}-\d{2}-\d{2}$/.test(date))
-          return { line, label, error: "Date invalide (attendu AAAA-MM-JJ)." };
-        if (!/^\d{1,2}:\d{2}$/.test(time))
-          return { line, label, error: "Heure invalide (attendu HH:MM)." };
-        if (!from) return { line, label, error: "Port de départ inconnu." };
-        if (!to) return { line, label, error: "Port d'arrivée inconnu." };
-        if (!company) return { line, label, error: "Compagnie inconnue." };
-        const route = routes.find(
-          (item) => item.departure_port_id === from.id && item.arrival_port_id === to.id,
-        );
-        if (!route)
-          return {
-            line,
-            label,
-            error: "Aucune ligne existante entre ces deux ports : créez-la dans l'onglet Lignes.",
-          };
+        const route =
+          from && to
+            ? routes.find(
+                (item) =>
+                  item.departure_port_id === from.id && item.arrival_port_id === to.id,
+              )
+            : undefined;
         const durationRaw = Number(get("duree_minutes"));
-        const duration = Number.isFinite(durationRaw) && durationRaw > 0
-          ? Math.round(durationRaw)
-          : route.typical_duration_minutes;
-        if (!duration) return { line, label, error: "Durée manquante pour cette ligne." };
-        const departureAt = new Date(`${date}T${time.padStart(5, "0")}:00Z`);
-        if (Number.isNaN(departureAt.getTime()))
-          return { line, label, error: "Date et heure illisibles." };
-        const status = importStatusMap[normalize(get("statut")) || "prevu"] ?? "scheduled";
+        const fallbackDuration =
+          Number.isFinite(durationRaw) && durationRaw > 0
+            ? Math.round(durationRaw)
+            : route?.typical_duration_minutes ?? 0;
+        const arrivalFromFile = String(get("heure_arrivee") ?? "").trim().slice(0, 5);
+        const arrivalTime =
+          timeToMinutes(arrivalFromFile) !== null
+            ? arrivalFromFile
+            : fallbackDuration
+              ? addMinutesToTime(departureTime, fallbackDuration)
+              : "";
         return {
-          line,
-          label,
-          values: {
-            route_id: route.id,
-            company_id: company.id,
-            vessel_id: vessel?.id ?? null,
-            departure_at: departureAt.toISOString(),
-            arrival_at: new Date(departureAt.getTime() + duration * 60000).toISOString(),
-            duration_minutes: duration,
-            status,
-            reliability: "verified",
-            source_name: `Import Excel — ${file.name}`,
-            last_verified_at: new Date().toISOString(),
-          },
+          key: `${index}-${date}-${departureTime}`,
+          line: index + 2,
+          date,
+          departure_time: departureTime,
+          arrival_time: arrivalTime,
+          departure_port_id: from?.id ?? "",
+          arrival_port_id: to?.id ?? "",
+          company_id: company?.id ?? "",
+          vessel_id: vessel?.id ?? "",
+          status: importStatusMap[normalize(get("statut")) || "prevu"] ?? "scheduled",
+          rawLabel: `${String(get("port_depart") ?? "?")} → ${String(get("port_arrivee") ?? "?")}`,
         };
       });
       setRows(parsed);
@@ -1794,17 +1848,23 @@ function ImportAdmin() {
     }
   };
 
-  const valid = rows.filter((row) => row.values);
-  const invalid = rows.filter((row) => row.error);
+  const patch = (key: string, changes: Partial<ImportDraftRow>) =>
+    setRows((prev) => prev.map((row) => (row.key === key ? { ...row, ...changes } : row)));
+
+  const checked = rows.map((row) => ({ row, result: check(row) }));
+  const validValues = checked
+    .map((item) => ("values" in item.result ? item.result.values : null))
+    .filter((values): values is Record<string, unknown> => values !== null);
+  const invalidCount = checked.length - validValues.length;
 
   const importRows = useMutation({
     mutationFn: async () => {
-      if (valid.length === 0) throw new Error("Aucune ligne valide à importer.");
-      const { error } = await supabase
-        .from("departures")
-        .insert(valid.map((row) => row.values) as never);
+      if (invalidCount > 0)
+        throw new Error("Corrigez d'abord les lignes signalées avant de valider l'import.");
+      if (validValues.length === 0) throw new Error("Aucune ligne à importer.");
+      const { error } = await supabase.from("departures").insert(validValues as never);
       if (error) throw new Error(error.message);
-      return valid.length;
+      return validValues.length;
     },
     onSuccess: (count) => {
       queryClient.invalidateQueries({ queryKey: ["departures"] });
@@ -1819,7 +1879,17 @@ function ImportAdmin() {
     const XLSX = await import("xlsx");
     const sheet = XLSX.utils.aoa_to_sheet([
       importColumns.map(([key]) => key as string),
-      ["2026-10-05", "18:30", "Alger", "Marseille", "Algérie Ferries", "", "660", "prevu"],
+      [
+        "2026-10-05",
+        "18:30",
+        "05:30",
+        "Alger",
+        "Marseille",
+        "Algérie Ferries",
+        "",
+        "660",
+        "prevu",
+      ],
     ]);
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, sheet, "departs");
@@ -1865,35 +1935,129 @@ function ImportAdmin() {
           }}
         />
         {parsing ? <p className="mt-2 text-sm text-muted-foreground">Lecture du fichier…</p> : null}
-        {rows.length > 0 ? (
-          <>
-            <p className="mt-3 text-sm">
-              {fileName} — {valid.length} ligne(s) prête(s), {invalid.length} à corriger.
-            </p>
-            {invalid.length > 0 ? (
-              <ul className="mt-2 space-y-1 text-xs text-destructive">
-                {invalid.map((row) => (
-                  <li key={row.line}>
-                    Ligne {row.line} — {row.label} : {row.error}
-                  </li>
-                ))}
-              </ul>
-            ) : null}
-            <div className="mt-3 flex gap-2">
-              <Button
-                size="sm"
-                disabled={importRows.isPending || valid.length === 0}
-                onClick={() => importRows.mutate()}
-              >
-                Importer {valid.length} départ(s)
-              </Button>
-              <Button size="sm" variant="ghost" onClick={() => setRows([])}>
-                Annuler
-              </Button>
-            </div>
-          </>
-        ) : null}
       </Panel>
+
+      {rows.length > 0 ? (
+        <Panel>
+          <h2 className="text-sm font-semibold">Vérifier et corriger avant validation</h2>
+          <p className="mt-1 text-xs text-muted-foreground">
+            {fileName} — {validValues.length} ligne(s) prête(s)
+            {invalidCount > 0 ? `, ${invalidCount} à corriger` : ""}. Vous pouvez tout modifier ici :
+            rien n'est enregistré avant la validation finale.
+          </p>
+          <ul className="mt-3 space-y-3">
+            {checked.map(({ row, result }) => {
+              const error = "error" in result ? result.error : null;
+              const total =
+                (timeToMinutes(row.departure_time) ?? 0) +
+                (durationBetweenTimes(row.departure_time, row.arrival_time) ?? 0);
+              return (
+                <li
+                  key={row.key}
+                  className={`rounded-lg border p-3 ${
+                    error ? "border-destructive/60 bg-destructive/5" : "border-border"
+                  }`}
+                >
+                  <div className="flex items-center justify-between gap-2">
+                    <p className="text-xs font-medium text-muted-foreground">
+                      Ligne {row.line} · {row.rawLabel}
+                    </p>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => setRows((prev) => prev.filter((item) => item.key !== row.key))}
+                    >
+                      Retirer
+                    </Button>
+                  </div>
+                  <div className="mt-2 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                    <Field label="Date">
+                      <Input
+                        type="date"
+                        value={row.date}
+                        onChange={(event) => patch(row.key, { date: event.target.value })}
+                      />
+                    </Field>
+                    <Field label="Heure de départ">
+                      <Input
+                        type="time"
+                        value={row.departure_time}
+                        onChange={(event) =>
+                          patch(row.key, { departure_time: event.target.value })
+                        }
+                      />
+                    </Field>
+                    <Field label={`Arrivée théorique${dayShift(total)}`}>
+                      <Input
+                        type="time"
+                        value={row.arrival_time}
+                        onChange={(event) => patch(row.key, { arrival_time: event.target.value })}
+                      />
+                    </Field>
+                    <Field label="Statut">
+                      <NativeSelect
+                        value={row.status}
+                        onChange={(value) =>
+                          patch(row.key, { status: value as ImportDraftRow["status"] })
+                        }
+                        options={importStatusOptions}
+                      />
+                    </Field>
+                    <Field label="Port de départ">
+                      <NativeSelect
+                        value={row.departure_port_id}
+                        onChange={(value) => patch(row.key, { departure_port_id: value })}
+                        options={portOptions}
+                      />
+                    </Field>
+                    <Field label="Port d'arrivée">
+                      <NativeSelect
+                        value={row.arrival_port_id}
+                        onChange={(value) => patch(row.key, { arrival_port_id: value })}
+                        options={portOptions}
+                      />
+                    </Field>
+                    <Field label="Compagnie">
+                      <NativeSelect
+                        value={row.company_id}
+                        onChange={(value) => patch(row.key, { company_id: value })}
+                        options={companyOptions}
+                      />
+                    </Field>
+                    <Field label="Navire (facultatif)">
+                      <NativeSelect
+                        value={row.vessel_id}
+                        onChange={(value) => patch(row.key, { vessel_id: value })}
+                        options={vesselOptions}
+                      />
+                    </Field>
+                  </div>
+                  {error ? <p className="mt-2 text-xs text-destructive">{error}</p> : null}
+                </li>
+              );
+            })}
+          </ul>
+          <div className="mt-4 flex gap-2">
+            <Button
+              size="sm"
+              disabled={importRows.isPending || invalidCount > 0 || validValues.length === 0}
+              onClick={() => importRows.mutate()}
+            >
+              Valider l'import de {validValues.length} départ(s)
+            </Button>
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={() => {
+                setRows([]);
+                setFileName("");
+              }}
+            >
+              Annuler
+            </Button>
+          </div>
+        </Panel>
+      ) : null}
     </>
   );
 }

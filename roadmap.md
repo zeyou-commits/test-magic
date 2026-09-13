@@ -19,3 +19,6 @@
 - [x] 17. Identité Batogo (logo, en-tête, couleurs, ombres)
 - [x] 18. Pages SEO : ports, ports/slug, lignes, lignes/slug, horaires, compagnies, guide,
       à propos, contact, mentions légales, confidentialité, sitemap.xml, robots.txt
+- [x] 19. Import Excel : création automatique des lignes, compagnies et navires manquants,
+      anti-doublon des départs
+- [x] 20. Nouvelle saison : archivage des départs à venir et suspension des calendriers/lignes

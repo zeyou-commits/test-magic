@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   adminPortsQuery,
+  adminRoutesQuery,
   companiesQuery,
   portsQuery,
   routesQuery,
@@ -22,6 +23,8 @@ import {
   reliabilityLabel,
   weekdayLabels,
 } from "@/lib/ferry/format";
+import { routeColor, routePalette } from "@/lib/ferry/colors";
+import { portPresets } from "@/lib/ferry/portPresets";
 const departureStatusLabel: Record<string, string> = {
   scheduled: "Prévu",
   modified: "Modifié",
@@ -98,6 +101,8 @@ function AdminPage() {
           <TabsTrigger value="departures">Départs</TabsTrigger>
           <TabsTrigger value="schedules">Calendriers</TabsTrigger>
           <TabsTrigger value="ports">Ports</TabsTrigger>
+          <TabsTrigger value="routes">Lignes</TabsTrigger>
+          <TabsTrigger value="import">Import Excel</TabsTrigger>
           <TabsTrigger value="data">Données</TabsTrigger>
         </TabsList>
         <TabsContent value="reviews">
@@ -114,6 +119,12 @@ function AdminPage() {
         </TabsContent>
         <TabsContent value="ports">
           <PortsAdmin />
+        </TabsContent>
+        <TabsContent value="routes">
+          <RoutesAdmin />
+        </TabsContent>
+        <TabsContent value="import">
+          <ImportAdmin />
         </TabsContent>
         <TabsContent value="data">
           <DataAdmin />

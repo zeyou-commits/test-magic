@@ -823,24 +823,141 @@ function NativeSelect({
 }
 
 function DataAdmin() {
+  const queryClient = useQueryClient();
   const { data: ports = [] } = useQuery(adminPortsQuery);
   const { data: routes = [] } = useQuery(adminRoutesQuery);
   const { data: companies = [] } = useQuery(companiesQuery);
   const { data: vessels = [] } = useQuery(vesselsQuery);
+  const { data: schedules = [] } = useQuery(schedulesQuery);
+  const { data: departures = [] } = useQuery(upcomingDeparturesQuery());
+
+  const [fromDate, setFromDate] = useState(() => new Date().toISOString().slice(0, 10));
+  const [suspendRoutes, setSuspendRoutes] = useState(true);
+  const [confirming, setConfirming] = useState(false);
+
+  const activeSchedules = schedules.filter((item) => item.status === "active");
+  const activeRoutes = routes.filter((item) => item.status === "active");
+  const affectedDepartures = departures.filter(
+    (item) => item.departure_at >= `${fromDate}T00:00:00`,
+  );
+
+  const newSeason = useMutation({
+    mutationFn: async () => {
+      const startIso = new Date(`${fromDate}T00:00:00Z`).toISOString();
+      if (Number.isNaN(new Date(startIso).getTime())) throw new Error("Date de début invalide.");
+
+      const removed = await supabase
+        .from("departures")
+        .delete()
+        .gte("departure_at", startIso)
+        .select("id");
+      if (removed.error) throw new Error(removed.error.message);
+
+      if (activeSchedules.length > 0) {
+        const suspended = await supabase
+          .from("schedules")
+          .update({ status: "inactive" })
+          .eq("status", "active");
+        if (suspended.error) throw new Error(suspended.error.message);
+      }
+
+      if (suspendRoutes && activeRoutes.length > 0) {
+        const suspendedRoutes = await supabase
+          .from("routes")
+          .update({ status: "inactive" })
+          .eq("status", "active");
+        if (suspendedRoutes.error) throw new Error(suspendedRoutes.error.message);
+      }
+
+      return removed.data?.length ?? 0;
+    },
+    onSuccess: (count) => {
+      queryClient.invalidateQueries({ queryKey: ["departures"] });
+      queryClient.invalidateQueries({ queryKey: ["schedules"] });
+      queryClient.invalidateQueries({ queryKey: ["routes"] });
+      setConfirming(false);
+      toast.success(
+        `Saison archivée : ${count} départ(s) retiré(s), calendriers suspendus. Vous pouvez importer la nouvelle saison.`,
+      );
+    },
+    onError: (error: Error) => toast.error(error.message),
+  });
 
   return (
-    <Panel>
-      <div className="grid gap-4 sm:grid-cols-2">
-        <Counter label="Ports" value={ports.length} />
-        <Counter label="Lignes" value={routes.length} />
-        <Counter label="Compagnies" value={companies.length} />
-        <Counter label="Navires" value={vessels.length} />
-      </div>
-      <p className="mt-4 text-xs text-muted-foreground">
-        Les fiches marquées « démonstration » servent d'exemples et doivent être remplacées par
-        des informations vérifiées avant publication.
-      </p>
-    </Panel>
+    <>
+      <Panel>
+        <div className="grid gap-4 sm:grid-cols-2">
+          <Counter label="Ports" value={ports.length} />
+          <Counter label="Lignes" value={routes.length} />
+          <Counter label="Compagnies" value={companies.length} />
+          <Counter label="Navires" value={vessels.length} />
+        </div>
+        <p className="mt-4 text-xs text-muted-foreground">
+          Les fiches marquées « démonstration » servent d'exemples et doivent être remplacées par
+          des informations vérifiées avant publication.
+        </p>
+      </Panel>
+
+      <Panel>
+        <h2 className="text-sm font-semibold">Nouvelle saison</h2>
+        <p className="mt-1 text-xs text-muted-foreground">
+          Prépare la base avant d'importer un calendrier complet : les départs à partir de la date
+          choisie sont retirés et les calendriers récurrents sont suspendus. Les ports, lignes,
+          compagnies, navires et avis sont conservés.
+        </p>
+        <div className="mt-3 grid gap-3 sm:grid-cols-2">
+          <Field label="Début de la nouvelle saison">
+            <Input
+              type="date"
+              value={fromDate}
+              onChange={(event) => {
+                setFromDate(event.target.value);
+                setConfirming(false);
+              }}
+            />
+          </Field>
+          <label className="flex items-end gap-2 pb-2 text-sm">
+            <input
+              type="checkbox"
+              checked={suspendRoutes}
+              onChange={(event) => setSuspendRoutes(event.target.checked)}
+            />
+            Suspendre aussi les lignes (à réactiver au fil des imports)
+          </label>
+        </div>
+        <ul className="mt-3 space-y-1 text-xs text-muted-foreground">
+          <li>{affectedDepartures.length} départ(s) à venir seront supprimés.</li>
+          <li>{activeSchedules.length} calendrier(s) actif(s) seront suspendus.</li>
+          {suspendRoutes ? <li>{activeRoutes.length} ligne(s) active(s) seront suspendues.</li> : null}
+        </ul>
+        {confirming ? (
+          <div className="mt-3 rounded-lg border border-destructive/60 bg-destructive/5 p-3">
+            <p className="text-xs text-destructive">
+              Cette opération est définitive pour les départs concernés. Confirmer l'archivage de la
+              saison en cours ?
+            </p>
+            <div className="mt-2 flex gap-2">
+              <Button
+                size="sm"
+                disabled={newSeason.isPending}
+                onClick={() => newSeason.mutate()}
+              >
+                Oui, archiver et repartir de zéro
+              </Button>
+              <Button size="sm" variant="ghost" onClick={() => setConfirming(false)}>
+                Annuler
+              </Button>
+            </div>
+          </div>
+        ) : (
+          <div className="mt-3">
+            <Button size="sm" variant="outline" onClick={() => setConfirming(true)}>
+              Préparer une nouvelle saison
+            </Button>
+          </div>
+        )}
+      </Panel>
+    </>
   );
 }
 

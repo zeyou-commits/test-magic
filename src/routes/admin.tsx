@@ -721,7 +721,16 @@ function SchedulesAdmin() {
             <li key={schedule.id} className="flex flex-wrap items-center gap-3 py-3">
               <div className="min-w-0 flex-1">
                 <p className="text-sm font-medium">
-                  {routeLabel(schedule.route_id)} · {schedule.departure_time.slice(0, 5)}
+                  {routeLabel(schedule.route_id)} · départ {schedule.departure_time.slice(0, 5)} →
+                  arrivée théorique{" "}
+                  {addMinutesToTime(
+                    schedule.departure_time.slice(0, 5),
+                    schedule.duration_minutes,
+                  )}
+                  {dayShift(
+                    (timeToMinutes(schedule.departure_time.slice(0, 5)) ?? 0) +
+                      schedule.duration_minutes,
+                  )}
                 </p>
                 <p className="text-xs text-muted-foreground">
                   {schedule.weekdays

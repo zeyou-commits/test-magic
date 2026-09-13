@@ -336,8 +336,9 @@ function DeparturesAdmin() {
                     ? `${portName(route.departure_port_id)} → ${portName(route.arrival_port_id)}`
                     : "—"}
                   {company ? ` · ${company.name}` : ""} ·{" "}
-                  {formatDuration(departure.duration_minutes)} · {departure.status} ·{" "}
-                  {departure.reliability}
+                  {formatDuration(departure.duration_minutes)} ·{" "}
+                  {departureStatusLabel[departure.status] ?? departure.status} ·{" "}
+                  {reliabilityLabel[departure.reliability]}
                 </p>
               </div>
               <div className="flex gap-2">

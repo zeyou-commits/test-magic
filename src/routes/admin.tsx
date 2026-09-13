@@ -11,8 +11,6 @@ import {
   adminPortsQuery,
   adminRoutesQuery,
   companiesQuery,
-  portsQuery,
-  routesQuery,
   schedulesQuery,
   upcomingDeparturesQuery,
   vesselsQuery,
@@ -148,7 +146,7 @@ function Panel({ children }: { children: React.ReactNode }) {
 
 function ReviewsModeration() {
   const queryClient = useQueryClient();
-  const { data: ports = [] } = useQuery(portsQuery);
+  const { data: ports = [] } = useQuery(adminPortsQuery);
   const { data: reviews = [], isLoading } = useQuery({
     queryKey: ["admin", "reviews"],
     queryFn: async () => {
@@ -310,8 +308,8 @@ function ReportsModeration() {
 function DeparturesAdmin() {
   const queryClient = useQueryClient();
   const { data: departures = [] } = useQuery(upcomingDeparturesQuery(60));
-  const { data: routes = [] } = useQuery(routesQuery);
-  const { data: ports = [] } = useQuery(portsQuery);
+  const { data: routes = [] } = useQuery(adminRoutesQuery);
+  const { data: ports = [] } = useQuery(adminPortsQuery);
   const { data: companies = [] } = useQuery(companiesQuery);
 
   const update = useMutation({
@@ -406,8 +404,8 @@ const emptyDraft = {
 function SchedulesAdmin() {
   const queryClient = useQueryClient();
   const { data: schedules = [] } = useQuery(schedulesQuery);
-  const { data: routes = [] } = useQuery(routesQuery);
-  const { data: ports = [] } = useQuery(portsQuery);
+  const { data: routes = [] } = useQuery(adminRoutesQuery);
+  const { data: ports = [] } = useQuery(adminPortsQuery);
   const { data: companies = [] } = useQuery(companiesQuery);
   const { data: vessels = [] } = useQuery(vesselsQuery);
   const [draft, setDraft] = useState(emptyDraft);
@@ -745,8 +743,8 @@ function NativeSelect({
 }
 
 function DataAdmin() {
-  const { data: ports = [] } = useQuery(portsQuery);
-  const { data: routes = [] } = useQuery(routesQuery);
+  const { data: ports = [] } = useQuery(adminPortsQuery);
+  const { data: routes = [] } = useQuery(adminRoutesQuery);
   const { data: companies = [] } = useQuery(companiesQuery);
   const { data: vessels = [] } = useQuery(vesselsQuery);
 

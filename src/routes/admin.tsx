@@ -823,24 +823,141 @@ function NativeSelect({
 }
 
 function DataAdmin() {
+  const queryClient = useQueryClient();
   const { data: ports = [] } = useQuery(adminPortsQuery);
   const { data: routes = [] } = useQuery(adminRoutesQuery);
   const { data: companies = [] } = useQuery(companiesQuery);
   const { data: vessels = [] } = useQuery(vesselsQuery);
+  const { data: schedules = [] } = useQuery(schedulesQuery);
+  const { data: departures = [] } = useQuery(upcomingDeparturesQuery());
+
+  const [fromDate, setFromDate] = useState(() => new Date().toISOString().slice(0, 10));
+  const [suspendRoutes, setSuspendRoutes] = useState(true);
+  const [confirming, setConfirming] = useState(false);
+
+  const activeSchedules = schedules.filter((item) => item.status === "active");
+  const activeRoutes = routes.filter((item) => item.status === "active");
+  const affectedDepartures = departures.filter(
+    (item) => item.departure_at >= `${fromDate}T00:00:00`,
+  );
+
+  const newSeason = useMutation({
+    mutationFn: async () => {
+      const startIso = new Date(`${fromDate}T00:00:00Z`).toISOString();
+      if (Number.isNaN(new Date(startIso).getTime())) throw new Error("Date de début invalide.");
+
+      const removed = await supabase
+        .from("departures")
+        .delete()
+        .gte("departure_at", startIso)
+        .select("id");
+      if (removed.error) throw new Error(removed.error.message);
+
+      if (activeSchedules.length > 0) {
+        const suspended = await supabase
+          .from("schedules")
+          .update({ status: "inactive" })
+          .eq("status", "active");
+        if (suspended.error) throw new Error(suspended.error.message);
+      }
+
+      if (suspendRoutes && activeRoutes.length > 0) {
+        const suspendedRoutes = await supabase
+          .from("routes")
+          .update({ status: "inactive" })
+          .eq("status", "active");
+        if (suspendedRoutes.error) throw new Error(suspendedRoutes.error.message);
+      }
+
+      return removed.data?.length ?? 0;
+    },
+    onSuccess: (count) => {
+      queryClient.invalidateQueries({ queryKey: ["departures"] });
+      queryClient.invalidateQueries({ queryKey: ["schedules"] });
+      queryClient.invalidateQueries({ queryKey: ["routes"] });
+      setConfirming(false);
+      toast.success(
+        `Saison archivée : ${count} départ(s) retiré(s), calendriers suspendus. Vous pouvez importer la nouvelle saison.`,
+      );
+    },
+    onError: (error: Error) => toast.error(error.message),
+  });
 
   return (
-    <Panel>
-      <div className="grid gap-4 sm:grid-cols-2">
-        <Counter label="Ports" value={ports.length} />
-        <Counter label="Lignes" value={routes.length} />
-        <Counter label="Compagnies" value={companies.length} />
-        <Counter label="Navires" value={vessels.length} />
-      </div>
-      <p className="mt-4 text-xs text-muted-foreground">
-        Les fiches marquées « démonstration » servent d'exemples et doivent être remplacées par
-        des informations vérifiées avant publication.
-      </p>
-    </Panel>
+    <>
+      <Panel>
+        <div className="grid gap-4 sm:grid-cols-2">
+          <Counter label="Ports" value={ports.length} />
+          <Counter label="Lignes" value={routes.length} />
+          <Counter label="Compagnies" value={companies.length} />
+          <Counter label="Navires" value={vessels.length} />
+        </div>
+        <p className="mt-4 text-xs text-muted-foreground">
+          Les fiches marquées « démonstration » servent d'exemples et doivent être remplacées par
+          des informations vérifiées avant publication.
+        </p>
+      </Panel>
+
+      <Panel>
+        <h2 className="text-sm font-semibold">Nouvelle saison</h2>
+        <p className="mt-1 text-xs text-muted-foreground">
+          Prépare la base avant d'importer un calendrier complet : les départs à partir de la date
+          choisie sont retirés et les calendriers récurrents sont suspendus. Les ports, lignes,
+          compagnies, navires et avis sont conservés.
+        </p>
+        <div className="mt-3 grid gap-3 sm:grid-cols-2">
+          <Field label="Début de la nouvelle saison">
+            <Input
+              type="date"
+              value={fromDate}
+              onChange={(event) => {
+                setFromDate(event.target.value);
+                setConfirming(false);
+              }}
+            />
+          </Field>
+          <label className="flex items-end gap-2 pb-2 text-sm">
+            <input
+              type="checkbox"
+              checked={suspendRoutes}
+              onChange={(event) => setSuspendRoutes(event.target.checked)}
+            />
+            Suspendre aussi les lignes (à réactiver au fil des imports)
+          </label>
+        </div>
+        <ul className="mt-3 space-y-1 text-xs text-muted-foreground">
+          <li>{affectedDepartures.length} départ(s) à venir seront supprimés.</li>
+          <li>{activeSchedules.length} calendrier(s) actif(s) seront suspendus.</li>
+          {suspendRoutes ? <li>{activeRoutes.length} ligne(s) active(s) seront suspendues.</li> : null}
+        </ul>
+        {confirming ? (
+          <div className="mt-3 rounded-lg border border-destructive/60 bg-destructive/5 p-3">
+            <p className="text-xs text-destructive">
+              Cette opération est définitive pour les départs concernés. Confirmer l'archivage de la
+              saison en cours ?
+            </p>
+            <div className="mt-2 flex gap-2">
+              <Button
+                size="sm"
+                disabled={newSeason.isPending}
+                onClick={() => newSeason.mutate()}
+              >
+                Oui, archiver et repartir de zéro
+              </Button>
+              <Button size="sm" variant="ghost" onClick={() => setConfirming(false)}>
+                Annuler
+              </Button>
+            </div>
+          </div>
+        ) : (
+          <div className="mt-3">
+            <Button size="sm" variant="outline" onClick={() => setConfirming(true)}>
+              Préparer une nouvelle saison
+            </Button>
+          </div>
+        )}
+      </Panel>
+    </>
   );
 }
 
@@ -1692,6 +1809,9 @@ interface ImportDraftRow {
   vessel_id: string;
   status: "scheduled" | "modified" | "cancelled";
   rawLabel: string;
+  raw_company: string;
+  raw_vessel: string;
+  duration_hint: number;
 }
 
 const importColumns = [
@@ -1864,6 +1984,9 @@ function ImportAdmin() {
           vessel_id: vessel?.id ?? "",
           status: importStatusMap[normalize(get("statut")) || "prevu"] ?? "scheduled",
           rawLabel: `${String(get("port_depart") ?? "?")} → ${String(get("port_arrivee") ?? "?")}`,
+          raw_company: String(get("compagnie") ?? "").trim(),
+          raw_vessel: String(get("navire") ?? "").trim(),
+          duration_hint: fallbackDuration,
         };
       });
       setRows(parsed);
@@ -1885,18 +2008,178 @@ function ImportAdmin() {
     .filter((values): values is Record<string, unknown> => values !== null);
   const invalidCount = checked.length - validValues.length;
 
+  // Éléments absents de la base que l'on sait créer sans invention de données.
+  const missingCompanies = [
+    ...new Set(rows.filter((row) => !row.company_id && row.raw_company).map((row) => row.raw_company)),
+  ];
+  const missingVessels = [
+    ...new Set(rows.filter((row) => !row.vessel_id && row.raw_vessel).map((row) => row.raw_vessel)),
+  ];
+  const missingRoutePairs = [
+    ...new Map(
+      rows
+        .filter(
+          (row) =>
+            row.departure_port_id &&
+            row.arrival_port_id &&
+            row.departure_port_id !== row.arrival_port_id &&
+            !routes.some(
+              (item) =>
+                item.departure_port_id === row.departure_port_id &&
+                item.arrival_port_id === row.arrival_port_id,
+            ),
+        )
+        .map((row) => [`${row.departure_port_id}-${row.arrival_port_id}`, row] as const),
+    ).values(),
+  ];
+  const missingPortRows = rows.filter((row) => !row.departure_port_id || !row.arrival_port_id);
+  const missingTotal = missingCompanies.length + missingVessels.length + missingRoutePairs.length;
+
+  const portById = (id: string) => ports.find((port) => port.id === id);
+  const uniqueSlug = (base: string, taken: string[]) => {
+    const root = slugify(base) || "element";
+    let candidate = root;
+    let index = 2;
+    while (taken.includes(candidate)) {
+      candidate = `${root}-${index}`;
+      index += 1;
+    }
+    return candidate;
+  };
+
+  // Crée compagnies, navires et lignes manquants, puis rattache les lignes du fichier.
+  const autoCreate = useMutation({
+    mutationFn: async () => {
+      const companyIdByName = new Map<string, string>();
+      const takenCompanySlugs = companies.map((item) => item.slug);
+      for (const name of missingCompanies) {
+        const slug = uniqueSlug(name, takenCompanySlugs);
+        takenCompanySlugs.push(slug);
+        const { data, error } = await supabase
+          .from("companies")
+          .insert({ slug, name, status: "active" } as never)
+          .select("id")
+          .single();
+        if (error) throw new Error(`Compagnie « ${name} » : ${error.message}`);
+        companyIdByName.set(normalize(name), (data as { id: string }).id);
+      }
+
+      const resolveCompany = (row: ImportDraftRow) =>
+        row.company_id || companyIdByName.get(normalize(row.raw_company)) || null;
+
+      const vesselIdByName = new Map<string, string>();
+      const takenVesselSlugs = vessels.map((item) => item.slug);
+      for (const name of missingVessels) {
+        const owner = rows.find((row) => row.raw_vessel === name);
+        const slug = uniqueSlug(name, takenVesselSlugs);
+        takenVesselSlugs.push(slug);
+        const { data, error } = await supabase
+          .from("vessels")
+          .insert({
+            slug,
+            name,
+            company_id: owner ? resolveCompany(owner) : null,
+            status: "active",
+          } as never)
+          .select("id")
+          .single();
+        if (error) throw new Error(`Navire « ${name} » : ${error.message}`);
+        vesselIdByName.set(normalize(name), (data as { id: string }).id);
+      }
+
+      const takenRouteSlugs = routes.map((item) => item.slug);
+      let createdRoutes = 0;
+      for (const row of missingRoutePairs) {
+        const from = portById(row.departure_port_id);
+        const to = portById(row.arrival_port_id);
+        if (!from || !to) continue;
+        const slug = uniqueSlug(`${from.name}-${to.name}`, takenRouteSlugs);
+        takenRouteSlugs.push(slug);
+        const duration =
+          durationBetweenTimes(row.departure_time, row.arrival_time) || row.duration_hint || null;
+        const { data, error } = await supabase
+          .from("routes")
+          .insert({
+            slug,
+            departure_port_id: from.id,
+            arrival_port_id: to.id,
+            typical_duration_minutes: duration,
+            status: "active",
+          } as never)
+          .select("id")
+          .single();
+        if (error) throw new Error(`Ligne ${from.name} → ${to.name} : ${error.message}`);
+        createdRoutes += 1;
+        const companyId = resolveCompany(row);
+        if (companyId) {
+          await supabase
+            .from("route_operators")
+            .insert({ route_id: (data as { id: string }).id, company_id: companyId } as never);
+        }
+      }
+
+      return {
+        companies: companyIdByName,
+        vessels: vesselIdByName,
+        createdRoutes,
+      };
+    },
+    onSuccess: (result) => {
+      queryClient.invalidateQueries({ queryKey: ["routes"] });
+      queryClient.invalidateQueries({ queryKey: ["companies"] });
+      queryClient.invalidateQueries({ queryKey: ["vessels"] });
+      setRows((prev) =>
+        prev.map((row) => ({
+          ...row,
+          company_id: row.company_id || result.companies.get(normalize(row.raw_company)) || "",
+          vessel_id: row.vessel_id || result.vessels.get(normalize(row.raw_vessel)) || "",
+        })),
+      );
+      const parts = [
+        result.createdRoutes ? `${result.createdRoutes} ligne(s)` : null,
+        result.companies.size ? `${result.companies.size} compagnie(s)` : null,
+        result.vessels.size ? `${result.vessels.size} navire(s)` : null,
+      ].filter(Boolean);
+      toast.success(parts.length ? `Créé : ${parts.join(", ")}.` : "Rien à créer.");
+    },
+    onError: (error: Error) => toast.error(error.message),
+  });
+
   const importRows = useMutation({
     mutationFn: async () => {
       if (invalidCount > 0)
         throw new Error("Corrigez d'abord les lignes signalées avant de valider l'import.");
       if (validValues.length === 0) throw new Error("Aucune ligne à importer.");
-      const { error } = await supabase.from("departures").insert(validValues as never);
+      // Anti-doublon : on ignore les départs déjà présents (même ligne, même horaire).
+      const routeIds = [...new Set(validValues.map((values) => values["route_id"] as string))];
+      const dates = validValues.map((values) => values["departure_at"] as string).sort();
+      const existing = await supabase
+        .from("departures")
+        .select("route_id, departure_at")
+        .in("route_id", routeIds)
+        .gte("departure_at", dates[0]!)
+        .lte("departure_at", dates[dates.length - 1]!);
+      if (existing.error) throw new Error(existing.error.message);
+      const known = new Set(
+        (existing.data ?? []).map(
+          (item) => `${item.route_id}|${new Date(item.departure_at).toISOString()}`,
+        ),
+      );
+      const fresh = validValues.filter(
+        (values) =>
+          !known.has(`${values["route_id"] as string}|${values["departure_at"] as string}`),
+      );
+      const skipped = validValues.length - fresh.length;
+      if (fresh.length === 0) return { count: 0, skipped };
+      const { error } = await supabase.from("departures").insert(fresh as never);
       if (error) throw new Error(error.message);
-      return validValues.length;
+      return { count: fresh.length, skipped };
     },
-    onSuccess: (count) => {
+    onSuccess: ({ count, skipped }) => {
       queryClient.invalidateQueries({ queryKey: ["departures"] });
-      toast.success(`${count} départ(s) importé(s).`);
+      toast.success(
+        `${count} départ(s) importé(s)${skipped ? ` — ${skipped} doublon(s) ignoré(s)` : ""}.`,
+      );
       setRows([]);
       setFileName("");
     },
@@ -1973,6 +2256,50 @@ function ImportAdmin() {
             {invalidCount > 0 ? `, ${invalidCount} à corriger` : ""}. Vous pouvez tout modifier ici :
             rien n'est enregistré avant la validation finale.
           </p>
+          {missingTotal > 0 ? (
+            <div className="mt-3 rounded-lg border border-primary/40 bg-primary/5 p-3">
+              <p className="text-xs font-semibold">Éléments absents de la base</p>
+              <ul className="mt-1 space-y-1 text-xs text-muted-foreground">
+                {missingRoutePairs.length ? (
+                  <li>
+                    {missingRoutePairs.length} ligne(s) à créer :{" "}
+                    {missingRoutePairs
+                      .map(
+                        (row) =>
+                          `${portById(row.departure_port_id)?.name ?? "?"} → ${portById(row.arrival_port_id)?.name ?? "?"}`,
+                      )
+                      .join(", ")}
+                  </li>
+                ) : null}
+                {missingCompanies.length ? (
+                  <li>{missingCompanies.length} compagnie(s) : {missingCompanies.join(", ")}</li>
+                ) : null}
+                {missingVessels.length ? (
+                  <li>{missingVessels.length} navire(s) : {missingVessels.join(", ")}</li>
+                ) : null}
+              </ul>
+              <div className="mt-2">
+                <Button
+                  size="sm"
+                  disabled={autoCreate.isPending}
+                  onClick={() => autoCreate.mutate()}
+                >
+                  Créer automatiquement ces éléments
+                </Button>
+              </div>
+              <p className="mt-2 text-xs text-muted-foreground">
+                Les lignes reprennent la durée du fichier ; compagnies et navires sont créés avec
+                leur nom, à compléter ensuite dans leurs onglets.
+              </p>
+            </div>
+          ) : null}
+          {missingPortRows.length > 0 ? (
+            <p className="mt-3 text-xs text-destructive">
+              {missingPortRows.length} ligne(s) ont un port inconnu : un port ne peut pas être créé
+              automatiquement (coordonnées nécessaires). Ajoutez-le dans l'onglet « Ports », puis
+              choisissez-le ci-dessous.
+            </p>
+          ) : null}
           <ul className="mt-3 space-y-3">
             {checked.map(({ row, result }) => {
               const error = "error" in result ? result.error : null;

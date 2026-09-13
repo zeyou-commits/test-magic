@@ -2256,6 +2256,50 @@ function ImportAdmin() {
             {invalidCount > 0 ? `, ${invalidCount} à corriger` : ""}. Vous pouvez tout modifier ici :
             rien n'est enregistré avant la validation finale.
           </p>
+          {missingTotal > 0 ? (
+            <div className="mt-3 rounded-lg border border-primary/40 bg-primary/5 p-3">
+              <p className="text-xs font-semibold">Éléments absents de la base</p>
+              <ul className="mt-1 space-y-1 text-xs text-muted-foreground">
+                {missingRoutePairs.length ? (
+                  <li>
+                    {missingRoutePairs.length} ligne(s) à créer :{" "}
+                    {missingRoutePairs
+                      .map(
+                        (row) =>
+                          `${portById(row.departure_port_id)?.name ?? "?"} → ${portById(row.arrival_port_id)?.name ?? "?"}`,
+                      )
+                      .join(", ")}
+                  </li>
+                ) : null}
+                {missingCompanies.length ? (
+                  <li>{missingCompanies.length} compagnie(s) : {missingCompanies.join(", ")}</li>
+                ) : null}
+                {missingVessels.length ? (
+                  <li>{missingVessels.length} navire(s) : {missingVessels.join(", ")}</li>
+                ) : null}
+              </ul>
+              <div className="mt-2">
+                <Button
+                  size="sm"
+                  disabled={autoCreate.isPending}
+                  onClick={() => autoCreate.mutate()}
+                >
+                  Créer automatiquement ces éléments
+                </Button>
+              </div>
+              <p className="mt-2 text-xs text-muted-foreground">
+                Les lignes reprennent la durée du fichier ; compagnies et navires sont créés avec
+                leur nom, à compléter ensuite dans leurs onglets.
+              </p>
+            </div>
+          ) : null}
+          {missingPortRows.length > 0 ? (
+            <p className="mt-3 text-xs text-destructive">
+              {missingPortRows.length} ligne(s) ont un port inconnu : un port ne peut pas être créé
+              automatiquement (coordonnées nécessaires). Ajoutez-le dans l'onglet « Ports », puis
+              choisissez-le ci-dessous.
+            </p>
+          ) : null}
           <ul className="mt-3 space-y-3">
             {checked.map(({ row, result }) => {
               const error = "error" in result ? result.error : null;

@@ -1031,23 +1031,25 @@ function DataAdmin() {
       </Panel>
 
       <Panel>
-        <h2 className="text-sm font-semibold">Ports sans ligne active</h2>
+        <h2 className="text-sm font-semibold">Ports sans traversée</h2>
         {idlePorts.length === 0 ? (
           <p className="mt-1 text-xs text-muted-foreground">
-            Tous les ports ouverts desservent au moins une ligne active.
+            Tous les ports ouverts desservent au moins une ligne avec des départs.
           </p>
         ) : (
           <>
             <p className="mt-1 text-xs text-muted-foreground">
-              Ces ports sont visibles sur la carte mais ne desservent plus aucune ligne. Vous pouvez
-              les fermer temporairement, le temps de recevoir leurs horaires.
+              Ces ports restent visibles sur la carte alors qu'ils n'ont plus de traversée
+              programmée. Vous pouvez les fermer temporairement, le temps de recevoir leurs
+              horaires.
             </p>
             <ul className="mt-3 space-y-2">
-              {idlePorts.map((port) => (
+              {idlePorts.map(({ port, reason }) => (
                 <li key={port.id} className="flex items-center justify-between gap-2 text-xs">
                   <span>
                     {port.name}
                     {port.country_name ? ` · ${port.country_name}` : ""}
+                    <span className="text-muted-foreground"> — {reason}</span>
                   </span>
                   <Button
                     size="sm"

@@ -22,6 +22,7 @@ import { Route as HorairesRouteImport } from './routes/horaires'
 import { Route as LignesRouteImport } from './routes/lignes'
 import { Route as MentionsLegalesRouteImport } from './routes/mentions-legales'
 import { Route as PortsRouteImport } from './routes/ports'
+import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as LignesSlugRouteImport } from './routes/lignes.$slug'
 import { Route as PortsSlugRouteImport } from './routes/ports.$slug'
 
@@ -90,6 +91,11 @@ const PortsRoute = PortsRouteImport.update({
   path: '/ports',
   getParentRoute: () => rootRouteImport,
 } as any)
+const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
+  id: '/sitemap.xml',
+  path: '/sitemap.xml',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const LignesSlugRoute = LignesSlugRouteImport.update({
   id: '/$slug',
   path: '/$slug',
@@ -115,6 +121,7 @@ export interface FileRoutesByFullPath {
   '/lignes': typeof LignesRouteWithChildren
   '/mentions-legales': typeof MentionsLegalesRoute
   '/ports': typeof PortsRouteWithChildren
+  '/sitemap.xml': typeof SitemapDotxmlRoute
   '/lignes/$slug': typeof LignesSlugRoute
   '/ports/$slug': typeof PortsSlugRoute
 }
@@ -132,6 +139,7 @@ export interface FileRoutesByTo {
   '/lignes': typeof LignesRouteWithChildren
   '/mentions-legales': typeof MentionsLegalesRoute
   '/ports': typeof PortsRouteWithChildren
+  '/sitemap.xml': typeof SitemapDotxmlRoute
   '/lignes/$slug': typeof LignesSlugRoute
   '/ports/$slug': typeof PortsSlugRoute
 }
@@ -150,6 +158,7 @@ export interface FileRoutesById {
   '/lignes': typeof LignesRouteWithChildren
   '/mentions-legales': typeof MentionsLegalesRoute
   '/ports': typeof PortsRouteWithChildren
+  '/sitemap.xml': typeof SitemapDotxmlRoute
   '/lignes/$slug': typeof LignesSlugRoute
   '/ports/$slug': typeof PortsSlugRoute
 }
@@ -169,6 +178,7 @@ export interface FileRouteTypes {
     | '/lignes'
     | '/mentions-legales'
     | '/ports'
+    | '/sitemap.xml'
     | '/lignes/$slug'
     | '/ports/$slug'
   fileRoutesByTo: FileRoutesByTo
@@ -186,6 +196,7 @@ export interface FileRouteTypes {
     | '/lignes'
     | '/mentions-legales'
     | '/ports'
+    | '/sitemap.xml'
     | '/lignes/$slug'
     | '/ports/$slug'
   id:
@@ -203,6 +214,7 @@ export interface FileRouteTypes {
     | '/lignes'
     | '/mentions-legales'
     | '/ports'
+    | '/sitemap.xml'
     | '/lignes/$slug'
     | '/ports/$slug'
   fileRoutesById: FileRoutesById
@@ -221,6 +233,7 @@ export interface RootRouteChildren {
   LignesRoute: typeof LignesRouteWithChildren
   MentionsLegalesRoute: typeof MentionsLegalesRoute
   PortsRoute: typeof PortsRouteWithChildren
+  SitemapDotxmlRoute: typeof SitemapDotxmlRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -316,6 +329,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PortsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/sitemap.xml': {
+      id: '/sitemap.xml'
+      path: '/sitemap.xml'
+      fullPath: '/sitemap.xml'
+      preLoaderRoute: typeof SitemapDotxmlRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/lignes/$slug': {
       id: '/lignes/$slug'
       path: '/$slug'
@@ -368,6 +388,7 @@ const rootRouteChildren: RootRouteChildren = {
   LignesRoute: LignesRouteWithChildren,
   MentionsLegalesRoute: MentionsLegalesRoute,
   PortsRoute: PortsRouteWithChildren,
+  SitemapDotxmlRoute: SitemapDotxmlRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

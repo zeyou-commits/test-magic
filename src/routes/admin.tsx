@@ -33,16 +33,16 @@ const departureStatusLabel: Record<string, string> = {
 export const Route = createFileRoute("/admin")({
   head: () => ({
     meta: [
-      { title: "Back-office — FerryDZ" },
+      { title: "Back-office — Batogo" },
       {
         name: "description",
         content:
-          "Espace d'administration FerryDZ : modération des avis, signalements, calendriers et départs.",
+          "Espace d'administration Batogo : modération des avis, signalements, calendriers et départs.",
       },
-      { property: "og:title", content: "Back-office — FerryDZ" },
+      { property: "og:title", content: "Back-office — Batogo" },
       {
         property: "og:description",
-        content: "Modération des avis, signalements et gestion des départs FerryDZ.",
+        content: "Modération des avis, signalements et gestion des départs Batogo.",
       },
       { name: "robots", content: "noindex" },
     ],
@@ -71,7 +71,7 @@ function AdminPage() {
   if (!isAdmin) {
     return (
       <CenteredNote>
-        <p>Cet espace est réservé à l'équipe FerryDZ.</p>
+        <p>Cet espace est réservé à l'équipe Batogo.</p>
         <Button asChild variant="outline" className="mt-3">
           <Link to="/">Retour à la carte</Link>
         </Button>

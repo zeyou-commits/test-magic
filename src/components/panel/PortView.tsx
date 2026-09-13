@@ -97,6 +97,39 @@ export function PortView({
         actions={<ReportButton targetType="port" targetId={port.id} />}
       />
       <div>
+        <Section title="Prochains départs">
+          {portDepartures.length === 0 ? (
+            <EmptyNote>Aucun départ connu à venir depuis ce port.</EmptyNote>
+          ) : (
+            <ul className="space-y-2">
+              {portDepartures.map((departure) => {
+                const route = routes.find((item) => item.id === departure.route_id);
+                const company = companies.find((item) => item.id === departure.company_id);
+                return (
+                  <li key={departure.id}>
+                    <button
+                      type="button"
+                      onClick={() => onSelect({ type: "departure", id: departure.id })}
+                      className="w-full rounded-lg px-2 py-2 text-left transition-colors hover:bg-secondary"
+                    >
+                      <p className="text-sm font-medium">
+                        {formatDateTime(departure.departure_at)}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        {route ? portName(route.arrival_port_id) : "—"}
+                        {company ? ` · ${company.name}` : ""}
+                        {departure.duration_minutes
+                          ? ` · ${formatDuration(departure.duration_minutes)}`
+                          : ""}
+                      </p>
+                    </button>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+        </Section>
+
         {port.notes ? (
           <Section title="À savoir">
             <p className="text-sm leading-relaxed">{port.notes}</p>
@@ -134,7 +167,7 @@ export function PortView({
                   <button
                     type="button"
                     onClick={() => onSelect({ type: "route", id: route.id })}
-                    className="flex w-full items-center justify-between gap-3 rounded-md px-2 py-2 text-left hover:bg-secondary"
+                    className="flex w-full items-center justify-between gap-3 rounded-lg px-2 py-2 text-left transition-colors hover:bg-secondary"
                   >
                     <span className="text-sm">
                       {portName(route.departure_port_id)} → {portName(route.arrival_port_id)}
@@ -149,38 +182,6 @@ export function PortView({
           )}
         </Section>
 
-        <Section title="Prochains départs">
-          {portDepartures.length === 0 ? (
-            <EmptyNote>Aucun départ connu à venir depuis ce port.</EmptyNote>
-          ) : (
-            <ul className="space-y-2">
-              {portDepartures.map((departure) => {
-                const route = routes.find((item) => item.id === departure.route_id);
-                const company = companies.find((item) => item.id === departure.company_id);
-                return (
-                  <li key={departure.id}>
-                    <button
-                      type="button"
-                      onClick={() => onSelect({ type: "departure", id: departure.id })}
-                      className="w-full rounded-md px-2 py-2 text-left hover:bg-secondary"
-                    >
-                      <p className="text-sm font-medium">
-                        {formatDateTime(departure.departure_at)}
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        {route ? portName(route.arrival_port_id) : "—"}
-                        {company ? ` · ${company.name}` : ""}
-                        {departure.duration_minutes
-                          ? ` · ${formatDuration(departure.duration_minutes)}`
-                          : ""}
-                      </p>
-                    </button>
-                  </li>
-                );
-              })}
-            </ul>
-          )}
-        </Section>
 
         <Section title="Notes des voyageurs">
           {averages.entries.length === 0 ? (

@@ -1,4 +1,3 @@
-import { Button } from "@/components/ui/button";
 import type { Filters, RouteLine, Selection } from "@/lib/ferry/types";
 import { ExplorerView } from "./ExplorerView";
 import { PortView } from "./PortView";
@@ -13,6 +12,10 @@ interface SidePanelProps {
   visibleRoutes: RouteLine[];
 }
 
+/**
+ * Volet unique : le détail de la sélection s'empile au-dessus de l'exploration,
+ * qui reste toujours accessible en dessous (aucun aller-retour entre onglets).
+ */
 export function SidePanel({
   selection,
   onSelect,
@@ -21,33 +24,42 @@ export function SidePanel({
   visibleRoutes,
 }: SidePanelProps) {
   return (
-    <div className="flex h-full flex-col bg-card">
-      {selection ? (
-        <div className="border-b border-border px-3 py-2">
-          <Button variant="ghost" size="sm" onClick={() => onSelect(null)}>
-            ← Retour à l'exploration
-          </Button>
-        </div>
-      ) : null}
-      <div className="min-h-0 flex-1 overflow-hidden">
-        {selection === null ? (
-          <ExplorerView
-            filters={filters}
-            onFiltersChange={onFiltersChange}
-            visibleRoutes={visibleRoutes}
-            onSelect={onSelect}
-          />
-        ) : selection.type === "port" ? (
-          <PortView portId={selection.id} onSelect={onSelect} />
-        ) : selection.type === "route" ? (
-          <RouteView routeId={selection.id} onSelect={onSelect} />
-        ) : selection.type === "company" ? (
-          <CompanyView companyId={selection.id} onSelect={onSelect} />
-        ) : selection.type === "vessel" ? (
-          <VesselView vesselId={selection.id} onSelect={onSelect} />
-        ) : (
-          <DepartureView departureId={selection.id} onSelect={onSelect} />
-        )}
+    <div className="flex h-full min-h-0 flex-col bg-card">
+      <div className="min-h-0 flex-1 overflow-y-auto">
+        {selection ? (
+          <div className="animate-in fade-in slide-in-from-top-1 duration-200">
+            <div className="flex items-center justify-between gap-2 border-b border-border bg-secondary/50 px-5 py-2">
+              <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+                Sélection
+              </span>
+              <button
+                type="button"
+                onClick={() => onSelect(null)}
+                className="rounded-full px-2 py-0.5 text-xs font-semibold text-muted-foreground transition-colors hover:bg-card hover:text-foreground"
+              >
+                Fermer ✕
+              </button>
+            </div>
+            {selection.type === "port" ? (
+              <PortView portId={selection.id} onSelect={onSelect} />
+            ) : selection.type === "route" ? (
+              <RouteView routeId={selection.id} onSelect={onSelect} />
+            ) : selection.type === "company" ? (
+              <CompanyView companyId={selection.id} onSelect={onSelect} />
+            ) : selection.type === "vessel" ? (
+              <VesselView vesselId={selection.id} onSelect={onSelect} />
+            ) : (
+              <DepartureView departureId={selection.id} onSelect={onSelect} />
+            )}
+            <div className="h-2 bg-secondary/40" />
+          </div>
+        ) : null}
+        <ExplorerView
+          filters={filters}
+          onFiltersChange={onFiltersChange}
+          visibleRoutes={visibleRoutes}
+          onSelect={onSelect}
+        />
       </div>
     </div>
   );

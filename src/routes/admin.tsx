@@ -834,12 +834,33 @@ function DataAdmin() {
   const [fromDate, setFromDate] = useState(() => new Date().toISOString().slice(0, 10));
   const [suspendRoutes, setSuspendRoutes] = useState(true);
   const [confirming, setConfirming] = useState(false);
+  const [fileReady, setFileReady] = useState(false);
 
   const activeSchedules = schedules.filter((item) => item.status === "active");
   const activeRoutes = routes.filter((item) => item.status === "active");
   const affectedDepartures = departures.filter(
     (item) => item.departure_at >= `${fromDate}T00:00:00`,
   );
+  // Après un import, un port sans aucune ligne active n'apporte rien à la carte.
+  const idlePorts = ports.filter(
+    (port) =>
+      port.status === "active" &&
+      !activeRoutes.some(
+        (route) => route.departure_port_id === port.id || route.arrival_port_id === port.id,
+      ),
+  );
+
+  const closePort = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("ports").update({ status: "inactive" }).eq("id", id);
+      if (error) throw new Error(error.message);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["ports"] });
+      toast.success("Port fermé temporairement.");
+    },
+    onError: (error: Error) => toast.error(error.message),
+  });
 
   const newSeason = useMutation({
     mutationFn: async () => {

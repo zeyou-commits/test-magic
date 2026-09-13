@@ -15,7 +15,17 @@ import {
   upcomingDeparturesQuery,
   vesselsQuery,
 } from "@/lib/ferry/queries";
-import { formatDateTime, formatDuration, weekdayLabels } from "@/lib/ferry/format";
+import {
+  formatDateTime,
+  formatDuration,
+  reliabilityLabel,
+  weekdayLabels,
+} from "@/lib/ferry/format";
+const departureStatusLabel: Record<string, string> = {
+  scheduled: "Prévu",
+  modified: "Modifié",
+  cancelled: "Annulé",
+};
 
 export const Route = createFileRoute("/admin")({
   head: () => ({

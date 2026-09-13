@@ -394,6 +394,7 @@ const emptyDraft = {
   company_id: "",
   default_vessel_id: "",
   departure_time: "08:00",
+  arrival_time: "18:00",
   duration_minutes: 600,
   weekdays: [] as number[],
   valid_from: new Date().toISOString().slice(0, 10),
@@ -401,6 +402,37 @@ const emptyDraft = {
   source_name: "",
   source_url: "",
 };
+
+// Heures théoriques : la durée et l'heure d'arrivée restent cohérentes entre elles.
+function timeToMinutes(time: string): number | null {
+  const match = /^(\d{1,2}):(\d{2})$/.exec(time.trim());
+  if (!match) return null;
+  const hours = Number(match[1]);
+  const minutes = Number(match[2]);
+  if (hours > 23 || minutes > 59) return null;
+  return hours * 60 + minutes;
+}
+
+function addMinutesToTime(time: string, minutes: number): string {
+  const base = timeToMinutes(time);
+  if (base === null || !Number.isFinite(minutes)) return "";
+  const total = ((base + Math.round(minutes)) % 1440 + 1440) % 1440;
+  return `${String(Math.floor(total / 60)).padStart(2, "0")}:${String(total % 60).padStart(2, "0")}`;
+}
+
+function durationBetweenTimes(departure: string, arrival: string): number | null {
+  const from = timeToMinutes(departure);
+  const to = timeToMinutes(arrival);
+  if (from === null || to === null) return null;
+  const diff = to - from;
+  return diff > 0 ? diff : diff + 1440;
+}
+
+// Indique si l'arrivée théorique tombe le lendemain (ou plus tard).
+function dayShift(minutes: number): string {
+  const days = Math.floor(minutes / 1440);
+  return days > 0 ? ` (+${days} j)` : "";
+}
 
 function SchedulesAdmin() {
   const queryClient = useQueryClient();

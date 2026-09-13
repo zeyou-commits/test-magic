@@ -96,6 +96,17 @@
   --map-route: oklch(0.42 0.14 238);
   --map-route-selected: oklch(0.68 0.145 55);
   --map-route-casing: oklch(0.985 0.008 85);
+  --gradient-header: linear-gradient(
+    100deg,
+    oklch(0.33 0.095 244) 0%,
+    oklch(0.42 0.105 238) 55%,
+    oklch(0.5 0.1 220) 100%
+  );
+  --gradient-brand: linear-gradient(140deg, oklch(0.68 0.145 55), oklch(0.46 0.12 238));
+  --shadow-brand: 0 6px 18px -8px color-mix(in oklab, oklch(0.42 0.105 238) 65%, transparent);
+  --shadow-panel: 0 12px 40px -24px color-mix(in oklab, oklch(0.24 0.045 250) 45%, transparent);
+  --shadow-elegant: 0 18px 50px -28px color-mix(in oklab, oklch(0.24 0.045 250) 40%, transparent);
+
   --sidebar: oklch(0.99 0.006 85);
   --sidebar-foreground: oklch(0.24 0.045 250);
   --sidebar-primary: oklch(0.42 0.105 238);

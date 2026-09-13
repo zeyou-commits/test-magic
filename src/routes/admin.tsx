@@ -920,12 +920,26 @@ function DataAdmin() {
       </Panel>
 
       <Panel>
-        <h2 className="text-sm font-semibold">Nouvelle saison</h2>
-        <p className="mt-1 text-xs text-muted-foreground">
-          Prépare la base avant d'importer un calendrier complet : les départs à partir de la date
-          choisie sont retirés et les calendriers récurrents sont suspendus. Les ports, lignes,
-          compagnies, navires et avis sont conservés.
-        </p>
+        <h2 className="text-sm font-semibold">Préparer une nouvelle saison</h2>
+        <ol className="mt-2 space-y-1 text-xs text-muted-foreground">
+          <li>
+            <strong>1.</strong> Ayez sous la main le fichier Excel de la nouvelle saison (onglet
+            « Import Excel » pour le modèle).
+          </li>
+          <li>
+            <strong>2.</strong> Archivez la saison en cours ci-dessous : les départs à partir de la
+            date choisie sont retirés et les calendriers récurrents suspendus. Ports, lignes,
+            compagnies, navires et avis sont conservés.
+          </li>
+          <li>
+            <strong>3.</strong> Importez le fichier : les lignes qui reçoivent des départs
+            redeviennent automatiquement visibles sur la carte.
+          </li>
+          <li>
+            <strong>4.</strong> Revenez ici pour fermer les ports qui ne desservent plus aucune
+            ligne.
+          </li>
+        </ol>
         <div className="mt-3 grid gap-3 sm:grid-cols-2">
           <Field label="Début de la nouvelle saison">
             <Input
@@ -943,7 +957,7 @@ function DataAdmin() {
               checked={suspendRoutes}
               onChange={(event) => setSuspendRoutes(event.target.checked)}
             />
-            Suspendre aussi les lignes (à réactiver au fil des imports)
+            Suspendre aussi les lignes (réactivées à l'import)
           </label>
         </div>
         <ul className="mt-3 space-y-1 text-xs text-muted-foreground">
@@ -951,6 +965,17 @@ function DataAdmin() {
           <li>{activeSchedules.length} calendrier(s) actif(s) seront suspendus.</li>
           {suspendRoutes ? <li>{activeRoutes.length} ligne(s) active(s) seront suspendues.</li> : null}
         </ul>
+        <label className="mt-3 flex items-center gap-2 text-xs">
+          <input
+            type="checkbox"
+            checked={fileReady}
+            onChange={(event) => {
+              setFileReady(event.target.checked);
+              setConfirming(false);
+            }}
+          />
+          Je confirme que le fichier de la nouvelle saison est prêt à être importé.
+        </label>
         {confirming ? (
           <div className="mt-3 rounded-lg border border-destructive/60 bg-destructive/5 p-3">
             <p className="text-xs text-destructive">
@@ -972,10 +997,54 @@ function DataAdmin() {
           </div>
         ) : (
           <div className="mt-3">
-            <Button size="sm" variant="outline" onClick={() => setConfirming(true)}>
-              Préparer une nouvelle saison
+            <Button
+              size="sm"
+              variant="outline"
+              disabled={!fileReady}
+              onClick={() => setConfirming(true)}
+            >
+              Archiver la saison en cours
             </Button>
+            {!fileReady ? (
+              <p className="mt-2 text-xs text-muted-foreground">
+                Cochez la case ci-dessus pour éviter de vider la carte sans données de remplacement.
+              </p>
+            ) : null}
           </div>
+        )}
+      </Panel>
+
+      <Panel>
+        <h2 className="text-sm font-semibold">Ports sans ligne active</h2>
+        {idlePorts.length === 0 ? (
+          <p className="mt-1 text-xs text-muted-foreground">
+            Tous les ports ouverts desservent au moins une ligne active.
+          </p>
+        ) : (
+          <>
+            <p className="mt-1 text-xs text-muted-foreground">
+              Ces ports sont visibles sur la carte mais ne desservent plus aucune ligne. Vous pouvez
+              les fermer temporairement, le temps de recevoir leurs horaires.
+            </p>
+            <ul className="mt-3 space-y-2">
+              {idlePorts.map((port) => (
+                <li key={port.id} className="flex items-center justify-between gap-2 text-xs">
+                  <span>
+                    {port.name}
+                    {port.country_name ? ` · ${port.country_name}` : ""}
+                  </span>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    disabled={closePort.isPending}
+                    onClick={() => closePort.mutate(port.id)}
+                  >
+                    Fermer temporairement
+                  </Button>
+                </li>
+              ))}
+            </ul>
+          </>
         )}
       </Panel>
     </>

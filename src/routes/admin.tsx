@@ -2342,6 +2342,31 @@ function ImportAdmin() {
               choisissez-le ci-dessous.
             </p>
           ) : null}
+          {blockedPorts.length > 0 ? (
+            <div className="mt-3 rounded-lg border border-primary/40 bg-primary/5 p-3">
+              <p className="text-xs font-semibold">
+                Ports fermés ou en brouillon : leurs lignes resteront invisibles sur la carte
+              </p>
+              <ul className="mt-2 space-y-2">
+                {blockedPorts.map((port) => (
+                  <li key={port.id} className="flex items-center justify-between gap-2 text-xs">
+                    <span>
+                      {port.name} —{" "}
+                      {port.status === "inactive" ? "temporairement fermé" : "brouillon"}
+                    </span>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      disabled={activatePort.isPending}
+                      onClick={() => activatePort.mutate(port.id)}
+                    >
+                      Ouvrir ce port
+                    </Button>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ) : null}
           <ul className="mt-3 space-y-3">
             {checked.map(({ row, result }) => {
               const error = "error" in result ? result.error : null;

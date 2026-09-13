@@ -10,12 +10,17 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AProposRouteImport } from './routes/a-propos'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as CompagniesRouteImport } from './routes/compagnies'
 import { Route as CompteRouteImport } from './routes/compte'
+import { Route as ConfidentialiteRouteImport } from './routes/confidentialite'
+import { Route as ContactRouteImport } from './routes/contact'
+import { Route as GuideRouteImport } from './routes/guide'
 import { Route as HorairesRouteImport } from './routes/horaires'
 import { Route as LignesRouteImport } from './routes/lignes'
+import { Route as MentionsLegalesRouteImport } from './routes/mentions-legales'
 import { Route as PortsRouteImport } from './routes/ports'
 import { Route as LignesSlugRouteImport } from './routes/lignes.$slug'
 import { Route as PortsSlugRouteImport } from './routes/ports.$slug'
@@ -23,6 +28,11 @@ import { Route as PortsSlugRouteImport } from './routes/ports.$slug'
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AProposRoute = AProposRouteImport.update({
+  id: '/a-propos',
+  path: '/a-propos',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AdminRoute = AdminRouteImport.update({
@@ -45,6 +55,21 @@ const CompteRoute = CompteRouteImport.update({
   path: '/compte',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ConfidentialiteRoute = ConfidentialiteRouteImport.update({
+  id: '/confidentialite',
+  path: '/confidentialite',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ContactRoute = ContactRouteImport.update({
+  id: '/contact',
+  path: '/contact',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const GuideRoute = GuideRouteImport.update({
+  id: '/guide',
+  path: '/guide',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const HorairesRoute = HorairesRouteImport.update({
   id: '/horaires',
   path: '/horaires',
@@ -53,6 +78,11 @@ const HorairesRoute = HorairesRouteImport.update({
 const LignesRoute = LignesRouteImport.update({
   id: '/lignes',
   path: '/lignes',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MentionsLegalesRoute = MentionsLegalesRouteImport.update({
+  id: '/mentions-legales',
+  path: '/mentions-legales',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PortsRoute = PortsRouteImport.update({
@@ -73,24 +103,34 @@ const PortsSlugRoute = PortsSlugRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/a-propos': typeof AProposRoute
   '/admin': typeof AdminRoute
   '/auth': typeof AuthRoute
   '/compagnies': typeof CompagniesRoute
   '/compte': typeof CompteRoute
+  '/confidentialite': typeof ConfidentialiteRoute
+  '/contact': typeof ContactRoute
+  '/guide': typeof GuideRoute
   '/horaires': typeof HorairesRoute
   '/lignes': typeof LignesRouteWithChildren
+  '/mentions-legales': typeof MentionsLegalesRoute
   '/ports': typeof PortsRouteWithChildren
   '/lignes/$slug': typeof LignesSlugRoute
   '/ports/$slug': typeof PortsSlugRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/a-propos': typeof AProposRoute
   '/admin': typeof AdminRoute
   '/auth': typeof AuthRoute
   '/compagnies': typeof CompagniesRoute
   '/compte': typeof CompteRoute
+  '/confidentialite': typeof ConfidentialiteRoute
+  '/contact': typeof ContactRoute
+  '/guide': typeof GuideRoute
   '/horaires': typeof HorairesRoute
   '/lignes': typeof LignesRouteWithChildren
+  '/mentions-legales': typeof MentionsLegalesRoute
   '/ports': typeof PortsRouteWithChildren
   '/lignes/$slug': typeof LignesSlugRoute
   '/ports/$slug': typeof PortsSlugRoute
@@ -98,12 +138,17 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/a-propos': typeof AProposRoute
   '/admin': typeof AdminRoute
   '/auth': typeof AuthRoute
   '/compagnies': typeof CompagniesRoute
   '/compte': typeof CompteRoute
+  '/confidentialite': typeof ConfidentialiteRoute
+  '/contact': typeof ContactRoute
+  '/guide': typeof GuideRoute
   '/horaires': typeof HorairesRoute
   '/lignes': typeof LignesRouteWithChildren
+  '/mentions-legales': typeof MentionsLegalesRoute
   '/ports': typeof PortsRouteWithChildren
   '/lignes/$slug': typeof LignesSlugRoute
   '/ports/$slug': typeof PortsSlugRoute
@@ -112,36 +157,51 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/a-propos'
     | '/admin'
     | '/auth'
     | '/compagnies'
     | '/compte'
+    | '/confidentialite'
+    | '/contact'
+    | '/guide'
     | '/horaires'
     | '/lignes'
+    | '/mentions-legales'
     | '/ports'
     | '/lignes/$slug'
     | '/ports/$slug'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/a-propos'
     | '/admin'
     | '/auth'
     | '/compagnies'
     | '/compte'
+    | '/confidentialite'
+    | '/contact'
+    | '/guide'
     | '/horaires'
     | '/lignes'
+    | '/mentions-legales'
     | '/ports'
     | '/lignes/$slug'
     | '/ports/$slug'
   id:
     | '__root__'
     | '/'
+    | '/a-propos'
     | '/admin'
     | '/auth'
     | '/compagnies'
     | '/compte'
+    | '/confidentialite'
+    | '/contact'
+    | '/guide'
     | '/horaires'
     | '/lignes'
+    | '/mentions-legales'
     | '/ports'
     | '/lignes/$slug'
     | '/ports/$slug'
@@ -149,12 +209,17 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AProposRoute: typeof AProposRoute
   AdminRoute: typeof AdminRoute
   AuthRoute: typeof AuthRoute
   CompagniesRoute: typeof CompagniesRoute
   CompteRoute: typeof CompteRoute
+  ConfidentialiteRoute: typeof ConfidentialiteRoute
+  ContactRoute: typeof ContactRoute
+  GuideRoute: typeof GuideRoute
   HorairesRoute: typeof HorairesRoute
   LignesRoute: typeof LignesRouteWithChildren
+  MentionsLegalesRoute: typeof MentionsLegalesRoute
   PortsRoute: typeof PortsRouteWithChildren
 }
 
@@ -165,6 +230,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/a-propos': {
+      id: '/a-propos'
+      path: '/a-propos'
+      fullPath: '/a-propos'
+      preLoaderRoute: typeof AProposRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/admin': {
@@ -195,6 +267,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CompteRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/confidentialite': {
+      id: '/confidentialite'
+      path: '/confidentialite'
+      fullPath: '/confidentialite'
+      preLoaderRoute: typeof ConfidentialiteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/contact': {
+      id: '/contact'
+      path: '/contact'
+      fullPath: '/contact'
+      preLoaderRoute: typeof ContactRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/guide': {
+      id: '/guide'
+      path: '/guide'
+      fullPath: '/guide'
+      preLoaderRoute: typeof GuideRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/horaires': {
       id: '/horaires'
       path: '/horaires'
@@ -207,6 +300,13 @@ declare module '@tanstack/react-router' {
       path: '/lignes'
       fullPath: '/lignes'
       preLoaderRoute: typeof LignesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/mentions-legales': {
+      id: '/mentions-legales'
+      path: '/mentions-legales'
+      fullPath: '/mentions-legales'
+      preLoaderRoute: typeof MentionsLegalesRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/ports': {
@@ -256,12 +356,17 @@ const PortsRouteWithChildren = PortsRoute._addFileChildren(PortsRouteChildren)
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AProposRoute: AProposRoute,
   AdminRoute: AdminRoute,
   AuthRoute: AuthRoute,
   CompagniesRoute: CompagniesRoute,
   CompteRoute: CompteRoute,
+  ConfidentialiteRoute: ConfidentialiteRoute,
+  ContactRoute: ContactRoute,
+  GuideRoute: GuideRoute,
   HorairesRoute: HorairesRoute,
   LignesRoute: LignesRouteWithChildren,
+  MentionsLegalesRoute: MentionsLegalesRoute,
   PortsRoute: PortsRouteWithChildren,
 }
 export const routeTree = rootRouteImport

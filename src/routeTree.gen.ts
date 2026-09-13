@@ -13,6 +13,8 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as CompteRouteImport } from './routes/compte'
+import { Route as PortsRouteImport } from './routes/ports'
+import { Route as PortsSlugRouteImport } from './routes/ports.$slug'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -34,18 +36,32 @@ const CompteRoute = CompteRouteImport.update({
   path: '/compte',
   getParentRoute: () => rootRouteImport,
 } as any)
+const PortsRoute = PortsRouteImport.update({
+  id: '/ports',
+  path: '/ports',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PortsSlugRoute = PortsSlugRouteImport.update({
+  id: '/$slug',
+  path: '/$slug',
+  getParentRoute: () => PortsRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
   '/auth': typeof AuthRoute
   '/compte': typeof CompteRoute
+  '/ports': typeof PortsRouteWithChildren
+  '/ports/$slug': typeof PortsSlugRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
   '/auth': typeof AuthRoute
   '/compte': typeof CompteRoute
+  '/ports': typeof PortsRouteWithChildren
+  '/ports/$slug': typeof PortsSlugRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -53,13 +69,22 @@ export interface FileRoutesById {
   '/admin': typeof AdminRoute
   '/auth': typeof AuthRoute
   '/compte': typeof CompteRoute
+  '/ports': typeof PortsRouteWithChildren
+  '/ports/$slug': typeof PortsSlugRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/admin' | '/auth' | '/compte'
+  fullPaths: '/' | '/admin' | '/auth' | '/compte' | '/ports' | '/ports/$slug'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/admin' | '/auth' | '/compte'
-  id: '__root__' | '/' | '/admin' | '/auth' | '/compte'
+  to: '/' | '/admin' | '/auth' | '/compte' | '/ports' | '/ports/$slug'
+  id:
+    | '__root__'
+    | '/'
+    | '/admin'
+    | '/auth'
+    | '/compte'
+    | '/ports'
+    | '/ports/$slug'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -67,6 +92,7 @@ export interface RootRouteChildren {
   AdminRoute: typeof AdminRoute
   AuthRoute: typeof AuthRoute
   CompteRoute: typeof CompteRoute
+  PortsRoute: typeof PortsRouteWithChildren
 }
 
 declare module '@tanstack/react-router' {
@@ -99,14 +125,39 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CompteRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/ports': {
+      id: '/ports'
+      path: '/ports'
+      fullPath: '/ports'
+      preLoaderRoute: typeof PortsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/ports/$slug': {
+      id: '/ports/$slug'
+      path: '/$slug'
+      fullPath: '/ports/$slug'
+      preLoaderRoute: typeof PortsSlugRouteImport
+      parentRoute: typeof PortsRoute
+    }
   }
 }
+
+interface PortsRouteChildren {
+  PortsSlugRoute: typeof PortsSlugRoute
+}
+
+const PortsRouteChildren: PortsRouteChildren = {
+  PortsSlugRoute: PortsSlugRoute,
+}
+
+const PortsRouteWithChildren = PortsRoute._addFileChildren(PortsRouteChildren)
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AdminRoute: AdminRoute,
   AuthRoute: AuthRoute,
   CompteRoute: CompteRoute,
+  PortsRoute: PortsRouteWithChildren,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

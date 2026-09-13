@@ -743,6 +743,10 @@ function SchedulesAdmin() {
                       company_id: schedule.company_id,
                       default_vessel_id: schedule.default_vessel_id ?? "",
                       departure_time: schedule.departure_time.slice(0, 5),
+                      arrival_time: addMinutesToTime(
+                        schedule.departure_time.slice(0, 5),
+                        schedule.duration_minutes,
+                      ),
                       duration_minutes: schedule.duration_minutes,
                       weekdays: schedule.weekdays,
                       valid_from: schedule.valid_from,

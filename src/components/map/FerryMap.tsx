@@ -350,12 +350,36 @@ export default function FerryMap({
           }`;
           tip.append(vessels);
         }
-        const next = document.createElement("p");
-        next.className = "port-tip__next";
-        next.textContent = meta?.nextDeparture
-          ? `Prochain départ : ${meta.nextDeparture}${meta.nextTo ? ` → ${meta.nextTo}` : ""}`
-          : "Prochain départ non connu";
-        tip.append(next);
+        if (meta?.upcoming?.length) {
+          const heading = document.createElement("p");
+          heading.className = "port-tip__meta port-tip__departures-title";
+          heading.textContent = "Prochains départs";
+          tip.append(heading);
+          const list = document.createElement("ul");
+          list.className = "port-tip__departures";
+          meta.upcoming.forEach((item) => {
+            const row = document.createElement("li");
+            row.textContent = `${item.label}${item.to ? ` → ${item.to}` : ""}`;
+            list.append(row);
+          });
+          tip.append(list);
+          if (meta.hasMore) {
+            const more = document.createElement("button");
+            more.type = "button";
+            more.className = "port-tip__more";
+            more.textContent = "Voir plus →";
+            more.addEventListener("click", (event) => {
+              event.stopPropagation();
+              selectRef.current({ type: "port", id: port.id });
+            });
+            tip.append(more);
+          }
+        } else {
+          const next = document.createElement("p");
+          next.className = "port-tip__next";
+          next.textContent = "Prochain départ non connu";
+          tip.append(next);
+        }
       }
     });
 

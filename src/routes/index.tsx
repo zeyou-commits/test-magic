@@ -2,6 +2,7 @@ import { lazy, Suspense, useMemo, useState } from "react";
 import { ClientOnly, createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { SidePanel } from "@/components/panel/SidePanel";
+import { UserMenu } from "@/components/layout/UserMenu";
 import { useAuth } from "@/hooks/useAuth";
 import { portsQuery, routesQuery, upcomingDeparturesQuery } from "@/lib/ferry/queries";
 import { emptyFilters, type Filters, type Selection } from "@/lib/ferry/types";
@@ -93,6 +94,19 @@ function Index() {
     return filtered;
   }, [selection, routes, visibleRoutes]);
 
+  // Sélection d'un port : seules ses lignes restent en couleur, les autres se grisent.
+  const focusRouteIds = useMemo(() => {
+    if (selection?.type === "route") return [selection.id];
+    if (selection?.type === "port")
+      return routes
+        .filter(
+          (route) =>
+            route.departure_port_id === selection.id || route.arrival_port_id === selection.id,
+        )
+        .map((route) => route.id);
+    return [];
+  }, [selection, routes]);
+
   return (
     <div className="flex h-dvh flex-col overflow-hidden bg-background">
       <header className="flex items-center justify-between gap-3 border-b border-border bg-card px-4 py-2.5">
@@ -129,6 +143,7 @@ function Index() {
                 ports={ports}
                 routes={routes}
                 visibleRouteIds={visibleRoutes.map((route) => route.id)}
+                focusRouteIds={focusRouteIds}
                 selection={selection}
                 highlightedPortIds={highlightedPortIds}
                 onSelect={setSelection}

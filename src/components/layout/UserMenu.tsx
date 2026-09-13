@@ -28,7 +28,11 @@ export function UserMenu() {
 
   if (!user) {
     return (
-      <Button asChild variant="outline" size="sm">
+      <Button
+        asChild
+        size="sm"
+        className="bg-accent font-semibold text-accent-foreground hover:bg-accent/90"
+      >
         <Link to="/auth">Se connecter</Link>
       </Button>
     );

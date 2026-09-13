@@ -945,6 +945,7 @@ function PortsAdmin() {
 
   const reset = () => {
     setDraft(emptyPortDraft);
+    setFacilities({});
     setEditingId(null);
   };
 

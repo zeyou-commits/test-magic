@@ -1809,6 +1809,9 @@ interface ImportDraftRow {
   vessel_id: string;
   status: "scheduled" | "modified" | "cancelled";
   rawLabel: string;
+  raw_company: string;
+  raw_vessel: string;
+  duration_hint: number;
 }
 
 const importColumns = [

@@ -915,6 +915,7 @@ function PortsAdmin() {
   const { data: routes = [] } = useQuery(adminRoutesQuery);
   const { data: schedules = [] } = useQuery(schedulesQuery);
   const [draft, setDraft] = useState(emptyPortDraft);
+  const [facilities, setFacilities] = useState<Record<string, string>>({});
   const [editingId, setEditingId] = useState<string | null>(null);
   const [presetName, setPresetName] = useState("");
   const [pendingClose, setPendingClose] = useState<Port | null>(null);

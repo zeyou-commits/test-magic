@@ -12,8 +12,12 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as AuthRouteImport } from './routes/auth'
+import { Route as CompagniesRouteImport } from './routes/compagnies'
 import { Route as CompteRouteImport } from './routes/compte'
+import { Route as HorairesRouteImport } from './routes/horaires'
+import { Route as LignesRouteImport } from './routes/lignes'
 import { Route as PortsRouteImport } from './routes/ports'
+import { Route as LignesSlugRouteImport } from './routes/lignes.$slug'
 import { Route as PortsSlugRouteImport } from './routes/ports.$slug'
 
 const IndexRoute = IndexRouteImport.update({
@@ -31,15 +35,35 @@ const AuthRoute = AuthRouteImport.update({
   path: '/auth',
   getParentRoute: () => rootRouteImport,
 } as any)
+const CompagniesRoute = CompagniesRouteImport.update({
+  id: '/compagnies',
+  path: '/compagnies',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const CompteRoute = CompteRouteImport.update({
   id: '/compte',
   path: '/compte',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const HorairesRoute = HorairesRouteImport.update({
+  id: '/horaires',
+  path: '/horaires',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LignesRoute = LignesRouteImport.update({
+  id: '/lignes',
+  path: '/lignes',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PortsRoute = PortsRouteImport.update({
   id: '/ports',
   path: '/ports',
   getParentRoute: () => rootRouteImport,
+} as any)
+const LignesSlugRoute = LignesSlugRouteImport.update({
+  id: '/$slug',
+  path: '/$slug',
+  getParentRoute: () => LignesRoute,
 } as any)
 const PortsSlugRoute = PortsSlugRouteImport.update({
   id: '/$slug',
@@ -51,16 +75,24 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
   '/auth': typeof AuthRoute
+  '/compagnies': typeof CompagniesRoute
   '/compte': typeof CompteRoute
+  '/horaires': typeof HorairesRoute
+  '/lignes': typeof LignesRouteWithChildren
   '/ports': typeof PortsRouteWithChildren
+  '/lignes/$slug': typeof LignesSlugRoute
   '/ports/$slug': typeof PortsSlugRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
   '/auth': typeof AuthRoute
+  '/compagnies': typeof CompagniesRoute
   '/compte': typeof CompteRoute
+  '/horaires': typeof HorairesRoute
+  '/lignes': typeof LignesRouteWithChildren
   '/ports': typeof PortsRouteWithChildren
+  '/lignes/$slug': typeof LignesSlugRoute
   '/ports/$slug': typeof PortsSlugRoute
 }
 export interface FileRoutesById {
@@ -68,22 +100,50 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
   '/auth': typeof AuthRoute
+  '/compagnies': typeof CompagniesRoute
   '/compte': typeof CompteRoute
+  '/horaires': typeof HorairesRoute
+  '/lignes': typeof LignesRouteWithChildren
   '/ports': typeof PortsRouteWithChildren
+  '/lignes/$slug': typeof LignesSlugRoute
   '/ports/$slug': typeof PortsSlugRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/admin' | '/auth' | '/compte' | '/ports' | '/ports/$slug'
+  fullPaths:
+    | '/'
+    | '/admin'
+    | '/auth'
+    | '/compagnies'
+    | '/compte'
+    | '/horaires'
+    | '/lignes'
+    | '/ports'
+    | '/lignes/$slug'
+    | '/ports/$slug'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/admin' | '/auth' | '/compte' | '/ports' | '/ports/$slug'
+  to:
+    | '/'
+    | '/admin'
+    | '/auth'
+    | '/compagnies'
+    | '/compte'
+    | '/horaires'
+    | '/lignes'
+    | '/ports'
+    | '/lignes/$slug'
+    | '/ports/$slug'
   id:
     | '__root__'
     | '/'
     | '/admin'
     | '/auth'
+    | '/compagnies'
     | '/compte'
+    | '/horaires'
+    | '/lignes'
     | '/ports'
+    | '/lignes/$slug'
     | '/ports/$slug'
   fileRoutesById: FileRoutesById
 }
@@ -91,7 +151,10 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AdminRoute: typeof AdminRoute
   AuthRoute: typeof AuthRoute
+  CompagniesRoute: typeof CompagniesRoute
   CompteRoute: typeof CompteRoute
+  HorairesRoute: typeof HorairesRoute
+  LignesRoute: typeof LignesRouteWithChildren
   PortsRoute: typeof PortsRouteWithChildren
 }
 
@@ -118,11 +181,32 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/compagnies': {
+      id: '/compagnies'
+      path: '/compagnies'
+      fullPath: '/compagnies'
+      preLoaderRoute: typeof CompagniesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/compte': {
       id: '/compte'
       path: '/compte'
       fullPath: '/compte'
       preLoaderRoute: typeof CompteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/horaires': {
+      id: '/horaires'
+      path: '/horaires'
+      fullPath: '/horaires'
+      preLoaderRoute: typeof HorairesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/lignes': {
+      id: '/lignes'
+      path: '/lignes'
+      fullPath: '/lignes'
+      preLoaderRoute: typeof LignesRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/ports': {
@@ -131,6 +215,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/ports'
       preLoaderRoute: typeof PortsRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/lignes/$slug': {
+      id: '/lignes/$slug'
+      path: '/$slug'
+      fullPath: '/lignes/$slug'
+      preLoaderRoute: typeof LignesSlugRouteImport
+      parentRoute: typeof LignesRoute
     }
     '/ports/$slug': {
       id: '/ports/$slug'
@@ -141,6 +232,17 @@ declare module '@tanstack/react-router' {
     }
   }
 }
+
+interface LignesRouteChildren {
+  LignesSlugRoute: typeof LignesSlugRoute
+}
+
+const LignesRouteChildren: LignesRouteChildren = {
+  LignesSlugRoute: LignesSlugRoute,
+}
+
+const LignesRouteWithChildren =
+  LignesRoute._addFileChildren(LignesRouteChildren)
 
 interface PortsRouteChildren {
   PortsSlugRoute: typeof PortsSlugRoute
@@ -156,7 +258,10 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AdminRoute: AdminRoute,
   AuthRoute: AuthRoute,
+  CompagniesRoute: CompagniesRoute,
   CompteRoute: CompteRoute,
+  HorairesRoute: HorairesRoute,
+  LignesRoute: LignesRouteWithChildren,
   PortsRoute: PortsRouteWithChildren,
 }
 export const routeTree = rootRouteImport

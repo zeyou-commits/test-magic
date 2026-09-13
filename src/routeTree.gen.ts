@@ -10,13 +10,30 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AProposRouteImport } from './routes/a-propos'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as AuthRouteImport } from './routes/auth'
+import { Route as CompagniesRouteImport } from './routes/compagnies'
 import { Route as CompteRouteImport } from './routes/compte'
+import { Route as ConfidentialiteRouteImport } from './routes/confidentialite'
+import { Route as ContactRouteImport } from './routes/contact'
+import { Route as GuideRouteImport } from './routes/guide'
+import { Route as HorairesRouteImport } from './routes/horaires'
+import { Route as LignesRouteImport } from './routes/lignes'
+import { Route as MentionsLegalesRouteImport } from './routes/mentions-legales'
+import { Route as PortsRouteImport } from './routes/ports'
+import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
+import { Route as LignesSlugRouteImport } from './routes/lignes.$slug'
+import { Route as PortsSlugRouteImport } from './routes/ports.$slug'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AProposRoute = AProposRouteImport.update({
+  id: '/a-propos',
+  path: '/a-propos',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AdminRoute = AdminRouteImport.update({
@@ -29,44 +46,194 @@ const AuthRoute = AuthRouteImport.update({
   path: '/auth',
   getParentRoute: () => rootRouteImport,
 } as any)
+const CompagniesRoute = CompagniesRouteImport.update({
+  id: '/compagnies',
+  path: '/compagnies',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const CompteRoute = CompteRouteImport.update({
   id: '/compte',
   path: '/compte',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ConfidentialiteRoute = ConfidentialiteRouteImport.update({
+  id: '/confidentialite',
+  path: '/confidentialite',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ContactRoute = ContactRouteImport.update({
+  id: '/contact',
+  path: '/contact',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const GuideRoute = GuideRouteImport.update({
+  id: '/guide',
+  path: '/guide',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const HorairesRoute = HorairesRouteImport.update({
+  id: '/horaires',
+  path: '/horaires',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LignesRoute = LignesRouteImport.update({
+  id: '/lignes',
+  path: '/lignes',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MentionsLegalesRoute = MentionsLegalesRouteImport.update({
+  id: '/mentions-legales',
+  path: '/mentions-legales',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PortsRoute = PortsRouteImport.update({
+  id: '/ports',
+  path: '/ports',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
+  id: '/sitemap.xml',
+  path: '/sitemap.xml',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LignesSlugRoute = LignesSlugRouteImport.update({
+  id: '/$slug',
+  path: '/$slug',
+  getParentRoute: () => LignesRoute,
+} as any)
+const PortsSlugRoute = PortsSlugRouteImport.update({
+  id: '/$slug',
+  path: '/$slug',
+  getParentRoute: () => PortsRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/a-propos': typeof AProposRoute
   '/admin': typeof AdminRoute
   '/auth': typeof AuthRoute
+  '/compagnies': typeof CompagniesRoute
   '/compte': typeof CompteRoute
+  '/confidentialite': typeof ConfidentialiteRoute
+  '/contact': typeof ContactRoute
+  '/guide': typeof GuideRoute
+  '/horaires': typeof HorairesRoute
+  '/lignes': typeof LignesRouteWithChildren
+  '/mentions-legales': typeof MentionsLegalesRoute
+  '/ports': typeof PortsRouteWithChildren
+  '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/lignes/$slug': typeof LignesSlugRoute
+  '/ports/$slug': typeof PortsSlugRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/a-propos': typeof AProposRoute
   '/admin': typeof AdminRoute
   '/auth': typeof AuthRoute
+  '/compagnies': typeof CompagniesRoute
   '/compte': typeof CompteRoute
+  '/confidentialite': typeof ConfidentialiteRoute
+  '/contact': typeof ContactRoute
+  '/guide': typeof GuideRoute
+  '/horaires': typeof HorairesRoute
+  '/lignes': typeof LignesRouteWithChildren
+  '/mentions-legales': typeof MentionsLegalesRoute
+  '/ports': typeof PortsRouteWithChildren
+  '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/lignes/$slug': typeof LignesSlugRoute
+  '/ports/$slug': typeof PortsSlugRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/a-propos': typeof AProposRoute
   '/admin': typeof AdminRoute
   '/auth': typeof AuthRoute
+  '/compagnies': typeof CompagniesRoute
   '/compte': typeof CompteRoute
+  '/confidentialite': typeof ConfidentialiteRoute
+  '/contact': typeof ContactRoute
+  '/guide': typeof GuideRoute
+  '/horaires': typeof HorairesRoute
+  '/lignes': typeof LignesRouteWithChildren
+  '/mentions-legales': typeof MentionsLegalesRoute
+  '/ports': typeof PortsRouteWithChildren
+  '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/lignes/$slug': typeof LignesSlugRoute
+  '/ports/$slug': typeof PortsSlugRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/admin' | '/auth' | '/compte'
+  fullPaths:
+    | '/'
+    | '/a-propos'
+    | '/admin'
+    | '/auth'
+    | '/compagnies'
+    | '/compte'
+    | '/confidentialite'
+    | '/contact'
+    | '/guide'
+    | '/horaires'
+    | '/lignes'
+    | '/mentions-legales'
+    | '/ports'
+    | '/sitemap.xml'
+    | '/lignes/$slug'
+    | '/ports/$slug'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/admin' | '/auth' | '/compte'
-  id: '__root__' | '/' | '/admin' | '/auth' | '/compte'
+  to:
+    | '/'
+    | '/a-propos'
+    | '/admin'
+    | '/auth'
+    | '/compagnies'
+    | '/compte'
+    | '/confidentialite'
+    | '/contact'
+    | '/guide'
+    | '/horaires'
+    | '/lignes'
+    | '/mentions-legales'
+    | '/ports'
+    | '/sitemap.xml'
+    | '/lignes/$slug'
+    | '/ports/$slug'
+  id:
+    | '__root__'
+    | '/'
+    | '/a-propos'
+    | '/admin'
+    | '/auth'
+    | '/compagnies'
+    | '/compte'
+    | '/confidentialite'
+    | '/contact'
+    | '/guide'
+    | '/horaires'
+    | '/lignes'
+    | '/mentions-legales'
+    | '/ports'
+    | '/sitemap.xml'
+    | '/lignes/$slug'
+    | '/ports/$slug'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AProposRoute: typeof AProposRoute
   AdminRoute: typeof AdminRoute
   AuthRoute: typeof AuthRoute
+  CompagniesRoute: typeof CompagniesRoute
   CompteRoute: typeof CompteRoute
+  ConfidentialiteRoute: typeof ConfidentialiteRoute
+  ContactRoute: typeof ContactRoute
+  GuideRoute: typeof GuideRoute
+  HorairesRoute: typeof HorairesRoute
+  LignesRoute: typeof LignesRouteWithChildren
+  MentionsLegalesRoute: typeof MentionsLegalesRoute
+  PortsRoute: typeof PortsRouteWithChildren
+  SitemapDotxmlRoute: typeof SitemapDotxmlRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -76,6 +243,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/a-propos': {
+      id: '/a-propos'
+      path: '/a-propos'
+      fullPath: '/a-propos'
+      preLoaderRoute: typeof AProposRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/admin': {
@@ -92,6 +266,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/compagnies': {
+      id: '/compagnies'
+      path: '/compagnies'
+      fullPath: '/compagnies'
+      preLoaderRoute: typeof CompagniesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/compte': {
       id: '/compte'
       path: '/compte'
@@ -99,14 +280,115 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CompteRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/confidentialite': {
+      id: '/confidentialite'
+      path: '/confidentialite'
+      fullPath: '/confidentialite'
+      preLoaderRoute: typeof ConfidentialiteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/contact': {
+      id: '/contact'
+      path: '/contact'
+      fullPath: '/contact'
+      preLoaderRoute: typeof ContactRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/guide': {
+      id: '/guide'
+      path: '/guide'
+      fullPath: '/guide'
+      preLoaderRoute: typeof GuideRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/horaires': {
+      id: '/horaires'
+      path: '/horaires'
+      fullPath: '/horaires'
+      preLoaderRoute: typeof HorairesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/lignes': {
+      id: '/lignes'
+      path: '/lignes'
+      fullPath: '/lignes'
+      preLoaderRoute: typeof LignesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/mentions-legales': {
+      id: '/mentions-legales'
+      path: '/mentions-legales'
+      fullPath: '/mentions-legales'
+      preLoaderRoute: typeof MentionsLegalesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/ports': {
+      id: '/ports'
+      path: '/ports'
+      fullPath: '/ports'
+      preLoaderRoute: typeof PortsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/sitemap.xml': {
+      id: '/sitemap.xml'
+      path: '/sitemap.xml'
+      fullPath: '/sitemap.xml'
+      preLoaderRoute: typeof SitemapDotxmlRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/lignes/$slug': {
+      id: '/lignes/$slug'
+      path: '/$slug'
+      fullPath: '/lignes/$slug'
+      preLoaderRoute: typeof LignesSlugRouteImport
+      parentRoute: typeof LignesRoute
+    }
+    '/ports/$slug': {
+      id: '/ports/$slug'
+      path: '/$slug'
+      fullPath: '/ports/$slug'
+      preLoaderRoute: typeof PortsSlugRouteImport
+      parentRoute: typeof PortsRoute
+    }
   }
 }
 
+interface LignesRouteChildren {
+  LignesSlugRoute: typeof LignesSlugRoute
+}
+
+const LignesRouteChildren: LignesRouteChildren = {
+  LignesSlugRoute: LignesSlugRoute,
+}
+
+const LignesRouteWithChildren =
+  LignesRoute._addFileChildren(LignesRouteChildren)
+
+interface PortsRouteChildren {
+  PortsSlugRoute: typeof PortsSlugRoute
+}
+
+const PortsRouteChildren: PortsRouteChildren = {
+  PortsSlugRoute: PortsSlugRoute,
+}
+
+const PortsRouteWithChildren = PortsRoute._addFileChildren(PortsRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AProposRoute: AProposRoute,
   AdminRoute: AdminRoute,
   AuthRoute: AuthRoute,
+  CompagniesRoute: CompagniesRoute,
   CompteRoute: CompteRoute,
+  ConfidentialiteRoute: ConfidentialiteRoute,
+  ContactRoute: ContactRoute,
+  GuideRoute: GuideRoute,
+  HorairesRoute: HorairesRoute,
+  LignesRoute: LignesRouteWithChildren,
+  MentionsLegalesRoute: MentionsLegalesRoute,
+  PortsRoute: PortsRouteWithChildren,
+  SitemapDotxmlRoute: SitemapDotxmlRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

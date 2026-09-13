@@ -14,16 +14,16 @@ import { formatDate } from "@/lib/ferry/format";
 export const Route = createFileRoute("/compte")({
   head: () => ({
     meta: [
-      { title: "Mon compte — FerryDZ" },
+      { title: "Mon compte — Batogo" },
       {
         name: "description",
         content:
-          "Gérez votre profil FerryDZ : nom affiché, photo, avis publiés et signalements envoyés.",
+          "Gérez votre profil Batogo : nom affiché, photo, avis publiés et signalements envoyés.",
       },
-      { property: "og:title", content: "Mon compte — FerryDZ" },
+      { property: "og:title", content: "Mon compte — Batogo" },
       {
         property: "og:description",
-        content: "Profil, avis et signalements de votre compte FerryDZ.",
+        content: "Profil, avis et signalements de votre compte Batogo.",
       },
       { name: "robots", content: "noindex" },
     ],

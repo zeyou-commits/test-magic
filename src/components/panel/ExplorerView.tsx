@@ -50,13 +50,13 @@ export function ExplorerView({
     : [];
 
   return (
-    <div className="flex h-full flex-col">
+    <div>
       <PanelHeader
         overline="Explorer"
         title="Traversées vers l'Algérie"
         subtitle={`${routes.length} lignes · ${ports.length} ports`}
       />
-      <div className="flex-1 overflow-y-auto">
+      <div>
         <Section title="Recherche">
           <Input
             value={filters.search}

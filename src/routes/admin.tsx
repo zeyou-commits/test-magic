@@ -16,6 +16,7 @@ import {
   vesselsQuery,
 } from "@/lib/ferry/queries";
 import {
+  facilityLabels,
   formatDateTime,
   formatDuration,
   reliabilityLabel,
@@ -33,16 +34,16 @@ const departureStatusLabel: Record<string, string> = {
 export const Route = createFileRoute("/admin")({
   head: () => ({
     meta: [
-      { title: "Back-office — FerryDZ" },
+      { title: "Back-office — Batogo" },
       {
         name: "description",
         content:
-          "Espace d'administration FerryDZ : modération des avis, signalements, calendriers et départs.",
+          "Espace d'administration Batogo : modération des avis, signalements, calendriers et départs.",
       },
-      { property: "og:title", content: "Back-office — FerryDZ" },
+      { property: "og:title", content: "Back-office — Batogo" },
       {
         property: "og:description",
-        content: "Modération des avis, signalements et gestion des départs FerryDZ.",
+        content: "Modération des avis, signalements et gestion des départs Batogo.",
       },
       { name: "robots", content: "noindex" },
     ],
@@ -71,7 +72,7 @@ function AdminPage() {
   if (!isAdmin) {
     return (
       <CenteredNote>
-        <p>Cet espace est réservé à l'équipe FerryDZ.</p>
+        <p>Cet espace est réservé à l'équipe Batogo.</p>
         <Button asChild variant="outline" className="mt-3">
           <Link to="/">Retour à la carte</Link>
         </Button>
@@ -915,6 +916,7 @@ function PortsAdmin() {
   const { data: routes = [] } = useQuery(adminRoutesQuery);
   const { data: schedules = [] } = useQuery(schedulesQuery);
   const [draft, setDraft] = useState(emptyPortDraft);
+  const [facilities, setFacilities] = useState<Record<string, string>>({});
   const [editingId, setEditingId] = useState<string | null>(null);
   const [presetName, setPresetName] = useState("");
   const [pendingClose, setPendingClose] = useState<Port | null>(null);
@@ -944,6 +946,7 @@ function PortsAdmin() {
 
   const reset = () => {
     setDraft(emptyPortDraft);
+    setFacilities({});
     setEditingId(null);
   };
 
@@ -972,6 +975,12 @@ function PortsAdmin() {
         label_offset_y: Number(draft.label_offset_y) || 0,
         status: draft.status as "active" | "inactive" | "draft",
         notes: draft.notes.trim() || null,
+        // Services du port : seules les lignes renseignées sont conservées.
+        facilities: Object.fromEntries(
+          Object.entries(facilities)
+            .map(([key, value]) => [key, value.trim()])
+            .filter(([, value]) => value !== ""),
+        ),
         info_source: draft.info_source.trim() || null,
         info_source_url: draft.info_source_url.trim() || null,
         info_verified_at: draft.info_source.trim() ? new Date().toISOString() : null,
@@ -1272,6 +1281,24 @@ function PortsAdmin() {
             />
           </Field>
         </div>
+        <div className="mt-3">
+          <p className="text-xs font-medium text-muted-foreground">
+            Services du port (laissez vide pour ne pas afficher)
+          </p>
+          <div className="mt-2 grid gap-3 sm:grid-cols-2">
+            {Object.entries(facilityLabels).map(([key, label]) => (
+              <Field key={key} label={label}>
+                <Input
+                  value={facilities[key] ?? ""}
+                  placeholder="Ex. : disponible, à l'étage, payant…"
+                  onChange={(event) =>
+                    setFacilities((prev) => ({ ...prev, [key]: event.target.value }))
+                  }
+                />
+              </Field>
+            ))}
+          </div>
+        </div>
         <div className="mt-4 flex gap-2">
           <Button size="sm" disabled={save.isPending} onClick={() => save.mutate()}>
             {editingId ? "Enregistrer les modifications" : "Ajouter le port"}
@@ -1307,6 +1334,7 @@ function PortsAdmin() {
                   variant="outline"
                   onClick={() => {
                     setEditingId(port.id);
+                    setFacilities((port.facilities ?? {}) as Record<string, string>);
                     setDraft({
                       name: port.name,
                       city: port.city ?? "",

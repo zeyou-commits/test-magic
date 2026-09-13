@@ -96,6 +96,17 @@
   --map-route: oklch(0.42 0.14 238);
   --map-route-selected: oklch(0.68 0.145 55);
   --map-route-casing: oklch(0.985 0.008 85);
+  --gradient-header: linear-gradient(
+    100deg,
+    oklch(0.33 0.095 244) 0%,
+    oklch(0.42 0.105 238) 55%,
+    oklch(0.5 0.1 220) 100%
+  );
+  --gradient-brand: linear-gradient(140deg, oklch(0.68 0.145 55), oklch(0.46 0.12 238));
+  --shadow-brand: 0 6px 18px -8px color-mix(in oklab, oklch(0.42 0.105 238) 65%, transparent);
+  --shadow-panel: 0 12px 40px -24px color-mix(in oklab, oklch(0.24 0.045 250) 45%, transparent);
+  --shadow-elegant: 0 18px 50px -28px color-mix(in oklab, oklch(0.24 0.045 250) 40%, transparent);
+
   --sidebar: oklch(0.99 0.006 85);
   --sidebar-foreground: oklch(0.24 0.045 250);
   --sidebar-primary: oklch(0.42 0.105 238);
@@ -227,3 +238,56 @@
   font-size: 10px;
 }
 
+
+/* Survol d'un port : l'essentiel sans quitter la carte. */
+.port-tip {
+  position: absolute;
+  left: 14px;
+  top: -12px;
+  z-index: 5;
+  width: max-content;
+  max-width: 240px;
+  padding: 8px 10px;
+  border-radius: 12px;
+  border: 1px solid var(--color-border);
+  background: color-mix(in oklab, var(--color-card) 94%, transparent);
+  backdrop-filter: blur(6px);
+  box-shadow: var(--shadow-elegant);
+  opacity: 0;
+  transform: translateY(4px) scale(0.98);
+  transition:
+    opacity 0.14s ease,
+    transform 0.14s ease;
+  pointer-events: none;
+}
+
+.port-marker:hover .port-tip,
+.port-marker:focus-within .port-tip {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+}
+
+.port-tip__title {
+  font-family: var(--font-display);
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--color-foreground);
+}
+
+.port-tip__meta {
+  font-size: 11px;
+  color: var(--color-muted-foreground);
+}
+
+.port-tip__next {
+  margin-top: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--color-primary);
+}
+
+.port-tip__closed {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--color-destructive);
+}

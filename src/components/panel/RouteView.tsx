@@ -40,7 +40,7 @@ export function RouteView({
   const routeDepartures = departures.filter((departure) => departure.route_id === routeId).slice(0, 8);
 
   return (
-    <div className="flex h-full flex-col">
+    <div>
       <PanelHeader
         overline="Ligne maritime"
         title={`${from?.name ?? "—"} → ${to?.name ?? "—"}`}
@@ -55,7 +55,7 @@ export function RouteView({
         }
         actions={<ReportButton targetType="route" targetId={route.id} />}
       />
-      <div className="flex-1 overflow-y-auto">
+      <div>
         <Section title="Ports">
           <div className="grid gap-2">
             {[from, to].map((port, index) =>

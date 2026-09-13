@@ -13,6 +13,15 @@ import { formatDuration } from "@/lib/ferry/format";
 import { portColor, routeColor } from "@/lib/ferry/colors";
 import { algeriaGeoJson } from "@/lib/ferry/algeriaGeoJson";
 
+export interface PortMeta {
+  /** Nombre de lignes visibles au départ ou à l'arrivée de ce port. */
+  routes: number;
+  /** Prochain départ connu, déjà formaté. */
+  nextDeparture: string | null;
+  /** Destination du prochain départ. */
+  nextTo: string | null;
+}
+
 interface FerryMapProps {
   ports: Port[];
   routes: RouteLine[];
@@ -21,6 +30,7 @@ interface FerryMapProps {
   focusRouteIds: string[];
   selection: Selection | null;
   highlightedPortIds: string[];
+  portMeta: Record<string, PortMeta>;
   onSelect: (selection: Selection | null) => void;
 }
 
@@ -99,6 +109,7 @@ export default function FerryMap({
   focusRouteIds,
   selection,
   highlightedPortIds,
+  portMeta,
   onSelect,
 }: FerryMapProps) {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -183,12 +194,13 @@ export default function FerryMap({
           "line-opacity": ["case", ["get", "dimmed"], 0.16, 1],
         },
       });
-      // Durée écrite le long de la ligne, sans pastille.
+      // Durée écrite le long de la ligne, sans pastille. Chevauchement autorisé :
+      // sinon une durée fraîchement saisie peut ne jamais s'afficher.
       map.addLayer({
         id: "ferry-routes-duration",
         type: "symbol",
         source: "ferry-routes",
-        minzoom: 4.2,
+        minzoom: 3.4,
         layout: {
           "symbol-placement": "line-center",
           "text-field": ["get", "label"],
@@ -198,13 +210,14 @@ export default function FerryMap({
           "text-rotation-alignment": "map",
           "text-pitch-alignment": "viewport",
           "text-keep-upright": true,
-          "text-offset": [0, -0.8],
-          "text-allow-overlap": false,
+          "text-offset": [0, -0.9],
+          "text-allow-overlap": true,
+          "text-ignore-placement": true,
         },
         paint: {
           "text-color": ["get", "color"],
           "text-halo-color": mapColor("--map-route-casing"),
-          "text-halo-width": 1.2,
+          "text-halo-width": 1.6,
           "text-opacity": ["case", ["get", "dimmed"], 0.2, 1],
         },
       });
@@ -262,7 +275,10 @@ export default function FerryMap({
         const label = document.createElement("span");
         label.className = "port-marker__label";
         label.textContent = port.name;
-        el.append(dot, label);
+        // Survol : l'essentiel du port, sans quitter la carte.
+        const tip = document.createElement("div");
+        tip.className = "port-tip";
+        el.append(dot, label, tip);
         const select = (event: Event) => {
           event.stopPropagation();
           selectRef.current({ type: "port", id: port.id });
@@ -285,6 +301,38 @@ export default function FerryMap({
       element.dataset["dimmed"] = String(dimming && !activeIds.has(port.id));
       // Port temporairement fermé : marqueur neutre, sans couleur de port.
       element.dataset["closed"] = String(port.status === "inactive");
+      marker.setLngLat([port.longitude, port.latitude]);
+
+      const tip = element.querySelector<HTMLDivElement>(".port-tip");
+      const meta = portMeta[port.id];
+      if (tip) {
+        tip.textContent = "";
+        const title = document.createElement("p");
+        title.className = "port-tip__title";
+        title.textContent = port.name;
+        const place = document.createElement("p");
+        place.className = "port-tip__meta";
+        place.textContent = [port.city, port.country_name].filter(Boolean).join(" · ");
+        tip.append(title, place);
+        if (port.status === "inactive") {
+          const closed = document.createElement("p");
+          closed.className = "port-tip__closed";
+          closed.textContent = "Temporairement fermé";
+          tip.append(closed);
+        }
+        const lines = document.createElement("p");
+        lines.className = "port-tip__meta";
+        const count = meta?.routes ?? 0;
+        lines.textContent =
+          count === 0 ? "Aucune ligne visible" : count === 1 ? "1 ligne" : `${count} lignes`;
+        tip.append(lines);
+        const next = document.createElement("p");
+        next.className = "port-tip__next";
+        next.textContent = meta?.nextDeparture
+          ? `Prochain départ : ${meta.nextDeparture}${meta.nextTo ? ` → ${meta.nextTo}` : ""}`
+          : "Prochain départ non connu";
+        tip.append(next);
+      }
     });
 
     portMarkersRef.current.forEach((marker, id) => {
@@ -293,7 +341,7 @@ export default function FerryMap({
         portMarkersRef.current.delete(id);
       }
     });
-  }, [ports, highlightedPortIds]);
+  }, [ports, highlightedPortIds, portMeta]);
 
   // Route lines + durations along each line
   useEffect(() => {

@@ -80,7 +80,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "FerryDZ — Ferries vers l'Algérie" },
+      { title: "Batogo — Ferries vers l'Algérie" },
       {
         name: "description",
         content:

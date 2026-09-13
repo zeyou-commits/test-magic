@@ -11,16 +11,16 @@ import { Label } from "@/components/ui/label";
 export const Route = createFileRoute("/auth")({
   head: () => ({
     meta: [
-      { title: "Connexion — FerryDZ" },
+      { title: "Connexion — Batogo" },
       {
         name: "description",
         content:
-          "Connectez-vous à FerryDZ pour noter les ports, laisser un avis et signaler une information inexacte.",
+          "Connectez-vous à Batogo pour noter les ports, laisser un avis et signaler une information inexacte.",
       },
-      { property: "og:title", content: "Connexion — FerryDZ" },
+      { property: "og:title", content: "Connexion — Batogo" },
       {
         property: "og:description",
-        content: "Accédez à votre compte FerryDZ pour contribuer aux informations des ports.",
+        content: "Accédez à votre compte Batogo pour contribuer aux informations des ports.",
       },
     ],
   }),

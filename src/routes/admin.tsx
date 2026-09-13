@@ -833,8 +833,30 @@ function slugify(value: string) {
 function PortsAdmin() {
   const queryClient = useQueryClient();
   const { data: ports = [] } = useQuery(adminPortsQuery);
+  const { data: routes = [] } = useQuery(adminRoutesQuery);
+  const { data: schedules = [] } = useQuery(schedulesQuery);
   const [draft, setDraft] = useState(emptyPortDraft);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [presetName, setPresetName] = useState("");
+  const [pendingClose, setPendingClose] = useState<Port | null>(null);
+  const [pendingReopen, setPendingReopen] = useState<Port | null>(null);
+
+  const portName = (id: string) => ports.find((port) => port.id === id)?.name ?? "—";
+  const activeRoutesOf = (portId: string) =>
+    routes.filter(
+      (route) =>
+        route.status === "active" &&
+        (route.departure_port_id === portId || route.arrival_port_id === portId),
+    );
+  const suspendedRoutesOf = (portId: string) =>
+    routes.filter(
+      (route) =>
+        route.status === "inactive" &&
+        (route.departure_port_id === portId || route.arrival_port_id === portId),
+    );
+  const schedulesOf = (routeIds: string[], status: string) =>
+    schedules.filter((item) => routeIds.includes(item.route_id) && item.status === status);
+
 
   const invalidate = () => queryClient.invalidateQueries({ queryKey: ["ports"] });
 
@@ -903,12 +925,193 @@ function PortsAdmin() {
     onError: (error: Error) => toast.error(error.message),
   });
 
+  // Fermeture temporaire : le port reste visible en gris, mais ses lignes et
+  // calendriers sont suspendus et disparaissent de la carte.
+  const closePort = useMutation({
+    mutationFn: async (port: Port) => {
+      const routeIds = activeRoutesOf(port.id).map((route) => route.id);
+      const { error } = await supabase
+        .from("ports")
+        .update({ status: "inactive" })
+        .eq("id", port.id);
+      if (error) throw new Error(error.message);
+      if (routeIds.length > 0) {
+        const routeUpdate = await supabase
+          .from("routes")
+          .update({ status: "inactive" })
+          .in("id", routeIds);
+        if (routeUpdate.error) throw new Error(routeUpdate.error.message);
+        const scheduleUpdate = await supabase
+          .from("schedules")
+          .update({ status: "inactive" })
+          .in("route_id", routeIds)
+          .eq("status", "active");
+        if (scheduleUpdate.error) throw new Error(scheduleUpdate.error.message);
+      }
+      return routeIds.length;
+    },
+    onSuccess: (count) => {
+      invalidateAll();
+      setPendingClose(null);
+      toast.success(
+        count > 0
+          ? `Port fermé temporairement. ${count} ligne(s) suspendue(s).`
+          : "Port fermé temporairement.",
+      );
+    },
+    onError: (error: Error) => toast.error(error.message),
+  });
+
+  const reopenPort = useMutation({
+    mutationFn: async ({ port, restore }: { port: Port; restore: boolean }) => {
+      const { error } = await supabase.from("ports").update({ status: "active" }).eq("id", port.id);
+      if (error) throw new Error(error.message);
+      if (!restore) return 0;
+      const restorable = suspendedRoutesOf(port.id).filter((route) => {
+        const other =
+          route.departure_port_id === port.id ? route.arrival_port_id : route.departure_port_id;
+        const otherPort = ports.find((item) => item.id === other);
+        return otherPort?.status === "active" || other === port.id;
+      });
+      const routeIds = restorable.map((route) => route.id);
+      if (routeIds.length > 0) {
+        const routeUpdate = await supabase
+          .from("routes")
+          .update({ status: "active" })
+          .in("id", routeIds);
+        if (routeUpdate.error) throw new Error(routeUpdate.error.message);
+        const scheduleUpdate = await supabase
+          .from("schedules")
+          .update({ status: "active" })
+          .in("route_id", routeIds)
+          .eq("status", "inactive");
+        if (scheduleUpdate.error) throw new Error(scheduleUpdate.error.message);
+      }
+      return routeIds.length;
+    },
+    onSuccess: (count) => {
+      invalidateAll();
+      setPendingReopen(null);
+      toast.success(
+        count > 0 ? `Port réouvert et ${count} ligne(s) réactivée(s).` : "Port réouvert.",
+      );
+    },
+    onError: (error: Error) => toast.error(error.message),
+  });
+
+  function invalidateAll() {
+    queryClient.invalidateQueries({ queryKey: ["ports"] });
+    queryClient.invalidateQueries({ queryKey: ["routes"] });
+    queryClient.invalidateQueries({ queryKey: ["schedules"] });
+  }
+
+  const applyPreset = (name: string) => {
+    setPresetName(name);
+    const preset = portPresets.find((item) => item.name === name);
+    if (!preset) return;
+    setDraft((prev) => ({
+      ...prev,
+      name: preset.name,
+      city: preset.city,
+      country_code: preset.country_code,
+      latitude: String(preset.latitude),
+      longitude: String(preset.longitude),
+    }));
+  };
+
   return (
     <>
+      {pendingClose ? (
+        <Panel>
+          <h2 className="text-sm font-semibold text-destructive">
+            Fermer temporairement {pendingClose.name} ?
+          </h2>
+          {activeRoutesOf(pendingClose.id).length > 0 ? (
+            <>
+              <p className="mt-2 text-sm text-muted-foreground">
+                Ce port est utilisé par {activeRoutesOf(pendingClose.id).length} ligne(s) active(s)
+                et {schedulesOf(activeRoutesOf(pendingClose.id).map((r) => r.id), "active").length}{" "}
+                calendrier(s) actif(s). Après validation, ces lignes ne s'afficheront plus sur la
+                carte et leurs calendriers seront suspendus.
+              </p>
+              <ul className="mt-2 list-disc pl-5 text-xs text-muted-foreground">
+                {activeRoutesOf(pendingClose.id).map((route) => (
+                  <li key={route.id}>
+                    {portName(route.departure_port_id)} → {portName(route.arrival_port_id)}
+                  </li>
+                ))}
+              </ul>
+            </>
+          ) : (
+            <p className="mt-2 text-sm text-muted-foreground">
+              Aucune ligne active ne dépend de ce port.
+            </p>
+          )}
+          <div className="mt-3 flex gap-2">
+            <Button
+              size="sm"
+              disabled={closePort.isPending}
+              onClick={() => closePort.mutate(pendingClose)}
+            >
+              Confirmer la fermeture
+            </Button>
+            <Button size="sm" variant="ghost" onClick={() => setPendingClose(null)}>
+              Annuler
+            </Button>
+          </div>
+        </Panel>
+      ) : null}
+
+      {pendingReopen ? (
+        <Panel>
+          <h2 className="text-sm font-semibold">Réouvrir {pendingReopen.name}</h2>
+          <p className="mt-2 text-sm text-muted-foreground">
+            {suspendedRoutesOf(pendingReopen.id).length > 0
+              ? `${suspendedRoutesOf(pendingReopen.id).length} ligne(s) suspendue(s) peuvent être réactivées avec leurs calendriers.`
+              : "Aucune ligne suspendue n'est associée à ce port."}
+          </p>
+          <div className="mt-3 flex flex-wrap gap-2">
+            <Button
+              size="sm"
+              disabled={reopenPort.isPending}
+              onClick={() => reopenPort.mutate({ port: pendingReopen, restore: true })}
+            >
+              Réouvrir et réactiver les lignes précédentes
+            </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              disabled={reopenPort.isPending}
+              onClick={() => reopenPort.mutate({ port: pendingReopen, restore: false })}
+            >
+              Réouvrir seulement
+            </Button>
+            <Button size="sm" variant="ghost" onClick={() => setPendingReopen(null)}>
+              Annuler
+            </Button>
+          </div>
+        </Panel>
+      ) : null}
+
       <Panel>
         <h2 className="text-sm font-semibold">
           {editingId ? "Modifier le port" : "Nouveau port"}
         </h2>
+        <div className="mt-3">
+          <Field label="Pré-sélection d'un grand port (Algérie et Europe)">
+            <NativeSelect
+              value={presetName}
+              onChange={applyPreset}
+              options={portPresets.map((preset) => ({
+                value: preset.name,
+                label: `${preset.name} — ${
+                  countryOptions.find((c) => c.value === preset.country_code)?.label ??
+                  preset.country_code
+                }`,
+              }))}
+            />
+          </Field>
+        </div>
         <div className="mt-3 grid gap-3 sm:grid-cols-2">
           <Field label="Nom du port">
             <Input
@@ -1044,21 +1247,11 @@ function PortsAdmin() {
                   Modifier
                 </Button>
                 {port.status === "inactive" ? (
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    disabled={setStatus.isPending}
-                    onClick={() => setStatus.mutate({ id: port.id, status: "active" })}
-                  >
+                  <Button size="sm" variant="outline" onClick={() => setPendingReopen(port)}>
                     Réouvrir
                   </Button>
                 ) : (
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    disabled={setStatus.isPending}
-                    onClick={() => setStatus.mutate({ id: port.id, status: "inactive" })}
-                  >
+                  <Button size="sm" variant="outline" onClick={() => setPendingClose(port)}>
                     Fermer temporairement
                   </Button>
                 )}

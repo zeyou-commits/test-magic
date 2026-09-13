@@ -10,7 +10,7 @@ import {
 import "maplibre-gl/dist/maplibre-gl.css";
 import type { Port, RouteLine, Selection } from "@/lib/ferry/types";
 import { formatDuration } from "@/lib/ferry/format";
-import { portColor } from "@/lib/ferry/colors";
+import { portColor, routeColor } from "@/lib/ferry/colors";
 import { algeriaGeoJson } from "@/lib/ferry/algeriaGeoJson";
 
 interface FerryMapProps {
@@ -57,7 +57,7 @@ function routeFeatures(
         type: "Feature" as const,
         properties: {
           id: route.id,
-          color: portColor(from.slug),
+          color: routeColor(route.color, from.slug),
           label: route.typical_duration_minutes
             ? formatDuration(route.typical_duration_minutes)
             : "",

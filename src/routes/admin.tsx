@@ -2008,18 +2008,178 @@ function ImportAdmin() {
     .filter((values): values is Record<string, unknown> => values !== null);
   const invalidCount = checked.length - validValues.length;
 
+  // Éléments absents de la base que l'on sait créer sans invention de données.
+  const missingCompanies = [
+    ...new Set(rows.filter((row) => !row.company_id && row.raw_company).map((row) => row.raw_company)),
+  ];
+  const missingVessels = [
+    ...new Set(rows.filter((row) => !row.vessel_id && row.raw_vessel).map((row) => row.raw_vessel)),
+  ];
+  const missingRoutePairs = [
+    ...new Map(
+      rows
+        .filter(
+          (row) =>
+            row.departure_port_id &&
+            row.arrival_port_id &&
+            row.departure_port_id !== row.arrival_port_id &&
+            !routes.some(
+              (item) =>
+                item.departure_port_id === row.departure_port_id &&
+                item.arrival_port_id === row.arrival_port_id,
+            ),
+        )
+        .map((row) => [`${row.departure_port_id}-${row.arrival_port_id}`, row] as const),
+    ).values(),
+  ];
+  const missingPortRows = rows.filter((row) => !row.departure_port_id || !row.arrival_port_id);
+  const missingTotal = missingCompanies.length + missingVessels.length + missingRoutePairs.length;
+
+  const portById = (id: string) => ports.find((port) => port.id === id);
+  const uniqueSlug = (base: string, taken: string[]) => {
+    const root = slugify(base) || "element";
+    let candidate = root;
+    let index = 2;
+    while (taken.includes(candidate)) {
+      candidate = `${root}-${index}`;
+      index += 1;
+    }
+    return candidate;
+  };
+
+  // Crée compagnies, navires et lignes manquants, puis rattache les lignes du fichier.
+  const autoCreate = useMutation({
+    mutationFn: async () => {
+      const companyIdByName = new Map<string, string>();
+      const takenCompanySlugs = companies.map((item) => item.slug);
+      for (const name of missingCompanies) {
+        const slug = uniqueSlug(name, takenCompanySlugs);
+        takenCompanySlugs.push(slug);
+        const { data, error } = await supabase
+          .from("companies")
+          .insert({ slug, name, status: "active" } as never)
+          .select("id")
+          .single();
+        if (error) throw new Error(`Compagnie « ${name} » : ${error.message}`);
+        companyIdByName.set(normalize(name), (data as { id: string }).id);
+      }
+
+      const resolveCompany = (row: ImportDraftRow) =>
+        row.company_id || companyIdByName.get(normalize(row.raw_company)) || null;
+
+      const vesselIdByName = new Map<string, string>();
+      const takenVesselSlugs = vessels.map((item) => item.slug);
+      for (const name of missingVessels) {
+        const owner = rows.find((row) => row.raw_vessel === name);
+        const slug = uniqueSlug(name, takenVesselSlugs);
+        takenVesselSlugs.push(slug);
+        const { data, error } = await supabase
+          .from("vessels")
+          .insert({
+            slug,
+            name,
+            company_id: owner ? resolveCompany(owner) : null,
+            status: "active",
+          } as never)
+          .select("id")
+          .single();
+        if (error) throw new Error(`Navire « ${name} » : ${error.message}`);
+        vesselIdByName.set(normalize(name), (data as { id: string }).id);
+      }
+
+      const takenRouteSlugs = routes.map((item) => item.slug);
+      let createdRoutes = 0;
+      for (const row of missingRoutePairs) {
+        const from = portById(row.departure_port_id);
+        const to = portById(row.arrival_port_id);
+        if (!from || !to) continue;
+        const slug = uniqueSlug(`${from.name}-${to.name}`, takenRouteSlugs);
+        takenRouteSlugs.push(slug);
+        const duration =
+          durationBetweenTimes(row.departure_time, row.arrival_time) || row.duration_hint || null;
+        const { data, error } = await supabase
+          .from("routes")
+          .insert({
+            slug,
+            departure_port_id: from.id,
+            arrival_port_id: to.id,
+            typical_duration_minutes: duration,
+            status: "active",
+          } as never)
+          .select("id")
+          .single();
+        if (error) throw new Error(`Ligne ${from.name} → ${to.name} : ${error.message}`);
+        createdRoutes += 1;
+        const companyId = resolveCompany(row);
+        if (companyId) {
+          await supabase
+            .from("route_operators")
+            .insert({ route_id: (data as { id: string }).id, company_id: companyId } as never);
+        }
+      }
+
+      return {
+        companies: companyIdByName,
+        vessels: vesselIdByName,
+        createdRoutes,
+      };
+    },
+    onSuccess: (result) => {
+      queryClient.invalidateQueries({ queryKey: ["routes"] });
+      queryClient.invalidateQueries({ queryKey: ["companies"] });
+      queryClient.invalidateQueries({ queryKey: ["vessels"] });
+      setRows((prev) =>
+        prev.map((row) => ({
+          ...row,
+          company_id: row.company_id || result.companies.get(normalize(row.raw_company)) || "",
+          vessel_id: row.vessel_id || result.vessels.get(normalize(row.raw_vessel)) || "",
+        })),
+      );
+      const parts = [
+        result.createdRoutes ? `${result.createdRoutes} ligne(s)` : null,
+        result.companies.size ? `${result.companies.size} compagnie(s)` : null,
+        result.vessels.size ? `${result.vessels.size} navire(s)` : null,
+      ].filter(Boolean);
+      toast.success(parts.length ? `Créé : ${parts.join(", ")}.` : "Rien à créer.");
+    },
+    onError: (error: Error) => toast.error(error.message),
+  });
+
   const importRows = useMutation({
     mutationFn: async () => {
       if (invalidCount > 0)
         throw new Error("Corrigez d'abord les lignes signalées avant de valider l'import.");
       if (validValues.length === 0) throw new Error("Aucune ligne à importer.");
-      const { error } = await supabase.from("departures").insert(validValues as never);
+      // Anti-doublon : on ignore les départs déjà présents (même ligne, même horaire).
+      const routeIds = [...new Set(validValues.map((values) => values["route_id"] as string))];
+      const dates = validValues.map((values) => values["departure_at"] as string).sort();
+      const existing = await supabase
+        .from("departures")
+        .select("route_id, departure_at")
+        .in("route_id", routeIds)
+        .gte("departure_at", dates[0]!)
+        .lte("departure_at", dates[dates.length - 1]!);
+      if (existing.error) throw new Error(existing.error.message);
+      const known = new Set(
+        (existing.data ?? []).map(
+          (item) => `${item.route_id}|${new Date(item.departure_at).toISOString()}`,
+        ),
+      );
+      const fresh = validValues.filter(
+        (values) =>
+          !known.has(`${values["route_id"] as string}|${values["departure_at"] as string}`),
+      );
+      const skipped = validValues.length - fresh.length;
+      if (fresh.length === 0) return { count: 0, skipped };
+      const { error } = await supabase.from("departures").insert(fresh as never);
       if (error) throw new Error(error.message);
-      return validValues.length;
+      return { count: fresh.length, skipped };
     },
-    onSuccess: (count) => {
+    onSuccess: ({ count, skipped }) => {
       queryClient.invalidateQueries({ queryKey: ["departures"] });
-      toast.success(`${count} départ(s) importé(s).`);
+      toast.success(
+        `${count} départ(s) importé(s)${skipped ? ` — ${skipped} doublon(s) ignoré(s)` : ""}.`,
+      );
       setRows([]);
       setFileName("");
     },

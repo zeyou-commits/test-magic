@@ -16,11 +16,23 @@ function unwrap<T>(result: { data: unknown; error: { message: string } | null })
   return (result.data ?? []) as T;
 }
 
+// Côté public : on montre les ports publiés (ouverts ou temporairement fermés),
+// jamais les brouillons.
 export const portsQuery = queryOptions({
   queryKey: ["ports"],
   queryFn: async () =>
-    unwrap<Port[]>(await supabase.from("ports").select("*").order("name")),
+    unwrap<Port[]>(
+      await supabase.from("ports").select("*").neq("status", "draft").order("name"),
+    ),
   staleTime: 5 * 60 * 1000,
+});
+
+// Côté back-office : tous les ports, brouillons compris.
+export const adminPortsQuery = queryOptions({
+  queryKey: ["ports", "admin"],
+  queryFn: async () =>
+    unwrap<Port[]>(await supabase.from("ports").select("*").order("name")),
+  staleTime: 30 * 1000,
 });
 
 export const companiesQuery = queryOptions({

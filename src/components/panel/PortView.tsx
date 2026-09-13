@@ -86,6 +86,11 @@ export function PortView({
             ) : (
               <span>Pas encore d'avis</span>
             )}
+            {port.status === "inactive" ? (
+              <span className="rounded-full bg-secondary px-2 py-0.5 text-[11px] font-semibold text-muted-foreground">
+                Temporairement fermé
+              </span>
+            ) : null}
             {port.is_demo ? <DemoBadge /> : null}
           </span>
         }

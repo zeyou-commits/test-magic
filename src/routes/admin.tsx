@@ -2145,6 +2145,31 @@ function ImportAdmin() {
     onError: (error: Error) => toast.error(error.message),
   });
 
+  // Ports du fichier encore fermés ou en brouillon : leurs lignes ne s'affichent pas sur la carte.
+  const blockedPorts = [
+    ...new Map(
+      rows
+        .flatMap((row) => [row.departure_port_id, row.arrival_port_id])
+        .filter(Boolean)
+        .map((id) => portById(id))
+        .filter((port): port is NonNullable<typeof port> => !!port && port.status !== "active")
+        .map((port) => [port.id, port] as const),
+    ).values(),
+  ];
+
+  const activatePort = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("ports").update({ status: "active" }).eq("id", id);
+      if (error) throw new Error(error.message);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["ports"] });
+      queryClient.invalidateQueries({ queryKey: ["routes"] });
+      toast.success("Port ouvert : ses lignes réapparaissent sur la carte.");
+    },
+    onError: (error: Error) => toast.error(error.message),
+  });
+
   const importRows = useMutation({
     mutationFn: async () => {
       if (invalidCount > 0)
@@ -2170,15 +2195,32 @@ function ImportAdmin() {
           !known.has(`${values["route_id"] as string}|${values["departure_at"] as string}`),
       );
       const skipped = validValues.length - fresh.length;
-      if (fresh.length === 0) return { count: 0, skipped };
-      const { error } = await supabase.from("departures").insert(fresh as never);
-      if (error) throw new Error(error.message);
-      return { count: fresh.length, skipped };
+      if (fresh.length > 0) {
+        const { error } = await supabase.from("departures").insert(fresh as never);
+        if (error) throw new Error(error.message);
+      }
+      // Une ligne suspendue (nouvelle saison) redevient active dès qu'elle reçoit des départs,
+      // sinon la carte resterait vide après l'import.
+      const toReactivate = routes
+        .filter((route) => routeIds.includes(route.id) && route.status !== "active")
+        .map((route) => route.id);
+      if (toReactivate.length > 0) {
+        const { error } = await supabase
+          .from("routes")
+          .update({ status: "active" })
+          .in("id", toReactivate);
+        if (error) throw new Error(error.message);
+      }
+      return { count: fresh.length, skipped, reactivated: toReactivate.length };
     },
-    onSuccess: ({ count, skipped }) => {
+    onSuccess: ({ count, skipped, reactivated }) => {
       queryClient.invalidateQueries({ queryKey: ["departures"] });
+      queryClient.invalidateQueries({ queryKey: ["routes"] });
+      queryClient.invalidateQueries({ queryKey: ["ports"] });
       toast.success(
-        `${count} départ(s) importé(s)${skipped ? ` — ${skipped} doublon(s) ignoré(s)` : ""}.`,
+        `${count} départ(s) importé(s)${skipped ? ` — ${skipped} doublon(s) ignoré(s)` : ""}${
+          reactivated ? ` — ${reactivated} ligne(s) réactivée(s) sur la carte` : ""
+        }.`,
       );
       setRows([]);
       setFileName("");

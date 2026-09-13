@@ -31,7 +31,7 @@ export function CompanyView({
   const portName = (id: string) => ports.find((port) => port.id === id)?.name ?? "—";
 
   return (
-    <div className="flex h-full flex-col">
+    <div>
       <PanelHeader
         overline="Compagnie"
         title={company.name}
@@ -49,7 +49,7 @@ export function CompanyView({
           ) : undefined
         }
       />
-      <div className="flex-1 overflow-y-auto">
+      <div>
         {company.description ? (
           <Section title="Présentation">
             <p className="text-sm leading-relaxed">{company.description}</p>
@@ -128,7 +128,7 @@ export function VesselView({
     .slice(0, 6);
 
   return (
-    <div className="flex h-full flex-col">
+    <div>
       <PanelHeader
         overline={vessel.vessel_type ?? "Navire"}
         title={vessel.name}
@@ -147,7 +147,7 @@ export function VesselView({
           </span>
         }
       />
-      <div className="flex-1 overflow-y-auto">
+      <div>
         {vessel.description ? (
           <Section title="À bord">
             <p className="text-sm leading-relaxed">{vessel.description}</p>
@@ -208,7 +208,7 @@ export function DepartureView({
   const portName = (id: string) => ports.find((port) => port.id === id)?.name ?? "—";
 
   return (
-    <div className="flex h-full flex-col">
+    <div>
       <PanelHeader
         overline="Départ"
         title={formatDateTime(departure.departure_at)}
@@ -219,7 +219,7 @@ export function DepartureView({
         }
         actions={<ReportButton targetType="departure" targetId={departure.id} />}
       />
-      <div className="flex-1 overflow-y-auto">
+      <div>
         <Section title="Détails">
           <dl className="grid gap-2 text-sm">
             <Row label="Durée" value={formatDuration(departure.duration_minutes)} />

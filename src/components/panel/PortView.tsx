@@ -75,7 +75,7 @@ export function PortView({
   const portName = (id: string) => ports.find((item) => item.id === id)?.name ?? "—";
 
   return (
-    <div className="flex h-full flex-col">
+    <div>
       <PanelHeader
         overline={`${port.country_name}${port.city ? ` · ${port.city}` : ""}`}
         title={port.name}
@@ -96,7 +96,7 @@ export function PortView({
         }
         actions={<ReportButton targetType="port" targetId={port.id} />}
       />
-      <div className="flex-1 overflow-y-auto">
+      <div>
         {port.notes ? (
           <Section title="À savoir">
             <p className="text-sm leading-relaxed">{port.notes}</p>

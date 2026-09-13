@@ -10,3 +10,4 @@
 - [x] 8. Avis, notes, signalements (en attente de modération)
 - [x] 9. Back-office et modération
 - [x] 10. Lisibilité de la carte (liaisons visibles, libellés épurés, Algérie mise en évidence)
+- [x] 11. Back-office ports (ajout de ports européens, ouverture/fermeture temporaire, brouillons)

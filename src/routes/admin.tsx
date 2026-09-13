@@ -974,6 +974,12 @@ function PortsAdmin() {
         label_offset_y: Number(draft.label_offset_y) || 0,
         status: draft.status as "active" | "inactive" | "draft",
         notes: draft.notes.trim() || null,
+        // Services du port : seules les lignes renseignées sont conservées.
+        facilities: Object.fromEntries(
+          Object.entries(facilities)
+            .map(([key, value]) => [key, value.trim()])
+            .filter(([, value]) => value !== ""),
+        ),
         info_source: draft.info_source.trim() || null,
         info_source_url: draft.info_source_url.trim() || null,
         info_verified_at: draft.info_source.trim() ? new Date().toISOString() : null,

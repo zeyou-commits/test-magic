@@ -23,6 +23,7 @@ import {
 } from "@/lib/ferry/format";
 import { routeColor, routePalette } from "@/lib/ferry/colors";
 import { portPresets } from "@/lib/ferry/portPresets";
+import type { Port } from "@/lib/ferry/types";
 const departureStatusLabel: Record<string, string> = {
   scheduled: "Prévu",
   modified: "Modifié",
@@ -1272,6 +1273,548 @@ function PortsAdmin() {
           Un port fermé temporairement reste visible sur la carte avec la mention « Temporairement
           fermé ». Un brouillon n'apparaît pas côté public.
         </p>
+      </Panel>
+    </>
+  );
+}
+
+// ---------------------------------------------------------------- Lignes
+
+const emptyRouteDraft = {
+  departure_port_id: "",
+  arrival_port_id: "",
+  typical_duration_minutes: "",
+  distance_km: "",
+  color: "",
+  status: "active",
+  notes: "",
+  company_ids: [] as string[],
+};
+
+const routeStatusOptions = [
+  { value: "active", label: "Active (visible)" },
+  { value: "inactive", label: "Suspendue" },
+  { value: "draft", label: "Brouillon" },
+];
+
+const routeStatusLabel: Record<string, string> = {
+  active: "Active",
+  inactive: "Suspendue",
+  draft: "Brouillon",
+};
+
+function RoutesAdmin() {
+  const queryClient = useQueryClient();
+  const { data: ports = [] } = useQuery(adminPortsQuery);
+  const { data: routes = [] } = useQuery(adminRoutesQuery);
+  const { data: companies = [] } = useQuery(companiesQuery);
+  const [draft, setDraft] = useState(emptyRouteDraft);
+  const [editingId, setEditingId] = useState<string | null>(null);
+
+  const port = (id: string) => ports.find((item) => item.id === id);
+  const portName = (id: string) => port(id)?.name ?? "—";
+  const portOptions = ports.map((item) => ({
+    value: item.id,
+    label: `${item.name} (${item.country_name})${item.status === "active" ? "" : " — fermé"}`,
+  }));
+
+  const invalidate = () => {
+    queryClient.invalidateQueries({ queryKey: ["routes"] });
+    queryClient.invalidateQueries({ queryKey: ["schedules"] });
+  };
+
+  const reset = () => {
+    setDraft(emptyRouteDraft);
+    setEditingId(null);
+  };
+
+  const save = useMutation({
+    mutationFn: async () => {
+      const from = port(draft.departure_port_id);
+      const to = port(draft.arrival_port_id);
+      if (!from || !to) throw new Error("Choisissez un port de départ et un port d'arrivée.");
+      if (from.id === to.id) throw new Error("Les deux ports doivent être différents.");
+      const duration = Number(draft.typical_duration_minutes);
+      if (!Number.isFinite(duration) || duration <= 0)
+        throw new Error("Indiquez la durée de la traversée en minutes.");
+      const values = {
+        slug: `${from.slug}-${to.slug}`,
+        departure_port_id: from.id,
+        arrival_port_id: to.id,
+        typical_duration_minutes: Math.round(duration),
+        distance_km: draft.distance_km ? Math.round(Number(draft.distance_km)) : null,
+        color: draft.color.trim() || null,
+        status: draft.status as "active" | "inactive" | "draft",
+        notes: draft.notes.trim() || null,
+      };
+      let routeId = editingId;
+      if (editingId) {
+        const { error } = await supabase.from("routes").update(values).eq("id", editingId);
+        if (error) throw new Error(error.message);
+      } else {
+        const { data, error } = await supabase
+          .from("routes")
+          .insert({ ...values, is_demo: false })
+          .select("id")
+          .single();
+        if (error) throw new Error(error.message);
+        routeId = data.id;
+      }
+      if (routeId) {
+        await supabase.from("route_operators").delete().eq("route_id", routeId);
+        if (draft.company_ids.length > 0) {
+          const { error } = await supabase
+            .from("route_operators")
+            .insert(draft.company_ids.map((company_id) => ({ route_id: routeId as string, company_id })));
+          if (error) throw new Error(error.message);
+        }
+      }
+    },
+    onSuccess: () => {
+      invalidate();
+      toast.success(editingId ? "Ligne mise à jour." : "Ligne ajoutée.");
+      reset();
+    },
+    onError: (error: Error) => toast.error(error.message),
+  });
+
+  const remove = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("routes").delete().eq("id", id);
+      if (error) throw new Error(error.message);
+    },
+    onSuccess: () => {
+      invalidate();
+      toast.success("Ligne supprimée.");
+    },
+    onError: (error: Error) => toast.error(error.message),
+  });
+
+  const toggleCompany = (id: string) =>
+    setDraft((prev) => ({
+      ...prev,
+      company_ids: prev.company_ids.includes(id)
+        ? prev.company_ids.filter((value) => value !== id)
+        : [...prev.company_ids, id],
+    }));
+
+  return (
+    <>
+      <Panel>
+        <h2 className="text-sm font-semibold">
+          {editingId ? "Modifier la ligne" : "Nouvelle ligne maritime"}
+        </h2>
+        <p className="mt-1 text-xs text-muted-foreground">
+          Le départ comme l'arrivée peuvent être en Algérie ou en Europe.
+        </p>
+        <div className="mt-3 grid gap-3 sm:grid-cols-2">
+          <Field label="Port de départ">
+            <NativeSelect
+              value={draft.departure_port_id}
+              onChange={(value) => setDraft((prev) => ({ ...prev, departure_port_id: value }))}
+              options={portOptions}
+            />
+          </Field>
+          <Field label="Port d'arrivée">
+            <NativeSelect
+              value={draft.arrival_port_id}
+              onChange={(value) => setDraft((prev) => ({ ...prev, arrival_port_id: value }))}
+              options={portOptions}
+            />
+          </Field>
+          <Field label="Durée de la traversée (minutes)">
+            <Input
+              type="number"
+              min={30}
+              placeholder="660"
+              value={draft.typical_duration_minutes}
+              onChange={(event) =>
+                setDraft((prev) => ({ ...prev, typical_duration_minutes: event.target.value }))
+              }
+            />
+          </Field>
+          <Field label="Distance (km, facultatif)">
+            <Input
+              type="number"
+              value={draft.distance_km}
+              onChange={(event) => setDraft((prev) => ({ ...prev, distance_km: event.target.value }))}
+            />
+          </Field>
+          <Field label="Statut">
+            <NativeSelect
+              value={draft.status}
+              onChange={(value) => setDraft((prev) => ({ ...prev, status: value }))}
+              options={routeStatusOptions}
+            />
+          </Field>
+          <Field label="Couleur de la ligne sur la carte">
+            <div className="flex items-center gap-2">
+              <input
+                type="color"
+                aria-label="Couleur de la ligne"
+                value={
+                  draft.color ||
+                  routeColor(null, port(draft.departure_port_id)?.slug ?? "ferrydz")
+                }
+                onChange={(event) => setDraft((prev) => ({ ...prev, color: event.target.value }))}
+                className="h-9 w-12 cursor-pointer rounded-md border border-input bg-transparent"
+              />
+              <div className="flex flex-wrap gap-1">
+                {routePalette.map((value) => (
+                  <button
+                    key={value}
+                    type="button"
+                    aria-label={`Couleur ${value}`}
+                    onClick={() => setDraft((prev) => ({ ...prev, color: value }))}
+                    className="h-6 w-6 rounded-full border border-border"
+                    style={{ background: value }}
+                  />
+                ))}
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => setDraft((prev) => ({ ...prev, color: "" }))}
+                >
+                  Automatique
+                </Button>
+              </div>
+            </div>
+          </Field>
+        </div>
+        <div className="mt-3">
+          <p className="text-xs font-medium text-muted-foreground">Compagnies qui exploitent la ligne</p>
+          <div className="mt-2 flex flex-wrap gap-2">
+            {companies.map((company) => (
+              <Button
+                key={company.id}
+                type="button"
+                size="sm"
+                variant={draft.company_ids.includes(company.id) ? "default" : "outline"}
+                onClick={() => toggleCompany(company.id)}
+              >
+                {company.name}
+              </Button>
+            ))}
+          </div>
+        </div>
+        <div className="mt-3">
+          <Field label="Notes (facultatif)">
+            <Input
+              value={draft.notes}
+              onChange={(event) => setDraft((prev) => ({ ...prev, notes: event.target.value }))}
+            />
+          </Field>
+        </div>
+        <div className="mt-4 flex gap-2">
+          <Button size="sm" disabled={save.isPending} onClick={() => save.mutate()}>
+            {editingId ? "Enregistrer les modifications" : "Ajouter la ligne"}
+          </Button>
+          {editingId ? (
+            <Button size="sm" variant="ghost" onClick={reset}>
+              Annuler
+            </Button>
+          ) : null}
+        </div>
+      </Panel>
+
+      <Panel>
+        <h2 className="text-sm font-semibold">Lignes existantes ({routes.length})</h2>
+        <ul className="divide-y divide-border">
+          {routes.map((route) => (
+            <li key={route.id} className="flex flex-wrap items-center gap-3 py-3">
+              <span
+                className="h-3 w-6 shrink-0 rounded-full"
+                style={{
+                  background: routeColor(route.color, port(route.departure_port_id)?.slug ?? ""),
+                }}
+              />
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-medium">
+                  {portName(route.departure_port_id)} → {portName(route.arrival_port_id)}
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  {formatDuration(route.typical_duration_minutes)} ·{" "}
+                  {routeStatusLabel[route.status] ?? route.status}
+                  {route.color ? " · couleur personnalisée" : " · couleur automatique"}
+                </p>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => {
+                    setEditingId(route.id);
+                    setDraft({
+                      departure_port_id: route.departure_port_id,
+                      arrival_port_id: route.arrival_port_id,
+                      typical_duration_minutes: String(route.typical_duration_minutes ?? ""),
+                      distance_km: String(route.distance_km ?? ""),
+                      color: route.color ?? "",
+                      status: route.status,
+                      notes: route.notes ?? "",
+                      company_ids: route.company_ids,
+                    });
+                  }}
+                >
+                  Modifier
+                </Button>
+                <Button size="sm" variant="ghost" onClick={() => remove.mutate(route.id)}>
+                  Supprimer
+                </Button>
+              </div>
+            </li>
+          ))}
+        </ul>
+      </Panel>
+    </>
+  );
+}
+
+// ---------------------------------------------------------------- Import Excel
+
+interface ImportRow {
+  line: number;
+  error?: string;
+  values?: Record<string, unknown>;
+  label: string;
+}
+
+const importColumns = [
+  ["date", "Date du départ, au format AAAA-MM-JJ (ex. 2026-10-05)"],
+  ["heure", "Heure de départ, format HH:MM sur 24 h (ex. 18:30)"],
+  ["port_depart", "Nom exact du port de départ (ex. Alger)"],
+  ["port_arrivee", "Nom exact du port d'arrivée (ex. Marseille)"],
+  ["compagnie", "Nom exact de la compagnie (ex. Algérie Ferries)"],
+  ["navire", "Facultatif — nom exact du navire"],
+  ["duree_minutes", "Facultatif — durée en minutes ; sinon la durée de la ligne est utilisée"],
+  ["statut", "Facultatif — prevu, modifie ou annule (par défaut : prevu)"],
+];
+
+const importStatusMap: Record<string, "scheduled" | "modified" | "cancelled"> = {
+  prevu: "scheduled",
+  "prévu": "scheduled",
+  scheduled: "scheduled",
+  modifie: "modified",
+  "modifié": "modified",
+  modified: "modified",
+  annule: "cancelled",
+  "annulé": "cancelled",
+  cancelled: "cancelled",
+};
+
+function normalize(value: unknown) {
+  return String(value ?? "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .trim()
+    .toLowerCase();
+}
+
+function ImportAdmin() {
+  const queryClient = useQueryClient();
+  const { data: ports = [] } = useQuery(adminPortsQuery);
+  const { data: routes = [] } = useQuery(adminRoutesQuery);
+  const { data: companies = [] } = useQuery(companiesQuery);
+  const { data: vessels = [] } = useQuery(vesselsQuery);
+  const [rows, setRows] = useState<ImportRow[]>([]);
+  const [fileName, setFileName] = useState("");
+  const [parsing, setParsing] = useState(false);
+
+  const findPort = (value: unknown) => {
+    const needle = normalize(value);
+    return ports.find(
+      (port) =>
+        normalize(port.name) === needle ||
+        normalize(port.slug) === needle ||
+        normalize(port.city) === needle,
+    );
+  };
+
+  const parseFile = async (file: File) => {
+    setParsing(true);
+    setFileName(file.name);
+    try {
+      const XLSX = await import("xlsx");
+      const workbook = XLSX.read(await file.arrayBuffer(), { type: "array" });
+      const sheetName = workbook.SheetNames[0];
+      const sheet = sheetName ? workbook.Sheets[sheetName] : undefined;
+      if (!sheet) throw new Error("Le fichier ne contient aucune feuille.");
+      const raw = XLSX.utils.sheet_to_json<Record<string, unknown>>(sheet, { raw: false });
+      const parsed: ImportRow[] = raw.map((entry, index) => {
+        const line = index + 2;
+        const get = (key: string) => {
+          const found = Object.keys(entry).find((column) => normalize(column) === key);
+          return found ? entry[found] : undefined;
+        };
+        const date = String(get("date") ?? "").trim();
+        const time = String(get("heure") ?? "").trim();
+        const from = findPort(get("port_depart"));
+        const to = findPort(get("port_arrivee"));
+        const companyNeedle = normalize(get("compagnie"));
+        const company = companies.find(
+          (item) => normalize(item.name) === companyNeedle || normalize(item.slug) === companyNeedle,
+        );
+        const vesselNeedle = normalize(get("navire"));
+        const vessel = vesselNeedle
+          ? vessels.find(
+              (item) => normalize(item.name) === vesselNeedle || normalize(item.slug) === vesselNeedle,
+            )
+          : undefined;
+        const label = `${date} ${time} · ${String(get("port_depart") ?? "?")} → ${String(
+          get("port_arrivee") ?? "?",
+        )}`;
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(date))
+          return { line, label, error: "Date invalide (attendu AAAA-MM-JJ)." };
+        if (!/^\d{1,2}:\d{2}$/.test(time))
+          return { line, label, error: "Heure invalide (attendu HH:MM)." };
+        if (!from) return { line, label, error: "Port de départ inconnu." };
+        if (!to) return { line, label, error: "Port d'arrivée inconnu." };
+        if (!company) return { line, label, error: "Compagnie inconnue." };
+        const route = routes.find(
+          (item) => item.departure_port_id === from.id && item.arrival_port_id === to.id,
+        );
+        if (!route)
+          return {
+            line,
+            label,
+            error: "Aucune ligne existante entre ces deux ports : créez-la dans l'onglet Lignes.",
+          };
+        const durationRaw = Number(get("duree_minutes"));
+        const duration = Number.isFinite(durationRaw) && durationRaw > 0
+          ? Math.round(durationRaw)
+          : route.typical_duration_minutes;
+        if (!duration) return { line, label, error: "Durée manquante pour cette ligne." };
+        const departureAt = new Date(`${date}T${time.padStart(5, "0")}:00Z`);
+        if (Number.isNaN(departureAt.getTime()))
+          return { line, label, error: "Date et heure illisibles." };
+        const status = importStatusMap[normalize(get("statut")) || "prevu"] ?? "scheduled";
+        return {
+          line,
+          label,
+          values: {
+            route_id: route.id,
+            company_id: company.id,
+            vessel_id: vessel?.id ?? null,
+            departure_at: departureAt.toISOString(),
+            arrival_at: new Date(departureAt.getTime() + duration * 60000).toISOString(),
+            duration_minutes: duration,
+            status,
+            reliability: "verified",
+            source_name: `Import Excel — ${file.name}`,
+            last_verified_at: new Date().toISOString(),
+          },
+        };
+      });
+      setRows(parsed);
+      if (parsed.length === 0) toast.error("Aucune ligne trouvée dans le fichier.");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Fichier illisible.");
+      setRows([]);
+    } finally {
+      setParsing(false);
+    }
+  };
+
+  const valid = rows.filter((row) => row.values);
+  const invalid = rows.filter((row) => row.error);
+
+  const importRows = useMutation({
+    mutationFn: async () => {
+      if (valid.length === 0) throw new Error("Aucune ligne valide à importer.");
+      const { error } = await supabase
+        .from("departures")
+        .insert(valid.map((row) => row.values) as never);
+      if (error) throw new Error(error.message);
+      return valid.length;
+    },
+    onSuccess: (count) => {
+      queryClient.invalidateQueries({ queryKey: ["departures"] });
+      toast.success(`${count} départ(s) importé(s).`);
+      setRows([]);
+      setFileName("");
+    },
+    onError: (error: Error) => toast.error(error.message),
+  });
+
+  const downloadTemplate = async () => {
+    const XLSX = await import("xlsx");
+    const sheet = XLSX.utils.aoa_to_sheet([
+      importColumns.map(([key]) => key as string),
+      ["2026-10-05", "18:30", "Alger", "Marseille", "Algérie Ferries", "", "660", "prevu"],
+    ]);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, sheet, "departs");
+    XLSX.writeFile(workbook, "modele-departs-ferrydz.xlsx");
+  };
+
+  return (
+    <>
+      <Panel>
+        <h2 className="text-sm font-semibold">Format attendu du fichier</h2>
+        <p className="mt-1 text-xs text-muted-foreground">
+          Un fichier .xlsx ou .csv, première feuille utilisée, première ligne = les en-têtes ci-dessous
+          (dans n'importe quel ordre, accents et majuscules indifférents). Les heures sont
+          interprétées en UTC.
+        </p>
+        <ul className="mt-3 space-y-1 text-xs">
+          {importColumns.map(([key, help]) => (
+            <li key={key}>
+              <code className="rounded bg-secondary px-1.5 py-0.5 font-semibold">{key}</code>{" "}
+              <span className="text-muted-foreground">{help}</span>
+            </li>
+          ))}
+        </ul>
+        <p className="mt-3 text-xs text-muted-foreground">
+          La ligne (port de départ → port d'arrivée) doit déjà exister dans l'onglet « Lignes ».
+        </p>
+        <div className="mt-3">
+          <Button size="sm" variant="outline" onClick={downloadTemplate}>
+            Télécharger un modèle Excel
+          </Button>
+        </div>
+      </Panel>
+
+      <Panel>
+        <h2 className="text-sm font-semibold">Importer des départs</h2>
+        <input
+          type="file"
+          accept=".xlsx,.xls,.csv"
+          className="mt-3 block w-full text-sm"
+          onChange={(event) => {
+            const file = event.target.files?.[0];
+            if (file) void parseFile(file);
+          }}
+        />
+        {parsing ? <p className="mt-2 text-sm text-muted-foreground">Lecture du fichier…</p> : null}
+        {rows.length > 0 ? (
+          <>
+            <p className="mt-3 text-sm">
+              {fileName} — {valid.length} ligne(s) prête(s), {invalid.length} à corriger.
+            </p>
+            {invalid.length > 0 ? (
+              <ul className="mt-2 space-y-1 text-xs text-destructive">
+                {invalid.map((row) => (
+                  <li key={row.line}>
+                    Ligne {row.line} — {row.label} : {row.error}
+                  </li>
+                ))}
+              </ul>
+            ) : null}
+            <div className="mt-3 flex gap-2">
+              <Button
+                size="sm"
+                disabled={importRows.isPending || valid.length === 0}
+                onClick={() => importRows.mutate()}
+              >
+                Importer {valid.length} départ(s)
+              </Button>
+              <Button size="sm" variant="ghost" onClick={() => setRows([])}>
+                Annuler
+              </Button>
+            </div>
+          </>
+        ) : null}
       </Panel>
     </>
   );

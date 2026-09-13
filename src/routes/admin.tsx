@@ -1280,6 +1280,24 @@ function PortsAdmin() {
             />
           </Field>
         </div>
+        <div className="mt-3">
+          <p className="text-xs font-medium text-muted-foreground">
+            Services du port (laissez vide pour ne pas afficher)
+          </p>
+          <div className="mt-2 grid gap-3 sm:grid-cols-2">
+            {Object.entries(facilityLabels).map(([key, label]) => (
+              <Field key={key} label={label}>
+                <Input
+                  value={facilities[key] ?? ""}
+                  placeholder="Ex. : disponible, à l'étage, payant…"
+                  onChange={(event) =>
+                    setFacilities((prev) => ({ ...prev, [key]: event.target.value }))
+                  }
+                />
+              </Field>
+            ))}
+          </div>
+        </div>
         <div className="mt-4 flex gap-2">
           <Button size="sm" disabled={save.isPending} onClick={() => save.mutate()}>
             {editingId ? "Enregistrer les modifications" : "Ajouter le port"}

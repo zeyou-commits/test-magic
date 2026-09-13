@@ -111,6 +111,9 @@ function AdminPage() {
         <TabsContent value="schedules">
           <SchedulesAdmin />
         </TabsContent>
+        <TabsContent value="ports">
+          <PortsAdmin />
+        </TabsContent>
         <TabsContent value="data">
           <DataAdmin />
         </TabsContent>

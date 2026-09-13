@@ -283,6 +283,8 @@ export default function FerryMap({
       const element = marker.getElement();
       element.dataset["active"] = String(activeIds.has(port.id));
       element.dataset["dimmed"] = String(dimming && !activeIds.has(port.id));
+      // Port temporairement fermé : marqueur neutre, sans couleur de port.
+      element.dataset["closed"] = String(port.status === "inactive");
     });
 
     portMarkersRef.current.forEach((marker, id) => {

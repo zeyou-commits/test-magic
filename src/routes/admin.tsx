@@ -96,6 +96,7 @@ function AdminPage() {
           <TabsTrigger value="reports">Signalements</TabsTrigger>
           <TabsTrigger value="departures">Départs</TabsTrigger>
           <TabsTrigger value="schedules">Calendriers</TabsTrigger>
+          <TabsTrigger value="ports">Ports</TabsTrigger>
           <TabsTrigger value="data">Données</TabsTrigger>
         </TabsList>
         <TabsContent value="reviews">

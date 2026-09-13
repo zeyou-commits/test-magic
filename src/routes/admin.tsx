@@ -16,6 +16,7 @@ import {
   vesselsQuery,
 } from "@/lib/ferry/queries";
 import {
+  facilityLabels,
   formatDateTime,
   formatDuration,
   reliabilityLabel,

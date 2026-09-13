@@ -834,12 +834,33 @@ function DataAdmin() {
   const [fromDate, setFromDate] = useState(() => new Date().toISOString().slice(0, 10));
   const [suspendRoutes, setSuspendRoutes] = useState(true);
   const [confirming, setConfirming] = useState(false);
+  const [fileReady, setFileReady] = useState(false);
 
   const activeSchedules = schedules.filter((item) => item.status === "active");
   const activeRoutes = routes.filter((item) => item.status === "active");
   const affectedDepartures = departures.filter(
     (item) => item.departure_at >= `${fromDate}T00:00:00`,
   );
+  // Après un import, un port sans aucune ligne active n'apporte rien à la carte.
+  const idlePorts = ports.filter(
+    (port) =>
+      port.status === "active" &&
+      !activeRoutes.some(
+        (route) => route.departure_port_id === port.id || route.arrival_port_id === port.id,
+      ),
+  );
+
+  const closePort = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("ports").update({ status: "inactive" }).eq("id", id);
+      if (error) throw new Error(error.message);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["ports"] });
+      toast.success("Port fermé temporairement.");
+    },
+    onError: (error: Error) => toast.error(error.message),
+  });
 
   const newSeason = useMutation({
     mutationFn: async () => {
@@ -899,12 +920,26 @@ function DataAdmin() {
       </Panel>
 
       <Panel>
-        <h2 className="text-sm font-semibold">Nouvelle saison</h2>
-        <p className="mt-1 text-xs text-muted-foreground">
-          Prépare la base avant d'importer un calendrier complet : les départs à partir de la date
-          choisie sont retirés et les calendriers récurrents sont suspendus. Les ports, lignes,
-          compagnies, navires et avis sont conservés.
-        </p>
+        <h2 className="text-sm font-semibold">Préparer une nouvelle saison</h2>
+        <ol className="mt-2 space-y-1 text-xs text-muted-foreground">
+          <li>
+            <strong>1.</strong> Ayez sous la main le fichier Excel de la nouvelle saison (onglet
+            « Import Excel » pour le modèle).
+          </li>
+          <li>
+            <strong>2.</strong> Archivez la saison en cours ci-dessous : les départs à partir de la
+            date choisie sont retirés et les calendriers récurrents suspendus. Ports, lignes,
+            compagnies, navires et avis sont conservés.
+          </li>
+          <li>
+            <strong>3.</strong> Importez le fichier : les lignes qui reçoivent des départs
+            redeviennent automatiquement visibles sur la carte.
+          </li>
+          <li>
+            <strong>4.</strong> Revenez ici pour fermer les ports qui ne desservent plus aucune
+            ligne.
+          </li>
+        </ol>
         <div className="mt-3 grid gap-3 sm:grid-cols-2">
           <Field label="Début de la nouvelle saison">
             <Input
@@ -922,7 +957,7 @@ function DataAdmin() {
               checked={suspendRoutes}
               onChange={(event) => setSuspendRoutes(event.target.checked)}
             />
-            Suspendre aussi les lignes (à réactiver au fil des imports)
+            Suspendre aussi les lignes (réactivées à l'import)
           </label>
         </div>
         <ul className="mt-3 space-y-1 text-xs text-muted-foreground">
@@ -930,6 +965,17 @@ function DataAdmin() {
           <li>{activeSchedules.length} calendrier(s) actif(s) seront suspendus.</li>
           {suspendRoutes ? <li>{activeRoutes.length} ligne(s) active(s) seront suspendues.</li> : null}
         </ul>
+        <label className="mt-3 flex items-center gap-2 text-xs">
+          <input
+            type="checkbox"
+            checked={fileReady}
+            onChange={(event) => {
+              setFileReady(event.target.checked);
+              setConfirming(false);
+            }}
+          />
+          Je confirme que le fichier de la nouvelle saison est prêt à être importé.
+        </label>
         {confirming ? (
           <div className="mt-3 rounded-lg border border-destructive/60 bg-destructive/5 p-3">
             <p className="text-xs text-destructive">
@@ -951,10 +997,54 @@ function DataAdmin() {
           </div>
         ) : (
           <div className="mt-3">
-            <Button size="sm" variant="outline" onClick={() => setConfirming(true)}>
-              Préparer une nouvelle saison
+            <Button
+              size="sm"
+              variant="outline"
+              disabled={!fileReady}
+              onClick={() => setConfirming(true)}
+            >
+              Archiver la saison en cours
             </Button>
+            {!fileReady ? (
+              <p className="mt-2 text-xs text-muted-foreground">
+                Cochez la case ci-dessus pour éviter de vider la carte sans données de remplacement.
+              </p>
+            ) : null}
           </div>
+        )}
+      </Panel>
+
+      <Panel>
+        <h2 className="text-sm font-semibold">Ports sans ligne active</h2>
+        {idlePorts.length === 0 ? (
+          <p className="mt-1 text-xs text-muted-foreground">
+            Tous les ports ouverts desservent au moins une ligne active.
+          </p>
+        ) : (
+          <>
+            <p className="mt-1 text-xs text-muted-foreground">
+              Ces ports sont visibles sur la carte mais ne desservent plus aucune ligne. Vous pouvez
+              les fermer temporairement, le temps de recevoir leurs horaires.
+            </p>
+            <ul className="mt-3 space-y-2">
+              {idlePorts.map((port) => (
+                <li key={port.id} className="flex items-center justify-between gap-2 text-xs">
+                  <span>
+                    {port.name}
+                    {port.country_name ? ` · ${port.country_name}` : ""}
+                  </span>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    disabled={closePort.isPending}
+                    onClick={() => closePort.mutate(port.id)}
+                  >
+                    Fermer temporairement
+                  </Button>
+                </li>
+              ))}
+            </ul>
+          </>
         )}
       </Panel>
     </>
@@ -2145,6 +2235,31 @@ function ImportAdmin() {
     onError: (error: Error) => toast.error(error.message),
   });
 
+  // Ports du fichier encore fermés ou en brouillon : leurs lignes ne s'affichent pas sur la carte.
+  const blockedPorts = [
+    ...new Map(
+      rows
+        .flatMap((row) => [row.departure_port_id, row.arrival_port_id])
+        .filter(Boolean)
+        .map((id) => portById(id))
+        .filter((port): port is NonNullable<typeof port> => !!port && port.status !== "active")
+        .map((port) => [port.id, port] as const),
+    ).values(),
+  ];
+
+  const activatePort = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("ports").update({ status: "active" }).eq("id", id);
+      if (error) throw new Error(error.message);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["ports"] });
+      queryClient.invalidateQueries({ queryKey: ["routes"] });
+      toast.success("Port ouvert : ses lignes réapparaissent sur la carte.");
+    },
+    onError: (error: Error) => toast.error(error.message),
+  });
+
   const importRows = useMutation({
     mutationFn: async () => {
       if (invalidCount > 0)
@@ -2170,15 +2285,32 @@ function ImportAdmin() {
           !known.has(`${values["route_id"] as string}|${values["departure_at"] as string}`),
       );
       const skipped = validValues.length - fresh.length;
-      if (fresh.length === 0) return { count: 0, skipped };
-      const { error } = await supabase.from("departures").insert(fresh as never);
-      if (error) throw new Error(error.message);
-      return { count: fresh.length, skipped };
+      if (fresh.length > 0) {
+        const { error } = await supabase.from("departures").insert(fresh as never);
+        if (error) throw new Error(error.message);
+      }
+      // Une ligne suspendue (nouvelle saison) redevient active dès qu'elle reçoit des départs,
+      // sinon la carte resterait vide après l'import.
+      const toReactivate = routes
+        .filter((route) => routeIds.includes(route.id) && route.status !== "active")
+        .map((route) => route.id);
+      if (toReactivate.length > 0) {
+        const { error } = await supabase
+          .from("routes")
+          .update({ status: "active" })
+          .in("id", toReactivate);
+        if (error) throw new Error(error.message);
+      }
+      return { count: fresh.length, skipped, reactivated: toReactivate.length };
     },
-    onSuccess: ({ count, skipped }) => {
+    onSuccess: ({ count, skipped, reactivated }) => {
       queryClient.invalidateQueries({ queryKey: ["departures"] });
+      queryClient.invalidateQueries({ queryKey: ["routes"] });
+      queryClient.invalidateQueries({ queryKey: ["ports"] });
       toast.success(
-        `${count} départ(s) importé(s)${skipped ? ` — ${skipped} doublon(s) ignoré(s)` : ""}.`,
+        `${count} départ(s) importé(s)${skipped ? ` — ${skipped} doublon(s) ignoré(s)` : ""}${
+          reactivated ? ` — ${reactivated} ligne(s) réactivée(s) sur la carte` : ""
+        }.`,
       );
       setRows([]);
       setFileName("");
@@ -2299,6 +2431,31 @@ function ImportAdmin() {
               automatiquement (coordonnées nécessaires). Ajoutez-le dans l'onglet « Ports », puis
               choisissez-le ci-dessous.
             </p>
+          ) : null}
+          {blockedPorts.length > 0 ? (
+            <div className="mt-3 rounded-lg border border-primary/40 bg-primary/5 p-3">
+              <p className="text-xs font-semibold">
+                Ports fermés ou en brouillon : leurs lignes resteront invisibles sur la carte
+              </p>
+              <ul className="mt-2 space-y-2">
+                {blockedPorts.map((port) => (
+                  <li key={port.id} className="flex items-center justify-between gap-2 text-xs">
+                    <span>
+                      {port.name} —{" "}
+                      {port.status === "inactive" ? "temporairement fermé" : "brouillon"}
+                    </span>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      disabled={activatePort.isPending}
+                      onClick={() => activatePort.mutate(port.id)}
+                    >
+                      Ouvrir ce port
+                    </Button>
+                  </li>
+                ))}
+              </ul>
+            </div>
           ) : null}
           <ul className="mt-3 space-y-3">
             {checked.map(({ row, result }) => {

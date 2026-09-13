@@ -275,7 +275,10 @@ export default function FerryMap({
         const label = document.createElement("span");
         label.className = "port-marker__label";
         label.textContent = port.name;
-        el.append(dot, label);
+        // Survol : l'essentiel du port, sans quitter la carte.
+        const tip = document.createElement("div");
+        tip.className = "port-tip";
+        el.append(dot, label, tip);
         const select = (event: Event) => {
           event.stopPropagation();
           selectRef.current({ type: "port", id: port.id });
@@ -298,6 +301,38 @@ export default function FerryMap({
       element.dataset["dimmed"] = String(dimming && !activeIds.has(port.id));
       // Port temporairement fermé : marqueur neutre, sans couleur de port.
       element.dataset["closed"] = String(port.status === "inactive");
+      marker.setLngLat([port.longitude, port.latitude]);
+
+      const tip = element.querySelector<HTMLDivElement>(".port-tip");
+      const meta = portMeta[port.id];
+      if (tip) {
+        tip.textContent = "";
+        const title = document.createElement("p");
+        title.className = "port-tip__title";
+        title.textContent = port.name;
+        const place = document.createElement("p");
+        place.className = "port-tip__meta";
+        place.textContent = [port.city, port.country_name].filter(Boolean).join(" · ");
+        tip.append(title, place);
+        if (port.status === "inactive") {
+          const closed = document.createElement("p");
+          closed.className = "port-tip__closed";
+          closed.textContent = "Temporairement fermé";
+          tip.append(closed);
+        }
+        const lines = document.createElement("p");
+        lines.className = "port-tip__meta";
+        const count = meta?.routes ?? 0;
+        lines.textContent =
+          count === 0 ? "Aucune ligne visible" : count === 1 ? "1 ligne" : `${count} lignes`;
+        tip.append(lines);
+        const next = document.createElement("p");
+        next.className = "port-tip__next";
+        next.textContent = meta?.nextDeparture
+          ? `Prochain départ : ${meta.nextDeparture}${meta.nextTo ? ` → ${meta.nextTo}` : ""}`
+          : "Prochain départ non connu";
+        tip.append(next);
+      }
     });
 
     portMarkersRef.current.forEach((marker, id) => {
@@ -306,7 +341,7 @@ export default function FerryMap({
         portMarkersRef.current.delete(id);
       }
     });
-  }, [ports, highlightedPortIds]);
+  }, [ports, highlightedPortIds, portMeta]);
 
   // Route lines + durations along each line
   useEffect(() => {

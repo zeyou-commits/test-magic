@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
+  adminPortsQuery,
   companiesQuery,
   portsQuery,
   routesQuery,
@@ -760,5 +761,316 @@ function Counter({ label, value }: { label: string; value: number }) {
       <p className="text-xs uppercase tracking-wider text-muted-foreground">{label}</p>
       <p className="text-2xl font-semibold">{value}</p>
     </div>
+  );
+}
+
+// Pays desservis (façade méditerranéenne européenne + Maghreb).
+const countryOptions = [
+  { value: "DZ", label: "Algérie" },
+  { value: "FR", label: "France" },
+  { value: "ES", label: "Espagne" },
+  { value: "IT", label: "Italie" },
+  { value: "PT", label: "Portugal" },
+  { value: "MT", label: "Malte" },
+  { value: "GR", label: "Grèce" },
+  { value: "TN", label: "Tunisie" },
+  { value: "MA", label: "Maroc" },
+  { value: "TR", label: "Turquie" },
+];
+
+const portStatusOptions = [
+  { value: "active", label: "Ouvert (visible)" },
+  { value: "inactive", label: "Temporairement fermé" },
+  { value: "draft", label: "Brouillon (non publié)" },
+];
+
+const portStatusLabel: Record<string, string> = {
+  active: "Ouvert",
+  inactive: "Temporairement fermé",
+  draft: "Brouillon",
+};
+
+const labelAnchorOptions = [
+  { value: "left", label: "À gauche du point" },
+  { value: "right", label: "À droite du point" },
+  { value: "top", label: "Au-dessus du point" },
+  { value: "bottom", label: "Sous le point" },
+];
+
+const emptyPortDraft = {
+  name: "",
+  city: "",
+  country_code: "IT",
+  latitude: "",
+  longitude: "",
+  label_anchor: "left",
+  label_offset_x: "-14",
+  label_offset_y: "0",
+  notes: "",
+  info_source: "",
+  info_source_url: "",
+  status: "active",
+};
+
+function slugify(value: string) {
+  return value
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "");
+}
+
+function PortsAdmin() {
+  const queryClient = useQueryClient();
+  const { data: ports = [] } = useQuery(adminPortsQuery);
+  const [draft, setDraft] = useState(emptyPortDraft);
+  const [editingId, setEditingId] = useState<string | null>(null);
+
+  const invalidate = () => queryClient.invalidateQueries({ queryKey: ["ports"] });
+
+  const set = (key: keyof typeof emptyPortDraft) => (value: string) =>
+    setDraft((prev) => ({ ...prev, [key]: value }));
+
+  const reset = () => {
+    setDraft(emptyPortDraft);
+    setEditingId(null);
+  };
+
+  const save = useMutation({
+    mutationFn: async () => {
+      const name = draft.name.trim();
+      const latitude = Number(draft.latitude);
+      const longitude = Number(draft.longitude);
+      if (!name) throw new Error("Indiquez le nom du port.");
+      if (!Number.isFinite(latitude) || latitude < -90 || latitude > 90)
+        throw new Error("Latitude invalide (entre -90 et 90).");
+      if (!Number.isFinite(longitude) || longitude < -180 || longitude > 180)
+        throw new Error("Longitude invalide (entre -180 et 180).");
+      const country = countryOptions.find((item) => item.value === draft.country_code);
+      if (!country) throw new Error("Choisissez un pays.");
+      const values = {
+        slug: slugify(name),
+        name,
+        city: draft.city.trim() || null,
+        country_code: country.value,
+        country_name: country.label,
+        latitude,
+        longitude,
+        label_anchor: draft.label_anchor as "left" | "right" | "top" | "bottom",
+        label_offset_x: Number(draft.label_offset_x) || 0,
+        label_offset_y: Number(draft.label_offset_y) || 0,
+        status: draft.status as "active" | "inactive" | "draft",
+        notes: draft.notes.trim() || null,
+        info_source: draft.info_source.trim() || null,
+        info_source_url: draft.info_source_url.trim() || null,
+        info_verified_at: draft.info_source.trim() ? new Date().toISOString() : null,
+      };
+      const { error } = editingId
+        ? await supabase.from("ports").update(values).eq("id", editingId)
+        : await supabase.from("ports").insert({ ...values, is_demo: false });
+      if (error) throw new Error(error.message);
+    },
+    onSuccess: () => {
+      invalidate();
+      toast.success(editingId ? "Port mis à jour." : "Port ajouté.");
+      reset();
+    },
+    onError: (error: Error) => toast.error(error.message),
+  });
+
+  const setStatus = useMutation({
+    mutationFn: async ({ id, status }: { id: string; status: string }) => {
+      const { error } = await supabase
+        .from("ports")
+        .update({ status: status as "active" | "inactive" | "draft" })
+        .eq("id", id);
+      if (error) throw new Error(error.message);
+    },
+    onSuccess: () => {
+      invalidate();
+      toast.success("Statut du port mis à jour.");
+    },
+    onError: (error: Error) => toast.error(error.message),
+  });
+
+  return (
+    <>
+      <Panel>
+        <h2 className="text-sm font-semibold">
+          {editingId ? "Modifier le port" : "Nouveau port"}
+        </h2>
+        <div className="mt-3 grid gap-3 sm:grid-cols-2">
+          <Field label="Nom du port">
+            <Input
+              value={draft.name}
+              placeholder="Gênes"
+              onChange={(event) => set("name")(event.target.value)}
+            />
+          </Field>
+          <Field label="Ville (facultatif)">
+            <Input
+              value={draft.city}
+              placeholder="Gênes"
+              onChange={(event) => set("city")(event.target.value)}
+            />
+          </Field>
+          <Field label="Pays">
+            <NativeSelect
+              value={draft.country_code}
+              onChange={set("country_code")}
+              options={countryOptions}
+            />
+          </Field>
+          <Field label="Statut">
+            <NativeSelect value={draft.status} onChange={set("status")} options={portStatusOptions} />
+          </Field>
+          <Field label="Latitude (GPS réelle)">
+            <Input
+              value={draft.latitude}
+              placeholder="44.4106"
+              onChange={(event) => set("latitude")(event.target.value)}
+            />
+          </Field>
+          <Field label="Longitude (GPS réelle)">
+            <Input
+              value={draft.longitude}
+              placeholder="8.9264"
+              onChange={(event) => set("longitude")(event.target.value)}
+            />
+          </Field>
+          <Field label="Position du nom sur la carte">
+            <NativeSelect
+              value={draft.label_anchor}
+              onChange={set("label_anchor")}
+              options={labelAnchorOptions}
+            />
+          </Field>
+          <Field label="Décalage du nom (X / Y en pixels)">
+            <div className="flex gap-2">
+              <Input
+                value={draft.label_offset_x}
+                onChange={(event) => set("label_offset_x")(event.target.value)}
+              />
+              <Input
+                value={draft.label_offset_y}
+                onChange={(event) => set("label_offset_y")(event.target.value)}
+              />
+            </div>
+          </Field>
+          <Field label="Source de l'information">
+            <Input
+              value={draft.info_source}
+              placeholder="Autorité portuaire"
+              onChange={(event) => set("info_source")(event.target.value)}
+            />
+          </Field>
+          <Field label="Lien de la source">
+            <Input
+              value={draft.info_source_url}
+              placeholder="https://…"
+              onChange={(event) => set("info_source_url")(event.target.value)}
+            />
+          </Field>
+        </div>
+        <div className="mt-3">
+          <Field label="À savoir (embarquement, accès, fermeture…)">
+            <Input
+              value={draft.notes}
+              onChange={(event) => set("notes")(event.target.value)}
+            />
+          </Field>
+        </div>
+        <div className="mt-4 flex gap-2">
+          <Button size="sm" disabled={save.isPending} onClick={() => save.mutate()}>
+            {editingId ? "Enregistrer les modifications" : "Ajouter le port"}
+          </Button>
+          {editingId ? (
+            <Button size="sm" variant="ghost" onClick={reset}>
+              Annuler
+            </Button>
+          ) : null}
+        </div>
+      </Panel>
+
+      <Panel>
+        <h2 className="text-sm font-semibold">Ports existants ({ports.length})</h2>
+        <ul className="divide-y divide-border">
+          {ports.map((port) => (
+            <li key={port.id} className="flex flex-wrap items-center gap-3 py-3">
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-medium">
+                  {port.name}{" "}
+                  <span className="font-normal text-muted-foreground">
+                    · {port.country_name}
+                  </span>
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  {portStatusLabel[port.status] ?? port.status} · {port.latitude.toFixed(3)},{" "}
+                  {port.longitude.toFixed(3)}
+                </p>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => {
+                    setEditingId(port.id);
+                    setDraft({
+                      name: port.name,
+                      city: port.city ?? "",
+                      country_code: port.country_code,
+                      latitude: String(port.latitude),
+                      longitude: String(port.longitude),
+                      label_anchor: port.label_anchor,
+                      label_offset_x: String(port.label_offset_x),
+                      label_offset_y: String(port.label_offset_y),
+                      notes: port.notes ?? "",
+                      info_source: port.info_source ?? "",
+                      info_source_url: port.info_source_url ?? "",
+                      status: port.status,
+                    });
+                  }}
+                >
+                  Modifier
+                </Button>
+                {port.status === "inactive" ? (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    disabled={setStatus.isPending}
+                    onClick={() => setStatus.mutate({ id: port.id, status: "active" })}
+                  >
+                    Réouvrir
+                  </Button>
+                ) : (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    disabled={setStatus.isPending}
+                    onClick={() => setStatus.mutate({ id: port.id, status: "inactive" })}
+                  >
+                    Fermer temporairement
+                  </Button>
+                )}
+                {port.status === "draft" ? (
+                  <Button
+                    size="sm"
+                    disabled={setStatus.isPending}
+                    onClick={() => setStatus.mutate({ id: port.id, status: "active" })}
+                  >
+                    Publier
+                  </Button>
+                ) : null}
+              </div>
+            </li>
+          ))}
+        </ul>
+        <p className="mt-3 text-xs text-muted-foreground">
+          Un port fermé temporairement reste visible sur la carte avec la mention « Temporairement
+          fermé ». Un brouillon n'apparaît pas côté public.
+        </p>
+      </Panel>
+    </>
   );
 }

@@ -49,20 +49,40 @@ export const vesselsQuery = queryOptions({
   staleTime: 5 * 60 * 1000,
 });
 
+function mapRoutes(rows: Array<Record<string, unknown>>): RouteLine[] {
+  return rows.map((row) => ({
+    ...(row as unknown as RouteLine),
+    company_ids: ((row["route_operators"] as Array<{ company_id: string }>) ?? []).map(
+      (o) => o.company_id,
+    ),
+  }));
+}
+
+// Côté public : seules les lignes actives sont affichées sur la carte.
 export const routesQuery = queryOptions({
   queryKey: ["routes"],
-  queryFn: async (): Promise<RouteLine[]> => {
-    const rows = unwrap<Array<Record<string, unknown>>>(
-      await supabase.from("routes").select("*, route_operators(company_id)"),
-    );
-    return rows.map((row) => ({
-      ...(row as unknown as RouteLine),
-      company_ids: ((row["route_operators"] as Array<{ company_id: string }>) ?? []).map(
-        (o) => o.company_id,
+  queryFn: async (): Promise<RouteLine[]> =>
+    mapRoutes(
+      unwrap<Array<Record<string, unknown>>>(
+        await supabase
+          .from("routes")
+          .select("*, route_operators(company_id)")
+          .eq("status", "active"),
       ),
-    }));
-  },
+    ),
   staleTime: 5 * 60 * 1000,
+});
+
+// Côté back-office : toutes les lignes, y compris suspendues et brouillons.
+export const adminRoutesQuery = queryOptions({
+  queryKey: ["routes", "admin"],
+  queryFn: async (): Promise<RouteLine[]> =>
+    mapRoutes(
+      unwrap<Array<Record<string, unknown>>>(
+        await supabase.from("routes").select("*, route_operators(company_id)"),
+      ),
+    ),
+  staleTime: 30 * 1000,
 });
 
 export const schedulesQuery = queryOptions({

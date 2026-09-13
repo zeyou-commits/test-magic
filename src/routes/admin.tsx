@@ -1334,6 +1334,7 @@ function PortsAdmin() {
                   variant="outline"
                   onClick={() => {
                     setEditingId(port.id);
+                    setFacilities((port.facilities ?? {}) as Record<string, string>);
                     setDraft({
                       name: port.name,
                       city: port.city ?? "",

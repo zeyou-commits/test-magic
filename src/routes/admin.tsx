@@ -1984,6 +1984,9 @@ function ImportAdmin() {
           vessel_id: vessel?.id ?? "",
           status: importStatusMap[normalize(get("statut")) || "prevu"] ?? "scheduled",
           rawLabel: `${String(get("port_depart") ?? "?")} → ${String(get("port_arrivee") ?? "?")}`,
+          raw_company: String(get("compagnie") ?? "").trim(),
+          raw_vessel: String(get("navire") ?? "").trim(),
+          duration_hint: fallbackDuration,
         };
       });
       setRows(parsed);

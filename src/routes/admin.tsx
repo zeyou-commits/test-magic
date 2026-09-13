@@ -593,7 +593,32 @@ function SchedulesAdmin() {
               type="time"
               value={draft.departure_time}
               onChange={(event) =>
-                setDraft((prev) => ({ ...prev, departure_time: event.target.value }))
+                setDraft((prev) => {
+                  const departure_time = event.target.value;
+                  const duration = durationBetweenTimes(departure_time, prev.arrival_time);
+                  return {
+                    ...prev,
+                    departure_time,
+                    duration_minutes: duration ?? prev.duration_minutes,
+                  };
+                })
+              }
+            />
+          </Field>
+          <Field label="Heure d'arrivée théorique">
+            <Input
+              type="time"
+              value={draft.arrival_time}
+              onChange={(event) =>
+                setDraft((prev) => {
+                  const arrival_time = event.target.value;
+                  const duration = durationBetweenTimes(prev.departure_time, arrival_time);
+                  return {
+                    ...prev,
+                    arrival_time,
+                    duration_minutes: duration ?? prev.duration_minutes,
+                  };
+                })
               }
             />
           </Field>
@@ -603,7 +628,15 @@ function SchedulesAdmin() {
               min={30}
               value={draft.duration_minutes}
               onChange={(event) =>
-                setDraft((prev) => ({ ...prev, duration_minutes: Number(event.target.value) }))
+                setDraft((prev) => {
+                  const duration_minutes = Number(event.target.value);
+                  return {
+                    ...prev,
+                    duration_minutes,
+                    arrival_time:
+                      addMinutesToTime(prev.departure_time, duration_minutes) || prev.arrival_time,
+                  };
+                })
               }
             />
           </Field>

@@ -24,6 +24,10 @@ export interface PortMeta {
   nextDeparture: string | null;
   /** Destination du prochain départ. */
   nextTo: string | null;
+  /** Jusqu'à 3 prochains départs formatés, avec destination. */
+  upcoming: { label: string; to: string | null }[];
+  /** D'autres départs existent au-delà des 3 affichés. */
+  hasMore: boolean;
 }
 
 interface FerryMapProps {

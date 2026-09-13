@@ -13,6 +13,15 @@ import { formatDuration } from "@/lib/ferry/format";
 import { portColor, routeColor } from "@/lib/ferry/colors";
 import { algeriaGeoJson } from "@/lib/ferry/algeriaGeoJson";
 
+export interface PortMeta {
+  /** Nombre de lignes visibles au départ ou à l'arrivée de ce port. */
+  routes: number;
+  /** Prochain départ connu, déjà formaté. */
+  nextDeparture: string | null;
+  /** Destination du prochain départ. */
+  nextTo: string | null;
+}
+
 interface FerryMapProps {
   ports: Port[];
   routes: RouteLine[];
@@ -21,6 +30,7 @@ interface FerryMapProps {
   focusRouteIds: string[];
   selection: Selection | null;
   highlightedPortIds: string[];
+  portMeta: Record<string, PortMeta>;
   onSelect: (selection: Selection | null) => void;
 }
 
@@ -99,6 +109,7 @@ export default function FerryMap({
   focusRouteIds,
   selection,
   highlightedPortIds,
+  portMeta,
   onSelect,
 }: FerryMapProps) {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -183,12 +194,13 @@ export default function FerryMap({
           "line-opacity": ["case", ["get", "dimmed"], 0.16, 1],
         },
       });
-      // Durée écrite le long de la ligne, sans pastille.
+      // Durée écrite le long de la ligne, sans pastille. Chevauchement autorisé :
+      // sinon une durée fraîchement saisie peut ne jamais s'afficher.
       map.addLayer({
         id: "ferry-routes-duration",
         type: "symbol",
         source: "ferry-routes",
-        minzoom: 4.2,
+        minzoom: 3.4,
         layout: {
           "symbol-placement": "line-center",
           "text-field": ["get", "label"],
@@ -198,13 +210,14 @@ export default function FerryMap({
           "text-rotation-alignment": "map",
           "text-pitch-alignment": "viewport",
           "text-keep-upright": true,
-          "text-offset": [0, -0.8],
-          "text-allow-overlap": false,
+          "text-offset": [0, -0.9],
+          "text-allow-overlap": true,
+          "text-ignore-placement": true,
         },
         paint: {
           "text-color": ["get", "color"],
           "text-halo-color": mapColor("--map-route-casing"),
-          "text-halo-width": 1.2,
+          "text-halo-width": 1.6,
           "text-opacity": ["case", ["get", "dimmed"], 0.2, 1],
         },
       });

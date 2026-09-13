@@ -5,7 +5,13 @@ import { SidePanel } from "@/components/panel/SidePanel";
 import { UserMenu } from "@/components/layout/UserMenu";
 import { BrandMark } from "@/components/layout/BrandMark";
 import { useAuth } from "@/hooks/useAuth";
-import { portsQuery, routesQuery, upcomingDeparturesQuery } from "@/lib/ferry/queries";
+import {
+  companiesQuery,
+  portsQuery,
+  routesQuery,
+  upcomingDeparturesQuery,
+  vesselsQuery,
+} from "@/lib/ferry/queries";
 import { formatDateTime } from "@/lib/ferry/format";
 import { emptyFilters, type Filters, type Selection } from "@/lib/ferry/types";
 import type { PortMeta } from "@/components/map/FerryMap";
@@ -41,6 +47,8 @@ function Index() {
   const { data: ports = [] } = useQuery(portsQuery);
   const { data: routes = [] } = useQuery(routesQuery);
   const { data: departures = [] } = useQuery(upcomingDeparturesQuery());
+  const { data: companies = [] } = useQuery(companiesQuery);
+  const { data: vessels = [] } = useQuery(vesselsQuery);
 
   const visibleRoutes = useMemo(() => {
     const term = filters.search.trim().toLowerCase();
@@ -114,15 +122,33 @@ function Index() {
     return [];
   }, [selection, routes]);
 
-  // Infobulle de survol : lignes visibles et prochain départ connu.
+  // Infobulle de survol : lignes visibles, compagnies, navires et prochain départ connu.
   const portMeta = useMemo(() => {
     const meta: Record<string, PortMeta> = {};
     const visibleIds = new Set(visibleRoutes.map((route) => route.id));
+    const companyName = new Map(companies.map((company) => [company.id, company.name]));
+    const vesselName = new Map(vessels.map((vessel) => [vessel.id, vessel.name]));
     ports.forEach((port) => {
-      const count = visibleRoutes.filter(
+      const portRoutes = visibleRoutes.filter(
         (route) =>
           route.departure_port_id === port.id || route.arrival_port_id === port.id,
-      ).length;
+      );
+      const routeIds = new Set(portRoutes.map((route) => route.id));
+      const companyNames = new Set<string>();
+      portRoutes.forEach((route) =>
+        route.company_ids.forEach((id) => {
+          const name = companyName.get(id);
+          if (name) companyNames.add(name);
+        }),
+      );
+      const vesselNames = new Set<string>();
+      departures.forEach((departure) => {
+        if (!routeIds.has(departure.route_id) || departure.status === "cancelled") return;
+        const company = companyName.get(departure.company_id);
+        if (company) companyNames.add(company);
+        const vessel = departure.vessel_id ? vesselName.get(departure.vessel_id) : null;
+        if (vessel) vesselNames.add(vessel);
+      });
       const next = departures.find((departure) => {
         if (!visibleIds.has(departure.route_id)) return false;
         const route = routes.find((item) => item.id === departure.route_id);
@@ -130,7 +156,9 @@ function Index() {
       });
       const nextRoute = next ? routes.find((item) => item.id === next.route_id) : undefined;
       meta[port.id] = {
-        routes: count,
+        routes: portRoutes.length,
+        companies: [...companyNames].sort(),
+        vessels: [...vesselNames].sort(),
         nextDeparture: next ? formatDateTime(next.departure_at) : null,
         nextTo: nextRoute
           ? ports.find((item) => item.id === nextRoute.arrival_port_id)?.name ?? null
@@ -138,7 +166,7 @@ function Index() {
       };
     });
     return meta;
-  }, [ports, routes, visibleRoutes, departures]);
+  }, [ports, routes, visibleRoutes, departures, companies, vessels]);
 
   return (
     <div className="flex h-dvh flex-col overflow-hidden bg-background">

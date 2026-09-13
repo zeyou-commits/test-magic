@@ -648,7 +648,8 @@ function SchedulesAdmin() {
                     .map((day) => weekdayLabels[day - 1] ?? "")
                     .filter(Boolean)
                     .join(", ")}{" "}
-                  · {formatDuration(schedule.duration_minutes)} · {schedule.reliability}
+                  · {formatDuration(schedule.duration_minutes)} ·{" "}
+                  {reliabilityLabel[schedule.reliability]}
                 </p>
               </div>
               <div className="flex flex-wrap gap-2">

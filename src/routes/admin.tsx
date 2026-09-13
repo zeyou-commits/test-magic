@@ -841,14 +841,30 @@ function DataAdmin() {
   const affectedDepartures = departures.filter(
     (item) => item.departure_at >= `${fromDate}T00:00:00`,
   );
-  // Après un import, un port sans aucune ligne active n'apporte rien à la carte.
-  const idlePorts = ports.filter(
-    (port) =>
-      port.status === "active" &&
-      !activeRoutes.some(
+  // Après un import, un port n'apporte rien à la carte s'il n'a aucune ligne active
+  // OU si aucune de ses lignes ne reçoit de départ dans la nouvelle saison.
+  const idlePorts = ports
+    .filter((port) => port.status === "active")
+    .map((port) => {
+      const portRoutes = activeRoutes.filter(
         (route) => route.departure_port_id === port.id || route.arrival_port_id === port.id,
-      ),
-  );
+      );
+      const routeIds = new Set(portRoutes.map((route) => route.id));
+      const hasDeparture = departures.some(
+        (departure) => routeIds.has(departure.route_id) && departure.status !== "cancelled",
+      );
+      const hasSchedule = activeSchedules.some((schedule) => routeIds.has(schedule.route_id));
+      return {
+        port,
+        reason:
+          portRoutes.length === 0
+            ? "aucune ligne active"
+            : !hasDeparture && !hasSchedule
+              ? "aucun départ ni calendrier dans la nouvelle saison"
+              : null,
+      };
+    })
+    .filter((item): item is { port: (typeof ports)[number]; reason: string } => item.reason !== null);
 
   const closePort = useMutation({
     mutationFn: async (id: string) => {

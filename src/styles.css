@@ -213,6 +213,16 @@
   opacity: 0.45;
 }
 
+/* Port temporairement fermé : point neutre et évidé. */
+.port-marker[data-closed="true"] .port-marker__dot {
+  background: var(--color-card);
+  border-color: var(--color-muted-foreground);
+}
+
+.port-marker[data-closed="true"] .port-marker__label {
+  color: var(--color-muted-foreground);
+}
+
 .maplibregl-ctrl-attrib {
   font-size: 10px;
 }

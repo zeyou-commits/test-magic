@@ -14,21 +14,13 @@ import { portColor, routeColor } from "@/lib/ferry/colors";
 import { algeriaGeoJson } from "@/lib/ferry/algeriaGeoJson";
 import { useIsMobile } from "@/hooks/use-mobile";
 
-
 export interface PortMeta {
-  /** Nombre de lignes visibles au départ ou à l'arrivée de ce port. */
   routes: number;
-  /** Compagnies desservant ce port. */
   companies: string[];
-  /** Navires connus sur les départs de ce port. */
   vessels: string[];
-  /** Prochain départ connu, déjà formaté. */
   nextDeparture: string | null;
-  /** Destination du prochain départ. */
   nextTo: string | null;
-  /** Jusqu'à 3 prochains départs formatés, avec destination. */
   upcoming: { label: string; to: string | null }[];
-  /** D'autres départs existent au-delà des 3 affichés. */
   hasMore: boolean;
 }
 
@@ -36,7 +28,6 @@ interface FerryMapProps {
   ports: Port[];
   routes: RouteLine[];
   visibleRouteIds: string[];
-  /** Lignes mises en avant : les autres sont grisées. Vide = toutes au même niveau. */
   focusRouteIds: string[];
   selection: Selection | null;
   highlightedPortIds: string[];
@@ -44,7 +35,9 @@ interface FerryMapProps {
   onSelect: (selection: Selection | null) => void;
 }
 
-const MAP_STYLE = "https://tiles.openfreemap.org/styles/positron";
+// Liberty est le style MapLibre/OpenFreeMap documenté et reste compatible avec
+// les sources vectorielles utilisées par la carte.
+const MAP_STYLE = "https://tiles.openfreemap.org/styles/liberty";
 
 function mapColor(token: string) {
   const cssColor = getComputedStyle(document.documentElement).getPropertyValue(token).trim();
@@ -78,14 +71,11 @@ function routeFeatures(
         properties: {
           id: route.id,
           color: routeColor(route.color, from.slug),
-          label: route.typical_duration_minutes
-            ? formatDuration(route.typical_duration_minutes)
-            : "",
+          label: route.typical_duration_minutes ? formatDuration(route.typical_duration_minutes) : "",
           selected: selectedRouteId === route.id,
           focused: focus.size > 0 && focus.has(route.id),
           dimmed,
         },
-
         geometry: {
           type: "LineString" as const,
           coordinates: [
@@ -133,24 +123,35 @@ export default function FerryMap({
   const isMobile = useIsMobile();
   const hasFocus = focusRouteIds.length > 0;
 
-
   useEffect(() => {
-    if (!containerRef.current || mapRef.current) return;
+    const container = containerRef.current;
+    if (!container || mapRef.current) return;
+
     const map = new MapLibreMap({
-      container: containerRef.current,
+      container,
       style: MAP_STYLE,
       center: [2.6, 39.4],
       zoom: 4.6,
       attributionControl: { compact: true },
+      fadeDuration: 0,
     });
     map.addControl(new NavigationControl({ showCompass: false }), "top-right");
     mapRef.current = map;
-    map.on("error", (e) => console.error("MAP ERROR", e.error?.message));
-    map.on("styledata", () => console.log("MAP styledata", map.isStyleLoaded()));
+
+    const resize = () => {
+      if (!mapRef.current) return;
+      requestAnimationFrame(() => mapRef.current?.resize());
+    };
+
+    const resizeObserver = new ResizeObserver(resize);
+    resizeObserver.observe(container);
+    window.addEventListener("resize", resize);
+
+    map.on("error", (e) => {
+      console.error("MAP ERROR", e.error?.message ?? e.error);
+    });
 
     map.on("load", () => {
-      console.log("MAP load");
-
       [
         "label_other",
         "label_village",
@@ -213,8 +214,6 @@ export default function FerryMap({
           "line-opacity": ["case", ["get", "dimmed"], 0.16, 1],
         },
       });
-      // Durée écrite le long de la ligne, sans pastille. Chevauchement autorisé :
-      // sinon une durée fraîchement saisie peut ne jamais s'afficher.
       map.addLayer({
         id: "ferry-routes-duration",
         type: "symbol",
@@ -240,6 +239,7 @@ export default function FerryMap({
           "text-opacity": ["case", ["get", "dimmed"], 0.2, 1],
         },
       });
+
       const pickRoute = (event: MapLayerMouseEvent) => {
         const id = event.features?.[0]?.properties?.["id"];
         if (typeof id === "string") selectRef.current({ type: "route", id });
@@ -258,13 +258,14 @@ export default function FerryMap({
         });
         if (hits.length === 0) selectRef.current(null);
       });
-      readyRef.current = true;
-      (window as unknown as { __ferryMap?: MapLibreMap }).__ferryMap = map;
-      map.resize();
 
+      readyRef.current = true;
+      requestAnimationFrame(() => map.resize());
     });
 
     return () => {
+      resizeObserver.disconnect();
+      window.removeEventListener("resize", resize);
       readyRef.current = false;
       portMarkersRef.current.forEach((marker) => marker.remove());
       portMarkersRef.current.clear();
@@ -273,10 +274,11 @@ export default function FerryMap({
     };
   }, []);
 
-  // Port markers: GPS position comes from the data, label placement is separate.
+  // Les marqueurs DOM ne sont créés qu'après le chargement complet du style.
+  // Cela évite de les attacher à une carte encore en train d'initialiser ses sources.
   useEffect(() => {
     const map = mapRef.current;
-    if (!map) return;
+    if (!map || !readyRef.current) return;
     const activeIds = new Set(highlightedPortIds);
     const dimming = highlightedPortIds.length > 0;
 
@@ -296,7 +298,6 @@ export default function FerryMap({
         const label = document.createElement("span");
         label.className = "port-marker__label";
         label.textContent = port.name;
-        // Survol : l'essentiel du port, sans quitter la carte.
         const tip = document.createElement("div");
         tip.className = "port-tip";
         el.append(dot, label, tip);
@@ -306,21 +307,19 @@ export default function FerryMap({
         };
         dot.addEventListener("click", select);
         label.addEventListener("click", select);
-
         Object.assign(
           label.style,
           portLabelPlacements[port.name] ?? anchorStyles[port.label_anchor] ?? anchorStyles["left"],
         );
-
         marker = new Marker({ element: el })
           .setLngLat([port.longitude, port.latitude])
           .addTo(map);
         portMarkersRef.current.set(port.id, marker);
       }
+
       const element = marker.getElement();
       element.dataset["active"] = String(activeIds.has(port.id));
       element.dataset["dimmed"] = String(dimming && !activeIds.has(port.id));
-      // Port temporairement fermé : marqueur neutre, sans couleur de port.
       element.dataset["closed"] = String(port.status === "inactive");
       marker.setLngLat([port.longitude, port.latitude]);
 
@@ -344,23 +343,18 @@ export default function FerryMap({
         const lines = document.createElement("p");
         lines.className = "port-tip__meta";
         const count = meta?.routes ?? 0;
-        lines.textContent =
-          count === 0 ? "Aucune ligne visible" : count === 1 ? "1 ligne" : `${count} lignes`;
+        lines.textContent = count === 0 ? "Aucune ligne visible" : count === 1 ? "1 ligne" : `${count} lignes`;
         tip.append(lines);
         if (meta?.companies?.length) {
           const companies = document.createElement("p");
           companies.className = "port-tip__meta";
-          companies.textContent = `Compagnies : ${meta.companies.slice(0, 3).join(", ")}${
-            meta.companies.length > 3 ? ` +${meta.companies.length - 3}` : ""
-          }`;
+          companies.textContent = `Compagnies : ${meta.companies.slice(0, 3).join(", ")}${meta.companies.length > 3 ? ` +${meta.companies.length - 3}` : ""}`;
           tip.append(companies);
         }
         if (meta?.vessels?.length) {
           const vessels = document.createElement("p");
           vessels.className = "port-tip__meta";
-          vessels.textContent = `Navires : ${meta.vessels.slice(0, 3).join(", ")}${
-            meta.vessels.length > 3 ? ` +${meta.vessels.length - 3}` : ""
-          }`;
+          vessels.textContent = `Navires : ${meta.vessels.slice(0, 3).join(", ")}${meta.vessels.length > 3 ? ` +${meta.vessels.length - 3}` : ""}`;
           tip.append(vessels);
         }
         if (meta?.upcoming?.length) {
@@ -402,9 +396,8 @@ export default function FerryMap({
         portMarkersRef.current.delete(id);
       }
     });
-  }, [ports, highlightedPortIds, portMeta]);
+  }, [ports, highlightedPortIds, portMeta, readyRef.current]);
 
-  // Route lines + durations along each line
   useEffect(() => {
     const map = mapRef.current;
     if (!map) return;
@@ -426,9 +419,6 @@ export default function FerryMap({
     else map.once("load", apply);
   }, [routes, ports, visibleRouteIds, focusRouteIds, selection]);
 
-  // Sur mobile, les durées se superposent et deviennent illisibles : on ne les
-  // affiche que pour la ligne choisie, ou une fois la carte suffisamment zoomée,
-  // et sans chevauchement.
   useEffect(() => {
     const map = mapRef.current;
     if (!map) return;
@@ -448,8 +438,6 @@ export default function FerryMap({
     else map.once("load", apply);
   }, [isMobile, hasFocus]);
 
-
-  // Recentre on the selection without hiding the map.
   useEffect(() => {
     const map = mapRef.current;
     if (!map || !selection) return;
@@ -474,7 +462,5 @@ export default function FerryMap({
     }
   }, [selection, ports, routes]);
 
-  // NB : maplibre-gl.css force `position: relative` sur `.maplibregl-map`,
-  // donc on dimensionne le conteneur en h/w plutôt qu'avec inset-0.
   return <div ref={containerRef} className="h-full w-full" />;
 }

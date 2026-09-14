@@ -131,6 +131,10 @@ export interface Selection {
 
 export interface Filters {
   search: string;
+  /** Ports sélectionnés (départ ou arrivée). Vide = tous. */
+  portIds: string[];
+  /** Code pays du port de départ. */
+  departureCountry: string | null;
   departurePortId: string | null;
   arrivalPortId: string | null;
   companyId: string | null;
@@ -140,9 +144,12 @@ export interface Filters {
 
 export const emptyFilters: Filters = {
   search: "",
+  portIds: [],
+  departureCountry: null,
   departurePortId: null,
   arrivalPortId: null,
   companyId: null,
   vesselId: null,
   date: null,
 };
+

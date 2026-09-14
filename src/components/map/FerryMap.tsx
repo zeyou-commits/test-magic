@@ -3,6 +3,7 @@ import {
   Map as MapLibreMap,
   Marker,
   NavigationControl,
+  prewarm,
   setWorkerUrl,
   type GeoJSONSource,
   type MapLayerMouseEvent,
@@ -17,6 +18,9 @@ import { algeriaGeoJson } from "@/lib/ferry/algeriaGeoJson";
 import { useIsMobile } from "@/hooks/use-mobile";
 
 setWorkerUrl(workerUrl);
+// Start MapLibre's shared worker before the map instance is created.
+// This reduces the perceived startup time on the main map screen.
+prewarm();
 
 export interface PortMeta {
   routes: number;
@@ -116,6 +120,8 @@ export default function FerryMap({ ports, routes, visibleRouteIds, focusRouteIds
       zoom: 4.6,
       attributionControl: { compact: true },
       fadeDuration: 0,
+      // Style validation is useful during development but adds avoidable work in production.
+      validateStyle: import.meta.env.PROD ? false : true,
     });
     map.addControl(new NavigationControl({ showCompass: false }), "top-right");
     mapRef.current = map;

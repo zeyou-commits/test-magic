@@ -321,8 +321,9 @@ export default function FerryMap({ ports, routes, visibleRouteIds, focusRouteIds
     if (!map) return;
     const apply = () => {
       if (!map.getLayer("ferry-routes-duration")) return;
+      const showMobileDurations = !isMobile || hasFocus;
+      map.setLayoutProperty("ferry-routes-duration", "visibility", showMobileDurations ? "visible" : "none");
       map.setFilter("ferry-routes-duration", isMobile && hasFocus ? ["any", ["get", "selected"], ["get", "focused"]] : null);
-      map.setLayerZoomRange("ferry-routes-duration", isMobile && !hasFocus ? 6.5 : 3.4, 24);
       map.setLayoutProperty("ferry-routes-duration", "text-size", isMobile ? 13 : 11);
       map.setLayoutProperty("ferry-routes-duration", "text-allow-overlap", !isMobile);
       map.setLayoutProperty("ferry-routes-duration", "text-ignore-placement", !isMobile);

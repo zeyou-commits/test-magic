@@ -36,6 +36,8 @@ export function ExplorerView({
   const portName = (id: string) => ports.find((port) => port.id === id)?.name ?? "—";
   const hasFilters =
     filters.search.trim() !== "" ||
+    filters.portIds.length > 0 ||
+    filters.departureCountry !== null ||
     filters.departurePortId !== null ||
     filters.arrivalPortId !== null ||
     filters.companyId !== null ||
@@ -48,6 +50,18 @@ export function ExplorerView({
           .includes(filters.search.trim().toLowerCase()),
       )
     : [];
+
+  const togglePort = (id: string) =>
+    onFiltersChange({
+      ...filters,
+      portIds: filters.portIds.includes(id)
+        ? filters.portIds.filter((item) => item !== id)
+        : [...filters.portIds, id],
+    });
+
+  const countries = [...new Map(ports.map((port) => [port.country_code, port.country_name]))]
+    .map(([code, name]) => ({ value: code, label: name }))
+    .sort((a, b) => a.label.localeCompare(b.label, "fr"));
 
   return (
     <div>
@@ -63,22 +77,50 @@ export function ExplorerView({
             onChange={(event) => onFiltersChange({ ...filters, search: event.target.value })}
             placeholder="Un port, une ville, un pays…"
           />
+          {filters.portIds.length > 0 ? (
+            <div className="mt-2 flex flex-wrap gap-1.5">
+              {filters.portIds.map((id) => (
+                <button
+                  key={id}
+                  type="button"
+                  onClick={() => togglePort(id)}
+                  className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2.5 py-1 text-xs font-medium text-primary hover:bg-primary/20"
+                >
+                  {portName(id)} <span aria-hidden>✕</span>
+                </button>
+              ))}
+            </div>
+          ) : null}
           {matchingPorts.length > 0 ? (
             <ul className="mt-2 space-y-1">
-              {matchingPorts.slice(0, 6).map((port) => (
-                <li key={port.id}>
-                  <button
-                    type="button"
-                    onClick={() => onSelect({ type: "port", id: port.id })}
-                    className="w-full rounded-md px-2 py-1.5 text-left text-sm hover:bg-secondary"
-                  >
-                    <span className="font-medium">{port.name}</span>
-                    <span className="text-muted-foreground"> · {port.country_name}</span>
-                  </button>
-                </li>
-              ))}
+              {matchingPorts.slice(0, 6).map((port) => {
+                const picked = filters.portIds.includes(port.id);
+                return (
+                  <li key={port.id} className="flex items-center gap-1">
+                    <button
+                      type="button"
+                      onClick={() => togglePort(port.id)}
+                      className="flex-1 rounded-md px-2 py-1.5 text-left text-sm hover:bg-secondary"
+                    >
+                      <span className="font-medium">{port.name}</span>
+                      <span className="text-muted-foreground"> · {port.country_name}</span>
+                      {picked ? <span className="ml-1 text-primary">✓</span> : null}
+                    </button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => onSelect({ type: "port", id: port.id })}
+                    >
+                      Fiche
+                    </Button>
+                  </li>
+                );
+              })}
             </ul>
           ) : null}
+          <p className="mt-2 text-xs text-muted-foreground">
+            Touchez un port pour l'ajouter à la sélection, plusieurs ports sont possibles.
+          </p>
         </Section>
 
         <Section
@@ -93,6 +135,12 @@ export function ExplorerView({
         >
           <div className="grid gap-3">
             <FilterSelect
+              label="Pays de départ"
+              value={filters.departureCountry}
+              onChange={(value) => onFiltersChange({ ...filters, departureCountry: value })}
+              options={countries}
+            />
+            <FilterSelect
               label="Port de départ"
               value={filters.departurePortId}
               onChange={(value) => onFiltersChange({ ...filters, departurePortId: value })}
@@ -104,6 +152,7 @@ export function ExplorerView({
               onChange={(value) => onFiltersChange({ ...filters, arrivalPortId: value })}
               options={ports.map((port) => ({ value: port.id, label: port.name }))}
             />
+
             <FilterSelect
               label="Compagnie"
               value={filters.companyId}

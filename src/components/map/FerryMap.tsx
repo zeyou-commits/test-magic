@@ -80,8 +80,10 @@ function routeFeatures(
             ? formatDuration(route.typical_duration_minutes)
             : "",
           selected: selectedRouteId === route.id,
+          focused: focus.size > 0 && focus.has(route.id),
           dimmed,
         },
+
         geometry: {
           type: "LineString" as const,
           coordinates: [

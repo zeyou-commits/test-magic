@@ -113,8 +113,8 @@ export default function FerryMap({ ports, routes, visibleRouteIds, focusRouteIds
       container,
       style: MAP_STYLE,
       center: [2.6, 39.4],
-      zoom: 4.15,
-      pitch: 10,
+      zoom: 3.5,
+      pitch: 20,
       bearing: 0,
       attributionControl: { compact: true },
       fadeDuration: 0,
@@ -306,37 +306,11 @@ export default function FerryMap({ ports, routes, visibleRouteIds, focusRouteIds
 
   useEffect(() => {
     const map = mapRef.current;
-    if (!map) return;
-    const apply = () => {
-      if (!map.getLayer("ferry-routes-duration")) return;
-      map.setFilter("ferry-routes-duration", isMobile && hasFocus ? ["any", ["get", "selected"], ["get", "focused"]] : null);
-      map.setLayerZoomRange("ferry-routes-duration", isMobile && !hasFocus ? 6.5 : 3.4, 24);
-      map.setLayoutProperty("ferry-routes-duration", "text-size", isMobile ? 13 : 11);
-      map.setLayoutProperty("ferry-routes-duration", "text-allow-overlap", !isMobile);
-      map.setLayoutProperty("ferry-routes-duration", "text-ignore-placement", !isMobile);
-      map.setLayoutProperty("ferry-routes-duration", "text-padding", isMobile ? 6 : 2);
-    };
-    if (readyRef.current) apply();
-    else map.once("load", apply);
-  }, [isMobile, hasFocus]);
-
-  useEffect(() => {
-    const map = mapRef.current;
-    if (!map || !selection) return;
-    if (selection.type === "port") {
-      const port = ports.find((item) => item.id === selection.id);
-      if (port) map.easeTo({ center: [port.longitude, port.latitude], duration: 600 });
-      return;
+    if (!map || !mapReady) return;
+    if (hasFocus) {
+      map.easeTo({ pitch: 20, duration: 450, essential: true });
     }
-    if (selection.type === "route") {
-      const route = routes.find((item) => item.id === selection.id);
-      const from = ports.find((item) => item.id === route?.departure_port_id);
-      const to = ports.find((item) => item.id === route?.arrival_port_id);
-      if (from && to) {
-        map.fitBounds([[Math.min(from.longitude, to.longitude), Math.min(from.latitude, to.latitude)], [Math.max(from.longitude, to.longitude), Math.max(from.latitude, to.latitude)]], { padding: 90, duration: 600, maxZoom: 7 });
-      }
-    }
-  }, [selection, ports, routes]);
+  }, [hasFocus, mapReady]);
 
-  return <div ref={containerRef} className="h-full w-full" />;
+  return <div ref={containerRef} className="absolute inset-0" aria-label="Carte des liaisons ferry" />;
 }

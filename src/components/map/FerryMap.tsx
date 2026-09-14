@@ -255,7 +255,9 @@ export default function FerryMap({
         if (hits.length === 0) selectRef.current(null);
       });
       readyRef.current = true;
+      (window as unknown as { __ferryMap?: MapLibreMap }).__ferryMap = map;
       map.resize();
+
     });
 
     return () => {

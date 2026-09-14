@@ -219,11 +219,12 @@ export default function FerryMap({ ports, routes, visibleRouteIds, focusRouteIds
       const label = element.querySelector<HTMLSpanElement>(".port-marker__label");
       const meta = portMeta[port.id];
       const routeCount = meta?.routes ?? 0;
-      const isSingleLineAlgerianPort = /alg[eé]rie/i.test(port.country_name ?? "") && routeCount === 1;
+      const singleLineAlgerianSlugs = new Set(["ghazaouet", "mostaganem"]);
+      const isSingleLineAlgerianPort = singleLineAlgerianSlugs.has((port.slug ?? "").toLowerCase());
       if (label) {
         Object.assign(label.style, getPortLabelStyle(port));
-        label.style.fontSize = isSingleLineAlgerianPort ? "7px" : "12px";
-        label.style.fontWeight = isSingleLineAlgerianPort ? "600" : "700";
+        label.style.fontSize = isSingleLineAlgerianPort ? "6px" : "12px";
+        label.style.fontWeight = isSingleLineAlgerianPort ? "500" : "700";
       }
       element.dataset["active"] = String(activeIds.has(port.id));
       element.dataset["dimmed"] = String(dimming && !activeIds.has(port.id));

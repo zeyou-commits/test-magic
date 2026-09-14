@@ -145,8 +145,12 @@ export default function FerryMap({
     });
     map.addControl(new NavigationControl({ showCompass: false }), "top-right");
     mapRef.current = map;
+    map.on("error", (e) => console.error("MAP ERROR", (e as { error?: Error }).error?.message));
+    map.on("styledata", () => console.log("MAP styledata", map.isStyleLoaded()));
 
     map.on("load", () => {
+      console.log("MAP load");
+
       [
         "label_other",
         "label_village",

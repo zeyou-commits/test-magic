@@ -12,6 +12,8 @@ import type { Port, RouteLine, Selection } from "@/lib/ferry/types";
 import { formatDuration } from "@/lib/ferry/format";
 import { portColor, routeColor } from "@/lib/ferry/colors";
 import { algeriaGeoJson } from "@/lib/ferry/algeriaGeoJson";
+import { useIsMobile } from "@/hooks/use-mobile";
+
 
 export interface PortMeta {
   /** Nombre de lignes visibles au départ ou à l'arrivée de ce port. */
@@ -80,8 +82,10 @@ function routeFeatures(
             ? formatDuration(route.typical_duration_minutes)
             : "",
           selected: selectedRouteId === route.id,
+          focused: focus.size > 0 && focus.has(route.id),
           dimmed,
         },
+
         geometry: {
           type: "LineString" as const,
           coordinates: [
@@ -126,6 +130,9 @@ export default function FerryMap({
   const portMarkersRef = useRef<Map<string, Marker>>(new Map());
   const selectRef = useRef(onSelect);
   selectRef.current = onSelect;
+  const isMobile = useIsMobile();
+  const hasFocus = focusRouteIds.length > 0;
+
 
   useEffect(() => {
     if (!containerRef.current || mapRef.current) return;
@@ -138,8 +145,12 @@ export default function FerryMap({
     });
     map.addControl(new NavigationControl({ showCompass: false }), "top-right");
     mapRef.current = map;
+    map.on("error", (e) => console.error("MAP ERROR", e.error?.message));
+    map.on("styledata", () => console.log("MAP styledata", map.isStyleLoaded()));
 
     map.on("load", () => {
+      console.log("MAP load");
+
       [
         "label_other",
         "label_village",
@@ -248,7 +259,9 @@ export default function FerryMap({
         if (hits.length === 0) selectRef.current(null);
       });
       readyRef.current = true;
+      (window as unknown as { __ferryMap?: MapLibreMap }).__ferryMap = map;
       map.resize();
+
     });
 
     return () => {
@@ -412,6 +425,29 @@ export default function FerryMap({
     if (readyRef.current) apply();
     else map.once("load", apply);
   }, [routes, ports, visibleRouteIds, focusRouteIds, selection]);
+
+  // Sur mobile, les durées se superposent et deviennent illisibles : on ne les
+  // affiche que pour la ligne choisie, ou une fois la carte suffisamment zoomée,
+  // et sans chevauchement.
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+    const apply = () => {
+      if (!map.getLayer("ferry-routes-duration")) return;
+      map.setFilter(
+        "ferry-routes-duration",
+        isMobile && hasFocus ? ["any", ["get", "selected"], ["get", "focused"]] : null,
+      );
+      map.setLayerZoomRange("ferry-routes-duration", isMobile && !hasFocus ? 6.5 : 3.4, 24);
+      map.setLayoutProperty("ferry-routes-duration", "text-size", isMobile ? 13 : 11);
+      map.setLayoutProperty("ferry-routes-duration", "text-allow-overlap", !isMobile);
+      map.setLayoutProperty("ferry-routes-duration", "text-ignore-placement", !isMobile);
+      map.setLayoutProperty("ferry-routes-duration", "text-padding", isMobile ? 6 : 2);
+    };
+    if (readyRef.current) apply();
+    else map.once("load", apply);
+  }, [isMobile, hasFocus]);
+
 
   // Recentre on the selection without hiding the map.
   useEffect(() => {

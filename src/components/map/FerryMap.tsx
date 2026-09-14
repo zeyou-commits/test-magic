@@ -217,14 +217,20 @@ export default function FerryMap({ ports, routes, visibleRouteIds, focusRouteIds
 
       const element = marker.getElement();
       const label = element.querySelector<HTMLSpanElement>(".port-marker__label");
-      if (label) Object.assign(label.style, getPortLabelStyle(port));
+      const meta = portMeta[port.id];
+      const routeCount = meta?.routes ?? 0;
+      const isSingleLineAlgerianPort = /alg[eé]rie/i.test(port.country_name ?? "") && routeCount === 1;
+      if (label) {
+        Object.assign(label.style, getPortLabelStyle(port));
+        label.style.fontSize = isSingleLineAlgerianPort ? "7px" : "12px";
+        label.style.fontWeight = isSingleLineAlgerianPort ? "600" : "700";
+      }
       element.dataset["active"] = String(activeIds.has(port.id));
       element.dataset["dimmed"] = String(dimming && !activeIds.has(port.id));
       element.dataset["closed"] = String(port.status === "inactive");
       marker.setLngLat([port.longitude, port.latitude]);
 
       const tip = element.querySelector<HTMLDivElement>(".port-tip");
-      const meta = portMeta[port.id];
       if (!tip) return;
       tip.textContent = "";
       const title = document.createElement("p");
@@ -242,8 +248,7 @@ export default function FerryMap({ ports, routes, visibleRouteIds, focusRouteIds
       }
       const lines = document.createElement("p");
       lines.className = "port-tip__meta";
-      const count = meta?.routes ?? 0;
-      lines.textContent = count === 0 ? "Aucune ligne visible" : count === 1 ? "1 ligne" : `${count} lignes`;
+      lines.textContent = routeCount === 0 ? "Aucune ligne visible" : routeCount === 1 ? "1 ligne" : `${routeCount} lignes`;
       tip.append(lines);
       if (meta?.companies?.length) {
         const companies = document.createElement("p");

@@ -13,11 +13,8 @@ export default defineConfig({
     server: { entry: "server" },
   },
   vite: {
-    // MapLibre embarque son propre web worker : le pré-bundling Vite casse ce
-    // worker (maplibre-gl-worker.mjs introuvable) et la carte ne charge jamais.
+    // MapLibre v6 needs its worker bundled explicitly for production builds.
     optimizeDeps: { exclude: ["maplibre-gl"] },
+    ssr: { noExternal: ["maplibre-gl"] },
   },
-
-
 });
-

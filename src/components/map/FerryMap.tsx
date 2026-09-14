@@ -85,14 +85,16 @@ const anchorStyles: Record<string, Partial<CSSStyleDeclaration>> = {
   bottom: { transform: "translateX(-50%)", left: "0", top: "12px" },
 };
 
-const portLabelPlacements: Record<string, Partial<CSSStyleDeclaration>> = {
-  Marseille: { left: "12px", top: "-24px" },
-  Sète: { right: "12px", top: "2px" },
-  Alger: { transform: "translateX(-50%)", left: "0", top: "12px" },
-  Béjaïa: { transform: "translateX(-50%)", left: "0", top: "12px" },
-  Skikda: { right: "12px", top: "-24px" },
-  Annaba: { left: "12px", top: "6px" },
-};
+function getPortLabelStyle(port: Port): Partial<CSSStyleDeclaration> {
+  const base = anchorStyles[port.label_anchor] ?? anchorStyles.left;
+  const x = Number.isFinite(port.label_offset_x) ? port.label_offset_x : 0;
+  const y = Number.isFinite(port.label_offset_y) ? port.label_offset_y : 0;
+  const baseTransform = base.transform ?? "";
+  return {
+    ...base,
+    transform: `${baseTransform}${baseTransform ? " " : ""}translate(${x}px, ${y}px)`,
+  };
+}
 
 export default function FerryMap({ ports, routes, visibleRouteIds, focusRouteIds, selection, highlightedPortIds, portMeta, onSelect }: FerryMapProps) {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -206,12 +208,13 @@ export default function FerryMap({ ports, routes, visibleRouteIds, focusRouteIds
         const select = (event: Event) => { event.stopPropagation(); selectRef.current({ type: "port", id: port.id }); };
         dot.addEventListener("click", select);
         label.addEventListener("click", select);
-        Object.assign(label.style, portLabelPlacements[port.name] ?? anchorStyles[port.label_anchor] ?? anchorStyles["left"]);
         marker = new Marker({ element: el }).setLngLat([port.longitude, port.latitude]).addTo(map);
         portMarkersRef.current.set(port.id, marker);
       }
 
       const element = marker.getElement();
+      const label = element.querySelector<HTMLSpanElement>(".port-marker__label");
+      if (label) Object.assign(label.style, getPortLabelStyle(port));
       element.dataset["active"] = String(activeIds.has(port.id));
       element.dataset["dimmed"] = String(dimming && !activeIds.has(port.id));
       element.dataset["closed"] = String(port.status === "inactive");

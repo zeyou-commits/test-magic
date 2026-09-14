@@ -87,11 +87,14 @@ const anchorStyles: Record<string, Partial<CSSStyleDeclaration>> = {
 
 function getPortLabelStyle(port: Port): Partial<CSSStyleDeclaration> {
   const base = anchorStyles[port.label_anchor] ?? anchorStyles.left;
-  const x = Number.isFinite(port.label_offset_x) ? port.label_offset_x : 0;
-  const y = Number.isFinite(port.label_offset_y) ? port.label_offset_y : 0;
+  const x = Number(port.label_offset_x) || 0;
+  const y = Number(port.label_offset_y) || 0;
   const baseTransform = base.transform ?? "";
   return {
-    ...base,
+    left: base.left ?? "",
+    right: base.right ?? "",
+    top: base.top ?? "",
+    bottom: base.bottom ?? "",
     transform: `${baseTransform}${baseTransform ? " " : ""}translate(${x}px, ${y}px)`,
   };
 }

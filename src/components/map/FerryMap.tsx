@@ -420,6 +420,29 @@ export default function FerryMap({
     else map.once("load", apply);
   }, [routes, ports, visibleRouteIds, focusRouteIds, selection]);
 
+  // Sur mobile, les durées se superposent et deviennent illisibles : on ne les
+  // affiche que pour la ligne choisie, ou une fois la carte suffisamment zoomée,
+  // et sans chevauchement.
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+    const apply = () => {
+      if (!map.getLayer("ferry-routes-duration")) return;
+      map.setFilter(
+        "ferry-routes-duration",
+        isMobile && hasFocus ? ["any", ["get", "selected"], ["get", "focused"]] : null,
+      );
+      map.setLayerZoomRange("ferry-routes-duration", isMobile && !hasFocus ? 6.5 : 3.4, 24);
+      map.setLayoutProperty("ferry-routes-duration", "text-size", isMobile ? 13 : 11);
+      map.setLayoutProperty("ferry-routes-duration", "text-allow-overlap", !isMobile);
+      map.setLayoutProperty("ferry-routes-duration", "text-ignore-placement", !isMobile);
+      map.setLayoutProperty("ferry-routes-duration", "text-padding", isMobile ? 6 : 2);
+    };
+    if (readyRef.current) apply();
+    else map.once("load", apply);
+  }, [isMobile, hasFocus]);
+
+
   // Recentre on the selection without hiding the map.
   useEffect(() => {
     const map = mapRef.current;

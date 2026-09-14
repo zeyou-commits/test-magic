@@ -13,10 +13,11 @@ export default defineConfig({
     server: { entry: "server" },
   },
   vite: {
-    // MapLibre est pré-bundlé : sans cela, le dev-server sert des centaines de
-    // modules séparés et la carte met très longtemps à apparaître.
-    optimizeDeps: { include: ["maplibre-gl"] },
+    // MapLibre embarque son propre web worker : le pré-bundling Vite casse ce
+    // worker (maplibre-gl-worker.mjs introuvable) et la carte ne charge jamais.
+    optimizeDeps: { exclude: ["maplibre-gl"] },
   },
+
 
 });
 

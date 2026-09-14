@@ -62,12 +62,24 @@ function Index() {
     // Un port fermé temporairement : ses lignes disparaissent de la carte.
     const portOpen = (id: string) =>
       ports.find((item) => item.id === id)?.status === "active";
+    const selected = new Set(filters.portIds);
     return routes.filter((route) => {
       if (!portOpen(route.departure_port_id) || !portOpen(route.arrival_port_id)) return false;
+      if (
+        selected.size > 0 &&
+        !selected.has(route.departure_port_id) &&
+        !selected.has(route.arrival_port_id)
+      )
+        return false;
+      if (filters.departureCountry) {
+        const from = ports.find((item) => item.id === route.departure_port_id);
+        if (from?.country_code !== filters.departureCountry) return false;
+      }
       if (filters.departurePortId && route.departure_port_id !== filters.departurePortId)
         return false;
       if (filters.arrivalPortId && route.arrival_port_id !== filters.arrivalPortId) return false;
       if (filters.companyId && !route.company_ids.includes(filters.companyId)) return false;
+
       if (filters.vesselId) {
         const hasVessel = departures.some(
           (departure) =>

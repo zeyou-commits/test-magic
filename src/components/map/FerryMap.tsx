@@ -12,6 +12,8 @@ import type { Port, RouteLine, Selection } from "@/lib/ferry/types";
 import { formatDuration } from "@/lib/ferry/format";
 import { portColor, routeColor } from "@/lib/ferry/colors";
 import { algeriaGeoJson } from "@/lib/ferry/algeriaGeoJson";
+import { useIsMobile } from "@/hooks/use-mobile";
+
 
 export interface PortMeta {
   /** Nombre de lignes visibles au départ ou à l'arrivée de ce port. */
@@ -128,6 +130,9 @@ export default function FerryMap({
   const portMarkersRef = useRef<Map<string, Marker>>(new Map());
   const selectRef = useRef(onSelect);
   selectRef.current = onSelect;
+  const isMobile = useIsMobile();
+  const hasFocus = focusRouteIds.length > 0;
+
 
   useEffect(() => {
     if (!containerRef.current || mapRef.current) return;

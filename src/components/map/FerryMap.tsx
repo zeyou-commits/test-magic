@@ -86,7 +86,8 @@ const anchorStyles: Record<string, Partial<CSSStyleDeclaration>> = {
 };
 
 function getPortLabelStyle(port: Port): Partial<CSSStyleDeclaration> {
-  const base = anchorStyles[port.label_anchor] ?? anchorStyles.left;
+  const base: Partial<CSSStyleDeclaration> =
+    anchorStyles[port.label_anchor] ?? anchorStyles["left"] ?? {};
   const x = Number(port.label_offset_x) || 0;
   const y = Number(port.label_offset_y) || 0;
   const baseTransform = base.transform ?? "";

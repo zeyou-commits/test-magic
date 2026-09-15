@@ -243,7 +243,7 @@ export default function FerryMap({ ports, routes, visibleRouteIds, focusRouteIds
 
   useEffect(() => {
     const map = mapRef.current; if (!map) return;
-    const apply = () => { if (!map.getLayer("ferry-routes-duration")) return; const showMobileDurations = !isMobile || hasFocus; map.setLayoutProperty("ferry-routes-duration", "visibility", showMobileDurations ? "visible" : "none"); map.setFilter("ferry-routes-duration", isMobile && hasFocus ? ["any", ["get", "selected"], ["get", "focused"]] : null); map.setLayoutProperty("ferry-routes-duration", "text-size", isMobile ? 13 : 11); map.setLayoutProperty("ferry-routes-duration", "text-allow-overlap", !isMobile); map.setLayoutProperty("ferry-routes-duration", "text-ignore-placement", !isMobile); map.setLayoutProperty("ferry-routes-duration", "text-padding", isMobile ? 6 : 2); };
+    const apply = () => { if (!map.getLayer("ferry-routes-duration")) return; const showMobileDurations = !isMobile || hasFocus; map.setLayoutProperty("ferry-routes-duration", "visibility", showMobileDurations ? "visible" : "none"); map.setFilter("ferry-routes-duration", isMobile && hasFocus ? ["any", ["get", "selected"], ["get", "focused"]] : null); map.setLayoutProperty("ferry-routes-duration", "text-size", isMobile ? 13 : 11); map.setLayoutProperty("ferry-routes-duration", "text-allow-overlap", false); map.setLayoutProperty("ferry-routes-duration", "text-ignore-placement", !isMobile); map.setLayoutProperty("ferry-routes-duration", "text-padding", isMobile ? 6 : 2); };
     if (readyRef.current) apply(); else map.once("load", apply);
   }, [isMobile, hasFocus]);
 

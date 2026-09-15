@@ -264,12 +264,15 @@ export default function FerryMap({ ports, routes, visibleRouteIds, focusRouteIds
       const meta = portMeta[port.id];
       const routeCount = meta?.routes ?? 0;
       const singleLineAlgerianSlugs = new Set(["ghazaouet", "mostaganem", "skikda", "annaba"]);
-      const isSingleLineAlgerianPort = singleLineAlgerianSlugs.has((port.slug ?? "").toLowerCase());
-      if (label) {
-        Object.assign(label.style, getPortLabelStyle(port));
-        label.style.fontSize = isSingleLineAlgerianPort ? "6px" : "12px";
-        label.style.fontWeight = isSingleLineAlgerianPort ? "500" : "700";
-      }
+const isSingleLineAlgerianPort = singleLineAlgerianSlugs.has((port.slug ?? "").toLowerCase());
+
+if (label) {
+  Object.assign(label.style, getPortLabelStyle(port));
+  label.style.fontSize = isSingleLineAlgerianPort
+    ? `${Math.max(6, Math.min(12, 6 + (map.getZoom() - 4.8) * 2))}px`
+    : "12px";
+  label.style.fontWeight = isSingleLineAlgerianPort ? "500" : "700";
+}
       element.dataset["active"] = String(activeIds.has(port.id));
       element.dataset["dimmed"] = String(dimming && !activeIds.has(port.id));
       element.dataset["closed"] = String(port.status === "inactive");

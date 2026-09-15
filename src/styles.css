@@ -175,15 +175,34 @@
 .port-tip__closed { font-size: 11px; font-weight: 600; color: var(--color-destructive); }
 
 
-/* --- FIX ULTIME ATTRIBUTION MAPLIBRE COMPACTE --- */
+/* --- FIX TAILWIND vs MAPLIBRE ATTRIBUTION --- */
 
-/* 1. On cache de force le texte par défaut (l'élément ne prendra plus de place) */
+/* 1. On enlève le fond rectangulaire par défaut */
+.maplibregl-ctrl-attrib {
+  background: none !important;
+  border: none !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+}
+
+/* 2. On cache le texte de force (définitivement) */
 .maplibregl-ctrl-attrib-inner {
   display: none !important;
 }
 
-/* 2. Au clic (ajout de l'attribut open) ou au survol, on réaffiche le texte */
-.maplibregl-ctrl-attrib[open] .maplibregl-ctrl-attrib-inner,
-.maplibregl-ctrl-attrib:hover .maplibregl-ctrl-attrib-inner {
+/* 3. On répare le bouton rond cassé par le reset de Tailwind */
+.maplibregl-ctrl-attrib details summary {
   display: block !important;
+  list-style-type: none !important; /* Enlève la petite flèche native */
+  background-color: rgba(255, 255, 255, 0.8) !important;
+  border-radius: 50% !important;
+  width: 24px !important;
+  height: 24px !important;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.2) !important;
+  cursor: pointer !important;
+}
+
+/* 4. On s'assure que la flèche native est aussi cachée sur Safari/Chrome */
+.maplibregl-ctrl-attrib details summary::-webkit-details-marker {
+  display: none !important;
 }

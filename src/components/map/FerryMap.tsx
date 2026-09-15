@@ -116,13 +116,7 @@ function getPortLabelStyle(port: Port): Partial<CSSStyleDeclaration> {
   const x = Number(port.label_offset_x) || 0;
   const y = Number(port.label_offset_y) || 0;
   const baseTransform = base.transform ?? "";
-  return { 
-    left: base.left ?? "", 
-    right: base.right ?? "", 
-    top: base.top ?? "", 
-    bottom: base.bottom ?? "", 
-    transform: `${baseTransform}${baseTransform ? " " : ""}translate(${x}px, ${y}px)` 
-  };
+  return { left: base.left ?? "", right: base.right ?? "", top: base.top ?? "", bottom: base.bottom ?? "", transform: `${baseTransform}${baseTransform ? " " : ""}translate(${x}px, ${y}px)` };
 }
 
 function positionPortTip(map: MapLibreMap, marker: Marker, tip: HTMLDivElement) {
@@ -172,8 +166,8 @@ export default function FerryMap({ ports, routes, visibleRouteIds, focusRouteIds
     const map = new MapLibreMap({
       container,
       style: MAP_STYLE,
-      center: [4.0, 39.0],
-      zoom: isMobile ? 3.8 : 4.8,
+      center: isMobile ? [4.0, 39.5] : [4.0, 39.0], 
+      zoom: isMobile ? 4.2 : 5.0, 
       pitch: isMobile ? 0 : 30,
       bearing: 0,
       attributionControl: { compact: true },
@@ -232,13 +226,15 @@ export default function FerryMap({ ports, routes, visibleRouteIds, focusRouteIds
       map.remove();
       mapRef.current = null;
     };
-  }, []); // <-- Suppression du useEffect imbriqué juste au-dessus
+  }, []);
 
-  // Gestion du zoom dynamique pour mobile
+  // Gestion du zoom et centrage dynamique pour mobile/PC
   useEffect(() => {
     const map = mapRef.current;
     if (!map) return;
-    map.setZoom(isMobile ? 1.0 : 4.8);
+    
+    map.setCenter(isMobile ? [4.0, 39.5] : [4.0, 39.0]);
+    map.setZoom(isMobile ? 4.2 : 5.0);
     map.setPitch(isMobile ? 0 : 30);
   }, [isMobile]);
 

@@ -118,8 +118,8 @@ export default function FerryMap({ ports, routes, visibleRouteIds, focusRouteIds
     const map = new MapLibreMap({
       container,
       style: MAP_STYLE,
-      center: [2.6, 39.4],
-      zoom: 3.7,
+      center: [5.0, 39.0],
+zoom: 4.5,
       pitch: 30,
       bearing: 0,
       attributionControl: { compact: true },

@@ -59,7 +59,6 @@ function Index() {
         .toLowerCase()
         .includes(term);
     };
-    // Un port fermé temporairement : ses lignes disparaissent de la carte.
     const portOpen = (id: string) =>
       ports.find((item) => item.id === id)?.status === "active";
     const selected = new Set(filters.portIds);
@@ -121,7 +120,6 @@ function Index() {
     return filtered;
   }, [selection, routes, visibleRoutes]);
 
-  // Sélection d'un port : seules ses lignes restent en couleur, les autres se grisent.
   const focusRouteIds = useMemo(() => {
     if (selection?.type === "route") return [selection.id];
     if (selection?.type === "port")
@@ -134,7 +132,6 @@ function Index() {
     return [];
   }, [selection, routes]);
 
-  // Infobulle de survol : lignes visibles, compagnies, navires et prochain départ connu.
   const portMeta = useMemo(() => {
     const meta: Record<string, PortMeta> = {};
     const visibleIds = new Set(visibleRoutes.map((route) => route.id));
@@ -190,13 +187,15 @@ function Index() {
   }, [ports, routes, visibleRoutes, departures, companies, vessels]);
 
   return (
-    <div className="flex h-dvh flex-col overflow-hidden bg-background">
-      <header className="relative z-20 flex items-center justify-between gap-3 border-b border-border bg-[image:var(--gradient-header)] px-4 py-2.5 text-primary-foreground">
+    <div className="relative h-[100dvh] w-full overflow-hidden bg-background">
+      
+      {/* HEADER FLOTTANT ET TRANSLUCIDE */}
+      <header className="absolute left-0 right-0 top-0 z-50 flex items-center justify-between gap-3 border-b border-border/40 bg-background/80 px-4 py-3 backdrop-blur-xl text-foreground shadow-sm">
         <Link to="/" className="flex items-center gap-2.5">
-          <BrandMark className="size-8" />
+          <BrandMark className="size-8 text-primary" />
           <span className="flex flex-col leading-none">
             <span className="font-display text-lg font-bold tracking-tight">Batogo</span>
-            <span className="hidden text-[11px] text-primary-foreground/70 sm:inline">
+            <span className="hidden text-[11px] text-muted-foreground sm:inline">
               Traversées en ferry vers l'Algérie
             </span>
           </span>
@@ -206,7 +205,7 @@ function Index() {
             asChild
             variant="ghost"
             size="sm"
-            className="hidden text-primary-foreground hover:bg-primary-foreground/10 hover:text-primary-foreground sm:inline-flex"
+            className="hidden text-foreground hover:bg-secondary hover:text-foreground sm:inline-flex"
           >
             <Link to="/horaires">Horaires</Link>
           </Button>
@@ -214,7 +213,7 @@ function Index() {
             asChild
             variant="ghost"
             size="sm"
-            className="hidden text-primary-foreground hover:bg-primary-foreground/10 hover:text-primary-foreground sm:inline-flex"
+            className="hidden text-foreground hover:bg-secondary hover:text-foreground sm:inline-flex"
           >
             <Link to="/ports">Ports</Link>
           </Button>
@@ -222,7 +221,7 @@ function Index() {
             asChild
             variant="ghost"
             size="sm"
-            className="hidden text-primary-foreground hover:bg-primary-foreground/10 hover:text-primary-foreground sm:inline-flex"
+            className="hidden text-foreground hover:bg-secondary hover:text-foreground sm:inline-flex"
           >
             <Link to="/guide">Guide</Link>
           </Button>
@@ -231,7 +230,7 @@ function Index() {
               asChild
               variant="ghost"
               size="sm"
-              className="text-primary-foreground hover:bg-primary-foreground/10 hover:text-primary-foreground"
+              className="text-foreground hover:bg-secondary hover:text-foreground"
             >
               <Link to="/admin">Back-office</Link>
             </Button>
@@ -240,33 +239,34 @@ function Index() {
         </nav>
       </header>
 
-      <div className="flex min-h-0 flex-1 flex-col-reverse md:flex-row">
-        <aside className="h-[48vh] w-full shrink-0 border-t border-border shadow-[var(--shadow-panel)] md:h-auto md:w-[390px] md:border-r md:border-t-0">
-          <SidePanel
-            selection={selection}
-            onSelect={setSelection}
-            filters={filters}
-            onFiltersChange={setFilters}
-            visibleRoutes={visibleRoutes}
-          />
-        </aside>
-        <main className="relative min-h-0 flex-1 bg-[var(--sea)]">
-          <ClientOnly fallback={<MapFallback />}>
-            <Suspense fallback={<MapFallback />}>
-              <FerryMap
-                ports={ports}
-                routes={routes}
-                visibleRouteIds={visibleRoutes.map((route) => route.id)}
-                focusRouteIds={focusRouteIds}
-                selection={selection}
-                highlightedPortIds={highlightedPortIds}
-                portMeta={portMeta}
-                onSelect={setSelection}
-              />
-            </Suspense>
-          </ClientOnly>
-        </main>
-      </div>
+      {/* PANNEAU LATÉRAL FLOTTANT */}
+      <aside className="absolute bottom-0 left-0 right-0 z-40 flex max-h-[85vh] flex-col overflow-hidden rounded-t-[2rem] border-t border-border/50 bg-background/95 shadow-[0_-10px_40px_rgba(0,0,0,0.1)] backdrop-blur-xl transition-transform duration-500 ease-out md:bottom-auto md:left-4 md:top-24 md:h-[calc(100vh-7.5rem)] md:w-[400px] md:rounded-3xl md:border md:shadow-[var(--shadow-elegant)]">
+        <SidePanel
+          selection={selection}
+          onSelect={setSelection}
+          filters={filters}
+          onFiltersChange={setFilters}
+          visibleRoutes={visibleRoutes}
+        />
+      </aside>
+
+      {/* CARTE EN PLEIN ÉCRAN */}
+      <main className="absolute inset-0 z-0 bg-[var(--sea)]">
+        <ClientOnly fallback={<MapFallback />}>
+          <Suspense fallback={<MapFallback />}>
+            <FerryMap
+              ports={ports}
+              routes={routes}
+              visibleRouteIds={visibleRoutes.map((route) => route.id)}
+              focusRouteIds={focusRouteIds}
+              selection={selection}
+              highlightedPortIds={highlightedPortIds}
+              portMeta={portMeta}
+              onSelect={setSelection}
+            />
+          </Suspense>
+        </ClientOnly>
+      </main>
     </div>
   );
 }

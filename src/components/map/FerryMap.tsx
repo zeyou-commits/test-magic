@@ -140,7 +140,7 @@ export default function FerryMap({ ports, routes, visibleRouteIds, focusRouteIds
     container,
     style: MAP_STYLE,
     center: [4.0, 39.0],
-    zoom: isMobile ? 1.0 : 4.8,
+    zoom: isMobile ? 3.8 : 4.8,
     pitch: isMobile ? 0 : 30,
     bearing: 0,
     attributionControl: { compact: true },

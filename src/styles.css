@@ -160,7 +160,6 @@
 .port-marker[data-dimmed="true"] { opacity: 0.45; }
 .port-marker[data-closed="true"] .port-marker__dot { background: var(--color-card); border-color: var(--color-muted-foreground); }
 .port-marker[data-closed="true"] .port-marker__label { color: var(--color-muted-foreground); }
-.maplibregl-ctrl-attrib { font-size: 10px; }
 
 /* Popup de port : positionné dans le marker pour rester confiné à la carte. */
 .port-tip { position: absolute; left: 14px; top: -12px; z-index: 5; width: max-content; max-width: min(240px, calc(100vw - 32px)); box-sizing: border-box; padding: 8px 10px; border-radius: 12px; border: 1px solid var(--color-border); background: color-mix(in oklab, var(--color-card) 94%, transparent); backdrop-filter: blur(6px); box-shadow: var(--shadow-elegant); opacity: 0; transform: translateY(4px) scale(0.98); transition: opacity 0.14s ease, transform 0.14s ease; pointer-events: none; }
@@ -175,10 +174,27 @@
 .port-tip__next { margin-top: 4px; font-size: 11px; font-weight: 600; color: var(--color-primary); }
 .port-tip__closed { font-size: 11px; font-weight: 600; color: var(--color-destructive); }
 
-/* Force l'attribution maplibre à rester sous forme de petit bouton "i" */
-.maplibregl-ctrl-attrib:not(.maplibregl-compact) {
+/* --- FIX ATTRIBUTION MAPLIBRE COMPACTE --- */
+.maplibregl-ctrl-attrib {
+  font-size: 10px;
+  background-color: transparent !important;
+  box-shadow: none !important;
+  border: none !important;
+}
+
+.maplibregl-ctrl-attrib .maplibregl-ctrl-attrib-inner {
   display: none !important;
 }
-.maplibregl-ctrl-attrib.maplibregl-compact {
+
+.maplibregl-ctrl-attrib:hover,
+.maplibregl-ctrl-attrib[open] {
+  background-color: rgba(255, 255, 255, 0.9) !important;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2) !important;
+  border-radius: 4px;
+}
+
+.maplibregl-ctrl-attrib:hover .maplibregl-ctrl-attrib-inner,
+.maplibregl-ctrl-attrib[open] .maplibregl-ctrl-attrib-inner {
   display: block !important;
+  padding: 0 4px;
 }

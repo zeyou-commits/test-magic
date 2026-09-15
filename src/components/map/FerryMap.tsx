@@ -236,21 +236,16 @@ export default function FerryMap({ ports, routes, visibleRouteIds, focusRouteIds
       tip.textContent = "";
       const title = document.createElement("p");
       title.className = "port-tip__title";
-      title.textContent = port.name;
-      const place = document.createElement("p");
-      place.className = "port-tip__meta";
-      place.textContent = [port.city, port.country_name].filter(Boolean).join(" · ");
-      tip.append(title, place);
+      const country = port.country_name ? `, ${port.country_name}` : "";
+      const lineLabel = routeCount === 0 ? "aucune ligne visible" : routeCount === 1 ? "1 ligne" : `${routeCount} lignes`;
+      title.textContent = `${port.name}${country}, ${lineLabel}`;
+      tip.append(title);
       if (port.status === "inactive") {
         const closed = document.createElement("p");
         closed.className = "port-tip__closed";
         closed.textContent = "Temporairement fermé";
         tip.append(closed);
       }
-      const lines = document.createElement("p");
-      lines.className = "port-tip__meta";
-      lines.textContent = routeCount === 0 ? "Aucune ligne visible" : routeCount === 1 ? "1 ligne" : `${routeCount} lignes`;
-      tip.append(lines);
       if (meta?.companies?.length) {
         const companies = document.createElement("p");
         companies.className = "port-tip__meta";

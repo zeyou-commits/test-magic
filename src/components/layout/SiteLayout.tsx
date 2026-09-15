@@ -22,7 +22,7 @@ const footerLinks = [
 /** Chrome commun aux pages de contenu (la carte garde son propre plein écran). */
 export function SiteLayout({ children }: { children: ReactNode }) {
   return (
-    <div className="flex min-h-dvh flex-col bg-background">
+    <div className="flex min-h-dvh flex-col bg-background pb-16 md:pb-0">
       {/* HEADER MODERNISÉ */}
       <header className="sticky top-0 z-30 border-b border-border/50 bg-background/80 backdrop-blur-xl text-foreground shadow-sm">
         <div className="mx-auto flex w-full max-w-6xl items-center justify-between gap-4 px-4 py-3">
@@ -79,6 +79,44 @@ export function SiteLayout({ children }: { children: ReactNode }) {
           </nav>
         </div>
       </footer>
+
+      {/* BARRE DE NAVIGATION DU BAS (Mobile uniquement) */}
+      <nav className="fixed bottom-0 left-0 right-0 z-50 flex h-16 items-center justify-around border-t border-border/50 bg-background/95 pb-1 backdrop-blur-xl md:hidden">
+        <Link 
+          to="/" 
+          activeOptions={{ exact: true }} 
+          className="flex flex-col items-center justify-center gap-1 text-muted-foreground transition-colors hover:text-foreground" 
+          activeProps={{ className: "!text-primary" }}
+        >
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21"></polygon><line x1="9" y1="3" x2="9" y2="21"></line><line x1="15" y1="3" x2="15" y2="21"></line></svg>
+          <span className="text-[10px] font-medium">Carte</span>
+        </Link>
+        <Link 
+          to="/horaires" 
+          className="flex flex-col items-center justify-center gap-1 text-muted-foreground transition-colors hover:text-foreground" 
+          activeProps={{ className: "!text-primary" }}
+        >
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+          <span className="text-[10px] font-medium">Horaires</span>
+        </Link>
+        <Link 
+          to="/ports" 
+          className="flex flex-col items-center justify-center gap-1 text-muted-foreground transition-colors hover:text-foreground" 
+          activeProps={{ className: "!text-primary" }}
+        >
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="10" r="3"></circle><path d="M12 21.7C17.3 17 20 13 20 10a8 8 0 1 0-16 0c0 3 2.7 7 8 11.7z"></path></svg>
+          <span className="text-[10px] font-medium">Ports</span>
+        </Link>
+        <Link 
+          to="/guide" 
+          className="flex flex-col items-center justify-center gap-1 text-muted-foreground transition-colors hover:text-foreground" 
+          activeProps={{ className: "!text-primary" }}
+        >
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path></svg>
+          <span className="text-[10px] font-medium">Guide</span>
+        </Link>
+      </nav>
+
     </div>
   );
 }

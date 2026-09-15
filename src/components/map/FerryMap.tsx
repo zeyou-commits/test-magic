@@ -135,7 +135,7 @@ export default function FerryMap({ ports, routes, visibleRouteIds, focusRouteIds
   useEffect(() => {
     const container = containerRef.current;
     if (!container || mapRef.current) return;
-    const map = new MapLibreMap({ container, style: MAP_STYLE, center: [5.5, 39.0], zoom: isMobile ? 4.2 : 4.8, pitch: 30, bearing: 0, attributionControl: { compact: true }, fadeDuration: 0 });
+    const map = new MapLibreMap({ container, style: MAP_STYLE, center: [6.5, 39.0], zoom: isMobile ? 4.2 : 4.8, pitch: 30, bearing: 0, attributionControl: { compact: true }, fadeDuration: 0 });
     map.addControl(new NavigationControl({ showCompass: false }), "top-right");
     mapRef.current = map;
     const resize = () => requestAnimationFrame(() => mapRef.current?.resize());

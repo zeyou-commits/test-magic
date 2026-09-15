@@ -146,6 +146,13 @@ export default function FerryMap({ ports, routes, visibleRouteIds, focusRouteIds
     attributionControl: { compact: true },
     fadeDuration: 0
   });
+   useEffect(() => {
+  const map = mapRef.current;
+  if (!map) return;
+
+  map.setZoom(isMobile ? 1.0 : 4.8);
+  map.setPitch(isMobile ? 0 : 30);
+}, [isMobile]);
     map.addControl(new NavigationControl({ showCompass: false }), "top-right");
     mapRef.current = map;
     const resize = () => requestAnimationFrame(() => mapRef.current?.resize());

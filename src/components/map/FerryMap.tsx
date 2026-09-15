@@ -147,18 +147,17 @@ function positionPortTip(map: MapLibreMap, marker: Marker, tip: HTMLDivElement) 
   const container = map.getContainer();
   const mapRect = container.getBoundingClientRect();
   const markerRect = marker.getElement().getBoundingClientRect();
-  const tipRect = tip.getBoundingClientRect();
   const gap = 14;
   const padding = 10;
   const availableWidth = Math.max(0, mapRect.width - padding * 2);
 
   tip.style.maxWidth = `${Math.min(240, availableWidth)}px`;
 
-  const updatedTipRect = tip.getBoundingClientRect();
+  const tipRect = tip.getBoundingClientRect();
   const markerX = markerRect.left + markerRect.width / 2;
   const markerY = markerRect.top + markerRect.height / 2;
-  const tipWidth = updatedTipRect.width;
-  const tipHeight = updatedTipRect.height;
+  const tipWidth = tipRect.width;
+  const tipHeight = tipRect.height;
 
   let left = markerRect.right + gap;
   if (left + tipWidth > mapRect.right - padding) {
@@ -174,8 +173,8 @@ function positionPortTip(map: MapLibreMap, marker: Marker, tip: HTMLDivElement) 
     top = mapRect.bottom - padding - tipHeight;
   }
 
-  tip.style.left = `${left}px`;
-  tip.style.top = `${top}px`;
+  tip.style.left = `${left - markerRect.left}px`;
+  tip.style.top = `${top - markerRect.top}px`;
 }
 
 export default function FerryMap({ ports, routes, visibleRouteIds, focusRouteIds, selection, highlightedPortIds, portMeta, onSelect }: FerryMapProps) {
@@ -467,24 +466,6 @@ export default function FerryMap({ ports, routes, visibleRouteIds, focusRouteIds
     if (readyRef.current) apply();
     else map.once("load", apply);
   }, [isMobile, hasFocus]);
-
-  useEffect(() => {
-    const map = mapRef.current;
-    if (!map || !selection) return;
-    if (selection.type === "port") {
-      const port = ports.find((item) => item.id === selection.id);
-      if (port) map.easeTo({ center: [port.longitude, port.latitude], duration: 600 });
-      return;
-    }
-    if (selection.type === "route") {
-      const route = routes.find((item) => item.id === selection.id);
-      const from = ports.find((item) => item.id === route?.departure_port_id);
-      const to = ports.find((item) => item.id === route?.arrival_port_id);
-      if (from && to) {
-        map.fitBounds([[Math.min(from.longitude, to.longitude), Math.min(from.latitude, to.latitude)], [Math.max(from.longitude, to.longitude), Math.max(from.latitude, to.latitude)]], { padding: 90, duration: 600, maxZoom: 7 });
-      }
-    }
-  }, [selection, ports, routes]);
 
   return <div ref={containerRef} className="h-full w-full" />;
 }

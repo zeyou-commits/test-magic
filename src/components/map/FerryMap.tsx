@@ -167,9 +167,9 @@ export default function FerryMap({ ports, routes, visibleRouteIds, focusRouteIds
     const map = new MapLibreMap({
       container,
       style: MAP_STYLE,
-      // Ici, on centre plus au Sud sur mobile (37.5) pour faire remonter la carte visuellement
-      center: isMobile ? [4.0, 37.5] : [6.5, 39.0], 
-      zoom: isMobile ? 4.0 : 5.0,
+      // On centre encore plus au sud (35.0) et on dézoome très légèrement (3.8) sur mobile
+      center: isMobile ? [4.0, 35.0] : [6.5, 39.0], 
+      zoom: isMobile ? 3.8 : 5.0,
       pitch: isMobile ? 0 : 30,
       bearing: 0,
       attributionControl: false,
@@ -237,8 +237,8 @@ export default function FerryMap({ ports, routes, visibleRouteIds, focusRouteIds
     if (!map) return;
     
     // Modification dynamique des coordonnées au redimensionnement
-    map.setCenter(isMobile ? [4.0, 37.5] : [6.5, 39.0]);
-    map.setZoom(isMobile ? 4.0 : 5.0);
+    map.setCenter(isMobile ? [4.0, 35.0] : [6.5, 39.0]);
+    map.setZoom(isMobile ? 3.8 : 5.0);
     map.setPitch(isMobile ? 0 : 30);
   }, [isMobile]);
 

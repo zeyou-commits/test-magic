@@ -24,8 +24,13 @@ export function SidePanel({
   visibleRoutes,
 }: SidePanelProps) {
   return (
-    <div className="flex h-full min-h-0 flex-col bg-card">
-      <div className="min-h-0 flex-1 overflow-y-auto">
+    <div className="flex h-full min-h-0 flex-col bg-transparent">
+      {/* LA POIGNÉE (Mobile) */}
+      <div className="flex w-full shrink-0 items-center justify-center pb-2 pt-4 md:hidden">
+        <div className="h-1.5 w-12 rounded-full bg-muted-foreground/30" />
+      </div>
+
+      <div className="custom-scrollbar min-h-0 flex-1 overflow-y-auto">
         {selection ? (
           <div className="animate-in fade-in slide-in-from-top-1 duration-200">
             <div className="flex items-center justify-between gap-2 border-b border-border bg-secondary/50 px-5 py-2">

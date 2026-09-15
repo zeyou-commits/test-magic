@@ -54,20 +54,63 @@ function mapColor(token: string) {
   return `rgb(${red}, ${green}, ${blue})`;
 }
 
-function routeFeatures(routes: RouteLine[], ports: Map<string, Port>, visible: Set<string>, focus: Set<string>, selectedRouteId: string | null) {
-  return routes.filter((route) => visible.has(route.id)).map((route) => {
+function routeFeatures(
+  routes: RouteLine[],
+  ports: Map<string, Port>,
+  visible: Set<string>,
+  focus: Set<string>,
+  selection: Selection | null,
+) {
+  const visibleRoutes = routes.filter((route) => visible.has(route.id));
+  const pairGroups = new Map<string, RouteLine[]>();
+
+  visibleRoutes.forEach((route) => {
+    const pairKey = [route.departure_port_id, route.arrival_port_id].sort().join("::");
+    const group = pairGroups.get(pairKey) ?? [];
+    group.push(route);
+    pairGroups.set(pairKey, group);
+  });
+
+  const selectedRouteId = selection?.type === "route" ? selection.id : null;
+  const selectedPortId = selection?.type === "port" ? selection.id : null;
+
+  return visibleRoutes.map((route) => {
     const from = ports.get(route.departure_port_id);
     const to = ports.get(route.arrival_port_id);
     if (!from || !to) return null;
-    const dimmed = focus.size > 0 && !focus.has(route.id);
+
+    const pairKey = [route.departure_port_id, route.arrival_port_id].sort().join("::");
+    const group = pairGroups.get(pairKey) ?? [route];
+    const displayRoute = group.slice().sort((a, b) => a.id.localeCompare(b.id))[0];
+    const isDisplayRoute = route.id === displayRoute.id;
+    const focusedPair = group.some((item) => focus.has(item.id));
+
+    let durationMinutes: number | null = null;
+    if (selectedRouteId) {
+      durationMinutes = group.find((item) => item.id === selectedRouteId)?.typical_duration_minutes ?? null;
+    } else if (selectedPortId) {
+      durationMinutes = group
+        .filter((item) => item.departure_port_id === selectedPortId)
+        .map((item) => item.typical_duration_minutes)
+        .filter((value): value is number => value != null)
+        .sort((a, b) => b - a)[0] ?? null;
+    } else {
+      durationMinutes = group
+        .map((item) => item.typical_duration_minutes)
+        .filter((value): value is number => value != null)
+        .sort((a, b) => b - a)[0] ?? null;
+    }
+
+    const dimmed = focus.size > 0 && !focus.has(route.id) && !(isDisplayRoute && focusedPair);
+
     return {
       type: "Feature" as const,
       properties: {
         id: route.id,
         color: routeColor(route.color, from.slug),
-        label: route.typical_duration_minutes ? formatDuration(route.typical_duration_minutes) : "",
+        label: isDisplayRoute && durationMinutes ? formatDuration(durationMinutes) : "",
         selected: selectedRouteId === route.id,
-        focused: focus.size > 0 && focus.has(route.id),
+        focused: focus.has(route.id) || (isDisplayRoute && focusedPair),
         dimmed,
       },
       geometry: {
@@ -119,7 +162,7 @@ export default function FerryMap({ ports, routes, visibleRouteIds, focusRouteIds
       container,
       style: MAP_STYLE,
       center: [5.0, 39.0],
-zoom:4.8,
+      zoom: 4.8,
       pitch: 30,
       bearing: 0,
       attributionControl: { compact: true },
@@ -302,11 +345,10 @@ zoom:4.8,
     const portMap = new Map(ports.map((port) => [port.id, port]));
     const visible = new Set(visibleRouteIds);
     const focus = new Set(focusRouteIds);
-    const selectedRouteId = selection?.type === "route" ? selection.id : null;
     const apply = () => {
       const source = map.getSource("ferry-routes") as GeoJSONSource | undefined;
       if (!source) return;
-      source.setData({ type: "FeatureCollection", features: routeFeatures(routes, portMap, visible, focus, selectedRouteId) });
+      source.setData({ type: "FeatureCollection", features: routeFeatures(routes, portMap, visible, focus, selection) });
     };
     if (readyRef.current) apply();
     else map.once("load", apply);

@@ -167,8 +167,8 @@ export default function FerryMap({ ports, routes, visibleRouteIds, focusRouteIds
     const map = new MapLibreMap({
       container,
       style: MAP_STYLE,
-      // CORRECTION ICI : Sur PC, on passe à 1.0 (Ouest) pour pousser la carte vers la droite
-      center: isMobile ? [4.0, 35.0] : [1.0, 38.5], 
+      // NOUVEAU CENTRAGE : on passe à -2.0 sur PC pour bien dégager l'Espagne
+      center: isMobile ? [4.0, 35.0] : [-2.0, 38.5], 
       zoom: isMobile ? 3.8 : 5.0,
       pitch: isMobile ? 0 : 30,
       bearing: 0,
@@ -236,8 +236,8 @@ export default function FerryMap({ ports, routes, visibleRouteIds, focusRouteIds
     const map = mapRef.current;
     if (!map) return;
     
-    // CORRECTION ICI AUSSI POUR LE REDIMENSIONNEMENT
-    map.setCenter(isMobile ? [4.0, 35.0] : [1.0, 38.5]);
+    // NOUVEAU CENTRAGE AUSSI ICI
+    map.setCenter(isMobile ? [4.0, 35.0] : [-2.0, 38.5]);
     map.setZoom(isMobile ? 3.8 : 5.0);
     map.setPitch(isMobile ? 0 : 30);
   }, [isMobile]);

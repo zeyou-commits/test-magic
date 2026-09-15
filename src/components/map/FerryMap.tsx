@@ -344,18 +344,48 @@ if (label) {
 
   useEffect(() => {
     const map = mapRef.current;
-    if (!map) return;
-    const portMap = new Map(ports.map((port) => [port.id, port]));
-    const visible = new Set(visibleRouteIds);
-    const focus = new Set(focusRouteIds);
-    const apply = () => {
-      const source = map.getSource("ferry-routes") as GeoJSONSource | undefined;
-      if (!source) return;
-      source.setData({ type: "FeatureCollection", features: routeFeatures(routes, portMap, visible, focus, selection) });
+    if (!map || !mapReady) return;
+
+    const singleLineAlgerianSlugs = new Set([
+      "ghazaouet",
+      "mostaganem",
+      "skikda",
+      "annaba",
+    ]);
+
+    const updateAlgerianLabelSizes = () => {
+      const zoom = map.getZoom();
+
+      const fontSize = Math.max(
+        6,
+        Math.min(12, 6 + (zoom - 4.8) * 3)
+      );
+
+      ports.forEach((port) => {
+        if (!singleLineAlgerianSlugs.has((port.slug ?? "").toLowerCase())) {
+          return;
+        }
+
+        const marker = portMarkersRef.current.get(port.id);
+        const label =
+          marker?.getElement().querySelector<HTMLSpanElement>(
+            ".port-marker__label"
+          );
+
+        if (label) {
+          label.style.fontSize = `${fontSize}px`;
+        }
+      });
     };
-    if (readyRef.current) apply();
-    else map.once("load", apply);
-  }, [routes, ports, visibleRouteIds, focusRouteIds, selection]);
+
+    updateAlgerianLabelSizes();
+    map.on("zoom", updateAlgerianLabelSizes);
+
+    return () => {
+      map.off("zoom", updateAlgerianLabelSizes);
+    };
+  }, [ports, mapReady]);
+
 
   useEffect(() => {
     const map = mapRef.current;

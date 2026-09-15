@@ -42,6 +42,8 @@ export const Route = createFileRoute("/")({
 function Index() {
   const [selection, setSelection] = useState<Selection | null>(null);
   const [filters, setFilters] = useState<Filters>(emptyFilters);
+  // Nouvel état pour gérer l'ouverture du tiroir sur mobile
+  const [isPanelExpanded, setIsPanelExpanded] = useState(false);
   const { isAdmin } = useAuth();
 
   const { data: ports = [] } = useQuery(portsQuery);
@@ -189,7 +191,7 @@ function Index() {
   return (
     <div className="relative h-[100dvh] w-full overflow-hidden bg-background">
       
-      {/* HEADER FLOTTANT ET TRANSLUCIDE */}
+      {/* HEADER FLOTTANT (PC & Mobile) */}
       <header className="absolute left-0 right-0 top-0 z-50 flex items-center justify-between gap-3 border-b border-border/40 bg-background/80 px-4 py-3 backdrop-blur-xl text-foreground shadow-sm">
         <Link to="/" className="flex items-center gap-2.5">
           <BrandMark className="size-8 text-primary" />
@@ -201,37 +203,17 @@ function Index() {
           </span>
         </Link>
         <nav className="flex items-center gap-1">
-          <Button
-            asChild
-            variant="ghost"
-            size="sm"
-            className="hidden text-foreground hover:bg-secondary hover:text-foreground sm:inline-flex"
-          >
+          <Button asChild variant="ghost" size="sm" className="hidden text-foreground hover:bg-secondary hover:text-foreground sm:inline-flex">
             <Link to="/horaires">Horaires</Link>
           </Button>
-          <Button
-            asChild
-            variant="ghost"
-            size="sm"
-            className="hidden text-foreground hover:bg-secondary hover:text-foreground sm:inline-flex"
-          >
+          <Button asChild variant="ghost" size="sm" className="hidden text-foreground hover:bg-secondary hover:text-foreground sm:inline-flex">
             <Link to="/ports">Ports</Link>
           </Button>
-          <Button
-            asChild
-            variant="ghost"
-            size="sm"
-            className="hidden text-foreground hover:bg-secondary hover:text-foreground sm:inline-flex"
-          >
+          <Button asChild variant="ghost" size="sm" className="hidden text-foreground hover:bg-secondary hover:text-foreground sm:inline-flex">
             <Link to="/guide">Guide</Link>
           </Button>
           {isAdmin ? (
-            <Button
-              asChild
-              variant="ghost"
-              size="sm"
-              className="text-foreground hover:bg-secondary hover:text-foreground"
-            >
+            <Button asChild variant="ghost" size="sm" className="hidden text-foreground hover:bg-secondary hover:text-foreground md:inline-flex">
               <Link to="/admin">Back-office</Link>
             </Button>
           ) : null}
@@ -239,8 +221,22 @@ function Index() {
         </nav>
       </header>
 
-      {/* PANNEAU LATÉRAL FLOTTANT */}
-      <aside className="absolute bottom-0 left-0 right-0 z-40 flex max-h-[85vh] flex-col overflow-hidden rounded-t-[2rem] border-t border-border/50 bg-background/95 shadow-[0_-10px_40px_rgba(0,0,0,0.1)] backdrop-blur-xl transition-transform duration-500 ease-out md:bottom-auto md:left-4 md:top-24 md:h-[calc(100vh-7.5rem)] md:w-[400px] md:rounded-3xl md:border md:shadow-[var(--shadow-elegant)]">
+      {/* PANNEAU LATÉRAL / TIROIR FLOTTANT */}
+      <aside
+        className={`absolute left-0 right-0 z-40 flex flex-col overflow-hidden rounded-t-[2rem] border-t border-border/50 bg-background/95 shadow-[0_-10px_40px_rgba(0,0,0,0.1)] backdrop-blur-xl transition-all duration-300 ease-in-out md:left-4 md:w-[400px] md:rounded-3xl md:border md:shadow-[var(--shadow-elegant)] ${
+          isPanelExpanded
+            ? "bottom-16 top-20 md:bottom-auto md:top-24 md:h-[calc(100vh-7.5rem)]"
+            : "bottom-16 h-[40vh] md:bottom-auto md:top-24 md:h-[calc(100vh-7.5rem)]"
+        }`}
+      >
+        {/* LA POIGNÉE (Mobile uniquement) - Cliquable pour agrandir/réduire */}
+        <div 
+          className="flex w-full shrink-0 cursor-pointer items-center justify-center pb-2 pt-4 md:hidden"
+          onClick={() => setIsPanelExpanded(!isPanelExpanded)}
+        >
+          <div className="h-1.5 w-12 rounded-full bg-muted-foreground/30" />
+        </div>
+
         <SidePanel
           selection={selection}
           onSelect={setSelection}
@@ -249,6 +245,26 @@ function Index() {
           visibleRoutes={visibleRoutes}
         />
       </aside>
+
+      {/* BARRE DE NAVIGATION DU BAS (Mobile uniquement) */}
+      <nav className="absolute bottom-0 left-0 right-0 z-50 flex h-16 items-center justify-around border-t border-border/50 bg-background/95 backdrop-blur-xl pb-1 md:hidden">
+        <Link to="/" className="flex flex-col items-center justify-center gap-1 text-primary">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21"></polygon><line x1="9" y1="3" x2="9" y2="21"></line><line x1="15" y1="3" x2="15" y2="21"></line></svg>
+          <span className="text-[10px] font-medium">Carte</span>
+        </Link>
+        <Link to="/horaires" className="flex flex-col items-center justify-center gap-1 text-muted-foreground transition-colors hover:text-foreground">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+          <span className="text-[10px] font-medium">Horaires</span>
+        </Link>
+        <Link to="/ports" className="flex flex-col items-center justify-center gap-1 text-muted-foreground transition-colors hover:text-foreground">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="10" r="3"></circle><path d="M12 21.7C17.3 17 20 13 20 10a8 8 0 1 0-16 0c0 3 2.7 7 8 11.7z"></path></svg>
+          <span className="text-[10px] font-medium">Ports</span>
+        </Link>
+        <Link to="/guide" className="flex flex-col items-center justify-center gap-1 text-muted-foreground transition-colors hover:text-foreground">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path></svg>
+          <span className="text-[10px] font-medium">Guide</span>
+        </Link>
+      </nav>
 
       {/* CARTE EN PLEIN ÉCRAN */}
       <main className="absolute inset-0 z-0 bg-[var(--sea)]">

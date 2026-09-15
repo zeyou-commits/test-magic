@@ -179,6 +179,7 @@
   width: 0;
   height: 0;
   z-index: 1;
+  anchor-name: --port-marker;
 }
 
 .port-marker:hover,
@@ -247,9 +248,19 @@
 
 /* Survol d'un port : l'essentiel sans quitter la carte. */
 .port-tip {
-  position: absolute;
-  left: 14px;
-  top: -12px;
+  position: fixed;
+  position-anchor: --port-marker;
+  position-area: right;
+  position-try:
+    right,
+    left,
+    top,
+    bottom,
+    top right,
+    bottom right,
+    top left,
+    bottom left;
+  margin: 0 0 0 14px;
   z-index: 5;
   width: max-content;
   max-width: 240px;
@@ -268,7 +279,8 @@
 }
 
 .port-marker:hover .port-tip,
-.port-marker:focus-within .port-tip {
+.port-marker:focus-within .port-tip,
+.port-marker[data-active="true"] .port-tip {
   opacity: 1;
   transform: translateY(0) scale(1);
   pointer-events: auto;

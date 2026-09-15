@@ -132,10 +132,20 @@ export default function FerryMap({ ports, routes, visibleRouteIds, focusRouteIds
   const isMobile = useIsMobile();
   const hasFocus = focusRouteIds.length > 0;
 
-  useEffect(() => {
-    const container = containerRef.current;
-    if (!container || mapRef.current) return;
-    const map = new MapLibreMap({ container, style: MAP_STYLE, center: [4.0, 39.0], zoom: isMobile ? 3.6 : 4.8, pitch: isMobile ? 0 : 30, bearing: 0, attributionControl: { compact: true }, fadeDuration: 0 });
+ useEffect(() => {
+  const container = containerRef.current;
+  if (!container || mapRef.current) return;
+
+  const map = new MapLibreMap({
+    container,
+    style: MAP_STYLE,
+    center: [4.0, 39.0],
+    zoom: isMobile ? 1.0 : 4.8,
+    pitch: isMobile ? 0 : 30,
+    bearing: 0,
+    attributionControl: { compact: true },
+    fadeDuration: 0
+  });
     map.addControl(new NavigationControl({ showCompass: false }), "top-right");
     mapRef.current = map;
     const resize = () => requestAnimationFrame(() => mapRef.current?.resize());
@@ -173,6 +183,13 @@ export default function FerryMap({ ports, routes, visibleRouteIds, focusRouteIds
       mapRef.current = null;
     };
   }, []);
+useEffect(() => {
+  const map = mapRef.current;
+  if (!map) return;
+
+  map.setZoom(isMobile ? 1.0 : 4.8);
+  map.setPitch(isMobile ? 0 : 30);
+}, [isMobile]);
 
   useEffect(() => {
     const map = mapRef.current;

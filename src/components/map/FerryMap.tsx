@@ -143,6 +143,41 @@ function getPortLabelStyle(port: Port): Partial<CSSStyleDeclaration> {
   };
 }
 
+function positionPortTip(map: MapLibreMap, marker: Marker, tip: HTMLDivElement) {
+  const container = map.getContainer();
+  const mapRect = container.getBoundingClientRect();
+  const markerRect = marker.getElement().getBoundingClientRect();
+  const tipRect = tip.getBoundingClientRect();
+  const gap = 14;
+  const padding = 10;
+  const availableWidth = Math.max(0, mapRect.width - padding * 2);
+
+  tip.style.maxWidth = `${Math.min(240, availableWidth)}px`;
+
+  const updatedTipRect = tip.getBoundingClientRect();
+  const markerX = markerRect.left + markerRect.width / 2;
+  const markerY = markerRect.top + markerRect.height / 2;
+  const tipWidth = updatedTipRect.width;
+  const tipHeight = updatedTipRect.height;
+
+  let left = markerRect.right + gap;
+  if (left + tipWidth > mapRect.right - padding) {
+    left = markerRect.left - tipWidth - gap;
+  }
+  if (left < mapRect.left + padding) {
+    left = Math.max(mapRect.left + padding, markerX - tipWidth / 2);
+  }
+
+  let top = markerY - tipHeight / 2;
+  if (top < mapRect.top + padding) top = mapRect.top + padding;
+  if (top + tipHeight > mapRect.bottom - padding) {
+    top = mapRect.bottom - padding - tipHeight;
+  }
+
+  tip.style.left = `${left}px`;
+  tip.style.top = `${top}px`;
+}
+
 export default function FerryMap({ ports, routes, visibleRouteIds, focusRouteIds, selection, highlightedPortIds, portMeta, onSelect }: FerryMapProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<MapLibreMap | null>(null);
@@ -234,6 +269,16 @@ export default function FerryMap({ ports, routes, visibleRouteIds, focusRouteIds
     const activeIds = new Set(highlightedPortIds);
     const dimming = highlightedPortIds.length > 0;
 
+    const repositionVisibleTips = () => {
+      portMarkersRef.current.forEach((marker) => {
+        const element = marker.getElement();
+        const tip = element.querySelector<HTMLDivElement>(".port-tip");
+        if (!tip) return;
+        const visible = element.matches(":hover, [data-active=\"true\"]") || element.matches(":focus-within");
+        if (visible) positionPortTip(map, marker, tip);
+      });
+    };
+
     ports.forEach((port) => {
       const existing = portMarkersRef.current.get(port.id);
       let marker: Marker;
@@ -252,9 +297,10 @@ export default function FerryMap({ ports, routes, visibleRouteIds, focusRouteIds
         const tip = document.createElement("div");
         tip.className = "port-tip";
         el.append(dot, label, tip);
-        const select = (event: Event) => { event.stopPropagation(); selectRef.current({ type: "port", id: port.id }); };
+        const select = (event: Event) => { event.stopPropagation(); selectRef.current({ type: "port", id: port.id }); requestAnimationFrame(() => positionPortTip(map, marker, tip)); };
         dot.addEventListener("click", select);
         label.addEventListener("click", select);
+        el.addEventListener("mouseenter", () => requestAnimationFrame(() => positionPortTip(map, marker, tip)));
         marker = new Marker({ element: el }).setLngLat([port.longitude, port.latitude]).addTo(map);
         portMarkersRef.current.set(port.id, marker);
       }
@@ -332,7 +378,16 @@ export default function FerryMap({ ports, routes, visibleRouteIds, focusRouteIds
         next.textContent = "Prochain départ non connu";
         tip.append(next);
       }
+      requestAnimationFrame(() => {
+        if (element.matches(":hover, [data-active=\"true\"]") || element.matches(":focus-within")) {
+          positionPortTip(map, marker, tip);
+        }
+      });
     });
+
+    const handleMapMove = () => repositionVisibleTips();
+    map.on("move", handleMapMove);
+    window.addEventListener("resize", repositionVisibleTips);
 
     portMarkersRef.current.forEach((marker, id) => {
       if (!ports.some((port) => port.id === id)) {
@@ -340,6 +395,11 @@ export default function FerryMap({ ports, routes, visibleRouteIds, focusRouteIds
         portMarkersRef.current.delete(id);
       }
     });
+
+    return () => {
+      map.off("move", handleMapMove);
+      window.removeEventListener("resize", repositionVisibleTips);
+    };
   }, [ports, highlightedPortIds, portMeta, mapReady]);
 
   useEffect(() => {

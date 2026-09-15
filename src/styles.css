@@ -96,17 +96,11 @@
   --map-route: oklch(0.42 0.14 238);
   --map-route-selected: oklch(0.68 0.145 55);
   --map-route-casing: oklch(0.985 0.008 85);
-  --gradient-header: linear-gradient(
-    100deg,
-    oklch(0.33 0.095 244) 0%,
-    oklch(0.42 0.105 238) 55%,
-    oklch(0.5 0.1 220) 100%
-  );
+  --gradient-header: linear-gradient(100deg, oklch(0.33 0.095 244) 0%, oklch(0.42 0.105 238) 55%, oklch(0.5 0.1 220) 100%);
   --gradient-brand: linear-gradient(140deg, oklch(0.68 0.145 55), oklch(0.46 0.12 238));
   --shadow-brand: 0 6px 18px -8px color-mix(in oklab, oklch(0.42 0.105 238) 65%, transparent);
   --shadow-panel: 0 12px 40px -24px color-mix(in oklab, oklch(0.24 0.045 250) 45%, transparent);
   --shadow-elegant: 0 18px 50px -28px color-mix(in oklab, oklch(0.24 0.045 250) 40%, transparent);
-
   --sidebar: oklch(0.99 0.006 85);
   --sidebar-foreground: oklch(0.24 0.045 250);
   --sidebar-primary: oklch(0.42 0.105 238);
@@ -116,7 +110,6 @@
   --sidebar-border: oklch(0.9 0.018 235);
   --sidebar-ring: oklch(0.42 0.105 238);
 }
-
 
 .dark {
   --background: oklch(0.129 0.042 264.695);
@@ -154,103 +147,30 @@
 }
 
 @layer base {
-  * {
-    border-color: var(--color-border);
-  }
-
-  body {
-    background-color: var(--color-background);
-    color: var(--color-foreground);
-    font-family: var(--font-sans);
-  }
-
-  h1,
-  h2,
-  h3,
-  h4 {
-    font-family: var(--font-display);
-    letter-spacing: -0.01em;
-  }
+  * { border-color: var(--color-border); }
+  body { background-color: var(--color-background); color: var(--color-foreground); font-family: var(--font-sans); }
+  h1, h2, h3, h4 { font-family: var(--font-display); letter-spacing: -0.01em; }
 }
 
-/* Carte : libellés de ports indépendants des coordonnées GPS */
-.port-marker {
-  position: relative;
-  width: 0;
-  height: 0;
-  z-index: 1;
-}
+.port-marker { position: relative; width: 0; height: 0; z-index: 1; }
+.port-marker:hover, .port-marker[data-active="true"] { z-index: 10; }
+.port-marker__dot { position: absolute; left: -7px; top: -7px; width: 14px; height: 14px; border-radius: 9999px; border: 2px solid var(--color-card); background: var(--port-color, var(--color-primary)); box-shadow: 0 1px 4px color-mix(in oklab, var(--color-foreground) 35%, transparent); cursor: pointer; transition: transform 0.15s ease, background 0.15s ease; }
+.port-marker[data-active="true"] .port-marker__dot { transform: scale(1.4); box-shadow: 0 0 0 4px color-mix(in oklab, var(--port-color, var(--color-primary)) 30%, transparent); }
+.port-marker__label { position: absolute; white-space: nowrap; font-family: var(--font-display); font-size: 12px; font-weight: 700; letter-spacing: 0; text-transform: uppercase; color: var(--color-foreground); text-shadow: 0 1px 0 var(--color-card), 1px 0 0 var(--color-card), -1px 0 0 var(--color-card), 0 -1px 0 var(--color-card), 0 0 4px var(--color-card); cursor: pointer; pointer-events: auto; }
+.port-marker[data-dimmed="true"] { opacity: 0.45; }
+.port-marker[data-closed="true"] .port-marker__dot { background: var(--color-card); border-color: var(--color-muted-foreground); }
+.port-marker[data-closed="true"] .port-marker__label { color: var(--color-muted-foreground); }
+.maplibregl-ctrl-attrib { font-size: 10px; }
 
-.port-marker:hover,
-.port-marker[data-active="true"] {
-  z-index: 10;
-}
-
-.port-marker__dot {
-  position: absolute;
-  left: -7px;
-  top: -7px;
-  width: 14px;
-  height: 14px;
-  border-radius: 9999px;
-  border: 2px solid var(--color-card);
-  background: var(--port-color, var(--color-primary));
-  box-shadow: 0 1px 4px color-mix(in oklab, var(--color-foreground) 35%, transparent);
-  cursor: pointer;
-  transition:
-    transform 0.15s ease,
-    background 0.15s ease;
-}
-
-.port-marker[data-active="true"] .port-marker__dot {
-  transform: scale(1.4);
-  box-shadow: 0 0 0 4px color-mix(in oklab, var(--port-color, var(--color-primary)) 30%, transparent);
-}
-
-.port-marker__label {
-  position: absolute;
-  white-space: nowrap;
-  font-family: var(--font-display);
-  font-size: 12px;
-  font-weight: 700;
-  letter-spacing: 0;
-  text-transform: uppercase;
-  color: var(--color-foreground);
-  text-shadow:
-    0 1px 0 var(--color-card),
-    1px 0 0 var(--color-card),
-    -1px 0 0 var(--color-card),
-    0 -1px 0 var(--color-card),
-    0 0 4px var(--color-card);
-  cursor: pointer;
-  pointer-events: auto;
-}
-
-.port-marker[data-dimmed="true"] {
-  opacity: 0.45;
-}
-
-/* Port temporairement fermé : point neutre et évidé. */
-.port-marker[data-closed="true"] .port-marker__dot {
-  background: var(--color-card);
-  border-color: var(--color-muted-foreground);
-}
-
-.port-marker[data-closed="true"] .port-marker__label {
-  color: var(--color-muted-foreground);
-}
-
-.maplibregl-ctrl-attrib {
-  font-size: 10px;
-}
-
-
-/* Survol d'un port : l'essentiel sans quitter la carte. */
+/* Popup de port : reste dans le conteneur de la carte et conserve le comportement hover/clic. */
 .port-tip {
-  position: fixed;
+  position: absolute;
+  left: 14px;
+  top: -12px;
   z-index: 5;
   width: max-content;
-  max-width: 240px;
+  max-width: min(240px, calc(100vw - 32px));
+  box-sizing: border-box;
   padding: 8px 10px;
   border-radius: 12px;
   border: 1px solid var(--color-border);
@@ -259,79 +179,16 @@
   box-shadow: var(--shadow-elegant);
   opacity: 0;
   transform: translateY(4px) scale(0.98);
-  transition:
-    opacity 0.14s ease,
-    transform 0.14s ease;
+  transition: opacity 0.14s ease, transform 0.14s ease;
   pointer-events: none;
 }
+.port-marker:hover .port-tip, .port-marker:focus-within .port-tip, .port-marker[data-active="true"] .port-tip { opacity: 1; transform: translateY(0) scale(1); pointer-events: auto; }
 
-.port-marker:hover .port-tip,
-.port-marker:focus-within .port-tip,
-.port-marker[data-active="true"] .port-tip {
-  opacity: 1;
-  transform: translateY(0) scale(1);
-  pointer-events: auto;
-}
-
-.port-tip__departures-title {
-  margin-top: 6px;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  font-size: 10px;
-}
-
-.port-tip__departures {
-  margin-top: 2px;
-  display: flex;
-  flex-direction: column;
-  gap: 1px;
-  font-size: 11px;
-  font-weight: 600;
-  color: var(--color-primary);
-  list-style: none;
-  padding: 0;
-}
-
-.port-tip__more {
-  margin-top: 4px;
-  align-self: flex-start;
-  font-size: 11px;
-  font-weight: 700;
-  color: var(--color-primary);
-  text-decoration: underline;
-  text-underline-offset: 2px;
-  cursor: pointer;
-  background: none;
-  border: none;
-  padding: 0;
-}
-
-.port-tip__more:hover {
-  color: var(--color-foreground);
-}
-
-.port-tip__title {
-  font-family: var(--font-display);
-  font-size: 13px;
-  font-weight: 700;
-  color: var(--color-foreground);
-}
-
-.port-tip__meta {
-  font-size: 11px;
-  color: var(--color-muted-foreground);
-}
-
-.port-tip__next {
-  margin-top: 4px;
-  font-size: 11px;
-  font-weight: 600;
-  color: var(--color-primary);
-}
-
-.port-tip__closed {
-  font-size: 11px;
-  font-weight: 600;
-  color: var(--color-destructive);
-}
+.port-tip__departures-title { margin-top: 6px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; font-size: 10px; }
+.port-tip__departures { margin-top: 2px; display: flex; flex-direction: column; gap: 1px; font-size: 11px; font-weight: 600; color: var(--color-primary); list-style: none; padding: 0; }
+.port-tip__more { margin-top: 4px; align-self: flex-start; font-size: 11px; font-weight: 700; color: var(--color-primary); text-decoration: underline; text-underline-offset: 2px; cursor: pointer; background: none; border: none; padding: 0; }
+.port-tip__more:hover { color: var(--color-foreground); }
+.port-tip__title { font-family: var(--font-display); font-size: 13px; font-weight: 700; color: var(--color-foreground); }
+.port-tip__meta { font-size: 11px; color: var(--color-muted-foreground); }
+.port-tip__next { margin-top: 4px; font-size: 11px; font-weight: 600; color: var(--color-primary); }
+.port-tip__closed { font-size: 11px; font-weight: 600; color: var(--color-destructive); }

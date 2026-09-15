@@ -264,15 +264,15 @@ export default function FerryMap({ ports, routes, visibleRouteIds, focusRouteIds
       const meta = portMeta[port.id];
       const routeCount = meta?.routes ?? 0;
       const singleLineAlgerianSlugs = new Set(["ghazaouet", "mostaganem", "skikda", "annaba"]);
-const isSingleLineAlgerianPort = singleLineAlgerianSlugs.has((port.slug ?? "").toLowerCase());
+      const isSingleLineAlgerianPort = singleLineAlgerianSlugs.has((port.slug ?? "").toLowerCase());
 
-if (label) {
-  Object.assign(label.style, getPortLabelStyle(port));
-  label.style.fontSize = isSingleLineAlgerianPort
-    ? `${Math.max(6, Math.min(12, 6 + (map.getZoom() - 4.8) * 2))}px`
-    : "12px";
-  label.style.fontWeight = isSingleLineAlgerianPort ? "500" : "700";
-}
+      if (label) {
+        Object.assign(label.style, getPortLabelStyle(port));
+        label.style.fontSize = isSingleLineAlgerianPort
+          ? `${Math.max(6, Math.min(12, 6 + (map.getZoom() - 4.8) * 2))}px`
+          : "12px";
+        label.style.fontWeight = isSingleLineAlgerianPort ? "500" : "700";
+      }
       element.dataset["active"] = String(activeIds.has(port.id));
       element.dataset["dimmed"] = String(dimming && !activeIds.has(port.id));
       element.dataset["closed"] = String(port.status === "inactive");
@@ -355,26 +355,16 @@ if (label) {
 
     const updateAlgerianLabelSizes = () => {
       const zoom = map.getZoom();
-
       const fontSize = Math.max(
         6,
         Math.min(12, 6 + (zoom - 4.8) * 3)
       );
 
       ports.forEach((port) => {
-        if (!singleLineAlgerianSlugs.has((port.slug ?? "").toLowerCase())) {
-          return;
-        }
-
+        if (!singleLineAlgerianSlugs.has((port.slug ?? "").toLowerCase())) return;
         const marker = portMarkersRef.current.get(port.id);
-        const label =
-          marker?.getElement().querySelector<HTMLSpanElement>(
-            ".port-marker__label"
-          );
-
-        if (label) {
-          label.style.fontSize = `${fontSize}px`;
-        }
+        const label = marker?.getElement().querySelector<HTMLSpanElement>(".port-marker__label");
+        if (label) label.style.fontSize = `${fontSize}px`;
       });
     };
 
@@ -386,6 +376,20 @@ if (label) {
     };
   }, [ports, mapReady]);
 
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+    const portMap = new Map(ports.map((port) => [port.id, port]));
+    const visible = new Set(visibleRouteIds);
+    const focus = new Set(focusRouteIds);
+    const apply = () => {
+      const source = map.getSource("ferry-routes") as GeoJSONSource | undefined;
+      if (!source) return;
+      source.setData({ type: "FeatureCollection", features: routeFeatures(routes, portMap, visible, focus, selection) });
+    };
+    if (readyRef.current) apply();
+    else map.once("load", apply);
+  }, [routes, ports, visibleRouteIds, focusRouteIds, selection]);
 
   useEffect(() => {
     const map = mapRef.current;

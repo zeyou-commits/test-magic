@@ -12,10 +12,6 @@ interface SidePanelProps {
   visibleRoutes: RouteLine[];
 }
 
-/**
- * Volet unique : le détail de la sélection s'empile au-dessus de l'exploration,
- * qui reste toujours accessible en dessous (aucun aller-retour entre onglets).
- */
 export function SidePanel({
   selection,
   onSelect,
@@ -25,11 +21,6 @@ export function SidePanel({
 }: SidePanelProps) {
   return (
     <div className="flex h-full min-h-0 flex-col bg-transparent">
-      {/* LA POIGNÉE (Mobile) */}
-      <div className="flex w-full shrink-0 items-center justify-center pb-2 pt-4 md:hidden">
-        <div className="h-1.5 w-12 rounded-full bg-muted-foreground/30" />
-      </div>
-
       <div className="custom-scrollbar min-h-0 flex-1 overflow-y-auto">
         {selection ? (
           <div className="animate-in fade-in slide-in-from-top-1 duration-200">

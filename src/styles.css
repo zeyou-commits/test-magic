@@ -178,6 +178,12 @@
   position: relative;
   width: 0;
   height: 0;
+  z-index: 1;
+}
+
+.port-marker:hover,
+.port-marker[data-active="true"] {
+  z-index: 10;
 }
 
 .port-marker__dot {

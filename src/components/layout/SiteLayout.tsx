@@ -23,13 +23,14 @@ const footerLinks = [
 export function SiteLayout({ children }: { children: ReactNode }) {
   return (
     <div className="flex min-h-dvh flex-col bg-background">
-      <header className="sticky top-0 z-30 border-b border-border bg-[image:var(--gradient-header)] text-primary-foreground">
+      {/* HEADER MODERNISÉ */}
+      <header className="sticky top-0 z-30 border-b border-border/50 bg-background/80 backdrop-blur-xl text-foreground shadow-sm">
         <div className="mx-auto flex w-full max-w-6xl items-center justify-between gap-4 px-4 py-3">
           <Link to="/" className="flex items-center gap-2.5">
-            <BrandMark className="size-9" />
+            <BrandMark className="size-9 text-primary" />
             <span className="flex flex-col leading-none">
               <span className="font-display text-lg font-bold tracking-tight">Batogo</span>
-              <span className="text-[11px] text-primary-foreground/70">
+              <span className="text-[11px] text-muted-foreground">
                 Traversées en ferry vers l'Algérie
               </span>
             </span>
@@ -40,8 +41,8 @@ export function SiteLayout({ children }: { children: ReactNode }) {
                 key={link.to}
                 to={link.to}
                 activeOptions={{ exact: link.to === "/" }}
-                className="rounded-full px-3 py-1.5 text-sm font-medium text-primary-foreground/85 transition-colors hover:bg-primary-foreground/10 hover:text-primary-foreground"
-                activeProps={{ className: "bg-primary-foreground/15 text-primary-foreground" }}
+                className="rounded-full px-3 py-1.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+                activeProps={{ className: "bg-secondary text-foreground" }}
               >
                 {link.label}
               </Link>
@@ -49,14 +50,14 @@ export function SiteLayout({ children }: { children: ReactNode }) {
           </nav>
           <UserMenu />
         </div>
-        <nav className="flex gap-1 overflow-x-auto border-t border-primary-foreground/10 px-4 py-2 md:hidden">
+        <nav className="flex gap-1 overflow-x-auto border-t border-border/50 px-4 py-2 md:hidden">
           {navLinks.map((link) => (
             <Link
               key={link.to}
               to={link.to}
               activeOptions={{ exact: link.to === "/" }}
-              className="shrink-0 rounded-full px-3 py-1 text-xs font-medium text-primary-foreground/85"
-              activeProps={{ className: "bg-primary-foreground/15 text-primary-foreground" }}
+              className="shrink-0 rounded-full px-3 py-1 text-xs font-medium text-muted-foreground transition-colors"
+              activeProps={{ className: "bg-secondary text-foreground" }}
             >
               {link.label}
             </Link>

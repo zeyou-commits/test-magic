@@ -3,7 +3,7 @@ import {
   Map as MapLibreMap,
   Marker,
   NavigationControl,
-  AttributionControl, // <-- Ajout de l'import ici
+  AttributionControl,
   setWorkerUrl,
   type GeoJSONSource,
   type MapLayerMouseEvent,
@@ -168,15 +168,15 @@ export default function FerryMap({ ports, routes, visibleRouteIds, focusRouteIds
       container,
       style: MAP_STYLE,
       center: isMobile ? [4.0, 39.5] : [4.0, 39.0], 
-      zoom: isMobile ? 4.0 : 5.0, // <-- Légèrement dézoomé (4.0)
+      zoom: isMobile ? 4.0 : 5.0,
       pitch: isMobile ? 0 : 30,
       bearing: 0,
-      attributionControl: false, // <-- On désactive le contrôle par défaut
+      attributionControl: false,
       fadeDuration: 0
     });
     
-    map.addControl(new NavigationControl({ showCompass: false }), "top-right");
-    // <-- On ajoute manuellement le contrôle avec compact: true pour forcer le "i"
+    // --- C'EST ICI QU'ON CHANGE "top-right" EN "bottom-right" ---
+    map.addControl(new NavigationControl({ showCompass: false }), "bottom-right");
     map.addControl(new AttributionControl({ compact: true }), "bottom-right"); 
     
     mapRef.current = map;
@@ -237,7 +237,7 @@ export default function FerryMap({ ports, routes, visibleRouteIds, focusRouteIds
     if (!map) return;
     
     map.setCenter(isMobile ? [4.0, 39.5] : [4.0, 39.0]);
-    map.setZoom(isMobile ? 4.0 : 5.0); // <-- 4.0 ici aussi
+    map.setZoom(isMobile ? 4.0 : 5.0);
     map.setPitch(isMobile ? 0 : 30);
   }, [isMobile]);
 

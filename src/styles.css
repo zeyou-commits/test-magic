@@ -174,3 +174,11 @@
 .port-tip__meta { font-size: 11px; color: var(--color-muted-foreground); }
 .port-tip__next { margin-top: 4px; font-size: 11px; font-weight: 600; color: var(--color-primary); }
 .port-tip__closed { font-size: 11px; font-weight: 600; color: var(--color-destructive); }
+
+/* Force l'attribution maplibre à rester sous forme de petit bouton "i" */
+.maplibregl-ctrl-attrib:not(.maplibregl-compact) {
+  display: none !important;
+}
+.maplibregl-ctrl-attrib.maplibregl-compact {
+  display: block !important;
+}

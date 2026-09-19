@@ -318,6 +318,7 @@ function Index() {
               highlightedPortIds={highlightedPortIds}
               portMeta={portMeta}
               onSelect={setSelectionAndOpen}
+              onMapInteract={() => setPanelLevel(0)}
             />
           </Suspense>
         </ClientOnly>

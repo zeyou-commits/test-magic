@@ -1,7 +1,7 @@
 import { useState } from "react";
 import type { ReactNode } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { CalendarDays, SlidersHorizontal, X } from "lucide-react";
+import { CalendarDays, SlidersHorizontal } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import {
@@ -221,7 +221,6 @@ function FilterChip({
     <button type="button" onClick={onClick} className={className}>
       {icon}
       {active ? value : label}
-      {active ? <X className="size-3.5" /> : null}
     </button>
   );
 }

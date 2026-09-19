@@ -38,6 +38,7 @@ interface FerryMapProps {
   highlightedPortIds: string[];
   portMeta: Record<string, PortMeta>;
   onSelect: (selection: Selection | null) => void;
+  onMapInteract?: () => void;
 }
 
 const MAP_STYLE = "https://tiles.openfreemap.org/styles/liberty";
@@ -149,7 +150,7 @@ function positionPortTip(map: MapLibreMap, marker: Marker, tip: HTMLDivElement) 
   tip.style.top = `${top - markerRect.top}px`;
 }
 
-export default function FerryMap({ ports, routes, visibleRouteIds, focusRouteIds, selection, highlightedPortIds, portMeta, onSelect }: FerryMapProps) {
+export default function FerryMap({ ports, routes, visibleRouteIds, focusRouteIds, selection, highlightedPortIds, portMeta, onSelect, onMapInteract }: FerryMapProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<MapLibreMap | null>(null);
   const readyRef = useRef(false);
@@ -207,6 +208,11 @@ export default function FerryMap({ ports, routes, visibleRouteIds, focusRouteIds
         if (typeof id === "string") selectRef.current({ type: "route", id }); 
       };
       
+      const handleMapInteraction = () => onMapInteract?.();
+      map.on("touchstart", handleMapInteraction);
+      map.on("mousedown", handleMapInteraction);
+      map.on("wheel", handleMapInteraction);
+
       map.on("click", "ferry-routes-line", pickRoute);
       map.on("click", "ferry-routes-duration", pickRoute);
       map.on("mouseenter", "ferry-routes-line", () => { map.getCanvas().style.cursor = "pointer"; });
@@ -222,6 +228,9 @@ export default function FerryMap({ ports, routes, visibleRouteIds, focusRouteIds
     });
     
     return () => {
+      map.off("touchstart", handleMapInteraction);
+      map.off("mousedown", handleMapInteraction);
+      map.off("wheel", handleMapInteraction);
       resizeObserver.disconnect();
       window.removeEventListener("resize", resize);
       readyRef.current = false;

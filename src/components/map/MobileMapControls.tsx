@@ -64,29 +64,29 @@ export function MobileMapControls({
 
   return (
     <div className="pointer-events-none absolute inset-x-0 top-0 z-50 px-3 pt-[max(0.75rem,env(safe-area-inset-top))] md:hidden">
-      <div className="pointer-events-auto rounded-xl border border-border/70 bg-background/95 p-2.5 shadow-[var(--shadow-elegant)] backdrop-blur-xl">
-        <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 px-1 pb-2">
-          <Link to="/" className="flex min-w-0 items-center gap-2">
-            <BrandMark className="size-7 shrink-0 text-primary" />
-            <span className="truncate font-display text-base font-bold">Batogo</span>
+      <div className="pointer-events-auto rounded-xl border border-border/70 bg-background/95 p-2 shadow-[var(--shadow-elegant)] backdrop-blur-xl">
+        <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2 px-1 pb-1.5">
+          <Link to="/" className="flex min-w-0 items-center gap-1.5">
+            <BrandMark className="size-5 shrink-0 text-primary" />
+            <span className="truncate font-display text-sm font-bold">Batogo</span>
           </Link>
-          <UserMenu />
+          <UserMenu compact />
         </div>
 
-        <div className="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-end gap-1.5">
+        <div className="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-1.5">
           <PortSelect
             label="Départ"
-            placeholder="D'où ?"
+            placeholder="Départ"
             value={filters.departurePortId}
             ports={activePorts}
             onChange={(departurePortId) =>
               onFiltersChange({ ...filters, departurePortId, departureCountry: null })
             }
           />
-          <ArrowRight className="mb-2.5 size-4 shrink-0 text-muted-foreground" aria-hidden />
+          <ArrowRight className="size-4 shrink-0 text-muted-foreground" aria-hidden />
           <PortSelect
             label="Arrivée"
-            placeholder="Où ?"
+            placeholder="Arrivée"
             value={filters.arrivalPortId}
             ports={activePorts}
             onChange={(arrivalPortId) => onFiltersChange({ ...filters, arrivalPortId })}
@@ -152,11 +152,9 @@ function PortSelect({
 }) {
   return (
     <label className="min-w-0">
-      <span className="mb-1 block px-1 text-[10px] font-semibold uppercase text-muted-foreground">
-        {label}
-      </span>
+      <span className="sr-only">{label}</span>
       <Select value={value ?? ANY} onValueChange={(next) => onChange(next === ANY ? null : next)}>
-        <SelectTrigger className="h-11 min-w-0 rounded-lg bg-card px-2.5 shadow-none">
+        <SelectTrigger className="h-10 min-w-0 rounded-lg bg-card px-2.5 shadow-none">
           <SelectValue placeholder={placeholder} />
         </SelectTrigger>
         <SelectContent>

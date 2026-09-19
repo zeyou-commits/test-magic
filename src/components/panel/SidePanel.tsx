@@ -10,6 +10,7 @@ interface SidePanelProps {
   filters: Filters;
   onFiltersChange: (filters: Filters) => void;
   visibleRoutes: RouteLine[];
+  hidePrimarySearchOnMobile?: boolean;
 }
 
 export function SidePanel({
@@ -18,6 +19,7 @@ export function SidePanel({
   filters,
   onFiltersChange,
   visibleRoutes,
+  hidePrimarySearchOnMobile = false,
 }: SidePanelProps) {
   return (
     <div className="flex h-full min-h-0 flex-col bg-transparent">
@@ -55,6 +57,7 @@ export function SidePanel({
           onFiltersChange={onFiltersChange}
           visibleRoutes={visibleRoutes}
           onSelect={onSelect}
+          hidePrimarySearchOnMobile={hidePrimarySearchOnMobile}
         />
       </div>
     </div>

@@ -1,4 +1,4 @@
-import { lazy, Suspense, useMemo, useState } from "react";
+import { lazy, Suspense, useMemo, useRef, useState } from "react";
 import { ClientOnly, createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { SidePanel } from "@/components/panel/SidePanel";
@@ -16,6 +16,7 @@ import { formatDateTime } from "@/lib/ferry/format";
 import { emptyFilters, type Filters, type Selection } from "@/lib/ferry/types";
 import type { PortMeta } from "@/components/map/FerryMap";
 import { Button } from "@/components/ui/button";
+import { MobileMapControls } from "@/components/map/MobileMapControls";
 
 const FerryMap = lazy(() => import("@/components/map/FerryMap"));
 
@@ -42,8 +43,9 @@ export const Route = createFileRoute("/")({
 function Index() {
   const [selection, setSelection] = useState<Selection | null>(null);
   const [filters, setFilters] = useState<Filters>(emptyFilters);
-  // Nouvel état pour gérer l'ouverture du tiroir sur mobile
-  const [isPanelExpanded, setIsPanelExpanded] = useState(false);
+  const [panelLevel, setPanelLevel] = useState<0 | 1 | 2>(1);
+  const dragStartY = useRef<number | null>(null);
+  const dragStartLevel = useRef<0 | 1 | 2>(1);
   const { isAdmin } = useAuth();
 
   const { data: ports = [] } = useQuery(portsQuery);
@@ -188,11 +190,34 @@ function Index() {
     return meta;
   }, [ports, routes, visibleRoutes, departures, companies, vessels]);
 
+  const setSelectionAndOpen = (next: Selection | null) => {
+    setSelection(next);
+    if (next) setPanelLevel((current) => (current === 0 ? 1 : current));
+  };
+
+  const cyclePanelLevel = () => setPanelLevel((current) => (current === 2 ? 0 : ((current + 1) as 1 | 2)));
+
+  const startPanelDrag = (clientY: number) => {
+    dragStartY.current = clientY;
+    dragStartLevel.current = panelLevel;
+  };
+
+  const finishPanelDrag = (clientY: number) => {
+    if (dragStartY.current === null) return;
+    const distance = dragStartY.current - clientY;
+    if (Math.abs(distance) >= 44) {
+      const direction = distance > 0 ? 1 : -1;
+      const next = Math.max(0, Math.min(2, dragStartLevel.current + direction));
+      setPanelLevel(next as 0 | 1 | 2);
+    }
+    dragStartY.current = null;
+  };
+
   return (
     <div className="relative h-[100dvh] w-full overflow-hidden bg-background">
       
-      {/* HEADER FLOTTANT (PC & Mobile) */}
-      <header className="absolute left-0 right-0 top-0 z-50 flex items-center justify-between gap-3 border-b border-border/40 bg-background/80 px-4 py-3 backdrop-blur-xl text-foreground shadow-sm">
+      {/* En-tête bureau */}
+      <header className="absolute left-0 right-0 top-0 z-50 hidden items-center justify-between gap-3 border-b border-border/40 bg-background/80 px-4 py-3 text-foreground shadow-sm backdrop-blur-xl md:flex">
         <Link to="/" className="flex items-center gap-2.5">
           <BrandMark className="size-8 text-primary" />
           <span className="flex flex-col leading-none">
@@ -221,28 +246,46 @@ function Index() {
         </nav>
       </header>
 
+      <MobileMapControls
+        ports={ports}
+        routes={routes}
+        departures={departures}
+        filters={filters}
+        onFiltersChange={setFilters}
+        onSelect={setSelection}
+        onOpenPanel={() => setPanelLevel(1)}
+      />
+
       {/* PANNEAU LATÉRAL / TIROIR FLOTTANT */}
       <aside
-        className={`absolute left-0 right-0 z-40 flex flex-col overflow-hidden rounded-t-[2rem] border-t border-border/50 bg-background/95 shadow-[0_-10px_40px_rgba(0,0,0,0.1)] backdrop-blur-xl transition-all duration-300 ease-in-out md:left-4 md:w-[400px] md:rounded-3xl md:border md:shadow-[var(--shadow-elegant)] ${
-          isPanelExpanded
-            ? "bottom-16 top-20 md:bottom-auto md:top-24 md:h-[calc(100vh-7.5rem)]"
-            : "bottom-16 h-[40vh] md:bottom-auto md:top-24 md:h-[calc(100vh-7.5rem)]"
+        className={`absolute bottom-16 left-0 right-0 z-40 flex flex-col overflow-hidden rounded-t-3xl border-t border-border/50 bg-background/95 shadow-[var(--shadow-elegant)] backdrop-blur-xl transition-[height] duration-300 ease-out md:bottom-auto md:left-4 md:right-auto md:top-24 md:h-[calc(100vh-7.5rem)] md:w-[400px] md:rounded-3xl md:border ${
+          panelLevel === 0
+            ? "h-24"
+            : panelLevel === 1
+              ? "h-[42dvh]"
+              : "h-[calc(100dvh-5rem)]"
         }`}
       >
-        {/* LA POIGNÉE (Mobile uniquement) - Cliquable pour agrandir/réduire */}
-        <div 
-          className="flex w-full shrink-0 cursor-pointer items-center justify-center pb-2 pt-4 md:hidden"
-          onClick={() => setIsPanelExpanded(!isPanelExpanded)}
+        <Button
+          type="button"
+          variant="ghost"
+          className="h-9 w-full touch-none rounded-none py-0 md:hidden"
+          aria-label={panelLevel === 2 ? "Replier le volet" : "Déplier le volet"}
+          onClick={cyclePanelLevel}
+          onPointerDown={(event) => startPanelDrag(event.clientY)}
+          onPointerUp={(event) => finishPanelDrag(event.clientY)}
+          onPointerCancel={() => { dragStartY.current = null; }}
         >
           <div className="h-1.5 w-12 rounded-full bg-muted-foreground/30" />
-        </div>
+        </Button>
 
         <SidePanel
           selection={selection}
-          onSelect={setSelection}
+          onSelect={setSelectionAndOpen}
           filters={filters}
           onFiltersChange={setFilters}
           visibleRoutes={visibleRoutes}
+          hidePrimarySearchOnMobile
         />
       </aside>
 
@@ -278,7 +321,7 @@ function Index() {
               selection={selection}
               highlightedPortIds={highlightedPortIds}
               portMeta={portMeta}
-              onSelect={setSelection}
+              onSelect={setSelectionAndOpen}
             />
           </Suspense>
         </ClientOnly>

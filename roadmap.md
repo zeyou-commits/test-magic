@@ -22,3 +22,4 @@
 - [x] 19. Import Excel : création automatique des lignes, compagnies et navires manquants,
       anti-doublon des départs
 - [x] 20. Nouvelle saison : archivage des départs à venir et suspension des calendriers/lignes
+- [x] 21. Structure mobile type carte : recherche départ/arrivée, raccourcis et volet à trois niveaux

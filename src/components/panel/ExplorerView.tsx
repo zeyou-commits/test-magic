@@ -17,6 +17,7 @@ import { formatDuration } from "@/lib/ferry/format";
 import { EmptyNote, PanelHeader, Section } from "./shared";
 
 const ANY = "__any__";
+const ALGERIA = "DZ";
 
 interface ExplorerViewProps {
   filters: Filters;
@@ -40,6 +41,33 @@ export function ExplorerView({
 
   const [filtersOpen, setFiltersOpen] = useState(false);
   const portName = (id: string) => ports.find((port) => port.id === id)?.name ?? "—";
+  const departurePorts = ports.filter((port) => port.status === "active" && port.country_code !== ALGERIA);
+  const arrivalPorts = ports.filter((port) => port.status === "active" && port.country_code === ALGERIA);
+  const filteredDeparturePorts = filters.departureCountry
+    ? departurePorts.filter((port) => port.country_code === filters.departureCountry)
+    : departurePorts;
+  const countries = [...new Map(departurePorts.map((port) => [port.country_code, port.country_name]))]
+    .map(([code, name]) => ({ value: code, label: name }))
+    .sort((a, b) => a.label.localeCompare(b.label, "fr"));
+
+  const updateDepartureCountry = (value: string | null) => {
+    const selectedPort = ports.find((port) => port.id === filters.departurePortId);
+    onFiltersChange({
+      ...filters,
+      departureCountry: value,
+      departurePortId: value && selectedPort?.country_code !== value ? null : filters.departurePortId,
+    });
+  };
+
+  const updateDeparturePort = (value: string | null) => {
+    const selectedPort = ports.find((port) => port.id === value);
+    onFiltersChange({
+      ...filters,
+      departurePortId: value,
+      departureCountry: selectedPort?.country_code ?? filters.departureCountry,
+    });
+  };
+
   const hasFilters =
     filters.search.trim() !== "" ||
     filters.portIds.length > 0 ||
@@ -133,7 +161,7 @@ export function ExplorerView({
         </div>
 
         <Section
-          title="Filtres"
+          title="Votre trajet"
           action={
             hasFilters ? (
               <Button variant="ghost" size="sm" onClick={() => onFiltersChange(emptyFilters)}>
@@ -142,11 +170,18 @@ export function ExplorerView({
             ) : null
           }
         >
-          <div className="space-y-2.5">
+          <div className="space-y-3">
+            <div className="rounded-2xl border border-primary/15 bg-primary/[0.04] p-3">
+              <p className="mb-3 text-xs text-muted-foreground">
+                Choisissez d’abord votre pays de départ, puis votre port et votre arrivée en Algérie.
+              </p>
+              <div className="space-y-2.5">
+                <FilterSelect label="1. Pays de départ" value={filters.departureCountry} onChange={updateDepartureCountry} options={countries} placeholder="Choisir un pays" />
+                <FilterSelect label="2. Port de départ" value={filters.departurePortId} onChange={updateDeparturePort} options={filteredDeparturePorts.map((port) => ({ value: port.id, label: port.name }))} placeholder={filters.departureCountry ? "Choisir un port de départ" : "Choisissez d’abord un pays"} disabled={!filters.departureCountry} />
+                <FilterSelect label="3. Port d’arrivée en Algérie" value={filters.arrivalPortId} onChange={(value) => onFiltersChange({ ...filters, arrivalPortId: value })} options={arrivalPorts.map((port) => ({ value: port.id, label: port.name }))} placeholder="Choisir un port d’arrivée" />
+              </div>
+            </div>
             <div className="flex flex-wrap gap-1.5">
-              <FilterChip label="Pays" active={filters.departureCountry !== null} value={filters.departureCountry ? countries.find((country) => country.value === filters.departureCountry)?.label : undefined} onClick={() => setFiltersOpen(true)} />
-              <FilterChip label="Départ" active={filters.departurePortId !== null} value={filters.departurePortId ? portName(filters.departurePortId) : undefined} onClick={() => setFiltersOpen(true)} />
-              <FilterChip label="Arrivée" active={filters.arrivalPortId !== null} value={filters.arrivalPortId ? portName(filters.arrivalPortId) : undefined} onClick={() => setFiltersOpen(true)} />
               <FilterChip label="Compagnie" active={filters.companyId !== null} value={filters.companyId ? companies.find((company) => company.id === filters.companyId)?.name : undefined} onClick={() => setFiltersOpen(true)} />
               <FilterChip label="Navire" active={filters.vesselId !== null} value={filters.vesselId ? vessels.find((vessel) => vessel.id === filters.vesselId)?.name : undefined} onClick={() => setFiltersOpen(true)} />
               <FilterChip label="Date" active={filters.date !== null} value={filters.date ? new Date(filters.date).toLocaleDateString("fr-FR") : undefined} onClick={() => setFiltersOpen(true)} icon={<CalendarDays className="size-3.5" />} />
@@ -158,9 +193,9 @@ export function ExplorerView({
 
             {filtersOpen ? (
               <div className="grid gap-2.5 rounded-xl border border-border/70 bg-secondary/30 p-3 sm:grid-cols-2">
-                <FilterSelect label="Pays de départ" value={filters.departureCountry} onChange={(value) => onFiltersChange({ ...filters, departureCountry: value })} options={countries} />
-                <FilterSelect label="Port de départ" value={filters.departurePortId} onChange={(value) => onFiltersChange({ ...filters, departurePortId: value })} options={ports.map((port) => ({ value: port.id, label: port.name }))} />
-                <FilterSelect label="Port d'arrivée" value={filters.arrivalPortId} onChange={(value) => onFiltersChange({ ...filters, arrivalPortId: value })} options={ports.map((port) => ({ value: port.id, label: port.name }))} />
+                <FilterSelect label="Pays de départ" value={filters.departureCountry} onChange={updateDepartureCountry} options={countries} />
+                <FilterSelect label="Port de départ" value={filters.departurePortId} onChange={updateDeparturePort} options={filteredDeparturePorts.map((port) => ({ value: port.id, label: port.name }))} disabled={!filters.departureCountry} />
+                <FilterSelect label="Port d'arrivée en Algérie" value={filters.arrivalPortId} onChange={(value) => onFiltersChange({ ...filters, arrivalPortId: value })} options={arrivalPorts.map((port) => ({ value: port.id, label: port.name }))} />
                 <FilterSelect label="Compagnie" value={filters.companyId} onChange={(value) => onFiltersChange({ ...filters, companyId: value })} options={companies.map((company) => ({ value: company.id, label: company.name }))} />
                 <FilterSelect label="Navire" value={filters.vesselId} onChange={(value) => onFiltersChange({ ...filters, vesselId: value })} options={vessels.map((vessel) => ({ value: vessel.id, label: vessel.name }))} />
                 <label className="grid gap-1">
@@ -230,11 +265,15 @@ function FilterSelect({
   value,
   onChange,
   options,
+  placeholder = "Tous",
+  disabled = false,
 }: {
   label: string;
   value: string | null;
   onChange: (value: string | null) => void;
   options: Array<{ value: string; label: string }>;
+  placeholder?: string;
+  disabled?: boolean;
 }) {
   return (
     <label className="grid gap-1">
@@ -247,7 +286,7 @@ function FilterSelect({
           <SelectValue placeholder="Tous" />
         </SelectTrigger>
         <SelectContent>
-          <SelectItem value={ANY}>Tous</SelectItem>
+          <SelectItem value={ANY}>{placeholder}</SelectItem>
           {options.map((option) => (
             <SelectItem key={option.value} value={option.value}>
               {option.label}

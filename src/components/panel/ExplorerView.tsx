@@ -1,4 +1,7 @@
+import { useState } from "react";
+import type { ReactNode } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { CalendarDays, SlidersHorizontal, X } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import {
@@ -35,6 +38,7 @@ export function ExplorerView({
   const { data: vessels = [] } = useQuery(vesselsQuery);
   const { data: routes = [] } = useQuery(routesQuery);
 
+  const [filtersOpen, setFiltersOpen] = useState(false);
   const portName = (id: string) => ports.find((port) => port.id === id)?.name ?? "—";
   const hasFilters =
     filters.search.trim() !== "" ||
@@ -43,7 +47,8 @@ export function ExplorerView({
     filters.departurePortId !== null ||
     filters.arrivalPortId !== null ||
     filters.companyId !== null ||
-    filters.vesselId !== null;
+    filters.vesselId !== null ||
+    filters.date !== null;
 
   const matchingPorts = filters.search.trim()
     ? ports.filter((port) =>
@@ -137,51 +142,35 @@ export function ExplorerView({
             ) : null
           }
         >
-          <div className="grid gap-3">
-            <FilterSelect
-              label="Pays de départ"
-              value={filters.departureCountry}
-              onChange={(value) => onFiltersChange({ ...filters, departureCountry: value })}
-              options={countries}
-            />
-            <FilterSelect
-              label="Port de départ"
-              value={filters.departurePortId}
-              onChange={(value) => onFiltersChange({ ...filters, departurePortId: value })}
-              options={ports.map((port) => ({ value: port.id, label: port.name }))}
-            />
-            <FilterSelect
-              label="Port d'arrivée"
-              value={filters.arrivalPortId}
-              onChange={(value) => onFiltersChange({ ...filters, arrivalPortId: value })}
-              options={ports.map((port) => ({ value: port.id, label: port.name }))}
-            />
+          <div className="space-y-2.5">
+            <div className="flex flex-wrap gap-1.5">
+              <FilterChip label="Pays" active={filters.departureCountry !== null} value={filters.departureCountry ? countries.find((country) => country.value === filters.departureCountry)?.label : undefined} onClick={() => setFiltersOpen(true)} />
+              <FilterChip label="Départ" active={filters.departurePortId !== null} value={filters.departurePortId ? portName(filters.departurePortId) : undefined} onClick={() => setFiltersOpen(true)} />
+              <FilterChip label="Arrivée" active={filters.arrivalPortId !== null} value={filters.arrivalPortId ? portName(filters.arrivalPortId) : undefined} onClick={() => setFiltersOpen(true)} />
+              <FilterChip label="Compagnie" active={filters.companyId !== null} value={filters.companyId ? companies.find((company) => company.id === filters.companyId)?.name : undefined} onClick={() => setFiltersOpen(true)} />
+              <FilterChip label="Navire" active={filters.vesselId !== null} value={filters.vesselId ? vessels.find((vessel) => vessel.id === filters.vesselId)?.name : undefined} onClick={() => setFiltersOpen(true)} />
+              <FilterChip label="Date" active={filters.date !== null} value={filters.date ? new Date(filters.date).toLocaleDateString("fr-FR") : undefined} onClick={() => setFiltersOpen(true)} icon={<CalendarDays className="size-3.5" />} />
+              <Button type="button" variant={filtersOpen ? "secondary" : "outline"} size="sm" className="h-8 rounded-full px-3" onClick={() => setFiltersOpen((open) => !open)}>
+                <SlidersHorizontal className="size-3.5" />
+                Plus de filtres
+              </Button>
+            </div>
 
-            <FilterSelect
-              label="Compagnie"
-              value={filters.companyId}
-              onChange={(value) => onFiltersChange({ ...filters, companyId: value })}
-              options={companies.map((company) => ({ value: company.id, label: company.name }))}
-            />
-            <FilterSelect
-              label="Navire"
-              value={filters.vesselId}
-              onChange={(value) => onFiltersChange({ ...filters, vesselId: value })}
-              options={vessels.map((vessel) => ({ value: vessel.id, label: vessel.name }))}
-            />
-            <label className="grid gap-1">
-              <span className="text-xs font-medium text-muted-foreground">Date de départ</span>
-              <Input
-                type="date"
-                value={filters.date ?? ""}
-                onChange={(event) =>
-                  onFiltersChange({ ...filters, date: event.target.value || null })
-                }
-              />
-            </label>
+            {filtersOpen ? (
+              <div className="grid gap-2.5 rounded-xl border border-border/70 bg-secondary/30 p-3 sm:grid-cols-2">
+                <FilterSelect label="Pays de départ" value={filters.departureCountry} onChange={(value) => onFiltersChange({ ...filters, departureCountry: value })} options={countries} />
+                <FilterSelect label="Port de départ" value={filters.departurePortId} onChange={(value) => onFiltersChange({ ...filters, departurePortId: value })} options={ports.map((port) => ({ value: port.id, label: port.name }))} />
+                <FilterSelect label="Port d'arrivée" value={filters.arrivalPortId} onChange={(value) => onFiltersChange({ ...filters, arrivalPortId: value })} options={ports.map((port) => ({ value: port.id, label: port.name }))} />
+                <FilterSelect label="Compagnie" value={filters.companyId} onChange={(value) => onFiltersChange({ ...filters, companyId: value })} options={companies.map((company) => ({ value: company.id, label: company.name }))} />
+                <FilterSelect label="Navire" value={filters.vesselId} onChange={(value) => onFiltersChange({ ...filters, vesselId: value })} options={vessels.map((vessel) => ({ value: vessel.id, label: vessel.name }))} />
+                <label className="grid gap-1">
+                  <span className="text-xs font-medium text-muted-foreground">Date de départ</span>
+                  <Input type="date" value={filters.date ?? ""} onChange={(event) => onFiltersChange({ ...filters, date: event.target.value || null })} />
+                </label>
+              </div>
+            ) : null}
           </div>
         </Section>
-
         <Section title={`Lignes affichées (${visibleRoutes.length})`}>
           {visibleRoutes.length === 0 ? (
             <EmptyNote>Aucune ligne ne correspond à cette sélection.</EmptyNote>
@@ -208,6 +197,32 @@ export function ExplorerView({
         </Section>
       </div>
     </div>
+  );
+}
+
+function FilterChip({
+  label,
+  value,
+  active,
+  onClick,
+  icon,
+}: {
+  label: string;
+  value?: string;
+  active: boolean;
+  onClick: () => void;
+  icon?: ReactNode;
+}) {
+  const className = active
+    ? "inline-flex h-8 items-center gap-1.5 rounded-full border border-primary/30 bg-primary/10 px-3 text-xs font-medium text-primary"
+    : "inline-flex h-8 items-center gap-1.5 rounded-full border border-border/70 bg-background px-3 text-xs font-medium text-muted-foreground hover:bg-secondary";
+
+  return (
+    <button type="button" onClick={onClick} className={className}>
+      {icon}
+      {active ? value : label}
+      {active ? <X className="size-3.5" /> : null}
+    </button>
   );
 }
 

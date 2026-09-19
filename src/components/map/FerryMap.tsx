@@ -264,7 +264,9 @@ export default function FerryMap({ ports, routes, visibleRouteIds, focusRouteIds
         const element = marker.getElement(); 
         const tip = element.querySelector<HTMLDivElement>(".port-tip"); 
         if (!tip) return; 
-        const visible = element.matches(":hover, [data-active=\"true\"]") || element.matches(":focus-within"); 
+        const visible = isMobile
+          ? element.dataset["active"] === "true"
+          : element.matches(":hover, [data-active=\"true\"]") || element.matches(":focus-within"); 
         if (visible) positionPortTip(map, marker, tip); 
       }); 
     };
@@ -339,7 +341,7 @@ export default function FerryMap({ ports, routes, visibleRouteIds, focusRouteIds
       
       const tip = element.querySelector<HTMLDivElement>(".port-tip"); 
       if (!tip) return;
-      tip.textContent = "";
+      tip.querySelectorAll(":scope > *:not(.port-tip__close)").forEach((child) => child.remove());
       
       const title = document.createElement("p"); 
       title.className = "port-tip__title"; 
@@ -354,51 +356,67 @@ export default function FerryMap({ ports, routes, visibleRouteIds, focusRouteIds
         closed.textContent = "Temporairement fermé"; 
         tip.append(closed); 
       }
-      if (meta?.companies?.length) { 
-        const companies = document.createElement("p"); 
-        companies.className = "port-tip__meta"; 
-        companies.textContent = `Compagnies : ${meta.companies.slice(0, 3).join(", ")}${meta.companies.length > 3 ? ` +${meta.companies.length - 3}` : ""}`; 
-        tip.append(companies); 
-      }
-      if (meta?.vessels?.length) { 
-        const vessels = document.createElement("p"); 
-        vessels.className = "port-tip__meta"; 
-        vessels.textContent = `Navires : ${meta.vessels.slice(0, 3).join(", ")}${meta.vessels.length > 3 ? ` +${meta.vessels.length - 3}` : ""}`; 
-        tip.append(vessels); 
-      }
-      if (meta?.upcoming?.length) {
-        const heading = document.createElement("p"); 
-        heading.className = "port-tip__meta port-tip__departures-title"; 
-        heading.textContent = "Prochains départs"; 
-        tip.append(heading);
-        const list = document.createElement("ul"); 
-        list.className = "port-tip__departures";
-        meta.upcoming.forEach((item) => { 
-          const row = document.createElement("li"); 
-          row.textContent = `${item.label}${item.to ? ` → ${item.to}` : ""}`; 
-          list.append(row); 
-        }); 
-        tip.append(list);
-        
-        if (meta.hasMore) { 
-          const more = document.createElement("button"); 
-          more.type = "button"; 
-          more.className = "port-tip__more"; 
-          more.textContent = "Voir plus →"; 
-          more.addEventListener("click", (event) => { 
-            event.stopPropagation(); 
-            selectRef.current({ type: "port", id: port.id }); 
-          }); 
-          tip.append(more); 
+      if (isMobile) {
+        if (meta?.upcoming?.length) {
+          const next = document.createElement("p");
+          next.className = "port-tip__next";
+          next.textContent = `Prochain : ${meta.upcoming[0].label}${meta.upcoming[0].to ? ` → ${meta.upcoming[0].to}` : ""}`;
+          tip.append(next);
+        } else {
+          const next = document.createElement("p");
+          next.className = "port-tip__next";
+          next.textContent = "Prochain départ non connu";
+          tip.append(next);
         }
-      } else { 
-        const next = document.createElement("p"); 
-        next.className = "port-tip__next"; 
-        next.textContent = "Prochain départ non connu"; 
-        tip.append(next); 
+      } else {
+        if (meta?.companies?.length) { 
+          const companies = document.createElement("p"); 
+          companies.className = "port-tip__meta"; 
+          companies.textContent = `Compagnies : ${meta.companies.slice(0, 3).join(", ")}${meta.companies.length > 3 ? ` +${meta.companies.length - 3}` : ""}`; 
+          tip.append(companies); 
+        }
+        if (meta?.vessels?.length) { 
+          const vessels = document.createElement("p"); 
+          vessels.className = "port-tip__meta"; 
+          vessels.textContent = `Navires : ${meta.vessels.slice(0, 3).join(", ")}${meta.vessels.length > 3 ? ` +${meta.vessels.length - 3}` : ""}`; 
+          tip.append(vessels); 
+        }
+        if (meta?.upcoming?.length) {
+          const heading = document.createElement("p"); 
+          heading.className = "port-tip__meta port-tip__departures-title"; 
+          heading.textContent = "Prochains départs"; 
+          tip.append(heading);
+          const list = document.createElement("ul"); 
+          list.className = "port-tip__departures";
+          meta.upcoming.forEach((item) => { 
+            const row = document.createElement("li"); 
+            row.textContent = `${item.label}${item.to ? ` → ${item.to}` : ""}`; 
+            list.append(row); 
+          }); 
+          tip.append(list);
+          if (meta.hasMore) { 
+            const more = document.createElement("button"); 
+            more.type = "button"; 
+            more.className = "port-tip__more"; 
+            more.textContent = "Voir plus →"; 
+            more.addEventListener("click", (event) => { 
+              event.stopPropagation(); 
+              selectRef.current({ type: "port", id: port.id }); 
+            }); 
+            tip.append(more); 
+          }
+        } else { 
+          const next = document.createElement("p"); 
+          next.className = "port-tip__next"; 
+          next.textContent = "Prochain départ non connu"; 
+          tip.append(next); 
+        }
       }
       requestAnimationFrame(() => { 
-        if (element.matches(":hover, [data-active=\"true\"]") || element.matches(":focus-within")) positionPortTip(map, marker, tip); 
+        if (
+          (isMobile && element.dataset["active"] === "true") ||
+          (!isMobile && (element.matches(":hover, [data-active=\"true\"]") || element.matches(":focus-within")))
+        ) positionPortTip(map, marker, tip); 
       });
     });
     

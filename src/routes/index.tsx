@@ -258,7 +258,7 @@ function Index() {
 
       {/* PANNEAU LATÉRAL / TIROIR FLOTTANT */}
       <aside
-        className={`absolute bottom-16 left-0 right-0 z-40 flex flex-col overflow-hidden rounded-t-3xl border-t border-border/50 bg-background/95 shadow-[var(--shadow-elegant)] backdrop-blur-xl transition-[height] duration-300 ease-out md:bottom-auto md:left-4 md:right-auto md:top-24 md:h-[calc(100vh-7.5rem)] md:w-[400px] md:rounded-3xl md:border ${
+        className={`absolute bottom-16 left-0 right-0 z-[60] flex flex-col overflow-hidden rounded-t-3xl border-t border-border/50 bg-background/95 shadow-[var(--shadow-elegant)] backdrop-blur-xl transition-[height] duration-300 ease-out md:bottom-auto md:left-4 md:right-auto md:top-24 md:h-[calc(100vh-7.5rem)] md:w-[400px] md:rounded-3xl md:border md:z-40 ${
           panelLevel === 0
             ? "h-24"
             : panelLevel === 1
@@ -304,7 +304,7 @@ function Index() {
           <span className="text-[10px] font-medium">Ports</span>
         </Link>
         <Link to="/guide" className="flex flex-col items-center justify-center gap-1 text-muted-foreground transition-colors hover:text-foreground">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path></svg>
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path><path d="M22 3h-6a4 4 0 0 1-4 4v14a3 3 0 0 1 3-3h7z"></path></svg>
           <span className="text-[10px] font-medium">Guide</span>
         </Link>
       </nav>

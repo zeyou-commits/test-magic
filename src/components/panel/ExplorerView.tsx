@@ -20,6 +20,7 @@ interface ExplorerViewProps {
   onFiltersChange: (filters: Filters) => void;
   visibleRoutes: RouteLine[];
   onSelect: (selection: Selection) => void;
+  hidePrimarySearchOnMobile?: boolean;
 }
 
 export function ExplorerView({
@@ -27,6 +28,7 @@ export function ExplorerView({
   onFiltersChange,
   visibleRoutes,
   onSelect,
+  hidePrimarySearchOnMobile = false,
 }: ExplorerViewProps) {
   const { data: ports = [] } = useQuery(portsQuery);
   const { data: companies = [] } = useQuery(companiesQuery);
@@ -71,6 +73,7 @@ export function ExplorerView({
         subtitle={`${routes.length} lignes · ${ports.length} ports`}
       />
       <div>
+        <div className={hidePrimarySearchOnMobile ? "hidden md:block" : undefined}>
         <Section title="Recherche">
           <Input
             value={filters.search}
@@ -122,6 +125,7 @@ export function ExplorerView({
             Touchez un port pour l'ajouter à la sélection, plusieurs ports sont possibles.
           </p>
         </Section>
+        </div>
 
         <Section
           title="Filtres"

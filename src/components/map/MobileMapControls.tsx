@@ -52,7 +52,7 @@ export function MobileMapControls({
     ? activeDeparturePorts.filter(
         (port) => port.country_code === filters.departureCountry,
       )
-    : [];
+    : activeDeparturePorts;
 
   const compatibleArrivals = arrivalPorts.filter((port) =>
     routes.some((route) => {
@@ -61,6 +61,19 @@ export function MobileMapControls({
       if (filters.departureCountry && departure?.country_code !== filters.departureCountry)
         return false;
       if (filters.departurePortId && route.departure_port_id !== filters.departurePortId)
+        return false;
+      return true;
+    }),
+  );
+
+  const compatibleDeparturePorts = activeDeparturePorts.filter((port) =>
+    routes.some((route) => {
+      if (route.departure_port_id !== port.id) return false;
+      if (filters.arrivalPortId && route.arrival_port_id !== filters.arrivalPortId) return false;
+      if (
+        filters.departureCountry &&
+        port.country_code !== filters.departureCountry
+      )
         return false;
       return true;
     }),
@@ -157,11 +170,12 @@ export function MobileMapControls({
           <div className="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-1.5">
             <PortSelect
               label="Port de départ"
-              placeholder={filters.departureCountry ? "Port de départ" : "Choisir un pays"}
+              placeholder={filters.departureCountry ? "Port de départ" : "Tous les départs"}
               value={filters.departurePortId}
-              ports={departurePorts}
+              ports={departurePorts.filter((port) =>
+                compatibleDeparturePorts.some((item) => item.id === port.id),
+              )}
               onChange={updateDeparturePort}
-              disabled={!filters.departureCountry}
             />
             <ArrowRight className="size-4 shrink-0 text-muted-foreground" aria-hidden />
             <PortSelect
@@ -170,7 +184,6 @@ export function MobileMapControls({
               value={filters.arrivalPortId}
               ports={compatibleArrivals}
               onChange={(arrivalPortId) => onFiltersChange({ ...filters, arrivalPortId })}
-              disabled={!filters.departureCountry}
             />
           </div>
         </div>

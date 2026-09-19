@@ -188,8 +188,9 @@ function Index() {
 
   const setSelectionAndOpen = (next: Selection | null) => {
     setSelection(next);
-    if (next) setPanelLevel((current) => (current === 0 ? 1 : current));
   };
+
+  const openPanel = () => setPanelLevel(1);
 
   const cyclePanelLevel = () => setPanelLevel((current) => (current === 2 ? 0 : ((current + 1) as 1 | 2)));
 
@@ -318,6 +319,7 @@ function Index() {
               highlightedPortIds={highlightedPortIds}
               portMeta={portMeta}
               onSelect={setSelectionAndOpen}
+              onOpenPanel={openPanel}
               onMapInteract={() => setPanelLevel(0)}
             />
           </Suspense>

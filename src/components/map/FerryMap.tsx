@@ -77,6 +77,7 @@ function routeFeatures(routes: RouteLine[], ports: Map<string, Port>, visible: S
     const pairKey = [route.departure_port_id, route.arrival_port_id].sort().join("::");
     const group = pairGroups.get(pairKey) ?? [route];
     const displayRoute = group.slice().sort((a, b) => a.id.localeCompare(b.id))[0];
+    if (!displayRoute) return null;
     const isDisplayRoute = route.id === displayRoute.id;
     const focusedPair = group.some((item) => focus.has(item.id));
     

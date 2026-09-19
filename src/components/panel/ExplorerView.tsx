@@ -189,9 +189,6 @@ export function ExplorerView({
 
             {filtersOpen ? (
               <div className="grid gap-2.5 rounded-xl border border-border/70 bg-secondary/30 p-3 sm:grid-cols-2">
-                <FilterSelect label="Pays de départ" value={filters.departureCountry} onChange={updateDepartureCountry} options={countries} />
-                <FilterSelect label="Port de départ" value={filters.departurePortId} onChange={updateDeparturePort} options={filteredDeparturePorts.map((port) => ({ value: port.id, label: port.name }))} disabled={!filters.departureCountry} />
-                <FilterSelect label="Port d'arrivée en Algérie" value={filters.arrivalPortId} onChange={(value) => onFiltersChange({ ...filters, arrivalPortId: value })} options={arrivalPorts.map((port) => ({ value: port.id, label: port.name }))} />
                 <FilterSelect label="Compagnie" value={filters.companyId} onChange={(value) => onFiltersChange({ ...filters, companyId: value })} options={companies.map((company) => ({ value: company.id, label: company.name }))} />
                 <FilterSelect label="Navire" value={filters.vesselId} onChange={(value) => onFiltersChange({ ...filters, vesselId: value })} options={vessels.map((vessel) => ({ value: vessel.id, label: vessel.name }))} />
                 <label className="grid gap-1">

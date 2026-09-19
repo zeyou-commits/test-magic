@@ -115,14 +115,7 @@ function Index() {
     }
     const filtered =
       visibleRoutes.length !== routes.length
-        ? [
-            ...new Set(
-              visibleRoutes.flatMap((route) => [
-                route.departure_port_id,
-                route.arrival_port_id,
-              ]),
-            ),
-          ]
+        ? [...new Set(visibleRoutes.map((route) => route.departure_port_id))]
         : [];
     return filtered;
   }, [selection, routes, visibleRoutes]);

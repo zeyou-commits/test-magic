@@ -94,10 +94,6 @@ export function ExplorerView({
         : [...filters.portIds, id],
     });
 
-  const countries = [...new Map(ports.map((port) => [port.country_code, port.country_name]))]
-    .map(([code, name]) => ({ value: code, label: name }))
-    .sort((a, b) => a.label.localeCompare(b.label, "fr"));
-
   return (
     <div>
       <PanelHeader
@@ -281,9 +277,10 @@ function FilterSelect({
       <Select
         value={value ?? ANY}
         onValueChange={(next) => onChange(next === ANY ? null : next)}
+        disabled={disabled}
       >
         <SelectTrigger>
-          <SelectValue placeholder="Tous" />
+          <SelectValue placeholder={placeholder} />
         </SelectTrigger>
         <SelectContent>
           <SelectItem value={ANY}>{placeholder}</SelectItem>

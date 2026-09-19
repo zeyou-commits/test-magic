@@ -69,6 +69,16 @@ function routeFeatures(routes: RouteLine[], ports: Map<string, Port>, visible: S
   
   const selectedRouteId = selection?.type === "route" ? selection.id : null;
   const selectedPortId = selection?.type === "port" ? selection.id : null;
+
+  // Le nombre de liaisons au départ sert à donner un poids visuel à chaque ligne.
+  // Marseille avec plusieurs liaisons sera donc plus épaisse qu'un port avec une seule liaison.
+  const departureLineCounts = new Map<string, number>();
+  visibleRoutes.forEach((route) => {
+    departureLineCounts.set(
+      route.departure_port_id,
+      (departureLineCounts.get(route.departure_port_id) ?? 0) + 1,
+    );
+  });
   
   return visibleRoutes.map((route) => {
     const from = ports.get(route.departure_port_id);
@@ -93,7 +103,8 @@ function routeFeatures(routes: RouteLine[], ports: Map<string, Port>, visible: S
       type: "Feature" as const, 
       properties: { 
         id: route.id, 
-        color: routeColor(route.color, from.slug), 
+        color: routeColor(route.color, from.slug),
+        lineCount: departureLineCounts.get(route.departure_port_id) ?? 1,
         label: isDisplayRoute && durationMinutes ? formatDuration(durationMinutes) : "", 
         selected: selectedRouteId === route.id, 
         focused: focus.has(route.id) || (isDisplayRoute && focusedPair), 
@@ -204,8 +215,50 @@ export default function FerryMap({ ports, routes, visibleRouteIds, focusRouteIds
       map.addLayer({ id: "algeria-highlight-outline", type: "line", source: "algeria-highlight", paint: { "line-color": mapColor("--map-country-outline"), "line-width": 1.5, "line-opacity": 0.7 } });
       
       map.addSource("ferry-routes", { type: "geojson", data: { type: "FeatureCollection", features: [] } });
-      map.addLayer({ id: "ferry-routes-casing", type: "line", source: "ferry-routes", layout: { "line-cap": "round", "line-join": "round" }, paint: { "line-color": mapColor("--map-route-casing"), "line-width": ["case", ["get", "selected"], 7, 5], "line-opacity": ["case", ["get", "dimmed"], 0.1, 0.8] } });
-      map.addLayer({ id: "ferry-routes-line", type: "line", source: "ferry-routes", layout: { "line-cap": "round", "line-join": "round" }, paint: { "line-color": ["get", "color"], "line-width": ["case", ["get", "selected"], 4, 2.5], "line-opacity": ["case", ["get", "dimmed"], 0.16, 1] } });
+      map.addLayer({
+        id: "ferry-routes-casing",
+        type: "line",
+        source: "ferry-routes",
+        layout: { "line-cap": "round", "line-join": "round" },
+        paint: {
+          "line-color": mapColor("--map-route-casing"),
+          "line-width": [
+            "case",
+            ["get", "selected"],
+            7,
+            ["interpolate", ["linear"], ["get", "lineCount"],
+              1, 3.5,
+              3, 4.5,
+              5, 5.5,
+              10, 7,
+              20, 9
+            ]
+          ],
+          "line-opacity": ["case", ["get", "dimmed"], 0.1, 0.8]
+        }
+      });
+      map.addLayer({
+        id: "ferry-routes-line",
+        type: "line",
+        source: "ferry-routes",
+        layout: { "line-cap": "round", "line-join": "round" },
+        paint: {
+          "line-color": ["get", "color"],
+          "line-width": [
+            "case",
+            ["get", "selected"],
+            4.5,
+            ["interpolate", ["linear"], ["get", "lineCount"],
+              1, 2,
+              3, 2.8,
+              5, 3.6,
+              10, 4.8,
+              20, 6.5
+            ]
+          ],
+          "line-opacity": ["case", ["get", "dimmed"], 0.16, 1]
+        }
+      });
       map.addLayer({ id: "ferry-routes-duration", type: "symbol", source: "ferry-routes", minzoom: 3.4, layout: { "symbol-placement": "line-center", "text-field": ["get", "label"], "text-font": ["Noto Sans Bold"], "text-size": 11, "text-letter-spacing": 0.04, "text-rotation-alignment": "map", "text-pitch-alignment": "viewport", "text-keep-upright": true, "text-offset": [0, -0.9], "text-allow-overlap": true, "text-ignore-placement": true }, paint: { "text-color": ["get", "color"], "text-halo-color": mapColor("--map-route-casing"), "text-halo-width": 1.6, "text-opacity": ["case", ["get", "dimmed"], 0.2, 1] } });
       
       const pickRoute = (event: MapLayerMouseEvent) => { 

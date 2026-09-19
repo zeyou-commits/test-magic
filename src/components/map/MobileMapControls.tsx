@@ -34,30 +34,103 @@ export function MobileMapControls({
   onSelect,
   onOpenPanel,
 }: MobileMapControlsProps) {
-  const activePorts = ports.filter((port) => port.status === "active");
-  const portName = (id: string) => ports.find((port) => port.id === id)?.name ?? "Port";
-  const destinationCounts = new Map<string, number>();
+  const ALGERIA = "DZ";
+  const activeDeparturePorts = ports.filter(
+    (port) => port.status === "active" && port.country_code !== ALGERIA,
+  );
+  const arrivalPorts = ports.filter(
+    (port) => port.status === "active" && port.country_code === ALGERIA,
+  );
 
-  routes.forEach((route) => {
-    if (filters.departurePortId && route.departure_port_id !== filters.departurePortId) return;
-    destinationCounts.set(
-      route.arrival_port_id,
-      (destinationCounts.get(route.arrival_port_id) ?? 0) + 1,
+  const countries = [...new Map(
+    activeDeparturePorts.map((port) => [port.country_code, port.country_name]),
+  )]
+    .map(([value, label]) => ({ value, label }))
+    .sort((a, b) => a.label.localeCompare(b.label, "fr"));
+
+  const departurePorts = filters.departureCountry
+    ? activeDeparturePorts.filter(
+        (port) => port.country_code === filters.departureCountry,
+      )
+    : [];
+
+  const compatibleArrivals = arrivalPorts.filter((port) =>
+    routes.some((route) => {
+      if (route.arrival_port_id !== port.id) return false;
+      const departure = ports.find((item) => item.id === route.departure_port_id);
+      if (filters.departureCountry && departure?.country_code !== filters.departureCountry)
+        return false;
+      if (filters.departurePortId && route.departure_port_id !== filters.departurePortId)
+        return false;
+      return true;
+    }),
+  );
+
+  const updateDepartureCountry = (departureCountry: string | null) => {
+    const selectedPort = ports.find((port) => port.id === filters.departurePortId);
+    const nextPortId =
+      departureCountry && selectedPort?.country_code === departureCountry
+        ? filters.departurePortId
+        : null;
+
+    const nextArrivals = arrivalPorts.filter((port) =>
+      routes.some((route) => {
+        if (route.arrival_port_id !== port.id) return false;
+        const departure = ports.find((item) => item.id === route.departure_port_id);
+        return departure?.country_code === departureCountry;
+      }),
     );
-  });
 
-  const destinations = [...destinationCounts.entries()]
-    .sort((a, b) => b[1] - a[1])
-    .slice(0, 6)
-    .map(([id]) => ports.find((port) => port.id === id))
-    .filter((port): port is Port => Boolean(port));
+    onFiltersChange({
+      ...filters,
+      departureCountry,
+      departurePortId: nextPortId,
+      arrivalPortId:
+        filters.arrivalPortId &&
+        nextArrivals.some((port) => port.id === filters.arrivalPortId)
+          ? filters.arrivalPortId
+          : null,
+    });
+  };
+
+  const updateDeparturePort = (departurePortId: string | null) => {
+    const selectedPort = ports.find((port) => port.id === departurePortId);
+    const departureCountry = selectedPort?.country_code ?? filters.departureCountry;
+    const nextArrivals = arrivalPorts.filter((port) =>
+      routes.some(
+        (route) =>
+          route.arrival_port_id === port.id &&
+          (!departureCountry ||
+            ports.find((item) => item.id === route.departure_port_id)?.country_code ===
+              departureCountry) &&
+          (!departurePortId || route.departure_port_id === departurePortId),
+      ),
+    );
+
+    onFiltersChange({
+      ...filters,
+      departureCountry,
+      departurePortId,
+      arrivalPortId:
+        filters.arrivalPortId &&
+        nextArrivals.some((port) => port.id === filters.arrivalPortId)
+          ? filters.arrivalPortId
+          : null,
+    });
+  };
+
+  const portName = (id: string) => ports.find((port) => port.id === id)?.name ?? "Port";
+
+  const destinations = compatibleArrivals.slice(0, 6);
 
   const nextDepartures = departures
     .filter((departure) => {
       const route = routes.find((item) => item.id === departure.route_id);
       if (!route || departure.status === "cancelled") return false;
-      if (filters.departurePortId && route.departure_port_id !== filters.departurePortId) return false;
-      if (filters.arrivalPortId && route.arrival_port_id !== filters.arrivalPortId) return false;
+      if (filters.departurePortId && route.departure_port_id !== filters.departurePortId)
+        return false;
+      if (filters.arrivalPortId && route.arrival_port_id !== filters.arrivalPortId)
+        return false;
       return true;
     })
     .slice(0, 4);
@@ -73,24 +146,33 @@ export function MobileMapControls({
           <UserMenu compact />
         </div>
 
-        <div className="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-1.5">
+        <div className="space-y-1.5">
           <PortSelect
-            label="Départ"
-            placeholder="Départ"
-            value={filters.departurePortId}
-            ports={activePorts}
-            onChange={(departurePortId) =>
-              onFiltersChange({ ...filters, departurePortId, departureCountry: null })
-            }
+            label="Pays de départ"
+            placeholder="Pays de départ"
+            value={filters.departureCountry}
+            options={countries}
+            onChange={updateDepartureCountry}
           />
-          <ArrowRight className="size-4 shrink-0 text-muted-foreground" aria-hidden />
-          <PortSelect
-            label="Arrivée"
-            placeholder="Arrivée"
-            value={filters.arrivalPortId}
-            ports={activePorts}
-            onChange={(arrivalPortId) => onFiltersChange({ ...filters, arrivalPortId })}
-          />
+          <div className="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-1.5">
+            <PortSelect
+              label="Port de départ"
+              placeholder={filters.departureCountry ? "Port de départ" : "Choisir un pays"}
+              value={filters.departurePortId}
+              ports={departurePorts}
+              onChange={updateDeparturePort}
+              disabled={!filters.departureCountry}
+            />
+            <ArrowRight className="size-4 shrink-0 text-muted-foreground" aria-hidden />
+            <PortSelect
+              label="Port d’arrivée"
+              placeholder="Arrivée en Algérie"
+              value={filters.arrivalPortId}
+              ports={compatibleArrivals}
+              onChange={(arrivalPortId) => onFiltersChange({ ...filters, arrivalPortId })}
+              disabled={!filters.departureCountry}
+            />
+          </div>
         </div>
       </div>
 
@@ -141,27 +223,37 @@ function PortSelect({
   label,
   placeholder,
   value,
-  ports,
+  ports = [],
+  options,
   onChange,
+  disabled = false,
 }: {
   label: string;
   placeholder: string;
   value: string | null;
-  ports: Port[];
+  ports?: Port[];
+  options?: Array<{ value: string; label: string }>;
   onChange: (value: string | null) => void;
+  disabled?: boolean;
 }) {
+  const values = options ?? ports.map((port) => ({ value: port.id, label: port.name }));
+
   return (
     <label className="min-w-0">
       <span className="sr-only">{label}</span>
-      <Select value={value ?? ANY} onValueChange={(next) => onChange(next === ANY ? null : next)}>
+      <Select
+        value={value ?? ANY}
+        onValueChange={(next) => onChange(next === ANY ? null : next)}
+        disabled={disabled}
+      >
         <SelectTrigger className="h-10 min-w-0 rounded-lg bg-card px-2.5 shadow-none">
           <SelectValue placeholder={placeholder} />
         </SelectTrigger>
         <SelectContent>
           <SelectItem value={ANY}>{placeholder}</SelectItem>
-          {ports.map((port) => (
-            <SelectItem key={port.id} value={port.id}>
-              {port.name} · {port.country_name}
+          {values.map((option) => (
+            <SelectItem key={option.value} value={option.value}>
+              {option.label}
             </SelectItem>
           ))}
         </SelectContent>

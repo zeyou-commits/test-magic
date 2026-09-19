@@ -259,10 +259,14 @@ function PortSelect({
         <SelectTrigger className="h-8 min-w-0 rounded-md bg-card px-1.5 text-[11px] shadow-none">
           <SelectValue placeholder={placeholder} />
         </SelectTrigger>
-        <SelectContent>
-          <SelectItem value={ANY}>{placeholder}</SelectItem>
+        <SelectContent
+          className="max-h-48 min-w-0 w-[var(--radix-select-trigger-width)] [&>div]:h-auto [&>div]:max-h-44"
+        >
+          <SelectItem value={ANY} className="py-1 text-xs">
+            {placeholder}
+          </SelectItem>
           {values.map((option) => (
-            <SelectItem key={option.value} value={option.value}>
+            <SelectItem key={option.value} value={option.value} className="py-1 text-xs">
               {option.label}
             </SelectItem>
           ))}

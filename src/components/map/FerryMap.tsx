@@ -188,6 +188,11 @@ export default function FerryMap({ ports, routes, visibleRouteIds, focusRouteIds
     resizeObserver.observe(container);
     window.addEventListener("resize", resize);
     
+    const handleMapInteraction = () => onMapInteract?.();
+    map.on("touchstart", handleMapInteraction);
+    map.on("mousedown", handleMapInteraction);
+    map.on("wheel", handleMapInteraction);
+
     map.on("error", (e) => console.error("MAP ERROR", e.error?.message ?? e.error));
     map.on("load", () => {
       ["label_other", "label_village", "label_town", "label_city", "label_city_capital", "label_country_1", "label_country_2", "label_country_3"].forEach((layerId) => { 
@@ -208,11 +213,6 @@ export default function FerryMap({ ports, routes, visibleRouteIds, focusRouteIds
         if (typeof id === "string") selectRef.current({ type: "route", id }); 
       };
       
-      const handleMapInteraction = () => onMapInteract?.();
-      map.on("touchstart", handleMapInteraction);
-      map.on("mousedown", handleMapInteraction);
-      map.on("wheel", handleMapInteraction);
-
       map.on("click", "ferry-routes-line", pickRoute);
       map.on("click", "ferry-routes-duration", pickRoute);
       map.on("mouseenter", "ferry-routes-line", () => { map.getCanvas().style.cursor = "pointer"; });

@@ -38,6 +38,7 @@ interface FerryMapProps {
   highlightedPortIds: string[];
   portMeta: Record<string, PortMeta>;
   onSelect: (selection: Selection | null) => void;
+  onOpenPanel?: () => void;
   onMapInteract?: () => void;
 }
 
@@ -421,6 +422,16 @@ export default function FerryMap({ ports, routes, visibleRouteIds, focusRouteIds
           next.className = "port-tip__next";
           next.textContent = `Prochain : ${meta.upcoming[0].label}${meta.upcoming[0].to ? ` → ${meta.upcoming[0].to}` : ""}`;
           tip.append(next);
+          const more = document.createElement("button");
+          more.type = "button";
+          more.className = "port-tip__more";
+          more.textContent = "Voir plus →";
+          more.addEventListener("click", (event) => {
+            event.stopPropagation();
+            onSelect({ type: "port", id: port.id });
+            onOpenPanel?.();
+          });
+          tip.append(more);
         } else {
           const next = document.createElement("p");
           next.className = "port-tip__next";

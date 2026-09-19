@@ -50,6 +50,22 @@ export function ExplorerView({
     .map(([code, name]) => ({ value: code, label: name }))
     .sort((a, b) => a.label.localeCompare(b.label, "fr"));
 
+  const routeMatchesDeparture = (route: RouteLine) =>
+    !filters.departureCountry ||
+    ports.find((port) => port.id === route.departure_port_id)?.country_code === filters.departureCountry;
+
+  const routeMatchesDeparturePort = (route: RouteLine) =>
+    !filters.departurePortId || route.departure_port_id === filters.departurePortId;
+
+  const compatibleArrivalPorts = arrivalPorts.filter((port) =>
+    routes.some(
+      (route) =>
+        route.arrival_port_id === port.id &&
+        routeMatchesDeparture(route) &&
+        routeMatchesDeparturePort(route),
+    ),
+  );
+
   const updateDepartureCountry = (value: string | null) => {
     const selectedPort = ports.find((port) => port.id === filters.departurePortId);
     onFiltersChange({
@@ -61,10 +77,29 @@ export function ExplorerView({
 
   const updateDeparturePort = (value: string | null) => {
     const selectedPort = ports.find((port) => port.id === value);
-    onFiltersChange({
+    const nextFilters = {
       ...filters,
       departurePortId: value,
       departureCountry: selectedPort?.country_code ?? filters.departureCountry,
+    };
+
+    const nextCompatibleArrivals = arrivalPorts.filter((port) =>
+      routes.some(
+        (route) =>
+          route.arrival_port_id === port.id &&
+          (!nextFilters.departureCountry ||
+            ports.find((item) => item.id === route.departure_port_id)?.country_code === nextFilters.departureCountry) &&
+          (!nextFilters.departurePortId || route.departure_port_id === nextFilters.departurePortId),
+      ),
+    );
+
+    onFiltersChange({
+      ...nextFilters,
+      arrivalPortId:
+        nextFilters.arrivalPortId &&
+        nextCompatibleArrivals.some((port) => port.id === nextFilters.arrivalPortId)
+          ? nextFilters.arrivalPortId
+          : null,
     });
   };
 
@@ -174,7 +209,7 @@ export function ExplorerView({
               <div className="space-y-2.5">
                 <FilterSelect label="1. Pays de départ" value={filters.departureCountry} onChange={updateDepartureCountry} options={countries} placeholder="Choisir un pays" />
                 <FilterSelect label="2. Port de départ" value={filters.departurePortId} onChange={updateDeparturePort} options={filteredDeparturePorts.map((port) => ({ value: port.id, label: port.name }))} placeholder={filters.departureCountry ? "Choisir un port de départ" : "Choisissez d’abord un pays"} disabled={!filters.departureCountry} />
-                <FilterSelect label="3. Port d’arrivée en Algérie" value={filters.arrivalPortId} onChange={(value) => onFiltersChange({ ...filters, arrivalPortId: value })} options={arrivalPorts.map((port) => ({ value: port.id, label: port.name }))} placeholder="Choisir un port d’arrivée" />
+                <FilterSelect label="3. Port d’arrivée en Algérie" value={filters.arrivalPortId} onChange={(value) => onFiltersChange({ ...filters, arrivalPortId: value })} options={compatibleArrivalPorts.map((port) => ({ value: port.id, label: port.name }))} placeholder="Choisir un port d’arrivée" />
               </div>
             </div>
             <div className="flex flex-wrap gap-1.5">

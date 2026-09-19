@@ -227,11 +227,11 @@ export default function FerryMap({ ports, routes, visibleRouteIds, focusRouteIds
             ["get", "selected"],
             7,
             ["interpolate", ["linear"], ["get", "lineCount"],
-              1, 3.5,
-              3, 4.5,
-              5, 5.5,
-              10, 7,
-              20, 9
+              1, 2.5,
+              3, 3,
+              5, 3.6,
+              10, 4.8,
+              20, 6
             ]
           ],
           "line-opacity": ["case", ["get", "dimmed"], 0.1, 0.8]
@@ -249,14 +249,20 @@ export default function FerryMap({ ports, routes, visibleRouteIds, focusRouteIds
             ["get", "selected"],
             4.5,
             ["interpolate", ["linear"], ["get", "lineCount"],
-              1, 2,
-              3, 2.8,
-              5, 3.6,
-              10, 4.8,
-              20, 6.5
+              1, 1.2,
+              3, 1.6,
+              5, 2.2,
+              10, 3.2,
+              20, 4.6
             ]
           ],
-          "line-opacity": ["case", ["get", "dimmed"], 0.16, 1]
+          "line-opacity": ["case", ["get", "dimmed"], 0.16, 1],
+          "line-dasharray": [
+            "case",
+            ["<=", ["get", "lineCount"], 2],
+            ["literal", [1.5, 2.5]],
+            ["literal", [1, 0]]
+          ]
         }
       });
       map.addLayer({ id: "ferry-routes-duration", type: "symbol", source: "ferry-routes", minzoom: 3.4, layout: { "symbol-placement": "line-center", "text-field": ["get", "label"], "text-font": ["Noto Sans Bold"], "text-size": 11, "text-letter-spacing": 0.04, "text-rotation-alignment": "map", "text-pitch-alignment": "viewport", "text-keep-upright": true, "text-offset": [0, -0.9], "text-allow-overlap": true, "text-ignore-placement": true }, paint: { "text-color": ["get", "color"], "text-halo-color": mapColor("--map-route-casing"), "text-halo-width": 1.6, "text-opacity": ["case", ["get", "dimmed"], 0.2, 1] } });

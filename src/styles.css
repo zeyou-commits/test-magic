@@ -163,6 +163,9 @@
 
 /* Popup de port : positionné dans le marker pour rester confiné à la carte. */
 .port-tip { position: absolute; left: 14px; top: -12px; z-index: 5; width: max-content; max-width: min(240px, calc(100vw - 32px)); box-sizing: border-box; padding: 8px 10px; border-radius: 12px; border: 1px solid var(--color-border); background: color-mix(in oklab, var(--color-card) 94%, transparent); backdrop-filter: blur(6px); box-shadow: var(--shadow-elegant); opacity: 0; transform: translateY(4px) scale(0.98); transition: opacity 0.14s ease, transform 0.14s ease; pointer-events: none; }
+.port-tip__close { position: absolute; top: 4px; right: 5px; z-index: 2; display: grid; place-items: center; width: 20px; height: 20px; margin: 0; padding: 0; border: 0; border-radius: 999px; background: transparent; color: var(--color-muted-foreground); font-size: 15px; line-height: 1; cursor: pointer; }
+.port-tip__close:hover { background: var(--color-secondary); color: var(--color-foreground); }
+.port-tip__close + .port-tip__title, .port-tip > .port-tip__title { padding-right: 22px; }
 .port-marker:hover .port-tip, .port-marker:focus-within .port-tip, .port-marker[data-active="true"] .port-tip { opacity: 1; transform: translateY(0) scale(1); pointer-events: auto; }
 
 .port-tip__departures-title { margin-top: 6px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; font-size: 10px; }

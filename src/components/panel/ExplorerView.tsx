@@ -14,7 +14,7 @@ import {
 import { companiesQuery, portsQuery, routesQuery, vesselsQuery } from "@/lib/ferry/queries";
 import { emptyFilters, type Filters, type RouteLine, type Selection } from "@/lib/ferry/types";
 import { formatDuration } from "@/lib/ferry/format";
-import { EmptyNote, PanelHeader, Section } from "./shared";
+import { EmptyNote, Section } from "./shared";
 
 const ANY = "__any__";
 const ALGERIA = "DZ";
@@ -131,11 +131,12 @@ export function ExplorerView({
 
   return (
     <div>
-      <PanelHeader
-        overline="Explorer"
-        title="Traversées vers l'Algérie"
-        subtitle={`${routes.length} lignes · ${ports.length} ports`}
-      />
+      <div className="flex items-center justify-between gap-2 border-b border-border px-5 py-2.5">
+        <h2 className="min-w-0 truncate text-sm font-semibold">Traversées EU - DZ</h2>
+        <span className="shrink-0 text-xs text-muted-foreground">
+          {routes.length} lignes · {ports.length} ports
+        </span>
+      </div>
       <div>
         <div className={hidePrimarySearchOnMobile ? "hidden md:block" : undefined}>
         <Section title="Recherche">

@@ -21,7 +21,7 @@ function initials(name: string) {
     .join("");
 }
 
-export function UserMenu() {
+export function UserMenu({ compact = false }: { compact?: boolean }) {
   const { user, profile, isAdmin, signOut } = useAuth();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -55,7 +55,7 @@ export function UserMenu() {
           aria-label="Mon compte"
           className="rounded-full ring-offset-2 ring-offset-card outline-none focus-visible:ring-2 focus-visible:ring-ring"
         >
-          <Avatar className="size-9 border border-border">
+          <Avatar className={`${compact ? "size-6" : "size-9"} border border-border`}>
             {profile?.avatar_url ? (
               <AvatarImage src={profile.avatar_url} alt={name} />
             ) : null}

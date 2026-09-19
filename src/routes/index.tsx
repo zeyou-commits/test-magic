@@ -68,8 +68,11 @@ function Index() {
     const selected = new Set(filters.portIds);
     return routes.filter((route) => {
       if (!portOpen(route.departure_port_id) || !portOpen(route.arrival_port_id)) return false;
+      // Les filtres guidés du trajet sont prioritaires sur l'ancienne sélection de ports.
       if (
         selected.size > 0 &&
+        !filters.departurePortId &&
+        !filters.arrivalPortId &&
         !selected.has(route.departure_port_id) &&
         !selected.has(route.arrival_port_id)
       )

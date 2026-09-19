@@ -1,4 +1,4 @@
-import { ArrowRight, CalendarClock, MapPin } from "lucide-react";
+import { CalendarClock, MapPin } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import { BrandMark } from "@/components/layout/BrandMark";
 import { UserMenu } from "@/components/layout/UserMenu";
@@ -149,43 +149,40 @@ export function MobileMapControls({
     .slice(0, 4);
 
   return (
-    <div className="pointer-events-none absolute inset-x-0 top-0 z-50 px-3 pt-[max(0.75rem,env(safe-area-inset-top))] md:hidden">
-      <div className="pointer-events-auto rounded-xl border border-border/70 bg-background/95 p-2 shadow-[var(--shadow-elegant)] backdrop-blur-xl">
-        <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2 px-1 pb-1.5">
-          <Link to="/" className="flex min-w-0 items-center gap-1.5">
-            <BrandMark className="size-5 shrink-0 text-primary" />
-            <span className="truncate font-display text-sm font-bold">Batogo</span>
+    <div className="pointer-events-none absolute inset-x-0 top-0 z-50 px-1.5 pt-[max(0.15rem,env(safe-area-inset-top))] md:hidden">
+      <div className="pointer-events-auto rounded-lg border border-border/60 bg-background/95 p-1.5 shadow-sm backdrop-blur-xl">
+        <div className="flex h-5 items-center justify-between px-0.5 pb-1">
+          <Link to="/" className="flex min-w-0 items-center">
+            <BrandMark className="size-3.5 shrink-0 text-primary" />
+            <span className="sr-only">Batogo</span>
           </Link>
           <UserMenu compact />
         </div>
 
-        <div className="space-y-1.5">
+        <div className="grid grid-cols-3 items-center gap-1">
           <PortSelect
             label="Pays de départ"
-            placeholder="Pays de départ"
+            placeholder="Pays"
             value={filters.departureCountry}
             options={countries}
             onChange={updateDepartureCountry}
           />
-          <div className="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-1.5">
-            <PortSelect
-              label="Port de départ"
-              placeholder={filters.departureCountry ? "Port de départ" : "Tous les départs"}
-              value={filters.departurePortId}
-              ports={departurePorts.filter((port) =>
-                compatibleDeparturePorts.some((item) => item.id === port.id),
-              )}
-              onChange={updateDeparturePort}
-            />
-            <ArrowRight className="size-4 shrink-0 text-muted-foreground" aria-hidden />
-            <PortSelect
-              label="Port d’arrivée"
-              placeholder="Arrivée en Algérie"
-              value={filters.arrivalPortId}
-              ports={compatibleArrivals}
-              onChange={(arrivalPortId) => onFiltersChange({ ...filters, arrivalPortId })}
-            />
-          </div>
+          <PortSelect
+            label="Port de départ"
+            placeholder="Départ"
+            value={filters.departurePortId}
+            ports={departurePorts.filter((port) =>
+              compatibleDeparturePorts.some((item) => item.id === port.id),
+            )}
+            onChange={updateDeparturePort}
+          />
+          <PortSelect
+            label="Port d’arrivée"
+            placeholder="Arrivée"
+            value={filters.arrivalPortId}
+            ports={compatibleArrivals}
+            onChange={(arrivalPortId) => onFiltersChange({ ...filters, arrivalPortId })}
+          />
         </div>
       </div>
 
@@ -259,7 +256,7 @@ function PortSelect({
         onValueChange={(next) => onChange(next === ANY ? null : next)}
         disabled={disabled}
       >
-        <SelectTrigger className="h-10 min-w-0 rounded-lg bg-card px-2.5 shadow-none">
+        <SelectTrigger className="h-8 min-w-0 rounded-md bg-card px-1.5 text-[11px] shadow-none">
           <SelectValue placeholder={placeholder} />
         </SelectTrigger>
         <SelectContent>

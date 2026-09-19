@@ -282,6 +282,18 @@ export default function FerryMap({ ports, routes, visibleRouteIds, focusRouteIds
         const tip = document.createElement("div"); 
         tip.className = "port-tip";
         
+        const close = document.createElement("button");
+        close.type = "button";
+        close.className = "port-tip__close";
+        close.setAttribute("aria-label", "Fermer");
+        close.textContent = "×";
+        close.addEventListener("click", (event) => {
+          event.stopPropagation();
+          selectRef.current(null);
+          el.dataset["active"] = "false";
+        });
+        tip.append(close);
+        
         el.append(dot, label, tip);
         
         const select = (event: Event) => { 

@@ -4,9 +4,9 @@ import { ArrowRight, CalendarDays, ChevronDown, Compass, Users } from "lucide-re
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { companiesQuery, portsQuery, routesQuery, schedulesQuery } from "@/lib/ferry/queries";
+import { companiesQuery, plannerDeparturesQuery, portsQuery, routesQuery, schedulesQuery } from "@/lib/ferry/queries";
 import { getSchoolBreak, type SchoolZone } from "@/lib/ferry/schoolCalendar";
-import type { Port, RouteLine, Schedule } from "@/lib/ferry/types";
+import type { Departure, Port, RouteLine, Schedule } from "@/lib/ferry/types";
 import { formatDuration } from "@/lib/ferry/format";
 
 type TravelerType = "solo" | "couple" | "family";
@@ -87,6 +87,7 @@ export function TripPlanner() {
   const { data: ports = [] } = useQuery(portsQuery);
   const { data: routes = [] } = useQuery(routesQuery);
   const { data: schedules = [] } = useQuery(schedulesQuery);
+  const { data: departures = [] } = useQuery(plannerDeparturesQuery);
   const { data: companies = [] } = useQuery(companiesQuery);
 
   const activePorts = useMemo(() => ports.filter((port) => port.status === "active"), [ports]);
@@ -104,19 +105,35 @@ export function TripPlanner() {
   const [returnToId, setReturnToId] = useState("");
   const [traveler, setTraveler] = useState<TravelerType>("family");
   const [zone, setZone] = useState<SchoolZone | null>(null);
+  const [flexDays, setFlexDays] = useState(3);
   const [searched, setSearched] = useState(false);
 
+  const availableDates = useMemo(() => {
+    const ids = new Set<string>();
+    departures.forEach((departure) => {
+      const route = routes.find((item) => item.id === departure.route_id);
+      if (!route || (fromId && route.departure_port_id !== fromId) || (toId && route.arrival_port_id !== toId)) return;
+      ids.add(departure.departure_at.slice(0, 10));
+    });
+    return ids;
+  }, [departures, routes, fromId, toId]);
+
+  const suggestedDates = useMemo(() => {
+    if (!zone || !outboundDate) return [];
+    return Array.from({ length: flexDays * 2 + 1 }, (_, i) => addDays(outboundDate, i - flexDays)).filter((date) => availableDates.has(date));
+  }, [zone, outboundDate, flexDays, availableDates]);
+
   const outbound = useMemo(
-    () => (searched && fromId && toId && outboundDate ? findLeg(outboundDate, fromId, toId, routes, schedules, companyNames, traveler) : null),
-    [searched, fromId, toId, outboundDate, routes, schedules, companyNames, traveler],
+    () => (searched && fromId && toId && outboundDate ? findActualDeparture(outboundDate, fromId, toId, routes, departures, companyNames, traveler) : null),
+    [searched, fromId, toId, outboundDate, routes, departures, companyNames, traveler],
   );
 
   const inbound = useMemo(
     () =>
       searched && returnDate && returnFromId && returnToId
-        ? findLeg(returnDate, returnFromId, returnToId, routes, schedules, companyNames, traveler)
+        ? findActualDeparture(returnDate, returnFromId, returnToId, routes, departures, companyNames, traveler)
         : null,
-    [searched, returnDate, returnFromId, returnToId, routes, schedules, companyNames, traveler],
+    [searched, returnDate, returnFromId, returnToId, routes, departures, companyNames, traveler],
   );
 
   const schoolInfo = useMemo(() => {
@@ -158,8 +175,8 @@ export function TripPlanner() {
       {open ? (
         <div className="space-y-3 px-5 pb-4">
           <div className="grid gap-2 sm:grid-cols-2">
-            <DateField label="Aller" value={outboundDate} min={today} onChange={setOutboundDate} />
-            <DateField label="Retour" value={returnDate} min={outboundDate || today} onChange={setReturnDate} optional />
+            <DateField label="Aller" value={outboundDate} min={today} onChange={setOutboundDate} availableDates={availableDates} />
+            <DateField label="Retour" value={returnDate} min={outboundDate || today} onChange={setReturnDate} optional availableDates={availableDates} />
           </div>
 
           <div className="grid gap-2 sm:grid-cols-2">
@@ -175,6 +192,19 @@ export function TripPlanner() {
                 <PortSelect label="Arrivée retour" value={returnToId} onChange={setReturnToId} ports={activePorts.filter((port) => port.id !== returnFromId)} />
               </div>
               <p className="mt-2 text-[11px] text-muted-foreground">Les ports retour peuvent être différents de l’aller.</p>
+            </div>
+          ) : null}
+
+          {zone ? (
+            <div className="rounded-xl border border-border/70 bg-background/70 p-3">
+              <div className="flex items-center justify-between gap-3">
+                <div><p className="text-xs font-semibold">Dates de traversée disponibles</p><p className="text-[11px] text-muted-foreground">Zone {zone} · fenêtre ± {flexDays} jours</p></div>
+                <Select value={String(flexDays)} onValueChange={(value) => setFlexDays(Number(value))}>
+                  <SelectTrigger className="h-8 w-[110px] bg-background"><SelectValue /></SelectTrigger>
+                  <SelectContent><SelectItem value="1">± 1 jour</SelectItem><SelectItem value="3">± 3 jours</SelectItem><SelectItem value="5">± 5 jours</SelectItem><SelectItem value="7">± 7 jours</SelectItem><SelectItem value="10">± 10 jours</SelectItem></SelectContent>
+                </Select>
+              </div>
+              <div className="mt-2 flex flex-wrap gap-1.5">{suggestedDates.length ? suggestedDates.map((date) => <button key={date} type="button" onClick={() => setOutboundDate(date)} className={date === outboundDate ? "rounded-lg border border-primary bg-primary px-2.5 py-1.5 text-xs text-primary-foreground" : "rounded-lg border border-border bg-background px-2.5 py-1.5 text-xs hover:bg-secondary"}>{formatDay(date)}</button>) : <span className="text-[11px] text-muted-foreground">Aucune traversée disponible dans cet intervalle.</span>}</div>
             </div>
           ) : null}
 
@@ -249,13 +279,22 @@ export function TripPlanner() {
   );
 }
 
-function DateField({ label, value, min, onChange, optional = false }: { label: string; value: string; min: string; onChange: (value: string) => void; optional?: boolean }) {
-  return (
-    <label className="grid gap-1">
-      <span className="text-xs font-medium text-muted-foreground">{label}{optional ? " · optionnel" : ""}</span>
-      <Input type="date" min={min} value={value} onChange={(event) => onChange(event.target.value)} className="bg-background/70" />
-    </label>
-  );
+function DateField({ label, value, min, onChange, optional = false, availableDates }: { label: string; value: string; min: string; onChange: (value: string) => void; optional?: boolean; availableDates: Set<string> }) {
+  return <label className="grid gap-1"><span className="text-xs font-medium text-muted-foreground">{label}{optional ? " · optionnel" : ""}</span><Input type="date" min={min} value={value} onChange={(event) => onChange(event.target.value)} className="bg-background/70" /><span className="text-[10px] text-muted-foreground">{availableDates.size} date(s) de traversée connues</span></label>;
+}
+
+function addDays(value: string, amount: number) { const date = new Date(value + "T00:00:00"); date.setDate(date.getDate() + amount); return date.toISOString().slice(0, 10); }
+
+function findActualDeparture(date: string, fromId: string, toId: string, routes: RouteLine[], departures: Departure[], companyNames: Map<string, string>, traveler: TravelerType): LegRecommendation | null {
+  const candidates = departures.filter((departure) => departure.departure_at.slice(0, 10) === date).map((departure) => {
+    const route = routes.find((item) => item.id === departure.route_id);
+    if (!route || route.departure_port_id !== fromId || route.arrival_port_id !== toId) return null;
+    const hour = Number(departure.departure_at.slice(11, 13)) + Number(departure.departure_at.slice(14, 16)) / 60;
+    const duration = departure.duration_minutes ?? route.typical_duration_minutes ?? 9999;
+    let penalty = 0; if (traveler === "family" && (hour < 7 || hour >= 22)) penalty += 80; else if (traveler === "couple" && hour < 6) penalty += 35; else if (traveler === "solo" && hour < 5) penalty += 20;
+    return { route, schedule: { id: departure.id, route_id: route.id, company_id: departure.company_id, default_vessel_id: departure.vessel_id, departure_time: departure.departure_at.slice(11, 19), duration_minutes: duration, weekdays: [], valid_from: date, valid_to: date, status: "active" as const, source_name: departure.source_name, source_url: departure.source_url, last_verified_at: departure.last_verified_at, reliability: departure.reliability, notes: departure.notes, is_demo: departure.is_demo }, companyName: companyNames.get(departure.company_id) ?? "Compagnie", score: duration + penalty };
+  }).filter(Boolean) as LegRecommendation[];
+  return candidates.sort((a, b) => a.score - b.score)[0] ?? null;
 }
 
 function PortSelect({ label, value, onChange, ports }: { label: string; value: string; onChange: (value: string) => void; ports: Port[] }) {

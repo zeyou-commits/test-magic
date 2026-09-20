@@ -68,10 +68,30 @@ export function ExplorerView({
 
   const updateDepartureCountry = (value: string | null) => {
     const selectedPort = ports.find((port) => port.id === filters.departurePortId);
+    const nextPortId =
+      value && selectedPort?.country_code === value
+        ? filters.departurePortId
+        : null;
+
+    const nextCompatibleArrivals = arrivalPorts.filter((port) =>
+      routes.some(
+        (route) =>
+          route.arrival_port_id === port.id &&
+          (!value ||
+            ports.find((item) => item.id === route.departure_port_id)?.country_code === value) &&
+          (!nextPortId || route.departure_port_id === nextPortId),
+      ),
+    );
+
     onFiltersChange({
       ...filters,
       departureCountry: value,
-      departurePortId: value && selectedPort?.country_code !== value ? null : filters.departurePortId,
+      departurePortId: nextPortId,
+      arrivalPortId:
+        filters.arrivalPortId &&
+        nextCompatibleArrivals.some((port) => port.id === filters.arrivalPortId)
+          ? filters.arrivalPortId
+          : null,
     });
   };
 
@@ -203,7 +223,7 @@ export function ExplorerView({
           }
         >
           <div className="space-y-3">
-            <div className="rounded-2xl border border-primary/15 bg-primary/[0.04] p-3">
+            <div className="hidden rounded-2xl border border-primary/15 bg-primary/[0.04] p-3 md:block">
               <p className="mb-3 text-xs text-muted-foreground">
                 Choisissez d’abord votre pays de départ, puis votre port et votre arrivée en Algérie.
               </p>

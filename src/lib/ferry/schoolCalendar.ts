@@ -39,3 +39,27 @@ export function getSchoolBreak(date: string, zone?: SchoolZone | null): SchoolBr
     return date >= period.start && date < period.end;
   }) ?? null;
 }
+
+export function getSchoolBreaksForZone(zone: SchoolZone): SchoolBreak[] {
+  return SCHOOL_BREAKS_2026_2027.flatMap((period) => {
+    if (period.name === "Hiver") {
+      const ranges: Record<SchoolZone, [string, string]> = {
+        A: ["2027-02-06", "2027-02-22"],
+        B: ["2027-02-13", "2027-03-01"],
+        C: ["2027-02-20", "2027-03-08"],
+      };
+      const [start, end] = ranges[zone];
+      return [{ ...period, start, end }];
+    }
+    if (period.name === "Printemps") {
+      const ranges: Record<SchoolZone, [string, string]> = {
+        A: ["2027-04-03", "2027-04-19"],
+        B: ["2027-04-10", "2027-04-26"],
+        C: ["2027-04-17", "2027-05-03"],
+      };
+      const [start, end] = ranges[zone];
+      return [{ ...period, start, end }];
+    }
+    return [{ ...period }];
+  });
+}

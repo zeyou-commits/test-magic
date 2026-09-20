@@ -1,5 +1,6 @@
 import type { Filters, RouteLine, Selection } from "@/lib/ferry/types";
 import { ExplorerView } from "./ExplorerView";
+import { TripPlanner } from "./TripPlanner";
 import { PortView } from "./PortView";
 import { RouteView } from "./RouteView";
 import { CompanyView, DepartureView, VesselView } from "./EntityViews";
@@ -52,6 +53,7 @@ export function SidePanel({
             <div className="h-2 bg-secondary/40" />
           </div>
         ) : null}
+        <TripPlanner />
         <ExplorerView
           filters={filters}
           onFiltersChange={onFiltersChange}

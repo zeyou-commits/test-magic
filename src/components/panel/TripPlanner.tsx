@@ -106,6 +106,7 @@ export function TripPlanner() {
   const [traveler, setTraveler] = useState<TravelerType>("family");
   const [zone, setZone] = useState<SchoolZone | null>(null);
   const [flexDays, setFlexDays] = useState(3);
+  const [tripMode, setTripMode] = useState<"roundtrip" | "oneway">("roundtrip");
   const [searched, setSearched] = useState(false);
 
   const availableDates = useMemo(() => {
@@ -145,7 +146,7 @@ export function TripPlanner() {
 
   const inbound = useMemo(
     () =>
-      searched && returnDate && returnFromId && returnToId
+      searched && tripMode === "roundtrip" && returnDate && returnFromId && returnToId
         ? findActualDeparture(returnDate, returnFromId, returnToId, routes, departures, companyNames, traveler)
         : null,
     [searched, returnDate, returnFromId, returnToId, routes, departures, companyNames, traveler],
@@ -164,7 +165,7 @@ export function TripPlanner() {
 
   const submit = () => {
     if (!outboundDate || !fromId || !toId) return;
-    if (returnDate && (!returnFromId || !returnToId || returnDate < outboundDate)) return;
+    if (tripMode === "roundtrip" && returnDate && (!returnFromId || !returnToId || returnDate < outboundDate)) return;
     setSearched(true);
   };
 
@@ -188,25 +189,56 @@ export function TripPlanner() {
       </button>
 
       {open ? (
-        <div className="space-y-3 px-5 pb-4">
-          <div className="grid gap-2 sm:grid-cols-2">
-            <DateField label="Aller" value={outboundDate} min={today} onChange={setOutboundDate} availableDates={availableDates} />
-            <DateField label="Retour" value={returnDate} min={outboundDate || today} onChange={setReturnDate} optional availableDates={availableDates} />
-          </div>
+        <div className="space-y-4 px-5 pb-4">
+          <section className="space-y-2">
+            <p className="text-sm font-semibold">Je voyage...</p>
+            <div className="grid grid-cols-3 gap-2">
+              {([["solo", "Seul"], ["couple", "En couple"], ["family", "En famille"]] as const).map(([value, label]) => (
+                <button key={value} type="button" onClick={() => setTraveler(value)}
+                  className={`rounded-2xl border p-3 text-center text-xs font-semibold transition ${traveler === value ? "border-primary bg-primary text-primary-foreground shadow-sm" : "border-border bg-background hover:bg-secondary"}`}>
+                  <Users className="mx-auto mb-1 size-5" />{label}
+                </button>
+              ))}
+            </div>
+          </section>
 
-          <div className="grid gap-2 sm:grid-cols-2">
-            <PortSelect label="Départ aller" value={fromId} onChange={setFromId} ports={activePorts} />
-            <PortSelect label="Arrivée aller" value={toId} onChange={setToId} ports={activePorts.filter((port) => port.id !== fromId)} />
-          </div>
+          <section className="space-y-2">
+            <p className="text-sm font-semibold">Vacances scolaires</p>
+            <Select value={zone ?? ANY} onValueChange={(value) => setZone(value === ANY ? null : value as SchoolZone)}>
+              <SelectTrigger className="h-11 bg-background"><SelectValue placeholder="Je ne sais pas / pas concerné" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value={ANY}>Je ne sais pas / pas concerné</SelectItem>
+                <SelectItem value="A">Zone A</SelectItem><SelectItem value="B">Zone B</SelectItem><SelectItem value="C">Zone C</SelectItem>
+              </SelectContent>
+            </Select>
+          </section>
 
-          {returnDate ? (
+          <section className="space-y-2">
+            <div className="grid grid-cols-2 gap-1 rounded-xl bg-secondary/70 p-1">
+              <button type="button" onClick={() => { setTripMode("roundtrip"); setReturnDate(returnDate || addDays(outboundDate, 7)); }}
+                className={`rounded-lg px-3 py-2 text-xs font-semibold ${tripMode === "roundtrip" ? "bg-background shadow-sm" : "text-muted-foreground"}`}>Aller-retour</button>
+              <button type="button" onClick={() => { setTripMode("oneway"); setReturnDate(""); }}
+                className={`rounded-lg px-3 py-2 text-xs font-semibold ${tripMode === "oneway" ? "bg-background shadow-sm" : "text-muted-foreground"}`}>Aller simple</button>
+            </div>
+
+            <div className="grid gap-2 sm:grid-cols-2">
+              <PortSelect label="Départ" value={fromId} onChange={setFromId} ports={activePorts} />
+              <PortSelect label="Arrivée" value={toId} onChange={setToId} ports={activePorts.filter((port) => port.id !== fromId)} />
+            </div>
+
+            <div className="grid gap-2 sm:grid-cols-2">
+              <DateField label="Aller" value={outboundDate} min={today} onChange={setOutboundDate} availableDates={availableDates} />
+              {tripMode === "roundtrip" ? <DateField label="Retour" value={returnDate} min={outboundDate || today} onChange={setReturnDate} availableDates={availableDates} /> : null}
+            </div>
+          </section>
+
+          {tripMode === "roundtrip" && returnDate ? (
             <div className="rounded-2xl border border-border/70 bg-background/70 p-3">
-              <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">Retour</p>
+              <p className="mb-2 text-xs font-semibold">Itinéraire retour</p>
               <div className="grid gap-2 sm:grid-cols-2">
                 <PortSelect label="Départ retour" value={returnFromId} onChange={setReturnFromId} ports={activePorts} />
                 <PortSelect label="Arrivée retour" value={returnToId} onChange={setReturnToId} ports={activePorts.filter((port) => port.id !== returnFromId)} />
               </div>
-              <p className="mt-2 text-[11px] text-muted-foreground">Les ports retour peuvent être différents de l’aller.</p>
             </div>
           ) : null}
 
@@ -222,42 +254,6 @@ export function TripPlanner() {
               <div className="mt-2 flex flex-wrap gap-1.5">{suggestedDates.length ? suggestedDates.map((date) => <button key={date} type="button" onClick={() => setOutboundDate(date)} className={date === outboundDate ? "rounded-lg border border-primary bg-primary px-2.5 py-1.5 text-xs text-primary-foreground" : "rounded-lg border border-border bg-background px-2.5 py-1.5 text-xs hover:bg-secondary"}>{formatDay(date)}</button>) : <span className="text-[11px] text-muted-foreground">Aucune traversée disponible dans cet intervalle.</span>}</div>
             </div>
           ) : null}
-
-          <div className="grid gap-2 sm:grid-cols-2">
-            <div>
-              <span className="mb-1 block text-xs font-medium text-muted-foreground">Voyageurs</span>
-              <div className="grid grid-cols-3 gap-1 rounded-xl border border-border/70 bg-background/70 p-1">
-                {([
-                  ["solo", "Seul"],
-                  ["couple", "Couple"],
-                  ["family", "Famille"],
-                ] as const).map(([value, label]) => (
-                  <button
-                    key={value}
-                    type="button"
-                    onClick={() => setTraveler(value)}
-                    className={`rounded-lg px-2 py-2 text-xs font-medium transition-colors ${traveler === value ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:bg-secondary"}`}
-                  >
-                    <Users className="mx-auto mb-0.5 size-3.5" />
-                    {label}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <label className="grid gap-1">
-              <span className="text-xs font-medium text-muted-foreground">Zone scolaire</span>
-              <Select value={zone ?? ANY} onValueChange={(value) => setZone(value === ANY ? null : value as SchoolZone)}>
-                <SelectTrigger className="bg-background/70"><SelectValue placeholder="Je ne sais pas" /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value={ANY}>Je ne sais pas</SelectItem>
-                  <SelectItem value="A">Zone A</SelectItem>
-                  <SelectItem value="B">Zone B</SelectItem>
-                  <SelectItem value="C">Zone C</SelectItem>
-                </SelectContent>
-              </Select>
-            </label>
-          </div>
 
           <Button
             type="button"
@@ -282,7 +278,7 @@ export function TripPlanner() {
             <div className="space-y-2">
               <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">Suggestion Batogo</p>
               {outbound ? <Recommendation title="Aller recommandé" leg={outbound} from={portName(fromId)} to={portName(toId)} date={outboundDate} /> : <EmptyRecommendation text="Aucune traversée programmée pour l’aller à cette date." />}
-              {returnDate ? inbound ? <Recommendation title="Retour recommandé" leg={inbound} from={portName(returnFromId)} to={portName(returnToId)} date={returnDate} /> : <EmptyRecommendation text="Aucune traversée programmée pour le retour à cette date." /> : null}
+              {tripMode === "roundtrip" && returnDate ? inbound ? <Recommendation title="Retour recommandé" leg={inbound} from={portName(returnFromId)} to={portName(returnToId)} date={returnDate} /> : <EmptyRecommendation text="Aucune traversée programmée pour le retour à cette date." /> : null}
               <p className="text-[10px] leading-relaxed text-muted-foreground">
                 Recommandation basée sur les horaires disponibles, la durée et le profil voyageur. Les tarifs ne sont pas encore pris en compte.
               </p>

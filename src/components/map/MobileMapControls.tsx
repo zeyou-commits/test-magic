@@ -198,9 +198,8 @@ export function MobileMapControls({
             size="sm"
             className="shrink-0 snap-start rounded-full bg-background/95 shadow-sm backdrop-blur-md"
             onClick={() => {
+              // Ce bouton applique uniquement le filtre : aucune popup ne doit s'ouvrir.
               onFiltersChange({ ...filters, arrivalPortId: port.id });
-              onSelect({ type: "port", id: port.id });
-              onOpenPanel();
             }}
           >
             <MapPin aria-hidden />

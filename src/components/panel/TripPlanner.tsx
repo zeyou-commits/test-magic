@@ -144,6 +144,27 @@ export function TripPlanner() {
     return ids;
   }, [departures, routes, activePorts, fromId, toId, zone]);
 
+  const suggestedReturnCrossings = useMemo(() => {
+    if (!zone) return [];
+    const period = getSchoolBreaksForZone(zone).find((item) => {
+      const start = addDays(item.start, -flexDays);
+      const end = addDays(item.end, flexDays);
+      return outboundDate >= start && outboundDate <= end;
+    }) ?? getSchoolBreaksForZone(zone)[0];
+    if (!period) return [];
+    return departures.flatMap((departure) => {
+      const route = routes.find((item) => item.id === departure.route_id);
+      if (!route) return [];
+      const from = activePorts.find((port) => port.id === route.departure_port_id);
+      const to = activePorts.find((port) => port.id === route.arrival_port_id);
+      if (!from || !to || from.country_code !== ALGERIA || to.country_code !== FRANCE) return [];
+      const date = departure.departure_at.slice(0, 10);
+      return date >= addDays(period.end, -flexDays) && date <= addDays(period.end, flexDays)
+        ? [{ departure, route, from, to }]
+        : [];
+    }).sort((a, b) => a.departure.departure_at.localeCompare(b.departure.departure_at));
+  }, [zone, outboundDate, departures, routes, activePorts]);
+
   const schoolTravelDates = useMemo(() => suggestedCrossings, [suggestedCrossings]);
 
   const selectedSchoolPeriod = useMemo(() => {
@@ -216,7 +237,7 @@ export function TripPlanner() {
 
           <section className="space-y-2">
             <p className="text-sm font-semibold">Vacances scolaires</p>
-            <Select value={zone ?? ANY} onValueChange={(value) => { const next = value === ANY ? null : value as SchoolZone; setZone(next); if (next && !fromId && !toId) { const first = suggestedCrossings[0]; if (first) { setOutboundDate(first.departure.departure_at.slice(0, 10)); setFromId(first.from.id); setToId(first.to.id); } } }}>
+            <Select value={zone ?? ANY} onValueChange={(value) => { const next = value === ANY ? null : value as SchoolZone; setZone(next); if (next) { const first = suggestedCrossings[0]; const firstReturn = suggestedReturnCrossings[0]; if (first) { setOutboundDate(first.departure.departure_at.slice(0, 10)); setFromId(first.from.id); setToId(first.to.id); } if (firstReturn) { setReturnDate(firstReturn.departure.departure_at.slice(0, 10)); setReturnFromId(firstReturn.from.id); setReturnToId(firstReturn.to.id); } } }}>
               <SelectTrigger className="h-11 bg-background"><SelectValue placeholder="Je ne sais pas / pas concerné" /></SelectTrigger>
               <SelectContent>
                 <SelectItem value={ANY}>Je ne sais pas / pas concerné</SelectItem>
@@ -233,15 +254,22 @@ export function TripPlanner() {
                 className={`rounded-lg px-3 py-2 text-xs font-semibold ${tripMode === "oneway" ? "bg-background shadow-sm" : "text-muted-foreground"}`}>Aller simple</button>
             </div>
 
-            <div className="grid gap-2 sm:grid-cols-2">
-              <PortSelect label="Départ" value={fromId} onChange={setFromId} ports={activePorts} />
-              <PortSelect label="Arrivée" value={toId} onChange={setToId} ports={activePorts.filter((port) => port.id !== fromId)} />
-            </div>
-
-            <div className="grid gap-2 sm:grid-cols-2">
-              <DateField label="Aller" value={outboundDate} min={today} onChange={setOutboundDate} availableDates={availableDates} />
-              {tripMode === "roundtrip" ? <DateField label="Retour" value={returnDate} min={outboundDate || today} onChange={setReturnDate} availableDates={availableDates} /> : null}
-            </div>
+            {zone ? (
+              <div className="rounded-xl border border-border/70 bg-background/70 px-3 py-2 text-xs">
+                <span className="font-semibold">Itinéraire compris :</span> France → Algérie
+              </div>
+            ) : (
+              <>
+                <div className="grid gap-2 sm:grid-cols-2">
+                  <PortSelect label="Départ" value={fromId} onChange={setFromId} ports={activePorts} />
+                  <PortSelect label="Arrivée" value={toId} onChange={setToId} ports={activePorts.filter((port) => port.id !== fromId)} />
+                </div>
+                <div className="grid gap-2 sm:grid-cols-2">
+                  <DateField label="Aller" value={outboundDate} min={today} onChange={setOutboundDate} availableDates={availableDates} />
+                  {tripMode === "roundtrip" ? <DateField label="Retour" value={returnDate} min={outboundDate || today} onChange={setReturnDate} availableDates={availableDates} /> : null}
+                </div>
+              </>
+            )}
           </section>
 
           {tripMode === "roundtrip" && returnDate ? (
@@ -261,24 +289,35 @@ export function TripPlanner() {
                 <p className="text-[11px] text-muted-foreground">Départ depuis la France · arrivée en Algérie · ± 3 jours autour des vacances</p>
               </div>
               {schoolTravelDates.length ? (
-                <div className="space-y-1.5">
-                  {schoolTravelDates.map(({ departure, from, to }) => {
-                    const date = departure.departure_at.slice(0, 10);
-                    const selected = date === outboundDate && fromId === from.id && toId === to.id;
-                    return (
-                      <button key={departure.id} type="button" onClick={() => {
-                        setOutboundDate(date);
-                        setFromId(from.id);
-                        setToId(to.id);
-                      }} className={`flex w-full items-center justify-between rounded-xl border px-3 py-2.5 text-left ${selected ? "border-primary bg-primary/10" : "border-border bg-background hover:bg-secondary"}`}>
-                        <span>
-                          <span className="block text-xs font-semibold">{formatDay(date)} · {formatTime(departure.departure_at)}</span>
-                          <span className="block text-[10px] text-muted-foreground">{from.name} → {to.name}</span>
-                        </span>
-                        <ArrowRight className="size-4 text-primary" />
-                      </button>
-                    );
-                  })}
+                <div className="space-y-3">
+                  <div>
+                    <p className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Aller</p>
+                    <div className="space-y-1.5">
+                      {schoolTravelDates.slice(0, 8).map(({ departure, from, to }) => {
+                        const date = departure.departure_at.slice(0, 10);
+                        const selected = date === outboundDate && fromId === from.id && toId === to.id;
+                        return <button key={departure.id} type="button" onClick={() => { setOutboundDate(date); setFromId(from.id); setToId(to.id); }}
+                          className={`flex w-full items-center justify-between rounded-xl border px-3 py-2.5 text-left ${selected ? "border-primary bg-primary/10" : "border-border bg-background hover:bg-secondary"}`}>
+                          <span><span className="block text-xs font-semibold">{formatDay(date)} · {formatTime(departure.departure_at)}</span><span className="block text-[10px] text-muted-foreground">{from.name} → {to.name}</span></span><ArrowRight className="size-4 text-primary" />
+                        </button>;
+                      })}
+                    </div>
+                  </div>
+                  {tripMode === "roundtrip" ? (
+                    <div>
+                      <p className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Retour</p>
+                      {suggestedReturnCrossings.length ? <div className="space-y-1.5">
+                        {suggestedReturnCrossings.slice(0, 8).map(({ departure, from, to }) => {
+                          const date = departure.departure_at.slice(0, 10);
+                          const selected = date === returnDate && returnFromId === from.id && returnToId === to.id;
+                          return <button key={departure.id} type="button" onClick={() => { setReturnDate(date); setReturnFromId(from.id); setReturnToId(to.id); }}
+                            className={`flex w-full items-center justify-between rounded-xl border px-3 py-2.5 text-left ${selected ? "border-primary bg-primary/10" : "border-border bg-background hover:bg-secondary"}`}>
+                            <span><span className="block text-xs font-semibold">{formatDay(date)} · {formatTime(departure.departure_at)}</span><span className="block text-[10px] text-muted-foreground">{from.name} → {to.name}</span></span><ArrowRight className="size-4 text-primary" />
+                          </button>;
+                        })}
+                      </div> : <p className="text-xs text-muted-foreground">Aucun retour Algérie → France trouvé autour de la fin des vacances.</p>}
+                    </div>
+                  ) : null}
                 </div>
               ) : (
                 <p className="text-xs text-muted-foreground">Aucune traversée France → Algérie trouvée autour des vacances de cette zone.</p>

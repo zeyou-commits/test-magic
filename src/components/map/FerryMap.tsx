@@ -162,7 +162,7 @@ function positionPortTip(map: MapLibreMap, marker: Marker, tip: HTMLDivElement) 
   tip.style.top = `${top - markerRect.top}px`;
 }
 
-export default function FerryMap({ ports, routes, visibleRouteIds, focusRouteIds, selection, highlightedPortIds, portMeta, onSelect, onMapInteract }: FerryMapProps) {
+export default function FerryMap({ ports, routes, visibleRouteIds, focusRouteIds, selection, highlightedPortIds, portMeta, onSelect, onOpenPanel, onMapInteract }: FerryMapProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<MapLibreMap | null>(null);
   const readyRef = useRef(false);
@@ -472,6 +472,7 @@ export default function FerryMap({ ports, routes, visibleRouteIds, focusRouteIds
             more.addEventListener("click", (event) => { 
               event.stopPropagation(); 
               selectRef.current({ type: "port", id: port.id }); 
+              onOpenPanel?.(); 
             }); 
             tip.append(more); 
           }

@@ -118,10 +118,25 @@ export function TripPlanner() {
     return ids;
   }, [departures, routes, fromId, toId]);
 
+  const selectedSchoolPeriod = useMemo(() => {
+    if (!zone || !outboundDate) return null;
+    return getSchoolBreak(outboundDate, zone);
+  }, [zone, outboundDate]);
+
   const suggestedDates = useMemo(() => {
-    if (!zone || !outboundDate) return [];
-    return Array.from({ length: flexDays * 2 + 1 }, (_, i) => addDays(outboundDate, i - flexDays)).filter((date) => availableDates.has(date));
-  }, [zone, outboundDate, flexDays, availableDates]);
+    if (!zone || !selectedSchoolPeriod) return [];
+    const dates = new Set<string>();
+    for (let offset = -flexDays; offset <= flexDays; offset += 1) {
+      const date = addDays(selectedSchoolPeriod.start, offset);
+      if (availableDates.has(date)) dates.add(date);
+    }
+    const end = addDays(selectedSchoolPeriod.end, -1);
+    for (let offset = -flexDays; offset <= flexDays; offset += 1) {
+      const date = addDays(end, offset);
+      if (availableDates.has(date)) dates.add(date);
+    }
+    return Array.from(dates).sort();
+  }, [zone, selectedSchoolPeriod, flexDays, availableDates]);
 
   const outbound = useMemo(
     () => (searched && fromId && toId && outboundDate ? findActualDeparture(outboundDate, fromId, toId, routes, departures, companyNames, traveler) : null),
@@ -198,7 +213,7 @@ export function TripPlanner() {
           {zone ? (
             <div className="rounded-xl border border-border/70 bg-background/70 p-3">
               <div className="flex items-center justify-between gap-3">
-                <div><p className="text-xs font-semibold">Dates de traversée disponibles</p><p className="text-[11px] text-muted-foreground">Zone {zone} · fenêtre ± {flexDays} jours</p></div>
+                <div><p className="text-xs font-semibold">Traversées autour des vacances</p><p className="text-[11px] text-muted-foreground">Zone {zone} · ± {flexDays} jours autour des vacances sélectionnées</p></div>
                 <Select value={String(flexDays)} onValueChange={(value) => setFlexDays(Number(value))}>
                   <SelectTrigger className="h-8 w-[110px] bg-background"><SelectValue /></SelectTrigger>
                   <SelectContent><SelectItem value="1">± 1 jour</SelectItem><SelectItem value="3">± 3 jours</SelectItem><SelectItem value="5">± 5 jours</SelectItem><SelectItem value="7">± 7 jours</SelectItem><SelectItem value="10">± 10 jours</SelectItem></SelectContent>

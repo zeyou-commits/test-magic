@@ -87,11 +87,14 @@ export function MobileMapControls({
         : null;
 
     const nextArrivals = arrivalPorts.filter((port) =>
-      routes.some((route) => {
-        if (route.arrival_port_id !== port.id) return false;
-        const departure = ports.find((item) => item.id === route.departure_port_id);
-        return departure?.country_code === departureCountry;
-      }),
+      routes.some(
+        (route) =>
+          route.arrival_port_id === port.id &&
+          (!departureCountry ||
+            ports.find((item) => item.id === route.departure_port_id)?.country_code ===
+              departureCountry) &&
+          (!nextPortId || route.departure_port_id === nextPortId),
+      ),
     );
 
     onFiltersChange({

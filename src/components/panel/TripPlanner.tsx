@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { companiesQuery, plannerDeparturesQuery, portsQuery, routesQuery, schedulesQuery } from "@/lib/ferry/queries";
-import { getSchoolBreak, type SchoolZone } from "@/lib/ferry/schoolCalendar";
+import { getSchoolBreaksForZone, getSchoolBreak, type SchoolZone } from "@/lib/ferry/schoolCalendar";
 import type { Departure, Port, RouteLine, Schedule } from "@/lib/ferry/types";
 import { formatDuration } from "@/lib/ferry/format";
 
@@ -105,7 +105,7 @@ export function TripPlanner() {
   const [returnToId, setReturnToId] = useState("");
   const [traveler, setTraveler] = useState<TravelerType>("family");
   const [zone, setZone] = useState<SchoolZone | null>(null);
-  const [flexDays, setFlexDays] = useState(3);
+  const flexDays = 3;
   const [tripMode, setTripMode] = useState<"roundtrip" | "oneway">("roundtrip");
   const [searched, setSearched] = useState(false);
 
@@ -119,25 +119,21 @@ export function TripPlanner() {
     return ids;
   }, [departures, routes, fromId, toId]);
 
+  const schoolTravelDates = useMemo(() => {
+    if (!zone) return [];
+    const dates = new Set<string>();
+    getSchoolBreaksForZone(zone).forEach((period) => {
+      for (let date = addDays(period.start, -flexDays); date <= addDays(period.end, flexDays); date = addDays(date, 1)) {
+        if (availableDates.has(date)) dates.add(date);
+      }
+    });
+    return Array.from(dates).sort();
+  }, [zone, availableDates]);
+
   const selectedSchoolPeriod = useMemo(() => {
     if (!zone || !outboundDate) return null;
     return getSchoolBreak(outboundDate, zone);
   }, [zone, outboundDate]);
-
-  const suggestedDates = useMemo(() => {
-    if (!zone || !selectedSchoolPeriod) return [];
-    const dates = new Set<string>();
-    for (let offset = -flexDays; offset <= flexDays; offset += 1) {
-      const date = addDays(selectedSchoolPeriod.start, offset);
-      if (availableDates.has(date)) dates.add(date);
-    }
-    const end = addDays(selectedSchoolPeriod.end, -1);
-    for (let offset = -flexDays; offset <= flexDays; offset += 1) {
-      const date = addDays(end, offset);
-      if (availableDates.has(date)) dates.add(date);
-    }
-    return Array.from(dates).sort();
-  }, [zone, selectedSchoolPeriod, flexDays, availableDates]);
 
   const outbound = useMemo(
     () => (searched && fromId && toId && outboundDate ? findActualDeparture(outboundDate, fromId, toId, routes, departures, companyNames, traveler) : null),
@@ -243,16 +239,23 @@ export function TripPlanner() {
           ) : null}
 
           {zone ? (
-            <div className="rounded-xl border border-border/70 bg-background/70 p-3">
-              <div className="flex items-center justify-between gap-3">
-                <div><p className="text-xs font-semibold">Traversées autour des vacances</p><p className="text-[11px] text-muted-foreground">Zone {zone} · ± {flexDays} jours autour des vacances sélectionnées</p></div>
-                <Select value={String(flexDays)} onValueChange={(value) => setFlexDays(Number(value))}>
-                  <SelectTrigger className="h-8 w-[110px] bg-background"><SelectValue /></SelectTrigger>
-                  <SelectContent><SelectItem value="1">± 1 jour</SelectItem><SelectItem value="3">± 3 jours</SelectItem><SelectItem value="5">± 5 jours</SelectItem><SelectItem value="7">± 7 jours</SelectItem><SelectItem value="10">± 10 jours</SelectItem></SelectContent>
-                </Select>
+            <section className="rounded-2xl border border-primary/15 bg-primary/[0.04] p-3">
+              <div className="mb-2">
+                <p className="text-sm font-semibold">Traversées disponibles</p>
+                <p className="text-[11px] text-muted-foreground">Zone {zone} · vacances scolaires ± 3 jours</p>
               </div>
-              <div className="mt-2 flex flex-wrap gap-1.5">{suggestedDates.length ? suggestedDates.map((date) => <button key={date} type="button" onClick={() => setOutboundDate(date)} className={date === outboundDate ? "rounded-lg border border-primary bg-primary px-2.5 py-1.5 text-xs text-primary-foreground" : "rounded-lg border border-border bg-background px-2.5 py-1.5 text-xs hover:bg-secondary"}>{formatDay(date)}</button>) : <span className="text-[11px] text-muted-foreground">Aucune traversée disponible dans cet intervalle.</span>}</div>
-            </div>
+              {schoolTravelDates.length ? (
+                <div className="space-y-1.5">
+                  {schoolTravelDates.map((date) => (
+                    <button key={date} type="button" onClick={() => setOutboundDate(date)}
+                      className={`flex w-full items-center justify-between rounded-xl border px-3 py-2.5 text-left ${date === outboundDate ? "border-primary bg-primary/10" : "border-border bg-background hover:bg-secondary"}`}>
+                      <span><span className="block text-xs font-semibold">{formatDay(date)}</span><span className="block text-[10px] text-muted-foreground">{countDeparturesForDate(date, fromId, toId, routes, departures)} traversée(s) disponible(s)</span></span>
+                      <CalendarDays className="size-4 text-primary" />
+                    </button>
+                  ))}
+                </div>
+              ) : <p className="text-xs text-muted-foreground">Aucune traversée connue autour des vacances de cette zone.</p>}
+            </section>
           ) : null}
 
           <Button
@@ -292,6 +295,14 @@ export function TripPlanner() {
 
 function DateField({ label, value, min, onChange, optional = false, availableDates }: { label: string; value: string; min: string; onChange: (value: string) => void; optional?: boolean; availableDates: Set<string> }) {
   return <label className="grid gap-1"><span className="text-xs font-medium text-muted-foreground">{label}{optional ? " · optionnel" : ""}</span><Input type="date" min={min} value={value} onChange={(event) => onChange(event.target.value)} className="bg-background/70" /><span className="text-[10px] text-muted-foreground">{availableDates.size} date(s) de traversée connues</span></label>;
+}
+
+function countDeparturesForDate(date: string, fromId: string, toId: string, routes: RouteLine[], departures: Departure[]) {
+  return departures.filter((departure) => {
+    if (departure.departure_at.slice(0, 10) !== date) return false;
+    const route = routes.find((item) => item.id === departure.route_id);
+    return Boolean(route && (!fromId || route.departure_port_id === fromId) && (!toId || route.arrival_port_id === toId));
+  }).length;
 }
 
 function addDays(value: string, amount: number) { const date = new Date(value + "T00:00:00"); date.setDate(date.getDate() + amount); return date.toISOString().slice(0, 10); }

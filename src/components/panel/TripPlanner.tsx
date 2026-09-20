@@ -19,6 +19,8 @@ interface LegRecommendation {
 }
 
 const ANY = "__any__";
+const FRANCE = "FR";
+const ALGERIA = "DZ";
 
 const toDate = (value: string) => new Date(`${value}T00:00:00`);
 
@@ -109,26 +111,40 @@ export function TripPlanner() {
   const [tripMode, setTripMode] = useState<"roundtrip" | "oneway">("roundtrip");
   const [searched, setSearched] = useState(false);
 
+  const suggestedCrossings = useMemo(() => {
+    if (!zone) return [];
+    return departures.flatMap((departure) => {
+      const route = routes.find((item) => item.id === departure.route_id);
+      if (!route) return [];
+      const from = activePorts.find((port) => port.id === route.departure_port_id);
+      const to = activePorts.find((port) => port.id === route.arrival_port_id);
+      if (!from || !to) return [];
+      if (from.country_code !== FRANCE || to.country_code !== ALGERIA) return [];
+      const date = departure.departure_at.slice(0, 10);
+      const inWindow = getSchoolBreaksForZone(zone).some((period) => {
+        return date >= addDays(period.start, -flexDays) && date <= addDays(period.end, flexDays);
+      });
+      return inWindow ? [{ departure, route, from, to }] : [];
+    }).sort((a, b) => a.departure.departure_at.localeCompare(b.departure.departure_at));
+  }, [zone, departures, routes, activePorts]);
+
   const availableDates = useMemo(() => {
     const ids = new Set<string>();
     departures.forEach((departure) => {
       const route = routes.find((item) => item.id === departure.route_id);
-      if (!route || (fromId && route.departure_port_id !== fromId) || (toId && route.arrival_port_id !== toId)) return;
+      if (!route) return;
+      const from = activePorts.find((port) => port.id === route.departure_port_id);
+      const to = activePorts.find((port) => port.id === route.arrival_port_id);
+      if (!from || !to) return;
+      if (fromId && route.departure_port_id !== fromId) return;
+      if (toId && route.arrival_port_id !== toId) return;
+      if (!fromId && !toId && zone && (from.country_code !== FRANCE || to.country_code !== ALGERIA)) return;
       ids.add(departure.departure_at.slice(0, 10));
     });
     return ids;
-  }, [departures, routes, fromId, toId]);
+  }, [departures, routes, activePorts, fromId, toId, zone]);
 
-  const schoolTravelDates = useMemo(() => {
-    if (!zone) return [];
-    const dates = new Set<string>();
-    getSchoolBreaksForZone(zone).forEach((period) => {
-      for (let date = addDays(period.start, -flexDays); date <= addDays(period.end, flexDays); date = addDays(date, 1)) {
-        if (availableDates.has(date)) dates.add(date);
-      }
-    });
-    return Array.from(dates).sort();
-  }, [zone, availableDates]);
+  const schoolTravelDates = useMemo(() => suggestedCrossings, [suggestedCrossings]);
 
   const selectedSchoolPeriod = useMemo(() => {
     if (!zone || !outboundDate) return null;
@@ -160,7 +176,7 @@ export function TripPlanner() {
   const portName = (id: string) => activePorts.find((port) => port.id === id)?.name ?? "—";
 
   const submit = () => {
-    if (!outboundDate || !fromId || !toId) return;
+    if (!outboundDate || (!zone && (!fromId || !toId))) return;
     if (tripMode === "roundtrip" && returnDate && (!returnFromId || !returnToId || returnDate < outboundDate)) return;
     setSearched(true);
   };
@@ -200,7 +216,7 @@ export function TripPlanner() {
 
           <section className="space-y-2">
             <p className="text-sm font-semibold">Vacances scolaires</p>
-            <Select value={zone ?? ANY} onValueChange={(value) => setZone(value === ANY ? null : value as SchoolZone)}>
+            <Select value={zone ?? ANY} onValueChange={(value) => { const next = value === ANY ? null : value as SchoolZone; setZone(next); if (next && !fromId && !toId) { const first = suggestedCrossings[0]; if (first) { setOutboundDate(first.departure.departure_at.slice(0, 10)); setFromId(first.from.id); setToId(first.to.id); } } }}>
               <SelectTrigger className="h-11 bg-background"><SelectValue placeholder="Je ne sais pas / pas concerné" /></SelectTrigger>
               <SelectContent>
                 <SelectItem value={ANY}>Je ne sais pas / pas concerné</SelectItem>
@@ -240,21 +256,33 @@ export function TripPlanner() {
 
           {zone ? (
             <section className="rounded-2xl border border-primary/15 bg-primary/[0.04] p-3">
-              <div className="mb-2">
-                <p className="text-sm font-semibold">Traversées disponibles</p>
-                <p className="text-[11px] text-muted-foreground">Zone {zone} · vacances scolaires ± 3 jours</p>
+              <div className="mb-3">
+                <p className="text-sm font-semibold">Dates suggérées pour la Zone {zone}</p>
+                <p className="text-[11px] text-muted-foreground">Départ depuis la France · arrivée en Algérie · ± 3 jours autour des vacances</p>
               </div>
               {schoolTravelDates.length ? (
                 <div className="space-y-1.5">
-                  {schoolTravelDates.map((date) => (
-                    <button key={date} type="button" onClick={() => setOutboundDate(date)}
-                      className={`flex w-full items-center justify-between rounded-xl border px-3 py-2.5 text-left ${date === outboundDate ? "border-primary bg-primary/10" : "border-border bg-background hover:bg-secondary"}`}>
-                      <span><span className="block text-xs font-semibold">{formatDay(date)}</span><span className="block text-[10px] text-muted-foreground">{countDeparturesForDate(date, fromId, toId, routes, departures)} traversée(s) disponible(s)</span></span>
-                      <CalendarDays className="size-4 text-primary" />
-                    </button>
-                  ))}
+                  {schoolTravelDates.map(({ departure, from, to }) => {
+                    const date = departure.departure_at.slice(0, 10);
+                    const selected = date === outboundDate && fromId === from.id && toId === to.id;
+                    return (
+                      <button key={departure.id} type="button" onClick={() => {
+                        setOutboundDate(date);
+                        setFromId(from.id);
+                        setToId(to.id);
+                      }} className={`flex w-full items-center justify-between rounded-xl border px-3 py-2.5 text-left ${selected ? "border-primary bg-primary/10" : "border-border bg-background hover:bg-secondary"}`}>
+                        <span>
+                          <span className="block text-xs font-semibold">{formatDay(date)} · {formatTime(departure.departure_at)}</span>
+                          <span className="block text-[10px] text-muted-foreground">{from.name} → {to.name}</span>
+                        </span>
+                        <ArrowRight className="size-4 text-primary" />
+                      </button>
+                    );
+                  })}
                 </div>
-              ) : <p className="text-xs text-muted-foreground">Aucune traversée connue autour des vacances de cette zone.</p>}
+              ) : (
+                <p className="text-xs text-muted-foreground">Aucune traversée France → Algérie trouvée autour des vacances de cette zone.</p>
+              )}
             </section>
           ) : null}
 
@@ -262,7 +290,7 @@ export function TripPlanner() {
             type="button"
             className="w-full rounded-xl"
             onClick={submit}
-            disabled={!outboundDate || !fromId || !toId || Boolean(returnDate && (!returnFromId || !returnToId || returnDate < outboundDate))}
+            disabled={!outboundDate || (!zone && (!fromId || !toId)) || Boolean(tripMode === "roundtrip" && returnDate && (!returnFromId || !returnToId || returnDate < outboundDate))}
           >
             <CalendarDays className="size-4" />
             Trouver ma traversée

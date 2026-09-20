@@ -227,7 +227,18 @@ export function TripPlanner() {
 
           <section className="space-y-2">
             <p className="text-sm font-semibold">Vacances scolaires</p>
-            <Select value={zone ?? ANY} onValueChange={(value) => { const next = value === ANY ? null : value as SchoolZone; setZone(next); if (next) { const first = suggestedCrossings[0]; const firstReturn = suggestedReturnCrossings[0]; if (first) { setOutboundDate(first.departure.departure_at.slice(0, 10)); setFromId(first.from.id); setToId(first.to.id); } if (firstReturn) { setReturnDate(firstReturn.departure.departure_at.slice(0, 10)); setReturnFromId(firstReturn.from.id); setReturnToId(firstReturn.to.id); } } }}>
+            <Select value={zone ?? ANY} onValueChange={(value) => {
+              const next = value === ANY ? null : value as SchoolZone;
+              setZone(next);
+              setSearched(false);
+              if (!next) {
+                setFromId("");
+                setToId("");
+                setReturnFromId("");
+                setReturnToId("");
+                setReturnDate("");
+              }
+            }}>
               <SelectTrigger className="h-11 bg-background"><SelectValue placeholder="Je ne sais pas / pas concerné" /></SelectTrigger>
               <SelectContent>
                 <SelectItem value={ANY}>Je ne sais pas / pas concerné</SelectItem>
@@ -277,8 +288,8 @@ export function TripPlanner() {
               <div className="mb-3">
                 <div className="flex items-start justify-between gap-2">
                   <div>
-                    <p className="text-sm font-semibold">Dates autour des vacances — Zone {zone}</p>
-                    <p className="text-[11px] text-muted-foreground">France → Algérie · traversées réelles disponibles</p>
+                    <p className="text-sm font-semibold">Traversées autour des vacances — Zone {zone}</p>
+                    <p className="text-[11px] text-muted-foreground">France 🇫🇷 → Algérie 🇩🇿 · dates réelles disponibles</p>
                   </div>
                   <Select value={String(flexDays)} onValueChange={(value) => setFlexDays(Number(value))}>
                     <SelectTrigger className="h-8 w-[92px] bg-background text-[11px]"><SelectValue /></SelectTrigger>

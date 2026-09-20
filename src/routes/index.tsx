@@ -113,11 +113,9 @@ function Index() {
       const route = routes.find((item) => item.id === selection.id);
       return route ? [route.departure_port_id, route.arrival_port_id] : [];
     }
-    const filtered =
-      visibleRoutes.length !== routes.length
-        ? [...new Set(visibleRoutes.map((route) => route.departure_port_id))]
-        : [];
-    return filtered;
+    // Les filtres ne doivent jamais ouvrir automatiquement une popup.
+    // Les ports ne sont activés que lorsqu'un utilisateur clique réellement dessus.
+    return [];
   }, [selection, routes, visibleRoutes]);
 
   const focusRouteIds = useMemo(() => {

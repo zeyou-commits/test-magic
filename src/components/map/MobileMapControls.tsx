@@ -35,11 +35,15 @@ export function MobileMapControls({
   onOpenPanel,
 }: MobileMapControlsProps) {
   const ALGERIA = "DZ";
-  const activeDeparturePorts = ports.filter(
-    (port) => port.status === "active" && port.country_code !== ALGERIA,
-  );
+  const activeDeparturePorts = ports.filter((port) => port.status === "active");
   const arrivalPorts = ports.filter(
-    (port) => port.status === "active" && port.country_code === ALGERIA,
+    (port) =>
+      port.status === "active" &&
+      (!filters.departureCountry
+        ? port.country_code === ALGERIA
+        : filters.departureCountry === ALGERIA
+          ? port.country_code !== ALGERIA
+          : port.country_code === ALGERIA),
   );
 
   const countries = [...new Map(

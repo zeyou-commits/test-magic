@@ -11,7 +11,7 @@ import {
   portsQuery,
   ratingCriteriaQuery,
   routesQuery,
-  upcomingDeparturesQuery,
+  portDeparturesQuery,
 } from "@/lib/ferry/queries";
 import { facilityLabels, formatDateTime, formatDuration } from "@/lib/ferry/format";
 import type { Selection } from "@/lib/ferry/types";
@@ -28,7 +28,7 @@ export function PortView({
   const { data: ports = [] } = useQuery(portsQuery);
   const { data: routes = [] } = useQuery(routesQuery);
   const { data: companies = [] } = useQuery(companiesQuery);
-  const { data: departures = [] } = useQuery(upcomingDeparturesQuery());
+  const { data: departures = [] } = useQuery(portDeparturesQuery(portId));
   const { data: criteria = [] } = useQuery(ratingCriteriaQuery);
   const { data: reviews = [] } = useQuery(portReviewsQuery(portId));
 
@@ -37,11 +37,11 @@ export function PortView({
     (route) => route.departure_port_id === portId || route.arrival_port_id === portId,
   );
   const portDepartures = departures
+    .filter((departure) => departure.status !== "cancelled")
     .filter((departure) => {
       const route = routes.find((item) => item.id === departure.route_id);
       return route?.departure_port_id === portId;
-    })
-    .slice(0, 6);
+    });
 
   const averages = useMemo(() => {
     const perCriterion = new Map<string, number[]>();

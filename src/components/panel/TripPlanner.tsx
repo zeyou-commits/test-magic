@@ -415,16 +415,6 @@ export function TripPlanner({ selection, onSelect }: { selection: Selection | nu
             )}
           </section>
 
-          {tripMode === "roundtrip" && returnDate ? (
-            <div className="rounded-2xl border border-border/70 bg-background/70 p-3">
-              <p className="mb-2 text-xs font-semibold">Itinéraire retour</p>
-              <div className="grid gap-2 sm:grid-cols-2">
-                <PortSelect label="Départ retour" value={returnFromId} onChange={setReturnFromId} ports={activePorts} />
-                <PortSelect label="Arrivée retour" value={returnToId} onChange={setReturnToId} ports={activePorts.filter((port) => port.id !== returnFromId)} />
-              </div>
-            </div>
-          ) : null}
-
           {zone ? (
             <section className="rounded-2xl border border-primary/15 bg-primary/[0.04] p-3">
               <div className="mb-3">

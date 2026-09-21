@@ -92,18 +92,51 @@ export const schedulesQuery = queryOptions({
   staleTime: 5 * 60 * 1000,
 });
 
-export function upcomingDeparturesQuery(limit = 300) {
+async function fetchAllUpcomingDepartures(portId?: string) {
+  const pageSize = 1000;
+  const rows: Departure[] = [];
+  let from = 0;
+
+  while (true) {
+    let query = supabase
+      .from("departures")
+      .select("*")
+      .gte("departure_at", new Date().toISOString())
+      .order("departure_at")
+      .range(from, from + pageSize - 1);
+
+    if (portId) {
+      const { data: routes } = await supabase
+        .from("routes")
+        .select("id")
+        .or(`departure_port_id.eq.${portId},arrival_port_id.eq.${portId}`);
+      const routeIds = (routes ?? []).map((route) => route.id as string);
+      if (!routeIds.length) return [];
+      query = query.in("route_id", routeIds);
+    }
+
+    const page = unwrap<Departure[]>(await query);
+    rows.push(...page);
+
+    if (page.length < pageSize) break;
+    from += pageSize;
+  }
+
+  return rows;
+}
+
+export function upcomingDeparturesQuery() {
   return queryOptions({
-    queryKey: ["departures", "upcoming", limit],
-    queryFn: async () =>
-      unwrap<Departure[]>(
-        await supabase
-          .from("departures")
-          .select("*")
-          .gte("departure_at", new Date().toISOString())
-          .order("departure_at")
-          .limit(limit),
-      ),
+    queryKey: ["departures", "upcoming"],
+    queryFn: () => fetchAllUpcomingDepartures(),
+    staleTime: 60 * 1000,
+  });
+}
+
+export function portDeparturesQuery(portId: string) {
+  return queryOptions({
+    queryKey: ["departures", "port", portId],
+    queryFn: () => fetchAllUpcomingDepartures(portId),
     staleTime: 60 * 1000,
   });
 }

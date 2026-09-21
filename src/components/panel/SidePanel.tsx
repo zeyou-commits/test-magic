@@ -53,7 +53,7 @@ export function SidePanel({
             <div className="h-2 bg-secondary/40" />
           </div>
         ) : null}
-        <TripPlanner onSelect={onSelect} />
+        <TripPlanner selection={selection} onSelect={onSelect} />
         <ExplorerView
           filters={filters}
           onFiltersChange={onFiltersChange}

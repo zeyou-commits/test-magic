@@ -326,7 +326,9 @@ export function TripPlanner() {
                         </div>
                       </div>
                     );
-                  })}                  </div>
+                  })}
+                    </div>
+                  </div>
                   {tripMode === "roundtrip" ? (
                     <div>
                       <p className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Retour — autour de la fin des vacances</p>

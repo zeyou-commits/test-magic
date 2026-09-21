@@ -15,6 +15,7 @@ interface LegRecommendation {
   route: RouteLine;
   schedule: Schedule;
   companyName: string;
+  companyLogoUrl: string | null;
   score: number;
 }
 
@@ -87,6 +88,7 @@ function findLeg(
             route,
             schedule,
             companyName: companyNames.get(schedule.company_id) ?? "Compagnie",
+            companyLogoUrl: companyLogos.get(schedule.company_id) ?? null,
             score: duration + comfortPenalty,
           });
         });
@@ -104,6 +106,7 @@ export function TripPlanner() {
 
   const activePorts = useMemo(() => ports.filter((port) => port.status === "active"), [ports]);
   const companyNames = useMemo(() => new Map(companies.map((company) => [company.id, company.name])), [companies]);
+  const companyLogos = useMemo(() => new Map(companies.map((company) => [company.id, company.logo_url])), [companies]);
 
   const today = new Date().toISOString().slice(0, 10);
   const defaultOutbound = new Date(Date.now() + 14 * 86400000).toISOString().slice(0, 10);
@@ -198,16 +201,16 @@ export function TripPlanner() {
   const schoolTravelDates = useMemo(() => suggestedCrossings, [suggestedCrossings]);
 
   const outbound = useMemo(
-    () => (searched && fromId && toId && outboundDate ? findActualDeparture(outboundDate, fromId, toId, routes, departures, companyNames, traveler) : null),
-    [searched, fromId, toId, outboundDate, routes, departures, companyNames, traveler],
+    () => (searched && fromId && toId && outboundDate ? findActualDeparture(outboundDate, fromId, toId, routes, departures, companyNames, companyLogos, traveler) : null),
+    [searched, fromId, toId, outboundDate, routes, departures, companyNames, companyLogos, traveler],
   );
 
   const inbound = useMemo(
     () =>
       searched && tripMode === "roundtrip" && returnDate && returnFromId && returnToId
-        ? findActualDeparture(returnDate, returnFromId, returnToId, routes, departures, companyNames, traveler)
+        ? findActualDeparture(returnDate, returnFromId, returnToId, routes, departures, companyNames, companyLogos, traveler)
         : null,
-    [searched, returnDate, returnFromId, returnToId, routes, departures, companyNames, traveler],
+    [searched, returnDate, returnFromId, returnToId, routes, departures, companyNames, companyLogos, traveler],
   );
 
   const schoolInfo = useMemo(() => {
@@ -355,7 +358,7 @@ export function TripPlanner() {
                             const selected = date === outboundDate && fromId === from.id && toId === to.id;
                             return <button key={departure.id} type="button" onClick={() => { setOutboundDate(date); setFromId(from.id); setToId(to.id); }}
                               className={`flex w-full items-center justify-between rounded-xl border px-3 py-2.5 text-left ${selected ? "border-primary bg-primary/10" : "border-border bg-background hover:bg-secondary"}`}>
-                              <span><span className="block text-xs font-semibold">{formatDay(date)} · {formatTime(departure.departure_at)}</span><span className="block text-[10px] text-muted-foreground">{from.name} → {to.name}</span></span><ArrowRight className="size-4 text-primary" />
+                              <span><span className="block text-xs font-semibold">{formatDay(date)} · {formatTime(departure.departure_at)}</span><span className="block text-[10px] text-muted-foreground">{from.name} → {to.name}</span><span className="mt-1 flex items-center gap-1.5 text-[10px] text-muted-foreground">{companyLogos.get(departure.company_id) ? <img src={companyLogos.get(departure.company_id) ?? ""} alt="" className="size-4 rounded object-contain" /> : null}{companyNames.get(departure.company_id) ?? "Compagnie"}</span></span><ArrowRight className="size-4 text-primary" />
                             </button>;
                           })}
                         </div>
@@ -435,14 +438,14 @@ function countDeparturesForDate(date: string, fromId: string, toId: string, rout
 
 function addDays(value: string, amount: number) { const date = new Date(value + "T00:00:00"); date.setDate(date.getDate() + amount); return date.toISOString().slice(0, 10); }
 
-function findActualDeparture(date: string, fromId: string, toId: string, routes: RouteLine[], departures: Departure[], companyNames: Map<string, string>, traveler: TravelerType): LegRecommendation | null {
+function findActualDeparture(date: string, fromId: string, toId: string, routes: RouteLine[], departures: Departure[], companyNames: Map<string, string>, companyLogos: Map<string, string | null>, traveler: TravelerType): LegRecommendation | null {
   const candidates = departures.filter((departure) => departure.departure_at.slice(0, 10) === date).map((departure) => {
     const route = routes.find((item) => item.id === departure.route_id);
     if (!route || route.departure_port_id !== fromId || route.arrival_port_id !== toId) return null;
     const hour = Number(departure.departure_at.slice(11, 13)) + Number(departure.departure_at.slice(14, 16)) / 60;
     const duration = departure.duration_minutes ?? route.typical_duration_minutes ?? 9999;
     let penalty = 0; if (traveler === "family" && (hour < 7 || hour >= 22)) penalty += 80; else if (traveler === "couple" && hour < 6) penalty += 35; else if (traveler === "solo" && hour < 5) penalty += 20;
-    return { route, schedule: { id: departure.id, route_id: route.id, company_id: departure.company_id, default_vessel_id: departure.vessel_id, departure_time: departure.departure_at.slice(11, 19), duration_minutes: duration, weekdays: [], valid_from: date, valid_to: date, status: "active" as const, source_name: departure.source_name, source_url: departure.source_url, last_verified_at: departure.last_verified_at, reliability: departure.reliability, notes: departure.notes, is_demo: departure.is_demo }, companyName: companyNames.get(departure.company_id) ?? "Compagnie", score: duration + penalty };
+    return { route, schedule: { id: departure.id, route_id: route.id, company_id: departure.company_id, default_vessel_id: departure.vessel_id, departure_time: departure.departure_at.slice(11, 19), duration_minutes: duration, weekdays: [], valid_from: date, valid_to: date, status: "active" as const, source_name: departure.source_name, source_url: departure.source_url, last_verified_at: departure.last_verified_at, reliability: departure.reliability, notes: departure.notes, is_demo: departure.is_demo }, companyName: companyNames.get(departure.company_id) ?? "Compagnie", companyLogoUrl: companyLogos.get(departure.company_id) ?? null, score: duration + penalty };
   }).filter(Boolean) as LegRecommendation[];
   return candidates.sort((a, b) => a.score - b.score)[0] ?? null;
 }
@@ -477,7 +480,7 @@ function Recommendation({ title, leg, from, to, date }: { title: string; leg: Le
       <div className="mt-2 grid grid-cols-3 gap-2 text-xs">
         <div><span className="block text-muted-foreground">Départ</span><strong>{formatTime(leg.schedule.departure_time)}</strong></div>
         <div><span className="block text-muted-foreground">Durée</span><strong>{formatDuration(leg.schedule.duration_minutes)}</strong></div>
-        <div><span className="block text-muted-foreground">Compagnie</span><strong className="block truncate">{leg.companyName}</strong></div>
+        <div><span className="block text-muted-foreground">Compagnie</span><div className="mt-0.5 flex items-center gap-1.5"><span className="grid size-7 shrink-0 place-items-center overflow-hidden rounded-lg border border-border bg-background">{leg.companyLogoUrl ? <img src={leg.companyLogoUrl} alt="" className="size-full object-contain p-1" /> : <span className="text-[9px] font-semibold text-muted-foreground">{leg.companyName.slice(0, 2).toUpperCase()}</span>}</span><strong className="block truncate">{leg.companyName}</strong></div></div>
       </div>
     </div>
   );

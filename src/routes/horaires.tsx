@@ -35,7 +35,7 @@ function HorairesPage() {
   const { data: companies } = useSuspenseQuery(companiesQuery);
   const portName = (id: string) => ports.find((item) => item.id === id)?.name ?? "—";
 
-  const rows = departures.slice(0, 80);
+  const rows = departures;
 
   return (
     <SiteLayout>

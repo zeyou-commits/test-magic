@@ -53,6 +53,7 @@ function findLeg(
   routes: RouteLine[],
   schedules: Schedule[],
   companyNames: Map<string, string>,
+  companyLogos: Map<string, string | null>,
   traveler: TravelerType,
 ): LegRecommendation | null {
   const weekday = weekdayFor(date);

@@ -455,49 +455,66 @@ export function TripPlanner({ selection, onSelect }: { selection: Selection | nu
                     {suggestedTripPairs.map(({ period, outbound, inbound }, index) => {
                       const outDate = outbound.departure.departure_at.slice(0, 10);
                       const inDate = inbound.departure.departure_at.slice(0, 10);
-                      const selected =
+                      const outboundSelected =
                         outDate === outboundDate &&
-                        inDate === returnDate &&
                         outbound.from.id === fromId &&
-                        outbound.to.id === toId &&
+                        outbound.to.id === toId;
+                      const returnSelected =
+                        inDate === returnDate &&
                         inbound.from.id === returnFromId &&
                         inbound.to.id === returnToId;
 
                       return (
-                        <button
+                        <div
                           key={`${period.name}-${outbound.departure.id}-${inbound.departure.id}`}
-                          type="button"
-                          onClick={() => {
-                            setOutboundDate(outDate);
-                            setFromId(outbound.from.id);
-                            setToId(outbound.to.id);
-                            setReturnDate(inDate);
-                            setReturnFromId(inbound.from.id);
-                            setReturnToId(inbound.to.id);
-                            onSelect({ type: "route", id: outbound.route.id });
-                          }}
-                          className={`grid w-full grid-cols-[1fr_auto_1fr] items-center gap-2 rounded-2xl border p-3 text-left transition ${
-                            selected
-                              ? "border-primary bg-primary/10 shadow-sm"
-                              : "border-border bg-background hover:border-primary/40 hover:bg-secondary"
-                          }`}
+                          className="grid grid-cols-[1fr_auto_1fr] items-stretch gap-2 rounded-2xl border border-border bg-background p-2"
                         >
-                          <span className="min-w-0">
-                            <span className="block text-[10px] font-semibold text-primary">{period.name}</span>
-                            <span className="block text-xs font-semibold">{formatDay(outDate)}</span>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setOutboundDate(outDate);
+                              setFromId(outbound.from.id);
+                              setToId(outbound.to.id);
+                              onSelect({ type: "route", id: outbound.route.id });
+                            }}
+                            className={`min-w-0 rounded-xl border p-2.5 text-left transition ${
+                              outboundSelected
+                                ? "border-primary bg-primary/10 shadow-sm"
+                                : "border-transparent hover:border-primary/40 hover:bg-secondary"
+                            }`}
+                          >
+                            <span className="block text-[10px] font-semibold text-primary">{period.name} · {index === 0 ? "Suggestion" : "Alternative"}</span>
+                            <span className="mt-0.5 block text-xs font-semibold">{formatDay(outDate)}</span>
                             <span className="block truncate text-[10px] text-muted-foreground">{outbound.from.name} → {outbound.to.name}</span>
-                          </span>
-                          <ArrowRight className="size-4 shrink-0 text-primary" />
-                          <span className="min-w-0">
-                            <span className="block text-[10px] font-semibold text-primary">{index === 0 ? "Suggestion" : "Alternative"}</span>
-                            <span className="block text-xs font-semibold">{formatDay(inDate)}</span>
+                          </button>
+
+                          <div className="flex items-center px-0.5">
+                            <ArrowRight className="size-4 shrink-0 text-primary" />
+                          </div>
+
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setReturnDate(inDate);
+                              setReturnFromId(inbound.from.id);
+                              setReturnToId(inbound.to.id);
+                              onSelect({ type: "route", id: inbound.route.id });
+                            }}
+                            className={`min-w-0 rounded-xl border p-2.5 text-left transition ${
+                              returnSelected
+                                ? "border-primary bg-primary/10 shadow-sm"
+                                : "border-transparent hover:border-primary/40 hover:bg-secondary"
+                            }`}
+                          >
+                            <span className="block text-[10px] font-semibold text-primary">{period.name} · {index === 0 ? "Suggestion" : "Alternative"}</span>
+                            <span className="mt-0.5 block text-xs font-semibold">{formatDay(inDate)}</span>
                             <span className="block truncate text-[10px] text-muted-foreground">{inbound.from.name} → {inbound.to.name}</span>
-                          </span>
-                        </button>
+                          </button>
+                        </div>
                       );
                     })}
-                    <p className="text-[10px] text-muted-foreground">
-                      Les couples sont présélectionnés automatiquement. Vous pouvez choisir une autre proposition ou modifier les dates ensuite.
+                    <p className="text-[10px] leading-relaxed text-muted-foreground">
+                      Les couples servent uniquement de suggestions. <span className="font-medium">Aller et retour restent indépendants :</span> vous pouvez, par exemple, choisir l’aller de la proposition 1 et le retour de la proposition 2.
                     </p>
                   </div>
                 ) : (

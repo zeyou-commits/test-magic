@@ -22,6 +22,16 @@ const ANY = "__any__";
 const FRANCE = "FR";
 const ALGERIA = "DZ";
 
+const isFrancePort = (port: Port) => {
+  const code = port.country_code.trim().toUpperCase();
+  return code === FRANCE || code === "FRA" || port.country_name.trim().toUpperCase() === "FRANCE";
+};
+
+const isAlgeriaPort = (port: Port) => {
+  const code = port.country_code.trim().toUpperCase();
+  return code === ALGERIA || code === "DZA" || port.country_name.trim().toUpperCase() === "ALGÉRIE" || port.country_name.trim().toUpperCase() === "ALGERIA";
+};
+
 const toDate = (value: string) => new Date(`${value}T00:00:00`);
 
 const weekdayFor = (value: string) => {
@@ -118,7 +128,7 @@ export function TripPlanner() {
       if (!route) return [];
       const from = activePorts.find((port) => port.id === route.departure_port_id);
       const to = activePorts.find((port) => port.id === route.arrival_port_id);
-      if (!from || !to || from.country_code !== FRANCE || to.country_code !== ALGERIA) return [];
+      if (!from || !to || !isFrancePort(from) || !isAlgeriaPort(to)) return [];
       const date = departure.departure_at.slice(0, 10);
       const period = getSchoolBreaksForZone(zone).find((item) => date >= addDays(item.start, -flexDays) && date <= addDays(item.end, flexDays));
       return period ? [{ departure, route, from, to, period }] : [];
@@ -142,22 +152,47 @@ export function TripPlanner() {
   }, [departures, routes, activePorts, fromId, toId, zone]);
 
   const suggestedReturnCrossings = useMemo(() => {
-    if (!zone) return [];
+    if (!zone || !outboundDate) return [];
+
     const period = getSchoolBreaksForZone(zone).find((item) =>
       outboundDate >= addDays(item.start, -flexDays) && outboundDate <= addDays(item.end, flexDays),
-    ) ?? getSchoolBreaksForZone(zone)[0];
+    );
     if (!period) return [];
-    return departures.flatMap((departure) => {
+
+    const candidates = departures.flatMap((departure) => {
       const route = routes.find((item) => item.id === departure.route_id);
       if (!route) return [];
+
       const from = activePorts.find((port) => port.id === route.departure_port_id);
       const to = activePorts.find((port) => port.id === route.arrival_port_id);
-      if (!from || !to || from.country_code !== ALGERIA || to.country_code !== FRANCE) return [];
+      if (!from || !to || !isAlgeriaPort(from) || !isFrancePort(to)) return [];
+
       const date = departure.departure_at.slice(0, 10);
-      return date >= addDays(period.end, -flexDays) && date <= addDays(period.end, flexDays)
-        ? [{ departure, route, from, to, period }]
-        : [];
-    }).sort((a, b) => a.departure.departure_at.localeCompare(b.departure.departure_at));
+      if (date < outboundDate || date > addDays(period.end, flexDays)) return [];
+
+      return [{ departure, route, from, to, period }];
+    });
+
+    // On privilégie les retours proches de la fin des vacances.
+    // Si aucun départ n'existe dans cette fenêtre, on garde les autres retours
+    // disponibles après l'aller afin de ne jamais afficher un faux "aucun retour".
+    const preferredStart = addDays(period.end, -flexDays);
+    const preferredEnd = addDays(period.end, flexDays);
+    const preferred = candidates
+      .filter(({ departure }) => {
+        const date = departure.departure_at.slice(0, 10);
+        return date >= preferredStart && date <= preferredEnd;
+      })
+      .sort((a, b) => a.departure.departure_at.localeCompare(b.departure.departure_at));
+
+    if (preferred.length) return preferred;
+
+    return candidates.sort((a, b) => {
+      const aDate = a.departure.departure_at.slice(0, 10);
+      const bDate = b.departure.departure_at.slice(0, 10);
+      const target = toDate(period.end).getTime();
+      return Math.abs(toDate(aDate).getTime() - target) - Math.abs(toDate(bDate).getTime() - target);
+    });
   }, [zone, outboundDate, flexDays, departures, routes, activePorts]);
 
   const schoolTravelDates = useMemo(() => suggestedCrossings, [suggestedCrossings]);

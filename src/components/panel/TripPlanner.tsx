@@ -98,7 +98,7 @@ function findLeg(
   return candidates.sort((a, b) => a.score - b.score)[0] ?? null;
 }
 
-export function TripPlanner({ onSelect }: { onSelect: (selection: Selection | null) => void }) {
+export function TripPlanner({ selection, onSelect }: { selection: Selection | null; onSelect: (selection: Selection | null) => void }) {
   const { data: ports = [] } = useQuery(portsQuery);
   const { data: routes = [] } = useQuery(routesQuery);
   const { data: schedules = [] } = useQuery(schedulesQuery);
@@ -396,7 +396,7 @@ export function TripPlanner({ onSelect }: { onSelect: (selection: Selection | nu
                           {periodDates.slice(0, 8).map(({ departure, from, to }) => {
                             const date = departure.departure_at.slice(0, 10);
                             const selected = date === outboundDate && fromId === from.id && toId === to.id;
-                            return <button key={departure.id} type="button" onClick={() => { setOutboundDate(date); setFromId(from.id); setToId(to.id); onSelect({ type: "route", id: departure.route_id }); }}
+                            return <button key={departure.id} type="button" onClick={() => { setOutboundDate(date); setFromId(from.id); setToId(to.id); onSelect((selection?.type === "route" && selection.id === departure.route_id) ? null : { type: "route", id: departure.route_id }); }}
                               className={`flex w-full items-center justify-between rounded-xl border px-3 py-2.5 text-left ${selected ? "border-primary bg-primary/10" : "border-border bg-background hover:bg-secondary"}`}>
                               <span><span className="block text-xs font-semibold">{formatDay(date)} · {formatTime(departure.departure_at)}</span><span className="block text-[10px] text-muted-foreground">{from.name} → {to.name}</span><span className="mt-1 flex items-center gap-1.5 text-[10px] text-muted-foreground">{companyLogos.get(departure.company_id) ? <img src={companyLogos.get(departure.company_id) ?? ""} alt="" className="size-4 rounded object-contain" /> : null}{companyNames.get(departure.company_id) ?? "Compagnie"}</span></span><ArrowRight className="size-4 text-primary" />
                             </button>;
@@ -451,8 +451,8 @@ export function TripPlanner({ onSelect }: { onSelect: (selection: Selection | nu
           {searched ? (
             <div className="space-y-2">
               <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">Suggestion Batogo</p>
-              {outbound ? <Recommendation title="Aller recommandé" leg={outbound} from={portName(fromId)} to={portName(toId)} date={outboundDate} onSelect={onSelect} /> : <EmptyRecommendation text="Aucune traversée programmée pour l’aller à cette date." />}
-              {tripMode === "roundtrip" && returnDate ? inbound ? <Recommendation title="Retour recommandé" leg={inbound} from={portName(returnFromId)} to={portName(returnToId)} date={returnDate} onSelect={onSelect} /> : <EmptyRecommendation text="Aucune traversée programmée pour le retour à cette date." /> : null}
+              {outbound ? <Recommendation title="Aller recommandé" leg={outbound} from={portName(fromId)} to={portName(toId)} date={outboundDate} selection={selection} onSelect={onSelect} /> : <EmptyRecommendation text="Aucune traversée programmée pour l’aller à cette date." />}
+              {tripMode === "roundtrip" && returnDate ? inbound ? <Recommendation title="Retour recommandé" leg={inbound} from={portName(returnFromId)} to={portName(returnToId)} date={returnDate} selection={selection} onSelect={onSelect} /> : <EmptyRecommendation text="Aucune traversée programmée pour le retour à cette date." /> : null}
               <p className="text-[10px] leading-relaxed text-muted-foreground">
                 Recommandation basée sur les horaires disponibles, la durée et le profil voyageur. Les tarifs ne sont pas encore pris en compte.
               </p>
@@ -505,9 +505,9 @@ function PortSelect({ label, value, onChange, ports }: { label: string; value: s
   );
 }
 
-function Recommendation({ title, leg, from, to, date, onSelect }: { title: string; leg: LegRecommendation; from: string; to: string; date: string; onSelect: (selection: Selection | null) => void }) {
+function Recommendation({ title, leg, from, to, date, selection, onSelect }: { title: string; leg: LegRecommendation; from: string; to: string; date: string; selection: Selection | null; onSelect: (selection: Selection | null) => void }) {
   return (
-    <button type="button" onClick={() => onSelect({ type: "route", id: leg.route.id })} className="w-full rounded-2xl border border-primary/20 bg-background/85 p-3 text-left shadow-sm transition hover:border-primary/40 hover:bg-primary/[0.03]">
+    <button type="button" onClick={() => onSelect(selection?.type === "route" && selection.id === leg.route.id ? null : { type: "route", id: leg.route.id })} className="w-full rounded-2xl border border-primary/20 bg-background/85 p-3 text-left shadow-sm transition hover:border-primary/40 hover:bg-primary/[0.03]">
       <div className="mb-2 flex items-center justify-between gap-2">
         <span className="text-xs font-semibold text-primary">{title}</span>
         <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-medium text-primary">{formatDay(date)}</span>

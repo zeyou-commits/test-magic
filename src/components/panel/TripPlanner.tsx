@@ -335,7 +335,18 @@ export function TripPlanner({ selection, onSelect }: { selection: Selection | nu
 
             {zone ? (
               <div className="rounded-xl border border-border/70 bg-background/70 px-3 py-2 text-xs">
-                <span className="font-semibold">Itinéraire compris :</span> France → Algérie
+                <div><span className="font-semibold">Itinéraire compris :</span> France → Algérie</div>
+                <div className="mt-2 border-t border-border/60 pt-2">
+                  <p className="mb-1.5 text-[11px] font-semibold text-muted-foreground">Calendrier Zone {zone} · 2026–2027</p>
+                  <div className="grid gap-1.5">
+                    {getSchoolBreaksForZone(zone).map((period) => (
+                      <div key={period.name} className="flex items-center justify-between gap-3 text-[11px]">
+                        <span className="font-medium">{period.name}</span>
+                        <span className="text-muted-foreground">{formatCalendarDate(period.start)} → {formatCalendarDate(period.end)}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
               </div>
             ) : (
               <>
@@ -474,6 +485,10 @@ function countDeparturesForDate(date: string, fromId: string, toId: string, rout
     const route = routes.find((item) => item.id === departure.route_id);
     return Boolean(route && (!fromId || route.departure_port_id === fromId) && (!toId || route.arrival_port_id === toId));
   }).length;
+}
+
+function formatCalendarDate(value: string) {
+  return toDate(value).toLocaleDateString("fr-FR", { day: "numeric", month: "short" });
 }
 
 function addDays(value: string, amount: number) { const date = new Date(value + "T00:00:00"); date.setDate(date.getDate() + amount); return date.toISOString().slice(0, 10); }

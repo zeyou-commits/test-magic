@@ -257,7 +257,10 @@ export function TripPlanner({ selection, onSelect }: { selection: Selection | nu
         const to = activePorts.find((port) => port.id === route.arrival_port_id);
         if (!from || !to || !isAlgeriaPort(from) || !isFrancePort(to)) return [];
         const date = departure.departure_at.slice(0, 10);
-        if (date < period.start || date > addDays(period.end, flexDays)) return [];
+        // Le retour se cherche autour de la fin des vacances, pas sur toute la période.
+        // Cela permet notamment de faire remonter les départs depuis TOUS les ports algériens
+        // disponibles dans la fenêtre ± flexDays.
+        if (date < addDays(period.end, -flexDays) || date > addDays(period.end, flexDays)) return [];
         return [{ departure, route, from, to, period }];
       }).sort((a, b) => {
         const target = toDate(period.end).getTime();
@@ -265,16 +268,30 @@ export function TripPlanner({ selection, onSelect }: { selection: Selection | nu
           Math.abs(toDate(b.departure.departure_at.slice(0, 10)).getTime() - target);
       });
 
-      return outboundCandidates.slice(0, 6).flatMap((outboundCandidate) => {
-        const after = returnCandidates.filter(
-          (item) => item.departure.departure_at.slice(0, 10) > outboundCandidate.departure.departure_at.slice(0, 10),
+      const selectedReturns: typeof returnCandidates = [];
+      for (const candidate of returnCandidates) {
+        const duplicatePort = selectedReturns.some(
+          (item) =>
+            item.from.id === candidate.from.id &&
+            item.to.id === candidate.to.id &&
+            item.departure.departure_at.slice(0, 10) === candidate.departure.departure_at.slice(0, 10),
         );
-        return (after.length ? after : returnCandidates).slice(0, 1).map((inboundCandidate) => ({
-          period,
-          outbound: outboundCandidate,
-          inbound: inboundCandidate,
-        }));
-      });
+        if (!duplicatePort) selectedReturns.push(candidate);
+        if (selectedReturns.length >= 6) break;
+      }
+
+      return outboundCandidates.slice(0, 6).map((outboundCandidate, index) => {
+        const after = selectedReturns.filter(
+          (item) =>
+            item.departure.departure_at.slice(0, 10) >
+            outboundCandidate.departure.departure_at.slice(0, 10),
+        );
+        const pool = after.length ? after : selectedReturns;
+        const inboundCandidate = pool[index % Math.max(pool.length, 1)];
+        return inboundCandidate
+          ? { period, outbound: outboundCandidate, inbound: inboundCandidate }
+          : null;
+      }).filter((pair): pair is { period: typeof period; outbound: (typeof outboundCandidates)[number]; inbound: (typeof selectedReturns)[number] } => pair !== null);
     }).slice(0, 12);
   }, [zone, tripMode, flexDays, suggestedCrossings, departures, routes, activePorts]);
 

@@ -143,7 +143,11 @@ export function portDeparturesQuery(portId: string) {
 
 export const plannerDeparturesQuery = queryOptions({
   queryKey: ["departures", "planner"],
-  queryFn: async () => unwrap<Departure[]>(await supabase.from("departures").select("*").gte("departure_at", new Date().toISOString()).neq("status", "cancelled").order("departure_at").limit(1000)),
+  queryFn: async () => {
+    // Le planner doit pouvoir voir aussi les retours éloignés de la date du jour.
+    // On pagine comme les autres vues pour ne pas perdre les départs au-delà des 1000 premiers.
+    return fetchAllUpcomingDepartures();
+  },
   staleTime: 60 * 1000,
 });
 

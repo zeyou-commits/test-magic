@@ -541,16 +541,21 @@ export default function FerryMap({ ports, routes, visibleRouteIds, focusRouteIds
       const to = route ? ports.find((port) => port.id === route.arrival_port_id) : null;
 
       if (from && to) {
-        map.fitBounds(
-          [[from.longitude, from.latitude], [to.longitude, to.latitude]],
-          {
-            padding: isMobile
-              ? 72
-              : { top: 120, right: 72, bottom: 120, left: 460 },
-            maxZoom: 6.2,
-            duration: 650,
-          },
-        );
+        const longitudeSpan = Math.abs(from.longitude - to.longitude);
+        const latitudeSpan = Math.abs(from.latitude - to.latitude);
+        const span = Math.max(longitudeSpan, latitudeSpan * 1.35, 0.8);
+        const zoom = Math.max(4.6, Math.min(6.4, Math.log2(360 / (span * 1.9))));
+
+        map.flyTo({
+          center: [
+            (from.longitude + to.longitude) / 2,
+            (from.latitude + to.latitude) / 2,
+          ],
+          zoom,
+          padding: isMobile ? { top: 40, right: 40, bottom: 40, left: 40 } : { top: 100, right: 80, bottom: 100, left: 460 },
+          duration: 650,
+          essential: true,
+        });
       }
     }
     

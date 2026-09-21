@@ -107,7 +107,46 @@ export function TripPlanner() {
 
   const activePorts = useMemo(() => ports.filter((port) => port.status === "active"), [ports]);
   const companyNames = useMemo(() => new Map(companies.map((company) => [company.id, company.name])), [companies]);
-  const companyLogos = useMemo(() => new Map(companies.map((company) => [company.id, company.logo_url])), [companies]);
+  const companyLogos = useMemo(() => {
+    const knownDomains: Record<string, string> = {
+      "gnv": "gnv.it",
+      "grandi navi veloci": "gnv.it",
+      "corsica ferries": "corsica-ferries.fr",
+      "balearia": "balearia.com",
+      "baleària": "balearia.com",
+      "algérie ferries": "algerieferries.com",
+      "algerie ferries": "algerieferries.com",
+      "grimaldi lines": "grimaldi-lines.com",
+      "la méridionale": "lameridionale.fr",
+      "la meridionale": "lameridionale.fr",
+      "ctn": "ctn.com.tn",
+      "compagnie tunisienne de navigation": "ctn.com.tn",
+      "trasmed": "trasmed.com",
+    };
+
+    return new Map(
+      companies.map((company) => {
+        if (company.logo_url) return [company.id, company.logo_url] as const;
+
+        let domain = "";
+        if (company.website_url) {
+          try {
+            domain = new URL(company.website_url).hostname.replace(/^www\\./, "");
+          } catch {
+            domain = "";
+          }
+        }
+
+        const normalized = company.name.trim().toLowerCase();
+        domain ||= knownDomains[normalized] ?? "";
+        const fallback = domain
+          ? `https://www.google.com/s2/favicons?domain=${domain}&sz=128`
+          : null;
+
+        return [company.id, fallback] as const;
+      }),
+    );
+  }, [companies]);
 
   const today = new Date().toISOString().slice(0, 10);
   const defaultOutbound = new Date(Date.now() + 14 * 86400000).toISOString().slice(0, 10);
@@ -377,7 +416,7 @@ export function TripPlanner() {
                           const selected = date === returnDate && returnFromId === from.id && returnToId === to.id;
                           return <button key={departure.id} type="button" onClick={() => { setReturnDate(date); setReturnFromId(from.id); setReturnToId(to.id); }}
                             className={`flex w-full items-center justify-between rounded-xl border px-3 py-2.5 text-left ${selected ? "border-primary bg-primary/10" : "border-border bg-background hover:bg-secondary"}`}>
-                            <span><span className="block text-xs font-semibold">{formatDay(date)} · {formatTime(departure.departure_at)}</span><span className="block text-[10px] text-muted-foreground">{from.name} → {to.name}</span></span><ArrowRight className="size-4 text-primary" />
+                            <span><span className="block text-xs font-semibold">{formatDay(date)} · {formatTime(departure.departure_at)}</span><span className="block text-[10px] text-muted-foreground">{from.name} → {to.name}</span><span className="mt-1 flex items-center gap-1.5 text-[10px] text-muted-foreground">{companyLogos.get(departure.company_id) ? <img src={companyLogos.get(departure.company_id) ?? ""} alt="" className="size-4 rounded object-contain" /> : null}{companyNames.get(departure.company_id) ?? "Compagnie"}</span></span><ArrowRight className="size-4 text-primary" />
                           </button>;
                         })}
                       </div> : <p className="text-xs text-muted-foreground">Aucun retour Algérie → France trouvé autour de la fin des vacances.</p>}

@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { ArrowRight, CalendarDays, ChevronDown, Compass, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -238,6 +238,46 @@ export function TripPlanner({ selection, onSelect }: { selection: Selection | nu
     });
   }, [zone, outboundDate, flexDays, departures, routes, activePorts]);
 
+  const suggestedTripPairs = useMemo(() => {
+    if (!zone || tripMode !== "roundtrip") return [];
+
+    return getSchoolBreaksForZone(zone).flatMap((period) => {
+      const outboundCandidates = suggestedCrossings
+        .filter((item) => item.period.name === period.name)
+        .sort((a, b) => {
+          const target = toDate(period.start).getTime();
+          return Math.abs(toDate(a.departure.departure_at.slice(0, 10)).getTime() - target) -
+            Math.abs(toDate(b.departure.departure_at.slice(0, 10)).getTime() - target);
+        });
+
+      const returnCandidates = departures.flatMap((departure) => {
+        const route = routes.find((item) => item.id === departure.route_id);
+        if (!route) return [];
+        const from = activePorts.find((port) => port.id === route.departure_port_id);
+        const to = activePorts.find((port) => port.id === route.arrival_port_id);
+        if (!from || !to || !isAlgeriaPort(from) || !isFrancePort(to)) return [];
+        const date = departure.departure_at.slice(0, 10);
+        if (date < period.start || date > addDays(period.end, flexDays)) return [];
+        return [{ departure, route, from, to, period }];
+      }).sort((a, b) => {
+        const target = toDate(period.end).getTime();
+        return Math.abs(toDate(a.departure.departure_at.slice(0, 10)).getTime() - target) -
+          Math.abs(toDate(b.departure.departure_at.slice(0, 10)).getTime() - target);
+      });
+
+      return outboundCandidates.slice(0, 6).flatMap((outboundCandidate) => {
+        const after = returnCandidates.filter(
+          (item) => item.departure.departure_at.slice(0, 10) > outboundCandidate.departure.departure_at.slice(0, 10),
+        );
+        return (after.length ? after : returnCandidates).slice(0, 1).map((inboundCandidate) => ({
+          period,
+          outbound: outboundCandidate,
+          inbound: inboundCandidate,
+        }));
+      });
+    }).slice(0, 12);
+  }, [zone, tripMode, flexDays, suggestedCrossings, departures, routes, activePorts]);
+
   const schoolTravelDates = useMemo(() => suggestedCrossings, [suggestedCrossings]);
 
   const outbound = useMemo(
@@ -252,6 +292,19 @@ export function TripPlanner({ selection, onSelect }: { selection: Selection | nu
         : null,
     [searched, returnDate, returnFromId, returnToId, routes, departures, companyNames, companyLogos, traveler],
   );
+
+  useEffect(() => {
+    if (!zone || tripMode !== "roundtrip" || !suggestedTripPairs.length) return;
+    const first = suggestedTripPairs[0];
+    const outDate = first.outbound.departure.departure_at.slice(0, 10);
+    const inDate = first.inbound.departure.departure_at.slice(0, 10);
+    setOutboundDate(outDate);
+    setFromId(first.outbound.from.id);
+    setToId(first.outbound.to.id);
+    setReturnDate(inDate);
+    setReturnFromId(first.inbound.from.id);
+    setReturnToId(first.inbound.to.id);
+  }, [zone, tripMode, flexDays, suggestedTripPairs]);
 
   const schoolInfo = useMemo(() => {
     if (!zone) return null;
@@ -392,50 +445,91 @@ export function TripPlanner({ selection, onSelect }: { selection: Selection | nu
                   </Select>
                 </div>
               </div>
-              {schoolTravelDates.length ? (
-                <div className="space-y-3">
-                  <div>
-                    <p className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Aller</p>
-                    <div className="space-y-1.5">
-                      {getSchoolBreaksForZone(zone).map((period) => {
-                    const periodDates = schoolTravelDates.filter((item) => item.period.name === period.name);
-                    if (!periodDates.length) return null;
-                    return (
-                      <div key={period.name}>
-                        <p className="mb-1.5 text-xs font-semibold">{period.name}</p>
-                        <div className="space-y-1.5">
-                          {periodDates.slice(0, 8).map(({ departure, from, to }) => {
-                            const date = departure.departure_at.slice(0, 10);
-                            const selected = date === outboundDate && fromId === from.id && toId === to.id;
-                            return <button key={departure.id} type="button" onClick={() => { setOutboundDate(date); setFromId(from.id); setToId(to.id); onSelect((selection?.type === "route" && selection.id === departure.route_id) ? null : { type: "route", id: departure.route_id }); }}
-                              className={`flex w-full items-center justify-between rounded-xl border px-3 py-2.5 text-left ${selected ? "border-primary bg-primary/10" : "border-border bg-background hover:bg-secondary"}`}>
-                              <span><span className="block text-xs font-semibold">{formatDay(date)} · {formatTime(departure.departure_at)}</span><span className="block text-[10px] text-muted-foreground">{from.name} → {to.name}</span><span className="mt-1 flex items-center gap-1.5 text-[10px] text-muted-foreground">{companyLogos.get(departure.company_id) ? <img src={companyLogos.get(departure.company_id) ?? ""} alt="" className="size-4 rounded object-contain" /> : null}{companyNames.get(departure.company_id) ?? "Compagnie"}</span></span><ArrowRight className="size-4 text-primary" />
-                            </button>;
-                          })}
-                        </div>
-                      </div>
-                    );
-                  })}
+              {tripMode === "roundtrip" ? (
+                suggestedTripPairs.length ? (
+                  <div className="space-y-2">
+                    <div className="grid grid-cols-[1fr_1fr] gap-2 px-3 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+                      <span>Aller 🇫🇷 → 🇩🇿</span>
+                      <span>Retour 🇩🇿 → 🇫🇷</span>
                     </div>
+                    {suggestedTripPairs.map(({ period, outbound, inbound }, index) => {
+                      const outDate = outbound.departure.departure_at.slice(0, 10);
+                      const inDate = inbound.departure.departure_at.slice(0, 10);
+                      const selected =
+                        outDate === outboundDate &&
+                        inDate === returnDate &&
+                        outbound.from.id === fromId &&
+                        outbound.to.id === toId &&
+                        inbound.from.id === returnFromId &&
+                        inbound.to.id === returnToId;
+
+                      return (
+                        <button
+                          key={`${period.name}-${outbound.departure.id}-${inbound.departure.id}`}
+                          type="button"
+                          onClick={() => {
+                            setOutboundDate(outDate);
+                            setFromId(outbound.from.id);
+                            setToId(outbound.to.id);
+                            setReturnDate(inDate);
+                            setReturnFromId(inbound.from.id);
+                            setReturnToId(inbound.to.id);
+                            onSelect({ type: "route", id: outbound.route.id });
+                          }}
+                          className={`grid w-full grid-cols-[1fr_auto_1fr] items-center gap-2 rounded-2xl border p-3 text-left transition ${
+                            selected
+                              ? "border-primary bg-primary/10 shadow-sm"
+                              : "border-border bg-background hover:border-primary/40 hover:bg-secondary"
+                          }`}
+                        >
+                          <span className="min-w-0">
+                            <span className="block text-[10px] font-semibold text-primary">{period.name}</span>
+                            <span className="block text-xs font-semibold">{formatDay(outDate)}</span>
+                            <span className="block truncate text-[10px] text-muted-foreground">{outbound.from.name} → {outbound.to.name}</span>
+                          </span>
+                          <ArrowRight className="size-4 shrink-0 text-primary" />
+                          <span className="min-w-0">
+                            <span className="block text-[10px] font-semibold text-primary">{index === 0 ? "Suggestion" : "Alternative"}</span>
+                            <span className="block text-xs font-semibold">{formatDay(inDate)}</span>
+                            <span className="block truncate text-[10px] text-muted-foreground">{inbound.from.name} → {inbound.to.name}</span>
+                          </span>
+                        </button>
+                      );
+                    })}
+                    <p className="text-[10px] text-muted-foreground">
+                      Les couples sont présélectionnés automatiquement. Vous pouvez choisir une autre proposition ou modifier les dates ensuite.
+                    </p>
                   </div>
-                  {tripMode === "roundtrip" ? (
-                    <div>
-                      <p className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Retour — autour de la fin des vacances</p>
-                      {suggestedReturnCrossings.length ? <div className="space-y-1.5">
-                        {suggestedReturnCrossings.slice(0, 8).map(({ departure, from, to }) => {
-                          const date = departure.departure_at.slice(0, 10);
-                          const selected = date === returnDate && returnFromId === from.id && returnToId === to.id;
-                          return <button key={departure.id} type="button" onClick={() => { setReturnDate(date); setReturnFromId(from.id); setReturnToId(to.id); onSelect({ type: "route", id: departure.route_id }); }}
-                            className={`flex w-full items-center justify-between rounded-xl border px-3 py-2.5 text-left ${selected ? "border-primary bg-primary/10" : "border-border bg-background hover:bg-secondary"}`}>
-                            <span><span className="block text-xs font-semibold">{formatDay(date)} · {formatTime(departure.departure_at)}</span><span className="block text-[10px] text-muted-foreground">{from.name} → {to.name}</span><span className="mt-1 flex items-center gap-1.5 text-[10px] text-muted-foreground">{companyLogos.get(departure.company_id) ? <img src={companyLogos.get(departure.company_id) ?? ""} alt="" className="size-4 rounded object-contain" /> : null}{companyNames.get(departure.company_id) ?? "Compagnie"}</span></span><ArrowRight className="size-4 text-primary" />
-                          </button>;
-                        })}
-                      </div> : <p className="text-xs text-muted-foreground">Aucun retour Algérie → France trouvé autour de la fin des vacances.</p>}
-                    </div>
-                  ) : null}
-                </div>
+                ) : (
+                  <p className="text-xs text-muted-foreground">Aucune paire aller-retour trouvée autour des vacances de cette zone.</p>
+                )
               ) : (
-                <p className="text-xs text-muted-foreground">Aucune traversée France → Algérie trouvée autour des vacances de cette zone.</p>
+                schoolTravelDates.length ? (
+                  <div className="space-y-2">
+                    {schoolTravelDates.slice(0, 8).map(({ departure, from, to }) => {
+                      const date = departure.departure_at.slice(0, 10);
+                      const selected = date === outboundDate && fromId === from.id && toId === to.id;
+                      return (
+                        <button key={departure.id} type="button" onClick={() => {
+                          setOutboundDate(date);
+                          setFromId(from.id);
+                          setToId(to.id);
+                          onSelect({ type: "route", id: departure.route_id });
+                        }} className={`flex w-full items-center justify-between rounded-xl border px-3 py-2.5 text-left ${
+                          selected ? "border-primary bg-primary/10" : "border-border bg-background hover:bg-secondary"
+                        }`}>
+                          <span>
+                            <span className="block text-xs font-semibold">{formatDay(date)} · {formatTime(departure.departure_at)}</span>
+                            <span className="block text-[10px] text-muted-foreground">{from.name} → {to.name}</span>
+                          </span>
+                          <ArrowRight className="size-4 text-primary" />
+                        </button>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <p className="text-xs text-muted-foreground">Aucune traversée France → Algérie trouvée autour des vacances de cette zone.</p>
+                )
               )}
             </section>
           ) : null}

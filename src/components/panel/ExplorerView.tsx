@@ -292,7 +292,7 @@ function FilterChip({
   icon,
 }: {
   label: string;
-  value?: string;
+  value?: string | undefined;
   active: boolean;
   onClick: () => void;
   icon?: ReactNode;

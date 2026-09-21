@@ -417,10 +417,11 @@ export default function FerryMap({ ports, routes, visibleRouteIds, focusRouteIds
         tip.append(closed); 
       }
       if (isMobile) {
-        if (meta?.upcoming?.length) {
+        const firstUpcoming = meta?.upcoming?.[0];
+        if (firstUpcoming) {
           const next = document.createElement("p");
           next.className = "port-tip__next";
-          next.textContent = `Prochain : ${meta.upcoming[0].label}${meta.upcoming[0].to ? ` → ${meta.upcoming[0].to}` : ""}`;
+          next.textContent = `Prochain : ${firstUpcoming.label}${firstUpcoming.to ? ` → ${firstUpcoming.to}` : ""}`;
           tip.append(next);
           const more = document.createElement("button");
           more.type = "button";

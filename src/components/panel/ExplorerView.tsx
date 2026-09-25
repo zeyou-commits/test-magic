@@ -1,7 +1,6 @@
 import { useState } from "react";
-import type { ReactNode } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { CalendarDays, SlidersHorizontal } from "lucide-react";
+import { SlidersHorizontal, X } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import {
@@ -40,19 +39,29 @@ export function ExplorerView({
   const { data: routes = [] } = useQuery(routesQuery);
 
   const [filtersOpen, setFiltersOpen] = useState(false);
+
   const portName = (id: string) => ports.find((port) => port.id === id)?.name ?? "—";
-  const departurePorts = ports.filter((port) => port.status === "active" && port.country_code !== ALGERIA);
-  const arrivalPorts = ports.filter((port) => port.status === "active" && port.country_code === ALGERIA);
+  const departurePorts = ports.filter(
+    (port) => port.status === "active" && port.country_code !== ALGERIA,
+  );
+  const arrivalPorts = ports.filter(
+    (port) => port.status === "active" && port.country_code === ALGERIA,
+  );
+
   const filteredDeparturePorts = filters.departureCountry
     ? departurePorts.filter((port) => port.country_code === filters.departureCountry)
-    : departurePorts;
-  const countries = [...new Map(departurePorts.map((port) => [port.country_code, port.country_name]))]
+    : [];
+
+  const countries = [...new Map(
+    departurePorts.map((port) => [port.country_code, port.country_name]),
+  )]
     .map(([code, name]) => ({ value: code, label: name }))
     .sort((a, b) => a.label.localeCompare(b.label, "fr"));
 
   const routeMatchesDeparture = (route: RouteLine) =>
     !filters.departureCountry ||
-    ports.find((port) => port.id === route.departure_port_id)?.country_code === filters.departureCountry;
+    ports.find((port) => port.id === route.departure_port_id)?.country_code ===
+      filters.departureCountry;
 
   const routeMatchesDeparturePort = (route: RouteLine) =>
     !filters.departurePortId || route.departure_port_id === filters.departurePortId;
@@ -69,9 +78,7 @@ export function ExplorerView({
   const updateDepartureCountry = (value: string | null) => {
     const selectedPort = ports.find((port) => port.id === filters.departurePortId);
     const nextPortId =
-      value && selectedPort?.country_code === value
-        ? filters.departurePortId
-        : null;
+      value && selectedPort?.country_code === value ? filters.departurePortId : null;
 
     const nextCompatibleArrivals = arrivalPorts.filter((port) =>
       routes.some(
@@ -108,8 +115,10 @@ export function ExplorerView({
         (route) =>
           route.arrival_port_id === port.id &&
           (!nextFilters.departureCountry ||
-            ports.find((item) => item.id === route.departure_port_id)?.country_code === nextFilters.departureCountry) &&
-          (!nextFilters.departurePortId || route.departure_port_id === nextFilters.departurePortId),
+            ports.find((item) => item.id === route.departure_port_id)?.country_code ===
+              nextFilters.departureCountry) &&
+          (!nextFilters.departurePortId ||
+            route.departure_port_id === nextFilters.departurePortId),
       ),
     );
 
@@ -123,9 +132,13 @@ export function ExplorerView({
     });
   };
 
+  const advancedFilterCount =
+    Number(filters.companyId !== null) +
+    Number(filters.vesselId !== null) +
+    Number(filters.date !== null);
+
   const hasFilters =
     filters.search.trim() !== "" ||
-    filters.portIds.length > 0 ||
     filters.departureCountry !== null ||
     filters.departurePortId !== null ||
     filters.arrivalPortId !== null ||
@@ -134,128 +147,223 @@ export function ExplorerView({
     filters.date !== null;
 
   const matchingPorts = filters.search.trim()
-    ? ports.filter((port) =>
-        `${port.name} ${port.city ?? ""} ${port.country_name}`
-          .toLowerCase()
-          .includes(filters.search.trim().toLowerCase()),
-      )
+    ? ports
+        .filter((port) =>
+          `${port.name} ${port.city ?? ""} ${port.country_name}`
+            .toLowerCase()
+            .includes(filters.search.trim().toLowerCase()),
+        )
+        .slice(0, 6)
     : [];
 
-  const togglePort = (id: string) =>
-    onFiltersChange({
-      ...filters,
-      portIds: filters.portIds.includes(id)
-        ? filters.portIds.filter((item) => item !== id)
-        : [...filters.portIds, id],
-    });
-
   return (
-    <div>
-      <div className="flex items-center justify-between gap-2 border-b border-border px-5 py-2.5">
-        <h2 className="min-w-0 truncate text-sm font-semibold">Traversées EU - DZ</h2>
-        <span className="shrink-0 text-xs text-muted-foreground">
+    <div className="pb-2">
+      <div className="flex items-center justify-between gap-3 border-b border-[#0e7490]/10 bg-[#f7f3ea] px-5 py-3">
+        <div className="min-w-0">
+          <p className="text-sm font-semibold text-[#12343b]">Explorer les traversées</p>
+          <p className="text-[11px] text-[#547078]">Europe → Algérie</p>
+        </div>
+        <span className="shrink-0 rounded-full bg-white px-2.5 py-1 text-[11px] font-medium text-[#547078] shadow-sm">
           {routes.length} lignes · {ports.length} ports
         </span>
       </div>
-      <div>
+
+      <div className="space-y-1">
         <div className={hidePrimarySearchOnMobile ? "hidden md:block" : undefined}>
-        <Section title="Recherche">
-          <Input
-            value={filters.search}
-            onChange={(event) => onFiltersChange({ ...filters, search: event.target.value })}
-            placeholder="Un port, une ville, un pays…"
-          />
-          {filters.portIds.length > 0 ? (
-            <div className="mt-2 flex flex-wrap gap-1.5">
-              {filters.portIds.map((id) => (
+          <Section title="Trouver un port">
+            <div className="relative">
+              <Input
+                value={filters.search}
+                onChange={(event) =>
+                  onFiltersChange({ ...filters, search: event.target.value })
+                }
+                placeholder="Marseille, Alger, Oran…"
+                className="pr-9"
+              />
+              {filters.search ? (
                 <button
-                  key={id}
                   type="button"
-                  onClick={() => togglePort(id)}
-                  className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2.5 py-1 text-xs font-medium text-primary hover:bg-primary/20"
+                  aria-label="Effacer la recherche"
+                  onClick={() => onFiltersChange({ ...filters, search: "" })}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full p-1 text-[#6b7f84] hover:bg-[#f1ece2]"
                 >
-                  {portName(id)} <span aria-hidden>✕</span>
+                  <X className="size-4" />
                 </button>
-              ))}
+              ) : null}
             </div>
-          ) : null}
-          {matchingPorts.length > 0 ? (
-            <ul className="mt-2 space-y-1">
-              {matchingPorts.slice(0, 6).map((port) => {
-                const picked = filters.portIds.includes(port.id);
-                return (
-                  <li key={port.id} className="flex items-center gap-1">
+
+            {matchingPorts.length > 0 ? (
+              <ul className="mt-2 overflow-hidden rounded-xl border border-[#0e7490]/10 bg-white">
+                {matchingPorts.map((port) => (
+                  <li key={port.id} className="border-b border-[#edf0ed] last:border-0">
                     <button
                       type="button"
-                      onClick={() => togglePort(port.id)}
-                      className="flex-1 rounded-md px-2 py-1.5 text-left text-sm hover:bg-secondary"
-                    >
-                      <span className="font-medium">{port.name}</span>
-                      <span className="text-muted-foreground"> · {port.country_name}</span>
-                      {picked ? <span className="ml-1 text-primary">✓</span> : null}
-                    </button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
                       onClick={() => onSelect({ type: "port", id: port.id })}
+                      className="flex w-full items-center justify-between gap-3 px-3 py-2.5 text-left hover:bg-[#f7f3ea]"
                     >
-                      Fiche
-                    </Button>
+                      <span className="min-w-0">
+                        <span className="block text-sm font-medium text-[#17383f]">
+                          {port.name}
+                        </span>
+                        <span className="block text-xs text-[#718489]">
+                          {port.city ? `${port.city} · ${port.country_name}` : port.country_name}
+                        </span>
+                      </span>
+                      <span className="shrink-0 text-xs font-semibold text-[#0e7490]">
+                        Voir
+                      </span>
+                    </button>
                   </li>
-                );
-              })}
-            </ul>
-          ) : null}
-          <p className="mt-2 text-xs text-muted-foreground">
-            Touchez un port pour l'ajouter à la sélection, plusieurs ports sont possibles.
-          </p>
-        </Section>
+                ))}
+              </ul>
+            ) : null}
+
+            {filters.search && matchingPorts.length === 0 ? (
+              <p className="mt-2 text-xs text-[#718489]">Aucun port trouvé.</p>
+            ) : null}
+
+            {!filters.search ? (
+              <p className="mt-2 text-[11px] text-[#718489]">
+                Recherchez un port pour ouvrir sa fiche.
+              </p>
+            ) : null}
+          </Section>
         </div>
 
         <Section
           title="Votre trajet"
           action={
             hasFilters ? (
-              <Button variant="ghost" size="sm" onClick={() => onFiltersChange(emptyFilters)}>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => onFiltersChange(emptyFilters)}
+                className="h-8 text-xs text-[#547078] hover:bg-[#f1ece2]"
+              >
                 Réinitialiser
               </Button>
             ) : null
           }
         >
-          <div className="space-y-3">
-            <div className="hidden rounded-2xl border border-primary/15 bg-primary/[0.04] p-3 md:block">
-              <p className="mb-3 text-xs text-muted-foreground">
-                Choisissez d’abord votre pays de départ, puis votre port et votre arrivée en Algérie.
+          <div className="rounded-2xl border border-[#0e7490]/15 bg-white p-3 shadow-[0_4px_18px_rgba(18,52,59,0.06)]">
+            <div className="mb-3 flex items-center justify-between gap-3">
+              <p className="text-xs text-[#547078]">
+                Pays de départ → port → arrivée
               </p>
-              <div className="space-y-2.5">
-                <FilterSelect label="1. Pays de départ" value={filters.departureCountry} onChange={updateDepartureCountry} options={countries} placeholder="Choisir un pays" />
-                <FilterSelect label="2. Port de départ" value={filters.departurePortId} onChange={updateDeparturePort} options={filteredDeparturePorts.map((port) => ({ value: port.id, label: port.name }))} placeholder={filters.departureCountry ? "Choisir un port de départ" : "Choisissez d’abord un pays"} disabled={!filters.departureCountry} />
-                <FilterSelect label="3. Port d’arrivée en Algérie" value={filters.arrivalPortId} onChange={(value) => onFiltersChange({ ...filters, arrivalPortId: value })} options={compatibleArrivalPorts.map((port) => ({ value: port.id, label: port.name }))} placeholder="Choisir un port d’arrivée" />
-              </div>
-            </div>
-            <div className="flex flex-wrap gap-1.5">
-              <FilterChip label="Compagnie" active={filters.companyId !== null} value={filters.companyId ? companies.find((company) => company.id === filters.companyId)?.name : undefined} onClick={() => setFiltersOpen(true)} />
-              <FilterChip label="Navire" active={filters.vesselId !== null} value={filters.vesselId ? vessels.find((vessel) => vessel.id === filters.vesselId)?.name : undefined} onClick={() => setFiltersOpen(true)} />
-              <FilterChip label="Date" active={filters.date !== null} value={filters.date ? new Date(filters.date).toLocaleDateString("fr-FR") : undefined} onClick={() => setFiltersOpen(true)} icon={<CalendarDays className="size-3.5" />} />
-              <Button type="button" variant={filtersOpen ? "secondary" : "outline"} size="sm" className="h-8 rounded-full px-3" onClick={() => setFiltersOpen((open) => !open)}>
-                <SlidersHorizontal className="size-3.5" />
-                Plus de filtres
-              </Button>
+              <span className="rounded-full bg-[#f7f3ea] px-2 py-1 text-[10px] font-semibold text-[#0e7490]">
+                3 étapes
+              </span>
             </div>
 
-            {filtersOpen ? (
-              <div className="grid gap-2.5 rounded-xl border border-border/70 bg-secondary/30 p-3 sm:grid-cols-2">
-                <FilterSelect label="Compagnie" value={filters.companyId} onChange={(value) => onFiltersChange({ ...filters, companyId: value })} options={companies.map((company) => ({ value: company.id, label: company.name }))} />
-                <FilterSelect label="Navire" value={filters.vesselId} onChange={(value) => onFiltersChange({ ...filters, vesselId: value })} options={vessels.map((vessel) => ({ value: vessel.id, label: vessel.name }))} />
-                <label className="grid gap-1">
-                  <span className="text-xs font-medium text-muted-foreground">Date de départ</span>
-                  <Input type="date" value={filters.date ?? ""} onChange={(event) => onFiltersChange({ ...filters, date: event.target.value || null })} />
-                </label>
+            <div className="space-y-2.5">
+              <FilterSelect
+                label="Pays de départ"
+                value={filters.departureCountry}
+                onChange={updateDepartureCountry}
+                options={countries}
+                placeholder="Choisir un pays"
+              />
+              <FilterSelect
+                label="Port de départ"
+                value={filters.departurePortId}
+                onChange={updateDeparturePort}
+                options={filteredDeparturePorts.map((port) => ({
+                  value: port.id,
+                  label: port.name,
+                }))}
+                placeholder={
+                  filters.departureCountry
+                    ? "Choisir un port"
+                    : "Choisir d’abord un pays"
+                }
+                disabled={!filters.departureCountry}
+              />
+              <FilterSelect
+                label="Port d’arrivée"
+                value={filters.arrivalPortId}
+                onChange={(value) =>
+                  onFiltersChange({ ...filters, arrivalPortId: value })
+                }
+                options={compatibleArrivalPorts.map((port) => ({
+                  value: port.id,
+                  label: port.name,
+                }))}
+                placeholder="Choisir une arrivée"
+              />
+            </div>
+
+            {filters.departurePortId || filters.arrivalPortId ? (
+              <div className="mt-3 rounded-xl bg-[#f7f3ea] px-3 py-2 text-xs font-medium text-[#17383f]">
+                {filters.departurePortId ? portName(filters.departurePortId) : "Départ"}{" "}
+                <span className="px-1 text-[#e87961]">→</span>{" "}
+                {filters.arrivalPortId ? portName(filters.arrivalPortId) : "Arrivée"}
               </div>
             ) : null}
           </div>
+
+          <div className="mt-3">
+            <Button
+              type="button"
+              variant={filtersOpen ? "secondary" : "outline"}
+              size="sm"
+              className="h-9 rounded-full border-[#0e7490]/15 bg-white px-3 text-xs text-[#315860] hover:bg-[#f7f3ea]"
+              onClick={() => setFiltersOpen((open) => !open)}
+            >
+              <SlidersHorizontal className="mr-1.5 size-3.5" />
+              Affiner
+              {advancedFilterCount > 0 ? (
+                <span className="ml-1.5 rounded-full bg-[#e87961] px-1.5 py-0.5 text-[10px] font-bold text-white">
+                  {advancedFilterCount}
+                </span>
+              ) : null}
+            </Button>
+          </div>
+
+          {filtersOpen ? (
+            <div className="mt-2 grid gap-2.5 rounded-2xl border border-[#0e7490]/10 bg-[#f7f3ea] p-3 sm:grid-cols-2">
+              <FilterSelect
+                label="Compagnie"
+                value={filters.companyId}
+                onChange={(value) =>
+                  onFiltersChange({ ...filters, companyId: value })
+                }
+                options={companies.map((company) => ({
+                  value: company.id,
+                  label: company.name,
+                }))}
+              />
+              <FilterSelect
+                label="Navire"
+                value={filters.vesselId}
+                onChange={(value) =>
+                  onFiltersChange({ ...filters, vesselId: value })
+                }
+                options={vessels.map((vessel) => ({
+                  value: vessel.id,
+                  label: vessel.name,
+                }))}
+              />
+              <label className="grid gap-1 sm:col-span-2">
+                <span className="text-xs font-medium text-[#547078]">
+                  Date de départ
+                </span>
+                <Input
+                  type="date"
+                  value={filters.date ?? ""}
+                  onChange={(event) =>
+                    onFiltersChange({
+                      ...filters,
+                      date: event.target.value || null,
+                    })
+                  }
+                  className="bg-white"
+                />
+              </label>
+            </div>
+          ) : null}
         </Section>
-        <Section title={`Lignes affichées (${visibleRoutes.length})`}>
+
+        <Section title={`Lignes affichées · ${visibleRoutes.length}`}>
           {visibleRoutes.length === 0 ? (
             <EmptyNote>Aucune ligne ne correspond à cette sélection.</EmptyNote>
           ) : (
@@ -265,12 +373,12 @@ export function ExplorerView({
                   <button
                     type="button"
                     onClick={() => onSelect({ type: "route", id: route.id })}
-                    className="flex w-full items-center justify-between gap-3 rounded-md px-2 py-2 text-left hover:bg-secondary"
+                    className="flex w-full items-center justify-between gap-3 rounded-xl px-3 py-2.5 text-left hover:bg-[#f7f3ea]"
                   >
-                    <span className="text-sm font-medium">
+                    <span className="text-sm font-medium text-[#17383f]">
                       {portName(route.departure_port_id)} → {portName(route.arrival_port_id)}
                     </span>
-                    <span className="text-xs font-semibold text-primary">
+                    <span className="text-xs font-semibold text-[#0e7490]">
                       {formatDuration(route.typical_duration_minutes)}
                     </span>
                   </button>
@@ -281,31 +389,6 @@ export function ExplorerView({
         </Section>
       </div>
     </div>
-  );
-}
-
-function FilterChip({
-  label,
-  value,
-  active,
-  onClick,
-  icon,
-}: {
-  label: string;
-  value?: string | undefined;
-  active: boolean;
-  onClick: () => void;
-  icon?: ReactNode;
-}) {
-  const className = active
-    ? "inline-flex h-8 items-center gap-1.5 rounded-full border border-primary/30 bg-primary/10 px-3 text-xs font-medium text-primary"
-    : "inline-flex h-8 items-center gap-1.5 rounded-full border border-border/70 bg-background px-3 text-xs font-medium text-muted-foreground hover:bg-secondary";
-
-  return (
-    <button type="button" onClick={onClick} className={className}>
-      {icon}
-      {active ? value : label}
-    </button>
   );
 }
 
@@ -326,13 +409,13 @@ function FilterSelect({
 }) {
   return (
     <label className="grid gap-1">
-      <span className="text-xs font-medium text-muted-foreground">{label}</span>
+      <span className="text-xs font-medium text-[#547078]">{label}</span>
       <Select
         value={value ?? ANY}
         onValueChange={(next) => onChange(next === ANY ? null : next)}
         disabled={disabled}
       >
-        <SelectTrigger>
+        <SelectTrigger className="border-[#0e7490]/15 bg-white">
           <SelectValue placeholder={placeholder} />
         </SelectTrigger>
         <SelectContent>

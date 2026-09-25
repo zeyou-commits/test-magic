@@ -497,7 +497,7 @@ export function TripPlanner({ selection, onSelect }: { selection: Selection | nu
                 <DateField label="Aller" value={outboundDate} min={today} onChange={setOutboundDate} availableDates={availableDates} />
                 {tripMode === "roundtrip" ? <DateField label="Retour" value={returnDate} min={outboundDate || today} onChange={setReturnDate} availableDates={availableDates} /> : null}
               </div>
-            )
+            )}
           </section>
 
           {zone ? (

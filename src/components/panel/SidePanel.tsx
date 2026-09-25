@@ -55,7 +55,7 @@ export function SidePanel({
   };
 
   return (
-    <div className="flex h-full min-h-0 flex-col bg-transparent">
+    <div className="flex h-full min-h-0 flex-col bg-[#f7f3ea]">
       <div className="custom-scrollbar min-h-0 flex-1 overflow-y-auto">
         {selection ? (
           <div className="animate-in fade-in slide-in-from-top-1 duration-200">
@@ -102,22 +102,22 @@ export function SidePanel({
               />
             )}
 
-            <div className="h-2 bg-secondary/40" />
+            <div className="h-2 bg-[#eee5d5]" />
           </div>
         ) : null}
 
-        <div className="sticky top-0 z-20 border-b border-border/70 bg-background/95 px-3 py-2 backdrop-blur supports-[backdrop-filter]:bg-background/80 sm:px-4">
+        <div className="sticky top-0 z-20 border-b border-[#e8dfcf] bg-[#f7f3ea]/95 px-3 py-2 backdrop-blur supports-[backdrop-filter]:bg-[#f7f3ea]/85 sm:px-4">
           <div
             role="tablist"
             aria-label="Mode de recherche"
-            className="grid grid-cols-2 gap-1 rounded-2xl border border-border/80 bg-card p-1.5 shadow-sm"
+            className="grid grid-cols-2 gap-1 rounded-2xl border border-[#e3d8c5] bg-white/75 p-1.5 shadow-sm"
           >
             <button
               type="button"
               role="tab"
               aria-selected={activeTab === "explore"}
               onClick={() => setActiveTab("explore")}
-              className={`flex min-h-11 items-center justify-center gap-2 rounded-xl px-3 text-xs font-semibold transition-all ${activeTab === "explore" ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:bg-secondary hover:text-foreground"}`}
+              className={`flex min-h-11 items-center justify-center gap-2 rounded-xl px-3 text-xs font-semibold transition-all ${activeTab === "explore" ? "bg-[#0e7490] text-white shadow-sm" : "text-[#64748b] hover:bg-[#efe7d8] hover:text-[#164e63]"}`}
             >
               <MapPinned aria-hidden className="size-4" />
               <span>Explorer la carte</span>
@@ -128,7 +128,7 @@ export function SidePanel({
               role="tab"
               aria-selected={activeTab === "plan"}
               onClick={() => setActiveTab("plan")}
-              className={`flex min-h-11 items-center justify-center gap-2 rounded-xl px-3 text-xs font-semibold transition-all ${activeTab === "plan" ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:bg-secondary hover:text-foreground"}`}
+              className={`flex min-h-11 items-center justify-center gap-2 rounded-xl px-3 text-xs font-semibold transition-all ${activeTab === "plan" ? "bg-[#0e7490] text-white shadow-sm" : "text-[#64748b] hover:bg-[#efe7d8] hover:text-[#164e63]"}`}
             >
               <CalendarDays aria-hidden className="size-4" />
               <span>Planifier mon voyage</span>

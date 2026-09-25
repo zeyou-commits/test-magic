@@ -109,6 +109,29 @@ export function TripPlanner({ selection, onSelect }: { selection: Selection | nu
   const { data: companies = [] } = useQuery(companiesQuery);
 
   const activePorts = useMemo(() => ports.filter((port) => port.status === "active"), [ports]);
+  const compatibleDeparturePorts = useMemo(() => {
+    if (!toId) return activePorts;
+    return activePorts.filter((port) =>
+      routes.some((route) => {
+        if (route.departure_port_id !== port.id || route.arrival_port_id !== toId) return false;
+        const arrival = activePorts.find((item) => item.id === toId);
+        return arrival ? isAlgeriaPort(port) !== isAlgeriaPort(arrival) : false;
+      }),
+    );
+  }, [activePorts, routes, toId]);
+  const compatibleArrivalPorts = useMemo(() => {
+    if (!fromId) return activePorts;
+    const departure = activePorts.find((port) => port.id === fromId);
+    if (!departure) return activePorts;
+    return activePorts.filter((port) =>
+      routes.some(
+        (route) =>
+          route.departure_port_id === fromId &&
+          route.arrival_port_id === port.id &&
+          isAlgeriaPort(departure) !== isAlgeriaPort(port),
+      ),
+    );
+  }, [activePorts, fromId, routes]);
   const companyNames = useMemo(() => new Map(companies.map((company) => [company.id, company.name])), [companies]);
   const companyLogos = useMemo(() => {
     const knownDomains: Record<string, string> = {
@@ -346,6 +369,15 @@ export function TripPlanner({ selection, onSelect }: { selection: Selection | nu
     setReturnToId(first.inbound.to.id);
   }, [zone, tripMode, flexDays, suggestedTripPairs]);
 
+  useEffect(() => {
+    if (fromId && !compatibleDeparturePorts.some((port) => port.id === fromId)) {
+      setFromId("");
+    }
+    if (toId && !compatibleArrivalPorts.some((port) => port.id === toId)) {
+      setToId("");
+    }
+  }, [compatibleArrivalPorts, compatibleDeparturePorts, fromId, toId]);
+
   const schoolInfo = useMemo(() => {
     if (!zone) return null;
     const outboundBreak = getSchoolBreak(outboundDate, zone);
@@ -444,19 +476,18 @@ export function TripPlanner({ selection, onSelect }: { selection: Selection | nu
             ) : (
               <>
                 <div className="grid gap-2 sm:grid-cols-2">
-                 <GroupedPortSelect
-  label="Départ"
-  value={fromId}
-  onChange={setFromId}
-  ports={activePorts}
-/>
-
-<GroupedPortSelect
-  label="Arrivée"
-  value={toId}
-  onChange={setToId}
-  ports={activePorts.filter((port) => port.id !== fromId)}
-/>
+                  <GroupedPortSelect
+                    label="Départ"
+                    value={fromId}
+                    onChange={setFromId}
+                    ports={compatibleDeparturePorts}
+                  />
+                  <GroupedPortSelect
+                    label="Arrivée"
+                    value={toId}
+                    onChange={setToId}
+                    ports={compatibleArrivalPorts.filter((port) => port.id !== fromId)}
+                  />
                 </div>
                 <div className="grid gap-2 sm:grid-cols-2">
                   <DateField label="Aller" value={outboundDate} min={today} onChange={setOutboundDate} availableDates={availableDates} />

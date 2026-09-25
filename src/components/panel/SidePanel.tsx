@@ -3,9 +3,14 @@ import { Share2 } from "lucide-react";
 import { toast } from "sonner";
 import { ExplorerView } from "./ExplorerView";
 import { TripPlanner } from "./TripPlanner";
+import { MapRouteFilter } from "./MapRouteFilter";
 import { PortView } from "./PortView";
 import { RouteView } from "./RouteView";
-import { CompanyView, DepartureView, VesselView } from "./EntityViews";
+import {
+  CompanyView,
+  DepartureView,
+  VesselView,
+} from "./EntityViews";
 
 interface SidePanelProps {
   selection: Selection | null;
@@ -26,16 +31,21 @@ export function SidePanel({
 }: SidePanelProps) {
   const shareSelection = async () => {
     if (typeof window === "undefined") return;
+
     const url = window.location.href;
+
     try {
       if (navigator.share) {
-        await navigator.share({ title: "Batogo — traversées en ferry", url });
+        await navigator.share({
+          title: "Batogo — traversées en ferry",
+          url,
+        });
       } else {
         await navigator.clipboard.writeText(url);
         toast.success("Lien copié");
       }
     } catch {
-      // L'utilisateur peut fermer la feuille de partage sans erreur à afficher.
+      // L'utilisateur peut fermer la fenêtre de partage.
     }
   };
 
@@ -48,6 +58,7 @@ export function SidePanel({
               <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
                 Sélection
               </span>
+
               <div className="flex items-center gap-1">
                 <button
                   type="button"
@@ -56,8 +67,11 @@ export function SidePanel({
                   title="Partager cette sélection"
                 >
                   <Share2 aria-hidden className="size-3.5" />
-                  <span className="sr-only sm:not-sr-only">Partager</span>
+                  <span className="sr-only sm:not-sr-only">
+                    Partager
+                  </span>
                 </button>
+
                 <button
                   type="button"
                   onClick={() => onSelect(null)}
@@ -67,6 +81,7 @@ export function SidePanel({
                 </button>
               </div>
             </div>
+
             {selection.type === "port" ? (
               <PortView portId={selection.id} onSelect={onSelect} />
             ) : selection.type === "route" ? (
@@ -76,12 +91,26 @@ export function SidePanel({
             ) : selection.type === "vessel" ? (
               <VesselView vesselId={selection.id} onSelect={onSelect} />
             ) : (
-              <DepartureView departureId={selection.id} onSelect={onSelect} />
+              <DepartureView
+                departureId={selection.id}
+                onSelect={onSelect}
+              />
             )}
+
             <div className="h-2 bg-secondary/40" />
           </div>
         ) : null}
-        <TripPlanner selection={selection} onSelect={onSelect} />
+
+        <MapRouteFilter
+          filters={filters}
+          onFiltersChange={onFiltersChange}
+        />
+
+        <TripPlanner
+          selection={selection}
+          onSelect={onSelect}
+        />
+
         <ExplorerView
           filters={filters}
           onFiltersChange={onFiltersChange}

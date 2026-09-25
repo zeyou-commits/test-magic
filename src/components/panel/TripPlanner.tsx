@@ -641,7 +641,7 @@ export function TripPlanner({ selection, onSelect }: { selection: Selection | nu
 
           <Button
             type="button"
-            className="w-full rounded-xl"
+            className="w-full rounded-xl bg-[#e87961] text-white hover:bg-[#d96851]"
             onClick={submit}
             disabled={!outboundDate || (!zone && (!fromId || !toId)) || Boolean(tripMode === "roundtrip" && returnDate && (!returnFromId || !returnToId || returnDate < outboundDate))}
           >
@@ -650,7 +650,7 @@ export function TripPlanner({ selection, onSelect }: { selection: Selection | nu
           </Button>
 
           {schoolInfo ? (
-            <div className="rounded-xl border border-amber-500/20 bg-amber-500/10 px-3 py-2 text-xs">
+            <div className="rounded-xl border border-[#f4b860]/30 bg-[#f4b860]/15 px-3 py-2 text-xs text-[#7c5a22]">
               <span className="font-semibold">Calendrier scolaire :</span>{" "}
               {schoolInfo.outbound ? `aller pendant les vacances de ${schoolInfo.outbound}` : ""}
               {schoolInfo.outbound && schoolInfo.return ? " · " : ""}
@@ -721,7 +721,7 @@ function PortSelect({ label, value, onChange, ports }: { label: string; value: s
 
 function Recommendation({ title, leg, from, to, date, selection, onSelect }: { title: string; leg: LegRecommendation; from: string; to: string; date: string; selection: Selection | null; onSelect: (selection: Selection | null) => void }) {
   return (
-    <button type="button" onClick={() => onSelect(selection?.type === "route" && selection.id === leg.route.id ? null : { type: "route", id: leg.route.id })} className="w-full rounded-2xl border border-primary/20 bg-background/85 p-3 text-left shadow-sm transition hover:border-primary/40 hover:bg-primary/[0.03]">
+    <button type="button" onClick={() => onSelect(selection?.type === "route" && selection.id === leg.route.id ? null : { type: "route", id: leg.route.id })} className="w-full rounded-2xl border border-[#e6d9c6] bg-white/90 p-3 text-left shadow-sm transition hover:border-[#0e7490]/40 hover:bg-[#fffaf2]">
       <div className="mb-2 flex items-center justify-between gap-2">
         <span className="text-xs font-semibold text-primary">{title}</span>
         <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-medium text-primary">{formatDay(date)}</span>
@@ -741,6 +741,6 @@ function Recommendation({ title, leg, from, to, date, selection, onSelect }: { t
 }
 
 function EmptyRecommendation({ text }: { text: string }) {
-  return <div className="rounded-xl border border-dashed border-border px-3 py-2 text-xs text-muted-foreground">{text}</div>;
+  return <div className="rounded-xl border border-dashed border-[#d8cbb8] bg-white/60 px-3 py-2 text-xs text-[#64748b]">{text}</div>;
 }
  

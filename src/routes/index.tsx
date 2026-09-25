@@ -299,7 +299,7 @@ function Index() {
       {/* PANNEAU LATÉRAL / TIROIR FLOTTANT */}
       <aside
         aria-label="Panneau d'exploration des traversées"
-        className={`absolute bottom-16 left-0 right-0 z-[60] flex flex-col overflow-hidden rounded-t-3xl border-t border-border/50 bg-background/95 shadow-[var(--shadow-elegant)] backdrop-blur-xl transition-[height,width,opacity] duration-300 ease-out md:bottom-auto md:left-4 md:right-auto md:top-24 md:h-[calc(100vh-7.5rem)] md:w-[400px] md:rounded-3xl md:border md:z-40 ${
+        className={`absolute bottom-16 left-0 right-0 z-[60] flex flex-col overflow-hidden rounded-t-3xl bg-transparent transition-[height,width,opacity] duration-300 ease-out md:bottom-auto md:left-4 md:right-auto md:top-24 md:h-[calc(100vh-7.5rem)] md:w-[400px] md:rounded-3xl md:z-40 ${
           desktopPanelOpen ? "md:opacity-100" : "md:pointer-events-none md:hidden"
         } ${
           panelLevel === 0

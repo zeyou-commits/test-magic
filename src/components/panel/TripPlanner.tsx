@@ -424,7 +424,6 @@ export function TripPlanner({ selection, onSelect }: { selection: Selection | nu
               </div>
               <span className="rounded-full bg-primary/10 px-2 py-1 text-[10px] font-semibold text-primary">Différenciant</span>
             </div>
-            <p className="text-sm font-semibold">Vacances scolaires</p>
             <Select value={zone ?? ANY} onValueChange={(value) => {
               const next = value === ANY ? null : value as SchoolZone;
               setZone(next);
@@ -494,27 +493,11 @@ export function TripPlanner({ selection, onSelect }: { selection: Selection | nu
                 </div>
               </div>
             ) : (
-              <>
-                <div className="grid gap-2 sm:grid-cols-2">
-                  <GroupedPortSelect
-                    label="Départ"
-                    value={fromId}
-                    onChange={setFromId}
-                    ports={compatibleDeparturePorts}
-                  />
-                  <GroupedPortSelect
-                    label="Arrivée"
-                    value={toId}
-                    onChange={setToId}
-                    ports={compatibleArrivalPorts.filter((port) => port.id !== fromId)}
-                  />
-                </div>
-                <div className="grid gap-2 sm:grid-cols-2">
-                  <DateField label="Aller" value={outboundDate} min={today} onChange={setOutboundDate} availableDates={availableDates} />
-                  {tripMode === "roundtrip" ? <DateField label="Retour" value={returnDate} min={outboundDate || today} onChange={setReturnDate} availableDates={availableDates} /> : null}
-                </div>
-              </>
-            )}
+              <div className="grid gap-2 sm:grid-cols-2">
+                <DateField label="Aller" value={outboundDate} min={today} onChange={setOutboundDate} availableDates={availableDates} />
+                {tripMode === "roundtrip" ? <DateField label="Retour" value={returnDate} min={outboundDate || today} onChange={setReturnDate} availableDates={availableDates} /> : null}
+              </div>
+            )
           </section>
 
           {zone ? (

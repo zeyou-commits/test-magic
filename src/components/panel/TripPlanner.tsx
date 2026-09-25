@@ -396,7 +396,7 @@ export function TripPlanner({ selection, onSelect }: { selection: Selection | nu
   };
 
   return (
-    <div className="border-b border-border/70 bg-gradient-to-br from-primary/[0.07] via-background to-secondary/30">
+    <div className="border-b border-[#e7dcc9] bg-gradient-to-br from-[#e7f5f7] via-[#fffaf2] to-[#f7efe2]">
       <button
         type="button"
         onClick={() => setOpen((value) => !value)}
@@ -463,11 +463,11 @@ export function TripPlanner({ selection, onSelect }: { selection: Selection | nu
           </details>
 
           <section className="space-y-2">
-            <div className="grid grid-cols-2 gap-1 rounded-xl bg-secondary/70 p-1">
+            <div className="grid grid-cols-2 gap-1 rounded-xl border border-[#e2d7c5] bg-[#efe7d8] p-1">
               <button type="button" onClick={() => { setTripMode("roundtrip"); setReturnDate(returnDate || addDays(outboundDate, 7)); }}
-                className={`rounded-lg px-3 py-2 text-xs font-semibold ${tripMode === "roundtrip" ? "bg-background shadow-sm" : "text-muted-foreground"}`}>Aller-retour</button>
+                className={`rounded-lg px-3 py-2 text-xs font-semibold ${tripMode === "roundtrip" ? "bg-white text-[#0e7490] shadow-sm" : "text-[#64748b]"}`}>Aller-retour</button>
               <button type="button" onClick={() => { setTripMode("oneway"); setReturnDate(""); }}
-                className={`rounded-lg px-3 py-2 text-xs font-semibold ${tripMode === "oneway" ? "bg-background shadow-sm" : "text-muted-foreground"}`}>Aller simple</button>
+                className={`rounded-lg px-3 py-2 text-xs font-semibold ${tripMode === "oneway" ? "bg-white text-[#0e7490] shadow-sm" : "text-[#64748b]"}`}>Aller simple</button>
             </div>
 
             {!zone ? (

@@ -4,7 +4,6 @@ import { CalendarDays, MapPinned, Share2 } from "lucide-react";
 import { toast } from "sonner";
 import { ExplorerView } from "./ExplorerView";
 import { TripPlanner } from "./TripPlanner";
-import { MapRouteFilter } from "./MapRouteFilter";
 import { PortView } from "./PortView";
 import { RouteView } from "./RouteView";
 import {
@@ -138,11 +137,6 @@ export function SidePanel({
 
         {activeTab === "explore" ? (
           <>
-            <MapRouteFilter
-              filters={filters}
-              onFiltersChange={onFiltersChange}
-            />
-
             <ExplorerView
               filters={filters}
               onFiltersChange={onFiltersChange}

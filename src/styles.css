@@ -214,9 +214,11 @@
   padding: 0 !important;
 }
 
-/* 2. On cache le texte de force (définitivement) */
+/* 2. L'attribution reste lisible quand le contrôle est ouvert. */
 .maplibregl-ctrl-attrib-inner {
-  display: none !important;
+  display: inline !important;
+  font-size: 10px !important;
+  line-height: 1.2 !important;
 }
 
 /* 3. On répare le bouton rond cassé par le reset de Tailwind */

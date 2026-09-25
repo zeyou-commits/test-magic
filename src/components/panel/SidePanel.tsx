@@ -54,20 +54,20 @@ export function SidePanel({
   };
 
   return (
-    <div className="flex h-full min-h-0 flex-col bg-[#f7f3ea]">
+    <div className="flex h-full min-h-0 flex-col bg-background batogo-panel">
       <div className="custom-scrollbar min-h-0 flex-1 overflow-y-auto">
-        <div className="sticky top-0 z-20 border-b border-[#e8dfcf] bg-[#f7f3ea]/95 px-3 py-2 backdrop-blur supports-[backdrop-filter]:bg-[#f7f3ea]/85 sm:px-4">
+        <div className="sticky top-0 z-20 border-b border-border/70 bg-background/92 px-3 py-2.5 backdrop-blur-xl sm:px-4">
           <div
             role="tablist"
             aria-label="Mode de recherche"
-            className="grid grid-cols-2 gap-1 rounded-2xl border border-[#e3d8c5] bg-white/75 p-1.5 shadow-sm"
+            className="batogo-tabbar grid grid-cols-2 gap-1 rounded-xl p-1.5"
           >
             <button
               type="button"
               role="tab"
               aria-selected={activeTab === "explore"}
               onClick={() => setActiveTab("explore")}
-              className={`flex min-h-11 items-center justify-center gap-2 rounded-xl px-3 text-xs font-semibold transition-all ${activeTab === "explore" ? "bg-[#0e7490] text-white shadow-sm" : "text-[#64748b] hover:bg-[#efe7d8] hover:text-[#164e63]"}`}
+              className="batogo-tab flex items-center justify-center gap-2 px-3 text-xs font-semibold" data-active={activeTab === "explore"}
             >
               <MapPinned aria-hidden className="size-4" />
               <span>Explorer la carte</span>
@@ -78,7 +78,7 @@ export function SidePanel({
               role="tab"
               aria-selected={activeTab === "plan"}
               onClick={() => setActiveTab("plan")}
-              className={`flex min-h-11 items-center justify-center gap-2 rounded-xl px-3 text-xs font-semibold transition-all ${activeTab === "plan" ? "bg-[#0e7490] text-white shadow-sm" : "text-[#64748b] hover:bg-[#efe7d8] hover:text-[#164e63]"}`}
+              className="batogo-tab flex items-center justify-center gap-2 px-3 text-xs font-semibold" data-active={activeTab === "plan"}
             >
               <CalendarDays aria-hidden className="size-4" />
               <span>Planifier mon voyage</span>
@@ -106,7 +106,7 @@ export function SidePanel({
 
         {selection ? (
           <div className="animate-in fade-in slide-in-from-top-1 duration-200">
-            <div className="flex items-center justify-between gap-2 border-b border-border bg-secondary/50 px-5 py-2">
+            <div className="flex items-center justify-between gap-2 border-y border-border/60 bg-background/70 px-5 py-2">
               <span className="sr-only">Détail sélectionné</span>
               <div className="flex items-center gap-1">
                 <button
@@ -146,7 +146,7 @@ export function SidePanel({
               />
             )}
 
-            <div className="h-2 bg-[#eee5d5]" />
+            <div className="h-3 bg-muted/70" />
           </div>
         ) : null}
       </div>

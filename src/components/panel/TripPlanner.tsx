@@ -108,6 +108,9 @@ export function TripPlanner({ selection, onSelect }: { selection: Selection | nu
   const { data: departures = [] } = useQuery(upcomingDeparturesQuery());
   const { data: companies = [] } = useQuery(companiesQuery);
 
+  const today = new Date().toISOString().slice(0, 10);
+  const defaultOutbound = new Date(Date.now() + 14 * 86400000).toISOString().slice(0, 10);
+
   const [open, setOpen] = useState(true);
   const [outboundDate, setOutboundDate] = useState(defaultOutbound);
   const [returnDate, setReturnDate] = useState("");
@@ -186,9 +189,6 @@ export function TripPlanner({ selection, onSelect }: { selection: Selection | nu
       }),
     );
   }, [companies]);
-
-  const today = new Date().toISOString().slice(0, 10);
-  const defaultOutbound = new Date(Date.now() + 14 * 86400000).toISOString().slice(0, 10);
 
   const suggestedCrossings = useMemo(() => {
     if (!zone) return [];

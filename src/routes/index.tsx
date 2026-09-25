@@ -1,4 +1,4 @@
-import { lazy, Suspense, useMemo, useRef, useState } from "react";
+import { lazy, Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { ClientOnly, createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { SidePanel } from "@/components/panel/SidePanel";
@@ -17,6 +17,8 @@ import { emptyFilters, type Filters, type Selection } from "@/lib/ferry/types";
 import type { PortMeta } from "@/components/map/FerryMap";
 import { Button } from "@/components/ui/button";
 import { MobileMapControls } from "@/components/map/MobileMapControls";
+import { filtersFromUrl, mapStateToSearch, selectionFromUrl } from "@/lib/ferry/urlState";
+import { navLinks } from "@/components/layout/SiteLayout";
 
 const FerryMap = lazy(() => import("@/components/map/FerryMap"));
 
@@ -41,18 +43,44 @@ export const Route = createFileRoute("/")({
 });
 
 function Index() {
-  const [selection, setSelection] = useState<Selection | null>(null);
-  const [filters, setFilters] = useState<Filters>(emptyFilters);
+  const [selection, setSelection] = useState<Selection | null>(() =>
+    typeof window === "undefined" ? null : selectionFromUrl(window.location.search),
+  );
+  const [filters, setFilters] = useState<Filters>(() =>
+    typeof window === "undefined" ? emptyFilters : filtersFromUrl(window.location.search),
+  );
   const [panelLevel, setPanelLevel] = useState<0 | 1 | 2>(1);
+  const [desktopPanelOpen, setDesktopPanelOpen] = useState(true);
   const dragStartY = useRef<number | null>(null);
   const dragStartLevel = useRef<0 | 1 | 2>(1);
   const { isAdmin } = useAuth();
 
-  const { data: ports = [] } = useQuery(portsQuery);
-  const { data: routes = [] } = useQuery(routesQuery);
-  const { data: departures = [] } = useQuery(upcomingDeparturesQuery());
-  const { data: companies = [] } = useQuery(companiesQuery);
-  const { data: vessels = [] } = useQuery(vesselsQuery);
+  const portsResult = useQuery(portsQuery);
+  const routesResult = useQuery(routesQuery);
+  const departuresResult = useQuery(upcomingDeparturesQuery());
+  const companiesResult = useQuery(companiesQuery);
+  const vesselsResult = useQuery(vesselsQuery);
+  const { data: ports = [] } = portsResult;
+  const { data: routes = [] } = routesResult;
+  const { data: departures = [] } = departuresResult;
+  const { data: companies = [] } = companiesResult;
+  const { data: vessels = [] } = vesselsResult;
+  const isLoadingData = [portsResult, routesResult, departuresResult, companiesResult, vesselsResult].some(
+    (result) => result.isPending,
+  );
+  const hasDemoData = ports.some((item) => item.is_demo)
+    || routes.some((item) => item.is_demo)
+    || companies.some((item) => item.is_demo)
+    || vessels.some((item) => item.is_demo);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const nextSearch = mapStateToSearch(filters, selection);
+    const nextUrl = `${window.location.pathname}${nextSearch}${window.location.hash}`;
+    if (`${window.location.pathname}${window.location.search}${window.location.hash}` !== nextUrl) {
+      window.history.replaceState(window.history.state, "", nextUrl);
+    }
+  }, [filters, selection]);
 
   const visibleRoutes = useMemo(() => {
     const term = filters.search.trim().toLowerCase();
@@ -223,14 +251,22 @@ function Index() {
           </span>
         </Link>
         <nav className="flex items-center gap-1">
-          <Button asChild variant="ghost" size="sm" className="hidden text-foreground hover:bg-secondary hover:text-foreground sm:inline-flex">
-            <Link to="/horaires">Horaires</Link>
-          </Button>
-          <Button asChild variant="ghost" size="sm" className="hidden text-foreground hover:bg-secondary hover:text-foreground sm:inline-flex">
-            <Link to="/ports">Ports</Link>
-          </Button>
-          <Button asChild variant="ghost" size="sm" className="hidden text-foreground hover:bg-secondary hover:text-foreground sm:inline-flex">
-            <Link to="/guide">Guide</Link>
+          <div className="hidden items-center gap-1 lg:flex">
+            {navLinks.slice(1).map((link) => (
+              <Button key={link.to} asChild variant="ghost" size="sm" className="text-foreground hover:bg-secondary hover:text-foreground">
+                <Link to={link.to}>{link.label}</Link>
+              </Button>
+            ))}
+          </div>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="hidden text-foreground md:inline-flex"
+            onClick={() => setDesktopPanelOpen((open) => !open)}
+            aria-pressed={!desktopPanelOpen}
+          >
+            {desktopPanelOpen ? "Carte seule" : "Afficher le panneau"}
           </Button>
           {isAdmin ? (
             <Button asChild variant="ghost" size="sm" className="hidden text-foreground hover:bg-secondary hover:text-foreground md:inline-flex">
@@ -251,9 +287,21 @@ function Index() {
         onOpenPanel={() => setPanelLevel(1)}
       />
 
+      {panelLevel === 2 ? (
+        <button
+          type="button"
+          aria-label="Fermer le panneau mobile"
+          className="absolute inset-0 z-50 bg-foreground/10 md:hidden"
+          onClick={() => setPanelLevel(1)}
+        />
+      ) : null}
+
       {/* PANNEAU LATÉRAL / TIROIR FLOTTANT */}
       <aside
-        className={`absolute bottom-16 left-0 right-0 z-[60] flex flex-col overflow-hidden rounded-t-3xl border-t border-border/50 bg-background/95 shadow-[var(--shadow-elegant)] backdrop-blur-xl transition-[height] duration-300 ease-out md:bottom-auto md:left-4 md:right-auto md:top-24 md:h-[calc(100vh-7.5rem)] md:w-[400px] md:rounded-3xl md:border md:z-40 ${
+        aria-label="Panneau d'exploration des traversées"
+        className={`absolute bottom-16 left-0 right-0 z-[60] flex flex-col overflow-hidden rounded-t-3xl border-t border-border/50 bg-background/95 shadow-[var(--shadow-elegant)] backdrop-blur-xl transition-[height,width,opacity] duration-300 ease-out md:bottom-auto md:left-4 md:right-auto md:top-24 md:h-[calc(100vh-7.5rem)] md:w-[400px] md:rounded-3xl md:border md:z-40 ${
+          desktopPanelOpen ? "md:opacity-100" : "md:pointer-events-none md:hidden"
+        } ${
           panelLevel === 0
             ? "h-24"
             : panelLevel === 1
@@ -270,6 +318,10 @@ function Index() {
           onPointerDown={(event) => startPanelDrag(event.clientY)}
           onPointerUp={(event) => finishPanelDrag(event.clientY)}
           onPointerCancel={() => { dragStartY.current = null; }}
+          onPointerMove={(event) => {
+            if (dragStartY.current !== null) event.currentTarget.setPointerCapture(event.pointerId);
+          }}
+          style={{ touchAction: "none" }}
         >
           <div className="h-1.5 w-12 rounded-full bg-muted-foreground/30" />
         </Button>
@@ -282,6 +334,11 @@ function Index() {
           visibleRoutes={visibleRoutes}
           hidePrimarySearchOnMobile
         />
+        {hasDemoData ? (
+          <div className="pointer-events-none absolute bottom-2 left-2 right-2 rounded-lg border border-amber-300/60 bg-amber-50/95 px-3 py-2 text-[11px] leading-snug text-amber-950 shadow-sm md:bottom-2">
+            Certaines fiches sont des données de démonstration. Vérifiez la source et la date avant de planifier.
+          </div>
+        ) : null}
       </aside>
 
       {/* BARRE DE NAVIGATION DU BAS (Mobile uniquement) */}
@@ -306,6 +363,11 @@ function Index() {
 
       {/* CARTE EN PLEIN ÉCRAN */}
       <main className="absolute inset-0 z-0 bg-[var(--sea)]">
+        {isLoadingData ? (
+          <div className="pointer-events-none absolute left-1/2 top-20 z-10 -translate-x-1/2 rounded-full border border-border/70 bg-background/90 px-3 py-1.5 text-xs font-medium text-muted-foreground shadow-sm">
+            Actualisation des données…
+          </div>
+        ) : null}
         <ClientOnly fallback={<MapFallback />}>
           <Suspense fallback={<MapFallback />}>
             <FerryMap

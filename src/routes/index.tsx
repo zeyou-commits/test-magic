@@ -240,20 +240,20 @@ function Index() {
     <div className="relative h-[100dvh] w-full overflow-hidden bg-background">
       
       {/* En-tête bureau */}
-      <header className="absolute left-0 right-0 top-0 z-50 hidden items-center justify-between gap-3 border-b border-border/40 bg-background/80 px-4 py-3 text-foreground shadow-sm backdrop-blur-xl md:flex">
-        <Link to="/" className="flex items-center gap-2.5">
-          <BrandMark className="size-8 text-primary" />
+      <header className="absolute left-0 right-0 top-0 z-50 hidden items-center justify-between gap-3 border-b border-white/15 bg-[var(--gradient-header)] px-5 py-3 text-white shadow-lg shadow-black/10 backdrop-blur-xl md:flex">
+        <Link to="/" className="flex items-center gap-3">
+          <BrandMark className="size-9 text-primary-foreground" />
           <span className="flex flex-col leading-none">
-            <span className="font-display text-lg font-bold tracking-tight">Batogo</span>
-            <span className="hidden text-[11px] text-muted-foreground sm:inline">
+            <span className="font-display text-lg font-bold tracking-tight text-white">Batogo</span>
+            <span className="hidden text-[11px] text-white/65 sm:inline">
               Traversées en ferry vers l'Algérie
             </span>
           </span>
         </Link>
-        <nav className="flex items-center gap-1">
+        <nav className="flex items-center gap-1.5">
           <div className="hidden items-center gap-1 lg:flex">
             {navLinks.slice(1).map((link) => (
-              <Button key={link.to} asChild variant="ghost" size="sm" className="text-foreground hover:bg-secondary hover:text-foreground">
+              <Button key={link.to} asChild variant="ghost" size="sm" className="text-white/80 hover:bg-white/10 hover:text-white">
                 <Link to={link.to}>{link.label}</Link>
               </Button>
             ))}
@@ -262,14 +262,14 @@ function Index() {
             type="button"
             variant="outline"
             size="sm"
-            className="hidden text-foreground md:inline-flex"
+            className="hidden border-white/20 bg-white/10 text-white hover:bg-white/15 hover:text-white md:inline-flex"
             onClick={() => setDesktopPanelOpen((open) => !open)}
             aria-pressed={!desktopPanelOpen}
           >
             {desktopPanelOpen ? "Carte seule" : "Afficher le panneau"}
           </Button>
           {isAdmin ? (
-            <Button asChild variant="ghost" size="sm" className="hidden text-foreground hover:bg-secondary hover:text-foreground md:inline-flex">
+            <Button asChild variant="ghost" size="sm" className="hidden text-white/80 hover:bg-white/10 hover:text-white md:inline-flex">
               <Link to="/admin">Back-office</Link>
             </Button>
           ) : null}

@@ -20,20 +20,26 @@ export const Route = createFileRoute("/sitemap.xml")({
       GET: async ({ request }) => {
         const origin = new URL(request.url).origin;
         const [ports, routes] = await Promise.all([
-          supabase.from("ports").select("slug").neq("status", "draft"),
-          supabase.from("routes").select("slug").eq("status", "active"),
+          supabase.from("ports").select("slug, updated_at").neq("status", "draft"),
+          supabase.from("routes").select("slug, updated_at").eq("status", "active"),
         ]);
         const urls = [
-          ...staticPaths,
-          ...(ports.data ?? []).map((port) => `/ports/${port.slug}`),
-          ...(routes.data ?? []).map((route) => `/lignes/${route.slug}`),
+          ...staticPaths.map((path) => ({ path, lastmod: null as string | null })),
+          ...(ports.data ?? []).map((port) => ({
+            path: `/ports/${port.slug}`,
+            lastmod: port.updated_at,
+          })),
+          ...(routes.data ?? []).map((route) => ({
+            path: `/lignes/${route.slug}`,
+            lastmod: route.updated_at,
+          })),
         ];
         const body = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
 ${urls
   .map(
-    (path) =>
-      `  <url><loc>${origin}${path}</loc><changefreq>${
+    ({ path, lastmod }) =>
+      `  <url><loc>${origin}${path}</loc>${lastmod ? `<lastmod>${lastmod.slice(0, 10)}</lastmod>` : ""}<changefreq>${
         path === "/" || path === "/horaires" ? "daily" : "weekly"
       }</changefreq></url>`,
   )

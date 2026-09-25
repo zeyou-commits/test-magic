@@ -248,7 +248,7 @@ export function ExplorerView({
             ) : null
           }
         >
-          <div className="batogo-field rounded-2xl p-3 shadow-none">
+          <div className="space-y-4">
             <div className="mb-1.5 flex items-center justify-between gap-3">
               <div className="flex items-center gap-2">
                 <MapPinned className="size-3.5 text-[#0e7490]" />
@@ -277,10 +277,10 @@ export function ExplorerView({
                       key={country.code}
                       type="button"
                       onClick={() => toggleCountry(country.code)}
-                      className={`batogo-list-item inline-flex min-h-9 items-center gap-1.5 rounded-xl border px-3 text-[11px] font-semibold transition ${
+                      className={`batogo-list-item inline-flex min-h-9 items-center gap-1.5 rounded-full px-3 text-[11px] font-semibold transition ${
                         selected
-                          ? "border-[#0e7490] bg-[#0e7490] text-white shadow-sm"
-                          : "border-[#dce4e1] bg-[#fbfaf7] text-[#3f6269] hover:border-[#0e7490]/40 hover:bg-[#f3f8f7]"
+                          ? "bg-[#0e7490] text-white shadow-sm"
+                          : "bg-[#f3f0e8] text-[#3f6269] hover:bg-[#e9f1ef]"
                       }`}
                     >
                       <span>{country.name}</span>
@@ -291,7 +291,7 @@ export function ExplorerView({
               </div>
             </div>
 
-            <div className="my-2 border-t border-[#edf0ed]" />
+            <div className="border-t border-[#eeeae1]" />
 
             <div>
               <div className="mb-2 flex items-center justify-between gap-2">
@@ -305,7 +305,7 @@ export function ExplorerView({
                 ) : null}
               </div>
 
-              <div className="grid max-h-44 gap-1 overflow-y-auto pr-1 sm:grid-cols-2">
+              <div className="grid max-h-52 gap-0.5 overflow-y-auto pr-1 sm:grid-cols-2">
                 {visiblePorts.map((port) => {
                   const selected = filters.portIds.includes(port.id);
                   return (
@@ -313,10 +313,10 @@ export function ExplorerView({
                       key={port.id}
                       type="button"
                       onClick={() => togglePort(port.id)}
-                      className={`batogo-list-item flex min-h-9 items-center justify-between gap-2 rounded-xl border px-2.5 text-left text-xs transition ${
+                      className={`batogo-list-item flex min-h-9 items-center justify-between gap-2 rounded-lg px-2.5 text-left text-xs transition ${
                         selected
-                          ? "border-[#0e7490]/40 bg-[#eaf5f5] text-[#0e6177]"
-                          : "border-[#e5e8e5] bg-[#fbfaf7] text-[#294b53] hover:border-[#0e7490]/30 hover:bg-[#f3f8f7]"
+                          ? "bg-[#eaf5f5] text-[#0e6177]"
+                          : "text-[#294b53] hover:bg-[#f4f1e9]"
                       }`}
                     >
                       <span className="min-w-0 truncate">

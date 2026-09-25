@@ -274,7 +274,20 @@
   transition: all .16s ease;
 }
 .batogo-chip:hover { border-color: color-mix(in oklab, var(--color-primary) 30%, var(--color-border)); background: color-mix(in oklab, var(--color-primary) 7%, white); }
-.maplibregl-ctrl-group, .maplibregl-ctrl-attrib {\n  border-radius: 12px !important;\n  overflow: hidden;\n  box-shadow: 0 8px 22px -14px rgba(14, 55, 70, .45) !important;\n}\n.maplibregl-ctrl-group {\n  background: rgba(255, 253, 248, .94) !important;\n  border: 1px solid rgba(14, 55, 70, .12) !important;\n}\n.maplibregl-ctrl-group button {\n  width: 32px !important; height: 32px !important;\n}\n\n.batogo-map-control {
+.maplibregl-ctrl-group, .maplibregl-ctrl-attrib {
+  border-radius: 12px !important;
+  overflow: hidden;
+  box-shadow: 0 8px 22px -14px rgba(14, 55, 70, .45) !important;
+}
+.maplibregl-ctrl-group {
+  background: rgba(255, 253, 248, .94) !important;
+  border: 1px solid rgba(14, 55, 70, .12) !important;
+}
+.maplibregl-ctrl-group button {
+  width: 32px !important; height: 32px !important;
+}
+
+.batogo-map-control {
   border: 1px solid rgba(14, 55, 70, .12) !important;
   border-radius: 12px !important;
   overflow: hidden;

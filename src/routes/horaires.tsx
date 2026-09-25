@@ -45,7 +45,7 @@ function HorairesPage() {
         intro="Les départs connus à venir, ligne par ligne. Chaque information indique sa source et sa date de vérification sur la fiche de la ligne."
       />
       <div className="mt-10 overflow-x-auto rounded-2xl border border-border bg-card shadow-[var(--shadow-panel)]">
-        <table className="w-full text-left text-sm">
+        <table className="hidden w-full text-left text-sm sm:table">
           <thead className="bg-secondary/60 text-xs uppercase tracking-wider text-muted-foreground">
             <tr>
               <th className="px-4 py-3">Départ</th>
@@ -95,6 +95,34 @@ function HorairesPage() {
             ) : null}
           </tbody>
         </table>
+        <div className="grid gap-2 p-2 sm:hidden">
+          {rows.map((departure) => {
+            const route = routes.find((item) => item.id === departure.route_id);
+            const company = companies.find((item) => item.id === departure.company_id);
+            return (
+              <article key={departure.id} className="rounded-xl border border-border bg-background p-3">
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <p className="font-semibold">{formatDateTime(departure.departure_at)}</p>
+                    <p className="mt-1 text-xs text-muted-foreground">{company?.name ?? "Compagnie inconnue"}</p>
+                  </div>
+                  {departure.status === "cancelled" ? (
+                    <span className="rounded-full bg-destructive/10 px-2 py-1 text-[11px] font-semibold text-destructive">Annulé</span>
+                  ) : null}
+                </div>
+                <p className="mt-3 text-sm">
+                  {route ? (
+                    <Link to="/lignes/$slug" params={{ slug: route.slug }} className="font-medium hover:text-primary">
+                      {portName(route.departure_port_id)} → {portName(route.arrival_port_id)}
+                    </Link>
+                  ) : "Ligne inconnue"}
+                </p>
+                <p className="mt-1 text-xs text-muted-foreground">Durée : {formatDuration(departure.duration_minutes)}</p>
+              </article>
+            );
+          })}
+          {rows.length === 0 ? <p className="px-3 py-4 text-center text-sm text-muted-foreground">Aucun départ connu à venir pour l'instant.</p> : null}
+        </div>
       </div>
     </SiteLayout>
   );

@@ -1,5 +1,6 @@
+import { useState } from "react";
 import type { Filters, RouteLine, Selection } from "@/lib/ferry/types";
-import { Share2 } from "lucide-react";
+import { CalendarDays, MapPinned, Share2 } from "lucide-react";
 import { toast } from "sonner";
 import { ExplorerView } from "./ExplorerView";
 import { TripPlanner } from "./TripPlanner";
@@ -21,6 +22,8 @@ interface SidePanelProps {
   hidePrimarySearchOnMobile?: boolean;
 }
 
+type PanelTab = "explore" | "plan";
+
 export function SidePanel({
   selection,
   onSelect,
@@ -29,6 +32,8 @@ export function SidePanel({
   visibleRoutes,
   hidePrimarySearchOnMobile = false,
 }: SidePanelProps) {
+  const [activeTab, setActiveTab] = useState<PanelTab>("explore");
+
   const shareSelection = async () => {
     if (typeof window === "undefined") return;
 
@@ -101,23 +106,57 @@ export function SidePanel({
           </div>
         ) : null}
 
-        <MapRouteFilter
-          filters={filters}
-          onFiltersChange={onFiltersChange}
-        />
+        <div className="sticky top-0 z-20 border-b border-border/70 bg-background/95 px-3 py-2 backdrop-blur supports-[backdrop-filter]:bg-background/80 sm:px-4">
+          <div
+            role="tablist"
+            aria-label="Mode de recherche"
+            className="grid grid-cols-2 gap-1 rounded-xl bg-secondary/70 p-1"
+          >
+            <button
+              type="button"
+              role="tab"
+              aria-selected={activeTab === "explore"}
+              onClick={() => setActiveTab("explore")}
+              className={`flex min-h-10 items-center justify-center gap-2 rounded-lg px-3 text-xs font-semibold transition-all ${activeTab === "explore" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
+            >
+              <MapPinned aria-hidden className="size-4" />
+              <span>Explorer la carte</span>
+            </button>
 
-        <TripPlanner
-          selection={selection}
-          onSelect={onSelect}
-        />
+            <button
+              type="button"
+              role="tab"
+              aria-selected={activeTab === "plan"}
+              onClick={() => setActiveTab("plan")}
+              className={`flex min-h-10 items-center justify-center gap-2 rounded-lg px-3 text-xs font-semibold transition-all ${activeTab === "plan" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
+            >
+              <CalendarDays aria-hidden className="size-4" />
+              <span>Planifier mon voyage</span>
+            </button>
+          </div>
+        </div>
 
-        <ExplorerView
-          filters={filters}
-          onFiltersChange={onFiltersChange}
-          visibleRoutes={visibleRoutes}
-          onSelect={onSelect}
-          hidePrimarySearchOnMobile={hidePrimarySearchOnMobile}
-        />
+        {activeTab === "explore" ? (
+          <>
+            <MapRouteFilter
+              filters={filters}
+              onFiltersChange={onFiltersChange}
+            />
+
+            <ExplorerView
+              filters={filters}
+              onFiltersChange={onFiltersChange}
+              visibleRoutes={visibleRoutes}
+              onSelect={onSelect}
+              hidePrimarySearchOnMobile={hidePrimarySearchOnMobile}
+            />
+          </>
+        ) : (
+          <TripPlanner
+            selection={selection}
+            onSelect={onSelect}
+          />
+        )}
       </div>
     </div>
   );

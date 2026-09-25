@@ -4,7 +4,7 @@ import { ArrowRight, CalendarDays, ChevronDown, Compass, Users } from "lucide-re
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { companiesQuery, plannerDeparturesQuery, portsQuery, routesQuery, schedulesQuery } from "@/lib/ferry/queries";
+import { companiesQuery, portsQuery, routesQuery, schedulesQuery, upcomingDeparturesQuery } from "@/lib/ferry/queries";
 import { getSchoolBreaksForZone, getSchoolBreak, type SchoolZone } from "@/lib/ferry/schoolCalendar";
 import type { Departure, Port, RouteLine, Schedule, Selection } from "@/lib/ferry/types";
 import { formatDuration } from "@/lib/ferry/format";
@@ -102,7 +102,9 @@ export function TripPlanner({ selection, onSelect }: { selection: Selection | nu
   const { data: ports = [] } = useQuery(portsQuery);
   const { data: routes = [] } = useQuery(routesQuery);
   const { data: schedules = [] } = useQuery(schedulesQuery);
-  const { data: departures = [] } = useQuery(plannerDeparturesQuery);
+  // Le planner réutilise le cache global des départs : une seule requête réseau
+  // alimente la carte, l'explorateur et le planificateur.
+  const { data: departures = [] } = useQuery(upcomingDeparturesQuery());
   const { data: companies = [] } = useQuery(companiesQuery);
 
   const activePorts = useMemo(() => ports.filter((port) => port.status === "active"), [ports]);

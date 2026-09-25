@@ -16,6 +16,7 @@ interface ExplorerViewProps {
   onFiltersChange: (filters: Filters) => void;
   visibleRoutes: RouteLine[];
   onSelect: (selection: Selection) => void;
+  selection: Selection | null;
   hidePrimarySearchOnMobile?: boolean;
 }
 
@@ -24,6 +25,7 @@ export function ExplorerView({
   onFiltersChange,
   visibleRoutes,
   onSelect,
+  selection,
   hidePrimarySearchOnMobile = false,
 }: ExplorerViewProps) {
   const { data: ports = [] } = useQuery(portsQuery);
@@ -176,13 +178,6 @@ export function ExplorerView({
 
   return (
     <div className="pb-2">
-      <div className="flex h-9 items-center justify-between gap-3 border-b border-[#0e7490]/10 bg-[#f7f3ea] px-4">
-        <span className="text-[11px] font-semibold text-[#12343b]">Traversées EU → DZ</span>
-        <span className="text-[10px] font-medium text-[#718489]">
-          {routes.length} lignes · {ports.length} ports
-        </span>
-      </div>
-
       <div className="space-y-1">
         <div className={hidePrimarySearchOnMobile ? "hidden md:block" : undefined}>
           <Section title="Rechercher un port">
@@ -335,21 +330,6 @@ export function ExplorerView({
               </div>
             </div>
 
-            {selectedPorts.length ? (
-              <div className="mt-3 flex flex-wrap gap-1.5 border-t border-[#edf0ed] pt-3">
-                {selectedPorts.map((port) => (
-                  <button
-                    key={port.id}
-                    type="button"
-                    onClick={() => togglePort(port.id)}
-                    className="inline-flex items-center gap-1.5 rounded-full bg-[#eaf5f5] px-2.5 py-1 text-xs font-medium text-[#0e6177] hover:bg-[#dff0f0]"
-                  >
-                    {port.name}
-                    <X className="size-3" />
-                  </button>
-                ))}
-              </div>
-            ) : null}
           </div>
 
           <div className="mt-2">
@@ -399,6 +379,7 @@ export function ExplorerView({
           ) : null}
         </Section>
 
+{!selection ? (
         <Section
           title="Prochains départs"
           action={
@@ -458,6 +439,7 @@ export function ExplorerView({
             </div>
           )}
         </Section>
+        ) : null}
       </div>
     </div>
   );

@@ -133,6 +133,8 @@ export interface Filters {
   search: string;
   /** Ports sélectionnés (départ ou arrivée). Vide = tous. */
   portIds: string[];
+  /** Pays sélectionnés pour explorer la carte. Vide = tous. */
+  countryCodes: string[];
   /** Code pays du port de départ. */
   departureCountry: string | null;
   departurePortId: string | null;
@@ -145,6 +147,7 @@ export interface Filters {
 export const emptyFilters: Filters = {
   search: "",
   portIds: [],
+  countryCodes: [],
   departureCountry: null,
   departurePortId: null,
   arrivalPortId: null,

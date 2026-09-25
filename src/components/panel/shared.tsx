@@ -14,7 +14,7 @@ export function PanelHeader({
   actions?: ReactNode;
 }) {
   return (
-    <div className="border-b border-border px-5 pb-4 pt-4">
+    <div className="px-5 pb-3 pt-5">
       {overline ? (
         <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
           {overline}
@@ -37,8 +37,8 @@ export function Section({
   action?: ReactNode;
 }) {
   return (
-    <section className="border-b border-border px-5 py-4 last:border-b-0">
-      <div className="mb-2 flex items-center justify-between gap-2">
+    <section className="batogo-section">
+      <div className="mb-3 flex items-center justify-between gap-2">
         <h3 className="text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
           {title}
         </h3>

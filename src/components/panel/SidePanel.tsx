@@ -110,14 +110,14 @@ export function SidePanel({
           <div
             role="tablist"
             aria-label="Mode de recherche"
-            className="grid grid-cols-2 gap-1 rounded-xl bg-secondary/70 p-1"
+            className="grid grid-cols-2 gap-1 rounded-2xl border border-border/80 bg-card p-1.5 shadow-sm"
           >
             <button
               type="button"
               role="tab"
               aria-selected={activeTab === "explore"}
               onClick={() => setActiveTab("explore")}
-              className={`flex min-h-10 items-center justify-center gap-2 rounded-lg px-3 text-xs font-semibold transition-all ${activeTab === "explore" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
+              className={`flex min-h-11 items-center justify-center gap-2 rounded-xl px-3 text-xs font-semibold transition-all ${activeTab === "explore" ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:bg-secondary hover:text-foreground"}`}
             >
               <MapPinned aria-hidden className="size-4" />
               <span>Explorer la carte</span>
@@ -128,7 +128,7 @@ export function SidePanel({
               role="tab"
               aria-selected={activeTab === "plan"}
               onClick={() => setActiveTab("plan")}
-              className={`flex min-h-10 items-center justify-center gap-2 rounded-lg px-3 text-xs font-semibold transition-all ${activeTab === "plan" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
+              className={`flex min-h-11 items-center justify-center gap-2 rounded-xl px-3 text-xs font-semibold transition-all ${activeTab === "plan" ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:bg-secondary hover:text-foreground"}`}
             >
               <CalendarDays aria-hidden className="size-4" />
               <span>Planifier mon voyage</span>

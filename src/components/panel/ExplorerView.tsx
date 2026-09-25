@@ -189,7 +189,7 @@ export function ExplorerView({
                   onFiltersChange({ ...filters, search: event.target.value })
                 }
                 placeholder="Rechercher Marseille, Alger, Oran…"
-                className="h-9 pl-8 pr-8 text-sm"
+                className="batogo-field h-11 pl-9 pr-9 text-sm shadow-none"
               />
               {filters.search ? (
                 <button
@@ -204,13 +204,13 @@ export function ExplorerView({
             </div>
 
             {matchingPorts.length > 0 ? (
-              <ul className="mt-2 overflow-hidden rounded-xl border border-[#0e7490]/10 bg-white">
+              <ul className="mt-2 overflow-hidden rounded-2xl border border-border/60 bg-card shadow-sm">
                 {matchingPorts.map((port) => (
                   <li key={port.id} className="border-b border-[#edf0ed] last:border-0">
                     <button
                       type="button"
                       onClick={() => onSelect({ type: "port", id: port.id })}
-                      className="flex w-full items-center justify-between gap-3 px-3 py-2.5 text-left hover:bg-[#f7f3ea]"
+                      className="batogo-list-item flex w-full items-center justify-between gap-3 px-3 py-2.5 text-left"
                     >
                       <span className="min-w-0">
                         <span className="block text-sm font-medium text-[#17383f]">{port.name}</span>
@@ -248,7 +248,7 @@ export function ExplorerView({
             ) : null
           }
         >
-          <div className="rounded-xl border border-[#0e7490]/15 bg-white p-2.5 shadow-[0_3px_12px_rgba(18,52,59,0.05)]">
+          <div className="batogo-field rounded-2xl p-3 shadow-none">
             <div className="mb-1.5 flex items-center justify-between gap-3">
               <div className="flex items-center gap-2">
                 <MapPinned className="size-3.5 text-[#0e7490]" />
@@ -277,7 +277,7 @@ export function ExplorerView({
                       key={country.code}
                       type="button"
                       onClick={() => toggleCountry(country.code)}
-                      className={`inline-flex min-h-8 items-center gap-1.5 rounded-full border px-2.5 text-[11px] font-semibold transition ${
+                      className={`batogo-list-item inline-flex min-h-9 items-center gap-1.5 rounded-xl border px-3 text-[11px] font-semibold transition ${
                         selected
                           ? "border-[#0e7490] bg-[#0e7490] text-white shadow-sm"
                           : "border-[#dce4e1] bg-[#fbfaf7] text-[#3f6269] hover:border-[#0e7490]/40 hover:bg-[#f3f8f7]"
@@ -313,7 +313,7 @@ export function ExplorerView({
                       key={port.id}
                       type="button"
                       onClick={() => togglePort(port.id)}
-                      className={`flex min-h-8 items-center justify-between gap-2 rounded-lg border px-2 text-left text-xs transition ${
+                      className={`batogo-list-item flex min-h-9 items-center justify-between gap-2 rounded-xl border px-2.5 text-left text-xs transition ${
                         selected
                           ? "border-[#0e7490]/40 bg-[#eaf5f5] text-[#0e6177]"
                           : "border-[#e5e8e5] bg-[#fbfaf7] text-[#294b53] hover:border-[#0e7490]/30 hover:bg-[#f3f8f7]"
@@ -351,7 +351,7 @@ export function ExplorerView({
           </div>
 
           {filtersOpen ? (
-            <div className="mt-2 grid gap-2 rounded-xl border border-[#0e7490]/10 bg-[#f7f3ea] p-2.5 sm:grid-cols-2">
+            <div className="mt-3 grid gap-2 rounded-2xl bg-muted/70 p-3 sm:grid-cols-2">
               <FilterSelect
                 label="Compagnie"
                 value={filters.companyId}
@@ -412,7 +412,7 @@ export function ExplorerView({
                     key={departure.id}
                     type="button"
                     onClick={() => onSelect({ type: "departure", id: departure.id })}
-                    className="flex w-full items-center gap-2.5 rounded-xl border border-[#edf0ed] bg-[#fbfaf7] px-2.5 py-2 text-left transition hover:border-[#0e7490]/25 hover:bg-[#f3f8f7]"
+                    className="batogo-departure-card flex w-full items-center gap-3 px-3 py-2.5 text-left"
                   >
                     <div className="min-w-[46px] rounded-lg bg-[#eaf5f5] px-1.5 py-1 text-center">
                       <div className="text-[9px] font-semibold uppercase text-[#0e7490]">

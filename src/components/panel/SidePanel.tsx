@@ -54,13 +54,13 @@ export function SidePanel({
   };
 
   return (
-    <div className="flex h-full min-h-0 flex-col bg-background batogo-panel">
+    <div className="batogo-floating-panel flex h-full min-h-0 flex-col overflow-hidden rounded-3xl">
       <div className="custom-scrollbar min-h-0 flex-1 overflow-y-auto">
-        <div className="sticky top-0 z-20 border-b border-border/70 bg-background/92 px-3 py-2.5 backdrop-blur-xl sm:px-4">
+        <div className="sticky top-0 z-20 bg-transparent px-3 pb-2.5 pt-3 sm:px-4">
           <div
             role="tablist"
             aria-label="Mode de recherche"
-            className="batogo-tabbar grid grid-cols-2 gap-1 rounded-xl p-1.5"
+            className="batogo-tabbar grid grid-cols-2 gap-1 rounded-2xl p-1.5"
           >
             <button
               type="button"
@@ -106,7 +106,7 @@ export function SidePanel({
 
         {selection ? (
           <div className="animate-in fade-in slide-in-from-top-1 duration-200">
-            <div className="flex items-center justify-between gap-2 border-y border-border/60 bg-background/70 px-5 py-2">
+            <div className="mx-3 mt-1 flex items-center justify-between gap-2 rounded-xl bg-muted/60 px-4 py-2">
               <span className="sr-only">Détail sélectionné</span>
               <div className="flex items-center gap-1">
                 <button

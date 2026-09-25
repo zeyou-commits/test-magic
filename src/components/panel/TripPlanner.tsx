@@ -463,7 +463,7 @@ export function TripPlanner({ selection, onSelect }: { selection: Selection | nu
           </details>
 
           <section className="space-y-2">
-            <div className="grid grid-cols-2 gap-1 rounded-xl border border-[#e2d7c5] bg-[#efe7d8] p-1">
+            <div className="batogo-tabbar grid grid-cols-2 gap-1 rounded-2xl p-1.5">
               <button type="button" onClick={() => { setTripMode("roundtrip"); setReturnDate(returnDate || addDays(outboundDate, 7)); }}
                 className={`rounded-lg px-3 py-2 text-xs font-semibold ${tripMode === "roundtrip" ? "bg-white text-[#0e7490] shadow-sm" : "text-[#64748b]"}`}>Aller-retour</button>
               <button type="button" onClick={() => { setTripMode("oneway"); setReturnDate(""); }}
@@ -478,7 +478,7 @@ export function TripPlanner({ selection, onSelect }: { selection: Selection | nu
             ) : null}
 
             {zone ? (
-              <div className="rounded-xl border border-primary/15 bg-background/70 px-3 py-2 text-xs">
+              <div className="batogo-field rounded-2xl px-3 py-2.5 text-xs shadow-none">
                 <div><span className="font-semibold">Itinéraire compris :</span> France → Algérie</div>
                 <div className="mt-2 border-t border-border/60 pt-2">
                   <p className="mb-1.5 text-[11px] font-semibold text-muted-foreground">Calendrier Zone {zone} · 2026–2027</p>
@@ -542,7 +542,7 @@ export function TripPlanner({ selection, onSelect }: { selection: Selection | nu
                       return (
                         <div
                           key={`${period.name}-${outbound.departure.id}-${inbound.departure.id}`}
-                          className="grid grid-cols-[1fr_auto_1fr] items-stretch gap-2 rounded-2xl border border-border bg-background p-2"
+                          className="batogo-field grid grid-cols-[1fr_auto_1fr] items-stretch gap-2 rounded-2xl p-2 shadow-none"
                         >
                           <button
                             type="button"
@@ -641,7 +641,7 @@ export function TripPlanner({ selection, onSelect }: { selection: Selection | nu
 
           <Button
             type="button"
-            className="w-full rounded-xl bg-[#e87961] text-white hover:bg-[#d96851]"
+            className="batogo-primary-action w-full bg-primary text-primary-foreground hover:bg-primary/90"
             onClick={submit}
             disabled={!outboundDate || (!zone && (!fromId || !toId)) || Boolean(tripMode === "roundtrip" && returnDate && (!returnFromId || !returnToId || returnDate < outboundDate))}
           >
@@ -721,7 +721,7 @@ function PortSelect({ label, value, onChange, ports }: { label: string; value: s
 
 function Recommendation({ title, leg, from, to, date, selection, onSelect }: { title: string; leg: LegRecommendation; from: string; to: string; date: string; selection: Selection | null; onSelect: (selection: Selection | null) => void }) {
   return (
-    <button type="button" onClick={() => onSelect(selection?.type === "route" && selection.id === leg.route.id ? null : { type: "route", id: leg.route.id })} className="w-full rounded-2xl border border-[#e6d9c6] bg-white/90 p-3 text-left shadow-sm transition hover:border-[#0e7490]/40 hover:bg-[#fffaf2]">
+    <button type="button" onClick={() => onSelect(selection?.type === "route" && selection.id === leg.route.id ? null : { type: "route", id: leg.route.id })} className="batogo-departure-card w-full p-3 text-left">
       <div className="mb-2 flex items-center justify-between gap-2">
         <span className="text-xs font-semibold text-primary">{title}</span>
         <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-medium text-primary">{formatDay(date)}</span>
@@ -741,6 +741,6 @@ function Recommendation({ title, leg, from, to, date, selection, onSelect }: { t
 }
 
 function EmptyRecommendation({ text }: { text: string }) {
-  return <div className="rounded-xl border border-dashed border-[#d8cbb8] bg-white/60 px-3 py-2 text-xs text-[#64748b]">{text}</div>;
+  return <div className="rounded-2xl border border-dashed border-border bg-muted/60 px-3 py-2.5 text-xs text-muted-foreground">{text}</div>;
 }
  

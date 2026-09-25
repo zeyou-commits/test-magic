@@ -22,14 +22,11 @@ const footerLinks = [
 export function SiteLayout({ children }: { children: ReactNode }) {
   return (
     <div className="flex min-h-dvh flex-col bg-background pb-16 md:pb-0">
-      {/* HEADER : Pleine largeur, fin et élégant (Glassmorphism) */}
-      <header className="sticky top-0 z-30 border-b border-border/60 bg-background/80 backdrop-blur-xl text-foreground">
+      <header className="sticky top-0 z-30 border-b border-border/60 bg-white/95 backdrop-blur-md text-foreground">
         <div className="mx-auto flex w-full max-w-7xl items-center justify-between gap-4 px-6 py-3">
-          <Link to="/" className="flex items-center gap-2.5 hover:opacity-80 transition-opacity">
-            <BrandMark className="size-8 text-primary" />
-            <span className="flex flex-col leading-none">
-              <span className="font-display text-lg font-bold tracking-tight">Batogo</span>
-            </span>
+          <Link to="/" className="flex items-center gap-3">
+            <BrandMark className="size-7 text-primary" />
+            <span className="font-display text-lg font-bold tracking-tight">Batogo</span>
           </Link>
           
           <nav className="hidden md:flex items-center gap-6">
@@ -38,8 +35,8 @@ export function SiteLayout({ children }: { children: ReactNode }) {
                 key={link.to}
                 to={link.to}
                 activeOptions={{ exact: link.to === "/" }}
-                className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground relative py-1"
-                activeProps={{ className: "text-foreground font-semibold after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-primary after:rounded-full" }}
+                className="text-[13px] font-semibold text-muted-foreground hover:text-foreground transition-colors"
+                activeProps={{ className: "text-primary" }}
               >
                 {link.label}
               </Link>
@@ -51,15 +48,14 @@ export function SiteLayout({ children }: { children: ReactNode }) {
           </div>
         </div>
         
-        {/* Navigation secondaire mobile */}
-        <nav className="flex gap-4 overflow-x-auto border-t border-border/40 px-4 py-2.5 md:hidden scrollbar-none">
+        <nav className="flex gap-4 overflow-x-auto border-t border-border/40 px-6 py-2.5 md:hidden scrollbar-none">
           {navLinks.map((link) => (
             <Link
               key={link.to}
               to={link.to}
               activeOptions={{ exact: link.to === "/" }}
-              className="shrink-0 text-xs font-medium text-muted-foreground transition-colors"
-              activeProps={{ className: "text-primary font-bold" }}
+              className="shrink-0 text-xs font-semibold text-muted-foreground transition-colors"
+              activeProps={{ className: "text-primary" }}
             >
               {link.label}
             </Link>
@@ -85,7 +81,6 @@ export function SiteLayout({ children }: { children: ReactNode }) {
         </div>
       </footer>
 
-      {/* NAV MOBILE FIXE */}
       <nav className="fixed bottom-0 left-0 right-0 z-50 flex h-14 items-center justify-around border-t border-border bg-background/95 pb-1 backdrop-blur-xl md:hidden">
         <Link to="/" activeOptions={{ exact: true }} className="flex flex-col items-center gap-1 text-muted-foreground hover:text-foreground" activeProps={{ className: "!text-primary" }}>
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21"></polygon><line x1="9" y1="3" x2="9" y2="21"></line><line x1="15" y1="3" x2="15" y2="21"></line></svg>
@@ -111,18 +106,18 @@ export function SiteLayout({ children }: { children: ReactNode }) {
 export function PageHero({ overline, title, intro }: { overline: string; title: string; intro: string; }) {
   return (
     <div className="max-w-3xl mb-10">
-      <p className="text-[12px] font-bold uppercase tracking-widest text-primary mb-3">
+      <p className="text-[11px] font-bold uppercase tracking-widest text-primary mb-3">
         {overline}
       </p>
-      <h1 className="text-4xl font-extrabold tracking-tight text-foreground sm:text-5xl">{title}</h1>
-      <p className="mt-4 text-lg leading-relaxed text-muted-foreground">{intro}</p>
+      <h1 className="text-3xl font-extrabold tracking-tight text-foreground sm:text-4xl">{title}</h1>
+      <p className="mt-3 text-lg leading-relaxed text-muted-foreground">{intro}</p>
     </div>
   );
 }
 
 export function Card({ children, className = "" }: { children: ReactNode; className?: string }) {
   return (
-    <div className={`rounded-2xl border border-border bg-card p-6 shadow-sm transition-shadow hover:shadow-md ${className}`}>
+    <div className={`rounded-xl border border-border bg-card p-6 shadow-sm ${className}`}>
       {children}
     </div>
   );

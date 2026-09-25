@@ -35,7 +35,7 @@ export function ExplorerView({
   const { data: departures = [], isLoading: departuresLoading } = useQuery(upcomingDeparturesQuery());
 
   const [filtersOpen, setFiltersOpen] = useState(false);
-  const [activeCountries, setActiveCountries] = useState<string[]>([]);
+  const activeCountries = filters.countryCodes;
 
   const activePorts = useMemo(
     () => ports.filter((port) => port.status === "active"),
@@ -125,7 +125,8 @@ export function ExplorerView({
     filters.portIds.length > 0 ||
     filters.companyId !== null ||
     filters.vesselId !== null ||
-    filters.date !== null;
+    filters.date !== null ||
+    filters.countryCodes.length > 0;
 
   const togglePort = (portId: string) => {
     const portIds = filters.portIds.includes(portId)
@@ -143,27 +144,13 @@ export function ExplorerView({
 
   const toggleCountry = (countryCode: string) => {
     const isSelected = activeCountries.includes(countryCode);
-    const nextCountries = isSelected
+    const countryCodes = isSelected
       ? activeCountries.filter((code) => code !== countryCode)
       : [...activeCountries, countryCode];
 
-    const countryPortIds = activePorts
-      .filter((port) => nextCountries.includes(port.country_code))
-      .map((port) => port.id);
-
-    const nextPortIds = isSelected
-      ? filters.portIds.filter(
-          (id) => !activePorts.some(
-            (port) =>
-              port.id === id && port.country_code === countryCode,
-          ),
-        )
-      : [...new Set([...filters.portIds, ...countryPortIds])];
-
-    setActiveCountries(nextCountries);
     onFiltersChange({
       ...filters,
-      portIds: nextPortIds,
+      countryCodes,
       departureCountry: null,
       departurePortId: null,
       arrivalPortId: null,
@@ -171,7 +158,6 @@ export function ExplorerView({
   };
 
   const reset = () => {
-    setActiveCountries([]);
     onFiltersChange(emptyFilters);
     setFiltersOpen(false);
   };

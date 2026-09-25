@@ -12,8 +12,6 @@
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 4px);
   --radius-2xl: calc(var(--radius) + 8px);
-  --radius-3xl: calc(var(--radius) + 12px);
-  --radius-4xl: calc(var(--radius) + 16px);
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
@@ -33,291 +31,184 @@
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
-  --color-ring-offset-background: var(--background);
-  --color-chart-1: var(--chart-1);
-  --color-chart-2: var(--chart-2);
-  --color-chart-3: var(--chart-3);
-  --color-chart-4: var(--chart-4);
-  --color-chart-5: var(--chart-5);
-  --color-sidebar: var(--sidebar);
-  --color-sidebar-foreground: var(--sidebar-foreground);
-  --color-sidebar-primary: var(--sidebar-primary);
-  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
-  --color-sidebar-accent: var(--sidebar-accent);
-  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
-  --color-sidebar-border: var(--sidebar-border);
-  --color-sidebar-ring: var(--sidebar-ring);
 }
 
 :root {
-  /* Palette "Méditerranée Premium" : Sable chaud, Marine profond, Terracotta, Eau azur */
-  --radius: 1.2rem;
-  --background: oklch(0.985 0.005 85); /* Blanc sable très doux */
-  --foreground: oklch(0.25 0.04 245); /* Bleu marine très sombre (plus chic que le gris/noir) */
-  --card: oklch(0.995 0.002 90);
-  --card-foreground: oklch(0.25 0.04 245);
-  --popover: oklch(0.995 0.002 90);
-  --popover-foreground: oklch(0.25 0.04 245);
+  /* Design épuré : rayons plus secs, couleurs à fort contraste */
+  --radius: 0.75rem; 
+  --background: oklch(0.99 0 0); /* Blanc pur */
+  --foreground: oklch(0.18 0.02 245); /* Bleu nuit presque noir, très chic */
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.18 0.02 245);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.18 0.02 245);
   
-  --primary: oklch(0.38 0.12 245); /* Bleu Océan profond et élégant */
-  --primary-foreground: oklch(0.99 0.005 90);
-  --secondary: oklch(0.96 0.01 245); /* Bleu très pâle pour les fonds secondaires */
-  --secondary-foreground: oklch(0.38 0.12 245);
+  --primary: oklch(0.25 0.04 245); /* Bleu marine classique et pro */
+  --primary-foreground: oklch(1 0 0);
+  --secondary: oklch(0.96 0.01 245); /* Gris-bleu très clair pour les fonds secondaires */
+  --secondary-foreground: oklch(0.25 0.04 245);
   
-  --muted: oklch(0.95 0.01 90);
-  --muted-foreground: oklch(0.55 0.03 245);
+  --muted: oklch(0.95 0.01 245);
+  --muted-foreground: oklch(0.55 0.02 245);
   
-  --accent: oklch(0.65 0.18 45); /* Terracotta chaleureux pour contraster avec le bleu */
-  --accent-foreground: oklch(0.99 0.005 90);
+  --accent: oklch(0.60 0.20 30); /* Orange/Terracotta dynamique mais maîtrisé */
+  --accent-foreground: oklch(1 0 0);
   
-  --destructive: oklch(0.60 0.18 25);
-  --destructive-foreground: oklch(0.99 0.005 90);
+  --destructive: oklch(0.55 0.20 25);
+  --destructive-foreground: oklch(1 0 0);
   --border: oklch(0.92 0.01 245);
   --input: oklch(0.92 0.01 245);
-  --ring: oklch(0.38 0.12 245);
+  --ring: oklch(0.25 0.04 245);
   
-  /* Couleurs de la carte modernisées */
-  --sea: oklch(0.92 0.05 235); /* Azur lumineux et invitant */
-  --map-country-highlight: oklch(0.85 0.12 100); /* Sable doré pour le pays survolé */
-  --map-country-outline: oklch(0.70 0.08 240);
-  --map-route: oklch(0.55 0.15 240); /* Lignes bleues vibrantes */
-  --map-route-selected: oklch(0.65 0.18 45); /* Ligne active en terracotta */
-  --map-route-casing: oklch(0.995 0.002 90);
+  /* Palette de la carte */
+  --sea: oklch(0.89 0.06 230);
+  --map-country-highlight: oklch(0.95 0.04 100);
+  --map-country-outline: oklch(0.75 0.05 240);
+  --map-route: oklch(0.40 0.12 245);
+  --map-route-selected: oklch(0.60 0.20 30);
+  --map-route-casing: oklch(1 0 0);
   
-  --gradient-header: linear-gradient(135deg, oklch(0.25 0.04 245 / 90%), oklch(0.38 0.12 245 / 85%));
-  --gradient-brand: linear-gradient(135deg, oklch(0.65 0.18 45), oklch(0.55 0.16 35));
-  
-  /* Ombres plus douces, typiques des UI "Travel" haut de gamme (ex: Airbnb, Uber) */
-  --shadow-brand: 0 12px 30px -10px color-mix(in oklab, oklch(0.65 0.18 45) 60%, transparent);
-  --shadow-panel: 0 30px 80px -20px color-mix(in oklab, oklch(0.25 0.04 245) 15%, transparent);
-  --shadow-elegant: 0 20px 50px -15px color-mix(in oklab, oklch(0.25 0.04 245) 12%, transparent);
-  
-  --sidebar: oklch(0.995 0.002 90);
-  --sidebar-foreground: oklch(0.25 0.04 245);
-  --sidebar-primary: oklch(0.38 0.12 245);
-  --sidebar-primary-foreground: oklch(0.99 0.005 90);
-  --sidebar-accent: oklch(0.96 0.01 245);
-  --sidebar-accent-foreground: oklch(0.38 0.12 245);
-  --sidebar-border: oklch(0.92 0.01 245);
-  --sidebar-ring: oklch(0.38 0.12 245);
-}
-
-.dark {
-  --background: oklch(0.15 0.02 245);
-  --foreground: oklch(0.98 0.005 245);
-  --card: oklch(0.20 0.03 245);
-  --card-foreground: oklch(0.98 0.005 245);
-  --popover: oklch(0.20 0.03 245);
-  --popover-foreground: oklch(0.98 0.005 245);
-  --primary: oklch(0.75 0.12 245);
-  --primary-foreground: oklch(0.15 0.02 245);
-  --secondary: oklch(0.25 0.04 245);
-  --secondary-foreground: oklch(0.98 0.005 245);
-  --muted: oklch(0.25 0.04 245);
-  --muted-foreground: oklch(0.75 0.02 245);
-  --accent: oklch(0.70 0.15 45);
-  --accent-foreground: oklch(0.15 0.02 245);
-  --destructive: oklch(0.70 0.18 25);
-  --destructive-foreground: oklch(0.98 0.005 245);
-  --border: oklch(1 0 0 / 12%);
-  --input: oklch(1 0 0 / 12%);
-  --ring: oklch(0.75 0.12 245);
-  --sidebar: oklch(0.20 0.03 245);
-  --sidebar-foreground: oklch(0.98 0.005 245);
-  --sidebar-primary: oklch(0.75 0.12 245);
-  --sidebar-primary-foreground: oklch(0.15 0.02 245);
-  --sidebar-accent: oklch(0.25 0.04 245);
-  --sidebar-accent-foreground: oklch(0.98 0.005 245);
-  --sidebar-border: oklch(1 0 0 / 12%);
-  --sidebar-ring: oklch(0.75 0.12 245);
+  /* Ombres réalistes et élégantes */
+  --shadow-panel: 0 12px 40px -12px rgba(0, 0, 0, 0.15), 0 4px 12px -4px rgba(0, 0, 0, 0.08);
+  --shadow-elegant: 0 8px 30px rgba(0, 0, 0, 0.08);
 }
 
 @layer base {
   * { border-color: var(--color-border); }
   html { font-family: var(--font-sans); }
   body { margin: 0; background: var(--color-background); color: var(--color-foreground); font-family: var(--font-sans); -webkit-font-smoothing: antialiased; }
-  h1, h2, h3, h4 { font-family: var(--font-display); letter-spacing: -0.03em; }
+  h1, h2, h3, h4 { font-family: var(--font-display); letter-spacing: -0.02em; }
   button, input, select { font-family: inherit; }
 }
 
-.batogo-panel {
-  background: var(--color-card);
-}
+/* UI du panneau latéral - Minimaliste */
 .batogo-floating-panel {
-  border: 1px solid oklch(1 0 0 / 60%);
-  background: color-mix(in oklab, var(--color-card) 85%, transparent);
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  background: rgba(255, 255, 255, 0.98);
   box-shadow: var(--shadow-panel);
-  backdrop-filter: blur(24px) saturate(120%);
+  backdrop-filter: blur(12px);
 }
 .batogo-tabbar {
   border: 0;
-  background: var(--color-muted);
-  border-radius: 14px;
+  background: var(--color-secondary);
+  border-radius: 0.75rem;
   padding: 4px;
 }
 .batogo-tab {
-  min-height: 42px;
-  border-radius: 10px;
+  min-height: 38px;
+  border-radius: 0.5rem;
   color: var(--color-muted-foreground);
   font-weight: 600;
-  transition: all .2s cubic-bezier(0.4, 0, 0.2, 1);
+  font-size: 0.9rem;
+  transition: all .2s ease;
 }
 .batogo-tab:hover { color: var(--color-foreground); }
 .batogo-tab[data-active="true"] {
-  color: var(--color-primary);
+  color: var(--color-foreground);
   background: var(--color-card);
-  box-shadow: 0 4px 15px -5px color-mix(in oklab, var(--color-primary) 15%, transparent);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
 }
 
 .batogo-section {
-  margin: 0;
-  padding: 16px 20px;
-  border: 0;
-  border-radius: 0;
-  background: transparent;
-  box-shadow: none;
+  padding: 20px 24px;
+  border-top: 1px solid var(--color-border);
 }
-.batogo-section + .batogo-section { margin-top: 0; border-top: 1px solid var(--color-border); }
+.batogo-section:first-child { border-top: none; }
 
 .batogo-field {
   border: 1px solid var(--color-border);
-  border-radius: 12px;
+  border-radius: 0.5rem;
   background: var(--color-background);
   transition: border-color .2s ease, box-shadow .2s ease;
 }
 .batogo-field:focus-within {
   border-color: var(--color-primary);
-  box-shadow: 0 0 0 3px color-mix(in oklab, var(--color-primary) 15%, transparent);
+  box-shadow: 0 0 0 2px color-mix(in oklab, var(--color-primary) 15%, transparent);
 }
 
 .batogo-list-item {
   border: 1px solid transparent;
-  border-radius: 14px;
+  border-radius: 0.75rem;
   transition: all .2s ease;
 }
 .batogo-list-item:hover {
   background: var(--color-secondary);
-  transform: translateX(4px);
 }
+
 .batogo-departure-card {
   border: 1px solid var(--color-border);
-  border-radius: 16px;
+  border-radius: 1rem;
   background: var(--color-card);
-  box-shadow: 0 4px 12px -8px color-mix(in oklab, var(--color-foreground) 10%, transparent);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02);
   transition: all .2s ease;
 }
 .batogo-departure-card:hover {
-  border-color: var(--color-primary);
-  box-shadow: 0 8px 24px -10px color-mix(in oklab, var(--color-primary) 15%, transparent);
-  transform: translateY(-2px);
-}
-.batogo-primary-action {
-  border-radius: 14px;
-  font-weight: 600;
-  letter-spacing: 0.02em;
-  box-shadow: var(--shadow-brand);
-  transition: transform .2s ease, box-shadow .2s ease;
-}
-.batogo-primary-action:hover {
+  border-color: var(--color-muted-foreground);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.06);
   transform: translateY(-1px);
-  box-shadow: 0 14px 28px -10px color-mix(in oklab, var(--color-primary) 70%, transparent);
 }
-.batogo-handle {
-  width: 48px;
-  height: 5px;
-  border-radius: 999px;
-  background: var(--color-border);
-  transition: background .2s ease;
-}
-.batogo-handle:hover { background: var(--color-muted-foreground); }
 
-/* Map markers: Elegant and interactive */
+.batogo-handle {
+  width: 40px;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--color-border);
+}
+
+/* Map markers */
 .port-marker { position: relative; width: 0; height: 0; z-index: 1; }
 .port-marker:hover, .port-marker[data-active="true"] { z-index: 10; }
 .port-marker__dot {
-  position: absolute; left: -7px; top: -7px; width: 14px; height: 14px;
-  border-radius: 9999px; border: 2.5px solid var(--color-card);
+  position: absolute; left: -6px; top: -6px; width: 12px; height: 12px;
+  border-radius: 50%; border: 2px solid var(--color-card);
   background: var(--color-primary);
-  box-shadow: 0 4px 12px color-mix(in oklab, var(--color-primary) 40%, transparent);
-  cursor: pointer; transition: all .3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+  cursor: pointer; transition: all .2s ease;
 }
 .port-marker[data-active="true"] .port-marker__dot {
   background: var(--color-accent);
-  transform: scale(1.6);
-  box-shadow: 0 0 0 4px color-mix(in oklab, var(--color-accent) 25%, transparent), 0 6px 16px color-mix(in oklab, var(--color-accent) 40%, transparent);
+  transform: scale(1.4);
 }
 .port-marker__label {
   position: absolute; white-space: nowrap; font-family: var(--font-display);
-  font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--color-foreground);
-  text-shadow: 0 2px 4px var(--color-card), 2px 0 4px var(--color-card), -2px 0 4px var(--color-card), 0 -2px 4px var(--color-card);
-  cursor: pointer; pointer-events: auto; transition: color .2s ease;
+  font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--color-primary);
+  text-shadow: 0 1.5px 3px var(--color-card), 1.5px 0 3px var(--color-card), -1.5px 0 3px var(--color-card), 0 -1.5px 3px var(--color-card);
+  cursor: pointer; transition: color .2s ease;
 }
 .port-marker[data-active="true"] .port-marker__label { color: var(--color-accent); }
-.port-marker[data-dimmed="true"] { opacity: .3; filter: grayscale(100%); }
-.port-marker[data-closed="true"] .port-marker__dot { background: var(--color-card); border-color: var(--color-muted-foreground); box-shadow: none; }
-.port-marker[data-closed="true"] .port-marker__label { color: var(--color-muted-foreground); }
 
+/* Tooltips */
 .port-tip {
-  position: absolute; left: 18px; top: -16px; z-index: 5; width: max-content;
-  max-width: min(280px, calc(100vw - 32px)); box-sizing: border-box; padding: 16px;
-  border: 1px solid oklch(1 0 0 / 50%);
-  border-radius: 20px; background: color-mix(in oklab, var(--color-card) 90%, transparent);
-  backdrop-filter: blur(20px); box-shadow: var(--shadow-elegant);
-  opacity: 0; transform: translateX(10px) scale(.95); transition: all .3s cubic-bezier(0.16, 1, 0.3, 1);
+  position: absolute; left: 16px; top: -12px; z-index: 5; width: max-content;
+  max-width: 280px; padding: 16px;
+  border: 1px solid var(--color-border);
+  border-radius: 1rem; background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(8px); box-shadow: var(--shadow-elegant);
+  opacity: 0; transform: translateX(5px); transition: all .2s ease;
   pointer-events: none;
 }
 .port-tip__close {
-  position: absolute; top: 12px; right: 12px; z-index: 2; display: grid; place-items: center;
-  width: 26px; height: 26px; margin: 0; padding: 0; border: 0; border-radius: 999px;
-  background: var(--color-secondary); color: var(--color-secondary-foreground); font-size: 14px; line-height: 1; cursor: pointer; transition: all .2s ease;
+  position: absolute; top: 12px; right: 12px; width: 24px; height: 24px;
+  background: var(--color-secondary); border-radius: 50%; border: none; cursor: pointer;
 }
-.port-tip__close:hover { background: var(--color-primary); color: var(--color-primary-foreground); transform: rotate(90deg); }
-.port-tip__close + .port-tip__title, .port-tip > .port-tip__title { padding-right: 32px; }
 .port-marker:hover .port-tip, .port-marker:focus-within .port-tip, .port-marker[data-active="true"] .port-tip {
-  opacity: 1; transform: translateX(0) scale(1); pointer-events: auto;
+  opacity: 1; transform: translateX(0); pointer-events: auto;
 }
-.port-tip__departures-title { margin-top: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; font-size: 10px; color: var(--color-muted-foreground); }
-.port-tip__departures { margin-top: 6px; display: flex; flex-direction: column; gap: 6px; font-size: 12px; font-weight: 600; color: var(--color-foreground); list-style: none; padding: 0; }
-.port-tip__more { margin-top: 8px; font-size: 12px; font-weight: 700; color: var(--color-accent); text-decoration: none; cursor: pointer; background: none; border: none; padding: 0; transition: color .2s ease; }
-.port-tip__more:hover { color: var(--color-primary); }
-.port-tip__title { font-family: var(--font-display); font-size: 16px; font-weight: 800; color: var(--color-foreground); letter-spacing: -0.02em; }
-.port-tip__meta { font-size: 12px; font-weight: 500; color: var(--color-muted-foreground); margin-top: 2px; }
-.port-tip__next { margin-top: 6px; font-size: 12px; font-weight: 600; color: var(--color-primary); padding: 6px 10px; background: var(--color-secondary); border-radius: 8px; display: inline-block; }
-.port-tip__closed { font-size: 12px; font-weight: 600; color: var(--color-destructive); }
+.port-tip__title { font-family: var(--font-display); font-size: 15px; font-weight: 700; color: var(--color-foreground); }
+.port-tip__meta { font-size: 12px; color: var(--color-muted-foreground); margin-top: 2px; }
+.port-tip__next { margin-top: 8px; font-size: 12px; font-weight: 600; color: var(--color-primary); }
 
 .maplibregl-ctrl-group {
-  overflow: hidden !important;
-  border: 1px solid oklch(1 0 0 / 40%) !important;
-  border-radius: 16px !important;
-  background: color-mix(in oklab, var(--color-card) 85%, transparent) !important;
-  backdrop-filter: blur(12px) !important;
+  border-radius: 0.75rem !important;
   box-shadow: var(--shadow-elegant) !important;
+  border: 1px solid var(--color-border) !important;
 }
-.maplibregl-ctrl-group button { width: 40px !important; height: 40px !important; transition: background .2s ease !important; }
-.maplibregl-ctrl-group button:hover { background: var(--color-secondary) !important; }
-.maplibregl-ctrl-attrib { background: none !important; border: none !important; box-shadow: none !important; padding: 0 !important; }
-.maplibregl-ctrl-attrib-inner { display: inline !important; font-size: 11px !important; font-weight: 500 !important; color: var(--color-foreground) !important; }
 
 @media (max-width: 767px) {
-  .batogo-floating-panel { border-left: 0; border-right: 0; border-bottom: 0; border-radius: 32px 32px 0 0; }
-  .batogo-section { margin-left: 12px; margin-right: 12px; padding: 16px; border-radius: 20px; }
-  .port-marker:hover .port-tip, .port-marker:focus-within .port-tip {
-    opacity: 0; transform: translateY(10px) scale(.95); pointer-events: none;
-  }
-  .port-marker[data-active="true"] .port-tip { opacity: 1; transform: translateY(0) scale(1); pointer-events: auto; }
-  .port-tip { max-width: min(240px, calc(100vw - 32px)); padding: 14px; border-radius: 20px; }
-  .port-tip__title { font-size: 15px; }
+  .batogo-floating-panel { border-radius: 1.5rem 1.5rem 0 0; }
+  .batogo-section { padding: 16px 20px; }
+  .port-tip { max-width: 220px; padding: 12px; border-radius: 0.75rem; }
 }
 
 .batogo-floating-panel .custom-scrollbar { scrollbar-width: thin; scrollbar-color: var(--color-border) transparent; }
-.batogo-floating-panel h3, .batogo-floating-panel h4 { color: var(--color-foreground); }
-.batogo-floating-panel input { background: var(--color-background) !important; border: 1px solid var(--color-border) !important; border-radius: 12px !important; transition: all .2s ease; }
-.batogo-floating-panel input:focus { border-color: var(--color-primary) !important; box-shadow: 0 0 0 3px color-mix(in oklab, var(--color-primary) 15%, transparent) !important; }
-.batogo-floating-panel .batogo-section button[data-state="open"] { background: var(--color-secondary); }
-@media (min-width: 768px) {
-  .batogo-floating-panel { width: 420px; }
-}
-@media (max-width: 767px) {
-  .batogo-floating-panel { width: 100%; }
-  .batogo-section { padding-left: 20px; padding-right: 20px; }
-}
+.batogo-floating-panel input { background: var(--color-background) !important; border: 1px solid var(--color-border) !important; border-radius: 0.5rem !important; }

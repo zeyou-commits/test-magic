@@ -240,12 +240,12 @@ function Index() {
     <div className="relative h-[100dvh] w-full overflow-hidden bg-background">
       
       {/* En-tête bureau */}
-      <header className="absolute left-0 right-0 top-0 z-50 hidden items-center justify-between gap-3 border-b border-white/15 bg-[var(--gradient-header)] px-5 py-3 text-white shadow-lg shadow-black/10 backdrop-blur-xl md:flex">
-        <Link to="/" className="flex items-center gap-3">
-          <BrandMark className="size-9 text-primary-foreground" />
+      <header className="absolute left-4 right-4 top-4 z-50 hidden items-center justify-between gap-4 rounded-2xl border border-white/55 bg-white/78 px-3 py-2.5 text-foreground shadow-[0_18px_45px_-28px_rgba(15,55,70,.55)] backdrop-blur-2xl md:flex lg:left-5 lg:right-5">
+        <Link to="/" className="flex items-center gap-2.5">
+          <BrandMark className="size-9" />
           <span className="flex flex-col leading-none">
-            <span className="font-display text-lg font-bold tracking-tight text-white">Batogo</span>
-            <span className="hidden text-[11px] text-white/65 sm:inline">
+            <span className="font-display text-lg font-bold tracking-tight text-foreground">Batogo</span>
+            <span className="hidden text-[11px] text-muted-foreground sm:inline">
               Traversées en ferry vers l'Algérie
             </span>
           </span>
@@ -253,7 +253,7 @@ function Index() {
         <nav className="flex items-center gap-1.5">
           <div className="hidden items-center gap-1 lg:flex">
             {navLinks.slice(1).map((link) => (
-              <Button key={link.to} asChild variant="ghost" size="sm" className="text-white/80 hover:bg-white/10 hover:text-white">
+              <Button key={link.to} asChild variant="ghost" size="sm" className="text-muted-foreground hover:bg-muted hover:text-foreground">
                 <Link to={link.to}>{link.label}</Link>
               </Button>
             ))}
@@ -262,14 +262,14 @@ function Index() {
             type="button"
             variant="outline"
             size="sm"
-            className="hidden border-white/20 bg-white/10 text-white hover:bg-white/15 hover:text-white md:inline-flex"
+            className="hidden border-border bg-white/70 text-foreground hover:bg-white md:inline-flex"
             onClick={() => setDesktopPanelOpen((open) => !open)}
             aria-pressed={!desktopPanelOpen}
           >
             {desktopPanelOpen ? "Carte seule" : "Afficher le panneau"}
           </Button>
           {isAdmin ? (
-            <Button asChild variant="ghost" size="sm" className="hidden text-white/80 hover:bg-white/10 hover:text-white md:inline-flex">
+            <Button asChild variant="ghost" size="sm" className="hidden text-muted-foreground hover:bg-muted hover:text-foreground md:inline-flex">
               <Link to="/admin">Back-office</Link>
             </Button>
           ) : null}
@@ -312,7 +312,7 @@ function Index() {
         <Button
           type="button"
           variant="ghost"
-          className="h-9 w-full touch-none rounded-none py-0 md:hidden"
+          className="h-8 w-full touch-none rounded-none py-0 md:hidden"
           aria-label={panelLevel === 2 ? "Replier le volet" : "Déplier le volet"}
           onClick={cyclePanelLevel}
           onPointerDown={(event) => startPanelDrag(event.clientY)}
@@ -323,7 +323,7 @@ function Index() {
           }}
           style={{ touchAction: "none" }}
         >
-          <div className="h-1.5 w-12 rounded-full bg-muted-foreground/30" />
+          <div className="batogo-handle" />
         </Button>
 
         <SidePanel
@@ -342,7 +342,7 @@ function Index() {
       </aside>
 
       {/* BARRE DE NAVIGATION DU BAS (Mobile uniquement) */}
-      <nav className="absolute bottom-0 left-0 right-0 z-50 flex h-16 items-center justify-around border-t border-border/50 bg-background/95 backdrop-blur-xl pb-1 md:hidden">
+      <nav className="absolute bottom-2 left-2 right-2 z-50 flex h-14 items-center justify-around rounded-2xl border border-white/65 bg-white/88 pb-1 shadow-[0_18px_40px_-24px_rgba(15,55,70,.6)] backdrop-blur-2xl md:hidden">
         <Link to="/" className="flex flex-col items-center justify-center gap-1 text-primary">
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21"></polygon><line x1="9" y1="3" x2="9" y2="21"></line><line x1="15" y1="3" x2="15" y2="21"></line></svg>
           <span className="text-[10px] font-medium">Carte</span>

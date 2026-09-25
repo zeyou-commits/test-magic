@@ -26,29 +26,15 @@ export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
       { title: "Batogo — Carte des ferries vers l'Algérie" },
-      {
-        name: "description",
-        content:
-          "Explorez sur une carte interactive les ports, lignes maritimes, durées de traversée et prochains départs vers l'Algérie.",
-      },
-      { property: "og:title", content: "Batogo — Carte des ferries vers l'Algérie" },
-      {
-        property: "og:description",
-        content:
-          "Ports, lignes, durées de traversée et prochains départs vers l'Algérie, sur une seule carte.",
-      },
+      { name: "description", content: "Explorez sur une carte interactive les ports, lignes maritimes, durées de traversée et prochains départs vers l'Algérie." },
     ],
   }),
   component: Index,
 });
 
 function Index() {
-  const [selection, setSelection] = useState<Selection | null>(() =>
-    typeof window === "undefined" ? null : selectionFromUrl(window.location.search),
-  );
-  const [filters, setFilters] = useState<Filters>(() =>
-    typeof window === "undefined" ? emptyFilters : filtersFromUrl(window.location.search),
-  );
+  const [selection, setSelection] = useState<Selection | null>(() => typeof window === "undefined" ? null : selectionFromUrl(window.location.search));
+  const [filters, setFilters] = useState<Filters>(() => typeof window === "undefined" ? emptyFilters : filtersFromUrl(window.location.search));
   const [panelLevel, setPanelLevel] = useState<0 | 1 | 2>(1);
   const [desktopPanelOpen, setDesktopPanelOpen] = useState(true);
   const dragStartY = useRef<number | null>(null);
@@ -60,18 +46,15 @@ function Index() {
   const departuresResult = useQuery(upcomingDeparturesQuery());
   const companiesResult = useQuery(companiesQuery);
   const vesselsResult = useQuery(vesselsQuery);
+  
   const { data: ports = [] } = portsResult;
   const { data: routes = [] } = routesResult;
   const { data: departures = [] } = departuresResult;
   const { data: companies = [] } = companiesResult;
   const { data: vessels = [] } = vesselsResult;
-  const isLoadingData = [portsResult, routesResult, departuresResult, companiesResult, vesselsResult].some(
-    (result) => result.isPending,
-  );
-  const hasDemoData = ports.some((item) => item.is_demo)
-    || routes.some((item) => item.is_demo)
-    || companies.some((item) => item.is_demo)
-    || vessels.some((item) => item.is_demo);
+  
+  const isLoadingData = [portsResult, routesResult, departuresResult, companiesResult, vesselsResult].some((res) => res.isPending);
+  const hasDemoData = ports.some(i => i.is_demo) || routes.some(i => i.is_demo) || companies.some(i => i.is_demo) || vessels.some(i => i.is_demo);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -86,57 +69,26 @@ function Index() {
     const term = filters.search.trim().toLowerCase();
     const portMatches = (id: string) => {
       const port = ports.find((item) => item.id === id);
-      if (!port) return false;
-      return `${port.name} ${port.city ?? ""} ${port.country_name}`
-        .toLowerCase()
-        .includes(term);
+      return port ? `${port.name} ${port.city ?? ""} ${port.country_name}`.toLowerCase().includes(term) : false;
     };
-    const portOpen = (id: string) =>
-      ports.find((item) => item.id === id)?.status === "active";
+    const portOpen = (id: string) => ports.find((item) => item.id === id)?.status === "active";
     const selected = new Set(filters.portIds);
     const selectedCountries = new Set(filters.countryCodes);
+    
     return routes.filter((route) => {
       if (!portOpen(route.departure_port_id) || !portOpen(route.arrival_port_id)) return false;
-      
-      if (
-        selectedCountries.size > 0 &&
-        !selectedCountries.has(ports.find((item) => item.id === route.departure_port_id)?.country_code ?? "") &&
-        !selectedCountries.has(ports.find((item) => item.id === route.arrival_port_id)?.country_code ?? "")
-      ) return false;
-      if (
-        selected.size > 0 &&
-        !filters.departurePortId &&
-        !filters.arrivalPortId &&
-        !selected.has(route.departure_port_id) &&
-        !selected.has(route.arrival_port_id)
-      )
-        return false;
+      if (selectedCountries.size > 0 && !selectedCountries.has(ports.find((item) => item.id === route.departure_port_id)?.country_code ?? "") && !selectedCountries.has(ports.find((item) => item.id === route.arrival_port_id)?.country_code ?? "")) return false;
+      if (selected.size > 0 && !filters.departurePortId && !filters.arrivalPortId && !selected.has(route.departure_port_id) && !selected.has(route.arrival_port_id)) return false;
       if (filters.departureCountry) {
         const from = ports.find((item) => item.id === route.departure_port_id);
         if (from?.country_code !== filters.departureCountry) return false;
       }
-      if (filters.departurePortId && route.departure_port_id !== filters.departurePortId)
-        return false;
+      if (filters.departurePortId && route.departure_port_id !== filters.departurePortId) return false;
       if (filters.arrivalPortId && route.arrival_port_id !== filters.arrivalPortId) return false;
       if (filters.companyId && !route.company_ids.includes(filters.companyId)) return false;
-
-      if (filters.vesselId) {
-        const hasVessel = departures.some(
-          (departure) =>
-            departure.route_id === route.id && departure.vessel_id === filters.vesselId,
-        );
-        if (!hasVessel) return false;
-      }
-      if (filters.date) {
-        const hasDate = departures.some(
-          (departure) =>
-            departure.route_id === route.id &&
-            departure.departure_at.slice(0, 10) === filters.date,
-        );
-        if (!hasDate) return false;
-      }
-      if (term && !portMatches(route.departure_port_id) && !portMatches(route.arrival_port_id))
-        return false;
+      if (filters.vesselId && !departures.some(d => d.route_id === route.id && d.vessel_id === filters.vesselId)) return false;
+      if (filters.date && !departures.some(d => d.route_id === route.id && d.departure_at.slice(0, 10) === filters.date)) return false;
+      if (term && !portMatches(route.departure_port_id) && !portMatches(route.arrival_port_id)) return false;
       return true;
     });
   }, [routes, ports, departures, filters]);
@@ -148,67 +100,46 @@ function Index() {
       return route ? [route.departure_port_id, route.arrival_port_id] : [];
     }
     return [];
-  }, [selection, routes, visibleRoutes]);
+  }, [selection, routes]);
 
   const focusRouteIds = useMemo(() => {
     if (selection?.type === "route") return [selection.id];
-    if (selection?.type === "port")
-      return routes
-        .filter(
-          (route) =>
-            route.departure_port_id === selection.id || route.arrival_port_id === selection.id,
-        )
-        .map((route) => route.id);
+    if (selection?.type === "port") return routes.filter(r => r.departure_port_id === selection.id || r.arrival_port_id === selection.id).map(r => r.id);
     return [];
   }, [selection, routes]);
 
   const portMeta = useMemo(() => {
     const meta: Record<string, PortMeta> = {};
     const visibleIds = new Set(visibleRoutes.map((route) => route.id));
-    const companyName = new Map(companies.map((company) => [company.id, company.name]));
-    const vesselName = new Map(vessels.map((vessel) => [vessel.id, vessel.name]));
+    const companyName = new Map(companies.map(c => [c.id, c.name]));
+    const vesselName = new Map(vessels.map(v => [v.id, v.name]));
+    
     ports.forEach((port) => {
-      const portRoutes = visibleRoutes.filter(
-        (route) =>
-          route.departure_port_id === port.id || route.arrival_port_id === port.id,
-      );
-      const routeIds = new Set(portRoutes.map((route) => route.id));
+      const portRoutes = visibleRoutes.filter(r => r.departure_port_id === port.id || r.arrival_port_id === port.id);
+      const routeIds = new Set(portRoutes.map(r => r.id));
       const companyNames = new Set<string>();
-      portRoutes.forEach((route) =>
-        route.company_ids.forEach((id) => {
-          const name = companyName.get(id);
-          if (name) companyNames.add(name);
-        }),
-      );
+      
+      portRoutes.forEach((route) => route.company_ids.forEach(id => { const n = companyName.get(id); if (n) companyNames.add(n); }));
+      
       const vesselNames = new Set<string>();
       departures.forEach((departure) => {
         if (!routeIds.has(departure.route_id) || departure.status === "cancelled") return;
-        const company = companyName.get(departure.company_id);
-        if (company) companyNames.add(company);
-        const vessel = departure.vessel_id ? vesselName.get(departure.vessel_id) : null;
-        if (vessel) vesselNames.add(vessel);
+        const c = companyName.get(departure.company_id); if (c) companyNames.add(c);
+        const v = departure.vessel_id ? vesselName.get(departure.vessel_id) : null; if (v) vesselNames.add(v);
       });
-      const portDepartures = departures.filter((departure) => {
-        if (!visibleIds.has(departure.route_id)) return false;
-        const route = routes.find((item) => item.id === departure.route_id);
-        return route?.departure_port_id === port.id && departure.status !== "cancelled";
-      });
-      const toName = (departure: (typeof portDepartures)[number]) => {
-        const route = routes.find((item) => item.id === departure.route_id);
-        return route
-          ? (ports.find((item) => item.id === route.arrival_port_id)?.name ?? null)
-          : null;
-      };
+      
+      const portDepartures = departures.filter(d => visibleIds.has(d.route_id) && routes.find(r => r.id === d.route_id)?.departure_port_id === port.id && d.status !== "cancelled");
       const next = portDepartures[0];
+      
       meta[port.id] = {
         routes: portRoutes.length,
         companies: [...companyNames].sort(),
         vessels: [...vesselNames].sort(),
         nextDeparture: next ? formatDateTime(next.departure_at) : null,
-        nextTo: next ? toName(next) : null,
-        upcoming: portDepartures.slice(0, 3).map((departure) => ({
-          label: formatDateTime(departure.departure_at),
-          to: toName(departure),
+        nextTo: next ? (ports.find(p => p.id === routes.find(r => r.id === next.route_id)?.arrival_port_id)?.name ?? null) : null,
+        upcoming: portDepartures.slice(0, 3).map(d => ({
+          label: formatDateTime(d.departure_at),
+          to: ports.find(p => p.id === routes.find(r => r.id === d.route_id)?.arrival_port_id)?.name ?? null,
         })),
         hasMore: portDepartures.length > 3,
       };
@@ -216,26 +147,16 @@ function Index() {
     return meta;
   }, [ports, routes, visibleRoutes, departures, companies, vessels]);
 
-  const setSelectionAndOpen = (next: Selection | null) => {
-    setSelection(next);
-  };
-
+  const setSelectionAndOpen = (next: Selection | null) => setSelection(next);
   const openPanel = () => setPanelLevel(1);
-
   const cyclePanelLevel = () => setPanelLevel((current) => (current === 2 ? 0 : ((current + 1) as 1 | 2)));
 
-  const startPanelDrag = (clientY: number) => {
-    dragStartY.current = clientY;
-    dragStartLevel.current = panelLevel;
-  };
-
+  const startPanelDrag = (clientY: number) => { dragStartY.current = clientY; dragStartLevel.current = panelLevel; };
   const finishPanelDrag = (clientY: number) => {
     if (dragStartY.current === null) return;
     const distance = dragStartY.current - clientY;
     if (Math.abs(distance) >= 44) {
-      const direction = distance > 0 ? 1 : -1;
-      const next = Math.max(0, Math.min(2, dragStartLevel.current + direction));
-      setPanelLevel(next as 0 | 1 | 2);
+      setPanelLevel(Math.max(0, Math.min(2, dragStartLevel.current + (distance > 0 ? 1 : -1))) as 0|1|2);
     }
     dragStartY.current = null;
   };
@@ -243,42 +164,36 @@ function Index() {
   return (
     <div className="relative h-[100dvh] w-full overflow-hidden bg-background">
       
-      {/* En-tête bureau : Refonte Pill-shape, effet vitre */}
-      <header className="absolute left-4 right-4 top-4 z-50 hidden items-center justify-between gap-4 rounded-[2rem] border border-white/50 bg-white/70 px-6 py-3 text-foreground shadow-[var(--shadow-elegant)] backdrop-blur-2xl md:flex lg:left-8 lg:right-8 xl:w-max xl:mx-auto xl:min-w-[800px]">
-        <Link to="/" className="flex items-center gap-3 transition-transform hover:scale-105">
-          <BrandMark className="size-10 text-primary drop-shadow-md" />
-          <span className="flex flex-col leading-none">
-            <span className="font-display text-xl font-extrabold tracking-tight text-foreground">Batogo</span>
-            <span className="hidden text-[11px] font-semibold uppercase tracking-wider text-muted-foreground sm:inline mt-1">
-              Traversées & Horaires
-            </span>
-          </span>
+      {/* HEADER BUREAU: Fixé en haut, bord à bord, sobre */}
+      <header className="absolute left-0 right-0 top-0 z-50 hidden h-16 items-center justify-between border-b border-border/60 bg-white/95 px-6 text-foreground shadow-sm backdrop-blur-md md:flex">
+        <Link to="/" className="flex items-center gap-3">
+          <BrandMark className="size-7 text-primary" />
+          <span className="font-display text-lg font-bold tracking-tight">Batogo</span>
         </Link>
-        <nav className="flex items-center gap-2">
-          <div className="hidden items-center gap-1.5 lg:flex mr-4">
+        <nav className="flex items-center gap-6">
+          <div className="hidden items-center gap-6 lg:flex">
             {navLinks.slice(1).map((link) => (
-              <Button key={link.to} asChild variant="ghost" className="rounded-full text-sm font-bold text-muted-foreground hover:bg-white hover:text-primary hover:shadow-sm transition-all">
-                <Link to={link.to}>{link.label}</Link>
-              </Button>
+              <Link key={link.to} to={link.to} className="text-[13px] font-semibold text-muted-foreground hover:text-foreground transition-colors">
+                {link.label}
+              </Link>
             ))}
           </div>
+          <div className="h-4 w-px bg-border mx-2 hidden lg:block"></div>
           <Button
             type="button"
-            variant="outline"
-            className="hidden rounded-full border-border/50 bg-white/80 font-bold text-foreground shadow-sm hover:bg-primary hover:text-white hover:border-primary transition-all md:inline-flex"
+            variant="ghost"
+            size="sm"
+            className="text-primary font-medium hover:bg-secondary"
             onClick={() => setDesktopPanelOpen((open) => !open)}
-            aria-pressed={!desktopPanelOpen}
           >
-            {desktopPanelOpen ? "Carte plein écran" : "Explorer les lignes"}
+            {desktopPanelOpen ? "Cacher le panneau" : "Afficher les lignes"}
           </Button>
-          {isAdmin ? (
-            <Button asChild variant="ghost" className="hidden rounded-full font-bold text-muted-foreground hover:bg-white hover:text-primary md:inline-flex">
+          {isAdmin && (
+            <Button asChild variant="ghost" size="sm" className="text-muted-foreground">
               <Link to="/admin">Admin</Link>
             </Button>
-          ) : null}
-          <div className="ml-2 pl-4 border-l border-border/50">
-            <UserMenu />
-          </div>
+          )}
+          <UserMenu />
         </nav>
       </header>
 
@@ -292,40 +207,25 @@ function Index() {
         onOpenPanel={() => setPanelLevel(1)}
       />
 
-      {panelLevel === 2 ? (
-        <button
-          type="button"
-          aria-label="Fermer le panneau mobile"
-          className="absolute inset-0 z-50 bg-foreground/15 backdrop-blur-sm md:hidden transition-opacity"
-          onClick={() => setPanelLevel(1)}
-        />
-      ) : null}
+      {panelLevel === 2 && (
+        <button type="button" aria-label="Fermer" className="absolute inset-0 z-50 bg-foreground/10 md:hidden" onClick={() => setPanelLevel(1)} />
+      )}
 
-      {/* PANNEAU LATÉRAL / TIROIR FLOTTANT */}
+      {/* PANNEAU LATÉRAL : Style carte flottante subtile, aligné à gauche sous le header */}
       <aside
-        aria-label="Panneau d'exploration des traversées"
-        className={`absolute bottom-20 left-0 right-0 z-[60] flex flex-col overflow-hidden rounded-t-[2.5rem] bg-transparent transition-[height,width,opacity,transform] duration-400 ease-out md:bottom-auto md:left-8 md:right-auto md:top-28 md:h-[calc(100vh-9rem)] md:w-[420px] md:rounded-[2.5rem] md:z-40 ${
-          desktopPanelOpen ? "md:opacity-100 md:translate-x-0" : "md:pointer-events-none md:opacity-0 md:-translate-x-12"
-        } ${
-          panelLevel === 0
-            ? "h-24"
-            : panelLevel === 1
-              ? "h-[45dvh]"
-              : "h-[calc(100dvh-5rem)]"
-        }`}
+        className={`absolute bottom-0 left-0 right-0 z-[60] flex flex-col overflow-hidden bg-transparent transition-[height,width,opacity,transform] duration-300 ease-out md:bottom-auto md:left-5 md:top-[5.5rem] md:h-[calc(100vh-7rem)] md:w-[380px] md:rounded-2xl md:z-40 ${
+          desktopPanelOpen ? "md:opacity-100 md:translate-x-0" : "md:pointer-events-none md:opacity-0 md:-translate-x-4"
+        } ${panelLevel === 0 ? "h-24 rounded-t-xl" : panelLevel === 1 ? "h-[45dvh] rounded-t-xl" : "h-[100dvh]"}`}
       >
         <Button
           type="button"
           variant="ghost"
-          className="h-10 w-full touch-none rounded-none py-0 md:hidden flex items-center justify-center bg-card/40 backdrop-blur-md"
-          aria-label={panelLevel === 2 ? "Replier le volet" : "Déplier le volet"}
+          className="h-10 w-full touch-none rounded-none py-0 md:hidden flex items-center justify-center bg-card/80 backdrop-blur-md border-b border-border/50"
           onClick={cyclePanelLevel}
-          onPointerDown={(event) => startPanelDrag(event.clientY)}
-          onPointerUp={(event) => finishPanelDrag(event.clientY)}
+          onPointerDown={(e) => startPanelDrag(e.clientY)}
+          onPointerUp={(e) => finishPanelDrag(e.clientY)}
           onPointerCancel={() => { dragStartY.current = null; }}
-          onPointerMove={(event) => {
-            if (dragStartY.current !== null) event.currentTarget.setPointerCapture(event.pointerId);
-          }}
+          onPointerMove={(e) => { if (dragStartY.current !== null) e.currentTarget.setPointerCapture(e.pointerId); }}
           style={{ touchAction: "none" }}
         >
           <div className="batogo-handle" />
@@ -339,40 +239,41 @@ function Index() {
           visibleRoutes={visibleRoutes}
           hidePrimarySearchOnMobile
         />
-        {hasDemoData ? (
-          <div className="pointer-events-none absolute bottom-4 left-4 right-4 rounded-xl border border-amber-300/60 bg-amber-50/95 px-4 py-3 text-[12px] font-medium leading-relaxed text-amber-950 shadow-[var(--shadow-elegant)] backdrop-blur-md md:bottom-4">
-            Certaines fiches sont des données de démonstration. Vérifiez la source et la date avant de planifier.
+        
+        {hasDemoData && (
+          <div className="pointer-events-none absolute bottom-4 left-4 right-4 rounded-xl border border-amber-200 bg-amber-50/95 px-4 py-3 text-[12px] text-amber-900 shadow-sm backdrop-blur-md md:bottom-4">
+            Données de démonstration : vérifiez les informations avant tout départ.
           </div>
-        ) : null}
+        )}
       </aside>
 
-      {/* BARRE DE NAVIGATION DU BAS (Mobile uniquement) */}
-      <nav className="absolute bottom-4 left-4 right-4 z-50 flex h-16 items-center justify-around rounded-2xl border border-white/60 bg-white/80 pb-0.5 shadow-[var(--shadow-elegant)] backdrop-blur-2xl md:hidden">
-        <Link to="/" className="flex flex-col items-center justify-center gap-1.5 text-primary scale-110 transition-transform">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21"></polygon><line x1="9" y1="3" x2="9" y2="21"></line><line x1="15" y1="3" x2="15" y2="21"></line></svg>
-          <span className="text-[10px] font-bold tracking-wide">Carte</span>
+      {/* NAV MOBILE FIXE */}
+      <nav className="absolute bottom-0 left-0 right-0 z-50 flex h-14 items-center justify-around border-t border-border bg-background/95 pb-1 backdrop-blur-xl md:hidden">
+        <Link to="/" className="flex flex-col items-center gap-1 text-primary">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21"></polygon><line x1="9" y1="3" x2="9" y2="21"></line><line x1="15" y1="3" x2="15" y2="21"></line></svg>
+          <span className="text-[10px] font-medium">Carte</span>
         </Link>
-        <Link to="/horaires" className="flex flex-col items-center justify-center gap-1.5 text-muted-foreground transition-all hover:text-foreground hover:scale-110">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
-          <span className="text-[10px] font-bold tracking-wide">Horaires</span>
+        <Link to="/horaires" className="flex flex-col items-center gap-1 text-muted-foreground">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+          <span className="text-[10px] font-medium">Horaires</span>
         </Link>
-        <Link to="/ports" className="flex flex-col items-center justify-center gap-1.5 text-muted-foreground transition-all hover:text-foreground hover:scale-110">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="10" r="3"></circle><path d="M12 21.7C17.3 17 20 13 20 10a8 8 0 1 0-16 0c0 3 2.7 7 8 11.7z"></path></svg>
-          <span className="text-[10px] font-bold tracking-wide">Ports</span>
+        <Link to="/ports" className="flex flex-col items-center gap-1 text-muted-foreground">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="10" r="3"></circle><path d="M12 21.7C17.3 17 20 13 20 10a8 8 0 1 0-16 0c0 3 2.7 7 8 11.7z"></path></svg>
+          <span className="text-[10px] font-medium">Ports</span>
         </Link>
-        <Link to="/guide" className="flex flex-col items-center justify-center gap-1.5 text-muted-foreground transition-all hover:text-foreground hover:scale-110">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path><path d="M22 3h-6a4 4 0 0 1-4 4v14a3 3 0 0 1 3-3h7z"></path></svg>
-          <span className="text-[10px] font-bold tracking-wide">Guide</span>
+        <Link to="/guide" className="flex flex-col items-center gap-1 text-muted-foreground">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path></svg>
+          <span className="text-[10px] font-medium">Guide</span>
         </Link>
       </nav>
 
-      {/* CARTE EN PLEIN ÉCRAN */}
-      <main className="absolute inset-0 z-0 bg-[var(--sea)] transition-colors duration-700">
-        {isLoadingData ? (
-          <div className="pointer-events-none absolute left-1/2 top-28 z-10 -translate-x-1/2 rounded-full border border-white/60 bg-white/90 px-5 py-2.5 text-xs font-bold uppercase tracking-wider text-primary shadow-[var(--shadow-elegant)] backdrop-blur-md animate-pulse">
-            Actualisation des données…
+      {/* CARTE */}
+      <main className="absolute inset-0 z-0 bg-[var(--sea)]">
+        {isLoadingData && (
+          <div className="pointer-events-none absolute left-1/2 top-20 z-10 -translate-x-1/2 rounded-full border border-border bg-background/95 px-4 py-2 text-[11px] font-semibold text-foreground shadow-sm">
+            Actualisation...
           </div>
-        ) : null}
+        )}
         <ClientOnly fallback={<MapFallback />}>
           <Suspense fallback={<MapFallback />}>
             <FerryMap
@@ -398,7 +299,7 @@ function Index() {
 
 function MapFallback() {
   return (
-    <div className="absolute inset-0 grid place-items-center gap-3 bg-[var(--sea)] text-sm font-bold tracking-widest uppercase text-primary/70">
+    <div className="absolute inset-0 grid place-items-center bg-[var(--sea)] text-[13px] font-semibold text-primary/70">
       <span className="animate-pulse">Chargement de la carte…</span>
     </div>
   );

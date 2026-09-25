@@ -97,7 +97,7 @@ function Index() {
     const selectedCountries = new Set(filters.countryCodes);
     return routes.filter((route) => {
       if (!portOpen(route.departure_port_id) || !portOpen(route.arrival_port_id)) return false;
-      // Les filtres guidés du trajet sont prioritaires sur l'ancienne sélection de ports.
+      
       if (
         selectedCountries.size > 0 &&
         !selectedCountries.has(ports.find((item) => item.id === route.departure_port_id)?.country_code ?? "") &&
@@ -147,8 +147,6 @@ function Index() {
       const route = routes.find((item) => item.id === selection.id);
       return route ? [route.departure_port_id, route.arrival_port_id] : [];
     }
-    // Les filtres ne doivent jamais ouvrir automatiquement une popup.
-    // Les ports ne sont activés que lorsqu'un utilisateur clique réellement dessus.
     return [];
   }, [selection, routes, visibleRoutes]);
 
@@ -245,21 +243,21 @@ function Index() {
   return (
     <div className="relative h-[100dvh] w-full overflow-hidden bg-background">
       
-      {/* En-tête bureau */}
-      <header className="absolute left-4 right-4 top-4 z-50 hidden items-center justify-between gap-4 rounded-2xl border border-white/55 bg-white/78 px-3 py-2.5 text-foreground shadow-[0_18px_45px_-28px_rgba(15,55,70,.55)] backdrop-blur-2xl md:flex lg:left-5 lg:right-5">
-        <Link to="/" className="flex items-center gap-2.5">
-          <BrandMark className="size-9" />
+      {/* En-tête bureau : Refonte Pill-shape, effet vitre */}
+      <header className="absolute left-4 right-4 top-4 z-50 hidden items-center justify-between gap-4 rounded-[2rem] border border-white/50 bg-white/70 px-6 py-3 text-foreground shadow-[var(--shadow-elegant)] backdrop-blur-2xl md:flex lg:left-8 lg:right-8 xl:w-max xl:mx-auto xl:min-w-[800px]">
+        <Link to="/" className="flex items-center gap-3 transition-transform hover:scale-105">
+          <BrandMark className="size-10 text-primary drop-shadow-md" />
           <span className="flex flex-col leading-none">
-            <span className="font-display text-lg font-bold tracking-tight text-foreground">Batogo</span>
-            <span className="hidden text-[11px] text-muted-foreground sm:inline">
-              Traversées en ferry vers l'Algérie
+            <span className="font-display text-xl font-extrabold tracking-tight text-foreground">Batogo</span>
+            <span className="hidden text-[11px] font-semibold uppercase tracking-wider text-muted-foreground sm:inline mt-1">
+              Traversées & Horaires
             </span>
           </span>
         </Link>
-        <nav className="flex items-center gap-1.5">
-          <div className="hidden items-center gap-1 lg:flex">
+        <nav className="flex items-center gap-2">
+          <div className="hidden items-center gap-1.5 lg:flex mr-4">
             {navLinks.slice(1).map((link) => (
-              <Button key={link.to} asChild variant="ghost" size="sm" className="text-muted-foreground hover:bg-muted hover:text-foreground">
+              <Button key={link.to} asChild variant="ghost" className="rounded-full text-sm font-bold text-muted-foreground hover:bg-white hover:text-primary hover:shadow-sm transition-all">
                 <Link to={link.to}>{link.label}</Link>
               </Button>
             ))}
@@ -267,19 +265,20 @@ function Index() {
           <Button
             type="button"
             variant="outline"
-            size="sm"
-            className="hidden border-border bg-white/70 text-foreground hover:bg-white md:inline-flex"
+            className="hidden rounded-full border-border/50 bg-white/80 font-bold text-foreground shadow-sm hover:bg-primary hover:text-white hover:border-primary transition-all md:inline-flex"
             onClick={() => setDesktopPanelOpen((open) => !open)}
             aria-pressed={!desktopPanelOpen}
           >
-            {desktopPanelOpen ? "Carte seule" : "Afficher le panneau"}
+            {desktopPanelOpen ? "Carte plein écran" : "Explorer les lignes"}
           </Button>
           {isAdmin ? (
-            <Button asChild variant="ghost" size="sm" className="hidden text-muted-foreground hover:bg-muted hover:text-foreground md:inline-flex">
-              <Link to="/admin">Back-office</Link>
+            <Button asChild variant="ghost" className="hidden rounded-full font-bold text-muted-foreground hover:bg-white hover:text-primary md:inline-flex">
+              <Link to="/admin">Admin</Link>
             </Button>
           ) : null}
-          <UserMenu />
+          <div className="ml-2 pl-4 border-l border-border/50">
+            <UserMenu />
+          </div>
         </nav>
       </header>
 
@@ -297,7 +296,7 @@ function Index() {
         <button
           type="button"
           aria-label="Fermer le panneau mobile"
-          className="absolute inset-0 z-50 bg-foreground/10 md:hidden"
+          className="absolute inset-0 z-50 bg-foreground/15 backdrop-blur-sm md:hidden transition-opacity"
           onClick={() => setPanelLevel(1)}
         />
       ) : null}
@@ -305,20 +304,20 @@ function Index() {
       {/* PANNEAU LATÉRAL / TIROIR FLOTTANT */}
       <aside
         aria-label="Panneau d'exploration des traversées"
-        className={`absolute bottom-16 left-0 right-0 z-[60] flex flex-col overflow-hidden rounded-t-3xl bg-transparent transition-[height,width,opacity] duration-300 ease-out md:bottom-auto md:left-4 md:right-auto md:top-24 md:h-[calc(100vh-7.5rem)] md:w-[400px] md:rounded-3xl md:z-40 ${
-          desktopPanelOpen ? "md:opacity-100" : "md:pointer-events-none md:hidden"
+        className={`absolute bottom-20 left-0 right-0 z-[60] flex flex-col overflow-hidden rounded-t-[2.5rem] bg-transparent transition-[height,width,opacity,transform] duration-400 ease-out md:bottom-auto md:left-8 md:right-auto md:top-28 md:h-[calc(100vh-9rem)] md:w-[420px] md:rounded-[2.5rem] md:z-40 ${
+          desktopPanelOpen ? "md:opacity-100 md:translate-x-0" : "md:pointer-events-none md:opacity-0 md:-translate-x-12"
         } ${
           panelLevel === 0
             ? "h-24"
             : panelLevel === 1
-              ? "h-[42dvh]"
+              ? "h-[45dvh]"
               : "h-[calc(100dvh-5rem)]"
         }`}
       >
         <Button
           type="button"
           variant="ghost"
-          className="h-8 w-full touch-none rounded-none py-0 md:hidden"
+          className="h-10 w-full touch-none rounded-none py-0 md:hidden flex items-center justify-center bg-card/40 backdrop-blur-md"
           aria-label={panelLevel === 2 ? "Replier le volet" : "Déplier le volet"}
           onClick={cyclePanelLevel}
           onPointerDown={(event) => startPanelDrag(event.clientY)}
@@ -341,36 +340,36 @@ function Index() {
           hidePrimarySearchOnMobile
         />
         {hasDemoData ? (
-          <div className="pointer-events-none absolute bottom-2 left-2 right-2 rounded-lg border border-amber-300/60 bg-amber-50/95 px-3 py-2 text-[11px] leading-snug text-amber-950 shadow-sm md:bottom-2">
+          <div className="pointer-events-none absolute bottom-4 left-4 right-4 rounded-xl border border-amber-300/60 bg-amber-50/95 px-4 py-3 text-[12px] font-medium leading-relaxed text-amber-950 shadow-[var(--shadow-elegant)] backdrop-blur-md md:bottom-4">
             Certaines fiches sont des données de démonstration. Vérifiez la source et la date avant de planifier.
           </div>
         ) : null}
       </aside>
 
       {/* BARRE DE NAVIGATION DU BAS (Mobile uniquement) */}
-      <nav className="absolute bottom-2 left-2 right-2 z-50 flex h-14 items-center justify-around rounded-2xl border border-white/65 bg-white/88 pb-1 shadow-[0_18px_40px_-24px_rgba(15,55,70,.6)] backdrop-blur-2xl md:hidden">
-        <Link to="/" className="flex flex-col items-center justify-center gap-1 text-primary">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21"></polygon><line x1="9" y1="3" x2="9" y2="21"></line><line x1="15" y1="3" x2="15" y2="21"></line></svg>
-          <span className="text-[10px] font-medium">Carte</span>
+      <nav className="absolute bottom-4 left-4 right-4 z-50 flex h-16 items-center justify-around rounded-2xl border border-white/60 bg-white/80 pb-0.5 shadow-[var(--shadow-elegant)] backdrop-blur-2xl md:hidden">
+        <Link to="/" className="flex flex-col items-center justify-center gap-1.5 text-primary scale-110 transition-transform">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21"></polygon><line x1="9" y1="3" x2="9" y2="21"></line><line x1="15" y1="3" x2="15" y2="21"></line></svg>
+          <span className="text-[10px] font-bold tracking-wide">Carte</span>
         </Link>
-        <Link to="/horaires" className="flex flex-col items-center justify-center gap-1 text-muted-foreground transition-colors hover:text-foreground">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
-          <span className="text-[10px] font-medium">Horaires</span>
+        <Link to="/horaires" className="flex flex-col items-center justify-center gap-1.5 text-muted-foreground transition-all hover:text-foreground hover:scale-110">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+          <span className="text-[10px] font-bold tracking-wide">Horaires</span>
         </Link>
-        <Link to="/ports" className="flex flex-col items-center justify-center gap-1 text-muted-foreground transition-colors hover:text-foreground">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="10" r="3"></circle><path d="M12 21.7C17.3 17 20 13 20 10a8 8 0 1 0-16 0c0 3 2.7 7 8 11.7z"></path></svg>
-          <span className="text-[10px] font-medium">Ports</span>
+        <Link to="/ports" className="flex flex-col items-center justify-center gap-1.5 text-muted-foreground transition-all hover:text-foreground hover:scale-110">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="10" r="3"></circle><path d="M12 21.7C17.3 17 20 13 20 10a8 8 0 1 0-16 0c0 3 2.7 7 8 11.7z"></path></svg>
+          <span className="text-[10px] font-bold tracking-wide">Ports</span>
         </Link>
-        <Link to="/guide" className="flex flex-col items-center justify-center gap-1 text-muted-foreground transition-colors hover:text-foreground">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path><path d="M22 3h-6a4 4 0 0 1-4 4v14a3 3 0 0 1 3-3h7z"></path></svg>
-          <span className="text-[10px] font-medium">Guide</span>
+        <Link to="/guide" className="flex flex-col items-center justify-center gap-1.5 text-muted-foreground transition-all hover:text-foreground hover:scale-110">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path><path d="M22 3h-6a4 4 0 0 1-4 4v14a3 3 0 0 1 3-3h7z"></path></svg>
+          <span className="text-[10px] font-bold tracking-wide">Guide</span>
         </Link>
       </nav>
 
       {/* CARTE EN PLEIN ÉCRAN */}
-      <main className="absolute inset-0 z-0 bg-[var(--sea)]">
+      <main className="absolute inset-0 z-0 bg-[var(--sea)] transition-colors duration-700">
         {isLoadingData ? (
-          <div className="pointer-events-none absolute left-1/2 top-20 z-10 -translate-x-1/2 rounded-full border border-border/70 bg-background/90 px-3 py-1.5 text-xs font-medium text-muted-foreground shadow-sm">
+          <div className="pointer-events-none absolute left-1/2 top-28 z-10 -translate-x-1/2 rounded-full border border-white/60 bg-white/90 px-5 py-2.5 text-xs font-bold uppercase tracking-wider text-primary shadow-[var(--shadow-elegant)] backdrop-blur-md animate-pulse">
             Actualisation des données…
           </div>
         ) : null}
@@ -399,8 +398,8 @@ function Index() {
 
 function MapFallback() {
   return (
-    <div className="absolute inset-0 grid place-items-center gap-2 text-sm text-muted-foreground">
-      <span className="animate-pulse font-display font-semibold">Chargement de la carte…</span>
+    <div className="absolute inset-0 grid place-items-center gap-3 bg-[var(--sea)] text-sm font-bold tracking-widest uppercase text-primary/70">
+      <span className="animate-pulse">Chargement de la carte…</span>
     </div>
   );
 }

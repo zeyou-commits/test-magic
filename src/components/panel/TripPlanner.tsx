@@ -108,6 +108,19 @@ export function TripPlanner({ selection, onSelect }: { selection: Selection | nu
   const { data: departures = [] } = useQuery(upcomingDeparturesQuery());
   const { data: companies = [] } = useQuery(companiesQuery);
 
+  const [open, setOpen] = useState(true);
+  const [outboundDate, setOutboundDate] = useState(defaultOutbound);
+  const [returnDate, setReturnDate] = useState("");
+  const [fromId, setFromId] = useState("");
+  const [toId, setToId] = useState("");
+  const [returnFromId, setReturnFromId] = useState("");
+  const [returnToId, setReturnToId] = useState("");
+  const [traveler, setTraveler] = useState<TravelerType>("family");
+  const [zone, setZone] = useState<SchoolZone | null>(null);
+  const [flexDays, setFlexDays] = useState(3);
+  const [tripMode, setTripMode] = useState<"roundtrip" | "oneway">("roundtrip");
+  const [searched, setSearched] = useState(false);
+
   const activePorts = useMemo(() => ports.filter((port) => port.status === "active"), [ports]);
   const compatibleDeparturePorts = useMemo(() => {
     if (!toId) return activePorts;
@@ -176,19 +189,6 @@ export function TripPlanner({ selection, onSelect }: { selection: Selection | nu
 
   const today = new Date().toISOString().slice(0, 10);
   const defaultOutbound = new Date(Date.now() + 14 * 86400000).toISOString().slice(0, 10);
-
-  const [open, setOpen] = useState(true);
-  const [outboundDate, setOutboundDate] = useState(defaultOutbound);
-  const [returnDate, setReturnDate] = useState("");
-  const [fromId, setFromId] = useState("");
-  const [toId, setToId] = useState("");
-  const [returnFromId, setReturnFromId] = useState("");
-  const [returnToId, setReturnToId] = useState("");
-  const [traveler, setTraveler] = useState<TravelerType>("family");
-  const [zone, setZone] = useState<SchoolZone | null>(null);
-  const [flexDays, setFlexDays] = useState(3);
-  const [tripMode, setTripMode] = useState<"roundtrip" | "oneway">("roundtrip");
-  const [searched, setSearched] = useState(false);
 
   const suggestedCrossings = useMemo(() => {
     if (!zone) return [];

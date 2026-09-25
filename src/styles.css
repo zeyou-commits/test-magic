@@ -4,20 +4,6 @@
 
 @custom-variant dark (&:is(.dark *));
 
-/*
- * Design system definition.
- *
- * The @theme inline block maps CSS custom properties to Tailwind utility
- * classes (e.g. --color-primary -> bg-primary, text-primary).
- *
- * The :root and .dark blocks define the actual color values using oklch.
- * All colors MUST use oklch format.
- *
- * To add a new semantic color:
- * 1. Add the variable to :root (light value) and .dark (dark value)
- * 2. Register it in @theme inline as --color-<name>: var(--<name>)
- */
-
 @theme inline {
   --font-sans: "DM Sans", ui-sans-serif, system-ui, sans-serif;
   --font-display: "Space Grotesk", ui-sans-serif, system-ui, sans-serif;
@@ -28,7 +14,6 @@
   --radius-2xl: calc(var(--radius) + 8px);
   --radius-3xl: calc(var(--radius) + 12px);
   --radius-4xl: calc(var(--radius) + 16px);
-
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
@@ -65,235 +50,248 @@
 }
 
 :root {
-  --radius: 0.75rem;
-  --background: oklch(0.965 0.018 88);
-  --foreground: oklch(0.20 0.045 238);
+  --radius: 0.9rem;
+  --background: oklch(0.975 0.012 88);
+  --foreground: oklch(0.22 0.045 238);
   --card: oklch(0.995 0.006 88);
-  --card-foreground: oklch(0.20 0.045 238);
+  --card-foreground: oklch(0.22 0.045 238);
   --popover: oklch(0.995 0.006 88);
-  --popover-foreground: oklch(0.20 0.045 238);
-  --primary: oklch(0.43 0.12 218);
-  --primary-foreground: oklch(0.985 0.008 85);
-  --secondary: oklch(0.935 0.025 88);
-  --secondary-foreground: oklch(0.30 0.055 225);
-  --muted: oklch(0.945 0.018 88);
-  --muted-foreground: oklch(0.50 0.035 235);
-  --accent: oklch(0.72 0.15 55);
+  --popover-foreground: oklch(0.22 0.045 238);
+  --primary: oklch(0.47 0.13 218);
+  --primary-foreground: oklch(0.99 0.005 90);
+  --secondary: oklch(0.94 0.025 92);
+  --secondary-foreground: oklch(0.31 0.055 225);
+  --muted: oklch(0.95 0.014 90);
+  --muted-foreground: oklch(0.52 0.035 235);
+  --accent: oklch(0.70 0.17 48);
   --accent-foreground: oklch(0.22 0.04 250);
-  --destructive: oklch(0.55 0.2 25);
-  --destructive-foreground: oklch(0.985 0.008 85);
-  --border: oklch(0.875 0.028 88);
-  --input: oklch(0.875 0.028 88);
-  --ring: oklch(0.43 0.12 218);
-  --chart-1: oklch(0.42 0.105 238);
-  --chart-2: oklch(0.68 0.145 55);
-  --chart-3: oklch(0.55 0.13 150);
-  --chart-4: oklch(0.6 0.1 280);
-  --chart-5: oklch(0.5 0.09 200);
-  --sea: oklch(0.9 0.03 225);
+  --destructive: oklch(0.58 0.20 27);
+  --destructive-foreground: oklch(0.99 0.005 90);
+  --border: oklch(0.90 0.018 90);
+  --input: oklch(0.90 0.018 90);
+  --ring: oklch(0.47 0.13 218);
+  --chart-1: oklch(0.47 0.13 218);
+  --chart-2: oklch(0.70 0.17 48);
+  --chart-3: oklch(0.58 0.13 150);
+  --chart-4: oklch(0.61 0.10 280);
+  --chart-5: oklch(0.53 0.09 200);
+  --sea: oklch(0.89 0.045 222);
   --map-country-highlight: oklch(0.72 0.105 145);
   --map-country-outline: oklch(0.43 0.12 150);
-  --map-route: oklch(0.43 0.12 218);
-  --map-route-selected: oklch(0.72 0.15 55);
-  --map-route-casing: oklch(0.985 0.008 85);
-  --gradient-header: linear-gradient(110deg, oklch(0.20 0.06 225) 0%, oklch(0.32 0.10 215) 58%, oklch(0.42 0.12 200) 100%);
-  --gradient-brand: linear-gradient(145deg, oklch(0.72 0.15 55), oklch(0.43 0.12 218));
-  --shadow-brand: 0 6px 18px -8px color-mix(in oklab, oklch(0.42 0.105 238) 65%, transparent);
-  --shadow-panel: 0 18px 45px -24px color-mix(in oklab, oklch(0.20 0.045 238) 34%, transparent);
-  --shadow-elegant: 0 18px 50px -28px color-mix(in oklab, oklch(0.24 0.045 250) 40%, transparent);
-  --sidebar: oklch(0.99 0.006 85);
+  --map-route: oklch(0.42 0.11 218);
+  --map-route-selected: oklch(0.72 0.17 48);
+  --map-route-casing: oklch(0.985 0.008 88);
+  --gradient-header: linear-gradient(115deg, oklch(0.20 0.06 228 / 92%), oklch(0.34 0.11 215 / 84%), oklch(0.48 0.13 205 / 78%));
+  --gradient-brand: linear-gradient(145deg, oklch(0.73 0.17 50), oklch(0.47 0.13 218));
+  --shadow-brand: 0 10px 24px -10px color-mix(in oklab, oklch(0.42 0.11 218) 55%, transparent);
+  --shadow-panel: 0 28px 70px -30px color-mix(in oklab, oklch(0.18 0.05 235) 42%, transparent);
+  --shadow-elegant: 0 20px 55px -28px color-mix(in oklab, oklch(0.20 0.045 238) 42%, transparent);
+  --sidebar: oklch(0.99 0.006 88);
   --sidebar-foreground: oklch(0.24 0.045 250);
-  --sidebar-primary: oklch(0.42 0.105 238);
-  --sidebar-primary-foreground: oklch(0.985 0.008 85);
-  --sidebar-accent: oklch(0.955 0.012 230);
-  --sidebar-accent-foreground: oklch(0.3 0.06 245);
-  --sidebar-border: oklch(0.9 0.018 235);
-  --sidebar-ring: oklch(0.42 0.105 238);
+  --sidebar-primary: oklch(0.47 0.13 218);
+  --sidebar-primary-foreground: oklch(0.99 0.005 90);
+  --sidebar-accent: oklch(0.95 0.014 230);
+  --sidebar-accent-foreground: oklch(0.30 0.06 245);
+  --sidebar-border: oklch(0.90 0.018 235);
+  --sidebar-ring: oklch(0.47 0.13 218);
 }
 
 .dark {
-  --background: oklch(0.129 0.042 264.695);
-  --foreground: oklch(0.984 0.003 247.858);
-  --card: oklch(0.208 0.042 265.755);
-  --card-foreground: oklch(0.984 0.003 247.858);
-  --popover: oklch(0.208 0.042 265.755);
-  --popover-foreground: oklch(0.984 0.003 247.858);
-  --primary: oklch(0.929 0.013 255.508);
-  --primary-foreground: oklch(0.208 0.042 265.755);
-  --secondary: oklch(0.279 0.041 260.031);
-  --secondary-foreground: oklch(0.984 0.003 247.858);
-  --muted: oklch(0.279 0.041 260.031);
-  --muted-foreground: oklch(0.704 0.04 256.788);
-  --accent: oklch(0.279 0.041 260.031);
-  --accent-foreground: oklch(0.984 0.003 247.858);
-  --destructive: oklch(0.704 0.191 22.216);
-  --destructive-foreground: oklch(0.984 0.003 247.858);
+  --background: oklch(0.13 0.04 264);
+  --foreground: oklch(0.98 0.003 248);
+  --card: oklch(0.21 0.04 266);
+  --card-foreground: oklch(0.98 0.003 248);
+  --popover: oklch(0.21 0.04 266);
+  --popover-foreground: oklch(0.98 0.003 248);
+  --primary: oklch(0.82 0.12 205);
+  --primary-foreground: oklch(0.18 0.04 250);
+  --secondary: oklch(0.28 0.04 260);
+  --secondary-foreground: oklch(0.98 0.003 248);
+  --muted: oklch(0.28 0.04 260);
+  --muted-foreground: oklch(0.70 0.04 257);
+  --accent: oklch(0.33 0.07 50);
+  --accent-foreground: oklch(0.98 0.003 248);
+  --destructive: oklch(0.70 0.19 22);
+  --destructive-foreground: oklch(0.98 0.003 248);
   --border: oklch(1 0 0 / 10%);
   --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.551 0.027 264.364);
-  --chart-1: oklch(0.488 0.243 264.376);
-  --chart-2: oklch(0.696 0.17 162.48);
-  --chart-3: oklch(0.769 0.188 70.08);
-  --chart-4: oklch(0.627 0.265 303.9);
-  --chart-5: oklch(0.645 0.246 16.439);
-  --sidebar: oklch(0.208 0.042 265.755);
-  --sidebar-foreground: oklch(0.984 0.003 247.858);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.984 0.003 247.858);
-  --sidebar-accent: oklch(0.279 0.041 260.031);
-  --sidebar-accent-foreground: oklch(0.984 0.003 247.858);
+  --ring: oklch(0.55 0.03 264);
+  --chart-1: oklch(0.49 0.24 264);
+  --chart-2: oklch(0.70 0.17 162);
+  --chart-3: oklch(0.77 0.19 70);
+  --chart-4: oklch(0.63 0.27 304);
+  --chart-5: oklch(0.65 0.25 16);
+  --sidebar: oklch(0.21 0.04 266);
+  --sidebar-foreground: oklch(0.98 0.003 248);
+  --sidebar-primary: oklch(0.49 0.24 264);
+  --sidebar-primary-foreground: oklch(0.98 0.003 248);
+  --sidebar-accent: oklch(0.28 0.04 260);
+  --sidebar-accent-foreground: oklch(0.98 0.003 248);
   --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.551 0.027 264.364);
+  --sidebar-ring: oklch(0.55 0.03 264);
 }
 
 @layer base {
   * { border-color: var(--color-border); }
-  body { background-color: var(--color-background); color: var(--color-foreground); font-family: var(--font-sans); }
-  h1, h2, h3, h4 { font-family: var(--font-display); letter-spacing: -0.01em; }
+  html { font-family: var(--font-sans); }
+  body { margin: 0; background: var(--color-background); color: var(--color-foreground); font-family: var(--font-sans); }
+  h1, h2, h3, h4 { font-family: var(--font-display); letter-spacing: -0.025em; }
+  button, input, select { font-family: inherit; }
 }
 
+.batogo-panel {
+  background: color-mix(in oklab, var(--color-card) 94%, var(--color-background));
+}
+.batogo-floating-panel {
+  border: 1px solid oklch(1 0 0 / 72%);
+  background: color-mix(in oklab, var(--color-card) 91%, transparent);
+  box-shadow: var(--shadow-panel);
+  backdrop-filter: blur(22px) saturate(125%);
+}
+.batogo-tabbar {
+  border: 1px solid color-mix(in oklab, var(--color-primary) 8%, var(--color-border));
+  background: color-mix(in oklab, var(--color-muted) 72%, white);
+  box-shadow: inset 0 1px 0 oklch(1 0 0 / 70%);
+}
+.batogo-tab {
+  min-height: 44px;
+  border-radius: 0.72rem;
+  color: var(--color-muted-foreground);
+  transition: transform .18s ease, background .18s ease, color .18s ease, box-shadow .18s ease;
+}
+.batogo-tab:hover { color: var(--color-foreground); }
+.batogo-tab[data-active="true"] {
+  color: var(--color-foreground);
+  background: var(--color-card);
+  box-shadow: 0 7px 18px -12px color-mix(in oklab, var(--color-foreground) 30%, transparent);
+}
+.batogo-tab[data-active="true"] svg { color: var(--color-primary); }
+
+.batogo-section {
+  margin: 0 12px 12px;
+  padding: 14px;
+  border: 1px solid color-mix(in oklab, var(--color-primary) 7%, var(--color-border));
+  border-radius: 18px;
+  background: color-mix(in oklab, var(--color-card) 82%, transparent);
+  box-shadow: 0 10px 28px -24px color-mix(in oklab, var(--color-foreground) 28%, transparent);
+}
+.batogo-section + .batogo-section { margin-top: 10px; }
+
+.batogo-field {
+  border: 1px solid color-mix(in oklab, var(--color-primary) 10%, var(--color-border));
+  border-radius: 14px;
+  background: var(--color-card);
+  box-shadow: inset 0 1px 0 oklch(1 0 0 / 75%);
+}
+.batogo-list-item {
+  border: 1px solid transparent;
+  border-radius: 13px;
+  transition: transform .16s ease, background .16s ease, border-color .16s ease, box-shadow .16s ease;
+}
+.batogo-list-item:hover {
+  border-color: color-mix(in oklab, var(--color-primary) 16%, transparent);
+  background: color-mix(in oklab, var(--color-primary) 5%, var(--color-card));
+  transform: translateY(-1px);
+}
+.batogo-departure-card {
+  border: 1px solid color-mix(in oklab, var(--color-primary) 8%, var(--color-border));
+  border-radius: 16px;
+  background: var(--color-card);
+  box-shadow: 0 10px 24px -22px color-mix(in oklab, var(--color-foreground) 35%, transparent);
+  transition: transform .16s ease, box-shadow .16s ease, border-color .16s ease;
+}
+.batogo-departure-card:hover {
+  transform: translateY(-2px);
+  border-color: color-mix(in oklab, var(--color-primary) 22%, var(--color-border));
+  box-shadow: 0 16px 28px -22px color-mix(in oklab, var(--color-primary) 35%, transparent);
+}
+.batogo-primary-action {
+  border-radius: 13px;
+  box-shadow: 0 12px 24px -16px color-mix(in oklab, var(--color-primary) 70%, transparent);
+}
+.batogo-handle {
+  width: 42px;
+  height: 4px;
+  border-radius: 999px;
+  background: color-mix(in oklab, var(--color-foreground) 22%, transparent);
+}
+
+/* Map markers: small, crisp and intentionally understated. */
 .port-marker { position: relative; width: 0; height: 0; z-index: 1; }
 .port-marker:hover, .port-marker[data-active="true"] { z-index: 10; }
-.port-marker__dot { position: absolute; left: -7px; top: -7px; width: 14px; height: 14px; border-radius: 9999px; border: 2px solid var(--color-card); background: var(--port-color, var(--color-primary)); box-shadow: 0 1px 4px color-mix(in oklab, var(--color-foreground) 35%, transparent); cursor: pointer; transition: transform 0.15s ease, background 0.15s ease; }
-.port-marker[data-active="true"] .port-marker__dot { transform: scale(1.4); box-shadow: 0 0 0 4px color-mix(in oklab, var(--port-color, var(--color-primary)) 30%, transparent); }
-.port-marker__label { position: absolute; white-space: nowrap; font-family: var(--font-display); font-size: 12px; font-weight: 700; letter-spacing: 0; text-transform: uppercase; color: var(--color-foreground); text-shadow: 0 1px 0 var(--color-card), 1px 0 0 var(--color-card), -1px 0 0 var(--color-card), 0 -1px 0 var(--color-card), 0 0 4px var(--color-card); cursor: pointer; pointer-events: auto; }
-.port-marker[data-dimmed="true"] { opacity: 0.45; }
+.port-marker__dot {
+  position: absolute; left: -6px; top: -6px; width: 12px; height: 12px;
+  border-radius: 9999px; border: 2px solid var(--color-card);
+  background: var(--port-color, var(--color-primary));
+  box-shadow: 0 2px 7px color-mix(in oklab, var(--color-foreground) 30%, transparent);
+  cursor: pointer; transition: transform .18s ease, box-shadow .18s ease;
+}
+.port-marker[data-active="true"] .port-marker__dot {
+  transform: scale(1.55);
+  box-shadow: 0 0 0 5px color-mix(in oklab, var(--port-color, var(--color-primary)) 22%, transparent), 0 3px 10px color-mix(in oklab, var(--color-foreground) 30%, transparent);
+}
+.port-marker__label {
+  position: absolute; white-space: nowrap; font-family: var(--font-display);
+  font-size: 11px; font-weight: 700; text-transform: uppercase; color: var(--color-foreground);
+  text-shadow: 0 1px 0 var(--color-card), 1px 0 0 var(--color-card), -1px 0 0 var(--color-card), 0 -1px 0 var(--color-card);
+  cursor: pointer; pointer-events: auto;
+}
+.port-marker[data-dimmed="true"] { opacity: .42; }
 .port-marker[data-closed="true"] .port-marker__dot { background: var(--color-card); border-color: var(--color-muted-foreground); }
 .port-marker[data-closed="true"] .port-marker__label { color: var(--color-muted-foreground); }
 
-/* Popup de port : positionné dans le marker pour rester confiné à la carte. */
-.port-tip { position: absolute; left: 14px; top: -12px; z-index: 5; width: max-content; max-width: min(240px, calc(100vw - 32px)); box-sizing: border-box; padding: 8px 10px; border-radius: 12px; border: 1px solid var(--color-border); background: color-mix(in oklab, var(--color-card) 94%, transparent); backdrop-filter: blur(6px); box-shadow: var(--shadow-elegant); opacity: 0; transform: translateY(4px) scale(0.98); transition: opacity 0.14s ease, transform 0.14s ease; pointer-events: none; }
-.port-tip__close { position: absolute; top: 4px; right: 5px; z-index: 2; display: grid; place-items: center; width: 20px; height: 20px; margin: 0; padding: 0; border: 0; border-radius: 999px; background: transparent; color: var(--color-muted-foreground); font-size: 15px; line-height: 1; cursor: pointer; }
+.port-tip {
+  position: absolute; left: 14px; top: -12px; z-index: 5; width: max-content;
+  max-width: min(250px, calc(100vw - 28px)); box-sizing: border-box; padding: 11px 12px;
+  border: 1px solid color-mix(in oklab, var(--color-primary) 10%, var(--color-border));
+  border-radius: 16px; background: color-mix(in oklab, var(--color-card) 95%, transparent);
+  backdrop-filter: blur(18px); box-shadow: var(--shadow-elegant);
+  opacity: 0; transform: translateY(5px) scale(.98); transition: opacity .16s ease, transform .16s ease;
+  pointer-events: none;
+}
+.port-tip__close {
+  position: absolute; top: 6px; right: 6px; z-index: 2; display: grid; place-items: center;
+  width: 22px; height: 22px; margin: 0; padding: 0; border: 0; border-radius: 999px;
+  background: var(--color-muted); color: var(--color-muted-foreground); font-size: 14px; line-height: 1; cursor: pointer;
+}
 .port-tip__close:hover { background: var(--color-secondary); color: var(--color-foreground); }
-.port-tip__close + .port-tip__title, .port-tip > .port-tip__title { padding-right: 22px; }
-.port-marker:hover .port-tip, .port-marker:focus-within .port-tip, .port-marker[data-active="true"] .port-tip { opacity: 1; transform: translateY(0) scale(1); pointer-events: auto; }
-
-.port-tip__departures-title { margin-top: 6px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; font-size: 10px; }
-.port-tip__departures { margin-top: 2px; display: flex; flex-direction: column; gap: 1px; font-size: 11px; font-weight: 600; color: var(--color-primary); list-style: none; padding: 0; }
-.port-tip__more { margin-top: 4px; align-self: flex-start; font-size: 11px; font-weight: 700; color: var(--color-primary); text-decoration: underline; text-underline-offset: 2px; cursor: pointer; background: none; border: none; padding: 0; }
-.port-tip__more:hover { color: var(--color-foreground); }
-.port-tip__title { font-family: var(--font-display); font-size: 13px; font-weight: 700; color: var(--color-foreground); }
+.port-tip__close + .port-tip__title, .port-tip > .port-tip__title { padding-right: 24px; }
+.port-marker:hover .port-tip, .port-marker:focus-within .port-tip, .port-marker[data-active="true"] .port-tip {
+  opacity: 1; transform: translateY(0) scale(1); pointer-events: auto;
+}
+.port-tip__departures-title { margin-top: 7px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; font-size: 9px; }
+.port-tip__departures { margin-top: 3px; display: flex; flex-direction: column; gap: 2px; font-size: 11px; font-weight: 650; color: var(--color-primary); list-style: none; padding: 0; }
+.port-tip__more { margin-top: 5px; font-size: 11px; font-weight: 700; color: var(--color-primary); text-decoration: none; cursor: pointer; background: none; border: none; padding: 0; }
+.port-tip__title { font-family: var(--font-display); font-size: 13px; font-weight: 750; color: var(--color-foreground); }
 .port-tip__meta { font-size: 11px; color: var(--color-muted-foreground); }
-.port-tip__next { margin-top: 4px; font-size: 11px; font-weight: 600; color: var(--color-primary); }
-.port-tip__closed { font-size: 11px; font-weight: 600; color: var(--color-destructive); }
+.port-tip__next { margin-top: 4px; font-size: 11px; font-weight: 650; color: var(--color-primary); }
+.port-tip__closed { font-size: 11px; font-weight: 650; color: var(--color-destructive); }
+
+.maplibregl-ctrl-group {
+  overflow: hidden !important;
+  border: 1px solid oklch(0.25 0.05 230 / 12%) !important;
+  border-radius: 14px !important;
+  background: oklch(0.99 0.01 90 / 94%) !important;
+  box-shadow: 0 12px 28px -18px oklch(0.18 0.04 230 / 45%) !important;
+}
+.maplibregl-ctrl-group button { width: 34px !important; height: 34px !important; }
+.maplibregl-ctrl-attrib { background: none !important; border: none !important; box-shadow: none !important; padding: 0 !important; }
+.maplibregl-ctrl-attrib-inner { display: inline !important; font-size: 10px !important; line-height: 1.2 !important; }
+.maplibregl-ctrl-attrib details summary {
+  display: block !important; list-style: none !important; background-color: oklch(0.99 0.01 90 / 82%) !important;
+  border-radius: 50% !important; width: 24px !important; height: 24px !important;
+  box-shadow: 0 3px 8px oklch(0.18 0.04 230 / 20%) !important; cursor: pointer !important;
+}
+.maplibregl-ctrl-attrib details summary::-webkit-details-marker { display: none !important; }
 
 @media (max-width: 767px) {
-  .port-marker:hover .port-tip,
-  .port-marker:focus-within .port-tip {
-    opacity: 0;
-    transform: translateY(4px) scale(0.98);
-    pointer-events: none;
+  .batogo-floating-panel { border-left: 0; border-right: 0; border-bottom: 0; border-radius: 26px 26px 0 0; }
+  .batogo-section { margin-left: 10px; margin-right: 10px; padding: 12px; border-radius: 16px; }
+  .port-marker:hover .port-tip, .port-marker:focus-within .port-tip {
+    opacity: 0; transform: translateY(5px) scale(.98); pointer-events: none;
   }
-
-  .port-marker[data-active="true"] .port-tip {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-    pointer-events: auto;
-  }
-
-  .port-tip {
-    width: max-content;
-    max-width: min(190px, calc(100vw - 24px));
-    padding: 6px 8px;
-    border-radius: 10px;
-  }
-
+  .port-marker[data-active="true"] .port-tip { opacity: 1; transform: translateY(0) scale(1); pointer-events: auto; }
+  .port-tip { max-width: min(200px, calc(100vw - 20px)); padding: 8px 10px; border-radius: 14px; }
   .port-tip__title { font-size: 12px; }
   .port-tip__next { margin-top: 2px; font-size: 10px; }
-  .port-tip__close { width: 20px; height: 20px; }
-}
-
-
-/* --- FIX TAILWIND vs MAPLIBRE ATTRIBUTION --- */
-
-/* 1. On enlève le fond rectangulaire par défaut */
-.maplibregl-ctrl-attrib {
-  background: none !important;
-  border: none !important;
-  box-shadow: none !important;
-  padding: 0 !important;
-}
-
-/* 2. L'attribution reste lisible quand le contrôle est ouvert. */
-.maplibregl-ctrl-attrib-inner {
-  display: inline !important;
-  font-size: 10px !important;
-  line-height: 1.2 !important;
-}
-
-/* 3. On répare le bouton rond cassé par le reset de Tailwind */
-.maplibregl-ctrl-attrib details summary {
-  display: block !important;
-  list-style-type: none !important; /* Enlève la petite flèche native */
-  background-color: rgba(255, 255, 255, 0.8) !important;
-  border-radius: 50% !important;
-  width: 24px !important;
-  height: 24px !important;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.2) !important;
-  cursor: pointer !important;
-}
-
-/* 4. On s'assure que la flèche native est aussi cachée sur Safari/Chrome */
-.maplibregl-ctrl-attrib details summary::-webkit-details-marker {
-  display: none !important;
-}
-
-
-/* Batogo visual system — shared surfaces, controls and map chrome. */
-.batogo-panel {
-  background: color-mix(in oklab, var(--color-background) 92%, white);
-  border-color: color-mix(in oklab, var(--color-primary) 10%, var(--color-border));
-  box-shadow: var(--shadow-panel);
-}
-.batogo-glass {
-  background: color-mix(in oklab, white 82%, var(--color-background));
-  border: 1px solid color-mix(in oklab, var(--color-primary) 10%, var(--color-border));
-  box-shadow: 0 10px 30px -20px color-mix(in oklab, var(--color-foreground) 35%, transparent);
-  backdrop-filter: blur(18px);
-}
-.batogo-tabbar {
-  background: color-mix(in oklab, var(--color-background) 90%, white);
-  border: 1px solid color-mix(in oklab, var(--color-primary) 12%, var(--color-border));
-}
-.batogo-tab {
-  min-height: 42px;
-  border-radius: 0.7rem;
-  color: var(--color-muted-foreground);
-  transition: all .18s ease;
-}
-.batogo-tab:hover { background: color-mix(in oklab, var(--color-accent) 12%, transparent); color: var(--color-foreground); }
-.batogo-tab[data-active="true"] {
-  background: var(--color-primary);
-  color: var(--color-primary-foreground);
-  box-shadow: 0 7px 18px -12px color-mix(in oklab, var(--color-primary) 70%, transparent);
-}
-.batogo-chip {
-  border: 1px solid color-mix(in oklab, var(--color-primary) 13%, var(--color-border));
-  background: color-mix(in oklab, white 78%, var(--color-background));
-  color: var(--color-foreground);
-  transition: all .16s ease;
-}
-.batogo-chip:hover { border-color: color-mix(in oklab, var(--color-primary) 30%, var(--color-border)); background: color-mix(in oklab, var(--color-primary) 7%, white); }
-.maplibregl-ctrl-group, .maplibregl-ctrl-attrib {
-  border-radius: 12px !important;
-  overflow: hidden;
-  box-shadow: 0 8px 22px -14px rgba(14, 55, 70, .45) !important;
-}
-.maplibregl-ctrl-group {
-  background: rgba(255, 253, 248, .94) !important;
-  border: 1px solid rgba(14, 55, 70, .12) !important;
-}
-.maplibregl-ctrl-group button {
-  width: 32px !important; height: 32px !important;
-}
-
-.batogo-map-control {
-  border: 1px solid rgba(14, 55, 70, .12) !important;
-  border-radius: 12px !important;
-  overflow: hidden;
-  box-shadow: 0 8px 22px -14px rgba(14, 55, 70, .45) !important;
-}
-.batogo-map-control button {
-  width: 32px !important;
-  height: 32px !important;
 }

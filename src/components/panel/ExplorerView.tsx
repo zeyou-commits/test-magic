@@ -207,7 +207,7 @@ export function ExplorerView({
         </div>
 
         <Section
-          title="Filtrer la carte"
+          title="Pays & ports"
           action={
             hasFilters ? (
               <Button
@@ -224,7 +224,7 @@ export function ExplorerView({
           }
         >
           <div className="rounded-xl border border-[#0e7490]/15 bg-white p-2.5 shadow-[0_3px_12px_rgba(18,52,59,0.05)]">
-            <div className="mb-2 flex items-center justify-between gap-3">
+            <div className="mb-1.5 flex items-center justify-between gap-3">
               <div className="flex items-center gap-2">
                 <MapPinned className="size-3.5 text-[#0e7490]" />
                 <span className="text-xs font-medium text-[#547078]">
@@ -241,7 +241,7 @@ export function ExplorerView({
             </div>
 
             <div>
-              <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.12em] text-[#718489]">
+              <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-[0.1em] text-[#718489]">
                 Pays
               </p>
               <div className="flex flex-wrap gap-2">
@@ -252,7 +252,7 @@ export function ExplorerView({
                       key={country.code}
                       type="button"
                       onClick={() => toggleCountry(country.code)}
-                      className={`inline-flex min-h-9 items-center gap-2 rounded-full border px-3 text-xs font-semibold transition ${
+                      className={`inline-flex min-h-8 items-center gap-1.5 rounded-full border px-2.5 text-[11px] font-semibold transition ${
                         selected
                           ? "border-[#0e7490] bg-[#0e7490] text-white shadow-sm"
                           : "border-[#dce4e1] bg-[#fbfaf7] text-[#3f6269] hover:border-[#0e7490]/40 hover:bg-[#f3f8f7]"
@@ -266,7 +266,7 @@ export function ExplorerView({
               </div>
             </div>
 
-            <div className="my-2.5 border-t border-[#edf0ed]" />
+            <div className="my-2 border-t border-[#edf0ed]" />
 
             <div>
               <div className="mb-2 flex items-center justify-between gap-2">
@@ -280,7 +280,7 @@ export function ExplorerView({
                 ) : null}
               </div>
 
-              <div className="grid max-h-48 gap-1 overflow-y-auto pr-1 sm:grid-cols-2">
+              <div className="grid max-h-44 gap-1 overflow-y-auto pr-1 sm:grid-cols-2">
                 {visiblePorts.map((port) => {
                   const selected = filters.portIds.includes(port.id);
                   return (
@@ -288,7 +288,7 @@ export function ExplorerView({
                       key={port.id}
                       type="button"
                       onClick={() => togglePort(port.id)}
-                      className={`flex min-h-9 items-center justify-between gap-2 rounded-lg border px-2.5 text-left text-xs transition ${
+                      className={`flex min-h-8 items-center justify-between gap-2 rounded-lg border px-2 text-left text-xs transition ${
                         selected
                           ? "border-[#0e7490]/40 bg-[#eaf5f5] text-[#0e6177]"
                           : "border-[#e5e8e5] bg-[#fbfaf7] text-[#294b53] hover:border-[#0e7490]/30 hover:bg-[#f3f8f7]"

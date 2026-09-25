@@ -157,16 +157,16 @@ export function MobileMapControls({
 
   return (
     <div className="pointer-events-none absolute inset-x-0 top-0 z-50 px-1.5 pt-[max(0.15rem,env(safe-area-inset-top))] md:hidden">
-      <div className="pointer-events-auto rounded-lg border border-border/60 bg-background/95 p-1.5 shadow-sm backdrop-blur-xl">
-        <div className="flex h-5 items-center justify-between px-0.5 pb-1">
+      <div className="pointer-events-auto rounded-xl border border-border/60 bg-background/95 p-2 shadow-sm backdrop-blur-xl">
+        <div className="flex h-7 items-center justify-between px-0.5 pb-1">
           <Link to="/" className="flex min-w-0 items-center">
-            <BrandMark className="size-3.5 shrink-0 text-primary" />
-            <span className="sr-only">Batogo</span>
+            <BrandMark className="size-5 shrink-0 text-primary" />
+            <span className="ml-1.5 text-xs font-semibold text-foreground">Batogo</span>
           </Link>
           <UserMenu compact />
         </div>
 
-        <div className="grid grid-cols-3 items-center gap-1">
+        <div className="grid grid-cols-2 items-center gap-1.5">
           <PortSelect
             label="Pays de départ"
             placeholder="Pays"
@@ -262,17 +262,17 @@ function PortSelect({
         onValueChange={(next) => onChange(next === ANY ? null : next)}
         disabled={disabled}
       >
-        <SelectTrigger className="h-8 min-w-0 rounded-md bg-card px-1.5 text-[11px] shadow-none">
+        <SelectTrigger className="h-11 min-w-0 rounded-lg bg-card px-2 text-xs shadow-none">
           <SelectValue placeholder={placeholder} />
         </SelectTrigger>
         <SelectContent
           className="max-h-48 min-w-0 w-[var(--radix-select-trigger-width)] [&>div]:h-auto [&>div]:max-h-44"
         >
-          <SelectItem value={ANY} className="py-1 text-xs">
+            <SelectItem value={ANY} className="py-2 text-sm">
             {placeholder}
           </SelectItem>
           {values.map((option) => (
-            <SelectItem key={option.value} value={option.value} className="py-1 text-xs">
+            <SelectItem key={option.value} value={option.value} className="py-2 text-sm">
               {option.label}
             </SelectItem>
           ))}

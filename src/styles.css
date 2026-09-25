@@ -50,265 +50,274 @@
 }
 
 :root {
-  --radius: 0.9rem;
-  --background: oklch(0.975 0.012 88);
-  --foreground: oklch(0.22 0.045 238);
-  --card: oklch(0.995 0.006 88);
-  --card-foreground: oklch(0.22 0.045 238);
-  --popover: oklch(0.995 0.006 88);
-  --popover-foreground: oklch(0.22 0.045 238);
-  --primary: oklch(0.47 0.13 218);
+  /* Palette "Méditerranée Premium" : Sable chaud, Marine profond, Terracotta, Eau azur */
+  --radius: 1.2rem;
+  --background: oklch(0.985 0.005 85); /* Blanc sable très doux */
+  --foreground: oklch(0.25 0.04 245); /* Bleu marine très sombre (plus chic que le gris/noir) */
+  --card: oklch(0.995 0.002 90);
+  --card-foreground: oklch(0.25 0.04 245);
+  --popover: oklch(0.995 0.002 90);
+  --popover-foreground: oklch(0.25 0.04 245);
+  
+  --primary: oklch(0.38 0.12 245); /* Bleu Océan profond et élégant */
   --primary-foreground: oklch(0.99 0.005 90);
-  --secondary: oklch(0.94 0.025 92);
-  --secondary-foreground: oklch(0.31 0.055 225);
-  --muted: oklch(0.95 0.014 90);
-  --muted-foreground: oklch(0.52 0.035 235);
-  --accent: oklch(0.70 0.17 48);
-  --accent-foreground: oklch(0.22 0.04 250);
-  --destructive: oklch(0.58 0.20 27);
+  --secondary: oklch(0.96 0.01 245); /* Bleu très pâle pour les fonds secondaires */
+  --secondary-foreground: oklch(0.38 0.12 245);
+  
+  --muted: oklch(0.95 0.01 90);
+  --muted-foreground: oklch(0.55 0.03 245);
+  
+  --accent: oklch(0.65 0.18 45); /* Terracotta chaleureux pour contraster avec le bleu */
+  --accent-foreground: oklch(0.99 0.005 90);
+  
+  --destructive: oklch(0.60 0.18 25);
   --destructive-foreground: oklch(0.99 0.005 90);
-  --border: oklch(0.90 0.018 90);
-  --input: oklch(0.90 0.018 90);
-  --ring: oklch(0.47 0.13 218);
-  --chart-1: oklch(0.47 0.13 218);
-  --chart-2: oklch(0.70 0.17 48);
-  --chart-3: oklch(0.58 0.13 150);
-  --chart-4: oklch(0.61 0.10 280);
-  --chart-5: oklch(0.53 0.09 200);
-  --sea: oklch(0.89 0.045 222);
-  --map-country-highlight: oklch(0.72 0.105 145);
-  --map-country-outline: oklch(0.43 0.12 150);
-  --map-route: oklch(0.42 0.11 218);
-  --map-route-selected: oklch(0.72 0.17 48);
-  --map-route-casing: oklch(0.985 0.008 88);
-  --gradient-header: linear-gradient(115deg, oklch(0.20 0.06 228 / 92%), oklch(0.34 0.11 215 / 84%), oklch(0.48 0.13 205 / 78%));
-  --gradient-brand: linear-gradient(145deg, oklch(0.73 0.17 50), oklch(0.47 0.13 218));
-  --shadow-brand: 0 10px 24px -10px color-mix(in oklab, oklch(0.42 0.11 218) 55%, transparent);
-  --shadow-panel: 0 28px 70px -30px color-mix(in oklab, oklch(0.18 0.05 235) 42%, transparent);
-  --shadow-elegant: 0 20px 55px -28px color-mix(in oklab, oklch(0.20 0.045 238) 42%, transparent);
-  --sidebar: oklch(0.99 0.006 88);
-  --sidebar-foreground: oklch(0.24 0.045 250);
-  --sidebar-primary: oklch(0.47 0.13 218);
+  --border: oklch(0.92 0.01 245);
+  --input: oklch(0.92 0.01 245);
+  --ring: oklch(0.38 0.12 245);
+  
+  /* Couleurs de la carte modernisées */
+  --sea: oklch(0.92 0.05 235); /* Azur lumineux et invitant */
+  --map-country-highlight: oklch(0.85 0.12 100); /* Sable doré pour le pays survolé */
+  --map-country-outline: oklch(0.70 0.08 240);
+  --map-route: oklch(0.55 0.15 240); /* Lignes bleues vibrantes */
+  --map-route-selected: oklch(0.65 0.18 45); /* Ligne active en terracotta */
+  --map-route-casing: oklch(0.995 0.002 90);
+  
+  --gradient-header: linear-gradient(135deg, oklch(0.25 0.04 245 / 90%), oklch(0.38 0.12 245 / 85%));
+  --gradient-brand: linear-gradient(135deg, oklch(0.65 0.18 45), oklch(0.55 0.16 35));
+  
+  /* Ombres plus douces, typiques des UI "Travel" haut de gamme (ex: Airbnb, Uber) */
+  --shadow-brand: 0 12px 30px -10px color-mix(in oklab, oklch(0.65 0.18 45) 60%, transparent);
+  --shadow-panel: 0 30px 80px -20px color-mix(in oklab, oklch(0.25 0.04 245) 15%, transparent);
+  --shadow-elegant: 0 20px 50px -15px color-mix(in oklab, oklch(0.25 0.04 245) 12%, transparent);
+  
+  --sidebar: oklch(0.995 0.002 90);
+  --sidebar-foreground: oklch(0.25 0.04 245);
+  --sidebar-primary: oklch(0.38 0.12 245);
   --sidebar-primary-foreground: oklch(0.99 0.005 90);
-  --sidebar-accent: oklch(0.95 0.014 230);
-  --sidebar-accent-foreground: oklch(0.30 0.06 245);
-  --sidebar-border: oklch(0.90 0.018 235);
-  --sidebar-ring: oklch(0.47 0.13 218);
+  --sidebar-accent: oklch(0.96 0.01 245);
+  --sidebar-accent-foreground: oklch(0.38 0.12 245);
+  --sidebar-border: oklch(0.92 0.01 245);
+  --sidebar-ring: oklch(0.38 0.12 245);
 }
 
 .dark {
-  --background: oklch(0.13 0.04 264);
-  --foreground: oklch(0.98 0.003 248);
-  --card: oklch(0.21 0.04 266);
-  --card-foreground: oklch(0.98 0.003 248);
-  --popover: oklch(0.21 0.04 266);
-  --popover-foreground: oklch(0.98 0.003 248);
-  --primary: oklch(0.82 0.12 205);
-  --primary-foreground: oklch(0.18 0.04 250);
-  --secondary: oklch(0.28 0.04 260);
-  --secondary-foreground: oklch(0.98 0.003 248);
-  --muted: oklch(0.28 0.04 260);
-  --muted-foreground: oklch(0.70 0.04 257);
-  --accent: oklch(0.33 0.07 50);
-  --accent-foreground: oklch(0.98 0.003 248);
-  --destructive: oklch(0.70 0.19 22);
-  --destructive-foreground: oklch(0.98 0.003 248);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.55 0.03 264);
-  --chart-1: oklch(0.49 0.24 264);
-  --chart-2: oklch(0.70 0.17 162);
-  --chart-3: oklch(0.77 0.19 70);
-  --chart-4: oklch(0.63 0.27 304);
-  --chart-5: oklch(0.65 0.25 16);
-  --sidebar: oklch(0.21 0.04 266);
-  --sidebar-foreground: oklch(0.98 0.003 248);
-  --sidebar-primary: oklch(0.49 0.24 264);
-  --sidebar-primary-foreground: oklch(0.98 0.003 248);
-  --sidebar-accent: oklch(0.28 0.04 260);
-  --sidebar-accent-foreground: oklch(0.98 0.003 248);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.55 0.03 264);
+  --background: oklch(0.15 0.02 245);
+  --foreground: oklch(0.98 0.005 245);
+  --card: oklch(0.20 0.03 245);
+  --card-foreground: oklch(0.98 0.005 245);
+  --popover: oklch(0.20 0.03 245);
+  --popover-foreground: oklch(0.98 0.005 245);
+  --primary: oklch(0.75 0.12 245);
+  --primary-foreground: oklch(0.15 0.02 245);
+  --secondary: oklch(0.25 0.04 245);
+  --secondary-foreground: oklch(0.98 0.005 245);
+  --muted: oklch(0.25 0.04 245);
+  --muted-foreground: oklch(0.75 0.02 245);
+  --accent: oklch(0.70 0.15 45);
+  --accent-foreground: oklch(0.15 0.02 245);
+  --destructive: oklch(0.70 0.18 25);
+  --destructive-foreground: oklch(0.98 0.005 245);
+  --border: oklch(1 0 0 / 12%);
+  --input: oklch(1 0 0 / 12%);
+  --ring: oklch(0.75 0.12 245);
+  --sidebar: oklch(0.20 0.03 245);
+  --sidebar-foreground: oklch(0.98 0.005 245);
+  --sidebar-primary: oklch(0.75 0.12 245);
+  --sidebar-primary-foreground: oklch(0.15 0.02 245);
+  --sidebar-accent: oklch(0.25 0.04 245);
+  --sidebar-accent-foreground: oklch(0.98 0.005 245);
+  --sidebar-border: oklch(1 0 0 / 12%);
+  --sidebar-ring: oklch(0.75 0.12 245);
 }
 
 @layer base {
   * { border-color: var(--color-border); }
   html { font-family: var(--font-sans); }
-  body { margin: 0; background: var(--color-background); color: var(--color-foreground); font-family: var(--font-sans); }
-  h1, h2, h3, h4 { font-family: var(--font-display); letter-spacing: -0.025em; }
+  body { margin: 0; background: var(--color-background); color: var(--color-foreground); font-family: var(--font-sans); -webkit-font-smoothing: antialiased; }
+  h1, h2, h3, h4 { font-family: var(--font-display); letter-spacing: -0.03em; }
   button, input, select { font-family: inherit; }
 }
 
 .batogo-panel {
-  background: color-mix(in oklab, var(--color-card) 94%, var(--color-background));
+  background: var(--color-card);
 }
 .batogo-floating-panel {
-  border: 1px solid oklch(1 0 0 / 88%);
-  background: color-mix(in oklab, var(--color-card) 97%, transparent);
-  box-shadow: 0 24px 70px -32px oklch(0.18 0.05 235 / 38%);
-  backdrop-filter: blur(18px) saturate(115%);
+  border: 1px solid oklch(1 0 0 / 60%);
+  background: color-mix(in oklab, var(--color-card) 85%, transparent);
+  box-shadow: var(--shadow-panel);
+  backdrop-filter: blur(24px) saturate(120%);
 }
 .batogo-tabbar {
   border: 0;
-  background: #f2eee5;
-  box-shadow: inset 0 1px 0 oklch(1 0 0 / 60%);
+  background: var(--color-muted);
+  border-radius: 14px;
+  padding: 4px;
 }
 .batogo-tab {
-  min-height: 40px;
-  border-radius: 11px;
-  color: #6b7d81;
-  transition: background .18s ease, color .18s ease, box-shadow .18s ease;
+  min-height: 42px;
+  border-radius: 10px;
+  color: var(--color-muted-foreground);
+  font-weight: 600;
+  transition: all .2s cubic-bezier(0.4, 0, 0.2, 1);
 }
-.batogo-tab:hover { color: #193b42; }
+.batogo-tab:hover { color: var(--color-foreground); }
 .batogo-tab[data-active="true"] {
-  color: #193b42;
-  background: #fffdfa;
-  box-shadow: 0 4px 12px -9px #183b42;
+  color: var(--color-primary);
+  background: var(--color-card);
+  box-shadow: 0 4px 15px -5px color-mix(in oklab, var(--color-primary) 15%, transparent);
 }
-.batogo-tab[data-active="true"] svg { color: var(--color-primary); }
 
 .batogo-section {
   margin: 0;
-  padding: 12px 18px 16px;
+  padding: 16px 20px;
   border: 0;
   border-radius: 0;
   background: transparent;
   box-shadow: none;
 }
-.batogo-section + .batogo-section { margin-top: 0; border-top: 1px solid #eeeae1; }
+.batogo-section + .batogo-section { margin-top: 0; border-top: 1px solid var(--color-border); }
 
 .batogo-field {
-  border: 0;
-  border-radius: 0;
-  background: transparent;
-  box-shadow: none;
-}
-.batogo-list-item {
-  border: 0;
-  border-radius: 10px;
-  transition: background .16s ease, color .16s ease;
-}
-.batogo-list-item:hover {
-  border-color: transparent;
-  background: #f4f1e9;
-  transform: none;
-}
-.batogo-departure-card {
-  border: 0;
+  border: 1px solid var(--color-border);
   border-radius: 12px;
-  background: #f6f3eb;
-  box-shadow: none;
-  transition: background .16s ease, transform .16s ease;
+  background: var(--color-background);
+  transition: border-color .2s ease, box-shadow .2s ease;
 }
-.batogo-departure-card:hover {
-  transform: none;
-  border-color: transparent;
-  background: #eeeae0;
-  box-shadow: none;
-}
-.batogo-primary-action {
-  border-radius: 13px;
-  box-shadow: 0 12px 24px -16px color-mix(in oklab, var(--color-primary) 70%, transparent);
-}
-.batogo-handle {
-  width: 42px;
-  height: 4px;
-  border-radius: 999px;
-  background: color-mix(in oklab, var(--color-foreground) 22%, transparent);
+.batogo-field:focus-within {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px color-mix(in oklab, var(--color-primary) 15%, transparent);
 }
 
-/* Map markers: small, crisp and intentionally understated. */
+.batogo-list-item {
+  border: 1px solid transparent;
+  border-radius: 14px;
+  transition: all .2s ease;
+}
+.batogo-list-item:hover {
+  background: var(--color-secondary);
+  transform: translateX(4px);
+}
+.batogo-departure-card {
+  border: 1px solid var(--color-border);
+  border-radius: 16px;
+  background: var(--color-card);
+  box-shadow: 0 4px 12px -8px color-mix(in oklab, var(--color-foreground) 10%, transparent);
+  transition: all .2s ease;
+}
+.batogo-departure-card:hover {
+  border-color: var(--color-primary);
+  box-shadow: 0 8px 24px -10px color-mix(in oklab, var(--color-primary) 15%, transparent);
+  transform: translateY(-2px);
+}
+.batogo-primary-action {
+  border-radius: 14px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  box-shadow: var(--shadow-brand);
+  transition: transform .2s ease, box-shadow .2s ease;
+}
+.batogo-primary-action:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 14px 28px -10px color-mix(in oklab, var(--color-primary) 70%, transparent);
+}
+.batogo-handle {
+  width: 48px;
+  height: 5px;
+  border-radius: 999px;
+  background: var(--color-border);
+  transition: background .2s ease;
+}
+.batogo-handle:hover { background: var(--color-muted-foreground); }
+
+/* Map markers: Elegant and interactive */
 .port-marker { position: relative; width: 0; height: 0; z-index: 1; }
 .port-marker:hover, .port-marker[data-active="true"] { z-index: 10; }
 .port-marker__dot {
-  position: absolute; left: -6px; top: -6px; width: 12px; height: 12px;
-  border-radius: 9999px; border: 2px solid var(--color-card);
-  background: var(--port-color, var(--color-primary));
-  box-shadow: 0 2px 7px color-mix(in oklab, var(--color-foreground) 30%, transparent);
-  cursor: pointer; transition: transform .18s ease, box-shadow .18s ease;
+  position: absolute; left: -7px; top: -7px; width: 14px; height: 14px;
+  border-radius: 9999px; border: 2.5px solid var(--color-card);
+  background: var(--color-primary);
+  box-shadow: 0 4px 12px color-mix(in oklab, var(--color-primary) 40%, transparent);
+  cursor: pointer; transition: all .3s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 .port-marker[data-active="true"] .port-marker__dot {
-  transform: scale(1.55);
-  box-shadow: 0 0 0 5px color-mix(in oklab, var(--port-color, var(--color-primary)) 22%, transparent), 0 3px 10px color-mix(in oklab, var(--color-foreground) 30%, transparent);
+  background: var(--color-accent);
+  transform: scale(1.6);
+  box-shadow: 0 0 0 4px color-mix(in oklab, var(--color-accent) 25%, transparent), 0 6px 16px color-mix(in oklab, var(--color-accent) 40%, transparent);
 }
 .port-marker__label {
   position: absolute; white-space: nowrap; font-family: var(--font-display);
-  font-size: 11px; font-weight: 700; text-transform: uppercase; color: var(--color-foreground);
-  text-shadow: 0 1px 0 var(--color-card), 1px 0 0 var(--color-card), -1px 0 0 var(--color-card), 0 -1px 0 var(--color-card);
-  cursor: pointer; pointer-events: auto;
+  font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--color-foreground);
+  text-shadow: 0 2px 4px var(--color-card), 2px 0 4px var(--color-card), -2px 0 4px var(--color-card), 0 -2px 4px var(--color-card);
+  cursor: pointer; pointer-events: auto; transition: color .2s ease;
 }
-.port-marker[data-dimmed="true"] { opacity: .42; }
-.port-marker[data-closed="true"] .port-marker__dot { background: var(--color-card); border-color: var(--color-muted-foreground); }
+.port-marker[data-active="true"] .port-marker__label { color: var(--color-accent); }
+.port-marker[data-dimmed="true"] { opacity: .3; filter: grayscale(100%); }
+.port-marker[data-closed="true"] .port-marker__dot { background: var(--color-card); border-color: var(--color-muted-foreground); box-shadow: none; }
 .port-marker[data-closed="true"] .port-marker__label { color: var(--color-muted-foreground); }
 
 .port-tip {
-  position: absolute; left: 14px; top: -12px; z-index: 5; width: max-content;
-  max-width: min(250px, calc(100vw - 28px)); box-sizing: border-box; padding: 11px 12px;
-  border: 1px solid color-mix(in oklab, var(--color-primary) 10%, var(--color-border));
-  border-radius: 16px; background: color-mix(in oklab, var(--color-card) 95%, transparent);
-  backdrop-filter: blur(18px); box-shadow: var(--shadow-elegant);
-  opacity: 0; transform: translateY(5px) scale(.98); transition: opacity .16s ease, transform .16s ease;
+  position: absolute; left: 18px; top: -16px; z-index: 5; width: max-content;
+  max-width: min(280px, calc(100vw - 32px)); box-sizing: border-box; padding: 16px;
+  border: 1px solid oklch(1 0 0 / 50%);
+  border-radius: 20px; background: color-mix(in oklab, var(--color-card) 90%, transparent);
+  backdrop-filter: blur(20px); box-shadow: var(--shadow-elegant);
+  opacity: 0; transform: translateX(10px) scale(.95); transition: all .3s cubic-bezier(0.16, 1, 0.3, 1);
   pointer-events: none;
 }
 .port-tip__close {
-  position: absolute; top: 6px; right: 6px; z-index: 2; display: grid; place-items: center;
-  width: 22px; height: 22px; margin: 0; padding: 0; border: 0; border-radius: 999px;
-  background: var(--color-muted); color: var(--color-muted-foreground); font-size: 14px; line-height: 1; cursor: pointer;
+  position: absolute; top: 12px; right: 12px; z-index: 2; display: grid; place-items: center;
+  width: 26px; height: 26px; margin: 0; padding: 0; border: 0; border-radius: 999px;
+  background: var(--color-secondary); color: var(--color-secondary-foreground); font-size: 14px; line-height: 1; cursor: pointer; transition: all .2s ease;
 }
-.port-tip__close:hover { background: var(--color-secondary); color: var(--color-foreground); }
-.port-tip__close + .port-tip__title, .port-tip > .port-tip__title { padding-right: 24px; }
+.port-tip__close:hover { background: var(--color-primary); color: var(--color-primary-foreground); transform: rotate(90deg); }
+.port-tip__close + .port-tip__title, .port-tip > .port-tip__title { padding-right: 32px; }
 .port-marker:hover .port-tip, .port-marker:focus-within .port-tip, .port-marker[data-active="true"] .port-tip {
-  opacity: 1; transform: translateY(0) scale(1); pointer-events: auto;
+  opacity: 1; transform: translateX(0) scale(1); pointer-events: auto;
 }
-.port-tip__departures-title { margin-top: 7px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; font-size: 9px; }
-.port-tip__departures { margin-top: 3px; display: flex; flex-direction: column; gap: 2px; font-size: 11px; font-weight: 650; color: var(--color-primary); list-style: none; padding: 0; }
-.port-tip__more { margin-top: 5px; font-size: 11px; font-weight: 700; color: var(--color-primary); text-decoration: none; cursor: pointer; background: none; border: none; padding: 0; }
-.port-tip__title { font-family: var(--font-display); font-size: 13px; font-weight: 750; color: var(--color-foreground); }
-.port-tip__meta { font-size: 11px; color: var(--color-muted-foreground); }
-.port-tip__next { margin-top: 4px; font-size: 11px; font-weight: 650; color: var(--color-primary); }
-.port-tip__closed { font-size: 11px; font-weight: 650; color: var(--color-destructive); }
+.port-tip__departures-title { margin-top: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; font-size: 10px; color: var(--color-muted-foreground); }
+.port-tip__departures { margin-top: 6px; display: flex; flex-direction: column; gap: 6px; font-size: 12px; font-weight: 600; color: var(--color-foreground); list-style: none; padding: 0; }
+.port-tip__more { margin-top: 8px; font-size: 12px; font-weight: 700; color: var(--color-accent); text-decoration: none; cursor: pointer; background: none; border: none; padding: 0; transition: color .2s ease; }
+.port-tip__more:hover { color: var(--color-primary); }
+.port-tip__title { font-family: var(--font-display); font-size: 16px; font-weight: 800; color: var(--color-foreground); letter-spacing: -0.02em; }
+.port-tip__meta { font-size: 12px; font-weight: 500; color: var(--color-muted-foreground); margin-top: 2px; }
+.port-tip__next { margin-top: 6px; font-size: 12px; font-weight: 600; color: var(--color-primary); padding: 6px 10px; background: var(--color-secondary); border-radius: 8px; display: inline-block; }
+.port-tip__closed { font-size: 12px; font-weight: 600; color: var(--color-destructive); }
 
 .maplibregl-ctrl-group {
   overflow: hidden !important;
-  border: 1px solid oklch(0.25 0.05 230 / 12%) !important;
-  border-radius: 14px !important;
-  background: oklch(0.99 0.01 90 / 94%) !important;
-  box-shadow: 0 12px 28px -18px oklch(0.18 0.04 230 / 45%) !important;
+  border: 1px solid oklch(1 0 0 / 40%) !important;
+  border-radius: 16px !important;
+  background: color-mix(in oklab, var(--color-card) 85%, transparent) !important;
+  backdrop-filter: blur(12px) !important;
+  box-shadow: var(--shadow-elegant) !important;
 }
-.maplibregl-ctrl-group button { width: 34px !important; height: 34px !important; }
+.maplibregl-ctrl-group button { width: 40px !important; height: 40px !important; transition: background .2s ease !important; }
+.maplibregl-ctrl-group button:hover { background: var(--color-secondary) !important; }
 .maplibregl-ctrl-attrib { background: none !important; border: none !important; box-shadow: none !important; padding: 0 !important; }
-.maplibregl-ctrl-attrib-inner { display: inline !important; font-size: 10px !important; line-height: 1.2 !important; }
-.maplibregl-ctrl-attrib details summary {
-  display: block !important; list-style: none !important; background-color: oklch(0.99 0.01 90 / 82%) !important;
-  border-radius: 50% !important; width: 24px !important; height: 24px !important;
-  box-shadow: 0 3px 8px oklch(0.18 0.04 230 / 20%) !important; cursor: pointer !important;
-}
-.maplibregl-ctrl-attrib details summary::-webkit-details-marker { display: none !important; }
+.maplibregl-ctrl-attrib-inner { display: inline !important; font-size: 11px !important; font-weight: 500 !important; color: var(--color-foreground) !important; }
 
 @media (max-width: 767px) {
-  .batogo-floating-panel { border-left: 0; border-right: 0; border-bottom: 0; border-radius: 26px 26px 0 0; }
-  .batogo-section { margin-left: 10px; margin-right: 10px; padding: 12px; border-radius: 16px; }
+  .batogo-floating-panel { border-left: 0; border-right: 0; border-bottom: 0; border-radius: 32px 32px 0 0; }
+  .batogo-section { margin-left: 12px; margin-right: 12px; padding: 16px; border-radius: 20px; }
   .port-marker:hover .port-tip, .port-marker:focus-within .port-tip {
-    opacity: 0; transform: translateY(5px) scale(.98); pointer-events: none;
+    opacity: 0; transform: translateY(10px) scale(.95); pointer-events: none;
   }
   .port-marker[data-active="true"] .port-tip { opacity: 1; transform: translateY(0) scale(1); pointer-events: auto; }
-  .port-tip { max-width: min(200px, calc(100vw - 20px)); padding: 8px 10px; border-radius: 14px; }
-  .port-tip__title { font-size: 12px; }
-  .port-tip__next { margin-top: 2px; font-size: 10px; }
+  .port-tip { max-width: min(240px, calc(100vw - 32px)); padding: 14px; border-radius: 20px; }
+  .port-tip__title { font-size: 15px; }
 }
 
-
-/* Clean travel-panel composition: one surface, strong typography, very few containers. */
-.batogo-floating-panel .custom-scrollbar { scrollbar-width: thin; scrollbar-color: #c8d4d0 transparent; }
-.batogo-floating-panel h3, .batogo-floating-panel h4 { color: #17383f; }
-.batogo-floating-panel input { background: #f6f4ee !important; border: 1px solid #e5e1d8 !important; border-radius: 12px !important; }
-.batogo-floating-panel .batogo-section > div:first-child { letter-spacing: -.01em; }
-.batogo-floating-panel .batogo-section button[data-state="open"] { background: #f2eee5; }
-.batogo-floating-panel .batogo-departure-card strong { color: #17383f; }
+.batogo-floating-panel .custom-scrollbar { scrollbar-width: thin; scrollbar-color: var(--color-border) transparent; }
+.batogo-floating-panel h3, .batogo-floating-panel h4 { color: var(--color-foreground); }
+.batogo-floating-panel input { background: var(--color-background) !important; border: 1px solid var(--color-border) !important; border-radius: 12px !important; transition: all .2s ease; }
+.batogo-floating-panel input:focus { border-color: var(--color-primary) !important; box-shadow: 0 0 0 3px color-mix(in oklab, var(--color-primary) 15%, transparent) !important; }
+.batogo-floating-panel .batogo-section button[data-state="open"] { background: var(--color-secondary); }
 @media (min-width: 768px) {
-  .batogo-floating-panel { width: 390px; }
+  .batogo-floating-panel { width: 420px; }
 }
 @media (max-width: 767px) {
   .batogo-floating-panel { width: 100%; }
-  .batogo-section { padding-left: 16px; padding-right: 16px; }
+  .batogo-section { padding-left: 20px; padding-right: 20px; }
 }

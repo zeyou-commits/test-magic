@@ -727,3 +727,4 @@ function Recommendation({ title, leg, from, to, date, selection, onSelect }: { t
 function EmptyRecommendation({ text }: { text: string }) {
   return <div className="rounded-xl border border-dashed border-border px-3 py-2 text-xs text-muted-foreground">{text}</div>;
 }
+ 

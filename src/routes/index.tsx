@@ -376,6 +376,8 @@ function Index() {
               visibleRouteIds={visibleRoutes.map((route) => route.id)}
               focusRouteIds={focusRouteIds}
               selection={selection}
+              filters={filters}
+              onFiltersChange={setFilters}
               highlightedPortIds={highlightedPortIds}
               portMeta={portMeta}
               onSelect={setSelectionAndOpen}

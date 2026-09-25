@@ -26,51 +26,48 @@
   --color-muted-foreground: var(--muted-foreground);
   --color-accent: var(--accent);
   --color-accent-foreground: var(--accent-foreground);
-  --color-destructive: var(--destructive);
-  --color-destructive-foreground: var(--destructive-foreground);
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
 }
 
 :root {
-  /* Design épuré : rayons plus secs, couleurs à fort contraste */
-  --radius: 0.75rem; 
-  --background: oklch(0.99 0 0); /* Blanc pur */
-  --foreground: oklch(0.18 0.02 245); /* Bleu nuit presque noir, très chic */
+  /* Style "Seamless Travel" : Minimaliste, contrasté, élégant */
+  --radius: 0.85rem;
+  --background: oklch(0.99 0 0);
+  --foreground: oklch(0.15 0.02 240);
   --card: oklch(1 0 0);
-  --card-foreground: oklch(0.18 0.02 245);
+  --card-foreground: oklch(0.15 0.02 240);
   --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.18 0.02 245);
+  --popover-foreground: oklch(0.15 0.02 240);
   
-  --primary: oklch(0.25 0.04 245); /* Bleu marine classique et pro */
+  --primary: oklch(0.40 0.12 250); /* Bleu Méditerranée chic */
   --primary-foreground: oklch(1 0 0);
-  --secondary: oklch(0.96 0.01 245); /* Gris-bleu très clair pour les fonds secondaires */
-  --secondary-foreground: oklch(0.25 0.04 245);
+  --secondary: oklch(0.97 0.01 240); /* Gris très perlé, presque blanc */
+  --secondary-foreground: oklch(0.40 0.12 250);
   
-  --muted: oklch(0.95 0.01 245);
-  --muted-foreground: oklch(0.55 0.02 245);
+  --muted: oklch(0.96 0.01 240);
+  --muted-foreground: oklch(0.50 0.02 240);
   
-  --accent: oklch(0.60 0.20 30); /* Orange/Terracotta dynamique mais maîtrisé */
+  --accent: oklch(0.65 0.15 35); /* Corail doux pour les accents */
   --accent-foreground: oklch(1 0 0);
   
-  --destructive: oklch(0.55 0.20 25);
+  --destructive: oklch(0.60 0.16 25);
   --destructive-foreground: oklch(1 0 0);
-  --border: oklch(0.92 0.01 245);
-  --input: oklch(0.92 0.01 245);
-  --ring: oklch(0.25 0.04 245);
   
-  /* Palette de la carte */
-  --sea: oklch(0.89 0.06 230);
-  --map-country-highlight: oklch(0.95 0.04 100);
-  --map-country-outline: oklch(0.75 0.05 240);
-  --map-route: oklch(0.40 0.12 245);
-  --map-route-selected: oklch(0.60 0.20 30);
-  --map-route-casing: oklch(1 0 0);
+  --border: oklch(0.92 0.01 240);
+  --input: oklch(0.94 0.01 240);
+  --ring: oklch(0.40 0.12 250);
   
-  /* Ombres réalistes et élégantes */
-  --shadow-panel: 0 12px 40px -12px rgba(0, 0, 0, 0.15), 0 4px 12px -4px rgba(0, 0, 0, 0.08);
-  --shadow-elegant: 0 8px 30px rgba(0, 0, 0, 0.08);
+  /* Couleurs Map */
+  --sea: oklch(0.94 0.03 235);
+  --map-country-highlight: oklch(0.96 0.02 90);
+  --map-route: oklch(0.40 0.12 250);
+  --map-route-selected: oklch(0.65 0.15 35);
+  
+  /* Ombres diffuses et haut de gamme */
+  --shadow-panel: 0 8px 30px -6px rgba(0, 0, 0, 0.08), 0 4px 12px -4px rgba(0, 0, 0, 0.04);
+  --shadow-elegant: 0 4px 20px rgba(0, 0, 0, 0.06);
 }
 
 @layer base {
@@ -81,32 +78,32 @@
   button, input, select { font-family: inherit; }
 }
 
-/* UI du panneau latéral - Minimaliste */
+/* Panneaux et Sections */
 .batogo-floating-panel {
-  border: 1px solid rgba(0, 0, 0, 0.06);
+  border: 1px solid rgba(0, 0, 0, 0.04);
   background: rgba(255, 255, 255, 0.98);
   box-shadow: var(--shadow-panel);
-  backdrop-filter: blur(12px);
+  backdrop-filter: blur(20px);
 }
 .batogo-tabbar {
-  border: 0;
+  border: 1px solid var(--color-border);
   background: var(--color-secondary);
   border-radius: 0.75rem;
   padding: 4px;
 }
 .batogo-tab {
-  min-height: 38px;
+  min-height: 36px;
   border-radius: 0.5rem;
   color: var(--color-muted-foreground);
   font-weight: 600;
-  font-size: 0.9rem;
+  font-size: 0.85rem;
   transition: all .2s ease;
 }
 .batogo-tab:hover { color: var(--color-foreground); }
 .batogo-tab[data-active="true"] {
   color: var(--color-foreground);
   background: var(--color-card);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
 }
 
 .batogo-section {
@@ -115,64 +112,58 @@
 }
 .batogo-section:first-child { border-top: none; }
 
+/* Champs et listes */
 .batogo-field {
-  border: 1px solid var(--color-border);
-  border-radius: 0.5rem;
+  border: 1px solid var(--color-input);
+  border-radius: 0.75rem;
   background: var(--color-background);
-  transition: border-color .2s ease, box-shadow .2s ease;
+  transition: all .2s ease;
 }
 .batogo-field:focus-within {
   border-color: var(--color-primary);
-  box-shadow: 0 0 0 2px color-mix(in oklab, var(--color-primary) 15%, transparent);
+  box-shadow: 0 0 0 3px color-mix(in oklab, var(--color-primary) 12%, transparent);
 }
 
 .batogo-list-item {
   border: 1px solid transparent;
   border-radius: 0.75rem;
-  transition: all .2s ease;
+  transition: all .15s ease;
 }
-.batogo-list-item:hover {
-  background: var(--color-secondary);
-}
+.batogo-list-item:hover { background: var(--color-secondary); }
 
 .batogo-departure-card {
   border: 1px solid var(--color-border);
   border-radius: 1rem;
   background: var(--color-card);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02);
   transition: all .2s ease;
 }
 .batogo-departure-card:hover {
-  border-color: var(--color-muted-foreground);
-  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.06);
-  transform: translateY(-1px);
+  border-color: var(--color-primary);
+  box-shadow: 0 4px 16px -4px rgba(0, 0, 0, 0.06);
 }
 
 .batogo-handle {
-  width: 40px;
-  height: 4px;
-  border-radius: 2px;
+  width: 36px; height: 4px; border-radius: 2px;
   background: var(--color-border);
 }
 
-/* Map markers */
+/* Marqueurs Map épurés */
 .port-marker { position: relative; width: 0; height: 0; z-index: 1; }
 .port-marker:hover, .port-marker[data-active="true"] { z-index: 10; }
 .port-marker__dot {
-  position: absolute; left: -6px; top: -6px; width: 12px; height: 12px;
+  position: absolute; left: -5px; top: -5px; width: 10px; height: 10px;
   border-radius: 50%; border: 2px solid var(--color-card);
   background: var(--color-primary);
-  box-shadow: 0 2px 6px rgba(0,0,0,0.2);
-  cursor: pointer; transition: all .2s ease;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.15);
+  cursor: pointer; transition: transform .2s ease;
 }
 .port-marker[data-active="true"] .port-marker__dot {
-  background: var(--color-accent);
-  transform: scale(1.4);
+  background: var(--color-accent); transform: scale(1.5);
 }
 .port-marker__label {
-  position: absolute; white-space: nowrap; font-family: var(--font-display);
-  font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--color-primary);
-  text-shadow: 0 1.5px 3px var(--color-card), 1.5px 0 3px var(--color-card), -1.5px 0 3px var(--color-card), 0 -1.5px 3px var(--color-card);
+  position: absolute; white-space: nowrap; font-family: var(--font-sans);
+  font-size: 11.5px; font-weight: 700; color: var(--color-foreground);
+  text-shadow: 0 1px 3px var(--color-card), 1px 0 3px var(--color-card), -1px 0 3px var(--color-card), 0 -1px 3px var(--color-card);
   cursor: pointer; transition: color .2s ease;
 }
 .port-marker[data-active="true"] .port-marker__label { color: var(--color-accent); }
@@ -180,35 +171,33 @@
 /* Tooltips */
 .port-tip {
   position: absolute; left: 16px; top: -12px; z-index: 5; width: max-content;
-  max-width: 280px; padding: 16px;
-  border: 1px solid var(--color-border);
-  border-radius: 1rem; background: rgba(255, 255, 255, 0.95);
-  backdrop-filter: blur(8px); box-shadow: var(--shadow-elegant);
-  opacity: 0; transform: translateX(5px); transition: all .2s ease;
+  max-width: 260px; padding: 14px;
+  border: 1px solid rgba(0,0,0,0.05);
+  border-radius: 1rem; background: rgba(255, 255, 255, 0.96);
+  backdrop-filter: blur(12px); box-shadow: var(--shadow-elegant);
+  opacity: 0; transform: translateX(4px); transition: all .2s ease;
   pointer-events: none;
 }
 .port-tip__close {
-  position: absolute; top: 12px; right: 12px; width: 24px; height: 24px;
+  position: absolute; top: 10px; right: 10px; width: 22px; height: 22px;
   background: var(--color-secondary); border-radius: 50%; border: none; cursor: pointer;
 }
 .port-marker:hover .port-tip, .port-marker:focus-within .port-tip, .port-marker[data-active="true"] .port-tip {
   opacity: 1; transform: translateX(0); pointer-events: auto;
 }
-.port-tip__title { font-family: var(--font-display); font-size: 15px; font-weight: 700; color: var(--color-foreground); }
-.port-tip__meta { font-size: 12px; color: var(--color-muted-foreground); margin-top: 2px; }
-.port-tip__next { margin-top: 8px; font-size: 12px; font-weight: 600; color: var(--color-primary); }
+.port-tip__title { font-family: var(--font-display); font-size: 14px; font-weight: 700; color: var(--color-foreground); }
 
 .maplibregl-ctrl-group {
-  border-radius: 0.75rem !important;
+  border-radius: 0.5rem !important;
   box-shadow: var(--shadow-elegant) !important;
   border: 1px solid var(--color-border) !important;
 }
 
 @media (max-width: 767px) {
-  .batogo-floating-panel { border-radius: 1.5rem 1.5rem 0 0; }
+  .batogo-floating-panel { border-radius: 1.25rem 1.25rem 0 0; }
   .batogo-section { padding: 16px 20px; }
-  .port-tip { max-width: 220px; padding: 12px; border-radius: 0.75rem; }
+  .port-tip { max-width: 200px; padding: 12px; border-radius: 0.75rem; }
 }
 
 .batogo-floating-panel .custom-scrollbar { scrollbar-width: thin; scrollbar-color: var(--color-border) transparent; }
-.batogo-floating-panel input { background: var(--color-background) !important; border: 1px solid var(--color-border) !important; border-radius: 0.5rem !important; }
+.batogo-floating-panel input { background: transparent !important; border: none !important; }

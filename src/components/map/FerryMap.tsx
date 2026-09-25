@@ -11,7 +11,7 @@ import {
 } from "maplibre-gl";
 import workerUrl from "maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url";
 import "maplibre-gl/dist/maplibre-gl.css";
-import type { Port, RouteLine, Selection } from "@/lib/ferry/types";
+import type { Filters, Port, RouteLine, Selection } from "@/lib/ferry/types";
 import { formatDuration } from "@/lib/ferry/format";
 import { portColor, routeColor } from "@/lib/ferry/colors";
 import { algeriaGeoJson } from "@/lib/ferry/algeriaGeoJson";
@@ -35,6 +35,8 @@ interface FerryMapProps {
   visibleRouteIds: string[];
   focusRouteIds: string[];
   selection: Selection | null;
+  filters: Filters;
+  onFiltersChange: (filters: Filters) => void;
   highlightedPortIds: string[];
   portMeta: Record<string, PortMeta>;
   onSelect: (selection: Selection | null) => void;
@@ -162,15 +164,19 @@ function positionPortTip(map: MapLibreMap, marker: Marker, tip: HTMLDivElement) 
   tip.style.top = `${top - markerRect.top}px`;
 }
 
-export default function FerryMap({ ports, routes, visibleRouteIds, focusRouteIds, selection, highlightedPortIds, portMeta, onSelect, onOpenPanel, onMapInteract }: FerryMapProps) {
+export default function FerryMap({ ports, routes, visibleRouteIds, focusRouteIds, selection, filters, onFiltersChange, highlightedPortIds, portMeta, onSelect, onOpenPanel, onMapInteract }: FerryMapProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<MapLibreMap | null>(null);
   const readyRef = useRef(false);
   const portMarkersRef = useRef<Map<string, Marker>>(new Map());
   const selectRef = useRef(onSelect);
+  const filtersRef = useRef(filters);
+  const filtersChangeRef = useRef(onFiltersChange);
   const [mapReady, setMapReady] = useState(false);
   
   selectRef.current = onSelect;
+  filtersRef.current = filters;
+  filtersChangeRef.current = onFiltersChange;
   const isMobile = useIsMobile();
   const hasFocus = focusRouteIds.length > 0;
 
@@ -268,9 +274,20 @@ export default function FerryMap({ ports, routes, visibleRouteIds, focusRouteIds
       });
       map.addLayer({ id: "ferry-routes-duration", type: "symbol", source: "ferry-routes", minzoom: 3.4, layout: { "symbol-placement": "line-center", "text-field": ["get", "label"], "text-font": ["Noto Sans Bold"], "text-size": 11, "text-letter-spacing": 0.04, "text-rotation-alignment": "map", "text-pitch-alignment": "viewport", "text-keep-upright": true, "text-offset": [0, -0.9], "text-allow-overlap": true, "text-ignore-placement": true }, paint: { "text-color": ["get", "color"], "text-halo-color": mapColor("--map-route-casing"), "text-halo-width": 1.6, "text-opacity": ["case", ["get", "dimmed"], 0.2, 1] } });
       
-      const pickRoute = (event: MapLayerMouseEvent) => { 
-        const id = event.features?.[0]?.properties?.["id"]; 
-        if (typeof id === "string") selectRef.current({ type: "route", id }); 
+      const pickRoute = (event: MapLayerMouseEvent) => {
+        const id = event.features?.[0]?.properties?.["id"];
+        if (typeof id !== "string") return;
+        const route = routes.find((item) => item.id === id);
+        if (route) {
+          filtersChangeRef.current({
+            ...filtersRef.current,
+            portIds: [route.departure_port_id, route.arrival_port_id],
+            departureCountry: null,
+            departurePortId: null,
+            arrivalPortId: null,
+          });
+        }
+        selectRef.current({ type: "route", id });
       };
       
       map.on("click", "ferry-routes-line", pickRoute);
@@ -367,10 +384,17 @@ export default function FerryMap({ ports, routes, visibleRouteIds, focusRouteIds
         
         el.append(dot, label, tip);
         
-        const select = (event: Event) => { 
-          event.stopPropagation(); 
-          selectRef.current({ type: "port", id: port.id }); 
-          requestAnimationFrame(() => positionPortTip(map, marker, tip)); 
+        const select = (event: Event) => {
+          event.stopPropagation();
+          filtersChangeRef.current({
+            ...filtersRef.current,
+            portIds: [port.id],
+            departureCountry: null,
+            departurePortId: null,
+            arrivalPortId: null,
+          });
+          selectRef.current({ type: "port", id: port.id });
+          requestAnimationFrame(() => positionPortTip(map, marker, tip));
         };
         
         dot.addEventListener("click", select); 

@@ -1,10 +1,10 @@
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Check, MapPinned, RotateCcw, Search, SlidersHorizontal, X } from "lucide-react";
+import { CalendarDays, Check, MapPinned, RotateCcw, Search, SlidersHorizontal, X } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { companiesQuery, portsQuery, routesQuery, vesselsQuery } from "@/lib/ferry/queries";
+import { companiesQuery, portsQuery, routesQuery, upcomingDeparturesQuery, vesselsQuery } from "@/lib/ferry/queries";
 import { emptyFilters, type Filters, type RouteLine, type Selection } from "@/lib/ferry/types";
 import { formatDuration } from "@/lib/ferry/format";
 import { EmptyNote, Section } from "./shared";
@@ -30,6 +30,7 @@ export function ExplorerView({
   const { data: companies = [] } = useQuery(companiesQuery);
   const { data: vessels = [] } = useQuery(vesselsQuery);
   const { data: routes = [] } = useQuery(routesQuery);
+  const { data: departures = [], isLoading: departuresLoading } = useQuery(upcomingDeparturesQuery());
 
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [activeCountries, setActiveCountries] = useState<string[]>([]);
@@ -69,6 +70,38 @@ export function ExplorerView({
         selectedIds.has(route.arrival_port_id),
     ).length;
   }, [filters.portIds, routes]);
+
+  const selectedRouteIds = useMemo(() => {
+    if (!filters.portIds.length) return new Set(routes.map((route) => route.id));
+    const selectedIds = new Set(filters.portIds);
+    return new Set(
+      routes
+        .filter(
+          (route) =>
+            selectedIds.has(route.departure_port_id) ||
+            selectedIds.has(route.arrival_port_id),
+        )
+        .map((route) => route.id),
+    );
+  }, [filters.portIds, routes]);
+
+  const upcoming = useMemo(() => {
+    const selected = departures
+      .filter((departure) => selectedRouteIds.has(departure.route_id))
+      .filter((departure) => !filters.companyId || departure.company_id === filters.companyId)
+      .filter((departure) => !filters.vesselId || departure.vessel_id === filters.vesselId)
+      .filter((departure) => !filters.date || departure.departure_at.startsWith(filters.date))
+      .sort(
+        (a, b) =>
+          new Date(a.departure_at).getTime() - new Date(b.departure_at).getTime(),
+      );
+    return selected.slice(0, 12);
+  }, [departures, filters.companyId, filters.date, filters.vesselId, selectedRouteIds]);
+
+  const routeById = useMemo(() => new Map(routes.map((route) => [route.id, route])), [routes]);
+  const portById = useMemo(() => new Map(activePorts.map((port) => [port.id, port])), [activePorts]);
+  const companyById = useMemo(() => new Map(companies.map((company) => [company.id, company])), [companies]);
+  const vesselById = useMemo(() => new Map(vessels.map((vessel) => [vessel.id, vessel])), [vessels]);
 
   const matchingPorts = filters.search.trim()
     ? activePorts
@@ -366,28 +399,63 @@ export function ExplorerView({
           ) : null}
         </Section>
 
-        <Section title={`Lignes · ${visibleRoutes.length}`}>
-          {visibleRoutes.length === 0 ? (
-            <EmptyNote>Aucune ligne ne correspond à cette sélection.</EmptyNote>
+        <Section
+          title="Prochains départs"
+          action={
+            upcoming.length ? (
+              <span className="text-[10px] font-medium text-[#718489]">
+                {upcoming.length} départ{upcoming.length > 1 ? "s" : ""}
+              </span>
+            ) : null
+          }
+        >
+          {departuresLoading ? (
+            <div className="flex items-center gap-2 py-2 text-xs text-[#718489]">
+              <CalendarDays className="size-3.5 animate-pulse text-[#0e7490]" />
+              Chargement du calendrier…
+            </div>
+          ) : upcoming.length === 0 ? (
+            <EmptyNote>Aucun départ à venir pour cette sélection.</EmptyNote>
           ) : (
-            <ul className="space-y-1">
-              {visibleRoutes.map((route) => (
-                <li key={route.id}>
+            <div className="space-y-1.5">
+              {upcoming.map((departure) => {
+                const route = routeById.get(departure.route_id);
+                const departurePort = route ? portById.get(route.departure_port_id) : undefined;
+                const arrivalPort = route ? portById.get(route.arrival_port_id) : undefined;
+                const company = companyById.get(departure.company_id);
+                const vessel = departure.vessel_id ? vesselById.get(departure.vessel_id) : undefined;
+                const date = new Date(departure.departure_at);
+
+                return (
                   <button
+                    key={departure.id}
                     type="button"
-                    onClick={() => onSelect({ type: "route", id: route.id })}
-                    className="flex w-full items-center justify-between gap-3 rounded-xl px-3 py-2.5 text-left hover:bg-[#f7f3ea]"
+                    onClick={() => onSelect({ type: "departure", id: departure.id })}
+                    className="flex w-full items-center gap-2.5 rounded-xl border border-[#edf0ed] bg-[#fbfaf7] px-2.5 py-2 text-left transition hover:border-[#0e7490]/25 hover:bg-[#f3f8f7]"
                   >
-                    <span className="text-sm font-medium text-[#17383f]">
-                      {ports.find((port) => port.id === route.departure_port_id)?.name ?? "—"} → {ports.find((port) => port.id === route.arrival_port_id)?.name ?? "—"}
-                    </span>
-                    <span className="text-xs font-semibold text-[#0e7490]">
-                      {formatDuration(route.typical_duration_minutes)}
-                    </span>
+                    <div className="min-w-[46px] rounded-lg bg-[#eaf5f5] px-1.5 py-1 text-center">
+                      <div className="text-[9px] font-semibold uppercase text-[#0e7490]">
+                        {date.toLocaleDateString("fr-FR", { weekday: "short" }).replace(".", "")}
+                      </div>
+                      <div className="text-sm font-bold leading-none text-[#17383f]">
+                        {date.toLocaleDateString("fr-FR", { day: "2-digit", month: "2-digit" })}
+                      </div>
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <div className="truncate text-xs font-semibold text-[#17383f]">
+                        {departurePort?.name ?? "—"} → {arrivalPort?.name ?? "—"}
+                      </div>
+                      <div className="truncate text-[10px] text-[#718489]">
+                        {company?.name ?? "Compagnie"}{vessel?.name ? ` · ${vessel.name}` : ""}
+                      </div>
+                    </div>
+                    <div className="shrink-0 text-sm font-bold text-[#0e7490]">
+                      {date.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })}
+                    </div>
                   </button>
-                </li>
-              ))}
-            </ul>
+                );
+              })}
+            </div>
           )}
         </Section>
       </div>

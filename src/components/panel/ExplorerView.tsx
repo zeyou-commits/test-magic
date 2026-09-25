@@ -155,7 +155,7 @@ export function ExplorerView({
 
       <div className="space-y-1">
         <div className={hidePrimarySearchOnMobile ? "hidden md:block" : undefined}>
-          <Section title="Trouver un port">
+          <Section title="Rechercher un port">
             <div className="relative">
               <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-[#718489]" />
               <Input
@@ -223,10 +223,10 @@ export function ExplorerView({
             ) : null
           }
         >
-          <div className="rounded-2xl border border-[#0e7490]/15 bg-white p-3 shadow-[0_4px_18px_rgba(18,52,59,0.06)]">
-            <div className="mb-3 flex items-center justify-between gap-3">
+          <div className="rounded-xl border border-[#0e7490]/15 bg-white p-2.5 shadow-[0_3px_12px_rgba(18,52,59,0.05)]">
+            <div className="mb-2 flex items-center justify-between gap-3">
               <div className="flex items-center gap-2">
-                <MapPinned className="size-4 text-[#0e7490]" />
+                <MapPinned className="size-3.5 text-[#0e7490]" />
                 <span className="text-xs font-medium text-[#547078]">
                   {filters.portIds.length
                     ? `${selectedLineCount} lignes liées à votre sélection`
@@ -266,7 +266,7 @@ export function ExplorerView({
               </div>
             </div>
 
-            <div className="my-4 border-t border-[#edf0ed]" />
+            <div className="my-2.5 border-t border-[#edf0ed]" />
 
             <div>
               <div className="mb-2 flex items-center justify-between gap-2">
@@ -280,7 +280,7 @@ export function ExplorerView({
                 ) : null}
               </div>
 
-              <div className="grid max-h-56 gap-1.5 overflow-y-auto pr-1 sm:grid-cols-2">
+              <div className="grid max-h-48 gap-1 overflow-y-auto pr-1 sm:grid-cols-2">
                 {visiblePorts.map((port) => {
                   const selected = filters.portIds.includes(port.id);
                   return (
@@ -288,7 +288,7 @@ export function ExplorerView({
                       key={port.id}
                       type="button"
                       onClick={() => togglePort(port.id)}
-                      className={`flex min-h-10 items-center justify-between gap-2 rounded-xl border px-3 text-left text-sm transition ${
+                      className={`flex min-h-9 items-center justify-between gap-2 rounded-lg border px-2.5 text-left text-xs transition ${
                         selected
                           ? "border-[#0e7490]/40 bg-[#eaf5f5] text-[#0e6177]"
                           : "border-[#e5e8e5] bg-[#fbfaf7] text-[#294b53] hover:border-[#0e7490]/30 hover:bg-[#f3f8f7]"
@@ -322,12 +322,12 @@ export function ExplorerView({
             ) : null}
           </div>
 
-          <div className="mt-3">
+          <div className="mt-2">
             <Button
               type="button"
               variant={filtersOpen ? "secondary" : "outline"}
               size="sm"
-              className="h-9 rounded-full border-[#0e7490]/15 bg-white px-3 text-xs text-[#315860] hover:bg-[#f7f3ea]"
+              className="h-8 rounded-full border-[#0e7490]/15 bg-white px-3 text-[11px] text-[#315860] hover:bg-[#f7f3ea]"
               onClick={() => setFiltersOpen((open) => !open)}
             >
               <SlidersHorizontal className="mr-1.5 size-3.5" />
@@ -341,7 +341,7 @@ export function ExplorerView({
           </div>
 
           {filtersOpen ? (
-            <div className="mt-2 grid gap-2.5 rounded-2xl border border-[#0e7490]/10 bg-[#f7f3ea] p-3 sm:grid-cols-2">
+            <div className="mt-2 grid gap-2 rounded-xl border border-[#0e7490]/10 bg-[#f7f3ea] p-2.5 sm:grid-cols-2">
               <FilterSelect
                 label="Compagnie"
                 value={filters.companyId}
@@ -369,7 +369,7 @@ export function ExplorerView({
           ) : null}
         </Section>
 
-        <Section title={`Lignes affichées · ${visibleRoutes.length}`}>
+        <Section title={`Lignes · ${visibleRoutes.length}`}>
           {visibleRoutes.length === 0 ? (
             <EmptyNote>Aucune ligne ne correspond à cette sélection.</EmptyNote>
           ) : (

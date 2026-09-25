@@ -8,6 +8,7 @@ import { companiesQuery, portsQuery, routesQuery, schedulesQuery, upcomingDepart
 import { getSchoolBreaksForZone, getSchoolBreak, type SchoolZone } from "@/lib/ferry/schoolCalendar";
 import type { Departure, Port, RouteLine, Schedule, Selection } from "@/lib/ferry/types";
 import { formatDuration } from "@/lib/ferry/format";
+import { GroupedPortSelect } from "./GroupedPortSelect";
 
 type TravelerType = "solo" | "couple" | "family";
 
@@ -443,8 +444,19 @@ export function TripPlanner({ selection, onSelect }: { selection: Selection | nu
             ) : (
               <>
                 <div className="grid gap-2 sm:grid-cols-2">
-                  <PortSelect label="Départ" value={fromId} onChange={setFromId} ports={activePorts} />
-                  <PortSelect label="Arrivée" value={toId} onChange={setToId} ports={activePorts.filter((port) => port.id !== fromId)} />
+                 <GroupedPortSelect
+  label="Départ"
+  value={fromId}
+  onChange={setFromId}
+  ports={activePorts}
+/>
+
+<GroupedPortSelect
+  label="Arrivée"
+  value={toId}
+  onChange={setToId}
+  ports={activePorts.filter((port) => port.id !== fromId)}
+/>
                 </div>
                 <div className="grid gap-2 sm:grid-cols-2">
                   <DateField label="Aller" value={outboundDate} min={today} onChange={setOutboundDate} availableDates={availableDates} />

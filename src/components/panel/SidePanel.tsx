@@ -93,6 +93,7 @@ export function SidePanel({
               onFiltersChange={onFiltersChange}
               visibleRoutes={visibleRoutes}
               onSelect={onSelect}
+              selection={selection}
               hidePrimarySearchOnMobile={hidePrimarySearchOnMobile}
             />
           </>
@@ -106,10 +107,7 @@ export function SidePanel({
         {selection ? (
           <div className="animate-in fade-in slide-in-from-top-1 duration-200">
             <div className="flex items-center justify-between gap-2 border-b border-border bg-secondary/50 px-5 py-2">
-              <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
-                Sélection
-              </span>
-
+              <span className="sr-only">Détail sélectionné</span>
               <div className="flex items-center gap-1">
                 <button
                   type="button"

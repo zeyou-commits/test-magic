@@ -6,11 +6,13 @@ const nullable = (value: string | null) => value || null;
 export function filtersFromUrl(search: string): Filters {
   const params = new URLSearchParams(search);
   const portIds = params.get("ports")?.split(",").filter(Boolean) ?? [];
+  const countryCodes = params.get("countries")?.split(",").filter(Boolean) ?? [];
 
   return {
     ...emptyFilters,
     search: params.get("q") ?? "",
     portIds,
+    countryCodes,
     departureCountry: nullable(params.get("country")),
     departurePortId: nullable(params.get("from")),
     arrivalPortId: nullable(params.get("to")),
@@ -33,6 +35,7 @@ export function mapStateToSearch(filters: Filters, selection: Selection | null) 
   const params = new URLSearchParams();
   if (filters.search.trim()) params.set("q", filters.search.trim());
   if (filters.portIds.length) params.set("ports", filters.portIds.join(","));
+  if (filters.countryCodes.length) params.set("countries", filters.countryCodes.join(","));
   if (filters.departureCountry) params.set("country", filters.departureCountry);
   if (filters.departurePortId) params.set("from", filters.departurePortId);
   if (filters.arrivalPortId) params.set("to", filters.arrivalPortId);

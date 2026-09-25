@@ -396,14 +396,14 @@ export function TripPlanner({ selection, onSelect }: { selection: Selection | nu
   };
 
   return (
-    <div className="border-b border-[#e7dcc9] bg-gradient-to-br from-[#e7f5f7] via-[#fffaf2] to-[#f7efe2]">
+    <div className="bg-transparent">
       <button
         type="button"
         onClick={() => setOpen((value) => !value)}
-        className="flex w-full items-center justify-between gap-3 px-5 py-3 text-left"
+        className="mx-3 mt-2 flex w-[calc(100%-1.5rem)] items-center justify-between gap-3 rounded-2xl bg-card px-4 py-3.5 text-left shadow-sm"
       >
         <span className="flex min-w-0 items-center gap-2.5">
-          <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-primary text-primary-foreground shadow-sm">
+          <span className="grid size-10 shrink-0 place-items-center rounded-2xl bg-primary text-primary-foreground shadow-[var(--shadow-brand)]">
             <Compass className="size-4" />
           </span>
           <span className="min-w-0">
@@ -415,7 +415,7 @@ export function TripPlanner({ selection, onSelect }: { selection: Selection | nu
       </button>
 
       {open ? (
-        <div className="space-y-4 px-5 pb-4">
+        <div className="space-y-3 px-1 pb-4 pt-1">
           <section className="space-y-2">
             <div className="flex items-center justify-between gap-2">
               <div>

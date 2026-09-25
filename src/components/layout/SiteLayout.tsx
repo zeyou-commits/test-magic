@@ -3,7 +3,7 @@ import { Link } from "@tanstack/react-router";
 import { BrandMark } from "./BrandMark";
 import { UserMenu } from "./UserMenu";
 
-const navLinks = [
+export const navLinks = [
   { to: "/", label: "Carte" },
   { to: "/horaires", label: "Horaires" },
   { to: "/ports", label: "Ports" },

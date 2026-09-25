@@ -94,9 +94,15 @@ function Index() {
     const portOpen = (id: string) =>
       ports.find((item) => item.id === id)?.status === "active";
     const selected = new Set(filters.portIds);
+    const selectedCountries = new Set(filters.countryCodes);
     return routes.filter((route) => {
       if (!portOpen(route.departure_port_id) || !portOpen(route.arrival_port_id)) return false;
       // Les filtres guidés du trajet sont prioritaires sur l'ancienne sélection de ports.
+      if (
+        selectedCountries.size > 0 &&
+        !selectedCountries.has(ports.find((item) => item.id === route.departure_port_id)?.country_code ?? "") &&
+        !selectedCountries.has(ports.find((item) => item.id === route.arrival_port_id)?.country_code ?? "")
+      ) return false;
       if (
         selected.size > 0 &&
         !filters.departurePortId &&

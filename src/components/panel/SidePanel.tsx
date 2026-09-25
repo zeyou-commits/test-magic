@@ -1,4 +1,6 @@
 import type { Filters, RouteLine, Selection } from "@/lib/ferry/types";
+import { Share2 } from "lucide-react";
+import { toast } from "sonner";
 import { ExplorerView } from "./ExplorerView";
 import { TripPlanner } from "./TripPlanner";
 import { PortView } from "./PortView";
@@ -22,6 +24,21 @@ export function SidePanel({
   visibleRoutes,
   hidePrimarySearchOnMobile = false,
 }: SidePanelProps) {
+  const shareSelection = async () => {
+    if (typeof window === "undefined") return;
+    const url = window.location.href;
+    try {
+      if (navigator.share) {
+        await navigator.share({ title: "Batogo — traversées en ferry", url });
+      } else {
+        await navigator.clipboard.writeText(url);
+        toast.success("Lien copié");
+      }
+    } catch {
+      // L'utilisateur peut fermer la feuille de partage sans erreur à afficher.
+    }
+  };
+
   return (
     <div className="flex h-full min-h-0 flex-col bg-transparent">
       <div className="custom-scrollbar min-h-0 flex-1 overflow-y-auto">
@@ -31,13 +48,24 @@ export function SidePanel({
               <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
                 Sélection
               </span>
-              <button
-                type="button"
-                onClick={() => onSelect(null)}
-                className="rounded-full px-2 py-0.5 text-xs font-semibold text-muted-foreground transition-colors hover:bg-card hover:text-foreground"
-              >
-                Fermer ✕
-              </button>
+              <div className="flex items-center gap-1">
+                <button
+                  type="button"
+                  onClick={shareSelection}
+                  className="inline-flex min-h-9 items-center gap-1 rounded-full px-2.5 text-xs font-semibold text-muted-foreground transition-colors hover:bg-card hover:text-foreground"
+                  title="Partager cette sélection"
+                >
+                  <Share2 aria-hidden className="size-3.5" />
+                  <span className="sr-only sm:not-sr-only">Partager</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => onSelect(null)}
+                  className="min-h-9 rounded-full px-2.5 text-xs font-semibold text-muted-foreground transition-colors hover:bg-card hover:text-foreground"
+                >
+                  Fermer ✕
+                </button>
+              </div>
             </div>
             {selection.type === "port" ? (
               <PortView portId={selection.id} onSelect={onSelect} />

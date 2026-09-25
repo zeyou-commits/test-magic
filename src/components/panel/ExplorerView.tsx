@@ -382,7 +382,7 @@ export function ExplorerView({
                     className="flex w-full items-center justify-between gap-3 rounded-xl px-3 py-2.5 text-left hover:bg-[#f7f3ea]"
                   >
                     <span className="text-sm font-medium text-[#17383f]">
-                      {portName(route.departure_port_id)} → {portName(route.arrival_port_id)}
+                      {ports.find((port) => port.id === route.departure_port_id)?.name ?? "—"} → {ports.find((port) => port.id === route.arrival_port_id)?.name ?? "—"}
                     </span>
                     <span className="text-xs font-semibold text-[#0e7490]">
                       {formatDuration(route.typical_duration_minutes)}
@@ -396,10 +396,6 @@ export function ExplorerView({
       </div>
     </div>
   );
-}
-
-function portName(id: string) {
-  return id;
 }
 
 function FilterSelect({

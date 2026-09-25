@@ -143,67 +143,68 @@
   background: color-mix(in oklab, var(--color-card) 94%, var(--color-background));
 }
 .batogo-floating-panel {
-  border: 1px solid oklch(1 0 0 / 72%);
-  background: color-mix(in oklab, var(--color-card) 91%, transparent);
-  box-shadow: var(--shadow-panel);
-  backdrop-filter: blur(22px) saturate(125%);
+  border: 1px solid oklch(1 0 0 / 88%);
+  background: color-mix(in oklab, var(--color-card) 97%, transparent);
+  box-shadow: 0 24px 70px -32px oklch(0.18 0.05 235 / 38%);
+  backdrop-filter: blur(18px) saturate(115%);
 }
 .batogo-tabbar {
-  border: 1px solid color-mix(in oklab, var(--color-primary) 8%, var(--color-border));
-  background: color-mix(in oklab, var(--color-muted) 72%, white);
-  box-shadow: inset 0 1px 0 oklch(1 0 0 / 70%);
+  border: 0;
+  background: #f2eee5;
+  box-shadow: inset 0 1px 0 oklch(1 0 0 / 60%);
 }
 .batogo-tab {
-  min-height: 44px;
-  border-radius: 0.72rem;
-  color: var(--color-muted-foreground);
-  transition: transform .18s ease, background .18s ease, color .18s ease, box-shadow .18s ease;
+  min-height: 40px;
+  border-radius: 11px;
+  color: #6b7d81;
+  transition: background .18s ease, color .18s ease, box-shadow .18s ease;
 }
-.batogo-tab:hover { color: var(--color-foreground); }
+.batogo-tab:hover { color: #193b42; }
 .batogo-tab[data-active="true"] {
-  color: var(--color-foreground);
-  background: var(--color-card);
-  box-shadow: 0 7px 18px -12px color-mix(in oklab, var(--color-foreground) 30%, transparent);
+  color: #193b42;
+  background: #fffdfa;
+  box-shadow: 0 4px 12px -9px #183b42;
 }
 .batogo-tab[data-active="true"] svg { color: var(--color-primary); }
 
 .batogo-section {
-  margin: 0 12px 12px;
-  padding: 14px;
-  border: 1px solid color-mix(in oklab, var(--color-primary) 7%, var(--color-border));
-  border-radius: 18px;
-  background: color-mix(in oklab, var(--color-card) 82%, transparent);
-  box-shadow: 0 10px 28px -24px color-mix(in oklab, var(--color-foreground) 28%, transparent);
+  margin: 0;
+  padding: 12px 18px 16px;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
 }
-.batogo-section + .batogo-section { margin-top: 10px; }
+.batogo-section + .batogo-section { margin-top: 0; border-top: 1px solid #eeeae1; }
 
 .batogo-field {
-  border: 1px solid color-mix(in oklab, var(--color-primary) 10%, var(--color-border));
-  border-radius: 14px;
-  background: var(--color-card);
-  box-shadow: inset 0 1px 0 oklch(1 0 0 / 75%);
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
 }
 .batogo-list-item {
-  border: 1px solid transparent;
-  border-radius: 13px;
-  transition: transform .16s ease, background .16s ease, border-color .16s ease, box-shadow .16s ease;
+  border: 0;
+  border-radius: 10px;
+  transition: background .16s ease, color .16s ease;
 }
 .batogo-list-item:hover {
-  border-color: color-mix(in oklab, var(--color-primary) 16%, transparent);
-  background: color-mix(in oklab, var(--color-primary) 5%, var(--color-card));
-  transform: translateY(-1px);
+  border-color: transparent;
+  background: #f4f1e9;
+  transform: none;
 }
 .batogo-departure-card {
-  border: 1px solid color-mix(in oklab, var(--color-primary) 8%, var(--color-border));
-  border-radius: 16px;
-  background: var(--color-card);
-  box-shadow: 0 10px 24px -22px color-mix(in oklab, var(--color-foreground) 35%, transparent);
-  transition: transform .16s ease, box-shadow .16s ease, border-color .16s ease;
+  border: 0;
+  border-radius: 12px;
+  background: #f6f3eb;
+  box-shadow: none;
+  transition: background .16s ease, transform .16s ease;
 }
 .batogo-departure-card:hover {
-  transform: translateY(-2px);
-  border-color: color-mix(in oklab, var(--color-primary) 22%, var(--color-border));
-  box-shadow: 0 16px 28px -22px color-mix(in oklab, var(--color-primary) 35%, transparent);
+  transform: none;
+  border-color: transparent;
+  background: #eeeae0;
+  box-shadow: none;
 }
 .batogo-primary-action {
   border-radius: 13px;
@@ -294,4 +295,20 @@
   .port-tip { max-width: min(200px, calc(100vw - 20px)); padding: 8px 10px; border-radius: 14px; }
   .port-tip__title { font-size: 12px; }
   .port-tip__next { margin-top: 2px; font-size: 10px; }
+}
+
+
+/* Clean travel-panel composition: one surface, strong typography, very few containers. */
+.batogo-floating-panel .custom-scrollbar { scrollbar-width: thin; scrollbar-color: #c8d4d0 transparent; }
+.batogo-floating-panel h3, .batogo-floating-panel h4 { color: #17383f; }
+.batogo-floating-panel input { background: #f6f4ee !important; border: 1px solid #e5e1d8 !important; border-radius: 12px !important; }
+.batogo-floating-panel .batogo-section > div:first-child { letter-spacing: -.01em; }
+.batogo-floating-panel .batogo-section button[data-state="open"] { background: #f2eee5; }
+.batogo-floating-panel .batogo-departure-card strong { color: #17383f; }
+@media (min-width: 768px) {
+  .batogo-floating-panel { width: 390px; }
+}
+@media (max-width: 767px) {
+  .batogo-floating-panel { width: 100%; }
+  .batogo-section { padding-left: 16px; padding-right: 16px; }
 }

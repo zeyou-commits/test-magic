@@ -417,18 +417,13 @@ export function TripPlanner({ selection, onSelect }: { selection: Selection | nu
       {open ? (
         <div className="space-y-4 px-5 pb-4">
           <section className="space-y-2">
-            <p className="text-sm font-semibold">Je voyage...</p>
-            <div className="grid grid-cols-3 gap-2">
-              {([["solo", "Seul"], ["couple", "En couple"], ["family", "En famille"]] as const).map(([value, label]) => (
-                <button key={value} type="button" onClick={() => setTraveler(value)}
-                  className={`rounded-2xl border p-3 text-center text-xs font-semibold transition ${traveler === value ? "border-primary bg-primary text-primary-foreground shadow-sm" : "border-border bg-background hover:bg-secondary"}`}>
-                  <Users className="mx-auto mb-1 size-5" />{label}
-                </button>
-              ))}
+            <div className="flex items-center justify-between gap-2">
+              <div>
+                <p className="text-sm font-semibold">Vacances scolaires</p>
+                <p className="text-[11px] text-muted-foreground">Le moteur adapte les dates et les ports aux vacances françaises.</p>
+              </div>
+              <span className="rounded-full bg-primary/10 px-2 py-1 text-[10px] font-semibold text-primary">Différenciant</span>
             </div>
-          </section>
-
-          <section className="space-y-2">
             <p className="text-sm font-semibold">Vacances scolaires</p>
             <Select value={zone ?? ANY} onValueChange={(value) => {
               const next = value === ANY ? null : value as SchoolZone;
@@ -450,6 +445,24 @@ export function TripPlanner({ selection, onSelect }: { selection: Selection | nu
             </Select>
           </section>
 
+          <details className="group rounded-xl border border-border/70 bg-background/60">
+            <summary className="flex cursor-pointer list-none items-center justify-between px-3 py-2.5 text-xs font-semibold">
+              <span>Plus de filtres</span>
+              <ChevronDown className="size-3.5 transition-transform group-open:rotate-180" />
+            </summary>
+            <div className="border-t border-border/60 px-3 pb-3 pt-2">
+              <p className="mb-2 text-[11px] text-muted-foreground">Profil voyageur</p>
+              <div className="grid grid-cols-3 gap-1.5">
+                {([["solo", "Seul"], ["couple", "Couple"], ["family", "Famille"]] as const).map(([value, label]) => (
+                  <button key={value} type="button" onClick={() => setTraveler(value)}
+                    className={`rounded-xl border px-2 py-2 text-[11px] font-semibold transition ${traveler === value ? "border-primary bg-primary text-primary-foreground" : "border-border bg-background hover:bg-secondary"}`}>
+                    <Users className="mx-auto mb-1 size-4" />{label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </details>
+
           <section className="space-y-2">
             <div className="grid grid-cols-2 gap-1 rounded-xl bg-secondary/70 p-1">
               <button type="button" onClick={() => { setTripMode("roundtrip"); setReturnDate(returnDate || addDays(outboundDate, 7)); }}
@@ -458,8 +471,15 @@ export function TripPlanner({ selection, onSelect }: { selection: Selection | nu
                 className={`rounded-lg px-3 py-2 text-xs font-semibold ${tripMode === "oneway" ? "bg-background shadow-sm" : "text-muted-foreground"}`}>Aller simple</button>
             </div>
 
+            {!zone ? (
+              <div className="grid gap-2 md:grid-cols-2">
+                <GroupedPortSelect label="Départ" value={fromId} onChange={(value) => { setFromId(value); setSearched(false); }} ports={compatibleDeparturePorts} />
+                <GroupedPortSelect label="Arrivée" value={toId} onChange={(value) => { setToId(value); setSearched(false); }} ports={compatibleArrivalPorts} />
+              </div>
+            ) : null}
+
             {zone ? (
-              <div className="rounded-xl border border-border/70 bg-background/70 px-3 py-2 text-xs">
+              <div className="rounded-xl border border-primary/15 bg-background/70 px-3 py-2 text-xs">
                 <div><span className="font-semibold">Itinéraire compris :</span> France → Algérie</div>
                 <div className="mt-2 border-t border-border/60 pt-2">
                   <p className="mb-1.5 text-[11px] font-semibold text-muted-foreground">Calendrier Zone {zone} · 2026–2027</p>
@@ -623,6 +643,19 @@ export function TripPlanner({ selection, onSelect }: { selection: Selection | nu
             </section>
           ) : null}
 
+          <div className="flex flex-wrap items-center gap-1.5">
+            {fromId && <span className="rounded-full bg-secondary px-2.5 py-1 text-[10px] font-medium">{portName(fromId)}</span>}
+            {toId && <><ArrowRight className="size-3 text-muted-foreground" /><span className="rounded-full bg-secondary px-2.5 py-1 text-[10px] font-medium">{portName(toId)}</span></>}
+            {zone && <span className="rounded-full bg-primary/10 px-2.5 py-1 text-[10px] font-semibold text-primary">Zone {zone}</span>}
+            {(fromId || toId || zone) && (
+              <button type="button" onClick={() => {
+                setFromId(""); setToId(""); setReturnDate(""); setReturnFromId(""); setReturnToId(""); setZone(null); setSearched(false);
+              }} className="ml-auto text-[10px] font-medium text-muted-foreground hover:text-foreground">
+                Réinitialiser
+              </button>
+            )}
+          </div>
+
           <Button
             type="button"
             className="w-full rounded-xl"
@@ -659,7 +692,7 @@ export function TripPlanner({ selection, onSelect }: { selection: Selection | nu
 }
 
 function DateField({ label, value, min, onChange, optional = false, availableDates }: { label: string; value: string; min: string; onChange: (value: string) => void; optional?: boolean; availableDates: Set<string> }) {
-  return <label className="grid gap-1"><span className="text-xs font-medium text-muted-foreground">{label}{optional ? " · optionnel" : ""}</span><Input type="date" min={min} value={value} onChange={(event) => onChange(event.target.value)} className="bg-background/70" /><span className="text-[10px] text-muted-foreground">{availableDates.size} date(s) de traversée connues</span></label>;
+  return <label className="grid gap-1"><span className="text-xs font-medium text-muted-foreground">{label}{optional ? " · optionnel" : ""}</span><Input type="date" min={min} value={value} onChange={(event) => onChange(event.target.value)} className="bg-background/70" /></label>;
 }
 
 function countDeparturesForDate(date: string, fromId: string, toId: string, routes: RouteLine[], departures: Departure[]) {

@@ -143,12 +143,9 @@ export function ExplorerView({
 
   return (
     <div className="pb-2">
-      <div className="flex items-center justify-between gap-3 border-b border-[#0e7490]/10 bg-[#f7f3ea] px-5 py-3">
-        <div className="min-w-0">
-          <p className="text-sm font-semibold text-[#12343b]">Explorer les traversées</p>
-          <p className="text-[11px] text-[#547078]">Choisissez un ou plusieurs pays, puis un ou plusieurs ports</p>
-        </div>
-        <span className="shrink-0 rounded-full bg-white px-2.5 py-1 text-[11px] font-medium text-[#547078] shadow-sm">
+      <div className="flex h-9 items-center justify-between gap-3 border-b border-[#0e7490]/10 bg-[#f7f3ea] px-4">
+        <span className="text-[11px] font-semibold text-[#12343b]">Traversées EU → DZ</span>
+        <span className="text-[10px] font-medium text-[#718489]">
           {routes.length} lignes · {ports.length} ports
         </span>
       </div>
@@ -157,14 +154,14 @@ export function ExplorerView({
         <div className={hidePrimarySearchOnMobile ? "hidden md:block" : undefined}>
           <Section title="Rechercher un port">
             <div className="relative">
-              <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-[#718489]" />
+              <Search className="pointer-events-none absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-[#718489]" />
               <Input
                 value={filters.search}
                 onChange={(event) =>
                   onFiltersChange({ ...filters, search: event.target.value })
                 }
-                placeholder="Marseille, Alger, Oran…"
-                className="pl-9 pr-9"
+                placeholder="Rechercher Marseille, Alger, Oran…"
+                className="h-9 pl-8 pr-8 text-sm"
               />
               {filters.search ? (
                 <button

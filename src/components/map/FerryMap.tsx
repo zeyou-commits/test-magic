@@ -172,6 +172,7 @@ export default function FerryMap({ ports, routes, visibleRouteIds, focusRouteIds
   const selectRef = useRef(onSelect);
   const filtersRef = useRef(filters);
   const filtersChangeRef = useRef(onFiltersChange);
+  const dismissedPortIdsRef = useRef<Set<string>>(new Set());
   const [mapReady, setMapReady] = useState(false);
   
   selectRef.current = onSelect;
@@ -378,6 +379,7 @@ export default function FerryMap({ ports, routes, visibleRouteIds, focusRouteIds
         close.addEventListener("pointerdown", (event) => {
           event.stopPropagation();
           event.preventDefault();
+          dismissedPortIdsRef.current.add(port.id);
           selectRef.current(null);
           el.dataset["active"] = "false";
           (document.activeElement as HTMLElement | null)?.blur?.();
@@ -393,6 +395,7 @@ export default function FerryMap({ ports, routes, visibleRouteIds, focusRouteIds
         
         const select = (event: Event) => {
           event.stopPropagation();
+          dismissedPortIdsRef.current.delete(port.id);
           filtersChangeRef.current({
             ...filtersRef.current,
             portIds: [port.id],
@@ -425,7 +428,7 @@ export default function FerryMap({ ports, routes, visibleRouteIds, focusRouteIds
         label.style.fontWeight = isSingleLineAlgerianPort ? "500" : "700"; 
       }
       
-      element.dataset["active"] = String(activeIds.has(port.id)); 
+      element.dataset["active"] = String(activeIds.has(port.id) && !dismissedPortIdsRef.current.has(port.id)); 
       element.dataset["dimmed"] = String(dimming && !activeIds.has(port.id)); 
       element.dataset["closed"] = String(port.status === "inactive");
       marker.setLngLat([port.longitude, port.latitude]);

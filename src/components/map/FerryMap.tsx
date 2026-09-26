@@ -381,7 +381,8 @@ export default function FerryMap({ ports, routes, visibleRouteIds, focusRouteIds
           selectRef.current(null);
           el.dataset["active"] = "false";
           (document.activeElement as HTMLElement | null)?.blur?.();
-          requestAnimationFrame(() => dot.focus({ preventScroll: true }));
+          close.blur();
+          dot.blur();
         });
         close.addEventListener("click", (event) => {
           event.stopPropagation();

@@ -39,7 +39,13 @@ export function MobileMapControls({
   const activeDeparturePorts = ports.filter((port) => port.status === "active");
   const countries = [...new Map(activeDeparturePorts.map((port) => [port.country_code, port.country_name]))]
     .map(([value, label]) => ({ value, label }))
-    .sort((a, b) => a.label.localeCompare(b.label, "fr"));
+    .sort((a, b) => {
+      const order = ["ES", "FR", "IT", "DZ"];
+      const ai = order.indexOf(a.value);
+      const bi = order.indexOf(b.value);
+      if (ai !== -1 || bi !== -1) return (ai === -1 ? order.length : ai) - (bi === -1 ? order.length : bi);
+      return a.label.localeCompare(b.label, "fr");
+    });
 
   const toggleDepartureCountry = (countryCode: string) => {
     const ids = activeDeparturePorts.filter((port) => port.country_code === countryCode).map((port) => port.id);

@@ -54,7 +54,6 @@ function Index() {
   const { data: vessels = [] } = vesselsResult;
   
   const isLoadingData = [portsResult, routesResult, departuresResult, companiesResult, vesselsResult].some((res) => res.isPending);
-  const hasDemoData = ports.some(i => i.is_demo) || routes.some(i => i.is_demo) || companies.some(i => i.is_demo) || vessels.some(i => i.is_demo);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -240,11 +239,6 @@ function Index() {
           hidePrimarySearchOnMobile
         />
         
-        {hasDemoData && (
-          <div className="pointer-events-none absolute bottom-4 left-4 right-4 rounded-xl border border-amber-200 bg-amber-50/95 px-4 py-3 text-[12px] text-amber-900 shadow-sm backdrop-blur-md md:bottom-4">
-            Données de démonstration : vérifiez les informations avant tout départ.
-          </div>
-        )}
       </aside>
 
       {/* NAV MOBILE FIXE */}

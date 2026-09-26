@@ -144,7 +144,7 @@ function positionPortTip(map: MapLibreMap, marker: Marker, tip: HTMLDivElement) 
   const padding = 10;
   const availableWidth = Math.max(0, mapRect.width - padding * 2);
   
-  tip.style.maxWidth = `${Math.min(240, availableWidth)}px`;
+  tip.style.maxWidth = `${Math.min(300, availableWidth)}px`;
   
   const tipRect = tip.getBoundingClientRect();
   const markerX = markerRect.left + markerRect.width / 2;
@@ -426,88 +426,87 @@ export default function FerryMap({ ports, routes, visibleRouteIds, focusRouteIds
       const tip = element.querySelector<HTMLDivElement>(".port-tip"); 
       if (!tip) return;
       tip.querySelectorAll(":scope > *:not(.port-tip__close)").forEach((child) => child.remove());
-      
-      const title = document.createElement("p"); 
-      title.className = "port-tip__title"; 
-      const country = port.country_name ? `, ${port.country_name}` : ""; 
-      const lineLabel = routeCount === 0 ? "aucune ligne visible" : routeCount === 1 ? "1 ligne" : `${routeCount} lignes`; 
-      title.textContent = `${port.name}${country}, ${lineLabel}`; 
-      tip.append(title);
-      
-      if (port.status === "inactive") { 
-        const closed = document.createElement("p"); 
-        closed.className = "port-tip__closed"; 
-        closed.textContent = "Temporairement fermé"; 
-        tip.append(closed); 
+
+      const header = document.createElement("div");
+      header.className = "port-tip__header";
+
+      const eyebrow = document.createElement("span");
+      eyebrow.className = "port-tip__eyebrow";
+      eyebrow.textContent = "PORT";
+      header.append(eyebrow);
+
+      const title = document.createElement("p");
+      title.className = "port-tip__title";
+      title.textContent = port.name;
+      header.append(title);
+
+      const country = document.createElement("p");
+      country.className = "port-tip__country";
+      const flags: Record<string, string> = { FR: "🇫🇷", ES: "🇪🇸", IT: "🇮🇹", DZ: "🇩🇿" };
+      country.textContent = `${flags[port.country_code] ?? "🌍"} ${port.country_name ?? ""}`.trim();
+      header.append(country);
+      tip.append(header);
+
+      const stats = document.createElement("div");
+      stats.className = "port-tip__stats";
+
+      const routeStat = document.createElement("div");
+      routeStat.className = "port-tip__stat";
+      routeStat.innerHTML = `<strong>${routeCount}</strong><span>${routeCount === 1 ? "ligne" : "lignes"}</span>`;
+      stats.append(routeStat);
+
+      const companyCount = meta?.companies?.length ?? 0;
+      const companyStat = document.createElement("div");
+      companyStat.className = "port-tip__stat";
+      companyStat.innerHTML = `<strong>${companyCount}</strong><span>${companyCount === 1 ? "compagnie" : "compagnies"}</span>`;
+      stats.append(companyStat);
+      tip.append(stats);
+
+      if (port.status === "inactive") {
+        const closed = document.createElement("p");
+        closed.className = "port-tip__closed";
+        closed.textContent = "Temporairement fermé";
+        tip.append(closed);
       }
-      if (isMobile) {
-        const firstUpcoming = meta?.upcoming?.[0];
-        if (firstUpcoming) {
-          const next = document.createElement("p");
-          next.className = "port-tip__next";
-          next.textContent = `Prochain : ${firstUpcoming.label}${firstUpcoming.to ? ` → ${firstUpcoming.to}` : ""}`;
-          tip.append(next);
-          const more = document.createElement("button");
-          more.type = "button";
-          more.className = "port-tip__more";
-          more.textContent = "Voir plus →";
-          more.addEventListener("click", (event) => {
-            event.stopPropagation();
-            onSelect({ type: "port", id: port.id });
-            onOpenPanel?.();
-          });
-          tip.append(more);
-        } else {
-          const next = document.createElement("p");
-          next.className = "port-tip__next";
-          next.textContent = "Prochain départ non connu";
-          tip.append(next);
-        }
+
+      const heading = document.createElement("p");
+      heading.className = "port-tip__departures-title";
+      heading.textContent = "Prochains départs";
+      tip.append(heading);
+
+      if (meta?.upcoming?.length) {
+        const list = document.createElement("ul");
+        list.className = "port-tip__departures";
+        meta.upcoming.slice(0, isMobile ? 2 : 3).forEach((item) => {
+          const row = document.createElement("li");
+          row.className = "port-tip__departure";
+          const date = document.createElement("span");
+          date.className = "port-tip__departure-date";
+          date.textContent = item.label;
+          const destination = document.createElement("span");
+          destination.className = "port-tip__departure-destination";
+          destination.textContent = item.to ? `→ ${item.to}` : "Destination à confirmer";
+          row.append(date, destination);
+          list.append(row);
+        });
+        tip.append(list);
       } else {
-        if (meta?.companies?.length) { 
-          const companies = document.createElement("p"); 
-          companies.className = "port-tip__meta"; 
-          companies.textContent = `Compagnies : ${meta.companies.slice(0, 3).join(", ")}${meta.companies.length > 3 ? ` +${meta.companies.length - 3}` : ""}`; 
-          tip.append(companies); 
-        }
-        if (meta?.vessels?.length) { 
-          const vessels = document.createElement("p"); 
-          vessels.className = "port-tip__meta"; 
-          vessels.textContent = `Navires : ${meta.vessels.slice(0, 3).join(", ")}${meta.vessels.length > 3 ? ` +${meta.vessels.length - 3}` : ""}`; 
-          tip.append(vessels); 
-        }
-        if (meta?.upcoming?.length) {
-          const heading = document.createElement("p"); 
-          heading.className = "port-tip__meta port-tip__departures-title"; 
-          heading.textContent = "Prochains départs"; 
-          tip.append(heading);
-          const list = document.createElement("ul"); 
-          list.className = "port-tip__departures";
-          meta.upcoming.forEach((item) => { 
-            const row = document.createElement("li"); 
-            row.textContent = `${item.label}${item.to ? ` → ${item.to}` : ""}`; 
-            list.append(row); 
-          }); 
-          tip.append(list);
-          if (meta.hasMore) { 
-            const more = document.createElement("button"); 
-            more.type = "button"; 
-            more.className = "port-tip__more"; 
-            more.textContent = "Voir plus →"; 
-            more.addEventListener("click", (event) => { 
-              event.stopPropagation(); 
-              selectRef.current({ type: "port", id: port.id }); 
-              onOpenPanel?.(); 
-            }); 
-            tip.append(more); 
-          }
-        } else { 
-          const next = document.createElement("p"); 
-          next.className = "port-tip__next"; 
-          next.textContent = "Prochain départ non connu"; 
-          tip.append(next); 
-        }
+        const next = document.createElement("p");
+        next.className = "port-tip__next";
+        next.textContent = "Aucun départ à venir renseigné.";
+        tip.append(next);
       }
+
+      const more = document.createElement("button");
+      more.type = "button";
+      more.className = "port-tip__more";
+      more.textContent = "Voir la fiche du port";
+      more.addEventListener("click", (event) => {
+        event.stopPropagation();
+        selectRef.current({ type: "port", id: port.id });
+        onOpenPanel?.();
+      });
+      tip.append(more);
       requestAnimationFrame(() => { 
         if (
           (isMobile && element.dataset["active"] === "true") ||

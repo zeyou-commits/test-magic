@@ -1,4 +1,4 @@
-import { CalendarClock, MapPin } from "lucide-react";
+import { CalendarClock, MapPin, ChevronDown, Check } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import { BrandMark } from "@/components/layout/BrandMark";
 import { UserMenu } from "@/components/layout/UserMenu";
@@ -10,6 +10,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { formatDateTime } from "@/lib/ferry/format";
 import type { Departure, Filters, Port, RouteLine, Selection } from "@/lib/ferry/types";
 
@@ -36,52 +37,24 @@ export function MobileMapControls({
 }: MobileMapControlsProps) {
   const ALGERIA = "DZ";
   const activeDeparturePorts = ports.filter((port) => port.status === "active");
-  const arrivalPorts = ports.filter(
-    (port) =>
-      port.status === "active" &&
-      (!filters.departureCountry
-        ? port.country_code === ALGERIA
-        : filters.departureCountry === ALGERIA
-          ? port.country_code !== ALGERIA
-          : port.country_code === ALGERIA),
-  );
-
-  const countries = [...new Map(
-    activeDeparturePorts.map((port) => [port.country_code, port.country_name]),
-  )]
+  const countries = [...new Map(activeDeparturePorts.map((port) => [port.country_code, port.country_name]))]
     .map(([value, label]) => ({ value, label }))
     .sort((a, b) => a.label.localeCompare(b.label, "fr"));
 
-  const departurePorts = filters.departureCountry
-    ? activeDeparturePorts.filter(
-        (port) => port.country_code === filters.departureCountry,
-      )
-    : activeDeparturePorts;
+  const toggleDepartureCountry = (countryCode: string) => {
+    const ids = activeDeparturePorts.filter((port) => port.country_code === countryCode).map((port) => port.id);
+    const allSelected = ids.length > 0 && ids.every((id) => filters.portIds.includes(id));
+    const portIds = allSelected ? filters.portIds.filter((id) => !ids.includes(id)) : [...new Set([...filters.portIds, ...ids])];
+    const countryCodes = allSelected ? filters.countryCodes.filter((code) => code !== countryCode) : [...new Set([...filters.countryCodes, countryCode])];
+    onFiltersChange({ ...filters, countryCodes, portIds, departureCountry: null, departurePortId: null });
+  };
 
-  const compatibleArrivals = arrivalPorts.filter((port) =>
-    routes.some((route) => {
-      if (route.arrival_port_id !== port.id) return false;
-      const departure = ports.find((item) => item.id === route.departure_port_id);
-      if (filters.departureCountry && departure?.country_code !== filters.departureCountry)
-        return false;
-      if (filters.departurePortId && route.departure_port_id !== filters.departurePortId)
-        return false;
-      return true;
-    }),
-  );
-
-  const compatibleDeparturePorts = activeDeparturePorts.filter((port) =>
-    routes.some((route) => {
-      if (route.departure_port_id !== port.id) return false;
-      if (filters.arrivalPortId && route.arrival_port_id !== filters.arrivalPortId) return false;
-      if (
-        filters.departureCountry &&
-        port.country_code !== filters.departureCountry
-      )
-        return false;
-      return true;
-    }),
-  );
+  const toggleDeparturePort = (portId: string) => {
+    const port = activeDeparturePorts.find((item) => item.id === portId);
+    const portIds = filters.portIds.includes(portId) ? filters.portIds.filter((id) => id !== portId) : [...filters.portIds, portId];
+    const countryCodes = port?.country_code ? [...new Set([...filters.countryCodes, port.country_code])] : filters.countryCodes;
+    onFiltersChange({ ...filters, countryCodes, portIds, departureCountry: null, departurePortId: null });
+  };
 
   const updateDepartureCountry = (departureCountry: string | null) => {
     const selectedPort = ports.find((port) => port.id === filters.departurePortId);
@@ -167,29 +140,50 @@ export function MobileMapControls({
         </div>
 
         <div className="grid grid-cols-2 items-center gap-1.5">
-          <PortSelect
-            label="Pays de départ"
-            placeholder="Pays"
-            value={filters.departureCountry}
-            options={countries}
-            onChange={updateDepartureCountry}
-          />
-          <PortSelect
-            label="Port de départ"
-            placeholder="Départ"
-            value={filters.departurePortId}
-            ports={departurePorts.filter((port) =>
-              compatibleDeparturePorts.some((item) => item.id === port.id),
-            )}
-            onChange={updateDeparturePort}
-          />
-          <PortSelect
-            label="Port d’arrivée"
-            placeholder="Arrivée"
-            value={filters.arrivalPortId}
-            ports={compatibleArrivals}
-            onChange={(arrivalPortId) => onFiltersChange({ ...filters, arrivalPortId })}
-          />
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button type="button" variant="outline" className="h-11 min-w-0 justify-between rounded-lg bg-card px-2.5 text-xs font-medium shadow-none">
+                <span className="truncate">{filters.portIds.length ? filters.portIds.length + " port" + (filters.portIds.length > 1 ? "s" : "") + " de départ" : "Départs"}</span>
+                <ChevronDown className="size-3.5 shrink-0 opacity-60" />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent align="start" className="w-[calc(100vw-1.5rem)] max-w-sm p-2">
+              <div className="px-2 py-1.5">
+                <p className="text-xs font-semibold text-foreground">Ports de départ</p>
+                <p className="text-[10px] text-muted-foreground">Choisissez un ou plusieurs pays et ports.</p>
+              </div>
+              <div className="max-h-[55vh] overflow-y-auto">
+                {countries.map((country) => {
+                  const ids = activeDeparturePorts.filter((port) => port.country_code === country.value).map((port) => port.id);
+                  const selectedCount = ids.filter((id) => filters.portIds.includes(id)).length;
+                  const countrySelected = selectedCount === ids.length && ids.length > 0;
+                  return (
+                    <div key={country.value} className="mb-1 rounded-lg bg-muted/40 p-1">
+                      <button type="button" onClick={() => toggleDepartureCountry(country.value)} className="flex w-full items-center justify-between rounded-md px-2 py-2 text-left text-xs font-semibold hover:bg-background">
+                        <span>{country.label}</span>
+                        <span className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
+                          {selectedCount ? selectedCount + "/" + ids.length : ""}
+                          <span className={countrySelected ? "grid size-4 place-items-center rounded border bg-primary text-primary-foreground" : "grid size-4 place-items-center rounded border"}>{countrySelected ? <Check className="size-3" /> : null}</span>
+                        </span>
+                      </button>
+                      <div className="grid grid-cols-2 gap-0.5 px-1 pb-1">
+                        {activeDeparturePorts.filter((port) => port.country_code === country.value).map((port) => {
+                          const selected = filters.portIds.includes(port.id);
+                          return (
+                            <button key={port.id} type="button" onClick={() => toggleDeparturePort(port.id)} className={selected ? "flex min-h-8 items-center gap-1.5 rounded-md bg-primary/10 px-2 text-left text-[11px] font-semibold text-primary" : "flex min-h-8 items-center gap-1.5 rounded-md px-2 text-left text-[11px] text-muted-foreground hover:bg-background"}>
+                              <span className={selected ? "grid size-3.5 place-items-center rounded-full bg-primary text-primary-foreground" : "size-3.5 rounded-full border"}>{selected ? <Check className="size-2.5" /> : null}</span>
+                              <span className="truncate">{port.name}</span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </PopoverContent>
+          </Popover>
+          <PortSelect label="Port d’arrivée" placeholder="Arrivée" value={filters.arrivalPortId} ports={compatibleArrivals} onChange={(arrivalPortId) => onFiltersChange({ ...filters, arrivalPortId })} />
         </div>
       </div>
 

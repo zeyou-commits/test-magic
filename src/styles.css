@@ -175,133 +175,135 @@
 }
 .port-marker[data-active="true"] .port-marker__label { color: var(--color-accent); }
 
-/* Popups ports : fiche courte, lisible et orientée voyage */
+/* Popups ports : mini-fiche de voyage */
 .port-tip {
   position: absolute;
   left: 16px;
   top: -12px;
   z-index: 5;
-  width: 272px;
+  width: 292px;
   max-width: calc(100vw - 24px);
-  padding: 15px;
-  border: 1px solid rgba(15, 42, 55, 0.08);
-  border-radius: 1.15rem;
-  background: rgba(255, 255, 255, 0.98);
-  backdrop-filter: blur(18px);
-  box-shadow: 0 18px 45px rgba(15, 42, 55, 0.16), 0 4px 12px rgba(15, 42, 55, 0.08);
+  padding: 17px;
+  border: 1px solid rgba(14, 43, 57, 0.08);
+  border-radius: 1.25rem;
+  background: rgba(255, 253, 249, 0.985);
+  box-shadow: 0 20px 50px rgba(14, 43, 57, 0.17), 0 5px 16px rgba(14, 43, 57, 0.08);
+  backdrop-filter: blur(20px);
   opacity: 0;
-  transform: translateX(6px) translateY(2px) scale(.98);
+  transform: translateX(6px) scale(.97);
   transform-origin: left center;
   transition: opacity .18s ease, transform .18s ease;
   pointer-events: none;
+  overflow: hidden;
 }
-.port-tip::before {
+.port-tip::after {
   content: "";
   position: absolute;
-  left: -7px;
-  top: 50%;
-  width: 12px;
-  height: 12px;
-  background: inherit;
-  border-left: 1px solid rgba(15, 42, 55, 0.08);
-  border-bottom: 1px solid rgba(15, 42, 55, 0.08);
-  transform: translateY(-50%) rotate(45deg);
+  inset: 0 0 auto;
+  height: 3px;
+  background: linear-gradient(90deg, var(--color-primary), var(--color-accent));
 }
 .port-tip__close {
   position: absolute;
-  top: 10px;
-  right: 10px;
+  top: 11px;
+  right: 11px;
   z-index: 2;
-  width: 28px;
-  height: 28px;
+  width: 30px;
+  height: 30px;
   display: grid;
   place-items: center;
-  padding: 0;
-  border: 0;
+  padding: 0 0 2px;
+  border: 1px solid rgba(14, 43, 57, 0.08);
   border-radius: 50%;
-  background: rgba(15, 42, 55, 0.07);
+  background: rgba(255,255,255,.78);
   color: var(--color-muted-foreground);
-  font-size: 18px;
+  font-size: 19px;
+  font-weight: 400;
   line-height: 1;
   cursor: pointer;
-  transition: background .15s ease, color .15s ease;
+  -webkit-tap-highlight-color: transparent;
 }
-.port-tip__close:hover {
-  background: rgba(15, 42, 55, 0.12);
+.port-tip__close:hover,
+.port-tip__close:active {
+  background: var(--color-secondary);
   color: var(--color-foreground);
 }
-.port-marker:hover .port-tip, .port-marker:focus-within .port-tip, .port-marker[data-active="true"] .port-tip {
+.port-marker:hover .port-tip,
+.port-marker:focus-within .port-tip,
+.port-marker[data-active="true"] .port-tip {
   opacity: 1;
-  transform: translateX(0) translateY(0) scale(1);
+  transform: translateX(0) scale(1);
   pointer-events: auto;
 }
 .port-tip__header {
-  padding: 1px 34px 11px 1px;
-  margin: -15px -15px 12px;
-  padding-left: 16px;
-  padding-top: 15px;
-  border-bottom: 1px solid rgba(15, 42, 55, 0.07);
-  background: linear-gradient(135deg, rgba(14, 116, 144, 0.08), rgba(244, 184, 96, 0.10));
+  padding: 4px 38px 0 1px;
+  margin-bottom: 14px;
 }
 .port-tip__eyebrow {
   display: block;
-  margin-bottom: 4px;
+  margin-bottom: 5px;
   color: var(--color-accent);
-  font-size: 8px;
+  font-size: 9px;
   font-weight: 800;
-  letter-spacing: .14em;
+  letter-spacing: .16em;
+  text-transform: uppercase;
 }
 .port-tip__title {
   margin: 0;
   font-family: var(--font-display);
-  font-size: 20px;
-  line-height: 1.05;
+  font-size: 22px;
+  line-height: 1;
   font-weight: 750;
   color: var(--color-foreground);
 }
 .port-tip__country {
-  margin: 5px 0 0;
+  display: inline-flex;
+  align-items: center;
+  margin: 7px 0 0;
+  padding: 4px 8px;
+  border-radius: 999px;
+  background: rgba(14, 43, 57, 0.055);
   color: var(--color-muted-foreground);
-  font-size: 12px;
-  font-weight: 500;
+  font-size: 11px;
+  font-weight: 600;
 }
 .port-tip__stats {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 6px;
-  margin-bottom: 13px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 15px;
+  padding: 0 1px;
 }
 .port-tip__stat {
   display: flex;
   align-items: baseline;
-  gap: 5px;
-  min-width: 0;
-  padding: 7px 9px;
-  border-radius: .65rem;
-  background: #f5f7f7;
+  gap: 4px;
 }
 .port-tip__stat strong {
+  color: var(--color-foreground);
   font-size: 15px;
   font-weight: 750;
-  color: var(--color-foreground);
 }
 .port-tip__stat span {
-  overflow: hidden;
   color: var(--color-muted-foreground);
-  font-size: 10px;
-  white-space: nowrap;
+  font-size: 10.5px;
+}
+.port-tip__stat + .port-tip__stat::before {
+  content: "•";
+  margin-right: 8px;
+  color: rgba(14, 43, 57, .25);
 }
 .port-tip__closed {
   margin: 0 0 12px;
   padding: 8px 10px;
-  border-radius: .65rem;
-  background: rgba(220, 100, 75, 0.10);
+  border-radius: .7rem;
+  background: rgba(220, 100, 75, .10);
   color: #a64b3c;
   font-size: 11px;
   font-weight: 700;
 }
 .port-tip__departures-title {
-  margin: 0 0 6px;
+  margin: 0 0 7px;
   color: var(--color-foreground);
   font-size: 11px;
   font-weight: 750;
@@ -314,14 +316,15 @@
   list-style: none;
 }
 .port-tip__departure {
-  display: flex;
+  display: grid;
+  grid-template-columns: 1fr auto;
   align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-  min-height: 32px;
-  padding: 6px 9px;
-  border-radius: .6rem;
-  background: #f7f8f8;
+  gap: 8px;
+  min-height: 35px;
+  padding: 7px 9px;
+  border: 1px solid rgba(14, 43, 57, .055);
+  border-radius: .7rem;
+  background: rgba(14, 43, 57, .035);
 }
 .port-tip__departure-date {
   color: var(--color-foreground);
@@ -331,37 +334,50 @@
 .port-tip__departure-destination {
   color: var(--color-primary);
   font-size: 11px;
-  font-weight: 700;
+  font-weight: 750;
   text-align: right;
 }
 .port-tip__next {
   margin: 0;
-  padding: 9px 10px;
-  border-radius: .65rem;
-  background: rgba(15, 42, 55, 0.04);
+  padding: 10px;
+  border-radius: .7rem;
+  background: rgba(14, 43, 57, .045);
   color: var(--color-muted-foreground);
   font-size: 11px;
+  line-height: 1.35;
 }
 .port-tip__more {
   width: 100%;
-  min-height: 34px;
-  margin-top: 11px;
-  padding: 8px 12px;
+  min-height: 38px;
+  margin-top: 12px;
+  padding: 8px 13px;
   border: 0;
-  border-radius: .7rem;
+  border-radius: .75rem;
   background: var(--color-primary);
   color: var(--color-primary-foreground);
   font-size: 11px;
   font-weight: 750;
-  letter-spacing: .01em;
   cursor: pointer;
   transition: transform .15s ease, filter .15s ease;
+  -webkit-tap-highlight-color: transparent;
 }
 .port-tip__more:hover {
   filter: brightness(1.06);
   transform: translateY(-1px);
 }
 
+@media (max-width: 767px) {
+  .port-tip {
+    width: 274px;
+    max-width: calc(100vw - 24px);
+    padding: 16px;
+    border-radius: 1.15rem;
+  }
+  .port-tip__title { font-size: 20px; }
+  .port-tip__header { margin-bottom: 12px; }
+  .port-tip__stats { margin-bottom: 13px; }
+  .port-tip__departure { min-height: 34px; }
+}
 
 .maplibregl-ctrl-group {
   border-radius: 0.5rem !important;

@@ -375,10 +375,16 @@ export default function FerryMap({ ports, routes, visibleRouteIds, focusRouteIds
         close.className = "port-tip__close";
         close.setAttribute("aria-label", "Fermer");
         close.textContent = "×";
-        close.addEventListener("click", (event) => {
+        close.addEventListener("pointerdown", (event) => {
           event.stopPropagation();
+          event.preventDefault();
           selectRef.current(null);
           el.dataset["active"] = "false";
+          (document.activeElement as HTMLElement | null)?.blur?.();
+          requestAnimationFrame(() => dot.focus({ preventScroll: true }));
+        });
+        close.addEventListener("click", (event) => {
+          event.stopPropagation();
         });
         tip.append(close);
         

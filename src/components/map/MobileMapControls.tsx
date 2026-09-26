@@ -56,61 +56,12 @@ export function MobileMapControls({
     onFiltersChange({ ...filters, countryCodes, portIds, departureCountry: null, departurePortId: null });
   };
 
-  const updateDepartureCountry = (departureCountry: string | null) => {
-    const selectedPort = ports.find((port) => port.id === filters.departurePortId);
-    const nextPortId =
-      departureCountry && selectedPort?.country_code === departureCountry
-        ? filters.departurePortId
-        : null;
-
-    const nextArrivals = arrivalPorts.filter((port) =>
-      routes.some(
-        (route) =>
-          route.arrival_port_id === port.id &&
-          (!departureCountry ||
-            ports.find((item) => item.id === route.departure_port_id)?.country_code ===
-              departureCountry) &&
-          (!nextPortId || route.departure_port_id === nextPortId),
-      ),
-    );
-
-    onFiltersChange({
-      ...filters,
-      departureCountry,
-      departurePortId: nextPortId,
-      arrivalPortId:
-        filters.arrivalPortId &&
-        nextArrivals.some((port) => port.id === filters.arrivalPortId)
-          ? filters.arrivalPortId
-          : null,
-    });
-  };
-
-  const updateDeparturePort = (departurePortId: string | null) => {
-    const selectedPort = ports.find((port) => port.id === departurePortId);
-    const departureCountry = selectedPort?.country_code ?? filters.departureCountry;
-    const nextArrivals = arrivalPorts.filter((port) =>
-      routes.some(
-        (route) =>
-          route.arrival_port_id === port.id &&
-          (!departureCountry ||
-            ports.find((item) => item.id === route.departure_port_id)?.country_code ===
-              departureCountry) &&
-          (!departurePortId || route.departure_port_id === departurePortId),
-      ),
-    );
-
-    onFiltersChange({
-      ...filters,
-      departureCountry,
-      departurePortId,
-      arrivalPortId:
-        filters.arrivalPortId &&
-        nextArrivals.some((port) => port.id === filters.arrivalPortId)
-          ? filters.arrivalPortId
-          : null,
-    });
-  };
+  const compatibleArrivals = activeDeparturePorts.filter((port) =>
+    port.country_code === ALGERIA &&
+    (!filters.portIds.length || routes.some((route) =>
+      filters.portIds.includes(route.departure_port_id) && route.arrival_port_id === port.id
+    )),
+  );
 
   const portName = (id: string) => ports.find((port) => port.id === id)?.name ?? "Port";
 

@@ -397,13 +397,18 @@ export function TripPlanner({ selection, onSelect }: { selection: Selection | nu
   return (
     <div className="bg-transparent">
       <div className="space-y-3 px-1 pb-4 pt-1">
-          <section className="space-y-2">
-            <div className="flex items-center justify-between gap-2">
-              <div>
-                <p className="text-sm font-semibold">Vacances scolaires</p>
-                <p className="text-[11px] text-muted-foreground">Le moteur adapte les dates et les ports aux vacances françaises.</p>
+          <section className="space-y-2 rounded-2xl bg-secondary/70 p-3.5">
+            <div className="flex items-start gap-3">
+              <div className="grid size-9 shrink-0 place-items-center rounded-xl bg-white/80 text-primary shadow-sm">
+                <CalendarDays className="size-4" />
               </div>
-              <span className="rounded-full bg-primary/10 px-2 py-1 text-[10px] font-semibold text-primary">Recommandé</span>
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center justify-between gap-2">
+                  <p className="text-sm font-bold">Vacances scolaires</p>
+                  <span className="shrink-0 rounded-full bg-primary/10 px-2 py-1 text-[10px] font-semibold text-primary">Recommandé</span>
+                </div>
+                <p className="mt-1 text-[11px] leading-relaxed text-muted-foreground">Choisissez une zone pour faire ressortir les traversées disponibles autour des vacances.</p>
+              </div>
             </div>
             <Select value={zone ?? ANY} onValueChange={(value) => {
               const next = value === ANY ? null : value as SchoolZone;

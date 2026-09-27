@@ -235,7 +235,7 @@ export function ExplorerView({
           }
         >
           <div className="space-y-4">
-            <div className="mb-2.5 flex items-center justify-between gap-3">
+            <div className="mb-3 flex items-center justify-between gap-3">
               <div className="flex items-center gap-2">
                 <MapPinned className="size-3.5 text-[#0e7490]" />
                 <span className="text-xs font-semibold text-foreground/80">
@@ -252,7 +252,7 @@ export function ExplorerView({
             </div>
 
             <div>
-              <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-[0.1em] text-[#718489]">
+              <p className="mb-2 text-[10px] font-bold uppercase tracking-[0.14em] text-muted-foreground">
                 Pays
               </p>
               <div className="flex flex-wrap gap-2">
@@ -281,7 +281,7 @@ export function ExplorerView({
 
             <div>
               <div className="mb-2 flex items-center justify-between gap-2">
-                <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-foreground/75">
+                <p className="text-[11px] font-bold uppercase tracking-[0.12em] text-foreground/80">
                   Ports
                 </p>
                 {activeCountries.length ? (

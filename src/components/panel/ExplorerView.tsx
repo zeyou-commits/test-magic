@@ -175,7 +175,7 @@ export function ExplorerView({
                   onFiltersChange({ ...filters, search: event.target.value })
                 }
                 placeholder="Rechercher Marseille, Alger, Oran…"
-                className="batogo-field h-11 pl-9 pr-9 text-sm shadow-none"
+                className="batogo-field batogo-control h-11 pl-9 pr-9 text-sm shadow-none"
               />
               {filters.search ? (
                 <button
@@ -192,7 +192,7 @@ export function ExplorerView({
             {matchingPorts.length > 0 ? (
               <ul className="mt-2 overflow-hidden rounded-2xl border border-border/60 bg-card shadow-sm">
                 {matchingPorts.map((port) => (
-                  <li key={port.id} className="border-b border-[#edf0ed] last:border-0">
+                  <li key={port.id} className="last:border-0">
                     <button
                       type="button"
                       onClick={() => onSelect({ type: "port", id: port.id })}
@@ -235,10 +235,10 @@ export function ExplorerView({
           }
         >
           <div className="space-y-4">
-            <div className="mb-1.5 flex items-center justify-between gap-3">
+            <div className="mb-2.5 flex items-center justify-between gap-3">
               <div className="flex items-center gap-2">
                 <MapPinned className="size-3.5 text-[#0e7490]" />
-                <span className="text-xs font-medium text-[#547078]">
+                <span className="text-xs font-semibold text-foreground/80">
                   {filters.portIds.length
                     ? `${selectedLineCount} lignes liées à votre sélection`
                     : `${routes.length} lignes disponibles`}
@@ -277,11 +277,11 @@ export function ExplorerView({
               </div>
             </div>
 
-            <div className="border-t border-[#eeeae1]" />
+            <div className="h-px bg-border/50" />
 
             <div>
               <div className="mb-2 flex items-center justify-between gap-2">
-                <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[#718489]">
+                <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-foreground/75">
                   Ports
                 </p>
                 {activeCountries.length ? (
@@ -318,12 +318,12 @@ export function ExplorerView({
 
           </div>
 
-          <div className="mt-2">
+          <div className="sticky bottom-0 z-10 -mx-6 mt-3 bg-gradient-to-t from-white via-white/95 to-transparent px-6 pb-1 pt-5">
             <Button
               type="button"
               variant={filtersOpen ? "secondary" : "outline"}
               size="sm"
-              className="h-8 rounded-full border-[#0e7490]/15 bg-white px-3 text-[11px] text-[#315860] hover:bg-[#f7f3ea]"
+              className="h-9 rounded-full bg-secondary px-3.5 text-[11px] font-semibold text-foreground/75 shadow-none hover:bg-muted"
               onClick={() => setFiltersOpen((open) => !open)}
             >
               <SlidersHorizontal className="mr-1.5 size-3.5" />
@@ -337,7 +337,7 @@ export function ExplorerView({
           </div>
 
           {filtersOpen ? (
-            <div className="mt-3 grid gap-2 rounded-2xl bg-muted/70 p-3 sm:grid-cols-2">
+            <div className="mt-3 grid gap-2 rounded-2xl bg-muted/60 p-3 sm:grid-cols-2">
               <FilterSelect
                 label="Compagnie"
                 value={filters.companyId}
@@ -358,7 +358,7 @@ export function ExplorerView({
                   onChange={(event) =>
                     onFiltersChange({ ...filters, date: event.target.value || null })
                   }
-                  className="bg-white"
+                  className="batogo-control bg-muted/50"
                 />
               </label>
             </div>
@@ -446,9 +446,9 @@ function FilterSelect({
 }) {
   return (
     <label className="grid gap-1">
-      <span className="text-xs font-medium text-[#547078]">{label}</span>
+      <span className="text-xs font-semibold text-foreground/80">{label}</span>
       <Select value={value ?? ANY} onValueChange={(next) => onChange(next === ANY ? null : next)}>
-        <SelectTrigger className="border-[#0e7490]/15 bg-white">
+        <SelectTrigger className="batogo-control">
           <SelectValue placeholder={placeholder} />
         </SelectTrigger>
         <SelectContent>

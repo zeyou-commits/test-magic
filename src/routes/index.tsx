@@ -218,10 +218,8 @@ function Index() {
       <MobileMapControls
         ports={ports}
         routes={routes}
-        departures={departures}
         filters={filters}
         onFiltersChange={setFilters}
-        onSelect={setSelection}
         onOpenPanel={(level = 1) => setPanelLevel(level)}
       />
 

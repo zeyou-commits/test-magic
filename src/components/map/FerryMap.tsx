@@ -402,6 +402,7 @@ export default function FerryMap({ ports, routes, visibleRouteIds, dateActiveRou
         const select = (event: Event) => {
           event.stopPropagation();
           dismissedPortIdsRef.current.delete(port.id);
+          onMapInteract?.();
           filtersChangeRef.current({
             ...filtersRef.current,
             portIds: [port.id],

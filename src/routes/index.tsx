@@ -220,7 +220,6 @@ function Index() {
         routes={routes}
         filters={filters}
         onFiltersChange={setFilters}
-        onOpenPanel={(level = 1) => setPanelLevel(level)}
       />
 
       {panelLevel === 2 && (

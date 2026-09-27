@@ -92,6 +92,25 @@ function Index() {
     });
   }, [routes, ports, departures, filters]);
 
+  const mapRoutes = useMemo(() => {
+    if (!filters.date) return visibleRoutes;
+    const dateFiltered = new Set(
+      departures
+        .filter((departure) => departure.status !== "cancelled" && departure.departure_at.slice(0, 10) === filters.date)
+        .map((departure) => departure.route_id),
+    );
+    // La date sert de signal visuel sur la carte : on conserve les lignes
+    // sans départ dans la période afin de les afficher comme opportunités indisponibles.
+    return routes.filter((route) => visibleRoutes.some((item) => item.id === route.id) || dateFiltered.has(route.id));
+  }, [filters.date, routes, visibleRoutes, departures]);
+
+  const dateActiveRouteIds = useMemo(() => {
+    if (!filters.date) return [];
+    return departures
+      .filter((departure) => departure.status !== "cancelled" && departure.departure_at.slice(0, 10) === filters.date)
+      .map((departure) => departure.route_id);
+  }, [filters.date, departures]);
+
   const highlightedPortIds = useMemo(() => {
     if (selection?.type === "port") return [selection.id];
     if (selection?.type === "route") {
@@ -273,7 +292,8 @@ function Index() {
             <FerryMap
               ports={ports}
               routes={routes}
-              visibleRouteIds={visibleRoutes.map((route) => route.id)}
+              visibleRouteIds={mapRoutes.map((route) => route.id)}
+              dateActiveRouteIds={dateActiveRouteIds}
               focusRouteIds={focusRouteIds}
               selection={selection}
               filters={filters}

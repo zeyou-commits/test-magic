@@ -1,4 +1,4 @@
-import { ChevronDown, Check } from "lucide-react";
+import { CalendarDays, ChevronDown, Check } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import { BrandMark } from "@/components/layout/BrandMark";
 import { UserMenu } from "@/components/layout/UserMenu";
@@ -22,7 +22,7 @@ interface MobileMapControlsProps {
   filters: Filters;
   onFiltersChange: (filters: Filters) => void;
   onSelect: (selection: Selection) => void;
-  onOpenPanel: () => void;
+  onOpenPanel: (level?: 0 | 1 | 2) => void;
 }
 
 export function MobileMapControls({
@@ -144,6 +144,34 @@ export function MobileMapControls({
       </div>
 
       <div className="pointer-events-auto -mx-3 mt-2 flex snap-x gap-2 overflow-x-auto px-3 pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        <button
+          type="button"
+          onClick={() => onOpenPanel(2)}
+          className="flex shrink-0 snap-start items-center gap-1.5 rounded-full bg-primary px-3 py-2 text-xs font-semibold text-primary-foreground shadow-md shadow-primary/15 backdrop-blur-md"
+        >
+          <CalendarDays className="size-3.5" />
+          Vacances scolaires
+        </button>
+        {countries.map((country) => {
+          const selected = filters.countryCodes.includes(country.value);
+          const flag = country.value === "FR" ? "🇫🇷" : country.value === "ES" ? "🇪🇸" : country.value === "IT" ? "🇮🇹" : country.value === "DZ" ? "🇩🇿" : "🌍";
+          return (
+            <button
+              key={`country-chip-${country.value}`}
+              type="button"
+              onClick={() => {
+                const nextCountries = selected
+                  ? filters.countryCodes.filter((code) => code !== country.value)
+                  : [...new Set([...filters.countryCodes, country.value])];
+                onFiltersChange({ ...filters, countryCodes: nextCountries });
+              }}
+              className={`shrink-0 snap-start rounded-full border-0 px-3 py-2 text-xs font-semibold shadow-sm backdrop-blur-md transition ${selected ? "bg-primary text-primary-foreground" : "bg-background/90 text-foreground/80 hover:bg-background"}`}
+            >
+              {flag} {country.label}
+            </button>
+          );
+        })}
+      </div>
         {shortcuts.map(({ key, departure, arrival }) => {
           const selected = filters.arrivalPortId === arrival.id && filters.portIds.includes(departure.id);
           return (

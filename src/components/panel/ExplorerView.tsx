@@ -171,9 +171,7 @@ export function ExplorerView({
               <Search className="pointer-events-none absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-[#718489]" />
               <Input
                 value={filters.search}
-                onChange={(event) =>
-                  onFiltersChange({ ...filters, search: event.target.value })
-                }
+                onChange={(event) => onFiltersChange({ ...filters, search: event.target.value })}
                 placeholder="Rechercher Marseille, Alger, Oran…"
                 className="batogo-field batogo-control h-11 pl-9 pr-9 text-sm shadow-none"
               />
@@ -188,7 +186,6 @@ export function ExplorerView({
                 </button>
               ) : null}
             </div>
-
             {matchingPorts.length > 0 ? (
               <ul className="mt-2 overflow-hidden rounded-2xl border border-border/60 bg-card shadow-sm">
                 {matchingPorts.map((port) => (
@@ -210,7 +207,6 @@ export function ExplorerView({
                 ))}
               </ul>
             ) : null}
-
             {filters.search && matchingPorts.length === 0 ? (
               <p className="mt-2 text-xs text-[#718489]">Aucun port trouvé.</p>
             ) : null}
@@ -248,220 +244,205 @@ export function ExplorerView({
         ) : null}
 
         <div className={hidePrimarySearchOnMobile ? "hidden md:block" : undefined}>
-        <Section
-          title="Pays & ports"
-          action={
-            hasFilters ? (
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                onClick={reset}
-                className="h-8 text-xs text-[#547078] hover:bg-[#f1ece2]"
-              >
-                <RotateCcw className="mr-1.5 size-3.5" />
-                Réinitialiser
-              </Button>
-            ) : null
-          }
-        >
-          <div className="space-y-4">
-            <div className="mb-3 flex items-center justify-between gap-3">
-              <div className="flex items-center gap-2">
-                <MapPinned className="size-3.5 text-[#0e7490]" />
-                <span className="text-xs font-semibold text-foreground/80">
-                  {filters.portIds.length
-                    ? `${selectedLineCount} lignes liées à votre sélection`
-                    : `${routes.length} lignes disponibles`}
-                </span>
-              </div>
-              {selectedPorts.length ? (
-                <span className="rounded-full bg-[#f7f3ea] px-2 py-1 text-[10px] font-semibold text-[#0e7490]">
-                  {selectedPorts.length} port{selectedPorts.length > 1 ? "s" : ""}
-                </span>
-              ) : null}
-            </div>
-
-            <div>
-              <p className="mb-2 text-[10px] font-bold uppercase tracking-[0.14em] text-muted-foreground">
-                Pays
-              </p>
-              <div className="flex flex-wrap gap-2">
-                {countries.map((country) => {
-                  const selected = activeCountries.includes(country.code);
-                  return (
-                    <button
-                      key={country.code}
-                      type="button"
-                      onClick={() => toggleCountry(country.code)}
-                      className={`batogo-list-item inline-flex min-h-9 items-center gap-1.5 rounded-full px-3 text-[11px] font-semibold transition ${
-                        selected
-                          ? "bg-[#0e7490] text-white shadow-sm"
-                          : "bg-[#f3f0e8] text-[#3f6269] hover:bg-[#e9f1ef]"
-                      }`}
-                    >
-                      <span>{country.name}</span>
-                      {selected ? <Check className="size-3.5" /> : null}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-
-            <div className="h-px bg-border/50" />
-
-            <div>
-              <div className="mb-2 flex items-center justify-between gap-2">
-                <p className="text-[11px] font-bold uppercase tracking-[0.12em] text-foreground/80">
-                  Ports
-                </p>
-                {activeCountries.length ? (
-                  <span className="text-[10px] text-[#718489]">
-                    {visiblePorts.length} disponibles
+          <Section
+            title="Pays & ports"
+            action={
+              hasFilters ? (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={reset}
+                  className="h-8 text-xs text-[#547078] hover:bg-[#f1ece2]"
+                >
+                  <RotateCcw className="mr-1.5 size-3.5" />
+                  Réinitialiser
+                </Button>
+              ) : null
+            }
+          >
+            <div className="space-y-4">
+              <div className="mb-3 flex items-center justify-between gap-3">
+                <div className="flex items-center gap-2">
+                  <MapPinned className="size-3.5 text-[#0e7490]" />
+                  <span className="text-xs font-semibold text-foreground/80">
+                    {filters.portIds.length
+                      ? `${selectedLineCount} lignes liées à votre sélection`
+                      : `${routes.length} lignes disponibles`}
+                  </span>
+                </div>
+                {selectedPorts.length ? (
+                  <span className="rounded-full bg-[#f7f3ea] px-2 py-1 text-[10px] font-semibold text-[#0e7490]">
+                    {selectedPorts.length} port{selectedPorts.length > 1 ? "s" : ""}
                   </span>
                 ) : null}
               </div>
 
-              <div className="grid max-h-52 gap-0.5 overflow-y-auto pr-1 sm:grid-cols-2">
-                {visiblePorts.map((port) => {
-                  const selected = filters.portIds.includes(port.id);
+              <div>
+                <p className="mb-2 text-[10px] font-bold uppercase tracking-[0.14em] text-muted-foreground">Pays</p>
+                <div className="flex flex-wrap gap-2">
+                  {countries.map((country) => {
+                    const selected = activeCountries.includes(country.code);
+                    return (
+                      <button
+                        key={country.code}
+                        type="button"
+                        onClick={() => toggleCountry(country.code)}
+                        className={`batogo-list-item inline-flex min-h-9 items-center gap-1.5 rounded-full px-3 text-[11px] font-semibold transition ${
+                          selected ? "bg-[#0e7490] text-white shadow-sm" : "bg-[#f3f0e8] text-[#3f6269] hover:bg-[#e9f1ef]"
+                        }`}
+                      >
+                        <span>{country.name}</span>
+                        {selected ? <Check className="size-3.5" /> : null}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div className="h-px bg-border/50" />
+
+              <div>
+                <div className="mb-2 flex items-center justify-between gap-2">
+                  <p className="text-[11px] font-bold uppercase tracking-[0.12em] text-foreground/80">Ports</p>
+                  {activeCountries.length ? (
+                    <span className="text-[10px] text-[#718489]">{visiblePorts.length} disponibles</span>
+                  ) : null}
+                </div>
+                <div className="grid max-h-52 gap-0.5 overflow-y-auto pr-1 sm:grid-cols-2">
+                  {visiblePorts.map((port) => {
+                    const selected = filters.portIds.includes(port.id);
+                    return (
+                      <button
+                        key={port.id}
+                        type="button"
+                        onClick={() => togglePort(port.id)}
+                        className={`batogo-list-item flex min-h-9 items-center justify-between gap-2 rounded-lg px-2.5 text-left text-xs transition ${
+                          selected ? "bg-[#eaf5f5] text-[#0e6177]" : "text-[#294b53] hover:bg-[#f4f1e9]"
+                        }`}
+                      >
+                        <span className="min-w-0 truncate">
+                          {port.name}
+                          {port.city && port.city !== port.name ? ` · ${port.city}` : ""}
+                        </span>
+                        {selected ? <Check className="size-4 shrink-0 text-[#0e7490]" /> : null}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+
+            <div className="sticky bottom-0 z-10 -mx-5 mt-3 bg-gradient-to-t from-white via-white/95 to-transparent px-5 pb-1 pt-5 sm:-mx-6 sm:px-6">
+              <Button
+                type="button"
+                variant={filtersOpen ? "secondary" : "outline"}
+                size="sm"
+                className="h-9 rounded-full bg-secondary px-3.5 text-[11px] font-semibold text-foreground/75 shadow-none hover:bg-muted"
+                onClick={() => setFiltersOpen((open) => !open)}
+              >
+                <SlidersHorizontal className="mr-1.5 size-3.5" />
+                Affiner
+                {advancedFilterCount > 0 ? (
+                  <span className="ml-1.5 rounded-full bg-[#e87961] px-1.5 py-0.5 text-[10px] font-bold text-white">
+                    {advancedFilterCount}
+                  </span>
+                ) : null}
+              </Button>
+            </div>
+
+            {filtersOpen ? (
+              <div className="mt-3 grid gap-2 rounded-2xl bg-muted/60 p-3 sm:grid-cols-2">
+                <FilterSelect
+                  label="Compagnie"
+                  value={filters.companyId}
+                  onChange={(value) => onFiltersChange({ ...filters, companyId: value })}
+                  options={companies.map((company) => ({ value: company.id, label: company.name }))}
+                />
+                <FilterSelect
+                  label="Navire"
+                  value={filters.vesselId}
+                  onChange={(value) => onFiltersChange({ ...filters, vesselId: value })}
+                  options={vessels.map((vessel) => ({ value: vessel.id, label: vessel.name }))}
+                />
+                <label className="grid gap-1 sm:col-span-2">
+                  <span className="text-xs font-medium text-[#547078]">Date de départ</span>
+                  <Input
+                    type="date"
+                    value={filters.date ?? ""}
+                    onChange={(event) => onFiltersChange({ ...filters, date: event.target.value || null })}
+                    className="batogo-control bg-muted/50"
+                  />
+                </label>
+              </div>
+            ) : null}
+          </Section>
+        </div>
+
+        {!selection && (
+          <Section
+            title="Prochains départs"
+            action={
+              upcoming.length ? (
+                <span className="text-[10px] font-medium text-[#718489]">
+                  {upcoming.length} départ{upcoming.length > 1 ? "s" : ""}
+                </span>
+              ) : null
+            }
+          >
+            {departuresLoading ? (
+              <div className="flex items-center gap-2 py-2 text-xs text-[#718489]">
+                <CalendarDays className="size-3.5 animate-pulse text-[#0e7490]" />
+                Chargement du calendrier…
+              </div>
+            ) : upcoming.length === 0 ? (
+              <EmptyNote>Aucun départ à venir pour cette sélection.</EmptyNote>
+            ) : (
+              <div className="space-y-1.5">
+                {upcoming.map((departure) => {
+                  const route = routeById.get(departure.route_id);
+                  const departurePort = route ? portById.get(route.departure_port_id) : undefined;
+                  const arrivalPort = route ? portById.get(route.arrival_port_id) : undefined;
+                  const company = companyById.get(departure.company_id);
+                  const vessel = departure.vessel_id ? vesselById.get(departure.vessel_id) : undefined;
+                  const date = new Date(departure.departure_at);
+
                   return (
                     <button
-                      key={port.id}
+                      key={departure.id}
                       type="button"
-                      onClick={() => togglePort(port.id)}
-                      className={`batogo-list-item flex min-h-9 items-center justify-between gap-2 rounded-lg px-2.5 text-left text-xs transition ${
-                        selected
-                          ? "bg-[#eaf5f5] text-[#0e6177]"
-                          : "text-[#294b53] hover:bg-[#f4f1e9]"
-                      }`}
+                      onClick={() => onSelect({ type: "departure", id: departure.id })}
+                      className="batogo-departure-card flex w-full items-center gap-3 px-3 py-2.5 text-left"
                     >
-                      <span className="min-w-0 truncate">
-                        {port.name}
-                        {port.city && port.city !== port.name ? ` · ${port.city}` : ""}
-                      </span>
-                      {selected ? <Check className="size-4 shrink-0 text-[#0e7490]" /> : null}
+                      <div className="min-w-[46px] rounded-lg bg-[#eaf5f5] px-1.5 py-1 text-center">
+                        <div className="text-[9px] font-semibold uppercase text-[#0e7490]">
+                          {date.toLocaleDateString("fr-FR", { weekday: "short" }).replace(".", "")}
+                        </div>
+                        <div className="text-sm font-bold leading-none text-[#17383f]">
+                          {date.toLocaleDateString("fr-FR", { day: "2-digit", month: "2-digit" })}
+                        </div>
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <div className="truncate text-xs font-semibold text-[#17383f]">
+                          {departurePort?.name ?? "—"} → {arrivalPort?.name ?? "—"}
+                        </div>
+                        <div className="truncate text-[10px] text-[#718489]">
+                          {company?.name ?? "Compagnie"}{vessel?.name ? ` · ${vessel.name}` : ""}
+                        </div>
+                      </div>
+                      <div className="shrink-0 text-sm font-bold text-[#0e7490]">
+                        {date.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })}
+                      </div>
                     </button>
                   );
                 })}
               </div>
-            </div>
-
-          </div>
-
-          <div className="sticky bottom-0 z-10 -mx-5 mt-3 bg-gradient-to-t from-white via-white/95 to-transparent px-5 pb-1 pt-5 sm:-mx-6 sm:px-6">
-            <Button
-              type="button"
-              variant={filtersOpen ? "secondary" : "outline"}
-              size="sm"
-              className="h-9 rounded-full bg-secondary px-3.5 text-[11px] font-semibold text-foreground/75 shadow-none hover:bg-muted"
-              onClick={() => setFiltersOpen((open) => !open)}
-            >
-              <SlidersHorizontal className="mr-1.5 size-3.5" />
-              Affiner
-              {advancedFilterCount > 0 ? (
-                <span className="ml-1.5 rounded-full bg-[#e87961] px-1.5 py-0.5 text-[10px] font-bold text-white">
-                  {advancedFilterCount}
-                </span>
-              ) : null}
-            </Button>
-          </div>
-
-          {filtersOpen ? (
-            <div className="mt-3 grid gap-2 rounded-2xl bg-muted/60 p-3 sm:grid-cols-2">
-              <FilterSelect
-                label="Compagnie"
-                value={filters.companyId}
-                onChange={(value) => onFiltersChange({ ...filters, companyId: value })}
-                options={companies.map((company) => ({ value: company.id, label: company.name }))}
-              />
-              <FilterSelect
-                label="Navire"
-                value={filters.vesselId}
-                onChange={(value) => onFiltersChange({ ...filters, vesselId: value })}
-                options={vessels.map((vessel) => ({ value: vessel.id, label: vessel.name }))}
-              />
-              <label className="grid gap-1 sm:col-span-2">
-                <span className="text-xs font-medium text-[#547078]">Date de départ</span>
-                <Input
-                  type="date"
-                  value={filters.date ?? ""}
-                  onChange={(event) =>
-                    onFiltersChange({ ...filters, date: event.target.value || null })
-                  }
-                  className="batogo-control bg-muted/50"
-                />
-              </label>
-            </div>
-          ) : null}
-        </Section>
-
-{!selection ? (
-        <Section
-          title="Prochains départs"
-          action={
-            upcoming.length ? (
-              <span className="text-[10px] font-medium text-[#718489]">
-                {upcoming.length} départ{upcoming.length > 1 ? "s" : ""}
-              </span>
-            ) : null
-          }
-        >
-          {departuresLoading ? (
-            <div className="flex items-center gap-2 py-2 text-xs text-[#718489]">
-              <CalendarDays className="size-3.5 animate-pulse text-[#0e7490]" />
-              Chargement du calendrier…
-            </div>
-          ) : upcoming.length === 0 ? (
-            <EmptyNote>Aucun départ à venir pour cette sélection.</EmptyNote>
-          ) : (
-            <div className="space-y-1.5">
-              {upcoming.map((departure) => {
-                const route = routeById.get(departure.route_id);
-                const departurePort = route ? portById.get(route.departure_port_id) : undefined;
-                const arrivalPort = route ? portById.get(route.arrival_port_id) : undefined;
-                const company = companyById.get(departure.company_id);
-                const vessel = departure.vessel_id ? vesselById.get(departure.vessel_id) : undefined;
-                const date = new Date(departure.departure_at);
-
-                return (
-                  <button
-                    key={departure.id}
-                    type="button"
-                    onClick={() => onSelect({ type: "departure", id: departure.id })}
-                    className="batogo-departure-card flex w-full items-center gap-3 px-3 py-2.5 text-left"
-                  >
-                    <div className="min-w-[46px] rounded-lg bg-[#eaf5f5] px-1.5 py-1 text-center">
-                      <div className="text-[9px] font-semibold uppercase text-[#0e7490]">
-                        {date.toLocaleDateString("fr-FR", { weekday: "short" }).replace(".", "")}
-                      </div>
-                      <div className="text-sm font-bold leading-none text-[#17383f]">
-                        {date.toLocaleDateString("fr-FR", { day: "2-digit", month: "2-digit" })}
-                      </div>
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <div className="truncate text-xs font-semibold text-[#17383f]">
-                        {departurePort?.name ?? "—"} → {arrivalPort?.name ?? "—"}
-                      </div>
-                      <div className="truncate text-[10px] text-[#718489]">
-                        {company?.name ?? "Compagnie"}{vessel?.name ? ` · ${vessel.name}` : ""}
-                      </div>
-                    </div>
-                    <div className="shrink-0 text-sm font-bold text-[#0e7490]">
-                      {date.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })}
-                    </div>
-                  </button>
-                );
-              })}
-            </div>
-          )}
-        </Section>
-        ) : null}
+            )}
+          </Section>
+        )}
       </div>
     </div>
   );
-}
-
 function FilterSelect({
   label,
   value,

@@ -630,7 +630,7 @@ export default function FerryMap({ ports, routes, visibleRouteIds, dateActiveRou
     
     if (readyRef.current) apply(); 
     else map.once("load", apply);
-  }, [routes, ports, visibleRouteIds, focusRouteIds, selection, mapReady, isMobile]);
+  }, [routes, ports, visibleRouteIds, dateActiveRouteIds, focusRouteIds, selection, mapReady, isMobile]);
 
   useEffect(() => {
     const map = mapRef.current; 

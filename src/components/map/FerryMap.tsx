@@ -33,6 +33,7 @@ interface FerryMapProps {
   ports: Port[];
   routes: RouteLine[];
   visibleRouteIds: string[];
+  dateActiveRouteIds: string[];
   focusRouteIds: string[];
   selection: Selection | null;
   filters: Filters;
@@ -59,7 +60,7 @@ function mapColor(token: string) {
   return `rgb(${red}, ${green}, ${blue})`;
 }
 
-function routeFeatures(routes: RouteLine[], ports: Map<string, Port>, visible: Set<string>, focus: Set<string>, selection: Selection | null) {
+function routeFeatures(routes: RouteLine[], ports: Map<string, Port>, visible: Set<string>, dateActive: Set<string>, focus: Set<string>, selection: Selection | null) {
   const visibleRoutes = routes.filter((route) => visible.has(route.id));
   const pairGroups = new Map<string, RouteLine[]>();
   
@@ -100,7 +101,8 @@ function routeFeatures(routes: RouteLine[], ports: Map<string, Port>, visible: S
     else if (selectedPortId) durationMinutes = group.filter((item) => item.departure_port_id === selectedPortId).map((item) => item.typical_duration_minutes).filter((value): value is number => value != null).sort((a, b) => b - a)[0] ?? null;
     else durationMinutes = group.map((item) => item.typical_duration_minutes).filter((value): value is number => value != null).sort((a, b) => b - a)[0] ?? null;
     
-    const dimmed = focus.size > 0 && !focus.has(route.id) && !(isDisplayRoute && focusedPair);
+    const focusDimmed = focus.size > 0 && !focus.has(route.id) && !(isDisplayRoute && focusedPair);
+    const dateDimmed = dateActive.size > 0 && !dateActive.has(route.id);
     
     return { 
       type: "Feature" as const, 
@@ -110,8 +112,9 @@ function routeFeatures(routes: RouteLine[], ports: Map<string, Port>, visible: S
         lineCount: departureLineCounts.get(route.departure_port_id) ?? 1,
         label: isDisplayRoute && durationMinutes ? formatDuration(durationMinutes) : "", 
         selected: selectedRouteId === route.id, 
-        focused: focus.has(route.id) || (isDisplayRoute && focusedPair), 
-        dimmed 
+        focused: focus.has(route.id) || (isDisplayRoute && focusedPair),
+        dimmed: focusDimmed,
+        dateDimmed 
       }, 
       geometry: { 
         type: "LineString" as const, 
@@ -164,7 +167,7 @@ function positionPortTip(map: MapLibreMap, marker: Marker, tip: HTMLDivElement) 
   tip.style.top = `${top - markerRect.top}px`;
 }
 
-export default function FerryMap({ ports, routes, visibleRouteIds, focusRouteIds, selection, filters, onFiltersChange, highlightedPortIds, portMeta, onSelect, onOpenPanel, onMapInteract }: FerryMapProps) {
+export default function FerryMap({ ports, routes, visibleRouteIds, dateActiveRouteIds, focusRouteIds, selection, filters, onFiltersChange, highlightedPortIds, portMeta, onSelect, onOpenPanel, onMapInteract }: FerryMapProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<MapLibreMap | null>(null);
   const readyRef = useRef(false);
@@ -229,7 +232,7 @@ export default function FerryMap({ ports, routes, visibleRouteIds, focusRouteIds
         source: "ferry-routes",
         layout: { "line-cap": "round", "line-join": "round" },
         paint: {
-          "line-color": mapColor("--map-route-casing"),
+          "line-color": ["case", ["get", "dateDimmed"], "#aeb7ba", mapColor("--map-route-casing")],
           "line-width": [
             "case",
             ["get", "selected"],
@@ -242,7 +245,7 @@ export default function FerryMap({ ports, routes, visibleRouteIds, focusRouteIds
               20, 6
             ]
           ],
-          "line-opacity": ["case", ["get", "dimmed"], 0.1, 0.8]
+          "line-opacity": ["case", ["get", "dateDimmed"], 0.18, ["get", "dimmed"], 0.1, 0.8]
         }
       });
       map.addLayer({
@@ -251,7 +254,7 @@ export default function FerryMap({ ports, routes, visibleRouteIds, focusRouteIds
         source: "ferry-routes",
         layout: { "line-cap": "round", "line-join": "round" },
         paint: {
-          "line-color": ["get", "color"],
+          "line-color": ["case", ["get", "dateDimmed"], "#9aa5a9", ["get", "color"]],
           "line-width": [
             "case",
             ["get", "selected"],
@@ -264,22 +267,25 @@ export default function FerryMap({ ports, routes, visibleRouteIds, focusRouteIds
               20, 4.6
             ]
           ],
-          "line-opacity": ["case", ["get", "dimmed"], 0.16, 1],
+          "line-opacity": ["case", ["get", "dateDimmed"], 0.3, ["get", "dimmed"], 0.16, 1],
           "line-dasharray": [
             "case",
+            ["get", "dateDimmed"],
+            ["literal", [2, 3]],
             ["<=", ["get", "lineCount"], 2],
             ["literal", [1.5, 2.5]],
             ["literal", [1, 0]]
           ]
         }
       });
-      map.addLayer({ id: "ferry-routes-duration", type: "symbol", source: "ferry-routes", minzoom: 3.4, layout: { "symbol-placement": "line-center", "text-field": ["get", "label"], "text-font": ["Noto Sans Regular"], "text-size": 11, "text-letter-spacing": 0.04, "text-rotation-alignment": "map", "text-pitch-alignment": "viewport", "text-keep-upright": true, "text-offset": [0, -0.9], "text-allow-overlap": true, "text-ignore-placement": true }, paint: { "text-color": ["get", "color"], "text-halo-color": mapColor("--map-route-casing"), "text-halo-width": 1.6, "text-opacity": ["case", ["get", "dimmed"], 0.2, 1] } });
+      map.addLayer({ id: "ferry-routes-duration", type: "symbol", source: "ferry-routes", minzoom: 3.4, layout: { "symbol-placement": "line-center", "text-field": ["get", "label"], "text-font": ["Noto Sans Regular"], "text-size": 11, "text-letter-spacing": 0.04, "text-rotation-alignment": "map", "text-pitch-alignment": "viewport", "text-keep-upright": true, "text-offset": [0, -0.9], "text-allow-overlap": true, "text-ignore-placement": true }, paint: { "text-color": ["get", "color"], "text-halo-color": mapColor("--map-route-casing"), "text-halo-width": 1.6, "text-opacity": ["case", ["get", "dateDimmed"], 0.28, ["get", "dimmed"], 0.2, 1] } });
       
       const pickRoute = (event: MapLayerMouseEvent) => {
         const id = event.features?.[0]?.properties?.["id"];
         if (typeof id !== "string") return;
         const route = routes.find((item) => item.id === id);
         if (route) {
+          onMapInteract?.();
           filtersChangeRef.current({
             ...filtersRef.current,
             portIds: [route.departure_port_id, route.arrival_port_id],

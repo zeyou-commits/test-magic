@@ -394,10 +394,7 @@ export function ExplorerView({
               </label>
             </div>
           ) : null}
-        </Se
-        </div>
-
-ction>
+        </Section>
 
 {!selection ? (
         <Section

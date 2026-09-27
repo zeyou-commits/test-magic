@@ -443,6 +443,8 @@ export function ExplorerView({
       </div>
     </div>
   );
+}
+
 function FilterSelect({
   label,
   value,

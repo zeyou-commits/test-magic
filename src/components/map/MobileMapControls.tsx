@@ -172,17 +172,26 @@ export function MobileMapControls({
           );
         })}
       </div>
-        {shortcuts.map(({ key, departure, arrival }) => {
-          const selected = filters.arrivalPortId === arrival.id && filters.portIds.includes(departure.id);
-          return (
-            <Button key={`shortcut-${key}`} type="button" variant={selected ? "default" : "outline"} size="sm"
-              className="shrink-0 snap-start rounded-full bg-background/95 px-3 text-xs font-semibold shadow-sm backdrop-blur-md"
-              onClick={() => onFiltersChange({ ...filters, portIds: [departure.id], countryCodes: [departure.country_code], departureCountry: null, departurePortId: departure.id, arrivalPortId: arrival.id })}>
-              {departure.name} – {arrival.name}
-            </Button>
-          );
-        })}
-      </div>
+
+      {shortcuts.length > 0 && (
+        <div className="pointer-events-auto -mx-3 mt-0.5 flex snap-x gap-2 overflow-x-auto px-3 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          {shortcuts.map(({ key, departure, arrival }) => {
+            const selected = filters.arrivalPortId === arrival.id && filters.portIds.includes(departure.id);
+            return (
+              <Button
+                key={`shortcut-${key}`}
+                type="button"
+                variant={selected ? "default" : "outline"}
+                size="sm"
+                className="shrink-0 snap-start rounded-full border-0 bg-background/95 px-3 text-xs font-semibold shadow-sm backdrop-blur-md"
+                onClick={() => onFiltersChange({ ...filters, portIds: [departure.id], countryCodes: [departure.country_code], departureCountry: null, departurePortId: departure.id, arrivalPortId: arrival.id })}
+              >
+                {departure.name} – {arrival.name}
+              </Button>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }

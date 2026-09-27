@@ -1,4 +1,4 @@
-import { CalendarDays, ChevronDown, Check } from "lucide-react";
+import { ChevronDown, Check } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import { BrandMark } from "@/components/layout/BrandMark";
 import { UserMenu } from "@/components/layout/UserMenu";
@@ -11,27 +11,23 @@ import {
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import type { Departure, Filters, Port, RouteLine, Selection } from "@/lib/ferry/types";
+import type { Filters, Port, RouteLine } from "@/lib/ferry/types";
 
 const ANY = "__any__";
 
 interface MobileMapControlsProps {
   ports: Port[];
   routes: RouteLine[];
-  departures: Departure[];
   filters: Filters;
   onFiltersChange: (filters: Filters) => void;
-  onSelect: (selection: Selection) => void;
   onOpenPanel: (level?: 0 | 1 | 2) => void;
 }
 
 export function MobileMapControls({
   ports,
   routes,
-  departures,
   filters,
   onFiltersChange,
-  onSelect,
   onOpenPanel,
 }: MobileMapControlsProps) {
   const ALGERIA = "DZ";
@@ -50,7 +46,7 @@ export function MobileMapControls({
     const ids = activeDeparturePorts.filter((port) => port.country_code === countryCode).map((port) => port.id);
     const allSelected = ids.length > 0 && ids.every((id) => filters.portIds.includes(id));
     const portIds = allSelected ? filters.portIds.filter((id) => !ids.includes(id)) : [...new Set([...filters.portIds, ...ids])];
-    const countryCodes = allSelected ? filters.countryCodes.filter((code) => code !== countryCode) : [...new Set([...filters.countryCodes, countryCode])];
+    const countryCodes = [...new Set(activeDeparturePorts.filter((port) => portIds.includes(port.id)).map((port) => port.country_code))];
     onFiltersChange({ ...filters, countryCodes, portIds, departureCountry: null, departurePortId: null });
   };
 
@@ -67,22 +63,6 @@ export function MobileMapControls({
       filters.portIds.includes(route.departure_port_id) && route.arrival_port_id === port.id
     )),
   );
-
-  const portName = (id: string) => ports.find((port) => port.id === id)?.name ?? "Port";
-
-  const shortcutCandidates = [
-    ["Marseille", "Alger"], ["Marseille", "Oran"], ["Valence", "Oran"],
-    ["Sète", "Alger"], ["Sète", "Oran"], ["Alicante", "Oran"],
-    ["Barcelone", "Alger"], ["Gênes", "Alger"],
-  ] as const;
-
-  const shortcuts = shortcutCandidates.map(([departureName, arrivalName]) => {
-    const departure = activeDeparturePorts.find((port) => port.name.toLocaleLowerCase("fr").includes(departureName.toLocaleLowerCase("fr")));
-    const arrival = activeDeparturePorts.find((port) => port.country_code === ALGERIA && port.name.toLocaleLowerCase("fr").includes(arrivalName.toLocaleLowerCase("fr")));
-    if (!departure || !arrival) return null;
-    const route = routes.find((item) => item.departure_port_id === departure.id && item.arrival_port_id === arrival.id);
-    return route ? { key: route.id, departure, arrival } : null;
-  }).filter((shortcut): shortcut is NonNullable<typeof shortcut> => shortcut !== null);
 
   return (
     <div className="pointer-events-none absolute inset-x-0 top-0 z-50 px-1.5 pt-[max(0.15rem,env(safe-area-inset-top))] md:hidden">

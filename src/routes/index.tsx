@@ -222,7 +222,7 @@ function Index() {
         filters={filters}
         onFiltersChange={setFilters}
         onSelect={setSelection}
-        onOpenPanel={() => setPanelLevel(1)}
+        onOpenPanel={(level = 1) => setPanelLevel(level)}
       />
 
       {panelLevel === 2 && (

@@ -483,7 +483,7 @@ export default function FerryMap({ ports, routes, visibleRouteIds, focusRouteIds
           const row = document.createElement("li");
           row.className = "port-tip__departure";
 
-          const dateParts = item.label.match(/^(.*?)(?:\\s+(\\d{1,2}:\\d{2}))$/);
+          const dateParts = item.label.match(/^(.*?)(?:\s+(\d{1,2}:\d{2}))$/);
           const date = document.createElement("span");
           date.className = "port-tip__departure-date";
           date.textContent = dateParts?.[1] ?? item.label;

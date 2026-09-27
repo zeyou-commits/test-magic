@@ -16,7 +16,7 @@ export function PanelHeader({
   return (
     <div className="px-5 pb-3 pt-5">
       {overline ? (
-        <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+        <p className="text-[12px] font-bold uppercase tracking-[0.13em] text-foreground/80">
           {overline}
         </p>
       ) : null}

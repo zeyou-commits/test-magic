@@ -20,7 +20,6 @@ interface MobileMapControlsProps {
   routes: RouteLine[];
   filters: Filters;
   onFiltersChange: (filters: Filters) => void;
-  onOpenPanel: (level?: 0 | 1 | 2) => void;
 }
 
 export function MobileMapControls({
@@ -28,7 +27,6 @@ export function MobileMapControls({
   routes,
   filters,
   onFiltersChange,
-  onOpenPanel,
 }: MobileMapControlsProps) {
   const ALGERIA = "DZ";
   const activeDeparturePorts = ports.filter((port) => port.status === "active");

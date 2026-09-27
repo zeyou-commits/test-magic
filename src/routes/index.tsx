@@ -212,9 +212,9 @@ function Index() {
 
       {/* PANNEAU LATÉRAL : Style carte flottante subtile, aligné à gauche sous le header */}
       <aside
-        className={`absolute bottom-0 left-0 right-0 z-[60] flex flex-col overflow-hidden bg-transparent transition-[height,width,opacity,transform] duration-300 ease-out md:bottom-auto md:left-5 md:top-[5.5rem] md:h-[calc(100vh-7rem)] md:w-[380px] md:rounded-2xl md:z-40 ${
+        className={`absolute bottom-[calc(3.5rem+env(safe-area-inset-bottom))] left-0 right-0 z-[60] flex flex-col overflow-hidden bg-transparent transition-[height,width,opacity,transform] duration-300 ease-out md:bottom-auto md:left-5 md:top-[5.5rem] md:h-[calc(100vh-7rem)] md:w-[380px] md:rounded-2xl md:z-40 ${
           desktopPanelOpen ? "md:opacity-100 md:translate-x-0" : "md:pointer-events-none md:opacity-0 md:-translate-x-4"
-        } ${panelLevel === 0 ? "h-24 rounded-t-xl" : panelLevel === 1 ? "h-[45dvh] rounded-t-xl" : "h-[100dvh]"}`}
+        } ${panelLevel === 0 ? "h-24 rounded-t-xl" : panelLevel === 1 ? "h-[45dvh] rounded-t-xl" : "h-[calc(100dvh-3.5rem)] rounded-t-xl"}`}
       >
         <Button
           type="button"
@@ -242,7 +242,7 @@ function Index() {
       </aside>
 
       {/* NAV MOBILE FIXE */}
-      <nav className="absolute bottom-0 left-0 right-0 z-50 flex h-14 items-center justify-around border-t border-border bg-background/95 pb-1 backdrop-blur-xl md:hidden">
+      <nav className="absolute bottom-0 left-0 right-0 z-50 flex h-[calc(3.5rem+env(safe-area-inset-bottom))] items-center justify-around border-t border-border bg-background/95 pb-[env(safe-area-inset-bottom)] backdrop-blur-xl md:hidden">
         <Link to="/" className="flex flex-col items-center gap-1 text-primary">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21"></polygon><line x1="9" y1="3" x2="9" y2="21"></line><line x1="15" y1="3" x2="15" y2="21"></line></svg>
           <span className="text-[10px] font-medium">Carte</span>

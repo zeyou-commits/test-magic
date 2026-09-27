@@ -111,7 +111,6 @@ export function TripPlanner({ selection, onSelect }: { selection: Selection | nu
   const today = new Date().toISOString().slice(0, 10);
   const defaultOutbound = new Date(Date.now() + 14 * 86400000).toISOString().slice(0, 10);
 
-  const [open, setOpen] = useState(true);
   const [outboundDate, setOutboundDate] = useState(defaultOutbound);
   const [returnDate, setReturnDate] = useState("");
   const [fromId, setFromId] = useState("");
@@ -397,32 +396,14 @@ export function TripPlanner({ selection, onSelect }: { selection: Selection | nu
 
   return (
     <div className="bg-transparent">
-      <button
-        type="button"
-        onClick={() => setOpen((value) => !value)}
-        className="mx-3 mt-2 flex w-[calc(100%-1.5rem)] items-center justify-between gap-3 rounded-2xl bg-card px-4 py-3.5 text-left shadow-sm"
-      >
-        <span className="flex min-w-0 items-center gap-2.5">
-          <span className="grid size-10 shrink-0 place-items-center rounded-2xl bg-primary text-primary-foreground shadow-[var(--shadow-brand)]">
-            <Compass className="size-4" />
-          </span>
-          <span className="min-w-0">
-            <span className="block text-sm font-semibold">Planifier mon voyage</span>
-            <span className="block truncate text-[11px] text-muted-foreground">Aller + retour, voyageurs et vacances scolaires</span>
-          </span>
-        </span>
-        <ChevronDown className={`size-4 shrink-0 text-muted-foreground transition-transform ${open ? "rotate-180" : ""}`} />
-      </button>
-
-      {open ? (
-        <div className="space-y-3 px-1 pb-4 pt-1">
+      <div className="space-y-3 px-1 pb-4 pt-1">
           <section className="space-y-2">
             <div className="flex items-center justify-between gap-2">
               <div>
                 <p className="text-sm font-semibold">Vacances scolaires</p>
                 <p className="text-[11px] text-muted-foreground">Le moteur adapte les dates et les ports aux vacances françaises.</p>
               </div>
-              <span className="rounded-full bg-primary/10 px-2 py-1 text-[10px] font-semibold text-primary">Différenciant</span>
+              <span className="rounded-full bg-primary/10 px-2 py-1 text-[10px] font-semibold text-primary">Recommandé</span>
             </div>
             <Select value={zone ?? ANY} onValueChange={(value) => {
               const next = value === ANY ? null : value as SchoolZone;
@@ -436,7 +417,7 @@ export function TripPlanner({ selection, onSelect }: { selection: Selection | nu
                 setReturnDate("");
               }
             }}>
-              <SelectTrigger className="h-11 bg-background"><SelectValue placeholder="Je ne sais pas / pas concerné" /></SelectTrigger>
+              <SelectTrigger className="batogo-control h-11"><SelectValue placeholder="Je ne sais pas / pas concerné" /></SelectTrigger>
               <SelectContent>
                 <SelectItem value={ANY}>Je ne sais pas / pas concerné</SelectItem>
                 <SelectItem value="A">Zone A</SelectItem><SelectItem value="B">Zone B</SelectItem><SelectItem value="C">Zone C</SelectItem>
@@ -444,17 +425,17 @@ export function TripPlanner({ selection, onSelect }: { selection: Selection | nu
             </Select>
           </section>
 
-          <details className="group rounded-xl border border-border/70 bg-background/60">
+          <details className="group rounded-xl bg-muted/50">
             <summary className="flex cursor-pointer list-none items-center justify-between px-3 py-2.5 text-xs font-semibold">
               <span>Plus de filtres</span>
               <ChevronDown className="size-3.5 transition-transform group-open:rotate-180" />
             </summary>
-            <div className="border-t border-border/60 px-3 pb-3 pt-2">
+            <div className="px-3 pb-3 pt-2">
               <p className="mb-2 text-[11px] text-muted-foreground">Profil voyageur</p>
               <div className="grid grid-cols-3 gap-1.5">
                 {([["solo", "Seul"], ["couple", "Couple"], ["family", "Famille"]] as const).map(([value, label]) => (
                   <button key={value} type="button" onClick={() => setTraveler(value)}
-                    className={`rounded-xl border px-2 py-2 text-[11px] font-semibold transition ${traveler === value ? "border-primary bg-primary text-primary-foreground" : "border-border bg-background hover:bg-secondary"}`}>
+                    className={`rounded-xl px-2 py-2 text-[11px] font-semibold transition ${traveler === value ? "bg-primary text-primary-foreground shadow-sm" : "bg-muted/60 text-foreground/75 hover:bg-muted"}` }>
                     <Users className="mx-auto mb-1 size-4" />{label}
                   </button>
                 ))}
@@ -478,9 +459,9 @@ export function TripPlanner({ selection, onSelect }: { selection: Selection | nu
             ) : null}
 
             {zone ? (
-              <div className="batogo-field rounded-2xl px-3 py-2.5 text-xs shadow-none">
+              <div className="batogo-control rounded-2xl px-3 py-2.5 text-xs shadow-none">
                 <div><span className="font-semibold">Itinéraire compris :</span> France → Algérie</div>
-                <div className="mt-2 border-t border-border/60 pt-2">
+                <div className="mt-2 border-t border-border/30 pt-2">
                   <p className="mb-1.5 text-[11px] font-semibold text-muted-foreground">Calendrier Zone {zone} · 2026–2027</p>
                   <div className="grid gap-1.5">
                     {getSchoolBreaksForZone(zone).map((period) => (
@@ -501,7 +482,7 @@ export function TripPlanner({ selection, onSelect }: { selection: Selection | nu
           </section>
 
           {zone ? (
-            <section className="rounded-2xl border border-primary/15 bg-primary/[0.04] p-3">
+            <section className="rounded-2xl bg-primary/[0.04] p-3">
               <div className="mb-3">
                 <div className="flex items-start justify-between gap-2">
                   <div>
@@ -509,7 +490,7 @@ export function TripPlanner({ selection, onSelect }: { selection: Selection | nu
                     <p className="text-[11px] text-muted-foreground">France 🇫🇷 → Algérie 🇩🇿 · dates réelles disponibles</p>
                   </div>
                   <Select value={String(flexDays)} onValueChange={(value) => setFlexDays(Number(value))}>
-                    <SelectTrigger className="h-8 w-[92px] bg-background text-[11px]"><SelectValue /></SelectTrigger>
+                    <SelectTrigger className="batogo-control h-8 w-[92px] text-[11px]"><SelectValue /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="1">± 1 jour</SelectItem>
                       <SelectItem value="3">± 3 jours</SelectItem>
@@ -552,7 +533,7 @@ export function TripPlanner({ selection, onSelect }: { selection: Selection | nu
                               setToId(outbound.to.id);
                               onSelect({ type: "route", id: outbound.route.id });
                             }}
-                            className={`min-w-0 rounded-xl border p-2.5 text-left transition ${
+                            className={`min-w-0 rounded-xl p-2.5 text-left transition ${
                               outboundSelected
                                 ? "border-primary bg-primary/10 shadow-sm"
                                 : "border-transparent hover:border-primary/40 hover:bg-secondary"
@@ -607,8 +588,8 @@ export function TripPlanner({ selection, onSelect }: { selection: Selection | nu
                           setFromId(from.id);
                           setToId(to.id);
                           onSelect({ type: "route", id: departure.route_id });
-                        }} className={`flex w-full items-center justify-between rounded-xl border px-3 py-2.5 text-left ${
-                          selected ? "border-primary bg-primary/10" : "border-border bg-background hover:bg-secondary"
+                        }} className={`flex w-full items-center justify-between rounded-xl px-3 py-2.5 text-left ${
+                          selected ? "bg-primary/10 ring-1 ring-primary/20" : "bg-muted/40 hover:bg-muted"
                         }`}>
                           <span>
                             <span className="block text-xs font-semibold">{formatDay(date)} · {formatTime(departure.departure_at)}</span>
@@ -650,7 +631,7 @@ export function TripPlanner({ selection, onSelect }: { selection: Selection | nu
           </Button>
 
           {schoolInfo ? (
-            <div className="rounded-xl border border-[#f4b860]/30 bg-[#f4b860]/15 px-3 py-2 text-xs text-[#7c5a22]">
+            <div className="rounded-xl bg-[#f4b860]/15 px-3 py-2 text-xs text-[#7c5a22]">
               <span className="font-semibold">Calendrier scolaire :</span>{" "}
               {schoolInfo.outbound ? `aller pendant les vacances de ${schoolInfo.outbound}` : ""}
               {schoolInfo.outbound && schoolInfo.return ? " · " : ""}
@@ -668,8 +649,7 @@ export function TripPlanner({ selection, onSelect }: { selection: Selection | nu
               </p>
             </div>
           ) : null}
-        </div>
-      ) : null}
+      </div>
     </div>
   );
 }
@@ -741,6 +721,6 @@ function Recommendation({ title, leg, from, to, date, selection, onSelect }: { t
 }
 
 function EmptyRecommendation({ text }: { text: string }) {
-  return <div className="rounded-2xl border border-dashed border-border bg-muted/60 px-3 py-2.5 text-xs text-muted-foreground">{text}</div>;
+  return <div className="rounded-2xl bg-muted/60 px-3 py-2.5 text-xs text-muted-foreground">{text}</div>;
 }
  

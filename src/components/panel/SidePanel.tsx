@@ -55,7 +55,7 @@ export function SidePanel({
 
   return (
     <div className="batogo-floating-panel flex h-full min-h-0 flex-col overflow-hidden rounded-3xl">
-      <div className="custom-scrollbar min-h-0 flex-1 overflow-y-auto">
+      <div className="batogo-panel-scroll min-h-0 flex-1 overflow-y-auto">
         <div className="sticky top-0 z-20 bg-transparent px-3 pb-2.5 pt-3 sm:px-4">
           <div
             role="tablist"
@@ -67,7 +67,7 @@ export function SidePanel({
               role="tab"
               aria-selected={activeTab === "explore"}
               onClick={() => setActiveTab("explore")}
-              className="batogo-tab flex items-center justify-center gap-2 px-3 text-xs font-semibold" data-active={activeTab === "explore"}
+              className="batogo-tab flex items-center justify-center gap-2 whitespace-nowrap px-2.5 text-xs font-semibold" data-active={activeTab === "explore"}
             >
               <MapPinned aria-hidden className="size-4" />
               <span>Explorer la carte</span>

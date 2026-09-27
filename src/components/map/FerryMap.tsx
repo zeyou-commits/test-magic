@@ -440,37 +440,21 @@ export default function FerryMap({ ports, routes, visibleRouteIds, focusRouteIds
       const header = document.createElement("div");
       header.className = "port-tip__header";
 
-      const eyebrow = document.createElement("span");
-      eyebrow.className = "port-tip__eyebrow";
-      eyebrow.textContent = "PORT";
-      header.append(eyebrow);
-
       const title = document.createElement("p");
       title.className = "port-tip__title";
       title.textContent = port.name;
       header.append(title);
 
-      const country = document.createElement("p");
-      country.className = "port-tip__country";
-      const flags: Record<string, string> = { FR: "🇫🇷", ES: "🇪🇸", IT: "🇮🇹", DZ: "🇩🇿" };
-      country.textContent = `${flags[port.country_code] ?? "🌍"} ${port.country_name ?? ""}`.trim();
-      header.append(country);
-      tip.append(header);
-
-      const stats = document.createElement("div");
-      stats.className = "port-tip__stats";
-
-      const routeStat = document.createElement("div");
-      routeStat.className = "port-tip__stat";
-      routeStat.innerHTML = `<strong>${routeCount}</strong><span>${routeCount === 1 ? "ligne" : "lignes"}</span>`;
-      stats.append(routeStat);
-
       const companyCount = meta?.companies?.length ?? 0;
-      const companyStat = document.createElement("div");
-      companyStat.className = "port-tip__stat";
-      companyStat.innerHTML = `<strong>${companyCount}</strong><span>${companyCount === 1 ? "compagnie" : "compagnies"}</span>`;
-      stats.append(companyStat);
-      tip.append(stats);
+      const country = port.country_name ?? "Pays non renseigné";
+      const routeLabel = routeCount === 1 ? "1 ligne" : `${routeCount} lignes`;
+      const companyLabel = companyCount === 1 ? "1 comp." : `${companyCount} comp.`;
+
+      const metaLine = document.createElement("p");
+      metaLine.className = "port-tip__country";
+      metaLine.innerHTML = `${country} <span class="port-tip__separator">•</span> ${routeLabel} <span class="port-tip__separator">•</span> ${companyLabel}`;
+      header.append(metaLine);
+      tip.append(header);
 
       if (port.status === "inactive") {
         const closed = document.createElement("p");
@@ -487,18 +471,40 @@ export default function FerryMap({ ports, routes, visibleRouteIds, focusRouteIds
       if (meta?.upcoming?.length) {
         const list = document.createElement("ul");
         list.className = "port-tip__departures";
-        meta.upcoming.slice(0, isMobile ? 2 : 3).forEach((item) => {
+
+        meta.upcoming.slice(0, isMobile ? 2 : 3).forEach((item, index) => {
+          if (index > 0) {
+            const divider = document.createElement("li");
+            divider.className = "port-tip__divider";
+            divider.setAttribute("aria-hidden", "true");
+            list.append(divider);
+          }
+
           const row = document.createElement("li");
           row.className = "port-tip__departure";
+
+          const dateParts = item.label.match(/^(.*?)(?:\\s+(\\d{1,2}:\\d{2}))$/);
           const date = document.createElement("span");
           date.className = "port-tip__departure-date";
-          date.textContent = item.label;
+          date.textContent = dateParts?.[1] ?? item.label;
+
+          const time = document.createElement("span");
+          time.className = "port-tip__departure-time";
+          time.textContent = dateParts?.[2] ?? "";
+
+          const schedule = document.createElement("div");
+          schedule.className = "port-tip__departure-schedule";
+          schedule.append(date);
+          if (time.textContent) schedule.append(time);
+
           const destination = document.createElement("span");
           destination.className = "port-tip__departure-destination";
-          destination.textContent = item.to ? `→ ${item.to}` : "Destination à confirmer";
-          row.append(date, destination);
+          destination.textContent = item.to ? `${item.to} →` : "Destination →";
+
+          row.append(schedule, destination);
           list.append(row);
         });
+
         tip.append(list);
       } else {
         const next = document.createElement("p");

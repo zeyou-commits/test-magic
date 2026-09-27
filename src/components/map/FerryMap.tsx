@@ -625,7 +625,7 @@ export default function FerryMap({ ports, routes, visibleRouteIds, dateActiveRou
     const apply = () => { 
       const source = map.getSource("ferry-routes") as GeoJSONSource | undefined; 
       if (!source) return; 
-      source.setData({ type: "FeatureCollection", features: routeFeatures(routes, portMap, visible, focus, selection) }); 
+      source.setData({ type: "FeatureCollection", features: routeFeatures(routes, portMap, visible, new Set(dateActiveRouteIds), focus, selection) }); 
     };
     
     if (readyRef.current) apply(); 

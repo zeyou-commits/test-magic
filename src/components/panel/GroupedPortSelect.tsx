@@ -100,7 +100,7 @@ export function GroupedPortSelect({
             variant="outline"
             aria-expanded={open}
             aria-label={`${label} : ${selected?.name ?? "Choisir un port"}`}
-            className="h-11 w-full justify-between bg-background/70 px-3 font-normal"
+            className="batogo-control h-11 w-full justify-between px-3 font-normal"
           >
             <span
               className={
@@ -136,7 +136,7 @@ export function GroupedPortSelect({
               onChange={(event) => setSearch(event.target.value)}
               placeholder="Rechercher un port"
               aria-label="Rechercher un port"
-              className="h-10 pl-9 pr-9"
+              className="batogo-control h-10 pl-9 pr-9"
             />
 
             {search ? (

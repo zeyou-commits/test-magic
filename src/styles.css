@@ -183,7 +183,7 @@
   z-index: 5;
   width: 256px;
   max-width: calc(100vw - 24px);
-  padding: 16px;
+  padding: 19px;
   border: 1px solid rgba(15, 42, 55, 0.08);
   border-radius: 1rem;
   background: rgba(255, 255, 255, 0.96);
@@ -209,8 +209,8 @@
 }
 .port-tip__close {
   position: absolute;
-  top: 12px;
-  right: 12px;
+  top: 15px;
+  right: 15px;
   z-index: 5;
   width: 24px;
   height: 24px;
@@ -241,7 +241,7 @@
   pointer-events: auto;
 }
 .port-tip__header {
-  padding-right: 28px;
+  padding-right: 32px;
 }
 .port-tip__title {
   margin: 0;
@@ -294,20 +294,27 @@
   font-size: 13px;
 }
 .port-tip__departure-schedule {
-  display: flex;
+  display: grid;
+  grid-template-columns: auto 10px auto;
   align-items: baseline;
-  gap: 6px;
   min-width: 0;
+}
+.port-tip__departure-separator {
+  color: var(--color-muted-foreground);
+  font-size: 9px;
+  font-weight: 500;
+  text-align: center;
+  opacity: .45;
 }
 .port-tip__departure-date {
   color: var(--color-foreground);
-  font-size: 13px;
+  font-size: 12.5px;
   font-weight: 650;
   white-space: nowrap;
 }
 .port-tip__departure-time {
   color: var(--color-muted-foreground);
-  font-size: 11px;
+  font-size: 10.5px;
   font-weight: 500;
   white-space: nowrap;
 }
@@ -316,16 +323,16 @@
   align-items: center;
   gap: 4px;
   color: var(--color-primary);
-  font-size: 12px;
-  font-weight: 700;
+  font-size: 11.5px;
+  font-weight: 650;
   white-space: nowrap;
 }
 .port-tip__divider {
   width: 100%;
   height: 1px;
-  margin: 7px 0;
-  background: var(--color-border);
-  opacity: .4;
+  margin: 6px 0;
+  background: rgba(15, 42, 55, .10);
+  opacity: .55;
 }
 .port-tip__next {
   margin: 0;
@@ -335,24 +342,25 @@
 }
 .port-tip__more {
   width: 100%;
-  min-height: 38px;
-  margin-top: 17px;
-  padding: 9px 12px;
+  min-height: 32px;
+  margin-top: 15px;
+  padding: 7px 12px;
   border: 0;
   border-radius: .7rem;
   background: var(--color-primary);
   color: var(--color-primary-foreground);
-  font-size: 12px;
-  font-weight: 700;
-  box-shadow: 0 2px 7px rgba(0,0,0,.08);
+  font-size: 11px;
+  font-weight: 650;
+  box-shadow: none;
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
   transition: background .15s ease, box-shadow .15s ease, transform .15s ease;
 }
 .port-tip__more:hover {
   background: var(--color-primary);
-  box-shadow: 0 4px 12px rgba(0,0,0,.12);
-  transform: translateY(-1px);
+  box-shadow: none;
+  transform: none;
+  filter: brightness(1.04);
 }
 
 

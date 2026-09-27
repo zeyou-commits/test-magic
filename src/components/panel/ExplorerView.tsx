@@ -318,7 +318,7 @@ export function ExplorerView({
 
           </div>
 
-          <div className="sticky bottom-0 z-10 -mx-6 mt-3 bg-gradient-to-t from-white via-white/95 to-transparent px-6 pb-1 pt-5">
+          <div className="sticky bottom-0 z-10 -mx-5 mt-3 bg-gradient-to-t from-white via-white/95 to-transparent px-5 pb-1 pt-5 sm:-mx-6 sm:px-6">
             <Button
               type="button"
               variant={filtersOpen ? "secondary" : "outline"}

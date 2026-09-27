@@ -484,9 +484,17 @@ export default function FerryMap({ ports, routes, visibleRouteIds, focusRouteIds
           row.className = "port-tip__departure";
 
           const dateParts = item.label.match(/^(.*?)(?:\s+(\d{1,2}:\d{2}))$/);
+          const shortMonths: Record<string, string> = {
+            janvier: "janv.", février: "févr.", mars: "mars", avril: "avr.",
+            mai: "mai", juin: "juin", juillet: "juil.", août: "août",
+            septembre: "sept.", octobre: "oct.", novembre: "nov.", décembre: "déc.",
+          };
+          const shortenDate = (value: string) =>
+            value.replace(/\b(\d{1,2})\s+(janvier|février|mars|avril|mai|juin|juillet|août|septembre|octobre|novembre|décembre)\b/i,
+              (_, day, month) => `${day} ${shortMonths[month.toLowerCase()] ?? month}`);
           const date = document.createElement("span");
           date.className = "port-tip__departure-date";
-          date.textContent = dateParts?.[1] ?? item.label;
+          date.textContent = shortenDate(dateParts?.[1] ?? item.label);
 
           const time = document.createElement("span");
           time.className = "port-tip__departure-time";
@@ -495,11 +503,16 @@ export default function FerryMap({ ports, routes, visibleRouteIds, focusRouteIds
           const schedule = document.createElement("div");
           schedule.className = "port-tip__departure-schedule";
           schedule.append(date);
-          if (time.textContent) schedule.append(time);
+          if (time.textContent) {
+            const separator = document.createElement("span");
+            separator.className = "port-tip__departure-separator";
+            separator.textContent = "•";
+            schedule.append(separator, time);
+          }
 
           const destination = document.createElement("span");
           destination.className = "port-tip__departure-destination";
-          destination.textContent = item.to ? `${item.to} →` : "Destination →";
+          destination.textContent = item.to ? `→ ${item.to}` : "→ Destination";
 
           row.append(schedule, destination);
           list.append(row);

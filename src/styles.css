@@ -112,16 +112,24 @@
 }
 .batogo-section:first-child { border-top: none; }
 
-/* Champs et listes */
+/* Champs premium : surfaces douces, aucun contour permanent */
+.batogo-control,
 .batogo-field {
-  border: 1px solid var(--color-input);
+  border: 0 !important;
   border-radius: 0.75rem;
-  background: var(--color-background);
-  transition: all .2s ease;
+  background: color-mix(in oklab, var(--color-muted) 72%, white) !important;
+  box-shadow: none !important;
+  outline: none;
+  transition: background .2s ease, box-shadow .2s ease;
 }
+.batogo-control:focus,
+.batogo-control:focus-visible,
 .batogo-field:focus-within {
-  border-color: var(--color-primary);
-  box-shadow: 0 0 0 3px color-mix(in oklab, var(--color-primary) 12%, transparent);
+  background: var(--color-card) !important;
+  box-shadow: 0 0 0 3px color-mix(in oklab, var(--color-primary) 13%, transparent) !important;
+}
+.batogo-control::placeholder {
+  color: var(--color-muted-foreground);
 }
 
 .batogo-list-item {
@@ -393,5 +401,9 @@
   .port-tip__departure { min-height: 32px; }
 }
 
-.batogo-floating-panel .custom-scrollbar { scrollbar-width: thin; scrollbar-color: var(--color-border) transparent; }
-.batogo-floating-panel input { background: transparent !important; border: none !important; }
+.batogo-panel-scroll {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.batogo-panel-scroll::-webkit-scrollbar { display: none; width: 0; height: 0; }
+.batogo-floating-panel input { border: none !important; }

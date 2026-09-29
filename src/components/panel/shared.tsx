@@ -1,116 +1,74 @@
 import type { ReactNode } from "react";
+import { Star } from "lucide-react";
 import { reliabilityLabel, reliabilityTone } from "@/lib/ferry/format";
 import type { Reliability } from "@/lib/ferry/types";
 
-export function PanelHeader({
-  overline,
-  title,
-  subtitle,
-  actions,
-}: {
-  overline?: string;
-  title: string;
-  subtitle?: ReactNode;
-  actions?: ReactNode;
-}) {
+export function PanelHeader({ overline, title, subtitle, actions }: { overline?: string; title: string; subtitle?: ReactNode; actions?: ReactNode; }) {
   return (
-    <div className="px-5 pb-3 pt-5">
-      {overline ? (
-        <p className="text-[12px] font-bold uppercase tracking-[0.13em] text-foreground/80">
-          {overline}
-        </p>
-      ) : null}
-      <h2 className="mt-1 text-xl leading-tight font-semibold">{title}</h2>
-      {subtitle ? <div className="mt-1 text-sm text-muted-foreground">{subtitle}</div> : null}
-      {actions ? <div className="mt-3 flex flex-wrap gap-2">{actions}</div> : null}
-    </div>
+    <header className="flex items-start justify-between gap-4 px-4 pt-6 md:px-6 md:pt-8">
+      <div>
+        {overline ? <div className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">{overline}</div> : null}
+        <h1 className="font-display text-2xl font-bold tracking-tight text-foreground">{title}</h1>
+        {subtitle ? <div>{subtitle}</div> : null}
+      </div>
+      {actions ? <div>{actions}</div> : null}
+    </header>
   );
 }
 
-export function Section({
-  title,
-  children,
-  action,
-}: {
-  title: string;
-  children: ReactNode;
-  action?: ReactNode;
-}) {
+export function Section({ title, children, action }: { title: string; children: ReactNode; action?: ReactNode; }) {
   return (
-    <section className="batogo-section">
-      <div className="mb-3 flex items-center justify-between gap-2">
-        <h3 className="text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
-          {title}
-        </h3>
+    <section className="batogo-section flex flex-col gap-4">
+      <header className="flex items-center justify-between">
+        <h2 className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">{title}</h2>
         {action}
-      </div>
+      </header>
       {children}
     </section>
   );
 }
 
-export function ReliabilityNote({
-  reliability,
-  sourceName,
-  sourceUrl,
-  verifiedAt,
-}: {
-  reliability: Reliability;
-  sourceName?: string | null;
-  sourceUrl?: string | null;
-  verifiedAt?: string | null;
-}) {
+export function ReliabilityNote({ reliability, sourceName, sourceUrl, verifiedAt }: { reliability: Reliability; sourceName?: string | null; sourceUrl?: string | null; verifiedAt?: string | null; }) {
   return (
-    <p className="text-xs text-muted-foreground">
-      <span className={`font-semibold ${reliabilityTone[reliability]}`}>
-        {reliabilityLabel[reliability]}
-      </span>
+    <div className="mt-2 text-xs text-muted-foreground">
+      <span className={`font-medium ${reliabilityTone[reliability]}`}>{reliabilityLabel[reliability]}</span>
       {sourceName ? (
         <>
           {" · Source : "}
-          {sourceUrl ? (
-            <a
-              href={sourceUrl}
-              target="_blank"
-              rel="noreferrer"
-              className="underline underline-offset-2"
-            >
-              {sourceName}
-            </a>
-          ) : (
-            sourceName
-          )}
+          {sourceUrl ? <a href={sourceUrl} target="_blank" rel="noreferrer" className="underline hover:text-foreground">{sourceName}</a> : sourceName}
         </>
       ) : null}
-      {verifiedAt
-        ? ` · Vérifié le ${new Date(verifiedAt).toLocaleDateString("fr-FR")}`
-        : null}
-    </p>
+      {verifiedAt ? ` · Vérifié le ${new Date(verifiedAt).toLocaleDateString("fr-FR")}` : null}
+    </div>
   );
 }
 
 export function EmptyNote({ children }: { children: ReactNode }) {
-  return <p className="text-sm text-muted-foreground">{children}</p>;
+  return <div className="text-sm text-muted-foreground">{children}</div>;
 }
 
 export function DemoBadge() {
-  return (
-    <span className="rounded-full bg-secondary px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-secondary-foreground">
-      Démonstration
-    </span>
-  );
+  return <span className="inline-flex items-center rounded-full bg-accent/10 px-2 py-0.5 text-[10px] font-medium text-accent">Démonstration</span>;
 }
 
 export function Stars({ value }: { value: number }) {
   const rounded = Math.round(value * 2) / 2;
   return (
-    <span className="inline-flex items-center gap-1 text-sm">
-      <span className="text-accent" aria-hidden>
-        {"★".repeat(Math.floor(rounded))}
-        {rounded % 1 ? "⯨" : ""}
-        {"☆".repeat(Math.max(0, 5 - Math.ceil(rounded)))}
-      </span>
-      <span className="font-semibold">{value.toFixed(1)}</span>
-    </span>
+    <div className="flex items-center gap-1.5" aria-label={`${value.toFixed(1)} sur 5`} title={`${value.toFixed(1)} / 5`}>
+      <div className="flex">
+        {[1, 2, 3, 4, 5].map((star) => {
+          const fill = rounded >= star ? 100 : rounded >= star - 0.5 ? 50 : 0;
+          return (
+            <div key={star} className="relative size-4">
+              <Star className="absolute inset-0 size-4 text-muted" strokeWidth={2} />
+              <div className="absolute inset-0 overflow-hidden" style={{ width: `${fill}%` }}>
+                <Star className="size-4 fill-amber-500 text-amber-500" strokeWidth={2} />
+              </div>
+            </div>
+          );
+        })}
+      </div>
+      <span className="text-xs font-semibold text-foreground">{value.toFixed(1)}</span>
+    </div>
   );
 }

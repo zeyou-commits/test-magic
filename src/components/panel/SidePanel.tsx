@@ -2,15 +2,13 @@ import { useState } from "react";
 import type { Filters, RouteLine, Selection } from "@/lib/ferry/types";
 import { CalendarDays, MapPinned, Share2 } from "lucide-react";
 import { toast } from "sonner";
+import { useIsMobile } from "@/hooks/use-mobile";
+
 import { ExplorerView } from "./ExplorerView";
 import { TripPlanner } from "./TripPlanner";
 import { PortView } from "./PortView";
 import { RouteView } from "./RouteView";
-import {
-  CompanyView,
-  DepartureView,
-  VesselView,
-} from "./EntityViews";
+import { CompanyView, DepartureView, VesselView } from "./EntityViews";
 
 interface SidePanelProps {
   selection: Selection | null;
@@ -18,7 +16,8 @@ interface SidePanelProps {
   filters: Filters;
   onFiltersChange: (filters: Filters) => void;
   visibleRoutes: RouteLine[];
-  hidePrimarySearchOnMobile?: boolean;
+  hasMobileBar?: boolean;
+  onRequestExpand?: () => void;
 }
 
 type PanelTab = "explore" | "plan";
@@ -29,28 +28,24 @@ export function SidePanel({
   filters,
   onFiltersChange,
   visibleRoutes,
-  hidePrimarySearchOnMobile = false,
+  hasMobileBar = false,
+  onRequestExpand,
 }: SidePanelProps) {
   const [activeTab, setActiveTab] = useState<PanelTab>("explore");
+  const isMobile = useIsMobile();
 
   const switchTab = (tab: PanelTab) => {
     setActiveTab(tab);
-    if (typeof window !== "undefined" && window.innerWidth < 768 && tab === "plan") {
-      window.dispatchEvent(new CustomEvent("batogo:planner-open"));
-    }
+    if (tab === "plan" && typeof window !== "undefined" && isMobile)
+      onRequestExpand?.();
   };
 
   const shareSelection = async () => {
     if (typeof window === "undefined") return;
-
     const url = window.location.href;
-
     try {
       if (navigator.share) {
-        await navigator.share({
-          title: "Batogo — traversées en ferry",
-          url,
-        });
+        await navigator.share({ title: "Batogo — traversées en ferry", url });
       } else {
         await navigator.clipboard.writeText(url);
         toast.success("Lien copié");
@@ -61,101 +56,59 @@ export function SidePanel({
   };
 
   return (
-    <div className="batogo-floating-panel flex h-full min-h-0 flex-col overflow-hidden rounded-3xl">
-      <div className="batogo-panel-scroll min-h-0 flex-1 overflow-y-auto overscroll-contain pb-[max(0.5rem,env(safe-area-inset-bottom))]">
-        <div className="sticky top-0 z-20 bg-transparent px-3 pb-2.5 pt-3 sm:px-4">
-          <div
-            role="tablist"
-            aria-label="Mode de recherche"
-            className="batogo-tabbar grid grid-cols-2 gap-1 rounded-2xl p-1.5"
+    <div className="batogo-floating-panel pointer-events-auto flex h-full w-full flex-col overflow-hidden shadow-2xl md:w-[420px] md:rounded-2xl">
+      <div className="flex-none p-3 pb-0">
+        <div className="batogo-tabbar grid grid-cols-2 p-1">
+          <button
+            onClick={() => switchTab("explore")}
+            className="batogo-tab flex items-center justify-center gap-2 whitespace-nowrap px-2.5 text-xs font-semibold"
+            data-active={activeTab === "explore"}
           >
-            <button
-              type="button"
-              role="tab"
-              aria-selected={activeTab === "explore"}
-              onClick={() => switchTab("explore")}
-              className="batogo-tab flex items-center justify-center gap-2 whitespace-nowrap px-2.5 text-xs font-semibold" data-active={activeTab === "explore"}
-            >
-              <MapPinned aria-hidden className="size-4" />
-              <span>Explorer la carte</span>
-            </button>
-
-            <button
-              type="button"
-              role="tab"
-              aria-selected={activeTab === "plan"}
-              onClick={() => switchTab("plan")}
-              className="batogo-tab flex items-center justify-center gap-2 px-3 text-xs font-semibold" data-active={activeTab === "plan"}
-            >
-              <CalendarDays aria-hidden className="size-4" />
-              <span>Planifier mon voyage</span>
-            </button>
-          </div>
+            <MapPinned className="size-4" />
+            Explorer la carte
+          </button>
+          <button
+            onClick={() => switchTab("plan")}
+            className="batogo-tab flex items-center justify-center gap-2 px-3 text-xs font-semibold"
+            data-active={activeTab === "plan"}
+          >
+            <CalendarDays className="size-4" />
+            Planifier mon voyage
+          </button>
         </div>
+      </div>
 
-        {activeTab === "explore" ? (
-          <>
-            <ExplorerView
-              filters={filters}
-              onFiltersChange={onFiltersChange}
-              visibleRoutes={visibleRoutes}
-              onSelect={onSelect}
-              selection={selection}
-              hidePrimarySearchOnMobile={hidePrimarySearchOnMobile}
-            />
-          </>
-        ) : (
-          <TripPlanner
-            selection={selection}
-            onSelect={onSelect}
-          />
-        )}
-
+      <div className="batogo-panel-scroll relative flex-1 overflow-y-auto">
         {selection ? (
-          <div className="animate-in fade-in slide-in-from-top-1 duration-200">
-            <div className="mx-3 mt-1 flex items-center justify-between gap-2 rounded-xl bg-muted/60 px-4 py-2">
-              <span className="sr-only">Détail sélectionné</span>
+          <div className="absolute inset-0 z-10 flex flex-col bg-background/98 backdrop-blur-md">
+            <div className="flex flex-none items-center justify-between border-b p-2">
+              <span className="px-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                Détail sélectionné
+              </span>
               <div className="flex items-center gap-1">
-                <button
-                  type="button"
-                  onClick={shareSelection}
-                  className="inline-flex min-h-9 items-center gap-1 rounded-full px-2.5 text-xs font-semibold text-muted-foreground transition-colors hover:bg-card hover:text-foreground"
-                  title="Partager cette sélection"
-                >
-                  <Share2 aria-hidden className="size-3.5" />
-                  <span className="sr-only sm:not-sr-only">
-                    Partager
-                  </span>
+                <button onClick={shareSelection} className="flex h-9 items-center gap-2 rounded-full px-3 text-xs font-semibold text-muted-foreground transition-colors hover:bg-card hover:text-foreground">
+                  <Share2 className="size-3.5" /> Partager
                 </button>
-
-                <button
-                  type="button"
-                  onClick={() => onSelect(null)}
-                  className="min-h-9 rounded-full px-2.5 text-xs font-semibold text-muted-foreground transition-colors hover:bg-card hover:text-foreground"
-                >
+                <button onClick={() => onSelect(null)} className="min-h-9 rounded-full px-2.5 text-xs font-semibold text-muted-foreground transition-colors hover:bg-card hover:text-foreground">
                   Fermer ✕
                 </button>
               </div>
             </div>
-
-            {selection.type === "port" ? (
-              <PortView portId={selection.id} onSelect={onSelect} />
-            ) : selection.type === "route" ? (
-              <RouteView routeId={selection.id} onSelect={onSelect} />
-            ) : selection.type === "company" ? (
-              <CompanyView companyId={selection.id} onSelect={onSelect} />
-            ) : selection.type === "vessel" ? (
-              <VesselView vesselId={selection.id} onSelect={onSelect} />
-            ) : (
-              <DepartureView
-                departureId={selection.id}
-                onSelect={onSelect}
-              />
-            )}
-
-            <div className="h-3 bg-muted/70" />
+            <div className="batogo-panel-scroll flex-1 overflow-y-auto p-4 md:p-6">
+              {selection.type === "port" ? <PortView portId={selection.id} onSelect={onSelect} /> :
+               selection.type === "route" ? <RouteView routeId={selection.id} onSelect={onSelect} /> :
+               selection.type === "company" ? <CompanyView companyId={selection.id} /> :
+               selection.type === "vessel" ? <VesselView vesselId={selection.id} /> :
+               <DepartureView departureId={selection.id} onSelect={onSelect} />}
+            </div>
           </div>
         ) : null}
+
+        {activeTab === "explore" ? (
+          <ExplorerView filters={filters} onFiltersChange={onFiltersChange} hidePrimarySearchOnMobile={hasMobileBar} />
+        ) : (
+          <TripPlanner />
+        )}
       </div>
     </div>
   );

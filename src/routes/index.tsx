@@ -236,7 +236,7 @@ function Index() {
       <aside
         className={`absolute bottom-[calc(3.5rem+env(safe-area-inset-bottom))] left-0 right-0 z-[60] flex flex-col overflow-hidden bg-transparent transition-[height,width,opacity,transform] duration-300 ease-out md:bottom-auto md:left-5 md:top-[5.5rem] md:h-[calc(100vh-7rem)] md:w-[380px] md:rounded-2xl md:z-40 ${
           desktopPanelOpen ? "md:opacity-100 md:translate-x-0" : "md:pointer-events-none md:opacity-0 md:-translate-x-4"
-        } ${panelLevel === 0 ? "h-24 rounded-t-xl" : panelLevel === 1 ? "h-[45dvh] rounded-t-xl" : "h-[calc(100dvh-3.5rem)] rounded-t-xl"}`}
+        } ${panelLevel === 0 ? "h-24 rounded-t-xl" : panelLevel === 1 ? "h-[45dvh] rounded-t-xl" : "h-[calc(100dvh-3.5rem-env(safe-area-inset-bottom))] rounded-t-xl"}`}
       >
         <Button
           type="button"

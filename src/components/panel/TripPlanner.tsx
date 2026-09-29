@@ -633,15 +633,17 @@ export function TripPlanner({ selection, onSelect }: { selection: Selection | nu
             )}
           </div>
 
-          <Button
-            type="button"
-            className="batogo-primary-action w-full bg-primary text-primary-foreground hover:bg-primary/90"
-            onClick={submit}
-            disabled={!outboundDate || (!zones.length && (!fromId || !toId)) || Boolean(tripMode === "roundtrip" && returnDate && (!returnFromId || !returnToId || returnDate < outboundDate))}
-          >
-            <CalendarDays className="size-4" />
-            Trouver ma traversée
-          </Button>
+          <div className="sticky bottom-0 z-10 -mx-1 mt-1 bg-background/95 px-1 pb-2 pt-2 backdrop-blur-md">
+            <Button
+              type="button"
+              className="batogo-primary-action w-full bg-primary text-primary-foreground shadow-md hover:bg-primary/90"
+              onClick={submit}
+              disabled={!outboundDate || (!zones.length && (!fromId || !toId)) || Boolean(tripMode === "roundtrip" && returnDate && (!returnFromId || !returnToId || returnDate < outboundDate))}
+            >
+              <CalendarDays className="size-4" />
+              Trouver ma traversée
+            </Button>
+          </div>
 
           {schoolInfo ? (
             <div className="rounded-xl bg-[#f4b860]/15 px-3 py-2 text-xs text-[#7c5a22]">

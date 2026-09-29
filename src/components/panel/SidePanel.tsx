@@ -17,6 +17,7 @@ interface SidePanelProps {
   onFiltersChange: (filters: Filters) => void;
   visibleRoutes: RouteLine[];
   hasMobileBar?: boolean;
+  hidePrimarySearchOnMobile?: boolean;
   onRequestExpand?: () => void;
 }
 
@@ -29,6 +30,7 @@ export function SidePanel({
   onFiltersChange,
   visibleRoutes,
   hasMobileBar = false,
+  hidePrimarySearchOnMobile = false,
   onRequestExpand,
 }: SidePanelProps) {
   const [activeTab, setActiveTab] = useState<PanelTab>("explore");
@@ -97,17 +99,17 @@ export function SidePanel({
             <div className="batogo-panel-scroll flex-1 overflow-y-auto p-4 md:p-6">
               {selection.type === "port" ? <PortView portId={selection.id} onSelect={onSelect} /> :
                selection.type === "route" ? <RouteView routeId={selection.id} onSelect={onSelect} /> :
-               selection.type === "company" ? <CompanyView companyId={selection.id} /> :
-               selection.type === "vessel" ? <VesselView vesselId={selection.id} /> :
+               selection.type === "company" ? <CompanyView companyId={selection.id} onSelect={onSelect} /> :
+               selection.type === "vessel" ? <VesselView vesselId={selection.id} onSelect={onSelect} /> :
                <DepartureView departureId={selection.id} onSelect={onSelect} />}
             </div>
           </div>
         ) : null}
 
         {activeTab === "explore" ? (
-          <ExplorerView filters={filters} onFiltersChange={onFiltersChange} hidePrimarySearchOnMobile={hasMobileBar} />
+          <ExplorerView filters={filters} onFiltersChange={onFiltersChange} visibleRoutes={visibleRoutes} onSelect={onSelect} selection={selection} hidePrimarySearchOnMobile={hasMobileBar || hidePrimarySearchOnMobile} />
         ) : (
-          <TripPlanner />
+          <TripPlanner selection={selection} onSelect={onSelect} />
         )}
       </div>
     </div>

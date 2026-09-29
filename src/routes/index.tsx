@@ -41,6 +41,12 @@ function Index() {
   const dragStartLevel = useRef<0 | 1 | 2>(1);
   const { isAdmin } = useAuth();
 
+  useEffect(() => {
+    const openPlanner = () => setPanelLevel(2);
+    window.addEventListener("batogo:planner-open", openPlanner);
+    return () => window.removeEventListener("batogo:planner-open", openPlanner);
+  }, []);
+
   const portsResult = useQuery(portsQuery);
   const routesResult = useQuery(routesQuery);
   const departuresResult = useQuery(upcomingDeparturesQuery());

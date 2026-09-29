@@ -81,7 +81,7 @@ export function MobileMapControls({
                 <ChevronDown className="size-3.5 shrink-0 opacity-60" />
               </Button>
             </PopoverTrigger>
-            <PopoverContent align="start" className="w-[calc(100vw-1.5rem)] max-w-sm p-2">
+            <PopoverContent align="start" className="z-[110] w-[calc(100vw-1.5rem)] max-w-sm p-2">
               <div className="px-2 py-1.5">
                 <p className="text-xs font-semibold text-foreground">Ports de départ</p>
                 <p className="text-[10px] text-muted-foreground">Choisissez un ou plusieurs pays et ports.</p>

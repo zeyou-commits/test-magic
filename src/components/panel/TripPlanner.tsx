@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { companiesQuery, portsQuery, routesQuery, schedulesQuery, upcomingDeparturesQuery } from "@/lib/ferry/queries";
-import { getSchoolBreaksForZone, getSchoolBreak, type SchoolZone } from "@/lib/ferry/schoolCalendar";
+import { getSchoolBreaksForZone, type SchoolZone } from "@/lib/ferry/schoolCalendar";
 import type { Departure, Port, RouteLine, Schedule, Selection } from "@/lib/ferry/types";
 import { formatDuration } from "@/lib/ferry/format";
 import { GroupedPortSelect } from "./GroupedPortSelect";
@@ -118,10 +118,10 @@ export function TripPlanner({ selection, onSelect }: { selection: Selection | nu
   const [returnFromId, setReturnFromId] = useState("");
   const [returnToId, setReturnToId] = useState("");
   const [traveler, setTraveler] = useState<TravelerType>("family");
-  const [zone, setZone] = useState<SchoolZone | null>(null);
+  const [zones, setZones] = useState<SchoolZone[]>([]);
   const [flexDays, setFlexDays] = useState(3);
   const [tripMode, setTripMode] = useState<"roundtrip" | "oneway">("roundtrip");
-  const [searched, setSearched] = useState(false);
+  const [searched, setSearched] = useState(false);\n\n  const schoolPeriods = useMemo(() =>\n    zones.flatMap((selectedZone) =>\n      getSchoolBreaksForZone(selectedZone).map((period) => ({ ...period, zone: selectedZone })),\n    ),\n    [zones],\n  );
 
   const activePorts = useMemo(() => ports.filter((port) => port.status === "active"), [ports]);
   const compatibleDeparturePorts = useMemo(() => {
@@ -190,7 +190,7 @@ export function TripPlanner({ selection, onSelect }: { selection: Selection | nu
   }, [companies]);
 
   const suggestedCrossings = useMemo(() => {
-    if (!zone) return [];
+    if (!zones.length) return [];
     return departures.flatMap((departure) => {
       const route = routes.find((item) => item.id === departure.route_id);
       if (!route) return [];
@@ -198,10 +198,10 @@ export function TripPlanner({ selection, onSelect }: { selection: Selection | nu
       const to = activePorts.find((port) => port.id === route.arrival_port_id);
       if (!from || !to || !isFrancePort(from) || !isAlgeriaPort(to)) return [];
       const date = departure.departure_at.slice(0, 10);
-      const period = getSchoolBreaksForZone(zone).find((item) => date >= addDays(item.start, -flexDays) && date <= addDays(item.end, flexDays));
+      const period = schoolPeriods.find((item) => date >= addDays(item.start, -flexDays) && date <= addDays(item.end, flexDays));
       return period ? [{ departure, route, from, to, period }] : [];
     }).sort((a, b) => a.departure.departure_at.localeCompare(b.departure.departure_at));
-  }, [zone, flexDays, departures, routes, activePorts]);
+  }, [zones, schoolPeriods, flexDays, departures, routes, activePorts]);
 
   const availableDates = useMemo(() => {
     const ids = new Set<string>();
@@ -213,16 +213,16 @@ export function TripPlanner({ selection, onSelect }: { selection: Selection | nu
       if (!from || !to) return;
       if (fromId && route.departure_port_id !== fromId) return;
       if (toId && route.arrival_port_id !== toId) return;
-      if (!fromId && !toId && zone && (from.country_code !== FRANCE || to.country_code !== ALGERIA)) return;
+      if (!fromId && !toId && zones.length && (from.country_code !== FRANCE || to.country_code !== ALGERIA)) return;
       ids.add(departure.departure_at.slice(0, 10));
     });
     return ids;
-  }, [departures, routes, activePorts, fromId, toId, zone]);
+  }, [departures, routes, activePorts, fromId, toId, zones]);
 
   const suggestedReturnCrossings = useMemo(() => {
-    if (!zone || !outboundDate) return [];
+    if (!zones.length || !outboundDate) return [];
 
-    const period = getSchoolBreaksForZone(zone).find((item) =>
+    const period = schoolPeriods.find((item) =>
       outboundDate >= addDays(item.start, -flexDays) && outboundDate <= addDays(item.end, flexDays),
     );
     if (!period) return [];
@@ -261,12 +261,12 @@ export function TripPlanner({ selection, onSelect }: { selection: Selection | nu
       const target = toDate(period.end).getTime();
       return Math.abs(toDate(aDate).getTime() - target) - Math.abs(toDate(bDate).getTime() - target);
     });
-  }, [zone, outboundDate, flexDays, departures, routes, activePorts]);
+  }, [zones, schoolPeriods, outboundDate, flexDays, departures, routes, activePorts]);
 
   const suggestedTripPairs = useMemo(() => {
-    if (!zone || tripMode !== "roundtrip") return [];
+    if (!zones.length || tripMode !== "roundtrip") return [];
 
-    return getSchoolBreaksForZone(zone).flatMap((period) => {
+    return schoolPeriods.map((period) => {
       const outboundCandidates = suggestedCrossings
         .filter((item) => item.period.name === period.name)
         .sort((a, b) => {
@@ -338,7 +338,7 @@ export function TripPlanner({ selection, onSelect }: { selection: Selection | nu
         return { period, outbound: outboundCandidate, inbound: inboundCandidate };
       });
     }).slice(0, 12);
-  }, [zone, tripMode, flexDays, suggestedCrossings, departures, routes, activePorts]);
+  }, [zones, schoolPeriods, tripMode, flexDays, suggestedCrossings, departures, routes, activePorts]);
 
   const schoolTravelDates = useMemo(() => suggestedCrossings, [suggestedCrossings]);
 
@@ -356,7 +356,7 @@ export function TripPlanner({ selection, onSelect }: { selection: Selection | nu
   );
 
   useEffect(() => {
-    if (!zone || tripMode !== "roundtrip" || !suggestedTripPairs.length) return;
+    if (!zones.length || tripMode !== "roundtrip" || !suggestedTripPairs.length) return;
     const first = suggestedTripPairs[0];
     const outDate = first.outbound.departure.departure_at.slice(0, 10);
     const inDate = first.inbound.departure.departure_at.slice(0, 10);
@@ -366,7 +366,7 @@ export function TripPlanner({ selection, onSelect }: { selection: Selection | nu
     setReturnDate(inDate);
     setReturnFromId(first.inbound.from.id);
     setReturnToId(first.inbound.to.id);
-  }, [zone, tripMode, flexDays, suggestedTripPairs]);
+  }, [zones, tripMode, flexDays, suggestedTripPairs]);
 
   useEffect(() => {
     if (fromId && !compatibleDeparturePorts.some((port) => port.id === fromId)) {
@@ -389,7 +389,7 @@ export function TripPlanner({ selection, onSelect }: { selection: Selection | nu
   const portName = (id: string) => activePorts.find((port) => port.id === id)?.name ?? "—";
 
   const submit = () => {
-    if (!outboundDate || (!zone && (!fromId || !toId))) return;
+    if (!outboundDate || (!zones.length && (!fromId || !toId))) return;
     if (tripMode === "roundtrip" && returnDate && (!returnFromId || !returnToId || returnDate < outboundDate)) return;
     setSearched(true);
   };
@@ -456,21 +456,21 @@ export function TripPlanner({ selection, onSelect }: { selection: Selection | nu
                 className={`rounded-lg px-3 py-2 text-xs font-semibold ${tripMode === "oneway" ? "bg-white text-[#0e7490] shadow-sm" : "text-[#64748b]"}`}>Aller simple</button>
             </div>
 
-            {!zone ? (
+            {!zones.length ? (
               <div className="grid gap-2 md:grid-cols-2">
                 <GroupedPortSelect label="Départ" value={fromId} onChange={(value) => { setFromId(value); setSearched(false); }} ports={compatibleDeparturePorts} />
                 <GroupedPortSelect label="Arrivée" value={toId} onChange={(value) => { setToId(value); setSearched(false); }} ports={compatibleArrivalPorts} />
               </div>
             ) : null}
 
-            {zone ? (
+            {zones.length ? (
               <div className="batogo-control rounded-2xl px-3 py-2.5 text-xs shadow-none">
                 <div><span className="font-semibold">Itinéraire compris :</span> France → Algérie</div>
                 <div className="mt-2 border-t border-border/30 pt-2">
-                  <p className="mb-1.5 text-[11px] font-semibold text-muted-foreground">Calendrier Zone {zone} · 2026–2027</p>
+                  <p className="mb-1.5 text-[11px] font-semibold text-muted-foreground">Calendrier {zones.map((item) => `Zone ${item}`).join(" · ")} · 2026–2027</p>
                   <div className="grid gap-1.5">
-                    {getSchoolBreaksForZone(zone).map((period) => (
-                      <div key={period.name} className="flex items-center justify-between gap-3 text-[11px]">
+                    {schoolPeriods.map((period) => (
+                      <div key={`${period.zone}-${period.name}`} className="flex items-center justify-between gap-3 text-[11px]">
                         <span className="font-medium">{period.name}</span>
                         <span className="text-muted-foreground">{formatCalendarDate(period.start)} → {formatCalendarDate(period.end)}</span>
                       </div>
@@ -491,7 +491,7 @@ export function TripPlanner({ selection, onSelect }: { selection: Selection | nu
               <div className="mb-3">
                 <div className="flex items-start justify-between gap-2">
                   <div>
-                    <p className="text-sm font-semibold">Traversées autour des vacances — Zone {zone}</p>
+                    <p className="text-sm font-semibold">Traversées autour des vacances — {zones.map((item) => `Zone ${item}`).join(" · ")}</p>
                     <p className="text-[11px] text-muted-foreground">France 🇫🇷 → Algérie 🇩🇿 · dates réelles disponibles</p>
                   </div>
                   <Select value={String(flexDays)} onValueChange={(value) => setFlexDays(Number(value))}>
@@ -615,10 +615,10 @@ export function TripPlanner({ selection, onSelect }: { selection: Selection | nu
           <div className="flex flex-wrap items-center gap-1.5">
             {fromId && <span className="rounded-full bg-secondary px-2.5 py-1 text-[10px] font-medium">{portName(fromId)}</span>}
             {toId && <><ArrowRight className="size-3 text-muted-foreground" /><span className="rounded-full bg-secondary px-2.5 py-1 text-[10px] font-medium">{portName(toId)}</span></>}
-            {zone && <span className="rounded-full bg-primary/10 px-2.5 py-1 text-[10px] font-semibold text-primary">Zone {zone}</span>}
-            {(fromId || toId || zone) && (
+            {zones.length ? <span className="rounded-full bg-primary/10 px-2.5 py-1 text-[10px] font-semibold text-primary">{zones.map((item) => `Zone ${item}`).join(" · ")}</span> : null}
+            {(fromId || toId || zones.length) && (
               <button type="button" onClick={() => {
-                setFromId(""); setToId(""); setReturnDate(""); setReturnFromId(""); setReturnToId(""); setZone(null); setSearched(false);
+                setFromId(""); setToId(""); setReturnDate(""); setReturnFromId(""); setReturnToId(""); setZones([]); setSearched(false);
               }} className="ml-auto text-[10px] font-medium text-muted-foreground hover:text-foreground">
                 Réinitialiser
               </button>
@@ -629,7 +629,7 @@ export function TripPlanner({ selection, onSelect }: { selection: Selection | nu
             type="button"
             className="batogo-primary-action w-full bg-primary text-primary-foreground hover:bg-primary/90"
             onClick={submit}
-            disabled={!outboundDate || (!zone && (!fromId || !toId)) || Boolean(tripMode === "roundtrip" && returnDate && (!returnFromId || !returnToId || returnDate < outboundDate))}
+            disabled={!outboundDate || (!zones.length && (!fromId || !toId)) || Boolean(tripMode === "roundtrip" && returnDate && (!returnFromId || !returnToId || returnDate < outboundDate))}
           >
             <CalendarDays className="size-4" />
             Trouver ma traversée

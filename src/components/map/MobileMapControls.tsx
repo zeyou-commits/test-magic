@@ -63,7 +63,7 @@ export function MobileMapControls({
   );
 
   return (
-    <div className="pointer-events-none absolute inset-x-0 top-0 z-50 px-1.5 pt-[max(0.15rem,env(safe-area-inset-top))] md:hidden">
+    <div className="pointer-events-none absolute inset-x-0 top-0 z-[80] px-1.5 pt-[max(0.15rem,env(safe-area-inset-top))] md:hidden">
       <div className="pointer-events-auto rounded-xl border border-border/60 bg-background/95 p-2 shadow-sm backdrop-blur-xl">
         <div className="flex h-7 items-center justify-between px-0.5 pb-1">
           <Link to="/" className="flex min-w-0 items-center">

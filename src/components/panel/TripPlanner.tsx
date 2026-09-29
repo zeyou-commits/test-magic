@@ -345,7 +345,7 @@ export function TripPlanner({ selection, onSelect }: { selection: Selection | nu
         const inboundCandidate = pool[index % pool.length];
         return { period, outbound: outboundCandidate, inbound: inboundCandidate };
       });
-    }).slice(0, 12);
+    }).filter((pair) => pair?.outbound?.departure && pair?.inbound?.departure).slice(0, 12);
   }, [zones, schoolPeriods, tripMode, flexDays, suggestedCrossings, departures, routes, activePorts]);
 
   const schoolTravelDates = useMemo(() => suggestedCrossings, [suggestedCrossings]);

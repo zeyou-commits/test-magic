@@ -274,7 +274,7 @@ export function TripPlanner({ selection, onSelect }: { selection: Selection | nu
   const suggestedTripPairs = useMemo(() => {
     if (!zones.length || tripMode !== "roundtrip") return [];
 
-    return schoolPeriods.map((period) => {
+    return schoolPeriods.flatMap((period) => {
       const outboundCandidates = suggestedCrossings
         .filter((item) => item.period.name === period.name)
         .sort((a, b) => {
@@ -345,7 +345,7 @@ export function TripPlanner({ selection, onSelect }: { selection: Selection | nu
         const inboundCandidate = pool[index % pool.length];
         return { period, outbound: outboundCandidate, inbound: inboundCandidate };
       });
-    }).filter((pair) => pair?.outbound?.departure && pair?.inbound?.departure).slice(0, 12);
+    }).filter((pair): pair is typeof pair & { inbound: NonNullable<typeof pair.inbound> } => Boolean(pair?.outbound?.departure && pair?.inbound?.departure)).slice(0, 12);
   }, [zones, schoolPeriods, tripMode, flexDays, suggestedCrossings, departures, routes, activePorts]);
 
   const schoolTravelDates = useMemo(() => suggestedCrossings, [suggestedCrossings]);
@@ -366,6 +366,7 @@ export function TripPlanner({ selection, onSelect }: { selection: Selection | nu
   useEffect(() => {
     if (!zones.length || tripMode !== "roundtrip" || !suggestedTripPairs.length) return;
     const first = suggestedTripPairs[0];
+    if (!first) return;
     const outDate = first.outbound.departure.departure_at.slice(0, 10);
     const inDate = first.inbound.departure.departure_at.slice(0, 10);
     setOutboundDate(outDate);

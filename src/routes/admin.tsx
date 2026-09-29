@@ -309,7 +309,7 @@ function ReportsModeration() {
 
 function DeparturesAdmin() {
   const queryClient = useQueryClient();
-  const { data: departures = [] } = useQuery(upcomingDeparturesQuery(60));
+  const { data: departures = [] } = useQuery(upcomingDeparturesQuery());
   const { data: routes = [] } = useQuery(adminRoutesQuery);
   const { data: ports = [] } = useQuery(adminPortsQuery);
   const { data: companies = [] } = useQuery(companiesQuery);

@@ -1,7 +1,8 @@
-import { ChevronDown } from "lucide-react";
+import { ChevronDown, Check, Search, X } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import { BrandMark } from "@/components/layout/BrandMark";
 import { UserMenu } from "@/components/layout/UserMenu";
+import { Input } from "@/components/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { ArrivalSelect, DeparturePicker } from "@/components/panel/PortFilters";
 import type { Filters, Port, RouteLine } from "@/lib/ferry/types";
@@ -19,6 +20,7 @@ export function MobileMapControls({ ports, routes, filters, onFiltersChange }: M
 
   return (
     <div className="pointer-events-auto flex w-full flex-col gap-2 p-2">
+      {/* Header Mobile */}
       <div className="flex h-12 items-center justify-between rounded-xl border bg-background/95 px-3 shadow-md backdrop-blur-md">
         <Link to="/" className="flex items-center gap-2">
           <BrandMark className="size-6 text-primary" />
@@ -29,12 +31,32 @@ export function MobileMapControls({ ports, routes, filters, onFiltersChange }: M
         </div>
       </div>
 
+      {/* Barre de Recherche Globale */}
+      <div className="relative">
+        <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+        <Input
+          value={filters.search}
+          onChange={(e) => onFiltersChange({ ...filters, search: e.target.value })}
+          placeholder="Rechercher une destination..."
+          className="batogo-control flex h-11 w-full items-center rounded-xl border border-input bg-background/95 pl-9 pr-10 text-sm shadow-md backdrop-blur-md"
+        />
+        {filters.search ? (
+          <button
+            onClick={() => onFiltersChange({ ...filters, search: "" })}
+            className="absolute right-2 top-1/2 grid size-7 -translate-y-1/2 place-items-center rounded-full text-muted-foreground hover:bg-secondary hover:text-foreground"
+          >
+            <X className="size-4" />
+          </button>
+        ) : null}
+      </div>
+
+      {/* Filtres de Ports */}
       <div className="flex gap-2">
         <div className="flex-1">
           <Popover>
             <PopoverTrigger asChild>
               <button className="flex min-h-10 w-full flex-col justify-center rounded-xl border border-input bg-background/95 px-3 py-1.5 text-left shadow-sm backdrop-blur-md transition hover:bg-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
-                <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
                   {departureLabel}
                 </span>
                 <span className="flex items-center justify-between text-sm font-medium">

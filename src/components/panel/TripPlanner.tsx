@@ -121,7 +121,9 @@ export function TripPlanner({ selection, onSelect }: { selection: Selection | nu
   const [zones, setZones] = useState<SchoolZone[]>([]);
   const [flexDays, setFlexDays] = useState(3);
   const [tripMode, setTripMode] = useState<"roundtrip" | "oneway">("roundtrip");
-  const [searched, setSearched] = useState(false);\n\n  const schoolPeriods = useMemo(() =>\n    zones.flatMap((selectedZone) =>\n      getSchoolBreaksForZone(selectedZone).map((period) => ({ ...period, zone: selectedZone })),\n    ),\n    [zones],\n  );
+  const [searched, setSearched] = useState(false);
+
+  const schoolPeriods = useMemo(() =>\n    zones.flatMap((selectedZone) =>\n      getSchoolBreaksForZone(selectedZone).map((period) => ({ ...period, zone: selectedZone })),\n    ),\n    [zones],\n  );
 
   const activePorts = useMemo(() => ports.filter((port) => port.status === "active"), [ports]);
   const compatibleDeparturePorts = useMemo(() => {
@@ -378,13 +380,13 @@ export function TripPlanner({ selection, onSelect }: { selection: Selection | nu
   }, [compatibleArrivalPorts, compatibleDeparturePorts, fromId, toId]);
 
   const schoolInfo = useMemo(() => {
-    if (!zone) return null;
-    const outboundBreak = getSchoolBreak(outboundDate, zone);
-    const returnBreak = returnDate ? getSchoolBreak(returnDate, zone) : null;
+    if (!zones.length) return null;
+    const outboundBreak = schoolPeriods.find((period) => outboundDate >= period.start && outboundDate <= period.end);
+    const returnBreak = returnDate ? schoolPeriods.find((period) => returnDate >= period.start && returnDate <= period.end) : null;
     return outboundBreak || returnBreak
       ? { outbound: outboundBreak?.name ?? null, return: returnBreak?.name ?? null }
       : null;
-  }, [outboundDate, returnDate, zone]);
+  }, [outboundDate, returnDate, zones, schoolPeriods]);
 
   const portName = (id: string) => activePorts.find((port) => port.id === id)?.name ?? "—";
 
@@ -397,37 +399,36 @@ export function TripPlanner({ selection, onSelect }: { selection: Selection | nu
   return (
     <div className="bg-transparent">
       <div className="space-y-3 px-1 pb-4 pt-1">
-          <section className="space-y-2 rounded-2xl bg-secondary/70 p-3.5">
-            <div className="flex items-start gap-3">
+          <section className="rounded-2xl bg-secondary/70 p-3.5">
+            <div className="mb-3 flex items-center gap-3">
               <div className="grid size-9 shrink-0 place-items-center rounded-xl bg-white/80 text-primary shadow-sm">
                 <CalendarDays className="size-4" />
               </div>
-              <div className="min-w-0 flex-1">
-                <div className="flex items-center justify-between gap-2">
-                  <p className="text-sm font-bold">Vacances scolaires</p>
-                  <span className="shrink-0 rounded-full bg-primary/10 px-2 py-1 text-[10px] font-semibold text-primary">Recommandé</span>
-                </div>
-                <p className="mt-1 text-[11px] leading-relaxed text-muted-foreground">Choisissez une zone pour faire ressortir les traversées disponibles autour des vacances.</p>
+              <div>
+                <p className="text-sm font-bold">Vacances scolaires</p>
+                <p className="text-[11px] text-muted-foreground">Choisissez une ou plusieurs zones</p>
               </div>
             </div>
-            <Select value={zone ?? ANY} onValueChange={(value) => {
-              const next = value === ANY ? null : value as SchoolZone;
-              setZone(next);
-              setSearched(false);
-              if (!next) {
-                setFromId("");
-                setToId("");
-                setReturnFromId("");
-                setReturnToId("");
-                setReturnDate("");
-              }
-            }}>
-              <SelectTrigger className="batogo-control h-11"><SelectValue placeholder="Je ne sais pas / pas concerné" /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value={ANY}>Je ne sais pas / pas concerné</SelectItem>
-                <SelectItem value="A">Zone A</SelectItem><SelectItem value="B">Zone B</SelectItem><SelectItem value="C">Zone C</SelectItem>
-              </SelectContent>
-            </Select>
+            <div className="grid grid-cols-3 gap-2">
+              {(["A", "B", "C"] as SchoolZone[]).map((schoolZone) => {
+                const selected = zones.includes(schoolZone);
+                return (
+                  <button
+                    key={schoolZone}
+                    type="button"
+                    onClick={() => {
+                      setZones((current) => selected ? current.filter((item) => item !== schoolZone) : [...current, schoolZone]);
+                      setSearched(false);
+                    }}
+                    aria-pressed={selected}
+                    className={`flex min-h-11 items-center justify-center gap-2 rounded-xl border text-sm font-semibold transition ${selected ? "border-primary bg-primary text-primary-foreground shadow-sm" : "border-border bg-background text-foreground hover:bg-muted"}`}
+                  >
+                    <span className="grid size-6 place-items-center rounded-full bg-current/10 text-[11px]">Z</span>
+                    Zone {schoolZone}
+                  </button>
+                );
+              })}
+            </div>
           </section>
 
           <details className="group rounded-xl bg-muted/50">
@@ -486,7 +487,7 @@ export function TripPlanner({ selection, onSelect }: { selection: Selection | nu
             )}
           </section>
 
-          {zone ? (
+          {zones.length ? (
             <section className="rounded-2xl bg-primary/[0.04] p-3">
               <div className="mb-3">
                 <div className="flex items-start justify-between gap-2">

@@ -33,6 +33,13 @@ export function SidePanel({
 }: SidePanelProps) {
   const [activeTab, setActiveTab] = useState<PanelTab>("explore");
 
+  const switchTab = (tab: PanelTab) => {
+    setActiveTab(tab);
+    if (typeof window !== "undefined" && window.innerWidth < 768 && tab === "plan") {
+      window.dispatchEvent(new CustomEvent("batogo:planner-open"));
+    }
+  };
+
   const shareSelection = async () => {
     if (typeof window === "undefined") return;
 
@@ -66,7 +73,7 @@ export function SidePanel({
               type="button"
               role="tab"
               aria-selected={activeTab === "explore"}
-              onClick={() => setActiveTab("explore")}
+              onClick={() => switchTab("explore")}
               className="batogo-tab flex items-center justify-center gap-2 whitespace-nowrap px-2.5 text-xs font-semibold" data-active={activeTab === "explore"}
             >
               <MapPinned aria-hidden className="size-4" />
@@ -77,7 +84,7 @@ export function SidePanel({
               type="button"
               role="tab"
               aria-selected={activeTab === "plan"}
-              onClick={() => setActiveTab("plan")}
+              onClick={() => switchTab("plan")}
               className="batogo-tab flex items-center justify-center gap-2 px-3 text-xs font-semibold" data-active={activeTab === "plan"}
             >
               <CalendarDays aria-hidden className="size-4" />

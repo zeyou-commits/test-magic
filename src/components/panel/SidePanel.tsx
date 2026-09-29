@@ -1,6 +1,6 @@
 import { useState } from "react";
 import type { Filters, RouteLine, Selection } from "@/lib/ferry/types";
-import { CalendarDays, MapPinned, Share2 } from "lucide-react";
+import { CalendarDays, MapPinned, Share2, X } from "lucide-react";
 import { toast } from "sonner";
 import { useIsMobile } from "@/hooks/use-mobile";
 
@@ -17,7 +17,6 @@ interface SidePanelProps {
   onFiltersChange: (filters: Filters) => void;
   visibleRoutes: RouteLine[];
   hasMobileBar?: boolean;
-  hidePrimarySearchOnMobile?: boolean;
   onRequestExpand?: () => void;
 }
 
@@ -30,7 +29,6 @@ export function SidePanel({
   onFiltersChange,
   visibleRoutes,
   hasMobileBar = false,
-  hidePrimarySearchOnMobile = false,
   onRequestExpand,
 }: SidePanelProps) {
   const [activeTab, setActiveTab] = useState<PanelTab>("explore");
@@ -91,25 +89,29 @@ export function SidePanel({
                 <button onClick={shareSelection} className="flex h-9 items-center gap-2 rounded-full px-3 text-xs font-semibold text-muted-foreground transition-colors hover:bg-card hover:text-foreground">
                   <Share2 className="size-3.5" /> Partager
                 </button>
-                <button onClick={() => onSelect(null)} className="min-h-9 rounded-full px-2.5 text-xs font-semibold text-muted-foreground transition-colors hover:bg-card hover:text-foreground">
-                  Fermer ✕
+                <button onClick={() => onSelect(null)} className="flex min-h-9 items-center gap-1.5 rounded-full px-2.5 text-xs font-semibold text-muted-foreground transition-colors hover:bg-card hover:text-foreground">
+                  Fermer <X className="size-4" />
                 </button>
               </div>
             </div>
             <div className="batogo-panel-scroll flex-1 overflow-y-auto p-4 md:p-6">
               {selection.type === "port" ? <PortView portId={selection.id} onSelect={onSelect} /> :
                selection.type === "route" ? <RouteView routeId={selection.id} onSelect={onSelect} /> :
-               selection.type === "company" ? <CompanyView companyId={selection.id} onSelect={onSelect} /> :
-               selection.type === "vessel" ? <VesselView vesselId={selection.id} onSelect={onSelect} /> :
+               selection.type === "company" ? <CompanyView companyId={selection.id} /> :
+               selection.type === "vessel" ? <VesselView vesselId={selection.id} /> :
                <DepartureView departureId={selection.id} onSelect={onSelect} />}
             </div>
           </div>
         ) : null}
 
         {activeTab === "explore" ? (
-          <ExplorerView filters={filters} onFiltersChange={onFiltersChange} visibleRoutes={visibleRoutes} onSelect={onSelect} selection={selection} hidePrimarySearchOnMobile={hasMobileBar || hidePrimarySearchOnMobile} />
+          <ExplorerView 
+            filters={filters} 
+            onFiltersChange={onFiltersChange} 
+            hidePrimarySearchOnMobile={hasMobileBar} 
+          />
         ) : (
-          <TripPlanner selection={selection} onSelect={onSelect} />
+          <TripPlanner />
         )}
       </div>
     </div>

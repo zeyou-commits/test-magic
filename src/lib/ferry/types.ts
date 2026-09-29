@@ -44,10 +44,14 @@ export interface Selection { type: SelectionType; id: string; }
 export interface Filters {
   search: string;
   departurePortIds: string[];
+  departurePortId: string | null;
+  portIds: string[];
+  countryCodes: string[];
+  departureCountry: string | null;
   arrivalPortId: string | null;
   companyId: string | null;
   vesselId: string | null;
   date: string | null;
 }
 
-export const emptyFilters: Filters = { search: "", departurePortIds: [], arrivalPortId: null, companyId: null, vesselId: null, date: null };
+export const emptyFilters: Filters = { search: "", departurePortIds: [], departurePortId: null, portIds: [], countryCodes: [], departureCountry: null, arrivalPortId: null, companyId: null, vesselId: null, date: null };

@@ -62,7 +62,7 @@ export function SidePanel({
 
   return (
     <div className="batogo-floating-panel flex h-full min-h-0 flex-col overflow-hidden rounded-3xl">
-      <div className="batogo-panel-scroll min-h-0 flex-1 overflow-y-auto">
+      <div className="batogo-panel-scroll min-h-0 flex-1 overflow-y-auto overscroll-contain pb-[max(0.5rem,env(safe-area-inset-bottom))]">
         <div className="sticky top-0 z-20 bg-transparent px-3 pb-2.5 pt-3 sm:px-4">
           <div
             role="tablist"

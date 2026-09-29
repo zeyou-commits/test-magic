@@ -405,35 +405,34 @@ export function TripPlanner({ selection, onSelect }: { selection: Selection | nu
   return (
     <div className="bg-transparent">
       <div className="space-y-3 px-1 pb-4 pt-1">
-          <section className="rounded-2xl bg-secondary/70 p-3.5">
-            <div className="mb-3 flex items-center gap-3">
-              <div className="grid size-9 shrink-0 place-items-center rounded-xl bg-white/80 text-primary shadow-sm">
+          <section className="rounded-2xl bg-secondary/70 px-3 py-2.5">
+            <div className="flex items-center gap-3">
+              <div className="grid size-9 shrink-0 place-items-center rounded-xl bg-background text-primary shadow-sm">
                 <CalendarDays className="size-4" />
               </div>
-              <div>
-                <p className="text-sm font-bold">Vacances scolaires</p>
-                <p className="text-[11px] text-muted-foreground">Choisissez une ou plusieurs zones</p>
+              <div className="min-w-0 flex-1">
+                <p className="text-xs font-semibold">Vacances</p>
+                <p className="text-[10px] text-muted-foreground">Une ou plusieurs zones</p>
               </div>
-            </div>
-            <div className="grid grid-cols-3 gap-2">
-              {(["A", "B", "C"] as SchoolZone[]).map((schoolZone) => {
-                const selected = zones.includes(schoolZone);
-                return (
-                  <button
-                    key={schoolZone}
-                    type="button"
-                    onClick={() => {
-                      setZones((current) => selected ? current.filter((item) => item !== schoolZone) : [...current, schoolZone]);
-                      setSearched(false);
-                    }}
-                    aria-pressed={selected}
-                    className={`flex min-h-11 items-center justify-center gap-2 rounded-xl border text-sm font-semibold transition ${selected ? "border-primary bg-primary text-primary-foreground shadow-sm" : "border-border bg-background text-foreground hover:bg-muted"}`}
-                  >
-                    <span className="grid size-6 place-items-center rounded-full bg-current/10 text-[11px]">Z</span>
-                    Zone {schoolZone}
-                  </button>
-                );
-              })}
+              <div className="flex gap-1.5">
+                {(["A", "B", "C"] as SchoolZone[]).map((schoolZone) => {
+                  const selected = zones.includes(schoolZone);
+                  return (
+                    <button
+                      key={schoolZone}
+                      type="button"
+                      onClick={() => {
+                        setZones((current) => selected ? current.filter((item) => item !== schoolZone) : [...current, schoolZone]);
+                        setSearched(false);
+                      }}
+                      aria-pressed={selected}
+                      className={`grid size-10 place-items-center rounded-xl border text-xs font-bold transition ${selected ? "border-primary bg-primary text-primary-foreground shadow-sm" : "border-border bg-background text-foreground hover:bg-muted"}`}
+                    >
+                      {schoolZone}
+                    </button>
+                  );
+                })}
+              </div>
             </div>
           </section>
 

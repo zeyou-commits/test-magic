@@ -336,16 +336,17 @@ export function TripPlanner({ selection, onSelect }: { selection: Selection | nu
 
       if (!selectedReturns.length) return [];
 
-      return outboundCandidates.slice(0, 6).map((outboundCandidate, index) => {
+      return outboundCandidates.slice(0, 6).flatMap((outboundCandidate, index) => {
         const after = selectedReturns.filter(
           (item) => item.departure.departure_at.slice(0, 10) >
             outboundCandidate.departure.departure_at.slice(0, 10),
         );
         const pool = after.length ? after : selectedReturns;
         const inboundCandidate = pool[index % pool.length];
-        return { period, outbound: outboundCandidate, inbound: inboundCandidate };
+        if (!inboundCandidate) return [];
+        return [{ period, outbound: outboundCandidate, inbound: inboundCandidate }];
       });
-    }).filter((pair): pair is typeof pair & { inbound: NonNullable<typeof pair.inbound> } => Boolean(pair?.outbound?.departure && pair?.inbound?.departure)).slice(0, 12);
+    }).slice(0, 12);
   }, [zones, schoolPeriods, tripMode, flexDays, suggestedCrossings, departures, routes, activePorts]);
 
   const schoolTravelDates = useMemo(() => suggestedCrossings, [suggestedCrossings]);

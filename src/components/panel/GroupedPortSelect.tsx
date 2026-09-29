@@ -25,7 +25,7 @@ export function GroupedPortSelect({ label, value, onChange, ports }: Props) {
   return (
     <label className="grid gap-1 text-[11px] font-semibold text-muted-foreground">
       {label}
-      <Select value={value || undefined} onValueChange={onChange}>
+      <Select {...(value ? { value } : {})} onValueChange={onChange}>
         <SelectTrigger className="h-10 bg-background text-sm text-foreground">
           <SelectValue placeholder="Choisir un port" />
         </SelectTrigger>

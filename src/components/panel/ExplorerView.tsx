@@ -245,7 +245,7 @@ export function ExplorerView({
 
         <div className={hidePrimarySearchOnMobile ? "hidden md:block" : undefined}>
           <Section
-            title="Pays & ports"
+            title="Ports de départ"
             action={
               hasFilters ? (
                 <Button
@@ -261,8 +261,8 @@ export function ExplorerView({
               ) : null
             }
           >
-            <div className="space-y-4">
-              <div className="mb-3 flex items-center justify-between gap-3">
+            <div className="space-y-3">
+              <div className="flex items-center justify-between gap-3">
                 <div className="flex items-center gap-2">
                   <MapPinned className="size-3.5 text-[#0e7490]" />
                   <span className="text-xs font-semibold text-foreground/80">
@@ -278,62 +278,83 @@ export function ExplorerView({
                 ) : null}
               </div>
 
-              <div>
-                <p className="mb-2 text-[10px] font-bold uppercase tracking-[0.14em] text-muted-foreground">Pays</p>
-                <div className="flex flex-wrap gap-2">
+              <div className="rounded-2xl bg-muted/40 p-1.5">
+                <div className="px-2 py-1.5">
+                  <p className="text-xs font-semibold text-foreground">Pays de départ</p>
+                  <p className="text-[10px] text-muted-foreground">Choisissez un ou plusieurs pays et ports.</p>
+                </div>
+
+                <div className="max-h-[360px] overflow-y-auto pr-0.5">
                   {countries.map((country) => {
-                    const selected = activeCountries.includes(country.code);
-                    return (
-                      <button
-                        key={country.code}
-                        type="button"
-                        onClick={() => toggleCountry(country.code)}
-                        className={`batogo-list-item inline-flex min-h-9 items-center gap-1.5 rounded-full px-3 text-[11px] font-semibold transition ${
-                          selected ? "bg-[#0e7490] text-white shadow-sm" : "bg-[#f3f0e8] text-[#3f6269] hover:bg-[#e9f1ef]"
-                        }`}
-                      >
-                        <span>{country.name}</span>
-                        {selected ? <Check className="size-3.5" /> : null}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
+                    const ids = activePorts
+                      .filter((port) => port.country_code === country.code)
+                      .map((port) => port.id);
+                    const selectedCount = ids.filter((id) => filters.portIds.includes(id)).length;
+                    const countrySelected = selectedCount === ids.length && ids.length > 0;
 
-              <div className="h-px bg-border/50" />
-
-              <div>
-                <div className="mb-2 flex items-center justify-between gap-2">
-                  <p className="text-[11px] font-bold uppercase tracking-[0.12em] text-foreground/80">Ports</p>
-                  {activeCountries.length ? (
-                    <span className="text-[10px] text-[#718489]">{visiblePorts.length} disponibles</span>
-                  ) : null}
-                </div>
-                <div className="grid max-h-52 gap-0.5 overflow-y-auto pr-1 sm:grid-cols-2">
-                  {visiblePorts.map((port) => {
-                    const selected = filters.portIds.includes(port.id);
                     return (
-                      <button
-                        key={port.id}
-                        type="button"
-                        onClick={() => togglePort(port.id)}
-                        className={`batogo-list-item flex min-h-9 items-center justify-between gap-2 rounded-lg px-2.5 text-left text-xs transition ${
-                          selected ? "bg-[#eaf5f5] text-[#0e6177]" : "text-[#294b53] hover:bg-[#f4f1e9]"
-                        }`}
-                      >
-                        <span className="min-w-0 truncate">
-                          {port.name}
-                          {port.city && port.city !== port.name ? ` · ${port.city}` : ""}
-                        </span>
-                        {selected ? <Check className="size-4 shrink-0 text-[#0e7490]" /> : null}
-                      </button>
+                      <div key={country.code} className="mb-1 rounded-xl bg-background/70 p-1">
+                        <button
+                          type="button"
+                          onClick={() => toggleCountry(country.code)}
+                          className="flex w-full items-center justify-between rounded-lg px-2.5 py-2 text-left text-xs font-semibold transition hover:bg-muted"
+                        >
+                          <span>{country.name}</span>
+                          <span className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
+                            {selectedCount ? `${selectedCount}/${ids.length}` : ""}
+                            <span
+                              className={
+                                countrySelected
+                                  ? "grid size-4 place-items-center rounded border bg-primary text-primary-foreground"
+                                  : "grid size-4 place-items-center rounded border"
+                              }
+                            >
+                              {countrySelected ? <Check className="size-3" /> : null}
+                            </span>
+                          </span>
+                        </button>
+
+                        <div className="grid grid-cols-2 gap-0.5 px-1 pb-1">
+                          {activePorts
+                            .filter((port) => port.country_code === country.code)
+                            .map((port) => {
+                              const selected = filters.portIds.includes(port.id);
+                              return (
+                                <button
+                                  key={port.id}
+                                  type="button"
+                                  onClick={() => togglePort(port.id)}
+                                  className={
+                                    selected
+                                      ? "flex min-h-8 items-center gap-1.5 rounded-md bg-primary/10 px-2 text-left text-[11px] font-semibold text-primary"
+                                      : "flex min-h-8 items-center gap-1.5 rounded-md px-2 text-left text-[11px] text-muted-foreground hover:bg-background"
+                                  }
+                                >
+                                  <span
+                                    className={
+                                      selected
+                                        ? "grid size-3.5 place-items-center rounded-full bg-primary text-primary-foreground"
+                                        : "size-3.5 rounded-full border"
+                                    }
+                                  >
+                                    {selected ? <Check className="size-2.5" /> : null}
+                                  </span>
+                                  <span className="truncate">
+                                    {port.name}
+                                    {port.city && port.city !== port.name ? ` · ${port.city}` : ""}
+                                  </span>
+                                </button>
+                              );
+                            })}
+                        </div>
+                      </div>
                     );
                   })}
                 </div>
               </div>
             </div>
 
-            <div className="sticky bottom-0 z-10 -mx-5 mt-3 bg-gradient-to-t from-white via-white/95 to-transparent px-5 pb-1 pt-5 sm:-mx-6 sm:px-6">
+            <div className="mt-3">
               <Button
                 type="button"
                 variant={filtersOpen ? "secondary" : "outline"}

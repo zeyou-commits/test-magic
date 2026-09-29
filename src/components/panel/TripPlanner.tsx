@@ -123,7 +123,13 @@ export function TripPlanner({ selection, onSelect }: { selection: Selection | nu
   const [tripMode, setTripMode] = useState<"roundtrip" | "oneway">("roundtrip");
   const [searched, setSearched] = useState(false);
 
-  const schoolPeriods = useMemo(() =>\n    zones.flatMap((selectedZone) =>\n      getSchoolBreaksForZone(selectedZone).map((period) => ({ ...period, zone: selectedZone })),\n    ),\n    [zones],\n  );
+  const schoolPeriods = useMemo(
+    () =>
+      zones.flatMap((selectedZone) =>
+        getSchoolBreaksForZone(selectedZone).map((period) => ({ ...period, zone: selectedZone })),
+      ),
+    [zones],
+  );
 
   const activePorts = useMemo(() => ports.filter((port) => port.status === "active"), [ports]);
   const compatibleDeparturePorts = useMemo(() => {

@@ -1,11 +1,11 @@
-import { ChevronDown, Check, Search, X } from "lucide-react";
+import { ArrowLeft, ArrowRight, Check, MapPin, Search, X } from "lucide-react";
+import { useMemo, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { BrandMark } from "@/components/layout/BrandMark";
 import { UserMenu } from "@/components/layout/UserMenu";
 import { Input } from "@/components/ui/input";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { ArrivalSelect, DeparturePicker } from "@/components/panel/PortFilters";
 import type { Filters, Port, RouteLine } from "@/lib/ferry/types";
+import { Button } from "@/components/ui/button";
 
 interface MobileMapControlsProps {
   ports: Port[];
@@ -15,8 +15,57 @@ interface MobileMapControlsProps {
 }
 
 export function MobileMapControls({ ports, routes, filters, onFiltersChange }: MobileMapControlsProps) {
-  const count = filters.departurePortIds.length;
-  const departureLabel = count === 0 ? "Départ : tous" : count === 1 ? "1 port de départ" : `${count} ports de départ`;
+  const [picker, setPicker] = useState<"departure" | "arrival" | null>(null);
+  const [query, setQuery] = useState("");
+  const activePorts = useMemo(() => ports.filter((port) => port.status === "active"), [ports]);
+  const portById = useMemo(() => new Map(activePorts.map((port) => [port.id, port])), [activePorts]);
+  const selectedDeparture = filters.departurePortId ? portById.get(filters.departurePortId) : undefined;
+  const selectedArrival = filters.arrivalPortId ? portById.get(filters.arrivalPortId) : undefined;
+
+  const normalized = (value: string) => value.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+  const findPort = (name: string) => activePorts.find((port) => normalized(port.name) === normalized(name));
+
+  const frequentTrips = useMemo(() => {
+    const requested = [["Marseille", "Alger"], ["Alicante", "Oran"], ["Sète", "Nador"]] as const;
+    return requested.flatMap(([fromName, toName]) => {
+      const from = findPort(fromName);
+      const to = findPort(toName);
+      if (!from || !to) return [];
+      const exists = routes.some((route) => route.status === "active" && route.departure_port_id === from.id && route.arrival_port_id === to.id);
+      return exists ? [{ from, to }] : [];
+    });
+  }, [activePorts, routes]);
+
+  const availablePorts = useMemo(() => {
+    const candidates = picker === "arrival" && filters.departurePortId
+      ? activePorts.filter((port) => routes.some((route) => route.status === "active" && route.departure_port_id === filters.departurePortId && route.arrival_port_id === port.id))
+      : picker === "departure" && filters.arrivalPortId
+        ? activePorts.filter((port) => routes.some((route) => route.status === "active" && route.departure_port_id === port.id && route.arrival_port_id === filters.arrivalPortId))
+        : activePorts;
+    const term = normalized(query.trim());
+    return candidates
+      .filter((port) => !term || normalized(`${port.name} ${port.city ?? ""} ${port.country_name}`).includes(term))
+      .sort((a, b) => a.country_name.localeCompare(b.country_name, "fr") || a.name.localeCompare(b.name, "fr"));
+  }, [activePorts, filters.arrivalPortId, filters.departurePortId, picker, query, routes]);
+
+  const openPicker = (next: "departure" | "arrival") => {
+    setQuery("");
+    setPicker(next);
+  };
+
+  const choosePort = (port: Port) => {
+    if (picker === "departure") {
+      onFiltersChange({ ...filters, departurePortId: port.id, departurePortIds: [port.id] });
+    } else {
+      onFiltersChange({ ...filters, arrivalPortId: port.id });
+    }
+    setPicker(null);
+  };
+
+  const chooseTrip = (from: Port, to: Port) => {
+    onFiltersChange({ ...filters, departurePortId: from.id, departurePortIds: [from.id], arrivalPortId: to.id });
+    setPicker(null);
+  };
 
   return (
     <div className="pointer-events-auto flex w-full flex-col gap-2 p-2">
@@ -50,46 +99,72 @@ export function MobileMapControls({ ports, routes, filters, onFiltersChange }: M
         ) : null}
       </div>
 
-      {/* Filtres de Ports */}
-      <div className="flex gap-2">
-        <div className="flex-1">
-          <Popover>
-            <PopoverTrigger asChild>
-              <button className="flex min-h-10 w-full flex-col justify-center rounded-xl border border-input bg-background/95 px-3 py-1.5 text-left shadow-sm backdrop-blur-md transition hover:bg-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
-                <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-                  {departureLabel}
-                </span>
-                <span className="flex items-center justify-between text-sm font-medium">
-                  <span className="truncate">
-                    {count === 1
-                      ? ports.find((p) => p.id === filters.departurePortIds[0])?.name
-                      : count > 1
-                        ? "Sélection multiple"
-                        : "Tous les ports"}
-                  </span>
-                  <ChevronDown className="size-4 opacity-50" />
-                </span>
-              </button>
-            </PopoverTrigger>
-            <PopoverContent className="w-[var(--radix-popover-trigger-width)] max-h-[50vh] overflow-y-auto p-2" align="start">
-              <div className="mb-4 px-2 text-xs font-semibold text-muted-foreground">
-                Ports de départ <br /> Un ou plusieurs pays et ports.
-              </div>
-              <DeparturePicker ports={ports} routes={routes} filters={filters} onFiltersChange={onFiltersChange} />
-            </PopoverContent>
-          </Popover>
-        </div>
-
-        <div className="flex-1">
-          <ArrivalSelect
-            ports={ports}
-            routes={routes}
-            filters={filters}
-            onFiltersChange={onFiltersChange}
-            triggerClassName="batogo-control min-h-10 h-auto flex-col items-start justify-center px-3 py-1.5 shadow-sm backdrop-blur-md"
-          />
-        </div>
+      <div className="grid grid-cols-2 gap-2">
+        <Button type="button" variant="outline" onClick={() => openPicker("departure")} className="h-12 min-w-0 justify-start rounded-xl bg-background/95 px-3 text-left shadow-sm backdrop-blur-md">
+          <span className="min-w-0">
+            <span className="block text-[10px] font-semibold uppercase text-muted-foreground">Départ</span>
+            <span className="block truncate text-sm font-semibold">{selectedDeparture?.name ?? "Choisir un port"}</span>
+          </span>
+        </Button>
+        <Button type="button" variant="outline" onClick={() => openPicker("arrival")} className="h-12 min-w-0 justify-start rounded-xl bg-background/95 px-3 text-left shadow-sm backdrop-blur-md">
+          <span className="min-w-0">
+            <span className="block text-[10px] font-semibold uppercase text-muted-foreground">Arrivée</span>
+            <span className="block truncate text-sm font-semibold">{selectedArrival?.name ?? "Choisir un port"}</span>
+          </span>
+        </Button>
       </div>
+
+      {picker ? (
+        <div className="fixed inset-0 z-[90] flex flex-col bg-background md:hidden" role="dialog" aria-modal="true" aria-label={`Choisir le port de ${picker === "departure" ? "départ" : "destination"}`}>
+          <header className="flex shrink-0 items-center gap-2 border-b px-2 pb-3 pt-[calc(.75rem+env(safe-area-inset-top))]">
+            <Button type="button" variant="ghost" size="icon" aria-label="Fermer la recherche" onClick={() => setPicker(null)}>
+              <ArrowLeft className="size-5" />
+            </Button>
+            <div className="min-w-0 flex-1">
+              <p className="font-display text-lg font-bold">{picker === "departure" ? "D’où partez-vous ?" : "Où allez-vous ?"}</p>
+              <p className="text-xs text-muted-foreground">Sélectionnez un port pour actualiser la carte</p>
+            </div>
+          </header>
+
+          <div className="shrink-0 space-y-4 px-4 py-4">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+              <Input autoFocus value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Rechercher une ville, un port ou un pays" className="batogo-control h-12 pl-10 pr-10" />
+              {query ? <Button type="button" variant="ghost" size="icon" aria-label="Effacer la recherche" onClick={() => setQuery("")} className="absolute right-1 top-1/2 -translate-y-1/2"><X className="size-4" /></Button> : null}
+            </div>
+
+            {frequentTrips.length ? (
+              <section>
+                <p className="mb-2 text-xs font-bold uppercase text-muted-foreground">Recherches fréquentes</p>
+                <div className="flex gap-2 overflow-x-auto pb-1">
+                  {frequentTrips.map(({ from, to }) => (
+                    <Button key={`${from.id}-${to.id}`} type="button" variant="secondary" onClick={() => chooseTrip(from, to)} className="h-10 shrink-0 rounded-full px-3 text-xs font-semibold">
+                      {from.name}<ArrowRight className="size-3.5" />{to.name}
+                    </Button>
+                  ))}
+                </div>
+              </section>
+            ) : null}
+          </div>
+
+          <div className="min-h-0 flex-1 overflow-y-auto px-4 pb-[calc(1rem+env(safe-area-inset-bottom))]">
+            <p className="sticky top-0 z-10 bg-background py-2 text-xs font-bold uppercase text-muted-foreground">Ports disponibles</p>
+            <div className="divide-y">
+              {availablePorts.map((port) => {
+                const selected = picker === "departure" ? filters.departurePortId === port.id : filters.arrivalPortId === port.id;
+                return (
+                  <Button key={port.id} type="button" variant="ghost" onClick={() => choosePort(port)} className="h-14 w-full justify-start rounded-none px-1">
+                    <span className="grid size-9 shrink-0 place-items-center rounded-full bg-secondary text-primary"><MapPin className="size-4" /></span>
+                    <span className="min-w-0 flex-1 text-left"><span className="block truncate text-sm font-semibold">{port.name}</span><span className="block truncate text-xs font-normal text-muted-foreground">{port.city ? `${port.city} · ` : ""}{port.country_name}</span></span>
+                    {selected ? <Check className="size-4 shrink-0 text-primary" /> : null}
+                  </Button>
+                );
+              })}
+              {!availablePorts.length ? <p className="py-10 text-center text-sm text-muted-foreground">Aucun port ne correspond à votre recherche.</p> : null}
+            </div>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }

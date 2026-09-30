@@ -13,7 +13,7 @@ import {
   vesselsQuery,
 } from "@/lib/ferry/queries";
 import { formatDateTime } from "@/lib/ferry/format";
-import { emptyFilters, type Filters, type Selection } from "@/lib/ferry/types";
+import { emptyFilters, type Departure, type Filters, type Port, type RouteLine, type Selection } from "@/lib/ferry/types";
 import type { PortMeta } from "@/components/map/FerryMap";
 import { Button } from "@/components/ui/button";
 import { MobileMapControls } from "@/components/map/MobileMapControls";
@@ -27,6 +27,10 @@ export const Route = createFileRoute("/")({
     meta: [
       { title: "Batogo — Carte des ferries vers l'Algérie" },
       { name: "description", content: "Explorez sur une carte interactive les ports, lignes maritimes, durées de traversée et prochains départs vers l'Algérie." },
+      { property: "og:title", content: "Batogo — Carte des ferries vers l'Algérie" },
+      { property: "og:description", content: "Explorez les lignes maritimes et les prochains départs vers l'Algérie." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
     ],
   }),
   component: Index,
@@ -185,6 +189,13 @@ function Index() {
     dragStartY.current = null;
   };
 
+  const todayKey = new Date().toLocaleDateString("en-CA");
+  const activeRouteIds = new Set(routes.filter((route) => route.status === "active").map((route) => route.id));
+  const todayDepartureCount = departures.filter((departure) => departure.status !== "cancelled" && departure.departure_at.slice(0, 10) === todayKey && activeRouteIds.has(departure.route_id)).length;
+  const nextDeparture = departures
+    .filter((departure) => departure.status !== "cancelled" && activeRouteIds.has(departure.route_id) && new Date(departure.departure_at).getTime() >= Date.now())
+    .sort((a, b) => new Date(a.departure_at).getTime() - new Date(b.departure_at).getTime())[0];
+
   return (
     <div className="relative h-[100dvh] w-full overflow-hidden bg-background">
       
@@ -238,7 +249,18 @@ function Index() {
           desktopPanelOpen ? "md:opacity-100 md:translate-x-0" : "md:pointer-events-none md:opacity-0 md:-translate-x-4"
         } ${panelLevel === 0 ? "h-24 rounded-t-xl" : panelLevel === 1 ? "h-[45dvh] rounded-t-xl" : "h-[calc(100dvh-3.5rem-env(safe-area-inset-bottom))] rounded-t-xl"}`}
       >
-        <Button
+        {panelLevel === 0 ? (
+          <CollapsedPanelSummary
+            routes={routes}
+            departures={departures}
+            ports={ports}
+            todayDepartureCount={todayDepartureCount}
+            nextDeparture={nextDeparture}
+            onOpen={() => setPanelLevel(1)}
+            onPointerDown={startPanelDrag}
+            onPointerUp={finishPanelDrag}
+          />
+        ) : <Button
           type="button"
           variant="ghost"
           className="h-10 w-full touch-none rounded-none py-0 md:hidden flex items-center justify-center bg-card/80 backdrop-blur-md border-b border-border/50"
@@ -250,16 +272,18 @@ function Index() {
           style={{ touchAction: "none" }}
         >
           <div className="batogo-handle" />
-        </Button>
+        </Button>}
 
-        <SidePanel
+        <div className={panelLevel === 0 ? "hidden md:block" : "min-h-0 flex-1"}>
+          <SidePanel
           selection={selection}
           onSelect={setSelectionAndOpen}
           filters={filters}
           onFiltersChange={setFilters}
           visibleRoutes={visibleRoutes}
           hidePrimarySearchOnMobile
-        />
+          />
+        </div>
         
       </aside>
 
@@ -311,6 +335,45 @@ function Index() {
         </ClientOnly>
       </main>
     </div>
+  );
+}
+
+function CollapsedPanelSummary({ routes, departures, ports, todayDepartureCount, nextDeparture, onOpen, onPointerDown, onPointerUp }: {
+  routes: RouteLine[];
+  departures: Departure[];
+  ports: Port[];
+  todayDepartureCount: number;
+  nextDeparture: Departure | undefined;
+  onOpen: () => void;
+  onPointerDown: (clientY: number) => void;
+  onPointerUp: (clientY: number) => void;
+}) {
+  const route = nextDeparture ? routes.find((item) => item.id === nextDeparture.route_id) : undefined;
+  const from = route ? ports.find((port) => port.id === route.departure_port_id)?.name : undefined;
+  const to = route ? ports.find((port) => port.id === route.arrival_port_id)?.name : undefined;
+  const nextLabel = nextDeparture && from && to
+    ? `${from} → ${to} à ${new Intl.DateTimeFormat("fr-FR", { hour: "2-digit", minute: "2-digit" }).format(new Date(nextDeparture.departure_at))}`
+    : "Aucun départ à venir";
+
+  return (
+    <Button
+      type="button"
+      variant="ghost"
+      onClick={onOpen}
+      onPointerDown={(event) => onPointerDown(event.clientY)}
+      onPointerUp={(event) => onPointerUp(event.clientY)}
+      className="h-24 w-full touch-none flex-col items-stretch justify-start gap-2 rounded-none border-b bg-card/95 px-4 py-2 text-left backdrop-blur-md md:hidden"
+      style={{ touchAction: "none" }}
+    >
+      <span className="mx-auto block h-1 w-10 rounded-full bg-muted-foreground/35" />
+      <span className="grid w-full grid-cols-[minmax(0,1fr)_auto] items-center gap-3">
+        <span className="min-w-0">
+          <span className="block truncate text-xs font-bold text-foreground">{routes.filter((item) => item.status === "active").length} lignes actives • {todayDepartureCount} départ{todayDepartureCount > 1 ? "s" : ""} aujourd’hui</span>
+          <span className="mt-1 block truncate text-[11px] font-normal text-muted-foreground">Prochain départ : {nextLabel}</span>
+        </span>
+        <span className="shrink-0 text-xs font-bold text-primary">Voir</span>
+      </span>
+    </Button>
   );
 }
 

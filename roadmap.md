@@ -23,3 +23,4 @@
       anti-doublon des départs
 - [x] 20. Nouvelle saison : archivage des départs à venir et suspension des calendriers/lignes
 - [x] 21. Structure mobile type carte : recherche départ/arrivée, raccourcis et volet à trois niveaux
+- [x] 22. Tiroir mobile replié avec synthèse dynamique et sélection de ports en plein écran

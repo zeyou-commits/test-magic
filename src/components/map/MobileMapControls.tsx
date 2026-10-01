@@ -68,7 +68,7 @@ export function MobileMapControls({ ports, routes, filters, onFiltersChange }: M
   };
 
   return (
-    <div className="pointer-events-auto flex w-full flex-col gap-2 p-2">
+    <div className="pointer-events-auto absolute inset-x-0 top-0 z-40 flex w-full flex-col gap-2 p-2 md:hidden">
       {/* Header Mobile */}
       <div className="flex h-12 items-center justify-between rounded-xl border bg-background/95 px-3 shadow-md backdrop-blur-md">
         <Link to="/" className="flex items-center gap-2">

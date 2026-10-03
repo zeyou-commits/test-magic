@@ -200,37 +200,28 @@ function Index() {
     <div className="relative h-[100dvh] w-full overflow-hidden bg-background">
       
       {/* HEADER BUREAU: Fixé en haut, bord à bord, sobre */}
-      <header className="absolute left-0 right-0 top-0 z-50 hidden h-16 items-center justify-between border-b border-border/60 bg-white/95 px-6 text-foreground shadow-sm backdrop-blur-md md:flex">
-        <Link to="/" className="flex items-center gap-3">
-          <BrandMark className="size-7 text-primary" />
-          <span className="font-display text-lg font-bold tracking-tight">Batogo</span>
-        </Link>
-        <nav className="flex items-center gap-6">
-          <div className="hidden items-center gap-6 lg:flex">
-            {navLinks.slice(1).map((link) => (
-              <Link key={link.to} to={link.to} className="text-[13px] font-semibold text-muted-foreground hover:text-foreground transition-colors">
-                {link.label}
-              </Link>
-            ))}
-          </div>
-          <div className="h-4 w-px bg-border mx-2 hidden lg:block"></div>
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            className="text-primary font-medium hover:bg-secondary"
-            onClick={() => setDesktopPanelOpen((open) => !open)}
-          >
-            {desktopPanelOpen ? "Cacher le panneau" : "Afficher les lignes"}
+      <Link to="/" className="batogo-floating-panel absolute left-5 top-4 z-50 hidden h-11 w-[380px] items-center gap-2 rounded-2xl px-4 md:flex">
+        <BrandMark className="size-6 text-primary" />
+        <span className="font-display text-base font-bold tracking-tight">Batogo</span>
+      </Link>
+      <nav className="batogo-floating-panel absolute right-4 top-4 z-50 hidden h-11 items-center gap-1 rounded-full pl-2 pr-1.5 md:flex">
+        <div className="hidden items-center gap-4 px-2 xl:flex">
+          {navLinks.slice(1).map((link) => (
+            <Link key={link.to} to={link.to} className="text-[13px] font-semibold text-muted-foreground hover:text-foreground transition-colors">
+              {link.label}
+            </Link>
+          ))}
+        </div>
+        <Button type="button" variant="ghost" size="sm" className="h-8 rounded-full text-primary font-medium hover:bg-secondary" onClick={() => setDesktopPanelOpen((open) => !open)}>
+          {desktopPanelOpen ? "Cacher le panneau" : "Afficher les lignes"}
+        </Button>
+        {isAdmin && (
+          <Button asChild variant="ghost" size="sm" className="h-8 rounded-full text-muted-foreground">
+            <Link to="/admin">Admin</Link>
           </Button>
-          {isAdmin && (
-            <Button asChild variant="ghost" size="sm" className="text-muted-foreground">
-              <Link to="/admin">Admin</Link>
-            </Button>
-          )}
-          <UserMenu />
-        </nav>
-      </header>
+        )}
+        <UserMenu compact />
+      </nav>
 
       <MobileMapControls
         ports={ports}

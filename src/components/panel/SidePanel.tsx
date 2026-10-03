@@ -56,12 +56,12 @@ export function SidePanel({
   };
 
   return (
-    <div className="batogo-floating-panel pointer-events-auto flex h-full w-full flex-col overflow-hidden shadow-2xl md:w-[420px] md:rounded-2xl">
+    <div className="batogo-floating-panel pointer-events-auto flex h-full w-full flex-col overflow-hidden shadow-2xl md:rounded-2xl">
       <div className="flex-none p-3 pb-0">
         <div className="batogo-tabbar grid grid-cols-2 p-1">
           <button
             onClick={() => switchTab("explore")}
-            className="batogo-tab flex items-center justify-center gap-2 whitespace-nowrap px-2.5 text-xs font-semibold"
+            className="batogo-tab flex min-w-0 items-center justify-center gap-1.5 whitespace-nowrap px-2 text-xs font-semibold"
             data-active={activeTab === "explore"}
           >
             <MapPinned className="size-4" />
@@ -69,7 +69,7 @@ export function SidePanel({
           </button>
           <button
             onClick={() => switchTab("plan")}
-            className="batogo-tab flex items-center justify-center gap-2 px-3 text-xs font-semibold"
+            className="batogo-tab flex min-w-0 items-center justify-center gap-1.5 whitespace-nowrap px-2 text-xs font-semibold"
             data-active={activeTab === "plan"}
           >
             <CalendarDays className="size-4" />

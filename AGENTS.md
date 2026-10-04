@@ -9,4 +9,4 @@
 > the editor, so keep the branch in a working state.
 <!-- LOVABLE:END -->
 
-- Sur mobile, les sélecteurs Départ/Arrivée utilisent un écran plein écran et le tiroir replié n’affiche que sa synthèse dynamique, afin de préserver une expérience cartographique lisible.
+- Sur mobile, l’en-tête tient sur une seule ligne avec l’identité compacte, les sélecteurs Départ/Arrivée ouvrent un écran plein écran et le tiroir replié n’affiche que sa synthèse dynamique, afin de préserver une expérience cartographique lisible.

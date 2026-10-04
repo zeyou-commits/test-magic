@@ -1,7 +1,6 @@
 import { ArrowLeft, ArrowRight, Check, MapPin, Search, X } from "lucide-react";
 import { useMemo, useState } from "react";
 import { Link } from "@tanstack/react-router";
-import { BrandMark } from "@/components/layout/BrandMark";
 import { UserMenu } from "@/components/layout/UserMenu";
 import { Input } from "@/components/ui/input";
 import type { Filters, Port, RouteLine } from "@/lib/ferry/types";
@@ -70,9 +69,8 @@ export function MobileMapControls({ ports, routes, filters, onFiltersChange }: M
   return (
     <div className={`pointer-events-auto absolute inset-x-0 top-0 w-full p-2 md:hidden ${picker ? "z-[90]" : "z-40"}`}>
       <div className="grid h-14 grid-cols-[2rem_minmax(0,1fr)_minmax(0,1fr)_2rem] items-center gap-1.5 rounded-xl border bg-background/95 px-2 shadow-md backdrop-blur-md">
-        <Link to="/" aria-label="Accueil Batogo" className="grid size-8 place-items-center">
-          <BrandMark className="size-7 text-primary" />
-          <span className="sr-only">Batogo</span>
+        <Link to="/" aria-label="Accueil Batogo" className="grid size-8 place-items-center rounded-lg bg-[image:var(--gradient-brand)] font-display text-sm font-bold text-primary-foreground shadow-[var(--shadow-brand)]">
+          B
         </Link>
         <Button type="button" variant="ghost" onClick={() => openPicker("departure")} className="h-11 min-w-0 justify-start rounded-lg px-2 text-left hover:bg-secondary/70">
           <span className="min-w-0">

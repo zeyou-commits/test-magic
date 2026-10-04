@@ -213,36 +213,6 @@ export function ExplorerView({
           </Section>
         </div>
 
-        {hidePrimarySearchOnMobile ? (
-          <div className="mx-1 mb-3 rounded-2xl bg-secondary/60 px-3.5 py-3">
-            <div className="flex items-center justify-between gap-3">
-              <div className="min-w-0">
-                <p className="text-xs font-bold text-foreground">Recherche en cours</p>
-                <p className="mt-1 truncate text-[11px] text-muted-foreground">
-                  {filters.portIds.length
-                    ? `${filters.portIds.length} port${filters.portIds.length > 1 ? "s" : ""} de départ`
-                    : "Tous les ports de départ"}
-                  {filters.arrivalPortId
-                    ? ` · arrivée ${portById.get(filters.arrivalPortId)?.name ?? "sélectionnée"}`
-                    : " · toutes les arrivées"}
-                </p>
-              </div>
-              {hasFilters ? (
-                <button
-                  type="button"
-                  onClick={reset}
-                  className="shrink-0 rounded-full px-2.5 py-1.5 text-[10px] font-semibold text-primary hover:bg-background/70"
-                >
-                  Réinitialiser
-                </button>
-              ) : null}
-            </div>
-            <p className="mt-2 text-[10px] leading-relaxed text-muted-foreground">
-              Les filtres en haut de la carte et ce volet utilisent la même sélection.
-            </p>
-          </div>
-        ) : null}
-
         <div className={hidePrimarySearchOnMobile ? "hidden md:block" : undefined}>
           <Section
             title="Ports de départ"

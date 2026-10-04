@@ -68,50 +68,25 @@ export function MobileMapControls({ ports, routes, filters, onFiltersChange }: M
   };
 
   return (
-    <div className={`pointer-events-auto absolute inset-x-0 top-0 flex w-full flex-col gap-2 p-2 md:hidden ${picker ? "z-[90]" : "z-40"}`}>
-      {/* Header Mobile */}
-      <div className="flex h-12 items-center justify-between rounded-xl border bg-background/95 px-3 shadow-md backdrop-blur-md">
-        <Link to="/" className="flex items-center gap-2">
-          <BrandMark className="size-6 text-primary" />
-          <span className="font-display text-base font-bold tracking-tight">Batogo</span>
+    <div className={`pointer-events-auto absolute inset-x-0 top-0 w-full p-2 md:hidden ${picker ? "z-[90]" : "z-40"}`}>
+      <div className="grid h-14 grid-cols-[2rem_minmax(0,1fr)_minmax(0,1fr)_2rem] items-center gap-1.5 rounded-xl border bg-background/95 px-2 shadow-md backdrop-blur-md">
+        <Link to="/" aria-label="Accueil Batogo" className="grid size-8 place-items-center">
+          <BrandMark className="size-7 text-primary" />
+          <span className="sr-only">Batogo</span>
         </Link>
-        <div className="flex items-center gap-2">
-          <UserMenu compact />
-        </div>
-      </div>
-
-      {/* Barre de Recherche Globale */}
-      <div className="relative">
-        <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-        <Input
-          value={filters.search}
-          onChange={(e) => onFiltersChange({ ...filters, search: e.target.value })}
-          placeholder="Rechercher une destination..."
-          className="batogo-control flex h-11 w-full items-center rounded-xl border border-input bg-background/95 pl-9 pr-10 text-sm shadow-md backdrop-blur-md"
-        />
-        {filters.search ? (
-          <button
-            onClick={() => onFiltersChange({ ...filters, search: "" })}
-            className="absolute right-2 top-1/2 grid size-7 -translate-y-1/2 place-items-center rounded-full text-muted-foreground hover:bg-secondary hover:text-foreground"
-          >
-            <X className="size-4" />
-          </button>
-        ) : null}
-      </div>
-
-      <div className="grid grid-cols-2 gap-2">
-        <Button type="button" variant="outline" onClick={() => openPicker("departure")} className="h-12 min-w-0 justify-start rounded-xl bg-background/95 px-3 text-left shadow-sm backdrop-blur-md">
+        <Button type="button" variant="ghost" onClick={() => openPicker("departure")} className="h-11 min-w-0 justify-start rounded-lg px-2 text-left hover:bg-secondary/70">
           <span className="min-w-0">
             <span className="block text-[10px] font-semibold uppercase text-muted-foreground">Départ</span>
-            <span className="block truncate text-sm font-semibold">{selectedDeparture?.name ?? "Choisir un port"}</span>
+            <span className="block truncate text-xs font-semibold">{selectedDeparture?.name ?? "Choisir"}</span>
           </span>
         </Button>
-        <Button type="button" variant="outline" onClick={() => openPicker("arrival")} className="h-12 min-w-0 justify-start rounded-xl bg-background/95 px-3 text-left shadow-sm backdrop-blur-md">
+        <Button type="button" variant="ghost" onClick={() => openPicker("arrival")} className="h-11 min-w-0 justify-start rounded-lg px-2 text-left hover:bg-secondary/70">
           <span className="min-w-0">
             <span className="block text-[10px] font-semibold uppercase text-muted-foreground">Arrivée</span>
-            <span className="block truncate text-sm font-semibold">{selectedArrival?.name ?? "Choisir un port"}</span>
+            <span className="block truncate text-xs font-semibold">{selectedArrival?.name ?? "Choisir"}</span>
           </span>
         </Button>
+        <UserMenu compact iconOnly />
       </div>
 
       {picker ? (

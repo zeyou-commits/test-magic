@@ -1,5 +1,6 @@
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
+import { LogIn } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import {
@@ -21,12 +22,19 @@ function initials(name: string) {
     .join("");
 }
 
-export function UserMenu({ compact = false }: { compact?: boolean }) {
+export function UserMenu({ compact = false, iconOnly = false }: { compact?: boolean; iconOnly?: boolean }) {
   const { user, profile, isAdmin, signOut } = useAuth();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
 
   if (!user) {
+    if (iconOnly) {
+      return (
+        <Button asChild variant="ghost" size="icon" className="size-8 rounded-full" title="Se connecter">
+          <Link to="/auth" aria-label="Se connecter"><LogIn className="size-4" /></Link>
+        </Button>
+      );
+    }
     return (
       <Button
         asChild

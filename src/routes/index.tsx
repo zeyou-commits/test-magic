@@ -43,6 +43,13 @@ function Index() {
   const [desktopPanelOpen, setDesktopPanelOpen] = useState(true);
   const dragStartY = useRef<number | null>(null);
   const dragStartLevel = useRef<0 | 1 | 2>(1);
+  const dragStartHeight = useRef(0);
+  const dragMoved = useRef(false);
+  const lastMove = useRef({ y: 0, t: 0, v: 0 });
+  const asideRef = useRef<HTMLElement | null>(null);
+  const [dragHeight, setDragHeightState] = useState<number | null>(null);
+  const dragHeightRef = useRef<number | null>(null);
+  const setDragHeight = (h: number | null) => { dragHeightRef.current = h; setDragHeightState(h); };
   const { isAdmin } = useAuth();
 
   useEffect(() => {
@@ -177,16 +184,62 @@ function Index() {
 
   const setSelectionAndOpen = (next: Selection | null) => setSelection(next);
   const openPanel = () => setPanelLevel(1);
-  const cyclePanelLevel = () => setPanelLevel((current) => (current === 2 ? 0 : ((current + 1) as 1 | 2)));
+  const cyclePanelLevel = () => {
+    if (dragMoved.current) { dragMoved.current = false; return; }
+    setPanelLevel((current) => (current === 2 ? 0 : ((current + 1) as 1 | 2)));
+  };
 
-  const startPanelDrag = (clientY: number) => { dragStartY.current = clientY; dragStartLevel.current = panelLevel; };
-  const finishPanelDrag = (clientY: number) => {
+  // Gestes continus façon Google Maps : le volet suit le doigt puis s'aimante avec l'élan.
+  const snapHeights = () => {
+    const vh = window.innerHeight;
+    const nav = 56;
+    return [96, Math.round(vh * 0.45), vh - nav] as const;
+  };
+  const startPanelDrag = (clientY: number) => {
+    dragStartY.current = clientY;
+    dragStartLevel.current = panelLevel;
+    dragMoved.current = false;
+    dragStartHeight.current = asideRef.current?.getBoundingClientRect().height ?? snapHeights()[panelLevel];
+    lastMove.current = { y: clientY, t: performance.now(), v: 0 };
+  };
+  const movePanelDrag = (clientY: number) => {
     if (dragStartY.current === null) return;
-    const distance = dragStartY.current - clientY;
-    if (Math.abs(distance) >= 44) {
-      setPanelLevel(Math.max(0, Math.min(2, dragStartLevel.current + (distance > 0 ? 1 : -1))) as 0|1|2);
-    }
+    const delta = dragStartY.current - clientY;
+    if (!dragMoved.current && Math.abs(delta) < 6) return;
+    dragMoved.current = true;
+    const [min, , max] = snapHeights();
+    const raw = dragStartHeight.current + delta;
+    // Résistance élastique au-delà des bornes.
+    const h = raw < min ? min - (min - raw) * 0.25 : raw > max ? max + (raw - max) * 0.25 : raw;
+    const now = performance.now();
+    const dt = Math.max(1, now - lastMove.current.t);
+    lastMove.current = { y: clientY, t: now, v: (lastMove.current.y - clientY) / dt };
+    setDragHeight(h);
+  };
+  const finishPanelDrag = () => {
+    if (dragStartY.current === null) return;
     dragStartY.current = null;
+    if (!dragMoved.current || dragHeightRef.current === null) { setDragHeight(null); return; }
+    const snaps = snapHeights();
+    const h = dragHeightRef.current;
+    const v = lastMove.current.v; // px/ms, positif = vers le haut
+    let target: 0 | 1 | 2;
+    if (Math.abs(v) > 0.5) {
+      const above = snaps.findIndex((s) => s > h + 1);
+      const below = [...snaps].reverse().findIndex((s) => s < h - 1);
+      target = (v > 0 ? (above === -1 ? 2 : above) : (below === -1 ? 0 : 2 - below)) as 0 | 1 | 2;
+    } else {
+      target = snaps.reduce((best, s, i) => (Math.abs(s - h) < Math.abs(snaps[best] - h) ? i : best), 0) as 0 | 1 | 2;
+    }
+    setPanelLevel(target);
+    setDragHeight(null);
+    setTimeout(() => { dragMoved.current = false; }, 50);
+  };
+  const dragHandlers = {
+    onPointerDown: (e: React.PointerEvent<HTMLElement>) => { e.currentTarget.setPointerCapture(e.pointerId); startPanelDrag(e.clientY); },
+    onPointerMove: (e: React.PointerEvent<HTMLElement>) => movePanelDrag(e.clientY),
+    onPointerUp: () => finishPanelDrag(),
+    onPointerCancel: () => finishPanelDrag(),
   };
 
   const todayKey = new Date().toLocaleDateString("en-CA");

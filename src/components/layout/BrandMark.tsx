@@ -2,7 +2,7 @@
 export function BrandMark({ className = "size-8" }: { className?: string }) {
   return (
     <span
-      className={`grid shrink-0 place-items-center rounded-xl bg-[image:var(--gradient-brand)] text-primary-foreground shadow-[var(--shadow-brand)] ${className}`}
+      className={`grid shrink-0 place-items-center rounded-xl bg-primary text-primary-foreground shadow-md ${className}`}
       aria-hidden
     >
       <svg viewBox="0 0 24 24" className="size-[62%]" fill="none" stroke="currentColor">

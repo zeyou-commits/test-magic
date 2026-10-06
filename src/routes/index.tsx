@@ -1,3 +1,4 @@
+import type React from "react";
 import { lazy, Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { ClientOnly, createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
@@ -43,6 +44,13 @@ function Index() {
   const [desktopPanelOpen, setDesktopPanelOpen] = useState(true);
   const dragStartY = useRef<number | null>(null);
   const dragStartLevel = useRef<0 | 1 | 2>(1);
+  const dragStartHeight = useRef(0);
+  const dragMoved = useRef(false);
+  const lastMove = useRef({ y: 0, t: 0, v: 0 });
+  const asideRef = useRef<HTMLElement | null>(null);
+  const [dragHeight, setDragHeightState] = useState<number | null>(null);
+  const dragHeightRef = useRef<number | null>(null);
+  const setDragHeight = (h: number | null) => { dragHeightRef.current = h; setDragHeightState(h); };
   const { isAdmin } = useAuth();
 
   useEffect(() => {
@@ -177,16 +185,62 @@ function Index() {
 
   const setSelectionAndOpen = (next: Selection | null) => setSelection(next);
   const openPanel = () => setPanelLevel(1);
-  const cyclePanelLevel = () => setPanelLevel((current) => (current === 2 ? 0 : ((current + 1) as 1 | 2)));
+  const cyclePanelLevel = () => {
+    if (dragMoved.current) { dragMoved.current = false; return; }
+    setPanelLevel((current) => (current === 2 ? 0 : ((current + 1) as 1 | 2)));
+  };
 
-  const startPanelDrag = (clientY: number) => { dragStartY.current = clientY; dragStartLevel.current = panelLevel; };
-  const finishPanelDrag = (clientY: number) => {
+  // Gestes continus façon Google Maps : le volet suit le doigt puis s'aimante avec l'élan.
+  const snapHeights = () => {
+    const vh = window.innerHeight;
+    const nav = 56;
+    return [96, Math.round(vh * 0.45), vh - nav] as const;
+  };
+  const startPanelDrag = (clientY: number) => {
+    dragStartY.current = clientY;
+    dragStartLevel.current = panelLevel;
+    dragMoved.current = false;
+    dragStartHeight.current = asideRef.current?.getBoundingClientRect().height ?? snapHeights()[panelLevel];
+    lastMove.current = { y: clientY, t: performance.now(), v: 0 };
+  };
+  const movePanelDrag = (clientY: number) => {
     if (dragStartY.current === null) return;
-    const distance = dragStartY.current - clientY;
-    if (Math.abs(distance) >= 44) {
-      setPanelLevel(Math.max(0, Math.min(2, dragStartLevel.current + (distance > 0 ? 1 : -1))) as 0|1|2);
-    }
+    const delta = dragStartY.current - clientY;
+    if (!dragMoved.current && Math.abs(delta) < 6) return;
+    dragMoved.current = true;
+    const [min, , max] = snapHeights();
+    const raw = dragStartHeight.current + delta;
+    // Résistance élastique au-delà des bornes.
+    const h = raw < min ? min - (min - raw) * 0.25 : raw > max ? max + (raw - max) * 0.25 : raw;
+    const now = performance.now();
+    const dt = Math.max(1, now - lastMove.current.t);
+    lastMove.current = { y: clientY, t: now, v: (lastMove.current.y - clientY) / dt };
+    setDragHeight(h);
+  };
+  const finishPanelDrag = () => {
+    if (dragStartY.current === null) return;
     dragStartY.current = null;
+    if (!dragMoved.current || dragHeightRef.current === null) { setDragHeight(null); return; }
+    const snaps = snapHeights();
+    const h = dragHeightRef.current;
+    const v = lastMove.current.v; // px/ms, positif = vers le haut
+    let target: 0 | 1 | 2;
+    if (Math.abs(v) > 0.5) {
+      const above = snaps.findIndex((s) => s > h + 1);
+      const below = [...snaps].reverse().findIndex((s) => s < h - 1);
+      target = (v > 0 ? (above === -1 ? 2 : above) : (below === -1 ? 0 : 2 - below)) as 0 | 1 | 2;
+    } else {
+      target = snaps.reduce((best, s, i) => (Math.abs(s - h) < Math.abs((snaps[best] ?? 0) - h) ? i : best), 0) as 0 | 1 | 2;
+    }
+    setPanelLevel(target);
+    setDragHeight(null);
+    setTimeout(() => { dragMoved.current = false; }, 50);
+  };
+  const dragHandlers = {
+    onPointerDown: (e: React.PointerEvent<HTMLElement>) => { e.currentTarget.setPointerCapture(e.pointerId); startPanelDrag(e.clientY); },
+    onPointerMove: (e: React.PointerEvent<HTMLElement>) => movePanelDrag(e.clientY),
+    onPointerUp: () => finishPanelDrag(),
+    onPointerCancel: () => finishPanelDrag(),
   };
 
   const todayKey = new Date().toLocaleDateString("en-CA");
@@ -236,36 +290,34 @@ function Index() {
 
       {/* PANNEAU LATÉRAL : Style carte flottante subtile, aligné à gauche sous le header */}
       <aside
-        className={`absolute bottom-[calc(3.5rem+env(safe-area-inset-bottom))] left-0 right-0 z-[60] flex flex-col overflow-hidden bg-transparent transition-[height,width,opacity,transform] duration-300 ease-out md:bottom-auto md:left-5 md:top-[5.5rem] md:h-[calc(100vh-7rem)] md:w-[380px] md:rounded-2xl md:z-40 ${
+        ref={asideRef}
+        style={dragHeight !== null ? { height: dragHeight } : undefined}
+        className={`absolute bottom-[calc(3.5rem+env(safe-area-inset-bottom))] left-0 right-0 z-[60] flex flex-col overflow-hidden bg-transparent ${dragHeight !== null ? "transition-none" : "transition-[height,width,opacity,transform] duration-[380ms] ease-[cubic-bezier(0.22,1,0.36,1)]"} md:bottom-auto md:left-5 md:top-[5.5rem] md:h-[calc(100vh-7rem)] md:w-[380px] md:rounded-2xl md:z-40 ${
           desktopPanelOpen ? "md:opacity-100 md:translate-x-0" : "md:pointer-events-none md:opacity-0 md:-translate-x-4"
         } ${panelLevel === 0 ? "h-24 rounded-t-xl" : panelLevel === 1 ? "h-[45dvh] rounded-t-xl" : "h-[calc(100dvh-3.5rem-env(safe-area-inset-bottom))] rounded-t-xl"}`}
       >
-        {panelLevel === 0 ? (
+        {panelLevel === 0 && (dragHeight === null || dragHeight < 140) ? (
           <CollapsedPanelSummary
             routes={routes}
             departures={departures}
             ports={ports}
             todayDepartureCount={todayDepartureCount}
             nextDeparture={nextDeparture}
-            onOpen={() => setPanelLevel(1)}
-            onPointerDown={startPanelDrag}
-            onPointerUp={finishPanelDrag}
+            onOpen={() => { if (!dragMoved.current) setPanelLevel(1); }}
+            dragHandlers={dragHandlers}
           />
         ) : <Button
           type="button"
           variant="ghost"
-          className="h-10 w-full touch-none rounded-none py-0 md:hidden flex items-center justify-center bg-card/80 backdrop-blur-md border-b border-border/50"
+          className="h-10 w-full flex-none touch-none rounded-none py-0 md:hidden flex items-center justify-center bg-card/80 backdrop-blur-md border-b border-border/50"
           onClick={cyclePanelLevel}
-          onPointerDown={(e) => startPanelDrag(e.clientY)}
-          onPointerUp={(e) => finishPanelDrag(e.clientY)}
-          onPointerCancel={() => { dragStartY.current = null; }}
-          onPointerMove={(e) => { if (dragStartY.current !== null) e.currentTarget.setPointerCapture(e.pointerId); }}
+          {...dragHandlers}
           style={{ touchAction: "none" }}
         >
           <div className="batogo-handle" />
         </Button>}
 
-        <div className={panelLevel === 0 ? "hidden md:block" : "min-h-0 flex-1"}>
+        <div className={panelLevel === 0 && (dragHeight === null || dragHeight < 140) ? "hidden md:block" : "min-h-0 flex-1"}>
           <SidePanel
           selection={selection}
           onSelect={setSelectionAndOpen}
@@ -329,15 +381,14 @@ function Index() {
   );
 }
 
-function CollapsedPanelSummary({ routes, departures, ports, todayDepartureCount, nextDeparture, onOpen, onPointerDown, onPointerUp }: {
+function CollapsedPanelSummary({ routes, departures, ports, todayDepartureCount, nextDeparture, onOpen, dragHandlers }: {
   routes: RouteLine[];
   departures: Departure[];
   ports: Port[];
   todayDepartureCount: number;
   nextDeparture: Departure | undefined;
   onOpen: () => void;
-  onPointerDown: (clientY: number) => void;
-  onPointerUp: (clientY: number) => void;
+  dragHandlers: Record<string, (e: React.PointerEvent<HTMLElement>) => void>;
 }) {
   const route = nextDeparture ? routes.find((item) => item.id === nextDeparture.route_id) : undefined;
   const from = route ? ports.find((port) => port.id === route.departure_port_id)?.name : undefined;
@@ -351,9 +402,8 @@ function CollapsedPanelSummary({ routes, departures, ports, todayDepartureCount,
       type="button"
       variant="ghost"
       onClick={onOpen}
-      onPointerDown={(event) => onPointerDown(event.clientY)}
-      onPointerUp={(event) => onPointerUp(event.clientY)}
-      className="h-24 w-full touch-none flex-col items-stretch justify-start gap-2 rounded-none border-b bg-card/95 px-4 py-2 text-left backdrop-blur-md md:hidden"
+      {...dragHandlers}
+      className="h-24 flex-none w-full touch-none flex-col items-stretch justify-start gap-2 rounded-none border-b bg-card/95 px-4 py-2 text-left backdrop-blur-md md:hidden"
       style={{ touchAction: "none" }}
     >
       <span className="mx-auto block h-1 w-10 rounded-full bg-muted-foreground/35" />

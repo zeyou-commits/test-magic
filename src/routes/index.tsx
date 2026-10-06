@@ -1,3 +1,4 @@
+import type React from "react";
 import { lazy, Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { ClientOnly, createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
@@ -380,15 +381,14 @@ function Index() {
   );
 }
 
-function CollapsedPanelSummary({ routes, departures, ports, todayDepartureCount, nextDeparture, onOpen, onPointerDown, onPointerUp }: {
+function CollapsedPanelSummary({ routes, departures, ports, todayDepartureCount, nextDeparture, onOpen, dragHandlers }: {
   routes: RouteLine[];
   departures: Departure[];
   ports: Port[];
   todayDepartureCount: number;
   nextDeparture: Departure | undefined;
   onOpen: () => void;
-  onPointerDown: (clientY: number) => void;
-  onPointerUp: (clientY: number) => void;
+  dragHandlers: Record<string, (e: React.PointerEvent<HTMLElement>) => void>;
 }) {
   const route = nextDeparture ? routes.find((item) => item.id === nextDeparture.route_id) : undefined;
   const from = route ? ports.find((port) => port.id === route.departure_port_id)?.name : undefined;
@@ -402,9 +402,8 @@ function CollapsedPanelSummary({ routes, departures, ports, todayDepartureCount,
       type="button"
       variant="ghost"
       onClick={onOpen}
-      onPointerDown={(event) => onPointerDown(event.clientY)}
-      onPointerUp={(event) => onPointerUp(event.clientY)}
-      className="h-24 w-full touch-none flex-col items-stretch justify-start gap-2 rounded-none border-b bg-card/95 px-4 py-2 text-left backdrop-blur-md md:hidden"
+      {...dragHandlers}
+      className="h-24 flex-none w-full touch-none flex-col items-stretch justify-start gap-2 rounded-none border-b bg-card/95 px-4 py-2 text-left backdrop-blur-md md:hidden"
       style={{ touchAction: "none" }}
     >
       <span className="mx-auto block h-1 w-10 rounded-full bg-muted-foreground/35" />

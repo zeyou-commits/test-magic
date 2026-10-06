@@ -230,7 +230,7 @@ function Index() {
       const below = [...snaps].reverse().findIndex((s) => s < h - 1);
       target = (v > 0 ? (above === -1 ? 2 : above) : (below === -1 ? 0 : 2 - below)) as 0 | 1 | 2;
     } else {
-      target = snaps.reduce((best, s, i) => (Math.abs(s - h) < Math.abs(snaps[best] - h) ? i : best), 0) as 0 | 1 | 2;
+      target = snaps.reduce((best, s, i) => (Math.abs(s - h) < Math.abs((snaps[best] ?? 0) - h) ? i : best), 0) as 0 | 1 | 2;
     }
     setPanelLevel(target);
     setDragHeight(null);

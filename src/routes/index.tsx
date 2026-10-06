@@ -289,36 +289,34 @@ function Index() {
 
       {/* PANNEAU LATÉRAL : Style carte flottante subtile, aligné à gauche sous le header */}
       <aside
-        className={`absolute bottom-[calc(3.5rem+env(safe-area-inset-bottom))] left-0 right-0 z-[60] flex flex-col overflow-hidden bg-transparent transition-[height,width,opacity,transform] duration-300 ease-out md:bottom-auto md:left-5 md:top-[5.5rem] md:h-[calc(100vh-7rem)] md:w-[380px] md:rounded-2xl md:z-40 ${
+        ref={asideRef}
+        style={dragHeight !== null ? { height: dragHeight } : undefined}
+        className={`absolute bottom-[calc(3.5rem+env(safe-area-inset-bottom))] left-0 right-0 z-[60] flex flex-col overflow-hidden bg-transparent ${dragHeight !== null ? "transition-none" : "transition-[height,width,opacity,transform] duration-[380ms] ease-[cubic-bezier(0.22,1,0.36,1)]"} md:bottom-auto md:left-5 md:top-[5.5rem] md:h-[calc(100vh-7rem)] md:w-[380px] md:rounded-2xl md:z-40 ${
           desktopPanelOpen ? "md:opacity-100 md:translate-x-0" : "md:pointer-events-none md:opacity-0 md:-translate-x-4"
         } ${panelLevel === 0 ? "h-24 rounded-t-xl" : panelLevel === 1 ? "h-[45dvh] rounded-t-xl" : "h-[calc(100dvh-3.5rem-env(safe-area-inset-bottom))] rounded-t-xl"}`}
       >
-        {panelLevel === 0 ? (
+        {panelLevel === 0 && (dragHeight === null || dragHeight < 140) ? (
           <CollapsedPanelSummary
             routes={routes}
             departures={departures}
             ports={ports}
             todayDepartureCount={todayDepartureCount}
             nextDeparture={nextDeparture}
-            onOpen={() => setPanelLevel(1)}
-            onPointerDown={startPanelDrag}
-            onPointerUp={finishPanelDrag}
+            onOpen={() => { if (!dragMoved.current) setPanelLevel(1); }}
+            dragHandlers={dragHandlers}
           />
         ) : <Button
           type="button"
           variant="ghost"
-          className="h-10 w-full touch-none rounded-none py-0 md:hidden flex items-center justify-center bg-card/80 backdrop-blur-md border-b border-border/50"
+          className="h-10 w-full flex-none touch-none rounded-none py-0 md:hidden flex items-center justify-center bg-card/80 backdrop-blur-md border-b border-border/50"
           onClick={cyclePanelLevel}
-          onPointerDown={(e) => startPanelDrag(e.clientY)}
-          onPointerUp={(e) => finishPanelDrag(e.clientY)}
-          onPointerCancel={() => { dragStartY.current = null; }}
-          onPointerMove={(e) => { if (dragStartY.current !== null) e.currentTarget.setPointerCapture(e.pointerId); }}
+          {...dragHandlers}
           style={{ touchAction: "none" }}
         >
           <div className="batogo-handle" />
         </Button>}
 
-        <div className={panelLevel === 0 ? "hidden md:block" : "min-h-0 flex-1"}>
+        <div className={panelLevel === 0 && (dragHeight === null || dragHeight < 140) ? "hidden md:block" : "min-h-0 flex-1"}>
           <SidePanel
           selection={selection}
           onSelect={setSelectionAndOpen}

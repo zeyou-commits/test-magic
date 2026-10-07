@@ -10,3 +10,4 @@
 <!-- LOVABLE:END -->
 
 - Sur mobile, l’en-tête tient sur une seule ligne avec l’identité compacte, les sélecteurs Départ/Arrivée ouvrent un écran plein écran et le tiroir replié n’affiche que sa synthèse dynamique, afin de préserver une expérience cartographique lisible.
+- Keep the desktop collapse control attached to the map panel's right edge and outside its clipped content so it remains reachable when the panel slides offscreen.

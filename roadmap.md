@@ -25,3 +25,4 @@
 - [x] 21. Structure mobile type carte : recherche départ/arrivée, raccourcis et volet à trois niveaux
 - [x] 22. Tiroir mobile replié avec synthèse dynamique et sélection de ports en plein écran
 - [x] 23. En-tête mobile compact : identité réduite, recherche unifiée et suppression du récapitulatif redondant
+- [x] 24. Flèche latérale sur le volet ordinateur pour le réduire et le développer horizontalement

@@ -1,4 +1,5 @@
 import type React from "react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import { lazy, Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { ClientOnly, createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
@@ -266,9 +267,6 @@ function Index() {
             </Link>
           ))}
         </div>
-        <Button type="button" variant="ghost" size="sm" className="h-8 rounded-full text-primary font-medium hover:bg-secondary" onClick={() => setDesktopPanelOpen((open) => !open)}>
-          {desktopPanelOpen ? "Cacher le panneau" : "Afficher les lignes"}
-        </Button>
         {isAdmin && (
           <Button asChild variant="ghost" size="sm" className="h-8 rounded-full text-muted-foreground">
             <Link to="/admin">Admin</Link>
@@ -292,8 +290,8 @@ function Index() {
       <aside
         ref={asideRef}
         style={dragHeight !== null ? { height: dragHeight } : undefined}
-        className={`absolute bottom-[calc(3.5rem+env(safe-area-inset-bottom))] left-0 right-0 z-[60] flex flex-col overflow-hidden bg-transparent ${dragHeight !== null ? "transition-none" : "transition-[height,width,opacity,transform] duration-[380ms] ease-[cubic-bezier(0.22,1,0.36,1)]"} md:bottom-auto md:left-5 md:top-[5.5rem] md:h-[calc(100vh-7rem)] md:w-[380px] md:rounded-2xl md:z-40 ${
-          desktopPanelOpen ? "md:opacity-100 md:translate-x-0" : "md:pointer-events-none md:opacity-0 md:-translate-x-4"
+        className={`absolute bottom-[calc(3.5rem+env(safe-area-inset-bottom))] left-0 right-0 z-[60] flex flex-col overflow-hidden bg-transparent ${dragHeight !== null ? "transition-none" : "transition-[height,width,transform] duration-[380ms] ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none"} md:bottom-auto md:left-5 md:right-auto md:top-[5.5rem] md:h-[calc(100vh-7rem)] md:w-[380px] md:overflow-visible md:rounded-2xl md:z-40 ${
+          desktopPanelOpen ? "md:translate-x-0" : "md:translate-x-[calc(-100%-1.25rem)]"
         } ${panelLevel === 0 ? "h-24 rounded-t-xl" : panelLevel === 1 ? "h-[45dvh] rounded-t-xl" : "h-[calc(100dvh-3.5rem-env(safe-area-inset-bottom))] rounded-t-xl"}`}
       >
         {panelLevel === 0 && (dragHeight === null || dragHeight < 140) ? (
@@ -317,7 +315,7 @@ function Index() {
           <div className="batogo-handle" />
         </Button>}
 
-        <div className={panelLevel === 0 && (dragHeight === null || dragHeight < 140) ? "hidden md:block" : "min-h-0 flex-1"}>
+        <div id="map-side-panel" className={`${panelLevel === 0 && (dragHeight === null || dragHeight < 140) ? "hidden md:block" : "min-h-0 flex-1"} ${desktopPanelOpen ? "" : "md:invisible md:pointer-events-none"}`}>
           <SidePanel
           selection={selection}
           onSelect={setSelectionAndOpen}
@@ -327,6 +325,19 @@ function Index() {
           hidePrimarySearchOnMobile
           />
         </div>
+        <Button
+          type="button"
+          variant="outline"
+          size="icon"
+          aria-label={desktopPanelOpen ? "Réduire le panneau" : "Développer le panneau"}
+          title={desktopPanelOpen ? "Réduire le panneau" : "Développer le panneau"}
+          aria-expanded={desktopPanelOpen}
+          aria-controls="map-side-panel"
+          onClick={() => setDesktopPanelOpen((open) => !open)}
+          className="absolute -right-8 top-1/2 hidden h-14 w-8 -translate-y-1/2 rounded-l-none rounded-r-lg border-l-0 bg-background/95 text-primary shadow-md backdrop-blur-md md:flex"
+        >
+          {desktopPanelOpen ? <ChevronLeft className="size-5" /> : <ChevronRight className="size-5" />}
+        </Button>
         
       </aside>
 

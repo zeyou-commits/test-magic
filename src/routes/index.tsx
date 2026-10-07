@@ -254,26 +254,36 @@ function Index() {
   return (
     <div className="relative h-[100dvh] w-full overflow-hidden bg-background">
       
-      {/* HEADER BUREAU: Fixé en haut, bord à bord, sobre */}
-      <Link to="/" className="batogo-floating-panel absolute left-5 top-4 z-50 hidden h-11 w-[380px] items-center gap-2 rounded-2xl px-4 md:flex">
-        <BrandMark className="size-6 text-primary" />
-        <span className="font-display text-base font-bold tracking-tight">Batogo</span>
-      </Link>
-      <nav className="batogo-floating-panel absolute right-4 top-4 z-50 hidden h-11 items-center gap-1 rounded-full pl-2 pr-1.5 md:flex">
-        <div className="hidden items-center gap-4 px-2 xl:flex">
-          {navLinks.slice(1).map((link) => (
-            <Link key={link.to} to={link.to} className="text-[13px] font-semibold text-muted-foreground hover:text-foreground transition-colors">
+      {/* HEADER BUREAU premium pleine largeur */}
+      <header className="absolute inset-x-0 top-0 z-50 hidden h-14 items-center justify-between gap-6 border-b border-border/60 bg-background/90 px-5 shadow-[0_1px_12px_-6px_hsl(0_0%_0%/0.15)] backdrop-blur-xl md:flex">
+        <Link to="/" className="flex shrink-0 items-center gap-2.5">
+          <BrandMark className="size-7 text-primary" />
+          <span className="flex flex-col leading-none">
+            <span className="font-display text-lg font-bold tracking-tight text-foreground">Batogo</span>
+            <span className="mt-0.5 hidden text-[10px] font-medium uppercase tracking-[0.14em] text-muted-foreground lg:block">Ferries Algérie & Méditerranée</span>
+          </span>
+        </Link>
+        <nav aria-label="Navigation principale" className="flex min-w-0 items-center gap-0.5 overflow-x-auto">
+          {navLinks.map((link) => (
+            <Link
+              key={link.to}
+              to={link.to}
+              activeOptions={{ exact: link.to === "/" }}
+              className="relative whitespace-nowrap rounded-full px-3 py-1.5 text-[13px] font-semibold text-muted-foreground transition-colors hover:bg-muted hover:text-foreground [&.active]:bg-primary/10 [&.active]:text-primary"
+            >
               {link.label}
             </Link>
           ))}
+        </nav>
+        <div className="flex shrink-0 items-center gap-2">
+          {isAdmin && (
+            <Button asChild variant="outline" size="sm" className="h-8 rounded-full text-xs font-semibold">
+              <Link to="/admin">Back-office</Link>
+            </Button>
+          )}
+          <UserMenu />
         </div>
-        {isAdmin && (
-          <Button asChild variant="ghost" size="sm" className="h-8 rounded-full text-muted-foreground">
-            <Link to="/admin">Admin</Link>
-          </Button>
-        )}
-        <UserMenu compact />
-      </nav>
+      </header>
 
       <MobileMapControls
         ports={ports}

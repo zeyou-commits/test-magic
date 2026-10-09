@@ -22,7 +22,10 @@ export const Route = createFileRoute("/lignes")({
       { name: "description", content: description },
       { property: "og:title", content: title },
       { property: "og:description", content: description },
+      { property: "og:type", content: "website" },
+      { property: "og:url", content: "https://test-magic.lovable.app/lignes" },
     ],
+    links: [{ rel: "canonical", href: "https://test-magic.lovable.app/lignes" }],
   }),
   component: LignesPage,
 });

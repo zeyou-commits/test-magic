@@ -15,4 +15,4 @@ Allow: /
 Disallow: /admin
 Disallow: /compte
 
-Sitemap: /sitemap.xml
+Sitemap: https://test-magic.lovable.app/sitemap.xml

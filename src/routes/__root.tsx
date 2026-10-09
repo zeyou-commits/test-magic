@@ -90,6 +90,20 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
+      { property: "og:site_name", content: "Batogo" },
+    ],
+    scripts: [
+      {
+        type: "application/ld+json",
+        children: JSON.stringify({
+          "@context": "https://schema.org",
+          "@type": "WebSite",
+          name: "Batogo",
+          url: "https://test-magic.lovable.app",
+          inLanguage: "fr",
+          description: "Carte des traversées maritimes vers l'Algérie : ports, lignes, durées et prochains départs.",
+        }),
+      },
     ],
     links: [
       {

@@ -20,7 +20,10 @@ export const Route = createFileRoute("/ports")({
       { name: "description", content: description },
       { property: "og:title", content: title },
       { property: "og:description", content: description },
+      { property: "og:type", content: "website" },
+      { property: "og:url", content: "https://test-magic.lovable.app/ports" },
     ],
+    links: [{ rel: "canonical", href: "https://test-magic.lovable.app/ports" }],
   }),
   component: PortsPage,
 });

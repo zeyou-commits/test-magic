@@ -1,0 +1,12 @@
+# Batogo
+
+> Batogo est une carte indépendante des traversées maritimes vers l'Algérie et en Méditerranée : ports, lignes, durées de traversée, compagnies, navires et prochains départs.
+
+## Pages principales
+- [Carte interactive](https://test-magic.lovable.app/): liaisons et prochains départs
+- [Horaires](https://test-magic.lovable.app/horaires): calendriers des départs
+- [Ports](https://test-magic.lovable.app/ports): ports algériens et européens (France, Espagne, Italie)
+- [Lignes](https://test-magic.lovable.app/lignes): liaisons, durées typiques, compagnies
+- [Compagnies](https://test-magic.lovable.app/compagnies): compagnies maritimes opérant vers l'Algérie
+- [Guide](https://test-magic.lovable.app/guide): conseils pour préparer sa traversée
+- [Plan du site](https://test-magic.lovable.app/sitemap.xml)

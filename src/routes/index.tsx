@@ -1,3 +1,4 @@
+import { DataUnavailableNotice } from "@/components/layout/DataUnavailableNotice";
 import type React from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { lazy, Suspense, useEffect, useMemo, useRef, useState } from "react";

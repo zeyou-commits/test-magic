@@ -3,6 +3,7 @@ import { Link } from "@tanstack/react-router";
 import { BrandMark } from "./BrandMark";
 import { UserMenu } from "./UserMenu";
 import { MobileTabBar } from "./MobileTabBar";
+import { DataUnavailableNotice } from "./DataUnavailableNotice";
 
 export const navLinks = [
   { to: "/", label: "Carte" },
@@ -51,7 +52,10 @@ export function SiteLayout({ children }: { children: ReactNode }) {
         </header>
       </div>
 
-      <main className="flex-1 pb-16 md:pb-0">{children}</main>
+      <main className="flex-1 pb-16 md:pb-0">
+        <DataUnavailableNotice className="mx-auto mt-4 max-w-6xl" />
+        {children}
+      </main>
 
       <footer className="mt-auto border-t bg-card py-12 text-center text-sm text-muted-foreground pb-24 md:pb-12">
         <div className="mx-auto max-w-6xl px-4">

@@ -1,3 +1,4 @@
+import { DataUnavailableNotice } from "@/components/layout/DataUnavailableNotice";
 import type React from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { lazy, Suspense, useEffect, useMemo, useRef, useState } from "react";
@@ -375,6 +376,7 @@ function Index() {
 
       {/* CARTE */}
       <main className="absolute inset-0 z-0 bg-[var(--sea)]">
+        <DataUnavailableNotice className="absolute left-1/2 top-20 z-20 w-[min(92vw,26rem)] -translate-x-1/2" />
         {isLoadingData && (
           <div className="pointer-events-none absolute left-1/2 top-20 z-10 -translate-x-1/2 rounded-full border border-border bg-background/95 px-4 py-2 text-[11px] font-semibold text-foreground shadow-sm">
             Actualisation...

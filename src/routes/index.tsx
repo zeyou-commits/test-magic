@@ -19,6 +19,7 @@ import { emptyFilters, type Departure, type Filters, type Port, type RouteLine, 
 import type { PortMeta } from "@/components/map/FerryMap";
 import { Button } from "@/components/ui/button";
 import { MobileMapControls } from "@/components/map/MobileMapControls";
+import { schoolBreakOn } from "@/lib/ferry/schoolCalendar";
 import { filtersFromUrl, mapStateToSearch, selectionFromUrl } from "@/lib/ferry/urlState";
 import { navLinks } from "@/components/layout/SiteLayout";
 
@@ -106,6 +107,7 @@ function Index() {
       if (filters.companyId && !route.company_ids.includes(filters.companyId)) return false;
       if (filters.vesselId && !departures.some(d => d.route_id === route.id && d.vessel_id === filters.vesselId)) return false;
       if (filters.date && !departures.some(d => d.route_id === route.id && d.departure_at.slice(0, 10) === filters.date)) return false;
+      if (filters.schoolZone && !departures.some(d => d.route_id === route.id && d.status !== "cancelled" && schoolBreakOn(d.departure_at, filters.schoolZone!))) return false;
       if (term && !portMatches(route.departure_port_id) && !portMatches(route.arrival_port_id)) return false;
       return true;
     });

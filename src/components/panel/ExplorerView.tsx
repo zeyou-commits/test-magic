@@ -8,6 +8,7 @@ import { companiesQuery, portsQuery, routesQuery, upcomingDeparturesQuery, vesse
 import { emptyFilters, type Filters, type RouteLine, type Selection } from "@/lib/ferry/types";
 import { formatDuration } from "@/lib/ferry/format";
 import { EmptyNote, Section } from "./shared";
+import { schoolBreakOn, type SchoolZone } from "@/lib/ferry/schoolCalendar";
 
 const ANY = "__any__";
 
@@ -93,12 +94,13 @@ export function ExplorerView({
       .filter((departure) => !filters.companyId || departure.company_id === filters.companyId)
       .filter((departure) => !filters.vesselId || departure.vessel_id === filters.vesselId)
       .filter((departure) => !filters.date || departure.departure_at.startsWith(filters.date))
+      .filter((departure) => !filters.schoolZone || schoolBreakOn(departure.departure_at, filters.schoolZone))
       .sort(
         (a, b) =>
           new Date(a.departure_at).getTime() - new Date(b.departure_at).getTime(),
       );
     return selected.slice(0, 12);
-  }, [departures, filters.companyId, filters.date, filters.vesselId, selectedRouteIds]);
+  }, [departures, filters.companyId, filters.date, filters.schoolZone, filters.vesselId, selectedRouteIds]);
 
   const routeById = useMemo(() => new Map(routes.map((route) => [route.id, route])), [routes]);
   const portById = useMemo(() => new Map(activePorts.map((port) => [port.id, port])), [activePorts]);
@@ -126,6 +128,7 @@ export function ExplorerView({
     filters.companyId !== null ||
     filters.vesselId !== null ||
     filters.date !== null ||
+    filters.schoolZone !== null ||
     filters.countryCodes.length > 0;
 
   const togglePort = (portId: string) => {
@@ -324,6 +327,24 @@ export function ExplorerView({
               </div>
             </div>
 
+            <div className="mt-3 flex items-center gap-1.5 overflow-x-auto pb-0.5" aria-label="Vacances scolaires">
+              <span className="shrink-0 text-[11px] font-semibold text-muted-foreground">🎒 Vacances</span>
+              {(["A", "B", "C"] as SchoolZone[]).map((zone) => {
+                const active = filters.schoolZone === zone;
+                return (
+                  <button
+                    key={zone}
+                    type="button"
+                    aria-pressed={active}
+                    onClick={() => onFiltersChange({ ...filters, schoolZone: active ? null : zone })}
+                    className={`h-8 shrink-0 rounded-full border px-3 text-[11px] font-semibold transition ${active ? "border-primary bg-primary text-primary-foreground" : "border-border bg-background text-foreground/75 hover:bg-muted"}`}
+                  >
+                    Zone {zone}
+                  </button>
+                );
+              })}
+            </div>
+
             <div className="mt-3">
               <Button
                 type="button"
@@ -420,6 +441,15 @@ export function ExplorerView({
                         <div className="truncate text-[10px] text-[#718489]">
                           {company?.name ?? "Compagnie"}{vessel?.name ? ` · ${vessel.name}` : ""}
                         </div>
+                        {(() => {
+                          const zone = filters.schoolZone;
+                          const found = zone ? schoolBreakOn(departure.departure_at, zone) : null;
+                          return found ? (
+                            <span className="mt-0.5 inline-block rounded-full bg-primary/10 px-1.5 py-0.5 text-[9px] font-semibold text-primary">
+                              🎒 {found.name} · Zone {zone}
+                            </span>
+                          ) : null;
+                        })()}
                       </div>
                       <div className="shrink-0 text-sm font-bold text-[#0e7490]">
                         {date.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })}

@@ -63,3 +63,9 @@ export function getSchoolBreaksForZone(zone: SchoolZone): SchoolBreak[] {
     return [{ ...period }];
   });
 }
+
+/** Vacances (zone donnée) couvrant une date ISO, ou null. */
+export function schoolBreakOn(dateIso: string, zone: SchoolZone): SchoolBreak | null {
+  const day = dateIso.slice(0, 10);
+  return getSchoolBreaksForZone(zone).find((period) => day >= period.start && day < period.end) ?? null;
+}

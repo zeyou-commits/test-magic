@@ -52,6 +52,7 @@ export interface Filters {
   companyId: string | null;
   vesselId: string | null;
   date: string | null;
+  schoolZone: "A" | "B" | "C" | null;
 }
 
-export const emptyFilters: Filters = { search: "", departurePortIds: [], departurePortId: null, portIds: [], countryCodes: [], departureCountry: null, arrivalPortId: null, companyId: null, vesselId: null, date: null };
+export const emptyFilters: Filters = { search: "", departurePortIds: [], departurePortId: null, portIds: [], countryCodes: [], departureCountry: null, arrivalPortId: null, companyId: null, vesselId: null, date: null, schoolZone: null };

@@ -1,5 +1,6 @@
 import { queryOptions } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { isNetworkError, markOffline } from "./offline";
 import type {
   Company,
   Departure,
@@ -12,7 +13,14 @@ import type {
 } from "./types";
 
 function unwrap<T>(result: { data: unknown; error: { message: string } | null }): T {
-  if (result.error) throw new Error(result.error.message);
+  if (result.error) {
+    // Base injoignable : on renvoie une liste vide et on affiche un message, sans page d'erreur.
+    if (isNetworkError(result.error.message)) {
+      markOffline();
+      return [] as T;
+    }
+    throw new Error(result.error.message);
+  }
   return (result.data ?? []) as T;
 }
 

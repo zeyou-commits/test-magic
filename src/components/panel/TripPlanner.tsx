@@ -9,6 +9,7 @@ import { getSchoolBreaksForZone, type SchoolZone } from "@/lib/ferry/schoolCalen
 import type { Departure, Port, RouteLine, Schedule, Selection } from "@/lib/ferry/types";
 import { formatDuration } from "@/lib/ferry/format";
 import { GroupedPortSelect } from "./GroupedPortSelect";
+import { TripProfile, defaultTripProfile, summarizePassengers, summarizeVehicle, type TripProfileValue } from "./TripProfile";
 
 type TravelerType = "solo" | "couple" | "family";
 
@@ -117,7 +118,8 @@ export function TripPlanner({ selection, onSelect }: { selection: Selection | nu
   const [toId, setToId] = useState("");
   const [returnFromId, setReturnFromId] = useState("");
   const [returnToId, setReturnToId] = useState("");
-  const [traveler, setTraveler] = useState<TravelerType>("family");
+  const [traveler, setTraveler] = useState<TravelerType>("couple");
+  const [profile, setProfile] = useState<TripProfileValue>(defaultTripProfile);
   const [zones, setZones] = useState<SchoolZone[]>([]);
   const [flexDays, setFlexDays] = useState(3);
   const [tripMode, setTripMode] = useState<"roundtrip" | "oneway">("roundtrip");
@@ -438,21 +440,18 @@ export function TripPlanner({ selection, onSelect }: { selection: Selection | nu
             </div>
           </section>
 
-          <details className="group rounded-xl bg-muted/50">
-            <summary className="flex cursor-pointer list-none items-center justify-between px-3 py-2.5 text-xs font-semibold">
-              <span>Plus de filtres</span>
-              <ChevronDown className="size-3.5 transition-transform group-open:rotate-180" />
+          <details className="group rounded-xl bg-muted/50" open>
+            <summary className="flex cursor-pointer list-none items-center justify-between gap-2 px-3 py-2.5 text-xs font-semibold">
+              <span className="min-w-0 truncate">👥 {summarizePassengers(profile.passengers)} · {summarizeVehicle(profile)}</span>
+              <ChevronDown className="size-3.5 shrink-0 transition-transform group-open:rotate-180" />
             </summary>
-            <div className="px-3 pb-3 pt-2">
-              <p className="mb-2 text-[11px] text-muted-foreground">Profil voyageur</p>
-              <div className="grid grid-cols-3 gap-1.5">
-                {([["solo", "Seul"], ["couple", "Couple"], ["family", "Famille"]] as const).map(([value, label]) => (
-                  <button key={value} type="button" onClick={() => setTraveler(value)}
-                    className={`rounded-xl px-2 py-2 text-[11px] font-semibold transition ${traveler === value ? "bg-primary text-primary-foreground shadow-sm" : "bg-muted/60 text-foreground/75 hover:bg-muted"}` }>
-                    <Users className="mx-auto mb-1 size-4" />{label}
-                  </button>
-                ))}
-              </div>
+            <div className="px-3 pb-3 pt-1">
+              <TripProfile value={profile} onChange={(next) => {
+                setProfile(next);
+                const p = next.passengers;
+                const total = p.adults + p.seniors + p.children + p.babies;
+                setTraveler(p.children + p.babies > 0 ? "family" : total <= 1 ? "solo" : "couple");
+              }} />
             </div>
           </details>
 
@@ -533,53 +532,44 @@ export function TripPlanner({ selection, onSelect }: { selection: Selection | nu
                         inbound.from.id === returnFromId &&
                         inbound.to.id === returnToId;
 
+                      const stayDays = Math.round((toDate(inDate).getTime() - toDate(outDate).getTime()) / 86400000);
+                      const inWindow = outDate >= period.start && inDate <= period.end;
                       return (
-                        <div
+                        <article
                           key={`${period.name}-${outbound.departure.id}-${inbound.departure.id}`}
-                          className="batogo-field grid grid-cols-[1fr_auto_1fr] items-stretch gap-2 rounded-2xl p-2 shadow-none"
+                          className="overflow-hidden rounded-2xl border border-border bg-card shadow-sm"
                         >
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setOutboundDate(outDate);
-                              setFromId(outbound.from.id);
-                              setToId(outbound.to.id);
-                              onSelect({ type: "route", id: outbound.route.id });
-                            }}
-                            className={`min-w-0 rounded-xl p-2.5 text-left transition ${
-                              outboundSelected
-                                ? "border-primary bg-primary/10 shadow-sm"
-                                : "border-transparent hover:border-primary/40 hover:bg-secondary"
-                            }`}
-                          >
-                            <span className="block text-[10px] font-semibold text-primary">{period.name} · {index === 0 ? "Suggestion" : "Alternative"}</span>
-                            <span className="mt-0.5 block text-xs font-semibold">{formatDay(outDate)}</span>
-                            <span className="block truncate text-[10px] text-muted-foreground">{outbound.from.name} → {outbound.to.name}</span>
-                          </button>
-
-                          <div className="flex items-center px-0.5">
-                            <ArrowRight className="size-4 shrink-0 text-primary" />
+                          <header className="flex items-center justify-between gap-2 bg-primary px-3 py-2 text-primary-foreground">
+                            <span className="text-[11px] font-bold uppercase tracking-wide">🎒 {period.name} · Zone {period.zone}</span>
+                            <span className="rounded-full bg-primary-foreground/15 px-2 py-0.5 text-[10px] font-semibold">{index === 0 ? "Meilleur combo" : `Alternative ${index}`}</span>
+                          </header>
+                          <div className="flex flex-wrap gap-x-3 gap-y-0.5 border-b border-dashed border-border px-3 py-1.5 text-[10px] text-muted-foreground">
+                            <span>👥 {summarizePassengers(profile.passengers)}</span>
+                            <span>{summarizeVehicle(profile)}</span>
                           </div>
-
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setReturnDate(inDate);
-                              setReturnFromId(inbound.from.id);
-                              setReturnToId(inbound.to.id);
-                              onSelect({ type: "route", id: inbound.route.id });
-                            }}
-                            className={`min-w-0 rounded-xl border p-2.5 text-left transition ${
-                              returnSelected
-                                ? "border-primary bg-primary/10 shadow-sm"
-                                : "border-transparent hover:border-primary/40 hover:bg-secondary"
-                            }`}
-                          >
-                            <span className="block text-[10px] font-semibold text-primary">{period.name} · {index === 0 ? "Suggestion" : "Alternative"}</span>
-                            <span className="mt-0.5 block text-xs font-semibold">{formatDay(inDate)}</span>
-                            <span className="block truncate text-[10px] text-muted-foreground">{inbound.from.name} → {inbound.to.name}</span>
-                          </button>
-                        </div>
+                          {([
+                            { kind: "Aller", dot: "bg-primary", date: outDate, leg: outbound, selected: outboundSelected, pick: () => { setOutboundDate(outDate); setFromId(outbound.from.id); setToId(outbound.to.id); onSelect({ type: "route", id: outbound.route.id }); } },
+                            { kind: "Retour", dot: "bg-accent-foreground", date: inDate, leg: inbound, selected: returnSelected, pick: () => { setReturnDate(inDate); setReturnFromId(inbound.from.id); setReturnToId(inbound.to.id); onSelect({ type: "route", id: inbound.route.id }); } },
+                          ] as const).map((coupon, i) => (
+                            <button key={coupon.kind} type="button" onClick={coupon.pick}
+                              className={`block w-full px-3 py-2.5 text-left transition ${i === 1 ? "border-t border-dashed border-border" : ""} ${coupon.selected ? "bg-primary/10" : "hover:bg-muted/60"}`}>
+                              <span className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wide text-muted-foreground">
+                                <span className={`size-2 rounded-full ${coupon.dot}`} />{coupon.kind} · {formatDay(coupon.date)}
+                                {coupon.selected ? <span className="ml-auto text-primary">✓ Choisi</span> : null}
+                              </span>
+                              <span className="mt-1 grid grid-cols-[auto_1fr_auto] items-center gap-2">
+                                <span className="text-sm font-bold tabular-nums">{formatTime(coupon.leg.departure.departure_at.slice(11, 16))}</span>
+                                <span className="relative h-px bg-border"><span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-card px-1 text-xs">🚢</span></span>
+                                <span className="text-[11px] font-medium text-muted-foreground">{coupon.leg.departure.duration_minutes ? formatDuration(coupon.leg.departure.duration_minutes) : ""}</span>
+                              </span>
+                              <span className="mt-0.5 block truncate text-[11px] font-semibold">{coupon.leg.from.name} → {coupon.leg.to.name}</span>
+                            </button>
+                          ))}
+                          <footer className="flex flex-wrap items-center justify-between gap-2 border-t border-border bg-muted/40 px-3 py-2 text-[10px]">
+                            <span className="font-medium">⏱️ {stayDays} jours sur place{inWindow ? " · 100 % pendant les vacances" : ""}</span>
+                            <span className="rounded-full border border-dashed border-border px-2 py-0.5 text-muted-foreground">Réservation bientôt disponible</span>
+                          </footer>
+                        </article>
                       );
                     })}
                     <p className="text-[10px] leading-relaxed text-muted-foreground">

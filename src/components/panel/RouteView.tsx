@@ -1,14 +1,15 @@
 import { useQuery } from "@tanstack/react-query";
-import { ChevronRight } from "lucide-react";
+import { CalendarDays, ChevronRight } from "lucide-react";
 import {
   companiesQuery, portsQuery, routesQuery, schedulesQuery, upcomingDeparturesQuery, vesselsQuery,
 } from "@/lib/ferry/queries";
 import { formatDateTime, formatDuration, weekdayLabels } from "@/lib/ferry/format";
-import type { Selection } from "@/lib/ferry/types";
+import type { RouteLine, Selection } from "@/lib/ferry/types";
+import { Button } from "@/components/ui/button";
 import { DemoBadge, EmptyNote, PanelHeader, ReliabilityNote, Section } from "./shared";
 import { ReportButton } from "./ReportButton";
 
-export function RouteView({ routeId, onSelect }: { routeId: string; onSelect: (selection: Selection) => void; }) {
+export function RouteView({ routeId, onSelect, onPlanRoute }: { routeId: string; onSelect: (selection: Selection) => void; onPlanRoute?: (route: RouteLine) => void; }) {
   const { data: routes = [] } = useQuery(routesQuery);
   const { data: ports = [] } = useQuery(portsQuery);
   const { data: companies = [] } = useQuery(companiesQuery);
@@ -39,6 +40,17 @@ export function RouteView({ routeId, onSelect }: { routeId: string; onSelect: (s
         }
         actions={<ReportButton targetType="route" targetId={route.id} />}
       />
+
+      {onPlanRoute ? (
+        <Button
+          type="button"
+          onClick={() => onPlanRoute(route)}
+          className="flex w-full items-center justify-center gap-2 rounded-xl text-sm font-semibold"
+        >
+          <CalendarDays className="size-4" />
+          Choisir ce trajet
+        </Button>
+      ) : null}
 
       <Section title="Ports reliés">
         <div className="flex flex-col gap-2">

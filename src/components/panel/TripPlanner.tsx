@@ -100,7 +100,7 @@ function findLeg(
   return candidates.sort((a, b) => a.score - b.score)[0] ?? null;
 }
 
-export function TripPlanner({ selection, onSelect }: { selection: Selection | null; onSelect: (selection: Selection | null) => void }) {
+export function TripPlanner({ selection, onSelect, prefill }: { selection: Selection | null; onSelect: (selection: Selection | null) => void; prefill?: { fromId: string; toId: string; key: number } | null }) {
   const { data: ports = [] } = useQuery(portsQuery);
   const { data: routes = [] } = useQuery(routesQuery);
   const { data: schedules = [] } = useQuery(schedulesQuery);
@@ -116,6 +116,11 @@ export function TripPlanner({ selection, onSelect }: { selection: Selection | nu
   const [returnDate, setReturnDate] = useState("");
   const [fromId, setFromId] = useState("");
   const [toId, setToId] = useState("");
+  useEffect(() => {
+    if (!prefill) return;
+    setFromId(prefill.fromId);
+    setToId(prefill.toId);
+  }, [prefill?.key]);
   const [returnFromId, setReturnFromId] = useState("");
   const [returnToId, setReturnToId] = useState("");
   const [traveler, setTraveler] = useState<TravelerType>("couple");

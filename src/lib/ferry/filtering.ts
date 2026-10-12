@@ -64,16 +64,17 @@ export function getArrivalPorts(ports: Port[], routes: RouteLine[], departurePor
 export function withDeparturePorts(filters: Filters, departurePortIds: string[], ports: Port[], routes: RouteLine[]): Filters {
   const arrivals = new Set(getArrivalPorts(ports, routes, departurePortIds).map((port) => port.id));
   const arrivalPortId = filters.arrivalPortId && arrivals.has(filters.arrivalPortId) ? filters.arrivalPortId : null;
-  return { ...filters, departurePortIds, arrivalPortId };
+  const arrivalPortIds = (filters.arrivalPortIds ?? []).filter((id) => arrivals.has(id));
+  return { ...filters, departurePortIds, arrivalPortId, arrivalPortIds };
 }
 
 export function filtersForPort(filters: Filters, portId: string, routes: RouteLine[]): Filters {
   const isOrigin = routes.some((route) => route.departure_port_id === portId);
-  return isOrigin ? { ...filters, departurePortIds: [portId], arrivalPortId: null } : { ...filters, departurePortIds: [], arrivalPortId: portId };
+  return isOrigin ? { ...filters, departurePortIds: [portId], arrivalPortId: null, arrivalPortIds: [] } : { ...filters, departurePortIds: [], arrivalPortId: portId, arrivalPortIds: [] };
 }
 
 export function filtersForRoute(filters: Filters, route: RouteLine): Filters {
-  return { ...filters, departurePortIds: [route.departure_port_id], arrivalPortId: route.arrival_port_id };
+  return { ...filters, departurePortIds: [route.departure_port_id], arrivalPortId: route.arrival_port_id, arrivalPortIds: [] };
 }
 
 interface FilterOptions {

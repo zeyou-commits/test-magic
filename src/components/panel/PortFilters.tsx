@@ -124,7 +124,7 @@ export function ArrivalSelect({ ports, routes, filters, onFiltersChange, trigger
   return (
     <Select
       value={filters.arrivalPortId ?? ANY}
-      onValueChange={(next) => onFiltersChange({ ...filters, arrivalPortId: next === ANY ? null : next })}
+      onValueChange={(next) => onFiltersChange({ ...filters, arrivalPortId: next === ANY ? null : next, arrivalPortIds: [] })}
     >
       <SelectTrigger className={triggerClassName}>
         <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">

@@ -1,4 +1,4 @@
-# Batogo (ex FerryDZ) — Roadmap V1
+# Batogo — Roadmap V1
 
 - [x] 1. Fondations données (Cloud, tables, règles d'accès, jeu de démonstration)
 - [x] 2. Écran carte (carte dominante + volet contextuel, mobile en panneau inférieur)
@@ -26,3 +26,13 @@
 - [x] 22. Tiroir mobile replié avec synthèse dynamique et sélection de ports en plein écran
 - [x] 23. En-tête mobile compact : identité réduite, recherche unifiée et suppression du récapitulatif redondant
 - [x] 24. Flèche latérale sur le volet ordinateur pour le réduire et le développer horizontalement
+- [x] 25. Refonte UX (octobre 2026) : un seul moteur de filtres (carte, liste, mobile, URL), heures en heure
+      locale des ports, sens inverse et bouton d'inversion, planificateur réorganisé (retour automatique,
+      jours de départ cliquables, vacances dans les deux sens), lien « Réserver » vers les compagnies,
+      légende de carte, palette par rôle, contrôles qualité et confirmations dans le back-office,
+      mot de passe oublié
+- [ ] 26. Exécuter scripts/sql/2026-10-correctif-fuseaux-horaires.sql (une fois, après relecture)
+- [ ] 27. Interface en arabe et en anglais
+- [ ] 28. Prix indicatifs puis partenariats de réservation
+- [ ] 29. Alertes (changement d'horaire, annulation, ouverture des ventes)
+- [ ] 30. Tracés maritimes réels (géométrie des lignes en base)

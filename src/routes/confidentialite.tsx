@@ -25,7 +25,7 @@ function PrivacyPage() {
         title="Vos données sur Batogo"
         intro="Nous collectons le minimum nécessaire pour permettre les avis, les signalements et la gestion de votre compte."
       />
-      <div className="mt-8 max-w-3xl space-y-6 text-sm leading-relaxed text-muted-foreground">
+      <div className="mx-auto mt-8 max-w-3xl space-y-6 text-sm leading-relaxed text-muted-foreground">
         <section>
           <h2 className="text-base font-semibold text-foreground">Données collectées</h2>
           <p className="mt-1">

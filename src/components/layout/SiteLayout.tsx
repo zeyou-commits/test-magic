@@ -22,50 +22,77 @@ const footerLinks = [
   { to: "/confidentialite", label: "Confidentialité" },
 ] as const;
 
+/** Identité commune à toutes les pages : même logo, même nom, même accroche. */
+export function BrandLink({ compact = false }: { compact?: boolean }) {
+  return (
+    <Link
+      to="/"
+      className="flex shrink-0 items-center gap-2.5"
+      aria-label="Batogo, retour à la carte"
+    >
+      <BrandMark className={compact ? "size-7" : "size-8"} />
+      <span className="flex flex-col leading-none">
+        <span className="font-display text-lg font-bold tracking-tight text-foreground">
+          Batogo
+        </span>
+        {compact ? null : (
+          <span className="mt-0.5 hidden text-[11px] font-medium text-muted-foreground lg:block">
+            Ferries Europe ↔ Algérie
+          </span>
+        )}
+      </span>
+    </Link>
+  );
+}
+
 export function SiteLayout({ children }: { children: ReactNode }) {
   return (
     <div className="flex min-h-dvh flex-col bg-background">
-      <header className="sticky top-0 z-40 hidden w-full border-b bg-background/95 backdrop-blur md:block">
-        <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4">
-          <Link to="/" className="flex items-center gap-3">
-            <BrandMark className="size-8 text-primary" />
-            <span className="font-display text-xl font-bold tracking-tight">Batogo</span>
-          </Link>
-          <nav className="flex items-center gap-6">
-            {navLinks.map((link) => (
-              <Link key={link.to} to={link.to} className="text-sm font-semibold text-muted-foreground transition-colors hover:text-foreground [&.active]:text-primary">
-                {link.label}
-              </Link>
-            ))}
-          </nav>
-          <div className="flex items-center gap-4"><UserMenu /></div>
+      <header className="sticky top-0 z-40 hidden h-14 w-full items-center justify-between gap-6 border-b border-border/60 bg-background/90 px-5 shadow-[0_1px_12px_-6px_hsl(0_0%_0%/0.15)] backdrop-blur-xl md:flex">
+        <BrandLink />
+        <nav
+          aria-label="Navigation principale"
+          className="flex min-w-0 items-center gap-0.5 overflow-x-auto"
+        >
+          {navLinks.map((link) => (
+            <Link
+              key={link.to}
+              to={link.to}
+              activeOptions={{ exact: link.to === "/" }}
+              className="whitespace-nowrap rounded-full px-3 py-1.5 text-sm font-semibold text-muted-foreground transition-colors hover:bg-muted hover:text-foreground [&.active]:bg-primary/10 [&.active]:text-primary"
+            >
+              {link.label}
+            </Link>
+          ))}
+        </nav>
+        <div className="flex shrink-0 items-center gap-2">
+          <UserMenu />
         </div>
       </header>
 
-      <div className="md:hidden">
-        <header className="sticky top-0 z-40 flex h-14 w-full items-center justify-between border-b bg-background/95 px-4 backdrop-blur">
-          <Link to="/" className="flex items-center gap-2">
-            <BrandMark className="size-6 text-primary" />
-            <span className="font-display font-bold tracking-tight">Batogo</span>
-          </Link>
-          <UserMenu compact />
-        </header>
-      </div>
+      <header className="sticky top-0 z-40 flex h-14 w-full items-center justify-between border-b bg-background/95 px-4 backdrop-blur md:hidden">
+        <BrandLink compact />
+        <UserMenu compact />
+      </header>
 
-      <main className="flex-1 pb-16 md:pb-0">
-        <DataUnavailableNotice className="mx-auto mt-4 max-w-6xl" />
+      {/* Conteneur commun : largeur maximale et marges latérales sur toutes les pages éditoriales. */}
+      <main className="mx-auto w-full max-w-6xl flex-1 px-4 pb-24 md:px-6 md:pb-16">
+        <DataUnavailableNotice className="mt-4" />
         {children}
       </main>
 
-      <footer className="mt-auto border-t bg-card py-12 text-center text-sm text-muted-foreground pb-24 md:pb-12">
+      <footer className="mt-auto border-t bg-card py-12 pb-24 text-center text-sm text-muted-foreground md:pb-12">
         <div className="mx-auto max-w-6xl px-4">
-          <p className="mb-4">
-            <BrandMark className="inline-block size-5 translate-y-[-2px] text-muted-foreground opacity-50" />
-            <br />Batogo © {new Date().getFullYear()} — Informations maritimes indépendantes.
+          <p className="mb-4 flex flex-col items-center gap-2">
+            <BrandMark className="size-6 opacity-60" />
+            Batogo © {new Date().getFullYear()} — Informations maritimes indépendantes. Les
+            compagnies restent la seule référence officielle pour les horaires et la réservation.
           </p>
           <div className="flex flex-wrap justify-center gap-4 gap-y-2">
             {footerLinks.map((link) => (
-              <Link key={link.to} to={link.to} className="hover:underline">{link.label}</Link>
+              <Link key={link.to} to={link.to} className="hover:underline">
+                {link.label}
+              </Link>
             ))}
           </div>
         </div>
@@ -77,16 +104,30 @@ export function SiteLayout({ children }: { children: ReactNode }) {
   );
 }
 
-export function PageHero({ overline, title, intro }: { overline: string; title: string; intro: string; }) {
+export function PageHero({
+  overline,
+  title,
+  intro,
+}: {
+  overline: string;
+  title: string;
+  intro: string;
+}) {
   return (
-    <div className="mx-auto max-w-3xl px-4 py-12 text-center md:py-20">
-      <div className="mb-4 text-xs font-bold uppercase tracking-widest text-primary">{overline}</div>
-      <h1 className="mb-6 font-display text-4xl font-extrabold tracking-tight md:text-5xl lg:text-6xl">{title}</h1>
+    <div className="mx-auto max-w-3xl py-12 text-center md:py-20">
+      <div className="mb-4 text-xs font-bold uppercase tracking-widest text-primary">
+        {overline}
+      </div>
+      <h1 className="mb-6 font-display text-4xl font-extrabold tracking-tight md:text-5xl lg:text-6xl">
+        {title}
+      </h1>
       <p className="mx-auto max-w-2xl text-lg text-muted-foreground">{intro}</p>
     </div>
   );
 }
 
-export function Card({ children, className = "" }: { children: ReactNode; className?: string; }) {
-  return <div className={`rounded-2xl border bg-card p-6 shadow-sm md:p-8 ${className}`}>{children}</div>;
+export function Card({ children, className = "" }: { children: ReactNode; className?: string }) {
+  return (
+    <div className={`rounded-2xl border bg-card p-6 shadow-sm md:p-8 ${className}`}>{children}</div>
+  );
 }

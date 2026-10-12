@@ -3,19 +3,21 @@ import { emptyFilters } from "./types";
 
 const nullable = (value: string | null) => value || null;
 const list = (value: string | null) => value?.split(",").filter(Boolean) ?? [];
+const ZONES = ["A", "B", "C"] as const;
 
 export function filtersFromUrl(search: string): Filters {
   const params = new URLSearchParams(search);
-  const departurePortIds = [...new Set([...list(params.get("from")), ...list(params.get("ports"))])];
+  const zone = params.get("zone");
   return {
     ...emptyFilters,
     search: params.get("q") ?? "",
-    departurePortIds,
-    arrivalPortId: list(params.get("to")).length === 1 ? list(params.get("to"))[0]! : null,
+    // « ports » : ancien paramètre, conservé pour que les liens déjà partagés fonctionnent.
+    departurePortIds: [...new Set([...list(params.get("from")), ...list(params.get("ports"))])],
     arrivalPortIds: list(params.get("to")),
     companyId: nullable(params.get("company")),
     vesselId: nullable(params.get("vessel")),
     date: nullable(params.get("date")),
+    schoolZone: ZONES.find((item) => item === zone) ?? null,
   };
 }
 
@@ -28,20 +30,25 @@ export function selectionFromUrl(search: string): Selection | null {
   return { type: type as Selection["type"], id };
 }
 
-export function mapStateToSearch(filters: Filters, selection: Selection | null) {
+export function mapStateToSearch(
+  filters: Filters,
+  selection: Selection | null,
+  extra: Record<string, string> = {},
+) {
   const params = new URLSearchParams();
   if (filters.search.trim()) params.set("q", filters.search.trim());
   if (filters.departurePortIds.length) params.set("from", filters.departurePortIds.join(","));
-  if (filters.arrivalPortIds?.length) params.set("to", filters.arrivalPortIds.join(","));
-  else if (filters.arrivalPortId) params.set("to", filters.arrivalPortId);
+  if (filters.arrivalPortIds.length) params.set("to", filters.arrivalPortIds.join(","));
   if (filters.companyId) params.set("company", filters.companyId);
   if (filters.vesselId) params.set("vessel", filters.vesselId);
   if (filters.date) params.set("date", filters.date);
+  if (filters.schoolZone) params.set("zone", filters.schoolZone);
 
   if (selection) {
     params.set("select", selection.type);
     params.set("id", selection.id);
   }
+  Object.entries(extra).forEach(([key, value]) => params.set(key, value));
 
   const query = params.toString();
   return query ? `?${query}` : "";

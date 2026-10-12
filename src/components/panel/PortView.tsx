@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { Link } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import {
@@ -13,7 +14,14 @@ import {
   routesQuery,
   portDeparturesQuery,
 } from "@/lib/ferry/queries";
-import { facilityLabels, formatDateTime, formatDuration } from "@/lib/ferry/format";
+import {
+  facilityLabels,
+  formatDateTime,
+  formatDuration,
+  isFacilityFilled,
+  ratingOnlyFacilities,
+} from "@/lib/ferry/format";
+import { portTimeZone, zoneLabel } from "@/lib/ferry/time";
 import type { Selection } from "@/lib/ferry/types";
 import { DemoBadge, EmptyNote, PanelHeader, ReliabilityNote, Section, Stars } from "./shared";
 import { ReportButton } from "./ReportButton";
@@ -73,6 +81,12 @@ export function PortView({
   if (!port) return <EmptyNote>Port introuvable.</EmptyNote>;
 
   const portName = (id: string) => ports.find((item) => item.id === id)?.name ?? "—";
+  const timeZone = portTimeZone(port);
+  const facilities = Object.entries(port.facilities ?? {}).filter(
+    ([key, value]) => !ratingOnlyFacilities.has(key) && isFacilityFilled(value),
+  );
+  const outgoing = portRoutes.filter((route) => route.departure_port_id === portId);
+  const incoming = portRoutes.filter((route) => route.arrival_port_id === portId);
 
   return (
     <div>
@@ -80,7 +94,7 @@ export function PortView({
         overline={`${port.country_name}${port.city ? ` · ${port.city}` : ""}`}
         title={port.name}
         subtitle={
-          <span className="flex items-center gap-2">
+          <span className="flex flex-wrap items-center gap-2">
             {averages.overall !== null ? (
               <Stars value={averages.overall} />
             ) : (
@@ -97,7 +111,7 @@ export function PortView({
         actions={<ReportButton targetType="port" targetId={port.id} />}
       />
       <div>
-        <Section title="Prochains départs">
+        <Section title={`Prochains départs · ${zoneLabel(timeZone)}`}>
           {portDepartures.length === 0 ? (
             <EmptyNote>Aucun départ connu à venir depuis ce port.</EmptyNote>
           ) : (
@@ -113,7 +127,7 @@ export function PortView({
                       className="w-full rounded-lg px-2 py-2 text-left transition-colors hover:bg-secondary"
                     >
                       <p className="text-sm font-medium">
-                        {formatDateTime(departure.departure_at)}
+                        {formatDateTime(departure.departure_at, timeZone)}
                       </p>
                       <p className="text-xs text-muted-foreground">
                         {route ? portName(route.arrival_port_id) : "—"}
@@ -144,10 +158,10 @@ export function PortView({
           </Section>
         ) : null}
 
-        {port.facilities && Object.keys(port.facilities).length > 0 ? (
+        {facilities.length > 0 ? (
           <Section title="Services du port">
             <dl className="grid gap-2">
-              {Object.entries(port.facilities).map(([key, value]) => (
+              {facilities.map(([key, value]) => (
                 <div key={key} className="text-sm">
                   <dt className="font-medium">{facilityLabels[key] ?? key}</dt>
                   <dd className="text-muted-foreground">{value}</dd>
@@ -161,27 +175,41 @@ export function PortView({
           {portRoutes.length === 0 ? (
             <EmptyNote>Aucune ligne enregistrée pour ce port.</EmptyNote>
           ) : (
-            <ul className="space-y-1">
-              {portRoutes.map((route) => (
-                <li key={route.id}>
-                  <button
-                    type="button"
-                    onClick={() => onSelect({ type: "route", id: route.id })}
-                    className="flex w-full items-center justify-between gap-3 rounded-lg px-2 py-2 text-left transition-colors hover:bg-secondary"
-                  >
-                    <span className="text-sm">
-                      {portName(route.departure_port_id)} → {portName(route.arrival_port_id)}
-                    </span>
-                    <span className="text-xs font-semibold text-primary">
-                      {formatDuration(route.typical_duration_minutes)}
-                    </span>
-                  </button>
-                </li>
-              ))}
-            </ul>
+            <div className="space-y-3">
+              {[
+                { label: `Au départ de ${port.name}`, items: outgoing },
+                { label: `À destination de ${port.name}`, items: incoming },
+              ].map((group) =>
+                group.items.length ? (
+                  <div key={group.label}>
+                    <p className="mb-1 text-xs font-semibold text-muted-foreground">
+                      {group.label}
+                    </p>
+                    <ul className="space-y-1">
+                      {group.items.map((route) => (
+                        <li key={route.id}>
+                          <button
+                            type="button"
+                            onClick={() => onSelect({ type: "route", id: route.id })}
+                            className="flex w-full items-center justify-between gap-3 rounded-lg px-2 py-2 text-left transition-colors hover:bg-secondary"
+                          >
+                            <span className="text-sm">
+                              {portName(route.departure_port_id)} →{" "}
+                              {portName(route.arrival_port_id)}
+                            </span>
+                            <span className="text-xs font-semibold text-primary">
+                              {formatDuration(route.typical_duration_minutes)}
+                            </span>
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                ) : null,
+              )}
+            </div>
           )}
         </Section>
-
 
         <Section title="Notes des voyageurs">
           {averages.entries.length === 0 ? (
@@ -245,7 +273,8 @@ function ReviewForm({ portId }: { portId: string }) {
         .insert({ port_id: portId, user_id: user.id, comment: comment.trim() || null })
         .select("id")
         .single();
-      if (error) throw new Error(error.message);
+      if (error)
+        throw new Error("L'envoi de votre avis a échoué. Réessayez dans quelques instants.");
       const ratings = Object.entries(scores).map(([criterion_id, score]) => ({
         review_id: data.id as string,
         criterion_id,
@@ -253,7 +282,10 @@ function ReviewForm({ portId }: { portId: string }) {
       }));
       if (ratings.length > 0) {
         const { error: ratingError } = await supabase.from("review_ratings").insert(ratings);
-        if (ratingError) throw new Error(ratingError.message);
+        if (ratingError)
+          throw new Error(
+            "Vos notes n'ont pas pu être enregistrées. Réessayez dans quelques instants.",
+          );
       }
     },
     onSuccess: () => {
@@ -268,7 +300,12 @@ function ReviewForm({ portId }: { portId: string }) {
   if (!user) {
     return (
       <Section title="Donner son avis">
-        <EmptyNote>Connectez-vous pour noter ce port et laisser un commentaire.</EmptyNote>
+        <EmptyNote>
+          <Link to="/auth" className="font-semibold text-primary underline underline-offset-4">
+            Connectez-vous
+          </Link>{" "}
+          pour noter ce port et laisser un commentaire.
+        </EmptyNote>
       </Section>
     );
   }
@@ -286,10 +323,11 @@ function ReviewForm({ portId }: { portId: string }) {
                   type="button"
                   aria-label={`${criterion.label} : ${score} sur 5`}
                   onClick={() => setScores((prev) => ({ ...prev, [criterion.id]: score }))}
-                  className={`size-6 rounded text-sm ${
+                  aria-pressed={(scores[criterion.id] ?? 0) >= score}
+                  className={`size-8 rounded text-lg ${
                     (scores[criterion.id] ?? 0) >= score
-                      ? "text-accent"
-                      : "text-muted-foreground/50"
+                      ? "text-amber-500"
+                      : "text-muted-foreground/40"
                   }`}
                 >
                   ★
@@ -310,9 +348,7 @@ function ReviewForm({ portId }: { portId: string }) {
         >
           {submit.isPending ? "Envoi…" : "Envoyer mon avis"}
         </Button>
-        <p className="text-xs text-muted-foreground">
-          Chaque avis est relu avant publication.
-        </p>
+        <p className="text-xs text-muted-foreground">Chaque avis est relu avant publication.</p>
       </div>
     </Section>
   );

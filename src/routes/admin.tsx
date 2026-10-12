@@ -25,6 +25,49 @@ import {
 import { routeColor, routePalette } from "@/lib/ferry/colors";
 import { portPresets } from "@/lib/ferry/portPresets";
 import type { Port } from "@/lib/ferry/types";
+import { portTimeZone, zonedTimeToUtc, zoneLabel } from "@/lib/ferry/time";
+
+// Libellés français des statuts et motifs (la base stocke des codes en anglais).
+const reviewStatusLabel: Record<string, string> = {
+  pending: "En attente",
+  approved: "Validé",
+  published: "Publié",
+  rejected: "Refusé",
+  hidden: "Masqué",
+  deleted: "Supprimé",
+};
+const reportStatusLabel: Record<string, string> = {
+  new: "Nouveau",
+  in_progress: "En cours",
+  resolved: "Traité",
+  rejected: "Écarté",
+};
+const reportTargetLabel: Record<string, string> = {
+  port: "Port",
+  route: "Ligne",
+  departure: "Départ",
+  review: "Avis",
+  schedule: "Calendrier",
+};
+const reportReasonLabel: Record<string, string> = {
+  wrong_schedule: "Horaire inexact",
+  outdated_info: "Information obsolète",
+  missing_info: "Information manquante",
+  inappropriate: "Contenu inapproprié",
+  other: "Autre",
+};
+
+/** Confirmation simple avant une action définitive. */
+function confirmAction(message: string) {
+  return typeof window === "undefined" ? false : window.confirm(message);
+}
+
+/** Ajoute des jours à une date AAAA-MM-JJ. */
+function addDaysToDate(date: string, days: number) {
+  const value = new Date(`${date}T00:00:00Z`);
+  value.setUTCDate(value.getUTCDate() + days);
+  return value.toISOString().slice(0, 10);
+}
 const departureStatusLabel: Record<string, string> = {
   scheduled: "Prévu",
   modified: "Modifié",
@@ -95,7 +138,7 @@ function AdminPage() {
       </div>
 
       <Tabs defaultValue="reviews" className="mt-6">
-        <TabsList>
+        <TabsList className="h-auto w-full justify-start overflow-x-auto">
           <TabsTrigger value="reviews">Avis</TabsTrigger>
           <TabsTrigger value="reports">Signalements</TabsTrigger>
           <TabsTrigger value="departures">Départs</TabsTrigger>
@@ -155,7 +198,7 @@ function ReviewsModeration() {
       const { data, error } = await supabase
         .from("port_reviews")
         .select("*")
-        .in("status", ["pending", "approved", "hidden", "rejected"])
+        .in("status", ["pending", "approved", "published", "hidden", "rejected"])
         .order("created_at", { ascending: false });
       if (error) throw new Error(error.message);
       return data;
@@ -196,8 +239,11 @@ function ReviewsModeration() {
               <div className="min-w-0 flex-1">
                 <p className="text-sm font-medium">
                   {portName(review.port_id)}
-                  <span className="ml-2 rounded-full bg-secondary px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider">
-                    {review.status}
+                  <span className="ml-2 rounded-full bg-secondary px-2 py-0.5 text-xs font-semibold">
+                    {reviewStatusLabel[review.status] ?? review.status}
+                  </span>
+                  <span className="ml-2 text-xs font-normal text-muted-foreground">
+                    {new Date(review.created_at).toLocaleDateString("fr-FR")}
                   </span>
                 </p>
                 <p className="mt-1 text-sm text-muted-foreground">
@@ -207,6 +253,7 @@ function ReviewsModeration() {
               <div className="flex gap-2">
                 <Button
                   size="sm"
+                  disabled={update.isPending || review.status === "published"}
                   onClick={() => update.mutate({ id: review.id, status: "published" })}
                 >
                   Publier
@@ -214,6 +261,7 @@ function ReviewsModeration() {
                 <Button
                   size="sm"
                   variant="outline"
+                  disabled={update.isPending || review.status === "hidden"}
                   onClick={() => update.mutate({ id: review.id, status: "hidden" })}
                 >
                   Masquer
@@ -221,7 +269,11 @@ function ReviewsModeration() {
                 <Button
                   size="sm"
                   variant="ghost"
-                  onClick={() => update.mutate({ id: review.id, status: "rejected" })}
+                  disabled={update.isPending || review.status === "rejected"}
+                  onClick={() => {
+                    if (confirmAction("Refuser cet avis ? Il ne sera pas publié."))
+                      update.mutate({ id: review.id, status: "rejected" });
+                  }}
                 >
                   Refuser
                 </Button>
@@ -275,9 +327,10 @@ function ReportsModeration() {
             <li key={report.id} className="flex flex-wrap items-start gap-3 py-3">
               <div className="min-w-0 flex-1">
                 <p className="text-sm font-medium">
-                  {report.target_type} · {report.reason}
-                  <span className="ml-2 rounded-full bg-secondary px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider">
-                    {report.status}
+                  {reportTargetLabel[report.target_type] ?? report.target_type} ·{" "}
+                  {reportReasonLabel[report.reason] ?? report.reason}
+                  <span className="ml-2 rounded-full bg-secondary px-2 py-0.5 text-xs font-semibold">
+                    {reportStatusLabel[report.status] ?? report.status}
                   </span>
                 </p>
                 {report.message ? (
@@ -287,13 +340,15 @@ function ReportsModeration() {
               <div className="flex gap-2">
                 <Button
                   size="sm"
+                  disabled={update.isPending}
                   onClick={() => update.mutate({ id: report.id, status: "resolved" })}
                 >
-                  Traité
+                  Marquer traité
                 </Button>
                 <Button
                   size="sm"
                   variant="ghost"
+                  disabled={update.isPending}
                   onClick={() => update.mutate({ id: report.id, status: "rejected" })}
                 >
                   Écarter
@@ -346,7 +401,19 @@ function DeparturesAdmin() {
           return (
             <li key={departure.id} className="flex flex-wrap items-center gap-3 py-3">
               <div className="min-w-0 flex-1">
-                <p className="text-sm font-medium">{formatDateTime(departure.departure_at)}</p>
+                <p className="text-sm font-medium">
+                  {formatDateTime(
+                    departure.departure_at,
+                    portTimeZone(ports.find((port) => port.id === route?.departure_port_id)),
+                  )}
+                  <span className="ml-1 text-xs font-normal text-muted-foreground">
+                    (
+                    {zoneLabel(
+                      portTimeZone(ports.find((port) => port.id === route?.departure_port_id)),
+                    )}
+                    )
+                  </span>
+                </p>
                 <p className="text-xs text-muted-foreground">
                   {route
                     ? `${portName(route.departure_port_id)} → ${portName(route.arrival_port_id)}`
@@ -361,6 +428,7 @@ function DeparturesAdmin() {
                 <Button
                   size="sm"
                   variant="outline"
+                  disabled={update.isPending}
                   onClick={() =>
                     update.mutate({ id: departure.id, values: { reliability: "verified" } })
                   }
@@ -370,16 +438,23 @@ function DeparturesAdmin() {
                 <Button
                   size="sm"
                   variant="ghost"
-                  onClick={() =>
+                  disabled={update.isPending}
+                  onClick={() => {
+                    const cancelling = departure.status !== "cancelled";
+                    if (
+                      cancelling &&
+                      !confirmAction(
+                        "Marquer ce départ comme annulé ? Il sera affiché « Annulé » sur le site.",
+                      )
+                    )
+                      return;
                     update.mutate({
                       id: departure.id,
-                      values: {
-                        status: departure.status === "cancelled" ? "scheduled" : "cancelled",
-                      },
-                    })
-                  }
+                      values: { status: cancelling ? "cancelled" : "scheduled" },
+                    });
+                  }}
                 >
-                  {departure.status === "cancelled" ? "Rétablir" : "Annuler"}
+                  {departure.status === "cancelled" ? "Rétablir le départ" : "Annuler le départ"}
                 </Button>
               </div>
             </li>
@@ -417,7 +492,7 @@ function timeToMinutes(time: string): number | null {
 function addMinutesToTime(time: string, minutes: number): string {
   const base = timeToMinutes(time);
   if (base === null || !Number.isFinite(minutes)) return "";
-  const total = ((base + Math.round(minutes)) % 1440 + 1440) % 1440;
+  const total = (((base + Math.round(minutes)) % 1440) + 1440) % 1440;
   return `${String(Math.floor(total / 60)).padStart(2, "0")}:${String(total % 60).padStart(2, "0")}`;
 }
 
@@ -459,7 +534,8 @@ function SchedulesAdmin() {
 
   const save = useMutation({
     mutationFn: async () => {
-      if (!draft.route_id || !draft.company_id) throw new Error("Choisissez une ligne et une compagnie.");
+      if (!draft.route_id || !draft.company_id)
+        throw new Error("Choisissez une ligne et une compagnie.");
       if (draft.weekdays.length === 0) throw new Error("Choisissez au moins un jour.");
       const values = {
         route_id: draft.route_id,
@@ -517,7 +593,14 @@ function SchedulesAdmin() {
         if (!schedule.weekdays.includes(weekday)) continue;
         if (isoDate < schedule.valid_from) continue;
         if (schedule.valid_to && isoDate > schedule.valid_to) continue;
-        const departureAt = new Date(`${isoDate}T${schedule.departure_time}Z`);
+        // L'heure du calendrier est l'heure locale du port de départ (celle du billet).
+        const route = routes.find((item) => item.id === schedule.route_id);
+        const fromPort = ports.find((port) => port.id === route?.departure_port_id);
+        const departureAt = zonedTimeToUtc(
+          isoDate,
+          schedule.departure_time.slice(0, 5),
+          portTimeZone(fromPort),
+        );
         rows.push({
           route_id: schedule.route_id,
           company_id: schedule.company_id,
@@ -724,10 +807,7 @@ function SchedulesAdmin() {
                 <p className="text-sm font-medium">
                   {routeLabel(schedule.route_id)} · départ {schedule.departure_time.slice(0, 5)} →
                   arrivée théorique{" "}
-                  {addMinutesToTime(
-                    schedule.departure_time.slice(0, 5),
-                    schedule.duration_minutes,
-                  )}
+                  {addMinutesToTime(schedule.departure_time.slice(0, 5), schedule.duration_minutes)}
                   {dayShift(
                     (timeToMinutes(schedule.departure_time.slice(0, 5)) ?? 0) +
                       schedule.duration_minutes,
@@ -772,11 +852,26 @@ function SchedulesAdmin() {
                   size="sm"
                   variant="outline"
                   disabled={generate.isPending}
-                  onClick={() => generate.mutate(schedule.id)}
+                  onClick={() => {
+                    if (
+                      confirmAction(
+                        "Générer les départs des 60 prochains jours ? Les départs à venir déjà créés par ce calendrier seront remplacés.",
+                      )
+                    )
+                      generate.mutate(schedule.id);
+                  }}
                 >
                   Générer les départs
                 </Button>
-                <Button size="sm" variant="ghost" onClick={() => remove.mutate(schedule.id)}>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  disabled={remove.isPending}
+                  onClick={() => {
+                    if (confirmAction("Supprimer définitivement ce calendrier ?"))
+                      remove.mutate(schedule.id);
+                  }}
+                >
                   Supprimer
                 </Button>
               </div>
@@ -864,7 +959,9 @@ function DataAdmin() {
               : null,
       };
     })
-    .filter((item): item is { port: (typeof ports)[number]; reason: string } => item.reason !== null);
+    .filter(
+      (item): item is { port: (typeof ports)[number]; reason: string } => item.reason !== null,
+    );
 
   const closePort = useMutation({
     mutationFn: async (id: string) => {
@@ -914,14 +1011,71 @@ function DataAdmin() {
       queryClient.invalidateQueries({ queryKey: ["routes"] });
       setConfirming(false);
       toast.success(
-        `Saison archivée : ${count} départ(s) retiré(s), calendriers suspendus. Vous pouvez importer la nouvelle saison.`,
+        `Saison vidée : ${count} départ(s) supprimé(s), calendriers suspendus. Vous pouvez importer la nouvelle saison.`,
       );
     },
     onError: (error: Error) => toast.error(error.message),
   });
 
+  // Contrôle qualité : incohérences de durée à vérifier avant publication.
+  const portLabel = (id: string) => ports.find((port) => port.id === id)?.name ?? "—";
+  const durationIssues = [
+    ...activeRoutes.flatMap((route) => {
+      const reverse = activeRoutes.find(
+        (item) =>
+          item.departure_port_id === route.arrival_port_id &&
+          item.arrival_port_id === route.departure_port_id,
+      );
+      const a = route.typical_duration_minutes;
+      const b = reverse?.typical_duration_minutes;
+      if (!reverse || !a || !b || route.id > reverse.id) return [];
+      const gap = Math.abs(a - b) / Math.max(a, b);
+      return gap > 0.3
+        ? [
+            `${portLabel(route.departure_port_id)} ⇄ ${portLabel(route.arrival_port_id)} : ${Math.round(a / 60)} h dans un sens, ${Math.round(b / 60)} h dans l'autre.`,
+          ]
+        : [];
+    }),
+    ...activeRoutes.flatMap((route) => {
+      const typical = route.typical_duration_minutes;
+      if (!typical) return [];
+      const odd = departures.filter(
+        (departure) =>
+          departure.route_id === route.id &&
+          departure.duration_minutes &&
+          Math.abs(departure.duration_minutes - typical) / typical > 0.3,
+      );
+      return odd.length
+        ? [
+            `${portLabel(route.departure_port_id)} → ${portLabel(route.arrival_port_id)} : durée typique ${Math.round(typical / 60)} h, mais ${odd.length} départ(s) avec une durée très différente.`,
+          ]
+        : [];
+    }),
+  ];
+
   return (
     <>
+      <Panel>
+        <h2 className="text-sm font-semibold">Contrôle qualité des durées</h2>
+        {durationIssues.length === 0 ? (
+          <p className="mt-1 text-xs text-muted-foreground">
+            Aucune incohérence de durée détectée.
+          </p>
+        ) : (
+          <>
+            <p className="mt-1 text-xs text-muted-foreground">
+              Ces écarts de plus de 30 % sont visibles par le public et nuisent à la confiance.
+              Vérifiez la durée de la ligne (onglet « Lignes ») ou les heures du fichier importé.
+            </p>
+            <ul className="mt-3 list-disc space-y-1 pl-5 text-xs">
+              {durationIssues.map((issue) => (
+                <li key={issue}>{issue}</li>
+              ))}
+            </ul>
+          </>
+        )}
+      </Panel>
+
       <Panel>
         <div className="grid gap-4 sm:grid-cols-2">
           <Counter label="Ports" value={ports.length} />
@@ -939,13 +1093,13 @@ function DataAdmin() {
         <h2 className="text-sm font-semibold">Préparer une nouvelle saison</h2>
         <ol className="mt-2 space-y-1 text-xs text-muted-foreground">
           <li>
-            <strong>1.</strong> Ayez sous la main le fichier Excel de la nouvelle saison (onglet
-            « Import Excel » pour le modèle).
+            <strong>1.</strong> Ayez sous la main le fichier Excel de la nouvelle saison (onglet «
+            Import Excel » pour le modèle).
           </li>
           <li>
-            <strong>2.</strong> Archivez la saison en cours ci-dessous : les départs à partir de la
-            date choisie sont retirés et les calendriers récurrents suspendus. Ports, lignes,
-            compagnies, navires et avis sont conservés.
+            <strong>2.</strong> Videz la saison en cours ci-dessous : les départs à partir de la
+            date choisie sont <strong>supprimés définitivement</strong> et les calendriers
+            récurrents suspendus. Ports, lignes, compagnies, navires et avis sont conservés.
           </li>
           <li>
             <strong>3.</strong> Importez le fichier : les lignes qui reçoivent des départs
@@ -979,7 +1133,9 @@ function DataAdmin() {
         <ul className="mt-3 space-y-1 text-xs text-muted-foreground">
           <li>{affectedDepartures.length} départ(s) à venir seront supprimés.</li>
           <li>{activeSchedules.length} calendrier(s) actif(s) seront suspendus.</li>
-          {suspendRoutes ? <li>{activeRoutes.length} ligne(s) active(s) seront suspendues.</li> : null}
+          {suspendRoutes ? (
+            <li>{activeRoutes.length} ligne(s) active(s) seront suspendues.</li>
+          ) : null}
         </ul>
         <label className="mt-3 flex items-center gap-2 text-xs">
           <input
@@ -995,16 +1151,17 @@ function DataAdmin() {
         {confirming ? (
           <div className="mt-3 rounded-lg border border-destructive/60 bg-destructive/5 p-3">
             <p className="text-xs text-destructive">
-              Cette opération est définitive pour les départs concernés. Confirmer l'archivage de la
-              saison en cours ?
+              Les départs concernés seront supprimés définitivement (ils ne sont pas archivés).
+              Conservez le fichier Excel de la saison en cours. Confirmer ?
             </p>
             <div className="mt-2 flex gap-2">
               <Button
                 size="sm"
+                variant="destructive"
                 disabled={newSeason.isPending}
                 onClick={() => newSeason.mutate()}
               >
-                Oui, archiver et repartir de zéro
+                Oui, supprimer les départs et repartir de zéro
               </Button>
               <Button size="sm" variant="ghost" onClick={() => setConfirming(false)}>
                 Annuler
@@ -1019,7 +1176,7 @@ function DataAdmin() {
               disabled={!fileReady}
               onClick={() => setConfirming(true)}
             >
-              Archiver la saison en cours
+              Vider la saison en cours
             </Button>
             {!fileReady ? (
               <p className="mt-2 text-xs text-muted-foreground">
@@ -1055,7 +1212,14 @@ function DataAdmin() {
                     size="sm"
                     variant="outline"
                     disabled={closePort.isPending}
-                    onClick={() => closePort.mutate(port.id)}
+                    onClick={() => {
+                      if (
+                        confirmAction(
+                          `Fermer temporairement le port de ${port.name} ? Il apparaîtra « fermé » sur la carte.`,
+                        )
+                      )
+                        closePort.mutate(port.id);
+                    }}
                   >
                     Fermer temporairement
                   </Button>
@@ -1162,7 +1326,6 @@ function PortsAdmin() {
     );
   const schedulesOf = (routeIds: string[], status: string) =>
     schedules.filter((item) => routeIds.includes(item.route_id) && item.status === status);
-
 
   const invalidate = () => queryClient.invalidateQueries({ queryKey: ["ports"] });
 
@@ -1343,7 +1506,13 @@ function PortsAdmin() {
             <>
               <p className="mt-2 text-sm text-muted-foreground">
                 Ce port est utilisé par {activeRoutesOf(pendingClose.id).length} ligne(s) active(s)
-                et {schedulesOf(activeRoutesOf(pendingClose.id).map((r) => r.id), "active").length}{" "}
+                et{" "}
+                {
+                  schedulesOf(
+                    activeRoutesOf(pendingClose.id).map((r) => r.id),
+                    "active",
+                  ).length
+                }{" "}
                 calendrier(s) actif(s). Après validation, ces lignes ne s'afficheront plus sur la
                 carte et leurs calendriers seront suspendus.
               </p>
@@ -1407,9 +1576,7 @@ function PortsAdmin() {
       ) : null}
 
       <Panel>
-        <h2 className="text-sm font-semibold">
-          {editingId ? "Modifier le port" : "Nouveau port"}
-        </h2>
+        <h2 className="text-sm font-semibold">{editingId ? "Modifier le port" : "Nouveau port"}</h2>
         <div className="mt-3">
           <Field label="Pré-sélection d'un grand port (Algérie et Europe)">
             <NativeSelect
@@ -1448,7 +1615,11 @@ function PortsAdmin() {
             />
           </Field>
           <Field label="Statut">
-            <NativeSelect value={draft.status} onChange={set("status")} options={portStatusOptions} />
+            <NativeSelect
+              value={draft.status}
+              onChange={set("status")}
+              options={portStatusOptions}
+            />
           </Field>
           <Field label="Latitude (GPS réelle)">
             <Input
@@ -1500,10 +1671,7 @@ function PortsAdmin() {
         </div>
         <div className="mt-3">
           <Field label="À savoir (embarquement, accès, fermeture…)">
-            <Input
-              value={draft.notes}
-              onChange={(event) => set("notes")(event.target.value)}
-            />
+            <Input value={draft.notes} onChange={(event) => set("notes")(event.target.value)} />
           </Field>
         </div>
         <div className="mt-3">
@@ -1544,9 +1712,7 @@ function PortsAdmin() {
               <div className="min-w-0 flex-1">
                 <p className="text-sm font-medium">
                   {port.name}{" "}
-                  <span className="font-normal text-muted-foreground">
-                    · {port.country_name}
-                  </span>
+                  <span className="font-normal text-muted-foreground">· {port.country_name}</span>
                 </p>
                 <p className="text-xs text-muted-foreground">
                   {portStatusLabel[port.status] ?? port.status} · {port.latitude.toFixed(3)},{" "}
@@ -1696,7 +1862,9 @@ function RoutesAdmin() {
         if (draft.company_ids.length > 0) {
           const { error } = await supabase
             .from("route_operators")
-            .insert(draft.company_ids.map((company_id) => ({ route_id: routeId as string, company_id })));
+            .insert(
+              draft.company_ids.map((company_id) => ({ route_id: routeId as string, company_id })),
+            );
           if (error) throw new Error(error.message);
         }
       }
@@ -1768,7 +1936,9 @@ function RoutesAdmin() {
             <Input
               type="number"
               value={draft.distance_km}
-              onChange={(event) => setDraft((prev) => ({ ...prev, distance_km: event.target.value }))}
+              onChange={(event) =>
+                setDraft((prev) => ({ ...prev, distance_km: event.target.value }))
+              }
             />
           </Field>
           <Field label="Statut">
@@ -1784,8 +1954,7 @@ function RoutesAdmin() {
                 type="color"
                 aria-label="Couleur de la ligne"
                 value={
-                  draft.color ||
-                  routeColor(null, port(draft.departure_port_id)?.slug ?? "ferrydz")
+                  draft.color || routeColor(null, port(draft.departure_port_id)?.slug ?? "batogo")
                 }
                 onChange={(event) => setDraft((prev) => ({ ...prev, color: event.target.value }))}
                 className="h-9 w-12 cursor-pointer rounded-md border border-input bg-transparent"
@@ -1814,7 +1983,9 @@ function RoutesAdmin() {
           </Field>
         </div>
         <div className="mt-3">
-          <p className="text-xs font-medium text-muted-foreground">Compagnies qui exploitent la ligne</p>
+          <p className="text-xs font-medium text-muted-foreground">
+            Compagnies qui exploitent la ligne
+          </p>
           <div className="mt-2 flex flex-wrap gap-2">
             {companies.map((company) => (
               <Button
@@ -1890,7 +2061,19 @@ function RoutesAdmin() {
                 >
                   Modifier
                 </Button>
-                <Button size="sm" variant="ghost" onClick={() => remove.mutate(route.id)}>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  disabled={remove.isPending}
+                  onClick={() => {
+                    if (
+                      confirmAction(
+                        "Supprimer définitivement cette ligne ? Ses calendriers et départs peuvent être perdus.",
+                      )
+                    )
+                      remove.mutate(route.id);
+                  }}
+                >
                   Supprimer
                 </Button>
               </div>
@@ -1930,22 +2113,19 @@ const importColumns = [
   ["port_arrivee", "Nom exact du port d'arrivée (ex. Marseille)"],
   ["compagnie", "Nom exact de la compagnie (ex. Algérie Ferries)"],
   ["navire", "Facultatif — nom exact du navire"],
-  [
-    "duree_minutes",
-    "Facultatif — durée en minutes ; utilisée si l'heure d'arrivée est absente",
-  ],
+  ["duree_minutes", "Facultatif — durée en minutes ; utilisée si l'heure d'arrivée est absente"],
   ["statut", "Facultatif — prevu, modifie ou annule (par défaut : prevu)"],
 ];
 
 const importStatusMap: Record<string, "scheduled" | "modified" | "cancelled"> = {
   prevu: "scheduled",
-  "prévu": "scheduled",
+  prévu: "scheduled",
   scheduled: "scheduled",
   modifie: "modified",
-  "modifié": "modified",
+  modifié: "modified",
   modified: "modified",
   annule: "cancelled",
-  "annulé": "cancelled",
+  annulé: "cancelled",
   cancelled: "cancelled",
 };
 
@@ -2011,10 +2191,22 @@ function ImportAdmin() {
       return {
         error: "Aucune ligne existante entre ces deux ports : créez-la dans l'onglet « Lignes ».",
       };
-    const duration = durationBetweenTimes(row.departure_time, row.arrival_time);
-    if (!duration) return { error: "Durée théorique impossible à calculer." };
-    const departureAt = new Date(`${row.date}T${row.departure_time.padStart(5, "0")}:00Z`);
+    const wallDuration = durationBetweenTimes(row.departure_time, row.arrival_time);
+    if (!wallDuration) return { error: "Durée théorique impossible à calculer." };
+    // Heure de départ = heure locale du port de départ ; heure d'arrivée = heure locale du port d'arrivée.
+    const fromPort = ports.find((port) => port.id === row.departure_port_id);
+    const toPort = ports.find((port) => port.id === row.arrival_port_id);
+    const departureTime = row.departure_time.padStart(5, "0");
+    const departureAt = zonedTimeToUtc(row.date, departureTime, portTimeZone(fromPort));
     if (Number.isNaN(departureAt.getTime())) return { error: "Date et heure illisibles." };
+    const dayOffset = Math.floor(((timeToMinutes(departureTime) ?? 0) + wallDuration) / 1440);
+    const arrivalAt = zonedTimeToUtc(
+      addDaysToDate(row.date, dayOffset),
+      row.arrival_time.padStart(5, "0"),
+      portTimeZone(toPort),
+    );
+    let duration = Math.round((arrivalAt.getTime() - departureAt.getTime()) / 60000);
+    if (duration <= 0) duration += 1440;
     return {
       values: {
         route_id: route.id,
@@ -2047,12 +2239,15 @@ function ImportAdmin() {
           return found ? entry[found] : undefined;
         };
         const date = String(get("date") ?? "").trim();
-        const departureTime = String(get("heure") ?? "").trim().slice(0, 5);
+        const departureTime = String(get("heure") ?? "")
+          .trim()
+          .slice(0, 5);
         const from = findPort(get("port_depart"));
         const to = findPort(get("port_arrivee"));
         const companyNeedle = normalize(get("compagnie"));
         const company = companies.find(
-          (item) => normalize(item.name) === companyNeedle || normalize(item.slug) === companyNeedle,
+          (item) =>
+            normalize(item.name) === companyNeedle || normalize(item.slug) === companyNeedle,
         );
         const vesselNeedle = normalize(get("navire"));
         const vessel = vesselNeedle
@@ -2064,16 +2259,17 @@ function ImportAdmin() {
         const route =
           from && to
             ? routes.find(
-                (item) =>
-                  item.departure_port_id === from.id && item.arrival_port_id === to.id,
+                (item) => item.departure_port_id === from.id && item.arrival_port_id === to.id,
               )
             : undefined;
         const durationRaw = Number(get("duree_minutes"));
         const fallbackDuration =
           Number.isFinite(durationRaw) && durationRaw > 0
             ? Math.round(durationRaw)
-            : route?.typical_duration_minutes ?? 0;
-        const arrivalFromFile = String(get("heure_arrivee") ?? "").trim().slice(0, 5);
+            : (route?.typical_duration_minutes ?? 0);
+        const arrivalFromFile = String(get("heure_arrivee") ?? "")
+          .trim()
+          .slice(0, 5);
         const arrivalTime =
           timeToMinutes(arrivalFromFile) !== null
             ? arrivalFromFile
@@ -2118,7 +2314,9 @@ function ImportAdmin() {
 
   // Éléments absents de la base que l'on sait créer sans invention de données.
   const missingCompanies = [
-    ...new Set(rows.filter((row) => !row.company_id && row.raw_company).map((row) => row.raw_company)),
+    ...new Set(
+      rows.filter((row) => !row.company_id && row.raw_company).map((row) => row.raw_company),
+    ),
   ];
   const missingVessels = [
     ...new Set(rows.filter((row) => !row.vessel_id && row.raw_vessel).map((row) => row.raw_vessel)),
@@ -2340,21 +2538,11 @@ function ImportAdmin() {
     const XLSX = await import("xlsx");
     const sheet = XLSX.utils.aoa_to_sheet([
       importColumns.map(([key]) => key as string),
-      [
-        "2026-10-05",
-        "18:30",
-        "05:30",
-        "Alger",
-        "Marseille",
-        "Algérie Ferries",
-        "",
-        "660",
-        "prevu",
-      ],
+      ["2026-10-05", "18:30", "05:30", "Alger", "Marseille", "Algérie Ferries", "", "660", "prevu"],
     ]);
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, sheet, "departs");
-    XLSX.writeFile(workbook, "modele-departs-ferrydz.xlsx");
+    XLSX.writeFile(workbook, "modele-departs-batogo.xlsx");
   };
 
   return (
@@ -2362,9 +2550,11 @@ function ImportAdmin() {
       <Panel>
         <h2 className="text-sm font-semibold">Format attendu du fichier</h2>
         <p className="mt-1 text-xs text-muted-foreground">
-          Un fichier .xlsx ou .csv, première feuille utilisée, première ligne = les en-têtes ci-dessous
-          (dans n'importe quel ordre, accents et majuscules indifférents). Les heures sont
-          interprétées en UTC.
+          Un fichier .xlsx ou .csv, première feuille utilisée, première ligne = les en-têtes
+          ci-dessous (dans n'importe quel ordre, accents et majuscules indifférents). Saisissez les
+          heures telles qu'imprimées sur les billets : heure locale du port de départ pour le
+          départ, heure locale du port d'arrivée pour l'arrivée. Le passage à l'heure d'été ou
+          d'hiver est géré automatiquement.
         </p>
         <ul className="mt-3 space-y-1 text-xs">
           {importColumns.map(([key, help]) => (
@@ -2403,8 +2593,8 @@ function ImportAdmin() {
           <h2 className="text-sm font-semibold">Vérifier et corriger avant validation</h2>
           <p className="mt-1 text-xs text-muted-foreground">
             {fileName} — {validValues.length} ligne(s) prête(s)
-            {invalidCount > 0 ? `, ${invalidCount} à corriger` : ""}. Vous pouvez tout modifier ici :
-            rien n'est enregistré avant la validation finale.
+            {invalidCount > 0 ? `, ${invalidCount} à corriger` : ""}. Vous pouvez tout modifier ici
+            : rien n'est enregistré avant la validation finale.
           </p>
           {missingTotal > 0 ? (
             <div className="mt-3 rounded-lg border border-primary/40 bg-primary/5 p-3">
@@ -2422,10 +2612,14 @@ function ImportAdmin() {
                   </li>
                 ) : null}
                 {missingCompanies.length ? (
-                  <li>{missingCompanies.length} compagnie(s) : {missingCompanies.join(", ")}</li>
+                  <li>
+                    {missingCompanies.length} compagnie(s) : {missingCompanies.join(", ")}
+                  </li>
                 ) : null}
                 {missingVessels.length ? (
-                  <li>{missingVessels.length} navire(s) : {missingVessels.join(", ")}</li>
+                  <li>
+                    {missingVessels.length} navire(s) : {missingVessels.join(", ")}
+                  </li>
                 ) : null}
               </ul>
               <div className="mt-2">
@@ -2512,9 +2706,7 @@ function ImportAdmin() {
                       <Input
                         type="time"
                         value={row.departure_time}
-                        onChange={(event) =>
-                          patch(row.key, { departure_time: event.target.value })
-                        }
+                        onChange={(event) => patch(row.key, { departure_time: event.target.value })}
                       />
                     </Field>
                     <Field label={`Arrivée théorique${dayShift(total)}`}>
@@ -2579,11 +2771,17 @@ function ImportAdmin() {
               size="sm"
               variant="ghost"
               onClick={() => {
+                if (
+                  !confirmAction(
+                    "Abandonner cet import ? Les corrections faites dans le tableau seront perdues.",
+                  )
+                )
+                  return;
                 setRows([]);
                 setFileName("");
               }}
             >
-              Annuler
+              Abandonner l'import
             </Button>
           </div>
         </Panel>

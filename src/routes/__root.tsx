@@ -15,7 +15,6 @@ import { reportLovableError } from "../lib/lovable-error-reporting";
 import { AuthProvider } from "@/hooks/useAuth";
 import { Toaster } from "@/components/ui/sonner";
 
-
 function NotFoundComponent() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
@@ -82,11 +81,11 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Batogo — Ferries vers l'Algérie" },
+      { title: "Batogo — Ferries Europe ↔ Algérie" },
       {
         name: "description",
         content:
-          "Carte des liaisons maritimes vers l'Algérie : ports, lignes, durées et prochains départs.",
+          "Les traversées en ferry entre l'Europe et l'Algérie, dans les deux sens : ports, lignes, durées, compagnies et prochains départs en heure locale.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
@@ -101,7 +100,8 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
           name: "Batogo",
           url: "https://test-magic.lovable.app",
           inLanguage: "fr",
-          description: "Carte des traversées maritimes vers l'Algérie : ports, lignes, durées et prochains départs.",
+          description:
+            "Carte des traversées maritimes entre l'Europe et l'Algérie, dans les deux sens : ports, lignes, durées et prochains départs.",
         }),
       },
     ],

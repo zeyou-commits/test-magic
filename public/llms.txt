@@ -1,6 +1,6 @@
 # Batogo
 
-> Batogo est une carte indépendante des traversées maritimes vers l'Algérie et en Méditerranée : ports, lignes, durées de traversée, compagnies, navires et prochains départs.
+> Batogo est une carte indépendante des traversées en ferry entre l'Europe et l'Algérie, dans les deux sens : ports, lignes, durées de traversée, compagnies, navires et prochains départs (heures locales des ports).
 
 ## Pages principales
 - [Carte interactive](https://test-magic.lovable.app/): liaisons et prochains départs

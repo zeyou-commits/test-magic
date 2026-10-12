@@ -21,6 +21,7 @@ import {
 } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { Link } from "@tanstack/react-router";
 
 const reasons = [
   { value: "wrong_schedule", label: "Horaire inexact" },
@@ -55,7 +56,8 @@ export function ReportButton({
         reporter_id: user.id,
       });
 
-      if (error) throw new Error(error.message);
+      if (error)
+        throw new Error("Le signalement n'a pas pu être envoyé. Réessayez dans quelques instants.");
     },
 
     onSuccess: () => {
@@ -80,31 +82,46 @@ export function ReportButton({
             Décrivez ce qui ne correspond pas à la réalité, nous vérifierons.
           </DialogDescription>
         </DialogHeader>
-        <div className="grid gap-3">
-          <Select value={reason} onValueChange={setReason}>
-            <SelectTrigger>
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {reasons.map((item) => (
-                <SelectItem key={item.value} value={item.value}>
-                  {item.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <Textarea
-            value={details}
-            onChange={(event) => setDetails(event.target.value)}
-            placeholder="Détails (facultatif)"
-            rows={4}
-          />
-        </div>
-        <DialogFooter>
-          <Button onClick={() => submit.mutate()} disabled={submit.isPending}>
-            {submit.isPending ? "Envoi…" : "Envoyer"}
-          </Button>
-        </DialogFooter>
+        {!user ? (
+          <div className="grid gap-3 rounded-xl bg-secondary p-4 text-sm">
+            <p>
+              Pour éviter les abus, il faut être connecté pour envoyer un signalement. C’est gratuit
+              et rapide.
+            </p>
+            <Button asChild>
+              <Link to="/auth">Se connecter ou créer un compte</Link>
+            </Button>
+          </div>
+        ) : (
+          <div className="grid gap-3">
+            <Select value={reason} onValueChange={setReason}>
+              <SelectTrigger aria-label="Motif du signalement">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {reasons.map((item) => (
+                  <SelectItem key={item.value} value={item.value}>
+                    {item.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Textarea
+              value={details}
+              onChange={(event) => setDetails(event.target.value)}
+              placeholder="Détails (facultatif)"
+              rows={4}
+              aria-label="Détails du signalement"
+            />
+          </div>
+        )}
+        {user ? (
+          <DialogFooter>
+            <Button onClick={() => submit.mutate()} disabled={submit.isPending}>
+              {submit.isPending ? "Envoi…" : "Envoyer"}
+            </Button>
+          </DialogFooter>
+        ) : null}
       </DialogContent>
     </Dialog>
   );

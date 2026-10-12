@@ -40,6 +40,14 @@ const reviewStatusLabels: Record<string, string> = {
   deleted: "Supprimé",
 };
 
+const reportReasonLabels: Record<string, string> = {
+  wrong_schedule: "Horaire inexact",
+  outdated_info: "Information obsolète",
+  missing_info: "Information manquante",
+  inappropriate: "Contenu inapproprié",
+  other: "Autre",
+};
+
 const reportStatusLabels: Record<string, string> = {
   new: "Reçu",
   in_progress: "En cours",
@@ -237,7 +245,7 @@ function MyReviews({ userId }: { userId: string }) {
               <div className="min-w-0 flex-1">
                 <p className="text-sm font-medium">
                   {portName(review.port_id)}
-                  <span className="ml-2 rounded-full bg-secondary px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider">
+                  <span className="ml-2 rounded-full bg-secondary px-2 py-0.5 text-xs font-semibold">
                     {reviewStatusLabels[review.status] ?? review.status}
                   </span>
                 </p>
@@ -285,17 +293,15 @@ function MyReports({ userId }: { userId: string }) {
           {reports.map((report) => (
             <li key={report.id} className="py-3">
               <p className="text-sm font-medium">
-                {report.reason}
-                <span className="ml-2 rounded-full bg-secondary px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider">
+                {reportReasonLabels[report.reason] ?? report.reason}
+                <span className="ml-2 rounded-full bg-secondary px-2 py-0.5 text-xs font-semibold">
                   {reportStatusLabels[report.status] ?? report.status}
                 </span>
               </p>
               {report.message ? (
                 <p className="mt-1 text-sm text-muted-foreground">{report.message}</p>
               ) : null}
-              <p className="mt-1 text-xs text-muted-foreground">
-                {formatDate(report.created_at)}
-              </p>
+              <p className="mt-1 text-xs text-muted-foreground">{formatDate(report.created_at)}</p>
             </li>
           ))}
         </ul>

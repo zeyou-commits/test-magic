@@ -10,6 +10,8 @@ import {
   vesselsQuery,
 } from "@/lib/ferry/queries";
 import { formatDateTime, formatDuration, weekdayLabels } from "@/lib/ferry/format";
+import { portTimeZone, zoneLabel } from "@/lib/ferry/time";
+import { BookingLink } from "@/components/panel/shared";
 
 export const Route = createFileRoute("/lignes/$slug")({
   loader: async ({ context, params }) => {
@@ -69,6 +71,12 @@ function LignePage() {
     .filter((departure) => departure.route_id === route.id)
     .slice(0, 10);
   const operators = companies.filter((company) => route.company_ids.includes(company.id));
+  const timeZone = portTimeZone(from);
+  const reverse = routes.find(
+    (item) =>
+      item.departure_port_id === route.arrival_port_id &&
+      item.arrival_port_id === route.departure_port_id,
+  );
 
   const jsonLd = {
     "@context": "https://schema.org",
@@ -111,7 +119,26 @@ function LignePage() {
         }. ${route.notes ?? ""}`}
       />
 
-      <div className="mt-6 flex flex-wrap gap-2">
+      <div className="mx-auto grid max-w-xl gap-2 sm:grid-cols-2">
+        <Link
+          to="/"
+          search={{ select: "route", id: route.id } as never}
+          className="inline-flex h-11 items-center justify-center rounded-xl bg-primary px-5 text-sm font-semibold text-primary-foreground hover:bg-primary/90"
+        >
+          Voir sur la carte
+        </Link>
+        {reverse ? (
+          <Link
+            to="/lignes/$slug"
+            params={{ slug: reverse.slug }}
+            className="inline-flex h-11 items-center justify-center rounded-xl border border-border bg-card px-5 text-sm font-semibold hover:bg-secondary"
+          >
+            Sens inverse : {to?.name} → {from?.name}
+          </Link>
+        ) : null}
+      </div>
+
+      <div className="mt-6 flex flex-wrap justify-center gap-2">
         {[from, to].map((port) =>
           port ? (
             <Link
@@ -126,6 +153,23 @@ function LignePage() {
         )}
       </div>
 
+      {operators.length ? (
+        <section className="mt-10">
+          <h2 className="text-xl font-semibold">Réserver cette traversée</h2>
+          <p className="mt-1 text-sm text-muted-foreground">
+            La réservation se fait directement auprès de la compagnie.
+          </p>
+          <div className="mt-4 grid gap-3 sm:grid-cols-2">
+            {operators.map((company) => (
+              <Card key={company.id}>
+                <p className="mb-3 font-display font-semibold">{company.name}</p>
+                <BookingLink company={company} />
+              </Card>
+            ))}
+          </div>
+        </section>
+      ) : null}
+
       <section className="mt-10">
         <h2 className="text-xl font-semibold">Calendrier habituel</h2>
         <div className="mt-4 grid gap-4 sm:grid-cols-2">
@@ -135,7 +179,7 @@ function LignePage() {
             return (
               <Card key={schedule.id}>
                 <p className="font-display font-semibold">
-                  Départ {schedule.departure_time.slice(0, 5)} ·{" "}
+                  Départ {schedule.departure_time.slice(0, 5)} ({zoneLabel(timeZone)}) ·{" "}
                   {formatDuration(schedule.duration_minutes)}
                 </p>
                 <p className="mt-1 text-sm text-muted-foreground">
@@ -158,7 +202,12 @@ function LignePage() {
       </section>
 
       <section className="mt-10">
-        <h2 className="text-xl font-semibold">Prochains départs connus</h2>
+        <h2 className="text-xl font-semibold">
+          Prochains départs connus{" "}
+          <span className="text-base font-normal text-muted-foreground">
+            · {zoneLabel(timeZone)}
+          </span>
+        </h2>
         <ul className="mt-4 divide-y divide-border rounded-2xl border border-border bg-card">
           {nextDepartures.map((departure) => {
             const company = companies.find((item) => item.id === departure.company_id);
@@ -167,7 +216,9 @@ function LignePage() {
                 key={departure.id}
                 className="flex flex-wrap items-center justify-between gap-2 px-4 py-3 text-sm"
               >
-                <span className="font-medium">{formatDateTime(departure.departure_at)}</span>
+                <span className="font-medium">
+                  {formatDateTime(departure.departure_at, timeZone)}
+                </span>
                 <span className="text-muted-foreground">
                   {company?.name ?? "—"}
                   {departure.duration_minutes

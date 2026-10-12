@@ -1,6 +1,7 @@
-# Pixel Perfect Pixels
+# Batogo — Ferries Europe ↔ Algérie
 
-Implement exactly the screenshot and nothing else
+Carte indépendante des traversées en ferry entre l'Europe et l'Algérie, dans les deux sens :
+ports, lignes, durées, compagnies et prochains départs, affichés en heure locale des ports.
 
 This project was built with [Lovable](https://lovable.dev).
 

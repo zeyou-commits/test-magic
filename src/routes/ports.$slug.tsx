@@ -2,7 +2,12 @@ import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { Card, PageHero, SiteLayout } from "@/components/layout/SiteLayout";
 import { companiesQuery, portsQuery, routesQuery } from "@/lib/ferry/queries";
-import { facilityLabels, formatDuration } from "@/lib/ferry/format";
+import {
+  facilityLabels,
+  formatDuration,
+  isFacilityFilled,
+  ratingOnlyFacilities,
+} from "@/lib/ferry/format";
 
 export const Route = createFileRoute("/ports/$slug")({
   loader: async ({ context, params }) => {
@@ -48,6 +53,9 @@ function PortPage() {
   const portRoutes = routes.filter(
     (route) => route.departure_port_id === port.id || route.arrival_port_id === port.id,
   );
+  const facilities = Object.entries(port.facilities ?? {}).filter(
+    ([key, value]) => !ratingOnlyFacilities.has(key) && isFacilityFilled(value),
+  );
   const operators = companies.filter((company) =>
     portRoutes.some((route) => route.company_ids.includes(company.id)),
   );
@@ -62,7 +70,10 @@ function PortPage() {
 
   return (
     <SiteLayout>
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
       <PageHero
         overline={`${port.country_name}${port.city ? ` · ${port.city}` : ""}`}
         title={`Ferry au port de ${port.name}`}
@@ -71,6 +82,15 @@ function PortPage() {
           `Lignes maritimes, durées de traversée et compagnies desservant le port de ${port.name}.`
         }
       />
+      <div className="flex justify-center">
+        <Link
+          to="/"
+          search={{ select: "port", id: port.id } as never}
+          className="inline-flex h-11 items-center rounded-xl bg-primary px-5 text-sm font-semibold text-primary-foreground hover:bg-primary/90"
+        >
+          Voir les prochains départs sur la carte
+        </Link>
+      </div>
       {port.status === "inactive" ? (
         <p className="mt-4 rounded-xl border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm font-semibold text-destructive">
           Ce port est temporairement fermé : les traversées ne sont pas assurées actuellement.
@@ -78,7 +98,9 @@ function PortPage() {
       ) : null}
 
       <section className="mt-10">
-        <h2 className="text-xl font-semibold">Lignes au départ ou à l'arrivée ({portRoutes.length})</h2>
+        <h2 className="text-xl font-semibold">
+          Lignes au départ ou à l'arrivée ({portRoutes.length})
+        </h2>
         <div className="mt-4 grid gap-4 sm:grid-cols-2">
           {portRoutes.map((route) => (
             <Card key={route.id}>
@@ -98,11 +120,11 @@ function PortPage() {
         </div>
       </section>
 
-      {port.facilities && Object.keys(port.facilities).length > 0 ? (
+      {facilities.length > 0 ? (
         <section className="mt-10">
           <h2 className="text-xl font-semibold">Services du port</h2>
           <dl className="mt-4 grid gap-3 sm:grid-cols-2">
-            {Object.entries(port.facilities).map(([key, value]) => (
+            {facilities.map(([key, value]) => (
               <div key={key} className="rounded-xl bg-secondary/60 px-4 py-3">
                 <dt className="text-sm font-semibold">{facilityLabels[key] ?? key}</dt>
                 <dd className="text-sm text-muted-foreground">{value}</dd>
@@ -117,10 +139,7 @@ function PortPage() {
           <h2 className="text-xl font-semibold">Compagnies présentes</h2>
           <ul className="mt-4 flex flex-wrap gap-2">
             {operators.map((company) => (
-              <li
-                key={company.id}
-                className="rounded-full border border-border px-3 py-1 text-sm"
-              >
+              <li key={company.id} className="rounded-full border border-border px-3 py-1 text-sm">
                 {company.name}
               </li>
             ))}

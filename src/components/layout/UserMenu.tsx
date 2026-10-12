@@ -22,7 +22,13 @@ function initials(name: string) {
     .join("");
 }
 
-export function UserMenu({ compact = false, iconOnly = false }: { compact?: boolean; iconOnly?: boolean }) {
+export function UserMenu({
+  compact = false,
+  iconOnly = false,
+}: {
+  compact?: boolean;
+  iconOnly?: boolean;
+}) {
   const { user, profile, isAdmin, signOut } = useAuth();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -30,8 +36,16 @@ export function UserMenu({ compact = false, iconOnly = false }: { compact?: bool
   if (!user) {
     if (iconOnly) {
       return (
-        <Button asChild variant="ghost" size="icon" className="size-8 rounded-full" title="Se connecter">
-          <Link to="/auth" aria-label="Se connecter"><LogIn className="size-4" /></Link>
+        <Button
+          asChild
+          variant="ghost"
+          size="icon"
+          className="size-9 rounded-full text-primary"
+          title="Se connecter"
+        >
+          <Link to="/auth" aria-label="Se connecter">
+            <LogIn className="size-4" />
+          </Link>
         </Button>
       );
     }
@@ -39,7 +53,7 @@ export function UserMenu({ compact = false, iconOnly = false }: { compact?: bool
       <Button
         asChild
         size="sm"
-        className="bg-accent font-semibold text-accent-foreground hover:bg-accent/90"
+        className="bg-cta font-semibold text-cta-foreground hover:bg-cta/90"
       >
         <Link to="/auth">Se connecter</Link>
       </Button>
@@ -63,10 +77,8 @@ export function UserMenu({ compact = false, iconOnly = false }: { compact?: bool
           aria-label="Mon compte"
           className="rounded-full ring-offset-2 ring-offset-card outline-none focus-visible:ring-2 focus-visible:ring-ring"
         >
-          <Avatar className={`${compact ? "size-6" : "size-9"} border border-border`}>
-            {profile?.avatar_url ? (
-              <AvatarImage src={profile.avatar_url} alt={name} />
-            ) : null}
+          <Avatar className={`${compact ? "size-8" : "size-9"} border border-border`}>
+            {profile?.avatar_url ? <AvatarImage src={profile.avatar_url} alt={name} /> : null}
             <AvatarFallback className="bg-primary text-xs font-semibold text-primary-foreground">
               {initials(name) || "?"}
             </AvatarFallback>

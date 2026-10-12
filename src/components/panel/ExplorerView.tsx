@@ -1,118 +1,105 @@
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { CalendarDays, Check, MapPinned, RotateCcw, Search, SlidersHorizontal, X } from "lucide-react";
+import {
+  ArrowLeftRight,
+  Backpack,
+  CalendarDays,
+  RotateCcw,
+  Search,
+  SlidersHorizontal,
+  X,
+} from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { companiesQuery, portsQuery, routesQuery, upcomingDeparturesQuery, vesselsQuery } from "@/lib/ferry/queries";
-import { emptyFilters, type Filters, type RouteLine, type Selection } from "@/lib/ferry/types";
-import { formatDuration } from "@/lib/ferry/format";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  companiesQuery,
+  portsQuery,
+  routesQuery,
+  upcomingDeparturesQuery,
+  vesselsQuery,
+} from "@/lib/ferry/queries";
+import {
+  emptyFilters,
+  type Departure,
+  type Filters,
+  type RouteLine,
+  type Selection,
+} from "@/lib/ferry/types";
+import { formatDateParts } from "@/lib/ferry/format";
+import {
+  hasActiveFilters,
+  normalizeText,
+  swapDirection,
+  withArrivalPorts,
+  withDeparturePorts,
+} from "@/lib/ferry/filtering";
+import { dateKeyInZone, portTimeZone } from "@/lib/ferry/time";
 import { EmptyNote, Section } from "./shared";
+import { PortMultiPicker } from "./PortFilters";
 import { schoolBreakOn, type SchoolZone } from "@/lib/ferry/schoolCalendar";
 
 const ANY = "__any__";
+const LIST_SIZE = 12;
 
 interface ExplorerViewProps {
   filters: Filters;
   onFiltersChange: (filters: Filters) => void;
-  visibleRoutes: RouteLine[];
+  matchingRoutes: RouteLine[];
+  matchingDepartures: Departure[];
   onSelect: (selection: Selection) => void;
-  selection: Selection | null;
   hidePrimarySearchOnMobile?: boolean;
 }
 
 export function ExplorerView({
   filters,
   onFiltersChange,
-  visibleRoutes,
+  matchingRoutes,
+  matchingDepartures,
   onSelect,
-  selection,
   hidePrimarySearchOnMobile = false,
 }: ExplorerViewProps) {
   const { data: ports = [] } = useQuery(portsQuery);
   const { data: companies = [] } = useQuery(companiesQuery);
   const { data: vessels = [] } = useQuery(vesselsQuery);
   const { data: routes = [] } = useQuery(routesQuery);
-  const { data: departures = [], isLoading: departuresLoading } = useQuery(upcomingDeparturesQuery());
+  const { isLoading: departuresLoading } = useQuery(upcomingDeparturesQuery());
 
-  const [filtersOpen, setFiltersOpen] = useState(false);
-  const activeCountries = filters.countryCodes;
-
-  const activePorts = useMemo(
-    () => ports.filter((port) => port.status === "active"),
-    [ports],
+  const [filtersOpen, setFiltersOpen] = useState(() =>
+    Boolean(filters.companyId || filters.vesselId || filters.date),
   );
 
-  const countries = useMemo(
-    () =>
-      [...new Map(
-        activePorts.map((port) => [port.country_code, port.country_name]),
-      )]
-        .map(([code, name]) => ({ code, name }))
-        .sort((a, b) => a.name.localeCompare(b.name, "fr")),
-    [activePorts],
+  const activePorts = useMemo(() => ports.filter((port) => port.status === "active"), [ports]);
+  const routeById = useMemo(() => new Map(routes.map((route) => [route.id, route])), [routes]);
+  const portById = useMemo(() => new Map(ports.map((port) => [port.id, port])), [ports]);
+  const companyById = useMemo(
+    () => new Map(companies.map((company) => [company.id, company])),
+    [companies],
   );
-
-  const selectedPorts = useMemo(
-    () => activePorts.filter((port) => filters.portIds.includes(port.id)),
-    [activePorts, filters.portIds],
+  const vesselById = useMemo(
+    () => new Map(vessels.map((vessel) => [vessel.id, vessel])),
+    [vessels],
   );
-
-  const visiblePorts = useMemo(() => {
-    if (!activeCountries.length) return activePorts;
-    return activePorts.filter((port) => activeCountries.includes(port.country_code));
-  }, [activeCountries, activePorts]);
-
-  const selectedLineCount = useMemo(() => {
-    if (!filters.portIds.length) return routes.length;
-
-    const selectedIds = new Set(filters.portIds);
-    return routes.filter(
-      (route) =>
-        selectedIds.has(route.departure_port_id) ||
-        selectedIds.has(route.arrival_port_id),
-    ).length;
-  }, [filters.portIds, routes]);
-
-  const selectedRouteIds = useMemo(() => {
-    if (!filters.portIds.length) return new Set(routes.map((route) => route.id));
-    const selectedIds = new Set(filters.portIds);
-    return new Set(
-      routes
-        .filter(
-          (route) =>
-            selectedIds.has(route.departure_port_id) ||
-            selectedIds.has(route.arrival_port_id),
-        )
-        .map((route) => route.id),
-    );
-  }, [filters.portIds, routes]);
 
   const upcoming = useMemo(() => {
-    const selected = departures
-      .filter((departure) => selectedRouteIds.has(departure.route_id))
-      .filter((departure) => !filters.companyId || departure.company_id === filters.companyId)
-      .filter((departure) => !filters.vesselId || departure.vessel_id === filters.vesselId)
-      .filter((departure) => !filters.date || departure.departure_at.startsWith(filters.date))
-      .filter((departure) => !filters.schoolZone || schoolBreakOn(departure.departure_at, filters.schoolZone))
-      .sort(
-        (a, b) =>
-          new Date(a.departure_at).getTime() - new Date(b.departure_at).getTime(),
-      );
-    return selected.slice(0, 12);
-  }, [departures, filters.companyId, filters.date, filters.schoolZone, filters.vesselId, selectedRouteIds]);
-
-  const routeById = useMemo(() => new Map(routes.map((route) => [route.id, route])), [routes]);
-  const portById = useMemo(() => new Map(activePorts.map((port) => [port.id, port])), [activePorts]);
-  const companyById = useMemo(() => new Map(companies.map((company) => [company.id, company])), [companies]);
-  const vesselById = useMemo(() => new Map(vessels.map((vessel) => [vessel.id, vessel])), [vessels]);
+    const now = Date.now();
+    return matchingDepartures.filter(
+      (departure) => new Date(departure.departure_at).getTime() >= now,
+    );
+  }, [matchingDepartures]);
 
   const matchingPorts = filters.search.trim()
     ? activePorts
         .filter((port) =>
-          `${port.name} ${port.city ?? ""} ${port.country_name}`
-            .toLowerCase()
-            .includes(filters.search.trim().toLowerCase()),
+          normalizeText(`${port.name} ${port.city ?? ""} ${port.country_name}`).includes(
+            normalizeText(filters.search),
+          ),
         )
         .slice(0, 6)
     : [];
@@ -121,44 +108,7 @@ export function ExplorerView({
     Number(filters.companyId !== null) +
     Number(filters.vesselId !== null) +
     Number(filters.date !== null);
-
-  const hasFilters =
-    filters.search.trim() !== "" ||
-    filters.portIds.length > 0 ||
-    filters.companyId !== null ||
-    filters.vesselId !== null ||
-    filters.date !== null ||
-    filters.schoolZone !== null ||
-    filters.countryCodes.length > 0;
-
-  const togglePort = (portId: string) => {
-    const portIds = filters.portIds.includes(portId)
-      ? filters.portIds.filter((id) => id !== portId)
-      : [...filters.portIds, portId];
-
-    onFiltersChange({
-      ...filters,
-      portIds,
-      departureCountry: null,
-      departurePortId: null,
-      arrivalPortId: null, arrivalPortIds: [],
-    });
-  };
-
-  const toggleCountry = (countryCode: string) => {
-    const isSelected = activeCountries.includes(countryCode);
-    const countryCodes = isSelected
-      ? activeCountries.filter((code) => code !== countryCode)
-      : [...activeCountries, countryCode];
-
-    onFiltersChange({
-      ...filters,
-      countryCodes,
-      departureCountry: null,
-      departurePortId: null,
-      arrivalPortId: null, arrivalPortIds: [],
-    });
-  };
+  const active = hasActiveFilters(filters);
 
   const reset = () => {
     onFiltersChange(emptyFilters);
@@ -166,302 +116,269 @@ export function ExplorerView({
   };
 
   return (
-    <div className="pb-2">
-      <div className="space-y-1">
-        <div className={hidePrimarySearchOnMobile ? "hidden md:block" : undefined}>
-          <Section title="Rechercher un port">
-            <div className="relative">
-              <Search className="pointer-events-none absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-[#718489]" />
-              <Input
-                value={filters.search}
-                onChange={(event) => onFiltersChange({ ...filters, search: event.target.value })}
-                placeholder="Rechercher Marseille, Alger, Oran…"
-                className="batogo-field batogo-control h-11 pl-9 pr-9 text-sm shadow-none"
-              />
-              {filters.search ? (
-                <button
-                  type="button"
-                  aria-label="Effacer la recherche"
-                  onClick={() => onFiltersChange({ ...filters, search: "" })}
-                  className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full p-1 text-[#6b7f84] hover:bg-[#f1ece2]"
-                >
-                  <X className="size-4" />
-                </button>
-              ) : null}
-            </div>
-            {matchingPorts.length > 0 ? (
-              <ul className="mt-2 overflow-hidden rounded-2xl border border-border/60 bg-card shadow-sm">
-                {matchingPorts.map((port) => (
-                  <li key={port.id} className="last:border-0">
-                    <button
-                      type="button"
-                      onClick={() => onSelect({ type: "port", id: port.id })}
-                      className="batogo-list-item flex w-full items-center justify-between gap-3 px-3 py-2.5 text-left"
-                    >
-                      <span className="min-w-0">
-                        <span className="block text-sm font-medium text-[#17383f]">{port.name}</span>
-                        <span className="block text-xs text-[#718489]">
-                          {port.city ? `${port.city} · ${port.country_name}` : port.country_name}
-                        </span>
-                      </span>
-                      <span className="shrink-0 text-xs font-semibold text-[#0e7490]">Voir la fiche</span>
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            ) : null}
-            {filters.search && matchingPorts.length === 0 ? (
-              <p className="mt-2 text-xs text-[#718489]">Aucun port trouvé.</p>
-            ) : null}
-          </Section>
-        </div>
-
-        <div className={hidePrimarySearchOnMobile ? "hidden md:block" : undefined}>
-          <Section
-            title="Ports de départ"
-            action={
-              hasFilters ? (
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  onClick={reset}
-                  className="h-8 text-xs text-[#547078] hover:bg-[#f1ece2]"
-                >
-                  <RotateCcw className="mr-1.5 size-3.5" />
-                  Réinitialiser
-                </Button>
-              ) : null
-            }
-          >
-            <div className="space-y-3">
-              <div className="flex items-center justify-between gap-3">
-                <div className="flex items-center gap-2">
-                  <MapPinned className="size-3.5 text-[#0e7490]" />
-                  <span className="text-xs font-semibold text-foreground/80">
-                    {filters.portIds.length
-                      ? `${selectedLineCount} lignes liées à votre sélection`
-                      : `${routes.length} lignes disponibles`}
-                  </span>
-                </div>
-                {selectedPorts.length ? (
-                  <span className="rounded-full bg-[#f7f3ea] px-2 py-1 text-[10px] font-semibold text-[#0e7490]">
-                    {selectedPorts.length} port{selectedPorts.length > 1 ? "s" : ""}
-                  </span>
-                ) : null}
-              </div>
-
-              <div className="rounded-2xl bg-muted/40 p-1.5">
-                <div className="px-2 py-1.5">
-                  <p className="text-xs font-semibold text-foreground">Pays de départ</p>
-                  <p className="text-[10px] text-muted-foreground">Choisissez un ou plusieurs pays et ports.</p>
-                </div>
-
-                <div className="max-h-[360px] overflow-y-auto pr-0.5">
-                  {countries.map((country) => {
-                    const ids = activePorts
-                      .filter((port) => port.country_code === country.code)
-                      .map((port) => port.id);
-                    const selectedCount = ids.filter((id) => filters.portIds.includes(id)).length;
-                    const countrySelected = selectedCount === ids.length && ids.length > 0;
-
-                    return (
-                      <div key={country.code} className="mb-1 rounded-xl bg-background/70 p-1">
-                        <button
-                          type="button"
-                          onClick={() => toggleCountry(country.code)}
-                          className="flex w-full items-center justify-between rounded-lg px-2.5 py-2 text-left text-xs font-semibold transition hover:bg-muted"
-                        >
-                          <span>{country.name}</span>
-                          <span className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
-                            {selectedCount ? `${selectedCount}/${ids.length}` : ""}
-                            <span
-                              className={
-                                countrySelected
-                                  ? "grid size-4 place-items-center rounded border bg-primary text-primary-foreground"
-                                  : "grid size-4 place-items-center rounded border"
-                              }
-                            >
-                              {countrySelected ? <Check className="size-3" /> : null}
-                            </span>
-                          </span>
-                        </button>
-
-                        <div className="grid grid-cols-2 gap-0.5 px-1 pb-1">
-                          {activePorts
-                            .filter((port) => port.country_code === country.code)
-                            .map((port) => {
-                              const selected = filters.portIds.includes(port.id);
-                              return (
-                                <button
-                                  key={port.id}
-                                  type="button"
-                                  onClick={() => togglePort(port.id)}
-                                  className={
-                                    selected
-                                      ? "flex min-h-8 items-center gap-1.5 rounded-md bg-primary/10 px-2 text-left text-[11px] font-semibold text-primary"
-                                      : "flex min-h-8 items-center gap-1.5 rounded-md px-2 text-left text-[11px] text-muted-foreground hover:bg-background"
-                                  }
-                                >
-                                  <span
-                                    className={
-                                      selected
-                                        ? "grid size-3.5 place-items-center rounded-full bg-primary text-primary-foreground"
-                                        : "size-3.5 rounded-full border"
-                                    }
-                                  >
-                                    {selected ? <Check className="size-2.5" /> : null}
-                                  </span>
-                                  <span className="truncate">
-                                    {port.name}
-                                    {port.city && port.city !== port.name ? ` · ${port.city}` : ""}
-                                  </span>
-                                </button>
-                              );
-                            })}
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            </div>
-
-            <div className="mt-3 flex items-center gap-1.5 overflow-x-auto pb-0.5" aria-label="Vacances scolaires">
-              <span className="shrink-0 text-[11px] font-semibold text-muted-foreground">🎒 Vacances</span>
-              {(["A", "B", "C"] as SchoolZone[]).map((zone) => {
-                const active = filters.schoolZone === zone;
-                return (
-                  <button
-                    key={zone}
-                    type="button"
-                    aria-pressed={active}
-                    onClick={() => onFiltersChange({ ...filters, schoolZone: active ? null : zone })}
-                    className={`h-8 shrink-0 rounded-full border px-3 text-[11px] font-semibold transition ${active ? "border-primary bg-primary text-primary-foreground" : "border-border bg-background text-foreground/75 hover:bg-muted"}`}
-                  >
-                    Zone {zone}
-                  </button>
-                );
-              })}
-            </div>
-
-            <div className="mt-3">
+    // Sur mobile, les prochains départs passent avant les filtres secondaires.
+    <div className="flex flex-col pb-2">
+      <div className={`order-1 ${hidePrimarySearchOnMobile ? "hidden md:block" : ""}`}>
+        <Section
+          title="Votre trajet"
+          action={
+            active ? (
               <Button
                 type="button"
-                variant={filtersOpen ? "secondary" : "outline"}
+                variant="ghost"
                 size="sm"
-                className="h-9 rounded-full bg-secondary px-3.5 text-[11px] font-semibold text-foreground/75 shadow-none hover:bg-muted"
-                onClick={() => setFiltersOpen((open) => !open)}
+                onClick={reset}
+                className="h-8 text-xs text-muted-foreground hover:bg-secondary"
               >
-                <SlidersHorizontal className="mr-1.5 size-3.5" />
-                Affiner
-                {advancedFilterCount > 0 ? (
-                  <span className="ml-1.5 rounded-full bg-[#e87961] px-1.5 py-0.5 text-[10px] font-bold text-white">
-                    {advancedFilterCount}
-                  </span>
-                ) : null}
+                <RotateCcw className="mr-1.5 size-3.5" />
+                Tout effacer
               </Button>
-            </div>
+            ) : null
+          }
+        >
+          <div className="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-1.5">
+            <PortMultiPicker
+              direction="departure"
+              ports={ports}
+              routes={routes}
+              value={filters.departurePortIds}
+              otherSide={filters.arrivalPortIds}
+              onChange={(ids) => onFiltersChange(withDeparturePorts(filters, ids, ports, routes))}
+            />
+            <button
+              type="button"
+              aria-label="Inverser départ et arrivée"
+              title="Inverser le sens"
+              disabled={!filters.departurePortIds.length && !filters.arrivalPortIds.length}
+              onClick={() => onFiltersChange(swapDirection(filters))}
+              className="grid size-9 place-items-center rounded-full border border-border bg-background text-primary shadow-sm transition hover:bg-secondary disabled:opacity-40"
+            >
+              <ArrowLeftRight className="size-4" />
+            </button>
+            <PortMultiPicker
+              direction="arrival"
+              ports={ports}
+              routes={routes}
+              value={filters.arrivalPortIds}
+              otherSide={filters.departurePortIds}
+              onChange={(ids) => onFiltersChange(withArrivalPorts(filters, ids, ports, routes))}
+            />
+          </div>
 
-            {filtersOpen ? (
-              <div className="mt-3 grid gap-2 rounded-2xl bg-muted/60 p-3 sm:grid-cols-2">
-                <FilterSelect
-                  label="Compagnie"
-                  value={filters.companyId}
-                  onChange={(value) => onFiltersChange({ ...filters, companyId: value })}
-                  options={companies.map((company) => ({ value: company.id, label: company.name }))}
-                />
-                <FilterSelect
-                  label="Navire"
-                  value={filters.vesselId}
-                  onChange={(value) => onFiltersChange({ ...filters, vesselId: value })}
-                  options={vessels.map((vessel) => ({ value: vessel.id, label: vessel.name }))}
-                />
-                <label className="grid gap-1 sm:col-span-2">
-                  <span className="text-xs font-medium text-[#547078]">Date de départ</span>
-                  <Input
-                    type="date"
-                    value={filters.date ?? ""}
-                    onChange={(event) => onFiltersChange({ ...filters, date: event.target.value || null })}
-                    className="batogo-control bg-muted/50"
-                  />
-                </label>
-              </div>
+          <div className="relative">
+            <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              value={filters.search}
+              onChange={(event) => onFiltersChange({ ...filters, search: event.target.value })}
+              placeholder="Rechercher un port : Marseille, Oran…"
+              aria-label="Rechercher un port"
+              className="batogo-field batogo-control h-11 pl-9 pr-9 text-sm shadow-none"
+            />
+            {filters.search ? (
+              <button
+                type="button"
+                aria-label="Effacer la recherche"
+                onClick={() => onFiltersChange({ ...filters, search: "" })}
+                className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full p-1 text-muted-foreground hover:bg-secondary"
+              >
+                <X className="size-4" />
+              </button>
             ) : null}
-          </Section>
+          </div>
+          {matchingPorts.length > 0 ? (
+            <ul className="-mt-2 overflow-hidden rounded-2xl border border-border/60 bg-card shadow-sm">
+              {matchingPorts.map((port) => (
+                <li key={port.id}>
+                  <button
+                    type="button"
+                    onClick={() => onSelect({ type: "port", id: port.id })}
+                    className="batogo-list-item flex w-full items-center justify-between gap-3 px-3 py-2.5 text-left"
+                  >
+                    <span className="min-w-0">
+                      <span className="block text-sm font-medium text-foreground">{port.name}</span>
+                      <span className="block text-xs text-muted-foreground">
+                        {port.country_name}
+                      </span>
+                    </span>
+                    <span className="shrink-0 text-xs font-semibold text-primary">
+                      Voir la fiche
+                    </span>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          ) : null}
+          {filters.search && matchingPorts.length === 0 ? (
+            <p className="-mt-2 text-xs text-muted-foreground">Aucun port trouvé.</p>
+          ) : null}
+        </Section>
+      </div>
+
+      <Section title="Affiner" className="order-3 md:order-2">
+        <div
+          className="flex flex-wrap items-center gap-1.5"
+          aria-label="Vacances scolaires françaises"
+        >
+          <span className="mr-1 inline-flex items-center gap-1.5 text-xs font-semibold text-muted-foreground">
+            <Backpack className="size-4" aria-hidden /> Vacances (France)
+          </span>
+          {(["A", "B", "C"] as SchoolZone[]).map((zone) => {
+            const isActive = filters.schoolZone === zone;
+            return (
+              <button
+                key={zone}
+                type="button"
+                aria-pressed={isActive}
+                onClick={() => onFiltersChange({ ...filters, schoolZone: isActive ? null : zone })}
+                className={`h-9 shrink-0 rounded-full border px-3 text-xs font-semibold transition ${isActive ? "border-primary bg-primary text-primary-foreground" : "border-border bg-background text-foreground hover:bg-muted"}`}
+              >
+                Zone {zone}
+              </button>
+            );
+          })}
         </div>
 
-        {!selection && (
-          <Section
-            title="Prochains départs"
-            action={
-              upcoming.length ? (
-                <span className="text-[10px] font-medium text-[#718489]">
-                  {upcoming.length} départ{upcoming.length > 1 ? "s" : ""}
-                </span>
-              ) : null
-            }
+        <div>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            aria-expanded={filtersOpen}
+            className="h-9 rounded-full px-3.5 text-xs font-semibold text-foreground shadow-none hover:bg-muted"
+            onClick={() => setFiltersOpen((open) => !open)}
           >
-            {departuresLoading ? (
-              <div className="flex items-center gap-2 py-2 text-xs text-[#718489]">
-                <CalendarDays className="size-3.5 animate-pulse text-[#0e7490]" />
-                Chargement du calendrier…
-              </div>
-            ) : upcoming.length === 0 ? (
-              <EmptyNote>Aucun départ à venir pour cette sélection.</EmptyNote>
-            ) : (
-              <div className="space-y-1.5">
-                {upcoming.map((departure) => {
-                  const route = routeById.get(departure.route_id);
-                  const departurePort = route ? portById.get(route.departure_port_id) : undefined;
-                  const arrivalPort = route ? portById.get(route.arrival_port_id) : undefined;
-                  const company = companyById.get(departure.company_id);
-                  const vessel = departure.vessel_id ? vesselById.get(departure.vessel_id) : undefined;
-                  const date = new Date(departure.departure_at);
+            <SlidersHorizontal className="mr-1.5 size-3.5" />
+            Date, compagnie, navire
+            {advancedFilterCount > 0 ? (
+              <span className="ml-1.5 rounded-full bg-primary px-1.5 py-0.5 text-[11px] font-bold text-primary-foreground">
+                {advancedFilterCount}
+              </span>
+            ) : null}
+          </Button>
+        </div>
 
-                  return (
-                    <button
-                      key={departure.id}
-                      type="button"
-                      onClick={() => onSelect({ type: "departure", id: departure.id })}
-                      className="batogo-departure-card flex w-full items-center gap-3 px-3 py-2.5 text-left"
-                    >
-                      <div className="min-w-[46px] rounded-lg bg-[#eaf5f5] px-1.5 py-1 text-center">
-                        <div className="text-[9px] font-semibold uppercase text-[#0e7490]">
-                          {date.toLocaleDateString("fr-FR", { weekday: "short" }).replace(".", "")}
-                        </div>
-                        <div className="text-sm font-bold leading-none text-[#17383f]">
-                          {date.toLocaleDateString("fr-FR", { day: "2-digit", month: "2-digit" })}
-                        </div>
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <div className="truncate text-xs font-semibold text-[#17383f]">
-                          {departurePort?.name ?? "—"} → {arrivalPort?.name ?? "—"}
-                        </div>
-                        <div className="truncate text-[10px] text-[#718489]">
-                          {company?.name ?? "Compagnie"}{vessel?.name ? ` · ${vessel.name}` : ""}
-                        </div>
-                        {(() => {
-                          const zone = filters.schoolZone;
-                          const found = zone ? schoolBreakOn(departure.departure_at, zone) : null;
-                          return found ? (
-                            <span className="mt-0.5 inline-block rounded-full bg-primary/10 px-1.5 py-0.5 text-[9px] font-semibold text-primary">
-                              🎒 {found.name} · Zone {zone}
-                            </span>
-                          ) : null;
-                        })()}
-                      </div>
-                      <div className="shrink-0 text-sm font-bold text-[#0e7490]">
-                        {date.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })}
-                      </div>
-                    </button>
-                  );
-                })}
-              </div>
-            )}
-          </Section>
+        {filtersOpen ? (
+          <div className="grid gap-2 rounded-2xl bg-muted/60 p-3 sm:grid-cols-2">
+            <label className="grid gap-1 sm:col-span-2">
+              <span className="text-xs font-semibold text-foreground/80">Date de départ</span>
+              <Input
+                type="date"
+                value={filters.date ?? ""}
+                onChange={(event) =>
+                  onFiltersChange({ ...filters, date: event.target.value || null })
+                }
+                className="batogo-control"
+              />
+            </label>
+            <FilterSelect
+              label="Compagnie"
+              value={filters.companyId}
+              onChange={(value) => onFiltersChange({ ...filters, companyId: value })}
+              options={companies.map((company) => ({ value: company.id, label: company.name }))}
+            />
+            <FilterSelect
+              label="Navire"
+              value={filters.vesselId}
+              onChange={(value) => onFiltersChange({ ...filters, vesselId: value })}
+              options={vessels.map((vessel) => ({ value: vessel.id, label: vessel.name }))}
+            />
+          </div>
+        ) : null}
+      </Section>
+
+      <Section
+        className="order-2 md:order-3"
+        title="Prochains départs"
+        action={
+          upcoming.length ? (
+            <span className="text-xs font-medium text-muted-foreground">
+              {matchingRoutes.length} ligne{matchingRoutes.length > 1 ? "s" : ""} ·{" "}
+              {upcoming.length} départ{upcoming.length > 1 ? "s" : ""}
+            </span>
+          ) : null
+        }
+      >
+        {departuresLoading ? (
+          <div className="space-y-1.5" aria-busy="true" aria-label="Chargement des départs">
+            {[0, 1, 2].map((item) => (
+              <div key={item} className="h-14 animate-pulse rounded-xl bg-muted" />
+            ))}
+          </div>
+        ) : upcoming.length === 0 ? (
+          <div className="space-y-3">
+            <EmptyNote>Aucun départ connu à venir pour cette recherche.</EmptyNote>
+            {active ? (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={reset}
+                className="rounded-full"
+              >
+                <RotateCcw className="mr-1.5 size-3.5" /> Élargir la recherche
+              </Button>
+            ) : null}
+          </div>
+        ) : (
+          <div className="space-y-1.5">
+            <p className="text-xs text-muted-foreground">Heures locales du port de départ.</p>
+            {upcoming.slice(0, LIST_SIZE).map((departure) => {
+              const route = routeById.get(departure.route_id);
+              const departurePort = route ? portById.get(route.departure_port_id) : undefined;
+              const arrivalPort = route ? portById.get(route.arrival_port_id) : undefined;
+              const company = companyById.get(departure.company_id);
+              const vessel = departure.vessel_id ? vesselById.get(departure.vessel_id) : undefined;
+              const timeZone = portTimeZone(departurePort);
+              const parts = formatDateParts(departure.departure_at, timeZone);
+              const zone = filters.schoolZone;
+              const holiday = zone
+                ? schoolBreakOn(dateKeyInZone(departure.departure_at, timeZone), zone)
+                : null;
+
+              return (
+                <button
+                  key={departure.id}
+                  type="button"
+                  onClick={() => onSelect({ type: "departure", id: departure.id })}
+                  className="batogo-departure-card flex w-full items-center gap-3 px-3 py-2.5 text-left"
+                >
+                  <div className="min-w-[52px] rounded-lg bg-primary/10 px-1.5 py-1 text-center">
+                    <div className="text-[11px] font-semibold uppercase text-primary">
+                      {parts.weekday}
+                    </div>
+                    <div className="text-sm font-bold leading-none text-foreground">
+                      {parts.dayMonth}
+                    </div>
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="truncate text-sm font-semibold text-foreground">
+                      {departurePort?.name ?? "—"} → {arrivalPort?.name ?? "—"}
+                    </div>
+                    <div className="truncate text-xs text-muted-foreground">
+                      {company?.name ?? "Compagnie"}
+                      {vessel?.name ? ` · ${vessel.name}` : ""}
+                    </div>
+                    {holiday ? (
+                      <span className="mt-0.5 inline-flex items-center gap-1 rounded-full bg-primary/10 px-1.5 py-0.5 text-[11px] font-semibold text-primary">
+                        <CalendarDays className="size-3" aria-hidden /> {holiday.name} · zone {zone}
+                      </span>
+                    ) : null}
+                  </div>
+                  <div className="shrink-0 text-base font-bold tabular-nums text-primary">
+                    {parts.time}
+                  </div>
+                </button>
+              );
+            })}
+            {upcoming.length > LIST_SIZE ? (
+              <p className="pt-1 text-center text-xs text-muted-foreground">
+                {upcoming.length - LIST_SIZE} autres départs : précisez le départ, l’arrivée ou la
+                date.
+              </p>
+            ) : null}
+          </div>
         )}
-      </div>
+      </Section>
     </div>
   );
 }
@@ -471,7 +388,7 @@ function FilterSelect({
   value,
   onChange,
   options,
-  placeholder = "Tous",
+  placeholder = "Toutes",
 }: {
   label: string;
   value: string | null;
@@ -483,7 +400,7 @@ function FilterSelect({
     <label className="grid gap-1">
       <span className="text-xs font-semibold text-foreground/80">{label}</span>
       <Select value={value ?? ANY} onValueChange={(next) => onChange(next === ANY ? null : next)}>
-        <SelectTrigger className="batogo-control">
+        <SelectTrigger className="batogo-control" aria-label={label}>
           <SelectValue placeholder={placeholder} />
         </SelectTrigger>
         <SelectContent>

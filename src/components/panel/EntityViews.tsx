@@ -8,7 +8,8 @@ import {
 } from "@/lib/ferry/queries";
 import { formatDateTime, formatDuration } from "@/lib/ferry/format";
 import type { Selection } from "@/lib/ferry/types";
-import { DemoBadge, EmptyNote, PanelHeader, ReliabilityNote, Section } from "./shared";
+import { BookingLink, DemoBadge, EmptyNote, PanelHeader, ReliabilityNote, Section } from "./shared";
+import { portTimeZone, zoneLabel } from "@/lib/ferry/time";
 import { ReportButton } from "./ReportButton";
 
 export function CompanyView({
@@ -36,19 +37,10 @@ export function CompanyView({
         overline="Compagnie"
         title={company.name}
         subtitle={company.is_demo ? <DemoBadge /> : undefined}
-        actions={
-          company.website_url ? (
-            <a
-              href={company.website_url}
-              target="_blank"
-              rel="noreferrer"
-              className="rounded-md border border-input px-3 py-1.5 text-sm hover:bg-secondary"
-            >
-              Site officiel
-            </a>
-          ) : undefined
-        }
       />
+      <div className="px-4 pt-4 md:px-6">
+        <BookingLink company={company} />
+      </div>
       <div>
         {company.description ? (
           <Section title="Présentation">
@@ -168,7 +160,10 @@ export function VesselView({
                       className="w-full rounded-md px-2 py-2 text-left hover:bg-secondary"
                     >
                       <p className="text-sm font-medium">
-                        {formatDateTime(departure.departure_at)}
+                        {formatDateTime(
+                          departure.departure_at,
+                          portTimeZone(ports.find((port) => port.id === route?.departure_port_id)),
+                        )}
                       </p>
                       <p className="text-xs text-muted-foreground">
                         {route
@@ -206,27 +201,42 @@ export function DepartureView({
   const company = companies.find((item) => item.id === departure.company_id);
   const vessel = vessels.find((item) => item.id === departure.vessel_id);
   const portName = (id: string) => ports.find((port) => port.id === id)?.name ?? "—";
+  const fromZone = portTimeZone(ports.find((port) => port.id === route?.departure_port_id));
+  const toZone = portTimeZone(ports.find((port) => port.id === route?.arrival_port_id));
 
   return (
     <div>
       <PanelHeader
         overline="Départ"
-        title={formatDateTime(departure.departure_at)}
-        subtitle={
+        title={
           route
             ? `${portName(route.departure_port_id)} → ${portName(route.arrival_port_id)}`
-            : undefined
+            : "Traversée"
         }
+        subtitle={`${formatDateTime(departure.departure_at, fromZone)} (${zoneLabel(fromZone)})`}
         actions={<ReportButton targetType="departure" targetId={departure.id} />}
       />
+      {departure.status !== "cancelled" ? (
+        <div className="px-4 pt-4 md:px-6">
+          <BookingLink company={company} />
+        </div>
+      ) : null}
       <div>
         <Section title="Détails">
           <dl className="grid gap-2 text-sm">
-            <Row label="Durée" value={formatDuration(departure.duration_minutes)} />
+            <Row
+              label="Départ"
+              value={`${formatDateTime(departure.departure_at, fromZone)} · ${zoneLabel(fromZone)}`}
+            />
             <Row
               label="Arrivée prévue"
-              value={departure.arrival_at ? formatDateTime(departure.arrival_at) : "—"}
+              value={
+                departure.arrival_at
+                  ? `${formatDateTime(departure.arrival_at, toZone)} · ${zoneLabel(toZone)}`
+                  : "—"
+              }
             />
+            <Row label="Durée" value={formatDuration(departure.duration_minutes)} />
             <Row
               label="État"
               value={
@@ -255,7 +265,7 @@ export function DepartureView({
                 onClick={() => onSelect({ type: "company", id: company.id })}
                 className="rounded-md px-2 py-2 text-left text-sm hover:bg-secondary"
               >
-                {company.name}
+                Compagnie · {company.name}
               </button>
             ) : null}
             {vessel ? (
@@ -264,7 +274,7 @@ export function DepartureView({
                 onClick={() => onSelect({ type: "vessel", id: vessel.id })}
                 className="rounded-md px-2 py-2 text-left text-sm hover:bg-secondary"
               >
-                {vessel.name}
+                Navire · {vessel.name}
               </button>
             ) : null}
             {route ? (
@@ -290,9 +300,9 @@ export function DepartureView({
 
 function Row({ label, value }: { label: string; value: string }) {
   return (
-    <div className="flex items-center justify-between gap-3">
-      <dt className="text-muted-foreground">{label}</dt>
-      <dd className="font-medium">{value}</dd>
+    <div className="flex items-start justify-between gap-3">
+      <dt className="shrink-0 text-muted-foreground">{label}</dt>
+      <dd className="text-right font-medium">{value}</dd>
     </div>
   );
 }

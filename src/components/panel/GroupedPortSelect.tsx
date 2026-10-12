@@ -1,5 +1,14 @@
 import { useMemo } from "react";
-import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectLabel,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { groupPortsByCountry } from "@/lib/ferry/filtering";
 import type { Port } from "@/lib/ferry/types";
 
 interface Props {
@@ -7,34 +16,34 @@ interface Props {
   value: string;
   onChange: (value: string) => void;
   ports: Port[];
+  placeholder?: string;
 }
 
-export function GroupedPortSelect({ label, value, onChange, ports }: Props) {
-  const groups = useMemo(() => {
-    const map = new Map<string, Port[]>();
-    ports.forEach((port) => {
-      const list = map.get(port.country_name) ?? [];
-      list.push(port);
-      map.set(port.country_name, list);
-    });
-    return [...map.entries()]
-      .sort(([a], [b]) => a.localeCompare(b, "fr"))
-      .map(([country, list]) => [country, list.sort((a, b) => a.name.localeCompare(b.name, "fr"))] as const);
-  }, [ports]);
+export function GroupedPortSelect({
+  label,
+  value,
+  onChange,
+  ports,
+  placeholder = "Choisir un port",
+}: Props) {
+  const groups = useMemo(() => groupPortsByCountry(ports), [ports]);
 
   return (
-    <label className="grid gap-1 text-[11px] font-semibold text-muted-foreground">
+    <label className="grid min-w-0 gap-1 text-xs font-semibold text-muted-foreground">
       {label}
-      <Select {...(value ? { value } : {})} onValueChange={onChange}>
-        <SelectTrigger className="h-10 bg-background text-sm text-foreground">
-          <SelectValue placeholder="Choisir un port" />
+      {/* La clé force la remise à zéro visuelle quand la valeur est effacée. */}
+      <Select key={value ? "set" : "empty"} {...(value ? { value } : {})} onValueChange={onChange}>
+        <SelectTrigger className="batogo-control h-11 text-sm text-foreground" aria-label={label}>
+          <SelectValue placeholder={placeholder} />
         </SelectTrigger>
         <SelectContent>
-          {groups.map(([country, list]) => (
-            <SelectGroup key={country}>
-              <SelectLabel>{country}</SelectLabel>
-              {list.map((port) => (
-                <SelectItem key={port.id} value={port.id}>{port.name}</SelectItem>
+          {groups.map((group) => (
+            <SelectGroup key={group.code}>
+              <SelectLabel>{group.name}</SelectLabel>
+              {group.ports.map((port) => (
+                <SelectItem key={port.id} value={port.id}>
+                  {port.name}
+                </SelectItem>
               ))}
             </SelectGroup>
           ))}

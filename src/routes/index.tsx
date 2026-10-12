@@ -4,10 +4,8 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 import { lazy, Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { ClientOnly, createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { SidePanel } from "@/components/panel/SidePanel";
+import { SidePanel, type PanelTab } from "@/components/panel/SidePanel";
 import { UserMenu } from "@/components/layout/UserMenu";
-import { BrandMark } from "@/components/layout/BrandMark";
-import { useAuth } from "@/hooks/useAuth";
 import {
   companiesQuery,
   portsQuery,
@@ -15,14 +13,31 @@ import {
   upcomingDeparturesQuery,
   vesselsQuery,
 } from "@/lib/ferry/queries";
-import { formatDateTime } from "@/lib/ferry/format";
-import { emptyFilters, type Departure, type Filters, type Port, type RouteLine, type Selection } from "@/lib/ferry/types";
+import { capitalizeFirst, formatDateParts } from "@/lib/ferry/format";
+import {
+  emptyFilters,
+  type Departure,
+  type Filters,
+  type Port,
+  type RouteLine,
+  type Selection,
+} from "@/lib/ferry/types";
 import type { PortMeta } from "@/components/map/FerryMap";
 import { Button } from "@/components/ui/button";
 import { MobileMapControls } from "@/components/map/MobileMapControls";
-import { schoolBreakOn } from "@/lib/ferry/schoolCalendar";
+import { MapStatusBar } from "@/components/map/MapStatusBar";
+import { MapLegend } from "@/components/map/MapLegend";
 import { filtersFromUrl, mapStateToSearch, selectionFromUrl } from "@/lib/ferry/urlState";
-import { navLinks } from "@/components/layout/SiteLayout";
+import {
+  departureDateKey,
+  describeActiveFilters,
+  filterDepartures,
+  filterRoutes,
+  routeTimeZones,
+  summarizePorts,
+} from "@/lib/ferry/filtering";
+import { dateKeyInZone, portTimeZone } from "@/lib/ferry/time";
+import { BrandLink, navLinks } from "@/components/layout/SiteLayout";
 import { MobileTabBar } from "@/components/layout/MobileTabBar";
 
 const FerryMap = lazy(() => import("@/components/map/FerryMap"));
@@ -30,10 +45,18 @@ const FerryMap = lazy(() => import("@/components/map/FerryMap"));
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Batogo — Carte des ferries vers l'Algérie" },
-      { name: "description", content: "Explorez sur une carte interactive les ports, lignes maritimes, durées de traversée et prochains départs vers l'Algérie." },
-      { property: "og:title", content: "Batogo — Carte des ferries vers l'Algérie" },
-      { property: "og:description", content: "Explorez les lignes maritimes et les prochains départs vers l'Algérie." },
+      { title: "Batogo — Carte des ferries Europe ↔ Algérie" },
+      {
+        name: "description",
+        content:
+          "Toutes les traversées en ferry entre l'Europe et l'Algérie, dans les deux sens : ports, lignes, durées, compagnies et prochains départs en heure locale.",
+      },
+      { property: "og:title", content: "Batogo — Carte des ferries Europe ↔ Algérie" },
+      {
+        property: "og:description",
+        content:
+          "Les lignes maritimes et les prochains départs entre l'Europe et l'Algérie, dans les deux sens.",
+      },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
     ],
@@ -41,27 +64,49 @@ export const Route = createFileRoute("/")({
   component: Index,
 });
 
+/** Hauteurs du tiroir mobile : replié, intermédiaire, plein écran (hors barre d'onglets). */
+const TAB_BAR_HEIGHT = 56;
+const COLLAPSED_HEIGHT = 96;
+const MIDDLE_RATIO = 0.42;
+
 function Index() {
-  const [selection, setSelection] = useState<Selection | null>(() => typeof window === "undefined" ? null : selectionFromUrl(window.location.search));
-  const [filters, setFilters] = useState<Filters>(() => typeof window === "undefined" ? emptyFilters : filtersFromUrl(window.location.search));
-  const [panelLevel, setPanelLevel] = useState<0 | 1 | 2>(1);
+  const [selection, setSelection] = useState<Selection | null>(() =>
+    typeof window === "undefined" ? null : selectionFromUrl(window.location.search),
+  );
+  const [filters, setFilters] = useState<Filters>(() =>
+    typeof window === "undefined" ? emptyFilters : filtersFromUrl(window.location.search),
+  );
+  const [panelTab, setPanelTab] = useState<PanelTab>(() =>
+    typeof window !== "undefined" && new URLSearchParams(window.location.search).get("plan") === "1"
+      ? "plan"
+      : "explore",
+  );
+  const [panelLevel, setPanelLevel] = useState<0 | 1 | 2>(() =>
+    typeof window !== "undefined" &&
+    new URLSearchParams(window.location.search).get("plan") === "1" &&
+    window.innerWidth < 768
+      ? 2
+      : 1,
+  );
   const [desktopPanelOpen, setDesktopPanelOpen] = useState(true);
   const dragStartY = useRef<number | null>(null);
-  const dragStartLevel = useRef<0 | 1 | 2>(1);
   const dragStartHeight = useRef(0);
   const dragMoved = useRef(false);
   const lastMove = useRef({ y: 0, t: 0, v: 0 });
   const asideRef = useRef<HTMLElement | null>(null);
   const [dragHeight, setDragHeightState] = useState<number | null>(null);
   const dragHeightRef = useRef<number | null>(null);
-  const setDragHeight = (h: number | null) => { dragHeightRef.current = h; setDragHeightState(h); };
-  const { isAdmin } = useAuth();
+  const setDragHeight = (h: number | null) => {
+    dragHeightRef.current = h;
+    setDragHeightState(h);
+  };
+  const [viewportHeight, setViewportHeight] = useState(800);
 
   useEffect(() => {
-    const openPlanner = () => setPanelLevel(2);
-    if (new URLSearchParams(window.location.search).get("plan") === "1" && window.innerWidth < 768) setPanelLevel(2);
-    window.addEventListener("batogo:planner-open", openPlanner);
-    return () => window.removeEventListener("batogo:planner-open", openPlanner);
+    const update = () => setViewportHeight(window.innerHeight);
+    update();
+    window.addEventListener("resize", update);
+    return () => window.removeEventListener("resize", update);
   }, []);
 
   const portsResult = useQuery(portsQuery);
@@ -69,71 +114,57 @@ function Index() {
   const departuresResult = useQuery(upcomingDeparturesQuery());
   const companiesResult = useQuery(companiesQuery);
   const vesselsResult = useQuery(vesselsQuery);
-  
+
   const { data: ports = [] } = portsResult;
   const { data: routes = [] } = routesResult;
   const { data: departures = [] } = departuresResult;
   const { data: companies = [] } = companiesResult;
   const { data: vessels = [] } = vesselsResult;
-  
-  const isLoadingData = [portsResult, routesResult, departuresResult, companiesResult, vesselsResult].some((res) => res.isPending);
 
+  const allResults = [portsResult, routesResult, departuresResult, companiesResult, vesselsResult];
+  const isLoadingData = allResults.some((res) => res.isPending);
+  const hasError = allResults.some((res) => res.isError);
+
+  // L'URL reflète toujours la vue : un lien partagé rouvre exactement la même carte.
   useEffect(() => {
     if (typeof window === "undefined") return;
-    const nextSearch = mapStateToSearch(filters, selection);
+    const nextSearch = mapStateToSearch(
+      filters,
+      selection,
+      panelTab === "plan" ? { plan: "1" } : {},
+    );
     const nextUrl = `${window.location.pathname}${nextSearch}${window.location.hash}`;
     if (`${window.location.pathname}${window.location.search}${window.location.hash}` !== nextUrl) {
       window.history.replaceState(window.history.state, "", nextUrl);
     }
-  }, [filters, selection]);
+  }, [filters, selection, panelTab]);
 
-  const visibleRoutes = useMemo(() => {
-    const term = filters.search.trim().toLowerCase();
-    const portMatches = (id: string) => {
-      const port = ports.find((item) => item.id === id);
-      return port ? `${port.name} ${port.city ?? ""} ${port.country_name}`.toLowerCase().includes(term) : false;
-    };
-    const portOpen = (id: string) => ports.find((item) => item.id === id)?.status === "active";
-    const selected = new Set(filters.portIds);
-    const selectedCountries = new Set(filters.countryCodes);
-    
-    return routes.filter((route) => {
-      if (!portOpen(route.departure_port_id) || !portOpen(route.arrival_port_id)) return false;
-      if (selectedCountries.size > 0 && !selectedCountries.has(ports.find((item) => item.id === route.departure_port_id)?.country_code ?? "") && !selectedCountries.has(ports.find((item) => item.id === route.arrival_port_id)?.country_code ?? "")) return false;
-      if (selected.size > 0 && !filters.departurePortId && !filters.arrivalPortId && !selected.has(route.departure_port_id) && !selected.has(route.arrival_port_id)) return false;
-      if (filters.departureCountry) {
-        const from = ports.find((item) => item.id === route.departure_port_id);
-        if (from?.country_code !== filters.departureCountry) return false;
-      }
-      if (filters.departurePortId && route.departure_port_id !== filters.departurePortId) return false;
-      if (filters.arrivalPortId && route.arrival_port_id !== filters.arrivalPortId) return false;
-      if (filters.companyId && !route.company_ids.includes(filters.companyId)) return false;
-      if (filters.vesselId && !departures.some(d => d.route_id === route.id && d.vessel_id === filters.vesselId)) return false;
-      if (filters.date && !departures.some(d => d.route_id === route.id && d.departure_at.slice(0, 10) === filters.date)) return false;
-      if (filters.schoolZone && !departures.some(d => d.route_id === route.id && d.status !== "cancelled" && schoolBreakOn(d.departure_at, filters.schoolZone!))) return false;
-      if (term && !portMatches(route.departure_port_id) && !portMatches(route.arrival_port_id)) return false;
-      return true;
-    });
-  }, [routes, ports, departures, filters]);
+  const timeZones = useMemo(() => routeTimeZones(routes, ports), [routes, ports]);
 
-  const mapRoutes = useMemo(() => {
-    if (!filters.date) return visibleRoutes;
-    const dateFiltered = new Set(
-      departures
-        .filter((departure) => departure.status !== "cancelled" && departure.departure_at.slice(0, 10) === filters.date)
-        .map((departure) => departure.route_id),
-    );
-    // La date sert de signal visuel sur la carte : on conserve les lignes
-    // sans départ dans la période afin de les afficher comme opportunités indisponibles.
-    return routes.filter((route) => visibleRoutes.some((item) => item.id === route.id) || dateFiltered.has(route.id));
-  }, [filters.date, routes, visibleRoutes, departures]);
-
-  const dateActiveRouteIds = useMemo(() => {
-    if (!filters.date) return [];
-    return departures
-      .filter((departure) => departure.status !== "cancelled" && departure.departure_at.slice(0, 10) === filters.date)
-      .map((departure) => departure.route_id);
-  }, [filters.date, departures]);
+  // Un seul moteur de filtres pour la carte, la liste et le tiroir mobile.
+  const matchingRoutes = useMemo(
+    () => filterRoutes(routes, ports, departures, filters),
+    [routes, ports, departures, filters],
+  );
+  // Sur la carte, la date sert de signal : les lignes sans départ ce jour-là restent visibles mais grisées.
+  const mapRoutes = useMemo(
+    () => filterRoutes(routes, ports, departures, filters, { ignoreDate: true }),
+    [routes, ports, departures, filters],
+  );
+  const dateActiveRouteIds = useMemo(
+    () => (filters.date ? matchingRoutes.map((route) => route.id) : []),
+    [filters.date, matchingRoutes],
+  );
+  const matchingDepartures = useMemo(
+    () =>
+      filterDepartures(
+        departures,
+        new Set(matchingRoutes.map((route) => route.id)),
+        filters,
+        timeZones,
+      ),
+    [departures, matchingRoutes, filters, timeZones],
+  );
 
   const highlightedPortIds = useMemo(() => {
     if (selection?.type === "port") return [selection.id];
@@ -146,67 +177,78 @@ function Index() {
 
   const focusRouteIds = useMemo(() => {
     if (selection?.type === "route") return [selection.id];
-    if (selection?.type === "port") return routes.filter(r => r.departure_port_id === selection.id || r.arrival_port_id === selection.id).map(r => r.id);
+    if (selection?.type === "port")
+      return routes
+        .filter((r) => r.departure_port_id === selection.id || r.arrival_port_id === selection.id)
+        .map((r) => r.id);
     return [];
   }, [selection, routes]);
 
+  // Les infobulles décrivent le réseau réel du port, indépendamment des filtres en cours.
   const portMeta = useMemo(() => {
     const meta: Record<string, PortMeta> = {};
-    const visibleIds = new Set(visibleRoutes.map((route) => route.id));
-    const companyName = new Map(companies.map(c => [c.id, c.name]));
-    const vesselName = new Map(vessels.map(v => [v.id, v.name]));
-    
+    const companyName = new Map(companies.map((c) => [c.id, c.name]));
+    const routeById = new Map(routes.map((route) => [route.id, route]));
+    const portById = new Map(ports.map((port) => [port.id, port]));
+
     ports.forEach((port) => {
-      const portRoutes = visibleRoutes.filter(r => r.departure_port_id === port.id || r.arrival_port_id === port.id);
-      const routeIds = new Set(portRoutes.map(r => r.id));
+      const portRoutes = routes.filter(
+        (r) =>
+          r.status === "active" &&
+          (r.departure_port_id === port.id || r.arrival_port_id === port.id),
+      );
       const companyNames = new Set<string>();
-      
-      portRoutes.forEach((route) => route.company_ids.forEach(id => { const n = companyName.get(id); if (n) companyNames.add(n); }));
-      
-      const vesselNames = new Set<string>();
-      departures.forEach((departure) => {
-        if (!routeIds.has(departure.route_id) || departure.status === "cancelled") return;
-        const c = companyName.get(departure.company_id); if (c) companyNames.add(c);
-        const v = departure.vessel_id ? vesselName.get(departure.vessel_id) : null; if (v) vesselNames.add(v);
-      });
-      
-      const portDepartures = departures.filter(d => visibleIds.has(d.route_id) && routes.find(r => r.id === d.route_id)?.departure_port_id === port.id && d.status !== "cancelled");
-      const next = portDepartures[0];
-      
+      portRoutes.forEach((route) =>
+        route.company_ids.forEach((id) => {
+          const n = companyName.get(id);
+          if (n) companyNames.add(n);
+        }),
+      );
+
+      const timeZone = portTimeZone(port);
+      const portDepartures = departures.filter(
+        (d) => routeById.get(d.route_id)?.departure_port_id === port.id && d.status !== "cancelled",
+      );
+
       meta[port.id] = {
         routes: portRoutes.length,
         companies: [...companyNames].sort(),
-        vessels: [...vesselNames].sort(),
-        nextDeparture: next ? formatDateTime(next.departure_at) : null,
-        nextTo: next ? (ports.find(p => p.id === routes.find(r => r.id === next.route_id)?.arrival_port_id)?.name ?? null) : null,
-        upcoming: portDepartures.slice(0, 3).map(d => ({
-          label: formatDateTime(d.departure_at),
-          to: ports.find(p => p.id === routes.find(r => r.id === d.route_id)?.arrival_port_id)?.name ?? null,
-        })),
-        hasMore: portDepartures.length > 3,
+        upcoming: portDepartures.slice(0, 3).map((d) => {
+          const parts = formatDateParts(d.departure_at, timeZone);
+          return {
+            date: capitalizeFirst(`${parts.weekday} ${parts.shortDate}`),
+            time: parts.time,
+            to: portById.get(routeById.get(d.route_id)?.arrival_port_id ?? "")?.name ?? null,
+          };
+        }),
       };
     });
     return meta;
-  }, [ports, routes, visibleRoutes, departures, companies, vessels]);
+  }, [ports, routes, departures, companies]);
 
-  const setSelectionAndOpen = (next: Selection | null) => setSelection(next);
-  const openPanel = () => setPanelLevel(1);
+  const chips = useMemo(
+    () => describeActiveFilters(filters, ports, companies, vessels),
+    [filters, ports, companies, vessels],
+  );
+
+  const snapHeights = () => {
+    const vh = window.innerHeight;
+    return [COLLAPSED_HEIGHT, Math.round(vh * MIDDLE_RATIO), vh - TAB_BAR_HEIGHT] as const;
+  };
   const cyclePanelLevel = () => {
-    if (dragMoved.current) { dragMoved.current = false; return; }
+    if (dragMoved.current) {
+      dragMoved.current = false;
+      return;
+    }
     setPanelLevel((current) => (current === 2 ? 0 : ((current + 1) as 1 | 2)));
   };
 
   // Gestes continus façon Google Maps : le volet suit le doigt puis s'aimante avec l'élan.
-  const snapHeights = () => {
-    const vh = window.innerHeight;
-    const nav = 56;
-    return [96, Math.round(vh * 0.45), vh - nav] as const;
-  };
   const startPanelDrag = (clientY: number) => {
     dragStartY.current = clientY;
-    dragStartLevel.current = panelLevel;
     dragMoved.current = false;
-    dragStartHeight.current = asideRef.current?.getBoundingClientRect().height ?? snapHeights()[panelLevel];
+    dragStartHeight.current =
+      asideRef.current?.getBoundingClientRect().height ?? snapHeights()[panelLevel];
     lastMove.current = { y: clientY, t: performance.now(), v: 0 };
   };
   const movePanelDrag = (clientY: number) => {
@@ -226,7 +268,10 @@ function Index() {
   const finishPanelDrag = () => {
     if (dragStartY.current === null) return;
     dragStartY.current = null;
-    if (!dragMoved.current || dragHeightRef.current === null) { setDragHeight(null); return; }
+    if (!dragMoved.current || dragHeightRef.current === null) {
+      setDragHeight(null);
+      return;
+    }
     const snaps = snapHeights();
     const h = dragHeightRef.current;
     const v = lastMove.current.v; // px/ms, positif = vers le haut
@@ -234,58 +279,67 @@ function Index() {
     if (Math.abs(v) > 0.5) {
       const above = snaps.findIndex((s) => s > h + 1);
       const below = [...snaps].reverse().findIndex((s) => s < h - 1);
-      target = (v > 0 ? (above === -1 ? 2 : above) : (below === -1 ? 0 : 2 - below)) as 0 | 1 | 2;
+      target = (v > 0 ? (above === -1 ? 2 : above) : below === -1 ? 0 : 2 - below) as 0 | 1 | 2;
     } else {
-      target = snaps.reduce((best, s, i) => (Math.abs(s - h) < Math.abs((snaps[best] ?? 0) - h) ? i : best), 0) as 0 | 1 | 2;
+      target = snaps.reduce(
+        (best, s, i) => (Math.abs(s - h) < Math.abs((snaps[best] ?? 0) - h) ? i : best),
+        0,
+      ) as 0 | 1 | 2;
     }
     setPanelLevel(target);
     setDragHeight(null);
-    setTimeout(() => { dragMoved.current = false; }, 50);
+    setTimeout(() => {
+      dragMoved.current = false;
+    }, 50);
   };
   const dragHandlers = {
-    onPointerDown: (e: React.PointerEvent<HTMLElement>) => { e.currentTarget.setPointerCapture(e.pointerId); startPanelDrag(e.clientY); },
+    onPointerDown: (e: React.PointerEvent<HTMLElement>) => {
+      e.currentTarget.setPointerCapture(e.pointerId);
+      startPanelDrag(e.clientY);
+    },
     onPointerMove: (e: React.PointerEvent<HTMLElement>) => movePanelDrag(e.clientY),
     onPointerUp: () => finishPanelDrag(),
     onPointerCancel: () => finishPanelDrag(),
   };
 
-  const todayKey = new Date().toLocaleDateString("en-CA");
-  const activeRouteIds = new Set(routes.filter((route) => route.status === "active").map((route) => route.id));
-  const todayDepartureCount = departures.filter((departure) => departure.status !== "cancelled" && departure.departure_at.slice(0, 10) === todayKey && activeRouteIds.has(departure.route_id)).length;
-  const nextDeparture = departures
-    .filter((departure) => departure.status !== "cancelled" && activeRouteIds.has(departure.route_id) && new Date(departure.departure_at).getTime() >= Date.now())
-    .sort((a, b) => new Date(a.departure_at).getTime() - new Date(b.departure_at).getTime())[0];
+  // Espace masqué par le tiroir mobile : la carte se recentre au-dessus de lui.
+  const mobileBottomInset =
+    TAB_BAR_HEIGHT +
+    (panelLevel === 0 ? COLLAPSED_HEIGHT : Math.round(viewportHeight * MIDDLE_RATIO));
+
+  const openPlanner = () => {
+    setPanelTab("plan");
+    setPanelLevel(2);
+  };
+  const openExplorer = () => {
+    setPanelTab("explore");
+    setSelection(null);
+    if (panelLevel === 0) setPanelLevel(1);
+  };
+
+  const collapsed = panelLevel === 0 && (dragHeight === null || dragHeight < 140);
 
   return (
     <div className="relative h-[100dvh] w-full overflow-hidden bg-background">
-      
-      {/* HEADER BUREAU premium pleine largeur */}
+      {/* EN-TÊTE ORDINATEUR */}
       <header className="absolute inset-x-0 top-0 z-50 hidden h-14 items-center justify-between gap-6 border-b border-border/60 bg-background/90 px-5 shadow-[0_1px_12px_-6px_hsl(0_0%_0%/0.15)] backdrop-blur-xl md:flex">
-        <Link to="/" className="flex shrink-0 items-center gap-2.5">
-          <BrandMark className="size-7 text-primary" />
-          <span className="flex flex-col leading-none">
-            <span className="font-display text-lg font-bold tracking-tight text-foreground">Batogo</span>
-            <span className="mt-0.5 hidden text-[10px] font-medium uppercase tracking-[0.14em] text-muted-foreground lg:block">Ferries Algérie & Méditerranée</span>
-          </span>
-        </Link>
-        <nav aria-label="Navigation principale" className="flex min-w-0 items-center gap-0.5 overflow-x-auto">
+        <BrandLink />
+        <nav
+          aria-label="Navigation principale"
+          className="flex min-w-0 items-center gap-0.5 overflow-x-auto"
+        >
           {navLinks.map((link) => (
             <Link
               key={link.to}
               to={link.to}
               activeOptions={{ exact: link.to === "/" }}
-              className="relative whitespace-nowrap rounded-full px-3 py-1.5 text-[13px] font-semibold text-muted-foreground transition-colors hover:bg-muted hover:text-foreground [&.active]:bg-primary/10 [&.active]:text-primary"
+              className="relative whitespace-nowrap rounded-full px-3 py-1.5 text-sm font-semibold text-muted-foreground transition-colors hover:bg-muted hover:text-foreground [&.active]:bg-primary/10 [&.active]:text-primary"
             >
               {link.label}
             </Link>
           ))}
         </nav>
         <div className="flex shrink-0 items-center gap-2">
-          {isAdmin && (
-            <Button asChild variant="outline" size="sm" className="h-8 rounded-full text-xs font-semibold">
-              <Link to="/admin">Back-office</Link>
-            </Button>
-          )}
           <UserMenu />
         </div>
       </header>
@@ -298,46 +352,66 @@ function Index() {
       />
 
       {panelLevel === 2 && (
-        <button type="button" aria-label="Fermer" className="absolute inset-0 z-50 bg-foreground/10 md:hidden" onClick={() => setPanelLevel(1)} />
+        <button
+          type="button"
+          aria-label="Réduire le panneau"
+          className="absolute inset-0 z-50 bg-foreground/10 md:hidden"
+          onClick={() => setPanelLevel(1)}
+        />
       )}
 
-      {/* PANNEAU LATÉRAL : Style carte flottante subtile, aligné à gauche sous le header */}
+      {/* VOLET : tiroir en bas sur mobile, carte flottante à gauche sur ordinateur */}
       <aside
         ref={asideRef}
         style={dragHeight !== null ? { height: dragHeight } : undefined}
         className={`absolute bottom-[calc(3.5rem+env(safe-area-inset-bottom))] left-0 right-0 z-[60] flex flex-col overflow-hidden bg-transparent ${dragHeight !== null ? "transition-none" : "transition-[height,width,transform] duration-[380ms] ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none"} md:bottom-auto md:left-5 md:right-auto md:top-[5.5rem] md:h-[calc(100vh-7rem)] md:w-[380px] md:overflow-visible md:rounded-2xl md:z-40 ${
           desktopPanelOpen ? "md:translate-x-0" : "md:translate-x-[calc(-100%-1.25rem)]"
-        } ${panelLevel === 0 ? "h-24 rounded-t-xl" : panelLevel === 1 ? "h-[45dvh] rounded-t-xl" : "h-[calc(100dvh-3.5rem-env(safe-area-inset-bottom))] rounded-t-xl"}`}
+        } ${panelLevel === 0 ? "h-24 rounded-t-xl" : panelLevel === 1 ? "h-[42dvh] rounded-t-xl" : "h-[calc(100dvh-3.5rem-env(safe-area-inset-bottom))] rounded-t-xl"}`}
       >
-        {panelLevel === 0 && (dragHeight === null || dragHeight < 140) ? (
+        {collapsed ? (
           <CollapsedPanelSummary
             routes={routes}
-            departures={departures}
             ports={ports}
-            todayDepartureCount={todayDepartureCount}
-            nextDeparture={nextDeparture}
-            onOpen={() => { if (!dragMoved.current) setPanelLevel(1); }}
+            matchingRoutes={matchingRoutes}
+            matchingDepartures={matchingDepartures}
+            timeZones={timeZones}
+            filters={filters}
+            onOpen={() => {
+              if (!dragMoved.current) setPanelLevel(1);
+            }}
             dragHandlers={dragHandlers}
           />
-        ) : <Button
-          type="button"
-          variant="ghost"
-          className="h-10 w-full flex-none touch-none rounded-none py-0 md:hidden flex items-center justify-center bg-card/80 backdrop-blur-md border-b border-border/50"
-          onClick={cyclePanelLevel}
-          {...dragHandlers}
-          style={{ touchAction: "none" }}
-        >
-          <div className="batogo-handle" />
-        </Button>}
+        ) : (
+          <Button
+            type="button"
+            variant="ghost"
+            aria-label={panelLevel === 2 ? "Réduire le panneau" : "Agrandir le panneau"}
+            className="flex h-8 w-full flex-none touch-none items-center justify-center rounded-none rounded-t-xl border-b border-border/50 bg-card py-0 md:hidden"
+            onClick={cyclePanelLevel}
+            {...dragHandlers}
+            style={{ touchAction: "none" }}
+          >
+            <span className="batogo-handle" aria-hidden />
+          </Button>
+        )}
 
-        <div id="map-side-panel" className={`${panelLevel === 0 && (dragHeight === null || dragHeight < 140) ? "hidden md:block" : "min-h-0 flex-1"} ${desktopPanelOpen ? "" : "md:invisible md:pointer-events-none"}`}>
+        <div
+          id="map-side-panel"
+          className={`${collapsed ? "hidden md:block" : "min-h-0 flex-1"} md:h-full ${desktopPanelOpen ? "" : "md:invisible md:pointer-events-none"}`}
+        >
           <SidePanel
-          selection={selection}
-          onSelect={setSelectionAndOpen}
-          filters={filters}
-          onFiltersChange={setFilters}
-          visibleRoutes={visibleRoutes}
-          hidePrimarySearchOnMobile
+            selection={selection}
+            onSelect={setSelection}
+            filters={filters}
+            onFiltersChange={setFilters}
+            matchingRoutes={matchingRoutes}
+            matchingDepartures={matchingDepartures}
+            hidePrimarySearchOnMobile
+            activeTab={panelTab}
+            onTabChange={(tab) => {
+              setPanelTab(tab);
+              if (tab === "plan") setPanelLevel(2);
+            }}
           />
         </div>
         <Button
@@ -351,24 +425,38 @@ function Index() {
           onClick={() => setDesktopPanelOpen((open) => !open)}
           className="absolute -right-8 top-1/2 hidden h-14 w-8 -translate-y-1/2 rounded-l-none rounded-r-lg border-l-0 bg-background/95 text-primary shadow-md backdrop-blur-md md:flex"
         >
-          {desktopPanelOpen ? <ChevronLeft className="size-5" /> : <ChevronRight className="size-5" />}
+          {desktopPanelOpen ? (
+            <ChevronLeft className="size-5" />
+          ) : (
+            <ChevronRight className="size-5" />
+          )}
         </Button>
-        
       </aside>
 
-      {/* NAV MOBILE FIXE */}
-      <div className="absolute bottom-0 left-0 right-0 z-50 md:hidden">
-        <MobileTabBar className="h-[calc(3.5rem+env(safe-area-inset-bottom))] pb-[env(safe-area-inset-bottom)]" />
+      {/* NAVIGATION MOBILE */}
+      <div className="absolute bottom-0 left-0 right-0 z-[70] md:hidden">
+        <MobileTabBar
+          className="h-[calc(3.5rem+env(safe-area-inset-bottom))] pb-[env(safe-area-inset-bottom)]"
+          mapTab={panelTab === "plan" ? "plan" : "map"}
+          onOpenMap={openExplorer}
+          onOpenPlanner={openPlanner}
+        />
       </div>
 
       {/* CARTE */}
       <main className="absolute inset-0 z-0 bg-[var(--sea)]">
         <DataUnavailableNotice className="absolute left-1/2 top-20 z-20 w-[min(92vw,26rem)] -translate-x-1/2" />
-        {isLoadingData && (
-          <div className="pointer-events-none absolute left-1/2 top-20 z-10 -translate-x-1/2 rounded-full border border-border bg-background/95 px-4 py-2 text-[11px] font-semibold text-foreground shadow-sm">
-            Actualisation...
-          </div>
-        )}
+        <MapStatusBar
+          chips={chips}
+          filters={filters}
+          onFiltersChange={setFilters}
+          onReset={() => setFilters(emptyFilters)}
+          loading={isLoadingData}
+          hasError={hasError}
+          onRetry={() => allResults.forEach((res) => void res.refetch())}
+          panelOpen={desktopPanelOpen}
+        />
+        <MapLegend panelOpen={desktopPanelOpen} showDateHint={Boolean(filters.date)} />
         <ClientOnly fallback={<MapFallback />}>
           <Suspense fallback={<MapFallback />}>
             <FerryMap
@@ -378,13 +466,13 @@ function Index() {
               dateActiveRouteIds={dateActiveRouteIds}
               focusRouteIds={focusRouteIds}
               selection={selection}
-              filters={filters}
-              onFiltersChange={setFilters}
               highlightedPortIds={highlightedPortIds}
               portMeta={portMeta}
-              onSelect={setSelectionAndOpen}
-              onOpenPanel={openPanel}
-              onMapInteract={() => setPanelLevel(0)}
+              onSelect={setSelection}
+              onOpenPanel={() => setPanelLevel(1)}
+              onMapInteract={() => setPanelLevel((level) => (level === 2 ? 1 : level))}
+              mobileBottomInset={mobileBottomInset}
+              desktopLeftInset={desktopPanelOpen ? 420 : 40}
             />
           </Suspense>
         </ClientOnly>
@@ -393,21 +481,48 @@ function Index() {
   );
 }
 
-function CollapsedPanelSummary({ routes, departures, ports, todayDepartureCount, nextDeparture, onOpen, dragHandlers }: {
+function CollapsedPanelSummary({
+  routes,
+  ports,
+  matchingRoutes,
+  matchingDepartures,
+  timeZones,
+  filters,
+  onOpen,
+  dragHandlers,
+}: {
   routes: RouteLine[];
-  departures: Departure[];
   ports: Port[];
-  todayDepartureCount: number;
-  nextDeparture: Departure | undefined;
+  matchingRoutes: RouteLine[];
+  matchingDepartures: Departure[];
+  timeZones: Map<string, string>;
+  filters: Filters;
   onOpen: () => void;
   dragHandlers: Record<string, (e: React.PointerEvent<HTMLElement>) => void>;
 }) {
-  const route = nextDeparture ? routes.find((item) => item.id === nextDeparture.route_id) : undefined;
-  const from = route ? ports.find((port) => port.id === route.departure_port_id)?.name : undefined;
-  const to = route ? ports.find((port) => port.id === route.arrival_port_id)?.name : undefined;
-  const nextLabel = nextDeparture && from && to
-    ? `${from} → ${to} à ${new Intl.DateTimeFormat("fr-FR", { hour: "2-digit", minute: "2-digit" }).format(new Date(nextDeparture.departure_at))}`
-    : "Aucun départ à venir";
+  const now = Date.now();
+  const upcoming = matchingDepartures.filter(
+    (departure) => new Date(departure.departure_at).getTime() >= now,
+  );
+  const next = upcoming[0];
+  const todayCount = upcoming.filter((departure) => {
+    const timeZone = timeZones.get(departure.route_id) ?? portTimeZone(null);
+    return departureDateKey(departure, timeZones) === dateKeyInZone(new Date(), timeZone);
+  }).length;
+  const route = next ? routes.find((item) => item.id === next.route_id) : undefined;
+  const from = route ? ports.find((port) => port.id === route.departure_port_id) : undefined;
+  const to = route ? ports.find((port) => port.id === route.arrival_port_id) : undefined;
+  const nextLabel =
+    next && from && to
+      ? (() => {
+          const parts = formatDateParts(next.departure_at, portTimeZone(from));
+          return `${from.name} → ${to.name}, ${parts.weekday} ${parts.shortDate} à ${parts.time}`;
+        })()
+      : "aucun départ connu pour cette recherche";
+  const filtered = filters.departurePortIds.length > 0 || filters.arrivalPortIds.length > 0;
+  const title = filtered
+    ? `${summarizePorts(filters.departurePortIds, ports, "Tous départs")} → ${summarizePorts(filters.arrivalPortIds, ports, "toutes arrivées")}`
+    : `${matchingRoutes.length} lignes • ${todayCount} départ${todayCount > 1 ? "s" : ""} aujourd’hui`;
 
   return (
     <Button
@@ -415,16 +530,18 @@ function CollapsedPanelSummary({ routes, departures, ports, todayDepartureCount,
       variant="ghost"
       onClick={onOpen}
       {...dragHandlers}
-      className="h-24 flex-none w-full touch-none flex-col items-stretch justify-start gap-2 rounded-none border-b bg-card/95 px-4 py-2 text-left backdrop-blur-md md:hidden"
+      className="h-24 w-full flex-none touch-none flex-col items-stretch justify-start gap-2 rounded-none rounded-t-xl border-b bg-card px-4 py-2 text-left md:hidden"
       style={{ touchAction: "none" }}
     >
-      <span className="mx-auto block h-1 w-10 rounded-full bg-muted-foreground/35" />
+      <span className="batogo-handle mx-auto" aria-hidden />
       <span className="grid w-full grid-cols-[minmax(0,1fr)_auto] items-center gap-3">
         <span className="min-w-0">
-          <span className="block truncate text-xs font-bold text-foreground">{routes.filter((item) => item.status === "active").length} lignes actives • {todayDepartureCount} départ{todayDepartureCount > 1 ? "s" : ""} aujourd’hui</span>
-          <span className="mt-1 block truncate text-[11px] font-normal text-muted-foreground">Prochain départ : {nextLabel}</span>
+          <span className="block truncate text-sm font-bold text-foreground">{title}</span>
+          <span className="mt-1 block truncate text-xs font-normal text-muted-foreground">
+            Prochain départ : {nextLabel}
+          </span>
         </span>
-        <span className="shrink-0 text-xs font-bold text-primary">Voir</span>
+        <span className="shrink-0 text-sm font-bold text-primary">Voir</span>
       </span>
     </Button>
   );
@@ -432,7 +549,7 @@ function CollapsedPanelSummary({ routes, departures, ports, todayDepartureCount,
 
 function MapFallback() {
   return (
-    <div className="absolute inset-0 grid place-items-center bg-[var(--sea)] text-[13px] font-semibold text-primary/70">
+    <div className="absolute inset-0 grid place-items-center bg-[var(--sea)] text-sm font-semibold text-primary/70">
       <span className="animate-pulse">Chargement de la carte…</span>
     </div>
   );

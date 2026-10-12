@@ -25,7 +25,7 @@ function LegalPage() {
         title="Mentions légales"
         intro="Batogo est un service d'information indépendant sur les traversées maritimes vers l'Algérie."
       />
-      <div className="mt-8 max-w-3xl space-y-6 text-sm leading-relaxed text-muted-foreground">
+      <div className="mx-auto mt-8 max-w-3xl space-y-6 text-sm leading-relaxed text-muted-foreground">
         <section>
           <h2 className="text-base font-semibold text-foreground">Éditeur</h2>
           <p className="mt-1">
@@ -36,9 +36,9 @@ function LegalPage() {
         <section>
           <h2 className="text-base font-semibold text-foreground">Responsabilité</h2>
           <p className="mt-1">
-            Les horaires, durées et disponibilités publiés sont donnés à titre indicatif. Seules
-            les compagnies maritimes et les autorités portuaires font foi. Batogo ne vend aucun
-            billet et ne garantit pas l'exactitude des informations transmises par des tiers.
+            Les horaires, durées et disponibilités publiés sont donnés à titre indicatif. Seules les
+            compagnies maritimes et les autorités portuaires font foi. Batogo ne vend aucun billet
+            et ne garantit pas l'exactitude des informations transmises par des tiers.
           </p>
         </section>
         <section>

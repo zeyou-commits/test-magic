@@ -49,6 +49,7 @@ export interface Filters {
   countryCodes: string[];
   departureCountry: string | null;
   arrivalPortId: string | null;
+  arrivalPortIds?: string[];
   companyId: string | null;
   vesselId: string | null;
   date: string | null;

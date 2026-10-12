@@ -11,7 +11,8 @@ export function filtersFromUrl(search: string): Filters {
     ...emptyFilters,
     search: params.get("q") ?? "",
     departurePortIds,
-    arrivalPortId: nullable(params.get("to")),
+    arrivalPortId: list(params.get("to")).length === 1 ? list(params.get("to"))[0]! : null,
+    arrivalPortIds: list(params.get("to")),
     companyId: nullable(params.get("company")),
     vesselId: nullable(params.get("vessel")),
     date: nullable(params.get("date")),
@@ -31,7 +32,8 @@ export function mapStateToSearch(filters: Filters, selection: Selection | null) 
   const params = new URLSearchParams();
   if (filters.search.trim()) params.set("q", filters.search.trim());
   if (filters.departurePortIds.length) params.set("from", filters.departurePortIds.join(","));
-  if (filters.arrivalPortId) params.set("to", filters.arrivalPortId);
+  if (filters.arrivalPortIds?.length) params.set("to", filters.arrivalPortIds.join(","));
+  else if (filters.arrivalPortId) params.set("to", filters.arrivalPortId);
   if (filters.companyId) params.set("company", filters.companyId);
   if (filters.vesselId) params.set("vessel", filters.vesselId);
   if (filters.date) params.set("date", filters.date);

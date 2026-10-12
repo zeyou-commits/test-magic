@@ -90,6 +90,7 @@ export function filterRoutes(
   const portById = new Map(ports.map((port) => [port.id, port]));
   const term = normalizeText(filters.search);
   const departureIds = new Set(filters.departurePortIds);
+  const arrivalIds = new Set(filters.arrivalPortIds?.length ? filters.arrivalPortIds : filters.arrivalPortId ? [filters.arrivalPortId] : []);
   const useDate = Boolean(filters.date) && !options.ignoreDate;
   const needsDeparture = Boolean(filters.vesselId) || useDate;
   const routesWithDeparture = new Set<string>();
@@ -112,7 +113,7 @@ export function filterRoutes(
 
     if (!from || !to || from.status !== "active" || to.status !== "active") return false;
     if (departureIds.size > 0 && !departureIds.has(from.id)) return false;
-    if (filters.arrivalPortId && to.id !== filters.arrivalPortId) return false;
+    if (arrivalIds.size > 0 && !arrivalIds.has(to.id)) return false;
     if (filters.companyId && !route.company_ids.includes(filters.companyId)) return false;
     if (needsDeparture && !routesWithDeparture.has(route.id)) return false;
     if (term && !matchesTerm(from) && !matchesTerm(to)) return false;
@@ -134,6 +135,7 @@ export function hasActiveFilters(filters: Filters): boolean {
     filters.search.trim() !== "" ||
     filters.departurePortIds.length > 0 ||
     filters.arrivalPortId !== null ||
+    (filters.arrivalPortIds?.length ?? 0) > 0 ||
     filters.companyId !== null ||
     filters.vesselId !== null ||
     filters.date !== null
@@ -173,11 +175,17 @@ export function describeActiveFilters(
     });
   }
 
-  if (filters.arrivalPortId) {
+  if ((filters.arrivalPortIds?.length ?? 0) > 1) {
+    chips.push({
+      key: "to-many",
+      label: `${filters.arrivalPortIds!.length} ports d’arrivée`,
+      remove: (f) => ({ ...f, arrivalPortId: null, arrivalPortIds: [] }),
+    });
+  } else if (filters.arrivalPortId) {
     chips.push({
       key: "to",
       label: `Arrivée : ${portName(filters.arrivalPortId)}`,
-      remove: (f) => ({ ...f, arrivalPortId: null }),
+      remove: (f) => ({ ...f, arrivalPortId: null, arrivalPortIds: [] }),
     });
   }
 
@@ -218,3 +226,11 @@ export function describeActiveFilters(
 }
 
 export { emptyFilters };
+
+/** Façades algériennes déduites de la longitude réelle des ports. */
+export function algerianRegion(port: Port): "Ouest" | "Centre" | "Est" | null {
+  if (port.country_code !== "DZ") return null;
+  if (port.longitude < 1.5) return "Ouest";
+  if (port.longitude < 5.5) return "Centre";
+  return "Est";
+}

@@ -291,7 +291,7 @@ export default function FerryMap({ ports, routes, visibleRouteIds, dateActiveRou
             portIds: [route.departure_port_id, route.arrival_port_id],
             departureCountry: null,
             departurePortId: null,
-            arrivalPortId: null,
+            arrivalPortId: null, arrivalPortIds: [],
           });
         }
         selectRef.current({ type: "route", id });
@@ -408,7 +408,7 @@ export default function FerryMap({ ports, routes, visibleRouteIds, dateActiveRou
             portIds: [port.id],
             departureCountry: null,
             departurePortId: null,
-            arrivalPortId: null,
+            arrivalPortId: null, arrivalPortIds: [],
           });
           selectRef.current({ type: "port", id: port.id });
           requestAnimationFrame(() => positionPortTip(map, marker, tip));

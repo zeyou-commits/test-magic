@@ -141,7 +141,7 @@ export function ExplorerView({
       portIds,
       departureCountry: null,
       departurePortId: null,
-      arrivalPortId: null,
+      arrivalPortId: null, arrivalPortIds: [],
     });
   };
 
@@ -156,7 +156,7 @@ export function ExplorerView({
       countryCodes,
       departureCountry: null,
       departurePortId: null,
-      arrivalPortId: null,
+      arrivalPortId: null, arrivalPortIds: [],
     });
   };
 

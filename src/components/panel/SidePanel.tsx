@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { Filters, RouteLine, Selection } from "@/lib/ferry/types";
 import { CalendarDays, MapPinned, Share2, X } from "lucide-react";
 import { toast } from "sonner";
@@ -33,6 +33,16 @@ export function SidePanel({
 }: SidePanelProps) {
   const [activeTab, setActiveTab] = useState<PanelTab>("explore");
   const isMobile = useIsMobile();
+  const [prefill, setPrefill] = useState<{ fromId: string; toId: string; key: number } | null>(null);
+  useEffect(() => {
+    if (new URLSearchParams(window.location.search).get("plan") === "1") setActiveTab("plan");
+  }, []);
+  const planRoute = (route: RouteLine) => {
+    setPrefill({ fromId: route.departure_port_id, toId: route.arrival_port_id, key: Date.now() });
+    onSelect(null);
+    setActiveTab("plan");
+    if (isMobile) onRequestExpand?.();
+  };
 
   const switchTab = (tab: PanelTab) => {
     setActiveTab(tab);
@@ -96,7 +106,7 @@ export function SidePanel({
             </div>
             <div className="batogo-panel-scroll flex-1 overflow-y-auto p-4 md:p-6">
               {selection.type === "port" ? <PortView portId={selection.id} onSelect={onSelect} /> :
-               selection.type === "route" ? <RouteView routeId={selection.id} onSelect={onSelect} /> :
+               selection.type === "route" ? <RouteView routeId={selection.id} onSelect={onSelect} onPlanRoute={planRoute} /> :
                selection.type === "company" ? <CompanyView companyId={selection.id} onSelect={onSelect} /> :
                selection.type === "vessel" ? <VesselView vesselId={selection.id} onSelect={onSelect} /> :
                <DepartureView departureId={selection.id} onSelect={onSelect} />}
@@ -114,7 +124,7 @@ export function SidePanel({
              hidePrimarySearchOnMobile={hidePrimarySearchOnMobile} 
           />
         ) : (
-          <TripPlanner selection={selection} onSelect={onSelect} />
+          <TripPlanner selection={selection} onSelect={onSelect} prefill={prefill} />
         )}
       </div>
     </div>

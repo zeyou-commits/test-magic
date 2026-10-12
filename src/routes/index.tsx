@@ -23,6 +23,7 @@ import { MobileMapControls } from "@/components/map/MobileMapControls";
 import { schoolBreakOn } from "@/lib/ferry/schoolCalendar";
 import { filtersFromUrl, mapStateToSearch, selectionFromUrl } from "@/lib/ferry/urlState";
 import { navLinks } from "@/components/layout/SiteLayout";
+import { MobileTabBar } from "@/components/layout/MobileTabBar";
 
 const FerryMap = lazy(() => import("@/components/map/FerryMap"));
 
@@ -58,6 +59,7 @@ function Index() {
 
   useEffect(() => {
     const openPlanner = () => setPanelLevel(2);
+    if (new URLSearchParams(window.location.search).get("plan") === "1" && window.innerWidth < 768) setPanelLevel(2);
     window.addEventListener("batogo:planner-open", openPlanner);
     return () => window.removeEventListener("batogo:planner-open", openPlanner);
   }, []);
@@ -355,24 +357,9 @@ function Index() {
       </aside>
 
       {/* NAV MOBILE FIXE */}
-      <nav className="absolute bottom-0 left-0 right-0 z-50 flex h-[calc(3.5rem+env(safe-area-inset-bottom))] items-center justify-around border-t border-border bg-background/95 pb-[env(safe-area-inset-bottom)] backdrop-blur-xl md:hidden">
-        <Link to="/" className="flex flex-col items-center gap-1 text-primary">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21"></polygon><line x1="9" y1="3" x2="9" y2="21"></line><line x1="15" y1="3" x2="15" y2="21"></line></svg>
-          <span className="text-[10px] font-medium">Carte</span>
-        </Link>
-        <Link to="/horaires" className="flex flex-col items-center gap-1 text-muted-foreground">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
-          <span className="text-[10px] font-medium">Horaires</span>
-        </Link>
-        <Link to="/ports" className="flex flex-col items-center gap-1 text-muted-foreground">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="10" r="3"></circle><path d="M12 21.7C17.3 17 20 13 20 10a8 8 0 1 0-16 0c0 3 2.7 7 8 11.7z"></path></svg>
-          <span className="text-[10px] font-medium">Ports</span>
-        </Link>
-        <Link to="/guide" className="flex flex-col items-center gap-1 text-muted-foreground">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path></svg>
-          <span className="text-[10px] font-medium">Guide</span>
-        </Link>
-      </nav>
+      <div className="absolute bottom-0 left-0 right-0 z-50 md:hidden">
+        <MobileTabBar className="h-[calc(3.5rem+env(safe-area-inset-bottom))] pb-[env(safe-area-inset-bottom)]" />
+      </div>
 
       {/* CARTE */}
       <main className="absolute inset-0 z-0 bg-[var(--sea)]">

@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
+import { ExternalLink, Ship } from "lucide-react";
 import {
   companiesQuery,
   fleetDeparturesQuery,
@@ -12,6 +13,8 @@ import type { Selection } from "@/lib/ferry/types";
 import { BookingLink, DemoBadge, EmptyNote, PanelHeader, ReliabilityNote, Section } from "./shared";
 import { portTimeZone, wallTimeInZone, zoneLabel } from "@/lib/ferry/time";
 import { useLiveShips } from "@/lib/ferry/useLiveShips";
+import { useFleet } from "@/lib/ferry/useFleet";
+import { vesselPhotoQuery } from "@/lib/ferry/vesselPhoto";
 import { courseLabel, formatAge, formatDelay } from "@/lib/ferry/tracking";
 import { ReportButton } from "./ReportButton";
 
@@ -112,75 +115,251 @@ export function VesselView({
   const { data: companies = [] } = useQuery(companiesQuery);
   const { data: routes = [] } = useQuery(routesQuery);
   const { data: ports = [] } = useQuery(portsQuery);
-  const { data: departures = [] } = useQuery(upcomingDeparturesQuery());
+  const { data: upcoming = [] } = useQuery(upcomingDeparturesQuery());
+  const { data: fleetDepartures = [] } = useQuery(fleetDeparturesQuery);
+  const fleet = useFleet();
+  const liveShips = useLiveShips();
 
   const vessel = vessels.find((item) => item.id === vesselId);
+  const photoQuery = useQuery({
+    ...vesselPhotoQuery(vessel ?? { id: "", name: "", photo_url: null }),
+    enabled: Boolean(vessel),
+  });
   if (!vessel) return <EmptyNote>Navire introuvable.</EmptyNote>;
+
   const company = companies.find((item) => item.id === vessel.company_id);
-  const portName = (id: string) => ports.find((port) => port.id === id)?.name ?? "—";
-  const nextDepartures = departures
-    .filter((departure) => departure.vessel_id === vesselId)
+  const portById = new Map(ports.map((port) => [port.id, port]));
+  const portName = (id: string | undefined) => (id ? (portById.get(id)?.name ?? "—") : "—");
+  const allDepartures = [
+    ...new Map([...fleetDepartures, ...upcoming].map((item) => [item.id, item])).values(),
+  ];
+  const now = Date.now();
+  const nextDepartures = allDepartures
+    .filter((departure) => departure.vessel_id === vesselId && departure.status !== "cancelled")
+    .filter((departure) => Date.parse(departure.departure_at) >= now - 3600_000)
+    .sort((a, b) => a.departure_at.localeCompare(b.departure_at))
     .slice(0, 6);
 
+  const ship = fleet.find((item) => item.vesselId === vesselId);
+  const live = liveShips.find((item) => item.vessel.id === vesselId);
+  const shipDeparture = ship
+    ? allDepartures.find((item) => item.id === ship.departureId)
+    : undefined;
+  const shipRoute = shipDeparture
+    ? routes.find((item) => item.id === shipDeparture.route_id)
+    : undefined;
+  const from = shipRoute ? portById.get(shipRoute.departure_port_id) : undefined;
+  const to = shipRoute ? portById.get(shipRoute.arrival_port_id) : undefined;
+  const photo = photoQuery.data;
+
+  let progress: number | null = null;
+  if (ship?.state === "sea" && shipDeparture) {
+    const start = Date.parse(shipDeparture.departure_at);
+    const end = shipDeparture.arrival_at
+      ? Date.parse(shipDeparture.arrival_at)
+      : start + (shipDeparture.duration_minutes ?? 1440) * 60_000;
+    progress = Math.min(1, Math.max(0, (now - start) / Math.max(1, end - start)));
+  }
+
   return (
-    <div>
-      <PanelHeader
-        overline={vessel.vessel_type ?? "Navire"}
-        title={vessel.name}
-        subtitle={
-          <span className="flex items-center gap-2">
-            {company ? (
-              <button
-                type="button"
-                className="underline underline-offset-2"
-                onClick={() => onSelect({ type: "company", id: company.id })}
-              >
-                {company.name}
-              </button>
-            ) : null}
-            {vessel.is_demo ? <DemoBadge /> : null}
-          </span>
-        }
-      />
-      <div>
-        {vessel.description ? (
-          <Section title="À bord">
-            <p className="text-sm leading-relaxed">{vessel.description}</p>
-          </Section>
-        ) : null}
-        <Section title="Prochains départs">
-          {nextDepartures.length === 0 ? (
-            <EmptyNote>Aucun départ connu à venir pour ce navire.</EmptyNote>
-          ) : (
-            <ul className="space-y-1">
-              {nextDepartures.map((departure) => {
-                const route = routes.find((item) => item.id === departure.route_id);
-                return (
-                  <li key={departure.id}>
-                    <button
-                      type="button"
-                      onClick={() => onSelect({ type: "departure", id: departure.id })}
-                      className="w-full rounded-md px-2 py-2 text-left hover:bg-secondary"
-                    >
-                      <p className="text-sm font-medium">
-                        {formatDateTime(
-                          departure.departure_at,
-                          portTimeZone(ports.find((port) => port.id === route?.departure_port_id)),
-                        )}
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        {route
-                          ? `${portName(route.departure_port_id)} → ${portName(route.arrival_port_id)}`
-                          : "—"}
-                      </p>
-                    </button>
-                  </li>
-                );
-              })}
-            </ul>
-          )}
-        </Section>
+    <div className="-mx-4 -mt-4 md:-mx-6 md:-mt-6">
+      {/* Photo du navire : photo du back-office, sinon photo libre de Wikimedia Commons, sinon illustration. */}
+      <div className="relative aspect-[16/9] overflow-hidden bg-gradient-to-br from-primary/90 to-primary/60">
+        {photoQuery.isLoading ? (
+          <div className="size-full animate-pulse bg-muted" aria-hidden />
+        ) : photo ? (
+          <img
+            src={photo.url}
+            alt={`Photo du navire ${vessel.name}`}
+            loading="lazy"
+            referrerPolicy="no-referrer"
+            className="size-full object-cover"
+          />
+        ) : (
+          <div className="grid size-full place-items-center text-primary-foreground/80">
+            <div className="text-center">
+              <Ship className="mx-auto size-12" aria-hidden />
+              <p className="mt-2 text-xs font-medium">Photo non disponible</p>
+            </div>
+          </div>
+        )}
+        <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/60 to-transparent px-4 pb-3 pt-10 md:px-6">
+          <p className="text-xs font-semibold uppercase tracking-wider text-white/80">
+            {vessel.vessel_type ?? "Navire"}
+          </p>
+          <h1 className="font-display text-2xl font-bold text-white drop-shadow">{vessel.name}</h1>
+        </div>
       </div>
+      {photo?.source === "commons" ? (
+        <p className="border-b px-4 py-2 text-[11px] leading-snug text-muted-foreground md:px-6">
+          Photo{photo.credit ? ` : ${photo.credit}` : ""}
+          {photo.license ? ` · ${photo.license}` : ""} ·{" "}
+          {photo.pageUrl ? (
+            <a href={photo.pageUrl} target="_blank" rel="noopener noreferrer" className="underline">
+              Wikimedia Commons
+            </a>
+          ) : (
+            "Wikimedia Commons"
+          )}
+          . Photo indicative, à vérifier.
+        </p>
+      ) : null}
+
+      <div className="flex flex-wrap items-center gap-2 px-4 pt-4 text-sm md:px-6">
+        {company ? (
+          <button
+            type="button"
+            className="font-semibold text-primary underline underline-offset-2"
+            onClick={() => onSelect({ type: "company", id: company.id })}
+          >
+            {company.name}
+          </button>
+        ) : null}
+        {vessel.is_demo ? <DemoBadge /> : null}
+      </div>
+
+      <Section title="Où est ce navire ?">
+        {ship && ship.state === "sea" ? (
+          <div className="rounded-2xl bg-success/10 p-4">
+            <div className="flex items-center gap-2 text-sm font-bold">
+              <span className="relative flex size-2.5" aria-hidden>
+                <span className="absolute inline-flex size-full animate-ping rounded-full bg-success/60" />
+                <span className="relative inline-flex size-2.5 rounded-full bg-success" />
+              </span>
+              En mer
+            </div>
+            <p className="mt-2 font-display text-lg font-bold">
+              {from?.name ?? "—"} → {to?.name ?? "—"}
+            </p>
+            {progress !== null ? (
+              <div className="mt-2">
+                <div
+                  className="h-2 overflow-hidden rounded-full bg-border"
+                  role="progressbar"
+                  aria-valuenow={Math.round(progress * 100)}
+                  aria-valuemin={0}
+                  aria-valuemax={100}
+                  aria-label="Avancement de la traversée"
+                >
+                  <div
+                    className="h-full rounded-full bg-gradient-to-r from-primary to-cta"
+                    style={{ width: `${Math.round(progress * 100)}%` }}
+                  />
+                </div>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  {Math.round(progress * 100)} % de la traversée
+                </p>
+              </div>
+            ) : null}
+            {shipDeparture?.arrival_at && to ? (
+              <p className="mt-2 text-sm">
+                Arrivée prévue à{" "}
+                <strong>{wallTimeInZone(shipDeparture.arrival_at, portTimeZone(to))}</strong>{" "}
+                <span className="text-xs text-muted-foreground">
+                  ({zoneLabel(portTimeZone(to))})
+                </span>
+              </p>
+            ) : null}
+            {live ? (
+              <p className="mt-2 text-xs text-muted-foreground">
+                {live.position.speedKnots !== null
+                  ? `${live.position.speedKnots.toFixed(1)} nœuds`
+                  : ""}
+                {live.position.courseDeg !== null
+                  ? ` · cap ${Math.round(live.position.courseDeg)}° (${courseLabel(live.position.courseDeg)})`
+                  : ""}{" "}
+                · position {formatAge(live.ageMinutes)}
+              </p>
+            ) : null}
+            <p className="mt-2 text-xs text-muted-foreground">
+              {live
+                ? "Position réelle (suivi AIS)."
+                : "Position déduite des horaires, pas une position GPS."}
+            </p>
+          </div>
+        ) : ship && ship.state === "docked" ? (
+          <div className="rounded-2xl bg-secondary p-4">
+            <p className="text-sm font-bold">Au port de {portName(ship.portId ?? undefined)}</p>
+            {shipDeparture && to ? (
+              <p className="mt-1 text-sm">
+                Prochain départ :{" "}
+                <strong>{formatDateTime(shipDeparture.departure_at, portTimeZone(from))}</strong>{" "}
+                vers {to.name}
+              </p>
+            ) : null}
+            <p className="mt-2 text-xs text-muted-foreground">Position déduite des horaires.</p>
+          </div>
+        ) : (
+          <EmptyNote>
+            Aucune traversée prévue prochainement pour ce navire : position inconnue.
+          </EmptyNote>
+        )}
+        {ship && shipDeparture ? (
+          <button
+            type="button"
+            onClick={() => onSelect({ type: "departure", id: shipDeparture.id })}
+            className="inline-flex h-10 items-center justify-center rounded-xl border border-border bg-card px-4 text-sm font-semibold hover:bg-secondary"
+          >
+            Voir la traversée
+          </button>
+        ) : null}
+      </Section>
+
+      {vessel.description ? (
+        <Section title="À bord">
+          <p className="text-sm leading-relaxed">{vessel.description}</p>
+        </Section>
+      ) : null}
+
+      {vessel.imo ? (
+        <Section title="En savoir plus">
+          <a
+            href={`https://www.vesselfinder.com/vessels/details/${vessel.imo}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex h-10 items-center justify-center gap-2 rounded-xl border border-border bg-card px-4 text-sm font-semibold hover:bg-secondary"
+          >
+            Voir sur VesselFinder <ExternalLink className="size-4" aria-hidden />
+            <span className="sr-only">(nouvel onglet)</span>
+          </a>
+          <p className="text-xs text-muted-foreground">
+            Fiche technique, historique et photos des contributeurs (IMO {vessel.imo}).
+          </p>
+        </Section>
+      ) : null}
+
+      <Section title="Prochains départs">
+        {nextDepartures.length === 0 ? (
+          <EmptyNote>Aucun départ connu à venir pour ce navire.</EmptyNote>
+        ) : (
+          <ul className="space-y-1">
+            {nextDepartures.map((departure) => {
+              const route = routes.find((item) => item.id === departure.route_id);
+              return (
+                <li key={departure.id}>
+                  <button
+                    type="button"
+                    onClick={() => onSelect({ type: "departure", id: departure.id })}
+                    className="w-full rounded-md px-2 py-2 text-left hover:bg-secondary"
+                  >
+                    <p className="text-sm font-medium">
+                      {formatDateTime(
+                        departure.departure_at,
+                        portTimeZone(portById.get(route?.departure_port_id ?? "")),
+                      )}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      {route
+                        ? `${portName(route.departure_port_id)} → ${portName(route.arrival_port_id)}`
+                        : "—"}
+                    </p>
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
+        )}
+      </Section>
     </div>
   );
 }

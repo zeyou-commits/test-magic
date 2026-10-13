@@ -153,8 +153,16 @@ function Index() {
       );
       return departure ? { type: "route", id: departure.route_id } : null;
     }
+    if (selection?.type === "vessel") {
+      // Un navire sélectionné éclaire sa ligne du moment (traversée en cours ou prochain départ).
+      const ship = fleet.find((item) => item.vesselId === selection.id);
+      const departure = ship
+        ? [...departures, ...fleetDepartures].find((item) => item.id === ship.departureId)
+        : undefined;
+      return departure ? { type: "route", id: departure.route_id } : null;
+    }
     return selection;
-  }, [selection, departures, fleetDepartures]);
+  }, [selection, departures, fleetDepartures, fleet]);
 
   const focusRouteIds = useMemo(() => {
     if (mapSelection?.type === "route") return [mapSelection.id];
@@ -299,6 +307,12 @@ function Index() {
   const mobileBottomInset =
     TAB_BAR_HEIGHT +
     (panelLevel === 0 ? COLLAPSED_HEIGHT : Math.round(viewportHeight * MIDDLE_RATIO));
+  // Sur mobile, choisir un navire, un port ou une traversée rouvre le tiroir s'il était replié.
+  useEffect(() => {
+    if (selection && panelLevel === 0) setPanelLevel(1);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selection?.type, selection?.id]);
+
   const collapsed = panelLevel === 0 && (dragHeight === null || dragHeight < 140);
 
   const resetToMap = () => {
@@ -458,7 +472,7 @@ function Index() {
               onOpenPanel={() => setPanelLevel(1)}
               onMapInteract={() => setPanelLevel((level) => (level === 2 ? 1 : level))}
               mobileBottomInset={mobileBottomInset}
-              desktopLeftInset={desktopPanelOpen ? DESKTOP_PANEL + 40 : 40}
+              desktopLeftInset={desktopPanelOpen ? DESKTOP_PANEL + 130 : 50}
             />
           </Suspense>
         </ClientOnly>

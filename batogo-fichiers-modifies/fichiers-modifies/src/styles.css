@@ -213,7 +213,6 @@
   z-index: 1;
   transition: opacity 0.2s ease;
 }
-.port-marker:hover,
 .port-marker[data-active="true"] {
   z-index: 10;
 }
@@ -275,7 +274,7 @@
   transition: color 0.2s ease;
 }
 [data-low-zoom="true"]
-  .port-marker[data-minor="true"]:not([data-active="true"]):not(:hover)
+  .port-marker[data-minor="true"]:not([data-active="true"])
   .port-marker__label {
   display: none;
 }
@@ -339,8 +338,7 @@
   background: var(--color-muted);
   color: var(--color-foreground);
 }
-.port-marker:hover .port-tip,
-.port-marker:focus-within .port-tip,
+/* La bulle d'un port s'ouvre au clic (jamais au survol, pour ne pas gêner la navigation). */
 .port-marker[data-tip="true"] .port-tip {
   opacity: 1;
   transform: translateX(0) scale(1);
@@ -449,11 +447,6 @@
     max-width: calc(100vw - 20px);
     padding: 14px;
     border-radius: 1rem;
-  }
-  .port-marker:focus-within:not([data-tip="true"]) .port-tip {
-    opacity: 0;
-    transform: translateX(6px) translateY(2px) scale(0.98);
-    pointer-events: none;
   }
   /* Sur mobile, le détail s'affiche dans le tiroir : l'infobulle ne doit pas passer dessous. */
   .maplibregl-ctrl-bottom-right {

@@ -1,4 +1,4 @@
-# Batogo — Refonte UX/UI + suivi en direct (octobre 2026) · version 4
+# Batogo — Refonte UX/UI + suivi en direct (octobre 2026) · version 5
 
 Ce document explique **quoi mettre sur GitHub**, **quoi supprimer** et **comment faire**, même sans connaissance technique.
 
@@ -29,6 +29,26 @@ Pour chacun : ouvrez le fichier sur GitHub, cliquez sur les **trois points ⋯**
 
 ### Étape 3 : vérifier dans Lovable
 L'aperçu se met à jour tout seul. Vérifiez la carte, la recherche et un clic sur « Réserver », puis republiez.
+
+---
+
+## NOUVEAU (v5) — Fiche navire, photos, infobulles, cadrage
+
+- **Clic sur un bateau** : la fiche du navire s'ouvre avec sa **photo**, sa compagnie, **où il est** (en mer avec la barre d'avancement et l'arrivée prévue, ou au port avec son prochain départ) et ses prochains départs. La ligne du navire s'éclaire sur la carte.
+- **Nom des bateaux en tout petit sur la carte**, dès la vue d'ensemble (plus lisible en zoomant). Les noms qui se chevauchent se masquent tout seuls.
+- **D'où vient la photo ?** Dans cet ordre :
+  1. la **photo que vous renseignez** dans *Admin → Navires* (adresse https d'une image dont vous avez le droit d'usage) ;
+  2. sinon une **photo libre de Wikimedia Commons**, avec le nom de l'auteur, la licence et un lien (obligation des licences) ; le site vérifie que le nom du fichier contient bien le nom du navire et un mot de navire, pour éviter les mauvaises photos. Sur vos 16 navires, une photo juste a été trouvée pour environ la moitié (Danielle Casanova, Jean Nicoli, Tariq Ibn Ziyad, A Nepita, Badji Mokhtar III…) ; les autres affichent une illustration « Photo non disponible » ;
+  3. sinon une illustration.
+  Les photos trouvées sont mémorisées 30 jours dans le navigateur du visiteur, pour ne pas solliciter Wikimedia à chaque visite.
+- **Pourquoi pas VesselFinder directement ?** Leurs photos appartiennent à leurs contributeurs, leurs conditions interdisent de les copier ou de les réafficher, et leur accès automatique est payant. À la place : renseignez le **numéro IMO** (7 chiffres) de chaque navire dans *Admin → Navires* ; la fiche affiche alors un bouton **« Voir sur VesselFinder »** (le visiteur y voit leurs photos chez eux). Exemple : IMO 9161948 → `vesselfinder.com/vessels/details/9161948`.
+- **Infobulle des ports** : elle ne s'ouvre plus au survol, seulement **au clic** ; la croix la ferme (le détail du port reste dans le volet).
+- **Zone cachée par le volet de gauche** : le cadrage laisse maintenant plus de place à gauche (les noms de ports ne passent plus dessous), et s'adapte aux fenêtres étroites.
+- Sur mobile, le tiroir se rouvre tout seul quand on choisit un navire ou un port.
+
+**À faire :** la migration `supabase/migrations/20261013120000_vessel_tracking.sql` contient maintenant aussi la colonne IMO : appliquez-la (même opération que pour le suivi). Puis, dans *Admin → Navires*, saisissez l'IMO et, si vous en avez, la photo de chaque navire.
+
+**Fichiers ajoutés :** `src/lib/ferry/vesselPhoto.ts`. Modifiés : `FerryMap.tsx`, `EntityViews.tsx`, `admin.tsx`, `index.tsx`, `styles.css`, `types.ts` (×2), la migration SQL.
 
 ---
 

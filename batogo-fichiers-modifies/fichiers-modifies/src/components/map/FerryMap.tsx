@@ -263,9 +263,11 @@ export default function FerryMap({
       mobileBottomInset: bottom,
       desktopLeftInset: left,
     } = insetsRef.current;
-    return mobile
-      ? { top: 110, right: 28, bottom: bottom + 20, left: 28 }
-      : { top: 130, right: 80, bottom: 60, left };
+    if (mobile) return { top: 110, right: 28, bottom: bottom + 20, left: 28 };
+    // Sur ordinateur, la zone utile commence après le volet. Sur une fenêtre étroite, on garde
+    // au moins 45 % de la largeur pour la carte afin que le trajet reste lisible.
+    const width = containerRef.current?.clientWidth ?? 1200;
+    return { top: 130, right: 90, bottom: 70, left: Math.min(left, Math.round(width * 0.55)) };
   };
 
   useEffect(() => {
@@ -475,29 +477,33 @@ export default function FerryMap({
         id: "fleet-label",
         type: "symbol",
         source: "fleet",
-        minzoom: 5.3,
-        filter: ["==", ["get", "state"], "sea"],
         layout: {
           "text-field": ["get", "name"],
           "text-font": ["Noto Sans Bold"],
-          "text-size": 11,
-          "text-offset": [0, 2.4],
+          // Nom du navire en tout petit dès la vue d'ensemble, un peu plus lisible en zoomant.
+          "text-size": ["interpolate", ["linear"], ["zoom"], 3, 7.5, 6, 9.5, 9, 12],
+          "text-offset": [0, 2.8],
           "text-anchor": "top",
           "text-optional": true,
+          "text-padding": 2,
         },
         paint: {
           "text-color": "#0b3a6e",
           "text-halo-color": "#ffffff",
-          "text-halo-width": 2,
+          "text-halo-width": 1.6,
           "text-opacity": ["get", "opacity"],
         },
       });
       map.on("click", "fleet-ships", (event) => {
-        const id = event.features?.[0]?.properties?.["departureId"];
-        if (typeof id === "string") {
-          interactRef.current?.();
-          selectRef.current({ type: "departure", id });
-        }
+        const props = event.features?.[0]?.properties;
+        const vesselId = props?.["vesselId"];
+        const departureId = props?.["departureId"];
+        interactRef.current?.();
+        // Un navire connu ouvre sa fiche ; sans navire renseigné, on ouvre sa traversée.
+        if (typeof vesselId === "string" && vesselId)
+          selectRef.current({ type: "vessel", id: vesselId });
+        else if (typeof departureId === "string")
+          selectRef.current({ type: "departure", id: departureId });
       });
       map.on("mouseenter", "fleet-ships", () => {
         map.getCanvas().style.cursor = "pointer";
@@ -507,6 +513,8 @@ export default function FerryMap({
       });
 
       const pickRoute = (event: MapLayerMouseEvent) => {
+        // Un navire posé sur la ligne a la priorité : le clic ouvre le navire, pas la ligne.
+        if (map.queryRenderedFeatures(event.point, { layers: ["fleet-ships"] }).length > 0) return;
         const id = event.features?.[0]?.properties?.["id"];
         if (typeof id !== "string") return;
         interactRef.current?.();
@@ -524,7 +532,7 @@ export default function FerryMap({
       });
       map.on("click", (event: MapMouseEvent) => {
         const hits = map.queryRenderedFeatures(event.point, {
-          layers: ["ferry-routes-line", "ferry-routes-duration"],
+          layers: ["ferry-routes-line", "ferry-routes-duration", "fleet-ships"],
         });
         if (hits.length === 0) selectRef.current(null);
       });
@@ -582,12 +590,13 @@ export default function FerryMap({
         const element = marker.getElement();
         const tip = element.querySelector<HTMLDivElement>(".port-tip");
         if (!tip) return;
-        const visible = isMobile
-          ? element.dataset["tip"] === "true"
-          : element.matches(':hover, [data-tip="true"]') || element.matches(":focus-within");
+        const visible = element.dataset["tip"] === "true";
         if (visible) positionPortTip(map, marker, tip);
       });
     };
+
+    // La bulle fermée à la main reste fermée tant que le même port est ouvert.
+    if (selection?.type !== "port") dismissedPortIdsRef.current.clear();
 
     ports.forEach((port) => {
       const existing = portMarkersRef.current.get(port.id);
@@ -616,19 +625,13 @@ export default function FerryMap({
         close.className = "port-tip__close";
         close.setAttribute("aria-label", "Fermer");
         close.textContent = "×";
-        close.addEventListener("pointerdown", (event) => {
-          event.stopPropagation();
-          event.preventDefault();
-          dismissedPortIdsRef.current.add(port.id);
-          selectRef.current(null);
-          el.dataset["active"] = "false";
-          el.dataset["tip"] = "false";
-          (document.activeElement as HTMLElement | null)?.blur?.();
-          close.blur();
-          dot.blur();
-        });
         close.addEventListener("click", (event) => {
           event.stopPropagation();
+          // Ferme uniquement la bulle ; le détail du port reste ouvert dans le volet.
+          dismissedPortIdsRef.current.add(port.id);
+          el.dataset["tip"] = "false";
+          close.blur();
+          dot.blur();
         });
         tip.append(close);
 
@@ -645,9 +648,6 @@ export default function FerryMap({
 
         dot.addEventListener("click", select);
         label.addEventListener("click", select);
-        el.addEventListener("mouseenter", () =>
-          requestAnimationFrame(() => positionPortTip(map, marker, tip)),
-        );
 
         marker = new Marker({ element: el }).setLngLat([port.longitude, port.latitude]).addTo(map);
         portMarkersRef.current.set(port.id, marker);
@@ -660,9 +660,7 @@ export default function FerryMap({
 
       if (label) Object.assign(label.style, getPortLabelStyle(port));
 
-      element.dataset["active"] = String(
-        activeIds.has(port.id) && !dismissedPortIdsRef.current.has(port.id),
-      );
+      element.dataset["active"] = String(activeIds.has(port.id));
       // L'infobulle n'est affichée que pour le port ouvert (pas pour les deux ports d'un trajet cherché).
       element.dataset["tip"] = String(
         selection?.type === "port" &&
@@ -753,12 +751,7 @@ export default function FerryMap({
       });
       tip.append(more);
       requestAnimationFrame(() => {
-        if (
-          (isMobile && element.dataset["tip"] === "true") ||
-          (!isMobile &&
-            (element.matches(':hover, [data-tip="true"]') || element.matches(":focus-within")))
-        )
-          positionPortTip(map, marker, tip);
+        if (element.dataset["tip"] === "true") positionPortTip(map, marker, tip);
       });
     });
 
@@ -894,6 +887,7 @@ export default function FerryMap({
               name: ship.name,
               state: ship.state,
               departureId: ship.departureId,
+              vesselId: ship.vesselId ?? "",
               opacity: dimmed ? 0.25 : 1,
               haloColor: selected ? "#e4572e" : "#22c55e",
               haloOpacity: dimmed ? 0 : selected ? 0.35 : live ? 0.3 : 0,

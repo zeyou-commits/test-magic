@@ -4,8 +4,11 @@ const W = 56;
 const H = 200;
 const NAVY = "#0b3a6e";
 
-/** Dessine un ferry vu du dessus, proue vers le haut. Le navire est centré pour que la rotation soit juste. */
-function drawFerry(withWake: boolean): ImageData | null {
+export const WAKE_FRAMES = 6;
+
+/** Dessine un ferry vu du dessus, proue vers le haut. Le navire est centré pour que la rotation soit juste.
+ *  `frame` (0..WAKE_FRAMES-1) fait glisser l'écume vers l'arrière pour animer le sillage. */
+function drawFerry(withWake: boolean, frame = 0): ImageData | null {
   const canvas = document.createElement("canvas");
   canvas.width = W;
   canvas.height = H;
@@ -14,9 +17,10 @@ function drawFerry(withWake: boolean): ImageData | null {
   ctx.translate(W / 2, H / 2);
 
   if (withWake) {
-    // Sillage : deux lignes qui s'écartent et une écume qui s'estompe.
+    const phase = frame / WAKE_FRAMES;
+    // Écume centrale : traînée qui s'estompe.
     const foam = ctx.createLinearGradient(0, 44, 0, 98);
-    foam.addColorStop(0, "rgba(255,255,255,0.75)");
+    foam.addColorStop(0, "rgba(255,255,255,0.7)");
     foam.addColorStop(1, "rgba(255,255,255,0)");
     ctx.fillStyle = foam;
     ctx.beginPath();
@@ -27,7 +31,7 @@ function drawFerry(withWake: boolean): ImageData | null {
     ctx.closePath();
     ctx.fill();
     ctx.lineCap = "round";
-    ctx.lineWidth = 2.6;
+    ctx.lineWidth = 2.4;
     [-1, 1].forEach((side) => {
       const line = ctx.createLinearGradient(0, 44, 0, 96);
       line.addColorStop(0, "rgba(255,255,255,0.85)");
@@ -38,6 +42,22 @@ function drawFerry(withWake: boolean): ImageData | null {
       ctx.quadraticCurveTo(side * 15, 62, side * 24, 96);
       ctx.stroke();
     });
+    // Vaguelettes d'écume qui glissent vers l'arrière et se dissolvent.
+    for (let i = 0; i < 3; i++) {
+      const t = (i / 3 + phase) % 1;
+      const y = 46 + t * 50;
+      const spread = 8 + t * 15;
+      const alpha = 0.9 * (1 - t);
+      ctx.fillStyle = `rgba(255,255,255,${alpha.toFixed(2)})`;
+      [-1, 1].forEach((side) => {
+        ctx.beginPath();
+        ctx.ellipse(side * spread, y, 2.2 + t * 1.5, 1.4, 0, 0, Math.PI * 2);
+        ctx.fill();
+      });
+      ctx.beginPath();
+      ctx.ellipse(0, y, 1.6, 1.2 + t, 0, 0, Math.PI * 2);
+      ctx.fill();
+    }
   }
 
   // Ombre portée sur l'eau.
@@ -108,10 +128,12 @@ function drawFerry(withWake: boolean): ImageData | null {
   return ctx.getImageData(0, 0, W, H);
 }
 
-/** Enregistre les deux icônes : « ship-sea » (avec sillage) et « ship-dock » (au port). */
+/** Enregistre « ship-sea-0..N » (sillage animé) et « ship-dock » (au port, statique). */
 export function addShipImages(map: MapLibreMap) {
-  const sea = drawFerry(true);
+  for (let f = 0; f < WAKE_FRAMES; f++) {
+    const sea = drawFerry(true, f);
+    if (sea && !map.hasImage(`ship-sea-${f}`)) map.addImage(`ship-sea-${f}`, sea, { pixelRatio: 2 });
+  }
   const dock = drawFerry(false);
-  if (sea && !map.hasImage("ship-sea")) map.addImage("ship-sea", sea, { pixelRatio: 2 });
   if (dock && !map.hasImage("ship-dock")) map.addImage("ship-dock", dock, { pixelRatio: 2 });
 }

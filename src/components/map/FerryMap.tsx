@@ -284,7 +284,7 @@ export default function FerryMap({
       mobileBottomInset: bottom,
       desktopLeftInset: left,
     } = insetsRef.current;
-    if (mobile) return { top: 110, right: 28, bottom: bottom + 20, left: 28 };
+    if (mobile) return { top: 70, right: 28, bottom: bottom + 20, left: 28 };
     // Sur ordinateur, la zone utile commence après le volet. Sur une fenêtre étroite, on garde
     // au moins 45 % de la largeur pour la carte afin que le trajet reste lisible.
     const width = containerRef.current?.clientWidth ?? 1200;

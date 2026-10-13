@@ -16,6 +16,7 @@ Cette version part de **ton zip de production (6)**. Elle ne touche ni au suivi 
 | 5 | Fiches ports | Nouvelle fiche : grande photo, repères (lignes, départs, fuseau), départs avec logo de compagnie, **services en pictogrammes**. Toutes les informations d'avant sont conservées. |
 | 6 | Carte mobile | Un tap sur un port n'ouvre **que la bulle**. Le panneau détaillé s'ouvre uniquement avec « Voir la fiche du port ». La bulle reste visible au-dessus du tiroir. |
 | 7 | Vacances scolaires | Le bouton « Vacances scolaires » est un **interrupteur on/off** (mémorisé). Activé, les vacances de la zone A, B ou C sont colorées dans le calendrier ; l'interrupteur est aussi dans le calendrier, avec le choix de zone. Si les prochaines vacances n'ont aucun départ, l'alerte « Me prévenir » s'affiche. La section « Où voulez-vous traverser ? » devient une ligne « Trajets fréquents » et le partage passe en icônes : les premiers départs sont visibles sans défiler. |
+| 8 | Mobile : carte d'abord | Plus de boutons Départ / Arrivée en haut de la carte : un en-tête fin (logo + menu burger) laisse la carte respirer. Départ, arrivée, dates et voyageurs sont tous dans le tiroir du bas, ouvert à mi-hauteur par défaut. |
 
 ## Point d'attention : notes des bateaux
 
@@ -42,9 +43,10 @@ Admin → Ports → champ **Photo du port** (lien https). Sans photo renseignée
 
 Glisse le **contenu** du dossier `A-GLISSER-SUR-GITHUB` (pas le dossier lui-même) : GitHub → Add file → Upload files.
 
-**À remplacer (15)**
+**À remplacer (16)**
 - `LISEZMOI-MODIFICATIONS.md` (cette notice, facultatif)
 - `src/components/map/FerryMap.tsx`
+- `src/routes/index.tsx`
 - `src/components/panel/EntityViews.tsx`
 - `src/components/panel/PortView.tsx`
 - `src/components/panel/SailingCard.tsx`
@@ -67,7 +69,7 @@ Glisse le **contenu** du dossier `A-GLISSER-SUR-GITHUB` (pas le dossier lui-mêm
 - `supabase/migrations/20261013130000_sales_alerts.sql`
 - `supabase/migrations/20261013140000_port_photos.sql`
 
-**À supprimer : aucun.**
+**À supprimer (1)** : `src/components/map/MobileMapControls.tsx` (GitHub → ouvrir le fichier → icône corbeille → Commit).
 
 ## Contrôles effectués
 

@@ -1,6 +1,12 @@
 import { DataUnavailableNotice } from "@/components/layout/DataUnavailableNotice";
 import type React from "react";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, Menu } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { lazy, Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { ClientOnly, createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
@@ -17,7 +23,6 @@ import { capitalizeFirst, formatDateParts } from "@/lib/ferry/format";
 import { emptyFilters, type Filters, type Selection } from "@/lib/ferry/types";
 import type { PortMeta } from "@/components/map/FerryMap";
 import { Button } from "@/components/ui/button";
-import { MobileMapControls } from "@/components/map/MobileMapControls";
 import { MapStatusBar } from "@/components/map/MapStatusBar";
 import { MapLegend } from "@/components/map/MapLegend";
 import { filtersFromUrl, mapStateToSearch, selectionFromUrl } from "@/lib/ferry/urlState";
@@ -369,12 +374,33 @@ function Index() {
         </div>
       </header>
 
-      <MobileMapControls
-        ports={ports}
-        routes={routes}
-        filters={filters}
-        onFiltersChange={setFilters}
-      />
+      {/* EN-TÊTE MOBILE : logo + menu. La recherche se fait uniquement dans le tiroir du bas. */}
+      <header className="absolute inset-x-0 top-0 z-50 flex h-12 items-center justify-between border-b border-border/60 bg-background/90 pl-3 pr-2 backdrop-blur-xl md:hidden">
+        <BrandLink />
+        <div className="flex items-center gap-1">
+          <UserMenu iconOnly />
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button
+                type="button"
+                aria-label="Ouvrir le menu"
+                className="grid size-10 place-items-center rounded-full text-foreground hover:bg-muted"
+              >
+                <Menu className="size-5" aria-hidden />
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="min-w-44">
+              {navLinks.map((link) => (
+                <DropdownMenuItem key={link.to} asChild>
+                  <Link to={link.to} className="text-sm font-semibold">
+                    {link.label}
+                  </Link>
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+      </header>
 
       {panelLevel === 2 && (
         <button
@@ -435,7 +461,6 @@ function Index() {
             onSelect={setSelection}
             filters={filters}
             onFiltersChange={setFilters}
-            hidePickersOnMobile
             onHighlightRoute={setHighlightRouteId}
           />
         </div>

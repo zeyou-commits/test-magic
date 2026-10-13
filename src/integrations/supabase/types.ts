@@ -685,6 +685,8 @@ export type Database = {
       vessel_positions: {
         Row: {
           course_deg: number | null
+          destination: string | null
+          eta: string | null
           fetched_at: string
           last_error: string | null
           latitude: number | null
@@ -697,6 +699,8 @@ export type Database = {
         }
         Insert: {
           course_deg?: number | null
+          destination?: string | null
+          eta?: string | null
           fetched_at?: string
           last_error?: string | null
           latitude?: number | null
@@ -709,6 +713,8 @@ export type Database = {
         }
         Update: {
           course_deg?: number | null
+          destination?: string | null
+          eta?: string | null
           fetched_at?: string
           last_error?: string | null
           latitude?: number | null

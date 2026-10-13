@@ -122,10 +122,10 @@ export function buildFleet(
         1,
         Math.max(0, (now - current.start) / Math.max(1, current.end - current.start)),
       );
+      // routeArc renvoie déjà les points du port de départ vers le port d'arrivée.
       const arc = routeArc(current.from, current.to);
-      const oriented = current.from.id > current.to.id ? [...arc].reverse() : arc;
-      const here = pointAlong(oriented, progress);
-      const ahead = pointAlong(oriented, Math.min(1, progress + 0.02));
+      const here = pointAlong(arc, progress);
+      const ahead = pointAlong(arc, Math.min(1, progress + 0.02));
       ships.push({
         id: `sea:${key}:${current.departure.id}`,
         name,

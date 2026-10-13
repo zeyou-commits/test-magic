@@ -311,19 +311,19 @@ export function VesselView({
         </Section>
       ) : null}
 
-      {vessel.imo ? (
-        <Section title="En savoir plus">
+      {vessel.imo || vessel.mmsi ? (
+        <Section title="Suivre ce navire">
           <a
-            href={`https://www.vesselfinder.com/vessels/details/${vessel.imo}`}
+            href={vessel.imo ? `https://www.vesselfinder.com/?imo=${vessel.imo}` : `https://www.vesselfinder.com/?mmsi=${vessel.mmsi}`}
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex h-10 items-center justify-center gap-2 rounded-xl border border-border bg-card px-4 text-sm font-semibold hover:bg-secondary"
           >
-            Voir sur VesselFinder <ExternalLink className="size-4" aria-hidden />
+            Suivre sur la carte VesselFinder <ExternalLink className="size-4" aria-hidden />
             <span className="sr-only">(nouvel onglet)</span>
           </a>
           <p className="text-xs text-muted-foreground">
-            Fiche technique, historique et photos des contributeurs (IMO {vessel.imo}).
+            Position en direct sur la carte VesselFinder.
           </p>
         </Section>
       ) : null}

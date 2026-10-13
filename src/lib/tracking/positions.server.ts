@@ -91,12 +91,20 @@ export async function getPositions(): Promise<PublicPosition[]> {
 
   if (claimed.length > 0) {
     const key = process.env["AISSTREAM_API_KEY"] ?? "";
+    const statics = new Map<number, { destination: string | null; eta: string | null }>();
     const found = key
-      ? await collectPositions(key, claimed, STREAM_LISTEN_MS)
+      ? await collectPositions(key, claimed, STREAM_LISTEN_MS, statics)
       : new Map<number, ParsedPosition>();
     if (!key) console.error("[tracking] AISSTREAM_API_KEY manquante côté serveur");
     await Promise.all(
       claimed.map(async (mmsi) => {
+        const declared = statics.get(mmsi);
+        if (declared) {
+          await supabaseAdmin
+            .from("vessel_positions")
+            .update(declared as never)
+            .eq("mmsi", mmsi);
+        }
         const position = found.get(mmsi);
         if (!position) {
           // Navire non entendu pendant la fenêtre d'écoute : on garde l'ancienne position.

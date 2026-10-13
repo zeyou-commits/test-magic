@@ -19,6 +19,7 @@ export function filtersFromUrl(search: string): Filters {
     date: nullable(params.get("date")),
     returnDate: nullable(params.get("ret")),
     roundTrip: params.get("way") !== "1",
+    flexDays: Math.min(3, Math.max(0, Number(params.get("flex")) || 0)),
     schoolZone: ZONES.find((item) => item === zone) ?? null,
   };
 }
@@ -46,6 +47,7 @@ export function mapStateToSearch(
   if (filters.date) params.set("date", filters.date);
   if (filters.returnDate) params.set("ret", filters.returnDate);
   if (!filters.roundTrip) params.set("way", "1");
+  if (filters.flexDays > 0) params.set("flex", String(filters.flexDays));
   if (filters.schoolZone) params.set("zone", filters.schoolZone);
 
   if (selection) {

@@ -135,6 +135,8 @@ export interface Filters {
   returnDate: string | null;
   /** Aller-retour (par défaut) ou aller simple. */
   roundTrip: boolean;
+  /** Souplesse sur la date d'aller : 0 = jour exact, sinon ± N jours. */
+  flexDays: number;
   schoolZone: "A" | "B" | "C" | null;
 }
 
@@ -147,5 +149,6 @@ export const emptyFilters: Filters = {
   date: null,
   returnDate: null,
   roundTrip: true,
+  flexDays: 0,
   schoolZone: null,
 };

@@ -42,7 +42,8 @@ import {
   type Sailing,
   type TravelerType,
 } from "@/lib/ferry/trips";
-import { getSchoolBreaksForZone, type SchoolZone } from "@/lib/ferry/schoolCalendar";
+import { diffDays } from "@/lib/ferry/schoolCalendar";
+import { TripCalendar, type CalendarField } from "./TripCalendar";
 import { dateKeyInZone } from "@/lib/ferry/time";
 import { useLiveShips } from "@/lib/ferry/useLiveShips";
 import type { LiveShip } from "@/lib/ferry/tracking";
@@ -94,7 +95,8 @@ export function SearchPanel({
     [liveShips],
   );
   const [profile, setProfile] = useState<TripProfileValue>(defaultTripProfile);
-  const [zone, setZone] = useState<SchoolZone | null>(null);
+  const [calOpen, setCalOpen] = useState(false);
+  const [calField, setCalField] = useState<CalendarField>("out");
   const [showAllOut, setShowAllOut] = useState(false);
   const [showAllBack, setShowAllBack] = useState(false);
   // Accordéon : une seule traversée dépliée à la fois ; le survol met sa ligne en évidence sur la carte.
@@ -163,8 +165,26 @@ export function SearchPanel({
     () => daysWithSailings(inbound, filters.date ?? today),
     [inbound, filters.date, today],
   );
+  // Disponibilités complètes pour le calendrier (tous les jours avec départ, pas seulement les 60 premiers).
+  const outAvailability = useMemo(
+    () => new Map(daysWithSailings(outbound, today, 1000).map((item) => [item.day, item.count])),
+    [outbound, today],
+  );
+  const backAvailability = useMemo(
+    () =>
+      new Map(
+        daysWithSailings(inbound, filters.date ?? today, 1000).map((item) => [
+          item.day,
+          item.count,
+        ]),
+      ),
+    [inbound, filters.date, today],
+  );
 
-  const outList = filters.date ? outbound.filter((item) => item.dayKey === filters.date) : outbound;
+  // Date d'aller « intelligente » : jour exact, ou fenêtre de ± N jours si la souplesse est activée.
+  const outList = filters.date
+    ? outbound.filter((item) => Math.abs(diffDays(filters.date!, item.dayKey)) <= filters.flexDays)
+    : outbound;
   const backList = filters.returnDate
     ? inbound.filter((item) => item.dayKey === filters.returnDate)
     : inbound.filter((item) => !filters.date || item.dayKey >= filters.date);
@@ -175,11 +195,6 @@ export function SearchPanel({
 
   const active = hasActiveFilters(filters);
   const pairs = useMemo(() => popularPairs(all, 6), [all]);
-  const periods = useMemo(
-    () => (zone ? getSchoolBreaksForZone(zone).filter((period) => period.end >= today) : []),
-    [zone, today],
-  );
-
   const route = (from: string, to: string) =>
     set({ departurePortIds: [from], arrivalPortIds: [to], date: null, returnDate: null });
   const fromName = (ids: string[]) => ports.find((port) => port.id === ids[0])?.name ?? "";
@@ -266,30 +281,50 @@ export function SearchPanel({
           />
         </div>
 
-        <div className={`grid gap-1.5 ${filters.roundTrip ? "grid-cols-2" : "grid-cols-1"}`}>
-          <DateField
-            label="Aller"
-            value={filters.date}
-            min={today}
-            onChange={(value) =>
-              set({
-                date: value,
-                returnDate:
-                  value && filters.returnDate && filters.returnDate < value
-                    ? null
-                    : filters.returnDate,
-              })
-            }
-          />
-          {filters.roundTrip ? (
-            <DateField
-              label="Retour"
-              value={filters.returnDate}
-              min={filters.date ?? today}
-              onChange={(value) => set({ returnDate: value })}
-            />
-          ) : null}
-        </div>
+        <TripCalendar
+          open={calOpen}
+          onOpenChange={setCalOpen}
+          field={calField}
+          onFieldChange={setCalField}
+          roundTrip={filters.roundTrip}
+          date={filters.date}
+          returnDate={filters.returnDate}
+          flexDays={filters.flexDays}
+          outDays={outAvailability}
+          backDays={backAvailability}
+          pairLabel={
+            hasPair
+              ? `${fromName(filters.departurePortIds)} → ${fromName(filters.arrivalPortIds)}`
+              : null
+          }
+          today={today}
+          onChange={(patch) => set(patch)}
+          anchor={
+            <div className={`grid gap-1.5 ${filters.roundTrip ? "grid-cols-2" : "grid-cols-1"}`}>
+              <DateButton
+                label="Aller"
+                value={filters.date}
+                flex={filters.flexDays}
+                active={calOpen && calField === "out"}
+                onClick={() => {
+                  setCalField("out");
+                  setCalOpen(true);
+                }}
+              />
+              {filters.roundTrip ? (
+                <DateButton
+                  label="Retour"
+                  value={filters.returnDate}
+                  active={calOpen && calField === "ret"}
+                  onClick={() => {
+                    setCalField(filters.date ? "ret" : "out");
+                    setCalOpen(true);
+                  }}
+                />
+              ) : null}
+            </div>
+          }
+        />
 
         <div className="grid grid-cols-2 gap-1.5">
           <Popover>
@@ -318,71 +353,20 @@ export function SearchPanel({
             </PopoverContent>
           </Popover>
 
-          <Popover>
-            <PopoverTrigger asChild>
-              <button
-                type="button"
-                className="batogo-control flex h-12 min-w-0 items-center justify-between gap-2 px-3 text-left"
-              >
-                <span className="flex min-w-0 items-center gap-2">
-                  <Backpack className="size-4 shrink-0 text-primary" aria-hidden />
-                  <span className="truncate text-xs font-semibold">Vacances scolaires</span>
-                </span>
-                <ChevronDown className="size-4 shrink-0 text-muted-foreground" />
-              </button>
-            </PopoverTrigger>
-            <PopoverContent align="end" className="w-[330px] max-w-[92vw] space-y-3 p-3">
-              <p className="text-xs text-muted-foreground">
-                Calendrier français 2026–2027. Choisissez une zone, puis une période : les dates
-                d’aller et de retour se remplissent.
-              </p>
-              <div className="flex gap-1.5">
-                {(["A", "B", "C"] as SchoolZone[]).map((item) => (
-                  <button
-                    key={item}
-                    type="button"
-                    aria-pressed={zone === item}
-                    onClick={() => setZone(zone === item ? null : item)}
-                    className={`h-9 flex-1 rounded-full border text-xs font-bold transition ${zone === item ? "border-primary bg-primary text-primary-foreground" : "border-border bg-background hover:bg-muted"}`}
-                  >
-                    Zone {item}
-                  </button>
-                ))}
-              </div>
-              {periods.map((period) => (
-                <button
-                  key={period.name}
-                  type="button"
-                  onClick={() =>
-                    set({
-                      roundTrip: true,
-                      date: period.start < today ? today : period.start,
-                      returnDate: period.end,
-                    })
-                  }
-                  className="flex w-full items-center justify-between rounded-xl bg-secondary px-3 py-2.5 text-left text-sm transition hover:bg-primary/10"
-                >
-                  <span className="font-semibold">{period.name}</span>
-                  <span className="text-xs text-muted-foreground">
-                    {new Date(`${period.start}T00:00:00Z`).toLocaleDateString("fr-FR", {
-                      day: "numeric",
-                      month: "short",
-                      timeZone: "UTC",
-                    })}{" "}
-                    →{" "}
-                    {new Date(`${period.end}T00:00:00Z`).toLocaleDateString("fr-FR", {
-                      day: "numeric",
-                      month: "short",
-                      timeZone: "UTC",
-                    })}
-                  </span>
-                </button>
-              ))}
-              {zone && periods.length === 0 ? (
-                <p className="text-xs text-muted-foreground">Aucune période à venir.</p>
-              ) : null}
-            </PopoverContent>
-          </Popover>
+          <button
+            type="button"
+            onClick={() => {
+              setCalField("out");
+              setCalOpen(true);
+            }}
+            className="batogo-control flex h-12 min-w-0 items-center justify-between gap-2 px-3 text-left"
+          >
+            <span className="flex min-w-0 items-center gap-2">
+              <Backpack className="size-4 shrink-0 text-primary" aria-hidden />
+              <span className="truncate text-xs font-semibold">Vacances scolaires</span>
+            </span>
+            <ChevronDown className="size-4 shrink-0 text-muted-foreground" />
+          </button>
         </div>
 
         <details className="group text-xs" open={Boolean(filters.companyId || filters.vesselId)}>
@@ -465,6 +449,7 @@ export function SearchPanel({
               list={outShown}
               total={outList.length}
               recommended={outRecommended}
+              multiDay={filters.flexDays > 0}
               openId={openCard?.id ?? null}
               onToggle={toggleCard}
               onHoverRoute={setHoverRouteId}
@@ -522,6 +507,7 @@ function ResultBlock({
   list,
   total,
   recommended,
+  multiDay,
   openId,
   onToggle,
   onHoverRoute,
@@ -541,6 +527,8 @@ function ResultBlock({
   list: Sailing[];
   total: number;
   recommended: string | null;
+  /** Plusieurs jours affichés (souplesse sur la date) : chaque carte indique son jour. */
+  multiDay?: boolean;
   openId: string | null;
   onToggle: (sailing: Sailing) => void;
   onHoverRoute: (routeId: string | null) => void;
@@ -551,6 +539,13 @@ function ResultBlock({
   emptyText: string;
   onReset?: (() => void) | undefined;
 }) {
+  // Jours avec départ les plus proches du jour demandé (avant / après), pour ne jamais laisser sans issue.
+  const near = date
+    ? {
+        before: [...days].reverse().find((item) => item.day < date),
+        after: days.find((item) => item.day > date),
+      }
+    : null;
   return (
     <div className="space-y-2.5">
       <div className="flex items-baseline justify-between gap-2">
@@ -561,6 +556,29 @@ function ResultBlock({
       {list.length === 0 ? (
         <div className="rounded-2xl border border-dashed p-5 text-center text-sm text-muted-foreground">
           {emptyText}
+          {near && (near.before || near.after) ? (
+            <div className="mt-3 flex flex-wrap items-center justify-center gap-2">
+              {[near.before, near.after].map((item) =>
+                item ? (
+                  <button
+                    key={item.day}
+                    type="button"
+                    onClick={() => onDate(item.day)}
+                    className="rounded-full border bg-card px-3 py-1.5 text-xs font-semibold text-foreground hover:bg-secondary"
+                  >
+                    {item.day < date! ? "←" : ""}{" "}
+                    {new Date(`${item.day}T00:00:00Z`).toLocaleDateString("fr-FR", {
+                      weekday: "short",
+                      day: "numeric",
+                      month: "short",
+                      timeZone: "UTC",
+                    })}{" "}
+                    {item.day > date! ? "→" : ""}
+                  </button>
+                ) : null,
+              )}
+            </div>
+          ) : null}
           {onReset ? (
             <button
               type="button"
@@ -578,7 +596,7 @@ function ResultBlock({
               key={sailing.departure.id}
               sailing={sailing}
               index={index}
-              showDay={!date}
+              showDay={!date || Boolean(multiDay)}
               live={liveByDeparture.get(sailing.departure.id)}
               recommended={recommended === sailing.departure.id}
               expanded={openId === sailing.departure.id}
@@ -603,23 +621,32 @@ function ResultBlock({
   );
 }
 
-function DateField({
+function DateButton({
   label,
   value,
-  min,
-  onChange,
+  flex = 0,
+  active,
+  onClick,
 }: {
   label: string;
   value: string | null;
-  min: string;
-  onChange: (value: string | null) => void;
+  flex?: number;
+  active: boolean;
+  onClick: () => void;
 }) {
   return (
-    <label className="batogo-control relative flex h-12 min-w-0 cursor-pointer items-center gap-2 px-3">
+    <button
+      type="button"
+      onClick={onClick}
+      aria-haspopup="dialog"
+      aria-expanded={active}
+      className={`batogo-control flex h-12 min-w-0 items-center gap-2 px-3 text-left ${active ? "!border-primary" : ""}`}
+    >
       <CalendarDays className="size-4 shrink-0 text-primary" aria-hidden />
       <span className="min-w-0 leading-tight">
         <span className="block text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
           {label}
+          {flex > 0 ? <span className="ml-1 text-primary">± {flex} j</span> : null}
         </span>
         <span className="block truncate text-sm font-semibold">
           {value
@@ -629,18 +656,10 @@ function DateField({
                 month: "short",
                 timeZone: "UTC",
               })
-            : "Date"}
+            : "Choisir"}
         </span>
       </span>
-      <Input
-        type="date"
-        min={min}
-        value={value ?? ""}
-        onChange={(event) => onChange(event.target.value || null)}
-        aria-label={`Date ${label.toLowerCase()}`}
-        className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
-      />
-    </label>
+    </button>
   );
 }
 

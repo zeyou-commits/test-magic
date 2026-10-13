@@ -1,4 +1,4 @@
-# Batogo — Refonte UX/UI + suivi en direct (octobre 2026) · version 6
+# Batogo — Refonte UX/UI + suivi en direct (octobre 2026) · version 7
 
 Ce document explique **quoi mettre sur GitHub**, **quoi supprimer** et **comment faire**, même sans connaissance technique.
 
@@ -29,6 +29,35 @@ Pour chacun : ouvrez le fichier sur GitHub, cliquez sur les **trois points ⋯**
 
 ### Étape 3 : vérifier dans Lovable
 L'aperçu se met à jour tout seul. Vérifiez la carte, la recherche et un clic sur « Réserver », puis republiez.
+
+---
+
+## NOUVEAU (v7) — Calendrier intelligent, vacances scolaires, bateaux animés
+
+**Les filtres de dates ne marchaient pas** : le champ de date était un champ natif invisible, qui ne réagissait pas au clic sauf sur une toute petite icône. Il est remplacé par un **vrai calendrier**, qui s'ouvre au clic sur « Aller » ou « Retour ».
+
+**Un calendrier intelligent**
+- **Un point sous chaque jour avec départ** pour le trajet choisi. Les jours sans départ sont **barrés et non cliquables** : impossible de choisir une date où il n'y a rien.
+- **Aller puis retour dans le même calendrier** : après l'aller, le calendrier passe tout seul au retour. Le retour ne peut pas être avant l'aller, et le calendrier n'affiche que les mois où il existe des départs.
+- **Séjour visible** : la période entre l'aller et le retour est colorée, avec « N jours sur place ».
+- **Aller flexible** : « Exact, ± 1 j, ± 2 j, ± 3 j » affiche les traversées des jours voisins (chaque carte indique alors son jour).
+- **Jour sans départ** (par exemple depuis un lien) : le calendrier propose le jour le plus proche en un clic, et la liste propose « ← jour d'avant / jour d'après → ».
+- Les dates sont conservées dans l'adresse de la page : un lien partagé rouvre le trajet avec ses dates.
+
+**Vacances scolaires (France, zones A, B, C)**
+- Dans le calendrier : choisissez votre **zone** (A / B / C, avec des villes d'exemple pour ne pas se tromper). Votre choix est **mémorisé** dans le navigateur.
+- Les vacances apparaissent en **bandeau jaune** dans le calendrier.
+- Un clic sur une période (« Toussaint 17 oct → 1 nov », « Noël », « Hiver », « Printemps », « Été ») règle l'aller **et** le retour **sur les vrais départs les plus proches**, et dit s'il a fallu ajuster.
+- Audit de l'ancien système : il n'existait qu'en fenêtre séparée, sans lien avec la disponibilité des traversées, avec du code mort. Il est remplacé par `schoolCalendar.ts` (dates 2026-2027 du calendrier officiel du ministère, **à vérifier chaque année** sur education.gouv.fr).
+- **Volontairement limité à la France**, pour ne pas alourdir l'application.
+
+**Bateaux animés au survol** : le navire grossit, se balance doucement, une pulsation orange l'entoure et « Nom du navire · voir la fiche » s'affiche, avec le curseur en forme de main : on voit tout de suite qu'il se clique.
+
+**Limite de dézoom** : on ne peut plus s'éloigner au-delà de la Méditerranée occidentale (limite calculée d'après la place visible, donc adaptée au téléphone et à l'ordinateur).
+
+**Correction au passage** : les fenêtres flottantes (listes de ports, calendrier, menus) passaient **derrière le tiroir mobile**. Elles sont maintenant au premier plan.
+
+**Fichiers ajoutés :** `src/components/panel/TripCalendar.tsx`. Modifiés : `SearchPanel.tsx`, `FerryMap.tsx`, `schoolCalendar.ts`, `types.ts`, `urlState.ts`, `styles.css`, et les fenêtres flottantes `popover.tsx`, `select.tsx`, `dropdown-menu.tsx`, `dialog.tsx`, `tooltip.tsx`, `hover-card.tsx`.
 
 ---
 

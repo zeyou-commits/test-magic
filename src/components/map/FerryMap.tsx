@@ -58,6 +58,13 @@ interface FerryMapProps {
   desktopLeftInset?: number;
 }
 
+// Limite de dézoom : on ne peut pas s'éloigner plus que « toute la Méditerranée occidentale visible »
+// (calculé d'après la zone réellement visible, donc adapté au téléphone comme à l'ordinateur).
+const MIN_ZOOM_FLOOR = 2.2;
+const LIMIT_BOUNDS: [[number, number], [number, number]] = [
+  [-11, 31],
+  [22, 47.5],
+];
 const MAP_STYLE = "https://tiles.openfreemap.org/styles/liberty";
 // Vue d'ensemble : toute la Méditerranée occidentale, de l'Espagne à l'Italie et toute la côte algérienne.
 const OVERVIEW_BOUNDS: [[number, number], [number, number]] = [
@@ -249,6 +256,7 @@ export default function FerryMap({
   const interactRef = useRef(onMapInteract);
   const dismissedPortIdsRef = useRef<Set<string>>(new Set());
   const [mapReady, setMapReady] = useState(false);
+  const hoverRafRef = useRef(0);
   const fleetRef = useRef<FleetShip[]>(fleet);
   fleetRef.current = fleet;
 
@@ -282,6 +290,9 @@ export default function FerryMap({
       style: MAP_STYLE,
       bounds: OVERVIEW_BOUNDS,
       fitBoundsOptions: { padding: viewPadding() },
+      // Limite de dézoom (ajustée ensuite d'après la zone visible).
+      minZoom: MIN_ZOOM_FLOOR,
+      maxZoom: 11,
       // Carte à plat : une vue inclinée déforme les distances et gêne la lecture des lignes.
       pitch: 0,
       bearing: 0,
@@ -497,6 +508,98 @@ export default function FerryMap({
           "text-opacity": ["get", "opacity"],
         },
       });
+      // Survol d'un navire : il grossit, se balance doucement et une pulsation l'entoure, avec un rappel « voir la fiche ».
+      const NO_SHIP = ["==", ["get", "shipId"], "__aucun__"] as never;
+      map.addLayer({
+        id: "fleet-hover-halo",
+        type: "circle",
+        source: "fleet",
+        filter: NO_SHIP,
+        paint: {
+          "circle-radius": ["interpolate", ["linear"], ["zoom"], 3, 20, 6, 30, 9, 48],
+          "circle-color": "#e4572e",
+          "circle-opacity": 0.3,
+          "circle-blur": 0.5,
+        },
+      });
+      map.addLayer({
+        id: "fleet-hover-icon",
+        type: "symbol",
+        source: "fleet",
+        filter: NO_SHIP,
+        layout: {
+          "icon-image": ["get", "icon"],
+          "icon-rotate": ["get", "course"],
+          "icon-rotation-alignment": "map",
+          "icon-allow-overlap": true,
+          "icon-ignore-placement": true,
+          "icon-size": ["interpolate", ["linear"], ["zoom"], 3, 0.95, 5, 1.25, 7, 1.7, 9, 2.4],
+        },
+      });
+      map.addLayer({
+        id: "fleet-hover-label",
+        type: "symbol",
+        source: "fleet",
+        filter: NO_SHIP,
+        layout: {
+          "text-field": ["concat", ["get", "name"], " · voir la fiche"],
+          "text-font": ["Noto Sans Bold"],
+          "text-size": 12,
+          "text-offset": [0, 3.4],
+          "text-anchor": "top",
+          "text-allow-overlap": true,
+          "text-ignore-placement": true,
+        },
+        paint: { "text-color": "#e4572e", "text-halo-color": "#ffffff", "text-halo-width": 2.2 },
+      });
+      const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      let hoveredShip: string | null = null;
+      const stopHoverAnimation = () => {
+        if (hoverRafRef.current) cancelAnimationFrame(hoverRafRef.current);
+        hoverRafRef.current = 0;
+      };
+      const startHoverAnimation = () => {
+        if (reduceMotion || hoverRafRef.current) return;
+        const loop = (time: number) => {
+          const wave = Math.sin(time / 170);
+          map.setPaintProperty("fleet-hover-halo", "circle-radius", [
+            "interpolate",
+            ["linear"],
+            ["zoom"],
+            3,
+            18 + wave * 5,
+            6,
+            28 + wave * 7,
+            9,
+            46 + wave * 10,
+          ]);
+          map.setPaintProperty("fleet-hover-halo", "circle-opacity", 0.3 + 0.14 * wave);
+          // Léger roulis du navire.
+          map.setLayoutProperty("fleet-hover-icon", "icon-rotate", [
+            "+",
+            ["get", "course"],
+            wave * 5,
+          ]);
+          hoverRafRef.current = requestAnimationFrame(loop);
+        };
+        hoverRafRef.current = requestAnimationFrame(loop);
+      };
+      const setHoveredShip = (id: string | null) => {
+        if (id === hoveredShip) return;
+        hoveredShip = id;
+        const filter = id ? (["==", ["get", "shipId"], id] as never) : NO_SHIP;
+        ["fleet-hover-halo", "fleet-hover-icon", "fleet-hover-label"].forEach((layer) =>
+          map.setFilter(layer, filter),
+        );
+        if (id) startHoverAnimation();
+        else stopHoverAnimation();
+      };
+      map.on("mousemove", "fleet-ships", (event) => {
+        const id = event.features?.[0]?.properties?.["shipId"];
+        setHoveredShip(typeof id === "string" ? id : null);
+      });
+      map.on("mouseleave", "fleet-ships", () => setHoveredShip(null));
+
       map.on("click", "fleet-ships", (event) => {
         const props = event.features?.[0]?.properties;
         const vesselId = props?.["vesselId"];
@@ -549,6 +652,7 @@ export default function FerryMap({
       map.off("dragstart", handleMapInteraction);
       resizeObserver.disconnect();
       window.removeEventListener("resize", resize);
+      if (hoverRafRef.current) cancelAnimationFrame(hoverRafRef.current);
       readyRef.current = false;
       setMapReady(false);
       portMarkersRef.current.forEach((marker) => marker.remove());
@@ -562,6 +666,9 @@ export default function FerryMap({
   useEffect(() => {
     const map = mapRef.current;
     if (!map || !mapReady || selection) return;
+    // Recalcule la limite de dézoom d'après la place réellement disponible (volet ou tiroir compris).
+    const limit = map.cameraForBounds(LIMIT_BOUNDS, { padding: viewPadding() });
+    if (limit?.zoom !== undefined) map.setMinZoom(Math.max(MIN_ZOOM_FLOOR, limit.zoom - 0.15));
     const chosen = fitPortIds
       .map((id) => ports.find((port) => port.id === id))
       .filter((port): port is Port => Boolean(port));
@@ -898,6 +1005,7 @@ export default function FerryMap({
               course,
               name: ship.name,
               state: ship.state,
+              shipId: ship.id,
               departureId: ship.departureId,
               vesselId: ship.vesselId ?? "",
               opacity: dimmed ? 0.25 : 1,

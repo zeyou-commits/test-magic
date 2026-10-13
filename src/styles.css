@@ -515,3 +515,57 @@
     animation: none;
   }
 }
+
+/* ---------- Calendrier des dates (TripCalendar) ---------- */
+/* Un point sous chaque jour qui a au moins un départ. */
+.batogo-day-avail button {
+  position: relative;
+  font-weight: 600;
+}
+.batogo-day-avail button::after {
+  content: "";
+  position: absolute;
+  bottom: 4px;
+  left: 50%;
+  width: 4px;
+  height: 4px;
+  margin-left: -2px;
+  border-radius: 999px;
+  background: var(--color-primary);
+}
+/* Vacances scolaires : bandeau doux. */
+.batogo-day-holiday {
+  background: color-mix(in oklab, var(--color-warning) 28%, transparent);
+  border-radius: 0.5rem;
+}
+/* Séjour entre l'aller et le retour. */
+.batogo-day-between {
+  background: color-mix(in oklab, var(--color-primary) 12%, transparent);
+  border-radius: 0;
+}
+/* Aller et retour : bien visibles même quand l'autre champ est en cours d'édition. */
+.batogo-day-out button {
+  background: var(--color-primary) !important;
+  color: var(--color-primary-foreground) !important;
+  border-radius: 0.6rem;
+}
+.batogo-day-ret button {
+  background: var(--color-cta) !important;
+  color: var(--color-cta-foreground) !important;
+  border-radius: 0.6rem;
+}
+.batogo-day-out button::after,
+.batogo-day-ret button::after {
+  background: #fff;
+}
+/* Fenêtre de souplesse autour de l'aller. */
+.batogo-day-flex:not(.batogo-day-out) button {
+  box-shadow: inset 0 0 0 1.5px var(--color-primary);
+  border-radius: 0.6rem;
+}
+/* Jours sans départ : clairement indisponibles. */
+[data-slot="calendar"] .rdp-disabled button {
+  opacity: 0.35;
+  text-decoration: line-through;
+  cursor: not-allowed;
+}

@@ -1,138 +1,131 @@
-# Batogo — Modifications UX/UI (octobre 2026)
+# Batogo — Refonte UX/UI + suivi en direct (octobre 2026) · version 3
 
-Ce document explique **quoi copier sur GitHub** et **comment le faire**, même sans connaissance technique.
+Ce document explique **quoi mettre sur GitHub**, **quoi supprimer** et **comment faire**, même sans connaissance technique.
 
----
-
-## ⚠️ Avant de commencer : une vérification importante
-
-Ces modifications ont été faites à partir du zip `test-magic-main (4).zip`.
-Si des changements ont été faits **depuis** sur GitHub ou dans Lovable, les écraser les ferait disparaître.
-
-1. Ouvrez votre dépôt sur GitHub.
-2. Regardez la date du dernier « commit » (en haut de la liste des fichiers).
-3. **Si cette date est postérieure au téléchargement du zip**, ne remplacez rien et demandez d'abord une fusion des deux versions.
+> Cette version **remplace** les précédentes : elle contient tout, plus le **suivi en direct des navires**.
 
 ---
 
-## Méthode la plus simple (recommandée) : envoyer le dossier « fichiers-modifies »
+## ⚠️ Avant de commencer
 
-Le zip `batogo-fichiers-modifies.zip` contient **uniquement** les 39 fichiers modifiés ou nouveaux (plus cette notice), rangés dans les bons dossiers.
+Ces modifications partent du zip `test-magic-main (4).zip`. Si des changements ont été faits sur GitHub ou dans Lovable **depuis**, les écraser les ferait disparaître. Regardez la date du dernier commit sur GitHub : si elle est postérieure au téléchargement du zip, ne remplacez rien et demandez d'abord une fusion.
 
-1. Décompressez `batogo-fichiers-modifies.zip` sur votre ordinateur.
-2. Sur GitHub, ouvrez votre dépôt, puis cliquez sur **Add file → Upload files**.
-3. Ouvrez le dossier décompressé et **glissez son contenu** (les dossiers `src`, `public`, `scripts` et les fichiers `.md`) dans la zone d'envoi de GitHub.
-   GitHub conserve les dossiers : chaque fichier remplace celui qui porte le même chemin.
-4. En bas de la page, écrivez un message, par exemple « Refonte UX : filtres, heures locales, planificateur ».
-5. Cliquez sur **Commit changes**.
-6. Lovable récupère automatiquement la nouvelle version. Vérifiez l'aperçu, puis republiez le site depuis Lovable.
+---
 
-> Aucun fichier n'est à supprimer.
+## Marche à suivre sur GitHub
+
+### Étape 1 : envoyer les fichiers
+1. Décompressez `batogo-fichiers-modifies.zip`.
+2. Sur GitHub : **Add file → Upload files**, puis glissez le **contenu** du dossier décompressé (`src`, `public`, `scripts` et les fichiers `.md`).
+3. Message du commit, par exemple « Refonte UX : recherche unique ». Cliquez sur **Commit changes**.
+
+### Étape 2 : supprimer 3 fichiers devenus inutiles ⚠️
+Ils sont remplacés par la recherche unique. S'ils restent, le site peut ne pas se construire.
+Pour chacun : ouvrez le fichier sur GitHub, cliquez sur les **trois points ⋯** en haut à droite, puis **Delete file**, puis **Commit changes**.
+
+- `src/components/panel/ExplorerView.tsx`
+- `src/components/panel/TripPlanner.tsx`
+- `src/components/panel/GroupedPortSelect.tsx`
+
+### Étape 3 : vérifier dans Lovable
+L'aperçu se met à jour tout seul. Vérifiez la carte, la recherche et un clic sur « Réserver », puis republiez.
+
+---
+
+## NOUVEAU — Suivi en direct des navires
+
+**Ce que voient les visiteurs**
+- Sur la carte : les **vrais navires** (icône orientée selon leur cap, avec leur nom) à la place des pastilles animées, sur les lignes concernées.
+- Sur chaque carte de traversée : « **En mer · 17 nœuds · Arrivée vers 19:39** » (avec le retard estimé s'il y en a un).
+- Dans la fiche d'un départ : **« Où est mon bateau ? »** avec l'heure d'arrivée estimée, le retard, la vitesse, le cap, la distance restante et l'âge de la dernière position.
+- Entre deux mises à jour, le navire avance doucement selon sa vitesse et son cap (maximum 40 minutes d'estimation).
+
+**Comment ça limite les appels (20 minutes)**
+- La clé API reste **côté serveur** : le navigateur ne la voit jamais.
+- Une position n'est redemandée qu'après **20 minutes**, même avec des milliers de visiteurs : le résultat est mis en cache dans la base et partagé.
+- Seuls les navires utiles sont interrogés : de **6 h avant le départ jusqu'à 1 h après l'arrivée prévue**. Un navire à quai depuis des jours n'est pas suivi.
+- Plafond de sécurité : 20 appels maximum par requête. En cas de panne de l'API, le site continue de fonctionner normalement, sans le suivi.
+
+**À faire pour l'activer (dans l'ordre)**
+1. **Régénérer la clé RapidAPI** (celle de votre capture d'écran a été partagée en clair) : RapidAPI → Apps → Security → Regenerate.
+2. **Créer la table dans la base** : demandez à Lovable d'appliquer le fichier `supabase/migrations/20261013120000_vessel_tracking.sql` (ou exécutez son contenu dans l'éditeur SQL).
+3. **Ajouter 4 secrets dans Lovable Cloud** (réglages du projet, rubrique des secrets / variables d'environnement) :
+   | Nom | Valeur |
+   |---|---|
+   | `RAPIDAPI_KEY` | la **nouvelle** clé |
+   | `RAPIDAPI_HOST` | `marinetraffic1.p.rapidapi.com` |
+   | `RAPIDAPI_VESSEL_PATH` | le chemin de l'endpoint « position d'un navire » (onglet *Endpoints* de l'API, par exemple `/vessel`) |
+   | `RAPIDAPI_MMSI_PARAM` | le nom du paramètre MMSI dans cet endpoint (souvent `mmsi`) |
+4. **Saisir le MMSI de chaque navire** : *Admin → onglet « Navires »*. Un navire sans MMSI n'est pas suivi.
+5. Vérifier que vos **départs sont bien rattachés à un navire** (colonne Navire de l'import Excel), sinon le lien départ ↔ navire ne peut pas se faire.
+
+> ⚠️ **Non testé avec l'API réelle** : je n'ai ni clé ni documentation de l'endpoint. J'ai testé la lecture de la réponse avec votre exemple (et des variantes de noms de champs) et tout l'affichage avec des positions fictives. Si le suivi ne s'allume pas, regardez dans *Admin → Navires* : un message d'erreur s'affiche sous chaque navire (par exemple « HTTP 404 » = mauvais chemin d'endpoint).
+> L'heure d'arrivée est une **estimation en ligne droite** ; l'écran le précise.
+
+**Fichiers ajoutés pour le suivi :** `src/lib/tracking/parse.ts`, `src/lib/tracking/positions.server.ts`, `src/routes/api.vessel-positions.ts`, `src/lib/ferry/tracking.ts`, `src/lib/ferry/useLiveShips.ts`, `supabase/migrations/20261013120000_vessel_tracking.sql`. Fichiers modifiés : `src/routeTree.gen.ts` (généré automatiquement, à remplacer), `FerryMap.tsx`, `SailingCard.tsx`, `SearchPanel.tsx`, `EntityViews.tsx`, `index.tsx`, `admin.tsx`, `src/lib/ferry/types.ts`, `src/integrations/supabase/types.ts`.
+
+---
+
+## Ce qui change (le principal)
+
+**Une seule recherche, qui pilote tout.** Plus d'onglets « Explorer » / « Planifier ». Un seul bloc :
+**Départ ⇄ Arrivée · Aller / Retour · Voyageurs · Vacances**.
+La carte, la liste et l'adresse de la page lisent la même recherche : un lien partagé rouvre exactement le même trajet, avec ses dates.
+
+**Ce qui se passe quand on remplit la recherche :**
+
+| Vous renseignez | La page montre |
+|---|---|
+| Rien | « Où voulez-vous traverser ? », les trajets les plus fréquents en un clic, les prochains départs |
+| Un départ | Ses traversées ; la carte se cadre dessus |
+| Départ + arrivée | La carte zoome sur le trajet, la ligne s'éclaire, une frise des jours avec départ apparaît |
+| + une date | Les traversées du jour, avec un badge « Recommandé » |
+| Aller-retour | Une deuxième section « Retour » apparaît automatiquement, dans le sens inverse |
+
+**Une carte vivante :**
+- trajets **courbes** (plus de lignes droites) ;
+- de petits **navires qui circulent** le long de chaque ligne, dans les deux sens (ils s'arrêtent si l'utilisateur a réduit les animations sur son appareil) ;
+- le trajet cherché est **éclairé** et les autres s'estompent ;
+- cadrage automatique, légende, panneau en verre dépoli.
+
+**Des cartes de traversée plus lisibles :** heure de départ, frise avec durée, heure d'arrivée (« +1 » = lendemain), compagnie et navire, fiabilité, bouton **Réserver** qui ouvre le site de la compagnie, badges « Recommandé » et « Nuit », apparition animée.
+
+**Aussi :** la barre mobile devient Carte · Horaires · Lignes · Ports · Plus ; les vacances scolaires remplissent d'un clic les dates d'aller et de retour.
+
+> Tout ce qui figurait dans la version précédente est conservé : heures locales des ports, sens inverse, back-office corrigé, mot de passe oublié, etc.
 
 ---
 
 ## Liste des fichiers
 
-### Fichiers à CRÉER (3)
-
+### Fichiers à CRÉER (13)
 | Fichier | Rôle |
 |---|---|
-| `src/lib/ferry/time.ts` | Fuseaux horaires des ports : chaque heure s'affiche dans l'heure locale du port, comme sur le billet. |
-| `src/components/map/MapLegend.tsx` | Légende de la carte (bouton « Légende » en bas à gauche, sur ordinateur). |
-| `scripts/sql/2026-10-correctif-fuseaux-horaires.sql` | Script **facultatif** pour recaler les horaires déjà en base (voir plus bas). |
+| `src/components/panel/SearchPanel.tsx` | La recherche unique et ses résultats. |
+| `src/components/panel/SailingCard.tsx` | Carte de traversée et frise des jours. |
+| `src/lib/ferry/trips.ts` | Calcul des traversées, jours disponibles, recommandation, trajets fréquents. |
+| `src/lib/ferry/geo.ts` | Trajets courbes et position des navires. |
+| `src/lib/ferry/time.ts` | Fuseaux horaires des ports (heure locale partout). |
+| `src/components/map/MapLegend.tsx` | Légende de la carte. |
+| `scripts/sql/2026-10-correctif-fuseaux-horaires.sql` | Script **facultatif** pour recaler les anciens horaires (voir plus bas). |
 
-### Fichiers à REMPLACER (36)
+### Fichiers à SUPPRIMER (3)
+`ExplorerView.tsx`, `TripPlanner.tsx`, `GroupedPortSelect.tsx` (dans `src/components/panel/`) : voir l'étape 2.
 
-**Racine et dossier `public`**
-- `README.md`, `roadmap.md`, `public/llms.txt` : nom et accroche unifiés (« Batogo — Ferries Europe ↔ Algérie »).
-
-**Styles**
-- `src/styles.css` : palette par rôle (le corail est réservé aux actions principales), poignée du tiroir mobile, ports estompés ou fermés sur la carte, infobulles.
-
-**Logique (dossier `src/lib/ferry`)**
-- `types.ts`, `filtering.ts`, `urlState.ts` : **un seul système de filtres** pour la carte, la liste, le mobile et l'adresse de la page.
-- `format.ts` : formats de date et d'heure en heure locale, services « non renseignés » masqués.
-
-**Mise en page (dossier `src/components/layout`)**
-- `SiteLayout.tsx` : même en-tête partout, marges latérales sur toutes les pages, pied de page.
-- `MobileTabBar.tsx` : barre mobile Carte / Planifier / Horaires / Lignes / Plus.
-- `UserMenu.tsx`, `BrandMark.tsx` : bouton de connexion, logo unique.
-
-**Carte (dossier `src/components/map`)**
-- `FerryMap.tsx` : cliquer ne modifie plus les filtres, vue à plat, noms en français, recentrage au-dessus du tiroir mobile, symbole ⇄ pour les lignes dans les deux sens.
-- `MobileMapControls.tsx` : vrai logo, bouton d'inversion du sens, trajets fréquents dans les deux sens.
-- `MapStatusBar.tsx` : filtres actifs affichés au-dessus de la carte, chacun supprimable.
-
-**Volet (dossier `src/components/panel`)**
-- `SidePanel.tsx`, `ExplorerView.tsx`, `PortFilters.tsx` : recherche Départ ⇄ Arrivée, liste des départs enfin filtrée.
-- `TripPlanner.tsx`, `TripProfile.tsx`, `GroupedPortSelect.tsx` : planificateur réorganisé.
-- `PortView.tsx`, `RouteView.tsx`, `EntityViews.tsx`, `shared.tsx`, `ReportButton.tsx` : fiches avec heures locales, bouton « Réserver sur le site de la compagnie », sens inverse.
-
-**Pages (dossier `src/routes`)**
-- `index.tsx` : page carte.
-- `horaires.tsx` : filtre « Vers / Depuis l'Algérie », heures locales, fiabilité, bouton « Afficher plus ».
-- `lignes.$slug.tsx`, `ports.$slug.tsx` : fiches avec réservation, sens inverse et lien vers la carte.
-- `auth.tsx` : mot de passe oublié.
-- `admin.tsx` : heures saisies en heure locale, confirmations, statuts en français, contrôle qualité des durées.
-- `compte.tsx`, `__root.tsx`, `mentions-legales.tsx`, `confidentialite.tsx` : libellés, titre du site, mise en page.
+### Fichiers à REMPLACER
+Tous les autres fichiers du zip `batogo-fichiers-modifies.zip` (environ 38), notamment :
+`src/routes/index.tsx`, `src/components/panel/SidePanel.tsx`, `src/components/map/FerryMap.tsx`, `src/components/map/MobileMapControls.tsx`, `src/components/layout/MobileTabBar.tsx`, `src/styles.css`, `src/lib/ferry/types.ts`, `filtering.ts`, `urlState.ts`, `format.ts`, ainsi que les pages (`horaires`, `lignes.$slug`, `ports.$slug`, `auth`, `admin`…), les fiches (`PortView`, `RouteView`, `EntityViews`…) et les documents (`README.md`, `roadmap.md`, `public/llms.txt`).
 
 ---
 
-## Ce qui change pour les visiteurs
+## Actions à faire de votre côté
 
-1. **Les horaires sont fiables** : chaque heure est affichée dans l'heure locale du port (« heure de Paris », « heure d'Alger »), quel que soit le pays d'où l'on consulte.
-2. **Les filtres fonctionnent partout** : choisir un départ ou une arrivée met à jour la carte **et** la liste des départs, sur ordinateur comme sur mobile. Un lien partagé rouvre exactement la même vue.
-3. **Les deux sens sont traités à égalité** :
-   - bouton ⇄ pour inverser le sens ;
-   - « Voir le sens inverse » sur chaque ligne ;
-   - Horaires filtrables « Vers l'Algérie » ou « Depuis l'Algérie » ;
-   - vacances scolaires disponibles dans les deux sens.
-4. **Le planificateur** :
-   - il suit l'ordre trajet → dates → options ;
-   - le retour est proposé automatiquement (et peut partir d'un autre port) ;
-   - les jours où il y a un départ sont cliquables ;
-   - toutes les traversées du jour s'affichent, avec un badge « Recommandé ».
-5. **Le visiteur sait où réserver** : un bouton « Réserver sur le site de [compagnie] » apparaît sur les départs, les lignes et le planificateur (si l'adresse du site de la compagnie est renseignée dans l'admin).
-6. **Le mobile est plus lisible** :
-   - la côte algérienne est visible au-dessus du tiroir ;
-   - la poignée du tiroir est visible ;
-   - les départs passent avant les filtres ;
-   - l'onglet « Planifier » ne recharge plus la page.
-7. **La cohérence visuelle est meilleure** : un seul logo et un seul en-tête, des icônes à la place des émojis, une légende de carte et des textes plus grands.
+1. Mettre les fichiers sur GitHub et **supprimer les 3 fichiers** (étapes 1 et 2).
+2. **Corriger les durées incohérentes** de vos données (ex. Alger → Marseille à 6 h) : *Admin → Données → Contrôle qualité*.
+3. **Renseigner le site web de chaque compagnie** dans l'admin, sinon le bouton « Réserver » n'apparaît pas.
+4. **(Facultatif, après relecture par une personne compétente)** le script SQL qui recale les horaires déjà en base. Faites une **sauvegarde** avant, exécutez-le **une seule fois**. Sans lui, les anciens horaires restent décalés d'une à deux heures ; réimporter vos fichiers Excel avec le nouveau code corrige aussi le problème.
+5. **Mot de passe oublié** : autorisez l'adresse `…/auth` comme adresse de retour dans les réglages d'authentification de Lovable Cloud.
+6. Le badge « Edit with Lovable » se masque dans les réglages du projet Lovable, pas dans le code.
 
----
-
-## Ce qui change dans le back-office
-
-- **Import Excel** : saisissez les heures **telles qu'imprimées sur les billets**. L'heure de départ est l'heure locale du port de départ, l'heure d'arrivée l'heure locale du port d'arrivée. Le changement d'heure été/hiver est géré.
-- **Confirmations** avant toute action définitive : suppression d'une ligne ou d'un calendrier, annulation d'un départ, génération des départs, fermeture d'un port, abandon d'un import.
-- « Archiver la saison » devient **« Vider la saison »**, parce que les départs sont bien supprimés et non archivés.
-- Nouvel encart **« Contrôle qualité des durées »** dans l'onglet *Données*. Il signale par exemple « Alger ⇄ Marseille : 20 h dans un sens, 6 h dans l'autre ».
-- Les statuts et motifs s'affichent en français ; les avis publiés restent visibles dans la liste.
-
----
-
-## Actions à faire de votre côté (dans l'ordre)
-
-1. **Mettre les fichiers sur GitHub**, comme expliqué plus haut.
-2. **Vérifier l'aperçu Lovable** : carte, recherche Départ/Arrivée, planificateur, page Horaires.
-3. **Corriger les durées incohérentes** signalées dans *Admin → Données → Contrôle qualité*.
-4. **Renseigner le site web de chaque compagnie** (*Admin*), sinon le bouton « Réserver » ne s'affiche pas.
-5. **(Facultatif, après relecture)** Recaler les horaires déjà en base avec `scripts/sql/2026-10-correctif-fuseaux-horaires.sql`.
-   - Sans ce script, les anciens horaires restent affichés comme aujourd'hui, c'est-à-dire décalés d'une à deux heures par rapport au fichier Excel d'origine.
-   - Réimporter les fichiers Excel avec le nouveau code donne le même résultat.
-   - Faites une sauvegarde avant, et exécutez-le une seule fois.
-6. **Mot de passe oublié** : dans les réglages d'authentification de Lovable Cloud / Supabase, vérifiez que l'adresse `https://VOTRE-DOMAINE/auth` est autorisée comme adresse de redirection.
-7. **Badge « Edit with Lovable »** : il ne vient pas du code. Il se masque dans les réglages du projet Lovable (selon l'abonnement).
-
----
-
-## Non traité dans cette version (à prévoir)
-
-- Interface en arabe (lecture de droite à gauche) et en anglais.
-- Prix, disponibilité et réservation intégrée.
-- Alertes : changement d'horaire, ouverture des ventes.
-- Tracés maritimes réels (les lignes restent droites ; la légende le précise).
-- Suppression ou export du compte (RGPD) et contrôle des droits admin côté serveur.
-- Remplacement de la bibliothèque `xlsx` 0.18.5 (vulnérabilités publiées, à vérifier).
-- Contenu du guide pratique, à rédiger et à valider avec des sources officielles.
+## Pas encore fait
+Interface arabe et anglaise · prix et réservation intégrée · alertes · mode sombre · tracés maritimes réels · suppression et export de compte (RGPD) · remplacement de la bibliothèque `xlsx` · contenu approfondi du guide.

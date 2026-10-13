@@ -114,9 +114,12 @@
 }
 
 .batogo-floating-panel {
-  border: 1px solid rgba(0, 0, 0, 0.04);
-  background: var(--color-card);
-  box-shadow: var(--shadow-panel);
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  background: color-mix(in oklab, var(--color-card) 94%, transparent);
+  box-shadow:
+    0 24px 60px -18px rgba(10, 40, 80, 0.35),
+    0 4px 14px -4px rgba(10, 40, 80, 0.12);
+  backdrop-filter: blur(24px) saturate(1.4);
 }
 .batogo-tabbar {
   border: 1px solid var(--color-border);
@@ -338,7 +341,7 @@
 }
 .port-marker:hover .port-tip,
 .port-marker:focus-within .port-tip,
-.port-marker[data-active="true"] .port-tip {
+.port-marker[data-tip="true"] .port-tip {
   opacity: 1;
   transform: translateX(0) scale(1);
   pointer-events: auto;
@@ -447,7 +450,7 @@
     padding: 14px;
     border-radius: 1rem;
   }
-  .port-marker:focus-within:not([data-active="true"]) .port-tip {
+  .port-marker:focus-within:not([data-tip="true"]) .port-tip {
     opacity: 0;
     transform: translateX(6px) translateY(2px) scale(0.98);
     pointer-events: none;
@@ -483,5 +486,39 @@
   .port-marker__dot,
   .port-marker__dot::after {
     transition: none;
+  }
+}
+
+/* Animations d'entrée : cartes de traversée et détail du volet */
+@keyframes sailing-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.sailing-card {
+  animation: sailing-in 0.4s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+@keyframes panel-detail-in {
+  from {
+    opacity: 0;
+    transform: translateX(16px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.panel-detail {
+  animation: panel-detail-in 0.3s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+@media (prefers-reduced-motion: reduce) {
+  .sailing-card,
+  .panel-detail {
+    animation: none;
   }
 }

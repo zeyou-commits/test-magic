@@ -17,6 +17,8 @@ export function filtersFromUrl(search: string): Filters {
     companyId: nullable(params.get("company")),
     vesselId: nullable(params.get("vessel")),
     date: nullable(params.get("date")),
+    returnDate: nullable(params.get("ret")),
+    roundTrip: params.get("way") !== "1",
     schoolZone: ZONES.find((item) => item === zone) ?? null,
   };
 }
@@ -42,6 +44,8 @@ export function mapStateToSearch(
   if (filters.companyId) params.set("company", filters.companyId);
   if (filters.vesselId) params.set("vessel", filters.vesselId);
   if (filters.date) params.set("date", filters.date);
+  if (filters.returnDate) params.set("ret", filters.returnDate);
+  if (!filters.roundTrip) params.set("way", "1");
   if (filters.schoolZone) params.set("zone", filters.schoolZone);
 
   if (selection) {

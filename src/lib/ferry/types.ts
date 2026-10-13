@@ -45,6 +45,8 @@ export interface Vessel {
   description: string | null;
   status: EntityStatus;
   is_demo: boolean;
+  /** Identifiant AIS à 9 chiffres, pour le suivi en direct. */
+  mmsi: number | null;
 }
 export interface RouteLine {
   id: string;
@@ -125,8 +127,12 @@ export interface Filters {
   arrivalPortIds: string[];
   companyId: string | null;
   vesselId: string | null;
-  /** Jour de départ (AAAA-MM-JJ), dans l'heure locale du port de départ. */
+  /** Jour de départ de l'aller (AAAA-MM-JJ), dans l'heure locale du port de départ. */
   date: string | null;
+  /** Jour de départ du retour (AAAA-MM-JJ), dans l'heure locale du port de retour. */
+  returnDate: string | null;
+  /** Aller-retour (par défaut) ou aller simple. */
+  roundTrip: boolean;
   schoolZone: "A" | "B" | "C" | null;
 }
 
@@ -137,5 +143,7 @@ export const emptyFilters: Filters = {
   companyId: null,
   vesselId: null,
   date: null,
+  returnDate: null,
+  roundTrip: true,
   schoolZone: null,
 };

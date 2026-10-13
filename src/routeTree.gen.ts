@@ -23,6 +23,7 @@ import { Route as LignesRouteImport } from './routes/lignes'
 import { Route as MentionsLegalesRouteImport } from './routes/mentions-legales'
 import { Route as PortsRouteImport } from './routes/ports'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
+import { Route as ApiVesselPositionsRouteImport } from './routes/api.vessel-positions'
 import { Route as LignesSlugRouteImport } from './routes/lignes.$slug'
 import { Route as PortsSlugRouteImport } from './routes/ports.$slug'
 
@@ -96,6 +97,11 @@ const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
   path: '/sitemap.xml',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiVesselPositionsRoute = ApiVesselPositionsRouteImport.update({
+  id: '/api/vessel-positions',
+  path: '/api/vessel-positions',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const LignesSlugRoute = LignesSlugRouteImport.update({
   id: '/$slug',
   path: '/$slug',
@@ -122,6 +128,7 @@ export interface FileRoutesByFullPath {
   '/mentions-legales': typeof MentionsLegalesRoute
   '/ports': typeof PortsRouteWithChildren
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/api/vessel-positions': typeof ApiVesselPositionsRoute
   '/lignes/$slug': typeof LignesSlugRoute
   '/ports/$slug': typeof PortsSlugRoute
 }
@@ -140,6 +147,7 @@ export interface FileRoutesByTo {
   '/mentions-legales': typeof MentionsLegalesRoute
   '/ports': typeof PortsRouteWithChildren
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/api/vessel-positions': typeof ApiVesselPositionsRoute
   '/lignes/$slug': typeof LignesSlugRoute
   '/ports/$slug': typeof PortsSlugRoute
 }
@@ -159,6 +167,7 @@ export interface FileRoutesById {
   '/mentions-legales': typeof MentionsLegalesRoute
   '/ports': typeof PortsRouteWithChildren
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/api/vessel-positions': typeof ApiVesselPositionsRoute
   '/lignes/$slug': typeof LignesSlugRoute
   '/ports/$slug': typeof PortsSlugRoute
 }
@@ -179,6 +188,7 @@ export interface FileRouteTypes {
     | '/mentions-legales'
     | '/ports'
     | '/sitemap.xml'
+    | '/api/vessel-positions'
     | '/lignes/$slug'
     | '/ports/$slug'
   fileRoutesByTo: FileRoutesByTo
@@ -197,6 +207,7 @@ export interface FileRouteTypes {
     | '/mentions-legales'
     | '/ports'
     | '/sitemap.xml'
+    | '/api/vessel-positions'
     | '/lignes/$slug'
     | '/ports/$slug'
   id:
@@ -215,6 +226,7 @@ export interface FileRouteTypes {
     | '/mentions-legales'
     | '/ports'
     | '/sitemap.xml'
+    | '/api/vessel-positions'
     | '/lignes/$slug'
     | '/ports/$slug'
   fileRoutesById: FileRoutesById
@@ -234,6 +246,7 @@ export interface RootRouteChildren {
   MentionsLegalesRoute: typeof MentionsLegalesRoute
   PortsRoute: typeof PortsRouteWithChildren
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
+  ApiVesselPositionsRoute: typeof ApiVesselPositionsRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -336,6 +349,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SitemapDotxmlRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/vessel-positions': {
+      id: '/api/vessel-positions'
+      path: '/api/vessel-positions'
+      fullPath: '/api/vessel-positions'
+      preLoaderRoute: typeof ApiVesselPositionsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/lignes/$slug': {
       id: '/lignes/$slug'
       path: '/$slug'
@@ -389,6 +409,7 @@ const rootRouteChildren: RootRouteChildren = {
   MentionsLegalesRoute: MentionsLegalesRoute,
   PortsRoute: PortsRouteWithChildren,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
+  ApiVesselPositionsRoute: ApiVesselPositionsRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

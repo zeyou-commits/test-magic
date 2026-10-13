@@ -13,7 +13,7 @@ export function MapLegend({
 
   return (
     <div
-      className={`absolute bottom-6 z-10 hidden transition-all duration-300 md:block ${panelOpen ? "left-[420px]" : "left-10"}`}
+      className={`absolute bottom-6 z-10 hidden transition-all duration-300 md:block ${panelOpen ? "left-[480px]" : "left-10"}`}
     >
       {open ? (
         <div className="w-64 rounded-2xl border border-border bg-background/95 p-4 text-sm shadow-[var(--shadow-panel)] backdrop-blur">

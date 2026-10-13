@@ -34,7 +34,7 @@ export function MapStatusBar({
     <div
       role="status"
       aria-live="polite"
-      className={`pointer-events-none absolute left-0 right-0 top-[4.75rem] z-10 flex flex-wrap items-center justify-center gap-2 px-4 transition-all duration-300 md:top-[4.5rem] md:justify-start ${panelOpen ? "md:left-[420px]" : "md:left-10"}`}
+      className={`pointer-events-none absolute left-0 right-0 top-[4.75rem] z-10 flex flex-wrap items-center justify-center gap-2 px-4 transition-all duration-300 md:top-[4.5rem] md:justify-start ${panelOpen ? "md:left-[480px]" : "md:left-10"}`}
     >
       {hasError ? (
         <div className="pointer-events-auto inline-flex min-h-9 items-center gap-2 rounded-full border border-destructive/20 bg-background px-3 py-1 text-sm font-medium text-destructive shadow-sm">

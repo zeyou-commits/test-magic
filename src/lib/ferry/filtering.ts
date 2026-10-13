@@ -221,6 +221,7 @@ export function hasActiveFilters(filters: Filters): boolean {
     filters.companyId !== null ||
     filters.vesselId !== null ||
     filters.date !== null ||
+    filters.returnDate !== null ||
     filters.schoolZone !== null
   );
 }
@@ -278,6 +279,15 @@ export function describeActiveFilters(
       key: "date",
       label: chipDateFormatter.format(new Date(y, m - 1, d)),
       remove: (f) => ({ ...f, date: null }),
+    });
+  }
+
+  if (filters.returnDate && filters.roundTrip) {
+    const [y = 1970, m = 1, d = 1] = filters.returnDate.split("-").map(Number);
+    chips.push({
+      key: "return",
+      label: `Retour ${chipDateFormatter.format(new Date(y, m - 1, d))}`,
+      remove: (f) => ({ ...f, returnDate: null }),
     });
   }
 

@@ -9,7 +9,9 @@ import {
 import { formatDateTime, formatDuration } from "@/lib/ferry/format";
 import type { Selection } from "@/lib/ferry/types";
 import { BookingLink, DemoBadge, EmptyNote, PanelHeader, ReliabilityNote, Section } from "./shared";
-import { portTimeZone, zoneLabel } from "@/lib/ferry/time";
+import { portTimeZone, wallTimeInZone, zoneLabel } from "@/lib/ferry/time";
+import { useLiveShips } from "@/lib/ferry/useLiveShips";
+import { courseLabel, formatAge, formatDelay } from "@/lib/ferry/tracking";
 import { ReportButton } from "./ReportButton";
 
 export function CompanyView({
@@ -195,8 +197,10 @@ export function DepartureView({
   const { data: companies = [] } = useQuery(companiesQuery);
   const { data: vessels = [] } = useQuery(vesselsQuery);
 
+  const liveShips = useLiveShips();
   const departure = departures.find((item) => item.id === departureId);
   if (!departure) return <EmptyNote>Départ introuvable.</EmptyNote>;
+  const live = liveShips.find((ship) => ship.departure.id === departureId);
   const route = routes.find((item) => item.id === departure.route_id);
   const company = companies.find((item) => item.id === departure.company_id);
   const vessel = vessels.find((item) => item.id === departure.vessel_id);
@@ -222,6 +226,70 @@ export function DepartureView({
         </div>
       ) : null}
       <div>
+        {live ? (
+          <Section title="Où est mon bateau ?">
+            <div
+              className={`rounded-2xl p-4 ${live.phase === "sea" ? "bg-success/10" : "bg-secondary"}`}
+            >
+              <div className="flex items-center gap-2 text-sm font-bold">
+                <span className="relative flex size-2.5" aria-hidden>
+                  {live.phase === "sea" ? (
+                    <span className="absolute inline-flex size-full animate-ping rounded-full bg-success/60" />
+                  ) : null}
+                  <span
+                    className={`relative inline-flex size-2.5 rounded-full ${live.phase === "sea" ? "bg-success" : "bg-muted-foreground"}`}
+                  />
+                </span>
+                {live.phase === "sea" ? "En mer" : "Au port, départ proche"}
+              </div>
+              {live.phase === "sea" && live.etaIso ? (
+                <>
+                  <p className="mt-2 font-display text-2xl font-bold tabular-nums">
+                    Arrivée vers {wallTimeInZone(live.etaIso, toZone)}
+                    <span className="ml-2 text-xs font-normal text-muted-foreground">
+                      {zoneLabel(toZone)}
+                    </span>
+                  </p>
+                  <p
+                    className={`text-sm font-semibold ${formatDelay(live.delayMinutes).tone === "late" ? "text-destructive" : "text-success"}`}
+                  >
+                    {formatDelay(live.delayMinutes).label}
+                  </p>
+                </>
+              ) : null}
+              <dl className="mt-3 grid gap-1.5 text-sm">
+                <Row
+                  label="Vitesse"
+                  value={
+                    live.position.speedKnots !== null
+                      ? `${live.position.speedKnots.toFixed(1)} nœuds`
+                      : "—"
+                  }
+                />
+                <Row
+                  label="Cap"
+                  value={
+                    live.position.courseDeg !== null
+                      ? `${Math.round(live.position.courseDeg)}° (${courseLabel(live.position.courseDeg)})`
+                      : "—"
+                  }
+                />
+                {live.phase === "sea" && live.remainingKm !== null ? (
+                  <Row
+                    label="Distance restante"
+                    value={`environ ${Math.round(live.remainingKm)} km`}
+                  />
+                ) : null}
+                <Row label="Dernière position" value={formatAge(live.ageMinutes)} />
+              </dl>
+              <p className="mt-3 text-xs leading-relaxed text-muted-foreground">
+                Position AIS actualisée toutes les 20 minutes environ ; l’heure d’arrivée est une
+                estimation en ligne droite, à vérifier auprès de la compagnie.
+                {live.demo ? " (Données de démonstration.)" : ""}
+              </p>
+            </div>
+          </Section>
+        ) : null}
         <Section title="Détails">
           <dl className="grid gap-2 text-sm">
             <Row

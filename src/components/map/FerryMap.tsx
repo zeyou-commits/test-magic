@@ -15,6 +15,8 @@ import type { Port, RouteLine, Selection } from "@/lib/ferry/types";
 import { formatDuration } from "@/lib/ferry/format";
 import { portColor, routeColor } from "@/lib/ferry/colors";
 import { algeriaGeoJson } from "@/lib/ferry/algeriaGeoJson";
+import { pointAlong, routeArc, stableRandom, type LngLat } from "@/lib/ferry/geo";
+import { projectedPosition, type LiveShip } from "@/lib/ferry/tracking";
 import { useIsMobile } from "@/hooks/use-mobile";
 
 // En production, MapLibre v6 a besoin que son « worker » soit fourni explicitement.
@@ -38,6 +40,10 @@ interface FerryMapProps {
   focusRouteIds: string[];
   selection: Selection | null;
   highlightedPortIds: string[];
+  /** Navires suivis en direct (positions réelles) : ils remplacent les navires animés de leur ligne. */
+  liveShips?: LiveShip[];
+  /** Ports à cadrer quand rien n'est sélectionné (trajet cherché). */
+  fitPortIds?: string[];
   portMeta: Record<string, PortMeta>;
   onSelect: (selection: Selection | null) => void;
   onOpenPanel?: () => void;
@@ -153,10 +159,7 @@ function routeFeatures(
         },
         geometry: {
           type: "LineString" as const,
-          coordinates: [
-            [from.longitude, from.latitude],
-            [to.longitude, to.latitude],
-          ],
+          coordinates: routeArc(from, to),
         },
       };
     })
@@ -224,6 +227,8 @@ export default function FerryMap({
   focusRouteIds,
   selection,
   highlightedPortIds,
+  fitPortIds = [],
+  liveShips = [],
   portMeta,
   onSelect,
   onOpenPanel,
@@ -239,6 +244,22 @@ export default function FerryMap({
   const interactRef = useRef(onMapInteract);
   const dismissedPortIdsRef = useRef<Set<string>>(new Set());
   const [mapReady, setMapReady] = useState(false);
+  // Navires animés : une pastille par ligne visible qui circule sur son arc.
+  const shipsRef = useRef<
+    {
+      id: string;
+      arc: LngLat[];
+      reverse: boolean;
+      color: string;
+      selected: boolean;
+      dimmed: boolean;
+      offset: number;
+      period: number;
+    }[]
+  >([]);
+
+  const liveRef = useRef<LiveShip[]>(liveShips);
+  liveRef.current = liveShips;
 
   selectRef.current = onSelect;
   interactRef.current = onMapInteract;
@@ -341,6 +362,24 @@ export default function FerryMap({
         data: { type: "FeatureCollection", features: [] },
       });
       map.addLayer({
+        id: "ferry-routes-glow",
+        type: "line",
+        source: "ferry-routes",
+        filter: ["any", ["get", "selected"], ["get", "focused"]],
+        layout: { "line-cap": "round", "line-join": "round" },
+        paint: {
+          "line-color": [
+            "case",
+            ["get", "selected"],
+            mapColor("--map-route-selected", "rgb(214, 90, 60)"),
+            ["get", "color"],
+          ],
+          "line-width": ["case", ["get", "selected"], 16, 11],
+          "line-blur": 5,
+          "line-opacity": ["case", ["get", "selected"], 0.45, 0.3],
+        },
+      });
+      map.addLayer({
         id: "ferry-routes-casing",
         type: "line",
         source: "ferry-routes",
@@ -373,7 +412,9 @@ export default function FerryMap({
           "line-width": [
             "case",
             ["get", "selected"],
-            3.4,
+            4,
+            ["get", "focused"],
+            3.2,
             ["interpolate", ["linear"], ["get", "lineCount"], 1, 1.4, 5, 1.8, 10, 2.2, 20, 2.8],
           ],
           "line-opacity": ["case", ["get", "dateDimmed"], 0.45, ["get", "dimmed"], 0.18, 1],
@@ -408,6 +449,115 @@ export default function FerryMap({
           "text-halo-color": "#ffffff",
           "text-halo-width": 2.2,
           "text-opacity": ["case", ["get", "dimmed"], 0, 1],
+        },
+      });
+
+      // Icône de navire (pointe vers le haut, tournée selon le cap).
+      const size = 56;
+      const canvas = document.createElement("canvas");
+      canvas.width = size;
+      canvas.height = size;
+      const ctx = canvas.getContext("2d");
+      if (ctx) {
+        ctx.translate(size / 2, size / 2);
+        ctx.beginPath();
+        ctx.moveTo(0, -22);
+        ctx.bezierCurveTo(10, -10, 12, 8, 9, 20);
+        ctx.lineTo(-9, 20);
+        ctx.bezierCurveTo(-12, 8, -10, -10, 0, -22);
+        ctx.closePath();
+        ctx.fillStyle = "#0b3a6e";
+        ctx.fill();
+        ctx.lineWidth = 4;
+        ctx.strokeStyle = "#ffffff";
+        ctx.stroke();
+        ctx.fillStyle = "#ffffff";
+        ctx.fillRect(-5, -2, 10, 7);
+        map.addImage("ship-arrow", ctx.getImageData(0, 0, size, size), { pixelRatio: 2 });
+      }
+      map.addSource("ferry-live", {
+        type: "geojson",
+        data: { type: "FeatureCollection", features: [] },
+      });
+      map.addLayer({
+        id: "ferry-live-halo",
+        type: "circle",
+        source: "ferry-live",
+        paint: {
+          "circle-radius": ["case", ["get", "selected"], 22, 17],
+          "circle-color": "#22c55e",
+          "circle-opacity": 0.22,
+          "circle-blur": 0.5,
+        },
+      });
+      map.addLayer({
+        id: "ferry-live-icon",
+        type: "symbol",
+        source: "ferry-live",
+        layout: {
+          "icon-image": "ship-arrow",
+          "icon-rotate": ["get", "course"],
+          "icon-rotation-alignment": "map",
+          "icon-allow-overlap": true,
+          "icon-ignore-placement": true,
+          "icon-size": ["case", ["get", "selected"], 1.3, 1],
+        },
+      });
+      map.addLayer({
+        id: "ferry-live-label",
+        type: "symbol",
+        source: "ferry-live",
+        minzoom: 4.8,
+        layout: {
+          "text-field": ["get", "name"],
+          "text-font": ["Noto Sans Bold"],
+          "text-size": 11,
+          "text-offset": [0, 1.7],
+          "text-anchor": "top",
+          "text-optional": true,
+        },
+        paint: { "text-color": "#0b3a6e", "text-halo-color": "#ffffff", "text-halo-width": 2 },
+      });
+      map.on("click", "ferry-live-icon", (event) => {
+        const id = event.features?.[0]?.properties?.["departureId"];
+        if (typeof id === "string") {
+          interactRef.current?.();
+          selectRef.current({ type: "departure", id });
+        }
+      });
+      map.on("mouseenter", "ferry-live-icon", () => {
+        map.getCanvas().style.cursor = "pointer";
+      });
+      map.on("mouseleave", "ferry-live-icon", () => {
+        map.getCanvas().style.cursor = "";
+      });
+
+      map.addSource("ferry-ships", {
+        type: "geojson",
+        data: { type: "FeatureCollection", features: [] },
+      });
+      map.addLayer({
+        id: "ferry-ships-halo",
+        type: "circle",
+        source: "ferry-ships",
+        paint: {
+          "circle-radius": ["case", ["get", "selected"], 12, 8],
+          "circle-color": ["get", "color"],
+          "circle-opacity": ["case", ["get", "dimmed"], 0, 0.28],
+          "circle-blur": 0.6,
+        },
+      });
+      map.addLayer({
+        id: "ferry-ships",
+        type: "circle",
+        source: "ferry-ships",
+        paint: {
+          "circle-radius": ["case", ["get", "selected"], 6, 4],
+          "circle-color": "#ffffff",
+          "circle-stroke-color": ["get", "color"],
+          "circle-stroke-width": ["case", ["get", "selected"], 3, 2.4],
+          "circle-opacity": ["case", ["get", "dimmed"], 0, 1],
+          "circle-stroke-opacity": ["case", ["get", "dimmed"], 0, 1],
         },
       });
 
@@ -456,8 +606,24 @@ export default function FerryMap({
   useEffect(() => {
     const map = mapRef.current;
     if (!map || !mapReady || selection) return;
-    map.fitBounds(OVERVIEW_BOUNDS, { padding: viewPadding(), duration: 400 });
-  }, [isMobile, mapReady, mobileBottomInset, desktopLeftInset]);
+    const chosen = fitPortIds
+      .map((id) => ports.find((port) => port.id === id))
+      .filter((port): port is Port => Boolean(port));
+    if (chosen.length > 0) {
+      const lngs = chosen.map((port) => port.longitude);
+      const lats = chosen.map((port) => port.latitude);
+      // Les ports du trajet cherché plus leurs destinations directes donnent un cadrage utile.
+      map.fitBounds(
+        [
+          [Math.min(...lngs) - 0.6, Math.min(...lats) - 0.6],
+          [Math.max(...lngs) + 0.6, Math.max(...lats) + 0.6],
+        ],
+        { padding: viewPadding(), maxZoom: 6.2, duration: 800 },
+      );
+    } else {
+      map.fitBounds(OVERVIEW_BOUNDS, { padding: viewPadding(), duration: 600 });
+    }
+  }, [isMobile, mapReady, mobileBottomInset, desktopLeftInset, fitPortIds.join("|"), ports.length]);
 
   useEffect(() => {
     const map = mapRef.current;
@@ -472,8 +638,8 @@ export default function FerryMap({
         const tip = element.querySelector<HTMLDivElement>(".port-tip");
         if (!tip) return;
         const visible = isMobile
-          ? element.dataset["active"] === "true"
-          : element.matches(':hover, [data-active="true"]') || element.matches(":focus-within");
+          ? element.dataset["tip"] === "true"
+          : element.matches(':hover, [data-tip="true"]') || element.matches(":focus-within");
         if (visible) positionPortTip(map, marker, tip);
       });
     };
@@ -511,6 +677,7 @@ export default function FerryMap({
           dismissedPortIdsRef.current.add(port.id);
           selectRef.current(null);
           el.dataset["active"] = "false";
+          el.dataset["tip"] = "false";
           (document.activeElement as HTMLElement | null)?.blur?.();
           close.blur();
           dot.blur();
@@ -550,6 +717,12 @@ export default function FerryMap({
 
       element.dataset["active"] = String(
         activeIds.has(port.id) && !dismissedPortIdsRef.current.has(port.id),
+      );
+      // L'infobulle n'est affichée que pour le port ouvert (pas pour les deux ports d'un trajet cherché).
+      element.dataset["tip"] = String(
+        selection?.type === "port" &&
+          selection.id === port.id &&
+          !dismissedPortIdsRef.current.has(port.id),
       );
       element.dataset["dimmed"] = String(dimming && !activeIds.has(port.id));
       element.dataset["closed"] = String(port.status === "inactive");
@@ -636,9 +809,9 @@ export default function FerryMap({
       tip.append(more);
       requestAnimationFrame(() => {
         if (
-          (isMobile && element.dataset["active"] === "true") ||
+          (isMobile && element.dataset["tip"] === "true") ||
           (!isMobile &&
-            (element.matches(':hover, [data-active="true"]') || element.matches(":focus-within")))
+            (element.matches(':hover, [data-tip="true"]') || element.matches(":focus-within")))
         )
           positionPortTip(map, marker, tip);
       });
@@ -659,7 +832,7 @@ export default function FerryMap({
       map.off("move", handleMapMove);
       window.removeEventListener("resize", repositionVisibleTips);
     };
-  }, [ports, highlightedPortIds, portMeta, mapReady]);
+  }, [ports, highlightedPortIds, portMeta, mapReady, selection?.type, selection?.id]);
 
   // La carte se recentre sur la sélection, dans la zone visible (hors volet et tiroir).
   useEffect(() => {
@@ -721,6 +894,35 @@ export default function FerryMap({
     const visible = new Set(visibleRouteIds);
     const focus = new Set(focusRouteIds);
 
+    const portsById = portMap;
+    const liveRouteIds = new Set(
+      liveShips.filter((ship) => ship.phase === "sea").map((ship) => ship.route.id),
+    );
+    shipsRef.current = routes
+      .filter((route) => visible.has(route.id) && !liveRouteIds.has(route.id))
+      .flatMap((route) => {
+        const from = portsById.get(route.departure_port_id);
+        const to = portsById.get(route.arrival_port_id);
+        if (!from || !to) return [];
+        const selected = selection?.type === "route" && selection.id === route.id;
+        const dimmed = focus.size > 0 && !focus.has(route.id);
+        return [
+          {
+            id: route.id,
+            arc: routeArc(from, to),
+            reverse: from.id > to.id,
+            color: routeColor(route.color, from.slug),
+            selected,
+            dimmed,
+            offset: stableRandom(route.id),
+            period:
+              14000 +
+              stableRandom(`p${route.id}`) * 9000 +
+              (route.typical_duration_minutes ?? 600) * 4,
+          },
+        ];
+      });
+
     const apply = () => {
       const source = map.getSource("ferry-routes") as GeoJSONSource | undefined;
       if (!source) return;
@@ -739,7 +941,80 @@ export default function FerryMap({
 
     if (readyRef.current) apply();
     else map.once("load", apply);
-  }, [routes, ports, visibleRouteIds, dateActiveRouteIds, focusRouteIds, selection, mapReady]);
+  }, [
+    routes,
+    ports,
+    visibleRouteIds,
+    dateActiveRouteIds,
+    focusRouteIds,
+    selection,
+    mapReady,
+    liveShips,
+  ]);
+
+  // Animation : les navires circulent doucement sur leur ligne (figés si l'utilisateur réduit les animations).
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !mapReady) return;
+    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    let frame = 0;
+    let last = 0;
+
+    const draw = (now: number) => {
+      const live = map.getSource("ferry-live") as GeoJSONSource | undefined;
+      if (live) {
+        const clock = Date.now();
+        live.setData({
+          type: "FeatureCollection",
+          features: liveRef.current.map((ship) => ({
+            type: "Feature" as const,
+            properties: {
+              course: ship.position.courseDeg ?? 0,
+              name: ship.vessel.name,
+              departureId: ship.departure.id,
+              selected: false,
+            },
+            geometry: {
+              type: "Point" as const,
+              coordinates: projectedPosition(ship.position, clock),
+            },
+          })),
+        });
+      }
+      const source = map.getSource("ferry-ships") as GeoJSONSource | undefined;
+      if (source) {
+        source.setData({
+          type: "FeatureCollection",
+          features: shipsRef.current.map((ship) => {
+            const progress = (((now / ship.period + ship.offset) % 1) + 1) % 1;
+            const t = ship.reverse ? 1 - progress : progress;
+            return {
+              type: "Feature" as const,
+              properties: { color: ship.color, selected: ship.selected, dimmed: ship.dimmed },
+              geometry: { type: "Point" as const, coordinates: pointAlong(ship.arc, t) },
+            };
+          }),
+        });
+      }
+    };
+
+    const loop = (now: number) => {
+      // ~30 images par seconde suffisent et ménagent la batterie.
+      if (now - last > 33 && !document.hidden) {
+        last = now;
+        draw(now);
+      }
+      frame = requestAnimationFrame(loop);
+    };
+
+    if (reduce) {
+      draw(0);
+      const timer = window.setInterval(() => draw(0), 1000);
+      return () => window.clearInterval(timer);
+    }
+    frame = requestAnimationFrame(loop);
+    return () => cancelAnimationFrame(frame);
+  }, [mapReady]);
 
   useEffect(() => {
     const map = mapRef.current;

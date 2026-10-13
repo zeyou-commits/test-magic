@@ -36,3 +36,5 @@
 - [ ] 28. Prix indicatifs puis partenariats de réservation
 - [ ] 29. Alertes (changement d'horaire, annulation, ouverture des ventes)
 - [ ] 30. Tracés maritimes réels (géométrie des lignes en base)
+- [x] 31. Recherche unique (départ, arrivée, dates, voyageurs) qui pilote la carte, la liste et l'adresse de la page ;
+      trajets courbes, navires animés, cartes de traversée, frise des jours

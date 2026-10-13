@@ -145,6 +145,7 @@ function AdminPage() {
           <TabsTrigger value="schedules">Calendriers</TabsTrigger>
           <TabsTrigger value="ports">Ports</TabsTrigger>
           <TabsTrigger value="routes">Lignes</TabsTrigger>
+          <TabsTrigger value="vessels">Navires</TabsTrigger>
           <TabsTrigger value="import">Import Excel</TabsTrigger>
           <TabsTrigger value="data">Données</TabsTrigger>
         </TabsList>
@@ -165,6 +166,9 @@ function AdminPage() {
         </TabsContent>
         <TabsContent value="routes">
           <RoutesAdmin />
+        </TabsContent>
+        <TabsContent value="vessels">
+          <VesselsAdmin />
         </TabsContent>
         <TabsContent value="import">
           <ImportAdmin />
@@ -880,6 +884,107 @@ function SchedulesAdmin() {
         </ul>
       </Panel>
     </>
+  );
+}
+
+/** Suivi en direct : identifiant MMSI de chaque navire et état de la dernière position reçue. */
+function VesselsAdmin() {
+  const queryClient = useQueryClient();
+  const { data: vessels = [] } = useQuery(vesselsQuery);
+  const { data: companies = [] } = useQuery(companiesQuery);
+  const { data: positions = [] } = useQuery({
+    queryKey: ["admin", "vessel_positions"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("vessel_positions").select("*");
+      if (error) throw new Error(error.message);
+      return data;
+    },
+    refetchInterval: 60_000,
+  });
+  const [drafts, setDrafts] = useState<Record<string, string>>({});
+
+  const save = useMutation({
+    mutationFn: async ({ id, mmsi }: { id: string; mmsi: number | null }) => {
+      const { error } = await supabase.from("vessels").update({ mmsi }).eq("id", id);
+      if (error)
+        throw new Error(
+          error.message.includes("unique")
+            ? "Ce MMSI est déjà utilisé par un autre navire."
+            : "Enregistrement impossible. Le MMSI doit avoir 9 chiffres.",
+        );
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["vessels"] });
+      toast.success(
+        "MMSI enregistré. Le suivi démarre dès qu'une traversée de ce navire approche.",
+      );
+    },
+    onError: (error: Error) => toast.error(error.message),
+  });
+
+  const positionByMmsi = new Map(positions.map((position) => [position.mmsi, position]));
+
+  return (
+    <Panel>
+      <h2 className="text-sm font-semibold">Suivi en direct des navires</h2>
+      <p className="mt-1 text-xs text-muted-foreground">
+        Saisissez le MMSI (9 chiffres) de chaque navire. Le site suit un navire de 6 h avant son
+        départ jusqu'à son arrivée, et ne redemande sa position qu'au bout de 20 minutes.
+      </p>
+      <ul className="mt-4 divide-y divide-border">
+        {vessels.map((vessel) => {
+          const value = drafts[vessel.id] ?? (vessel.mmsi ? String(vessel.mmsi) : "");
+          const valid = value === "" || /^\d{9}$/.test(value);
+          const position = vessel.mmsi ? positionByMmsi.get(vessel.mmsi) : undefined;
+          const company = companies.find((item) => item.id === vessel.company_id);
+          return (
+            <li key={vessel.id} className="flex flex-wrap items-center gap-3 py-3">
+              <div className="min-w-0 flex-1 basis-48">
+                <p className="text-sm font-medium">{vessel.name}</p>
+                <p className="text-xs text-muted-foreground">
+                  {company?.name ?? "Sans compagnie"}
+                  {position?.reported_at
+                    ? ` · dernière position le ${new Date(position.reported_at).toLocaleString("fr-FR")}`
+                    : vessel.mmsi
+                      ? " · pas encore de position"
+                      : ""}
+                  {position?.last_error ? ` · erreur : ${position.last_error}` : ""}
+                </p>
+              </div>
+              <Input
+                inputMode="numeric"
+                maxLength={9}
+                placeholder="MMSI"
+                aria-label={`MMSI de ${vessel.name}`}
+                aria-invalid={!valid}
+                value={value}
+                onChange={(event) =>
+                  setDrafts((prev) => ({
+                    ...prev,
+                    [vessel.id]: event.target.value.replace(/\D/g, ""),
+                  }))
+                }
+                className="w-36"
+              />
+              <Button
+                size="sm"
+                disabled={
+                  !valid || save.isPending || value === (vessel.mmsi ? String(vessel.mmsi) : "")
+                }
+                onClick={() =>
+                  save.mutate({ id: vessel.id, mmsi: value === "" ? null : Number(value) })
+                }
+              >
+                Enregistrer
+              </Button>
+            </li>
+          );
+        })}
+        {vessels.length === 0 ? (
+          <li className="py-3 text-sm text-muted-foreground">Aucun navire enregistré.</li>
+        ) : null}
+      </ul>
+    </Panel>
   );
 }
 

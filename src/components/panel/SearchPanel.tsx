@@ -49,6 +49,7 @@ import { useLiveShips } from "@/lib/ferry/useLiveShips";
 import type { LiveShip } from "@/lib/ferry/tracking";
 import { PortMultiPicker } from "./PortFilters";
 import { DayStrip, SailingCard } from "./SailingCard";
+import { ShareButtons } from "./ShareButtons";
 import {
   TripProfile,
   defaultTripProfile,
@@ -552,6 +553,7 @@ function ResultBlock({
         <h2 className="font-display text-base font-bold leading-tight">{title}</h2>
         <span className="shrink-0 text-[11px] text-muted-foreground">{subtitle}</span>
       </div>
+      <ShareButtons label="Partager cette recherche" />
       <DayStrip days={days} value={date} onChange={onDate} allLabel="Tous" />
       {list.length === 0 ? (
         <div className="rounded-2xl border border-dashed p-5 text-center text-sm text-muted-foreground">

@@ -199,7 +199,13 @@ function getPortLabelStyle(port: Port): Partial<CSSStyleDeclaration> {
   };
 }
 
-function positionPortTip(map: MapLibreMap, marker: Marker, tip: HTMLDivElement) {
+function positionPortTip(
+  map: MapLibreMap,
+  marker: Marker,
+  tip: HTMLDivElement,
+  /** Mobile : hauteur du tiroir qui masque le bas de la carte. */
+  bottomInset = 0,
+) {
   const container = map.getContainer();
   const mapRect = container.getBoundingClientRect();
   const markerRect = marker.getElement().getBoundingClientRect();
@@ -224,7 +230,9 @@ function positionPortTip(map: MapLibreMap, marker: Marker, tip: HTMLDivElement) 
   const topSafe = 84;
   let top = markerY - tipHeight / 2;
   if (top < mapRect.top + topSafe) top = mapRect.top + topSafe;
-  if (top + tipHeight > mapRect.bottom - padding) top = mapRect.bottom - padding - tipHeight;
+  const bottomSafe = mapRect.bottom - bottomInset - padding;
+  if (top + tipHeight > bottomSafe) top = bottomSafe - tipHeight;
+  if (top < mapRect.top + topSafe) top = mapRect.top + topSafe;
 
   tip.style.left = `${left - markerRect.left}px`;
   tip.style.top = `${top - markerRect.top}px`;
@@ -263,6 +271,8 @@ export default function FerryMap({
   selectRef.current = onSelect;
   interactRef.current = onMapInteract;
   const isMobile = useIsMobile();
+  // Mobile : un tap sur un port n'ouvre que la bulle ; le volet s'ouvre via « Voir la fiche du port ».
+  const [tipPortId, setTipPortId] = useState<string | null>(null);
   const hasFocus = focusRouteIds.length > 0;
 
   // Zone utile de la carte : ce qui n'est caché ni par le volet, ni par le tiroir, ni par l'en-tête.
@@ -651,10 +661,16 @@ export default function FerryMap({
         map.getCanvas().style.cursor = "";
       });
       map.on("click", (event: MapMouseEvent) => {
+        // Un clic sur un port ou sa bulle est géré par le marqueur lui-même.
+        const target = event.originalEvent?.target;
+        if (target instanceof Element && target.closest(".port-marker")) return;
         const hits = map.queryRenderedFeatures(event.point, {
           layers: ["ferry-routes-line", "ferry-routes-duration", "fleet-ships"],
         });
-        if (hits.length === 0) selectRef.current(null);
+        if (hits.length === 0) {
+          setTipPortId(null);
+          selectRef.current(null);
+        }
       });
 
       readyRef.current = true;
@@ -708,6 +724,7 @@ export default function FerryMap({
 
     const activeIds = new Set(highlightedPortIds);
     const dimming = highlightedPortIds.length > 0;
+    const tipInset = () => (insetsRef.current.isMobile ? insetsRef.current.mobileBottomInset : 0);
 
     const repositionVisibleTips = () => {
       portMarkersRef.current.forEach((marker) => {
@@ -715,7 +732,7 @@ export default function FerryMap({
         const tip = element.querySelector<HTMLDivElement>(".port-tip");
         if (!tip) return;
         const visible = element.dataset["tip"] === "true";
-        if (visible) positionPortTip(map, marker, tip);
+        if (visible) positionPortTip(map, marker, tip, tipInset());
       });
     };
 
@@ -753,6 +770,7 @@ export default function FerryMap({
           event.stopPropagation();
           // Ferme uniquement la bulle ; le détail du port reste ouvert dans le volet.
           dismissedPortIdsRef.current.add(port.id);
+          setTipPortId(null);
           el.dataset["tip"] = "false";
           close.blur();
           dot.blur();
@@ -765,9 +783,19 @@ export default function FerryMap({
           event.stopPropagation();
           dismissedPortIdsRef.current.delete(port.id);
           interactRef.current?.();
-          // Cliquer un port le sélectionne, sans modifier les filtres de recherche.
-          selectRef.current({ type: "port", id: port.id });
-          requestAnimationFrame(() => positionPortTip(map, marker, tip));
+          if (insetsRef.current.isMobile) {
+            setTipPortId(port.id);
+            // Le port se place au centre de la zone visible, au-dessus du tiroir.
+            map.easeTo({
+              center: [port.longitude, port.latitude],
+              offset: [0, -insetsRef.current.mobileBottomInset / 2 + 40],
+              duration: 350,
+            });
+          } else {
+            // Cliquer un port le sélectionne, sans modifier les filtres de recherche.
+            selectRef.current({ type: "port", id: port.id });
+          }
+          requestAnimationFrame(() => positionPortTip(map, marker, tip, tipInset()));
         };
 
         dot.addEventListener("click", select);
@@ -787,8 +815,9 @@ export default function FerryMap({
       element.dataset["active"] = String(activeIds.has(port.id));
       // L'infobulle n'est affichée que pour le port ouvert (pas pour les deux ports d'un trajet cherché).
       element.dataset["tip"] = String(
-        selection?.type === "port" &&
-          selection.id === port.id &&
+        (isMobile
+          ? tipPortId === port.id
+          : selection?.type === "port" && selection.id === port.id) &&
           !dismissedPortIdsRef.current.has(port.id),
       );
       element.dataset["dimmed"] = String(dimming && !activeIds.has(port.id));
@@ -870,12 +899,13 @@ export default function FerryMap({
       more.textContent = "Voir la fiche du port";
       more.addEventListener("click", (event) => {
         event.stopPropagation();
+        setTipPortId(null);
         selectRef.current({ type: "port", id: port.id });
         onOpenPanel?.();
       });
       tip.append(more);
       requestAnimationFrame(() => {
-        if (element.dataset["tip"] === "true") positionPortTip(map, marker, tip);
+        if (element.dataset["tip"] === "true") positionPortTip(map, marker, tip, tipInset());
       });
     });
 
@@ -894,7 +924,16 @@ export default function FerryMap({
       map.off("move", handleMapMove);
       window.removeEventListener("resize", repositionVisibleTips);
     };
-  }, [ports, highlightedPortIds, portMeta, mapReady, selection?.type, selection?.id]);
+  }, [
+    ports,
+    highlightedPortIds,
+    portMeta,
+    mapReady,
+    selection?.type,
+    selection?.id,
+    isMobile,
+    tipPortId,
+  ]);
 
   // La carte se recentre sur la sélection, dans la zone visible (hors volet et tiroir).
   useEffect(() => {
@@ -1067,7 +1106,16 @@ export default function FerryMap({
       window.clearInterval(wakeTimer);
       map.off("zoomend", draw);
     };
-  }, [mapReady, fleet, visibleRouteIds, focusRouteIds, selection?.type, selection?.id, routes, ports]);
+  }, [
+    mapReady,
+    fleet,
+    visibleRouteIds,
+    focusRouteIds,
+    selection?.type,
+    selection?.id,
+    routes,
+    ports,
+  ]);
 
   useEffect(() => {
     const map = mapRef.current;

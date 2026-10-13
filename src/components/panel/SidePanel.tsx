@@ -1,7 +1,7 @@
 import type { Filters, RouteLine, Selection } from "@/lib/ferry/types";
-import { ArrowLeft, Share2 } from "lucide-react";
-import { toast } from "sonner";
+import { ArrowLeft } from "lucide-react";
 
+import { ShareButtons } from "./ShareButtons";
 import { SearchPanel } from "./SearchPanel";
 import { PortView } from "./PortView";
 import { RouteView } from "./RouteView";
@@ -36,21 +36,6 @@ export function SidePanel({
     onSelect(null);
   };
 
-  const shareSelection = async () => {
-    if (typeof window === "undefined") return;
-    const url = window.location.href;
-    try {
-      if (navigator.share) {
-        await navigator.share({ title: "Batogo — traversées en ferry", url });
-      } else {
-        await navigator.clipboard.writeText(url);
-        toast.success("Lien copié");
-      }
-    } catch {
-      // L'utilisateur peut fermer la fenêtre de partage.
-    }
-  };
-
   return (
     <div className="batogo-floating-panel pointer-events-auto relative flex h-full w-full flex-col overflow-hidden md:rounded-3xl">
       <div className="batogo-panel-scroll relative flex-1 overflow-y-auto">
@@ -74,13 +59,7 @@ export function SidePanel({
             >
               <ArrowLeft className="size-4" /> Retour à la recherche
             </button>
-            <button
-              type="button"
-              onClick={shareSelection}
-              className="flex h-10 items-center gap-2 rounded-full px-3 text-sm font-semibold text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
-            >
-              <Share2 className="size-4" /> Partager
-            </button>
+            <ShareButtons />
           </div>
           <div className="batogo-panel-scroll flex-1 overflow-y-auto p-4 md:p-6">
             {selection.type === "port" ? (

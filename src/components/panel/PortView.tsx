@@ -23,8 +23,12 @@ import {
 } from "@/lib/ferry/format";
 import { portTimeZone, zoneLabel } from "@/lib/ferry/time";
 import type { Selection } from "@/lib/ferry/types";
-import { DemoBadge, EmptyNote, PanelHeader, ReliabilityNote, Section, Stars } from "./shared";
+import { DemoBadge, EmptyNote, ReliabilityNote, Section, Stars } from "./shared";
 import { ReportButton } from "./ReportButton";
+import { CompanyBadge } from "./CompanyBadge";
+import { FacilityIcons } from "./FacilityIcons";
+import { portPhotoQuery } from "@/lib/ferry/vesselPhoto";
+import { Anchor, Camera, Clock, Route as RouteIcon, Ship } from "lucide-react";
 
 export function PortView({
   portId,
@@ -41,6 +45,7 @@ export function PortView({
   const { data: reviews = [] } = useQuery(portReviewsQuery(portId));
 
   const port = ports.find((item) => item.id === portId);
+  const photoQuery = useQuery(portPhotoQuery(port ?? { id: "", name: "", photo_url: null }));
   const portRoutes = routes.filter(
     (route) => route.departure_port_id === portId || route.arrival_port_id === portId,
   );
@@ -88,28 +93,104 @@ export function PortView({
   const outgoing = portRoutes.filter((route) => route.departure_port_id === portId);
   const incoming = portRoutes.filter((route) => route.arrival_port_id === portId);
 
+  const photo = photoQuery.data;
+
   return (
-    <div>
-      <PanelHeader
-        overline={`${port.country_name}${port.city ? ` · ${port.city}` : ""}`}
-        title={port.name}
-        subtitle={
-          <span className="flex flex-wrap items-center gap-2">
-            {averages.overall !== null ? (
-              <Stars value={averages.overall} />
+    <div className="-mx-4 -mt-4 md:-mx-6 md:-mt-6">
+      {/* En-tête : photo du port (back-office ou Wikimedia Commons), sinon fond illustré. */}
+      <div className="relative h-44 overflow-hidden bg-gradient-to-br from-primary to-primary/60 md:h-52">
+        {photoQuery.isLoading ? (
+          <div className="size-full animate-pulse bg-muted" aria-hidden />
+        ) : photo ? (
+          <img
+            src={photo.url}
+            alt={`Photo du port de ${port.name}`}
+            loading="lazy"
+            decoding="async"
+            referrerPolicy="no-referrer"
+            className="size-full object-cover"
+          />
+        ) : (
+          <div className="grid size-full place-items-center text-primary-foreground/70" aria-hidden>
+            <Anchor className="size-14" />
+          </div>
+        )}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent" />
+        <div className="absolute inset-x-0 bottom-0 p-4 md:p-6">
+          <p className="text-xs font-semibold uppercase tracking-wider text-white/80">
+            {port.country_name}
+            {port.city ? ` · ${port.city}` : ""}
+          </p>
+          <h1 className="font-display text-3xl font-bold leading-tight text-white drop-shadow">
+            {port.name}
+          </h1>
+        </div>
+        <div className="absolute right-3 top-3">
+          <ReportButton targetType="port" targetId={port.id} />
+        </div>
+      </div>
+      {photo?.source === "commons" ? (
+        <p className="flex items-start gap-1.5 border-b px-4 py-1.5 text-[10px] leading-snug text-muted-foreground md:px-6">
+          <Camera className="mt-px size-3 shrink-0" aria-hidden />
+          <span>
+            Photo{photo.credit ? ` : ${photo.credit}` : ""}
+            {photo.license ? ` · ${photo.license}` : ""} ·{" "}
+            {photo.pageUrl ? (
+              <a
+                href={photo.pageUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="underline"
+              >
+                Wikimedia Commons
+              </a>
             ) : (
-              <span>Pas encore d'avis</span>
+              "Wikimedia Commons"
             )}
-            {port.status === "inactive" ? (
-              <span className="rounded-full bg-secondary px-2 py-0.5 text-[11px] font-semibold text-muted-foreground">
-                Temporairement fermé
-              </span>
-            ) : null}
-            {port.is_demo ? <DemoBadge /> : null}
+            . Photo indicative.
           </span>
-        }
-        actions={<ReportButton targetType="port" targetId={port.id} />}
-      />
+        </p>
+      ) : null}
+
+      {/* Repères : note, lignes, prochains départs, fuseau. */}
+      <div className="space-y-3 px-4 pb-1 pt-4 md:px-6">
+        <div className="flex flex-wrap items-center gap-2 text-sm">
+          {averages.overall !== null ? (
+            <Stars value={averages.overall} />
+          ) : (
+            <span className="text-muted-foreground">Pas encore d'avis</span>
+          )}
+          {port.status === "inactive" ? (
+            <span className="rounded-full bg-secondary px-2 py-0.5 text-[11px] font-semibold text-muted-foreground">
+              Temporairement fermé
+            </span>
+          ) : null}
+          {port.is_demo ? <DemoBadge /> : null}
+        </div>
+        <dl className="grid grid-cols-3 gap-2 text-center">
+          <div className="rounded-2xl bg-secondary/60 px-2 py-2.5">
+            <dt className="flex items-center justify-center gap-1 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+              <RouteIcon className="size-3" aria-hidden /> Lignes
+            </dt>
+            <dd className="font-display text-xl font-bold leading-tight">{portRoutes.length}</dd>
+          </div>
+          <div className="rounded-2xl bg-secondary/60 px-2 py-2.5">
+            <dt className="flex items-center justify-center gap-1 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+              <Ship className="size-3" aria-hidden /> Départs
+            </dt>
+            <dd className="font-display text-xl font-bold leading-tight">
+              {portDepartures.length}
+            </dd>
+          </div>
+          <div className="rounded-2xl bg-secondary/60 px-2 py-2.5">
+            <dt className="flex items-center justify-center gap-1 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+              <Clock className="size-3" aria-hidden /> Heure
+            </dt>
+            <dd className="text-xs font-semibold leading-tight">{zoneLabel(timeZone)}</dd>
+          </div>
+        </dl>
+      </div>
+
       <div>
         <Section title={`Prochains départs · ${zoneLabel(timeZone)}`}>
           {portDepartures.length === 0 ? (
@@ -126,16 +207,21 @@ export function PortView({
                       onClick={() => onSelect({ type: "departure", id: departure.id })}
                       className="w-full rounded-lg px-2 py-2 text-left transition-colors hover:bg-secondary"
                     >
-                      <p className="text-sm font-medium">
-                        {formatDateTime(departure.departure_at, timeZone)}
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        {route ? portName(route.arrival_port_id) : "—"}
-                        {company ? ` · ${company.name}` : ""}
-                        {departure.duration_minutes
-                          ? ` · ${formatDuration(departure.duration_minutes)}`
-                          : ""}
-                      </p>
+                      <div className="flex items-center gap-2.5">
+                        <CompanyBadge name={company?.name} logoUrl={company?.logo_url} size={32} />
+                        <div className="min-w-0">
+                          <p className="text-sm font-medium">
+                            {formatDateTime(departure.departure_at, timeZone)}
+                          </p>
+                          <p className="truncate text-xs text-muted-foreground">
+                            {route ? portName(route.arrival_port_id) : "—"}
+                            {company ? ` · ${company.name}` : ""}
+                            {departure.duration_minutes
+                              ? ` · ${formatDuration(departure.duration_minutes)}`
+                              : ""}
+                          </p>
+                        </div>
+                      </div>
                     </button>
                   </li>
                 );
@@ -160,14 +246,7 @@ export function PortView({
 
         {facilities.length > 0 ? (
           <Section title="Services du port">
-            <dl className="grid gap-2">
-              {facilities.map(([key, value]) => (
-                <div key={key} className="text-sm">
-                  <dt className="font-medium">{facilityLabels[key] ?? key}</dt>
-                  <dd className="text-muted-foreground">{value}</dd>
-                </div>
-              ))}
-            </dl>
+            <FacilityIcons items={facilities} />
           </Section>
         ) : null}
 

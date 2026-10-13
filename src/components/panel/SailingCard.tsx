@@ -1,4 +1,13 @@
-import { ArrowUpRight, ChevronDown, ChevronRight, Moon, Ship, Sparkles } from "lucide-react";
+import { useEffect, useState } from "react";
+import {
+  ArrowUpRight,
+  ChevronDown,
+  ChevronLeft,
+  ChevronRight,
+  Moon,
+  Ship,
+  Sparkles,
+} from "lucide-react";
 import {
   formatDuration,
   reliabilityLabel,
@@ -11,15 +20,8 @@ import { safeExternalUrl } from "./shared";
 import { formatAge, formatDelay, type LiveShip } from "@/lib/ferry/tracking";
 import { wallTimeInZone, zoneLabel } from "@/lib/ferry/time";
 import { ReportButton } from "./ReportButton";
-
-function initials(name: string) {
-  return name
-    .split(/[\s-]+/)
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((part) => part[0]?.toUpperCase() ?? "")
-    .join("");
-}
+import { ShareButtons } from "./ShareButtons";
+import { CompanyBadge, companyColor } from "./CompanyBadge";
 
 const dayFormatter = new Intl.DateTimeFormat("fr-FR", {
   weekday: "short",
@@ -60,11 +62,7 @@ export function SailingCard({
   const arrivalSuffix = sailing.arrDayOffset > 0 ? `+${sailing.arrDayOffset}` : "";
   const departure = sailing.departure;
   const panelId = `sailing-${departure.id}`;
-  const sourceHref = safeExternalUrl(departure.source_url);
-  // « Import Excel — fichier-long-nom.xlsx » devient simplement « import Excel ».
-  const sourceLabel = departure.source_name?.startsWith("Import Excel")
-    ? "import Excel"
-    : (departure.source_name ?? "");
+  const brand = companyColor(sailing.company?.name);
 
   return (
     <article
@@ -75,12 +73,17 @@ export function SailingCard({
       onBlur={() => onHover(false)}
       className={`sailing-card group relative overflow-hidden rounded-2xl border bg-card transition-all duration-200 hover:shadow-lg ${expanded ? "border-primary shadow-md ring-2 ring-primary/20" : "border-border hover:-translate-y-0.5"}`}
     >
+      <span
+        className="absolute inset-y-0 left-0 w-1.5"
+        style={{ background: brand.solid }}
+        aria-hidden
+      />
       <button
         type="button"
         onClick={onToggle}
         aria-expanded={expanded}
         aria-controls={panelId}
-        className="block w-full px-3.5 pb-2.5 pt-3 text-left"
+        className="block w-full py-3 pb-2.5 pl-4 pr-3.5 text-left"
       >
         <div className="mb-2 flex items-center justify-between gap-2 text-xs">
           <span className="font-semibold text-foreground">
@@ -152,12 +155,7 @@ export function SailingCard({
 
       <div className="flex items-center justify-between gap-2 border-t border-dashed bg-secondary/40 px-3.5 py-2">
         <div className="flex min-w-0 items-center gap-2">
-          <span
-            className="grid size-6 shrink-0 place-items-center rounded-full bg-primary text-[10px] font-bold text-primary-foreground"
-            aria-hidden
-          >
-            {initials(sailing.company?.name ?? "?")}
-          </span>
+          <CompanyBadge name={sailing.company?.name} logoUrl={sailing.company?.logo_url} />
           <div className="min-w-0 truncate text-xs font-semibold">
             {sailing.company?.name ?? "Compagnie"}
             {sailing.vessel?.name ? (
@@ -224,23 +222,6 @@ export function SailingCard({
                   vérifié le {new Date(departure.last_verified_at).toLocaleDateString("fr-FR")}
                 </span>
               ) : null}
-              {departure.source_name ? (
-                <span className="text-muted-foreground">
-                  · source :{" "}
-                  {sourceHref ? (
-                    <a
-                      href={sourceHref}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="underline"
-                    >
-                      {sourceLabel}
-                    </a>
-                  ) : (
-                    sourceLabel
-                  )}
-                </span>
-              ) : null}
             </div>
 
             {departure.notes ? (
@@ -256,6 +237,7 @@ export function SailingCard({
                 Fiche de la ligne <ChevronRight className="size-3.5" aria-hidden />
               </button>
               <ReportButton targetType="departure" targetId={departure.id} label="Signaler" />
+              <ShareButtons />
             </div>
           </div>
         </div>
@@ -276,7 +258,11 @@ function Fact({ label, value, hint }: { label: string; value: string; hint?: str
   );
 }
 
-/** Frise horizontale des jours avec départ. */
+const STRIP_PAGE = 7;
+const weekdayFmt = new Intl.DateTimeFormat("fr-FR", { weekday: "short", timeZone: "UTC" });
+const monthFmt = new Intl.DateTimeFormat("fr-FR", { month: "short", timeZone: "UTC" });
+
+/** Frise compacte des jours avec départ, paginée : « Dates précédentes » / « Dates suivantes ». */
 export function DayStrip({
   days,
   value,
@@ -288,24 +274,49 @@ export function DayStrip({
   onChange: (day: string | null) => void;
   allLabel?: string;
 }) {
+  const [start, setStart] = useState(0);
+  // La fenêtre suit le jour choisi (ex. depuis le calendrier).
+  useEffect(() => {
+    if (!value) return;
+    const index = days.findIndex((item) => item.day === value);
+    if (index < 0) return;
+    setStart((current) =>
+      index >= current && index < current + STRIP_PAGE ? current : Math.max(0, index - 1),
+    );
+  }, [value, days]);
+
   if (days.length === 0) return null;
+  const maxStart = Math.max(0, days.length - STRIP_PAGE);
+  const from = Math.min(start, maxStart);
+  const visible = days.slice(from, from + STRIP_PAGE);
+  const hasPrev = from > 0;
+  const hasNext = from < maxStart;
+  const arrow =
+    "grid size-8 shrink-0 place-items-center rounded-full border bg-card text-muted-foreground transition hover:bg-secondary disabled:pointer-events-none disabled:opacity-30";
+
   return (
-    <div
-      className="-mx-4 overflow-x-auto px-4 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
-      role="listbox"
-      aria-label="Jours avec départ"
-    >
-      <div className="flex gap-1.5">
+    <div className="flex items-center gap-1" role="listbox" aria-label="Jours avec départ">
+      <button
+        type="button"
+        className={arrow}
+        disabled={!hasPrev}
+        onClick={() => setStart(Math.max(0, from - STRIP_PAGE))}
+        aria-label="Dates précédentes"
+        title="Dates précédentes"
+      >
+        <ChevronLeft className="size-4" aria-hidden />
+      </button>
+      <div className="flex min-w-0 flex-1 gap-1 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         <button
           type="button"
           role="option"
           aria-selected={value === null}
           onClick={() => onChange(null)}
-          className={`flex h-[58px] min-w-[52px] shrink-0 flex-col items-center justify-center rounded-2xl border px-2 text-xs font-semibold transition ${value === null ? "border-primary bg-primary text-primary-foreground shadow-md" : "border-border bg-card hover:bg-secondary"}`}
+          className={`flex h-11 min-w-[40px] flex-1 shrink-0 flex-col items-center justify-center rounded-xl border px-1.5 text-[11px] font-semibold transition ${value === null ? "border-primary bg-primary text-primary-foreground" : "border-border bg-card hover:bg-secondary"}`}
         >
           {allLabel}
         </button>
-        {days.map(({ day, count }) => {
+        {visible.map(({ day, count }) => {
           const date = new Date(`${day}T00:00:00Z`);
           const active = value === day;
           return (
@@ -315,28 +326,23 @@ export function DayStrip({
               role="option"
               aria-selected={active}
               onClick={() => onChange(active ? null : day)}
-              className={`relative flex h-[58px] min-w-[52px] shrink-0 flex-col items-center justify-center rounded-2xl border px-2 transition ${active ? "scale-105 border-primary bg-primary text-primary-foreground shadow-md" : "border-border bg-card hover:-translate-y-0.5 hover:bg-secondary"}`}
+              title={`${count} départ${count > 1 ? "s" : ""}`}
+              className={`relative flex h-11 min-w-[40px] flex-1 shrink-0 flex-col items-center justify-center rounded-xl border px-1 leading-none transition ${active ? "border-primary bg-primary text-primary-foreground" : "border-border bg-card hover:bg-secondary"}`}
             >
               <span
-                className={`text-[10px] font-semibold uppercase ${active ? "text-primary-foreground/80" : "text-muted-foreground"}`}
+                className={`text-[9px] font-semibold uppercase ${active ? "text-primary-foreground/80" : "text-muted-foreground"}`}
               >
-                {new Intl.DateTimeFormat("fr-FR", { weekday: "short", timeZone: "UTC" })
-                  .format(date)
-                  .replace(".", "")}
+                {weekdayFmt.format(date).replace(".", "")}
               </span>
-              <span className="font-display text-lg font-bold leading-none">
-                {date.getUTCDate()}
-              </span>
+              <span className="font-display text-sm font-bold">{date.getUTCDate()}</span>
               <span
-                className={`text-[10px] font-medium ${active ? "text-primary-foreground/80" : "text-muted-foreground"}`}
+                className={`text-[9px] ${active ? "text-primary-foreground/80" : "text-muted-foreground"}`}
               >
-                {new Intl.DateTimeFormat("fr-FR", { month: "short", timeZone: "UTC" })
-                  .format(date)
-                  .replace(".", "")}
+                {monthFmt.format(date).replace(".", "")}
               </span>
               {count > 1 ? (
                 <span
-                  className={`absolute -right-1 -top-1 grid size-4 place-items-center rounded-full text-[10px] font-bold ${active ? "bg-cta text-cta-foreground" : "bg-primary text-primary-foreground"}`}
+                  className={`absolute -right-0.5 -top-1 grid size-3.5 place-items-center rounded-full text-[9px] font-bold ${active ? "bg-cta text-cta-foreground" : "bg-primary text-primary-foreground"}`}
                 >
                   {count}
                 </span>
@@ -345,6 +351,16 @@ export function DayStrip({
           );
         })}
       </div>
+      <button
+        type="button"
+        className={arrow}
+        disabled={!hasNext}
+        onClick={() => setStart(Math.min(maxStart, from + STRIP_PAGE))}
+        aria-label="Dates suivantes"
+        title="Dates suivantes"
+      >
+        <ChevronRight className="size-4" aria-hidden />
+      </button>
     </div>
   );
 }

@@ -20,6 +20,8 @@ export interface Port {
   status: EntityStatus;
   facilities: Record<string, string> | null;
   notes: string | null;
+  /** Photo du port (URL https), sinon recherche sur Wikimedia Commons. */
+  photo_url: string | null;
   info_source: string | null;
   info_source_url: string | null;
   info_verified_at: string | null;

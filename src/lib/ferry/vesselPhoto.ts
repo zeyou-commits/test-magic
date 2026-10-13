@@ -91,7 +91,11 @@ interface CommonsPage {
  * fichier contient tous les mots du nom du navire ET un indice « navire » : mieux vaut aucune photo
  * qu'une mauvaise. Les photos renseignées dans le back-office priment toujours.
  */
-async function searchCommons(name: string, term: string): Promise<VesselPhoto | null> {
+async function searchCommons(
+  name: string,
+  term: string,
+  hints: string[] = SHIP_HINTS,
+): Promise<VesselPhoto | null> {
   const params = new URLSearchParams({
     action: "query",
     generator: "search",
@@ -100,7 +104,7 @@ async function searchCommons(name: string, term: string): Promise<VesselPhoto | 
     gsrlimit: "8",
     prop: "imageinfo",
     iiprop: "url|extmetadata",
-    iiurlwidth: "720",
+    iiurlwidth: "480",
     format: "json",
     origin: "*",
   });
@@ -118,7 +122,7 @@ async function searchCommons(name: string, term: string): Promise<VesselPhoto | 
     const title = normalize(page.title.replace(/^File:/i, ""));
     if (!/\.(jpe?g|png|webp)$/i.test(page.title)) continue;
     if (!words.every((word) => title.includes(word))) continue;
-    if (!SHIP_HINTS.some((hint) => title.includes(hint))) continue;
+    if (!hints.some((hint) => title.includes(hint))) continue;
     const info = page.imageinfo?.[0];
     const url = safeHttps(info?.thumburl ?? info?.url);
     if (!info || !url) continue;
@@ -159,6 +163,45 @@ function writeCache(key: string, value: VesselPhoto | null, days: number) {
   } catch {
     // Stockage indisponible (navigation privée) : sans conséquence.
   }
+}
+
+/** Mots qui prouvent que la photo représente bien un port. */
+const PORT_HINTS = [
+  "port",
+  "harbour",
+  "harbor",
+  "ferry",
+  "terminal",
+  "quai",
+  "marina",
+  "gare maritime",
+];
+
+/** Photo d'un port : celle du back-office, sinon une photo libre de Wikimedia Commons, sinon rien. */
+export function portPhotoQuery(port: { id: string; name: string; photo_url: string | null }) {
+  return queryOptions({
+    queryKey: ["port-photo", port.id, port.photo_url ?? ""],
+    queryFn: async (): Promise<VesselPhoto | null> => {
+      const own = safeHttps(port.photo_url);
+      if (own) return { url: own, pageUrl: null, credit: null, license: null, source: "batogo" };
+      const cacheKey = `batogo:port-photo:${normalize(port.name)}`;
+      const cached = readCache(cacheKey);
+      if (cached !== undefined) return cached;
+      try {
+        const found =
+          (await searchCommons(port.name, "port", PORT_HINTS)) ??
+          (await searchCommons(port.name, "harbour ferry terminal", PORT_HINTS));
+        writeCache(cacheKey, found, found ? 30 : 3);
+        return found;
+      } catch {
+        return null;
+      }
+    },
+    staleTime: Infinity,
+    gcTime: Infinity,
+    retry: false,
+    enabled: Boolean(port.name),
+  });
 }
 
 export function vesselPhotoQuery(vessel: Pick<Vessel, "id" | "name" | "photo_url">) {

@@ -54,6 +54,11 @@ export function Section({
   );
 }
 
+/** Sources internes (imports de fichiers) : jamais affichées au public. */
+export function isInternalSource(name?: string | null) {
+  return !!name && /import|excel|\.xlsx?|\.csv/i.test(name);
+}
+
 export function ReliabilityNote({
   reliability,
   sourceName,
@@ -71,7 +76,7 @@ export function ReliabilityNote({
       <span className={`font-semibold ${reliabilityTone[reliability]}`}>
         {reliabilityLabel[reliability]}
       </span>
-      {sourceName ? (
+      {sourceName && !isInternalSource(sourceName) ? (
         <>
           {" · Source : "}
           {href ? (

@@ -1002,7 +1002,8 @@ function VesselsAdmin() {
                 {(() => {
                   const dep = nextDeps.find((d) => d.vessel_id === vessel.id);
                   const route = dep ? routes.find((r) => r.id === dep.route_id) : undefined;
-                  const declared = position as { destination?: string | null; eta?: string | null } | undefined;
+                  const declared = position as
+                    { destination?: string | null; eta?: string | null } | undefined;
                   const link = vessel.imo
                     ? `https://www.vesselfinder.com/?imo=${vessel.imo}`
                     : vessel.mmsi
@@ -1023,7 +1024,12 @@ function VesselsAdmin() {
                           : "pas encore reçu"}
                       </p>
                       {link ? (
-                        <a href={link} target="_blank" rel="noopener noreferrer" className="font-semibold text-primary underline underline-offset-2">
+                        <a
+                          href={link}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="font-semibold text-primary underline underline-offset-2"
+                        >
                           Suivre sur VesselFinder ↗
                         </a>
                       ) : null}
@@ -1495,6 +1501,7 @@ const emptyPortDraft = {
   notes: "",
   info_source: "",
   info_source_url: "",
+  photo_url: "",
   status: "active",
 };
 
@@ -1571,6 +1578,7 @@ function PortsAdmin() {
         label_offset_y: Number(draft.label_offset_y) || 0,
         status: draft.status as "active" | "inactive" | "draft",
         notes: draft.notes.trim() || null,
+        photo_url: draft.photo_url.trim() || null,
         // Services du port : seules les lignes renseignées sont conservées.
         facilities: Object.fromEntries(
           Object.entries(facilities)
@@ -1876,6 +1884,13 @@ function PortsAdmin() {
               onChange={(event) => set("info_source_url")(event.target.value)}
             />
           </Field>
+          <Field label="Photo du port (lien https, facultatif)">
+            <Input
+              value={draft.photo_url}
+              placeholder="https://… (sinon photo libre Wikimedia Commons)"
+              onChange={(event) => set("photo_url")(event.target.value)}
+            />
+          </Field>
         </div>
         <div className="mt-3">
           <Field label="À savoir (embarquement, accès, fermeture…)">
@@ -1946,6 +1961,7 @@ function PortsAdmin() {
                       notes: port.notes ?? "",
                       info_source: port.info_source ?? "",
                       info_source_url: port.info_source_url ?? "",
+                      photo_url: port.photo_url ?? "",
                       status: port.status,
                     });
                   }}

@@ -339,6 +339,11 @@
   color: var(--color-foreground);
 }
 /* La bulle d'un port s'ouvre au clic (jamais au survol, pour ne pas gêner la navigation). */
+/* Le port dont la bulle est ouverte passe au-dessus des libellés voisins. */
+.port-marker[data-tip="true"] {
+  z-index: 30;
+}
+
 .port-marker[data-tip="true"] .port-tip {
   opacity: 1;
   transform: translateX(0) scale(1);
@@ -518,6 +523,11 @@
 
 /* ---------- Calendrier des dates (TripCalendar) ---------- */
 /* Un point sous chaque jour qui a au moins un départ. */
+/* Semaine entièrement passée (jours masqués) : la ligne disparaît. */
+.rdp-week:not(:has(td:not([data-hidden]))) {
+  display: none;
+}
+
 .batogo-day-avail button {
   position: relative;
   font-weight: 600;

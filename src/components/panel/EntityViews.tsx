@@ -17,6 +17,7 @@ import { useFleet } from "@/lib/ferry/useFleet";
 import { vesselPhotoQuery } from "@/lib/ferry/vesselPhoto";
 import { courseLabel, formatAge, formatDelay } from "@/lib/ferry/tracking";
 import { ReportButton } from "./ReportButton";
+import { CompanyBadge } from "./CompanyBadge";
 
 export function CompanyView({
   companyId,
@@ -164,7 +165,7 @@ export function VesselView({
   return (
     <div className="-mx-4 -mt-4 md:-mx-6 md:-mt-6">
       {/* Photo du navire : photo du back-office, sinon photo libre de Wikimedia Commons, sinon illustration. */}
-      <div className="relative aspect-[16/9] overflow-hidden bg-gradient-to-br from-primary/90 to-primary/60">
+      <div className="relative h-36 overflow-hidden bg-gradient-to-br from-primary/90 to-primary/60 md:h-40">
         {photoQuery.isLoading ? (
           <div className="size-full animate-pulse bg-muted" aria-hidden />
         ) : photo ? (
@@ -172,22 +173,28 @@ export function VesselView({
             src={photo.url}
             alt={`Photo du navire ${vessel.name}`}
             loading="lazy"
+            decoding="async"
+            fetchPriority="low"
+            width={480}
+            height={270}
             referrerPolicy="no-referrer"
             className="size-full object-cover"
           />
         ) : (
           <div className="grid size-full place-items-center text-primary-foreground/80">
             <div className="text-center">
-              <Ship className="mx-auto size-12" aria-hidden />
+              <Ship className="mx-auto size-9" aria-hidden />
               <p className="mt-2 text-xs font-medium">Photo non disponible</p>
             </div>
           </div>
         )}
-        <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/60 to-transparent px-4 pb-3 pt-10 md:px-6">
-          <p className="text-xs font-semibold uppercase tracking-wider text-white/80">
+        <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/60 to-transparent px-4 pb-2.5 pt-8 md:px-6">
+          <p className="text-[11px] font-semibold uppercase tracking-wider text-white/80">
             {vessel.vessel_type ?? "Navire"}
           </p>
-          <h1 className="font-display text-2xl font-bold text-white drop-shadow">{vessel.name}</h1>
+          <h1 className="font-display text-xl font-bold leading-tight text-white drop-shadow">
+            {vessel.name}
+          </h1>
         </div>
       </div>
       {photo?.source === "commons" ? (
@@ -205,15 +212,36 @@ export function VesselView({
         </p>
       ) : null}
 
-      <div className="flex flex-wrap items-center gap-2 px-4 pt-4 text-sm md:px-6">
+      <div className="flex flex-wrap items-center gap-2 px-4 pt-3 text-sm md:px-6">
         {company ? (
           <button
             type="button"
-            className="font-semibold text-primary underline underline-offset-2"
+            className="inline-flex items-center gap-2 rounded-full border bg-card py-1 pl-1 pr-3 font-semibold text-primary hover:bg-secondary"
             onClick={() => onSelect({ type: "company", id: company.id })}
           >
+            <CompanyBadge name={company.name} logoUrl={company.logo_url} size={24} />
             {company.name}
           </button>
+        ) : null}
+        {vessel.imo ? (
+          <span className="rounded-full bg-secondary px-2.5 py-1 text-[11px] font-semibold text-muted-foreground">
+            IMO {vessel.imo}
+          </span>
+        ) : null}
+        {vessel.imo || vessel.mmsi ? (
+          <a
+            href={
+              vessel.imo
+                ? `https://www.vesselfinder.com/?imo=${vessel.imo}`
+                : `https://www.vesselfinder.com/?mmsi=${vessel.mmsi}`
+            }
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1 rounded-full bg-secondary px-2.5 py-1 text-[11px] font-semibold text-primary hover:underline"
+          >
+            Suivre en direct <ExternalLink className="size-3" aria-hidden />
+            <span className="sr-only">(VesselFinder, nouvel onglet)</span>
+          </a>
         ) : null}
         {vessel.is_demo ? <DemoBadge /> : null}
       </div>
@@ -305,29 +333,6 @@ export function VesselView({
         ) : null}
       </Section>
 
-      {vessel.description ? (
-        <Section title="À bord">
-          <p className="text-sm leading-relaxed">{vessel.description}</p>
-        </Section>
-      ) : null}
-
-      {vessel.imo || vessel.mmsi ? (
-        <Section title="Suivre ce navire">
-          <a
-            href={vessel.imo ? `https://www.vesselfinder.com/?imo=${vessel.imo}` : `https://www.vesselfinder.com/?mmsi=${vessel.mmsi}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex h-10 items-center justify-center gap-2 rounded-xl border border-border bg-card px-4 text-sm font-semibold hover:bg-secondary"
-          >
-            Suivre sur la carte VesselFinder <ExternalLink className="size-4" aria-hidden />
-            <span className="sr-only">(nouvel onglet)</span>
-          </a>
-          <p className="text-xs text-muted-foreground">
-            Position en direct sur la carte VesselFinder.
-          </p>
-        </Section>
-      ) : null}
-
       <Section title="Prochains départs">
         {nextDepartures.length === 0 ? (
           <EmptyNote>Aucun départ connu à venir pour ce navire.</EmptyNote>
@@ -360,6 +365,12 @@ export function VesselView({
           </ul>
         )}
       </Section>
+
+      {vessel.description ? (
+        <Section title="À bord">
+          <p className="text-sm leading-relaxed">{vessel.description}</p>
+        </Section>
+      ) : null}
     </div>
   );
 }

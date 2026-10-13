@@ -89,6 +89,8 @@ export const facilityLabels: Record<string, string> = {
   transports: "Transports",
   restauration: "Restauration",
   pmr: "Accessibilité PMR",
+  wifi: "Wi-Fi",
+  boutique: "Boutique",
 };
 
 /** Critères qui relèvent d'une note des voyageurs et non d'un service du port. */

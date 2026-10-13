@@ -12,6 +12,7 @@ import {
   type SchoolZone,
 } from "@/lib/ferry/schoolCalendar";
 import { capitalizeFirst } from "@/lib/ferry/format";
+import { SalesAlertForm } from "./SalesAlertForm";
 
 const ZONE_STORAGE_KEY = "batogo:school-zone";
 
@@ -99,6 +100,8 @@ export function TripCalendar({
   const [zone, setZone] = useState<SchoolZone | null>(null);
   const [month, setMonth] = useState<Date>(() => keyToDate(date ?? today));
   const [note, setNote] = useState<string | null>(null);
+  // Période de vacances choisie alors qu'aucune traversée n'est encore programmée.
+  const [emptyPeriod, setEmptyPeriod] = useState<HolidayPeriod | null>(null);
 
   // La zone choisie est mémorisée dans le navigateur : on ne la redemande pas à chaque visite.
   useEffect(() => {
@@ -141,6 +144,7 @@ export function TripCalendar({
 
   const pick = (key: string) => {
     setNote(null);
+    setEmptyPeriod(null);
     if (field === "out") {
       onChange({ date: key, returnDate: returnDate && returnDate < key ? null : returnDate });
       if (roundTrip) onFieldChange("ret");
@@ -151,7 +155,19 @@ export function TripCalendar({
     }
   };
 
+  // Aucun départ connu pendant la période (ni juste avant) : les ventes ne sont probablement pas ouvertes.
+  const isUnscheduled = (period: HolidayPeriod) => {
+    const from = addDaysKey(period.start, -3);
+    return ![...outDays.keys()].some((key) => key >= from && key <= period.lastDay);
+  };
+
   const applyPeriod = (period: HolidayPeriod) => {
+    if (isUnscheduled(period)) {
+      setEmptyPeriod(period);
+      setNote(null);
+      return;
+    }
+    setEmptyPeriod(null);
     // On cale l'aller et le retour sur les vrais départs les plus proches du début et de la fin des vacances.
     const out = nearest(outDays, period.start, 3, 3, today);
     const ret = nearest(backDays.size > 0 ? backDays : outDays, period.lastDay, 6, 0, out ?? today);
@@ -179,7 +195,7 @@ export function TripCalendar({
       <PopoverContent
         align="start"
         collisionPadding={12}
-        className="max-h-[min(var(--radix-popover-content-available-height),640px)] w-[348px] max-w-[94vw] space-y-2.5 overflow-y-auto p-3"
+        className="max-h-[min(var(--radix-popover-content-available-height),640px)] w-[348px] max-w-[calc(100vw-1.5rem)] space-y-2.5 overflow-y-auto overflow-x-hidden p-3"
         onOpenAutoFocus={(event) => event.preventDefault()}
       >
         {/* Aller / Retour */}
@@ -233,7 +249,7 @@ export function TripCalendar({
                   role="radio"
                   aria-checked={zone === item}
                   onClick={() => chooseZone(item)}
-                  className={`h-7 min-w-9 rounded-full border px-2 text-[11px] font-bold transition ${zone === item ? "border-primary bg-primary text-primary-foreground" : "border-border bg-background hover:bg-muted"}`}
+                  className={`h-9 min-w-10 rounded-full sm:h-7 sm:min-w-9 border px-2 text-[11px] font-bold transition ${zone === item ? "border-primary bg-primary text-primary-foreground" : "border-border bg-background hover:bg-muted"}`}
                 >
                   {item ?? "Non"}
                 </button>
@@ -267,6 +283,7 @@ export function TripCalendar({
                       </span>
                       <span className="block text-[10px] text-muted-foreground">
                         {short(period.start)} → {short(period.lastDay)}
+                        {isUnscheduled(period) ? " · à venir" : ""}
                       </span>
                     </button>
                   );
@@ -284,6 +301,16 @@ export function TripCalendar({
           )}
         </div>
 
+        {emptyPeriod ? (
+          <SalesAlertForm
+            periodLabel={`${emptyPeriod.name} · ${short(emptyPeriod.start)} → ${short(emptyPeriod.lastDay)}`}
+            periodStart={emptyPeriod.start}
+            periodEnd={emptyPeriod.lastDay}
+            fromLabel={pairLabel?.split(" → ")[0] ?? null}
+            toLabel={pairLabel?.split(" → ")[1] ?? null}
+          />
+        ) : null}
+
         {/* Calendrier */}
         <Calendar
           mode="single"
@@ -297,6 +324,7 @@ export function TripCalendar({
           onSelect={(day) => {
             if (day) pick(dateToKey(day));
           }}
+          hidden={(day) => dateToKey(day) < today}
           disabled={(day) => {
             const key = dateToKey(day);
             if (key < today) return true;
@@ -325,7 +353,7 @@ export function TripCalendar({
             between: "batogo-day-between",
             flex: "batogo-day-flex",
           }}
-          className="!p-0 [--cell-size:2.3rem]"
+          className="!p-0 [--cell-size:min(2.75rem,calc((100vw_-_3rem_-_1.5rem)/7))]"
         />
 
         {/* Aides intelligentes */}
@@ -376,7 +404,7 @@ export function TripCalendar({
                 role="radio"
                 aria-checked={flexDays === value}
                 onClick={() => onChange({ flexDays: value })}
-                className={`h-7 min-w-9 rounded-full border px-2 text-[11px] font-bold transition ${flexDays === value ? "border-primary bg-primary text-primary-foreground" : "border-border bg-background hover:bg-muted"}`}
+                className={`h-9 min-w-10 rounded-full sm:h-7 sm:min-w-9 border px-2 text-[11px] font-bold transition ${flexDays === value ? "border-primary bg-primary text-primary-foreground" : "border-border bg-background hover:bg-muted"}`}
               >
                 {value === 0 ? "Exact" : `± ${value} j`}
               </button>

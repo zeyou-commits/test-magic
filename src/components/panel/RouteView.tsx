@@ -96,7 +96,7 @@ export function RouteView({
 
       <Section title={`Prochains départs · ${zoneLabel(timeZone)}`}>
         {routeDepartures.length === 0 ? (
-          <EmptyNote>Aucun départ connu à venir.</EmptyNote>
+          <EmptyNote>Aucun départ programmé pour le moment sur cette ligne.</EmptyNote>
         ) : (
           <div className="flex flex-col gap-1">
             {routeDepartures.map((departure) => {

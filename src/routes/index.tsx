@@ -120,6 +120,17 @@ function Index() {
     () => filterRoutes(routes, ports, departures, { ...filters, date: null }),
     [routes, ports, departures, filters],
   );
+  // Lignes avec au moins un départ à venir (non annulé) : les autres sont en pointillés.
+  const scheduledRouteIds = useMemo(() => {
+    const now = Date.now();
+    return [
+      ...new Set(
+        departures
+          .filter((d) => d.status !== "cancelled" && new Date(d.departure_at).getTime() >= now)
+          .map((d) => d.route_id),
+      ),
+    ];
+  }, [departures]);
   const sailings = useMemo(
     () => buildSailings(departures, routes, ports, companies, []),
     [departures, routes, ports, companies],
@@ -475,7 +486,7 @@ function Index() {
               ports={ports}
               routes={routes}
               visibleRouteIds={matchingRoutes.map((route) => route.id)}
-              dateActiveRouteIds={[]}
+              dateActiveRouteIds={scheduledRouteIds.length ? scheduledRouteIds : ["__none__"]}
               focusRouteIds={focusRouteIds}
               selection={mapSelection}
               highlightedPortIds={highlightedPortIds}

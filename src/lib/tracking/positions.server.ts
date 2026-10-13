@@ -1,7 +1,8 @@
 // Suivi des navires : cache partagé en base + écoute ponctuelle du flux AISStream.
 // Ce fichier ne s'exécute que sur le serveur : la clé API n'est jamais envoyée au navigateur.
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
-import { collectPositions, parseAisMessage } from "./aisstream.server";
+import { collectPositions } from "./aisstream.server";
+import type { ParsedPosition } from "./parse";
 
 /** Une position n'est pas redemandée tant qu'elle a moins de 5 minutes. */
 export const REFRESH_MINUTES = 5;
@@ -92,7 +93,7 @@ export async function getPositions(): Promise<PublicPosition[]> {
     const key = process.env["AISSTREAM_API_KEY"] ?? "";
     const found = key
       ? await collectPositions(key, claimed, STREAM_LISTEN_MS)
-      : new Map<number, Awaited<ReturnType<typeof parseAisMessage>> & object>();
+      : new Map<number, ParsedPosition>();
     if (!key) console.error("[tracking] AISSTREAM_API_KEY manquante côté serveur");
     await Promise.all(
       claimed.map(async (mmsi) => {

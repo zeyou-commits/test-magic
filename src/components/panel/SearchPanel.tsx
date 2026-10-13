@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import {
   ArrowLeftRight,
@@ -39,6 +39,7 @@ import {
   legSailings,
   popularPairs,
   recommendedId,
+  type Sailing,
   type TravelerType,
 } from "@/lib/ferry/trips";
 import { getSchoolBreaksForZone, type SchoolZone } from "@/lib/ferry/schoolCalendar";
@@ -65,6 +66,8 @@ interface SearchPanelProps {
   onSelect: (selection: Selection | null) => void;
   /** Sur mobile, Départ et Arrivée sont déjà dans l'en-tête de la page. */
   hidePickersOnMobile?: boolean;
+  /** Ligne à mettre en évidence sur la carte (survol ou traversée dépliée). */
+  onHighlightRoute?: (routeId: string | null) => void;
 }
 
 /**
@@ -77,6 +80,7 @@ export function SearchPanel({
   selection,
   onSelect,
   hidePickersOnMobile = false,
+  onHighlightRoute,
 }: SearchPanelProps) {
   const { data: ports = [] } = useQuery(portsQuery);
   const { data: routes = [] } = useQuery(routesQuery);
@@ -93,6 +97,19 @@ export function SearchPanel({
   const [zone, setZone] = useState<SchoolZone | null>(null);
   const [showAllOut, setShowAllOut] = useState(false);
   const [showAllBack, setShowAllBack] = useState(false);
+  // Accordéon : une seule traversée dépliée à la fois ; le survol met sa ligne en évidence sur la carte.
+  const [openCard, setOpenCard] = useState<{ id: string; routeId: string } | null>(null);
+  const [hoverRouteId, setHoverRouteId] = useState<string | null>(null);
+  useEffect(() => {
+    onHighlightRoute?.(hoverRouteId ?? openCard?.routeId ?? null);
+  }, [hoverRouteId, openCard, onHighlightRoute]);
+  useEffect(() => () => onHighlightRoute?.(null), [onHighlightRoute]);
+  const toggleCard = (sailing: Sailing) =>
+    setOpenCard((current) =>
+      current?.id === sailing.departure.id
+        ? null
+        : { id: sailing.departure.id, routeId: sailing.route.id },
+    );
 
   const today = dateKeyInZone(new Date(), "Europe/Paris");
   const set = (patch: Partial<Filters>) => onFiltersChange({ ...filters, ...patch });
@@ -448,8 +465,11 @@ export function SearchPanel({
               list={outShown}
               total={outList.length}
               recommended={outRecommended}
-              selection={selection}
-              onSelect={onSelect}
+              openId={openCard?.id ?? null}
+              onToggle={toggleCard}
+              onHoverRoute={setHoverRouteId}
+              onOpenVessel={(id) => onSelect({ type: "vessel", id })}
+              onOpenRoute={(id) => onSelect({ type: "route", id })}
               onMore={() => setShowAllOut(true)}
               expanded={showAllOut || Boolean(filters.date)}
               emptyText="Aucune traversée connue pour cette recherche."
@@ -475,8 +495,11 @@ export function SearchPanel({
                 list={backShown}
                 total={backList.length}
                 recommended={backRecommended}
-                selection={selection}
-                onSelect={onSelect}
+                openId={openCard?.id ?? null}
+                onToggle={toggleCard}
+                onHoverRoute={setHoverRouteId}
+                onOpenVessel={(id) => onSelect({ type: "vessel", id })}
+                onOpenRoute={(id) => onSelect({ type: "route", id })}
                 onMore={() => setShowAllBack(true)}
                 expanded={showAllBack || Boolean(filters.returnDate)}
                 emptyText="Aucune traversée de retour connue. Essayez un autre port de retour depuis la carte."
@@ -499,8 +522,11 @@ function ResultBlock({
   list,
   total,
   recommended,
-  selection,
-  onSelect,
+  openId,
+  onToggle,
+  onHoverRoute,
+  onOpenVessel,
+  onOpenRoute,
   onMore,
   expanded,
   emptyText,
@@ -512,11 +538,14 @@ function ResultBlock({
   days: { day: string; count: number }[];
   date: string | null;
   onDate: (day: string | null) => void;
-  list: import("@/lib/ferry/trips").Sailing[];
+  list: Sailing[];
   total: number;
   recommended: string | null;
-  selection: Selection | null;
-  onSelect: (selection: Selection | null) => void;
+  openId: string | null;
+  onToggle: (sailing: Sailing) => void;
+  onHoverRoute: (routeId: string | null) => void;
+  onOpenVessel: (vesselId: string) => void;
+  onOpenRoute: (routeId: string) => void;
   onMore: () => void;
   expanded: boolean;
   emptyText: string;
@@ -552,8 +581,11 @@ function ResultBlock({
               showDay={!date}
               live={liveByDeparture.get(sailing.departure.id)}
               recommended={recommended === sailing.departure.id}
-              selected={selection?.type === "departure" && selection.id === sailing.departure.id}
-              onSelect={() => onSelect({ type: "departure", id: sailing.departure.id })}
+              expanded={openId === sailing.departure.id}
+              onToggle={() => onToggle(sailing)}
+              onHover={(hovering) => onHoverRoute(hovering ? sailing.route.id : null)}
+              onOpenVessel={onOpenVessel}
+              onOpenRoute={onOpenRoute}
             />
           ))}
           {!expanded && total > list.length ? (

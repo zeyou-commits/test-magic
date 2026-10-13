@@ -13,6 +13,7 @@ interface SidePanelProps {
   filters: Filters;
   onFiltersChange: (filters: Filters) => void;
   hidePickersOnMobile?: boolean;
+  onHighlightRoute?: (routeId: string | null) => void;
 }
 
 /** Un seul volet : la recherche en permanence, et le détail d'un port, d'une ligne ou d'un départ par-dessus. */
@@ -22,6 +23,7 @@ export function SidePanel({
   filters,
   onFiltersChange,
   hidePickersOnMobile = false,
+  onHighlightRoute,
 }: SidePanelProps) {
   const planRoute = (route: RouteLine) => {
     onFiltersChange({
@@ -58,6 +60,7 @@ export function SidePanel({
           selection={selection}
           onSelect={onSelect}
           hidePickersOnMobile={hidePickersOnMobile}
+          {...(onHighlightRoute ? { onHighlightRoute } : {})}
         />
       </div>
 

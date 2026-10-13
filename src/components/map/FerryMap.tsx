@@ -44,6 +44,8 @@ interface FerryMapProps {
   highlightedPortIds: string[];
   /** Flotte : un navire par traversée en cours ou à venir (position déduite des horaires ou réelle si suivie). */
   fleet?: FleetShip[];
+  /** Ligne survolée ou dépliée dans le volet : mise en évidence sans déplacer la carte. */
+  hoverRouteId?: string | null;
   /** Ports à cadrer quand rien n'est sélectionné (trajet cherché). */
   fitPortIds?: string[];
   portMeta: Record<string, PortMeta>;
@@ -230,6 +232,7 @@ export default function FerryMap({
   selection,
   highlightedPortIds,
   fitPortIds = [],
+  hoverRouteId = null,
   fleet = [],
   portMeta,
   onSelect,
@@ -843,14 +846,23 @@ export default function FerryMap({
           visible,
           new Set(dateActiveRouteIds),
           focus,
-          selection,
+          hoverRouteId ? { type: "route", id: hoverRouteId } : selection,
         ),
       });
     };
 
     if (readyRef.current) apply();
     else map.once("load", apply);
-  }, [routes, ports, visibleRouteIds, dateActiveRouteIds, focusRouteIds, selection, mapReady]);
+  }, [
+    routes,
+    ports,
+    visibleRouteIds,
+    dateActiveRouteIds,
+    focusRouteIds,
+    selection,
+    hoverRouteId,
+    mapReady,
+  ]);
 
   // Flotte : mise à jour chaque seconde (un navire avance très lentement : inutile d'animer plus vite).
   useEffect(() => {
@@ -858,7 +870,7 @@ export default function FerryMap({
     if (!map || !mapReady) return;
     const visible = new Set(visibleRouteIds);
     const focus = new Set(focusRouteIds);
-    const selectedRouteId = selection?.type === "route" ? selection.id : null;
+    const selectedRouteId = hoverRouteId ?? (selection?.type === "route" ? selection.id : null);
 
     const draw = () => {
       const source = map.getSource("fleet") as GeoJSONSource | undefined;

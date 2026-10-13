@@ -65,6 +65,7 @@ function Index() {
   const [filters, setFilters] = useState<Filters>(() =>
     typeof window === "undefined" ? emptyFilters : filtersFromUrl(window.location.search),
   );
+  const [highlightRouteId, setHighlightRouteId] = useState<string | null>(null);
   const [panelLevel, setPanelLevel] = useState<0 | 1 | 2>(1);
   const [desktopPanelOpen, setDesktopPanelOpen] = useState(true);
   const dragStartY = useRef<number | null>(null);
@@ -165,6 +166,7 @@ function Index() {
   }, [selection, departures, fleetDepartures, fleet]);
 
   const focusRouteIds = useMemo(() => {
+    if (highlightRouteId) return [highlightRouteId];
     if (mapSelection?.type === "route") return [mapSelection.id];
     if (mapSelection?.type === "port") {
       return routes
@@ -175,9 +177,13 @@ function Index() {
     }
     if (hasPair) return [...matchingRoutes, ...returnRoutes].map((route) => route.id);
     return [];
-  }, [mapSelection, routes, hasPair, matchingRoutes, returnRoutes]);
+  }, [mapSelection, routes, hasPair, matchingRoutes, returnRoutes, highlightRouteId]);
 
   const highlightedPortIds = useMemo(() => {
+    if (highlightRouteId) {
+      const route = routes.find((item) => item.id === highlightRouteId);
+      if (route) return [route.departure_port_id, route.arrival_port_id];
+    }
     if (mapSelection?.type === "port") return [mapSelection.id];
     if (mapSelection?.type === "route") {
       const route = routes.find((item) => item.id === mapSelection.id);
@@ -185,7 +191,14 @@ function Index() {
     }
     if (hasPair) return [...new Set([...filters.departurePortIds, ...filters.arrivalPortIds])];
     return [];
-  }, [mapSelection, routes, hasPair, filters.departurePortIds, filters.arrivalPortIds]);
+  }, [
+    mapSelection,
+    routes,
+    hasPair,
+    filters.departurePortIds,
+    filters.arrivalPortIds,
+    highlightRouteId,
+  ]);
 
   // Cadrage automatique : les ports du trajet cherché (sans sélection).
   const fitPortIds = useMemo(() => {
@@ -412,6 +425,7 @@ function Index() {
             filters={filters}
             onFiltersChange={setFilters}
             hidePickersOnMobile
+            onHighlightRoute={setHighlightRouteId}
           />
         </div>
         <Button
@@ -466,6 +480,7 @@ function Index() {
               selection={mapSelection}
               highlightedPortIds={highlightedPortIds}
               fitPortIds={fitPortIds}
+              hoverRouteId={highlightRouteId}
               fleet={fleet}
               portMeta={portMeta}
               onSelect={setSelection}

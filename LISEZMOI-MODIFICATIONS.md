@@ -1,4 +1,4 @@
-# Batogo — Refonte UX/UI + suivi en direct (octobre 2026) · version 5
+# Batogo — Refonte UX/UI + suivi en direct (octobre 2026) · version 6
 
 Ce document explique **quoi mettre sur GitHub**, **quoi supprimer** et **comment faire**, même sans connaissance technique.
 
@@ -29,6 +29,18 @@ Pour chacun : ouvrez le fichier sur GitHub, cliquez sur les **trois points ⋯**
 
 ### Étape 3 : vérifier dans Lovable
 L'aperçu se met à jour tout seul. Vérifiez la carte, la recherche et un clic sur « Réserver », puis republiez.
+
+---
+
+## NOUVEAU (v6) — Survol et accordéon dans la liste des traversées
+
+- **Au survol d'une traversée** (volet de gauche), sa **ligne s'éclaire sur la carte** : trait épais avec halo, durée affichée, ses deux ports en orange, les autres lignes, ports et navires s'estompent. La carte ne bouge pas (pas de zoom intempestif).
+- **Au clic**, le détail **s'ouvre juste en dessous** de la carte (accordéon animé) au lieu d'ouvrir un autre écran. Un seul détail est ouvert à la fois, la ligne reste éclairée tant qu'il est ouvert.
+- **Détail compact** : durée, arrivée (jour + heure locale), distance si connue ; navire (fiche + photo en un clic) ; fiabilité, date de vérification et source ; remarques éventuelles ; boutons « Fiche de la ligne » et « Signaler ».
+- **Cartes plus compactes** : marges réduites, compagnie et navire sur une seule ligne, bouton « Réserver » toujours visible.
+- Sur écran tactile, il n'y a pas de survol : la ligne s'éclaire au clic (dépliage).
+
+**Fichiers modifiés dans cette version :** `SailingCard.tsx`, `SearchPanel.tsx`, `SidePanel.tsx`, `FerryMap.tsx`, `index.tsx`.
 
 ---
 

@@ -1,14 +1,16 @@
-import { ArrowUpRight, Moon, Ship, Sparkles } from "lucide-react";
+import { ArrowUpRight, ChevronDown, ChevronRight, Moon, Ship, Sparkles } from "lucide-react";
 import {
   formatDuration,
   reliabilityLabel,
   reliabilityTone,
   capitalizeFirst,
+  formatShortDay,
 } from "@/lib/ferry/format";
 import { relativeDay, type Sailing } from "@/lib/ferry/trips";
 import { safeExternalUrl } from "./shared";
 import { formatAge, formatDelay, type LiveShip } from "@/lib/ferry/tracking";
-import { wallTimeInZone } from "@/lib/ferry/time";
+import { wallTimeInZone, zoneLabel } from "@/lib/ferry/time";
+import { ReportButton } from "./ReportButton";
 
 function initials(name: string) {
   return name
@@ -28,35 +30,59 @@ const dayFormatter = new Intl.DateTimeFormat("fr-FR", {
 const formatDayKey = (dayKey: string) =>
   capitalizeFirst(dayFormatter.format(new Date(`${dayKey}T00:00:00Z`)));
 
-/** Carte de traversée : frise départ → arrivée, durée, compagnie, réservation. */
+/** Carte de traversée compacte : un clic déplie le détail juste en dessous (accordéon). */
 export function SailingCard({
   sailing,
   recommended,
-  selected,
   live,
   showDay,
   index,
-  onSelect,
+  expanded,
+  onToggle,
+  onHover,
+  onOpenVessel,
+  onOpenRoute,
 }: {
   sailing: Sailing;
   recommended?: boolean;
-  selected?: boolean;
   live?: LiveShip | undefined;
   showDay?: boolean;
   index: number;
-  onSelect: () => void;
+  expanded: boolean;
+  onToggle: () => void;
+  /** Survol (ou focus clavier) : la ligne correspondante se met en évidence sur la carte. */
+  onHover: (hovering: boolean) => void;
+  onOpenVessel: (vesselId: string) => void;
+  onOpenRoute: (routeId: string) => void;
 }) {
   const href = safeExternalUrl(sailing.company?.website_url);
   const overnight = sailing.depHour >= 20 || sailing.depHour < 5;
   const arrivalSuffix = sailing.arrDayOffset > 0 ? `+${sailing.arrDayOffset}` : "";
+  const departure = sailing.departure;
+  const panelId = `sailing-${departure.id}`;
+  const sourceHref = safeExternalUrl(departure.source_url);
+  // « Import Excel — fichier-long-nom.xlsx » devient simplement « import Excel ».
+  const sourceLabel = departure.source_name?.startsWith("Import Excel")
+    ? "import Excel"
+    : (departure.source_name ?? "");
 
   return (
     <article
       style={{ animationDelay: `${Math.min(index, 8) * 45}ms` }}
-      className={`sailing-card group relative overflow-hidden rounded-2xl border bg-card transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg ${selected ? "border-primary ring-2 ring-primary/25" : "border-border"}`}
+      onMouseEnter={() => onHover(true)}
+      onMouseLeave={() => onHover(false)}
+      onFocus={() => onHover(true)}
+      onBlur={() => onHover(false)}
+      className={`sailing-card group relative overflow-hidden rounded-2xl border bg-card transition-all duration-200 hover:shadow-lg ${expanded ? "border-primary shadow-md ring-2 ring-primary/20" : "border-border hover:-translate-y-0.5"}`}
     >
-      <button type="button" onClick={onSelect} className="block w-full px-4 pb-3 pt-3.5 text-left">
-        <div className="mb-3 flex items-center justify-between gap-2 text-xs">
+      <button
+        type="button"
+        onClick={onToggle}
+        aria-expanded={expanded}
+        aria-controls={panelId}
+        className="block w-full px-3.5 pb-2.5 pt-3 text-left"
+      >
+        <div className="mb-2 flex items-center justify-between gap-2 text-xs">
           <span className="font-semibold text-foreground">
             {showDay ? `${formatDayKey(sailing.dayKey)} · ` : ""}
             <span className="font-medium text-muted-foreground">
@@ -77,21 +103,25 @@ export function SailingCard({
                 <Moon className="size-3" aria-hidden /> Nuit
               </span>
             ) : null}
+            <ChevronDown
+              className={`size-4 text-muted-foreground transition-transform duration-300 ${expanded ? "rotate-180 text-primary" : ""}`}
+              aria-hidden
+            />
           </span>
         </div>
 
         <div className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3">
           <div>
-            <div className="font-display text-[26px] font-bold leading-none tabular-nums tracking-tight">
+            <div className="font-display text-2xl font-bold leading-none tabular-nums tracking-tight">
               {sailing.depTime}
             </div>
-            <div className="mt-1 max-w-[88px] truncate text-xs font-semibold text-foreground">
+            <div className="mt-0.5 max-w-[92px] truncate text-xs font-semibold text-foreground">
               {sailing.from.name}
             </div>
           </div>
 
           <div className="relative flex flex-col items-center px-1" aria-hidden>
-            <span className="mb-3 text-[11px] font-semibold tabular-nums text-muted-foreground">
+            <span className="mb-2.5 text-[11px] font-semibold tabular-nums text-muted-foreground">
               {formatDuration(sailing.durationMin)}
             </span>
             <div className="relative h-0.5 w-full rounded-full bg-border">
@@ -105,13 +135,13 @@ export function SailingCard({
           </div>
 
           <div className="text-right">
-            <div className="font-display text-[26px] font-bold leading-none tabular-nums tracking-tight">
+            <div className="font-display text-2xl font-bold leading-none tabular-nums tracking-tight">
               {sailing.arrTime ?? "—"}
               {arrivalSuffix ? (
                 <sup className="ml-0.5 text-[11px] font-semibold text-cta">{arrivalSuffix}</sup>
               ) : null}
             </div>
-            <div className="mt-1 ml-auto max-w-[88px] truncate text-xs font-semibold text-foreground">
+            <div className="ml-auto mt-0.5 max-w-[92px] truncate text-xs font-semibold text-foreground">
               {sailing.to.name}
             </div>
           </div>
@@ -120,24 +150,19 @@ export function SailingCard({
 
       {live ? <LiveStrip live={live} arrivalZone={sailing.toZone} /> : null}
 
-      <div className="flex items-center justify-between gap-2 border-t border-dashed bg-secondary/40 px-4 py-2.5">
+      <div className="flex items-center justify-between gap-2 border-t border-dashed bg-secondary/40 px-3.5 py-2">
         <div className="flex min-w-0 items-center gap-2">
           <span
-            className="grid size-7 shrink-0 place-items-center rounded-full bg-primary text-[11px] font-bold text-primary-foreground"
+            className="grid size-6 shrink-0 place-items-center rounded-full bg-primary text-[10px] font-bold text-primary-foreground"
             aria-hidden
           >
             {initials(sailing.company?.name ?? "?")}
           </span>
-          <div className="min-w-0 leading-tight">
-            <div className="truncate text-xs font-semibold">
-              {sailing.company?.name ?? "Compagnie"}
-            </div>
-            <div
-              className={`truncate text-[11px] ${reliabilityTone[sailing.departure.reliability]}`}
-            >
-              {sailing.vessel?.name ? `${sailing.vessel.name} · ` : ""}
-              {reliabilityLabel[sailing.departure.reliability]}
-            </div>
+          <div className="min-w-0 truncate text-xs font-semibold">
+            {sailing.company?.name ?? "Compagnie"}
+            {sailing.vessel?.name ? (
+              <span className="font-normal text-muted-foreground"> · {sailing.vessel.name}</span>
+            ) : null}
           </div>
         </div>
         {href ? (
@@ -145,14 +170,109 @@ export function SailingCard({
             href={href}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex h-9 shrink-0 items-center gap-1 rounded-full bg-cta px-3.5 text-xs font-semibold text-cta-foreground shadow-sm transition hover:brightness-110 active:scale-95"
+            className="inline-flex h-8 shrink-0 items-center gap-1 rounded-full bg-cta px-3 text-xs font-semibold text-cta-foreground shadow-sm transition hover:brightness-110 active:scale-95"
           >
             Réserver <ArrowUpRight className="size-3.5" aria-hidden />
             <span className="sr-only">sur le site de {sailing.company?.name} (nouvel onglet)</span>
           </a>
         ) : null}
       </div>
+
+      {/* Détail : s'ouvre en glissant, sans quitter la liste. */}
+      <div
+        id={panelId}
+        role="region"
+        aria-label="Détail de la traversée"
+        className={`grid transition-[grid-template-rows] duration-300 ease-out ${expanded ? "grid-rows-[1fr]" : "grid-rows-[0fr]"}`}
+      >
+        <div className="overflow-hidden">
+          <div className="space-y-2.5 border-t bg-card px-3.5 py-3 text-xs">
+            <dl
+              className={`grid gap-2 ${sailing.route.distance_km ? "grid-cols-3" : "grid-cols-2"}`}
+            >
+              <Fact label="Durée" value={formatDuration(sailing.durationMin)} />
+              <Fact
+                label="Arrivée"
+                value={
+                  departure.arrival_at
+                    ? `${formatShortDay(departure.arrival_at, sailing.toZone)} · ${sailing.arrTime ?? ""}`
+                    : "—"
+                }
+                hint={zoneLabel(sailing.toZone)}
+              />
+              {sailing.route.distance_km ? (
+                <Fact label="Distance" value={`${sailing.route.distance_km} km`} />
+              ) : null}
+            </dl>
+
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+              {sailing.vessel ? (
+                <button
+                  type="button"
+                  onClick={() => onOpenVessel(sailing.vessel!.id)}
+                  className="inline-flex items-center gap-1 font-semibold text-primary hover:underline"
+                >
+                  <Ship className="size-3.5" aria-hidden /> {sailing.vessel.name}
+                  <span className="font-normal text-muted-foreground">(fiche + photo)</span>
+                </button>
+              ) : null}
+              <span className={`font-semibold ${reliabilityTone[departure.reliability]}`}>
+                {reliabilityLabel[departure.reliability]}
+              </span>
+              {departure.last_verified_at ? (
+                <span className="text-muted-foreground">
+                  vérifié le {new Date(departure.last_verified_at).toLocaleDateString("fr-FR")}
+                </span>
+              ) : null}
+              {departure.source_name ? (
+                <span className="text-muted-foreground">
+                  · source :{" "}
+                  {sourceHref ? (
+                    <a
+                      href={sourceHref}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="underline"
+                    >
+                      {sourceLabel}
+                    </a>
+                  ) : (
+                    sourceLabel
+                  )}
+                </span>
+              ) : null}
+            </div>
+
+            {departure.notes ? (
+              <p className="leading-relaxed text-muted-foreground">{departure.notes}</p>
+            ) : null}
+
+            <div className="flex flex-wrap items-center gap-2 pt-0.5">
+              <button
+                type="button"
+                onClick={() => onOpenRoute(sailing.route.id)}
+                className="inline-flex h-8 items-center gap-1 rounded-full border border-border px-3 font-semibold hover:bg-secondary"
+              >
+                Fiche de la ligne <ChevronRight className="size-3.5" aria-hidden />
+              </button>
+              <ReportButton targetType="departure" targetId={departure.id} label="Signaler" />
+            </div>
+          </div>
+        </div>
+      </div>
     </article>
+  );
+}
+
+function Fact({ label, value, hint }: { label: string; value: string; hint?: string }) {
+  return (
+    <div className="rounded-xl bg-secondary/60 px-2.5 py-1.5">
+      <dt className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+        {label}
+      </dt>
+      <dd className="font-semibold leading-tight text-foreground">{value}</dd>
+      {hint ? <dd className="text-[10px] text-muted-foreground">{hint}</dd> : null}
+    </div>
   );
 }
 

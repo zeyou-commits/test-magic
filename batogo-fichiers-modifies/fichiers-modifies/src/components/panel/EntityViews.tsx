@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import {
   companiesQuery,
+  fleetDeparturesQuery,
   portsQuery,
   routesQuery,
   upcomingDeparturesQuery,
@@ -198,7 +199,8 @@ export function DepartureView({
   const { data: vessels = [] } = useQuery(vesselsQuery);
 
   const liveShips = useLiveShips();
-  const departure = departures.find((item) => item.id === departureId);
+  const { data: fleetDepartures = [] } = useQuery(fleetDeparturesQuery);
+  const departure = [...departures, ...fleetDepartures].find((item) => item.id === departureId);
   if (!departure) return <EmptyNote>Départ introuvable.</EmptyNote>;
   const live = liveShips.find((ship) => ship.departure.id === departureId);
   const route = routes.find((item) => item.id === departure.route_id);

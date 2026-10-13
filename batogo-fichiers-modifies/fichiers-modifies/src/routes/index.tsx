@@ -8,6 +8,7 @@ import { SidePanel } from "@/components/panel/SidePanel";
 import { UserMenu } from "@/components/layout/UserMenu";
 import {
   companiesQuery,
+  fleetDeparturesQuery,
   portsQuery,
   routesQuery,
   upcomingDeparturesQuery,
@@ -23,7 +24,7 @@ import { filtersFromUrl, mapStateToSearch, selectionFromUrl } from "@/lib/ferry/
 import { filterRoutes, summarizePorts } from "@/lib/ferry/filtering";
 import { portTimeZone } from "@/lib/ferry/time";
 import { buildSailings, legSailings } from "@/lib/ferry/trips";
-import { useLiveShips } from "@/lib/ferry/useLiveShips";
+import { useFleet } from "@/lib/ferry/useFleet";
 import { BrandLink, navLinks } from "@/components/layout/SiteLayout";
 import { MobileTabBar } from "@/components/layout/MobileTabBar";
 
@@ -96,7 +97,8 @@ function Index() {
   const { data: departures = [] } = departuresResult;
   const { data: companies = [] } = companiesResult;
 
-  const liveShips = useLiveShips();
+  const fleet = useFleet();
+  const { data: fleetDepartures = [] } = useQuery(fleetDeparturesQuery);
 
   const allResults = [portsResult, routesResult, departuresResult, companiesResult];
   const isLoadingData = allResults.some((res) => res.isPending);
@@ -146,11 +148,13 @@ function Index() {
   // La carte reçoit la sélection « traversée » comme une ligne.
   const mapSelection: Selection | null = useMemo(() => {
     if (selection?.type === "departure") {
-      const departure = departures.find((item) => item.id === selection.id);
+      const departure = [...departures, ...fleetDepartures].find(
+        (item) => item.id === selection.id,
+      );
       return departure ? { type: "route", id: departure.route_id } : null;
     }
     return selection;
-  }, [selection, departures]);
+  }, [selection, departures, fleetDepartures]);
 
   const focusRouteIds = useMemo(() => {
     if (mapSelection?.type === "route") return [mapSelection.id];
@@ -448,7 +452,7 @@ function Index() {
               selection={mapSelection}
               highlightedPortIds={highlightedPortIds}
               fitPortIds={fitPortIds}
-              liveShips={liveShips}
+              fleet={fleet}
               portMeta={portMeta}
               onSelect={setSelection}
               onOpenPanel={() => setPanelLevel(1)}

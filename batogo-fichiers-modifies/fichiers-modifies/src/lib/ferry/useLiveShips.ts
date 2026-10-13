@@ -3,8 +3,8 @@ import { queryOptions, useQuery } from "@tanstack/react-query";
 import {
   companiesQuery,
   portsQuery,
+  fleetDeparturesQuery,
   routesQuery,
-  upcomingDeparturesQuery,
   vesselsQuery,
 } from "./queries";
 import { routeArc, pointAlong } from "./geo";
@@ -48,7 +48,7 @@ function demoEnabled() {
 export function useLiveShips(): LiveShip[] {
   const { data: positions = [] } = useQuery(vesselPositionsQuery);
   const { data: vessels = [] } = useQuery(vesselsQuery);
-  const { data: departures = [] } = useQuery(upcomingDeparturesQuery());
+  const { data: departures = [] } = useQuery(fleetDeparturesQuery);
   const { data: routes = [] } = useQuery(routesQuery);
   const { data: ports = [] } = useQuery(portsQuery);
   useQuery(companiesQuery);

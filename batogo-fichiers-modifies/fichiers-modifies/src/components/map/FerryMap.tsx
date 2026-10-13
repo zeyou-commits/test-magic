@@ -15,8 +15,10 @@ import type { Port, RouteLine, Selection } from "@/lib/ferry/types";
 import { formatDuration } from "@/lib/ferry/format";
 import { portColor, routeColor } from "@/lib/ferry/colors";
 import { algeriaGeoJson } from "@/lib/ferry/algeriaGeoJson";
-import { pointAlong, routeArc, stableRandom, type LngLat } from "@/lib/ferry/geo";
-import { projectedPosition, type LiveShip } from "@/lib/ferry/tracking";
+import { routeArc } from "@/lib/ferry/geo";
+import type { FleetShip } from "@/lib/ferry/fleet";
+import { addShipImages } from "./shipIcons";
+import { projectedPosition } from "@/lib/ferry/tracking";
 import { useIsMobile } from "@/hooks/use-mobile";
 
 // En production, MapLibre v6 a besoin que son « worker » soit fourni explicitement.
@@ -40,8 +42,8 @@ interface FerryMapProps {
   focusRouteIds: string[];
   selection: Selection | null;
   highlightedPortIds: string[];
-  /** Navires suivis en direct (positions réelles) : ils remplacent les navires animés de leur ligne. */
-  liveShips?: LiveShip[];
+  /** Flotte : un navire par traversée en cours ou à venir (position déduite des horaires ou réelle si suivie). */
+  fleet?: FleetShip[];
   /** Ports à cadrer quand rien n'est sélectionné (trajet cherché). */
   fitPortIds?: string[];
   portMeta: Record<string, PortMeta>;
@@ -228,7 +230,7 @@ export default function FerryMap({
   selection,
   highlightedPortIds,
   fitPortIds = [],
-  liveShips = [],
+  fleet = [],
   portMeta,
   onSelect,
   onOpenPanel,
@@ -244,22 +246,8 @@ export default function FerryMap({
   const interactRef = useRef(onMapInteract);
   const dismissedPortIdsRef = useRef<Set<string>>(new Set());
   const [mapReady, setMapReady] = useState(false);
-  // Navires animés : une pastille par ligne visible qui circule sur son arc.
-  const shipsRef = useRef<
-    {
-      id: string;
-      arc: LngLat[];
-      reverse: boolean;
-      color: string;
-      selected: boolean;
-      dimmed: boolean;
-      offset: number;
-      period: number;
-    }[]
-  >([]);
-
-  const liveRef = useRef<LiveShip[]>(liveShips);
-  liveRef.current = liveShips;
+  const fleetRef = useRef<FleetShip[]>(fleet);
+  fleetRef.current = fleet;
 
   selectRef.current = onSelect;
   interactRef.current = onMapInteract;
@@ -452,113 +440,70 @@ export default function FerryMap({
         },
       });
 
-      // Icône de navire (pointe vers le haut, tournée selon le cap).
-      const size = 56;
-      const canvas = document.createElement("canvas");
-      canvas.width = size;
-      canvas.height = size;
-      const ctx = canvas.getContext("2d");
-      if (ctx) {
-        ctx.translate(size / 2, size / 2);
-        ctx.beginPath();
-        ctx.moveTo(0, -22);
-        ctx.bezierCurveTo(10, -10, 12, 8, 9, 20);
-        ctx.lineTo(-9, 20);
-        ctx.bezierCurveTo(-12, 8, -10, -10, 0, -22);
-        ctx.closePath();
-        ctx.fillStyle = "#0b3a6e";
-        ctx.fill();
-        ctx.lineWidth = 4;
-        ctx.strokeStyle = "#ffffff";
-        ctx.stroke();
-        ctx.fillStyle = "#ffffff";
-        ctx.fillRect(-5, -2, 10, 7);
-        map.addImage("ship-arrow", ctx.getImageData(0, 0, size, size), { pixelRatio: 2 });
-      }
-      map.addSource("ferry-live", {
+      // Flotte : de vrais ferrys vus du dessus, orientés selon leur cap.
+      addShipImages(map);
+      map.addSource("fleet", {
         type: "geojson",
         data: { type: "FeatureCollection", features: [] },
       });
       map.addLayer({
-        id: "ferry-live-halo",
+        id: "fleet-halo",
         type: "circle",
-        source: "ferry-live",
+        source: "fleet",
         paint: {
-          "circle-radius": ["case", ["get", "selected"], 22, 17],
-          "circle-color": "#22c55e",
-          "circle-opacity": 0.22,
-          "circle-blur": 0.5,
+          "circle-radius": ["interpolate", ["linear"], ["zoom"], 3, 16, 6, 26, 9, 44],
+          "circle-color": ["get", "haloColor"],
+          "circle-opacity": ["get", "haloOpacity"],
+          "circle-blur": 0.6,
         },
       });
       map.addLayer({
-        id: "ferry-live-icon",
+        id: "fleet-ships",
         type: "symbol",
-        source: "ferry-live",
+        source: "fleet",
         layout: {
-          "icon-image": "ship-arrow",
+          "icon-image": ["get", "icon"],
           "icon-rotate": ["get", "course"],
           "icon-rotation-alignment": "map",
           "icon-allow-overlap": true,
           "icon-ignore-placement": true,
-          "icon-size": ["case", ["get", "selected"], 1.3, 1],
+          "icon-size": ["interpolate", ["linear"], ["zoom"], 3, 0.7, 5, 0.95, 7, 1.3, 9, 1.9],
         },
+        paint: { "icon-opacity": ["get", "opacity"] },
       });
       map.addLayer({
-        id: "ferry-live-label",
+        id: "fleet-label",
         type: "symbol",
-        source: "ferry-live",
-        minzoom: 4.8,
+        source: "fleet",
+        minzoom: 5.3,
+        filter: ["==", ["get", "state"], "sea"],
         layout: {
           "text-field": ["get", "name"],
           "text-font": ["Noto Sans Bold"],
           "text-size": 11,
-          "text-offset": [0, 1.7],
+          "text-offset": [0, 2.4],
           "text-anchor": "top",
           "text-optional": true,
         },
-        paint: { "text-color": "#0b3a6e", "text-halo-color": "#ffffff", "text-halo-width": 2 },
+        paint: {
+          "text-color": "#0b3a6e",
+          "text-halo-color": "#ffffff",
+          "text-halo-width": 2,
+          "text-opacity": ["get", "opacity"],
+        },
       });
-      map.on("click", "ferry-live-icon", (event) => {
+      map.on("click", "fleet-ships", (event) => {
         const id = event.features?.[0]?.properties?.["departureId"];
         if (typeof id === "string") {
           interactRef.current?.();
           selectRef.current({ type: "departure", id });
         }
       });
-      map.on("mouseenter", "ferry-live-icon", () => {
+      map.on("mouseenter", "fleet-ships", () => {
         map.getCanvas().style.cursor = "pointer";
       });
-      map.on("mouseleave", "ferry-live-icon", () => {
+      map.on("mouseleave", "fleet-ships", () => {
         map.getCanvas().style.cursor = "";
-      });
-
-      map.addSource("ferry-ships", {
-        type: "geojson",
-        data: { type: "FeatureCollection", features: [] },
-      });
-      map.addLayer({
-        id: "ferry-ships-halo",
-        type: "circle",
-        source: "ferry-ships",
-        paint: {
-          "circle-radius": ["case", ["get", "selected"], 12, 8],
-          "circle-color": ["get", "color"],
-          "circle-opacity": ["case", ["get", "dimmed"], 0, 0.28],
-          "circle-blur": 0.6,
-        },
-      });
-      map.addLayer({
-        id: "ferry-ships",
-        type: "circle",
-        source: "ferry-ships",
-        paint: {
-          "circle-radius": ["case", ["get", "selected"], 6, 4],
-          "circle-color": "#ffffff",
-          "circle-stroke-color": ["get", "color"],
-          "circle-stroke-width": ["case", ["get", "selected"], 3, 2.4],
-          "circle-opacity": ["case", ["get", "dimmed"], 0, 1],
-          "circle-stroke-opacity": ["case", ["get", "dimmed"], 0, 1],
-        },
       });
 
       const pickRoute = (event: MapLayerMouseEvent) => {
@@ -894,35 +839,6 @@ export default function FerryMap({
     const visible = new Set(visibleRouteIds);
     const focus = new Set(focusRouteIds);
 
-    const portsById = portMap;
-    const liveRouteIds = new Set(
-      liveShips.filter((ship) => ship.phase === "sea").map((ship) => ship.route.id),
-    );
-    shipsRef.current = routes
-      .filter((route) => visible.has(route.id) && !liveRouteIds.has(route.id))
-      .flatMap((route) => {
-        const from = portsById.get(route.departure_port_id);
-        const to = portsById.get(route.arrival_port_id);
-        if (!from || !to) return [];
-        const selected = selection?.type === "route" && selection.id === route.id;
-        const dimmed = focus.size > 0 && !focus.has(route.id);
-        return [
-          {
-            id: route.id,
-            arc: routeArc(from, to),
-            reverse: from.id > to.id,
-            color: routeColor(route.color, from.slug),
-            selected,
-            dimmed,
-            offset: stableRandom(route.id),
-            period:
-              14000 +
-              stableRandom(`p${route.id}`) * 9000 +
-              (route.typical_duration_minutes ?? 600) * 4,
-          },
-        ];
-      });
-
     const apply = () => {
       const source = map.getSource("ferry-routes") as GeoJSONSource | undefined;
       if (!source) return;
@@ -941,80 +857,61 @@ export default function FerryMap({
 
     if (readyRef.current) apply();
     else map.once("load", apply);
-  }, [
-    routes,
-    ports,
-    visibleRouteIds,
-    dateActiveRouteIds,
-    focusRouteIds,
-    selection,
-    mapReady,
-    liveShips,
-  ]);
+  }, [routes, ports, visibleRouteIds, dateActiveRouteIds, focusRouteIds, selection, mapReady]);
 
-  // Animation : les navires circulent doucement sur leur ligne (figés si l'utilisateur réduit les animations).
+  // Flotte : mise à jour chaque seconde (un navire avance très lentement : inutile d'animer plus vite).
   useEffect(() => {
     const map = mapRef.current;
     if (!map || !mapReady) return;
-    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    let frame = 0;
-    let last = 0;
+    const visible = new Set(visibleRouteIds);
+    const focus = new Set(focusRouteIds);
+    const selectedRouteId = selection?.type === "route" ? selection.id : null;
 
-    const draw = (now: number) => {
-      const live = map.getSource("ferry-live") as GeoJSONSource | undefined;
-      if (live) {
-        const clock = Date.now();
-        live.setData({
-          type: "FeatureCollection",
-          features: liveRef.current.map((ship) => ({
+    const draw = () => {
+      const source = map.getSource("fleet") as GeoJSONSource | undefined;
+      if (!source) return;
+      const clock = Date.now();
+      source.setData({
+        type: "FeatureCollection",
+        features: fleetRef.current.map((ship) => {
+          const dimmed = !visible.has(ship.routeId) || (focus.size > 0 && !focus.has(ship.routeId));
+          const selected = selectedRouteId === ship.routeId;
+          const live = ship.live;
+          const base = live ? projectedPosition(live.position, clock) : ship.lngLat;
+          // Les navires amarrés sont rangés en file à côté du port : le décalage est en pixels écran.
+          let coordinates = base;
+          if (ship.dx !== 0 || ship.dy !== 0) {
+            const point = map.project(base);
+            const moved = map.unproject([point.x + ship.dx, point.y + ship.dy]);
+            coordinates = [moved.lng, moved.lat];
+          }
+          const course = live ? (live.position.courseDeg ?? ship.course) : ship.course;
+          return {
             type: "Feature" as const,
             properties: {
-              course: ship.position.courseDeg ?? 0,
-              name: ship.vessel.name,
-              departureId: ship.departure.id,
-              selected: false,
+              icon: ship.state === "sea" ? "ship-sea" : "ship-dock",
+              course,
+              name: ship.name,
+              state: ship.state,
+              departureId: ship.departureId,
+              opacity: dimmed ? 0.25 : 1,
+              haloColor: selected ? "#e4572e" : "#22c55e",
+              haloOpacity: dimmed ? 0 : selected ? 0.35 : live ? 0.3 : 0,
             },
-            geometry: {
-              type: "Point" as const,
-              coordinates: projectedPosition(ship.position, clock),
-            },
-          })),
-        });
-      }
-      const source = map.getSource("ferry-ships") as GeoJSONSource | undefined;
-      if (source) {
-        source.setData({
-          type: "FeatureCollection",
-          features: shipsRef.current.map((ship) => {
-            const progress = (((now / ship.period + ship.offset) % 1) + 1) % 1;
-            const t = ship.reverse ? 1 - progress : progress;
-            return {
-              type: "Feature" as const,
-              properties: { color: ship.color, selected: ship.selected, dimmed: ship.dimmed },
-              geometry: { type: "Point" as const, coordinates: pointAlong(ship.arc, t) },
-            };
-          }),
-        });
-      }
+            geometry: { type: "Point" as const, coordinates },
+          };
+        }),
+      });
     };
 
-    const loop = (now: number) => {
-      // ~30 images par seconde suffisent et ménagent la batterie.
-      if (now - last > 33 && !document.hidden) {
-        last = now;
-        draw(now);
-      }
-      frame = requestAnimationFrame(loop);
+    draw();
+    const timer = window.setInterval(draw, 1000);
+    map.on("zoomend", draw);
+    return () => {
+      window.clearInterval(timer);
+      map.off("zoomend", draw);
     };
-
-    if (reduce) {
-      draw(0);
-      const timer = window.setInterval(() => draw(0), 1000);
-      return () => window.clearInterval(timer);
-    }
-    frame = requestAnimationFrame(loop);
-    return () => cancelAnimationFrame(frame);
-  }, [mapReady]);
+  }, [mapReady, fleet, visibleRouteIds, focusRouteIds, selection?.type, selection?.id]);
 
   useEffect(() => {
     const map = mapRef.current;

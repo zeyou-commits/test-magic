@@ -1,4 +1,4 @@
-# Batogo — Refonte UX/UI + suivi en direct (octobre 2026) · version 3
+# Batogo — Refonte UX/UI + suivi en direct (octobre 2026) · version 4
 
 Ce document explique **quoi mettre sur GitHub**, **quoi supprimer** et **comment faire**, même sans connaissance technique.
 
@@ -62,7 +62,7 @@ L'aperçu se met à jour tout seul. Vérifiez la carte, la recherche et un clic 
 > ⚠️ **Non testé avec l'API réelle** : je n'ai ni clé ni documentation de l'endpoint. J'ai testé la lecture de la réponse avec votre exemple (et des variantes de noms de champs) et tout l'affichage avec des positions fictives. Si le suivi ne s'allume pas, regardez dans *Admin → Navires* : un message d'erreur s'affiche sous chaque navire (par exemple « HTTP 404 » = mauvais chemin d'endpoint).
 > L'heure d'arrivée est une **estimation en ligne droite** ; l'écran le précise.
 
-**Fichiers ajoutés pour le suivi :** `src/lib/tracking/parse.ts`, `src/lib/tracking/positions.server.ts`, `src/routes/api.vessel-positions.ts`, `src/lib/ferry/tracking.ts`, `src/lib/ferry/useLiveShips.ts`, `supabase/migrations/20261013120000_vessel_tracking.sql`. Fichiers modifiés : `src/routeTree.gen.ts` (généré automatiquement, à remplacer), `FerryMap.tsx`, `SailingCard.tsx`, `SearchPanel.tsx`, `EntityViews.tsx`, `index.tsx`, `admin.tsx`, `src/lib/ferry/types.ts`, `src/integrations/supabase/types.ts`.
+**Fichiers ajoutés pour la flotte et le suivi :** `src/lib/ferry/fleet.ts`, `src/lib/ferry/useFleet.ts`, `src/components/map/shipIcons.ts`, `src/lib/tracking/parse.ts`, `src/lib/tracking/positions.server.ts`, `src/routes/api.vessel-positions.ts`, `src/lib/ferry/tracking.ts`, `src/lib/ferry/useLiveShips.ts`, `supabase/migrations/20261013120000_vessel_tracking.sql`. Fichiers modifiés : `src/routeTree.gen.ts` (généré automatiquement, à remplacer), `FerryMap.tsx`, `SailingCard.tsx`, `SearchPanel.tsx`, `EntityViews.tsx`, `index.tsx`, `admin.tsx`, `src/lib/ferry/types.ts`, `src/integrations/supabase/types.ts`.
 
 ---
 
@@ -82,10 +82,15 @@ La carte, la liste et l'adresse de la page lisent la même recherche : un lien p
 | + une date | Les traversées du jour, avec un badge « Recommandé » |
 | Aller-retour | Une deuxième section « Retour » apparaît automatiquement, dans le sens inverse |
 
-**Une carte vivante :**
+**Une carte vivante, avec de vrais bateaux :**
 - trajets **courbes** (plus de lignes droites) ;
-- de petits **navires qui circulent** le long de chaque ligne, dans les deux sens (ils s'arrêtent si l'utilisateur a réduit les animations sur son appareil) ;
-- le trajet cherché est **éclairé** et les autres s'estompent ;
+- de **vrais ferrys vus du dessus** (coque, passerelle, cheminée, sillage), orientés selon leur cap, avec leur nom au zoom ;
+- **un navire par traversée en base de données**, placé d'après les horaires, **sans suivi nécessaire** :
+  - traversée **en cours** → le navire est **en pleine mer**, sur sa ligne, à l'avancement exact de l'horaire (il avance aussi lentement que dans la réalité, par exemple 1/20e de la route par heure pour 20 h) ;
+  - départ **dans les 36 prochaines heures** → le navire est **au port de départ**, rangé le long de la côte (plusieurs navires au même port sont alignés) ;
+  - arrivé depuis **moins de 12 h** → il reste **au port d'arrivée** ;
+  - quand le suivi en direct est activé, la **position réelle remplace automatiquement** la position déduite : le navire bouge alors selon sa vitesse et son cap réels ;
+- le trajet cherché est **éclairé** et les autres navires s'estompent ; cliquer sur un navire ouvre sa traversée ;
 - cadrage automatique, légende, panneau en verre dépoli.
 
 **Des cartes de traversée plus lisibles :** heure de départ, frise avec durée, heure d'arrivée (« +1 » = lendemain), compagnie et navire, fiabilité, bouton **Réserver** qui ouvre le site de la compagnie, badges « Recommandé » et « Nuit », apparition animée.

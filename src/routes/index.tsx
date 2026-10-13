@@ -8,6 +8,7 @@ import { SidePanel } from "@/components/panel/SidePanel";
 import { UserMenu } from "@/components/layout/UserMenu";
 import {
   companiesQuery,
+  fleetDeparturesQuery,
   portsQuery,
   routesQuery,
   upcomingDeparturesQuery,
@@ -23,7 +24,7 @@ import { filtersFromUrl, mapStateToSearch, selectionFromUrl } from "@/lib/ferry/
 import { filterRoutes, summarizePorts } from "@/lib/ferry/filtering";
 import { portTimeZone } from "@/lib/ferry/time";
 import { buildSailings, legSailings } from "@/lib/ferry/trips";
-import { useLiveShips } from "@/lib/ferry/useLiveShips";
+import { useFleet } from "@/lib/ferry/useFleet";
 import { BrandLink, navLinks } from "@/components/layout/SiteLayout";
 import { MobileTabBar } from "@/components/layout/MobileTabBar";
 
@@ -96,7 +97,8 @@ function Index() {
   const { data: departures = [] } = departuresResult;
   const { data: companies = [] } = companiesResult;
 
-  const liveShips = useLiveShips();
+  const fleet = useFleet();
+  const { data: fleetDepartures = [] } = useQuery(fleetDeparturesQuery);
 
   const allResults = [portsResult, routesResult, departuresResult, companiesResult];
   const isLoadingData = allResults.some((res) => res.isPending);
@@ -146,11 +148,21 @@ function Index() {
   // La carte reçoit la sélection « traversée » comme une ligne.
   const mapSelection: Selection | null = useMemo(() => {
     if (selection?.type === "departure") {
-      const departure = departures.find((item) => item.id === selection.id);
+      const departure = [...departures, ...fleetDepartures].find(
+        (item) => item.id === selection.id,
+      );
+      return departure ? { type: "route", id: departure.route_id } : null;
+    }
+    if (selection?.type === "vessel") {
+      // Un navire sélectionné éclaire sa ligne du moment (traversée en cours ou prochain départ).
+      const ship = fleet.find((item) => item.vesselId === selection.id);
+      const departure = ship
+        ? [...departures, ...fleetDepartures].find((item) => item.id === ship.departureId)
+        : undefined;
       return departure ? { type: "route", id: departure.route_id } : null;
     }
     return selection;
-  }, [selection, departures]);
+  }, [selection, departures, fleetDepartures, fleet]);
 
   const focusRouteIds = useMemo(() => {
     if (mapSelection?.type === "route") return [mapSelection.id];
@@ -295,6 +307,12 @@ function Index() {
   const mobileBottomInset =
     TAB_BAR_HEIGHT +
     (panelLevel === 0 ? COLLAPSED_HEIGHT : Math.round(viewportHeight * MIDDLE_RATIO));
+  // Sur mobile, choisir un navire, un port ou une traversée rouvre le tiroir s'il était replié.
+  useEffect(() => {
+    if (selection && panelLevel === 0) setPanelLevel(1);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selection?.type, selection?.id]);
+
   const collapsed = panelLevel === 0 && (dragHeight === null || dragHeight < 140);
 
   const resetToMap = () => {
@@ -448,13 +466,13 @@ function Index() {
               selection={mapSelection}
               highlightedPortIds={highlightedPortIds}
               fitPortIds={fitPortIds}
-              liveShips={liveShips}
+              fleet={fleet}
               portMeta={portMeta}
               onSelect={setSelection}
               onOpenPanel={() => setPanelLevel(1)}
               onMapInteract={() => setPanelLevel((level) => (level === 2 ? 1 : level))}
               mobileBottomInset={mobileBottomInset}
-              desktopLeftInset={desktopPanelOpen ? DESKTOP_PANEL + 40 : 40}
+              desktopLeftInset={desktopPanelOpen ? DESKTOP_PANEL + 130 : 50}
             />
           </Suspense>
         </ClientOnly>

@@ -721,6 +721,7 @@ export type Database = {
           created_at: string;
           description: string | null;
           id: string;
+          imo: number | null;
           is_demo: boolean;
           mmsi: number | null;
           name: string;
@@ -735,6 +736,7 @@ export type Database = {
           created_at?: string;
           description?: string | null;
           id?: string;
+          imo?: number | null;
           is_demo?: boolean;
           mmsi?: number | null;
           name: string;
@@ -749,6 +751,7 @@ export type Database = {
           created_at?: string;
           description?: string | null;
           id?: string;
+          imo?: number | null;
           is_demo?: boolean;
           mmsi?: number | null;
           name?: string;

@@ -901,23 +901,40 @@ function VesselsAdmin() {
     },
     refetchInterval: 60_000,
   });
-  const [drafts, setDrafts] = useState<Record<string, string>>({});
+  // Brouillons de saisie, par navire : { mmsi, imo, photo }.
+  const [drafts, setDrafts] = useState<
+    Record<string, { mmsi?: string; imo?: string; photo?: string }>
+  >({});
+  const setDraft = (id: string, patch: { mmsi?: string; imo?: string; photo?: string }) =>
+    setDrafts((prev) => ({ ...prev, [id]: { ...prev[id], ...patch } }));
 
   const save = useMutation({
-    mutationFn: async ({ id, mmsi }: { id: string; mmsi: number | null }) => {
-      const { error } = await supabase.from("vessels").update({ mmsi }).eq("id", id);
+    mutationFn: async ({
+      id,
+      mmsi,
+      imo,
+      photo_url,
+    }: {
+      id: string;
+      mmsi: number | null;
+      imo: number | null;
+      photo_url: string | null;
+    }) => {
+      const { error } = await supabase
+        .from("vessels")
+        .update({ mmsi, imo, photo_url })
+        .eq("id", id);
       if (error)
         throw new Error(
           error.message.includes("unique")
             ? "Ce MMSI est déjà utilisé par un autre navire."
-            : "Enregistrement impossible. Le MMSI doit avoir 9 chiffres.",
+            : "Enregistrement impossible. Vérifiez le MMSI (9 chiffres) et l'IMO (7 chiffres).",
         );
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["vessels"] });
-      toast.success(
-        "MMSI enregistré. Le suivi démarre dès qu'une traversée de ce navire approche.",
-      );
+      queryClient.invalidateQueries({ queryKey: ["vessel-photo"] });
+      toast.success("Navire enregistré.");
     },
     onError: (error: Error) => toast.error(error.message),
   });
@@ -926,20 +943,32 @@ function VesselsAdmin() {
 
   return (
     <Panel>
-      <h2 className="text-sm font-semibold">Suivi en direct des navires</h2>
+      <h2 className="text-sm font-semibold">Navires : suivi en direct, IMO et photo</h2>
       <p className="mt-1 text-xs text-muted-foreground">
-        Saisissez le MMSI (9 chiffres) de chaque navire. Le site suit un navire de 6 h avant son
-        départ jusqu'à son arrivée, et ne redemande sa position qu'au bout de 20 minutes.
+        <strong>MMSI</strong> (9 chiffres) : active le suivi en direct. Le site suit un navire de 6
+        h avant son départ jusqu'à son arrivée et ne redemande sa position qu'au bout de 20 minutes.{" "}
+        <strong>IMO</strong> (7 chiffres) : ajoute le lien « Voir sur VesselFinder » dans la fiche.{" "}
+        <strong>Photo</strong> : adresse https d'une image dont vous avez le droit d'usage ; sans
+        elle, le site cherche une photo libre sur Wikimedia Commons.
       </p>
       <ul className="mt-4 divide-y divide-border">
         {vessels.map((vessel) => {
-          const value = drafts[vessel.id] ?? (vessel.mmsi ? String(vessel.mmsi) : "");
-          const valid = value === "" || /^\d{9}$/.test(value);
+          const draft = drafts[vessel.id] ?? {};
+          const mmsi = draft.mmsi ?? (vessel.mmsi ? String(vessel.mmsi) : "");
+          const imo = draft.imo ?? (vessel.imo ? String(vessel.imo) : "");
+          const photo = draft.photo ?? vessel.photo_url ?? "";
+          const mmsiOk = mmsi === "" || /^\d{9}$/.test(mmsi);
+          const imoOk = imo === "" || /^\d{7}$/.test(imo);
+          const photoOk = photo === "" || /^https:\/\//i.test(photo);
+          const changed =
+            mmsi !== (vessel.mmsi ? String(vessel.mmsi) : "") ||
+            imo !== (vessel.imo ? String(vessel.imo) : "") ||
+            photo !== (vessel.photo_url ?? "");
           const position = vessel.mmsi ? positionByMmsi.get(vessel.mmsi) : undefined;
           const company = companies.find((item) => item.id === vessel.company_id);
           return (
-            <li key={vessel.id} className="flex flex-wrap items-center gap-3 py-3">
-              <div className="min-w-0 flex-1 basis-48">
+            <li key={vessel.id} className="grid gap-2 py-3">
+              <div className="min-w-0">
                 <p className="text-sm font-medium">{vessel.name}</p>
                 <p className="text-xs text-muted-foreground">
                   {company?.name ?? "Sans compagnie"}
@@ -951,32 +980,55 @@ function VesselsAdmin() {
                   {position?.last_error ? ` · erreur : ${position.last_error}` : ""}
                 </p>
               </div>
-              <Input
-                inputMode="numeric"
-                maxLength={9}
-                placeholder="MMSI"
-                aria-label={`MMSI de ${vessel.name}`}
-                aria-invalid={!valid}
-                value={value}
-                onChange={(event) =>
-                  setDrafts((prev) => ({
-                    ...prev,
-                    [vessel.id]: event.target.value.replace(/\D/g, ""),
-                  }))
-                }
-                className="w-36"
-              />
-              <Button
-                size="sm"
-                disabled={
-                  !valid || save.isPending || value === (vessel.mmsi ? String(vessel.mmsi) : "")
-                }
-                onClick={() =>
-                  save.mutate({ id: vessel.id, mmsi: value === "" ? null : Number(value) })
-                }
-              >
-                Enregistrer
-              </Button>
+              <div className="flex flex-wrap items-center gap-2">
+                <Input
+                  inputMode="numeric"
+                  maxLength={9}
+                  placeholder="MMSI"
+                  aria-label={`MMSI de ${vessel.name}`}
+                  aria-invalid={!mmsiOk}
+                  value={mmsi}
+                  onChange={(event) =>
+                    setDraft(vessel.id, { mmsi: event.target.value.replace(/\D/g, "") })
+                  }
+                  className="w-32"
+                />
+                <Input
+                  inputMode="numeric"
+                  maxLength={7}
+                  placeholder="IMO"
+                  aria-label={`IMO de ${vessel.name}`}
+                  aria-invalid={!imoOk}
+                  value={imo}
+                  onChange={(event) =>
+                    setDraft(vessel.id, { imo: event.target.value.replace(/\D/g, "") })
+                  }
+                  className="w-28"
+                />
+                <Input
+                  type="url"
+                  placeholder="URL de la photo (https://…)"
+                  aria-label={`Photo de ${vessel.name}`}
+                  aria-invalid={!photoOk}
+                  value={photo}
+                  onChange={(event) => setDraft(vessel.id, { photo: event.target.value.trim() })}
+                  className="min-w-48 flex-1"
+                />
+                <Button
+                  size="sm"
+                  disabled={!mmsiOk || !imoOk || !photoOk || !changed || save.isPending}
+                  onClick={() =>
+                    save.mutate({
+                      id: vessel.id,
+                      mmsi: mmsi === "" ? null : Number(mmsi),
+                      imo: imo === "" ? null : Number(imo),
+                      photo_url: photo === "" ? null : photo,
+                    })
+                  }
+                >
+                  Enregistrer
+                </Button>
+              </div>
             </li>
           );
         })}

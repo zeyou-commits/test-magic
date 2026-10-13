@@ -47,6 +47,8 @@ export interface Vessel {
   is_demo: boolean;
   /** Identifiant AIS à 9 chiffres, pour le suivi en direct. */
   mmsi: number | null;
+  /** Numéro IMO à 7 chiffres (lien vers la fiche VesselFinder). */
+  imo: number | null;
 }
 export interface RouteLine {
   id: string;

@@ -17,7 +17,7 @@ import { portColor, routeColor } from "@/lib/ferry/colors";
 import { algeriaGeoJson } from "@/lib/ferry/algeriaGeoJson";
 import { routeArc } from "@/lib/ferry/geo";
 import type { FleetShip } from "@/lib/ferry/fleet";
-import { addShipImages } from "./shipIcons";
+import { addShipImages, WAKE_FRAMES } from "./shipIcons";
 import { projectedPosition } from "@/lib/ferry/tracking";
 import { useIsMobile } from "@/hooks/use-mobile";
 
@@ -492,9 +492,23 @@ export default function FerryMap({
         type: "symbol",
         source: "fleet",
         layout: {
-          "text-field": ["get", "name"],
+          // Nom du navire, puis (à partir du zoom 5) son allure : vitesse et destination, ou port à quai.
+          "text-field": [
+            "step",
+            ["zoom"],
+            ["get", "name"],
+            5,
+            [
+              "format",
+              ["get", "name"],
+              {},
+              "\n",
+              {},
+              ["get", "allure"],
+              { "font-scale": 0.82, "text-color": ["get", "allureColor"] },
+            ],
+          ] as never,
           "text-font": ["Noto Sans Bold"],
-          // Nom du navire en tout petit dès la vue d'ensemble, un peu plus lisible en zoomant.
           "text-size": ["interpolate", ["linear"], ["zoom"], 3, 7.5, 6, 9.5, 9, 12],
           "text-offset": [0, 2.8],
           "text-anchor": "top",
@@ -978,6 +992,8 @@ export default function FerryMap({
     const visible = new Set(visibleRouteIds);
     const focus = new Set(focusRouteIds);
     const selectedRouteId = hoverRouteId ?? (selection?.type === "route" ? selection.id : null);
+    const routeById = new Map(routes.map((route) => [route.id, route]));
+    const portById = new Map(ports.map((port) => [port.id, port]));
 
     const draw = () => {
       const source = map.getSource("fleet") as GeoJSONSource | undefined;
@@ -998,13 +1014,26 @@ export default function FerryMap({
             coordinates = [moved.lng, moved.lat];
           }
           const course = live ? (live.position.courseDeg ?? ship.course) : ship.course;
+          // Étiquette d'allure : vitesse réelle et destination en mer, port d'attache à quai.
+          const route = routeById.get(ship.routeId);
+          const toName = route ? portById.get(route.arrival_port_id)?.name : undefined;
+          const dockName = ship.portId ? portById.get(ship.portId)?.name : undefined;
+          const speed = live?.position.speedKnots;
+          let allure: string;
+          if (ship.state === "sea") {
+            const head = live && speed != null ? `● ${Math.round(speed)} kts` : "● En navigation";
+            allure = toName ? `${head} · vers ${toName}` : head;
+          } else {
+            allure = dockName ? `⚓ À quai · ${dockName}` : "⚓ À quai";
+          }
           return {
             type: "Feature" as const,
             properties: {
-              icon: ship.state === "sea" ? "ship-sea" : "ship-dock",
+              state: ship.state,
               course,
               name: ship.name,
-              state: ship.state,
+              allure,
+              allureColor: ship.state === "sea" ? (live ? "#059669" : "#1d6fb8") : "#5b6b7a",
               shipId: ship.id,
               departureId: ship.departureId,
               vesselId: ship.vesselId ?? "",
@@ -1018,14 +1047,27 @@ export default function FerryMap({
       });
     };
 
+    // Sillage animé : on fait défiler les images d'écume des navires en mer.
+    let frame = 0;
+    const animateWake = () => {
+      frame = (frame + 1) % WAKE_FRAMES;
+      const image = ["case", ["==", ["get", "state"], "sea"], `ship-sea-${frame}`, "ship-dock"];
+      ["fleet-ships", "fleet-hover-icon"].forEach((id) => {
+        if (map.getLayer(id)) map.setLayoutProperty(id, "icon-image", image as never);
+      });
+    };
+
     draw();
+    animateWake();
     const timer = window.setInterval(draw, 1000);
+    const wakeTimer = window.setInterval(animateWake, 180);
     map.on("zoomend", draw);
     return () => {
       window.clearInterval(timer);
+      window.clearInterval(wakeTimer);
       map.off("zoomend", draw);
     };
-  }, [mapReady, fleet, visibleRouteIds, focusRouteIds, selection?.type, selection?.id]);
+  }, [mapReady, fleet, visibleRouteIds, focusRouteIds, selection?.type, selection?.id, routes, ports]);
 
   useEffect(() => {
     const map = mapRef.current;

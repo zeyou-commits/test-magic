@@ -29,7 +29,7 @@ export function UserMenu({
   compact?: boolean;
   iconOnly?: boolean;
 }) {
-  const { user, profile, isAdmin, signOut } = useAuth();
+  const { user, profile, roles, signOut } = useAuth();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
 
@@ -101,7 +101,7 @@ export function UserMenu({
             Mes contributions
           </Link>
         </DropdownMenuItem>
-        {isAdmin ? (
+        {roles.length ? (
           <DropdownMenuItem asChild>
             <Link to="/admin">Back-office</Link>
           </DropdownMenuItem>

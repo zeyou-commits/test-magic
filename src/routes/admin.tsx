@@ -19,7 +19,7 @@ import {
   Map as MapIcon,
   Menu,
   MessageSquare,
-  Route,
+  Route as RouteIcon,
   Ship,
   Users,
 } from "lucide-react";
@@ -137,7 +137,7 @@ const SECTIONS: {
   { id: "dashboard", label: "Tableau de bord", group: "Pilotage", icon: LayoutDashboard, roles: ["admin", "editor", "moderator"], description: "Vue d'ensemble et points d'attention." },
   { id: "departures", label: "Départs", group: "Exploitation", icon: CalendarClock, roles: ["admin", "editor"], description: "Traversées datées, statuts et navires assignés." },
   { id: "schedules", label: "Calendriers", group: "Exploitation", icon: CalendarDays, roles: ["admin", "editor"], description: "Rotations régulières et préparation de saison." },
-  { id: "routes", label: "Lignes", group: "Exploitation", icon: Route, roles: ["admin", "editor"], description: "Liaisons entre ports et compagnies." },
+  { id: "routes", label: "Lignes", group: "Exploitation", icon: RouteIcon, roles: ["admin", "editor"], description: "Liaisons entre ports et compagnies." },
   { id: "ports", label: "Ports", group: "Exploitation", icon: Anchor, roles: ["admin", "editor"], description: "Fiches et services des ports." },
   { id: "vessels", label: "Navires", group: "Exploitation", icon: Ship, roles: ["admin", "editor"], description: "Flotte, MMSI/IMO et suivi en direct." },
   { id: "reviews", label: "Avis", group: "Modération", icon: MessageSquare, roles: ["admin", "moderator"], description: "Avis voyageurs à publier ou refuser." },

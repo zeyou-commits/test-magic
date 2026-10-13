@@ -244,6 +244,7 @@ export type Database = {
           longitude: number
           name: string
           notes: string | null
+          photo_url: string | null
           slug: string
           status: Database["public"]["Enums"]["entity_status"]
           updated_at: string
@@ -266,6 +267,7 @@ export type Database = {
           longitude: number
           name: string
           notes?: string | null
+          photo_url?: string | null
           slug: string
           status?: Database["public"]["Enums"]["entity_status"]
           updated_at?: string
@@ -288,6 +290,7 @@ export type Database = {
           longitude?: number
           name?: string
           notes?: string | null
+          photo_url?: string | null
           slug?: string
           status?: Database["public"]["Enums"]["entity_status"]
           updated_at?: string
@@ -345,6 +348,42 @@ export type Database = {
           slug?: string
           sort_order?: number
           status?: Database["public"]["Enums"]["entity_status"]
+        }
+        Relationships: []
+      }
+      sales_alerts: {
+        Row: {
+          consent: boolean
+          created_at: string
+          email: string
+          from_label: string | null
+          id: string
+          period_end: string | null
+          period_label: string | null
+          period_start: string | null
+          to_label: string | null
+        }
+        Insert: {
+          consent?: boolean
+          created_at?: string
+          email: string
+          from_label?: string | null
+          id?: string
+          period_end?: string | null
+          period_label?: string | null
+          period_start?: string | null
+          to_label?: string | null
+        }
+        Update: {
+          consent?: boolean
+          created_at?: string
+          email?: string
+          from_label?: string | null
+          id?: string
+          period_end?: string | null
+          period_label?: string | null
+          period_start?: string | null
+          to_label?: string | null
         }
         Relationships: []
       }

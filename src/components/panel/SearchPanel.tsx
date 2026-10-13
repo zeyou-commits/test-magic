@@ -98,6 +98,7 @@ export function SearchPanel({
   const [profile, setProfile] = useState<TripProfileValue>(defaultTripProfile);
   const [calOpen, setCalOpen] = useState(false);
   const [calField, setCalField] = useState<CalendarField>("out");
+  const [calVac, setCalVac] = useState(false);
   const [showAllOut, setShowAllOut] = useState(false);
   const [showAllBack, setShowAllBack] = useState(false);
   // Accordéon : une seule traversée dépliée à la fois ; le survol met sa ligne en évidence sur la carte.
@@ -285,6 +286,7 @@ export function SearchPanel({
         <TripCalendar
           open={calOpen}
           onOpenChange={setCalOpen}
+          holidaysOpen={calVac}
           field={calField}
           onFieldChange={setCalField}
           roundTrip={filters.roundTrip}
@@ -308,6 +310,7 @@ export function SearchPanel({
                 flex={filters.flexDays}
                 active={calOpen && calField === "out"}
                 onClick={() => {
+                  setCalVac(false);
                   setCalField("out");
                   setCalOpen(true);
                 }}
@@ -318,6 +321,7 @@ export function SearchPanel({
                   value={filters.returnDate}
                   active={calOpen && calField === "ret"}
                   onClick={() => {
+                    setCalVac(false);
                     setCalField(filters.date ? "ret" : "out");
                     setCalOpen(true);
                   }}
@@ -357,6 +361,7 @@ export function SearchPanel({
           <button
             type="button"
             onClick={() => {
+              setCalVac(true);
               setCalField("out");
               setCalOpen(true);
             }}
@@ -403,21 +408,18 @@ export function SearchPanel({
         ) : (
           <>
             {!hasPair && !active ? (
-              <div className="space-y-2">
-                <h2 className="font-display text-lg font-bold leading-tight">
-                  Où voulez-vous traverser ?
+              <div className="-mx-4 space-y-1.5 md:-mx-5">
+                <h2 className="px-4 text-[11px] font-bold uppercase tracking-wider text-muted-foreground md:px-5">
+                  Trajets fréquents
                 </h2>
-                <p className="text-sm text-muted-foreground">
-                  Choisissez un trajet, ou partez d’un des plus fréquentés :
-                </p>
-                <div className="flex flex-wrap gap-1.5 pt-1">
+                <div className="flex gap-1.5 overflow-x-auto px-4 pb-1 [scrollbar-width:none] md:px-5 [&::-webkit-scrollbar]:hidden">
                   {pairs.map((pair, index) => (
                     <button
                       key={`${pair.from.id}-${pair.to.id}`}
                       type="button"
                       onClick={() => route(pair.from.id, pair.to.id)}
                       style={{ animationDelay: `${index * 50}ms` }}
-                      className="sailing-card inline-flex items-center gap-1.5 rounded-full border border-border bg-card px-3 py-2 text-xs font-semibold shadow-sm transition hover:-translate-y-0.5 hover:border-primary hover:shadow-md"
+                      className="sailing-card inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full border border-border bg-card px-3 py-2 text-xs font-semibold shadow-sm transition hover:-translate-y-0.5 hover:border-primary hover:shadow-md"
                     >
                       {pair.from.name} <ArrowRight className="size-3 text-primary" /> {pair.to.name}
                     </button>
@@ -551,9 +553,11 @@ function ResultBlock({
     <div className="space-y-2.5">
       <div className="flex items-baseline justify-between gap-2">
         <h2 className="font-display text-base font-bold leading-tight">{title}</h2>
-        <span className="shrink-0 text-[11px] text-muted-foreground">{subtitle}</span>
+        <div className="flex shrink-0 items-center gap-2">
+          <span className="text-[11px] text-muted-foreground">{subtitle}</span>
+          <ShareButtons compact label="Partager cette recherche" />
+        </div>
       </div>
-      <ShareButtons label="Partager cette recherche" />
       <DayStrip days={days} value={date} onChange={onDate} allLabel="Tous" />
       {list.length === 0 ? (
         <div className="rounded-2xl border border-dashed p-5 text-center text-sm text-muted-foreground">

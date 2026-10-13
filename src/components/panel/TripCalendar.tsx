@@ -39,6 +39,8 @@ interface TripCalendarProps {
     flexDays?: number;
     roundTrip?: boolean;
   }) => void;
+  /** Ouvert depuis le bouton « Vacances » : le bloc des zones est déplié. */
+  holidaysOpen?: boolean;
   /** Les deux champs de date, qui servent d'ancre au calendrier. */
   anchor: ReactNode;
 }
@@ -95,8 +97,10 @@ export function TripCalendar({
   pairLabel,
   today,
   onChange,
+  holidaysOpen = false,
   anchor,
 }: TripCalendarProps) {
+  const [vacOpen, setVacOpen] = useState(false);
   const [zone, setZone] = useState<SchoolZone | null>(null);
   const [month, setMonth] = useState<Date>(() => keyToDate(date ?? today));
   const [note, setNote] = useState<string | null>(null);
@@ -136,6 +140,7 @@ export function TripCalendar({
     const first = [...activeDays.keys()].sort()[0];
     setMonth(keyToDate(target ?? first ?? today));
     setNote(null);
+    setVacOpen(holidaysOpen);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, field]);
 
@@ -241,27 +246,39 @@ export function TripCalendar({
             <span className="flex items-center gap-1.5 text-xs font-semibold">
               <Backpack className="size-3.5 text-primary" aria-hidden /> Vacances scolaires
             </span>
-            <div className="flex gap-1" role="radiogroup" aria-label="Zone de vacances scolaires">
-              {([null, "A", "B", "C"] as (SchoolZone | null)[]).map((item) => (
-                <button
-                  key={item ?? "none"}
-                  type="button"
-                  role="radio"
-                  aria-checked={zone === item}
-                  onClick={() => chooseZone(item)}
-                  className={`h-9 min-w-10 rounded-full sm:h-7 sm:min-w-9 border px-2 text-[11px] font-bold transition ${zone === item ? "border-primary bg-primary text-primary-foreground" : "border-border bg-background hover:bg-muted"}`}
-                >
-                  {item ?? "Non"}
-                </button>
-              ))}
-            </div>
+            {zone && !vacOpen ? (
+              <button
+                type="button"
+                onClick={() => setVacOpen(true)}
+                className="rounded-full border border-border bg-background px-2.5 py-1 text-[11px] font-bold hover:bg-muted"
+              >
+                Zone {zone} · modifier
+              </button>
+            ) : (
+              <div className="flex gap-1" role="radiogroup" aria-label="Zone de vacances scolaires">
+                {([null, "A", "B", "C"] as (SchoolZone | null)[]).map((item) => (
+                  <button
+                    key={item ?? "none"}
+                    type="button"
+                    role="radio"
+                    aria-checked={zone === item}
+                    onClick={() => chooseZone(item)}
+                    className={`h-9 min-w-10 rounded-full sm:h-7 sm:min-w-9 border px-2 text-[11px] font-bold transition ${zone === item ? "border-primary bg-primary text-primary-foreground" : "border-border bg-background hover:bg-muted"}`}
+                  >
+                    {item ?? "Non"}
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
           {zone ? (
             <>
-              <p className="mt-1.5 text-[11px] leading-snug text-muted-foreground">
-                <strong className="text-foreground">{SCHOOL_ZONES[zone].label}</strong> :{" "}
-                {SCHOOL_ZONES[zone].cities}
-              </p>
+              {vacOpen ? (
+                <p className="mt-1.5 text-[11px] leading-snug text-muted-foreground">
+                  <strong className="text-foreground">{SCHOOL_ZONES[zone].label}</strong> :{" "}
+                  {SCHOOL_ZONES[zone].cities}
+                </p>
+              ) : null}
               <div className="-mx-1 mt-2 flex gap-1.5 overflow-x-auto px-1 pb-0.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
                 {periods.map((period) => {
                   const applied =

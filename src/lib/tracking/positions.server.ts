@@ -1,17 +1,18 @@
-// Suivi des navires : cache partagé de 20 minutes en base + appel à l'API RapidAPI.
+// Suivi des navires : cache partagé en base + écoute ponctuelle du flux AISStream.
 // Ce fichier ne s'exécute que sur le serveur : la clé API n'est jamais envoyée au navigateur.
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
-import { parsePosition } from "./parse";
+import { collectPositions, parseAisMessage } from "./aisstream.server";
 
-/** Une position n'est pas redemandée à l'API tant qu'elle a moins de 20 minutes. */
-export const REFRESH_MINUTES = 20;
+/** Une position n'est pas redemandée tant qu'elle a moins de 5 minutes. */
+export const REFRESH_MINUTES = 5;
 /** On suit un navire de 6 h avant son départ jusqu'à 1 h après son arrivée prévue. */
 const BEFORE_DEPARTURE_MS = 6 * 3600_000;
 const AFTER_ARRIVAL_MS = 3600_000;
 const DEFAULT_CROSSING_MS = 36 * 3600_000;
-/** Garde-fou : nombre maximal d'appels à l'API déclenchés par une seule requête. */
-const MAX_CALLS_PER_REQUEST = 20;
-const API_TIMEOUT_MS = 8000;
+/** Garde-fou : nombre maximal de navires rafraîchis par une seule requête. */
+const MAX_CALLS_PER_REQUEST = 50;
+/** Durée d'écoute du flux AIS par rafraîchissement. */
+const STREAM_LISTEN_MS = 8000;
 
 export interface PublicPosition {
   mmsi: number;
@@ -23,30 +24,6 @@ export interface PublicPosition {
   courseDeg: number | null;
   reportedAt: string | null;
   fetchedAt: string;
-}
-
-function config() {
-  return {
-    key: process.env["RAPIDAPI_KEY"] ?? "",
-    host: process.env["RAPIDAPI_HOST"] ?? "marinetraffic1.p.rapidapi.com",
-    // Chemin et nom du paramètre : à ajuster selon la documentation de l'API (onglet « Endpoints »).
-    path: process.env["RAPIDAPI_VESSEL_PATH"] ?? "/vessel",
-    param: process.env["RAPIDAPI_MMSI_PARAM"] ?? "mmsi",
-  };
-}
-
-async function fetchFromApi(mmsi: number) {
-  const { key, host, path, param } = config();
-  if (!key) throw new Error("RAPIDAPI_KEY manquante côté serveur");
-  const url = `https://${host}${path.startsWith("/") ? path : `/${path}`}?${param}=${mmsi}`;
-  const response = await fetch(url, {
-    headers: { "X-RapidAPI-Key": key, "X-RapidAPI-Host": host, Accept: "application/json" },
-    signal: AbortSignal.timeout(API_TIMEOUT_MS),
-  });
-  if (!response.ok) throw new Error(`API de suivi : HTTP ${response.status}`);
-  const parsed = parsePosition(await response.json(), mmsi);
-  if (!parsed) throw new Error("API de suivi : réponse sans position exploitable");
-  return parsed;
 }
 
 /** MMSI des navires à suivre maintenant (départ proche ou traversée en cours). */
@@ -111,10 +88,23 @@ export async function getPositions(): Promise<PublicPosition[]> {
     if (data && data.length > 0) claimed.push(mmsi);
   }
 
-  await Promise.all(
-    claimed.map(async (mmsi) => {
-      try {
-        const position = await fetchFromApi(mmsi);
+  if (claimed.length > 0) {
+    const key = process.env["AISSTREAM_API_KEY"] ?? "";
+    const found = key
+      ? await collectPositions(key, claimed, STREAM_LISTEN_MS)
+      : new Map<number, Awaited<ReturnType<typeof parseAisMessage>> & object>();
+    if (!key) console.error("[tracking] AISSTREAM_API_KEY manquante côté serveur");
+    await Promise.all(
+      claimed.map(async (mmsi) => {
+        const position = found.get(mmsi);
+        if (!position) {
+          // Navire non entendu pendant la fenêtre d'écoute : on garde l'ancienne position.
+          await supabaseAdmin
+            .from("vessel_positions")
+            .update({ last_error: key ? "Aucun signal AIS reçu pendant l'écoute" : "Clé AISStream manquante" })
+            .eq("mmsi", mmsi);
+          return;
+        }
         await supabaseAdmin
           .from("vessel_positions")
           .update({
@@ -128,17 +118,9 @@ export async function getPositions(): Promise<PublicPosition[]> {
             last_error: null,
           })
           .eq("mmsi", mmsi);
-      } catch (error) {
-        // On garde l'ancienne position ; la prochaine tentative aura lieu dans 20 minutes.
-        const message = error instanceof Error ? error.message : "Erreur inconnue";
-        console.error(`[tracking] ${mmsi}: ${message}`);
-        await supabaseAdmin
-          .from("vessel_positions")
-          .update({ last_error: message.slice(0, 200) })
-          .eq("mmsi", mmsi);
-      }
-    }),
-  );
+      }),
+    );
+  }
 
   const { data } = await supabaseAdmin.from("vessel_positions").select("*").in("mmsi", mmsis);
   return (data ?? [])

@@ -185,7 +185,7 @@ function AdminPage() {
 
   const allowed = SECTIONS.filter((s) => s.roles.some((r) => roles.includes(r)));
   const can = (id: string) => allowed.some((s) => s.id === id);
-  const current = allowed.find((s) => s.id === section) ?? allowed[0];
+  const current = allowed.find((s) => s.id === section) ?? allowed[0]!;
   const groups = [...new Set(allowed.map((s) => s.group))];
   const badge = (id: SectionId) =>
     id === "reports" ? counts?.reports : id === "reviews" ? counts?.reviews : undefined;

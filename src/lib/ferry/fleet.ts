@@ -95,6 +95,27 @@ export function buildFleet(
     const name = vessel?.name ?? "Ferry";
     const live = vessel ? liveByVessel.get(vessel.id) : undefined;
 
+    // Signal AIS récent : la position réelle prime sur l'horaire (en mer ou à quai).
+    if (live && vessel) {
+      ships.push({
+        id: `live:${vessel.id}`,
+        name,
+        vesselId: vessel.id,
+        state: live.phase === "sea" ? "sea" : "docked",
+        source: "live",
+        lngLat: [live.position.longitude, live.position.latitude],
+        course: live.position.courseDeg ?? 90,
+        dx: 0,
+        dy: 0,
+        routeId: live.route.id,
+        departureId: live.departure.id,
+        portId: null,
+        live,
+      });
+      return;
+    }
+
+
     const current = legs.find((leg) => leg.start <= now && now <= leg.end);
     if (current) {
       const progress = Math.min(

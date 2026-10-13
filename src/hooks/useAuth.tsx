@@ -20,6 +20,8 @@ interface AuthContextValue {
   session: Session | null;
   profile: Profile | null;
   isAdmin: boolean;
+  /** Rôles d'équipe (admin, editor, moderator). */
+  roles: string[];
   loading: boolean;
   refreshProfile: () => Promise<void>;
   signOut: () => Promise<void>;
@@ -30,6 +32,7 @@ const AuthContext = createContext<AuthContextValue>({
   session: null,
   profile: null,
   isAdmin: false,
+  roles: [],
   loading: true,
   refreshProfile: async () => {},
   signOut: async () => {},
@@ -38,7 +41,8 @@ const AuthContext = createContext<AuthContextValue>({
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
-  const [isAdmin, setIsAdmin] = useState(false);
+  const [roles, setRoles] = useState<string[]>([]);
+  const isAdmin = roles.includes("admin");
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -74,7 +78,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (!userId) {
-      setIsAdmin(false);
+      setRoles([]);
       return;
     }
     let active = true;
@@ -82,10 +86,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       .from("user_roles")
       .select("role")
       .eq("user_id", userId)
-      .eq("role", "admin")
-      .maybeSingle()
       .then(({ data }) => {
-        if (active) setIsAdmin(Boolean(data));
+        if (active) setRoles((data ?? []).map((r) => r.role).filter((r) => r !== "user"));
       });
     return () => {
       active = false;
@@ -99,6 +101,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         session,
         profile,
         isAdmin,
+        roles,
         loading,
         refreshProfile: loadProfile,
         signOut: async () => {

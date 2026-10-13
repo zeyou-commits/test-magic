@@ -682,13 +682,54 @@ export type Database = {
         }
         Relationships: []
       }
+      vessel_positions: {
+        Row: {
+          course_deg: number | null
+          fetched_at: string
+          last_error: string | null
+          latitude: number | null
+          longitude: number | null
+          mmsi: number
+          reported_at: string | null
+          speed_knots: number | null
+          status: string | null
+          vessel_name: string | null
+        }
+        Insert: {
+          course_deg?: number | null
+          fetched_at?: string
+          last_error?: string | null
+          latitude?: number | null
+          longitude?: number | null
+          mmsi: number
+          reported_at?: string | null
+          speed_knots?: number | null
+          status?: string | null
+          vessel_name?: string | null
+        }
+        Update: {
+          course_deg?: number | null
+          fetched_at?: string
+          last_error?: string | null
+          latitude?: number | null
+          longitude?: number | null
+          mmsi?: number
+          reported_at?: string | null
+          speed_knots?: number | null
+          status?: string | null
+          vessel_name?: string | null
+        }
+        Relationships: []
+      }
       vessels: {
         Row: {
           company_id: string | null
           created_at: string
           description: string | null
           id: string
+          imo: number | null
           is_demo: boolean
+          mmsi: number | null
           name: string
           photo_url: string | null
           slug: string
@@ -701,7 +742,9 @@ export type Database = {
           created_at?: string
           description?: string | null
           id?: string
+          imo?: number | null
           is_demo?: boolean
+          mmsi?: number | null
           name: string
           photo_url?: string | null
           slug: string
@@ -714,7 +757,9 @@ export type Database = {
           created_at?: string
           description?: string | null
           id?: string
+          imo?: number | null
           is_demo?: boolean
+          mmsi?: number | null
           name?: string
           photo_url?: string | null
           slug?: string

@@ -8,6 +8,13 @@
       "when": 1791824158600,
       "tag": "0000_profiles_own_read",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1791853496525,
+      "tag": "0001_vessel_tracking",
+      "breakpoints": true
     }
   ]
 }

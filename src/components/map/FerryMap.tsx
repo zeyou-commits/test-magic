@@ -860,7 +860,7 @@ export default function FerryMap({
       } else {
         const next = document.createElement("p");
         next.className = "port-tip__next";
-        next.textContent = "Aucun départ à venir renseigné.";
+        next.textContent = "Aucun départ programmé pour le moment sur cette ligne.";
         tip.append(next);
       }
 

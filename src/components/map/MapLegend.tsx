@@ -31,7 +31,7 @@ export function MapLegend({
           <ul className="space-y-2.5 text-[13px]">
             <li className="flex items-center gap-3">
               <span className="h-[3px] w-8 shrink-0 rounded-full bg-primary" aria-hidden />
-              Ligne maritime (couleur du port de départ)
+              En service (couleur du port de départ)
             </li>
             <li className="flex items-center gap-3">
               <span className="h-[4px] w-8 shrink-0 rounded-full bg-cta" aria-hidden />
@@ -42,9 +42,7 @@ export function MapLegend({
                 className="w-8 shrink-0 border-t-2 border-dashed border-muted-foreground/60"
                 aria-hidden
               />
-              {showDateHint
-                ? "Pas de départ à la date choisie"
-                : "Sans départ à la date choisie (si une date est filtrée)"}
+              {showDateHint ? "Pas de départ à la date choisie" : "Aucun départ programmé"}
             </li>
             <li className="flex items-center gap-3">
               <span className="grid w-8 shrink-0 place-items-center" aria-hidden>

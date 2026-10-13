@@ -129,6 +129,29 @@ export function activeDeparture(
     : null;
 }
 
+/** Départ le plus proche dans le temps (passé ou futur) : sert à rattacher un signal AIS hors horaire. */
+export function nearestDeparture(
+  departures: Departure[],
+  vessel: Vessel,
+  now: number,
+): Departure | null {
+  let best: { departure: Departure; distance: number } | null = null;
+  departures.forEach((departure) => {
+    if (departure.vessel_id !== vessel.id || departure.status === "cancelled") return;
+    const distance = Math.abs(now - Date.parse(departure.departure_at));
+    if (!best || distance < best.distance) best = { departure, distance };
+  });
+  return best ? (best as { departure: Departure }).departure : null;
+}
+
+/** Au-delà de cet âge, un signal AIS n'est plus considéré comme l'état réel du navire. */
+export const LIVE_MAX_AGE_MINUTES = 6 * 60;
+
+/** Phase réelle déduite du signal : en mouvement (≥ 3 nœuds) → en mer, sinon à quai. */
+export function phaseFromSignal(position: LivePosition): "sea" | "port" {
+  return (position.speedKnots ?? 0) >= 3 ? "sea" : "port";
+}
+
 export function formatAge(minutes: number): string {
   if (minutes < 2) return "à l’instant";
   if (minutes < 60) return `il y a ${Math.round(minutes)} min`;

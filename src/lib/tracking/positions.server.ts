@@ -6,10 +6,6 @@ import type { ParsedPosition } from "./parse";
 
 /** Une position n'est pas redemandée tant qu'elle a moins de 5 minutes. */
 export const REFRESH_MINUTES = 5;
-/** On suit un navire de 6 h avant son départ jusqu'à 1 h après son arrivée prévue. */
-const BEFORE_DEPARTURE_MS = 6 * 3600_000;
-const AFTER_ARRIVAL_MS = 3600_000;
-const DEFAULT_CROSSING_MS = 36 * 3600_000;
 /** Garde-fou : nombre maximal de navires rafraîchis par une seule requête. */
 const MAX_CALLS_PER_REQUEST = 50;
 /** Durée d'écoute du flux AIS par rafraîchissement. */
@@ -27,39 +23,17 @@ export interface PublicPosition {
   fetchedAt: string;
 }
 
-/** MMSI des navires à suivre maintenant (départ proche ou traversée en cours). */
+/**
+ * MMSI de tous les navires actifs renseignés : le signal réel est suivi en continu,
+ * indépendamment des horaires saisis (un navire peut naviguer hors calendrier).
+ */
 async function trackedMmsis(): Promise<number[]> {
-  const now = Date.now();
   const { data: vessels } = await supabaseAdmin
     .from("vessels")
-    .select("id, mmsi")
+    .select("mmsi")
+    .eq("status", "active")
     .not("mmsi", "is", null);
-  if (!vessels?.length) return [];
-  const byVessel = new Map(vessels.map((vessel) => [vessel.id, vessel.mmsi as number]));
-
-  const since = new Date(now - DEFAULT_CROSSING_MS - AFTER_ARRIVAL_MS).toISOString();
-  const until = new Date(now + BEFORE_DEPARTURE_MS).toISOString();
-  const { data: departures } = await supabaseAdmin
-    .from("departures")
-    .select("vessel_id, departure_at, arrival_at, status")
-    .in("vessel_id", [...byVessel.keys()])
-    .neq("status", "cancelled")
-    .gte("departure_at", since)
-    .lte("departure_at", until);
-
-  const result = new Set<number>();
-  (departures ?? []).forEach((departure) => {
-    if (!departure.vessel_id) return;
-    const start = new Date(departure.departure_at).getTime();
-    const end = departure.arrival_at
-      ? new Date(departure.arrival_at).getTime()
-      : start + DEFAULT_CROSSING_MS;
-    if (start - BEFORE_DEPARTURE_MS <= now && now <= end + AFTER_ARRIVAL_MS) {
-      const mmsi = byVessel.get(departure.vessel_id);
-      if (mmsi) result.add(mmsi);
-    }
-  });
-  return [...result];
+  return [...new Set((vessels ?? []).map((vessel) => vessel.mmsi as number))];
 }
 
 /**

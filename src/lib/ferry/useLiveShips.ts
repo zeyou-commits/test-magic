@@ -8,7 +8,15 @@ import {
   vesselsQuery,
 } from "./queries";
 import { routeArc, pointAlong } from "./geo";
-import { activeDeparture, estimateArrival, type LivePosition, type LiveShip } from "./tracking";
+import {
+  activeDeparture,
+  estimateArrival,
+  LIVE_MAX_AGE_MINUTES,
+  nearestDeparture,
+  phaseFromSignal,
+  type LivePosition,
+  type LiveShip,
+} from "./tracking";
 
 /**
  * Positions fournies par le serveur. Le serveur ne rappelle l'API externe que toutes les 20 minutes
@@ -106,22 +114,27 @@ export function useLiveShips(): LiveShip[] {
       if (!vessel.mmsi) return;
       const position = byMmsi.get(vessel.mmsi);
       if (!position) return;
-      const active = activeDeparture(departures, vessel, now);
-      if (!active) return;
-      const route = routeById.get(active.departure.route_id);
-      const to = route ? portById.get(route.arrival_port_id) : undefined;
-      if (!route || !to) return;
       const reported = position.reportedAt
         ? Date.parse(position.reportedAt)
         : Date.parse(position.fetchedAt);
-      const estimate = estimateArrival(position, to, active.departure.arrival_at, now);
+      const ageMinutes = Math.max(0, (now - reported) / 60_000);
+      // Le signal AIS récent fait foi : il est affiché même si aucun départ n'est prévu à cette heure.
+      if (ageMinutes > LIVE_MAX_AGE_MINUTES) return;
+      const departure =
+        activeDeparture(departures, vessel, now)?.departure ??
+        nearestDeparture(departures, vessel, now);
+      if (!departure) return;
+      const route = routeById.get(departure.route_id);
+      const to = route ? portById.get(route.arrival_port_id) : undefined;
+      if (!route || !to) return;
+      const estimate = estimateArrival(position, to, departure.arrival_at, now);
       ships.push({
         vessel,
-        departure: active.departure,
+        departure,
         route,
         position,
-        phase: active.phase,
-        ageMinutes: Math.max(0, (now - reported) / 60_000),
+        phase: phaseFromSignal(position),
+        ageMinutes,
         ...estimate,
       });
     });

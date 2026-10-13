@@ -98,7 +98,22 @@ export function SearchPanel({
   const [profile, setProfile] = useState<TripProfileValue>(defaultTripProfile);
   const [calOpen, setCalOpen] = useState(false);
   const [calField, setCalField] = useState<CalendarField>("out");
-  const [calVac, setCalVac] = useState(false);
+  const [holidaysOn, setHolidaysOnState] = useState(false);
+  useEffect(() => {
+    try {
+      setHolidaysOnState(window.localStorage.getItem("batogo:school-holidays") === "1");
+    } catch {
+      // Stockage indisponible : sans conséquence.
+    }
+  }, []);
+  const setHolidaysOn = (on: boolean) => {
+    setHolidaysOnState(on);
+    try {
+      window.localStorage.setItem("batogo:school-holidays", on ? "1" : "0");
+    } catch {
+      // Sans conséquence.
+    }
+  };
   const [showAllOut, setShowAllOut] = useState(false);
   const [showAllBack, setShowAllBack] = useState(false);
   // Accordéon : une seule traversée dépliée à la fois ; le survol met sa ligne en évidence sur la carte.
@@ -286,7 +301,8 @@ export function SearchPanel({
         <TripCalendar
           open={calOpen}
           onOpenChange={setCalOpen}
-          holidaysOpen={calVac}
+          holidaysOn={holidaysOn}
+          onHolidaysChange={setHolidaysOn}
           field={calField}
           onFieldChange={setCalField}
           roundTrip={filters.roundTrip}
@@ -310,7 +326,6 @@ export function SearchPanel({
                 flex={filters.flexDays}
                 active={calOpen && calField === "out"}
                 onClick={() => {
-                  setCalVac(false);
                   setCalField("out");
                   setCalOpen(true);
                 }}
@@ -321,7 +336,6 @@ export function SearchPanel({
                   value={filters.returnDate}
                   active={calOpen && calField === "ret"}
                   onClick={() => {
-                    setCalVac(false);
                     setCalField(filters.date ? "ret" : "out");
                     setCalOpen(true);
                   }}
@@ -360,18 +374,23 @@ export function SearchPanel({
 
           <button
             type="button"
-            onClick={() => {
-              setCalVac(true);
-              setCalField("out");
-              setCalOpen(true);
-            }}
+            role="switch"
+            aria-checked={holidaysOn}
+            onClick={() => setHolidaysOn(!holidaysOn)}
             className="batogo-control flex h-12 min-w-0 items-center justify-between gap-2 px-3 text-left"
           >
             <span className="flex min-w-0 items-center gap-2">
               <Backpack className="size-4 shrink-0 text-primary" aria-hidden />
               <span className="truncate text-xs font-semibold">Vacances scolaires</span>
             </span>
-            <ChevronDown className="size-4 shrink-0 text-muted-foreground" />
+            <span
+              className={`relative h-6 w-11 shrink-0 rounded-full transition ${holidaysOn ? "bg-primary" : "bg-border"}`}
+              aria-hidden
+            >
+              <span
+                className={`absolute top-0.5 size-5 rounded-full bg-white shadow transition-all ${holidaysOn ? "left-[22px]" : "left-0.5"}`}
+              />
+            </span>
           </button>
         </div>
 

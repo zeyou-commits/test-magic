@@ -15,7 +15,7 @@ Cette version part de **ton zip de production (6)**. Elle ne touche ni au suivi 
 | 4 | Fiches bateaux | Photo plus petite et plus légère (480 px au lieu de 720, bandeau de 144 px), en-tête resserré : compagnie avec logo, numéro IMO, lien « Suivre en direct » sur une seule ligne. |
 | 5 | Fiches ports | Nouvelle fiche : grande photo, repères (lignes, départs, fuseau), départs avec logo de compagnie, **services en pictogrammes**. Toutes les informations d'avant sont conservées. |
 | 6 | Carte mobile | Un tap sur un port n'ouvre **que la bulle**. Le panneau détaillé s'ouvre uniquement avec « Voir la fiche du port ». La bulle reste visible au-dessus du tiroir. |
-| 7 | Parcours des dates | Le bloc « Vacances » du calendrier est replié par défaut (une ligne « Zone C · modifier » + les périodes) et ne se déplie que depuis le bouton « Vacances scolaires ». La section « Où voulez-vous traverser ? » devient une ligne défilante « Trajets fréquents », et les boutons de partage passent en icônes dans l'en-tête : les premiers départs sont visibles sans défiler. |
+| 7 | Vacances scolaires | Le bouton « Vacances scolaires » est un **interrupteur on/off** (mémorisé). Activé, les vacances de la zone A, B ou C sont colorées dans le calendrier ; l'interrupteur est aussi dans le calendrier, avec le choix de zone. Si les prochaines vacances n'ont aucun départ, l'alerte « Me prévenir » s'affiche. La section « Où voulez-vous traverser ? » devient une ligne « Trajets fréquents » et le partage passe en icônes : les premiers départs sont visibles sans défiler. |
 
 ## Point d'attention : notes des bateaux
 

@@ -40,7 +40,8 @@ interface TripCalendarProps {
     roundTrip?: boolean;
   }) => void;
   /** Ouvert depuis le bouton « Vacances » : le bloc des zones est déplié. */
-  holidaysOpen?: boolean;
+  holidaysOn: boolean;
+  onHolidaysChange: (on: boolean) => void;
   /** Les deux champs de date, qui servent d'ancre au calendrier. */
   anchor: ReactNode;
 }
@@ -97,15 +98,13 @@ export function TripCalendar({
   pairLabel,
   today,
   onChange,
-  holidaysOpen = false,
+  holidaysOn,
+  onHolidaysChange,
   anchor,
 }: TripCalendarProps) {
-  const [vacOpen, setVacOpen] = useState(false);
   const [zone, setZone] = useState<SchoolZone | null>(null);
   const [month, setMonth] = useState<Date>(() => keyToDate(date ?? today));
   const [note, setNote] = useState<string | null>(null);
-  // Période de vacances choisie alors qu'aucune traversée n'est encore programmée.
-  const [emptyPeriod, setEmptyPeriod] = useState<HolidayPeriod | null>(null);
 
   // La zone choisie est mémorisée dans le navigateur : on ne la redemande pas à chaque visite.
   useEffect(() => {
@@ -129,7 +128,10 @@ export function TripCalendar({
 
   // Retour : si aucun trajet de retour précis n'est connu, on propose les jours où le réseau a des départs.
   const activeDays = field === "ret" && backDays.size > 0 ? backDays : outDays;
-  const periods = useMemo(() => (zone ? holidayPeriods(zone, today) : []), [zone, today]);
+  const periods = useMemo(
+    () => (zone && holidaysOn ? holidayPeriods(zone, today) : []),
+    [zone, holidaysOn, today],
+  );
   const inHoliday = (key: string) =>
     periods.some((period) => key >= period.start && key <= period.lastDay);
 
@@ -140,7 +142,6 @@ export function TripCalendar({
     const first = [...activeDays.keys()].sort()[0];
     setMonth(keyToDate(target ?? first ?? today));
     setNote(null);
-    setVacOpen(holidaysOpen);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, field]);
 
@@ -149,7 +150,6 @@ export function TripCalendar({
 
   const pick = (key: string) => {
     setNote(null);
-    setEmptyPeriod(null);
     if (field === "out") {
       onChange({ date: key, returnDate: returnDate && returnDate < key ? null : returnDate });
       if (roundTrip) onFieldChange("ret");
@@ -166,26 +166,8 @@ export function TripCalendar({
     return ![...outDays.keys()].some((key) => key >= from && key <= period.lastDay);
   };
 
-  const applyPeriod = (period: HolidayPeriod) => {
-    if (isUnscheduled(period)) {
-      setEmptyPeriod(period);
-      setNote(null);
-      return;
-    }
-    setEmptyPeriod(null);
-    // On cale l'aller et le retour sur les vrais départs les plus proches du début et de la fin des vacances.
-    const out = nearest(outDays, period.start, 3, 3, today);
-    const ret = nearest(backDays.size > 0 ? backDays : outDays, period.lastDay, 6, 0, out ?? today);
-    const nextDate = out ?? (period.start < today ? today : period.start);
-    onChange({ roundTrip: true, date: nextDate, returnDate: ret ?? period.lastDay });
-    setMonth(keyToDate(nextDate));
-    onFieldChange("out");
-    setNote(
-      out && ret
-        ? `Dates calées sur les départs les plus proches des vacances de ${period.name.toLowerCase()}.`
-        : "Aucun départ exact autour de ces dates : dates des vacances conservées, à ajuster.",
-    );
-  };
+  // Prochaines vacances sans aucun départ programmé : on le dit, et on propose une alerte.
+  const nextEmpty = periods[0] && isUnscheduled(periods[0]) ? periods[0] : null;
 
   const hasRange = Boolean(date && returnDate && roundTrip);
   const stay = date && returnDate ? diffDays(date, returnDate) : null;
@@ -240,89 +222,56 @@ export function TripCalendar({
           ) : null}
         </div>
 
-        {/* Vacances scolaires */}
+        {/* Vacances scolaires : simple interrupteur d'affichage */}
         <div className="rounded-2xl bg-secondary/60 p-2.5">
-          <div className="flex items-center justify-between gap-2">
+          <button
+            type="button"
+            role="switch"
+            aria-checked={holidaysOn}
+            onClick={() => onHolidaysChange(!holidaysOn)}
+            className="flex w-full items-center justify-between gap-3 text-left"
+          >
             <span className="flex items-center gap-1.5 text-xs font-semibold">
-              <Backpack className="size-3.5 text-primary" aria-hidden /> Vacances scolaires
+              <Backpack className="size-3.5 text-primary" aria-hidden /> Afficher les vacances
+              scolaires
             </span>
-            {zone && !vacOpen ? (
-              <button
-                type="button"
-                onClick={() => setVacOpen(true)}
-                className="rounded-full border border-border bg-background px-2.5 py-1 text-[11px] font-bold hover:bg-muted"
-              >
-                Zone {zone} · modifier
-              </button>
-            ) : (
+            <span
+              className={`relative h-6 w-11 shrink-0 rounded-full transition ${holidaysOn ? "bg-primary" : "bg-border"}`}
+              aria-hidden
+            >
+              <span
+                className={`absolute top-0.5 size-5 rounded-full bg-white shadow transition-all ${holidaysOn ? "left-[22px]" : "left-0.5"}`}
+              />
+            </span>
+          </button>
+          {holidaysOn ? (
+            <div className="mt-2 flex items-center justify-between gap-2">
+              <span className="text-[11px] text-muted-foreground">
+                {zone ? SCHOOL_ZONES[zone].cities : "Choisissez votre zone"}
+              </span>
               <div className="flex gap-1" role="radiogroup" aria-label="Zone de vacances scolaires">
-                {([null, "A", "B", "C"] as (SchoolZone | null)[]).map((item) => (
+                {(["A", "B", "C"] as SchoolZone[]).map((item) => (
                   <button
-                    key={item ?? "none"}
+                    key={item}
                     type="button"
                     role="radio"
                     aria-checked={zone === item}
                     onClick={() => chooseZone(item)}
-                    className={`h-9 min-w-10 rounded-full sm:h-7 sm:min-w-9 border px-2 text-[11px] font-bold transition ${zone === item ? "border-primary bg-primary text-primary-foreground" : "border-border bg-background hover:bg-muted"}`}
+                    className={`h-9 min-w-10 rounded-full border px-2 text-[11px] font-bold transition sm:h-7 sm:min-w-9 ${zone === item ? "border-primary bg-primary text-primary-foreground" : "border-border bg-background hover:bg-muted"}`}
                   >
-                    {item ?? "Non"}
+                    {item}
                   </button>
                 ))}
               </div>
-            )}
-          </div>
-          {zone ? (
-            <>
-              {vacOpen ? (
-                <p className="mt-1.5 text-[11px] leading-snug text-muted-foreground">
-                  <strong className="text-foreground">{SCHOOL_ZONES[zone].label}</strong> :{" "}
-                  {SCHOOL_ZONES[zone].cities}
-                </p>
-              ) : null}
-              <div className="-mx-1 mt-2 flex gap-1.5 overflow-x-auto px-1 pb-0.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-                {periods.map((period) => {
-                  const applied =
-                    date &&
-                    date >= addDaysKey(period.start, -3) &&
-                    date <= period.lastDay &&
-                    returnDate !== null &&
-                    returnDate <= addDaysKey(period.reprise, 0);
-                  return (
-                    <button
-                      key={period.id}
-                      type="button"
-                      onClick={() => applyPeriod(period)}
-                      className={`shrink-0 rounded-xl border px-2.5 py-1.5 text-left transition hover:border-primary ${applied ? "border-primary bg-primary/10" : "border-border bg-background"}`}
-                    >
-                      <span className="flex items-center gap-1 text-xs font-semibold">
-                        {applied ? <Check className="size-3 text-primary" aria-hidden /> : null}
-                        {period.name}
-                      </span>
-                      <span className="block text-[10px] text-muted-foreground">
-                        {short(period.start)} → {short(period.lastDay)}
-                        {isUnscheduled(period) ? " · à venir" : ""}
-                      </span>
-                    </button>
-                  );
-                })}
-                {periods.length === 0 ? (
-                  <span className="text-[11px] text-muted-foreground">Aucune période à venir.</span>
-                ) : null}
-              </div>
-            </>
-          ) : (
-            <p className="mt-1 text-[11px] text-muted-foreground">
-              Choisissez votre zone : les vacances s’affichent dans le calendrier et se règlent en
-              un clic.
-            </p>
-          )}
+            </div>
+          ) : null}
         </div>
 
-        {emptyPeriod ? (
+        {nextEmpty ? (
           <SalesAlertForm
-            periodLabel={`${emptyPeriod.name} · ${short(emptyPeriod.start)} → ${short(emptyPeriod.lastDay)}`}
-            periodStart={emptyPeriod.start}
-            periodEnd={emptyPeriod.lastDay}
+            periodLabel={`${nextEmpty.name} · ${short(nextEmpty.start)} → ${short(nextEmpty.lastDay)}`}
+            periodStart={nextEmpty.start}
+            periodEnd={nextEmpty.lastDay}
             fromLabel={pairLabel?.split(" → ")[0] ?? null}
             toLabel={pairLabel?.split(" → ")[1] ?? null}
           />

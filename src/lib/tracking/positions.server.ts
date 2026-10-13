@@ -6,10 +6,6 @@ import type { ParsedPosition } from "./parse";
 
 /** Une position n'est pas redemandée tant qu'elle a moins de 5 minutes. */
 export const REFRESH_MINUTES = 5;
-/** On suit un navire de 6 h avant son départ jusqu'à 1 h après son arrivée prévue. */
-const BEFORE_DEPARTURE_MS = 6 * 3600_000;
-const AFTER_ARRIVAL_MS = 3600_000;
-const DEFAULT_CROSSING_MS = 36 * 3600_000;
 /** Garde-fou : nombre maximal de navires rafraîchis par une seule requête. */
 const MAX_CALLS_PER_REQUEST = 50;
 /** Durée d'écoute du flux AIS par rafraîchissement. */

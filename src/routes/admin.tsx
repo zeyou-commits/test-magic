@@ -6,7 +6,26 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  AlertTriangle,
+  Anchor,
+  CalendarClock,
+  CalendarDays,
+  Database,
+  FileSpreadsheet,
+  LayoutDashboard,
+  Lock,
+  LogOut,
+  Map as MapIcon,
+  Menu,
+  MessageSquare,
+  Route,
+  Ship,
+  Users,
+} from "lucide-react";
+import { TeamAdmin } from "@/components/admin/TeamAdmin";
+import { DashboardOverview, useAdminCounts } from "@/components/admin/DashboardOverview";
+import { ROLE_INFO } from "@/components/admin/roles";
 import {
   adminPortsQuery,
   adminRoutesQuery,
@@ -94,8 +113,45 @@ export const Route = createFileRoute("/admin")({
   component: AdminPage,
 });
 
+type SectionId =
+  | "dashboard"
+  | "departures"
+  | "schedules"
+  | "ports"
+  | "routes"
+  | "vessels"
+  | "reviews"
+  | "reports"
+  | "import"
+  | "data"
+  | "team";
+
+const SECTIONS: {
+  id: SectionId;
+  label: string;
+  group: string;
+  icon: typeof LayoutDashboard;
+  roles: string[];
+  description: string;
+}[] = [
+  { id: "dashboard", label: "Tableau de bord", group: "Pilotage", icon: LayoutDashboard, roles: ["admin", "editor", "moderator"], description: "Vue d'ensemble et points d'attention." },
+  { id: "departures", label: "Départs", group: "Exploitation", icon: CalendarClock, roles: ["admin", "editor"], description: "Traversées datées, statuts et navires assignés." },
+  { id: "schedules", label: "Calendriers", group: "Exploitation", icon: CalendarDays, roles: ["admin", "editor"], description: "Rotations régulières et préparation de saison." },
+  { id: "routes", label: "Lignes", group: "Exploitation", icon: Route, roles: ["admin", "editor"], description: "Liaisons entre ports et compagnies." },
+  { id: "ports", label: "Ports", group: "Exploitation", icon: Anchor, roles: ["admin", "editor"], description: "Fiches et services des ports." },
+  { id: "vessels", label: "Navires", group: "Exploitation", icon: Ship, roles: ["admin", "editor"], description: "Flotte, MMSI/IMO et suivi en direct." },
+  { id: "reviews", label: "Avis", group: "Modération", icon: MessageSquare, roles: ["admin", "moderator"], description: "Avis voyageurs à publier ou refuser." },
+  { id: "reports", label: "Signalements", group: "Modération", icon: AlertTriangle, roles: ["admin", "moderator"], description: "Informations signalées comme inexactes." },
+  { id: "import", label: "Import Excel", group: "Administration", icon: FileSpreadsheet, roles: ["admin"], description: "Import massif de calendriers et départs." },
+  { id: "data", label: "Données", group: "Administration", icon: Database, roles: ["admin"], description: "Maintenance des données." },
+  { id: "team", label: "Équipe & droits", group: "Administration", icon: Users, roles: ["admin"], description: "Collaborateurs, invitations et rôles." },
+];
+
 function AdminPage() {
-  const { isAdmin, loading, user } = useAuth();
+  const { roles, loading, user, profile, signOut } = useAuth();
+  const [section, setSection] = useState<SectionId>("dashboard");
+  const [menuOpen, setMenuOpen] = useState(false);
+  const { data: counts } = useAdminCounts();
 
   if (loading) {
     return <CenteredNote>Chargement…</CenteredNote>;
@@ -104,6 +160,8 @@ function AdminPage() {
   if (!user) {
     return (
       <CenteredNote>
+        <Lock className="mx-auto mb-3 h-8 w-8 text-primary" />
+        <p className="font-medium text-foreground">Espace réservé à l'équipe Batogo</p>
         <p>Connectez-vous pour accéder au back-office.</p>
         <Button asChild className="mt-3">
           <Link to="/auth">Se connecter</Link>
@@ -112,10 +170,12 @@ function AdminPage() {
     );
   }
 
-  if (!isAdmin) {
+  if (roles.length === 0) {
     return (
       <CenteredNote>
-        <p>Cet espace est réservé à l'équipe Batogo.</p>
+        <Lock className="mx-auto mb-3 h-8 w-8 text-muted-foreground" />
+        <p>Votre compte n'a pas encore de droits sur le back-office.</p>
+        <p>Demandez à un administrateur de vous attribuer un rôle.</p>
         <Button asChild variant="outline" className="mt-3">
           <Link to="/">Retour à la carte</Link>
         </Button>
@@ -123,60 +183,140 @@ function AdminPage() {
     );
   }
 
-  return (
-    <div className="mx-auto w-full max-w-5xl px-4 py-6">
-      <div className="flex items-center justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-semibold">Back-office</h1>
-          <p className="text-sm text-muted-foreground">
-            Modération et mise à jour des informations publiées.
-          </p>
-        </div>
-        <Button asChild variant="outline" size="sm">
-          <Link to="/">Voir la carte</Link>
-        </Button>
-      </div>
+  const allowed = SECTIONS.filter((s) => s.roles.some((r) => roles.includes(r)));
+  const can = (id: string) => allowed.some((s) => s.id === id);
+  const current = allowed.find((s) => s.id === section) ?? allowed[0];
+  const groups = [...new Set(allowed.map((s) => s.group))];
+  const badge = (id: SectionId) =>
+    id === "reports" ? counts?.reports : id === "reviews" ? counts?.reviews : undefined;
+  const mainRole = (["admin", "editor", "moderator"] as const).find((r) => roles.includes(r))!;
 
-      <Tabs defaultValue="reviews" className="mt-6">
-        <TabsList className="h-auto w-full justify-start overflow-x-auto">
-          <TabsTrigger value="reviews">Avis</TabsTrigger>
-          <TabsTrigger value="reports">Signalements</TabsTrigger>
-          <TabsTrigger value="departures">Départs</TabsTrigger>
-          <TabsTrigger value="schedules">Calendriers</TabsTrigger>
-          <TabsTrigger value="ports">Ports</TabsTrigger>
-          <TabsTrigger value="routes">Lignes</TabsTrigger>
-          <TabsTrigger value="vessels">Navires</TabsTrigger>
-          <TabsTrigger value="import">Import Excel</TabsTrigger>
-          <TabsTrigger value="data">Données</TabsTrigger>
-        </TabsList>
-        <TabsContent value="reviews">
-          <ReviewsModeration />
-        </TabsContent>
-        <TabsContent value="reports">
-          <ReportsModeration />
-        </TabsContent>
-        <TabsContent value="departures">
-          <DeparturesAdmin />
-        </TabsContent>
-        <TabsContent value="schedules">
-          <SchedulesAdmin />
-        </TabsContent>
-        <TabsContent value="ports">
-          <PortsAdmin />
-        </TabsContent>
-        <TabsContent value="routes">
-          <RoutesAdmin />
-        </TabsContent>
-        <TabsContent value="vessels">
-          <VesselsAdmin />
-        </TabsContent>
-        <TabsContent value="import">
-          <ImportAdmin />
-        </TabsContent>
-        <TabsContent value="data">
-          <DataAdmin />
-        </TabsContent>
-      </Tabs>
+  const go = (id: string) => {
+    setSection(id as SectionId);
+    setMenuOpen(false);
+  };
+
+  const nav = (
+    <nav className="flex flex-1 flex-col gap-5 overflow-y-auto p-3">
+      {groups.map((g) => (
+        <div key={g}>
+          <p className="px-3 pb-1 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">{g}</p>
+          {allowed
+            .filter((s) => s.group === g)
+            .map((s) => {
+              const count = badge(s.id);
+              return (
+                <button
+                  key={s.id}
+                  type="button"
+                  onClick={() => go(s.id)}
+                  className={`flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm transition ${
+                    current.id === s.id
+                      ? "bg-primary text-primary-foreground"
+                      : "text-foreground/80 hover:bg-muted"
+                  }`}
+                >
+                  <s.icon className="h-4 w-4" />
+                  {s.label}
+                  {count ? (
+                    <span className={`ml-auto rounded-full px-2 text-xs ${current.id === s.id ? "bg-primary-foreground/20" : "bg-destructive text-destructive-foreground"}`}>
+                      {count}
+                    </span>
+                  ) : null}
+                </button>
+              );
+            })}
+        </div>
+      ))}
+    </nav>
+  );
+
+  return (
+    <div className="flex min-h-dvh bg-muted/30">
+      <aside
+        className={`fixed inset-y-0 left-0 z-40 flex w-64 flex-col border-r border-border bg-card transition-transform lg:static lg:translate-x-0 ${
+          menuOpen ? "translate-x-0" : "-translate-x-full"
+        }`}
+      >
+        <div className="flex h-16 items-center gap-2 border-b border-border px-5">
+          <span className="text-lg font-semibold">Batogo</span>
+          <span className="rounded bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">Console</span>
+        </div>
+        {nav}
+        <div className="border-t border-border p-3">
+          <div className="px-3 pb-2">
+            <p className="truncate text-sm font-medium">{profile?.display_name ?? user.email}</p>
+            <p className="text-xs text-muted-foreground">{ROLE_INFO[mainRole].label}</p>
+          </div>
+          <Button asChild variant="ghost" size="sm" className="w-full justify-start">
+            <Link to="/">
+              <MapIcon className="mr-2 h-4 w-4" /> Voir le site
+            </Link>
+          </Button>
+          <Button variant="ghost" size="sm" className="w-full justify-start" onClick={() => void signOut()}>
+            <LogOut className="mr-2 h-4 w-4" /> Se déconnecter
+          </Button>
+        </div>
+      </aside>
+      {menuOpen ? (
+        <button
+          type="button"
+          aria-label="Fermer le menu"
+          className="fixed inset-0 z-30 bg-foreground/30 lg:hidden"
+          onClick={() => setMenuOpen(false)}
+        />
+      ) : null}
+
+      <main className="min-w-0 flex-1">
+        <header className="sticky top-0 z-20 flex h-16 items-center gap-3 border-b border-border bg-card/90 px-4 backdrop-blur lg:px-8">
+          <Button variant="ghost" size="icon" className="lg:hidden" onClick={() => setMenuOpen(true)} aria-label="Ouvrir le menu">
+            <Menu className="h-5 w-5" />
+          </Button>
+          <div className="min-w-0">
+            <h1 className="truncate text-lg font-semibold">{current.label}</h1>
+            <p className="hidden truncate text-xs text-muted-foreground sm:block">{current.description}</p>
+          </div>
+        </header>
+        <div className="mx-auto w-full max-w-6xl px-4 py-6 lg:px-8">
+          {current.id === "dashboard" ? (
+            <div className="space-y-6">
+              <div>
+                <h2 className="text-xl font-semibold">Bonjour {profile?.display_name ?? ""}</h2>
+                <p className="text-sm text-muted-foreground">Voici ce qui demande votre attention.</p>
+              </div>
+              <DashboardOverview onNavigate={go} can={can} />
+              <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+                {allowed
+                  .filter((s) => s.id !== "dashboard")
+                  .map((s) => (
+                    <button
+                      key={s.id}
+                      type="button"
+                      onClick={() => go(s.id)}
+                      className="flex items-start gap-3 rounded-2xl border border-border bg-card p-4 text-left transition hover:border-primary"
+                    >
+                      <s.icon className="mt-0.5 h-5 w-5 text-primary" />
+                      <span>
+                        <span className="block text-sm font-medium">{s.label}</span>
+                        <span className="block text-xs text-muted-foreground">{s.description}</span>
+                      </span>
+                    </button>
+                  ))}
+              </div>
+            </div>
+          ) : null}
+          {current.id === "reviews" ? <ReviewsModeration /> : null}
+          {current.id === "reports" ? <ReportsModeration /> : null}
+          {current.id === "departures" ? <DeparturesAdmin /> : null}
+          {current.id === "schedules" ? <SchedulesAdmin /> : null}
+          {current.id === "ports" ? <PortsAdmin /> : null}
+          {current.id === "routes" ? <RoutesAdmin /> : null}
+          {current.id === "vessels" ? <VesselsAdmin /> : null}
+          {current.id === "import" ? <ImportAdmin /> : null}
+          {current.id === "data" ? <DataAdmin /> : null}
+          {current.id === "team" ? <TeamAdmin /> : null}
+        </div>
+      </main>
     </div>
   );
 }

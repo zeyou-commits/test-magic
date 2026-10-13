@@ -11,6 +11,8 @@ import {
   adminPortsQuery,
   adminRoutesQuery,
   companiesQuery,
+  portsQuery,
+  routesQuery,
   schedulesQuery,
   upcomingDeparturesQuery,
   vesselsQuery,
@@ -901,6 +903,24 @@ function VesselsAdmin() {
     },
     refetchInterval: 60_000,
   });
+  const { data: routes = [] } = useQuery(routesQuery);
+  const { data: ports = [] } = useQuery(portsQuery);
+  const { data: nextDeps = [] } = useQuery({
+    queryKey: ["admin", "vessel_next_departures"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("departures")
+        .select("vessel_id, route_id, departure_at")
+        .not("vessel_id", "is", null)
+        .neq("status", "cancelled")
+        .gte("departure_at", new Date(Date.now() - 36 * 3600_000).toISOString())
+        .order("departure_at")
+        .limit(1000);
+      if (error) throw new Error(error.message);
+      return data;
+    },
+  });
+  const portLabel = (id: string) => ports.find((p) => p.id === id)?.name ?? "—";
   // Brouillons de saisie, par navire : { mmsi, imo, photo }.
   const [drafts, setDrafts] = useState<
     Record<string, { mmsi?: string; imo?: string; photo?: string }>
@@ -979,6 +999,37 @@ function VesselsAdmin() {
                       : ""}
                   {position?.last_error ? ` · erreur : ${position.last_error}` : ""}
                 </p>
+                {(() => {
+                  const dep = nextDeps.find((d) => d.vessel_id === vessel.id);
+                  const route = dep ? routes.find((r) => r.id === dep.route_id) : undefined;
+                  const declared = position as { destination?: string | null; eta?: string | null } | undefined;
+                  const link = vessel.imo
+                    ? `https://www.vesselfinder.com/?imo=${vessel.imo}`
+                    : vessel.mmsi
+                      ? `https://www.vesselfinder.com/?mmsi=${vessel.mmsi}`
+                      : null;
+                  return (
+                    <div className="mt-1 grid gap-0.5 text-xs">
+                      <p>
+                        <span className="text-muted-foreground">Prévu Batogo : </span>
+                        {route && dep
+                          ? `${portLabel(route.departure_port_id)} → ${portLabel(route.arrival_port_id)} · ${new Date(dep.departure_at).toLocaleString("fr-FR")}`
+                          : "aucun départ à venir"}
+                      </p>
+                      <p>
+                        <span className="text-muted-foreground">Déclaré par le navire : </span>
+                        {declared?.destination
+                          ? `« ${declared.destination} »${declared.eta ? ` · arrivée estimée ${declared.eta}` : ""}`
+                          : "pas encore reçu"}
+                      </p>
+                      {link ? (
+                        <a href={link} target="_blank" rel="noopener noreferrer" className="font-semibold text-primary underline underline-offset-2">
+                          Suivre sur VesselFinder ↗
+                        </a>
+                      ) : null}
+                    </div>
+                  );
+                })()}
               </div>
               <div className="flex flex-wrap items-center gap-2">
                 <Input

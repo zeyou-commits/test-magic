@@ -63,6 +63,7 @@ export function collectPositions(
   apiKey: string,
   mmsis: number[],
   timeoutMs: number,
+  statics?: Map<number, { destination: string | null; eta: string | null }>,
 ): Promise<Map<number, ParsedPosition>> {
   const found = new Map<number, ParsedPosition>();
   return new Promise((resolve) => {
@@ -93,7 +94,7 @@ export function collectPositions(
           APIKey: apiKey,
           BoundingBoxes: [BOUNDING_BOX],
           FiltersShipMMSI: mmsis.slice(0, 200).map(String),
-          FilterMessageTypes: ["PositionReport"],
+          FilterMessageTypes: ["PositionReport", "ShipStaticData"],
         }),
       );
     });
@@ -111,6 +112,18 @@ export function collectPositions(
           console.error("[tracking] AISStream :", parsed.error);
           finish();
           return;
+        }
+        if (parsed?.MessageType === "ShipStaticData" && statics) {
+          const st = parsed.Message?.ShipStaticData;
+          const id = Number(parsed.MetaData?.MMSI);
+          if (st && mmsis.includes(id)) {
+            const e = st.Eta;
+            const pad = (n: number) => String(n).padStart(2, "0");
+            statics.set(id, {
+              destination: String(st.Destination ?? "").replace(/@/g, "").trim() || null,
+              eta: e && e.Month ? `${pad(e.Day)}/${pad(e.Month)} ${pad(e.Hour)}:${pad(e.Minute)} UTC` : null,
+            });
+          }
         }
         const position = parseAisMessage(parsed);
         if (position && mmsis.includes(position.mmsi)) {

@@ -18,9 +18,6 @@ export interface PlanningConflict {
   message: string;
 }
 
-/** Temps minimal à quai entre deux traversées d'un même navire. */
-const MIN_TURNAROUND = 60 * 60_000;
-
 /** Traversées en conflit : deux départs physiquement incompatibles pour le même navire. */
 export function detectVesselConflicts(legs: ConflictLeg[]): PlanningConflict[] {
   const byVessel = new Map<string, ConflictLeg[]>();
@@ -33,9 +30,9 @@ export function detectVesselConflicts(legs: ConflictLeg[]): PlanningConflict[] {
   byVessel.forEach((list, vesselId) => {
     list.sort((a, b) => a.start - b.start);
     for (let i = 0; i < list.length - 1; i++) {
-      const a = list[i];
-      const b = list[i + 1];
-      if (b.start < a.end + (a.toId === b.fromId ? 0 : MIN_TURNAROUND) && b.start < a.end) {
+      const a = list[i]!;
+      const b = list[i + 1]!;
+      if (b.start < a.end) {
         out.push({
           kind: "overlap",
           severity: "high",

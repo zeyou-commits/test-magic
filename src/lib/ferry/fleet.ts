@@ -7,6 +7,7 @@
 //  - un navire arrivé il y a moins de 12 h → AU PORT d'arrivée ;
 //  - avec le suivi en direct, la position réelle remplace la position déduite.
 import { pointAlong, routeArc, type LngLat } from "./geo";
+import { overlappingDepartureIds } from "./conflicts";
 import type { LiveShip } from "./tracking";
 import type { Departure, Port, RouteLine, Vessel } from "./types";
 
@@ -86,6 +87,13 @@ export function buildFleet(
     groups.set(key, legs);
   });
 
+  // Départs en chevauchement pour un même navire : jamais utilisés pour le placer en mer.
+  const unreliable = overlappingDepartureIds(
+    [...groups.entries()].filter(([k]) => !k.startsWith("anon:")).flatMap(([k, legs]) =>
+      legs.map((l) => ({ id: l.departure.id, vesselId: k, fromId: l.from.id, toId: l.to.id, fromName: l.from.name, toName: l.to.name, start: l.start, end: l.end })),
+    ),
+  );
+
   const ships: FleetShip[] = [];
   const dockedAt = new Map<string, FleetShip[]>();
 
@@ -116,7 +124,9 @@ export function buildFleet(
     }
 
 
-    const current = legs.find((leg) => leg.start <= now && now <= leg.end);
+    const current = legs.find(
+      (leg) => leg.start <= now && now <= leg.end && !unreliable.has(leg.departure.id),
+    );
     if (current) {
       const progress = Math.min(
         1,
@@ -145,7 +155,7 @@ export function buildFleet(
     }
 
     const next = legs.find((leg) => leg.start > now);
-    const last = [...legs].reverse().find((leg) => leg.end < now);
+    const last = [...legs].reverse().find((leg) => leg.end < now && !unreliable.has(leg.departure.id));
     let port: Port | undefined;
     let leg: Leg | undefined;
     const dockWindow = vessel ? DOCK_BEFORE_DEPARTURE : ANONYMOUS_DOCK_BEFORE;

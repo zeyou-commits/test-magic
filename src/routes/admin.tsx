@@ -4,6 +4,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { PlanningAlerts } from "@/components/admin/PlanningAlerts";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -143,6 +144,7 @@ function AdminPage() {
         <TabsList className="h-auto w-full justify-start overflow-x-auto">
           <TabsTrigger value="reviews">Avis</TabsTrigger>
           <TabsTrigger value="reports">Signalements</TabsTrigger>
+          <TabsTrigger value="alerts">Alertes planning</TabsTrigger>
           <TabsTrigger value="departures">Départs</TabsTrigger>
           <TabsTrigger value="schedules">Calendriers</TabsTrigger>
           <TabsTrigger value="ports">Ports</TabsTrigger>
@@ -156,6 +158,9 @@ function AdminPage() {
         </TabsContent>
         <TabsContent value="reports">
           <ReportsModeration />
+        </TabsContent>
+        <TabsContent value="alerts">
+          <PlanningAlerts />
         </TabsContent>
         <TabsContent value="departures">
           <DeparturesAdmin />

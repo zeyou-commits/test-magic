@@ -28,7 +28,7 @@ import {
 import { routeColor, routePalette } from "@/lib/ferry/colors";
 import { portPresets } from "@/lib/ferry/portPresets";
 import type { Port } from "@/lib/ferry/types";
-import { portTimeZone, zonedTimeToUtc, zoneLabel } from "@/lib/ferry/time";
+import { dateKeyInZone, portTimeZone, wallTimeInZone, zonedTimeToUtc, zoneLabel } from "@/lib/ferry/time";
 
 // Libellés français des statuts et motifs (la base stocke des codes en anglais).
 const reviewStatusLabel: Record<string, string> = {
@@ -373,12 +373,83 @@ function ReportsModeration() {
   );
 }
 
+function DepartureEditor({
+  departure,
+  timeZone,
+  vessels,
+  onDone,
+}: {
+  departure: { id: string; departure_at: string; duration_minutes: number | null; vessel_id: string | null; status: string };
+  timeZone: string;
+  vessels: { id: string; name: string }[];
+  onDone: () => void;
+}) {
+  const queryClient = useQueryClient();
+  const [date, setDate] = useState(dateKeyInZone(departure.departure_at, timeZone));
+  const [time, setTime] = useState(wallTimeInZone(departure.departure_at, timeZone).slice(0, 5));
+  const [hours, setHours] = useState(String(Math.floor((departure.duration_minutes ?? 0) / 60)));
+  const [mins, setMins] = useState(String((departure.duration_minutes ?? 0) % 60));
+  const [vesselId, setVesselId] = useState(departure.vessel_id ?? "");
+  const save = useMutation({
+    mutationFn: async () => {
+      const start = zonedTimeToUtc(date, time, timeZone);
+      const duration = Number(hours) * 60 + Number(mins);
+      if (!Number.isFinite(duration) || duration <= 0) throw new Error("Durée invalide.");
+      const { error } = await supabase
+        .from("departures")
+        .update({
+          departure_at: start.toISOString(),
+          duration_minutes: duration,
+          arrival_at: new Date(start.getTime() + duration * 60_000).toISOString(),
+          vessel_id: vesselId || null,
+          status: departure.status === "cancelled" ? "cancelled" : "modified",
+          last_verified_at: new Date().toISOString(),
+        })
+        .eq("id", departure.id);
+      if (error) throw new Error(error.message);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["departures"] });
+      queryClient.invalidateQueries({ queryKey: ["admin", "planning-alerts"] });
+      toast.success("Départ modifié.");
+      onDone();
+    },
+    onError: (error: Error) => toast.error(error.message),
+  });
+  return (
+    <div className="mt-2 flex w-full flex-wrap items-end gap-2 rounded-md border border-border p-2">
+      <label className="text-xs">Date<Input type="date" value={date} onChange={(e) => setDate(e.target.value)} /></label>
+      <label className="text-xs">Heure ({zoneLabel(timeZone)})<Input type="time" value={time} onChange={(e) => setTime(e.target.value)} /></label>
+      <label className="text-xs">Durée h<Input className="w-16" type="number" min={0} value={hours} onChange={(e) => setHours(e.target.value)} /></label>
+      <label className="text-xs">min<Input className="w-16" type="number" min={0} max={59} value={mins} onChange={(e) => setMins(e.target.value)} /></label>
+      <label className="text-xs">Navire
+        <select className="block h-9 rounded-md border border-input bg-background px-2 text-sm" value={vesselId} onChange={(e) => setVesselId(e.target.value)}>
+          <option value="">—</option>
+          {vessels.map((v) => <option key={v.id} value={v.id}>{v.name}</option>)}
+        </select>
+      </label>
+      <Button size="sm" disabled={save.isPending} onClick={() => save.mutate()}>Enregistrer</Button>
+      <Button size="sm" variant="ghost" onClick={onDone}>Fermer</Button>
+    </div>
+  );
+}
+
 function DeparturesAdmin() {
   const queryClient = useQueryClient();
   const { data: departures = [] } = useQuery(upcomingDeparturesQuery());
   const { data: routes = [] } = useQuery(adminRoutesQuery);
   const { data: ports = [] } = useQuery(adminPortsQuery);
   const { data: companies = [] } = useQuery(companiesQuery);
+  const { data: vessels = [] } = useQuery({
+    queryKey: ["admin", "vessels-lite"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("vessels").select("id,name,company_id").order("name");
+      if (error) throw new Error(error.message);
+      return data ?? [];
+    },
+  });
+  const [companyFilter, setCompanyFilter] = useState("");
+  const [editing, setEditing] = useState<string | null>(null);
 
   const update = useMutation({
     mutationFn: async ({
@@ -402,40 +473,55 @@ function DeparturesAdmin() {
   });
 
   const portName = (id: string) => ports.find((port) => port.id === id)?.name ?? "—";
+  const shown = companyFilter
+    ? departures.filter((d) => d.company_id === companyFilter)
+    : departures;
 
   return (
     <Panel>
+      <div className="mb-3 flex items-center gap-2">
+        <label className="text-sm text-muted-foreground" htmlFor="dep-company">Compagnie</label>
+        <select
+          id="dep-company"
+          className="h-9 rounded-md border border-input bg-background px-2 text-sm"
+          value={companyFilter}
+          onChange={(e) => setCompanyFilter(e.target.value)}
+        >
+          <option value="">Toutes</option>
+          {companies.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+        </select>
+        <span className="text-xs text-muted-foreground">{shown.length} départ(s)</span>
+      </div>
       <ul className="divide-y divide-border">
-        {departures.map((departure) => {
+        {shown.map((departure) => {
           const route = routes.find((item) => item.id === departure.route_id);
           const company = companies.find((item) => item.id === departure.company_id);
+          const tz = portTimeZone(ports.find((port) => port.id === route?.departure_port_id));
+          const vessel = vessels.find((v) => v.id === departure.vessel_id);
           return (
             <li key={departure.id} className="flex flex-wrap items-center gap-3 py-3">
               <div className="min-w-0 flex-1">
                 <p className="text-sm font-medium">
-                  {formatDateTime(
-                    departure.departure_at,
-                    portTimeZone(ports.find((port) => port.id === route?.departure_port_id)),
-                  )}
+                  {formatDateTime(departure.departure_at, tz)}
                   <span className="ml-1 text-xs font-normal text-muted-foreground">
-                    (
-                    {zoneLabel(
-                      portTimeZone(ports.find((port) => port.id === route?.departure_port_id)),
-                    )}
-                    )
+                    ({zoneLabel(tz)})
                   </span>
                 </p>
                 <p className="text-xs text-muted-foreground">
                   {route
                     ? `${portName(route.departure_port_id)} → ${portName(route.arrival_port_id)}`
                     : "—"}
-                  {company ? ` · ${company.name}` : ""} ·{" "}
+                  {company ? ` · ${company.name}` : ""}
+                  {vessel ? ` · ${vessel.name}` : ""} ·{" "}
                   {formatDuration(departure.duration_minutes)} ·{" "}
                   {departureStatusLabel[departure.status] ?? departure.status} ·{" "}
                   {reliabilityLabel[departure.reliability]}
                 </p>
               </div>
               <div className="flex gap-2">
+                <Button size="sm" variant="outline" onClick={() => setEditing(editing === departure.id ? null : departure.id)}>
+                  Modifier
+                </Button>
                 <Button
                   size="sm"
                   variant="outline"
@@ -468,6 +554,14 @@ function DeparturesAdmin() {
                   {departure.status === "cancelled" ? "Rétablir le départ" : "Annuler le départ"}
                 </Button>
               </div>
+              {editing === departure.id && (
+                <DepartureEditor
+                  departure={departure}
+                  timeZone={tz}
+                  vessels={vessels.filter((v) => !company || !v.company_id || v.company_id === company.id)}
+                  onDone={() => setEditing(null)}
+                />
+              )}
             </li>
           );
         })}

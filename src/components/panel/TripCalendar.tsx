@@ -102,25 +102,32 @@ export function TripCalendar({
   onHolidaysChange,
   anchor,
 }: TripCalendarProps) {
-  const [zone, setZone] = useState<SchoolZone | null>(null);
+  const [zones, setZones] = useState<SchoolZone[]>([]);
   const [month, setMonth] = useState<Date>(() => keyToDate(date ?? today));
   const [note, setNote] = useState<string | null>(null);
+  const isMobile = useIsMobile();
 
-  // La zone choisie est mémorisée dans le navigateur : on ne la redemande pas à chaque visite.
+  // Les zones choisies sont mémorisées dans le navigateur.
   useEffect(() => {
     try {
-      const saved = window.localStorage.getItem(ZONE_STORAGE_KEY);
-      if (saved === "A" || saved === "B" || saved === "C") setZone(saved);
+      const saved = (window.localStorage.getItem(ZONE_STORAGE_KEY) ?? "")
+        .split(",")
+        .filter((z): z is SchoolZone => z === "A" || z === "B" || z === "C");
+      setZones(saved);
     } catch {
       // Stockage indisponible : sans conséquence.
     }
   }, []);
-  const chooseZone = (next: SchoolZone | null) => {
-    setZone(next);
+  const toggleZone = (item: SchoolZone) => {
+    const next = zones.includes(item)
+      ? zones.filter((z) => z !== item)
+      : ([...zones, item].sort() as SchoolZone[]);
+    setZones(next);
     setNote(null);
+    if (next.length > 0 && !holidaysOn) onHolidaysChange(true);
+    if (next.length === 0 && holidaysOn) onHolidaysChange(false);
     try {
-      if (next) window.localStorage.setItem(ZONE_STORAGE_KEY, next);
-      else window.localStorage.removeItem(ZONE_STORAGE_KEY);
+      window.localStorage.setItem(ZONE_STORAGE_KEY, next.join(","));
     } catch {
       // Sans conséquence.
     }
@@ -128,12 +135,26 @@ export function TripCalendar({
 
   // Retour : si aucun trajet de retour précis n'est connu, on propose les jours où le réseau a des départs.
   const activeDays = field === "ret" && backDays.size > 0 ? backDays : outDays;
-  const periods = useMemo(
-    () => (zone && holidaysOn ? holidayPeriods(zone, today) : []),
-    [zone, holidaysOn, today],
+  const shownZones = holidaysOn ? zones : [];
+  const periodsByZone = useMemo(
+    () =>
+      Object.fromEntries(
+        (["A", "B", "C"] as SchoolZone[]).map((z) => [
+          z,
+          holidaysOn && zones.includes(z) ? holidayPeriods(z, today) : [],
+        ]),
+      ) as Record<SchoolZone, HolidayPeriod[]>,
+    [zones, holidaysOn, today],
   );
-  const inHoliday = (key: string) =>
-    periods.some((period) => key >= period.start && key <= period.lastDay);
+  const periods = useMemo(
+    () =>
+      shownZones
+        .flatMap((z) => periodsByZone[z])
+        .sort((a, b) => a.start.localeCompare(b.start)),
+    [shownZones, periodsByZone],
+  );
+  const inZone = (z: SchoolZone, key: string) =>
+    periodsByZone[z].some((period) => key >= period.start && key <= period.lastDay);
 
   // On se place sur le bon mois à l'ouverture et au changement de champ.
   useEffect(() => {

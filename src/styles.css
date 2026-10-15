@@ -543,10 +543,23 @@
   border-radius: 999px;
   background: var(--color-primary);
 }
-/* Vacances scolaires : bandeau doux. */
-.batogo-day-holiday {
-  background: color-mix(in oklab, var(--color-warning) 28%, transparent);
-  border-radius: 0.5rem;
+/* Vacances scolaires : un fin liseré coloré par zone, empilé sous le chiffre. */
+.batogo-zone-a-dot { background: var(--color-warning); }
+.batogo-zone-b-dot { background: var(--color-cta); }
+.batogo-zone-c-dot { background: var(--color-success, oklch(0.65 0.15 155)); }
+.batogo-zone-a { --zA: var(--color-warning); }
+.batogo-zone-b { --zB: var(--color-cta); }
+.batogo-zone-c { --zC: var(--color-success, oklch(0.65 0.15 155)); }
+.batogo-zone-a,
+.batogo-zone-b,
+.batogo-zone-c {
+  background-image:
+    linear-gradient(var(--zA, transparent), var(--zA, transparent)),
+    linear-gradient(var(--zB, transparent), var(--zB, transparent)),
+    linear-gradient(var(--zC, transparent), var(--zC, transparent));
+  background-size: 100% 3px;
+  background-repeat: no-repeat;
+  background-position: 0 0, 0 4px, 0 8px;
 }
 /* Séjour entre l'aller et le retour. */
 .batogo-day-between {

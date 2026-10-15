@@ -345,12 +345,12 @@ export function SearchPanel({
           }
         />
 
-        <div className="grid grid-cols-2 gap-1.5">
+        <div className="grid grid-cols-1">
           <Popover>
             <PopoverTrigger asChild>
               <button
                 type="button"
-                className="batogo-control flex h-12 min-w-0 items-center gap-2 px-3 text-left"
+                className="batogo-control flex h-12 w-full min-w-0 items-center gap-2 px-3 text-left"
               >
                 <Users className="size-4 shrink-0 text-primary" aria-hidden />
                 <span className="min-w-0 leading-tight">
@@ -371,27 +371,6 @@ export function SearchPanel({
               </p>
             </PopoverContent>
           </Popover>
-
-          <button
-            type="button"
-            role="switch"
-            aria-checked={holidaysOn}
-            onClick={() => setHolidaysOn(!holidaysOn)}
-            className="batogo-control flex h-12 min-w-0 items-center justify-between gap-2 px-3 text-left"
-          >
-            <span className="flex min-w-0 items-center gap-2">
-              <Backpack className="size-4 shrink-0 text-primary" aria-hidden />
-              <span className="truncate text-xs font-semibold">Vacances scolaires</span>
-            </span>
-            <span
-              className={`relative h-6 w-11 shrink-0 rounded-full transition ${holidaysOn ? "bg-primary" : "bg-border"}`}
-              aria-hidden
-            >
-              <span
-                className={`absolute top-0.5 size-5 rounded-full bg-white shadow transition-all ${holidaysOn ? "left-[22px]" : "left-0.5"}`}
-              />
-            </span>
-          </button>
         </div>
 
         <details className="group text-xs" open={Boolean(filters.companyId || filters.vesselId)}>

@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { fr } from "react-day-picker/locale";
-import { Backpack, CalendarDays, Check } from "lucide-react";
+import { Backpack, CalendarDays } from "lucide-react";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverAnchor, PopoverContent } from "@/components/ui/popover";
 import {
@@ -210,64 +210,46 @@ export function TripCalendar({
       <PopoverContent
         align="start"
         collisionPadding={12}
-        className="max-h-[var(--radix-popover-content-available-height)] w-[348px] max-w-[calc(100vw-1.5rem)] space-y-3 overflow-y-auto overflow-x-hidden p-4 md:w-[660px]"
+        className="batogo-cal-pop w-[348px] max-w-[calc(100vw-1.5rem)] space-y-4 overflow-hidden rounded-2xl border-border/60 p-0 shadow-2xl md:w-[640px]"
         onOpenAutoFocus={(event) => event.preventDefault()}
       >
-        {/* En-tête : aller / retour + zones de vacances */}
-        <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
-          <div className="batogo-tabbar grid grid-cols-2 gap-1 p-1 md:w-[320px]" role="tablist" aria-label="Date à choisir">
-            {(["out", ...(roundTrip ? (["ret"] as const) : [])] as CalendarField[]).map((item) => (
-              <button
-                key={item}
-                type="button"
-                role="tab"
-                aria-selected={field === item}
-                data-active={field === item}
-                onClick={() => onFieldChange(item)}
-                className="batogo-tab px-2 text-left"
-              >
-                <span className="block text-[10px] font-semibold uppercase tracking-wide opacity-70">
-                  {item === "out" ? "Aller" : "Retour"}
+        {/* En-tête : étape en cours + zones de vacances */}
+        <div className="flex flex-col gap-3 border-b border-border/60 px-5 pb-4 pt-5 md:flex-row md:items-end md:justify-between">
+          <div className="min-w-0">
+            <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-primary">
+              {field === "out" ? "Date d'aller" : "Date de retour"}
+              {pairLabel ? <span className="font-medium normal-case tracking-normal text-muted-foreground"> · {pairLabel}</span> : null}
+            </p>
+            <p className="mt-1 truncate text-lg font-semibold tracking-tight">
+              {date ? long(date) : "Quand partez-vous ?"}
+              {roundTrip ? (
+                <span className="text-muted-foreground">
+                  {" "}→ {returnDate ? long(returnDate) : "retour"}
                 </span>
-                <span className="block text-sm">
-                  {(item === "out" ? date : returnDate)
-                    ? long((item === "out" ? date : returnDate)!)
-                    : "Choisir"}
-                </span>
-              </button>
-            ))}
-            {!roundTrip ? (
-              <button type="button" onClick={() => onChange({ roundTrip: true })} className="batogo-tab px-2 text-xs">
-                + Ajouter un retour
-              </button>
-            ) : null}
+              ) : null}
+            </p>
           </div>
-
-          <div className="flex items-center gap-2">
-            <span className="flex items-center gap-1 text-[11px] font-semibold text-muted-foreground">
-              <Backpack className="size-3.5 text-primary" aria-hidden /> Vacances
-            </span>
-            <div className="flex gap-1" role="group" aria-label="Zones de vacances scolaires">
-              {(["A", "B", "C"] as SchoolZone[]).map((item) => {
-                const on = holidaysOn && zones.includes(item);
-                return (
-                  <button
-                    key={item}
-                    type="button"
-                    aria-pressed={on}
-                    title={SCHOOL_ZONES[item].cities}
-                    onClick={() => (holidaysOn || !zones.includes(item) ? toggleZone(item) : onHolidaysChange(true))}
-                    className={`inline-flex h-8 items-center gap-1.5 whitespace-nowrap rounded-full border px-2.5 text-[11px] font-bold transition ${on ? "border-foreground/20 bg-card shadow-sm" : "border-border bg-background text-muted-foreground hover:bg-muted"}`}
-                  >
-                    <span className={`size-2 rounded-full ${zoneTone[item]}-dot ${on ? "" : "opacity-40"}`} aria-hidden />
-                    Zone {item}
-                    {on ? <Check className="size-3" aria-hidden /> : null}
-                  </button>
-                );
-              })}
-            </div>
+          <div className="flex shrink-0 items-center gap-1" role="group" aria-label="Zones de vacances scolaires">
+            <Backpack className="mr-1 size-3.5 text-muted-foreground" aria-hidden />
+            {(["A", "B", "C"] as SchoolZone[]).map((item) => {
+              const on = holidaysOn && zones.includes(item);
+              return (
+                <button
+                  key={item}
+                  type="button"
+                  aria-pressed={on}
+                  title={`Vacances zone ${item} · ${SCHOOL_ZONES[item].cities}`}
+                  onClick={() => (holidaysOn || !zones.includes(item) ? toggleZone(item) : onHolidaysChange(true))}
+                  className={`inline-flex h-7 items-center gap-1.5 rounded-full px-2.5 text-[11px] font-semibold transition ${on ? "bg-foreground text-background" : "text-muted-foreground hover:bg-muted hover:text-foreground"}`}
+                >
+                  <span className={`size-1.5 rounded-full ${zoneTone[item]}-dot`} aria-hidden />
+                  {item}
+                </button>
+              );
+            })}
           </div>
         </div>
+        <div className="space-y-4 px-5">
 
         {nextEmpty ? (
           <SalesAlertForm
@@ -359,11 +341,12 @@ export function TripCalendar({
           ) : null}
           {!pairLabel ? <span>Choisissez un trajet pour ne voir que ses jours de départ.</span> : null}
         </div>
+        </div>
 
-        <div className="flex flex-wrap items-center justify-between gap-2 border-t pt-3">
-          <div className="flex items-center gap-2">
-            <span className="text-xs font-semibold">Souplesse</span>
-            <div className="flex gap-1" role="radiogroup" aria-label="Souplesse sur la date d'aller">
+        <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border/60 bg-muted/40 px-5 py-3.5">
+          <div className="flex items-center gap-2.5">
+            <span className="text-[10px] font-bold uppercase tracking-[0.12em] text-muted-foreground">Souplesse</span>
+            <div className="flex rounded-full bg-background p-0.5 shadow-sm ring-1 ring-border/60" role="radiogroup" aria-label="Souplesse sur la date d'aller">
               {[0, 1, 2, 3].map((value) => (
                 <button
                   key={value}
@@ -371,14 +354,14 @@ export function TripCalendar({
                   role="radio"
                   aria-checked={flexDays === value}
                   onClick={() => onChange({ flexDays: value })}
-                  className={`h-8 min-w-10 rounded-full border px-2 text-[11px] font-bold transition ${flexDays === value ? "border-primary bg-primary text-primary-foreground" : "border-border bg-background hover:bg-muted"}`}
+                  className={`h-7 min-w-11 rounded-full px-2.5 text-[11px] font-semibold transition ${flexDays === value ? "bg-foreground text-background shadow" : "text-muted-foreground hover:text-foreground"}`}
                 >
                   {value === 0 ? "Exact" : `± ${value} j`}
                 </button>
               ))}
             </div>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-4">
             <button
               type="button"
               onClick={() => {
@@ -386,16 +369,16 @@ export function TripCalendar({
                 onFieldChange("out");
                 setNote(null);
               }}
-              className="text-xs font-semibold text-muted-foreground hover:text-foreground"
+              className="text-xs font-semibold text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
             >
-              Effacer
+              Réinitialiser
             </button>
             <button
               type="button"
               onClick={() => onOpenChange(false)}
-              className="h-9 rounded-xl bg-primary px-4 text-sm font-semibold text-primary-foreground hover:bg-primary/90"
+              className="h-10 rounded-full bg-primary px-6 text-sm font-semibold text-primary-foreground shadow-lg shadow-primary/25 transition hover:bg-primary/90"
             >
-              Terminer
+              Appliquer
             </button>
           </div>
         </div>

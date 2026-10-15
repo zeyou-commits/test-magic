@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { fr } from "react-day-picker/locale";
-import { Backpack, CalendarDays, Check } from "lucide-react";
+import { Backpack, CalendarDays } from "lucide-react";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverAnchor, PopoverContent } from "@/components/ui/popover";
 import {
@@ -341,11 +341,12 @@ export function TripCalendar({
           ) : null}
           {!pairLabel ? <span>Choisissez un trajet pour ne voir que ses jours de départ.</span> : null}
         </div>
+        </div>
 
-        <div className="flex flex-wrap items-center justify-between gap-2 border-t pt-3">
-          <div className="flex items-center gap-2">
-            <span className="text-xs font-semibold">Souplesse</span>
-            <div className="flex gap-1" role="radiogroup" aria-label="Souplesse sur la date d'aller">
+        <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border/60 bg-muted/40 px-5 py-3.5">
+          <div className="flex items-center gap-2.5">
+            <span className="text-[10px] font-bold uppercase tracking-[0.12em] text-muted-foreground">Souplesse</span>
+            <div className="flex rounded-full bg-background p-0.5 shadow-sm ring-1 ring-border/60" role="radiogroup" aria-label="Souplesse sur la date d'aller">
               {[0, 1, 2, 3].map((value) => (
                 <button
                   key={value}
@@ -353,14 +354,14 @@ export function TripCalendar({
                   role="radio"
                   aria-checked={flexDays === value}
                   onClick={() => onChange({ flexDays: value })}
-                  className={`h-8 min-w-10 rounded-full border px-2 text-[11px] font-bold transition ${flexDays === value ? "border-primary bg-primary text-primary-foreground" : "border-border bg-background hover:bg-muted"}`}
+                  className={`h-7 min-w-11 rounded-full px-2.5 text-[11px] font-semibold transition ${flexDays === value ? "bg-foreground text-background shadow" : "text-muted-foreground hover:text-foreground"}`}
                 >
                   {value === 0 ? "Exact" : `± ${value} j`}
                 </button>
               ))}
             </div>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-4">
             <button
               type="button"
               onClick={() => {
@@ -368,16 +369,16 @@ export function TripCalendar({
                 onFieldChange("out");
                 setNote(null);
               }}
-              className="text-xs font-semibold text-muted-foreground hover:text-foreground"
+              className="text-xs font-semibold text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
             >
-              Effacer
+              Réinitialiser
             </button>
             <button
               type="button"
               onClick={() => onOpenChange(false)}
-              className="h-9 rounded-xl bg-primary px-4 text-sm font-semibold text-primary-foreground hover:bg-primary/90"
+              className="h-10 rounded-full bg-primary px-6 text-sm font-semibold text-primary-foreground shadow-lg shadow-primary/25 transition hover:bg-primary/90"
             >
-              Terminer
+              Appliquer
             </button>
           </div>
         </div>

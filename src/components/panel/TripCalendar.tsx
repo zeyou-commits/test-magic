@@ -13,6 +13,7 @@ import {
 } from "@/lib/ferry/schoolCalendar";
 import { capitalizeFirst } from "@/lib/ferry/format";
 import { SalesAlertForm } from "./SalesAlertForm";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 const ZONE_STORAGE_KEY = "batogo:school-zone";
 
@@ -102,25 +103,32 @@ export function TripCalendar({
   onHolidaysChange,
   anchor,
 }: TripCalendarProps) {
-  const [zone, setZone] = useState<SchoolZone | null>(null);
+  const [zones, setZones] = useState<SchoolZone[]>([]);
   const [month, setMonth] = useState<Date>(() => keyToDate(date ?? today));
   const [note, setNote] = useState<string | null>(null);
+  const isMobile = useIsMobile();
 
-  // La zone choisie est mémorisée dans le navigateur : on ne la redemande pas à chaque visite.
+  // Les zones choisies sont mémorisées dans le navigateur.
   useEffect(() => {
     try {
-      const saved = window.localStorage.getItem(ZONE_STORAGE_KEY);
-      if (saved === "A" || saved === "B" || saved === "C") setZone(saved);
+      const saved = (window.localStorage.getItem(ZONE_STORAGE_KEY) ?? "")
+        .split(",")
+        .filter((z): z is SchoolZone => z === "A" || z === "B" || z === "C");
+      setZones(saved);
     } catch {
       // Stockage indisponible : sans conséquence.
     }
   }, []);
-  const chooseZone = (next: SchoolZone | null) => {
-    setZone(next);
+  const toggleZone = (item: SchoolZone) => {
+    const next = zones.includes(item)
+      ? zones.filter((z) => z !== item)
+      : ([...zones, item].sort() as SchoolZone[]);
+    setZones(next);
     setNote(null);
+    if (next.length > 0 && !holidaysOn) onHolidaysChange(true);
+    if (next.length === 0 && holidaysOn) onHolidaysChange(false);
     try {
-      if (next) window.localStorage.setItem(ZONE_STORAGE_KEY, next);
-      else window.localStorage.removeItem(ZONE_STORAGE_KEY);
+      window.localStorage.setItem(ZONE_STORAGE_KEY, next.join(","));
     } catch {
       // Sans conséquence.
     }
@@ -128,12 +136,26 @@ export function TripCalendar({
 
   // Retour : si aucun trajet de retour précis n'est connu, on propose les jours où le réseau a des départs.
   const activeDays = field === "ret" && backDays.size > 0 ? backDays : outDays;
-  const periods = useMemo(
-    () => (zone && holidaysOn ? holidayPeriods(zone, today) : []),
-    [zone, holidaysOn, today],
+  const shownZones = holidaysOn ? zones : [];
+  const periodsByZone = useMemo(
+    () =>
+      Object.fromEntries(
+        (["A", "B", "C"] as SchoolZone[]).map((z) => [
+          z,
+          holidaysOn && zones.includes(z) ? holidayPeriods(z, today) : [],
+        ]),
+      ) as Record<SchoolZone, HolidayPeriod[]>,
+    [zones, holidaysOn, today],
   );
-  const inHoliday = (key: string) =>
-    periods.some((period) => key >= period.start && key <= period.lastDay);
+  const periods = useMemo(
+    () =>
+      shownZones
+        .flatMap((z) => periodsByZone[z])
+        .sort((a, b) => a.start.localeCompare(b.start)),
+    [shownZones, periodsByZone],
+  );
+  const inZone = (z: SchoolZone, key: string) =>
+    periodsByZone[z].some((period) => key >= period.start && key <= period.lastDay);
 
   // On se place sur le bon mois à l'ouverture et au changement de champ.
   useEffect(() => {
@@ -176,95 +198,75 @@ export function TripCalendar({
   const suggestion =
     activeValue && unavailableActive ? nearest(activeDays, activeValue, 7, 7, today) : null;
 
+  const zoneTone: Record<SchoolZone, string> = {
+    A: "batogo-zone-a",
+    B: "batogo-zone-b",
+    C: "batogo-zone-c",
+  };
+
   return (
     <Popover open={open} onOpenChange={onOpenChange}>
       <PopoverAnchor asChild>{anchor}</PopoverAnchor>
       <PopoverContent
         align="start"
         collisionPadding={12}
-        className="max-h-[min(var(--radix-popover-content-available-height),640px)] w-[348px] max-w-[calc(100vw-1.5rem)] space-y-2.5 overflow-y-auto overflow-x-hidden p-3"
+        className="max-h-[var(--radix-popover-content-available-height)] w-[348px] max-w-[calc(100vw-1.5rem)] space-y-3 overflow-y-auto overflow-x-hidden p-4 md:w-[660px]"
         onOpenAutoFocus={(event) => event.preventDefault()}
       >
-        {/* Aller / Retour */}
-        <div
-          className="batogo-tabbar grid grid-cols-2 gap-1 p-1"
-          role="tablist"
-          aria-label="Date à choisir"
-        >
-          {(["out", ...(roundTrip ? (["ret"] as const) : [])] as CalendarField[]).map((item) => (
-            <button
-              key={item}
-              type="button"
-              role="tab"
-              aria-selected={field === item}
-              data-active={field === item}
-              onClick={() => onFieldChange(item)}
-              className="batogo-tab px-2 text-left"
-            >
-              <span className="block text-[10px] font-semibold uppercase tracking-wide opacity-70">
-                {item === "out" ? "Aller" : "Retour"}
-              </span>
-              <span className="block text-sm">
-                {(item === "out" ? date : returnDate)
-                  ? long((item === "out" ? date : returnDate)!)
-                  : "Choisir"}
-              </span>
-            </button>
-          ))}
-          {!roundTrip ? (
-            <button
-              type="button"
-              onClick={() => onChange({ roundTrip: true })}
-              className="batogo-tab px-2 text-xs"
-            >
-              + Ajouter un retour
-            </button>
-          ) : null}
-        </div>
+        {/* En-tête : aller / retour + zones de vacances */}
+        <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+          <div className="batogo-tabbar grid grid-cols-2 gap-1 p-1 md:w-[320px]" role="tablist" aria-label="Date à choisir">
+            {(["out", ...(roundTrip ? (["ret"] as const) : [])] as CalendarField[]).map((item) => (
+              <button
+                key={item}
+                type="button"
+                role="tab"
+                aria-selected={field === item}
+                data-active={field === item}
+                onClick={() => onFieldChange(item)}
+                className="batogo-tab px-2 text-left"
+              >
+                <span className="block text-[10px] font-semibold uppercase tracking-wide opacity-70">
+                  {item === "out" ? "Aller" : "Retour"}
+                </span>
+                <span className="block text-sm">
+                  {(item === "out" ? date : returnDate)
+                    ? long((item === "out" ? date : returnDate)!)
+                    : "Choisir"}
+                </span>
+              </button>
+            ))}
+            {!roundTrip ? (
+              <button type="button" onClick={() => onChange({ roundTrip: true })} className="batogo-tab px-2 text-xs">
+                + Ajouter un retour
+              </button>
+            ) : null}
+          </div>
 
-        {/* Vacances scolaires : simple interrupteur d'affichage */}
-        <div className="rounded-2xl bg-secondary/60 p-2.5">
-          <button
-            type="button"
-            role="switch"
-            aria-checked={holidaysOn}
-            onClick={() => onHolidaysChange(!holidaysOn)}
-            className="flex w-full items-center justify-between gap-3 text-left"
-          >
-            <span className="flex items-center gap-1.5 text-xs font-semibold">
-              <Backpack className="size-3.5 text-primary" aria-hidden /> Afficher les vacances
-              scolaires
+          <div className="flex items-center gap-2">
+            <span className="flex items-center gap-1 text-[11px] font-semibold text-muted-foreground">
+              <Backpack className="size-3.5 text-primary" aria-hidden /> Vacances
             </span>
-            <span
-              className={`relative h-6 w-11 shrink-0 rounded-full transition ${holidaysOn ? "bg-primary" : "bg-border"}`}
-              aria-hidden
-            >
-              <span
-                className={`absolute top-0.5 size-5 rounded-full bg-white shadow transition-all ${holidaysOn ? "left-[22px]" : "left-0.5"}`}
-              />
-            </span>
-          </button>
-          {holidaysOn ? (
-            <div className="mt-2 flex items-center justify-between gap-2">
-              <span className="text-[11px] text-muted-foreground">
-                {zone ? SCHOOL_ZONES[zone].cities : "Choisissez votre zone"}
-              </span>
-              <div className="flex gap-1" role="radiogroup" aria-label="Zone de vacances scolaires">
-                {(["A", "B", "C"] as SchoolZone[]).map((item) => (
+            <div className="flex gap-1" role="group" aria-label="Zones de vacances scolaires">
+              {(["A", "B", "C"] as SchoolZone[]).map((item) => {
+                const on = holidaysOn && zones.includes(item);
+                return (
                   <button
                     key={item}
                     type="button"
-                    role="radio"
-                    aria-checked={zone === item}
-                    onClick={() => chooseZone(item)}
-                    className={`h-9 min-w-10 rounded-full border px-2 text-[11px] font-bold transition sm:h-7 sm:min-w-9 ${zone === item ? "border-primary bg-primary text-primary-foreground" : "border-border bg-background hover:bg-muted"}`}
+                    aria-pressed={on}
+                    title={SCHOOL_ZONES[item].cities}
+                    onClick={() => (holidaysOn || !zones.includes(item) ? toggleZone(item) : onHolidaysChange(true))}
+                    className={`inline-flex h-8 items-center gap-1.5 whitespace-nowrap rounded-full border px-2.5 text-[11px] font-bold transition ${on ? "border-foreground/20 bg-card shadow-sm" : "border-border bg-background text-muted-foreground hover:bg-muted"}`}
                   >
-                    {item}
+                    <span className={`size-2 rounded-full ${zoneTone[item]}-dot ${on ? "" : "opacity-40"}`} aria-hidden />
+                    Zone {item}
+                    {on ? <Check className="size-3" aria-hidden /> : null}
                   </button>
-                ))}
-              </div>
+                );
+              })}
             </div>
-          ) : null}
+          </div>
         </div>
 
         {nextEmpty ? (
@@ -277,11 +279,12 @@ export function TripCalendar({
           />
         ) : null}
 
-        {/* Calendrier */}
         <Calendar
           mode="single"
           locale={fr}
           weekStartsOn={1}
+          numberOfMonths={isMobile ? 1 : 2}
+          showOutsideDays={false}
           month={month}
           onMonthChange={setMonth}
           startMonth={keyToDate(today)}
@@ -299,7 +302,9 @@ export function TripCalendar({
           }}
           modifiers={{
             avail: (day) => activeDays.has(dateToKey(day)),
-            holiday: (day) => inHoliday(dateToKey(day)),
+            zoneA: (day) => inZone("A", dateToKey(day)),
+            zoneB: (day) => inZone("B", dateToKey(day)),
+            zoneC: (day) => inZone("C", dateToKey(day)),
             out: (day) => dateToKey(day) === date,
             ret: (day) => roundTrip && dateToKey(day) === returnDate,
             between: (day) => {
@@ -313,90 +318,86 @@ export function TripCalendar({
           }}
           modifiersClassNames={{
             avail: "batogo-day-avail",
-            holiday: "batogo-day-holiday",
+            zoneA: "batogo-zone-a",
+            zoneB: "batogo-zone-b",
+            zoneC: "batogo-zone-c",
             out: "batogo-day-out",
             ret: "batogo-day-ret",
             between: "batogo-day-between",
             flex: "batogo-day-flex",
           }}
-          className="!p-0 [--cell-size:min(2.75rem,calc((100vw_-_3rem_-_1.5rem)/7))]"
+          className="batogo-calendar w-full !p-0 [--cell-size:min(2.6rem,calc((100vw_-_3rem_-_1.5rem)/7))] md:[--cell-size:2.6rem]"
+          classNames={{ months: "relative flex flex-col gap-4 md:flex-row md:gap-8", root: "w-full" }}
         />
 
-        {/* Aides intelligentes */}
-        {note ? (
-          <p className="rounded-xl bg-primary/10 px-3 py-2 text-xs text-primary">{note}</p>
-        ) : null}
+        {note ? <p className="rounded-xl bg-primary/10 px-3 py-2 text-xs text-primary">{note}</p> : null}
         {suggestion ? (
           <button
             type="button"
             onClick={() => pick(suggestion)}
             className="w-full rounded-xl bg-warning/15 px-3 py-2 text-left text-xs text-warning-foreground"
           >
-            Pas de départ le {long(activeValue!)}. Le plus proche :{" "}
-            <strong>{long(suggestion)}</strong> (cliquez pour le choisir).
+            Pas de départ le {long(activeValue!)}. Le plus proche : <strong>{long(suggestion)}</strong>{" "}
+            (cliquez pour le choisir).
           </button>
-        ) : null}
-        {stay !== null && stay >= 0 ? (
-          <p className="text-center text-xs font-semibold">
-            <CalendarDays className="mr-1 inline size-3.5 text-primary" aria-hidden />
-            {stay} jour{stay > 1 ? "s" : ""} sur place
-          </p>
         ) : null}
 
         <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-muted-foreground">
           <span className="inline-flex items-center gap-1">
             <span className="size-1.5 rounded-full bg-primary" aria-hidden /> départ possible
           </span>
-          {zone ? (
-            <span className="inline-flex items-center gap-1">
-              <span className="size-2.5 rounded bg-warning/40" aria-hidden /> vacances zone {zone}
+          {shownZones.map((z) => (
+            <span key={z} className="inline-flex items-center gap-1">
+              <span className={`h-1 w-3 rounded-full ${zoneTone[z]}-dot`} aria-hidden /> zone {z}
+            </span>
+          ))}
+          {stay !== null && stay >= 0 ? (
+            <span className="inline-flex items-center gap-1 font-semibold text-foreground">
+              <CalendarDays className="size-3.5 text-primary" aria-hidden />
+              {stay} jour{stay > 1 ? "s" : ""} sur place
             </span>
           ) : null}
-          <span>
-            {pairLabel
-              ? `Seuls les jours avec départ ${pairLabel} sont proposés.`
-              : "Choisissez un trajet pour ne voir que ses jours de départ."}
-          </span>
+          {!pairLabel ? <span>Choisissez un trajet pour ne voir que ses jours de départ.</span> : null}
         </div>
 
-        {/* Souplesse */}
-        <div className="flex items-center justify-between gap-2 border-t pt-2.5">
-          <span className="text-xs font-semibold">Aller flexible</span>
-          <div className="flex gap-1" role="radiogroup" aria-label="Souplesse sur la date d'aller">
-            {[0, 1, 2, 3].map((value) => (
-              <button
-                key={value}
-                type="button"
-                role="radio"
-                aria-checked={flexDays === value}
-                onClick={() => onChange({ flexDays: value })}
-                className={`h-9 min-w-10 rounded-full sm:h-7 sm:min-w-9 border px-2 text-[11px] font-bold transition ${flexDays === value ? "border-primary bg-primary text-primary-foreground" : "border-border bg-background hover:bg-muted"}`}
-              >
-                {value === 0 ? "Exact" : `± ${value} j`}
-              </button>
-            ))}
+        <div className="flex flex-wrap items-center justify-between gap-2 border-t pt-3">
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-semibold">Souplesse</span>
+            <div className="flex gap-1" role="radiogroup" aria-label="Souplesse sur la date d'aller">
+              {[0, 1, 2, 3].map((value) => (
+                <button
+                  key={value}
+                  type="button"
+                  role="radio"
+                  aria-checked={flexDays === value}
+                  onClick={() => onChange({ flexDays: value })}
+                  className={`h-8 min-w-10 rounded-full border px-2 text-[11px] font-bold transition ${flexDays === value ? "border-primary bg-primary text-primary-foreground" : "border-border bg-background hover:bg-muted"}`}
+                >
+                  {value === 0 ? "Exact" : `± ${value} j`}
+                </button>
+              ))}
+            </div>
           </div>
-        </div>
-
-        <div className="flex items-center justify-between gap-2">
-          <button
-            type="button"
-            onClick={() => {
-              onChange({ date: null, returnDate: null, flexDays: 0 });
-              onFieldChange("out");
-              setNote(null);
-            }}
-            className="text-xs font-semibold text-muted-foreground hover:text-foreground"
-          >
-            Effacer les dates
-          </button>
-          <button
-            type="button"
-            onClick={() => onOpenChange(false)}
-            className="h-9 rounded-xl bg-primary px-4 text-sm font-semibold text-primary-foreground hover:bg-primary/90"
-          >
-            Terminer
-          </button>
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={() => {
+                onChange({ date: null, returnDate: null, flexDays: 0 });
+                onFieldChange("out");
+                setNote(null);
+              }}
+              className="text-xs font-semibold text-muted-foreground hover:text-foreground"
+            >
+              Effacer
+            </button>
+            <button
+              type="button"
+              onClick={() => onOpenChange(false)}
+              className="h-9 rounded-xl bg-primary px-4 text-sm font-semibold text-primary-foreground hover:bg-primary/90"
+            >
+              Terminer
+            </button>
+          </div>
         </div>
       </PopoverContent>
     </Popover>

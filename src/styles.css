@@ -550,16 +550,17 @@
 .batogo-zone-a { --zA: var(--color-warning); }
 .batogo-zone-b { --zB: var(--color-cta); }
 .batogo-zone-c { --zC: var(--color-success, oklch(0.65 0.15 155)); }
+/* Traits continus façon calendrier papier : une bande par zone, empilées en bas de case. */
 .batogo-zone-a,
 .batogo-zone-b,
 .batogo-zone-c {
   background-image:
-    radial-gradient(circle, var(--zA, transparent) 0 2px, transparent 2.5px),
-    radial-gradient(circle, var(--zB, transparent) 0 2px, transparent 2.5px),
-    radial-gradient(circle, var(--zC, transparent) 0 2px, transparent 2.5px);
-  background-size: 6px 6px;
+    linear-gradient(var(--zA, transparent), var(--zA, transparent)),
+    linear-gradient(var(--zB, transparent), var(--zB, transparent)),
+    linear-gradient(var(--zC, transparent), var(--zC, transparent));
+  background-size: 100% 3px;
   background-repeat: no-repeat;
-  background-position: calc(50% - 7px) calc(100% - 1px), 50% calc(100% - 1px), calc(50% + 7px) calc(100% - 1px);
+  background-position: 0 calc(100% - 8px), 0 calc(100% - 4px), 0 100%;
 }
 /* Séjour entre l'aller et le retour. */
 .batogo-day-between {

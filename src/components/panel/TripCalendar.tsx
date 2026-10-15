@@ -251,6 +251,27 @@ export function TripCalendar({
         </div>
         <div className="space-y-4 px-5">
 
+        <div className="flex flex-col gap-2 rounded-xl bg-primary/5 p-3 ring-1 ring-primary/15 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <p className="text-sm font-semibold">Dates flexibles</p>
+            <p className="text-[11px] text-muted-foreground">Voir aussi les départs autour de la date d'aller</p>
+          </div>
+          <div className="flex rounded-full bg-background p-0.5 shadow-sm ring-1 ring-border/60" role="radiogroup" aria-label="Souplesse sur la date d'aller">
+            {[0, 1, 2, 3].map((value) => (
+              <button
+                key={value}
+                type="button"
+                role="radio"
+                aria-checked={flexDays === value}
+                onClick={() => onChange({ flexDays: value })}
+                className={`h-8 min-w-14 flex-1 rounded-full px-3 text-xs font-semibold transition ${flexDays === value ? "bg-primary text-primary-foreground shadow" : "text-muted-foreground hover:text-foreground"}`}
+              >
+                {value === 0 ? "Exacte" : `± ${value} j`}
+              </button>
+            ))}
+          </div>
+        </div>
+
         {nextEmpty ? (
           <SalesAlertForm
             periodLabel={`${nextEmpty.name} · ${short(nextEmpty.start)} → ${short(nextEmpty.lastDay)}`}
@@ -343,24 +364,7 @@ export function TripCalendar({
         </div>
         </div>
 
-        <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border/60 bg-muted/40 px-5 py-3.5">
-          <div className="flex items-center gap-2.5">
-            <span className="text-[10px] font-bold uppercase tracking-[0.12em] text-muted-foreground">Souplesse</span>
-            <div className="flex rounded-full bg-background p-0.5 shadow-sm ring-1 ring-border/60" role="radiogroup" aria-label="Souplesse sur la date d'aller">
-              {[0, 1, 2, 3].map((value) => (
-                <button
-                  key={value}
-                  type="button"
-                  role="radio"
-                  aria-checked={flexDays === value}
-                  onClick={() => onChange({ flexDays: value })}
-                  className={`h-7 min-w-11 rounded-full px-2.5 text-[11px] font-semibold transition ${flexDays === value ? "bg-foreground text-background shadow" : "text-muted-foreground hover:text-foreground"}`}
-                >
-                  {value === 0 ? "Exact" : `± ${value} j`}
-                </button>
-              ))}
-            </div>
-          </div>
+        <div className="flex flex-wrap items-center justify-end gap-3 border-t border-border/60 bg-muted/40 px-5 py-3.5">
           <div className="flex items-center gap-4">
             <button
               type="button"

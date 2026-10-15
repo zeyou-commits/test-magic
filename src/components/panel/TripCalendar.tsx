@@ -257,7 +257,7 @@ export function TripCalendar({
                     aria-pressed={on}
                     title={SCHOOL_ZONES[item].cities}
                     onClick={() => (holidaysOn || !zones.includes(item) ? toggleZone(item) : onHolidaysChange(true))}
-                    className={`inline-flex h-8 items-center gap-1.5 rounded-full border px-2.5 text-[11px] font-bold transition ${on ? "border-foreground/20 bg-card shadow-sm" : "border-border bg-background text-muted-foreground hover:bg-muted"}`}
+                    className={`inline-flex h-8 items-center gap-1.5 whitespace-nowrap rounded-full border px-2.5 text-[11px] font-bold transition ${on ? "border-foreground/20 bg-card shadow-sm" : "border-border bg-background text-muted-foreground hover:bg-muted"}`}
                   >
                     <span className={`size-2 rounded-full ${zoneTone[item]}-dot ${on ? "" : "opacity-40"}`} aria-hidden />
                     Zone {item}
@@ -284,6 +284,7 @@ export function TripCalendar({
           locale={fr}
           weekStartsOn={1}
           numberOfMonths={isMobile ? 1 : 2}
+          showOutsideDays={false}
           month={month}
           onMonthChange={setMonth}
           startMonth={keyToDate(today)}

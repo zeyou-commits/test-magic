@@ -49,6 +49,8 @@ import { useLiveShips } from "@/lib/ferry/useLiveShips";
 import type { LiveShip } from "@/lib/ferry/tracking";
 import { PortMultiPicker } from "./PortFilters";
 import { CompanyBadge } from "./CompanyBadge";
+import { RoundTripCard } from "./RoundTripCard";
+import { buildRoundTrips, type RoundTrip } from "@/lib/ferry/roundTrips";
 import { DayStrip, SailingCard } from "./SailingCard";
 import { ShareButtons } from "./ShareButtons";
 import {
@@ -210,6 +212,22 @@ export function SearchPanel({
   const backShown = filters.returnDate || showAllBack ? backList : backList.slice(0, PAGE);
   const outRecommended = filters.date ? recommendedId(outList, traveler) : null;
   const backRecommended = filters.returnDate ? recommendedId(backList, traveler) : null;
+
+  const roundTrips = useMemo(
+    () =>
+      filters.roundTrip
+        ? buildRoundTrips(all, {
+            fromIds: filters.departurePortIds,
+            toIds: filters.arrivalPortIds,
+            companyId: filters.companyId,
+            vesselId: filters.vesselId,
+            date: filters.date,
+            returnDate: filters.returnDate,
+            flexDays: filters.flexDays,
+          })
+        : { main: [], alternatives: [] },
+    [all, filters],
+  );
 
   const active = hasActiveFilters(filters);
   const pairs = useMemo(() => popularPairs(all, 6), [all]);
@@ -433,6 +451,14 @@ export function SearchPanel({
               </div>
             ) : null}
 
+            {filters.roundTrip ? (
+              <RoundTripSection
+                trips={roundTrips}
+                hasPorts={filters.departurePortIds.length + filters.arrivalPortIds.length > 0}
+                onOpenDeparture={(id) => onSelect({ type: "departure", id })}
+                onHoverRoute={setHoverRouteId}
+              />
+            ) : (
             <ResultBlock
               liveByDeparture={liveByDeparture}
               title={
@@ -472,32 +498,7 @@ export function SearchPanel({
                   : undefined
               }
             />
-
-            {hasPair && filters.roundTrip ? (
-              <ResultBlock
-                liveByDeparture={liveByDeparture}
-                title={`Retour · ${fromName(filters.arrivalPortIds)} → ${fromName(filters.departurePortIds)}`}
-                subtitle={
-                  filters.returnDate
-                    ? "Heures locales des ports"
-                    : "Choisissez le jour de votre retour"
-                }
-                days={backDays}
-                date={filters.returnDate}
-                onDate={(day) => set({ returnDate: day })}
-                list={backShown}
-                total={backList.length}
-                recommended={backRecommended}
-                openId={openCard?.id ?? null}
-                onToggle={toggleCard}
-                onHoverRoute={setHoverRouteId}
-                onOpenVessel={(id) => onSelect({ type: "vessel", id })}
-                onOpenRoute={(id) => onSelect({ type: "route", id })}
-                onMore={() => setShowAllBack(true)}
-                expanded={showAllBack || Boolean(filters.returnDate)}
-                emptyText="Aucune traversée de retour connue. Essayez un autre port de retour depuis la carte."
-              />
-            ) : null}
+            )}
           </>
         )}
       </section>
@@ -704,5 +705,59 @@ function FilterSelect({
         ))}
       </SelectContent>
     </Select>
+  );
+}
+
+function RoundTripSection({
+  trips,
+  hasPorts,
+  onOpenDeparture,
+  onHoverRoute,
+}: {
+  trips: { main: RoundTrip[]; alternatives: RoundTrip[] };
+  hasPorts: boolean;
+  onOpenDeparture: (id: string) => void;
+  onHoverRoute: (routeId: string | null) => void;
+}) {
+  const list = (items: RoundTrip[]) => (
+    <div className="space-y-2">
+      {items.map((trip, index) => (
+        <RoundTripCard
+          key={`${trip.out.departure.id}-${trip.back.departure.id}`}
+          trip={trip}
+          index={index}
+          onOpenDeparture={onOpenDeparture}
+          onHoverRoute={onHoverRoute}
+        />
+      ))}
+    </div>
+  );
+  return (
+    <div className="space-y-5">
+      <div className="space-y-2.5">
+        <div className="flex items-baseline justify-between gap-2">
+          <h2 className="font-display text-base font-bold leading-tight">
+            {hasPorts ? "Allers-retours pour votre trajet" : "Allers-retours possibles"}
+          </h2>
+          <span className="text-[11px] text-muted-foreground">Heures locales des ports</span>
+        </div>
+        {trips.main.length ? (
+          list(trips.main)
+        ) : (
+          <div className="rounded-2xl border border-dashed p-5 text-center text-sm text-muted-foreground">
+            Aucun aller-retour connu pour ces ports et ces dates.
+            {trips.alternatives.length ? " Voici des alternatives ci-dessous." : ""}
+          </div>
+        )}
+      </div>
+      {trips.alternatives.length ? (
+        <div className="space-y-2.5">
+          <h2 className="font-display text-base font-bold leading-tight">
+            {hasPorts ? "Alternatives par d’autres ports" : "Combinaisons avec ports différents"}
+          </h2>
+          {list(trips.alternatives)}
+        </div>
+      ) : null}
+    </div>
   );
 }

@@ -384,7 +384,13 @@ export function SearchPanel({
               label="Compagnie"
               value={filters.companyId}
               onChange={(value) => set({ companyId: value })}
-              options={companies.map((company) => ({ value: company.id, label: company.name }))}
+              options={companies.map((company) => ({
+                value: company.id,
+                label: company.name,
+                leading: (
+                  <CompanyBadge name={company.name} logoUrl={company.logo_url} size={20} />
+                ),
+              }))}
             />
             <FilterSelect
               label="Navire"
@@ -677,7 +683,7 @@ function FilterSelect({
   label: string;
   value: string | null;
   onChange: (value: string | null) => void;
-  options: { value: string; label: string }[];
+  options: { value: string; label: string; leading?: ReactNode }[];
 }) {
   return (
     <Select value={value ?? ANY} onValueChange={(next) => onChange(next === ANY ? null : next)}>
@@ -685,10 +691,15 @@ function FilterSelect({
         <SelectValue placeholder={label} />
       </SelectTrigger>
       <SelectContent>
-        <SelectItem value={ANY}>{label} : toutes</SelectItem>
+        <SelectItem value={ANY} textValue={label}>
+          {label} : toutes
+        </SelectItem>
         {options.map((option) => (
-          <SelectItem key={option.value} value={option.value}>
-            {option.label}
+          <SelectItem key={option.value} value={option.value} textValue={option.label}>
+            <span className="flex min-w-0 items-center gap-2">
+              {option.leading}
+              <span className="truncate">{option.label}</span>
+            </span>
           </SelectItem>
         ))}
       </SelectContent>

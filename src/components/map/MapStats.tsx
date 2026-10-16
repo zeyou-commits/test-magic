@@ -55,7 +55,7 @@ export function MapStats({
 
   return (
     <>
-      <div className="pointer-events-auto absolute right-4 top-4 z-10 hidden md:block">
+      <div className="pointer-events-auto absolute right-5 top-[4.5rem] z-20 hidden md:block">
         <div className="flex items-center gap-0.5 rounded-full border border-border bg-background/95 p-1 shadow-lg backdrop-blur">
           {stat(
             plural(atSea.length, "navire en mer", "navires en mer"),

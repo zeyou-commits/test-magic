@@ -2,6 +2,8 @@ import { useMemo, useState } from "react";
 import { Check, ChevronDown, Search, X } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import * as SheetPrimitive from "@radix-ui/react-dialog";
+import { useIsMobile } from "@/hooks/use-mobile";
 import {
   getArrivalPorts,
   getDeparturePorts,
@@ -33,6 +35,7 @@ export function PortMultiPicker({
 }: PortMultiPickerProps) {
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
+  const isMobile = useIsMobile();
   const label = direction === "departure" ? "Départ" : "Arrivée";
 
   const groups = useMemo(() => {
@@ -60,27 +63,9 @@ export function PortMultiPicker({
     );
   };
 
-  return (
-    <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger asChild>
-        <button
-          type="button"
-          className="batogo-control flex h-14 w-full min-w-0 items-center justify-between gap-2 px-3 text-left"
-          aria-label={`${label} : ${summarizePorts(value, ports)}`}
-        >
-          <span className="min-w-0">
-            <span className="block text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
-              {label}
-            </span>
-            <span className="block truncate text-sm font-semibold text-foreground">
-              {summarizePorts(value, ports, "Tous")}
-            </span>
-          </span>
-          <ChevronDown className="size-4 shrink-0 text-muted-foreground" />
-        </button>
-      </PopoverTrigger>
-      <PopoverContent align="start" className="w-80 p-3">
-        <div className="relative mb-3">
+  const body = (
+    <>
+      <div className="relative mb-3 shrink-0">
           <Search className="absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
           <Input
             value={search}
@@ -101,10 +86,19 @@ export function PortMultiPicker({
           ) : null}
         </div>
 
+        <button
+          type="button"
+          aria-pressed={value.length === 0}
+          onClick={() => onChange([])}
+          className={`mb-2 flex min-h-11 w-full shrink-0 items-center gap-2 rounded-lg px-2.5 text-left text-sm font-semibold ${value.length === 0 ? "bg-primary/10 text-primary" : "hover:bg-secondary"}`}
+        >
+          <span className="w-4 shrink-0">{value.length === 0 ? <Check className="size-4" /> : null}</span>
+          🌍 Tous les ports <span className="font-normal text-muted-foreground">(aucun filtre)</span>
+        </button>
         {groups.length === 0 ? (
           <p className="p-4 text-center text-sm text-muted-foreground">Aucun port trouvé.</p>
         ) : (
-          <div className="flex max-h-[50vh] flex-col gap-3 overflow-y-auto pr-1">
+          <div className="flex max-h-[50vh] flex-col gap-3 overflow-y-auto pr-1 max-md:max-h-none max-md:min-h-0 max-md:flex-1 max-md:overscroll-contain">
             {groups.map((group) => {
               const ids = group.ports.map((port) => port.id);
               const selectedCount = ids.filter((id) => value.includes(id)).length;
@@ -118,6 +112,7 @@ export function PortMultiPicker({
                     className="flex min-h-10 w-full items-center justify-between rounded-lg px-2.5 text-left text-sm font-semibold transition hover:bg-secondary"
                   >
                     <span>
+                      <span className="mr-1.5" aria-hidden>{flag(group.code)}</span>
                       {group.name}
                       {ids.length > 1 ? (
                         <span className="ml-1 font-normal text-muted-foreground">· tous</span>
@@ -153,24 +148,79 @@ export function PortMultiPicker({
           </div>
         )}
 
-        <div className="mt-3 flex items-center justify-between border-t pt-3">
+        <div className="mt-3 flex shrink-0 items-center justify-between border-t pt-3">
           <button
             type="button"
             onClick={() => onChange([])}
             disabled={!value.length}
             className="text-sm font-medium text-muted-foreground hover:text-foreground disabled:opacity-40"
           >
-            Tous les ports
+            Réinitialiser
           </button>
           <button
             type="button"
             onClick={() => setOpen(false)}
             className="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90"
           >
-            Valider
+            Valider{value.length ? ` (${value.length})` : ""}
           </button>
         </div>
+    </>
+  );
+
+  const trigger = (
+        <button
+          type="button"
+          className="batogo-control flex h-14 w-full min-w-0 items-center justify-between gap-2 px-3 text-left"
+          aria-label={`${label} : ${summarizePorts(value, ports)}`}
+        >
+          <span className="min-w-0">
+            <span className="block text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+              {label}
+            </span>
+            <span className="block truncate text-sm font-semibold text-foreground">
+              {summarizePorts(value, ports, "Tous")}
+            </span>
+          </span>
+          <ChevronDown className="size-4 shrink-0 text-muted-foreground" />
+        </button>
+  );
+
+  if (isMobile) {
+    return (
+      <SheetPrimitive.Root open={open} onOpenChange={setOpen}>
+        <SheetPrimitive.Trigger asChild>{trigger}</SheetPrimitive.Trigger>
+        <SheetPrimitive.Portal>
+          <SheetPrimitive.Overlay className="fixed inset-0 z-[90] bg-foreground/40" />
+          <SheetPrimitive.Content
+            aria-describedby={undefined}
+            onOpenAutoFocus={(e) => e.preventDefault()}
+            className="fixed inset-0 z-[95] flex flex-col bg-background p-4 pb-[max(1rem,env(safe-area-inset-bottom))]"
+          >
+            <div className="mb-3 flex shrink-0 items-center justify-between">
+              <SheetPrimitive.Title className="text-base font-bold">Port {direction === "departure" ? "de départ" : "d'arrivée"}</SheetPrimitive.Title>
+              <SheetPrimitive.Close aria-label="Fermer" className="grid size-9 place-items-center rounded-full hover:bg-muted">
+                <X className="size-4" />
+              </SheetPrimitive.Close>
+            </div>
+            {body}
+          </SheetPrimitive.Content>
+        </SheetPrimitive.Portal>
+      </SheetPrimitive.Root>
+    );
+  }
+
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>{trigger}</PopoverTrigger>
+      <PopoverContent align="start" collisionPadding={12} className="flex w-96 max-w-[calc(100vw-1.5rem)] flex-col p-3">
+        {body}
       </PopoverContent>
     </Popover>
   );
 }
+
+const flag = (code: string) =>
+  /^[A-Z]{2}$/.test(code)
+    ? String.fromCodePoint(...[...code].map((c) => 0x1f1a5 + c.charCodeAt(0)))
+    : "";

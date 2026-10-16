@@ -1,8 +1,8 @@
-import { ArrowRight, Moon } from "lucide-react";
+import { ArrowUpRight, CalendarDays, Moon, Ship, Shuffle } from "lucide-react";
 import type { RoundTrip } from "@/lib/ferry/roundTrips";
 import type { Sailing } from "@/lib/ferry/trips";
 import { capitalizeFirst, formatDuration } from "@/lib/ferry/format";
-import { CompanyBadge } from "./CompanyBadge";
+import { CompanyBadge, companyColor } from "./CompanyBadge";
 
 const dayFormatter = new Intl.DateTimeFormat("fr-FR", {
   weekday: "short",
@@ -24,6 +24,7 @@ function Leg({
   onHover: (hovering: boolean) => void;
 }) {
   const overnight = sailing.depHour >= 20 || sailing.depHour < 5;
+  const brand = companyColor(sailing.company?.name);
   return (
     <button
       type="button"
@@ -32,39 +33,71 @@ function Leg({
       onMouseLeave={() => onHover(false)}
       onFocus={() => onHover(true)}
       onBlur={() => onHover(false)}
-      className="min-w-0 flex-1 space-y-1 p-3 text-left transition hover:bg-secondary/60"
+      className="group/leg relative block w-full py-3 pl-4 pr-3.5 text-left transition-colors hover:bg-secondary/40"
     >
-      <span className="block text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
-        {label}
-      </span>
-      <span className="flex items-center gap-1 truncate text-sm font-bold">
-        <span className="truncate">{sailing.from.name}</span>
-        <ArrowRight className="size-3 shrink-0 text-primary" aria-hidden />
-        <span className="truncate">{sailing.to.name}</span>
-      </span>
-      <span className="block text-xs font-semibold">{formatDay(sailing.dayKey)}</span>
-      <span className="block text-xs tabular-nums text-muted-foreground">
-        {sailing.depTime} → {sailing.arrTime ?? "—"}
-        {sailing.arrDayOffset > 0 ? <sup className="ml-0.5">+{sailing.arrDayOffset}</sup> : null}
-        {sailing.durationMin ? ` · ${formatDuration(sailing.durationMin)}` : ""}
-        {overnight ? <Moon className="ml-1 inline size-3" aria-label="Traversée de nuit" /> : null}
-      </span>
-      <span className="flex min-w-0 items-center gap-1.5 pt-0.5 text-[11px] text-muted-foreground">
+      <span className="absolute inset-y-0 left-0 w-1.5" style={{ background: brand.solid }} aria-hidden />
+      <div className="mb-2 flex items-center justify-between gap-2 text-xs">
+        <span className="flex items-center gap-2">
+          <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-primary">
+            {label}
+          </span>
+          <span className="font-semibold text-foreground">{formatDay(sailing.dayKey)}</span>
+        </span>
+        {overnight ? (
+          <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 font-semibold text-primary">
+            <Moon className="size-3" aria-hidden /> Nuit
+          </span>
+        ) : null}
+      </div>
+
+      <div className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3">
+        <div>
+          <div className="font-display text-2xl font-bold leading-none tabular-nums tracking-tight">
+            {sailing.depTime}
+          </div>
+          <div className="mt-0.5 max-w-[96px] truncate text-xs font-semibold">{sailing.from.name}</div>
+        </div>
+        <div className="relative flex flex-col items-center px-1" aria-hidden>
+          <span className="mb-2.5 text-[11px] font-semibold tabular-nums text-muted-foreground">
+            {formatDuration(sailing.durationMin)}
+          </span>
+          <div className="relative h-0.5 w-full rounded-full bg-border">
+            <span className="absolute inset-0 rounded-full bg-gradient-to-r from-primary to-cta opacity-0 transition-opacity duration-300 group-hover/leg:opacity-100" />
+            <span className="absolute -left-0.5 top-1/2 size-2 -translate-y-1/2 rounded-full bg-primary" />
+            <span className="absolute -right-0.5 top-1/2 size-2 -translate-y-1/2 rounded-full border-2 border-primary bg-card" />
+            <span className="absolute left-1/2 top-1/2 grid size-6 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-full bg-card text-primary shadow-sm ring-1 ring-border transition-transform duration-500 group-hover/leg:translate-x-3">
+              <Ship className="size-3.5" />
+            </span>
+          </div>
+        </div>
+        <div className="text-right">
+          <div className="font-display text-2xl font-bold leading-none tabular-nums tracking-tight">
+            {sailing.arrTime ?? "—"}
+            {sailing.arrDayOffset > 0 ? (
+              <sup className="ml-0.5 text-[11px] font-semibold text-cta">+{sailing.arrDayOffset}</sup>
+            ) : null}
+          </div>
+          <div className="ml-auto mt-0.5 max-w-[96px] truncate text-xs font-semibold">{sailing.to.name}</div>
+        </div>
+      </div>
+
+      <div className="mt-2.5 flex min-w-0 items-center gap-2 text-xs text-muted-foreground">
         <CompanyBadge
           name={sailing.company?.name ?? "?"}
           logoUrl={sailing.company?.logo_url ?? null}
-          size={16}
+          size={20}
         />
-        <span className="truncate">
-          {sailing.company?.name ?? "Compagnie"}
+        <span className="min-w-0 flex-1 truncate">
+          <span className="font-semibold text-foreground">{sailing.company?.name ?? "Compagnie"}</span>
           {sailing.vessel ? ` · ${sailing.vessel.name}` : ""}
         </span>
-      </span>
+        <ArrowUpRight className="size-4 shrink-0 text-muted-foreground transition group-hover/leg:text-cta" aria-hidden />
+      </div>
     </button>
   );
 }
 
-/** Couple aller | retour, côte à côte (empilés sur très petit écran). */
+/** Carte Duo aller + retour sur deux étages, séparés par la durée du séjour. */
 export function RoundTripCard({
   trip,
   index,
@@ -79,28 +112,32 @@ export function RoundTripCard({
   return (
     <article
       style={{ animationDelay: `${Math.min(index, 8) * 45}ms` }}
-      className="sailing-card overflow-hidden rounded-2xl border border-border bg-card shadow-sm transition hover:shadow-md"
+      className="sailing-card overflow-hidden rounded-2xl border border-border bg-card transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg"
     >
-      <div className="flex flex-col divide-y divide-border min-[380px]:flex-row min-[380px]:divide-x min-[380px]:divide-y-0">
-        <Leg
-          label="Aller"
-          sailing={trip.out}
-          onOpen={() => onOpenDeparture(trip.out.departure.id)}
-          onHover={(h) => onHoverRoute(h ? trip.out.route.id : null)}
-        />
-        <Leg
-          label="Retour"
-          sailing={trip.back}
-          onOpen={() => onOpenDeparture(trip.back.departure.id)}
-          onHover={(h) => onHoverRoute(h ? trip.back.route.id : null)}
-        />
-      </div>
-      <div className="flex items-center justify-between gap-2 border-t bg-secondary/40 px-3 py-1.5 text-[11px] text-muted-foreground">
-        <span>
-          Séjour de {trip.stayDays} jour{trip.stayDays > 1 ? "s" : ""}
+      <Leg
+        label="Aller"
+        sailing={trip.out}
+        onOpen={() => onOpenDeparture(trip.out.departure.id)}
+        onHover={(h) => onHoverRoute(h ? trip.out.route.id : null)}
+      />
+      <div className="relative flex items-center justify-center py-1" aria-hidden={false}>
+        <span className="absolute inset-x-4 top-1/2 border-t border-dashed border-border" aria-hidden />
+        <span className="relative flex items-center gap-1.5 rounded-full border border-border bg-card px-3 py-1 text-[11px] font-semibold text-foreground shadow-sm">
+          <CalendarDays className="size-3 text-primary" aria-hidden />
+          {trip.stayDays} jour{trip.stayDays > 1 ? "s" : ""} sur place
+          {!trip.mirror ? (
+            <span className="ml-1 inline-flex items-center gap-1 text-cta">
+              <Shuffle className="size-3" aria-hidden /> autre port
+            </span>
+          ) : null}
         </span>
-        {!trip.mirror ? <span className="font-semibold text-primary">Ports différents</span> : null}
       </div>
+      <Leg
+        label="Retour"
+        sailing={trip.back}
+        onOpen={() => onOpenDeparture(trip.back.departure.id)}
+        onHover={(h) => onHoverRoute(h ? trip.back.route.id : null)}
+      />
     </article>
   );
 }

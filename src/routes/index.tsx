@@ -524,9 +524,19 @@ function Index() {
               key: Date.now(),
             });
           }}
+          companyOf={(ship) => {
+            const dep = [...departures, ...fleetDepartures].find((d) => d.id === ship.departureId);
+            return companies.find((c) => c.id === dep?.company_id)?.name;
+          }}
           onOpenDepartures={() => {
             setSelection(null);
             openPanel();
+            const el = asideRef.current;
+            if (!el) return;
+            el.dataset["flash"] = "false";
+            void el.offsetWidth;
+            el.dataset["flash"] = "true";
+            window.setTimeout(() => (el.dataset["flash"] = "false"), 1300);
           }}
           onOpenCompanies={() => {
             setSelection(null);
@@ -536,7 +546,9 @@ function Index() {
               if (!el) return;
               el.open = true;
               el.scrollIntoView({ behavior: "smooth", block: "center" });
-              el.querySelector<HTMLElement>("button")?.focus();
+              const trigger = el.querySelector<HTMLElement>('[aria-label="Compagnie"]');
+              trigger?.focus();
+              trigger?.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true }));
             }, 250);
           }}
           onShowPorts={() => {

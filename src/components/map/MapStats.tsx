@@ -10,6 +10,7 @@ interface MapStatsProps {
   portsCount: number;
   onSelectShip: (ship: FleetShip) => void;
   onOpenDepartures: () => void;
+  companyOf: (ship: FleetShip) => string | undefined;
   onOpenCompanies: () => void;
   onShowPorts: () => void;
 }
@@ -37,6 +38,7 @@ export function MapStats({
   portsCount,
   onSelectShip,
   onOpenDepartures,
+  companyOf,
   onOpenCompanies,
   onShowPorts,
 }: MapStatsProps) {
@@ -98,7 +100,7 @@ export function MapStats({
           )}
         </div>
         {open ? (
-          <ul className="ml-auto mt-2 max-h-56 w-56 overflow-y-auto rounded-2xl border border-border bg-background/95 p-1 shadow-lg backdrop-blur">
+          <ul className="ml-auto mt-2 max-h-56 w-64 overflow-y-auto rounded-2xl border border-border bg-background/95 p-1 shadow-lg backdrop-blur">
             {list.length === 0 ? (
               <li className="px-3 py-2 text-xs text-muted-foreground">Aucun navire</li>
             ) : (
@@ -110,7 +112,10 @@ export function MapStats({
                     className="flex w-full items-center gap-2 rounded-xl px-2.5 py-1.5 text-left text-xs font-medium hover:bg-secondary"
                   >
                     <Ship className="size-3.5 text-primary" />
-                    <span className="flex-1 truncate">{ship.name}</span>
+                    <span className="min-w-0 flex-1 leading-tight">
+                      <span className="block truncate">{ship.name}</span>
+                      {companyOf(ship) ? <span className="block truncate text-[10px] font-normal text-muted-foreground">{companyOf(ship)}</span> : null}
+                    </span>
                     {ship.source === "live" ? (
                       <span className="text-[10px] font-semibold text-primary">AIS</span>
                     ) : null}

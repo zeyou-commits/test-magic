@@ -22,6 +22,7 @@ import { wallTimeInZone, zoneLabel } from "@/lib/ferry/time";
 import { ReportButton } from "./ReportButton";
 import { ShareButtons } from "./ShareButtons";
 import { CompanyBadge, companyColor } from "./CompanyBadge";
+import { estimateFare, formatEuro, useFareProfile } from "@/lib/ferry/pricing";
 
 const dayFormatter = new Intl.DateTimeFormat("fr-FR", {
   weekday: "short",
@@ -63,6 +64,7 @@ export function SailingCard({
   const departure = sailing.departure;
   const panelId = `sailing-${departure.id}`;
   const brand = companyColor(sailing.company?.name);
+  const fare = estimateFare(sailing, useFareProfile());
 
   return (
     <article
@@ -163,6 +165,9 @@ export function SailingCard({
             ) : null}
           </div>
         </div>
+        <span className="ml-auto shrink-0 text-sm font-bold tabular-nums" title="Tarif moyen indicatif">
+          {formatEuro(fare)}
+        </span>
         {href ? (
           <a
             href={href}

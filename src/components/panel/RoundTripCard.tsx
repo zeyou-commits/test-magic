@@ -5,6 +5,7 @@ import type { Sailing } from "@/lib/ferry/trips";
 import { capitalizeFirst, formatDuration } from "@/lib/ferry/format";
 import { CompanyBadge, companyColor } from "./CompanyBadge";
 import { SailingDetail } from "./SailingCard";
+import { estimateFare, formatEuro, useFareProfile } from "@/lib/ferry/pricing";
 
 const dayFormatter = new Intl.DateTimeFormat("fr-FR", {
   weekday: "short",
@@ -34,6 +35,7 @@ function Leg({
   const panelId = `rt-${label}-${sailing.departure.id}`;
   const overnight = sailing.depHour >= 20 || sailing.depHour < 5;
   const brand = companyColor(sailing.company?.name);
+  const fare = estimateFare(sailing, useFareProfile());
   return (
     <div>
     <button
@@ -103,6 +105,9 @@ function Leg({
           <span className="font-semibold text-foreground">{sailing.company?.name ?? "Compagnie"}</span>
           {sailing.vessel ? ` · ${sailing.vessel.name}` : ""}
         </span>
+        <span className="shrink-0 text-xs font-bold tabular-nums text-foreground" title="Tarif moyen indicatif">
+          {formatEuro(fare)}
+        </span>
         <span className="inline-flex shrink-0 items-center gap-0.5 text-[11px] font-semibold text-primary">
           {expanded ? "Masquer" : "Détails"}
           <ChevronDown className={`size-4 transition-transform duration-300 ${expanded ? "rotate-180" : ""}`} aria-hidden />
@@ -139,6 +144,8 @@ export function RoundTripCard({
 }) {
   const [open, setOpen] = useState<"out" | "back" | null>(null);
   const toggle = (leg: "out" | "back") => setOpen((cur) => (cur === leg ? null : leg));
+  const profile = useFareProfile();
+  const total = estimateFare(trip.out, profile) + estimateFare(trip.back, profile);
   return (
     <article
       style={{ animationDelay: `${Math.min(index, 8) * 45}ms` }}
@@ -163,6 +170,9 @@ export function RoundTripCard({
               <Shuffle className="size-3" aria-hidden /> autre port
             </span>
           ) : null}
+          <span className="ml-1 border-l border-border pl-2 tabular-nums text-cta" title="Tarif moyen indicatif aller + retour">
+            {formatEuro(total)} A/R
+          </span>
         </span>
       </div>
       <Leg

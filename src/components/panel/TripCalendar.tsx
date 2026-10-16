@@ -204,16 +204,7 @@ export function TripCalendar({
     C: "batogo-zone-c",
   };
 
-  return (
-    <Popover open={open} onOpenChange={onOpenChange}>
-      <PopoverAnchor asChild>{anchor}</PopoverAnchor>
-      <PopoverContent
-        align="start"
-        collisionPadding={12}
-        className="batogo-cal-pop w-[348px] max-w-[calc(100vw-1.5rem)] space-y-4 overflow-hidden rounded-2xl border-border/60 p-0 shadow-2xl md:w-[640px]"
-        onOpenAutoFocus={(event) => event.preventDefault()}
-      >
-        {/* En-tête : étape en cours + zones de vacances */}
+  const headerBlock = (
         <div className="flex flex-col gap-3 border-b border-border/60 px-5 pb-4 pt-5 md:flex-row md:items-end md:justify-between">
           <div className="min-w-0">
             <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-primary">
@@ -249,7 +240,9 @@ export function TripCalendar({
             })}
           </div>
         </div>
-        <div className="space-y-4 px-5">
+  );
+  const bodyBlock = (
+    <>
 
         <div className="flex flex-col gap-2 rounded-xl bg-primary/5 p-3 ring-1 ring-primary/15 sm:flex-row sm:items-center sm:justify-between">
           <div>
@@ -271,6 +264,36 @@ export function TripCalendar({
             ))}
           </div>
         </div>
+
+          {holidaysOn && zones.length ? (
+            <div className="space-y-2">
+              <ul className="space-y-1 text-[11px] leading-snug text-muted-foreground">
+                {zones.map((z) => (
+                  <li key={z} className="flex gap-1.5">
+                    <span className={`mt-1 h-1 w-3 shrink-0 rounded-full ${zoneTone[z]}-dot`} aria-hidden />
+                    <span><strong className="font-semibold text-foreground">Zone {z}</strong> · {SCHOOL_ZONES[z].cities}</span>
+                  </li>
+                ))}
+              </ul>
+              {periods.length ? (
+                <div className="-mx-5 flex gap-1.5 overflow-x-auto px-5 pb-0.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden" role="group" aria-label="Partir pendant les vacances">
+                  {dedupedPeriods.map((period) => (
+                    <button
+                      key={period.id}
+                      type="button"
+                      onClick={() => pickPeriod(period)}
+                      className="flex shrink-0 flex-col items-start rounded-xl border border-border bg-card px-3 py-1.5 text-left transition hover:border-primary hover:bg-primary/5 active:scale-95"
+                    >
+                      <span className="text-xs font-semibold">{period.name}</span>
+                      <span className="text-[10px] tabular-nums text-muted-foreground">{short(period.start)} → {short(period.lastDay)}</span>
+                    </button>
+                  ))}
+                </div>
+              ) : null}
+            </div>
+          ) : (
+            <p className="text-[11px] text-muted-foreground">Choisissez votre zone (A, B, C) pour partir pendant les vacances scolaires en un geste.</p>
+          )}
 
         {nextEmpty ? (
           <SalesAlertForm
@@ -362,8 +385,9 @@ export function TripCalendar({
           ) : null}
           {!pairLabel ? <span>Choisissez un trajet pour ne voir que ses jours de départ.</span> : null}
         </div>
-        </div>
-
+    </>
+  );
+  const footerBlock = (
         <div className="flex flex-wrap items-center justify-end gap-3 border-t border-border/60 bg-muted/40 px-5 py-3.5">
           <div className="flex items-center gap-4">
             <button
@@ -386,6 +410,41 @@ export function TripCalendar({
             </button>
           </div>
         </div>
+  );
+
+  if (isMobile) {
+    return (
+      <>
+        {anchor}
+        <Sheet open={open} onOpenChange={onOpenChange}>
+          <SheetContent
+            side="bottom"
+            className="batogo-cal-pop flex h-[92dvh] flex-col gap-0 rounded-t-3xl border-border/60 p-0"
+            onOpenAutoFocus={(event) => event.preventDefault()}
+          >
+            <SheetTitle className="sr-only">Choisir les dates</SheetTitle>
+            <div className="mx-auto mt-2 h-1 w-10 shrink-0 rounded-full bg-border" aria-hidden />
+            <div className="shrink-0">{headerBlock}</div>
+            <div className="min-h-0 flex-1 space-y-4 overflow-y-auto overscroll-contain px-5 py-4">{bodyBlock}</div>
+            <div className="shrink-0 pb-[env(safe-area-inset-bottom)]">{footerBlock}</div>
+          </SheetContent>
+        </Sheet>
+      </>
+    );
+  }
+
+  return (
+    <Popover open={open} onOpenChange={onOpenChange}>
+      <PopoverAnchor asChild>{anchor}</PopoverAnchor>
+      <PopoverContent
+        align="start"
+        collisionPadding={12}
+        className="batogo-cal-pop w-[640px] max-w-[calc(100vw-1.5rem)] space-y-4 overflow-hidden rounded-2xl border-border/60 p-0 shadow-2xl"
+        onOpenAutoFocus={(event) => event.preventDefault()}
+      >
+        {headerBlock}
+        <div className="space-y-4 px-5">{bodyBlock}</div>
+        {footerBlock}
       </PopoverContent>
     </Popover>
   );

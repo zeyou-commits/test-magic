@@ -288,7 +288,7 @@ export function TripCalendar({
                 role="radio"
                 aria-checked={flexDays === value}
                 onClick={() => onChange({ flexDays: value })}
-                className={`h-7 flex-1 rounded-full px-3 text-[11px] font-semibold transition ${flexDays === value ? "bg-primary text-primary-foreground shadow" : "text-muted-foreground hover:text-foreground"}`}
+                className={`h-7 flex-1 whitespace-nowrap rounded-full px-3 text-[11px] font-semibold transition ${flexDays === value ? "bg-primary text-primary-foreground shadow" : "text-muted-foreground hover:text-foreground"}`}
               >
                 {value === 0 ? "Exacte" : `± ${value} j`}
               </button>

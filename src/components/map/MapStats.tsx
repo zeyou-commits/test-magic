@@ -1,10 +1,8 @@
-import type React from "react";
-import { useState } from "react";
+import { cloneElement, useState, type ReactElement } from "react";
 import { Link } from "@tanstack/react-router";
 import { Anchor, CalendarDays, Flag, Ship, Waves, type LucideProps } from "lucide-react";
 import type { FleetShip } from "@/lib/ferry/fleet";
 import type { Departure } from "@/lib/ferry/types";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface MapStatsProps {
   fleet: FleetShip[];
@@ -53,15 +51,10 @@ export function MapStats({
     "flex items-center gap-1.5 rounded-full px-2.5 py-1.5 text-sm font-bold tabular-nums text-foreground transition-colors hover:bg-secondary data-[active=true]:bg-secondary";
   const plural = (n: number, one: string, many: string) => `${n} ${n > 1 ? many : one}`;
 
-  const stat = (tip: string, node: React.ReactElement) => (
-    <Tooltip>
-      <TooltipTrigger asChild>{node}</TooltipTrigger>
-      <TooltipContent side="bottom">{tip}</TooltipContent>
-    </Tooltip>
-  );
+  const stat = (tip: string, node: ReactElement<{ title?: string }>) => cloneElement(node, { title: tip });
 
   return (
-    <TooltipProvider delayDuration={150}>
+    <>
       <div className="pointer-events-auto absolute right-4 top-4 z-10 hidden md:block">
         <div className="flex items-center gap-0.5 rounded-full border border-border bg-background/95 p-1 shadow-lg backdrop-blur">
           {stat(
@@ -126,6 +119,6 @@ export function MapStats({
           </ul>
         ) : null}
       </div>
-    </TooltipProvider>
+    </>
   );
 }

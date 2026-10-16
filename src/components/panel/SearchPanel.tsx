@@ -50,6 +50,7 @@ import type { LiveShip } from "@/lib/ferry/tracking";
 import { PortMultiPicker } from "./PortFilters";
 import { CompanyBadge } from "./CompanyBadge";
 import { RoundTripCard } from "./RoundTripCard";
+import { FareProfileContext } from "@/lib/ferry/pricing";
 import { buildRoundTrips, type RoundTrip } from "@/lib/ferry/roundTrips";
 import { DayStrip, SailingCard } from "./SailingCard";
 import { ShareButtons } from "./ShareButtons";
@@ -237,6 +238,7 @@ export function SearchPanel({
   const fromName = (ids: string[]) => ports.find((port) => port.id === ids[0])?.name ?? "";
 
   return (
+    <FareProfileContext.Provider value={profile}>
     <div className="flex flex-col">
       {/* RECHERCHE */}
       <section className="space-y-3 border-b bg-gradient-to-b from-primary/[0.06] to-transparent px-4 pb-4 pt-4 md:px-5">
@@ -339,35 +341,19 @@ export function SearchPanel({
           today={today}
           onChange={(patch) => set(patch)}
           anchor={
-            <div className={`grid gap-1.5 ${filters.roundTrip ? "grid-cols-2" : "grid-cols-1"}`}>
+            <div className="grid grid-cols-[minmax(0,1.25fr)_minmax(0,1fr)] gap-1.5">
               <DateButton
-                label="Aller"
+                label={filters.roundTrip ? "Dates" : "Date"}
                 value={filters.date}
+                returnValue={filters.roundTrip ? filters.returnDate : undefined}
                 flex={filters.flexDays}
-                active={calOpen && calField === "out"}
+                active={calOpen}
                 onClick={() => {
-                  setCalField("out");
+                  setCalField(filters.roundTrip && filters.date && !filters.returnDate ? "ret" : "out");
                   setCalOpen(true);
                 }}
               />
-              {filters.roundTrip ? (
-                <DateButton
-                  label="Retour"
-                  value={filters.returnDate}
-                  active={calOpen && calField === "ret"}
-                  onClick={() => {
-                    setCalField(filters.date ? "ret" : "out");
-                    setCalOpen(true);
-                  }}
-                />
-              ) : null}
-            </div>
-          }
-        />
-
-        <VehicleChips value={profile} onChange={setProfile} />
-
-        <div className="grid grid-cols-1">
+        <div className="min-w-0">
           <Popover>
             <PopoverTrigger asChild>
               <button
@@ -388,12 +374,16 @@ export function SearchPanel({
             <PopoverContent align="start" className="w-[340px] max-w-[92vw] p-3">
               <TripProfile value={profile} onChange={setProfile} hideVehicle />
               <p className="mt-3 text-xs leading-relaxed text-muted-foreground">
-                Sert à recommander l’horaire le plus confortable. Les tarifs ne sont pas encore
-                comparés.
+                Sert à recommander l’horaire le plus confortable et à estimer un tarif moyen indicatif.
               </p>
             </PopoverContent>
           </Popover>
         </div>
+            </div>
+          }
+        />
+
+        <VehicleChips value={profile} onChange={setProfile} />
 
         <details id="filters-company" className="group text-xs" open={Boolean(filters.companyId || filters.vesselId)}>
           <summary className="flex cursor-pointer list-none items-center gap-1 font-semibold text-muted-foreground hover:text-foreground">
@@ -507,6 +497,7 @@ export function SearchPanel({
         )}
       </section>
     </div>
+    </FareProfileContext.Provider>
   );
 }
 
@@ -637,15 +628,25 @@ function ResultBlock({
   );
 }
 
+const fmtShort = (key: string, weekday = false) =>
+  new Date(`${key}T00:00:00Z`).toLocaleDateString("fr-FR", {
+    ...(weekday ? { weekday: "short" as const } : {}),
+    day: "numeric",
+    month: "short",
+    timeZone: "UTC",
+  });
+
 function DateButton({
   label,
   value,
+  returnValue,
   flex = 0,
   active,
   onClick,
 }: {
   label: string;
   value: string | null;
+  returnValue?: string | null | undefined;
   flex?: number;
   active: boolean;
   onClick: () => void;
@@ -666,12 +667,9 @@ function DateButton({
         </span>
         <span className="block truncate text-sm font-semibold">
           {value
-            ? new Date(`${value}T00:00:00Z`).toLocaleDateString("fr-FR", {
-                weekday: "short",
-                day: "numeric",
-                month: "short",
-                timeZone: "UTC",
-              })
+            ? returnValue !== undefined
+              ? `${fmtShort(value)} → ${returnValue ? fmtShort(returnValue) : "retour"}`
+              : fmtShort(value, true)
             : "Choisir"}
         </span>
       </span>

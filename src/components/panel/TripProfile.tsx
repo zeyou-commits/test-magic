@@ -214,7 +214,7 @@ export function VehicleChips({
     <div
       role="radiogroup"
       aria-label="Votre véhicule"
-      className="-mx-4 flex snap-x gap-1.5 overflow-x-auto px-4 pb-0.5 [scrollbar-width:none] md:-mx-5 md:px-5 [&::-webkit-scrollbar]:hidden"
+      className="-mx-4 flex gap-1.5 overflow-x-auto px-4 pb-0.5 [scrollbar-width:none] md:-mx-5 md:px-5 [&::-webkit-scrollbar]:hidden"
     >
       {VEHICLES.map(({ id, Icon, label, hint }) => {
         const selected = value.vehicle === id;
@@ -228,7 +228,7 @@ export function VehicleChips({
             onClick={() =>
               onChange({ ...value, vehicle: id, accessories: id === "none" ? [] : value.accessories })
             }
-            className={`inline-flex h-9 shrink-0 snap-start items-center gap-1.5 rounded-full border px-3 text-xs font-semibold transition active:scale-95 ${selected ? "border-primary bg-primary text-primary-foreground shadow-sm" : "border-border bg-card text-foreground hover:border-primary/50 hover:bg-primary/5"}`}
+            className={`inline-flex h-9 shrink-0 items-center gap-1.5 rounded-full border px-3 text-xs font-semibold transition active:scale-95 ${selected ? "border-primary bg-primary text-primary-foreground shadow-sm" : "border-border bg-card text-foreground hover:border-primary/50 hover:bg-primary/5"}`}
           >
             <Icon className="size-4" aria-hidden />
             {label}

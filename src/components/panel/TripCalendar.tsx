@@ -3,7 +3,8 @@ import { fr } from "react-day-picker/locale";
 import { Backpack, CalendarDays } from "lucide-react";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverAnchor, PopoverContent } from "@/components/ui/popover";
-import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
+import * as SheetPrimitive from "@radix-ui/react-dialog";
+import { X } from "lucide-react";
 import {
   SCHOOL_ZONES,
   addDaysKey,
@@ -239,7 +240,7 @@ export function TripCalendar({
   };
 
   const headerBlock = (
-        <div className="flex flex-col gap-3 border-b border-border/60 px-5 pb-3 pt-3 md:flex-row md:pb-4 md:pt-5 md:items-end md:justify-between">
+        <div className="flex flex-col gap-3 border-b border-border/60 px-5 pb-3 pr-14 pt-3 md:flex-row md:pr-5 md:pb-4 md:pt-5 md:items-end md:justify-between">
           <div className="min-w-0">
             <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-primary">
               {field === "out" ? "Date d'aller" : "Date de retour"}
@@ -450,19 +451,26 @@ export function TripCalendar({
     return (
       <>
         {anchor}
-        <Sheet open={open} onOpenChange={onOpenChange}>
-          <SheetContent
-            side="bottom"
-            className="batogo-cal-pop flex h-[92dvh] flex-col gap-0 rounded-t-3xl border-border/60 p-0"
+        <SheetPrimitive.Root open={open} onOpenChange={onOpenChange}>
+          <SheetPrimitive.Portal>
+          {/* Au-dessus du tiroir mobile et de la barre d'onglets. */}
+          <SheetPrimitive.Overlay className="fixed inset-0 z-[90] bg-foreground/40 backdrop-blur-[2px] data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0" />
+          <SheetPrimitive.Content
+            aria-describedby={undefined}
+            className="batogo-cal-pop fixed inset-x-0 bottom-0 z-[95] flex h-[92dvh] flex-col rounded-t-3xl border-t border-border/60 bg-background shadow-2xl data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:slide-out-to-bottom data-[state=open]:slide-in-from-bottom"
             onOpenAutoFocus={(event) => event.preventDefault()}
           >
-            <SheetTitle className="sr-only">Choisir les dates</SheetTitle>
+            <SheetPrimitive.Title className="sr-only">Choisir les dates</SheetPrimitive.Title>
+            <SheetPrimitive.Close className="absolute right-3 top-3 grid size-9 place-items-center rounded-full text-muted-foreground hover:bg-muted" aria-label="Fermer">
+              <X className="size-4" />
+            </SheetPrimitive.Close>
             <div className="mx-auto mt-2 h-1 w-10 shrink-0 rounded-full bg-border" aria-hidden />
             <div className="shrink-0">{headerBlock}</div>
             <div className="min-h-0 flex-1 space-y-4 overflow-y-auto overscroll-contain px-5 py-4">{bodyBlock}</div>
             <div className="shrink-0 pb-[env(safe-area-inset-bottom)]">{footerBlock}</div>
-          </SheetContent>
-        </Sheet>
+          </SheetPrimitive.Content>
+          </SheetPrimitive.Portal>
+        </SheetPrimitive.Root>
       </>
     );
   }

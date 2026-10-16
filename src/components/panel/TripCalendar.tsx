@@ -3,6 +3,8 @@ import { fr } from "react-day-picker/locale";
 import { Backpack, CalendarDays } from "lucide-react";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverAnchor, PopoverContent } from "@/components/ui/popover";
+import * as SheetPrimitive from "@radix-ui/react-dialog";
+import { X } from "lucide-react";
 import {
   SCHOOL_ZONES,
   addDaysKey,
@@ -198,23 +200,46 @@ export function TripCalendar({
   const suggestion =
     activeValue && unavailableActive ? nearest(activeDays, activeValue, 7, 7, today) : null;
 
+  // Une même période (ex. Toussaint) commune à plusieurs zones n'apparaît qu'une fois.
+  const dedupedPeriods = useMemo(() => {
+    const seen = new Set<string>();
+    return periods.filter((period) => (seen.has(period.id) ? false : (seen.add(period.id), true))).slice(0, 6);
+  }, [periods]);
+
+  /** Un geste : aller au plus près du début des vacances, retour au plus près de la reprise (souplesse incluse). */
+  const pickPeriod = (period: HolidayPeriod) => {
+    const tolerance = Math.max(flexDays, 1);
+    const out = nearest(outDays, period.start, tolerance, tolerance + 2, today);
+    if (!out) {
+      setNote(`Aucun départ connu autour du début des vacances de ${period.name} (± ${tolerance} j).`);
+      setMonth(keyToDate(period.start));
+      return;
+    }
+    if (!roundTrip) {
+      onChange({ date: out, returnDate: null });
+      setMonth(keyToDate(out));
+      setNote(`Aller le ${long(out)} pour les vacances de ${period.name}.`);
+      return;
+    }
+    const backPool = backDays.size > 0 ? backDays : outDays;
+    const back = nearest(backPool, period.lastDay, tolerance + 2, tolerance, addDaysKey(out, 1));
+    onChange({ date: out, returnDate: back });
+    setMonth(keyToDate(out));
+    setNote(
+      back
+        ? `${period.name} : aller le ${long(out)}, retour le ${long(back)} (${diffDays(out, back)} jours).`
+        : `${period.name} : aller le ${long(out)}. Aucun retour connu autour de la reprise, choisissez-le dans le calendrier.`,
+    );
+  };
+
   const zoneTone: Record<SchoolZone, string> = {
     A: "batogo-zone-a",
     B: "batogo-zone-b",
     C: "batogo-zone-c",
   };
 
-  return (
-    <Popover open={open} onOpenChange={onOpenChange}>
-      <PopoverAnchor asChild>{anchor}</PopoverAnchor>
-      <PopoverContent
-        align="start"
-        collisionPadding={12}
-        className="batogo-cal-pop w-[348px] max-w-[calc(100vw-1.5rem)] space-y-4 overflow-hidden rounded-2xl border-border/60 p-0 shadow-2xl md:w-[640px]"
-        onOpenAutoFocus={(event) => event.preventDefault()}
-      >
-        {/* En-tête : étape en cours + zones de vacances */}
-        <div className="flex flex-col gap-3 border-b border-border/60 px-5 pb-4 pt-5 md:flex-row md:items-end md:justify-between">
+  const headerBlock = (
+        <div className="flex flex-col gap-3 border-b border-border/60 px-5 pb-3 pr-14 pt-3 md:flex-row md:pr-5 md:pb-4 md:pt-5 md:items-end md:justify-between">
           <div className="min-w-0">
             <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-primary">
               {field === "out" ? "Date d'aller" : "Date de retour"}
@@ -249,7 +274,9 @@ export function TripCalendar({
             })}
           </div>
         </div>
-        <div className="space-y-4 px-5">
+  );
+  const bodyBlock = (
+    <>
 
         <div className="flex flex-col gap-2 rounded-xl bg-primary/5 p-3 ring-1 ring-primary/15 sm:flex-row sm:items-center sm:justify-between">
           <div>
@@ -271,6 +298,36 @@ export function TripCalendar({
             ))}
           </div>
         </div>
+
+          {holidaysOn && zones.length ? (
+            <div className="space-y-2">
+              <ul className="space-y-1 text-[11px] leading-snug text-muted-foreground">
+                {zones.map((z) => (
+                  <li key={z} className="flex gap-1.5">
+                    <span className={`mt-1 h-1 w-3 shrink-0 rounded-full ${zoneTone[z]}-dot`} aria-hidden />
+                    <span><strong className="font-semibold text-foreground">Zone {z}</strong> · {SCHOOL_ZONES[z].cities}</span>
+                  </li>
+                ))}
+              </ul>
+              {periods.length ? (
+                <div className="-mx-5 flex gap-1.5 overflow-x-auto px-5 pb-0.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden" role="group" aria-label="Partir pendant les vacances">
+                  {dedupedPeriods.map((period) => (
+                    <button
+                      key={period.id}
+                      type="button"
+                      onClick={() => pickPeriod(period)}
+                      className="flex shrink-0 flex-col items-start rounded-xl border border-border bg-card px-3 py-1.5 text-left transition hover:border-primary hover:bg-primary/5 active:scale-95"
+                    >
+                      <span className="text-xs font-semibold">{period.name}</span>
+                      <span className="text-[10px] tabular-nums text-muted-foreground">{short(period.start)} → {short(period.lastDay)}</span>
+                    </button>
+                  ))}
+                </div>
+              ) : null}
+            </div>
+          ) : (
+            <p className="text-[11px] text-muted-foreground">Choisissez votre zone (A, B, C) pour partir pendant les vacances scolaires en un geste.</p>
+          )}
 
         {nextEmpty ? (
           <SalesAlertForm
@@ -362,8 +419,9 @@ export function TripCalendar({
           ) : null}
           {!pairLabel ? <span>Choisissez un trajet pour ne voir que ses jours de départ.</span> : null}
         </div>
-        </div>
-
+    </>
+  );
+  const footerBlock = (
         <div className="flex flex-wrap items-center justify-end gap-3 border-t border-border/60 bg-muted/40 px-5 py-3.5">
           <div className="flex items-center gap-4">
             <button
@@ -386,6 +444,48 @@ export function TripCalendar({
             </button>
           </div>
         </div>
+  );
+
+  if (isMobile) {
+    return (
+      <>
+        {anchor}
+        <SheetPrimitive.Root open={open} onOpenChange={onOpenChange}>
+          <SheetPrimitive.Portal>
+          {/* Au-dessus du tiroir mobile et de la barre d'onglets. */}
+          <SheetPrimitive.Overlay className="fixed inset-0 z-[90] bg-foreground/40 backdrop-blur-[2px] data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0" />
+          <SheetPrimitive.Content
+            aria-describedby={undefined}
+            className="batogo-cal-pop fixed inset-x-0 bottom-0 z-[95] flex h-[92dvh] flex-col rounded-t-3xl border-t border-border/60 bg-background shadow-2xl data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:slide-out-to-bottom data-[state=open]:slide-in-from-bottom"
+            onOpenAutoFocus={(event) => event.preventDefault()}
+          >
+            <SheetPrimitive.Title className="sr-only">Choisir les dates</SheetPrimitive.Title>
+            <SheetPrimitive.Close className="absolute right-3 top-3 grid size-9 place-items-center rounded-full text-muted-foreground hover:bg-muted" aria-label="Fermer">
+              <X className="size-4" />
+            </SheetPrimitive.Close>
+            <div className="mx-auto mt-2 h-1 w-10 shrink-0 rounded-full bg-border" aria-hidden />
+            <div className="shrink-0">{headerBlock}</div>
+            <div className="min-h-0 flex-1 space-y-4 overflow-y-auto overscroll-contain px-5 py-4">{bodyBlock}</div>
+            <div className="shrink-0 pb-[env(safe-area-inset-bottom)]">{footerBlock}</div>
+          </SheetPrimitive.Content>
+          </SheetPrimitive.Portal>
+        </SheetPrimitive.Root>
+      </>
+    );
+  }
+
+  return (
+    <Popover open={open} onOpenChange={onOpenChange}>
+      <PopoverAnchor asChild>{anchor}</PopoverAnchor>
+      <PopoverContent
+        align="start"
+        collisionPadding={12}
+        className="batogo-cal-pop w-[640px] max-w-[calc(100vw-1.5rem)] space-y-4 overflow-hidden rounded-2xl border-border/60 p-0 shadow-2xl"
+        onOpenAutoFocus={(event) => event.preventDefault()}
+      >
+        {headerBlock}
+        <div className="space-y-4 px-5">{bodyBlock}</div>
+        {footerBlock}
       </PopoverContent>
     </Popover>
   );

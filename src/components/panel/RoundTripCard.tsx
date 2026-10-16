@@ -1,8 +1,10 @@
-import { ArrowUpRight, CalendarDays, Moon, Ship, Shuffle } from "lucide-react";
+import { useState } from "react";
+import { ChevronDown, CalendarDays, Moon, Ship, Shuffle } from "lucide-react";
 import type { RoundTrip } from "@/lib/ferry/roundTrips";
 import type { Sailing } from "@/lib/ferry/trips";
 import { capitalizeFirst, formatDuration } from "@/lib/ferry/format";
 import { CompanyBadge, companyColor } from "./CompanyBadge";
+import { SailingDetail } from "./SailingCard";
 
 const dayFormatter = new Intl.DateTimeFormat("fr-FR", {
   weekday: "short",
@@ -15,25 +17,35 @@ const formatDay = (key: string) => capitalizeFirst(dayFormatter.format(new Date(
 function Leg({
   label,
   sailing,
-  onOpen,
+  expanded,
+  onToggle,
   onHover,
+  onOpenVessel,
+  onOpenRoute,
 }: {
   label: string;
   sailing: Sailing;
-  onOpen: () => void;
+  expanded: boolean;
+  onToggle: () => void;
   onHover: (hovering: boolean) => void;
+  onOpenVessel: (vesselId: string) => void;
+  onOpenRoute: (routeId: string) => void;
 }) {
+  const panelId = `rt-${label}-${sailing.departure.id}`;
   const overnight = sailing.depHour >= 20 || sailing.depHour < 5;
   const brand = companyColor(sailing.company?.name);
   return (
+    <div>
     <button
       type="button"
-      onClick={onOpen}
+      onClick={onToggle}
+      aria-expanded={expanded}
+      aria-controls={panelId}
       onMouseEnter={() => onHover(true)}
       onMouseLeave={() => onHover(false)}
       onFocus={() => onHover(true)}
       onBlur={() => onHover(false)}
-      className="group/leg relative block w-full py-3 pl-4 pr-3.5 text-left transition-colors hover:bg-secondary/40"
+      className={`group/leg relative block w-full py-3 pl-4 pr-3.5 text-left transition-colors hover:bg-secondary/40 ${expanded ? "bg-primary/[0.04]" : ""}`}
     >
       <span className="absolute inset-y-0 left-0 w-1.5" style={{ background: brand.solid }} aria-hidden />
       <div className="mb-2 flex items-center justify-between gap-2 text-xs">
@@ -91,9 +103,23 @@ function Leg({
           <span className="font-semibold text-foreground">{sailing.company?.name ?? "Compagnie"}</span>
           {sailing.vessel ? ` · ${sailing.vessel.name}` : ""}
         </span>
-        <ArrowUpRight className="size-4 shrink-0 text-muted-foreground transition group-hover/leg:text-cta" aria-hidden />
+        <span className="inline-flex shrink-0 items-center gap-0.5 text-[11px] font-semibold text-primary">
+          {expanded ? "Masquer" : "Détails"}
+          <ChevronDown className={`size-4 transition-transform duration-300 ${expanded ? "rotate-180" : ""}`} aria-hidden />
+        </span>
       </div>
     </button>
+    <div
+      id={panelId}
+      role="region"
+      aria-label={`Détail du trajet ${label.toLowerCase()}`}
+      className={`grid transition-[grid-template-rows] duration-300 ease-out ${expanded ? "grid-rows-[1fr]" : "grid-rows-[0fr]"}`}
+    >
+      <div className="overflow-hidden">
+        {expanded ? <SailingDetail sailing={sailing} onOpenVessel={onOpenVessel} onOpenRoute={onOpenRoute} showBooking /> : null}
+      </div>
+    </div>
+    </div>
   );
 }
 
@@ -101,23 +127,30 @@ function Leg({
 export function RoundTripCard({
   trip,
   index,
-  onOpenDeparture,
+  onOpenVessel,
+  onOpenRoute,
   onHoverRoute,
 }: {
   trip: RoundTrip;
   index: number;
-  onOpenDeparture: (departureId: string) => void;
+  onOpenVessel: (vesselId: string) => void;
+  onOpenRoute: (routeId: string) => void;
   onHoverRoute: (routeId: string | null) => void;
 }) {
+  const [open, setOpen] = useState<"out" | "back" | null>(null);
+  const toggle = (leg: "out" | "back") => setOpen((cur) => (cur === leg ? null : leg));
   return (
     <article
       style={{ animationDelay: `${Math.min(index, 8) * 45}ms` }}
-      className="sailing-card overflow-hidden rounded-2xl border border-border bg-card transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg"
+      className={`sailing-card overflow-hidden rounded-2xl border border-border bg-card transition-all duration-200 hover:shadow-lg ${open ? "border-primary ring-2 ring-primary/20" : ""}`}
     >
       <Leg
         label="Aller"
         sailing={trip.out}
-        onOpen={() => onOpenDeparture(trip.out.departure.id)}
+        expanded={open === "out"}
+        onToggle={() => toggle("out")}
+        onOpenVessel={onOpenVessel}
+        onOpenRoute={onOpenRoute}
         onHover={(h) => onHoverRoute(h ? trip.out.route.id : null)}
       />
       <div className="relative flex items-center justify-center py-1" aria-hidden={false}>
@@ -135,7 +168,10 @@ export function RoundTripCard({
       <Leg
         label="Retour"
         sailing={trip.back}
-        onOpen={() => onOpenDeparture(trip.back.departure.id)}
+        expanded={open === "back"}
+        onToggle={() => toggle("back")}
+        onOpenVessel={onOpenVessel}
+        onOpenRoute={onOpenRoute}
         onHover={(h) => onHoverRoute(h ? trip.back.route.id : null)}
       />
     </article>

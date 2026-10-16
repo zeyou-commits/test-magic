@@ -184,65 +184,95 @@ export function SailingCard({
         className={`grid transition-[grid-template-rows] duration-300 ease-out ${expanded ? "grid-rows-[1fr]" : "grid-rows-[0fr]"}`}
       >
         <div className="overflow-hidden">
-          <div className="space-y-2.5 border-t bg-card px-3.5 py-3 text-xs">
-            <dl
-              className={`grid gap-2 ${sailing.route.distance_km ? "grid-cols-3" : "grid-cols-2"}`}
-            >
-              <Fact label="Durée" value={formatDuration(sailing.durationMin)} />
-              <Fact
-                label="Arrivée"
-                value={
-                  departure.arrival_at
-                    ? `${formatShortDay(departure.arrival_at, sailing.toZone)} · ${sailing.arrTime ?? ""}`
-                    : "—"
-                }
-                hint={zoneLabel(sailing.toZone)}
-              />
-              {sailing.route.distance_km ? (
-                <Fact label="Distance" value={`${sailing.route.distance_km} km`} />
-              ) : null}
-            </dl>
-
-            <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-              {sailing.vessel ? (
-                <button
-                  type="button"
-                  onClick={() => onOpenVessel(sailing.vessel!.id)}
-                  className="inline-flex items-center gap-1 font-semibold text-primary hover:underline"
-                >
-                  <Ship className="size-3.5" aria-hidden /> {sailing.vessel.name}
-                  <span className="font-normal text-muted-foreground">(fiche + photo)</span>
-                </button>
-              ) : null}
-              <span className={`font-semibold ${reliabilityTone[departure.reliability]}`}>
-                {reliabilityLabel[departure.reliability]}
-              </span>
-              {departure.last_verified_at ? (
-                <span className="text-muted-foreground">
-                  vérifié le {new Date(departure.last_verified_at).toLocaleDateString("fr-FR")}
-                </span>
-              ) : null}
-            </div>
-
-            {departure.notes ? (
-              <p className="leading-relaxed text-muted-foreground">{departure.notes}</p>
-            ) : null}
-
-            <div className="flex flex-wrap items-center gap-2 pt-0.5">
-              <button
-                type="button"
-                onClick={() => onOpenRoute(sailing.route.id)}
-                className="inline-flex h-8 items-center gap-1 rounded-full border border-border px-3 font-semibold hover:bg-secondary"
-              >
-                Fiche de la ligne <ChevronRight className="size-3.5" aria-hidden />
-              </button>
-              <ReportButton targetType="departure" targetId={departure.id} label="Signaler" />
-              <ShareButtons />
-            </div>
-          </div>
+          <SailingDetail sailing={sailing} onOpenVessel={onOpenVessel} onOpenRoute={onOpenRoute} />
         </div>
       </div>
     </article>
+  );
+}
+
+/** Détail d'une traversée (durée, arrivée, navire, fiabilité, actions), affiché en accordéon. */
+export function SailingDetail({
+  sailing,
+  onOpenVessel,
+  onOpenRoute,
+  showBooking = false,
+}: {
+  sailing: Sailing;
+  onOpenVessel: (vesselId: string) => void;
+  onOpenRoute: (routeId: string) => void;
+  /** Ajoute le bouton « Réserver » (cartes aller-retour, qui n'ont pas de pied). */
+  showBooking?: boolean;
+}) {
+  const departure = sailing.departure;
+  const bookingHref = showBooking ? safeExternalUrl(sailing.company?.website_url) : null;
+  return (
+    <div className="space-y-2.5 border-t bg-card px-3.5 py-3 text-xs">
+      <dl
+        className={`grid gap-2 ${sailing.route.distance_km ? "grid-cols-3" : "grid-cols-2"}`}
+      >
+        <Fact label="Durée" value={formatDuration(sailing.durationMin)} />
+        <Fact
+          label="Arrivée"
+          value={
+            departure.arrival_at
+              ? `${formatShortDay(departure.arrival_at, sailing.toZone)} · ${sailing.arrTime ?? ""}`
+              : "—"
+          }
+          hint={zoneLabel(sailing.toZone)}
+        />
+        {sailing.route.distance_km ? (
+          <Fact label="Distance" value={`${sailing.route.distance_km} km`} />
+        ) : null}
+      </dl>
+
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+        {sailing.vessel ? (
+          <button
+            type="button"
+            onClick={() => onOpenVessel(sailing.vessel!.id)}
+            className="inline-flex items-center gap-1 font-semibold text-primary hover:underline"
+          >
+            <Ship className="size-3.5" aria-hidden /> {sailing.vessel.name}
+            <span className="font-normal text-muted-foreground">(fiche + photo)</span>
+          </button>
+        ) : null}
+        <span className={`font-semibold ${reliabilityTone[departure.reliability]}`}>
+          {reliabilityLabel[departure.reliability]}
+        </span>
+        {departure.last_verified_at ? (
+          <span className="text-muted-foreground">
+            vérifié le {new Date(departure.last_verified_at).toLocaleDateString("fr-FR")}
+          </span>
+        ) : null}
+      </div>
+
+      {departure.notes ? (
+        <p className="leading-relaxed text-muted-foreground">{departure.notes}</p>
+      ) : null}
+
+      <div className="flex flex-wrap items-center gap-2 pt-0.5">
+        <button
+          type="button"
+          onClick={() => onOpenRoute(sailing.route.id)}
+          className="inline-flex h-8 items-center gap-1 rounded-full border border-border px-3 font-semibold hover:bg-secondary"
+        >
+          Fiche de la ligne <ChevronRight className="size-3.5" aria-hidden />
+        </button>
+        <ReportButton targetType="departure" targetId={departure.id} label="Signaler" />
+        <ShareButtons />
+        {bookingHref ? (
+          <a
+            href={bookingHref}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="ml-auto inline-flex h-8 items-center gap-1 rounded-full bg-cta px-3 font-semibold text-cta-foreground shadow-sm transition hover:brightness-110 active:scale-95"
+          >
+            Réserver <ArrowUpRight className="size-3.5" aria-hidden />
+          </a>
+        ) : null}
+      </div>
+    </div>
   );
 }
 

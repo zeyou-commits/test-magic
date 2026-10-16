@@ -646,7 +646,7 @@ function DateButton({
 }: {
   label: string;
   value: string | null;
-  returnValue?: string | null;
+  returnValue?: string | null | undefined;
   flex?: number;
   active: boolean;
   onClick: () => void;

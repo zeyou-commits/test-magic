@@ -141,15 +141,43 @@ function AdminPage() {
         </Button>
       </div>
 
-      <Tabs defaultValue="reviews" className="mt-6">
+      <AdminTabs />
+    </div>
+  );
+}
+
+function CountBadge({ value, tone = "warn" }: { value: number | undefined; tone?: "warn" | "muted" }) {
+  if (!value) return null;
+  return (
+    <span
+      className={`ml-1.5 inline-flex min-w-5 items-center justify-center rounded-full px-1.5 text-[11px] font-semibold tabular-nums ${
+        tone === "warn" ? "bg-destructive text-destructive-foreground" : "bg-muted text-foreground"
+      }`}
+    >
+      {value}
+    </span>
+  );
+}
+
+function AdminTabs() {
+  const [tab, setTab] = useState("reviews");
+  const { data: counts } = useAdminCounts();
+  const { data: alerts } = usePlanningAlerts();
+  return (
+    <>
+      <div className="mt-6">
+        <DashboardOverview onNavigate={setTab} can={() => true} />
+      </div>
+      <Tabs value={tab} onValueChange={setTab} className="mt-6">
         <TabsList className="h-auto w-full justify-start overflow-x-auto">
-          <TabsTrigger value="reviews">Avis</TabsTrigger>
-          <TabsTrigger value="reports">Signalements</TabsTrigger>
-          <TabsTrigger value="alerts">Alertes planning</TabsTrigger>
+          <TabsTrigger value="reviews">Avis<CountBadge value={counts?.reviews} /></TabsTrigger>
+          <TabsTrigger value="reports">Signalements<CountBadge value={counts?.reports} /></TabsTrigger>
+          <TabsTrigger value="alerts">Alertes planning<CountBadge value={alerts?.length} /></TabsTrigger>
           <TabsTrigger value="departures">Départs</TabsTrigger>
           <TabsTrigger value="schedules">Calendriers</TabsTrigger>
           <TabsTrigger value="ports">Ports</TabsTrigger>
           <TabsTrigger value="routes">Lignes</TabsTrigger>
+          <TabsTrigger value="companies">Compagnies</TabsTrigger>
           <TabsTrigger value="vessels">Navires</TabsTrigger>
           <TabsTrigger value="import">Import Excel</TabsTrigger>
           <TabsTrigger value="data">Données</TabsTrigger>
@@ -161,7 +189,12 @@ function AdminPage() {
           <ReportsModeration />
         </TabsContent>
         <TabsContent value="alerts">
-          <PlanningAlerts />
+          <PlanningAlerts
+            renderEditor={(id, onDone) => <AlertDepartureEditor departureId={id} onDone={onDone} />}
+          />
+        </TabsContent>
+        <TabsContent value="companies">
+          <CompaniesAdmin />
         </TabsContent>
         <TabsContent value="departures">
           <DeparturesAdmin />

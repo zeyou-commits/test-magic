@@ -53,48 +53,48 @@ export function MapStats({
 
   const list = open === "sea" ? atSea : open === "docked" ? docked : [];
   const item =
-    "flex items-center gap-1.5 rounded-full px-2.5 py-1.5 text-sm font-bold tabular-nums text-foreground transition-colors hover:bg-secondary data-[active=true]:bg-secondary";
+    "flex items-center gap-1 rounded-full px-1.5 py-0.5 text-[11px] md:gap-1.5 md:px-2.5 md:py-1.5 md:text-sm font-bold tabular-nums text-foreground transition-colors hover:bg-secondary data-[active=true]:bg-secondary";
   const plural = (n: number, one: string, many: string) => `${n} ${n > 1 ? many : one}`;
 
   const stat = (tip: string, node: ReactElement<{ title?: string }>) => cloneElement(node, { title: tip });
 
   return (
     <>
-      <div className="pointer-events-auto absolute right-3 top-[4.25rem] z-20 md:right-5 md:top-[4.5rem]">
-        <div className="flex items-center gap-0.5 rounded-full border border-border bg-background/95 p-1 shadow-lg backdrop-blur">
+      <div className="pointer-events-auto absolute right-2 top-[3.25rem] z-20 md:right-5 md:top-[4.5rem]">
+        <div className="flex items-center gap-0 rounded-full border border-border bg-background/95 p-0.5 shadow-md md:gap-0.5 md:p-1 md:shadow-lg backdrop-blur">
           {stat(
             plural(atSea.length, "navire en mer", "navires en mer"),
             <button type="button" className={item} data-active={open === "sea"} aria-label="Navires en mer" aria-expanded={open === "sea"} onClick={() => setOpen(open === "sea" ? null : "sea")}>
-              <Waves className="size-4 text-primary" />
+              <Waves className="size-3 md:size-4 text-primary" />
               {atSea.length}
             </button>,
           )}
           {stat(
             plural(docked.length, "navire à quai", "navires à quai"),
             <button type="button" className={item} data-active={open === "docked"} aria-label="Navires à quai" aria-expanded={open === "docked"} onClick={() => setOpen(open === "docked" ? null : "docked")}>
-              <Anchor className="size-4 text-muted-foreground" />
+              <Anchor className="size-3 md:size-4 text-muted-foreground" />
               {docked.length}
             </button>,
           )}
-          <span className="mx-0.5 h-5 w-px bg-border" />
+          <span className="mx-0.5 h-3.5 w-px md:h-5 bg-border" />
           {stat(
             `${plural(upcoming, "traversée", "traversées")} sous ${DAYS} jours`,
             <button type="button" className={item} aria-label="Traversées à venir" onClick={onOpenDepartures}>
-              <CalendarDays className="size-4 text-muted-foreground" />
+              <CalendarDays className="size-3 md:size-4 text-muted-foreground" />
               {upcoming}
             </button>,
           )}
           {stat(
             plural(companiesCount, "compagnie", "compagnies"),
             <button type="button" className={item} aria-label="Compagnies" onClick={() => { setOpen(null); onOpenCompanies(); }}>
-              <Flag className="size-4 text-muted-foreground" />
+              <Flag className="size-3 md:size-4 text-muted-foreground" />
               {companiesCount}
             </button>,
           )}
           {stat(
             plural(portsCount, "port", "ports"),
             <button type="button" className={item} aria-label="Ports" onClick={() => { setOpen(null); onShowPorts(); }}>
-              <LighthouseIcon className="size-4 text-muted-foreground" />
+              <LighthouseIcon className="size-3 md:size-4 text-muted-foreground" />
               {portsCount}
             </button>,
           )}

@@ -726,7 +726,7 @@ function RoundTripSection({
   onHoverRoute: (routeId: string | null) => void;
 }) {
   const list = (items: RoundTrip[]) => (
-    <div className="space-y-2">
+    <div className="space-y-2.5">
       {items.map((trip, index) => (
         <RoundTripCard
           key={`${trip.out.departure.id}-${trip.back.departure.id}`}

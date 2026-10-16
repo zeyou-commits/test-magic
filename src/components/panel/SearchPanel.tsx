@@ -707,3 +707,57 @@ function FilterSelect({
     </Select>
   );
 }
+
+function RoundTripSection({
+  trips,
+  hasPorts,
+  onOpenDeparture,
+  onHoverRoute,
+}: {
+  trips: { main: RoundTrip[]; alternatives: RoundTrip[] };
+  hasPorts: boolean;
+  onOpenDeparture: (id: string) => void;
+  onHoverRoute: (routeId: string | null) => void;
+}) {
+  const list = (items: RoundTrip[]) => (
+    <div className="space-y-2">
+      {items.map((trip, index) => (
+        <RoundTripCard
+          key={`${trip.out.departure.id}-${trip.back.departure.id}`}
+          trip={trip}
+          index={index}
+          onOpenDeparture={onOpenDeparture}
+          onHoverRoute={onHoverRoute}
+        />
+      ))}
+    </div>
+  );
+  return (
+    <div className="space-y-5">
+      <div className="space-y-2.5">
+        <div className="flex items-baseline justify-between gap-2">
+          <h2 className="font-display text-base font-bold leading-tight">
+            {hasPorts ? "Allers-retours pour votre trajet" : "Allers-retours possibles"}
+          </h2>
+          <span className="text-[11px] text-muted-foreground">Heures locales des ports</span>
+        </div>
+        {trips.main.length ? (
+          list(trips.main)
+        ) : (
+          <div className="rounded-2xl border border-dashed p-5 text-center text-sm text-muted-foreground">
+            Aucun aller-retour connu pour ces ports et ces dates.
+            {trips.alternatives.length ? " Voici des alternatives ci-dessous." : ""}
+          </div>
+        )}
+      </div>
+      {trips.alternatives.length ? (
+        <div className="space-y-2.5">
+          <h2 className="font-display text-base font-bold leading-tight">
+            {hasPorts ? "Alternatives par d’autres ports" : "Combinaisons avec ports différents"}
+          </h2>
+          {list(trips.alternatives)}
+        </div>
+      ) : null}
+    </div>
+  );
+}

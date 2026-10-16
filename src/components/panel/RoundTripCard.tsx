@@ -45,10 +45,10 @@ function Leg({
       onMouseLeave={() => onHover(false)}
       onFocus={() => onHover(true)}
       onBlur={() => onHover(false)}
-      className={`group/leg relative block w-full py-3 pl-4 pr-3.5 text-left transition-colors hover:bg-secondary/40 ${expanded ? "bg-primary/[0.04]" : ""}`}
+      className={`group/leg relative block w-full py-2 pl-3.5 pr-3 md:py-3 md:pl-4 md:pr-3.5 text-left transition-colors hover:bg-secondary/40 ${expanded ? "bg-primary/[0.04]" : ""}`}
     >
       <span className="absolute inset-y-0 left-0 w-1.5" style={{ background: brand.solid }} aria-hidden />
-      <div className="mb-2 flex items-center justify-between gap-2 text-xs">
+      <div className="mb-1 flex items-center justify-between gap-2 text-xs md:mb-2">
         <span className="flex items-center gap-2">
           <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-primary">
             {label}
@@ -64,13 +64,13 @@ function Leg({
 
       <div className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3">
         <div>
-          <div className="font-display text-2xl font-bold leading-none tabular-nums tracking-tight">
+          <div className="font-display text-xl md:text-2xl font-bold leading-none tabular-nums tracking-tight">
             {sailing.depTime}
           </div>
           <div className="mt-0.5 max-w-[96px] truncate text-xs font-semibold">{sailing.from.name}</div>
         </div>
         <div className="relative flex flex-col items-center px-1" aria-hidden>
-          <span className="mb-2.5 text-[11px] font-semibold tabular-nums text-muted-foreground">
+          <span className="mb-1.5 text-[11px] md:mb-2.5 font-semibold tabular-nums text-muted-foreground">
             {formatDuration(sailing.durationMin)}
           </span>
           <div className="relative h-0.5 w-full rounded-full bg-border">
@@ -83,7 +83,7 @@ function Leg({
           </div>
         </div>
         <div className="text-right">
-          <div className="font-display text-2xl font-bold leading-none tabular-nums tracking-tight">
+          <div className="font-display text-xl md:text-2xl font-bold leading-none tabular-nums tracking-tight">
             {sailing.arrTime ?? "—"}
             {sailing.arrDayOffset > 0 ? (
               <sup className="ml-0.5 text-[11px] font-semibold text-cta">+{sailing.arrDayOffset}</sup>
@@ -93,11 +93,11 @@ function Leg({
         </div>
       </div>
 
-      <div className="mt-2.5 flex min-w-0 items-center gap-2 text-xs text-muted-foreground">
+      <div className="mt-1.5 flex min-w-0 items-center gap-2 text-[11px] md:mt-2.5 md:text-xs text-muted-foreground">
         <CompanyBadge
           name={sailing.company?.name ?? "?"}
           logoUrl={sailing.company?.logo_url ?? null}
-          size={20}
+          size={18}
         />
         <span className="min-w-0 flex-1 truncate">
           <span className="font-semibold text-foreground">{sailing.company?.name ?? "Compagnie"}</span>
@@ -142,7 +142,7 @@ export function RoundTripCard({
   return (
     <article
       style={{ animationDelay: `${Math.min(index, 8) * 45}ms` }}
-      className={`sailing-card overflow-hidden rounded-2xl border border-border bg-card transition-all duration-200 hover:shadow-lg ${open ? "border-primary ring-2 ring-primary/20" : ""}`}
+      className={`sailing-card overflow-hidden rounded-2xl border-2 border-border bg-card shadow-sm transition-all duration-200 hover:shadow-lg ${open ? "border-primary ring-2 ring-primary/20" : ""}`}
     >
       <Leg
         label="Aller"
@@ -153,9 +153,9 @@ export function RoundTripCard({
         onOpenRoute={onOpenRoute}
         onHover={(h) => onHoverRoute(h ? trip.out.route.id : null)}
       />
-      <div className="relative flex items-center justify-center py-1" aria-hidden={false}>
+      <div className="relative flex items-center justify-center border-y border-border/60 bg-muted/50 py-0.5" aria-hidden={false}>
         <span className="absolute inset-x-4 top-1/2 border-t border-dashed border-border" aria-hidden />
-        <span className="relative flex items-center gap-1.5 rounded-full border border-border bg-card px-3 py-1 text-[11px] font-semibold text-foreground shadow-sm">
+        <span className="relative flex items-center gap-1.5 rounded-full border border-border bg-card px-2.5 py-0.5 text-[11px] font-semibold text-foreground shadow-sm">
           <CalendarDays className="size-3 text-primary" aria-hidden />
           {trip.stayDays} jour{trip.stayDays > 1 ? "s" : ""} sur place
           {!trip.mirror ? (

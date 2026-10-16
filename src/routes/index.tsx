@@ -562,6 +562,7 @@ function Index() {
           onShowPorts={() => {
             setSelection(null);
             setFocusShipId(null);
+            setFocusTarget(null);
             setPortsPulseKey(Date.now());
           }}
         />

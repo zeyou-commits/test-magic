@@ -1161,6 +1161,7 @@ export default function FerryMap({
     fleet,
     visibleRouteIds,
     focusRouteIds,
+    focusShipId,
     selection?.type,
     selection?.id,
     routes,

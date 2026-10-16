@@ -16,6 +16,7 @@ import {
   routesQuery,
   schedulesQuery,
   upcomingDeparturesQuery,
+  adminDeparturesQuery,
   vesselsQuery,
 } from "@/lib/ferry/queries";
 import {
@@ -436,7 +437,12 @@ function DepartureEditor({
 
 function DeparturesAdmin() {
   const queryClient = useQueryClient();
-  const { data: departures = [] } = useQuery(upcomingDeparturesQuery());
+  const [period, setPeriod] = useState<"upcoming" | "recent" | "all">("upcoming");
+  const [dateFilter, setDateFilter] = useState("");
+  const { data: periodDepartures = [], isLoading: loadingDeps } = useQuery(adminDeparturesQuery(period));
+  const departures = dateFilter
+    ? periodDepartures.filter((d) => d.departure_at.slice(0, 10) === dateFilter)
+    : periodDepartures;
   const { data: routes = [] } = useQuery(adminRoutesQuery);
   const { data: ports = [] } = useQuery(adminPortsQuery);
   const { data: companies = [] } = useQuery(companiesQuery);
@@ -479,7 +485,7 @@ function DeparturesAdmin() {
 
   return (
     <Panel>
-      <div className="mb-3 flex items-center gap-2">
+      <div className="mb-3 flex flex-wrap items-center gap-2">
         <label className="text-sm text-muted-foreground" htmlFor="dep-company">Compagnie</label>
         <select
           id="dep-company"
@@ -490,7 +496,30 @@ function DeparturesAdmin() {
           <option value="">Toutes</option>
           {companies.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
         </select>
-        <span className="text-xs text-muted-foreground">{shown.length} départ(s)</span>
+        <label className="ml-2 text-sm text-muted-foreground" htmlFor="dep-period">Période</label>
+        <select
+          id="dep-period"
+          className="h-9 rounded-md border border-input bg-background px-2 text-sm"
+          value={period}
+          onChange={(e) => setPeriod(e.target.value as typeof period)}
+        >
+          <option value="upcoming">Aujourd'hui et à venir</option>
+          <option value="recent">7 derniers jours et à venir</option>
+          <option value="all">Tout l'historique</option>
+        </select>
+        <input
+          type="date"
+          aria-label="Filtrer par date"
+          className="h-9 rounded-md border border-input bg-background px-2 text-sm"
+          value={dateFilter}
+          onChange={(e) => {
+            setDateFilter(e.target.value);
+            if (e.target.value && e.target.value < new Date().toISOString().slice(0, 10)) setPeriod("all");
+          }}
+        />
+        <span className="text-xs text-muted-foreground">
+          {loadingDeps ? "Chargement…" : `${shown.length} départ(s)`}
+        </span>
       </div>
       <ul className="divide-y divide-border">
         {shown.map((departure) => {

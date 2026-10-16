@@ -455,7 +455,8 @@ export function SearchPanel({
               <RoundTripSection
                 trips={roundTrips}
                 hasPorts={filters.departurePortIds.length + filters.arrivalPortIds.length > 0}
-                onOpenDeparture={(id) => onSelect({ type: "departure", id })}
+                onOpenVessel={(id) => onSelect({ type: "vessel", id })}
+                onOpenRoute={(id) => onSelect({ type: "route", id })}
                 onHoverRoute={setHoverRouteId}
               />
             ) : (
@@ -711,12 +712,14 @@ function FilterSelect({
 function RoundTripSection({
   trips,
   hasPorts,
-  onOpenDeparture,
+  onOpenVessel,
+  onOpenRoute,
   onHoverRoute,
 }: {
   trips: { main: RoundTrip[]; alternatives: RoundTrip[] };
   hasPorts: boolean;
-  onOpenDeparture: (id: string) => void;
+  onOpenVessel: (id: string) => void;
+  onOpenRoute: (id: string) => void;
   onHoverRoute: (routeId: string | null) => void;
 }) {
   const list = (items: RoundTrip[]) => (
@@ -726,7 +729,8 @@ function RoundTripSection({
           key={`${trip.out.departure.id}-${trip.back.departure.id}`}
           trip={trip}
           index={index}
-          onOpenDeparture={onOpenDeparture}
+          onOpenVessel={onOpenVessel}
+          onOpenRoute={onOpenRoute}
           onHoverRoute={onHoverRoute}
         />
       ))}

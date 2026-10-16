@@ -533,6 +533,7 @@ function Index() {
           }}
           onOpenDepartures={() => {
             setSelection(null);
+            setFocusShipId(null);
             openPanel();
             const el = asideRef.current;
             if (!el) return;
@@ -543,6 +544,7 @@ function Index() {
           }}
           onOpenCompanies={() => {
             setSelection(null);
+            setFocusShipId(null);
             openPanel();
             window.setTimeout(() => {
               const el = document.getElementById("filters-company") as HTMLDetailsElement | null;
@@ -556,6 +558,7 @@ function Index() {
           }}
           onShowPorts={() => {
             setSelection(null);
+            setFocusShipId(null);
             setPortsPulseKey(Date.now());
           }}
         />
@@ -565,6 +568,7 @@ function Index() {
             <FerryMap
               focusTarget={focusTarget}
               portsPulseKey={portsPulseKey}
+              focusShipId={focusShipId}
               ports={ports}
               routes={routes}
               visibleRouteIds={matchingRoutes.map((route) => route.id)}

@@ -3,6 +3,7 @@ import { fr } from "react-day-picker/locale";
 import { Backpack, CalendarDays } from "lucide-react";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverAnchor, PopoverContent } from "@/components/ui/popover";
+import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
 import {
   SCHOOL_ZONES,
   addDaysKey,
@@ -198,6 +199,39 @@ export function TripCalendar({
   const suggestion =
     activeValue && unavailableActive ? nearest(activeDays, activeValue, 7, 7, today) : null;
 
+  // Une même période (ex. Toussaint) commune à plusieurs zones n'apparaît qu'une fois.
+  const dedupedPeriods = useMemo(() => {
+    const seen = new Set<string>();
+    return periods.filter((period) => (seen.has(period.id) ? false : (seen.add(period.id), true))).slice(0, 6);
+  }, [periods]);
+
+  /** Un geste : aller au plus près du début des vacances, retour au plus près de la reprise (souplesse incluse). */
+  const pickPeriod = (period: HolidayPeriod) => {
+    const tolerance = Math.max(flexDays, 1);
+    const out = nearest(outDays, period.start, tolerance, tolerance + 2, today);
+    if (!out) {
+      setNote(`Aucun départ connu autour du début des vacances de ${period.name} (± ${tolerance} j).`);
+      setMonth(keyToDate(period.start));
+      return;
+    }
+    if (!roundTrip) {
+      onChange({ date: out, returnDate: null });
+      setMonth(keyToDate(out));
+      setNote(`Aller le ${long(out)} pour les vacances de ${period.name}.`);
+      return;
+    }
+    const backPool = backDays.size > 0 ? backDays : outDays;
+    const back = nearest(backPool, period.lastDay, tolerance + 2, tolerance, addDaysKey(out, 1));
+    onChange({ date: out, returnDate: back });
+    onFieldChange("ret");
+    setMonth(keyToDate(out));
+    setNote(
+      back
+        ? `${period.name} : aller le ${long(out)}, retour le ${long(back)} (${diffDays(out, back)} jours).`
+        : `${period.name} : aller le ${long(out)}. Aucun retour connu autour de la reprise, choisissez-le dans le calendrier.`,
+    );
+  };
+
   const zoneTone: Record<SchoolZone, string> = {
     A: "batogo-zone-a",
     B: "batogo-zone-b",
@@ -205,7 +239,7 @@ export function TripCalendar({
   };
 
   const headerBlock = (
-        <div className="flex flex-col gap-3 border-b border-border/60 px-5 pb-4 pt-5 md:flex-row md:items-end md:justify-between">
+        <div className="flex flex-col gap-3 border-b border-border/60 px-5 pb-3 pt-3 md:flex-row md:pb-4 md:pt-5 md:items-end md:justify-between">
           <div className="min-w-0">
             <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-primary">
               {field === "out" ? "Date d'aller" : "Date de retour"}

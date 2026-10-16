@@ -50,6 +50,7 @@ import type { LiveShip } from "@/lib/ferry/tracking";
 import { PortMultiPicker } from "./PortFilters";
 import { CompanyBadge } from "./CompanyBadge";
 import { RoundTripCard } from "./RoundTripCard";
+import { FareProfileContext } from "@/lib/ferry/pricing";
 import { buildRoundTrips, type RoundTrip } from "@/lib/ferry/roundTrips";
 import { DayStrip, SailingCard } from "./SailingCard";
 import { ShareButtons } from "./ShareButtons";
@@ -237,6 +238,7 @@ export function SearchPanel({
   const fromName = (ids: string[]) => ports.find((port) => port.id === ids[0])?.name ?? "";
 
   return (
+    <FareProfileContext.Provider value={profile}>
     <div className="flex flex-col">
       {/* RECHERCHE */}
       <section className="space-y-3 border-b bg-gradient-to-b from-primary/[0.06] to-transparent px-4 pb-4 pt-4 md:px-5">
@@ -495,6 +497,7 @@ export function SearchPanel({
         )}
       </section>
     </div>
+    </FareProfileContext.Provider>
   );
 }
 

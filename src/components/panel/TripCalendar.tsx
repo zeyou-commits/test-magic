@@ -239,7 +239,7 @@ export function TripCalendar({
   };
 
   const headerBlock = (
-        <div className="flex flex-col gap-3 border-b border-border/60 px-5 pb-3 pr-14 pt-3 md:flex-row md:pr-5 md:pb-4 md:pt-5 md:items-end md:justify-between">
+        <div className="flex flex-col gap-3 border-b border-border/60 px-5 pb-2.5 pr-14 pt-3 md:flex-row md:pr-5 md:pb-3 md:pt-4 md:items-end md:justify-between">
           <div className="min-w-0">
             <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-primary">
               {field === "out" ? "Date d'aller" : "Date de retour"}
@@ -278,12 +278,9 @@ export function TripCalendar({
   const bodyBlock = (
     <>
 
-        <div className="flex flex-col gap-2 rounded-xl bg-primary/5 p-3 ring-1 ring-primary/15 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <p className="text-sm font-semibold">Dates flexibles</p>
-            <p className="text-[11px] text-muted-foreground">Voir aussi les départs autour de la date d'aller</p>
-          </div>
-          <div className="flex rounded-full bg-background p-0.5 shadow-sm ring-1 ring-border/60" role="radiogroup" aria-label="Souplesse sur la date d'aller">
+        <div className="flex items-center gap-2">
+          <span className="shrink-0 text-[11px] font-semibold text-muted-foreground">Souplesse</span>
+          <div className="flex flex-1 rounded-full bg-muted/60 p-0.5 md:flex-none" role="radiogroup" aria-label="Souplesse sur la date d'aller">
             {[0, 1, 2, 3].map((value) => (
               <button
                 key={value}
@@ -291,7 +288,7 @@ export function TripCalendar({
                 role="radio"
                 aria-checked={flexDays === value}
                 onClick={() => onChange({ flexDays: value })}
-                className={`h-8 min-w-14 flex-1 rounded-full px-3 text-xs font-semibold transition ${flexDays === value ? "bg-primary text-primary-foreground shadow" : "text-muted-foreground hover:text-foreground"}`}
+                className={`h-7 flex-1 rounded-full px-3 text-[11px] font-semibold transition ${flexDays === value ? "bg-primary text-primary-foreground shadow" : "text-muted-foreground hover:text-foreground"}`}
               >
                 {value === 0 ? "Exacte" : `± ${value} j`}
               </button>
@@ -299,35 +296,35 @@ export function TripCalendar({
           </div>
         </div>
 
-          {holidaysOn && zones.length ? (
-            <div className="space-y-2">
-              <ul className="space-y-1 text-[11px] leading-snug text-muted-foreground">
-                {zones.map((z) => (
-                  <li key={z} className="flex gap-1.5">
-                    <span className={`mt-1 h-1 w-3 shrink-0 rounded-full ${zoneTone[z]}-dot`} aria-hidden />
-                    <span><strong className="font-semibold text-foreground">Zone {z}</strong> · {SCHOOL_ZONES[z].cities}</span>
-                  </li>
+        {holidaysOn && zones.length ? (
+          <div className="space-y-1.5">
+            <p className="truncate text-[10px] text-muted-foreground">
+              {zones.map((z, i) => (
+                <span key={z}>
+                  {i > 0 ? " · " : ""}
+                  <strong className="font-semibold text-foreground">Zone {z}</strong> {SCHOOL_ZONES[z].cities}
+                </span>
+              ))}
+            </p>
+            {periods.length ? (
+              <div className="-mx-5 flex gap-1.5 overflow-x-auto px-5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden" role="group" aria-label="Partir pendant les vacances">
+                {dedupedPeriods.map((period) => (
+                  <button
+                    key={period.id}
+                    type="button"
+                    onClick={() => pickPeriod(period)}
+                    className="inline-flex h-7 shrink-0 items-center gap-1 rounded-full border border-border bg-card px-2.5 text-[11px] transition hover:border-primary hover:bg-primary/5 active:scale-95"
+                  >
+                    <span className="font-semibold">{period.name}</span>
+                    <span className="tabular-nums text-muted-foreground">· {short(period.start)}</span>
+                  </button>
                 ))}
-              </ul>
-              {periods.length ? (
-                <div className="-mx-5 flex gap-1.5 overflow-x-auto px-5 pb-0.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden" role="group" aria-label="Partir pendant les vacances">
-                  {dedupedPeriods.map((period) => (
-                    <button
-                      key={period.id}
-                      type="button"
-                      onClick={() => pickPeriod(period)}
-                      className="flex shrink-0 flex-col items-start rounded-xl border border-border bg-card px-3 py-1.5 text-left transition hover:border-primary hover:bg-primary/5 active:scale-95"
-                    >
-                      <span className="text-xs font-semibold">{period.name}</span>
-                      <span className="text-[10px] tabular-nums text-muted-foreground">{short(period.start)} → {short(period.lastDay)}</span>
-                    </button>
-                  ))}
-                </div>
-              ) : null}
-            </div>
-          ) : (
-            <p className="text-[11px] text-muted-foreground">Choisissez votre zone (A, B, C) pour partir pendant les vacances scolaires en un geste.</p>
-          )}
+              </div>
+            ) : null}
+          </div>
+        ) : (
+          <p className="text-[10px] text-muted-foreground">Touchez A, B ou C pour partir pendant les vacances en un geste.</p>
+        )}
 
         {nextEmpty ? (
           <SalesAlertForm
@@ -465,7 +462,7 @@ export function TripCalendar({
             </SheetPrimitive.Close>
             <div className="mx-auto mt-2 h-1 w-10 shrink-0 rounded-full bg-border" aria-hidden />
             <div className="shrink-0">{headerBlock}</div>
-            <div className="min-h-0 flex-1 space-y-4 overflow-y-auto overscroll-contain px-5 py-4">{bodyBlock}</div>
+            <div className="min-h-0 flex-1 space-y-3 overflow-y-auto overscroll-contain px-5 py-4">{bodyBlock}</div>
             <div className="shrink-0 pb-[env(safe-area-inset-bottom)]">{footerBlock}</div>
           </SheetPrimitive.Content>
           </SheetPrimitive.Portal>
@@ -484,7 +481,7 @@ export function TripCalendar({
         onOpenAutoFocus={(event) => event.preventDefault()}
       >
         {headerBlock}
-        <div className="space-y-4 px-5">{bodyBlock}</div>
+        <div className="space-y-3 px-5">{bodyBlock}</div>
         {footerBlock}
       </PopoverContent>
     </Popover>

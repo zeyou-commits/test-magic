@@ -56,6 +56,10 @@ interface FerryMapProps {
   mobileBottomInset?: number;
   /** Largeur (px) masquée par le volet ordinateur. */
   desktopLeftInset?: number;
+  /** Navire à amener au centre de la zone visible (clé changeante = nouveau cadrage). */
+  focusTarget?: { center: [number, number]; key: number } | null;
+  /** Clé changeante : vue globale + clignotement des ports. */
+  portsPulseKey?: number;
 }
 
 // Limite de dézoom : on ne peut pas s'éloigner plus que « toute la Méditerranée occidentale visible »
@@ -998,6 +1002,32 @@ export default function FerryMap({
       }
     }
   }, [selection, mapReady]);
+
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !mapReady || !focusTarget) return;
+    const timer = window.setTimeout(() => {
+      map.easeTo({
+        center: focusTarget.center,
+        zoom: Math.max(map.getZoom(), 7),
+        padding: viewPadding(),
+        duration: 800,
+      });
+    }, 80);
+    return () => window.clearTimeout(timer);
+  }, [focusTarget?.key, mapReady]);
+
+  useEffect(() => {
+    const map = mapRef.current;
+    const container = containerRef.current;
+    if (!map || !mapReady || !portsPulseKey || !container) return;
+    map.fitBounds(OVERVIEW_BOUNDS, { padding: viewPadding(), duration: 800 });
+    container.dataset["pulsePorts"] = "false";
+    void container.offsetWidth;
+    container.dataset["pulsePorts"] = "true";
+    const timer = window.setTimeout(() => (container.dataset["pulsePorts"] = "false"), 3600);
+    return () => window.clearTimeout(timer);
+  }, [portsPulseKey, mapReady]);
 
   useEffect(() => {
     const map = mapRef.current;

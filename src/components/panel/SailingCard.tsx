@@ -261,6 +261,16 @@ export function SailingDetail({
         </button>
         <ReportButton targetType="departure" targetId={departure.id} label="Signaler" />
         <ShareButtons />
+        {bookingHref ? (
+          <a
+            href={bookingHref}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="ml-auto inline-flex h-8 items-center gap-1 rounded-full bg-cta px-3 font-semibold text-cta-foreground shadow-sm transition hover:brightness-110 active:scale-95"
+          >
+            Réserver <ArrowUpRight className="size-3.5" aria-hidden />
+          </a>
+        ) : null}
       </div>
     </div>
   );

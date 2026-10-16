@@ -76,6 +76,8 @@ function Index() {
   const [desktopPanelOpen, setDesktopPanelOpen] = useState(true);
   const [focusTarget, setFocusTarget] = useState<{ center: [number, number]; key: number } | null>(null);
   const [portsPulseKey, setPortsPulseKey] = useState(0);
+  // Navire choisi depuis le tableau de bord : il reste pleinement visible même si une ligne est active.
+  const [focusShipId, setFocusShipId] = useState<string | null>(null);
   const openPanel = () => {
     setDesktopPanelOpen(true);
     setPanelLevel((level) => (level === 0 ? 1 : level));
@@ -518,6 +520,7 @@ function Index() {
           portsCount={ports.length}
           onSelectShip={(ship) => {
             if (ship.vesselId) setSelection({ type: "vessel", id: ship.vesselId });
+            setFocusShipId(ship.id);
             const pos = ship.live ? ship.live.position : null;
             setFocusTarget({
               center: pos ? [pos.longitude, pos.latitude] : ship.lngLat,

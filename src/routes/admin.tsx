@@ -4,7 +4,9 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { PlanningAlerts } from "@/components/admin/PlanningAlerts";
+import { PlanningAlerts, usePlanningAlerts } from "@/components/admin/PlanningAlerts";
+import { DashboardOverview, useAdminCounts } from "@/components/admin/DashboardOverview";
+import { CompanyBadge } from "@/components/panel/CompanyBadge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -141,15 +143,43 @@ function AdminPage() {
         </Button>
       </div>
 
-      <Tabs defaultValue="reviews" className="mt-6">
+      <AdminTabs />
+    </div>
+  );
+}
+
+function CountBadge({ value, tone = "warn" }: { value: number | undefined; tone?: "warn" | "muted" }) {
+  if (!value) return null;
+  return (
+    <span
+      className={`ml-1.5 inline-flex min-w-5 items-center justify-center rounded-full px-1.5 text-[11px] font-semibold tabular-nums ${
+        tone === "warn" ? "bg-destructive text-destructive-foreground" : "bg-muted text-foreground"
+      }`}
+    >
+      {value}
+    </span>
+  );
+}
+
+function AdminTabs() {
+  const [tab, setTab] = useState("reviews");
+  const { data: counts } = useAdminCounts();
+  const { data: alerts } = usePlanningAlerts();
+  return (
+    <>
+      <div className="mt-6">
+        <DashboardOverview onNavigate={setTab} can={() => true} />
+      </div>
+      <Tabs value={tab} onValueChange={setTab} className="mt-6">
         <TabsList className="h-auto w-full justify-start overflow-x-auto">
-          <TabsTrigger value="reviews">Avis</TabsTrigger>
-          <TabsTrigger value="reports">Signalements</TabsTrigger>
-          <TabsTrigger value="alerts">Alertes planning</TabsTrigger>
+          <TabsTrigger value="reviews">Avis<CountBadge value={counts?.reviews} /></TabsTrigger>
+          <TabsTrigger value="reports">Signalements<CountBadge value={counts?.reports} /></TabsTrigger>
+          <TabsTrigger value="alerts">Alertes planning<CountBadge value={alerts?.length} /></TabsTrigger>
           <TabsTrigger value="departures">Départs</TabsTrigger>
           <TabsTrigger value="schedules">Calendriers</TabsTrigger>
           <TabsTrigger value="ports">Ports</TabsTrigger>
           <TabsTrigger value="routes">Lignes</TabsTrigger>
+          <TabsTrigger value="companies">Compagnies</TabsTrigger>
           <TabsTrigger value="vessels">Navires</TabsTrigger>
           <TabsTrigger value="import">Import Excel</TabsTrigger>
           <TabsTrigger value="data">Données</TabsTrigger>
@@ -161,7 +191,12 @@ function AdminPage() {
           <ReportsModeration />
         </TabsContent>
         <TabsContent value="alerts">
-          <PlanningAlerts />
+          <PlanningAlerts
+            renderEditor={(id, onDone) => <AlertDepartureEditor departureId={id} onDone={onDone} />}
+          />
+        </TabsContent>
+        <TabsContent value="companies">
+          <CompaniesAdmin />
         </TabsContent>
         <TabsContent value="departures">
           <DeparturesAdmin />
@@ -185,7 +220,97 @@ function AdminPage() {
           <DataAdmin />
         </TabsContent>
       </Tabs>
-    </div>
+    </>
+  );
+}
+
+function AlertDepartureEditor({ departureId, onDone }: { departureId: string; onDone: () => void }) {
+  const { data, isLoading } = useQuery({
+    queryKey: ["admin", "departure-edit", departureId],
+    queryFn: async () => {
+      const { data: dep, error } = await supabase
+        .from("departures")
+        .select("id, departure_at, duration_minutes, vessel_id, status, company_id, route_id")
+        .eq("id", departureId)
+        .single();
+      if (error) throw new Error(error.message);
+      const [{ data: route }, { data: vessels }] = await Promise.all([
+        supabase.from("routes").select("departure_port_id").eq("id", dep.route_id).single(),
+        supabase.from("vessels").select("id,name,company_id").order("name"),
+      ]);
+      const { data: port } = route
+        ? await supabase.from("ports").select("*").eq("id", route.departure_port_id).single()
+        : { data: null };
+      return { dep, port, vessels: vessels ?? [] };
+    },
+  });
+  if (isLoading || !data) return <p className="mt-2 text-xs">Chargement…</p>;
+  const tz = portTimeZone((data.port ?? undefined) as Port | undefined);
+  return (
+    <DepartureEditor
+      departure={data.dep}
+      timeZone={tz}
+      vessels={data.vessels.filter((v) => !v.company_id || v.company_id === data.dep.company_id)}
+      onDone={onDone}
+    />
+  );
+}
+
+function CompaniesAdmin() {
+  const { data: companies = [] } = useQuery(companiesQuery);
+  return (
+    <Panel>
+      <p className="mb-3 text-sm text-muted-foreground">
+        Collez l'adresse (URL) du logo officiel. Sans logo, une pastille avec les initiales s'affiche.
+      </p>
+      <ul className="divide-y divide-border">
+        {companies.map((c) => (
+          <CompanyRow key={c.id} company={c} />
+        ))}
+      </ul>
+    </Panel>
+  );
+}
+
+function CompanyRow({
+  company,
+}: {
+  company: { id: string; name: string; logo_url: string | null; website_url: string | null; description: string | null };
+}) {
+  const queryClient = useQueryClient();
+  const [name, setName] = useState(company.name);
+  const [logo, setLogo] = useState(company.logo_url ?? "");
+  const [site, setSite] = useState(company.website_url ?? "");
+  const [desc, setDesc] = useState(company.description ?? "");
+  const save = useMutation({
+    mutationFn: async () => {
+      if (!name.trim()) throw new Error("Nom requis.");
+      const { error } = await supabase
+        .from("companies")
+        .update({
+          name: name.trim(),
+          logo_url: logo.trim() || null,
+          website_url: site.trim() || null,
+          description: desc.trim() || null,
+        })
+        .eq("id", company.id);
+      if (error) throw new Error(error.message);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["companies"] });
+      toast.success("Compagnie mise à jour.");
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+  return (
+    <li className="flex flex-wrap items-end gap-3 py-3">
+      <CompanyBadge name={name} logoUrl={logo} size={40} />
+      <label className="text-xs">Nom<Input value={name} onChange={(e) => setName(e.target.value)} /></label>
+      <label className="min-w-56 flex-1 text-xs">URL du logo<Input value={logo} placeholder="https://…" onChange={(e) => setLogo(e.target.value)} /></label>
+      <label className="min-w-48 flex-1 text-xs">Site officiel<Input value={site} placeholder="https://…" onChange={(e) => setSite(e.target.value)} /></label>
+      <label className="w-full text-xs">Description<Input value={desc} onChange={(e) => setDesc(e.target.value)} /></label>
+      <Button size="sm" disabled={save.isPending} onClick={() => save.mutate()}>Enregistrer</Button>
+    </li>
   );
 }
 

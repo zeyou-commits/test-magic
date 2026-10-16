@@ -1,5 +1,7 @@
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { AlertTriangle, CheckCircle2, Radio } from "lucide-react";
+import { AlertTriangle, CheckCircle2, Pencil, Radio } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { formatDateTime } from "@/lib/ferry/format";
 import {
@@ -96,15 +98,20 @@ export function usePlanningAlerts() {
 
 const kindLabel = { overlap: "Chevauchement", continuity: "Escale incohérente", ais: "Écart AIS" } as const;
 
-export function PlanningAlerts() {
+export function PlanningAlerts({
+  renderEditor,
+}: {
+  renderEditor?: (departureId: string, onDone: () => void) => React.ReactNode;
+}) {
   const { data = [], isLoading, error } = usePlanningAlerts();
+  const [editing, setEditing] = useState<string | null>(null);
   if (isLoading) return <p className="py-6 text-sm text-muted-foreground">Analyse des calendriers…</p>;
   if (error) return <p className="py-6 text-sm text-destructive">Analyse impossible : {String((error as Error).message)}</p>;
   return (
     <div className="mt-4 space-y-3">
       <p className="text-sm text-muted-foreground">
         Incohérences détectées par navire entre les départs saisis et le signal AIS. Rien n'est modifié
-        automatiquement : corrigez le départ concerné dans l'onglet Départs.
+        automatiquement : corrigez le départ concerné avec « Modifier ».
       </p>
       {data.length === 0 && (
         <div className="flex items-center gap-2 rounded-xl border border-border bg-card p-4 text-sm">
@@ -123,12 +130,31 @@ export function PlanningAlerts() {
             <span className="rounded-full bg-muted px-2 py-0.5 text-xs">{kindLabel[a.kind]}</span>
           </div>
           <p className="mt-2 text-sm">{a.message}</p>
-          <ul className="mt-2 space-y-0.5 text-xs text-muted-foreground">
-            {a.departures.map((d) => (
-              <li key={d.id}>
-                {d.label} · {d.at ? formatDateTime(d.at) : ""}
-              </li>
-            ))}
+          <ul className="mt-2 space-y-2 text-xs text-muted-foreground">
+            {a.departures.map((d) => {
+              const key = `${i}:${d.id}`;
+              return (
+                <li key={d.id}>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span>
+                      {d.label} · {d.at ? formatDateTime(d.at) : ""}
+                    </span>
+                    {renderEditor && (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="h-7 px-2 text-xs"
+                        onClick={() => setEditing(editing === key ? null : key)}
+                      >
+                        <Pencil className="mr-1 h-3 w-3" />
+                        {editing === key ? "Fermer" : "Modifier"}
+                      </Button>
+                    )}
+                  </div>
+                  {renderEditor && editing === key && renderEditor(d.id, () => setEditing(null))}
+                </li>
+              );
+            })}
           </ul>
         </div>
       ))}

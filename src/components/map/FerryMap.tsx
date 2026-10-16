@@ -984,6 +984,18 @@ export default function FerryMap({
           duration: 650,
         });
       }
+    } else if (selection.type === "vessel") {
+      // Le navire est amené au centre de la zone dégagée (hors volet, en-tête et tableau de bord).
+      const ship = fleetRef.current.find((item) => item.vesselId === selection.id);
+      if (ship) {
+        const center = ship.live ? projectedPosition(ship.live.position, Date.now()) : ship.lngLat;
+        map.easeTo({
+          center,
+          zoom: Math.max(map.getZoom(), 6),
+          padding: viewPadding(),
+          duration: 700,
+        });
+      }
     }
   }, [selection, mapReady]);
 

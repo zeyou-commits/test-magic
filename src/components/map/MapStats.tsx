@@ -1,3 +1,4 @@
+import type React from "react";
 import { useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { Anchor, CalendarDays, Flag, Ship, Waves, type LucideProps } from "lucide-react";

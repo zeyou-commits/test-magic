@@ -259,6 +259,8 @@ export default function FerryMap({
   onMapInteract,
   mobileBottomInset = 0,
   desktopLeftInset = 420,
+  focusTarget = null,
+  portsPulseKey = 0,
 }: FerryMapProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<MapLibreMap | null>(null);

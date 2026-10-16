@@ -106,7 +106,7 @@ export function MapStats({
                 <li key={ship.id}>
                   <button
                     type="button"
-                    onClick={() => onSelectShip(ship)}
+                    onClick={() => { setOpen(null); onSelectShip(ship); }}
                     className="flex w-full items-center gap-2 rounded-xl px-2.5 py-1.5 text-left text-xs font-medium hover:bg-secondary"
                   >
                     <Ship className="size-3.5 text-primary" />

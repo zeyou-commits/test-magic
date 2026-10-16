@@ -196,12 +196,16 @@ export function SailingDetail({
   sailing,
   onOpenVessel,
   onOpenRoute,
+  showBooking = false,
 }: {
   sailing: Sailing;
   onOpenVessel: (vesselId: string) => void;
   onOpenRoute: (routeId: string) => void;
+  /** Ajoute le bouton « Réserver » (cartes aller-retour, qui n'ont pas de pied). */
+  showBooking?: boolean;
 }) {
   const departure = sailing.departure;
+  const bookingHref = showBooking ? safeExternalUrl(sailing.company?.website_url) : null;
   return (
     <div className="space-y-2.5 border-t bg-card px-3.5 py-3 text-xs">
       <dl

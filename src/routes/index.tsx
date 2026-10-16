@@ -76,6 +76,8 @@ function Index() {
   const [desktopPanelOpen, setDesktopPanelOpen] = useState(true);
   const [focusTarget, setFocusTarget] = useState<{ center: [number, number]; key: number } | null>(null);
   const [portsPulseKey, setPortsPulseKey] = useState(0);
+  // Navire choisi depuis le tableau de bord : il reste pleinement visible même si une ligne est active.
+  const [focusShipId, setFocusShipId] = useState<string | null>(null);
   const openPanel = () => {
     setDesktopPanelOpen(true);
     setPanelLevel((level) => (level === 0 ? 1 : level));
@@ -465,7 +467,10 @@ function Index() {
         >
           <SidePanel
             selection={selection}
-            onSelect={setSelection}
+            onSelect={(sel) => {
+              setSelection(sel);
+              setFocusShipId(null);
+            }}
             filters={filters}
             onFiltersChange={setFilters}
             onHighlightRoute={setHighlightRouteId}
@@ -518,6 +523,7 @@ function Index() {
           portsCount={ports.length}
           onSelectShip={(ship) => {
             if (ship.vesselId) setSelection({ type: "vessel", id: ship.vesselId });
+            setFocusShipId(ship.id);
             const pos = ship.live ? ship.live.position : null;
             setFocusTarget({
               center: pos ? [pos.longitude, pos.latitude] : ship.lngLat,
@@ -530,6 +536,7 @@ function Index() {
           }}
           onOpenDepartures={() => {
             setSelection(null);
+            setFocusShipId(null);
             openPanel();
             const el = asideRef.current;
             if (!el) return;
@@ -540,6 +547,7 @@ function Index() {
           }}
           onOpenCompanies={() => {
             setSelection(null);
+            setFocusShipId(null);
             openPanel();
             window.setTimeout(() => {
               const el = document.getElementById("filters-company") as HTMLDetailsElement | null;
@@ -553,6 +561,7 @@ function Index() {
           }}
           onShowPorts={() => {
             setSelection(null);
+            setFocusShipId(null);
             setPortsPulseKey(Date.now());
           }}
         />
@@ -562,6 +571,7 @@ function Index() {
             <FerryMap
               focusTarget={focusTarget}
               portsPulseKey={portsPulseKey}
+              focusShipId={focusShipId}
               ports={ports}
               routes={routes}
               visibleRouteIds={matchingRoutes.map((route) => route.id)}
@@ -573,7 +583,10 @@ function Index() {
               hoverRouteId={highlightRouteId}
               fleet={fleet}
               portMeta={portMeta}
-              onSelect={setSelection}
+              onSelect={(sel) => {
+                setSelection(sel);
+                setFocusShipId(null);
+              }}
               onOpenPanel={() => setPanelLevel(1)}
               onMapInteract={() => setPanelLevel((level) => (level === 2 ? 1 : level))}
               mobileBottomInset={mobileBottomInset}

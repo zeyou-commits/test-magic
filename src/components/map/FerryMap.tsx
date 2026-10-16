@@ -60,6 +60,8 @@ interface FerryMapProps {
   focusTarget?: { center: [number, number]; key: number } | null;
   /** Clé changeante : vue globale + clignotement des ports. */
   portsPulseKey?: number;
+  /** Navire choisi depuis le tableau de bord : jamais estompé, même si une ligne est sélectionnée. */
+  focusShipId?: string | null;
 }
 
 // Limite de dézoom : on ne peut pas s'éloigner plus que « toute la Méditerranée occidentale visible »
@@ -261,6 +263,7 @@ export default function FerryMap({
   desktopLeftInset = 420,
   focusTarget = null,
   portsPulseKey = 0,
+  focusShipId = null,
 }: FerryMapProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<MapLibreMap | null>(null);
@@ -1085,8 +1088,11 @@ export default function FerryMap({
       source.setData({
         type: "FeatureCollection",
         features: fleetRef.current.map((ship) => {
-          const dimmed = !visible.has(ship.routeId) || (focus.size > 0 && !focus.has(ship.routeId));
-          const selected = selectedRouteId === ship.routeId;
+          // Un navire choisi depuis le tableau de bord reste pleinement visible, quelle que soit la ligne active.
+          const focused = focusShipId === ship.id;
+          const dimmed =
+            !focused && (!visible.has(ship.routeId) || (focus.size > 0 && !focus.has(ship.routeId)));
+          const selected = selectedRouteId === ship.routeId || focused;
           const live = ship.live;
           const base = live ? projectedPosition(live.position, clock) : ship.lngLat;
           // Les navires amarrés sont rangés en file à côté du port : le décalage est en pixels écran.
@@ -1155,6 +1161,7 @@ export default function FerryMap({
     fleet,
     visibleRouteIds,
     focusRouteIds,
+    focusShipId,
     selection?.type,
     selection?.id,
     routes,

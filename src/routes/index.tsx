@@ -25,6 +25,7 @@ import type { PortMeta } from "@/components/map/FerryMap";
 import { Button } from "@/components/ui/button";
 import { MapStatusBar } from "@/components/map/MapStatusBar";
 import { MapLegend } from "@/components/map/MapLegend";
+import { MapStats } from "@/components/map/MapStats";
 import { filtersFromUrl, mapStateToSearch, selectionFromUrl } from "@/lib/ferry/urlState";
 import { filterRoutes, summarizePorts } from "@/lib/ferry/filtering";
 import { portTimeZone } from "@/lib/ferry/time";
@@ -503,6 +504,20 @@ function Index() {
           hasError={hasError}
           onRetry={() => allResults.forEach((res) => void res.refetch())}
           panelOpen={desktopPanelOpen}
+        />
+        <MapStats
+          fleet={fleet}
+          departures={departures}
+          companiesCount={companies.length}
+          portsCount={ports.length}
+          onSelectVessel={(id) => {
+            setSelection({ type: "vessel", id });
+            setDesktopPanelOpen(true);
+          }}
+          onOpenDepartures={() => {
+            setSelection(null);
+            setDesktopPanelOpen(true);
+          }}
         />
         <MapLegend panelOpen={desktopPanelOpen} showDateHint={false} />
         <ClientOnly fallback={<MapFallback />}>

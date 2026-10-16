@@ -96,7 +96,7 @@ export const schedulesQuery = queryOptions({
   staleTime: 5 * 60 * 1000,
 });
 
-async function fetchAllUpcomingDepartures(portId?: string) {
+async function fetchAllUpcomingDepartures(portId?: string, sinceIso?: string, untilIso?: string) {
   const pageSize = 1000;
   const rows: Departure[] = [];
   let from = 0;
@@ -105,10 +105,11 @@ async function fetchAllUpcomingDepartures(portId?: string) {
     let query = supabase
       .from("departures")
       .select("*")
-      .gte("departure_at", new Date().toISOString())
+      .gte("departure_at", sinceIso ?? new Date().toISOString())
       .order("departure_at")
       .range(from, from + pageSize - 1);
 
+    if (untilIso) query = query.lt("departure_at", untilIso);
     if (portId) {
       const { data: routes } = await supabase
         .from("routes")
@@ -228,6 +229,22 @@ export function portReviewsQuery(portId: string) {
         author: names.get(row["user_id"] as string) ?? null,
       }));
     },
+    staleTime: 60 * 1000,
+  });
+}
+
+/** Back-office : départs d'une période choisie, y compris ceux déjà partis. */
+export function adminDeparturesQuery(period: "upcoming" | "recent" | "all") {
+  const day = 86_400_000;
+  const since =
+    period === "upcoming"
+      ? new Date(new Date().setHours(0, 0, 0, 0)).toISOString()
+      : period === "recent"
+        ? new Date(Date.now() - 7 * day).toISOString()
+        : "2000-01-01T00:00:00Z";
+  return queryOptions({
+    queryKey: ["departures", "admin", period],
+    queryFn: () => fetchAllUpcomingDepartures(undefined, since),
     staleTime: 60 * 1000,
   });
 }

@@ -224,7 +224,6 @@ export function TripCalendar({
     const backPool = backDays.size > 0 ? backDays : outDays;
     const back = nearest(backPool, period.lastDay, tolerance + 2, tolerance, addDaysKey(out, 1));
     onChange({ date: out, returnDate: back });
-    onFieldChange("ret");
     setMonth(keyToDate(out));
     setNote(
       back

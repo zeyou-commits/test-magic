@@ -467,7 +467,10 @@ function Index() {
         >
           <SidePanel
             selection={selection}
-            onSelect={setSelection}
+            onSelect={(sel) => {
+              setSelection(sel);
+              setFocusShipId(null);
+            }}
             filters={filters}
             onFiltersChange={setFilters}
             onHighlightRoute={setHighlightRouteId}
@@ -580,7 +583,10 @@ function Index() {
               hoverRouteId={highlightRouteId}
               fleet={fleet}
               portMeta={portMeta}
-              onSelect={setSelection}
+              onSelect={(sel) => {
+                setSelection(sel);
+                setFocusShipId(null);
+              }}
               onOpenPanel={() => setPanelLevel(1)}
               onMapInteract={() => setPanelLevel((level) => (level === 2 ? 1 : level))}
               mobileBottomInset={mobileBottomInset}

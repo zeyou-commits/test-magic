@@ -60,6 +60,8 @@ interface FerryMapProps {
   focusTarget?: { center: [number, number]; key: number } | null;
   /** Clé changeante : vue globale + clignotement des ports. */
   portsPulseKey?: number;
+  /** Navire choisi depuis le tableau de bord : jamais estompé, même si une ligne est sélectionnée. */
+  focusShipId?: string | null;
 }
 
 // Limite de dézoom : on ne peut pas s'éloigner plus que « toute la Méditerranée occidentale visible »

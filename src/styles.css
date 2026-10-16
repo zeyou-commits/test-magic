@@ -758,3 +758,12 @@
   text-decoration: line-through;
   cursor: not-allowed;
 }
+
+/* Clic « Ports » du tableau de bord : les ports clignotent sur la vue globale. */
+[data-pulse-ports="true"] .port-marker__dot {
+  animation: port-blink 0.6s ease-in-out 6;
+}
+@keyframes port-blink {
+  0%, 100% { transform: scale(1); box-shadow: 0 0 0 0 color-mix(in oklab, var(--primary) 60%, transparent); }
+  50% { transform: scale(1.8); box-shadow: 0 0 0 8px color-mix(in oklab, var(--primary) 0%, transparent); }
+}

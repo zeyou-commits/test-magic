@@ -1,5 +1,4 @@
 import { cloneElement, useState, type ReactElement } from "react";
-import { Link } from "@tanstack/react-router";
 import { Anchor, CalendarDays, Flag, Ship, Waves, type LucideProps } from "lucide-react";
 import type { FleetShip } from "@/lib/ferry/fleet";
 import type { Departure } from "@/lib/ferry/types";
@@ -9,8 +8,10 @@ interface MapStatsProps {
   departures: Departure[];
   companiesCount: number;
   portsCount: number;
-  onSelectVessel: (vesselId: string) => void;
+  onSelectShip: (ship: FleetShip) => void;
   onOpenDepartures: () => void;
+  onOpenCompanies: () => void;
+  onShowPorts: () => void;
 }
 
 const DAYS = 7;
@@ -34,8 +35,10 @@ export function MapStats({
   departures,
   companiesCount,
   portsCount,
-  onSelectVessel,
+  onSelectShip,
   onOpenDepartures,
+  onOpenCompanies,
+  onShowPorts,
 }: MapStatsProps) {
   const [open, setOpen] = useState<"sea" | "docked" | null>(null);
   const now = Date.now();
@@ -55,7 +58,7 @@ export function MapStats({
 
   return (
     <>
-      <div className="pointer-events-auto absolute right-5 top-[4.5rem] z-20 hidden md:block">
+      <div className="pointer-events-auto absolute right-3 top-[4.25rem] z-20 md:right-5 md:top-[4.5rem]">
         <div className="flex items-center gap-0.5 rounded-full border border-border bg-background/95 p-1 shadow-lg backdrop-blur">
           {stat(
             plural(atSea.length, "navire en mer", "navires en mer"),
@@ -81,17 +84,17 @@ export function MapStats({
           )}
           {stat(
             plural(companiesCount, "compagnie", "compagnies"),
-            <Link to="/compagnies" className={item} aria-label="Compagnies">
+            <button type="button" className={item} aria-label="Compagnies" onClick={() => { setOpen(null); onOpenCompanies(); }}>
               <Flag className="size-4 text-muted-foreground" />
               {companiesCount}
-            </Link>,
+            </button>,
           )}
           {stat(
             plural(portsCount, "port", "ports"),
-            <Link to="/ports" className={item} aria-label="Ports">
+            <button type="button" className={item} aria-label="Ports" onClick={() => { setOpen(null); onShowPorts(); }}>
               <LighthouseIcon className="size-4 text-muted-foreground" />
               {portsCount}
-            </Link>,
+            </button>,
           )}
         </div>
         {open ? (
@@ -103,8 +106,7 @@ export function MapStats({
                 <li key={ship.id}>
                   <button
                     type="button"
-                    disabled={!ship.vesselId}
-                    onClick={() => ship.vesselId && onSelectVessel(ship.vesselId)}
+                    onClick={() => onSelectShip(ship)}
                     className="flex w-full items-center gap-2 rounded-xl px-2.5 py-1.5 text-left text-xs font-medium hover:bg-secondary"
                   >
                     <Ship className="size-3.5 text-primary" />

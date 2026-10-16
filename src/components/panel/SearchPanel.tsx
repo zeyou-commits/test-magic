@@ -373,7 +373,7 @@ export function SearchPanel({
           </Popover>
         </div>
 
-        <details className="group text-xs" open={Boolean(filters.companyId || filters.vesselId)}>
+        <details id="filters-company" className="group text-xs" open={Boolean(filters.companyId || filters.vesselId)}>
           <summary className="flex cursor-pointer list-none items-center gap-1 font-semibold text-muted-foreground hover:text-foreground">
             <ChevronDown className="size-3.5 transition-transform group-open:rotate-180" />{" "}
             Compagnie, navire

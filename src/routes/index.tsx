@@ -74,6 +74,12 @@ function Index() {
   const [highlightRouteId, setHighlightRouteId] = useState<string | null>(null);
   const [panelLevel, setPanelLevel] = useState<0 | 1 | 2>(1);
   const [desktopPanelOpen, setDesktopPanelOpen] = useState(true);
+  const [focusTarget, setFocusTarget] = useState<{ center: [number, number]; key: number } | null>(null);
+  const [portsPulseKey, setPortsPulseKey] = useState(0);
+  const openPanel = () => {
+    setDesktopPanelOpen(true);
+    setPanelLevel((level) => (level === 0 ? 1 : level));
+  };
   const dragStartY = useRef<number | null>(null);
   const dragStartHeight = useRef(0);
   const dragMoved = useRef(false);
@@ -510,19 +516,40 @@ function Index() {
           departures={departures}
           companiesCount={companies.length}
           portsCount={ports.length}
-          onSelectVessel={(id) => {
-            setSelection({ type: "vessel", id });
-            setDesktopPanelOpen(true);
+          onSelectShip={(ship) => {
+            if (ship.vesselId) setSelection({ type: "vessel", id: ship.vesselId });
+            const pos = ship.live ? ship.live.position : null;
+            setFocusTarget({
+              center: pos ? [pos.longitude, pos.latitude] : ship.lngLat,
+              key: Date.now(),
+            });
           }}
           onOpenDepartures={() => {
             setSelection(null);
-            setDesktopPanelOpen(true);
+            openPanel();
+          }}
+          onOpenCompanies={() => {
+            setSelection(null);
+            openPanel();
+            window.setTimeout(() => {
+              const el = document.getElementById("filters-company") as HTMLDetailsElement | null;
+              if (!el) return;
+              el.open = true;
+              el.scrollIntoView({ behavior: "smooth", block: "center" });
+              el.querySelector<HTMLElement>("button")?.focus();
+            }, 250);
+          }}
+          onShowPorts={() => {
+            setSelection(null);
+            setPortsPulseKey(Date.now());
           }}
         />
         <MapLegend panelOpen={desktopPanelOpen} showDateHint={false} />
         <ClientOnly fallback={<MapFallback />}>
           <Suspense fallback={<MapFallback />}>
             <FerryMap
+              focusTarget={focusTarget}
+              portsPulseKey={portsPulseKey}
               ports={ports}
               routes={routes}
               visibleRouteIds={matchingRoutes.map((route) => route.id)}

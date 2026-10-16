@@ -89,9 +89,12 @@ export function summarizeVehicle(value: TripProfileValue) {
 export function TripProfile({
   value,
   onChange,
+  hideVehicle = false,
 }: {
   value: TripProfileValue;
   onChange: (value: TripProfileValue) => void;
+  /** Le véhicule est déjà choisi ailleurs (pastilles du volet) : on ne garde que les options. */
+  hideVehicle?: boolean;
 }) {
   const setCount = (key: keyof Passengers, delta: number) => {
     const next = Math.max(0, Math.min(9, value.passengers[key] + delta));
@@ -107,6 +110,7 @@ export function TripProfile({
 
   return (
     <div className="space-y-4">
+      {hideVehicle ? null : (
       <div>
         <p className="mb-2 text-xs font-semibold text-muted-foreground">Votre véhicule</p>
         <div className="grid grid-cols-3 gap-1.5">
@@ -134,9 +138,11 @@ export function TripProfile({
           })}
         </div>
       </div>
+      )}
 
       {value.vehicle !== "none" ? (
         <div className="flex flex-wrap gap-1.5">
+          {hideVehicle ? <p className="w-full text-xs font-semibold text-muted-foreground">Options du véhicule</p> : null}
           {ACCESSORIES.map(({ id, Icon, label }) => {
             const selected = value.accessories.includes(id);
             return (
@@ -192,6 +198,43 @@ export function TripProfile({
           ))}
         </div>
       </div>
+    </div>
+  );
+}
+
+/** Choix du véhicule en pastilles (icône + libellé court), défilement horizontal sur smartphone. */
+export function VehicleChips({
+  value,
+  onChange,
+}: {
+  value: TripProfileValue;
+  onChange: (value: TripProfileValue) => void;
+}) {
+  return (
+    <div
+      role="radiogroup"
+      aria-label="Votre véhicule"
+      className="-mx-4 flex snap-x gap-1.5 overflow-x-auto px-4 pb-0.5 [scrollbar-width:none] md:-mx-5 md:px-5 [&::-webkit-scrollbar]:hidden"
+    >
+      {VEHICLES.map(({ id, Icon, label, hint }) => {
+        const selected = value.vehicle === id;
+        return (
+          <button
+            key={id}
+            type="button"
+            role="radio"
+            aria-checked={selected}
+            title={hint}
+            onClick={() =>
+              onChange({ ...value, vehicle: id, accessories: id === "none" ? [] : value.accessories })
+            }
+            className={`inline-flex h-9 shrink-0 snap-start items-center gap-1.5 rounded-full border px-3 text-xs font-semibold transition active:scale-95 ${selected ? "border-primary bg-primary text-primary-foreground shadow-sm" : "border-border bg-card text-foreground hover:border-primary/50 hover:bg-primary/5"}`}
+          >
+            <Icon className="size-4" aria-hidden />
+            {label}
+          </button>
+        );
+      })}
     </div>
   );
 }

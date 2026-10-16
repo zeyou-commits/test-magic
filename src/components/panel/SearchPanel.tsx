@@ -55,6 +55,7 @@ import { DayStrip, SailingCard } from "./SailingCard";
 import { ShareButtons } from "./ShareButtons";
 import {
   TripProfile,
+  VehicleChips,
   defaultTripProfile,
   summarizePassengers,
   summarizeVehicle,
@@ -364,6 +365,8 @@ export function SearchPanel({
           }
         />
 
+        <VehicleChips value={profile} onChange={setProfile} />
+
         <div className="grid grid-cols-1">
           <Popover>
             <PopoverTrigger asChild>
@@ -377,13 +380,13 @@ export function SearchPanel({
                     {summarizePassengers(profile.passengers)}
                   </span>
                   <span className="block truncate text-[11px] text-muted-foreground">
-                    {summarizeVehicle(profile)}
+                    {profile.accessories.length ? summarizeVehicle(profile) : "Voyageurs et options"}
                   </span>
                 </span>
               </button>
             </PopoverTrigger>
             <PopoverContent align="start" className="w-[340px] max-w-[92vw] p-3">
-              <TripProfile value={profile} onChange={setProfile} />
+              <TripProfile value={profile} onChange={setProfile} hideVehicle />
               <p className="mt-3 text-xs leading-relaxed text-muted-foreground">
                 Sert à recommander l’horaire le plus confortable. Les tarifs ne sont pas encore
                 comparés.

@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Check, ChevronDown, Search, X } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -80,8 +80,8 @@ export function PortMultiPicker({
   // « Tout désélectionner » : état visuel vide le temps de choisir (sans choix, aucun filtre).
   const [cleared, setCleared] = useState(false);
   useEffect(() => {
-    if (value.length) setCleared(false);
-  }, [value.length]);
+    if (value.length || !open) setCleared(false);
+  }, [value.length, open]);
   const allMode = value.length === 0 && !cleared;
   const effective = allMode ? enabledIds : value;
   const isOn = (id: string) => effective.includes(id);

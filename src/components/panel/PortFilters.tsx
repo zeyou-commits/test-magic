@@ -3,6 +3,7 @@ import { Check, ChevronDown, Search, X } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import * as SheetPrimitive from "@radix-ui/react-dialog";
+import { CountryFlag } from "./CountryFlag";
 import { useIsMobile } from "@/hooks/use-mobile";
 import {
   getArrivalPorts,
@@ -38,29 +39,55 @@ export function PortMultiPicker({
   const isMobile = useIsMobile();
   const label = direction === "departure" ? "Départ" : "Arrivée";
 
-  const groups = useMemo(() => {
+  const { groups, enabledIds, reasons } = useMemo(() => {
     const candidates =
       direction === "departure"
         ? getDeparturePorts(ports, routes, otherSide)
         : getArrivalPorts(ports, routes, otherSide);
+    const enabled = new Set(candidates.map((p) => p.id));
+    // Raison affichée pour les ports non sélectionnables.
+    const reasons = new Map<string, string>();
+    const otherDir =
+      direction === "departure"
+        ? getArrivalPorts(ports, routes, [])
+        : getDeparturePorts(ports, routes, []);
+    const otherIds = new Set(otherDir.map((p) => p.id));
+    ports.forEach((p) => {
+      if (enabled.has(p.id)) return;
+      if (p.status !== "active") reasons.set(p.id, "Port inactif");
+      else if (otherSide.length) reasons.set(p.id, "Pas de liaison avec votre choix");
+      else if (otherIds.has(p.id))
+        reasons.set(p.id, direction === "departure" ? "Arrivée uniquement" : "Départ uniquement");
+      else reasons.set(p.id, "Aucune ligne active");
+    });
     const term = normalizeText(search);
-    return groupPortsByCountry(candidates)
+    const groups = groupPortsByCountry(ports)
       .map((group) => ({
         ...group,
-        ports: group.ports.filter(
-          (port) =>
-            !term ||
-            normalizeText(`${port.name} ${port.city ?? ""} ${port.country_name}`).includes(term),
-        ),
+        ports: group.ports
+          .filter(
+            (port) =>
+              !term ||
+              normalizeText(`${port.name} ${port.city ?? ""} ${port.country_name}`).includes(term),
+          )
+          .sort((a, b) => Number(enabled.has(b.id)) - Number(enabled.has(a.id))),
       }))
       .filter((group) => group.ports.length > 0);
+    return { groups, enabledIds: [...enabled], reasons };
   }, [direction, ports, routes, otherSide, search]);
 
+  // Aucun filtre = tous les ports : on l'affiche comme tout coché.
+  const allMode = value.length === 0;
+  const effective = allMode ? enabledIds : value;
+  const isOn = (id: string) => effective.includes(id);
+
   const toggle = (ids: string[]) => {
-    const allSelected = ids.length > 0 && ids.every((id) => value.includes(id));
-    onChange(
-      allSelected ? value.filter((id) => !ids.includes(id)) : [...new Set([...value, ...ids])],
-    );
+    const allSelected = ids.length > 0 && ids.every(isOn);
+    const next = allSelected
+      ? effective.filter((id) => !ids.includes(id))
+      : [...new Set([...effective, ...ids])];
+    const coversAll = enabledIds.length > 0 && enabledIds.every((id) => next.includes(id));
+    onChange(coversAll ? [] : next);
   };
 
   const body = (
@@ -100,44 +127,52 @@ export function PortMultiPicker({
         ) : (
           <div className="flex max-h-[50vh] flex-col gap-3 overflow-y-auto pr-1 max-md:max-h-none max-md:min-h-0 max-md:flex-1 max-md:overscroll-contain">
             {groups.map((group) => {
-              const ids = group.ports.map((port) => port.id);
-              const selectedCount = ids.filter((id) => value.includes(id)).length;
+              const ids = group.ports.filter((p) => !reasons.has(p.id)).map((port) => port.id);
+              const selectedCount = ids.filter(isOn).length;
               const countrySelected = selectedCount === ids.length && ids.length > 0;
               return (
                 <div key={group.code} className="flex flex-col gap-0.5">
                   <button
                     type="button"
                     aria-pressed={countrySelected}
+                    disabled={!ids.length}
                     onClick={() => toggle(ids)}
-                    className="flex min-h-10 w-full items-center justify-between rounded-lg px-2.5 text-left text-sm font-semibold transition hover:bg-secondary"
+                    className="flex min-h-10 w-full items-center justify-between rounded-lg px-2.5 text-left text-sm font-semibold transition hover:bg-secondary disabled:cursor-default disabled:text-muted-foreground disabled:hover:bg-transparent"
                   >
-                    <span>
-                      <span className="mr-1.5" aria-hidden>{flag(group.code)}</span>
+                    <span className="flex items-center gap-2">
+                      <CountryFlag code={group.code} />
                       {group.name}
                       {ids.length > 1 ? (
-                        <span className="ml-1 font-normal text-muted-foreground">· tous</span>
+                        <span className="font-normal text-muted-foreground">· tous</span>
                       ) : null}
                     </span>
                     <span className="flex items-center gap-2 text-xs text-muted-foreground">
-                      {selectedCount ? `${selectedCount}/${ids.length}` : ""}
+                      {ids.length ? `${selectedCount}/${ids.length}` : "indisponible"}
                       {countrySelected ? <Check className="size-4 text-primary" /> : null}
                     </span>
                   </button>
                   <div className="ml-2 flex flex-col gap-0.5 border-l-2 border-muted pl-2">
                     {group.ports.map((port) => {
-                      const isSelected = value.includes(port.id);
+                      const reason = reasons.get(port.id);
+                      const isSelected = !reason && isOn(port.id);
                       return (
                         <button
                           key={port.id}
                           type="button"
                           aria-pressed={isSelected}
+                          disabled={!!reason}
                           onClick={() => toggle([port.id])}
-                          className={`flex min-h-10 items-center gap-2 rounded-md px-2 text-left text-sm ${isSelected ? "bg-primary/10 font-semibold text-primary" : "text-foreground hover:bg-secondary"}`}
+                          className={`flex min-h-10 items-center gap-2 rounded-md px-2 text-left text-sm ${reason ? "cursor-not-allowed text-muted-foreground/60" : isSelected ? "bg-primary/10 font-semibold text-primary" : "text-foreground hover:bg-secondary"}`}
                         >
                           <span className="w-4 shrink-0">
                             {isSelected ? <Check className="size-4" /> : null}
                           </span>
-                          <span>{port.name}</span>
+                          <span className="flex-1">{port.name}</span>
+                          {reason ? (
+                            <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
+                              {reason}
+                            </span>
+                          ) : null}
                         </button>
                       );
                     })}
@@ -219,8 +254,3 @@ export function PortMultiPicker({
     </Popover>
   );
 }
-
-const flag = (code: string) =>
-  /^[A-Z]{2}$/.test(code)
-    ? String.fromCodePoint(...[...code].map((c) => 0x1f1a5 + c.charCodeAt(0)))
-    : "";

@@ -244,7 +244,7 @@ export function SearchPanel({
       <section className="space-y-3 border-b bg-gradient-to-b from-primary/[0.06] to-transparent px-4 pb-4 pt-4 md:px-5">
         <div className="flex items-center justify-between gap-2">
           <div
-            className="batogo-tabbar inline-grid grid-cols-2 gap-1 p-1"
+            className="batogo-tabbar inline-grid grid-cols-2 gap-0.5 !rounded-full !p-0.5"
             role="radiogroup"
             aria-label="Type de voyage"
           >
@@ -258,9 +258,9 @@ export function SearchPanel({
                 onClick={() =>
                   set({ roundTrip: round, returnDate: round ? filters.returnDate : null })
                 }
-                className="batogo-tab px-3"
+                className="batogo-tab !min-h-7 !rounded-full px-3 !text-xs"
               >
-                {round ? "Aller-retour" : "Aller simple"}
+                {round ? "⇄ Aller-retour" : "→ Aller simple"}
               </button>
             ))}
           </div>

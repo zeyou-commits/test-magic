@@ -1,0 +1,1 @@
+ALTER TABLE public.vessels ADD COLUMN build_year integer, ADD COLUMN length_meters numeric, ADD COLUMN passenger_capacity integer, ADD COLUMN car_capacity integer, ADD COLUMN freight_lane_meters integer, ADD COLUMN speed_knots numeric;

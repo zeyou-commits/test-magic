@@ -9,7 +9,7 @@ import {
   vesselsQuery,
 } from "@/lib/ferry/queries";
 import { formatDateTime, formatDuration } from "@/lib/ferry/format";
-import type { Selection } from "@/lib/ferry/types";
+import type { Selection, Vessel } from "@/lib/ferry/types";
 import { BookingLink, DemoBadge, EmptyNote, PanelHeader, ReliabilityNote, Section } from "./shared";
 import { portTimeZone, wallTimeInZone, zoneLabel } from "@/lib/ferry/time";
 import { useLiveShips } from "@/lib/ferry/useLiveShips";
@@ -331,6 +331,7 @@ export function VesselView({
         ) : null}
         {vessel.is_demo ? <DemoBadge /> : null}
       </div>
+      <VesselSpecs vessel={vessel} />
 
 
       <Section title="Prochains départs">
@@ -564,5 +565,36 @@ function Row({ label, value }: { label: string; value: string }) {
       <dt className="shrink-0 text-muted-foreground">{label}</dt>
       <dd className="text-right font-medium">{value}</dd>
     </div>
+  );
+}
+
+function VesselSpecs({ vessel }: { vessel: Vessel }) {
+  const n = (v: number | null | undefined) => (v == null ? null : Number(v).toLocaleString("fr-FR"));
+  const age = vessel.build_year ? new Date().getFullYear() - vessel.build_year : null;
+  const items = [
+    { icon: "⚓", label: "Mise en service", value: vessel.build_year ? `${vessel.build_year} · ${age} ans` : null },
+    { icon: "📐", label: "Longueur", value: vessel.length_meters ? `${n(vessel.length_meters)} m` : null },
+    { icon: "👥", label: "Passagers", value: n(vessel.passenger_capacity) },
+    { icon: "🚗", label: "Voitures", value: n(vessel.car_capacity) },
+    { icon: "🚛", label: "Fret", value: vessel.freight_lane_meters ? `${n(vessel.freight_lane_meters)} ml` : null },
+    { icon: "💨", label: "Vitesse", value: vessel.speed_knots ? `${n(vessel.speed_knots)} nœuds` : null },
+  ].filter((i) => i.value);
+  if (!items.length) return null;
+  return (
+    <section className="px-4 pt-4 md:px-6" aria-label="Caractéristiques techniques">
+      <h2 className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+        Caractéristiques
+      </h2>
+      <dl className="grid grid-cols-3 gap-2">
+        {items.map((i) => (
+          <div key={i.label} className="rounded-xl border bg-card px-2.5 py-2">
+            <dt className="text-[10px] text-muted-foreground">
+              <span aria-hidden>{i.icon}</span> {i.label}
+            </dt>
+            <dd className="mt-0.5 text-sm font-semibold">{i.value}</dd>
+          </div>
+        ))}
+      </dl>
+    </section>
   );
 }

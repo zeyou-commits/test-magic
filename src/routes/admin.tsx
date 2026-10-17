@@ -1339,6 +1339,7 @@ function VesselsAdmin() {
                   Enregistrer
                 </Button>
               </div>
+              <VesselSpecsEditor vessel={vessel as unknown as VesselSpecsRow} />
             </li>
           );
         })}
@@ -3264,5 +3265,67 @@ function ImportAdmin() {
         </Panel>
       ) : null}
     </>
+  );
+}
+
+type VesselSpecsRow = {
+  id: string;
+  name: string;
+  build_year?: number | null;
+  length_meters?: number | null;
+  passenger_capacity?: number | null;
+  car_capacity?: number | null;
+  freight_lane_meters?: number | null;
+  speed_knots?: number | null;
+};
+const SPEC_FIELDS = [
+  ["build_year", "Année"],
+  ["length_meters", "Longueur (m)"],
+  ["passenger_capacity", "Passagers"],
+  ["car_capacity", "Voitures"],
+  ["freight_lane_meters", "Fret (ml)"],
+  ["speed_knots", "Vitesse (nœuds)"],
+] as const;
+
+function VesselSpecsEditor({ vessel }: { vessel: VesselSpecsRow }) {
+  const queryClient = useQueryClient();
+  const initial = Object.fromEntries(
+    SPEC_FIELDS.map(([k]) => [k, vessel[k] == null ? "" : String(vessel[k])]),
+  ) as Record<string, string>;
+  const [values, setValues] = useState(initial);
+  const changed = SPEC_FIELDS.some(([k]) => values[k] !== initial[k]);
+  const valid = SPEC_FIELDS.every(([k]) => !values[k] || /^\d+([.,]\d+)?$/.test(values[k]!));
+  const save = useMutation({
+    mutationFn: async () => {
+      const patch = Object.fromEntries(
+        SPEC_FIELDS.map(([k]) => [k, !values[k] ? null : Number(values[k]!.replace(",", "."))]),
+      ) as Record<string, number | null>;
+      const { error } = await supabase.from("vessels").update(patch as never).eq("id", vessel.id);
+      if (error) throw new Error("Enregistrement des caractéristiques impossible.");
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["vessels"] });
+      toast.success("Caractéristiques enregistrées.");
+    },
+    onError: (error: Error) => toast.error(error.message),
+  });
+  return (
+    <div className="flex flex-wrap items-end gap-2">
+      {SPEC_FIELDS.map(([k, label]) => (
+        <label key={k} className="grid gap-0.5 text-[10px] text-muted-foreground">
+          {label}
+          <Input
+            inputMode="decimal"
+            aria-label={`${label} de ${vessel.name}`}
+            value={values[k]}
+            onChange={(e) => setValues((v) => ({ ...v, [k]: e.target.value.trim() }))}
+            className="h-8 w-24 text-xs"
+          />
+        </label>
+      ))}
+      <Button size="sm" variant="outline" disabled={!changed || !valid || save.isPending} onClick={() => save.mutate()}>
+        Enregistrer les caractéristiques
+      </Button>
+    </div>
   );
 }

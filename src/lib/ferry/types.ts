@@ -51,6 +51,12 @@ export interface Vessel {
   mmsi: number | null;
   /** Numéro IMO à 7 chiffres (lien vers la fiche VesselFinder). */
   imo: number | null;
+  build_year?: number | null;
+  length_meters?: number | null;
+  passenger_capacity?: number | null;
+  car_capacity?: number | null;
+  freight_lane_meters?: number | null;
+  speed_knots?: number | null;
 }
 export interface RouteLine {
   id: string;

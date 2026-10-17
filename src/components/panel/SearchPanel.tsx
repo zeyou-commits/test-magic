@@ -949,14 +949,16 @@ function StepLabel({
   summary,
   children,
   className = "",
+  forceOpen = false,
 }: {
+  forceOpen?: boolean;
   open: boolean;
   onOpen: () => void;
   summary: string;
   children: ReactNode;
   className?: string;
 }) {
-  if (open) {
+  if (open || forceOpen) {
     return <h3 className={`font-display text-base font-bold tracking-tight ${className}`}>{children}</h3>;
   }
   return (

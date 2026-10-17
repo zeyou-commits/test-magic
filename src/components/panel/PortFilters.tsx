@@ -1,5 +1,4 @@
 import { useMemo, useState } from "react";
-import { CountryFlag } from "./CountryFlag";
 import { Check, ChevronDown, Search, X } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";

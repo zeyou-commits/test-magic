@@ -9,7 +9,7 @@ import {
   vesselsQuery,
 } from "@/lib/ferry/queries";
 import { formatDateTime, formatDuration } from "@/lib/ferry/format";
-import type { Selection } from "@/lib/ferry/types";
+import type { Selection, Vessel } from "@/lib/ferry/types";
 import { BookingLink, DemoBadge, EmptyNote, PanelHeader, ReliabilityNote, Section } from "./shared";
 import { portTimeZone, wallTimeInZone, zoneLabel } from "@/lib/ferry/time";
 import { useLiveShips } from "@/lib/ferry/useLiveShips";

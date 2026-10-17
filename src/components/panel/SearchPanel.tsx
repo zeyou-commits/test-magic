@@ -108,7 +108,22 @@ export function SearchPanel({
   const [profile, setProfile] = useState<TripProfileValue>(defaultTripProfile);
   // Formulaire guidé ouvert tant qu'aucune recherche n'est lancée, capsule ensuite.
   const [editing, setEditing] = useState(false);
-  const [step, setStep] = useState<1 | 2 | 3>(hidePickersOnMobile ? 2 : 1);
+  const [step, setStep] = useState<1 | 2 | 3>(1);
+  // Ordinateur : 2 étapes (Où ? puis Quand & qui ?). Smartphone : une étape par écran.
+  const [isDesktop, setIsDesktop] = useState(false);
+  useEffect(() => {
+    const mq = window.matchMedia("(min-width: 768px)");
+    const sync = () => setIsDesktop(mq.matches);
+    sync();
+    mq.addEventListener("change", sync);
+    return () => mq.removeEventListener("change", sync);
+  }, []);
+  const firstStep: 1 | 2 = hidePickersOnMobile && !isDesktop ? 2 : 1;
+  const lastStep: 2 | 3 = isDesktop ? 2 : 3;
+  const startSearch = () => {
+    setStep(firstStep);
+    setEditing(true);
+  };
   useEffect(() => {
     const open = () => setEditing(true);
     window.addEventListener("batogo:edit-filters", open);
@@ -286,7 +301,7 @@ export function SearchPanel({
         <section className="border-b px-3 py-2.5 md:px-5">
           <button
             type="button"
-            onClick={() => setEditing(true)}
+            onClick={startSearch}
             className="flex w-full items-center gap-2.5 rounded-full border border-border bg-card py-1.5 pl-3.5 pr-1.5 text-left shadow-md transition hover:shadow-lg"
           >
             <Search className="size-4 shrink-0 text-primary" aria-hidden />
@@ -471,10 +486,12 @@ export function SearchPanel({
           open={step === 3}
           onOpen={() => setStep(3)}
           summary={profile.vehicle !== "none" ? summarizeVehicle(profile) : "Sans véhicule"}
+          className={isDesktop ? (step === 2 ? "" : "hidden") : ""}
+          forceOpen={isDesktop && step === 2}
         >
           Votre véhicule
         </StepLabel>
-        <div className={step === 3 ? "-mt-1.5" : "hidden"}>
+        <div className={step === 3 || (isDesktop && step === 2) ? "-mt-1.5" : "hidden"}>
           <VehicleChips value={profile} onChange={setProfile} />
         </div>
 
@@ -516,13 +533,32 @@ export function SearchPanel({
             type="button"
             onClick={() => {
               onFiltersChange({ ...emptyFilters, roundTrip: filters.roundTrip });
-              setStep(hidePickersOnMobile ? 2 : 1);
+              setStep(firstStep);
             }}
             className="text-sm font-semibold text-foreground underline underline-offset-2 disabled:opacity-40"
             disabled={!active}
           >
             Effacer tout
           </button>
+          <div className="flex items-center gap-2">
+          {step > firstStep ? (
+            <button
+              type="button"
+              onClick={() => setStep((s) => (s - 1) as 1 | 2 | 3)}
+              className="h-11 rounded-xl px-3 text-sm font-semibold text-muted-foreground transition hover:bg-secondary hover:text-foreground"
+            >
+              ← Retour
+            </button>
+          ) : null}
+          {step < lastStep ? (
+            <button
+              type="button"
+              onClick={() => setStep((s) => (s + 1) as 1 | 2 | 3)}
+              className="flex h-11 items-center justify-center gap-2 rounded-xl bg-primary px-5 text-sm font-bold text-primary-foreground shadow-md transition hover:opacity-90"
+            >
+              Suivant →
+            </button>
+          ) : (
           <button
             type="button"
             onClick={() => setEditing(false)}
@@ -531,6 +567,8 @@ export function SearchPanel({
             <Search className="size-4" aria-hidden />
             Trouver ma traversée{active && resultCount ? ` (${resultCount})` : ""}
           </button>
+          )}
+          </div>
         </div>
       </section>
 

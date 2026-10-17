@@ -16,7 +16,7 @@ import {
   formatShortDay,
 } from "@/lib/ferry/format";
 import { relativeDay, type Sailing } from "@/lib/ferry/trips";
-import { bookingUrl } from "@/lib/ferry/booking";
+import { bookingSite, bookingUrl } from "@/lib/ferry/booking";
 import { formatAge, formatDelay, type LiveShip } from "@/lib/ferry/tracking";
 import { wallTimeInZone, zoneLabel } from "@/lib/ferry/time";
 import { ReportButton } from "./ReportButton";
@@ -177,7 +177,7 @@ export function SailingCard({
             className="inline-flex h-8 shrink-0 items-center gap-1 rounded-full bg-cta px-3 text-xs font-semibold text-cta-foreground shadow-sm transition hover:brightness-110 active:scale-95"
           >
             Réserver <ArrowUpRight className="size-3.5" aria-hidden />
-            <span className="sr-only">sur le site de {sailing.company?.name} (nouvel onglet)</span>
+            <span className="sr-only">sur {bookingSite(sailing)} (nouvel onglet)</span>
           </a>
         ) : null}
       </div>

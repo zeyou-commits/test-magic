@@ -275,7 +275,9 @@ export function SearchPanel({
             <Search className="size-4 shrink-0 text-primary" aria-hidden />
             <span className="min-w-0 flex-1 leading-tight">
               <span className="block truncate text-sm font-bold">
-                {portsLabel(filters.departurePortIds)} {filters.roundTrip ? "⇄" : "→"} {portsLabel(filters.arrivalPortIds)}
+                {active
+                  ? `${portsLabel(filters.departurePortIds)} ${filters.roundTrip ? "⇄" : "→"} ${portsLabel(filters.arrivalPortIds)}`
+                  : "Trouver ma traversée"}
               </span>
               <span className="block truncate text-[11px] text-muted-foreground">
                 {datesLabel} · {summarizePassengers(profile.passengers)}

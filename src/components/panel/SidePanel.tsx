@@ -60,9 +60,9 @@ export function SidePanel({
               onClick={() => onSelect(null)}
               className="flex min-h-10 items-center gap-1.5 rounded-full px-3 text-sm font-semibold text-primary transition-colors hover:bg-secondary"
             >
-              <ArrowLeft className="size-4" /> Retour à la recherche
+              <ArrowLeft className="size-4" /> Rechercher
             </button>
-            <ShareButtons />
+            <ShareButtons compact />
           </div>
           <div className="batogo-panel-scroll flex-1 overflow-y-auto p-4 md:p-6">
             {selection.type === "port" ? (

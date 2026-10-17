@@ -3,6 +3,7 @@ import { Check, ChevronDown, Search, X } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import * as SheetPrimitive from "@radix-ui/react-dialog";
+import { CountryFlag } from "./CountryFlag";
 import { useIsMobile } from "@/hooks/use-mobile";
 import {
   getArrivalPorts,
@@ -253,8 +254,3 @@ export function PortMultiPicker({
     </Popover>
   );
 }
-
-const flag = (code: string) =>
-  /^[A-Z]{2}$/.test(code)
-    ? String.fromCodePoint(...[...code].map((c) => 0x1f1a5 + c.charCodeAt(0)))
-    : "";

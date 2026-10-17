@@ -768,46 +768,64 @@ export type Database = {
       }
       vessels: {
         Row: {
+          build_year: number | null
+          car_capacity: number | null
           company_id: string | null
           created_at: string
           description: string | null
+          freight_lane_meters: number | null
           id: string
           imo: number | null
           is_demo: boolean
+          length_meters: number | null
           mmsi: number | null
           name: string
+          passenger_capacity: number | null
           photo_url: string | null
           slug: string
+          speed_knots: number | null
           status: Database["public"]["Enums"]["entity_status"]
           updated_at: string
           vessel_type: string | null
         }
         Insert: {
+          build_year?: number | null
+          car_capacity?: number | null
           company_id?: string | null
           created_at?: string
           description?: string | null
+          freight_lane_meters?: number | null
           id?: string
           imo?: number | null
           is_demo?: boolean
+          length_meters?: number | null
           mmsi?: number | null
           name: string
+          passenger_capacity?: number | null
           photo_url?: string | null
           slug: string
+          speed_knots?: number | null
           status?: Database["public"]["Enums"]["entity_status"]
           updated_at?: string
           vessel_type?: string | null
         }
         Update: {
+          build_year?: number | null
+          car_capacity?: number | null
           company_id?: string | null
           created_at?: string
           description?: string | null
+          freight_lane_meters?: number | null
           id?: string
           imo?: number | null
           is_demo?: boolean
+          length_meters?: number | null
           mmsi?: number | null
           name?: string
+          passenger_capacity?: number | null
           photo_url?: string | null
           slug?: string
+          speed_knots?: number | null
           status?: Database["public"]["Enums"]["entity_status"]
           updated_at?: string
           vessel_type?: string | null

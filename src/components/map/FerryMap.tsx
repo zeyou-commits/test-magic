@@ -65,8 +65,13 @@ interface FerryMapProps {
 }
 
 // Limite de dézoom : on ne peut pas s'éloigner plus que « toute la Méditerranée occidentale visible »
-// (calculé d'après la zone réellement visible, donc adapté au téléphone comme à l'ordinateur).
-const MIN_ZOOM_FLOOR = 2.2;
+// (plancher relevé selon la largeur d'écran pour empêcher une vue planisphère).
+function minZoomFloor() {
+  const width = typeof window === "undefined" ? 1280 : window.innerWidth;
+  if (width < 768) return 3.6;
+  if (width < 1200) return 3.9;
+  return 4.2;
+}
 const LIMIT_BOUNDS: [[number, number], [number, number]] = [
   [-11, 31],
   [22, 47.5],
@@ -309,8 +314,11 @@ export default function FerryMap({
       style: MAP_STYLE,
       bounds: OVERVIEW_BOUNDS,
       fitBoundsOptions: { padding: viewPadding() },
-      // Limite de dézoom (ajustée ensuite d'après la zone visible).
-      minZoom: MIN_ZOOM_FLOOR,
+      // La carte est physiquement cantonnée à la Méditerranée occidentale :
+      // impossible de faire glisser hors de cette zone.
+      maxBounds: LIMIT_BOUNDS,
+      // Limite de dézoom (relevée, puis ajustée d'après la zone visible).
+      minZoom: minZoomFloor(),
       maxZoom: 11,
       // Carte à plat : une vue inclinée déforme les distances et gêne la lecture des lignes.
       pitch: 0,
@@ -707,7 +715,7 @@ export default function FerryMap({
     if (!map || !mapReady || selection) return;
     // Recalcule la limite de dézoom d'après la place réellement disponible (volet ou tiroir compris).
     const limit = map.cameraForBounds(LIMIT_BOUNDS, { padding: viewPadding() });
-    if (limit?.zoom !== undefined) map.setMinZoom(Math.max(MIN_ZOOM_FLOOR, limit.zoom - 0.15));
+    if (limit?.zoom !== undefined) map.setMinZoom(Math.max(minZoomFloor(), limit.zoom - 0.15));
     const chosen = fitPortIds
       .map((id) => ports.find((port) => port.id === id))
       .filter((port): port is Port => Boolean(port));

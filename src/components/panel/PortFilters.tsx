@@ -38,29 +38,55 @@ export function PortMultiPicker({
   const isMobile = useIsMobile();
   const label = direction === "departure" ? "Départ" : "Arrivée";
 
-  const groups = useMemo(() => {
+  const { groups, enabledIds, reasons } = useMemo(() => {
     const candidates =
       direction === "departure"
         ? getDeparturePorts(ports, routes, otherSide)
         : getArrivalPorts(ports, routes, otherSide);
+    const enabled = new Set(candidates.map((p) => p.id));
+    // Raison affichée pour les ports non sélectionnables.
+    const reasons = new Map<string, string>();
+    const otherDir =
+      direction === "departure"
+        ? getArrivalPorts(ports, routes, [])
+        : getDeparturePorts(ports, routes, []);
+    const otherIds = new Set(otherDir.map((p) => p.id));
+    ports.forEach((p) => {
+      if (enabled.has(p.id)) return;
+      if (p.status !== "active") reasons.set(p.id, "Port inactif");
+      else if (otherSide.length) reasons.set(p.id, "Pas de liaison avec votre choix");
+      else if (otherIds.has(p.id))
+        reasons.set(p.id, direction === "departure" ? "Arrivée uniquement" : "Départ uniquement");
+      else reasons.set(p.id, "Aucune ligne active");
+    });
     const term = normalizeText(search);
-    return groupPortsByCountry(candidates)
+    const groups = groupPortsByCountry(ports)
       .map((group) => ({
         ...group,
-        ports: group.ports.filter(
-          (port) =>
-            !term ||
-            normalizeText(`${port.name} ${port.city ?? ""} ${port.country_name}`).includes(term),
-        ),
+        ports: group.ports
+          .filter(
+            (port) =>
+              !term ||
+              normalizeText(`${port.name} ${port.city ?? ""} ${port.country_name}`).includes(term),
+          )
+          .sort((a, b) => Number(enabled.has(b.id)) - Number(enabled.has(a.id))),
       }))
       .filter((group) => group.ports.length > 0);
+    return { groups, enabledIds: [...enabled], reasons };
   }, [direction, ports, routes, otherSide, search]);
 
+  // Aucun filtre = tous les ports : on l'affiche comme tout coché.
+  const allMode = value.length === 0;
+  const effective = allMode ? enabledIds : value;
+  const isOn = (id: string) => effective.includes(id);
+
   const toggle = (ids: string[]) => {
-    const allSelected = ids.length > 0 && ids.every((id) => value.includes(id));
-    onChange(
-      allSelected ? value.filter((id) => !ids.includes(id)) : [...new Set([...value, ...ids])],
-    );
+    const allSelected = ids.length > 0 && ids.every(isOn);
+    const next = allSelected
+      ? effective.filter((id) => !ids.includes(id))
+      : [...new Set([...effective, ...ids])];
+    const coversAll = enabledIds.length > 0 && enabledIds.every((id) => next.includes(id));
+    onChange(coversAll ? [] : next);
   };
 
   const body = (

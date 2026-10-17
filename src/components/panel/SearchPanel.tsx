@@ -75,6 +75,8 @@ interface SearchPanelProps {
   hidePickersOnMobile?: boolean;
   /** Ligne à mettre en évidence sur la carte (survol ou traversée dépliée). */
   onHighlightRoute?: (routeId: string | null) => void;
+  /** Trajet ouvert par l'utilisateur : prime sur les filtres pour le cadrage de la carte. */
+  onFocusRoute?: (routeId: string | null) => void;
 }
 
 /**
@@ -88,6 +90,7 @@ export function SearchPanel({
   onSelect,
   hidePickersOnMobile = false,
   onHighlightRoute,
+  onFocusRoute,
 }: SearchPanelProps) {
   const { data: ports = [] } = useQuery(portsQuery);
   const { data: routes = [] } = useQuery(routesQuery);
@@ -128,12 +131,14 @@ export function SearchPanel({
     onHighlightRoute?.(hoverRouteId ?? openCard?.routeId ?? null);
   }, [hoverRouteId, openCard, onHighlightRoute]);
   useEffect(() => () => onHighlightRoute?.(null), [onHighlightRoute]);
-  const toggleCard = (sailing: Sailing) =>
-    setOpenCard((current) =>
-      current?.id === sailing.departure.id
+  const toggleCard = (sailing: Sailing) => {
+    const next =
+      openCard?.id === sailing.departure.id
         ? null
-        : { id: sailing.departure.id, routeId: sailing.route.id },
-    );
+        : { id: sailing.departure.id, routeId: sailing.route.id };
+    setOpenCard(next);
+    onFocusRoute?.(next?.routeId ?? null);
+  };
 
   const today = dateKeyInZone(new Date(), "Europe/Paris");
   const set = (patch: Partial<Filters>) => onFiltersChange({ ...filters, ...patch });
@@ -451,6 +456,10 @@ export function SearchPanel({
                 onOpenVessel={(id) => onSelect({ type: "vessel", id })}
                 onOpenRoute={(id) => onSelect({ type: "route", id })}
                 onHoverRoute={setHoverRouteId}
+                onFocusRoute={(routeId) => {
+                  setOpenCard(routeId ? { id: routeId, routeId } : null);
+                  onFocusRoute?.(routeId);
+                }}
               />
             ) : (
             <ResultBlock
@@ -716,12 +725,14 @@ function RoundTripSection({
   onOpenVessel,
   onOpenRoute,
   onHoverRoute,
+  onFocusRoute,
 }: {
   trips: { main: RoundTrip[]; alternatives: RoundTrip[] };
   hasPorts: boolean;
   onOpenVessel: (id: string) => void;
   onOpenRoute: (id: string) => void;
   onHoverRoute: (routeId: string | null) => void;
+  onFocusRoute: (routeId: string | null) => void;
 }) {
   const list = (items: RoundTrip[]) => (
     <div className="space-y-2.5">
@@ -733,6 +744,7 @@ function RoundTripSection({
           onOpenVessel={onOpenVessel}
           onOpenRoute={onOpenRoute}
           onHoverRoute={onHoverRoute}
+          onFocusRoute={onFocusRoute}
         />
       ))}
     </div>

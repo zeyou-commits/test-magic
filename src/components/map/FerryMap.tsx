@@ -715,7 +715,7 @@ export default function FerryMap({
     if (!map || !mapReady || selection) return;
     // Recalcule la limite de dézoom d'après la place réellement disponible (volet ou tiroir compris).
     const limit = map.cameraForBounds(LIMIT_BOUNDS, { padding: viewPadding() });
-    if (limit?.zoom !== undefined) map.setMinZoom(Math.max(MIN_ZOOM_FLOOR, limit.zoom - 0.15));
+    if (limit?.zoom !== undefined) map.setMinZoom(Math.max(minZoomFloor(), limit.zoom - 0.15));
     const chosen = fitPortIds
       .map((id) => ports.find((port) => port.id === id))
       .filter((port): port is Port => Boolean(port));

@@ -3294,13 +3294,13 @@ function VesselSpecsEditor({ vessel }: { vessel: VesselSpecsRow }) {
   ) as Record<string, string>;
   const [values, setValues] = useState(initial);
   const changed = SPEC_FIELDS.some(([k]) => values[k] !== initial[k]);
-  const valid = SPEC_FIELDS.every(([k]) => values[k] === "" || /^\d+([.,]\d+)?$/.test(values[k]));
+  const valid = SPEC_FIELDS.every(([k]) => !values[k] || /^\d+([.,]\d+)?$/.test(values[k]!));
   const save = useMutation({
     mutationFn: async () => {
       const patch = Object.fromEntries(
-        SPEC_FIELDS.map(([k]) => [k, values[k] === "" ? null : Number(values[k].replace(",", "."))]),
-      );
-      const { error } = await supabase.from("vessels").update(patch).eq("id", vessel.id);
+        SPEC_FIELDS.map(([k]) => [k, !values[k] ? null : Number(values[k]!.replace(",", "."))]),
+      ) as Record<string, number | null>;
+      const { error } = await supabase.from("vessels").update(patch as never).eq("id", vessel.id);
       if (error) throw new Error("Enregistrement des caractéristiques impossible.");
     },
     onSuccess: () => {

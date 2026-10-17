@@ -68,7 +68,7 @@ interface FerryMapProps {
 // (plancher relevé selon la largeur d'écran pour empêcher une vue planisphère).
 function minZoomFloor() {
   const width = typeof window === "undefined" ? 1280 : window.innerWidth;
-  if (width < 768) return 2.8;
+  if (width < 768) return 2.2;
   if (width < 1200) return 3.3;
   return 3.6;
 }
@@ -715,7 +715,7 @@ export default function FerryMap({
     if (!map || !mapReady || selection) return;
     // Recalcule la limite de dézoom d'après la place réellement disponible (volet ou tiroir compris).
     const limit = map.cameraForBounds(LIMIT_BOUNDS, { padding: viewPadding() });
-    if (limit?.zoom !== undefined) map.setMinZoom(Math.min(minZoomFloor(), Math.max(2.5, limit.zoom - 0.6)));
+    if (limit?.zoom !== undefined) map.setMinZoom(Math.min(minZoomFloor(), Math.max(2.2, limit.zoom - 0.6)));
     const chosen = fitPortIds
       .map((id) => ports.find((port) => port.id === id))
       .filter((port): port is Port => Boolean(port));

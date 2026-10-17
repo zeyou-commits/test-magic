@@ -65,8 +65,13 @@ interface FerryMapProps {
 }
 
 // Limite de dézoom : on ne peut pas s'éloigner plus que « toute la Méditerranée occidentale visible »
-// (calculé d'après la zone réellement visible, donc adapté au téléphone comme à l'ordinateur).
-const MIN_ZOOM_FLOOR = 2.2;
+// (plancher relevé selon la largeur d'écran pour empêcher une vue planisphère).
+function minZoomFloor() {
+  const width = typeof window === "undefined" ? 1280 : window.innerWidth;
+  if (width < 768) return 3.6;
+  if (width < 1200) return 3.9;
+  return 4.2;
+}
 const LIMIT_BOUNDS: [[number, number], [number, number]] = [
   [-11, 31],
   [22, 47.5],

@@ -333,6 +333,7 @@ export default function FerryMap({
     map.addControl(new AttributionControl({ compact: true }), "bottom-right");
 
     mapRef.current = map;
+    (window as unknown as { __batogoMap?: MapLibreMap }).__batogoMap = map;
 
     const resize = () => requestAnimationFrame(() => mapRef.current?.resize());
     const resizeObserver = new ResizeObserver(resize);

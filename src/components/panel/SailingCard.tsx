@@ -165,7 +165,7 @@ export function SailingCard({
             ) : null}
           </div>
         </div>
-        <span className="ml-auto shrink-0 text-sm font-bold tabular-nums" title="Tarif moyen indicatif">
+        <span className="ml-auto shrink-0 text-sm font-bold tabular-nums text-success" title="Tarif moyen indicatif">
           {formatEuro(fare)}
         </span>
         {href ? (

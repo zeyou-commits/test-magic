@@ -107,7 +107,8 @@ export function SearchPanel({
   );
   const [profile, setProfile] = useState<TripProfileValue>(defaultTripProfile);
   // Formulaire guidé ouvert tant qu'aucune recherche n'est lancée, capsule ensuite.
-  const [editing, setEditing] = useState(true);
+  const [editing, setEditing] = useState(false);
+  const [step, setStep] = useState<1 | 2 | 3>(hidePickersOnMobile ? 2 : 1);
   useEffect(() => {
     const open = () => setEditing(true);
     window.addEventListener("batogo:edit-filters", open);
@@ -274,7 +275,9 @@ export function SearchPanel({
             <Search className="size-4 shrink-0 text-primary" aria-hidden />
             <span className="min-w-0 flex-1 leading-tight">
               <span className="block truncate text-sm font-bold">
-                {portsLabel(filters.departurePortIds)} {filters.roundTrip ? "⇄" : "→"} {portsLabel(filters.arrivalPortIds)}
+                {active
+                  ? `${portsLabel(filters.departurePortIds)} ${filters.roundTrip ? "⇄" : "→"} ${portsLabel(filters.arrivalPortIds)}`
+                  : "Trouver ma traversée"}
               </span>
               <span className="block truncate text-[11px] text-muted-foreground">
                 {datesLabel} · {summarizePassengers(profile.passengers)}
@@ -322,9 +325,16 @@ export function SearchPanel({
           ) : null}
         </div>
 
-        <StepLabel n={1} className={hidePickersOnMobile ? "hidden md:flex" : ""}>Où partez-vous ?</StepLabel>
+        <StepLabel
+          open={step === 1}
+          onOpen={() => setStep(1)}
+          summary={`${portsLabel(filters.departurePortIds)} ${filters.roundTrip ? "⇄" : "→"} ${portsLabel(filters.arrivalPortIds)}`}
+          className={hidePickersOnMobile ? "hidden md:flex" : ""}
+        >
+          Où partez-vous ?
+        </StepLabel>
         <div
-          className={`-mt-1.5 grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-1.5 ${hidePickersOnMobile ? "hidden md:grid" : ""}`}
+          className={`-mt-1.5 items-center gap-1.5 ${step === 1 ? "grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)]" : "hidden"} ${hidePickersOnMobile ? "max-md:hidden" : ""}`}
         >
           <PortMultiPicker
             direction="departure"
@@ -368,8 +378,14 @@ export function SearchPanel({
           />
         </div>
 
-        <StepLabel n={hidePickersOnMobile ? undefined : 2}>Quand, et à combien ?</StepLabel>
-        <div className="-mt-1.5">
+        <StepLabel
+          open={step === 2}
+          onOpen={() => setStep(2)}
+          summary={`${datesLabel} · ${summarizePassengers(profile.passengers)}`}
+        >
+          Quand, et à combien ?
+        </StepLabel>
+        <div className={step === 2 ? "-mt-1.5" : "hidden"}>
         <TripCalendar
           open={calOpen}
           onOpenChange={setCalOpen}
@@ -434,8 +450,14 @@ export function SearchPanel({
         />
         </div>
 
-        <StepLabel n={hidePickersOnMobile ? undefined : 3}>Votre véhicule</StepLabel>
-        <div className="-mt-1.5">
+        <StepLabel
+          open={step === 3}
+          onOpen={() => setStep(3)}
+          summary={profile.vehicle !== "none" ? summarizeVehicle(profile) : "Sans véhicule"}
+        >
+          Votre véhicule
+        </StepLabel>
+        <div className={step === 3 ? "-mt-1.5" : "hidden"}>
           <VehicleChips value={profile} onChange={setProfile} />
         </div>
 
@@ -465,17 +487,27 @@ export function SearchPanel({
             />
           </div>
         </details>
-        {active ? (
+        <div className="sticky bottom-0 z-10 -mx-4 flex items-center justify-between gap-2 border-t bg-card/95 px-4 py-2.5 backdrop-blur md:-mx-5 md:px-5">
+          <button
+            type="button"
+            onClick={() => {
+              onFiltersChange({ ...emptyFilters, roundTrip: filters.roundTrip });
+              setStep(hidePickersOnMobile ? 2 : 1);
+            }}
+            className="text-sm font-semibold text-foreground underline underline-offset-2 disabled:opacity-40"
+            disabled={!active}
+          >
+            Effacer tout
+          </button>
           <button
             type="button"
             onClick={() => setEditing(false)}
-            className="flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-cta text-sm font-bold text-cta-foreground shadow-md transition hover:opacity-90"
+            className="flex h-11 items-center justify-center gap-2 rounded-xl bg-primary px-4 text-sm font-bold text-primary-foreground shadow-md transition hover:opacity-90"
           >
             <Search className="size-4" aria-hidden />
-            Voir {resultCount ? `les ${resultCount} ` : "les "}
-            {filters.roundTrip ? "allers-retours" : "traversées"}
+            Trouver ma traversée{active && resultCount ? ` (${resultCount})` : ""}
           </button>
-        ) : null}
+        </div>
       </section>
 
       {/* RÉSULTATS */}
@@ -844,13 +876,31 @@ function shortDay(key: string) {
   return shortDayFormatter.format(new Date(`${key}T00:00:00Z`));
 }
 
-function StepLabel({ n, children, className = "" }: { n?: number | undefined; children: ReactNode; className?: string }) {
+/** En-tête d'étape façon Airbnb : titre quand l'étape est ouverte, ligne résumé cliquable sinon. */
+function StepLabel({
+  open,
+  onOpen,
+  summary,
+  children,
+  className = "",
+}: {
+  open: boolean;
+  onOpen: () => void;
+  summary: string;
+  children: ReactNode;
+  className?: string;
+}) {
+  if (open) {
+    return <h3 className={`font-display text-base font-bold tracking-tight ${className}`}>{children}</h3>;
+  }
   return (
-    <h3 className={`flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-muted-foreground ${className}`}>
-      {n ? (
-        <span className="grid size-4 place-items-center rounded-full bg-primary text-[9px] text-primary-foreground">{n}</span>
-      ) : null}
-      {children}
-    </h3>
+    <button
+      type="button"
+      onClick={onOpen}
+      className={`flex w-full items-center justify-between gap-3 rounded-xl border border-border bg-card px-3.5 py-2.5 text-left shadow-sm transition hover:border-primary ${className}`}
+    >
+      <span className="text-xs font-semibold text-muted-foreground">{children}</span>
+      <span className="min-w-0 truncate text-xs font-bold text-foreground">{summary}</span>
+    </button>
   );
 }

@@ -113,7 +113,7 @@ function Leg({
           <span className="font-semibold text-foreground">{sailing.company?.name ?? "Compagnie"}</span>
           {sailing.vessel ? ` · ${sailing.vessel.name}` : ""}
         </span>
-        <span className="shrink-0 text-xs font-bold tabular-nums text-foreground" title="Tarif moyen indicatif">
+        <span className="shrink-0 text-xs font-bold tabular-nums text-success" title="Tarif moyen indicatif">
           {formatEuro(fare)}
         </span>
         <span className="inline-flex shrink-0 items-center gap-0.5 text-[11px] font-semibold text-primary">
@@ -213,7 +213,7 @@ export function RoundTripCard({
           ) : null}
         </span>
         <span className="shrink-0 text-right leading-none" title="Tarif moyen indicatif aller + retour">
-          <span className="font-display text-lg font-bold tabular-nums text-cta">{formatEuro(total)}</span>
+          <span className="font-display text-lg font-bold tabular-nums text-success">{formatEuro(total)}</span>
           <span className="ml-1 text-[11px] font-semibold text-muted-foreground">A/R</span>
         </span>
       </footer>

@@ -331,6 +331,7 @@ export function VesselView({
         ) : null}
         {vessel.is_demo ? <DemoBadge /> : null}
       </div>
+      <VesselSpecs vessel={vessel} />
 
 
       <Section title="Prochains départs">

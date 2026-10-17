@@ -30,6 +30,27 @@ const arrivalMs = (sailing: Sailing) =>
     ? Date.parse(sailing.departure.arrival_at)
     : Date.parse(sailing.departure.departure_at) + (sailing.durationMin ?? 0) * 60000;
 
+/** Débarquement estimé après l'arrivée (formalités, sortie véhicule). */
+export const DISEMBARK_MIN = 90;
+/** Présentation au port estimée avant le départ du retour. */
+export const BOARDING_MIN = 180;
+
+/** Temps réellement disponible à terre, en minutes (estimation, jamais négatif). */
+export function estimateStayMinutes(trip: Pick<RoundTrip, "out" | "back">) {
+  const free = Date.parse(trip.back.departure.departure_at) - BOARDING_MIN * 60000;
+  const landed = arrivalMs(trip.out) + DISEMBARK_MIN * 60000;
+  return Math.max(0, Math.round((free - landed) / 60000));
+}
+
+/** « 20 h », « 1 j 4 h », « 6 j ». */
+export function formatStay(minutes: number) {
+  const hours = Math.round(minutes / 60);
+  if (hours < 24) return `${hours} h`;
+  const days = Math.floor(hours / 24);
+  const rest = hours % 24;
+  return rest >= 2 && days < 4 ? `${days} j ${rest} h` : `${days} j`;
+}
+
 const matches = (ids: string[], id: string) => ids.length === 0 || ids.includes(id);
 
 function withinDate(day: string, target: string | null, flex: number) {

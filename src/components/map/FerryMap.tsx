@@ -73,8 +73,8 @@ function minZoomFloor() {
   return 3.6;
 }
 const LIMIT_BOUNDS: [[number, number], [number, number]] = [
-  [-14, 28],
-  [24, 50],
+  [-16, 18],
+  [26, 54],
 ];
 const MAP_STYLE = "https://tiles.openfreemap.org/styles/liberty";
 // Vue d'ensemble : toute la Méditerranée occidentale, de l'Espagne à l'Italie et toute la côte algérienne.

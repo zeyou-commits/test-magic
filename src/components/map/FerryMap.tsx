@@ -68,19 +68,19 @@ interface FerryMapProps {
 // (plancher relevé selon la largeur d'écran pour empêcher une vue planisphère).
 function minZoomFloor() {
   const width = typeof window === "undefined" ? 1280 : window.innerWidth;
-  if (width < 768) return 3.6;
-  if (width < 1200) return 3.9;
-  return 4.2;
+  if (width < 768) return 2.8;
+  if (width < 1200) return 3.3;
+  return 3.6;
 }
 const LIMIT_BOUNDS: [[number, number], [number, number]] = [
-  [-11, 31],
-  [22, 47.5],
+  [-14, 28],
+  [24, 50],
 ];
 const MAP_STYLE = "https://tiles.openfreemap.org/styles/liberty";
 // Vue d'ensemble : toute la Méditerranée occidentale, de l'Espagne à l'Italie et toute la côte algérienne.
 const OVERVIEW_BOUNDS: [[number, number], [number, number]] = [
-  [-5.5, 35.2],
-  [16.5, 44.6],
+  [-3.5, 35],
+  [10.5, 44],
 ];
 
 function mapColor(token: string, fallback: string) {
@@ -298,11 +298,11 @@ export default function FerryMap({
       mobileBottomInset: bottom,
       desktopLeftInset: left,
     } = insetsRef.current;
-    if (mobile) return { top: 70, right: 28, bottom: bottom + 20, left: 28 };
+    if (mobile) return { top: 64, right: 16, bottom: bottom + 12, left: 16 };
     // Sur ordinateur, la zone utile commence après le volet. Sur une fenêtre étroite, on garde
     // au moins 45 % de la largeur pour la carte afin que le trajet reste lisible.
     const width = containerRef.current?.clientWidth ?? 1200;
-    return { top: 130, right: 90, bottom: 70, left: Math.min(left, Math.round(width * 0.55)) };
+    return { top: 120, right: 60, bottom: 60, left: Math.min(left, Math.round(width * 0.5)) };
   };
 
   useEffect(() => {
@@ -715,7 +715,7 @@ export default function FerryMap({
     if (!map || !mapReady || selection) return;
     // Recalcule la limite de dézoom d'après la place réellement disponible (volet ou tiroir compris).
     const limit = map.cameraForBounds(LIMIT_BOUNDS, { padding: viewPadding() });
-    if (limit?.zoom !== undefined) map.setMinZoom(Math.max(minZoomFloor(), limit.zoom - 0.15));
+    if (limit?.zoom !== undefined) map.setMinZoom(Math.min(minZoomFloor(), Math.max(2.5, limit.zoom - 0.6)));
     const chosen = fitPortIds
       .map((id) => ports.find((port) => port.id === id))
       .filter((port): port is Port => Boolean(port));

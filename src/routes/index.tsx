@@ -602,7 +602,7 @@ function Index() {
               onOpenPanel={() => setPanelLevel(1)}
               onMapInteract={() => setPanelLevel((level) => (level === 2 ? 1 : level))}
               mobileBottomInset={mobileBottomInset}
-              desktopLeftInset={desktopPanelOpen ? DESKTOP_PANEL + 130 : 50}
+              desktopLeftInset={desktopPanelOpen ? DESKTOP_PANEL + 40 : 50}
             />
           </Suspense>
         </ClientOnly>

@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Check, ChevronDown, Search, X } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -77,7 +77,12 @@ export function PortMultiPicker({
   }, [direction, ports, routes, otherSide, search]);
 
   // Aucun filtre = tous les ports : on l'affiche comme tout coché.
-  const allMode = value.length === 0;
+  // « Tout désélectionner » : état visuel vide le temps de choisir (sans choix, aucun filtre).
+  const [cleared, setCleared] = useState(false);
+  useEffect(() => {
+    if (value.length || !open) setCleared(false);
+  }, [value.length, open]);
+  const allMode = value.length === 0 && !cleared;
   const effective = allMode ? enabledIds : value;
   const isOn = (id: string) => effective.includes(id);
 
@@ -87,7 +92,17 @@ export function PortMultiPicker({
       ? effective.filter((id) => !ids.includes(id))
       : [...new Set([...effective, ...ids])];
     const coversAll = enabledIds.length > 0 && enabledIds.every((id) => next.includes(id));
+    if (next.length === 0) setCleared(true);
     onChange(coversAll ? [] : next);
+  };
+  const toggleAll = () => {
+    if (allMode) {
+      setCleared(true);
+      onChange([]);
+    } else {
+      setCleared(false);
+      onChange([]);
+    }
   };
 
   const body = (
@@ -115,12 +130,15 @@ export function PortMultiPicker({
 
         <button
           type="button"
-          aria-pressed={value.length === 0}
-          onClick={() => onChange([])}
-          className={`mb-2 flex min-h-11 w-full shrink-0 items-center gap-2 rounded-lg px-2.5 text-left text-sm font-semibold ${value.length === 0 ? "bg-primary/10 text-primary" : "hover:bg-secondary"}`}
+          aria-pressed={allMode}
+          onClick={toggleAll}
+          className={`mb-2 flex min-h-11 w-full shrink-0 items-center gap-2 rounded-lg px-2.5 text-left text-sm font-semibold ${allMode ? "bg-primary/10 text-primary" : "hover:bg-secondary"}`}
         >
-          <span className="w-4 shrink-0">{value.length === 0 ? <Check className="size-4" /> : null}</span>
-          🌍 Tous les ports <span className="font-normal text-muted-foreground">(aucun filtre)</span>
+          <span className="w-4 shrink-0">{allMode ? <Check className="size-4" /> : null}</span>
+          🌍 Tous les ports
+          <span className="ml-auto text-xs font-normal text-muted-foreground">
+            {allMode ? "Tout désélectionner" : "Tout cocher"}
+          </span>
         </button>
         {groups.length === 0 ? (
           <p className="p-4 text-center text-sm text-muted-foreground">Aucun port trouvé.</p>
@@ -186,8 +204,11 @@ export function PortMultiPicker({
         <div className="mt-3 flex shrink-0 items-center justify-between border-t pt-3">
           <button
             type="button"
-            onClick={() => onChange([])}
-            disabled={!value.length}
+            onClick={() => {
+              setCleared(false);
+              onChange([]);
+            }}
+            disabled={!value.length && !cleared}
             className="text-sm font-medium text-muted-foreground hover:text-foreground disabled:opacity-40"
           >
             Réinitialiser

@@ -1,6 +1,12 @@
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import { ChevronDown, CalendarDays, Moon, Ship, Shuffle } from "lucide-react";
-import type { RoundTrip } from "@/lib/ferry/roundTrips";
+import {
+  BOARDING_MIN,
+  DISEMBARK_MIN,
+  estimateStayMinutes,
+  formatStay,
+  type RoundTrip,
+} from "@/lib/ferry/roundTrips";
 import type { Sailing } from "@/lib/ferry/trips";
 import { capitalizeFirst, formatDuration } from "@/lib/ferry/format";
 import { CompanyBadge, companyColor } from "./CompanyBadge";
@@ -23,6 +29,7 @@ function Leg({
   onHover,
   onOpenVessel,
   onOpenRoute,
+  extra,
 }: {
   label: string;
   sailing: Sailing;
@@ -31,6 +38,7 @@ function Leg({
   onHover: (hovering: boolean) => void;
   onOpenVessel: (vesselId: string) => void;
   onOpenRoute: (routeId: string) => void;
+  extra?: ReactNode;
 }) {
   const panelId = `rt-${label}-${sailing.departure.id}`;
   const overnight = sailing.depHour >= 20 || sailing.depHour < 5;
@@ -121,31 +129,53 @@ function Leg({
       className={`grid transition-[grid-template-rows] duration-300 ease-out ${expanded ? "grid-rows-[1fr]" : "grid-rows-[0fr]"}`}
     >
       <div className="overflow-hidden">
-        {expanded ? <SailingDetail sailing={sailing} onOpenVessel={onOpenVessel} onOpenRoute={onOpenRoute} showBooking /> : null}
+        {expanded ? (
+          <>
+            <SailingDetail sailing={sailing} onOpenVessel={onOpenVessel} onOpenRoute={onOpenRoute} showBooking />
+            {extra}
+          </>
+        ) : null}
       </div>
     </div>
     </div>
   );
 }
 
-/** Carte Duo aller + retour sur deux étages, séparés par la durée du séjour. */
+/** Carte Duo aller + retour sur deux étages, synthèse (séjour, prix A/R) en pied. */
 export function RoundTripCard({
   trip,
   index,
   onOpenVessel,
   onOpenRoute,
   onHoverRoute,
+  onFocusRoute,
 }: {
   trip: RoundTrip;
   index: number;
   onOpenVessel: (vesselId: string) => void;
   onOpenRoute: (routeId: string) => void;
   onHoverRoute: (routeId: string | null) => void;
+  onFocusRoute?: (routeId: string | null) => void;
 }) {
   const [open, setOpen] = useState<"out" | "back" | null>(null);
-  const toggle = (leg: "out" | "back") => setOpen((cur) => (cur === leg ? null : leg));
+  const toggle = (leg: "out" | "back") => {
+    const next = open === leg ? null : leg;
+    setOpen(next);
+    // Le trajet ouvert prime sur les filtres : sa ligne est mise en avant et cadrée sur la carte.
+    onFocusRoute?.(next ? (next === "out" ? trip.out : trip.back).route.id : null);
+  };
   const profile = useFareProfile();
   const total = estimateFare(trip.out, profile) + estimateFare(trip.back, profile);
+  const stay = formatStay(estimateStayMinutes(trip));
+  const stayNote = (
+    <p className="mx-3 mb-2 flex items-start gap-1.5 rounded-lg bg-muted/60 px-2.5 py-1.5 text-[11px] leading-snug text-muted-foreground">
+      <CalendarDays className="mt-px size-3 shrink-0 text-primary" aria-hidden />
+      <span>
+        <span className="font-semibold text-foreground">~{stay} sur place</span> (estimation : débarquement
+        ~{DISEMBARK_MIN / 60} h après l'arrivée, présentation au port {BOARDING_MIN / 60} h avant le retour).
+      </span>
+    </p>
+  );
   return (
     <article
       style={{ animationDelay: `${Math.min(index, 8) * 45}ms` }}
@@ -159,22 +189,9 @@ export function RoundTripCard({
         onOpenVessel={onOpenVessel}
         onOpenRoute={onOpenRoute}
         onHover={(h) => onHoverRoute(h ? trip.out.route.id : null)}
+        extra={stayNote}
       />
-      <div className="relative flex items-center justify-center border-y border-border/60 bg-muted/50 py-0.5" aria-hidden={false}>
-        <span className="absolute inset-x-4 top-1/2 border-t border-dashed border-border" aria-hidden />
-        <span className="relative flex items-center gap-1.5 rounded-full border border-border bg-card px-2.5 py-0.5 text-[11px] font-semibold text-foreground shadow-sm">
-          <CalendarDays className="size-3 text-primary" aria-hidden />
-          {trip.stayDays} jour{trip.stayDays > 1 ? "s" : ""} sur place
-          {!trip.mirror ? (
-            <span className="ml-1 inline-flex items-center gap-1 text-cta">
-              <Shuffle className="size-3" aria-hidden /> autre port
-            </span>
-          ) : null}
-          <span className="ml-1 border-l border-border pl-2 tabular-nums text-cta" title="Tarif moyen indicatif aller + retour">
-            {formatEuro(total)} A/R
-          </span>
-        </span>
-      </div>
+      <div className="border-t border-dashed border-border" aria-hidden />
       <Leg
         label="Retour"
         sailing={trip.back}
@@ -183,7 +200,23 @@ export function RoundTripCard({
         onOpenVessel={onOpenVessel}
         onOpenRoute={onOpenRoute}
         onHover={(h) => onHoverRoute(h ? trip.back.route.id : null)}
+        extra={stayNote}
       />
+      <footer className="flex items-center justify-between gap-2 border-t border-border/70 bg-muted/40 px-3.5 py-2">
+        <span className="flex min-w-0 items-center gap-1.5 text-[11px] font-semibold text-muted-foreground">
+          <CalendarDays className="size-3.5 shrink-0 text-primary" aria-hidden />
+          <span className="truncate">~{stay} sur place</span>
+          {!trip.mirror ? (
+            <span className="inline-flex shrink-0 items-center gap-1 text-cta">
+              <Shuffle className="size-3" aria-hidden /> autre port
+            </span>
+          ) : null}
+        </span>
+        <span className="shrink-0 text-right leading-none" title="Tarif moyen indicatif aller + retour">
+          <span className="font-display text-lg font-bold tabular-nums text-cta">{formatEuro(total)}</span>
+          <span className="ml-1 text-[11px] font-semibold text-muted-foreground">A/R</span>
+        </span>
+      </footer>
     </article>
   );
 }

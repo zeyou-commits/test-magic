@@ -72,6 +72,7 @@ function Index() {
     typeof window === "undefined" ? emptyFilters : filtersFromUrl(window.location.search),
   );
   const [highlightRouteId, setHighlightRouteId] = useState<string | null>(null);
+  const [focusedRouteId, setFocusedRouteId] = useState<string | null>(null);
   const [panelLevel, setPanelLevel] = useState<0 | 1 | 2>(1);
   const [desktopPanelOpen, setDesktopPanelOpen] = useState(true);
   const [focusTarget, setFocusTarget] = useState<{ center: [number, number]; key: number } | null>(null);
@@ -226,10 +227,27 @@ function Index() {
   ]);
 
   // Cadrage automatique : les ports du trajet cherché (sans sélection).
+  // Un trajet ouvert dans les résultats prime ; un seul côté choisi inclut ses destinations actives.
   const fitPortIds = useMemo(() => {
     if (mapSelection) return [];
-    return [...new Set([...filters.departurePortIds, ...filters.arrivalPortIds])];
-  }, [mapSelection, filters.departurePortIds, filters.arrivalPortIds]);
+    if (focusedRouteId) {
+      const route = routes.find((item) => item.id === focusedRouteId);
+      if (route) return [route.departure_port_id, route.arrival_port_id];
+    }
+    const from = filters.departurePortIds;
+    const to = filters.arrivalPortIds;
+    const ids = new Set([...from, ...to]);
+    if (from.length === 0 || to.length === 0) {
+      const chosen = from.length ? from : to;
+      routes
+        .filter((r) => r.status === "active")
+        .forEach((r) => {
+          if (from.length && chosen.includes(r.departure_port_id)) ids.add(r.arrival_port_id);
+          if (to.length && chosen.includes(r.arrival_port_id)) ids.add(r.departure_port_id);
+        });
+    }
+    return [...ids];
+  }, [mapSelection, focusedRouteId, routes, filters.departurePortIds, filters.arrivalPortIds]);
 
   // Les infobulles décrivent le réseau réel du port, indépendamment des filtres en cours.
   const portMeta = useMemo(() => {
@@ -474,6 +492,7 @@ function Index() {
             filters={filters}
             onFiltersChange={setFilters}
             onHighlightRoute={setHighlightRouteId}
+            onFocusRoute={setFocusedRouteId}
           />
         </div>
         <Button
@@ -549,6 +568,7 @@ function Index() {
             setSelection(null);
             setFocusShipId(null);
             openPanel();
+            window.dispatchEvent(new Event("batogo:edit-filters"));
             window.setTimeout(() => {
               const el = document.getElementById("filters-company") as HTMLDetailsElement | null;
               if (!el) return;

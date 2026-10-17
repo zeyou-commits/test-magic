@@ -31,24 +31,34 @@ function passengerList(profile: TripProfileValue): string {
   return (list.length ? list : ["ADULT"]).join(",");
 }
 
-/** URL de réservation pour un aller simple ou un aller-retour (retour facultatif). */
+/** Agrégateur utilisé quand aucun lien direct n'existe (ou aller/retour sur deux compagnies). */
+export const AGGREGATOR = { name: "Direct Ferries", url: "https://www.directferries.fr/" };
+
+/** URL de réservation pour un aller simple ou un aller-retour : jamais nulle. */
 export function bookingUrl(
   out: Sailing,
   profile: TripProfileValue,
   back?: Sailing,
-): string | null {
+): string {
   const company = out.company;
-  if (!company) return null;
-  // Aller et retour avec deux compagnies : lien de l'aller seul.
-  const sameCompany = back && back.company?.id === company.id ? back : undefined;
+  const mixed = Boolean(back && back.company?.id !== company?.id);
+  if (!company || mixed) return AGGREGATOR.url;
 
   if (company.slug === "corsica-linea") {
     const params = new URLSearchParams({ route: corsicaRoute(out), outwardDate: out.dayKey });
-    if (sameCompany) params.set("returnDate", sameCompany.dayKey);
+    if (back) params.set("returnDate", back.dayKey);
     const vehicle = CORSICA_VEHICLE[profile.vehicle];
     if (vehicle) params.set("vehicles", vehicle);
     params.set("passengers", passengerList(profile));
     return `https://www.corsicalinea.com/tsw/search/departure/crossing?${params.toString().replace(/%2C/g, ",")}`;
   }
-  return safeExternalUrl(company.website_url);
+  return safeExternalUrl(company.website_url) ?? AGGREGATOR.url;
+}
+
+/** Nom du site ouvert par le bouton « Réserver ». */
+export function bookingSite(out: Sailing, back?: Sailing): string {
+  const company = out.company;
+  if (!company || (back && back.company?.id !== company.id)) return AGGREGATOR.name;
+  if (company.slug === "corsica-linea" || safeExternalUrl(company.website_url)) return company.name;
+  return AGGREGATOR.name;
 }

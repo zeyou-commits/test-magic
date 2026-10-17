@@ -16,7 +16,7 @@ import {
   formatShortDay,
 } from "@/lib/ferry/format";
 import { relativeDay, type Sailing } from "@/lib/ferry/trips";
-import { safeExternalUrl } from "./shared";
+import { bookingUrl } from "@/lib/ferry/booking";
 import { formatAge, formatDelay, type LiveShip } from "@/lib/ferry/tracking";
 import { wallTimeInZone, zoneLabel } from "@/lib/ferry/time";
 import { ReportButton } from "./ReportButton";
@@ -58,13 +58,14 @@ export function SailingCard({
   onOpenVessel: (vesselId: string) => void;
   onOpenRoute: (routeId: string) => void;
 }) {
-  const href = safeExternalUrl(sailing.company?.website_url);
+  const profile = useFareProfile();
+  const href = bookingUrl(sailing, profile);
   const overnight = sailing.depHour >= 20 || sailing.depHour < 5;
   const arrivalSuffix = sailing.arrDayOffset > 0 ? `+${sailing.arrDayOffset}` : "";
   const departure = sailing.departure;
   const panelId = `sailing-${departure.id}`;
   const brand = companyColor(sailing.company?.name);
-  const fare = estimateFare(sailing, useFareProfile());
+  const fare = estimateFare(sailing, profile);
 
   return (
     <article
@@ -210,7 +211,8 @@ export function SailingDetail({
   showBooking?: boolean;
 }) {
   const departure = sailing.departure;
-  const bookingHref = showBooking ? safeExternalUrl(sailing.company?.website_url) : null;
+  const profile = useFareProfile();
+  const bookingHref = showBooking ? bookingUrl(sailing, profile) : null;
   return (
     <div className="space-y-2.5 border-t bg-card px-3.5 py-3 text-xs">
       <dl

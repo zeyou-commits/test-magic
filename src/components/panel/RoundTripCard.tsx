@@ -11,7 +11,7 @@ import type { Sailing } from "@/lib/ferry/trips";
 import { capitalizeFirst, formatDuration } from "@/lib/ferry/format";
 import { CompanyBadge, companyColor } from "./CompanyBadge";
 import { SailingDetail } from "./SailingCard";
-import { bookingUrl } from "@/lib/ferry/booking";
+import { bookingSite, bookingUrl } from "@/lib/ferry/booking";
 import { estimateFare, formatEuro, useFareProfile } from "@/lib/ferry/pricing";
 
 const dayFormatter = new Intl.DateTimeFormat("fr-FR", {
@@ -169,7 +169,7 @@ export function RoundTripCard({
   const total = estimateFare(trip.out, profile) + estimateFare(trip.back, profile);
   const stay = formatStay(estimateStayMinutes(trip));
   const bookHref = bookingUrl(trip.out, profile, trip.back);
-  const twoCompanies = trip.out.company?.id !== trip.back.company?.id;
+  const bookSite = bookingSite(trip.out, trip.back);
   const stayNote = (
     <p className="mx-3 mb-2 flex items-start gap-1.5 rounded-lg bg-muted/60 px-2.5 py-1.5 text-[11px] leading-snug text-muted-foreground">
       <CalendarDays className="mt-px size-3 shrink-0 text-primary" aria-hidden />
@@ -219,17 +219,15 @@ export function RoundTripCard({
           <span className="font-display text-lg font-bold tabular-nums text-success">{formatEuro(total)}</span>
           <span className="ml-1 text-[11px] font-semibold text-muted-foreground">A/R</span>
         </span>
-        {bookHref ? (
-          <a
+        <a
             href={bookHref}
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex h-8 shrink-0 items-center gap-1 rounded-full bg-cta px-3 text-xs font-semibold text-cta-foreground shadow-sm transition hover:brightness-110 active:scale-95"
           >
-            {twoCompanies ? "Réserver l'aller" : "Réserver"} <ArrowUpRight className="size-3.5" aria-hidden />
-            <span className="sr-only">sur le site de {trip.out.company?.name} (nouvel onglet)</span>
+            Réserver A/R <ArrowUpRight className="size-3.5" aria-hidden />
+            <span className="sr-only">sur {bookSite} (nouvel onglet)</span>
           </a>
-        ) : null}
       </footer>
     </article>
   );

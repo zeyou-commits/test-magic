@@ -25,4 +25,14 @@ describe("bookingUrl", () => {
   it("renvoie le site officiel pour les autres compagnies", () => {
     expect(bookingUrl(leg("gnv", "2026-10-17"), profile)).toBe("https://www.example.com/");
   });
+  it("bascule sur l'agrégateur quand l'aller et le retour sont sur deux compagnies", () => {
+    expect(bookingUrl(leg("gnv", "2026-10-17"), profile, leg("corsica-linea", "2026-10-31"))).toBe(
+      "https://www.directferries.fr/",
+    );
+  });
+  it("bascule sur l'agrégateur sans site officiel", () => {
+    const l = leg("armas", "2026-10-17");
+    (l.company as { website_url: string | null }).website_url = null;
+    expect(bookingUrl(l, profile)).toBe("https://www.directferries.fr/");
+  });
 });

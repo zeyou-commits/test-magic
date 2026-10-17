@@ -126,44 +126,52 @@ export function PortMultiPicker({
         ) : (
           <div className="flex max-h-[50vh] flex-col gap-3 overflow-y-auto pr-1 max-md:max-h-none max-md:min-h-0 max-md:flex-1 max-md:overscroll-contain">
             {groups.map((group) => {
-              const ids = group.ports.map((port) => port.id);
-              const selectedCount = ids.filter((id) => value.includes(id)).length;
+              const ids = group.ports.filter((p) => !reasons.has(p.id)).map((port) => port.id);
+              const selectedCount = ids.filter(isOn).length;
               const countrySelected = selectedCount === ids.length && ids.length > 0;
               return (
                 <div key={group.code} className="flex flex-col gap-0.5">
                   <button
                     type="button"
                     aria-pressed={countrySelected}
+                    disabled={!ids.length}
                     onClick={() => toggle(ids)}
-                    className="flex min-h-10 w-full items-center justify-between rounded-lg px-2.5 text-left text-sm font-semibold transition hover:bg-secondary"
+                    className="flex min-h-10 w-full items-center justify-between rounded-lg px-2.5 text-left text-sm font-semibold transition hover:bg-secondary disabled:cursor-default disabled:text-muted-foreground disabled:hover:bg-transparent"
                   >
-                    <span>
-                      <span className="mr-1.5" aria-hidden>{flag(group.code)}</span>
+                    <span className="flex items-center gap-2">
+                      <CountryFlag code={group.code} />
                       {group.name}
                       {ids.length > 1 ? (
-                        <span className="ml-1 font-normal text-muted-foreground">· tous</span>
+                        <span className="font-normal text-muted-foreground">· tous</span>
                       ) : null}
                     </span>
                     <span className="flex items-center gap-2 text-xs text-muted-foreground">
-                      {selectedCount ? `${selectedCount}/${ids.length}` : ""}
+                      {ids.length ? `${selectedCount}/${ids.length}` : "indisponible"}
                       {countrySelected ? <Check className="size-4 text-primary" /> : null}
                     </span>
                   </button>
                   <div className="ml-2 flex flex-col gap-0.5 border-l-2 border-muted pl-2">
                     {group.ports.map((port) => {
-                      const isSelected = value.includes(port.id);
+                      const reason = reasons.get(port.id);
+                      const isSelected = !reason && isOn(port.id);
                       return (
                         <button
                           key={port.id}
                           type="button"
                           aria-pressed={isSelected}
+                          disabled={!!reason}
                           onClick={() => toggle([port.id])}
-                          className={`flex min-h-10 items-center gap-2 rounded-md px-2 text-left text-sm ${isSelected ? "bg-primary/10 font-semibold text-primary" : "text-foreground hover:bg-secondary"}`}
+                          className={`flex min-h-10 items-center gap-2 rounded-md px-2 text-left text-sm ${reason ? "cursor-not-allowed text-muted-foreground/60" : isSelected ? "bg-primary/10 font-semibold text-primary" : "text-foreground hover:bg-secondary"}`}
                         >
                           <span className="w-4 shrink-0">
                             {isSelected ? <Check className="size-4" /> : null}
                           </span>
-                          <span>{port.name}</span>
+                          <span className="flex-1">{port.name}</span>
+                          {reason ? (
+                            <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
+                              {reason}
+                            </span>
+                          ) : null}
                         </button>
                       );
                     })}

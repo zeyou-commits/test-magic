@@ -1,3 +1,4 @@
+import { seoHead } from "@/lib/seo/site";
 import { createFileRoute } from "@tanstack/react-router";
 import { PageHero, SiteLayout } from "@/components/layout/SiteLayout";
 
@@ -6,14 +7,7 @@ const description =
   "Quelles données Batogo collecte lors de la création d'un compte, de la publication d'un avis ou d'un signalement, et comment les supprimer.";
 
 export const Route = createFileRoute("/confidentialite")({
-  head: () => ({
-    meta: [
-      { title },
-      { name: "description", content: description },
-      { property: "og:title", content: title },
-      { property: "og:description", content: description },
-    ],
-  }),
+  head: () => seoHead(title, description, "/confidentialite"),
   component: PrivacyPage,
 });
 

@@ -1,3 +1,5 @@
+import seoConfig from "../../seo.config.json";
+import { seoHead } from "@/lib/seo/site";
 import { createFileRoute } from "@tanstack/react-router";
 import { Card, PageHero, SiteLayout } from "@/components/layout/SiteLayout";
 
@@ -6,14 +8,7 @@ const description =
   "Signaler un horaire erroné, une ligne manquante ou un port à ajouter sur Batogo, la carte des ferries vers l'Algérie.";
 
 export const Route = createFileRoute("/contact")({
-  head: () => ({
-    meta: [
-      { title },
-      { name: "description", content: description },
-      { property: "og:title", content: title },
-      { property: "og:description", content: description },
-    ],
-  }),
+  head: () => seoHead(title, description, "/contact"),
   component: ContactPage,
 });
 
@@ -35,10 +30,22 @@ function ContactPage() {
         </Card>
         <Card>
           <h2 className="font-display font-semibold">Nous écrire</h2>
-          <p className="mt-2 text-sm text-muted-foreground">
-            Vous représentez une compagnie ou une autorité portuaire et souhaitez nous transmettre
-            vos calendriers officiels ? Indiquez-nous l'adresse à utiliser et nous ajouterons ce
-            canal de contact ici.
+          {seoConfig.contactEmail ? (
+            <a
+              href={`mailto:${seoConfig.contactEmail}?subject=${encodeURIComponent("Correction documentaire Batogo")}`}
+              className="mt-3 inline-flex min-h-11 items-center font-semibold text-primary underline underline-offset-4"
+            >
+              {seoConfig.contactEmail}
+            </a>
+          ) : (
+            <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+              Le canal de contact pour les dossiers documentaires sera indiqué ici dès son
+              ouverture. Les signalements depuis une fiche de la carte restent disponibles.
+            </p>
+          )}
+          <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
+            Pour préparer une correction, relevez l'URL de la page, le passage concerné et une
+            source datée. Ne transmettez pas de papiers d'identité ni de documents de véhicule.
           </p>
         </Card>
       </div>

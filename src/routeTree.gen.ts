@@ -13,19 +13,37 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AProposRouteImport } from './routes/a-propos'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as AuthRouteImport } from './routes/auth'
+import { Route as BateauxRouteImport } from './routes/bateaux'
 import { Route as CompagniesRouteImport } from './routes/compagnies'
 import { Route as CompteRouteImport } from './routes/compte'
 import { Route as ConfidentialiteRouteImport } from './routes/confidentialite'
 import { Route as ContactRouteImport } from './routes/contact'
+import { Route as CovoiturageRouteImport } from './routes/covoiturage'
 import { Route as GuideRouteImport } from './routes/guide'
 import { Route as HorairesRouteImport } from './routes/horaires'
 import { Route as LignesRouteImport } from './routes/lignes'
 import { Route as MentionsLegalesRouteImport } from './routes/mentions-legales'
+import { Route as MethodeEditorialeRouteImport } from './routes/methode-editoriale'
 import { Route as PortsRouteImport } from './routes/ports'
+import { Route as SimulateursRouteImport } from './routes/simulateurs'
+import { Route as SitemapMaritimeDotxmlRouteImport } from './routes/sitemap-maritime[.]xml'
+import { Route as SitemapPagesDotxmlRouteImport } from './routes/sitemap-pages[.]xml'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
+import { Route as VehiculesMoins3AnsRouteImport } from './routes/vehicules-moins-3-ans'
+import { Route as VoyageAlgerieRouteImport } from './routes/voyage-algerie'
 import { Route as ApiVesselPositionsRouteImport } from './routes/api.vessel-positions'
+import { Route as BateauxIndexRouteImport } from './routes/bateaux.index'
+import { Route as BateauxSlugRouteImport } from './routes/bateaux.$slug'
+import { Route as CovoiturageIndexRouteImport } from './routes/covoiturage.index'
+import { Route as CovoiturageSlugRouteImport } from './routes/covoiturage.$slug'
+import { Route as GuideIndexRouteImport } from './routes/guide.index'
+import { Route as GuideSlugRouteImport } from './routes/guide.$slug'
+import { Route as LignesIndexRouteImport } from './routes/lignes.index'
 import { Route as LignesSlugRouteImport } from './routes/lignes.$slug'
+import { Route as PortsIndexRouteImport } from './routes/ports.index'
 import { Route as PortsSlugRouteImport } from './routes/ports.$slug'
+import { Route as SimulateursIndexRouteImport } from './routes/simulateurs.index'
+import { Route as SimulateursSlugRouteImport } from './routes/simulateurs.$slug'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -45,6 +63,11 @@ const AdminRoute = AdminRouteImport.update({
 const AuthRoute = AuthRouteImport.update({
   id: '/auth',
   path: '/auth',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const BateauxRoute = BateauxRouteImport.update({
+  id: '/bateaux',
+  path: '/bateaux',
   getParentRoute: () => rootRouteImport,
 } as any)
 const CompagniesRoute = CompagniesRouteImport.update({
@@ -67,6 +90,11 @@ const ContactRoute = ContactRouteImport.update({
   path: '/contact',
   getParentRoute: () => rootRouteImport,
 } as any)
+const CovoiturageRoute = CovoiturageRouteImport.update({
+  id: '/covoiturage',
+  path: '/covoiturage',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const GuideRoute = GuideRouteImport.update({
   id: '/guide',
   path: '/guide',
@@ -87,9 +115,29 @@ const MentionsLegalesRoute = MentionsLegalesRouteImport.update({
   path: '/mentions-legales',
   getParentRoute: () => rootRouteImport,
 } as any)
+const MethodeEditorialeRoute = MethodeEditorialeRouteImport.update({
+  id: '/methode-editoriale',
+  path: '/methode-editoriale',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const PortsRoute = PortsRouteImport.update({
   id: '/ports',
   path: '/ports',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SimulateursRoute = SimulateursRouteImport.update({
+  id: '/simulateurs',
+  path: '/simulateurs',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SitemapMaritimeDotxmlRoute = SitemapMaritimeDotxmlRouteImport.update({
+  id: '/sitemap-maritime.xml',
+  path: '/sitemap-maritime.xml',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SitemapPagesDotxmlRoute = SitemapPagesDotxmlRouteImport.update({
+  id: '/sitemap-pages.xml',
+  path: '/sitemap-pages.xml',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
@@ -97,20 +145,80 @@ const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
   path: '/sitemap.xml',
   getParentRoute: () => rootRouteImport,
 } as any)
+const VehiculesMoins3AnsRoute = VehiculesMoins3AnsRouteImport.update({
+  id: '/vehicules-moins-3-ans',
+  path: '/vehicules-moins-3-ans',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const VoyageAlgerieRoute = VoyageAlgerieRouteImport.update({
+  id: '/voyage-algerie',
+  path: '/voyage-algerie',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiVesselPositionsRoute = ApiVesselPositionsRouteImport.update({
   id: '/api/vessel-positions',
   path: '/api/vessel-positions',
   getParentRoute: () => rootRouteImport,
+} as any)
+const BateauxIndexRoute = BateauxIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => BateauxRoute,
+} as any)
+const BateauxSlugRoute = BateauxSlugRouteImport.update({
+  id: '/$slug',
+  path: '/$slug',
+  getParentRoute: () => BateauxRoute,
+} as any)
+const CovoiturageIndexRoute = CovoiturageIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => CovoiturageRoute,
+} as any)
+const CovoiturageSlugRoute = CovoiturageSlugRouteImport.update({
+  id: '/$slug',
+  path: '/$slug',
+  getParentRoute: () => CovoiturageRoute,
+} as any)
+const GuideIndexRoute = GuideIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => GuideRoute,
+} as any)
+const GuideSlugRoute = GuideSlugRouteImport.update({
+  id: '/$slug',
+  path: '/$slug',
+  getParentRoute: () => GuideRoute,
+} as any)
+const LignesIndexRoute = LignesIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => LignesRoute,
 } as any)
 const LignesSlugRoute = LignesSlugRouteImport.update({
   id: '/$slug',
   path: '/$slug',
   getParentRoute: () => LignesRoute,
 } as any)
+const PortsIndexRoute = PortsIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => PortsRoute,
+} as any)
 const PortsSlugRoute = PortsSlugRouteImport.update({
   id: '/$slug',
   path: '/$slug',
   getParentRoute: () => PortsRoute,
+} as any)
+const SimulateursIndexRoute = SimulateursIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => SimulateursRoute,
+} as any)
+const SimulateursSlugRoute = SimulateursSlugRouteImport.update({
+  id: '/$slug',
+  path: '/$slug',
+  getParentRoute: () => SimulateursRoute,
 } as any)
 
 export interface FileRoutesByFullPath {
@@ -118,19 +226,37 @@ export interface FileRoutesByFullPath {
   '/a-propos': typeof AProposRoute
   '/admin': typeof AdminRoute
   '/auth': typeof AuthRoute
+  '/bateaux': typeof BateauxRouteWithChildren
   '/compagnies': typeof CompagniesRoute
   '/compte': typeof CompteRoute
   '/confidentialite': typeof ConfidentialiteRoute
   '/contact': typeof ContactRoute
-  '/guide': typeof GuideRoute
+  '/covoiturage': typeof CovoiturageRouteWithChildren
+  '/guide': typeof GuideRouteWithChildren
   '/horaires': typeof HorairesRoute
   '/lignes': typeof LignesRouteWithChildren
   '/mentions-legales': typeof MentionsLegalesRoute
+  '/methode-editoriale': typeof MethodeEditorialeRoute
   '/ports': typeof PortsRouteWithChildren
+  '/simulateurs': typeof SimulateursRouteWithChildren
+  '/sitemap-maritime.xml': typeof SitemapMaritimeDotxmlRoute
+  '/sitemap-pages.xml': typeof SitemapPagesDotxmlRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/vehicules-moins-3-ans': typeof VehiculesMoins3AnsRoute
+  '/voyage-algerie': typeof VoyageAlgerieRoute
   '/api/vessel-positions': typeof ApiVesselPositionsRoute
+  '/bateaux/$slug': typeof BateauxSlugRoute
+  '/covoiturage/$slug': typeof CovoiturageSlugRoute
+  '/guide/$slug': typeof GuideSlugRoute
   '/lignes/$slug': typeof LignesSlugRoute
   '/ports/$slug': typeof PortsSlugRoute
+  '/simulateurs/$slug': typeof SimulateursSlugRoute
+  '/bateaux/': typeof BateauxIndexRoute
+  '/covoiturage/': typeof CovoiturageIndexRoute
+  '/guide/': typeof GuideIndexRoute
+  '/lignes/': typeof LignesIndexRoute
+  '/ports/': typeof PortsIndexRoute
+  '/simulateurs/': typeof SimulateursIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -141,15 +267,27 @@ export interface FileRoutesByTo {
   '/compte': typeof CompteRoute
   '/confidentialite': typeof ConfidentialiteRoute
   '/contact': typeof ContactRoute
-  '/guide': typeof GuideRoute
   '/horaires': typeof HorairesRoute
-  '/lignes': typeof LignesRouteWithChildren
   '/mentions-legales': typeof MentionsLegalesRoute
-  '/ports': typeof PortsRouteWithChildren
+  '/methode-editoriale': typeof MethodeEditorialeRoute
+  '/sitemap-maritime.xml': typeof SitemapMaritimeDotxmlRoute
+  '/sitemap-pages.xml': typeof SitemapPagesDotxmlRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/vehicules-moins-3-ans': typeof VehiculesMoins3AnsRoute
+  '/voyage-algerie': typeof VoyageAlgerieRoute
   '/api/vessel-positions': typeof ApiVesselPositionsRoute
+  '/bateaux/$slug': typeof BateauxSlugRoute
+  '/covoiturage/$slug': typeof CovoiturageSlugRoute
+  '/guide/$slug': typeof GuideSlugRoute
   '/lignes/$slug': typeof LignesSlugRoute
   '/ports/$slug': typeof PortsSlugRoute
+  '/simulateurs/$slug': typeof SimulateursSlugRoute
+  '/bateaux': typeof BateauxIndexRoute
+  '/covoiturage': typeof CovoiturageIndexRoute
+  '/guide': typeof GuideIndexRoute
+  '/lignes': typeof LignesIndexRoute
+  '/ports': typeof PortsIndexRoute
+  '/simulateurs': typeof SimulateursIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -157,19 +295,37 @@ export interface FileRoutesById {
   '/a-propos': typeof AProposRoute
   '/admin': typeof AdminRoute
   '/auth': typeof AuthRoute
+  '/bateaux': typeof BateauxRouteWithChildren
   '/compagnies': typeof CompagniesRoute
   '/compte': typeof CompteRoute
   '/confidentialite': typeof ConfidentialiteRoute
   '/contact': typeof ContactRoute
-  '/guide': typeof GuideRoute
+  '/covoiturage': typeof CovoiturageRouteWithChildren
+  '/guide': typeof GuideRouteWithChildren
   '/horaires': typeof HorairesRoute
   '/lignes': typeof LignesRouteWithChildren
   '/mentions-legales': typeof MentionsLegalesRoute
+  '/methode-editoriale': typeof MethodeEditorialeRoute
   '/ports': typeof PortsRouteWithChildren
+  '/simulateurs': typeof SimulateursRouteWithChildren
+  '/sitemap-maritime.xml': typeof SitemapMaritimeDotxmlRoute
+  '/sitemap-pages.xml': typeof SitemapPagesDotxmlRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/vehicules-moins-3-ans': typeof VehiculesMoins3AnsRoute
+  '/voyage-algerie': typeof VoyageAlgerieRoute
   '/api/vessel-positions': typeof ApiVesselPositionsRoute
+  '/bateaux/$slug': typeof BateauxSlugRoute
+  '/covoiturage/$slug': typeof CovoiturageSlugRoute
+  '/guide/$slug': typeof GuideSlugRoute
   '/lignes/$slug': typeof LignesSlugRoute
   '/ports/$slug': typeof PortsSlugRoute
+  '/simulateurs/$slug': typeof SimulateursSlugRoute
+  '/bateaux/': typeof BateauxIndexRoute
+  '/covoiturage/': typeof CovoiturageIndexRoute
+  '/guide/': typeof GuideIndexRoute
+  '/lignes/': typeof LignesIndexRoute
+  '/ports/': typeof PortsIndexRoute
+  '/simulateurs/': typeof SimulateursIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -178,19 +334,37 @@ export interface FileRouteTypes {
     | '/a-propos'
     | '/admin'
     | '/auth'
+    | '/bateaux'
     | '/compagnies'
     | '/compte'
     | '/confidentialite'
     | '/contact'
+    | '/covoiturage'
     | '/guide'
     | '/horaires'
     | '/lignes'
     | '/mentions-legales'
+    | '/methode-editoriale'
     | '/ports'
+    | '/simulateurs'
+    | '/sitemap-maritime.xml'
+    | '/sitemap-pages.xml'
     | '/sitemap.xml'
+    | '/vehicules-moins-3-ans'
+    | '/voyage-algerie'
     | '/api/vessel-positions'
+    | '/bateaux/$slug'
+    | '/covoiturage/$slug'
+    | '/guide/$slug'
     | '/lignes/$slug'
     | '/ports/$slug'
+    | '/simulateurs/$slug'
+    | '/bateaux/'
+    | '/covoiturage/'
+    | '/guide/'
+    | '/lignes/'
+    | '/ports/'
+    | '/simulateurs/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -201,34 +375,64 @@ export interface FileRouteTypes {
     | '/compte'
     | '/confidentialite'
     | '/contact'
-    | '/guide'
     | '/horaires'
-    | '/lignes'
     | '/mentions-legales'
-    | '/ports'
+    | '/methode-editoriale'
+    | '/sitemap-maritime.xml'
+    | '/sitemap-pages.xml'
     | '/sitemap.xml'
+    | '/vehicules-moins-3-ans'
+    | '/voyage-algerie'
     | '/api/vessel-positions'
+    | '/bateaux/$slug'
+    | '/covoiturage/$slug'
+    | '/guide/$slug'
     | '/lignes/$slug'
     | '/ports/$slug'
+    | '/simulateurs/$slug'
+    | '/bateaux'
+    | '/covoiturage'
+    | '/guide'
+    | '/lignes'
+    | '/ports'
+    | '/simulateurs'
   id:
     | '__root__'
     | '/'
     | '/a-propos'
     | '/admin'
     | '/auth'
+    | '/bateaux'
     | '/compagnies'
     | '/compte'
     | '/confidentialite'
     | '/contact'
+    | '/covoiturage'
     | '/guide'
     | '/horaires'
     | '/lignes'
     | '/mentions-legales'
+    | '/methode-editoriale'
     | '/ports'
+    | '/simulateurs'
+    | '/sitemap-maritime.xml'
+    | '/sitemap-pages.xml'
     | '/sitemap.xml'
+    | '/vehicules-moins-3-ans'
+    | '/voyage-algerie'
     | '/api/vessel-positions'
+    | '/bateaux/$slug'
+    | '/covoiturage/$slug'
+    | '/guide/$slug'
     | '/lignes/$slug'
     | '/ports/$slug'
+    | '/simulateurs/$slug'
+    | '/bateaux/'
+    | '/covoiturage/'
+    | '/guide/'
+    | '/lignes/'
+    | '/ports/'
+    | '/simulateurs/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -236,16 +440,24 @@ export interface RootRouteChildren {
   AProposRoute: typeof AProposRoute
   AdminRoute: typeof AdminRoute
   AuthRoute: typeof AuthRoute
+  BateauxRoute: typeof BateauxRouteWithChildren
   CompagniesRoute: typeof CompagniesRoute
   CompteRoute: typeof CompteRoute
   ConfidentialiteRoute: typeof ConfidentialiteRoute
   ContactRoute: typeof ContactRoute
-  GuideRoute: typeof GuideRoute
+  CovoiturageRoute: typeof CovoiturageRouteWithChildren
+  GuideRoute: typeof GuideRouteWithChildren
   HorairesRoute: typeof HorairesRoute
   LignesRoute: typeof LignesRouteWithChildren
   MentionsLegalesRoute: typeof MentionsLegalesRoute
+  MethodeEditorialeRoute: typeof MethodeEditorialeRoute
   PortsRoute: typeof PortsRouteWithChildren
+  SimulateursRoute: typeof SimulateursRouteWithChildren
+  SitemapMaritimeDotxmlRoute: typeof SitemapMaritimeDotxmlRoute
+  SitemapPagesDotxmlRoute: typeof SitemapPagesDotxmlRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
+  VehiculesMoins3AnsRoute: typeof VehiculesMoins3AnsRoute
+  VoyageAlgerieRoute: typeof VoyageAlgerieRoute
   ApiVesselPositionsRoute: typeof ApiVesselPositionsRoute
 }
 
@@ -279,6 +491,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/bateaux': {
+      id: '/bateaux'
+      path: '/bateaux'
+      fullPath: '/bateaux'
+      preLoaderRoute: typeof BateauxRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/compagnies': {
       id: '/compagnies'
       path: '/compagnies'
@@ -305,6 +524,13 @@ declare module '@tanstack/react-router' {
       path: '/contact'
       fullPath: '/contact'
       preLoaderRoute: typeof ContactRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/covoiturage': {
+      id: '/covoiturage'
+      path: '/covoiturage'
+      fullPath: '/covoiturage'
+      preLoaderRoute: typeof CovoiturageRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/guide': {
@@ -335,11 +561,39 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof MentionsLegalesRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/methode-editoriale': {
+      id: '/methode-editoriale'
+      path: '/methode-editoriale'
+      fullPath: '/methode-editoriale'
+      preLoaderRoute: typeof MethodeEditorialeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/ports': {
       id: '/ports'
       path: '/ports'
       fullPath: '/ports'
       preLoaderRoute: typeof PortsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/simulateurs': {
+      id: '/simulateurs'
+      path: '/simulateurs'
+      fullPath: '/simulateurs'
+      preLoaderRoute: typeof SimulateursRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/sitemap-maritime.xml': {
+      id: '/sitemap-maritime.xml'
+      path: '/sitemap-maritime.xml'
+      fullPath: '/sitemap-maritime.xml'
+      preLoaderRoute: typeof SitemapMaritimeDotxmlRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/sitemap-pages.xml': {
+      id: '/sitemap-pages.xml'
+      path: '/sitemap-pages.xml'
+      fullPath: '/sitemap-pages.xml'
+      preLoaderRoute: typeof SitemapPagesDotxmlRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/sitemap.xml': {
@@ -349,12 +603,75 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SitemapDotxmlRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/vehicules-moins-3-ans': {
+      id: '/vehicules-moins-3-ans'
+      path: '/vehicules-moins-3-ans'
+      fullPath: '/vehicules-moins-3-ans'
+      preLoaderRoute: typeof VehiculesMoins3AnsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/voyage-algerie': {
+      id: '/voyage-algerie'
+      path: '/voyage-algerie'
+      fullPath: '/voyage-algerie'
+      preLoaderRoute: typeof VoyageAlgerieRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/vessel-positions': {
       id: '/api/vessel-positions'
       path: '/api/vessel-positions'
       fullPath: '/api/vessel-positions'
       preLoaderRoute: typeof ApiVesselPositionsRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/bateaux/': {
+      id: '/bateaux/'
+      path: '/'
+      fullPath: '/bateaux/'
+      preLoaderRoute: typeof BateauxIndexRouteImport
+      parentRoute: typeof BateauxRoute
+    }
+    '/bateaux/$slug': {
+      id: '/bateaux/$slug'
+      path: '/$slug'
+      fullPath: '/bateaux/$slug'
+      preLoaderRoute: typeof BateauxSlugRouteImport
+      parentRoute: typeof BateauxRoute
+    }
+    '/covoiturage/': {
+      id: '/covoiturage/'
+      path: '/'
+      fullPath: '/covoiturage/'
+      preLoaderRoute: typeof CovoiturageIndexRouteImport
+      parentRoute: typeof CovoiturageRoute
+    }
+    '/covoiturage/$slug': {
+      id: '/covoiturage/$slug'
+      path: '/$slug'
+      fullPath: '/covoiturage/$slug'
+      preLoaderRoute: typeof CovoiturageSlugRouteImport
+      parentRoute: typeof CovoiturageRoute
+    }
+    '/guide/': {
+      id: '/guide/'
+      path: '/'
+      fullPath: '/guide/'
+      preLoaderRoute: typeof GuideIndexRouteImport
+      parentRoute: typeof GuideRoute
+    }
+    '/guide/$slug': {
+      id: '/guide/$slug'
+      path: '/$slug'
+      fullPath: '/guide/$slug'
+      preLoaderRoute: typeof GuideSlugRouteImport
+      parentRoute: typeof GuideRoute
+    }
+    '/lignes/': {
+      id: '/lignes/'
+      path: '/'
+      fullPath: '/lignes/'
+      preLoaderRoute: typeof LignesIndexRouteImport
+      parentRoute: typeof LignesRoute
     }
     '/lignes/$slug': {
       id: '/lignes/$slug'
@@ -363,6 +680,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LignesSlugRouteImport
       parentRoute: typeof LignesRoute
     }
+    '/ports/': {
+      id: '/ports/'
+      path: '/'
+      fullPath: '/ports/'
+      preLoaderRoute: typeof PortsIndexRouteImport
+      parentRoute: typeof PortsRoute
+    }
     '/ports/$slug': {
       id: '/ports/$slug'
       path: '/$slug'
@@ -370,15 +694,70 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PortsSlugRouteImport
       parentRoute: typeof PortsRoute
     }
+    '/simulateurs/': {
+      id: '/simulateurs/'
+      path: '/'
+      fullPath: '/simulateurs/'
+      preLoaderRoute: typeof SimulateursIndexRouteImport
+      parentRoute: typeof SimulateursRoute
+    }
+    '/simulateurs/$slug': {
+      id: '/simulateurs/$slug'
+      path: '/$slug'
+      fullPath: '/simulateurs/$slug'
+      preLoaderRoute: typeof SimulateursSlugRouteImport
+      parentRoute: typeof SimulateursRoute
+    }
   }
 }
 
+interface BateauxRouteChildren {
+  BateauxSlugRoute: typeof BateauxSlugRoute
+  BateauxIndexRoute: typeof BateauxIndexRoute
+}
+
+const BateauxRouteChildren: BateauxRouteChildren = {
+  BateauxSlugRoute: BateauxSlugRoute,
+  BateauxIndexRoute: BateauxIndexRoute,
+}
+
+const BateauxRouteWithChildren =
+  BateauxRoute._addFileChildren(BateauxRouteChildren)
+
+interface CovoiturageRouteChildren {
+  CovoiturageSlugRoute: typeof CovoiturageSlugRoute
+  CovoiturageIndexRoute: typeof CovoiturageIndexRoute
+}
+
+const CovoiturageRouteChildren: CovoiturageRouteChildren = {
+  CovoiturageSlugRoute: CovoiturageSlugRoute,
+  CovoiturageIndexRoute: CovoiturageIndexRoute,
+}
+
+const CovoiturageRouteWithChildren = CovoiturageRoute._addFileChildren(
+  CovoiturageRouteChildren,
+)
+
+interface GuideRouteChildren {
+  GuideSlugRoute: typeof GuideSlugRoute
+  GuideIndexRoute: typeof GuideIndexRoute
+}
+
+const GuideRouteChildren: GuideRouteChildren = {
+  GuideSlugRoute: GuideSlugRoute,
+  GuideIndexRoute: GuideIndexRoute,
+}
+
+const GuideRouteWithChildren = GuideRoute._addFileChildren(GuideRouteChildren)
+
 interface LignesRouteChildren {
   LignesSlugRoute: typeof LignesSlugRoute
+  LignesIndexRoute: typeof LignesIndexRoute
 }
 
 const LignesRouteChildren: LignesRouteChildren = {
   LignesSlugRoute: LignesSlugRoute,
+  LignesIndexRoute: LignesIndexRoute,
 }
 
 const LignesRouteWithChildren =
@@ -386,29 +765,53 @@ const LignesRouteWithChildren =
 
 interface PortsRouteChildren {
   PortsSlugRoute: typeof PortsSlugRoute
+  PortsIndexRoute: typeof PortsIndexRoute
 }
 
 const PortsRouteChildren: PortsRouteChildren = {
   PortsSlugRoute: PortsSlugRoute,
+  PortsIndexRoute: PortsIndexRoute,
 }
 
 const PortsRouteWithChildren = PortsRoute._addFileChildren(PortsRouteChildren)
+
+interface SimulateursRouteChildren {
+  SimulateursSlugRoute: typeof SimulateursSlugRoute
+  SimulateursIndexRoute: typeof SimulateursIndexRoute
+}
+
+const SimulateursRouteChildren: SimulateursRouteChildren = {
+  SimulateursSlugRoute: SimulateursSlugRoute,
+  SimulateursIndexRoute: SimulateursIndexRoute,
+}
+
+const SimulateursRouteWithChildren = SimulateursRoute._addFileChildren(
+  SimulateursRouteChildren,
+)
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AProposRoute: AProposRoute,
   AdminRoute: AdminRoute,
   AuthRoute: AuthRoute,
+  BateauxRoute: BateauxRouteWithChildren,
   CompagniesRoute: CompagniesRoute,
   CompteRoute: CompteRoute,
   ConfidentialiteRoute: ConfidentialiteRoute,
   ContactRoute: ContactRoute,
-  GuideRoute: GuideRoute,
+  CovoiturageRoute: CovoiturageRouteWithChildren,
+  GuideRoute: GuideRouteWithChildren,
   HorairesRoute: HorairesRoute,
   LignesRoute: LignesRouteWithChildren,
   MentionsLegalesRoute: MentionsLegalesRoute,
+  MethodeEditorialeRoute: MethodeEditorialeRoute,
   PortsRoute: PortsRouteWithChildren,
+  SimulateursRoute: SimulateursRouteWithChildren,
+  SitemapMaritimeDotxmlRoute: SitemapMaritimeDotxmlRoute,
+  SitemapPagesDotxmlRoute: SitemapPagesDotxmlRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
+  VehiculesMoins3AnsRoute: VehiculesMoins3AnsRoute,
+  VoyageAlgerieRoute: VoyageAlgerieRoute,
   ApiVesselPositionsRoute: ApiVesselPositionsRoute,
 }
 export const routeTree = rootRouteImport

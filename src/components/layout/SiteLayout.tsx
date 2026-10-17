@@ -12,9 +12,18 @@ export const navLinks = [
   { to: "/lignes", label: "Lignes" },
   { to: "/compagnies", label: "Compagnies" },
   { to: "/guide", label: "Guide" },
+  { to: "/bateaux", label: "Bateaux" },
+  { to: "/simulateurs", label: "Simulateurs" },
 ] as const;
 
 const footerLinks = [
+  { to: "/guide", label: "Tous les dossiers" },
+  { to: "/vehicules-moins-3-ans", label: "Véhicules de moins de 3 ans" },
+  { to: "/voyage-algerie", label: "Voyage en Algérie" },
+  { to: "/covoiturage", label: "Covoiturage" },
+  { to: "/bateaux", label: "Bateaux" },
+  { to: "/simulateurs", label: "Simulateurs" },
+  { to: "/methode-editoriale", label: "Méthode éditoriale" },
   { to: "/compagnies", label: "Compagnies" },
   { to: "/a-propos", label: "À propos" },
   { to: "/contact", label: "Contact" },
@@ -48,6 +57,12 @@ export function BrandLink({ compact = false }: { compact?: boolean }) {
 export function SiteLayout({ children }: { children: ReactNode }) {
   return (
     <div className="flex min-h-dvh flex-col bg-background">
+      <a
+        href="#contenu"
+        className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[100] focus:rounded-lg focus:bg-background focus:p-3 focus:text-primary"
+      >
+        Aller au contenu
+      </a>
       <header className="sticky top-0 z-40 hidden h-14 w-full items-center justify-between gap-6 border-b border-border/60 bg-background/90 px-5 shadow-[0_1px_12px_-6px_hsl(0_0%_0%/0.15)] backdrop-blur-xl md:flex">
         <BrandLink />
         <nav
@@ -76,7 +91,11 @@ export function SiteLayout({ children }: { children: ReactNode }) {
       </header>
 
       {/* Conteneur commun : largeur maximale et marges latérales sur toutes les pages éditoriales. */}
-      <main className="mx-auto w-full max-w-6xl flex-1 px-4 pb-24 md:px-6 md:pb-16">
+      <main
+        id="contenu"
+        tabIndex={-1}
+        className="mx-auto w-full max-w-6xl flex-1 px-4 pb-24 md:px-6 md:pb-16"
+      >
         <DataUnavailableNotice className="mt-4" />
         {children}
       </main>

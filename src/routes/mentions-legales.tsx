@@ -1,3 +1,4 @@
+import { seoHead } from "@/lib/seo/site";
 import { createFileRoute } from "@tanstack/react-router";
 import { PageHero, SiteLayout } from "@/components/layout/SiteLayout";
 
@@ -6,14 +7,7 @@ const description =
   "Mentions légales du site Batogo : éditeur, hébergement, propriété intellectuelle et limites de responsabilité sur les informations maritimes publiées.";
 
 export const Route = createFileRoute("/mentions-legales")({
-  head: () => ({
-    meta: [
-      { title },
-      { name: "description", content: description },
-      { property: "og:title", content: title },
-      { property: "og:description", content: description },
-    ],
-  }),
+  head: () => seoHead(title, description, "/mentions-legales"),
   component: LegalPage,
 });
 

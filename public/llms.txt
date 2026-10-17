@@ -1,12 +1,22 @@
 # Batogo
 
-> Batogo est une carte indépendante des traversées en ferry entre l'Europe et l'Algérie, dans les deux sens : ports, lignes, durées de traversée, compagnies, navires et prochains départs (heures locales des ports).
+> Information indépendante pour les ferries Europe–Algérie et la préparation du voyage.
 
 ## Pages principales
-- [Carte interactive](https://test-magic.lovable.app/): liaisons et prochains départs
-- [Horaires](https://test-magic.lovable.app/horaires): calendriers des départs
-- [Ports](https://test-magic.lovable.app/ports): ports algériens et européens (France, Espagne, Italie)
-- [Lignes](https://test-magic.lovable.app/lignes): liaisons, durées typiques, compagnies
-- [Compagnies](https://test-magic.lovable.app/compagnies): compagnies maritimes opérant vers l'Algérie
-- [Guide](https://test-magic.lovable.app/guide): conseils pour préparer sa traversée
-- [Plan du site](https://test-magic.lovable.app/sitemap.xml)
+- [Carte des ferries](https://test-magic.lovable.app/)
+- [Horaires](https://test-magic.lovable.app/horaires)
+- [Ports](https://test-magic.lovable.app/ports)
+- [Lignes](https://test-magic.lovable.app/lignes)
+- [Compagnies](https://test-magic.lovable.app/compagnies)
+- [Guide et dossiers](https://test-magic.lovable.app/guide)
+- [Véhicules de moins de trois ans](https://test-magic.lovable.app/vehicules-moins-3-ans)
+- [Voyage en Algérie](https://test-magic.lovable.app/voyage-algerie)
+- [Dossiers bateaux](https://test-magic.lovable.app/bateaux)
+- [Points de covoiturage](https://test-magic.lovable.app/covoiturage)
+- [Simulateurs](https://test-magic.lovable.app/simulateurs)
+- [Méthode et sources](https://test-magic.lovable.app/methode-editoriale)
+
+## Portée des informations
+Les horaires et affectations se confirment auprès des compagnies. Les formalités se confirment auprès des autorités compétentes. Les simulateurs utilisent les données saisies par le visiteur et ne certifient ni prix ni éligibilité.
+
+Ce fichier est un sommaire documentaire facultatif. Il ne garantit aucune visibilité dans les moteurs de recherche ou les réponses d'IA.

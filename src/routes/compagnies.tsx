@@ -1,3 +1,5 @@
+import { vesselDossiers } from "@/content/vessels";
+import { seoHead } from "@/lib/seo/site";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { Card, PageHero, SiteLayout } from "@/components/layout/SiteLayout";
@@ -17,14 +19,7 @@ export const Route = createFileRoute("/compagnies")({
       context.queryClient.ensureQueryData(vesselsQuery),
     ]);
   },
-  head: () => ({
-    meta: [
-      { title },
-      { name: "description", content: description },
-      { property: "og:title", content: title },
-      { property: "og:description", content: description },
-    ],
-  }),
+  head: () => seoHead(title, description, "/compagnies"),
   component: CompagniesPage,
 });
 
@@ -72,9 +67,22 @@ function CompagniesPage() {
               {fleet.length > 0 ? (
                 <>
                   <h3 className="mt-4 text-sm font-semibold">Flotte ({fleet.length})</h3>
-                  <p className="mt-1 text-sm text-muted-foreground">
-                    {fleet.map((vessel) => vessel.name).join(", ")}
-                  </p>
+                  <ul className="mt-2 flex flex-wrap gap-2 text-sm">
+                    {fleet.map((vessel) => (
+                      <li key={vessel.id}>
+                        {vesselDossiers.some((d) => d.slug === vessel.slug) ? (
+                          <a
+                            href={`/bateaux/${vessel.slug}`}
+                            className="font-semibold text-primary underline underline-offset-4"
+                          >
+                            {vessel.name}
+                          </a>
+                        ) : (
+                          <span className="text-muted-foreground">{vessel.name}</span>
+                        )}
+                      </li>
+                    ))}
+                  </ul>
                 </>
               ) : null}
               {company.website_url ? (

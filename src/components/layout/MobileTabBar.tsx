@@ -13,6 +13,10 @@ const itemClass =
 const moreLinks = [
   { to: "/compagnies", label: "Compagnies" },
   { to: "/guide", label: "Guide pratique" },
+  { to: "/vehicules-moins-3-ans", label: "Véhicules de moins de 3 ans" },
+  { to: "/bateaux", label: "Dossiers bateaux" },
+  { to: "/simulateurs", label: "Simulateurs" },
+  { to: "/covoiturage", label: "Covoiturage" },
   { to: "/a-propos", label: "À propos" },
   { to: "/contact", label: "Contact" },
 ] as const;

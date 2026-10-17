@@ -5,11 +5,13 @@
   "type": "module",
   "scripts": {
     "dev": "vite dev",
-    "build": "vite build",
-    "build:dev": "vite build --mode development",
+    "build": "node scripts/seo/generate-discovery.mjs && vite build",
+    "build:dev": "node scripts/seo/generate-discovery.mjs && vite build --mode development",
     "preview": "vite preview",
     "lint": "eslint .",
-    "format": "prettier --write ."
+    "format": "prettier --write .",
+    "seo:discovery": "node scripts/seo/generate-discovery.mjs",
+    "test:seo": "vitest run src/lib/seo src/lib/tools"
   },
   "overrides": {
     "rolldown": "1.2.1"

@@ -1,0 +1,497 @@
+{
+  "base": "test-magic-main (4).zip",
+  "date": "2026-10-17",
+  "instructions": "Fichiers complets à déposer aux mêmes chemins. Aucune suppression. Ce manifeste ne référence pas sa propre empreinte.",
+  "files": [
+    {
+      "path": "LISEZMOI-SEO-GEO.md",
+      "operation": "new",
+      "bytes": 4855,
+      "sha256": "932d3ae3fd80e02688859ebe3d440230ab0a502e160658d26c38c11a1e520460",
+      "original_sha256": null
+    },
+    {
+      "path": "docs/seo/AUDIT-SEO-GEO.md",
+      "operation": "new",
+      "bytes": 12455,
+      "sha256": "ae6544788a2658da1721430107ec95874d31c57084ca7ab78d928b8115e30420",
+      "original_sha256": null
+    },
+    {
+      "path": "docs/seo/PAGES-LIVREES.md",
+      "operation": "new",
+      "bytes": 3331,
+      "sha256": "41e4ef56dbb59338883880ce99a67dc22e5b3a736e4025c126f54621ba791794",
+      "original_sha256": null
+    },
+    {
+      "path": "docs/seo/ROADMAP-90-JOURS.md",
+      "operation": "new",
+      "bytes": 9692,
+      "sha256": "276e17460ae8ae5cffc9b4f4014c518b45eee65185437223276b629d4162cb44",
+      "original_sha256": null
+    },
+    {
+      "path": "docs/seo/VALIDATION.md",
+      "operation": "new",
+      "bytes": 5129,
+      "sha256": "77057411b6143ef31a6f165b1fc499149b23360a4a58a72c71785e3a9061a23a",
+      "original_sha256": null
+    },
+    {
+      "path": "package.json",
+      "operation": "modified",
+      "bytes": 3386,
+      "sha256": "e0bdf56642042c42ad26ded7c7d0ff68fff57cbb2133d13a52a230dd0d29ba22",
+      "original_sha256": "451d57a661d8df051982989774709184cebc1768c0657aef34ff789afb9e7478"
+    },
+    {
+      "path": "public/llms.txt",
+      "operation": "modified",
+      "bytes": 1286,
+      "sha256": "5717e4427b4bc490d36322e4400fd1444eacf5f67b3446bd245ce8ccd2142d74",
+      "original_sha256": "c2286e03dd67fa23d11d94f2b2aecea6f2de667a63897c857ec8d4335b19e455"
+    },
+    {
+      "path": "public/robots.txt",
+      "operation": "modified",
+      "bytes": 92,
+      "sha256": "e4cb86c8ccb1076433a3f7c5a8a11f1be805f5888b1ce9f511a2db6a60396896",
+      "original_sha256": "601426a4300ada7e8bbc725644aa590b1259e0f704afef47d884b6d229cb8a2c"
+    },
+    {
+      "path": "scripts/seo/generate-discovery.mjs",
+      "operation": "new",
+      "bytes": 1858,
+      "sha256": "c2941a7e64478289056ab4ad34cd5e13b80501c0de9251e668ec2632de50a632",
+      "original_sha256": null
+    },
+    {
+      "path": "seo.config.json",
+      "operation": "new",
+      "bytes": 145,
+      "sha256": "8d17cc01c068ab73bf3c92025514feebe55a370ed017921499a582b7763de16a",
+      "original_sha256": null
+    },
+    {
+      "path": "src/components/editorial/ArticlePage.tsx",
+      "operation": "new",
+      "bytes": 3490,
+      "sha256": "dece9e3640aefbd10ef8bef93919b9755bbd1fb56f0cf606efa37f8a7f699c51",
+      "original_sha256": null
+    },
+    {
+      "path": "src/components/editorial/Editorial.tsx",
+      "operation": "new",
+      "bytes": 7997,
+      "sha256": "29cbb89876c80ddd33242bb3cce12e2e63cae5c253cca8c152dafe52c0ca2bfb",
+      "original_sha256": null
+    },
+    {
+      "path": "src/components/editorial/GuideHub.tsx",
+      "operation": "new",
+      "bytes": 4353,
+      "sha256": "f1713f1a83ebc7d1028946c27dd67892ab262c01cd8272ae7bf96f6d4b3cc12d",
+      "original_sha256": null
+    },
+    {
+      "path": "src/components/layout/MobileTabBar.tsx",
+      "operation": "modified",
+      "bytes": 2893,
+      "sha256": "0ee03c56a6c71c547ed4c50bb1791b48484b5b915da9e78c8b6cfdeca5aa3cc8",
+      "original_sha256": "28d2300b632b75e5d80b231475b50883d458b150d381410adbf326eacef7d80b"
+    },
+    {
+      "path": "src/components/layout/SiteLayout.tsx",
+      "operation": "modified",
+      "bytes": 5650,
+      "sha256": "d7b327a0f6e4283670d9f764b31c64ab887939a283e06b6454e6764350a55484",
+      "original_sha256": "2b584b77f7f69c6026a0afba715a1108db68c810292294222f1f07df29af6bc4"
+    },
+    {
+      "path": "src/components/tools/CostSharing.tsx",
+      "operation": "new",
+      "bytes": 3680,
+      "sha256": "024a63ec934a7714fa40ca325534e77291dfdb7ef1272b2ea2054aeff3435334",
+      "original_sha256": null
+    },
+    {
+      "path": "src/components/tools/Fields.tsx",
+      "operation": "new",
+      "bytes": 2679,
+      "sha256": "c0ffbfd5afbef4c8b156ca8ab020f6cc6d4ce73a5f595cfe1bb8f296b2966d1c",
+      "original_sha256": null
+    },
+    {
+      "path": "src/components/tools/ImportBudget.tsx",
+      "operation": "new",
+      "bytes": 5434,
+      "sha256": "4841a517a594d641231b866e08de2b2fb391d90b2646f5dae3051008d6d9f0ad",
+      "original_sha256": null
+    },
+    {
+      "path": "src/components/tools/TravelBudget.tsx",
+      "operation": "new",
+      "bytes": 6610,
+      "sha256": "8fe5db8846ff48c31fc852e8a66f38695a698d22be59bff69b6f2b906ecbd6e0",
+      "original_sha256": null
+    },
+    {
+      "path": "src/components/tools/VehicleAge.tsx",
+      "operation": "new",
+      "bytes": 3984,
+      "sha256": "27634f7fd45d059bc5f0e328ee2c966a142688d08f5be547cc3f704e4da6b04b",
+      "original_sha256": null
+    },
+    {
+      "path": "src/content/articles.ts",
+      "operation": "new",
+      "bytes": 47261,
+      "sha256": "623cd09a886a24a8721a9c907b88d81d4a406122bdd328efdf1384616f600eac",
+      "original_sha256": null
+    },
+    {
+      "path": "src/content/carpool.ts",
+      "operation": "new",
+      "bytes": 2918,
+      "sha256": "1b9f0abd05c9321c2e3129ceccec357d373a4cfaf2dc69e2ce06bd28a50a6f32",
+      "original_sha256": null
+    },
+    {
+      "path": "src/content/sources.ts",
+      "operation": "new",
+      "bytes": 5158,
+      "sha256": "1f25174c304e0be689212886a21fe5dc0356d132fa7b6df2d78c1e0bbaa0eb77",
+      "original_sha256": null
+    },
+    {
+      "path": "src/content/tools.ts",
+      "operation": "new",
+      "bytes": 1164,
+      "sha256": "04dffeae25b284868671bd9b3127cc89cafc437e59f509fccc43eda39e0c5c55",
+      "original_sha256": null
+    },
+    {
+      "path": "src/content/types.ts",
+      "operation": "new",
+      "bytes": 893,
+      "sha256": "74116503d40ce7a9db70c23312c95969f9f9fd686660121f363e62fd22407aed",
+      "original_sha256": null
+    },
+    {
+      "path": "src/content/vessels.ts",
+      "operation": "new",
+      "bytes": 7815,
+      "sha256": "114b0a1e7592762b1ada97e5a7dd4704838fcd05f498d6a919faf89239d76a66",
+      "original_sha256": null
+    },
+    {
+      "path": "src/lib/seo/content.test.ts",
+      "operation": "new",
+      "bytes": 2789,
+      "sha256": "be7c703835be9b75c86513041dfe09a35db7955c62409b5ed230d657f423bae7",
+      "original_sha256": null
+    },
+    {
+      "path": "src/lib/seo/maritime-sitemap.server.ts",
+      "operation": "new",
+      "bytes": 1422,
+      "sha256": "02dbd9d92e9d5e8057ef698b8c4aa0983b8813de31f9bcbc5e588a5da9976a2a",
+      "original_sha256": null
+    },
+    {
+      "path": "src/lib/seo/paths.ts",
+      "operation": "new",
+      "bytes": 945,
+      "sha256": "f97129c5ad2846cec1972f9ade9ec7400ded8fb6b333eb17e52a01a8faa3ad7a",
+      "original_sha256": null
+    },
+    {
+      "path": "src/lib/seo/site.ts",
+      "operation": "new",
+      "bytes": 1829,
+      "sha256": "bac57917d6d772d67c2db8907d5161059b635447cfa63d52f8a43f9f5570ebbd",
+      "original_sha256": null
+    },
+    {
+      "path": "src/lib/seo/sitemap.ts",
+      "operation": "new",
+      "bytes": 1115,
+      "sha256": "ff5122610f53c5fd77524fae633c2ab01cdd7ea470b1d09e479d72b73738d4cb",
+      "original_sha256": null
+    },
+    {
+      "path": "src/lib/tools/calculations.test.ts",
+      "operation": "new",
+      "bytes": 2528,
+      "sha256": "8bd6a77fb7b0abb786f9505ce5497d55d7b8986cffd6592146695bff7daa29f6",
+      "original_sha256": null
+    },
+    {
+      "path": "src/lib/tools/calculations.ts",
+      "operation": "new",
+      "bytes": 3029,
+      "sha256": "b54c9e4fd9eacd4827e6a4877b65a337ae10084833f853b920ad20702d6ff27e",
+      "original_sha256": null
+    },
+    {
+      "path": "src/routeTree.gen.ts",
+      "operation": "modified",
+      "bytes": 26533,
+      "sha256": "8d0f45c4125ccaaa86452045b6ec09400e8d5efa930ee552cef9440ea4617f70",
+      "original_sha256": "565ca8ddaf20dc711506cf73f86142604540add31ae625e238bb46f48fdcd72f"
+    },
+    {
+      "path": "src/routes/__root.tsx",
+      "operation": "modified",
+      "bytes": 5620,
+      "sha256": "34f2efc35d55088f550f775130132f935acb7711f63c6bb109bb2e5ccb37c14d",
+      "original_sha256": "2ffcdca4b8c5ae3dc0a4d5d86d7e47b0a5ceddff6bf056a7d23941da5c9b3c78"
+    },
+    {
+      "path": "src/routes/a-propos.tsx",
+      "operation": "modified",
+      "bytes": 2221,
+      "sha256": "60b058a214c34185358defa08e708f1cc3749441fdb6b239df1df676e2e84810",
+      "original_sha256": "75cef57a68dc03e9700a629cb6bbbcb058ed8de434cf0f22b565f99089954f61"
+    },
+    {
+      "path": "src/routes/admin.tsx",
+      "operation": "modified",
+      "bytes": 129990,
+      "sha256": "4967d2fd31ee283b144d77503cee8db00a472d7082bc25a150471068eb77ae6e",
+      "original_sha256": "299e8d1781529922409a5dbb41995182214148a16d3f4f3adae88445c6669d19"
+    },
+    {
+      "path": "src/routes/auth.tsx",
+      "operation": "modified",
+      "bytes": 12421,
+      "sha256": "d4b0413a7e6cb3414fd5e6457babe4cc3ac95c9532e15213b0f0d8728de9280a",
+      "original_sha256": "fb1b41161e93f7ab12266c45af59d7007b2071c0b586f01482278c0e7ed30d96"
+    },
+    {
+      "path": "src/routes/bateaux.$slug.tsx",
+      "operation": "new",
+      "bytes": 2924,
+      "sha256": "213815bfdc2e99ad654a45a78d207f3ced605a2a00e9428af9dd3aa86f592024",
+      "original_sha256": null
+    },
+    {
+      "path": "src/routes/bateaux.index.tsx",
+      "operation": "new",
+      "bytes": 2394,
+      "sha256": "4c02af3ed1f819f1709b8cfd2dc401235cf2772841ac1033ceaf94378569f749",
+      "original_sha256": null
+    },
+    {
+      "path": "src/routes/bateaux.tsx",
+      "operation": "new",
+      "bytes": 139,
+      "sha256": "4ce6264004c7abd108ca06e36df43ddeb75d8c1d1b8b12c9f89c892a2155ebe5",
+      "original_sha256": null
+    },
+    {
+      "path": "src/routes/compagnies.tsx",
+      "operation": "modified",
+      "bytes": 4369,
+      "sha256": "faedd451f39f35277a27b346777fb9d3d159aef3b439767b2817d68566a165ac",
+      "original_sha256": "f3b6b85d6c7adee6a2ecf13f5c42ee55d130b6fc65c7a23fb64ece04ee5d2a38"
+    },
+    {
+      "path": "src/routes/compte.tsx",
+      "operation": "modified",
+      "bytes": 10152,
+      "sha256": "cd201a09a033a441fe60ffa2ee82e066b395ed52ec8c400aa0d952e7e65eb6d2",
+      "original_sha256": "3896616438cec8398f2d4f69adc5404e06084c809054cf6606470b1c2243cc01"
+    },
+    {
+      "path": "src/routes/confidentialite.tsx",
+      "operation": "modified",
+      "bytes": 2116,
+      "sha256": "4349ab3d37f911c0fc8782ae52264ef1c61be0c80f281f6c1052845c8753dbe1",
+      "original_sha256": "7f2e74cd0872aaed1d243db4dc52604e3d3fee6cb382724bbb2548df8f5d6433"
+    },
+    {
+      "path": "src/routes/contact.tsx",
+      "operation": "modified",
+      "bytes": 2382,
+      "sha256": "d18aba7bf3ed3fc98dd1fda1c42ada1d801abe5320ef219f4c4695dd83ca1ba4",
+      "original_sha256": "dddc93de9999549b81b6ae5bc6760fb267940665b792204aa221baf8ba3a8c6c"
+    },
+    {
+      "path": "src/routes/covoiturage.$slug.tsx",
+      "operation": "new",
+      "bytes": 3265,
+      "sha256": "7aa49c11514a79cdceea6f5c9096ea1873748109c432acdb56d6c8b0aa9c1bf4",
+      "original_sha256": null
+    },
+    {
+      "path": "src/routes/covoiturage.index.tsx",
+      "operation": "new",
+      "bytes": 2846,
+      "sha256": "e0732afabe1ae7d4697a340671da48478e5350b34f92e803fb0d9436b63fc925",
+      "original_sha256": null
+    },
+    {
+      "path": "src/routes/covoiturage.tsx",
+      "operation": "new",
+      "bytes": 143,
+      "sha256": "403d72d64d7a4e0e31fbf08ef5826ab9fce3dc493db694404c2402d3dcff6621",
+      "original_sha256": null
+    },
+    {
+      "path": "src/routes/guide.$slug.tsx",
+      "operation": "new",
+      "bytes": 901,
+      "sha256": "386af56b15390eb1f35c734f58623f159ee6dda8fcc894f13900002b483c3b6e",
+      "original_sha256": null
+    },
+    {
+      "path": "src/routes/guide.index.tsx",
+      "operation": "new",
+      "bytes": 516,
+      "sha256": "b6e1509c3bd72c3dcfac3959c8946b487cc01fe029e12ab184440cabd1eaff2e",
+      "original_sha256": null
+    },
+    {
+      "path": "src/routes/guide.tsx",
+      "operation": "modified",
+      "bytes": 137,
+      "sha256": "55e006bf031ed3db6a76908f40587899d7e7314d0a28c67a8ee24c7bfa35e279",
+      "original_sha256": "d69c0356d2471a7c46479b71b2a52ff893b4feaa9c5f85dae113cd0467a3ba0e"
+    },
+    {
+      "path": "src/routes/horaires.tsx",
+      "operation": "modified",
+      "bytes": 10324,
+      "sha256": "a9e49a488b9206707f3f44749f112463a57644ee93b565d90d7ecd28d9743d04",
+      "original_sha256": "e142ddb14871a5e8718ca5c31b291d5164851afc698838bb4c7193cfd8f6ab61"
+    },
+    {
+      "path": "src/routes/index.tsx",
+      "operation": "modified",
+      "bytes": 26632,
+      "sha256": "cf87ee90f0d337e08ef52ef019a9047bde5450a9315181cd820ae7c1518e6c7f",
+      "original_sha256": "1203a63f230b14b02a55d1298e2e042ff13a529a064e42061530990a3046a31a"
+    },
+    {
+      "path": "src/routes/lignes.$slug.tsx",
+      "operation": "modified",
+      "bytes": 9404,
+      "sha256": "b1da25b3e52a76b6755283ee6fea72d74ecb22686137d2326635f39fb2ba81a4",
+      "original_sha256": "b8a1e2aceb2996d467cf4c148ba5e188176cffc953298db3378feae56159b2ba"
+    },
+    {
+      "path": "src/routes/lignes.index.tsx",
+      "operation": "new",
+      "bytes": 2648,
+      "sha256": "43c925e2a22e11a05d05ad30af3062fdb387c9aaf3109682c39ef73224bd2504",
+      "original_sha256": null
+    },
+    {
+      "path": "src/routes/lignes.tsx",
+      "operation": "modified",
+      "bytes": 138,
+      "sha256": "b8c8a61bc1bbbd1c5c0a5277ed36bfebb892a462352bff345470d1a028e79d46",
+      "original_sha256": "6941947a3e4372c6ca8a2e82a907d6eb967df5beed82ad20896295399cf8e4ab"
+    },
+    {
+      "path": "src/routes/mentions-legales.tsx",
+      "operation": "modified",
+      "bytes": 2141,
+      "sha256": "02f72c442de03105c981115d88685ffaa2d641e4f6f12d8e74115b196eb43563",
+      "original_sha256": "2a71edb86b046d3030c25a127850f6e79a3db313dad4b2c4f011d94b8e3ed015"
+    },
+    {
+      "path": "src/routes/methode-editoriale.tsx",
+      "operation": "new",
+      "bytes": 4462,
+      "sha256": "f2312a67701ed5b938b00944a4d151b1b9ea654e5f4ff077bea8780365514e41",
+      "original_sha256": null
+    },
+    {
+      "path": "src/routes/ports.$slug.tsx",
+      "operation": "modified",
+      "bytes": 7349,
+      "sha256": "86cee67f37eabf1ca87c75a40d5b851c1424304eda73a211266cf362bad5c3ad",
+      "original_sha256": "5d03889f5af2f9c9e0ed902056a1b2576b702f68b69b110d19a80c1699ef0051"
+    },
+    {
+      "path": "src/routes/ports.index.tsx",
+      "operation": "new",
+      "bytes": 3044,
+      "sha256": "10f298603f502561539455b6993844a768ddeea91a38e73af9110d8e5c2a0b3e",
+      "original_sha256": null
+    },
+    {
+      "path": "src/routes/ports.tsx",
+      "operation": "modified",
+      "bytes": 137,
+      "sha256": "d8b3ce9f7e4dd2c792eb7f59cfe2636a87ddc93f0cd2ee97031443c841caf301",
+      "original_sha256": "a0d2f97a4759399e8958d16a272ba32672facc2a357cfa3810103f9ccfcf2670"
+    },
+    {
+      "path": "src/routes/simulateurs.$slug.tsx",
+      "operation": "new",
+      "bytes": 2706,
+      "sha256": "c0cbaf6eb4825e9f9bd190d1703834aa42e77b884c18a0916a46d2e2e0be8bdb",
+      "original_sha256": null
+    },
+    {
+      "path": "src/routes/simulateurs.index.tsx",
+      "operation": "new",
+      "bytes": 2025,
+      "sha256": "67fb7f40bf0c1e84e09fae02b9c8874a45bdec22538b72aa1b0dc346802771d4",
+      "original_sha256": null
+    },
+    {
+      "path": "src/routes/simulateurs.tsx",
+      "operation": "new",
+      "bytes": 143,
+      "sha256": "d3b65dd05796e2ce5d0cb96e537f80736babf52556b43de731a73f207c0f9f8b",
+      "original_sha256": null
+    },
+    {
+      "path": "src/routes/sitemap-maritime[.]xml.ts",
+      "operation": "new",
+      "bytes": 810,
+      "sha256": "377f84eaf17957042243bc035b8317614234981fe13e3a3cb60fd78bb8f65ab5",
+      "original_sha256": null
+    },
+    {
+      "path": "src/routes/sitemap-pages[.]xml.ts",
+      "operation": "new",
+      "bytes": 326,
+      "sha256": "f986dae3ec6de2ffa6da609864601c1dfd81a412f33ab56ee7a5ebb866b89a43",
+      "original_sha256": null
+    },
+    {
+      "path": "src/routes/sitemap[.]xml.ts",
+      "operation": "modified",
+      "bytes": 593,
+      "sha256": "92bcac122366e73330f4b0d38720ae2d9e412e1dc803acaf3c92ca981e6dcab0",
+      "original_sha256": "38d8dd0fd03815cef338a531a27de35c1d6c17da4aae64cfeae1191ce084b003"
+    },
+    {
+      "path": "src/routes/vehicules-moins-3-ans.tsx",
+      "operation": "new",
+      "bytes": 567,
+      "sha256": "1da2c6d15fe17a8c55aac763761b5f9827a7b5490f72acf09830bef78d724e5e",
+      "original_sha256": null
+    },
+    {
+      "path": "src/routes/voyage-algerie.tsx",
+      "operation": "new",
+      "bytes": 547,
+      "sha256": "e659e83068f80f70a75f0f9a3e5728eb39efae99db360a2e117dcad9157a46ed",
+      "original_sha256": null
+    },
+    {
+      "path": "tsconfig.json",
+      "operation": "modified",
+      "bytes": 849,
+      "sha256": "c78e48d90c06abb19b44fa967c58ea066d5eb61733c1960931fb4be33918d6bf",
+      "original_sha256": "0ff5b0536ac765fe8beabcfe2202c3069c4cc43136e20e4c2f04c55f6f4ebc84"
+    }
+  ]
+}

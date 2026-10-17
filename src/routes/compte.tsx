@@ -14,6 +14,7 @@ import { formatDate } from "@/lib/ferry/format";
 export const Route = createFileRoute("/compte")({
   head: () => ({
     meta: [
+      { name: "robots", content: "noindex, nofollow" },
       { title: "Mon compte — Batogo" },
       {
         name: "description",
@@ -25,7 +26,6 @@ export const Route = createFileRoute("/compte")({
         property: "og:description",
         content: "Profil, avis et signalements de votre compte Batogo.",
       },
-      { name: "robots", content: "noindex" },
     ],
   }),
   component: AccountPage,

@@ -1,3 +1,4 @@
+import { seoHead } from "@/lib/seo/site";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Card, PageHero, SiteLayout } from "@/components/layout/SiteLayout";
 
@@ -6,14 +7,7 @@ const description =
   "Batogo rassemble ports, lignes, durées et départs des traversées vers l'Algérie, avec la source et la date de vérification de chaque information.";
 
 export const Route = createFileRoute("/a-propos")({
-  head: () => ({
-    meta: [
-      { title },
-      { name: "description", content: description },
-      { property: "og:title", content: title },
-      { property: "og:description", content: description },
-    ],
-  }),
+  head: () => seoHead(title, description, "/a-propos"),
   component: AboutPage,
 });
 
@@ -29,8 +23,8 @@ function AboutPage() {
         <Card>
           <h2 className="font-display font-semibold">Informer d'abord</h2>
           <p className="mt-2 text-sm text-muted-foreground">
-            Nous ne vendons pas de billets. Nous rassemblons, vérifions et présentons clairement
-            les ports, lignes, durées et départs.
+            Nous ne vendons pas de billets. Nous rassemblons, vérifions et présentons clairement les
+            ports, lignes, durées et départs.
           </p>
         </Card>
         <Card>

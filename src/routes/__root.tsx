@@ -1,3 +1,4 @@
+import { absoluteUrl, jsonLdString } from "@/lib/seo/site";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import {
   Outlet,
@@ -94,14 +95,26 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     scripts: [
       {
         type: "application/ld+json",
-        children: JSON.stringify({
+        children: jsonLdString({
           "@context": "https://schema.org",
-          "@type": "WebSite",
-          name: "Batogo",
-          url: "https://test-magic.lovable.app",
-          inLanguage: "fr",
-          description:
-            "Carte des traversées maritimes entre l'Europe et l'Algérie, dans les deux sens : ports, lignes, durées et prochains départs.",
+          "@graph": [
+            {
+              "@type": "WebSite",
+              "@id": absoluteUrl("/#site"),
+              name: "Batogo",
+              url: absoluteUrl("/"),
+              inLanguage: "fr",
+              publisher: { "@id": absoluteUrl("/#organisation") },
+            },
+            {
+              "@type": "Organization",
+              "@id": absoluteUrl("/#organisation"),
+              name: "Batogo",
+              url: absoluteUrl("/"),
+              description:
+                "Information indépendante sur les ferries Europe–Algérie et la préparation du voyage.",
+            },
+          ],
         }),
       },
     ],

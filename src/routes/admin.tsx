@@ -83,6 +83,7 @@ const departureStatusLabel: Record<string, string> = {
 export const Route = createFileRoute("/admin")({
   head: () => ({
     meta: [
+      { name: "robots", content: "noindex, nofollow" },
       { title: "Back-office — Batogo" },
       {
         name: "description",
@@ -94,7 +95,6 @@ export const Route = createFileRoute("/admin")({
         property: "og:description",
         content: "Modération des avis, signalements et gestion des départs Batogo.",
       },
-      { name: "robots", content: "noindex" },
     ],
   }),
   component: AdminPage,

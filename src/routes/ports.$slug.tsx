@@ -1,3 +1,5 @@
+import { absoluteUrl, breadcrumbSchema, jsonLdString, seoHead } from "@/lib/seo/site";
+import { Breadcrumbs } from "@/components/editorial/Editorial";
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { Card, PageHero, SiteLayout } from "@/components/layout/SiteLayout";
@@ -18,7 +20,7 @@ export const Route = createFileRoute("/ports/$slug")({
       context.queryClient.ensureQueryData(routesQuery),
       context.queryClient.ensureQueryData(companiesQuery),
     ]);
-    return { name: port.name, country: port.country_name };
+    return { name: port.name, country: port.country_name, slug: port.slug };
   },
   head: ({ loaderData }) => {
     if (!loaderData) {
@@ -28,14 +30,7 @@ export const Route = createFileRoute("/ports/$slug")({
     }
     const title = `Ferry ${loaderData.name} (${loaderData.country}) — lignes et durées | Batogo`;
     const description = `Traversées en ferry au départ et à l'arrivée du port de ${loaderData.name} : lignes desservies, durées, compagnies et services du port.`;
-    return {
-      meta: [
-        { title },
-        { name: "description", content: description },
-        { property: "og:title", content: title },
-        { property: "og:description", content: description },
-      ],
-    };
+    return seoHead(title, description, `/ports/${loaderData.slug}`);
   },
   component: PortPage,
 });
@@ -70,9 +65,15 @@ function PortPage() {
 
   return (
     <SiteLayout>
+      <Breadcrumbs
+        items={[
+          { name: "Ports", path: "/ports" },
+          { name: port.name, path: `/ports/${port.slug}` },
+        ]}
+      />
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        dangerouslySetInnerHTML={{ __html: jsonLdString(jsonLd) }}
       />
       <PageHero
         overline={`${port.country_name}${port.city ? ` · ${port.city}` : ""}`}
@@ -171,6 +172,21 @@ function PortPage() {
           ))}
         </ul>
       </section>
+      <p className="mt-10 text-sm">
+        <a
+          href="/voyage-algerie"
+          className="font-semibold text-primary underline underline-offset-4"
+        >
+          Préparer la traversée
+        </a>{" "}
+        ·{" "}
+        <a
+          href="/simulateurs/budget-voyage"
+          className="font-semibold text-primary underline underline-offset-4"
+        >
+          Comparer le budget du voyage
+        </a>
+      </p>
     </SiteLayout>
   );
 }

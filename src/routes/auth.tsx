@@ -13,13 +13,13 @@ import { BrandMark } from "@/components/layout/BrandMark";
 export const Route = createFileRoute("/auth")({
   head: () => ({
     meta: [
+      { name: "robots", content: "noindex, nofollow" },
       { title: "Connexion — Batogo" },
       {
         name: "description",
         content:
           "Connectez-vous à Batogo pour noter les ports, laisser un avis et signaler une information inexacte.",
       },
-      { name: "robots", content: "noindex" },
     ],
   }),
   component: AuthPage,

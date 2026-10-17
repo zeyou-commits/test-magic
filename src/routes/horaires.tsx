@@ -1,3 +1,4 @@
+import { seoHead } from "@/lib/seo/site";
 import { useMemo, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useSuspenseQuery } from "@tanstack/react-query";
@@ -35,14 +36,7 @@ export const Route = createFileRoute("/horaires")({
       context.queryClient.ensureQueryData(companiesQuery),
     ]);
   },
-  head: () => ({
-    meta: [
-      { title },
-      { name: "description", content: description },
-      { property: "og:title", content: title },
-      { property: "og:description", content: description },
-    ],
-  }),
+  head: () => seoHead(title, description, "/horaires"),
   component: HorairesPage,
 });
 

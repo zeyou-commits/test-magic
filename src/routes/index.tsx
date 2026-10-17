@@ -1,3 +1,4 @@
+import { seoHead } from "@/lib/seo/site";
 import { DataUnavailableNotice } from "@/components/layout/DataUnavailableNotice";
 import type React from "react";
 import { ChevronLeft, ChevronRight, Menu } from "lucide-react";
@@ -37,24 +38,12 @@ import { MobileTabBar } from "@/components/layout/MobileTabBar";
 const FerryMap = lazy(() => import("@/components/map/FerryMap"));
 
 export const Route = createFileRoute("/")({
-  head: () => ({
-    meta: [
-      { title: "Batogo — Carte des ferries Europe ↔ Algérie" },
-      {
-        name: "description",
-        content:
-          "Toutes les traversées en ferry entre l'Europe et l'Algérie, dans les deux sens : ports, lignes, durées, compagnies et prochains départs en heure locale.",
-      },
-      { property: "og:title", content: "Batogo — Carte des ferries Europe ↔ Algérie" },
-      {
-        property: "og:description",
-        content:
-          "Les lignes maritimes et les prochains départs entre l'Europe et l'Algérie, dans les deux sens.",
-      },
-      { property: "og:type", content: "website" },
-      { name: "twitter:card", content: "summary" },
-    ],
-  }),
+  head: () =>
+    seoHead(
+      "Batogo — Ferries Europe–Algérie, carte et départs",
+      "Explorez les lignes, ports et départs connus entre l’Europe et l’Algérie. Préparez aussi votre voiture, votre traversée et votre budget avec nos guides.",
+      "/",
+    ),
   component: Index,
 });
 
@@ -75,7 +64,9 @@ function Index() {
   const [focusedRouteId, setFocusedRouteId] = useState<string | null>(null);
   const [panelLevel, setPanelLevel] = useState<0 | 1 | 2>(1);
   const [desktopPanelOpen, setDesktopPanelOpen] = useState(true);
-  const [focusTarget, setFocusTarget] = useState<{ center: [number, number]; key: number } | null>(null);
+  const [focusTarget, setFocusTarget] = useState<{ center: [number, number]; key: number } | null>(
+    null,
+  );
   const [portsPulseKey, setPortsPulseKey] = useState(0);
   // Navire choisi depuis le tableau de bord : il reste pleinement visible même si une ligne est active.
   const [focusShipId, setFocusShipId] = useState<string | null>(null);
@@ -524,6 +515,9 @@ function Index() {
 
       {/* CARTE */}
       <main className="absolute inset-0 z-0 bg-[var(--sea)]">
+        <h1 className="sr-only">
+          Ferries Europe–Algérie : carte des lignes, ports et prochains départs
+        </h1>
         <DataUnavailableNotice className="absolute left-1/2 top-20 z-20 w-[min(92vw,26rem)] -translate-x-1/2" />
         <MapStatusBar
           chips={[]}

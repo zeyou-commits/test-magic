@@ -1,3 +1,5 @@
+import { absoluteUrl, breadcrumbSchema, jsonLdString, seoHead } from "@/lib/seo/site";
+import { Breadcrumbs } from "@/components/editorial/Editorial";
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { Card, PageHero, SiteLayout } from "@/components/layout/SiteLayout";
@@ -31,6 +33,7 @@ export const Route = createFileRoute("/lignes/$slug")({
       from: ports.find((port) => port.id === route.departure_port_id)?.name ?? "—",
       to: ports.find((port) => port.id === route.arrival_port_id)?.name ?? "—",
       duration: formatDuration(route.typical_duration_minutes),
+      slug: route.slug,
     };
   },
   head: ({ loaderData }) => {
@@ -41,14 +44,7 @@ export const Route = createFileRoute("/lignes/$slug")({
     }
     const title = `Ferry ${loaderData.from} — ${loaderData.to} : durée, horaires, compagnies | Batogo`;
     const description = `Traversée en ferry ${loaderData.from} → ${loaderData.to} : durée typique de ${loaderData.duration}, calendrier habituel, compagnies et prochains départs connus.`;
-    return {
-      meta: [
-        { title },
-        { name: "description", content: description },
-        { property: "og:title", content: title },
-        { property: "og:description", content: description },
-      ],
-    };
+    return seoHead(title, description, `/lignes/${loaderData.slug}`);
   },
   component: LignePage,
 });
@@ -80,36 +76,23 @@ function LignePage() {
 
   const jsonLd = {
     "@context": "https://schema.org",
-    "@type": "FAQPage",
-    mainEntity: [
-      {
-        "@type": "Question",
-        name: `Combien de temps dure la traversée ${from?.name} — ${to?.name} ?`,
-        acceptedAnswer: {
-          "@type": "Answer",
-          text: `La durée typique de la traversée est de ${formatDuration(
-            route.typical_duration_minutes,
-          )}.`,
-        },
-      },
-      {
-        "@type": "Question",
-        name: `Quelles compagnies assurent la ligne ${from?.name} — ${to?.name} ?`,
-        acceptedAnswer: {
-          "@type": "Answer",
-          text:
-            operators.map((company) => company.name).join(", ") ||
-            "Les compagnies desservant cette ligne restent à confirmer.",
-        },
-      },
-    ],
+    "@type": "WebPage",
+    name: `Ferry ${from?.name ?? ""} → ${to?.name ?? ""}`,
+    url: absoluteUrl(`/lignes/${route.slug}`),
+    inLanguage: "fr",
   };
 
   return (
     <SiteLayout>
+      <Breadcrumbs
+        items={[
+          { name: "Lignes", path: "/lignes" },
+          { name: `${from?.name ?? ""} → ${to?.name ?? ""}`, path: `/lignes/${route.slug}` },
+        ]}
+      />
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        dangerouslySetInnerHTML={{ __html: jsonLdString(jsonLd) }}
       />
       <PageHero
         overline="Ligne maritime"
@@ -236,6 +219,21 @@ function LignePage() {
           ) : null}
         </ul>
       </section>
+      <p className="mt-10 text-sm">
+        <a
+          href="/voyage-algerie"
+          className="font-semibold text-primary underline underline-offset-4"
+        >
+          Préparer la traversée
+        </a>{" "}
+        ·{" "}
+        <a
+          href="/simulateurs/budget-voyage"
+          className="font-semibold text-primary underline underline-offset-4"
+        >
+          Comparer le budget du voyage
+        </a>
+      </p>
     </SiteLayout>
   );
 }

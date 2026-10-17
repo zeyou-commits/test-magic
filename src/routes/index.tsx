@@ -492,6 +492,7 @@ function Index() {
             filters={filters}
             onFiltersChange={setFilters}
             onHighlightRoute={setHighlightRouteId}
+            onFocusRoute={setFocusedRouteId}
           />
         </div>
         <Button

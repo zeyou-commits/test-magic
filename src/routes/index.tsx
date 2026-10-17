@@ -568,16 +568,7 @@ function Index() {
             setSelection(null);
             setFocusShipId(null);
             openPanel();
-            window.dispatchEvent(new Event("batogo:edit-filters"));
-            window.setTimeout(() => {
-              const el = document.getElementById("filters-company") as HTMLDetailsElement | null;
-              if (!el) return;
-              el.open = true;
-              el.scrollIntoView({ behavior: "smooth", block: "center" });
-              const trigger = el.querySelector<HTMLElement>('[aria-label="Compagnie"]');
-              trigger?.focus();
-              trigger?.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true }));
-            }, 250);
+            window.dispatchEvent(new Event("batogo:open-companies"));
           }}
           onShowPorts={() => {
             setSelection(null);

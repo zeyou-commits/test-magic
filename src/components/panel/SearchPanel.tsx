@@ -114,6 +114,24 @@ export function SearchPanel({
     window.addEventListener("batogo:edit-filters", open);
     return () => window.removeEventListener("batogo:edit-filters", open);
   }, []);
+  // Drapeau du compteur : déplie la section et ouvre la liste des compagnies.
+  const [companyMenuOpen, setCompanyMenuOpen] = useState(false);
+  const [companyOpen, setCompanyOpen] = useState(false);
+  useEffect(() => {
+    const open = () => {
+      setEditing(true);
+      setCompanyOpen(true);
+      window.setTimeout(() => {
+        const el = document.getElementById("filters-company");
+        el?.scrollIntoView({ behavior: "smooth", block: "center" });
+        el?.setAttribute("data-flash", "true");
+        window.setTimeout(() => el?.removeAttribute("data-flash"), 1400);
+        window.setTimeout(() => setCompanyMenuOpen(true), 350);
+      }, 200);
+    };
+    window.addEventListener("batogo:open-companies", open);
+    return () => window.removeEventListener("batogo:open-companies", open);
+  }, []);
   const [calOpen, setCalOpen] = useState(false);
   const [calField, setCalField] = useState<CalendarField>("out");
   const [holidaysOn, setHolidaysOnState] = useState(false);
@@ -461,7 +479,12 @@ export function SearchPanel({
           <VehicleChips value={profile} onChange={setProfile} />
         </div>
 
-        <details id="filters-company" className="group text-xs" open={Boolean(filters.companyId || filters.vesselId)}>
+        <details
+          id="filters-company"
+          className="group rounded-xl text-xs transition-shadow data-[flash=true]:ring-2 data-[flash=true]:ring-primary/50"
+          open={companyOpen || Boolean(filters.companyId || filters.vesselId)}
+          onToggle={(e) => setCompanyOpen((e.currentTarget as HTMLDetailsElement).open)}
+        >
           <summary className="flex cursor-pointer list-none items-center gap-1 font-semibold text-muted-foreground hover:text-foreground">
             <ChevronDown className="size-3.5 transition-transform group-open:rotate-180" />{" "}
             Compagnie, navire
@@ -469,6 +492,8 @@ export function SearchPanel({
           <div className="mt-2 grid grid-cols-2 gap-1.5">
             <FilterSelect
               label="Compagnie"
+              open={companyMenuOpen}
+              onOpenChange={setCompanyMenuOpen}
               value={filters.companyId}
               onChange={(value) => set({ companyId: value })}
               options={companies.map((company) => ({
@@ -783,14 +808,18 @@ function FilterSelect({
   value,
   onChange,
   options,
+  open,
+  onOpenChange,
 }: {
   label: string;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
   value: string | null;
   onChange: (value: string | null) => void;
   options: { value: string; label: string; leading?: ReactNode }[];
 }) {
   return (
-    <Select value={value ?? ANY} onValueChange={(next) => onChange(next === ANY ? null : next)}>
+    <Select open={open} onOpenChange={onOpenChange} value={value ?? ANY} onValueChange={(next) => onChange(next === ANY ? null : next)}>
       <SelectTrigger className="batogo-control h-10 text-xs" aria-label={label}>
         <SelectValue placeholder={label} />
       </SelectTrigger>

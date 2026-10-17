@@ -314,8 +314,11 @@ export default function FerryMap({
       style: MAP_STYLE,
       bounds: OVERVIEW_BOUNDS,
       fitBoundsOptions: { padding: viewPadding() },
-      // Limite de dézoom (ajustée ensuite d'après la zone visible).
-      minZoom: MIN_ZOOM_FLOOR,
+      // La carte est physiquement cantonnée à la Méditerranée occidentale :
+      // impossible de faire glisser hors de cette zone.
+      maxBounds: LIMIT_BOUNDS,
+      // Limite de dézoom (relevée, puis ajustée d'après la zone visible).
+      minZoom: minZoomFloor(),
       maxZoom: 11,
       // Carte à plat : une vue inclinée déforme les distances et gêne la lecture des lignes.
       pitch: 0,

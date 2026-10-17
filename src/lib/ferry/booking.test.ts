@@ -23,6 +23,6 @@ describe("bookingUrl", () => {
     );
   });
   it("renvoie le site officiel pour les autres compagnies", () => {
-    expect(bookingUrl(leg("gnv", "2026-10-17"), profile)).toBe("https://www.example.com");
+    expect(bookingUrl(leg("gnv", "2026-10-17"), profile)).toBe("https://www.example.com/");
   });
 });

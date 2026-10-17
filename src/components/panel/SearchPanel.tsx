@@ -107,7 +107,8 @@ export function SearchPanel({
   );
   const [profile, setProfile] = useState<TripProfileValue>(defaultTripProfile);
   // Formulaire guidé ouvert tant qu'aucune recherche n'est lancée, capsule ensuite.
-  const [editing, setEditing] = useState(true);
+  const [editing, setEditing] = useState(false);
+  const [step, setStep] = useState<1 | 2 | 3>(hidePickersOnMobile ? 2 : 1);
   useEffect(() => {
     const open = () => setEditing(true);
     window.addEventListener("batogo:edit-filters", open);
@@ -844,13 +845,31 @@ function shortDay(key: string) {
   return shortDayFormatter.format(new Date(`${key}T00:00:00Z`));
 }
 
-function StepLabel({ n, children, className = "" }: { n?: number | undefined; children: ReactNode; className?: string }) {
+/** En-tête d'étape façon Airbnb : titre quand l'étape est ouverte, ligne résumé cliquable sinon. */
+function StepLabel({
+  open,
+  onOpen,
+  summary,
+  children,
+  className = "",
+}: {
+  open: boolean;
+  onOpen: () => void;
+  summary: string;
+  children: ReactNode;
+  className?: string;
+}) {
+  if (open) {
+    return <h3 className={`font-display text-base font-bold tracking-tight ${className}`}>{children}</h3>;
+  }
   return (
-    <h3 className={`flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-muted-foreground ${className}`}>
-      {n ? (
-        <span className="grid size-4 place-items-center rounded-full bg-primary text-[9px] text-primary-foreground">{n}</span>
-      ) : null}
-      {children}
-    </h3>
+    <button
+      type="button"
+      onClick={onOpen}
+      className={`flex w-full items-center justify-between gap-3 rounded-xl border border-border bg-card px-3.5 py-2.5 text-left shadow-sm transition hover:border-primary ${className}`}
+    >
+      <span className="text-xs font-semibold text-muted-foreground">{children}</span>
+      <span className="min-w-0 truncate text-xs font-bold text-foreground">{summary}</span>
+    </button>
   );
 }

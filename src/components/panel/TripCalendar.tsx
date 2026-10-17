@@ -477,7 +477,7 @@ export function TripCalendar({
       <PopoverContent
         align="start"
         collisionPadding={12}
-        className="batogo-cal-pop w-[640px] max-w-[calc(100vw-1.5rem)] space-y-4 overflow-hidden rounded-2xl border-border/60 p-0 shadow-2xl"
+        className="batogo-cal-pop w-[640px] max-h-[var(--radix-popover-content-available-height)] max-w-[calc(100vw-1.5rem)] space-y-4 overflow-y-auto overscroll-contain rounded-2xl border-border/60 p-0 shadow-2xl"
         onOpenAutoFocus={(event) => event.preventDefault()}
       >
         {headerBlock}

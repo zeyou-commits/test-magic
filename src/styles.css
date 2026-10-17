@@ -678,7 +678,8 @@
 .batogo-day-avail button::after {
   content: "";
   position: absolute;
-  bottom: 4px;
+  /* Au-dessus des liserés de vacances (3 derniers px ×3) pour rester visible. */
+  bottom: 13px;
   left: 50%;
   width: 4.5px;
   height: 4.5px;

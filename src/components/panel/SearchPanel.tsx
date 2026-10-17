@@ -189,7 +189,7 @@ export function SearchPanel({
   const hasPair = filters.departurePortIds.length > 0 && filters.arrivalPortIds.length > 0;
   const inbound = useMemo(
     () =>
-      hasPair && filters.roundTrip
+      filters.roundTrip
         ? legSailings(
             all,
             filters.arrivalPortIds,
@@ -200,7 +200,6 @@ export function SearchPanel({
         : [],
     [
       all,
-      hasPair,
       filters.roundTrip,
       filters.arrivalPortIds,
       filters.departurePortIds,

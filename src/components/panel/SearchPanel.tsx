@@ -818,7 +818,7 @@ function FilterSelect({
   options: { value: string; label: string; leading?: ReactNode }[];
 }) {
   return (
-    <Select open={open} onOpenChange={onOpenChange} value={value ?? ANY} onValueChange={(next) => onChange(next === ANY ? null : next)}>
+    <Select {...(open !== undefined && onOpenChange ? { open, onOpenChange } : {})} value={value ?? ANY} onValueChange={(next) => onChange(next === ANY ? null : next)}>
       <SelectTrigger className="batogo-control h-10 text-xs" aria-label={label}>
         <SelectValue placeholder={label} />
       </SelectTrigger>

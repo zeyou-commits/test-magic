@@ -4,3 +4,6 @@
 - [x] Carte A/R : pied avec prix agrandi, temps sur place estimé (marges débarquement/embarquement) dans le détail
 - [x] Clic sur un trajet prioritaire sur les filtres de ports
 - [x] Filtres style Airbnb guidé (capsule condensée + étapes)
+- [x] Bouton « Réserver » (lien Corsica Linea pré-rempli, site officiel sinon)
+- [x] Drapeau « Compagnies » : ouvre directement la liste des compagnies
+- [x] Calendrier : pastilles visibles, retours corrects avec « Tous les ports », plus de débordement

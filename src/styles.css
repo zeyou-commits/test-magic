@@ -678,7 +678,8 @@
 .batogo-day-avail button::after {
   content: "";
   position: absolute;
-  bottom: 4px;
+  /* En haut de la case : les liserés de vacances occupent le bas. */
+  top: 3px;
   left: 50%;
   width: 4.5px;
   height: 4.5px;

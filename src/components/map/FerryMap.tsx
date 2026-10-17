@@ -73,7 +73,7 @@ function minZoomFloor() {
   return 3.6;
 }
 const LIMIT_BOUNDS: [[number, number], [number, number]] = [
-  [-16, 18],
+  [-16, 0],
   [26, 54],
 ];
 const MAP_STYLE = "https://tiles.openfreemap.org/styles/liberty";
@@ -333,7 +333,6 @@ export default function FerryMap({
     map.addControl(new AttributionControl({ compact: true }), "bottom-right");
 
     mapRef.current = map;
-    (window as unknown as { __batogoMap?: MapLibreMap }).__batogoMap = map;
 
     const resize = () => requestAnimationFrame(() => mapRef.current?.resize());
     const resizeObserver = new ResizeObserver(resize);

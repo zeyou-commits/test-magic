@@ -1339,6 +1339,7 @@ function VesselsAdmin() {
                   Enregistrer
                 </Button>
               </div>
+              <VesselSpecsEditor vessel={vessel as unknown as VesselSpecsRow} />
             </li>
           );
         })}

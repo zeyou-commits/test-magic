@@ -568,6 +568,7 @@ function Index() {
             setSelection(null);
             setFocusShipId(null);
             openPanel();
+            window.dispatchEvent(new Event("batogo:edit-filters"));
             window.setTimeout(() => {
               const el = document.getElementById("filters-company") as HTMLDetailsElement | null;
               if (!el) return;

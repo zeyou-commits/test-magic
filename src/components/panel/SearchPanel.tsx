@@ -7,6 +7,8 @@ import {
   CalendarDays,
   ChevronDown,
   RotateCcw,
+  Search,
+  SlidersHorizontal,
   Users,
   X,
 } from "lucide-react";
@@ -104,6 +106,13 @@ export function SearchPanel({
     [liveShips],
   );
   const [profile, setProfile] = useState<TripProfileValue>(defaultTripProfile);
+  // Formulaire guidé ouvert tant qu'aucune recherche n'est lancée, capsule ensuite.
+  const [editing, setEditing] = useState(true);
+  useEffect(() => {
+    const open = () => setEditing(true);
+    window.addEventListener("batogo:edit-filters", open);
+    return () => window.removeEventListener("batogo:edit-filters", open);
+  }, []);
   const [calOpen, setCalOpen] = useState(false);
   const [calField, setCalField] = useState<CalendarField>("out");
   const [holidaysOn, setHolidaysOnState] = useState(false);
@@ -242,11 +251,44 @@ export function SearchPanel({
     set({ departurePortIds: [from], arrivalPortIds: [to], date: null, returnDate: null });
   const fromName = (ids: string[]) => ports.find((port) => port.id === ids[0])?.name ?? "";
 
+  const resultCount = filters.roundTrip
+    ? roundTrips.main.length + roundTrips.alternatives.length
+    : outList.length;
+  const portsLabel = (ids: string[]) =>
+    ids.length === 0 ? "Tous ports" : ids.length === 1 ? fromName(ids) : `${ids.length} ports`;
+  const datesLabel = filters.date
+    ? `${shortDay(filters.date)}${filters.roundTrip && filters.returnDate ? ` → ${shortDay(filters.returnDate)}` : ""}${filters.flexDays ? ` ±${filters.flexDays}j` : ""}`
+    : "Dates flexibles";
+
   return (
     <FareProfileContext.Provider value={profile}>
     <div className="flex flex-col">
-      {/* RECHERCHE */}
-      <section className="space-y-3 border-b bg-gradient-to-b from-primary/[0.06] to-transparent px-4 pb-4 pt-4 md:px-5">
+      {/* RECHERCHE : capsule condensée façon Airbnb, formulaire guidé à la demande */}
+      {!editing ? (
+        <section className="border-b px-3 py-2.5 md:px-5">
+          <button
+            type="button"
+            onClick={() => setEditing(true)}
+            className="flex w-full items-center gap-2.5 rounded-full border border-border bg-card py-1.5 pl-3.5 pr-1.5 text-left shadow-md transition hover:shadow-lg"
+          >
+            <Search className="size-4 shrink-0 text-primary" aria-hidden />
+            <span className="min-w-0 flex-1 leading-tight">
+              <span className="block truncate text-sm font-bold">
+                {portsLabel(filters.departurePortIds)} {filters.roundTrip ? "⇄" : "→"} {portsLabel(filters.arrivalPortIds)}
+              </span>
+              <span className="block truncate text-[11px] text-muted-foreground">
+                {datesLabel} · {summarizePassengers(profile.passengers)}
+                {profile.vehicle !== "none" ? ` · ${summarizeVehicle(profile)}` : ""}
+              </span>
+            </span>
+            <span className="grid size-8 shrink-0 place-items-center rounded-full border border-border text-foreground" aria-hidden>
+              <SlidersHorizontal className="size-4" />
+            </span>
+            <span className="sr-only">Modifier la recherche</span>
+          </button>
+        </section>
+      ) : null}
+      <section className={`space-y-3 border-b bg-gradient-to-b from-primary/[0.06] to-transparent px-4 pb-4 pt-4 md:px-5 ${editing ? "" : "hidden"}`}>
         <div className="flex items-center justify-between gap-2">
           <div
             className="batogo-tabbar inline-grid grid-cols-2 gap-0.5 !rounded-full !p-0.5"
@@ -280,8 +322,9 @@ export function SearchPanel({
           ) : null}
         </div>
 
+        <StepLabel n={1} className={hidePickersOnMobile ? "hidden md:flex" : ""}>Où partez-vous ?</StepLabel>
         <div
-          className={`grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-1.5 ${hidePickersOnMobile ? "hidden md:grid" : ""}`}
+          className={`-mt-1.5 grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-1.5 ${hidePickersOnMobile ? "hidden md:grid" : ""}`}
         >
           <PortMultiPicker
             direction="departure"
@@ -325,6 +368,8 @@ export function SearchPanel({
           />
         </div>
 
+        <StepLabel n={hidePickersOnMobile ? undefined : 2}>Quand, et à combien ?</StepLabel>
+        <div className="-mt-1.5">
         <TripCalendar
           open={calOpen}
           onOpenChange={setCalOpen}
@@ -387,8 +432,12 @@ export function SearchPanel({
             </div>
           }
         />
+        </div>
 
-        <VehicleChips value={profile} onChange={setProfile} />
+        <StepLabel n={hidePickersOnMobile ? undefined : 3}>Votre véhicule</StepLabel>
+        <div className="-mt-1.5">
+          <VehicleChips value={profile} onChange={setProfile} />
+        </div>
 
         <details id="filters-company" className="group text-xs" open={Boolean(filters.companyId || filters.vesselId)}>
           <summary className="flex cursor-pointer list-none items-center gap-1 font-semibold text-muted-foreground hover:text-foreground">
@@ -416,6 +465,17 @@ export function SearchPanel({
             />
           </div>
         </details>
+        {active ? (
+          <button
+            type="button"
+            onClick={() => setEditing(false)}
+            className="flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-cta text-sm font-bold text-cta-foreground shadow-md transition hover:opacity-90"
+          >
+            <Search className="size-4" aria-hidden />
+            Voir {resultCount ? `les ${resultCount} ` : "les "}
+            {filters.roundTrip ? "allers-retours" : "traversées"}
+          </button>
+        ) : null}
       </section>
 
       {/* RÉSULTATS */}
@@ -776,5 +836,21 @@ function RoundTripSection({
         </div>
       ) : null}
     </div>
+  );
+}
+
+const shortDayFormatter = new Intl.DateTimeFormat("fr-FR", { day: "numeric", month: "short", timeZone: "UTC" });
+function shortDay(key: string) {
+  return shortDayFormatter.format(new Date(`${key}T00:00:00Z`));
+}
+
+function StepLabel({ n, children, className = "" }: { n?: number; children: ReactNode; className?: string }) {
+  return (
+    <h3 className={`flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-muted-foreground ${className}`}>
+      {n ? (
+        <span className="grid size-4 place-items-center rounded-full bg-primary text-[9px] text-primary-foreground">{n}</span>
+      ) : null}
+      {children}
+    </h3>
   );
 }

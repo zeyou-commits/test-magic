@@ -381,7 +381,30 @@ export function SearchPanel({
               <ArrowLeftRight className="size-3.5" /> {reversed ? "Algérie → Europe" : "Europe → Algérie"}
             </button>
         </div>
-        <div className={step === 1 ? "-mt-1 grid grid-cols-2 gap-2" : "hidden"}>
+        <div
+          className={step === 1 ? "batogo-tabbar grid grid-cols-2 gap-0.5 !rounded-full !p-0.5 md:hidden" : "hidden"}
+          role="tablist"
+          aria-label="Côté du trajet"
+        >
+          {(["departure", "arrival"] as const).map((side) => (
+            <button
+              key={side}
+              type="button"
+              role="tab"
+              aria-selected={portSide === side}
+              data-active={portSide === side}
+              onClick={() => setPortSide(side)}
+              className="batogo-tab !min-h-9 !rounded-full px-3 !text-sm"
+            >
+              {side === "departure" ? "Départ" : "Arrivée"} ·{" "}
+              <span className="font-normal">
+                {portsLabel(side === "departure" ? filters.departurePortIds : filters.arrivalPortIds)}
+              </span>
+            </button>
+          ))}
+        </div>
+        <div className={step === 1 ? "-mt-1 grid grid-cols-1 gap-2 bg-card md:grid-cols-2" : "hidden"}>
+          <div className={portSide === "departure" ? "min-w-0" : "min-w-0 max-md:hidden"}>
           <PortMultiPicker
             inline
             title="Départ"
@@ -399,6 +422,8 @@ export function SearchPanel({
               })
             }
           />
+          </div>
+          <div className={portSide === "arrival" ? "min-w-0" : "min-w-0 max-md:hidden"}>
           <PortMultiPicker
             inline
             title="Arrivée"

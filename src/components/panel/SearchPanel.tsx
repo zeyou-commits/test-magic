@@ -123,6 +123,7 @@ export function SearchPanel({
   void hidePickersOnMobile;
   // Sens du trajet : Europe → Algérie par défaut, inversé par le bouton ⇄.
   const [reversed, setReversed] = useState(false);
+  const [portSide, setPortSide] = useState<"departure" | "arrival">("departure");
   const startSearch = () => {
     setStep(firstStep);
     setCalField("out");

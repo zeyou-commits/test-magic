@@ -23,6 +23,11 @@ interface PortMultiPickerProps {
   /** Ports choisis de l'autre côté, pour ne proposer que les combinaisons qui existent. */
   otherSide: string[];
   onChange: (ids: string[]) => void;
+  /** Affiché directement dans le panneau (sans menu déroulant). */
+  inline?: boolean;
+  /** Ne garder que certains pays (ex. Algérie uniquement). */
+  countryFilter?: (code: string) => boolean;
+  title?: string;
 }
 
 /** Choix d'un ou plusieurs ports, groupés par pays, avec recherche intégrée. */
@@ -33,6 +38,9 @@ export function PortMultiPicker({
   value,
   otherSide,
   onChange,
+  inline = false,
+  countryFilter,
+  title,
 }: PortMultiPickerProps) {
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
@@ -40,10 +48,11 @@ export function PortMultiPicker({
   const label = direction === "departure" ? "Départ" : "Arrivée";
 
   const { groups, enabledIds, reasons } = useMemo(() => {
-    const candidates =
+    const candidates = (
       direction === "departure"
         ? getDeparturePorts(ports, routes, otherSide)
-        : getArrivalPorts(ports, routes, otherSide);
+        : getArrivalPorts(ports, routes, otherSide)
+    ).filter((p) => !countryFilter || countryFilter(p.country_code));
     const enabled = new Set(candidates.map((p) => p.id));
     // Raison affichée pour les ports non sélectionnables.
     const reasons = new Map<string, string>();
@@ -61,7 +70,9 @@ export function PortMultiPicker({
       else reasons.set(p.id, "Aucune ligne active");
     });
     const term = normalizeText(search);
-    const groups = groupPortsByCountry(ports)
+    const groups = groupPortsByCountry(
+      countryFilter ? ports.filter((p) => countryFilter(p.country_code)) : ports,
+    )
       .map((group) => ({
         ...group,
         ports: group.ports
@@ -74,14 +85,14 @@ export function PortMultiPicker({
       }))
       .filter((group) => group.ports.length > 0);
     return { groups, enabledIds: [...enabled], reasons };
-  }, [direction, ports, routes, otherSide, search]);
+  }, [direction, ports, routes, otherSide, search, countryFilter]);
 
   // Aucun filtre = tous les ports : on l'affiche comme tout coché.
   // « Tout désélectionner » : état visuel vide le temps de choisir (sans choix, aucun filtre).
   const [cleared, setCleared] = useState(false);
   useEffect(() => {
-    if (value.length || !open) setCleared(false);
-  }, [value.length, open]);
+    if (value.length || (!open && !inline)) setCleared(false);
+  }, [value.length, open, inline]);
   const allMode = value.length === 0 && !cleared;
   const effective = allMode ? enabledIds : value;
   const isOn = (id: string) => effective.includes(id);
@@ -143,7 +154,7 @@ export function PortMultiPicker({
         {groups.length === 0 ? (
           <p className="p-4 text-center text-sm text-muted-foreground">Aucun port trouvé.</p>
         ) : (
-          <div className="flex max-h-[50vh] flex-col gap-3 overflow-y-auto pr-1 max-md:max-h-none max-md:min-h-0 max-md:flex-1 max-md:overscroll-contain">
+          <div className={`flex flex-col gap-3 overflow-y-auto pr-1 ${inline ? "max-h-[44vh]" : "max-h-[50vh] max-md:max-h-none"} max-md:min-h-0 max-md:flex-1 max-md:overscroll-contain`}>
             {groups.map((group) => {
               const ids = group.ports.filter((p) => !reasons.has(p.id)).map((port) => port.id);
               const selectedCount = ids.filter(isOn).length;
@@ -201,6 +212,7 @@ export function PortMultiPicker({
           </div>
         )}
 
+        {inline ? null : (
         <div className="mt-3 flex shrink-0 items-center justify-between border-t pt-3">
           <button
             type="button"
@@ -221,8 +233,23 @@ export function PortMultiPicker({
             Valider{value.length ? ` (${value.length})` : ""}
           </button>
         </div>
+        )}
     </>
   );
+
+  if (inline) {
+    return (
+      <div className="flex min-w-0 flex-col rounded-2xl border border-border bg-card p-2.5 shadow-sm">
+        <p className="mb-2 px-1 text-[11px] font-bold uppercase tracking-wider text-primary">
+          {title ?? label}
+          <span className="ml-1 font-medium normal-case tracking-normal text-muted-foreground">
+            · {summarizePorts(value, ports, "Tous")}
+          </span>
+        </p>
+        {body}
+      </div>
+    );
+  }
 
   const trigger = (
         <button

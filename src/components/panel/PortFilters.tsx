@@ -175,7 +175,7 @@ export function PortMultiPicker({
                         <span className="font-normal text-muted-foreground">· tous</span>
                       ) : null}
                     </span>
-                    <span className="flex items-center gap-2 text-xs text-muted-foreground">
+                    <span className="ml-3 flex shrink-0 items-center gap-2 text-xs font-medium text-muted-foreground">
                       {ids.length ? `${selectedCount}/${ids.length}` : "indisponible"}
                       {countrySelected ? <Check className="size-4 text-primary" /> : null}
                     </span>

@@ -118,7 +118,7 @@ export function PortMultiPicker({
 
   const body = (
     <>
-      <div className="relative mb-3 shrink-0">
+      <div className={`relative mb-3 shrink-0 ${inline ? "hidden" : ""}`}>
           <Search className="absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
           <Input
             value={search}
@@ -146,8 +146,8 @@ export function PortMultiPicker({
           className={`mb-2 flex min-h-11 w-full shrink-0 items-center gap-2 rounded-lg px-2.5 text-left text-sm font-semibold ${allMode ? "bg-primary/10 text-primary" : "hover:bg-secondary"}`}
         >
           <span className="w-4 shrink-0">{allMode ? <Check className="size-4" /> : null}</span>
-          🌍 Tous les ports
-          <span className="ml-auto text-xs font-normal text-muted-foreground">
+          {inline ? "Tous" : "🌍 Tous les ports"}
+          <span className={`ml-auto text-xs font-normal text-muted-foreground ${inline ? "hidden" : ""}`}>
             {allMode ? "Tout désélectionner" : "Tout cocher"}
           </span>
         </button>
@@ -171,7 +171,7 @@ export function PortMultiPicker({
                     <span className="flex items-center gap-2">
                       <CountryFlag code={group.code} />
                       {group.name}
-                      {ids.length > 1 ? (
+                      {ids.length > 1 && !inline ? (
                         <span className="font-normal text-muted-foreground">· tous</span>
                       ) : null}
                     </span>

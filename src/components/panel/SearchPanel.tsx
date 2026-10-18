@@ -459,8 +459,7 @@ export function SearchPanel({
         </StepLabel>
         <div className={step === 3 ? "-mt-1 space-y-3" : "hidden"}>
           <div className="rounded-2xl border border-border bg-card p-3 shadow-sm">
-            <p className="mb-2 text-[11px] font-bold uppercase tracking-wider text-primary">Voyageurs</p>
-            <TripProfile value={profile} onChange={setProfile} hideVehicle />
+                        <TripProfile value={profile} onChange={setProfile} hideVehicle />
           </div>
           <div className="rounded-2xl border border-border bg-card p-3 shadow-sm">
             <p className="mb-2 text-[11px] font-bold uppercase tracking-wider text-primary">Véhicule</p>
@@ -511,7 +510,8 @@ export function SearchPanel({
             className="text-sm font-semibold text-foreground underline underline-offset-2 disabled:opacity-40"
             disabled={!active}
           >
-            Effacer tout
+            <span className="md:hidden">Effacer</span>
+            <span className="max-md:hidden">Effacer tout</span>
           </button>
           <div className="flex items-center gap-2">
           {step > firstStep ? (
@@ -541,7 +541,8 @@ export function SearchPanel({
             className="flex h-11 items-center justify-center gap-2 rounded-xl bg-primary px-4 text-sm font-bold text-primary-foreground shadow-md transition hover:opacity-90"
           >
             <Search className="size-4" aria-hidden />
-            Trouver ma traversée{active && resultCount ? ` (${resultCount})` : ""}
+            <span className="md:hidden">Voir{active && resultCount ? ` (${resultCount})` : ""}</span>
+            <span className="max-md:hidden">Trouver ma traversée{active && resultCount ? ` (${resultCount})` : ""}</span>
           </button>
           )}
           </div>

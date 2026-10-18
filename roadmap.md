@@ -9,6 +9,6 @@
 - [x] Calendrier : pastilles visibles, retours corrects avec « Tous les ports », plus de débordement
 
 ## Parcours guidé recherche (oct. 2026)
-- [ ] Étape 1 : ports en direct, Europe à gauche / Algérie à droite, groupés par pays (cocher un pays entier)
-- [ ] Étape 2 : calendrier ouvert en direct, onglets Aller / Retour nets
-- [ ] Étape 3 : voyageurs + véhicule
+- [x] Étape 1 : ports en direct, Europe à gauche / Algérie à droite, groupés par pays (cocher un pays entier)
+- [x] Étape 2 : calendrier ouvert en direct, onglets Aller / Retour nets
+- [x] Étape 3 : voyageurs + véhicule

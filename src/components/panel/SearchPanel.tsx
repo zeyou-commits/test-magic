@@ -441,6 +441,7 @@ export function SearchPanel({
               })
             }
           />
+          </div>
         </div>
 
         <StepLabel

@@ -46,7 +46,9 @@ interface TripCalendarProps {
   holidaysOn: boolean;
   onHolidaysChange: (on: boolean) => void;
   /** Les deux champs de date, qui servent d'ancre au calendrier. */
-  anchor: ReactNode;
+  anchor?: ReactNode;
+  /** Affiché directement dans le panneau, sans fenêtre superposée. */
+  inline?: boolean;
 }
 
 const keyToDate = (key: string) => {
@@ -104,6 +106,7 @@ export function TripCalendar({
   holidaysOn,
   onHolidaysChange,
   anchor,
+  inline = false,
 }: TripCalendarProps) {
   const [zones, setZones] = useState<SchoolZone[]>([]);
   const [month, setMonth] = useState<Date>(() => keyToDate(date ?? today));
@@ -340,7 +343,7 @@ export function TripCalendar({
           mode="single"
           locale={fr}
           weekStartsOn={1}
-          numberOfMonths={isMobile ? 1 : 2}
+          numberOfMonths={isMobile || inline ? 1 : 2}
           showOutsideDays={false}
           month={month}
           onMonthChange={setMonth}
@@ -442,6 +445,65 @@ export function TripCalendar({
           </div>
         </div>
   );
+
+  const legTabs = (
+    <div className={`grid gap-2 ${roundTrip ? "grid-cols-2" : "grid-cols-1"}`} role="tablist" aria-label="Date à choisir">
+      {(roundTrip ? (["out", "ret"] as CalendarField[]) : (["out"] as CalendarField[])).map((f) => {
+        const on = field === f;
+        const value = f === "out" ? date : returnDate;
+        return (
+          <button
+            key={f}
+            type="button"
+            role="tab"
+            aria-selected={on}
+            disabled={f === "ret" && !date}
+            onClick={() => onFieldChange(f)}
+            className={`relative min-w-0 rounded-xl border-2 px-3 py-2 text-left transition disabled:opacity-50 ${on ? "border-primary bg-primary/10 shadow-sm" : "border-border bg-card hover:border-primary/50"}`}
+          >
+            <span className={`block text-[10px] font-bold uppercase tracking-wider ${on ? "text-primary" : "text-muted-foreground"}`}>
+              {f === "out" ? "① Aller" : "② Retour"}
+              {on ? " · à choisir" : ""}
+            </span>
+            <span className={`block truncate text-sm font-bold ${value ? "text-foreground" : "text-muted-foreground"}`}>
+              {value ? long(value) : f === "out" ? "Choisir la date" : date ? "Choisir la date" : "Après l'aller"}
+            </span>
+          </button>
+        );
+      })}
+    </div>
+  );
+
+  if (inline) {
+    return (
+      <div className="space-y-3">
+        {legTabs}
+        <div className="flex items-center justify-end gap-1" role="group" aria-label="Zones de vacances scolaires">
+          <span className="mr-auto text-[11px] font-semibold text-muted-foreground">
+            {field === "out" ? "Touchez votre jour de départ" : "Touchez votre jour de retour"}
+          </span>
+          <Backpack className="mr-1 size-3.5 text-muted-foreground" aria-hidden />
+          {(["A", "B", "C"] as SchoolZone[]).map((item) => {
+            const on = holidaysOn && zones.includes(item);
+            return (
+              <button
+                key={item}
+                type="button"
+                aria-pressed={on}
+                title={`Vacances zone ${item} · ${SCHOOL_ZONES[item].cities}`}
+                onClick={() => (holidaysOn || !zones.includes(item) ? toggleZone(item) : onHolidaysChange(true))}
+                className={`inline-flex h-7 items-center gap-1.5 rounded-full px-2.5 text-[11px] font-semibold transition ${on ? "bg-foreground text-background" : "text-muted-foreground hover:bg-muted hover:text-foreground"}`}
+              >
+                <span className={`size-1.5 rounded-full ${zoneTone[item]}-dot`} aria-hidden />
+                {item}
+              </button>
+            );
+          })}
+        </div>
+        {bodyBlock}
+      </div>
+    );
+  }
 
   if (isMobile) {
     return (

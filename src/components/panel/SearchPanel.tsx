@@ -118,10 +118,14 @@ export function SearchPanel({
     mq.addEventListener("change", sync);
     return () => mq.removeEventListener("change", sync);
   }, []);
-  const firstStep: 1 | 2 = hidePickersOnMobile && !isDesktop ? 2 : 1;
-  const lastStep: 2 | 3 = isDesktop ? 2 : 3;
+  const firstStep = 1 as 1 | 2;
+  const lastStep = 3 as 2 | 3;
+  void hidePickersOnMobile;
+  // Sens du trajet : Europe → Algérie par défaut, inversé par le bouton ⇄.
+  const [reversed, setReversed] = useState(false);
   const startSearch = () => {
     setStep(firstStep);
+    setCalField("out");
     setEditing(true);
   };
   useEffect(() => {
@@ -361,17 +365,30 @@ export function SearchPanel({
           open={step === 1}
           onOpen={() => setStep(1)}
           summary={`${portsLabel(filters.departurePortIds)} ${filters.roundTrip ? "⇄" : "→"} ${portsLabel(filters.arrivalPortIds)}`}
-          className={hidePickersOnMobile ? "hidden md:flex" : ""}
         >
-          Où partez-vous ?
+          ① Où partez-vous ?
         </StepLabel>
-        <div
-          className={`-mt-1.5 items-center gap-1.5 ${step === 1 ? "grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)]" : "hidden"} ${hidePickersOnMobile ? "max-md:hidden" : ""}`}
-        >
+        <div className={step === 1 ? "-mt-1 flex justify-center" : "hidden"}>
+            <button
+              type="button"
+              title="Inverser le sens"
+              onClick={() => {
+                setReversed((r) => !r);
+                onFiltersChange({ ...swapDirection(filters), date: null, returnDate: null });
+              }}
+              className="inline-flex items-center gap-1.5 rounded-full border border-border bg-card px-3 py-1 text-xs font-semibold text-primary shadow-sm transition hover:bg-primary hover:text-primary-foreground"
+            >
+              <ArrowLeftRight className="size-3.5" /> {reversed ? "Algérie → Europe" : "Europe → Algérie"}
+            </button>
+        </div>
+        <div className={step === 1 ? "-mt-1 grid grid-cols-2 gap-2" : "hidden"}>
           <PortMultiPicker
+            inline
+            title="Départ"
             direction="departure"
             ports={ports}
             routes={routes}
+            countryFilter={reversed ? isAlgeria : isNotAlgeria}
             value={filters.departurePortIds}
             otherSide={filters.arrivalPortIds}
             onChange={(ids) =>
@@ -382,22 +399,13 @@ export function SearchPanel({
               })
             }
           />
-          <button
-            type="button"
-            aria-label="Inverser départ et arrivée"
-            title="Inverser le sens"
-            disabled={!filters.departurePortIds.length && !filters.arrivalPortIds.length}
-            onClick={() =>
-              onFiltersChange({ ...swapDirection(filters), date: null, returnDate: null })
-            }
-            className="group grid size-10 place-items-center rounded-full border border-border bg-card text-primary shadow-sm transition hover:rotate-180 hover:bg-primary hover:text-primary-foreground disabled:opacity-40 disabled:hover:rotate-0 disabled:hover:bg-card disabled:hover:text-primary"
-          >
-            <ArrowLeftRight className="size-4" />
-          </button>
           <PortMultiPicker
+            inline
+            title="Arrivée"
             direction="arrival"
             ports={ports}
             routes={routes}
+            countryFilter={reversed ? isNotAlgeria : isAlgeria}
             value={filters.arrivalPortIds}
             otherSide={filters.departurePortIds}
             onChange={(ids) =>
@@ -413,86 +421,50 @@ export function SearchPanel({
         <StepLabel
           open={step === 2}
           onOpen={() => setStep(2)}
-          summary={`${datesLabel} · ${summarizePassengers(profile.passengers)}`}
+          summary={datesLabel}
         >
-          Quand, et à combien ?
+          ② Quand partez-vous ?
         </StepLabel>
-        <div className={step === 2 ? "-mt-1.5" : "hidden"}>
-        <TripCalendar
-          open={calOpen}
-          onOpenChange={setCalOpen}
-          holidaysOn={holidaysOn}
-          onHolidaysChange={setHolidaysOn}
-          field={calField}
-          onFieldChange={setCalField}
-          roundTrip={filters.roundTrip}
-          date={filters.date}
-          returnDate={filters.returnDate}
-          flexDays={filters.flexDays}
-          outDays={outAvailability}
-          backDays={backAvailability}
-          pairLabel={
-            hasPair
-              ? `${fromName(filters.departurePortIds)} → ${fromName(filters.arrivalPortIds)}`
-              : null
-          }
-          today={today}
-          onChange={(patch) => set(patch)}
-          anchor={
-            <div className="grid grid-cols-[minmax(0,1.25fr)_minmax(0,1fr)] gap-1.5">
-              <DateButton
-                label={filters.roundTrip ? "Dates" : "Date"}
-                value={filters.date}
-                returnValue={filters.roundTrip ? filters.returnDate : undefined}
-                flex={filters.flexDays}
-                active={calOpen}
-                onClick={() => {
-                  setCalField(filters.roundTrip && filters.date && !filters.returnDate ? "ret" : "out");
-                  setCalOpen(true);
-                }}
-              />
-        <div className="min-w-0">
-          <Popover>
-            <PopoverTrigger asChild>
-              <button
-                type="button"
-                className="batogo-control flex h-12 w-full min-w-0 items-center gap-2 px-3 text-left"
-              >
-                <Users className="size-4 shrink-0 text-primary" aria-hidden />
-                <span className="min-w-0 leading-tight">
-                  <span className="block truncate text-xs font-semibold">
-                    {summarizePassengers(profile.passengers)}
-                  </span>
-                  <span className="block truncate text-[11px] text-muted-foreground">
-                    {profile.accessories.length ? summarizeVehicle(profile) : "Voyageurs et options"}
-                  </span>
-                </span>
-              </button>
-            </PopoverTrigger>
-            <PopoverContent align="start" className="w-[340px] max-w-[92vw] p-3">
-              <TripProfile value={profile} onChange={setProfile} hideVehicle />
-              <p className="mt-3 text-xs leading-relaxed text-muted-foreground">
-                Sert à recommander l’horaire le plus confortable et à estimer un tarif moyen indicatif.
-              </p>
-            </PopoverContent>
-          </Popover>
-        </div>
-            </div>
-          }
-        />
+        <div className={step === 2 ? "-mt-1" : "hidden"}>
+          <TripCalendar
+            inline
+            open={step === 2}
+            onOpenChange={() => {}}
+            holidaysOn={holidaysOn}
+            onHolidaysChange={setHolidaysOn}
+            field={calField}
+            onFieldChange={setCalField}
+            roundTrip={filters.roundTrip}
+            date={filters.date}
+            returnDate={filters.returnDate}
+            flexDays={filters.flexDays}
+            outDays={outAvailability}
+            backDays={backAvailability}
+            pairLabel={
+              hasPair
+                ? `${fromName(filters.departurePortIds)} → ${fromName(filters.arrivalPortIds)}`
+                : null
+            }
+            today={today}
+            onChange={(patch) => set(patch)}
+          />
         </div>
 
         <StepLabel
           open={step === 3}
           onOpen={() => setStep(3)}
-          summary={profile.vehicle !== "none" ? summarizeVehicle(profile) : "Sans véhicule"}
-          className={isDesktop ? (step === 2 ? "" : "hidden") : ""}
-          forceOpen={isDesktop && step === 2}
+          summary={`${summarizePassengers(profile.passengers)}${profile.vehicle !== "none" ? ` · ${summarizeVehicle(profile)}` : " · Sans véhicule"}`}
         >
-          Votre véhicule
+          ③ Qui voyage, avec quel véhicule ?
         </StepLabel>
-        <div className={step === 3 || (isDesktop && step === 2) ? "-mt-1.5" : "hidden"}>
-          <VehicleChips value={profile} onChange={setProfile} />
+        <div className={step === 3 ? "-mt-1 space-y-3" : "hidden"}>
+          <div className="rounded-2xl border border-border bg-card p-3 shadow-sm">
+                        <TripProfile value={profile} onChange={setProfile} hideVehicle />
+          </div>
+          <div className="rounded-2xl border border-border bg-card p-3 shadow-sm">
+            <p className="mb-2 text-[11px] font-bold uppercase tracking-wider text-primary">Véhicule</p>
+            <VehicleChips value={profile} onChange={setProfile} />
+          </div>
         </div>
 
         <details
@@ -538,7 +510,8 @@ export function SearchPanel({
             className="text-sm font-semibold text-foreground underline underline-offset-2 disabled:opacity-40"
             disabled={!active}
           >
-            Effacer tout
+            <span className="md:hidden">Effacer</span>
+            <span className="max-md:hidden">Effacer tout</span>
           </button>
           <div className="flex items-center gap-2">
           {step > firstStep ? (
@@ -553,7 +526,10 @@ export function SearchPanel({
           {step < lastStep ? (
             <button
               type="button"
-              onClick={() => setStep((s) => (s + 1) as 1 | 2 | 3)}
+              onClick={() => {
+                if (step === 1) setCalField("out");
+                setStep((s) => (s + 1) as 1 | 2 | 3);
+              }}
               className="flex h-11 items-center justify-center gap-2 rounded-xl bg-primary px-5 text-sm font-bold text-primary-foreground shadow-md transition hover:opacity-90"
             >
               Suivant →
@@ -565,7 +541,8 @@ export function SearchPanel({
             className="flex h-11 items-center justify-center gap-2 rounded-xl bg-primary px-4 text-sm font-bold text-primary-foreground shadow-md transition hover:opacity-90"
           >
             <Search className="size-4" aria-hidden />
-            Trouver ma traversée{active && resultCount ? ` (${resultCount})` : ""}
+            <span className="md:hidden">Voir{active && resultCount ? ` (${resultCount})` : ""}</span>
+            <span className="max-md:hidden">Trouver ma traversée{active && resultCount ? ` (${resultCount})` : ""}</span>
           </button>
           )}
           </div>
@@ -943,6 +920,9 @@ function shortDay(key: string) {
 }
 
 /** En-tête d'étape façon Airbnb : titre quand l'étape est ouverte, ligne résumé cliquable sinon. */
+const isAlgeria = (code: string) => code === "DZ";
+const isNotAlgeria = (code: string) => code !== "DZ";
+
 function StepLabel({
   open,
   onOpen,

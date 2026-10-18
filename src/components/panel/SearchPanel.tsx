@@ -366,8 +366,9 @@ export function SearchPanel({
           onOpen={() => setStep(1)}
           summary={`${portsLabel(filters.departurePortIds)} ${filters.roundTrip ? "⇄" : "→"} ${portsLabel(filters.arrivalPortIds)}`}
         >
-          <span className="flex items-center justify-between gap-2">
-            <span>① Où partez-vous ?</span>
+          ① Où partez-vous ?
+        </StepLabel>
+        <div className={step === 1 ? "-mt-1 flex justify-center" : "hidden"}>
             <button
               type="button"
               title="Inverser le sens"
@@ -379,8 +380,7 @@ export function SearchPanel({
             >
               <ArrowLeftRight className="size-3.5" /> {reversed ? "Algérie → Europe" : "Europe → Algérie"}
             </button>
-          </span>
-        </StepLabel>
+        </div>
         <div className={step === 1 ? "-mt-1 grid grid-cols-2 gap-2" : "hidden"}>
           <PortMultiPicker
             inline

@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { Check, ExternalLink, Ship } from "lucide-react";
+import { ExternalLink, Ship } from "lucide-react";
 import { CountryFlag } from "./CountryFlag";
 import {
   companiesQuery,
@@ -250,9 +250,6 @@ export function VesselView({
     const dayLabel = arrivalDay === today ? "Aujourd’hui" : arrivalDay === tomorrow ? "Demain" : date.toLocaleDateString("fr-FR", { weekday: "short", day: "numeric", month: "short", timeZone });
     return `${dayLabel} à ${wallTimeInZone(iso, timeZone)}`;
   };
-  const delay = live?.etaIso && shipDeparture?.arrival_at
-    ? formatDelay(Math.round((Date.parse(live.etaIso) - Date.parse(shipDeparture.arrival_at)) / 60_000))
-    : null;
   const currentPort = ship?.portId ? portById.get(ship.portId) : from;
 
   return (

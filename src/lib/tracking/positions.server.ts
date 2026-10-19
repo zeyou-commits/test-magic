@@ -20,6 +20,8 @@ export interface PublicPosition {
   speedKnots: number | null;
   courseDeg: number | null;
   reportedAt: string | null;
+  atdAt: string | null;
+  lastPortId: string | null;
   fetchedAt: string;
 }
 
@@ -142,6 +144,8 @@ export async function getPositions(): Promise<PublicPosition[]> {
       speedKnots: row.speed_knots,
       courseDeg: row.course_deg,
       reportedAt: row.reported_at,
+      atdAt: row.atd_at ?? null,
+      lastPortId: row.last_port_id ?? null,
       fetchedAt: row.fetched_at,
     }));
 }

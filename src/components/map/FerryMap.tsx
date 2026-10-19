@@ -18,7 +18,7 @@ import { algeriaGeoJson } from "@/lib/ferry/algeriaGeoJson";
 import { routeArc } from "@/lib/ferry/geo";
 import type { FleetShip } from "@/lib/ferry/fleet";
 import { addShipImages, WAKE_FRAMES } from "./shipIcons";
-import { projectedPosition } from "@/lib/ferry/tracking";
+import { physicalStatus, projectedPosition } from "@/lib/ferry/tracking";
 import { useIsMobile } from "@/hooks/use-mobile";
 
 // En production, MapLibre v6 a besoin que son « worker » soit fourni explicitement.
@@ -1119,11 +1119,22 @@ export default function FerryMap({
           const course = live ? (live.position.courseDeg ?? ship.course) : ship.course;
           // Étiquette d'allure : vitesse réelle et destination en mer, port d'attache à quai.
           const route = routeById.get(ship.routeId);
-          const toName = route ? portById.get(route.arrival_port_id)?.name : undefined;
+          const fromPort = route ? portById.get(route.departure_port_id) : undefined;
+          const toPort = route ? portById.get(route.arrival_port_id) : undefined;
+          const toName = toPort?.name;
           const dockName = ship.portId ? portById.get(ship.portId)?.name : undefined;
           const speed = live?.position.speedKnots;
+          const physical = live && fromPort && toPort
+            ? physicalStatus(live.position, fromPort, toPort, live.departure.departure_at, clock)
+            : null;
           let allure: string;
-          if (ship.state === "sea") {
+          if (physical) {
+            const speedText = speed != null ? ` · ${Math.round(speed)} kts` : "";
+            const atdText = live?.position.atdAt
+              ? ` · parti à ${new Date(live.position.atdAt).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit", timeZone: live.departure ? undefined : "UTC" })}`
+              : "";
+            allure = `${physical.label}${speedText}${physical.code === "approaching" && toName ? ` · vers ${toName}` : ""}${atdText}`;
+          } else if (ship.state === "sea") {
             const head = live && speed != null ? `● ${Math.round(speed)} kts` : "● En navigation";
             allure = toName ? `${head} · vers ${toName}` : head;
           } else {
@@ -1136,7 +1147,7 @@ export default function FerryMap({
               course,
               name: ship.name,
               allure,
-              allureColor: ship.state === "sea" ? (live ? "#059669" : "#1d6fb8") : "#5b6b7a",
+              allureColor: physical?.tone === "success" ? "#059669" : physical?.tone === "warning" ? "#d97706" : physical?.tone === "info" ? "#1d6fb8" : ship.state === "sea" ? (live ? "#059669" : "#1d6fb8") : "#5b6b7a",
               shipId: ship.id,
               departureId: ship.departureId,
               vesselId: ship.vesselId ?? "",

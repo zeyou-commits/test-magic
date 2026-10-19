@@ -15,6 +15,15 @@ export interface LivePosition {
 }
 
 /** Un navire suivi, rattaché à sa traversée. */
+export type PhysicalVesselStatus =
+  | "boarding" | "boarding_closed" | "departing" | "at_sea" | "approaching" | "docked" | "unknown";
+
+export interface PhysicalStatus {
+  code: PhysicalVesselStatus;
+  label: string;
+  tone: "success" | "warning" | "info" | "muted";
+}
+
 export interface LiveShip {
   vessel: Vessel;
   departure: Departure;
@@ -179,4 +188,32 @@ export function courseLabel(course: number | null): string {
   if (course === null) return "—";
   const names = ["nord", "nord-est", "est", "sud-est", "sud", "sud-ouest", "ouest", "nord-ouest"];
   return names[Math.round(course / 45) % 8]!;
+}
+
+
+/** Statut physique calculé à partir de la position AIS et des coordonnées portuaires. */
+export function physicalStatus(
+  position: LivePosition,
+  departurePort: Pick<Port, "latitude" | "longitude"> | null,
+  arrivalPort: Pick<Port, "latitude" | "longitude"> | null,
+  scheduledDepartureIso: string | null,
+  now = Date.now(),
+): PhysicalStatus {
+  const point: LngLat = [position.longitude, position.latitude];
+  const speed = position.speedKnots ?? 0;
+  const fromKm = departurePort ? haversineKm(point, [departurePort.longitude, departurePort.latitude]) : Infinity;
+  const toKm = arrivalPort ? haversineKm(point, [arrivalPort.longitude, arrivalPort.latitude]) : Infinity;
+  const departure = scheduledDepartureIso ? Date.parse(scheduledDepartureIso) : NaN;
+  const hoursToDeparture = Number.isFinite(departure) ? (departure - now) / 3_600_000 : Infinity;
+  if (toKm < 1 && speed < 1.5) return { code: "docked", label: "Accosté à quai", tone: "info" };
+  if (toKm < 15 && speed >= 1.5) return { code: "approaching", label: "En approche", tone: "warning" };
+  if (fromKm < 3 && speed >= 3) return { code: "departing", label: "Appareillage en cours", tone: "warning" };
+  if (fromKm < 2 && speed < 1.5 && hoursToDeparture >= 1 && hoursToDeparture <= 3)
+    return { code: "boarding", label: "Embarquement en cours", tone: "info" };
+  if (fromKm < 2 && speed < 1.5 && hoursToDeparture >= 0 && hoursToDeparture < 1)
+    return { code: "boarding_closed", label: "Embarquement clos", tone: "warning" };
+  if (fromKm > 15 && toKm > 15 && speed >= 3)
+    return { code: "at_sea", label: "En mer", tone: "success" };
+  if (toKm < 15) return { code: "approaching", label: "En approche", tone: "warning" };
+  return { code: "unknown", label: "Position AIS reçue", tone: "muted" };
 }

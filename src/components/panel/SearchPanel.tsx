@@ -6,7 +6,6 @@ import {
   Backpack,
   CalendarDays,
   ChevronDown,
-  RotateCcw,
   Search,
   SlidersHorizontal,
   Users,
@@ -351,17 +350,20 @@ export function SearchPanel({
               </button>
             ))}
           </div>
-          {active ? (
-            <button
-              type="button"
-              onClick={() => onFiltersChange({ ...emptyFilters, roundTrip: filters.roundTrip })}
-              className="inline-flex items-center gap-1 rounded-full px-2.5 py-1.5 text-xs font-semibold text-muted-foreground transition hover:bg-secondary hover:text-foreground"
-            >
-              <RotateCcw className="size-3.5" /> Effacer
-            </button>
-          ) : null}
+          <button
+            type="button"
+            title="Inverser le sens"
+            aria-label={`Inverser le sens : actuellement ${reversed ? "Algérie → Europe" : "Europe → Algérie"}`}
+            onClick={() => {
+              setReversed((r) => !r);
+              onFiltersChange({ ...swapDirection(filters), date: null, returnDate: null });
+            }}
+            className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-border bg-card px-2.5 py-1.5 text-xs font-semibold text-primary shadow-sm transition hover:bg-primary hover:text-primary-foreground"
+          >
+            <ArrowLeftRight className="size-3.5" />
+            <span className="max-md:hidden">{reversed ? "Algérie → Europe" : "Europe → Algérie"}</span>
+          </button>
         </div>
-
         <StepLabel
           open={step === 1}
           onOpen={() => setStep(1)}
@@ -369,19 +371,6 @@ export function SearchPanel({
         >
           ① Où partez-vous ?
         </StepLabel>
-        <div className={step === 1 ? "-mt-1 flex justify-center" : "hidden"}>
-            <button
-              type="button"
-              title="Inverser le sens"
-              onClick={() => {
-                setReversed((r) => !r);
-                onFiltersChange({ ...swapDirection(filters), date: null, returnDate: null });
-              }}
-              className="inline-flex items-center gap-1.5 rounded-full border border-border bg-card px-3 py-1 text-xs font-semibold text-primary shadow-sm transition hover:bg-primary hover:text-primary-foreground"
-            >
-              <ArrowLeftRight className="size-3.5" /> {reversed ? "Algérie → Europe" : "Europe → Algérie"}
-            </button>
-        </div>
         <div
           className={step === 1 ? "batogo-tabbar grid grid-cols-2 gap-0.5 !rounded-full !p-0.5 md:hidden" : "hidden"}
           role="tablist"

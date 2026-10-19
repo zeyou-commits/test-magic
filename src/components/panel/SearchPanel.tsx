@@ -6,7 +6,6 @@ import {
   Backpack,
   CalendarDays,
   ChevronDown,
-  RotateCcw,
   Search,
   SlidersHorizontal,
   Users,

@@ -261,7 +261,7 @@ export function detectRotationDelay(args: {
   if (!notDocked) return null;
   const speed = position.speedKnots ?? 0;
   const etaMs = speed >= 1.5
-    ? now + (distanceKm / (speed * KNOT_MS / 1000)) * 60_000
+    ? now + ((distanceKm * 1000) / (speed * KNOT_MS)) * 1000
     : NaN;
   const etaLabel = Number.isFinite(etaMs)
     ? new Intl.DateTimeFormat("fr-FR", { timeZone, hour: "2-digit", minute: "2-digit" }).format(new Date(etaMs))

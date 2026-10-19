@@ -110,7 +110,7 @@ export async function getPositions(): Promise<PublicPosition[]> {
         if (position.reportedAt !== null) update.reported_at = position.reportedAt;
 
         // Détection de l'escale et de l'appareillage à partir des coordonnées réelles des ports.
-        const { data: ports } = await supabaseAdmin.from("ports").select("id, latitude, longitude");
+        const { data: ports } = await supabaseAdmin.from("ports").select("id, latitude, longitude").eq("status", "active");
         const distanceKm = (lat1: number, lon1: number, lat2: number, lon2: number) => {
           const rad = (v: number) => (v * Math.PI) / 180;
           const dLat = rad(lat2 - lat1), dLon = rad(lon2 - lon1);

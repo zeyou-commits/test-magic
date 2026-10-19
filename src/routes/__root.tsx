@@ -82,7 +82,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Batogo — Ferries Europe ↔ Algérie" },
+      { title: "BledWay — Ferries Europe ↔ Algérie" },
       {
         name: "description",
         content:
@@ -90,7 +90,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
-      { property: "og:site_name", content: "Batogo" },
+      { property: "og:site_name", content: "BledWay" },
     ],
     scripts: [
       {
@@ -101,7 +101,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
             {
               "@type": "WebSite",
               "@id": absoluteUrl("/#site"),
-              name: "Batogo",
+              name: "BledWay",
               url: absoluteUrl("/"),
               inLanguage: "fr",
               publisher: { "@id": absoluteUrl("/#organisation") },
@@ -109,7 +109,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
             {
               "@type": "Organization",
               "@id": absoluteUrl("/#organisation"),
-              name: "Batogo",
+              name: "BledWay",
               url: absoluteUrl("/"),
               description:
                 "Information indépendante sur les ferries Europe–Algérie et la préparation du voyage.",

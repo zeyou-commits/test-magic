@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { useQuery } from "@tanstack/react-query";
 import {
   ArrowLeftRight,
@@ -543,10 +543,17 @@ export function SearchPanel({
             <span className="max-md:hidden">Effacer tout</span>
           </button>
           <div className="flex items-center gap-2">
-          {step > firstStep ? (
+          {step > firstStep || (portSide === "arrival" && editing) ? (
             <button
               type="button"
-              onClick={() => setStep((s) => (s - 1) as 1 | 2 | 3)}
+              onClick={() => {
+                if (step === 1) {
+                  setPortSide("departure");
+                  return;
+                }
+                if (step === 2) setPortSide("arrival");
+                setStep((s) => (s - 1) as 1 | 2 | 3);
+              }}
               className="h-11 rounded-xl px-3 text-sm font-semibold text-muted-foreground transition hover:bg-secondary hover:text-foreground"
             >
               ← Retour

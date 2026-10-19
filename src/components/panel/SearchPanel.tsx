@@ -441,6 +441,7 @@ export function SearchPanel({
           </div>
         </div>
 
+        <div id="search-step-2" className="scroll-mt-1" />
         <StepLabel
           open={step === 2}
           onOpen={() => setStep(2)}
@@ -473,6 +474,7 @@ export function SearchPanel({
           />
         </div>
 
+        <div id="search-step-3" className="scroll-mt-1" />
         <StepLabel
           open={step === 3}
           onOpen={() => setStep(3)}

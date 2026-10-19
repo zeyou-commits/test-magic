@@ -316,7 +316,7 @@ export function TripCalendar({
             ) : null}
           </div>
         ) : (
-          <p className="text-[10px] text-muted-foreground">Touchez A, B ou C pour partir pendant les vacances en un geste.</p>
+          <p className="text-[10px] text-muted-foreground max-md:hidden">Touchez A, B ou C pour partir pendant les vacances en un geste.</p>
         )}
 
         {nextEmpty ? (
@@ -463,7 +463,7 @@ export function TripCalendar({
 
   if (inline) {
     return (
-      <div className="space-y-3">
+      <div className="space-y-2">
         {legTabs}
         <div className="flex items-center justify-end gap-1" role="group" aria-label="Zones de vacances scolaires">
           <span className="mr-auto text-[11px] font-semibold text-muted-foreground">

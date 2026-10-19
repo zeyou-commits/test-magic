@@ -1,6 +1,5 @@
 import type { ReactNode } from "react";
 import { Link } from "@tanstack/react-router";
-import { BrandMark } from "./BrandMark";
 import { UserMenu } from "./UserMenu";
 import { MobileTabBar } from "./MobileTabBar";
 import { DataUnavailableNotice } from "./DataUnavailableNotice";
@@ -37,19 +36,13 @@ export function BrandLink({ compact = false }: { compact?: boolean }) {
     <Link
       to="/"
       className="flex shrink-0 items-center gap-2.5"
-      aria-label="Batogo, retour à la carte"
+      aria-label="BledWay, retour à la carte"
     >
-      <BrandMark className={compact ? "size-7" : "size-8"} />
-      <span className="flex flex-col leading-none">
-        <span className="font-display text-lg font-bold tracking-tight text-foreground">
-          Batogo
-        </span>
-        {compact ? null : (
-          <span className="mt-0.5 hidden text-[11px] font-medium text-muted-foreground lg:block">
-            Ferries Europe ↔ Algérie
-          </span>
-        )}
-      </span>
+      <img
+        src="/bledway-logo.webp"
+        alt="BledWay"
+        className={compact ? "h-9 w-auto max-w-[145px] object-contain" : "h-11 w-auto max-w-[190px] object-contain"}
+      />
     </Link>
   );
 }
@@ -103,8 +96,8 @@ export function SiteLayout({ children }: { children: ReactNode }) {
       <footer className="mt-auto border-t bg-card py-12 pb-24 text-center text-sm text-muted-foreground md:pb-12">
         <div className="mx-auto max-w-6xl px-4">
           <p className="mb-4 flex flex-col items-center gap-2">
-            <BrandMark className="size-6 opacity-60" />
-            Batogo © {new Date().getFullYear()} — Informations maritimes indépendantes. Les
+            <img src="/bledway-logo.webp" alt="BledWay" className="mx-auto h-10 w-auto max-w-[150px] object-contain opacity-80" />
+            BledWay © {new Date().getFullYear()} — Informations maritimes indépendantes. Les
             compagnies restent la seule référence officielle pour les horaires et la réservation.
           </p>
           <div className="flex flex-wrap justify-center gap-4 gap-y-2">

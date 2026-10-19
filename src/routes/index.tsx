@@ -360,6 +360,13 @@ function Index() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selection?.type, selection?.id]);
 
+  // La recherche ouverte sur mobile prend toute la hauteur.
+  useEffect(() => {
+    const full = () => setPanelLevel(2);
+    window.addEventListener("batogo:panel-full", full);
+    return () => window.removeEventListener("batogo:panel-full", full);
+  }, []);
+
   const collapsed = panelLevel === 0 && (dragHeight === null || dragHeight < 140);
 
   const resetToMap = () => {

@@ -267,7 +267,7 @@ export function VesselView({
           {photo?.source === "commons" ? (
             <details className="group absolute bottom-0.5 right-0.5">
               <summary aria-label="Crédit et licence de la photo" title="Crédit photo" className="grid size-5 cursor-pointer list-none place-items-center rounded-full bg-black/60 text-[11px] font-bold text-white shadow-sm [&::-webkit-details-marker]:hidden">ⓘ</summary>
-              <div className="absolute bottom-6 right-0 z-30 w-52 rounded-lg border border-border bg-popover p-2.5 text-left text-[11px] font-normal leading-snug text-popover-foreground shadow-xl group-hover:block group-open:block">
+              <div className="absolute bottom-6 right-0 z-30 hidden w-52 rounded-lg border border-border bg-popover p-2.5 text-left text-[11px] font-normal leading-snug text-popover-foreground shadow-xl group-hover:block group-open:block">
                 <p className="font-semibold">Photo indicative</p>
                 {photo.credit ? <p className="mt-1">{photo.credit}</p> : null}
                 {photo.license ? <p className="mt-0.5">{photo.license}</p> : null}
@@ -342,7 +342,7 @@ export function VesselView({
                   <p className="text-[10px] font-medium text-success">✓ Départ · {actualDepartureIso ? relative(actualDepartureIso) : "horaire prévu"}</p>
                   <p className="truncate text-sm font-bold text-foreground">{actualDepartureIso ? wallTimeInZone(actualDepartureIso, departureZone) : departureIso ? wallTimeInZone(departureIso, departureZone) : "—"}</p>
                   {actualDepartureIso && departureIso && departureDeltaMinutes !== 0 ? <p className="truncate text-[10px] text-muted-foreground"><span className="line-through">Prévu {wallTimeInZone(departureIso, departureZone)}</span></p> : null}
-                  <p className="text-[10px] font-semibold text-success">{actualDepartureIso && departureDeltaMinutes != null && departureDeltaMinutes !== 0 ? `Parti avec ${formatOffset(departureDeltaMinutes)} de ${departureDeltaMinutes > 0 ? "retard" : "avance"}` : "Selon programme"}</p>
+                  <p className="text-[10px] font-semibold text-success">{actualDepartureIso && departureDeltaMinutes != null && departureDeltaMinutes !== 0 ? `Parti avec ${formatOffset(departureDeltaMinutes)} ${departureDeltaMinutes > 0 ? "de retard" : "d’avance"}` : "Selon programme"}</p>
                 </div>
                 <div className="min-w-0 rounded-lg bg-primary/10 px-2 py-1.5 text-right">
                   <p className="text-[10px] font-medium text-primary">⚑ Arrivée {etaIso ? timeUntil(etaIso) : "à confirmer"}</p>

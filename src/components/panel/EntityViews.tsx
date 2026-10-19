@@ -306,7 +306,7 @@ export function VesselView({
                 {live?.position.speedKnots != null ? <span>{live.position.speedKnots.toFixed(1)} nds</span> : null}
                 {live?.position.courseDeg != null ? <span>Cap {Math.round(live.position.courseDeg)}° {courseLabel(live.position.courseDeg)}</span> : null}
                 {remainingKm != null ? <span>{Math.round(remainingKm)} km restants</span> : null}
-                <button type="button" onClick={() => onSelect({ type: "vessel", id: vesselId })} className="ml-auto inline-flex items-center gap-1 font-semibold text-primary hover:underline">🎯 Voir sur la carte</button>
+                <button type="button" onClick={() => window.dispatchEvent(new CustomEvent("batogo:focus-vessel", { detail: { vesselId } }))} className="ml-auto inline-flex items-center gap-1 font-semibold text-primary hover:underline">🎯 Voir sur la carte</button>
               </div>
             </>
           ) : isPreparing && milestones ? (

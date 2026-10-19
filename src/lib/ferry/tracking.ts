@@ -11,6 +11,8 @@ export interface LivePosition {
   speedKnots: number | null;
   courseDeg: number | null;
   reportedAt: string | null;
+  atdAt?: string | null;
+  lastPortId?: string | null;
   fetchedAt: string;
 }
 

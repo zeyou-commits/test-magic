@@ -195,7 +195,8 @@ export function VesselView({
     ? Math.max(0, totalKm - remainingKm)
     : totalKm != null ? Math.round(totalKm * progress) : null;
   const scheduledArrivalIso = shipDeparture?.arrival_at;
-  const etaForComparison = liveIsRecent ? live?.etaIso : null;
+  const actualArrivalIso = live?.position.ataAt ?? null;
+  const etaForComparison = liveIsRecent ? (actualArrivalIso ?? live?.etaIso) : null;
   const delayMinutes = etaForComparison && scheduledArrivalIso
     ? Math.round((Date.parse(etaForComparison) - Date.parse(scheduledArrivalIso)) / 60_000)
     : null;
@@ -235,7 +236,7 @@ export function VesselView({
     if (minutes < 60) return `il y a ${minutes} min`;
     return `il y a ${Math.floor(minutes / 60)}h${String(minutes % 60).padStart(2, "0")}`;
   };
-  const etaIso = liveIsRecent && live?.etaIso ? live.etaIso : shipDeparture?.arrival_at;
+  const etaIso = liveIsRecent && actualArrivalIso ? actualArrivalIso : liveIsRecent && live?.etaIso ? live.etaIso : shipDeparture?.arrival_at;
   const timeUntil = (iso: string) => {
     const mins = Math.max(0, Math.round((Date.parse(iso) - now) / 60_000));
     if (mins < 60) return `dans ${mins} min`;
@@ -342,10 +343,10 @@ export function VesselView({
                   {hasDepartureShift ? <p className="text-[10px] font-semibold text-warning">Écart au départ : {departureDiffMins! > 0 ? "+" : ""}{departureDiffMins} min</p> : hasDepartureComparison ? <p className="text-[10px] text-success">Départ à l’heure (écart inférieur à 1 min)</p> : <p className="text-[10px] text-muted-foreground">Horaire réel de départ indisponible</p>}
                 </div>
                 <div className="min-w-0 rounded-xl bg-primary/10 p-2.5 text-right">
-                  <p className="text-[10px] font-medium text-primary">⚑ Arrivée {etaIso ? timeUntil(etaIso) : "à confirmer"}</p>
+                  <p className="text-[10px] font-medium text-primary">{actualArrivalIso && liveIsRecent ? "✓ Arrivée réelle" : "⚑ Arrivée estimée"} {etaIso && !(actualArrivalIso && liveIsRecent) ? timeUntil(etaIso) : ""}</p>
                   <p className="truncate text-base font-bold tabular-nums text-foreground">{etaIso ? arrivalDateLabel(etaIso, arrivalZone) : "À confirmer"}</p>
                   {scheduledArrivalIso ? <p className="mt-0.5 truncate text-[10px] text-muted-foreground">Prévu {wallTimeInZone(scheduledArrivalIso, arrivalZone)} · {zoneLabel(arrivalZone)}</p> : null}
-                  {hasArrivalShift ? <p className="text-[10px] font-semibold text-warning">{delayMinutes! < 0 ? "En avance de " + formatDuration(Math.abs(delayMinutes!)) : "Retard estimé de " + formatDuration(delayMinutes!)}</p> : hasArrivalComparison ? <p className="text-[10px] text-success">Arrivée estimée à l’heure (écart inférieur à 1 min)</p> : <p className="text-[10px] text-muted-foreground">Estimation réelle indisponible · horaire programmé affiché</p>}
+                  {hasArrivalShift ? <p className={`text-[10px] font-semibold ${delayMinutes! < 0 ? "text-success" : "text-warning"}`}>{delayMinutes! < 0 ? "En avance de " + formatDuration(Math.abs(delayMinutes!)) : (actualArrivalIso && liveIsRecent ? "Retard réel de " : "Retard estimé de ") + formatDuration(delayMinutes!)}</p> : hasArrivalComparison ? <p className="text-[10px] text-success">{actualArrivalIso && liveIsRecent ? "Arrivée réelle à l’heure" : "Arrivée estimée à l’heure"} (écart inférieur à 1 min)</p> : <p className="text-[10px] text-muted-foreground">Estimation réelle indisponible · horaire programmé affiché</p>}
                 </div>
               </div>
             </>

@@ -51,7 +51,7 @@ export const Route = createFileRoute("/")({
 const TAB_BAR_HEIGHT = 56;
 const COLLAPSED_HEIGHT = 96;
 const MIDDLE_RATIO = 0.5;
-const DESKTOP_PANEL = 440;
+const DESKTOP_PANEL = 480;
 
 function Index() {
   const [selection, setSelection] = useState<Selection | null>(() =>
@@ -491,7 +491,7 @@ function Index() {
       <aside
         ref={asideRef}
         style={dragHeight !== null ? { height: dragHeight } : undefined}
-        className={`absolute bottom-[calc(3.5rem+env(safe-area-inset-bottom))] left-0 right-0 z-[60] flex flex-col overflow-hidden bg-transparent ${dragHeight !== null ? "transition-none" : "transition-[height,width,transform] duration-[420ms] ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none"} md:bottom-auto md:left-5 md:right-auto md:top-[4.5rem] md:h-[calc(100vh-5.75rem)] md:w-[440px] md:overflow-visible md:rounded-3xl md:z-40 ${
+        className={`absolute bottom-[calc(3.5rem+env(safe-area-inset-bottom))] left-0 right-0 z-[60] flex flex-col overflow-hidden bg-transparent ${dragHeight !== null ? "transition-none" : "transition-[height,width,transform] duration-[420ms] ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none"} md:bottom-auto md:left-5 md:right-auto md:top-[4.5rem] md:h-[calc(100vh-5.75rem)] md:w-[480px] md:overflow-visible md:rounded-3xl md:z-40 ${
           desktopPanelOpen ? "md:translate-x-0" : "md:translate-x-[calc(-100%-1.25rem)]"
         } ${panelLevel === 0 ? "h-24 rounded-t-3xl" : panelLevel === 1 ? "h-[50dvh] rounded-t-3xl" : "h-[calc(100dvh-3.5rem-env(safe-area-inset-bottom))] rounded-t-3xl"}`}
       >

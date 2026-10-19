@@ -153,7 +153,7 @@ export function VesselView({
   const to = shipRoute ? portById.get(shipRoute.arrival_port_id) : undefined;
   const photo = photoQuery.data;
   const physical = live && from && to
-    ? physicalStatus(live.position, from, to, shipDeparture?.departure_at ?? null, now)
+    ? physicalStatus(live.position, from, to, shipDeparture?.departure_at ?? null, now, ports)
     : null;
   const statusTone = physical?.tone === "success"
     ? "bg-success/10 text-success"
@@ -200,9 +200,13 @@ export function VesselView({
             </div>
             <div className="mt-3 space-y-1.5 text-sm">
               {from ? <p><span className="text-muted-foreground">Départ :</span> {from.name}</p> : null}
-              {live.position.atdAt ? <p><span className="text-muted-foreground">Appareillage réel :</span> {wallTimeInZone(live.position.atdAt, portTimeZone(from))}</p> : null}
-              {to ? <p><span className="text-muted-foreground">Destination :</span> {to.name}</p> : null}
-              {live.etaIso && to ? <p><span className="text-muted-foreground">Arrivée estimée :</span> vers {wallTimeInZone(live.etaIso, portTimeZone(to))}</p> : null}
+              {live.position.atdAt ? <p><span className="text-muted-foreground">Parti de {from?.name ?? "son port"} à :</span> {wallTimeInZone(live.position.atdAt, portTimeZone(from))}</p> : null}
+              {to ? <p><span className="text-muted-foreground">Destination prévue :</span> {to.name}</p> : null}
+              {live.position.declaredDestination ? <p><span className="text-muted-foreground">Destination AIS déclarée :</span> {live.position.declaredDestination}</p> : null}
+              {live.position.declaredEta ? <p><span className="text-muted-foreground">ETA AIS déclarée :</span> {live.position.declaredEta}</p> : null}
+              {live.etaIso && to ? <p><span className="text-muted-foreground">ETA calculée :</span> vers {wallTimeInZone(live.etaIso, portTimeZone(to))}</p> : null}
+              {live.position.ataAt && to ? <p><span className="text-muted-foreground">Accostage constaté :</span> {wallTimeInZone(live.position.ataAt, portTimeZone(to))}</p> : null}
+              {shipDeparture?.arrival_at ? <p className="text-xs text-muted-foreground">Horaire prévu : {wallTimeInZone(shipDeparture.arrival_at, portTimeZone(to))}</p> : null}
             </div>
             <p className="mt-3 text-xs text-muted-foreground">
               {live.ageMinutes <= 30 ? "Position GPS réelle reçue via AIS." : "Dernière position AIS connue : elle peut ne plus refléter la position actuelle."}

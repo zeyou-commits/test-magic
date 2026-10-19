@@ -226,3 +226,49 @@ export function physicalStatus(
     return { code: "at_sea", label: "En mer", tone: "success" };
   return { code: "unknown", label: "Position AIS reçue", tone: "muted" };
 }
+
+
+export interface RotationAlert {
+  etaLabel: string;
+  message: string;
+  legalWarning: string;
+}
+
+/**
+ * Signale une rotation potentiellement retardée lorsque le navire précédent n'est pas
+ * accosté à H-2. La traversée précédente doit arriver dans le port de départ courant.
+ */
+export function detectRotationDelay(args: {
+  departureIso: string;
+  previousArrivalIso: string | null;
+  position: LivePosition | null | undefined;
+  departurePort: Pick<Port, "latitude" | "longitude"> | null | undefined;
+  now?: number;
+  timeZone: string;
+}): RotationAlert | null {
+  const { departureIso, previousArrivalIso, position, departurePort, timeZone } = args;
+  const now = args.now ?? Date.now();
+  const departureMs = Date.parse(departureIso);
+  const previousArrivalMs = previousArrivalIso ? Date.parse(previousArrivalIso) : NaN;
+  if (!position || !departurePort || !Number.isFinite(departureMs) ||
+      !Number.isFinite(previousArrivalMs) || previousArrivalMs >= departureMs ||
+      now < departureMs - 2 * 3_600_000 || now >= departureMs) return null;
+  const distanceKm = haversineKm(
+    [position.longitude, position.latitude],
+    [departurePort.longitude, departurePort.latitude],
+  );
+  const notDocked = (position.speedKnots ?? 0) >= 1.5 || distanceKm > 2;
+  if (!notDocked) return null;
+  const speed = position.speedKnots ?? 0;
+  const etaMs = speed >= 1.5
+    ? now + ((distanceKm * 1000) / (speed * KNOT_MS)) * 1000
+    : NaN;
+  const etaLabel = Number.isFinite(etaMs)
+    ? new Intl.DateTimeFormat("fr-FR", { timeZone, hour: "2-digit", minute: "2-digit" }).format(new Date(etaMs))
+    : "à confirmer";
+  return {
+    etaLabel,
+    message: `Navire en approche finale (ETA ${etaLabel}). Rotation en cours : ouverture des portes retardée.`,
+    legalWarning: "Conservez votre horaire de convocation officiel : les contrôles de police restent actifs à l'heure prévue.",
+  };
+}

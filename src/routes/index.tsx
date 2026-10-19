@@ -367,6 +367,25 @@ function Index() {
     return () => window.removeEventListener("batogo:panel-full", full);
   }, []);
 
+  useEffect(() => {
+    const focusVessel = (event: Event) => {
+      const vesselId = (event as CustomEvent<{ vesselId?: string }>).detail?.vesselId;
+      if (!vesselId) return;
+      const ship = fleet.find((item) => item.vesselId === vesselId);
+      if (!ship) return;
+      setSelection({ type: "vessel", id: vesselId });
+      setFocusShipId(ship.id);
+      const pos = ship.live ? ship.live.position : null;
+      setFocusTarget({
+        center: pos ? [pos.longitude, pos.latitude] : ship.lngLat,
+        key: Date.now(),
+      });
+      setPanelLevel(0);
+    };
+    window.addEventListener("batogo:focus-vessel", focusVessel);
+    return () => window.removeEventListener("batogo:focus-vessel", focusVessel);
+  }, [fleet]);
+
   const collapsed = panelLevel === 0 && (dragHeight === null || dragHeight < 140);
 
   const resetToMap = () => {

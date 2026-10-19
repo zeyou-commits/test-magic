@@ -15,7 +15,8 @@ import { portTimeZone, wallTimeInZone, zoneLabel } from "@/lib/ferry/time";
 import { useLiveShips } from "@/lib/ferry/useLiveShips";
 import { useFleet } from "@/lib/ferry/useFleet";
 import { vesselPhotoQuery } from "@/lib/ferry/vesselPhoto";
-import { courseLabel, formatAge, formatDelay, physicalStatus } from "@/lib/ferry/tracking";
+import { courseLabel, detectRotationDelay, formatAge, formatDelay, physicalStatus } from "@/lib/ferry/tracking";
+import { getBoardingMilestones } from "@/lib/ferry/boarding";
 import { ReportButton } from "./ReportButton";
 import { CompanyBadge } from "./CompanyBadge";
 
@@ -140,15 +141,12 @@ export function VesselView({
     .filter((departure) => Date.parse(departure.departure_at) >= now - 3600_000)
     .sort((a, b) => a.departure_at.localeCompare(b.departure_at))
     .slice(0, 6);
-
   const ship = fleet.find((item) => item.vesselId === vesselId);
   const live = liveShips.find((item) => item.vessel.id === vesselId);
   const shipDeparture = ship
     ? allDepartures.find((item) => item.id === ship.departureId)
-    : undefined;
-  const shipRoute = shipDeparture
-    ? routes.find((item) => item.id === shipDeparture.route_id)
-    : undefined;
+    : nextDepartures[0];
+  const shipRoute = shipDeparture ? routes.find((item) => item.id === shipDeparture.route_id) : undefined;
   const from = shipRoute ? portById.get(shipRoute.departure_port_id) : undefined;
   const to = shipRoute ? portById.get(shipRoute.arrival_port_id) : undefined;
   const photo = photoQuery.data;
@@ -162,228 +160,182 @@ export function VesselView({
       : physical?.tone === "info"
         ? "bg-primary/10 text-primary"
         : "bg-muted text-muted-foreground";
-
-  let progress: number | null = null;
-  if (ship?.state === "sea" && shipDeparture) {
-    const start = Date.parse(shipDeparture.departure_at);
-    const end = shipDeparture.arrival_at
-      ? Date.parse(shipDeparture.arrival_at)
-      : start + (shipDeparture.duration_minutes ?? 1440) * 60_000;
-    progress = Math.min(1, Math.max(0, (now - start) / Math.max(1, end - start)));
-  }
+  const liveIsRecent = Boolean(live && live.ageMinutes <= 30);
+  const isAtSea = Boolean((liveIsRecent && (live?.position.speedKnots ?? 0) > 3) || ship?.state === "sea");
+  const departureZone = portTimeZone(from);
+  const arrivalZone = portTimeZone(to);
+  const departureIso = shipDeparture?.departure_at;
+  const milestones = departureIso && from
+    ? getBoardingMilestones(departureIso, from, { hasVehicle: true })
+    : null;
+  const minutesToDeparture = departureIso ? (Date.parse(departureIso) - now) / 60_000 : Infinity;
+  const minutesToHle = milestones ? (milestones.lastBoardingTime.getTime() - now) / 60_000 : Infinity;
+  const isPreparing = Boolean(!isAtSea && milestones && minutesToDeparture >= 0 && minutesToDeparture <= 4 * 60);
+  const isBoarding = isPreparing && minutesToHle > 0 && minutesToDeparture <= 3 * 60;
+  const isBoardingClosed = isPreparing && minutesToHle <= 0;
+  const progress = shipDeparture
+    ? (() => {
+        const start = Date.parse(shipDeparture.departure_at);
+        const end = shipDeparture.arrival_at
+          ? Date.parse(shipDeparture.arrival_at)
+          : start + (shipDeparture.duration_minutes ?? 1440) * 60_000;
+        return Math.min(1, Math.max(0, (now - start) / Math.max(1, end - start)));
+      })()
+    : 0;
+  const remainingKm = live?.remainingKm ?? null;
+  const previousDeparture = shipDeparture && from
+    ? allDepartures
+        .filter((item) => item.vessel_id === vesselId && item.id !== shipDeparture.id && item.status !== "cancelled")
+        .filter((item) => {
+          const previousRoute = routes.find((route) => route.id === item.route_id);
+          return previousRoute?.arrival_port_id === from.id &&
+            Boolean(item.arrival_at) &&
+            Date.parse(item.arrival_at!) <= Date.parse(shipDeparture.departure_at);
+        })
+        .sort((a, b) => Date.parse(b.arrival_at ?? b.departure_at) - Date.parse(a.arrival_at ?? a.departure_at))[0]
+    : undefined;
+  const rotationAlert = shipDeparture && from && live
+    ? detectRotationDelay({
+        departureIso: shipDeparture.departure_at,
+        previousArrivalIso: previousDeparture?.arrival_at ?? null,
+        position: live.position,
+        departurePort: from,
+        now,
+        timeZone: departureZone,
+      })
+    : null;
+  const flag = (code?: string) => {
+    if (!code || code.length !== 2) return "🌍";
+    return String.fromCodePoint(...code.toUpperCase().split("").map((letter) => 127397 + letter.charCodeAt(0)));
+  };
+  const relative = (iso?: string | null) => {
+    if (!iso) return "";
+    const minutes = Math.round((now - Date.parse(iso)) / 60_000);
+    if (minutes < 0) return "à venir";
+    if (minutes < 60) return `il y a ${minutes} min`;
+    return `il y a ${Math.floor(minutes / 60)}h${String(minutes % 60).padStart(2, "0")}`;
+  };
+  const etaIso = liveIsRecent && live?.etaIso ? live.etaIso : shipDeparture?.arrival_at;
+  const delay = live?.etaIso && shipDeparture?.arrival_at
+    ? formatDelay(Math.round((Date.parse(live.etaIso) - Date.parse(shipDeparture.arrival_at)) / 60_000))
+    : null;
+  const currentPort = ship?.portId ? portById.get(ship.portId) : from;
 
   return (
     <div className="-mx-4 -mt-4 md:-mx-6 md:-mt-6">
-      {live ? (
-        <Section title="Suivi en direct">
-          <div className="rounded-2xl border border-border bg-card p-3.5 sm:p-4">
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <span className={`inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-sm font-bold ${statusTone}`}>
-                <span className="size-2 rounded-full bg-current" aria-hidden />
-                {physical?.label ?? "Position AIS reçue"}
-              </span>
-              <span className="text-xs text-muted-foreground">
-                Signal {formatAge(live.ageMinutes)}
-              </span>
-            </div>
-            <div className="mt-3 grid grid-cols-2 gap-3">
-              <div className="min-w-0 rounded-xl bg-muted/50 p-3">
-                <p className="text-xs text-muted-foreground">Vitesse</p>
-                <p className="mt-1 font-semibold tabular-nums">{live.position.speedKnots != null ? `${live.position.speedKnots.toFixed(1)} nds` : "Indisponible"}</p>
-              </div>
-              <div className="min-w-0 rounded-xl bg-muted/50 p-3">
-                <p className="text-xs text-muted-foreground">Cap</p>
-                <p className="mt-1 flex items-center gap-1.5 font-semibold tabular-nums">
-                  {live.position.courseDeg != null ? <><span aria-hidden style={{ transform: `rotate(${live.position.courseDeg}deg)` }} className="inline-block">↑</span>{Math.round(live.position.courseDeg)}° ({courseLabel(live.position.courseDeg)})</> : "Indisponible"}
-                </p>
-              </div>
-            </div>
-            <div className="mt-3 space-y-1.5 text-sm">
-              {from ? <p><span className="text-muted-foreground">Départ :</span> {from.name}</p> : null}
-              {live.position.atdAt ? <p><span className="text-muted-foreground">Parti de {from?.name ?? "son port"} à :</span> {wallTimeInZone(live.position.atdAt, portTimeZone(from))}</p> : null}
-              {to ? <p><span className="text-muted-foreground">Destination prévue :</span> {to.name}</p> : null}
-              {live.position.declaredDestination ? <p><span className="text-muted-foreground">Destination AIS déclarée :</span> {live.position.declaredDestination}</p> : null}
-              {live.position.declaredEta ? <p><span className="text-muted-foreground">ETA AIS déclarée :</span> {live.position.declaredEta}</p> : null}
-              {live.etaIso && to ? <p><span className="text-muted-foreground">ETA calculée (vitesse actuelle) :</span> vers {wallTimeInZone(live.etaIso, portTimeZone(to))}</p> : null}
-              {live.etaIso && shipDeparture?.arrival_at ? <p><span className="text-muted-foreground">Comparaison calendrier :</span> {formatDelay(Math.round((Date.parse(live.etaIso) - Date.parse(shipDeparture.arrival_at)) / 60_000)).label}</p> : null}
-              {live.position.ataAt && to ? <p><span className="text-muted-foreground">Accostage constaté :</span> {wallTimeInZone(live.position.ataAt, portTimeZone(to))}</p> : null}
-              {shipDeparture?.arrival_at && to ? <p className="text-xs text-muted-foreground">Horaire prévu : {wallTimeInZone(shipDeparture.arrival_at, portTimeZone(to))}</p> : null}
-            </div>
-            <p className="mt-3 text-xs text-muted-foreground">
-              {live.ageMinutes <= 30 ? "Position GPS réelle reçue via AIS." : "Dernière position AIS connue : elle peut ne plus refléter la position actuelle."}
-            </p>
+      <div className="flex items-center gap-3 border-b border-border px-4 py-3 md:px-6">
+        <div className="grid size-16 shrink-0 place-items-center overflow-hidden rounded-2xl border border-border bg-muted shadow-sm sm:size-[72px]">
+          {photo ? (
+            <img src={photo.url} alt={`Photo du navire ${vessel.name}`} loading="lazy" decoding="async" width={144} height={144} referrerPolicy="no-referrer" className="size-full object-cover" />
+          ) : (
+            <Ship className="size-8 text-muted-foreground" aria-hidden />
+          )}
+        </div>
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center justify-between gap-2">
+            <span className="truncate text-xs text-muted-foreground">{(vessel.vessel_type ?? "Navire").toLocaleLowerCase("fr-FR")}</span>
+            <span className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-semibold ${statusTone}`}>
+              {isAtSea ? "🟢 En mer" : isBoardingClosed ? "🟠 Accès fermé" : isBoarding ? "🔵 Embarquement" : "⚓ À quai"}
+            </span>
           </div>
-        </Section>
-      ) : null}
-      <Section title="Où en est ce navire ?">
-        {ship && ship.state === "sea" ? (
-          <div className="rounded-2xl bg-success/10 p-4">
-            <div className="flex items-center gap-2 text-sm font-bold">
-              <span className="relative flex size-2.5" aria-hidden>
-                <span className="absolute inline-flex size-full animate-ping rounded-full bg-success/60" />
-                <span className="relative inline-flex size-2.5 rounded-full bg-success" />
-              </span>
-              En mer
-            </div>
-            <p className="mt-2 font-display text-lg font-bold">
-              {from?.name ?? "—"} → {to?.name ?? "—"}
-            </p>
-            {progress !== null ? (
-              <div className="mt-2">
-                <div
-                  className="h-2 overflow-hidden rounded-full bg-border"
-                  role="progressbar"
-                  aria-valuenow={Math.round(progress * 100)}
-                  aria-valuemin={0}
-                  aria-valuemax={100}
-                  aria-label="Avancement de la traversée"
-                >
-                  <div
-                    className="h-full rounded-full bg-gradient-to-r from-primary to-cta"
-                    style={{ width: `${Math.round(progress * 100)}%` }}
-                  />
-                </div>
-                <p className="mt-1 text-xs text-muted-foreground">
-                  {Math.round(progress * 100)} % de la traversée
-                </p>
-              </div>
+          <h1 className="truncate font-display text-lg font-bold leading-tight text-foreground">{vessel.name}</h1>
+          <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] text-muted-foreground">
+            {company ? (
+              <button type="button" onClick={() => onSelect({ type: "company", id: company.id })} className="inline-flex items-center gap-1.5 font-medium text-foreground hover:underline">
+                <CompanyBadge name={company.name} logoUrl={company.logo_url} size={18} />
+                <span className="max-w-[120px] truncate">{company.name}</span>
+              </button>
             ) : null}
-            {shipDeparture?.arrival_at && to ? (
-              <p className="mt-2 text-sm">
-                Arrivée prévue à{" "}
-                <strong>{wallTimeInZone(shipDeparture.arrival_at, portTimeZone(to))}</strong>{" "}
-                <span className="text-xs text-muted-foreground">
-                  ({zoneLabel(portTimeZone(to))})
-                </span>
-              </p>
+            {vessel.length_meters ? <span>{vessel.length_meters} m</span> : null}
+            {vessel.passenger_capacity ? <span>{vessel.passenger_capacity.toLocaleString("fr-FR")} passagers</span> : null}
+            {vessel.imo || vessel.mmsi ? (
+              <a href={vessel.imo ? `https://www.vesselfinder.com/?imo=${vessel.imo}` : `https://www.vesselfinder.com/?mmsi=${vessel.mmsi}`} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 hover:text-primary hover:underline">
+                IMO/VesselFinder <ExternalLink className="size-3" aria-hidden />
+              </a>
             ) : null}
-            {live ? (
-              <p className="mt-2 text-xs text-muted-foreground">
-                {live.position.speedKnots !== null
-                  ? `${live.position.speedKnots.toFixed(1)} nœuds`
-                  : ""}
-                {live.position.courseDeg !== null
-                  ? ` · cap ${Math.round(live.position.courseDeg)}° (${courseLabel(live.position.courseDeg)})`
-                  : ""}{" "}
-                · position {formatAge(live.ageMinutes)}
-              </p>
-            ) : null}
-            <p className="mt-2 text-xs text-muted-foreground">
-              {live
-                ? "Position réelle (suivi AIS)."
-                : "Position déduite des horaires, pas une position GPS."}
-            </p>
+            {vessel.is_demo ? <DemoBadge /> : null}
           </div>
-        ) : ship && ship.state === "docked" ? (
-          <div className="rounded-2xl bg-secondary p-4">
-            <p className="text-sm font-bold">Au port de {portName(ship.portId ?? undefined)}</p>
-            {shipDeparture && to ? (
-              <p className="mt-1 text-sm">
-                Prochain départ :{" "}
-                <strong>{formatDateTime(shipDeparture.departure_at, portTimeZone(from))}</strong>{" "}
-                vers {to.name}
-              </p>
-            ) : null}
-            <p className="mt-2 text-xs text-muted-foreground">Position déduite des horaires.</p>
-          </div>
-        ) : (
-          <EmptyNote>
-            Aucune traversée prévue prochainement pour ce navire : position inconnue.
-          </EmptyNote>
-        )}
-        {ship && shipDeparture ? (
-          <button
-            type="button"
-            onClick={() => onSelect({ type: "departure", id: shipDeparture.id })}
-            className="inline-flex h-10 items-center justify-center rounded-xl border border-border bg-card px-4 text-sm font-semibold hover:bg-secondary"
-          >
-            Voir la traversée
-          </button>
-        ) : null}
-      </Section>
-      {/* Photo du navire : photo du back-office, sinon photo libre de Wikimedia Commons, sinon illustration. */}
-      <div className="relative h-36 overflow-hidden bg-gradient-to-br from-primary/90 to-primary/60 md:h-40">
-        {photoQuery.isLoading ? (
-          <div className="size-full animate-pulse bg-muted" aria-hidden />
-        ) : photo ? (
-          <img
-            src={photo.url}
-            alt={`Photo du navire ${vessel.name}`}
-            loading="lazy"
-            decoding="async"
-            fetchPriority="low"
-            width={480}
-            height={270}
-            referrerPolicy="no-referrer"
-            className="size-full object-cover"
-          />
-        ) : (
-          <div className="grid size-full place-items-center text-primary-foreground/80">
-            <div className="text-center">
-              <Ship className="mx-auto size-9" aria-hidden />
-              <p className="mt-2 text-xs font-medium">Photo non disponible</p>
-            </div>
-          </div>
-        )}
-        <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/60 to-transparent px-4 pb-2.5 pt-8 md:px-6">
-          <p className="text-[11px] font-semibold uppercase tracking-wider text-white/80">
-            {vessel.vessel_type ?? "Navire"}
-          </p>
-          <h1 className="font-display text-xl font-bold leading-tight text-white drop-shadow">
-            {vessel.name}
-          </h1>
         </div>
       </div>
       {photo?.source === "commons" ? (
-        <p className="border-b px-4 py-2 text-[11px] leading-snug text-muted-foreground md:px-6">
-          Photo{photo.credit ? ` : ${photo.credit}` : ""}
-          {photo.license ? ` · ${photo.license}` : ""} ·{" "}
-          {photo.pageUrl ? (
-            <a href={photo.pageUrl} target="_blank" rel="noopener noreferrer" className="underline">
-              Wikimedia Commons
-            </a>
-          ) : (
-            "Wikimedia Commons"
-          )}
-          . Photo indicative, à vérifier.
+        <p className="px-4 pt-1 text-[10px] text-muted-foreground md:px-6">
+          Photo{photo.credit ? ` : ${photo.credit}` : ""}{photo.license ? ` · ${photo.license}` : ""} · {photo.pageUrl ? <a href={photo.pageUrl} target="_blank" rel="noopener noreferrer" className="underline">Wikimedia Commons</a> : "Wikimedia Commons"} — photo indicative.
         </p>
       ) : null}
 
-      <div className="flex flex-wrap items-center gap-2 px-4 pt-3 text-sm md:px-6">
-        {company ? (
-          <button
-            type="button"
-            className="inline-flex items-center gap-2 rounded-full border bg-card py-1 pl-1 pr-3 font-semibold text-primary hover:bg-secondary"
-            onClick={() => onSelect({ type: "company", id: company.id })}
-          >
-            <CompanyBadge name={company.name} logoUrl={company.logo_url} size={24} />
-            {company.name}
-          </button>
-        ) : null}
-        {vessel.imo ? (
-          <span className="rounded-full bg-secondary px-2.5 py-1 text-[11px] font-semibold text-muted-foreground">
-            IMO {vessel.imo}
-          </span>
-        ) : null}
-        {vessel.imo || vessel.mmsi ? (
-          <a
-            href={
-              vessel.imo
-                ? `https://www.vesselfinder.com/?imo=${vessel.imo}`
-                : `https://www.vesselfinder.com/?mmsi=${vessel.mmsi}`
-            }
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-1 rounded-full bg-secondary px-2.5 py-1 text-[11px] font-semibold text-primary hover:underline"
-          >
-            Suivre en direct <ExternalLink className="size-3" aria-hidden />
-            <span className="sr-only">(VesselFinder, nouvel onglet)</span>
-          </a>
-        ) : null}
-        {vessel.is_demo ? <DemoBadge /> : null}
-      </div>
-      <VesselSpecs vessel={vessel} />
+      <div className="px-4 pt-3 md:px-6">
+        <section className="rounded-2xl border border-border bg-card p-3.5 shadow-sm sm:p-4">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-bold ${statusTone}`}>
+              {isAtSea ? (
+                <><span className="relative flex size-2" aria-hidden><span className="absolute inline-flex size-full animate-ping rounded-full bg-success/60" /><span className="relative size-2 rounded-full bg-success" /></span>{physical?.code === "approaching" ? "En approche finale" : "En mer (croisière)"}</>
+              ) : isBoardingClosed ? "🟠 Moteurs allumés · accès fermé" : isBoarding ? "🔵 Embarquement en cours" : currentPort ? `⚓ À quai · ${currentPort.name}` : "État du navire à confirmer"}
+            </span>
+            <span className="text-[10px] text-muted-foreground">
+              {liveIsRecent ? `📡 GPS direct · ${formatAge(live!.ageMinutes)}` : "⏱️ Estimé (programme)"}
+            </span>
+          </div>
 
+          {isAtSea && from && to ? (
+            <>
+              <div className="mt-3 flex items-center gap-2 text-xs font-semibold">
+                <span className="max-w-[35%] truncate">{from.name} {flag(from.country_code)}</span>
+                <span className="relative flex min-w-8 flex-1 items-center justify-center text-primary">
+                  <span className="absolute inset-x-0 h-px bg-border" />
+                  <Ship className="relative size-4 bg-card" aria-hidden />
+                </span>
+                <span className="max-w-[35%] truncate text-right">{to.name} {flag(to.country_code)}</span>
+              </div>
+              <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-muted" role="progressbar" aria-valuenow={Math.round(progress * 100)} aria-valuemin={0} aria-valuemax={100} aria-label="Avancement estimé de la traversée">
+                <div className="h-full rounded-full bg-primary transition-[width]" style={{ width: `${Math.round(progress * 100)}%` }} />
+              </div>
+              <div className="mt-1 text-right text-[10px] text-muted-foreground">{Math.round(progress * 100)} % du trajet</div>
+              <div className="mt-2 grid grid-cols-2 gap-3">
+                <div className="min-w-0">
+                  <p className="text-[10px] text-muted-foreground">Départ</p>
+                  <p className="truncate text-sm font-semibold">{live?.position.atdAt ? wallTimeInZone(live.position.atdAt, departureZone) : milestones?.departureLabel ?? (departureIso ? wallTimeInZone(departureIso, departureZone) : "—")}</p>
+                  <p className="text-[10px] text-muted-foreground">{live?.position.atdAt ? relative(live.position.atdAt) : "horaire prévu"}</p>
+                </div>
+                <div className="min-w-0 text-right">
+                  <p className="text-[10px] text-muted-foreground">Arrivée prévue</p>
+                  <p className="truncate text-sm font-semibold">{etaIso ? wallTimeInZone(etaIso, arrivalZone) : "À confirmer"}</p>
+                  <p className={`text-[10px] ${delay?.tone === "late" ? "text-warning" : "text-muted-foreground"}`}>{delay?.label ?? (live?.etaIso ? "ETA calculée" : "selon programme")}</p>
+                </div>
+              </div>
+              <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 border-t border-border pt-2 text-[10px] text-muted-foreground">
+                {live?.position.speedKnots != null ? <span>{live.position.speedKnots.toFixed(1)} nds</span> : null}
+                {live?.position.courseDeg != null ? <span>Cap {Math.round(live.position.courseDeg)}° {courseLabel(live.position.courseDeg)}</span> : null}
+                {remainingKm != null ? <span>{Math.round(remainingKm)} km restants</span> : null}
+                <button type="button" onClick={() => window.dispatchEvent(new CustomEvent("batogo:focus-vessel", { detail: { vesselId } }))} className="ml-auto inline-flex items-center gap-1 font-semibold text-primary hover:underline">🎯 Voir sur la carte</button>
+              </div>
+            </>
+          ) : isPreparing && milestones ? (
+            <>
+              <p className="mt-2 text-sm font-semibold">{currentPort?.name ?? from?.name ?? "Port de départ"}</p>
+              <div className="mt-3 grid grid-cols-3 items-start gap-1 text-center">
+                <div><p className="text-[10px] text-muted-foreground">H−3h</p><p className="text-xs font-semibold">{milestones.boardingLabel}</p><p className="text-[10px] text-muted-foreground">Début</p></div>
+                <div className="border-x border-border px-1"><p className="text-[10px] text-muted-foreground">H−1h · HLE</p><p className="text-xs font-semibold">{milestones.lastBoardingLabel}</p><p className="text-[10px] text-muted-foreground">Clôture</p></div>
+                <div><p className="text-[10px] text-muted-foreground">H · Départ</p><p className="text-xs font-semibold">{milestones.departureLabel}</p><p className="text-[10px] text-muted-foreground">Appareillage</p></div>
+              </div>
+              <p className={`mt-3 rounded-xl px-3 py-2 text-sm font-bold ${isBoardingClosed ? "bg-warning/10 text-warning" : "bg-primary/10 text-primary"}`}>
+                {isBoardingClosed ? "Portes fermées — présentez-vous au personnel portuaire." : `Accès quai fermé dans ${Math.max(0, Math.round(minutesToHle))} min`}
+              </p>
+              {rotationAlert ? <div className="mt-3 rounded-xl border border-warning/40 bg-warning/10 p-3 text-xs"><p className="font-semibold text-warning">{rotationAlert.message}</p><p className="mt-1 text-foreground">{rotationAlert.legalWarning}</p></div> : null}
+              <p className="mt-2 text-[10px] text-muted-foreground">Convocation recommandée : {milestones.callLabel} ({portTimeZone(from)}) · conservez l'heure officielle de votre billet.</p>
+            </>
+          ) : (
+            <>
+              <p className="mt-2 text-sm font-semibold">⚓ À quai au port de {currentPort?.name ?? from?.name ?? "—"}</p>
+              {shipDeparture && milestones ? <p className="mt-1 text-xs text-muted-foreground">Prochain voyage : {milestones.departureLabel} · convocation recommandée {milestones.callLabel} ({departureZone})</p> : <p className="mt-1 text-xs text-muted-foreground">Aucun départ imminent identifié pour ce navire.</p>}
+              {rotationAlert ? <div className="mt-3 rounded-xl border border-warning/40 bg-warning/10 p-3 text-xs"><p className="font-semibold text-warning">{rotationAlert.message}</p><p className="mt-1 text-foreground">{rotationAlert.legalWarning}</p></div> : null}
+            </>
+          )}
+          {live && !liveIsRecent ? <p className="mt-2 text-[10px] text-muted-foreground">Dernier signal AIS {formatAge(live.ageMinutes)} : il peut ne plus représenter la position actuelle.</p> : null}
+          {shipDeparture ? <button type="button" onClick={() => onSelect({ type: "departure", id: shipDeparture.id })} className="mt-3 inline-flex h-9 items-center justify-center rounded-xl border border-border px-3 text-xs font-semibold hover:bg-secondary">Voir la traversée complète</button> : null}
+        </section>
+      </div>
+
+      <VesselSpecs vessel={vessel} />
 
       <Section title="Prochains départs">
         {nextDepartures.length === 0 ? (
@@ -394,22 +346,9 @@ export function VesselView({
               const route = routes.find((item) => item.id === departure.route_id);
               return (
                 <li key={departure.id}>
-                  <button
-                    type="button"
-                    onClick={() => onSelect({ type: "departure", id: departure.id })}
-                    className="w-full rounded-md px-2 py-2 text-left hover:bg-secondary"
-                  >
-                    <p className="text-sm font-medium">
-                      {formatDateTime(
-                        departure.departure_at,
-                        portTimeZone(portById.get(route?.departure_port_id ?? "")),
-                      )}
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                      {route
-                        ? `${portName(route.departure_port_id)} → ${portName(route.arrival_port_id)}`
-                        : "—"}
-                    </p>
+                  <button type="button" onClick={() => onSelect({ type: "departure", id: departure.id })} className="w-full rounded-md px-2 py-2 text-left hover:bg-secondary">
+                    <p className="text-sm font-medium">{formatDateTime(departure.departure_at, portTimeZone(portById.get(route?.departure_port_id ?? "")))}</p>
+                    <p className="text-xs text-muted-foreground">{route ? `${portName(route.departure_port_id)} → ${portName(route.arrival_port_id)}` : "—"}</p>
                   </button>
                 </li>
               );
@@ -417,12 +356,7 @@ export function VesselView({
           </ul>
         )}
       </Section>
-
-      {vessel.description ? (
-        <Section title="À bord">
-          <p className="text-sm leading-relaxed">{vessel.description}</p>
-        </Section>
-      ) : null}
+      {vessel.description ? <Section title="À bord"><p className="text-sm leading-relaxed">{vessel.description}</p></Section> : null}
     </div>
   );
 }

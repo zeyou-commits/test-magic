@@ -224,6 +224,5 @@ export function physicalStatus(
     return { code: "boarding_closed", label: "Embarquement clos", tone: "warning" };
   if (nearestPortKm > 15 && speed >= 3)
     return { code: "at_sea", label: "En mer", tone: "success" };
-  if (toKm < 15) return { code: "approaching", label: "En approche", tone: "warning" };
   return { code: "unknown", label: "Position AIS reçue", tone: "muted" };
 }

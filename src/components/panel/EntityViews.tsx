@@ -196,7 +196,8 @@ export function VesselView({
     : totalKm != null ? Math.round(totalKm * progress) : null;
   const scheduledArrivalIso = shipDeparture?.arrival_at;
   const actualArrivalIso = live?.position.ataAt ?? null;
-  const etaForComparison = liveIsRecent ? (actualArrivalIso ?? live?.etaIso) : null;
+  // Keep the same computed ETA as the full-traversal view; stale AIS is disclosed separately below.
+  const etaForComparison = live ? (actualArrivalIso ?? live.etaIso) : null;
   const delayMinutes = etaForComparison && scheduledArrivalIso
     ? Math.round((Date.parse(etaForComparison) - Date.parse(scheduledArrivalIso)) / 60_000)
     : null;
@@ -236,7 +237,7 @@ export function VesselView({
     if (minutes < 60) return `il y a ${minutes} min`;
     return `il y a ${Math.floor(minutes / 60)}h${String(minutes % 60).padStart(2, "0")}`;
   };
-  const etaIso = liveIsRecent && actualArrivalIso ? actualArrivalIso : liveIsRecent && live?.etaIso ? live.etaIso : shipDeparture?.arrival_at;
+  const etaIso = live && actualArrivalIso ? actualArrivalIso : live?.etaIso ?? shipDeparture?.arrival_at;
   const timeUntil = (iso: string) => {
     const mins = Math.max(0, Math.round((Date.parse(iso) - now) / 60_000));
     if (mins < 60) return `dans ${mins} min`;

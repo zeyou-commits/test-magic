@@ -240,7 +240,7 @@ export function PortMultiPicker({
   if (inline) {
     return (
       <div className="flex min-w-0 flex-col rounded-2xl border border-border bg-card p-2.5 shadow-sm">
-        <p className="mb-2 px-1 text-[11px] font-bold uppercase tracking-wider text-primary">
+        <p className="mb-2 max-md:hidden px-1 text-[11px] font-bold uppercase tracking-wider text-primary">
           {title ?? label}
           <span className="ml-1 font-medium normal-case tracking-normal text-muted-foreground">
             · {summarizePorts(value, ports, "Tous")}

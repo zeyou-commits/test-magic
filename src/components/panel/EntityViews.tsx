@@ -204,9 +204,10 @@ export function VesselView({
               {to ? <p><span className="text-muted-foreground">Destination prévue :</span> {to.name}</p> : null}
               {live.position.declaredDestination ? <p><span className="text-muted-foreground">Destination AIS déclarée :</span> {live.position.declaredDestination}</p> : null}
               {live.position.declaredEta ? <p><span className="text-muted-foreground">ETA AIS déclarée :</span> {live.position.declaredEta}</p> : null}
-              {live.etaIso && to ? <p><span className="text-muted-foreground">ETA calculée :</span> vers {wallTimeInZone(live.etaIso, portTimeZone(to))}</p> : null}
+              {live.etaIso && to ? <p><span className="text-muted-foreground">ETA calculée (vitesse actuelle) :</span> vers {wallTimeInZone(live.etaIso, portTimeZone(to))}</p> : null}
+              {live.etaIso && shipDeparture?.arrival_at ? <p><span className="text-muted-foreground">Comparaison calendrier :</span> {formatDelay(Math.round((Date.parse(live.etaIso) - Date.parse(shipDeparture.arrival_at)) / 60_000)).label}</p> : null}
               {live.position.ataAt && to ? <p><span className="text-muted-foreground">Accostage constaté :</span> {wallTimeInZone(live.position.ataAt, portTimeZone(to))}</p> : null}
-              {shipDeparture?.arrival_at ? <p className="text-xs text-muted-foreground">Horaire prévu : {wallTimeInZone(shipDeparture.arrival_at, portTimeZone(to))}</p> : null}
+              {shipDeparture?.arrival_at && to ? <p className="text-xs text-muted-foreground">Horaire prévu : {wallTimeInZone(shipDeparture.arrival_at, portTimeZone(to))}</p> : null}
             </div>
             <p className="mt-3 text-xs text-muted-foreground">
               {live.ageMinutes <= 30 ? "Position GPS réelle reçue via AIS." : "Dernière position AIS connue : elle peut ne plus refléter la position actuelle."}

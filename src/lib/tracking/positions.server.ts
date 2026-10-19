@@ -123,7 +123,11 @@ export async function getPositions(): Promise<PublicPosition[]> {
         const nearest = (ports ?? [])
           .map((port) => ({ id: port.id, distance: distanceKm(position.latitude, position.longitude, port.latitude, port.longitude) }))
           .sort((x, y) => x.distance - y.distance)[0];
-        if (nearest && nearest.distance < 2) update.last_port_id = nearest.id;
+        if (nearest && nearest.distance < 2) {
+          update.last_port_id = nearest.id;
+          // Une nouvelle escale réarme la détection pour le prochain voyage.
+          update.atd_at = null;
+        }
         if (nearest && nearest.distance >= 3 && wasAtPort && (position.speedKnots ?? 0) >= 3 && !previous?.atd_at) {
           update.atd_at = position.reportedAt ?? new Date().toISOString();
         }

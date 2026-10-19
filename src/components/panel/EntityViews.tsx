@@ -1,7 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
-import { ExternalLink, Info, Ship } from "lucide-react";
+import { ExternalLink, Ship } from "lucide-react";
 import { CountryFlag } from "./CountryFlag";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import {
   companiesQuery,
   fleetDeparturesQuery,
@@ -253,26 +252,18 @@ export function VesselView({
   return (
     <div className="-mx-4 -mt-4 md:-mx-6 md:-mt-6">
       <div className="flex items-center gap-2.5 border-b border-border px-4 py-2 md:px-6">
-        <div className="relative grid size-13 shrink-0 place-items-center overflow-hidden rounded-xl border border-border bg-muted shadow-sm sm:size-14">
+        <div className="group relative grid size-13 shrink-0 place-items-center overflow-hidden rounded-xl border border-border bg-muted shadow-sm sm:size-14">
           {photo ? (
             <>
               <img src={photo.url} alt={`Photo du navire ${vessel.name}`} loading="lazy" decoding="async" width={144} height={144} referrerPolicy="no-referrer" className="size-full object-cover" />
               {photo.source === "commons" ? (
-                <div className="absolute bottom-1 right-1">
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <button type="button" aria-label="Crédits et licence de la photo" className="grid size-4 place-items-center rounded-full bg-black/65 text-white shadow backdrop-blur-xs transition hover:bg-black/85">
-                        <Info className="size-2.5" aria-hidden />
-                      </button>
-                    </PopoverTrigger>
-                    <PopoverContent side="bottom" align="start" className="w-64 max-w-[calc(100vw-2rem)] p-2.5 text-[11px] leading-tight text-foreground shadow-md">
-                      <p className="font-semibold">Crédit photo</p>
-                      <p className="mt-1 text-muted-foreground">{photo.credit ? `${photo.credit} · ` : ""}{photo.license || "CC"} ·{" "}
-                        {photo.pageUrl ? <a href={photo.pageUrl} target="_blank" rel="noopener noreferrer" className="text-primary underline">Wikimedia Commons</a> : "Wikimedia Commons"}
-                      </p>
-                      <p className="mt-1 text-[9px] text-muted-foreground/80">Photo à titre indicatif.</p>
-                    </PopoverContent>
-                  </Popover>
+                <div className="pointer-events-none absolute inset-0 flex items-end justify-center bg-black/60 p-1 opacity-0 backdrop-blur-[2px] transition-opacity duration-200 group-hover:pointer-events-auto group-hover:opacity-100 group-focus-within:pointer-events-auto group-focus-within:opacity-100">
+                  <p className="line-clamp-2 text-center text-[9px] leading-tight text-white">
+                    {photo.credit ? `${photo.credit} · ` : ""}{photo.license || "CC"}
+                    {photo.pageUrl ? (
+                      <> · <a href={photo.pageUrl} target="_blank" rel="noopener noreferrer" className="pointer-events-auto underline hover:text-primary-foreground">Wikimedia</a></>
+                    ) : null}
+                  </p>
                 </div>
               ) : null}
             </>
@@ -296,11 +287,6 @@ export function VesselView({
             ) : null}
             {vessel.length_meters ? <span>{vessel.length_meters} m</span> : null}
             {vessel.passenger_capacity ? <span>{vessel.passenger_capacity.toLocaleString("fr-FR")} passagers</span> : null}
-            {vessel.imo || vessel.mmsi ? (
-              <a href={vessel.imo ? `https://www.vesselfinder.com/?imo=${vessel.imo}` : `https://www.vesselfinder.com/?mmsi=${vessel.mmsi}`} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 hover:text-primary hover:underline">
-                IMO/VesselFinder <ExternalLink className="size-3" aria-hidden />
-              </a>
-            ) : null}
             {vessel.is_demo ? <DemoBadge /> : null}
           </div>
         </div>
@@ -349,17 +335,16 @@ export function VesselView({
               <div className="mt-2 grid grid-cols-2 gap-2">
                 <div className="min-w-0 rounded-xl bg-success/10 p-2.5">
                   <p className="text-[10px] font-medium text-success">✓ Parti {atdIso ? relative(atdIso) : "selon programme"}</p>
-                  <p className="truncate text-sm font-bold text-foreground">{atdIso ? wallTimeInZone(atdIso, departureZone) : departureIso ? wallTimeInZone(departureIso, departureZone) : "—"}</p>
+                  <p className="truncate text-base font-bold tabular-nums text-foreground">{atdIso ? wallTimeInZone(atdIso, departureZone) : departureIso ? wallTimeInZone(departureIso, departureZone) : "—"}</p>
                   {hasDepartureShift && departureIso ? <p className="mt-0.5 truncate text-[10px] text-muted-foreground"><span className="line-through opacity-70">Prévu {wallTimeInZone(departureIso, departureZone)}</span><span className="ml-1 text-warning">({departureDiffMins > 0 ? "+" : ""}{departureDiffMins} min)</span></p> : null}
-                  {atdIso && !hasDepartureShift ? <p className="mt-0.5 text-[10px] text-success">Selon programme</p> : null}
+                  {hasDepartureShift && departureIso ? null : <p className="mt-0.5 text-[10px] text-success">À l'heure prévue</p>}
                 </div>
                 <div className="min-w-0 rounded-xl bg-primary/10 p-2.5 text-right">
                   <p className="text-[10px] font-medium text-primary">⚑ Arrivée {etaIso ? timeUntil(etaIso) : "à confirmer"}</p>
-                  <p className="truncate text-sm font-bold text-foreground">{etaIso ? arrivalDateLabel(etaIso, arrivalZone) : "À confirmer"}</p>
+                  <p className="truncate text-base font-bold tabular-nums text-foreground">{etaIso ? arrivalDateLabel(etaIso, arrivalZone) : "À confirmer"}</p>
                   {hasArrivalShift && scheduledArrivalIso ? <p className="mt-0.5 truncate text-[10px]"><span className="line-through text-muted-foreground/70">Prévu {wallTimeInZone(scheduledArrivalIso, arrivalZone)}</span><span className={`ml-1 font-semibold ${delayMinutes < 0 ? "text-success" : "text-warning"}`}>{delayMinutes < 0 ? `En avance de ${formatDuration(Math.abs(delayMinutes))}` : `Retard de ${formatDuration(delayMinutes)}`}</span></p> : <p className="mt-0.5 truncate text-[10px] text-muted-foreground">Selon programme</p>}
                 </div>
               </div>
-              <button type="button" onClick={() => window.dispatchEvent(new CustomEvent("batogo:focus-vessel", { detail: { vesselId } }))} className="mt-2 inline-flex h-8 w-full items-center justify-center gap-1 rounded-lg bg-primary/10 px-3 text-xs font-semibold text-primary hover:bg-primary/15">🎯 Voir sur la carte</button>
             </>
           ) : isPreparing && milestones ? (
             <>
@@ -383,11 +368,20 @@ export function VesselView({
             </>
           )}
           {live && !liveIsRecent ? <p className="mt-2 text-[10px] text-muted-foreground">Dernier signal AIS {formatAge(live.ageMinutes)} : il peut ne plus représenter la position actuelle.</p> : null}
-          {shipDeparture ? <button type="button" onClick={() => onSelect({ type: "departure", id: shipDeparture.id })} className="mt-3 inline-flex h-9 items-center justify-center rounded-xl border border-border px-3 text-xs font-semibold hover:bg-secondary">Voir la traversée complète</button> : null}
+          <VesselSpecs vessel={vessel} />
+          <button type="button" onClick={() => window.dispatchEvent(new CustomEvent("batogo:focus-vessel", { detail: { vesselId } }))} className="mt-2 inline-flex h-8 w-full items-center justify-center gap-1 rounded-lg bg-primary/10 px-3 text-xs font-semibold text-primary hover:bg-primary/15">🎯 Voir sur la carte</button>
+          <div className="mt-3 flex items-center justify-between gap-2">
+            {shipDeparture ? (
+              <button type="button" onClick={() => onSelect({ type: "departure", id: shipDeparture.id })} className="inline-flex h-8 items-center justify-center rounded-xl border border-border px-3 text-xs font-semibold transition-colors hover:bg-secondary">Voir la traversée complète</button>
+            ) : <div />}
+            {vessel.imo || vessel.mmsi ? (
+              <a href={vessel.imo ? `https://www.vesselfinder.com/?imo=${vessel.imo}` : `https://www.vesselfinder.com/?mmsi=${vessel.mmsi}`} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-[11px] text-muted-foreground transition-colors hover:text-primary">
+                IMO/VesselFinder <ExternalLink className="size-3" aria-hidden />
+              </a>
+            ) : null}
+          </div>
         </section>
       </div>
-
-      <VesselSpecs vessel={vessel} />
 
       <Section title="Prochains départs">
         {nextDepartures.length === 0 ? (

@@ -344,7 +344,8 @@ export function VesselView({
                 <div className="min-w-0 rounded-xl bg-primary/10 p-2.5 text-right">
                   <p className="text-[10px] font-medium text-primary">⚑ Arrivée {etaIso ? timeUntil(etaIso) : "à confirmer"}</p>
                   <p className="truncate text-base font-bold tabular-nums text-foreground">{etaIso ? arrivalDateLabel(etaIso, arrivalZone) : "À confirmer"}</p>
-                  {hasArrivalShift && scheduledArrivalIso ? <p className="mt-0.5 truncate text-[10px]"><span className="line-through text-muted-foreground/70">Prévu {wallTimeInZone(scheduledArrivalIso, arrivalZone)}</span><span className={`ml-1 font-semibold ${delayMinutes < 0 ? "text-success" : "text-warning"}`}>{delayMinutes < 0 ? `En avance de ${formatDuration(Math.abs(delayMinutes))}` : `Retard de ${formatDuration(delayMinutes)}`}</span></p> : <p className="mt-0.5 truncate text-[10px] text-muted-foreground">Selon programme</p>}
+                  {scheduledArrivalIso ? <p className="mt-0.5 truncate text-[10px] text-muted-foreground">Prévu {wallTimeInZone(scheduledArrivalIso, arrivalZone)} · {zoneLabel(arrivalZone)}</p> : null}
+                  {hasArrivalShift ? <p className="text-[10px] font-semibold text-warning">{delayMinutes! < 0 ? "En avance de " + formatDuration(Math.abs(delayMinutes!)) : "Retard estimé de " + formatDuration(delayMinutes!)}</p> : hasArrivalComparison ? <p className="text-[10px] text-success">Arrivée estimée à l’heure (écart inférieur à 1 min)</p> : <p className="text-[10px] text-muted-foreground">Estimation réelle indisponible · horaire programmé affiché</p>}
                 </div>
               </div>
             </>
@@ -370,7 +371,7 @@ export function VesselView({
           ) : (
             <>
               <p className="mt-2 text-sm font-semibold">⚓ À quai au port de {currentPort?.name ?? from?.name ?? "—"}</p>
-              {shipDeparture && milestones ? <p className="mt-1 text-xs text-muted-foreground">Prochain voyage : {milestones.departureLabel} · convocation recommandée {milestones.callLabel} ({departureZone})</p> : <p className="mt-1 text-xs text-muted-foreground">Aucun départ imminent identifié pour ce navire.</p>}
+              {shipDeparture && milestones ? <div className="mt-2 rounded-xl bg-muted/50 p-3"><p className="mb-2 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">Prochain départ · {zoneLabel(departureZone)}</p><div className="grid grid-cols-2 gap-2 text-xs"><p>Convocation véhicule H−4<strong className="block text-sm">{getBoardingMilestones(departureIso!, from, { hasVehicle: true })?.callLabel}</strong></p><p>Convocation piéton H−3<strong className="block text-sm">{getBoardingMilestones(departureIso!, from, { hasVehicle: false })?.callLabel}</strong></p><p>Début embarquement H−3<strong className="block text-sm">{milestones.boardingLabel}</strong></p><p>HLE H−1<strong className="block text-sm">{milestones.lastBoardingLabel}</strong></p><p className="col-span-2">Départ H<strong className="text-sm">{milestones.departureLabel}</strong></p></div><p className="mt-2 text-[10px] text-muted-foreground">Horaires indicatifs : l’heure de convocation figurant sur votre billet prévaut.</p></div> : <p className="mt-1 text-xs text-muted-foreground">Aucun départ identifié pour ce navire.</p>}
               {rotationAlert ? <div className="mt-3 rounded-xl border border-warning/40 bg-warning/10 p-3 text-xs"><p className="font-semibold text-warning">{rotationAlert.message}</p><p className="mt-1 text-foreground">{rotationAlert.legalWarning}</p></div> : null}
             </>
           )}

@@ -198,13 +198,15 @@ export function VesselView({
   const etaForComparison = liveIsRecent ? live?.etaIso : null;
   const delayMinutes = etaForComparison && scheduledArrivalIso
     ? Math.round((Date.parse(etaForComparison) - Date.parse(scheduledArrivalIso)) / 60_000)
-    : 0;
-  const hasArrivalShift = Boolean(etaForComparison && scheduledArrivalIso && Math.abs(delayMinutes) >= 5);
+    : null;
+  const hasArrivalComparison = Boolean(etaForComparison && scheduledArrivalIso && delayMinutes !== null);
+  const hasArrivalShift = Boolean(hasArrivalComparison && Math.abs(delayMinutes!) >= 1);
   const atdIso = live?.position.atdAt ?? null;
   const departureDiffMins = atdIso && departureIso
     ? Math.round((Date.parse(atdIso) - Date.parse(departureIso)) / 60_000)
-    : 0;
-  const hasDepartureShift = Boolean(atdIso && departureIso && Math.abs(departureDiffMins) >= 5);
+    : null;
+  const hasDepartureComparison = Boolean(atdIso && departureIso && departureDiffMins !== null);
+  const hasDepartureShift = Boolean(hasDepartureComparison && Math.abs(departureDiffMins!) >= 1);
   const previousDeparture = shipDeparture && from
     ? allDepartures
         .filter((item) => item.vessel_id === vesselId && item.id !== shipDeparture.id && item.status !== "cancelled")
@@ -216,7 +218,7 @@ export function VesselView({
         })
         .sort((a, b) => Date.parse(b.arrival_at ?? b.departure_at) - Date.parse(a.arrival_at ?? a.departure_at))[0]
     : undefined;
-  const rotationAlert = shipDeparture && from && live
+  const rotationAlert = shipDeparture && from && live && liveIsRecent
     ? detectRotationDelay({
         departureIso: shipDeparture.departure_at,
         previousArrivalIso: previousDeparture?.arrival_at ?? null,
@@ -336,8 +338,8 @@ export function VesselView({
                 <div className="min-w-0 rounded-xl bg-success/10 p-2.5">
                   <p className="text-[10px] font-medium text-success">✓ Parti {atdIso ? relative(atdIso) : "selon programme"}</p>
                   <p className="truncate text-base font-bold tabular-nums text-foreground">{atdIso ? wallTimeInZone(atdIso, departureZone) : departureIso ? wallTimeInZone(departureIso, departureZone) : "—"}</p>
-                  {hasDepartureShift && departureIso ? <p className="mt-0.5 truncate text-[10px] text-muted-foreground"><span className="line-through opacity-70">Prévu {wallTimeInZone(departureIso, departureZone)}</span><span className="ml-1 text-warning">({departureDiffMins > 0 ? "+" : ""}{departureDiffMins} min)</span></p> : null}
-                  {hasDepartureShift && departureIso ? null : <p className="mt-0.5 text-[10px] text-success">À l'heure prévue</p>}
+                  {departureIso ? <p className="mt-0.5 truncate text-[10px] text-muted-foreground">Prévu {wallTimeInZone(departureIso, departureZone)}</p> : null}
+                  {hasDepartureShift ? <p className="text-[10px] font-semibold text-warning">Écart au départ : {departureDiffMins! > 0 ? "+" : ""}{departureDiffMins} min</p> : hasDepartureComparison ? <p className="text-[10px] text-success">Départ à l’heure (écart inférieur à 1 min)</p> : <p className="text-[10px] text-muted-foreground">Horaire réel de départ indisponible</p>}
                 </div>
                 <div className="min-w-0 rounded-xl bg-primary/10 p-2.5 text-right">
                   <p className="text-[10px] font-medium text-primary">⚑ Arrivée {etaIso ? timeUntil(etaIso) : "à confirmer"}</p>
@@ -349,10 +351,15 @@ export function VesselView({
           ) : isPreparing && milestones ? (
             <>
               <p className="mt-2 text-sm font-semibold">{currentPort?.name ?? from?.name ?? "Port de départ"}</p>
-              <div className="mt-3 grid grid-cols-3 items-start gap-1 text-center">
-                <div><p className="text-[10px] text-muted-foreground">H−3h</p><p className="text-xs font-semibold">{milestones.boardingLabel}</p><p className="text-[10px] text-muted-foreground">Début</p></div>
-                <div className="border-x border-border px-1"><p className="text-[10px] text-muted-foreground">H−1h · HLE</p><p className="text-xs font-semibold">{milestones.lastBoardingLabel}</p><p className="text-[10px] text-muted-foreground">Clôture</p></div>
-                <div><p className="text-[10px] text-muted-foreground">H · Départ</p><p className="text-xs font-semibold">{milestones.departureLabel}</p><p className="text-[10px] text-muted-foreground">Appareillage</p></div>
+              <div className="mt-3 rounded-xl bg-muted/50 p-3">
+                <p className="mb-2 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">Horaires d’embarquement · {zoneLabel(departureZone)}</p>
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="rounded-lg border border-border bg-card p-2"><p className="text-[10px] text-muted-foreground">Convocation véhicule · H−4</p><p className="text-sm font-bold tabular-nums">{getBoardingMilestones(departureIso!, from, { hasVehicle: true })?.callLabel ?? "—"}</p></div>
+                  <div className="rounded-lg border border-border bg-card p-2"><p className="text-[10px] text-muted-foreground">Convocation piéton · H−3</p><p className="text-sm font-bold tabular-nums">{getBoardingMilestones(departureIso!, from, { hasVehicle: false })?.callLabel ?? "—"}</p></div>
+                  <div className="rounded-lg border border-border bg-card p-2"><p className="text-[10px] text-muted-foreground">Début embarquement · H−3</p><p className="text-sm font-bold tabular-nums">{milestones.boardingLabel}</p></div>
+                  <div className="rounded-lg border border-warning/30 bg-warning/5 p-2"><p className="text-[10px] text-muted-foreground">Heure limite (HLE) · H−1</p><p className="text-sm font-bold tabular-nums">{milestones.lastBoardingLabel}</p></div>
+                  <div className="col-span-2 rounded-lg border border-border bg-card p-2"><p className="text-[10px] text-muted-foreground">Départ programmé · H</p><p className="text-sm font-bold tabular-nums">{milestones.departureLabel}</p></div>
+                </div>
               </div>
               <p className={`mt-3 rounded-xl px-3 py-2 text-sm font-bold ${isBoardingClosed ? "bg-warning/10 text-warning" : "bg-primary/10 text-primary"}`}>
                 {isBoardingClosed ? "Portes fermées — présentez-vous au personnel portuaire." : `Accès quai fermé dans ${Math.max(0, Math.round(minutesToHle))} min`}

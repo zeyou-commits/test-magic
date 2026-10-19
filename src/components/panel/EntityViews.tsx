@@ -15,7 +15,7 @@ import { portTimeZone, wallTimeInZone, zoneLabel } from "@/lib/ferry/time";
 import { useLiveShips } from "@/lib/ferry/useLiveShips";
 import { useFleet } from "@/lib/ferry/useFleet";
 import { vesselPhotoQuery } from "@/lib/ferry/vesselPhoto";
-import { courseLabel, formatAge, formatDelay } from "@/lib/ferry/tracking";
+import { courseLabel, formatAge, formatDelay, physicalStatus } from "@/lib/ferry/tracking";
 import { ReportButton } from "./ReportButton";
 import { CompanyBadge } from "./CompanyBadge";
 
@@ -152,6 +152,16 @@ export function VesselView({
   const from = shipRoute ? portById.get(shipRoute.departure_port_id) : undefined;
   const to = shipRoute ? portById.get(shipRoute.arrival_port_id) : undefined;
   const photo = photoQuery.data;
+  const physical = live && from && to
+    ? physicalStatus(live.position, from, to, shipDeparture?.departure_at ?? null, now)
+    : null;
+  const statusTone = physical?.tone === "success"
+    ? "bg-success/10 text-success"
+    : physical?.tone === "warning"
+      ? "bg-warning/10 text-warning"
+      : physical?.tone === "info"
+        ? "bg-primary/10 text-primary"
+        : "bg-muted text-muted-foreground";
 
   let progress: number | null = null;
   if (ship?.state === "sea" && shipDeparture) {
@@ -164,6 +174,42 @@ export function VesselView({
 
   return (
     <div className="-mx-4 -mt-4 md:-mx-6 md:-mt-6">
+      {live ? (
+        <Section title="Suivi en direct">
+          <div className="rounded-2xl border border-border bg-card p-3.5 sm:p-4">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <span className={`inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-sm font-bold ${statusTone}`}>
+                <span className="size-2 rounded-full bg-current" aria-hidden />
+                {physical?.label ?? "Position AIS reçue"}
+              </span>
+              <span className="text-xs text-muted-foreground">
+                Signal {formatAge(live.ageMinutes)}
+              </span>
+            </div>
+            <div className="mt-3 grid grid-cols-2 gap-3">
+              <div className="min-w-0 rounded-xl bg-muted/50 p-3">
+                <p className="text-xs text-muted-foreground">Vitesse</p>
+                <p className="mt-1 font-semibold tabular-nums">{live.position.speedKnots != null ? `${live.position.speedKnots.toFixed(1)} nds` : "Indisponible"}</p>
+              </div>
+              <div className="min-w-0 rounded-xl bg-muted/50 p-3">
+                <p className="text-xs text-muted-foreground">Cap</p>
+                <p className="mt-1 flex items-center gap-1.5 font-semibold tabular-nums">
+                  {live.position.courseDeg != null ? <><span aria-hidden style={{ transform: `rotate(${live.position.courseDeg}deg)` }} className="inline-block">↑</span>{Math.round(live.position.courseDeg)}° ({courseLabel(live.position.courseDeg)})</> : "Indisponible"}
+                </p>
+              </div>
+            </div>
+            <div className="mt-3 space-y-1.5 text-sm">
+              {from ? <p><span className="text-muted-foreground">Départ :</span> {from.name}</p> : null}
+              {live.position.atdAt ? <p><span className="text-muted-foreground">Appareillage réel :</span> {wallTimeInZone(live.position.atdAt, portTimeZone(from))}</p> : null}
+              {to ? <p><span className="text-muted-foreground">Destination :</span> {to.name}</p> : null}
+              {live.etaIso && to ? <p><span className="text-muted-foreground">Arrivée estimée :</span> vers {wallTimeInZone(live.etaIso, portTimeZone(to))}</p> : null}
+            </div>
+            <p className="mt-3 text-xs text-muted-foreground">
+              {live.ageMinutes <= 30 ? "Position GPS réelle reçue via AIS." : "Dernière position AIS connue : elle peut ne plus refléter la position actuelle."}
+            </p>
+          </div>
+        </Section>
+      ) : null}
       <Section title="Où en est ce navire ?">
         {ship && ship.state === "sea" ? (
           <div className="rounded-2xl bg-success/10 p-4">

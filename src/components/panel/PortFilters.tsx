@@ -126,7 +126,7 @@ export function PortMultiPicker({
             onChange={(e) => setSearch(e.target.value)}
             placeholder={inline ? "Rechercher un port…" : "Ville, port ou pays"}
             aria-label={`Rechercher un port de ${direction === "departure" ? "départ" : "d'arrivée"}`}
-            className="batogo-control h-9 w-full rounded-xl pl-9 pr-9 text-sm"
+            className="batogo-control h-8 w-full rounded-xl pl-9 pr-9 text-xs"
           />
           {search ? (
             <button
@@ -144,7 +144,7 @@ export function PortMultiPicker({
           type="button"
           aria-pressed={allMode}
           onClick={toggleAll}
-          className={`mb-2 flex min-h-11 w-full shrink-0 items-center gap-2 rounded-lg px-2.5 text-left text-sm font-semibold ${allMode ? "bg-primary/10 text-primary" : "hover:bg-secondary"}`}
+          className={`mb-2 flex min-h-9 w-full shrink-0 items-center gap-2 rounded-lg px-2.5 text-left text-xs font-semibold ${allMode ? "bg-primary/10 text-primary" : "hover:bg-secondary"}`}
         >
           <span className="w-4 shrink-0">{allMode ? <Check className="size-4" /> : null}</span>
           {inline ? "Tous" : "🌍 Tous les ports"}
@@ -168,7 +168,7 @@ export function PortMultiPicker({
                       type="button"
                       aria-expanded={!collapsed}
                       onClick={() => setCollapsedCountries((prev) => ({ ...prev, [group.code]: !collapsed }))}
-                      className="flex min-w-0 flex-1 items-center gap-2 rounded-lg px-1 py-1.5 text-left text-sm font-semibold transition hover:bg-secondary"
+                      className="flex min-w-0 flex-1 items-center gap-1.5 rounded-lg px-1 py-1 text-left text-xs font-semibold transition hover:bg-secondary"
                     >
                       <ChevronDown className={`size-3.5 shrink-0 text-muted-foreground transition-transform ${collapsed ? "-rotate-90" : ""}`} />
                       <CountryFlag code={group.code} />
@@ -187,7 +187,7 @@ export function PortMultiPicker({
                     </button>
                   </div>
                   {!collapsed ? (
-                    <div className="mt-1 flex min-w-0 flex-wrap gap-1.5">
+                    <div className="mt-1 flex min-w-0 flex-wrap gap-1">
                       {group.ports.map((port) => {
                         const reason = reasons.get(port.id);
                         const isSelected = !reason && isOn(port.id);
@@ -199,7 +199,7 @@ export function PortMultiPicker({
                             disabled={!!reason}
                             title={reason ?? port.name}
                             onClick={() => toggle([port.id])}
-                            className={`inline-flex min-h-9 max-w-full items-center gap-1.5 rounded-full border px-3 py-1.5 text-left text-xs font-medium transition-colors ${reason ? "cursor-not-allowed border-border/50 text-muted-foreground/50" : isSelected ? "border-primary/20 bg-primary/10 text-primary" : "border-border bg-background text-foreground hover:border-primary/30 hover:bg-secondary"}`}
+                            className={`inline-flex min-h-8 max-w-full items-center gap-1 rounded-full border px-2.5 py-1 text-left text-[11px] font-medium leading-tight transition-colors ${reason ? "cursor-not-allowed border-border/50 text-muted-foreground/50" : isSelected ? "border-primary/20 bg-primary/10 text-primary" : "border-border bg-background text-foreground hover:border-primary/30 hover:bg-secondary"}`}
                           >
                             {isSelected ? <Check className="size-3.5 shrink-0" /> : null}
                             <span className="truncate">{port.name}</span>

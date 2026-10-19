@@ -16,7 +16,7 @@ import { portTimeZone, wallTimeInZone, zoneLabel } from "@/lib/ferry/time";
 import { useLiveShips } from "@/lib/ferry/useLiveShips";
 import { useFleet } from "@/lib/ferry/useFleet";
 import { vesselPhotoQuery } from "@/lib/ferry/vesselPhoto";
-import { courseLabel, detectRotationDelay, formatAge, formatDelay, physicalStatus } from "@/lib/ferry/tracking";
+import { courseLabel, detectRotationDelay, formatAge, formatDelay, physicalStatus, haversineKm } from "@/lib/ferry/tracking";
 import { getBoardingMilestones } from "@/lib/ferry/boarding";
 import { ReportButton } from "./ReportButton";
 import { CompanyBadge } from "./CompanyBadge";
@@ -183,7 +183,31 @@ export function VesselView({
         return Math.min(1, Math.max(0, (now - start) / Math.max(1, end - start)));
       })()
     : 0;
-  const remainingKm = live?.remainingKm ?? null;
+  const totalDistanceKm = from && to
+    ? haversineKm([from.longitude, from.latitude], [to.longitude, to.latitude])
+    : shipRoute?.distance_km ?? null;
+  const remainingKm = live?.remainingKm ?? (live && to
+    ? haversineKm([live.position.longitude, live.position.latitude], [to.longitude, to.latitude])
+    : null);
+  const travelledKm = totalDistanceKm != null && remainingKm != null
+    ? Math.max(0, totalDistanceKm - remainingKm)
+    : totalDistanceKm != null ? totalDistanceKm * progress : null;
+  const formatKm = (km: number | null) => km == null || !Number.isFinite(km) ? "—" : Math.round(km).toLocaleString("fr-FR");
+  const actualDepartureIso = live?.position.atdAt ?? null;
+  const scheduledArrivalIso = shipDeparture?.arrival_at ?? null;
+  const actualEtaIso = liveIsRecent && live?.etaIso ? live.etaIso : null;
+  const departureDeltaMinutes = actualDepartureIso && departureIso
+    ? Math.round((Date.parse(actualDepartureIso) - Date.parse(departureIso)) / 60_000)
+    : null;
+  const arrivalDeltaMinutes = actualEtaIso && scheduledArrivalIso
+    ? Math.round((Date.parse(actualEtaIso) - Date.parse(scheduledArrivalIso)) / 60_000)
+    : null;
+  const formatOffset = (minutes: number) => {
+    const abs = Math.abs(minutes);
+    if (abs < 1) return "0 min";
+    if (abs >= 60) return `${Math.floor(abs / 60)} h ${String(abs % 60).padStart(2, "0")}`;
+    return `${abs} min`;
+  };
   const previousDeparture = shipDeparture && from
     ? allDepartures
         .filter((item) => item.vessel_id === vesselId && item.id !== shipDeparture.id && item.status !== "cancelled")
@@ -234,12 +258,23 @@ export function VesselView({
   return (
     <div className="-mx-4 -mt-4 md:-mx-6 md:-mt-6">
       <div className="flex items-center gap-2.5 border-b border-border px-4 py-2 md:px-6">
-        <div className="grid size-13 shrink-0 place-items-center overflow-hidden rounded-xl border border-border bg-muted shadow-sm sm:size-14">
+        <div className="relative grid size-13 shrink-0 place-items-center overflow-hidden rounded-xl border border-border bg-muted shadow-sm sm:size-14">
           {photo ? (
             <img src={photo.url} alt={`Photo du navire ${vessel.name}`} loading="lazy" decoding="async" width={144} height={144} referrerPolicy="no-referrer" className="size-full object-cover" />
           ) : (
             <Ship className="size-8 text-muted-foreground" aria-hidden />
           )}
+          {photo?.source === "commons" ? (
+            <details className="group absolute bottom-0.5 right-0.5">
+              <summary aria-label="Crédit et licence de la photo" title="Crédit photo" className="grid size-5 cursor-pointer list-none place-items-center rounded-full bg-black/60 text-[11px] font-bold text-white shadow-sm [&::-webkit-details-marker]:hidden">ⓘ</summary>
+              <div className="absolute bottom-6 right-0 z-30 w-52 rounded-lg border border-border bg-popover p-2.5 text-left text-[11px] font-normal leading-snug text-popover-foreground shadow-xl group-hover:block group-open:block">
+                <p className="font-semibold">Photo indicative</p>
+                {photo.credit ? <p className="mt-1">{photo.credit}</p> : null}
+                {photo.license ? <p className="mt-0.5">{photo.license}</p> : null}
+                {photo.pageUrl ? <a href={photo.pageUrl} target="_blank" rel="noopener noreferrer" className="mt-1 inline-flex items-center gap-1 text-primary underline">Wikimedia Commons <ExternalLink className="size-3" aria-hidden /></a> : <span>Wikimedia Commons</span>}
+              </div>
+            </details>
+          ) : null}
         </div>
         <div className="min-w-0 flex-1">
           <div className="flex items-center justify-between gap-2">
@@ -266,12 +301,6 @@ export function VesselView({
           </div>
         </div>
       </div>
-      {photo?.source === "commons" ? (
-        <p className="px-4 pt-1 text-[10px] text-muted-foreground md:px-6">
-          Photo{photo.credit ? ` : ${photo.credit}` : ""}{photo.license ? ` · ${photo.license}` : ""} · {photo.pageUrl ? <a href={photo.pageUrl} target="_blank" rel="noopener noreferrer" className="underline">Wikimedia Commons</a> : "Wikimedia Commons"} — photo indicative.
-        </p>
-      ) : null}
-
       <div className="px-4 pt-3 md:px-6">
         <section className="rounded-2xl border border-border bg-card p-3.5 shadow-sm sm:p-4">
           <div className="flex flex-wrap items-center justify-between gap-2">
@@ -287,35 +316,47 @@ export function VesselView({
 
           {isAtSea && from && to ? (
             <>
-              <div className="mt-3 grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-2 text-xs font-semibold">
-                <span className="min-w-0 truncate">{from.name} <CountryFlag code={from.country_code} /></span>
-                <span className="flex items-center gap-1 text-[10px] font-medium text-muted-foreground"><Check className="size-3.5 text-success" aria-hidden /> Départ effectué</span>
-                <span className="min-w-0 truncate text-right">{to.name} <CountryFlag code={to.country_code} /></span>
-              </div>
-              <div className="mt-2 flex items-center gap-2">
-                <span className="size-2 shrink-0 rounded-full bg-success" aria-hidden />
-                <div className="h-1.5 min-w-0 flex-1 overflow-hidden rounded-full bg-muted" role="progressbar" aria-valuenow={Math.round(progress * 100)} aria-valuemin={0} aria-valuemax={100} aria-label="Avancement estimé de la traversée">
-                  <div className="h-full rounded-full bg-gradient-to-r from-success to-primary transition-[width]" style={{ width: `${Math.max(3, Math.round(progress * 100))}%` }} />
+              <div className="mt-3 grid grid-cols-2 gap-2 text-xs font-semibold">
+                <div className="min-w-0">
+                  <div className="flex items-center gap-1.5"><span className="size-2 shrink-0 rounded-full bg-success" aria-hidden /><span className="truncate">{from.name}</span><CountryFlag code={from.country_code} /></div>
+                  <p className="mt-1 pl-3.5 text-[10px] font-medium text-muted-foreground">{formatKm(travelledKm)} km parcourus</p>
                 </div>
-                <span className="size-2 shrink-0 rounded-full bg-border" aria-hidden />
-                <span className="shrink-0 text-[10px] font-semibold text-primary">{Math.round(progress * 100)} %</span>
+                <div className="min-w-0 text-right">
+                  <div className="flex items-center justify-end gap-1.5"><span className="truncate">{to.name}</span><CountryFlag code={to.country_code} /><span className="size-2 shrink-0 rounded-full border border-border" aria-hidden /></div>
+                  <p className="mt-1 text-[10px] font-medium text-muted-foreground">{formatKm(remainingKm)} km restants</p>
+                </div>
               </div>
-              <div className="mt-2 grid grid-cols-2 gap-2">
+              <div className="relative mx-2 mt-7 h-3" role="progressbar" aria-valuenow={Math.round(progress * 100)} aria-valuemin={0} aria-valuemax={100} aria-label="Avancement estimé de la traversée">
+                <div className="absolute inset-x-0 top-1/2 h-1.5 -translate-y-1/2 overflow-hidden rounded-full bg-muted">
+                  <div className="h-full rounded-full bg-gradient-to-r from-success to-primary transition-[width]" style={{ width: `${Math.max(0, Math.min(100, progress * 100))}%` }} />
+                </div>
+                <div className="absolute top-1/2 z-10 -translate-x-1/2 -translate-y-1/2 transition-[left]" style={{ left: `${Math.max(2, Math.min(98, progress * 100))}%` }}>
+                  <div className="absolute bottom-5 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-md border border-border bg-card px-1.5 py-0.5 text-[9px] font-semibold text-foreground shadow-sm">
+                    {live?.position.speedKnots != null ? `${live.position.speedKnots.toFixed(1)} nds · ` : ""}{Math.round(progress * 100)} %
+                  </div>
+                  <Ship className="size-5 -rotate-0 fill-primary/15 text-primary drop-shadow-sm" aria-label="Position du navire" />
+                </div>
+              </div>
+              <div className="mt-3 grid grid-cols-2 gap-2">
                 <div className="min-w-0 rounded-lg bg-success/10 px-2 py-1.5">
-                  <p className="text-[10px] font-medium text-success">✓ Parti {live?.position.atdAt ? relative(live.position.atdAt) : "selon programme"}</p>
-                  <p className="truncate text-sm font-semibold">{live?.position.atdAt ? wallTimeInZone(live.position.atdAt, departureZone) : milestones?.departureLabel ?? (departureIso ? wallTimeInZone(departureIso, departureZone) : "—")}</p>
+                  <p className="text-[10px] font-medium text-success">✓ Départ · {actualDepartureIso ? relative(actualDepartureIso) : "horaire prévu"}</p>
+                  <p className="truncate text-sm font-bold text-foreground">{actualDepartureIso ? wallTimeInZone(actualDepartureIso, departureZone) : departureIso ? wallTimeInZone(departureIso, departureZone) : "—"}</p>
+                  {actualDepartureIso && departureIso && departureDeltaMinutes !== 0 ? <p className="truncate text-[10px] text-muted-foreground"><span className="line-through">Prévu {wallTimeInZone(departureIso, departureZone)}</span></p> : null}
+                  <p className="text-[10px] font-semibold text-success">{actualDepartureIso && departureDeltaMinutes != null && departureDeltaMinutes !== 0 ? `Parti avec ${formatOffset(departureDeltaMinutes)} de ${departureDeltaMinutes > 0 ? "retard" : "avance"}` : "Selon programme"}</p>
                 </div>
                 <div className="min-w-0 rounded-lg bg-primary/10 px-2 py-1.5 text-right">
                   <p className="text-[10px] font-medium text-primary">⚑ Arrivée {etaIso ? timeUntil(etaIso) : "à confirmer"}</p>
-                  <p className="truncate text-sm font-semibold">{etaIso ? arrivalDateLabel(etaIso, arrivalZone) : "À confirmer"}</p>
-                  <p className={`truncate text-[10px] ${delay?.tone === "late" ? "text-warning" : "text-muted-foreground"}`}>{delay?.label ?? (live?.etaIso ? "ETA calculée" : "selon programme")}</p>
+                  <p className="truncate text-sm font-bold text-foreground">{etaIso ? arrivalDateLabel(etaIso, arrivalZone) : "À confirmer"}</p>
+                  {actualEtaIso && scheduledArrivalIso && arrivalDeltaMinutes !== 0 ? <p className="truncate text-[10px] text-muted-foreground"><span className="line-through">Prévu {wallTimeInZone(scheduledArrivalIso, arrivalZone)}</span></p> : null}
+                  <p className={`truncate text-[10px] font-semibold ${arrivalDeltaMinutes != null && arrivalDeltaMinutes > 0 ? "text-warning" : arrivalDeltaMinutes != null && arrivalDeltaMinutes < 0 ? "text-success" : "text-muted-foreground"}`}>
+                    {arrivalDeltaMinutes != null && Math.abs(arrivalDeltaMinutes) >= 1
+                      ? arrivalDeltaMinutes > 0 ? `🟠 Retard estimé de ${formatOffset(arrivalDeltaMinutes)}` : `🟢 En avance de ${formatOffset(arrivalDeltaMinutes)}`
+                      : "Selon programme"}
+                  </p>
                 </div>
               </div>
               <div className="mt-2 flex flex-wrap items-center gap-1.5 text-[10px] text-muted-foreground">
-                <span className="inline-flex items-center gap-1 rounded-full border border-border px-2 py-1"><Ship className="size-3 text-success" aria-hidden /> En cours</span>
-                {live?.position.speedKnots != null ? <span className="rounded-full border border-border px-2 py-1">{live.position.speedKnots.toFixed(1)} nds</span> : null}
                 {live?.position.courseDeg != null ? <span className="rounded-full border border-border px-2 py-1">Cap {Math.round(live.position.courseDeg)}° {courseLabel(live.position.courseDeg)}</span> : null}
-                {remainingKm != null ? <span className="rounded-full border border-border px-2 py-1">{Math.round(remainingKm)} km restants</span> : null}
               </div>
               <button type="button" onClick={() => window.dispatchEvent(new CustomEvent("batogo:focus-vessel", { detail: { vesselId } }))} className="mt-2 inline-flex h-8 w-full items-center justify-center gap-1 rounded-lg bg-primary/10 px-3 text-xs font-semibold text-primary hover:bg-primary/15">🎯 Voir sur la carte</button>
             </>

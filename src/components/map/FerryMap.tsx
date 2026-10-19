@@ -19,6 +19,7 @@ import { routeArc } from "@/lib/ferry/geo";
 import type { FleetShip } from "@/lib/ferry/fleet";
 import { addShipImages, WAKE_FRAMES } from "./shipIcons";
 import { physicalStatus, projectedPosition } from "@/lib/ferry/tracking";
+import { portTimeZone, wallTimeInZone } from "@/lib/ferry/time";
 import { useIsMobile } from "@/hooks/use-mobile";
 
 // En production, MapLibre v6 a besoin que son « worker » soit fourni explicitement.
@@ -1131,7 +1132,7 @@ export default function FerryMap({
           if (physical) {
             const speedText = speed != null ? ` · ${Math.round(speed)} kts` : "";
             const atdText = live?.position.atdAt
-              ? ` · parti à ${new Date(live.position.atdAt).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit", timeZone: live.departure ? undefined : "UTC" })}`
+              ? ` · parti à ${wallTimeInZone(live.position.atdAt, portTimeZone(fromPort))}`
               : "";
             allure = `${physical.label}${speedText}${physical.code === "approaching" && toName ? ` · vers ${toName}` : ""}${atdText}`;
           } else if (ship.state === "sea") {

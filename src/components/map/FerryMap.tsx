@@ -83,6 +83,10 @@ const OVERVIEW_BOUNDS: [[number, number], [number, number]] = [
   [-3.5, 35],
   [10.5, 44],
 ];
+const DESKTOP_OVERVIEW_BOUNDS: [[number, number], [number, number]] = [
+  [-4.5, 34.5],
+  [11.5, 44.5],
+];
 
 function mapColor(token: string, fallback: string) {
   const cssColor = getComputedStyle(document.documentElement).getPropertyValue(token).trim();
@@ -303,7 +307,7 @@ export default function FerryMap({
     // Sur ordinateur, la zone utile commence après le volet. Sur une fenêtre étroite, on garde
     // au moins 45 % de la largeur pour la carte afin que le trajet reste lisible.
     const width = containerRef.current?.clientWidth ?? 1200;
-    return { top: 120, right: 60, bottom: 60, left: Math.min(left, Math.round(width * 0.5)) };
+    return { top: 120, right: 60, bottom: 60, left: Math.min(left + 36, Math.round(width * 0.56)) };
   };
 
   useEffect(() => {
@@ -313,7 +317,7 @@ export default function FerryMap({
     const map = new MapLibreMap({
       container,
       style: MAP_STYLE,
-      bounds: OVERVIEW_BOUNDS,
+      bounds: typeof window !== "undefined" && window.innerWidth >= 768 ? DESKTOP_OVERVIEW_BOUNDS : OVERVIEW_BOUNDS,
       fitBoundsOptions: { padding: viewPadding() },
       // La carte est physiquement cantonnée à la Méditerranée occidentale :
       // impossible de faire glisser hors de cette zone.
@@ -1041,7 +1045,7 @@ export default function FerryMap({
     // persistant avant de cadrer la zone visible une seule fois.
     map.stop();
     map.setPadding({ top: 0, right: 0, bottom: 0, left: 0 });
-    map.fitBounds(OVERVIEW_BOUNDS, { padding: viewPadding(), duration: 800 });
+    map.fitBounds(typeof window !== "undefined" && window.innerWidth >= 768 ? DESKTOP_OVERVIEW_BOUNDS : OVERVIEW_BOUNDS, { padding: viewPadding(), duration: 800 });
     container.dataset["pulsePorts"] = "false";
     void container.offsetWidth;
     container.dataset["pulsePorts"] = "true";

@@ -44,6 +44,7 @@ export function PortMultiPicker({
 }: PortMultiPickerProps) {
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
+  const [collapsedCountries, setCollapsedCountries] = useState<Record<string, boolean>>({});
   const isMobile = useIsMobile();
   const label = direction === "departure" ? "Départ" : "Arrivée";
 
@@ -118,14 +119,14 @@ export function PortMultiPicker({
 
   const body = (
     <>
-      <div className={`relative mb-3 shrink-0 ${inline ? "hidden" : ""}`}>
+      <div className="relative mb-2 shrink-0">
           <Search className="absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
           <Input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Ville, port ou pays"
+            placeholder={inline ? "Rechercher un port…" : "Ville, port ou pays"}
             aria-label={`Rechercher un port de ${direction === "departure" ? "départ" : "d'arrivée"}`}
-            className="batogo-control h-10 w-full pl-9 pr-9 text-sm"
+            className="batogo-control h-9 w-full rounded-xl pl-9 pr-9 text-sm"
           />
           {search ? (
             <button
@@ -154,58 +155,59 @@ export function PortMultiPicker({
         {groups.length === 0 ? (
           <p className="p-4 text-center text-sm text-muted-foreground">Aucun port trouvé.</p>
         ) : (
-          <div className={`flex flex-col gap-3 overflow-y-auto pr-1 ${inline ? "max-h-[44vh]" : "max-h-[50vh] max-md:max-h-none"} max-md:min-h-0 max-md:flex-1 max-md:overscroll-contain`}>
+          <div className="flex min-w-0 flex-col gap-2.5 pr-0.5">
             {groups.map((group) => {
               const ids = group.ports.filter((p) => !reasons.has(p.id)).map((port) => port.id);
               const selectedCount = ids.filter(isOn).length;
               const countrySelected = selectedCount === ids.length && ids.length > 0;
+              const collapsed = collapsedCountries[group.code] ?? false;
               return (
-                <div key={group.code} className="flex flex-col gap-0.5">
-                  <button
-                    type="button"
-                    aria-pressed={countrySelected}
-                    disabled={!ids.length}
-                    onClick={() => toggle(ids)}
-                    className="flex min-h-10 w-full items-center justify-between rounded-lg px-2.5 text-left text-sm font-semibold transition hover:bg-secondary disabled:cursor-default disabled:text-muted-foreground disabled:hover:bg-transparent"
-                  >
-                    <span className="flex items-center gap-2">
+                <div key={group.code} className="min-w-0 rounded-xl border border-border/70 bg-card p-2">
+                  <div className="flex min-w-0 items-center gap-1">
+                    <button
+                      type="button"
+                      aria-expanded={!collapsed}
+                      onClick={() => setCollapsedCountries((prev) => ({ ...prev, [group.code]: !collapsed }))}
+                      className="flex min-w-0 flex-1 items-center gap-2 rounded-lg px-1 py-1.5 text-left text-sm font-semibold transition hover:bg-secondary"
+                    >
+                      <ChevronDown className={`size-3.5 shrink-0 text-muted-foreground transition-transform ${collapsed ? "-rotate-90" : ""}`} />
                       <CountryFlag code={group.code} />
-                      {group.name}
-                      {ids.length > 1 && !inline ? (
-                        <span className="font-normal text-muted-foreground">· tous</span>
-                      ) : null}
-                    </span>
-                    <span className="ml-3 flex shrink-0 items-center gap-2 text-xs font-medium text-muted-foreground">
-                      {ids.length ? `${selectedCount}/${ids.length}` : "indisponible"}
-                      {countrySelected ? <Check className="size-4 text-primary" /> : null}
-                    </span>
-                  </button>
-                  <div className="ml-2 flex flex-col gap-0.5 border-l-2 border-muted pl-2">
-                    {group.ports.map((port) => {
-                      const reason = reasons.get(port.id);
-                      const isSelected = !reason && isOn(port.id);
-                      return (
-                        <button
-                          key={port.id}
-                          type="button"
-                          aria-pressed={isSelected}
-                          disabled={!!reason}
-                          onClick={() => toggle([port.id])}
-                          className={`flex min-h-10 items-center gap-2 rounded-md px-2 text-left text-sm ${reason ? "cursor-not-allowed text-muted-foreground/60" : isSelected ? "bg-primary/10 font-semibold text-primary" : "text-foreground hover:bg-secondary"}`}
-                        >
-                          <span className="w-4 shrink-0">
-                            {isSelected ? <Check className="size-4" /> : null}
-                          </span>
-                          <span className="flex-1">{port.name}</span>
-                          {reason ? (
-                            <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
-                              {reason}
-                            </span>
-                          ) : null}
-                        </button>
-                      );
-                    })}
+                      <span className="truncate">{group.name}</span>
+                      <span className="ml-auto shrink-0 text-[11px] font-medium text-muted-foreground">{ids.length ? `${selectedCount}/${ids.length}` : "—"}</span>
+                    </button>
+                    <button
+                      type="button"
+                      aria-label={`${countrySelected ? "Désélectionner" : "Sélectionner"} les ports de ${group.name}`}
+                      aria-pressed={countrySelected}
+                      disabled={!ids.length}
+                      onClick={() => toggle(ids)}
+                      className={`grid size-8 shrink-0 place-items-center rounded-lg transition disabled:opacity-30 ${countrySelected ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-secondary"}`}
+                    >
+                      {countrySelected ? <Check className="size-4" /> : <span className="size-3.5 rounded border border-current" />}
+                    </button>
                   </div>
+                  {!collapsed ? (
+                    <div className="mt-1 flex min-w-0 flex-wrap gap-1.5">
+                      {group.ports.map((port) => {
+                        const reason = reasons.get(port.id);
+                        const isSelected = !reason && isOn(port.id);
+                        return (
+                          <button
+                            key={port.id}
+                            type="button"
+                            aria-pressed={isSelected}
+                            disabled={!!reason}
+                            title={reason ?? port.name}
+                            onClick={() => toggle([port.id])}
+                            className={`inline-flex min-h-9 max-w-full items-center gap-1.5 rounded-full border px-3 py-1.5 text-left text-xs font-medium transition-colors ${reason ? "cursor-not-allowed border-border/50 text-muted-foreground/50" : isSelected ? "border-primary/20 bg-primary/10 text-primary" : "border-border bg-background text-foreground hover:border-primary/30 hover:bg-secondary"}`}
+                          >
+                            {isSelected ? <Check className="size-3.5 shrink-0" /> : null}
+                            <span className="truncate">{port.name}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  ) : null}
                 </div>
               );
             })}
@@ -240,7 +242,7 @@ export function PortMultiPicker({
   if (inline) {
     return (
       <div className="flex min-w-0 flex-col rounded-2xl border border-border bg-card p-2.5 shadow-sm">
-        <p className="mb-2 max-md:hidden px-1 text-[11px] font-bold uppercase tracking-wider text-primary">
+        <p className="mb-2 px-1 text-[11px] font-bold uppercase tracking-wider text-primary">
           {title ?? label}
           <span className="ml-1 font-medium normal-case tracking-normal text-muted-foreground">
             · {summarizePorts(value, ports, "Tous")}

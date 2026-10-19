@@ -10,6 +10,8 @@ import { CompanyView, DepartureView, VesselView } from "./EntityViews";
 interface SidePanelProps {
   selection: Selection | null;
   onSelect: (selection: Selection | null) => void;
+  onBack?: () => void;
+  backLabel?: string;
   filters: Filters;
   onFiltersChange: (filters: Filters) => void;
   hidePickersOnMobile?: boolean;
@@ -21,6 +23,8 @@ interface SidePanelProps {
 export function SidePanel({
   selection,
   onSelect,
+  onBack,
+  backLabel,
   filters,
   onFiltersChange,
   hidePickersOnMobile = false,
@@ -57,10 +61,16 @@ export function SidePanel({
           <div className="flex flex-none items-center justify-between border-b border-border/20 px-3 py-1.5">
             <button
               type="button"
-              onClick={() => onSelect(null)}
+              onClick={() => {
+                if (onBack) {
+                  onBack();
+                } else {
+                  onSelect(null);
+                }
+              }}
               className="flex h-7 items-center gap-1 rounded-full px-2.5 text-xs font-semibold text-primary transition-colors hover:bg-secondary"
             >
-              <ArrowLeft className="size-3.5" /> Rechercher
+              <ArrowLeft className="size-3.5" /> {backLabel ?? "Rechercher"}
             </button>
             <ShareButtons compact />
           </div>

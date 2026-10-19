@@ -57,6 +57,38 @@ function Index() {
   const [selection, setSelection] = useState<Selection | null>(() =>
     typeof window === "undefined" ? null : selectionFromUrl(window.location.search),
   );
+  const [selectionHistory, setSelectionHistory] = useState<Selection[]>([]);
+  const handleSelect = (newSelection: Selection | null) => {
+    if (newSelection === null) {
+      setSelection(null);
+      setSelectionHistory([]);
+    } else {
+      if (selection && (selection.type !== newSelection.type || selection.id !== newSelection.id)) {
+        setSelectionHistory((prev) => [...prev, selection]);
+      }
+      setSelection(newSelection);
+    }
+    setFocusShipId(null);
+  };
+  const handleBack = () => {
+    if (selectionHistory.length > 0) {
+      const previous = selectionHistory[selectionHistory.length - 1];
+      setSelectionHistory((prev) => prev.slice(0, -1));
+      setSelection(previous);
+      setFocusShipId(null);
+    } else {
+      setSelection(null);
+      setSelectionHistory([]);
+      setFocusShipId(null);
+    }
+  };
+  const backLabel = selectionHistory.length > 0
+    ? selectionHistory[selectionHistory.length - 1].type === "vessel"
+      ? "Navire"
+      : selectionHistory[selectionHistory.length - 1].type === "port"
+        ? "Port"
+        : "Précédent"
+    : "Rechercher";
   const [filters, setFilters] = useState<Filters>(() =>
     typeof window === "undefined" ? emptyFilters : filtersFromUrl(window.location.search),
   );
@@ -373,7 +405,7 @@ function Index() {
       if (!vesselId) return;
       const ship = fleet.find((item) => item.vesselId === vesselId);
       if (!ship) return;
-      setSelection({ type: "vessel", id: vesselId });
+      handleSelect({ type: "vessel", id: vesselId });
       setFocusShipId(ship.id);
       const pos = ship.live ? ship.live.position : null;
       setFocusTarget({
@@ -389,7 +421,7 @@ function Index() {
   const collapsed = panelLevel === 0 && (dragHeight === null || dragHeight < 140);
 
   const resetToMap = () => {
-    setSelection(null);
+    handleSelect(null);
     if (panelLevel === 0) setPanelLevel(1);
   };
 
@@ -502,10 +534,9 @@ function Index() {
         >
           <SidePanel
             selection={selection}
-            onSelect={(sel) => {
-              setSelection(sel);
-              setFocusShipId(null);
-            }}
+            onSelect={handleSelect}
+            onBack={handleBack}
+            backLabel={backLabel}
             filters={filters}
             onFiltersChange={setFilters}
             onHighlightRoute={setHighlightRouteId}
@@ -561,7 +592,7 @@ function Index() {
           companiesCount={companies.length}
           portsCount={ports.length}
           onSelectShip={(ship) => {
-            if (ship.vesselId) setSelection({ type: "vessel", id: ship.vesselId });
+            if (ship.vesselId) handleSelect({ type: "vessel", id: ship.vesselId });
             setFocusShipId(ship.id);
             const pos = ship.live ? ship.live.position : null;
             setFocusTarget({
@@ -574,7 +605,7 @@ function Index() {
             return companies.find((c) => c.id === dep?.company_id)?.name;
           }}
           onOpenDepartures={() => {
-            setSelection(null);
+            handleSelect(null);
             setFocusShipId(null);
             openPanel();
             const el = asideRef.current;
@@ -585,13 +616,13 @@ function Index() {
             window.setTimeout(() => (el.dataset["flash"] = "false"), 1300);
           }}
           onOpenCompanies={() => {
-            setSelection(null);
+            handleSelect(null);
             setFocusShipId(null);
             openPanel();
             window.dispatchEvent(new Event("batogo:open-companies"));
           }}
           onShowPorts={() => {
-            setSelection(null);
+            handleSelect(null);
             setFocusShipId(null);
             setFocusTarget(null);
             setPortsPulseKey(Date.now());
@@ -615,10 +646,7 @@ function Index() {
               hoverRouteId={highlightRouteId}
               fleet={fleet}
               portMeta={portMeta}
-              onSelect={(sel) => {
-                setSelection(sel);
-                setFocusShipId(null);
-              }}
+              onSelect={handleSelect}
               onOpenPanel={() => setPanelLevel(1)}
               onMapInteract={() => setPanelLevel((level) => (level === 2 ? 1 : level))}
               mobileBottomInset={mobileBottomInset}

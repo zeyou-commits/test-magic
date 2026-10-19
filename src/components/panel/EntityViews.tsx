@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
-import { ExternalLink, Ship } from "lucide-react";
+import { Check, ExternalLink, Ship } from "lucide-react";
+import { CountryFlag } from "./CountryFlag";
 import {
   companiesQuery,
   fleetDeparturesQuery,
@@ -204,11 +205,7 @@ export function VesselView({
         timeZone: departureZone,
       })
     : null;
-  const flag = (code?: string) => {
-    if (!code || code.length !== 2) return "🌍";
-    return String.fromCodePoint(...code.toUpperCase().split("").map((letter) => 127397 + letter.charCodeAt(0)));
-  };
-  const relative = (iso?: string | null) => {
+    const relative = (iso?: string | null) => {
     if (!iso) return "";
     const minutes = Math.round((now - Date.parse(iso)) / 60_000);
     if (minutes < 0) return "à venir";
@@ -216,6 +213,19 @@ export function VesselView({
     return `il y a ${Math.floor(minutes / 60)}h${String(minutes % 60).padStart(2, "0")}`;
   };
   const etaIso = liveIsRecent && live?.etaIso ? live.etaIso : shipDeparture?.arrival_at;
+  const timeUntil = (iso: string) => {
+    const mins = Math.max(0, Math.round((Date.parse(iso) - now) / 60_000));
+    if (mins < 60) return `dans ${mins} min`;
+    return `dans ${Math.floor(mins / 60)}h${String(mins % 60).padStart(2, "0")}`;
+  };
+  const arrivalDateLabel = (iso: string, timeZone: string) => {
+    const date = new Date(iso);
+    const today = new Date(now).toLocaleDateString("fr-FR", { timeZone });
+    const tomorrow = new Date(now + 86_400_000).toLocaleDateString("fr-FR", { timeZone });
+    const arrivalDay = date.toLocaleDateString("fr-FR", { timeZone });
+    const dayLabel = arrivalDay === today ? "Aujourd’hui" : arrivalDay === tomorrow ? "Demain" : date.toLocaleDateString("fr-FR", { weekday: "short", day: "numeric", month: "short", timeZone });
+    return `${dayLabel} à ${wallTimeInZone(iso, timeZone)}`;
+  };
   const delay = live?.etaIso && shipDeparture?.arrival_at
     ? formatDelay(Math.round((Date.parse(live.etaIso) - Date.parse(shipDeparture.arrival_at)) / 60_000))
     : null;
@@ -223,8 +233,8 @@ export function VesselView({
 
   return (
     <div className="-mx-4 -mt-4 md:-mx-6 md:-mt-6">
-      <div className="flex items-center gap-3 border-b border-border px-4 py-3 md:px-6">
-        <div className="grid size-16 shrink-0 place-items-center overflow-hidden rounded-2xl border border-border bg-muted shadow-sm sm:size-[72px]">
+      <div className="flex items-center gap-2.5 border-b border-border px-4 py-2 md:px-6">
+        <div className="grid size-13 shrink-0 place-items-center overflow-hidden rounded-xl border border-border bg-muted shadow-sm sm:size-14">
           {photo ? (
             <img src={photo.url} alt={`Photo du navire ${vessel.name}`} loading="lazy" decoding="async" width={144} height={144} referrerPolicy="no-referrer" className="size-full object-cover" />
           ) : (
@@ -233,12 +243,11 @@ export function VesselView({
         </div>
         <div className="min-w-0 flex-1">
           <div className="flex items-center justify-between gap-2">
-            <span className="truncate text-xs text-muted-foreground">{(vessel.vessel_type ?? "Navire").toLocaleLowerCase("fr-FR")}</span>
+            <h1 className="min-w-0 truncate font-display text-base font-bold leading-tight text-foreground">{vessel.name}</h1>
             <span className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-semibold ${statusTone}`}>
               {isAtSea ? "🟢 En mer" : isBoardingClosed ? "🟠 Accès fermé" : isBoarding ? "🔵 Embarquement" : "⚓ À quai"}
             </span>
           </div>
-          <h1 className="truncate font-display text-lg font-bold leading-tight text-foreground">{vessel.name}</h1>
           <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] text-muted-foreground">
             {company ? (
               <button type="button" onClick={() => onSelect({ type: "company", id: company.id })} className="inline-flex items-center gap-1.5 font-medium text-foreground hover:underline">
@@ -278,36 +287,37 @@ export function VesselView({
 
           {isAtSea && from && to ? (
             <>
-              <div className="mt-3 flex items-center gap-2 text-xs font-semibold">
-                <span className="max-w-[35%] truncate">{from.name} {flag(from.country_code)}</span>
-                <span className="relative flex min-w-8 flex-1 items-center justify-center text-primary">
-                  <span className="absolute inset-x-0 h-px bg-border" />
-                  <Ship className="relative size-4 bg-card" aria-hidden />
-                </span>
-                <span className="max-w-[35%] truncate text-right">{to.name} {flag(to.country_code)}</span>
+              <div className="mt-3 grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-2 text-xs font-semibold">
+                <span className="min-w-0 truncate">{from.name} <CountryFlag code={from.country_code} /></span>
+                <span className="flex items-center gap-1 text-[10px] font-medium text-muted-foreground"><Check className="size-3.5 text-success" aria-hidden /> Départ effectué</span>
+                <span className="min-w-0 truncate text-right">{to.name} <CountryFlag code={to.country_code} /></span>
               </div>
-              <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-muted" role="progressbar" aria-valuenow={Math.round(progress * 100)} aria-valuemin={0} aria-valuemax={100} aria-label="Avancement estimé de la traversée">
-                <div className="h-full rounded-full bg-primary transition-[width]" style={{ width: `${Math.round(progress * 100)}%` }} />
+              <div className="mt-2 flex items-center gap-2">
+                <span className="size-2 shrink-0 rounded-full bg-success" aria-hidden />
+                <div className="h-1.5 min-w-0 flex-1 overflow-hidden rounded-full bg-muted" role="progressbar" aria-valuenow={Math.round(progress * 100)} aria-valuemin={0} aria-valuemax={100} aria-label="Avancement estimé de la traversée">
+                  <div className="h-full rounded-full bg-gradient-to-r from-success to-primary transition-[width]" style={{ width: `${Math.max(3, Math.round(progress * 100))}%` }} />
+                </div>
+                <span className="size-2 shrink-0 rounded-full bg-border" aria-hidden />
+                <span className="shrink-0 text-[10px] font-semibold text-primary">{Math.round(progress * 100)} %</span>
               </div>
-              <div className="mt-1 text-right text-[10px] text-muted-foreground">{Math.round(progress * 100)} % du trajet</div>
-              <div className="mt-2 grid grid-cols-2 gap-3">
-                <div className="min-w-0">
-                  <p className="text-[10px] text-muted-foreground">Départ</p>
+              <div className="mt-2 grid grid-cols-2 gap-2">
+                <div className="min-w-0 rounded-lg bg-success/10 px-2 py-1.5">
+                  <p className="text-[10px] font-medium text-success">✓ Parti {live?.position.atdAt ? relative(live.position.atdAt) : "selon programme"}</p>
                   <p className="truncate text-sm font-semibold">{live?.position.atdAt ? wallTimeInZone(live.position.atdAt, departureZone) : milestones?.departureLabel ?? (departureIso ? wallTimeInZone(departureIso, departureZone) : "—")}</p>
-                  <p className="text-[10px] text-muted-foreground">{live?.position.atdAt ? relative(live.position.atdAt) : "horaire prévu"}</p>
                 </div>
-                <div className="min-w-0 text-right">
-                  <p className="text-[10px] text-muted-foreground">Arrivée prévue</p>
-                  <p className="truncate text-sm font-semibold">{etaIso ? wallTimeInZone(etaIso, arrivalZone) : "À confirmer"}</p>
-                  <p className={`text-[10px] ${delay?.tone === "late" ? "text-warning" : "text-muted-foreground"}`}>{delay?.label ?? (live?.etaIso ? "ETA calculée" : "selon programme")}</p>
+                <div className="min-w-0 rounded-lg bg-primary/10 px-2 py-1.5 text-right">
+                  <p className="text-[10px] font-medium text-primary">⚑ Arrivée {etaIso ? timeUntil(etaIso) : "à confirmer"}</p>
+                  <p className="truncate text-sm font-semibold">{etaIso ? arrivalDateLabel(etaIso, arrivalZone) : "À confirmer"}</p>
+                  <p className={`truncate text-[10px] ${delay?.tone === "late" ? "text-warning" : "text-muted-foreground"}`}>{delay?.label ?? (live?.etaIso ? "ETA calculée" : "selon programme")}</p>
                 </div>
               </div>
-              <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 border-t border-border pt-2 text-[10px] text-muted-foreground">
-                {live?.position.speedKnots != null ? <span>{live.position.speedKnots.toFixed(1)} nds</span> : null}
-                {live?.position.courseDeg != null ? <span>Cap {Math.round(live.position.courseDeg)}° {courseLabel(live.position.courseDeg)}</span> : null}
-                {remainingKm != null ? <span>{Math.round(remainingKm)} km restants</span> : null}
-                <button type="button" onClick={() => window.dispatchEvent(new CustomEvent("batogo:focus-vessel", { detail: { vesselId } }))} className="ml-auto inline-flex items-center gap-1 font-semibold text-primary hover:underline">🎯 Voir sur la carte</button>
+              <div className="mt-2 flex flex-wrap items-center gap-1.5 text-[10px] text-muted-foreground">
+                <span className="inline-flex items-center gap-1 rounded-full border border-border px-2 py-1"><Ship className="size-3 text-success" aria-hidden /> En cours</span>
+                {live?.position.speedKnots != null ? <span className="rounded-full border border-border px-2 py-1">{live.position.speedKnots.toFixed(1)} nds</span> : null}
+                {live?.position.courseDeg != null ? <span className="rounded-full border border-border px-2 py-1">Cap {Math.round(live.position.courseDeg)}° {courseLabel(live.position.courseDeg)}</span> : null}
+                {remainingKm != null ? <span className="rounded-full border border-border px-2 py-1">{Math.round(remainingKm)} km restants</span> : null}
               </div>
+              <button type="button" onClick={() => window.dispatchEvent(new CustomEvent("batogo:focus-vessel", { detail: { vesselId } }))} className="mt-2 inline-flex h-8 w-full items-center justify-center gap-1 rounded-lg bg-primary/10 px-3 text-xs font-semibold text-primary hover:bg-primary/15">🎯 Voir sur la carte</button>
             </>
           ) : isPreparing && milestones ? (
             <>

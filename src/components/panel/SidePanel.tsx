@@ -54,13 +54,13 @@ export function SidePanel({
 
       {selection ? (
         <div className="panel-detail absolute inset-0 z-10 flex flex-col bg-background">
-          <div className="flex flex-none items-center justify-between border-b p-2">
+          <div className="flex flex-none items-center justify-between border-b border-border/20 px-3 py-1.5">
             <button
               type="button"
               onClick={() => onSelect(null)}
-              className="flex min-h-10 items-center gap-1.5 rounded-full px-3 text-sm font-semibold text-primary transition-colors hover:bg-secondary"
+              className="flex h-7 items-center gap-1 rounded-full px-2.5 text-xs font-semibold text-primary transition-colors hover:bg-secondary"
             >
-              <ArrowLeft className="size-4" /> Rechercher
+              <ArrowLeft className="size-3.5" /> Rechercher
             </button>
             <ShareButtons compact />
           </div>

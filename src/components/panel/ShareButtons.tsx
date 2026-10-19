@@ -63,7 +63,7 @@ export function ShareButtons({
   };
 
   const base = compact
-    ? "grid size-9 place-items-center rounded-full border bg-card text-muted-foreground transition hover:bg-secondary hover:text-foreground"
+    ? "grid size-7 place-items-center rounded-full border bg-card text-muted-foreground transition hover:bg-secondary hover:text-foreground"
     : "inline-flex h-9 items-center gap-1.5 rounded-full border bg-card px-3 text-xs font-semibold text-foreground transition hover:bg-secondary";
 
   return (
@@ -76,9 +76,9 @@ export function ShareButtons({
         aria-label="Copier le lien"
       >
         {copied ? (
-          <Check className="size-4 text-success" aria-hidden />
+          <Check className="size-3.5 text-success" aria-hidden />
         ) : (
-          <Link2 className="size-4" aria-hidden />
+          <Link2 className="size-3.5" aria-hidden />
         )}
         {compact ? null : copied ? "Copié" : "Copier le lien"}
       </button>
@@ -90,7 +90,7 @@ export function ShareButtons({
           title="Partager"
           aria-label="Partager"
         >
-          <Share2 className="size-4" aria-hidden />
+          <Share2 className="size-3.5" aria-hidden />
           {compact ? null : "Partager"}
         </button>
       ) : null}

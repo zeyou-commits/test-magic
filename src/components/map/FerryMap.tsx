@@ -1126,7 +1126,7 @@ export default function FerryMap({
           const dockName = ship.portId ? portById.get(ship.portId)?.name : undefined;
           const speed = live?.position.speedKnots;
           const physical = live && fromPort && toPort
-            ? physicalStatus(live.position, fromPort, toPort, live.departure.departure_at, clock)
+            ? physicalStatus(live.position, fromPort, toPort, live.departure.departure_at, clock, [...portById.values()])
             : null;
           let allure: string;
           if (physical) {

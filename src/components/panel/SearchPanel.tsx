@@ -123,11 +123,24 @@ export function SearchPanel({
   // Sens du trajet : Europe → Algérie par défaut, inversé par le bouton ⇄.
   const [reversed, setReversed] = useState(false);
   const [portSide, setPortSide] = useState<"departure" | "arrival">("departure");
+  const searchRef = useRef<HTMLElement>(null);
+  const isMobileView = () => typeof window !== "undefined" && window.innerWidth < 768;
   const startSearch = () => {
     setStep(firstStep);
     setCalField("out");
+    setPortSide("departure");
     setEditing(true);
+    // Sur mobile, le volet passe en plein écran pour la recherche.
+    if (isMobileView()) window.dispatchEvent(new Event("batogo:panel-full"));
   };
+  // Chaque étape s'affiche depuis son début, en haut du volet.
+  useEffect(() => {
+    if (!editing || !isMobileView()) return;
+    const id = window.setTimeout(() => {
+      searchRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 60);
+    return () => window.clearTimeout(id);
+  }, [step, editing]);
   useEffect(() => {
     const open = () => setEditing(true);
     window.addEventListener("batogo:edit-filters", open);
@@ -327,7 +340,7 @@ export function SearchPanel({
           </button>
         </section>
       ) : null}
-      <section className={`space-y-3 border-b bg-gradient-to-b from-primary/[0.06] to-transparent px-4 pb-4 pt-4 md:px-5 ${editing ? "" : "hidden"}`}>
+      <section ref={searchRef} className={`scroll-mt-0 space-y-3 border-b bg-card px-4 pb-4 pt-4 md:bg-transparent md:bg-gradient-to-b md:from-primary/[0.06] md:to-transparent md:px-5 ${editing ? "" : "hidden"}`}>
         <div className="flex items-center justify-between gap-2">
           <div
             className="batogo-tabbar inline-grid grid-cols-2 gap-0.5 !rounded-full !p-0.5"
@@ -543,6 +556,11 @@ export function SearchPanel({
             <button
               type="button"
               onClick={() => {
+                // Mobile : Départ → Arrivée avant de passer aux dates.
+                if (step === 1 && portSide === "departure" && isMobileView()) {
+                  setPortSide("arrival");
+                  return;
+                }
                 if (step === 1) setCalField("out");
                 setStep((s) => (s + 1) as 1 | 2 | 3);
               }}

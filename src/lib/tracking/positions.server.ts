@@ -21,7 +21,10 @@ export interface PublicPosition {
   courseDeg: number | null;
   reportedAt: string | null;
   atdAt: string | null;
+  ataAt: string | null;
   lastPortId: string | null;
+  declaredDestination: string | null;
+  declaredEta: string | null;
   fetchedAt: string;
 }
 
@@ -92,7 +95,7 @@ export async function getPositions(): Promise<PublicPosition[]> {
         }
         const { data: previous } = await supabaseAdmin
           .from("vessel_positions")
-          .select("latitude, longitude, speed_knots, course_deg, reported_at, atd_at, last_port_id")
+          .select("latitude, longitude, speed_knots, course_deg, reported_at, atd_at, ata_at, last_port_id")
           .eq("mmsi", mmsi)
           .maybeSingle();
 
@@ -123,13 +126,21 @@ export async function getPositions(): Promise<PublicPosition[]> {
         const nearest = (ports ?? [])
           .map((port) => ({ id: port.id, distance: distanceKm(position.latitude, position.longitude, port.latitude, port.longitude) }))
           .sort((x, y) => x.distance - y.distance)[0];
+        const previousPortDistance = previousPort && previous?.latitude != null && previous?.longitude != null
+          ? distanceKm(position.latitude, position.longitude, previousPort.latitude, previousPort.longitude)
+          : Infinity;
+        const arrivedAtDifferentPort = Boolean(
+          nearest && nearest.distance < 2 && previousPort && nearest.id !== previousPort.id,
+        );
         if (nearest && nearest.distance < 2) {
           update.last_port_id = nearest.id;
-          // Une nouvelle escale réarme la détection pour le prochain voyage.
-          update.atd_at = null;
+          if (arrivedAtDifferentPort) update.ata_at = position.reportedAt ?? new Date().toISOString();
         }
-        if (nearest && nearest.distance >= 3 && wasAtPort && (position.speedKnots ?? 0) >= 3 && !previous?.atd_at) {
+        const newDeparture = wasAtPort && previousPortDistance >= 3 && (position.speedKnots ?? 0) >= 3;
+        const previousVoyageCompleted = previous?.atd_at && previous?.ata_at && Date.parse(previous.ata_at) >= Date.parse(previous.atd_at);
+        if (newDeparture && (!previous?.atd_at || previousVoyageCompleted)) {
           update.atd_at = position.reportedAt ?? new Date().toISOString();
+          update.ata_at = null;
         }
         await supabaseAdmin.from("vessel_positions").update(update as never).eq("mmsi", mmsi);
       }),
@@ -149,7 +160,10 @@ export async function getPositions(): Promise<PublicPosition[]> {
       courseDeg: row.course_deg,
       reportedAt: row.reported_at,
       atdAt: row.atd_at ?? null,
+      ataAt: row.ata_at ?? null,
       lastPortId: row.last_port_id ?? null,
+      declaredDestination: row.destination ?? null,
+      declaredEta: row.eta ?? null,
       fetchedAt: row.fetched_at,
     }));
 }

@@ -12,7 +12,10 @@ export interface LivePosition {
   courseDeg: number | null;
   reportedAt: string | null;
   atdAt?: string | null;
+  ataAt?: string | null;
   lastPortId?: string | null;
+  declaredDestination?: string | null;
+  declaredEta?: string | null;
   fetchedAt: string;
 }
 
@@ -200,6 +203,7 @@ export function physicalStatus(
   arrivalPort: Pick<Port, "latitude" | "longitude"> | null,
   scheduledDepartureIso: string | null,
   now = Date.now(),
+  allPorts?: Array<Pick<Port, "latitude" | "longitude">>,
 ): PhysicalStatus {
   const point: LngLat = [position.longitude, position.latitude];
   const speed = position.speedKnots ?? 0;
@@ -207,14 +211,18 @@ export function physicalStatus(
   const toKm = arrivalPort ? haversineKm(point, [arrivalPort.longitude, arrivalPort.latitude]) : Infinity;
   const departure = scheduledDepartureIso ? Date.parse(scheduledDepartureIso) : NaN;
   const hoursToDeparture = Number.isFinite(departure) ? (departure - now) / 3_600_000 : Infinity;
+  const nearestPortKm = allPorts?.length
+    ? Math.min(...allPorts.map((port) => haversineKm(point, [port.longitude, port.latitude])))
+    : Math.min(fromKm, toKm);
+  const etaMinutes = speed >= 1.5 ? (toKm / (speed * KNOT_MS / 1000)) / 60 : Infinity;
   if (toKm < 1 && speed < 1.5) return { code: "docked", label: "Accosté à quai", tone: "info" };
-  if (toKm < 15 && speed >= 1.5) return { code: "approaching", label: "En approche", tone: "warning" };
   if (fromKm < 3 && speed >= 3) return { code: "departing", label: "Appareillage en cours", tone: "warning" };
+  if (toKm < 15 && etaMinutes < 45) return { code: "approaching", label: "En approche", tone: "warning" };
   if (fromKm < 2 && speed < 1.5 && hoursToDeparture >= 1 && hoursToDeparture <= 3)
     return { code: "boarding", label: "Embarquement en cours", tone: "info" };
   if (fromKm < 2 && speed < 1.5 && hoursToDeparture >= 0 && hoursToDeparture < 1)
     return { code: "boarding_closed", label: "Embarquement clos", tone: "warning" };
-  if (fromKm > 15 && toKm > 15 && speed >= 3)
+  if (nearestPortKm > 15 && speed >= 3)
     return { code: "at_sea", label: "En mer", tone: "success" };
   if (toKm < 15) return { code: "approaching", label: "En approche", tone: "warning" };
   return { code: "unknown", label: "Position AIS reçue", tone: "muted" };

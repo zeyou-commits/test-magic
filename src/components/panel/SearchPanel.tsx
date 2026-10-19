@@ -365,6 +365,13 @@ export function SearchPanel({
             <span className="max-md:hidden">{reversed ? "Algérie → Europe" : "Europe → Algérie"}</span>
           </button>
         </div>
+        <StepLabel
+          open={step === 1}
+          onOpen={() => setStep(1)}
+          summary={`${portsLabel(filters.departurePortIds)} ${filters.roundTrip ? "⇄" : "→"} ${portsLabel(filters.arrivalPortIds)}`}
+        >
+          ① Où partez-vous ?
+        </StepLabel>
         <div
           className={step === 1 ? "batogo-tabbar grid grid-cols-2 gap-0.5 !rounded-full !p-0.5 md:hidden" : "hidden"}
           role="tablist"

@@ -1,4 +1,4 @@
-# Batogo
+# BledWay
 
 > Information indépendante pour les ferries Europe–Algérie et la préparation du voyage.
 

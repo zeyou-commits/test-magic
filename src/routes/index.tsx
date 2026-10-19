@@ -96,6 +96,8 @@ function Index() {
   const [focusedRouteId, setFocusedRouteId] = useState<string | null>(null);
   const [panelLevel, setPanelLevel] = useState<0 | 1 | 2>(1);
   const [desktopPanelOpen, setDesktopPanelOpen] = useState(true);
+  const [desktopPanelWidth, setDesktopPanelWidth] = useState(DESKTOP_PANEL);
+  const resizingPanel = useRef(false);
   const [focusTarget, setFocusTarget] = useState<{ center: [number, number]; key: number } | null>(
     null,
   );
@@ -490,8 +492,11 @@ function Index() {
       {/* VOLET : tiroir en bas sur mobile, carte flottante à gauche sur ordinateur */}
       <aside
         ref={asideRef}
-        style={dragHeight !== null ? { height: dragHeight } : undefined}
-        className={`absolute bottom-[calc(3.5rem+env(safe-area-inset-bottom))] left-0 right-0 z-[60] flex flex-col overflow-hidden bg-transparent ${dragHeight !== null ? "transition-none" : "transition-[height,width,transform] duration-[420ms] ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none"} md:bottom-auto md:left-5 md:right-auto md:top-[4.5rem] md:h-[calc(100vh-5.75rem)] md:w-[480px] md:overflow-visible md:rounded-3xl md:z-40 ${
+        style={{
+          ...(dragHeight !== null ? { height: dragHeight } : {}),
+          "--desktop-panel-width": `${desktopPanelWidth}px`,
+        } as React.CSSProperties}
+        className={`absolute bottom-[calc(3.5rem+env(safe-area-inset-bottom))] left-0 right-0 z-[60] flex flex-col overflow-hidden bg-transparent ${dragHeight !== null ? "transition-none" : "transition-[height,width,transform] duration-[420ms] ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none"} md:bottom-auto md:left-5 md:right-auto md:top-[4.5rem] md:h-[calc(100vh-5.75rem)] md:w-[var(--desktop-panel-width)] md:overflow-visible md:rounded-3xl md:z-40 ${
           desktopPanelOpen ? "md:translate-x-0" : "md:translate-x-[calc(-100%-1.25rem)]"
         } ${panelLevel === 0 ? "h-24 rounded-t-3xl" : panelLevel === 1 ? "h-[50dvh] rounded-t-3xl" : "h-[calc(100dvh-3.5rem-env(safe-area-inset-bottom))] rounded-t-3xl"}`}
       >
@@ -543,6 +548,25 @@ function Index() {
             onFocusRoute={setFocusedRouteId}
           />
         </div>
+        <div
+          role="separator"
+          aria-orientation="vertical"
+          aria-label="Redimensionner le volet"
+          title="Faire glisser pour ajuster la largeur"
+          onPointerDown={(event) => {
+            if (window.innerWidth < 768 || !desktopPanelOpen) return;
+            event.preventDefault();
+            resizingPanel.current = true;
+            event.currentTarget.setPointerCapture(event.pointerId);
+          }}
+          onPointerMove={(event) => {
+            if (!resizingPanel.current) return;
+            setDesktopPanelWidth(Math.max(320, Math.min(600, event.clientX - 20)));
+          }}
+          onPointerUp={() => { resizingPanel.current = false; }}
+          onPointerCancel={() => { resizingPanel.current = false; }}
+          className="absolute -right-1 top-4 bottom-4 z-10 hidden w-2 cursor-ew-resize rounded-full transition-colors hover:bg-primary/30 md:block"
+        />
         <Button
           type="button"
           variant="outline"
@@ -650,7 +674,7 @@ function Index() {
               onOpenPanel={() => setPanelLevel(1)}
               onMapInteract={() => setPanelLevel((level) => (level === 2 ? 1 : level))}
               mobileBottomInset={mobileBottomInset}
-              desktopLeftInset={desktopPanelOpen ? DESKTOP_PANEL + 40 : 50}
+              desktopLeftInset={desktopPanelOpen ? desktopPanelWidth + 80 : 50}
             />
           </Suspense>
         </ClientOnly>

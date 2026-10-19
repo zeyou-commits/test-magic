@@ -1,4 +1,5 @@
 import { useState, type ReactNode } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { ArrowUpRight, ChevronDown, Moon, Ship } from "lucide-react";
 import type { RoundTrip } from "@/lib/ferry/roundTrips";
 import type { Sailing } from "@/lib/ferry/trips";
@@ -7,6 +8,8 @@ import { CompanyBadge, companyColor } from "./CompanyBadge";
 import { SailingDetail } from "./SailingCard";
 import { bookingSite, bookingUrl } from "@/lib/ferry/booking";
 import { estimateFare, formatEuro, useFareProfile } from "@/lib/ferry/pricing";
+import { vesselPositionsQuery } from "@/lib/ferry/useLiveShips";
+import { wallTimeInZone } from "@/lib/ferry/time";
 
 const dayFormatter = new Intl.DateTimeFormat("fr-FR", {
   weekday: "short",
@@ -25,9 +28,11 @@ function Leg({
   onOpenVessel,
   onOpenRoute,
   extra,
+  atdAt,
 }: {
   label: string;
   sailing: Sailing;
+  atdAt: string | null;
   expanded: boolean;
   onToggle: () => void;
   onHover: (hovering: boolean) => void;
@@ -70,7 +75,7 @@ function Leg({
       <div className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3">
         <div>
           <div className="font-display text-xl md:text-2xl font-bold leading-none tabular-nums tracking-tight">
-            {sailing.depTime}
+            {atdAt ? <><span className="text-muted-foreground line-through">{sailing.depTime}</span><span className="ml-1.5 text-sm font-bold text-success">{wallTimeInZone(atdAt, sailing.fromZone)} réel</span></> : sailing.depTime}
           </div>
           <div className="mt-0.5 max-w-[96px] truncate text-xs font-semibold">{sailing.from.name}</div>
         </div>
@@ -153,6 +158,19 @@ export function RoundTripCard({
   onFocusRoute?: (routeId: string | null) => void;
 }) {
   const [open, setOpen] = useState<"out" | "back" | null>(null);
+  const { data: livePositions = [] } = useQuery(vesselPositionsQuery);
+  const actualDeparture = (sailing: Sailing) => {
+    const mmsi = sailing.vessel?.mmsi;
+    if (!mmsi) return null;
+    const position = livePositions.find((item) => item.mmsi === mmsi);
+    if (!position?.atdAt) return null;
+    const atdTime = Date.parse(position.atdAt);
+    const scheduled = Date.parse(sailing.departure.departure_at);
+    // Ne pas afficher un ancien ATD d'une traversée précédente.
+    return atdTime >= scheduled - 6 * 60 * 60_000 && atdTime <= scheduled + 24 * 60 * 60_000
+      ? position.atdAt
+      : null;
+  };
   const toggle = (leg: "out" | "back") => {
     const next = open === leg ? null : leg;
     setOpen(next);
@@ -171,6 +189,7 @@ export function RoundTripCard({
       <Leg
         label="Aller"
         sailing={trip.out}
+        atdAt={actualDeparture(trip.out)}
         expanded={open === "out"}
         onToggle={() => toggle("out")}
         onOpenVessel={onOpenVessel}
@@ -181,6 +200,7 @@ export function RoundTripCard({
       <Leg
         label="Retour"
         sailing={trip.back}
+        atdAt={actualDeparture(trip.back)}
         expanded={open === "back"}
         onToggle={() => toggle("back")}
         onOpenVessel={onOpenVessel}

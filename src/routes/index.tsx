@@ -40,7 +40,7 @@ const FerryMap = lazy(() => import("@/components/map/FerryMap"));
 export const Route = createFileRoute("/")({
   head: () =>
     seoHead(
-      "Batogo — Ferries Europe–Algérie, carte et départs",
+      "BledWay — Ferries Europe–Algérie, carte et départs",
       "Explorez les lignes, ports et départs connus entre l’Europe et l’Algérie. Préparez aussi votre voiture, votre traversée et votre budget avec nos guides.",
       "/",
     ),

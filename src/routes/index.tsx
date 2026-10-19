@@ -487,7 +487,7 @@ function Index() {
             type="button"
             variant="ghost"
             aria-label={panelLevel === 2 ? "Réduire le panneau" : "Agrandir le panneau"}
-            className="flex h-8 w-full flex-none touch-none items-center justify-center rounded-none rounded-t-3xl border-b border-border/50 bg-card py-0 md:hidden"
+            className="flex h-5 w-full flex-none touch-none items-center justify-center rounded-none rounded-t-3xl border-b border-border/20 bg-card py-0 md:hidden"
             onClick={cyclePanelLevel}
             {...dragHandlers}
             style={{ touchAction: "none" }}

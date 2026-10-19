@@ -113,17 +113,7 @@ export function TripCalendar({
   const [note, setNote] = useState<string | null>(null);
   const isMobile = useIsMobile();
 
-  // Les zones choisies sont mémorisées dans le navigateur.
-  useEffect(() => {
-    try {
-      const saved = (window.localStorage.getItem(ZONE_STORAGE_KEY) ?? "")
-        .split(",")
-        .filter((z): z is SchoolZone => z === "A" || z === "B" || z === "C");
-      setZones(saved);
-    } catch {
-      // Stockage indisponible : sans conséquence.
-    }
-  }, []);
+  // Aucune zone de vacances n'est cochée par défaut à l'arrivée sur le calendrier.
   const toggleZone = (item: SchoolZone) => {
     const next = zones.includes(item)
       ? zones.filter((z) => z !== item)
@@ -326,7 +316,7 @@ export function TripCalendar({
             ) : null}
           </div>
         ) : (
-          <p className="text-[10px] text-muted-foreground">Touchez A, B ou C pour partir pendant les vacances en un geste.</p>
+          <p className="text-[10px] text-muted-foreground max-md:hidden">Touchez A, B ou C pour partir pendant les vacances en un geste.</p>
         )}
 
         {nextEmpty ? (
@@ -447,7 +437,7 @@ export function TripCalendar({
   );
 
   const legTabs = (
-    <div className={`grid gap-2 ${roundTrip ? "grid-cols-2" : "grid-cols-1"}`} role="tablist" aria-label="Date à choisir">
+    <div className={`grid gap-1.5 ${roundTrip ? "grid-cols-2" : "grid-cols-1"}`} role="tablist" aria-label="Date à choisir">
       {(roundTrip ? (["out", "ret"] as CalendarField[]) : (["out"] as CalendarField[])).map((f) => {
         const on = field === f;
         const value = f === "out" ? date : returnDate;
@@ -459,14 +449,11 @@ export function TripCalendar({
             aria-selected={on}
             disabled={f === "ret" && !date}
             onClick={() => onFieldChange(f)}
-            className={`relative min-w-0 rounded-xl border-2 px-3 py-2 text-left transition disabled:opacity-50 ${on ? "border-primary bg-primary/10 shadow-sm" : "border-border bg-card hover:border-primary/50"}`}
+            className={`flex h-8 min-w-0 items-center gap-1.5 rounded-full border px-3 text-left text-xs transition disabled:opacity-50 ${on ? "border-primary bg-primary/10 text-primary" : "border-border bg-card text-muted-foreground hover:border-primary/50"}`}
           >
-            <span className={`block text-[10px] font-bold uppercase tracking-wider ${on ? "text-primary" : "text-muted-foreground"}`}>
-              {f === "out" ? "① Aller" : "② Retour"}
-              {on ? " · à choisir" : ""}
-            </span>
-            <span className={`block truncate text-sm font-bold ${value ? "text-foreground" : "text-muted-foreground"}`}>
-              {value ? long(value) : f === "out" ? "Choisir la date" : date ? "Choisir la date" : "Après l'aller"}
+            <span className="shrink-0 font-bold">{f === "out" ? "Aller" : "Retour"}</span>
+            <span className={`min-w-0 truncate font-semibold ${value ? "text-foreground" : ""}`}>
+              {value ? short(value) : "—"}
             </span>
           </button>
         );
@@ -476,7 +463,7 @@ export function TripCalendar({
 
   if (inline) {
     return (
-      <div className="space-y-3">
+      <div className="space-y-2">
         {legTabs}
         <div className="flex items-center justify-end gap-1" role="group" aria-label="Zones de vacances scolaires">
           <span className="mr-auto text-[11px] font-semibold text-muted-foreground">

@@ -137,7 +137,8 @@ export function SearchPanel({
   useEffect(() => {
     if (!editing || !isMobileView()) return;
     const id = window.setTimeout(() => {
-      searchRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+      const target = step === 1 ? searchRef.current : document.getElementById(`search-step-${step}`);
+      target?.scrollIntoView({ behavior: "smooth", block: "start" });
     }, 60);
     return () => window.clearTimeout(id);
   }, [step, editing]);
@@ -167,13 +168,6 @@ export function SearchPanel({
   const [calOpen, setCalOpen] = useState(false);
   const [calField, setCalField] = useState<CalendarField>("out");
   const [holidaysOn, setHolidaysOnState] = useState(false);
-  useEffect(() => {
-    try {
-      setHolidaysOnState(window.localStorage.getItem("batogo:school-holidays") === "1");
-    } catch {
-      // Stockage indisponible : sans conséquence.
-    }
-  }, []);
   const setHolidaysOn = (on: boolean) => {
     setHolidaysOnState(on);
     try {
@@ -447,6 +441,7 @@ export function SearchPanel({
           </div>
         </div>
 
+        <div id="search-step-2" className="scroll-mt-1" />
         <StepLabel
           open={step === 2}
           onOpen={() => setStep(2)}
@@ -479,6 +474,7 @@ export function SearchPanel({
           />
         </div>
 
+        <div id="search-step-3" className="scroll-mt-1" />
         <StepLabel
           open={step === 3}
           onOpen={() => setStep(3)}

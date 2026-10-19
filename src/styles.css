@@ -212,8 +212,9 @@
 /* Poignée tactile du tiroir mobile */
 .batogo-handle {
   display: block;
-  width: 42px;
-  height: 5px;
+  width: 36px;
+  height: 3.5px;
+  margin-top: 1px;
   border-radius: 999px;
   background: color-mix(in oklab, var(--color-muted-foreground) 38%, transparent);
   transition:
@@ -222,7 +223,7 @@
 }
 *:hover > .batogo-handle,
 *:active > .batogo-handle {
-  width: 52px;
+  width: 40px;
   background: color-mix(in oklab, var(--color-primary) 65%, transparent);
 }
 

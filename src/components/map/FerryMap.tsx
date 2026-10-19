@@ -736,7 +736,7 @@ export default function FerryMap({
         { padding: viewPadding(), maxZoom: 6.2, duration: 800 },
       );
     } else {
-      map.fitBounds(OVERVIEW_BOUNDS, { padding: viewPadding(), duration: 600 });
+      map.fitBounds(!isMobile ? DESKTOP_OVERVIEW_BOUNDS : OVERVIEW_BOUNDS, { padding: viewPadding(), duration: 600 });
     }
   }, [isMobile, mapReady, mobileBottomInset, desktopLeftInset, fitPortIds.join("|"), ports.length]);
 

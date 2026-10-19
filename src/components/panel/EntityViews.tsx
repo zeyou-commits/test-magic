@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
-import { ExternalLink, Ship } from "lucide-react";
+import { useState } from "react";
+import { Anchor, ExternalLink, MapPin, Ship } from "lucide-react";
 import { CountryFlag } from "./CountryFlag";
 import {
   companiesQuery,
@@ -114,6 +115,7 @@ export function VesselView({
   vesselId: string;
   onSelect: (selection: Selection) => void;
 }) {
+  const [expandedTrackingStep, setExpandedTrackingStep] = useState<number | null>(null);
   const { data: vessels = [] } = useQuery(vesselsQuery);
   const { data: companies = [] } = useQuery(companiesQuery);
   const { data: routes = [] } = useQuery(routesQuery);
@@ -310,46 +312,89 @@ export function VesselView({
 
           {isAtSea && from && to ? (
             <>
-              <div className="mt-3 grid grid-cols-2 gap-2 text-xs font-semibold">
-                <div className="min-w-0">
-                  <div className="flex items-center gap-1.5"><span className="size-2 shrink-0 rounded-full bg-success" aria-hidden /><span className="truncate">{from.name}</span><CountryFlag code={from.country_code} /></div>
-                </div>
-                <div className="min-w-0 text-right">
-                  <div className="flex items-center justify-end gap-1.5"><span className="truncate">{to.name}</span><CountryFlag code={to.country_code} /><span className="size-2 shrink-0 rounded-full border border-border" aria-hidden /></div>
-                </div>
-              </div>
-              <div className="relative mt-4 mb-2 px-1">
-                <div className="relative h-2 w-full overflow-hidden rounded-full bg-muted">
-                  <div className="h-full rounded-full bg-gradient-to-r from-success via-primary/80 to-primary transition-all duration-500" style={{ width: `${Math.min(100, Math.max(3, Math.round(progress * 100)))}%` }} />
-                </div>
-                <div className="absolute -top-1 left-0 size-4 rounded-full border-2 border-background bg-success shadow-xs" title="Départ effectué" />
-                <div className="absolute -top-3 -translate-x-1/2 transition-all duration-500" style={{ left: `${Math.min(94, Math.max(6, Math.round(progress * 100)))}%` }}>
-                  <div className="flex flex-col items-center">
-                    <span className="inline-flex items-center gap-0.5 rounded-full border border-primary/20 bg-card px-1.5 py-0.5 text-[9px] font-bold text-primary shadow-xs">{live?.position.speedKnots != null ? `${live.position.speedKnots.toFixed(1)} nds · ` : ""}{Math.round(progress * 100)} %</span>
-                    <div className="grid size-5.5 place-items-center rounded-full bg-primary text-primary-foreground shadow"><Ship className="size-3 text-white" aria-hidden /></div>
+              {/*
+                Horizontal accordion stepper: one expanded stage at a time.
+                Inactive stages collapse to their icon; the strip remains swipeable on mobile.
+              */}
+              {(() => {
+                const activeStep = expandedTrackingStep ?? (progress <= 0.02 ? 0 : progress >= 0.98 ? 2 : 1);
+                const steps = [
+                  { id: 0, label: "Départ", icon: Anchor },
+                  { id: 1, label: "Traversée", icon: Ship },
+                  { id: 2, label: "Arrivée", icon: MapPin },
+                ];
+                return (
+                  <div className="mt-4">
+                    <div
+                      className="flex items-stretch gap-2 overflow-x-auto pb-2 snap-x snap-mandatory"
+                      style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
+                      aria-label="Étapes du suivi de la traversée"
+                    >
+                      {steps.map((step) => {
+                        const active = activeStep === step.id;
+                        const Icon = step.icon;
+                        return (
+                          <button
+                            key={step.id}
+                            type="button"
+                            aria-expanded={active}
+                            aria-label={step.label}
+                            onClick={() => setExpandedTrackingStep(active ? null : step.id)}
+                            className={`relative min-h-14 shrink-0 snap-start overflow-hidden rounded-xl border text-left transition-[width,flex-basis,background-color,border-color] duration-300 ease-in-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary ${active ? "w-[min(350px,calc(100vw-100px))] border-primary/40 bg-primary/5 p-3 sm:w-[350px]" : "w-12 border-border bg-muted/50 p-0"}`}
+                          >
+                            <span className={`flex h-full items-center ${active ? "gap-2" : "justify-center"}`}>
+                              <span className={`grid size-8 shrink-0 place-items-center rounded-full transition-colors duration-300 ${step.id < activeStep ? "bg-success/10 text-success" : active ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground"}`}>
+                                <Icon className="size-4" aria-hidden />
+                              </span>
+                              <span className={`min-w-0 transition-[opacity,transform] duration-200 ${active ? "translate-x-0 opacity-100 delay-100" : "pointer-events-none absolute translate-x-2 opacity-0"}`}>
+                                <span className="block whitespace-nowrap text-sm font-bold text-foreground">{step.label}</span>
+                                {active ? <span className="block whitespace-nowrap text-[10px] text-muted-foreground">{step.id === 0 ? "Départ du port" : step.id === 1 ? "Position et progression" : "Heure d’arrivée"}</span> : null}
+                              </span>
+                            </span>
+                            {active ? (
+                              <div className="mt-3 min-w-0 animate-in fade-in duration-200">
+                                {step.id === 0 ? (
+                                  <div className="space-y-1">
+                                    <p className="text-xs text-muted-foreground">{from.name} · {zoneLabel(departureZone)}</p>
+                                    <p className="text-2xl font-bold tabular-nums text-foreground">{atdIso ? wallTimeInZone(atdIso, departureZone) : departureIso ? wallTimeInZone(departureIso, departureZone) : "—"}</p>
+                                    <p className="text-[11px] text-muted-foreground">Horaire prévu : {departureIso ? wallTimeInZone(departureIso, departureZone) : "—"}</p>
+                                    {hasDepartureShift ? <p className="text-xs font-semibold text-warning">Écart au départ : {departureDiffMins! > 0 ? "+" : ""}{departureDiffMins} min</p> : hasDepartureComparison ? <p className="text-xs font-semibold text-success">Départ à l’heure</p> : <p className="text-[11px] text-muted-foreground">Heure réelle de départ indisponible</p>}
+                                  </div>
+                                ) : step.id === 1 ? (
+                                  <div>
+                                    <div className="flex items-center justify-between gap-2 text-xs">
+                                      <span className="truncate font-semibold text-foreground">{from.name}</span>
+                                      <span className="shrink-0 font-bold text-primary">{Math.round(progress * 100)} %</span>
+                                      <span className="truncate text-right font-semibold text-foreground">{to.name}</span>
+                                    </div>
+                                    <div className="relative mt-3 h-2.5 overflow-hidden rounded-full bg-muted">
+                                      <div className="h-full rounded-full bg-gradient-to-r from-success via-primary/80 to-primary transition-[width] duration-700 ease-out" style={{ width: `${Math.min(100, Math.max(3, Math.round(progress * 100)))}%` }} />
+                                    </div>
+                                    <div className="mt-3 flex items-center justify-between gap-2 text-[10px] text-muted-foreground">
+                                      <span className="shrink-0">{elapsedKm != null ? `${elapsedKm} km parcourus` : "Distance parcourue —"}</span>
+                                      {live?.position.speedKnots != null ? <span className="shrink-0 font-semibold text-primary">{live.position.speedKnots.toFixed(1)} nds</span> : null}
+                                      <span className="shrink-0 text-right">{remainingKm != null ? `${remainingKm} km restants` : "Distance restante —"}</span>
+                                    </div>
+                                    {live?.position.courseDeg != null ? <p className="mt-2 text-[11px] text-muted-foreground">Cap {Math.round(live.position.courseDeg)}° {courseLabel(live.position.courseDeg)}</p> : null}
+                                  </div>
+                                ) : (
+                                  <div className="space-y-1">
+                                    <p className="text-xs text-muted-foreground">{to.name} · {zoneLabel(arrivalZone)}</p>
+                                    <p className="text-2xl font-bold tabular-nums text-foreground">{etaIso ? arrivalDateLabel(etaIso, arrivalZone) : "À confirmer"}</p>
+                                    <p className="text-[11px] text-muted-foreground">Horaire prévu : {scheduledArrivalIso ? wallTimeInZone(scheduledArrivalIso, arrivalZone) : "—"}</p>
+                                    {hasArrivalShift ? <p className={`text-xs font-semibold ${delayMinutes! < 0 ? "text-success" : "text-warning"}`}>{delayMinutes! < 0 ? "En avance de " : actualArrivalIso && liveIsRecent ? "Retard réel de " : "Retard estimé de "}{formatDuration(Math.abs(delayMinutes!))}</p> : hasArrivalComparison ? <p className="text-xs font-semibold text-success">Arrivée estimée à l’heure</p> : <p className="text-[11px] text-muted-foreground">Estimation à confirmer · programme affiché</p>}
+                                  </div>
+                                )}
+                              </div>
+                            ) : null}
+                          </button>
+                        );
+                      })}
+                    </div>
+                    <style>{`[aria-label="Étapes du suivi de la traversée"]::-webkit-scrollbar{display:none}`}</style>
                   </div>
-                </div>
-                <div className="absolute -top-1 right-0 size-4 rounded-full border-2 border-background bg-border" title="Arrivée prévue" />
-                <div className="mt-4 flex items-center justify-between gap-1 text-[10px] font-medium text-muted-foreground">
-                  <span className="shrink-0">{elapsedKm != null ? `${elapsedKm} km parcourus` : "En mer"}</span>
-                  {live?.position.courseDeg != null ? <span className="truncate text-center">Cap {Math.round(live.position.courseDeg)}° {courseLabel(live.position.courseDeg)}</span> : null}
-                  <span className="shrink-0 text-right">{remainingKm != null ? `${remainingKm} km restants` : "—"}</span>
-                </div>
-              </div>
-              <div className="mt-2 grid grid-cols-2 gap-2">
-                <div className="min-w-0 rounded-xl bg-success/10 p-2.5">
-                  <p className="text-[10px] font-medium text-success">✓ Parti {atdIso ? relative(atdIso) : "selon programme"}</p>
-                  <p className="truncate text-base font-bold tabular-nums text-foreground">{atdIso ? wallTimeInZone(atdIso, departureZone) : departureIso ? wallTimeInZone(departureIso, departureZone) : "—"}</p>
-                  {departureIso ? <p className="mt-0.5 truncate text-[10px] text-muted-foreground">Prévu {wallTimeInZone(departureIso, departureZone)}</p> : null}
-                  {hasDepartureShift ? <p className="text-[10px] font-semibold text-warning">Écart au départ : {departureDiffMins! > 0 ? "+" : ""}{departureDiffMins} min</p> : hasDepartureComparison ? <p className="text-[10px] text-success">Départ à l’heure (écart inférieur à 1 min)</p> : <p className="text-[10px] text-muted-foreground">Horaire réel de départ indisponible</p>}
-                </div>
-                <div className="min-w-0 rounded-xl bg-primary/10 p-2.5 text-right">
-                  <p className="text-[10px] font-medium text-primary">{actualArrivalIso && liveIsRecent ? "✓ Arrivée réelle" : "⚑ Arrivée estimée"} {etaIso && !(actualArrivalIso && liveIsRecent) ? timeUntil(etaIso) : ""}</p>
-                  <p className="truncate text-base font-bold tabular-nums text-foreground">{etaIso ? arrivalDateLabel(etaIso, arrivalZone) : "À confirmer"}</p>
-                  {scheduledArrivalIso ? <p className="mt-0.5 truncate text-[10px] text-muted-foreground">Prévu {wallTimeInZone(scheduledArrivalIso, arrivalZone)} · {zoneLabel(arrivalZone)}</p> : null}
-                  {hasArrivalShift ? <p className={`text-[10px] font-semibold ${delayMinutes! < 0 ? "text-success" : "text-warning"}`}>{delayMinutes! < 0 ? "En avance de " + formatDuration(Math.abs(delayMinutes!)) : (actualArrivalIso && liveIsRecent ? "Retard réel de " : "Retard estimé de ") + formatDuration(delayMinutes!)}</p> : hasArrivalComparison ? <p className="text-[10px] text-success">{actualArrivalIso && liveIsRecent ? "Arrivée réelle à l’heure" : "Arrivée estimée à l’heure"} (écart inférieur à 1 min)</p> : <p className="text-[10px] text-muted-foreground">Estimation réelle indisponible · horaire programmé affiché</p>}
-                </div>
-              </div>
+                );
+              })()}
             </>
           ) : isPreparing && milestones ? (
             <>

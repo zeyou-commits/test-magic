@@ -33,6 +33,8 @@ export interface PortMeta {
   companies: string[];
   /** Prochains départs depuis ce port, déjà formatés en heure locale du port. */
   upcoming: { date: string; time: string; to: string | null }[];
+  /** Prochaines arrivées prévues dans ce port, en heure locale. */
+  upcomingArrivals: { date: string; time: string; from: string | null }[];
 }
 
 interface FerryMapProps {
@@ -917,7 +919,38 @@ export default function FerryMap({
       } else {
         const next = document.createElement("p");
         next.className = "port-tip__next";
-        next.textContent = "Aucun départ programmé pour le moment sur cette ligne.";
+        next.textContent = "Aucun départ programmé pour le moment.";
+        tip.append(next);
+      }
+
+      const arrivalHeading = document.createElement("p");
+      arrivalHeading.className = "port-tip__departures-title port-tip__arrivals-title";
+      arrivalHeading.textContent = "Prochaines arrivées · heure locale";
+      tip.append(arrivalHeading);
+
+      if (meta?.upcomingArrivals?.length) {
+        const list = document.createElement("ul");
+        list.className = "port-tip__departures";
+        meta.upcomingArrivals.slice(0, isMobile ? 2 : 3).forEach((item) => {
+          const row = document.createElement("li");
+          row.className = "port-tip__departure";
+          const date = document.createElement("span");
+          date.className = "port-tip__departure-date";
+          date.textContent = item.date;
+          const time = document.createElement("span");
+          time.className = "port-tip__departure-time";
+          time.textContent = item.time;
+          const from = document.createElement("span");
+          from.className = "port-tip__departure-destination";
+          from.textContent = item.from ? `← ${item.from}` : "";
+          row.append(date, time, from);
+          list.append(row);
+        });
+        tip.append(list);
+      } else {
+        const next = document.createElement("p");
+        next.className = "port-tip__next";
+        next.textContent = "Aucune arrivée prévue connue pour le moment.";
         tip.append(next);
       }
 

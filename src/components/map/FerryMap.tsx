@@ -894,7 +894,7 @@ export default function FerryMap({
         const button = document.createElement("button");
         button.type = "button"; button.textContent = label;
         button.setAttribute("aria-pressed", String(active));
-        Object.assign(button.style, { minHeight: "34px", border: "0", borderRadius: "9px", padding: "6px 8px", fontSize: "12px", fontWeight: "650", cursor: "pointer", color: active ? "var(--foreground, #171717)" : "var(--muted-foreground, #737373)", background: active ? "var(--background, #fff)" : "transparent", boxShadow: active ? "0 1px 3px rgba(0,0,0,.12)" : "none", transition: "all .18s ease" });
+        Object.assign(button.style, { minHeight: "34px", border: "0", borderRadius: "6px", padding: "6px 8px", fontSize: "12px", fontWeight: "650", cursor: "pointer", color: active ? "var(--foreground, #171717)" : "var(--muted-foreground, #737373)", background: active ? "var(--background, #fff)" : "transparent", boxShadow: active ? "0 1px 3px rgba(0,0,0,.12)" : "none", transition: "all .18s ease" });
         return button;
       };
       const departureTab = makeTab("↗ Départs", true);

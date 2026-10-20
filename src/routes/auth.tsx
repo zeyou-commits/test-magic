@@ -3,7 +3,6 @@ import { Eye, EyeOff } from "lucide-react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { lovable } from "@/integrations/lovable/index";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -130,15 +129,11 @@ function AuthPage() {
   async function handleGoogle() {
     setGoogleLoading(true);
     try {
-      const result = await lovable.auth.signInWithOAuth("google", {
-        redirect_uri: window.location.origin,
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: { redirectTo: window.location.origin },
       });
-      if (result.error) {
-        toast.error("Connexion Google impossible pour le moment.");
-        return;
-      }
-      if (result.redirected) return;
-      navigate({ to: "/" });
+      if (error) throw error;
     } catch {
       toast.error("Connexion Google impossible pour le moment.");
     } finally {

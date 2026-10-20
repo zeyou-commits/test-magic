@@ -886,73 +886,51 @@ export default function FerryMap({
         tip.append(closed);
       }
 
-      const heading = document.createElement("p");
-      heading.className = "port-tip__departures-title";
-      heading.textContent = "Prochains départs · heure locale";
-      tip.append(heading);
-
-      if (meta?.upcoming?.length) {
-        const list = document.createElement("ul");
-        list.className = "port-tip__departures";
-
-        meta.upcoming.slice(0, isMobile ? 2 : 3).forEach((item) => {
-          const row = document.createElement("li");
-          row.className = "port-tip__departure";
-
-          const date = document.createElement("span");
-          date.className = "port-tip__departure-date";
-          date.textContent = item.date;
-
-          const time = document.createElement("span");
-          time.className = "port-tip__departure-time";
-          time.textContent = item.time;
-
-          const destination = document.createElement("span");
-          destination.className = "port-tip__departure-destination";
-          destination.textContent = item.to ? `→ ${item.to}` : "";
-
-          row.append(date, time, destination);
-          list.append(row);
+      const tabBar = document.createElement("div");
+      tabBar.className = "port-tip__tabs";
+      Object.assign(tabBar.style, { display: "grid", gridTemplateColumns: "1fr 1fr", gap: "4px", padding: "4px", margin: "10px 0 8px", borderRadius: "12px", background: "rgba(127,127,127,.12)" });
+      const makeTab = (label: string, active: boolean) => {
+        const button = document.createElement("button");
+        button.type = "button"; button.textContent = label;
+        button.setAttribute("aria-pressed", String(active));
+        Object.assign(button.style, { minHeight: "34px", border: "0", borderRadius: "9px", padding: "6px 8px", fontSize: "12px", fontWeight: "650", cursor: "pointer", color: active ? "var(--foreground, #171717)" : "var(--muted-foreground, #737373)", background: active ? "var(--background, #fff)" : "transparent", boxShadow: active ? "0 1px 3px rgba(0,0,0,.12)" : "none", transition: "all .18s ease" });
+        return button;
+      };
+      const departureTab = makeTab("↗ Départs", true);
+      const arrivalTab = makeTab("↙ Arrivées", false);
+      tabBar.append(departureTab, arrivalTab); tip.append(tabBar);
+      const departurePanel = document.createElement("div");
+      departurePanel.setAttribute("role", "tabpanel");
+      const arrivalPanel = document.createElement("div");
+      arrivalPanel.setAttribute("role", "tabpanel"); arrivalPanel.hidden = true;
+      const makeRows = (items: { date: string; time: string; place: string | null }[], emptyText: string) => {
+        if (!items.length) {
+          const empty = document.createElement("p"); empty.className = "port-tip__next"; empty.textContent = emptyText;
+          return empty;
+        }
+        const list = document.createElement("ul"); list.className = "port-tip__departures";
+        items.slice(0, isMobile ? 2 : 3).forEach((item) => {
+          const row = document.createElement("li"); row.className = "port-tip__departure";
+          const date = document.createElement("span"); date.className = "port-tip__departure-date"; date.textContent = item.date;
+          const time = document.createElement("span"); time.className = "port-tip__departure-time"; time.textContent = item.time;
+          const place = document.createElement("span"); place.className = "port-tip__departure-destination"; place.textContent = item.place ? (item === undefined ? "" : item.place) : "";
+          row.append(date, time, place); list.append(row);
         });
-
-        tip.append(list);
-      } else {
-        const next = document.createElement("p");
-        next.className = "port-tip__next";
-        next.textContent = "Aucun départ programmé pour le moment.";
-        tip.append(next);
-      }
-
-      const arrivalHeading = document.createElement("p");
-      arrivalHeading.className = "port-tip__departures-title port-tip__arrivals-title";
-      arrivalHeading.textContent = "Prochaines arrivées · heure locale";
-      tip.append(arrivalHeading);
-
-      if (meta?.upcomingArrivals?.length) {
-        const list = document.createElement("ul");
-        list.className = "port-tip__departures";
-        meta.upcomingArrivals.slice(0, isMobile ? 2 : 3).forEach((item) => {
-          const row = document.createElement("li");
-          row.className = "port-tip__departure";
-          const date = document.createElement("span");
-          date.className = "port-tip__departure-date";
-          date.textContent = item.date;
-          const time = document.createElement("span");
-          time.className = "port-tip__departure-time";
-          time.textContent = item.time;
-          const from = document.createElement("span");
-          from.className = "port-tip__departure-destination";
-          from.textContent = item.from ? `← ${item.from}` : "";
-          row.append(date, time, from);
-          list.append(row);
+        return list;
+      };
+      departurePanel.append(makeRows((meta?.upcoming ?? []).map(item => ({date:item.date,time:item.time,place:item.to ? `→ ${item.to}` : null})), "Aucun départ programmé pour le moment."));
+      arrivalPanel.append(makeRows((meta?.upcomingArrivals ?? []).map(item => ({date:item.date,time:item.time,place:item.from ? `← ${item.from}` : null})), "Aucune arrivée prévue connue pour le moment."));
+      const activateTab = (arrivals: boolean) => {
+        departurePanel.hidden = arrivals; arrivalPanel.hidden = !arrivals;
+        [[departureTab,!arrivals],[arrivalTab,arrivals]].forEach(([el,active]) => {
+          const button = el as HTMLButtonElement, on = active as boolean;
+          Object.assign(button.style, { color:on ? "var(--foreground, #171717)" : "var(--muted-foreground, #737373)", background:on ? "var(--background, #fff)" : "transparent", boxShadow:on ? "0 1px 3px rgba(0,0,0,.12)" : "none" });
+          button.setAttribute("aria-pressed", String(on));
         });
-        tip.append(list);
-      } else {
-        const next = document.createElement("p");
-        next.className = "port-tip__next";
-        next.textContent = "Aucune arrivée prévue connue pour le moment.";
-        tip.append(next);
-      }
+      };
+      departureTab.addEventListener("click", () => activateTab(false));
+      arrivalTab.addEventListener("click", () => activateTab(true));
+      tip.append(departurePanel, arrivalPanel);
 
       const more = document.createElement("button");
       more.type = "button";

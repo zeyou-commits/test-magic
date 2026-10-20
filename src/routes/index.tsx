@@ -74,7 +74,7 @@ function Index() {
     if (selectionHistory.length > 0) {
       const previous = selectionHistory[selectionHistory.length - 1];
       setSelectionHistory((prev) => prev.slice(0, -1));
-      setSelection(previous);
+      setSelection(previous ?? null);
       setFocusShipId(null);
     } else {
       setSelection(null);
@@ -83,9 +83,9 @@ function Index() {
     }
   };
   const backLabel = selectionHistory.length > 0
-    ? selectionHistory[selectionHistory.length - 1].type === "vessel"
+    ? selectionHistory[selectionHistory.length - 1]?.type === "vessel"
       ? "Navire"
-      : selectionHistory[selectionHistory.length - 1].type === "port"
+      : selectionHistory[selectionHistory.length - 1]?.type === "port"
         ? "Port"
         : "Précédent"
     : "Rechercher";

@@ -85,6 +85,8 @@ export const Route = createFileRoute("/admin")({
     meta: [
       { name: "robots", content: "noindex, nofollow" },
       { title: "Back-office — Batogo" },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
       {
         name: "description",
         content:

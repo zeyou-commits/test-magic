@@ -16,6 +16,8 @@ export const Route = createFileRoute("/compte")({
     meta: [
       { name: "robots", content: "noindex, nofollow" },
       { title: "Mon compte — Batogo" },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
       {
         name: "description",
         content:

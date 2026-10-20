@@ -1,5 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { ExternalLink, Ship } from "lucide-react";
+import { TrackingTimes } from "./TrackingTimes";
+import { Button } from "@/components/ui/button";
 import { CountryFlag } from "./CountryFlag";
 import {
   companiesQuery,
@@ -144,9 +146,9 @@ export function VesselView({
     .slice(0, 6);
   const ship = fleet.find((item) => item.vesselId === vesselId);
   const live = liveShips.find((item) => item.vessel.id === vesselId);
-  const shipDeparture = ship
+  const shipDeparture = live?.departure ?? (ship
     ? allDepartures.find((item) => item.id === ship.departureId)
-    : nextDepartures[0];
+    : nextDepartures[0]);
   const shipRoute = shipDeparture ? routes.find((item) => item.id === shipDeparture.route_id) : undefined;
   const from = shipRoute ? portById.get(shipRoute.departure_port_id) : undefined;
   const to = shipRoute ? portById.get(shipRoute.arrival_port_id) : undefined;
@@ -174,49 +176,25 @@ export function VesselView({
   const isPreparing = Boolean(!isAtSea && milestones && minutesToDeparture >= 0 && minutesToDeparture <= 4 * 60);
   const isBoarding = isPreparing && minutesToHle > 0 && minutesToDeparture <= 3 * 60;
   const isBoardingClosed = isPreparing && minutesToHle <= 0;
-  const progress = shipDeparture
-    ? (() => {
-        const start = Date.parse(shipDeparture.departure_at);
-        const end = shipDeparture.arrival_at
-          ? Date.parse(shipDeparture.arrival_at)
-          : start + (shipDeparture.duration_minutes ?? 1440) * 60_000;
-        return Math.min(1, Math.max(0, (now - start) / Math.max(1, end - start)));
-      })()
-    : 0;
   const totalKm = from && to
-    ? Math.round(haversineKm([from.longitude, from.latitude], [to.longitude, to.latitude]))
-    : shipRoute?.distance_km != null ? Math.round(shipRoute.distance_km) : null;
-  const remainingKm = live?.remainingKm != null
-    ? Math.round(live.remainingKm)
-    : live && to
-      ? Math.round(haversineKm([live.position.longitude, live.position.latitude], [to.longitude, to.latitude]))
-      : null;
-  const elapsedKm = totalKm != null && remainingKm != null
-    ? Math.max(0, totalKm - remainingKm)
-    : totalKm != null ? Math.round(totalKm * progress) : null;
-  const scheduledArrivalIso = shipDeparture?.arrival_at;
-  const actualArrivalIso = live?.position.ataAt ?? null;
-  // Keep the same computed ETA as the full-traversal view; stale AIS is disclosed separately below.
-  const etaForComparison = live ? (actualArrivalIso ?? live.etaIso) : null;
-  const delayMinutes = etaForComparison && scheduledArrivalIso
-    ? Math.round((Date.parse(etaForComparison) - Date.parse(scheduledArrivalIso)) / 60_000)
-    : null;
-  const hasArrivalComparison = Boolean(etaForComparison && scheduledArrivalIso && delayMinutes !== null);
-  const hasArrivalShift = Boolean(hasArrivalComparison && Math.abs(delayMinutes!) >= 1);
-  const atdIso = live?.position.atdAt ?? null;
-  const departureDiffMins = atdIso && departureIso
-    ? Math.round((Date.parse(atdIso) - Date.parse(departureIso)) / 60_000)
-    : null;
-  const hasDepartureComparison = Boolean(atdIso && departureIso && departureDiffMins !== null);
-  const hasDepartureShift = Boolean(hasDepartureComparison && Math.abs(departureDiffMins!) >= 1);
+    ? haversineKm([from.longitude, from.latitude], [to.longitude, to.latitude]) : null;
+  const remainingKm = live?.remainingKm != null ? Math.round(live.remainingKm) : null;
+  const scheduleProgress = shipDeparture ? (() => {
+    const start = Date.parse(shipDeparture.departure_at);
+    const end = shipDeparture.arrival_at ? Date.parse(shipDeparture.arrival_at) : start + (shipDeparture.duration_minutes ?? 1440) * 60_000;
+    return Math.min(1, Math.max(0, (now - start) / Math.max(1, end - start)));
+  })() : 0;
+  const progress = totalKm && live?.remainingKm != null
+    ? Math.min(1, Math.max(0, 1 - live.remainingKm / totalKm)) : scheduleProgress;
+  const elapsedKm = totalKm && live?.remainingKm != null ? Math.round(Math.max(0, totalKm - live.remainingKm)) : null;
   const previousDeparture = shipDeparture && from
     ? allDepartures
         .filter((item) => item.vessel_id === vesselId && item.id !== shipDeparture.id && item.status !== "cancelled")
         .filter((item) => {
           const previousRoute = routes.find((route) => route.id === item.route_id);
           return previousRoute?.arrival_port_id === from.id &&
-            Boolean(item.arrival_at) &&
-            Date.parse(item.arrival_at!) <= Date.parse(shipDeparture.departure_at);
+            item.arrival_at !== null &&
+            Date.parse(item.arrival_at) <= Date.parse(shipDeparture.departure_at);
         })
         .sort((a, b) => Date.parse(b.arrival_at ?? b.departure_at) - Date.parse(a.arrival_at ?? a.departure_at))[0]
     : undefined;
@@ -230,27 +208,6 @@ export function VesselView({
         timeZone: departureZone,
       })
     : null;
-    const relative = (iso?: string | null) => {
-    if (!iso) return "";
-    const minutes = Math.round((now - Date.parse(iso)) / 60_000);
-    if (minutes < 0) return "à venir";
-    if (minutes < 60) return `il y a ${minutes} min`;
-    return `il y a ${Math.floor(minutes / 60)}h${String(minutes % 60).padStart(2, "0")}`;
-  };
-  const etaIso = live && actualArrivalIso ? actualArrivalIso : live?.etaIso ?? shipDeparture?.arrival_at;
-  const timeUntil = (iso: string) => {
-    const mins = Math.max(0, Math.round((Date.parse(iso) - now) / 60_000));
-    if (mins < 60) return `dans ${mins} min`;
-    return `dans ${Math.floor(mins / 60)}h${String(mins % 60).padStart(2, "0")}`;
-  };
-  const arrivalDateLabel = (iso: string, timeZone: string) => {
-    const date = new Date(iso);
-    const today = new Date(now).toLocaleDateString("fr-FR", { timeZone });
-    const tomorrow = new Date(now + 86_400_000).toLocaleDateString("fr-FR", { timeZone });
-    const arrivalDay = date.toLocaleDateString("fr-FR", { timeZone });
-    const dayLabel = arrivalDay === today ? "Aujourd’hui" : arrivalDay === tomorrow ? "Demain" : date.toLocaleDateString("fr-FR", { weekday: "short", day: "numeric", month: "short", timeZone });
-    return `${dayLabel} à ${wallTimeInZone(iso, timeZone)}`;
-  };
   const currentPort = ship?.portId ? portById.get(ship.portId) : from;
 
   return (
@@ -304,7 +261,7 @@ export function VesselView({
               ) : isBoardingClosed ? "🟠 Moteurs allumés · accès fermé" : isBoarding ? "🔵 Embarquement en cours" : currentPort ? `⚓ À quai · ${currentPort.name}` : "État du navire à confirmer"}
             </span>
             <span className="text-[10px] text-muted-foreground">
-              {liveIsRecent ? `📡 GPS direct · ${formatAge(live!.ageMinutes)}` : "⏱️ Estimé (programme)"}
+              {liveIsRecent ? `📡 GPS direct · ${formatAge(live?.ageMinutes ?? 0)}` : live ? `AIS ancien · ${formatAge(live.ageMinutes)}` : "Selon programme · non confirmé"}
             </span>
           </div>
 
@@ -318,38 +275,26 @@ export function VesselView({
                   <div className="flex items-center justify-end gap-1.5"><span className="truncate">{to.name}</span><CountryFlag code={to.country_code} /><span className="size-2 shrink-0 rounded-full border border-border" aria-hidden /></div>
                 </div>
               </div>
-              <div className="relative mt-4 mb-2 px-1">
+              <div className="relative mt-3 mb-2 pt-8 px-1">
                 <div className="relative h-2 w-full overflow-hidden rounded-full bg-muted">
                   <div className="h-full rounded-full bg-gradient-to-r from-success via-primary/80 to-primary transition-all duration-500" style={{ width: `${Math.min(100, Math.max(3, Math.round(progress * 100)))}%` }} />
                 </div>
-                <div className="absolute -top-1 left-0 size-4 rounded-full border-2 border-background bg-success shadow-xs" title="Départ effectué" />
-                <div className="absolute -top-3 -translate-x-1/2 transition-all duration-500" style={{ left: `${Math.min(94, Math.max(6, Math.round(progress * 100)))}%` }}>
+                <div className="absolute top-7 left-0 size-4 rounded-full border-2 border-background bg-success shadow-xs" title={live?.position.atdAt ? "Départ constaté AIS" : "Départ selon programme · non confirmé"} />
+                <div className="absolute top-1 -translate-x-1/2 motion-safe:transition-all motion-safe:duration-500" style={{ left: `calc(50px + (100% - 100px) * ${progress})` }}>
                   <div className="flex flex-col items-center">
                     <span className="inline-flex items-center gap-0.5 rounded-full border border-primary/20 bg-card px-1.5 py-0.5 text-[9px] font-bold text-primary shadow-xs">{live?.position.speedKnots != null ? `${live.position.speedKnots.toFixed(1)} nds · ` : ""}{Math.round(progress * 100)} %</span>
-                    <div className="grid size-5.5 place-items-center rounded-full bg-primary text-primary-foreground shadow"><Ship className="size-3 text-white" aria-hidden /></div>
+                    <div className="grid size-5.5 place-items-center rounded-full bg-primary text-primary-foreground shadow"><Ship className="size-3 text-primary-foreground" aria-hidden /></div>
                   </div>
                 </div>
-                <div className="absolute -top-1 right-0 size-4 rounded-full border-2 border-background bg-border" title="Arrivée prévue" />
-                <div className="mt-4 flex items-center justify-between gap-1 text-[10px] font-medium text-muted-foreground">
-                  <span className="shrink-0">{elapsedKm != null ? `${elapsedKm} km parcourus` : "En mer"}</span>
+                <div className="absolute top-7 right-0 size-4 rounded-full border-2 border-background bg-border" title="Arrivée prévue" />
+                <div className="mt-4 flex flex-wrap items-center justify-between gap-x-2 gap-y-1 text-[10px] font-medium text-muted-foreground">
+                  <span className="shrink-0">{elapsedKm != null ? `≈ ${elapsedKm} km progressés` : "En mer"}</span>
                   {live?.position.courseDeg != null ? <span className="truncate text-center">Cap {Math.round(live.position.courseDeg)}° {courseLabel(live.position.courseDeg)}</span> : null}
-                  <span className="shrink-0 text-right">{remainingKm != null ? `${remainingKm} km restants` : "—"}</span>
+                  <span className="shrink-0 text-right">{remainingKm != null ? `≈ ${remainingKm} km restants` : "—"}</span>
                 </div>
               </div>
-              <div className="mt-2 grid grid-cols-2 gap-2">
-                <div className="min-w-0 rounded-xl bg-success/10 p-2.5">
-                  <p className="text-[10px] font-medium text-success">✓ Parti {atdIso ? relative(atdIso) : "selon programme"}</p>
-                  <p className="truncate text-base font-bold tabular-nums text-foreground">{atdIso ? wallTimeInZone(atdIso, departureZone) : departureIso ? wallTimeInZone(departureIso, departureZone) : "—"}</p>
-                  {departureIso ? <p className="mt-0.5 truncate text-[10px] text-muted-foreground">Prévu {wallTimeInZone(departureIso, departureZone)}</p> : null}
-                  {hasDepartureShift ? <p className="text-[10px] font-semibold text-warning">Écart au départ : {departureDiffMins! > 0 ? "+" : ""}{departureDiffMins} min</p> : hasDepartureComparison ? <p className="text-[10px] text-success">Départ à l’heure (écart inférieur à 1 min)</p> : <p className="text-[10px] text-muted-foreground">Horaire réel de départ indisponible</p>}
-                </div>
-                <div className="min-w-0 rounded-xl bg-primary/10 p-2.5 text-right">
-                  <p className="text-[10px] font-medium text-primary">{actualArrivalIso && liveIsRecent ? "✓ Arrivée réelle" : "⚑ Arrivée estimée"} {etaIso && !(actualArrivalIso && liveIsRecent) ? timeUntil(etaIso) : ""}</p>
-                  <p className="truncate text-base font-bold tabular-nums text-foreground">{etaIso ? arrivalDateLabel(etaIso, arrivalZone) : "À confirmer"}</p>
-                  {scheduledArrivalIso ? <p className="mt-0.5 truncate text-[10px] text-muted-foreground">Prévu {wallTimeInZone(scheduledArrivalIso, arrivalZone)} · {zoneLabel(arrivalZone)}</p> : null}
-                  {hasArrivalShift ? <p className={`text-[10px] font-semibold ${delayMinutes! < 0 ? "text-success" : "text-warning"}`}>{delayMinutes! < 0 ? "En avance de " + formatDuration(Math.abs(delayMinutes!)) : (actualArrivalIso && liveIsRecent ? "Retard réel de " : "Retard estimé de ") + formatDuration(delayMinutes!)}</p> : hasArrivalComparison ? <p className="text-[10px] text-success">{actualArrivalIso && liveIsRecent ? "Arrivée réelle à l’heure" : "Arrivée estimée à l’heure"} (écart inférieur à 1 min)</p> : <p className="text-[10px] text-muted-foreground">Estimation réelle indisponible · horaire programmé affiché</p>}
-                </div>
-              </div>
+              <p className="text-[10px] text-muted-foreground">{live ? "Progression géographique · distances en ligne droite" : "Progression selon programme · non confirmée"}</p>
+              {shipDeparture ? <TrackingTimes departure={shipDeparture} live={live} fromZone={departureZone} toZone={arrivalZone} /> : null}
             </>
           ) : isPreparing && milestones ? (
             <>
@@ -357,8 +302,8 @@ export function VesselView({
               <div className="mt-3 rounded-xl bg-muted/50 p-3">
                 <p className="mb-2 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">Horaires d’embarquement · {zoneLabel(departureZone)}</p>
                 <div className="grid grid-cols-2 gap-2">
-                  <div className="rounded-lg border border-border bg-card p-2"><p className="text-[10px] text-muted-foreground">Convocation véhicule · H−4</p><p className="text-sm font-bold tabular-nums">{getBoardingMilestones(departureIso!, from, { hasVehicle: true })?.callLabel ?? "—"}</p></div>
-                  <div className="rounded-lg border border-border bg-card p-2"><p className="text-[10px] text-muted-foreground">Convocation piéton · H−3</p><p className="text-sm font-bold tabular-nums">{getBoardingMilestones(departureIso!, from, { hasVehicle: false })?.callLabel ?? "—"}</p></div>
+                  <div className="rounded-lg border border-border bg-card p-2"><p className="text-[10px] text-muted-foreground">Convocation véhicule · H−4</p><p className="text-sm font-bold tabular-nums">{getBoardingMilestones(departureIso ?? "", from, { hasVehicle: true })?.callLabel ?? "—"}</p></div>
+                  <div className="rounded-lg border border-border bg-card p-2"><p className="text-[10px] text-muted-foreground">Convocation piéton · H−3</p><p className="text-sm font-bold tabular-nums">{getBoardingMilestones(departureIso ?? "", from, { hasVehicle: false })?.callLabel ?? "—"}</p></div>
                   <div className="rounded-lg border border-border bg-card p-2"><p className="text-[10px] text-muted-foreground">Début embarquement · H−3</p><p className="text-sm font-bold tabular-nums">{milestones.boardingLabel}</p></div>
                   <div className="rounded-lg border border-warning/30 bg-warning/5 p-2"><p className="text-[10px] text-muted-foreground">Heure limite (HLE) · H−1</p><p className="text-sm font-bold tabular-nums">{milestones.lastBoardingLabel}</p></div>
                   <div className="col-span-2 rounded-lg border border-border bg-card p-2"><p className="text-[10px] text-muted-foreground">Départ programmé · H</p><p className="text-sm font-bold tabular-nums">{milestones.departureLabel}</p></div>
@@ -373,10 +318,11 @@ export function VesselView({
           ) : (
             <>
               <p className="mt-2 text-sm font-semibold">⚓ À quai au port de {currentPort?.name ?? from?.name ?? "—"}</p>
-              {shipDeparture && milestones ? <div className="mt-2 rounded-xl bg-muted/50 p-3"><p className="mb-2 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">Prochain départ · {zoneLabel(departureZone)}</p><div className="grid grid-cols-2 gap-2 text-xs"><p>Convocation véhicule H−4<strong className="block text-sm">{getBoardingMilestones(departureIso!, from, { hasVehicle: true })?.callLabel}</strong></p><p>Convocation piéton H−3<strong className="block text-sm">{getBoardingMilestones(departureIso!, from, { hasVehicle: false })?.callLabel}</strong></p><p>Début embarquement H−3<strong className="block text-sm">{milestones.boardingLabel}</strong></p><p>HLE H−1<strong className="block text-sm">{milestones.lastBoardingLabel}</strong></p><p className="col-span-2">Départ H<strong className="text-sm">{milestones.departureLabel}</strong></p></div><p className="mt-2 text-[10px] text-muted-foreground">Horaires indicatifs : l’heure de convocation figurant sur votre billet prévaut.</p></div> : <p className="mt-1 text-xs text-muted-foreground">Aucun départ identifié pour ce navire.</p>}
+              {shipDeparture && milestones ? <div className="mt-2 rounded-xl bg-muted/50 p-3"><p className="mb-2 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">Prochain départ · {zoneLabel(departureZone)}</p><div className="grid grid-cols-2 gap-2 text-xs"><p>Convocation véhicule H−4<strong className="block text-sm">{getBoardingMilestones(departureIso ?? "", from, { hasVehicle: true })?.callLabel}</strong></p><p>Convocation piéton H−3<strong className="block text-sm">{getBoardingMilestones(departureIso ?? "", from, { hasVehicle: false })?.callLabel}</strong></p><p>Début embarquement H−3<strong className="block text-sm">{milestones.boardingLabel}</strong></p><p>HLE H−1<strong className="block text-sm">{milestones.lastBoardingLabel}</strong></p><p className="col-span-2">Départ H<strong className="text-sm">{milestones.departureLabel}</strong></p></div><p className="mt-2 text-[10px] text-muted-foreground">Horaires indicatifs : l’heure de convocation figurant sur votre billet prévaut.</p></div> : <p className="mt-1 text-xs text-muted-foreground">Aucun départ identifié pour ce navire.</p>}
               {rotationAlert ? <div className="mt-3 rounded-xl border border-warning/40 bg-warning/10 p-3 text-xs"><p className="font-semibold text-warning">{rotationAlert.message}</p><p className="mt-1 text-foreground">{rotationAlert.legalWarning}</p></div> : null}
             </>
           )}
+          {!isAtSea && shipDeparture ? <TrackingTimes departure={shipDeparture} live={live} fromZone={departureZone} toZone={arrivalZone} /> : null}
           {live && !liveIsRecent ? <p className="mt-2 text-[10px] text-muted-foreground">Dernier signal AIS {formatAge(live.ageMinutes)} : il peut ne plus représenter la position actuelle.</p> : null}
           <VesselSpecs vessel={vessel} />
           <button type="button" onClick={() => window.dispatchEvent(new CustomEvent("batogo:focus-vessel", { detail: { vesselId } }))} className="mt-2 inline-flex h-8 w-full items-center justify-center gap-1 rounded-lg bg-primary/10 px-3 text-xs font-semibold text-primary hover:bg-primary/15">🎯 Voir sur la carte</button>
@@ -476,21 +422,7 @@ export function DepartureView({
                 </span>
                 {live.phase === "sea" ? "En mer" : "Au port, départ proche"}
               </div>
-              {live.phase === "sea" && live.etaIso ? (
-                <>
-                  <p className="mt-2 font-display text-2xl font-bold tabular-nums">
-                    Arrivée vers {wallTimeInZone(live.etaIso, toZone)}
-                    <span className="ml-2 text-xs font-normal text-muted-foreground">
-                      {zoneLabel(toZone)}
-                    </span>
-                  </p>
-                  <p
-                    className={`text-sm font-semibold ${formatDelay(live.delayMinutes).tone === "late" ? "text-destructive" : "text-success"}`}
-                  >
-                    {formatDelay(live.delayMinutes).label}
-                  </p>
-                </>
-              ) : null}
+              <TrackingTimes departure={departure} live={live} fromZone={fromZone} toZone={toZone} />
               <dl className="mt-3 grid gap-1.5 text-sm">
                 <Row
                   label="Vitesse"
@@ -517,7 +449,7 @@ export function DepartureView({
                 <Row label="Dernière position" value={formatAge(live.ageMinutes)} />
               </dl>
               <p className="mt-3 text-xs leading-relaxed text-muted-foreground">
-                Position AIS actualisée toutes les 20 minutes environ ; l’heure d’arrivée est une
+                Les tentatives de réception AIS ont lieu toutes les 5 minutes ; l’heure d’arrivée est une
                 estimation en ligne droite, à vérifier auprès de la compagnie.
                 {live.demo ? " (Données de démonstration.)" : ""}
               </p>
@@ -527,7 +459,7 @@ export function DepartureView({
         <Section title="Détails">
           <dl className="grid gap-2 text-sm">
             <Row
-              label="Départ"
+              label="Départ programmé"
               value={`${formatDateTime(departure.departure_at, fromZone)} · ${zoneLabel(fromZone)}`}
             />
             <Row

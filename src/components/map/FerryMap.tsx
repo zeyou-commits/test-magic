@@ -84,8 +84,8 @@ const OVERVIEW_BOUNDS: [[number, number], [number, number]] = [
   [10.5, 44],
 ];
 const DESKTOP_OVERVIEW_BOUNDS: [[number, number], [number, number]] = [
-  [-12.5, 34.5],
-  [7.5, 44.5],
+  [-8.5, 34.5],
+  [5.5, 44.5],
 ];
 
 function mapColor(token: string, fallback: string) {

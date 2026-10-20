@@ -935,12 +935,18 @@ export default function FerryMap({
       departurePanel.append(makeRows((meta?.upcoming ?? []).map(item => ({date:item.date,time:item.time,place:item.to ? `→ ${item.to}` : null,companyName:item.companyName,logoUrl:item.logoUrl})), "Aucun départ programmé pour le moment."));
       arrivalPanel.append(makeRows((meta?.upcomingArrivals ?? []).map(item => ({date:item.date,time:item.time,place:item.from ? `← ${item.from}` : null,companyName:item.companyName,logoUrl:item.logoUrl})), "Aucune arrivée prévue connue pour le moment."));
       const activateTab = (arrivals: boolean) => {
-        departurePanel.hidden = arrivals; arrivalPanel.hidden = !arrivals;
-        [[departureTab,!arrivals],[arrivalTab,arrivals]].forEach(([el,active]) => {
-          const button = el as HTMLButtonElement, on = active as boolean;
-          Object.assign(button.style, { color:on ? "var(--foreground, #171717)" : "var(--muted-foreground, #737373)", background:on ? "var(--background, #fff)" : "transparent", boxShadow:on ? "0 1px 3px rgba(0,0,0,.12)" : "none" });
-          button.setAttribute("aria-pressed", String(on));
-        });
+        departurePanel.hidden = arrivals;
+        arrivalPanel.hidden = !arrivals;
+        const setTabState = (button: HTMLButtonElement, active: boolean) => {
+          Object.assign(button.style, {
+            color: active ? "var(--foreground, #171717)" : "var(--muted-foreground, #737373)",
+            background: active ? "var(--background, #fff)" : "transparent",
+            boxShadow: active ? "0 1px 3px rgba(0,0,0,.12)" : "none",
+          });
+          button.setAttribute("aria-pressed", String(active));
+        };
+        setTabState(departureTab, !arrivals);
+        setTabState(arrivalTab, arrivals);
       };
       departureTab.addEventListener("click", () => activateTab(false));
       arrivalTab.addEventListener("click", () => activateTab(true));

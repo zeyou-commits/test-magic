@@ -721,13 +721,45 @@ export type Database = {
         }
         Relationships: []
       }
+      vessel_position_observations: {
+        Row: {
+          course_deg: number | null
+          latitude: number
+          longitude: number
+          mmsi: number
+          reported_at: string
+          speed_knots: number | null
+        }
+        Insert: {
+          course_deg?: number | null
+          latitude: number
+          longitude: number
+          mmsi: number
+          reported_at: string
+          speed_knots?: number | null
+        }
+        Update: {
+          course_deg?: number | null
+          latitude?: number
+          longitude?: number
+          mmsi?: number
+          reported_at?: string
+          speed_knots?: number | null
+        }
+        Relationships: []
+      }
       vessel_positions: {
         Row: {
+          arrival_port_id: string | null
+          ata_after: string | null
           ata_at: string | null
+          atd_after: string | null
           atd_at: string | null
           course_deg: number | null
+          departure_port_id: string | null
           destination: string | null
           eta: string | null
+          event_departure_id: string | null
           fetched_at: string
           last_error: string | null
           last_port_id: string | null
@@ -740,11 +772,16 @@ export type Database = {
           vessel_name: string | null
         }
         Insert: {
+          arrival_port_id?: string | null
+          ata_after?: string | null
           ata_at?: string | null
+          atd_after?: string | null
           atd_at?: string | null
           course_deg?: number | null
+          departure_port_id?: string | null
           destination?: string | null
           eta?: string | null
+          event_departure_id?: string | null
           fetched_at?: string
           last_error?: string | null
           last_port_id?: string | null
@@ -757,11 +794,16 @@ export type Database = {
           vessel_name?: string | null
         }
         Update: {
+          arrival_port_id?: string | null
+          ata_after?: string | null
           ata_at?: string | null
+          atd_after?: string | null
           atd_at?: string | null
           course_deg?: number | null
+          departure_port_id?: string | null
           destination?: string | null
           eta?: string | null
+          event_departure_id?: string | null
           fetched_at?: string
           last_error?: string | null
           last_port_id?: string | null
@@ -774,6 +816,27 @@ export type Database = {
           vessel_name?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "vessel_positions_arrival_port_id_fkey"
+            columns: ["arrival_port_id"]
+            isOneToOne: false
+            referencedRelation: "ports"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vessel_positions_departure_port_id_fkey"
+            columns: ["departure_port_id"]
+            isOneToOne: false
+            referencedRelation: "ports"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vessel_positions_event_departure_id_fkey"
+            columns: ["event_departure_id"]
+            isOneToOne: false
+            referencedRelation: "departures"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "vessel_positions_last_port_id_fkey"
             columns: ["last_port_id"]

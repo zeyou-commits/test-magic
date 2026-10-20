@@ -50,6 +50,13 @@
       "when": 1792456485372,
       "tag": "0006_vessel_positions_physical_tracking",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1792456536108,
+      "tag": "0007_ais_observation_provenance",
+      "breakpoints": true
     }
   ]
 }

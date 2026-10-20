@@ -8,7 +8,7 @@
 //  - avec le suivi en direct, la position réelle remplace la position déduite.
 import { pointAlong, routeArc, type LngLat } from "./geo";
 import { overlappingDepartureIds } from "./conflicts";
-import type { LiveShip } from "./tracking";
+import { LIVE_MAX_AGE_MINUTES, type LiveShip } from "./tracking";
 import type { Departure, Port, RouteLine, Vessel } from "./types";
 
 export interface FleetShip {
@@ -58,7 +58,20 @@ export function buildFleet(
     ports.filter((port) => port.status === "active").map((port) => [port.id, port]),
   );
   const vesselById = new Map(vessels.map((vessel) => [vessel.id, vessel]));
-  const liveByVessel = new Map(liveShips.map((ship) => [ship.vessel.id, ship]));
+  // Un signal sans coordonnées valides ou trop ancien ne doit jamais masquer le placement
+  // déduit des horaires. Certains fournisseurs gardent une ligne AIS même après perte du signal.
+  const liveByVessel = new Map(
+    liveShips
+      .filter((ship) =>
+        Number.isFinite(ship.position.latitude) &&
+        Number.isFinite(ship.position.longitude) &&
+        Math.abs(ship.position.latitude) <= 90 &&
+        Math.abs(ship.position.longitude) <= 180 &&
+        ship.ageMinutes >= 0 &&
+        ship.ageMinutes <= LIVE_MAX_AGE_MINUTES
+      )
+      .map((ship) => [ship.vessel.id, ship]),
+  );
 
   interface Leg {
     departure: Departure;

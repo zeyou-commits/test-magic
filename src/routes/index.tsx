@@ -277,7 +277,7 @@ function Index() {
   // Les infobulles décrivent le réseau réel du port, indépendamment des filtres en cours.
   const portMeta = useMemo(() => {
     const meta: Record<string, PortMeta> = {};
-    const companyName = new Map(companies.map((c) => [c.id, c.name]));
+    const companyById = new Map(companies.map((c) => [c.id, c]));
     const portById = new Map(ports.map((port) => [port.id, port]));
 
     ports.forEach((port) => {
@@ -289,15 +289,15 @@ function Index() {
       const companyNames = new Set<string>();
       portRoutes.forEach((route) =>
         route.company_ids.forEach((id) => {
-          const n = companyName.get(id);
-          if (n) companyNames.add(n);
+          const company = companyById.get(id);
+          if (company) companyNames.add(company.name);
         }),
       );
 
       const timeZone = portTimeZone(port);
       meta[port.id] = {
         routes: portRoutes.length,
-        companies: [...companyNames].sort(),
+        companies: [...companyNames].sort().map((name) => { const company = companies.find((item) => item.name === name); return { name, logoUrl: company?.logo_url ?? null }; }),
         upcoming: sailings
           .filter((s) => s.from.id === port.id)
           .slice(0, 3)
@@ -307,6 +307,8 @@ function Index() {
               date: capitalizeFirst(`${parts.weekday} ${parts.shortDate}`),
               time: parts.time,
               to: portById.get(s.route.arrival_port_id)?.name ?? null,
+              companyName: companyById.get(s.departure.company_id)?.name ?? null,
+              logoUrl: companyById.get(s.departure.company_id)?.logo_url ?? null,
             };
           }),
         upcomingArrivals: departures
@@ -330,11 +332,13 @@ function Index() {
               date: capitalizeFirst(`${parts.weekday} ${parts.shortDate}`),
               time: parts.time,
               from: portById.get(route.departure_port_id)?.name ?? null,
+              companyName: companyById.get(departure.company_id)?.name ?? null,
+              logoUrl: companyById.get(departure.company_id)?.logo_url ?? null,
             };
           })
           .sort((a, b) => a.timestamp - b.timestamp)
           .slice(0, 3)
-          .map(({ date, time, from }) => ({ date, time, from })),
+          .map(({ date, time, from, companyName, logoUrl }) => ({ date, time, from, companyName, logoUrl })),
       };
     });
     return meta;

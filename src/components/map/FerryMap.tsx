@@ -1191,6 +1191,7 @@ export default function FerryMap({
             type: "Feature" as const,
             properties: {
               state: ship.state,
+              icon: ship.state === "sea" ? "ship-sea-0" : "ship-dock",
               course,
               name: ship.name,
               allure,
@@ -1198,9 +1199,9 @@ export default function FerryMap({
               shipId: ship.id,
               departureId: ship.departureId,
               vesselId: ship.vesselId ?? "",
-              opacity: dimmed ? 0.25 : 1,
+              opacity: 1,
               haloColor: selected ? "#e4572e" : "#22c55e",
-              haloOpacity: dimmed ? 0 : selected ? 0.35 : live ? 0.3 : 0,
+              haloOpacity: selected ? 0.42 : live ? 0.3 : 0.18,
             },
             geometry: { type: "Point" as const, coordinates },
           };

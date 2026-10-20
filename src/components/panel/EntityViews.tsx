@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { ExternalLink, Ship } from "lucide-react";
+import { CarFront, ExternalLink, Ship, Users } from "lucide-react";
 import { TrackingTimes } from "./TrackingTimes";
 import { Button } from "@/components/ui/button";
 import { CountryFlag } from "./CountryFlag";
@@ -246,8 +246,18 @@ export function VesselView({
                 <span className="max-w-[120px] truncate">{company.name}</span>
               </button>
             ) : null}
-            {vessel.length_meters ? <span>{vessel.length_meters} m</span> : null}
-            {vessel.passenger_capacity ? <span>{vessel.passenger_capacity.toLocaleString("fr-FR")} passagers</span> : null}
+            {vessel.passenger_capacity ? (
+              <span className="inline-flex items-center gap-1" title="Capacité passagers">
+                <Users className="size-3.5" aria-label="Passagers" />
+                {vessel.passenger_capacity.toLocaleString("fr-FR")}
+              </span>
+            ) : null}
+            {vessel.car_capacity != null ? (
+              <span className="inline-flex items-center gap-1" title="Capacité véhicules légers">
+                <CarFront className="size-3.5" aria-label="Véhicules légers" />
+                {vessel.car_capacity.toLocaleString("fr-FR")}
+              </span>
+            ) : null}
             {vessel.is_demo ? <DemoBadge /> : null}
           </div>
         </div>

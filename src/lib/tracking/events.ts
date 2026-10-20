@@ -12,7 +12,11 @@ export function acceptableReport(position: ParsedPosition, previous: PreviousObs
   return Number.isFinite(reported) && reported <= now + 60_000 && now - reported <= 6 * 3600_000 &&
     (!previous?.reported_at || reported > Date.parse(previous.reported_at));
 }
-export function observePortEvent(position: ParsedPosition, previous: PreviousObservation | null, ports: PortPoint[], now: number) {
+export interface PortEvent {
+  atd_at?: string | null; ata_at?: string | null; atd_after?: string | null; ata_after?: string | null;
+  departure_port_id?: string | null; arrival_port_id?: string | null; last_port_id?: string | null; event_departure_id?: string | null;
+}
+export function observePortEvent(position: ParsedPosition, previous: PreviousObservation | null, ports: PortPoint[], now: number): PortEvent {
   if (!acceptableReport(position, previous, now) || !position.reportedAt || now - Date.parse(position.reportedAt) > 30 * 60_000) return {};
   const distance = (port: PortPoint) => haversineKm([position.longitude, position.latitude], [port.longitude, port.latitude]);
   const nearest = ports.map((port) => ({ port, km: distance(port) })).sort((a, b) => a.km - b.km)[0];

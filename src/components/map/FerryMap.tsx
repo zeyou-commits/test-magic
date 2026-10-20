@@ -739,7 +739,7 @@ export default function FerryMap({
      // On utilise un point central "Espagne - Algérie" (~ longitude 0, latitude 39)
       map.easeTo({
         center: [4, 39],
-        zoom: !isMobile ? 4.4 : 3.8, // Ajustez ce zoom selon ce que vous voulez voir
+        zoom: !isMobile ? 4.2 : 3.6, // Ajustez ce zoom selon ce que vous voulez voir
         padding: viewPadding(),      // Le padding décale magiquement le centre vers la droite !
         duration: 600
       });
@@ -1052,7 +1052,7 @@ export default function FerryMap({
     // Remplacement du fitBounds par le centrage fixe
     map.easeTo({
       center: [4, 39],
-      zoom: typeof window !== "undefined" && window.innerWidth >= 768 ? 3.8 : 2.8,
+      zoom: typeof window !== "undefined" && window.innerWidth >= 768 ? 4.2 : 3.2,
       padding: viewPadding(),
       duration: 800
     });

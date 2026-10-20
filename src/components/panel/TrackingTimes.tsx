@@ -17,7 +17,7 @@ function Time({ time, label, zone }: { time: TrackingTime; label: string; zone: 
   </div>;
 }
 
-export function TrackingTimes({ departure, live, fromZone, toZone }: { departure: Departure; live?: LiveShip | null; fromZone: string; toZone: string }) {
+export function TrackingTimes({ departure, live, fromZone, toZone }: { departure: Departure; live?: LiveShip | null | undefined; fromZone: string; toZone: string }) {
   const times = trackingTimes(departure, live);
   return <div className="mt-3 grid grid-cols-2 gap-3 border-t border-border pt-3" aria-label="Horaires de la traversée">
     <Time time={times.departure} label="Départ" zone={fromZone} />

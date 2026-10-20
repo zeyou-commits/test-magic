@@ -27,10 +27,10 @@ export function observePortEvent(position: ParsedPosition, previous: PreviousObs
     haversineKm([previous.longitude, previous.latitude], [previousPort.longitude, previousPort.latitude]) < 2;
   const voyageOpen = Boolean(previous?.atd_at && !previous.ata_at);
   if (voyageOpen && nearest && nearest.km < 2 && speed !== null && speed < 1.5 && nearest.port.id !== previous?.departure_port_id) {
-    return { ata_at: position.reportedAt, ata_after: previous?.reported_at, arrival_port_id: nearest.port.id, last_port_id: nearest.port.id };
+    return { ata_at: position.reportedAt, ata_after: previous?.reported_at ?? null, arrival_port_id: nearest.port.id, last_port_id: nearest.port.id };
   }
   if (!voyageOpen && previouslyDocked && previousAge <= 30 * 60_000 && previousPort && distance(previousPort) >= 3 && speed !== null && speed >= 3) {
-    return { atd_at: position.reportedAt, atd_after: previous?.reported_at, departure_port_id: previousPort.id, ata_at: null, ata_after: null, arrival_port_id: null, event_departure_id: null };
+    return { atd_at: position.reportedAt, atd_after: previous?.reported_at ?? null, departure_port_id: previousPort.id, ata_at: null, ata_after: null, arrival_port_id: null, event_departure_id: null };
   }
   if (!voyageOpen && nearest && nearest.km < 2 && speed !== null && speed < 1.5) return { last_port_id: nearest.port.id };
   return {};

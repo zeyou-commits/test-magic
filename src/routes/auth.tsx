@@ -15,6 +15,10 @@ export const Route = createFileRoute("/auth")({
     meta: [
       { name: "robots", content: "noindex, nofollow" },
       { title: "Connexion — Batogo" },
+      { property: "og:title", content: "Connexion — Batogo" },
+      { property: "og:description", content: "Connectez-vous à Batogo pour retrouver votre compte et vos contributions." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
       {
         name: "description",
         content:

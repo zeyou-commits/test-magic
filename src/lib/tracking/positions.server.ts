@@ -10,7 +10,7 @@ export const REFRESH_MINUTES = 5;
 /** Garde-fou : nombre maximal de navires rafraîchis par une seule requête. */
 const MAX_CALLS_PER_REQUEST = 50;
 /** Durée d'écoute du flux AIS par rafraîchissement. */
-const STREAM_LISTEN_MS = 18000;
+const STREAM_LISTEN_MS = 45000;
 
 export interface PublicPosition {
   mmsi: number;

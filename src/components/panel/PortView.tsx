@@ -55,6 +55,19 @@ export function PortView({
       const route = routes.find((item) => item.id === departure.route_id);
       return route?.departure_port_id === portId;
     });
+  const portArrivals = departures
+    .filter((departure) => departure.status !== "cancelled")
+    .map((departure) => {
+      const route = routes.find((item) => item.id === departure.route_id);
+      if (!route || route.arrival_port_id !== portId) return null;
+      const arrivalAt = departure.arrival_at ?? (departure.duration_minutes
+        ? new Date(new Date(departure.departure_at).getTime() + departure.duration_minutes * 60000).toISOString()
+        : null);
+      if (!arrivalAt || new Date(arrivalAt).getTime() < Date.now()) return null;
+      return { departure, route, arrivalAt };
+    })
+    .filter((item): item is NonNullable<typeof item> => item !== null)
+    .sort((a, b) => new Date(a.arrivalAt).getTime() - new Date(b.arrivalAt).getTime());
 
   const averages = useMemo(() => {
     const perCriterion = new Map<string, number[]>();
@@ -215,6 +228,41 @@ export function PortView({
                           </p>
                           <p className="truncate text-xs text-muted-foreground">
                             {route ? portName(route.arrival_port_id) : "—"}
+                            {company ? ` · ${company.name}` : ""}
+                            {departure.duration_minutes
+                              ? ` · ${formatDuration(departure.duration_minutes)}`
+                              : ""}
+                          </p>
+                        </div>
+                      </div>
+                    </button>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+        </Section>
+
+        <Section title={`Prochaines arrivées · ${zoneLabel(timeZone)}`}>
+          {portArrivals.length === 0 ? (
+            <EmptyNote>Aucune arrivée programmée connue pour le moment.</EmptyNote>
+          ) : (
+            <ul className="space-y-2">
+              {portArrivals.slice(0, 10).map(({ departure, route, arrivalAt }) => {
+                const company = companies.find((item) => item.id === departure.company_id);
+                return (
+                  <li key={`arrival-${departure.id}`}>
+                    <button
+                      type="button"
+                      onClick={() => onSelect({ type: "departure", id: departure.id })}
+                      className="w-full rounded-lg px-2 py-2 text-left transition-colors hover:bg-secondary"
+                    >
+                      <div className="flex items-center gap-2.5">
+                        <CompanyBadge name={company?.name} logoUrl={company?.logo_url} size={32} />
+                        <div className="min-w-0">
+                          <p className="text-sm font-medium">{formatDateTime(arrivalAt, timeZone)}</p>
+                          <p className="truncate text-xs text-muted-foreground">
+                            {portName(route.departure_port_id)}
                             {company ? ` · ${company.name}` : ""}
                             {departure.duration_minutes
                               ? ` · ${formatDuration(departure.duration_minutes)}`

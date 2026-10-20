@@ -14,6 +14,11 @@ export interface LivePosition {
   atdAt?: string | null;
   ataAt?: string | null;
   lastPortId?: string | null;
+  departurePortId?: string | null;
+  arrivalPortId?: string | null;
+  eventDepartureId?: string | null;
+  atdAfter?: string | null;
+  ataAfter?: string | null;
   declaredDestination?: string | null;
   declaredEta?: string | null;
   fetchedAt: string;
@@ -89,7 +94,7 @@ export function projectedPosition(position: LivePosition, now: number): LngLat {
     ? Date.parse(position.reportedAt)
     : Date.parse(position.fetchedAt);
   const elapsed = Math.min(40 * 60_000, Math.max(0, now - reported));
-  const km = (position.speedKnots * KNOT_MS * elapsed) / 1000 / 1000;
+  const km = (position.speedKnots * KNOT_MS * elapsed) / 1000;
   return destination(base, position.courseDeg, km);
 }
 
@@ -100,12 +105,15 @@ export function estimateArrival(
   scheduledArrivalIso: string | null,
   now: number,
 ) {
-  const here = projectedPosition(position, now);
+  // L'ETA est ancrée au signal, jamais à l'heure du rafraîchissement de l'écran.
+  const here: LngLat = [position.longitude, position.latitude];
   const remainingKm = haversineKm(here, [arrivalPort.longitude, arrivalPort.latitude]);
   const speed = position.speedKnots ?? 0;
-  if (speed < 3)
+  const reported = position.reportedAt ? Date.parse(position.reportedAt) : NaN;
+  if (!Number.isFinite(reported) || reported > now + 60_000 || now - reported > 30 * 60_000 || speed < 3 || speed > 50)
     return { remainingKm, etaIso: null as string | null, delayMinutes: null as number | null };
-  const etaMs = now + ((remainingKm * 1000) / (speed * KNOT_MS)) * 1000;
+  const etaMs = reported + ((remainingKm * 1000) / (speed * KNOT_MS)) * 1000;
+  if (etaMs <= now) return { remainingKm, etaIso: null, delayMinutes: null };
   const delayMinutes = scheduledArrivalIso
     ? Math.round((etaMs - Date.parse(scheduledArrivalIso)) / 60_000)
     : null;
@@ -192,7 +200,42 @@ export function formatDelay(minutes: number | null): {
 export function courseLabel(course: number | null): string {
   if (course === null) return "—";
   const names = ["nord", "nord-est", "est", "sud-est", "sud", "sud-ouest", "ouest", "nord-ouest"];
-  return names[Math.round(course / 45) % 8]!;
+  return names[Math.round(((course % 360) + 360) / 45) % 8] ?? "—";
+}
+
+/** Rattachement unique ; aucun événement d'une ancienne rotation ne doit être réutilisé. */
+export function departureForSignal(departures: Departure[], vessel: Vessel, position: LivePosition, routes: RouteLine[], now: number): Departure | null {
+  const candidates = departures.filter((d) => d.vessel_id === vessel.id && d.status !== "cancelled");
+  const linked = candidates.find((d) => d.id === position.eventDepartureId);
+  if (linked && !position.ataAt) return linked;
+  if (linked && position.ataAt && now - Date.parse(position.ataAt) < 3600_000) return linked;
+  const routeById = new Map(routes.map((r) => [r.id, r]));
+  const eligible = candidates.filter((d) => {
+    const start = Date.parse(d.departure_at);
+    const end = d.arrival_at ? Date.parse(d.arrival_at) : start + 36 * 3600_000;
+    const route = routeById.get(d.route_id);
+    return now >= start - 6 * 3600_000 && now <= end + 6 * 3600_000 &&
+      (!position.departurePortId || route?.departure_port_id === position.departurePortId);
+  });
+  // En cas de chevauchement, pas de rattachement arbitraire à la traversée la plus proche.
+  return eligible.length === 1 ? eligible[0] ?? null : null;
+}
+
+export type TimeKind = "observed" | "estimated" | "scheduled" | "unavailable";
+export interface TrackingTime { iso: string | null; scheduledIso: string | null; kind: TimeKind; shiftMinutes: number | null; }
+export function trackingTimes(departure: Departure, live?: LiveShip | null) {
+  const linked = live?.departure.id === departure.id && live.position.eventDepartureId === departure.id;
+  const make = (scheduledIso: string | null, observed: string | null, estimated: string | null): TrackingTime => {
+    const iso = observed ?? estimated ?? scheduledIso;
+    const kind: TimeKind = observed ? "observed" : estimated ? "estimated" : scheduledIso ? "scheduled" : "unavailable";
+    return { iso, scheduledIso, kind, shiftMinutes: (observed || estimated) && scheduledIso && iso ? Math.round((Date.parse(iso) - Date.parse(scheduledIso)) / 60_000) : null };
+  };
+  const actualDeparture = linked ? live?.position.atdAt ?? null : null;
+  const actualArrival = linked && actualDeparture && live?.position.ataAt && Date.parse(live.position.ataAt) >= Date.parse(actualDeparture) ? live.position.ataAt : null;
+  return {
+    departure: make(departure.departure_at, actualDeparture, null),
+    arrival: make(departure.arrival_at, actualArrival, live?.departure.id === departure.id ? live.etaIso : null),
+  };
 }
 
 

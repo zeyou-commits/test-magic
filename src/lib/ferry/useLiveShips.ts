@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { queryOptions, useQuery } from "@tanstack/react-query";
 import {
   companiesQuery,
@@ -9,10 +9,9 @@ import {
 } from "./queries";
 import { routeArc, pointAlong } from "./geo";
 import {
-  activeDeparture,
+  departureForSignal,
   estimateArrival,
   LIVE_MAX_AGE_MINUTES,
-  nearestDeparture,
   phaseFromSignal,
   type LivePosition,
   type LiveShip,
@@ -54,6 +53,11 @@ function demoEnabled() {
 
 /** Navires suivis, rattachés à leur traversée en cours. */
 export function useLiveShips(): LiveShip[] {
+  const [tick, setTick] = useState(0);
+  useEffect(() => {
+    const timer = window.setInterval(() => setTick((value) => value + 1), 60_000);
+    return () => window.clearInterval(timer);
+  }, []);
   const { data: positions = [] } = useQuery(vesselPositionsQuery);
   const { data: vessels = [] } = useQuery(vesselsQuery);
   const { data: departures = [] } = useQuery(fleetDeparturesQuery);
@@ -114,15 +118,12 @@ export function useLiveShips(): LiveShip[] {
       if (!vessel.mmsi) return;
       const position = byMmsi.get(vessel.mmsi);
       if (!position) return;
-      const reported = position.reportedAt
-        ? Date.parse(position.reportedAt)
-        : Date.parse(position.fetchedAt);
+      const reported = position.reportedAt ? Date.parse(position.reportedAt) : NaN;
+      if (!Number.isFinite(reported) || reported > now + 60_000) return;
       const ageMinutes = Math.max(0, (now - reported) / 60_000);
       // Le signal AIS récent fait foi : il est affiché même si aucun départ n'est prévu à cette heure.
       if (ageMinutes > LIVE_MAX_AGE_MINUTES) return;
-      const departure =
-        activeDeparture(departures, vessel, now)?.departure ??
-        nearestDeparture(departures, vessel, now);
+      const departure = departureForSignal(departures, vessel, position, routes, now);
       if (!departure) return;
       const route = routeById.get(departure.route_id);
       const to = route ? portById.get(route.arrival_port_id) : undefined;
@@ -139,5 +140,5 @@ export function useLiveShips(): LiveShip[] {
       });
     });
     return ships;
-  }, [positions, vessels, departures, routes, ports]);
+  }, [positions, vessels, departures, routes, ports, tick]);
 }

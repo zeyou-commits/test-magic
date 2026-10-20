@@ -110,10 +110,13 @@ export function estimateArrival(
   const remainingKm = haversineKm(here, [arrivalPort.longitude, arrivalPort.latitude]);
   const speed = position.speedKnots ?? 0;
   const reported = position.reportedAt ? Date.parse(position.reportedAt) : NaN;
-  if (!Number.isFinite(reported) || reported > now + 60_000 || now - reported > 30 * 60_000 || speed < 3 || speed > 50)
+  // L'ETA doit rester ancrée à l'heure du dernier signal AIS : ne jamais la recalculer
+  // depuis "maintenant", ni la masquer uniquement parce que le signal a plus de 30 minutes.
+  // Ainsi, sans nouveau signal, l'heure estimée reste stable au fil des rafraîchissements.
+  if (!Number.isFinite(reported) || reported > now + 60_000 || speed < 3 || speed > 50)
     return { remainingKm, etaIso: null as string | null, delayMinutes: null as number | null };
   const etaMs = reported + ((remainingKm * 1000) / (speed * KNOT_MS)) * 1000;
-  if (etaMs <= now) return { remainingKm, etaIso: null, delayMinutes: null };
+  if (!Number.isFinite(etaMs)) return { remainingKm, etaIso: null, delayMinutes: null };
   const delayMinutes = scheduledArrivalIso
     ? Math.round((etaMs - Date.parse(scheduledArrivalIso)) / 60_000)
     : null;

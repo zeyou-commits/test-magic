@@ -306,7 +306,7 @@ function CompanyRow({
   });
   return (
     <li className="flex flex-wrap items-end gap-3 py-3">
-      <CompanyBadge name={name} logoUrl={logo} size={40} />
+      <CompanyBadge name={name} logoUrl={logo} size={56} />
       <label className="text-xs">Nom<Input value={name} onChange={(e) => setName(e.target.value)} /></label>
       <label className="min-w-56 flex-1 text-xs">URL du logo<Input value={logo} placeholder="https://…" onChange={(e) => setLogo(e.target.value)} /></label>
       <label className="min-w-48 flex-1 text-xs">Site officiel<Input value={site} placeholder="https://…" onChange={(e) => setSite(e.target.value)} /></label>
@@ -1178,9 +1178,9 @@ function VesselsAdmin() {
   const portLabel = (id: string) => ports.find((p) => p.id === id)?.name ?? "—";
   // Brouillons de saisie, par navire : { mmsi, imo, photo }.
   const [drafts, setDrafts] = useState<
-    Record<string, { mmsi?: string; imo?: string; photo?: string }>
+    Record<string, { mmsi?: string; imo?: string; photo?: string; photoFile?: File | null }>
   >({});
-  const setDraft = (id: string, patch: { mmsi?: string; imo?: string; photo?: string }) =>
+  const setDraft = (id: string, patch: { mmsi?: string; imo?: string; photo?: string; photoFile?: File | null }) =>
     setDrafts((prev) => ({ ...prev, [id]: { ...prev[id], ...patch } }));
 
   const save = useMutation({
@@ -1189,15 +1189,28 @@ function VesselsAdmin() {
       mmsi,
       imo,
       photo_url,
+      photoFile,
     }: {
       id: string;
       mmsi: number | null;
       imo: number | null;
       photo_url: string | null;
+      photoFile: File | null;
     }) => {
+      let finalPhotoUrl = photo_url;
+      if (photoFile) {
+        const extension = photoFile.name.split(".").pop()?.toLowerCase() || "jpg";
+        const path = id + "/" + Date.now() + "." + extension.replace(/[^a-z0-9]/g, "");
+        const { error: uploadError } = await supabase.storage
+          .from("vessel-photos")
+          .upload(path, photoFile, { upsert: true, contentType: photoFile.type });
+        if (uploadError) throw new Error("Téléversement de la photo impossible : " + uploadError.message);
+        const { data: publicUrl } = supabase.storage.from("vessel-photos").getPublicUrl(path);
+        finalPhotoUrl = publicUrl.publicUrl;
+      }
       const { error } = await supabase
         .from("vessels")
-        .update({ mmsi, imo, photo_url })
+        .update({ mmsi, imo, photo_url: finalPhotoUrl })
         .eq("id", id);
       if (error)
         throw new Error(
@@ -1223,8 +1236,7 @@ function VesselsAdmin() {
         <strong>MMSI</strong> (9 chiffres) : active le suivi en direct. Le site suit un navire de 6
         h avant son départ jusqu'à son arrivée et ne redemande sa position qu'au bout de 20 minutes.{" "}
         <strong>IMO</strong> (7 chiffres) : ajoute le lien « Voir sur VesselFinder » dans la fiche.{" "}
-        <strong>Photo</strong> : adresse https d'une image dont vous avez le droit d'usage ; sans
-        elle, le site cherche une photo libre sur Wikimedia Commons.
+        <strong>Photo</strong> : collez une URL ou téléversez un fichier image (JPG, PNG, WebP ou AVIF, 10 Mo max). Le téléversement remplace l’URL ; sans photo personnalisée, le site cherche une photo libre sur Wikimedia Commons.
       </p>
       <ul className="mt-4 divide-y divide-border">
         {vessels.map((vessel) => {
@@ -1232,10 +1244,12 @@ function VesselsAdmin() {
           const mmsi = draft.mmsi ?? (vessel.mmsi ? String(vessel.mmsi) : "");
           const imo = draft.imo ?? (vessel.imo ? String(vessel.imo) : "");
           const photo = draft.photo ?? vessel.photo_url ?? "";
+          const photoFile = draft.photoFile ?? null;
           const mmsiOk = mmsi === "" || /^\d{9}$/.test(mmsi);
           const imoOk = imo === "" || /^\d{7}$/.test(imo);
           const photoOk = photo === "" || /^https:\/\//i.test(photo);
           const changed =
+            photoFile !== null ||
             mmsi !== (vessel.mmsi ? String(vessel.mmsi) : "") ||
             imo !== (vessel.imo ? String(vessel.imo) : "") ||
             photo !== (vessel.photo_url ?? "");
@@ -1317,24 +1331,54 @@ function VesselsAdmin() {
                   }
                   className="w-28"
                 />
-                <Input
-                  type="url"
-                  placeholder="URL de la photo (https://…)"
-                  aria-label={`Photo de ${vessel.name}`}
-                  aria-invalid={!photoOk}
-                  value={photo}
-                  onChange={(event) => setDraft(vessel.id, { photo: event.target.value.trim() })}
-                  className="min-w-48 flex-1"
-                />
+                <div className="grid min-w-56 flex-1 gap-1">
+                  <Input
+                    type="url"
+                    placeholder="URL de la photo (https://…)"
+                    aria-label={"URL de la photo de " + vessel.name}
+                    aria-invalid={!photoOk}
+                    value={photo}
+                    onChange={(event) => setDraft(vessel.id, { photo: event.target.value.trim(), photoFile: null })}
+                    className="w-full"
+                    disabled={Boolean(photoFile)}
+                  />
+                  <label className="grid gap-1 text-xs text-muted-foreground">
+                    <span>Ou téléverser une image {photoFile ? "— " + photoFile.name : ""}</span>
+                    <input
+                      type="file"
+                      accept="image/jpeg,image/png,image/webp,image/avif"
+                      aria-label={"Téléverser une photo de " + vessel.name}
+                      className="block w-full text-xs file:mr-2 file:rounded-md file:border file:border-border file:bg-background file:px-2 file:py-1"
+                      onChange={(event) => {
+                        const file = event.target.files?.[0] ?? null;
+                        if (file && file.size > 10 * 1024 * 1024) {
+                          toast.error("La photo doit faire 10 Mo maximum.");
+                          event.target.value = "";
+                          return;
+                        }
+                        if (file && !["image/jpeg", "image/png", "image/webp", "image/avif"].includes(file.type)) {
+                          toast.error("Format accepté : JPG, PNG, WebP ou AVIF.");
+                          event.target.value = "";
+                          return;
+                        }
+                        setDraft(vessel.id, { photoFile: file, ...(file ? { photo: "" } : {}) });
+                      }}
+                    />
+                  </label>
+                  {photoFile ? (
+                    <Button size="sm" variant="ghost" onClick={() => setDraft(vessel.id, { photoFile: null })}>Annuler le téléversement</Button>
+                  ) : null}
+                </div>
                 <Button
                   size="sm"
-                  disabled={!mmsiOk || !imoOk || !photoOk || !changed || save.isPending}
+                  disabled={!mmsiOk || !imoOk || (!photoFile && !photoOk) || !changed || save.isPending}
                   onClick={() =>
                     save.mutate({
                       id: vessel.id,
                       mmsi: mmsi === "" ? null : Number(mmsi),
                       imo: imo === "" ? null : Number(imo),
                       photo_url: photo === "" ? null : photo,
+                      photoFile,
                     })
                   }
                 >

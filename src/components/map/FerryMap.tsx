@@ -738,8 +738,8 @@ export default function FerryMap({
     } else {
      // On utilise un point central "Espagne - Algérie" (~ longitude 0, latitude 39)
       map.easeTo({
-        center: [0, 39],
-        zoom: !isMobile ? 4.8 : 4.2, // Ajustez ce zoom selon ce que vous voulez voir
+        center: [4, 39],
+        zoom: !isMobile ? 4.4 : 3.8, // Ajustez ce zoom selon ce que vous voulez voir
         padding: viewPadding(),      // Le padding décale magiquement le centre vers la droite !
         duration: 600
       });

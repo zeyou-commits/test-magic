@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { fleetDeparturesQuery, portsQuery, routesQuery, vesselsQuery } from "./queries";
+import { fleetDeparturesQuery, upcomingDeparturesQuery, portsQuery, routesQuery, vesselsQuery } from "./queries";
 import { buildFleet, type FleetShip } from "./fleet";
 import { useLiveShips } from "./useLiveShips";
 
@@ -20,6 +20,13 @@ function clockShiftMs() {
 /** Tous les navires à afficher : déduits des horaires, remplacés par leur position réelle si le suivi est actif. */
 export function useFleet(): FleetShip[] {
   const { data: departures = [] } = useQuery(fleetDeparturesQuery);
+  // Secours : le flux complet des départs futurs évite qu’un décalage de fenêtre/cache
+  // fasse disparaître un navire pourtant associé à une traversée publiée.
+  const { data: upcomingDepartures = [] } = useQuery(upcomingDeparturesQuery());
+  const allDepartures = useMemo(() => {
+    const byId = new Map([...departures, ...upcomingDepartures].map((departure) => [departure.id, departure]));
+    return [...byId.values()];
+  }, [departures, upcomingDepartures]);
   const { data: routes = [] } = useQuery(routesQuery);
   const { data: ports = [] } = useQuery(portsQuery);
   const { data: vessels = [] } = useQuery(vesselsQuery);
@@ -33,8 +40,8 @@ export function useFleet(): FleetShip[] {
   }, []);
 
   return useMemo(
-    () => buildFleet(departures, routes, ports, vessels, liveShips, Date.now() + clockShiftMs()),
+    () => buildFleet(allDepartures, routes, ports, vessels, liveShips, Date.now() + clockShiftMs()),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [departures, routes, ports, vessels, liveShips, tick],
+    [allDepartures, routes, ports, vessels, liveShips, tick],
   );
 }

@@ -275,7 +275,7 @@ function Index() {
   }, [mapSelection, focusedRouteId, routes, filters.departurePortIds, filters.arrivalPortIds]);
 
   // Les infobulles décrivent le réseau réel du port, indépendamment des filtres en cours.
-  const portMeta = useMemo(() => {
+  const portMeta = useMemo<Record<string, PortMeta>>(() => {
     const meta: Record<string, PortMeta> = {};
     const companyById = new Map(companies.map((c) => [c.id, c]));
     const portById = new Map(ports.map((port) => [port.id, port]));
@@ -342,7 +342,7 @@ function Index() {
       };
     });
     return meta;
-  }, [ports, routes, sailings, companies]);
+  }, [ports, routes, departures, sailings, companies]);
 
   const snapHeights = () => {
     const vh = window.innerHeight;

@@ -335,7 +335,6 @@ export function PortView({
         </Section>
 
         <ReviewForm portId={portId} />
-      </div>
     </div>
   );
 }

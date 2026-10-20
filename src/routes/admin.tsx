@@ -1366,7 +1366,7 @@ function VesselsAdmin() {
                     />
                   </label>
                   {photoFile ? (
-                    <Button size="sm" variant="ghost" onClick={() => setDraft(vessel.id, { photoFile: null })}>Annuler le téléversement</Button>
+                    <Button size="sm" variant="ghost" onClick={() => setDraft(vessel.id, { photoFile: null, photo: vessel.photo_url ?? "" })}>Annuler le téléversement</Button>
                   ) : null}
                 </div>
                 <Button

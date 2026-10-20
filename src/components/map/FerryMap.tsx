@@ -474,8 +474,9 @@ export default function FerryMap({
           "symbol-placement": "line-center",
           "text-field": ["get", "label"],
           "text-font": ["Noto Sans Bold"],
-          "text-size": 12,
-          "text-rotation-alignment": "viewport",
+          "text-size": 9,
+          // Les durées suivent l’orientation réelle des lignes pour rester discrètes et lisibles.
+          "text-rotation-alignment": "map",
           "text-keep-upright": true,
           "text-allow-overlap": false,
           "text-ignore-placement": false,

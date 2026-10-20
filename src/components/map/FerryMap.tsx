@@ -1052,7 +1052,7 @@ export default function FerryMap({
     // Remplacement du fitBounds par le centrage fixe
     map.easeTo({
       center: [0, 39],
-      zoom: typeof window !== "undefined" && window.innerWidth >= 768 ? 4.8 : 4.2,
+      zoom: typeof window !== "undefined" && window.innerWidth >= 768 ? 4.2 : 3.8,
       padding: viewPadding(),
       duration: 800
     });

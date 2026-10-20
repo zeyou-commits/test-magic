@@ -1,4 +1,8 @@
 # Roadmap
+- [ ] Suivi : ETA stable, fraîcheur explicite et source commune aux fiches
+- [ ] Événements : départ/arrivée constatés rattachés à leur traversée sans inventer une heure passée
+- [ ] Parcours : progression AIS et mini-bateau sans chevauchement
+- [ ] Validation : tests et vérification du Rosalind Franklin sur les deux fiches
 - [x] Ports : « Tous les ports » bascule tout coché / tout décoché
 - [x] Carte mobile : cadrer le port choisi + ses destinations au-dessus du tiroir
 - [x] Carte A/R : pied avec prix agrandi, temps sur place estimé (marges débarquement/embarquement) dans le détail

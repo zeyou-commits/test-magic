@@ -30,11 +30,11 @@ if (!import.meta.env.DEV) setWorkerUrl(workerUrl);
 export interface PortMeta {
   /** Nombre de lignes actives qui touchent le port (départ ou arrivée). */
   routes: number;
-  companies: string[];
+  companies: { name: string; logoUrl: string | null }[];
   /** Prochains départs depuis ce port, déjà formatés en heure locale du port. */
-  upcoming: { date: string; time: string; to: string | null }[];
+  upcoming: { date: string; time: string; to: string | null; companyName: string | null; logoUrl: string | null }[];
   /** Prochaines arrivées prévues dans ce port, en heure locale. */
-  upcomingArrivals: { date: string; time: string; from: string | null }[];
+  upcomingArrivals: { date: string; time: string; from: string | null; companyName: string | null; logoUrl: string | null }[];
 }
 
 interface FerryMapProps {
@@ -903,7 +903,7 @@ export default function FerryMap({
       departurePanel.setAttribute("role", "tabpanel");
       const arrivalPanel = document.createElement("div");
       arrivalPanel.setAttribute("role", "tabpanel"); arrivalPanel.hidden = true;
-      const makeRows = (items: { date: string; time: string; place: string | null }[], emptyText: string) => {
+      const makeRows = (items: { date: string; time: string; place: string | null; companyName: string | null; logoUrl: string | null }[], emptyText: string) => {
         if (!items.length) {
           const empty = document.createElement("p"); empty.className = "port-tip__next"; empty.textContent = emptyText;
           return empty;
@@ -913,13 +913,27 @@ export default function FerryMap({
           const row = document.createElement("li"); row.className = "port-tip__departure";
           const date = document.createElement("span"); date.className = "port-tip__departure-date"; date.textContent = item.date;
           const time = document.createElement("span"); time.className = "port-tip__departure-time"; time.textContent = item.time;
-          const place = document.createElement("span"); place.className = "port-tip__departure-destination"; place.textContent = item.place ? (item === undefined ? "" : item.place) : "";
-          row.append(date, time, place); list.append(row);
+          const details = document.createElement("span"); details.style.cssText = "display:flex;flex-direction:column;min-width:0;gap:2px;flex:1";
+          const place = document.createElement("span"); place.className = "port-tip__departure-destination"; place.textContent = item.place ?? "";
+          place.style.cssText = "font-size:11px;line-height:1.25;white-space:nowrap;overflow:hidden;text-overflow:ellipsis";
+          details.append(place);
+          if (item.companyName) {
+            const company = document.createElement("span"); company.style.cssText = "display:flex;align-items:center;gap:5px;min-width:0;font-size:10px;line-height:1.2;color:var(--muted-foreground,#737373)";
+            if (item.logoUrl) {
+              const logo = document.createElement("img"); logo.src = item.logoUrl; logo.alt = ""; logo.loading = "lazy";
+              logo.style.cssText = "width:18px;height:18px;object-fit:contain;border-radius:4px;background:#fff;border:1px solid rgba(127,127,127,.2);padding:1px;flex-shrink:0";
+              logo.onerror = () => logo.remove(); company.append(logo);
+            }
+            const name = document.createElement("span"); name.textContent = item.companyName; name.style.cssText = "overflow:hidden;text-overflow:ellipsis;white-space:nowrap";
+            company.append(name); details.append(company);
+          }
+          date.style.fontSize = "10px"; time.style.fontSize = "13px"; time.style.fontWeight = "700";
+          row.style.gap = "8px"; row.append(date, time, details); list.append(row);
         });
         return list;
       };
-      departurePanel.append(makeRows((meta?.upcoming ?? []).map(item => ({date:item.date,time:item.time,place:item.to ? `→ ${item.to}` : null})), "Aucun départ programmé pour le moment."));
-      arrivalPanel.append(makeRows((meta?.upcomingArrivals ?? []).map(item => ({date:item.date,time:item.time,place:item.from ? `← ${item.from}` : null})), "Aucune arrivée prévue connue pour le moment."));
+      departurePanel.append(makeRows((meta?.upcoming ?? []).map(item => ({date:item.date,time:item.time,place:item.to ? `→ ${item.to}` : null,companyName:item.companyName,logoUrl:item.logoUrl})), "Aucun départ programmé pour le moment."));
+      arrivalPanel.append(makeRows((meta?.upcomingArrivals ?? []).map(item => ({date:item.date,time:item.time,place:item.from ? `← ${item.from}` : null,companyName:item.companyName,logoUrl:item.logoUrl})), "Aucune arrivée prévue connue pour le moment."));
       const activateTab = (arrivals: boolean) => {
         departurePanel.hidden = arrivals; arrivalPanel.hidden = !arrivals;
         [[departureTab,!arrivals],[arrivalTab,arrivals]].forEach(([el,active]) => {

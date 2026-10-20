@@ -309,6 +309,32 @@ function Index() {
               to: portById.get(s.route.arrival_port_id)?.name ?? null,
             };
           }),
+        upcomingArrivals: departures
+          .filter((departure) => {
+            if (departure.status === "cancelled") return false;
+            const route = routes.find((item) => item.id === departure.route_id);
+            if (!route || route.arrival_port_id !== port.id) return false;
+            const arrivalAt = departure.arrival_at ?? (departure.duration_minutes
+              ? new Date(new Date(departure.departure_at).getTime() + departure.duration_minutes * 60000).toISOString()
+              : null);
+            return Boolean(arrivalAt && new Date(arrivalAt).getTime() >= Date.now());
+          })
+          .map((departure) => {
+            const route = routes.find((item) => item.id === departure.route_id)!;
+            const arrivalAt = departure.arrival_at ?? new Date(
+              new Date(departure.departure_at).getTime() + (departure.duration_minutes ?? 0) * 60000,
+            ).toISOString();
+            const parts = formatDateParts(arrivalAt, timeZone);
+            return {
+              timestamp: new Date(arrivalAt).getTime(),
+              date: capitalizeFirst(`${parts.weekday} ${parts.shortDate}`),
+              time: parts.time,
+              from: portById.get(route.departure_port_id)?.name ?? null,
+            };
+          })
+          .sort((a, b) => a.timestamp - b.timestamp)
+          .slice(0, 3)
+          .map(({ date, time, from }) => ({ date, time, from })),
       };
     });
     return meta;

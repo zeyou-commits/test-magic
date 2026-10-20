@@ -26,7 +26,7 @@ function initials(name: string) {
 export function CompanyBadge({
   name,
   logoUrl,
-  size = 28,
+  size = 40,
 }: {
   name: string | undefined | null;
   logoUrl?: string | null | undefined;

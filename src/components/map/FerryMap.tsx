@@ -736,7 +736,13 @@ export default function FerryMap({
         { padding: viewPadding(), maxZoom: 6.2, duration: 800 },
       );
     } else {
-      map.fitBounds(!isMobile ? DESKTOP_OVERVIEW_BOUNDS : OVERVIEW_BOUNDS, { padding: viewPadding(), duration: 600 });
+     // On utilise un point central "Espagne - Algérie" (~ longitude 0, latitude 39)
+      map.easeTo({
+        center: [0, 39],
+        zoom: !isMobile ? 4.8 : 4.2, // Ajustez ce zoom selon ce que vous voulez voir
+        padding: viewPadding(),      // Le padding décale magiquement le centre vers la droite !
+        duration: 600
+      });
     }
   }, [isMobile, mapReady, mobileBottomInset, desktopLeftInset, fitPortIds.join("|"), ports.length]);
 
@@ -1035,17 +1041,22 @@ export default function FerryMap({
     return () => window.clearTimeout(timer);
   }, [focusTarget?.key, mapReady]);
 
-  useEffect(() => {
+ useEffect(() => {
     const map = mapRef.current;
     const container = containerRef.current;
     if (!map || !mapReady || !portsPulseKey || !container) return;
-    // easeTo (focus navire) conserve son padding dans la caméra. MapLibre l'ajoute
-    // ensuite à celui de cameraForBounds : sur une fenêtre étroite il ne reste
-    // aucune largeur disponible et fitBounds ne fait rien. Repartir sans inset
-    // persistant avant de cadrer la zone visible une seule fois.
+    
     map.stop();
     map.setPadding({ top: 0, right: 0, bottom: 0, left: 0 });
-    map.fitBounds(typeof window !== "undefined" && window.innerWidth >= 768 ? DESKTOP_OVERVIEW_BOUNDS : OVERVIEW_BOUNDS, { padding: viewPadding(), duration: 800 });
+    
+    // Remplacement du fitBounds par le centrage fixe
+    map.easeTo({
+      center: [0, 39],
+      zoom: typeof window !== "undefined" && window.innerWidth >= 768 ? 4.8 : 4.2,
+      padding: viewPadding(),
+      duration: 800
+    });
+
     container.dataset["pulsePorts"] = "false";
     void container.offsetWidth;
     container.dataset["pulsePorts"] = "true";

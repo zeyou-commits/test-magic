@@ -12,7 +12,7 @@ import {
   portsQuery,
   ratingCriteriaQuery,
   routesQuery,
-  portDeparturesQuery,
+  upcomingDeparturesQuery,
 } from "@/lib/ferry/queries";
 import {
   facilityLabels,
@@ -40,9 +40,10 @@ export function PortView({
   const { data: ports = [] } = useQuery(portsQuery);
   const { data: routes = [] } = useQuery(routesQuery);
   const { data: companies = [] } = useQuery(companiesQuery);
-  const { data: departures = [] } = useQuery(portDeparturesQuery(portId));
+  const { data: departures = [] } = useQuery(upcomingDeparturesQuery());
   const { data: criteria = [] } = useQuery(ratingCriteriaQuery);
   const { data: reviews = [] } = useQuery(portReviewsQuery(portId));
+  const [scheduleTab, setScheduleTab] = useState<"departures" | "arrivals">("departures");
 
   const port = ports.find((item) => item.id === portId);
   const photoQuery = useQuery(portPhotoQuery(port ?? { id: "", name: "", photo_url: null }));
@@ -204,79 +205,33 @@ export function PortView({
         </dl>
       </div>
 
-      <div>
-        <Section title={`Prochains départs · ${zoneLabel(timeZone)}`}>
-          {portDepartures.length === 0 ? (
-            <EmptyNote>Aucun départ connu à venir depuis ce port.</EmptyNote>
+      <div className="px-4 pt-3 md:px-6">
+        <div className="rounded-2xl border border-border/70 bg-card p-3 shadow-sm">
+          <div className="mb-3 flex items-center justify-between gap-3">
+            <div><h2 className="text-base font-semibold tracking-tight">Horaires du port</h2><p className="text-xs text-muted-foreground">Heure locale · {zoneLabel(timeZone)}</p></div>
+          </div>
+          <div className="grid grid-cols-2 gap-1 rounded-xl bg-secondary/70 p-1" role="tablist" aria-label="Horaires du port">
+            <button type="button" role="tab" aria-selected={scheduleTab === "departures"} onClick={() => setScheduleTab("departures")} className={`flex min-h-10 items-center justify-center gap-2 rounded-lg px-3 text-sm font-semibold transition-all duration-200 ${scheduleTab === "departures" ? "bg-background text-foreground shadow-sm ring-1 ring-black/5" : "text-muted-foreground hover:text-foreground"}`}>
+              <span aria-hidden>↗</span> Départs <span className="rounded-full bg-primary/10 px-1.5 py-0.5 text-[10px] tabular-nums">{portDepartures.length}</span>
+            </button>
+            <button type="button" role="tab" aria-selected={scheduleTab === "arrivals"} onClick={() => setScheduleTab("arrivals")} className={`flex min-h-10 items-center justify-center gap-2 rounded-lg px-3 text-sm font-semibold transition-all duration-200 ${scheduleTab === "arrivals" ? "bg-background text-foreground shadow-sm ring-1 ring-black/5" : "text-muted-foreground hover:text-foreground"}`}>
+              <span aria-hidden>↙</span> Arrivées <span className="rounded-full bg-primary/10 px-1.5 py-0.5 text-[10px] tabular-nums">{portArrivals.length}</span>
+            </button>
+          </div>
+          {scheduleTab === "departures" ? (
+            portDepartures.length ? <ul className="mt-2 divide-y divide-border/70">{portDepartures.map((departure) => {
+              const route = routes.find((item) => item.id === departure.route_id);
+              const company = companies.find((item) => item.id === departure.company_id);
+              return <li key={departure.id}><button type="button" onClick={() => onSelect({type:"departure",id:departure.id})} className="w-full rounded-xl px-2 py-3 text-left transition-colors hover:bg-secondary/60"><div className="flex items-center gap-3"><div className="grid size-10 shrink-0 place-items-center rounded-xl bg-primary/10 text-primary"><Ship className="size-4" aria-hidden /></div><div className="min-w-0 flex-1"><p className="text-sm font-semibold">{formatDateTime(departure.departure_at,timeZone)}</p><p className="truncate text-xs text-muted-foreground">Vers {route ? portName(route.arrival_port_id) : "—"}{company ? ` · ${company.name}` : ""}</p></div>{departure.duration_minutes ? <span className="shrink-0 text-[11px] text-muted-foreground">{formatDuration(departure.duration_minutes)}</span> : null}</div></button></li>;
+            })}</ul> : <div className="py-5"><EmptyNote>Aucun départ connu à venir depuis ce port.</EmptyNote></div>
           ) : (
-            <ul className="space-y-2">
-              {portDepartures.map((departure) => {
-                const route = routes.find((item) => item.id === departure.route_id);
-                const company = companies.find((item) => item.id === departure.company_id);
-                return (
-                  <li key={departure.id}>
-                    <button
-                      type="button"
-                      onClick={() => onSelect({ type: "departure", id: departure.id })}
-                      className="w-full rounded-lg px-2 py-2 text-left transition-colors hover:bg-secondary"
-                    >
-                      <div className="flex items-center gap-2.5">
-                        <CompanyBadge name={company?.name} logoUrl={company?.logo_url} size={32} />
-                        <div className="min-w-0">
-                          <p className="text-sm font-medium">
-                            {formatDateTime(departure.departure_at, timeZone)}
-                          </p>
-                          <p className="truncate text-xs text-muted-foreground">
-                            {route ? portName(route.arrival_port_id) : "—"}
-                            {company ? ` · ${company.name}` : ""}
-                            {departure.duration_minutes
-                              ? ` · ${formatDuration(departure.duration_minutes)}`
-                              : ""}
-                          </p>
-                        </div>
-                      </div>
-                    </button>
-                  </li>
-                );
-              })}
-            </ul>
+            portArrivals.length ? <ul className="mt-2 divide-y divide-border/70">{portArrivals.slice(0,10).map(({departure,route,arrivalAt}) => {
+              const company = companies.find((item) => item.id === departure.company_id);
+              return <li key={`arrival-${departure.id}`}><button type="button" onClick={() => onSelect({type:"departure",id:departure.id})} className="w-full rounded-xl px-2 py-3 text-left transition-colors hover:bg-secondary/60"><div className="flex items-center gap-3"><div className="grid size-10 shrink-0 place-items-center rounded-xl bg-sky-500/10 text-sky-600"><Ship className="size-4 rotate-180" aria-hidden /></div><div className="min-w-0 flex-1"><p className="text-sm font-semibold">{formatDateTime(arrivalAt,timeZone)}</p><p className="truncate text-xs text-muted-foreground">Depuis {portName(route.departure_port_id)}{company ? ` · ${company.name}` : ""}</p></div>{departure.duration_minutes ? <span className="shrink-0 text-[11px] text-muted-foreground">{formatDuration(departure.duration_minutes)}</span> : null}</div></button></li>;
+            })}</ul> : <div className="py-5"><EmptyNote>Aucune arrivée programmée connue pour le moment.</EmptyNote></div>
           )}
-        </Section>
-
-        <Section title={`Prochaines arrivées · ${zoneLabel(timeZone)}`}>
-          {portArrivals.length === 0 ? (
-            <EmptyNote>Aucune arrivée programmée connue pour le moment.</EmptyNote>
-          ) : (
-            <ul className="space-y-2">
-              {portArrivals.slice(0, 10).map(({ departure, route, arrivalAt }) => {
-                const company = companies.find((item) => item.id === departure.company_id);
-                return (
-                  <li key={`arrival-${departure.id}`}>
-                    <button
-                      type="button"
-                      onClick={() => onSelect({ type: "departure", id: departure.id })}
-                      className="w-full rounded-lg px-2 py-2 text-left transition-colors hover:bg-secondary"
-                    >
-                      <div className="flex items-center gap-2.5">
-                        <CompanyBadge name={company?.name} logoUrl={company?.logo_url} size={32} />
-                        <div className="min-w-0">
-                          <p className="text-sm font-medium">{formatDateTime(arrivalAt, timeZone)}</p>
-                          <p className="truncate text-xs text-muted-foreground">
-                            {portName(route.departure_port_id)}
-                            {company ? ` · ${company.name}` : ""}
-                            {departure.duration_minutes
-                              ? ` · ${formatDuration(departure.duration_minutes)}`
-                              : ""}
-                          </p>
-                        </div>
-                      </div>
-                    </button>
-                  </li>
-                );
-              })}
-            </ul>
-          )}
-        </Section>
+        </div>
+      </div>
 
         {port.notes ? (
           <Section title="À savoir">

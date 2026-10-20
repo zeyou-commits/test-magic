@@ -43,6 +43,13 @@
       "when": 1792201747815,
       "tag": "0005_vessel_specs",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1792456485372,
+      "tag": "0006_vessel_positions_physical_tracking",
+      "breakpoints": true
     }
   ]
 }

@@ -723,11 +723,14 @@ export type Database = {
       }
       vessel_positions: {
         Row: {
+          ata_at: string | null
+          atd_at: string | null
           course_deg: number | null
           destination: string | null
           eta: string | null
           fetched_at: string
           last_error: string | null
+          last_port_id: string | null
           latitude: number | null
           longitude: number | null
           mmsi: number
@@ -737,11 +740,14 @@ export type Database = {
           vessel_name: string | null
         }
         Insert: {
+          ata_at?: string | null
+          atd_at?: string | null
           course_deg?: number | null
           destination?: string | null
           eta?: string | null
           fetched_at?: string
           last_error?: string | null
+          last_port_id?: string | null
           latitude?: number | null
           longitude?: number | null
           mmsi: number
@@ -751,11 +757,14 @@ export type Database = {
           vessel_name?: string | null
         }
         Update: {
+          ata_at?: string | null
+          atd_at?: string | null
           course_deg?: number | null
           destination?: string | null
           eta?: string | null
           fetched_at?: string
           last_error?: string | null
+          last_port_id?: string | null
           latitude?: number | null
           longitude?: number | null
           mmsi?: number
@@ -764,7 +773,15 @@ export type Database = {
           status?: string | null
           vessel_name?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "vessel_positions_last_port_id_fkey"
+            columns: ["last_port_id"]
+            isOneToOne: false
+            referencedRelation: "ports"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       vessels: {
         Row: {

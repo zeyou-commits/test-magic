@@ -102,6 +102,18 @@ export function PortView({
       isFacilityFilled(value) &&
       !/^(non|indisponible|absent|no)$/i.test(value.trim()),
   );
+  const servicesSection = (tab: "practical" | "community") => (
+    <section className="port-profile-section port-services-compact" aria-labelledby={`services-${tab}-${portId}`}>
+      <div className="port-section-heading">
+        <h3 id={`services-${tab}-${portId}`}>Services sur place</h3>
+      </div>
+      {facilities.length ? (
+        <FacilityIcons items={facilities} />
+      ) : (
+        <p className="text-xs text-muted-foreground">Services non renseignés pour ce port.</p>
+      )}
+    </section>
+  );
   const contribute = () => {
     setActiveTab("community");
     setWriteReview(true);
@@ -223,6 +235,7 @@ export function PortView({
 
         <TabsContent value="practical" className="port-tab-content">
           <TravelSignals key={portId} kind="port" target={portId} />
+          {servicesSection("practical")}
           {port.notes ? (
             <details className="port-practical-details">
               <summary>
@@ -413,14 +426,7 @@ export function PortView({
               )}
             </>
           )}
-          {facilities.length ? (
-            <section className="port-profile-section port-services-compact" aria-labelledby={`services-${portId}`}>
-              <div className="port-section-heading">
-                <h3 id={`services-${portId}`}>Services sur place</h3>
-              </div>
-              <FacilityIcons items={facilities} />
-            </section>
-          ) : null}
+          {servicesSection("community")}
           {!reviewsResult.isPending && !reviewsResult.isError && reviews.length ? (
                 <section className="port-reviews" aria-labelledby={`reviews-${portId}`}>
                   <div className="port-section-heading">

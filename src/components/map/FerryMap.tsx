@@ -568,7 +568,7 @@ export default function FerryMap({
         type: "circle",
         source: "fleet",
         paint: {
-          "circle-radius": ["interpolate", ["linear"], ["zoom"], 3, 16, 6, 26, 9, 44],
+          "circle-radius": ["interpolate", ["linear"], ["zoom"], 3, 12, 6, 18, 9, 25],
           "circle-color": ["get", "haloColor"],
           "circle-opacity": ["get", "haloOpacity"],
           "circle-blur": 0.6,
@@ -580,11 +580,11 @@ export default function FerryMap({
         source: "fleet",
         layout: {
           "icon-image": ["get", "icon"],
-          "icon-rotate": ["get", "course"],
-          "icon-rotation-alignment": "map",
+          // Perspective constante : la flèche dans l'icône porte le cap.
+          "icon-rotation-alignment": "viewport",
           "icon-allow-overlap": true,
           "icon-ignore-placement": true,
-          "icon-size": ["interpolate", ["linear"], ["zoom"], 3, 0.55, 5, 0.75, 7, 0.95, 9, 1.2],
+          "icon-size": ["interpolate", ["linear"], ["zoom"], 3, 0.44, 5, 0.54, 7, 0.64, 9, 0.72],
         },
         paint: { "icon-opacity": ["get", "opacity"] },
       });
@@ -597,7 +597,7 @@ export default function FerryMap({
           "text-field": ["get", "name"],
           "text-font": ["Noto Sans Bold"],
           "text-size": ["interpolate", ["linear"], ["zoom"], 3, 7.5, 6, 9.5, 9, 12],
-          "text-offset": [0, 3.4],
+          "text-offset": [0, 2.2],
           "text-anchor": "top",
           "text-optional": true,
           "text-padding": 2,
@@ -1317,7 +1317,10 @@ export default function FerryMap({
             type: "Feature" as const,
             properties: {
               state: ship.state,
-              icon: ship.state === "sea" ? "ship-sea-0" : "ship-dock",
+              icon:
+                ship.state === "sea"
+                  ? `ship-sea-${Math.round((((course % 360) + 360) % 360) / 45) % 8}`
+                  : "ship-dock",
               course,
               name: ship.name,
               allure,
@@ -1338,7 +1341,7 @@ export default function FerryMap({
               vesselId: ship.vesselId ?? "",
               opacity: 1,
               haloColor: selected ? "#0e7a43" : "#1e5b7a",
-              haloOpacity: selected ? 0.42 : live ? 0.3 : 0.18,
+              haloOpacity: selected ? 0.24 : live ? 0.15 : 0.08,
             },
             geometry: { type: "Point" as const, coordinates },
           };

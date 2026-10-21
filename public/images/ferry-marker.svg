@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 52" fill="none">
+  <defs>
+    <linearGradient id="hull" x1="12" y1="28" x2="79" y2="44" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#fffdf7"/>
+      <stop offset="0.58" stop-color="#f1f5f4"/>
+      <stop offset="1" stop-color="#a9c5d0"/>
+    </linearGradient>
+    <linearGradient id="upper" x1="19" y1="16" x2="75" y2="35" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#ffffff"/>
+      <stop offset="1" stop-color="#d8e8e9"/>
+    </linearGradient>
+  </defs>
+  <!-- Silhouette profil trois-quarts, proue à droite. -->
+  <path d="M8 30 18 24 74 23 88 31 82 39 72 43 17 42 10 37Z" fill="#123d56" stroke="#fffdf7" stroke-width="2" stroke-linejoin="round"/>
+  <path d="M10 29 72 25 85 31 78 38 18 38 11 34Z" fill="url(#hull)"/>
+  <path d="M18 37 78 37 83 34 79 41 72 43 17 42 11 37Z" fill="#0b4565"/>
+  <path d="M14 33 76 33 84 31" stroke="#87bec5" stroke-width="1.4" stroke-linecap="round"/>
+  <!-- Pont supérieur et cabine avec volume latéral. -->
+  <path d="M18 25 24 16 64 15 75 24 77 31 18 32Z" fill="url(#upper)" stroke="#183f57" stroke-width="1.5" stroke-linejoin="round"/>
+  <path d="M20 25 72 24 75 29 19 29Z" fill="#e7f2f0"/>
+  <path d="M23 18 63 17 71 23 21 24Z" fill="#c5dfe3"/>
+  <path d="M22 24 71 23" stroke="#fff" stroke-width="1.3"/>
+  <path d="M27 19h8v4h-9zM38 18h8v5h-8zM49 18h8v5h-8zM60 19l8 4h-8z" fill="#164867"/>
+  <path d="M24 28h45" stroke="#38728a" stroke-width="1.8" stroke-linecap="round" stroke-dasharray="3 2.8"/>
+  <!-- Cheminée et canots : accents lisibles sans surcharge. -->
+  <path d="M39 10h12l-2 7H41Z" fill="#087f7c" stroke="#17435d" stroke-width="1.4" stroke-linejoin="round"/>
+  <path d="M39 10h12" stroke="#18394c" stroke-width="2.5" stroke-linecap="round"/>
+  <path d="M43 15h5" stroke="#e1f4ef" stroke-width="1.3"/>
+  <path d="M29 25h8q1 0 1 1.5T36 28h-6q-2 0-2-1.5t1-1.5ZM52 24.7h8q1 0 1 1.5T59 28h-6q-2 0-2-1.5t1-1.5Z" fill="#dc6a37" stroke="#fff2df" stroke-width="0.8"/>
+  <path d="M22 15h38" stroke="#fff" stroke-width="1" stroke-linecap="round"/>
+</svg>

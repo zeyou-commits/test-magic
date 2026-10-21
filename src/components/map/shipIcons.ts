@@ -1,45 +1,55 @@
 import type { Map as MapLibreMap } from "maplibre-gl";
 
-const MARKER_ASSET = "/images/ferry-3d-marker.png";
-const SIZE = 128;
+const MARKER_ASSET = "/images/ferry-marker.svg";
+const WIDTH = 192;
+const HEIGHT = 104;
+const HEADINGS = 8;
 
-/** Prépare le rendu 3D pour MapLibre. La proue pointe vers le haut afin de
- * conserver la rotation exacte selon le cap du navire. */
-function drawMarker(ship: HTMLImageElement, atSea: boolean): ImageData | null {
+/** Le ferry reste en perspective stable ; seule la petite flèche indique le cap réel. */
+function drawMarker(ship: HTMLImageElement, heading: number | null): ImageData | null {
   const canvas = document.createElement("canvas");
-  canvas.width = SIZE;
-  canvas.height = SIZE;
+  canvas.width = WIDTH;
+  canvas.height = HEIGHT;
   const ctx = canvas.getContext("2d");
   if (!ctx) return null;
 
-  if (atSea) {
-    const wake = ctx.createLinearGradient(0, 94, 0, 128);
-    wake.addColorStop(0, "rgba(255,255,255,0.8)");
-    wake.addColorStop(1, "rgba(255,255,255,0)");
-    ctx.fillStyle = wake;
+  ctx.drawImage(ship, 0, 0, WIDTH, HEIGHT);
+  if (heading !== null) {
+    ctx.save();
+    ctx.translate(170, 17);
+    ctx.fillStyle = "rgba(255,253,247,0.96)";
+    ctx.strokeStyle = "#bdd4d5";
+    ctx.lineWidth = 2;
     ctx.beginPath();
-    ctx.moveTo(47, 94);
-    ctx.lineTo(81, 94);
-    ctx.lineTo(96, 128);
-    ctx.lineTo(32, 128);
+    ctx.arc(0, 0, 14, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+    ctx.rotate((heading * Math.PI * 2) / HEADINGS);
+    ctx.fillStyle = "#087846";
+    ctx.beginPath();
+    ctx.moveTo(0, -9);
+    ctx.lineTo(6, 6);
+    ctx.lineTo(0, 3);
+    ctx.lineTo(-6, 6);
     ctx.closePath();
     ctx.fill();
+    ctx.restore();
   }
-
-  // L'image source est transparente et cadrée en trois quarts.
-  ctx.drawImage(ship, 4, 0, 120, 120);
-  return ctx.getImageData(0, 0, SIZE, SIZE);
+  return ctx.getImageData(0, 0, WIDTH, HEIGHT);
 }
 
-/** Enregistre le visuel 3D une fois l'image chargée, sans bloquer la carte. */
 export function addShipImages(map: MapLibreMap) {
   const ship = new Image();
   ship.decoding = "async";
   ship.onload = () => {
     if (!map.getStyle()) return;
-    const sea = drawMarker(ship, true);
-    const dock = drawMarker(ship, false);
-    if (sea && !map.hasImage("ship-sea-0")) map.addImage("ship-sea-0", sea, { pixelRatio: 2 });
+    for (let heading = 0; heading < HEADINGS; heading++) {
+      const image = drawMarker(ship, heading);
+      if (image && !map.hasImage(`ship-sea-${heading}`)) {
+        map.addImage(`ship-sea-${heading}`, image, { pixelRatio: 2 });
+      }
+    }
+    const dock = drawMarker(ship, null);
     if (dock && !map.hasImage("ship-dock")) map.addImage("ship-dock", dock, { pixelRatio: 2 });
   };
   ship.src = MARKER_ASSET;

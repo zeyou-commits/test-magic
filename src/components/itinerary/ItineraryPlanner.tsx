@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowRight, CalendarDays, CarFront, Clock3, Fuel, LocateFixed, MapPin, Ship, Wallet } from "lucide-react";
+import { Anchor, ArrowRight, CalendarDays, Car, CarFront, Clock3, Fuel, LocateFixed, MapPin, Ship, Wallet } from "lucide-react";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { fr } from "date-fns/locale";
@@ -33,14 +33,17 @@ const timeSlots = Array.from({ length: 96 }, (_, index) => `${String(Math.floor(
 
 function JourneyGuide() {
   const steps = [
-    { Icon: MapPin, label: "Chez vous" },
-    { Icon: CarFront, label: "Port de départ" },
-    { Icon: Ship, label: "Port d’arrivée" },
-    { Icon: MapPin, label: "Destination" },
+    { label: "Chez vous", symbol: <MapPin className="size-4" aria-hidden /> },
+    { label: "Port de départ", symbol: <Anchor className="size-4" aria-hidden /> },
+    { label: "Port d’arrivée", symbol: <Anchor className="size-4" aria-hidden /> },
+    { label: "Destination", symbol: <svg viewBox="0 0 24 24" className="size-4" aria-hidden="true"><path d="M4 3v18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/><path d="M5 4h16v11H5z" fill="#fff" stroke="currentColor" strokeWidth="1"/><path d="M5 4h4v3H5zm8 0h4v3h-4zM9 7h4v3H9zm8 0h4v3h-4zM5 10h4v3H5zm8 0h4v3h-4z" fill="currentColor"/></svg> },
   ];
   return <div className="bw-journey-guide" aria-label="Votre trajet : de chez vous au port, traversée en ferry, puis route vers votre destination">
-    <div className="bw-journey-guide__track" aria-hidden><span /></div>
-    {steps.map(({ Icon, label }) => <div key={label} className="bw-journey-guide__step"><span className="bw-journey-guide__icon"><Icon className="size-4" aria-hidden /></span><span>{label}</span></div>)}
+    <div className="bw-journey-guide__track" aria-hidden />
+    <span className="bw-journey-guide__vehicle bw-journey-guide__vehicle--first" aria-hidden><span className="bw-journey-guide__bags"><span /><span /><span /></span><Car className="size-5" /></span>
+    <span className="bw-journey-guide__vehicle bw-journey-guide__vehicle--ship" aria-hidden><Ship className="size-5" /></span>
+    <span className="bw-journey-guide__vehicle bw-journey-guide__vehicle--last" aria-hidden><span className="bw-journey-guide__bags"><span /><span /><span /></span><Car className="size-5" /></span>
+    {steps.map(({ symbol, label }) => <div key={label} className="bw-journey-guide__step"><span className="bw-journey-guide__icon">{symbol}</span><span>{label}</span></div>)}
   </div>;
 }
 
@@ -118,17 +121,28 @@ export function ItineraryPlanner({ onClose, onPreview }: { onClose: () => void; 
     : [], [sailings, roadAccess, searchStartedAt, profile, consumption, fuelPrice, tollRate]);
   const sorted = useMemo(() => sortItineraries(options, priority), [options, priority]);
   const selected = options.find((option) => option.sailing.departure.id === selectedId) ?? sorted[0];
+  const alternativeKey = sorted.slice(0, 6).map((option) => option.sailing.route.id).join("|");
 
   useEffect(() => {
     if (!selected || !roadAccess) { onPreview(null); return; }
     const id = selected.sailing.departure.id;
     const departurePort: [number, number] = [selected.sailing.from.longitude, selected.sailing.from.latitude];
     const arrivalPort: [number, number] = [selected.sailing.to.longitude, selected.sailing.to.latitude];
+    const alternatives: [number, number][][] = [];
+    const seen = new Set([`${selected.sailing.from.id}|${selected.sailing.to.id}`]);
+    for (const option of sorted.slice(0, 6)) {
+      const pair = `${option.sailing.from.id}|${option.sailing.to.id}`;
+      if (seen.has(pair)) continue;
+      seen.add(pair);
+      const from: [number, number] = [option.sailing.from.longitude, option.sailing.from.latitude];
+      const to: [number, number] = [option.sailing.to.longitude, option.sailing.to.latitude];
+      alternatives.push([roadAccess.originPoint, from], routeArc(option.sailing.from, option.sailing.to), [to, roadAccess.destinationPoint]);
+    }
     let cancelled = false;
     const show = (roadToPort: [number, number][], roadFromPort: [number, number][], roadDetailed: boolean) => {
       if (cancelled) return;
       onPreview({ key: Date.now() + Math.random(), routeId: selected.sailing.route.id, origin: roadAccess.originPoint, destination: roadAccess.destinationPoint,
-        departurePort, arrivalPort, roadToPort, roadDetailed, ferry: routeArc(selected.sailing.from, selected.sailing.to), roadFromPort });
+        departurePort, arrivalPort, roadToPort, roadDetailed, ferry: routeArc(selected.sailing.from, selected.sailing.to), roadFromPort, alternatives });
     };
     show([roadAccess.originPoint, departurePort], [arrivalPort, roadAccess.destinationPoint], false);
     if (roadAccess.roadMode === "estimate") {
@@ -149,7 +163,7 @@ export function ItineraryPlanner({ onClose, onPreview }: { onClose: () => void; 
       if (!cancelled) setGeometryNote("Tracé routier indisponible : le trajet approximatif reste affiché, sans modifier l'estimation de cette option.");
     });
     return () => { cancelled = true; };
-  }, [selected?.sailing.departure.id, roadAccess, onPreview]);
+  }, [selected?.sailing.departure.id, alternativeKey, roadAccess, onPreview]);
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();

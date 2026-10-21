@@ -14,8 +14,10 @@ export interface ItineraryMapPreview {
   departurePort: [number, number];
   arrivalPort: [number, number];
   roadToPort: [number, number][];
+  roadDetailed: boolean;
   ferry: [number, number][];
   roadFromPort: [number, number][];
+  alternatives: [number, number][][];
 }
 
 export interface ItineraryOption {

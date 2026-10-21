@@ -748,6 +748,7 @@ export default function FerryMap({
     if (!map.getSource("itinerary-preview")) {
       map.addSource("itinerary-preview", { type: "geojson", data: { type: "FeatureCollection", features: [] } });
       const before = map.getLayer("fleet-halo") ? "fleet-halo" : undefined;
+      map.addLayer({ id: "itinerary-alternatives", type: "line", source: "itinerary-preview", filter: ["==", ["get", "kind"], "alternative"], layout: { "line-cap": "round", "line-join": "round" }, paint: { "line-color": "#87969b", "line-width": 3, "line-opacity": 0.58 } }, before);
       map.addLayer({ id: "itinerary-road-casing", type: "line", source: "itinerary-preview", filter: ["==", ["get", "kind"], "road"], layout: { "line-cap": "round", "line-join": "round" }, paint: { "line-color": "#fffdf8", "line-width": 7, "line-opacity": 0.92 } }, before);
       map.addLayer({ id: "itinerary-road", type: "line", source: "itinerary-preview", filter: ["==", ["get", "kind"], "road"], layout: { "line-cap": "round", "line-join": "round" }, paint: { "line-color": "#1e5b7a", "line-width": 4, "line-dasharray": [2, 1.3] } }, before);
       map.addLayer({ id: "itinerary-estimate", type: "line", source: "itinerary-preview", filter: ["==", ["get", "kind"], "estimate"], layout: { "line-cap": "round", "line-join": "round" }, paint: { "line-color": "#1e5b7a", "line-width": 3, "line-opacity": 0.7, "line-dasharray": [1, 2] } }, before);
@@ -767,6 +768,7 @@ export default function FerryMap({
     map.setMinZoom(1.5);
     const preview = itineraryPreview;
     source.setData({ type: "FeatureCollection", features: [
+      ...preview.alternatives.map((coordinates) => ({ type: "Feature" as const, properties: { kind: "alternative" }, geometry: { type: "LineString" as const, coordinates } })),
       { type: "Feature" as const, properties: { kind: preview.roadDetailed ? "road" : "estimate" }, geometry: { type: "LineString" as const, coordinates: preview.roadToPort } },
       { type: "Feature", properties: { kind: "ferry" }, geometry: { type: "LineString", coordinates: preview.ferry } },
       { type: "Feature" as const, properties: { kind: preview.roadDetailed ? "road" : "estimate" }, geometry: { type: "LineString" as const, coordinates: preview.roadFromPort } },
@@ -783,9 +785,17 @@ export default function FerryMap({
       [Math.min(...points.map((point) => point[0])) - 0.15, Math.min(...points.map((point) => point[1])) - 0.15],
       [Math.max(...points.map((point) => point[0])) + 0.15, Math.max(...points.map((point) => point[1])) + 0.15],
     ];
-    const camera = map.cameraForBounds(bounds, { padding: viewPadding(), maxZoom: 6 });
-    if (camera?.center && camera.zoom !== undefined) map.easeTo({ center: camera.center, zoom: Math.max(3.65, camera.zoom), padding: viewPadding(), duration: cameraDuration(700) });
+    map.fitBounds(bounds, { padding: viewPadding(), maxZoom: 5.8, duration: cameraDuration(700) });
   }, [itineraryPreview?.key, mapReady]);
+
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !mapReady) return;
+    const ordinaryLayers = ["ferry-routes-glow", "ferry-routes-casing", "ferry-routes-line", "ferry-routes-duration", "fleet-halo", "fleet-ships", "fleet-label", "fleet-hover-halo"];
+    for (const id of ordinaryLayers) {
+      if (map.getLayer(id)) map.setLayoutProperty(id, "visibility", itineraryPreview ? "none" : id === "ferry-routes-duration" && isMobile && !hasFocus ? "none" : "visible");
+    }
+  }, [itineraryPreview, isMobile, hasFocus, mapReady]);
 
   useEffect(() => {
     const map = mapRef.current;
@@ -1518,7 +1528,7 @@ export default function FerryMap({
       map.setLayoutProperty(
         "ferry-routes-duration",
         "visibility",
-        !isMobile || hasFocus ? "visible" : "none",
+        !itineraryPreview && (!isMobile || hasFocus) ? "visible" : "none",
       );
       map.setFilter(
         "ferry-routes-duration",
@@ -1528,7 +1538,7 @@ export default function FerryMap({
 
     if (readyRef.current) apply();
     else map.once("load", apply);
-  }, [isMobile, hasFocus, mapReady]);
+  }, [isMobile, hasFocus, mapReady, itineraryPreview]);
 
   return <div ref={containerRef} className="h-full w-full" />;
 }

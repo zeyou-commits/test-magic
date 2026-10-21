@@ -3,7 +3,7 @@ import { Info, X } from "lucide-react";
 
 /** Légende de la carte : explique les codes visuels des lignes et des ports. */
 export function MapLegend({
-  panelOpen,
+  panelOpen: _panelOpen,
   showDateHint,
 }: {
   panelOpen: boolean;
@@ -13,7 +13,7 @@ export function MapLegend({
 
   return (
     <div
-      className={`absolute bottom-6 z-10 hidden transition-all duration-300 md:block ${panelOpen ? "left-[480px]" : "left-10"}`}
+      className={`absolute top-14 right-3 z-10 transition-all duration-200 md:top-auto md:bottom-6 md:right-32 `}
     >
       {open ? (
         <div className="w-64 rounded-2xl border border-border bg-background/95 p-4 text-sm shadow-[var(--shadow-panel)] backdrop-blur">
@@ -31,10 +31,10 @@ export function MapLegend({
           <ul className="space-y-2.5 text-[13px]">
             <li className="flex items-center gap-3">
               <span className="h-[3px] w-8 shrink-0 rounded-full bg-primary" aria-hidden />
-              En service (couleur du port de départ)
+              Liaison avec un départ connu
             </li>
             <li className="flex items-center gap-3">
-              <span className="h-[4px] w-8 shrink-0 rounded-full bg-cta" aria-hidden />
+              <span className="h-[4px] w-8 shrink-0 rounded-full bg-primary" aria-hidden />
               Ligne ou port sélectionné
             </li>
             <li className="flex items-center gap-3">

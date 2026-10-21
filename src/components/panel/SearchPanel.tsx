@@ -122,13 +122,11 @@ export function SearchPanel({
   void hidePickersOnMobile;
   // Sens du trajet : Europe → Algérie par défaut, inversé par le bouton ⇄.
   const [reversed, setReversed] = useState(false);
-  const [portSide, setPortSide] = useState<"departure" | "arrival">("departure");
   const searchRef = useRef<HTMLElement>(null);
   const isMobileView = () => typeof window !== "undefined" && window.innerWidth < 768;
   const startSearch = () => {
     setStep(firstStep);
     setCalField("out");
-    setPortSide("departure");
     setEditing(true);
     // Sur mobile, le volet passe en plein écran pour la recherche.
     if (isMobileView()) window.dispatchEvent(new Event("batogo:panel-full"));
@@ -137,7 +135,8 @@ export function SearchPanel({
   useEffect(() => {
     if (!editing || !isMobileView()) return;
     const id = window.setTimeout(() => {
-      const target = step === 1 ? searchRef.current : document.getElementById(`search-step-${step}`);
+      const target =
+        step === 1 ? searchRef.current : document.getElementById(`search-step-${step}`);
       target?.scrollIntoView({ behavior: "smooth", block: "start" });
     }, 60);
     return () => window.clearTimeout(id);
@@ -306,374 +305,365 @@ export function SearchPanel({
 
   return (
     <FareProfileContext.Provider value={profile}>
-    <div className="flex flex-col">
-      {/* RECHERCHE : capsule condensée façon Airbnb, formulaire guidé à la demande */}
-      {!editing ? (
-        <section className="border-b px-3 py-2.5 md:px-5">
-          <button
-            type="button"
-            onClick={startSearch}
-            className="flex w-full items-center gap-2.5 rounded-full border border-border bg-card py-1.5 pl-3.5 pr-1.5 text-left shadow-md transition hover:shadow-lg"
-          >
-            <Search className="size-4 shrink-0 text-primary" aria-hidden />
-            <span className="min-w-0 flex-1 leading-tight">
-              <span className="block truncate text-sm font-bold">
-                {active
-                  ? `${portsLabel(filters.departurePortIds)} ${filters.roundTrip ? "⇄" : "→"} ${portsLabel(filters.arrivalPortIds)}`
-                  : "Trouver ma traversée"}
+      <div className="flex flex-col">
+        {!editing && !active ? (
+          <div className="bw-search-welcome">
+            <p className="bw-eyebrow">Le plaisir de se retrouver</p>
+            <h2>On prend le large ?</h2>
+            <p>Choisissez vos ports. Nous vous aidons à préparer la traversée.</p>
+          </div>
+        ) : null}
+        {/* RECHERCHE : capsule condensée façon Airbnb, formulaire guidé à la demande */}
+        {!editing ? (
+          <section className="border-b px-3 py-2.5 md:px-5">
+            <button type="button" onClick={startSearch} className="bw-search-summary">
+              <Search className="size-4 shrink-0 text-primary" aria-hidden />
+              <span className="min-w-0 flex-1 leading-tight">
+                <span className="block truncate text-sm font-bold">
+                  {active
+                    ? `${portsLabel(filters.departurePortIds)} ${filters.roundTrip ? "⇄" : "→"} ${portsLabel(filters.arrivalPortIds)}`
+                    : "Trouver ma traversée"}
+                </span>
+                <span className="block truncate text-[11px] text-muted-foreground">
+                  {datesLabel} · {summarizePassengers(profile.passengers)}
+                  {profile.vehicle !== "none" ? ` · ${summarizeVehicle(profile)}` : ""}
+                </span>
               </span>
-              <span className="block truncate text-[11px] text-muted-foreground">
-                {datesLabel} · {summarizePassengers(profile.passengers)}
-                {profile.vehicle !== "none" ? ` · ${summarizeVehicle(profile)}` : ""}
+              <span className="bw-search-icon" aria-hidden>
+                <SlidersHorizontal className="size-4" />
               </span>
-            </span>
-            <span className="grid size-8 shrink-0 place-items-center rounded-full border border-border text-foreground" aria-hidden>
-              <SlidersHorizontal className="size-4" />
-            </span>
-            <span className="sr-only">Modifier la recherche</span>
-          </button>
-        </section>
-      ) : null}
-      <section ref={searchRef} className={`scroll-mt-0 space-y-3 border-b bg-card px-4 pb-4 pt-4 md:bg-transparent md:bg-gradient-to-b md:from-primary/[0.06] md:to-transparent md:px-5 ${editing ? "" : "hidden"}`}>
-        <div className="flex items-center justify-between gap-2">
-          <div
-            className="batogo-tabbar inline-grid grid-cols-2 gap-0.5 !rounded-full !p-0.5"
-            role="radiogroup"
-            aria-label="Type de voyage"
-          >
-            {[true, false].map((round) => (
-              <button
-                key={String(round)}
-                type="button"
-                role="radio"
-                aria-checked={filters.roundTrip === round}
-                data-active={filters.roundTrip === round}
-                onClick={() =>
-                  set({ roundTrip: round, returnDate: round ? filters.returnDate : null })
-                }
-                className="batogo-tab !min-h-7 !rounded-full px-3 !text-xs"
-              >
-                {round ? "⇄ Aller-retour" : "→ Aller simple"}
+              <span className="sr-only">Modifier la recherche</span>
+            </button>
+            {!active ? (
+              <button type="button" className="bw-search-start" onClick={startSearch}>
+                Choisir ma traversée <ArrowRight size={18} />
               </button>
-            ))}
-          </div>
-          <button
-            type="button"
-            title="Inverser le sens"
-            aria-label={`Inverser le sens : actuellement ${reversed ? "Algérie → Europe" : "Europe → Algérie"}`}
-            onClick={() => {
-              setReversed((r) => !r);
-              onFiltersChange({ ...swapDirection(filters), date: null, returnDate: null });
-            }}
-            className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-border bg-card px-2.5 py-1.5 text-xs font-semibold text-primary shadow-sm transition hover:bg-primary hover:text-primary-foreground"
-          >
-            <ArrowLeftRight className="size-3.5" />
-            <span className="max-md:hidden">{reversed ? "Algérie → Europe" : "Europe → Algérie"}</span>
-          </button>
-        </div>
-        <StepLabel
-          open={step === 1}
-          onOpen={() => setStep(1)}
-          summary={`${portsLabel(filters.departurePortIds)} ${filters.roundTrip ? "⇄" : "→"} ${portsLabel(filters.arrivalPortIds)}`}
+            ) : null}
+          </section>
+        ) : null}
+        <section
+          ref={searchRef}
+          className={`scroll-mt-0 space-y-3 border-b bg-card px-4 pb-4 pt-4 md:bg-white md:px-5 ${editing ? "" : "hidden"}`}
         >
-          ① Où partez-vous ?
-        </StepLabel>
-        <div
-          className={step === 1 ? "batogo-tabbar grid grid-cols-2 gap-0.5 !rounded-full !p-0.5 md:hidden" : "hidden"}
-          role="tablist"
-          aria-label="Côté du trajet"
-        >
-          {(["departure", "arrival"] as const).map((side) => (
-            <button
-              key={side}
-              type="button"
-              role="tab"
-              aria-selected={portSide === side}
-              data-active={portSide === side}
-              onClick={() => setPortSide(side)}
-              className="batogo-tab !min-h-9 !rounded-full px-3 !text-sm"
+          <div className="flex items-center justify-between gap-2">
+            <div
+              className="batogo-tabbar inline-grid grid-cols-2 gap-0.5 !rounded-full !p-0.5"
+              role="radiogroup"
+              aria-label="Type de voyage"
             >
-              {side === "departure" ? "Départ" : "Arrivée"} ·{" "}
-              <span className="font-normal">
-                {portsLabel(side === "departure" ? filters.departurePortIds : filters.arrivalPortIds)}
+              {[true, false].map((round) => (
+                <button
+                  key={String(round)}
+                  type="button"
+                  role="radio"
+                  aria-checked={filters.roundTrip === round}
+                  data-active={filters.roundTrip === round}
+                  onClick={() =>
+                    set({ roundTrip: round, returnDate: round ? filters.returnDate : null })
+                  }
+                  className="batogo-tab !min-h-7 !rounded-full px-3 !text-xs"
+                >
+                  {round ? "⇄ Aller-retour" : "→ Aller simple"}
+                </button>
+              ))}
+            </div>
+            <button
+              type="button"
+              title="Inverser le sens"
+              aria-label={`Inverser le sens : actuellement ${reversed ? "Algérie → Europe" : "Europe → Algérie"}`}
+              onClick={() => {
+                setReversed((r) => !r);
+                onFiltersChange({ ...swapDirection(filters), date: null, returnDate: null });
+              }}
+              className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-border bg-card px-2.5 py-1.5 text-xs font-semibold text-primary shadow-sm transition hover:bg-primary hover:text-primary-foreground"
+            >
+              <ArrowLeftRight className="size-3.5" />
+              <span className="max-md:hidden">
+                {reversed ? "Algérie → Europe" : "Europe → Algérie"}
               </span>
             </button>
-          ))}
-        </div>
-        <div className={step === 1 ? "-mt-1 grid grid-cols-1 gap-2 bg-card md:grid-cols-2" : "hidden"}>
-          <div className={portSide === "departure" ? "min-w-0" : "min-w-0 max-md:hidden"}>
-          <PortMultiPicker
-            inline
-            title="Départ"
-            direction="departure"
-            ports={ports}
-            routes={routes}
-            countryFilter={reversed ? isAlgeria : isNotAlgeria}
-            value={filters.departurePortIds}
-            otherSide={filters.arrivalPortIds}
-            onChange={(ids) =>
-              onFiltersChange({
-                ...withDeparturePorts(filters, ids, ports, routes),
-                date: null,
-                returnDate: null,
-              })
-            }
-          />
           </div>
-          <div className={portSide === "arrival" ? "min-w-0" : "min-w-0 max-md:hidden"}>
-          <PortMultiPicker
-            inline
-            title="Arrivée"
-            direction="arrival"
-            ports={ports}
-            routes={routes}
-            countryFilter={reversed ? isNotAlgeria : isAlgeria}
-            value={filters.arrivalPortIds}
-            otherSide={filters.departurePortIds}
-            onChange={(ids) =>
-              onFiltersChange({
-                ...withArrivalPorts(filters, ids, ports, routes),
-                date: null,
-                returnDate: null,
-              })
-            }
-          />
-          </div>
-        </div>
-
-        <div id="search-step-2" className="scroll-mt-1" />
-        <StepLabel
-          open={step === 2}
-          onOpen={() => setStep(2)}
-          summary={datesLabel}
-        >
-          ② Quand partez-vous ?
-        </StepLabel>
-        <div className={step === 2 ? "-mt-1" : "hidden"}>
-          <TripCalendar
-            inline
-            open={step === 2}
-            onOpenChange={() => {}}
-            holidaysOn={holidaysOn}
-            onHolidaysChange={setHolidaysOn}
-            field={calField}
-            onFieldChange={setCalField}
-            roundTrip={filters.roundTrip}
-            date={filters.date}
-            returnDate={filters.returnDate}
-            flexDays={filters.flexDays}
-            outDays={outAvailability}
-            backDays={backAvailability}
-            pairLabel={
-              hasPair
-                ? `${fromName(filters.departurePortIds)} → ${fromName(filters.arrivalPortIds)}`
-                : null
-            }
-            today={today}
-            onChange={(patch) => set(patch)}
-          />
-        </div>
-
-        <div id="search-step-3" className="scroll-mt-1" />
-        <StepLabel
-          open={step === 3}
-          onOpen={() => setStep(3)}
-          summary={`${summarizePassengers(profile.passengers)}${profile.vehicle !== "none" ? ` · ${summarizeVehicle(profile)}` : " · Sans véhicule"}`}
-        >
-          ③ Qui voyage, avec quel véhicule ?
-        </StepLabel>
-        <div className={step === 3 ? "-mt-1 space-y-3" : "hidden"}>
-          <div className="rounded-2xl border border-border bg-card p-3 shadow-sm">
-                        <TripProfile value={profile} onChange={setProfile} hideVehicle />
-          </div>
-          <div className="rounded-2xl border border-border bg-card p-3 shadow-sm">
-            <p className="mb-2 text-[11px] font-bold uppercase tracking-wider text-primary">Véhicule</p>
-            <VehicleChips value={profile} onChange={setProfile} />
-          </div>
-        </div>
-
-        <details
-          id="filters-company"
-          className="group rounded-xl text-xs transition-shadow data-[flash=true]:ring-2 data-[flash=true]:ring-primary/50"
-          open={companyOpen || Boolean(filters.companyId || filters.vesselId)}
-          onToggle={(e) => setCompanyOpen((e.currentTarget as HTMLDetailsElement).open)}
-        >
-          <summary className="flex cursor-pointer list-none items-center gap-1 font-semibold text-muted-foreground hover:text-foreground">
-            <ChevronDown className="size-3.5 transition-transform group-open:rotate-180" />{" "}
-            Compagnie, navire
-          </summary>
-          <div className="mt-2 grid grid-cols-2 gap-1.5">
-            <FilterSelect
-              label="Compagnie"
-              open={companyMenuOpen}
-              onOpenChange={setCompanyMenuOpen}
-              value={filters.companyId}
-              onChange={(value) => set({ companyId: value })}
-              options={companies.map((company) => ({
-                value: company.id,
-                label: company.name,
-                leading: (
-                  <CompanyBadge name={company.name} logoUrl={company.logo_url} size={20} />
-                ),
-              }))}
-            />
-            <FilterSelect
-              label="Navire"
-              value={filters.vesselId}
-              onChange={(value) => set({ vesselId: value })}
-              options={vessels.map((vessel) => ({ value: vessel.id, label: vessel.name }))}
-            />
-          </div>
-        </details>
-        <div className="sticky bottom-0 z-10 -mx-4 flex items-center justify-between gap-2 border-t bg-card/95 px-4 py-2.5 backdrop-blur md:-mx-5 md:px-5">
-          <button
-            type="button"
-            onClick={() => {
-              onFiltersChange({ ...emptyFilters, roundTrip: filters.roundTrip });
-              setStep(firstStep);
-            }}
-            className="text-sm font-semibold text-foreground underline underline-offset-2 disabled:opacity-40"
-            disabled={!active}
+          <StepLabel
+            open={step === 1}
+            onOpen={() => setStep(1)}
+            summary={`${portsLabel(filters.departurePortIds)} ${filters.roundTrip ? "⇄" : "→"} ${portsLabel(filters.arrivalPortIds)}`}
           >
-            <span className="md:hidden">Effacer</span>
-            <span className="max-md:hidden">Effacer tout</span>
-          </button>
-          <div className="flex items-center gap-2">
-          {step > firstStep || (portSide === "arrival" && editing) ? (
-            <button
-              type="button"
-              onClick={() => {
-                if (step === 1) {
-                  setPortSide("departure");
-                  return;
+            ① Où partez-vous ?
+          </StepLabel>
+          <div className={step === 1 ? "grid grid-cols-1 gap-3" : "hidden"}>
+            <div className="min-w-0">
+              <PortMultiPicker
+                title="Départ"
+                direction="departure"
+                ports={ports}
+                routes={routes}
+                countryFilter={reversed ? isAlgeria : isNotAlgeria}
+                value={filters.departurePortIds}
+                otherSide={filters.arrivalPortIds}
+                onChange={(ids) =>
+                  onFiltersChange({
+                    ...withDeparturePorts(filters, ids, ports, routes),
+                    date: null,
+                    returnDate: null,
+                  })
                 }
-                if (step === 2) setPortSide("arrival");
-                setStep((s) => (s - 1) as 1 | 2 | 3);
-              }}
-              className="h-11 rounded-xl px-3 text-sm font-semibold text-muted-foreground transition hover:bg-secondary hover:text-foreground"
-            >
-              ← Retour
-            </button>
-          ) : null}
-          {step < lastStep ? (
-            <button
-              type="button"
-              onClick={() => {
-                // Mobile : Départ → Arrivée avant de passer aux dates.
-                if (step === 1 && portSide === "departure" && isMobileView()) {
-                  setPortSide("arrival");
-                  return;
-                }
-                if (step === 1) setCalField("out");
-                setStep((s) => (s + 1) as 1 | 2 | 3);
-              }}
-              className="flex h-11 items-center justify-center gap-2 rounded-xl bg-primary px-5 text-sm font-bold text-primary-foreground shadow-md transition hover:opacity-90"
-            >
-              Suivant →
-            </button>
-          ) : (
-          <button
-            type="button"
-            onClick={() => setEditing(false)}
-            className="flex h-11 items-center justify-center gap-2 rounded-xl bg-primary px-4 text-sm font-bold text-primary-foreground shadow-md transition hover:opacity-90"
-          >
-            <Search className="size-4" aria-hidden />
-            <span className="md:hidden">Voir{active && resultCount ? ` (${resultCount})` : ""}</span>
-            <span className="max-md:hidden">Trouver ma traversée{active && resultCount ? ` (${resultCount})` : ""}</span>
-          </button>
-          )}
-          </div>
-        </div>
-      </section>
-
-      {/* RÉSULTATS */}
-      <section className="space-y-5 px-4 py-4 md:px-5">
-        {isLoading ? (
-          <div className="space-y-2" aria-busy="true">
-            {[0, 1, 2].map((item) => (
-              <div key={item} className="h-[120px] animate-pulse rounded-2xl bg-muted" />
-            ))}
-          </div>
-        ) : (
-          <>
-            {!hasPair && !active ? (
-              <div className="-mx-4 space-y-1.5 md:-mx-5">
-                <h2 className="px-4 text-[11px] font-bold uppercase tracking-wider text-muted-foreground md:px-5">
-                  Trajets fréquents
-                </h2>
-                <div className="flex gap-1.5 overflow-x-auto px-4 pb-1 [scrollbar-width:none] md:px-5 [&::-webkit-scrollbar]:hidden">
-                  {pairs.map((pair, index) => (
-                    <button
-                      key={`${pair.from.id}-${pair.to.id}`}
-                      type="button"
-                      onClick={() => route(pair.from.id, pair.to.id)}
-                      style={{ animationDelay: `${index * 50}ms` }}
-                      className="sailing-card inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full border border-border bg-card px-3 py-2 text-xs font-semibold shadow-sm transition hover:-translate-y-0.5 hover:border-primary hover:shadow-md"
-                    >
-                      {pair.from.name} <ArrowRight className="size-3 text-primary" /> {pair.to.name}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            ) : null}
-
-            {filters.roundTrip ? (
-              <RoundTripSection
-                trips={roundTrips}
-                hasPorts={filters.departurePortIds.length + filters.arrivalPortIds.length > 0}
-                onOpenVessel={(id) => onSelect({ type: "vessel", id })}
-                onOpenRoute={(id) => onSelect({ type: "route", id })}
-                onHoverRoute={setHoverRouteId}
-                onFocusRoute={(routeId) => {
-                  setOpenCard(routeId ? { id: routeId, routeId } : null);
-                  onFocusRoute?.(routeId);
-                }}
               />
-            ) : (
-            <ResultBlock
-              liveByDeparture={liveByDeparture}
-              title={
-                hasPair
-                  ? `Aller · ${fromName(filters.departurePortIds)} → ${fromName(filters.arrivalPortIds)}`
-                  : filters.departurePortIds.length || filters.arrivalPortIds.length
-                    ? "Traversées"
-                    : "Prochains départs"
-              }
-              subtitle="Heures locales des ports"
-              days={outDays}
+            </div>
+            <div className="min-w-0">
+              <PortMultiPicker
+                title="Arrivée"
+                direction="arrival"
+                ports={ports}
+                routes={routes}
+                countryFilter={reversed ? isNotAlgeria : isAlgeria}
+                value={filters.arrivalPortIds}
+                otherSide={filters.departurePortIds}
+                onChange={(ids) =>
+                  onFiltersChange({
+                    ...withArrivalPorts(filters, ids, ports, routes),
+                    date: null,
+                    returnDate: null,
+                  })
+                }
+              />
+            </div>
+          </div>
+
+          <div id="search-step-2" className="scroll-mt-1" />
+          <StepLabel open={step === 2} onOpen={() => setStep(2)} summary={datesLabel}>
+            ② Quand partez-vous ?
+          </StepLabel>
+          <div className={step === 2 ? "-mt-1" : "hidden"}>
+            <TripCalendar
+              inline
+              open={step === 2}
+              onOpenChange={() => {}}
+              holidaysOn={holidaysOn}
+              onHolidaysChange={setHolidaysOn}
+              field={calField}
+              onFieldChange={setCalField}
+              roundTrip={filters.roundTrip}
               date={filters.date}
-              onDate={(day) =>
-                set({
-                  date: day,
-                  returnDate:
-                    day && filters.returnDate && filters.returnDate < day
-                      ? null
-                      : filters.returnDate,
-                })
+              returnDate={filters.returnDate}
+              flexDays={filters.flexDays}
+              outDays={outAvailability}
+              backDays={backAvailability}
+              pairLabel={
+                hasPair
+                  ? `${fromName(filters.departurePortIds)} → ${fromName(filters.arrivalPortIds)}`
+                  : null
               }
-              list={outShown}
-              total={outList.length}
-              recommended={outRecommended}
-              multiDay={filters.flexDays > 0}
-              openId={openCard?.id ?? null}
-              onToggle={toggleCard}
-              onHoverRoute={setHoverRouteId}
-              onOpenVessel={(id) => onSelect({ type: "vessel", id })}
-              onOpenRoute={(id) => onSelect({ type: "route", id })}
-              onMore={() => setShowAllOut(true)}
-              expanded={showAllOut || Boolean(filters.date)}
-              emptyText="Aucune traversée connue pour cette recherche."
-              onReset={
-                active
-                  ? () => onFiltersChange({ ...emptyFilters, roundTrip: filters.roundTrip })
-                  : undefined
-              }
+              today={today}
+              onChange={(patch) => set(patch)}
             />
-            )}
-          </>
-        )}
-      </section>
-    </div>
+          </div>
+
+          <div id="search-step-3" className="scroll-mt-1" />
+          <StepLabel
+            open={step === 3}
+            onOpen={() => setStep(3)}
+            summary={`${summarizePassengers(profile.passengers)}${profile.vehicle !== "none" ? ` · ${summarizeVehicle(profile)}` : " · Sans véhicule"}`}
+          >
+            ③ Qui voyage, avec quel véhicule ?
+          </StepLabel>
+          <div className={step === 3 ? "-mt-1 space-y-3" : "hidden"}>
+            <div className="rounded-2xl border border-border bg-card p-3 shadow-sm">
+              <TripProfile value={profile} onChange={setProfile} hideVehicle />
+            </div>
+            <div className="rounded-2xl border border-border bg-card p-3 shadow-sm">
+              <p className="mb-2 text-[11px] font-bold uppercase tracking-wider text-primary">
+                Véhicule
+              </p>
+              <VehicleChips value={profile} onChange={setProfile} />
+            </div>
+          </div>
+
+          <details
+            id="filters-company"
+            className="group rounded-xl text-xs transition-shadow data-[flash=true]:ring-2 data-[flash=true]:ring-primary/50"
+            open={companyOpen || Boolean(filters.companyId || filters.vesselId)}
+            onToggle={(e) => setCompanyOpen((e.currentTarget as HTMLDetailsElement).open)}
+          >
+            <summary className="flex cursor-pointer list-none items-center gap-1 font-semibold text-muted-foreground hover:text-foreground">
+              <ChevronDown className="size-3.5 transition-transform group-open:rotate-180" />{" "}
+              Compagnie, navire
+            </summary>
+            <div className="mt-2 grid grid-cols-2 gap-1.5">
+              <FilterSelect
+                label="Compagnie"
+                open={companyMenuOpen}
+                onOpenChange={setCompanyMenuOpen}
+                value={filters.companyId}
+                onChange={(value) => set({ companyId: value })}
+                options={companies.map((company) => ({
+                  value: company.id,
+                  label: company.name,
+                  leading: (
+                    <CompanyBadge name={company.name} logoUrl={company.logo_url} size={20} />
+                  ),
+                }))}
+              />
+              <FilterSelect
+                label="Navire"
+                value={filters.vesselId}
+                onChange={(value) => set({ vesselId: value })}
+                options={vessels.map((vessel) => ({ value: vessel.id, label: vessel.name }))}
+              />
+            </div>
+          </details>
+          <div className="sticky bottom-0 z-10 -mx-4 flex items-center justify-between gap-1 border-t bg-card/95 px-4 py-2.5 backdrop-blur md:-mx-5 md:px-5">
+            <button
+              type="button"
+              onClick={() => {
+                onFiltersChange({ ...emptyFilters, roundTrip: filters.roundTrip });
+                setStep(firstStep);
+              }}
+              className="text-sm font-semibold text-foreground underline underline-offset-2 disabled:opacity-40"
+              disabled={!active}
+            >
+              <span className="md:hidden">Effacer</span>
+              <span className="max-md:hidden">Effacer tout</span>
+            </button>
+            <div className="flex items-center gap-1">
+              {step > firstStep ? (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setStep((s) => (s - 1) as 1 | 2 | 3);
+                  }}
+                  className="h-11 whitespace-nowrap rounded-xl px-2 text-sm font-semibold text-muted-foreground transition hover:bg-secondary hover:text-foreground"
+                >
+                  ← Retour
+                </button>
+              ) : null}
+              {step < lastStep ? (
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (step === 1) setCalField("out");
+                    setStep((s) => (s + 1) as 1 | 2 | 3);
+                  }}
+                  className="flex h-11 whitespace-nowrap items-center justify-center gap-2 rounded-xl bg-primary px-3 text-sm font-bold text-primary-foreground shadow-md transition hover:opacity-90"
+                >
+                  Suivant →
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setEditing(false);
+                    searchRef.current
+                      ?.closest(".batogo-panel-scroll")
+                      ?.scrollTo({ top: 0, behavior: "instant" });
+                  }}
+                  className="flex h-11 items-center justify-center gap-2 rounded-xl bg-primary px-4 text-sm font-bold text-primary-foreground shadow-md transition hover:opacity-90"
+                >
+                  <Search className="size-4" aria-hidden />
+                  <span className="md:hidden">
+                    Voir{active && resultCount ? ` (${resultCount})` : ""}
+                  </span>
+                  <span className="max-md:hidden">
+                    Trouver ma traversée{active && resultCount ? ` (${resultCount})` : ""}
+                  </span>
+                </button>
+              )}
+            </div>
+          </div>
+        </section>
+
+        {/* RÉSULTATS */}
+        <section className="space-y-5 px-4 py-4 md:px-5">
+          {isLoading ? (
+            <div className="space-y-2" aria-busy="true">
+              {[0, 1, 2].map((item) => (
+                <div key={item} className="h-[120px] animate-pulse rounded-2xl bg-muted" />
+              ))}
+            </div>
+          ) : (
+            <>
+              {!hasPair && !active ? (
+                <div className="-mx-4 space-y-1.5 md:-mx-5">
+                  <h2 className="px-4 text-[11px] font-bold uppercase tracking-wider text-muted-foreground md:px-5">
+                    Trajets fréquents
+                  </h2>
+                  <div className="flex gap-1.5 overflow-x-auto px-4 pb-1 [scrollbar-width:none] md:px-5 [&::-webkit-scrollbar]:hidden">
+                    {pairs.map((pair, index) => (
+                      <button
+                        key={`${pair.from.id}-${pair.to.id}`}
+                        type="button"
+                        onClick={() => route(pair.from.id, pair.to.id)}
+                        style={{ animationDelay: `${index * 50}ms` }}
+                        className="sailing-card inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full border border-border bg-card px-3 py-2 text-xs font-semibold shadow-sm transition hover:-translate-y-0.5 hover:border-primary hover:shadow-md"
+                      >
+                        {pair.from.name} <ArrowRight className="size-3 text-primary" />{" "}
+                        {pair.to.name}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              ) : null}
+
+              {!active ? (
+                <div className="rounded-xl bg-secondary/60 p-4 text-sm leading-6 text-muted-foreground">
+                  Choisissez un trajet pour voir les départs connus.
+                </div>
+              ) : filters.roundTrip ? (
+                <RoundTripSection
+                  trips={roundTrips}
+                  hasPorts={filters.departurePortIds.length + filters.arrivalPortIds.length > 0}
+                  onOpenVessel={(id) => onSelect({ type: "vessel", id })}
+                  onOpenRoute={(id) => onSelect({ type: "route", id })}
+                  onHoverRoute={setHoverRouteId}
+                  onFocusRoute={(routeId) => {
+                    setOpenCard(routeId ? { id: routeId, routeId } : null);
+                    onFocusRoute?.(routeId);
+                  }}
+                />
+              ) : (
+                <ResultBlock
+                  liveByDeparture={liveByDeparture}
+                  title={
+                    hasPair
+                      ? `Aller · ${fromName(filters.departurePortIds)} → ${fromName(filters.arrivalPortIds)}`
+                      : filters.departurePortIds.length || filters.arrivalPortIds.length
+                        ? "Traversées"
+                        : "Prochains départs"
+                  }
+                  subtitle="Heures locales des ports"
+                  days={outDays}
+                  date={filters.date}
+                  onDate={(day) =>
+                    set({
+                      date: day,
+                      returnDate:
+                        day && filters.returnDate && filters.returnDate < day
+                          ? null
+                          : filters.returnDate,
+                    })
+                  }
+                  list={outShown}
+                  total={outList.length}
+                  recommended={outRecommended}
+                  multiDay={filters.flexDays > 0}
+                  openId={openCard?.id ?? null}
+                  onToggle={toggleCard}
+                  onHoverRoute={setHoverRouteId}
+                  onOpenVessel={(id) => onSelect({ type: "vessel", id })}
+                  onOpenRoute={(id) => onSelect({ type: "route", id })}
+                  onMore={() => setShowAllOut(true)}
+                  expanded={showAllOut || Boolean(filters.date)}
+                  emptyText="Aucune traversée connue pour cette recherche."
+                  onReset={
+                    active
+                      ? () => onFiltersChange({ ...emptyFilters, roundTrip: filters.roundTrip })
+                      : undefined
+                  }
+                />
+              )}
+            </>
+          )}
+        </section>
+      </div>
     </FareProfileContext.Provider>
   );
 }
@@ -870,7 +860,11 @@ function FilterSelect({
   options: { value: string; label: string; leading?: ReactNode }[];
 }) {
   return (
-    <Select {...(open !== undefined && onOpenChange ? { open, onOpenChange } : {})} value={value ?? ANY} onValueChange={(next) => onChange(next === ANY ? null : next)}>
+    <Select
+      {...(open !== undefined && onOpenChange ? { open, onOpenChange } : {})}
+      value={value ?? ANY}
+      onValueChange={(next) => onChange(next === ANY ? null : next)}
+    >
       <SelectTrigger className="batogo-control h-10 text-xs" aria-label={label}>
         <SelectValue placeholder={label} />
       </SelectTrigger>
@@ -951,7 +945,11 @@ function RoundTripSection({
   );
 }
 
-const shortDayFormatter = new Intl.DateTimeFormat("fr-FR", { day: "numeric", month: "short", timeZone: "UTC" });
+const shortDayFormatter = new Intl.DateTimeFormat("fr-FR", {
+  day: "numeric",
+  month: "short",
+  timeZone: "UTC",
+});
 function shortDay(key: string) {
   return shortDayFormatter.format(new Date(`${key}T00:00:00Z`));
 }
@@ -976,7 +974,9 @@ function StepLabel({
   className?: string;
 }) {
   if (open || forceOpen) {
-    return <h3 className={`font-display text-base font-bold tracking-tight ${className}`}>{children}</h3>;
+    return (
+      <h3 className={`font-display text-base font-bold tracking-tight ${className}`}>{children}</h3>
+    );
   }
   return (
     <button

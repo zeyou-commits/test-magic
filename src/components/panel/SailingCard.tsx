@@ -21,7 +21,7 @@ import { formatAge, formatDelay, type LiveShip } from "@/lib/ferry/tracking";
 import { wallTimeInZone, zoneLabel } from "@/lib/ferry/time";
 import { ReportButton } from "./ReportButton";
 import { ShareButtons } from "./ShareButtons";
-import { CompanyBadge, companyColor } from "./CompanyBadge";
+import { CompanyBadge } from "./CompanyBadge";
 import { estimateFare, formatEuro, useFareProfile } from "@/lib/ferry/pricing";
 
 const dayFormatter = new Intl.DateTimeFormat("fr-FR", {
@@ -64,7 +64,6 @@ export function SailingCard({
   const arrivalSuffix = sailing.arrDayOffset > 0 ? `+${sailing.arrDayOffset}` : "";
   const departure = sailing.departure;
   const panelId = `sailing-${departure.id}`;
-  const brand = companyColor(sailing.company?.name);
   const fare = estimateFare(sailing, profile);
 
   return (
@@ -78,7 +77,7 @@ export function SailingCard({
     >
       <span
         className="absolute inset-y-0 left-0 w-1.5"
-        style={{ background: brand.solid }}
+        style={{ background: "#1e5b7a" }}
         aria-hidden
       />
       <button
@@ -166,7 +165,11 @@ export function SailingCard({
             ) : null}
           </div>
         </div>
-        <span className="ml-auto shrink-0 text-sm font-bold tabular-nums text-success" title="Tarif moyen indicatif">
+        <span
+          className="ml-auto shrink-0 text-sm font-bold tabular-nums text-success"
+          title="Tarif moyen indicatif"
+        >
+          <span className="block text-[10px] font-normal text-muted-foreground">Budget estimé</span>
           {formatEuro(fare)}
         </span>
         {href ? (
@@ -176,7 +179,7 @@ export function SailingCard({
             rel="noopener noreferrer"
             className="inline-flex h-8 shrink-0 items-center gap-1 rounded-full bg-cta px-3 text-xs font-semibold text-cta-foreground shadow-sm transition hover:brightness-110 active:scale-95"
           >
-            Réserver <ArrowUpRight className="size-3.5" aria-hidden />
+            Voir l’offre <ArrowUpRight className="size-3.5" aria-hidden />
             <span className="sr-only">sur {bookingSite(sailing)} (nouvel onglet)</span>
           </a>
         ) : null}
@@ -190,7 +193,13 @@ export function SailingCard({
         className={`grid transition-[grid-template-rows] duration-300 ease-out ${expanded ? "grid-rows-[1fr]" : "grid-rows-[0fr]"}`}
       >
         <div className="overflow-hidden">
-          <SailingDetail sailing={sailing} onOpenVessel={onOpenVessel} onOpenRoute={onOpenRoute} />
+          {expanded ? (
+            <SailingDetail
+              sailing={sailing}
+              onOpenVessel={onOpenVessel}
+              onOpenRoute={onOpenRoute}
+            />
+          ) : null}
         </div>
       </div>
     </article>
@@ -215,9 +224,7 @@ export function SailingDetail({
   const bookingHref = showBooking ? bookingUrl(sailing, profile) : null;
   return (
     <div className="space-y-2.5 border-t bg-card px-3.5 py-3 text-xs">
-      <dl
-        className={`grid gap-2 ${sailing.route.distance_km ? "grid-cols-3" : "grid-cols-2"}`}
-      >
+      <dl className={`grid gap-2 ${sailing.route.distance_km ? "grid-cols-3" : "grid-cols-2"}`}>
         <Fact label="Durée" value={formatDuration(sailing.durationMin)} />
         <Fact
           label="Arrivée"
@@ -275,7 +282,7 @@ export function SailingDetail({
             rel="noopener noreferrer"
             className="ml-auto inline-flex h-8 items-center gap-1 rounded-full bg-cta px-3 font-semibold text-cta-foreground shadow-sm transition hover:brightness-110 active:scale-95"
           >
-            Réserver <ArrowUpRight className="size-3.5" aria-hidden />
+            Voir l’offre <ArrowUpRight className="size-3.5" aria-hidden />
           </a>
         ) : null}
       </div>

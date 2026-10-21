@@ -13,11 +13,10 @@ import workerUrl from "maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url";
 import "maplibre-gl/dist/maplibre-gl.css";
 import type { Port, RouteLine, Selection } from "@/lib/ferry/types";
 import { formatDuration } from "@/lib/ferry/format";
-import { portColor, routeColor } from "@/lib/ferry/colors";
 import { algeriaGeoJson } from "@/lib/ferry/algeriaGeoJson";
 import { routeArc } from "@/lib/ferry/geo";
 import type { FleetShip } from "@/lib/ferry/fleet";
-import { addShipImages, WAKE_FRAMES } from "./shipIcons";
+import { addShipImages } from "./shipIcons";
 import { physicalStatus, projectedPosition } from "@/lib/ferry/tracking";
 import { portTimeZone, wallTimeInZone } from "@/lib/ferry/time";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -32,9 +31,21 @@ export interface PortMeta {
   routes: number;
   companies: { name: string; logoUrl: string | null }[];
   /** Prochains départs depuis ce port, déjà formatés en heure locale du port. */
-  upcoming: { date: string; time: string; to: string | null; companyName: string | null; logoUrl: string | null }[];
+  upcoming: {
+    date: string;
+    time: string;
+    to: string | null;
+    companyName: string | null;
+    logoUrl: string | null;
+  }[];
   /** Prochaines arrivées prévues dans ce port, en heure locale. */
-  upcomingArrivals: { date: string; time: string; from: string | null; companyName: string | null; logoUrl: string | null }[];
+  upcomingArrivals: {
+    date: string;
+    time: string;
+    from: string | null;
+    companyName: string | null;
+    logoUrl: string | null;
+  }[];
 }
 
 interface FerryMapProps {
@@ -69,6 +80,10 @@ interface FerryMapProps {
 
 // Limite de dézoom : on ne peut pas s'éloigner plus que « toute la Méditerranée occidentale visible »
 // (plancher relevé selon la largeur d'écran pour empêcher une vue planisphère).
+function cameraDuration(milliseconds: number) {
+  return window.matchMedia("(prefers-reduced-motion: reduce)").matches ? 0 : milliseconds;
+}
+
 function minZoomFloor() {
   const width = typeof window === "undefined" ? 1280 : window.innerWidth;
   if (width < 768) return 2.2;
@@ -178,7 +193,7 @@ function routeFeatures(
         type: "Feature" as const,
         properties: {
           id: route.id,
-          color: routeColor(route.color, from.slug),
+          color: "#1e5b7a",
           lineCount: departureLineCounts.get(route.departure_port_id) ?? 1,
           label,
           selected: selectedRouteId === route.id,
@@ -319,7 +334,10 @@ export default function FerryMap({
     const map = new MapLibreMap({
       container,
       style: MAP_STYLE,
-      bounds: typeof window !== "undefined" && window.innerWidth >= 768 ? DESKTOP_OVERVIEW_BOUNDS : OVERVIEW_BOUNDS,
+      bounds:
+        typeof window !== "undefined" && window.innerWidth >= 768
+          ? DESKTOP_OVERVIEW_BOUNDS
+          : OVERVIEW_BOUNDS,
       fitBoundsOptions: { padding: viewPadding() },
       // La carte est physiquement cantonnée à la Méditerranée occidentale :
       // impossible de faire glisser hors de cette zone.
@@ -333,11 +351,26 @@ export default function FerryMap({
       dragRotate: false,
       attributionControl: false,
       fadeDuration: 0,
+      cooperativeGestures: true,
+      scrollZoom: false,
     });
     map.touchZoomRotate.disableRotation();
 
     map.addControl(new NavigationControl({ showCompass: false }), "bottom-right");
     map.addControl(new AttributionControl({ compact: true }), "bottom-right");
+    const attribution = map
+      .getContainer()
+      .querySelector<HTMLDetailsElement>("details.maplibregl-ctrl-attrib");
+    if (attribution) {
+      attribution.open = false;
+      attribution.classList.remove("maplibregl-compact-show");
+    }
+    map.once("idle", () => {
+      if (attribution) {
+        attribution.open = false;
+        attribution.classList.remove("maplibregl-compact-show");
+      }
+    });
 
     mapRef.current = map;
 
@@ -357,6 +390,30 @@ export default function FerryMap({
 
     map.on("error", (e) => console.error("MAP ERROR", e.error?.message ?? e.error));
     map.on("load", () => {
+      // Fond maritime calme : les ports et les traversées portent la hiérarchie.
+      for (const layer of map.getStyle().layers) {
+        if (layer.type === "background")
+          map.setPaintProperty(layer.id, "background-color", "#f6f2ea");
+        if (layer.type === "fill") {
+          map.setPaintProperty(
+            layer.id,
+            "fill-color",
+            /water/.test(layer.id) ? "#e5eff0" : "#f6f2ea",
+          );
+        }
+        if (
+          layer.type === "raster" ||
+          /hillshade|landcover|landuse|building|road|bridge|tunnel|aeroway|poi|railway|peak/.test(
+            layer.id,
+          )
+        ) {
+          map.setLayoutProperty(layer.id, "visibility", "none");
+        }
+        if (layer.type === "symbol" && /label_country|water_name/.test(layer.id)) {
+          map.setPaintProperty(layer.id, "text-color", "#627d8a");
+          map.setPaintProperty(layer.id, "text-halo-color", "#f6f2ea");
+        }
+      }
       // Les ports sont étiquetés par Batogo ; on masque les villes du fond de carte pour éviter les doublons.
       ["label_other", "label_village", "label_town", "label_city", "label_city_capital"].forEach(
         (layerId) => {
@@ -444,7 +501,7 @@ export default function FerryMap({
             ["get", "selected"],
             mapColor("--map-route-selected", "rgb(214, 90, 60)"),
             ["get", "dateDimmed"],
-            "#9aa5a9",
+            "#627d8a",
             ["get", "color"],
           ],
           "line-width": [
@@ -469,7 +526,7 @@ export default function FerryMap({
         id: "ferry-routes-duration",
         type: "symbol",
         source: "ferry-routes",
-        minzoom: 4,
+        minzoom: 5,
         layout: {
           "symbol-placement": "line-center",
           "text-field": ["get", "label"],
@@ -723,7 +780,8 @@ export default function FerryMap({
     if (!map || !mapReady || selection) return;
     // Recalcule la limite de dézoom d'après la place réellement disponible (volet ou tiroir compris).
     const limit = map.cameraForBounds(LIMIT_BOUNDS, { padding: viewPadding() });
-    if (limit?.zoom !== undefined) map.setMinZoom(Math.min(minZoomFloor(), Math.max(2.2, limit.zoom - 0.6)));
+    if (limit?.zoom !== undefined)
+      map.setMinZoom(Math.min(minZoomFloor(), Math.max(2.2, limit.zoom - 0.6)));
     const chosen = fitPortIds
       .map((id) => ports.find((port) => port.id === id))
       .filter((port): port is Port => Boolean(port));
@@ -736,15 +794,15 @@ export default function FerryMap({
           [Math.min(...lngs) - 0.6, Math.min(...lats) - 0.6],
           [Math.max(...lngs) + 0.6, Math.max(...lats) + 0.6],
         ],
-        { padding: viewPadding(), maxZoom: 6.2, duration: 800 },
+        { padding: viewPadding(), maxZoom: 6.2, duration: cameraDuration(800) },
       );
     } else {
-     // On utilise un point central "Espagne - Algérie" (~ longitude 0, latitude 39)
+      // On utilise un point central "Espagne - Algérie" (~ longitude 0, latitude 39)
       map.easeTo({
         center: [4, 39],
         zoom: !isMobile ? 4.2 : 3.6, // Ajustez ce zoom selon ce que vous voulez voir
-        padding: viewPadding(),      // Le padding décale magiquement le centre vers la droite !
-        duration: 600
+        padding: viewPadding(), // Le padding décale magiquement le centre vers la droite !
+        duration: cameraDuration(600),
       });
     }
   }, [isMobile, mapReady, mobileBottomInset, desktopLeftInset, fitPortIds.join("|"), ports.length]);
@@ -778,7 +836,7 @@ export default function FerryMap({
       } else {
         const el = document.createElement("div");
         el.className = "port-marker";
-        el.style.setProperty("--port-color", portColor(port.slug));
+        el.style.setProperty("--port-color", "#16324a");
 
         const dot = document.createElement("button");
         dot.type = "button";
@@ -820,7 +878,7 @@ export default function FerryMap({
             map.easeTo({
               center: [port.longitude, port.latitude],
               offset: [0, -insetsRef.current.mobileBottomInset / 2 + 40],
-              duration: 350,
+              duration: cameraDuration(350),
             });
           } else {
             // Cliquer un port le sélectionne, sans modifier les filtres de recherche.
@@ -889,52 +947,132 @@ export default function FerryMap({
 
       const tabBar = document.createElement("div");
       tabBar.className = "port-tip__tabs";
-      Object.assign(tabBar.style, { display: "grid", gridTemplateColumns: "1fr 1fr", gap: "4px", padding: "4px", margin: "10px 0 8px", borderRadius: "12px", background: "rgba(127,127,127,.12)" });
+      Object.assign(tabBar.style, {
+        display: "grid",
+        gridTemplateColumns: "1fr 1fr",
+        gap: "4px",
+        padding: "4px",
+        margin: "10px 0 8px",
+        borderRadius: "12px",
+        background: "rgba(127,127,127,.12)",
+      });
       const makeTab = (label: string, active: boolean) => {
         const button = document.createElement("button");
-        button.type = "button"; button.textContent = label;
+        button.type = "button";
+        button.textContent = label;
         button.setAttribute("aria-pressed", String(active));
-        Object.assign(button.style, { minHeight: "34px", border: "0", borderRadius: "3px", padding: "6px 8px", fontSize: "12px", fontWeight: "650", cursor: "pointer", color: active ? "var(--foreground, #171717)" : "var(--muted-foreground, #737373)", background: active ? "var(--background, #fff)" : "transparent", boxShadow: active ? "0 1px 3px rgba(0,0,0,.12)" : "none", transition: "all .18s ease" });
+        Object.assign(button.style, {
+          minHeight: "34px",
+          border: "0",
+          borderRadius: "3px",
+          padding: "6px 8px",
+          fontSize: "12px",
+          fontWeight: "650",
+          cursor: "pointer",
+          color: active ? "var(--foreground, #171717)" : "var(--muted-foreground, #737373)",
+          background: active ? "var(--background, #fff)" : "transparent",
+          boxShadow: active ? "0 1px 3px rgba(0,0,0,.12)" : "none",
+          transition: "all .18s ease",
+        });
         return button;
       };
       const departureTab = makeTab("↗ Départs", true);
       const arrivalTab = makeTab("↙ Arrivées", false);
-      tabBar.append(departureTab, arrivalTab); tip.append(tabBar);
+      tabBar.append(departureTab, arrivalTab);
+      tip.append(tabBar);
       const departurePanel = document.createElement("div");
       departurePanel.setAttribute("role", "tabpanel");
       const arrivalPanel = document.createElement("div");
-      arrivalPanel.setAttribute("role", "tabpanel"); arrivalPanel.hidden = true;
-      const makeRows = (items: { date: string; time: string; place: string | null; companyName: string | null; logoUrl: string | null }[], emptyText: string) => {
+      arrivalPanel.setAttribute("role", "tabpanel");
+      arrivalPanel.hidden = true;
+      const makeRows = (
+        items: {
+          date: string;
+          time: string;
+          place: string | null;
+          companyName: string | null;
+          logoUrl: string | null;
+        }[],
+        emptyText: string,
+      ) => {
         if (!items.length) {
-          const empty = document.createElement("p"); empty.className = "port-tip__next"; empty.textContent = emptyText;
+          const empty = document.createElement("p");
+          empty.className = "port-tip__next";
+          empty.textContent = emptyText;
           return empty;
         }
-        const list = document.createElement("ul"); list.className = "port-tip__departures";
+        const list = document.createElement("ul");
+        list.className = "port-tip__departures";
         items.slice(0, isMobile ? 2 : 3).forEach((item) => {
-          const row = document.createElement("li"); row.className = "port-tip__departure";
-          const date = document.createElement("span"); date.className = "port-tip__departure-date"; date.textContent = item.date;
-          const time = document.createElement("span"); time.className = "port-tip__departure-time"; time.textContent = item.time;
-          const details = document.createElement("span"); details.style.cssText = "display:flex;flex-direction:column;min-width:0;gap:2px;flex:1";
-          const place = document.createElement("span"); place.className = "port-tip__departure-destination"; place.textContent = item.place ?? "";
-          place.style.cssText = "font-size:11px;line-height:1.25;white-space:nowrap;overflow:hidden;text-overflow:ellipsis";
+          const row = document.createElement("li");
+          row.className = "port-tip__departure";
+          const date = document.createElement("span");
+          date.className = "port-tip__departure-date";
+          date.textContent = item.date;
+          const time = document.createElement("span");
+          time.className = "port-tip__departure-time";
+          time.textContent = item.time;
+          const details = document.createElement("span");
+          details.style.cssText = "display:flex;flex-direction:column;min-width:0;gap:2px;flex:1";
+          const place = document.createElement("span");
+          place.className = "port-tip__departure-destination";
+          place.textContent = item.place ?? "";
+          place.style.cssText =
+            "font-size:11px;line-height:1.25;white-space:nowrap;overflow:hidden;text-overflow:ellipsis";
           details.append(place);
           if (item.companyName) {
-            const company = document.createElement("span"); company.style.cssText = "display:flex;align-items:center;gap:5px;min-width:0;font-size:10px;line-height:1.2;color:var(--muted-foreground,#737373)";
+            const company = document.createElement("span");
+            company.style.cssText =
+              "display:flex;align-items:center;gap:5px;min-width:0;font-size:10px;line-height:1.2;color:var(--muted-foreground,#737373)";
             if (item.logoUrl) {
-              const logo = document.createElement("img"); logo.src = item.logoUrl; logo.alt = ""; logo.loading = "lazy";
-              logo.style.cssText = "width:18px;height:18px;object-fit:contain;border-radius:4px;background:#fff;border:1px solid rgba(127,127,127,.2);padding:1px;flex-shrink:0";
-              logo.onerror = () => logo.remove(); company.append(logo);
+              const logo = document.createElement("img");
+              logo.src = item.logoUrl;
+              logo.alt = "";
+              logo.loading = "lazy";
+              logo.style.cssText =
+                "width:18px;height:18px;object-fit:contain;border-radius:4px;background:#fff;border:1px solid rgba(127,127,127,.2);padding:1px;flex-shrink:0";
+              logo.onerror = () => logo.remove();
+              company.append(logo);
             }
-            const name = document.createElement("span"); name.textContent = item.companyName; name.style.cssText = "overflow:hidden;text-overflow:ellipsis;white-space:nowrap";
-            company.append(name); details.append(company);
+            const name = document.createElement("span");
+            name.textContent = item.companyName;
+            name.style.cssText = "overflow:hidden;text-overflow:ellipsis;white-space:nowrap";
+            company.append(name);
+            details.append(company);
           }
-          date.style.fontSize = "10px"; time.style.fontSize = "13px"; time.style.fontWeight = "700";
-          row.style.gap = "8px"; row.append(date, time, details); list.append(row);
+          date.style.fontSize = "10px";
+          time.style.fontSize = "13px";
+          time.style.fontWeight = "700";
+          row.style.gap = "8px";
+          row.append(date, time, details);
+          list.append(row);
         });
         return list;
       };
-      departurePanel.append(makeRows((meta?.upcoming ?? []).map(item => ({date:item.date,time:item.time,place:item.to ? `→ ${item.to}` : null,companyName:item.companyName,logoUrl:item.logoUrl})), "Aucun départ programmé pour le moment."));
-      arrivalPanel.append(makeRows((meta?.upcomingArrivals ?? []).map(item => ({date:item.date,time:item.time,place:item.from ? `← ${item.from}` : null,companyName:item.companyName,logoUrl:item.logoUrl})), "Aucune arrivée prévue connue pour le moment."));
+      departurePanel.append(
+        makeRows(
+          (meta?.upcoming ?? []).map((item) => ({
+            date: item.date,
+            time: item.time,
+            place: item.to ? `→ ${item.to}` : null,
+            companyName: item.companyName,
+            logoUrl: item.logoUrl,
+          })),
+          "Aucun départ programmé pour le moment.",
+        ),
+      );
+      arrivalPanel.append(
+        makeRows(
+          (meta?.upcomingArrivals ?? []).map((item) => ({
+            date: item.date,
+            time: item.time,
+            place: item.from ? `← ${item.from}` : null,
+            companyName: item.companyName,
+            logoUrl: item.logoUrl,
+          })),
+          "Aucune arrivée prévue connue pour le moment.",
+        ),
+      );
       const activateTab = (arrivals: boolean) => {
         departurePanel.hidden = arrivals;
         arrivalPanel.hidden = !arrivals;
@@ -1010,7 +1148,7 @@ export default function FerryMap({
             [Math.min(from.longitude, to.longitude), Math.min(from.latitude, to.latitude)],
             [Math.max(from.longitude, to.longitude), Math.max(from.latitude, to.latitude)],
           ],
-          { padding: viewPadding(), maxZoom: 6.4, duration: 650 },
+          { padding: viewPadding(), maxZoom: 6.4, duration: cameraDuration(650) },
         );
       }
     } else if (selection.type === "port") {
@@ -1035,13 +1173,13 @@ export default function FerryMap({
             [Math.min(...lngs), Math.min(...lats)],
             [Math.max(...lngs), Math.max(...lats)],
           ],
-          { padding: viewPadding(), maxZoom: 6.4, duration: 650 },
+          { padding: viewPadding(), maxZoom: 6.4, duration: cameraDuration(650) },
         );
       } else if (port) {
         map.easeTo({
           center: [port.longitude, port.latitude],
           padding: viewPadding(),
-          duration: 650,
+          duration: cameraDuration(650),
         });
       }
     } else if (selection.type === "vessel") {
@@ -1053,7 +1191,7 @@ export default function FerryMap({
           center,
           zoom: Math.max(map.getZoom(), 6),
           padding: viewPadding(),
-          duration: 700,
+          duration: cameraDuration(700),
         });
       }
     }
@@ -1067,26 +1205,26 @@ export default function FerryMap({
         center: focusTarget.center,
         zoom: Math.max(map.getZoom(), 7),
         padding: viewPadding(),
-        duration: 800,
+        duration: cameraDuration(800),
       });
     }, 80);
     return () => window.clearTimeout(timer);
   }, [focusTarget?.key, mapReady]);
 
- useEffect(() => {
+  useEffect(() => {
     const map = mapRef.current;
     const container = containerRef.current;
     if (!map || !mapReady || !portsPulseKey || !container) return;
-    
+
     map.stop();
     map.setPadding({ top: 0, right: 0, bottom: 0, left: 0 });
-    
+
     // Remplacement du fitBounds par le centrage fixe
     map.easeTo({
       center: [4, 39],
       zoom: typeof window !== "undefined" && window.innerWidth >= 768 ? 4.2 : 3.2,
       padding: viewPadding(),
-      duration: 800
+      duration: cameraDuration(800),
     });
 
     container.dataset["pulsePorts"] = "false";
@@ -1153,7 +1291,8 @@ export default function FerryMap({
           // Un navire choisi depuis le tableau de bord reste pleinement visible, quelle que soit la ligne active.
           const focused = focusShipId === ship.id;
           const dimmed =
-            !focused && (!visible.has(ship.routeId) || (focus.size > 0 && !focus.has(ship.routeId)));
+            !focused &&
+            (!visible.has(ship.routeId) || (focus.size > 0 && !focus.has(ship.routeId)));
           const selected = selectedRouteId === ship.routeId || focused;
           const live = ship.live;
           const base = live ? projectedPosition(live.position, clock) : ship.lngLat;
@@ -1172,9 +1311,17 @@ export default function FerryMap({
           const toName = toPort?.name;
           const dockName = ship.portId ? portById.get(ship.portId)?.name : undefined;
           const speed = live?.position.speedKnots;
-          const physical = live && fromPort && toPort
-            ? physicalStatus(live.position, fromPort, toPort, live.departure.departure_at, clock, [...portById.values()])
-            : null;
+          const physical =
+            live && fromPort && toPort
+              ? physicalStatus(
+                  live.position,
+                  fromPort,
+                  toPort,
+                  live.departure.departure_at,
+                  clock,
+                  [...portById.values()],
+                )
+              : null;
           let allure: string;
           if (physical) {
             const speedText = speed != null ? ` · ${Math.round(speed)} kts` : "";
@@ -1196,12 +1343,23 @@ export default function FerryMap({
               course,
               name: ship.name,
               allure,
-              allureColor: physical?.tone === "success" ? "#059669" : physical?.tone === "warning" ? "#d97706" : physical?.tone === "info" ? "#1d6fb8" : ship.state === "sea" ? (live ? "#059669" : "#1d6fb8") : "#5b6b7a",
+              allureColor:
+                physical?.tone === "success"
+                  ? "#059669"
+                  : physical?.tone === "warning"
+                    ? "#d97706"
+                    : physical?.tone === "info"
+                      ? "#1d6fb8"
+                      : ship.state === "sea"
+                        ? live
+                          ? "#059669"
+                          : "#1d6fb8"
+                        : "#5b6b7a",
               shipId: ship.id,
               departureId: ship.departureId,
               vesselId: ship.vesselId ?? "",
               opacity: 1,
-              haloColor: selected ? "#e4572e" : "#22c55e",
+              haloColor: selected ? "#0e7a43" : "#1e5b7a",
               haloOpacity: selected ? 0.42 : live ? 0.3 : 0.18,
             },
             geometry: { type: "Point" as const, coordinates },
@@ -1210,24 +1368,12 @@ export default function FerryMap({
       });
     };
 
-    // Sillage animé : on fait défiler les images d'écume des navires en mer.
-    let frame = 0;
-    const animateWake = () => {
-      frame = (frame + 1) % WAKE_FRAMES;
-      const image = ["case", ["==", ["get", "state"], "sea"], `ship-sea-${frame}`, "ship-dock"];
-      ["fleet-ships", "fleet-hover-icon"].forEach((id) => {
-        if (map.getLayer(id)) map.setLayoutProperty(id, "icon-image", image as never);
-      });
-    };
-
+    // Les positions se mettent à jour, sans animation décorative continue du sillage.
     draw();
-    animateWake();
     const timer = window.setInterval(draw, 1000);
-    const wakeTimer = window.setInterval(animateWake, 180);
     map.on("zoomend", draw);
     return () => {
       window.clearInterval(timer);
-      window.clearInterval(wakeTimer);
       map.off("zoomend", draw);
     };
   }, [

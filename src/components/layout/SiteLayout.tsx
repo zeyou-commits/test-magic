@@ -3,6 +3,13 @@ import { Link } from "@tanstack/react-router";
 import { UserMenu } from "./UserMenu";
 import { MobileTabBar } from "./MobileTabBar";
 import { DataUnavailableNotice } from "./DataUnavailableNotice";
+import { ChevronDown, Menu, ArrowUpRight } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 export const navLinks = [
   { to: "/", label: "Carte" },
@@ -39,11 +46,134 @@ export function BrandLink({ compact = false }: { compact?: boolean }) {
       aria-label="BledWay, retour à la carte"
     >
       <img
-        src="/bledway-logo.webp"
+        src="/bledway-brand.png"
         alt="BledWay"
-        className={compact ? "h-9 w-auto max-w-[145px] object-contain" : "h-11 w-auto max-w-[190px] object-contain"}
+        className={compact ? "bw-brand bw-brand-compact" : "bw-brand"}
       />
     </Link>
+  );
+}
+
+export function SiteHeader() {
+  const primary = navLinks.filter((item) =>
+    ["/", "/horaires", "/guide", "/simulateurs"].includes(item.to),
+  );
+  const explore = navLinks.filter((item) =>
+    ["/ports", "/lignes", "/compagnies", "/bateaux"].includes(item.to),
+  );
+  return (
+    <header className="bw-header">
+      <div className="bw-header-inner">
+        <BrandLink />
+        <nav aria-label="Navigation principale" className="bw-desktop-nav">
+          {primary.slice(0, 2).map((item) => (
+            <Link key={item.to} to={item.to} activeOptions={{ exact: item.to === "/" }}>
+              {item.label}
+            </Link>
+          ))}
+          <DropdownMenu>
+            <DropdownMenuTrigger className="bw-explore-trigger">
+              Explorer <ChevronDown size={15} />
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start" className="min-w-48">
+              {explore.map((item) => (
+                <DropdownMenuItem asChild key={item.to}>
+                  <Link to={item.to}>{item.label}</Link>
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
+          {primary.slice(2).map((item) => (
+            <Link key={item.to} to={item.to}>
+              {item.label}
+            </Link>
+          ))}
+        </nav>
+        <div className="bw-header-actions">
+          <UserMenu compact />
+          <DropdownMenu>
+            <DropdownMenuTrigger
+              className="bw-mobile-menu bw-icon-button"
+              aria-label="Ouvrir le menu"
+            >
+              <Menu size={22} />
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="min-w-52">
+              {navLinks.map((item) => (
+                <DropdownMenuItem asChild key={item.to}>
+                  <Link to={item.to}>{item.label}</Link>
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+      </div>
+    </header>
+  );
+}
+
+export function SiteFooter() {
+  return (
+    <footer className="bw-footer">
+      <div className="bw-container bw-footer-grid">
+        <div>
+          <BrandLink />
+          <p>
+            La mer entre nous.
+            <br />
+            Le voyage qui nous rapproche.
+          </p>
+          <span>Ferries Europe ↔ Algérie</span>
+        </div>
+        <div>
+          <h2>Explorer</h2>
+          {navLinks
+            .filter((item) =>
+              ["/", "/horaires", "/ports", "/lignes", "/bateaux", "/compagnies"].includes(item.to),
+            )
+            .map((item) => (
+              <Link key={item.to} to={item.to}>
+                {item.label}
+              </Link>
+            ))}
+        </div>
+        <div>
+          <h2>Préparer le voyage</h2>
+          {footerLinks
+            .filter((item) =>
+              ["/guide", "/voyage-algerie", "/simulateurs", "/covoiturage"].includes(item.to),
+            )
+            .map((item) => (
+              <Link key={item.to} to={item.to}>
+                {item.label}
+              </Link>
+            ))}
+        </div>
+        <div>
+          <h2>À vos côtés</h2>
+          {footerLinks
+            .filter((item) => ["/a-propos", "/contact", "/methode-editoriale"].includes(item.to))
+            .map((item) => (
+              <Link key={item.to} to={item.to}>
+                {item.label}
+              </Link>
+            ))}
+          <Link to="/contact" className="bw-text-link">
+            Une question ? <ArrowUpRight size={16} />
+          </Link>
+        </div>
+      </div>
+      <div className="bw-container bw-footer-bottom">
+        <p>
+          © {new Date().getFullYear()} BledWay · Informations indépendantes. Horaires et offres à
+          confirmer auprès des compagnies.
+        </p>
+        <div>
+          <Link to="/mentions-legales">Mentions légales</Link>
+          <Link to="/confidentialite">Confidentialité</Link>
+        </div>
+      </div>
+    </footer>
   );
 }
 
@@ -56,32 +186,7 @@ export function SiteLayout({ children }: { children: ReactNode }) {
       >
         Aller au contenu
       </a>
-      <header className="sticky top-0 z-40 hidden h-14 w-full items-center justify-between gap-6 border-b border-border/60 bg-background/90 px-5 shadow-[0_1px_12px_-6px_hsl(0_0%_0%/0.15)] backdrop-blur-xl md:flex">
-        <BrandLink />
-        <nav
-          aria-label="Navigation principale"
-          className="flex min-w-0 items-center gap-0.5 overflow-x-auto"
-        >
-          {navLinks.map((link) => (
-            <Link
-              key={link.to}
-              to={link.to}
-              activeOptions={{ exact: link.to === "/" }}
-              className="whitespace-nowrap rounded-full px-3 py-1.5 text-sm font-semibold text-muted-foreground transition-colors hover:bg-muted hover:text-foreground [&.active]:bg-primary/10 [&.active]:text-primary"
-            >
-              {link.label}
-            </Link>
-          ))}
-        </nav>
-        <div className="flex shrink-0 items-center gap-2">
-          <UserMenu />
-        </div>
-      </header>
-
-      <header className="sticky top-0 z-40 flex h-14 w-full items-center justify-between border-b bg-background/95 px-4 backdrop-blur md:hidden">
-        <BrandLink compact />
-        <UserMenu compact />
-      </header>
+      <SiteHeader />
 
       {/* Conteneur commun : largeur maximale et marges latérales sur toutes les pages éditoriales. */}
       <main
@@ -93,22 +198,7 @@ export function SiteLayout({ children }: { children: ReactNode }) {
         {children}
       </main>
 
-      <footer className="mt-auto border-t bg-card py-12 pb-24 text-center text-sm text-muted-foreground md:pb-12">
-        <div className="mx-auto max-w-6xl px-4">
-          <p className="mb-4 flex flex-col items-center gap-2">
-            <img src="/bledway-logo.webp" alt="BledWay" className="mx-auto h-10 w-auto max-w-[150px] object-contain opacity-80" />
-            BledWay © {new Date().getFullYear()} — Informations maritimes indépendantes. Les
-            compagnies restent la seule référence officielle pour les horaires et la réservation.
-          </p>
-          <div className="flex flex-wrap justify-center gap-4 gap-y-2">
-            {footerLinks.map((link) => (
-              <Link key={link.to} to={link.to} className="hover:underline">
-                {link.label}
-              </Link>
-            ))}
-          </div>
-        </div>
-      </footer>
+      <SiteFooter />
       <div className="fixed bottom-0 left-0 right-0 z-50 md:hidden">
         <MobileTabBar />
       </div>

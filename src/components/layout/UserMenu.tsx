@@ -53,7 +53,8 @@ export function UserMenu({
       <Button
         asChild
         size="sm"
-        className="bg-cta font-semibold text-cta-foreground hover:bg-cta/90"
+        variant="ghost"
+        className="bw-account-link font-semibold text-foreground hover:bg-secondary"
       >
         <Link to="/auth">Se connecter</Link>
       </Button>

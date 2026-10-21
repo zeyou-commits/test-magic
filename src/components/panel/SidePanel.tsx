@@ -1,3 +1,4 @@
+import { useEffect, useRef } from "react";
 import type { Filters, RouteLine, Selection } from "@/lib/ferry/types";
 import { ArrowLeft } from "lucide-react";
 
@@ -31,6 +32,19 @@ export function SidePanel({
   onHighlightRoute,
   onFocusRoute,
 }: SidePanelProps) {
+  const detailRef = useRef<HTMLDivElement>(null);
+  const returnFocusRef = useRef<HTMLElement | null>(null);
+  const selectionKey = selection ? `${selection.type}:${selection.id}` : null;
+  useEffect(() => {
+    if (selectionKey) {
+      if (!returnFocusRef.current && document.activeElement instanceof HTMLElement)
+        returnFocusRef.current = document.activeElement;
+      detailRef.current?.focus({ preventScroll: true });
+    } else {
+      returnFocusRef.current?.focus({ preventScroll: true });
+      returnFocusRef.current = null;
+    }
+  }, [selectionKey]);
   const planRoute = (route: RouteLine) => {
     onFiltersChange({
       ...filters,
@@ -44,7 +58,10 @@ export function SidePanel({
 
   return (
     <div className="batogo-floating-panel pointer-events-auto relative flex h-full w-full flex-col overflow-hidden md:rounded-3xl">
-      <div className="batogo-panel-scroll relative flex-1 overflow-y-auto">
+      <div
+        inert={selection ? true : undefined}
+        className="batogo-panel-scroll relative flex-1 overflow-y-auto"
+      >
         <SearchPanel
           filters={filters}
           onFiltersChange={onFiltersChange}
@@ -57,7 +74,19 @@ export function SidePanel({
       </div>
 
       {selection ? (
-        <div className="panel-detail absolute inset-0 z-10 flex flex-col bg-background">
+        <div
+          ref={detailRef}
+          tabIndex={-1}
+          aria-label="Détails de la sélection"
+          onKeyDown={(event) => {
+            if (event.key === "Escape") {
+              event.stopPropagation();
+              if (onBack) onBack();
+              else onSelect(null);
+            }
+          }}
+          className="panel-detail absolute inset-0 z-10 flex flex-col bg-background"
+        >
           <div className="flex flex-none items-center justify-between border-b border-border/20 px-3 py-1.5">
             <button
               type="button"

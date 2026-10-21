@@ -11,7 +11,8 @@
     "lint": "eslint .",
     "format": "prettier --write .",
     "seo:discovery": "node scripts/seo/generate-discovery.mjs",
-    "test:seo": "vitest run src/lib/seo src/lib/tools"
+    "test:seo": "vitest run src/lib/seo src/lib/tools",
+    "build:vercel": "npm run build && node scripts/check-vercel-build.mjs"
   },
   "overrides": {
     "rolldown": "1.2.1"

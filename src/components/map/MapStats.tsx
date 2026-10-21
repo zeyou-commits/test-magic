@@ -20,7 +20,16 @@ const DAYS = 7;
 /** Phare (style Lucide) : absent de la bibliothèque d'icônes. */
 function LighthouseIcon({ className }: LucideProps) {
   return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" className={className} aria-hidden="true">
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={2}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+      aria-hidden="true"
+    >
       <path d="M9 9h6l1 12H8L9 9Z" />
       <path d="M8.5 15h7" />
       <path d="M10 9V6l2-2 2 2v3" />
@@ -56,22 +65,37 @@ export function MapStats({
     "flex items-center gap-1 rounded-full px-1.5 py-0.5 text-[11px] md:gap-1.5 md:px-2.5 md:py-1.5 md:text-sm font-bold tabular-nums text-foreground transition-colors hover:bg-secondary data-[active=true]:bg-secondary";
   const plural = (n: number, one: string, many: string) => `${n} ${n > 1 ? many : one}`;
 
-  const stat = (tip: string, node: ReactElement<{ title?: string }>) => cloneElement(node, { title: tip });
+  const stat = (tip: string, node: ReactElement<{ title?: string }>) =>
+    cloneElement(node, { title: tip });
 
   return (
     <>
-      <div className="pointer-events-auto absolute right-2 top-[3.25rem] z-20 md:right-5 md:top-[4.5rem]">
+      <div className="pointer-events-auto absolute right-2 top-3 z-20 md:right-5 md:top-5">
         <div className="flex items-center gap-0 rounded-full border border-border bg-background/95 p-0.5 shadow-md md:gap-0.5 md:p-1 md:shadow-lg backdrop-blur">
           {stat(
             plural(atSea.length, "navire en mer", "navires en mer"),
-            <button type="button" className={item} data-active={open === "sea"} aria-label="Navires en mer" aria-expanded={open === "sea"} onClick={() => setOpen(open === "sea" ? null : "sea")}>
+            <button
+              type="button"
+              className={item}
+              data-active={open === "sea"}
+              aria-label="Navires en mer"
+              aria-expanded={open === "sea"}
+              onClick={() => setOpen(open === "sea" ? null : "sea")}
+            >
               <Waves className="size-3 md:size-4 text-primary" />
               {atSea.length}
             </button>,
           )}
           {stat(
             plural(docked.length, "navire à quai", "navires à quai"),
-            <button type="button" className={item} data-active={open === "docked"} aria-label="Navires à quai" aria-expanded={open === "docked"} onClick={() => setOpen(open === "docked" ? null : "docked")}>
+            <button
+              type="button"
+              className={item}
+              data-active={open === "docked"}
+              aria-label="Navires à quai"
+              aria-expanded={open === "docked"}
+              onClick={() => setOpen(open === "docked" ? null : "docked")}
+            >
               <Anchor className="size-3 md:size-4 text-muted-foreground" />
               {docked.length}
             </button>,
@@ -79,21 +103,42 @@ export function MapStats({
           <span className="mx-0.5 h-3.5 w-px md:h-5 bg-border" />
           {stat(
             `${plural(upcoming, "traversée", "traversées")} sous ${DAYS} jours`,
-            <button type="button" className={item} aria-label="Traversées à venir" onClick={onOpenDepartures}>
+            <button
+              type="button"
+              className={item}
+              aria-label="Traversées à venir"
+              onClick={onOpenDepartures}
+            >
               <CalendarDays className="size-3 md:size-4 text-muted-foreground" />
               {upcoming}
             </button>,
           )}
           {stat(
             plural(companiesCount, "compagnie", "compagnies"),
-            <button type="button" className={item} aria-label="Compagnies" onClick={() => { setOpen(null); onOpenCompanies(); }}>
+            <button
+              type="button"
+              className={item}
+              aria-label="Compagnies"
+              onClick={() => {
+                setOpen(null);
+                onOpenCompanies();
+              }}
+            >
               <Flag className="size-3 md:size-4 text-muted-foreground" />
               {companiesCount}
             </button>,
           )}
           {stat(
             plural(portsCount, "port", "ports"),
-            <button type="button" className={item} aria-label="Ports" onClick={() => { setOpen(null); onShowPorts(); }}>
+            <button
+              type="button"
+              className={item}
+              aria-label="Ports"
+              onClick={() => {
+                setOpen(null);
+                onShowPorts();
+              }}
+            >
               <LighthouseIcon className="size-3 md:size-4 text-muted-foreground" />
               {portsCount}
             </button>,
@@ -108,13 +153,20 @@ export function MapStats({
                 <li key={ship.id}>
                   <button
                     type="button"
-                    onClick={() => { setOpen(null); onSelectShip(ship); }}
+                    onClick={() => {
+                      setOpen(null);
+                      onSelectShip(ship);
+                    }}
                     className="flex w-full items-center gap-2 rounded-xl px-2.5 py-1.5 text-left text-xs font-medium hover:bg-secondary"
                   >
                     <Ship className="size-3.5 text-primary" />
                     <span className="min-w-0 flex-1 leading-tight">
                       <span className="block truncate">{ship.name}</span>
-                      {companyOf(ship) ? <span className="block truncate text-[10px] font-normal text-muted-foreground">{companyOf(ship)}</span> : null}
+                      {companyOf(ship) ? (
+                        <span className="block truncate text-[10px] font-normal text-muted-foreground">
+                          {companyOf(ship)}
+                        </span>
+                      ) : null}
                     </span>
                     {ship.source === "live" ? (
                       <span className="text-[10px] font-semibold text-primary">AIS</span>

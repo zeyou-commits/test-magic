@@ -19,7 +19,7 @@ import type { PortMeta } from "@/components/map/FerryMap";
 import { Button } from "@/components/ui/button";
 import { MapStatusBar } from "@/components/map/MapStatusBar";
 import { MapLegend } from "@/components/map/MapLegend";
-import { MapStats } from "@/components/map/MapStats";
+import { MapStats, type MapShortcut } from "@/components/map/MapStats";
 import { filtersFromUrl, mapStateToSearch, selectionFromUrl } from "@/lib/ferry/urlState";
 import { filterRoutes, summarizePorts } from "@/lib/ferry/filtering";
 import { portTimeZone } from "@/lib/ferry/time";
@@ -96,6 +96,8 @@ function Index() {
   const [panelLevel, setPanelLevel] = useState<0 | 1 | 2>(0);
   const [panelMode, setPanelMode] = useState<"departures" | "search" | null>(null);
   const [portsActive, setPortsActive] = useState(false);
+  const [activeShortcut, setActiveShortcut] = useState<MapShortcut>(null);
+  const [shortcutCompanyId, setShortcutCompanyId] = useState<string | null>(null);
   const [desktopPanelOpen, setDesktopPanelOpen] = useState(true);
   const [desktopPanelWidth, setDesktopPanelWidth] = useState(DESKTOP_PANEL);
   const resizingPanel = useRef(false);
@@ -145,6 +147,29 @@ function Index() {
 
   const fleet = useFleet();
   const { data: fleetDepartures = [] } = useQuery(fleetDeparturesQuery);
+  const atSea = useMemo(() => fleet.filter((ship) => ship.state === "sea"), [fleet]);
+  const upcomingShips = useMemo(() => {
+    const now = Date.now();
+    const future = new Set([...departures, ...fleetDepartures]
+      .filter((departure) => departure.status !== "cancelled" && new Date(departure.departure_at).getTime() > now)
+      .map((departure) => departure.id));
+    return fleet.filter((ship) => ship.state === "docked" && future.has(ship.departureId));
+  }, [fleet, departures, fleetDepartures]);
+  const shipCompanyIds = useMemo(() => {
+    const byDeparture = new Map([...departures, ...fleetDepartures].map((departure) => [departure.id, departure.company_id]));
+    return new Set([...atSea, ...upcomingShips].map((ship) => byDeparture.get(ship.departureId)).filter((id): id is string => Boolean(id)));
+  }, [atSea, upcomingShips, departures, fleetDepartures]);
+  const shortcutCompanies = useMemo(() => companies.filter((company) => shipCompanyIds.has(company.id)).map((company) => ({ id: company.id, name: company.name, logoUrl: company.logo_url })), [companies, shipCompanyIds]);
+  const mapFleet = useMemo(() => {
+    if (activeShortcut === "ports") return [];
+    if (activeShortcut === "sea") return atSea;
+    if (activeShortcut === "upcoming") return upcomingShips;
+    if (activeShortcut === "companies" && shortcutCompanyId) {
+      const byDeparture = new Map([...departures, ...fleetDepartures].map((departure) => [departure.id, departure.company_id]));
+      return [...atSea, ...upcomingShips].filter((ship) => byDeparture.get(ship.departureId) === shortcutCompanyId);
+    }
+    return fleet;
+  }, [activeShortcut, shortcutCompanyId, atSea, upcomingShips, fleet, departures, fleetDepartures]);
 
   const allResults = [portsResult, routesResult, departuresResult, companiesResult];
   const isLoadingData = allResults.some((res) => res.isPending);
@@ -165,6 +190,9 @@ function Index() {
     () => filterRoutes(routes, ports, departures, { ...filters, date: null }),
     [routes, ports, departures, filters],
   );
+  const mapVisibleRouteIds = useMemo(() => matchingRoutes
+    .filter((route) => activeShortcut !== "companies" || !shortcutCompanyId || route.company_ids.includes(shortcutCompanyId))
+    .map((route) => route.id), [matchingRoutes, activeShortcut, shortcutCompanyId]);
   // Lignes avec au moins un départ à venir (non annulé) : les autres sont en pointillés.
   const scheduledRouteIds = useMemo(() => {
     const now = Date.now();
@@ -406,8 +434,8 @@ function Index() {
   };
 
   // Espace masqué par le tiroir mobile : la carte se recentre au-dessus de lui.
-  const mobileBottomInset = panelLevel === 0 ? 0 : Math.round(viewportHeight * MIDDLE_RATIO);
-  const mobilePanelHeight = panelLevel === 2 ? viewportHeight - TAB_BAR_HEIGHT : mobileBottomInset;
+  const mobileBottomInset = panelLevel === 0 ? 0 : panelLevel === 2 ? viewportHeight - TAB_BAR_HEIGHT : Math.round(viewportHeight * MIDDLE_RATIO);
+  const mobilePanelHeight = mobileBottomInset;
   // Sur mobile, choisir un navire, un port ou une traversée rouvre le tiroir s'il était replié.
   useEffect(() => {
     if (selection?.type === "vessel" || selection?.type === "departure") setPanelLevel(2);
@@ -427,7 +455,7 @@ function Index() {
       setPanelMode(null);
     };
     const results = () => {
-      setPanelLevel(1);
+      setPanelLevel(2);
       setPanelMode("departures");
     };
     window.addEventListener("batogo:close-panel", close);
@@ -464,6 +492,8 @@ function Index() {
     setPanelLevel(0);
     setPanelMode(null);
     setPortsActive(false);
+    setActiveShortcut(null);
+    setShortcutCompanyId(null);
     window.dispatchEvent(new Event("batogo:close-filters"));
   };
 
@@ -472,8 +502,10 @@ function Index() {
     handleSelect(null);
     setFilters((current) => ({ ...current, roundTrip: false, returnDate: null }));
     setPortsActive(false);
+    setActiveShortcut(null);
+    setShortcutCompanyId(null);
     setPanelMode("departures");
-    setPanelLevel(1);
+    setPanelLevel(2);
     window.setTimeout(() => window.dispatchEvent(new Event("batogo:show-departures")), 60);
   };
 
@@ -481,6 +513,8 @@ function Index() {
     document.getElementById("carte")?.scrollIntoView({ behavior: "instant" });
     handleSelect(null);
     setPortsActive(false);
+    setActiveShortcut(null);
+    setShortcutCompanyId(null);
     setPanelMode("search");
     setPanelLevel(2);
     window.setTimeout(() => window.dispatchEvent(new Event("batogo:edit-filters")), 60);
@@ -492,6 +526,8 @@ function Index() {
     setPanelMode(null);
     setPanelLevel(0);
     setPortsActive(true);
+    setActiveShortcut(null);
+    setShortcutCompanyId(null);
     setPortsPulseKey(Date.now());
     window.dispatchEvent(new Event("batogo:close-filters"));
   };
@@ -558,6 +594,7 @@ function Index() {
           id="carte"
           aria-label="Carte et recherche de traversées"
           className="bw-map-stage"
+          data-panel-open={panelLevel !== 0}
           ref={mapStageRef}
           style={
             {
@@ -587,7 +624,7 @@ function Index() {
             }
             className={`bw-map-panel absolute bottom-0 left-0 right-0 z-[60] flex flex-col overflow-hidden bg-transparent ${panelLevel === 0 && dragHeight === null ? "max-md:invisible max-md:pointer-events-none" : ""} ${dragHeight !== null ? "transition-none" : "transition-[height,width,transform] duration-[420ms] ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none"} md:bottom-5 md:left-5 md:right-auto md:top-5 md:h-auto md:w-[var(--desktop-panel-width)] md:overflow-visible md:rounded-3xl md:z-40 ${
               desktopPanelOpen ? "md:translate-x-0" : "md:translate-x-[calc(-100%-1.25rem)]"
-            } ${panelLevel === 0 ? "h-24 rounded-t-3xl" : panelLevel === 1 ? "h-[calc(var(--stage-height)*0.5)] rounded-t-3xl" : "h-[calc(var(--stage-height)-3.5rem)] rounded-t-3xl"}`}
+            } ${panelLevel === 0 ? "h-24 rounded-t-3xl" : panelLevel === 1 ? "h-[calc(var(--stage-height)*0.68)] rounded-t-3xl" : "h-[calc(var(--stage-height)-3.5rem)] rounded-t-3xl"}`}
           >
             {collapsed ? (
               <CollapsedPanelSummary
@@ -715,10 +752,25 @@ function Index() {
               panelOpen={desktopPanelOpen}
             />
             <MapStats
-              fleet={fleet}
-              departures={departures}
-              companiesCount={companies.length}
+              atSea={atSea}
+              upcomingShips={upcomingShips}
+              companies={shortcutCompanies}
               portsCount={ports.length}
+              activeShortcut={activeShortcut}
+              selectedCompanyId={shortcutCompanyId}
+              onToggle={(shortcut) => {
+                if (activeShortcut === shortcut) {
+                  setActiveShortcut(null);
+                  setShortcutCompanyId(null);
+                  return;
+                }
+                setActiveShortcut(shortcut);
+                setShortcutCompanyId(null);
+                setPanelLevel(0);
+                setPanelMode(null);
+                if (shortcut === "ports") setPortsPulseKey(Date.now());
+              }}
+              onSelectCompany={setShortcutCompanyId}
               onSelectShip={(ship) => {
                 if (ship.vesselId) handleSelect({ type: "vessel", id: ship.vesselId });
                 else handleSelect({ type: "departure", id: ship.departureId });
@@ -735,55 +787,25 @@ function Index() {
                 );
                 return companies.find((c) => c.id === dep?.company_id)?.name;
               }}
-              onOpenDepartures={() => {
-                if (window.innerWidth < 768) {
-                  openMobileDepartures();
-                  return;
-                }
-                handleSelect(null);
-                setFocusShipId(null);
-                openPanel();
-                const el = asideRef.current;
-                if (!el) return;
-                el.dataset["flash"] = "false";
-                void el.offsetWidth;
-                el.dataset["flash"] = "true";
-                window.setTimeout(() => (el.dataset["flash"] = "false"), 1300);
-              }}
-              onOpenCompanies={() => {
-                handleSelect(null);
-                setFocusShipId(null);
-                openPanel();
-                window.dispatchEvent(new Event("batogo:open-companies"));
-              }}
-              onShowPorts={() => {
-                if (window.innerWidth < 768) {
-                  showMobilePorts();
-                  return;
-                }
-                handleSelect(null);
-                setFocusShipId(null);
-                setFocusTarget(null);
-                setPortsPulseKey(Date.now());
-              }}
             />
             <MapLegend panelOpen={desktopPanelOpen} showDateHint={false} />
             <ClientOnly fallback={<MapFallback />}>
               <Suspense fallback={<MapFallback />}>
                 <FerryMap
                   focusTarget={focusTarget}
-                  portsPulseKey={portsPulseKey}
+                  portsPulseKey={activeShortcut === "ports" || portsActive ? portsPulseKey : 0}
+                  portsMode={activeShortcut === "ports"}
                   focusShipId={focusShipId}
                   ports={ports}
                   routes={routes}
-                  visibleRouteIds={matchingRoutes.map((route) => route.id)}
+                  visibleRouteIds={mapVisibleRouteIds}
                   dateActiveRouteIds={scheduledRouteIds.length ? scheduledRouteIds : ["__none__"]}
                   focusRouteIds={focusRouteIds}
                   selection={mapSelection}
                   highlightedPortIds={highlightedPortIds}
                   fitPortIds={fitPortIds}
                   hoverRouteId={highlightRouteId}
-                  fleet={fleet}
+                  fleet={mapFleet}
                   portMeta={portMeta}
                   onSelect={handleSelect}
                   onOpenPanel={() => setPanelLevel(2)}
@@ -792,7 +814,8 @@ function Index() {
                       handleSelect(null);
                       setPanelLevel(0);
                     } else if (kind === "vessel") setPanelLevel(2);
-                    else setPanelLevel(1);
+                    else if (kind === "route") setPanelLevel(2);
+                    else setPanelLevel(0);
                   }}
                   mobileBottomInset={mobileBottomInset}
                   desktopLeftInset={desktopPanelOpen ? desktopPanelWidth + 80 : 50}

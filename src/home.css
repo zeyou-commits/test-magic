@@ -884,6 +884,10 @@ html {
     border-radius: 18px;
     height: max(320px, calc(100svh - 190px));
   }
+  .bw-map-stage[data-panel-open="true"] {
+    height: 100dvh;
+    min-height: 100dvh;
+  }
   .bw-map-panel {
     bottom: 0 !important;
     margin-inline: 8px;

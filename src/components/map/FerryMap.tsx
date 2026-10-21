@@ -69,7 +69,7 @@ interface FerryMapProps {
   portMeta: Record<string, PortMeta>;
   onSelect: (selection: Selection | null) => void;
   onOpenPanel?: () => void;
-  onMapInteract?: (kind?: "port" | "vessel") => void;
+  onMapInteract?: (kind?: "port" | "vessel" | "route") => void;
   /** Hauteur (px) masquée par le tiroir mobile et la barre d'onglets. */
   mobileBottomInset?: number;
   /** Largeur (px) masquée par le volet ordinateur. */
@@ -78,6 +78,8 @@ interface FerryMapProps {
   focusTarget?: { center: [number, number]; key: number } | null;
   /** Clé changeante : vue globale + clignotement des ports. */
   portsPulseKey?: number;
+  /** Mode Ports actif : conserve les noms visibles jusqu'au second clic. */
+  portsMode?: boolean;
   /** Navire choisi depuis le tableau de bord : jamais estompé, même si une ligne est sélectionnée. */
   focusShipId?: string | null;
 }
@@ -295,6 +297,7 @@ export default function FerryMap({
   desktopLeftInset = 420,
   focusTarget = null,
   portsPulseKey = 0,
+  portsMode = false,
   focusShipId = null,
 }: FerryMapProps) {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -686,7 +689,7 @@ export default function FerryMap({
         if (map.queryRenderedFeatures(event.point, { layers: ["fleet-ships"] }).length > 0) return;
         const id = event.features?.[0]?.properties?.["id"];
         if (typeof id !== "string") return;
-        interactRef.current?.();
+        interactRef.current?.("route");
         // Cliquer une ligne la sélectionne, sans modifier les filtres de recherche.
         selectRef.current({ type: "route", id });
       };
@@ -1206,14 +1209,14 @@ export default function FerryMap({
         },
         duration: cameraDuration(800),
       });
-      return;
+      if (!portsMode) return;
     }
     container.dataset["pulsePorts"] = "true";
     if (map.getLayer("fleet-label")) map.setPaintProperty("fleet-label", "text-opacity", 0.15);
     if (map.getLayer("fleet-ships")) map.setPaintProperty("fleet-ships", "icon-opacity", 0.35);
 
     // N'afficher que les noms visibles et suffisamment espacés, sans déplacer la carte.
-    const frame = window.requestAnimationFrame(() => {
+    const showLabels = () => {
       const bounds = container.getBoundingClientRect();
       const occupied: DOMRect[] = [];
       const rankedPorts = [...ports]
@@ -1245,7 +1248,8 @@ export default function FerryMap({
         if (outside || overlaps) delete element.dataset["portFocusLabel"];
         else occupied.push(rect);
       }
-    });
+    };
+    const frame = window.requestAnimationFrame(showLabels);
     const clear = () => {
       container.dataset["pulsePorts"] = "false";
       portMarkersRef.current.forEach((marker) => {
@@ -1257,17 +1261,21 @@ export default function FerryMap({
       if (map.getLayer("fleet-ships"))
         map.setPaintProperty("fleet-ships", "icon-opacity", ["get", "opacity"]);
     };
-    const timer = window.setTimeout(clear, 3600);
-    map.on("dragstart", clear);
-    map.on("zoomstart", clear);
+    const timer = portsMode ? null : window.setTimeout(clear, 3600);
+    if (portsMode) map.on("moveend", showLabels);
+    else {
+      map.on("dragstart", clear);
+      map.on("zoomstart", clear);
+    }
     return () => {
       window.cancelAnimationFrame(frame);
-      window.clearTimeout(timer);
+      if (timer !== null) window.clearTimeout(timer);
+      map.off("moveend", showLabels);
       map.off("dragstart", clear);
       map.off("zoomstart", clear);
       clear();
     };
-  }, [portsPulseKey, mapReady, isMobile, ports, portMeta]);
+  }, [portsPulseKey, portsMode, mapReady, isMobile, ports, portMeta]);
 
   useEffect(() => {
     const map = mapRef.current;

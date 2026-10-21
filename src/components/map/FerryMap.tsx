@@ -584,7 +584,7 @@ export default function FerryMap({
           "icon-rotation-alignment": "map",
           "icon-allow-overlap": true,
           "icon-ignore-placement": true,
-          "icon-size": ["interpolate", ["linear"], ["zoom"], 3, 0.7, 5, 0.95, 7, 1.3, 9, 1.9],
+          "icon-size": ["interpolate", ["linear"], ["zoom"], 3, 0.55, 5, 0.75, 7, 0.95, 9, 1.2],
         },
         paint: { "icon-opacity": ["get", "opacity"] },
       });
@@ -597,7 +597,7 @@ export default function FerryMap({
           "text-field": ["get", "name"],
           "text-font": ["Noto Sans Bold"],
           "text-size": ["interpolate", ["linear"], ["zoom"], 3, 7.5, 6, 9.5, 9, 12],
-          "text-offset": [0, 2.8],
+          "text-offset": [0, 3.4],
           "text-anchor": "top",
           "text-optional": true,
           "text-padding": 2,

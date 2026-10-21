@@ -36,25 +36,19 @@ export function FacilityIcons({ items }: { items: [string, string][] }) {
       {items.map(([key, value]) => {
         const Icon = icons[key] ?? Info;
         const label = facilityLabels[key] ?? key;
-        // « Oui » / « Disponible » n'apportent rien : on n'affiche que les vraies précisions.
-        const unavailable = /^(non|indisponible|absent|no)$/i.test(value.trim());
-        const detail = unavailable
-          ? "Indisponible"
-          : /^(oui|disponible|présent|yes)$/i.test(value.trim())
-            ? "Disponible"
-            : value;
+        const detail = /^(oui|disponible|présent|yes)$/i.test(value.trim()) ? null : value;
         return (
           <li
             key={key}
             title={detail ? `${label} : ${detail}` : label}
-            className={`port-facility ${unavailable ? "is-unavailable" : ""}`}
+            className="port-facility"
           >
             <span className="port-facility-icon">
               <Icon className="size-[18px]" aria-hidden />
             </span>
             <span className="port-facility-copy">
               <strong>{label}</strong>
-              <span>{detail}</span>
+              {detail ? <span>{detail}</span> : null}
             </span>
           </li>
         );

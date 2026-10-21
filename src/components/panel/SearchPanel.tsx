@@ -2,7 +2,6 @@ import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { useQuery } from "@tanstack/react-query";
 import {
   ArrowLeftRight,
-  ArrowRight,
   Backpack,
   CalendarDays,
   ChevronDown,
@@ -38,7 +37,6 @@ import {
   buildSailings,
   daysWithSailings,
   legSailings,
-  popularPairs,
   recommendedId,
   type Sailing,
   type TravelerType,
@@ -65,7 +63,7 @@ import {
 } from "./TripProfile";
 
 const ANY = "__any__";
-const PAGE = 6;
+const PAGE = 4;
 
 interface SearchPanelProps {
   filters: Filters;
@@ -289,9 +287,6 @@ export function SearchPanel({
   );
 
   const active = hasActiveFilters(filters);
-  const pairs = useMemo(() => popularPairs(all, 6), [all]);
-  const route = (from: string, to: string) =>
-    set({ departurePortIds: [from], arrivalPortIds: [to], date: null, returnDate: null });
   const fromName = (ids: string[]) => ports.find((port) => port.id === ids[0])?.name ?? "";
 
   const resultCount = filters.roundTrip
@@ -308,9 +303,7 @@ export function SearchPanel({
       <div className="flex flex-col">
         {!editing && !active ? (
           <div className="bw-search-welcome">
-            <p className="bw-eyebrow">Le plaisir de se retrouver</p>
             <h2>On prend le large ?</h2>
-            <p>Choisissez vos ports. Nous vous aidons à préparer la traversée.</p>
           </div>
         ) : null}
         {/* RECHERCHE : capsule condensée façon Airbnb, formulaire guidé à la demande */}
@@ -334,11 +327,6 @@ export function SearchPanel({
               </span>
               <span className="sr-only">Modifier la recherche</span>
             </button>
-            {!active ? (
-              <button type="button" className="bw-search-start" onClick={startSearch}>
-                Choisir ma traversée <ArrowRight size={18} />
-              </button>
-            ) : null}
           </section>
         ) : null}
         <section
@@ -581,33 +569,7 @@ export function SearchPanel({
             </div>
           ) : (
             <>
-              {!hasPair && !active ? (
-                <div className="-mx-4 space-y-1.5 md:-mx-5">
-                  <h2 className="px-4 text-[11px] font-bold uppercase tracking-wider text-muted-foreground md:px-5">
-                    Trajets fréquents
-                  </h2>
-                  <div className="flex gap-1.5 overflow-x-auto px-4 pb-1 [scrollbar-width:none] md:px-5 [&::-webkit-scrollbar]:hidden">
-                    {pairs.map((pair, index) => (
-                      <button
-                        key={`${pair.from.id}-${pair.to.id}`}
-                        type="button"
-                        onClick={() => route(pair.from.id, pair.to.id)}
-                        style={{ animationDelay: `${index * 50}ms` }}
-                        className="sailing-card inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full border border-border bg-card px-3 py-2 text-xs font-semibold shadow-sm transition hover:-translate-y-0.5 hover:border-primary hover:shadow-md"
-                      >
-                        {pair.from.name} <ArrowRight className="size-3 text-primary" />{" "}
-                        {pair.to.name}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              ) : null}
-
-              {!active ? (
-                <div className="rounded-xl bg-secondary/60 p-4 text-sm leading-6 text-muted-foreground">
-                  Choisissez un trajet pour voir les départs connus.
-                </div>
-              ) : filters.roundTrip ? (
+              {filters.roundTrip && hasPair ? (
                 <RoundTripSection
                   trips={roundTrips}
                   hasPorts={filters.departurePortIds.length + filters.arrivalPortIds.length > 0}
@@ -629,7 +591,7 @@ export function SearchPanel({
                         ? "Traversées"
                         : "Prochains départs"
                   }
-                  subtitle="Heures locales des ports"
+                  subtitle={filters.roundTrip ? "Départs aller · heures locales" : "Aller simple · heures locales"}
                   days={outDays}
                   date={filters.date}
                   onDate={(day) =>

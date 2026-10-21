@@ -18,11 +18,10 @@ import { formatDuration } from "@/lib/ferry/format";
 import { algeriaGeoJson } from "@/lib/ferry/algeriaGeoJson";
 import { routeArc } from "@/lib/ferry/geo";
 import type { FleetShip } from "@/lib/ferry/fleet";
-import { addRenderedShipImage, addShipImages } from "./shipIcons";
+import { addShipImages } from "./shipIcons";
 import { physicalStatus, projectedPosition } from "@/lib/ferry/tracking";
 import { portTimeZone, wallTimeInZone } from "@/lib/ferry/time";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { vesselMapIcon, vesselVisual } from "@/lib/ferry/vesselVisuals";
 
 // En production, MapLibre v6 a besoin que son « worker » soit fourni explicitement.
 // En développement, ce fichier injecté par Vite plante (« document is not defined ») et la carte
@@ -560,7 +559,6 @@ export default function FerryMap({
 
       // Flotte : de vrais ferrys vus du dessus, orientés selon leur cap.
       addShipImages(map);
-      addRenderedShipImage(map);
       map.addSource("fleet", {
         type: "geojson",
         data: { type: "FeatureCollection", features: [] },
@@ -586,12 +584,7 @@ export default function FerryMap({
           "icon-rotation-alignment": "map",
           "icon-allow-overlap": true,
           "icon-ignore-placement": true,
-          "icon-size": [
-            "case",
-            ["get", "renderedIcon"],
-            ["interpolate", ["linear"], ["zoom"], 3, 0.6, 5, 0.8, 7, 0.9, 9, 1],
-            ["interpolate", ["linear"], ["zoom"], 3, 0.7, 5, 0.95, 7, 1.3, 9, 1.9],
-          ],
+          "icon-size": ["interpolate", ["linear"], ["zoom"], 3, 0.7, 5, 0.95, 7, 1.3, 9, 1.9],
         },
         paint: { "icon-opacity": ["get", "opacity"] },
       });
@@ -604,12 +597,7 @@ export default function FerryMap({
           "text-field": ["get", "name"],
           "text-font": ["Noto Sans Bold"],
           "text-size": ["interpolate", ["linear"], ["zoom"], 3, 7.5, 6, 9.5, 9, 12],
-          "text-offset": [
-            "case",
-            ["get", "renderedIcon"],
-            ["literal", [0, 5]],
-            ["literal", [0, 2.8]],
-          ],
+          "text-offset": [0, 2.8],
           "text-anchor": "top",
           "text-optional": true,
           "text-padding": 2,
@@ -664,15 +652,6 @@ export default function FerryMap({
           card.setAttribute("role", "tooltip");
           const name = document.createElement("strong");
           name.textContent = String(feature.properties["name"] ?? "Navire");
-          const visual = vesselVisual(name.textContent);
-          if (visual) {
-            const image = document.createElement("img");
-            image.src = visual;
-            image.alt = "";
-            image.className = "bw-vessel-tooltip__image";
-            image.loading = "lazy";
-            card.append(image);
-          }
           const status = document.createElement("p");
           status.textContent = String(feature.properties["allure"] ?? "");
           card.append(name, status);
@@ -1338,13 +1317,7 @@ export default function FerryMap({
             type: "Feature" as const,
             properties: {
               state: ship.state,
-              renderedIcon: Boolean(vesselMapIcon(ship.name) && map.hasImage(vesselMapIcon(ship.name)!)),
-              icon:
-                (vesselMapIcon(ship.name) && map.hasImage(vesselMapIcon(ship.name)!))
-                  ? vesselMapIcon(ship.name)
-                  : ship.state === "sea"
-                    ? "ship-sea-0"
-                    : "ship-dock",
+              icon: ship.state === "sea" ? "ship-sea-0" : "ship-dock",
               course,
               name: ship.name,
               allure,

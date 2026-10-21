@@ -1,6 +1,5 @@
 import { queryOptions } from "@tanstack/react-query";
 import type { Vessel } from "./types";
-import { vesselVisual } from "./vesselVisuals";
 
 export interface VesselPhoto {
   url: string;
@@ -8,7 +7,7 @@ export interface VesselPhoto {
   pageUrl: string | null;
   credit: string | null;
   license: string | null;
-  source: "batogo" | "commons" | "render";
+  source: "batogo" | "commons";
 }
 
 const normalize = (value: string) =>
@@ -209,9 +208,6 @@ export function vesselPhotoQuery(vessel: Pick<Vessel, "id" | "name" | "photo_url
   return queryOptions({
     queryKey: ["vessel-photo", vessel.id, vessel.photo_url ?? ""],
     queryFn: async (): Promise<VesselPhoto | null> => {
-      const render = vesselVisual(vessel.name);
-      if (render)
-        return { url: render, pageUrl: null, credit: null, license: null, source: "render" };
       const own = safeHttps(vessel.photo_url);
       if (own) return { url: own, pageUrl: null, credit: null, license: null, source: "batogo" };
       const cacheKey = `batogo:vessel-photo:${normalize(vessel.name)}`;

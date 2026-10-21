@@ -97,7 +97,10 @@ export function PortView({
   const timeZone = portTimeZone(port);
   const portName = (id: string) => ports.find((item) => item.id === id)?.name ?? "—";
   const facilities = Object.entries(port.facilities ?? {}).filter(
-    ([key, value]) => !ratingOnlyFacilities.has(key) && isFacilityFilled(value),
+    ([key, value]) =>
+      !ratingOnlyFacilities.has(key) &&
+      isFacilityFilled(value) &&
+      !/^(non|indisponible|absent|no)$/i.test(value.trim()),
   );
   const contribute = () => {
     setActiveTab("community");
@@ -220,26 +223,6 @@ export function PortView({
 
         <TabsContent value="practical" className="port-tab-content">
           <TravelSignals key={portId} kind="port" target={portId} />
-          <section className="port-profile-section" aria-labelledby={`services-${portId}`}>
-            <div className="port-section-heading">
-              <div>
-                <h3 id={`services-${portId}`}>Les services sur place</h3>
-                <p>Les repères utiles avant d’embarquer.</p>
-              </div>
-            </div>
-            {facilities.length ? (
-              <FacilityIcons items={facilities} />
-            ) : (
-              <div className="port-soft-note">
-                <p>Les services de ce port ne sont pas encore renseignés.</p>
-                <ReportButton
-                  targetType="port"
-                  targetId={portId}
-                  label="Compléter les informations"
-                />
-              </div>
-            )}
-          </section>
           {port.notes ? (
             <details className="port-practical-details">
               <summary>
@@ -428,7 +411,17 @@ export function PortView({
                   {reviews.length ? "Partager mon expérience" : "Écrire le premier avis"}
                 </Button>
               )}
-              {reviews.length ? (
+            </>
+          )}
+          {facilities.length ? (
+            <section className="port-profile-section port-services-compact" aria-labelledby={`services-${portId}`}>
+              <div className="port-section-heading">
+                <h3 id={`services-${portId}`}>Services sur place</h3>
+              </div>
+              <FacilityIcons items={facilities} />
+            </section>
+          ) : null}
+          {!reviewsResult.isPending && !reviewsResult.isError && reviews.length ? (
                 <section className="port-reviews" aria-labelledby={`reviews-${portId}`}>
                   <div className="port-section-heading">
                     <h4 id={`reviews-${portId}`}>
@@ -485,9 +478,7 @@ export function PortView({
                     })}
                   </ul>
                 </section>
-              ) : null}
-            </>
-          )}
+          ) : null}
         </TabsContent>
       </Tabs>
     </article>

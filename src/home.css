@@ -210,7 +210,7 @@ html {
   height: 40px;
 }
 .bw-search-welcome {
-  padding: 22px 24px 18px;
+  padding: 14px 20px;
   background: #f6f2ea;
   border-bottom: 1px solid #e9e5dc;
   position: relative;
@@ -219,7 +219,7 @@ html {
   margin-bottom: 8px;
 }
 .bw-search-welcome h2 {
-  font-size: 25px;
+  font-size: 21px;
   line-height: 1.15;
   letter-spacing: -0.04em;
   font-weight: 750;
@@ -274,7 +274,7 @@ html {
   font-weight: 650;
 }
 .bw-search-welcome + section {
-  padding-block: 16px;
+  padding-block: 10px;
 }
 .bw-map-stage .sailing-card {
   box-shadow: none;
@@ -317,11 +317,15 @@ html {
   font-weight: 600;
 }
 .bw-intro {
-  padding-block: 88px 72px;
+  margin-block: 40px 72px;
+  padding: 28px;
   display: grid;
-  grid-template-columns: 1.15fr 1fr;
-  gap: 80px;
+  grid-template-columns: minmax(0, 0.82fr) minmax(0, 1.18fr);
+  gap: 32px;
   align-items: center;
+  border: 1px solid #dfded3;
+  border-radius: 28px;
+  background: #fffcf6;
 }
 .bw-home-content h2 {
   font-size: clamp(27px, 3.15vw, 44px);
@@ -338,6 +342,42 @@ html {
   color: #53636b;
   font-size: 16px;
   line-height: 1.85;
+}
+.bw-intro-copy > .bw-eyebrow {
+  margin-bottom: 16px;
+  color: #507367;
+  font-size: 11px;
+  line-height: 1.4;
+}
+.bw-intro-copy > h2 {
+  max-width: 12ch;
+  margin-bottom: 20px;
+}
+.bw-intro-art {
+  position: relative;
+  overflow: hidden;
+  margin: 0;
+  border-radius: 20px;
+  background: #dfc18b;
+  aspect-ratio: 1.55;
+}
+.bw-intro-art img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.bw-intro-art figcaption {
+  position: absolute;
+  left: 16px;
+  bottom: 16px;
+  max-width: calc(100% - 32px);
+  padding: 8px 12px;
+  border-radius: 10px;
+  background: #fffaf0e8;
+  color: #16324a;
+  font-size: 11px;
+  font-weight: 650;
 }
 .bw-inline-note {
   display: flex;
@@ -882,7 +922,20 @@ html {
     gap: 28px;
   }
   .bw-intro {
-    padding-block: 48px 40px;
+    margin-block: 24px 48px;
+    padding: 16px;
+    gap: 22px;
+    border-radius: 22px;
+  }
+  .bw-intro-art {
+    aspect-ratio: 1.25;
+    border-radius: 14px;
+  }
+  .bw-intro-art figcaption {
+    left: 10px;
+    bottom: 10px;
+    max-width: calc(100% - 20px);
+    font-size: 10px;
   }
   .bw-home-content h2 {
     font-size: 30px;
@@ -1076,52 +1129,6 @@ html {
   font-size: 11px;
   line-height: 1.45;
   color: var(--muted-foreground);
-}
-.bw-vessel-tooltip__image {
-  display: block;
-  width: 184px;
-  max-height: 114px;
-  margin-bottom: 8px;
-  object-fit: contain;
-  background: #fff;
-  border-radius: 8px;
-}
-.bw-render-credit {
-  margin: -4px 0 10px;
-  color: var(--muted-foreground);
-  font-size: 11px;
-}
-.bw-vessel-render,
-.bw-editorial-vessel-render {
-  margin: 0 0 20px;
-  overflow: hidden;
-  border: 1px solid #dce6dc;
-  border-radius: 20px;
-  background: #fff;
-}
-.bw-vessel-render img,
-.bw-editorial-vessel-render img {
-  display: block;
-  width: 100%;
-  height: auto;
-  max-height: 280px;
-  object-fit: contain;
-}
-.bw-vessel-render figcaption,
-.bw-editorial-vessel-render figcaption {
-  padding: 6px 14px 10px;
-  color: var(--muted-foreground);
-  font-size: 11px;
-}
-.bw-editorial-vessel-render {
-  max-width: 840px;
-  margin: 18px auto 28px;
-}
-.bw-ship-photo:has(img[src^="/vessel-visuals/"]) {
-  background: #fff;
-}
-.bw-ship-photo img[src^="/vessel-visuals/"] {
-  object-fit: contain;
 }
 .port-tip__count {
   display: inline-grid;
@@ -1354,9 +1361,9 @@ html {
 }
 .port-facility {
   display: flex;
-  gap: 8px;
-  padding: 10px;
-  align-items: flex-start;
+  gap: 7px;
+  padding: 7px 8px;
+  align-items: center;
   background: var(--card);
   border: 1px solid var(--border);
   border-radius: 10px;
@@ -1365,8 +1372,8 @@ html {
 .port-facility-icon {
   display: grid;
   place-items: center;
-  width: 28px;
-  height: 28px;
+  width: 24px;
+  height: 24px;
   flex: none;
   color: var(--primary);
   background: var(--accent);
@@ -1375,7 +1382,7 @@ html {
 .port-facility-copy {
   display: flex;
   flex-direction: column;
-  gap: 3px;
+  gap: 1px;
   min-width: 0;
 }
 .port-facility-copy strong {
@@ -1383,6 +1390,14 @@ html {
   line-height: 1.4;
   font-weight: 650;
   overflow-wrap: anywhere;
+}
+.port-services-compact {
+  margin-top: 18px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+}
+.port-services-compact .port-section-heading {
+  margin-bottom: 10px;
 }
 .port-facility-copy > span {
   font-size: 10px;

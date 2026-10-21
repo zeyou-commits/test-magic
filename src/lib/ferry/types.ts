@@ -141,7 +141,7 @@ export interface Filters {
   date: string | null;
   /** Jour de départ du retour (AAAA-MM-JJ), dans l'heure locale du port de retour. */
   returnDate: string | null;
-  /** Aller-retour (par défaut) ou aller simple. */
+  /** Aller-retour ou aller simple (par défaut). */
   roundTrip: boolean;
   /** Souplesse sur la date d'aller : 0 = jour exact, sinon ± N jours. */
   flexDays: number;
@@ -156,7 +156,7 @@ export const emptyFilters: Filters = {
   vesselId: null,
   date: null,
   returnDate: null,
-  roundTrip: true,
+  roundTrip: false,
   flexDays: 0,
   schoolZone: null,
 };

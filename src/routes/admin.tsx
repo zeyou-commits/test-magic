@@ -1604,7 +1604,7 @@ function DataAdmin() {
           <Counter label="Navires" value={vessels.length} />
         </div>
         <p className="mt-4 text-xs text-muted-foreground">
-          Les fiches marquées « démonstration » servent d'exemples et doivent être remplacées par
+          Les fiches signalées « à confirmer » servent d'exemples et doivent être remplacées par
           des informations vérifiées avant publication.
         </p>
       </Panel>

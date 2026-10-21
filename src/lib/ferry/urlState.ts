@@ -8,6 +8,8 @@ const ZONES = ["A", "B", "C"] as const;
 export function filtersFromUrl(search: string): Filters {
   const params = new URLSearchParams(search);
   const zone = params.get("zone");
+  const way = params.get("way");
+  const roundTrip = way === "2" || (way !== "1" && params.has("ret"));
   return {
     ...emptyFilters,
     search: params.get("q") ?? "",
@@ -17,8 +19,8 @@ export function filtersFromUrl(search: string): Filters {
     companyId: nullable(params.get("company")),
     vesselId: nullable(params.get("vessel")),
     date: nullable(params.get("date")),
-    returnDate: nullable(params.get("ret")),
-    roundTrip: params.get("way") !== "1",
+    returnDate: roundTrip ? nullable(params.get("ret")) : null,
+    roundTrip,
     flexDays: Math.min(3, Math.max(0, Number(params.get("flex")) || 0)),
     schoolZone: ZONES.find((item) => item === zone) ?? null,
   };
@@ -46,7 +48,7 @@ export function mapStateToSearch(
   if (filters.vesselId) params.set("vessel", filters.vesselId);
   if (filters.date) params.set("date", filters.date);
   if (filters.returnDate) params.set("ret", filters.returnDate);
-  if (!filters.roundTrip) params.set("way", "1");
+  if (filters.roundTrip) params.set("way", "2");
   if (filters.flexDays > 0) params.set("flex", String(filters.flexDays));
   if (filters.schoolZone) params.set("zone", filters.schoolZone);
 

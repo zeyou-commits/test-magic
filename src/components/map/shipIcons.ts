@@ -1,5 +1,4 @@
 import type { Map as MapLibreMap } from "maplibre-gl";
-import { ROSALIND_MAP_ICON, ROSALIND_MAP_ICON_URL } from "@/lib/ferry/vesselVisuals";
 
 const W = 56;
 const H = 200;
@@ -137,14 +136,4 @@ export function addShipImages(map: MapLibreMap) {
   }
   const dock = drawFerry(false);
   if (dock && !map.hasImage("ship-dock")) map.addImage("ship-dock", dock, { pixelRatio: 2 });
-}
-
-/** Vue plongeante du navire réel. La proue pointe vers le haut : MapLibre la tourne selon le cap. */
-export function addRenderedShipImage(map: MapLibreMap) {
-  const image = new Image();
-  image.onload = () => {
-    if (map.getStyle() && !map.hasImage(ROSALIND_MAP_ICON))
-      map.addImage(ROSALIND_MAP_ICON, image, { pixelRatio: 10 });
-  };
-  image.src = ROSALIND_MAP_ICON_URL;
 }

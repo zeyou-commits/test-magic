@@ -92,15 +92,13 @@ export function HomeContent({
         aria-labelledby="journey-title"
         data-reveal
       >
-        <div>
+        <div className="bw-intro-copy">
           <p className="bw-eyebrow">D’une rive à l’autre</p>
           <h2 id="journey-title">
             Le voyage commence
             <br />
             bien avant <em>le départ.</em>
           </h2>
-        </div>
-        <div className="bw-intro-copy">
           <p>
             La voiture chargée, les retrouvailles en tête, la mer devant soi. BledWay rassemble les
             repères utiles pour préparer votre traversée vers l’Algérie — et votre retour.
@@ -110,6 +108,17 @@ export function HomeContent({
             <span>Un guide indépendant. Des informations expliquées.</span>
           </div>
         </div>
+        <figure className="bw-intro-art">
+          <img
+            src="/images/bledway-horizon-algerien.png"
+            alt="Illustration de dunes, d’un dromadaire et de la mer à l’horizon"
+            loading="lazy"
+            decoding="async"
+            width={1536}
+            height={1024}
+          />
+          <figcaption>La traversée n’est que le début du voyage.</figcaption>
+        </figure>
       </section>
       <section className="bw-container bw-route-section" aria-labelledby="routes-title" data-reveal>
         <div className="bw-section-heading">

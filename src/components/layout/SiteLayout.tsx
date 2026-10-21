@@ -90,7 +90,12 @@ export function SiteHeader() {
           ))}
         </nav>
         <div className="bw-header-actions">
-          <UserMenu compact />
+          <span className="md:hidden">
+            <UserMenu compact iconOnly />
+          </span>
+          <span className="hidden md:inline-flex">
+            <UserMenu compact />
+          </span>
           <DropdownMenu>
             <DropdownMenuTrigger
               className="bw-mobile-menu bw-icon-button"

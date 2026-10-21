@@ -1,6 +1,6 @@
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
-import { LogIn } from "lucide-react";
+import { UserRound } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import {
@@ -44,7 +44,7 @@ export function UserMenu({
           title="Se connecter"
         >
           <Link to="/auth" aria-label="Se connecter">
-            <LogIn className="size-4" />
+            <UserRound className="size-5" />
           </Link>
         </Button>
       );

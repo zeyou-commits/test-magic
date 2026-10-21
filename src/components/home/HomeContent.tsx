@@ -1,7 +1,6 @@
 import { useEffect, useRef } from "react";
 import { Link } from "@tanstack/react-router";
 import {
-  ArrowDown,
   ArrowUpRight,
   ArrowRight,
   Compass,
@@ -80,12 +79,6 @@ export function HomeContent({
   });
   return (
     <div ref={root} className="bw-home-content" id="preparer">
-      <div className="bw-scroll-invitation">
-        <span>La traversée n’est que le début.</span>
-        <a href="#le-voyage">
-          Préparons la suite <ArrowDown size={16} />
-        </a>
-      </div>
       <section
         className="bw-intro bw-container"
         id="le-voyage"

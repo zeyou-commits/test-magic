@@ -887,12 +887,15 @@ html {
     height: max(500px, 68svh);
   }
   .bw-map-panel {
-    bottom: 46px !important;
+    bottom: 0 !important;
     margin-inline: 8px;
   }
   .bw-map-stage .maplibregl-ctrl-bottom-right {
     bottom: 150px;
     right: 6px;
+  }
+  .bw-map-stage .maplibregl-ctrl-group {
+    display: none;
   }
   .bw-map-scroll {
     display: flex;

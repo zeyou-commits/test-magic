@@ -60,70 +60,88 @@ function drawFerry(withWake: boolean, frame = 0): ImageData | null {
     }
   }
 
-  // Ombre portée sur l'eau.
+  // Silhouette trois-quarts : la proue reste dans l'axe du cap, tandis que
+  // le flanc ombré donne du relief même lorsque l'icône est très petite.
   ctx.save();
-  ctx.shadowColor = "rgba(8, 30, 60, 0.45)";
-  ctx.shadowBlur = 5;
-  ctx.shadowOffsetY = 2;
-
-  // Coque.
+  ctx.shadowColor = "rgba(8, 30, 60, 0.35)";
+  ctx.shadowBlur = 8;
+  ctx.shadowOffsetY = 4;
+  ctx.fillStyle = "#0b3a6e";
   ctx.beginPath();
-  ctx.moveTo(0, -46);
-  ctx.bezierCurveTo(9, -34, 12, -20, 12, -10);
-  ctx.lineTo(12, 36);
-  ctx.quadraticCurveTo(12, 45, 7, 45);
-  ctx.lineTo(-7, 45);
-  ctx.quadraticCurveTo(-12, 45, -12, 36);
-  ctx.lineTo(-12, -10);
-  ctx.bezierCurveTo(-12, -20, -9, -34, 0, -46);
+  ctx.moveTo(-3, -43);
+  ctx.quadraticCurveTo(14, -28, 17, -8);
+  ctx.lineTo(19, 28);
+  ctx.quadraticCurveTo(17, 39, 8, 42);
+  ctx.lineTo(-9, 35);
+  ctx.quadraticCurveTo(-18, 30, -18, 23);
+  ctx.lineTo(-18, -10);
+  ctx.quadraticCurveTo(-17, -30, -3, -43);
   ctx.closePath();
-  ctx.fillStyle = "#ffffff";
   ctx.fill();
   ctx.restore();
-  ctx.lineWidth = 3;
-  ctx.strokeStyle = NAVY;
-  ctx.stroke();
 
-  // Pont principal.
-  ctx.fillStyle = "#cfe0f2";
+  // Flanc éclairé et pont en perspective.
+  const hull = ctx.createLinearGradient(-20, 0, 18, 0);
+  hull.addColorStop(0, "#f7f4ec");
+  hull.addColorStop(0.55, "#ffffff");
+  hull.addColorStop(1, "#aec5d5");
+  ctx.fillStyle = hull;
   ctx.beginPath();
-  ctx.moveTo(0, -38);
-  ctx.bezierCurveTo(6, -29, 8, -18, 8, -10);
-  ctx.lineTo(8, 38);
-  ctx.lineTo(-8, 38);
-  ctx.lineTo(-8, -10);
-  ctx.bezierCurveTo(-8, -18, -6, -29, 0, -38);
+  ctx.moveTo(-3, -39);
+  ctx.quadraticCurveTo(9, -26, 10, -10);
+  ctx.lineTo(12, 29);
+  ctx.lineTo(8, 37);
+  ctx.lineTo(-10, 31);
+  ctx.lineTo(-13, 23);
+  ctx.lineTo(-13, -10);
+  ctx.quadraticCurveTo(-12, -27, -3, -39);
   ctx.closePath();
   ctx.fill();
+  ctx.strokeStyle = NAVY;
+  ctx.lineWidth = 1.8;
+  ctx.stroke();
 
-  // Passerelle (avant) et superstructure.
+  ctx.fillStyle = "#c4dfec";
+  ctx.beginPath();
+  ctx.moveTo(-3, -34);
+  ctx.quadraticCurveTo(5, -23, 6, -9);
+  ctx.lineTo(7, 27);
+  ctx.lineTo(-8, 22);
+  ctx.lineTo(-8, -10);
+  ctx.quadraticCurveTo(-8, -24, -3, -34);
+  ctx.fill();
+
+  // Passerelle relevée, vitrage et ponts lisibles à l'échelle de la carte.
   ctx.fillStyle = "#ffffff";
   ctx.strokeStyle = NAVY;
-  ctx.lineWidth = 2;
+  ctx.lineWidth = 1.5;
   ctx.beginPath();
-  ctx.roundRect(-7, -14, 14, 38, 3);
+  ctx.roundRect(-7, -12, 13, 34, 3);
   ctx.fill();
   ctx.stroke();
   ctx.fillStyle = NAVY;
-  ctx.fillRect(-6, -13, 12, 5); // vitres de la passerelle
+  ctx.fillRect(-6, -11, 11, 5);
+  ctx.fillStyle = "#4284a4";
+  ctx.fillRect(-6, 1, 11, 2);
+  ctx.fillRect(-6, 7, 11, 2);
 
   // Bossoirs et canots de sauvetage.
   ctx.fillStyle = "#e4572e";
-  ctx.fillRect(-10, -2, 3, 11);
-  ctx.fillRect(7, -2, 3, 11);
+  ctx.fillRect(-12, -2, 3, 10);
+  ctx.fillRect(8, -2, 3, 10);
 
   // Cheminée aux couleurs de la marque.
   ctx.fillStyle = "#e4572e";
   ctx.beginPath();
-  ctx.ellipse(0, 12, 5, 6, 0, 0, Math.PI * 2);
+  ctx.ellipse(0, 14, 5, 6, 0, 0, Math.PI * 2);
   ctx.fill();
   ctx.lineWidth = 1.6;
   ctx.strokeStyle = NAVY;
   ctx.stroke();
 
   // Pont arrière.
-  ctx.fillStyle = "rgba(11,58,110,0.18)";
-  ctx.fillRect(-6, 28, 12, 8);
+  ctx.fillStyle = "rgba(11,58,110,0.3)";
+  ctx.fillRect(-6, 27, 12, 5);
 
   return ctx.getImageData(0, 0, W, H);
 }
@@ -132,7 +150,8 @@ function drawFerry(withWake: boolean, frame = 0): ImageData | null {
 export function addShipImages(map: MapLibreMap) {
   for (let f = 0; f < WAKE_FRAMES; f++) {
     const sea = drawFerry(true, f);
-    if (sea && !map.hasImage(`ship-sea-${f}`)) map.addImage(`ship-sea-${f}`, sea, { pixelRatio: 2 });
+    if (sea && !map.hasImage(`ship-sea-${f}`))
+      map.addImage(`ship-sea-${f}`, sea, { pixelRatio: 2 });
   }
   const dock = drawFerry(false);
   if (dock && !map.hasImage("ship-dock")) map.addImage("ship-dock", dock, { pixelRatio: 2 });

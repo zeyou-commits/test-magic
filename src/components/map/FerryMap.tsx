@@ -360,7 +360,7 @@ export default function FerryMap({
       cooperativeGestures: false,
       dragPan: true,
       touchPitch: false,
-      scrollZoom: false,
+      scrollZoom: true,
     });
     map.touchZoomRotate.disableRotation();
 

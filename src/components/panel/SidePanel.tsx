@@ -4,6 +4,8 @@ import { ArrowLeft } from "lucide-react";
 
 import { ShareButtons } from "./ShareButtons";
 import { SearchPanel } from "./SearchPanel";
+import { ItineraryPlanner } from "@/components/itinerary/ItineraryPlanner";
+import type { ItineraryMapPreview } from "@/lib/ferry/itinerary";
 import { PortView } from "./PortView";
 import { RouteView } from "./RouteView";
 import { CompanyView, DepartureView, VesselView } from "./EntityViews";
@@ -18,6 +20,10 @@ interface SidePanelProps {
   hidePickersOnMobile?: boolean;
   onHighlightRoute?: (routeId: string | null) => void;
   onFocusRoute?: (routeId: string | null) => void;
+  itineraryOpen?: boolean;
+  onOpenItinerary?: () => void;
+  onCloseItinerary?: () => void;
+  onItineraryPreview?: (preview: ItineraryMapPreview | null) => void;
 }
 
 /** Un seul volet : la recherche en permanence, et le détail d'un port, d'une ligne ou d'un départ par-dessus. */
@@ -31,6 +37,10 @@ export function SidePanel({
   hidePickersOnMobile = false,
   onHighlightRoute,
   onFocusRoute,
+  itineraryOpen = false,
+  onOpenItinerary,
+  onCloseItinerary,
+  onItineraryPreview,
 }: SidePanelProps) {
   const detailRef = useRef<HTMLDivElement>(null);
   const returnFocusRef = useRef<HTMLElement | null>(null);
@@ -62,7 +72,7 @@ export function SidePanel({
         inert={selection ? true : undefined}
         className="batogo-panel-scroll relative flex-1 overflow-y-auto"
       >
-        <SearchPanel
+        {itineraryOpen && onCloseItinerary && onItineraryPreview ? <ItineraryPlanner onClose={onCloseItinerary} onPreview={onItineraryPreview} /> : <SearchPanel
           filters={filters}
           onFiltersChange={onFiltersChange}
           selection={selection}
@@ -70,7 +80,8 @@ export function SidePanel({
           hidePickersOnMobile={hidePickersOnMobile}
           {...(onHighlightRoute ? { onHighlightRoute } : {})}
           {...(onFocusRoute ? { onFocusRoute } : {})}
-        />
+          {...(onOpenItinerary ? { onOpenItinerary } : {})}
+        />}
       </div>
 
       {selection ? (

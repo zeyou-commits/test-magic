@@ -22,6 +22,7 @@ import { addShipImages } from "./shipIcons";
 import { physicalStatus, projectedPosition } from "@/lib/ferry/tracking";
 import { portTimeZone, wallTimeInZone } from "@/lib/ferry/time";
 import { useIsMobile } from "@/hooks/use-mobile";
+import type { ItineraryMapPreview } from "@/lib/ferry/itinerary";
 
 // En production, MapLibre v6 a besoin que son « worker » soit fourni explicitement.
 // En développement, ce fichier injecté par Vite plante (« document is not defined ») et la carte
@@ -76,11 +77,11 @@ interface FerryMapProps {
   desktopLeftInset?: number;
   /** Navire à amener au centre de la zone visible (clé changeante = nouveau cadrage). */
   focusTarget?: { center: [number, number]; key: number } | null;
+  itineraryPreview?: ItineraryMapPreview | null;
   /** Clé changeante : vue globale + clignotement des ports. */
   portsPulseKey?: number;
   /** Mode Ports actif : conserve les noms visibles jusqu'au second clic. */
   portsMode?: boolean;
-  portsFocusIds?: string[];
   companyFocusShips?: FleetShip[];
   /** Navire choisi depuis le tableau de bord : jamais estompé, même si une ligne est sélectionnée. */
   focusShipId?: string | null;
@@ -298,9 +299,9 @@ export default function FerryMap({
   mobileBottomInset = 0,
   desktopLeftInset = 420,
   focusTarget = null,
+  itineraryPreview = null,
   portsPulseKey = 0,
   portsMode = false,
-  portsFocusIds = [],
   companyFocusShips = [],
   focusShipId = null,
 }: FerryMapProps) {
@@ -739,10 +740,46 @@ export default function FerryMap({
     };
   }, []);
 
-  // Recadrage quand on passe de mobile à ordinateur, ou que le tiroir change de hauteur sans sélection.
+  // Surcouche de l'itinéraire porte à porte : route, traversée et derniers kilomètres.
   useEffect(() => {
     const map = mapRef.current;
-    if (!map || !mapReady || selection) return;
+    if (!map || !mapReady) return;
+    if (!map.getSource("itinerary-preview")) {
+      map.addSource("itinerary-preview", { type: "geojson", data: { type: "FeatureCollection", features: [] } });
+      const before = map.getLayer("fleet-halo") ? "fleet-halo" : undefined;
+      map.addLayer({ id: "itinerary-road-casing", type: "line", source: "itinerary-preview", filter: ["==", ["get", "kind"], "road"], layout: { "line-cap": "round", "line-join": "round" }, paint: { "line-color": "#fffdf8", "line-width": 7, "line-opacity": 0.92 } }, before);
+      map.addLayer({ id: "itinerary-road", type: "line", source: "itinerary-preview", filter: ["==", ["get", "kind"], "road"], layout: { "line-cap": "round", "line-join": "round" }, paint: { "line-color": "#1e5b7a", "line-width": 4, "line-dasharray": [2, 1.3] } }, before);
+      map.addLayer({ id: "itinerary-ferry-casing", type: "line", source: "itinerary-preview", filter: ["==", ["get", "kind"], "ferry"], layout: { "line-cap": "round", "line-join": "round" }, paint: { "line-color": "#fffdf8", "line-width": 11 } }, before);
+      map.addLayer({ id: "itinerary-ferry", type: "line", source: "itinerary-preview", filter: ["==", ["get", "kind"], "ferry"], layout: { "line-cap": "round", "line-join": "round" }, paint: { "line-color": "#0e7a43", "line-width": 6 } }, before);
+      map.addLayer({ id: "itinerary-ends", type: "circle", source: "itinerary-preview", filter: ["==", ["geometry-type"], "Point"], paint: { "circle-radius": 8, "circle-color": "#0e7a43", "circle-stroke-color": "#fffdf8", "circle-stroke-width": 3 } });
+      map.addLayer({ id: "itinerary-end-labels", type: "symbol", source: "itinerary-preview", filter: ["==", ["geometry-type"], "Point"], layout: { "text-field": ["get", "label"], "text-font": ["Noto Sans Bold"], "text-size": 11, "text-offset": [0, 1.8], "text-allow-overlap": true }, paint: { "text-color": "#16324a", "text-halo-color": "#fffdf8", "text-halo-width": 2 } });
+    }
+    const source = map.getSource("itinerary-preview") as GeoJSONSource;
+    if (!itineraryPreview) {
+      source.setData({ type: "FeatureCollection", features: [] });
+      map.setMaxBounds(LIMIT_BOUNDS);
+      return;
+    }
+    map.setMaxBounds(null);
+    map.setMinZoom(1.5);
+    const preview = itineraryPreview;
+    source.setData({ type: "FeatureCollection", features: [
+      { type: "Feature", properties: { kind: "road" }, geometry: { type: "LineString", coordinates: preview.roadToPort } },
+      { type: "Feature", properties: { kind: "ferry" }, geometry: { type: "LineString", coordinates: preview.ferry } },
+      { type: "Feature", properties: { kind: "road" }, geometry: { type: "LineString", coordinates: preview.roadFromPort } },
+      { type: "Feature", properties: { label: "Départ" }, geometry: { type: "Point", coordinates: preview.origin } },
+      { type: "Feature", properties: { label: "Destination" }, geometry: { type: "Point", coordinates: preview.destination } },
+    ] });
+    const points = [...preview.roadToPort, ...preview.ferry, ...preview.roadFromPort];
+    map.fitBounds([
+      [Math.min(...points.map((point) => point[0])) - 0.5, Math.min(...points.map((point) => point[1])) - 0.5],
+      [Math.max(...points.map((point) => point[0])) + 0.5, Math.max(...points.map((point) => point[1])) + 0.5],
+    ], { padding: viewPadding(), maxZoom: 6, duration: cameraDuration(700) });
+  }, [itineraryPreview?.key, mapReady]);
+
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !mapReady || selection || itineraryPreview) return;
     // Recalcule la limite de dézoom d'après la place réellement disponible (volet ou tiroir compris).
     const limit = map.cameraForBounds(LIMIT_BOUNDS, { padding: viewPadding() });
     if (limit?.zoom !== undefined)
@@ -770,7 +807,7 @@ export default function FerryMap({
         duration: cameraDuration(600),
       });
     }
-  }, [isMobile, mapReady, mobileBottomInset, desktopLeftInset, fitPortIds.join("|"), ports.length]);
+  }, [isMobile, mapReady, mobileBottomInset, desktopLeftInset, fitPortIds.join("|"), ports.length, itineraryPreview?.key]);
 
   useEffect(() => {
     const map = mapRef.current;
@@ -1218,13 +1255,23 @@ export default function FerryMap({
     const map = mapRef.current;
     const container = containerRef.current;
     if (!map || !mapReady || !portsPulseKey || !container) return;
+    if (!portsMode) {
+      const limit = map.cameraForBounds(LIMIT_BOUNDS, { padding: viewPadding() });
+      if (limit?.zoom !== undefined)
+        map.setMinZoom(Math.min(minZoomFloor(), Math.max(2.2, limit.zoom - 0.6)));
+    }
     if (portsMode) {
-      const selected = portsFocusIds.length ? ports.filter((port) => portsFocusIds.includes(port.id)) : ports.filter((port) => port.status === "active");
+      // Le compteur « Ports » représente tout le réseau actif, pas seulement les lignes
+      // qui correspondent aux filtres de recherche en cours.
+      const selected = ports.filter((port) => port.status === "active");
+      // Le zoom minimal normal privilégie l'exploration. Ici on doit pouvoir faire tenir
+      // simultanément les deux rives dans la zone restée visible à droite du volet.
+      map.setMinZoom(2.6);
       if (selected.length > 1) {
         map.fitBounds([
-          [Math.min(...selected.map((port) => port.longitude)), Math.min(...selected.map((port) => port.latitude))],
-          [Math.max(...selected.map((port) => port.longitude)), Math.max(...selected.map((port) => port.latitude))],
-        ], { padding: viewPadding(), maxZoom: 6, duration: cameraDuration(800) });
+          [Math.min(...selected.map((port) => port.longitude)) - 0.8, Math.min(...selected.map((port) => port.latitude)) - 0.6],
+          [Math.max(...selected.map((port) => port.longitude)) + 0.8, Math.max(...selected.map((port) => port.latitude)) + 0.6],
+        ], { padding: viewPadding(), maxZoom: 5.3, duration: cameraDuration(800) });
       } else if (selected[0]) {
         map.easeTo({ center: [selected[0].longitude, selected[0].latitude], zoom: 6, padding: viewPadding(), duration: cameraDuration(800) });
       }
@@ -1296,7 +1343,7 @@ export default function FerryMap({
       map.off("zoomstart", clear);
       clear();
     };
-  }, [portsPulseKey, portsMode, portsFocusIds.join("|"), mapReady, isMobile, ports, portMeta]);
+  }, [portsPulseKey, portsMode, mapReady, isMobile, ports, portMeta]);
 
   useEffect(() => {
     const map = mapRef.current;

@@ -76,6 +76,7 @@ interface SearchPanelProps {
   onHighlightRoute?: (routeId: string | null) => void;
   /** Trajet ouvert par l'utilisateur : prime sur les filtres pour le cadrage de la carte. */
   onFocusRoute?: (routeId: string | null) => void;
+  onOpenItinerary?: () => void;
 }
 
 /**
@@ -90,6 +91,7 @@ export function SearchPanel({
   hidePickersOnMobile = false,
   onHighlightRoute,
   onFocusRoute,
+  onOpenItinerary,
 }: SearchPanelProps) {
   const { data: ports = [] } = useQuery(portsQuery);
   const { data: routes = [] } = useQuery(routesQuery);
@@ -366,6 +368,9 @@ export function SearchPanel({
               </span>
               <span className="sr-only">Modifier la recherche</span>
             </button>
+            <button type="button" onClick={onOpenItinerary} className="mt-2 inline-flex items-center gap-1 text-xs font-semibold text-primary underline-offset-2 hover:underline">
+              De mon adresse jusqu'au Bled → Comparer les itinéraires
+            </button>
           </section>
         ) : null}
         <section
@@ -383,6 +388,9 @@ export function SearchPanel({
               <X className="size-4" aria-hidden />
             </button>
           </div>
+          <button type="button" onClick={onOpenItinerary} className="text-left text-xs font-semibold text-primary underline-offset-2 hover:underline">
+            Ou comparer le voyage depuis mon adresse →
+          </button>
           <div className="flex items-center justify-between gap-2">
             <div
               className="batogo-tabbar inline-grid grid-cols-2 gap-0.5 !rounded-full !p-0.5"

@@ -2,7 +2,7 @@ import { seoHead } from "@/lib/seo/site";
 import { DataUnavailableNotice } from "@/components/layout/DataUnavailableNotice";
 import type React from "react";
 import { ChevronLeft, ChevronRight, ArrowDown, Compass } from "lucide-react";
-import { lazy, Suspense, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { lazy, Suspense, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { ClientOnly, createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { SidePanel } from "@/components/panel/SidePanel";
@@ -29,6 +29,7 @@ import { useFleet } from "@/lib/ferry/useFleet";
 import { SiteHeader, SiteFooter } from "@/components/layout/SiteLayout";
 import { MobileTabBar } from "@/components/layout/MobileTabBar";
 import { HomeContent } from "@/components/home/HomeContent";
+import type { ItineraryMapPreview } from "@/lib/ferry/itinerary";
 
 const FerryMap = lazy(() => import("@/components/map/FerryMap"));
 
@@ -97,7 +98,15 @@ function Index() {
   const [focusedRouteId, setFocusedRouteId] = useState<string | null>(null);
   const [panelLevel, setPanelLevel] = useState<0 | 1 | 2>(0);
   const [peekSelectionKey, setPeekSelectionKey] = useState<string | null>(null);
-  const [panelMode, setPanelMode] = useState<"departures" | "search" | null>(null);
+  const [panelMode, setPanelMode] = useState<"departures" | "search" | "itinerary" | null>(null);
+  const [itineraryPreview, setItineraryPreview] = useState<ItineraryMapPreview | null>(null);
+  const updateItineraryPreview = useCallback((preview: ItineraryMapPreview | null) => {
+    setItineraryPreview(preview);
+    setFocusedRouteId(preview?.routeId ?? null);
+  }, []);
+  useEffect(() => {
+    if (panelMode !== "itinerary") setItineraryPreview(null);
+  }, [panelMode]);
   const [portsActive, setPortsActive] = useState(false);
   const [activeShortcut, setActiveShortcut] = useState<MapShortcut>(null);
   const [shortcutCompanyId, setShortcutCompanyId] = useState<string | null>(null);
@@ -204,14 +213,6 @@ function Index() {
   const mapVisibleRouteIds = useMemo(() => matchingRoutes
     .filter((route) => activeShortcut !== "companies" || !shortcutCompanyId || route.company_ids.includes(shortcutCompanyId))
     .map((route) => route.id), [matchingRoutes, activeShortcut, shortcutCompanyId]);
-  const portsFocusIds = useMemo(() => {
-    const ids = new Set<string>();
-    matchingRoutes.forEach((route) => {
-      ids.add(route.departure_port_id);
-      ids.add(route.arrival_port_id);
-    });
-    return [...ids];
-  }, [matchingRoutes]);
   // Lignes avec au moins un départ à venir (non annulé) : les autres sont en pointillés.
   const scheduledRouteIds = useMemo(() => {
     const now = Date.now();
@@ -455,7 +456,7 @@ function Index() {
   // Espace masqué par le tiroir mobile : la carte se recentre au-dessus de lui.
   const isPeekSelection = peekSelectionKey !== null && peekSelectionKey === `${selection?.type}:${selection?.id}`;
   const peekHeight = Math.min(Math.round(viewportHeight * 0.6), Math.max(240, viewportHeight - 260));
-  const mobileBottomInset = panelLevel === 0 ? 0 : panelLevel === 2 ? viewportHeight - TAB_BAR_HEIGHT : isPeekSelection ? peekHeight : Math.round(viewportHeight * MIDDLE_RATIO);
+  const mobileBottomInset = panelLevel === 0 ? 0 : panelLevel === 2 ? viewportHeight - TAB_BAR_HEIGHT : isPeekSelection ? peekHeight : Math.round(viewportHeight * (panelMode === "itinerary" ? 0.52 : MIDDLE_RATIO));
   const mobilePanelHeight = mobileBottomInset;
   // Sur mobile, choisir un navire, un port ou une traversée rouvre le tiroir s'il était replié.
   useEffect(() => {
@@ -544,6 +545,18 @@ function Index() {
     window.setTimeout(() => window.dispatchEvent(new Event("batogo:edit-filters")), 60);
   };
 
+  const openItinerary = () => {
+    document.getElementById("carte")?.scrollIntoView({ behavior: "instant" });
+    handleSelect(null);
+    setPortsActive(false);
+    setActiveShortcut(null);
+    setShortcutCompanyId(null);
+    setShortcutMenuOpen(false);
+    setPanelMode("itinerary");
+    setPanelLevel(1);
+    setDesktopPanelOpen(true);
+  };
+
   const showMobilePorts = () => {
     document.getElementById("carte")?.scrollIntoView({ behavior: "instant" });
     handleSelect(null);
@@ -571,6 +584,7 @@ function Index() {
       if (action === "departures") openMobileDepartures();
       else if (action === "search") openMobileSearch();
       else if (action === "ports") showMobilePorts();
+      else if (action === "itinerary") openItinerary();
     }, 120);
     return () => window.clearTimeout(timer);
     // Navigation entrante : l'action enregistrée n'est lue qu'une fois au montage.
@@ -638,7 +652,7 @@ function Index() {
             }
             className={`bw-map-panel absolute bottom-0 left-0 right-0 z-[60] flex flex-col overflow-hidden bg-transparent ${panelLevel === 0 && dragHeight === null ? "max-md:invisible max-md:pointer-events-none" : ""} ${dragHeight !== null ? "transition-none" : "transition-[height,width,transform] duration-[420ms] ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none"} md:bottom-5 md:left-5 md:right-auto md:top-5 md:h-auto md:w-[var(--desktop-panel-width)] md:overflow-visible md:rounded-3xl md:z-40 ${
               desktopPanelOpen ? "md:translate-x-0" : "md:translate-x-[calc(-100%-1.25rem)]"
-            } ${panelLevel === 0 ? "h-24 rounded-t-3xl" : panelLevel === 1 ? isPeekSelection ? "h-[var(--mobile-peek-height)] rounded-t-3xl" : "h-[calc(var(--stage-height)*0.68)] rounded-t-3xl" : "h-[calc(var(--stage-height)-3.5rem)] rounded-t-3xl"}`}
+            } ${panelLevel === 0 ? "h-24 rounded-t-3xl" : panelLevel === 1 ? isPeekSelection ? "h-[var(--mobile-peek-height)] rounded-t-3xl" : panelMode === "itinerary" ? "h-[calc(var(--stage-height)*0.52)] rounded-t-3xl" : "h-[calc(var(--stage-height)*0.68)] rounded-t-3xl" : "h-[calc(var(--stage-height)-3.5rem)] rounded-t-3xl"}`}
           >
             {collapsed ? (
               <CollapsedPanelSummary
@@ -696,6 +710,15 @@ function Index() {
                 onFiltersChange={setFilters}
                 onHighlightRoute={setHighlightRouteId}
                 onFocusRoute={setFocusedRouteId}
+                itineraryOpen={panelMode === "itinerary"}
+                onOpenItinerary={openItinerary}
+                onCloseItinerary={() => {
+                  setPanelMode(null);
+                  setItineraryPreview(null);
+                  setFocusedRouteId(null);
+                  if (window.innerWidth < 768) setPanelLevel(0);
+                }}
+                onItineraryPreview={updateItineraryPreview}
               />
             </div>
             <div
@@ -744,11 +767,12 @@ function Index() {
           <div className="bw-home-mobile-tabs fixed bottom-0 left-0 right-0 z-[70] md:hidden">
             <MobileTabBar
               className="h-[calc(3.5rem+env(safe-area-inset-bottom))] pb-[env(safe-area-inset-bottom)]"
-              activeTab={portsActive ? "ports" : panelLevel === 0 ? "map" : (panelMode ?? "map")}
+              activeTab={portsActive ? "ports" : panelLevel === 0 ? "map" : panelMode === "itinerary" ? "search" : (panelMode ?? "map")}
               onOpenMap={resetToMap}
               onOpenDepartures={openMobileDepartures}
               onOpenSearch={openMobileSearch}
               onShowPorts={showMobilePorts}
+              onOpenItinerary={openItinerary}
             />
           </div>
 
@@ -776,6 +800,9 @@ function Index() {
               onToggle={(shortcut) => {
                 if (window.innerWidth >= 768) shortcutScrollY.current = window.scrollY;
                 handleSelect(null);
+                setPanelMode(null);
+                setItineraryPreview(null);
+                setFocusedRouteId(null);
                 setFocusTarget(null);
                 if (window.innerWidth < 768) {
                   setPanelLevel(0);
@@ -819,9 +846,9 @@ function Index() {
               <Suspense fallback={<MapFallback />}>
                 <FerryMap
                   focusTarget={focusTarget}
+                  itineraryPreview={itineraryPreview}
                   portsPulseKey={activeShortcut === "ports" || portsActive ? portsPulseKey : 0}
                   portsMode={activeShortcut === "ports"}
-                  portsFocusIds={portsFocusIds}
                   companyFocusShips={companyFocusShips}
                   focusShipId={focusShipId}
                   ports={ports}
@@ -844,7 +871,7 @@ function Index() {
                       setPanelLevel(0);
                     } else if (kind === "vessel") setPanelLevel(2);
                     else if (kind === "route") setPanelLevel(2);
-                    else setPanelLevel(0);
+                    else if (panelMode !== "itinerary") setPanelLevel(0);
                   }}
                   mobileBottomInset={mobileBottomInset}
                   desktopLeftInset={desktopPanelOpen ? desktopPanelWidth + 80 : 50}

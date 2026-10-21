@@ -31,9 +31,10 @@ interface MobileTabBarProps {
   onOpenDepartures?: () => void;
   onOpenSearch?: () => void;
   onShowPorts?: () => void;
+  onOpenItinerary?: () => void;
 }
 
-const rememberAction = (action: "departures" | "search" | "ports") =>
+const rememberAction = (action: "departures" | "search" | "ports" | "itinerary") =>
   window.sessionStorage.setItem("bledway:open-home-action", action);
 
 export function MobileTabBar({
@@ -43,6 +44,7 @@ export function MobileTabBar({
   onOpenDepartures,
   onOpenSearch,
   onShowPorts,
+  onOpenItinerary,
 }: MobileTabBarProps) {
   return (
     <nav
@@ -130,6 +132,9 @@ export function MobileTabBar({
           <span>Plus</span>
         </DropdownMenuTrigger>
         <DropdownMenuContent side="top" align="end" className="w-52">
+          <DropdownMenuItem asChild>
+            {onOpenItinerary ? <button type="button" className="w-full" onClick={onOpenItinerary}>Itinéraire porte à porte</button> : <Link to="/" onClick={() => rememberAction("itinerary")}>Itinéraire porte à porte</Link>}
+          </DropdownMenuItem>
           {moreLinks.map((link) => (
             <DropdownMenuItem key={link.to} asChild>
               <Link to={link.to}>{link.label}</Link>

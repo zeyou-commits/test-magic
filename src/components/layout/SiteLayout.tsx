@@ -95,7 +95,7 @@ export function SiteHeader() {
             <UserMenu compact iconOnly />
           </span>
           <span className="hidden md:inline-flex">
-            <UserMenu compact />
+            <UserMenu compact iconOnly />
           </span>
           <DropdownMenu>
             <DropdownMenuTrigger

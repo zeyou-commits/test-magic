@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import {
   Map as MapLibreMap,
   Marker,
+  Popup,
   NavigationControl,
   AttributionControl,
   setWorkerUrl,
@@ -29,6 +30,8 @@ if (!import.meta.env.DEV) setWorkerUrl(workerUrl);
 export interface PortMeta {
   /** Nombre de lignes actives qui touchent le port (départ ou arrivée). */
   routes: number;
+  departureCount: number;
+  arrivalCount: number;
   companies: { name: string; logoUrl: string | null }[];
   /** Prochains départs depuis ce port, déjà formatés en heure locale du port. */
   upcoming: {
@@ -65,7 +68,7 @@ interface FerryMapProps {
   portMeta: Record<string, PortMeta>;
   onSelect: (selection: Selection | null) => void;
   onOpenPanel?: () => void;
-  onMapInteract?: () => void;
+  onMapInteract?: (kind?: "port") => void;
   /** Hauteur (px) masquée par le tiroir mobile et la barre d'onglets. */
   mobileBottomInset?: number;
   /** Largeur (px) masquée par le volet ordinateur. */
@@ -245,8 +248,11 @@ function positionPortTip(
   const gap = 14;
   const padding = 10;
   const availableWidth = Math.max(0, mapRect.width - padding * 2);
+  const topSafe = 84;
+  const bottomSafe = mapRect.bottom - bottomInset - padding;
 
   tip.style.maxWidth = `${Math.min(300, availableWidth)}px`;
+  tip.style.maxHeight = `${Math.max(160, bottomSafe - mapRect.top - topSafe)}px`;
 
   const tipRect = tip.getBoundingClientRect();
   const markerX = markerRect.left + markerRect.width / 2;
@@ -260,10 +266,8 @@ function positionPortTip(
     left = Math.max(mapRect.left + padding, markerX - tipWidth / 2);
 
   // La carte passe sous l'en-tête (et sous la recherche sur mobile) : l'infobulle reste en dessous.
-  const topSafe = 84;
   let top = markerY - tipHeight / 2;
   if (top < mapRect.top + topSafe) top = mapRect.top + topSafe;
-  const bottomSafe = mapRect.bottom - bottomInset - padding;
   if (top + tipHeight > bottomSafe) top = bottomSafe - tipHeight;
   if (top < mapRect.top + topSafe) top = mapRect.top + topSafe;
 
@@ -300,7 +304,7 @@ export default function FerryMap({
   const interactRef = useRef(onMapInteract);
   const dismissedPortIdsRef = useRef<Set<string>>(new Set());
   const [mapReady, setMapReady] = useState(false);
-  const hoverRafRef = useRef(0);
+  const vesselPopupRef = useRef<Popup | null>(null);
   const fleetRef = useRef<FleetShip[]>(fleet);
   fleetRef.current = fleet;
 
@@ -584,22 +588,8 @@ export default function FerryMap({
         type: "symbol",
         source: "fleet",
         layout: {
-          // Nom du navire, puis (à partir du zoom 5) son allure : vitesse et destination, ou port à quai.
-          "text-field": [
-            "step",
-            ["zoom"],
-            ["get", "name"],
-            5,
-            [
-              "format",
-              ["get", "name"],
-              {},
-              "\n",
-              {},
-              ["get", "allure"],
-              { "font-scale": 0.82, "text-color": ["get", "allureColor"] },
-            ],
-          ] as never,
+          // A single name at rest; the status belongs to the hover card.
+          "text-field": ["get", "name"],
           "text-font": ["Noto Sans Bold"],
           "text-size": ["interpolate", ["linear"], ["zoom"], 3, 7.5, 6, 9.5, 9, 12],
           "text-offset": [0, 2.8],
@@ -614,7 +604,7 @@ export default function FerryMap({
           "text-opacity": ["get", "opacity"],
         },
       });
-      // Survol d'un navire : il grossit, se balance doucement et une pulsation l'entoure, avec un rappel « voir la fiche ».
+      // The hover card stays readable above the map, without enlarged text or rocking.
       const NO_SHIP = ["==", ["get", "shipId"], "__aucun__"] as never;
       map.addLayer({
         id: "fleet-hover-halo",
@@ -622,91 +612,53 @@ export default function FerryMap({
         source: "fleet",
         filter: NO_SHIP,
         paint: {
-          "circle-radius": ["interpolate", ["linear"], ["zoom"], 3, 20, 6, 30, 9, 48],
-          "circle-color": "#e4572e",
-          "circle-opacity": 0.3,
-          "circle-blur": 0.5,
+          "circle-radius": ["interpolate", ["linear"], ["zoom"], 3, 18, 6, 27, 9, 40],
+          "circle-color": "#0e7a43",
+          "circle-opacity": 0.18,
+          "circle-blur": 0.6,
         },
       });
-      map.addLayer({
-        id: "fleet-hover-icon",
-        type: "symbol",
-        source: "fleet",
-        filter: NO_SHIP,
-        layout: {
-          "icon-image": ["get", "icon"],
-          "icon-rotate": ["get", "course"],
-          "icon-rotation-alignment": "map",
-          "icon-allow-overlap": true,
-          "icon-ignore-placement": true,
-          "icon-size": ["interpolate", ["linear"], ["zoom"], 3, 0.95, 5, 1.25, 7, 1.7, 9, 2.4],
-        },
+      const hoverTip = new Popup({
+        closeButton: false,
+        closeOnClick: false,
+        offset: 24,
+        maxWidth: "240px",
+        className: "bw-vessel-tooltip",
       });
-      map.addLayer({
-        id: "fleet-hover-label",
-        type: "symbol",
-        source: "fleet",
-        filter: NO_SHIP,
-        layout: {
-          "text-field": ["concat", ["get", "name"], " · voir la fiche"],
-          "text-font": ["Noto Sans Bold"],
-          "text-size": 12,
-          "text-offset": [0, 3.4],
-          "text-anchor": "top",
-          "text-allow-overlap": true,
-          "text-ignore-placement": true,
-        },
-        paint: { "text-color": "#e4572e", "text-halo-color": "#ffffff", "text-halo-width": 2.2 },
-      });
-      const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      vesselPopupRef.current = hoverTip;
       let hoveredShip: string | null = null;
-      const stopHoverAnimation = () => {
-        if (hoverRafRef.current) cancelAnimationFrame(hoverRafRef.current);
-        hoverRafRef.current = 0;
-      };
-      const startHoverAnimation = () => {
-        if (reduceMotion || hoverRafRef.current) return;
-        const loop = (time: number) => {
-          const wave = Math.sin(time / 170);
-          map.setPaintProperty("fleet-hover-halo", "circle-radius", [
-            "interpolate",
-            ["linear"],
-            ["zoom"],
-            3,
-            18 + wave * 5,
-            6,
-            28 + wave * 7,
-            9,
-            46 + wave * 10,
-          ]);
-          map.setPaintProperty("fleet-hover-halo", "circle-opacity", 0.3 + 0.14 * wave);
-          // Léger roulis du navire.
-          map.setLayoutProperty("fleet-hover-icon", "icon-rotate", [
-            "+",
-            ["get", "course"],
-            wave * 5,
-          ]);
-          hoverRafRef.current = requestAnimationFrame(loop);
-        };
-        hoverRafRef.current = requestAnimationFrame(loop);
-      };
       const setHoveredShip = (id: string | null) => {
-        if (id === hoveredShip) return;
         hoveredShip = id;
-        const filter = id ? (["==", ["get", "shipId"], id] as never) : NO_SHIP;
-        ["fleet-hover-halo", "fleet-hover-icon", "fleet-hover-label"].forEach((layer) =>
-          map.setFilter(layer, filter),
-        );
-        if (id) startHoverAnimation();
-        else stopHoverAnimation();
+        map.setFilter("fleet-hover-halo", id ? (["==", ["get", "shipId"], id] as never) : NO_SHIP);
+        map.setFilter("fleet-label", id ? (["!=", ["get", "shipId"], id] as never) : null);
+        if (!id) hoverTip.remove();
       };
       map.on("mousemove", "fleet-ships", (event) => {
-        const id = event.features?.[0]?.properties?.["shipId"];
-        setHoveredShip(typeof id === "string" ? id : null);
+        const feature = event.features?.[0];
+        const id = feature?.properties?.["shipId"];
+        if (!feature || feature.geometry.type !== "Point" || typeof id !== "string") {
+          setHoveredShip(null);
+          return;
+        }
+        const coordinates = feature.geometry.coordinates as [number, number];
+        if (id !== hoveredShip) {
+          setHoveredShip(id);
+          const card = document.createElement("div");
+          card.setAttribute("role", "tooltip");
+          const name = document.createElement("strong");
+          name.textContent = String(feature.properties["name"] ?? "Navire");
+          const status = document.createElement("p");
+          status.textContent = String(feature.properties["allure"] ?? "");
+          card.append(name, status);
+          hoverTip.setLngLat(coordinates).setDOMContent(card).addTo(map);
+        } else hoverTip.setLngLat(coordinates);
       });
       map.on("mouseleave", "fleet-ships", () => setHoveredShip(null));
+      map.on("dragstart", () => setHoveredShip(null));
+      map.on("zoomstart", () => setHoveredShip(null));
 
       map.on("click", "fleet-ships", (event) => {
+        setHoveredShip(null);
         const props = event.features?.[0]?.properties;
         const vesselId = props?.["vesselId"];
         const departureId = props?.["departureId"];
@@ -764,7 +716,8 @@ export default function FerryMap({
       map.off("dragstart", handleMapInteraction);
       resizeObserver.disconnect();
       window.removeEventListener("resize", resize);
-      if (hoverRafRef.current) cancelAnimationFrame(hoverRafRef.current);
+      vesselPopupRef.current?.remove();
+      vesselPopupRef.current = null;
       readyRef.current = false;
       setMapReady(false);
       portMarkersRef.current.forEach((marker) => marker.remove());
@@ -861,6 +814,8 @@ export default function FerryMap({
           dismissedPortIdsRef.current.add(port.id);
           setTipPortId(null);
           el.dataset["tip"] = "false";
+          tip.inert = true;
+          tip.setAttribute("aria-hidden", "true");
           close.blur();
           dot.blur();
         });
@@ -871,7 +826,7 @@ export default function FerryMap({
         const select = (event: Event) => {
           event.stopPropagation();
           dismissedPortIdsRef.current.delete(port.id);
-          interactRef.current?.();
+          interactRef.current?.(insetsRef.current.isMobile ? "port" : undefined);
           if (insetsRef.current.isMobile) {
             setTipPortId(port.id);
             // Le port se place au centre de la zone visible, au-dessus du tiroir.
@@ -917,6 +872,9 @@ export default function FerryMap({
 
       const tip = element.querySelector<HTMLDivElement>(".port-tip");
       if (!tip) return;
+      const tipVisible = element.dataset["tip"] === "true";
+      tip.inert = !tipVisible;
+      tip.setAttribute("aria-hidden", String(!tipVisible));
       tip.querySelectorAll(":scope > *:not(.port-tip__close)").forEach((child) => child.remove());
 
       const header = document.createElement("div");
@@ -947,6 +905,8 @@ export default function FerryMap({
 
       const tabBar = document.createElement("div");
       tabBar.className = "port-tip__tabs";
+      tabBar.setAttribute("role", "group");
+      tabBar.setAttribute("aria-label", "Départs ou arrivées");
       Object.assign(tabBar.style, {
         display: "grid",
         gridTemplateColumns: "1fr 1fr",
@@ -956,10 +916,15 @@ export default function FerryMap({
         borderRadius: "12px",
         background: "rgba(127,127,127,.12)",
       });
-      const makeTab = (label: string, active: boolean) => {
+      const makeTab = (label: string, count: number, active: boolean) => {
         const button = document.createElement("button");
         button.type = "button";
         button.textContent = label;
+        const badge = document.createElement("span");
+        badge.className = "port-tip__count";
+        badge.textContent = String(count);
+        button.append(badge);
+        button.setAttribute("aria-label", `${label} : ${count}`);
         button.setAttribute("aria-pressed", String(active));
         Object.assign(button.style, {
           minHeight: "34px",
@@ -976,14 +941,22 @@ export default function FerryMap({
         });
         return button;
       };
-      const departureTab = makeTab("↗ Départs", true);
-      const arrivalTab = makeTab("↙ Arrivées", false);
+      const departureTab = makeTab("↗ Départs", meta?.departureCount ?? 0, true);
+      const arrivalTab = makeTab("↙ Arrivées", meta?.arrivalCount ?? 0, false);
       tabBar.append(departureTab, arrivalTab);
       tip.append(tabBar);
+      const scope = document.createElement("p");
+      scope.className = "port-tip__scope";
+      scope.textContent = "Horaires connus à venir · heure locale";
+      tip.append(scope);
       const departurePanel = document.createElement("div");
-      departurePanel.setAttribute("role", "tabpanel");
+      departurePanel.className = "port-tip__schedule";
+      departurePanel.setAttribute("role", "region");
+      departurePanel.setAttribute("aria-label", "Prochains départs");
       const arrivalPanel = document.createElement("div");
-      arrivalPanel.setAttribute("role", "tabpanel");
+      arrivalPanel.className = "port-tip__schedule";
+      arrivalPanel.setAttribute("role", "region");
+      arrivalPanel.setAttribute("aria-label", "Prochaines arrivées");
       arrivalPanel.hidden = true;
       const makeRows = (
         items: {

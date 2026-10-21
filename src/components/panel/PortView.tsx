@@ -1,11 +1,18 @@
 import { useMemo, useState } from "react";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { toast } from "sonner";
+import { useQuery } from "@tanstack/react-query";
+import {
+  ArrowDownLeft,
+  ArrowUpRight,
+  Camera,
+  ChevronRight,
+  Clock3,
+  MessageSquare,
+  PenLine,
+  Route as RouteIcon,
+  Star,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
-import { Link } from "@tanstack/react-router";
-import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/hooks/useAuth";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   companiesQuery,
   portReviewsQuery,
@@ -15,20 +22,23 @@ import {
   upcomingDeparturesQuery,
 } from "@/lib/ferry/queries";
 import {
-  facilityLabels,
   formatDateTime,
   formatDuration,
   isFacilityFilled,
   ratingOnlyFacilities,
 } from "@/lib/ferry/format";
+import { portTraffic } from "@/lib/ferry/portTraffic";
 import { portTimeZone, zoneLabel } from "@/lib/ferry/time";
 import type { Selection } from "@/lib/ferry/types";
-import { DemoBadge, EmptyNote, ReliabilityNote, Section, Stars } from "./shared";
+import { portPhotoQuery } from "@/lib/ferry/vesselPhoto";
+import { DemoBadge, EmptyNote, ReliabilityNote, Stars } from "./shared";
 import { ReportButton } from "./ReportButton";
 import { CompanyBadge } from "./CompanyBadge";
 import { FacilityIcons } from "./FacilityIcons";
-import { portPhotoQuery } from "@/lib/ferry/vesselPhoto";
-import { Anchor, Camera, Clock, Route as RouteIcon, Ship } from "lucide-react";
+import { PortReviewForm } from "./PortReviewForm";
+
+const scoreLabel = (value: number) =>
+  value.toLocaleString("fr-FR", { minimumFractionDigits: 1, maximumFractionDigits: 1 });
 
 export function PortView({
   portId,
@@ -40,397 +50,444 @@ export function PortView({
   const { data: ports = [] } = useQuery(portsQuery);
   const { data: routes = [] } = useQuery(routesQuery);
   const { data: companies = [] } = useQuery(companiesQuery);
-  const { data: departures = [] } = useQuery(upcomingDeparturesQuery());
+  const departuresResult = useQuery(upcomingDeparturesQuery());
   const { data: criteria = [] } = useQuery(ratingCriteriaQuery);
-  const { data: reviews = [] } = useQuery(portReviewsQuery(portId));
-  const [scheduleTab, setScheduleTab] = useState<"departures" | "arrivals">("departures");
-
+  const reviewsResult = useQuery(portReviewsQuery(portId));
+  const reviews = useMemo(() => reviewsResult.data ?? [], [reviewsResult.data]);
+  const [activeTab, setActiveTab] = useState("practical");
+  const [scheduleTab, setScheduleTab] = useState("departures");
+  const [writeReview, setWriteReview] = useState(false);
   const port = ports.find((item) => item.id === portId);
   const photoQuery = useQuery(portPhotoQuery(port ?? { id: "", name: "", photo_url: null }));
+  const traffic = portTraffic(portId, routes, departuresResult.data ?? []);
   const portRoutes = routes.filter(
     (route) => route.departure_port_id === portId || route.arrival_port_id === portId,
   );
-  const portDepartures = departures
-    .filter((departure) => departure.status !== "cancelled")
-    .filter((departure) => {
-      const route = routes.find((item) => item.id === departure.route_id);
-      return route?.departure_port_id === portId;
-    });
-  const portArrivals = departures
-    .filter((departure) => departure.status !== "cancelled")
-    .map((departure) => {
-      const route = routes.find((item) => item.id === departure.route_id);
-      if (!route || route.arrival_port_id !== portId) return null;
-      const arrivalAt = departure.arrival_at ?? (departure.duration_minutes
-        ? new Date(new Date(departure.departure_at).getTime() + departure.duration_minutes * 60000).toISOString()
-        : null);
-      if (!arrivalAt || new Date(arrivalAt).getTime() < Date.now()) return null;
-      return { departure, route, arrivalAt };
-    })
-    .filter((item): item is NonNullable<typeof item> => item !== null)
-    .sort((a, b) => new Date(a.arrivalAt).getTime() - new Date(b.arrivalAt).getTime());
-
   const averages = useMemo(() => {
-    const perCriterion = new Map<string, number[]>();
-    reviews.forEach((review) => {
-      review.ratings.forEach((rating) => {
-        const list = perCriterion.get(rating.criterion_id) ?? [];
-        list.push(rating.score);
-        perCriterion.set(rating.criterion_id, list);
-      });
+    const entries = criteria.flatMap((criterion) => {
+      const scores = reviews.flatMap((review) =>
+        review.ratings
+          .filter(
+            (rating) =>
+              rating.criterion_id === criterion.id && rating.score >= 1 && rating.score <= 5,
+          )
+          .map((rating) => rating.score),
+      );
+      return scores.length
+        ? [
+            {
+              label: criterion.label,
+              value: scores.reduce((sum, score) => sum + score, 0) / scores.length,
+              count: scores.length,
+            },
+          ]
+        : [];
     });
-    const entries = criteria
-      .map((criterion) => {
-        const scores = perCriterion.get(criterion.id) ?? [];
-        if (scores.length === 0) return null;
-        return {
-          label: criterion.label,
-          value: scores.reduce((sum, score) => sum + score, 0) / scores.length,
-          count: scores.length,
-        };
-      })
-      .filter((entry): entry is NonNullable<typeof entry> => entry !== null);
-    const overall =
-      entries.length > 0
+    return {
+      entries,
+      overall: entries.length
         ? entries.reduce((sum, entry) => sum + entry.value, 0) / entries.length
-        : null;
-    return { entries, overall };
+        : null,
+    };
   }, [criteria, reviews]);
 
   if (!port) return <EmptyNote>Port introuvable.</EmptyNote>;
-
-  const portName = (id: string) => ports.find((item) => item.id === id)?.name ?? "—";
+  const photo = photoQuery.data;
   const timeZone = portTimeZone(port);
+  const portName = (id: string) => ports.find((item) => item.id === id)?.name ?? "—";
   const facilities = Object.entries(port.facilities ?? {}).filter(
     ([key, value]) => !ratingOnlyFacilities.has(key) && isFacilityFilled(value),
   );
-  const outgoing = portRoutes.filter((route) => route.departure_port_id === portId);
-  const incoming = portRoutes.filter((route) => route.arrival_port_id === portId);
-
-  const photo = photoQuery.data;
+  const contribute = () => {
+    setActiveTab("community");
+    setWriteReview(true);
+  };
+  const movements =
+    scheduleTab === "departures"
+      ? traffic.departures.map((departure) => ({
+          departure,
+          time: departure.departure_at,
+          place: portName(
+            routes.find((route) => route.id === departure.route_id)?.arrival_port_id ?? "",
+          ),
+        }))
+      : traffic.arrivals.map(({ departure, route, arrivalAt }) => ({
+          departure,
+          time: arrivalAt,
+          place: portName(route.departure_port_id),
+        }));
 
   return (
-    <div className="-mx-4 -mt-4 md:-mx-6 md:-mt-6">
-      {/* En-tête : photo du port (back-office ou Wikimedia Commons), sinon fond illustré. */}
-      <div className="relative h-44 overflow-hidden bg-gradient-to-br from-primary to-primary/60 md:h-52">
-        {photoQuery.isLoading ? (
-          <div className="size-full animate-pulse bg-muted" aria-hidden />
-        ) : photo ? (
+    <article className="port-profile" aria-label={`Fiche du port de ${port.name}`}>
+      <header className="port-profile-heading">
+        <div>
+          <p className="port-profile-country">
+            {port.country_name}
+            {port.city && port.city !== port.name ? ` · ${port.city}` : ""}
+          </p>
+          <h2>{port.name}</h2>
+          <div className="port-profile-badges">
+            <span>
+              <RouteIcon size={13} aria-hidden /> {portRoutes.length}{" "}
+              {portRoutes.length === 1 ? "ligne" : "lignes"}
+            </span>
+            {port.status === "inactive" ? <span>Temporairement fermé</span> : null}
+            {port.is_demo ? <DemoBadge /> : null}
+          </div>
+        </div>
+        {photo ? (
           <img
+            className="port-profile-photo"
             src={photo.url}
-            alt={`Photo du port de ${port.name}`}
+            alt={`Port de ${port.name}`}
             loading="lazy"
             decoding="async"
             referrerPolicy="no-referrer"
-            className="size-full object-cover"
           />
-        ) : (
-          <div className="grid size-full place-items-center text-primary-foreground/70" aria-hidden>
-            <Anchor className="size-14" />
-          </div>
-        )}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent" />
-        <div className="absolute inset-x-0 bottom-0 p-4 md:p-6">
-          <p className="text-xs font-semibold uppercase tracking-wider text-white/80">
-            {port.country_name}
-            {port.city ? ` · ${port.city}` : ""}
-          </p>
-          <h1 className="font-display text-3xl font-bold leading-tight text-white drop-shadow">
-            {port.name}
-          </h1>
-        </div>
-        <div className="absolute right-3 top-3">
-          <ReportButton targetType="port" targetId={port.id} />
-        </div>
-      </div>
+        ) : null}
+      </header>
       {photo?.source === "commons" ? (
-        <p className="flex items-start gap-1.5 border-b px-4 py-1.5 text-[10px] leading-snug text-muted-foreground md:px-6">
-          <Camera className="mt-px size-3 shrink-0" aria-hidden />
-          <span>
+        <details className="port-photo-credit">
+          <summary>
+            <Camera size={12} aria-hidden /> Crédit photo
+          </summary>
+          <p>
             Photo{photo.credit ? ` : ${photo.credit}` : ""}
             {photo.license ? ` · ${photo.license}` : ""} ·{" "}
             {photo.pageUrl ? (
-              <a
-                href={photo.pageUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="underline"
-              >
+              <a href={photo.pageUrl} target="_blank" rel="noopener noreferrer">
                 Wikimedia Commons
               </a>
             ) : (
               "Wikimedia Commons"
             )}
             . Photo indicative.
-          </span>
-        </p>
+          </p>
+        </details>
       ) : null}
 
-      {/* Repères : note, lignes, prochains départs, fuseau. */}
-      <div className="space-y-3 px-4 pb-1 pt-4 md:px-6">
-        <div className="flex flex-wrap items-center gap-2 text-sm">
-          {averages.overall !== null ? (
-            <Stars value={averages.overall} />
-          ) : (
-            <span className="text-muted-foreground">Pas encore d'avis</span>
-          )}
-          {port.status === "inactive" ? (
-            <span className="rounded-full bg-secondary px-2 py-0.5 text-[11px] font-semibold text-muted-foreground">
-              Temporairement fermé
-            </span>
-          ) : null}
-          {port.is_demo ? <DemoBadge /> : null}
-        </div>
-        <dl className="grid grid-cols-3 gap-2 text-center">
-          <div className="rounded-2xl bg-secondary/60 px-2 py-2.5">
-            <dt className="flex items-center justify-center gap-1 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
-              <RouteIcon className="size-3" aria-hidden /> Lignes
-            </dt>
-            <dd className="font-display text-xl font-bold leading-tight">{portRoutes.length}</dd>
-          </div>
-          <div className="rounded-2xl bg-secondary/60 px-2 py-2.5">
-            <dt className="flex items-center justify-center gap-1 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
-              <Ship className="size-3" aria-hidden /> Départs
-            </dt>
-            <dd className="font-display text-xl font-bold leading-tight">
-              {portDepartures.length}
-            </dd>
-          </div>
-          <div className="rounded-2xl bg-secondary/60 px-2 py-2.5">
-            <dt className="flex items-center justify-center gap-1 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
-              <Clock className="size-3" aria-hidden /> Heure
-            </dt>
-            <dd className="text-xs font-semibold leading-tight">{zoneLabel(timeZone)}</dd>
-          </div>
-        </dl>
+      <div className="port-community-summary">
+        <button
+          type="button"
+          className="port-community-score"
+          onClick={() => setActiveTab("community")}
+        >
+          <Star size={20} aria-hidden />
+          <span>
+            {reviewsResult.isPending ? (
+              <strong>Lecture des avis…</strong>
+            ) : reviewsResult.isError ? (
+              <strong>Avis indisponibles</strong>
+            ) : averages.overall != null ? (
+              <>
+                <strong>
+                  {scoreLabel(averages.overall)} <small>/ 5</small>
+                </strong>
+                <small>
+                  {reviews.length} {reviews.length === 1 ? "avis de voyageur" : "avis de voyageurs"}
+                </small>
+              </>
+            ) : reviews.length ? (
+              <>
+                <strong>
+                  {reviews.length} {reviews.length === 1 ? "avis publié" : "avis publiés"}
+                </strong>
+                <small>Les retours de la communauté</small>
+              </>
+            ) : (
+              <>
+                <strong>À vous de commencer</strong>
+                <small>Aucun avis publié pour le moment</small>
+              </>
+            )}
+          </span>
+        </button>
+        <button type="button" onClick={contribute} className="port-review-cta">
+          <PenLine size={15} aria-hidden /> Donner un avis
+        </button>
       </div>
 
-      <div className="px-4 pt-3 md:px-6">
-        <div className="rounded-2xl border border-border/70 bg-card p-3 shadow-sm">
-          <div className="mb-3 flex items-center justify-between gap-3">
-            <div><h2 className="text-base font-semibold tracking-tight">Horaires du port</h2><p className="text-xs text-muted-foreground">Heure locale · {zoneLabel(timeZone)}</p></div>
-          </div>
-          <div className="grid grid-cols-2 gap-1 rounded-xl bg-secondary/70 p-1" role="tablist" aria-label="Horaires du port">
-            <button type="button" role="tab" aria-selected={scheduleTab === "departures"} onClick={() => setScheduleTab("departures")} className={`flex min-h-10 items-center justify-center gap-2 rounded-lg px-3 text-sm font-semibold transition-all duration-200 ${scheduleTab === "departures" ? "bg-background text-foreground shadow-sm ring-1 ring-black/5" : "text-muted-foreground hover:text-foreground"}`}>
-              <span aria-hidden>↗</span> Départs <span className="rounded-full bg-primary/10 px-1.5 py-0.5 text-[10px] tabular-nums">{portDepartures.length}</span>
-            </button>
-            <button type="button" role="tab" aria-selected={scheduleTab === "arrivals"} onClick={() => setScheduleTab("arrivals")} className={`flex min-h-10 items-center justify-center gap-2 rounded-lg px-3 text-sm font-semibold transition-all duration-200 ${scheduleTab === "arrivals" ? "bg-background text-foreground shadow-sm ring-1 ring-black/5" : "text-muted-foreground hover:text-foreground"}`}>
-              <span aria-hidden>↙</span> Arrivées <span className="rounded-full bg-primary/10 px-1.5 py-0.5 text-[10px] tabular-nums">{portArrivals.length}</span>
-            </button>
-          </div>
-          {scheduleTab === "departures" ? (
-            portDepartures.length ? <ul className="mt-2 divide-y divide-border/70">{portDepartures.map((departure) => {
-              const route = routes.find((item) => item.id === departure.route_id);
-              const company = companies.find((item) => item.id === departure.company_id);
-              return <li key={departure.id}><button type="button" onClick={() => onSelect({type:"departure",id:departure.id})} className="w-full rounded-xl px-2 py-2.5 text-left transition-colors hover:bg-secondary/60"><div className="flex items-center gap-3"><div className="min-w-0 flex-1"><p className="text-xs font-semibold">{formatDateTime(departure.departure_at,timeZone)}</p><div className="mt-1 flex min-w-0 items-center gap-2"><span className="truncate text-[11px] text-muted-foreground">Vers {route ? portName(route.arrival_port_id) : "—"}</span></div>{company ? <div className="mt-1 flex min-w-0 items-center gap-1.5 text-[11px] text-muted-foreground"><CompanyBadge name={company.name} logoUrl={company.logo_url} size={20} /><span className="truncate">{company.name}</span></div> : null}</div>{departure.duration_minutes ? <span className="shrink-0 text-[11px] text-muted-foreground">{formatDuration(departure.duration_minutes)}</span> : null}</div></button></li>;
-            })}</ul> : <div className="py-5"><EmptyNote>Aucun départ connu à venir depuis ce port.</EmptyNote></div>
-          ) : (
-            portArrivals.length ? <ul className="mt-2 divide-y divide-border/70">{portArrivals.slice(0,10).map(({departure,route,arrivalAt}) => {
-              const company = companies.find((item) => item.id === departure.company_id);
-              return <li key={`arrival-${departure.id}`}><button type="button" onClick={() => onSelect({type:"departure",id:departure.id})} className="w-full rounded-xl px-2 py-3 text-left transition-colors hover:bg-secondary/60"><div className="flex items-center gap-3"><div className="min-w-0 flex-1"><p className="text-xs font-semibold">{formatDateTime(arrivalAt,timeZone)}</p><p className="truncate text-[11px] text-muted-foreground">Depuis {portName(route.departure_port_id)}</p>{company ? <div className="mt-1 flex min-w-0 items-center gap-1.5 text-[11px] text-muted-foreground"><CompanyBadge name={company.name} logoUrl={company.logo_url} size={20} /><span className="truncate">{company.name}</span></div> : null}</div>{departure.duration_minutes ? <span className="shrink-0 text-[11px] text-muted-foreground">{formatDuration(departure.duration_minutes)}</span> : null}</div></button></li>;
-            })}</ul> : <div className="py-5"><EmptyNote>Aucune arrivée programmée connue pour le moment.</EmptyNote></div>
-          )}
-        </div>
-      </div>
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="port-profile-tabs">
+        <TabsList aria-label={`Explorer le port de ${port.name}`} className="port-profile-nav">
+          <TabsTrigger value="practical">Sur place</TabsTrigger>
+          <TabsTrigger value="schedules">Horaires</TabsTrigger>
+          <TabsTrigger value="community">
+            Avis{" "}
+            <span>{reviewsResult.isPending || reviewsResult.isError ? "—" : reviews.length}</span>
+          </TabsTrigger>
+        </TabsList>
 
-        {port.notes ? (
-          <Section title="À savoir">
-            <p className="text-sm leading-relaxed">{port.notes}</p>
-            <div className="mt-2">
+        <TabsContent value="practical" className="port-tab-content">
+          <section className="port-profile-section" aria-labelledby={`services-${portId}`}>
+            <div className="port-section-heading">
+              <div>
+                <h3 id={`services-${portId}`}>Les services sur place</h3>
+                <p>Les repères utiles avant d’embarquer.</p>
+              </div>
+            </div>
+            {facilities.length ? (
+              <FacilityIcons items={facilities} />
+            ) : (
+              <div className="port-soft-note">
+                <p>Les services de ce port ne sont pas encore renseignés.</p>
+                <ReportButton
+                  targetType="port"
+                  targetId={portId}
+                  label="Compléter les informations"
+                />
+              </div>
+            )}
+          </section>
+          {port.notes ? (
+            <details className="port-practical-details">
+              <summary>
+                À savoir avant votre passage <ChevronRight size={16} aria-hidden />
+              </summary>
+              <p>{port.notes}</p>
               <ReliabilityNote
                 reliability="to_verify"
                 sourceName={port.info_source}
                 sourceUrl={port.info_source_url}
                 verifiedAt={port.info_verified_at}
               />
-            </div>
-          </Section>
-        ) : null}
-
-        {facilities.length > 0 ? (
-          <Section title="Services du port">
-            <FacilityIcons items={facilities} />
-          </Section>
-        ) : null}
-
-        <Section title={`Lignes (${portRoutes.length})`}>
-          {portRoutes.length === 0 ? (
-            <EmptyNote>Aucune ligne enregistrée pour ce port.</EmptyNote>
-          ) : (
-            <div className="space-y-3">
-              {[
-                { label: `Au départ de ${port.name}`, items: outgoing },
-                { label: `À destination de ${port.name}`, items: incoming },
-              ].map((group) =>
-                group.items.length ? (
-                  <div key={group.label}>
-                    <p className="mb-1 text-xs font-semibold text-muted-foreground">
-                      {group.label}
-                    </p>
-                    <ul className="space-y-1">
-                      {group.items.map((route) => (
-                        <li key={route.id}>
-                          <button
-                            type="button"
-                            onClick={() => onSelect({ type: "route", id: route.id })}
-                            className="flex w-full items-center justify-between gap-3 rounded-lg px-2 py-2 text-left transition-colors hover:bg-secondary"
-                          >
-                            <span className="text-sm">
-                              {portName(route.departure_port_id)} →{" "}
-                              {portName(route.arrival_port_id)}
-                            </span>
-                            <span className="text-xs font-semibold text-primary">
-                              {formatDuration(route.typical_duration_minutes)}
-                            </span>
-                          </button>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                ) : null,
-              )}
-            </div>
-          )}
-        </Section>
-
-        <Section title="Notes des voyageurs">
-          {averages.entries.length === 0 ? (
-            <EmptyNote>Aucune note publiée pour l'instant.</EmptyNote>
-          ) : (
-            <ul className="space-y-2">
-              {averages.entries.map((entry) => (
-                <li key={entry.label} className="flex items-center justify-between gap-3">
-                  <span className="text-sm">{entry.label}</span>
-                  <span className="flex items-center gap-2">
-                    <Stars value={entry.value} />
-                    <span className="text-xs text-muted-foreground">({entry.count})</span>
-                  </span>
-                </li>
-              ))}
-            </ul>
-          )}
-        </Section>
-
-        <Section title={`Avis publiés (${reviews.length})`}>
-          {reviews.length === 0 ? (
-            <EmptyNote>Soyez le premier à partager votre expérience.</EmptyNote>
-          ) : (
-            <ul className="space-y-3">
-              {reviews.map((review) => (
-                <li key={review.id} className="rounded-lg bg-secondary/60 px-3 py-2">
-                  <p className="text-xs font-semibold">
-                    {review.author ?? "Voyageur"}
-                    <span className="font-normal text-muted-foreground">
-                      {" · "}
-                      {new Date(review.created_at).toLocaleDateString("fr-FR")}
-                    </span>
-                  </p>
-                  {review.comment ? (
-                    <p className="mt-1 text-sm leading-relaxed">{review.comment}</p>
-                  ) : null}
-                </li>
-              ))}
-            </ul>
-          )}
-        </Section>
-
-        <ReviewForm portId={portId} />
-    </div>
-  );
-}
-
-function ReviewForm({ portId }: { portId: string }) {
-  const { user } = useAuth();
-  const queryClient = useQueryClient();
-  const { data: criteria = [] } = useQuery(ratingCriteriaQuery);
-  const [comment, setComment] = useState("");
-  const [scores, setScores] = useState<Record<string, number>>({});
-
-  const submit = useMutation({
-    mutationFn: async () => {
-      if (!user) throw new Error("Connexion requise");
-      const { data, error } = await supabase
-        .from("port_reviews")
-        .insert({ port_id: portId, user_id: user.id, comment: comment.trim() || null })
-        .select("id")
-        .single();
-      if (error)
-        throw new Error("L'envoi de votre avis a échoué. Réessayez dans quelques instants.");
-      const ratings = Object.entries(scores).map(([criterion_id, score]) => ({
-        review_id: data.id as string,
-        criterion_id,
-        score,
-      }));
-      if (ratings.length > 0) {
-        const { error: ratingError } = await supabase.from("review_ratings").insert(ratings);
-        if (ratingError)
-          throw new Error(
-            "Vos notes n'ont pas pu être enregistrées. Réessayez dans quelques instants.",
-          );
-      }
-    },
-    onSuccess: () => {
-      setComment("");
-      setScores({});
-      queryClient.invalidateQueries({ queryKey: ["port_reviews", portId] });
-      toast.success("Merci ! Votre avis sera publié après vérification.");
-    },
-    onError: (error: Error) => toast.error(error.message),
-  });
-
-  if (!user) {
-    return (
-      <Section title="Donner son avis">
-        <EmptyNote>
-          <Link to="/auth" className="font-semibold text-primary underline underline-offset-4">
-            Connectez-vous
-          </Link>{" "}
-          pour noter ce port et laisser un commentaire.
-        </EmptyNote>
-      </Section>
-    );
-  }
-
-  return (
-    <Section title="Donner son avis">
-      <div className="grid gap-3">
-        {criteria.map((criterion) => (
-          <div key={criterion.id} className="flex items-center justify-between gap-3">
-            <span className="text-sm">{criterion.label}</span>
-            <div className="flex gap-1">
-              {[1, 2, 3, 4, 5].map((score) => (
-                <button
-                  key={score}
-                  type="button"
-                  aria-label={`${criterion.label} : ${score} sur 5`}
-                  onClick={() => setScores((prev) => ({ ...prev, [criterion.id]: score }))}
-                  aria-pressed={(scores[criterion.id] ?? 0) >= score}
-                  className={`size-8 rounded text-lg ${
-                    (scores[criterion.id] ?? 0) >= score
-                      ? "text-amber-500"
-                      : "text-muted-foreground/40"
-                  }`}
-                >
-                  ★
-                </button>
-              ))}
+            </details>
+          ) : null}
+          <div className="port-timezone">
+            <Clock3 size={15} aria-hidden /> Les horaires sont affichés à l’{zoneLabel(timeZone)}.
+          </div>
+          <details className="port-practical-details">
+            <summary>
+              Les lignes de ce port <span>{portRoutes.length}</span>
+              <ChevronRight size={16} aria-hidden />
+            </summary>
+            {portRoutes.length ? (
+              <ul className="port-route-list">
+                {portRoutes.map((route) => (
+                  <li key={route.id}>
+                    <button type="button" onClick={() => onSelect({ type: "route", id: route.id })}>
+                      <span>
+                        {portName(route.departure_port_id)} → {portName(route.arrival_port_id)}
+                      </span>
+                      <small>{formatDuration(route.typical_duration_minutes)}</small>
+                      <ChevronRight size={14} aria-hidden />
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <EmptyNote>Aucune ligne enregistrée.</EmptyNote>
+            )}
+          </details>
+          <div className="port-contribute-inline">
+            <MessageSquare size={20} aria-hidden />
+            <div>
+              <h3>Vous connaissez ce port ?</h3>
+              <p>Partagez les petits conseils qui changent un voyage.</p>
+              <button type="button" onClick={contribute}>
+                Raconter mon expérience <ArrowUpRight size={14} aria-hidden />
+              </button>
             </div>
           </div>
-        ))}
-        <Textarea
-          value={comment}
-          onChange={(event) => setComment(event.target.value)}
-          placeholder="Votre expérience dans ce port (embarquement, attente, services…)"
-          rows={3}
-        />
-        <Button
-          onClick={() => submit.mutate()}
-          disabled={submit.isPending || Object.keys(scores).length === 0}
+          <div className="port-report">
+            <ReportButton targetType="port" targetId={portId} label="Suggérer une correction" />
+          </div>
+        </TabsContent>
+
+        <TabsContent value="schedules" className="port-tab-content">
+          <div className="port-section-heading">
+            <div>
+              <h3>Les prochains mouvements</h3>
+              <p>Horaires connus à venir · {zoneLabel(timeZone)}</p>
+            </div>
+          </div>
+          {departuresResult.isPending ? (
+            <p role="status">Chargement des horaires…</p>
+          ) : departuresResult.isError ? (
+            <div role="alert" className="port-soft-note">
+              <p>Les horaires n’ont pas pu être chargés.</p>
+              <Button variant="outline" onClick={() => void departuresResult.refetch()}>
+                Réessayer
+              </Button>
+            </div>
+          ) : (
+            <Tabs value={scheduleTab} onValueChange={setScheduleTab}>
+              <TabsList aria-label="Départs ou arrivées" className="port-traffic-tabs">
+                <TabsTrigger value="departures">
+                  <ArrowUpRight size={15} aria-hidden /> Départs{" "}
+                  <span>{traffic.departures.length}</span>
+                </TabsTrigger>
+                <TabsTrigger value="arrivals">
+                  <ArrowDownLeft size={15} aria-hidden /> Arrivées{" "}
+                  <span>{traffic.arrivals.length}</span>
+                </TabsTrigger>
+              </TabsList>
+              <TabsContent value={scheduleTab} className="port-movements">
+                {movements.length ? (
+                  <ul>
+                    {movements.map(({ departure, time, place }) => {
+                      const company = companies.find((item) => item.id === departure.company_id);
+                      return (
+                        <li key={departure.id}>
+                          <button
+                            type="button"
+                            onClick={() => onSelect({ type: "departure", id: departure.id })}
+                          >
+                            <div>
+                              <time dateTime={time}>{formatDateTime(time, timeZone)}</time>
+                              <strong>
+                                {scheduleTab === "departures" ? "Vers" : "Depuis"} {place}
+                              </strong>
+                              {company ? (
+                                <span className="port-movement-company">
+                                  <CompanyBadge
+                                    name={company.name}
+                                    logoUrl={company.logo_url}
+                                    size={18}
+                                  />
+                                  {company.name}
+                                </span>
+                              ) : null}
+                            </div>
+                            <ChevronRight size={16} aria-hidden />
+                          </button>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                ) : (
+                  <div className="port-soft-note">
+                    <p>
+                      {scheduleTab === "departures"
+                        ? "Aucun départ connu à venir depuis ce port."
+                        : "Aucune arrivée connue à venir dans ce port."}
+                    </p>
+                    <small>Les programmes peuvent évoluer selon la saison.</small>
+                  </div>
+                )}
+              </TabsContent>
+            </Tabs>
+          )}
+        </TabsContent>
+
+        <TabsContent
+          value="community"
+          forceMount
+          hidden={activeTab !== "community"}
+          className="port-tab-content"
         >
-          {submit.isPending ? "Envoi…" : "Envoyer mon avis"}
-        </Button>
-        <p className="text-xs text-muted-foreground">Chaque avis est relu avant publication.</p>
-      </div>
-    </Section>
+          <div className="port-section-heading">
+            <div>
+              <h3>Le port, côté voyageurs</h3>
+              <p>Des expériences vécues pour mieux préparer la vôtre.</p>
+            </div>
+          </div>
+          {reviewsResult.isPending ? (
+            <p role="status">Chargement des avis…</p>
+          ) : reviewsResult.isError ? (
+            <div role="alert" className="port-soft-note">
+              <p>Les avis ne sont pas disponibles pour le moment.</p>
+              <Button variant="outline" onClick={() => void reviewsResult.refetch()}>
+                Réessayer
+              </Button>
+            </div>
+          ) : (
+            <>
+              {averages.entries.length ? (
+                <ul className="port-rating-breakdown">
+                  {averages.entries.map((entry) => (
+                    <li key={entry.label}>
+                      <span>{entry.label}</span>
+                      <div className="port-rating-track" aria-hidden>
+                        <span style={{ width: `${entry.value * 20}%` }} />
+                      </div>
+                      <strong>
+                        {scoreLabel(entry.value)}
+                        <small> / 5</small>
+                      </strong>
+                      <span className="sr-only">{entry.count} notes</span>
+                    </li>
+                  ))}
+                </ul>
+              ) : !reviews.length && !writeReview ? (
+                <div className="port-community-empty">
+                  <MessageSquare size={28} aria-hidden />
+                  <h4>Le premier conseil pourrait être le vôtre.</h4>
+                  <p>
+                    Un embarquement facile, une attente à prévoir, un service pratique… Votre retour
+                    aidera les prochains voyageurs.
+                  </p>
+                </div>
+              ) : null}
+              {writeReview ? (
+                <PortReviewForm portId={portId} />
+              ) : (
+                <Button onClick={contribute} className="w-full">
+                  <PenLine size={16} aria-hidden />{" "}
+                  {reviews.length ? "Partager mon expérience" : "Écrire le premier avis"}
+                </Button>
+              )}
+              {reviews.length ? (
+                <section className="port-reviews" aria-labelledby={`reviews-${portId}`}>
+                  <div className="port-section-heading">
+                    <h4 id={`reviews-${portId}`}>
+                      {reviews.length} {reviews.length === 1 ? "avis publié" : "avis publiés"}
+                    </h4>
+                    <span>Les plus récents</span>
+                  </div>
+                  <ul>
+                    {reviews.map((review) => {
+                      const score = review.ratings.length
+                        ? review.ratings.reduce((sum, rating) => sum + rating.score, 0) /
+                          review.ratings.length
+                        : null;
+                      const name = review.author?.trim() || "Voyageur";
+                      return (
+                        <li key={review.id}>
+                          <article>
+                            <header>
+                              <span className="port-review-avatar" aria-hidden>
+                                {name
+                                  .split(/\s+/)
+                                  .slice(0, 2)
+                                  .map((part) => part.charAt(0))
+                                  .join("")
+                                  .toUpperCase()}
+                              </span>
+                              <div>
+                                <h5>{name}</h5>
+                                <time dateTime={review.created_at}>
+                                  {new Date(review.created_at).toLocaleDateString("fr-FR", {
+                                    day: "numeric",
+                                    month: "short",
+                                    year: "numeric",
+                                  })}
+                                </time>
+                              </div>
+                            </header>
+                            {score != null ? <Stars value={score} /> : null}
+                            {review.comment ? (
+                              <p>{review.comment}</p>
+                            ) : (
+                              <p className="port-review-no-comment">
+                                Ce voyageur a partagé ses notes sans commentaire.
+                              </p>
+                            )}
+                            <ReportButton
+                              targetType="review"
+                              targetId={review.id}
+                              label="Signaler cet avis"
+                            />
+                          </article>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                </section>
+              ) : null}
+            </>
+          )}
+        </TabsContent>
+      </Tabs>
+    </article>
   );
 }

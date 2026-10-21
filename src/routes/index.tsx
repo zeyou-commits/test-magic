@@ -23,6 +23,7 @@ import { MapStats } from "@/components/map/MapStats";
 import { filtersFromUrl, mapStateToSearch, selectionFromUrl } from "@/lib/ferry/urlState";
 import { filterRoutes, summarizePorts } from "@/lib/ferry/filtering";
 import { portTimeZone } from "@/lib/ferry/time";
+import { portTraffic } from "@/lib/ferry/portTraffic";
 import { buildSailings, legSailings } from "@/lib/ferry/trips";
 import { useFleet } from "@/lib/ferry/useFleet";
 import { SiteHeader, SiteFooter } from "@/components/layout/SiteLayout";
@@ -294,70 +295,40 @@ function Index() {
       );
 
       const timeZone = portTimeZone(port);
+      const traffic = portTraffic(port.id, routes, departures);
       meta[port.id] = {
+        departureCount: traffic.departures.length,
+        arrivalCount: traffic.arrivals.length,
         routes: portRoutes.length,
         companies: [...companyNames].sort().map((name) => {
           const company = companies.find((item) => item.name === name);
           return { name, logoUrl: company?.logo_url ?? null };
         }),
-        upcoming: sailings
-          .filter((s) => s.from.id === port.id)
-          .slice(0, 3)
-          .map((s) => {
-            const parts = formatDateParts(s.departure.departure_at, timeZone);
-            return {
-              date: capitalizeFirst(`${parts.weekday} ${parts.shortDate}`),
-              time: parts.time,
-              to: portById.get(s.route.arrival_port_id)?.name ?? null,
-              companyName: companyById.get(s.departure.company_id)?.name ?? null,
-              logoUrl: companyById.get(s.departure.company_id)?.logo_url ?? null,
-            };
-          }),
-        upcomingArrivals: departures
-          .filter((departure) => {
-            if (departure.status === "cancelled") return false;
-            const route = routes.find((item) => item.id === departure.route_id);
-            if (!route || route.arrival_port_id !== port.id) return false;
-            const arrivalAt =
-              departure.arrival_at ??
-              (departure.duration_minutes
-                ? new Date(
-                    new Date(departure.departure_at).getTime() + departure.duration_minutes * 60000,
-                  ).toISOString()
-                : null);
-            return Boolean(arrivalAt && new Date(arrivalAt).getTime() >= Date.now());
-          })
-          .map((departure) => {
-            const route = routes.find((item) => item.id === departure.route_id)!;
-            const arrivalAt =
-              departure.arrival_at ??
-              new Date(
-                new Date(departure.departure_at).getTime() +
-                  (departure.duration_minutes ?? 0) * 60000,
-              ).toISOString();
-            const parts = formatDateParts(arrivalAt, timeZone);
-            return {
-              timestamp: new Date(arrivalAt).getTime(),
-              date: capitalizeFirst(`${parts.weekday} ${parts.shortDate}`),
-              time: parts.time,
-              from: portById.get(route.departure_port_id)?.name ?? null,
-              companyName: companyById.get(departure.company_id)?.name ?? null,
-              logoUrl: companyById.get(departure.company_id)?.logo_url ?? null,
-            };
-          })
-          .sort((a, b) => a.timestamp - b.timestamp)
-          .slice(0, 3)
-          .map(({ date, time, from, companyName, logoUrl }) => ({
-            date,
-            time,
-            from,
-            companyName,
-            logoUrl,
-          })),
+        upcoming: traffic.departures.slice(0, 3).map((departure) => {
+          const route = routes.find((item) => item.id === departure.route_id);
+          const parts = formatDateParts(departure.departure_at, timeZone);
+          return {
+            date: capitalizeFirst(`${parts.weekday} ${parts.shortDate}`),
+            time: parts.time,
+            to: route ? (portById.get(route.arrival_port_id)?.name ?? null) : null,
+            companyName: companyById.get(departure.company_id)?.name ?? null,
+            logoUrl: companyById.get(departure.company_id)?.logo_url ?? null,
+          };
+        }),
+        upcomingArrivals: traffic.arrivals.slice(0, 3).map(({ departure, route, arrivalAt }) => {
+          const parts = formatDateParts(arrivalAt, timeZone);
+          return {
+            date: capitalizeFirst(`${parts.weekday} ${parts.shortDate}`),
+            time: parts.time,
+            from: portById.get(route.departure_port_id)?.name ?? null,
+            companyName: companyById.get(departure.company_id)?.name ?? null,
+            logoUrl: companyById.get(departure.company_id)?.logo_url ?? null,
+          };
+        }),
       };
     });
     return meta;
-  }, [ports, routes, departures, sailings, companies]);
+  }, [ports, routes, departures, companies]);
 
   const snapHeights = () => {
     const vh = mapStageRef.current?.clientHeight ?? window.innerHeight;
@@ -727,8 +698,13 @@ function Index() {
                   fleet={fleet}
                   portMeta={portMeta}
                   onSelect={handleSelect}
-                  onOpenPanel={() => setPanelLevel(1)}
-                  onMapInteract={() => setPanelLevel((level) => (level === 2 ? 1 : level))}
+                  onOpenPanel={() => setPanelLevel(2)}
+                  onMapInteract={(kind) => {
+                    if (kind === "port") {
+                      handleSelect(null);
+                      setPanelLevel(0);
+                    } else setPanelLevel((level) => (level === 2 ? 1 : level));
+                  }}
                   mobileBottomInset={mobileBottomInset}
                   desktopLeftInset={desktopPanelOpen ? desktopPanelWidth + 80 : 50}
                 />

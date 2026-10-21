@@ -105,7 +105,7 @@ export function SidePanel({
           </div>
           <div className="batogo-panel-scroll flex-1 overflow-y-auto p-4 md:p-6">
             {selection.type === "port" ? (
-              <PortView portId={selection.id} onSelect={onSelect} />
+              <PortView key={selection.id} portId={selection.id} onSelect={onSelect} />
             ) : selection.type === "route" ? (
               <RouteView routeId={selection.id} onSelect={onSelect} onPlanRoute={planRoute} />
             ) : selection.type === "company" ? (

@@ -55,7 +55,7 @@ export function PortView({
   const { data: criteria = [] } = useQuery(ratingCriteriaQuery);
   const reviewsResult = useQuery(portReviewsQuery(portId));
   const reviews = useMemo(() => reviewsResult.data ?? [], [reviewsResult.data]);
-  const [activeTab, setActiveTab] = useState("practical");
+  const [activeTab, setActiveTab] = useState("community");
   const [scheduleTab, setScheduleTab] = useState("departures");
   const [writeReview, setWriteReview] = useState(false);
   const port = ports.find((item) => item.id === portId);
@@ -102,10 +102,10 @@ export function PortView({
       isFacilityFilled(value) &&
       !/^(non|indisponible|absent|no)$/i.test(value.trim()),
   );
-  const servicesSection = (tab: "practical" | "community") => (
-    <section className="port-profile-section port-services-compact" aria-labelledby={`services-${tab}-${portId}`}>
+  const servicesSection = (
+    <section className="port-profile-section port-services-compact" aria-labelledby={`services-${portId}`}>
       <div className="port-section-heading">
-        <h3 id={`services-${tab}-${portId}`}>Services sur place</h3>
+        <h3 id={`services-${portId}`}>Services sur place</h3>
       </div>
       {facilities.length ? (
         <FacilityIcons items={facilities} />
@@ -182,6 +182,8 @@ export function PortView({
         </details>
       ) : null}
 
+      {servicesSection}
+
       <div className="port-community-summary">
         <button
           type="button"
@@ -225,17 +227,16 @@ export function PortView({
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="port-profile-tabs">
         <TabsList aria-label={`Explorer le port de ${port.name}`} className="port-profile-nav">
-          <TabsTrigger value="practical">Sur place</TabsTrigger>
-          <TabsTrigger value="schedules">Horaires</TabsTrigger>
           <TabsTrigger value="community">
             Avis{" "}
             <span>{reviewsResult.isPending || reviewsResult.isError ? "—" : reviews.length}</span>
           </TabsTrigger>
+          <TabsTrigger value="practical">Sur place</TabsTrigger>
+          <TabsTrigger value="schedules">Horaires</TabsTrigger>
         </TabsList>
 
         <TabsContent value="practical" className="port-tab-content">
           <TravelSignals key={portId} kind="port" target={portId} />
-          {servicesSection("practical")}
           {port.notes ? (
             <details className="port-practical-details">
               <summary>
@@ -426,7 +427,6 @@ export function PortView({
               )}
             </>
           )}
-          {servicesSection("community")}
           {!reviewsResult.isPending && !reviewsResult.isError && reviews.length ? (
                 <section className="port-reviews" aria-labelledby={`reviews-${portId}`}>
                   <div className="port-section-heading">

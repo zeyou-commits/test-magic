@@ -129,6 +129,11 @@ export function SearchPanel({
     // Sur mobile, le volet passe en plein écran pour la recherche.
     if (isMobileView()) window.dispatchEvent(new Event("batogo:panel-full"));
   };
+  const closeSearch = () => {
+    setEditing(false);
+    setStep(firstStep);
+    searchRef.current?.closest(".batogo-panel-scroll")?.scrollTo({ top: 0, behavior: "instant" });
+  };
   // Chaque étape s'affiche depuis son début, en haut du volet.
   useEffect(() => {
     if (!editing || !isMobileView()) return;
@@ -334,6 +339,12 @@ export function SearchPanel({
           className={`scroll-mt-0 space-y-3 border-b bg-card px-4 pb-4 pt-4 md:bg-white md:px-5 ${editing ? "" : "hidden"}`}
         >
           <div className="flex items-center justify-between gap-2">
+            <span className="text-sm font-bold text-foreground">Trouver ma traversée</span>
+            <button type="button" onClick={closeSearch} aria-label="Fermer la recherche" className="grid size-9 shrink-0 place-items-center rounded-full border border-border bg-card text-foreground hover:bg-secondary">
+              <X className="size-4" aria-hidden />
+            </button>
+          </div>
+          <div className="flex items-center justify-between gap-2">
             <div
               className="batogo-tabbar inline-grid grid-cols-2 gap-0.5 !rounded-full !p-0.5"
               role="radiogroup"
@@ -523,7 +534,11 @@ export function SearchPanel({
                 >
                   ← Retour
                 </button>
-              ) : null}
+              ) : (
+                <button type="button" onClick={closeSearch} className="h-11 whitespace-nowrap rounded-xl px-2 text-sm font-semibold text-muted-foreground transition hover:bg-secondary hover:text-foreground">
+                  ← Fermer
+                </button>
+              )}
               {step < lastStep ? (
                 <button
                   type="button"
@@ -539,10 +554,7 @@ export function SearchPanel({
                 <button
                   type="button"
                   onClick={() => {
-                    setEditing(false);
-                    searchRef.current
-                      ?.closest(".batogo-panel-scroll")
-                      ?.scrollTo({ top: 0, behavior: "instant" });
+                    closeSearch();
                   }}
                   className="flex h-11 items-center justify-center gap-2 rounded-xl bg-primary px-4 text-sm font-bold text-primary-foreground shadow-md transition hover:opacity-90"
                 >

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   ArrowUpRight,
   ChevronDown,
@@ -302,9 +302,9 @@ function Fact({ label, value, hint }: { label: string; value: string; hint?: str
   );
 }
 
-const STRIP_PAGE = 7;
 const weekdayFmt = new Intl.DateTimeFormat("fr-FR", { weekday: "short", timeZone: "UTC" });
 const monthFmt = new Intl.DateTimeFormat("fr-FR", { month: "short", timeZone: "UTC" });
+const fullDayFmt = new Intl.DateTimeFormat("fr-FR", { weekday: "long", day: "numeric", month: "long", timeZone: "UTC" });
 
 /** Frise compacte des jours avec départ, paginée : « Dates précédentes » / « Dates suivantes ». */
 export function DayStrip({
@@ -319,44 +319,58 @@ export function DayStrip({
   allLabel?: string;
 }) {
   const [start, setStart] = useState(0);
+  const stripRef = useRef<HTMLDivElement>(null);
+  const [pageSize, setPageSize] = useState(5);
+  useEffect(() => {
+    const element = stripRef.current;
+    if (!element) return;
+    const resize = () => {
+      const width = element.clientWidth;
+      setPageSize(width >= 520 ? 5 : width >= 420 ? 4 : width >= 320 ? 3 : 2);
+    };
+    resize();
+    const observer = new ResizeObserver(resize);
+    observer.observe(element);
+    return () => observer.disconnect();
+  }, []);
   // La fenêtre suit le jour choisi (ex. depuis le calendrier).
   useEffect(() => {
     if (!value) return;
     const index = days.findIndex((item) => item.day === value);
     if (index < 0) return;
     setStart((current) =>
-      index >= current && index < current + STRIP_PAGE ? current : Math.max(0, index - 1),
+      index >= current && index < current + pageSize ? current : Math.max(0, index - 1),
     );
-  }, [value, days]);
+  }, [value, days, pageSize]);
 
   if (days.length === 0) return null;
-  const maxStart = Math.max(0, days.length - STRIP_PAGE);
+  const maxStart = Math.max(0, days.length - pageSize);
   const from = Math.min(start, maxStart);
-  const visible = days.slice(from, from + STRIP_PAGE);
+  const visible = days.slice(from, from + pageSize);
   const hasPrev = from > 0;
   const hasNext = from < maxStart;
   const arrow =
     "grid size-8 shrink-0 place-items-center rounded-full border bg-card text-muted-foreground transition hover:bg-secondary disabled:pointer-events-none disabled:opacity-30";
 
   return (
-    <div className="flex items-center gap-1" role="listbox" aria-label="Jours avec départ">
+    <div ref={stripRef} className="flex w-full min-w-0 items-center gap-1" role="listbox" aria-label="Jours avec départ">
       <button
         type="button"
         className={arrow}
         disabled={!hasPrev}
-        onClick={() => setStart(Math.max(0, from - STRIP_PAGE))}
+        onClick={() => setStart(Math.max(0, from - pageSize))}
         aria-label="Dates précédentes"
         title="Dates précédentes"
       >
         <ChevronLeft className="size-4" aria-hidden />
       </button>
-      <div className="flex min-w-0 flex-1 gap-1 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+      <div className="flex min-w-0 flex-1 gap-1 overflow-hidden">
         <button
           type="button"
           role="option"
           aria-selected={value === null}
           onClick={() => onChange(null)}
-          className={`flex h-11 min-w-[40px] flex-1 shrink-0 flex-col items-center justify-center rounded-xl border px-1.5 text-[11px] font-semibold transition ${value === null ? "border-primary bg-primary text-primary-foreground" : "border-border bg-card hover:bg-secondary"}`}
+          className={`flex h-14 min-w-0 flex-1 flex-col items-center justify-center rounded-xl border px-1 text-[11px] font-semibold transition ${value === null ? "border-primary bg-primary text-primary-foreground" : "border-border bg-card hover:bg-secondary"}`}
         >
           {allLabel}
         </button>
@@ -369,14 +383,16 @@ export function DayStrip({
               type="button"
               role="option"
               aria-selected={active}
+              aria-label={`${fullDayFmt.format(date)}, ${count} départ${count > 1 ? "s" : ""}`}
               onClick={() => onChange(active ? null : day)}
               title={`${count} départ${count > 1 ? "s" : ""}`}
-              className={`relative flex h-11 min-w-[40px] flex-1 shrink-0 flex-col items-center justify-center rounded-xl border px-1 leading-none transition ${active ? "border-primary bg-primary text-primary-foreground" : "border-border bg-card hover:bg-secondary"}`}
+              className={`flex h-14 min-w-0 flex-1 flex-col items-center justify-center rounded-xl border px-0.5 leading-none transition ${active ? "border-primary bg-primary text-primary-foreground" : "border-border bg-card hover:bg-secondary"}`}
             >
-              <span
-                className={`text-[9px] font-semibold uppercase ${active ? "text-primary-foreground/80" : "text-muted-foreground"}`}
-              >
-                {weekdayFmt.format(date).replace(".", "")}
+              <span className="flex items-center justify-center gap-0.5 whitespace-nowrap">
+                <span className={`text-[9px] font-semibold uppercase ${active ? "text-primary-foreground/80" : "text-muted-foreground"}`}>
+                  {weekdayFmt.format(date).replace(".", "")}
+                </span>
+                {count > 1 ? <span className={`grid min-w-3.5 place-items-center rounded-full px-0.5 text-[9px] font-bold ${active ? "bg-cta text-cta-foreground" : "bg-primary text-primary-foreground"}`}>{count}</span> : null}
               </span>
               <span className="font-display text-sm font-bold">{date.getUTCDate()}</span>
               <span
@@ -384,13 +400,6 @@ export function DayStrip({
               >
                 {monthFmt.format(date).replace(".", "")}
               </span>
-              {count > 1 ? (
-                <span
-                  className={`absolute -right-0.5 -top-1 grid size-3.5 place-items-center rounded-full text-[9px] font-bold ${active ? "bg-cta text-cta-foreground" : "bg-primary text-primary-foreground"}`}
-                >
-                  {count}
-                </span>
-              ) : null}
             </button>
           );
         })}
@@ -399,7 +408,7 @@ export function DayStrip({
         type="button"
         className={arrow}
         disabled={!hasNext}
-        onClick={() => setStart(Math.min(maxStart, from + STRIP_PAGE))}
+        onClick={() => setStart(Math.min(maxStart, from + pageSize))}
         aria-label="Dates suivantes"
         title="Dates suivantes"
       >

@@ -1,6 +1,6 @@
 # Itinéraire porte à porte — première version
 
-La fonctionnalité s'ouvre depuis « De mon adresse jusqu'au Bled » dans le volet de recherche de la carte principale. Sur mobile, elle est également accessible dans « Plus ». Elle compare les traversées Europe → Algérie en voiture et dessine l'option recommandée sur la carte. Changer le classement ou choisir une autre option met immédiatement à jour le tracé et le cadrage.
+La fonctionnalité s'ouvre depuis le bouton « Itinéraire depuis chez moi » dans le volet de recherche de la carte principale. Sur mobile, elle est également accessible dans « Plus ». Après activation, l'utilisateur peut partager sa position ou saisir une adresse européenne ; la destination est limitée à l'Algérie. Elle compare les traversées Europe → Algérie en voiture et dessine l'option recommandée sur la carte. Changer le classement ou choisir une autre option met immédiatement à jour le tracé et le cadrage.
 
 ## Activation
 

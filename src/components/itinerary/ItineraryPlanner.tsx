@@ -1,6 +1,9 @@
 import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowRight, CarFront, Clock3, Fuel, MapPin, Ship, Wallet } from "lucide-react";
+import { ArrowRight, CalendarDays, CarFront, Clock3, Fuel, LocateFixed, MapPin, Ship, Wallet } from "lucide-react";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { fr } from "date-fns/locale";
 import { companiesQuery, portsQuery, routesQuery, upcomingDeparturesQuery } from "@/lib/ferry/queries";
 import { buildSailings } from "@/lib/ferry/trips";
 import { calculateRoadAccess, searchItineraryAddress } from "@/lib/ferry/itinerary.functions";
@@ -20,11 +23,26 @@ const priorities: { id: ItineraryPriority; label: string; icon: typeof Wallet }[
 ];
 
 function localDateTime(date: Date) {
-  const local = new Date(date.getTime() - date.getTimezoneOffset() * 60_000);
+  const rounded = new Date(Math.ceil(date.getTime() / (15 * 60_000)) * (15 * 60_000));
+  const local = new Date(rounded.getTime() - rounded.getTimezoneOffset() * 60_000);
   return local.toISOString().slice(0, 16);
 }
 
 const numberFormat = new Intl.NumberFormat("fr-FR");
+const timeSlots = Array.from({ length: 96 }, (_, index) => `${String(Math.floor(index / 4)).padStart(2, "0")}:${String((index % 4) * 15).padStart(2, "0")}`);
+
+function JourneyGuide() {
+  const steps = [
+    { Icon: MapPin, label: "Chez vous" },
+    { Icon: CarFront, label: "Port de départ" },
+    { Icon: Ship, label: "Port d’arrivée" },
+    { Icon: MapPin, label: "Destination" },
+  ];
+  return <div className="bw-journey-guide" aria-label="Votre trajet : de chez vous au port, traversée en ferry, puis route vers votre destination">
+    <div className="bw-journey-guide__track" aria-hidden><span /></div>
+    {steps.map(({ Icon, label }) => <div key={label} className="bw-journey-guide__step"><span className="bw-journey-guide__icon"><Icon className="size-4" aria-hidden /></span><span>{label}</span></div>)}
+  </div>;
+}
 
 function AddressField({ label, placeholder, value, onChange, point, onPointChange, countryCode }: {
   label: string; placeholder: string; value: string; onChange: (value: string) => void;
@@ -62,6 +80,9 @@ export function ItineraryPlanner({ onClose, onPreview }: { onClose: () => void; 
   const [originPoint, setOriginPoint] = useState<[number, number] | null>(null);
   const [destinationPoint, setDestinationPoint] = useState<[number, number] | null>(null);
   const [startAt, setStartAt] = useState(() => localDateTime(new Date(Date.now() + 60 * 60_000)));
+  const [dateOpen, setDateOpen] = useState(false);
+  const [locating, setLocating] = useState(false);
+  const [locationError, setLocationError] = useState<string | null>(null);
   const [vehicle, setVehicle] = useState<VehicleKind>("sedan");
   const [adults, setAdults] = useState(2);
   const [children, setChildren] = useState(0);
@@ -161,24 +182,45 @@ export function ItineraryPlanner({ onClose, onPreview }: { onClose: () => void; 
     }
   }
 
+  function locateOrigin() {
+    if (!navigator.geolocation) { setLocationError("La géolocalisation n’est pas disponible sur cet appareil."); return; }
+    setLocationError(null);
+    setLocating(true);
+    navigator.geolocation.getCurrentPosition(({ coords }) => {
+      setLocating(false);
+      if (coords.longitude < -12 || coords.longitude > 36 || coords.latitude < 35 || coords.latitude > 72) {
+        setLocationError("Votre position est hors de la zone Europe–Algérie. Saisissez une adresse de départ en Europe.");
+        return;
+      }
+      setOriginPoint([coords.longitude, coords.latitude]);
+      setOrigin("Ma position actuelle");
+    }, () => { setLocating(false); setLocationError("Position indisponible. Saisissez votre adresse de départ."); }, { enableHighAccuracy: false, timeout: 10000, maximumAge: 300000 });
+  }
+
   return (
     <section id="itineraire" className="min-h-full bg-[#fffdf8]">
-      <div className="flex items-start justify-between gap-3 bg-[#e9f3ef] px-4 py-5">
+      <div className="flex items-start justify-between gap-3 bg-[#e9f3ef] px-4 py-4">
         <div>
           <p className="text-xs font-bold uppercase tracking-[.15em] text-primary">De porte à porte · en voiture</p>
-          <h2 className="mt-2 font-display text-xl font-bold tracking-tight text-foreground">Quelle traversée vous rapproche vraiment du Bled ?</h2>
-          <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">Comparez le trajet jusqu'au port, le ferry et la route après l'arrivée. Choisissez selon votre budget, votre heure d'arrivée ou les kilomètres à conduire.</p>
+          <h2 className="mt-1 font-display text-xl font-bold tracking-tight text-foreground">Votre route jusqu'au Bled</h2>
+          <p className="mt-1 text-xs leading-5 text-muted-foreground">La route, la traversée, puis les derniers kilomètres.</p>
         </div>
         <button type="button" onClick={onClose} className="shrink-0 rounded-full border border-border bg-white px-3 py-1.5 text-xs font-semibold text-primary">Fermer</button>
       </div>
       <form onSubmit={(event) => void submit(event)} className="space-y-4 p-4">
+        <JourneyGuide />
         <div className="grid gap-3">
           <AddressField label="Votre adresse de départ" placeholder="Ex. 12 rue de Lyon, Paris, France" value={origin} onChange={setOrigin} point={originPoint} onPointChange={setOriginPoint} />
+          <button type="button" onClick={locateOrigin} disabled={locating} className="inline-flex min-h-9 items-center gap-2 self-start rounded-full border border-primary/30 bg-primary/5 px-3 text-xs font-semibold text-primary hover:bg-primary/10 disabled:opacity-60"><LocateFixed className="size-4" aria-hidden />{locating ? "Localisation…" : "Utiliser ma position"}</button>
+          {locationError && <p role="status" className="text-xs text-destructive">{locationError}</p>}
           <AddressField label="Votre destination finale en Algérie" placeholder="Ex. rue Didouche Mourad, Alger" value={destination} onChange={setDestination} point={destinationPoint} onPointChange={setDestinationPoint} countryCode="DZ" />
         </div>
         <div className="grid gap-3">
-          <label className="text-sm font-semibold">Départ de chez vous<input type="datetime-local" className="mt-1 block min-h-11 w-full rounded-xl border border-border bg-white px-3" value={startAt} onChange={(event) => setStartAt(event.target.value)} required /></label>
-          <label className="text-sm font-semibold">Votre voiture<select className="mt-1 block min-h-11 w-full rounded-xl border border-border bg-white px-3" value={vehicle} onChange={(event) => setVehicle(event.target.value as VehicleKind)}>{VEHICLES.filter((item) => item.id !== "none").map((item) => <option key={item.id} value={item.id}>{item.label}</option>)}</select></label>
+          <div className="text-sm font-semibold">Départ de chez vous<div className="mt-1 grid grid-cols-[minmax(0,1fr)_105px] gap-2">
+            <Popover open={dateOpen} onOpenChange={setDateOpen}><PopoverTrigger asChild><button type="button" className="flex min-h-11 items-center gap-2 rounded-xl border border-border bg-white px-3 text-left text-sm font-semibold"><CalendarDays className="size-4 shrink-0 text-primary" aria-hidden /><span className="truncate">{new Intl.DateTimeFormat("fr-FR", { weekday: "short", day: "numeric", month: "short" }).format(new Date(`${startAt.slice(0, 10)}T12:00:00`))}</span></button></PopoverTrigger><PopoverContent align="start" className="w-auto max-w-[calc(100vw-2rem)] p-1"><Calendar mode="single" locale={fr} selected={new Date(`${startAt.slice(0, 10)}T12:00:00`)} disabled={{ before: new Date(new Date().setHours(0, 0, 0, 0)) }} onSelect={(day) => { if (day) { setStartAt(`${day.getFullYear()}-${String(day.getMonth() + 1).padStart(2, "0")}-${String(day.getDate()).padStart(2, "0")}${startAt.slice(10)}`); setDateOpen(false); } }} /></PopoverContent></Popover>
+            <label className="sr-only" htmlFor="itinerary-time">Heure de départ</label><select id="itinerary-time" aria-label="Heure de départ" className="min-h-11 rounded-xl border border-border bg-white px-2 text-sm font-semibold" value={timeSlots.includes(startAt.slice(11)) ? startAt.slice(11) : ""} onChange={(event) => setStartAt(`${startAt.slice(0, 10)}T${event.target.value}`)} required>{!timeSlots.includes(startAt.slice(11)) && <option value="">Heure</option>}{timeSlots.map((time) => <option key={time} value={time}>{time}</option>)}</select>
+          </div></div>
+          <fieldset><legend className="mb-2 text-sm font-semibold">Votre voiture</legend><div className="flex gap-2 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">{VEHICLES.filter((item) => item.id !== "none").map(({ id, Icon, label, hint }) => <button key={id} type="button" aria-pressed={vehicle === id} title={hint} onClick={() => setVehicle(id)} className={`flex min-w-20 shrink-0 flex-col items-center gap-1 rounded-xl border px-2 py-2 text-xs font-semibold transition-colors ${vehicle === id ? "border-primary bg-primary text-white" : "border-border bg-white text-foreground hover:border-primary/50"}`}><Icon className="size-5" aria-hidden />{label}</button>)}</div></fieldset>
           <div className="grid grid-cols-2 gap-2"><label className="text-sm font-semibold">Adultes<input type="number" min={1} max={9} className="mt-1 block min-h-11 w-full rounded-xl border border-border bg-white px-3" value={adults} onChange={(event) => setAdults(Number(event.target.value))} /></label><label className="text-sm font-semibold">Enfants<input type="number" min={0} max={9} className="mt-1 block min-h-11 w-full rounded-xl border border-border bg-white px-3" value={children} onChange={(event) => setChildren(Number(event.target.value))} /></label></div>
         </div>
         <details className="rounded-xl border border-border bg-white px-4 py-3 text-sm"><summary className="cursor-pointer font-semibold text-primary">Ajuster les hypothèses de coût routier</summary><div className="mt-4 grid gap-3 sm:grid-cols-3"><label>Consommation · L/100 km<input type="number" min={1} max={30} step={0.1} className="mt-1 block w-full rounded-lg border p-2" value={consumption} onChange={(event) => setConsumption(Number(event.target.value))} /></label><label>Carburant · €/L<input type="number" min={0.5} max={5} step={0.01} className="mt-1 block w-full rounded-lg border p-2" value={fuelPrice} onChange={(event) => setFuelPrice(Number(event.target.value))} /></label><label>Provision péages · €/km<input type="number" min={0} max={1} step={0.01} className="mt-1 block w-full rounded-lg border p-2" value={tollRate} onChange={(event) => setTollRate(Number(event.target.value))} /></label></div></details>

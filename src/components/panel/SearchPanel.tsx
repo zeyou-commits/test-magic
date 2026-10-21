@@ -6,6 +6,7 @@ import {
   CalendarDays,
   ChevronDown,
   Search,
+  Route,
   SlidersHorizontal,
   Users,
   X,
@@ -368,8 +369,8 @@ export function SearchPanel({
               </span>
               <span className="sr-only">Modifier la recherche</span>
             </button>
-            <button type="button" onClick={onOpenItinerary} className="mt-2 inline-flex items-center gap-1 text-xs font-semibold text-primary underline-offset-2 hover:underline">
-              De mon adresse jusqu'au Bled → Comparer les itinéraires
+            <button type="button" onClick={onOpenItinerary} aria-label="Activer le mode itinéraire" title="Activer le mode itinéraire" className="mt-2 inline-flex min-h-9 items-center gap-2 rounded-full border border-primary/25 bg-primary/5 px-3 text-xs font-semibold text-primary transition-colors hover:bg-primary/10">
+              <Route className="size-4" aria-hidden /> Itinéraire depuis chez moi
             </button>
           </section>
         ) : null}
@@ -388,8 +389,8 @@ export function SearchPanel({
               <X className="size-4" aria-hidden />
             </button>
           </div>
-          <button type="button" onClick={onOpenItinerary} className="text-left text-xs font-semibold text-primary underline-offset-2 hover:underline">
-            Ou comparer le voyage depuis mon adresse →
+          <button type="button" onClick={onOpenItinerary} className="inline-flex min-h-9 items-center gap-2 self-start rounded-full border border-primary/25 bg-primary/5 px-3 text-left text-xs font-semibold text-primary hover:bg-primary/10">
+            <Route className="size-4" aria-hidden /> Mode itinéraire
           </button>
           <div className="flex items-center justify-between gap-2">
             <div

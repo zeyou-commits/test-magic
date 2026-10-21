@@ -789,7 +789,7 @@ export default function FerryMap({
 
   useEffect(() => {
     const map = mapRef.current;
-    if (!map || !mapReady || selection || itineraryPreview) return;
+    if (!map || !mapReady || selection || itineraryPreview || portsMode) return;
     // Recalcule la limite de dézoom d'après la place réellement disponible (volet ou tiroir compris).
     const limit = map.cameraForBounds(LIMIT_BOUNDS, { padding: viewPadding() });
     if (limit?.zoom !== undefined)
@@ -817,7 +817,7 @@ export default function FerryMap({
         duration: cameraDuration(600),
       });
     }
-  }, [isMobile, mapReady, mobileBottomInset, desktopLeftInset, fitPortIds.join("|"), ports.length, itineraryPreview?.key]);
+  }, [isMobile, mapReady, mobileBottomInset, desktopLeftInset, fitPortIds.join("|"), ports.length, itineraryPreview?.key, portsMode]);
 
   useEffect(() => {
     const map = mapRef.current;
@@ -1271,10 +1271,16 @@ export default function FerryMap({
         map.setMinZoom(Math.min(minZoomFloor(), Math.max(2.2, limit.zoom - 0.6)));
     }
     if (portsMode) {
-      // La vue « Ports » cadre la zone de navigation, et non la boîte englobante
-      // de tous les ports (qui peut inclure des ports lointains et faire perdre la mer).
-      map.setMinZoom(3.1);
-      map.fitBounds(OVERVIEW_BOUNDS, { padding: viewPadding(), maxZoom: 5, duration: cameraDuration(800) });
+      // Cadre les ports réellement actifs dans la zone visible de la carte.
+      // Le minZoom précédent empêchait fitBounds d'inclure la côte algérienne.
+      const visiblePorts = ports.filter((port) => port.status === "active" && port.longitude >= -10 && port.longitude <= 16 && port.latitude >= 34 && port.latitude <= 46);
+      const lngs = visiblePorts.map((port) => port.longitude);
+      const lats = visiblePorts.map((port) => port.latitude);
+      map.setMinZoom(2.2);
+      const bounds: [[number, number], [number, number]] = visiblePorts.length > 1
+        ? [[Math.min(...lngs) - 0.55, Math.min(...lats) - 0.55], [Math.max(...lngs) + 0.55, Math.max(...lats) + 0.55]]
+        : OVERVIEW_BOUNDS;
+      map.fitBounds(bounds, { padding: viewPadding(), maxZoom: 5, duration: cameraDuration(800) });
     } else if (!isMobile) {
       map.easeTo({ center: [4, 39], zoom: 4.2, padding: viewPadding(), duration: cameraDuration(800) });
       return;
@@ -1343,7 +1349,7 @@ export default function FerryMap({
       map.off("zoomstart", clear);
       clear();
     };
-  }, [portsPulseKey, portsMode, mapReady, isMobile, ports, portMeta]);
+  }, [portsPulseKey, portsMode, mapReady, isMobile, ports, portMeta, mobileBottomInset, desktopLeftInset]);
 
   useEffect(() => {
     const map = mapRef.current;

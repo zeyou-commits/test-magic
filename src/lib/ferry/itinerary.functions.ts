@@ -20,6 +20,7 @@ type Place = { label: string; point: [number, number] };
 type PortPoint = z.infer<typeof portSchema>;
 type MatrixResponse = { code?: string; distances?: (number | null)[][]; durations?: (number | null)[][] };
 const geocodeCache = new Map<string, Place>();
+const EUROPE_CODES = new Set(["AL", "AD", "AT", "BE", "BA", "BG", "BY", "CH", "CY", "CZ", "DE", "DK", "EE", "ES", "FI", "FR", "GB", "GR", "HR", "HU", "IE", "IS", "IT", "LI", "LT", "LU", "LV", "MC", "MD", "ME", "MK", "MT", "NL", "NO", "PL", "PT", "RO", "RS", "SE", "SI", "SK", "SM", "UA", "VA"]);
 let lastGeocodeAt = 0;
 let geocodeQueue = Promise.resolve();
 let osrmQueue = Promise.resolve();
@@ -50,13 +51,15 @@ function roadEstimate(from: [number, number], to: [number, number]) {
 async function photonSearch(text: string, countryCode?: string): Promise<Place[]> {
   const url = new URL("https://photon.komoot.io/api");
   url.searchParams.set("q", text);
-  url.searchParams.set("limit", "5");
+  url.searchParams.set("limit", "12");
   url.searchParams.set("lang", "fr");
   if (countryCode) url.searchParams.set("countrycode", countryCode);
   const response = await fetch(url, { headers: { "User-Agent": "BledWay/1.0 (https://test-magic.vercel.app)" }, signal: AbortSignal.timeout(12000) });
   if (!response.ok) throw new Error("La recherche d'adresse est momentanément indisponible.");
-  const data = await response.json() as { features?: { geometry?: { coordinates?: number[] }; properties?: { name?: string; housenumber?: string; street?: string; postcode?: string; city?: string; country?: string } }[] };
+  const data = await response.json() as { features?: { geometry?: { coordinates?: number[] }; properties?: { name?: string; housenumber?: string; street?: string; postcode?: string; city?: string; country?: string; countrycode?: string } }[] };
   return (data.features ?? []).flatMap((feature) => {
+    const featureCountry = feature.properties?.countrycode?.toUpperCase();
+    if (countryCode ? featureCountry !== countryCode : !featureCountry || !EUROPE_CODES.has(featureCountry)) return [];
     const longitude = Number(feature.geometry?.coordinates?.[0]);
     const latitude = Number(feature.geometry?.coordinates?.[1]);
     if (!Number.isFinite(longitude) || !Number.isFinite(latitude)) return [];
@@ -64,21 +67,21 @@ async function photonSearch(text: string, countryCode?: string): Promise<Place[]
     const street = [p?.housenumber, p?.street].filter(Boolean).join(" ");
     const label = [street || p?.name, p?.postcode, p?.city, p?.country].filter(Boolean).join(", ");
     return [{ label: label || text, point: [longitude, latitude] as [number, number] }];
-  });
+  }).slice(0, 5);
 }
 
 export const searchItineraryAddress = createServerFn({ method: "GET" })
   .inputValidator((input: unknown) => z.object({ query: z.string().trim().min(3).max(120), countryCode: z.enum(["DZ", "FR", "ES", "IT", "PT", "BE", "DE", "CH"]).optional() }).parse(input))
   .handler(async ({ data }) => photonSearch(data.query, data.countryCode));
 
-async function geocode(text: string): Promise<Place> {
+async function geocode(text: string, countryCode?: string): Promise<Place> {
   const coordinateMatch = text.trim().match(/^(-?\d+(?:[.,]\d+)?)\s*[,; ]\s*(-?\d+(?:[.,]\d+)?)$/);
   if (coordinateMatch) {
     const latitude = Number(coordinateMatch[1]?.replace(",", "."));
     const longitude = Number(coordinateMatch[2]?.replace(",", "."));
     if (Math.abs(latitude) <= 90 && Math.abs(longitude) <= 180) return { label: text, point: [longitude, latitude] };
   }
-  const cacheKey = text.trim().toLocaleLowerCase("fr");
+  const cacheKey = `${countryCode ?? "EU"}:${text.trim().toLocaleLowerCase("fr")}`;
   const cached = geocodeCache.get(cacheKey);
   if (cached) return cached;
   const previous = geocodeQueue;
@@ -89,7 +92,7 @@ async function geocode(text: string): Promise<Place> {
   const wait = Math.max(0, 1100 - (Date.now() - lastGeocodeAt));
   if (wait) await new Promise((resolve) => setTimeout(resolve, wait));
   lastGeocodeAt = Date.now();
-  const first = (await photonSearch(text))[0];
+  const first = (await photonSearch(text, countryCode))[0];
   if (!first)
     throw new Error(`Adresse introuvable : ${text}. Précisez la ville et le pays.`);
   const place: Place = first;
@@ -130,7 +133,7 @@ export const calculateRoadAccess = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     const base = osrmBase();
     const origin = data.originPoint ? { label: data.origin, point: data.originPoint } : await geocode(data.origin);
-    const destination = data.destinationPoint ? { label: data.destination, point: data.destinationPoint } : await geocode(data.destination);
+    const destination = data.destinationPoint ? { label: data.destination, point: data.destinationPoint } : await geocode(data.destination, "DZ");
     const firstPoints: [number, number][] = [origin.point, ...data.departurePorts.map((port) => [port.longitude, port.latitude] as [number, number])];
     const lastPoints: [number, number][] = [...data.arrivalPorts.map((port) => [port.longitude, port.latitude] as [number, number]), destination.point];
     const [outward, onward] = await Promise.allSettled([

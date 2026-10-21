@@ -118,6 +118,11 @@ export function VesselView({
           {vessel.is_demo ? <DemoBadge /> : null}
         </div>
       </header>
+      {departure && from && to ? (
+        <div className="bw-ship-crossing-first">
+          <CrossingCard departure={departure} from={from} to={to} live={live} />
+        </div>
+      ) : null}
       <button
         type="button"
         onClick={requestVesselSignal}
@@ -154,7 +159,6 @@ export function VesselView({
         <TabsContent value="tracking" forceMount hidden={activeTab !== "tracking"}>
           {departure && from && to ? (
             <>
-              <CrossingCard departure={departure} from={from} to={to} live={live} />
               <button
                 className="bw-detail-link"
                 type="button"

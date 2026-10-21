@@ -9,6 +9,7 @@ interface MapStatsProps {
   companies: { id: string; name: string; logoUrl: string | null }[];
   portsCount: number;
   activeShortcut: MapShortcut;
+  menuOpen: boolean;
   selectedCompanyId: string | null;
   onToggle: (shortcut: Exclude<MapShortcut, null>) => void;
   onSelectCompany: (companyId: string | null) => void;
@@ -22,7 +23,7 @@ function LighthouseIcon({ className }: LucideProps) {
   </svg>;
 }
 
-export function MapStats({ atSea, upcomingShips, companies, portsCount, activeShortcut, selectedCompanyId, onToggle, onSelectCompany, onSelectShip, companyOf }: MapStatsProps) {
+export function MapStats({ atSea, upcomingShips, companies, portsCount, activeShortcut, menuOpen, selectedCompanyId, onToggle, onSelectCompany, onSelectShip, companyOf }: MapStatsProps) {
   const item = "flex items-center gap-1 rounded-full px-1.5 py-0.5 text-[11px] font-bold tabular-nums text-foreground transition-colors hover:bg-secondary data-[active=true]:bg-primary data-[active=true]:text-primary-foreground md:gap-1.5 md:px-2.5 md:py-1.5 md:text-sm";
   const shipList = activeShortcut === "sea" ? atSea : activeShortcut === "upcoming" ? upcomingShips : [];
   const shortcuts = [
@@ -35,10 +36,10 @@ export function MapStats({ atSea, upcomingShips, companies, portsCount, activeSh
     <div className="pointer-events-auto absolute right-2 top-3 z-20 md:right-5 md:top-5">
       <div className="flex items-center rounded-full border border-border bg-background/95 p-0.5 shadow-md backdrop-blur md:gap-0.5 md:p-1 md:shadow-lg">
         {shortcuts.map(({ id, label, count, icon }) => (
-          <button key={id} type="button" className={item} data-active={activeShortcut === id} aria-label={`${label} : ${count}`} aria-pressed={activeShortcut === id} aria-expanded={activeShortcut === id && id !== "ports"} title={`${label} : ${count}`} onClick={() => onToggle(id)}>{icon}{count}</button>
+          <button key={id} type="button" className={item} data-active={activeShortcut === id} aria-label={`${label} : ${count}`} aria-pressed={activeShortcut === id} aria-expanded={activeShortcut === id && menuOpen} title={`${label} : ${count}`} onClick={() => onToggle(id)}>{icon}{count}</button>
         ))}
       </div>
-      {(activeShortcut === "sea" || activeShortcut === "upcoming" || activeShortcut === "companies") && (
+      {menuOpen && (activeShortcut === "sea" || activeShortcut === "upcoming" || activeShortcut === "companies") && (
         <div className="ml-auto mt-2 max-h-[min(48dvh,18rem)] w-64 overflow-y-auto rounded-2xl border border-border bg-background/95 p-1 shadow-lg backdrop-blur" aria-label={activeShortcut === "companies" ? "Filtrer les compagnies" : "Choisir un navire"}>
           {activeShortcut === "companies" ? (
             <>

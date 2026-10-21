@@ -80,6 +80,8 @@ interface FerryMapProps {
   portsPulseKey?: number;
   /** Mode Ports actif : conserve les noms visibles jusqu'au second clic. */
   portsMode?: boolean;
+  portsFocusIds?: string[];
+  companyFocusShips?: FleetShip[];
   /** Navire choisi depuis le tableau de bord : jamais estompé, même si une ligne est sélectionnée. */
   focusShipId?: string | null;
 }
@@ -298,6 +300,8 @@ export default function FerryMap({
   focusTarget = null,
   portsPulseKey = 0,
   portsMode = false,
+  portsFocusIds = [],
+  companyFocusShips = [],
   focusShipId = null,
 }: FerryMapProps) {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -1182,34 +1186,51 @@ export default function FerryMap({
     const map = mapRef.current;
     if (!map || !mapReady || !focusTarget) return;
     const timer = window.setTimeout(() => {
+      map.resize();
       map.easeTo({
         center: focusTarget.center,
-        zoom: Math.max(map.getZoom(), 7),
+        zoom: Math.max(map.getZoom(), 6.4),
         padding: viewPadding(),
         duration: cameraDuration(800),
       });
-    }, 80);
+    }, 160);
     return () => window.clearTimeout(timer);
   }, [focusTarget?.key, mapReady]);
 
   useEffect(() => {
     const map = mapRef.current;
+    if (!map || !mapReady || !companyFocusShips.length) return;
+    const points = companyFocusShips.map((ship) => ship.live
+      ? [ship.live.position.longitude, ship.live.position.latitude] as [number, number]
+      : ship.lngLat);
+    const first = points[0];
+    if (points.length === 1 && first) {
+      map.easeTo({ center: first, zoom: Math.max(map.getZoom(), 6), padding: viewPadding(), duration: cameraDuration(650) });
+    } else {
+      map.fitBounds([
+        [Math.min(...points.map((point) => point[0])), Math.min(...points.map((point) => point[1]))],
+        [Math.max(...points.map((point) => point[0])), Math.max(...points.map((point) => point[1]))],
+      ], { padding: viewPadding(), maxZoom: 6.5, duration: cameraDuration(650) });
+    }
+  }, [companyFocusShips.map((ship) => ship.id).join("|"), mapReady]);
+
+  useEffect(() => {
+    const map = mapRef.current;
     const container = containerRef.current;
     if (!map || !mapReady || !portsPulseKey || !container) return;
-    if (!isMobile) {
-      const width = container.clientWidth;
-      map.easeTo({
-        center: [4, 39],
-        zoom: 4.2,
-        padding: {
-          top: 120,
-          right: 60,
-          bottom: 60,
-          left: Math.min(insetsRef.current.desktopLeftInset + 36, Math.round(width * 0.56)),
-        },
-        duration: cameraDuration(800),
-      });
-      if (!portsMode) return;
+    if (portsMode) {
+      const selected = portsFocusIds.length ? ports.filter((port) => portsFocusIds.includes(port.id)) : ports.filter((port) => port.status === "active");
+      if (selected.length > 1) {
+        map.fitBounds([
+          [Math.min(...selected.map((port) => port.longitude)), Math.min(...selected.map((port) => port.latitude))],
+          [Math.max(...selected.map((port) => port.longitude)), Math.max(...selected.map((port) => port.latitude))],
+        ], { padding: viewPadding(), maxZoom: 6, duration: cameraDuration(800) });
+      } else if (selected[0]) {
+        map.easeTo({ center: [selected[0].longitude, selected[0].latitude], zoom: 6, padding: viewPadding(), duration: cameraDuration(800) });
+      }
+    } else if (!isMobile) {
+      map.easeTo({ center: [4, 39], zoom: 4.2, padding: viewPadding(), duration: cameraDuration(800) });
+      return;
     }
     container.dataset["pulsePorts"] = "true";
     if (map.getLayer("fleet-label")) map.setPaintProperty("fleet-label", "text-opacity", 0.15);
@@ -1275,7 +1296,7 @@ export default function FerryMap({
       map.off("zoomstart", clear);
       clear();
     };
-  }, [portsPulseKey, portsMode, mapReady, isMobile, ports, portMeta]);
+  }, [portsPulseKey, portsMode, portsFocusIds.join("|"), mapReady, isMobile, ports, portMeta]);
 
   useEffect(() => {
     const map = mapRef.current;

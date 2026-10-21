@@ -1825,6 +1825,9 @@ html {
   align-items: center;
   margin-bottom: 12px;
 }
+.bw-ship-crossing-first {
+  margin: 0 0 12px;
+}
 .bw-ship-heading > div:last-child {
   min-width: 0;
   flex: 1;

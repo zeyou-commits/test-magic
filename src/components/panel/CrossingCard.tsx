@@ -23,13 +23,13 @@ export function CrossingCard({
       ? "Traversée annulée"
       : progress.times.arrival.kind === "observed"
         ? "Arrivée constatée"
+        : at < Date.parse(departure.departure_at) && progress.signal?.phase !== "sea"
+          ? "Prochaine traversée"
         : progress.signal
           ? progress.signal.phase === "sea"
             ? "En mer"
             : "Au port"
-          : at < Date.parse(departure.departure_at)
-            ? "Prochaine traversée"
-            : "Votre traversée";
+          : "Votre traversée";
   return (
     <section className="bw-crossing" aria-label="Avancement de la traversée">
       <div className="bw-crossing-top">
@@ -44,7 +44,7 @@ export function CrossingCard({
         <ArrowRight size={17} aria-hidden />
         <strong>{to.name}</strong>
       </div>
-      {progress.ratio !== null ? (
+      {progress.ratio !== null && (at >= Date.parse(departure.departure_at) || progress.signal?.phase === "sea") ? (
         <div className="bw-crossing-progress">
           <div className="bw-crossing-progress-label">
             <span>{progress.source}</span>

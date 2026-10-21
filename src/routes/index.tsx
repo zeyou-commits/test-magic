@@ -53,7 +53,8 @@ function Index() {
     typeof window === "undefined" ? null : selectionFromUrl(window.location.search),
   );
   const [selectionHistory, setSelectionHistory] = useState<Selection[]>([]);
-  const handleSelect = (newSelection: Selection | null) => {
+  const handleSelect = (newSelection: Selection | null, peek = false) => {
+    setPeekSelectionKey(peek && newSelection ? `${newSelection.type}:${newSelection.id}` : null);
     if (newSelection === null) {
       setSelection(null);
       setSelectionHistory([]);
@@ -63,11 +64,12 @@ function Index() {
       }
       setSelection(newSelection);
       setPanelMode(null);
-      if (newSelection.type === "vessel" || newSelection.type === "departure") setPanelLevel(2);
+      if (newSelection.type === "vessel" || newSelection.type === "departure") setPanelLevel(peek ? 1 : 2);
     }
     setFocusShipId(null);
   };
   const handleBack = () => {
+    setPeekSelectionKey(null);
     if (selectionHistory.length > 0) {
       const previous = selectionHistory[selectionHistory.length - 1];
       setSelectionHistory((prev) => prev.slice(0, -1));
@@ -94,10 +96,12 @@ function Index() {
   const [highlightRouteId, setHighlightRouteId] = useState<string | null>(null);
   const [focusedRouteId, setFocusedRouteId] = useState<string | null>(null);
   const [panelLevel, setPanelLevel] = useState<0 | 1 | 2>(0);
+  const [peekSelectionKey, setPeekSelectionKey] = useState<string | null>(null);
   const [panelMode, setPanelMode] = useState<"departures" | "search" | null>(null);
   const [portsActive, setPortsActive] = useState(false);
   const [activeShortcut, setActiveShortcut] = useState<MapShortcut>(null);
   const [shortcutCompanyId, setShortcutCompanyId] = useState<string | null>(null);
+  const [shortcutMenuOpen, setShortcutMenuOpen] = useState(false);
   const [desktopPanelOpen, setDesktopPanelOpen] = useState(true);
   const [desktopPanelWidth, setDesktopPanelWidth] = useState(DESKTOP_PANEL);
   const resizingPanel = useRef(false);
@@ -170,6 +174,7 @@ function Index() {
     }
     return fleet;
   }, [activeShortcut, shortcutCompanyId, atSea, upcomingShips, fleet, departures, fleetDepartures]);
+  const companyFocusShips = activeShortcut === "companies" && shortcutCompanyId ? mapFleet : [];
 
   const allResults = [portsResult, routesResult, departuresResult, companiesResult];
   const isLoadingData = allResults.some((res) => res.isPending);
@@ -193,6 +198,14 @@ function Index() {
   const mapVisibleRouteIds = useMemo(() => matchingRoutes
     .filter((route) => activeShortcut !== "companies" || !shortcutCompanyId || route.company_ids.includes(shortcutCompanyId))
     .map((route) => route.id), [matchingRoutes, activeShortcut, shortcutCompanyId]);
+  const portsFocusIds = useMemo(() => {
+    const ids = new Set<string>();
+    matchingRoutes.forEach((route) => {
+      ids.add(route.departure_port_id);
+      ids.add(route.arrival_port_id);
+    });
+    return [...ids];
+  }, [matchingRoutes]);
   // Lignes avec au moins un départ à venir (non annulé) : les autres sont en pointillés.
   const scheduledRouteIds = useMemo(() => {
     const now = Date.now();
@@ -434,14 +447,16 @@ function Index() {
   };
 
   // Espace masqué par le tiroir mobile : la carte se recentre au-dessus de lui.
-  const mobileBottomInset = panelLevel === 0 ? 0 : panelLevel === 2 ? viewportHeight - TAB_BAR_HEIGHT : Math.round(viewportHeight * MIDDLE_RATIO);
+  const isPeekSelection = peekSelectionKey !== null && peekSelectionKey === `${selection?.type}:${selection?.id}`;
+  const peekHeight = Math.min(Math.round(viewportHeight * 0.6), Math.max(240, viewportHeight - 260));
+  const mobileBottomInset = panelLevel === 0 ? 0 : panelLevel === 2 ? viewportHeight - TAB_BAR_HEIGHT : isPeekSelection ? peekHeight : Math.round(viewportHeight * MIDDLE_RATIO);
   const mobilePanelHeight = mobileBottomInset;
   // Sur mobile, choisir un navire, un port ou une traversée rouvre le tiroir s'il était replié.
   useEffect(() => {
-    if (selection?.type === "vessel" || selection?.type === "departure") setPanelLevel(2);
+    if (selection?.type === "vessel" || selection?.type === "departure") setPanelLevel(isPeekSelection ? 1 : 2);
     else if (selection && panelLevel === 0) setPanelLevel(1);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selection?.type, selection?.id]);
+  }, [selection?.type, selection?.id, isPeekSelection]);
 
   // La recherche ouverte sur mobile prend toute la hauteur.
   useEffect(() => {
@@ -494,6 +509,7 @@ function Index() {
     setPortsActive(false);
     setActiveShortcut(null);
     setShortcutCompanyId(null);
+    setShortcutMenuOpen(false);
     window.dispatchEvent(new Event("batogo:close-filters"));
   };
 
@@ -504,6 +520,7 @@ function Index() {
     setPortsActive(false);
     setActiveShortcut(null);
     setShortcutCompanyId(null);
+    setShortcutMenuOpen(false);
     setPanelMode("departures");
     setPanelLevel(2);
     window.setTimeout(() => window.dispatchEvent(new Event("batogo:show-departures")), 60);
@@ -515,6 +532,7 @@ function Index() {
     setPortsActive(false);
     setActiveShortcut(null);
     setShortcutCompanyId(null);
+    setShortcutMenuOpen(false);
     setPanelMode("search");
     setPanelLevel(2);
     window.setTimeout(() => window.dispatchEvent(new Event("batogo:edit-filters")), 60);
@@ -528,6 +546,7 @@ function Index() {
     setPortsActive(true);
     setActiveShortcut(null);
     setShortcutCompanyId(null);
+    setShortcutMenuOpen(false);
     setPortsPulseKey(Date.now());
     window.dispatchEvent(new Event("batogo:close-filters"));
   };
@@ -601,6 +620,7 @@ function Index() {
               "--desktop-panel-width": `${desktopPanelWidth}px`,
               "--stage-height": `${viewportHeight}px`,
               "--mobile-panel-height": `${mobilePanelHeight}px`,
+              "--mobile-peek-height": `${peekHeight}px`,
             } as React.CSSProperties
           }
         >
@@ -624,7 +644,7 @@ function Index() {
             }
             className={`bw-map-panel absolute bottom-0 left-0 right-0 z-[60] flex flex-col overflow-hidden bg-transparent ${panelLevel === 0 && dragHeight === null ? "max-md:invisible max-md:pointer-events-none" : ""} ${dragHeight !== null ? "transition-none" : "transition-[height,width,transform] duration-[420ms] ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none"} md:bottom-5 md:left-5 md:right-auto md:top-5 md:h-auto md:w-[var(--desktop-panel-width)] md:overflow-visible md:rounded-3xl md:z-40 ${
               desktopPanelOpen ? "md:translate-x-0" : "md:translate-x-[calc(-100%-1.25rem)]"
-            } ${panelLevel === 0 ? "h-24 rounded-t-3xl" : panelLevel === 1 ? "h-[calc(var(--stage-height)*0.68)] rounded-t-3xl" : "h-[calc(var(--stage-height)-3.5rem)] rounded-t-3xl"}`}
+            } ${panelLevel === 0 ? "h-24 rounded-t-3xl" : panelLevel === 1 ? isPeekSelection ? "h-[var(--mobile-peek-height)] rounded-t-3xl" : "h-[calc(var(--stage-height)*0.68)] rounded-t-3xl" : "h-[calc(var(--stage-height)-3.5rem)] rounded-t-3xl"}`}
           >
             {collapsed ? (
               <CollapsedPanelSummary
@@ -757,23 +777,32 @@ function Index() {
               companies={shortcutCompanies}
               portsCount={ports.length}
               activeShortcut={activeShortcut}
+              menuOpen={shortcutMenuOpen}
               selectedCompanyId={shortcutCompanyId}
               onToggle={(shortcut) => {
+                handleSelect(null);
+                setFocusTarget(null);
+                setPanelLevel(0);
+                setPanelMode(null);
                 if (activeShortcut === shortcut) {
                   setActiveShortcut(null);
                   setShortcutCompanyId(null);
+                  setShortcutMenuOpen(false);
                   return;
                 }
                 setActiveShortcut(shortcut);
                 setShortcutCompanyId(null);
-                setPanelLevel(0);
-                setPanelMode(null);
+                setShortcutMenuOpen(shortcut !== "ports");
                 if (shortcut === "ports") setPortsPulseKey(Date.now());
               }}
-              onSelectCompany={setShortcutCompanyId}
+              onSelectCompany={(companyId) => {
+                setShortcutCompanyId(companyId);
+                setShortcutMenuOpen(false);
+              }}
               onSelectShip={(ship) => {
-                if (ship.vesselId) handleSelect({ type: "vessel", id: ship.vesselId });
-                else handleSelect({ type: "departure", id: ship.departureId });
+                setShortcutMenuOpen(false);
+                if (ship.vesselId) handleSelect({ type: "vessel", id: ship.vesselId }, true);
+                else handleSelect({ type: "departure", id: ship.departureId }, true);
                 setFocusShipId(ship.id);
                 const pos = ship.live ? ship.live.position : null;
                 setFocusTarget({
@@ -795,6 +824,8 @@ function Index() {
                   focusTarget={focusTarget}
                   portsPulseKey={activeShortcut === "ports" || portsActive ? portsPulseKey : 0}
                   portsMode={activeShortcut === "ports"}
+                  portsFocusIds={portsFocusIds}
+                  companyFocusShips={companyFocusShips}
                   focusShipId={focusShipId}
                   ports={ports}
                   routes={routes}
@@ -810,6 +841,7 @@ function Index() {
                   onSelect={handleSelect}
                   onOpenPanel={() => setPanelLevel(2)}
                   onMapInteract={(kind) => {
+                    setShortcutMenuOpen(false);
                     if (kind === "port") {
                       handleSelect(null);
                       setPanelLevel(0);

@@ -22,6 +22,7 @@ import { addShipImages } from "./shipIcons";
 import { physicalStatus, projectedPosition } from "@/lib/ferry/tracking";
 import { portTimeZone, wallTimeInZone } from "@/lib/ferry/time";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { vesselVisual } from "@/lib/ferry/vesselVisuals";
 
 // En production, MapLibre v6 a besoin que son « worker » soit fourni explicitement.
 // En développement, ce fichier injecté par Vite plante (« document is not defined ») et la carte
@@ -652,6 +653,15 @@ export default function FerryMap({
           card.setAttribute("role", "tooltip");
           const name = document.createElement("strong");
           name.textContent = String(feature.properties["name"] ?? "Navire");
+          const visual = vesselVisual(name.textContent);
+          if (visual) {
+            const image = document.createElement("img");
+            image.src = visual;
+            image.alt = "";
+            image.className = "bw-vessel-tooltip__image";
+            image.loading = "lazy";
+            card.append(image);
+          }
           const status = document.createElement("p");
           status.textContent = String(feature.properties["allure"] ?? "");
           card.append(name, status);

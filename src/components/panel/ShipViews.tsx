@@ -115,6 +115,7 @@ export function VesselView({
           ) : null}
         </details>
       ) : null}
+      {photo?.source === "render" ? <p className="bw-render-credit">Illustration 3D du navire</p> : null}
       <Tabs value={activeTab} onValueChange={setTab} className="bw-ship-tabs">
         <TabsList aria-label="Fiche du navire">
           <TabsTrigger value="tracking">Ma traversée</TabsTrigger>
@@ -193,6 +194,12 @@ export function VesselView({
         </TabsContent>
         <TabsContent value="onboard" forceMount hidden={activeTab !== "onboard"}>
           <section className="bw-onboard">
+            {photo?.source === "render" ? (
+              <figure className="bw-vessel-render">
+                <img src={photo.url} alt={`Illustration 3D du ${vessel.name}`} loading="lazy" />
+                <figcaption>Illustration 3D de {vessel.name}</figcaption>
+              </figure>
+            ) : null}
             <h3>Faites connaissance avec {vessel.name}</h3>
             {vessel.description ? <p>{vessel.description}</p> : null}
             <VesselSpecs vessel={vessel} />

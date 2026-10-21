@@ -13,6 +13,7 @@ import {
 } from "@/components/editorial/Editorial";
 import { vesselDossiers } from "@/content/vessels";
 import { absoluteUrl, seoHead } from "@/lib/seo/site";
+import { vesselVisual } from "@/lib/ferry/vesselVisuals";
 export const Route = createFileRoute("/bateaux/$slug")({
   loader: ({ params }) => {
     const v = vesselDossiers.find((v) => v.slug === params.slug);
@@ -33,6 +34,7 @@ export const Route = createFileRoute("/bateaux/$slug")({
 });
 function Boat() {
   const v = Route.useLoaderData();
+  const visual = vesselVisual(v.name);
   return (
     <SiteLayout>
       <StructuredData
@@ -52,6 +54,12 @@ function Boat() {
         ]}
       />
       <EditorialHero label={v.company} title={v.name} intro={v.summary} />
+      {visual ? (
+        <figure className="bw-editorial-vessel-render">
+          <img src={visual} alt={`Illustration 3D du ${v.name}`} width={1264} height={848} />
+          <figcaption>Illustration 3D de {v.name}</figcaption>
+        </figure>
+      ) : null}
       <ReadingLayout sections={v.sections}>
         <AnswerBox>
           Les caractéristiques décrivent un navire. Pour connaître le bateau affecté, les places

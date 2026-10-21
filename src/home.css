@@ -868,12 +868,10 @@ html {
     border: 0;
   }
   .bw-map-heading {
-    padding-block: 16px 20px;
+    padding-block: 10px 14px;
   }
-  .bw-map-heading .bw-eyebrow {
-    font-size: 9px;
-    letter-spacing: 0.08em;
-    margin-bottom: 10px;
+  .bw-map-heading .bw-map-overline {
+    display: none;
   }
   .bw-map-heading h1 {
     font-size: 30px;
@@ -884,14 +882,14 @@ html {
   .bw-map-stage {
     margin-inline: 8px;
     border-radius: 18px;
-    height: max(500px, 68svh);
+    height: max(320px, calc(100svh - 190px));
   }
   .bw-map-panel {
     bottom: 0 !important;
     margin-inline: 8px;
   }
   .bw-map-stage .maplibregl-ctrl-bottom-right {
-    bottom: 150px;
+    bottom: calc(var(--mobile-panel-height) + 8px);
     right: 6px;
   }
   .bw-map-stage .maplibregl-ctrl-group {
@@ -1099,7 +1097,7 @@ html {
     font-size: 28px;
   }
   .bw-map-stage {
-    height: max(400px, calc(100svh - 132px));
+    height: max(320px, calc(100svh - 190px));
     border-radius: 20px;
   }
 }

@@ -361,6 +361,28 @@
   font-weight: 800;
 }
 
+/* Mode Ports mobile : sept libellés au maximum, retenus par collision en JS. */
+[data-pulse-ports="true"] .port-marker__label {
+  display: none !important;
+}
+[data-pulse-ports="true"] .port-marker[data-port-focus-label="true"] .port-marker__label {
+  display: inline-flex !important;
+  align-items: center;
+  width: max-content;
+  max-width: 130px;
+  padding: 3px 6px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  border: 1px solid #cbded7;
+  border-radius: 8px;
+  background: #fffdf8;
+  box-shadow: 0 3px 10px rgba(15, 50, 67, 0.12);
+  color: #153b50;
+  font-size: 11px;
+  line-height: 1.35;
+  text-shadow: none;
+}
+
 /* ---------- Infobulle de port (Popover Carte) ---------- */
 .port-tip {
   position: absolute;

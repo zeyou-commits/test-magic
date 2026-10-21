@@ -12,19 +12,11 @@ import {
   portsQuery,
   routesQuery,
   upcomingDeparturesQuery,
-  vesselsQuery,
 } from "@/lib/ferry/queries";
 import { capitalizeFirst, formatDateParts } from "@/lib/ferry/format";
 import { emptyFilters, type Filters, type Selection, type RouteLine } from "@/lib/ferry/types";
 import type { PortMeta } from "@/components/map/FerryMap";
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import { MapStatusBar } from "@/components/map/MapStatusBar";
 import { MapLegend } from "@/components/map/MapLegend";
 import { MapStats } from "@/components/map/MapStats";
@@ -53,7 +45,7 @@ export const Route = createFileRoute("/")({
 /** Hauteurs du tiroir mobile : replié, intermédiaire, plein écran (hors barre d'onglets). */
 const TAB_BAR_HEIGHT = 56;
 const COLLAPSED_HEIGHT = 96;
-const MIDDLE_RATIO = 0.5;
+const MIDDLE_RATIO = 0.68;
 const DESKTOP_PANEL = 420;
 
 function Index() {
@@ -70,6 +62,7 @@ function Index() {
         setSelectionHistory((prev) => [...prev, selection]);
       }
       setSelection(newSelection);
+      setPanelMode(null);
       if (newSelection.type === "vessel" || newSelection.type === "departure") setPanelLevel(2);
     }
     setFocusShipId(null);
@@ -84,6 +77,7 @@ function Index() {
       setSelection(null);
       setSelectionHistory([]);
       setFocusShipId(null);
+      if (typeof window !== "undefined" && window.innerWidth < 768) setPanelLevel(0);
     }
   };
   const backLabel =
@@ -100,34 +94,8 @@ function Index() {
   const [highlightRouteId, setHighlightRouteId] = useState<string | null>(null);
   const [focusedRouteId, setFocusedRouteId] = useState<string | null>(null);
   const [panelLevel, setPanelLevel] = useState<0 | 1 | 2>(0);
-  const [signalChooserOpen, setSignalChooserOpen] = useState(false);
-  const [signalKind, setSignalKind] = useState<"vessel" | "port" | null>(null);
-  const [signalTarget, setSignalTarget] = useState("");
-  useEffect(() => {
-    if (window.sessionStorage.getItem("bledway:open-signal-chooser") !== "1") return;
-    window.sessionStorage.removeItem("bledway:open-signal-chooser");
-    setSignalChooserOpen(true);
-  }, []);
-  const openMobileSignal = () => {
-    if (selection?.type !== "vessel" && selection?.type !== "port") {
-      setSignalChooserOpen(true);
-      return;
-    }
-    requestSignalFor(selection.type, selection.id);
-  };
-  const requestSignalFor = (kind: "vessel" | "port", target: string) => {
-    setSignalChooserOpen(false);
-    setSignalKind(null);
-    setSignalTarget("");
-    const alreadySelected = selection?.type === kind && selection.id === target;
-    if (!alreadySelected) {
-      window.sessionStorage.setItem("bledway:pending-travel-signal", `${kind}:${target}`);
-      handleSelect({ type: kind, id: target });
-    }
-    setPanelLevel(2);
-    if (alreadySelected)
-      window.dispatchEvent(new CustomEvent("batogo:show-signal", { detail: { kind, target } }));
-  };
+  const [panelMode, setPanelMode] = useState<"departures" | "search" | null>(null);
+  const [portsActive, setPortsActive] = useState(false);
   const [desktopPanelOpen, setDesktopPanelOpen] = useState(true);
   const [desktopPanelWidth, setDesktopPanelWidth] = useState(DESKTOP_PANEL);
   const resizingPanel = useRef(false);
@@ -169,7 +137,6 @@ function Index() {
   const routesResult = useQuery(routesQuery);
   const departuresResult = useQuery(upcomingDeparturesQuery());
   const companiesResult = useQuery(companiesQuery);
-  const { data: vessels = [] } = useQuery(vesselsQuery);
 
   const { data: ports = [] } = portsResult;
   const { data: routes = [] } = routesResult;
@@ -439,8 +406,8 @@ function Index() {
   };
 
   // Espace masqué par le tiroir mobile : la carte se recentre au-dessus de lui.
-  const mobileBottomInset =
-    panelLevel === 0 ? COLLAPSED_HEIGHT : Math.round(viewportHeight * MIDDLE_RATIO);
+  const mobileBottomInset = panelLevel === 0 ? 0 : Math.round(viewportHeight * MIDDLE_RATIO);
+  const mobilePanelHeight = panelLevel === 2 ? viewportHeight - TAB_BAR_HEIGHT : mobileBottomInset;
   // Sur mobile, choisir un navire, un port ou une traversée rouvre le tiroir s'il était replié.
   useEffect(() => {
     if (selection?.type === "vessel" || selection?.type === "departure") setPanelLevel(2);
@@ -453,6 +420,22 @@ function Index() {
     const full = () => setPanelLevel(2);
     window.addEventListener("batogo:panel-full", full);
     return () => window.removeEventListener("batogo:panel-full", full);
+  }, []);
+  useEffect(() => {
+    const close = () => {
+      setPanelLevel(0);
+      setPanelMode(null);
+    };
+    const results = () => {
+      setPanelLevel(1);
+      setPanelMode("departures");
+    };
+    window.addEventListener("batogo:close-panel", close);
+    window.addEventListener("batogo:results-panel", results);
+    return () => {
+      window.removeEventListener("batogo:close-panel", close);
+      window.removeEventListener("batogo:results-panel", results);
+    };
   }, []);
 
   useEffect(() => {
@@ -468,7 +451,6 @@ function Index() {
         center: pos ? [pos.longitude, pos.latitude] : ship.lngLat,
         key: Date.now(),
       });
-      setPanelLevel(0);
     };
     window.addEventListener("batogo:focus-vessel", focusVessel);
     return () => window.removeEventListener("batogo:focus-vessel", focusVessel);
@@ -479,8 +461,60 @@ function Index() {
   const resetToMap = () => {
     document.getElementById("carte")?.scrollIntoView({ behavior: "instant" });
     handleSelect(null);
-    if (panelLevel === 0) setPanelLevel(1);
+    setPanelLevel(0);
+    setPanelMode(null);
+    setPortsActive(false);
+    window.dispatchEvent(new Event("batogo:close-filters"));
   };
+
+  const openMobileDepartures = () => {
+    document.getElementById("carte")?.scrollIntoView({ behavior: "instant" });
+    handleSelect(null);
+    setFilters((current) => ({ ...current, roundTrip: false, returnDate: null }));
+    setPortsActive(false);
+    setPanelMode("departures");
+    setPanelLevel(1);
+    window.setTimeout(() => window.dispatchEvent(new Event("batogo:show-departures")), 60);
+  };
+
+  const openMobileSearch = () => {
+    document.getElementById("carte")?.scrollIntoView({ behavior: "instant" });
+    handleSelect(null);
+    setPortsActive(false);
+    setPanelMode("search");
+    setPanelLevel(2);
+    window.setTimeout(() => window.dispatchEvent(new Event("batogo:edit-filters")), 60);
+  };
+
+  const showMobilePorts = () => {
+    document.getElementById("carte")?.scrollIntoView({ behavior: "instant" });
+    handleSelect(null);
+    setPanelMode(null);
+    setPanelLevel(0);
+    setPortsActive(true);
+    setPortsPulseKey(Date.now());
+    window.dispatchEvent(new Event("batogo:close-filters"));
+  };
+
+  useEffect(() => {
+    if (!portsActive) return;
+    const timer = window.setTimeout(() => setPortsActive(false), 3600);
+    return () => window.clearTimeout(timer);
+  }, [portsActive, portsPulseKey]);
+
+  useEffect(() => {
+    const action = window.sessionStorage.getItem("bledway:open-home-action");
+    if (!action) return;
+    const timer = window.setTimeout(() => {
+      window.sessionStorage.removeItem("bledway:open-home-action");
+      if (action === "departures") openMobileDepartures();
+      else if (action === "search") openMobileSearch();
+      else if (action === "ports") showMobilePorts();
+    }, 120);
+    return () => window.clearTimeout(timer);
+    // Navigation entrante : l'action enregistrée n'est lue qu'une fois au montage.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const exploreRoute = (route: RouteLine) => {
     setFilters((current) => ({
@@ -509,7 +543,9 @@ function Index() {
       <main id="contenu" tabIndex={-1}>
         <div className="bw-map-heading bw-container">
           <div>
-            <p className="bw-eyebrow max-md:hidden">Europe ↔ Algérie · Votre voyage commence ici</p>
+            <p className="bw-eyebrow bw-map-overline">
+              Europe ↔ Algérie · Votre voyage commence ici
+            </p>
             <h1>
               La mer nous <span>rapproche.</span>
             </h1>
@@ -527,6 +563,7 @@ function Index() {
             {
               "--desktop-panel-width": `${desktopPanelWidth}px`,
               "--stage-height": `${viewportHeight}px`,
+              "--mobile-panel-height": `${mobilePanelHeight}px`,
             } as React.CSSProperties
           }
         >
@@ -548,7 +585,7 @@ function Index() {
                 "--desktop-panel-width": `${desktopPanelWidth}px`,
               } as React.CSSProperties
             }
-            className={`bw-map-panel absolute bottom-0 left-0 right-0 z-[60] flex flex-col overflow-hidden bg-transparent ${dragHeight !== null ? "transition-none" : "transition-[height,width,transform] duration-[420ms] ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none"} md:bottom-5 md:left-5 md:right-auto md:top-5 md:h-auto md:w-[var(--desktop-panel-width)] md:overflow-visible md:rounded-3xl md:z-40 ${
+            className={`bw-map-panel absolute bottom-0 left-0 right-0 z-[60] flex flex-col overflow-hidden bg-transparent ${panelLevel === 0 && dragHeight === null ? "max-md:invisible max-md:pointer-events-none" : ""} ${dragHeight !== null ? "transition-none" : "transition-[height,width,transform] duration-[420ms] ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none"} md:bottom-5 md:left-5 md:right-auto md:top-5 md:h-auto md:w-[var(--desktop-panel-width)] md:overflow-visible md:rounded-3xl md:z-40 ${
               desktopPanelOpen ? "md:translate-x-0" : "md:translate-x-[calc(-100%-1.25rem)]"
             } ${panelLevel === 0 ? "h-24 rounded-t-3xl" : panelLevel === 1 ? "h-[calc(var(--stage-height)*0.5)] rounded-t-3xl" : "h-[calc(var(--stage-height)-3.5rem)] rounded-t-3xl"}`}
           >
@@ -656,82 +693,13 @@ function Index() {
           <div className="bw-home-mobile-tabs fixed bottom-0 left-0 right-0 z-[70] md:hidden">
             <MobileTabBar
               className="h-[calc(3.5rem+env(safe-area-inset-bottom))] pb-[env(safe-area-inset-bottom)]"
+              activeTab={portsActive ? "ports" : panelLevel === 0 ? "map" : (panelMode ?? "map")}
               onOpenMap={resetToMap}
-              onOpenSignal={openMobileSignal}
+              onOpenDepartures={openMobileDepartures}
+              onOpenSearch={openMobileSearch}
+              onShowPorts={showMobilePorts}
             />
           </div>
-
-          <Dialog open={signalChooserOpen} onOpenChange={setSignalChooserOpen}>
-            <DialogContent className="max-w-sm rounded-3xl">
-              <DialogHeader>
-                <DialogTitle>Que souhaitez-vous signaler ?</DialogTitle>
-                <DialogDescription>
-                  Choisissez un bateau ou un port, puis partagez une information constatée sur
-                  place. Les signalements prédéfinis sont visibles immédiatement.
-                </DialogDescription>
-              </DialogHeader>
-              {!signalKind ? (
-                <div className="grid grid-cols-2 gap-2">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    className="h-12 rounded-xl"
-                    onClick={() => setSignalKind("vessel")}
-                  >
-                    Un bateau
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    className="h-12 rounded-xl"
-                    onClick={() => setSignalKind("port")}
-                  >
-                    Un port
-                  </Button>
-                </div>
-              ) : (
-                <div className="grid gap-3">
-                  <label htmlFor="signal-target" className="text-sm font-semibold">
-                    {signalKind === "vessel" ? "Choisir le bateau" : "Choisir le port"}
-                  </label>
-                  <select
-                    id="signal-target"
-                    value={signalTarget}
-                    onChange={(event) => setSignalTarget(event.target.value)}
-                    className="h-12 w-full rounded-xl border border-border bg-card px-3 text-sm"
-                  >
-                    <option value="">Sélectionnez dans la liste</option>
-                    {(signalKind === "vessel" ? vessels : ports)
-                      .filter((item) => item.status === "active")
-                      .map((item) => (
-                        <option key={item.id} value={item.id}>
-                          {item.name}
-                        </option>
-                      ))}
-                  </select>
-                  <div className="flex items-center justify-between gap-2">
-                    <button
-                      type="button"
-                      className="text-sm font-semibold text-muted-foreground"
-                      onClick={() => {
-                        setSignalKind(null);
-                        setSignalTarget("");
-                      }}
-                    >
-                      ← Retour
-                    </button>
-                    <Button
-                      type="button"
-                      disabled={!signalTarget}
-                      onClick={() => signalKind && requestSignalFor(signalKind, signalTarget)}
-                    >
-                      Continuer
-                    </Button>
-                  </div>
-                </div>
-              )}
-            </DialogContent>
-          </Dialog>
 
           {/* CARTE */}
           <div className="bw-map-canvas absolute inset-0 z-0 bg-[var(--sea)]">
@@ -768,6 +736,10 @@ function Index() {
                 return companies.find((c) => c.id === dep?.company_id)?.name;
               }}
               onOpenDepartures={() => {
+                if (window.innerWidth < 768) {
+                  openMobileDepartures();
+                  return;
+                }
                 handleSelect(null);
                 setFocusShipId(null);
                 openPanel();
@@ -785,6 +757,10 @@ function Index() {
                 window.dispatchEvent(new Event("batogo:open-companies"));
               }}
               onShowPorts={() => {
+                if (window.innerWidth < 768) {
+                  showMobilePorts();
+                  return;
+                }
                 handleSelect(null);
                 setFocusShipId(null);
                 setFocusTarget(null);
@@ -816,7 +792,7 @@ function Index() {
                       handleSelect(null);
                       setPanelLevel(0);
                     } else if (kind === "vessel") setPanelLevel(2);
-                    else setPanelLevel((level) => (level === 2 ? 1 : level));
+                    else setPanelLevel(1);
                   }}
                   mobileBottomInset={mobileBottomInset}
                   desktopLeftInset={desktopPanelOpen ? desktopPanelWidth + 80 : 50}

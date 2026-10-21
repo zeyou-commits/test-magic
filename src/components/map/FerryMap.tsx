@@ -1193,24 +1193,81 @@ export default function FerryMap({
     const map = mapRef.current;
     const container = containerRef.current;
     if (!map || !mapReady || !portsPulseKey || !container) return;
-
-    map.stop();
-    map.setPadding({ top: 0, right: 0, bottom: 0, left: 0 });
-
-    // Remplacement du fitBounds par le centrage fixe
-    map.easeTo({
-      center: [4, 39],
-      zoom: typeof window !== "undefined" && window.innerWidth >= 768 ? 4.2 : 3.2,
-      padding: viewPadding(),
-      duration: cameraDuration(800),
-    });
-
-    container.dataset["pulsePorts"] = "false";
-    void container.offsetWidth;
+    if (!isMobile) {
+      const width = container.clientWidth;
+      map.easeTo({
+        center: [4, 39],
+        zoom: 4.2,
+        padding: {
+          top: 120,
+          right: 60,
+          bottom: 60,
+          left: Math.min(insetsRef.current.desktopLeftInset + 36, Math.round(width * 0.56)),
+        },
+        duration: cameraDuration(800),
+      });
+      return;
+    }
     container.dataset["pulsePorts"] = "true";
-    const timer = window.setTimeout(() => (container.dataset["pulsePorts"] = "false"), 3600);
-    return () => window.clearTimeout(timer);
-  }, [portsPulseKey, mapReady]);
+    if (map.getLayer("fleet-label")) map.setPaintProperty("fleet-label", "text-opacity", 0.15);
+    if (map.getLayer("fleet-ships")) map.setPaintProperty("fleet-ships", "icon-opacity", 0.35);
+
+    // N'afficher que les noms visibles et suffisamment espacés, sans déplacer la carte.
+    const frame = window.requestAnimationFrame(() => {
+      const bounds = container.getBoundingClientRect();
+      const occupied: DOMRect[] = [];
+      const rankedPorts = [...ports]
+        .filter((port) => port.status === "active")
+        .sort((a, b) => (portMeta[b.id]?.routes ?? 0) - (portMeta[a.id]?.routes ?? 0));
+      portMarkersRef.current.forEach((marker) => {
+        delete marker.getElement().dataset["portFocusLabel"];
+      });
+      for (const port of rankedPorts) {
+        if (occupied.length >= 7) break;
+        const element = portMarkersRef.current.get(port.id)?.getElement();
+        const label = element?.querySelector<HTMLElement>(".port-marker__label");
+        if (!element || !label) continue;
+        element.dataset["portFocusLabel"] = "true";
+        const rect = label.getBoundingClientRect();
+        const outside =
+          rect.width === 0 ||
+          rect.left < bounds.left + 8 ||
+          rect.right > bounds.right - 8 ||
+          rect.top < bounds.top + 70 ||
+          rect.bottom > bounds.bottom - 8;
+        const overlaps = occupied.some(
+          (other) =>
+            rect.left < other.right + 8 &&
+            rect.right > other.left - 8 &&
+            rect.top < other.bottom + 6 &&
+            rect.bottom > other.top - 6,
+        );
+        if (outside || overlaps) delete element.dataset["portFocusLabel"];
+        else occupied.push(rect);
+      }
+    });
+    const clear = () => {
+      container.dataset["pulsePorts"] = "false";
+      portMarkersRef.current.forEach((marker) => {
+        delete marker.getElement().dataset["portFocusLabel"];
+      });
+      if (!map.getStyle()) return;
+      if (map.getLayer("fleet-label"))
+        map.setPaintProperty("fleet-label", "text-opacity", ["get", "opacity"]);
+      if (map.getLayer("fleet-ships"))
+        map.setPaintProperty("fleet-ships", "icon-opacity", ["get", "opacity"]);
+    };
+    const timer = window.setTimeout(clear, 3600);
+    map.on("dragstart", clear);
+    map.on("zoomstart", clear);
+    return () => {
+      window.cancelAnimationFrame(frame);
+      window.clearTimeout(timer);
+      map.off("dragstart", clear);
+      map.off("zoomstart", clear);
+      clear();
+    };
+  }, [portsPulseKey, mapReady, isMobile, ports, portMeta]);
 
   useEffect(() => {
     const map = mapRef.current;

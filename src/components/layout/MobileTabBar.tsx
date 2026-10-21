@@ -1,5 +1,5 @@
 import { Link } from "@tanstack/react-router";
-import { Anchor, Clock, Flag, Map as MapIcon, MoreHorizontal } from "lucide-react";
+import { Anchor, Clock, Map as MapIcon, MoreHorizontal, Search } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -11,6 +11,8 @@ const itemClass =
   "flex h-full flex-1 flex-col items-center justify-center gap-1 text-[11px] font-medium text-muted-foreground transition-colors hover:text-foreground data-[active=true]:text-primary [&.active]:text-primary";
 
 const moreLinks = [
+  { to: "/horaires", label: "Tous les horaires" },
+  { to: "/ports", label: "Annuaire des ports" },
   { to: "/lignes", label: "Lignes" },
   { to: "/compagnies", label: "Compagnies" },
   { to: "/guide", label: "Guide pratique" },
@@ -24,13 +26,24 @@ const moreLinks = [
 
 interface MobileTabBarProps {
   className?: string;
-  /** Sur la page carte : revient à la recherche sans recharger la page. */
+  activeTab?: "map" | "departures" | "search" | "ports";
   onOpenMap?: () => void;
-  /** Action communautaire contextuelle sur la carte. */
-  onOpenSignal?: () => void;
+  onOpenDepartures?: () => void;
+  onOpenSearch?: () => void;
+  onShowPorts?: () => void;
 }
 
-export function MobileTabBar({ className = "", onOpenMap, onOpenSignal }: MobileTabBarProps) {
+const rememberAction = (action: "departures" | "search" | "ports") =>
+  window.sessionStorage.setItem("bledway:open-home-action", action);
+
+export function MobileTabBar({
+  className = "",
+  activeTab,
+  onOpenMap,
+  onOpenDepartures,
+  onOpenSearch,
+  onShowPorts,
+}: MobileTabBarProps) {
   return (
     <nav
       aria-label="Navigation mobile"
@@ -40,8 +53,8 @@ export function MobileTabBar({ className = "", onOpenMap, onOpenSignal }: Mobile
         <button
           type="button"
           onClick={onOpenMap}
-          data-active="true"
-          aria-current="page"
+          data-active={activeTab === "map"}
+          aria-current={activeTab === "map" ? "page" : undefined}
           className={itemClass}
         >
           <MapIcon className="size-5" aria-hidden />
@@ -53,39 +66,64 @@ export function MobileTabBar({ className = "", onOpenMap, onOpenSignal }: Mobile
           <span>Carte</span>
         </Link>
       )}
-      <Link to="/horaires" className={itemClass}>
-        <Clock className="size-5" aria-hidden />
-        <span>Départs</span>
-      </Link>
-      {onOpenSignal ? (
+      {onOpenDepartures ? (
         <button
           type="button"
-          onClick={onOpenSignal}
+          onClick={onOpenDepartures}
+          data-active={activeTab === "departures"}
+          className={itemClass}
+        >
+          <Clock className="size-5" aria-hidden />
+          <span>Départs</span>
+        </button>
+      ) : (
+        <Link to="/" onClick={() => rememberAction("departures")} className={itemClass}>
+          <Clock className="size-5" aria-hidden />
+          <span>Départs</span>
+        </Link>
+      )}
+      {onOpenSearch ? (
+        <button
+          type="button"
+          onClick={onOpenSearch}
+          data-active={activeTab === "search"}
           className={`${itemClass} text-primary`}
-          aria-label="Signaler une information"
+          aria-label="Chercher une traversée"
         >
           <span className="grid size-10 place-items-center rounded-full bg-primary text-primary-foreground shadow-md">
-            <Flag className="size-5" aria-hidden />
+            <Search className="size-5" aria-hidden />
           </span>
-          <span>Signaler</span>
+          <span>Chercher</span>
         </button>
       ) : (
         <Link
           to="/"
-          onClick={() => window.sessionStorage.setItem("bledway:open-signal-chooser", "1")}
+          onClick={() => rememberAction("search")}
           className={`${itemClass} text-primary`}
-          aria-label="Signaler une information"
+          aria-label="Chercher une traversée"
         >
           <span className="grid size-10 place-items-center rounded-full bg-primary text-primary-foreground shadow-md">
-            <Flag className="size-5" aria-hidden />
+            <Search className="size-5" aria-hidden />
           </span>
-          <span>Signaler</span>
+          <span>Chercher</span>
         </Link>
       )}
-      <Link to="/ports" className={itemClass}>
-        <Anchor className="size-5" aria-hidden />
-        <span>Ports</span>
-      </Link>
+      {onShowPorts ? (
+        <button
+          type="button"
+          onClick={onShowPorts}
+          data-active={activeTab === "ports"}
+          className={itemClass}
+        >
+          <Anchor className="size-5" aria-hidden />
+          <span>Ports</span>
+        </button>
+      ) : (
+        <Link to="/" onClick={() => rememberAction("ports")} className={itemClass}>
+          <Anchor className="size-5" aria-hidden />
+          <span>Ports</span>
+        </Link>
+      )}
       <DropdownMenu>
         <DropdownMenuTrigger className={itemClass} aria-label="Plus de pages">
           <MoreHorizontal className="size-5" aria-hidden />

@@ -133,6 +133,15 @@ export function SearchPanel({
     setEditing(false);
     setStep(firstStep);
     searchRef.current?.closest(".batogo-panel-scroll")?.scrollTo({ top: 0, behavior: "instant" });
+    if (isMobileView()) window.dispatchEvent(new Event("batogo:close-panel"));
+  };
+  const showResults = () => {
+    setEditing(false);
+    setStep(firstStep);
+    if (isMobileView()) {
+      window.dispatchEvent(new Event("batogo:results-panel"));
+      window.setTimeout(() => window.dispatchEvent(new Event("batogo:show-departures")), 60);
+    }
   };
   // Chaque étape s'affiche depuis son début, en haut du volet.
   useEffect(() => {
@@ -145,9 +154,34 @@ export function SearchPanel({
     return () => window.clearTimeout(id);
   }, [step, editing]);
   useEffect(() => {
-    const open = () => setEditing(true);
+    const open = () => {
+      setStep(1);
+      setEditing(true);
+    };
     window.addEventListener("batogo:edit-filters", open);
     return () => window.removeEventListener("batogo:edit-filters", open);
+  }, []);
+  useEffect(() => {
+    const close = () => {
+      setEditing(false);
+      setStep(1);
+    };
+    const showDepartures = () => {
+      close();
+      window.setTimeout(() => {
+        const result = document.getElementById("map-next-departures");
+        const scroller = result?.closest(".batogo-panel-scroll");
+        if (!result || !(scroller instanceof HTMLElement)) return;
+        const top = result.getBoundingClientRect().top - scroller.getBoundingClientRect().top;
+        scroller.scrollTo({ top: scroller.scrollTop + top - 8, behavior: "smooth" });
+      }, 40);
+    };
+    window.addEventListener("batogo:close-filters", close);
+    window.addEventListener("batogo:show-departures", showDepartures);
+    return () => {
+      window.removeEventListener("batogo:close-filters", close);
+      window.removeEventListener("batogo:show-departures", showDepartures);
+    };
   }, []);
   // Drapeau du compteur : déplie la section et ouvre la liste des compagnies.
   const [companyMenuOpen, setCompanyMenuOpen] = useState(false);
@@ -340,7 +374,12 @@ export function SearchPanel({
         >
           <div className="flex items-center justify-between gap-2">
             <span className="text-sm font-bold text-foreground">Trouver ma traversée</span>
-            <button type="button" onClick={closeSearch} aria-label="Fermer la recherche" className="grid size-9 shrink-0 place-items-center rounded-full border border-border bg-card text-foreground hover:bg-secondary">
+            <button
+              type="button"
+              onClick={closeSearch}
+              aria-label="Fermer la recherche"
+              className="grid size-9 shrink-0 place-items-center rounded-full border border-border bg-card text-foreground hover:bg-secondary"
+            >
               <X className="size-4" aria-hidden />
             </button>
           </div>
@@ -535,7 +574,11 @@ export function SearchPanel({
                   ← Retour
                 </button>
               ) : (
-                <button type="button" onClick={closeSearch} className="h-11 whitespace-nowrap rounded-xl px-2 text-sm font-semibold text-muted-foreground transition hover:bg-secondary hover:text-foreground">
+                <button
+                  type="button"
+                  onClick={closeSearch}
+                  className="h-11 whitespace-nowrap rounded-xl px-2 text-sm font-semibold text-muted-foreground transition hover:bg-secondary hover:text-foreground"
+                >
                   ← Fermer
                 </button>
               )}
@@ -554,7 +597,7 @@ export function SearchPanel({
                 <button
                   type="button"
                   onClick={() => {
-                    closeSearch();
+                    showResults();
                   }}
                   className="flex h-11 items-center justify-center gap-2 rounded-xl bg-primary px-4 text-sm font-bold text-primary-foreground shadow-md transition hover:opacity-90"
                 >
@@ -572,7 +615,7 @@ export function SearchPanel({
         </section>
 
         {/* RÉSULTATS */}
-        <section className="space-y-5 px-4 py-4 md:px-5">
+        <section id="map-next-departures" className="space-y-5 px-4 py-4 md:px-5">
           {isLoading ? (
             <div className="space-y-2" aria-busy="true">
               {[0, 1, 2].map((item) => (
@@ -603,7 +646,11 @@ export function SearchPanel({
                         ? "Traversées"
                         : "Prochains départs"
                   }
-                  subtitle={filters.roundTrip ? "Départs aller · heures locales" : "Aller simple · heures locales"}
+                  subtitle={
+                    filters.roundTrip
+                      ? "Départs aller · heures locales"
+                      : "Aller simple · heures locales"
+                  }
                   days={outDays}
                   date={filters.date}
                   onDate={(day) =>

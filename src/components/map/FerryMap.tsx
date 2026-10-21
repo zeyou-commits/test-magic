@@ -18,11 +18,11 @@ import { formatDuration } from "@/lib/ferry/format";
 import { algeriaGeoJson } from "@/lib/ferry/algeriaGeoJson";
 import { routeArc } from "@/lib/ferry/geo";
 import type { FleetShip } from "@/lib/ferry/fleet";
-import { addShipImages } from "./shipIcons";
+import { addRenderedShipImage, addShipImages } from "./shipIcons";
 import { physicalStatus, projectedPosition } from "@/lib/ferry/tracking";
 import { portTimeZone, wallTimeInZone } from "@/lib/ferry/time";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { vesselVisual } from "@/lib/ferry/vesselVisuals";
+import { vesselMapIcon, vesselVisual } from "@/lib/ferry/vesselVisuals";
 
 // En production, MapLibre v6 a besoin que son « worker » soit fourni explicitement.
 // En développement, ce fichier injecté par Vite plante (« document is not defined ») et la carte
@@ -560,6 +560,7 @@ export default function FerryMap({
 
       // Flotte : de vrais ferrys vus du dessus, orientés selon leur cap.
       addShipImages(map);
+      addRenderedShipImage(map);
       map.addSource("fleet", {
         type: "geojson",
         data: { type: "FeatureCollection", features: [] },
@@ -1327,7 +1328,12 @@ export default function FerryMap({
             type: "Feature" as const,
             properties: {
               state: ship.state,
-              icon: ship.state === "sea" ? "ship-sea-0" : "ship-dock",
+              icon:
+                (vesselMapIcon(ship.name) && map.hasImage(vesselMapIcon(ship.name)!))
+                  ? vesselMapIcon(ship.name)
+                  : ship.state === "sea"
+                    ? "ship-sea-0"
+                    : "ship-dock",
               course,
               name: ship.name,
               allure,

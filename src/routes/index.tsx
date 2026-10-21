@@ -12,11 +12,19 @@ import {
   portsQuery,
   routesQuery,
   upcomingDeparturesQuery,
+  vesselsQuery,
 } from "@/lib/ferry/queries";
 import { capitalizeFirst, formatDateParts } from "@/lib/ferry/format";
 import { emptyFilters, type Filters, type Selection, type RouteLine } from "@/lib/ferry/types";
 import type { PortMeta } from "@/components/map/FerryMap";
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { MapStatusBar } from "@/components/map/MapStatusBar";
 import { MapLegend } from "@/components/map/MapLegend";
 import { MapStats } from "@/components/map/MapStats";
@@ -92,6 +100,34 @@ function Index() {
   const [highlightRouteId, setHighlightRouteId] = useState<string | null>(null);
   const [focusedRouteId, setFocusedRouteId] = useState<string | null>(null);
   const [panelLevel, setPanelLevel] = useState<0 | 1 | 2>(0);
+  const [signalChooserOpen, setSignalChooserOpen] = useState(false);
+  const [signalKind, setSignalKind] = useState<"vessel" | "port" | null>(null);
+  const [signalTarget, setSignalTarget] = useState("");
+  useEffect(() => {
+    if (window.sessionStorage.getItem("bledway:open-signal-chooser") !== "1") return;
+    window.sessionStorage.removeItem("bledway:open-signal-chooser");
+    setSignalChooserOpen(true);
+  }, []);
+  const openMobileSignal = () => {
+    if (selection?.type !== "vessel" && selection?.type !== "port") {
+      setSignalChooserOpen(true);
+      return;
+    }
+    requestSignalFor(selection.type, selection.id);
+  };
+  const requestSignalFor = (kind: "vessel" | "port", target: string) => {
+    setSignalChooserOpen(false);
+    setSignalKind(null);
+    setSignalTarget("");
+    const alreadySelected = selection?.type === kind && selection.id === target;
+    if (!alreadySelected) {
+      window.sessionStorage.setItem("bledway:pending-travel-signal", `${kind}:${target}`);
+      handleSelect({ type: kind, id: target });
+    }
+    setPanelLevel(2);
+    if (alreadySelected)
+      window.dispatchEvent(new CustomEvent("batogo:show-signal", { detail: { kind, target } }));
+  };
   const [desktopPanelOpen, setDesktopPanelOpen] = useState(true);
   const [desktopPanelWidth, setDesktopPanelWidth] = useState(DESKTOP_PANEL);
   const resizingPanel = useRef(false);
@@ -133,6 +169,7 @@ function Index() {
   const routesResult = useQuery(routesQuery);
   const departuresResult = useQuery(upcomingDeparturesQuery());
   const companiesResult = useQuery(companiesQuery);
+  const { data: vessels = [] } = useQuery(vesselsQuery);
 
   const { data: ports = [] } = portsResult;
   const { data: routes = [] } = routesResult;
@@ -621,8 +658,81 @@ function Index() {
             <MobileTabBar
               className="h-[calc(3.5rem+env(safe-area-inset-bottom))] pb-[env(safe-area-inset-bottom)]"
               onOpenMap={resetToMap}
+              onOpenSignal={openMobileSignal}
             />
           </div>
+
+          <Dialog open={signalChooserOpen} onOpenChange={setSignalChooserOpen}>
+            <DialogContent className="max-w-sm rounded-3xl">
+              <DialogHeader>
+                <DialogTitle>Que souhaitez-vous signaler ?</DialogTitle>
+                <DialogDescription>
+                  Choisissez un bateau ou un port, puis partagez une information constatée sur
+                  place. Les signalements prédéfinis sont visibles immédiatement.
+                </DialogDescription>
+              </DialogHeader>
+              {!signalKind ? (
+                <div className="grid grid-cols-2 gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="h-12 rounded-xl"
+                    onClick={() => setSignalKind("vessel")}
+                  >
+                    Un bateau
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="h-12 rounded-xl"
+                    onClick={() => setSignalKind("port")}
+                  >
+                    Un port
+                  </Button>
+                </div>
+              ) : (
+                <div className="grid gap-3">
+                  <label htmlFor="signal-target" className="text-sm font-semibold">
+                    {signalKind === "vessel" ? "Choisir le bateau" : "Choisir le port"}
+                  </label>
+                  <select
+                    id="signal-target"
+                    value={signalTarget}
+                    onChange={(event) => setSignalTarget(event.target.value)}
+                    className="h-12 w-full rounded-xl border border-border bg-card px-3 text-sm"
+                  >
+                    <option value="">Sélectionnez dans la liste</option>
+                    {(signalKind === "vessel" ? vessels : ports)
+                      .filter((item) => item.status === "active")
+                      .map((item) => (
+                        <option key={item.id} value={item.id}>
+                          {item.name}
+                        </option>
+                      ))}
+                  </select>
+                  <div className="flex items-center justify-between gap-2">
+                    <button
+                      type="button"
+                      className="text-sm font-semibold text-muted-foreground"
+                      onClick={() => {
+                        setSignalKind(null);
+                        setSignalTarget("");
+                      }}
+                    >
+                      ← Retour
+                    </button>
+                    <Button
+                      type="button"
+                      disabled={!signalTarget}
+                      onClick={() => signalKind && requestSignalFor(signalKind, signalTarget)}
+                    >
+                      Continuer
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </DialogContent>
+          </Dialog>
 
           {/* CARTE */}
           <div className="bw-map-canvas absolute inset-0 z-0 bg-[var(--sea)]">

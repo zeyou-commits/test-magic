@@ -1,5 +1,5 @@
 import { Link } from "@tanstack/react-router";
-import { Anchor, Clock, List, Map as MapIcon, MoreHorizontal } from "lucide-react";
+import { Anchor, Clock, Flag, Map as MapIcon, MoreHorizontal } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -11,6 +11,7 @@ const itemClass =
   "flex h-full flex-1 flex-col items-center justify-center gap-1 text-[11px] font-medium text-muted-foreground transition-colors hover:text-foreground data-[active=true]:text-primary [&.active]:text-primary";
 
 const moreLinks = [
+  { to: "/lignes", label: "Lignes" },
   { to: "/compagnies", label: "Compagnies" },
   { to: "/guide", label: "Guide pratique" },
   { to: "/vehicules-moins-3-ans", label: "Véhicules de moins de 3 ans" },
@@ -25,9 +26,11 @@ interface MobileTabBarProps {
   className?: string;
   /** Sur la page carte : revient à la recherche sans recharger la page. */
   onOpenMap?: () => void;
+  /** Action communautaire contextuelle sur la carte. */
+  onOpenSignal?: () => void;
 }
 
-export function MobileTabBar({ className = "", onOpenMap }: MobileTabBarProps) {
+export function MobileTabBar({ className = "", onOpenMap, onOpenSignal }: MobileTabBarProps) {
   return (
     <nav
       aria-label="Navigation mobile"
@@ -52,12 +55,33 @@ export function MobileTabBar({ className = "", onOpenMap }: MobileTabBarProps) {
       )}
       <Link to="/horaires" className={itemClass}>
         <Clock className="size-5" aria-hidden />
-        <span>Horaires</span>
+        <span>Départs</span>
       </Link>
-      <Link to="/lignes" className={itemClass}>
-        <List className="size-5" aria-hidden />
-        <span>Lignes</span>
-      </Link>
+      {onOpenSignal ? (
+        <button
+          type="button"
+          onClick={onOpenSignal}
+          className={`${itemClass} text-primary`}
+          aria-label="Signaler une information"
+        >
+          <span className="grid size-10 place-items-center rounded-full bg-primary text-primary-foreground shadow-md">
+            <Flag className="size-5" aria-hidden />
+          </span>
+          <span>Signaler</span>
+        </button>
+      ) : (
+        <Link
+          to="/"
+          onClick={() => window.sessionStorage.setItem("bledway:open-signal-chooser", "1")}
+          className={`${itemClass} text-primary`}
+          aria-label="Signaler une information"
+        >
+          <span className="grid size-10 place-items-center rounded-full bg-primary text-primary-foreground shadow-md">
+            <Flag className="size-5" aria-hidden />
+          </span>
+          <span>Signaler</span>
+        </Link>
+      )}
       <Link to="/ports" className={itemClass}>
         <Anchor className="size-5" aria-hidden />
         <span>Ports</span>

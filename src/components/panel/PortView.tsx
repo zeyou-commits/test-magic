@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import {
   ArrowDownLeft,
@@ -6,6 +6,7 @@ import {
   Camera,
   ChevronRight,
   Clock3,
+  Flag,
   MessageSquare,
   PenLine,
   Route as RouteIcon,
@@ -55,7 +56,12 @@ export function PortView({
   const { data: criteria = [] } = useQuery(ratingCriteriaQuery);
   const reviewsResult = useQuery(portReviewsQuery(portId));
   const reviews = useMemo(() => reviewsResult.data ?? [], [reviewsResult.data]);
-  const [activeTab, setActiveTab] = useState("community");
+  const [activeTab, setActiveTab] = useState(() =>
+    typeof window !== "undefined" &&
+    window.sessionStorage.getItem("bledway:pending-travel-signal") === `port:${portId}`
+      ? "practical"
+      : "community",
+  );
   const [scheduleTab, setScheduleTab] = useState("departures");
   const [writeReview, setWriteReview] = useState(false);
   const port = ports.find((item) => item.id === portId);
@@ -92,6 +98,25 @@ export function PortView({
     };
   }, [criteria, reviews]);
 
+  const requestPortSignal = useCallback(() => {
+    setActiveTab("practical");
+    window.setTimeout(
+      () =>
+        window.dispatchEvent(
+          new CustomEvent("batogo:open-signal", { detail: { kind: "port", target: portId } }),
+        ),
+      80,
+    );
+  }, [portId]);
+  useEffect(() => {
+    const onRequest = (event: Event) => {
+      const detail = (event as CustomEvent<{ kind: string; target: string }>).detail;
+      if (detail?.kind === "port" && detail.target === portId) requestPortSignal();
+    };
+    window.addEventListener("batogo:show-signal", onRequest);
+    return () => window.removeEventListener("batogo:show-signal", onRequest);
+  }, [portId, requestPortSignal]);
+
   if (!port) return <EmptyNote>Port introuvable.</EmptyNote>;
   const photo = photoQuery.data;
   const timeZone = portTimeZone(port);
@@ -103,7 +128,10 @@ export function PortView({
       !/^(non|indisponible|absent|no)$/i.test(value.trim()),
   );
   const servicesSection = (
-    <section className="port-profile-section port-services-compact" aria-labelledby={`services-${portId}`}>
+    <section
+      className="port-profile-section port-services-compact"
+      aria-labelledby={`services-${portId}`}
+    >
       <div className="port-section-heading">
         <h3 id={`services-${portId}`}>Services sur place</h3>
       </div>
@@ -224,6 +252,14 @@ export function PortView({
           <PenLine size={15} aria-hidden /> Donner un avis
         </button>
       </div>
+
+      <button
+        type="button"
+        onClick={requestPortSignal}
+        className="mb-4 flex min-h-11 w-full items-center justify-center gap-2 rounded-xl border border-primary/30 bg-primary/5 px-3 text-sm font-semibold text-primary transition hover:bg-primary/10"
+      >
+        <Flag size={17} aria-hidden /> Signaler une info sur ce port
+      </button>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="port-profile-tabs">
         <TabsList aria-label={`Explorer le port de ${port.name}`} className="port-profile-nav">
@@ -428,62 +464,62 @@ export function PortView({
             </>
           )}
           {!reviewsResult.isPending && !reviewsResult.isError && reviews.length ? (
-                <section className="port-reviews" aria-labelledby={`reviews-${portId}`}>
-                  <div className="port-section-heading">
-                    <h4 id={`reviews-${portId}`}>
-                      {reviews.length} {reviews.length === 1 ? "avis publié" : "avis publiés"}
-                    </h4>
-                    <span>Les plus récents</span>
-                  </div>
-                  <ul>
-                    {reviews.map((review) => {
-                      const score = review.ratings.length
-                        ? review.ratings.reduce((sum, rating) => sum + rating.score, 0) /
-                          review.ratings.length
-                        : null;
-                      const name = review.author?.trim() || "Voyageur";
-                      return (
-                        <li key={review.id}>
-                          <article>
-                            <header>
-                              <span className="port-review-avatar" aria-hidden>
-                                {name
-                                  .split(/\s+/)
-                                  .slice(0, 2)
-                                  .map((part) => part.charAt(0))
-                                  .join("")
-                                  .toUpperCase()}
-                              </span>
-                              <div>
-                                <h5>{name}</h5>
-                                <time dateTime={review.created_at}>
-                                  {new Date(review.created_at).toLocaleDateString("fr-FR", {
-                                    day: "numeric",
-                                    month: "short",
-                                    year: "numeric",
-                                  })}
-                                </time>
-                              </div>
-                            </header>
-                            {score != null ? <Stars value={score} /> : null}
-                            {review.comment ? (
-                              <p>{review.comment}</p>
-                            ) : (
-                              <p className="port-review-no-comment">
-                                Ce voyageur a partagé ses notes sans commentaire.
-                              </p>
-                            )}
-                            <ReportButton
-                              targetType="review"
-                              targetId={review.id}
-                              label="Signaler cet avis"
-                            />
-                          </article>
-                        </li>
-                      );
-                    })}
-                  </ul>
-                </section>
+            <section className="port-reviews" aria-labelledby={`reviews-${portId}`}>
+              <div className="port-section-heading">
+                <h4 id={`reviews-${portId}`}>
+                  {reviews.length} {reviews.length === 1 ? "avis publié" : "avis publiés"}
+                </h4>
+                <span>Les plus récents</span>
+              </div>
+              <ul>
+                {reviews.map((review) => {
+                  const score = review.ratings.length
+                    ? review.ratings.reduce((sum, rating) => sum + rating.score, 0) /
+                      review.ratings.length
+                    : null;
+                  const name = review.author?.trim() || "Voyageur";
+                  return (
+                    <li key={review.id}>
+                      <article>
+                        <header>
+                          <span className="port-review-avatar" aria-hidden>
+                            {name
+                              .split(/\s+/)
+                              .slice(0, 2)
+                              .map((part) => part.charAt(0))
+                              .join("")
+                              .toUpperCase()}
+                          </span>
+                          <div>
+                            <h5>{name}</h5>
+                            <time dateTime={review.created_at}>
+                              {new Date(review.created_at).toLocaleDateString("fr-FR", {
+                                day: "numeric",
+                                month: "short",
+                                year: "numeric",
+                              })}
+                            </time>
+                          </div>
+                        </header>
+                        {score != null ? <Stars value={score} /> : null}
+                        {review.comment ? (
+                          <p>{review.comment}</p>
+                        ) : (
+                          <p className="port-review-no-comment">
+                            Ce voyageur a partagé ses notes sans commentaire.
+                          </p>
+                        )}
+                        <ReportButton
+                          targetType="review"
+                          targetId={review.id}
+                          label="Signaler cet avis"
+                        />
+                      </article>
+                    </li>
+                  );
+                })}
+              </ul>
+            </section>
           ) : null}
         </TabsContent>
       </Tabs>

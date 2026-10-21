@@ -1,8 +1,8 @@
 import { useAuth } from "@/hooks/useAuth";
 import { communityQuery } from "@/lib/ferry/community";
-import { useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowRight, CarFront, ExternalLink, MapPin, Ship, Star, Users } from "lucide-react";
+import { ArrowRight, CarFront, ExternalLink, Flag, MapPin, Ship, Star, Users } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import {
@@ -52,6 +52,24 @@ export function VesselView({
   const community = useQuery(communityQuery("vessel", vesselId, false, user?.id));
   const communityAvailable = Boolean(community.data);
   const [tab, setTab] = useState("tracking");
+  const requestVesselSignal = useCallback(() => {
+    setTab("tracking");
+    window.setTimeout(
+      () =>
+        window.dispatchEvent(
+          new CustomEvent("batogo:open-signal", { detail: { kind: "vessel", target: vesselId } }),
+        ),
+      80,
+    );
+  }, [vesselId]);
+  useEffect(() => {
+    const onRequest = (event: Event) => {
+      const detail = (event as CustomEvent<{ kind: string; target: string }>).detail;
+      if (detail?.kind === "vessel" && detail.target === vesselId) requestVesselSignal();
+    };
+    window.addEventListener("batogo:show-signal", onRequest);
+    return () => window.removeEventListener("batogo:show-signal", onRequest);
+  }, [requestVesselSignal, vesselId]);
   const activeTab = tab === "reviews" && !communityAvailable ? "tracking" : tab;
   const vessel = data.vessels.find((v) => v.id === vesselId);
   const photo = useQuery({
@@ -100,6 +118,13 @@ export function VesselView({
           {vessel.is_demo ? <DemoBadge /> : null}
         </div>
       </header>
+      <button
+        type="button"
+        onClick={requestVesselSignal}
+        className="mb-4 flex min-h-11 w-full items-center justify-center gap-2 rounded-xl border border-primary/30 bg-primary/5 px-3 text-sm font-semibold text-primary transition hover:bg-primary/10"
+      >
+        <Flag size={17} aria-hidden /> Signaler une info sur ce bateau
+      </button>
       {photo?.source === "commons" ? (
         <details className="bw-photo-credit">
           <summary>Crédit photo</summary>

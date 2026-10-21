@@ -1,11 +1,9 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Link } from "@tanstack/react-router";
 import {
   Check,
   Clock3,
   Flag,
-  LogIn,
   MessageCircle,
   Star,
   ThumbsUp,
@@ -46,25 +44,57 @@ const failure = (message?: string) =>
       ? message
       : "L’envoi n’a pas abouti. Réessayez dans quelques instants.",
   );
-function SignIn() {
-  return (
-    <Button variant="outline" asChild>
-      <Link to="/auth">
-        <LogIn size={16} aria-hidden />
-        Se connecter pour participer
-      </Link>
-    </Button>
-  );
-}
-
 export function TravelSignals({ kind, target }: { kind: CommunityKind; target: string }) {
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const queryClient = useQueryClient();
   const feed = useQuery(communityQuery(kind, target, false, user?.id));
   const [open, setOpen] = useState(false);
   const [category, setCategory] = useState<AlertCategory | null>(null);
   const [delay, setDelay] = useState(30);
   const [sent, setSent] = useState(false);
+  const signalKey = `${kind}:${target}`;
+  const startSignal = useCallback(() => {
+    setSent(false);
+    if (!user) {
+      window.sessionStorage.setItem("bledway:pending-travel-signal", signalKey);
+      const next = `${window.location.pathname}${window.location.search}`;
+      window.location.assign(`/auth?next=${encodeURIComponent(next)}`);
+      return;
+    }
+    setOpen(true);
+    window.setTimeout(
+      () =>
+        document
+          .getElementById(`signal-${signalKey}`)
+          ?.scrollIntoView({ behavior: "smooth", block: "center" }),
+      80,
+    );
+  }, [signalKey, user]);
+  useEffect(() => {
+    const pending = window.sessionStorage.getItem("bledway:pending-travel-signal");
+    if (pending === signalKey && !authLoading) {
+      if (user) {
+        window.sessionStorage.removeItem("bledway:pending-travel-signal");
+        setOpen(true);
+        window.setTimeout(
+          () =>
+            document
+              .getElementById(`signal-${signalKey}`)
+              ?.scrollIntoView({ behavior: "smooth", block: "center" }),
+          80,
+        );
+      } else startSignal();
+    }
+    const onRequest = (event: Event) => {
+      const detail = (event as CustomEvent<{ kind: CommunityKind; target: string }>).detail;
+      if (detail?.kind === kind && detail.target === target) {
+        if (user) window.sessionStorage.removeItem("bledway:pending-travel-signal");
+        startSignal();
+      }
+    };
+    window.addEventListener("batogo:open-signal", onRequest);
+    return () => window.removeEventListener("batogo:open-signal", onRequest);
+  }, [kind, target, user, authLoading, signalKey, startSignal]);
   const mutation = useMutation({
     mutationFn: async (
       action: { type: "report" } | { type: "confirm" | "resolve"; id: string },
@@ -100,7 +130,11 @@ export function TravelSignals({ kind, target }: { kind: CommunityKind; target: s
     ) : null;
   const alerts = activeAlerts(feed.data.alerts);
   return (
-    <section className="bw-signals" aria-label="Informations des voyageurs">
+    <section
+      id={`signal-${signalKey}`}
+      className="bw-signals"
+      aria-label="Informations des voyageurs"
+    >
       <div className="bw-section-heading">
         <div>
           <span className="bw-eyebrow">
@@ -113,8 +147,8 @@ export function TravelSignals({ kind, target }: { kind: CommunityKind; target: s
           variant="outline"
           size="sm"
           onClick={() => {
-            setOpen(!open);
-            setSent(false);
+            if (open) setOpen(false);
+            else startSignal();
             mutation.reset();
           }}
           aria-expanded={open}
@@ -180,69 +214,62 @@ export function TravelSignals({ kind, target }: { kind: CommunityKind; target: s
       ) : null}
       {open ? (
         <div className="bw-signal-compose">
-          {user ? (
-            <form
-              aria-label="Signaler une information"
-              onSubmit={(e) => {
-                e.preventDefault();
-                if (category) mutation.mutate({ type: "report" });
-              }}
-            >
-              <fieldset disabled={mutation.isPending}>
-                <legend>Que voyez-vous ?</legend>
-                <div className="bw-signal-choices">
-                  {(
-                    Object.entries(alertCategories) as [
-                      AlertCategory,
-                      { label: string; kind: string },
-                    ][]
-                  )
-                    .filter(([, c]) => c.kind === kind)
-                    .map(([key, c]) => (
-                      <label key={key}>
-                        <input
-                          type="radio"
-                          name={`signal-${target}`}
-                          checked={category === key}
-                          onChange={() => setCategory(key)}
-                        />
-                        <span>
-                          <AlertIcon category={key} />
-                          {c.label}
-                        </span>
-                      </label>
-                    ))}
-                </div>
-              </fieldset>
-              {category === "delay" ? (
-                <fieldset className="bw-delay-choice" disabled={mutation.isPending}>
-                  <legend>Retard annoncé sur place</legend>
-                  {[30, 60, 120].map((m) => (
-                    <label key={m}>
+          <form
+            aria-label="Signaler une information"
+            onSubmit={(e) => {
+              e.preventDefault();
+              if (category) mutation.mutate({ type: "report" });
+            }}
+          >
+            <fieldset disabled={mutation.isPending}>
+              <legend>Que voyez-vous ?</legend>
+              <div className="bw-signal-choices">
+                {(
+                  Object.entries(alertCategories) as [
+                    AlertCategory,
+                    { label: string; kind: string },
+                  ][]
+                )
+                  .filter(([, c]) => c.kind === kind)
+                  .map(([key, c]) => (
+                    <label key={key}>
                       <input
                         type="radio"
-                        name={`delay-${target}`}
-                        checked={delay === m}
-                        onChange={() => setDelay(m)}
+                        name={`signal-${target}`}
+                        checked={category === key}
+                        onChange={() => setCategory(key)}
                       />
-                      <span>{m === 120 ? "2 h et +" : `${m} min`}</span>
+                      <span>
+                        <AlertIcon category={key} />
+                        {c.label}
+                      </span>
                     </label>
                   ))}
-                </fieldset>
-              ) : null}
-              <p className="bw-community-caption">
-                Partagez uniquement ce que vous constatez ou ce qui est annoncé sur place.
-              </p>
-              <Button disabled={!category || mutation.isPending} type="submit">
-                {mutation.isPending ? "Envoi…" : "Partager l’info"}
-              </Button>
-            </form>
-          ) : (
-            <>
-              <p>Une communauté utile commence avec vous.</p>
-              <SignIn />
-            </>
-          )}
+              </div>
+            </fieldset>
+            {category === "delay" ? (
+              <fieldset className="bw-delay-choice" disabled={mutation.isPending}>
+                <legend>Retard annoncé sur place</legend>
+                {[30, 60, 120].map((m) => (
+                  <label key={m}>
+                    <input
+                      type="radio"
+                      name={`delay-${target}`}
+                      checked={delay === m}
+                      onChange={() => setDelay(m)}
+                    />
+                    <span>{m === 120 ? "2 h et +" : `${m} min`}</span>
+                  </label>
+                ))}
+              </fieldset>
+            ) : null}
+            <p className="bw-community-caption">
+              Partagez uniquement ce que vous constatez ou ce qui est annoncé sur place.
+            </p>
+            <Button disabled={!category || mutation.isPending} type="submit">
+              {mutation.isPending ? "Envoi…" : "Partager l’info"}
+            </Button>
+          </form>
         </div>
       ) : null}
       {mutation.isError ? (

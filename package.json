@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite dev",
-    "build": "node scripts/seo/generate-discovery.mjs && vite build",
+    "build": "node scripts/seo/generate-discovery.mjs && node scripts/write-build-version.mjs && vite build",
     "build:dev": "node scripts/seo/generate-discovery.mjs && vite build --mode development",
     "preview": "vite preview",
     "lint": "eslint .",

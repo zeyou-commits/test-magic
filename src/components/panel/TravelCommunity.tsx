@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import {
@@ -258,6 +258,13 @@ export function VesselReviews({ vesselId }: { vesselId: string }) {
   const { user } = useAuth();
   const feed = useQuery(communityQuery("vessel", vesselId, false, user?.id));
   const [write, setWrite] = useState(false);
+  useEffect(() => {
+    if (!user) return;
+    const pending = window.sessionStorage.getItem("bledway:pending-vessel-review");
+    if (pending !== vesselId) return;
+    window.sessionStorage.removeItem("bledway:pending-vessel-review");
+    setWrite(true);
+  }, [user, vesselId]);
   if (feed.data === null) return null;
   if (!feed.data)
     return feed.isPending ? (
@@ -296,23 +303,29 @@ export function VesselReviews({ vesselId }: { vesselId: string }) {
           Votre avis n’a pas été publié. Vous pouvez le modifier.
         </p>
       ) : null}
-      <Button variant="outline" onClick={() => setWrite(!write)} aria-expanded={write}>
+      <Button
+        variant="outline"
+        onClick={() => {
+          if (!user) {
+            window.sessionStorage.setItem("bledway:pending-vessel-review", vesselId);
+            const next = `${window.location.pathname}${window.location.search}`;
+            window.location.assign(`/auth?next=${encodeURIComponent(next)}`);
+            return;
+          }
+          setWrite(!write);
+        }}
+        aria-expanded={user ? write : undefined}
+      >
         <MessageCircle size={16} aria-hidden />
         {own ? "Modifier mon avis" : "Noter ce bateau"}
       </Button>
-      {write ? (
-        user ? (
-          <VesselReviewForm
-            key={`${own?.id}:${own?.score}:${own?.comment}`}
-            vesselId={vesselId}
-            review={own}
-            onDone={() => setWrite(false)}
-          />
-        ) : (
-          <div className="bw-signal-compose">
-            <SignIn />
-          </div>
-        )
+      {write && user ? (
+        <VesselReviewForm
+          key={`${own?.id}:${own?.score}:${own?.comment}`}
+          vesselId={vesselId}
+          review={own}
+          onDone={() => setWrite(false)}
+        />
       ) : null}
       {count > published.length ? (
         <p className="bw-community-caption">

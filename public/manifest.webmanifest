@@ -1,0 +1,32 @@
+{
+  "id": "/",
+  "name": "BledWay — La mer nous rapproche",
+  "short_name": "BledWay",
+  "description": "Traversées en ferry entre l’Europe et l’Algérie, ports, bateaux et conseils des voyageurs.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#f8f5ee",
+  "theme_color": "#087d46",
+  "lang": "fr",
+  "icons": [
+    {
+      "src": "/pwa-icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/pwa-icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/pwa-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}

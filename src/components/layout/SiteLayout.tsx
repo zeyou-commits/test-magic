@@ -42,7 +42,7 @@ export function BrandLink({ compact = false }: { compact?: boolean }) {
   return (
     <Link
       to="/"
-      className="flex shrink-0 items-center gap-2.5"
+      className="bw-brand-link flex shrink-0 flex-col items-start justify-center"
       aria-label="BledWay, retour à la carte"
     >
       <img
@@ -50,6 +50,7 @@ export function BrandLink({ compact = false }: { compact?: boolean }) {
         alt="BledWay"
         className={compact ? "bw-brand bw-brand-compact" : "bw-brand"}
       />
+      <span className="bw-brand-tagline">La route du Bled</span>
     </Link>
   );
 }

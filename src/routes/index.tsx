@@ -2,7 +2,7 @@ import { seoHead } from "@/lib/seo/site";
 import { DataUnavailableNotice } from "@/components/layout/DataUnavailableNotice";
 import type React from "react";
 import { ChevronLeft, ChevronRight, ArrowDown, Compass } from "lucide-react";
-import { lazy, Suspense, useEffect, useMemo, useRef, useState } from "react";
+import { lazy, Suspense, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { ClientOnly, createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { SidePanel } from "@/components/panel/SidePanel";
@@ -102,6 +102,12 @@ function Index() {
   const [activeShortcut, setActiveShortcut] = useState<MapShortcut>(null);
   const [shortcutCompanyId, setShortcutCompanyId] = useState<string | null>(null);
   const [shortcutMenuOpen, setShortcutMenuOpen] = useState(false);
+  const shortcutScrollY = useRef<number | null>(null);
+  useLayoutEffect(() => {
+    if (shortcutScrollY.current === null) return;
+    window.scrollTo({ top: shortcutScrollY.current, behavior: "instant" });
+    shortcutScrollY.current = null;
+  }, [activeShortcut, shortcutMenuOpen]);
   const [desktopPanelOpen, setDesktopPanelOpen] = useState(true);
   const [desktopPanelWidth, setDesktopPanelWidth] = useState(DESKTOP_PANEL);
   const resizingPanel = useRef(false);
@@ -596,19 +602,7 @@ function Index() {
       </a>
       <SiteHeader />
       <main id="contenu" tabIndex={-1}>
-        <div className="bw-map-heading bw-container">
-          <div>
-            <p className="bw-eyebrow bw-map-overline">
-              Europe ↔ Algérie · Votre voyage commence ici
-            </p>
-            <h1>
-              La mer nous <span>rapproche.</span>
-            </h1>
-          </div>
-          <a href="#preparer" className="bw-discover-link">
-            Tout pour préparer votre départ <ArrowDown size={18} />
-          </a>
-        </div>
+        <h1 className="sr-only">BledWay — La route du Bled</h1>
         <section
           id="carte"
           aria-label="Carte et recherche de traversées"
@@ -780,10 +774,13 @@ function Index() {
               menuOpen={shortcutMenuOpen}
               selectedCompanyId={shortcutCompanyId}
               onToggle={(shortcut) => {
+                if (window.innerWidth >= 768) shortcutScrollY.current = window.scrollY;
                 handleSelect(null);
                 setFocusTarget(null);
-                setPanelLevel(0);
-                setPanelMode(null);
+                if (window.innerWidth < 768) {
+                  setPanelLevel(0);
+                  setPanelMode(null);
+                }
                 if (activeShortcut === shortcut) {
                   setActiveShortcut(null);
                   setShortcutCompanyId(null);

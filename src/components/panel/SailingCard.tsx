@@ -85,9 +85,9 @@ export function SailingCard({
         onClick={onToggle}
         aria-expanded={expanded}
         aria-controls={panelId}
-        className="block w-full py-3 pb-2.5 pl-4 pr-3.5 text-left"
+        className="block w-full py-2.5 pb-2 pl-4 pr-3.5 text-left"
       >
-        <div className="mb-2 flex items-center justify-between gap-2 text-xs">
+        <div className="mb-1.5 flex items-center justify-between gap-2 text-[11px]">
           <span className="font-semibold text-foreground">
             {showDay ? `${formatDayKey(sailing.dayKey)} · ` : ""}
             <span className="font-medium text-muted-foreground">
@@ -117,7 +117,7 @@ export function SailingCard({
 
         <div className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3">
           <div>
-            <div className="font-display text-2xl font-bold leading-none tabular-nums tracking-tight">
+            <div className="font-display text-xl font-bold leading-none tabular-nums tracking-tight">
               {sailing.depTime}
             </div>
             <div className="mt-0.5 max-w-[92px] truncate text-xs font-semibold text-foreground">
@@ -140,7 +140,7 @@ export function SailingCard({
           </div>
 
           <div className="text-right">
-            <div className="font-display text-2xl font-bold leading-none tabular-nums tracking-tight">
+            <div className="font-display text-xl font-bold leading-none tabular-nums tracking-tight">
               {sailing.arrTime ?? "—"}
               {arrivalSuffix ? (
                 <sup className="ml-0.5 text-[11px] font-semibold text-cta">{arrivalSuffix}</sup>
@@ -155,7 +155,7 @@ export function SailingCard({
 
       {live ? <LiveStrip live={live} arrivalZone={sailing.toZone} /> : null}
 
-      <div className="flex items-center justify-between gap-2 border-t border-dashed bg-secondary/40 px-3.5 py-2">
+      <div className="flex items-center justify-between gap-2 border-t border-dashed bg-secondary/40 px-3.5 py-1.5">
         <div className="flex min-w-0 items-center gap-2">
           <CompanyBadge name={sailing.company?.name} logoUrl={sailing.company?.logo_url} />
           <div className="min-w-0 truncate text-xs font-semibold">
@@ -306,7 +306,7 @@ const weekdayFmt = new Intl.DateTimeFormat("fr-FR", { weekday: "short", timeZone
 const monthFmt = new Intl.DateTimeFormat("fr-FR", { month: "short", timeZone: "UTC" });
 const fullDayFmt = new Intl.DateTimeFormat("fr-FR", { weekday: "long", day: "numeric", month: "long", timeZone: "UTC" });
 
-/** Frise compacte des jours avec départ, paginée : « Dates précédentes » / « Dates suivantes ». */
+/** Frise de dates défilable au doigt, à la molette horizontale ou par glissement de souris. */
 export function DayStrip({
   days,
   value,
@@ -318,63 +318,83 @@ export function DayStrip({
   onChange: (day: string | null) => void;
   allLabel?: string;
 }) {
-  const [start, setStart] = useState(0);
-  const stripRef = useRef<HTMLDivElement>(null);
-  const [pageSize, setPageSize] = useState(5);
+  const railRef = useRef<HTMLDivElement>(null);
+  const dragRef = useRef<{ x: number; left: number; moved: boolean } | null>(null);
+  const [canScroll, setCanScroll] = useState({ left: false, right: false });
   useEffect(() => {
-    const element = stripRef.current;
+    const element = railRef.current;
     if (!element) return;
-    const resize = () => {
-      const width = element.clientWidth;
-      setPageSize(width >= 520 ? 5 : width >= 420 ? 4 : width >= 320 ? 3 : 2);
+    const update = () => {
+      setCanScroll({
+        left: element.scrollLeft > 2,
+        right: element.scrollLeft + element.clientWidth < element.scrollWidth - 2,
+      });
     };
-    resize();
-    const observer = new ResizeObserver(resize);
+    update();
+    const observer = new ResizeObserver(update);
     observer.observe(element);
-    return () => observer.disconnect();
-  }, []);
-  // La fenêtre suit le jour choisi (ex. depuis le calendrier).
+    element.addEventListener("scroll", update, { passive: true });
+    return () => { observer.disconnect(); element.removeEventListener("scroll", update); };
+  }, [days.length]);
+  // Le jour choisi depuis le calendrier reste visible dans la frise.
   useEffect(() => {
     if (!value) return;
+    const rail = railRef.current;
     const index = days.findIndex((item) => item.day === value);
-    if (index < 0) return;
-    setStart((current) =>
-      index >= current && index < current + pageSize ? current : Math.max(0, index - 1),
-    );
-  }, [value, days, pageSize]);
+    const target = index < 0 ? null : rail?.children.item(index + 1);
+    if (!(target instanceof HTMLElement) || !rail) return;
+    const left = target.offsetLeft - rail.offsetLeft;
+    if (left < rail.scrollLeft || left + target.offsetWidth > rail.scrollLeft + rail.clientWidth)
+      rail.scrollTo({ left: Math.max(0, left - 8), behavior: "smooth" });
+  }, [value, days]);
 
   if (days.length === 0) return null;
-  const maxStart = Math.max(0, days.length - pageSize);
-  const from = Math.min(start, maxStart);
-  const visible = days.slice(from, from + pageSize);
-  const hasPrev = from > 0;
-  const hasNext = from < maxStart;
   const arrow =
-    "grid size-8 shrink-0 place-items-center rounded-full border bg-card text-muted-foreground transition hover:bg-secondary disabled:pointer-events-none disabled:opacity-30";
+    "grid size-7 shrink-0 place-items-center rounded-full border bg-card text-muted-foreground transition hover:bg-secondary disabled:pointer-events-none disabled:opacity-30";
 
   return (
-    <div ref={stripRef} className="flex w-full min-w-0 items-center gap-1" role="listbox" aria-label="Jours avec départ">
+    <div className="flex w-full min-w-0 items-center gap-1" aria-label="Jours avec départ">
       <button
         type="button"
         className={arrow}
-        disabled={!hasPrev}
-        onClick={() => setStart(Math.max(0, from - pageSize))}
+        disabled={!canScroll.left}
+        onClick={() => { const rail = railRef.current; rail?.scrollBy({ left: -rail.clientWidth * 0.8, behavior: "smooth" }); }}
         aria-label="Dates précédentes"
         title="Dates précédentes"
       >
         <ChevronLeft className="size-4" aria-hidden />
       </button>
-      <div className="flex min-w-0 flex-1 gap-1 overflow-hidden">
+      <div
+        ref={railRef}
+        className="bw-day-rail flex min-w-0 flex-1 gap-1 overflow-x-auto overscroll-x-contain scroll-smooth"
+        role="listbox"
+        aria-label="Choisir un jour de départ"
+        onPointerDown={(event) => {
+          if (event.pointerType !== "mouse" || event.button !== 0) return;
+          dragRef.current = { x: event.clientX, left: event.currentTarget.scrollLeft, moved: false };
+        }}
+        onPointerMove={(event) => {
+          const drag = dragRef.current;
+          if (!drag || event.buttons !== 1) return;
+          if (Math.abs(event.clientX - drag.x) > 5) drag.moved = true;
+          if (drag.moved) event.currentTarget.scrollLeft = drag.left - (event.clientX - drag.x);
+        }}
+        onPointerUp={() => { window.setTimeout(() => { dragRef.current = null; }, 0); }}
+        onPointerCancel={() => { dragRef.current = null; }}
+        onClickCapture={(event) => {
+          if (dragRef.current?.moved) { event.preventDefault(); event.stopPropagation(); dragRef.current = null; }
+        }}
+      >
         <button
           type="button"
           role="option"
           aria-selected={value === null}
           onClick={() => onChange(null)}
-          className={`flex h-14 min-w-0 flex-1 flex-col items-center justify-center rounded-xl border px-1 text-[11px] font-semibold transition ${value === null ? "border-primary bg-primary text-primary-foreground" : "border-border bg-card hover:bg-secondary"}`}
+          className={`flex h-12 min-w-14 shrink-0 flex-col items-center justify-center rounded-xl border px-1 text-[11px] font-semibold transition ${value === null ? "border-primary bg-primary text-primary-foreground" : "border-border bg-card hover:bg-secondary"}`}
         >
           {allLabel}
         </button>
-        {visible.map(({ day, count }) => {
+        {days.map(({ day, count }) => {
           const date = new Date(`${day}T00:00:00Z`);
           const active = value === day;
           return (
@@ -386,7 +406,7 @@ export function DayStrip({
               aria-label={`${fullDayFmt.format(date)}, ${count} départ${count > 1 ? "s" : ""}`}
               onClick={() => onChange(active ? null : day)}
               title={`${count} départ${count > 1 ? "s" : ""}`}
-              className={`flex h-14 min-w-0 flex-1 flex-col items-center justify-center rounded-xl border px-0.5 leading-none transition ${active ? "border-primary bg-primary text-primary-foreground" : "border-border bg-card hover:bg-secondary"}`}
+              className={`flex h-12 min-w-14 shrink-0 flex-col items-center justify-center rounded-xl border px-0.5 leading-none transition ${active ? "border-primary bg-primary text-primary-foreground" : "border-border bg-card hover:bg-secondary"}`}
             >
               <span className="flex items-center justify-center gap-0.5 whitespace-nowrap">
                 <span className={`text-[9px] font-semibold uppercase ${active ? "text-primary-foreground/80" : "text-muted-foreground"}`}>
@@ -407,8 +427,8 @@ export function DayStrip({
       <button
         type="button"
         className={arrow}
-        disabled={!hasNext}
-        onClick={() => setStart(Math.min(maxStart, from + pageSize))}
+        disabled={!canScroll.right}
+        onClick={() => { const rail = railRef.current; rail?.scrollBy({ left: rail.clientWidth * 0.8, behavior: "smooth" }); }}
         aria-label="Dates suivantes"
         title="Dates suivantes"
       >

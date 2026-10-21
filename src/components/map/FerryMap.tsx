@@ -586,7 +586,12 @@ export default function FerryMap({
           "icon-rotation-alignment": "map",
           "icon-allow-overlap": true,
           "icon-ignore-placement": true,
-          "icon-size": ["interpolate", ["linear"], ["zoom"], 3, 0.7, 5, 0.95, 7, 1.3, 9, 1.9],
+          "icon-size": [
+            "case",
+            ["get", "renderedIcon"],
+            ["interpolate", ["linear"], ["zoom"], 3, 0.6, 5, 0.8, 7, 0.9, 9, 1],
+            ["interpolate", ["linear"], ["zoom"], 3, 0.7, 5, 0.95, 7, 1.3, 9, 1.9],
+          ],
         },
         paint: { "icon-opacity": ["get", "opacity"] },
       });
@@ -599,7 +604,12 @@ export default function FerryMap({
           "text-field": ["get", "name"],
           "text-font": ["Noto Sans Bold"],
           "text-size": ["interpolate", ["linear"], ["zoom"], 3, 7.5, 6, 9.5, 9, 12],
-          "text-offset": [0, 2.8],
+          "text-offset": [
+            "case",
+            ["get", "renderedIcon"],
+            ["literal", [0, 5]],
+            ["literal", [0, 2.8]],
+          ],
           "text-anchor": "top",
           "text-optional": true,
           "text-padding": 2,
@@ -1328,6 +1338,7 @@ export default function FerryMap({
             type: "Feature" as const,
             properties: {
               state: ship.state,
+              renderedIcon: Boolean(vesselMapIcon(ship.name) && map.hasImage(vesselMapIcon(ship.name)!)),
               icon:
                 (vesselMapIcon(ship.name) && map.hasImage(vesselMapIcon(ship.name)!))
                   ? vesselMapIcon(ship.name)

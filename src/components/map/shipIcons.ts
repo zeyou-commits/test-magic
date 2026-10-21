@@ -144,7 +144,7 @@ export function addRenderedShipImage(map: MapLibreMap) {
   const image = new Image();
   image.onload = () => {
     if (map.getStyle() && !map.hasImage(ROSALIND_MAP_ICON))
-      map.addImage(ROSALIND_MAP_ICON, image, { pixelRatio: 24 });
+      map.addImage(ROSALIND_MAP_ICON, image, { pixelRatio: 10 });
   };
   image.src = ROSALIND_MAP_ICON_URL;
 }

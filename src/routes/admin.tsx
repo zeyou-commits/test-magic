@@ -1,3 +1,5 @@
+import { communityQuery } from "@/lib/ferry/community";
+import { CommunityModeration } from "@/components/panel/CommunityModeration";
 import { useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -164,6 +166,8 @@ function CountBadge({ value, tone = "warn" }: { value: number | undefined; tone?
 }
 
 function AdminTabs() {
+  const { user } = useAuth();
+  const community = useQuery(communityQuery(undefined, undefined, true, user?.id));
   const [tab, setTab] = useState("reviews");
   const { data: counts } = useAdminCounts();
   const { data: alerts } = usePlanningAlerts();
@@ -174,7 +178,8 @@ function AdminTabs() {
       </div>
       <Tabs value={tab} onValueChange={setTab} className="mt-6">
         <TabsList className="h-auto w-full justify-start overflow-x-auto">
-          <TabsTrigger value="reviews">Avis<CountBadge value={counts?.reviews} /></TabsTrigger>
+          <TabsTrigger value="reviews">Avis ports<CountBadge value={counts?.reviews} /></TabsTrigger>
+          <TabsTrigger value="community">Communauté navires<CountBadge value={community.data?.reviews.filter(r => r.status === "pending").length} /></TabsTrigger>
           <TabsTrigger value="reports">Signalements<CountBadge value={counts?.reports} /></TabsTrigger>
           <TabsTrigger value="alerts">Alertes planning<CountBadge value={alerts?.length} /></TabsTrigger>
           <TabsTrigger value="departures">Départs</TabsTrigger>
@@ -189,6 +194,7 @@ function AdminTabs() {
         <TabsContent value="reviews">
           <ReviewsModeration />
         </TabsContent>
+        <TabsContent value="community"><CommunityModeration /></TabsContent>
         <TabsContent value="reports">
           <ReportsModeration />
         </TabsContent>

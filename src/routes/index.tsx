@@ -62,6 +62,7 @@ function Index() {
         setSelectionHistory((prev) => [...prev, selection]);
       }
       setSelection(newSelection);
+      if (newSelection.type === "vessel" || newSelection.type === "departure") setPanelLevel(2);
     }
     setFocusShipId(null);
   };
@@ -406,7 +407,8 @@ function Index() {
     (panelLevel === 0 ? COLLAPSED_HEIGHT : Math.round(viewportHeight * MIDDLE_RATIO));
   // Sur mobile, choisir un navire, un port ou une traversée rouvre le tiroir s'il était replié.
   useEffect(() => {
-    if (selection && panelLevel === 0) setPanelLevel(1);
+    if (selection?.type === "vessel" || selection?.type === "departure") setPanelLevel(2);
+    else if (selection && panelLevel === 0) setPanelLevel(1);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selection?.type, selection?.id]);
 
@@ -642,6 +644,7 @@ function Index() {
               portsCount={ports.length}
               onSelectShip={(ship) => {
                 if (ship.vesselId) handleSelect({ type: "vessel", id: ship.vesselId });
+                else handleSelect({ type: "departure", id: ship.departureId });
                 setFocusShipId(ship.id);
                 const pos = ship.live ? ship.live.position : null;
                 setFocusTarget({
@@ -703,7 +706,8 @@ function Index() {
                     if (kind === "port") {
                       handleSelect(null);
                       setPanelLevel(0);
-                    } else setPanelLevel((level) => (level === 2 ? 1 : level));
+                    } else if (kind === "vessel") setPanelLevel(2);
+                    else setPanelLevel((level) => (level === 2 ? 1 : level));
                   }}
                   mobileBottomInset={mobileBottomInset}
                   desktopLeftInset={desktopPanelOpen ? desktopPanelWidth + 80 : 50}

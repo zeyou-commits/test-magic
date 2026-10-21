@@ -35,6 +35,7 @@ import { DemoBadge, EmptyNote, ReliabilityNote, Stars } from "./shared";
 import { ReportButton } from "./ReportButton";
 import { CompanyBadge } from "./CompanyBadge";
 import { FacilityIcons } from "./FacilityIcons";
+import { TravelSignals } from "./TravelCommunity";
 import { PortReviewForm } from "./PortReviewForm";
 
 const scoreLabel = (value: number) =>
@@ -218,6 +219,7 @@ export function PortView({
         </TabsList>
 
         <TabsContent value="practical" className="port-tab-content">
+          <TravelSignals key={portId} kind="port" target={portId} />
           <section className="port-profile-section" aria-labelledby={`services-${portId}`}>
             <div className="port-section-heading">
               <div>

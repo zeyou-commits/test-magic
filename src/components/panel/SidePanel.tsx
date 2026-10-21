@@ -111,9 +111,9 @@ export function SidePanel({
             ) : selection.type === "company" ? (
               <CompanyView companyId={selection.id} onSelect={onSelect} />
             ) : selection.type === "vessel" ? (
-              <VesselView vesselId={selection.id} onSelect={onSelect} />
+              <VesselView key={selection.id} vesselId={selection.id} onSelect={onSelect} />
             ) : (
-              <DepartureView departureId={selection.id} onSelect={onSelect} />
+              <DepartureView key={selection.id} departureId={selection.id} onSelect={onSelect} />
             )}
           </div>
         </div>

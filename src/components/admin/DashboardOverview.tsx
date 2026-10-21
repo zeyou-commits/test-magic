@@ -40,7 +40,7 @@ export function DashboardOverview({ onNavigate, can }: { onNavigate: (id: string
     { id: "departures", label: "Départs aujourd'hui", value: data?.today, icon: CalendarClock },
     { id: "departures", label: "Départs à venir sans navire", value: data?.unlinked, icon: Ship, warn: true },
     { id: "reports", label: "Signalements à traiter", value: data?.reports, icon: AlertTriangle, warn: true },
-    { id: "reviews", label: "Avis en attente", value: data?.reviews, icon: MessageSquare, warn: true },
+    { id: "reviews", label: "Avis ports en attente", value: data?.reviews, icon: MessageSquare, warn: true },
   ].filter((c) => can(c.id));
 
   return (

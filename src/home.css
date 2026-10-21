@@ -1746,3 +1746,797 @@ html {
     grid-template-columns: minmax(0, 1fr) 40px 44px;
   }
 }
+/* Compact vessel and crossing profiles. */
+.bw-ship-profile,
+.bw-departure-profile {
+  color: var(--foreground);
+  font-size: 13px;
+  min-width: 0;
+}
+.bw-ship-heading {
+  display: flex;
+  gap: 14px;
+  align-items: center;
+  margin-bottom: 12px;
+}
+.bw-ship-heading > div:last-child {
+  min-width: 0;
+  flex: 1;
+}
+.bw-ship-photo {
+  width: 84px;
+  height: 76px;
+  flex: none;
+  border-radius: 18px;
+  overflow: hidden;
+  display: grid;
+  place-items: center;
+  background: #e7efef;
+  color: #1e5b7a;
+}
+.bw-ship-photo img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.bw-ship-heading h2,
+.bw-departure-profile h2 {
+  font-size: 25px;
+  line-height: 1.12;
+  letter-spacing: -0.8px;
+  font-weight: 750;
+  overflow-wrap: anywhere;
+  margin: 4px 0 7px;
+}
+.bw-eyebrow {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  text-transform: uppercase;
+  letter-spacing: 1.2px;
+  font-size: 9px;
+  font-weight: 700;
+  color: #50736a;
+}
+.bw-company-link {
+  display: inline-flex;
+  gap: 5px;
+  align-items: center;
+  text-align: left;
+  font-size: 11px;
+  color: #536875;
+  min-height: 28px;
+}
+.bw-company-link:hover {
+  text-decoration: underline;
+}
+.bw-photo-credit {
+  font-size: 9px;
+  color: #60727a;
+  margin: -6px 0 10px;
+}
+.bw-photo-credit a {
+  text-decoration: underline;
+}
+.bw-photo-credit summary {
+  cursor: pointer;
+  padding: 3px 0;
+}
+.bw-ship-tabs > [role="tablist"] {
+  display: flex;
+  width: 100%;
+  height: 44px;
+  gap: 3px;
+  background: #efeee8;
+  border: 1px solid #e4e5dd;
+  border-radius: 14px;
+  padding: 4px;
+  margin-bottom: 12px;
+}
+.bw-ship-tabs > [role="tablist"] > button {
+  flex: 1;
+  min-width: 0;
+  font-size: 12px;
+  border-radius: 10px;
+  gap: 5px;
+}
+.bw-ship-tabs > [role="tablist"] > button[data-state="active"] {
+  background: #fff;
+  color: #0e7a43;
+  box-shadow: 0 2px 6px #16324a0a;
+}
+.bw-ship-tabs [hidden] {
+  display: none !important;
+}
+.bw-crossing {
+  border: 1px solid #d4e3db;
+  background: linear-gradient(135deg, #f4faf6, #fffdf8);
+  padding: 15px;
+  border-radius: 20px;
+}
+.bw-crossing-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 5px;
+  color: #0e7a43;
+  font-size: 11px;
+  font-weight: 650;
+}
+.bw-crossing-top > span {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+.bw-crossing-top small {
+  color: #637579;
+  font-size: 9px;
+  font-weight: 450;
+}
+.bw-crossing-route {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 17px minmax(0, 1fr);
+  gap: 10px;
+  align-items: center;
+  margin: 13px 0 17px;
+  font-size: 18px;
+  line-height: 1.2;
+  letter-spacing: -0.4px;
+}
+.bw-crossing-route strong {
+  overflow-wrap: anywhere;
+}
+.bw-crossing-route strong:last-child {
+  text-align: right;
+}
+.bw-crossing-route > svg {
+  color: #7d9695;
+}
+.bw-crossing-progress {
+  margin: 0 0 17px;
+}
+.bw-crossing-progress-label {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 10px;
+  color: #647774;
+  margin-bottom: 13px;
+}
+.bw-crossing-progress-label strong {
+  font-size: 12px;
+  color: #0e7a43;
+}
+.bw-crossing-track {
+  position: relative;
+  height: 5px;
+  background: #dce9e1;
+  border-radius: 8px;
+}
+.bw-crossing-track > span {
+  height: 5px;
+  border-radius: 8px;
+  display: block;
+  background: #0e7a43;
+}
+.bw-crossing-track > i {
+  position: absolute;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 25px;
+  height: 25px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: #0e7a43;
+  color: white;
+  border: 3px solid #fffdf9;
+  box-shadow: 0 2px 7px #16324a15;
+}
+.bw-crossing-metrics {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 7px;
+  font-size: 10px;
+  color: #647774;
+  padding-top: 9px;
+}
+.bw-crossing-metrics span + span:before {
+  content: "·";
+  margin-right: 7px;
+}
+.bw-detail-link {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  width: 100%;
+  min-height: 44px;
+  font-size: 12px;
+  font-weight: 650;
+  color: #0e7a43;
+  text-align: left;
+}
+.bw-map-button {
+  width: 100%;
+  min-height: 44px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 7px;
+  font-size: 12px;
+  font-weight: 600;
+  border: 1px solid #d9e2d9;
+  border-radius: 12px;
+  background: #fff;
+  margin: 1px 0 18px;
+  color: #0e7a43;
+}
+.bw-section-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+.bw-section-heading h3,
+.bw-onboard h3,
+.bw-community-invite h3 {
+  font-size: 15px;
+  line-height: 1.3;
+  font-weight: 700;
+  letter-spacing: -0.2px;
+}
+.bw-section-heading h3 {
+  margin-top: 4px;
+}
+.bw-section-heading > small {
+  color: #627773;
+}
+.bw-section-heading > button {
+  min-height: 40px;
+  border-radius: 11px;
+  font-size: 11px;
+  flex-shrink: 0;
+  color: #0e7a43;
+}
+.bw-signals {
+  margin: 18px 0;
+  padding-top: 16px;
+  border-top: 1px solid #e5e7df;
+}
+.bw-community-empty {
+  background: #f2f1eb;
+  border-radius: 14px;
+  padding: 15px;
+  font-size: 12px;
+  line-height: 1.6;
+  color: #61716f;
+}
+.bw-community-caption {
+  font-size: 10px;
+  line-height: 1.6;
+  color: #667977;
+  margin-top: 10px;
+}
+.bw-community-success {
+  padding: 11px;
+  border-radius: 12px;
+  background: #e9f4ec;
+  color: #116a40;
+  font-size: 12px;
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  margin-top: 10px;
+}
+.bw-community-error {
+  color: #943d27;
+  font-size: 12px;
+  line-height: 1.5;
+  margin: 10px 0;
+}
+.bw-community-error button {
+  text-decoration: underline;
+  min-height: 32px;
+}
+.bw-signal-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.bw-signal-list > li {
+  display: flex;
+  gap: 10px;
+  padding: 12px 0;
+  border-bottom: 1px solid #eeeee7;
+}
+.bw-signal-list > li > div {
+  flex: 1;
+  min-width: 0;
+}
+.bw-signal-list strong {
+  font-size: 12px;
+  display: block;
+  line-height: 1.4;
+}
+.bw-signal-list small {
+  font-size: 10px;
+  color: #6a7873;
+  display: block;
+  margin-top: 4px;
+}
+.bw-signal-icon {
+  width: 34px;
+  height: 34px;
+  flex: none;
+  background: #fff1ce;
+  border-radius: 11px;
+  color: #865d16;
+  display: grid;
+  place-items: center;
+}
+.bw-signal-actions button {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  min-height: 40px;
+  font-size: 11px;
+  color: #0e7a43;
+  font-weight: 600;
+}
+.bw-signal-actions button:disabled {
+  opacity: 0.7;
+  cursor: default;
+}
+.bw-signal-compose {
+  margin-top: 12px;
+  border: 1px solid #dce6dc;
+  padding: 14px;
+  border-radius: 16px;
+  background: #fffdf8;
+}
+.bw-signal-compose > p {
+  font-size: 12px;
+  margin-bottom: 12px;
+}
+.bw-signal-compose legend {
+  font-weight: 650;
+  font-size: 12px;
+  margin-bottom: 9px;
+}
+.bw-signal-choices {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+.bw-signal-choices label,
+.bw-delay-choice label {
+  position: relative;
+  cursor: pointer;
+}
+.bw-signal-choices input,
+.bw-delay-choice input {
+  position: absolute;
+  opacity: 0;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  cursor: pointer;
+}
+.bw-signal-choices label > span {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: flex-start;
+  justify-content: center;
+  min-height: 86px;
+  padding: 12px;
+  border: 1px solid #e2e6dd;
+  border-radius: 13px;
+  font-size: 11px;
+  line-height: 1.4;
+  color: #586c66;
+  background: #fff;
+}
+.bw-signal-choices input:checked + span,
+.bw-delay-choice input:checked + span {
+  background: #edf7ef;
+  border-color: #0e7a43;
+  color: #0e7a43;
+  box-shadow: inset 0 0 0 1px #0e7a43;
+}
+.bw-signal-choices input:focus-visible + span,
+.bw-delay-choice input:focus-visible + span {
+  outline: 3px solid #1e5b7a;
+  outline-offset: 2px;
+}
+.bw-delay-choice {
+  margin-top: 14px;
+  display: flex;
+  gap: 7px;
+}
+.bw-delay-choice label {
+  flex: 1;
+}
+.bw-delay-choice label > span {
+  display: grid;
+  place-items: center;
+  min-height: 44px;
+  border: 1px solid #e2e6dd;
+  border-radius: 10px;
+  font-size: 11px;
+}
+.bw-signal-compose form > button {
+  width: 100%;
+  margin-top: 12px;
+  min-height: 44px;
+}
+.bw-next-crossings {
+  margin-top: 22px;
+}
+.bw-next-crossings ul {
+  list-style: none;
+  padding: 0;
+}
+.bw-next-crossings li + li {
+  border-top: 1px solid #e6e7df;
+}
+.bw-next-crossings button {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  min-height: 68px;
+  width: 100%;
+  text-align: left;
+}
+.bw-next-crossings strong {
+  font-size: 13px;
+  display: block;
+}
+.bw-next-crossings span {
+  font-size: 11px;
+  color: #657775;
+  margin-top: 5px;
+  display: block;
+}
+.bw-onboard > p {
+  margin: 12px 0;
+  line-height: 1.8;
+  font-size: 12px;
+  color: #5b6e70;
+}
+.bw-vessel-specs {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin: 16px 0;
+}
+.bw-vessel-specs > div {
+  background: #f1f1eb;
+  border-radius: 14px;
+  padding: 13px;
+}
+.bw-vessel-specs dt {
+  font-size: 10px;
+  color: #697a72;
+}
+.bw-vessel-specs dd {
+  font-size: 15px;
+  font-weight: 650;
+  margin-top: 5px;
+  overflow-wrap: anywhere;
+}
+.bw-community-invite {
+  background: #eef4ef;
+  border-radius: 19px;
+  padding: 20px;
+  margin-top: 20px;
+}
+.bw-community-invite > svg {
+  color: #0e7a43;
+  margin-bottom: 12px;
+}
+.bw-community-invite p {
+  font-size: 12px;
+  line-height: 1.6;
+  color: #61716f;
+  margin: 10px 0 16px;
+}
+.bw-review-summary {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin: 16px 0;
+}
+.bw-review-score {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 5px;
+  font-size: 27px;
+  font-weight: 750;
+  white-space: nowrap;
+  color: #0e7a43;
+  letter-spacing: -1px;
+}
+.bw-review-score > small {
+  font-size: 12px;
+  color: #697a72;
+}
+.bw-review-summary h3 {
+  font-size: 13px;
+  font-weight: 650;
+}
+.bw-review-summary p {
+  font-size: 11px;
+  line-height: 1.6;
+  color: #647775;
+  margin-top: 5px;
+}
+.bw-vessel-reviews > button {
+  min-height: 44px;
+  width: 100%;
+  color: #0e7a43;
+}
+.bw-review-list {
+  padding: 0;
+  list-style: none;
+  margin-top: 16px;
+}
+.bw-review-list > li {
+  padding: 16px 0;
+  border-top: 1px solid #e5e7de;
+}
+.bw-review-list > li > div {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+}
+.bw-review-list time {
+  font-size: 9px;
+  color: #687c74;
+  margin-left: auto;
+}
+.bw-review-avatar {
+  display: grid;
+  place-items: center;
+  background: #eaf1eb;
+  color: #537362;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  flex: none;
+}
+.bw-review-stars {
+  display: flex;
+  gap: 3px;
+  color: #0e7a43;
+  margin: 9px 0;
+}
+.bw-review-list > li > p:last-child {
+  font-size: 12px;
+  line-height: 1.8;
+}
+.bw-vessel-review-form {
+  margin-top: 15px;
+}
+.bw-vessel-switch {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  width: 100%;
+  min-height: 80px;
+  text-align: left;
+  margin: 14px 0;
+  border: 1px solid #dfe5dc;
+  border-radius: 16px;
+  padding: 12px;
+}
+.bw-vessel-switch-icon {
+  display: grid;
+  place-items: center;
+  background: #e7efe9;
+  border-radius: 12px;
+  width: 42px;
+  height: 42px;
+  color: #0e7a43;
+  flex: none;
+}
+.bw-vessel-switch > span:nth-child(2) {
+  flex: 1;
+  min-width: 0;
+}
+.bw-vessel-switch small,
+.bw-port-links small {
+  display: block;
+  font-size: 10px;
+  color: #65766f;
+}
+.bw-vessel-switch strong,
+.bw-port-links strong {
+  display: block;
+  font-size: 14px;
+  margin-top: 5px;
+  overflow-wrap: anywhere;
+}
+.bw-port-links {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin: 14px 0;
+}
+.bw-port-links > button {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  text-align: left;
+  padding: 11px 9px;
+  background: #f1f1eb;
+  border-radius: 14px;
+  min-width: 0;
+  min-height: 70px;
+}
+.bw-port-links > button > span {
+  flex: 1;
+  min-width: 0;
+}
+.bw-port-links > button > svg {
+  flex: none;
+  color: #56766a;
+}
+.bw-boarding-guide,
+.bw-source-details {
+  border: 1px solid #e1e5dc;
+  border-radius: 13px;
+  font-size: 12px;
+  margin: 14px 0;
+}
+.bw-boarding-guide summary,
+.bw-source-details summary {
+  padding: 14px;
+  cursor: pointer;
+  font-weight: 600;
+  min-height: 44px;
+}
+.bw-boarding-guide > div,
+.bw-source-details > div {
+  padding: 0 14px 14px;
+}
+.bw-boarding-guide p {
+  font-size: 10px;
+  color: #65766f;
+}
+.bw-boarding-guide dl {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin: 12px 0;
+}
+.bw-boarding-guide dt {
+  display: flex;
+  gap: 5px;
+  align-items: center;
+  font-size: 10px;
+  color: #5a7268;
+}
+.bw-boarding-guide dd {
+  font-size: 18px;
+  font-weight: 700;
+  margin-top: 8px;
+}
+.bw-boarding-guide small {
+  font-size: 10px;
+  line-height: 1.6;
+  color: #65766f;
+}
+.bw-travel-marker {
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  position: absolute;
+}
+.bw-travel-marker > span {
+  display: grid;
+  place-items: center;
+  background: #fff1ce;
+  border: 2px solid #fff;
+  width: 25px;
+  height: 25px;
+  border-radius: 50%;
+  color: #805712;
+  box-shadow: 0 2px 8px #16324a38;
+}
+.bw-travel-marker > small {
+  position: absolute;
+  right: 1px;
+  top: 1px;
+  background: #16324a;
+  border: 1px solid #fff;
+  border-radius: 50%;
+  width: 16px;
+  height: 16px;
+  display: grid;
+  place-items: center;
+  font-size: 9px;
+  color: #fff;
+}
+.bw-travel-marker:focus-visible {
+  outline: 2px solid #0e7a43;
+  border-radius: 50%;
+}
+.bw-ship-profile button:focus-visible,
+.bw-departure-profile button:focus-visible {
+  outline: 2px solid #0e7a43;
+  outline-offset: 3px;
+}
+@media (max-width: 359px) {
+  .bw-ship-photo {
+    width: 62px;
+    height: 62px;
+    border-radius: 14px;
+  }
+  .bw-ship-heading {
+    gap: 10px;
+  }
+  .bw-ship-heading h2,
+  .bw-departure-profile h2 {
+    font-size: 22px;
+  }
+  .bw-crossing {
+    padding: 12px;
+  }
+  .bw-crossing-route {
+    font-size: 16px;
+  }
+  .bw-port-links {
+    grid-template-columns: 1fr;
+  }
+  .bw-section-heading {
+    gap: 6px;
+  }
+  .bw-section-heading h3 {
+    font-size: 13px;
+  }
+  .bw-section-heading > button {
+    padding: 0 9px;
+  }
+}
+
+.bw-ship-photo {
+  position: relative;
+}
+.bw-ship-photo img {
+  position: absolute;
+  inset: 0;
+}
+
+.bw-dossier-community {
+  margin: 36px 0;
+  padding: 24px;
+  border: 1px solid #dce6dc;
+  border-radius: 22px;
+  background: #fffdf8;
+}
+.bw-dossier-community h2 {
+  font-size: 24px;
+  line-height: 1.2;
+  font-weight: 700;
+  letter-spacing: -0.6px;
+  margin-top: 8px;
+}
+
+@media (max-width: 767px) {
+  .bw-map-stage:has(.panel-detail) .bw-map-scroll {
+    display: none;
+  }
+}

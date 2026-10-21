@@ -1,3 +1,4 @@
+import { VesselDossierCommunity } from "@/components/panel/VesselDossierCommunity";
 import { createFileRoute, notFound } from "@tanstack/react-router";
 import { SiteLayout } from "@/components/layout/SiteLayout";
 import {
@@ -70,6 +71,7 @@ function Boat() {
         {v.sections.map((s) => (
           <ContentSection section={s} key={s.id} />
         ))}
+        <VesselDossierCommunity slug={v.slug} />
         <SourceList ids={v.sources} />
       </ReadingLayout>
       <p className="mt-10 text-sm">

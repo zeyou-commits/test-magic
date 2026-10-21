@@ -162,7 +162,7 @@ function AuthPage() {
             ? "Indiquez votre e-mail : nous vous enverrons un lien pour choisir un nouveau mot de passe."
             : mode === "reset"
               ? "Choisissez votre nouveau mot de passe (6 caractères minimum)."
-              : "Pour noter les ports, laisser un avis et signaler une erreur."}
+              : "Pour noter un port ou un bateau et partager vos informations avec les voyageurs."}
         </p>
 
         {mode === "forgot" && resetSent ? (

@@ -1,3 +1,4 @@
+import { useTravelMarkers } from "./useTravelMarkers";
 import { useEffect, useRef, useState } from "react";
 import {
   Map as MapLibreMap,
@@ -68,7 +69,7 @@ interface FerryMapProps {
   portMeta: Record<string, PortMeta>;
   onSelect: (selection: Selection | null) => void;
   onOpenPanel?: () => void;
-  onMapInteract?: (kind?: "port") => void;
+  onMapInteract?: (kind?: "port" | "vessel") => void;
   /** Hauteur (px) masquée par le tiroir mobile et la barre d'onglets. */
   mobileBottomInset?: number;
   /** Largeur (px) masquée par le volet ordinateur. */
@@ -310,6 +311,7 @@ export default function FerryMap({
 
   selectRef.current = onSelect;
   interactRef.current = onMapInteract;
+  useTravelMarkers(mapRef, mapReady, ports, fleet, onSelect, onOpenPanel);
   const isMobile = useIsMobile();
   // Mobile : un tap sur un port n'ouvre que la bulle ; le volet s'ouvre via « Voir la fiche du port ».
   const [tipPortId, setTipPortId] = useState<string | null>(null);
@@ -355,7 +357,9 @@ export default function FerryMap({
       dragRotate: false,
       attributionControl: false,
       fadeDuration: 0,
-      cooperativeGestures: true,
+      cooperativeGestures: false,
+      dragPan: true,
+      touchPitch: false,
       scrollZoom: false,
     });
     map.touchZoomRotate.disableRotation();
@@ -376,6 +380,7 @@ export default function FerryMap({
       }
     });
 
+    map.touchZoomRotate.disableRotation();
     mapRef.current = map;
 
     const resize = () => requestAnimationFrame(() => mapRef.current?.resize());
@@ -662,7 +667,7 @@ export default function FerryMap({
         const props = event.features?.[0]?.properties;
         const vesselId = props?.["vesselId"];
         const departureId = props?.["departureId"];
-        interactRef.current?.();
+        interactRef.current?.("vessel");
         // Un navire connu ouvre sa fiche ; sans navire renseigné, on ouvre sa traversée.
         if (typeof vesselId === "string" && vesselId)
           selectRef.current({ type: "vessel", id: vesselId });

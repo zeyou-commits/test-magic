@@ -307,6 +307,7 @@ export default function FerryMap({
 }: FerryMapProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<MapLibreMap | null>(null);
+  const itineraryCameraRef = useRef<string | null>(null);
   const readyRef = useRef(false);
   const portMarkersRef = useRef<Map<string, Marker>>(new Map());
   const selectRef = useRef(onSelect);
@@ -749,6 +750,7 @@ export default function FerryMap({
       const before = map.getLayer("fleet-halo") ? "fleet-halo" : undefined;
       map.addLayer({ id: "itinerary-road-casing", type: "line", source: "itinerary-preview", filter: ["==", ["get", "kind"], "road"], layout: { "line-cap": "round", "line-join": "round" }, paint: { "line-color": "#fffdf8", "line-width": 7, "line-opacity": 0.92 } }, before);
       map.addLayer({ id: "itinerary-road", type: "line", source: "itinerary-preview", filter: ["==", ["get", "kind"], "road"], layout: { "line-cap": "round", "line-join": "round" }, paint: { "line-color": "#1e5b7a", "line-width": 4, "line-dasharray": [2, 1.3] } }, before);
+      map.addLayer({ id: "itinerary-estimate", type: "line", source: "itinerary-preview", filter: ["==", ["get", "kind"], "estimate"], layout: { "line-cap": "round", "line-join": "round" }, paint: { "line-color": "#1e5b7a", "line-width": 3, "line-opacity": 0.7, "line-dasharray": [1, 2] } }, before);
       map.addLayer({ id: "itinerary-ferry-casing", type: "line", source: "itinerary-preview", filter: ["==", ["get", "kind"], "ferry"], layout: { "line-cap": "round", "line-join": "round" }, paint: { "line-color": "#fffdf8", "line-width": 11 } }, before);
       map.addLayer({ id: "itinerary-ferry", type: "line", source: "itinerary-preview", filter: ["==", ["get", "kind"], "ferry"], layout: { "line-cap": "round", "line-join": "round" }, paint: { "line-color": "#0e7a43", "line-width": 6 } }, before);
       map.addLayer({ id: "itinerary-ends", type: "circle", source: "itinerary-preview", filter: ["==", ["geometry-type"], "Point"], paint: { "circle-radius": 8, "circle-color": "#0e7a43", "circle-stroke-color": "#fffdf8", "circle-stroke-width": 3 } });
@@ -757,6 +759,7 @@ export default function FerryMap({
     const source = map.getSource("itinerary-preview") as GeoJSONSource;
     if (!itineraryPreview) {
       source.setData({ type: "FeatureCollection", features: [] });
+      itineraryCameraRef.current = null;
       map.setMaxBounds(LIMIT_BOUNDS);
       return;
     }
@@ -764,17 +767,24 @@ export default function FerryMap({
     map.setMinZoom(1.5);
     const preview = itineraryPreview;
     source.setData({ type: "FeatureCollection", features: [
-      { type: "Feature", properties: { kind: "road" }, geometry: { type: "LineString", coordinates: preview.roadToPort } },
+      { type: "Feature" as const, properties: { kind: preview.roadDetailed ? "road" : "estimate" }, geometry: { type: "LineString" as const, coordinates: preview.roadToPort } },
       { type: "Feature", properties: { kind: "ferry" }, geometry: { type: "LineString", coordinates: preview.ferry } },
-      { type: "Feature", properties: { kind: "road" }, geometry: { type: "LineString", coordinates: preview.roadFromPort } },
+      { type: "Feature" as const, properties: { kind: preview.roadDetailed ? "road" : "estimate" }, geometry: { type: "LineString" as const, coordinates: preview.roadFromPort } },
       { type: "Feature", properties: { label: "Départ" }, geometry: { type: "Point", coordinates: preview.origin } },
       { type: "Feature", properties: { label: "Destination" }, geometry: { type: "Point", coordinates: preview.destination } },
     ] });
-    const points = [...preview.roadToPort, ...preview.ferry, ...preview.roadFromPort];
-    map.fitBounds([
-      [Math.min(...points.map((point) => point[0])) - 0.5, Math.min(...points.map((point) => point[1])) - 0.5],
-      [Math.max(...points.map((point) => point[0])) + 0.5, Math.max(...points.map((point) => point[1])) + 0.5],
-    ], { padding: viewPadding(), maxZoom: 6, duration: cameraDuration(700) });
+    const cameraFingerprint = `${preview.routeId}|${preview.origin.join(",")}|${preview.destination.join(",")}`;
+    if (itineraryCameraRef.current === cameraFingerprint) return;
+    itineraryCameraRef.current = cameraFingerprint;
+    // Les extrémités suffisent au cadrage : les points intermédiaires d'une géométrie
+    // routière peuvent contenir un détour qui dézoomerait toute la carte.
+    const points = [preview.origin, preview.departurePort, preview.arrivalPort, preview.destination];
+    const bounds: [[number, number], [number, number]] = [
+      [Math.min(...points.map((point) => point[0])) - 0.15, Math.min(...points.map((point) => point[1])) - 0.15],
+      [Math.max(...points.map((point) => point[0])) + 0.15, Math.max(...points.map((point) => point[1])) + 0.15],
+    ];
+    const camera = map.cameraForBounds(bounds, { padding: viewPadding(), maxZoom: 6 });
+    if (camera?.center && camera.zoom !== undefined) map.easeTo({ center: camera.center, zoom: Math.max(3.65, camera.zoom), padding: viewPadding(), duration: cameraDuration(700) });
   }, [itineraryPreview?.key, mapReady]);
 
   useEffect(() => {
@@ -1261,20 +1271,10 @@ export default function FerryMap({
         map.setMinZoom(Math.min(minZoomFloor(), Math.max(2.2, limit.zoom - 0.6)));
     }
     if (portsMode) {
-      // Le compteur « Ports » représente tout le réseau actif, pas seulement les lignes
-      // qui correspondent aux filtres de recherche en cours.
-      const selected = ports.filter((port) => port.status === "active");
-      // Le zoom minimal normal privilégie l'exploration. Ici on doit pouvoir faire tenir
-      // simultanément les deux rives dans la zone restée visible à droite du volet.
-      map.setMinZoom(2.6);
-      if (selected.length > 1) {
-        map.fitBounds([
-          [Math.min(...selected.map((port) => port.longitude)) - 0.8, Math.min(...selected.map((port) => port.latitude)) - 0.6],
-          [Math.max(...selected.map((port) => port.longitude)) + 0.8, Math.max(...selected.map((port) => port.latitude)) + 0.6],
-        ], { padding: viewPadding(), maxZoom: 5.3, duration: cameraDuration(800) });
-      } else if (selected[0]) {
-        map.easeTo({ center: [selected[0].longitude, selected[0].latitude], zoom: 6, padding: viewPadding(), duration: cameraDuration(800) });
-      }
+      // La vue « Ports » cadre la zone de navigation, et non la boîte englobante
+      // de tous les ports (qui peut inclure des ports lointains et faire perdre la mer).
+      map.setMinZoom(3.1);
+      map.fitBounds(OVERVIEW_BOUNDS, { padding: viewPadding(), maxZoom: 5, duration: cameraDuration(800) });
     } else if (!isMobile) {
       map.easeTo({ center: [4, 39], zoom: 4.2, padding: viewPadding(), duration: cameraDuration(800) });
       return;

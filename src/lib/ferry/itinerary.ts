@@ -8,6 +8,7 @@ export interface RoadLeg {
 
 export interface ItineraryMapPreview {
   key: number;
+  fit?: boolean;
   routeId: string;
   origin: [number, number];
   destination: [number, number];
@@ -77,12 +78,16 @@ export function buildItineraryOptions(
   });
 }
 
-export type ItineraryPriority = "cost" | "time" | "driving";
+export type ItineraryPriority = "recommended" | "cost" | "time" | "driving";
 
-export function sortItineraries(options: ItineraryOption[], priority: ItineraryPriority) {
+export function sortItineraries(options: ItineraryOption[], priority: ItineraryPriority, children = 0) {
   return [...options].sort((a, b) => {
     if (priority === "time") return a.totalMinutes - b.totalMinutes || a.arrivalAt - b.arrivalAt;
     if (priority === "driving") return a.roadKm - b.roadKm || a.arrivalAt - b.arrivalAt;
+    if (priority === "recommended") {
+      const score = (option: ItineraryOption) => option.totalEuro + option.roadKm * (children > 0 ? 0.3 : 0.12) + option.totalMinutes / 60 * (children > 0 ? 5 : 2);
+      return score(a) - score(b) || a.arrivalAt - b.arrivalAt;
+    }
     return a.totalEuro - b.totalEuro || a.arrivalAt - b.arrivalAt;
   });
 }
@@ -90,7 +95,7 @@ export function sortItineraries(options: ItineraryOption[], priority: ItineraryP
 /** Une proposition par couple de ports : le premier départ atteignable de chaque liaison.
  * Les autres dates restent disponibles dans la recherche des traversées.
  */
-export function distinctItineraries(options: ItineraryOption[], priority: ItineraryPriority) {
+export function distinctItineraries(options: ItineraryOption[], priority: ItineraryPriority, children = 0) {
   const byPorts = new Map<string, ItineraryOption>();
   for (const option of options) {
     const key = `${option.sailing.from.id}|${option.sailing.to.id}`;
@@ -101,5 +106,5 @@ export function distinctItineraries(options: ItineraryOption[], priority: Itiner
       byPorts.set(key, option);
     }
   }
-  return sortItineraries([...byPorts.values()], priority);
+  return sortItineraries([...byPorts.values()], priority, children);
 }

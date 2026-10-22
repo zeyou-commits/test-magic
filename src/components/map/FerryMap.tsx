@@ -779,6 +779,7 @@ export default function FerryMap({
       { type: "Feature", properties: { label: "Départ" }, geometry: { type: "Point", coordinates: preview.origin } },
       { type: "Feature", properties: { label: "Destination" }, geometry: { type: "Point", coordinates: preview.destination } },
     ] });
+    if (preview.fit === false) return;
     const cameraFingerprint = `${preview.routeId}|${preview.origin.join(",")}|${preview.destination.join(",")}`;
     if (itineraryCameraRef.current === cameraFingerprint) return;
     itineraryCameraRef.current = cameraFingerprint;

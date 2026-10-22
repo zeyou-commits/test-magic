@@ -456,7 +456,7 @@ function Index() {
   // Espace masqué par le tiroir mobile : la carte se recentre au-dessus de lui.
   const isPeekSelection = peekSelectionKey !== null && peekSelectionKey === `${selection?.type}:${selection?.id}`;
   const peekHeight = Math.min(Math.round(viewportHeight * 0.6), Math.max(240, viewportHeight - 260));
-  const mobileBottomInset = panelLevel === 0 ? 0 : panelLevel === 2 ? viewportHeight - TAB_BAR_HEIGHT : isPeekSelection ? peekHeight : Math.round(viewportHeight * (panelMode === "itinerary" ? 0.52 : MIDDLE_RATIO));
+  const mobileBottomInset = panelLevel === 0 ? 0 : panelLevel === 2 ? viewportHeight - TAB_BAR_HEIGHT : isPeekSelection ? peekHeight : Math.round(viewportHeight * (panelMode === "itinerary" ? 0.64 : MIDDLE_RATIO));
   const mobilePanelHeight = mobileBottomInset;
   // Sur mobile, choisir un navire, un port ou une traversée rouvre le tiroir s'il était replié.
   useEffect(() => {
@@ -651,7 +651,7 @@ function Index() {
             }
             className={`bw-map-panel absolute bottom-0 left-0 right-0 z-[60] flex flex-col overflow-hidden bg-transparent ${panelLevel === 0 && dragHeight === null ? "max-md:invisible max-md:pointer-events-none" : ""} ${dragHeight !== null ? "transition-none" : "transition-[height,width,transform] duration-[420ms] ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none"} md:bottom-5 md:left-5 md:right-auto md:top-5 md:h-auto md:w-[var(--desktop-panel-width)] md:overflow-visible md:rounded-3xl md:z-40 ${
               desktopPanelOpen ? "md:translate-x-0" : "md:translate-x-[calc(-100%-1.25rem)]"
-            } ${panelLevel === 0 ? "h-24 rounded-t-3xl" : panelLevel === 1 ? isPeekSelection ? "h-[var(--mobile-peek-height)] rounded-t-3xl" : panelMode === "itinerary" ? "h-[calc(var(--stage-height)*0.52)] rounded-t-3xl" : "h-[calc(var(--stage-height)*0.68)] rounded-t-3xl" : "h-[calc(var(--stage-height)-3.5rem)] rounded-t-3xl"}`}
+            } ${panelLevel === 0 ? "h-24 rounded-t-3xl" : panelLevel === 1 ? isPeekSelection ? "h-[var(--mobile-peek-height)] rounded-t-3xl" : panelMode === "itinerary" ? "h-[calc(var(--stage-height)*0.64)] rounded-t-3xl" : "h-[calc(var(--stage-height)*0.68)] rounded-t-3xl" : "h-[calc(var(--stage-height)-3.5rem)] rounded-t-3xl"}`}
           >
             {collapsed ? (
               <CollapsedPanelSummary
@@ -718,6 +718,7 @@ function Index() {
                   if (window.innerWidth < 768) setPanelLevel(0);
                 }}
                 onItineraryPreview={updateItineraryPreview}
+                onItineraryResultsReady={() => { if (window.innerWidth < 768) setPanelLevel(1); }}
               />
             </div>
             <div

@@ -48,3 +48,11 @@ test("les classements coût, arrivée et conduite restent distincts", () => {
   assert.equal(sortItineraries(basic, "time")[0]?.sailing.departure.id, "b");
   assert.equal(sortItineraries(basic, "driving")[0]?.sailing.departure.id, "b");
 });
+
+test("avec des enfants, la recommandation évite un long trajet routier pour une faible économie", () => {
+  const base = buildItineraryOptions([sailing("a", "2026-10-22T11:00:00Z", "2026-10-22T23:00:00Z")], roadIn, roadOut, startedAt, () => 200, 7, 2, 0.05)[0]!;
+  const cheapLongRoad = { ...base, totalEuro: 320, roadKm: 900, sailing: sailing("economique", "2026-10-22T11:00:00Z", "2026-10-22T23:00:00Z") };
+  const shortRoad = { ...base, totalEuro: 410, roadKm: 150, sailing: sailing("confort", "2026-10-22T11:00:00Z", "2026-10-22T23:00:00Z") };
+  assert.equal(sortItineraries([cheapLongRoad, shortRoad], "cost")[0]?.sailing.departure.id, "economique");
+  assert.equal(sortItineraries([cheapLongRoad, shortRoad], "recommended", 2)[0]?.sailing.departure.id, "confort");
+});

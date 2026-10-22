@@ -1,35 +1,32 @@
 import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Anchor, ArrowRight, CalendarDays, Car, CarFront, ChevronLeft, ChevronRight, Clock3, Fuel, LocateFixed, MapPin, Ship, Wallet } from "lucide-react";
-import { Calendar } from "@/components/ui/calendar";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { fr } from "date-fns/locale";
+import { Anchor, ArrowRight, Car, CarFront, ChevronLeft, ChevronRight, Clock3, Fuel, LocateFixed, MapPin, Minus, Plus, Ship, Sparkles, Wallet } from "lucide-react";
 import { companiesQuery, portsQuery, routesQuery, upcomingDeparturesQuery } from "@/lib/ferry/queries";
 import { buildSailings } from "@/lib/ferry/trips";
 import { calculateRoadAccess, searchItineraryAddress } from "@/lib/ferry/itinerary.functions";
 import { buildItineraryOptions, distinctItineraries, type ItineraryMapPreview, type ItineraryPriority } from "@/lib/ferry/itinerary";
 import { calculateRoadGeometry } from "@/lib/ferry/itinerary.functions";
 import { bookingSite, bookingUrl } from "@/lib/ferry/booking";
-import { estimateFare, estimateFerryFare, estimateVehicleFare, formatFareRange } from "@/lib/ferry/pricing";
+import { estimateFare, estimateFerryFare, estimateVehicleFare, formatFareRange, priceSeason } from "@/lib/ferry/pricing";
 import { routeArc } from "@/lib/ferry/geo";
 import { defaultTripProfile, VEHICLES, type VehicleKind } from "@/components/panel/TripProfile";
 
 type RoadAccess = Awaited<ReturnType<typeof calculateRoadAccess>>;
 
 const priorities: { id: ItineraryPriority; label: string; icon: typeof Wallet }[] = [
+  { id: "recommended", label: "Recommandé", icon: Sparkles },
   { id: "cost", label: "Moins cher", icon: Wallet },
   { id: "time", label: "Plus rapide", icon: Clock3 },
-  { id: "driving", label: "Moins de conduite", icon: CarFront },
 ];
 
-function localDateTime(date: Date) {
-  const rounded = new Date(Math.ceil(date.getTime() / (15 * 60_000)) * (15 * 60_000));
-  const local = new Date(rounded.getTime() - rounded.getTimezoneOffset() * 60_000);
-  return local.toISOString().slice(0, 16);
-}
-
 const numberFormat = new Intl.NumberFormat("fr-FR");
-const timeSlots = Array.from({ length: 96 }, (_, index) => `${String(Math.floor(index / 4)).padStart(2, "0")}:${String((index % 4) * 15).padStart(2, "0")}`);
+const monthKey = (date: Date) => `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
+const seasonLabel = { calme: "Basse", intermediaire: "Moyenne", forte: "Haute", pointe: "Pic" } as const;
+const seasonHeight = { calme: "h-3", intermediaire: "h-5", forte: "h-7", pointe: "h-9" } as const;
+
+function PassengerControl({ label, value, min, onChange }: { label: string; value: number; min: number; onChange: (value: number) => void }) {
+  return <div className="flex min-w-0 items-center justify-between rounded-xl border border-border bg-white px-2 py-1.5"><span className="text-xs font-semibold">{label}</span><span className="flex items-center gap-2"><button type="button" aria-label={`Retirer un ${label.toLowerCase().slice(0, -1)}`} disabled={value <= min} onClick={() => onChange(value - 1)} className="grid size-7 place-items-center rounded-full border border-border disabled:opacity-40"><Minus className="size-3.5" /></button><span className="min-w-3 text-center text-sm font-bold">{value}</span><button type="button" aria-label={`Ajouter un ${label.toLowerCase().slice(0, -1)}`} disabled={value >= 9} onClick={() => onChange(value + 1)} className="grid size-7 place-items-center rounded-full border border-border disabled:opacity-40"><Plus className="size-3.5" /></button></span></div>;
+}
 
 function JourneyGuide() {
   const steps = [
@@ -47,9 +44,10 @@ function JourneyGuide() {
   </div>;
 }
 
-function AddressField({ label, placeholder, value, onChange, point, onPointChange, countryCode }: {
+function AddressField({ label, placeholder, value, onChange, point, onPointChange, countryCode, onLocate, locating }: {
   label: string; placeholder: string; value: string; onChange: (value: string) => void;
   point: [number, number] | null; onPointChange: (point: [number, number] | null) => void; countryCode?: "DZ";
+  onLocate?: () => void; locating?: boolean;
 }) {
   const [suggestions, setSuggestions] = useState<{ label: string; point: [number, number] }[]>([]);
   const [open, setOpen] = useState(false);
@@ -66,14 +64,14 @@ function AddressField({ label, placeholder, value, onChange, point, onPointChang
     }, 450);
     return () => { cancelled = true; window.clearTimeout(timer); };
   }, [value, point, countryCode]);
-  return <label className="relative block text-sm font-semibold">{label}
-    <span className="mt-1 flex items-center gap-2 rounded-xl border border-border bg-white px-3 focus-within:ring-2 focus-within:ring-primary/30"><MapPin className="size-4 shrink-0 text-primary" aria-hidden /><input className="min-h-11 w-full min-w-0 outline-none" autoComplete="off" role="combobox" aria-autocomplete="list" aria-expanded={open && suggestions.length > 0} placeholder={placeholder} value={value} onChange={(event) => { onChange(event.target.value); onPointChange(null); setOpen(true); }} onFocus={() => setOpen(true)} onBlur={() => window.setTimeout(() => setOpen(false), 150)} required minLength={5} /></span>
+  return <div className="relative text-sm font-semibold"><label className="block" htmlFor={`itinerary-${countryCode ?? "origin"}`}>{label}</label>
+    <div className="mt-1 flex items-center gap-2 rounded-xl border border-border bg-white px-3 focus-within:ring-2 focus-within:ring-primary/30"><MapPin className="size-4 shrink-0 text-primary" aria-hidden /><input id={`itinerary-${countryCode ?? "origin"}`} className="min-h-11 w-full min-w-0 outline-none" autoComplete="off" role="combobox" aria-autocomplete="list" aria-expanded={open && suggestions.length > 0} placeholder={placeholder} value={value} onChange={(event) => { onChange(event.target.value); onPointChange(null); setOpen(true); }} onFocus={() => setOpen(true)} onBlur={() => window.setTimeout(() => setOpen(false), 150)} required minLength={5} />{onLocate && <button type="button" onClick={onLocate} disabled={locating} aria-label={locating ? "Localisation en cours" : "Utiliser ma position"} title="Utiliser ma position" className="grid size-8 shrink-0 place-items-center rounded-lg text-primary hover:bg-primary/10 disabled:opacity-50"><LocateFixed className="size-4" aria-hidden /></button>}</div>
     {pending && <span className="mt-1 block text-xs font-normal text-muted-foreground">Recherche d’adresses…</span>}
     {open && suggestions.length > 0 && <span role="listbox" className="absolute z-50 mt-1 block max-h-56 w-full overflow-auto rounded-xl border border-border bg-white p-1 shadow-xl">{suggestions.map((item, index) => <button key={`${item.point.join(",")}-${index}`} type="button" role="option" aria-selected={false} className="block w-full rounded-lg px-3 py-2 text-left text-sm font-medium hover:bg-secondary focus:bg-secondary" onPointerDown={(event) => event.preventDefault()} onClick={() => { onChange(item.label); onPointChange(item.point); setSuggestions([]); setOpen(false); }}>{item.label}</button>)}</span>}
-  </label>;
+  </div>;
 }
 
-export function ItineraryPlanner({ onClose, onPreview }: { onClose: () => void; onPreview: (preview: ItineraryMapPreview | null) => void }) {
+export function ItineraryPlanner({ onClose, onPreview, onResultsReady }: { onClose: () => void; onPreview: (preview: ItineraryMapPreview | null) => void; onResultsReady?: () => void }) {
   const { data: ports = [], isPending: portsPending } = useQuery(portsQuery);
   const { data: routes = [], isPending: routesPending } = useQuery(routesQuery);
   const { data: departures = [], isPending: departuresPending } = useQuery(upcomingDeparturesQuery());
@@ -82,8 +80,8 @@ export function ItineraryPlanner({ onClose, onPreview }: { onClose: () => void; 
   const [destination, setDestination] = useState("");
   const [originPoint, setOriginPoint] = useState<[number, number] | null>(null);
   const [destinationPoint, setDestinationPoint] = useState<[number, number] | null>(null);
-  const [startAt, setStartAt] = useState(() => localDateTime(new Date(Date.now() + 60 * 60_000)));
-  const [dateOpen, setDateOpen] = useState(false);
+  const [period, setPeriod] = useState(() => monthKey(new Date()));
+  const months = useMemo(() => Array.from({ length: 12 }, (_, index) => { const date = new Date(); date.setDate(1); date.setMonth(date.getMonth() + index); return { key: monthKey(date), label: new Intl.DateTimeFormat("fr-FR", { month: "short" }).format(date), season: priceSeason(`${monthKey(date)}-15`) }; }), []);
   const [locating, setLocating] = useState(false);
   const [locationError, setLocationError] = useState<string | null>(null);
   const [vehicle, setVehicle] = useState<VehicleKind>("sedan");
@@ -94,7 +92,9 @@ export function ItineraryPlanner({ onClose, onPreview }: { onClose: () => void; 
   const [consumption, setConsumption] = useState(7);
   const [fuelPrice, setFuelPrice] = useState(1.8);
   const [tollRate, setTollRate] = useState(0.06);
-  const [priority, setPriority] = useState<ItineraryPriority>("cost");
+  const [priority, setPriority] = useState<ItineraryPriority>("recommended");
+  const [filtersOpen, setFiltersOpen] = useState(true);
+  const [hoveredId, setHoveredId] = useState<string | null>(null);
   const [roadAccess, setRoadAccess] = useState<RoadAccess | null>(null);
   const [searchStartedAt, setSearchStartedAt] = useState<number | null>(null);
   const [loading, setLoading] = useState(false);
@@ -128,19 +128,20 @@ export function ItineraryPlanner({ onClose, onPreview }: { onClose: () => void; 
     passengers: { ...defaultTripProfile.passengers, adults, children },
   }), [vehicle, adults, children]);
   const options = useMemo(() => roadAccess && searchStartedAt !== null
-    ? buildItineraryOptions(sailings, roadAccess.toDeparturePorts, roadAccess.fromArrivalPorts, searchStartedAt, (sailing) => estimateFare(sailing, profile), consumption, fuelPrice, tollRate)
-    : [], [sailings, roadAccess, searchStartedAt, profile, consumption, fuelPrice, tollRate]);
-  const sorted = useMemo(() => distinctItineraries(options, priority), [options, priority]);
+    ? buildItineraryOptions(sailings.filter((sailing) => sailing.dayKey.startsWith(period)), roadAccess.toDeparturePorts, roadAccess.fromArrivalPorts, searchStartedAt, (sailing) => estimateFare(sailing, profile), consumption, fuelPrice, tollRate)
+    : [], [sailings, roadAccess, searchStartedAt, profile, consumption, fuelPrice, tollRate, period]);
+  const sorted = useMemo(() => distinctItineraries(options, priority, children), [options, priority, children]);
   const selected = sorted.find((option) => option.sailing.departure.id === selectedId) ?? sorted[0];
+  const previewed = sorted.find((option) => option.sailing.departure.id === hoveredId) ?? selected;
   const alternativeKey = sorted.slice(0, 6).map((option) => option.sailing.route.id).join("|");
 
   useEffect(() => {
-    if (!selected || !roadAccess) { onPreview(null); return; }
-    const id = selected.sailing.departure.id;
-    const departurePort: [number, number] = [selected.sailing.from.longitude, selected.sailing.from.latitude];
-    const arrivalPort: [number, number] = [selected.sailing.to.longitude, selected.sailing.to.latitude];
+    if (!previewed || !roadAccess) { onPreview(null); return; }
+    const id = previewed.sailing.departure.id;
+    const departurePort: [number, number] = [previewed.sailing.from.longitude, previewed.sailing.from.latitude];
+    const arrivalPort: [number, number] = [previewed.sailing.to.longitude, previewed.sailing.to.latitude];
     const alternatives: [number, number][][] = [];
-    const seen = new Set([`${selected.sailing.from.id}|${selected.sailing.to.id}`]);
+    const seen = new Set([`${previewed.sailing.from.id}|${previewed.sailing.to.id}`]);
     for (const option of sorted.slice(0, 6)) {
       const pair = `${option.sailing.from.id}|${option.sailing.to.id}`;
       if (seen.has(pair)) continue;
@@ -152,10 +153,11 @@ export function ItineraryPlanner({ onClose, onPreview }: { onClose: () => void; 
     let cancelled = false;
     const show = (roadToPort: [number, number][], roadFromPort: [number, number][], roadDetailed: boolean) => {
       if (cancelled) return;
-      onPreview({ key: Date.now() + Math.random(), routeId: selected.sailing.route.id, origin: roadAccess.originPoint, destination: roadAccess.destinationPoint,
-        departurePort, arrivalPort, roadToPort, roadDetailed, ferry: routeArc(selected.sailing.from, selected.sailing.to), roadFromPort, alternatives });
+      onPreview({ key: Date.now() + Math.random(), fit: !hoveredId, routeId: previewed.sailing.route.id, origin: roadAccess.originPoint, destination: roadAccess.destinationPoint,
+        departurePort, arrivalPort, roadToPort, roadDetailed, ferry: routeArc(previewed.sailing.from, previewed.sailing.to), roadFromPort, alternatives });
     };
     show([roadAccess.originPoint, departurePort], [arrivalPort, roadAccess.destinationPoint], false);
+    if (hoveredId && hoveredId !== selected?.sailing.departure.id) return () => { cancelled = true; };
     if (roadAccess.roadMode === "estimate") {
       setGeometryNote("OSRM indisponible : trajet approximatif affiché en pointillés. Distances et durées estimées.");
       return () => { cancelled = true; };
@@ -174,16 +176,16 @@ export function ItineraryPlanner({ onClose, onPreview }: { onClose: () => void; 
       if (!cancelled) setGeometryNote("Tracé routier indisponible : le trajet approximatif reste affiché, sans modifier l'estimation de cette option.");
     });
     return () => { cancelled = true; };
-  }, [selected?.sailing.departure.id, alternativeKey, roadAccess, onPreview]);
+  }, [previewed?.sailing.departure.id, selected?.sailing.departure.id, hoveredId, alternativeKey, roadAccess, onPreview]);
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError(null);
     setRoadAccess(null);
     geometryCache.current.clear();
-    const timestamp = Date.parse(startAt);
-    if (!Number.isFinite(timestamp) || timestamp < Date.now() - 60_000) {
-      setError("Choisissez une heure de départ dans le futur.");
+    const timestamp = Math.max(Date.now(), Date.parse(`${period}-01T00:00:00`));
+    if (!Number.isFinite(timestamp)) {
+      setError("Choisissez une période de départ.");
       return;
     }
     if (!departurePorts.length || !arrivalPorts.length) {
@@ -200,6 +202,9 @@ export function ItineraryPlanner({ onClose, onPreview }: { onClose: () => void; 
       setSelectedId(null);
       setSearchStartedAt(timestamp);
       setRoadAccess(roads);
+      setFiltersOpen(false);
+      onResultsReady?.();
+      requestAnimationFrame(() => document.querySelector(".batogo-panel-scroll")?.scrollTo({ top: 0, behavior: "smooth" }));
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "Le calcul n'a pas pu aboutir. Réessayez.");
     } finally {
@@ -224,35 +229,30 @@ export function ItineraryPlanner({ onClose, onPreview }: { onClose: () => void; 
 
   return (
     <section id="itineraire" className="min-h-full bg-[#fffdf8]">
-      <div className="flex items-center justify-between gap-3 bg-[#e9f3ef] px-4 py-2.5 sm:items-start sm:py-4">
+      <div className="flex items-center justify-between gap-3 border-b border-border bg-[#e9f3ef] px-4 py-2.5">
         <div>
-          <p className="hidden text-xs font-bold uppercase tracking-[.15em] text-primary sm:block">De porte à porte · en voiture</p>
-          <h2 className="font-display text-lg font-bold tracking-tight text-foreground sm:mt-1 sm:text-xl">Votre route jusqu'au Bled</h2>
-          <p className="mt-1 hidden text-xs leading-5 text-muted-foreground sm:block">La route, la traversée, puis les derniers kilomètres.</p>
+          <h2 className="font-display text-base font-bold uppercase tracking-tight text-foreground sm:text-lg">Le trajet porte à porte</h2>
         </div>
         <button type="button" onClick={onClose} className="shrink-0 rounded-full border border-border bg-white px-3 py-1.5 text-xs font-semibold text-primary">Fermer</button>
       </div>
-      <form onSubmit={(event) => void submit(event)} className="space-y-4 p-4">
+      {roadAccess && !filtersOpen && <div className="flex items-center justify-between gap-3 border-b border-border px-4 py-2.5"><p className="min-w-0 truncate text-xs font-medium text-muted-foreground">{roadAccess.origin} → {roadAccess.destination} · {period} · {vehicle === "sedan" ? "Berline" : VEHICLES.find((item) => item.id === vehicle)?.label}</p><button type="button" onClick={() => setFiltersOpen(true)} className="shrink-0 rounded-lg border border-border px-2.5 py-1.5 text-xs font-bold text-primary">Modifier</button></div>}
+      <form onSubmit={(event) => void submit(event)} hidden={!filtersOpen} className="space-y-3 p-4">
         <JourneyGuide />
         <div className="grid gap-3">
-          <AddressField label="Votre adresse de départ" placeholder="Ex. 12 rue de Lyon, Paris, France" value={origin} onChange={setOrigin} point={originPoint} onPointChange={setOriginPoint} />
-          <button type="button" onClick={locateOrigin} disabled={locating} className="inline-flex min-h-9 items-center gap-2 self-start rounded-full border border-primary/30 bg-primary/5 px-3 text-xs font-semibold text-primary hover:bg-primary/10 disabled:opacity-60"><LocateFixed className="size-4" aria-hidden />{locating ? "Localisation…" : "Utiliser ma position"}</button>
+          <AddressField label="Votre adresse de départ" placeholder="Ex. 12 rue de Lyon, Paris, France" value={origin} onChange={setOrigin} point={originPoint} onPointChange={setOriginPoint} onLocate={locateOrigin} locating={locating} />
           {locationError && <p role="status" className="text-xs text-destructive">{locationError}</p>}
           <AddressField label="Votre destination finale en Algérie" placeholder="Ex. rue Didouche Mourad, Alger" value={destination} onChange={setDestination} point={destinationPoint} onPointChange={setDestinationPoint} countryCode="DZ" />
         </div>
         <div className="grid gap-3">
-          <div className="text-sm font-semibold">Disponible à partir du<div className="mt-1 grid grid-cols-[minmax(0,1fr)_105px] gap-2">
-            <Popover open={dateOpen} onOpenChange={setDateOpen}><PopoverTrigger asChild><button type="button" className="flex min-h-11 items-center gap-2 rounded-xl border border-border bg-white px-3 text-left text-sm font-semibold"><CalendarDays className="size-4 shrink-0 text-primary" aria-hidden /><span className="truncate">{new Intl.DateTimeFormat("fr-FR", { weekday: "short", day: "numeric", month: "short" }).format(new Date(`${startAt.slice(0, 10)}T12:00:00`))}</span></button></PopoverTrigger><PopoverContent align="start" className="w-auto max-w-[calc(100vw-2rem)] p-1"><Calendar mode="single" locale={fr} selected={new Date(`${startAt.slice(0, 10)}T12:00:00`)} disabled={{ before: new Date(new Date().setHours(0, 0, 0, 0)) }} onSelect={(day) => { if (day) { setStartAt(`${day.getFullYear()}-${String(day.getMonth() + 1).padStart(2, "0")}-${String(day.getDate()).padStart(2, "0")}${startAt.slice(10)}`); setDateOpen(false); } }} /></PopoverContent></Popover>
-            <label className="sr-only" htmlFor="itinerary-time">Heure de départ</label><select id="itinerary-time" aria-label="Heure de départ" className="min-h-11 rounded-xl border border-border bg-white px-2 text-sm font-semibold" value={timeSlots.includes(startAt.slice(11)) ? startAt.slice(11) : ""} onChange={(event) => setStartAt(`${startAt.slice(0, 10)}T${event.target.value}`)} required>{!timeSlots.includes(startAt.slice(11)) && <option value="">Heure</option>}{timeSlots.map((time) => <option key={time} value={time}>{time}</option>)}</select>
-          </div></div>
+          <fieldset><legend className="text-sm font-semibold">Période de départ <span className="font-normal text-muted-foreground">· prix indicatifs</span></legend><div className="mt-2 flex gap-1.5 overflow-x-auto pb-2 touch-pan-x" aria-label="Choisir le mois de départ">{months.map((month) => <button key={month.key} type="button" aria-pressed={period === month.key} onClick={() => setPeriod(month.key)} className={`flex min-w-12 shrink-0 flex-col items-center rounded-lg border px-1 py-1.5 text-[10px] transition-colors ${period === month.key ? "border-primary bg-primary/10 text-primary" : "border-border bg-white text-muted-foreground"}`}><span className={`mb-1 w-4 rounded-t-sm ${seasonHeight[month.season]} ${month.season === "pointe" ? "bg-orange-500" : month.season === "forte" ? "bg-amber-500" : month.season === "intermediaire" ? "bg-teal-500" : "bg-primary/50"}`} aria-hidden /><strong>{month.label}</strong><span>{seasonLabel[month.season]}</span></button>)}</div><a href="/barometre-prix" className="text-[11px] font-semibold text-primary underline underline-offset-2">Comprendre les saisons et les prix</a></fieldset>
           <fieldset className="min-w-0 max-w-full">
             <legend className="text-sm font-semibold">Votre voiture</legend>
-            <div className="mb-2 flex items-center justify-between gap-2"><span className="text-xs text-muted-foreground">Glissez pour choisir votre véhicule</span><span className="flex gap-1"><button type="button" aria-label="Véhicules précédents" onClick={() => vehicleScrollRef.current?.scrollBy({ left: -170, behavior: "smooth" })} className="grid size-8 place-items-center rounded-full border border-border bg-white text-primary"><ChevronLeft className="size-4" /></button><button type="button" aria-label="Véhicules suivants" onClick={() => vehicleScrollRef.current?.scrollBy({ left: 170, behavior: "smooth" })} className="grid size-8 place-items-center rounded-full border border-border bg-white text-primary"><ChevronRight className="size-4" /></button></span></div>
+            <div className="mb-1 flex items-center justify-between gap-2"><span className="text-[11px] text-muted-foreground">Glissez pour choisir</span><span className="flex gap-1"><button type="button" aria-label="Véhicules précédents" onClick={() => vehicleScrollRef.current?.scrollBy({ left: -150, behavior: "smooth" })} className="grid size-7 place-items-center rounded-full border border-border bg-white text-primary"><ChevronLeft className="size-3.5" /></button><button type="button" aria-label="Véhicules suivants" onClick={() => vehicleScrollRef.current?.scrollBy({ left: 150, behavior: "smooth" })} className="grid size-7 place-items-center rounded-full border border-border bg-white text-primary"><ChevronRight className="size-3.5" /></button></span></div>
             <div ref={vehicleScrollRef} role="group" aria-label="Choisir votre véhicule" className="max-w-full overflow-x-auto overscroll-x-contain pb-2 touch-pan-x cursor-grab select-none [scrollbar-width:thin] active:cursor-grabbing" onPointerDown={(event) => { if (event.pointerType === "touch") return; vehicleDragRef.current = { x: event.clientX, left: event.currentTarget.scrollLeft, dragged: false }; }} onPointerMove={(event) => { const drag = vehicleDragRef.current; if (!drag) return; const delta = event.clientX - drag.x; if (Math.abs(delta) > 5 && !drag.dragged) { drag.dragged = true; event.currentTarget.setPointerCapture(event.pointerId); } if (drag.dragged) event.currentTarget.scrollLeft = drag.left - delta; }} onPointerUp={(event) => { if (event.currentTarget.hasPointerCapture(event.pointerId)) event.currentTarget.releasePointerCapture(event.pointerId); }} onPointerCancel={() => { vehicleDragRef.current = null; }} onClickCapture={(event) => { if (vehicleDragRef.current?.dragged) { event.preventDefault(); event.stopPropagation(); } vehicleDragRef.current = null; }}>
-              <div className="flex w-max min-w-full justify-center gap-2 px-1">{VEHICLES.filter((item) => item.id !== "none").map(({ id, Icon, label, hint }) => <button key={id} type="button" aria-pressed={vehicle === id} title={hint} onClick={() => setVehicle(id)} className={`flex min-h-20 w-27 shrink-0 flex-col items-center justify-center gap-1 rounded-xl border px-2 py-2 text-center text-xs font-semibold transition-colors ${vehicle === id ? "border-primary bg-primary text-white" : "border-border bg-white text-foreground hover:border-primary/50"}`}><Icon className="size-5" aria-hidden />{label}</button>)}</div>
+              <div className="flex w-max min-w-full justify-center gap-1.5 px-1">{VEHICLES.filter((item) => item.id !== "none").map(({ id, Icon, label, hint }) => <button key={id} type="button" aria-pressed={vehicle === id} title={hint} onClick={() => setVehicle(id)} className={`flex min-h-14 w-20 shrink-0 flex-col items-center justify-center gap-0.5 rounded-xl border px-1.5 py-1 text-center text-[11px] font-semibold transition-colors ${vehicle === id ? "border-primary bg-primary text-white" : "border-border bg-white text-foreground hover:border-primary/50"}`}><Icon className="size-4" aria-hidden />{label}</button>)}</div>
             </div>
           </fieldset>
-          <div className="grid grid-cols-2 gap-2"><label className="text-sm font-semibold">Adultes<input type="number" min={1} max={9} className="mt-1 block min-h-11 w-full rounded-xl border border-border bg-white px-3" value={adults} onChange={(event) => setAdults(Number(event.target.value))} /></label><label className="text-sm font-semibold">Enfants<input type="number" min={0} max={9} className="mt-1 block min-h-11 w-full rounded-xl border border-border bg-white px-3" value={children} onChange={(event) => setChildren(Number(event.target.value))} /></label></div>
+          <div className="grid grid-cols-2 gap-2"><PassengerControl label="Adultes" value={adults} min={1} onChange={setAdults} /><PassengerControl label="Enfants" value={children} min={0} onChange={setChildren} /></div>
         </div>
         <details className="rounded-xl border border-border bg-white px-4 py-3 text-sm"><summary className="cursor-pointer font-semibold text-primary">Ajuster les hypothèses de coût routier</summary><div className="mt-4 grid gap-3 sm:grid-cols-3"><label>Consommation · L/100 km<input type="number" min={1} max={30} step={0.1} className="mt-1 block w-full rounded-lg border p-2" value={consumption} onChange={(event) => setConsumption(Number(event.target.value))} /></label><label>Carburant · €/L<input type="number" min={0.5} max={5} step={0.01} className="mt-1 block w-full rounded-lg border p-2" value={fuelPrice} onChange={(event) => setFuelPrice(Number(event.target.value))} /></label><label>Provision péages · €/km<input type="number" min={0} max={1} step={0.01} className="mt-1 block w-full rounded-lg border p-2" value={tollRate} onChange={(event) => setTollRate(Number(event.target.value))} /></label></div></details>
         <button type="submit" disabled={loading || portsPending || routesPending || departuresPending} className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-primary px-6 font-bold text-white transition hover:brightness-110 disabled:opacity-60 sm:w-auto">{loading ? "Calcul en cours…" : "Comparer les itinéraires"}<ArrowRight className="size-4" aria-hidden /></button>
@@ -263,7 +263,7 @@ export function ItineraryPlanner({ onClose, onPreview }: { onClose: () => void; 
           <div className="flex flex-wrap items-center justify-between gap-4"><div><h3 className="font-display text-xl font-bold">Vos options de voyage</h3><p className="mt-1 text-xs text-muted-foreground">{roadAccess.origin} → {roadAccess.destination} · {sorted.length} itinéraire{sorted.length > 1 ? "s" : ""} distinct{sorted.length > 1 ? "s" : ""} · premier départ atteignable par liaison</p></div><div className="flex flex-wrap gap-1 rounded-xl bg-secondary p-1" aria-label="Classer les itinéraires">{priorities.map(({ id, label, icon: Icon }) => <button key={id} type="button" aria-pressed={priority === id} onClick={() => { setPriority(id); setSelectedId(null); }} className={`inline-flex items-center gap-1 rounded-lg px-2.5 py-2 text-xs font-semibold ${priority === id ? "bg-white text-primary shadow-sm" : "text-muted-foreground hover:text-foreground"}`}><Icon className="size-3.5" aria-hidden />{label}</button>)}</div></div>
           {geometryNote && <p role="status" className="mt-3 text-xs text-muted-foreground">{geometryNote}</p>}
           {selected && <p className="mt-3 rounded-xl bg-secondary px-3 py-2 text-xs leading-5 text-muted-foreground">Pour l'itinéraire affiché : ferry estimé entre <strong className="text-foreground">{formatFareRange(estimateFerryFare(selected.sailing, profile))}</strong>, voiture comprise. Le total affiché est un repère central, auquel s'ajoute la route. <a href="/barometre-prix" className="font-semibold text-primary underline underline-offset-2">Voir le baromètre et les saisons</a>.</p>}
-          {sorted.length === 0 ? <p className="mt-5 rounded-xl bg-secondary p-4 text-sm">Aucune traversée atteignable après votre départ et la marge de 2 h pour l'embarquement. Essayez une heure plus tôt ou une autre date.</p> : <div className="mt-5 grid gap-3">{sorted.slice(0, 6).map((option, index) => <article key={option.sailing.departure.id} className={`rounded-2xl border bg-white p-4 ${selected?.sailing.departure.id === option.sailing.departure.id ? "border-primary ring-2 ring-primary/20" : "border-border"}`}><div className="flex items-start justify-between gap-3"><div><span className="text-[11px] font-bold uppercase tracking-wide text-primary">{index === 0 ? priorities.find((item) => item.id === priority)?.label : `Option ${index + 1}`}</span><h4 className="mt-1 font-display text-lg font-bold">{option.sailing.from.name} <span className="text-primary">→</span> {option.sailing.to.name}</h4><p className="text-xs text-muted-foreground">{option.sailing.company?.name ?? "Compagnie à confirmer"} · {option.sailing.vessel?.name ?? "Navire à confirmer"}</p></div><strong className="whitespace-nowrap text-lg text-primary">~{numberFormat.format(option.totalEuro)} €</strong></div><div className="mt-4 flex items-center gap-2 border-y border-border py-3 text-xs"><CarFront className="size-4 text-primary" aria-hidden /><span>{Math.round(option.originRoad.distanceKm)} km</span><ArrowRight className="size-3 text-muted-foreground" aria-hidden /><Ship className="size-4 text-primary" aria-hidden /><span>{option.sailing.durationMin ? Math.round(option.sailing.durationMin / 60) : "—"} h</span><ArrowRight className="size-3 text-muted-foreground" aria-hidden /><CarFront className="size-4 text-primary" aria-hidden /><span>{Math.round(option.destinationRoad.distanceKm)} km</span></div><div className="mt-3 grid grid-cols-2 gap-2 text-xs"><p><span className="block text-muted-foreground">Ferry · départ local</span><strong>{option.sailing.dayKey} · {option.sailing.depTime}</strong></p><p><span className="block text-muted-foreground">Destination · heure locale estimée</span><strong>{new Intl.DateTimeFormat("fr-FR", { weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit", timeZone: option.sailing.toZone }).format(option.arrivalAt)}</strong></p><p><span className="block text-muted-foreground">Voyage porte à porte</span><strong>{Math.floor(option.totalMinutes / 60)} h {option.totalMinutes % 60} min</strong></p><p><span className="block text-muted-foreground">Départ conseillé de chez vous</span><strong>{new Intl.DateTimeFormat("fr-FR", { weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" }).format(option.leaveHomeAt)}</strong></p><p><span className="block text-muted-foreground">Conduite totale</span><strong>{Math.round(option.roadKm)} km</strong></p></div><div className="mt-3 flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground"><span className="inline-flex items-center gap-1"><Fuel className="size-3.5" aria-hidden />Route ~{option.roadEuro} € · Ferry ~{option.ferryEuro} € (dont voiture ~{estimateVehicleFare(option.sailing, profile)} €)</span><a href={bookingUrl(option.sailing, profile)} target="_blank" rel="noopener noreferrer" className="font-bold text-primary underline underline-offset-2">Voir l'offre {bookingSite(option.sailing)} ↗</a></div><button type="button" onClick={() => setSelectedId(option.sailing.departure.id)} className="mt-3 w-full rounded-lg bg-primary/10 px-3 py-2 text-xs font-bold text-primary hover:bg-primary/20" aria-pressed={selected?.sailing.departure.id === option.sailing.departure.id}>{selected?.sailing.departure.id === option.sailing.departure.id ? "Affiché sur la carte" : "Voir cet itinéraire sur la carte"}</button></article>)}</div>}
+          {sorted.length === 0 ? <p className="mt-5 rounded-xl bg-secondary p-4 text-sm">Aucune traversée connue pour cette période. Choisissez un autre mois ou consultez les horaires.</p> : <div className="mt-3 grid gap-2">{sorted.slice(0, 6).map((option, index) => <article key={option.sailing.departure.id} role="button" tabIndex={0} aria-label={`Sélectionner ${option.sailing.from.name} vers ${option.sailing.to.name}`} aria-pressed={selected?.sailing.departure.id === option.sailing.departure.id} onMouseEnter={() => setHoveredId(option.sailing.departure.id)} onMouseLeave={() => setHoveredId(null)} onFocus={() => setHoveredId(option.sailing.departure.id)} onBlur={() => setHoveredId(null)} onClick={() => setSelectedId(option.sailing.departure.id)} onKeyDown={(event) => { if (event.target === event.currentTarget && (event.key === "Enter" || event.key === " ")) { event.preventDefault(); setSelectedId(option.sailing.departure.id); } }} className={`cursor-pointer rounded-2xl border bg-white p-3 transition-colors hover:border-primary/60 focus-visible:outline-2 focus-visible:outline-primary ${selected?.sailing.departure.id === option.sailing.departure.id ? "border-primary ring-2 ring-primary/20" : "border-border"}`}><div className="flex items-start justify-between gap-3"><div><span className="text-[11px] font-bold uppercase tracking-wide text-primary">{index === 0 ? priorities.find((item) => item.id === priority)?.label : `Option ${index + 1}`}</span><h4 className="mt-1 font-display text-lg font-bold">{option.sailing.from.name} <span className="text-primary">→</span> {option.sailing.to.name}</h4><p className="text-xs text-muted-foreground">{option.sailing.company?.name ?? "Compagnie à confirmer"} · {option.sailing.vessel?.name ?? "Navire à confirmer"}</p></div><strong className="whitespace-nowrap text-lg text-primary">~{numberFormat.format(option.totalEuro)} €</strong></div><div className="mt-2 flex items-center gap-2 border-y border-border py-2 text-xs"><CarFront className="size-4 text-primary" aria-hidden /><span>{Math.round(option.originRoad.distanceKm)} km</span><ArrowRight className="size-3 text-muted-foreground" aria-hidden /><Ship className="size-4 text-primary" aria-hidden /><span>{option.sailing.durationMin ? Math.round(option.sailing.durationMin / 60) : "—"} h</span><ArrowRight className="size-3 text-muted-foreground" aria-hidden /><CarFront className="size-4 text-primary" aria-hidden /><span>{Math.round(option.destinationRoad.distanceKm)} km</span></div><div className="mt-2 grid grid-cols-2 gap-1.5 text-xs"><p><span className="block text-muted-foreground">Ferry · départ local</span><strong>{option.sailing.dayKey} · {option.sailing.depTime}</strong></p><p><span className="block text-muted-foreground">Destination · heure locale estimée</span><strong>{new Intl.DateTimeFormat("fr-FR", { weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit", timeZone: option.sailing.toZone }).format(option.arrivalAt)}</strong></p><p><span className="block text-muted-foreground">Voyage porte à porte</span><strong>{Math.floor(option.totalMinutes / 60)} h {option.totalMinutes % 60} min</strong></p><p><span className="block text-muted-foreground">Départ conseillé de chez vous</span><strong>{new Intl.DateTimeFormat("fr-FR", { weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" }).format(option.leaveHomeAt)}</strong></p><p><span className="block text-muted-foreground">Conduite totale</span><strong>{Math.round(option.roadKm)} km</strong></p></div><div className="mt-3 flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground"><span className="inline-flex items-center gap-1"><Fuel className="size-3.5" aria-hidden />Route ~{option.roadEuro} € · Ferry ~{option.ferryEuro} € (dont voiture ~{estimateVehicleFare(option.sailing, profile)} €)</span><a href={bookingUrl(option.sailing, profile)} target="_blank" rel="noopener noreferrer" className="font-bold text-primary underline underline-offset-2">Voir l'offre {bookingSite(option.sailing)} ↗</a></div></article>)}</div>}
           <p className="mt-5 text-xs leading-5 text-muted-foreground">{roadAccess.roadMode === "osrm" ? "Distances routières : OSRM / OpenStreetMap." : "Distances routières approximatives : distance directe majorée de 32 %, vitesse moyenne de 68 km/h."} En cas d'échec du tracé, la ligne approximative ne modifie pas les coûts et durées déjà calculés. Coût carburant et péages provisionnés selon vos hypothèses ; l'estimation du ferry comprend les voyageurs et le véhicule choisi, mais ne constitue pas un devis. La durée porte à porte commence au départ conseillé de chez vous, inclut 2 h avant l'embarquement et exclut les jours d'attente avant cette date. Conditions routières, frontières et retards non prédits.</p>
         </div>
       )}

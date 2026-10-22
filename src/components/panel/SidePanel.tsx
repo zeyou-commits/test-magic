@@ -24,6 +24,7 @@ interface SidePanelProps {
   onOpenItinerary?: () => void;
   onCloseItinerary?: () => void;
   onItineraryPreview?: (preview: ItineraryMapPreview | null) => void;
+  onItineraryResultsReady?: () => void;
 }
 
 /** Un seul volet : la recherche en permanence, et le détail d'un port, d'une ligne ou d'un départ par-dessus. */
@@ -41,6 +42,7 @@ export function SidePanel({
   onOpenItinerary,
   onCloseItinerary,
   onItineraryPreview,
+  onItineraryResultsReady,
 }: SidePanelProps) {
   const detailRef = useRef<HTMLDivElement>(null);
   const returnFocusRef = useRef<HTMLElement | null>(null);
@@ -72,7 +74,7 @@ export function SidePanel({
         inert={selection ? true : undefined}
         className="batogo-panel-scroll relative flex-1 overflow-y-auto"
       >
-        {itineraryOpen && onCloseItinerary && onItineraryPreview ? <ItineraryPlanner onClose={onCloseItinerary} onPreview={onItineraryPreview} /> : <SearchPanel
+        {itineraryOpen && onCloseItinerary && onItineraryPreview ? <ItineraryPlanner onClose={onCloseItinerary} onPreview={onItineraryPreview} {...(onItineraryResultsReady ? { onResultsReady: onItineraryResultsReady } : {})} /> : <SearchPanel
           filters={filters}
           onFiltersChange={onFiltersChange}
           selection={selection}

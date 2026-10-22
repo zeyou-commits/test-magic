@@ -7,23 +7,25 @@ import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { GoogleMark } from "@/components/auth/GoogleMark";
+import { CrossingScene } from "@/components/auth/CrossingScene";
 
 export const Route = createFileRoute("/auth")({
   head: () => ({
     meta: [
       { name: "robots", content: "noindex, nofollow" },
-      { title: "Connexion — Batogo" },
-      { property: "og:title", content: "Connexion — Batogo" },
+      { title: "Connexion — BledWay" },
+      { property: "og:title", content: "Connexion — BledWay" },
       {
         property: "og:description",
-        content: "Connectez-vous à Batogo pour retrouver votre compte et vos contributions.",
+        content: "Connectez-vous à BledWay pour retrouver votre compte et vos contributions.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
       {
         name: "description",
         content:
-          "Connectez-vous à Batogo pour noter les ports, laisser un avis et signaler une information inexacte.",
+          "Connectez-vous à BledWay pour noter les ports, laisser un avis et signaler une information inexacte.",
       },
     ],
   }),
@@ -167,53 +169,46 @@ function AuthPage() {
   const showPasswordField = mode !== "forgot";
 
   return (
-    <div className="relative flex min-h-dvh items-center justify-center overflow-hidden bg-[#f8f5ee] px-4 py-8 text-foreground sm:px-6">
-      <div className="pointer-events-none absolute -left-24 -top-28 size-80 rounded-full bg-primary/10 blur-3xl" />
-      <div className="pointer-events-none absolute -bottom-32 right-0 size-96 rounded-full bg-[#d7e9e7] blur-3xl" />
-      <div className="relative grid w-full max-w-5xl overflow-hidden rounded-[2rem] border border-border bg-card shadow-2xl lg:grid-cols-[.9fr_1.1fr]">
-        <div className="relative hidden min-h-[650px] flex-col justify-between overflow-hidden bg-[#e9f0e9] p-10 lg:flex">
+    <div className="bw-auth-page relative bg-background text-foreground">
+      <div className="bw-auth-layout relative grid w-full border border-border bg-card lg:grid-cols-[.9fr_1.1fr]">
+        <div className="bw-auth-story relative flex flex-col overflow-hidden bg-[#e5efed]">
           <div className="relative z-10">
             <img
               src="/bledway-brand.png"
               alt="BledWay"
-              className="h-12 w-auto object-contain object-left"
+              className="h-10 w-auto object-contain object-left"
             />
           </div>
-          <img
-            src="/images/bledway-horizon-algerien.png"
-            alt=""
-            className="absolute inset-0 size-full object-cover opacity-65"
-          />
-          <div className="relative z-10 rounded-3xl border border-white/70 bg-[#f8f5ee]/90 p-7 backdrop-blur">
+          <CrossingScene className="bw-auth-scene" />
+          <div className="bw-auth-story-copy relative z-10 border border-white/70 bg-background/95">
             <span className="text-xs font-bold uppercase tracking-[.18em] text-primary">
               La mer nous rapproche
             </span>
-            <h2 className="mt-3 font-display text-3xl font-bold leading-tight">
+            <h2 className="mt-2 font-display text-2xl font-bold leading-tight">
               Préparons la traversée ensemble.
             </h2>
-            <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
+            <p className="bw-auth-story-description mt-3 text-sm leading-relaxed text-muted-foreground">
               Retrouvez votre voyage et partagez vos conseils avec celles et ceux qui prennent le
               large.
             </p>
-            <div className="mt-5 flex items-center gap-2 text-sm font-semibold text-primary">
+            <div className="bw-auth-story-benefits mt-4 flex flex-wrap items-center gap-2 text-xs font-semibold text-primary">
               <Star size={17} /> Avis de voyageurs <span className="mx-2 text-border">·</span>{" "}
               <ShieldCheck size={17} /> Compte sécurisé
             </div>
           </div>
         </div>
-        <div className="w-full px-6 py-7 sm:px-10 sm:py-10">
-          <div className="mb-8 flex items-center justify-between">
+        <div className="bw-auth-form w-full">
+          <div className="mb-5 flex items-center justify-between">
             <Link
               to="/"
               className="inline-flex text-sm font-medium text-muted-foreground hover:text-foreground"
             >
               &larr; Retour à la carte
             </Link>
-            <img src="/pwa-icon-192.png" alt="" className="size-11 rounded-xl lg:hidden" />
           </div>
           {mode === "signin" || mode === "signup" ? (
             <div
-              className="mb-7 grid grid-cols-2 rounded-xl bg-secondary p-1"
+              className="mb-5 grid grid-cols-2 rounded-xl bg-secondary p-1"
               aria-label="Connexion ou inscription"
             >
               <button
@@ -238,7 +233,7 @@ function AuthPage() {
             </div>
           ) : null}
           <h1 className="mb-2 font-display text-3xl font-bold tracking-tight">{titles[mode]}</h1>
-          <p className="mb-7 text-sm leading-relaxed text-muted-foreground">
+          <p className="mb-5 text-sm leading-relaxed text-muted-foreground">
             {mode === "forgot"
               ? "Indiquez votre e-mail : nous vous enverrons un lien pour choisir un nouveau mot de passe."
               : mode === "reset"
@@ -424,6 +419,7 @@ function AuthPage() {
                 onClick={handleGoogle}
                 disabled={googleLoading}
               >
+                <GoogleMark />
                 {googleLoading ? "Redirection vers Google…" : "Continuer avec Google"}
               </Button>
             </>

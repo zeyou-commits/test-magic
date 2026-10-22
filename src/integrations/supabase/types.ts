@@ -534,6 +534,24 @@ export type Database = {
         Update: { id?: string; target_kind?: string; target_id?: string; user_id?: string; category?: string; delay_minutes?: number | null; created_at?: string; expires_at?: string; resolved?: boolean };
         Relationships: [];
       };
+      bw_voyage_events: {
+        Row: { id: string; departure_id: string; vessel_id: string | null; previous_vessel_id: string | null; title: string; body: string; created_at: string };
+        Insert: { id?: string; departure_id: string; vessel_id?: string | null; previous_vessel_id?: string | null; title: string; body: string; created_at?: string };
+        Update: { title?: string; body?: string };
+        Relationships: [];
+      };
+      bw_notification_campaigns: {
+        Row: { id: string; route_id: string; period_month: string; status: string; created_at: string; updated_at: string; approved_at: string | null; approved_by: string | null; sent_at: string | null; last_error: string | null };
+        Insert: { id?: string; route_id: string; period_month: string; status?: string; created_at?: string; updated_at?: string; approved_at?: string | null; approved_by?: string | null; sent_at?: string | null; last_error?: string | null };
+        Update: { status?: string; updated_at?: string; approved_at?: string | null; approved_by?: string | null; sent_at?: string | null; last_error?: string | null };
+        Relationships: [];
+      };
+      bw_notification_preferences: {
+        Row: { user_id: string; reminders: boolean; community: boolean; openings: boolean; push_enabled: boolean; updated_at: string };
+        Insert: { user_id: string; reminders?: boolean; community?: boolean; openings?: boolean; push_enabled?: boolean; updated_at?: string };
+        Update: { reminders?: boolean; community?: boolean; openings?: boolean; push_enabled?: boolean; updated_at?: string };
+        Relationships: [];
+      };
       bw_push_subscriptions: {
         Row: { id: string; user_id: string; endpoint: string; p256dh: string; auth_key: string; created_at: string; last_success_at: string | null };
         Insert: { id?: string; user_id: string; endpoint: string; p256dh: string; auth_key: string; created_at?: string; last_success_at?: string | null };
@@ -553,9 +571,9 @@ export type Database = {
         Relationships: [];
       };
       bw_push_deliveries: {
-        Row: { notification_id: string; subscription_id: string; attempts: number; sent_at: string | null; last_error: string | null };
-        Insert: { notification_id: string; subscription_id: string; attempts?: number; sent_at?: string | null; last_error?: string | null };
-        Update: { notification_id?: string; subscription_id?: string; attempts?: number; sent_at?: string | null; last_error?: string | null };
+        Row: { notification_id: string; subscription_id: string; attempts: number; sent_at: string | null; last_error: string | null; leased_until: string | null };
+        Insert: { notification_id: string; subscription_id: string; attempts?: number; sent_at?: string | null; last_error?: string | null; leased_until?: string | null };
+        Update: { notification_id?: string; subscription_id?: string; attempts?: number; sent_at?: string | null; last_error?: string | null; leased_until?: string | null };
         Relationships: [];
       };
       bw_itinerary_watches: {
@@ -964,6 +982,7 @@ export type Database = {
       [_ in never]: never;
     };
     Functions: {
+      bw_prepare_opening_campaigns: { Args: { p_route?: string }; Returns: number };
       bw_community_feed: {
         Args: { p_kind?: string; p_target?: string; p_moderation?: boolean };
         Returns: Json;

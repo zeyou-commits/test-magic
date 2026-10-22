@@ -17,7 +17,8 @@ import {
   reliabilityLabel,
   reliabilityTone,
 } from "@/lib/ferry/format";
-import { portTimeZone, zoneLabel } from "@/lib/ferry/time";
+import { dateKeyInZone, portTimeZone, zoneLabel } from "@/lib/ferry/time";
+import { FollowButton } from "@/components/panel/FollowButton";
 import type { Port } from "@/lib/ferry/types";
 
 const title = "Horaires des ferries Europe ↔ Algérie — prochains départs | Batogo";
@@ -28,6 +29,13 @@ const PAGE_SIZE = 40;
 type Direction = "all" | "toAlgeria" | "fromAlgeria";
 
 export const Route = createFileRoute("/horaires")({
+  validateSearch: (search: Record<string, unknown>): { from?: string; to?: string; month?: string } => {
+    const result: { from?: string; to?: string; month?: string } = {};
+    if (typeof search['from'] === "string" && /^[\da-f-]{36}$/i.test(search['from'])) result.from = search['from'];
+    if (typeof search['to'] === "string" && /^[\da-f-]{36}$/i.test(search['to'])) result.to = search['to'];
+    if (typeof search['month'] === "string" && /^\d{4}-(0[1-9]|1[0-2])$/.test(search['month'])) result.month = search['month'];
+    return result;
+  },
   loader: async ({ context }) => {
     await Promise.all([
       context.queryClient.ensureQueryData(upcomingDeparturesQuery()),
@@ -43,6 +51,7 @@ export const Route = createFileRoute("/horaires")({
 const isAlgeria = (port: Port | undefined) => port?.country_code === "DZ";
 
 function HorairesPage() {
+  const search = Route.useSearch();
   const { data: departures } = useSuspenseQuery(upcomingDeparturesQuery());
   const { data: routes } = useSuspenseQuery(routesQuery);
   const { data: ports } = useSuspenseQuery(portsQuery);
@@ -70,6 +79,7 @@ function HorairesPage() {
         })
         // Un départ dont la ligne n'est plus publiée (ligne suspendue) n'est pas affiché.
         .filter(({ route, from, to }) => Boolean(route && from && to))
+        .filter(({ from, to, departure }) => (!search.from || from?.id === search.from) && (!search.to || to?.id === search.to) && (!search.month || dateKeyInZone(departure.departure_at, portTimeZone(from)).startsWith(search.month)))
         .filter(({ from, to }) =>
           direction === "all"
             ? true
@@ -77,7 +87,7 @@ function HorairesPage() {
               ? isAlgeria(to) && !isAlgeria(from)
               : isAlgeria(from) && !isAlgeria(to),
         ),
-    [departures, routeById, portById, companies, direction],
+    [departures, routeById, portById, companies, direction, search.from, search.to, search.month],
   );
 
   return (
@@ -88,6 +98,7 @@ function HorairesPage() {
         intro="Les départs connus à venir, dans les deux sens. Chaque heure est donnée dans l'heure locale du port de départ, comme sur votre billet."
       />
 
+      {(search.from || search.to || search.month) && <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-primary/20 bg-primary/5 p-4 text-sm"><p className="font-semibold">{search.from ? portById.get(search.from)?.name ?? "Départ" : "Tous les ports"} → {search.to ? portById.get(search.to)?.name ?? "Arrivée" : "Tous les ports"}{search.month && ` · ${new Intl.DateTimeFormat("fr-FR", { month: "long", year: "numeric" }).format(new Date(`${search.month}-15T12:00:00`))}`}</p><Link to="/horaires" search={{}} className="text-xs font-semibold text-primary underline">Tous les départs</Link></div>}
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <div
           className="batogo-tabbar inline-grid grid-cols-3 gap-1 p-1"
@@ -131,6 +142,7 @@ function HorairesPage() {
               <th className="px-4 py-3">Compagnie</th>
               <th className="px-4 py-3">Durée</th>
               <th className="px-4 py-3">Fiabilité</th>
+              <th className="px-4 py-3"><span className="sr-only">Suivre la traversée</span></th>
             </tr>
           </thead>
           <tbody className="divide-y divide-border">
@@ -174,13 +186,14 @@ function HorairesPage() {
                   >
                     {reliabilityLabel[departure.reliability]}
                   </td>
+                  <td className="px-4 py-3"><FollowButton kind="departure" targetId={departure.id} label={`${from?.name ?? "Départ"} → ${to?.name ?? "Arrivée"}`} compact demo={Boolean(departure.is_demo)}/></td>
                 </tr>
               );
             })}
             {rows.length === 0 ? (
               <tr>
-                <td colSpan={5} className="px-4 py-6 text-center text-muted-foreground">
-                  Aucun départ connu à venir pour l'instant.
+                <td colSpan={6} className="px-4 py-6 text-center text-muted-foreground">
+                  Aucun départ publié ne correspond à ces critères pour le moment.
                 </td>
               </tr>
             ) : null}
@@ -231,6 +244,7 @@ function HorairesPage() {
                     {reliabilityLabel[departure.reliability]}
                   </span>
                 </p>
+                <div className="mt-3"><FollowButton kind="departure" targetId={departure.id} label={`${from?.name ?? "Départ"} → ${to?.name ?? "Arrivée"}`} compact demo={Boolean(departure.is_demo)}/></div>
               </article>
             );
           })}

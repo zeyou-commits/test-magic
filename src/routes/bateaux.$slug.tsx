@@ -1,4 +1,4 @@
-import { VesselDossierCommunity } from "@/components/panel/VesselDossierCommunity";
+import { VesselDossierCommunity, VesselDossierFollow } from "@/components/panel/VesselDossierCommunity";
 import { createFileRoute, notFound } from "@tanstack/react-router";
 import { SiteLayout } from "@/components/layout/SiteLayout";
 import {
@@ -52,6 +52,7 @@ function Boat() {
         ]}
       />
       <EditorialHero label={v.company} title={v.name} intro={v.summary} />
+      <VesselDossierFollow slug={v.slug} />
       <ReadingLayout sections={v.sections}>
         <AnswerBox>
           Les caractéristiques décrivent un navire. Pour connaître le bateau affecté, les places

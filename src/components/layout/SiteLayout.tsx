@@ -3,7 +3,7 @@ import { Link } from "@tanstack/react-router";
 import { UserMenu } from "./UserMenu";
 import { MobileTabBar } from "./MobileTabBar";
 import { DataUnavailableNotice } from "./DataUnavailableNotice";
-import { ChevronDown, Menu, ArrowUpRight } from "lucide-react";
+import { ChevronDown, Menu, ArrowUpRight, Route as RouteIcon } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -38,6 +38,11 @@ const footerLinks = [
   { to: "/mentions-legales", label: "Mentions légales" },
   { to: "/confidentialite", label: "Confidentialité" },
 ] as const;
+
+function openItineraryFromHeader() {
+  window.sessionStorage.setItem("bledway:open-home-action", "itinerary");
+  if (window.location.pathname === "/") window.dispatchEvent(new Event("bledway:open-itinerary"));
+}
 
 /** Identité commune à toutes les pages : même logo, même nom, même accroche. */
 export function BrandLink({ compact = false }: { compact?: boolean }) {
@@ -74,6 +79,7 @@ export function SiteHeader() {
               {item.label}
             </Link>
           ))}
+          <Link to="/" onClick={openItineraryFromHeader} activeProps={{ className: "" }} className="inline-flex items-center gap-1.5"><RouteIcon size={16} aria-hidden/>Itinéraire</Link>
           <DropdownMenu>
             <DropdownMenuTrigger className="bw-explore-trigger">
               Explorer <ChevronDown size={15} />
@@ -107,6 +113,7 @@ export function SiteHeader() {
               <Menu size={22} />
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="min-w-52">
+              <DropdownMenuItem asChild><Link to="/" onClick={openItineraryFromHeader}><RouteIcon size={16} aria-hidden/>Itinéraire porte à porte</Link></DropdownMenuItem>
               {navLinks.map((item) => (
                 <DropdownMenuItem asChild key={item.to}>
                   <Link to={item.to}>{item.label}</Link>

@@ -355,7 +355,7 @@ export function SearchPanel({
       <div className="flex flex-col">
         {!editing && !active ? (
           <div className="bw-search-welcome">
-            <h2>On prend le large ?</h2>
+            <div className="flex items-center justify-between gap-2"><h2>On prend le large ?</h2><button type="button" onClick={onOpenItinerary} aria-label="Simuler mon itinéraire porte à porte" title="Itinéraire porte à porte" className="grid size-9 shrink-0 place-items-center rounded-xl border border-primary/20 bg-white text-primary hover:bg-primary/5"><Route className="size-4" aria-hidden/></button></div>
           </div>
         ) : null}
         {/* RECHERCHE : capsule condensée façon Airbnb, formulaire guidé à la demande */}
@@ -379,9 +379,6 @@ export function SearchPanel({
               </span>
               <span className="sr-only">Modifier la recherche</span>
             </button>
-            <button type="button" onClick={onOpenItinerary} aria-label="Activer le mode itinéraire" title="Activer le mode itinéraire" className="mt-2 inline-flex min-h-9 items-center gap-2 rounded-full border border-primary/25 bg-primary/5 px-3 text-xs font-semibold text-primary transition-colors hover:bg-primary/10">
-              <Route className="size-4" aria-hidden /> Itinéraire depuis chez moi
-            </button>
           </section>
         ) : null}
         <section
@@ -399,9 +396,6 @@ export function SearchPanel({
               <X className="size-4" aria-hidden />
             </button>
           </div>
-          <button type="button" onClick={onOpenItinerary} className="inline-flex min-h-9 items-center gap-2 self-start rounded-full border border-primary/25 bg-primary/5 px-3 text-left text-xs font-semibold text-primary hover:bg-primary/10">
-            <Route className="size-4" aria-hidden /> Mode itinéraire
-          </button>
           <div className="flex items-center justify-between gap-2">
             <div
               className="batogo-tabbar inline-grid grid-cols-2 gap-0.5 !rounded-full !p-0.5"

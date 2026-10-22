@@ -15,6 +15,7 @@ import { reportLovableError } from "../lib/lovable-error-reporting";
 import { AuthProvider } from "@/hooks/useAuth";
 import { Toaster } from "@/components/ui/sonner";
 import { PwaInstall } from "@/components/layout/PwaInstall";
+import { TravelActionProvider } from "@/components/auth/TravelActionProvider";
 
 function NotFoundComponent() {
   return (
@@ -177,10 +178,12 @@ function RootComponent() {
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
+        <TravelActionProvider>
         {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
         <Outlet />
         <PwaInstall />
         <Toaster />
+        </TravelActionProvider>
       </AuthProvider>
     </QueryClientProvider>
   );

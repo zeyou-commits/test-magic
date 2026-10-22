@@ -275,7 +275,7 @@ export function SailingDetail({
           Fiche de la ligne <ChevronRight className="size-3.5" aria-hidden />
         </button>
         <ReportButton targetType="departure" targetId={departure.id} label="Signaler" />
-        {!departure.is_demo && <FollowButton kind="departure" targetId={departure.id} compact />}
+        <FollowButton kind="departure" targetId={departure.id} compact label={`${sailing.from.name} → ${sailing.to.name}`} demo={Boolean(departure.is_demo)} />
         <ShareButtons />
         {bookingHref ? (
           <a

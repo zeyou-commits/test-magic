@@ -1,5 +1,5 @@
 import { Link } from "@tanstack/react-router";
-import { Anchor, Clock, Map as MapIcon, MoreHorizontal, Search } from "lucide-react";
+import { Route as RouteIcon, Clock, Map as MapIcon, MoreHorizontal, Search } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -26,7 +26,7 @@ const moreLinks = [
 
 interface MobileTabBarProps {
   className?: string;
-  activeTab?: "map" | "departures" | "search" | "ports";
+  activeTab?: "map" | "departures" | "search" | "ports" | "itinerary";
   onOpenMap?: () => void;
   onOpenDepartures?: () => void;
   onOpenSearch?: () => void;
@@ -110,20 +110,20 @@ export function MobileTabBar({
           <span>Chercher</span>
         </Link>
       )}
-      {onShowPorts ? (
+      {onOpenItinerary ? (
         <button
           type="button"
-          onClick={onShowPorts}
-          data-active={activeTab === "ports"}
+          onClick={onOpenItinerary}
+          data-active={activeTab === "itinerary"}
           className={itemClass}
         >
-          <Anchor className="size-5" aria-hidden />
-          <span>Ports</span>
+          <RouteIcon className="size-5" aria-hidden />
+          <span>Itinéraire</span>
         </button>
       ) : (
-        <Link to="/" onClick={() => rememberAction("ports")} className={itemClass}>
-          <Anchor className="size-5" aria-hidden />
-          <span>Ports</span>
+        <Link to="/" onClick={() => rememberAction("itinerary")} className={itemClass}>
+          <RouteIcon className="size-5" aria-hidden />
+          <span>Itinéraire</span>
         </Link>
       )}
       <DropdownMenu>

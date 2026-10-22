@@ -95,7 +95,16 @@ export function UserMenu({
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
         <DropdownMenuItem asChild>
-          <Link to="/compte">Mon profil</Link>
+          <Link to="/compte">Mon espace voyageur</Link>
+        </DropdownMenuItem>
+        <DropdownMenuItem asChild>
+          <Link to="/compte" hash="voyages">Mes bateaux et traversées suivis</Link>
+        </DropdownMenuItem>
+        <DropdownMenuItem asChild>
+          <Link to="/compte" hash="notifications">Mes notifications</Link>
+        </DropdownMenuItem>
+        <DropdownMenuItem asChild>
+          <Link to="/compte" hash="profil">Mon profil</Link>
         </DropdownMenuItem>
         <DropdownMenuItem asChild>
           <Link to="/compte" hash="contributions">

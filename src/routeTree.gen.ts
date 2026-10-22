@@ -32,6 +32,7 @@ import { Route as SitemapPagesDotxmlRouteImport } from './routes/sitemap-pages[.
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as VehiculesMoins3AnsRouteImport } from './routes/vehicules-moins-3-ans'
 import { Route as VoyageAlgerieRouteImport } from './routes/voyage-algerie'
+import { Route as ApiPushAdminRouteImport } from './routes/api.push-admin'
 import { Route as ApiPushDispatchRouteImport } from './routes/api.push-dispatch'
 import { Route as ApiVesselPositionsRouteImport } from './routes/api.vessel-positions'
 import { Route as BateauxIndexRouteImport } from './routes/bateaux.index'
@@ -162,6 +163,11 @@ const VoyageAlgerieRoute = VoyageAlgerieRouteImport.update({
   path: '/voyage-algerie',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPushAdminRoute = ApiPushAdminRouteImport.update({
+  id: '/api/push-admin',
+  path: '/api/push-admin',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPushDispatchRoute = ApiPushDispatchRouteImport.update({
   id: '/api/push-dispatch',
   path: '/api/push-dispatch',
@@ -257,6 +263,7 @@ export interface FileRoutesByFullPath {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/vehicules-moins-3-ans': typeof VehiculesMoins3AnsRoute
   '/voyage-algerie': typeof VoyageAlgerieRoute
+  '/api/push-admin': typeof ApiPushAdminRoute
   '/api/push-dispatch': typeof ApiPushDispatchRoute
   '/api/vessel-positions': typeof ApiVesselPositionsRoute
   '/bateaux/$slug': typeof BateauxSlugRoute
@@ -290,6 +297,7 @@ export interface FileRoutesByTo {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/vehicules-moins-3-ans': typeof VehiculesMoins3AnsRoute
   '/voyage-algerie': typeof VoyageAlgerieRoute
+  '/api/push-admin': typeof ApiPushAdminRoute
   '/api/push-dispatch': typeof ApiPushDispatchRoute
   '/api/vessel-positions': typeof ApiVesselPositionsRoute
   '/bateaux/$slug': typeof BateauxSlugRoute
@@ -330,6 +338,7 @@ export interface FileRoutesById {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/vehicules-moins-3-ans': typeof VehiculesMoins3AnsRoute
   '/voyage-algerie': typeof VoyageAlgerieRoute
+  '/api/push-admin': typeof ApiPushAdminRoute
   '/api/push-dispatch': typeof ApiPushDispatchRoute
   '/api/vessel-positions': typeof ApiVesselPositionsRoute
   '/bateaux/$slug': typeof BateauxSlugRoute
@@ -371,6 +380,7 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/vehicules-moins-3-ans'
     | '/voyage-algerie'
+    | '/api/push-admin'
     | '/api/push-dispatch'
     | '/api/vessel-positions'
     | '/bateaux/$slug'
@@ -404,6 +414,7 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/vehicules-moins-3-ans'
     | '/voyage-algerie'
+    | '/api/push-admin'
     | '/api/push-dispatch'
     | '/api/vessel-positions'
     | '/bateaux/$slug'
@@ -443,6 +454,7 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/vehicules-moins-3-ans'
     | '/voyage-algerie'
+    | '/api/push-admin'
     | '/api/push-dispatch'
     | '/api/vessel-positions'
     | '/bateaux/$slug'
@@ -483,6 +495,7 @@ export interface RootRouteChildren {
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   VehiculesMoins3AnsRoute: typeof VehiculesMoins3AnsRoute
   VoyageAlgerieRoute: typeof VoyageAlgerieRoute
+  ApiPushAdminRoute: typeof ApiPushAdminRoute
   ApiPushDispatchRoute: typeof ApiPushDispatchRoute
   ApiVesselPositionsRoute: typeof ApiVesselPositionsRoute
 }
@@ -648,6 +661,13 @@ declare module '@tanstack/react-router' {
       path: '/voyage-algerie'
       fullPath: '/voyage-algerie'
       preLoaderRoute: typeof VoyageAlgerieRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/push-admin': {
+      id: '/api/push-admin'
+      path: '/api/push-admin'
+      fullPath: '/api/push-admin'
+      preLoaderRoute: typeof ApiPushAdminRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/push-dispatch': {
@@ -853,6 +873,7 @@ const rootRouteChildren: RootRouteChildren = {
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   VehiculesMoins3AnsRoute: VehiculesMoins3AnsRoute,
   VoyageAlgerieRoute: VoyageAlgerieRoute,
+  ApiPushAdminRoute: ApiPushAdminRoute,
   ApiPushDispatchRoute: ApiPushDispatchRoute,
   ApiVesselPositionsRoute: ApiVesselPositionsRoute,
 }

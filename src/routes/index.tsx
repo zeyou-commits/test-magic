@@ -154,6 +154,25 @@ function Index() {
     return () => observer.disconnect();
   }, []);
 
+  useLayoutEffect(() => {
+    const header = document.querySelector<HTMLElement>(".bw-home > .bw-header");
+    const home = mapStageRef.current?.closest<HTMLElement>(".bw-home");
+    if (!header || !home) return;
+    const update = () => home.style.setProperty("--bw-header-height", `${header.getBoundingClientRect().height}px`);
+    const observer = new ResizeObserver(update);
+    observer.observe(header);
+    update();
+    return () => observer.disconnect();
+  }, []);
+
+  useEffect(() => {
+    if (panelLevel !== 2 || !window.matchMedia("(max-width: 767px)").matches) return;
+    const background = [...document.querySelectorAll<HTMLElement>(".bw-home > .bw-header, .bw-home #preparer, .bw-home > .bw-footer, .bw-home .bw-map-canvas")];
+    const previous = background.map((element) => element.inert);
+    background.forEach((element) => { element.inert = true; });
+    return () => background.forEach((element, index) => { element.inert = previous[index] ?? false; });
+  }, [panelLevel]);
+
   const portsResult = useQuery(portsQuery);
   const routesResult = useQuery(routesQuery);
   const departuresResult = useQuery(upcomingDeparturesQuery());
@@ -456,7 +475,7 @@ function Index() {
   // Espace masqué par le tiroir mobile : la carte se recentre au-dessus de lui.
   const isPeekSelection = peekSelectionKey !== null && peekSelectionKey === `${selection?.type}:${selection?.id}`;
   const peekHeight = Math.min(Math.round(viewportHeight * 0.6), Math.max(240, viewportHeight - 260));
-  const mobileBottomInset = panelLevel === 0 ? 0 : panelLevel === 2 ? viewportHeight - TAB_BAR_HEIGHT : isPeekSelection ? peekHeight : Math.round(viewportHeight * (panelMode === "itinerary" ? 0.64 : MIDDLE_RATIO));
+  const mobileBottomInset = panelLevel === 0 ? 0 : panelLevel === 2 ? viewportHeight - TAB_BAR_HEIGHT : TAB_BAR_HEIGHT + (isPeekSelection ? peekHeight : Math.round(viewportHeight * (panelMode === "itinerary" ? 0.64 : MIDDLE_RATIO)));
   const mobilePanelHeight = mobileBottomInset;
   // Sur mobile, choisir un navire, un port ou une traversée rouvre le tiroir s'il était replié.
   useEffect(() => {
@@ -588,6 +607,12 @@ function Index() {
     // Navigation entrante : l'action enregistrée n'est lue qu'une fois au montage.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  useEffect(() => {
+    const open = () => { window.sessionStorage.removeItem("bledway:open-home-action"); openItinerary(); };
+    window.addEventListener("bledway:open-itinerary", open);
+    return () => window.removeEventListener("bledway:open-itinerary", open);
+  });
 
   const exploreRoute = (route: RouteLine) => {
     setFilters((current) => ({
@@ -767,7 +792,7 @@ function Index() {
           <div className="bw-home-mobile-tabs fixed bottom-0 left-0 right-0 z-[70] md:hidden">
             <MobileTabBar
               className="h-[calc(3.5rem+env(safe-area-inset-bottom))] pb-[env(safe-area-inset-bottom)]"
-              activeTab={portsActive ? "ports" : panelLevel === 0 ? "map" : panelMode === "itinerary" ? "search" : (panelMode ?? "map")}
+              activeTab={panelLevel === 0 ? "map" : panelMode === "itinerary" ? "itinerary" : (panelMode ?? "map")}
               onOpenMap={resetToMap}
               onOpenDepartures={openMobileDepartures}
               onOpenSearch={openMobileSearch}

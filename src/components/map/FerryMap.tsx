@@ -2,7 +2,6 @@ import { useTravelMarkers } from "./useTravelMarkers";
 import { useEffect, useRef, useState } from "react";
 import {
   Map as MapLibreMap,
-  LngLat,
   Marker,
   Popup,
   NavigationControl,
@@ -315,6 +314,7 @@ export default function FerryMap({
   const interactRef = useRef(onMapInteract);
   const dismissedPortIdsRef = useRef<Set<string>>(new Set());
   const [mapReady, setMapReady] = useState(false);
+  const [mapViewportKey, setMapViewportKey] = useState("");
   const vesselPopupRef = useRef<Popup | null>(null);
   const fleetRef = useRef<FleetShip[]>(fleet);
   fleetRef.current = fleet;
@@ -393,7 +393,10 @@ export default function FerryMap({
     map.touchZoomRotate.disableRotation();
     mapRef.current = map;
 
-    const resize = () => requestAnimationFrame(() => mapRef.current?.resize());
+    const resize = () => requestAnimationFrame(() => {
+      mapRef.current?.resize();
+      setMapViewportKey(`${container.clientWidth}x${container.clientHeight}`);
+    });
     const resizeObserver = new ResizeObserver(resize);
     resizeObserver.observe(container);
     window.addEventListener("resize", resize);
@@ -780,7 +783,11 @@ export default function FerryMap({
       { type: "Feature", properties: { label: "Destination" }, geometry: { type: "Point", coordinates: preview.destination } },
     ] });
     if (preview.fit === false) return;
-    const cameraFingerprint = `${preview.routeId}|${preview.origin.join(",")}|${preview.destination.join(",")}`;
+    const padding = viewPadding();
+    const width = containerRef.current?.clientWidth ?? 0;
+    const height = containerRef.current?.clientHeight ?? 0;
+    if (width - padding.left - padding.right < 100 || height - padding.top - padding.bottom < 100) return;
+    const cameraFingerprint = `${preview.routeId}|${preview.origin.join(",")}|${preview.destination.join(",")}|${width}x${height}|${padding.left},${padding.right},${padding.top},${padding.bottom}`;
     if (itineraryCameraRef.current === cameraFingerprint) return;
     itineraryCameraRef.current = cameraFingerprint;
     // Les extrémités suffisent au cadrage : les points intermédiaires d'une géométrie
@@ -790,21 +797,10 @@ export default function FerryMap({
       [Math.min(...points.map((point) => point[0])) - 0.15, Math.min(...points.map((point) => point[1])) - 0.15],
       [Math.max(...points.map((point) => point[0])) + 0.15, Math.max(...points.map((point) => point[1])) + 0.15],
     ];
-    const camera = map.cameraForBounds(bounds, { padding: viewPadding(), maxZoom: 5.8 });
-    if (!camera?.center || camera.zoom === undefined) return;
-    const cameraCenter = LngLat.convert(camera.center);
-    const west = bounds[0][0];
-    const east = bounds[1][0];
-    const south = bounds[0][1];
-    const north = bounds[1][1];
-    const displaced = cameraCenter.lng < west - 5 || cameraCenter.lng > east + 5 || cameraCenter.lat < south - 5 || cameraCenter.lat > north + 5;
-    map.easeTo({
-      center: displaced ? [(west + east) / 2, (south + north) / 2] : cameraCenter,
-      zoom: displaced ? (Math.max(east - west, north - south) < 12 ? 4.5 : 3.4) : camera.zoom,
-      padding: { top: 0, right: 0, bottom: 0, left: 0 },
-      duration: cameraDuration(700),
-    });
-  }, [itineraryPreview?.key, mapReady]);
+    // Le centre géographique peut sortir de l'itinéraire avec un volet asymétrique :
+    // c'est normal. MapLibre place alors le trajet dans la partie réellement visible.
+    map.fitBounds(bounds, { padding, maxZoom: 5.8, linear: true, duration: cameraDuration(700) });
+  }, [itineraryPreview?.key, mapReady, mapViewportKey, isMobile, mobileBottomInset, desktopLeftInset]);
 
   useEffect(() => {
     const map = mapRef.current;

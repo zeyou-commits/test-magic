@@ -7,6 +7,7 @@ import {
   type ReactNode,
 } from "react";
 import type { Session, User } from "@supabase/supabase-js";
+import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 
 export interface Profile {
@@ -39,9 +40,11 @@ const AuthContext = createContext<AuthContextValue>({
 });
 
 export function AuthProvider({ children }: { children: ReactNode }) {
+  const queryClient = useQueryClient();
   const [session, setSession] = useState<Session | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [roles, setRoles] = useState<string[]>([]);
+  const [rolesOwner, setRolesOwner] = useState<string | null>(null);
   const isAdmin = roles.includes("admin");
   const [loading, setLoading] = useState(true);
 
@@ -79,6 +82,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (!userId) {
       setRoles([]);
+      setRolesOwner(null);
       return;
     }
     let active = true;
@@ -87,7 +91,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       .select("role")
       .eq("user_id", userId)
       .then(({ data }) => {
-        if (active) setRoles((data ?? []).map((r) => r.role).filter((r) => r !== "user"));
+        if (active) {
+          setRoles((data ?? []).map((r) => r.role).filter((r) => r !== "user"));
+          setRolesOwner(userId);
+        }
       });
     return () => {
       active = false;
@@ -102,7 +109,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         profile,
         isAdmin,
         roles,
-        loading,
+        loading: loading || Boolean(userId && rolesOwner !== userId),
         refreshProfile: loadProfile,
         signOut: async () => {
           if (session?.user && typeof navigator !== "undefined" && "serviceWorker" in navigator) {
@@ -116,6 +123,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             } catch { /* la déconnexion doit rester possible */ }
           }
           await supabase.auth.signOut();
+          queryClient.clear();
           setProfile(null);
         },
       }}

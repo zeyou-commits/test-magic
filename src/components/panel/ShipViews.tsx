@@ -118,6 +118,7 @@ export function VesselView({
             </button>
           ) : null}
           {vessel.is_demo ? <DemoBadge /> : null}
+          <div className="mt-2"><FollowButton kind="vessel" targetId={vesselId} label={vessel.name} demo={Boolean(vessel.is_demo)} /></div>
         </div>
       </header>
       {departure && from && to ? (
@@ -125,7 +126,6 @@ export function VesselView({
           <CrossingCard departure={departure} from={from} to={to} live={live} />
         </div>
       ) : null}
-      {!vessel.is_demo && <div className="mb-3"><FollowButton kind="vessel" targetId={vesselId} /></div>}
       <button
         type="button"
         onClick={requestVesselSignal}
@@ -289,7 +289,7 @@ export function DepartureView({
         <ReportButton targetType="departure" targetId={departureId} />
       </header>
       {from && to ? <CrossingCard departure={departure} from={from} to={to} live={live} /> : null}
-      {!departure.is_demo && <div className="my-3"><FollowButton kind="departure" targetId={departureId} /></div>}
+      <div className="my-3"><FollowButton kind="departure" targetId={departureId} label={`${from?.name ?? "Départ"} → ${to?.name ?? "Arrivée"}`} demo={Boolean(departure.is_demo)} /></div>
       {from && <JourneyChecklist departureId={departureId} departureAt={departure.departure_at} port={from} />}
       {vessel ? (
         <button

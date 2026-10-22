@@ -1,6 +1,6 @@
 import { communityQuery } from "@/lib/ferry/community";
 import { CommunityModeration } from "@/components/panel/CommunityModeration";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -8,7 +8,10 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { PlanningAlerts, usePlanningAlerts } from "@/components/admin/PlanningAlerts";
 import { NotificationOverview } from "@/components/admin/NotificationOverview";
-import { DashboardOverview, useAdminCounts } from "@/components/admin/DashboardOverview";
+import { DashboardOverview } from "@/components/admin/DashboardOverview";
+import { useAdminCounts } from "@/hooks/useAdminCounts";
+import { AdminWorkspace } from "@/components/admin/AdminWorkspace";
+import { adminNotificationQuery } from "@/lib/notifications/admin";
 import { CompanyBadge } from "@/components/panel/CompanyBadge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -87,18 +90,18 @@ export const Route = createFileRoute("/admin")({
   head: () => ({
     meta: [
       { name: "robots", content: "noindex, nofollow" },
-      { title: "Back-office — Batogo" },
+      { title: "Back-office — BledWay" },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
       {
         name: "description",
         content:
-          "Espace d'administration Batogo : modération des avis, signalements, calendriers et départs.",
+          "Espace d'administration BledWay : modération des avis, signalements, calendriers et départs.",
       },
-      { property: "og:title", content: "Back-office — Batogo" },
+      { property: "og:title", content: "Back-office — BledWay" },
       {
         property: "og:description",
-        content: "Modération des avis, signalements et gestion des départs Batogo.",
+        content: "Modération des avis, signalements et gestion des départs BledWay.",
       },
     ],
   }),
@@ -117,7 +120,7 @@ function AdminPage() {
       <CenteredNote>
         <p>Connectez-vous pour accéder au back-office.</p>
         <Button asChild className="mt-3">
-          <Link to="/auth">Se connecter</Link>
+          <a href="/auth?next=%2Fadmin">Se connecter</a>
         </Button>
       </CenteredNote>
     );
@@ -126,7 +129,7 @@ function AdminPage() {
   if (!isAdmin) {
     return (
       <CenteredNote>
-        <p>Cet espace est réservé à l'équipe Batogo.</p>
+        <p>Cet espace est réservé à l'équipe BledWay.</p>
         <Button asChild variant="outline" className="mt-3">
           <Link to="/">Retour à la carte</Link>
         </Button>
@@ -134,23 +137,7 @@ function AdminPage() {
     );
   }
 
-  return (
-    <div className="mx-auto w-full max-w-5xl px-4 py-6">
-      <div className="flex items-center justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-semibold">Back-office</h1>
-          <p className="text-sm text-muted-foreground">
-            Modération et mise à jour des informations publiées.
-          </p>
-        </div>
-        <Button asChild variant="outline" size="sm">
-          <Link to="/">Voir la carte</Link>
-        </Button>
-      </div>
-
-      <AdminTabs />
-    </div>
-  );
+  return <AdminTabs />;
 }
 
 function CountBadge({ value, tone = "warn" }: { value: number | undefined; tone?: "warn" | "muted" }) {
@@ -169,30 +156,22 @@ function CountBadge({ value, tone = "warn" }: { value: number | undefined; tone?
 function AdminTabs() {
   const { user } = useAuth();
   const community = useQuery(communityQuery(undefined, undefined, true, user?.id));
-  const [tab, setTab] = useState("reviews");
+  const [tab, setTab] = useState("overview");
+  const queryClient = useQueryClient();
+  const notificationOverview = useQuery(adminNotificationQuery(user?.id));
   const { data: counts } = useAdminCounts();
   const { data: alerts } = usePlanningAlerts();
+  useEffect(() => queryClient.getMutationCache().subscribe((event) => {
+    if (event.type === "updated" && event.action.type === "success") {
+      void queryClient.invalidateQueries({ queryKey: ["admin", "notification-overview"] });
+      void queryClient.invalidateQueries({ queryKey: ["admin", "counts"] });
+    }
+  }), [queryClient]);
+  const badges = { notifications: notificationOverview.data?.campaigns.filter((campaign) => ["pending", "approved"].includes(campaign.status)).length ?? 0, reviews: counts?.reviews ?? 0, reports: counts?.reports ?? 0, alerts: alerts?.length ?? 0, community: community.data?.reviews.filter((review) => review.status === "pending").length ?? 0 };
   return (
-    <>
-      <div className="mt-6">
-        <DashboardOverview onNavigate={setTab} can={() => true} />
-      </div>
-      <Tabs value={tab} onValueChange={setTab} className="mt-6">
-        <TabsList className="h-auto w-full justify-start overflow-x-auto">
-          <TabsTrigger value="reviews">Avis ports<CountBadge value={counts?.reviews} /></TabsTrigger>
-          <TabsTrigger value="community">Communauté navires<CountBadge value={community.data?.reviews.filter(r => r.status === "pending").length} /></TabsTrigger>
-          <TabsTrigger value="reports">Signalements<CountBadge value={counts?.reports} /></TabsTrigger>
-          <TabsTrigger value="alerts">Alertes planning<CountBadge value={alerts?.length} /></TabsTrigger>
-          <TabsTrigger value="notifications">Notifications</TabsTrigger>
-          <TabsTrigger value="departures">Départs</TabsTrigger>
-          <TabsTrigger value="schedules">Calendriers</TabsTrigger>
-          <TabsTrigger value="ports">Ports</TabsTrigger>
-          <TabsTrigger value="routes">Lignes</TabsTrigger>
-          <TabsTrigger value="companies">Compagnies</TabsTrigger>
-          <TabsTrigger value="vessels">Navires</TabsTrigger>
-          <TabsTrigger value="import">Import Excel</TabsTrigger>
-          <TabsTrigger value="data">Données</TabsTrigger>
-        </TabsList>
+      <Tabs value={tab} onValueChange={setTab}>
+        <AdminWorkspace tab={tab} onNavigate={setTab} badges={badges}>
+        <TabsContent value="overview"><DashboardOverview onNavigate={setTab} can={() => true} />{notificationOverview.error && <p role="alert" className="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">Le centre de notifications n’est pas disponible. Vérifiez la migration des campagnes et la configuration serveur.</p>}</TabsContent>
         <TabsContent value="reviews">
           <ReviewsModeration />
         </TabsContent>
@@ -230,8 +209,8 @@ function AdminTabs() {
         <TabsContent value="data">
           <DataAdmin />
         </TabsContent>
+        </AdminWorkspace>
       </Tabs>
-    </>
   );
 }
 
@@ -334,7 +313,7 @@ function CenteredNote({ children }: { children: React.ReactNode }) {
 }
 
 function Panel({ children }: { children: React.ReactNode }) {
-  return <div className="mt-4 rounded-xl border border-border bg-card p-4">{children}</div>;
+  return <div className="bw-admin-surface bw-admin-editor mt-4 overflow-x-auto p-4 sm:p-5">{children}</div>;
 }
 
 function ReviewsModeration() {
@@ -1290,7 +1269,7 @@ function VesselsAdmin() {
                   return (
                     <div className="mt-1 grid gap-0.5 text-xs">
                       <p>
-                        <span className="text-muted-foreground">Prévu Batogo : </span>
+                        <span className="text-muted-foreground">Prévu BledWay : </span>
                         {route && dep
                           ? `${portLabel(route.departure_port_id)} → ${portLabel(route.arrival_port_id)} · ${new Date(dep.departure_at).toLocaleString("fr-FR")}`
                           : "aucun départ à venir"}

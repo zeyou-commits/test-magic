@@ -11,23 +11,27 @@ import { Label } from "@/components/ui/label";
 import { portsQuery } from "@/lib/ferry/queries";
 import { formatDate } from "@/lib/ferry/format";
 import { FollowCenter } from "@/components/panel/FollowCenter";
+import { NotificationSettings } from "@/components/account/NotificationSettings";
+import { AvatarUpload } from "@/components/account/AvatarUpload";
+import { Bell, Heart, MessageSquare, UserRound, LogOut, ArrowLeft } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 export const Route = createFileRoute("/compte")({
   head: () => ({
     meta: [
       { name: "robots", content: "noindex, nofollow" },
-      { title: "Mon compte — Batogo" },
+      { title: "Mon espace voyageur — BledWay" },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
       {
         name: "description",
         content:
-          "Gérez votre profil Batogo : nom affiché, photo, avis publiés et signalements envoyés.",
+          "Gérez votre profil BledWay : nom affiché, photo, avis publiés et signalements envoyés.",
       },
-      { property: "og:title", content: "Mon compte — Batogo" },
+      { property: "og:title", content: "Mon compte — BledWay" },
       {
         property: "og:description",
-        content: "Profil, avis et signalements de votre compte Batogo.",
+        content: "Profil, avis et signalements de votre compte BledWay.",
       },
     ],
   }),
@@ -60,6 +64,16 @@ const reportStatusLabels: Record<string, string> = {
 
 function AccountPage() {
   const { user, profile, isAdmin, loading, refreshProfile, signOut } = useAuth();
+  const [section, setSection] = useState("voyages");
+  useEffect(() => {
+    const sync = () => {
+      const hash = window.location.hash.slice(1);
+      setSection(["profil", "notifications", "contributions"].includes(hash) ? hash : "voyages");
+    };
+    sync();
+    window.addEventListener("hashchange", sync);
+    return () => window.removeEventListener("hashchange", sync);
+  }, []);
 
   if (loading) {
     return <Centered>Chargement…</Centered>;
@@ -70,47 +84,25 @@ function AccountPage() {
       <Centered>
         <p>Connectez-vous pour accéder à votre compte.</p>
         <Button asChild className="mt-3">
-          <Link to="/auth">Se connecter</Link>
+          <a href="/auth?next=%2Fcompte">Se connecter</a>
         </Button>
       </Centered>
     );
   }
 
   return (
-    <div className="mx-auto w-full max-w-3xl px-4 py-8">
-      <div className="flex items-center justify-between gap-3">
-        <Link to="/" className="text-sm text-muted-foreground hover:underline">
-          ← Retour à la carte
-        </Link>
-        <div className="flex gap-2">
-          {isAdmin ? (
-            <Button asChild variant="outline" size="sm">
-              <Link to="/admin">Back-office</Link>
-            </Button>
-          ) : null}
-          <Button variant="ghost" size="sm" onClick={() => void signOut()}>
-            Se déconnecter
-          </Button>
-        </div>
-      </div>
-
-      <h1 className="mt-4 text-2xl font-semibold">Mon compte</h1>
-      <p className="mt-1 text-sm text-muted-foreground">{user.email}</p>
-
-      <ProfileCard
-        userId={user.id}
-        displayName={profile?.display_name ?? ""}
-        avatarUrl={profile?.avatar_url ?? ""}
-        onSaved={refreshProfile}
-      />
-
-      <FollowCenter userId={user.id} />
-
-      <section id="contributions" className="mt-8 scroll-mt-6">
-        <h2 className="text-lg font-semibold">Mes contributions</h2>
-        <MyReviews userId={user.id} />
-        <MyReports userId={user.id} />
-      </section>
+    <div className="bw-account-page">
+      <header className="bw-account-header"><Link to="/" className="inline-flex items-center gap-2 text-xs font-semibold text-primary"><ArrowLeft className="size-4"/>Retour à la carte</Link><img src="/bledway-brand.png" alt="BledWay" className="h-9 w-auto"/><button type="button" onClick={() => void signOut()} aria-label="Se déconnecter" className="grid size-10 place-items-center rounded-full border border-border text-muted-foreground"><LogOut className="size-4"/></button></header>
+      <div className="bw-account-welcome"><Avatar className="size-16 border-4 border-white shadow-sm">{profile?.avatar_url && <AvatarImage src={profile.avatar_url} alt=""/>}<AvatarFallback className="bg-primary text-xl font-semibold text-white">{(profile?.display_name || user.email || "V").slice(0, 1).toUpperCase()}</AvatarFallback></Avatar><div className="min-w-0"><span className="bw-account-kicker">Mon espace voyageur</span><h1>Bonjour{profile?.display_name ? ` ${profile.display_name.split(" ")[0]}` : ""}.</h1><p>Les retrouvailles se préparent ici.</p></div></div>
+      <Tabs value={section} onValueChange={(value) => { setSection(value); window.history.replaceState(null, "", `/compte${value === "voyages" ? "" : `#${value}`}`); }}>
+        <TabsList className="bw-account-tabs" aria-label="Mon espace voyageur">
+          <TabsTrigger value="voyages"><Heart className="size-4"/>Mes voyages</TabsTrigger><TabsTrigger value="notifications"><Bell className="size-4"/>Notifications</TabsTrigger><TabsTrigger value="profil"><UserRound className="size-4"/>Mon profil</TabsTrigger><TabsTrigger value="contributions"><MessageSquare className="size-4"/>Contributions</TabsTrigger>
+        </TabsList>
+        <TabsContent value="voyages"><FollowCenter userId={user.id}/></TabsContent>
+        <TabsContent value="notifications"><NotificationSettings userId={user.id}/></TabsContent>
+        <TabsContent value="profil"><section className="bw-account-section"><h2 className="font-display text-xl font-semibold">Votre profil voyageur</h2><p className="mt-1 text-sm text-muted-foreground">Ce prénom ou pseudo accompagne vos contributions publiques.</p><ProfileCard userId={user.id} displayName={profile?.display_name ?? ""} avatarUrl={profile?.avatar_url ?? ""} onSaved={refreshProfile}/><div className="mt-5 border-t border-border pt-4"><p className="text-xs text-muted-foreground">Adresse de connexion</p><p className="mt-1 break-all text-sm font-medium">{user.email}</p></div>{isAdmin && <Link to="/admin" className="mt-6 inline-flex text-xs font-semibold text-primary underline">Ouvrir l’espace équipe</Link>}</section></TabsContent>
+        <TabsContent value="contributions"><section className="bw-account-section"><h2 className="font-display text-xl font-semibold">Mes contributions</h2><MyReviews userId={user.id}/><MyReports userId={user.id}/></section></TabsContent>
+      </Tabs>
     </div>
   );
 }
@@ -148,13 +140,18 @@ function ProfileCard({
 
   const save = useMutation({
     mutationFn: async () => {
+      if (!name.trim() || name.trim().length > 80) throw new Error("Indiquez un prénom ou un pseudo de 80 caractères maximum.");
+      if (avatar.trim()) {
+        try { if (new URL(avatar.trim()).protocol !== "https:") throw new Error(); }
+        catch { throw new Error("La photo doit utiliser une adresse HTTPS valide."); }
+      }
       const { error } = await supabase
         .from("profiles")
         .update({
           display_name: name.trim() || null,
           avatar_url: avatar.trim() || null,
         })
-        .eq("id", userId);
+        .eq("id", userId).select("id").single();
       if (error) throw new Error(error.message);
     },
     onSuccess: async () => {
@@ -166,14 +163,14 @@ function ProfileCard({
 
   return (
     <Card>
-      <div className="flex items-center gap-4">
+      <div className="flex flex-col items-start gap-4 sm:flex-row sm:items-center">
         <Avatar className="size-14 border border-border">
           {avatar ? <AvatarImage src={avatar} alt={name} /> : null}
           <AvatarFallback className="bg-primary text-primary-foreground">
             {(name || "?").slice(0, 2).toUpperCase()}
           </AvatarFallback>
         </Avatar>
-        <div className="grid flex-1 gap-3 sm:grid-cols-2">
+        <div className="grid w-full min-w-0 flex-1 gap-3 sm:grid-cols-2">
           <div className="grid gap-1.5">
             <Label htmlFor="display-name">Nom affiché</Label>
             <Input
@@ -181,12 +178,14 @@ function ProfileCard({
               value={name}
               onChange={(event) => setName(event.target.value)}
               placeholder="Amine"
+              maxLength={80}
             />
           </div>
           <div className="grid gap-1.5">
-            <Label htmlFor="avatar-url">Lien de la photo</Label>
+            <Label htmlFor="avatar-url">Photo de profil · lien HTTPS</Label>
             <Input
               id="avatar-url"
+              type="url"
               value={avatar}
               onChange={(event) => setAvatar(event.target.value)}
               placeholder="https://…"
@@ -194,6 +193,7 @@ function ProfileCard({
           </div>
         </div>
       </div>
+      <AvatarUpload userId={userId} onUploaded={setAvatar}/>
       <div className="mt-4 flex justify-end">
         <Button size="sm" disabled={save.isPending} onClick={() => save.mutate()}>
           Enregistrer

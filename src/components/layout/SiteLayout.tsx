@@ -20,6 +20,7 @@ export const navLinks = [
   { to: "/guide", label: "Guide" },
   { to: "/bateaux", label: "Bateaux" },
   { to: "/simulateurs", label: "Simulateurs" },
+  { to: "/barometre-prix", label: "Baromètre des prix" },
 ] as const;
 
 const footerLinks = [
@@ -29,6 +30,7 @@ const footerLinks = [
   { to: "/covoiturage", label: "Covoiturage" },
   { to: "/bateaux", label: "Bateaux" },
   { to: "/simulateurs", label: "Simulateurs" },
+  { to: "/barometre-prix", label: "Baromètre des prix" },
   { to: "/methode-editoriale", label: "Méthode éditoriale" },
   { to: "/compagnies", label: "Compagnies" },
   { to: "/a-propos", label: "À propos" },
@@ -147,7 +149,7 @@ export function SiteFooter() {
           <h2>Préparer le voyage</h2>
           {footerLinks
             .filter((item) =>
-              ["/guide", "/voyage-algerie", "/simulateurs", "/covoiturage"].includes(item.to),
+              ["/guide", "/voyage-algerie", "/simulateurs", "/covoiturage", "/barometre-prix"].includes(item.to),
             )
             .map((item) => (
               <Link key={item.to} to={item.to}>

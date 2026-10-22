@@ -13,6 +13,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AProposRouteImport } from './routes/a-propos'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as AuthRouteImport } from './routes/auth'
+import { Route as BarometrePrixRouteImport } from './routes/barometre-prix'
 import { Route as BateauxRouteImport } from './routes/bateaux'
 import { Route as CompagniesRouteImport } from './routes/compagnies'
 import { Route as CompteRouteImport } from './routes/compte'
@@ -63,6 +64,11 @@ const AdminRoute = AdminRouteImport.update({
 const AuthRoute = AuthRouteImport.update({
   id: '/auth',
   path: '/auth',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const BarometrePrixRoute = BarometrePrixRouteImport.update({
+  id: '/barometre-prix',
+  path: '/barometre-prix',
   getParentRoute: () => rootRouteImport,
 } as any)
 const BateauxRoute = BateauxRouteImport.update({
@@ -226,6 +232,7 @@ export interface FileRoutesByFullPath {
   '/a-propos': typeof AProposRoute
   '/admin': typeof AdminRoute
   '/auth': typeof AuthRoute
+  '/barometre-prix': typeof BarometrePrixRoute
   '/bateaux': typeof BateauxRouteWithChildren
   '/compagnies': typeof CompagniesRoute
   '/compte': typeof CompteRoute
@@ -263,6 +270,7 @@ export interface FileRoutesByTo {
   '/a-propos': typeof AProposRoute
   '/admin': typeof AdminRoute
   '/auth': typeof AuthRoute
+  '/barometre-prix': typeof BarometrePrixRoute
   '/compagnies': typeof CompagniesRoute
   '/compte': typeof CompteRoute
   '/confidentialite': typeof ConfidentialiteRoute
@@ -295,6 +303,7 @@ export interface FileRoutesById {
   '/a-propos': typeof AProposRoute
   '/admin': typeof AdminRoute
   '/auth': typeof AuthRoute
+  '/barometre-prix': typeof BarometrePrixRoute
   '/bateaux': typeof BateauxRouteWithChildren
   '/compagnies': typeof CompagniesRoute
   '/compte': typeof CompteRoute
@@ -334,6 +343,7 @@ export interface FileRouteTypes {
     | '/a-propos'
     | '/admin'
     | '/auth'
+    | '/barometre-prix'
     | '/bateaux'
     | '/compagnies'
     | '/compte'
@@ -371,6 +381,7 @@ export interface FileRouteTypes {
     | '/a-propos'
     | '/admin'
     | '/auth'
+    | '/barometre-prix'
     | '/compagnies'
     | '/compte'
     | '/confidentialite'
@@ -402,6 +413,7 @@ export interface FileRouteTypes {
     | '/a-propos'
     | '/admin'
     | '/auth'
+    | '/barometre-prix'
     | '/bateaux'
     | '/compagnies'
     | '/compte'
@@ -440,6 +452,7 @@ export interface RootRouteChildren {
   AProposRoute: typeof AProposRoute
   AdminRoute: typeof AdminRoute
   AuthRoute: typeof AuthRoute
+  BarometrePrixRoute: typeof BarometrePrixRoute
   BateauxRoute: typeof BateauxRouteWithChildren
   CompagniesRoute: typeof CompagniesRoute
   CompteRoute: typeof CompteRoute
@@ -489,6 +502,13 @@ declare module '@tanstack/react-router' {
       path: '/auth'
       fullPath: '/auth'
       preLoaderRoute: typeof AuthRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/barometre-prix': {
+      id: '/barometre-prix'
+      path: '/barometre-prix'
+      fullPath: '/barometre-prix'
+      preLoaderRoute: typeof BarometrePrixRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/bateaux': {
@@ -794,6 +814,7 @@ const rootRouteChildren: RootRouteChildren = {
   AProposRoute: AProposRoute,
   AdminRoute: AdminRoute,
   AuthRoute: AuthRoute,
+  BarometrePrixRoute: BarometrePrixRoute,
   BateauxRoute: BateauxRouteWithChildren,
   CompagniesRoute: CompagniesRoute,
   CompteRoute: CompteRoute,

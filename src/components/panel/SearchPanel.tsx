@@ -625,6 +625,7 @@ export function SearchPanel({
 
         {/* RÉSULTATS */}
         <section id="map-next-departures" className="space-y-5 px-4 py-4 md:px-5">
+          <a href="/barometre-prix" className="inline-block text-xs font-semibold text-primary underline underline-offset-2">Comprendre les prix estimés et quand partir</a>
           {isLoading ? (
             <div className="space-y-2" aria-busy="true">
               {[0, 1, 2].map((item) => (

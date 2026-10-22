@@ -22,7 +22,7 @@ import { wallTimeInZone, zoneLabel } from "@/lib/ferry/time";
 import { ReportButton } from "./ReportButton";
 import { ShareButtons } from "./ShareButtons";
 import { CompanyBadge } from "./CompanyBadge";
-import { estimateFare, formatEuro, useFareProfile } from "@/lib/ferry/pricing";
+import { estimateFerryFare, formatEuro, formatFareRange, useFareProfile } from "@/lib/ferry/pricing";
 
 const dayFormatter = new Intl.DateTimeFormat("fr-FR", {
   weekday: "short",
@@ -64,7 +64,7 @@ export function SailingCard({
   const arrivalSuffix = sailing.arrDayOffset > 0 ? `+${sailing.arrDayOffset}` : "";
   const departure = sailing.departure;
   const panelId = `sailing-${departure.id}`;
-  const fare = estimateFare(sailing, profile);
+  const fare = estimateFerryFare(sailing, profile);
 
   return (
     <article
@@ -167,10 +167,10 @@ export function SailingCard({
         </div>
         <span
           className="ml-auto shrink-0 text-sm font-bold tabular-nums text-success"
-          title="Tarif moyen indicatif"
+          title={`Fourchette indicative : ${formatFareRange(fare)} · voyageurs et véhicule choisis`}
         >
           <span className="block text-[10px] font-normal text-muted-foreground">Budget estimé</span>
-          {formatEuro(fare)}
+          {formatEuro(fare.amount)}
         </span>
         {href ? (
           <a

@@ -28,7 +28,12 @@ export interface ItineraryOption {
   roadEuro: number;
   totalEuro: number;
   roadKm: number;
+  /** Durée du trajet effectivement parcouru, embarquement compris, sans jours d'attente. */
   totalMinutes: number;
+  /** Départ conseillé du domicile pour atteindre ce ferry. */
+  leaveHomeAt: number;
+  /** Temps entre la première disponibilité saisie et le départ conseillé. */
+  waitUntilTravelMin: number;
   arrivalAt: number;
 }
 
@@ -60,10 +65,14 @@ export function buildItineraryOptions(
     const roadKm = first.distanceKm + last.distanceKm;
     const ferryEuro = ferryFare(sailing);
     const roadEuro = Math.round(roadKm * (fuelLitresPer100Km / 100 * fuelEuroPerLitre + tollEuroPerKm));
+    const leaveHomeAt = departureAt - (first.durationMin + boardingBufferMin) * 60_000;
     return [{
       sailing, originRoad: first, destinationRoad: last, ferryEuro, roadEuro,
       totalEuro: ferryEuro + roadEuro, roadKm,
-      totalMinutes: Math.round((arrivalAt - startedAt) / 60_000), arrivalAt,
+      totalMinutes: Math.round((arrivalAt - leaveHomeAt) / 60_000),
+      leaveHomeAt,
+      waitUntilTravelMin: Math.max(0, Math.round((leaveHomeAt - startedAt) / 60_000)),
+      arrivalAt,
     }];
   });
 }
@@ -72,8 +81,25 @@ export type ItineraryPriority = "cost" | "time" | "driving";
 
 export function sortItineraries(options: ItineraryOption[], priority: ItineraryPriority) {
   return [...options].sort((a, b) => {
-    if (priority === "time") return a.arrivalAt - b.arrivalAt || a.totalEuro - b.totalEuro;
+    if (priority === "time") return a.totalMinutes - b.totalMinutes || a.arrivalAt - b.arrivalAt;
     if (priority === "driving") return a.roadKm - b.roadKm || a.arrivalAt - b.arrivalAt;
     return a.totalEuro - b.totalEuro || a.arrivalAt - b.arrivalAt;
   });
+}
+
+/** Une proposition par couple de ports : le premier départ atteignable de chaque liaison.
+ * Les autres dates restent disponibles dans la recherche des traversées.
+ */
+export function distinctItineraries(options: ItineraryOption[], priority: ItineraryPriority) {
+  const byPorts = new Map<string, ItineraryOption>();
+  for (const option of options) {
+    const key = `${option.sailing.from.id}|${option.sailing.to.id}`;
+    const previous = byPorts.get(key);
+    const departureAt = Date.parse(option.sailing.departure.departure_at);
+    if (!previous || departureAt < Date.parse(previous.sailing.departure.departure_at) ||
+      (departureAt === Date.parse(previous.sailing.departure.departure_at) && option.totalEuro < previous.totalEuro)) {
+      byPorts.set(key, option);
+    }
+  }
+  return sortItineraries([...byPorts.values()], priority);
 }

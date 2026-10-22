@@ -10,6 +10,7 @@ import { bookingSite, bookingUrl } from "@/lib/ferry/booking";
 import { estimateFare, estimateFerryFare, formatFareRange, priceSeason } from "@/lib/ferry/pricing";
 import { routeArc } from "@/lib/ferry/geo";
 import { defaultTripProfile, VEHICLES, type VehicleKind } from "@/components/panel/TripProfile";
+import { ItineraryAlertForm } from "./ItineraryAlertForm";
 
 type RoadAccess = Awaited<ReturnType<typeof calculateRoadAccess>>;
 
@@ -268,6 +269,7 @@ export function ItineraryPlanner({ onClose, onPreview, onResultsReady }: { onClo
           <div className="grid grid-cols-3 gap-1 rounded-xl bg-secondary p-1" role="group" aria-label="Classer les itinéraires">
             {priorities.map(({ id, label, icon: Icon }) => <button key={id} type="button" title={id === "driving" ? "Moins de kilomètres en voiture" : undefined} aria-pressed={priority === id} onClick={() => { setPriority(id); setSelectedId(null); }} className={`inline-flex min-w-0 items-center justify-center gap-1 rounded-lg px-1 py-2 text-[11px] font-semibold ${priority === id ? "bg-white text-primary shadow-sm" : "text-muted-foreground hover:text-foreground"}`}><Icon className="size-3.5 shrink-0" aria-hidden />{label}</button>)}
           </div>
+          {priority === "recommended" && <p className="mt-2 text-[11px] leading-snug text-muted-foreground">Recommandé : équilibre entre prix estimé, kilomètres en voiture et durée totale. Avec des enfants, la route et la durée comptent davantage. Pour le tarif seul, choisissez « Prix ».</p>}
           {sorted.some((option) => option.sailing.isSimulation) && <p className="mt-2 text-[11px] text-muted-foreground">Simulation : liaisons et prix estimés, sans départ confirmé pour cette période.</p>}
           {sorted.length === 0 ? <p className="mt-3 rounded-xl bg-secondary p-3 text-sm">Aucune liaison connue pour comparer ces ports.</p> : <div className="mt-3 grid gap-2">
             {sorted.slice(0, 6).map((option, index) => <article
@@ -289,6 +291,7 @@ export function ItineraryPlanner({ onClose, onPreview, onResultsReady }: { onClo
               <div className="mt-1 grid grid-cols-3 gap-1 text-center text-[10px] font-semibold text-foreground"><span>{formatDuration(option.originRoad.durationMin)} · {Math.round(option.originRoad.distanceKm)} km</span><span>{formatDuration(option.sailing.durationMin ?? 0)} de ferry</span><span>{formatDuration(option.destinationRoad.durationMin)} · {Math.round(option.destinationRoad.distanceKm)} km</span></div>
               <div className="mt-2 flex flex-wrap items-center justify-between gap-x-2 gap-y-1 border-t border-border pt-2 text-[11px]"><strong>{formatDuration(option.totalMinutes)} porte à porte</strong><span className="text-muted-foreground">dont {BOARDING_BUFFER_MIN / 60} h au départ · {DISEMBARK_BUFFER_MIN / 60} h à l’arrivée</span></div>
               <div className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] text-muted-foreground"><span className="inline-flex items-center gap-1"><Fuel className="size-3" aria-hidden />Route ~{option.roadEuro} €</span><span>Ferry ~{option.ferryEuro} € · voiture incluse</span><span>Fourchette {formatFareRange(estimateFerryFare(option.sailing, profile))}</span>{option.sailing.isSimulation ? <a href="/horaires" className="font-bold text-primary underline underline-offset-2">Voir les horaires publiés</a> : <a href={bookingUrl(option.sailing, profile)} target="_blank" rel="noopener noreferrer" className="font-bold text-primary underline underline-offset-2">Voir l’offre {bookingSite(option.sailing)} ↗</a>}</div>
+              {option.sailing.isSimulation && <ItineraryAlertForm from={option.sailing.from.name} to={option.sailing.to.name} period={period} origin={roadAccess.origin} destination={roadAccess.destination} vehicle={vehicle} adults={adults} children={children} />}
             </article>)}
           </div>}
           {geometryNote && <p role="status" className="mt-2 text-[11px] text-muted-foreground">{geometryNote}</p>}

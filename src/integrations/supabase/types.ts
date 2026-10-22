@@ -529,6 +529,7 @@ export type Database = {
           email: string;
           from_label: string | null;
           id: string;
+          journey_context: Json | null;
           period_end: string | null;
           period_label: string | null;
           period_start: string | null;
@@ -540,6 +541,7 @@ export type Database = {
           email: string;
           from_label?: string | null;
           id?: string;
+          journey_context?: Json | null;
           period_end?: string | null;
           period_label?: string | null;
           period_start?: string | null;
@@ -551,6 +553,7 @@ export type Database = {
           email?: string;
           from_label?: string | null;
           id?: string;
+          journey_context?: Json | null;
           period_end?: string | null;
           period_label?: string | null;
           period_start?: string | null;

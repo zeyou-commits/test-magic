@@ -3,6 +3,7 @@
   "framework": "tanstack-start",
   "buildCommand": "npm run build:vercel",
   "outputDirectory": null,
+  "crons": [{ "path": "/api/push-dispatch", "schedule": "7 8 * * *" }],
   "headers": [
     {
       "source": "/sw.js",

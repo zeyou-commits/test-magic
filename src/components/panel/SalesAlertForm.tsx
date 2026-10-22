@@ -49,8 +49,7 @@ export function SalesAlertForm({
       </p>
       {state === "done" ? (
         <p className="flex items-center gap-1.5 font-semibold text-success">
-          <Check className="size-4" aria-hidden /> C’est noté : nous vous préviendrons à l’ouverture
-          des ventes.
+          <Check className="size-4" aria-hidden /> Demande transmise à l’équipe pour cette période.
         </p>
       ) : (
         <form onSubmit={submit} className="space-y-2">
@@ -81,8 +80,7 @@ export function SalesAlertForm({
               onChange={(event) => setConsent(event.target.checked)}
               className="mt-0.5 size-4"
             />
-            J’accepte que Batogo utilise mon e-mail uniquement pour m’informer de l’ouverture des
-            ventes sur cette période.
+            J’accepte que BledWay utilise mon e-mail uniquement pour cette demande d’alerte.
           </label>
           {state === "error" ? (
             <p className="text-destructive">L’inscription a échoué. Réessayez dans un instant.</p>

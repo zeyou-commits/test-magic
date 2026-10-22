@@ -105,6 +105,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         loading,
         refreshProfile: loadProfile,
         signOut: async () => {
+          if (session?.user && typeof navigator !== "undefined" && "serviceWorker" in navigator) {
+            try {
+              const registration = await navigator.serviceWorker.getRegistration("/sw.js");
+              const subscription = await registration?.pushManager.getSubscription();
+              if (subscription) {
+                await supabase.from("bw_push_subscriptions").delete().eq("user_id", session.user.id).eq("endpoint", subscription.endpoint);
+                await subscription.unsubscribe();
+              }
+            } catch { /* la déconnexion doit rester possible */ }
+          }
           await supabase.auth.signOut();
           setProfile(null);
         },

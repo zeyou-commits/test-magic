@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { PlanningAlerts, usePlanningAlerts } from "@/components/admin/PlanningAlerts";
+import { NotificationOverview } from "@/components/admin/NotificationOverview";
 import { DashboardOverview, useAdminCounts } from "@/components/admin/DashboardOverview";
 import { CompanyBadge } from "@/components/panel/CompanyBadge";
 import { Button } from "@/components/ui/button";
@@ -182,6 +183,7 @@ function AdminTabs() {
           <TabsTrigger value="community">Communauté navires<CountBadge value={community.data?.reviews.filter(r => r.status === "pending").length} /></TabsTrigger>
           <TabsTrigger value="reports">Signalements<CountBadge value={counts?.reports} /></TabsTrigger>
           <TabsTrigger value="alerts">Alertes planning<CountBadge value={alerts?.length} /></TabsTrigger>
+          <TabsTrigger value="notifications">Notifications</TabsTrigger>
           <TabsTrigger value="departures">Départs</TabsTrigger>
           <TabsTrigger value="schedules">Calendriers</TabsTrigger>
           <TabsTrigger value="ports">Ports</TabsTrigger>
@@ -203,6 +205,7 @@ function AdminTabs() {
             renderEditor={(id, onDone) => <AlertDepartureEditor departureId={id} onDone={onDone} />}
           />
         </TabsContent>
+        <TabsContent value="notifications"><NotificationOverview /></TabsContent>
         <TabsContent value="companies">
           <CompaniesAdmin />
         </TabsContent>

@@ -117,6 +117,7 @@ export function ItineraryPlanner({ onClose, onPreview, onResultsReady }: { onClo
   const departurePorts = ports.filter((port) => departurePortIds.has(port.id));
   const arrivalPorts = ports.filter((port) => arrivalPortIds.has(port.id));
   const sailings = useMemo(() => buildSailings(departures, relevantRoutes, ports, companies, []), [departures, relevantRoutes, ports, companies]);
+  const hasPublishedForPeriod = sailings.some((sailing) => sailing.dayKey.startsWith(period) && !sailing.departure.is_demo);
   const profile = useMemo(() => ({
     ...defaultTripProfile,
     vehicle,
@@ -124,10 +125,10 @@ export function ItineraryPlanner({ onClose, onPreview, onResultsReady }: { onClo
   }), [vehicle, adults, children]);
   const options = useMemo(() => {
     if (!roadAccess || searchStartedAt === null) return [];
-    const published = sailings.filter((sailing) => sailing.dayKey.startsWith(period));
+    const published = sailings.filter((sailing) => sailing.dayKey.startsWith(period) && !sailing.departure.is_demo);
     const fare = (sailing: (typeof sailings)[number]) => estimateFare(sailing, profile);
     const realOptions = buildItineraryOptions(published, roadAccess.toDeparturePorts, roadAccess.fromArrivalPorts, searchStartedAt, fare, consumption, fuelPrice, tollRate);
-    const simulated = buildSimulatedSailings(relevantRoutes, ports, period, new Set(realOptions.map((option) => option.sailing.route.id)));
+    const simulated = buildSimulatedSailings(relevantRoutes, ports, period, new Set(published.map((sailing) => sailing.route.id)));
     const simulationOptions = buildItineraryOptions(simulated, roadAccess.toDeparturePorts, roadAccess.fromArrivalPorts, Date.parse(`${period}-01T00:00:00Z`), fare, consumption, fuelPrice, tollRate);
     return [...realOptions, ...simulationOptions];
   }, [sailings, relevantRoutes, ports, roadAccess, searchStartedAt, profile, consumption, fuelPrice, tollRate, period]);
@@ -290,8 +291,8 @@ export function ItineraryPlanner({ onClose, onPreview, onResultsReady }: { onClo
               <div className="mt-2"><JourneyGuide animated={selected?.sailing.departure.id === option.sailing.departure.id} /></div>
               <div className="mt-1 grid grid-cols-3 gap-1 text-center text-[10px] font-semibold text-foreground"><span>{formatDuration(option.originRoad.durationMin)} · {Math.round(option.originRoad.distanceKm)} km</span><span>{formatDuration(option.sailing.durationMin ?? 0)} de ferry</span><span>{formatDuration(option.destinationRoad.durationMin)} · {Math.round(option.destinationRoad.distanceKm)} km</span></div>
               <div className="mt-2 flex flex-wrap items-center justify-between gap-x-2 gap-y-1 border-t border-border pt-2 text-[11px]"><strong>{formatDuration(option.totalMinutes)} porte à porte</strong><span className="text-muted-foreground">dont {BOARDING_BUFFER_MIN / 60} h au départ · {DISEMBARK_BUFFER_MIN / 60} h à l’arrivée</span></div>
-              <div className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] text-muted-foreground"><span className="inline-flex items-center gap-1"><Fuel className="size-3" aria-hidden />Route ~{option.roadEuro} €</span><span>Ferry ~{option.ferryEuro} € · voiture incluse</span><span>Fourchette {formatFareRange(estimateFerryFare(option.sailing, profile))}</span>{option.sailing.isSimulation ? <a href="/horaires" className="font-bold text-primary underline underline-offset-2">Voir les horaires publiés</a> : <a href={bookingUrl(option.sailing, profile)} target="_blank" rel="noopener noreferrer" className="font-bold text-primary underline underline-offset-2">Voir l’offre {bookingSite(option.sailing)} ↗</a>}</div>
-              {option.sailing.isSimulation && <ItineraryAlertForm from={option.sailing.from.name} to={option.sailing.to.name} period={period} origin={roadAccess.origin} destination={roadAccess.destination} vehicle={vehicle} adults={adults} children={children} />}
+              <div className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] text-muted-foreground"><span className="inline-flex items-center gap-1"><Fuel className="size-3" aria-hidden />Route ~{option.roadEuro} €</span><span>Ferry ~{option.ferryEuro} € · voiture incluse</span><span>Fourchette {formatFareRange(estimateFerryFare(option.sailing, profile))}</span>{option.sailing.isSimulation ? <a href="/horaires" className="font-bold text-primary underline underline-offset-2">Voir les horaires publiés</a> : <a href="/horaires" className="font-bold text-primary underline underline-offset-2">Voir les traversées</a>}</div>
+              {option.sailing.isSimulation && !hasPublishedForPeriod && <ItineraryAlertForm routeId={option.sailing.route.id} from={option.sailing.from.name} to={option.sailing.to.name} period={period} origin={roadAccess.origin} destination={roadAccess.destination} vehicle={vehicle} adults={adults} children={children} />}
             </article>)}
           </div>}
           {geometryNote && <p role="status" className="mt-2 text-[11px] text-muted-foreground">{geometryNote}</p>}

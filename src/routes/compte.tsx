@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { portsQuery } from "@/lib/ferry/queries";
 import { formatDate } from "@/lib/ferry/format";
+import { FollowCenter } from "@/components/panel/FollowCenter";
 
 export const Route = createFileRoute("/compte")({
   head: () => ({
@@ -102,6 +103,8 @@ function AccountPage() {
         avatarUrl={profile?.avatar_url ?? ""}
         onSaved={refreshProfile}
       />
+
+      <FollowCenter userId={user.id} />
 
       <section id="contributions" className="mt-8 scroll-mt-6">
         <h2 className="text-lg font-semibold">Mes contributions</h2>

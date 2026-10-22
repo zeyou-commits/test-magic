@@ -522,6 +522,48 @@ export type Database = {
           },
         ];
       };
+      bw_vessel_reviews: {
+        Row: { id: string; vessel_id: string; user_id: string; score: number; comment: string; status: string; created_at: string; updated_at: string };
+        Insert: { id?: string; vessel_id: string; user_id: string; score: number; comment?: string; status?: string; created_at?: string; updated_at?: string };
+        Update: { id?: string; vessel_id?: string; user_id?: string; score?: number; comment?: string; status?: string; created_at?: string; updated_at?: string };
+        Relationships: [];
+      };
+      bw_travel_alerts: {
+        Row: { id: string; target_kind: string; target_id: string; user_id: string; category: string; delay_minutes: number | null; created_at: string; expires_at: string; resolved: boolean };
+        Insert: { id?: string; target_kind: string; target_id: string; user_id: string; category: string; delay_minutes?: number | null; created_at?: string; expires_at?: string; resolved?: boolean };
+        Update: { id?: string; target_kind?: string; target_id?: string; user_id?: string; category?: string; delay_minutes?: number | null; created_at?: string; expires_at?: string; resolved?: boolean };
+        Relationships: [];
+      };
+      bw_push_subscriptions: {
+        Row: { id: string; user_id: string; endpoint: string; p256dh: string; auth_key: string; created_at: string; last_success_at: string | null };
+        Insert: { id?: string; user_id: string; endpoint: string; p256dh: string; auth_key: string; created_at?: string; last_success_at?: string | null };
+        Update: { id?: string; user_id?: string; endpoint?: string; p256dh?: string; auth_key?: string; created_at?: string; last_success_at?: string | null };
+        Relationships: [];
+      };
+      bw_follows: {
+        Row: { id: string; user_id: string; target_kind: string; target_id: string; created_at: string; active: boolean; last_community_at: string };
+        Insert: { id?: string; user_id: string; target_kind: string; target_id: string; created_at?: string; active?: boolean; last_community_at?: string };
+        Update: { id?: string; user_id?: string; target_kind?: string; target_id?: string; created_at?: string; active?: boolean; last_community_at?: string };
+        Relationships: [];
+      };
+      bw_notifications: {
+        Row: { id: string; user_id: string; follow_id: string | null; event_key: string; title: string; body: string; url: string; created_at: string; read_at: string | null };
+        Insert: { id?: string; user_id: string; follow_id?: string | null; event_key: string; title: string; body: string; url?: string; created_at?: string; read_at?: string | null };
+        Update: { id?: string; user_id?: string; follow_id?: string | null; event_key?: string; title?: string; body?: string; url?: string; created_at?: string; read_at?: string | null };
+        Relationships: [];
+      };
+      bw_push_deliveries: {
+        Row: { notification_id: string; subscription_id: string; attempts: number; sent_at: string | null; last_error: string | null };
+        Insert: { notification_id: string; subscription_id: string; attempts?: number; sent_at?: string | null; last_error?: string | null };
+        Update: { notification_id?: string; subscription_id?: string; attempts?: number; sent_at?: string | null; last_error?: string | null };
+        Relationships: [];
+      };
+      bw_itinerary_watches: {
+        Row: { id: string; user_id: string; route_id: string; period_month: string; origin_label: string; destination_label: string; journey_context: Json; active: boolean; created_at: string };
+        Insert: { id?: string; user_id: string; route_id: string; period_month: string; origin_label: string; destination_label: string; journey_context?: Json; active?: boolean; created_at?: string };
+        Update: { id?: string; user_id?: string; route_id?: string; period_month?: string; origin_label?: string; destination_label?: string; journey_context?: Json; active?: boolean; created_at?: string };
+        Relationships: [];
+      };
       sales_alerts: {
         Row: {
           consent: boolean;

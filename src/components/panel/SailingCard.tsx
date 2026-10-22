@@ -20,6 +20,7 @@ import { bookingSite, bookingUrl } from "@/lib/ferry/booking";
 import { formatAge, formatDelay, type LiveShip } from "@/lib/ferry/tracking";
 import { wallTimeInZone, zoneLabel } from "@/lib/ferry/time";
 import { ReportButton } from "./ReportButton";
+import { FollowButton } from "./FollowButton";
 import { ShareButtons } from "./ShareButtons";
 import { CompanyBadge } from "./CompanyBadge";
 import { estimateFerryFare, formatEuro, formatFareRange, useFareProfile } from "@/lib/ferry/pricing";
@@ -274,6 +275,7 @@ export function SailingDetail({
           Fiche de la ligne <ChevronRight className="size-3.5" aria-hidden />
         </button>
         <ReportButton targetType="departure" targetId={departure.id} label="Signaler" />
+        {!departure.is_demo && <FollowButton kind="departure" targetId={departure.id} compact />}
         <ShareButtons />
         {bookingHref ? (
           <a

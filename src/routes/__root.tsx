@@ -4,7 +4,6 @@ import {
   Outlet,
   Link,
   createRootRouteWithContext,
-  useRouter,
   HeadContent,
   Scripts,
   type ErrorComponentProps,
@@ -39,16 +38,28 @@ function NotFoundComponent() {
   );
 }
 
-function ErrorComponent({ error, reset }: ErrorComponentProps) {
+function ErrorComponent({ error }: ErrorComponentProps) {
   const caughtError = useMemo(
     () => (error instanceof Error ? error : new Error(String(error))),
     [error],
   );
   console.error(caughtError);
-  const router = useRouter();
+  const assetLoadError = /failed to fetch dynamically imported module|importing a module script failed|chunkloaderror|loading chunk .+ failed/i.test(
+    `${caughtError.message} ${String(caughtError.cause ?? "")}`,
+  );
   useEffect(() => {
     reportLovableError(caughtError, { boundary: "tanstack_root_error_component" });
-  }, [caughtError]);
+    if (!import.meta.env.PROD || !assetLoadError) return;
+    try {
+      const key = "bledway:last-asset-reload";
+      const lastAttempt = Number(window.sessionStorage.getItem(key) || 0);
+      if (Date.now() - lastAttempt < 60_000) return;
+      window.sessionStorage.setItem(key, String(Date.now()));
+      window.location.reload();
+    } catch {
+      // Le bouton de rechargement reste accessible si le stockage est désactivé.
+    }
+  }, [caughtError, assetLoadError]);
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
@@ -57,14 +68,13 @@ function ErrorComponent({ error, reset }: ErrorComponentProps) {
           Cette page n’a pas pu être chargée
         </h1>
         <p className="mt-2 text-sm text-muted-foreground">
-          Un problème est survenu. Vous pouvez réessayer ou revenir à la carte.
+          {assetLoadError
+            ? "Une mise à jour a interrompu le chargement. Actualisez la page pour récupérer la dernière version."
+            : "Un problème est survenu. Vous pouvez réessayer ou revenir à la carte."}
         </p>
         <div className="mt-6 flex flex-wrap justify-center gap-2">
           <button
-            onClick={() => {
-              router.invalidate();
-              reset();
-            }}
+            onClick={() => window.location.reload()}
             className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
           >
             Réessayer

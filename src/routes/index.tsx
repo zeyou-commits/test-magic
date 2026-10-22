@@ -521,7 +521,6 @@ function Index() {
   };
 
   const openMobileDepartures = () => {
-    document.getElementById("carte")?.scrollIntoView({ behavior: "instant" });
     handleSelect(null);
     setFilters((current) => ({ ...current, roundTrip: false, returnDate: null }));
     setPortsActive(false);
@@ -534,7 +533,6 @@ function Index() {
   };
 
   const openMobileSearch = () => {
-    document.getElementById("carte")?.scrollIntoView({ behavior: "instant" });
     handleSelect(null);
     setPortsActive(false);
     setActiveShortcut(null);
@@ -546,14 +544,14 @@ function Index() {
   };
 
   const openItinerary = () => {
-    document.getElementById("carte")?.scrollIntoView({ behavior: "instant" });
+    if (window.innerWidth >= 768) document.getElementById("carte")?.scrollIntoView({ behavior: "instant" });
     handleSelect(null);
     setPortsActive(false);
     setActiveShortcut(null);
     setShortcutCompanyId(null);
     setShortcutMenuOpen(false);
     setPanelMode("itinerary");
-    setPanelLevel(1);
+    setPanelLevel(window.innerWidth < 768 ? 2 : 1);
     setDesktopPanelOpen(true);
   };
 
@@ -622,6 +620,7 @@ function Index() {
           aria-label="Carte et recherche de traversées"
           className="bw-map-stage"
           data-panel-open={panelLevel !== 0}
+          data-panel-full={panelLevel === 2}
           ref={mapStageRef}
           style={
             {

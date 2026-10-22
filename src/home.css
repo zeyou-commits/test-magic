@@ -2650,4 +2650,25 @@ html {
   .bw-brand-tagline { font-size: 9px; }
   .bw-map-stage { height: max(320px, calc(100svh - 88px)); }
   .bw-map-stage[data-panel-open="true"] { height: 100dvh; }
+  /* Un tiroir complet est un écran autonome : la page suivante ne doit pas apparaître. */
+  body:has(.bw-map-stage[data-panel-full="true"]) { overflow: hidden; }
+  .bw-map-stage[data-panel-full="true"] {
+    position: fixed;
+    inset: 0;
+    z-index: 60;
+    width: 100%;
+    height: 100dvh;
+    min-height: 100dvh;
+    margin: 0;
+    border-radius: 0;
+  }
+  .bw-map-stage[data-panel-full="true"] .bw-map-panel {
+    bottom: calc(3.5rem + env(safe-area-inset-bottom)) !important;
+    height: calc(100dvh - 4.25rem - env(safe-area-inset-bottom)) !important;
+    margin-inline: 0;
+  }
+  .bw-map-stage[data-panel-full="true"] .batogo-panel-scroll {
+    min-height: 0;
+    overscroll-behavior: contain;
+  }
 }

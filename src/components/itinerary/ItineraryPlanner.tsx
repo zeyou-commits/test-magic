@@ -224,11 +224,11 @@ export function ItineraryPlanner({ onClose, onPreview }: { onClose: () => void; 
 
   return (
     <section id="itineraire" className="min-h-full bg-[#fffdf8]">
-      <div className="flex items-start justify-between gap-3 bg-[#e9f3ef] px-4 py-4">
+      <div className="flex items-center justify-between gap-3 bg-[#e9f3ef] px-4 py-2.5 sm:items-start sm:py-4">
         <div>
-          <p className="text-xs font-bold uppercase tracking-[.15em] text-primary">De porte à porte · en voiture</p>
-          <h2 className="mt-1 font-display text-xl font-bold tracking-tight text-foreground">Votre route jusqu'au Bled</h2>
-          <p className="mt-1 text-xs leading-5 text-muted-foreground">La route, la traversée, puis les derniers kilomètres.</p>
+          <p className="hidden text-xs font-bold uppercase tracking-[.15em] text-primary sm:block">De porte à porte · en voiture</p>
+          <h2 className="font-display text-lg font-bold tracking-tight text-foreground sm:mt-1 sm:text-xl">Votre route jusqu'au Bled</h2>
+          <p className="mt-1 hidden text-xs leading-5 text-muted-foreground sm:block">La route, la traversée, puis les derniers kilomètres.</p>
         </div>
         <button type="button" onClick={onClose} className="shrink-0 rounded-full border border-border bg-white px-3 py-1.5 text-xs font-semibold text-primary">Fermer</button>
       </div>

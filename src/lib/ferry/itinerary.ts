@@ -38,6 +38,10 @@ export interface ItineraryOption {
   arrivalAt: number;
 }
 
+/** Marges de simulation, affichées dans le récapitulatif du trajet. */
+export const BOARDING_BUFFER_MIN = 240;
+export const DISEMBARK_BUFFER_MIN = 240;
+
 /** Ne compare que les traversées atteignables après le trajet routier et l'embarquement. */
 export function buildItineraryOptions(
   sailings: Sailing[],
@@ -48,7 +52,8 @@ export function buildItineraryOptions(
   fuelLitresPer100Km: number,
   fuelEuroPerLitre: number,
   tollEuroPerKm: number,
-  boardingBufferMin = 120,
+  boardingBufferMin = BOARDING_BUFFER_MIN,
+  disembarkBufferMin = DISEMBARK_BUFFER_MIN,
 ): ItineraryOption[] {
   const outward = new Map(toDeparturePorts.map((leg) => [leg.portId, leg]));
   const onward = new Map(fromArrivalPorts.map((leg) => [leg.portId, leg]));
@@ -62,7 +67,7 @@ export function buildItineraryOptions(
       ? Date.parse(sailing.departure.arrival_at)
       : departureAt + sailing.durationMin * 60_000;
     if (!Number.isFinite(ferryArrivalAt)) return [];
-    const arrivalAt = ferryArrivalAt + last.durationMin * 60_000;
+    const arrivalAt = ferryArrivalAt + (disembarkBufferMin + last.durationMin) * 60_000;
     const roadKm = first.distanceKm + last.distanceKm;
     const ferryEuro = ferryFare(sailing);
     const roadEuro = Math.round(roadKm * (fuelLitresPer100Km / 100 * fuelEuroPerLitre + tollEuroPerKm));

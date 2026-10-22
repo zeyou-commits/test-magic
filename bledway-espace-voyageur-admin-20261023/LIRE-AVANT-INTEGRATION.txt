@@ -1,0 +1,43 @@
+BLEDWAY — ESPACE VOYAGEUR ET ADMINISTRATION — 23 OCTOBRE 2026
+
+CE QUI CHANGE
+• Connexion : illustration de ferry légère, logo Google et présentation compacte sur petit écran.
+• Itinéraire : accès discret dans l'en-tête du volet et dans le header. Sur mobile, le raccourci Itinéraire remplace Ports en bas ; le filtre Ports reste sur la carte et l'annuaire reste dans les menus.
+• Recommandation : explication accessible par un bouton i, sans paragraphe permanent.
+• Alertes : fenêtre dédiée, plein écran sur mobile, avec inscription/connexion. Le choix du bateau ou du parcours est conservé pendant la connexion ; il n'est pas nécessaire de relancer la simulation.
+• Suivis : cœur Suivre visible dans les fiches bateau, les dossiers et les traversées. Les données de démonstration sont identifiées et ne déclenchent pas de notifications.
+• Compte : espace voyageur distinct de l'administration, profil et photo, voyages suivis, alertes d'ouverture, checklist, heure au port, fil des notifications et préférences.
+• Admin : navigation par rubrique, recherche, indicateurs réels, priorités et centre de notifications avec prévisualisation et validation des campagnes.
+• Carte mobile : formulaire complet au-dessus de la page de fond, en-tête du formulaire accessible, options contenues dans le volet et cadrage natif de l'itinéraire dans la zone visible.
+
+MISE EN SERVICE DANS TON GIT CLOUD
+1. Intégrer les fichiers du dossier en conservant l'arborescence. Si le dépôt cloud contient des changements plus récents sur les mêmes fichiers, les fusionner ; les fichiers fournis représentent la version locale complète de ces fichiers.
+2. Conserver les variables Supabase, CRON et VAPID déjà configurées. Aucune nouvelle clé n'est nécessaire ; ne pas régénérer la paire VAPID.
+3. Déployer le nouveau code sur Vercel avant d'activer la nouvelle migration. C'est le nouveau moteur serveur qui impose la validation admin des ouvertures. Pendant la courte période précédant la migration, le centre de notifications peut afficher une indisponibilité.
+4. Dans le projet Supabase relié au site, appliquer la migration 20261023120000_notification_campaigns_preferences.sql. Elle est réexécutable et ne supprime pas les données existantes.
+5. Si les tables communautaires et push n'existent pas encore, vérifier puis appliquer auparavant les trois migrations précédentes jointes dans l'ordre chronologique. Ces anciennes migrations ne doivent pas être rejouées à l'aveugle sur des objets déjà présents.
+6. Vérifier le job bledway-push-10m dans Supabase Cron. La nouvelle migration le crée ou le réactive si pg_cron, pg_net et les deux secrets Vault existent déjà : bledway_dispatch_url et bledway_cron_secret. Le second doit correspondre au CRON_SECRET Vercel ; son contenu ne doit jamais être copié dans Git ou dans un message.
+
+QUI ENVOIE QUOI ?
+Les suivis enregistrés créent automatiquement les messages dans le compte : rappels à 7 jours, 48 h et 24 h, changements d'horaire/navire ou annulation, nouveaux signalements et avis.
+Une publication correspondant à une liaison et un mois suivis prépare une campagne d'ouverture. L'admin voit le nombre de voyageurs concernés, prévisualise puis valide l'envoi. Aucun envoi d'ouverture n'est déclenché avant cette validation.
+Les préférences du voyageur sont appliquées avant création et avant envoi push. Les notifications push nécessitent une autorisation du navigateur. Un appareil déjà autorisé est synchronisé automatiquement, sauf désactivation explicite. Sur iPhone, l'app doit être ouverte depuis l'écran d'accueil pour activer le push.
+Le traitement de 10 minutes est important pour les signalements courts. Le cron Vercel quotidien reste le traitement de secours s'il est déjà configuré. Une campagne approuvée ou un push temporairement échoué peut être repris sans recréer le message dans le compte.
+
+PROMPT À TRANSMETTRE À TON IA SUPABASE
+Vérifie le bon projet relié à test-magic.vercel.app. Lis la migration 20261023120000_notification_campaigns_preferences.sql jointe et ses prérequis. Vérifie les migrations déjà installées et applique uniquement les étapes manquantes, sans supprimer ni réinitialiser de données. Si les anciennes migrations sont partiellement installées, réconcilie leurs objets au lieu de les recréer à l'aveugle. Le nouveau code doit être déployé pour que les ouvertures soient soumises à validation admin.
+Vérifie les préférences privées, les campagnes accessibles uniquement à l'équipe, les événements de changement de départ, le bucket bledway-avatars limité à 2 Mo et ses droits par utilisateur. Vérifie qu'un voyageur ne peut ni approuver une campagne ni modifier le contenu de ses notifications.
+Contrôle pg_cron, pg_net et l'existence des deux secrets Vault nommés ci-dessus, sans lire ni afficher leur valeur dans ta réponse. Vérifie que bledway-push-10m est actif toutes les 10 minutes et que l'URL cible est celle du déploiement. Si un élément manque, indique précisément lequel. Ne pousse aucune notification à des voyageurs réels pour tester ; utilise un compte de test dédié. Retourne les objets appliqués et les résultats de contrôle, sans aucune clé secrète.
+
+VALIDATION LOCALE
+• TypeScript : aucune erreur.
+• Tests : 30 tests passent, dont protection admin, reprise de l'intention après connexion, validation des campagnes, préférences, absence de doublon lors d'une reprise, changement de navire et comportement sans VAPID.
+• PostgreSQL local : les 4 migrations s'exécutent ; la nouvelle migration est réexécutable ; 10 contrôles de migration, déclencheurs et droits passent.
+• Navigateur : 44 contrôles sur les pages de connexion, inscription, compte, préférences, profil, admin, fenêtres et itinéraire, à 320, 390, 768, 1024 et 1440 px ; aucun débordement horizontal ni erreur JavaScript dans ces scénarios.
+• Les scénarios connectés utilisent des utilisateurs et réponses Supabase simulés : ils n'écrivent pas dans la production. Le calcul routier mobile utilise des coordonnées de villes de test. Le cadrage final des deux extrémités est contrôlé dans la zone visible au-dessus du volet.
+• Aucun push réel sur téléphone ni OAuth Google réel n'est déclaré validé : ces deux contrôles restent à faire avec ton compte de test après déploiement et migration.
+
+CONTRÔLE FINAL APRÈS INTÉGRATION
+Avec ton compte de test, suivre un bateau et autoriser le push ; retrouver le suivi dans Mon espace voyageur. Tester l'alerte d'une période non publiée. Ajouter ensuite un départ correspondant et vérifier le bandeau admin, sans envoyer tant que le contenu n'a pas été relu. Valider la campagne test, vérifier le message dans le compte et la réception sur le téléphone. Contrôler les réponses du traitement dans les journaux Vercel/Supabase ; ne jamais publier les en-têtes d'authentification.
+
+Documentation du planificateur : https://supabase.com/docs/guides/functions/schedule-functions

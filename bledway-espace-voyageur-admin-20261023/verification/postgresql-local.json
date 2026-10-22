@@ -1,0 +1,15 @@
+{
+  "passed": 10,
+  "tests": [
+    "Migration 20261021120000_vessel_community.sql exécutée",
+    "Migration 20261022110000_sales_alert_journey.sql exécutée",
+    "Migration 20261022140000_push_follows.sql exécutée",
+    "Migration 20261023120000_notification_campaigns_preferences.sql exécutée",
+    "Nouvelle migration réexécutable sans erreur",
+    "Publication à la frontière du mois : campagne locale juillet préparée, aucun envoi automatique",
+    "Changement de navire/horaire enregistré une seule fois",
+    "Nouveau voyageur concerné : nouvelle validation requise sans doublon de campagne",
+    "Voyageur : campagnes inaccessibles, préférences privées, messages non modifiables, photo limitée à son dossier",
+    "Admin : campagnes lisibles, validation imposée via endpoint serveur sécurisé"
+  ]
+}

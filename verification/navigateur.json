@@ -1,0 +1,310 @@
+[
+  {
+    "label": "auth-320",
+    "width": 320,
+    "document": 320,
+    "body": 320,
+    "errors": 0
+  },
+  {
+    "label": "signup-320",
+    "width": 320,
+    "document": 320,
+    "body": 320,
+    "errors": 0
+  },
+  {
+    "label": "auth-390",
+    "width": 390,
+    "document": 390,
+    "body": 390,
+    "errors": 0
+  },
+  {
+    "label": "signup-390",
+    "width": 390,
+    "document": 390,
+    "body": 390,
+    "errors": 0
+  },
+  {
+    "label": "auth-768",
+    "width": 768,
+    "document": 768,
+    "body": 768,
+    "errors": 0
+  },
+  {
+    "label": "signup-768",
+    "width": 768,
+    "document": 768,
+    "body": 768,
+    "errors": 0
+  },
+  {
+    "label": "auth-1024",
+    "width": 1024,
+    "document": 1024,
+    "body": 1024,
+    "errors": 0
+  },
+  {
+    "label": "signup-1024",
+    "width": 1024,
+    "document": 1024,
+    "body": 1024,
+    "errors": 0
+  },
+  {
+    "label": "auth-1440",
+    "width": 1440,
+    "document": 1440,
+    "body": 1440,
+    "errors": 0
+  },
+  {
+    "label": "signup-1440",
+    "width": 1440,
+    "document": 1440,
+    "body": 1440,
+    "errors": 0
+  },
+  {
+    "label": "user-320",
+    "width": 320,
+    "document": 320,
+    "body": 320,
+    "errors": 0
+  },
+  {
+    "label": "preferences-320",
+    "width": 320,
+    "document": 320,
+    "body": 320,
+    "errors": 0
+  },
+  {
+    "label": "profile-320",
+    "width": 320,
+    "document": 320,
+    "body": 320,
+    "errors": 0
+  },
+  {
+    "label": "user-390",
+    "width": 390,
+    "document": 390,
+    "body": 390,
+    "errors": 0
+  },
+  {
+    "label": "preferences-390",
+    "width": 390,
+    "document": 390,
+    "body": 390,
+    "errors": 0
+  },
+  {
+    "label": "profile-390",
+    "width": 390,
+    "document": 390,
+    "body": 390,
+    "errors": 0
+  },
+  {
+    "label": "user-768",
+    "width": 768,
+    "document": 768,
+    "body": 768,
+    "errors": 0
+  },
+  {
+    "label": "preferences-768",
+    "width": 768,
+    "document": 768,
+    "body": 768,
+    "errors": 0
+  },
+  {
+    "label": "profile-768",
+    "width": 768,
+    "document": 768,
+    "body": 768,
+    "errors": 0
+  },
+  {
+    "label": "user-1440",
+    "width": 1440,
+    "document": 1440,
+    "body": 1440,
+    "errors": 0
+  },
+  {
+    "label": "preferences-1440",
+    "width": 1440,
+    "document": 1440,
+    "body": 1440,
+    "errors": 0
+  },
+  {
+    "label": "profile-1440",
+    "width": 1440,
+    "document": 1440,
+    "body": 1440,
+    "errors": 0
+  },
+  {
+    "label": "admin-320",
+    "width": 320,
+    "document": 320,
+    "body": 320,
+    "errors": 0
+  },
+  {
+    "label": "admin-preview-320",
+    "width": 320,
+    "document": 320,
+    "body": 320,
+    "errors": 0
+  },
+  {
+    "label": "admin-390",
+    "width": 390,
+    "document": 390,
+    "body": 390,
+    "errors": 0
+  },
+  {
+    "label": "admin-preview-390",
+    "width": 390,
+    "document": 390,
+    "body": 390,
+    "errors": 0
+  },
+  {
+    "label": "admin-768",
+    "width": 768,
+    "document": 768,
+    "body": 768,
+    "errors": 0
+  },
+  {
+    "label": "admin-preview-768",
+    "width": 768,
+    "document": 768,
+    "body": 768,
+    "errors": 0
+  },
+  {
+    "label": "admin-1440",
+    "width": 1440,
+    "document": 1440,
+    "body": 1440,
+    "errors": 0
+  },
+  {
+    "label": "admin-preview-1440",
+    "width": 1440,
+    "document": 1440,
+    "body": 1440,
+    "errors": 0
+  },
+  {
+    "label": "follow-auth-dialog-320",
+    "width": 320,
+    "document": 320,
+    "body": 320,
+    "errors": 0
+  },
+  {
+    "label": "follow-resumed-320",
+    "width": 320,
+    "document": 320,
+    "body": 320,
+    "errors": 0
+  },
+  {
+    "label": "follow-auth-dialog-390",
+    "width": 390,
+    "document": 390,
+    "body": 390,
+    "errors": 0
+  },
+  {
+    "label": "follow-resumed-390",
+    "width": 390,
+    "document": 390,
+    "body": 390,
+    "errors": 0
+  },
+  {
+    "label": "follow-auth-dialog-1440",
+    "width": 1440,
+    "document": 1440,
+    "body": 1440,
+    "errors": 0
+  },
+  {
+    "label": "follow-resumed-1440",
+    "width": 1440,
+    "document": 1440,
+    "body": 1440,
+    "errors": 0
+  },
+  {
+    "label": "map-itinerary-320",
+    "width": 320,
+    "document": 320,
+    "body": 320,
+    "errors": 0
+  },
+  {
+    "label": "map-itinerary-390",
+    "width": 390,
+    "document": 390,
+    "body": 390,
+    "errors": 0
+  },
+  {
+    "label": "map-itinerary-768",
+    "width": 768,
+    "document": 768,
+    "body": 768,
+    "errors": 0
+  },
+  {
+    "label": "map-itinerary-1024",
+    "width": 1024,
+    "document": 1024,
+    "body": 1024,
+    "errors": 0
+  },
+  {
+    "label": "map-itinerary-1440",
+    "width": 1440,
+    "document": 1440,
+    "body": 1440,
+    "errors": 0
+  },
+  {
+    "label": "opening-resumed-390",
+    "width": 390,
+    "document": 390,
+    "body": 390,
+    "errors": 0
+  },
+  {
+    "label": "mobile-simulation-results-390",
+    "width": 390,
+    "document": 390,
+    "body": 390,
+    "errors": 0
+  },
+  {
+    "label": "mobile-opening-dialog-390",
+    "width": 390,
+    "document": 390,
+    "body": 390,
+    "errors": 0
+  }
+]

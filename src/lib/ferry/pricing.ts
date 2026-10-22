@@ -26,6 +26,14 @@ export function estimateFare(sailing: Sailing, profile: TripProfileValue): numbe
   return Math.max(5, Math.round((people + vehicle + extras) / 5) * 5);
 }
 
+/** Part indicative du billet ferry liée au véhicule et à ses accessoires. */
+export function estimateVehicleFare(sailing: Sailing, profile: TripProfileValue): number {
+  if (profile.vehicle === "none") return 0;
+  const hours = Math.max((sailing.durationMin ?? 600) / 60, 2);
+  const factor = Math.min(Math.max(hours / 12, 0.6), 1.8);
+  return Math.round((VEHICLE_BASE[profile.vehicle] + profile.accessories.length * 40) * factor);
+}
+
 export const formatEuro = (value: number) => `~${value.toLocaleString("fr-FR")} €`;
 
 export const FareProfileContext = createContext<TripProfileValue>(defaultTripProfile);

@@ -2,6 +2,7 @@ import { useTravelMarkers } from "./useTravelMarkers";
 import { useEffect, useRef, useState } from "react";
 import {
   Map as MapLibreMap,
+  LngLat,
   Marker,
   Popup,
   NavigationControl,
@@ -766,6 +767,9 @@ export default function FerryMap({
     }
     map.setMaxBounds(null);
     map.setMinZoom(1.5);
+    // Les anciens cadrages du volet peuvent laisser un padding persistant dans MapLibre.
+    // Le remettre à zéro avant de calculer la caméra évite de déporter l'itinéraire dans l'Atlantique.
+    map.setPadding({ top: 0, right: 0, bottom: 0, left: 0 });
     const preview = itineraryPreview;
     source.setData({ type: "FeatureCollection", features: [
       ...preview.alternatives.map((coordinates) => ({ type: "Feature" as const, properties: { kind: "alternative" }, geometry: { type: "LineString" as const, coordinates } })),
@@ -785,7 +789,20 @@ export default function FerryMap({
       [Math.min(...points.map((point) => point[0])) - 0.15, Math.min(...points.map((point) => point[1])) - 0.15],
       [Math.max(...points.map((point) => point[0])) + 0.15, Math.max(...points.map((point) => point[1])) + 0.15],
     ];
-    map.fitBounds(bounds, { padding: viewPadding(), maxZoom: 5.8, duration: cameraDuration(700) });
+    const camera = map.cameraForBounds(bounds, { padding: viewPadding(), maxZoom: 5.8 });
+    if (!camera?.center || camera.zoom === undefined) return;
+    const cameraCenter = LngLat.convert(camera.center);
+    const west = bounds[0][0];
+    const east = bounds[1][0];
+    const south = bounds[0][1];
+    const north = bounds[1][1];
+    const displaced = cameraCenter.lng < west - 5 || cameraCenter.lng > east + 5 || cameraCenter.lat < south - 5 || cameraCenter.lat > north + 5;
+    map.easeTo({
+      center: displaced ? [(west + east) / 2, (south + north) / 2] : cameraCenter,
+      zoom: displaced ? (Math.max(east - west, north - south) < 12 ? 4.5 : 3.4) : camera.zoom,
+      padding: { top: 0, right: 0, bottom: 0, left: 0 },
+      duration: cameraDuration(700),
+    });
   }, [itineraryPreview?.key, mapReady]);
 
   useEffect(() => {

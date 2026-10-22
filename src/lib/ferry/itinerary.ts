@@ -1,4 +1,6 @@
 import type { Sailing } from "./trips";
+import type { Port, RouteLine } from "./types";
+import { portTimeZone } from "./time";
 
 export interface RoadLeg {
   portId: string;
@@ -41,6 +43,39 @@ export interface ItineraryOption {
 /** Marges de simulation, affichées dans le récapitulatif du trajet. */
 export const BOARDING_BUFFER_MIN = 240;
 export const DISEMBARK_BUFFER_MIN = 240;
+
+/** Un repère par liaison pour comparer les ports lorsqu'aucun horaire n'est publié.
+ * Le 15 du mois ne représente pas un départ réservable.
+ */
+export function buildSimulatedSailings(routes: RouteLine[], ports: Port[], period: string, publishedRouteIds: Set<string> = new Set()): Sailing[] {
+  if (!/^\d{4}-(0[1-9]|1[0-2])$/.test(period)) return [];
+  const departureAt = new Date(`${period}-15T12:00:00Z`);
+  const portById = new Map(ports.filter((port) => port.status === "active").map((port) => [port.id, port]));
+  return routes.flatMap((route) => {
+    if (route.status !== "active" || publishedRouteIds.has(route.id)) return [];
+    const from = portById.get(route.departure_port_id);
+    const to = portById.get(route.arrival_port_id);
+    if (!from || !to) return [];
+    const durationMin = route.typical_duration_minutes && route.typical_duration_minutes > 0
+      ? route.typical_duration_minutes
+      : route.distance_km && route.distance_km > 0
+        ? Math.max(360, Math.min(2160, Math.round(route.distance_km / 28 * 60)))
+        : 1200;
+    const arrivalAt = new Date(departureAt.getTime() + durationMin * 60_000);
+    return [{
+      isSimulation: true,
+      departure: {
+        id: `simulation:${route.id}:${period}`, route_id: route.id, company_id: route.company_ids[0] ?? "", vessel_id: null,
+        schedule_id: null, departure_at: departureAt.toISOString(), arrival_at: arrivalAt.toISOString(), duration_minutes: durationMin,
+        status: "scheduled" as const, source_name: null, source_url: null, last_verified_at: null, reliability: "to_verify" as const,
+        notes: null, is_demo: true,
+      },
+      route, from, to, company: undefined, vessel: undefined,
+      fromZone: portTimeZone(from), toZone: portTimeZone(to), dayKey: `${period}-15`, depTime: "", arrTime: null,
+      arrDayOffset: Math.floor(durationMin / 1440), durationMin, depHour: 12,
+    } satisfies Sailing];
+  });
+}
 
 /** Ne compare que les traversées atteignables après le trajet routier et l'embarquement. */
 export function buildItineraryOptions(
@@ -106,8 +141,10 @@ export function distinctItineraries(options: ItineraryOption[], priority: Itiner
     const key = `${option.sailing.from.id}|${option.sailing.to.id}`;
     const previous = byPorts.get(key);
     const departureAt = Date.parse(option.sailing.departure.departure_at);
-    if (!previous || departureAt < Date.parse(previous.sailing.departure.departure_at) ||
-      (departureAt === Date.parse(previous.sailing.departure.departure_at) && option.totalEuro < previous.totalEuro)) {
+    if (!previous || (previous.sailing.isSimulation && !option.sailing.isSimulation) ||
+      (Boolean(previous.sailing.isSimulation) === Boolean(option.sailing.isSimulation) &&
+        (departureAt < Date.parse(previous.sailing.departure.departure_at) ||
+          (departureAt === Date.parse(previous.sailing.departure.departure_at) && option.totalEuro < previous.totalEuro)))) {
       byPorts.set(key, option);
     }
   }

@@ -4,7 +4,7 @@ import { Anchor, ArrowRight, Car, CarFront, Fuel, LocateFixed, MapPin, Minus, Pl
 import { companiesQuery, portsQuery, routesQuery, upcomingDeparturesQuery } from "@/lib/ferry/queries";
 import { buildSailings } from "@/lib/ferry/trips";
 import { calculateRoadAccess, searchItineraryAddress } from "@/lib/ferry/itinerary.functions";
-import { BOARDING_BUFFER_MIN, DISEMBARK_BUFFER_MIN, buildItineraryOptions, distinctItineraries, type ItineraryMapPreview, type ItineraryPriority } from "@/lib/ferry/itinerary";
+import { BOARDING_BUFFER_MIN, DISEMBARK_BUFFER_MIN, buildItineraryOptions, buildSimulatedSailings, distinctItineraries, type ItineraryMapPreview, type ItineraryPriority } from "@/lib/ferry/itinerary";
 import { calculateRoadGeometry } from "@/lib/ferry/itinerary.functions";
 import { bookingSite, bookingUrl } from "@/lib/ferry/booking";
 import { estimateFare, estimateFerryFare, formatFareRange, priceSeason } from "@/lib/ferry/pricing";
@@ -121,9 +121,15 @@ export function ItineraryPlanner({ onClose, onPreview, onResultsReady }: { onClo
     vehicle,
     passengers: { ...defaultTripProfile.passengers, adults, children },
   }), [vehicle, adults, children]);
-  const options = useMemo(() => roadAccess && searchStartedAt !== null
-    ? buildItineraryOptions(sailings.filter((sailing) => sailing.dayKey.startsWith(period)), roadAccess.toDeparturePorts, roadAccess.fromArrivalPorts, searchStartedAt, (sailing) => estimateFare(sailing, profile), consumption, fuelPrice, tollRate)
-    : [], [sailings, roadAccess, searchStartedAt, profile, consumption, fuelPrice, tollRate, period]);
+  const options = useMemo(() => {
+    if (!roadAccess || searchStartedAt === null) return [];
+    const published = sailings.filter((sailing) => sailing.dayKey.startsWith(period));
+    const fare = (sailing: (typeof sailings)[number]) => estimateFare(sailing, profile);
+    const realOptions = buildItineraryOptions(published, roadAccess.toDeparturePorts, roadAccess.fromArrivalPorts, searchStartedAt, fare, consumption, fuelPrice, tollRate);
+    const simulated = buildSimulatedSailings(relevantRoutes, ports, period, new Set(realOptions.map((option) => option.sailing.route.id)));
+    const simulationOptions = buildItineraryOptions(simulated, roadAccess.toDeparturePorts, roadAccess.fromArrivalPorts, Date.parse(`${period}-01T00:00:00Z`), fare, consumption, fuelPrice, tollRate);
+    return [...realOptions, ...simulationOptions];
+  }, [sailings, relevantRoutes, ports, roadAccess, searchStartedAt, profile, consumption, fuelPrice, tollRate, period]);
   const sorted = useMemo(() => distinctItineraries(options, priority, children), [options, priority, children]);
   const selected = sorted.find((option) => option.sailing.departure.id === selectedId) ?? sorted[0];
   const previewed = sorted.find((option) => option.sailing.departure.id === hoveredId) ?? selected;
@@ -262,7 +268,8 @@ export function ItineraryPlanner({ onClose, onPreview, onResultsReady }: { onClo
           <div className="grid grid-cols-3 gap-1 rounded-xl bg-secondary p-1" role="group" aria-label="Classer les itinéraires">
             {priorities.map(({ id, label, icon: Icon }) => <button key={id} type="button" title={id === "driving" ? "Moins de kilomètres en voiture" : undefined} aria-pressed={priority === id} onClick={() => { setPriority(id); setSelectedId(null); }} className={`inline-flex min-w-0 items-center justify-center gap-1 rounded-lg px-1 py-2 text-[11px] font-semibold ${priority === id ? "bg-white text-primary shadow-sm" : "text-muted-foreground hover:text-foreground"}`}><Icon className="size-3.5 shrink-0" aria-hidden />{label}</button>)}
           </div>
-          {sorted.length === 0 ? <p className="mt-3 rounded-xl bg-secondary p-3 text-sm">Aucune traversée connue pour cette période. Choisissez un autre mois ou consultez les horaires.</p> : <div className="mt-3 grid gap-2">
+          {sorted.some((option) => option.sailing.isSimulation) && <p className="mt-2 text-[11px] text-muted-foreground">Simulation : liaisons et prix estimés, sans départ confirmé pour cette période.</p>}
+          {sorted.length === 0 ? <p className="mt-3 rounded-xl bg-secondary p-3 text-sm">Aucune liaison connue pour comparer ces ports.</p> : <div className="mt-3 grid gap-2">
             {sorted.slice(0, 6).map((option, index) => <article
               key={option.sailing.departure.id}
               role="button"
@@ -277,11 +284,11 @@ export function ItineraryPlanner({ onClose, onPreview, onResultsReady }: { onClo
               onKeyDown={(event) => { if (event.target === event.currentTarget && (event.key === "Enter" || event.key === " ")) { event.preventDefault(); setSelectedId(option.sailing.departure.id); } }}
               className={`cursor-pointer rounded-2xl border bg-white p-3 transition-colors hover:border-primary/60 focus-visible:outline-2 focus-visible:outline-primary ${selected?.sailing.departure.id === option.sailing.departure.id ? "border-primary ring-2 ring-primary/20" : "border-border"}`}
             >
-              <div className="flex items-start justify-between gap-2"><div className="min-w-0"><span className="text-[10px] font-bold uppercase tracking-wide text-primary">{index === 0 ? priorities.find((item) => item.id === priority)?.label : `Option ${index + 1}`}</span><h3 className="font-display text-base font-bold leading-tight">{option.sailing.from.name} <span className="text-primary">→</span> {option.sailing.to.name}</h3><p className="truncate text-[11px] text-muted-foreground">{option.sailing.company?.name ?? "Compagnie à confirmer"} · {new Intl.DateTimeFormat("fr-FR", { day: "numeric", month: "short" }).format(new Date(`${option.sailing.dayKey}T12:00:00`))} à {option.sailing.depTime}</p></div><strong className="shrink-0 whitespace-nowrap text-base text-primary">~{numberFormat.format(option.totalEuro)} €</strong></div>
+              <div className="flex items-start justify-between gap-2"><div className="min-w-0"><span className="text-[10px] font-bold uppercase tracking-wide text-primary">{index === 0 ? priorities.find((item) => item.id === priority)?.label : `Option ${index + 1}`}</span><h3 className="font-display text-base font-bold leading-tight">{option.sailing.from.name} <span className="text-primary">→</span> {option.sailing.to.name}</h3><p className="truncate text-[11px] text-muted-foreground">{option.sailing.isSimulation ? "Liaison simulée · horaire et compagnie à confirmer" : `${option.sailing.company?.name ?? "Compagnie à confirmer"} · ${new Intl.DateTimeFormat("fr-FR", { day: "numeric", month: "short" }).format(new Date(`${option.sailing.dayKey}T12:00:00`))} à ${option.sailing.depTime}`}</p></div><strong className="shrink-0 whitespace-nowrap text-base text-primary">~{numberFormat.format(option.totalEuro)} €</strong></div>
               <div className="mt-2"><JourneyGuide animated={selected?.sailing.departure.id === option.sailing.departure.id} /></div>
               <div className="mt-1 grid grid-cols-3 gap-1 text-center text-[10px] font-semibold text-foreground"><span>{formatDuration(option.originRoad.durationMin)} · {Math.round(option.originRoad.distanceKm)} km</span><span>{formatDuration(option.sailing.durationMin ?? 0)} de ferry</span><span>{formatDuration(option.destinationRoad.durationMin)} · {Math.round(option.destinationRoad.distanceKm)} km</span></div>
               <div className="mt-2 flex flex-wrap items-center justify-between gap-x-2 gap-y-1 border-t border-border pt-2 text-[11px]"><strong>{formatDuration(option.totalMinutes)} porte à porte</strong><span className="text-muted-foreground">dont {BOARDING_BUFFER_MIN / 60} h au départ · {DISEMBARK_BUFFER_MIN / 60} h à l’arrivée</span></div>
-              <div className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] text-muted-foreground"><span className="inline-flex items-center gap-1"><Fuel className="size-3" aria-hidden />Route ~{option.roadEuro} €</span><span>Ferry ~{option.ferryEuro} € · voiture incluse</span><span>Fourchette {formatFareRange(estimateFerryFare(option.sailing, profile))}</span><a href={bookingUrl(option.sailing, profile)} target="_blank" rel="noopener noreferrer" className="font-bold text-primary underline underline-offset-2">Voir l’offre {bookingSite(option.sailing)} ↗</a></div>
+              <div className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] text-muted-foreground"><span className="inline-flex items-center gap-1"><Fuel className="size-3" aria-hidden />Route ~{option.roadEuro} €</span><span>Ferry ~{option.ferryEuro} € · voiture incluse</span><span>Fourchette {formatFareRange(estimateFerryFare(option.sailing, profile))}</span>{option.sailing.isSimulation ? <a href="/horaires" className="font-bold text-primary underline underline-offset-2">Voir les horaires publiés</a> : <a href={bookingUrl(option.sailing, profile)} target="_blank" rel="noopener noreferrer" className="font-bold text-primary underline underline-offset-2">Voir l’offre {bookingSite(option.sailing)} ↗</a>}</div>
             </article>)}
           </div>}
           {geometryNote && <p role="status" className="mt-2 text-[11px] text-muted-foreground">{geometryNote}</p>}

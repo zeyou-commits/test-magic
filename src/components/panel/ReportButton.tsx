@@ -35,15 +35,19 @@ export function ReportButton({
   targetType,
   targetId,
   label = "Signaler une erreur",
+  initialDetails = "",
+  initialReason = "wrong_schedule",
 }: {
   targetType: "port" | "route" | "departure" | "review" | "schedule";
   targetId: string;
   label?: string;
+  initialDetails?: string;
+  initialReason?: string;
 }) {
   const { user } = useAuth();
   const [open, setOpen] = useState(false);
-  const [reason, setReason] = useState(reasons[0]!.value);
-  const [details, setDetails] = useState("");
+  const [reason, setReason] = useState(initialReason);
+  const [details, setDetails] = useState(initialDetails);
 
   const submit = useMutation({
     mutationFn: async () => {
@@ -69,7 +73,7 @@ export function ReportButton({
   });
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog open={open} onOpenChange={(next) => { setOpen(next); if (next) { setDetails(initialDetails); setReason(initialReason); } }}>
       <DialogTrigger asChild>
         <Button variant="outline" size="sm">
           {label}

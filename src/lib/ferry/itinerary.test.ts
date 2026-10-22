@@ -1,6 +1,7 @@
 import { test, assert } from "vitest";
-import { buildItineraryOptions, distinctItineraries, sortItineraries } from "./itinerary.ts";
+import { buildItineraryOptions, buildSimulatedSailings, distinctItineraries, sortItineraries } from "./itinerary.ts";
 import type { Sailing } from "./trips";
+import type { Port, RouteLine } from "./types";
 
 const startedAt = Date.parse("2026-10-22T08:00:00Z");
 const sailing = (id: string, departureAt: string, arrivalAt: string): Sailing => ({
@@ -55,4 +56,19 @@ test("avec des enfants, la recommandation évite un long trajet routier pour une
   const shortRoad = { ...base, totalEuro: 410, roadKm: 150, sailing: sailing("confort", "2026-10-22T13:00:00Z", "2026-10-23T01:00:00Z") };
   assert.equal(sortItineraries([cheapLongRoad, shortRoad], "cost")[0]?.sailing.departure.id, "economique");
   assert.equal(sortItineraries([cheapLongRoad, shortRoad], "recommended", 2)[0]?.sailing.departure.id, "confort");
+});
+
+test("un mois sans horaire publié produit une comparaison indicative sans faux départ confirmé", () => {
+  const ports = [
+    { id: "europe", country_code: "FR", status: "active", name: "Sète" },
+    { id: "algerie", country_code: "DZ", status: "active", name: "Béjaïa" },
+  ] as Port[];
+  const routes: RouteLine[] = [{ id: "ligne", slug: "sete-bejaia", departure_port_id: "europe", arrival_port_id: "algerie", typical_duration_minutes: 1320, distance_km: 700, status: "active", company_ids: [], notes: null, color: null, is_demo: false }];
+  const simulated = buildSimulatedSailings(routes, ports, "2027-07");
+  assert.equal(simulated[0]?.isSimulation, true);
+  assert.equal(simulated[0]?.dayKey, "2027-07-15");
+  assert.equal(simulated[0]?.durationMin, 1320);
+  const options = buildItineraryOptions(simulated, roadIn, roadOut, Date.parse("2027-07-01T00:00:00Z"), () => 500, 7, 2, 0.05);
+  assert.equal(options.length, 1);
+  assert.equal(buildSimulatedSailings(routes, ports, "2027-07", new Set(["ligne"])).length, 0);
 });

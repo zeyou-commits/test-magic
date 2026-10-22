@@ -5,6 +5,8 @@ import { dateKeyInZone, portTimeZone, wallTimeInZone } from "./time";
 export type TravelerType = "solo" | "couple" | "family";
 
 export interface Sailing {
+  /** Comparaison indicative créée à partir d'une liaison, sans départ publié. */
+  isSimulation?: boolean;
   departure: Departure;
   route: RouteLine;
   from: Port;

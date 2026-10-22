@@ -54,6 +54,7 @@ import { FareProfileContext } from "@/lib/ferry/pricing";
 import { buildRoundTrips, type RoundTrip } from "@/lib/ferry/roundTrips";
 import { DayStrip, SailingCard } from "./SailingCard";
 import { ShareButtons } from "./ShareButtons";
+import { ReportButton } from "./ReportButton";
 import {
   TripProfile,
   VehicleChips,
@@ -330,6 +331,15 @@ export function SearchPanel({
 
   const active = hasActiveFilters(filters);
   const fromName = (ids: string[]) => ports.find((port) => port.id === ids[0])?.name ?? "";
+  const reportRoute = routes.find((route) => route.status === "active" && filters.departurePortIds.includes(route.departure_port_id) && filters.arrivalPortIds.includes(route.arrival_port_id));
+  const reportTarget = reportRoute
+    ? { type: "route" as const, id: reportRoute.id }
+    : filters.departurePortIds.length === 1
+      ? { type: "port" as const, id: filters.departurePortIds[0]! }
+      : filters.arrivalPortIds.length === 1
+        ? { type: "port" as const, id: filters.arrivalPortIds[0]! }
+        : null;
+  const reportContext = `Recherche sans départ affiché : ${fromName(filters.departurePortIds) || "tous ports"} → ${fromName(filters.arrivalPortIds) || "tous ports"}${filters.date ? `, le ${filters.date}` : ""}.`;
 
   const resultCount = filters.roundTrip
     ? roundTrips.main.length + roundTrips.alternatives.length
@@ -645,6 +655,8 @@ export function SearchPanel({
                     setOpenCard(routeId ? { id: routeId, routeId } : null);
                     onFocusRoute?.(routeId);
                   }}
+                  reportTarget={reportTarget}
+                  reportContext={reportContext}
                 />
               ) : (
                 <ResultBlock
@@ -683,7 +695,10 @@ export function SearchPanel({
                   onOpenRoute={(id) => onSelect({ type: "route", id })}
                   onMore={() => setShowAllOut(true)}
                   expanded={showAllOut || Boolean(filters.date)}
-                  emptyText="Aucune traversée connue pour cette recherche."
+                  emptyText="Aucun départ publié pour cette recherche. Un horaire peut manquer."
+                  reportTarget={reportTarget}
+                  reportContext={reportContext}
+                  onReportMissing={startSearch}
                   onReset={
                     active
                       ? () => onFiltersChange({ ...emptyFilters, roundTrip: filters.roundTrip })
@@ -719,6 +734,9 @@ function ResultBlock({
   expanded,
   emptyText,
   onReset,
+  reportTarget,
+  reportContext,
+  onReportMissing,
 }: {
   liveByDeparture: Map<string, LiveShip>;
   title: string;
@@ -740,6 +758,9 @@ function ResultBlock({
   expanded: boolean;
   emptyText: string;
   onReset?: (() => void) | undefined;
+  reportTarget: { type: "route" | "port"; id: string } | null;
+  reportContext: string;
+  onReportMissing: () => void;
 }) {
   // Jours avec départ les plus proches du jour demandé (avant / après), pour ne jamais laisser sans issue.
   const near = date
@@ -761,6 +782,7 @@ function ResultBlock({
       {list.length === 0 ? (
         <div className="rounded-2xl border border-dashed p-5 text-center text-sm text-muted-foreground">
           {emptyText}
+          <div className="mt-3">{reportTarget ? <ReportButton targetType={reportTarget.type} targetId={reportTarget.id} label="Signaler un horaire manquant" initialDetails={reportContext} initialReason="missing_info" /> : <button type="button" onClick={onReportMissing} className="rounded-full border bg-card px-3 py-1.5 text-xs font-semibold text-primary hover:bg-secondary">Choisir des ports pour signaler</button>}</div>
           {near && (near.before || near.after) ? (
             <div className="mt-3 flex flex-wrap items-center justify-center gap-2">
               {[near.before, near.after].map((item) =>
@@ -923,6 +945,8 @@ function RoundTripSection({
   onOpenRoute,
   onHoverRoute,
   onFocusRoute,
+  reportTarget,
+  reportContext,
 }: {
   trips: { main: RoundTrip[]; alternatives: RoundTrip[] };
   hasPorts: boolean;
@@ -930,6 +954,8 @@ function RoundTripSection({
   onOpenRoute: (id: string) => void;
   onHoverRoute: (routeId: string | null) => void;
   onFocusRoute: (routeId: string | null) => void;
+  reportTarget: { type: "route" | "port"; id: string } | null;
+  reportContext: string;
 }) {
   const list = (items: RoundTrip[]) => (
     <div className="space-y-2.5">
@@ -961,6 +987,7 @@ function RoundTripSection({
           <div className="rounded-2xl border border-dashed p-5 text-center text-sm text-muted-foreground">
             Aucun aller-retour connu pour ces ports et ces dates.
             {trips.alternatives.length ? " Voici des alternatives ci-dessous." : ""}
+            {reportTarget && <div className="mt-3"><ReportButton targetType={reportTarget.type} targetId={reportTarget.id} label="Signaler un horaire manquant" initialDetails={reportContext} initialReason="missing_info" /></div>}
           </div>
         )}
       </div>

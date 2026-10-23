@@ -2,7 +2,16 @@ import { seoHead } from "@/lib/seo/site";
 import { DataUnavailableNotice } from "@/components/layout/DataUnavailableNotice";
 import type React from "react";
 import { ChevronLeft, ChevronRight, ArrowDown, Compass } from "lucide-react";
-import { lazy, Suspense, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import {
+  lazy,
+  Suspense,
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { ClientOnly, createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { SidePanel } from "@/components/panel/SidePanel";
@@ -60,12 +69,14 @@ function Index() {
       setSelection(null);
       setSelectionHistory([]);
     } else {
+      if (typeof window !== "undefined" && window.innerWidth >= 768) setDesktopPanelOpen(true);
       if (selection && (selection.type !== newSelection.type || selection.id !== newSelection.id)) {
         setSelectionHistory((prev) => [...prev, selection]);
       }
       setSelection(newSelection);
       setPanelMode(null);
-      if (newSelection.type === "vessel" || newSelection.type === "departure") setPanelLevel(peek ? 1 : 2);
+      if (newSelection.type === "vessel" || newSelection.type === "departure")
+        setPanelLevel(peek ? 1 : 2);
     }
     setFocusShipId(null);
   };
@@ -158,7 +169,8 @@ function Index() {
     const header = document.querySelector<HTMLElement>(".bw-home > .bw-header");
     const home = mapStageRef.current?.closest<HTMLElement>(".bw-home");
     if (!header || !home) return;
-    const update = () => home.style.setProperty("--bw-header-height", `${header.getBoundingClientRect().height}px`);
+    const update = () =>
+      home.style.setProperty("--bw-header-height", `${header.getBoundingClientRect().height}px`);
     const observer = new ResizeObserver(update);
     observer.observe(header);
     update();
@@ -167,10 +179,19 @@ function Index() {
 
   useEffect(() => {
     if (panelLevel !== 2 || !window.matchMedia("(max-width: 767px)").matches) return;
-    const background = [...document.querySelectorAll<HTMLElement>(".bw-home > .bw-header, .bw-home #preparer, .bw-home > .bw-footer, .bw-home .bw-map-canvas")];
+    const background = [
+      ...document.querySelectorAll<HTMLElement>(
+        ".bw-home > .bw-header, .bw-home #preparer, .bw-home > .bw-footer, .bw-home .bw-map-canvas",
+      ),
+    ];
     const previous = background.map((element) => element.inert);
-    background.forEach((element) => { element.inert = true; });
-    return () => background.forEach((element, index) => { element.inert = previous[index] ?? false; });
+    background.forEach((element) => {
+      element.inert = true;
+    });
+    return () =>
+      background.forEach((element, index) => {
+        element.inert = previous[index] ?? false;
+      });
   }, [panelLevel]);
 
   const portsResult = useQuery(portsQuery);
@@ -188,23 +209,47 @@ function Index() {
   const atSea = useMemo(() => fleet.filter((ship) => ship.state === "sea"), [fleet]);
   const upcomingShips = useMemo(() => {
     const now = Date.now();
-    const future = new Set([...departures, ...fleetDepartures]
-      .filter((departure) => departure.status !== "cancelled" && new Date(departure.departure_at).getTime() > now)
-      .map((departure) => departure.id));
+    const future = new Set(
+      [...departures, ...fleetDepartures]
+        .filter(
+          (departure) =>
+            departure.status !== "cancelled" && new Date(departure.departure_at).getTime() > now,
+        )
+        .map((departure) => departure.id),
+    );
     return fleet.filter((ship) => ship.state === "docked" && future.has(ship.departureId));
   }, [fleet, departures, fleetDepartures]);
   const shipCompanyIds = useMemo(() => {
-    const byDeparture = new Map([...departures, ...fleetDepartures].map((departure) => [departure.id, departure.company_id]));
-    return new Set([...atSea, ...upcomingShips].map((ship) => byDeparture.get(ship.departureId)).filter((id): id is string => Boolean(id)));
+    const byDeparture = new Map(
+      [...departures, ...fleetDepartures].map((departure) => [departure.id, departure.company_id]),
+    );
+    return new Set(
+      [...atSea, ...upcomingShips]
+        .map((ship) => byDeparture.get(ship.departureId))
+        .filter((id): id is string => Boolean(id)),
+    );
   }, [atSea, upcomingShips, departures, fleetDepartures]);
-  const shortcutCompanies = useMemo(() => companies.filter((company) => shipCompanyIds.has(company.id)).map((company) => ({ id: company.id, name: company.name, logoUrl: company.logo_url })), [companies, shipCompanyIds]);
+  const shortcutCompanies = useMemo(
+    () =>
+      companies
+        .filter((company) => shipCompanyIds.has(company.id))
+        .map((company) => ({ id: company.id, name: company.name, logoUrl: company.logo_url })),
+    [companies, shipCompanyIds],
+  );
   const mapFleet = useMemo(() => {
     if (activeShortcut === "ports") return [];
     if (activeShortcut === "sea") return atSea;
     if (activeShortcut === "upcoming") return upcomingShips;
     if (activeShortcut === "companies" && shortcutCompanyId) {
-      const byDeparture = new Map([...departures, ...fleetDepartures].map((departure) => [departure.id, departure.company_id]));
-      return [...atSea, ...upcomingShips].filter((ship) => byDeparture.get(ship.departureId) === shortcutCompanyId);
+      const byDeparture = new Map(
+        [...departures, ...fleetDepartures].map((departure) => [
+          departure.id,
+          departure.company_id,
+        ]),
+      );
+      return [...atSea, ...upcomingShips].filter(
+        (ship) => byDeparture.get(ship.departureId) === shortcutCompanyId,
+      );
     }
     return fleet;
   }, [activeShortcut, shortcutCompanyId, atSea, upcomingShips, fleet, departures, fleetDepartures]);
@@ -229,9 +274,18 @@ function Index() {
     () => filterRoutes(routes, ports, departures, { ...filters, date: null }),
     [routes, ports, departures, filters],
   );
-  const mapVisibleRouteIds = useMemo(() => matchingRoutes
-    .filter((route) => activeShortcut !== "companies" || !shortcutCompanyId || route.company_ids.includes(shortcutCompanyId))
-    .map((route) => route.id), [matchingRoutes, activeShortcut, shortcutCompanyId]);
+  const mapVisibleRouteIds = useMemo(
+    () =>
+      matchingRoutes
+        .filter(
+          (route) =>
+            activeShortcut !== "companies" ||
+            !shortcutCompanyId ||
+            route.company_ids.includes(shortcutCompanyId),
+        )
+        .map((route) => route.id),
+    [matchingRoutes, activeShortcut, shortcutCompanyId],
+  );
   // Lignes avec au moins un départ à venir (non annulé) : les autres sont en pointillés.
   const scheduledRouteIds = useMemo(() => {
     const now = Date.now();
@@ -473,13 +527,26 @@ function Index() {
   };
 
   // Espace masqué par le tiroir mobile : la carte se recentre au-dessus de lui.
-  const isPeekSelection = peekSelectionKey !== null && peekSelectionKey === `${selection?.type}:${selection?.id}`;
-  const peekHeight = Math.min(Math.round(viewportHeight * 0.6), Math.max(240, viewportHeight - 260));
-  const mobileBottomInset = panelLevel === 0 ? 0 : panelLevel === 2 ? viewportHeight - TAB_BAR_HEIGHT : TAB_BAR_HEIGHT + (isPeekSelection ? peekHeight : Math.round(viewportHeight * (panelMode === "itinerary" ? 0.64 : MIDDLE_RATIO)));
+  const isPeekSelection =
+    peekSelectionKey !== null && peekSelectionKey === `${selection?.type}:${selection?.id}`;
+  const peekHeight = Math.min(
+    Math.round(viewportHeight * 0.6),
+    Math.max(240, viewportHeight - 260),
+  );
+  const mobileBottomInset =
+    panelLevel === 0
+      ? 0
+      : panelLevel === 2
+        ? viewportHeight - TAB_BAR_HEIGHT
+        : TAB_BAR_HEIGHT +
+          (isPeekSelection
+            ? peekHeight
+            : Math.round(viewportHeight * (panelMode === "itinerary" ? 0.64 : MIDDLE_RATIO)));
   const mobilePanelHeight = mobileBottomInset;
   // Sur mobile, choisir un navire, un port ou une traversée rouvre le tiroir s'il était replié.
   useEffect(() => {
-    if (selection?.type === "vessel" || selection?.type === "departure") setPanelLevel(isPeekSelection ? 1 : 2);
+    if (selection?.type === "vessel" || selection?.type === "departure")
+      setPanelLevel(isPeekSelection ? 1 : 2);
     else if (selection && panelLevel === 0) setPanelLevel(1);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selection?.type, selection?.id, isPeekSelection]);
@@ -563,7 +630,8 @@ function Index() {
   };
 
   const openItinerary = () => {
-    if (window.innerWidth >= 768) document.getElementById("carte")?.scrollIntoView({ behavior: "instant" });
+    if (window.innerWidth >= 768)
+      document.getElementById("carte")?.scrollIntoView({ behavior: "instant" });
     handleSelect(null);
     setPortsActive(false);
     setActiveShortcut(null);
@@ -609,7 +677,10 @@ function Index() {
   }, []);
 
   useEffect(() => {
-    const open = () => { window.sessionStorage.removeItem("bledway:open-home-action"); openItinerary(); };
+    const open = () => {
+      window.sessionStorage.removeItem("bledway:open-home-action");
+      openItinerary();
+    };
     window.addEventListener("bledway:open-itinerary", open);
     return () => window.removeEventListener("bledway:open-itinerary", open);
   });
@@ -639,7 +710,7 @@ function Index() {
       </a>
       <SiteHeader />
       <main id="contenu" tabIndex={-1}>
-        <h1 className="sr-only">BledWay — La route du Bled</h1>
+        <h1 className="sr-only">BledWay — Carte des traversées</h1>
         <section
           id="carte"
           aria-label="Carte et recherche de traversées"
@@ -676,7 +747,7 @@ function Index() {
             }
             className={`bw-map-panel absolute bottom-0 left-0 right-0 z-[60] flex flex-col overflow-hidden bg-transparent ${panelLevel === 0 && dragHeight === null ? "max-md:invisible max-md:pointer-events-none" : ""} ${dragHeight !== null ? "transition-none" : "transition-[height,width,transform] duration-[420ms] ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none"} md:bottom-5 md:left-5 md:right-auto md:top-5 md:h-auto md:w-[var(--desktop-panel-width)] md:overflow-visible md:rounded-3xl md:z-40 ${
               desktopPanelOpen ? "md:translate-x-0" : "md:translate-x-[calc(-100%-1.25rem)]"
-            } ${panelLevel === 0 ? "h-24 rounded-t-3xl" : panelLevel === 1 ? isPeekSelection ? "h-[var(--mobile-peek-height)] rounded-t-3xl" : panelMode === "itinerary" ? "h-[calc(var(--stage-height)*0.64)] rounded-t-3xl" : "h-[calc(var(--stage-height)*0.68)] rounded-t-3xl" : "h-[calc(var(--stage-height)-3.5rem)] rounded-t-3xl"}`}
+            } ${panelLevel === 0 ? "h-24 rounded-t-3xl" : panelLevel === 1 ? (isPeekSelection ? "h-[var(--mobile-peek-height)] rounded-t-3xl" : panelMode === "itinerary" ? "h-[calc(var(--stage-height)*0.64)] rounded-t-3xl" : "h-[calc(var(--stage-height)*0.68)] rounded-t-3xl") : "h-[calc(var(--stage-height)-3.5rem)] rounded-t-3xl"}`}
           >
             {collapsed ? (
               <CollapsedPanelSummary
@@ -743,7 +814,9 @@ function Index() {
                   if (window.innerWidth < 768) setPanelLevel(0);
                 }}
                 onItineraryPreview={updateItineraryPreview}
-                onItineraryResultsReady={() => { if (window.innerWidth < 768) setPanelLevel(1); }}
+                onItineraryResultsReady={() => {
+                  if (window.innerWidth < 768) setPanelLevel(1);
+                }}
               />
             </div>
             <div
@@ -792,7 +865,13 @@ function Index() {
           <div className="bw-home-mobile-tabs fixed bottom-0 left-0 right-0 z-[70] md:hidden">
             <MobileTabBar
               className="h-[calc(3.5rem+env(safe-area-inset-bottom))] pb-[env(safe-area-inset-bottom)]"
-              activeTab={panelLevel === 0 ? "map" : panelMode === "itinerary" ? "itinerary" : (panelMode ?? "map")}
+              activeTab={
+                panelLevel === 0
+                  ? "map"
+                  : panelMode === "itinerary"
+                    ? "itinerary"
+                    : (panelMode ?? "map")
+              }
               onOpenMap={resetToMap}
               onOpenDepartures={openMobileDepartures}
               onOpenSearch={openMobileSearch}
@@ -886,6 +965,7 @@ function Index() {
                   fitPortIds={fitPortIds}
                   hoverRouteId={highlightRouteId}
                   fleet={mapFleet}
+                  selectedVesselId={selection?.type === "vessel" ? selection.id : null}
                   portMeta={portMeta}
                   onSelect={handleSelect}
                   onOpenPanel={() => setPanelLevel(2)}

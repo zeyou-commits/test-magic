@@ -1,31 +1,22 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 52" fill="none">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 56" fill="none">
   <defs>
-    <linearGradient id="hull" x1="12" y1="28" x2="79" y2="44" gradientUnits="userSpaceOnUse">
-      <stop stop-color="#fffdf7"/>
-      <stop offset="0.58" stop-color="#f1f5f4"/>
-      <stop offset="1" stop-color="#a9c5d0"/>
+    <linearGradient id="deck" x1="33" y1="16" x2="55" y2="36" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#fffefb"/><stop offset="1" stop-color="#dce8e7"/>
     </linearGradient>
-    <linearGradient id="upper" x1="19" y1="16" x2="75" y2="35" gradientUnits="userSpaceOnUse">
-      <stop stop-color="#ffffff"/>
-      <stop offset="1" stop-color="#d8e8e9"/>
+    <linearGradient id="hull" x1="45" y1="31" x2="47" y2="44" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#24556b"/><stop offset="1" stop-color="#12374c"/>
     </linearGradient>
   </defs>
-  <!-- Silhouette profil trois-quarts, proue à droite. -->
-  <path d="M8 30 18 24 74 23 88 31 82 39 72 43 17 42 10 37Z" fill="#123d56" stroke="#fffdf7" stroke-width="2" stroke-linejoin="round"/>
-  <path d="M10 29 72 25 85 31 78 38 18 38 11 34Z" fill="url(#hull)"/>
-  <path d="M18 37 78 37 83 34 79 41 72 43 17 42 11 37Z" fill="#0b4565"/>
-  <path d="M14 33 76 33 84 31" stroke="#87bec5" stroke-width="1.4" stroke-linecap="round"/>
-  <!-- Pont supérieur et cabine avec volume latéral. -->
-  <path d="M18 25 24 16 64 15 75 24 77 31 18 32Z" fill="url(#upper)" stroke="#183f57" stroke-width="1.5" stroke-linejoin="round"/>
-  <path d="M20 25 72 24 75 29 19 29Z" fill="#e7f2f0"/>
-  <path d="M23 18 63 17 71 23 21 24Z" fill="#c5dfe3"/>
-  <path d="M22 24 71 23" stroke="#fff" stroke-width="1.3"/>
-  <path d="M27 19h8v4h-9zM38 18h8v5h-8zM49 18h8v5h-8zM60 19l8 4h-8z" fill="#164867"/>
-  <path d="M24 28h45" stroke="#38728a" stroke-width="1.8" stroke-linecap="round" stroke-dasharray="3 2.8"/>
-  <!-- Cheminée et canots : accents lisibles sans surcharge. -->
-  <path d="M39 10h12l-2 7H41Z" fill="#087f7c" stroke="#17435d" stroke-width="1.4" stroke-linejoin="round"/>
-  <path d="M39 10h12" stroke="#18394c" stroke-width="2.5" stroke-linecap="round"/>
-  <path d="M43 15h5" stroke="#e1f4ef" stroke-width="1.3"/>
-  <path d="M29 25h8q1 0 1 1.5T36 28h-6q-2 0-2-1.5t1-1.5ZM52 24.7h8q1 0 1 1.5T59 28h-6q-2 0-2-1.5t1-1.5Z" fill="#dc6a37" stroke="#fff2df" stroke-width="0.8"/>
-  <path d="M22 15h38" stroke="#fff" stroke-width="1" stroke-linecap="round"/>
+  <!-- Profil stable et volumes discrets, lisibles à petite échelle. -->
+  <path d="M11 33h8l5-12h12v-6h12l2 6h16l8 10 13 2-9 10H20l-9-10Z" fill="#fffefb" stroke="#fffefb" stroke-width="5" stroke-linejoin="round"/>
+  <path d="m36 15 1 8h13l-2-8H36Z" fill="#087c57"/>
+  <path d="M36 15h12" stroke="#163b4e" stroke-width="2.5" stroke-linecap="round"/>
+  <path d="m24 21-5 12h57l-10-12H24Z" fill="url(#deck)"/>
+  <path d="m25 22-2 5h48l-5-5H25Z" fill="#fffefb"/>
+  <path d="M27 24h9m5 0h9m5 0h8" stroke="#376478" stroke-width="2.5" stroke-linecap="round"/>
+  <path d="M22 30h49" stroke="#9ab6bc" stroke-width="1.5" stroke-linecap="round"/>
+  <path d="M11 33h66l10-1-9 11H20l-9-10Z" fill="url(#hull)"/>
+  <path d="M17 35h60l7-2" stroke="#6b9caa" stroke-width="1.5" stroke-linecap="round"/>
+  <path d="M25 30h8m22 0h8" stroke="#d76b42" stroke-width="2.5" stroke-linecap="round"/>
+  <path d="M24 40h49" stroke="#d5e5e5" stroke-width="1.2" stroke-linecap="round"/>
 </svg>

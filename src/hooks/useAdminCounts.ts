@@ -1,20 +1,19 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { adminDayRange } from "@/lib/admin/navigation";
 
 export function useAdminCounts() {
   return useQuery({
     queryKey: ["admin", "counts"],
     queryFn: async () => {
-      const start = new Date();
-      start.setHours(0, 0, 0, 0);
-      const end = new Date(start);
-      end.setDate(end.getDate() + 1);
+      const now = new Date();
+      const { start, end } = adminDayRange(now);
       const [today, reports, reviews, unlinked] = await Promise.all([
         supabase
           .from("departures")
           .select("id", { count: "exact", head: true })
-          .gte("departure_at", start.toISOString())
-          .lt("departure_at", end.toISOString()),
+          .gte("departure_at", start)
+          .lt("departure_at", end),
         supabase.from("reports").select("id", { count: "exact", head: true }).eq("status", "new"),
         supabase
           .from("port_reviews")
@@ -24,7 +23,8 @@ export function useAdminCounts() {
           .from("departures")
           .select("id", { count: "exact", head: true })
           .is("vessel_id", null)
-          .gte("departure_at", start.toISOString()),
+          .neq("status", "cancelled")
+          .gte("departure_at", now.toISOString()),
       ]);
       const error = [today, reports, reviews, unlinked].find((result) => result.error)?.error;
       if (error) throw error;

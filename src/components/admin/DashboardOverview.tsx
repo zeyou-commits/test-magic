@@ -10,19 +10,27 @@ import {
   Bell,
 } from "lucide-react";
 import { useAdminCounts } from "@/hooks/useAdminCounts";
+import type { AdminFilter } from "@/lib/admin/navigation";
 
 export function DashboardOverview({
   onNavigate,
   can,
 }: {
-  onNavigate: (id: string) => void;
+  onNavigate: (id: string, filter?: AdminFilter) => void;
   can: (id: string) => boolean;
 }) {
   const { data, error, isPending, refetch } = useAdminCounts();
   const cards = [
-    { id: "departures", label: "Départs aujourd'hui", value: data?.today, icon: CalendarClock },
     {
       id: "departures",
+      filter: "today" as const,
+      label: "Départs aujourd'hui",
+      value: data?.today,
+      icon: CalendarClock,
+    },
+    {
+      id: "departures",
+      filter: "unassigned" as const,
       label: "Départs à venir sans navire",
       value: data?.unlinked,
       icon: Ship,
@@ -30,6 +38,7 @@ export function DashboardOverview({
     },
     {
       id: "reports",
+      filter: "new" as const,
       label: "Signalements à traiter",
       value: data?.reports,
       icon: AlertTriangle,
@@ -37,6 +46,7 @@ export function DashboardOverview({
     },
     {
       id: "reviews",
+      filter: "pending" as const,
       label: "Avis ports en attente",
       value: data?.reviews,
       icon: MessageSquare,
@@ -63,7 +73,7 @@ export function DashboardOverview({
           <button
             key={c.label}
             type="button"
-            onClick={() => onNavigate(c.id)}
+            onClick={() => onNavigate(c.id, c.filter)}
             className="bw-admin-metric text-left transition hover:border-primary/40"
           >
             <c.icon
@@ -91,11 +101,11 @@ export function DashboardOverview({
             </div>
           ) : (
             <div className="divide-y divide-border">
-              {priorities.map(({ id, label, value, icon: Icon }) => (
+              {priorities.map(({ id, filter, label, value, icon: Icon }) => (
                 <button
                   key={label}
                   type="button"
-                  onClick={() => onNavigate(id)}
+                  onClick={() => onNavigate(id, filter)}
                   className="flex min-h-20 w-full items-center gap-3 px-5 py-4 text-left hover:bg-secondary/30"
                 >
                   <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-amber-50 text-amber-800">

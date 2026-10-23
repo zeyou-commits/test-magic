@@ -44,7 +44,7 @@ function openItineraryFromHeader() {
   if (window.location.pathname === "/") window.dispatchEvent(new Event("bledway:open-itinerary"));
 }
 
-/** Identité commune à toutes les pages : même logo, même nom, même accroche. */
+/** Identité compacte commune à toutes les pages. */
 export function BrandLink({ compact = false }: { compact?: boolean }) {
   return (
     <Link
@@ -57,7 +57,6 @@ export function BrandLink({ compact = false }: { compact?: boolean }) {
         alt="BledWay"
         className={compact ? "bw-brand bw-brand-compact" : "bw-brand"}
       />
-      <span className="bw-brand-tagline">La route du Bled</span>
     </Link>
   );
 }
@@ -79,7 +78,15 @@ export function SiteHeader() {
               {item.label}
             </Link>
           ))}
-          <Link to="/" onClick={openItineraryFromHeader} activeProps={{ className: "" }} className="inline-flex items-center gap-1.5"><RouteIcon size={16} aria-hidden/>Itinéraire</Link>
+          <Link
+            to="/"
+            onClick={openItineraryFromHeader}
+            activeProps={{ className: "" }}
+            className="inline-flex items-center gap-1.5"
+          >
+            <RouteIcon size={16} aria-hidden />
+            Itinéraire
+          </Link>
           <DropdownMenu>
             <DropdownMenuTrigger className="bw-explore-trigger">
               Explorer <ChevronDown size={15} />
@@ -113,7 +120,12 @@ export function SiteHeader() {
               <Menu size={22} />
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="min-w-52">
-              <DropdownMenuItem asChild><Link to="/" onClick={openItineraryFromHeader}><RouteIcon size={16} aria-hidden/>Itinéraire porte à porte</Link></DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <Link to="/" onClick={openItineraryFromHeader}>
+                  <RouteIcon size={16} aria-hidden />
+                  Itinéraire porte à porte
+                </Link>
+              </DropdownMenuItem>
               {navLinks.map((item) => (
                 <DropdownMenuItem asChild key={item.to}>
                   <Link to={item.to}>{item.label}</Link>
@@ -156,7 +168,13 @@ export function SiteFooter() {
           <h2>Préparer le voyage</h2>
           {footerLinks
             .filter((item) =>
-              ["/guide", "/voyage-algerie", "/simulateurs", "/covoiturage", "/barometre-prix"].includes(item.to),
+              [
+                "/guide",
+                "/voyage-algerie",
+                "/simulateurs",
+                "/covoiturage",
+                "/barometre-prix",
+              ].includes(item.to),
             )
             .map((item) => (
               <Link key={item.to} to={item.to}>

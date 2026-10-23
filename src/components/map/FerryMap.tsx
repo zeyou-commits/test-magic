@@ -24,6 +24,15 @@ import { portTimeZone, wallTimeInZone } from "@/lib/ferry/time";
 import { useIsMobile } from "@/hooks/use-mobile";
 import type { ItineraryMapPreview } from "@/lib/ferry/itinerary";
 
+type FleetFrame = {
+  type: "FeatureCollection";
+  features: Array<{
+    type: "Feature";
+    properties: Record<string, string | number>;
+    geometry: { type: "Point"; coordinates: [number, number] };
+  }>;
+};
+
 // En production, MapLibre v6 a besoin que son « worker » soit fourni explicitement.
 // En développement, ce fichier injecté par Vite plante (« document is not defined ») et la carte
 // reste vide : on laisse alors MapLibre utiliser son worker intégré.
@@ -63,6 +72,7 @@ interface FerryMapProps {
   highlightedPortIds: string[];
   /** Flotte : un navire par traversée en cours ou à venir (position déduite des horaires ou réelle si suivie). */
   fleet?: FleetShip[];
+  selectedVesselId?: string | null;
   /** Ligne survolée ou dépliée dans le volet : mise en évidence sans déplacer la carte. */
   hoverRouteId?: string | null;
   /** Ports à cadrer quand rien n'est sélectionné (trajet cherché). */
@@ -292,6 +302,7 @@ export default function FerryMap({
   fitPortIds = [],
   hoverRouteId = null,
   fleet = [],
+  selectedVesselId = null,
   portMeta,
   onSelect,
   onOpenPanel,
@@ -317,6 +328,7 @@ export default function FerryMap({
   const [mapViewportKey, setMapViewportKey] = useState("");
   const vesselPopupRef = useRef<Popup | null>(null);
   const fleetRef = useRef<FleetShip[]>(fleet);
+  const lastFleetFrame = useRef<{ source: GeoJSONSource; data: FleetFrame } | null>(null);
   fleetRef.current = fleet;
 
   selectRef.current = onSelect;
@@ -366,7 +378,9 @@ export default function FerryMap({
       bearing: 0,
       dragRotate: false,
       attributionControl: false,
-      fadeDuration: 0,
+      // Les noms du fond de carte ne doivent pas masquer un navire sélectionné.
+      crossSourceCollisions: false,
+      fadeDuration: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? 0 : 180,
       cooperativeGestures: false,
       dragPan: true,
       touchPitch: false,
@@ -393,10 +407,11 @@ export default function FerryMap({
     map.touchZoomRotate.disableRotation();
     mapRef.current = map;
 
-    const resize = () => requestAnimationFrame(() => {
-      mapRef.current?.resize();
-      setMapViewportKey(`${container.clientWidth}x${container.clientHeight}`);
-    });
+    const resize = () =>
+      requestAnimationFrame(() => {
+        mapRef.current?.resize();
+        setMapViewportKey(`${container.clientWidth}x${container.clientHeight}`);
+      });
     const resizeObserver = new ResizeObserver(resize);
     resizeObserver.observe(container);
     window.addEventListener("resize", resize);
@@ -570,7 +585,7 @@ export default function FerryMap({
         },
       });
 
-      // Flotte : de vrais ferrys vus du dessus, orientés selon leur cap.
+      // Un seul symbole pour le ferry et son nom : aucun nom orphelin si l'icône est masquée.
       addShipImages(map);
       map.addSource("fleet", {
         type: "geojson",
@@ -593,32 +608,30 @@ export default function FerryMap({
         source: "fleet",
         layout: {
           "icon-image": ["get", "icon"],
-          // Perspective constante : la flèche dans l'icône porte le cap.
+          // Profil stable, sans rotation ; les collisions donnent priorité au bateau sélectionné.
           "icon-rotation-alignment": "viewport",
-          "icon-allow-overlap": true,
-          "icon-ignore-placement": true,
-          "icon-size": ["interpolate", ["linear"], ["zoom"], 3, 0.44, 5, 0.54, 7, 0.64, 9, 0.72],
-        },
-        paint: { "icon-opacity": ["get", "opacity"] },
-      });
-      map.addLayer({
-        id: "fleet-label",
-        type: "symbol",
-        source: "fleet",
-        layout: {
-          // A single name at rest; the status belongs to the hover card.
+          "icon-pitch-alignment": "viewport",
+          "icon-allow-overlap": false,
+          "icon-ignore-placement": false,
+          "icon-padding": 5,
+          "icon-size": ["interpolate", ["linear"], ["zoom"], 3, 0.42, 5, 0.52, 7, 0.62, 9, 0.72],
+          "symbol-sort-key": ["get", "priority"],
           "text-field": ["get", "name"],
           "text-font": ["Noto Sans Bold"],
-          "text-size": ["interpolate", ["linear"], ["zoom"], 3, 7.5, 6, 9.5, 9, 12],
-          "text-offset": [0, 2.2],
+          "text-size": ["interpolate", ["linear"], ["zoom"], 3, 9, 6, 10, 9, 12],
+          "text-offset": [0, 1.35],
           "text-anchor": "top",
           "text-optional": true,
-          "text-padding": 2,
+          "text-max-width": 12,
+          "text-padding": 5,
         },
         paint: {
-          "text-color": "#0b3a6e",
-          "text-halo-color": "#ffffff",
-          "text-halo-width": 1.6,
+          "icon-opacity": ["get", "opacity"],
+          "icon-opacity-transition": { duration: 200 },
+          "text-color": "#234b5e",
+          "text-halo-color": "#fffefb",
+          "text-halo-width": 1.8,
+          "text-halo-blur": 0.4,
           "text-opacity": ["get", "opacity"],
         },
       });
@@ -648,7 +661,6 @@ export default function FerryMap({
       const setHoveredShip = (id: string | null) => {
         hoveredShip = id;
         map.setFilter("fleet-hover-halo", id ? (["==", ["get", "shipId"], id] as never) : NO_SHIP);
-        map.setFilter("fleet-label", id ? (["!=", ["get", "shipId"], id] as never) : null);
         if (!id) hoverTip.remove();
       };
       map.on("mousemove", "fleet-ships", (event) => {
@@ -750,16 +762,108 @@ export default function FerryMap({
     const map = mapRef.current;
     if (!map || !mapReady) return;
     if (!map.getSource("itinerary-preview")) {
-      map.addSource("itinerary-preview", { type: "geojson", data: { type: "FeatureCollection", features: [] } });
+      map.addSource("itinerary-preview", {
+        type: "geojson",
+        data: { type: "FeatureCollection", features: [] },
+      });
       const before = map.getLayer("fleet-halo") ? "fleet-halo" : undefined;
-      map.addLayer({ id: "itinerary-alternatives", type: "line", source: "itinerary-preview", filter: ["==", ["get", "kind"], "alternative"], layout: { "line-cap": "round", "line-join": "round" }, paint: { "line-color": "#87969b", "line-width": 3, "line-opacity": 0.58 } }, before);
-      map.addLayer({ id: "itinerary-road-casing", type: "line", source: "itinerary-preview", filter: ["==", ["get", "kind"], "road"], layout: { "line-cap": "round", "line-join": "round" }, paint: { "line-color": "#fffdf8", "line-width": 7, "line-opacity": 0.92 } }, before);
-      map.addLayer({ id: "itinerary-road", type: "line", source: "itinerary-preview", filter: ["==", ["get", "kind"], "road"], layout: { "line-cap": "round", "line-join": "round" }, paint: { "line-color": "#1e5b7a", "line-width": 4, "line-dasharray": [2, 1.3] } }, before);
-      map.addLayer({ id: "itinerary-estimate", type: "line", source: "itinerary-preview", filter: ["==", ["get", "kind"], "estimate"], layout: { "line-cap": "round", "line-join": "round" }, paint: { "line-color": "#1e5b7a", "line-width": 3, "line-opacity": 0.7, "line-dasharray": [1, 2] } }, before);
-      map.addLayer({ id: "itinerary-ferry-casing", type: "line", source: "itinerary-preview", filter: ["==", ["get", "kind"], "ferry"], layout: { "line-cap": "round", "line-join": "round" }, paint: { "line-color": "#fffdf8", "line-width": 11 } }, before);
-      map.addLayer({ id: "itinerary-ferry", type: "line", source: "itinerary-preview", filter: ["==", ["get", "kind"], "ferry"], layout: { "line-cap": "round", "line-join": "round" }, paint: { "line-color": "#0e7a43", "line-width": 6 } }, before);
-      map.addLayer({ id: "itinerary-ends", type: "circle", source: "itinerary-preview", filter: ["==", ["geometry-type"], "Point"], paint: { "circle-radius": 8, "circle-color": "#0e7a43", "circle-stroke-color": "#fffdf8", "circle-stroke-width": 3 } });
-      map.addLayer({ id: "itinerary-end-labels", type: "symbol", source: "itinerary-preview", filter: ["==", ["geometry-type"], "Point"], layout: { "text-field": ["get", "label"], "text-font": ["Noto Sans Bold"], "text-size": 11, "text-offset": [0, 1.8], "text-allow-overlap": true }, paint: { "text-color": "#16324a", "text-halo-color": "#fffdf8", "text-halo-width": 2 } });
+      map.addLayer(
+        {
+          id: "itinerary-alternatives",
+          type: "line",
+          source: "itinerary-preview",
+          filter: ["==", ["get", "kind"], "alternative"],
+          layout: { "line-cap": "round", "line-join": "round" },
+          paint: { "line-color": "#87969b", "line-width": 3, "line-opacity": 0.58 },
+        },
+        before,
+      );
+      map.addLayer(
+        {
+          id: "itinerary-road-casing",
+          type: "line",
+          source: "itinerary-preview",
+          filter: ["==", ["get", "kind"], "road"],
+          layout: { "line-cap": "round", "line-join": "round" },
+          paint: { "line-color": "#fffdf8", "line-width": 7, "line-opacity": 0.92 },
+        },
+        before,
+      );
+      map.addLayer(
+        {
+          id: "itinerary-road",
+          type: "line",
+          source: "itinerary-preview",
+          filter: ["==", ["get", "kind"], "road"],
+          layout: { "line-cap": "round", "line-join": "round" },
+          paint: { "line-color": "#1e5b7a", "line-width": 4, "line-dasharray": [2, 1.3] },
+        },
+        before,
+      );
+      map.addLayer(
+        {
+          id: "itinerary-estimate",
+          type: "line",
+          source: "itinerary-preview",
+          filter: ["==", ["get", "kind"], "estimate"],
+          layout: { "line-cap": "round", "line-join": "round" },
+          paint: {
+            "line-color": "#1e5b7a",
+            "line-width": 3,
+            "line-opacity": 0.7,
+            "line-dasharray": [1, 2],
+          },
+        },
+        before,
+      );
+      map.addLayer(
+        {
+          id: "itinerary-ferry-casing",
+          type: "line",
+          source: "itinerary-preview",
+          filter: ["==", ["get", "kind"], "ferry"],
+          layout: { "line-cap": "round", "line-join": "round" },
+          paint: { "line-color": "#fffdf8", "line-width": 11 },
+        },
+        before,
+      );
+      map.addLayer(
+        {
+          id: "itinerary-ferry",
+          type: "line",
+          source: "itinerary-preview",
+          filter: ["==", ["get", "kind"], "ferry"],
+          layout: { "line-cap": "round", "line-join": "round" },
+          paint: { "line-color": "#0e7a43", "line-width": 6 },
+        },
+        before,
+      );
+      map.addLayer({
+        id: "itinerary-ends",
+        type: "circle",
+        source: "itinerary-preview",
+        filter: ["==", ["geometry-type"], "Point"],
+        paint: {
+          "circle-radius": 8,
+          "circle-color": "#0e7a43",
+          "circle-stroke-color": "#fffdf8",
+          "circle-stroke-width": 3,
+        },
+      });
+      map.addLayer({
+        id: "itinerary-end-labels",
+        type: "symbol",
+        source: "itinerary-preview",
+        filter: ["==", ["geometry-type"], "Point"],
+        layout: {
+          "text-field": ["get", "label"],
+          "text-font": ["Noto Sans Bold"],
+          "text-size": 11,
+          "text-offset": [0, 1.8],
+          "text-allow-overlap": true,
+        },
+        paint: { "text-color": "#16324a", "text-halo-color": "#fffdf8", "text-halo-width": 2 },
+      });
     }
     const source = map.getSource("itinerary-preview") as GeoJSONSource;
     if (!itineraryPreview) {
@@ -774,40 +878,103 @@ export default function FerryMap({
     // Le remettre à zéro avant de calculer la caméra évite de déporter l'itinéraire dans l'Atlantique.
     map.setPadding({ top: 0, right: 0, bottom: 0, left: 0 });
     const preview = itineraryPreview;
-    source.setData({ type: "FeatureCollection", features: [
-      ...preview.alternatives.map((coordinates) => ({ type: "Feature" as const, properties: { kind: "alternative" }, geometry: { type: "LineString" as const, coordinates } })),
-      { type: "Feature" as const, properties: { kind: preview.roadDetailed ? "road" : "estimate" }, geometry: { type: "LineString" as const, coordinates: preview.roadToPort } },
-      { type: "Feature", properties: { kind: "ferry" }, geometry: { type: "LineString", coordinates: preview.ferry } },
-      { type: "Feature" as const, properties: { kind: preview.roadDetailed ? "road" : "estimate" }, geometry: { type: "LineString" as const, coordinates: preview.roadFromPort } },
-      { type: "Feature", properties: { label: "Départ" }, geometry: { type: "Point", coordinates: preview.origin } },
-      { type: "Feature", properties: { label: "Destination" }, geometry: { type: "Point", coordinates: preview.destination } },
-    ] });
+    source.setData({
+      type: "FeatureCollection",
+      features: [
+        ...preview.alternatives.map((coordinates) => ({
+          type: "Feature" as const,
+          properties: { kind: "alternative" },
+          geometry: { type: "LineString" as const, coordinates },
+        })),
+        {
+          type: "Feature" as const,
+          properties: { kind: preview.roadDetailed ? "road" : "estimate" },
+          geometry: { type: "LineString" as const, coordinates: preview.roadToPort },
+        },
+        {
+          type: "Feature",
+          properties: { kind: "ferry" },
+          geometry: { type: "LineString", coordinates: preview.ferry },
+        },
+        {
+          type: "Feature" as const,
+          properties: { kind: preview.roadDetailed ? "road" : "estimate" },
+          geometry: { type: "LineString" as const, coordinates: preview.roadFromPort },
+        },
+        {
+          type: "Feature",
+          properties: { label: "Départ" },
+          geometry: { type: "Point", coordinates: preview.origin },
+        },
+        {
+          type: "Feature",
+          properties: { label: "Destination" },
+          geometry: { type: "Point", coordinates: preview.destination },
+        },
+      ],
+    });
     if (preview.fit === false) return;
     const padding = viewPadding();
     const width = containerRef.current?.clientWidth ?? 0;
     const height = containerRef.current?.clientHeight ?? 0;
-    if (width - padding.left - padding.right < 100 || height - padding.top - padding.bottom < 100) return;
+    if (width - padding.left - padding.right < 100 || height - padding.top - padding.bottom < 100)
+      return;
     const cameraFingerprint = `${preview.routeId}|${preview.origin.join(",")}|${preview.destination.join(",")}|${width}x${height}|${padding.left},${padding.right},${padding.top},${padding.bottom}`;
     if (itineraryCameraRef.current === cameraFingerprint) return;
     itineraryCameraRef.current = cameraFingerprint;
     // Les extrémités suffisent au cadrage : les points intermédiaires d'une géométrie
     // routière peuvent contenir un détour qui dézoomerait toute la carte.
-    const points = [preview.origin, preview.departurePort, preview.arrivalPort, preview.destination];
+    const points = [
+      preview.origin,
+      preview.departurePort,
+      preview.arrivalPort,
+      preview.destination,
+    ];
     const bounds: [[number, number], [number, number]] = [
-      [Math.min(...points.map((point) => point[0])) - 0.15, Math.min(...points.map((point) => point[1])) - 0.15],
-      [Math.max(...points.map((point) => point[0])) + 0.15, Math.max(...points.map((point) => point[1])) + 0.15],
+      [
+        Math.min(...points.map((point) => point[0])) - 0.15,
+        Math.min(...points.map((point) => point[1])) - 0.15,
+      ],
+      [
+        Math.max(...points.map((point) => point[0])) + 0.15,
+        Math.max(...points.map((point) => point[1])) + 0.15,
+      ],
     ];
     // Le centre géographique peut sortir de l'itinéraire avec un volet asymétrique :
     // c'est normal. MapLibre place alors le trajet dans la partie réellement visible.
     map.fitBounds(bounds, { padding, maxZoom: 5.8, linear: true, duration: cameraDuration(700) });
-  }, [itineraryPreview?.key, mapReady, mapViewportKey, isMobile, mobileBottomInset, desktopLeftInset]);
+  }, [
+    itineraryPreview?.key,
+    mapReady,
+    mapViewportKey,
+    isMobile,
+    mobileBottomInset,
+    desktopLeftInset,
+  ]);
 
   useEffect(() => {
     const map = mapRef.current;
     if (!map || !mapReady) return;
-    const ordinaryLayers = ["ferry-routes-glow", "ferry-routes-casing", "ferry-routes-line", "ferry-routes-duration", "fleet-halo", "fleet-ships", "fleet-label", "fleet-hover-halo"];
+    const ordinaryLayers = [
+      "ferry-routes-glow",
+      "ferry-routes-casing",
+      "ferry-routes-line",
+      "ferry-routes-duration",
+      "fleet-halo",
+      "fleet-ships",
+      "fleet-hover-halo",
+    ];
     for (const id of ordinaryLayers) {
-      if (map.getLayer(id)) map.setLayoutProperty(id, "visibility", itineraryPreview ? "none" : id === "ferry-routes-duration" && isMobile && !hasFocus ? "none" : "visible");
+      if (map.getLayer(id))
+        map.setLayoutProperty(
+          id,
+          "visibility",
+          itineraryPreview
+            ? "none"
+            : id === "ferry-routes-duration" && isMobile && !hasFocus
+              ? "none"
+              : "visible",
+        );
     }
   }, [itineraryPreview, isMobile, hasFocus, mapReady]);
 
@@ -841,7 +1008,16 @@ export default function FerryMap({
         duration: cameraDuration(600),
       });
     }
-  }, [isMobile, mapReady, mobileBottomInset, desktopLeftInset, fitPortIds.join("|"), ports.length, itineraryPreview?.key, portsMode]);
+  }, [
+    isMobile,
+    mapReady,
+    mobileBottomInset,
+    desktopLeftInset,
+    fitPortIds.join("|"),
+    ports.length,
+    itineraryPreview?.key,
+    portsMode,
+  ]);
 
   useEffect(() => {
     const map = mapRef.current;
@@ -1271,17 +1447,33 @@ export default function FerryMap({
   useEffect(() => {
     const map = mapRef.current;
     if (!map || !mapReady || !companyFocusShips.length) return;
-    const points = companyFocusShips.map((ship) => ship.live
-      ? [ship.live.position.longitude, ship.live.position.latitude] as [number, number]
-      : ship.lngLat);
+    const points = companyFocusShips.map((ship) =>
+      ship.live
+        ? ([ship.live.position.longitude, ship.live.position.latitude] as [number, number])
+        : ship.lngLat,
+    );
     const first = points[0];
     if (points.length === 1 && first) {
-      map.easeTo({ center: first, zoom: Math.max(map.getZoom(), 6), padding: viewPadding(), duration: cameraDuration(650) });
+      map.easeTo({
+        center: first,
+        zoom: Math.max(map.getZoom(), 6),
+        padding: viewPadding(),
+        duration: cameraDuration(650),
+      });
     } else {
-      map.fitBounds([
-        [Math.min(...points.map((point) => point[0])), Math.min(...points.map((point) => point[1]))],
-        [Math.max(...points.map((point) => point[0])), Math.max(...points.map((point) => point[1]))],
-      ], { padding: viewPadding(), maxZoom: 6.5, duration: cameraDuration(650) });
+      map.fitBounds(
+        [
+          [
+            Math.min(...points.map((point) => point[0])),
+            Math.min(...points.map((point) => point[1])),
+          ],
+          [
+            Math.max(...points.map((point) => point[0])),
+            Math.max(...points.map((point) => point[1])),
+          ],
+        ],
+        { padding: viewPadding(), maxZoom: 6.5, duration: cameraDuration(650) },
+      );
     }
   }, [companyFocusShips.map((ship) => ship.id).join("|"), mapReady]);
 
@@ -1297,20 +1489,36 @@ export default function FerryMap({
     if (portsMode) {
       // Cadre les ports réellement actifs dans la zone visible de la carte.
       // Le minZoom précédent empêchait fitBounds d'inclure la côte algérienne.
-      const visiblePorts = ports.filter((port) => port.status === "active" && port.longitude >= -10 && port.longitude <= 16 && port.latitude >= 34 && port.latitude <= 46);
+      const visiblePorts = ports.filter(
+        (port) =>
+          port.status === "active" &&
+          port.longitude >= -10 &&
+          port.longitude <= 16 &&
+          port.latitude >= 34 &&
+          port.latitude <= 46,
+      );
       const lngs = visiblePorts.map((port) => port.longitude);
       const lats = visiblePorts.map((port) => port.latitude);
       map.setMinZoom(2.2);
-      const bounds: [[number, number], [number, number]] = visiblePorts.length > 1
-        ? [[Math.min(...lngs) - 0.55, Math.min(...lats) - 0.55], [Math.max(...lngs) + 0.55, Math.max(...lats) + 0.55]]
-        : OVERVIEW_BOUNDS;
+      const bounds: [[number, number], [number, number]] =
+        visiblePorts.length > 1
+          ? [
+              [Math.min(...lngs) - 0.55, Math.min(...lats) - 0.55],
+              [Math.max(...lngs) + 0.55, Math.max(...lats) + 0.55],
+            ]
+          : OVERVIEW_BOUNDS;
       map.fitBounds(bounds, { padding: viewPadding(), maxZoom: 5, duration: cameraDuration(800) });
     } else if (!isMobile) {
-      map.easeTo({ center: [4, 39], zoom: 4.2, padding: viewPadding(), duration: cameraDuration(800) });
+      map.easeTo({
+        center: [4, 39],
+        zoom: 4.2,
+        padding: viewPadding(),
+        duration: cameraDuration(800),
+      });
       return;
     }
     container.dataset["pulsePorts"] = "true";
-    if (map.getLayer("fleet-label")) map.setPaintProperty("fleet-label", "text-opacity", 0.15);
+    if (map.getLayer("fleet-ships")) map.setPaintProperty("fleet-ships", "text-opacity", 0.15);
     if (map.getLayer("fleet-ships")) map.setPaintProperty("fleet-ships", "icon-opacity", 0.35);
 
     // N'afficher que les noms visibles et suffisamment espacés, sans déplacer la carte.
@@ -1354,8 +1562,8 @@ export default function FerryMap({
         delete marker.getElement().dataset["portFocusLabel"];
       });
       if (!map.getStyle()) return;
-      if (map.getLayer("fleet-label"))
-        map.setPaintProperty("fleet-label", "text-opacity", ["get", "opacity"]);
+      if (map.getLayer("fleet-ships"))
+        map.setPaintProperty("fleet-ships", "text-opacity", ["get", "opacity"]);
       if (map.getLayer("fleet-ships"))
         map.setPaintProperty("fleet-ships", "icon-opacity", ["get", "opacity"]);
     };
@@ -1373,7 +1581,16 @@ export default function FerryMap({
       map.off("zoomstart", clear);
       clear();
     };
-  }, [portsPulseKey, portsMode, mapReady, isMobile, ports, portMeta, mobileBottomInset, desktopLeftInset]);
+  }, [
+    portsPulseKey,
+    portsMode,
+    mapReady,
+    isMobile,
+    ports,
+    portMeta,
+    mobileBottomInset,
+    desktopLeftInset,
+  ]);
 
   useEffect(() => {
     const map = mapRef.current;
@@ -1412,7 +1629,7 @@ export default function FerryMap({
     mapReady,
   ]);
 
-  // Flotte : mise à jour chaque seconde (un navire avance très lentement : inutile d'animer plus vite).
+  // Positions à leur vitesse réelle ; ne pas relancer le placement des symboles à l'arrêt.
   useEffect(() => {
     const map = mapRef.current;
     if (!map || !mapReady) return;
@@ -1426,11 +1643,15 @@ export default function FerryMap({
       const source = map.getSource("fleet") as GeoJSONSource | undefined;
       if (!source) return;
       const clock = Date.now();
-      source.setData({
+      const data: FleetFrame = {
         type: "FeatureCollection",
         features: fleetRef.current.map((ship) => {
           // Un navire choisi depuis le tableau de bord reste pleinement visible, quelle que soit la ligne active.
-          const focused = focusShipId === ship.id;
+          const focused =
+            focusShipId === ship.id ||
+            (selectedVesselId !== null && selectedVesselId === ship.vesselId) ||
+            (selection?.type === "vessel" && selection.id === ship.vesselId) ||
+            (selection?.type === "departure" && selection.id === ship.departureId);
           const dimmed =
             !focused &&
             (!visible.has(ship.routeId) || (focus.size > 0 && !focus.has(ship.routeId)));
@@ -1482,7 +1703,7 @@ export default function FerryMap({
               state: ship.state,
               icon:
                 ship.state === "sea"
-                  ? `ship-sea-${Math.round((((course % 360) + 360) % 360) / 45) % 8}`
+                  ? `ship-sea-${Math.sin((course * Math.PI) / 180) < -0.15 ? "west" : "east"}`
                   : "ship-dock",
               course,
               name: ship.name,
@@ -1500,16 +1721,34 @@ export default function FerryMap({
                           : "#1d6fb8"
                         : "#5b6b7a",
               shipId: ship.id,
+              priority: focused ? 0 : selected ? 1 : live ? 2 : ship.state === "sea" ? 3 : 4,
               departureId: ship.departureId,
               vesselId: ship.vesselId ?? "",
-              opacity: 1,
+              opacity: dimmed ? 0.35 : 1,
               haloColor: selected ? "#0e7a43" : "#1e5b7a",
-              haloOpacity: selected ? 0.24 : live ? 0.15 : 0.08,
+              haloOpacity: selected ? 0.18 : 0,
             },
             geometry: { type: "Point" as const, coordinates },
           };
         }),
-      });
+      };
+      const previous = lastFleetFrame.current;
+      const changed =
+        !previous ||
+        previous.source !== source ||
+        previous.data.features.length !== data.features.length ||
+        data.features.some((feature, index) => {
+          const before = previous.data.features[index];
+          if (!before || JSON.stringify(before.properties) !== JSON.stringify(feature.properties))
+            return true;
+          const a = map.project(before.geometry.coordinates as [number, number]);
+          const b = map.project(feature.geometry.coordinates as [number, number]);
+          return Math.hypot(a.x - b.x, a.y - b.y) >= 0.3;
+        });
+      if (changed) {
+        source.setData(data);
+        lastFleetFrame.current = { source, data };
+      }
     };
 
     // Les positions se mettent à jour, sans animation décorative continue du sillage.
@@ -1526,6 +1765,8 @@ export default function FerryMap({
     visibleRouteIds,
     focusRouteIds,
     focusShipId,
+    selectedVesselId,
+    hoverRouteId,
     selection?.type,
     selection?.id,
     routes,

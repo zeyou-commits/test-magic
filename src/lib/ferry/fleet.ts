@@ -62,13 +62,14 @@ export function buildFleet(
   // déduit des horaires. Certains fournisseurs gardent une ligne AIS même après perte du signal.
   const liveByVessel = new Map(
     liveShips
-      .filter((ship) =>
-        Number.isFinite(ship.position.latitude) &&
-        Number.isFinite(ship.position.longitude) &&
-        Math.abs(ship.position.latitude) <= 90 &&
-        Math.abs(ship.position.longitude) <= 180 &&
-        ship.ageMinutes >= 0 &&
-        ship.ageMinutes <= LIVE_MAX_AGE_MINUTES
+      .filter(
+        (ship) =>
+          Number.isFinite(ship.position.latitude) &&
+          Number.isFinite(ship.position.longitude) &&
+          Math.abs(ship.position.latitude) <= 90 &&
+          Math.abs(ship.position.longitude) <= 180 &&
+          ship.ageMinutes >= 0 &&
+          ship.ageMinutes <= LIVE_MAX_AGE_MINUTES,
       )
       .map((ship) => [ship.vessel.id, ship]),
   );
@@ -102,9 +103,20 @@ export function buildFleet(
 
   // Départs en chevauchement pour un même navire : jamais utilisés pour le placer en mer.
   const unreliable = overlappingDepartureIds(
-    [...groups.entries()].filter(([k]) => !k.startsWith("anon:")).flatMap(([k, legs]) =>
-      legs.map((l) => ({ id: l.departure.id, vesselId: k, fromId: l.from.id, toId: l.to.id, fromName: l.from.name, toName: l.to.name, start: l.start, end: l.end })),
-    ),
+    [...groups.entries()]
+      .filter(([k]) => !k.startsWith("anon:"))
+      .flatMap(([k, legs]) =>
+        legs.map((l) => ({
+          id: l.departure.id,
+          vesselId: k,
+          fromId: l.from.id,
+          toId: l.to.id,
+          fromName: l.from.name,
+          toName: l.to.name,
+          start: l.start,
+          end: l.end,
+        })),
+      ),
   );
 
   const ships: FleetShip[] = [];
@@ -135,7 +147,6 @@ export function buildFleet(
       });
       return;
     }
-
 
     const current = legs.find(
       (leg) => leg.start <= now && now <= leg.end && !unreliable.has(leg.departure.id),
@@ -168,7 +179,9 @@ export function buildFleet(
     }
 
     const next = legs.find((leg) => leg.start > now);
-    const last = [...legs].reverse().find((leg) => leg.end < now && !unreliable.has(leg.departure.id));
+    const last = [...legs]
+      .reverse()
+      .find((leg) => leg.end < now && !unreliable.has(leg.departure.id));
     let port: Port | undefined;
     let leg: Leg | undefined;
     const dockWindow = vessel ? DOCK_BEFORE_DEPARTURE : ANONYMOUS_DOCK_BEFORE;
@@ -207,8 +220,9 @@ export function buildFleet(
     const offshoreDown = port?.country_code !== "DZ"; // ports européens : mer au sud ; ports algériens : mer au nord
     list.sort((a, b) => a.name.localeCompare(b.name));
     list.forEach((ship, index) => {
-      ship.dx = (index - (list.length - 1) / 2) * 17;
-      ship.dy = offshoreDown ? 20 : -20;
+      // L'icône reste hors de la cible tactile du port (44 px) et des ferrys voisins.
+      ship.dx = (index - (list.length - 1) / 2) * 52;
+      ship.dy = offshoreDown ? 38 : -38;
       ship.course = index % 2 === 0 ? 90 : 270;
     });
   });

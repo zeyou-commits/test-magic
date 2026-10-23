@@ -1,0 +1,29 @@
+BLEDWAY — CORRECTIF ADMIN ET MARQUEURS — 23 OCTOBRE 2026
+
+À INTÉGRER DANS LE GIT CLOUD
+Copier les 12 fichiers src/ et public/ dans le dépôt en conservant exactement leurs chemins. Les dossiers et fichiers nouveaux font partie du correctif. La base GitHub vérifiée est le commit 179cec791ce97a96bdc98dd08ee75a8798aa600d. Si le cloud a évolué depuis, fusionner les fichiers concernés avant de publier.
+Aucune migration Supabase, nouvelle clé ou modification des secrets n'est nécessaire.
+Après intégration : lancer les tests et la compilation, puis effectuer le déploiement Vercel habituel.
+
+CHANGEMENTS
+- Chaque indicateur du dashboard et chaque priorité ouvrent leur liste avec le bon filtre : départs aujourd'hui, départs futurs sans navire, nouveaux signalements, avis ports en attente.
+- Le filtre actif est visible et conservé dans l'URL : un rechargement et le bouton Retour du navigateur le conservent. Le bouton Voir tout retire cette restriction.
+- Les départs sans navire excluent les départs déjà partis et les annulations. L'indicateur et sa liste appliquent la même règle. Après affectation d'un navire, le départ quitte cette liste et l'indicateur est actualisé.
+- Le départ affiche explicitement Navire à affecter quand le champ est vide. Les boutons d'action se replient sur plusieurs lignes sur petit écran.
+- La mention La route du Bled sous le logo est retirée du composant d'identité partagé et du titre masqué de la carte.
+- Nouveau ferry vectoriel léger : profil stable, volume discret, coque bleu marine, cheminée verte, détails plus sobres et ombre légère. Deux profils est/ouest remplacent les huit orientations à flèche.
+- Le nom et le ferry forment un symbole commun : priorité au navire sélectionné, noms facultatifs si la place manque, absence de nom isolé quand l'icône est masquée. Les symboles trop proches se dévoilent avec le zoom et la sélection depuis les listes.
+- Les ferrys à quai sont espacés et leur icône est placée hors de la cible tactile du port. La sélection d'un élément réouvre le volet sur PC. Le navire sélectionné est prioritaire, même lorsque plusieurs bateaux partagent sa ligne.
+- Le placement n'est plus réécrit chaque seconde quand rien ne bouge à l'écran. Les positions restent celles du moteur de suivi existant. Les transitions respectent la préférence Réduire les animations.
+
+VÉRIFICATIONS
+- TypeScript : compilation sans erreur.
+- Tests de logique admin : 6 tests réussis.
+- Parcours admin dans le navigateur à 320, 390, 768, 1024 et 1440 px : filtre sans navire, rechargement, Voir tout, Retour navigateur, affectation puis retrait du départ, nouveaux signalements, avis en attente et journée entière.
+- Carte sur la version compilée : 7 contrôles réussis à 320, 390, 768, 1024 et 1440 px ; sélection mobile, survol et sélection d'un bateau à quai sur PC, réouverture du volet, absence de réécriture de la flotte immobile pendant les mesures. Aucun débordement horizontal ni erreur JavaScript dans ces scénarios.
+- Compilation npm run build:vercel réussie ; contrôle local de l'accueil compilé HTTP 200 et des ressources.
+- ESLint : aucune erreur sur les fichiers contrôlés ; des avertissements déjà présents dans les composants carte et navigation.
+- Les essais admin utilisent des comptes et réponses Supabase simulés : aucune donnée de production ni notification n'a été modifiée.
+
+PROMPT POUR TON IA GIT CLOUD
+Intègre le correctif joint à BledWay en conservant les chemins des 12 fichiers de src/ et public/. Vérifie les modifications cloud intervenues depuis le commit de base avant toute substitution. Les filtres du dashboard utilisent maintenant les paramètres tab et filter de /admin et le module src/lib/admin/navigation.ts ; ne retirer aucun de ces fichiers. Le rendu des marqueurs dépend à la fois de FerryMap.tsx, shipIcons.ts et public/images/ferry-marker.svg. Lance npx vitest run src/lib/admin/navigation.test.ts, npx tsc --noEmit et npm run build:vercel. Publie les changements via le fonctionnement Git/Vercel habituel. Aucune opération Supabase n'est requise. Vérifie enfin les indicateurs sur le site déployé avec un compte admin et le nouveau rendu sur mobile et PC.

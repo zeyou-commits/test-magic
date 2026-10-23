@@ -1,0 +1,61 @@
+export const adminTabs = [
+  "overview",
+  "reviews",
+  "community",
+  "reports",
+  "alerts",
+  "notifications",
+  "companies",
+  "departures",
+  "schedules",
+  "ports",
+  "routes",
+  "vessels",
+  "import",
+  "data",
+] as const;
+
+export type AdminTab = (typeof adminTabs)[number];
+export type AdminFilter = "today" | "unassigned" | "new" | "pending";
+export type DepartureScope = Extract<AdminFilter, "today" | "unassigned">;
+
+export function adminSearch(search: Record<string, unknown>): {
+  tab?: AdminTab;
+  filter?: AdminFilter;
+} {
+  const tab = adminTabs.includes(search["tab"] as AdminTab)
+    ? (search["tab"] as AdminTab)
+    : "overview";
+  const filter = search["filter"];
+  if (
+    (tab === "departures" && (filter === "today" || filter === "unassigned")) ||
+    (tab === "reports" && filter === "new") ||
+    (tab === "reviews" && filter === "pending")
+  ) {
+    return { tab, filter };
+  }
+  return { tab };
+}
+
+/** Même journée locale pour l'indicateur et sa liste, y compris aux changements d'heure. */
+export function adminDayRange(now = new Date()) {
+  const start = new Date(now);
+  start.setHours(0, 0, 0, 0);
+  const end = new Date(start);
+  end.setDate(end.getDate() + 1);
+  return { start: start.toISOString(), end: end.toISOString() };
+}
+
+export function matchesDepartureScope(
+  departure: { departure_at: string; vessel_id: string | null; status: string },
+  scope: DepartureScope | undefined,
+  now = new Date(),
+) {
+  if (!scope) return true;
+  const timestamp = Date.parse(departure.departure_at);
+  if (scope === "unassigned") {
+    return !departure.vessel_id && departure.status !== "cancelled" && timestamp >= now.getTime();
+  }
+  const { start, end } = adminDayRange(now);
+  return timestamp >= Date.parse(start) && timestamp < Date.parse(end);
+}

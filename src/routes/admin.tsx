@@ -11,6 +11,13 @@ import { NotificationOverview } from "@/components/admin/NotificationOverview";
 import { DashboardOverview } from "@/components/admin/DashboardOverview";
 import { useAdminCounts } from "@/hooks/useAdminCounts";
 import { AdminWorkspace } from "@/components/admin/AdminWorkspace";
+import { AdminFilterNotice } from "@/components/admin/AdminFilterNotice";
+import {
+  adminSearch,
+  matchesDepartureScope,
+  type AdminFilter,
+  type DepartureScope,
+} from "@/lib/admin/navigation";
 import { adminNotificationQuery } from "@/lib/notifications/admin";
 import { CompanyBadge } from "@/components/panel/CompanyBadge";
 import { Button } from "@/components/ui/button";
@@ -37,7 +44,13 @@ import {
 import { routeColor, routePalette } from "@/lib/ferry/colors";
 import { portPresets } from "@/lib/ferry/portPresets";
 import type { Port } from "@/lib/ferry/types";
-import { dateKeyInZone, portTimeZone, wallTimeInZone, zonedTimeToUtc, zoneLabel } from "@/lib/ferry/time";
+import {
+  dateKeyInZone,
+  portTimeZone,
+  wallTimeInZone,
+  zonedTimeToUtc,
+  zoneLabel,
+} from "@/lib/ferry/time";
 
 // Libellés français des statuts et motifs (la base stocke des codes en anglais).
 const reviewStatusLabel: Record<string, string> = {
@@ -87,6 +100,7 @@ const departureStatusLabel: Record<string, string> = {
 };
 
 export const Route = createFileRoute("/admin")({
+  validateSearch: adminSearch,
   head: () => ({
     meta: [
       { name: "robots", content: "noindex, nofollow" },
@@ -140,7 +154,13 @@ function AdminPage() {
   return <AdminTabs />;
 }
 
-function CountBadge({ value, tone = "warn" }: { value: number | undefined; tone?: "warn" | "muted" }) {
+function CountBadge({
+  value,
+  tone = "warn",
+}: {
+  value: number | undefined;
+  tone?: "warn" | "muted";
+}) {
   if (!value) return null;
   return (
     <span
@@ -156,40 +176,76 @@ function CountBadge({ value, tone = "warn" }: { value: number | undefined; tone?
 function AdminTabs() {
   const { user } = useAuth();
   const community = useQuery(communityQuery(undefined, undefined, true, user?.id));
-  const [tab, setTab] = useState("overview");
+  const { tab = "overview", filter } = Route.useSearch();
+  const navigate = Route.useNavigate();
+  const navigateTo = (id: string, nextFilter?: AdminFilter) => {
+    void navigate({ search: adminSearch({ tab: id, filter: nextFilter }), resetScroll: false });
+  };
+  const clearFilter = () => navigateTo(tab);
   const queryClient = useQueryClient();
   const notificationOverview = useQuery(adminNotificationQuery(user?.id));
   const { data: counts } = useAdminCounts();
   const { data: alerts } = usePlanningAlerts();
-  useEffect(() => queryClient.getMutationCache().subscribe((event) => {
-    if (event.type === "updated" && event.action.type === "success") {
-      void queryClient.invalidateQueries({ queryKey: ["admin", "notification-overview"] });
-      void queryClient.invalidateQueries({ queryKey: ["admin", "counts"] });
-    }
-  }), [queryClient]);
-  const badges = { notifications: notificationOverview.data?.campaigns.filter((campaign) => ["pending", "approved"].includes(campaign.status)).length ?? 0, reviews: counts?.reviews ?? 0, reports: counts?.reports ?? 0, alerts: alerts?.length ?? 0, community: community.data?.reviews.filter((review) => review.status === "pending").length ?? 0 };
+  useEffect(
+    () =>
+      queryClient.getMutationCache().subscribe((event) => {
+        if (event.type === "updated" && event.action.type === "success") {
+          void queryClient.invalidateQueries({ queryKey: ["admin", "notification-overview"] });
+          void queryClient.invalidateQueries({ queryKey: ["admin", "counts"] });
+        }
+      }),
+    [queryClient],
+  );
+  const badges = {
+    notifications:
+      notificationOverview.data?.campaigns.filter((campaign) =>
+        ["pending", "approved"].includes(campaign.status),
+      ).length ?? 0,
+    reviews: counts?.reviews ?? 0,
+    reports: counts?.reports ?? 0,
+    alerts: alerts?.length ?? 0,
+    community: community.data?.reviews.filter((review) => review.status === "pending").length ?? 0,
+  };
   return (
-      <Tabs value={tab} onValueChange={setTab}>
-        <AdminWorkspace tab={tab} onNavigate={setTab} badges={badges}>
-        <TabsContent value="overview"><DashboardOverview onNavigate={setTab} can={() => true} />{notificationOverview.error && <p role="alert" className="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">Le centre de notifications n’est pas disponible. Vérifiez la migration des campagnes et la configuration serveur.</p>}</TabsContent>
-        <TabsContent value="reviews">
-          <ReviewsModeration />
+    <Tabs value={tab} onValueChange={navigateTo}>
+      <AdminWorkspace tab={tab} onNavigate={navigateTo} badges={badges}>
+        <TabsContent value="overview">
+          <DashboardOverview onNavigate={navigateTo} can={() => true} />
+          {notificationOverview.error && (
+            <p
+              role="alert"
+              className="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900"
+            >
+              Le centre de notifications n’est pas disponible. Vérifiez la migration des campagnes
+              et la configuration serveur.
+            </p>
+          )}
         </TabsContent>
-        <TabsContent value="community"><CommunityModeration /></TabsContent>
+        <TabsContent value="reviews">
+          <ReviewsModeration pendingOnly={filter === "pending"} onClearFilter={clearFilter} />
+        </TabsContent>
+        <TabsContent value="community">
+          <CommunityModeration />
+        </TabsContent>
         <TabsContent value="reports">
-          <ReportsModeration />
+          <ReportsModeration newOnly={filter === "new"} onClearFilter={clearFilter} />
         </TabsContent>
         <TabsContent value="alerts">
           <PlanningAlerts
             renderEditor={(id, onDone) => <AlertDepartureEditor departureId={id} onDone={onDone} />}
           />
         </TabsContent>
-        <TabsContent value="notifications"><NotificationOverview /></TabsContent>
+        <TabsContent value="notifications">
+          <NotificationOverview />
+        </TabsContent>
         <TabsContent value="companies">
           <CompaniesAdmin />
         </TabsContent>
         <TabsContent value="departures">
-          <DeparturesAdmin />
+          <DeparturesAdmin
+            scope={filter === "today" || filter === "unassigned" ? filter : undefined}
+            onClearFilter={clearFilter}
+          />
         </TabsContent>
         <TabsContent value="schedules">
           <SchedulesAdmin />
@@ -209,12 +265,18 @@ function AdminTabs() {
         <TabsContent value="data">
           <DataAdmin />
         </TabsContent>
-        </AdminWorkspace>
-      </Tabs>
+      </AdminWorkspace>
+    </Tabs>
   );
 }
 
-function AlertDepartureEditor({ departureId, onDone }: { departureId: string; onDone: () => void }) {
+function AlertDepartureEditor({
+  departureId,
+  onDone,
+}: {
+  departureId: string;
+  onDone: () => void;
+}) {
   const { data, isLoading } = useQuery({
     queryKey: ["admin", "departure-edit", departureId],
     queryFn: async () => {
@@ -251,7 +313,8 @@ function CompaniesAdmin() {
   return (
     <Panel>
       <p className="mb-3 text-sm text-muted-foreground">
-        Collez l'adresse (URL) du logo officiel. Sans logo, une pastille avec les initiales s'affiche.
+        Collez l'adresse (URL) du logo officiel. Sans logo, une pastille avec les initiales
+        s'affiche.
       </p>
       <ul className="divide-y divide-border">
         {companies.map((c) => (
@@ -265,7 +328,13 @@ function CompaniesAdmin() {
 function CompanyRow({
   company,
 }: {
-  company: { id: string; name: string; logo_url: string | null; website_url: string | null; description: string | null };
+  company: {
+    id: string;
+    name: string;
+    logo_url: string | null;
+    website_url: string | null;
+    description: string | null;
+  };
 }) {
   const queryClient = useQueryClient();
   const [name, setName] = useState(company.name);
@@ -295,11 +364,25 @@ function CompanyRow({
   return (
     <li className="flex flex-wrap items-end gap-3 py-3">
       <CompanyBadge name={name} logoUrl={logo} size={56} />
-      <label className="text-xs">Nom<Input value={name} onChange={(e) => setName(e.target.value)} /></label>
-      <label className="min-w-56 flex-1 text-xs">URL du logo<Input value={logo} placeholder="https://…" onChange={(e) => setLogo(e.target.value)} /></label>
-      <label className="min-w-48 flex-1 text-xs">Site officiel<Input value={site} placeholder="https://…" onChange={(e) => setSite(e.target.value)} /></label>
-      <label className="w-full text-xs">Description<Input value={desc} onChange={(e) => setDesc(e.target.value)} /></label>
-      <Button size="sm" disabled={save.isPending} onClick={() => save.mutate()}>Enregistrer</Button>
+      <label className="text-xs">
+        Nom
+        <Input value={name} onChange={(e) => setName(e.target.value)} />
+      </label>
+      <label className="min-w-56 flex-1 text-xs">
+        URL du logo
+        <Input value={logo} placeholder="https://…" onChange={(e) => setLogo(e.target.value)} />
+      </label>
+      <label className="min-w-48 flex-1 text-xs">
+        Site officiel
+        <Input value={site} placeholder="https://…" onChange={(e) => setSite(e.target.value)} />
+      </label>
+      <label className="w-full text-xs">
+        Description
+        <Input value={desc} onChange={(e) => setDesc(e.target.value)} />
+      </label>
+      <Button size="sm" disabled={save.isPending} onClick={() => save.mutate()}>
+        Enregistrer
+      </Button>
     </li>
   );
 }
@@ -313,19 +396,32 @@ function CenteredNote({ children }: { children: React.ReactNode }) {
 }
 
 function Panel({ children }: { children: React.ReactNode }) {
-  return <div className="bw-admin-surface bw-admin-editor mt-4 overflow-x-auto p-4 sm:p-5">{children}</div>;
+  return (
+    <div className="bw-admin-surface bw-admin-editor mt-4 overflow-x-auto p-4 sm:p-5">
+      {children}
+    </div>
+  );
 }
 
-function ReviewsModeration() {
+function ReviewsModeration({
+  pendingOnly,
+  onClearFilter,
+}: {
+  pendingOnly: boolean;
+  onClearFilter: () => void;
+}) {
   const queryClient = useQueryClient();
   const { data: ports = [] } = useQuery(adminPortsQuery);
   const { data: reviews = [], isLoading } = useQuery({
-    queryKey: ["admin", "reviews"],
+    queryKey: ["admin", "reviews", pendingOnly],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("port_reviews")
         .select("*")
-        .in("status", ["pending", "approved", "published", "hidden", "rejected"])
+        .in(
+          "status",
+          pendingOnly ? ["pending"] : ["pending", "approved", "published", "hidden", "rejected"],
+        )
         .order("created_at", { ascending: false });
       if (error) throw new Error(error.message);
       return data;
@@ -355,6 +451,9 @@ function ReviewsModeration() {
 
   return (
     <Panel>
+      {pendingOnly && (
+        <AdminFilterNotice label="Avis ports en attente de modération" onClear={onClearFilter} />
+      )}
       {isLoading ? (
         <p className="text-sm text-muted-foreground">Chargement…</p>
       ) : reviews.length === 0 ? (
@@ -413,15 +512,20 @@ function ReviewsModeration() {
   );
 }
 
-function ReportsModeration() {
+function ReportsModeration({
+  newOnly,
+  onClearFilter,
+}: {
+  newOnly: boolean;
+  onClearFilter: () => void;
+}) {
   const queryClient = useQueryClient();
   const { data: reports = [], isLoading } = useQuery({
-    queryKey: ["admin", "reports"],
+    queryKey: ["admin", "reports", newOnly],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("reports")
-        .select("*")
-        .order("created_at", { ascending: false });
+      let query = supabase.from("reports").select("*").order("created_at", { ascending: false });
+      if (newOnly) query = query.eq("status", "new");
+      const { data, error } = await query;
       if (error) throw new Error(error.message);
       return data;
     },
@@ -444,6 +548,9 @@ function ReportsModeration() {
 
   return (
     <Panel>
+      {newOnly && (
+        <AdminFilterNotice label="Nouveaux signalements à traiter" onClear={onClearFilter} />
+      )}
       {isLoading ? (
         <p className="text-sm text-muted-foreground">Chargement…</p>
       ) : reports.length === 0 ? (
@@ -495,7 +602,13 @@ function DepartureEditor({
   vessels,
   onDone,
 }: {
-  departure: { id: string; departure_at: string; duration_minutes: number | null; vessel_id: string | null; status: string };
+  departure: {
+    id: string;
+    departure_at: string;
+    duration_minutes: number | null;
+    vessel_id: string | null;
+    status: string;
+  };
   timeZone: string;
   vessels: { id: string; name: string }[];
   onDone: () => void;
@@ -534,37 +647,86 @@ function DepartureEditor({
   });
   return (
     <div className="mt-2 flex w-full flex-wrap items-end gap-2 rounded-md border border-border p-2">
-      <label className="text-xs">Date<Input type="date" value={date} onChange={(e) => setDate(e.target.value)} /></label>
-      <label className="text-xs">Heure ({zoneLabel(timeZone)})<Input type="time" value={time} onChange={(e) => setTime(e.target.value)} /></label>
-      <label className="text-xs">Durée h<Input className="w-16" type="number" min={0} value={hours} onChange={(e) => setHours(e.target.value)} /></label>
-      <label className="text-xs">min<Input className="w-16" type="number" min={0} max={59} value={mins} onChange={(e) => setMins(e.target.value)} /></label>
-      <label className="text-xs">Navire
-        <select className="block h-9 rounded-md border border-input bg-background px-2 text-sm" value={vesselId} onChange={(e) => setVesselId(e.target.value)}>
+      <label className="text-xs">
+        Date
+        <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
+      </label>
+      <label className="text-xs">
+        Heure ({zoneLabel(timeZone)})
+        <Input type="time" value={time} onChange={(e) => setTime(e.target.value)} />
+      </label>
+      <label className="text-xs">
+        Durée h
+        <Input
+          className="w-16"
+          type="number"
+          min={0}
+          value={hours}
+          onChange={(e) => setHours(e.target.value)}
+        />
+      </label>
+      <label className="text-xs">
+        min
+        <Input
+          className="w-16"
+          type="number"
+          min={0}
+          max={59}
+          value={mins}
+          onChange={(e) => setMins(e.target.value)}
+        />
+      </label>
+      <label className="text-xs">
+        Navire
+        <select
+          className="block h-9 rounded-md border border-input bg-background px-2 text-sm"
+          value={vesselId}
+          onChange={(e) => setVesselId(e.target.value)}
+        >
           <option value="">—</option>
-          {vessels.map((v) => <option key={v.id} value={v.id}>{v.name}</option>)}
+          {vessels.map((v) => (
+            <option key={v.id} value={v.id}>
+              {v.name}
+            </option>
+          ))}
         </select>
       </label>
-      <Button size="sm" disabled={save.isPending} onClick={() => save.mutate()}>Enregistrer</Button>
-      <Button size="sm" variant="ghost" onClick={onDone}>Fermer</Button>
+      <Button size="sm" disabled={save.isPending} onClick={() => save.mutate()}>
+        Enregistrer
+      </Button>
+      <Button size="sm" variant="ghost" onClick={onDone}>
+        Fermer
+      </Button>
     </div>
   );
 }
 
-function DeparturesAdmin() {
+function DeparturesAdmin({
+  scope,
+  onClearFilter,
+}: {
+  scope: DepartureScope | undefined;
+  onClearFilter: () => void;
+}) {
   const queryClient = useQueryClient();
   const [period, setPeriod] = useState<"upcoming" | "recent" | "all">("upcoming");
   const [dateFilter, setDateFilter] = useState("");
-  const { data: periodDepartures = [], isLoading: loadingDeps } = useQuery(adminDeparturesQuery(period));
-  const departures = dateFilter
-    ? periodDepartures.filter((d) => d.departure_at.slice(0, 10) === dateFilter)
-    : periodDepartures;
+  const {
+    data: periodDepartures = [],
+    isLoading: loadingDeps,
+    error: departuresError,
+    refetch,
+  } = useQuery(adminDeparturesQuery(scope ? "upcoming" : period));
   const { data: routes = [] } = useQuery(adminRoutesQuery);
   const { data: ports = [] } = useQuery(adminPortsQuery);
   const { data: companies = [] } = useQuery(companiesQuery);
   const { data: vessels = [] } = useQuery({
     queryKey: ["admin", "vessels-lite"],
     queryFn: async () => {
-      const { data, error } = await supabase.from("vessels").select("id,name,company_id").order("name");
+      const { data, error } = await supabase
+        .from("vessels")
+        .select("id,name,company_id")
+        .order("name");
       if (error) throw new Error(error.message);
       return data ?? [];
     },
@@ -594,14 +756,39 @@ function DeparturesAdmin() {
   });
 
   const portName = (id: string) => ports.find((port) => port.id === id)?.name ?? "—";
-  const shown = companyFilter
-    ? departures.filter((d) => d.company_id === companyFilter)
-    : departures;
+  const now = new Date();
+  const shown = periodDepartures.filter((departure) => {
+    if (!matchesDepartureScope(departure, scope, now)) return false;
+    if (companyFilter && departure.company_id !== companyFilter) return false;
+    const route = routes.find((item) => item.id === departure.route_id);
+    const zone = portTimeZone(ports.find((port) => port.id === route?.departure_port_id));
+    return !dateFilter || dateKeyInZone(departure.departure_at, zone) === dateFilter;
+  });
 
   return (
     <Panel>
+      {scope && (
+        <AdminFilterNotice
+          label={
+            scope === "unassigned"
+              ? "Départs à venir sans navire · hors annulations"
+              : "Départs aujourd’hui"
+          }
+          onClear={onClearFilter}
+        />
+      )}
+      {departuresError && (
+        <p role="alert" className="mb-3 text-sm text-destructive">
+          Impossible de charger les départs.{" "}
+          <button type="button" className="underline" onClick={() => void refetch()}>
+            Réessayer
+          </button>
+        </p>
+      )}
       <div className="mb-3 flex flex-wrap items-center gap-2">
-        <label className="text-sm text-muted-foreground" htmlFor="dep-company">Compagnie</label>
+        <label className="text-sm text-muted-foreground" htmlFor="dep-company">
+          Compagnie
+        </label>
         <select
           id="dep-company"
           className="h-9 rounded-md border border-input bg-background px-2 text-sm"
@@ -609,13 +796,20 @@ function DeparturesAdmin() {
           onChange={(e) => setCompanyFilter(e.target.value)}
         >
           <option value="">Toutes</option>
-          {companies.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+          {companies.map((c) => (
+            <option key={c.id} value={c.id}>
+              {c.name}
+            </option>
+          ))}
         </select>
-        <label className="ml-2 text-sm text-muted-foreground" htmlFor="dep-period">Période</label>
+        <label className="ml-2 text-sm text-muted-foreground" htmlFor="dep-period">
+          Période
+        </label>
         <select
           id="dep-period"
           className="h-9 rounded-md border border-input bg-background px-2 text-sm"
           value={period}
+          disabled={!!scope}
           onChange={(e) => setPeriod(e.target.value as typeof period)}
         >
           <option value="upcoming">Aujourd'hui et à venir</option>
@@ -629,13 +823,23 @@ function DeparturesAdmin() {
           value={dateFilter}
           onChange={(e) => {
             setDateFilter(e.target.value);
-            if (e.target.value && e.target.value < new Date().toISOString().slice(0, 10)) setPeriod("all");
+            if (e.target.value && e.target.value < new Date().toISOString().slice(0, 10))
+              setPeriod("all");
           }}
         />
         <span className="text-xs text-muted-foreground">
           {loadingDeps ? "Chargement…" : `${shown.length} départ(s)`}
         </span>
       </div>
+      {!loadingDeps && !departuresError && shown.length === 0 && (
+        <p role="status" className="rounded-xl bg-secondary/40 p-4 text-sm text-muted-foreground">
+          Aucun départ ne correspond aux filtres.{" "}
+          {scope === "unassigned" &&
+            !companyFilter &&
+            !dateFilter &&
+            "Tous les départs à venir ont un navire affecté."}
+        </p>
+      )}
       <ul className="divide-y divide-border">
         {shown.map((departure) => {
           const route = routes.find((item) => item.id === departure.route_id);
@@ -643,7 +847,11 @@ function DeparturesAdmin() {
           const tz = portTimeZone(ports.find((port) => port.id === route?.departure_port_id));
           const vessel = vessels.find((v) => v.id === departure.vessel_id);
           return (
-            <li key={departure.id} className="flex flex-wrap items-center gap-3 py-3">
+            <li
+              key={departure.id}
+              className="flex flex-wrap items-center gap-3 py-3"
+              data-departure-id={departure.id}
+            >
               <div className="min-w-0 flex-1">
                 <p className="text-sm font-medium">
                   {formatDateTime(departure.departure_at, tz)}
@@ -656,14 +864,18 @@ function DeparturesAdmin() {
                     ? `${portName(route.departure_port_id)} → ${portName(route.arrival_port_id)}`
                     : "—"}
                   {company ? ` · ${company.name}` : ""}
-                  {vessel ? ` · ${vessel.name}` : ""} ·{" "}
+                  {vessel ? ` · ${vessel.name}` : " · Navire à affecter"} ·{" "}
                   {formatDuration(departure.duration_minutes)} ·{" "}
                   {departureStatusLabel[departure.status] ?? departure.status} ·{" "}
                   {reliabilityLabel[departure.reliability]}
                 </p>
               </div>
-              <div className="flex gap-2">
-                <Button size="sm" variant="outline" onClick={() => setEditing(editing === departure.id ? null : departure.id)}>
+              <div className="flex flex-wrap gap-2">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => setEditing(editing === departure.id ? null : departure.id)}
+                >
                   Modifier
                 </Button>
                 <Button
@@ -702,7 +914,9 @@ function DeparturesAdmin() {
                 <DepartureEditor
                   departure={departure}
                   timeZone={tz}
-                  vessels={vessels.filter((v) => !company || !v.company_id || v.company_id === company.id)}
+                  vessels={vessels.filter(
+                    (v) => !company || !v.company_id || v.company_id === company.id,
+                  )}
                   onDone={() => setEditing(null)}
                 />
               )}
@@ -1168,8 +1382,10 @@ function VesselsAdmin() {
   const [drafts, setDrafts] = useState<
     Record<string, { mmsi?: string; imo?: string; photo?: string; photoFile?: File | null }>
   >({});
-  const setDraft = (id: string, patch: { mmsi?: string; imo?: string; photo?: string; photoFile?: File | null }) =>
-    setDrafts((prev) => ({ ...prev, [id]: { ...prev[id], ...patch } }));
+  const setDraft = (
+    id: string,
+    patch: { mmsi?: string; imo?: string; photo?: string; photoFile?: File | null },
+  ) => setDrafts((prev) => ({ ...prev, [id]: { ...prev[id], ...patch } }));
 
   const save = useMutation({
     mutationFn: async ({
@@ -1192,7 +1408,8 @@ function VesselsAdmin() {
         const { error: uploadError } = await supabase.storage
           .from("vessel-photos")
           .upload(path, photoFile, { upsert: true, contentType: photoFile.type });
-        if (uploadError) throw new Error("Téléversement de la photo impossible : " + uploadError.message);
+        if (uploadError)
+          throw new Error("Téléversement de la photo impossible : " + uploadError.message);
         const { data: publicUrl } = supabase.storage.from("vessel-photos").getPublicUrl(path);
         finalPhotoUrl = publicUrl.publicUrl;
       }
@@ -1224,7 +1441,9 @@ function VesselsAdmin() {
         <strong>MMSI</strong> (9 chiffres) : active le suivi en direct. Le site suit un navire de 6
         h avant son départ jusqu'à son arrivée et ne redemande sa position qu'au bout de 20 minutes.{" "}
         <strong>IMO</strong> (7 chiffres) : ajoute le lien « Voir sur VesselFinder » dans la fiche.{" "}
-        <strong>Photo</strong> : collez une URL ou téléversez un fichier image (JPG, PNG, WebP ou AVIF, 10 Mo max). Le téléversement remplace l’URL ; sans photo personnalisée, le site cherche une photo libre sur Wikimedia Commons.
+        <strong>Photo</strong> : collez une URL ou téléversez un fichier image (JPG, PNG, WebP ou
+        AVIF, 10 Mo max). Le téléversement remplace l’URL ; sans photo personnalisée, le site
+        cherche une photo libre sur Wikimedia Commons.
       </p>
       <ul className="mt-4 divide-y divide-border">
         {vessels.map((vessel) => {
@@ -1326,7 +1545,9 @@ function VesselsAdmin() {
                     aria-label={"URL de la photo de " + vessel.name}
                     aria-invalid={!photoOk}
                     value={photo}
-                    onChange={(event) => setDraft(vessel.id, { photo: event.target.value.trim(), photoFile: null })}
+                    onChange={(event) =>
+                      setDraft(vessel.id, { photo: event.target.value.trim(), photoFile: null })
+                    }
                     className="w-full"
                     disabled={Boolean(photoFile)}
                   />
@@ -1344,7 +1565,12 @@ function VesselsAdmin() {
                           event.target.value = "";
                           return;
                         }
-                        if (file && !["image/jpeg", "image/png", "image/webp", "image/avif"].includes(file.type)) {
+                        if (
+                          file &&
+                          !["image/jpeg", "image/png", "image/webp", "image/avif"].includes(
+                            file.type,
+                          )
+                        ) {
                           toast.error("Format accepté : JPG, PNG, WebP ou AVIF.");
                           event.target.value = "";
                           return;
@@ -1354,12 +1580,22 @@ function VesselsAdmin() {
                     />
                   </label>
                   {photoFile ? (
-                    <Button size="sm" variant="ghost" onClick={() => setDraft(vessel.id, { photoFile: null, photo: vessel.photo_url ?? "" })}>Annuler le téléversement</Button>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() =>
+                        setDraft(vessel.id, { photoFile: null, photo: vessel.photo_url ?? "" })
+                      }
+                    >
+                      Annuler le téléversement
+                    </Button>
                   ) : null}
                 </div>
                 <Button
                   size="sm"
-                  disabled={!mmsiOk || !imoOk || (!photoFile && !photoOk) || !changed || save.isPending}
+                  disabled={
+                    !mmsiOk || !imoOk || (!photoFile && !photoOk) || !changed || save.isPending
+                  }
                   onClick={() =>
                     save.mutate({
                       id: vessel.id,
@@ -1586,8 +1822,8 @@ function DataAdmin() {
           <Counter label="Navires" value={vessels.length} />
         </div>
         <p className="mt-4 text-xs text-muted-foreground">
-          Les fiches signalées « à confirmer » servent d'exemples et doivent être remplacées par
-          des informations vérifiées avant publication.
+          Les fiches signalées « à confirmer » servent d'exemples et doivent être remplacées par des
+          informations vérifiées avant publication.
         </p>
       </Panel>
 
@@ -3334,7 +3570,10 @@ function VesselSpecsEditor({ vessel }: { vessel: VesselSpecsRow }) {
       const patch = Object.fromEntries(
         SPEC_FIELDS.map(([k]) => [k, !values[k] ? null : Number(values[k]!.replace(",", "."))]),
       ) as Record<string, number | null>;
-      const { error } = await supabase.from("vessels").update(patch as never).eq("id", vessel.id);
+      const { error } = await supabase
+        .from("vessels")
+        .update(patch as never)
+        .eq("id", vessel.id);
       if (error) throw new Error("Enregistrement des caractéristiques impossible.");
     },
     onSuccess: () => {
@@ -3357,7 +3596,12 @@ function VesselSpecsEditor({ vessel }: { vessel: VesselSpecsRow }) {
           />
         </label>
       ))}
-      <Button size="sm" variant="outline" disabled={!changed || !valid || save.isPending} onClick={() => save.mutate()}>
+      <Button
+        size="sm"
+        variant="outline"
+        disabled={!changed || !valid || save.isPending}
+        onClick={() => save.mutate()}
+      >
         Enregistrer les caractéristiques
       </Button>
     </div>

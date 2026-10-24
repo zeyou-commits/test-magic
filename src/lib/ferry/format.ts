@@ -91,6 +91,7 @@ export const facilityLabels: Record<string, string> = {
   pmr: "Accessibilité PMR",
   wifi: "Wi-Fi",
   boutique: "Boutique",
+  dedouanement_vehicule: "Dédouanement véhicules -3 ans",
 };
 
 /** Critères qui relèvent d'une note des voyageurs et non d'un service du port. */

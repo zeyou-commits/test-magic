@@ -29,7 +29,7 @@ interface PortMultiPickerProps {
   countryFilter?: (code: string) => boolean;
   title?: string;
   /** Ports avec au moins une traversée planifiée ; les autres sont grisés. */
-  scheduledPortIds?: Set<string>;
+  scheduledPortIds?: Set<string> | undefined;
 }
 
 /** Choix d'un ou plusieurs ports, groupés par pays, avec recherche intégrée. */

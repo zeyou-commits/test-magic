@@ -102,7 +102,9 @@ interface FerryMapProps {
   /** Navire choisi depuis le tableau de bord : jamais estompé, même si une ligne est sélectionnée. */
   focusShipId?: string | null;
   /** Logo de la compagnie et photo du navire, affichés au survol. */
-  vesselCards?: Record<string, { photoUrl: string | null; logoUrl: string | null; companyName: string | null }>;
+  vesselCards?:
+    | Record<string, { photoUrl: string | null; logoUrl: string | null; companyName: string | null }>
+    | undefined;
 }
 
 // Limite de dézoom : on ne peut pas s'éloigner plus que « toute la Méditerranée occidentale visible »

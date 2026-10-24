@@ -238,7 +238,11 @@ export function PortMultiPicker({
                               ? `${port.name} · dédouanement véhicules -3 ans`
                               : port.name)
                           }
-                          onClick={() => (reason ? onOpenPort?.(port.id) : toggle([port.id]))}
+                          onClick={() => {
+                            if (!reason) return toggle([port.id]);
+                            setOpen(false);
+                            onOpenPort?.(port.id);
+                          }}
                           className={`inline-flex min-h-8 max-w-full items-center gap-1 rounded-full border px-2.5 py-1 text-left text-[11px] font-medium leading-tight transition-colors ${reason ? "border-border/50 text-muted-foreground/60 hover:bg-secondary hover:text-muted-foreground" : isSelected ? "border-primary/20 bg-primary/10 text-primary" : "border-border bg-background text-foreground hover:border-primary/30 hover:bg-secondary"}`}
                         >
                           {isSelected ? <Check className="size-3.5 shrink-0" /> : null}

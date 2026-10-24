@@ -2,6 +2,7 @@ import { matchesTraffic } from "@/lib/ferry/filterSync";
 import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Ship, ArrowDownLeft, ArrowUpRight } from "lucide-react";
+import { MiniFerry } from "./MiniFerry";
 import {
   companiesQuery,
   fleetDeparturesQuery,
@@ -190,8 +191,8 @@ export function HomeTraffic({
                   >
                     <span style={{ width: `${percent ?? 0}%` }} />
                     <i style={{ left: `${Math.max(8, Math.min(92, percent ?? 0))}%` }}>
-                      <Ship size={13} aria-hidden />
-                      {percent === null ? "—" : `${percent} %`}
+                      <MiniFerry size={38} />
+                      <b>{percent === null ? "—" : `${percent} %`}</b>
                     </i>
                   </div>
                   <div className="mt-2 flex justify-between text-[11px] tabular-nums">

@@ -316,10 +316,34 @@
 .port-marker[data-dimmed="true"] {
   opacity: 0.42;
 }
+/* Port temporairement fermé : panneau sens interdit. */
 .port-marker[data-closed="true"] .port-marker__dot::after {
-  background: var(--color-card);
-  border-color: var(--color-muted-foreground);
+  width: 16px;
+  height: 16px;
+  border: 2px solid var(--color-card);
+  background:
+    linear-gradient(var(--color-card), var(--color-card)) center / 9px 3px no-repeat,
+    var(--color-destructive);
   animation: none;
+}
+/* Port sans liaison active : pastille grise et atténuée. */
+.port-marker[data-noroutes="true"] .port-marker__dot::after {
+  background: var(--color-muted-foreground);
+  opacity: 0.55;
+  animation: none;
+}
+.port-marker[data-noroutes="true"] .port-marker__label {
+  color: var(--color-muted-foreground);
+  font-weight: 600;
+}
+/* Survol : la bulle s'ouvre pour tout port, quel que soit son état. */
+.port-marker[data-hover="true"] {
+  z-index: 30;
+}
+.port-marker[data-hover="true"] .port-tip {
+  opacity: 1;
+  transform: translateX(0) scale(1);
+  pointer-events: auto;
 }
 
 .port-marker__label {

@@ -8,7 +8,11 @@ import {
 } from "react";
 import type { Session, User } from "@supabase/supabase-js";
 import { useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import type { SupabaseClient } from "@supabase/supabase-js";
+import { supabase as typedSupabase } from "@/integrations/supabase/client";
+
+// Tables communautaires pas encore présentes dans les types générés.
+const supabase = typedSupabase as unknown as SupabaseClient;
 
 export interface Profile {
   id: string;

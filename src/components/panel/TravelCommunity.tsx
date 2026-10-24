@@ -14,7 +14,11 @@ import {
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/hooks/useAuth";
-import { supabase } from "@/integrations/supabase/client";
+import type { SupabaseClient } from "@supabase/supabase-js";
+import { supabase as typedSupabase } from "@/integrations/supabase/client";
+
+// Tables communautaires pas encore présentes dans les types générés.
+const supabase = typedSupabase as unknown as SupabaseClient;
 import {
   activeAlerts,
   alertCategories,

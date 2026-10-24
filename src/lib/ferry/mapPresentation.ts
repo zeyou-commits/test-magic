@@ -3,7 +3,12 @@ import type { FleetShip } from "./fleet";
 import { dateKeyInZone, portTimeZone, zonedTimeToUtc } from "./time";
 
 export type LineVisibility = "published" | "all" | "none";
-export type MapPreview = { routeId?: string; vesselId?: string; portId?: string };
+export type MapPreview = {
+  routeId?: string;
+  vesselId?: string;
+  portId?: string;
+  companyId?: string;
+};
 
 const PORT_CODES: Record<string, string> = {
   alger: "ALG",
@@ -114,7 +119,7 @@ export function fleetShortcutInfo(
         ? `Départ prévu dans ${minutes} min`
         : `Départ prévu dans ${Math.floor(minutes / 60)} h${minutes % 60 ? ` ${minutes % 60}` : ""}`;
   return {
-    route: `${portCode(ship.state === "docked" ? dock ?? from : from)} → ${portCode(to)}`,
+    route: `${portCode(ship.state === "docked" ? (dock ?? from) : from)} → ${portCode(to)}`,
     dock: dock?.name ?? from?.name ?? "Port à confirmer",
     destination: to?.name ?? "Destination à confirmer",
     status: delay,

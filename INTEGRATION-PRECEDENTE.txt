@@ -1,0 +1,64 @@
+BLEDWAY — ACCUEIL, CARTE ET SESSION ADMIN — 24 OCTOBRE 2026
+
+ÉTAT RÉEL
+Développé et vérifié localement. Ce ZIP n'a pas encore été intégré au Git cloud, déployé sur Vercel ni appliqué en production. La cause exacte des 401 de production ne peut pas être déterminée à partir des seules captures et n'a pas été confirmée avec une session réelle de production.
+Le correctif contient 52 fichiers applicatifs/tests/SQL. Il est cumulatif avec le précédent ZIP fiches/programmes, sans le dépôt complet, les dépendances, les fichiers .env ou des clés.
+Fusionner avec la version actuelle du Git cloud ; ne pas écraser les changements plus récents ni réécrire l'historique.
+
+CHANGEMENTS DE CARTE
+- Bateaux vus du dessus, orientés dans le sens du trajet, avec un sillage discret derrière la coque. Suppression des chevrons et des cercles pulsants.
+- Le sillage anime l'image ; il n'accélère pas les coordonnées. Les navires à quai restent immobiles. Le mouvement réduit du téléphone/système est respecté et l'animation suspendue en arrière-plan.
+- Pas de « Position estimée » répété dans les cartes compactes et infobulles. Explication globale dans la légende et la FAQ ; détails AIS et lien VesselFinder réservés aux admins conservés.
+- Sur PC, survol d'une carte compacte ou d'un mouvement : bateau et ligne en évidence, autres bateaux atténués, sans déplacement de caméra. Le survol d'un nom de port met ce port en évidence. Le clic garde les fiches habituelles.
+
+ACCUEIL ET NAVIGATION
+- Le volet d'accueil revient quand on ferme un outil ou qu'on quitte la dernière fiche : bateaux en navigation, puis départs ET arrivées.
+- Mobile : volet d'accueil partiellement ouvert, Méditerranée visible ; recherche et formulaire d'itinéraire ouvrent le volet en grand.
+- Second appui sur Chercher, Départs, Itinéraire ou un raccourci actif : retour à l'accueil. Les champs saisis restent conservés, y compris les adresses, le mois, la voiture et les passagers de la simulation. Un autre raccourci remplace le mode actif.
+- Le menu Plus reste refermable par son bouton. Le retour à l'accueil conserve le header visible. Les raccourcis ne se décalent plus sous le bouton d'information quand leur liste s'ouvre à 320 px.
+- Les recherches et simulations restent montées mais masquées quand elles ne sont pas utilisées ; un calcul asynchrone masqué ne doit pas rouvrir le volet.
+
+RACCOURCIS
+- En mer : compagnie courte et trajet compact, par exemple Corsica Linea · SET → BEJ.
+- À quai : port actuel, destination publiée et délai avant départ ; à défaut, En attente d'un départ publié. L'heure seule ne produit jamais un faux statut « Embarquement en cours ».
+- Compagnies : nom contracté et nombre de navires distincts représentés dans la flotte de la carte. Le nom complet reste accessible au survol.
+- Ports : Avec programme publié (défaut), Toutes les liaisons, Aucune liaison. Tous les programmes futurs sont considérés, y compris l'été suivant ; aucune fenêtre arbitraire de quelques semaines. Masquer les lignes conserve les ports et les bateaux. Une ligne sans programme publié n'est pas présentée comme définitivement fermée.
+
+401 ADMIN : CORRECTION ET DIAGNOSTIC
+Les deux services /api/push-admin et /api/admin-users utilisent désormais le même mécanisme de session :
+1. Transmission du jeton de la session Supabase.
+2. En cas de refus d'authentification, un seul renouvellement puis un seul nouvel essai. Si plusieurs panneaux le demandent simultanément, le renouvellement est mutualisé.
+3. Aucun nouvel essai automatique après un refus de permission ou une erreur serveur susceptible de suivre une mutation.
+4. Si le refus persiste, message visible et lien Se reconnecter, sans boucle de redirection. Le contrôle périodique des notifications s'arrête sur un refus d'authentification, de permission ou une erreur de configuration.
+5. Le serveur continue à valider la session auprès de Supabase et à contrôler le rôle admin. Un simple rôle déclaré dans le navigateur n'autorise jamais l'accès.
+6. Des diagnostics distincts détectent une URL navigateur/serveur incohérente, une clé JWT de service d'un autre projet, une session d'un autre projet ou une clé API serveur refusée. Aucun secret n'est affiché.
+7. Ajout de mobile-web-app-capable=yes, en conservant la balise Apple nécessaire aux anciens appareils.
+
+VÉRIFICATION À FAIRE DANS VERCEL PAR L'IA QUI DISPOSE DES ACCÈS
+Ces erreurs peuvent persister si les variables du déploiement pointent vers des projets différents. Dans l'environnement réellement utilisé (Production ou Preview), vérifier ensemble :
+- SUPABASE_URL : URL du projet Batogo choisi pour la production.
+- VITE_SUPABASE_URL : même URL/projet pour le site compilé.
+- SUPABASE_SERVICE_ROLE_KEY : clé secrète de CE même projet, uniquement côté serveur.
+- VITE_SUPABASE_PUBLISHABLE_KEY : clé publique/publishable de CE même projet.
+Le fichier .env local peut contenir un ancien projet ; ne pas le recopier sur Vercel. Ne pas placer une clé service_role dans une variable VITE_. Ne pas partager les valeurs de ces clés dans un rapport ou un message.
+Après correction éventuelle des variables VITE_, refaire la compilation et le déploiement, puis se reconnecter. Un changement de variables ne modifie pas à lui seul un site déjà compilé.
+
+SUPABASE
+Aucune nouvelle migration, table, clé VAPID, entrée Vault ou planification n'est requise pour ce lot carte/session.
+Les deux migrations utilisateurs/programmes incluses proviennent du correctif précédent. Vérifier leur présence avant de les appliquer ; ne pas les réinstaller aveuglément et ne pas relancer les anciennes migrations de notifications déjà appliquées.
+
+VÉRIFICATIONS LOCALES
+- 39 tests de logique et de permissions réussis : session, renouvellement simultané, limite des essais, refus 403, configuration incohérente, protections des comptes et disponibilité des programmes futurs.
+- 31 contrôles navigateur réussis sur la version compilée à 320, 390, 768 et 1440 px : appuis tactiles, saisies conservées, boutons accessibles en bas du formulaire, menu Plus, raccourcis, filtres de lignes, fiches, survol PC sans déplacement de caméra, sillage et mouvement réduit, trois scénarios de session admin.
+- Compilation locale Vercel et contrôle des ressources compilées réussis. TypeScript sans erreur. Lint sans erreur sur les fichiers contrôlés, avec des avertissements de dépendances de hooks déjà présents.
+- Les services Supabase et les réponses admin étaient simulés dans les essais navigateur. Aucune notification réelle, invitation, suppression de compte ou modification de données en production n'a été effectuée.
+- Les captures jointes utilisent des bateaux, horaires et positions de test ; elles ne représentent pas le trafic réel actuel.
+
+PROMPT POUR L'IA GIT CLOUD
+Intègre le ZIP bledway-accueil-carte-admin-20261024.zip par fusion avec le dépôt actuel de BledWay. Conserve les changements plus récents et l'historique Git. Le lot comprend les précédents correctifs de fiches/programmes et ajoute le nouvel accueil, les bateaux vus du dessus avec sillage, les interactions par survol, les raccourcis, les boutons qui se referment au second appui et la conservation des champs.
+Vérifie particulièrement /api/push-admin et /api/admin-users : leur authentification doit utiliser une session Supabase valide et le rôle admin vérifié côté serveur. Contrôle sans afficher les clés que SUPABASE_URL, VITE_SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY et VITE_SUPABASE_PUBLISHABLE_KEY correspondent tous au même projet Batogo et au même environnement Vercel. Corrige cette cohérence si nécessaire, recompile et redéploie. Aucun nouveau secret ni nouvelle migration n'est demandé pour ce lot. Vérifie uniquement les migrations utilisateurs/programmes précédentes si elles manquent encore.
+Exécute les tests inclus, npm run build:vercel et npx tsc --noEmit. Après déploiement, vérifie les deux services avec un véritable compte admin, puis confirme qu'un voyageur et un visiteur restent refusés. Vérifie le renouvellement d'une session expirée, l'absence de boucle 401, le lien de reconnexion et la présence de mobile-web-app-capable=yes. N'envoie aucune notification réelle et ne modifie aucun compte pendant ces contrôles. Teste également les volets tactiles à 320/390 px, le retour à l'accueil, les saisies conservées, les programmes futurs de 2027 et le survol sur PC sans déplacement de caméra. Confirme séparément intégration Git, déploiement et résultat des tests réels de production ; ne déclare pas les 401 résolus avant ce dernier contrôle.
+
+RÉFÉRENCES UTILISÉES POUR LE RENOUVELLEMENT DE SESSION
+Supabase refreshSession : https://supabase.com/docs/reference/javascript/auth-refreshsession
+Supabase validation getUser : https://supabase.com/docs/reference/javascript/auth-getuser

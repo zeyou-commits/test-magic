@@ -19,6 +19,7 @@ import { algeriaGeoJson } from "@/lib/ferry/algeriaGeoJson";
 import { routeArc } from "@/lib/ferry/geo";
 import type { FleetShip } from "@/lib/ferry/fleet";
 import { addShipImages } from "./shipIcons";
+import { fleetGroups } from "./fleetVisibility";
 import { physicalStatus, projectedPosition } from "@/lib/ferry/tracking";
 import { portTimeZone, wallTimeInZone } from "@/lib/ferry/time";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -68,6 +69,7 @@ interface FerryMapProps {
   visibleRouteIds: string[];
   fleetVisibleRouteIds?: string[];
   hoverVesselId?: string | null;
+  hoverShipIds?: string[];
   hoverPortId?: string | null;
   dateActiveRouteIds: string[];
   focusRouteIds: string[];
@@ -300,6 +302,7 @@ export default function FerryMap({
   visibleRouteIds,
   fleetVisibleRouteIds = visibleRouteIds,
   hoverVesselId = null,
+  hoverShipIds = [],
   hoverPortId = null,
   dateActiveRouteIds,
   focusRouteIds,
@@ -333,6 +336,8 @@ export default function FerryMap({
   const [mapReady, setMapReady] = useState(false);
   const [mapViewportKey, setMapViewportKey] = useState("");
   const vesselPopupRef = useRef<Popup | null>(null);
+  const fleetPickerRef = useRef<Popup | null>(null);
+  const pickFleetRef = useRef<((point: [number, number]) => boolean) | null>(null);
   const fleetRef = useRef<FleetShip[]>(fleet);
   const lastFleetFrame = useRef<{ source: GeoJSONSource; data: FleetFrame } | null>(null);
   fleetRef.current = fleet;
@@ -596,7 +601,7 @@ export default function FerryMap({
         },
       });
 
-      // Un seul symbole pour le ferry et son nom : aucun nom orphelin si l'icône est masquée.
+      // Les coques restent toujours visibles ; seuls les noms évitent les collisions.
       addShipImages(map);
       map.addSource("fleet", {
         type: "geojson",
@@ -623,29 +628,69 @@ export default function FerryMap({
           "icon-rotation-alignment": "map",
           "icon-rotate": ["get", "course"],
           "icon-pitch-alignment": "viewport",
-          "icon-allow-overlap": false,
-          "icon-ignore-placement": false,
-          "icon-padding": 2,
+          "icon-allow-overlap": true,
+          "icon-ignore-placement": true,
+          "icon-padding": 0,
           "icon-size": ["interpolate", ["linear"], ["zoom"], 3, 0.68, 5, 0.82, 7, 0.96, 9, 1.08],
+          "symbol-sort-key": ["-", 5, ["get", "priority"]],
+        },
+        paint: {
+          "icon-opacity": ["get", "opacity"],
+          "icon-opacity-transition": { duration: 200 },
+        },
+      });
+      map.addLayer({
+        id: "fleet-labels",
+        type: "symbol",
+        source: "fleet",
+        layout: {
           "symbol-sort-key": ["get", "priority"],
           "text-field": ["get", "name"],
           "text-font": ["Noto Sans Bold"],
           "text-size": ["interpolate", ["linear"], ["zoom"], 3, 9, 6, 10, 9, 12],
           "text-offset": [0, 2.3],
           "text-anchor": "top",
-          "text-optional": true,
+          "text-allow-overlap": false,
+          "text-ignore-placement": false,
           "text-max-width": 12,
           "text-padding": 5,
         },
         paint: {
-          "icon-opacity": ["get", "opacity"],
-          "icon-opacity-transition": { duration: 200 },
           "text-color": "#234b5e",
           "text-halo-color": "#fffefb",
           "text-halo-width": 1.8,
           "text-halo-blur": 0.4,
           "text-opacity": ["get", "opacity"],
         },
+      });
+      map.addLayer({
+        id: "fleet-count-bg",
+        type: "circle",
+        source: "fleet",
+        filter: [">", ["get", "groupCount"], 1],
+        paint: {
+          "circle-radius": 9,
+          "circle-color": "#0e7a43",
+          "circle-stroke-color": "#fffefb",
+          "circle-stroke-width": 1.5,
+          "circle-translate": [12, -12],
+          "circle-translate-anchor": "viewport",
+        },
+      });
+      map.addLayer({
+        id: "fleet-count",
+        type: "symbol",
+        source: "fleet",
+        filter: [">", ["get", "groupCount"], 1],
+        layout: {
+          "text-field": ["to-string", ["get", "groupCount"]],
+          "text-font": ["Noto Sans Bold"],
+          "text-size": 10,
+          "text-offset": [1.2, -1.2],
+          "text-allow-overlap": true,
+          "text-ignore-placement": true,
+        },
+        paint: { "text-color": "#fffefb" },
       });
       // The hover card stays readable above the map, without enlarged text or rocking.
       const NO_SHIP = ["==", ["get", "shipId"], "__aucun__"] as never;
@@ -675,8 +720,49 @@ export default function FerryMap({
         map.setFilter("fleet-hover-halo", id ? (["==", ["get", "shipId"], id] as never) : NO_SHIP);
         if (!id) hoverTip.remove();
       };
-      map.on("mousemove", "fleet-ships", (event) => {
-        const feature = event.features?.[0];
+      const fleetLayers = ["fleet-ships", "fleet-labels", "fleet-count-bg", "fleet-count"];
+      type FleetPickEvent = {
+        features?: MapLayerMouseEvent["features"];
+        point: { x: number; y: number };
+      };
+      const closestShip = (event: FleetPickEvent) => {
+        const features = event.features ?? [];
+        const badge = features.find(
+          (f) => f.layer.id === "fleet-count" || f.layer.id === "fleet-count-bg",
+        );
+        if (badge) return badge;
+        const labels = features.filter((f) => f.layer.id === "fleet-labels");
+        return (labels.length ? labels : features)
+          .filter((f) => f.geometry.type === "Point")
+          .sort((a, b) => {
+            const pointA = map.project(
+              (a.geometry as { coordinates: [number, number] }).coordinates,
+            );
+            const pointB = map.project(
+              (b.geometry as { coordinates: [number, number] }).coordinates,
+            );
+            return (
+              Math.hypot(pointA.x - event.point.x, pointA.y - event.point.y) -
+              Math.hypot(pointB.x - event.point.x, pointB.y - event.point.y)
+            );
+          })[0];
+      };
+      const membersOf = (groupId: unknown) =>
+        lastFleetFrame.current?.data.features.filter((f) => f.properties["groupId"] === groupId) ??
+        [];
+      const selectShip = (properties: Record<string, unknown>) => {
+        fleetPickerRef.current?.remove();
+        interactRef.current?.("vessel");
+        const vesselId = properties["vesselId"],
+          departureId = properties["departureId"];
+        if (typeof vesselId === "string" && vesselId)
+          selectRef.current({ type: "vessel", id: vesselId });
+        else if (typeof departureId === "string")
+          selectRef.current({ type: "departure", id: departureId });
+      };
+      map.on("mousemove", fleetLayers, (event) => {
+        if (fleetPickerRef.current?.isOpen()) return;
+        const feature = closestShip(event);
         const id = feature?.properties?.["shipId"];
         if (!feature || feature.geometry.type !== "Point" || typeof id !== "string") {
           setHoveredShip(null);
@@ -687,40 +773,118 @@ export default function FerryMap({
           setHoveredShip(id);
           const card = document.createElement("div");
           card.setAttribute("role", "tooltip");
-          const name = document.createElement("strong");
-          name.textContent = String(feature.properties["name"] ?? "Navire");
-          const status = document.createElement("p");
-          status.textContent = String(feature.properties["allure"] ?? "");
+          const name = document.createElement("strong"),
+            status = document.createElement("p");
+          const members = membersOf(feature.properties["groupId"]);
+          name.textContent =
+            members.length > 1
+              ? `${members.length} bateaux à proximité`
+              : String(feature.properties["name"] ?? "Navire");
+          status.textContent =
+            members.length > 1
+              ? members.map((f) => f.properties["name"]).join(" · ")
+              : String(feature.properties["allure"] ?? "");
           card.append(name, status);
           hoverTip.setLngLat(coordinates).setDOMContent(card).addTo(map);
         } else hoverTip.setLngLat(coordinates);
       });
-      map.on("mouseleave", "fleet-ships", () => setHoveredShip(null));
-      map.on("dragstart", () => setHoveredShip(null));
-      map.on("zoomstart", () => setHoveredShip(null));
-
-      map.on("click", "fleet-ships", (event) => {
+      map.on("mouseleave", fleetLayers, () => setHoveredShip(null));
+      const closeFleetPopups = () => {
         setHoveredShip(null);
-        const props = event.features?.[0]?.properties;
-        const vesselId = props?.["vesselId"];
-        const departureId = props?.["departureId"];
-        interactRef.current?.("vessel");
-        // Un navire connu ouvre sa fiche ; sans navire renseigné, on ouvre sa traversée.
-        if (typeof vesselId === "string" && vesselId)
-          selectRef.current({ type: "vessel", id: vesselId });
-        else if (typeof departureId === "string")
-          selectRef.current({ type: "departure", id: departureId });
-      });
-      map.on("mouseenter", "fleet-ships", () => {
+        fleetPickerRef.current?.remove();
+      };
+      map.on("dragstart", closeFleetPopups);
+      map.on("zoomstart", closeFleetPopups);
+      map.on("resize", closeFleetPopups);
+      const pickFleet = (event: FleetPickEvent) => {
+        setHoveredShip(null);
+        const feature = closestShip(event);
+        if (!feature || feature.geometry.type !== "Point") return;
+        const members = membersOf(feature.properties["groupId"]);
+        if (members.length < 2) {
+          selectShip(feature.properties);
+          return;
+        }
+        fleetPickerRef.current?.remove();
+        const card = document.createElement("div");
+        card.setAttribute("role", "dialog");
+        card.setAttribute("aria-label", "Choisir un bateau");
+        card.className = "min-w-48 space-y-1 p-1";
+        const heading = document.createElement("strong");
+        heading.textContent = `${members.length} bateaux à proximité`;
+        heading.className = "mb-2 block pr-4 text-sm";
+        card.append(heading);
+        for (const member of members) {
+          const button = document.createElement("button");
+          button.type = "button";
+          button.textContent = String(member.properties["name"]);
+          button.className =
+            "block min-h-11 w-full rounded-lg px-3 py-2 text-left text-sm font-semibold text-primary hover:bg-secondary focus-visible:outline-2 focus-visible:outline-primary";
+          button.addEventListener("click", (e) => {
+            e.stopPropagation();
+            selectShip(member.properties);
+          });
+          card.append(button);
+        }
+        fleetPickerRef.current = new Popup({
+          closeButton: true,
+          closeOnClick: true,
+          className: "bw-fleet-picker",
+          focusAfterOpen: false,
+          anchor: "bottom",
+          offset: 20,
+          maxWidth: "280px",
+        })
+          .setLngLat(feature.geometry.coordinates as [number, number])
+          .setDOMContent(card)
+          .addTo(map);
+        requestAnimationFrame(() => {
+          const popup = fleetPickerRef.current;
+          if (!popup?.isOpen()) return;
+          const element = popup.getElement();
+          const bounds = container.getBoundingClientRect();
+          const insets = insetsRef.current;
+          const left =
+            bounds.left +
+            (insets.isMobile ? 8 : Math.min(insets.desktopLeftInset, bounds.width * 0.56) + 8);
+          const right = Math.min(window.innerWidth - 8, bounds.right - 8);
+          const headerBottom =
+            document.querySelector(".bw-home > .bw-header")?.getBoundingClientRect().bottom ?? 0;
+          const top = Math.max(8, bounds.top + 8, headerBottom + 8);
+          const bottom = Math.min(
+            window.innerHeight - 8,
+            bounds.bottom - (insets.isMobile ? insets.mobileBottomInset : 0) - 8,
+          );
+          element.style.maxWidth = `${Math.max(160, Math.min(280, right - left))}px`;
+          card.style.maxHeight = `${Math.max(70, bottom - top - 40)}px`;
+          const rect = element.getBoundingClientRect();
+          element.style.marginLeft = `${rect.left < left ? left - rect.left : rect.right > right ? right - rect.right : 0}px`;
+          element.style.marginTop = `${rect.top < top ? top - rect.top : rect.bottom > bottom ? bottom - rect.bottom : 0}px`;
+          card.querySelector<HTMLButtonElement>("button")?.focus({ preventScroll: true });
+        });
+      };
+      map.on("click", fleetLayers, pickFleet);
+      pickFleetRef.current = (point) => {
+        const features = map.queryRenderedFeatures(point, { layers: fleetLayers });
+        const event = { features, point: { x: point[0], y: point[1] } };
+        const feature = closestShip(event);
+        if (!feature || feature.geometry.type !== "Point") return false;
+        const center = map.project(feature.geometry.coordinates as [number, number]);
+        const badge = feature.layer.id === "fleet-count" || feature.layer.id === "fleet-count-bg";
+        if (!badge && Math.hypot(center.x - point[0], center.y - point[1]) > 14) return false;
+        pickFleet(event);
+        return true;
+      };
+      map.on("mouseenter", fleetLayers, () => {
         map.getCanvas().style.cursor = "pointer";
       });
-      map.on("mouseleave", "fleet-ships", () => {
+      map.on("mouseleave", fleetLayers, () => {
         map.getCanvas().style.cursor = "";
       });
 
       const pickRoute = (event: MapLayerMouseEvent) => {
         // Un navire posé sur la ligne a la priorité : le clic ouvre le navire, pas la ligne.
-        if (map.queryRenderedFeatures(event.point, { layers: ["fleet-ships"] }).length > 0) return;
+        if (map.queryRenderedFeatures(event.point, { layers: fleetLayers }).length > 0) return;
         const id = event.features?.[0]?.properties?.["id"];
         if (typeof id !== "string") return;
         interactRef.current?.("route");
@@ -741,7 +905,7 @@ export default function FerryMap({
         const target = event.originalEvent?.target;
         if (target instanceof Element && target.closest(".port-marker")) return;
         const hits = map.queryRenderedFeatures(event.point, {
-          layers: ["ferry-routes-line", "ferry-routes-duration", "fleet-ships"],
+          layers: ["ferry-routes-line", "ferry-routes-duration", ...fleetLayers],
         });
         if (hits.length === 0) {
           setTipPortId(null);
@@ -759,6 +923,8 @@ export default function FerryMap({
       resizeObserver.disconnect();
       window.removeEventListener("resize", resize);
       vesselPopupRef.current?.remove();
+      fleetPickerRef.current?.remove();
+      pickFleetRef.current = null;
       vesselPopupRef.current = null;
       readyRef.current = false;
       setMapReady(false);
@@ -974,6 +1140,9 @@ export default function FerryMap({
       "ferry-routes-duration",
       "fleet-halo",
       "fleet-ships",
+      "fleet-labels",
+      "fleet-count-bg",
+      "fleet-count",
       "fleet-hover-halo",
     ];
     for (const id of ordinaryLayers) {
@@ -1096,6 +1265,20 @@ export default function FerryMap({
 
         const select = (event: Event) => {
           event.stopPropagation();
+          // La cible tactile transparente d'un port ne doit pas intercepter une coque ou son compteur.
+          if (event.currentTarget === dot && event instanceof MouseEvent && event.detail > 0) {
+            const bounds = map.getCanvas().getBoundingClientRect();
+            const point: [number, number] = [
+              event.clientX - bounds.left,
+              event.clientY - bounds.top,
+            ];
+            const center = map.project([port.longitude, port.latitude]);
+            if (
+              Math.hypot(point[0] - center.x, point[1] - center.y) > 8 &&
+              pickFleetRef.current?.(point)
+            )
+              return;
+          }
           dismissedPortIdsRef.current.delete(port.id);
           interactRef.current?.(insetsRef.current.isMobile ? "port" : undefined);
           if (insetsRef.current.isMobile) {
@@ -1572,8 +1755,8 @@ export default function FerryMap({
         delete marker.getElement().dataset["portFocusLabel"];
       });
       if (!map.getStyle()) return;
-      if (map.getLayer("fleet-ships"))
-        map.setPaintProperty("fleet-ships", "text-opacity", ["get", "opacity"]);
+      if (map.getLayer("fleet-labels"))
+        map.setPaintProperty("fleet-labels", "text-opacity", ["get", "opacity"]);
       if (map.getLayer("fleet-ships"))
         map.setPaintProperty("fleet-ships", "icon-opacity", ["get", "opacity"]);
     };
@@ -1657,10 +1840,14 @@ export default function FerryMap({
         type: "FeatureCollection",
         features: fleetRef.current.map((ship) => {
           // Un navire choisi depuis le tableau de bord reste pleinement visible, quelle que soit la ligne active.
-          const previewing = Boolean(hoverRouteId || hoverVesselId || hoverPortId);
-          const previewed = hoverVesselId
-            ? hoverVesselId === ship.vesselId
-            : hoverRouteId === ship.routeId;
+          const previewing = Boolean(
+            hoverRouteId || hoverVesselId || hoverPortId || hoverShipIds.length,
+          );
+          const previewed = hoverShipIds.length
+            ? hoverShipIds.includes(ship.id)
+            : hoverVesselId
+              ? hoverVesselId === ship.vesselId
+              : hoverRouteId === ship.routeId;
           const focused =
             (!previewing &&
               (focusShipId === ship.id ||
@@ -1747,6 +1934,19 @@ export default function FerryMap({
           };
         }),
       };
+      const groups = fleetGroups(
+        data.features.map((feature) => {
+          const point = map.project(feature.geometry.coordinates);
+          return {
+            id: String(feature.properties["shipId"]),
+            x: point.x,
+            y: point.y,
+            priority: Number(feature.properties["priority"]),
+          };
+        }),
+      );
+      for (const feature of data.features)
+        Object.assign(feature.properties, groups.get(String(feature.properties["shipId"])));
       const previous = lastFleetFrame.current;
       const changed =
         !previous ||
@@ -1769,16 +1969,17 @@ export default function FerryMap({
     // Le sillage anime seulement la texture : les coordonnées gardent leur vitesse réelle.
     draw();
     const timer = window.setInterval(draw, 1000);
-    map.on("zoomend", draw);
+    map.on("moveend", draw);
     return () => {
       window.clearInterval(timer);
-      map.off("zoomend", draw);
+      map.off("moveend", draw);
     };
   }, [
     mapReady,
     fleet,
     fleetVisibleRouteIds,
     hoverVesselId,
+    hoverShipIds,
     hoverPortId,
     focusRouteIds,
     focusShipId,

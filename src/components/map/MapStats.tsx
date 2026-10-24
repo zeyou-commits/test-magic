@@ -160,6 +160,8 @@ export function MapStats({
                 className="flex w-full items-center rounded-xl px-3 py-2 text-left text-xs font-semibold hover:bg-secondary"
                 aria-pressed={!selectedCompanyId}
                 onClick={() => onSelectCompany(null)}
+                onPointerEnter={() => onPreview(null)}
+                onFocus={() => onPreview(null)}
               >
                 Toutes les compagnies
               </button>
@@ -171,6 +173,14 @@ export function MapStats({
                   data-active={selectedCompanyId === company.id}
                   aria-pressed={selectedCompanyId === company.id}
                   onClick={() => onSelectCompany(company.id)}
+                  onPointerEnter={(e) => {
+                    if (e.pointerType === "mouse") onPreview({ companyId: company.id });
+                  }}
+                  onPointerLeave={(e) => {
+                    if (e.pointerType === "mouse") onPreview(null);
+                  }}
+                  onFocus={() => onPreview({ companyId: company.id })}
+                  onBlur={() => onPreview(null)}
                 >
                   {company.logoUrl ? (
                     <img src={company.logoUrl} alt="" className="size-5 shrink-0 object-contain" />

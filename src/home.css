@@ -1111,6 +1111,23 @@ html {
   pointer-events: none;
   z-index: 35;
 }
+.bw-fleet-picker {
+  z-index: 35;
+}
+.bw-fleet-picker .maplibregl-popup-tip {
+  display: none;
+}
+.bw-fleet-picker .maplibregl-popup-content {
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: var(--background);
+  color: var(--foreground);
+  box-shadow: 0 8px 28px rgb(21 51 67 / 16%);
+}
+.bw-fleet-picker [role="dialog"] {
+  max-height: min(38dvh, 18rem);
+  overflow-y: auto;
+}
 .bw-vessel-tooltip .maplibregl-popup-content {
   padding: 12px 14px;
   border: 1px solid var(--border);

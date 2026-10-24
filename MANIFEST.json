@@ -24,11 +24,11 @@
     },
     {
       "path": "src/components/map/FerryMap.tsx",
-      "sha256": "76c1decf1a406fad73501ed5c2ebac22b430ce5355e569c29fa68743f6ba5aef"
+      "sha256": "89ed5b859a3b0d96df29fcc6eee077bf3aad93ce1d875d899b1513638319fe97"
     },
     {
       "path": "src/components/map/MapStats.tsx",
-      "sha256": "e1c2bfd43f8fcf41de6e8b27b30b289053967f7bdcf84041c1de6821f0abe393"
+      "sha256": "2686e8a675f3b55308358c7836eed1cb365f7c10ce9401d2f0392924176da80d"
     },
     {
       "path": "src/components/map/shipIcons.ts",
@@ -100,7 +100,7 @@
     },
     {
       "path": "src/routes/index.tsx",
-      "sha256": "b055e11350e3218a1b69539a9d38eba46dbba982b53c47ef3b71e56a396c59c9"
+      "sha256": "0f4a067be201f6a12b12a7cdfd17d6882e2ef6383de7bed1ac07d06aa7fdc7dd"
     },
     {
       "path": "src/routes/api.admin-users.ts",
@@ -108,7 +108,7 @@
     },
     {
       "path": "src/home.css",
-      "sha256": "07903c523ba4f4423522f037c7d6fd951439de48e433ddbe01eb72ab883852a8"
+      "sha256": "91ca91df4ed95a1805bb9bb343a18aa99883fe9be2c090fe9f01cd46f19b8940"
     },
     {
       "path": "public/images/ferry-marker.svg",
@@ -144,7 +144,7 @@
     },
     {
       "path": "src/lib/ferry/mapPresentation.ts",
-      "sha256": "cac6f4e7b42b48e889478d31944e4e4ae520fa3a46596572936b92a11067cdfa"
+      "sha256": "536cba404b4046641c1fda355808b52959ad7ac82c4e2798227addda84d332c8"
     },
     {
       "path": "src/lib/ferry/mapPresentation.test.ts",
@@ -209,6 +209,23 @@
     {
       "path": "src/components/home/HomeContent.tsx",
       "sha256": "871b28e3a096d4af5dc6ff7fe883d7a76612007b6bc88bda1f700917504bb23e"
+    },
+    {
+      "path": "src/components/map/fleetVisibility.ts",
+      "sha256": "32e9a316b000993eca4fb69460e93e7cc78670eede44102952eb9f6fa72d83d6"
+    },
+    {
+      "path": "src/components/map/fleetVisibility.test.ts",
+      "sha256": "e7566337e90d9936be354e239791d8ae38d8fa6030d32e265a9c702afad5af56"
     }
+  ],
+  "changed_since_previous": [
+    "src/components/map/FerryMap.tsx",
+    "src/components/map/MapStats.tsx",
+    "src/routes/index.tsx",
+    "src/home.css",
+    "src/lib/ferry/mapPresentation.ts",
+    "src/components/map/fleetVisibility.ts",
+    "src/components/map/fleetVisibility.test.ts"
   ]
 }

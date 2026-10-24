@@ -284,6 +284,15 @@ function Index() {
     return fleet;
   }, [activeShortcut, shortcutCompanyId, atSea, upcomingShips, fleet, departures, fleetDepartures]);
   const companyFocusShips = activeShortcut === "companies" && shortcutCompanyId ? mapFleet : [];
+  const hoverCompanyShipIds = useMemo(() => {
+    if (!trafficPreview?.companyId) return [];
+    const departureIds = new Set(
+      [...departures, ...fleetDepartures]
+        .filter((d) => d.company_id === trafficPreview.companyId)
+        .map((d) => d.id),
+    );
+    return fleet.filter((ship) => departureIds.has(ship.departureId)).map((ship) => ship.id);
+  }, [trafficPreview?.companyId, departures, fleetDepartures, fleet]);
 
   const allResults = [portsResult, routesResult, departuresResult, companiesResult];
   const isLoadingData = allResults.some((res) => res.isPending);
@@ -1006,6 +1015,7 @@ function Index() {
                 if (shortcut === "ports") setPortsPulseKey(Date.now());
               }}
               onSelectCompany={(companyId) => {
+                setTrafficPreview(null);
                 setShortcutCompanyId(companyId);
                 setShortcutMenuOpen(false);
               }}
@@ -1042,6 +1052,7 @@ function Index() {
                   visibleRouteIds={displayedRouteIds}
                   fleetVisibleRouteIds={fleetVisibleRouteIds}
                   hoverVesselId={trafficPreview?.vesselId ?? null}
+                  hoverShipIds={hoverCompanyShipIds}
                   hoverPortId={trafficPreview?.portId ?? null}
                   dateActiveRouteIds={scheduledRouteIds.length ? scheduledRouteIds : ["__none__"]}
                   focusRouteIds={focusRouteIds}

@@ -19,7 +19,7 @@ import { algeriaGeoJson } from "@/lib/ferry/algeriaGeoJson";
 import { routeArc } from "@/lib/ferry/geo";
 import type { FleetShip } from "@/lib/ferry/fleet";
 import { addShipImages, wakeLevel } from "./shipIcons";
-import { vesselMapIcon, vesselVisual } from "@/lib/ferry/vesselVisuals";
+import { vesselVisual } from "@/lib/ferry/vesselVisuals";
 import { fleetGroups } from "./fleetVisibility";
 import { physicalStatus, projectedPosition } from "@/lib/ferry/tracking";
 import { portTimeZone, wallTimeInZone } from "@/lib/ferry/time";
@@ -1946,7 +1946,7 @@ export default function FerryMap({
             type: "Feature" as const,
             properties: {
               state: ship.state,
-              icon: `${vesselMapIcon(ship.name) ?? "ship"}-${wakeLevel(ship.state, live ? speed : null)}`,
+              icon: `ship-${wakeLevel(ship.state, live ? speed : null)}`,
               course,
               name: ship.name,
               allure,

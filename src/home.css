@@ -2847,20 +2847,25 @@ html {
   border-radius: inherit;
   background: #0b8145;
 }
+.bw-compact-track {
+  margin-top: 26px;
+}
 .bw-compact-track > i {
   position: absolute;
-  top: 50%;
+  bottom: -5px;
+  transform: translateX(-50%);
   display: flex;
-  align-items: center;
-  gap: 3px;
-  transform: translate(-50%, -50%);
-  padding: 3px 5px;
-  border-radius: 9px;
-  background: #fff;
-  border: 1px solid #d2e5d7;
+  align-items: flex-end;
+  gap: 2px;
+  line-height: 0;
   color: #08783f;
-  font: 700 10px/1.2 sans-serif;
+  font: 800 10px/1 sans-serif;
+  font-style: normal;
   white-space: nowrap;
+  pointer-events: none;
+}
+.bw-compact-track > i > b {
+  margin-bottom: 9px;
 }
 
 @media (max-width: 767px) {

@@ -113,19 +113,36 @@ export function VesselView({
               type="button"
               onClick={() => onSelect({ type: "company", id: company.id })}
             >
-              <CompanyBadge name={company.name} logoUrl={company.logo_url} size={17} />
+              <CompanyBadge name={company.name} logoUrl={company.logo_url} size={38} />
               {company.name}
             </button>
           ) : null}
           {vessel.is_demo ? <DemoBadge /> : null}
-          <div className="mt-2">
-            <FollowButton
-              kind="vessel"
-              targetId={vesselId}
-              label={vessel.name}
-              demo={Boolean(vessel.is_demo)}
-            />
-          </div>
+          <dl
+            className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs"
+            aria-label="Le bateau en chiffres"
+          >
+            <div>
+              <dt className="text-[10px] text-muted-foreground">Âge</dt>
+              <dd className="font-bold">
+                {vessel.build_year && vessel.build_year <= new Date().getFullYear()
+                  ? `${new Date().getFullYear() - vessel.build_year} ans`
+                  : "À renseigner"}
+              </dd>
+            </div>
+            <div>
+              <dt className="text-[10px] text-muted-foreground">Passagers</dt>
+              <dd className="font-bold">
+                {vessel.passenger_capacity?.toLocaleString("fr-FR") ?? "À renseigner"}
+              </dd>
+            </div>
+            <div>
+              <dt className="text-[10px] text-muted-foreground">Véhicules</dt>
+              <dd className="font-bold">
+                {vessel.car_capacity?.toLocaleString("fr-FR") ?? "À renseigner"}
+              </dd>
+            </div>
+          </dl>
         </div>
       </header>
       {departure && from && to ? (

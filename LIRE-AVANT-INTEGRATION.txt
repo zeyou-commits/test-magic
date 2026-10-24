@@ -1,51 +1,57 @@
-BLEDWAY — SUIVI COMPACT ET GESTION DES UTILISATEURS — 24 OCTOBRE 2026
+BLEDWAY — FICHES BATEAUX ET PROGRAMMES PAR COMPAGNIE — 24 OCTOBRE 2026
 
-ÉTAT DE LA LIVRAISON
-Correctif développé et testé localement. Il n'a pas été poussé sur GitHub, déployé sur Vercel ni appliqué à Supabase par cette livraison.
-L'accès au Git cloud actuel n'a pas pu être vérifié. La dernière base cloud connue dans le travail précédent est 179cec791ce97a96bdc98dd08ee75a8798aa600d (23 octobre). Fusionner les changements si le cloud a évolué ; ne pas remplacer aveuglément des évolutions plus récentes.
-Ce petit ZIP contient 29 fichiers applicatifs/SQL et les preuves de contrôle. Il complète le système de suivi, de comptes et de notifications déjà livré ; il ne remplace pas le dépôt complet.
+ÉTAT
+Correctif développé et vérifié localement, pas encore intégré dans le Git cloud, déployé sur Vercel ni appliqué à Supabase.
+Le ZIP léger contient 35 fichiers applicatifs/SQL. Il reprend également les fichiers du correctif précédent de suivi/utilisateurs ; il ne contient pas le dépôt complet, les dépendances ou des secrets.
+Si le Git cloud a évolué, fusionner les changements au lieu de remplacer aveuglément les fichiers. L'état actuel du cloud n'a pas été vérifié.
 
-À FAIRE PAR L'IA QUI TRAVAILLE SUR TON GIT CLOUD
-1. Intégrer les fichiers src/ et public/ du ZIP aux mêmes chemins dans le dépôt. Les dépendances déjà présentes du projet sont conservées. Le ZIP conserve également le correctif précédent des indicateurs admin et marqueurs de bateaux.
-2. Vérifier que les migrations communauté, suivis/push et préférences/campagnes précédentes sont déjà installées dans le BON projet Supabase de production Batogo. Ne pas utiliser l'ancien projet d'un éventuel .env local.
-3. Appliquer la nouvelle migration supabase/migrations/20261024120000_user_management.sql avec les droits de migration. Elle est réexécutable et ne crée aucun compte réel ni notification.
-4. Lancer les tests, puis npm run build:vercel (qui régénère notamment l'arbre des routes pour /api/admin-users), et npx tsc --noEmit. Ne pas remplacer un arbre de routes récent par un ancien fichier généré.
-5. Déployer normalement sur Vercel. Vérifier /admin?tab=users avec un vrai compte administrateur et les nouveaux parcours sur téléphone.
-6. Ne jamais mettre SUPABASE_SERVICE_ROLE_KEY dans une variable VITE_ ou dans le navigateur. Aucune nouvelle clé, aucun nouveau secret Vault et aucun nouveau cron ne sont nécessaires ici.
+PROPOSITION D'ORGANISATION MISE EN PLACE
+1. RÉSEAU GÉNÉRAL
+   Ports, liaisons géographiques, compagnies et fiches des navires. Une liaison est un sens précis entre deux ports ; le sens retour possède son propre programme.
+2. PROGRAMMES COMMERCIAUX
+   Choisir une compagnie, rechercher une liaison, puis la déplier. Le programme apparaît juste dessous :
+   - Départs / arrivées : consulter, ajouter un départ ponctuel, modifier date/heure/durée/navire, annuler/rétablir et marquer vérifié.
+   - Calendriers : ajouter ou modifier une fréquence, ses jours de service, sa période de validité, son horaire, sa durée, son navire et sa source. Le formulaire de création reste replié au départ.
+   - Navires & photos : consulter les bateaux affectés à cette liaison et modifier les données/photos avec les éditeurs existants.
+   - Sources officielles, toujours au-dessus : jusqu'à six liens renseignés manuellement par compagnie ET liaison, complétés par les liens des calendriers ; ouverture dans un nouvel onglet et date du dernier contrôle manuel.
+   Les listes de départs/calendriers de cette vue sont réellement limitées à la compagnie et à la liaison choisies. Le contexte reste dans l'URL après rechargement.
+   Les vues transversales Départs, Calendriers et Import restent disponibles pour les contrôles globaux et l'import existant.
 
-CHANGEMENTS POUR LES VOYAGEURS
-- Accueil mobile avec volet partiellement ouvert, recherche condensée et Méditerranée visible.
-- Cartes compactes des traversées en navigation : compagnie/logo (ou initiales si le logo manque), nom du bateau en second niveau, ports, progression, heures locales et décalage +1 j.
-- Clic sur le fond de la carte : fiche du bateau ; clic sur chaque nom de port : fiche de ce port ; cœur : parcours existant de suivi, avec inscription/connexion si nécessaire. Les boutons sont séparés et utilisables au clavier.
-- Départs ET arrivées à venir, triés par instant, avec filtres Tous/Départs/Arrivées.
-- Distinction lisible entre position estimée selon les horaires et position actualisée. Aucun jargon AIS ni lien VesselFinder dans les composants publics modifiés.
-- Halo de navigation animé et chevron de direction en mer. Cette animation ne déplace pas artificiellement les bateaux, et la préférence Réduire les animations est respectée.
-- Correction d'un facteur 1000 dans la projection de position : conversion correcte de millisecondes vers kilomètres. Sans date du signal, aucune extrapolation depuis la date de récupération des données.
-- Arrivée planifiée déduite d'une durée publiée lorsqu'il manque arrival_at. Elle reste identifiée comme prévue, jamais comme observation réelle.
+EXEMPLE BALÉARIA
+Sélectionner Baléaria puis rattacher ses liaisons déjà créées dans le réseau : Mostaganem → Valence, Alger → Valence, Oran → Valence, Alger → Barcelone, Oran → Barcelone, Ghazaouet → Almería, Oran → Almería selon les données que vous souhaitez gérer. Chaque rattachement ouvre ensuite son programme indépendant. Aucune ligne ni traversée de cet exemple n'est publiée automatiquement à partir de cette simple liste.
+La même organisation s'applique à Algérie Ferries et aux autres compagnies.
 
-ADMINISTRATION
-- Lien Voir sur VesselFinder près du suivi, uniquement en profil administrateur et dès qu'un IMO OU un MMSI existe, même en l'absence de signal AIS.
-- Vue admin du suivi : source et âge du signal ou absence de signal, distincts du repère horaire.
-- Rubrique Utilisateurs : recherche serveur par nom/e-mail, pagination (30), filtres équipe/bannis, invitation par e-mail d'un compte voyageur, attribution/retrait des rôles admin/éditeur/modérateur, bannissement 24 h/7 j/durée indéterminée, réactivation et suppression définitive du compte avec retrait de ses avatars.
-- Les invitations n'accordent aucun privilège automatiquement ; le rôle est attribué dans une action distincte.
-- Confirmation avec recopie de l'e-mail/identifiant et motif requis pour les actions sur un compte. Aucune modification de son propre compte depuis cet écran.
-- Administrateurs : comptes protégés contre bannissement/suppression tant que leur rôle admin est présent. Le dernier administrateur actif et l'auto-démotion sont protégés en base ; changements de rôles et état Auth partagent un verrou transactionnel.
-- Un compte banni perd ses accès aux tables protégées même avec un ancien JWT, ses abonnements push sont retirés et ses suivis/alertes sont suspendus. À la réactivation, il doit réactiver ses suivis et autoriser à nouveau ses notifications.
-- Éditeurs : données ferry. Modérateurs : avis et signalements. Administration des utilisateurs et campagnes réservée aux administrateurs. Contrôles serveur et règles de base, pas seulement masquage de boutons.
-- Journal des opérations ; en cas d'erreur après une action distante, l'interface demande de recharger et vérifier l'état avant de réessayer.
-- Suppression : les données liées suivent les clés étrangères déjà définies dans le projet. Si d'autres fichiers appartiennent au compte, Supabase peut refuser sa suppression ; le message précise que les avatars ont pu être retirés. Cette fonction ne prétend pas effacer toutes les copies, sauvegardes ou obligations de conservation.
+MISE À JOUR CONSEILLÉE
+Ouvrir la compagnie → ouvrir la liaison → vérifier les sites officiels enregistrés → modifier le calendrier ou le départ concerné → vérifier son navire et sa photo → enregistrer → marquer les sources contrôlées.
+L'ajout d'un départ ponctuel le publie dans la base ; l'interface l'indique. Les nouvelles données ne sont pas marquées vérifiées par la seule présence d'un lien.
 
-CONTRÔLES EFFECTUÉS
-- 40 tests de logique et de protection serveur réussis.
-- 13 contrôles SQL dans une base temporaire, dont migration réexécutable, protection des rôles, accès modérateur et blocage des anciens JWT après bannissement/suppression.
-- 28 scénarios navigateur réussis sur le résultat compilé : 320/390/768/1440 px, petit écran 390×667, clics séparés, clavier, fiche bateau public/admin, confirmations admin, filtres arrivées, rôles et animation/réduction des mouvements.
-- TypeScript : sans erreur. ESLint : zéro erreur, 10 avertissements existants dans carte/navigation.
-- Compilation Vercel locale réussie ; accueil compilé HTTP 200 et ressources contrôlées. Aucun nom de variable privilégiée/service de gestion Auth trouvé dans les fichiers JavaScript statiques contrôlés.
-- Aucun envoi push, invitation, bannissement, suppression de compte ou modification de données de production pendant les essais. Les interactions navigateur/API sont simulées ; la réception d'un push réel devra être testée sur un appareil autorisé après intégration.
+PRÉSERVATION DES DONNÉES
+- Ajouter les départs manquants génère au maximum 60 jours à partir d'aujourd'hui ou du début de validité futur ; ce n'est plus une suppression suivie d'une recréation.
+- Les départs publiés conservent leur identifiant, leurs suivis, leurs corrections et leurs annulations. Les exceptions d'horaire/navire et d'annulation sont prises en compte pour les nouveaux départs.
+- Une clé d'occurrence conserve l'origine du départ même si sa date est ensuite reportée. Pour les corrections antérieures à cette migration, la date d'origine historique ne peut pas être reconstruite : la migration initialise la clé avec la date actuellement enregistrée.
+- Modifier un calendrier ne remplace pas silencieusement les départs déjà publiés. Ces derniers se modifient dans Départs / arrivées. Une future mise à jour massive devrait passer par un aperçu des différences et une validation explicite ; elle n'est pas ajoutée dans ce correctif.
+- Modifier une liaison du réseau conserve les sources des compagnies encore rattachées. Seuls les rattachements réellement retirés sont supprimés.
+- Les horaires sont calculés selon les fuseaux des ports, y compris les changements d'heure. Changer l'heure de départ d'un calendrier ne transforme plus une durée de plus de 24 h en une durée modulo 24 h. L'arrivée présentée dans le formulaire est un aperçu daté au début de validité.
 
-MAINTENANCE
-La nouvelle migration ajoute une politique restrictive de compte actif aux tables RLS déjà présentes et renforce les fonctions communauté SECURITY DEFINER. Toute nouvelle table privée ou nouvelle fonction privilégiée ajoutée ensuite doit conserver ce contrôle.
-Utiliser les API officielles Supabase Auth Admin côté serveur uniquement : https://supabase.com/docs/reference/javascript/auth-admin-updateuserbyid
+FICHE BATEAU
+- Le cœur de suivi est placé dans la barre du haut, à côté du partage. Le parcours de connexion et de suivi est conservé.
+- Le gros bouton dans l'en-tête disparaît au profit de l'âge, du nombre de passagers et du nombre de véhicules. Les valeurs absentes affichent À renseigner.
+- Le logo de la compagnie passe de 17 à 38 px dans cet en-tête ; le texte et la fiche compagnie restent accessibles.
 
-PROMPT PRÊT À TRANSMETTRE À TON IA GIT CLOUD
-Intègre ce ZIP au dépôt BledWay existant en fusionnant les évolutions récentes, sans réécrire l'historique Git. Applique la migration 20261024120000_user_management.sql dans le projet Supabase de production Batogo après avoir vérifié les migrations précédentes. Ne touche pas aux secrets déjà configurés et n'envoie aucune notification ni invitation réelle pendant les tests. Exécute les tests inclus, npm run build:vercel et le contrôle TypeScript, puis vérifie sur mobile et PC les cartes compactes, leurs clics séparés, les rôles et la rubrique Utilisateurs. Confirme séparément l'intégration Git, la migration Supabase et le déploiement Vercel ; n'annonce pas une mise en production tant que ces trois étapes ne sont pas vérifiées.
+INTÉGRATION À CONFIER À L'IA GIT CLOUD
+1. Fusionner les fichiers src/ et public/ dans le dépôt existant en conservant leurs chemins.
+2. Dans le BON projet Supabase de production Batogo, vérifier les migrations de communauté, suivis/push et campagnes déjà installées. Installer si nécessaire la migration précédente 20261024120000_user_management.sql incluse, puis la nouvelle 20261024160000_commercial_programs.sql.
+3. Cette nouvelle migration ajoute les sources et le contrôle manuel aux rattachements commerciaux, une clé d'occurrence sur les départs et la fonction de génération sans remplacement. Elle ne crée ni compagnie, ni liaison, ni départ automatiquement à son installation.
+4. Aucun nouveau secret, aucune clé supplémentaire et aucun nouveau cron ne sont requis. Conserver les secrets existants.
+5. Exécuter les tests inclus, npm run build:vercel (qui régénère les routes), puis npx tsc --noEmit. Déployer normalement et vérifier /admin?tab=commercial avec un compte admin ou éditeur.
+6. Ne pas envoyer de push, d'invitation, ni générer de vrais départs pendant les tests sans décision explicite. Une génération réelle peut préparer des campagnes d'ouverture, dont l'envoi reste soumis à la validation admin prévue.
+
+VÉRIFICATIONS EFFECTUÉES
+- 25 tests de logique réussis, dont contexte compagnie/liaison, durées de plus de 24 h, fuseaux et protection des comptes précédents.
+- 10 contrôles SQL en base temporaire : migration réexécutable, liens HTTPS, droits d'édition, génération future, exceptions, maintien des identifiants/suivis, absence de doublon, report vers une autre date et refus d'un éditeur banni.
+- 20 parcours navigateur sur la version compilée, à 320, 390 et 1440 px : fiche et cœur, sources, filtre compagnie/liaison, calendrier, photos, ajout ponctuel, rechargement et changement de compagnie.
+- TypeScript et lint : sans erreur sur les fichiers concernés. Compilation Vercel et contrôle local de l'accueil compilé/résolution des ressources réussis.
+- Les essais navigateur utilisent des données simulées ; aucun compte, programme ou envoi de production n'a été modifié.
+
+PROMPT À TRANSMETTRE À L'IA GIT CLOUD
+Intègre ce correctif cumulatif BledWay par fusion avec l'état actuel du dépôt, sans réécrire l'historique Git. Vérifie puis applique dans le projet Supabase Batogo les migrations utilisateurs et programmes commerciaux incluses, dans cet ordre si elles ne sont pas déjà installées. Conserve les secrets existants. Exécute les tests, npm run build:vercel et le contrôle TypeScript. Vérifie sur mobile et PC le cœur dans la barre de partage, les trois chiffres et le logo de la fiche, puis la gestion par compagnie et liaison avec sources officielles, calendriers, départs/arrivées et navires/photos. Confirme séparément l'intégration Git, l'application des migrations et le déploiement. Ne publie pas les exemples de liaisons ni de départs de test et n'envoie aucune notification réelle pendant les vérifications.

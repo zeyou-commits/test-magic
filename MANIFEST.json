@@ -1,8 +1,7 @@
 {
   "date": "2026-10-24",
-  "cloud_current_state_verified": false,
   "production_changes_applied": false,
-  "source_files": [
+  "files": [
     {
       "path": "src/components/panel/HomeTraffic.tsx",
       "sha256": "e8b947a6fc089b23aad44ff1f0a2b1f77fb059a8e74ef243d8896dfd5ac04e68"
@@ -13,7 +12,7 @@
     },
     {
       "path": "src/components/panel/ShipViews.tsx",
-      "sha256": "38a1939b33a9a5a5928ce655bd14e6e25cc511f046755962212ea8082586c419"
+      "sha256": "87f1e85bd97585a194b2e097e0b491b747b7aa78a000e2098c117b9b3d4b2971"
     },
     {
       "path": "src/components/panel/CrossingCard.tsx",
@@ -41,7 +40,7 @@
     },
     {
       "path": "src/components/admin/AdminWorkspace.tsx",
-      "sha256": "74f1a96c96722e1a5e61a5581386de228d7a86fc5502e90f6d5b64d93d356dea"
+      "sha256": "9a6308bf9e8d833c07667aa57733f60cba95c5b80e992ef884d179f02bc5cc12"
     },
     {
       "path": "src/components/admin/AdminFilterNotice.tsx",
@@ -73,15 +72,15 @@
     },
     {
       "path": "src/lib/admin/permissions.ts",
-      "sha256": "c8097bd3975692b603868c1d929e2e5e328bda216da6033a48451a0fe8c1f5dd"
+      "sha256": "91b7af11016df07ad70e74f8ae76341e6019c935eb330df48c93527bc26cbd7f"
     },
     {
       "path": "src/lib/admin/navigation.ts",
-      "sha256": "2c096772bf3306102e8a3498adc8ddfda9a9c342e50c27f12dab31cac25a1c86"
+      "sha256": "4a21c45099ab11968a47f902e7b3e21fc9e4c4c756c1f691a294adb5ff6933b7"
     },
     {
       "path": "src/lib/admin/navigation.test.ts",
-      "sha256": "dae645231f7012a8755001f216c1ce9226a3f27b0f13199d5e966de7816dab5f"
+      "sha256": "62cecf37c73070dbe25e290843bf562d6c2f51b0a1043557e2ba8d8ae9f2d4d7"
     },
     {
       "path": "src/lib/ferry/tracking.ts",
@@ -97,7 +96,7 @@
     },
     {
       "path": "src/routes/admin.tsx",
-      "sha256": "9a45a58c7ee3a459fa1de2a3f10d3c4a5621f0e8ac47324a9675fff6baa0ccbd"
+      "sha256": "d05fcf6b20470c2e99b0bfed2a4fa76f6880c36d088bde7cf04a1f0c3e15afc4"
     },
     {
       "path": "src/routes/index.tsx",
@@ -118,6 +117,30 @@
     {
       "path": "supabase/migrations/20261024120000_user_management.sql",
       "sha256": "5bca5268b8d3090fe0c992ad6e92354c17b4e14f0c776263a1c71f6ab27d433d"
+    },
+    {
+      "path": "src/components/admin/CommercialPrograms.tsx",
+      "sha256": "de605916a5e841330a2b064c67b2ea08ff98987d15e7f65f20aaf6e3e6ecc934"
+    },
+    {
+      "path": "src/components/panel/FollowButton.tsx",
+      "sha256": "2f7096a90a0cfb841917693df014afb9d8eb6ba86e74c4734b2eefbf1d824128"
+    },
+    {
+      "path": "src/components/panel/SidePanel.tsx",
+      "sha256": "8dde499479029b7ad9e851bc1487d1f06d9d562e4ef660df240586a929efbf02"
+    },
+    {
+      "path": "src/lib/admin/commercial.ts",
+      "sha256": "5f2816de13dc06da384d69fc6de038579cc7c0d7d86341d6a8a5d15eab063196"
+    },
+    {
+      "path": "src/lib/admin/commercial.test.ts",
+      "sha256": "a561792b50347caf487d2581e8d7c926608898f354b5498a298025502a45cfce"
+    },
+    {
+      "path": "supabase/migrations/20261024160000_commercial_programs.sql",
+      "sha256": "74b3e165490ce47ed909dd72f00d3ff5bbe78e289ffc72851a6aa372b8a0633c"
     }
   ]
 }

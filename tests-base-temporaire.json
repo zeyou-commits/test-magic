@@ -1,18 +1,15 @@
 {
   "tests": [
-    "Migration exécutable et réexécutable",
-    "Recherche serveur globale avec pagination et sans mot de passe ni clé",
-    "Liste refusée à un voyageur",
-    "Un voyageur ne peut pas se promouvoir ou appeler la fonction privilégiée",
-    "Éditeur autorisé à gérer les données ferry",
-    "Bannissement : ancien JWT bloqué en RLS, push retirés et suivis suspendus",
-    "Compte banni non promouvable",
-    "Bannissement et suppression des administrateurs bloqués au niveau base",
-    "Auto-démotion et retrait du dernier administrateur refusés",
-    "Réactivation rétablit les droits sans réinscrire au push automatiquement",
-    "Modérateur : lecture des contributions privées et publication autorisées",
-    "Compte supprimé : ancien JWT sans accès aux données",
-    "Changements de rôle journalisés"
+    "Migration commerciale réexécutable",
+    "Sources HTTPS enregistrées, lien dangereux rejeté",
+    "Voyageur non autorisé à publier un calendrier",
+    "Saison future : génération limitée à la période valide et aux jours de service",
+    "Départ corrigé et son suivi conservés sans changement d’identifiant",
+    "Annulation existante et exception calendrier respectées",
+    "Changement de navire et heure locale d’été convertis correctement",
+    "Relancer la génération n’ajoute aucun doublon",
+    "Report d’un départ vers une autre date : l’ancienne occurrence ne réapparaît pas",
+    "Éditeur banni bloqué même avec son ancien jeton"
   ],
   "productionWrites": false
 }

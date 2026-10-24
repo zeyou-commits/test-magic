@@ -23,6 +23,13 @@ import { UserMenu } from "@/components/layout/UserMenu";
 
 const sections = [
   {
+    id: "commercial",
+    label: "Programmes par compagnie",
+    description: "Liaisons commerciales, départs, navires et sources officielles au même endroit.",
+    group: "Programmes commerciaux",
+    icon: CalendarRange,
+  },
+  {
     id: "users",
     label: "Utilisateurs",
     description: "Gérez les comptes voyageurs, les rôles et les accès de votre équipe.",
@@ -54,49 +61,49 @@ const sections = [
     id: "departures",
     label: "Départs",
     description: "Retrouvez un départ et mettez à jour ses informations.",
-    group: "Traversées",
+    group: "Programmes commerciaux",
     icon: CalendarDays,
   },
   {
     id: "schedules",
     label: "Calendriers",
     description: "Gérez les programmes et les fréquences des lignes.",
-    group: "Traversées",
+    group: "Programmes commerciaux",
     icon: CalendarRange,
   },
   {
     id: "import",
     label: "Importer un planning",
     description: "Contrôlez les lignes de votre fichier avant de les publier.",
-    group: "Traversées",
+    group: "Programmes commerciaux",
     icon: FileSpreadsheet,
   },
   {
     id: "vessels",
     label: "Navires",
     description: "Photos, caractéristiques et affectations de la flotte.",
-    group: "Référentiel",
+    group: "Réseau général",
     icon: Ship,
   },
   {
     id: "ports",
     label: "Ports",
     description: "Accès, informations pratiques et points sur la carte.",
-    group: "Référentiel",
+    group: "Réseau général",
     icon: MapPin,
   },
   {
     id: "routes",
-    label: "Lignes",
+    label: "Liaisons du réseau",
     description: "Les liaisons entre les deux rives.",
-    group: "Référentiel",
+    group: "Réseau général",
     icon: Route,
   },
   {
     id: "companies",
     label: "Compagnies",
     description: "Les transporteurs et leurs informations publiques.",
-    group: "Référentiel",
+    group: "Réseau général",
     icon: Building2,
   },
   {
@@ -124,7 +131,7 @@ const sections = [
     id: "data",
     label: "Qualité des données",
     description: "Contrôlez la cohérence des informations publiées.",
-    group: "Référentiel",
+    group: "Réseau général",
     icon: Database,
   },
 ];
@@ -174,7 +181,7 @@ export function AdminWorkspace({
           />
         </label>
         <nav aria-label="Administration">
-          {["Pilotage", "Traversées", "Référentiel", "Communauté"].map((group) => {
+          {["Pilotage", "Réseau général", "Programmes commerciaux", "Communauté"].map((group) => {
             const items = filtered.filter((item) => item.group === group);
             return items.length ? (
               <div className="bw-admin-nav-group" key={group}>

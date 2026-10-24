@@ -1,5 +1,6 @@
 export const adminTabs = [
   "overview",
+  "commercial",
   "users",
   "reviews",
   "community",
@@ -23,10 +24,21 @@ export type DepartureScope = Extract<AdminFilter, "today" | "unassigned">;
 export function adminSearch(search: Record<string, unknown>): {
   tab?: AdminTab;
   filter?: AdminFilter;
+  company?: string;
+  route?: string;
 } {
   const tab = adminTabs.includes(search["tab"] as AdminTab)
     ? (search["tab"] as AdminTab)
     : "overview";
+  if (tab === "commercial") {
+    const uuid = (value: unknown) =>
+      typeof value === "string" && /^[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}$/i.test(value)
+        ? value
+        : undefined;
+    const company = uuid(search["company"]),
+      route = uuid(search["route"]);
+    return { tab, ...(company ? { company } : {}), ...(company && route ? { route } : {}) };
+  }
   const filter = search["filter"];
   if (
     (tab === "departures" && (filter === "today" || filter === "unassigned")) ||

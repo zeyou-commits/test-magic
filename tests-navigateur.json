@@ -1,147 +1,140 @@
 {
   "checks": [
     {
-      "label": "accueil-compact-320",
+      "label": "fiche-bateau-condensee-320",
       "width": 320,
       "document": 320,
       "body": 320,
       "errors": 0
     },
     {
-      "label": "suivi-independant-320",
+      "label": "suivi-coeur-en-tete-320",
       "width": 320,
       "document": 320,
       "body": 320,
       "errors": 0
     },
     {
-      "label": "port-cliquable-320",
-      "width": 320,
-      "document": 320,
-      "body": 320,
-      "errors": 0
-    },
-    {
-      "label": "fiche-bateau-public-320",
-      "width": 320,
-      "document": 320,
-      "body": 320,
-      "errors": 0
-    },
-    {
-      "label": "accueil-compact-390",
+      "label": "fiche-bateau-condensee-390",
       "width": 390,
       "document": 390,
       "body": 390,
       "errors": 0
     },
     {
-      "label": "suivi-independant-390",
+      "label": "suivi-coeur-en-tete-390",
       "width": 390,
       "document": 390,
       "body": 390,
       "errors": 0
     },
     {
-      "label": "port-cliquable-390",
+      "label": "fiche-bateau-condensee-1440",
+      "width": 1440,
+      "document": 1440,
+      "body": 1440,
+      "errors": 0
+    },
+    {
+      "label": "suivi-coeur-en-tete-1440",
+      "width": 1440,
+      "document": 1440,
+      "body": 1440,
+      "errors": 0
+    },
+    {
+      "label": "programme-compagnie-liaison-390",
       "width": 390,
       "document": 390,
       "body": 390,
       "errors": 0
     },
     {
-      "label": "fiche-bateau-public-390",
+      "label": "sources-officielles-enregistrees-390",
       "width": 390,
       "document": 390,
       "body": 390,
       "errors": 0
     },
     {
-      "label": "accueil-compact-768",
-      "width": 768,
-      "document": 768,
-      "body": 768,
-      "errors": 0
-    },
-    {
-      "label": "suivi-independant-768",
-      "width": 768,
-      "document": 768,
-      "body": 768,
-      "errors": 0
-    },
-    {
-      "label": "port-cliquable-768",
-      "width": 768,
-      "document": 768,
-      "body": 768,
-      "errors": 0
-    },
-    {
-      "label": "fiche-bateau-public-768",
-      "width": 768,
-      "document": 768,
-      "body": 768,
-      "errors": 0
-    },
-    {
-      "label": "accueil-compact-1440",
-      "width": 1440,
-      "document": 1440,
-      "body": 1440,
-      "errors": 0
-    },
-    {
-      "label": "suivi-independant-1440",
-      "width": 1440,
-      "document": 1440,
-      "body": 1440,
-      "errors": 0
-    },
-    {
-      "label": "port-cliquable-1440",
-      "width": 1440,
-      "document": 1440,
-      "body": 1440,
-      "errors": 0
-    },
-    {
-      "label": "fiche-bateau-public-1440",
-      "width": 1440,
-      "document": 1440,
-      "body": 1440,
-      "errors": 0
-    },
-    {
-      "label": "admin-utilisateurs-390",
+      "label": "calendrier-scope-correct-390",
       "width": 390,
       "document": 390,
       "body": 390,
       "errors": 0
     },
     {
-      "label": "admin-bannissement-confirme-390",
+      "label": "navires-photos-sous-liaison-390",
       "width": 390,
       "document": 390,
       "body": 390,
       "errors": 0
     },
     {
-      "label": "admin-utilisateurs-1440",
+      "label": "ajout-depart-ponctuel-390",
+      "width": 390,
+      "document": 390,
+      "body": 390,
+      "errors": 0
+    },
+    {
+      "label": "contexte-liaison-conserve-au-rechargement-390",
+      "width": 390,
+      "document": 390,
+      "body": 390,
+      "errors": 0
+    },
+    {
+      "label": "changement-compagnie-390",
+      "width": 390,
+      "document": 390,
+      "body": 390,
+      "errors": 0
+    },
+    {
+      "label": "programme-compagnie-liaison-1440",
       "width": 1440,
       "document": 1440,
       "body": 1440,
       "errors": 0
     },
     {
-      "label": "admin-bannissement-confirme-1440",
+      "label": "sources-officielles-enregistrees-1440",
       "width": 1440,
       "document": 1440,
       "body": 1440,
       "errors": 0
     },
     {
-      "label": "vesselfinder-admin-sans-signal",
+      "label": "calendrier-scope-correct-1440",
+      "width": 1440,
+      "document": 1440,
+      "body": 1440,
+      "errors": 0
+    },
+    {
+      "label": "navires-photos-sous-liaison-1440",
+      "width": 1440,
+      "document": 1440,
+      "body": 1440,
+      "errors": 0
+    },
+    {
+      "label": "ajout-depart-ponctuel-1440",
+      "width": 1440,
+      "document": 1440,
+      "body": 1440,
+      "errors": 0
+    },
+    {
+      "label": "contexte-liaison-conserve-au-rechargement-1440",
+      "width": 1440,
+      "document": 1440,
+      "body": 1440,
+      "errors": 0
+    },
+    {
+      "label": "changement-compagnie-1440",
       "width": 1440,
       "document": 1440,
       "body": 1440,

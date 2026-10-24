@@ -1,3 +1,6 @@
+import { useQuery } from "@tanstack/react-query";
+import { vesselsQuery } from "@/lib/ferry/queries";
+import { FollowButton } from "./FollowButton";
 import { useEffect, useRef } from "react";
 import type { Filters, RouteLine, Selection } from "@/lib/ferry/types";
 import { ArrowLeft } from "lucide-react";
@@ -44,6 +47,9 @@ export function SidePanel({
   onItineraryPreview,
   onItineraryResultsReady,
 }: SidePanelProps) {
+  const { data: vessels = [] } = useQuery(vesselsQuery);
+  const followedVessel =
+    selection?.type === "vessel" ? vessels.find((v) => v.id === selection.id) : null;
   const detailRef = useRef<HTMLDivElement>(null);
   const returnFocusRef = useRef<HTMLElement | null>(null);
   const selectionKey = selection ? `${selection.type}:${selection.id}` : null;
@@ -74,16 +80,24 @@ export function SidePanel({
         inert={selection ? true : undefined}
         className="batogo-panel-scroll relative flex-1 overflow-y-auto"
       >
-        {itineraryOpen && onCloseItinerary && onItineraryPreview ? <ItineraryPlanner onClose={onCloseItinerary} onPreview={onItineraryPreview} {...(onItineraryResultsReady ? { onResultsReady: onItineraryResultsReady } : {})} /> : <SearchPanel
-          filters={filters}
-          onFiltersChange={onFiltersChange}
-          selection={selection}
-          onSelect={onSelect}
-          hidePickersOnMobile={hidePickersOnMobile}
-          {...(onHighlightRoute ? { onHighlightRoute } : {})}
-          {...(onFocusRoute ? { onFocusRoute } : {})}
-          {...(onOpenItinerary ? { onOpenItinerary } : {})}
-        />}
+        {itineraryOpen && onCloseItinerary && onItineraryPreview ? (
+          <ItineraryPlanner
+            onClose={onCloseItinerary}
+            onPreview={onItineraryPreview}
+            {...(onItineraryResultsReady ? { onResultsReady: onItineraryResultsReady } : {})}
+          />
+        ) : (
+          <SearchPanel
+            filters={filters}
+            onFiltersChange={onFiltersChange}
+            selection={selection}
+            onSelect={onSelect}
+            hidePickersOnMobile={hidePickersOnMobile}
+            {...(onHighlightRoute ? { onHighlightRoute } : {})}
+            {...(onFocusRoute ? { onFocusRoute } : {})}
+            {...(onOpenItinerary ? { onOpenItinerary } : {})}
+          />
+        )}
       </div>
 
       {selection ? (
@@ -114,7 +128,19 @@ export function SidePanel({
             >
               <ArrowLeft className="size-3.5" /> {backLabel ?? "Rechercher"}
             </button>
-            <ShareButtons compact />
+            <div className="flex items-center gap-1.5">
+              {followedVessel ? (
+                <FollowButton
+                  kind="vessel"
+                  targetId={followedVessel.id}
+                  label={followedVessel.name}
+                  demo={followedVessel.is_demo}
+                  compact
+                  iconOnly
+                />
+              ) : null}
+              <ShareButtons compact />
+            </div>
           </div>
           <div className="batogo-panel-scroll flex-1 overflow-y-auto p-4 md:p-6">
             {selection.type === "port" ? (

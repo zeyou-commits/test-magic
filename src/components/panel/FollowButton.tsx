@@ -9,12 +9,14 @@ export function FollowButton({
   kind,
   targetId,
   compact = false,
+  iconOnly = false,
   label,
   demo = false,
 }: {
   kind: "vessel" | "departure";
   targetId: string;
   compact?: boolean;
+  iconOnly?: boolean;
   label?: string;
   demo?: boolean;
 }) {
@@ -78,7 +80,7 @@ export function FollowButton({
     }
   }
   return (
-    <span className={`inline-flex flex-col gap-1 ${compact ? "items-start" : "w-full"}`}>
+    <span className={`relative inline-flex flex-col gap-1 ${compact ? "items-start" : "w-full"}`}>
       <button
         type="button"
         onClick={(event) => {
@@ -87,23 +89,38 @@ export function FollowButton({
         }}
         disabled={busy || Boolean(user && isPending)}
         aria-pressed={Boolean(follow?.active)}
-        className={`inline-flex min-h-10 items-center justify-center gap-2 rounded-xl border px-3 text-xs font-semibold transition-colors disabled:opacity-50 ${follow?.active ? "border-primary/30 bg-primary/10 text-primary" : "border-primary/25 bg-primary/5 text-primary hover:bg-primary/10"}`}
+        aria-label={
+          iconOnly
+            ? `${follow?.active ? "Ne plus suivre" : "Suivre"} ${label ?? (kind === "vessel" ? "ce bateau" : "cette traversée")}`
+            : undefined
+        }
+        title={iconOnly ? (follow?.active ? "Suivi activé" : "Suivre ce bateau") : undefined}
+        className={`inline-flex ${iconOnly ? "size-8 rounded-full !min-h-8 !gap-0 !px-0" : "min-h-10"} items-center justify-center gap-2 rounded-xl border px-3 text-xs font-semibold transition-colors disabled:opacity-50 ${follow?.active ? "border-primary/30 bg-primary/10 text-primary" : "border-primary/25 bg-primary/5 text-primary hover:bg-primary/10"}`}
       >
         {busy ? (
           <LoaderCircle className="size-4 animate-spin" aria-hidden />
         ) : (
           <Heart className={`size-4 ${follow?.active ? "fill-current" : ""}`} aria-hidden />
         )}
-        {follow?.active
-          ? "Suivi activé"
-          : compact
-            ? "Suivre"
-            : kind === "vessel"
-              ? "Suivre ce bateau"
-              : "Suivre cette traversée"}
+        {iconOnly
+          ? null
+          : follow?.active
+            ? "Suivi activé"
+            : compact
+              ? "Suivre"
+              : kind === "vessel"
+                ? "Suivre ce bateau"
+                : "Suivre cette traversée"}
       </button>
       {(message || error) && (
-        <span role="status" className="max-w-sm text-[11px] leading-snug text-muted-foreground">
+        <span
+          role="status"
+          className={
+            iconOnly
+              ? "absolute right-0 top-full z-50 mt-2 w-56 rounded-xl border bg-background p-3 text-[11px] shadow-lg"
+              : "max-w-sm text-[11px] leading-snug text-muted-foreground"
+          }
+        >
           {message || "Vos suivis sont momentanément indisponibles."}
         </span>
       )}

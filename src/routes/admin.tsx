@@ -1,8 +1,12 @@
+import { commercialArrival } from "@/lib/admin/commercial";
+import { trackingTimes } from "@/lib/ferry/tracking";
+import type { Departure } from "@/lib/ferry/types";
+import { CommercialPrograms } from "@/components/admin/CommercialPrograms";
 import { UsersAdmin } from "@/components/admin/UsersAdmin";
 import { canUseAdminTab } from "@/lib/admin/permissions";
 import { communityQuery } from "@/lib/ferry/community";
 import { CommunityModeration } from "@/components/panel/CommunityModeration";
-import { useEffect, useState } from "react";
+import { cloneElement, isValidElement, useEffect, useId, useRef, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -178,7 +182,12 @@ function CountBadge({
 function AdminTabs() {
   const { user, roles, isAdmin } = useAuth();
   const community = useQuery(communityQuery(undefined, undefined, true, user?.id));
-  const { tab: requestedTab = "overview", filter } = Route.useSearch();
+  const {
+    tab: requestedTab = "overview",
+    filter,
+    company,
+    route: commercialRoute,
+  } = Route.useSearch();
   const tab = canUseAdminTab(roles, requestedTab)
     ? requestedTab
     : roles.includes("editor")
@@ -222,6 +231,36 @@ function AdminTabs() {
         badges={badges}
         canAccess={(id) => canUseAdminTab(roles, id)}
       >
+        <TabsContent value="commercial">
+          <CommercialPrograms
+            companyId={company}
+            routeId={commercialRoute}
+            onContext={(companyId, routeId) =>
+              void navigate({
+                search: adminSearch({ tab: "commercial", company: companyId, route: routeId }),
+                resetScroll: false,
+              })
+            }
+            onNetwork={() => navigateTo("routes")}
+            renderSchedules={(companyId, routeId) => (
+              <SchedulesAdmin
+                key={`${companyId}:${routeId}`}
+                companyId={companyId}
+                routeId={routeId}
+              />
+            )}
+            renderDepartures={(companyId, routeId) => (
+              <DeparturesAdmin
+                key={`${companyId}:${routeId}`}
+                scope={undefined}
+                onClearFilter={() => {}}
+                companyId={companyId}
+                routeId={routeId}
+              />
+            )}
+            renderVessels={(_companyId, ids) => <VesselsAdmin vesselIds={ids} />}
+          />
+        </TabsContent>
         <TabsContent value="users">
           <UsersAdmin />
         </TabsContent>
@@ -720,7 +759,11 @@ function DepartureEditor({
 function DeparturesAdmin({
   scope,
   onClearFilter,
+  companyId,
+  routeId,
 }: {
+  companyId?: string;
+  routeId?: string;
   scope: DepartureScope | undefined;
   onClearFilter: () => void;
 }) {
@@ -747,7 +790,7 @@ function DeparturesAdmin({
       return data ?? [];
     },
   });
-  const [companyFilter, setCompanyFilter] = useState("");
+  const [companyFilter, setCompanyFilter] = useState(companyId ?? "");
   const [editing, setEditing] = useState<string | null>(null);
 
   const update = useMutation({
@@ -774,6 +817,8 @@ function DeparturesAdmin({
   const portName = (id: string) => ports.find((port) => port.id === id)?.name ?? "—";
   const now = new Date();
   const shown = periodDepartures.filter((departure) => {
+    if (companyId && departure.company_id !== companyId) return false;
+    if (routeId && departure.route_id !== routeId) return false;
     if (!matchesDepartureScope(departure, scope, now)) return false;
     if (companyFilter && departure.company_id !== companyFilter) return false;
     const route = routes.find((item) => item.id === departure.route_id);
@@ -812,11 +857,13 @@ function DeparturesAdmin({
           onChange={(e) => setCompanyFilter(e.target.value)}
         >
           <option value="">Toutes</option>
-          {companies.map((c) => (
-            <option key={c.id} value={c.id}>
-              {c.name}
-            </option>
-          ))}
+          {companies
+            .filter((c) => !companyId || c.id === companyId)
+            .map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.name}
+              </option>
+            ))}
         </select>
         <label className="ml-2 text-sm text-muted-foreground" htmlFor="dep-period">
           Période
@@ -858,6 +905,7 @@ function DeparturesAdmin({
       )}
       <ul className="divide-y divide-border">
         {shown.map((departure) => {
+          const arrival = trackingTimes(departure as Departure).arrival.iso;
           const route = routes.find((item) => item.id === departure.route_id);
           const company = companies.find((item) => item.id === departure.company_id);
           const tz = portTimeZone(ports.find((port) => port.id === route?.departure_port_id));
@@ -875,6 +923,15 @@ function DeparturesAdmin({
                     ({zoneLabel(tz)})
                   </span>
                 </p>
+                {arrival && (
+                  <p className="text-xs font-medium">
+                    Arrivée :{" "}
+                    {formatDateTime(
+                      arrival,
+                      portTimeZone(ports.find((p) => p.id === route?.arrival_port_id)),
+                    )}
+                  </p>
+                )}
                 <p className="text-xs text-muted-foreground">
                   {route
                     ? `${portName(route.departure_port_id)} → ${portName(route.arrival_port_id)}`
@@ -975,28 +1032,36 @@ function addMinutesToTime(time: string, minutes: number): string {
   return `${String(Math.floor(total / 60)).padStart(2, "0")}:${String(total % 60).padStart(2, "0")}`;
 }
 
-function durationBetweenTimes(departure: string, arrival: string): number | null {
-  const from = timeToMinutes(departure);
-  const to = timeToMinutes(arrival);
-  if (from === null || to === null) return null;
-  const diff = to - from;
-  return diff > 0 ? diff : diff + 1440;
-}
-
 // Indique si l'arrivée théorique tombe le lendemain (ou plus tard).
 function dayShift(minutes: number): string {
   const days = Math.floor(minutes / 1440);
   return days > 0 ? ` (+${days} j)` : "";
 }
 
-function SchedulesAdmin() {
+// Conversion de deux heures d'une même journée pour les anciens imports.
+function durationBetweenTimes(departure: string, arrival: string): number | null {
+  const from = timeToMinutes(departure),
+    to = timeToMinutes(arrival);
+  if (from === null || to === null) return null;
+  const diff = to - from;
+  return diff > 0 ? diff : diff + 1440;
+}
+
+function SchedulesAdmin({ companyId, routeId }: { companyId?: string; routeId?: string } = {}) {
   const queryClient = useQueryClient();
-  const { data: schedules = [] } = useQuery(schedulesQuery);
+  const editorRef = useRef<HTMLDetailsElement>(null);
+  const { data: allSchedules = [] } = useQuery(schedulesQuery);
   const { data: routes = [] } = useQuery(adminRoutesQuery);
   const { data: ports = [] } = useQuery(adminPortsQuery);
   const { data: companies = [] } = useQuery(companiesQuery);
   const { data: vessels = [] } = useQuery(vesselsQuery);
-  const [draft, setDraft] = useState(emptyDraft);
+  const schedules = allSchedules.filter(
+    (schedule) =>
+      (!companyId || schedule.company_id === companyId) &&
+      (!routeId || schedule.route_id === routeId),
+  );
+  const scopedDraft = { ...emptyDraft, company_id: companyId ?? "", route_id: routeId ?? "" };
+  const [draft, setDraft] = useState(scopedDraft);
   const [editingId, setEditingId] = useState<string | null>(null);
 
   const portName = (id: string) => ports.find((port) => port.id === id)?.name ?? "—";
@@ -1027,8 +1092,8 @@ function SchedulesAdmin() {
         valid_to: draft.valid_to || null,
         source_name: draft.source_name || null,
         source_url: draft.source_url || null,
-        reliability: "verified" as const,
-        last_verified_at: new Date().toISOString(),
+        reliability: "to_verify" as const,
+        last_verified_at: null,
         status: "active" as const,
       };
       const { error } = editingId
@@ -1038,7 +1103,7 @@ function SchedulesAdmin() {
     },
     onSuccess: () => {
       invalidate();
-      setDraft(emptyDraft);
+      setDraft(scopedDraft);
       setEditingId(null);
       toast.success(editingId ? "Calendrier modifié." : "Calendrier ajouté.");
     },
@@ -1060,61 +1125,46 @@ function SchedulesAdmin() {
   // Génère les départs des 60 prochains jours à partir d'un calendrier.
   const generate = useMutation({
     mutationFn: async (scheduleId: string) => {
-      const schedule = schedules.find((item) => item.id === scheduleId);
-      if (!schedule) throw new Error("Calendrier introuvable.");
-      const today = new Date();
-      const rows: Array<Record<string, unknown>> = [];
-      for (let offset = 0; offset < 60; offset += 1) {
-        const day = new Date(today);
-        day.setUTCDate(day.getUTCDate() + offset);
-        const isoDate = day.toISOString().slice(0, 10);
-        const weekday = ((day.getUTCDay() + 6) % 7) + 1; // 1 = lundi
-        if (!schedule.weekdays.includes(weekday)) continue;
-        if (isoDate < schedule.valid_from) continue;
-        if (schedule.valid_to && isoDate > schedule.valid_to) continue;
-        // L'heure du calendrier est l'heure locale du port de départ (celle du billet).
-        const route = routes.find((item) => item.id === schedule.route_id);
-        const fromPort = ports.find((port) => port.id === route?.departure_port_id);
-        const departureAt = zonedTimeToUtc(
-          isoDate,
-          schedule.departure_time.slice(0, 5),
-          portTimeZone(fromPort),
-        );
-        rows.push({
-          route_id: schedule.route_id,
-          company_id: schedule.company_id,
-          vessel_id: schedule.default_vessel_id,
-          schedule_id: schedule.id,
-          departure_at: departureAt.toISOString(),
-          arrival_at: new Date(
-            departureAt.getTime() + schedule.duration_minutes * 60000,
-          ).toISOString(),
-          duration_minutes: schedule.duration_minutes,
-          status: "scheduled",
-          reliability: schedule.reliability,
-          source_name: schedule.source_name,
-          source_url: schedule.source_url,
-          last_verified_at: new Date().toISOString(),
-        });
-      }
-      const { error: deleteError } = await supabase
-        .from("departures")
-        .delete()
-        .eq("schedule_id", schedule.id)
-        .gte("departure_at", new Date().toISOString());
-      if (deleteError) throw new Error(deleteError.message);
-      if (rows.length === 0) return 0;
-      const { error } = await supabase.from("departures").insert(rows as never);
-      if (error) throw new Error(error.message);
-      return rows.length;
+      const { data, error } = await (
+        supabase.rpc as unknown as (
+          name: string,
+          args: Record<string, unknown>,
+        ) => Promise<{ data: number | null; error: { message: string } | null }>
+      )("bw_generate_schedule_missing", { _schedule: scheduleId });
+      if (error)
+        throw new Error("Génération impossible : vérifiez la migration commerciale et vos droits.");
+      return data ?? 0;
     },
     onSuccess: (count) => {
       invalidate();
-      toast.success(`${count} départ(s) généré(s).`);
+      toast.success(
+        `${count} nouveau(x) départ(s) ajouté(s), sans modifier les départs existants.`,
+      );
     },
     onError: (error: Error) => toast.error(error.message),
   });
 
+  const draftRoute = routes.find((r) => r.id === draft.route_id);
+  const fromZone = portTimeZone(ports.find((p) => p.id === draftRoute?.departure_port_id));
+  const toZone = portTimeZone(ports.find((p) => p.id === draftRoute?.arrival_port_id));
+  const previewArrival = commercialArrival(
+    draft.valid_from,
+    draft.departure_time,
+    Number(draft.duration_minutes),
+    fromZone,
+  );
+  const schedulePreview = (schedule: (typeof allSchedules)[number]) => {
+    const line = routes.find((r) => r.id === schedule.route_id);
+    const departureZone = portTimeZone(ports.find((p) => p.id === line?.departure_port_id));
+    const arrivalZone = portTimeZone(ports.find((p) => p.id === line?.arrival_port_id));
+    const iso = commercialArrival(
+      schedule.valid_from,
+      schedule.departure_time.slice(0, 5),
+      schedule.duration_minutes,
+      departureZone,
+    );
+    return iso ? `${formatDateTime(iso, arrivalZone)} · ${zoneLabel(arrivalZone)}` : "À confirmer";
+  };
   const toggleDay = (day: number) =>
     setDraft((prev) => ({
       ...prev,
@@ -1125,157 +1175,167 @@ function SchedulesAdmin() {
 
   return (
     <>
-      <Panel>
-        <h2 className="text-sm font-semibold">
-          {editingId ? "Modifier le calendrier" : "Nouveau calendrier de traversées"}
-        </h2>
-        <div className="mt-3 grid gap-3 sm:grid-cols-2">
-          <Field label="Ligne">
-            <NativeSelect
-              value={draft.route_id}
-              onChange={(value) => setDraft((prev) => ({ ...prev, route_id: value }))}
-              options={routes.map((route) => ({ value: route.id, label: routeLabel(route.id) }))}
-            />
-          </Field>
-          <Field label="Compagnie">
-            <NativeSelect
-              value={draft.company_id}
-              onChange={(value) => setDraft((prev) => ({ ...prev, company_id: value }))}
-              options={companies.map((company) => ({ value: company.id, label: company.name }))}
-            />
-          </Field>
-          <Field label="Navire (facultatif)">
-            <NativeSelect
-              value={draft.default_vessel_id}
-              onChange={(value) => setDraft((prev) => ({ ...prev, default_vessel_id: value }))}
-              options={vessels.map((vessel) => ({ value: vessel.id, label: vessel.name }))}
-            />
-          </Field>
-          <Field label="Heure de départ">
-            <Input
-              type="time"
-              value={draft.departure_time}
-              onChange={(event) =>
-                setDraft((prev) => {
-                  const departure_time = event.target.value;
-                  const duration = durationBetweenTimes(departure_time, prev.arrival_time);
-                  return {
-                    ...prev,
-                    departure_time,
-                    duration_minutes: duration ?? prev.duration_minutes,
-                  };
-                })
-              }
-            />
-          </Field>
-          <Field label="Heure d'arrivée théorique">
-            <Input
-              type="time"
-              value={draft.arrival_time}
-              onChange={(event) =>
-                setDraft((prev) => {
-                  const arrival_time = event.target.value;
-                  const duration = durationBetweenTimes(prev.departure_time, arrival_time);
-                  return {
-                    ...prev,
-                    arrival_time,
-                    duration_minutes: duration ?? prev.duration_minutes,
-                  };
-                })
-              }
-            />
-          </Field>
-          <Field label="Durée (minutes)">
-            <Input
-              type="number"
-              min={30}
-              value={draft.duration_minutes}
-              onChange={(event) =>
-                setDraft((prev) => {
-                  const duration_minutes = Number(event.target.value);
-                  return {
-                    ...prev,
-                    duration_minutes,
-                    arrival_time:
-                      addMinutesToTime(prev.departure_time, duration_minutes) || prev.arrival_time,
-                  };
-                })
-              }
-            />
-          </Field>
-          <Field label="Valide du">
-            <Input
-              type="date"
-              value={draft.valid_from}
-              onChange={(event) =>
-                setDraft((prev) => ({ ...prev, valid_from: event.target.value }))
-              }
-            />
-          </Field>
-          <Field label="Valide jusqu'au (facultatif)">
-            <Input
-              type="date"
-              value={draft.valid_to}
-              onChange={(event) => setDraft((prev) => ({ ...prev, valid_to: event.target.value }))}
-            />
-          </Field>
-          <Field label="Source de l'information">
-            <Input
-              value={draft.source_name}
-              placeholder="Site officiel de la compagnie"
-              onChange={(event) =>
-                setDraft((prev) => ({ ...prev, source_name: event.target.value }))
-              }
-            />
-          </Field>
-          <Field label="Lien de la source">
-            <Input
-              value={draft.source_url}
-              placeholder="https://…"
-              onChange={(event) =>
-                setDraft((prev) => ({ ...prev, source_url: event.target.value }))
-              }
-            />
-          </Field>
-        </div>
-        <div className="mt-3">
-          <p className="text-xs font-medium text-muted-foreground">Jours de départ</p>
-          <div className="mt-2 flex flex-wrap gap-2">
-            {weekdayLabels.map((label, index) => {
-              const day = index + 1;
-              const active = draft.weekdays.includes(day);
-              return (
-                <Button
-                  key={label}
-                  type="button"
-                  size="sm"
-                  variant={active ? "default" : "outline"}
-                  onClick={() => toggleDay(day)}
-                >
-                  {label}
-                </Button>
-              );
-            })}
+      <details
+        ref={editorRef}
+        open={editingId ? true : undefined}
+        className="rounded-2xl border bg-card p-3"
+      >
+        <summary className="cursor-pointer text-sm font-semibold text-primary">
+          {editingId ? "Modifier ce calendrier" : "Ajouter un calendrier récurrent"}
+        </summary>
+        <Panel>
+          <h2 className="text-sm font-semibold">
+            {editingId ? "Modifier le calendrier" : "Nouveau calendrier de traversées"}
+          </h2>
+          <div className="mt-3 grid gap-3 sm:grid-cols-2">
+            <Field label="Ligne">
+              <NativeSelect
+                value={draft.route_id}
+                onChange={(value) => setDraft((prev) => ({ ...prev, route_id: value }))}
+                options={routes
+                  .filter((r) => !routeId || r.id === routeId)
+                  .map((route) => ({ value: route.id, label: routeLabel(route.id) }))}
+              />
+            </Field>
+            <Field label="Compagnie">
+              <NativeSelect
+                value={draft.company_id}
+                onChange={(value) => setDraft((prev) => ({ ...prev, company_id: value }))}
+                options={companies
+                  .filter((c) => !companyId || c.id === companyId)
+                  .map((company) => ({ value: company.id, label: company.name }))}
+              />
+            </Field>
+            <Field label="Navire (facultatif)">
+              <NativeSelect
+                value={draft.default_vessel_id}
+                onChange={(value) => setDraft((prev) => ({ ...prev, default_vessel_id: value }))}
+                options={vessels
+                  .filter(
+                    (v) => !draft.company_id || !v.company_id || v.company_id === draft.company_id,
+                  )
+                  .map((vessel) => ({ value: vessel.id, label: vessel.name }))}
+              />
+            </Field>
+            <Field label="Heure de départ">
+              <Input
+                type="time"
+                value={draft.departure_time}
+                onChange={(event) =>
+                  setDraft((prev) => ({ ...prev, departure_time: event.target.value }))
+                }
+              />
+            </Field>
+            <Field label="Arrivée calculée · heure du port d’arrivée">
+              <Input
+                readOnly
+                value={
+                  previewArrival
+                    ? `${formatDateTime(previewArrival, toZone)} (${zoneLabel(toZone)})`
+                    : "À renseigner"
+                }
+              />
+            </Field>
+            <Field label="Durée (minutes)">
+              <Input
+                type="number"
+                min={30}
+                value={draft.duration_minutes}
+                onChange={(event) =>
+                  setDraft((prev) => {
+                    const duration_minutes = Number(event.target.value);
+                    return {
+                      ...prev,
+                      duration_minutes,
+                      arrival_time:
+                        addMinutesToTime(prev.departure_time, duration_minutes) ||
+                        prev.arrival_time,
+                    };
+                  })
+                }
+              />
+            </Field>
+            <Field label="Valide du">
+              <Input
+                type="date"
+                value={draft.valid_from}
+                onChange={(event) =>
+                  setDraft((prev) => ({ ...prev, valid_from: event.target.value }))
+                }
+              />
+            </Field>
+            <Field label="Valide jusqu'au (facultatif)">
+              <Input
+                type="date"
+                value={draft.valid_to}
+                onChange={(event) =>
+                  setDraft((prev) => ({ ...prev, valid_to: event.target.value }))
+                }
+              />
+            </Field>
+            <Field label="Source de l'information">
+              <Input
+                value={draft.source_name}
+                placeholder="Site officiel de la compagnie"
+                onChange={(event) =>
+                  setDraft((prev) => ({ ...prev, source_name: event.target.value }))
+                }
+              />
+            </Field>
+            <Field label="Lien de la source">
+              <Input
+                value={draft.source_url}
+                placeholder="https://…"
+                onChange={(event) =>
+                  setDraft((prev) => ({ ...prev, source_url: event.target.value }))
+                }
+              />
+            </Field>
           </div>
-        </div>
-        <div className="mt-4 flex gap-2">
-          <Button size="sm" disabled={save.isPending} onClick={() => save.mutate()}>
-            {editingId ? "Enregistrer les modifications" : "Ajouter le calendrier"}
-          </Button>
-          {editingId ? (
-            <Button
-              size="sm"
-              variant="ghost"
-              onClick={() => {
-                setEditingId(null);
-                setDraft(emptyDraft);
-              }}
-            >
-              Annuler
+          <div className="mt-3">
+            <p className="text-xs font-medium text-muted-foreground">Jours de départ</p>
+            <div className="mt-2 flex flex-wrap gap-2">
+              {weekdayLabels.map((label, index) => {
+                const day = index + 1;
+                const active = draft.weekdays.includes(day);
+                return (
+                  <Button
+                    key={label}
+                    type="button"
+                    size="sm"
+                    variant={active ? "default" : "outline"}
+                    onClick={() => toggleDay(day)}
+                  >
+                    {label}
+                  </Button>
+                );
+              })}
+            </div>
+          </div>
+          <p className="mt-3 text-[11px] text-muted-foreground">
+            L’arrivée affichée est un aperçu au début de validité. Les nouveaux départs seront
+            calculés dans les fuseaux des ports à leur date. Les départs déjà publiés se modifient
+            dans Départs / arrivées.
+          </p>
+          <div className="mt-4 flex gap-2">
+            <Button size="sm" disabled={save.isPending} onClick={() => save.mutate()}>
+              {editingId ? "Enregistrer les modifications" : "Ajouter le calendrier"}
             </Button>
-          ) : null}
-        </div>
-      </Panel>
+            {editingId ? (
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() => {
+                  setEditingId(null);
+                  setDraft(scopedDraft);
+                }}
+              >
+                Annuler
+              </Button>
+            ) : null}
+          </div>
+        </Panel>
+      </details>
 
       <Panel>
         <h2 className="text-sm font-semibold">Calendriers existants</h2>
@@ -1284,13 +1344,12 @@ function SchedulesAdmin() {
             <li key={schedule.id} className="flex flex-wrap items-center gap-3 py-3">
               <div className="min-w-0 flex-1">
                 <p className="text-sm font-medium">
-                  {routeLabel(schedule.route_id)} · départ {schedule.departure_time.slice(0, 5)} →
-                  arrivée théorique{" "}
-                  {addMinutesToTime(schedule.departure_time.slice(0, 5), schedule.duration_minutes)}
-                  {dayShift(
-                    (timeToMinutes(schedule.departure_time.slice(0, 5)) ?? 0) +
-                      schedule.duration_minutes,
-                  )}
+                  {routeLabel(schedule.route_id)} · départ {schedule.departure_time.slice(0, 5)}
+                </p>
+                <p className="mt-1 text-[11px] text-muted-foreground">
+                  Du {schedule.valid_from}
+                  {schedule.valid_to ? ` au ${schedule.valid_to}` : " · fin à préciser"} · Aperçu
+                  d’arrivée au début de validité : {schedulePreview(schedule)}
                 </p>
                 <p className="text-xs text-muted-foreground">
                   {schedule.weekdays
@@ -1307,6 +1366,16 @@ function SchedulesAdmin() {
                   variant="outline"
                   onClick={() => {
                     setEditingId(schedule.id);
+                    window.setTimeout(
+                      () =>
+                        editorRef.current?.scrollIntoView({
+                          block: "start",
+                          behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches
+                            ? "instant"
+                            : "smooth",
+                        }),
+                      0,
+                    );
                     setDraft({
                       route_id: schedule.route_id,
                       company_id: schedule.company_id,
@@ -1334,13 +1403,13 @@ function SchedulesAdmin() {
                   onClick={() => {
                     if (
                       confirmAction(
-                        "Générer les départs des 60 prochains jours ? Les départs à venir déjà créés par ce calendrier seront remplacés.",
+                        "Ajouter les départs manquants sur 60 jours, à partir du début de validité ou d’aujourd’hui ? Les départs existants, corrections et annulations sont conservés.",
                       )
                     )
                       generate.mutate(schedule.id);
                   }}
                 >
-                  Générer les départs
+                  Ajouter les départs manquants
                 </Button>
                 <Button
                   size="sm"
@@ -1363,9 +1432,9 @@ function SchedulesAdmin() {
 }
 
 /** Suivi en direct : identifiant MMSI de chaque navire et état de la dernière position reçue. */
-function VesselsAdmin() {
+function VesselsAdmin({ vesselIds }: { vesselIds?: string[] } = {}) {
   const queryClient = useQueryClient();
-  const { data: vessels = [] } = useQuery(vesselsQuery);
+  const { data: allVessels = [] } = useQuery(vesselsQuery);
   const { data: companies = [] } = useQuery(companiesQuery);
   const { data: positions = [] } = useQuery({
     queryKey: ["admin", "vessel_positions"],
@@ -1393,6 +1462,7 @@ function VesselsAdmin() {
       return data;
     },
   });
+  const vessels = allVessels.filter((v) => !vesselIds || vesselIds.includes(v.id));
   const portLabel = (id: string) => ports.find((p) => p.id === id)?.name ?? "—";
   // Brouillons de saisie, par navire : { mmsi, imo, photo }.
   const [drafts, setDrafts] = useState<
@@ -1481,7 +1551,20 @@ function VesselsAdmin() {
           return (
             <li key={vessel.id} className="grid gap-2 py-3">
               <div className="min-w-0">
-                <p className="text-sm font-medium">{vessel.name}</p>
+                <div className="flex items-center gap-3">
+                  {photo && photoOk ? (
+                    <img
+                      src={photo}
+                      alt={vessel.name}
+                      width={80}
+                      height={56}
+                      loading="lazy"
+                      referrerPolicy="no-referrer"
+                      className="h-14 w-20 rounded-lg border object-cover"
+                    />
+                  ) : null}
+                  <p className="text-sm font-medium">{vessel.name}</p>
+                </div>
                 <p className="text-xs text-muted-foreground">
                   {company?.name ?? "Sans compagnie"}
                   {position?.reported_at
@@ -1638,25 +1721,35 @@ function VesselsAdmin() {
 }
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
+  const labelId = useId();
+  const control =
+    isValidElement(children) && (children.type === NativeSelect || children.type === Input)
+      ? cloneElement(children as React.ReactElement<{ "aria-labelledby"?: string }>, {
+          "aria-labelledby": labelId,
+        })
+      : children;
   return (
     <label className="grid gap-1.5 text-xs font-medium text-muted-foreground">
-      {label}
-      {children}
+      <span id={labelId}>{label}</span>
+      {control}
     </label>
   );
 }
 
 function NativeSelect({
+  "aria-labelledby": labelledBy,
   value,
   onChange,
   options,
 }: {
+  "aria-labelledby"?: string;
   value: string;
   onChange: (value: string) => void;
   options: Array<{ value: string; label: string }>;
 }) {
   return (
     <select
+      aria-labelledby={labelledBy}
       value={value}
       onChange={(event) => onChange(event.target.value)}
       className="h-9 w-full rounded-md border border-input bg-transparent px-2 text-sm text-foreground"
@@ -2622,14 +2715,28 @@ function RoutesAdmin() {
         routeId = data.id;
       }
       if (routeId) {
-        await supabase.from("route_operators").delete().eq("route_id", routeId);
-        if (draft.company_ids.length > 0) {
-          const { error } = await supabase
+        const { data: operators, error: operatorsError } = await supabase
+          .from("route_operators")
+          .select("company_id")
+          .eq("route_id", routeId);
+        if (operatorsError) throw operatorsError;
+        const removed = (operators ?? [])
+          .map((o) => o.company_id)
+          .filter((id) => !draft.company_ids.includes(id));
+        if (removed.length) {
+          const result = await supabase
             .from("route_operators")
-            .insert(
-              draft.company_ids.map((company_id) => ({ route_id: routeId as string, company_id })),
-            );
-          if (error) throw new Error(error.message);
+            .delete()
+            .eq("route_id", routeId)
+            .in("company_id", removed);
+          if (result.error) throw result.error;
+        }
+        if (draft.company_ids.length) {
+          const result = await supabase.from("route_operators").upsert(
+            draft.company_ids.map((company_id) => ({ route_id: routeId as string, company_id })),
+            { onConflict: "route_id,company_id", ignoreDuplicates: true },
+          );
+          if (result.error) throw result.error;
         }
       }
     },

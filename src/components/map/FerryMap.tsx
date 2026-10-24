@@ -1339,6 +1339,23 @@ export default function FerryMap({
         dot.addEventListener("click", select);
         label.addEventListener("click", select);
 
+        // Survol à la souris : la bulle s'affiche pour tous les ports (fermés ou sans liaison compris).
+        el.addEventListener("pointerenter", (event) => {
+          if (event.pointerType !== "mouse" || insetsRef.current.isMobile) return;
+          el.dataset["hover"] = "true";
+          tip.inert = false;
+          tip.setAttribute("aria-hidden", "false");
+          requestAnimationFrame(() => positionPortTip(map, marker, tip, tipInset()));
+        });
+        el.addEventListener("pointerleave", (event) => {
+          if (event.pointerType !== "mouse") return;
+          el.dataset["hover"] = "false";
+          if (el.dataset["tip"] !== "true") {
+            tip.inert = true;
+            tip.setAttribute("aria-hidden", "true");
+          }
+        });
+
         marker = new Marker({ element: el }).setLngLat([port.longitude, port.latitude]).addTo(map);
         portMarkersRef.current.set(port.id, marker);
       }
@@ -1360,6 +1377,7 @@ export default function FerryMap({
       );
       element.dataset["dimmed"] = String(dimming && !activeIds.has(port.id));
       element.dataset["closed"] = String(port.status === "inactive");
+      element.dataset["noroutes"] = String(port.status !== "inactive" && routeCount === 0);
       // Les ports secondaires (une seule liaison, éventuellement dans les deux sens) ont un libellé plus discret, mais toujours lisible.
       element.dataset["minor"] = String(routeCount <= 2);
       marker.setLngLat([port.longitude, port.latitude]);

@@ -220,9 +220,9 @@ export function buildFleet(
     const offshoreDown = port?.country_code !== "DZ"; // ports européens : mer au sud ; ports algériens : mer au nord
     list.sort((a, b) => a.name.localeCompare(b.name));
     list.forEach((ship, index) => {
-      // L'icône reste hors de la cible tactile du port (44 px) et des ferrys voisins.
-      ship.dx = (index - (list.length - 1) / 2) * 52;
-      ship.dy = offshoreDown ? 38 : -38;
+            // Collés au quai : léger éventail le long de la côte, sans partir au large.
+      ship.dx = (index - (list.length - 1) / 2) * 18;
+      ship.dy = offshoreDown ? 10 : -10;
       ship.course = index % 2 === 0 ? 90 : 270;
     });
   });

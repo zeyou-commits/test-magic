@@ -2,7 +2,7 @@ import { syncFilters, matchesTraffic } from "@/lib/ferry/filterSync";
 import { seoHead } from "@/lib/seo/site";
 import { DataUnavailableNotice } from "@/components/layout/DataUnavailableNotice";
 import type React from "react";
-import { ChevronLeft, ChevronRight, ArrowDown, Compass } from "lucide-react";
+import { ChevronLeft, ChevronRight, ArrowDown, Compass, Globe2 } from "lucide-react";
 import {
   lazy,
   Suspense,
@@ -1090,6 +1090,19 @@ function Index() {
                 return companies.find((c) => c.id === dep?.company_id)?.name;
               }}
             />
+            {filters.companyId || filters.vesselId || focusShipId ? (
+              <button
+                type="button"
+                onClick={() => {
+                  resetToMap();
+                  setFocusShipId(null);
+                  setFilters(emptyFilters);
+                }}
+                className="pointer-events-auto absolute left-1/2 top-14 z-20 inline-flex -translate-x-1/2 items-center gap-1.5 rounded-full border border-border bg-background/95 px-3 py-1.5 text-xs font-semibold text-foreground shadow-lg backdrop-blur hover:bg-secondary md:top-5"
+              >
+                <Globe2 className="size-4" /> Vue d'ensemble
+              </button>
+            ) : null}
             <MapLegend panelOpen={desktopPanelOpen} showDateHint={false} />
             <ClientOnly fallback={<MapFallback />}>
               <Suspense fallback={<MapFallback />}>

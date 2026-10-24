@@ -477,7 +477,7 @@ export function SearchPanel({
               aria-label={`Inverser le sens : actuellement ${reversed ? "Algérie → Europe" : "Europe → Algérie"}`}
               onClick={() => {
                 setReversed((r) => !r);
-                onFiltersChange({ ...swapDirection(filters), date: null, returnDate: null });
+                onFiltersChange(swapDirection(filters));
               }}
               className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-border bg-card px-2.5 py-1.5 text-xs font-semibold text-primary shadow-sm transition hover:bg-primary hover:text-primary-foreground"
             >
@@ -504,13 +504,7 @@ export function SearchPanel({
                 countryFilter={reversed ? isAlgeria : isNotAlgeria}
                 value={filters.departurePortIds}
                 otherSide={filters.arrivalPortIds}
-                onChange={(ids) =>
-                  onFiltersChange({
-                    ...withDeparturePorts(filters, ids, ports, routes),
-                    date: null,
-                    returnDate: null,
-                  })
-                }
+                onChange={(ids) => onFiltersChange(withDeparturePorts(filters, ids, ports, routes))}
               />
             </div>
             <div className="min-w-0">
@@ -522,13 +516,7 @@ export function SearchPanel({
                 countryFilter={reversed ? isNotAlgeria : isAlgeria}
                 value={filters.arrivalPortIds}
                 otherSide={filters.departurePortIds}
-                onChange={(ids) =>
-                  onFiltersChange({
-                    ...withArrivalPorts(filters, ids, ports, routes),
-                    date: null,
-                    returnDate: null,
-                  })
-                }
+                onChange={(ids) => onFiltersChange(withArrivalPorts(filters, ids, ports, routes))}
               />
             </div>
           </div>

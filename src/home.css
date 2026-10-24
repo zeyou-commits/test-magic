@@ -2010,8 +2010,8 @@ html {
   position: absolute;
   top: 50%;
   transform: translate(-50%, -50%);
-  width: 25px;
-  height: 25px;
+  width: 30px;
+  height: 30px;
   display: grid;
   place-items: center;
   border-radius: 50%;
@@ -2019,6 +2019,54 @@ html {
   color: white;
   border: 3px solid #fffdf9;
   box-shadow: 0 2px 7px #16324a15;
+  overflow: visible;
+}
+.bw-mini-ferry {
+  width: 24px;
+  height: 15px;
+  overflow: visible;
+}
+.bw-mini-ferry-wake {
+  stroke: rgba(255, 255, 255, 0.75);
+  stroke-width: 1.4;
+  stroke-linecap: round;
+  stroke-dasharray: 3 3;
+  animation: bw-wake 0.9s linear infinite;
+}
+.bw-smoke {
+  fill: rgba(255, 255, 255, 0.9);
+  transform-box: fill-box;
+  animation: bw-smoke 1.8s linear infinite;
+}
+.bw-smoke-2 {
+  animation-delay: 0.6s;
+}
+.bw-smoke-3 {
+  animation-delay: 1.2s;
+}
+@keyframes bw-smoke {
+  0% {
+    transform: translate(0, 0) scale(0.5);
+    opacity: 0;
+  }
+  25% {
+    opacity: 0.95;
+  }
+  100% {
+    transform: translate(-7px, -7px) scale(1.5);
+    opacity: 0;
+  }
+}
+@keyframes bw-wake {
+  to {
+    stroke-dashoffset: -6;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .bw-smoke,
+  .bw-mini-ferry-wake {
+    animation: none;
+  }
 }
 .bw-crossing-metrics {
   display: flex;

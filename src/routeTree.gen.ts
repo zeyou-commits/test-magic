@@ -32,6 +32,7 @@ import { Route as SitemapPagesDotxmlRouteImport } from './routes/sitemap-pages[.
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as VehiculesMoins3AnsRouteImport } from './routes/vehicules-moins-3-ans'
 import { Route as VoyageAlgerieRouteImport } from './routes/voyage-algerie'
+import { Route as ApiAdminUsersRouteImport } from './routes/api.admin-users'
 import { Route as ApiPushAdminRouteImport } from './routes/api.push-admin'
 import { Route as ApiPushDispatchRouteImport } from './routes/api.push-dispatch'
 import { Route as ApiVesselPositionsRouteImport } from './routes/api.vessel-positions'
@@ -163,6 +164,11 @@ const VoyageAlgerieRoute = VoyageAlgerieRouteImport.update({
   path: '/voyage-algerie',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiAdminUsersRoute = ApiAdminUsersRouteImport.update({
+  id: '/api/admin-users',
+  path: '/api/admin-users',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPushAdminRoute = ApiPushAdminRouteImport.update({
   id: '/api/push-admin',
   path: '/api/push-admin',
@@ -263,6 +269,7 @@ export interface FileRoutesByFullPath {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/vehicules-moins-3-ans': typeof VehiculesMoins3AnsRoute
   '/voyage-algerie': typeof VoyageAlgerieRoute
+  '/api/admin-users': typeof ApiAdminUsersRoute
   '/api/push-admin': typeof ApiPushAdminRoute
   '/api/push-dispatch': typeof ApiPushDispatchRoute
   '/api/vessel-positions': typeof ApiVesselPositionsRoute
@@ -297,6 +304,7 @@ export interface FileRoutesByTo {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/vehicules-moins-3-ans': typeof VehiculesMoins3AnsRoute
   '/voyage-algerie': typeof VoyageAlgerieRoute
+  '/api/admin-users': typeof ApiAdminUsersRoute
   '/api/push-admin': typeof ApiPushAdminRoute
   '/api/push-dispatch': typeof ApiPushDispatchRoute
   '/api/vessel-positions': typeof ApiVesselPositionsRoute
@@ -338,6 +346,7 @@ export interface FileRoutesById {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/vehicules-moins-3-ans': typeof VehiculesMoins3AnsRoute
   '/voyage-algerie': typeof VoyageAlgerieRoute
+  '/api/admin-users': typeof ApiAdminUsersRoute
   '/api/push-admin': typeof ApiPushAdminRoute
   '/api/push-dispatch': typeof ApiPushDispatchRoute
   '/api/vessel-positions': typeof ApiVesselPositionsRoute
@@ -380,6 +389,7 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/vehicules-moins-3-ans'
     | '/voyage-algerie'
+    | '/api/admin-users'
     | '/api/push-admin'
     | '/api/push-dispatch'
     | '/api/vessel-positions'
@@ -414,6 +424,7 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/vehicules-moins-3-ans'
     | '/voyage-algerie'
+    | '/api/admin-users'
     | '/api/push-admin'
     | '/api/push-dispatch'
     | '/api/vessel-positions'
@@ -454,6 +465,7 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/vehicules-moins-3-ans'
     | '/voyage-algerie'
+    | '/api/admin-users'
     | '/api/push-admin'
     | '/api/push-dispatch'
     | '/api/vessel-positions'
@@ -495,6 +507,7 @@ export interface RootRouteChildren {
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   VehiculesMoins3AnsRoute: typeof VehiculesMoins3AnsRoute
   VoyageAlgerieRoute: typeof VoyageAlgerieRoute
+  ApiAdminUsersRoute: typeof ApiAdminUsersRoute
   ApiPushAdminRoute: typeof ApiPushAdminRoute
   ApiPushDispatchRoute: typeof ApiPushDispatchRoute
   ApiVesselPositionsRoute: typeof ApiVesselPositionsRoute
@@ -661,6 +674,13 @@ declare module '@tanstack/react-router' {
       path: '/voyage-algerie'
       fullPath: '/voyage-algerie'
       preLoaderRoute: typeof VoyageAlgerieRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/admin-users': {
+      id: '/api/admin-users'
+      path: '/api/admin-users'
+      fullPath: '/api/admin-users'
+      preLoaderRoute: typeof ApiAdminUsersRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/push-admin': {
@@ -873,6 +893,7 @@ const rootRouteChildren: RootRouteChildren = {
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   VehiculesMoins3AnsRoute: VehiculesMoins3AnsRoute,
   VoyageAlgerieRoute: VoyageAlgerieRoute,
+  ApiAdminUsersRoute: ApiAdminUsersRoute,
   ApiPushAdminRoute: ApiPushAdminRoute,
   ApiPushDispatchRoute: ApiPushDispatchRoute,
   ApiVesselPositionsRoute: ApiVesselPositionsRoute,

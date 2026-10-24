@@ -2,7 +2,11 @@ import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Heart, LoaderCircle } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
-import { supabase } from "@/integrations/supabase/client";
+import type { SupabaseClient } from "@supabase/supabase-js";
+import { supabase as typedSupabase } from "@/integrations/supabase/client";
+
+// Tables communautaires pas encore présentes dans les types générés.
+const supabase = typedSupabase as unknown as SupabaseClient;
 import { useTravelAction } from "@/hooks/useTravelAction";
 
 export function FollowButton({

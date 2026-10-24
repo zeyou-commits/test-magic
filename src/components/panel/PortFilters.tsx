@@ -96,12 +96,15 @@ export function PortMultiPicker({
   }, [value.length, open, inline]);
   const allMode = value.length === 0 && !cleared;
   const effective = allMode ? enabledIds : value;
-  const isOn = (id: string) => !allMode && effective.includes(id);
+  // « Tous » : chaque port sélectionnable apparaît coché.
+  const isOn = (id: string) => effective.includes(id);
 
   const toggle = (ids: string[]) => {
     if (allMode) {
-      setCleared(false);
-      onChange(ids.length === enabledIds.length ? [] : ids);
+      // Décocher depuis « Tous » : on garde tous les autres ports.
+      const next = enabledIds.filter((id) => !ids.includes(id));
+      setCleared(next.length === 0);
+      onChange(next);
       return;
     }
     const allSelected = ids.length > 0 && ids.every(isOn);

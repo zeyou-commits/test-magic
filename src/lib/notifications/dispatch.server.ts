@@ -1,5 +1,9 @@
 import webpush from "web-push";
-import { supabaseAdmin as db } from "@/integrations/supabase/client.server";
+import type { SupabaseClient } from "@supabase/supabase-js";
+import { supabaseAdmin as typedDb } from "@/integrations/supabase/client.server";
+
+// Tables communautaires pas encore présentes dans les types générés.
+const db = typedDb as unknown as SupabaseClient;
 import { portTimeZone, zonedTimeToUtc } from "@/lib/ferry/time";
 import {
   notificationAllowed,

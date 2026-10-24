@@ -1,6 +1,10 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
-import { supabase } from "@/integrations/supabase/client";
+import type { SupabaseClient } from "@supabase/supabase-js";
+import { supabase as typedSupabase } from "@/integrations/supabase/client";
+
+// Tables communautaires pas encore présentes dans les types générés.
+const supabase = typedSupabase as unknown as SupabaseClient;
 import { communityKey, communityQuery } from "@/lib/ferry/community";
 import { vesselsQuery, portsQuery } from "@/lib/ferry/queries";
 import { Button } from "@/components/ui/button";

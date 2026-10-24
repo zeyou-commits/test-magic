@@ -12,11 +12,12 @@ export const Route = createFileRoute("/api/push-admin")({
     handlers: {
       POST: async ({ request }) => {
         try {
-          const [{ supabaseAdmin: db }, { verifyAdminSession }] = await Promise.all([
+          const [{ supabaseAdmin: typedDb }, { verifyAdminSession }] = await Promise.all([
             import("@/integrations/supabase/client.server"),
             import("@/lib/admin/session.server"),
           ]);
-          const session = await verifyAdminSession(request, db);
+          const db = typedDb as unknown as import("@supabase/supabase-js").SupabaseClient;
+          const session = await verifyAdminSession(request, typedDb);
           if (session.response) return session.response;
           const auth = { user: session.user! };
           const { data: role, error: roleError } = await db

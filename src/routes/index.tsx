@@ -226,6 +226,18 @@ function Index() {
   const fleet = useFleet();
   const { data: fleetDepartures = [] } = useQuery(fleetDeparturesQuery);
   const { data: vessels = [] } = useQuery(vesselsQuery);
+  const vesselCards = useMemo(() => {
+    const byCompany = new Map(companies.map((c) => [c.id, c]));
+    return Object.fromEntries(
+      vessels.map((v) => {
+        const company = v.company_id ? byCompany.get(v.company_id) : undefined;
+        return [
+          v.id,
+          { photoUrl: v.photo_url, logoUrl: company?.logo_url ?? null, companyName: company?.name ?? null },
+        ];
+      }),
+    );
+  }, [vessels, companies]);
   const allDepartures = useMemo(
     () => [...new Map([...fleetDepartures, ...departures].map((d) => [d.id, d])).values()],
     [fleetDepartures, departures],
@@ -1088,6 +1100,7 @@ function Index() {
                   portsMode={activeShortcut === "ports"}
                   companyFocusShips={companyFocusShips}
                   focusShipId={focusShipId}
+                  vesselCards={vesselCards}
                   ports={ports}
                   routes={routes}
                   visibleRouteIds={displayedRouteIds}

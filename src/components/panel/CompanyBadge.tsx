@@ -38,8 +38,8 @@ export function CompanyBadge({
   if (src && !failed) {
     return (
       <span
-        className="grid shrink-0 place-items-center overflow-hidden rounded-lg border bg-white"
-        style={{ width: size, height: size }}
+        className="grid shrink-0 place-items-center overflow-hidden rounded-lg border border-border bg-white shadow-sm ring-1 ring-black/5"
+        style={{ width: Math.round(size * 1.5), height: size }}
         aria-hidden
       >
         <img
@@ -48,7 +48,7 @@ export function CompanyBadge({
           loading="lazy"
           decoding="async"
           onError={() => setFailed(true)}
-          className="size-full object-contain p-0.5"
+          className="size-full object-contain p-1"
         />
       </span>
     );

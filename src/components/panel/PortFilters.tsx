@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Check, ChevronDown, Search, X } from "lucide-react";
+import { CalendarX2, Car, Check, ChevronDown, Search, X } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import * as SheetPrimitive from "@radix-ui/react-dialog";
@@ -28,6 +28,8 @@ interface PortMultiPickerProps {
   /** Ne garder que certains pays (ex. Algérie uniquement). */
   countryFilter?: (code: string) => boolean;
   title?: string;
+  /** Ports avec au moins une traversée planifiée ; les autres sont grisés. */
+  scheduledPortIds?: Set<string> | undefined;
 }
 
 /** Choix d'un ou plusieurs ports, groupés par pays, avec recherche intégrée. */
@@ -41,6 +43,7 @@ export function PortMultiPicker({
   inline = false,
   countryFilter,
   title,
+  scheduledPortIds,
 }: PortMultiPickerProps) {
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
@@ -53,7 +56,9 @@ export function PortMultiPicker({
       direction === "departure"
         ? getDeparturePorts(ports, routes, otherSide)
         : getArrivalPorts(ports, routes, otherSide)
-    ).filter((p) => !countryFilter || countryFilter(p.country_code));
+    )
+      .filter((p) => !countryFilter || countryFilter(p.country_code))
+      .filter((p) => !scheduledPortIds || scheduledPortIds.has(p.id));
     const enabled = new Set(candidates.map((p) => p.id));
     // Raison affichée pour les ports non sélectionnables.
     const reasons = new Map<string, string>();
@@ -65,6 +70,8 @@ export function PortMultiPicker({
     ports.forEach((p) => {
       if (enabled.has(p.id)) return;
       if (p.status !== "active") reasons.set(p.id, "Port inactif");
+      else if (scheduledPortIds && !scheduledPortIds.has(p.id))
+        reasons.set(p.id, "Aucun départ planifié pour le moment");
       else if (otherSide.length) reasons.set(p.id, "Pas de liaison avec votre choix");
       else if (otherIds.has(p.id))
         reasons.set(p.id, direction === "departure" ? "Arrivée uniquement" : "Départ uniquement");
@@ -86,7 +93,7 @@ export function PortMultiPicker({
       }))
       .filter((group) => group.ports.length > 0);
     return { groups, enabledIds: [...enabled], reasons };
-  }, [direction, ports, routes, otherSide, search, countryFilter]);
+  }, [direction, ports, routes, otherSide, search, countryFilter, scheduledPortIds]);
 
   // Aucun filtre = tous les ports : on l'affiche comme tout coché.
   // « Tout désélectionner » : état visuel vide le temps de choisir (sans choix, aucun filtre).
@@ -222,12 +229,26 @@ export function PortMultiPicker({
                           type="button"
                           aria-pressed={isSelected}
                           disabled={!!reason}
-                          title={reason ?? port.name}
+                          title={
+                            reason ??
+                            (port.facilities?.["dedouanement_vehicule"] === "oui"
+                              ? `${port.name} · dédouanement véhicules -3 ans`
+                              : port.name)
+                          }
                           onClick={() => toggle([port.id])}
                           className={`inline-flex min-h-8 max-w-full items-center gap-1 rounded-full border px-2.5 py-1 text-left text-[11px] font-medium leading-tight transition-colors ${reason ? "cursor-not-allowed border-border/50 text-muted-foreground/50" : isSelected ? "border-primary/20 bg-primary/10 text-primary" : "border-border bg-background text-foreground hover:border-primary/30 hover:bg-secondary"}`}
                         >
                           {isSelected ? <Check className="size-3.5 shrink-0" /> : null}
+                          {reason === "Aucun départ planifié pour le moment" ? (
+                            <CalendarX2 aria-hidden className="size-3 shrink-0" />
+                          ) : null}
                           <span className="truncate">{port.name}</span>
+                          {port.facilities?.["dedouanement_vehicule"] === "oui" ? (
+                            <Car
+                              aria-label="Dédouanement véhicules de moins de 3 ans"
+                              className="size-3 shrink-0 text-primary"
+                            />
+                          ) : null}
                         </button>
                       );
                     })}

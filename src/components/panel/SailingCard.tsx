@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import {
   ArrowUpRight,
+  Calculator,
   ChevronDown,
   ChevronLeft,
   ChevronRight,
@@ -173,6 +174,14 @@ export function SailingCard({
           <span className="block text-[10px] font-normal text-muted-foreground">Budget estimé</span>
           {formatEuro(fare.amount)}
         </span>
+        <a
+          href={`/simulateurs/budget-voyage?ticket=${Math.round(fare.amount)}`}
+          title="Budget porte-à-porte : route, péages et bateau"
+          aria-label="Calculer le budget porte-à-porte avec ce billet"
+          className="inline-flex h-8 shrink-0 items-center gap-1 rounded-full border border-border bg-card px-2.5 text-xs font-semibold text-primary hover:bg-secondary"
+        >
+          <Calculator className="size-3.5" aria-hidden /> Budget
+        </a>
         {href ? (
           <a
             href={href}

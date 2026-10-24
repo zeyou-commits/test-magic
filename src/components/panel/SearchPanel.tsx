@@ -51,6 +51,7 @@ import { dateKeyInZone } from "@/lib/ferry/time";
 import { useLiveShips } from "@/lib/ferry/useLiveShips";
 import type { LiveShip } from "@/lib/ferry/tracking";
 import { PortMultiPicker } from "./PortFilters";
+import { SalesAlertForm } from "./SalesAlertForm";
 import { CompanyBadge } from "./CompanyBadge";
 import { RoundTripCard } from "./RoundTripCard";
 import { FareProfileContext } from "@/lib/ferry/pricing";
@@ -251,6 +252,28 @@ export function SearchPanel({
   const all = useMemo(
     () => buildSailings(departures, routes, ports, companies, vessels),
     [departures, routes, ports, companies, vessels],
+  );
+  // Date cherchée au-delà du dernier départ publié : ventes pas encore ouvertes.
+  const salesClosed = useMemo(() => {
+    if (!filters.date || !departures.length) return null;
+    const last = departures.reduce((max, d) => (d.departure_at > max ? d.departure_at : max), "");
+    if (filters.date <= last.slice(0, 10)) return null;
+    const month = new Intl.DateTimeFormat("fr-FR", { month: "long", year: "numeric" }).format(
+      new Date(`${filters.date}T12:00:00`),
+    );
+    return month;
+  }, [filters.date, departures]);
+  // Ports ayant au moins un départ ou une arrivée planifiés (hors annulations).
+  const scheduledPortIds = useMemo(() => {
+    const byRoute = new Map(routes.map((r) => [r.id, r]));
+    const ids = new Set<string>();
+    departures.forEach((d) => {
+      if (d.status === "cancelled") return;
+      const route = byRoute.get(d.route_id);
+      if (route) ids.add(route.departure_port_id).add(route.arrival_port_id);
+    });
+    return ids;
+  }, [departures, routes],
   );
   const outbound = useMemo(
     () =>
@@ -504,6 +527,7 @@ export function SearchPanel({
                 countryFilter={reversed ? isAlgeria : isNotAlgeria}
                 value={filters.departurePortIds}
                 otherSide={filters.arrivalPortIds}
+                scheduledPortIds={departures.length ? scheduledPortIds : undefined}
                 onChange={(ids) => onFiltersChange(withDeparturePorts(filters, ids, ports, routes))}
               />
             </div>
@@ -516,6 +540,7 @@ export function SearchPanel({
                 countryFilter={reversed ? isNotAlgeria : isAlgeria}
                 value={filters.arrivalPortIds}
                 otherSide={filters.departurePortIds}
+                scheduledPortIds={departures.length ? scheduledPortIds : undefined}
                 onChange={(ids) => onFiltersChange(withArrivalPorts(filters, ids, ports, routes))}
               />
             </div>
@@ -719,6 +744,18 @@ export function SearchPanel({
                   reportContext={reportContext}
                 />
               ) : (
+                <>
+                {salesClosed && filters.date ? (
+                  <div className="mb-3">
+                    <SalesAlertForm
+                      periodLabel={salesClosed}
+                      periodStart={filters.date}
+                      periodEnd={filters.returnDate ?? filters.date}
+                      fromLabel={filters.departurePortIds.length ? fromName(filters.departurePortIds) : null}
+                      toLabel={filters.arrivalPortIds.length ? fromName(filters.arrivalPortIds) : null}
+                    />
+                  </div>
+                ) : null}
                 <ResultBlock
                   liveByDeparture={liveByDeparture}
                   title={
@@ -765,6 +802,7 @@ export function SearchPanel({
                       : undefined
                   }
                 />
+                </>
               )}
             </>
           )}

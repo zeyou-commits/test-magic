@@ -3,6 +3,7 @@ import {
   Accessibility,
   Armchair,
   Bus,
+  Car,
   Info,
   MapPin,
   MoonStar,
@@ -27,6 +28,7 @@ const icons: Record<string, LucideIcon> = {
   acces: MapPin,
   pmr: Accessibility,
   boutique: ShoppingBag,
+  dedouanement_vehicule: Car,
 };
 
 /** Services du port sous forme de pictogrammes : icône, nom, et précision en dessous quand elle existe. */

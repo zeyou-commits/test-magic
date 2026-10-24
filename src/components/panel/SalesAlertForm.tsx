@@ -38,12 +38,12 @@ export function SalesAlertForm({
 
   return (
     <div className="space-y-2 rounded-2xl border border-warning/40 bg-warning/10 p-3 text-xs">
-      <p className="flex items-start gap-2 font-semibold text-foreground">
-        <CalendarClock className="mt-0.5 size-4 shrink-0 text-warning-foreground" aria-hidden />
+      <p className="flex items-start gap-2 text-sm font-bold text-foreground">
+        <CalendarClock className="mt-0.5 size-5 shrink-0 text-warning-foreground" aria-hidden />
         <span>
-          Les traversées ne sont pas encore programmées pour ces dates ({periodLabel}).
-          <span className="mt-0.5 block font-normal text-muted-foreground">
-            Les compagnies n’ont pas encore ouvert les ventes sur cette période.
+          Les ventes pour {periodLabel} ne sont pas encore ouvertes.
+          <span className="mt-0.5 block text-xs font-normal text-muted-foreground">
+            Soyez prévenu dès l’ouverture des billets par les compagnies.
           </span>
         </span>
       </p>

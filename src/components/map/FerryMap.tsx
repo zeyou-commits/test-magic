@@ -66,6 +66,9 @@ interface FerryMapProps {
   ports: Port[];
   routes: RouteLine[];
   visibleRouteIds: string[];
+  fleetVisibleRouteIds?: string[];
+  hoverVesselId?: string | null;
+  hoverPortId?: string | null;
   dateActiveRouteIds: string[];
   focusRouteIds: string[];
   selection: Selection | null;
@@ -295,6 +298,9 @@ export default function FerryMap({
   ports,
   routes,
   visibleRouteIds,
+  fleetVisibleRouteIds = visibleRouteIds,
+  hoverVesselId = null,
+  hoverPortId = null,
   dateActiveRouteIds,
   focusRouteIds,
   selection,
@@ -597,42 +603,6 @@ export default function FerryMap({
         data: { type: "FeatureCollection", features: [] },
       });
       map.addLayer({
-        id: "fleet-motion",
-        type: "circle",
-        source: "fleet",
-        filter: ["==", ["get", "state"], "sea"],
-        paint: {
-          "circle-radius": 17,
-          "circle-color": "#168d74",
-          "circle-opacity": 0.14,
-          "circle-stroke-width": 1.5,
-          "circle-stroke-color": "#168d74",
-          "circle-stroke-opacity": 0.3,
-        },
-      });
-      map.addLayer({
-        id: "fleet-direction",
-        type: "symbol",
-        source: "fleet",
-        filter: ["==", ["get", "state"], "sea"],
-        layout: {
-          "text-field": "›",
-          "text-font": ["Noto Sans Bold"],
-          "text-size": 24,
-          "text-rotate": ["-", ["get", "course"], 90],
-          "text-rotation-alignment": "map",
-          "text-offset": [1.1, 0],
-          "text-allow-overlap": true,
-          "text-ignore-placement": true,
-        },
-        paint: {
-          "text-color": "#0b8051",
-          "text-halo-color": "#ffffff",
-          "text-halo-width": 2,
-          "text-opacity": ["get", "opacity"],
-        },
-      });
-      map.addLayer({
         id: "fleet-halo",
         type: "circle",
         source: "fleet",
@@ -649,18 +619,19 @@ export default function FerryMap({
         source: "fleet",
         layout: {
           "icon-image": ["get", "icon"],
-          // Profil stable, sans rotation ; les collisions donnent priorité au bateau sélectionné.
-          "icon-rotation-alignment": "viewport",
+          // Proue et sillage tournent ensemble ; le nom reste toujours lisible.
+          "icon-rotation-alignment": "map",
+          "icon-rotate": ["get", "course"],
           "icon-pitch-alignment": "viewport",
           "icon-allow-overlap": false,
           "icon-ignore-placement": false,
-          "icon-padding": 5,
-          "icon-size": ["interpolate", ["linear"], ["zoom"], 3, 0.42, 5, 0.52, 7, 0.62, 9, 0.72],
+          "icon-padding": 2,
+          "icon-size": ["interpolate", ["linear"], ["zoom"], 3, 0.68, 5, 0.82, 7, 0.96, 9, 1.08],
           "symbol-sort-key": ["get", "priority"],
           "text-field": ["get", "name"],
           "text-font": ["Noto Sans Bold"],
           "text-size": ["interpolate", ["linear"], ["zoom"], 3, 9, 6, 10, 9, 12],
-          "text-offset": [0, 1.35],
+          "text-offset": [0, 2.3],
           "text-anchor": "top",
           "text-optional": true,
           "text-max-width": 12,
@@ -1001,8 +972,6 @@ export default function FerryMap({
       "ferry-routes-casing",
       "ferry-routes-line",
       "ferry-routes-duration",
-      "fleet-motion",
-      "fleet-direction",
       "fleet-halo",
       "fleet-ships",
       "fleet-hover-halo",
@@ -1561,8 +1530,6 @@ export default function FerryMap({
       return;
     }
     container.dataset["pulsePorts"] = "true";
-    if (map.getLayer("fleet-ships")) map.setPaintProperty("fleet-ships", "text-opacity", 0.15);
-    if (map.getLayer("fleet-ships")) map.setPaintProperty("fleet-ships", "icon-opacity", 0.35);
 
     // N'afficher que les noms visibles et suffisamment espacés, sans déplacer la carte.
     const showLabels = () => {
@@ -1641,7 +1608,7 @@ export default function FerryMap({
 
     const portMap = new Map(ports.map((port) => [port.id, port]));
     const visible = new Set(visibleRouteIds);
-    const focus = new Set(focusRouteIds);
+    const focus = new Set(hoverRouteId ? [hoverRouteId] : focusRouteIds);
 
     const apply = () => {
       const source = map.getSource("ferry-routes") as GeoJSONSource | undefined;
@@ -1672,29 +1639,12 @@ export default function FerryMap({
     mapReady,
   ]);
 
-  // Le halo anime l'état « en navigation », jamais la vitesse ou la position du navire.
-  useEffect(() => {
-    const map = mapRef.current;
-    if (!map || !mapReady) return;
-    const media = window.matchMedia("(prefers-reduced-motion: reduce)");
-    const paint = () => {
-      if (!map.getLayer("fleet-motion") || document.hidden) return;
-      const phase = media.matches ? 0.35 : (performance.now() % 2400) / 2400;
-      map.setPaintProperty("fleet-motion", "circle-radius", 12 + phase * 17);
-      map.setPaintProperty("fleet-motion", "circle-opacity", (1 - phase) * 0.12);
-      map.setPaintProperty("fleet-motion", "circle-stroke-opacity", (1 - phase) * 0.4);
-    };
-    paint();
-    const timer = window.setInterval(paint, 120);
-    return () => window.clearInterval(timer);
-  }, [mapReady]);
-
   // Positions à leur vitesse réelle ; ne pas relancer le placement des symboles à l'arrêt.
   useEffect(() => {
     const map = mapRef.current;
     if (!map || !mapReady) return;
-    const visible = new Set(visibleRouteIds);
-    const focus = new Set(focusRouteIds);
+    const visible = new Set(fleetVisibleRouteIds);
+    const focus = new Set(hoverRouteId ? [hoverRouteId] : focusRouteIds);
     const selectedRouteId = hoverRouteId ?? (selection?.type === "route" ? selection.id : null);
     const routeById = new Map(routes.map((route) => [route.id, route]));
     const portById = new Map(ports.map((port) => [port.id, port]));
@@ -1707,15 +1657,23 @@ export default function FerryMap({
         type: "FeatureCollection",
         features: fleetRef.current.map((ship) => {
           // Un navire choisi depuis le tableau de bord reste pleinement visible, quelle que soit la ligne active.
+          const previewing = Boolean(hoverRouteId || hoverVesselId || hoverPortId);
+          const previewed = hoverVesselId
+            ? hoverVesselId === ship.vesselId
+            : hoverRouteId === ship.routeId;
           const focused =
-            focusShipId === ship.id ||
-            (selectedVesselId !== null && selectedVesselId === ship.vesselId) ||
-            (selection?.type === "vessel" && selection.id === ship.vesselId) ||
-            (selection?.type === "departure" && selection.id === ship.departureId);
+            (!previewing &&
+              (focusShipId === ship.id ||
+                (selectedVesselId !== null && selectedVesselId === ship.vesselId) ||
+                (selection?.type === "vessel" && selection.id === ship.vesselId) ||
+                (selection?.type === "departure" && selection.id === ship.departureId))) ||
+            previewed;
           const dimmed =
             !focused &&
-            (!visible.has(ship.routeId) || (focus.size > 0 && !focus.has(ship.routeId)));
-          const selected = selectedRouteId === ship.routeId || focused;
+            ((previewing && !previewed) ||
+              !visible.has(ship.routeId) ||
+              (focus.size > 0 && !focus.has(ship.routeId)));
+          const selected = previewing ? previewed : selectedRouteId === ship.routeId || focused;
           const live = ship.live;
           const base = live ? projectedPosition(live.position, clock) : ship.lngLat;
           // Les navires amarrés sont rangés en file à côté du port : le décalage est en pixels écran.
@@ -1761,13 +1719,10 @@ export default function FerryMap({
             type: "Feature" as const,
             properties: {
               state: ship.state,
-              icon:
-                ship.state === "sea"
-                  ? `ship-sea-${Math.sin((course * Math.PI) / 180) < -0.15 ? "west" : "east"}`
-                  : "ship-dock",
+              icon: ship.state === "sea" ? "ship-sea" : "ship-dock",
               course,
               name: ship.name,
-              allure: `${allure} · ${live && live.ageMinutes <= 30 ? "Position actualisée" : "Position estimée selon les horaires"}`,
+              allure,
               allureColor:
                 physical?.tone === "success"
                   ? "#059669"
@@ -1811,7 +1766,7 @@ export default function FerryMap({
       }
     };
 
-    // Les positions se mettent à jour, sans animation décorative continue du sillage.
+    // Le sillage anime seulement la texture : les coordonnées gardent leur vitesse réelle.
     draw();
     const timer = window.setInterval(draw, 1000);
     map.on("zoomend", draw);
@@ -1822,7 +1777,9 @@ export default function FerryMap({
   }, [
     mapReady,
     fleet,
-    visibleRouteIds,
+    fleetVisibleRouteIds,
+    hoverVesselId,
+    hoverPortId,
     focusRouteIds,
     focusShipId,
     selectedVesselId,

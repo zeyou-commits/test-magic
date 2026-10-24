@@ -69,6 +69,9 @@ const ANY = "__any__";
 const PAGE = 4;
 
 interface SearchPanelProps {
+  homeMode?: boolean;
+  onTrafficPreview?: (preview: import("@/lib/ferry/mapPresentation").MapPreview | null) => void;
+  onOpenSearch?: () => void;
   filters: Filters;
   onFiltersChange: (filters: Filters) => void;
   selection: Selection | null;
@@ -87,6 +90,9 @@ interface SearchPanelProps {
  * lue à la fois par la carte, cette liste et l'adresse de la page.
  */
 export function SearchPanel({
+  homeMode = false,
+  onTrafficPreview,
+  onOpenSearch,
   filters,
   onFiltersChange,
   selection,
@@ -128,6 +134,7 @@ export function SearchPanel({
   const searchRef = useRef<HTMLElement>(null);
   const isMobileView = () => typeof window !== "undefined" && window.innerWidth < 768;
   const startSearch = () => {
+    onOpenSearch?.();
     setStep(firstStep);
     setCalField("out");
     setEditing(true);
@@ -138,7 +145,7 @@ export function SearchPanel({
     setEditing(false);
     setStep(firstStep);
     searchRef.current?.closest(".batogo-panel-scroll")?.scrollTo({ top: 0, behavior: "instant" });
-    if (isMobileView()) window.dispatchEvent(new Event("batogo:close-panel"));
+    window.dispatchEvent(new Event("batogo:close-panel"));
   };
   const showResults = () => {
     setEditing(false);
@@ -359,7 +366,7 @@ export function SearchPanel({
   return (
     <FareProfileContext.Provider value={profile}>
       <div className="flex flex-col">
-        {!editing && !active ? (
+        {!editing && homeMode ? (
           <div className="bw-search-welcome">
             <div className="flex items-center justify-between gap-2">
               <h2>On prend le large ?</h2>
@@ -644,10 +651,15 @@ export function SearchPanel({
           </div>
         </section>
 
-        {!editing && !active ? <HomeTraffic onSelect={onSelect} /> : null}
+        {!editing && homeMode ? (
+          <HomeTraffic
+            onSelect={onSelect}
+            {...(onTrafficPreview ? { onPreview: onTrafficPreview } : {})}
+          />
+        ) : null}
         {/* RÉSULTATS */}
         <section
-          hidden={!editing && !active}
+          hidden={homeMode || editing}
           id="map-next-departures"
           className="space-y-5 px-4 py-4 md:px-5"
         >

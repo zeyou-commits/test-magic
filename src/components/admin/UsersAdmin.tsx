@@ -1,3 +1,4 @@
+import { AdminRequestError } from "@/lib/admin/request";
 import { useState } from "react";
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import {
@@ -60,6 +61,8 @@ export function UsersAdmin() {
     queryFn: () => userAdminAction<UsersPage>({ action: "list", search: query, filter, page }),
     enabled: Boolean(user),
     retry: false,
+    refetchOnWindowFocus: (query) => !query.state.error,
+    refetchOnReconnect: (query) => !query.state.error,
   });
   const mutation = useMutation({
     mutationFn: (input: Record<string, unknown>) => userAdminAction(input),
@@ -152,6 +155,14 @@ export function UsersAdmin() {
       ) : result.error ? (
         <div role="alert" className="rounded-xl border border-orange-200 bg-orange-50 p-4 text-sm">
           {result.error.message}
+          {result.error instanceof AdminRequestError && result.error.status === 401 && (
+            <a
+              href="/auth?next=%2Fadmin&reauth=1"
+              className="mt-2 block font-semibold text-primary underline"
+            >
+              Se reconnecter
+            </a>
+          )}
           <Button variant="outline" className="mt-2 block" onClick={() => void result.refetch()}>
             Réessayer
           </Button>

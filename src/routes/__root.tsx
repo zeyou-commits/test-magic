@@ -45,9 +45,10 @@ function ErrorComponent({ error }: ErrorComponentProps) {
     [error],
   );
   console.error(caughtError);
-  const assetLoadError = /failed to fetch dynamically imported module|importing a module script failed|chunkloaderror|loading chunk .+ failed/i.test(
-    `${caughtError.message} ${String(caughtError.cause ?? "")}`,
-  );
+  const assetLoadError =
+    /failed to fetch dynamically imported module|importing a module script failed|chunkloaderror|loading chunk .+ failed/i.test(
+      `${caughtError.message} ${String(caughtError.cause ?? "")}`,
+    );
   useEffect(() => {
     reportLovableError(caughtError, { boundary: "tanstack_root_error_component" });
     if (!import.meta.env.PROD || !assetLoadError) return;
@@ -99,6 +100,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { name: "viewport", content: "width=device-width, initial-scale=1" },
       { name: "theme-color", content: "#087d46" },
       { name: "apple-mobile-web-app-capable", content: "yes" },
+      { name: "mobile-web-app-capable", content: "yes" },
       { name: "apple-mobile-web-app-status-bar-style", content: "default" },
       { title: "BledWay — Ferries Europe ↔ Algérie" },
       {
@@ -179,10 +181,10 @@ function RootComponent() {
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
         <TravelActionProvider>
-        {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
-        <Outlet />
-        <PwaInstall />
-        <Toaster />
+          {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
+          <Outlet />
+          <PwaInstall />
+          <Toaster />
         </TravelActionProvider>
       </AuthProvider>
     </QueryClientProvider>

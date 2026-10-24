@@ -101,7 +101,12 @@ function AuthPage() {
   }, []);
 
   useEffect(() => {
-    if (user && mode !== "reset") window.location.replace(next);
+    if (
+      user &&
+      mode !== "reset" &&
+      new URLSearchParams(window.location.search).get("reauth") !== "1"
+    )
+      window.location.replace(next);
   }, [user, mode, next]);
 
   async function handleSubmit(event: React.FormEvent) {

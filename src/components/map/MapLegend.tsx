@@ -29,7 +29,7 @@ export function MapLegend({
           <ul className="space-y-1.5 text-[11px] md:space-y-2.5 md:text-[13px]">
             <li className="flex items-center gap-2 md:gap-3">
               <span className="h-[3px] w-6 shrink-0 rounded-full bg-primary md:w-8" aria-hidden />
-              Liaison avec un départ connu
+              Liaison avec un programme publié
             </li>
             <li className="flex items-center gap-2 md:gap-3">
               <span className="h-[4px] w-6 shrink-0 rounded-full bg-primary md:w-8" aria-hidden />
@@ -40,7 +40,7 @@ export function MapLegend({
                 className="w-6 shrink-0 border-t-2 border-dashed border-muted-foreground/60 md:w-8"
                 aria-hidden
               />
-              {showDateHint ? "Pas de départ à la date choisie" : "Aucun départ programmé"}
+              {showDateHint ? "Pas de départ à la date choisie" : "Sans programme publié à venir"}
             </li>
             <li className="flex items-center gap-2 md:gap-3">
               <span className="grid w-6 shrink-0 place-items-center md:w-8" aria-hidden>
@@ -66,7 +66,8 @@ export function MapLegend({
           </ul>
           <p className="mt-2 text-[10px] leading-relaxed text-muted-foreground md:mt-3 md:text-xs">
             Tracés indicatifs en ligne droite : ils ne représentent pas la route réelle du navire.
-            Les horaires sont en heure locale du port.
+            Les positions et l’avancement sont des repères estimés. Le sillage indique le sens du
+            trajet. Les horaires sont en heure locale du port.
           </p>
         </div>
       ) : (

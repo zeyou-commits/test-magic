@@ -19,11 +19,7 @@ export function CrossingCard({
 }) {
   const { isAdmin } = useAuth();
   const progress = crossingProgress(departure, from, to, live);
-  const sourceLabel = isAdmin
-    ? progress.source
-    : progress.source !== "Repère horaire"
-      ? "Position actualisée"
-      : "Position estimée · selon les horaires";
+  const sourceLabel = isAdmin ? progress.source : "Avancement";
   const at = Date.now();
   const status =
     departure.status === "cancelled"

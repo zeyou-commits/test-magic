@@ -20,7 +20,7 @@ const questions = [
   ],
   [
     "Les positions des bateaux sont-elles en temps réel ?",
-    "Cela dépend des données disponibles. Une position AIS est accompagnée de sa fraîcheur ; une position estimée est calculée à partir des horaires. Consultez la fiche du bateau pour connaître la source et la dernière mise à jour.",
+    "La carte donne des repères de position et d’avancement estimés, notamment à partir des horaires de la traversée. Le sillage montre son sens de déplacement ; il n’accélère pas le bateau sur la carte. Ces repères ne constituent pas un suivi GPS de navigation.",
   ],
   [
     "Puis-je voyager avec ma voiture ?",

@@ -18,8 +18,27 @@ import { portTimeZone, dateKeyInZone } from "@/lib/ferry/time";
 import type { Selection } from "@/lib/ferry/types";
 import { CompanyBadge } from "./CompanyBadge";
 import { FollowButton } from "./FollowButton";
+import type { MapPreview } from "@/lib/ferry/mapPresentation";
 
-export function HomeTraffic({ onSelect }: { onSelect: (selection: Selection) => void }) {
+export function HomeTraffic({
+  onSelect,
+  onPreview,
+}: {
+  onSelect: (selection: Selection) => void;
+  onPreview?: (preview: MapPreview | null) => void;
+}) {
+  const previewEvents = (preview: MapPreview) => ({
+    onPointerEnter: (event: React.PointerEvent) => {
+      if (event.pointerType === "mouse") onPreview?.(preview);
+    },
+    onPointerLeave: (event: React.PointerEvent) => {
+      if (event.pointerType === "mouse") onPreview?.(null);
+    },
+    onFocusCapture: () => onPreview?.(preview),
+    onBlurCapture: (event: React.FocusEvent) => {
+      if (!event.currentTarget.contains(event.relatedTarget)) onPreview?.(null);
+    },
+  });
   const { data: recent = [] } = useQuery(fleetDeparturesQuery);
   const { data: upcoming = [], isPending, error } = useQuery(upcomingDeparturesQuery());
   const { data: ports = [] } = useQuery(portsQuery);
@@ -81,10 +100,10 @@ export function HomeTraffic({ onSelect }: { onSelect: (selection: Selection) => 
           sailing.map((c) => {
             const progress = crossingProgress(c.departure, c.from, c.to, c.live);
             const percent = progress.ratio === null ? null : Math.round(progress.ratio * 100);
-            const source =
-              progress.source !== "Repère horaire"
-                ? "Position actualisée"
-                : "Position estimée · selon les horaires";
+            const preview = {
+              routeId: c.departure.route_id,
+              ...(c.vessel ? { vesselId: c.vessel.id } : {}),
+            };
             const target: Selection = c.vessel
               ? { type: "vessel", id: c.vessel.id }
               : { type: "departure", id: c.departure.id };
@@ -101,7 +120,11 @@ export function HomeTraffic({ onSelect }: { onSelect: (selection: Selection) => 
                 ? Math.round((Date.parse(endDay) - Date.parse(startDay)) / 86_400_000)
                 : 0;
             return (
-              <article key={c.departure.id} className="bw-compact-crossing">
+              <article
+                key={c.departure.id}
+                className="bw-compact-crossing"
+                {...previewEvents(preview)}
+              >
                 <button
                   type="button"
                   className="absolute inset-0 z-0 rounded-2xl focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
@@ -141,6 +164,13 @@ export function HomeTraffic({ onSelect }: { onSelect: (selection: Selection) => 
                         key={port.id}
                         type="button"
                         onClick={() => onSelect({ type: "port", id: port.id })}
+                        onPointerEnter={(e) => {
+                          if (e.pointerType === "mouse") onPreview?.({ portId: port.id });
+                        }}
+                        onPointerLeave={(e) => {
+                          if (e.pointerType === "mouse") onPreview?.(preview);
+                        }}
+                        onFocus={() => onPreview?.({ portId: port.id })}
                         className="pointer-events-auto min-h-9 truncate rounded-md underline-offset-4 hover:text-primary hover:underline focus-visible:outline-2 focus-visible:outline-primary"
                       >
                         {port.name}
@@ -150,7 +180,7 @@ export function HomeTraffic({ onSelect }: { onSelect: (selection: Selection) => 
                   <div
                     className="bw-compact-track"
                     role="progressbar"
-                    aria-label={source}
+                    aria-label="Avancement de la traversée"
                     aria-valuemin={0}
                     aria-valuemax={100}
                     {...(percent === null ? {} : { "aria-valuenow": percent })}
@@ -170,7 +200,6 @@ export function HomeTraffic({ onSelect }: { onSelect: (selection: Selection) => 
                       {dayDelta > 0 && <sup className="ml-0.5 text-primary">+{dayDelta} j</sup>}
                     </span>
                   </div>
-                  <p className="mt-1 text-[10px] text-muted-foreground">{source}</p>
                 </div>
               </article>
             );
@@ -213,6 +242,10 @@ export function HomeTraffic({ onSelect }: { onSelect: (selection: Selection) => 
             <div
               key={`${event.departure.id}:${event.kind}`}
               className="relative flex items-center gap-2 border-b py-2.5 text-xs"
+              {...previewEvents({
+                routeId: event.departure.route_id,
+                ...(event.vessel ? { vesselId: event.vessel.id } : {}),
+              })}
             >
               <button
                 type="button"
@@ -243,7 +276,25 @@ export function HomeTraffic({ onSelect }: { onSelect: (selection: Selection) => 
               )}
               <div className="pointer-events-none relative min-w-0 flex-1">
                 <span className="block truncate font-semibold">
-                  {event.kind === "arrival" ? "Arrivée" : "Départ"} · {event.port.name}
+                  {event.kind === "arrival" ? "Arrivée" : "Départ"} ·{" "}
+                  <button
+                    type="button"
+                    className="pointer-events-auto rounded underline-offset-2 hover:text-primary hover:underline"
+                    onClick={() => onSelect({ type: "port", id: event.port.id })}
+                    onPointerEnter={(e) => {
+                      if (e.pointerType === "mouse") onPreview?.({ portId: event.port.id });
+                    }}
+                    onPointerLeave={(e) => {
+                      if (e.pointerType === "mouse")
+                        onPreview?.({
+                          routeId: event.departure.route_id,
+                          ...(event.vessel ? { vesselId: event.vessel.id } : {}),
+                        });
+                    }}
+                    onFocus={() => onPreview?.({ portId: event.port.id })}
+                  >
+                    {event.port.name}
+                  </button>
                 </span>
                 <span className="block truncate text-[10px] text-muted-foreground">
                   {event.from.name} → {event.to.name} · {event.vessel?.name ?? event.company?.name}

@@ -1,3 +1,4 @@
+import { verifyAdminSession } from "./session.server";
 import { z } from "zod";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
@@ -30,10 +31,9 @@ export const usersActionSchema = z.discriminatedUnion("action", [
 export async function handleUsersAdmin(request: Request, db: SupabaseClient<Database>) {
   const respond = (body: unknown, status = 200) =>
     Response.json(body, { status, headers: { "cache-control": "no-store" } });
-  const token = request.headers.get("authorization")?.match(/^Bearer (.+)$/)?.[1];
-  if (!token) return respond({ error: "Connexion requise." }, 401);
-  const { data: auth, error: authError } = await db.auth.getUser(token);
-  if (authError || !auth.user) return respond({ error: "Session expirée." }, 401);
+  const session = await verifyAdminSession(request, db);
+  if (session.response) return session.response;
+  const auth = { user: session.user! };
   const { data: role, error: roleError } = await db
     .from("user_roles")
     .select("role")

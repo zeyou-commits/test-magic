@@ -1,143 +1,220 @@
 {
   "checks": [
     {
-      "label": "fiche-bateau-condensee-320",
+      "label": "accueil-et-programmes-futurs-320",
       "width": 320,
       "document": 320,
       "body": 320,
       "errors": 0
     },
     {
-      "label": "suivi-coeur-en-tete-320",
+      "label": "filtre-lignes-et-retour-accueil-320",
       "width": 320,
       "document": 320,
       "body": 320,
       "errors": 0
     },
     {
-      "label": "fiche-bateau-condensee-390",
+      "label": "raccourcis-enrichis-et-second-appui-320",
+      "width": 320,
+      "document": 320,
+      "body": 320,
+      "errors": 0
+    },
+    {
+      "label": "recherche-toggle-et-saisie-conservee-320",
+      "width": 320,
+      "document": 320,
+      "body": 320,
+      "errors": 0
+    },
+    {
+      "label": "itineraire-preserve-et-formulaire-accessible-320",
+      "width": 320,
+      "document": 320,
+      "body": 320,
+      "errors": 0
+    },
+    {
+      "label": "autres-onglets-toggle-320",
+      "width": 320,
+      "document": 320,
+      "body": 320,
+      "errors": 0
+    },
+    {
+      "label": "fiches-et-retour-accueil-320",
+      "width": 320,
+      "document": 320,
+      "body": 320,
+      "errors": 0
+    },
+    {
+      "label": "sillage-et-mouvement-reduit-320",
+      "width": 320,
+      "document": 320,
+      "body": 320,
+      "errors": 0
+    },
+    {
+      "label": "accueil-et-programmes-futurs-390",
       "width": 390,
       "document": 390,
       "body": 390,
       "errors": 0
     },
     {
-      "label": "suivi-coeur-en-tete-390",
+      "label": "filtre-lignes-et-retour-accueil-390",
       "width": 390,
       "document": 390,
       "body": 390,
       "errors": 0
     },
     {
-      "label": "fiche-bateau-condensee-1440",
-      "width": 1440,
-      "document": 1440,
-      "body": 1440,
-      "errors": 0
-    },
-    {
-      "label": "suivi-coeur-en-tete-1440",
-      "width": 1440,
-      "document": 1440,
-      "body": 1440,
-      "errors": 0
-    },
-    {
-      "label": "programme-compagnie-liaison-390",
+      "label": "raccourcis-enrichis-et-second-appui-390",
       "width": 390,
       "document": 390,
       "body": 390,
       "errors": 0
     },
     {
-      "label": "sources-officielles-enregistrees-390",
+      "label": "recherche-toggle-et-saisie-conservee-390",
       "width": 390,
       "document": 390,
       "body": 390,
       "errors": 0
     },
     {
-      "label": "calendrier-scope-correct-390",
+      "label": "itineraire-preserve-et-formulaire-accessible-390",
       "width": 390,
       "document": 390,
       "body": 390,
       "errors": 0
     },
     {
-      "label": "navires-photos-sous-liaison-390",
+      "label": "autres-onglets-toggle-390",
       "width": 390,
       "document": 390,
       "body": 390,
       "errors": 0
     },
     {
-      "label": "ajout-depart-ponctuel-390",
+      "label": "fiches-et-retour-accueil-390",
       "width": 390,
       "document": 390,
       "body": 390,
       "errors": 0
     },
     {
-      "label": "contexte-liaison-conserve-au-rechargement-390",
+      "label": "sillage-et-mouvement-reduit-390",
       "width": 390,
       "document": 390,
       "body": 390,
       "errors": 0
     },
     {
-      "label": "changement-compagnie-390",
+      "label": "accueil-et-programmes-futurs-768",
+      "width": 768,
+      "document": 768,
+      "body": 768,
+      "errors": 0
+    },
+    {
+      "label": "survol-trajet-sans-deplacement-768",
+      "width": 768,
+      "document": 768,
+      "body": 768,
+      "errors": 0
+    },
+    {
+      "label": "filtre-lignes-et-retour-accueil-768",
+      "width": 768,
+      "document": 768,
+      "body": 768,
+      "errors": 0
+    },
+    {
+      "label": "raccourcis-enrichis-et-second-appui-768",
+      "width": 768,
+      "document": 768,
+      "body": 768,
+      "errors": 0
+    },
+    {
+      "label": "fiches-et-retour-accueil-768",
+      "width": 768,
+      "document": 768,
+      "body": 768,
+      "errors": 0
+    },
+    {
+      "label": "sillage-et-mouvement-reduit-768",
+      "width": 768,
+      "document": 768,
+      "body": 768,
+      "errors": 0
+    },
+    {
+      "label": "accueil-et-programmes-futurs-1440",
+      "width": 1440,
+      "document": 1440,
+      "body": 1440,
+      "errors": 0
+    },
+    {
+      "label": "survol-trajet-sans-deplacement-1440",
+      "width": 1440,
+      "document": 1440,
+      "body": 1440,
+      "errors": 0
+    },
+    {
+      "label": "filtre-lignes-et-retour-accueil-1440",
+      "width": 1440,
+      "document": 1440,
+      "body": 1440,
+      "errors": 0
+    },
+    {
+      "label": "raccourcis-enrichis-et-second-appui-1440",
+      "width": 1440,
+      "document": 1440,
+      "body": 1440,
+      "errors": 0
+    },
+    {
+      "label": "fiches-et-retour-accueil-1440",
+      "width": 1440,
+      "document": 1440,
+      "body": 1440,
+      "errors": 0
+    },
+    {
+      "label": "sillage-et-mouvement-reduit-1440",
+      "width": 1440,
+      "document": 1440,
+      "body": 1440,
+      "errors": 0
+    },
+    {
+      "label": "admin-session-renew",
       "width": 390,
       "document": 390,
       "body": 390,
       "errors": 0
     },
     {
-      "label": "programme-compagnie-liaison-1440",
-      "width": 1440,
-      "document": 1440,
-      "body": 1440,
+      "label": "admin-session-rejected",
+      "width": 390,
+      "document": 390,
+      "body": 390,
       "errors": 0
     },
     {
-      "label": "sources-officielles-enregistrees-1440",
-      "width": 1440,
-      "document": 1440,
-      "body": 1440,
-      "errors": 0
-    },
-    {
-      "label": "calendrier-scope-correct-1440",
-      "width": 1440,
-      "document": 1440,
-      "body": 1440,
-      "errors": 0
-    },
-    {
-      "label": "navires-photos-sous-liaison-1440",
-      "width": 1440,
-      "document": 1440,
-      "body": 1440,
-      "errors": 0
-    },
-    {
-      "label": "ajout-depart-ponctuel-1440",
-      "width": 1440,
-      "document": 1440,
-      "body": 1440,
-      "errors": 0
-    },
-    {
-      "label": "contexte-liaison-conserve-au-rechargement-1440",
-      "width": 1440,
-      "document": 1440,
-      "body": 1440,
-      "errors": 0
-    },
-    {
-      "label": "changement-compagnie-1440",
-      "width": 1440,
-      "document": 1440,
-      "body": 1440,
+      "label": "admin-session-configuration",
+      "width": 390,
+      "document": 390,
+      "body": 390,
       "errors": 0
     }
   ],

@@ -8,6 +8,7 @@ import { ArrowLeft } from "lucide-react";
 import { ShareButtons } from "./ShareButtons";
 import { SearchPanel } from "./SearchPanel";
 import { ItineraryPlanner } from "@/components/itinerary/ItineraryPlanner";
+import type { MapPreview } from "@/lib/ferry/mapPresentation";
 import type { ItineraryMapPreview } from "@/lib/ferry/itinerary";
 import { PortView } from "./PortView";
 import { RouteView } from "./RouteView";
@@ -23,6 +24,9 @@ interface SidePanelProps {
   hidePickersOnMobile?: boolean;
   onHighlightRoute?: (routeId: string | null) => void;
   onFocusRoute?: (routeId: string | null) => void;
+  homeMode?: boolean;
+  onTrafficPreview?: (preview: MapPreview | null) => void;
+  onOpenSearch?: () => void;
   itineraryOpen?: boolean;
   onOpenItinerary?: () => void;
   onCloseItinerary?: () => void;
@@ -41,6 +45,9 @@ export function SidePanel({
   hidePickersOnMobile = false,
   onHighlightRoute,
   onFocusRoute,
+  homeMode = false,
+  onTrafficPreview,
+  onOpenSearch,
   itineraryOpen = false,
   onOpenItinerary,
   onCloseItinerary,
@@ -80,14 +87,21 @@ export function SidePanel({
         inert={selection ? true : undefined}
         className="batogo-panel-scroll relative flex-1 overflow-y-auto"
       >
-        {itineraryOpen && onCloseItinerary && onItineraryPreview ? (
-          <ItineraryPlanner
-            onClose={onCloseItinerary}
-            onPreview={onItineraryPreview}
-            {...(onItineraryResultsReady ? { onResultsReady: onItineraryResultsReady } : {})}
-          />
-        ) : (
+        <div hidden={!itineraryOpen} inert={!itineraryOpen ? true : undefined}>
+          {onCloseItinerary && onItineraryPreview ? (
+            <ItineraryPlanner
+              active={itineraryOpen && !selection}
+              onClose={onCloseItinerary}
+              onPreview={onItineraryPreview}
+              {...(onItineraryResultsReady ? { onResultsReady: onItineraryResultsReady } : {})}
+            />
+          ) : null}
+        </div>
+        <div hidden={itineraryOpen} inert={itineraryOpen ? true : undefined}>
           <SearchPanel
+            homeMode={homeMode}
+            {...(onTrafficPreview ? { onTrafficPreview } : {})}
+            {...(onOpenSearch ? { onOpenSearch } : {})}
             filters={filters}
             onFiltersChange={onFiltersChange}
             selection={selection}
@@ -97,7 +111,7 @@ export function SidePanel({
             {...(onFocusRoute ? { onFocusRoute } : {})}
             {...(onOpenItinerary ? { onOpenItinerary } : {})}
           />
-        )}
+        </div>
       </div>
 
       {selection ? (
@@ -126,7 +140,7 @@ export function SidePanel({
               }}
               className="flex h-7 items-center gap-1 rounded-full px-2.5 text-xs font-semibold text-primary transition-colors hover:bg-secondary"
             >
-              <ArrowLeft className="size-3.5" /> {backLabel ?? "Rechercher"}
+              <ArrowLeft className="size-3.5" /> {backLabel ?? "Accueil"}
             </button>
             <div className="flex items-center gap-1.5">
               {followedVessel ? (

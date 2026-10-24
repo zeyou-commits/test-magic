@@ -1,13 +1,18 @@
 import { useAuth } from "@/hooks/useAuth";
 import { Anchor, Flag, Ship, Waves, type LucideProps } from "lucide-react";
 import type { FleetShip } from "@/lib/ferry/fleet";
+import {
+  shortCompanyName,
+  type LineVisibility,
+  type MapPreview,
+} from "@/lib/ferry/mapPresentation";
 
 export type MapShortcut = "sea" | "upcoming" | "companies" | "ports" | null;
 
 interface MapStatsProps {
   atSea: FleetShip[];
   upcomingShips: FleetShip[];
-  companies: { id: string; name: string; logoUrl: string | null }[];
+  companies: { id: string; name: string; logoUrl: string | null; count: number }[];
   portsCount: number;
   activeShortcut: MapShortcut;
   menuOpen: boolean;
@@ -16,6 +21,10 @@ interface MapStatsProps {
   onSelectCompany: (companyId: string | null) => void;
   onSelectShip: (ship: FleetShip) => void;
   companyOf: (ship: FleetShip) => string | undefined;
+  infoOf: (ship: FleetShip) => { route: string; dock: string; destination: string; status: string };
+  lineVisibility: LineVisibility;
+  onLineVisibility: (value: LineVisibility) => void;
+  onPreview: (preview: MapPreview | null) => void;
 }
 
 function LighthouseIcon({ className }: LucideProps) {
@@ -51,6 +60,10 @@ export function MapStats({
   onSelectCompany,
   onSelectShip,
   companyOf,
+  infoOf,
+  lineVisibility,
+  onLineVisibility,
+  onPreview,
 }: MapStatsProps) {
   const { isAdmin } = useAuth();
   const item =
@@ -66,7 +79,7 @@ export function MapStats({
     },
     {
       id: "upcoming" as const,
-      label: "Navires bientôt au départ",
+      label: "Navires à quai",
       count: upcomingShips.length,
       icon: <Anchor className="size-3 md:size-4" />,
     },
@@ -85,7 +98,7 @@ export function MapStats({
   ];
   return (
     <div className="pointer-events-auto absolute right-2 top-3 z-20 md:right-5 md:top-5">
-      <div className="flex items-center rounded-full border border-border bg-background/95 p-0.5 shadow-md backdrop-blur md:gap-0.5 md:p-1 md:shadow-lg">
+      <div className="ml-auto flex w-max items-center rounded-full border border-border bg-background/95 p-0.5 shadow-md backdrop-blur md:gap-0.5 md:p-1 md:shadow-lg">
         {shortcuts.map(({ id, label, count, icon }) => (
           <button
             key={id}
@@ -103,80 +116,131 @@ export function MapStats({
           </button>
         ))}
       </div>
-      {menuOpen &&
-        (activeShortcut === "sea" ||
-          activeShortcut === "upcoming" ||
-          activeShortcut === "companies") && (
-          <div
-            className="ml-auto mt-2 max-h-[min(48dvh,18rem)] w-64 overflow-y-auto rounded-2xl border border-border bg-background/95 p-1 shadow-lg backdrop-blur"
-            aria-label={
-              activeShortcut === "companies" ? "Filtrer les compagnies" : "Choisir un navire"
-            }
-          >
-            {activeShortcut === "companies" ? (
-              <>
-                <button
-                  type="button"
-                  className="flex w-full items-center rounded-xl px-3 py-2 text-left text-xs font-semibold hover:bg-secondary"
-                  aria-pressed={!selectedCompanyId}
-                  onClick={() => onSelectCompany(null)}
+      {menuOpen && activeShortcut && (
+        <div
+          className="ml-auto mt-2 max-h-[min(48dvh,20rem)] w-[min(18rem,calc(100vw-2rem))] overflow-y-auto rounded-2xl border border-border bg-background/95 p-1 shadow-lg backdrop-blur"
+          onPointerLeave={() => onPreview(null)}
+          aria-label={
+            activeShortcut === "companies" ? "Filtrer les compagnies" : "Choisir un navire"
+          }
+        >
+          {activeShortcut === "ports" ? (
+            <fieldset className="p-2">
+              <legend className="px-1 pt-1 text-xs font-bold">Afficher les liaisons</legend>
+              {(
+                [
+                  ["published", "Avec programme publié", "Tous les programmes futurs"],
+                  ["all", "Toutes les liaisons", "Y compris sans programme à venir"],
+                  ["none", "Aucune liaison", "Garder les ports et les bateaux"],
+                ] as const
+              ).map(([value, label, description]) => (
+                <label
+                  key={value}
+                  className="flex min-h-12 cursor-pointer items-center gap-2 rounded-xl px-2 py-2 hover:bg-secondary"
                 >
-                  Toutes les compagnies
-                </button>
-                {companies.map((company) => (
-                  <button
-                    key={company.id}
-                    type="button"
-                    className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left text-xs font-medium hover:bg-secondary data-[active=true]:bg-secondary"
-                    data-active={selectedCompanyId === company.id}
-                    aria-pressed={selectedCompanyId === company.id}
-                    onClick={() => onSelectCompany(company.id)}
-                  >
-                    {company.logoUrl ? (
-                      <img
-                        src={company.logoUrl}
-                        alt=""
-                        className="size-5 shrink-0 object-contain"
-                      />
-                    ) : (
-                      <Flag className="size-4 shrink-0 text-primary" />
-                    )}
-                    <span className="truncate">{company.name}</span>
-                  </button>
-                ))}
-                {companies.length === 0 && (
-                  <p className="px-3 py-2 text-xs text-muted-foreground">
-                    Aucune compagnie pour le moment
-                  </p>
-                )}
-              </>
-            ) : shipList.length === 0 ? (
-              <p className="px-3 py-2 text-xs text-muted-foreground">Aucun navire pour le moment</p>
-            ) : (
-              shipList.map((ship) => (
-                <button
-                  key={ship.id}
-                  type="button"
-                  onClick={() => onSelectShip(ship)}
-                  className="flex w-full items-center gap-2 rounded-xl px-2.5 py-1.5 text-left text-xs font-medium hover:bg-secondary"
-                >
-                  <Ship className="size-3.5 shrink-0 text-primary" />
-                  <span className="min-w-0 flex-1 leading-tight">
-                    <span className="block truncate">{ship.name}</span>
-                    {companyOf(ship) && (
-                      <span className="block truncate text-[10px] font-normal text-muted-foreground">
-                        {companyOf(ship)}
-                      </span>
-                    )}
+                  <input
+                    type="radio"
+                    name="map-lines"
+                    value={value}
+                    checked={lineVisibility === value}
+                    onChange={() => onLineVisibility(value)}
+                    className="accent-primary"
+                  />
+                  <span>
+                    <b className="block text-xs">{label}</b>
+                    <span className="text-[10px] text-muted-foreground">{description}</span>
                   </span>
-                  {isAdmin && ship.source === "live" && (
-                    <span className="text-[10px] font-semibold text-primary">AIS</span>
+                </label>
+              ))}
+            </fieldset>
+          ) : activeShortcut === "companies" ? (
+            <>
+              <button
+                type="button"
+                className="flex w-full items-center rounded-xl px-3 py-2 text-left text-xs font-semibold hover:bg-secondary"
+                aria-pressed={!selectedCompanyId}
+                onClick={() => onSelectCompany(null)}
+              >
+                Toutes les compagnies
+              </button>
+              {companies.map((company) => (
+                <button
+                  key={company.id}
+                  type="button"
+                  className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left text-xs font-medium hover:bg-secondary data-[active=true]:bg-secondary"
+                  data-active={selectedCompanyId === company.id}
+                  aria-pressed={selectedCompanyId === company.id}
+                  onClick={() => onSelectCompany(company.id)}
+                >
+                  {company.logoUrl ? (
+                    <img src={company.logoUrl} alt="" className="size-5 shrink-0 object-contain" />
+                  ) : (
+                    <Flag className="size-4 shrink-0 text-primary" />
                   )}
+                  <span className="truncate" title={company.name}>
+                    {shortCompanyName(company.name)} ({company.count})
+                  </span>
                 </button>
-              ))
-            )}
-          </div>
-        )}
+              ))}
+              {companies.length === 0 && (
+                <p className="px-3 py-2 text-xs text-muted-foreground">
+                  Aucune compagnie pour le moment
+                </p>
+              )}
+            </>
+          ) : shipList.length === 0 ? (
+            <p className="px-3 py-2 text-xs text-muted-foreground">Aucun navire pour le moment</p>
+          ) : (
+            shipList.map((ship) => (
+              <button
+                key={ship.id}
+                type="button"
+                onClick={() => onSelectShip(ship)}
+                onPointerEnter={(e) => {
+                  if (e.pointerType === "mouse")
+                    onPreview({
+                      routeId: ship.routeId,
+                      ...(ship.vesselId ? { vesselId: ship.vesselId } : {}),
+                    });
+                }}
+                onFocus={() =>
+                  onPreview({
+                    routeId: ship.routeId,
+                    ...(ship.vesselId ? { vesselId: ship.vesselId } : {}),
+                  })
+                }
+                onBlur={() => onPreview(null)}
+                className="flex w-full items-center gap-2 rounded-xl px-2.5 py-1.5 text-left text-xs font-medium hover:bg-secondary"
+              >
+                <Ship className="size-3.5 shrink-0 text-primary" />
+                <span className="min-w-0 flex-1 leading-tight">
+                  <span className="block truncate">{ship.name}</span>
+                  <span
+                    className="block truncate text-[10px] font-normal text-muted-foreground"
+                    title={companyOf(ship)}
+                  >
+                    {shortCompanyName(companyOf(ship) ?? "Compagnie à confirmer")} ·{" "}
+                    {infoOf(ship).route}
+                  </span>
+                  {activeShortcut === "upcoming" && (
+                    <>
+                      <span className="mt-1 block truncate text-[10px]">
+                        {infoOf(ship).dock} → {infoOf(ship).destination}
+                      </span>
+                      <span className="block text-[10px] font-normal text-primary">
+                        {infoOf(ship).status}
+                      </span>
+                    </>
+                  )}
+                </span>
+                {isAdmin && ship.source === "live" && (
+                  <span className="text-[10px] font-semibold text-primary">AIS</span>
+                )}
+              </button>
+            ))
+          )}
+        </div>
+      )}
     </div>
   );
 }

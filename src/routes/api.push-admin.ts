@@ -11,13 +11,14 @@ export const Route = createFileRoute("/api/push-admin")({
   server: {
     handlers: {
       POST: async ({ request }) => {
-        const token = request.headers.get("authorization")?.match(/^Bearer (.+)$/)?.[1];
-        if (!token) return Response.json({ error: "Connexion requise." }, { status: 401 });
         try {
-          const { supabaseAdmin: db } = await import("@/integrations/supabase/client.server");
-          const { data: auth, error: authError } = await db.auth.getUser(token);
-          if (authError || !auth.user)
-            return Response.json({ error: "Session expirée." }, { status: 401 });
+          const [{ supabaseAdmin: db }, { verifyAdminSession }] = await Promise.all([
+            import("@/integrations/supabase/client.server"),
+            import("@/lib/admin/session.server"),
+          ]);
+          const session = await verifyAdminSession(request, db);
+          if (session.response) return session.response;
+          const auth = { user: session.user! };
           const { data: role, error: roleError } = await db
             .from("user_roles")
             .select("role")

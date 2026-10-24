@@ -28,6 +28,7 @@ interface MobileTabBarProps {
   className?: string;
   activeTab?: "map" | "departures" | "search" | "ports" | "itinerary";
   onOpenMap?: () => void;
+  onMoreToggle?: () => void;
   onOpenDepartures?: () => void;
   onOpenSearch?: () => void;
   onShowPorts?: () => void;
@@ -41,6 +42,7 @@ export function MobileTabBar({
   className = "",
   activeTab,
   onOpenMap,
+  onMoreToggle,
   onOpenDepartures,
   onOpenSearch,
   onShowPorts,
@@ -126,14 +128,27 @@ export function MobileTabBar({
           <span>Itinéraire</span>
         </Link>
       )}
-      <DropdownMenu>
+      <DropdownMenu
+        modal={false}
+        onOpenChange={(open) => {
+          if (open) onMoreToggle?.();
+        }}
+      >
         <DropdownMenuTrigger className={itemClass} aria-label="Plus de pages">
           <MoreHorizontal className="size-5" aria-hidden />
           <span>Plus</span>
         </DropdownMenuTrigger>
         <DropdownMenuContent side="top" align="end" className="w-52">
           <DropdownMenuItem asChild>
-            {onOpenItinerary ? <button type="button" className="w-full" onClick={onOpenItinerary}>Itinéraire porte à porte</button> : <Link to="/" onClick={() => rememberAction("itinerary")}>Itinéraire porte à porte</Link>}
+            {onOpenItinerary ? (
+              <button type="button" className="w-full" onClick={onOpenItinerary}>
+                Itinéraire porte à porte
+              </button>
+            ) : (
+              <Link to="/" onClick={() => rememberAction("itinerary")}>
+                Itinéraire porte à porte
+              </Link>
+            )}
           </DropdownMenuItem>
           {moreLinks.map((link) => (
             <DropdownMenuItem key={link.to} asChild>

@@ -1,4 +1,4 @@
-import { supabase } from "@/integrations/supabase/client";
+import { adminRequest } from "./request";
 
 export type ManagedUser = {
   id: string;
@@ -21,18 +21,5 @@ export type UsersPage = {
   }[];
 };
 export async function userAdminAction<T>(input: Record<string, unknown>): Promise<T> {
-  const { data } = await supabase.auth.getSession();
-  if (!data.session) throw new Error("Votre session a expiré. Reconnectez-vous.");
-  const response = await fetch("/api/admin-users", {
-    method: "POST",
-    headers: {
-      "content-type": "application/json",
-      authorization: `Bearer ${data.session.access_token}`,
-    },
-    body: JSON.stringify(input),
-  });
-  const result = (await response.json().catch(() => null)) as (T & { error?: string }) | null;
-  if (!response.ok || !result)
-    throw new Error(result?.error ?? "La gestion des utilisateurs est indisponible.");
-  return result;
+  return adminRequest<T>("/api/admin-users", input);
 }

@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Bell, CheckCircle2, Clock3, RefreshCw, Send, Ship, Users, X } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
+import { AdminRequestError } from "@/lib/admin/request";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import {
   adminNotificationQuery,
@@ -52,7 +53,12 @@ export function NotificationOverview() {
       <div role="alert" className="bw-admin-empty">
         <Bell className="size-7 text-primary" />
         <h3>Notifications momentanément indisponibles</h3>
-        <p>Vérifiez la migration des campagnes, puis réessayez.</p>
+        <p>{query.error.message}</p>
+        {query.error instanceof AdminRequestError && query.error.status === 401 && (
+          <a className="bw-action-primary" href="/auth?next=%2Fadmin&reauth=1">
+            Se reconnecter
+          </a>
+        )}
         <button type="button" onClick={() => void query.refetch()} className="bw-action-secondary">
           Réessayer
         </button>

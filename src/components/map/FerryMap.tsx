@@ -1195,6 +1195,8 @@ export default function FerryMap({
     mobileBottomInset,
     desktopLeftInset,
     fitPortIds.join("|"),
+    selection?.type,
+    selection?.id,
     ports.length,
     itineraryPreview?.key,
     portsMode,

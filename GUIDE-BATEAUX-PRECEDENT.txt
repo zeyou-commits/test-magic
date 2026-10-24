@@ -1,0 +1,57 @@
+BLEDWAY — BATEAUX VISIBLES ET SURVOL DES COMPAGNIES — 24 OCTOBRE 2026
+
+ÉTAT
+Correctif développé et testé localement, pas encore intégré au Git cloud ni déployé en production. Aucune donnée de production modifiée.
+Ce ZIP est cumulatif avec bledway-accueil-carte-admin-20261024.zip : 54 fichiers source/tests/SQL, sans dépôt complet, dépendances, fichiers .env ni secrets. Il remplace ce précédent ZIP pour l'intégration. Si ce dernier est déjà intégré, seuls les 7 fichiers listés plus bas ont changé.
+
+CAUSE DES BATEAUX MANQUANTS
+Les bateaux étaient présents dans les données et dans les raccourcis. La carte masquait certains symboles quand les zones du bateau, du sillage et du texte se chevauchaient. Une zone transparente autour du dessin suffisait à provoquer ce masquage : un compteur de quatre bateaux pouvait donc coexister avec seulement deux dessins visibles.
+
+CORRECTION
+- Les icônes des bateaux et leurs noms sont désormais deux couches indépendantes.
+- Tous les marqueurs de la flotte active sont dessinés, même si les zones de placement se chevauchent. Les noms restent soumis à l'espacement pour garder la carte lisible.
+- Un bateau mis en évidence est dessiné au-dessus des autres.
+- Si des coques sont presque superposées à l'échelle de l'écran, un petit compteur les signale. Le clic ou l'appui tactile ouvre une liste permettant d'ouvrir chacune des fiches.
+- Aucune position n'est déplacée pour simuler un espacement géographique. Le regroupement se recalcule avec le zoom.
+- Le choix des bateaux proches reste dans la zone visible de la carte, au-dessus des ports et hors du header/volet mobile. Il est accessible au clavier.
+- Le sillage, les filtres, les fiches et le mode itinéraire sont conservés ; masquer les lignes ne supprime pas les bateaux.
+
+SURVOL DES COMPAGNIES
+Dans le raccourci Compagnies en haut à droite, survoler une compagnie met tous ses bateaux en évidence, avec un halo discret ; les autres sont atténués. La caméra ne bouge pas. Quitter la ligne ou la liste rétablit l'affichage précédent. Le même aperçu est disponible avec le focus clavier. Le clic conserve le filtrage par compagnie existant.
+
+FICHIERS MODIFIÉS DEPUIS LE PRÉCÉDENT ZIP
+- src/components/map/FerryMap.tsx
+- src/components/map/MapStats.tsx
+- src/routes/index.tsx
+- src/home.css
+- src/lib/ferry/mapPresentation.ts
+- src/components/map/fleetVisibility.ts
+- src/components/map/fleetVisibility.test.ts
+
+INTÉGRATION
+1. Fusionner ces fichiers avec la version actuelle du Git cloud en conservant leurs chemins ; ne pas écraser des changements plus récents et ne pas réécrire l'historique.
+2. Les deux nouveaux fichiers fleetVisibility.ts et fleetVisibility.test.ts sont indispensables au correctif. Le style de la liste des bateaux proches se trouve dans src/home.css.
+3. Exécuter le test ciblé : npx vitest run src/components/map/fleetVisibility.test.ts, puis npm run build:vercel et npx tsc --noEmit.
+4. Déployer normalement, puis vérifier sur la carte avec les données réelles que chaque bateau de la liste En mer possède un marqueur. Vérifier aussi les navires à quai et les différents niveaux de zoom.
+5. Sur PC, survoler successivement deux compagnies : seuls leurs bateaux doivent être mis en évidence, sans déplacement de la carte. Quitter la liste puis vérifier la restauration.
+6. Sur mobile, tester le compteur quand deux bateaux sont proches et ouvrir chacune des fiches proposées.
+
+SUPABASE ET SECRETS
+Aucune nouvelle migration, table, clé, configuration Vault ou tâche cron n'est requise pour ce correctif d'affichage. Les migrations SQL incluses proviennent des lots précédents : ne pas les rejouer si elles sont déjà appliquées.
+Les consignes du correctif précédent, notamment le diagnostic 401 et la vérification de cohérence des projets Supabase côté Vercel, sont conservées dans INTEGRATION-PRECEDENTE.txt. Elles ne constituent pas de nouvelles opérations nécessaires à l'affichage des bateaux.
+
+VÉRIFICATIONS RÉALISÉES
+- 5 tests de regroupement réussis : bateaux distincts, coordonnées identiques, priorité au bateau sélectionné, groupes de plusieurs bateaux et séparation au zoom.
+- 46 contrôles navigateur sur la version compilée à 320, 390, 768 et 1440 px : contrôle des marqueurs réellement rendus par la carte, modes en mer/à quai, dézoom, lignes masquées, survol des compagnies et clavier, choix des bateaux proches et ouverture de chacune des deux fiches lorsque deux bateaux ont exactement la même position.
+- Le test d'affichage compare les identifiants des bateaux du jeu de données à ceux réellement rendus par la couche d'icônes ; il ne se contente plus de compter les données chargées.
+- Compilation Vercel locale réussie ; TypeScript et lint sans erreur sur les fichiers concernés. Des avertissements de dépendances de hooks préexistants subsistent.
+- Les jeux de données et les services sont simulés ; aucun envoi de notification, compte ou programme réel n'a été modifié.
+
+PROMPT À TRANSMETTRE À L'IA GIT CLOUD
+Intègre par fusion le correctif cumulatif bledway-bateaux-visibles-compagnies-20261024.zip dans BledWay. Si le précédent lot accueil/carte/admin est déjà présent, concentre la fusion sur les 7 fichiers modifiés listés dans ce guide. Conserve tous les autres changements récents.
+Corrige le masquage de bateaux par collision : les coques et les noms doivent rester indépendants, toutes les icônes de la flotte active doivent être dessinées, et les bateaux presque superposés doivent rester accessibles via le compteur et la liste. Conserve leurs positions réelles/estimées actuelles sans les déplacer artificiellement. Le choix doit fonctionner au toucher et au clavier, hors du header et du volet mobile.
+Dans le raccourci Compagnies, le survol doit mettre en évidence tous les bateaux de la compagnie, atténuer les autres, ne jamais déplacer la caméra et restaurer l'affichage en quittant la ligne. Conserve le comportement du clic.
+Exécute le test ciblé inclus, compile, contrôle TypeScript et déploie. Vérifie ensuite avec les données réelles que les bateaux listés dans En mer sont effectivement rendus sur la carte et accessibles, sur PC et mobile, en tenant compte des filtres actifs. Ne confonds pas présence dans les données et rendu d'un marqueur. Aucune migration ou modification de secret Supabase n'est requise pour ce lot. Confirme séparément intégration Git, déploiement et vérification en production.
+
+RÉFÉRENCE TECHNIQUE
+Spécification MapLibre des collisions et priorités de symboles : https://maplibre.org/maplibre-style-spec/layers/#icon-allow-overlap

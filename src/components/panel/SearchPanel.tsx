@@ -1,3 +1,4 @@
+import { vesselCompanyIds } from "@/lib/ferry/filterSync";
 import { HomeTraffic } from "./HomeTraffic";
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { useQuery } from "@tanstack/react-query";
@@ -23,6 +24,7 @@ import {
 } from "@/components/ui/select";
 import {
   companiesQuery,
+  fleetDeparturesQuery,
   portsQuery,
   routesQuery,
   upcomingDeparturesQuery,
@@ -107,6 +109,7 @@ export function SearchPanel({
   const { data: companies = [] } = useQuery(companiesQuery);
   const { data: vessels = [] } = useQuery(vesselsQuery);
   const { data: departures = [], isLoading } = useQuery(upcomingDeparturesQuery());
+  const { data: recentDepartures = [] } = useQuery(fleetDeparturesQuery);
 
   const liveShips = useLiveShips();
   const liveByDeparture = useMemo(
@@ -369,7 +372,9 @@ export function SearchPanel({
         {!editing && homeMode ? (
           <div className="bw-search-welcome">
             <div className="flex items-center justify-between gap-2">
-              <h2>On prend le large ?</h2>
+              <h2>
+                On prend <strong className="bw-brand-red">la route du bled</strong> ?
+              </h2>
               <button
                 type="button"
                 onClick={onOpenItinerary}
@@ -404,6 +409,30 @@ export function SearchPanel({
               <span className="sr-only">Modifier la recherche</span>
             </button>
           </section>
+        ) : null}
+        {!editing && (filters.companyId || filters.vesselId) ? (
+          <div className="flex flex-wrap gap-1 border-b px-4 py-2" aria-label="Filtres actifs">
+            {filters.companyId && (
+              <button
+                type="button"
+                className="rounded-full border bg-secondary px-2 py-1 text-[11px] font-semibold"
+                aria-label="Retirer le filtre compagnie"
+                onClick={() => set({ companyId: null, vesselId: null })}
+              >
+                {companies.find((c) => c.id === filters.companyId)?.name ?? "Compagnie"} ×
+              </button>
+            )}
+            {filters.vesselId && (
+              <button
+                type="button"
+                className="rounded-full border bg-secondary px-2 py-1 text-[11px] font-semibold"
+                aria-label="Retirer le filtre navire"
+                onClick={() => set({ vesselId: null })}
+              >
+                {vessels.find((v) => v.id === filters.vesselId)?.name ?? "Navire"} ×
+              </button>
+            )}
+          </div>
         ) : null}
         <section
           ref={searchRef}
@@ -582,7 +611,16 @@ export function SearchPanel({
                 label="Navire"
                 value={filters.vesselId}
                 onChange={(value) => set({ vesselId: value })}
-                options={vessels.map((vessel) => ({ value: vessel.id, label: vessel.name }))}
+                options={vessels
+                  .filter(
+                    (vessel) =>
+                      !filters.companyId ||
+                      vesselCompanyIds(vessel.id, vessels, [
+                        ...recentDepartures,
+                        ...departures,
+                      ]).includes(filters.companyId),
+                  )
+                  .map((vessel) => ({ value: vessel.id, label: vessel.name }))}
               />
             </div>
           </details>
@@ -653,6 +691,7 @@ export function SearchPanel({
 
         {!editing && homeMode ? (
           <HomeTraffic
+            filters={filters}
             onSelect={onSelect}
             {...(onTrafficPreview ? { onPreview: onTrafficPreview } : {})}
           />

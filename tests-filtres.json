@@ -1,0 +1,89 @@
+{
+  "checks": [
+    {
+      "label": "titre-rouge-et-gras-320",
+      "width": 320,
+      "document": 320,
+      "body": 320,
+      "errors": 0
+    },
+    {
+      "label": "fermeture-exterieure-map-focus-echap-320",
+      "width": 320,
+      "document": 320,
+      "body": 320,
+      "errors": 0
+    },
+    {
+      "label": "compagnie-partagee-carte-accueil-url-320",
+      "width": 320,
+      "document": 320,
+      "body": 320,
+      "errors": 0
+    },
+    {
+      "label": "filtres-bidirectionnels-navires-compatibles-320",
+      "width": 320,
+      "document": 320,
+      "body": 320,
+      "errors": 0
+    },
+    {
+      "label": "titre-rouge-et-gras-390",
+      "width": 390,
+      "document": 390,
+      "body": 390,
+      "errors": 0
+    },
+    {
+      "label": "fermeture-exterieure-map-focus-echap-390",
+      "width": 390,
+      "document": 390,
+      "body": 390,
+      "errors": 0
+    },
+    {
+      "label": "compagnie-partagee-carte-accueil-url-390",
+      "width": 390,
+      "document": 390,
+      "body": 390,
+      "errors": 0
+    },
+    {
+      "label": "filtres-bidirectionnels-navires-compatibles-390",
+      "width": 390,
+      "document": 390,
+      "body": 390,
+      "errors": 0
+    },
+    {
+      "label": "titre-rouge-et-gras-1440",
+      "width": 1440,
+      "document": 1440,
+      "body": 1440,
+      "errors": 0
+    },
+    {
+      "label": "fermeture-exterieure-map-focus-echap-1440",
+      "width": 1440,
+      "document": 1440,
+      "body": 1440,
+      "errors": 0
+    },
+    {
+      "label": "compagnie-partagee-carte-accueil-url-1440",
+      "width": 1440,
+      "document": 1440,
+      "body": 1440,
+      "errors": 0
+    },
+    {
+      "label": "filtres-bidirectionnels-navires-compatibles-1440",
+      "width": 1440,
+      "document": 1440,
+      "body": 1440,
+      "errors": 0
+    }
+  ],
+  "productionWrites": false
+}

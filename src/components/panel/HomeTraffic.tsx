@@ -1,3 +1,4 @@
+import { matchesTraffic } from "@/lib/ferry/filterSync";
 import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Ship, ArrowDownLeft, ArrowUpRight } from "lucide-react";
@@ -15,7 +16,7 @@ import { crossingProgress } from "@/lib/ferry/crossingProgress";
 import { trackingTimes } from "@/lib/ferry/tracking";
 import { formatDateParts } from "@/lib/ferry/format";
 import { portTimeZone, dateKeyInZone } from "@/lib/ferry/time";
-import type { Selection } from "@/lib/ferry/types";
+import { emptyFilters, type Filters, type Selection } from "@/lib/ferry/types";
 import { CompanyBadge } from "./CompanyBadge";
 import { FollowButton } from "./FollowButton";
 import type { MapPreview } from "@/lib/ferry/mapPresentation";
@@ -23,9 +24,11 @@ import type { MapPreview } from "@/lib/ferry/mapPresentation";
 export function HomeTraffic({
   onSelect,
   onPreview,
+  filters = emptyFilters,
 }: {
   onSelect: (selection: Selection) => void;
   onPreview?: (preview: MapPreview | null) => void;
+  filters?: Filters;
 }) {
   const previewEvents = (preview: MapPreview) => ({
     onPointerEnter: (event: React.PointerEvent) => {
@@ -55,7 +58,7 @@ export function HomeTraffic({
     return () => window.clearInterval(timer);
   }, []);
   const departures = [...new Map([...recent, ...upcoming].map((d) => [d.id, d])).values()].filter(
-    (d) => d.status !== "cancelled",
+    (d) => matchesTraffic(d, routes, ports, filters),
   );
   const crossings = departures.flatMap((departure) => {
     const route = routes.find((r) => r.id === departure.route_id);

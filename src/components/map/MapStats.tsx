@@ -1,4 +1,5 @@
 import { useAuth } from "@/hooks/useAuth";
+import { useEffect, useRef } from "react";
 import { Anchor, Flag, Ship, Waves, type LucideProps } from "lucide-react";
 import type { FleetShip } from "@/lib/ferry/fleet";
 import {
@@ -25,6 +26,7 @@ interface MapStatsProps {
   lineVisibility: LineVisibility;
   onLineVisibility: (value: LineVisibility) => void;
   onPreview: (preview: MapPreview | null) => void;
+  onDismiss: () => void;
 }
 
 function LighthouseIcon({ className }: LucideProps) {
@@ -64,7 +66,33 @@ export function MapStats({
   lineVisibility,
   onLineVisibility,
   onPreview,
+  onDismiss,
 }: MapStatsProps) {
+  const rootRef = useRef<HTMLDivElement>(null);
+  const dismissRef = useRef(onDismiss);
+  dismissRef.current = onDismiss;
+  useEffect(() => {
+    if (!menuOpen) return;
+    const outside = (event: Event) => {
+      if (event.target instanceof Node && !rootRef.current?.contains(event.target))
+        dismissRef.current();
+    };
+    const escape = (event: KeyboardEvent) => {
+      if (event.key !== "Escape") return;
+      event.preventDefault();
+      event.stopPropagation();
+      dismissRef.current();
+      rootRef.current?.querySelector<HTMLButtonElement>("button[data-active=true]")?.focus();
+    };
+    document.addEventListener("pointerdown", outside, true);
+    document.addEventListener("focusin", outside, true);
+    document.addEventListener("keydown", escape, true);
+    return () => {
+      document.removeEventListener("pointerdown", outside, true);
+      document.removeEventListener("focusin", outside, true);
+      document.removeEventListener("keydown", escape, true);
+    };
+  }, [menuOpen]);
   const { isAdmin } = useAuth();
   const item =
     "flex items-center gap-1 rounded-full px-1.5 py-0.5 text-[11px] font-bold tabular-nums text-foreground transition-colors hover:bg-secondary data-[active=true]:bg-primary data-[active=true]:text-primary-foreground md:gap-1.5 md:px-2.5 md:py-1.5 md:text-sm";
@@ -97,7 +125,10 @@ export function MapStats({
     },
   ];
   return (
-    <div className="pointer-events-auto absolute right-2 top-3 z-20 md:right-5 md:top-5">
+    <div
+      ref={rootRef}
+      className="pointer-events-auto absolute right-2 top-3 z-20 md:right-5 md:top-5"
+    >
       <div className="ml-auto flex w-max items-center rounded-full border border-border bg-background/95 p-0.5 shadow-md backdrop-blur md:gap-0.5 md:p-1 md:shadow-lg">
         {shortcuts.map(({ id, label, count, icon }) => (
           <button

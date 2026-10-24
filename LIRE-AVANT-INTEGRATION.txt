@@ -1,57 +1,44 @@
-BLEDWAY — BATEAUX VISIBLES ET SURVOL DES COMPAGNIES — 24 OCTOBRE 2026
+BLEDWAY — FILTRES SYNCHRONISÉS ET FERMETURE DES RACCOURCIS — 24 OCTOBRE 2026
 
 ÉTAT
-Correctif développé et testé localement, pas encore intégré au Git cloud ni déployé en production. Aucune donnée de production modifiée.
-Ce ZIP est cumulatif avec bledway-accueil-carte-admin-20261024.zip : 54 fichiers source/tests/SQL, sans dépôt complet, dépendances, fichiers .env ni secrets. Il remplace ce précédent ZIP pour l'intégration. Si ce dernier est déjà intégré, seuls les 7 fichiers listés plus bas ont changé.
+Développé et vérifié localement, pas encore intégré au Git cloud ni déployé en production. Aucune donnée réelle modifiée.
+ZIP cumulatif de 56 fichiers source/tests/SQL, sans dépôt complet, dépendances, fichiers .env ou secrets. Il reprend le précédent lot bateaux/compagnies et le remplace pour l'intégration. Si ce dernier est déjà installé, seuls 8 fichiers ont changé, listés ci-dessous.
 
-CAUSE DES BATEAUX MANQUANTS
-Les bateaux étaient présents dans les données et dans les raccourcis. La carte masquait certains symboles quand les zones du bateau, du sillage et du texte se chevauchaient. Une zone transparente autour du dessin suffisait à provoquer ce masquage : un compteur de quatre bateaux pouvait donc coexister avec seulement deux dessins visibles.
-
-CORRECTION
-- Les icônes des bateaux et leurs noms sont désormais deux couches indépendantes.
-- Tous les marqueurs de la flotte active sont dessinés, même si les zones de placement se chevauchent. Les noms restent soumis à l'espacement pour garder la carte lisible.
-- Un bateau mis en évidence est dessiné au-dessus des autres.
-- Si des coques sont presque superposées à l'échelle de l'écran, un petit compteur les signale. Le clic ou l'appui tactile ouvre une liste permettant d'ouvrir chacune des fiches.
-- Aucune position n'est déplacée pour simuler un espacement géographique. Le regroupement se recalcule avec le zoom.
-- Le choix des bateaux proches reste dans la zone visible de la carte, au-dessus des ports et hors du header/volet mobile. Il est accessible au clavier.
-- Le sillage, les filtres, les fiches et le mode itinéraire sont conservés ; masquer les lignes ne supprime pas les bateaux.
-
-SURVOL DES COMPAGNIES
-Dans le raccourci Compagnies en haut à droite, survoler une compagnie met tous ses bateaux en évidence, avec un halo discret ; les autres sont atténués. La caméra ne bouge pas. Quitter la ligne ou la liste rétablit l'affichage précédent. Le même aperçu est disponible avec le focus clavier. Le clic conserve le filtrage par compagnie existant.
+CHANGEMENTS
+1. Une seule sélection compagnie/navire alimente désormais la recherche, la carte, les raccourcis et le volet d'accueil. L'ancien filtre de compagnie propre aux raccourcis est supprimé.
+2. Choisir une compagnie en haut à droite se retrouve dans le formulaire, les bateaux affichés et les mouvements de l'accueil. Choisir un navire depuis les raccourcis ouvre toujours sa fiche et renseigne également sa sélection et la compagnie de sa traversée.
+3. Dans la recherche, seuls les navires compatibles avec la compagnie sont proposés. Un changement de compagnie retire un navire incompatible ; un choix de navire renseigne sa compagnie. Les affectations commerciales connues, y compris les traversées en cours et les affrètements, sont prises en compte.
+4. Les filtres restent actifs quand on ferme le formulaire ou revient à l'accueil, et leur sélection reste dans l'URL. Des petites pastilles permettent de retirer le filtre compagnie ou navire depuis l'accueil, sur PC et mobile. Retirer la compagnie retire aussi son éventuel navire ; retirer seulement le navire conserve la compagnie.
+5. La liste des compagnies garde les autres compagnies du contexte géographique pour permettre d'en changer. Leur nombre entre parenthèses correspond à leurs navires dans ce contexte. Les listes En mer et À quai suivent les critères actifs.
+6. Les volets En navigation et Départs & arrivées décrivent toujours le trafic actuel, avec les mêmes critères de ports, compagnie et navire que la carte. Les dates de recherche continuent à filtrer les résultats de traversées ; elles ne transforment pas la vue du trafic actuel en simulation historique.
+7. Cliquer ou toucher à l'extérieur d'une liste de raccourci, y compris sur la carte, la ferme. Un changement de focus à l'extérieur ou la touche Échap la ferme aussi. Les filtres sélectionnés sont conservés. Un raccourci dont la liste est fermée peut être rouvert immédiatement.
+8. Le titre devient « On prend la route du bled ? ». Seule l'expression « la route du bled » est mise en rouge, en gras renforcé.
+9. Le cadrage suit le contexte compagnie/navire après un changement de filtre. Retirer ces filtres rétablit une vue qui montre à nouveau la flotte complète ; les aperçus au survol ne déplacent toujours pas la caméra.
 
 FICHIERS MODIFIÉS DEPUIS LE PRÉCÉDENT ZIP
+- src/components/panel/HomeTraffic.tsx
+- src/components/panel/SearchPanel.tsx
 - src/components/map/FerryMap.tsx
 - src/components/map/MapStats.tsx
 - src/routes/index.tsx
 - src/home.css
-- src/lib/ferry/mapPresentation.ts
-- src/components/map/fleetVisibility.ts
-- src/components/map/fleetVisibility.test.ts
+- src/lib/ferry/filterSync.ts
+- src/lib/ferry/filterSync.test.ts
 
 INTÉGRATION
-1. Fusionner ces fichiers avec la version actuelle du Git cloud en conservant leurs chemins ; ne pas écraser des changements plus récents et ne pas réécrire l'historique.
-2. Les deux nouveaux fichiers fleetVisibility.ts et fleetVisibility.test.ts sont indispensables au correctif. Le style de la liste des bateaux proches se trouve dans src/home.css.
-3. Exécuter le test ciblé : npx vitest run src/components/map/fleetVisibility.test.ts, puis npm run build:vercel et npx tsc --noEmit.
-4. Déployer normalement, puis vérifier sur la carte avec les données réelles que chaque bateau de la liste En mer possède un marqueur. Vérifier aussi les navires à quai et les différents niveaux de zoom.
-5. Sur PC, survoler successivement deux compagnies : seuls leurs bateaux doivent être mis en évidence, sans déplacement de la carte. Quitter la liste puis vérifier la restauration.
-6. Sur mobile, tester le compteur quand deux bateaux sont proches et ouvrir chacune des fiches proposées.
+- Fusionner avec l'état actuel du Git cloud en conservant les chemins et les modifications plus récentes. Ne pas réécrire l'historique Git.
+- Ajouter impérativement src/lib/ferry/filterSync.ts et son test ; les composants modifiés l'utilisent.
+- Exécuter npx vitest run src/lib/ferry/filterSync.test.ts, npm run build:vercel et npx tsc --noEmit.
+- Déployer, puis vérifier les deux sens : raccourci compagnie vers formulaire, puis choix de compagnie/navire du formulaire vers carte et raccourcis.
+- Vérifier le retrait d'un navire incompatible, les pastilles de suppression, la fermeture extérieure et Échap, le maintien des filtres à la fermeture du volet, puis le retour de tous les bateaux après suppression des filtres.
+- Aucune nouvelle migration, clé, configuration Supabase ou tâche cron n'est requise. Les SQL inclus proviennent des précédents lots et ne doivent pas être rejoués s'ils sont déjà installés.
 
-SUPABASE ET SECRETS
-Aucune nouvelle migration, table, clé, configuration Vault ou tâche cron n'est requise pour ce correctif d'affichage. Les migrations SQL incluses proviennent des lots précédents : ne pas les rejouer si elles sont déjà appliquées.
-Les consignes du correctif précédent, notamment le diagnostic 401 et la vérification de cohérence des projets Supabase côté Vercel, sont conservées dans INTEGRATION-PRECEDENTE.txt. Elles ne constituent pas de nouvelles opérations nécessaires à l'affichage des bateaux.
+VÉRIFICATIONS LOCALES
+- 8 tests de logique réussis : compatibilité compagnie/navire, changement et retrait des filtres, affrètement et exclusion des affectations annulées.
+- 12 contrôles navigateur regroupant les parcours à 320, 390 et 1440 px : titre rouge/gras, fermeture au clic extérieur/carte/focus/Échap, réouverture immédiate, raccourci vers formulaire, formulaire vers raccourcis, options de navires compatibles, retrait d'une sélection incohérente, accès à la fiche et suppression des pastilles.
+- À la fin du retrait des filtres, le contrôle vérifie aussi les marqueurs effectivement rendus par la carte, pas seulement les données chargées.
+- Compilation locale Vercel réussie. TypeScript et lint sans erreur sur les fichiers concernés, hors avertissements de dépendances de hooks préexistants.
+- Données de test et services simulés. Aucune écriture, invitation ou notification réelle en production.
 
-VÉRIFICATIONS RÉALISÉES
-- 5 tests de regroupement réussis : bateaux distincts, coordonnées identiques, priorité au bateau sélectionné, groupes de plusieurs bateaux et séparation au zoom.
-- 46 contrôles navigateur sur la version compilée à 320, 390, 768 et 1440 px : contrôle des marqueurs réellement rendus par la carte, modes en mer/à quai, dézoom, lignes masquées, survol des compagnies et clavier, choix des bateaux proches et ouverture de chacune des deux fiches lorsque deux bateaux ont exactement la même position.
-- Le test d'affichage compare les identifiants des bateaux du jeu de données à ceux réellement rendus par la couche d'icônes ; il ne se contente plus de compter les données chargées.
-- Compilation Vercel locale réussie ; TypeScript et lint sans erreur sur les fichiers concernés. Des avertissements de dépendances de hooks préexistants subsistent.
-- Les jeux de données et les services sont simulés ; aucun envoi de notification, compte ou programme réel n'a été modifié.
-
-PROMPT À TRANSMETTRE À L'IA GIT CLOUD
-Intègre par fusion le correctif cumulatif bledway-bateaux-visibles-compagnies-20261024.zip dans BledWay. Si le précédent lot accueil/carte/admin est déjà présent, concentre la fusion sur les 7 fichiers modifiés listés dans ce guide. Conserve tous les autres changements récents.
-Corrige le masquage de bateaux par collision : les coques et les noms doivent rester indépendants, toutes les icônes de la flotte active doivent être dessinées, et les bateaux presque superposés doivent rester accessibles via le compteur et la liste. Conserve leurs positions réelles/estimées actuelles sans les déplacer artificiellement. Le choix doit fonctionner au toucher et au clavier, hors du header et du volet mobile.
-Dans le raccourci Compagnies, le survol doit mettre en évidence tous les bateaux de la compagnie, atténuer les autres, ne jamais déplacer la caméra et restaurer l'affichage en quittant la ligne. Conserve le comportement du clic.
-Exécute le test ciblé inclus, compile, contrôle TypeScript et déploie. Vérifie ensuite avec les données réelles que les bateaux listés dans En mer sont effectivement rendus sur la carte et accessibles, sur PC et mobile, en tenant compte des filtres actifs. Ne confonds pas présence dans les données et rendu d'un marqueur. Aucune migration ou modification de secret Supabase n'est requise pour ce lot. Confirme séparément intégration Git, déploiement et vérification en production.
-
-RÉFÉRENCE TECHNIQUE
-Spécification MapLibre des collisions et priorités de symboles : https://maplibre.org/maplibre-style-spec/layers/#icon-allow-overlap
+PROMPT POUR L'IA GIT CLOUD
+Intègre par fusion le ZIP cumulatif bledway-filtres-synchronises-20261024.zip. Si le lot précédent bateaux/compagnies est déjà intégré, concentre la fusion sur les 8 fichiers modifiés ci-dessus, sans écraser des changements plus récents. Les sélections compagnie et navire doivent avoir une source commune pour le formulaire, les raccourcis, la carte et l'accueil. Respecte les affectations commerciales connues et retire les navires incompatibles quand la compagnie change. Conserve les filtres quand les listes et le volet se ferment, et permets de les retirer via les pastilles. Un clic sur la carte ou ailleurs, un focus extérieur et Échap doivent fermer la liste active sans perdre ses filtres ; un appui suivant doit pouvoir la rouvrir. Conserve le clic sur les bateaux et les aperçus au survol. Le titre demandé est « On prend la route du bled ? », avec « la route du bled » rouge et gras. Exécute les tests, compile, contrôle TypeScript et déploie. Vérifie ensuite ces parcours avec les données réelles sur PC et mobile, y compris la visibilité de tous les marqueurs après suppression des filtres. Aucune opération Supabase n'est nécessaire pour ce lot. Confirme séparément intégration Git, déploiement et vérification en production.

@@ -2801,3 +2801,8 @@ html {
     padding-top: 8px;
   }
 }
+
+.bw-brand-red {
+  color: #cf4427;
+  font-weight: 800;
+}

@@ -4,11 +4,11 @@
   "files": [
     {
       "path": "src/components/panel/HomeTraffic.tsx",
-      "sha256": "aeee9c70199db9046709302c68d58437102047b3a8294c6da168b644e444727e"
+      "sha256": "27a32cc17ad2e8cfe0d48dbe3c9d758c9a361aae7df73bbf658749f61a86a9e6"
     },
     {
       "path": "src/components/panel/SearchPanel.tsx",
-      "sha256": "df9dedcb8a657e6d240568ff866b078ddada6059cdd97b2725f1c54b9928208b"
+      "sha256": "1cd0284c9a359c87faa0ef94c1cefb56d2b52a255d0678c1ebbe966a3382c481"
     },
     {
       "path": "src/components/panel/ShipViews.tsx",
@@ -24,11 +24,11 @@
     },
     {
       "path": "src/components/map/FerryMap.tsx",
-      "sha256": "89ed5b859a3b0d96df29fcc6eee077bf3aad93ce1d875d899b1513638319fe97"
+      "sha256": "5c2520696ed9633327566646397b2d6b9f93fd358c12d211c8cdd8de55919fe6"
     },
     {
       "path": "src/components/map/MapStats.tsx",
-      "sha256": "2686e8a675f3b55308358c7836eed1cb365f7c10ce9401d2f0392924176da80d"
+      "sha256": "27879756daafb089ea01bcdf870d69e13c0213a83ef9c231692f5829f219251c"
     },
     {
       "path": "src/components/map/shipIcons.ts",
@@ -100,7 +100,7 @@
     },
     {
       "path": "src/routes/index.tsx",
-      "sha256": "0f4a067be201f6a12b12a7cdfd17d6882e2ef6383de7bed1ac07d06aa7fdc7dd"
+      "sha256": "655fd6342b3ee92f3fd61f06e093401876b16825000cb4526b3fe3e1231ed40e"
     },
     {
       "path": "src/routes/api.admin-users.ts",
@@ -108,7 +108,7 @@
     },
     {
       "path": "src/home.css",
-      "sha256": "91ca91df4ed95a1805bb9bb343a18aa99883fe9be2c090fe9f01cd46f19b8940"
+      "sha256": "9ebaca664e503a67d2b1cd1d0193fab18ec25bde01f02491a0dc2abb195ba550"
     },
     {
       "path": "public/images/ferry-marker.svg",
@@ -217,15 +217,24 @@
     {
       "path": "src/components/map/fleetVisibility.test.ts",
       "sha256": "e7566337e90d9936be354e239791d8ae38d8fa6030d32e265a9c702afad5af56"
+    },
+    {
+      "path": "src/lib/ferry/filterSync.ts",
+      "sha256": "7ed2c044508838a69479be0aee375258f15a516724f5da96f415fa78d6ab4d2b"
+    },
+    {
+      "path": "src/lib/ferry/filterSync.test.ts",
+      "sha256": "7225da306fdd3417d9846c876b3c88fbfd519818a0a59a56ed5998f9f1f06e57"
     }
   ],
   "changed_since_previous": [
+    "src/components/panel/HomeTraffic.tsx",
+    "src/components/panel/SearchPanel.tsx",
     "src/components/map/FerryMap.tsx",
     "src/components/map/MapStats.tsx",
     "src/routes/index.tsx",
     "src/home.css",
-    "src/lib/ferry/mapPresentation.ts",
-    "src/components/map/fleetVisibility.ts",
-    "src/components/map/fleetVisibility.test.ts"
+    "src/lib/ferry/filterSync.ts",
+    "src/lib/ferry/filterSync.test.ts"
   ]
 }

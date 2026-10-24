@@ -18,7 +18,8 @@ import { formatDuration } from "@/lib/ferry/format";
 import { algeriaGeoJson } from "@/lib/ferry/algeriaGeoJson";
 import { routeArc } from "@/lib/ferry/geo";
 import type { FleetShip } from "@/lib/ferry/fleet";
-import { addShipImages } from "./shipIcons";
+import { addShipImages, wakeLevel } from "./shipIcons";
+import { vesselMapIcon, vesselVisual } from "@/lib/ferry/vesselVisuals";
 import { fleetGroups } from "./fleetVisibility";
 import { physicalStatus, projectedPosition } from "@/lib/ferry/tracking";
 import { portTimeZone, wallTimeInZone } from "@/lib/ferry/time";
@@ -100,6 +101,8 @@ interface FerryMapProps {
   companyFocusShips?: FleetShip[];
   /** Navire choisi depuis le tableau de bord : jamais estompé, même si une ligne est sélectionnée. */
   focusShipId?: string | null;
+  /** Logo de la compagnie et photo du navire, affichés au survol. */
+  vesselCards?: Record<string, { photoUrl: string | null; logoUrl: string | null; companyName: string | null }>;
 }
 
 // Limite de dézoom : on ne peut pas s'éloigner plus que « toute la Méditerranée occidentale visible »
@@ -310,6 +313,7 @@ export default function FerryMap({
   highlightedPortIds,
   fitPortIds = [],
   hoverRouteId = null,
+  vesselCards = {},
   fleet = [],
   selectedVesselId = null,
   portMeta,
@@ -784,6 +788,36 @@ export default function FerryMap({
             members.length > 1
               ? members.map((f) => f.properties["name"]).join(" · ")
               : String(feature.properties["allure"] ?? "");
+          if (members.length <= 1) {
+            const info = vesselCardsRef.current[String(feature.properties["vesselId"] ?? "")];
+            const photo = info?.photoUrl ?? vesselVisual(String(feature.properties["name"] ?? ""));
+            card.className = "w-56";
+            if (photo) {
+              const img = document.createElement("img");
+              img.src = photo;
+              img.alt = "";
+              img.className = "mb-2 h-24 w-full rounded-md object-cover";
+              card.append(img);
+            }
+            if (info?.logoUrl || info?.companyName) {
+              const row = document.createElement("div");
+              row.className = "mb-1 flex items-center gap-2";
+              if (info.logoUrl) {
+                const logo = document.createElement("img");
+                logo.src = info.logoUrl;
+                logo.alt = info.companyName ?? "";
+                logo.className = "h-6 max-w-24 rounded bg-card object-contain p-0.5 ring-1 ring-border";
+                row.append(logo);
+              }
+              if (info.companyName) {
+                const company = document.createElement("span");
+                company.textContent = info.companyName;
+                company.className = "text-xs font-semibold text-muted-foreground";
+                row.append(company);
+              }
+              card.append(row);
+            }
+          }
           card.append(name, status);
           hoverTip.setLngLat(coordinates).setDOMContent(card).addTo(map);
         } else hoverTip.setLngLat(coordinates);
@@ -1908,7 +1942,7 @@ export default function FerryMap({
             type: "Feature" as const,
             properties: {
               state: ship.state,
-              icon: ship.state === "sea" ? "ship-sea" : "ship-dock",
+              icon: `${vesselMapIcon(ship.name) ?? "ship"}-${wakeLevel(ship.state, live ? speed : null)}`,
               course,
               name: ship.name,
               allure,

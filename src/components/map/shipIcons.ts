@@ -1,5 +1,4 @@
 import type { Map as MapLibreMap } from "maplibre-gl";
-import { ROSALIND_MAP_ICON, ROSALIND_MAP_ICON_URL } from "@/lib/ferry/vesselVisuals";
 
 const WIDTH = 128;
 const HEIGHT = 192;
@@ -22,13 +21,6 @@ interface Sprite {
 
 const SPRITES: Sprite[] = [
   { base: "ship", url: "/images/ferry-overhead.svg", dest: [43, 61, 42, 70] },
-  // Rendu 3D vue du ciel fourni pour le Rosalind Franklin.
-  {
-    base: ROSALIND_MAP_ICON,
-    url: ROSALIND_MAP_ICON_URL,
-    source: [430, 50, 430, 1110],
-    dest: [46, 50, 36, 92],
-  },
 ];
 
 /** Proue vers le nord ; le sillage reste derrière après rotation de la carte. */

@@ -1,5 +1,5 @@
 /** Ferry de profil qui tangue sur l'eau, avec fumée de cheminée et écume animées (styles dans home.css). */
-export function MiniFerry({ size = 44 }: { size?: number }) {
+export function MiniFerry({ size = 60 }: { size?: number }) {
   return (
     <svg
       viewBox="0 0 64 36"

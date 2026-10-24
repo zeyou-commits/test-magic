@@ -617,7 +617,7 @@ function Index() {
     const h = dragHeightRef.current;
     const v = lastMove.current.v;
     let target: 0 | 1 | 2;
-    if (Math.abs(v) > 0.5) {
+    if (Math.abs(v) > 0.35) {
       const above = snaps.findIndex((s) => s > h + 1);
       const below = [...snaps].reverse().findIndex((s) => s < h - 1);
       target = (v > 0 ? (above === -1 ? 2 : above) : below === -1 ? 0 : 2 - below) as 0 | 1 | 2;
@@ -633,6 +633,57 @@ function Index() {
       dragMoved.current = false;
     }, 50);
   };
+  // Relais défilement → volet (façon Google Maps) : en haut de la liste, continuer à tirer
+  // vers le bas fait descendre le volet sous le doigt ; un geste vif le fait changer de cran.
+  const panelGesture = useRef({ start: startPanelDrag, move: movePanelDrag, finish: finishPanelDrag, level: panelLevel });
+  panelGesture.current = { start: startPanelDrag, move: movePanelDrag, finish: finishPanelDrag, level: panelLevel };
+  useEffect(() => {
+    const aside = asideRef.current;
+    if (!aside) return;
+    let touchY: number | null = null;
+    let scroller: HTMLElement | null = null;
+    let handoff = false;
+    const onStart = (e: TouchEvent) => {
+      if (window.innerWidth >= 768 || e.touches.length !== 1) return;
+      const target = e.target as Element | null;
+      if (!target?.closest("#map-side-panel")) return;
+      touchY = e.touches[0]!.clientY;
+      scroller = target.closest<HTMLElement>(".batogo-panel-scroll, .overflow-y-auto");
+      handoff = false;
+    };
+    const onMove = (e: TouchEvent) => {
+      if (touchY === null) return;
+      const y = e.touches[0]!.clientY;
+      const g = panelGesture.current;
+      if (!handoff) {
+        const down = y - touchY;
+        const atTop = !scroller || scroller.scrollTop <= 0;
+        const pullDown = down > 8 && atTop;
+        const pullUp = down < -8 && g.level < 2;
+        if (!pullDown && !pullUp) return;
+        handoff = true;
+        g.start(y);
+      }
+      e.preventDefault();
+      g.move(y);
+    };
+    const onEnd = () => {
+      if (handoff) panelGesture.current.finish();
+      touchY = null;
+      handoff = false;
+    };
+    aside.addEventListener("touchstart", onStart, { passive: true });
+    aside.addEventListener("touchmove", onMove, { passive: false });
+    aside.addEventListener("touchend", onEnd);
+    aside.addEventListener("touchcancel", onEnd);
+    return () => {
+      aside.removeEventListener("touchstart", onStart);
+      aside.removeEventListener("touchmove", onMove);
+      aside.removeEventListener("touchend", onEnd);
+      aside.removeEventListener("touchcancel", onEnd);
+    };
+  }, []);
+
   const dragHandlers = {
     onPointerDown: (e: React.PointerEvent<HTMLElement>) => {
       e.currentTarget.setPointerCapture(e.pointerId);

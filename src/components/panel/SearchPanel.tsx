@@ -535,6 +535,7 @@ export function SearchPanel({
           <div className={step === 1 ? "grid grid-cols-1 gap-3" : "hidden"}>
             <div className="min-w-0">
               <PortMultiPicker
+                onOpenPort={(id) => onSelect({ type: "port", id })}
                 title="Départ"
                 direction="departure"
                 ports={ports}
@@ -548,6 +549,7 @@ export function SearchPanel({
             </div>
             <div className="min-w-0">
               <PortMultiPicker
+                onOpenPort={(id) => onSelect({ type: "port", id })}
                 title="Arrivée"
                 direction="arrival"
                 ports={ports}

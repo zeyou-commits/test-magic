@@ -16,3 +16,10 @@
 - [x] Étape 1 : ports en direct, Europe à gauche / Algérie à droite, groupés par pays (cocher un pays entier)
 - [x] Étape 2 : calendrier ouvert en direct, onglets Aller / Retour nets
 - [x] Étape 3 : voyageurs + véhicule
+
+## Carte & confiance (oct. 2026)
+- [x] Bateaux à quai collés au port ; sillage selon la vitesse ; rendu 3D Rosalind Franklin
+- [x] Statuts « Débarquement en cours » et « Au mouillage »
+- [x] Survol bateau : photo + logo compagnie ; logos agrandis
+- [x] Ports sans départ grisés (icône) ; repère voiture -3 ans (équipement « dedouanement_vehicule » à renseigner côté admin)
+- [x] Alerte « ventes pas encore ouvertes » ; bouton Budget porte-à-porte depuis une traversée

@@ -191,7 +191,7 @@ export function HomeTraffic({
                   >
                     <span style={{ width: `${percent ?? 0}%` }} />
                     <i style={{ left: `${Math.max(8, Math.min(92, percent ?? 0))}%` }}>
-                      <MiniFerry size={38} />
+                      <MiniFerry size={58} />
                       <b>{percent === null ? "—" : `${percent} %`}</b>
                     </i>
                   </div>

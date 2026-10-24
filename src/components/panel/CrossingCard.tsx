@@ -67,7 +67,7 @@ export function CrossingCard({
           >
             <span style={{ width: `${progress.ratio * 100}%` }} />
             <i style={{ left: `${Math.max(4, Math.min(96, progress.ratio * 100))}%` }}>
-              <MiniFerry />
+              <MiniFerry size={62} />
             </i>
           </div>
         </div>

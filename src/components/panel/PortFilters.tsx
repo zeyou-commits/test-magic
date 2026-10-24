@@ -30,6 +30,8 @@ interface PortMultiPickerProps {
   title?: string;
   /** Ports avec au moins une traversée planifiée ; les autres sont grisés. */
   scheduledPortIds?: Set<string> | undefined;
+  /** Ouvre la fiche d'un port grisé ou fermé (consultation toujours possible). */
+  onOpenPort?: (id: string) => void;
 }
 
 /** Choix d'un ou plusieurs ports, groupés par pays, avec recherche intégrée. */
@@ -44,6 +46,7 @@ export function PortMultiPicker({
   countryFilter,
   title,
   scheduledPortIds,
+  onOpenPort,
 }: PortMultiPickerProps) {
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
@@ -228,15 +231,15 @@ export function PortMultiPicker({
                           key={port.id}
                           type="button"
                           aria-pressed={isSelected}
-                          disabled={!!reason}
+                          aria-disabled={!!reason}
                           title={
-                            reason ??
+                            reason ? `${reason} · voir la fiche du port` :
                             (port.facilities?.["dedouanement_vehicule"] === "oui"
                               ? `${port.name} · dédouanement véhicules -3 ans`
                               : port.name)
                           }
-                          onClick={() => toggle([port.id])}
-                          className={`inline-flex min-h-8 max-w-full items-center gap-1 rounded-full border px-2.5 py-1 text-left text-[11px] font-medium leading-tight transition-colors ${reason ? "cursor-not-allowed border-border/50 text-muted-foreground/50" : isSelected ? "border-primary/20 bg-primary/10 text-primary" : "border-border bg-background text-foreground hover:border-primary/30 hover:bg-secondary"}`}
+                          onClick={() => (reason ? onOpenPort?.(port.id) : toggle([port.id]))}
+                          className={`inline-flex min-h-8 max-w-full items-center gap-1 rounded-full border px-2.5 py-1 text-left text-[11px] font-medium leading-tight transition-colors ${reason ? "border-border/50 text-muted-foreground/60 hover:bg-secondary hover:text-muted-foreground" : isSelected ? "border-primary/20 bg-primary/10 text-primary" : "border-border bg-background text-foreground hover:border-primary/30 hover:bg-secondary"}`}
                         >
                           {isSelected ? <Check className="size-3.5 shrink-0" /> : null}
                           {reason === "Aucun départ planifié pour le moment" ? (

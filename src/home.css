@@ -2865,7 +2865,7 @@ html {
   pointer-events: none;
 }
 .bw-compact-track > i > b {
-  margin-bottom: 9px;
+  margin-bottom: 12px;
 }
 
 @media (max-width: 767px) {

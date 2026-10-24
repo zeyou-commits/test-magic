@@ -1377,7 +1377,10 @@ export default function FerryMap({
       );
       element.dataset["dimmed"] = String(dimming && !activeIds.has(port.id));
       element.dataset["closed"] = String(port.status === "inactive");
-      element.dataset["noroutes"] = String(port.status !== "inactive" && routeCount === 0);
+      element.dataset["noroutes"] = String(
+        port.status !== "inactive" &&
+          (routeCount === 0 || (meta?.departureCount ?? 0) + (meta?.arrivalCount ?? 0) === 0),
+      );
       // Les ports secondaires (une seule liaison, éventuellement dans les deux sens) ont un libellé plus discret, mais toujours lisible.
       element.dataset["minor"] = String(routeCount <= 2);
       marker.setLngLat([port.longitude, port.latitude]);

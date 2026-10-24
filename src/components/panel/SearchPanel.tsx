@@ -252,6 +252,18 @@ export function SearchPanel({
     () => buildSailings(departures, routes, ports, companies, vessels),
     [departures, routes, ports, companies, vessels],
   );
+  // Ports ayant au moins un départ ou une arrivée planifiés (hors annulations).
+  const scheduledPortIds = useMemo(() => {
+    const byRoute = new Map(routes.map((r) => [r.id, r]));
+    const ids = new Set<string>();
+    departures.forEach((d) => {
+      if (d.status === "cancelled") return;
+      const route = byRoute.get(d.route_id);
+      if (route) ids.add(route.departure_port_id).add(route.arrival_port_id);
+    });
+    return ids;
+  }, [departures, routes],
+  );
   const outbound = useMemo(
     () =>
       legSailings(
@@ -504,6 +516,7 @@ export function SearchPanel({
                 countryFilter={reversed ? isAlgeria : isNotAlgeria}
                 value={filters.departurePortIds}
                 otherSide={filters.arrivalPortIds}
+                scheduledPortIds={departures.length ? scheduledPortIds : undefined}
                 onChange={(ids) => onFiltersChange(withDeparturePorts(filters, ids, ports, routes))}
               />
             </div>
@@ -516,6 +529,7 @@ export function SearchPanel({
                 countryFilter={reversed ? isNotAlgeria : isAlgeria}
                 value={filters.arrivalPortIds}
                 otherSide={filters.departurePortIds}
+                scheduledPortIds={departures.length ? scheduledPortIds : undefined}
                 onChange={(ids) => onFiltersChange(withArrivalPorts(filters, ids, ports, routes))}
               />
             </div>

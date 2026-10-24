@@ -397,6 +397,11 @@ export default function FerryMap({
       attribution.open = false;
       attribution.classList.remove("maplibregl-compact-show");
     }
+    map.once("load", () => {
+      const control = map.getContainer().querySelector(".maplibregl-ctrl-attrib");
+      control?.classList.remove("maplibregl-compact-show");
+      if (control instanceof HTMLDetailsElement) control.open = false;
+    });
     map.once("idle", () => {
       if (attribution) {
         attribution.open = false;
@@ -590,6 +595,42 @@ export default function FerryMap({
       map.addSource("fleet", {
         type: "geojson",
         data: { type: "FeatureCollection", features: [] },
+      });
+      map.addLayer({
+        id: "fleet-motion",
+        type: "circle",
+        source: "fleet",
+        filter: ["==", ["get", "state"], "sea"],
+        paint: {
+          "circle-radius": 17,
+          "circle-color": "#168d74",
+          "circle-opacity": 0.14,
+          "circle-stroke-width": 1.5,
+          "circle-stroke-color": "#168d74",
+          "circle-stroke-opacity": 0.3,
+        },
+      });
+      map.addLayer({
+        id: "fleet-direction",
+        type: "symbol",
+        source: "fleet",
+        filter: ["==", ["get", "state"], "sea"],
+        layout: {
+          "text-field": "›",
+          "text-font": ["Noto Sans Bold"],
+          "text-size": 24,
+          "text-rotate": ["-", ["get", "course"], 90],
+          "text-rotation-alignment": "map",
+          "text-offset": [1.1, 0],
+          "text-allow-overlap": true,
+          "text-ignore-placement": true,
+        },
+        paint: {
+          "text-color": "#0b8051",
+          "text-halo-color": "#ffffff",
+          "text-halo-width": 2,
+          "text-opacity": ["get", "opacity"],
+        },
       });
       map.addLayer({
         id: "fleet-halo",
@@ -960,6 +1001,8 @@ export default function FerryMap({
       "ferry-routes-casing",
       "ferry-routes-line",
       "ferry-routes-duration",
+      "fleet-motion",
+      "fleet-direction",
       "fleet-halo",
       "fleet-ships",
       "fleet-hover-halo",
@@ -1629,6 +1672,23 @@ export default function FerryMap({
     mapReady,
   ]);
 
+  // Le halo anime l'état « en navigation », jamais la vitesse ou la position du navire.
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !mapReady) return;
+    const media = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const paint = () => {
+      if (!map.getLayer("fleet-motion") || document.hidden) return;
+      const phase = media.matches ? 0.35 : (performance.now() % 2400) / 2400;
+      map.setPaintProperty("fleet-motion", "circle-radius", 12 + phase * 17);
+      map.setPaintProperty("fleet-motion", "circle-opacity", (1 - phase) * 0.12);
+      map.setPaintProperty("fleet-motion", "circle-stroke-opacity", (1 - phase) * 0.4);
+    };
+    paint();
+    const timer = window.setInterval(paint, 120);
+    return () => window.clearInterval(timer);
+  }, [mapReady]);
+
   // Positions à leur vitesse réelle ; ne pas relancer le placement des symboles à l'arrêt.
   useEffect(() => {
     const map = mapRef.current;
@@ -1707,7 +1767,7 @@ export default function FerryMap({
                   : "ship-dock",
               course,
               name: ship.name,
-              allure,
+              allure: `${allure} · ${live && live.ageMinutes <= 30 ? "Position actualisée" : "Position estimée selon les horaires"}`,
               allureColor:
                 physical?.tone === "success"
                   ? "#059669"

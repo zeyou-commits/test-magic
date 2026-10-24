@@ -1,0 +1,152 @@
+{
+  "checks": [
+    {
+      "label": "accueil-compact-320",
+      "width": 320,
+      "document": 320,
+      "body": 320,
+      "errors": 0
+    },
+    {
+      "label": "suivi-independant-320",
+      "width": 320,
+      "document": 320,
+      "body": 320,
+      "errors": 0
+    },
+    {
+      "label": "port-cliquable-320",
+      "width": 320,
+      "document": 320,
+      "body": 320,
+      "errors": 0
+    },
+    {
+      "label": "fiche-bateau-public-320",
+      "width": 320,
+      "document": 320,
+      "body": 320,
+      "errors": 0
+    },
+    {
+      "label": "accueil-compact-390",
+      "width": 390,
+      "document": 390,
+      "body": 390,
+      "errors": 0
+    },
+    {
+      "label": "suivi-independant-390",
+      "width": 390,
+      "document": 390,
+      "body": 390,
+      "errors": 0
+    },
+    {
+      "label": "port-cliquable-390",
+      "width": 390,
+      "document": 390,
+      "body": 390,
+      "errors": 0
+    },
+    {
+      "label": "fiche-bateau-public-390",
+      "width": 390,
+      "document": 390,
+      "body": 390,
+      "errors": 0
+    },
+    {
+      "label": "accueil-compact-768",
+      "width": 768,
+      "document": 768,
+      "body": 768,
+      "errors": 0
+    },
+    {
+      "label": "suivi-independant-768",
+      "width": 768,
+      "document": 768,
+      "body": 768,
+      "errors": 0
+    },
+    {
+      "label": "port-cliquable-768",
+      "width": 768,
+      "document": 768,
+      "body": 768,
+      "errors": 0
+    },
+    {
+      "label": "fiche-bateau-public-768",
+      "width": 768,
+      "document": 768,
+      "body": 768,
+      "errors": 0
+    },
+    {
+      "label": "accueil-compact-1440",
+      "width": 1440,
+      "document": 1440,
+      "body": 1440,
+      "errors": 0
+    },
+    {
+      "label": "suivi-independant-1440",
+      "width": 1440,
+      "document": 1440,
+      "body": 1440,
+      "errors": 0
+    },
+    {
+      "label": "port-cliquable-1440",
+      "width": 1440,
+      "document": 1440,
+      "body": 1440,
+      "errors": 0
+    },
+    {
+      "label": "fiche-bateau-public-1440",
+      "width": 1440,
+      "document": 1440,
+      "body": 1440,
+      "errors": 0
+    },
+    {
+      "label": "admin-utilisateurs-390",
+      "width": 390,
+      "document": 390,
+      "body": 390,
+      "errors": 0
+    },
+    {
+      "label": "admin-bannissement-confirme-390",
+      "width": 390,
+      "document": 390,
+      "body": 390,
+      "errors": 0
+    },
+    {
+      "label": "admin-utilisateurs-1440",
+      "width": 1440,
+      "document": 1440,
+      "body": 1440,
+      "errors": 0
+    },
+    {
+      "label": "admin-bannissement-confirme-1440",
+      "width": 1440,
+      "document": 1440,
+      "body": 1440,
+      "errors": 0
+    },
+    {
+      "label": "vesselfinder-admin-sans-signal",
+      "width": 1440,
+      "document": 1440,
+      "body": 1440,
+      "errors": 0
+    }
+  ],
+  "productionWrites": false
+}

@@ -2611,15 +2611,19 @@ html {
 }
 
 /* La carte occupe l'espace libéré par le titre de page. */
-.bw-brand-link { line-height: 1; }
-.bw-brand-link .bw-brand { height: 44px; }
+.bw-brand-link {
+  line-height: 1;
+}
+.bw-brand-link .bw-brand {
+  height: 44px;
+}
 .bw-brand-tagline {
   align-self: center;
   margin-top: -2px;
   color: #506b65;
   font-size: 10px;
   font-weight: 700;
-  letter-spacing: .035em;
+  letter-spacing: 0.035em;
 }
 .bw-map-stage {
   height: clamp(540px, calc(100svh - 96px), 900px);
@@ -2630,30 +2634,65 @@ html {
   -webkit-overflow-scrolling: touch;
   scroll-snap-type: x proximity;
 }
-.bw-day-rail::-webkit-scrollbar { display: none; }
-.bw-day-rail > button { scroll-snap-align: start; }
+.bw-day-rail::-webkit-scrollbar {
+  display: none;
+}
+.bw-day-rail > button {
+  scroll-snap-align: start;
+}
 @media (min-width: 768px) {
-  .bw-map-stage .bw-search-welcome { padding: 10px 16px; }
-  .bw-map-stage .bw-search-welcome h2 { font-size: 19px; }
-  .bw-map-stage .bw-search-summary { padding: 10px 12px; }
-  .bw-map-stage #map-next-departures { padding-top: 10px; }
-  .bw-map-stage #map-next-departures h2 { font-size: 15px; }
-  .bw-map-stage .panel-detail > .batogo-panel-scroll { padding: 14px 18px; }
+  .bw-map-stage .bw-search-welcome {
+    padding: 10px 16px;
+  }
+  .bw-map-stage .bw-search-welcome h2 {
+    font-size: 19px;
+  }
+  .bw-map-stage .bw-search-summary {
+    padding: 10px 12px;
+  }
+  .bw-map-stage #map-next-departures {
+    padding-top: 10px;
+  }
+  .bw-map-stage #map-next-departures h2 {
+    font-size: 15px;
+  }
+  .bw-map-stage .panel-detail > .batogo-panel-scroll {
+    padding: 14px 18px;
+  }
   .bw-map-stage .bw-ship-heading h2,
-  .bw-map-stage .bw-departure-profile h2 { font-size: 21px; }
+  .bw-map-stage .bw-departure-profile h2 {
+    font-size: 21px;
+  }
 }
 @media (min-width: 768px) and (max-height: 800px) {
-  .bw-map-stage { height: max(440px, calc(100svh - 78px)); }
+  .bw-map-stage {
+    height: max(440px, calc(100svh - 78px));
+  }
 }
 @media (max-width: 767px) {
-  .bw-brand-link .bw-brand { height: 40px; }
-  .bw-brand-tagline { font-size: 9px; }
-  .bw-map-stage { height: max(320px, calc(100svh - 88px)); }
-  .bw-map-stage[data-panel-open="true"] { height: calc(100dvh - var(--bw-header-height, 64px)); min-height: 320px; }
-  .bw-map-stage[data-panel-open="true"] .bw-map-panel { bottom: calc(3.5rem + env(safe-area-inset-bottom)) !important; }
-  .bw-map-stage[data-panel-open="true"] .bw-map-scroll { display: none; }
+  .bw-brand-link .bw-brand {
+    height: 40px;
+  }
+  .bw-brand-tagline {
+    font-size: 9px;
+  }
+  .bw-map-stage {
+    height: max(320px, calc(100svh - 88px));
+  }
+  .bw-map-stage[data-panel-open="true"] {
+    height: calc(100dvh - var(--bw-header-height, 64px));
+    min-height: 320px;
+  }
+  .bw-map-stage[data-panel-open="true"] .bw-map-panel {
+    bottom: calc(3.5rem + env(safe-area-inset-bottom)) !important;
+  }
+  .bw-map-stage[data-panel-open="true"] .bw-map-scroll {
+    display: none;
+  }
   /* Un tiroir complet est un écran autonome : la page suivante ne doit pas apparaître. */
-  body:has(.bw-map-stage[data-panel-full="true"]) { overflow: hidden; }
+  body:has(.bw-map-stage[data-panel-full="true"]) {
+    overflow: hidden;
+  }
   .bw-map-stage[data-panel-full="true"] {
     position: fixed;
     inset: 0;
@@ -2672,5 +2711,76 @@ html {
   .bw-map-stage[data-panel-full="true"] .batogo-panel-scroll {
     min-height: 0;
     overscroll-behavior: contain;
+  }
+}
+
+/* Cartes de suivi compactes : les boutons sont frères, jamais imbriqués. */
+.bw-home-traffic {
+  padding: 12px 16px 20px;
+}
+.bw-compact-crossing {
+  position: relative;
+  margin-bottom: 8px;
+  padding: 10px 12px;
+  border: 1px solid #d9e8dd;
+  border-radius: 16px;
+  background: linear-gradient(130deg, #fffefa, #f2f8f4);
+}
+.bw-compact-crossing:hover {
+  border-color: #83b797;
+}
+.bw-compact-track {
+  position: relative;
+  height: 4px;
+  margin: 10px 2px 15px;
+  border-radius: 8px;
+  background: #d8e7de;
+}
+.bw-compact-track > span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: #0b8145;
+}
+.bw-compact-track > i {
+  position: absolute;
+  top: 50%;
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  transform: translate(-50%, -50%);
+  padding: 3px 5px;
+  border-radius: 9px;
+  background: #fff;
+  border: 1px solid #d2e5d7;
+  color: #08783f;
+  font: 700 10px/1.2 sans-serif;
+  white-space: nowrap;
+}
+
+@media (max-width: 767px) {
+  .bw-map-stage .bw-search-welcome {
+    padding: 5px 16px;
+  }
+  .bw-map-stage .bw-search-welcome h2 {
+    font-size: 16px;
+  }
+  .bw-map-stage .bw-search-welcome button {
+    width: 30px;
+    height: 30px;
+  }
+  .bw-map-stage .bw-search-welcome + section {
+    padding-block: 6px;
+  }
+  .bw-map-stage .bw-search-summary {
+    padding: 7px 10px;
+    gap: 8px;
+  }
+  .bw-map-stage .bw-search-summary .bw-search-icon {
+    width: 30px;
+    height: 30px;
+  }
+  .bw-home-traffic {
+    padding-top: 8px;
   }
 }

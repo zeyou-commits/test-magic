@@ -1,3 +1,4 @@
+import { HomeTraffic } from "./HomeTraffic";
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { useQuery } from "@tanstack/react-query";
 import {
@@ -331,7 +332,12 @@ export function SearchPanel({
 
   const active = hasActiveFilters(filters);
   const fromName = (ids: string[]) => ports.find((port) => port.id === ids[0])?.name ?? "";
-  const reportRoute = routes.find((route) => route.status === "active" && filters.departurePortIds.includes(route.departure_port_id) && filters.arrivalPortIds.includes(route.arrival_port_id));
+  const reportRoute = routes.find(
+    (route) =>
+      route.status === "active" &&
+      filters.departurePortIds.includes(route.departure_port_id) &&
+      filters.arrivalPortIds.includes(route.arrival_port_id),
+  );
   const reportTarget = reportRoute
     ? { type: "route" as const, id: reportRoute.id }
     : filters.departurePortIds.length === 1
@@ -355,7 +361,18 @@ export function SearchPanel({
       <div className="flex flex-col">
         {!editing && !active ? (
           <div className="bw-search-welcome">
-            <div className="flex items-center justify-between gap-2"><h2>On prend le large ?</h2><button type="button" onClick={onOpenItinerary} aria-label="Simuler mon itinéraire porte à porte" title="Itinéraire porte à porte" className="grid size-9 shrink-0 place-items-center rounded-xl border border-primary/20 bg-white text-primary hover:bg-primary/5"><Route className="size-4" aria-hidden/></button></div>
+            <div className="flex items-center justify-between gap-2">
+              <h2>On prend le large ?</h2>
+              <button
+                type="button"
+                onClick={onOpenItinerary}
+                aria-label="Simuler mon itinéraire porte à porte"
+                title="Itinéraire porte à porte"
+                className="grid size-9 shrink-0 place-items-center rounded-xl border border-primary/20 bg-white text-primary hover:bg-primary/5"
+              >
+                <Route className="size-4" aria-hidden />
+              </button>
+            </div>
           </div>
         ) : null}
         {/* RECHERCHE : capsule condensée façon Airbnb, formulaire guidé à la demande */}
@@ -627,9 +644,19 @@ export function SearchPanel({
           </div>
         </section>
 
+        {!editing && !active ? <HomeTraffic onSelect={onSelect} /> : null}
         {/* RÉSULTATS */}
-        <section id="map-next-departures" className="space-y-5 px-4 py-4 md:px-5">
-          <a href="/barometre-prix" className="inline-block text-xs font-semibold text-primary underline underline-offset-2">Comprendre les prix estimés et quand partir</a>
+        <section
+          hidden={!editing && !active}
+          id="map-next-departures"
+          className="space-y-5 px-4 py-4 md:px-5"
+        >
+          <a
+            href="/barometre-prix"
+            className="inline-block text-xs font-semibold text-primary underline underline-offset-2"
+          >
+            Comprendre les prix estimés et quand partir
+          </a>
           {isLoading ? (
             <div className="space-y-2" aria-busy="true">
               {[0, 1, 2].map((item) => (
@@ -776,7 +803,25 @@ function ResultBlock({
       {list.length === 0 ? (
         <div className="rounded-2xl border border-dashed p-5 text-center text-sm text-muted-foreground">
           {emptyText}
-          <div className="mt-3">{reportTarget ? <ReportButton targetType={reportTarget.type} targetId={reportTarget.id} label="Signaler un horaire manquant" initialDetails={reportContext} initialReason="missing_info" /> : <button type="button" onClick={onReportMissing} className="rounded-full border bg-card px-3 py-1.5 text-xs font-semibold text-primary hover:bg-secondary">Choisir des ports pour signaler</button>}</div>
+          <div className="mt-3">
+            {reportTarget ? (
+              <ReportButton
+                targetType={reportTarget.type}
+                targetId={reportTarget.id}
+                label="Signaler un horaire manquant"
+                initialDetails={reportContext}
+                initialReason="missing_info"
+              />
+            ) : (
+              <button
+                type="button"
+                onClick={onReportMissing}
+                className="rounded-full border bg-card px-3 py-1.5 text-xs font-semibold text-primary hover:bg-secondary"
+              >
+                Choisir des ports pour signaler
+              </button>
+            )}
+          </div>
           {near && (near.before || near.after) ? (
             <div className="mt-3 flex flex-wrap items-center justify-center gap-2">
               {[near.before, near.after].map((item) =>
@@ -981,7 +1026,17 @@ function RoundTripSection({
           <div className="rounded-2xl border border-dashed p-5 text-center text-sm text-muted-foreground">
             Aucun aller-retour connu pour ces ports et ces dates.
             {trips.alternatives.length ? " Voici des alternatives ci-dessous." : ""}
-            {reportTarget && <div className="mt-3"><ReportButton targetType={reportTarget.type} targetId={reportTarget.id} label="Signaler un horaire manquant" initialDetails={reportContext} initialReason="missing_info" /></div>}
+            {reportTarget && (
+              <div className="mt-3">
+                <ReportButton
+                  targetType={reportTarget.type}
+                  targetId={reportTarget.id}
+                  label="Signaler un horaire manquant"
+                  initialDetails={reportContext}
+                  initialReason="missing_info"
+                />
+              </div>
+            )}
           </div>
         )}
       </div>

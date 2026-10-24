@@ -1,6 +1,48 @@
 {
-  "base_github_commit": "179cec791ce97a96bdc98dd08ee75a8798aa600d",
-  "files": [
+  "date": "2026-10-24",
+  "cloud_current_state_verified": false,
+  "production_changes_applied": false,
+  "source_files": [
+    {
+      "path": "src/components/panel/HomeTraffic.tsx",
+      "sha256": "e8b947a6fc089b23aad44ff1f0a2b1f77fb059a8e74ef243d8896dfd5ac04e68"
+    },
+    {
+      "path": "src/components/panel/SearchPanel.tsx",
+      "sha256": "12199f307cd68f03239e0a568b74c1e22c089cd91ef225639cfbd2269914345c"
+    },
+    {
+      "path": "src/components/panel/ShipViews.tsx",
+      "sha256": "38a1939b33a9a5a5928ce655bd14e6e25cc511f046755962212ea8082586c419"
+    },
+    {
+      "path": "src/components/panel/CrossingCard.tsx",
+      "sha256": "d983816fcd8c3c3e1dc18317c22c22b3f1b76865072671d804011d4aa7473024"
+    },
+    {
+      "path": "src/components/panel/TrackingTimes.tsx",
+      "sha256": "defdf0a991846f7f75e175603f69646165675c1d3de1a92835162cf7bdb7ca27"
+    },
+    {
+      "path": "src/components/map/FerryMap.tsx",
+      "sha256": "731a37c73b64a8246074404576f404b8e160c44ccdd8b53f657b6874308e8b78"
+    },
+    {
+      "path": "src/components/map/MapStats.tsx",
+      "sha256": "02634f0d58629b5c86e5a6cd175c9620f1e307e25b6275a0eb595ba0ff9a33ac"
+    },
+    {
+      "path": "src/components/map/shipIcons.ts",
+      "sha256": "b0c25c5d5b54ea2f8ac44625c424b52b4605d405c8fb5d2f2c0d1403ebb1cc6f"
+    },
+    {
+      "path": "src/components/admin/UsersAdmin.tsx",
+      "sha256": "7e8c525fcd25bc05adccf650d428c0f2173fb3e6fae43a6e79b9f9cb27f3b45d"
+    },
+    {
+      "path": "src/components/admin/AdminWorkspace.tsx",
+      "sha256": "74f1a96c96722e1a5e61a5581386de228d7a86fc5502e90f6d5b64d93d356dea"
+    },
     {
       "path": "src/components/admin/AdminFilterNotice.tsx",
       "sha256": "c32af0342d078828bca48259e72ffa0275323ebc6d0b12a88e8bc942bfd5de09"
@@ -14,40 +56,68 @@
       "sha256": "f35a33af25903a841a10f79299af652b8e99284e03a58012d448929873245406"
     },
     {
-      "path": "src/components/map/FerryMap.tsx",
-      "sha256": "85960b7aa8cd501e1947a413f18ec2e143fd4d8ec9e9a49ed667375d23a5a52c"
-    },
-    {
-      "path": "src/components/map/shipIcons.ts",
-      "sha256": "b0c25c5d5b54ea2f8ac44625c424b52b4605d405c8fb5d2f2c0d1403ebb1cc6f"
-    },
-    {
       "path": "src/hooks/useAdminCounts.ts",
       "sha256": "3cfc55011bc2f3ea85d11743a33aad5e22d2c950cf1447380a5cc3eee18fe8d7"
     },
     {
+      "path": "src/lib/admin/users.ts",
+      "sha256": "716994264f61c55b6c457c03ca248b948514c916822ff2f84ec803caf2138678"
+    },
+    {
+      "path": "src/lib/admin/users.server.ts",
+      "sha256": "5f6bc20e3ab45da6559312734e28dee2d03d62938c69b4f999eb04f06a4ebb4a"
+    },
+    {
+      "path": "src/lib/admin/users.server.test.ts",
+      "sha256": "81a2ebba0fced7fe86f0520b9c254f4da72b108ccc3d78b169329636e50ce8c2"
+    },
+    {
+      "path": "src/lib/admin/permissions.ts",
+      "sha256": "c8097bd3975692b603868c1d929e2e5e328bda216da6033a48451a0fe8c1f5dd"
+    },
+    {
       "path": "src/lib/admin/navigation.ts",
-      "sha256": "a166314812b97e34a58717fee069e916ccc58e8b9c8ce61d54f1df43163a4072"
+      "sha256": "2c096772bf3306102e8a3498adc8ddfda9a9c342e50c27f12dab31cac25a1c86"
     },
     {
       "path": "src/lib/admin/navigation.test.ts",
       "sha256": "dae645231f7012a8755001f216c1ce9226a3f27b0f13199d5e966de7816dab5f"
     },
     {
-      "path": "src/routes/admin.tsx",
-      "sha256": "8a9ba7cf867d7e1de32cb0c12e23cffd9d2c5ca5611e580a1f8ae344e91c8a77"
+      "path": "src/lib/ferry/tracking.ts",
+      "sha256": "886647dd6cd2c54b4b2e0e67ca889d5fb0110bd6096a0b61cf39a6f5b262f2e1"
     },
     {
-      "path": "src/routes/index.tsx",
-      "sha256": "99089572e80bf3503051185ead7d33b4fb8ee153b25d8bd3e55e3a4b1f6a6620"
+      "path": "src/lib/ferry/tracking.test.ts",
+      "sha256": "105f3c80d71ac0ee4d3032f584c0f032f89665c15b4779e0a9ebdf22a75e8b85"
     },
     {
       "path": "src/lib/ferry/fleet.ts",
       "sha256": "d2811f869c84be75d0758220034d32f5f5a0255332d0c32efdaf08cabd321285"
     },
     {
+      "path": "src/routes/admin.tsx",
+      "sha256": "9a45a58c7ee3a459fa1de2a3f10d3c4a5621f0e8ac47324a9675fff6baa0ccbd"
+    },
+    {
+      "path": "src/routes/index.tsx",
+      "sha256": "3bdc82d38d3b6e647ac7eedc394293af2b828194026e0d8857f9923971f5ea69"
+    },
+    {
+      "path": "src/routes/api.admin-users.ts",
+      "sha256": "89da1cc74b155bab705fca94da4c56c65b89ba40eba84d234b5354573ed0a651"
+    },
+    {
+      "path": "src/home.css",
+      "sha256": "07903c523ba4f4423522f037c7d6fd951439de48e433ddbe01eb72ab883852a8"
+    },
+    {
       "path": "public/images/ferry-marker.svg",
       "sha256": "0fc708a1f6840f01fe5f813dca1e0020ab9407b0dabfb315e765b8aa57d5810e"
+    },
+    {
+      "path": "supabase/migrations/20261024120000_user_management.sql",
+      "sha256": "5bca5268b8d3090fe0c992ad6e92354c17b4e14f0c776263a1c71f6ab27d433d"
     }
   ]
 }

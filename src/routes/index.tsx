@@ -30,7 +30,7 @@ import { MapStatusBar } from "@/components/map/MapStatusBar";
 import { MapLegend } from "@/components/map/MapLegend";
 import { MapStats, type MapShortcut } from "@/components/map/MapStats";
 import { filtersFromUrl, mapStateToSearch, selectionFromUrl } from "@/lib/ferry/urlState";
-import { filterRoutes, summarizePorts } from "@/lib/ferry/filtering";
+import { hasActiveFilters, filterRoutes, summarizePorts } from "@/lib/ferry/filtering";
 import { portTimeZone } from "@/lib/ferry/time";
 import { portTraffic } from "@/lib/ferry/portTraffic";
 import { buildSailings, legSailings } from "@/lib/ferry/trips";
@@ -107,7 +107,7 @@ function Index() {
   );
   const [highlightRouteId, setHighlightRouteId] = useState<string | null>(null);
   const [focusedRouteId, setFocusedRouteId] = useState<string | null>(null);
-  const [panelLevel, setPanelLevel] = useState<0 | 1 | 2>(0);
+  const [panelLevel, setPanelLevel] = useState<0 | 1 | 2>(1);
   const [peekSelectionKey, setPeekSelectionKey] = useState<string | null>(null);
   const [panelMode, setPanelMode] = useState<"departures" | "search" | "itinerary" | null>(null);
   const [itineraryPreview, setItineraryPreview] = useState<ItineraryMapPreview | null>(null);
@@ -456,9 +456,11 @@ function Index() {
     return meta;
   }, [ports, routes, departures, companies]);
 
+  const middleRatio =
+    !selection && panelMode === null && !hasActiveFilters(filters) ? 0.46 : MIDDLE_RATIO;
   const snapHeights = () => {
     const vh = mapStageRef.current?.clientHeight ?? window.innerHeight;
-    return [COLLAPSED_HEIGHT, Math.round(vh * MIDDLE_RATIO), vh - TAB_BAR_HEIGHT] as const;
+    return [COLLAPSED_HEIGHT, Math.round(vh * middleRatio), vh - TAB_BAR_HEIGHT] as const;
   };
   const cyclePanelLevel = () => {
     if (dragMoved.current) {
@@ -541,7 +543,7 @@ function Index() {
         : TAB_BAR_HEIGHT +
           (isPeekSelection
             ? peekHeight
-            : Math.round(viewportHeight * (panelMode === "itinerary" ? 0.64 : MIDDLE_RATIO)));
+            : Math.round(viewportHeight * (panelMode === "itinerary" ? 0.64 : middleRatio)));
   const mobilePanelHeight = mobileBottomInset;
   // Sur mobile, choisir un navire, un port ou une traversée rouvre le tiroir s'il était replié.
   useEffect(() => {
@@ -724,6 +726,7 @@ function Index() {
               "--stage-height": `${viewportHeight}px`,
               "--mobile-panel-height": `${mobilePanelHeight}px`,
               "--mobile-peek-height": `${peekHeight}px`,
+              "--middle-panel-height": `${Math.round(viewportHeight * middleRatio)}px`,
             } as React.CSSProperties
           }
         >
@@ -747,7 +750,7 @@ function Index() {
             }
             className={`bw-map-panel absolute bottom-0 left-0 right-0 z-[60] flex flex-col overflow-hidden bg-transparent ${panelLevel === 0 && dragHeight === null ? "max-md:invisible max-md:pointer-events-none" : ""} ${dragHeight !== null ? "transition-none" : "transition-[height,width,transform] duration-[420ms] ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none"} md:bottom-5 md:left-5 md:right-auto md:top-5 md:h-auto md:w-[var(--desktop-panel-width)] md:overflow-visible md:rounded-3xl md:z-40 ${
               desktopPanelOpen ? "md:translate-x-0" : "md:translate-x-[calc(-100%-1.25rem)]"
-            } ${panelLevel === 0 ? "h-24 rounded-t-3xl" : panelLevel === 1 ? (isPeekSelection ? "h-[var(--mobile-peek-height)] rounded-t-3xl" : panelMode === "itinerary" ? "h-[calc(var(--stage-height)*0.64)] rounded-t-3xl" : "h-[calc(var(--stage-height)*0.68)] rounded-t-3xl") : "h-[calc(var(--stage-height)-3.5rem)] rounded-t-3xl"}`}
+            } ${panelLevel === 0 ? "h-24 rounded-t-3xl" : panelLevel === 1 ? (isPeekSelection ? "h-[var(--mobile-peek-height)] rounded-t-3xl" : panelMode === "itinerary" ? "h-[calc(var(--stage-height)*0.64)] rounded-t-3xl" : "h-[var(--middle-panel-height)] rounded-t-3xl") : "h-[calc(var(--stage-height)-3.5rem)] rounded-t-3xl"}`}
           >
             {collapsed ? (
               <CollapsedPanelSummary

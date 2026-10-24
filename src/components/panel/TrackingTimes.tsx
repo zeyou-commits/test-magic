@@ -1,9 +1,11 @@
+import { useAuth } from "@/hooks/useAuth";
 import type { Departure } from "@/lib/ferry/types";
 import { trackingTimes, type LiveShip, type TrackingTime } from "@/lib/ferry/tracking";
 import { formatDateTime, formatDuration } from "@/lib/ferry/format";
 import { zoneLabel } from "@/lib/ferry/time";
 
 function Time({ time, label, zone }: { time: TrackingTime; label: string; zone: string }) {
+  const { isAdmin } = useAuth();
   if (!time.iso) return null;
   const shift = time.shiftMinutes;
   const changed = shift !== null && Math.abs(shift) >= 5;
@@ -13,12 +15,12 @@ function Time({ time, label, zone }: { time: TrackingTime; label: string; zone: 
         {label}{" "}
         {time.kind === "observed"
           ? label === "Arrivée"
-            ? "constatée (AIS)"
-            : "constaté (AIS)"
+            ? `constatée${isAdmin ? " (AIS)" : ""}`
+            : `constaté${isAdmin ? " (AIS)" : ""}`
           : time.kind === "estimated"
             ? label === "Arrivée"
-              ? "estimée (AIS)"
-              : "estimé (AIS)"
+              ? `estimée${isAdmin ? " (AIS)" : ""}`
+              : `estimé${isAdmin ? " (AIS)" : ""}`
             : label === "Arrivée"
               ? "prévue"
               : "prévu"}

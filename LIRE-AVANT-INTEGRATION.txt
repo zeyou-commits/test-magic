@@ -1,43 +1,51 @@
-BLEDWAY — ESPACE VOYAGEUR ET ADMINISTRATION — 23 OCTOBRE 2026
+BLEDWAY — SUIVI COMPACT ET GESTION DES UTILISATEURS — 24 OCTOBRE 2026
 
-CE QUI CHANGE
-• Connexion : illustration de ferry légère, logo Google et présentation compacte sur petit écran.
-• Itinéraire : accès discret dans l'en-tête du volet et dans le header. Sur mobile, le raccourci Itinéraire remplace Ports en bas ; le filtre Ports reste sur la carte et l'annuaire reste dans les menus.
-• Recommandation : explication accessible par un bouton i, sans paragraphe permanent.
-• Alertes : fenêtre dédiée, plein écran sur mobile, avec inscription/connexion. Le choix du bateau ou du parcours est conservé pendant la connexion ; il n'est pas nécessaire de relancer la simulation.
-• Suivis : cœur Suivre visible dans les fiches bateau, les dossiers et les traversées. Les données de démonstration sont identifiées et ne déclenchent pas de notifications.
-• Compte : espace voyageur distinct de l'administration, profil et photo, voyages suivis, alertes d'ouverture, checklist, heure au port, fil des notifications et préférences.
-• Admin : navigation par rubrique, recherche, indicateurs réels, priorités et centre de notifications avec prévisualisation et validation des campagnes.
-• Carte mobile : formulaire complet au-dessus de la page de fond, en-tête du formulaire accessible, options contenues dans le volet et cadrage natif de l'itinéraire dans la zone visible.
+ÉTAT DE LA LIVRAISON
+Correctif développé et testé localement. Il n'a pas été poussé sur GitHub, déployé sur Vercel ni appliqué à Supabase par cette livraison.
+L'accès au Git cloud actuel n'a pas pu être vérifié. La dernière base cloud connue dans le travail précédent est 179cec791ce97a96bdc98dd08ee75a8798aa600d (23 octobre). Fusionner les changements si le cloud a évolué ; ne pas remplacer aveuglément des évolutions plus récentes.
+Ce petit ZIP contient 29 fichiers applicatifs/SQL et les preuves de contrôle. Il complète le système de suivi, de comptes et de notifications déjà livré ; il ne remplace pas le dépôt complet.
 
-MISE EN SERVICE DANS TON GIT CLOUD
-1. Intégrer les fichiers du dossier en conservant l'arborescence. Si le dépôt cloud contient des changements plus récents sur les mêmes fichiers, les fusionner ; les fichiers fournis représentent la version locale complète de ces fichiers.
-2. Conserver les variables Supabase, CRON et VAPID déjà configurées. Aucune nouvelle clé n'est nécessaire ; ne pas régénérer la paire VAPID.
-3. Déployer le nouveau code sur Vercel avant d'activer la nouvelle migration. C'est le nouveau moteur serveur qui impose la validation admin des ouvertures. Pendant la courte période précédant la migration, le centre de notifications peut afficher une indisponibilité.
-4. Dans le projet Supabase relié au site, appliquer la migration 20261023120000_notification_campaigns_preferences.sql. Elle est réexécutable et ne supprime pas les données existantes.
-5. Si les tables communautaires et push n'existent pas encore, vérifier puis appliquer auparavant les trois migrations précédentes jointes dans l'ordre chronologique. Ces anciennes migrations ne doivent pas être rejouées à l'aveugle sur des objets déjà présents.
-6. Vérifier le job bledway-push-10m dans Supabase Cron. La nouvelle migration le crée ou le réactive si pg_cron, pg_net et les deux secrets Vault existent déjà : bledway_dispatch_url et bledway_cron_secret. Le second doit correspondre au CRON_SECRET Vercel ; son contenu ne doit jamais être copié dans Git ou dans un message.
+À FAIRE PAR L'IA QUI TRAVAILLE SUR TON GIT CLOUD
+1. Intégrer les fichiers src/ et public/ du ZIP aux mêmes chemins dans le dépôt. Les dépendances déjà présentes du projet sont conservées. Le ZIP conserve également le correctif précédent des indicateurs admin et marqueurs de bateaux.
+2. Vérifier que les migrations communauté, suivis/push et préférences/campagnes précédentes sont déjà installées dans le BON projet Supabase de production Batogo. Ne pas utiliser l'ancien projet d'un éventuel .env local.
+3. Appliquer la nouvelle migration supabase/migrations/20261024120000_user_management.sql avec les droits de migration. Elle est réexécutable et ne crée aucun compte réel ni notification.
+4. Lancer les tests, puis npm run build:vercel (qui régénère notamment l'arbre des routes pour /api/admin-users), et npx tsc --noEmit. Ne pas remplacer un arbre de routes récent par un ancien fichier généré.
+5. Déployer normalement sur Vercel. Vérifier /admin?tab=users avec un vrai compte administrateur et les nouveaux parcours sur téléphone.
+6. Ne jamais mettre SUPABASE_SERVICE_ROLE_KEY dans une variable VITE_ ou dans le navigateur. Aucune nouvelle clé, aucun nouveau secret Vault et aucun nouveau cron ne sont nécessaires ici.
 
-QUI ENVOIE QUOI ?
-Les suivis enregistrés créent automatiquement les messages dans le compte : rappels à 7 jours, 48 h et 24 h, changements d'horaire/navire ou annulation, nouveaux signalements et avis.
-Une publication correspondant à une liaison et un mois suivis prépare une campagne d'ouverture. L'admin voit le nombre de voyageurs concernés, prévisualise puis valide l'envoi. Aucun envoi d'ouverture n'est déclenché avant cette validation.
-Les préférences du voyageur sont appliquées avant création et avant envoi push. Les notifications push nécessitent une autorisation du navigateur. Un appareil déjà autorisé est synchronisé automatiquement, sauf désactivation explicite. Sur iPhone, l'app doit être ouverte depuis l'écran d'accueil pour activer le push.
-Le traitement de 10 minutes est important pour les signalements courts. Le cron Vercel quotidien reste le traitement de secours s'il est déjà configuré. Une campagne approuvée ou un push temporairement échoué peut être repris sans recréer le message dans le compte.
+CHANGEMENTS POUR LES VOYAGEURS
+- Accueil mobile avec volet partiellement ouvert, recherche condensée et Méditerranée visible.
+- Cartes compactes des traversées en navigation : compagnie/logo (ou initiales si le logo manque), nom du bateau en second niveau, ports, progression, heures locales et décalage +1 j.
+- Clic sur le fond de la carte : fiche du bateau ; clic sur chaque nom de port : fiche de ce port ; cœur : parcours existant de suivi, avec inscription/connexion si nécessaire. Les boutons sont séparés et utilisables au clavier.
+- Départs ET arrivées à venir, triés par instant, avec filtres Tous/Départs/Arrivées.
+- Distinction lisible entre position estimée selon les horaires et position actualisée. Aucun jargon AIS ni lien VesselFinder dans les composants publics modifiés.
+- Halo de navigation animé et chevron de direction en mer. Cette animation ne déplace pas artificiellement les bateaux, et la préférence Réduire les animations est respectée.
+- Correction d'un facteur 1000 dans la projection de position : conversion correcte de millisecondes vers kilomètres. Sans date du signal, aucune extrapolation depuis la date de récupération des données.
+- Arrivée planifiée déduite d'une durée publiée lorsqu'il manque arrival_at. Elle reste identifiée comme prévue, jamais comme observation réelle.
 
-PROMPT À TRANSMETTRE À TON IA SUPABASE
-Vérifie le bon projet relié à test-magic.vercel.app. Lis la migration 20261023120000_notification_campaigns_preferences.sql jointe et ses prérequis. Vérifie les migrations déjà installées et applique uniquement les étapes manquantes, sans supprimer ni réinitialiser de données. Si les anciennes migrations sont partiellement installées, réconcilie leurs objets au lieu de les recréer à l'aveugle. Le nouveau code doit être déployé pour que les ouvertures soient soumises à validation admin.
-Vérifie les préférences privées, les campagnes accessibles uniquement à l'équipe, les événements de changement de départ, le bucket bledway-avatars limité à 2 Mo et ses droits par utilisateur. Vérifie qu'un voyageur ne peut ni approuver une campagne ni modifier le contenu de ses notifications.
-Contrôle pg_cron, pg_net et l'existence des deux secrets Vault nommés ci-dessus, sans lire ni afficher leur valeur dans ta réponse. Vérifie que bledway-push-10m est actif toutes les 10 minutes et que l'URL cible est celle du déploiement. Si un élément manque, indique précisément lequel. Ne pousse aucune notification à des voyageurs réels pour tester ; utilise un compte de test dédié. Retourne les objets appliqués et les résultats de contrôle, sans aucune clé secrète.
+ADMINISTRATION
+- Lien Voir sur VesselFinder près du suivi, uniquement en profil administrateur et dès qu'un IMO OU un MMSI existe, même en l'absence de signal AIS.
+- Vue admin du suivi : source et âge du signal ou absence de signal, distincts du repère horaire.
+- Rubrique Utilisateurs : recherche serveur par nom/e-mail, pagination (30), filtres équipe/bannis, invitation par e-mail d'un compte voyageur, attribution/retrait des rôles admin/éditeur/modérateur, bannissement 24 h/7 j/durée indéterminée, réactivation et suppression définitive du compte avec retrait de ses avatars.
+- Les invitations n'accordent aucun privilège automatiquement ; le rôle est attribué dans une action distincte.
+- Confirmation avec recopie de l'e-mail/identifiant et motif requis pour les actions sur un compte. Aucune modification de son propre compte depuis cet écran.
+- Administrateurs : comptes protégés contre bannissement/suppression tant que leur rôle admin est présent. Le dernier administrateur actif et l'auto-démotion sont protégés en base ; changements de rôles et état Auth partagent un verrou transactionnel.
+- Un compte banni perd ses accès aux tables protégées même avec un ancien JWT, ses abonnements push sont retirés et ses suivis/alertes sont suspendus. À la réactivation, il doit réactiver ses suivis et autoriser à nouveau ses notifications.
+- Éditeurs : données ferry. Modérateurs : avis et signalements. Administration des utilisateurs et campagnes réservée aux administrateurs. Contrôles serveur et règles de base, pas seulement masquage de boutons.
+- Journal des opérations ; en cas d'erreur après une action distante, l'interface demande de recharger et vérifier l'état avant de réessayer.
+- Suppression : les données liées suivent les clés étrangères déjà définies dans le projet. Si d'autres fichiers appartiennent au compte, Supabase peut refuser sa suppression ; le message précise que les avatars ont pu être retirés. Cette fonction ne prétend pas effacer toutes les copies, sauvegardes ou obligations de conservation.
 
-VALIDATION LOCALE
-• TypeScript : aucune erreur.
-• Tests : 30 tests passent, dont protection admin, reprise de l'intention après connexion, validation des campagnes, préférences, absence de doublon lors d'une reprise, changement de navire et comportement sans VAPID.
-• PostgreSQL local : les 4 migrations s'exécutent ; la nouvelle migration est réexécutable ; 10 contrôles de migration, déclencheurs et droits passent.
-• Navigateur : 44 contrôles sur les pages de connexion, inscription, compte, préférences, profil, admin, fenêtres et itinéraire, à 320, 390, 768, 1024 et 1440 px ; aucun débordement horizontal ni erreur JavaScript dans ces scénarios.
-• Les scénarios connectés utilisent des utilisateurs et réponses Supabase simulés : ils n'écrivent pas dans la production. Le calcul routier mobile utilise des coordonnées de villes de test. Le cadrage final des deux extrémités est contrôlé dans la zone visible au-dessus du volet.
-• Aucun push réel sur téléphone ni OAuth Google réel n'est déclaré validé : ces deux contrôles restent à faire avec ton compte de test après déploiement et migration.
+CONTRÔLES EFFECTUÉS
+- 40 tests de logique et de protection serveur réussis.
+- 13 contrôles SQL dans une base temporaire, dont migration réexécutable, protection des rôles, accès modérateur et blocage des anciens JWT après bannissement/suppression.
+- 28 scénarios navigateur réussis sur le résultat compilé : 320/390/768/1440 px, petit écran 390×667, clics séparés, clavier, fiche bateau public/admin, confirmations admin, filtres arrivées, rôles et animation/réduction des mouvements.
+- TypeScript : sans erreur. ESLint : zéro erreur, 10 avertissements existants dans carte/navigation.
+- Compilation Vercel locale réussie ; accueil compilé HTTP 200 et ressources contrôlées. Aucun nom de variable privilégiée/service de gestion Auth trouvé dans les fichiers JavaScript statiques contrôlés.
+- Aucun envoi push, invitation, bannissement, suppression de compte ou modification de données de production pendant les essais. Les interactions navigateur/API sont simulées ; la réception d'un push réel devra être testée sur un appareil autorisé après intégration.
 
-CONTRÔLE FINAL APRÈS INTÉGRATION
-Avec ton compte de test, suivre un bateau et autoriser le push ; retrouver le suivi dans Mon espace voyageur. Tester l'alerte d'une période non publiée. Ajouter ensuite un départ correspondant et vérifier le bandeau admin, sans envoyer tant que le contenu n'a pas été relu. Valider la campagne test, vérifier le message dans le compte et la réception sur le téléphone. Contrôler les réponses du traitement dans les journaux Vercel/Supabase ; ne jamais publier les en-têtes d'authentification.
+MAINTENANCE
+La nouvelle migration ajoute une politique restrictive de compte actif aux tables RLS déjà présentes et renforce les fonctions communauté SECURITY DEFINER. Toute nouvelle table privée ou nouvelle fonction privilégiée ajoutée ensuite doit conserver ce contrôle.
+Utiliser les API officielles Supabase Auth Admin côté serveur uniquement : https://supabase.com/docs/reference/javascript/auth-admin-updateuserbyid
 
-Documentation du planificateur : https://supabase.com/docs/guides/functions/schedule-functions
+PROMPT PRÊT À TRANSMETTRE À TON IA GIT CLOUD
+Intègre ce ZIP au dépôt BledWay existant en fusionnant les évolutions récentes, sans réécrire l'historique Git. Applique la migration 20261024120000_user_management.sql dans le projet Supabase de production Batogo après avoir vérifié les migrations précédentes. Ne touche pas aux secrets déjà configurés et n'envoie aucune notification ni invitation réelle pendant les tests. Exécute les tests inclus, npm run build:vercel et le contrôle TypeScript, puis vérifie sur mobile et PC les cartes compactes, leurs clics séparés, les rôles et la rubrique Utilisateurs. Confirme séparément l'intégration Git, la migration Supabase et le déploiement Vercel ; n'annonce pas une mise en production tant que ces trois étapes ne sont pas vérifiées.

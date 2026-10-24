@@ -1,3 +1,5 @@
+import { UsersAdmin } from "@/components/admin/UsersAdmin";
+import { canUseAdminTab } from "@/lib/admin/permissions";
 import { communityQuery } from "@/lib/ferry/community";
 import { CommunityModeration } from "@/components/panel/CommunityModeration";
 import { useEffect, useState } from "react";
@@ -123,7 +125,7 @@ export const Route = createFileRoute("/admin")({
 });
 
 function AdminPage() {
-  const { isAdmin, loading, user } = useAuth();
+  const { roles, loading, user } = useAuth();
 
   if (loading) {
     return <CenteredNote>Chargement…</CenteredNote>;
@@ -140,7 +142,7 @@ function AdminPage() {
     );
   }
 
-  if (!isAdmin) {
+  if (!roles.some((role) => ["admin", "editor", "moderator"].includes(role))) {
     return (
       <CenteredNote>
         <p>Cet espace est réservé à l'équipe BledWay.</p>
@@ -174,16 +176,22 @@ function CountBadge({
 }
 
 function AdminTabs() {
-  const { user } = useAuth();
+  const { user, roles, isAdmin } = useAuth();
   const community = useQuery(communityQuery(undefined, undefined, true, user?.id));
-  const { tab = "overview", filter } = Route.useSearch();
+  const { tab: requestedTab = "overview", filter } = Route.useSearch();
+  const tab = canUseAdminTab(roles, requestedTab)
+    ? requestedTab
+    : roles.includes("editor")
+      ? "departures"
+      : "reviews";
   const navigate = Route.useNavigate();
   const navigateTo = (id: string, nextFilter?: AdminFilter) => {
+    if (!canUseAdminTab(roles, id)) return;
     void navigate({ search: adminSearch({ tab: id, filter: nextFilter }), resetScroll: false });
   };
   const clearFilter = () => navigateTo(tab);
   const queryClient = useQueryClient();
-  const notificationOverview = useQuery(adminNotificationQuery(user?.id));
+  const notificationOverview = useQuery(adminNotificationQuery(isAdmin ? user?.id : undefined));
   const { data: counts } = useAdminCounts();
   const { data: alerts } = usePlanningAlerts();
   useEffect(
@@ -208,7 +216,15 @@ function AdminTabs() {
   };
   return (
     <Tabs value={tab} onValueChange={navigateTo}>
-      <AdminWorkspace tab={tab} onNavigate={navigateTo} badges={badges}>
+      <AdminWorkspace
+        tab={tab}
+        onNavigate={navigateTo}
+        badges={badges}
+        canAccess={(id) => canUseAdminTab(roles, id)}
+      >
+        <TabsContent value="users">
+          <UsersAdmin />
+        </TabsContent>
         <TabsContent value="overview">
           <DashboardOverview onNavigate={navigateTo} can={() => true} />
           {notificationOverview.error && (

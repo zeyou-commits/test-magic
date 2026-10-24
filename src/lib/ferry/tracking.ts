@@ -26,7 +26,7 @@ export interface LivePosition {
 
 /** Un navire suivi, rattaché à sa traversée. */
 export type PhysicalVesselStatus =
-  | "boarding" | "boarding_closed" | "departing" | "at_sea" | "approaching" | "docked" | "unknown";
+  "boarding" | "boarding_closed" | "departing" | "at_sea" | "approaching" | "docked" | "unknown";
 
 export interface PhysicalStatus {
   code: PhysicalVesselStatus;
@@ -90,11 +90,19 @@ export function destination(start: LngLat, courseDeg: number, distanceKm: number
 export function projectedPosition(position: LivePosition, now: number): LngLat {
   const base: LngLat = [position.longitude, position.latitude];
   if (!position.speedKnots || position.courseDeg === null || position.speedKnots < 1) return base;
-  const reported = position.reportedAt
-    ? Date.parse(position.reportedAt)
-    : Date.parse(position.fetchedAt);
+  // Une date de récupération n'est pas une date de position : sans signal daté, aucun déplacement.
+  const reported = position.reportedAt ? Date.parse(position.reportedAt) : NaN;
+  if (
+    !Number.isFinite(reported) ||
+    reported > now ||
+    !Number.isFinite(position.speedKnots) ||
+    position.speedKnots > 50 ||
+    !Number.isFinite(position.courseDeg)
+  )
+    return base;
   const elapsed = Math.min(40 * 60_000, Math.max(0, now - reported));
-  const km = (position.speedKnots * KNOT_MS * elapsed) / 1000;
+  // m/s × millisecondes → kilomètres : division par 1 000 000.
+  const km = (position.speedKnots * KNOT_MS * elapsed) / 1_000_000;
   return destination(base, position.courseDeg, km);
 }
 
@@ -207,8 +215,16 @@ export function courseLabel(course: number | null): string {
 }
 
 /** Rattachement unique ; aucun événement d'une ancienne rotation ne doit être réutilisé. */
-export function departureForSignal(departures: Departure[], vessel: Vessel, position: LivePosition, routes: RouteLine[], now: number): Departure | null {
-  const candidates = departures.filter((d) => d.vessel_id === vessel.id && d.status !== "cancelled");
+export function departureForSignal(
+  departures: Departure[],
+  vessel: Vessel,
+  position: LivePosition,
+  routes: RouteLine[],
+  now: number,
+): Departure | null {
+  const candidates = departures.filter(
+    (d) => d.vessel_id === vessel.id && d.status !== "cancelled",
+  );
   const linked = candidates.find((d) => d.id === position.eventDepartureId);
   if (linked && !position.ataAt) return linked;
   if (linked && position.ataAt && now - Date.parse(position.ataAt) < 3600_000) return linked;
@@ -217,30 +233,77 @@ export function departureForSignal(departures: Departure[], vessel: Vessel, posi
     const start = Date.parse(d.departure_at);
     const end = d.arrival_at ? Date.parse(d.arrival_at) : start + 36 * 3600_000;
     const route = routeById.get(d.route_id);
-    return now >= start - 6 * 3600_000 && now <= end + 6 * 3600_000 &&
-      (!position.departurePortId || route?.departure_port_id === position.departurePortId);
+    return (
+      now >= start - 6 * 3600_000 &&
+      now <= end + 6 * 3600_000 &&
+      (!position.departurePortId || route?.departure_port_id === position.departurePortId)
+    );
   });
   // En cas de chevauchement, pas de rattachement arbitraire à la traversée la plus proche.
-  return eligible.length === 1 ? eligible[0] ?? null : null;
+  return eligible.length === 1 ? (eligible[0] ?? null) : null;
 }
 
 export type TimeKind = "observed" | "estimated" | "scheduled" | "unavailable";
-export interface TrackingTime { iso: string | null; scheduledIso: string | null; kind: TimeKind; shiftMinutes: number | null; }
+export interface TrackingTime {
+  iso: string | null;
+  scheduledIso: string | null;
+  kind: TimeKind;
+  shiftMinutes: number | null;
+}
 export function trackingTimes(departure: Departure, live?: LiveShip | null) {
-  const linked = live?.departure.id === departure.id && live.position.eventDepartureId === departure.id;
-  const make = (scheduledIso: string | null, observed: string | null, estimated: string | null): TrackingTime => {
+  const start = Date.parse(departure.departure_at);
+  const declaredArrival = departure.arrival_at ? Date.parse(departure.arrival_at) : NaN;
+  const duration = departure.duration_minutes;
+  const fallback = duration && duration > 0 ? start + duration * 60_000 : NaN;
+  const arrivalMs =
+    Number.isFinite(declaredArrival) && declaredArrival > start ? declaredArrival : fallback;
+  const scheduledArrival =
+    Number.isFinite(arrivalMs) && !Number.isNaN(new Date(arrivalMs).getTime())
+      ? new Date(arrivalMs).toISOString()
+      : null;
+
+  const linked =
+    live?.departure.id === departure.id && live.position.eventDepartureId === departure.id;
+  const make = (
+    scheduledIso: string | null,
+    observed: string | null,
+    estimated: string | null,
+  ): TrackingTime => {
     const iso = observed ?? estimated ?? scheduledIso;
-    const kind: TimeKind = observed ? "observed" : estimated ? "estimated" : scheduledIso ? "scheduled" : "unavailable";
-    return { iso, scheduledIso, kind, shiftMinutes: (observed || estimated) && scheduledIso && iso ? Math.round((Date.parse(iso) - Date.parse(scheduledIso)) / 60_000) : null };
+    const kind: TimeKind = observed
+      ? "observed"
+      : estimated
+        ? "estimated"
+        : scheduledIso
+          ? "scheduled"
+          : "unavailable";
+    return {
+      iso,
+      scheduledIso,
+      kind,
+      shiftMinutes:
+        (observed || estimated) && scheduledIso && iso
+          ? Math.round((Date.parse(iso) - Date.parse(scheduledIso)) / 60_000)
+          : null,
+    };
   };
-  const actualDeparture = linked ? live?.position.atdAt ?? null : null;
-  const actualArrival = linked && actualDeparture && live?.position.ataAt && Date.parse(live.position.ataAt) >= Date.parse(actualDeparture) ? live.position.ataAt : null;
+  const actualDeparture = linked ? (live?.position.atdAt ?? null) : null;
+  const actualArrival =
+    linked &&
+    actualDeparture &&
+    live?.position.ataAt &&
+    Date.parse(live.position.ataAt) >= Date.parse(actualDeparture)
+      ? live.position.ataAt
+      : null;
   return {
     departure: make(departure.departure_at, actualDeparture, null),
-    arrival: make(departure.arrival_at, actualArrival, live?.departure.id === departure.id ? live.etaIso : null),
+    arrival: make(
+      scheduledArrival,
+      actualArrival,
+      live?.departure.id === departure.id ? live.etaIso : null,
+    ),
   };
 }
-
 
 /** Statut physique calculé à partir de la position AIS et des coordonnées portuaires. */
 export function physicalStatus(
@@ -253,26 +316,30 @@ export function physicalStatus(
 ): PhysicalStatus {
   const point: LngLat = [position.longitude, position.latitude];
   const speed = position.speedKnots ?? 0;
-  const fromKm = departurePort ? haversineKm(point, [departurePort.longitude, departurePort.latitude]) : Infinity;
-  const toKm = arrivalPort ? haversineKm(point, [arrivalPort.longitude, arrivalPort.latitude]) : Infinity;
+  const fromKm = departurePort
+    ? haversineKm(point, [departurePort.longitude, departurePort.latitude])
+    : Infinity;
+  const toKm = arrivalPort
+    ? haversineKm(point, [arrivalPort.longitude, arrivalPort.latitude])
+    : Infinity;
   const departure = scheduledDepartureIso ? Date.parse(scheduledDepartureIso) : NaN;
   const hoursToDeparture = Number.isFinite(departure) ? (departure - now) / 3_600_000 : Infinity;
   const nearestPortKm = allPorts?.length
     ? Math.min(...allPorts.map((port) => haversineKm(point, [port.longitude, port.latitude])))
     : Math.min(fromKm, toKm);
-  const etaMinutes = speed >= 1.5 ? (toKm / (speed * KNOT_MS / 1000)) / 60 : Infinity;
+  const etaMinutes = speed >= 1.5 ? toKm / ((speed * KNOT_MS) / 1000) / 60 : Infinity;
   if (toKm < 1 && speed < 1.5) return { code: "docked", label: "Accosté à quai", tone: "info" };
-  if (fromKm < 3 && speed >= 3) return { code: "departing", label: "Appareillage en cours", tone: "warning" };
-  if (toKm < 15 && etaMinutes < 45) return { code: "approaching", label: "En approche", tone: "warning" };
+  if (fromKm < 3 && speed >= 3)
+    return { code: "departing", label: "Appareillage en cours", tone: "warning" };
+  if (toKm < 15 && etaMinutes < 45)
+    return { code: "approaching", label: "En approche", tone: "warning" };
   if (fromKm < 2 && speed < 1.5 && hoursToDeparture >= 1 && hoursToDeparture <= 3)
     return { code: "boarding", label: "Embarquement en cours", tone: "info" };
   if (fromKm < 2 && speed < 1.5 && hoursToDeparture >= 0 && hoursToDeparture < 1)
     return { code: "boarding_closed", label: "Embarquement clos", tone: "warning" };
-  if (nearestPortKm > 15 && speed >= 3)
-    return { code: "at_sea", label: "En mer", tone: "success" };
+  if (nearestPortKm > 15 && speed >= 3) return { code: "at_sea", label: "En mer", tone: "success" };
   return { code: "unknown", label: "Position AIS reçue", tone: "muted" };
 }
-
 
 export interface RotationAlert {
   etaLabel: string;
@@ -296,9 +363,16 @@ export function detectRotationDelay(args: {
   const now = args.now ?? Date.now();
   const departureMs = Date.parse(departureIso);
   const previousArrivalMs = previousArrivalIso ? Date.parse(previousArrivalIso) : NaN;
-  if (!position || !departurePort || !Number.isFinite(departureMs) ||
-      !Number.isFinite(previousArrivalMs) || previousArrivalMs >= departureMs ||
-      now < departureMs - 2 * 3_600_000 || now >= departureMs) return null;
+  if (
+    !position ||
+    !departurePort ||
+    !Number.isFinite(departureMs) ||
+    !Number.isFinite(previousArrivalMs) ||
+    previousArrivalMs >= departureMs ||
+    now < departureMs - 2 * 3_600_000 ||
+    now >= departureMs
+  )
+    return null;
   const distanceKm = haversineKm(
     [position.longitude, position.latitude],
     [departurePort.longitude, departurePort.latitude],
@@ -306,15 +380,16 @@ export function detectRotationDelay(args: {
   const notDocked = (position.speedKnots ?? 0) >= 1.5 || distanceKm > 2;
   if (!notDocked) return null;
   const speed = position.speedKnots ?? 0;
-  const etaMs = speed >= 1.5
-    ? now + ((distanceKm * 1000) / (speed * KNOT_MS)) * 1000
-    : NaN;
+  const etaMs = speed >= 1.5 ? now + ((distanceKm * 1000) / (speed * KNOT_MS)) * 1000 : NaN;
   const etaLabel = Number.isFinite(etaMs)
-    ? new Intl.DateTimeFormat("fr-FR", { timeZone, hour: "2-digit", minute: "2-digit" }).format(new Date(etaMs))
+    ? new Intl.DateTimeFormat("fr-FR", { timeZone, hour: "2-digit", minute: "2-digit" }).format(
+        new Date(etaMs),
+      )
     : "à confirmer";
   return {
     etaLabel,
     message: `Navire en approche finale (ETA ${etaLabel}). Rotation en cours : ouverture des portes retardée.`,
-    legalWarning: "Conservez votre horaire de convocation officiel : les contrôles de police restent actifs à l'heure prévue.",
+    legalWarning:
+      "Conservez votre horaire de convocation officiel : les contrôles de police restent actifs à l'heure prévue.",
   };
 }

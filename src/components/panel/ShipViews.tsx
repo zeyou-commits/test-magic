@@ -50,7 +50,7 @@ export function VesselView({
   onSelect: (s: Selection) => void;
 }) {
   const data = useShipData();
-  const { user } = useAuth();
+  const { user, isAdmin } = useAuth();
   const community = useQuery(communityQuery("vessel", vesselId, false, user?.id));
   const communityAvailable = Boolean(community.data);
   const [tab, setTab] = useState("tracking");
@@ -118,13 +118,42 @@ export function VesselView({
             </button>
           ) : null}
           {vessel.is_demo ? <DemoBadge /> : null}
-          <div className="mt-2"><FollowButton kind="vessel" targetId={vesselId} label={vessel.name} demo={Boolean(vessel.is_demo)} /></div>
+          <div className="mt-2">
+            <FollowButton
+              kind="vessel"
+              targetId={vesselId}
+              label={vessel.name}
+              demo={Boolean(vessel.is_demo)}
+            />
+          </div>
         </div>
       </header>
       {departure && from && to ? (
         <div className="bw-ship-crossing-first">
           <CrossingCard departure={departure} from={from} to={to} live={live} />
         </div>
+      ) : null}
+      {isAdmin && (vessel.imo || vessel.mmsi) ? (
+        <aside className="mb-3 rounded-xl border border-primary/20 bg-primary/5 p-3 text-xs">
+          <p className="mb-1 font-semibold">Contrôle admin du suivi</p>
+          <p className="mb-2 text-muted-foreground">
+            {live
+              ? `Signal AIS associé · âge ${Math.round(live.ageMinutes)} min`
+              : "Aucun signal AIS associé : position estimée selon les horaires."}
+          </p>
+          <a
+            className="bw-detail-link"
+            href={
+              vessel.imo
+                ? `https://www.vesselfinder.com/?imo=${vessel.imo}`
+                : `https://www.vesselfinder.com/?mmsi=${vessel.mmsi}`
+            }
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            Voir sur VesselFinder <ExternalLink size={14} aria-hidden />
+          </a>
+        </aside>
       ) : null}
       <button
         type="button"
@@ -228,21 +257,6 @@ export function VesselView({
             <h3>Faites connaissance avec {vessel.name}</h3>
             {vessel.description ? <p>{vessel.description}</p> : null}
             <VesselSpecs vessel={vessel} />
-            {vessel.imo || vessel.mmsi ? (
-              <a
-                className="bw-detail-link"
-                href={
-                  vessel.imo
-                    ? `https://www.vesselfinder.com/?imo=${vessel.imo}`
-                    : `https://www.vesselfinder.com/?mmsi=${vessel.mmsi}`
-                }
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                Informations maritimes
-                <ExternalLink size={15} aria-hidden />
-              </a>
-            ) : null}
             {communityAvailable ? (
               <div className="bw-community-invite">
                 <Users size={25} aria-hidden />
@@ -289,8 +303,21 @@ export function DepartureView({
         <ReportButton targetType="departure" targetId={departureId} />
       </header>
       {from && to ? <CrossingCard departure={departure} from={from} to={to} live={live} /> : null}
-      <div className="my-3"><FollowButton kind="departure" targetId={departureId} label={`${from?.name ?? "Départ"} → ${to?.name ?? "Arrivée"}`} demo={Boolean(departure.is_demo)} /></div>
-      {from && <JourneyChecklist departureId={departureId} departureAt={departure.departure_at} port={from} />}
+      <div className="my-3">
+        <FollowButton
+          kind="departure"
+          targetId={departureId}
+          label={`${from?.name ?? "Départ"} → ${to?.name ?? "Arrivée"}`}
+          demo={Boolean(departure.is_demo)}
+        />
+      </div>
+      {from && (
+        <JourneyChecklist
+          departureId={departureId}
+          departureAt={departure.departure_at}
+          port={from}
+        />
+      )}
       {vessel ? (
         <button
           className="bw-vessel-switch"

@@ -1,3 +1,4 @@
+import { useAuth } from "@/hooks/useAuth";
 import { ArrowRight, Navigation, Ship, Waves } from "lucide-react";
 import { crossingProgress } from "@/lib/ferry/crossingProgress";
 import type { Departure, Port } from "@/lib/ferry/types";
@@ -16,7 +17,13 @@ export function CrossingCard({
   to: Port;
   live?: LiveShip | null | undefined;
 }) {
+  const { isAdmin } = useAuth();
   const progress = crossingProgress(departure, from, to, live);
+  const sourceLabel = isAdmin
+    ? progress.source
+    : progress.source !== "Repère horaire"
+      ? "Position actualisée"
+      : "Position estimée · selon les horaires";
   const at = Date.now();
   const status =
     departure.status === "cancelled"
@@ -25,11 +32,11 @@ export function CrossingCard({
         ? "Arrivée constatée"
         : at < Date.parse(departure.departure_at) && progress.signal?.phase !== "sea"
           ? "Prochaine traversée"
-        : progress.signal
-          ? progress.signal.phase === "sea"
-            ? "En mer"
-            : "Au port"
-          : "Votre traversée";
+          : progress.signal
+            ? progress.signal.phase === "sea"
+              ? "En mer"
+              : "Au port"
+            : "Votre traversée";
   return (
     <section className="bw-crossing" aria-label="Avancement de la traversée">
       <div className="bw-crossing-top">
@@ -37,23 +44,26 @@ export function CrossingCard({
           <Waves size={16} aria-hidden />
           {status}
         </span>
-        {progress.signal ? <small>AIS · {formatAge(progress.signal.ageMinutes)}</small> : null}
+        {isAdmin && progress.signal ? (
+          <small>AIS · {formatAge(progress.signal.ageMinutes)}</small>
+        ) : null}
       </div>
       <div className="bw-crossing-route">
         <strong>{from.name}</strong>
         <ArrowRight size={17} aria-hidden />
         <strong>{to.name}</strong>
       </div>
-      {progress.ratio !== null && (at >= Date.parse(departure.departure_at) || progress.signal?.phase === "sea") ? (
+      {progress.ratio !== null &&
+      (at >= Date.parse(departure.departure_at) || progress.signal?.phase === "sea") ? (
         <div className="bw-crossing-progress">
           <div className="bw-crossing-progress-label">
-            <span>{progress.source}</span>
+            <span>{sourceLabel}</span>
             <strong>{Math.round(progress.ratio * 100)} %</strong>
           </div>
           <div
             className="bw-crossing-track"
             role="progressbar"
-            aria-label={progress.source}
+            aria-label={sourceLabel}
             aria-valuenow={Math.round(progress.ratio * 100)}
             aria-valuemin={0}
             aria-valuemax={100}

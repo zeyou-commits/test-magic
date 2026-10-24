@@ -16,11 +16,19 @@ import {
   Ship,
   Star,
   Waves,
+  Users,
 } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import { UserMenu } from "@/components/layout/UserMenu";
 
 const sections = [
+  {
+    id: "users",
+    label: "Utilisateurs",
+    description: "Gérez les comptes voyageurs, les rôles et les accès de votre équipe.",
+    group: "Pilotage",
+    icon: Users,
+  },
   {
     id: "overview",
     label: "Vue d’ensemble",
@@ -126,15 +134,18 @@ export function AdminWorkspace({
   onNavigate,
   badges,
   children,
+  canAccess = () => true,
 }: {
   tab: string;
   onNavigate: (tab: string) => void;
   badges: Record<string, number>;
   children: ReactNode;
+  canAccess?: (tab: string) => boolean;
 }) {
   const [search, setSearch] = useState("");
   const current = sections.find((section) => section.id === tab) ?? sections[0]!;
-  const filtered = sections.filter((section) =>
+  const available = sections.filter((section) => canAccess(section.id));
+  const filtered = available.filter((section) =>
     `${section.label} ${section.description}`
       .toLocaleLowerCase("fr")
       .includes(search.toLocaleLowerCase("fr")),
@@ -203,19 +214,21 @@ export function AdminWorkspace({
             <strong className="font-medium text-foreground">{current.group}</strong>
           </span>
           <div className="flex items-center gap-3">
-            <button
-              type="button"
-              onClick={() => onNavigate("notifications")}
-              aria-label={`${pending} campagne${pending > 1 ? "s" : ""} à vérifier`}
-              className="relative grid size-9 place-items-center rounded-full border border-border"
-            >
-              <Bell className="size-4" />
-              {pending > 0 && (
-                <span className="absolute -right-1 -top-1 grid size-4 place-items-center rounded-full bg-[#d65236] text-[9px] font-bold text-white">
-                  {pending}
-                </span>
-              )}
-            </button>
+            {canAccess("notifications") && (
+              <button
+                type="button"
+                onClick={() => onNavigate("notifications")}
+                aria-label={`${pending} campagne${pending > 1 ? "s" : ""} à vérifier`}
+                className="relative grid size-9 place-items-center rounded-full border border-border"
+              >
+                <Bell className="size-4" />
+                {pending > 0 && (
+                  <span className="absolute -right-1 -top-1 grid size-4 place-items-center rounded-full bg-[#d65236] text-[9px] font-bold text-white">
+                    {pending}
+                  </span>
+                )}
+              </button>
+            )}
             <UserMenu compact iconOnly />
           </div>
         </header>
@@ -226,7 +239,7 @@ export function AdminWorkspace({
             value={tab}
             onChange={(event) => onNavigate(event.target.value)}
           >
-            {sections.map((item) => (
+            {available.map((item) => (
               <option key={item.id} value={item.id}>
                 {item.label}
                 {badges[item.id] ? ` (${badges[item.id]})` : ""}
@@ -246,7 +259,7 @@ export function AdminWorkspace({
               <ArrowUpRight className="size-4" />
             </Link>
           </div>
-          {pending > 0 && tab !== "notifications" && (
+          {pending > 0 && tab !== "notifications" && canAccess("notifications") && (
             <button
               type="button"
               onClick={() => onNavigate("notifications")}

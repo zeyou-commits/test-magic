@@ -23,7 +23,7 @@ export interface RoundTripQuery {
 }
 
 /** Temps minimum à terre entre l'arrivée de l'aller et le départ du retour. */
-const MIN_STAY_MS = 24 * 3600 * 1000;
+const MIN_STAY_MS = 6 * 3600 * 1000;
 
 const arrivalMs = (sailing: Sailing) =>
   sailing.departure.arrival_at

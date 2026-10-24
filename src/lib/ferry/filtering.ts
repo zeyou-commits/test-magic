@@ -146,6 +146,9 @@ export function departureDateKey(departure: Departure, timeZones: Map<string, st
 
 interface FilterOptions {
   ignoreDate?: boolean;
+  /** Permet à la recherche libre de trouver un navire ou une compagnie. */
+  companies?: { id: string; name: string }[];
+  vessels?: { id: string; name: string }[];
 }
 
 export function filterRoutes(
@@ -178,6 +181,22 @@ export function filterRoutes(
 
   const matchesTerm = (port: Port) =>
     normalizeText(`${port.name} ${port.city ?? ""} ${port.country_name}`).includes(term);
+  const companyTermIds = new Set(
+    term
+      ? (options.companies ?? []).filter((c) => normalizeText(c.name).includes(term)).map((c) => c.id)
+      : [],
+  );
+  const vesselTermIds = new Set(
+    term
+      ? (options.vessels ?? []).filter((v) => normalizeText(v.name).includes(term)).map((v) => v.id)
+      : [],
+  );
+  const vesselTermRoutes = new Set(
+    vesselTermIds.size
+      ? departures.filter((d) => d.vessel_id && vesselTermIds.has(d.vessel_id)).map((d) => d.route_id)
+      : [],
+  );
+
 
   return routes.filter((route) => {
     const from = portById.get(route.departure_port_id);
@@ -189,7 +208,14 @@ export function filterRoutes(
     if (arrivalIds.size > 0 && !arrivalIds.has(to.id)) return false;
     if (filters.companyId && !route.company_ids.includes(filters.companyId)) return false;
     if (needsDeparture && !routesWithDeparture.has(route.id)) return false;
-    if (term && !matchesTerm(from) && !matchesTerm(to)) return false;
+    if (
+      term &&
+      !matchesTerm(from) &&
+      !matchesTerm(to) &&
+      !route.company_ids.some((id) => companyTermIds.has(id)) &&
+      !vesselTermRoutes.has(route.id)
+    )
+      return false;
     return true;
   });
 }

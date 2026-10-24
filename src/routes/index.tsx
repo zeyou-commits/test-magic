@@ -340,8 +340,12 @@ function Index() {
   );
   // Un seul état de recherche alimente la carte, la liste et le tiroir mobile.
   const matchingRoutes = useMemo(
-    () => filterRoutes(routes, ports, allDepartures, { ...mapFilters, date: null }),
-    [routes, ports, allDepartures, mapFilters],
+    () =>
+      filterRoutes(routes, ports, allDepartures, { ...mapFilters, date: null }, {
+        companies,
+        vessels,
+      }),
+    [routes, ports, allDepartures, mapFilters, companies, vessels],
   );
   const fleetVisibleRouteIds = useMemo(
     () =>

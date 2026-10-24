@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { euros, journeyBudget, parseAmount, parseOccupants } from "@/lib/tools/calculations";
 import { CalculatorForm, InvalidResult, NumberField, ResultPanel } from "./Fields";
 const emptyScenario = {
@@ -68,6 +68,11 @@ function parseScenario(v: typeof emptyScenario) {
 export function TravelBudget() {
   const [a, setA] = useState(emptyScenario),
     [b, setB] = useState(emptyScenario);
+  // Reprise du billet estimé depuis un résultat de traversée (?ticket=…).
+  useEffect(() => {
+    const ticket = new URLSearchParams(window.location.search).get("ticket");
+    if (ticket && /^\d+(\.\d+)?$/.test(ticket)) setA((v) => ({ ...v, ticket }));
+  }, []);
   const [people, setPeople] = useState("1"),
     [submitted, setSubmitted] = useState(false);
   const inputA = parseScenario(a),

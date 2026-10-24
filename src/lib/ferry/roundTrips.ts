@@ -65,7 +65,7 @@ function withinDate(day: string, target: string | null, flex: number) {
 export function buildRoundTrips(
   all: Sailing[],
   query: RoundTripQuery,
-  limits = { main: 6, alternatives: 8 },
+  limits = { main: 20, alternatives: 8 },
 ): { main: RoundTrip[]; alternatives: RoundTrip[] } {
   const brandOk = (sailing: Sailing) =>
     (!query.companyId || sailing.departure.company_id === query.companyId) &&
@@ -111,8 +111,8 @@ export function buildRoundTrips(
         (query.returnDate ? Math.abs(diffDays(query.returnDate, back.dayKey)) * 10 : stayDays) +
         (query.date ? Math.abs(diffDays(query.date, out.dayKey)) * 10 : 0) +
         (mirror ? 0 : 3);
-      // Un seul couple par combinaison de ports (le mieux daté).
-      const key = `${out.from.id}>${out.to.id}|${back.from.id}>${back.to.id}`;
+      // Un couple par départ aller et combinaison de retour (le retour le mieux daté).
+      const key = `${out.departure.id}|${back.from.id}>${back.to.id}`;
       const current = best.get(key);
       if (!current || score < current.score)
         best.set(key, { out, back, stayDays, mirror, score, exact: hasPorts ? exact : true });

@@ -716,7 +716,7 @@ export function SearchPanel({
             </div>
           ) : (
             <>
-              {filters.roundTrip && hasPair ? (
+              {filters.roundTrip ? (
                 <RoundTripSection
                   trips={roundTrips}
                   hasPorts={filters.departurePortIds.length + filters.arrivalPortIds.length > 0}

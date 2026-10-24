@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { CalendarX2, Car, Check, ChevronDown, Search, X } from "lucide-react";
+import { Ban, CalendarX2, Car, Check, ChevronDown, Search, X } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import * as SheetPrimitive from "@radix-ui/react-dialog";
@@ -241,6 +241,9 @@ export function PortMultiPicker({
                           {isSelected ? <Check className="size-3.5 shrink-0" /> : null}
                           {reason === "Aucun départ planifié pour le moment" ? (
                             <CalendarX2 aria-hidden className="size-3 shrink-0" />
+                          ) : null}
+                          {reason === "Port inactif" ? (
+                            <Ban aria-hidden className="size-3 shrink-0" />
                           ) : null}
                           <span className="truncate">{port.name}</span>
                           {port.facilities?.["dedouanement_vehicule"] === "oui" ? (

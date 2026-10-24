@@ -168,7 +168,7 @@ export function SailingCard({
           </div>
         </div>
         <span
-          className="ml-auto shrink-0 text-sm font-bold tabular-nums text-success"
+          className="ml-auto shrink-0 text-sm font-bold tabular-nums text-success max-md:hidden"
           title={`Fourchette indicative : ${formatFareRange(fare)} · voyageurs et véhicule choisis`}
         >
           <span className="block text-[10px] font-normal text-muted-foreground">Budget estimé</span>
@@ -188,8 +188,11 @@ export function SailingCard({
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex h-8 shrink-0 items-center gap-1 rounded-full bg-cta px-3 text-xs font-semibold text-cta-foreground shadow-sm transition hover:brightness-110 active:scale-95"
+            title={`Voir l’offre sur ${bookingSite(sailing)} · budget estimé ${formatEuro(fare.amount)}`}
           >
-            Voir l’offre <ArrowUpRight className="size-3.5" aria-hidden />
+            <span className="max-md:hidden">Voir l’offre</span>
+            <span className="md:hidden">{formatEuro(fare.amount)}</span>
+            <ArrowUpRight className="size-3.5" aria-hidden />
             <span className="sr-only">sur {bookingSite(sailing)} (nouvel onglet)</span>
           </a>
         ) : null}

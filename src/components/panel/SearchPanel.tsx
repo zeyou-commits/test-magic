@@ -7,6 +7,7 @@ import {
   Backpack,
   CalendarDays,
   ChevronDown,
+  RotateCcw,
   Search,
   Route,
   SlidersHorizontal,
@@ -463,14 +464,28 @@ export function SearchPanel({
         >
           <div className="flex items-center justify-between gap-2">
             <span className="text-sm font-bold text-foreground">Trouver ma traversée</span>
-            <button
-              type="button"
-              onClick={closeSearch}
-              aria-label="Fermer la recherche"
-              className="grid size-9 shrink-0 place-items-center rounded-full border border-border bg-card text-foreground hover:bg-secondary"
-            >
-              <X className="size-4" aria-hidden />
-            </button>
+            <div className="flex items-center gap-1.5">
+              {active ? (
+                <button
+                  type="button"
+                  onClick={() =>
+                    onFiltersChange({ ...emptyFilters, roundTrip: filters.roundTrip })
+                  }
+                  className="inline-flex h-9 items-center gap-1.5 rounded-full border border-border bg-card px-3 text-xs font-semibold text-muted-foreground hover:bg-secondary hover:text-foreground"
+                >
+                  <RotateCcw className="size-3.5" aria-hidden />
+                  Réinitialiser
+                </button>
+              ) : null}
+              <button
+                type="button"
+                onClick={closeSearch}
+                aria-label="Fermer la recherche"
+                className="grid size-9 shrink-0 place-items-center rounded-full border border-border bg-card text-foreground hover:bg-secondary"
+              >
+                <X className="size-4" aria-hidden />
+              </button>
+            </div>
           </div>
           <div className="flex items-center justify-between gap-2">
             <div

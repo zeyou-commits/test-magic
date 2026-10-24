@@ -1,10 +1,28 @@
 import { useAuth } from "@/hooks/useAuth";
-import { ArrowRight, Navigation, Ship, Waves } from "lucide-react";
+import { ArrowRight, Navigation, Waves } from "lucide-react";
 import { crossingProgress } from "@/lib/ferry/crossingProgress";
 import type { Departure, Port } from "@/lib/ferry/types";
 import { formatAge, type LiveShip } from "@/lib/ferry/tracking";
 import { portTimeZone } from "@/lib/ferry/time";
 import { TrackingTimes } from "./TrackingTimes";
+
+/** Ferry miniature de profil : fumée de cheminée et traînée animées (CSS home.css). */
+function MiniFerry() {
+  return (
+    <svg viewBox="0 0 40 24" className="bw-mini-ferry" aria-hidden>
+      <path className="bw-mini-ferry-wake" d="M1 20h9" />
+      <path d="M6 15h28l-4 5H10z" fill="currentColor" />
+      <rect x="11" y="9" width="17" height="6" rx="1.5" fill="currentColor" opacity="0.85" />
+      <rect x="13" y="10.5" width="3" height="2" rx="0.6" fill="#0e7a43" />
+      <rect x="17.5" y="10.5" width="3" height="2" rx="0.6" fill="#0e7a43" />
+      <rect x="22" y="10.5" width="3" height="2" rx="0.6" fill="#0e7a43" />
+      <rect x="24" y="5" width="4" height="4" rx="1" fill="#f4a261" />
+      <circle className="bw-smoke bw-smoke-1" cx="26" cy="4" r="1.5" />
+      <circle className="bw-smoke bw-smoke-2" cx="26" cy="4" r="1.5" />
+      <circle className="bw-smoke bw-smoke-3" cx="26" cy="4" r="1.5" />
+    </svg>
+  );
+}
 
 export function CrossingCard({
   departure,
@@ -66,7 +84,7 @@ export function CrossingCard({
           >
             <span style={{ width: `${progress.ratio * 100}%` }} />
             <i style={{ left: `${Math.max(4, Math.min(96, progress.ratio * 100))}%` }}>
-              <Ship size={15} aria-hidden />
+              <MiniFerry />
             </i>
           </div>
         </div>

@@ -156,34 +156,42 @@ export function MapStats({
           }
         >
           {activeShortcut === "ports" ? (
-            <fieldset className="p-2">
-              <legend className="px-1 pt-1 text-xs font-bold">Afficher les liaisons</legend>
+            <div role="radiogroup" aria-label="Afficher les liaisons" className="p-2">
+              <p className="px-1 pt-1 text-xs font-bold">Afficher les liaisons</p>
               {(
                 [
                   ["published", "Avec programme publié", "Tous les programmes futurs"],
                   ["all", "Toutes les liaisons", "Y compris sans programme à venir"],
                   ["none", "Aucune liaison", "Garder les ports et les bateaux"],
                 ] as const
-              ).map(([value, label, description]) => (
-                <label
-                  key={value}
-                  className="flex min-h-12 cursor-pointer items-center gap-2 rounded-xl px-2 py-2 hover:bg-secondary"
-                >
-                  <input
-                    type="radio"
-                    name="map-lines"
-                    value={value}
-                    checked={lineVisibility === value}
-                    onChange={() => onLineVisibility(value)}
-                    className="accent-primary"
-                  />
-                  <span>
-                    <b className="block text-xs">{label}</b>
-                    <span className="text-[10px] text-muted-foreground">{description}</span>
-                  </span>
-                </label>
-              ))}
-            </fieldset>
+              ).map(([value, label, description]) => {
+                const selected = lineVisibility === value;
+                return (
+                  <button
+                    key={value}
+                    type="button"
+                    role="radio"
+                    aria-checked={selected}
+                    onClick={() => {
+                      onLineVisibility(value);
+                      onDismiss();
+                    }}
+                    className={`flex min-h-12 w-full cursor-pointer items-center gap-2 rounded-xl px-2 py-2 text-left transition-colors hover:bg-secondary ${value === "published" ? "text-success" : "text-foreground"}`}
+                  >
+                    <span
+                      aria-hidden
+                      className={`grid size-4 shrink-0 place-items-center rounded-full border-2 ${selected ? "border-current" : "border-muted-foreground/40"}`}
+                    >
+                      {selected ? <span className="size-2 rounded-full bg-current" /> : null}
+                    </span>
+                    <span>
+                      <b className="block text-xs">{label}</b>
+                      <span className="text-[10px] text-muted-foreground">{description}</span>
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
           ) : activeShortcut === "companies" ? (
             <>
               <button

@@ -335,6 +335,8 @@ export default function FerryMap({
   const readyRef = useRef(false);
   const portMarkersRef = useRef<Map<string, Marker>>(new Map());
   const selectRef = useRef(onSelect);
+  const vesselCardsRef = useRef(vesselCards);
+  vesselCardsRef.current = vesselCards;
   const interactRef = useRef(onMapInteract);
   const dismissedPortIdsRef = useRef<Set<string>>(new Set());
   const [mapReady, setMapReady] = useState(false);

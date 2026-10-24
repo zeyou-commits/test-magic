@@ -1,6 +1,6 @@
 import { useAuth } from "@/hooks/useAuth";
 import { useEffect, useRef } from "react";
-import { Anchor, Flag, Ship, Waves, type LucideProps } from "lucide-react";
+import { Anchor, Flag, Hourglass, Ship, Waves, type LucideProps } from "lucide-react";
 import type { FleetShip } from "@/lib/ferry/fleet";
 import {
   shortCompanyName,
@@ -103,13 +103,21 @@ export function MapStats({
       id: "sea" as const,
       label: "Navires en mer",
       count: atSea.length,
-      icon: <Waves className="size-3 md:size-4" />,
+      icon: (
+        <span className="relative inline-flex items-center">
+          <span className="relative mr-1 inline-flex size-2">
+            <span className="absolute inline-flex size-full animate-ping rounded-full bg-destructive opacity-75" />
+            <span className="relative inline-flex size-2 rounded-full bg-destructive" />
+          </span>
+          <Waves className="size-3 md:size-4" />
+        </span>
+      ),
     },
     {
       id: "upcoming" as const,
       label: "Navires à quai",
       count: upcomingShips.length,
-      icon: <Anchor className="size-3 md:size-4" />,
+      icon: <Hourglass className="size-3 md:size-4" />,
     },
     {
       id: "companies" as const,
@@ -121,7 +129,7 @@ export function MapStats({
       id: "ports" as const,
       label: "Ports et liaisons",
       count: portsCount,
-      icon: <LighthouseIcon className="size-3 md:size-4" />,
+      icon: <Anchor className="size-3 md:size-4" />,
     },
   ];
   return (

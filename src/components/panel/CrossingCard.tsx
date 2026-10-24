@@ -67,8 +67,7 @@ export function CrossingCard({
         <ArrowRight size={17} aria-hidden />
         <strong>{to.name}</strong>
       </div>
-      {progress.ratio !== null &&
-      (at >= Date.parse(departure.departure_at) || progress.signal?.phase === "sea") ? (
+      {progress.ratio !== null ? (
         <div className="bw-crossing-progress">
           <div className="bw-crossing-progress-label">
             <span>{sourceLabel}</span>

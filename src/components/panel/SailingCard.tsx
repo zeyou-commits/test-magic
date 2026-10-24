@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import {
   ArrowUpRight,
+  Calculator,
   ChevronDown,
   ChevronLeft,
   ChevronRight,

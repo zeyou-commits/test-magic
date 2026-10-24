@@ -617,7 +617,7 @@ function Index() {
     const h = dragHeightRef.current;
     const v = lastMove.current.v;
     let target: 0 | 1 | 2;
-    if (Math.abs(v) > 0.5) {
+    if (Math.abs(v) > 0.35) {
       const above = snaps.findIndex((s) => s > h + 1);
       const below = [...snaps].reverse().findIndex((s) => s < h - 1);
       target = (v > 0 ? (above === -1 ? 2 : above) : below === -1 ? 0 : 2 - below) as 0 | 1 | 2;
@@ -635,7 +635,7 @@ function Index() {
   };
   // Relais défilement → volet (façon Google Maps) : en haut de la liste, continuer à tirer
   // vers le bas fait descendre le volet sous le doigt ; un geste vif le fait changer de cran.
-  const panelGesture = useRef({ start, move: movePanelDrag, finish: finishPanelDrag, level: panelLevel });
+  const panelGesture = useRef({ start: startPanelDrag, move: movePanelDrag, finish: finishPanelDrag, level: panelLevel });
   panelGesture.current = { start: startPanelDrag, move: movePanelDrag, finish: finishPanelDrag, level: panelLevel };
   useEffect(() => {
     const aside = asideRef.current;

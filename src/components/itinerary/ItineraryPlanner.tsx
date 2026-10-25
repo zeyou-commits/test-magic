@@ -717,7 +717,7 @@ export function ItineraryPlanner({
 
   return (
     <section id="itineraire" className="min-h-full min-w-0 w-full bg-[#fffdf8]">
-      <div className="sticky top-0 z-10 flex items-center justify-between gap-3 border-b border-border bg-[#e9f3ef] px-4 py-2.5">
+      <div className="sticky top-0 z-10 flex items-center justify-between gap-3 border-b border-border bg-[#e9f3ef] px-4 py-1.5">
         <div>
           <h2 className="font-display text-base font-bold uppercase tracking-tight text-foreground sm:text-lg">
             Le trajet porte à porte

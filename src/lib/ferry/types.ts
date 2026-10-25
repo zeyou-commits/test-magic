@@ -156,7 +156,7 @@ export const emptyFilters: Filters = {
   vesselId: null,
   date: null,
   returnDate: null,
-  roundTrip: false,
+  roundTrip: true,
   flexDays: 0,
   schoolZone: null,
 };

@@ -53,7 +53,7 @@ export function HomeTraffic({
   const signals = useLiveShips();
   const [now, setNow] = useState(() => Date.now());
   const [filter, setFilter] = useState<"all" | "departure" | "arrival">("all");
-  const [expanded, setExpanded] = useState(false);
+  const [expanded, setExpanded] = useState(true);
   useEffect(() => {
     const timer = window.setInterval(() => setNow(Date.now()), 30_000);
     return () => window.clearInterval(timer);
@@ -232,7 +232,6 @@ export function HomeTraffic({
               aria-pressed={filter === value}
               onClick={() => {
                 setFilter(value);
-                setExpanded(false);
               }}
               className={`min-h-9 flex-1 rounded-lg text-xs font-semibold ${filter === value ? "bg-white text-primary shadow-sm" : "text-muted-foreground"}`}
             >
@@ -243,7 +242,7 @@ export function HomeTraffic({
         {(() => {
           // Mouvements regroupés par port, dans l'ordre du premier mouvement de chaque port.
           const groups = new Map<string, typeof events>();
-          events.slice(0, expanded ? 30 : 6).forEach((e) => {
+          events.slice(0, expanded ? 60 : 6).forEach((e) => {
             groups.set(e.port.id, [...(groups.get(e.port.id) ?? []), e]);
           });
           return [...groups.values()].map((list) => (

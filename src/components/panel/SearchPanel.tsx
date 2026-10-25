@@ -200,13 +200,11 @@ export function SearchPanel({
       window.removeEventListener("batogo:show-departures", showDepartures);
     };
   }, []);
-  // Drapeau du compteur : déplie la section et ouvre la liste des compagnies.
+  // Drapeau du compteur : ouvre la liste des compagnies.
   const [companyMenuOpen, setCompanyMenuOpen] = useState(false);
-  const [companyOpen, setCompanyOpen] = useState(false);
   useEffect(() => {
     const open = () => {
       setEditing(true);
-      setCompanyOpen(true);
       window.setTimeout(() => {
         const el = document.getElementById("filters-company");
         el?.scrollIntoView({ behavior: "smooth", block: "center" });
@@ -612,17 +610,14 @@ export function SearchPanel({
             </div>
           </div>
 
-          <details
+          <div
             id="filters-company"
-            className="group rounded-xl text-xs transition-shadow data-[flash=true]:ring-2 data-[flash=true]:ring-primary/50"
-            open={companyOpen || Boolean(filters.companyId || filters.vesselId)}
-            onToggle={(e) => setCompanyOpen((e.currentTarget as HTMLDetailsElement).open)}
+            className="rounded-2xl border border-border bg-card p-3 text-xs shadow-sm transition-shadow data-[flash=true]:ring-2 data-[flash=true]:ring-primary/50"
           >
-            <summary className="flex cursor-pointer list-none items-center gap-1 font-semibold text-muted-foreground hover:text-foreground">
-              <ChevronDown className="size-3.5 transition-transform group-open:rotate-180" />{" "}
-              Compagnie, navire
-            </summary>
-            <div className="mt-2 grid grid-cols-2 gap-1.5">
+            <p className="mb-2 text-[11px] font-bold uppercase tracking-wider text-primary">
+              Compagnie et navire
+            </p>
+            <div className="grid grid-cols-2 gap-1.5">
               <FilterSelect
                 label="Compagnie"
                 open={companyMenuOpen}
@@ -653,7 +648,7 @@ export function SearchPanel({
                   .map((vessel) => ({ value: vessel.id, label: vessel.name }))}
               />
             </div>
-          </details>
+          </div>
           <div className="sticky bottom-0 z-10 -mx-4 flex items-center justify-between gap-1 border-t bg-card/95 px-4 py-2.5 backdrop-blur md:-mx-5 md:px-5">
             <button
               type="button"

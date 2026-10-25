@@ -167,18 +167,11 @@ export function SailingCard({
             ) : null}
           </div>
         </div>
-        <span
-          className="ml-auto shrink-0 text-sm font-bold tabular-nums text-success max-md:hidden"
-          title={`Fourchette indicative : ${formatFareRange(fare)} · voyageurs et véhicule choisis`}
-        >
-          <span className="block text-[10px] font-normal text-muted-foreground">Budget estimé</span>
-          {formatEuro(fare.amount)}
-        </span>
         <a
           href={`/simulateurs/budget-voyage?ticket=${Math.round(fare.amount)}`}
           title="Budget porte-à-porte : route, péages et bateau"
           aria-label="Calculer le budget porte-à-porte avec ce billet"
-          className="inline-flex h-8 shrink-0 items-center gap-1 rounded-full border border-border bg-card px-2.5 text-xs font-semibold text-primary hover:bg-secondary"
+          className="ml-auto inline-flex h-8 shrink-0 items-center gap-1 rounded-full border border-border bg-card px-2.5 text-xs font-semibold text-primary hover:bg-secondary"
         >
           <Calculator className="size-3.5" aria-hidden /> Budget
         </a>
@@ -188,10 +181,9 @@ export function SailingCard({
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex h-8 shrink-0 items-center gap-1 rounded-full bg-cta px-3 text-xs font-semibold text-cta-foreground shadow-sm transition hover:brightness-110 active:scale-95"
-            title={`Voir l’offre sur ${bookingSite(sailing)} · budget estimé ${formatEuro(fare.amount)}`}
+            title={`Voir l’offre sur ${bookingSite(sailing)} · budget estimé ${formatEuro(fare.amount)} (${formatFareRange(fare)})`}
           >
-            <span className="max-md:hidden">Voir l’offre</span>
-            <span className="md:hidden">{formatEuro(fare.amount)}</span>
+            <span className="tabular-nums">≈ {formatEuro(fare.amount)}</span>
             <ArrowUpRight className="size-3.5" aria-hidden />
             <span className="sr-only">sur {bookingSite(sailing)} (nouvel onglet)</span>
           </a>

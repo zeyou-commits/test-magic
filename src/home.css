@@ -1850,8 +1850,8 @@ html {
   flex: 1;
 }
 .bw-ship-photo {
-  width: 84px;
-  height: 76px;
+  width: 132px;
+  height: 100px;
   flex: none;
   border-radius: 18px;
   overflow: hidden;
@@ -2655,8 +2655,8 @@ html {
 }
 @media (max-width: 359px) {
   .bw-ship-photo {
-    width: 62px;
-    height: 62px;
+    width: 104px;
+    height: 80px;
     border-radius: 14px;
   }
   .bw-ship-heading {

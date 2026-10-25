@@ -32,7 +32,7 @@ export interface TripProfileValue {
 }
 
 export const defaultTripProfile: TripProfileValue = {
-  vehicle: "none",
+  vehicle: "sedan",
   accessories: [],
   passengers: { adults: 2, seniors: 0, children: 0, babies: 0, pets: 0 },
 };

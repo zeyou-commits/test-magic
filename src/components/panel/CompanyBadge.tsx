@@ -33,13 +33,15 @@ export function CompanyBadge({
   size?: number;
 }) {
   const [failed, setFailed] = useState(false);
+  // Les logos carrés (ex. Baléaria) remplissent une pastille carrée au lieu de flotter dans un cadre large.
+  const [square, setSquare] = useState(false);
   const src = safeExternalUrl(logoUrl);
   const color = companyColor(name);
   if (src && !failed) {
     return (
       <span
         className="grid shrink-0 place-items-center overflow-hidden rounded-lg border border-border bg-white shadow-sm ring-1 ring-black/5"
-        style={{ width: Math.round(size * 1.5), height: size }}
+        style={{ width: square ? size : Math.round(size * 1.5), height: size }}
         aria-hidden
       >
         <img
@@ -48,7 +50,11 @@ export function CompanyBadge({
           loading="lazy"
           decoding="async"
           onError={() => setFailed(true)}
-          className="size-full object-contain p-1"
+          onLoad={(event) => {
+            const { naturalWidth: w, naturalHeight: h } = event.currentTarget;
+            if (w && h && w / h < 1.25) setSquare(true);
+          }}
+          className={`size-full ${square ? "scale-[1.18] object-cover" : "object-contain p-1"}`}
         />
       </span>
     );

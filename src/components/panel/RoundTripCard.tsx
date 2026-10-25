@@ -243,21 +243,14 @@ export function RoundTripCard({
         <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
           Estimation A/R
         </span>
-        <span
-          className="ml-auto shrink-0 text-right leading-none"
-          title="Tarif moyen indicatif aller + retour"
-        >
-          <span className="font-display text-lg font-bold tabular-nums text-success">
-            {formatEuro(total)}
-          </span>
-        </span>
         <a
           href={bookHref}
           target="_blank"
           rel="noopener noreferrer"
-          className="inline-flex h-8 shrink-0 items-center gap-1 rounded-full bg-cta px-3 text-xs font-semibold text-cta-foreground shadow-sm transition hover:brightness-110 active:scale-95"
+          title="Tarif moyen indicatif aller + retour"
+          className="ml-auto inline-flex h-8 shrink-0 items-center gap-1 rounded-full bg-cta px-3 text-xs font-semibold tabular-nums text-cta-foreground shadow-sm transition hover:brightness-110 active:scale-95"
         >
-          Voir les offres <ArrowUpRight className="size-3.5" aria-hidden />
+          ≈ {formatEuro(total)} <ArrowUpRight className="size-3.5" aria-hidden />
           <span className="sr-only">sur {bookSite} (nouvel onglet)</span>
         </a>
       </footer>

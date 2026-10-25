@@ -23,6 +23,7 @@ export function filtersFromUrl(search: string): Filters {
     roundTrip,
     flexDays: Math.min(3, Math.max(0, Number(params.get("flex")) || 0)),
     schoolZone: ZONES.find((item) => item === zone) ?? null,
+    direction: params.get("dir") === "dz" ? "dz-eu" : "eu-dz",
   };
 }
 
@@ -51,6 +52,7 @@ export function mapStateToSearch(
   if (!filters.roundTrip) params.set("way", "1");
   if (filters.flexDays > 0) params.set("flex", String(filters.flexDays));
   if (filters.schoolZone) params.set("zone", filters.schoolZone);
+  if (filters.direction === "dz-eu") params.set("dir", "dz");
 
   if (selection) {
     params.set("select", selection.type);

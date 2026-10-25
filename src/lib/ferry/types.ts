@@ -146,6 +146,12 @@ export interface Filters {
   /** Souplesse sur la date d'aller : 0 = jour exact, sinon ± N jours. */
   flexDays: number;
   schoolZone: "A" | "B" | "C" | null;
+  /**
+   * Sens de la traversée : Europe → Algérie (par défaut) ou Algérie → Europe.
+   * Quand un côté reste sur « Tous les ports », ce sens verrouille le pays :
+   * jamais de départ algérien en mode Europe → Algérie, et inversement.
+   */
+  direction: "eu-dz" | "dz-eu";
 }
 
 export const emptyFilters: Filters = {
@@ -159,4 +165,5 @@ export const emptyFilters: Filters = {
   roundTrip: true,
   flexDays: 0,
   schoolZone: null,
+  direction: "eu-dz",
 };

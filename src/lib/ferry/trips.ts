@@ -87,20 +87,31 @@ export function buildSailings(
   return result.sort((a, b) => a.departure.departure_at.localeCompare(b.departure.departure_at));
 }
 
-/** Traversées d'un sens : ports de départ et d'arrivée (liste vide = tous). */
+/**
+ * Traversées d'un sens : ports de départ et d'arrivée (liste vide = tous).
+ * Quand un côté reste sur « Tous », le sens choisi verrouille le pays :
+ * en Europe → Algérie, un départ « Tous » ne propose jamais un port algérien,
+ * et une arrivée « Tous » ne propose jamais un port européen (et inversement).
+ */
 export function legSailings(
   all: Sailing[],
   fromIds: string[],
   toIds: string[],
   companyId: string | null = null,
   vesselId: string | null = null,
+  direction: "eu-dz" | "dz-eu" = "eu-dz",
 ): Sailing[] {
   const from = new Set(fromIds);
   const to = new Set(toIds);
+  const fromIsDz = direction === "dz-eu";
   return all.filter(
     (sailing) =>
-      (from.size === 0 || from.has(sailing.from.id)) &&
-      (to.size === 0 || to.has(sailing.to.id)) &&
+      (from.size === 0
+        ? (sailing.from.country_code === "DZ") === fromIsDz
+        : from.has(sailing.from.id)) &&
+      (to.size === 0
+        ? (sailing.to.country_code === "DZ") === !fromIsDz
+        : to.has(sailing.to.id)) &&
       (!companyId || sailing.departure.company_id === companyId) &&
       (!vesselId || sailing.departure.vessel_id === vesselId),
   );

@@ -10,8 +10,8 @@ const departures = [
 ] as Departure[];
 const routes = [{ id: "r", departure_port_id: "from", arrival_port_id: "to" }] as RouteLine[];
 const ports = [
-  { id: "from", name: "Sète" },
-  { id: "to", name: "Béjaïa" },
+  { id: "from", name: "Sète", country_code: "FR" },
+  { id: "to", name: "Béjaïa", country_code: "DZ" },
 ] as Port[];
 describe("Sélection partagée compagnie et navire", () => {
   it("retire le navire incompatible après changement de compagnie", () => {

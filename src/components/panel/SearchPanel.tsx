@@ -135,7 +135,8 @@ export function SearchPanel({
   const lastStep = 3 as 2 | 3;
   void hidePickersOnMobile;
   // Sens du trajet : Europe → Algérie par défaut, inversé par le bouton ⇄.
-  const [reversed, setReversed] = useState(false);
+  // Le sens vit dans les filtres (et l'URL) : « Tous les ports » le respecte.
+  const reversed = filters.direction === "dz-eu";
   const searchRef = useRef<HTMLElement>(null);
   const isMobileView = () => typeof window !== "undefined" && window.innerWidth < 768;
   const startSearch = () => {
@@ -282,8 +283,16 @@ export function SearchPanel({
         filters.arrivalPortIds,
         filters.companyId,
         filters.vesselId,
+        filters.direction,
       ),
-    [all, filters.departurePortIds, filters.arrivalPortIds, filters.companyId, filters.vesselId],
+    [
+      all,
+      filters.departurePortIds,
+      filters.arrivalPortIds,
+      filters.companyId,
+      filters.vesselId,
+      filters.direction,
+    ],
   );
   const hasPair = filters.departurePortIds.length > 0 && filters.arrivalPortIds.length > 0;
   const inbound = useMemo(
@@ -295,6 +304,7 @@ export function SearchPanel({
             filters.departurePortIds,
             filters.companyId,
             filters.vesselId,
+            filters.direction === "dz-eu" ? "eu-dz" : "dz-eu",
           )
         : [],
     [
@@ -511,10 +521,7 @@ export function SearchPanel({
               type="button"
               title="Inverser le sens"
               aria-label={`Inverser le sens : actuellement ${reversed ? "Algérie → Europe" : "Europe → Algérie"}`}
-              onClick={() => {
-                setReversed((r) => !r);
-                onFiltersChange(swapDirection(filters));
-              }}
+              onClick={() => onFiltersChange(swapDirection(filters))}
               className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-border bg-card px-2.5 py-1.5 text-xs font-semibold text-primary shadow-sm transition hover:bg-primary hover:text-primary-foreground"
             >
               <ArrowLeftRight className="size-3.5" />

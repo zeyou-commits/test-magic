@@ -117,6 +117,7 @@ export function swapDirection(filters: Filters): Filters {
     ...filters,
     departurePortIds: filters.arrivalPortIds,
     arrivalPortIds: filters.departurePortIds,
+    direction: filters.direction === "dz-eu" ? "eu-dz" : "dz-eu",
   };
 }
 

@@ -1142,6 +1142,7 @@ export default function FerryMap({
         },
       ],
     });
+    console.log("ITINA", String(preview.fit), insetsRef.current.mobileBottomInset, containerRef.current?.clientHeight);
     if (preview.fit === false) return;
     const basePadding = viewPadding();
     // Sur mobile, le trajet doit tenir dans la moitié haute laissée libre par le volet :

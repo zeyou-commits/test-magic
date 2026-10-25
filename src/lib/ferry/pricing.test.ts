@@ -21,7 +21,7 @@ describe("estimation du ferry", () => {
   it("compte la voiture dans le total, y compris pour deux adultes", () => {
     const trip = sailing("Marseille", "Alger", "2026-10-22");
     const withCar = estimateFerryFare(trip, car);
-    const onFoot = estimateFerryFare(trip, defaultTripProfile);
+    const onFoot = estimateFerryFare(trip, { ...defaultTripProfile, vehicle: "none" });
     expect(withCar.amount).toBeGreaterThan(onFoot.amount);
     expect(estimateVehicleFare(trip, car)).toBe(withCar.vehiclePart);
     expect(withCar.low).toBeLessThan(withCar.amount);

@@ -15,9 +15,12 @@ export interface TeamMember {
   confirmed: boolean;
 }
 
-/** Vérifie côté serveur que l'appelant est administrateur (via sa propre session, RLS appliquée). */
-async function assertAdmin(supabase: any, userId: string) {
-  const { data, error } = await supabase
+/** Vérifie côté serveur l'identité issue du middleware puis le rôle via le client privilégié.
+ * La vérification du rôle ne dépend ainsi pas des politiques RLS de lecture de user_roles.
+ */
+async function assertAdmin(_supabase: any, userId: string) {
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const { data, error } = await supabaseAdmin
     .from("user_roles")
     .select("role")
     .eq("user_id", userId)

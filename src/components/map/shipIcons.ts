@@ -125,9 +125,14 @@ export function addShipImages(map: MapLibreMap) {
         if (frames[0] && !map.hasImage(id)) map.addImage(id, frames[0], { pixelRatio: 2 });
         animated.push({ id, frames });
       });
-      const dock = drawMarker(sprite, img, null, 0);
+      const dockFrames: ImageData[] = [];
+      for (let i = 0; i < 12; i++) {
+        const image = drawMarker(sprite, img, null, 0, Math.sin((i / 12) * Math.PI * 2) * 1.5);
+        if (image) dockFrames.push(image);
+      }
       const dockId = `${sprite.base}-dock`;
-      if (dock && !map.hasImage(dockId)) map.addImage(dockId, dock, { pixelRatio: 2 });
+      if (dockFrames[0] && !map.hasImage(dockId)) map.addImage(dockId, dockFrames[0], { pixelRatio: 2 });
+      animated.push({ id: dockId, frames: dockFrames });
       syncMotion();
     };
     img.src = sprite.url;

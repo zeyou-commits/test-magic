@@ -793,36 +793,35 @@ export default function FerryMap({
               ? members.map((f) => f.properties["name"]).join(" · ")
               : String(feature.properties["allure"] ?? "");
           if (members.length <= 1) {
+            // Médaillon compact : logo rond, nom du navire, puce d'allure.
             const info = vesselCardsRef.current[String(feature.properties["vesselId"] ?? "")];
-            const photo = info?.photoUrl ?? vesselVisual(String(feature.properties["name"] ?? ""));
-            card.className = "w-56";
-            if (photo) {
-              const img = document.createElement("img");
-              img.src = photo;
-              img.alt = "";
-              img.className = "mb-2 h-24 w-full rounded-md object-cover";
-              card.append(img);
-            }
-            if (info?.logoUrl || info?.companyName) {
-              const row = document.createElement("div");
-              row.className = "mb-1 flex items-center gap-2";
-              if (info.logoUrl) {
-                const logo = document.createElement("img");
-                logo.src = info.logoUrl;
-                logo.alt = info.companyName ?? "";
-                logo.className = "h-6 max-w-24 rounded bg-card object-contain p-0.5 ring-1 ring-border";
-                row.append(logo);
-              }
-              if (info.companyName) {
-                const company = document.createElement("span");
-                company.textContent = info.companyName;
-                company.className = "text-xs font-semibold text-muted-foreground";
-                row.append(company);
-              }
-              card.append(row);
-            }
-          }
-          card.append(name, status);
+            const moving = feature.properties["icon"] !== "ship-dock";
+            card.className = "flex items-center gap-2 pr-1";
+            const badge = document.createElement("span");
+            badge.className =
+              "grid h-9 w-9 shrink-0 place-items-center overflow-hidden rounded-full bg-card ring-1 ring-border";
+            if (info?.logoUrl) {
+              const logo = document.createElement("img");
+              logo.src = info.logoUrl;
+              logo.alt = info.companyName ?? "";
+              logo.className = "h-7 w-7 object-contain";
+              badge.append(logo);
+            } else badge.textContent = "⛴";
+            const text = document.createElement("div");
+            text.className = "min-w-0 leading-tight";
+            name.className = "block text-sm";
+            status.className = "flex items-center gap-1.5 text-xs text-muted-foreground";
+            const dot = document.createElement("i");
+            dot.className = `inline-block h-2 w-2 rounded-full ${moving ? "bg-destructive animate-pulse" : "bg-muted-foreground"}`;
+            status.prepend(dot);
+            if (info?.companyName) {
+              const company = document.createElement("span");
+              company.textContent = info.companyName;
+              company.className = "block text-[11px] font-semibold text-muted-foreground";
+              text.append(name, company, status);
+            } else text.append(name, status);
+            card.append(badge, text);
+          } else card.append(name, status);
           hoverTip.setLngLat(coordinates).setDOMContent(card).addTo(map);
         } else hoverTip.setLngLat(coordinates);
       });

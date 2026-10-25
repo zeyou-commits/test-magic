@@ -118,7 +118,7 @@ function Index() {
     typeof window === "undefined" ? emptyFilters : filtersFromUrl(window.location.search),
   );
   const [trafficPreview, setTrafficPreview] = useState<MapPreview | null>(null);
-  const [lineVisibility, setLineVisibility] = useState<LineVisibility>("published");
+  const [lineVisibility, setLineVisibility] = useState<LineVisibility>("all");
   const [highlightRouteId, setHighlightRouteId] = useState<string | null>(null);
   const [focusedRouteId, setFocusedRouteId] = useState<string | null>(null);
   const [panelLevel, setPanelLevel] = useState<0 | 1 | 2>(1);
@@ -703,7 +703,7 @@ function Index() {
   );
   const mobileBottomInset =
     panelLevel === 0
-      ? 0
+      ? TAB_BAR_HEIGHT + COLLAPSED_HEIGHT
       : panelLevel === 2
         ? viewportHeight - TAB_BAR_HEIGHT
         : TAB_BAR_HEIGHT +
@@ -893,7 +893,7 @@ function Index() {
           id="carte"
           aria-label="Carte et recherche de traversées"
           className="bw-map-stage"
-          data-panel-open={panelLevel !== 0}
+          data-panel-open={true}
           data-panel-full={panelLevel === 2}
           ref={mapStageRef}
           style={

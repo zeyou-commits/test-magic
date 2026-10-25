@@ -2917,7 +2917,7 @@ html {
   display: flex; justify-content: space-between; gap: 6px;
 }
 .bw-ship-hero-stats > div {
-  display: flex; align-items: baseline; gap: 4px; min-width: 0;
+  display: flex; align-items: baseline; gap: 4px; flex: none;
   background: color-mix(in oklab, var(--card) 88%, transparent);
   backdrop-filter: blur(6px); border-radius: 999px; padding: 3px 9px;
   box-shadow: 0 1px 6px rgba(9, 40, 56, 0.18);
@@ -2931,4 +2931,9 @@ html {
   .bw-ship-hero-stats > div { padding: 2px 7px; gap: 3px; }
   .bw-ship-hero-stats dt { font-size: 9px; }
   .bw-ship-hero-stats dd { font-size: 11px; }
+}
+/* Tout petit écran : le libellé suffit, l'icône céde la place. */
+@media (max-width: 360px) {
+  .bw-ship-hero-stats { left: 5px; right: 5px; gap: 3px; }
+  .bw-ship-hero-stats svg { display: none; }
 }

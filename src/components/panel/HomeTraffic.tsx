@@ -240,73 +240,76 @@ export function HomeTraffic({
             </button>
           ))}
         </div>
-        {events.slice(0, expanded ? 30 : 5).map((event) => {
-          const parts = formatDateParts(event.iso!, portTimeZone(event.port));
-          return (
-            <div
-              key={`${event.departure.id}:${event.kind}`}
-              className="relative flex items-center gap-2 border-b py-2.5 text-xs"
-              {...previewEvents({
-                routeId: event.departure.route_id,
-                ...(event.vessel ? { vesselId: event.vessel.id } : {}),
-              })}
-            >
+        {(() => {
+          // Mouvements regroupés par port, dans l'ordre du premier mouvement de chaque port.
+          const groups = new Map<string, typeof events>();
+          events.slice(0, expanded ? 30 : 6).forEach((e) => {
+            groups.set(e.port.id, [...(groups.get(e.port.id) ?? []), e]);
+          });
+          return [...groups.values()].map((list) => (
+            <div key={list[0]!.port.id} className="mb-2">
               <button
                 type="button"
-                onClick={() =>
-                  onSelect(
-                    event.vessel
-                      ? { type: "vessel", id: event.vessel.id }
-                      : { type: "departure", id: event.departure.id },
-                  )
-                }
-                aria-label={`${event.kind === "arrival" ? "Arrivée" : "Départ"} ${event.vessel?.name ?? "traversée"}, ${event.from.name} vers ${event.to.name}`}
-                className="absolute inset-0 rounded-md focus-visible:outline-2 focus-visible:outline-primary"
-              />
-              <span className="pointer-events-none relative flex w-14 shrink-0 flex-col tabular-nums">
-                <b>{parts.time}</b>
-                <small className="text-[10px] text-muted-foreground">{parts.shortDate}</small>
-              </span>
-              {event.kind === "arrival" ? (
-                <ArrowDownLeft
-                  className="pointer-events-none size-4 shrink-0 text-primary"
-                  aria-hidden
-                />
-              ) : (
-                <ArrowUpRight
-                  className="pointer-events-none size-4 shrink-0 text-muted-foreground"
-                  aria-hidden
-                />
-              )}
-              <div className="pointer-events-none relative min-w-0 flex-1">
-                <span className="block truncate font-semibold">
-                  {event.kind === "arrival" ? "Arrivée" : "Départ"} ·{" "}
-                  <button
-                    type="button"
-                    className="pointer-events-auto rounded underline-offset-2 hover:text-primary hover:underline"
-                    onClick={() => onSelect({ type: "port", id: event.port.id })}
-                    onPointerEnter={(e) => {
-                      if (e.pointerType === "mouse") onPreview?.({ portId: event.port.id });
-                    }}
-                    onPointerLeave={(e) => {
-                      if (e.pointerType === "mouse")
-                        onPreview?.({
-                          routeId: event.departure.route_id,
-                          ...(event.vessel ? { vesselId: event.vessel.id } : {}),
-                        });
-                    }}
-                    onFocus={() => onPreview?.({ portId: event.port.id })}
+                onClick={() => onSelect({ type: "port", id: list[0]!.port.id })}
+                className="mt-2 text-[11px] font-bold uppercase tracking-wide text-muted-foreground hover:text-primary"
+              >
+                {list[0]!.port.name}
+              </button>
+              {list.map((event) => {
+                const parts = formatDateParts(event.iso!, portTimeZone(event.port));
+                return (
+                  <div
+                    key={`${event.departure.id}:${event.kind}`}
+                    className="relative flex items-center gap-2 border-b py-2 text-xs"
+                    {...previewEvents({
+                      routeId: event.departure.route_id,
+                      ...(event.vessel ? { vesselId: event.vessel.id } : {}),
+                    })}
                   >
-                    {event.port.name}
-                  </button>
-                </span>
-                <span className="block truncate text-[10px] text-muted-foreground">
-                  {event.from.name} → {event.to.name} · {event.vessel?.name ?? event.company?.name}
-                </span>
-              </div>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        onSelect(
+                          event.vessel
+                            ? { type: "vessel", id: event.vessel.id }
+                            : { type: "departure", id: event.departure.id },
+                        )
+                      }
+                      aria-label={`${event.kind === "arrival" ? "Arrivée" : "Départ"} ${event.vessel?.name ?? "traversée"}, ${event.from.name} vers ${event.to.name}`}
+                      className="absolute inset-0 rounded-md focus-visible:outline-2 focus-visible:outline-primary"
+                    />
+                    <span className="pointer-events-none relative flex w-12 shrink-0 flex-col tabular-nums">
+                      <b>{parts.time}</b>
+                      <small className="text-[10px] text-muted-foreground">{parts.shortDate}</small>
+                    </span>
+                    <span className="pointer-events-none relative shrink-0">
+                      <CompanyBadge
+                        name={event.company?.name ?? "Compagnie à confirmer"}
+                        logoUrl={event.company?.logo_url ?? null}
+                        size={28}
+                      />
+                    </span>
+                    <div className="pointer-events-none relative min-w-0 flex-1">
+                      <span className="flex items-center gap-1 truncate font-semibold">
+                        {event.kind === "arrival" ? (
+                          <ArrowDownLeft className="size-3.5 shrink-0 text-primary" aria-hidden />
+                        ) : (
+                          <ArrowUpRight className="size-3.5 shrink-0 text-muted-foreground" aria-hidden />
+                        )}
+                        {event.kind === "arrival"
+                          ? `Arrivée de ${event.from.name}`
+                          : `Départ vers ${event.to.name}`}
+                      </span>
+                      <span className="block truncate text-[10px] text-muted-foreground">
+                        {[event.vessel?.name, event.company?.name].filter(Boolean).join(" · ")}
+                      </span>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
-          );
-        })}
+          ));
+        })()}
         {!events.length && (
           <p className="py-2 text-xs text-muted-foreground">
             {error

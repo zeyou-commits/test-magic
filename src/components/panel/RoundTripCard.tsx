@@ -1,6 +1,6 @@
 import { useState, type ReactNode } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowUpRight, ChevronDown, Moon, Ship } from "lucide-react";
+import { ArrowUpRight, ChevronDown, Moon, Repeat2, Ship, Undo2 } from "lucide-react";
 import type { RoundTrip } from "@/lib/ferry/roundTrips";
 import type { Sailing } from "@/lib/ferry/trips";
 import { capitalizeFirst, formatDuration } from "@/lib/ferry/format";
@@ -20,8 +20,23 @@ const dayFormatter = new Intl.DateTimeFormat("fr-FR", {
 const formatDay = (key: string) =>
   capitalizeFirst(dayFormatter.format(new Date(`${key}T00:00:00Z`)));
 
+/** Identité visuelle par sens : aller = bleu pétrole, retour = orange (lisible d'un coup d'œil). */
+const LEG_TONES = {
+  out: {
+    bar: "#1e5b7a",
+    badge: "bg-primary/10 text-primary",
+    expandedBg: "bg-primary/[0.04]",
+  },
+  back: {
+    bar: "#c2410c",
+    badge: "bg-[#c2410c]/10 text-[#c2410c]",
+    expandedBg: "bg-[#c2410c]/[0.05]",
+  },
+} as const;
+
 function Leg({
   label,
+  tone,
   sailing,
   expanded,
   onToggle,
@@ -32,6 +47,7 @@ function Leg({
   atdAt,
 }: {
   label: string;
+  tone: keyof typeof LEG_TONES;
   sailing: Sailing;
   atdAt: string | null;
   expanded: boolean;
@@ -44,6 +60,7 @@ function Leg({
   const panelId = `rt-${label}-${sailing.departure.id}`;
   const overnight = sailing.depHour >= 20 || sailing.depHour < 5;
   const fare = estimateFare(sailing, useFareProfile());
+  const colors = LEG_TONES[tone];
   return (
     <div>
       <button
@@ -55,16 +72,19 @@ function Leg({
         onMouseLeave={() => onHover(false)}
         onFocus={() => onHover(true)}
         onBlur={() => onHover(false)}
-        className={`group/leg relative block w-full py-2 pl-3.5 pr-3 md:py-3 md:pl-4 md:pr-3.5 text-left transition-colors hover:bg-secondary/40 ${expanded ? "bg-primary/[0.04]" : ""}`}
+        className={`group/leg relative block w-full py-2 pl-3.5 pr-3 md:py-3 md:pl-4 md:pr-3.5 text-left transition-colors hover:bg-secondary/40 ${expanded ? colors.expandedBg : ""}`}
       >
         <span
           className="absolute inset-y-0 left-0 w-1.5"
-          style={{ background: "#1e5b7a" }}
+          style={{ background: colors.bar }}
           aria-hidden
         />
         <div className="mb-1 flex items-center justify-between gap-2 text-xs md:mb-2">
           <span className="flex items-center gap-2">
-            <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-primary">
+            <span
+              className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider ${colors.badge}`}
+            >
+              {tone === "back" ? <Undo2 className="size-3" aria-hidden /> : null}
               {label}
             </span>
             <span className="font-semibold text-foreground">{formatDay(sailing.dayKey)}</span>
@@ -218,8 +238,19 @@ export function RoundTripCard({
       style={{ animationDelay: `${Math.min(index, 8) * 45}ms` }}
       className={`sailing-card overflow-hidden rounded-2xl border-2 border-border bg-card shadow-sm transition-all duration-200 hover:shadow-lg ${open ? "border-primary ring-2 ring-primary/20" : ""}`}
     >
+      <header className="flex items-center gap-2 border-b border-border/70 bg-muted/30 px-3.5 py-1.5">
+        <Repeat2 className="size-3.5 shrink-0 text-muted-foreground" aria-hidden />
+        <span className="min-w-0 flex-1 truncate text-[11px] font-semibold text-muted-foreground">
+          {trip.out.from.name} ⇄ {trip.out.to.name}
+          {trip.mirror ? "" : ` · retour depuis ${trip.back.from.name}`}
+        </span>
+        <span className="shrink-0 text-[11px] font-semibold text-muted-foreground">
+          {trip.stayDays > 0 ? `${trip.stayDays} j sur place` : "Aller-retour"}
+        </span>
+      </header>
       <Leg
         label="Aller"
+        tone="out"
         sailing={trip.out}
         atdAt={actualDeparture(trip.out)}
         expanded={open === "out"}
@@ -228,9 +259,14 @@ export function RoundTripCard({
         onOpenRoute={onOpenRoute}
         onHover={(h) => onHoverRoute(h ? trip.out.route.id : null)}
       />
-      <div className="border-t border-dashed border-border" aria-hidden />
+      <div className="relative border-t border-dashed border-border" aria-hidden>
+        <span className="absolute left-1/2 top-1/2 grid size-5 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-full border border-border bg-card text-muted-foreground">
+          <Repeat2 className="size-3" />
+        </span>
+      </div>
       <Leg
         label="Retour"
+        tone="back"
         sailing={trip.back}
         atdAt={actualDeparture(trip.back)}
         expanded={open === "back"}

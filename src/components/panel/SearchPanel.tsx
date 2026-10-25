@@ -1107,15 +1107,25 @@ function RoundTripSection({
       ))}
     </div>
   );
+  const allMirror = trips.main.length > 0 && trips.main.every((trip) => trip.mirror);
   return (
     <div className="space-y-5">
       <div className="space-y-2.5">
         <div className="flex items-baseline justify-between gap-2">
           <h2 className="font-display text-base font-bold leading-tight">
-            {hasPorts ? "Allers-retours pour votre trajet" : "Allers-retours possibles"}
+            {allMirror
+              ? "Aller-retour même port"
+              : hasPorts
+                ? "Allers-retours pour votre trajet"
+                : "Allers-retours possibles"}
           </h2>
           <span className="text-[11px] text-muted-foreground">Heures locales des ports</span>
         </div>
+        {allMirror ? (
+          <p className="text-[11px] leading-snug text-muted-foreground">
+            Départ et retour depuis les mêmes ports, dans les deux sens.
+          </p>
+        ) : null}
         {trips.main.length ? (
           list(trips.main)
         ) : (
@@ -1137,10 +1147,16 @@ function RoundTripSection({
         )}
       </div>
       {trips.alternatives.length ? (
-        <div className="space-y-2.5">
-          <h2 className="font-display text-base font-bold leading-tight">
-            {hasPorts ? "Alternatives par d’autres ports" : "Combinaisons avec ports différents"}
-          </h2>
+        <div className="space-y-2.5 rounded-2xl border border-dashed border-[#c2410c]/40 bg-[#c2410c]/[0.03] p-3">
+          <div>
+            <h2 className="font-display text-base font-bold leading-tight">
+              {hasPorts ? "Alternatives par d’autres ports" : "Retour depuis un autre port"}
+            </h2>
+            <p className="mt-0.5 text-[11px] leading-snug text-muted-foreground">
+              Le retour part d’un port différent de l’arrivée (ex. aller Oran, retour Alger) —
+              pratique pour un road trip ou quand aucune ligne directe n’est publiée.
+            </p>
+          </div>
           {list(trips.alternatives)}
         </div>
       ) : null}

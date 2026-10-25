@@ -3,15 +3,15 @@ import { emptyFilters } from "./types";
 import { filtersFromUrl, mapStateToSearch } from "./urlState";
 
 describe("sens du voyage dans l'URL", () => {
-  it("montre les allers simples quand aucun trajet n'est demandé", () => {
-    expect(filtersFromUrl("").roundTrip).toBe(false);
+  it("propose l'aller-retour par défaut", () => {
+    expect(filtersFromUrl("").roundTrip).toBe(true);
     expect(mapStateToSearch(emptyFilters, null)).toBe("");
   });
 
-  it("conserve le choix aller-retour dans un lien partagé", () => {
-    const url = mapStateToSearch({ ...emptyFilters, roundTrip: true }, null);
-    expect(url).toBe("?way=2");
-    expect(filtersFromUrl(url).roundTrip).toBe(true);
+  it("conserve le choix aller simple dans un lien partagé", () => {
+    const url = mapStateToSearch({ ...emptyFilters, roundTrip: false }, null);
+    expect(url).toBe("?way=1");
+    expect(filtersFromUrl(url).roundTrip).toBe(false);
   });
 
   it("reconnaît les anciens liens avec une date de retour", () => {

@@ -200,13 +200,11 @@ export function SearchPanel({
       window.removeEventListener("batogo:show-departures", showDepartures);
     };
   }, []);
-  // Drapeau du compteur : déplie la section et ouvre la liste des compagnies.
+  // Drapeau du compteur : ouvre la liste des compagnies.
   const [companyMenuOpen, setCompanyMenuOpen] = useState(false);
-  const [companyOpen, setCompanyOpen] = useState(false);
   useEffect(() => {
     const open = () => {
       setEditing(true);
-      setCompanyOpen(true);
       window.setTimeout(() => {
         const el = document.getElementById("filters-company");
         el?.scrollIntoView({ behavior: "smooth", block: "center" });

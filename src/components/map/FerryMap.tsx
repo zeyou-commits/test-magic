@@ -344,7 +344,7 @@ export default function FerryMap({
   const [mapViewportKey, setMapViewportKey] = useState("");
   const vesselPopupRef = useRef<Popup | null>(null);
   const fleetPickerRef = useRef<Popup | null>(null);
-  const pickFleetRef = useRef<((point: [number, number]) => boolean) | null>(null);
+  const pickFleetRef = useRef<((point: [number, number], portDistance?: number) => boolean) | null>(null);
   const fleetRef = useRef<FleetShip[]>(fleet);
   const lastFleetFrame = useRef<{ source: GeoJSONSource; data: FleetFrame } | null>(null);
   fleetRef.current = fleet;
@@ -911,14 +911,17 @@ export default function FerryMap({
         });
       };
       map.on("click", fleetLayers, pickFleet);
-      pickFleetRef.current = (point) => {
+      pickFleetRef.current = (point, portDistance = 8) => {
         const features = map.queryRenderedFeatures(point, { layers: fleetLayers });
         const event = { features, point: { x: point[0], y: point[1] } };
         const feature = closestShip(event);
         if (!feature || feature.geometry.type !== "Point") return false;
         const center = map.project(feature.geometry.coordinates as [number, number]);
         const badge = feature.layer.id === "fleet-count" || feature.layer.id === "fleet-count-bg";
-        if (!badge && Math.hypot(center.x - point[0], center.y - point[1]) > 14) return false;
+        const shipDistance = Math.hypot(center.x - point[0], center.y - point[1]);
+        // Un seul élément s'ouvre : le plus proche du doigt (navire ou port).
+        if (!badge && (shipDistance > 18 || shipDistance >= portDistance)) return false;
+        setTipPortId(null);
         pickFleet(event);
         return true;
       };
@@ -1315,17 +1318,14 @@ export default function FerryMap({
         const select = (event: Event) => {
           event.stopPropagation();
           // La cible tactile transparente d'un port ne doit pas intercepter une coque ou son compteur.
-          if (event.currentTarget === dot && event instanceof MouseEvent && event.detail > 0) {
+          if (event.currentTarget === dot && event instanceof MouseEvent && (event.clientX || event.clientY)) {
             const bounds = map.getCanvas().getBoundingClientRect();
             const point: [number, number] = [
               event.clientX - bounds.left,
               event.clientY - bounds.top,
             ];
             const center = map.project([port.longitude, port.latitude]);
-            if (
-              Math.hypot(point[0] - center.x, point[1] - center.y) > 8 &&
-              pickFleetRef.current?.(point)
-            )
+            if (pickFleetRef.current?.(point, Math.hypot(point[0] - center.x, point[1] - center.y)))
               return;
           }
           dismissedPortIdsRef.current.delete(port.id);

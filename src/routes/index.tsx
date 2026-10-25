@@ -1010,6 +1010,20 @@ function Index() {
                 onItineraryResultsReady={() => {
                   if (window.innerWidth < 768) setPanelLevel(1);
                 }}
+                onBookPeriod={(period) => {
+                  setPanelMode("search");
+                  setActiveShortcut(null);
+                  setShortcutMenuOpen(false);
+                  setDesktopPanelOpen(true);
+                  if (window.innerWidth < 768) setPanelLevel(2);
+                  setFilters((current) => ({
+                    ...current,
+                    date: `${period}-01`,
+                    returnDate: null,
+                    roundTrip: false,
+                    flexDays: 15,
+                  }));
+                }}
               />
             </div>
             <div

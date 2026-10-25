@@ -990,21 +990,56 @@ export function ItineraryPlanner({
                         : "Voir les traversées"}
                     </a>
                   </div>
-                  {option.sailing.isSimulation && !hasPublishedForPeriod && (
-                    <ItineraryAlertForm
-                      routeId={option.sailing.route.id}
-                      from={option.sailing.from.name}
-                      to={option.sailing.to.name}
-                      period={period}
-                      origin={roadAccess.origin}
-                      destination={roadAccess.destination}
-                      vehicle={vehicle}
-                      adults={adults}
-                      children={children}
+                  <div className="mt-2">
+                    <JourneyGuide
+                      animated={selected?.sailing.departure.id === option.sailing.departure.id}
                     />
-                  )}
+                  </div>
+                  <div className="mt-1 grid grid-cols-3 gap-1 text-center text-[10px] font-semibold text-foreground">
+                    <span>
+                      {formatDuration(option.originRoad.durationMin)} ·{" "}
+                      {Math.round(option.originRoad.distanceKm)} km
+                    </span>
+                    <span>{formatDuration(option.sailing.durationMin ?? 0)} de ferry</span>
+                    <span>
+                      {formatDuration(option.destinationRoad.durationMin)} ·{" "}
+                      {Math.round(option.destinationRoad.distanceKm)} km
+                    </span>
+                  </div>
                 </article>
               ))}
+            </div>
+          )}
+          {sorted.length > 0 && hasPublishedForPeriod && onBookPeriod && (
+            <div className="mt-3 rounded-xl border border-primary/30 bg-primary/5 p-3 text-xs">
+              <p className="font-semibold">
+                Des départs sont publiés pour cette période : vous pouvez réserver.
+              </p>
+              <button
+                type="button"
+                onClick={() => onBookPeriod(period)}
+                className="mt-2 inline-flex min-h-10 w-full items-center justify-center gap-2 rounded-lg bg-primary px-3 font-bold text-white transition hover:brightness-110"
+              >
+                Voir les traversées et réserver <ArrowRight className="size-4" aria-hidden />
+              </button>
+            </div>
+          )}
+          {sorted.length > 0 && !hasPublishedForPeriod && (
+            <div className="mt-3 rounded-xl border border-red-200 bg-red-50/60 p-3 text-xs">
+              <p className="font-semibold text-red-800">
+                Aucun calendrier commercial n’est encore publié pour cette période.
+              </p>
+              <ItineraryAlertForm
+                routeId={(selected ?? sorted[0]!).sailing.route.id}
+                from={(selected ?? sorted[0]!).sailing.from.name}
+                to={(selected ?? sorted[0]!).sailing.to.name}
+                period={period}
+                origin={roadAccess.origin}
+                destination={roadAccess.destination}
+                vehicle={vehicle}
+                adults={adults}
+                children={children}
+              />
             </div>
           )}
           {geometryNote && (

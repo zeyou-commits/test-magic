@@ -63,7 +63,7 @@ export const Route = createFileRoute("/")({
 
 /** Hauteurs du tiroir mobile : replié, intermédiaire, plein écran (hors barre d'onglets). */
 const TAB_BAR_HEIGHT = 56;
-const COLLAPSED_HEIGHT = 96;
+const COLLAPSED_HEIGHT = 128;
 const MIDDLE_RATIO = 0.68;
 const DESKTOP_PANEL = 420;
 
@@ -757,7 +757,7 @@ function Index() {
     return () => window.removeEventListener("batogo:focus-vessel", focusVessel);
   }, [fleet]);
 
-  const collapsed = panelLevel === 0 && (dragHeight === null || dragHeight < 140);
+  const collapsed = panelLevel === 0 && Boolean(selection || filters.departurePortIds.length || filters.arrivalPortIds.length) && (dragHeight === null || dragHeight < 140);
 
   const resetToMap = () => {
     document.querySelector(".bw-home")?.scrollIntoView({ behavior: "instant", block: "start" });
@@ -926,7 +926,7 @@ function Index() {
             }
             className={`bw-map-panel absolute bottom-0 left-0 right-0 z-[60] flex flex-col overflow-hidden bg-transparent ${dragHeight !== null ? "transition-none" : "transition-[height,width,transform] duration-[420ms] ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none"} md:bottom-5 md:left-5 md:right-auto md:top-5 md:h-auto md:w-[var(--desktop-panel-width)] md:overflow-visible md:rounded-3xl md:z-40 ${
               desktopPanelOpen ? "md:translate-x-0" : "md:translate-x-[calc(-100%-1.25rem)]"
-            } ${panelLevel === 0 ? "h-24 rounded-t-3xl" : panelLevel === 1 ? (isPeekSelection ? "h-[var(--mobile-peek-height)] rounded-t-3xl" : panelMode === "itinerary" ? "h-[calc(var(--stage-height)*0.64)] rounded-t-3xl" : "h-[var(--middle-panel-height)] rounded-t-3xl") : "h-[calc(var(--stage-height)-3.5rem)] rounded-t-3xl"}`}
+            } ${panelLevel === 0 ? "h-32 rounded-t-3xl" : panelLevel === 1 ? (isPeekSelection ? "h-[var(--mobile-peek-height)] rounded-t-3xl" : panelMode === "itinerary" ? "h-[calc(var(--stage-height)*0.64)] rounded-t-3xl" : "h-[var(--middle-panel-height)] rounded-t-3xl") : "h-[calc(var(--stage-height)-3.5rem)] rounded-t-3xl"}`}
           >
             {collapsed ? (
               <CollapsedPanelSummary

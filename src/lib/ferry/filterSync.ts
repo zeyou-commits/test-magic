@@ -48,13 +48,17 @@ export function matchesTraffic(
   if (filters.vesselId && filters.vesselId !== departure.vessel_id) return false;
   const route = routes.find((r) => r.id === departure.route_id);
   if (!route) return false;
-  if (
-    filters.departurePortIds.length &&
-    !filters.departurePortIds.includes(route.departure_port_id)
-  )
-    return false;
-  if (filters.arrivalPortIds.length && !filters.arrivalPortIds.includes(route.arrival_port_id))
-    return false;
+  // « Tous les ports » respecte le sens choisi : jamais de départ algérien
+  // en Europe → Algérie, jamais d'arrivée européenne en Algérie → Europe.
+  const fromIsDz = filters.direction === "dz-eu";
+  const fromPort = ports.find((p) => p.id === route.departure_port_id);
+  const toPort = ports.find((p) => p.id === route.arrival_port_id);
+  if (filters.departurePortIds.length) {
+    if (!filters.departurePortIds.includes(route.departure_port_id)) return false;
+  } else if (fromPort && (fromPort.country_code === "DZ") !== fromIsDz) return false;
+  if (filters.arrivalPortIds.length) {
+    if (!filters.arrivalPortIds.includes(route.arrival_port_id)) return false;
+  } else if (toPort && (toPort.country_code === "DZ") === fromIsDz) return false;
   const term = normalizeText(filters.search);
   if (
     term &&

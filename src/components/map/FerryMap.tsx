@@ -1142,7 +1142,6 @@ export default function FerryMap({
         },
       ],
     });
-    console.debug("ITIN", preview.fit, insetsRef.current.mobileBottomInset);
     if (preview.fit === false) return;
     const basePadding = viewPadding();
     // Sur mobile, le trajet doit tenir dans la moitié haute laissée libre par le volet :

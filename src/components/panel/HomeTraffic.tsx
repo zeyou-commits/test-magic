@@ -126,7 +126,7 @@ export function HomeTraffic({
             return (
               <article
                 key={c.departure.id}
-                className="bw-compact-crossing"
+                className="bw-compact-crossing !py-2"
                 {...previewEvents(preview)}
               >
                 <button
@@ -136,7 +136,7 @@ export function HomeTraffic({
                   aria-label={`Ouvrir la fiche ${c.vessel?.name ?? "de la traversée"}, ${c.from.name} vers ${c.to.name}`}
                 />
                 <div className="pointer-events-none relative z-[1]">
-                  <div className="mb-2 flex min-w-0 items-center gap-2">
+                  <div className="mb-1 flex min-w-0 items-center gap-2">
                     <CompanyBadge
                       name={c.company?.name ?? "Compagnie à confirmer"}
                       logoUrl={c.company?.logo_url ?? null}
@@ -175,7 +175,7 @@ export function HomeTraffic({
                           if (e.pointerType === "mouse") onPreview?.(preview);
                         }}
                         onFocus={() => onPreview?.({ portId: port.id })}
-                        className="pointer-events-auto min-h-9 truncate rounded-md underline-offset-4 hover:text-primary hover:underline focus-visible:outline-2 focus-visible:outline-primary"
+                        className="pointer-events-auto truncate rounded-md leading-tight underline-offset-4 hover:text-primary hover:underline focus-visible:outline-2 focus-visible:outline-primary"
                       >
                         {port.name}
                       </button>
@@ -195,7 +195,7 @@ export function HomeTraffic({
                       <b>{percent === null ? "—" : `${percent} %`}</b>
                     </i>
                   </div>
-                  <div className="mt-2 flex justify-between text-[11px] tabular-nums">
+                  <div className="flex justify-between text-[11px] tabular-nums">
                     <span>
                       Départ <b>{time(c.times.departure.iso, c.from)}</b>
                     </span>

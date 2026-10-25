@@ -118,7 +118,7 @@ function Index() {
     typeof window === "undefined" ? emptyFilters : filtersFromUrl(window.location.search),
   );
   const [trafficPreview, setTrafficPreview] = useState<MapPreview | null>(null);
-  const [lineVisibility, setLineVisibility] = useState<LineVisibility>("published");
+  const [lineVisibility, setLineVisibility] = useState<LineVisibility>("all");
   const [highlightRouteId, setHighlightRouteId] = useState<string | null>(null);
   const [focusedRouteId, setFocusedRouteId] = useState<string | null>(null);
   const [panelLevel, setPanelLevel] = useState<0 | 1 | 2>(1);
@@ -703,7 +703,7 @@ function Index() {
   );
   const mobileBottomInset =
     panelLevel === 0
-      ? 0
+      ? TAB_BAR_HEIGHT + COLLAPSED_HEIGHT
       : panelLevel === 2
         ? viewportHeight - TAB_BAR_HEIGHT
         : TAB_BAR_HEIGHT +
@@ -893,7 +893,7 @@ function Index() {
           id="carte"
           aria-label="Carte et recherche de traversées"
           className="bw-map-stage"
-          data-panel-open={panelLevel !== 0}
+          data-panel-open={true}
           data-panel-full={panelLevel === 2}
           ref={mapStageRef}
           style={
@@ -924,7 +924,7 @@ function Index() {
                 "--desktop-panel-width": `${desktopPanelWidth}px`,
               } as React.CSSProperties
             }
-            className={`bw-map-panel absolute bottom-0 left-0 right-0 z-[60] flex flex-col overflow-hidden bg-transparent ${panelLevel === 0 && dragHeight === null ? "max-md:invisible max-md:pointer-events-none" : ""} ${dragHeight !== null ? "transition-none" : "transition-[height,width,transform] duration-[420ms] ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none"} md:bottom-5 md:left-5 md:right-auto md:top-5 md:h-auto md:w-[var(--desktop-panel-width)] md:overflow-visible md:rounded-3xl md:z-40 ${
+            className={`bw-map-panel absolute bottom-0 left-0 right-0 z-[60] flex flex-col overflow-hidden bg-transparent ${dragHeight !== null ? "transition-none" : "transition-[height,width,transform] duration-[420ms] ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none"} md:bottom-5 md:left-5 md:right-auto md:top-5 md:h-auto md:w-[var(--desktop-panel-width)] md:overflow-visible md:rounded-3xl md:z-40 ${
               desktopPanelOpen ? "md:translate-x-0" : "md:translate-x-[calc(-100%-1.25rem)]"
             } ${panelLevel === 0 ? "h-24 rounded-t-3xl" : panelLevel === 1 ? (isPeekSelection ? "h-[var(--mobile-peek-height)] rounded-t-3xl" : panelMode === "itinerary" ? "h-[calc(var(--stage-height)*0.64)] rounded-t-3xl" : "h-[var(--middle-panel-height)] rounded-t-3xl") : "h-[calc(var(--stage-height)-3.5rem)] rounded-t-3xl"}`}
           >

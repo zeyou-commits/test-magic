@@ -2837,7 +2837,7 @@ html {
 .bw-compact-track {
   position: relative;
   height: 4px;
-  margin: 10px 2px 15px;
+  margin: 6px 2px 8px;
   border-radius: 8px;
   background: #d8e7de;
 }
@@ -2848,7 +2848,7 @@ html {
   background: #0b8145;
 }
 .bw-compact-track {
-  margin-top: 36px;
+  margin-top: 26px;
 }
 .bw-compact-track > i {
   position: absolute;

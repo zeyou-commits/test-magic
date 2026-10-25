@@ -819,7 +819,18 @@ export default function FerryMap({
               company.className = "block text-[11px] font-semibold text-muted-foreground";
               text.append(name, company, status);
             } else text.append(name, status);
-            card.append(badge, text);
+            if (info?.photoUrl) {
+              // Photo du navire au-dessus de son identité.
+              card.className = "flex w-56 flex-col gap-2";
+              const photo = document.createElement("img");
+              photo.src = info.photoUrl;
+              photo.alt = String(feature.properties["name"] ?? "");
+              photo.className = "h-28 w-full rounded-lg object-cover";
+              const row = document.createElement("div");
+              row.className = "flex items-center gap-2 pr-1";
+              row.append(badge, text);
+              card.append(photo, row);
+            } else card.append(badge, text);
           } else card.append(name, status);
           hoverTip.setLngLat(coordinates).setDOMContent(card).addTo(map);
         } else hoverTip.setLngLat(coordinates);
@@ -1339,7 +1350,7 @@ export default function FerryMap({
 
         // Survol à la souris : la bulle s'affiche pour tous les ports (fermés ou sans liaison compris).
         el.addEventListener("pointerenter", (event) => {
-          if (event.pointerType !== "mouse" || insetsRef.current.isMobile) return;
+          if (event.pointerType !== "mouse") return;
           el.dataset["hover"] = "true";
           tip.inert = false;
           tip.setAttribute("aria-hidden", "false");

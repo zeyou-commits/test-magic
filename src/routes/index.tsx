@@ -277,10 +277,21 @@ function Index() {
       }),
     [fleet, allDepartures, routes, ports, filters],
   );
-  const atSea = useMemo(() => trafficFleet.filter((ship) => ship.state === "sea"), [trafficFleet]);
+  // Les compteurs ignorent le navire choisi : un seul est sélectionné à la fois, le total reste réel.
+  const shortcutFleet = useMemo(
+    () =>
+      fleet.filter((ship) => {
+        const departure = allDepartures.find((d) => d.id === ship.departureId);
+        return departure
+          ? matchesTraffic(departure, routes, ports, { ...filters, vesselId: null })
+          : false;
+      }),
+    [fleet, allDepartures, routes, ports, filters],
+  );
+  const atSea = useMemo(() => shortcutFleet.filter((ship) => ship.state === "sea"), [shortcutFleet]);
   const upcomingShips = useMemo(
-    () => trafficFleet.filter((ship) => ship.state === "docked"),
-    [trafficFleet],
+    () => shortcutFleet.filter((ship) => ship.state === "docked"),
+    [shortcutFleet],
   );
   const shipCompanyIds = useMemo(() => {
     const byDeparture = new Map(

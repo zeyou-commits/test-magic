@@ -8,7 +8,9 @@ export const getRouter = () => {
   const router = createRouter({
     routeTree,
     context: { queryClient },
-    scrollRestoration: true,
+    // Mobile : revenir à l'accueil montre toujours la carte, jamais une section plus bas.
+    scrollRestoration: ({ location }) =>
+      !(location.pathname === "/" && typeof window !== "undefined" && window.innerWidth < 768),
     defaultPreloadStaleTime: 0,
   });
 

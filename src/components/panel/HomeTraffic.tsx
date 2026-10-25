@@ -232,7 +232,6 @@ export function HomeTraffic({
               aria-pressed={filter === value}
               onClick={() => {
                 setFilter(value);
-                setExpanded(false);
               }}
               className={`min-h-9 flex-1 rounded-lg text-xs font-semibold ${filter === value ? "bg-white text-primary shadow-sm" : "text-muted-foreground"}`}
             >

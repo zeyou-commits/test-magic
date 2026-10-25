@@ -181,7 +181,7 @@ export function SailingCard({
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex h-8 shrink-0 items-center gap-1 rounded-full bg-cta px-3 text-xs font-semibold text-cta-foreground shadow-sm transition hover:brightness-110 active:scale-95"
-            title={`Voir l’offre sur ${bookingSite(sailing)} · budget estimé ${formatEuro(fare.amount)}`}
+            title={`Voir l’offre sur ${bookingSite(sailing)} · budget estimé ${formatEuro(fare.amount)} (${formatFareRange(fare)})`}
           >
             <span className="tabular-nums">≈ {formatEuro(fare.amount)}</span>
             <ArrowUpRight className="size-3.5" aria-hidden />

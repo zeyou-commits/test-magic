@@ -297,12 +297,14 @@ export function ItineraryPlanner({
   onClose,
   onPreview,
   onResultsReady,
+  onBookPeriod,
   active = true,
 }: {
   active?: boolean;
   onClose: () => void;
   onPreview: (preview: ItineraryMapPreview | null) => void;
   onResultsReady?: () => void;
+  onBookPeriod?: (period: string) => void;
 }) {
   const { data: ports = [], isPending: portsPending } = useQuery(portsQuery);
   const { data: routes = [], isPending: routesPending } = useQuery(routesQuery);
@@ -631,6 +633,73 @@ export function ItineraryPlanner({
     );
   }
 
+  const priorityTabs = (compact = false) => (
+    <div
+      className={
+        compact
+          ? "flex shrink-0 items-center rounded-lg bg-secondary p-0.5"
+          : "grid grid-cols-3 gap-1 rounded-xl bg-secondary p-1"
+      }
+      role="group"
+      aria-label="Classer les itinéraires"
+    >
+      {priorities.map(({ id, label, icon: Icon }) => (
+        <div
+          key={id}
+          className={`flex min-w-0 items-center justify-center rounded-lg ${priority === id ? "bg-white text-primary shadow-sm" : "text-muted-foreground"}`}
+        >
+          {id === "recommended" && !compact && (
+            <Popover>
+              <PopoverTrigger asChild>
+                <button
+                  type="button"
+                  aria-label="Comment est choisi le trajet recommandé ?"
+                  className="grid min-h-10 w-7 shrink-0 place-items-center rounded-lg hover:bg-primary/5"
+                >
+                  <Info className="size-3.5" aria-hidden />
+                </button>
+              </PopoverTrigger>
+              <PopoverContent
+                side="bottom"
+                align="start"
+                className="z-[110] w-64 text-xs leading-relaxed"
+              >
+                <p className="font-semibold">Pourquoi ce trajet ?</p>
+                <p className="mt-1 text-muted-foreground">
+                  La distance en voiture compte d’abord ; le prix ne prime que lorsque l’écart est
+                  important. Pour le tarif seul, choisissez « Prix ».
+                </p>
+              </PopoverContent>
+            </Popover>
+          )}
+          <button
+            type="button"
+            title={
+              id === "driving"
+                ? "Moins de kilomètres en voiture"
+                : id === "recommended"
+                  ? "Distance d’abord, prix si l’écart est important"
+                  : undefined
+            }
+            aria-pressed={priority === id}
+            onClick={() => {
+              setPriority(id);
+              setSelectedId(null);
+            }}
+            className={
+              compact
+                ? "inline-flex min-h-8 min-w-0 flex-1 items-center justify-center gap-1 rounded-lg px-1.5 text-[10px] font-semibold"
+                : "inline-flex min-h-10 min-w-0 flex-1 items-center justify-center gap-1 rounded-lg pr-1 text-[11px] font-semibold"
+            }
+          >
+            {id !== "recommended" && <Icon className="size-3.5 shrink-0" aria-hidden />}
+            {label}
+          </button>
+        </div>
+      ))}
+    </div>
+  );
+
   return (
     <section id="itineraire" className="min-h-full min-w-0 w-full bg-[#fffdf8]">
       <div className="sticky top-0 z-10 flex items-center justify-between gap-3 border-b border-border bg-[#e9f3ef] px-4 py-2.5">
@@ -648,8 +717,8 @@ export function ItineraryPlanner({
         </button>
       </div>
       {roadAccess && !filtersOpen && (
-        <div className="flex items-center justify-between gap-3 border-b border-border px-4 py-2.5">
-          <div className="min-w-0">
+        <div className="flex flex-wrap items-center gap-2 border-b border-border px-3 py-2">
+          <div className="min-w-0 flex-1 basis-36">
             <p className="truncate text-xs font-semibold">
               {roadAccess.origin} → {roadAccess.destination}
             </p>
@@ -662,6 +731,7 @@ export function ItineraryPlanner({
               {children > 0 ? ` · ${children} enfant${children > 1 ? "s" : ""}` : ""}
             </p>
           </div>
+          {priorityTabs(true)}
           <button
             type="button"
             onClick={() => setFiltersOpen(true)}

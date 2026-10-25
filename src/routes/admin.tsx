@@ -1493,7 +1493,7 @@ function VesselsAdmin({ vesselIds }: { vesselIds?: string[] } = {}) {
         const path = id + "/" + Date.now() + "." + extension.replace(/[^a-z0-9]/g, "");
         const { error: uploadError } = await supabase.storage
           .from("vessel-photos")
-          .upload(path, photoFile, { upsert: true, contentType: photoFile.type });
+          .upload(path, photoFile, { contentType: photoFile.type });
         if (uploadError)
           throw new Error("Téléversement de la photo impossible : " + uploadError.message);
         const { data: publicUrl } = supabase.storage.from("vessel-photos").getPublicUrl(path);

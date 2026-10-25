@@ -125,8 +125,13 @@ export function sortItineraries(options: ItineraryOption[], priority: ItineraryP
     if (priority === "time") return a.totalMinutes - b.totalMinutes || a.arrivalAt - b.arrivalAt;
     if (priority === "driving") return a.roadKm - b.roadKm || a.arrivalAt - b.arrivalAt;
     if (priority === "recommended") {
-      const score = (option: ItineraryOption) => option.totalEuro + option.roadKm * (children > 0 ? 0.3 : 0.12) + option.totalMinutes / 60 * (children > 0 ? 5 : 2);
-      return score(a) - score(b) || a.arrivalAt - b.arrivalAt;
+      // La distance routière d'abord ; le prix ne prime que si l'écart est important.
+      const priceGap = a.totalEuro - b.totalEuro;
+      const significant =
+        Math.abs(priceGap) >
+        Math.max(children > 0 ? 120 : 80, 0.18 * Math.max(a.totalEuro, b.totalEuro));
+      if (significant) return priceGap || a.arrivalAt - b.arrivalAt;
+      return a.roadKm - b.roadKm || priceGap || a.arrivalAt - b.arrivalAt;
     }
     return a.totalEuro - b.totalEuro || a.arrivalAt - b.arrivalAt;
   });

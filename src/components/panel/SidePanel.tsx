@@ -32,6 +32,7 @@ interface SidePanelProps {
   onCloseItinerary?: () => void;
   onItineraryPreview?: (preview: ItineraryMapPreview | null) => void;
   onItineraryResultsReady?: () => void;
+  onBookPeriod?: (period: string) => void;
 }
 
 /** Un seul volet : la recherche en permanence, et le détail d'un port, d'une ligne ou d'un départ par-dessus. */
@@ -53,6 +54,7 @@ export function SidePanel({
   onCloseItinerary,
   onItineraryPreview,
   onItineraryResultsReady,
+  onBookPeriod,
 }: SidePanelProps) {
   const { data: vessels = [] } = useQuery(vesselsQuery);
   const followedVessel =
@@ -94,6 +96,7 @@ export function SidePanel({
               onClose={onCloseItinerary}
               onPreview={onItineraryPreview}
               {...(onItineraryResultsReady ? { onResultsReady: onItineraryResultsReady } : {})}
+              {...(onBookPeriod ? { onBookPeriod } : {})}
             />
           ) : null}
         </div>

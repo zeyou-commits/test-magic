@@ -1185,6 +1185,7 @@ export default function FerryMap({
     ];
     // Le centre géographique peut sortir de l'itinéraire avec un volet asymétrique :
     // c'est normal. MapLibre place alors le trajet dans la partie réellement visible.
+    console.log("ITINFIT", JSON.stringify(padding), JSON.stringify(bounds));
     map.fitBounds(bounds, { padding, maxZoom: 5.8, linear: true, duration: cameraDuration(700) });
   }, [
     itineraryPreview?.key,

@@ -1145,13 +1145,13 @@ export default function FerryMap({
     if (preview.fit === false) return;
     const basePadding = viewPadding();
     // Sur mobile, le trajet doit tenir dans la moitié haute laissée libre par le volet :
-    // marges serrées et inset sans la barre d'onglets (déjà hors de la carte).
+    // marges serrées pour garder tout le trajet lisible.
     const padding = insetsRef.current.isMobile
       ? {
           top: 44,
           right: 28,
           left: 28,
-          bottom: Math.max(24, insetsRef.current.mobileBottomInset - 56 + 16),
+          bottom: insetsRef.current.mobileBottomInset + 10,
         }
       : basePadding;
     if (insetsRef.current.isMobile) {

@@ -170,7 +170,7 @@ function VesselCard({ vessel, routes, ports }: { vessel: Vessel; routes: RouteLi
           </ul>
         ) : null}
         <div className="mt-auto flex flex-wrap gap-3 pt-4 text-sm font-semibold">
-          <Link to="/" search={{ vessel: vessel.id } as never} className="inline-flex items-center gap-1 text-primary">
+          <Link to="/" search={{ select: "vessel", id: vessel.id } as never} className="inline-flex items-center gap-1 text-primary">
             Voir sur la carte <ArrowRight size={14} />
           </Link>
           {dossier ? (

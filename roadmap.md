@@ -24,6 +24,6 @@
 - [x] Ports sans départ grisés (icône) ; repère voiture -3 ans (équipement « dedouanement_vehicule » à renseigner côté admin)
 - [x] Alerte « ventes pas encore ouvertes » ; bouton Budget porte-à-porte depuis une traversée
 
-- [ ] Supprimer le bandeau replié tronqué du volet
-- [ ] Fiche bateau : logo+nom, grande photo, âge/passagers/véhicules
-- [ ] Page Bateaux premium par compagnie
+- [x] Supprimer le bandeau replié tronqué du volet
+- [x] Fiche bateau : logo+nom, grande photo, âge/passagers/véhicules
+- [x] Page Bateaux premium par compagnie

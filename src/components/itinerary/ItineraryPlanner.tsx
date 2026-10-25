@@ -906,57 +906,7 @@ export function ItineraryPlanner({
       </form>
       {roadAccess && (
         <div className="border-t border-border px-3 py-3 sm:px-4">
-          <div
-            className="grid grid-cols-3 gap-1 rounded-xl bg-secondary p-1"
-            role="group"
-            aria-label="Classer les itinéraires"
-          >
-            {priorities.map(({ id, label, icon: Icon }) => (
-              <div
-                key={id}
-                className={`flex min-w-0 items-center justify-center rounded-lg ${priority === id ? "bg-white text-primary shadow-sm" : "text-muted-foreground"}`}
-              >
-                {id === "recommended" && (
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <button
-                        type="button"
-                        aria-label="Comment est choisi le trajet recommandé ?"
-                        className="grid min-h-10 w-7 shrink-0 place-items-center rounded-lg hover:bg-primary/5"
-                      >
-                        <Info className="size-3.5" aria-hidden />
-                      </button>
-                    </PopoverTrigger>
-                    <PopoverContent
-                      side="bottom"
-                      align="start"
-                      className="z-[110] w-64 text-xs leading-relaxed"
-                    >
-                      <p className="font-semibold">Pourquoi ce trajet ?</p>
-                      <p className="mt-1 text-muted-foreground">
-                        Équilibre entre prix estimé, kilomètres en voiture et durée totale. Avec des
-                        enfants, la route et la durée comptent davantage. Pour le tarif seul,
-                        choisissez « Prix ».
-                      </p>
-                    </PopoverContent>
-                  </Popover>
-                )}
-                <button
-                  type="button"
-                  title={id === "driving" ? "Moins de kilomètres en voiture" : undefined}
-                  aria-pressed={priority === id}
-                  onClick={() => {
-                    setPriority(id);
-                    setSelectedId(null);
-                  }}
-                  className="inline-flex min-h-10 min-w-0 flex-1 items-center justify-center gap-1 rounded-lg pr-1 text-[11px] font-semibold"
-                >
-                  {id !== "recommended" && <Icon className="size-3.5 shrink-0" aria-hidden />}
-                  {label}
-                </button>
-              </div>
-            ))}
-          </div>
+          {filtersOpen && priorityTabs()}
           {sorted.some((option) => option.sailing.isSimulation) && (
             <p className="mt-2 text-[11px] text-muted-foreground">
               Simulation : liaisons et prix estimés, sans départ confirmé pour cette période.

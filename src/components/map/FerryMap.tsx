@@ -19,7 +19,6 @@ import { algeriaGeoJson } from "@/lib/ferry/algeriaGeoJson";
 import { routeArc } from "@/lib/ferry/geo";
 import type { FleetShip } from "@/lib/ferry/fleet";
 import { addShipImages, wakeLevel } from "./shipIcons";
-import { vesselVisual } from "@/lib/ferry/vesselVisuals";
 import { fleetGroups } from "./fleetVisibility";
 import { physicalStatus, projectedPosition } from "@/lib/ferry/tracking";
 import { portTimeZone, wallTimeInZone } from "@/lib/ferry/time";

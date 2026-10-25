@@ -1,7 +1,7 @@
 import { matchesTraffic } from "@/lib/ferry/filterSync";
 import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Ship, ArrowDownLeft, ArrowUpRight } from "lucide-react";
+import { Ship, ArrowDownLeft, ArrowUpRight, MapPin } from "lucide-react";
 import { MiniFerry } from "./MiniFerry";
 import {
   companiesQuery,
@@ -247,12 +247,16 @@ export function HomeTraffic({
             groups.set(e.port.id, [...(groups.get(e.port.id) ?? []), e]);
           });
           return [...groups.values()].map((list) => (
-            <div key={list[0]!.port.id} className="mb-2">
+            <div
+              key={list[0]!.port.id}
+              className="mb-3 overflow-hidden rounded-xl border border-border/70 bg-white shadow-sm"
+            >
               <button
                 type="button"
                 onClick={() => onSelect({ type: "port", id: list[0]!.port.id })}
-                className="mt-2 text-[11px] font-bold uppercase tracking-wide text-muted-foreground hover:text-primary"
+                className="flex w-full items-center gap-1.5 border-b border-border/70 bg-secondary/70 px-3 py-2 text-left text-[11px] font-bold uppercase tracking-wide text-foreground hover:text-primary"
               >
+                <MapPin className="size-3.5 shrink-0 text-primary" aria-hidden />
                 {list[0]!.port.name}
               </button>
               {list.map((event) => {
@@ -260,7 +264,7 @@ export function HomeTraffic({
                 return (
                   <div
                     key={`${event.departure.id}:${event.kind}`}
-                    className="relative flex items-center gap-2 border-b py-2 text-xs"
+                    className="relative flex items-center gap-2 border-b px-3 py-2 text-xs last:border-b-0"
                     {...previewEvents({
                       routeId: event.departure.route_id,
                       ...(event.vessel ? { vesselId: event.vessel.id } : {}),

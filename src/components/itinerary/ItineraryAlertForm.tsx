@@ -73,7 +73,7 @@ export function ItineraryAlertForm({
               children,
             })
           }
-          className="inline-flex min-h-10 w-full items-center justify-center gap-2 rounded-lg bg-primary/5 px-2 text-xs font-bold text-primary hover:bg-primary/10"
+          className="inline-flex min-h-10 w-full items-center justify-center gap-2 rounded-lg bg-red-50 px-2 text-xs font-bold text-red-700 hover:bg-red-100"
         >
           <BellRing className="size-4" aria-hidden />
           M’avertir à l’ouverture des traversées

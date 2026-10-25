@@ -99,12 +99,12 @@ export function FollowButton({
             : undefined
         }
         title={iconOnly ? (follow?.active ? "Suivi activé" : "Suivre ce bateau") : undefined}
-        className={`inline-flex ${iconOnly ? "size-8 rounded-full !min-h-8 !gap-0 !px-0" : "min-h-10"} items-center justify-center gap-2 rounded-xl border px-3 text-xs font-semibold transition-colors disabled:opacity-50 ${follow?.active ? "border-primary/30 bg-primary/10 text-primary" : "border-primary/25 bg-primary/5 text-primary hover:bg-primary/10"}`}
+        className={`inline-flex ${iconOnly ? "size-8 rounded-full !min-h-8 !gap-0 !px-0" : compact ? "h-7 gap-1 rounded-lg px-2 text-[11px]" : "min-h-10"} items-center justify-center gap-2 rounded-xl border px-3 text-xs font-semibold transition-colors disabled:opacity-50 ${follow?.active ? "border-primary/30 bg-primary/10 text-primary" : "border-primary/25 bg-primary/5 text-primary hover:bg-primary/10"}`}
       >
         {busy ? (
           <LoaderCircle className="size-4 animate-spin" aria-hidden />
         ) : (
-          <Heart className={`size-4 ${follow?.active ? "fill-current" : ""}`} aria-hidden />
+          <Heart className={`${compact ? "size-3.5" : "size-4"} ${follow?.active ? "fill-current" : ""}`} aria-hidden />
         )}
         {iconOnly
           ? null

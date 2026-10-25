@@ -238,8 +238,19 @@ export function RoundTripCard({
       style={{ animationDelay: `${Math.min(index, 8) * 45}ms` }}
       className={`sailing-card overflow-hidden rounded-2xl border-2 border-border bg-card shadow-sm transition-all duration-200 hover:shadow-lg ${open ? "border-primary ring-2 ring-primary/20" : ""}`}
     >
+      <header className="flex items-center gap-2 border-b border-border/70 bg-muted/30 px-3.5 py-1.5">
+        <Repeat2 className="size-3.5 shrink-0 text-muted-foreground" aria-hidden />
+        <span className="min-w-0 flex-1 truncate text-[11px] font-semibold text-muted-foreground">
+          {trip.out.from.name} ⇄ {trip.out.to.name}
+          {trip.mirror ? "" : ` · retour depuis ${trip.back.from.name}`}
+        </span>
+        <span className="shrink-0 text-[11px] font-semibold text-muted-foreground">
+          {trip.stayDays > 0 ? `${trip.stayDays} j sur place` : "Aller-retour"}
+        </span>
+      </header>
       <Leg
         label="Aller"
+        tone="out"
         sailing={trip.out}
         atdAt={actualDeparture(trip.out)}
         expanded={open === "out"}
@@ -248,9 +259,14 @@ export function RoundTripCard({
         onOpenRoute={onOpenRoute}
         onHover={(h) => onHoverRoute(h ? trip.out.route.id : null)}
       />
-      <div className="border-t border-dashed border-border" aria-hidden />
+      <div className="relative border-t border-dashed border-border" aria-hidden>
+        <span className="absolute left-1/2 top-1/2 grid size-5 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-full border border-border bg-card text-muted-foreground">
+          <Repeat2 className="size-3" />
+        </span>
+      </div>
       <Leg
         label="Retour"
+        tone="back"
         sailing={trip.back}
         atdAt={actualDeparture(trip.back)}
         expanded={open === "back"}

@@ -2,7 +2,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { communityQuery } from "@/lib/ferry/community";
 import { useCallback, useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowRight, CarFront, ExternalLink, Flag, MapPin, Ship, Star, Users } from "lucide-react";
+import { ArrowRight, CalendarDays, CarFront, ExternalLink, Flag, MapPin, Ship, Star, Users } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import {
@@ -124,6 +124,7 @@ export function VesselView({
           <ShipPhoto key={photo?.url ?? vesselId} url={photo?.url} name={vessel.name} />
           <dl className="bw-ship-hero-stats" aria-label="Le bateau en chiffres">
             <div>
+              <CalendarDays size={12} aria-hidden />
               <dt>Âge</dt>
               <dd>
                 {vessel.build_year && vessel.build_year <= new Date().getFullYear()
@@ -132,10 +133,12 @@ export function VesselView({
               </dd>
             </div>
             <div>
+              <Users size={12} aria-hidden />
               <dt>Passagers</dt>
               <dd>{vessel.passenger_capacity?.toLocaleString("fr-FR") ?? "—"}</dd>
             </div>
             <div>
+              <CarFront size={12} aria-hidden />
               <dt>Véhicules</dt>
               <dd>{vessel.car_capacity?.toLocaleString("fr-FR") ?? "—"}</dd>
             </div>

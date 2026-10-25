@@ -102,45 +102,42 @@ export function VesselView({
   const to = data.ports.find((p) => p.id === route?.arrival_port_id);
   return (
     <article className="bw-ship-profile">
-      <header className="bw-ship-heading">
-        <ShipPhoto key={photo?.url ?? vesselId} url={photo?.url} name={vessel.name} />
-        <div>
-          <span className="bw-eyebrow">Votre bateau</span>
-          <h2>{vessel.name}</h2>
+      <header className="bw-ship-hero">
+        <div className="bw-ship-hero-title">
           {company ? (
             <button
-              className="bw-company-link"
               type="button"
+              className="bw-ship-hero-logo"
+              aria-label={`Voir la compagnie ${company.name}`}
               onClick={() => onSelect({ type: "company", id: company.id })}
             >
-              <CompanyBadge name={company.name} logoUrl={company.logo_url} size={38} />
-              {company.name}
+              <CompanyBadge name={company.name} logoUrl={company.logo_url} size={34} />
             </button>
           ) : null}
+          <div className="min-w-0">
+            <h2>{vessel.name}</h2>
+            {company ? <p className="bw-ship-hero-company">{company.name}</p> : null}
+          </div>
           {vessel.is_demo ? <DemoBadge /> : null}
-          <dl
-            className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs"
-            aria-label="Le bateau en chiffres"
-          >
+        </div>
+        <div className="bw-ship-hero-photo">
+          <ShipPhoto key={photo?.url ?? vesselId} url={photo?.url} name={vessel.name} />
+          <dl className="bw-ship-hero-stats" aria-label="Le bateau en chiffres">
             <div>
-              <dt className="text-[10px] text-muted-foreground">Âge</dt>
-              <dd className="font-bold">
+              <dt>Âge</dt>
+              <dd>
                 {vessel.build_year && vessel.build_year <= new Date().getFullYear()
                   ? `${new Date().getFullYear() - vessel.build_year} ans`
-                  : "À renseigner"}
+                  : "—"}
               </dd>
             </div>
             <div>
-              <dt className="text-[10px] text-muted-foreground">Passagers</dt>
-              <dd className="font-bold">
-                {vessel.passenger_capacity?.toLocaleString("fr-FR") ?? "À renseigner"}
-              </dd>
+              <dt>Passagers</dt>
+              <dd>{vessel.passenger_capacity?.toLocaleString("fr-FR") ?? "—"}</dd>
             </div>
             <div>
-              <dt className="text-[10px] text-muted-foreground">Véhicules</dt>
-              <dd className="font-bold">
-                {vessel.car_capacity?.toLocaleString("fr-FR") ?? "À renseigner"}
-              </dd>
+              <dt>Véhicules</dt>
+              <dd>{vessel.car_capacity?.toLocaleString("fr-FR") ?? "—"}</dd>
             </div>
           </dl>
         </div>

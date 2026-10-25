@@ -29,6 +29,7 @@ function drawMarker(
   ship: HTMLImageElement,
   phase: number | null,
   strength: number,
+  sway = 0,
 ): ImageData | null {
   const canvas = document.createElement("canvas");
   canvas.width = WIDTH;
@@ -64,10 +65,18 @@ function drawMarker(
       ctx.stroke();
     }
   }
-  ctx.shadowColor = "rgba(20,55,69,0.18)";
-  ctx.shadowBlur = 3;
+  ctx.shadowColor = "rgba(20,55,69,0.28)";
+  ctx.shadowBlur = 4;
   ctx.shadowOffsetY = 2;
   const [dx, dy, dw, dh] = sprite.dest;
+  // À l'arrêt : léger roulis autour du centre, sans déplacer le point GPS.
+  if (sway) {
+    const cx = dx + dw / 2,
+      cy = dy + dh / 2;
+    ctx.translate(cx, cy);
+    ctx.rotate((sway * Math.PI) / 180);
+    ctx.translate(-cx, -cy);
+  }
   if (sprite.source) {
     const [sx, sy, sw, sh] = sprite.source;
     ctx.drawImage(ship, sx, sy, sw, sh, dx, dy, dw, dh);

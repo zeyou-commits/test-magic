@@ -1114,6 +1114,14 @@ function Index() {
               onToggle={(shortcut) => {
                 if (window.innerWidth >= 768) shortcutScrollY.current = window.scrollY;
                 resetToMap();
+                // Un navire choisi depuis ce raccourci : re-cliquer revient à la carte complète.
+                if ((shortcut === "sea" || shortcut === "upcoming") && (focusShipId || filters.vesselId)) {
+                  setFocusShipId(null);
+                  setFilters((current) => ({ ...current, vesselId: null, companyId: null }));
+                  setActiveShortcut(null);
+                  setShortcutMenuOpen(false);
+                  return;
+                }
                 if (activeShortcut === shortcut && shortcutMenuOpen) {
                   setActiveShortcut(null);
                   setShortcutMenuOpen(false);

@@ -242,7 +242,7 @@ export function HomeTraffic({
         {(() => {
           // Mouvements regroupés par port, dans l'ordre du premier mouvement de chaque port.
           const groups = new Map<string, typeof events>();
-          events.slice(0, expanded ? 30 : 6).forEach((e) => {
+          events.slice(0, expanded ? 60 : 6).forEach((e) => {
             groups.set(e.port.id, [...(groups.get(e.port.id) ?? []), e]);
           });
           return [...groups.values()].map((list) => (

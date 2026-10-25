@@ -720,7 +720,7 @@ function Index() {
         : TAB_BAR_HEIGHT +
           (isPeekSelection
             ? peekHeight
-            : Math.round(viewportHeight * (panelMode === "itinerary" ? 0.64 : middleRatio)));
+            : Math.round(viewportHeight * (panelMode === "itinerary" ? 0.5 : middleRatio)));
   const mobilePanelHeight = mobileBottomInset;
   // Sur mobile, choisir un navire, un port ou une traversée rouvre le tiroir s'il était replié.
   useEffect(() => {
@@ -937,7 +937,7 @@ function Index() {
             }
             className={`bw-map-panel absolute bottom-0 left-0 right-0 z-[60] flex flex-col overflow-hidden bg-transparent ${dragHeight !== null ? "transition-none" : "transition-[height,width,transform] duration-[420ms] ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none"} md:bottom-5 md:left-5 md:right-auto md:top-5 md:h-auto md:w-[var(--desktop-panel-width)] md:overflow-visible md:rounded-3xl md:z-40 ${
               desktopPanelOpen ? "md:translate-x-0" : "md:translate-x-[calc(-100%-1.25rem)]"
-            } ${panelLevel === 0 ? "h-32 rounded-t-3xl" : panelLevel === 1 ? (isPeekSelection ? "h-[var(--mobile-peek-height)] rounded-t-3xl" : panelMode === "itinerary" ? "h-[calc(var(--stage-height)*0.64)] rounded-t-3xl" : "h-[var(--middle-panel-height)] rounded-t-3xl") : "h-[calc(var(--stage-height)-3.5rem)] rounded-t-3xl"}`}
+            } ${panelLevel === 0 ? "h-32 rounded-t-3xl" : panelLevel === 1 ? (isPeekSelection ? "h-[var(--mobile-peek-height)] rounded-t-3xl" : panelMode === "itinerary" ? "h-[calc(var(--stage-height)*0.5)] rounded-t-3xl" : "h-[var(--middle-panel-height)] rounded-t-3xl") : "h-[calc(var(--stage-height)-3.5rem)] rounded-t-3xl"}`}
           >
             {collapsed ? (
               <CollapsedPanelSummary

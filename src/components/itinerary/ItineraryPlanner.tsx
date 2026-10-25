@@ -14,7 +14,11 @@ import {
   Ship,
   Sparkles,
   Wallet,
+  SlidersHorizontal as SlidersHorizontalIcon,
+  Star as StarIcon,
 } from "lucide-react";
+const SlidersHorizontal = SlidersHorizontalIcon;
+const Star = StarIcon;
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import {
   companiesQuery,
@@ -197,7 +201,7 @@ function AddressField({
   const [open, setOpen] = useState(false);
   const [pending, setPending] = useState(false);
   useEffect(() => {
-    if (point || value.trim().length < 3) {
+    if (point || value.trim().length < 2) {
       setSuggestions([]);
       return;
     }
@@ -244,7 +248,7 @@ function AddressField({
           onFocus={() => setOpen(true)}
           onBlur={() => window.setTimeout(() => setOpen(false), 150)}
           required
-          minLength={5}
+          minLength={2}
         />
         {onLocate && (
           <button
@@ -686,14 +690,25 @@ export function ItineraryPlanner({
               setPriority(id);
               setSelectedId(null);
             }}
+            aria-label={compact ? label : undefined}
             className={
               compact
-                ? "inline-flex min-h-8 min-w-0 flex-1 items-center justify-center gap-1 rounded-lg px-1.5 text-[10px] font-semibold"
+                ? "grid size-7 place-items-center rounded-lg"
                 : "inline-flex min-h-10 min-w-0 flex-1 items-center justify-center gap-1 rounded-lg pr-1 text-[11px] font-semibold"
             }
           >
-            {id !== "recommended" && <Icon className="size-3.5 shrink-0" aria-hidden />}
-            {label}
+            {compact ? (
+              id === "recommended" ? (
+                <Star className="size-4" fill={priority === id ? "currentColor" : "none"} aria-hidden />
+              ) : (
+                <Icon className="size-4" aria-hidden />
+              )
+            ) : (
+              <>
+                {id !== "recommended" && <Icon className="size-3.5 shrink-0" aria-hidden />}
+                {label}
+              </>
+            )}
           </button>
         </div>
       ))}
@@ -702,7 +717,7 @@ export function ItineraryPlanner({
 
   return (
     <section id="itineraire" className="min-h-full min-w-0 w-full bg-[#fffdf8]">
-      <div className="sticky top-0 z-10 flex items-center justify-between gap-3 border-b border-border bg-[#e9f3ef] px-4 py-2.5">
+      <div className="sticky top-0 z-10 flex items-center justify-between gap-3 border-b border-border bg-[#e9f3ef] px-4 py-1.5">
         <div>
           <h2 className="font-display text-base font-bold uppercase tracking-tight text-foreground sm:text-lg">
             Le trajet porte à porte
@@ -717,8 +732,8 @@ export function ItineraryPlanner({
         </button>
       </div>
       {roadAccess && !filtersOpen && (
-        <div className="flex flex-wrap items-center gap-2 border-b border-border px-3 py-2">
-          <div className="min-w-0 flex-1 basis-36">
+        <div className="flex items-center gap-1.5 border-b border-border px-3 py-1.5">
+          <div className="min-w-0 flex-1">
             <p className="truncate text-xs font-semibold">
               {roadAccess.origin} → {roadAccess.destination}
             </p>
@@ -735,9 +750,11 @@ export function ItineraryPlanner({
           <button
             type="button"
             onClick={() => setFiltersOpen(true)}
-            className="shrink-0 rounded-lg border border-border px-2.5 py-1.5 text-xs font-bold text-primary"
+            aria-label="Modifier la recherche"
+            title="Modifier la recherche"
+            className="grid size-8 shrink-0 place-items-center rounded-lg border border-border text-primary"
           >
-            Modifier
+            <SlidersHorizontal className="size-4" aria-hidden />
           </button>
         </div>
       )}
@@ -905,19 +922,14 @@ export function ItineraryPlanner({
         )}
       </form>
       {roadAccess && (
-        <div className="border-t border-border px-3 py-3 sm:px-4">
+        <div className="px-3 py-2 sm:px-4">
           {filtersOpen && priorityTabs()}
-          {sorted.some((option) => option.sailing.isSimulation) && (
-            <p className="mt-2 text-[11px] text-muted-foreground">
-              Simulation : liaisons et prix estimés, sans départ confirmé pour cette période.
-            </p>
-          )}
           {sorted.length === 0 ? (
-            <p className="mt-3 rounded-xl bg-secondary p-3 text-sm">
+            <p className="mt-2 rounded-xl bg-secondary p-3 text-sm">
               Aucune liaison connue pour comparer ces ports.
             </p>
           ) : (
-            <div className="-mx-1 mt-3 flex snap-x snap-mandatory gap-2 overflow-x-auto px-1 pb-2">
+            <div className="-mx-1 flex snap-x snap-mandatory gap-2 overflow-x-auto px-1 pb-1">
               {sorted.slice(0, 6).map((option, index) => (
                 <article
                   key={option.sailing.departure.id}
@@ -1009,6 +1021,11 @@ export function ItineraryPlanner({
                 </article>
               ))}
             </div>
+          )}
+          {sorted.some((option) => option.sailing.isSimulation) && (
+            <p className="mt-1 text-[11px] leading-snug text-muted-foreground">
+              Simulation : liaisons et prix estimés, sans départ confirmé pour cette période.
+            </p>
           )}
           {sorted.length > 0 && hasPublishedForPeriod && onBookPeriod && (
             <div className="mt-3 rounded-xl border border-primary/30 bg-primary/5 p-3 text-xs">

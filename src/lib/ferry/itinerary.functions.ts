@@ -8,8 +8,8 @@ const portSchema = z.object({
 });
 
 const requestSchema = z.object({
-  origin: z.string().trim().min(5).max(180),
-  destination: z.string().trim().min(5).max(180),
+  origin: z.string().trim().min(2).max(180),
+  destination: z.string().trim().min(2).max(180),
   originPoint: z.tuple([z.number().min(-180).max(180), z.number().min(-90).max(90)]).optional(),
   destinationPoint: z.tuple([z.number().min(-180).max(180), z.number().min(-90).max(90)]).optional(),
   departurePorts: z.array(portSchema).min(1).max(20),
@@ -71,7 +71,7 @@ async function photonSearch(text: string, countryCode?: string): Promise<Place[]
 }
 
 export const searchItineraryAddress = createServerFn({ method: "GET" })
-  .inputValidator((input: unknown) => z.object({ query: z.string().trim().min(3).max(120), countryCode: z.enum(["DZ", "FR", "ES", "IT", "PT", "BE", "DE", "CH"]).optional() }).parse(input))
+  .inputValidator((input: unknown) => z.object({ query: z.string().trim().min(2).max(120), countryCode: z.enum(["DZ", "FR", "ES", "IT", "PT", "BE", "DE", "CH"]).optional() }).parse(input))
   .handler(async ({ data }) => photonSearch(data.query, data.countryCode));
 
 async function geocode(text: string, countryCode?: string): Promise<Place> {

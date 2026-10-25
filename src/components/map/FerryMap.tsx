@@ -1143,7 +1143,21 @@ export default function FerryMap({
       ],
     });
     if (preview.fit === false) return;
-    const padding = viewPadding();
+    const basePadding = viewPadding();
+    // Sur mobile, le trajet doit tenir dans la moitié haute laissée libre par le volet :
+    // marges serrées pour garder tout le trajet lisible.
+    const padding = insetsRef.current.isMobile
+      ? {
+          top: 44,
+          right: 28,
+          left: 28,
+          bottom: insetsRef.current.mobileBottomInset + 10,
+        }
+      : basePadding;
+    if (insetsRef.current.isMobile) {
+      const floor = Math.max(1.5, map.getMinZoom() - 2);
+      if (map.getMinZoom() > floor) map.setMinZoom(floor);
+    }
     const width = containerRef.current?.clientWidth ?? 0;
     const height = containerRef.current?.clientHeight ?? 0;
     if (width - padding.left - padding.right < 100 || height - padding.top - padding.bottom < 100)
@@ -1171,7 +1185,7 @@ export default function FerryMap({
     ];
     // Le centre géographique peut sortir de l'itinéraire avec un volet asymétrique :
     // c'est normal. MapLibre place alors le trajet dans la partie réellement visible.
-    map.fitBounds(bounds, { padding, maxZoom: 5.8, linear: true, duration: cameraDuration(700) });
+    map.fitBounds(bounds, { padding, maxZoom: 5.8, linear: true, duration: insetsRef.current.isMobile ? 0 : cameraDuration(700) });
   }, [
     itineraryPreview?.key,
     mapReady,

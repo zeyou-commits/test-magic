@@ -2899,3 +2899,26 @@ html {
   color: #cf4427;
   font-weight: 800;
 }
+
+/* Fiche navire : en-tête logo + nom, grande photo, chiffres incrustés */
+.bw-ship-hero { margin-bottom: 12px; }
+.bw-ship-hero-title { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+.bw-ship-hero-logo { flex: none; border-radius: 12px; }
+.bw-ship-hero-title h2 {
+  font-size: 19px; line-height: 1.15; font-weight: 750; letter-spacing: -0.3px;
+  margin: 0; overflow-wrap: anywhere;
+}
+.bw-ship-hero-company { margin: 1px 0 0; font-size: 12px; color: var(--muted-foreground); }
+.bw-ship-hero-photo { position: relative; border-radius: 18px; overflow: hidden; }
+.bw-ship-hero-photo .bw-ship-photo { width: 100%; height: auto; aspect-ratio: 16 / 9; border-radius: 0; }
+.bw-ship-hero-photo .bw-ship-photo img { object-fit: cover; }
+.bw-ship-hero-stats {
+  position: absolute; left: 8px; right: 8px; bottom: 8px; margin: 0;
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px;
+}
+.bw-ship-hero-stats > div {
+  background: color-mix(in oklab, var(--card) 88%, transparent);
+  backdrop-filter: blur(6px); border-radius: 10px; padding: 5px 8px; text-align: center;
+}
+.bw-ship-hero-stats dt { font-size: 10px; color: var(--muted-foreground); }
+.bw-ship-hero-stats dd { margin: 0; font-size: 13px; font-weight: 750; }

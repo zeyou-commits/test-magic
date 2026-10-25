@@ -9,7 +9,7 @@ export function filtersFromUrl(search: string): Filters {
   const params = new URLSearchParams(search);
   const zone = params.get("zone");
   const way = params.get("way");
-  const roundTrip = way === "2" || (way !== "1" && params.has("ret"));
+  const roundTrip = way !== "1";
   return {
     ...emptyFilters,
     search: params.get("q") ?? "",
@@ -48,7 +48,7 @@ export function mapStateToSearch(
   if (filters.vesselId) params.set("vessel", filters.vesselId);
   if (filters.date) params.set("date", filters.date);
   if (filters.returnDate) params.set("ret", filters.returnDate);
-  if (filters.roundTrip) params.set("way", "2");
+  if (!filters.roundTrip) params.set("way", "1");
   if (filters.flexDays > 0) params.set("flex", String(filters.flexDays));
   if (filters.schoolZone) params.set("zone", filters.schoolZone);
 

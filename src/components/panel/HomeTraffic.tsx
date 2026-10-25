@@ -53,7 +53,7 @@ export function HomeTraffic({
   const signals = useLiveShips();
   const [now, setNow] = useState(() => Date.now());
   const [filter, setFilter] = useState<"all" | "departure" | "arrival">("all");
-  const [expanded, setExpanded] = useState(false);
+  const [expanded, setExpanded] = useState(true);
   useEffect(() => {
     const timer = window.setInterval(() => setNow(Date.now()), 30_000);
     return () => window.clearInterval(timer);

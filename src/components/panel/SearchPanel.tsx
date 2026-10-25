@@ -135,7 +135,8 @@ export function SearchPanel({
   const lastStep = 3 as 2 | 3;
   void hidePickersOnMobile;
   // Sens du trajet : Europe → Algérie par défaut, inversé par le bouton ⇄.
-  const [reversed, setReversed] = useState(false);
+  // Le sens vit dans les filtres (et l'URL) : « Tous les ports » le respecte.
+  const reversed = filters.direction === "dz-eu";
   const searchRef = useRef<HTMLElement>(null);
   const isMobileView = () => typeof window !== "undefined" && window.innerWidth < 768;
   const startSearch = () => {

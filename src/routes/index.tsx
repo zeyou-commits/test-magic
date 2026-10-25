@@ -397,8 +397,21 @@ function Index() {
   );
   const matchingSailings = useMemo(
     () =>
-      legSailings(sailings, filters.departurePortIds, filters.arrivalPortIds, filters.companyId),
-    [sailings, filters.departurePortIds, filters.arrivalPortIds, filters.companyId],
+      legSailings(
+        sailings,
+        filters.departurePortIds,
+        filters.arrivalPortIds,
+        filters.companyId,
+        null,
+        filters.direction,
+      ),
+    [
+      sailings,
+      filters.departurePortIds,
+      filters.arrivalPortIds,
+      filters.companyId,
+      filters.direction,
+    ],
   );
 
   const hasPair =

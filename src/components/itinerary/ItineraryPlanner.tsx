@@ -201,7 +201,7 @@ function AddressField({
   const [open, setOpen] = useState(false);
   const [pending, setPending] = useState(false);
   useEffect(() => {
-    if (point || value.trim().length < 3) {
+    if (point || value.trim().length < 2) {
       setSuggestions([]);
       return;
     }

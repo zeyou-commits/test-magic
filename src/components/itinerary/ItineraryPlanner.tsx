@@ -917,7 +917,7 @@ export function ItineraryPlanner({
               Aucune liaison connue pour comparer ces ports.
             </p>
           ) : (
-            <div className="mt-3 grid min-w-0 grid-cols-1 gap-2">
+            <div className="-mx-1 mt-3 flex snap-x snap-mandatory gap-2 overflow-x-auto px-1 pb-2">
               {sorted.slice(0, 6).map((option, index) => (
                 <article
                   key={option.sailing.departure.id}
@@ -942,7 +942,7 @@ export function ItineraryPlanner({
                       setSelectedId(option.sailing.departure.id);
                     }
                   }}
-                  className={`min-w-0 w-full cursor-pointer rounded-2xl border bg-white p-3 transition-colors hover:border-primary/60 focus-visible:outline-2 focus-visible:outline-primary ${selected?.sailing.departure.id === option.sailing.departure.id ? "border-primary ring-2 ring-primary/20" : "border-border"}`}
+                  className={`w-[82%] min-w-[250px] max-w-[330px] shrink-0 cursor-pointer snap-start rounded-2xl border bg-white p-3 transition-colors hover:border-primary/60 focus-visible:outline-2 focus-visible:outline-primary ${selected?.sailing.departure.id === option.sailing.departure.id ? "border-primary ring-2 ring-primary/20" : "border-border"}`}
                 >
                   <div className="flex items-start justify-between gap-2">
                     <div className="min-w-0">
@@ -964,22 +964,6 @@ export function ItineraryPlanner({
                     <strong className="shrink-0 whitespace-nowrap text-base text-primary">
                       ~{numberFormat.format(option.totalEuro)} €
                     </strong>
-                  </div>
-                  <div className="mt-2">
-                    <JourneyGuide
-                      animated={selected?.sailing.departure.id === option.sailing.departure.id}
-                    />
-                  </div>
-                  <div className="mt-1 grid grid-cols-3 gap-1 text-center text-[10px] font-semibold text-foreground">
-                    <span>
-                      {formatDuration(option.originRoad.durationMin)} ·{" "}
-                      {Math.round(option.originRoad.distanceKm)} km
-                    </span>
-                    <span>{formatDuration(option.sailing.durationMin ?? 0)} de ferry</span>
-                    <span>
-                      {formatDuration(option.destinationRoad.durationMin)} ·{" "}
-                      {Math.round(option.destinationRoad.distanceKm)} km
-                    </span>
                   </div>
                   <div className="mt-2 flex flex-wrap items-center justify-between gap-x-2 gap-y-1 border-t border-border pt-2 text-[11px]">
                     <strong>{formatDuration(option.totalMinutes)} porte à porte</strong>

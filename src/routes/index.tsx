@@ -781,7 +781,8 @@ function Index() {
     return () => window.removeEventListener("batogo:focus-vessel", focusVessel);
   }, [fleet]);
 
-  const collapsed = panelLevel === 0 && Boolean(selection || filters.departurePortIds.length || filters.arrivalPortIds.length) && (dragHeight === null || dragHeight < 140);
+  // Le résumé replié est désactivé : le vrai volet reste toujours affiché (pas de capsule tronquée).
+  const collapsed = false as boolean;
 
   const resetToMap = () => {
     document.querySelector(".bw-home")?.scrollIntoView({ behavior: "instant", block: "start" });

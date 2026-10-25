@@ -845,6 +845,7 @@ export default function FerryMap({
       map.on("resize", closeFleetPopups);
       const pickFleet = (event: FleetPickEvent) => {
         setHoveredShip(null);
+        setTipPortId(null);
         const feature = closestShip(event);
         if (!feature || feature.geometry.type !== "Point") return;
         const members = membersOf(feature.properties["groupId"]);

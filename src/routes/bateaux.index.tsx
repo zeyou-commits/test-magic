@@ -132,7 +132,7 @@ function VesselCard({ vessel, routes, ports }: { vessel: Vessel; routes: RouteLi
   ].filter((s) => s.value);
   return (
     <article className="flex flex-col overflow-hidden rounded-2xl border bg-background shadow-sm transition hover:shadow-md">
-      <div className="relative aspect-[16/9] bg-muted">
+      <div className="relative aspect-[16/9] bg-card">
         {photo?.url && !failed ? (
           <img
             src={photo.url}

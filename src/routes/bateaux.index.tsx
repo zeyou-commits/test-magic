@@ -140,7 +140,7 @@ function VesselCard({ vessel, routes, ports }: { vessel: Vessel; routes: RouteLi
             loading="lazy"
             referrerPolicy="no-referrer"
             onError={() => setFailed(true)}
-            className="h-full w-full object-cover"
+            className="h-full w-full object-contain p-2"
           />
         ) : (
           <div className="grid h-full place-items-center text-muted-foreground">

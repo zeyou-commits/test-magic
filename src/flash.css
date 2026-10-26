@@ -634,3 +634,20 @@
 body:has(.bw-flash-sheet[data-state="open"]) .bw-header {
   z-index: 40;
 }
+
+/* Raccourci « En mer » : le bateau tangue doucement (désactivé si moins d'animations demandées). */
+@keyframes bw-ship-sway {
+  0%,
+  100% {
+    transform: translateY(0) rotate(0deg);
+  }
+  50% {
+    transform: translateY(-1px) rotate(-6deg);
+  }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .bw-ship-sailing {
+    animation: bw-ship-sway 2.4s ease-in-out infinite;
+    transform-origin: 50% 80%;
+  }
+}

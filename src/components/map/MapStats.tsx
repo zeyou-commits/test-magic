@@ -1,6 +1,6 @@
 import { useAuth } from "@/hooks/useAuth";
 import { useEffect, useRef } from "react";
-import { Anchor, Flag, Hourglass, Ship, Waves, type LucideProps } from "lucide-react";
+import { Anchor, Building2, Ship, type LucideProps } from "lucide-react";
 import type { FleetShip } from "@/lib/ferry/fleet";
 import {
   shortCompanyName,
@@ -98,38 +98,52 @@ export function MapStats({
     "flex min-h-9 w-full items-center justify-between gap-1.5 rounded-xl px-2 py-1 text-xs font-bold tabular-nums text-foreground transition-colors hover:bg-secondary data-[active=true]:bg-primary data-[active=true]:text-primary-foreground md:min-h-10 md:gap-2 md:px-2.5 md:text-sm";
   const shipList =
     activeShortcut === "sea" ? atSea : activeShortcut === "upcoming" ? upcomingShips : [];
+  // Icônes parlantes sans légende : bateau qui tangue (en mer, avec point « en direct »),
+  // bateau à l'ancre (à quai), bâtiment (compagnies), phare (ports).
+  const icon = "size-4 md:size-[18px]";
   const shortcuts = [
     {
       id: "sea" as const,
-      label: "Navires en mer",
+      label: "En mer",
+      title: "Navires en mer",
       count: atSea.length,
       icon: (
-        <span className="relative inline-flex items-center">
-          <span className="relative mr-1 inline-flex size-2">
-            <span className="absolute inline-flex size-full animate-ping rounded-full bg-destructive opacity-75" />
-            <span className="relative inline-flex size-2 rounded-full bg-destructive" />
+        <span className="relative inline-flex">
+          <Ship className={`${icon} bw-ship-sailing`} />
+          <span className="absolute -right-0.5 -top-0.5 inline-flex size-2" aria-hidden>
+            <span className="absolute inline-flex size-full rounded-full bg-success opacity-75 motion-safe:animate-ping" />
+            <span className="relative inline-flex size-2 rounded-full border border-background bg-success" />
           </span>
-          <Waves className="size-3 md:size-4" />
         </span>
       ),
     },
     {
       id: "upcoming" as const,
-      label: "Navires à quai",
+      label: "À quai",
+      title: "Navires à quai",
       count: upcomingShips.length,
-      icon: <Hourglass className="size-3 md:size-4" />,
+      icon: (
+        <span className="relative inline-flex">
+          <Ship className={icon} />
+          <span className="absolute -bottom-1 -right-1 grid size-3 place-items-center rounded-full bg-background">
+            <Anchor className="size-2.5" strokeWidth={2.5} />
+          </span>
+        </span>
+      ),
     },
     {
       id: "companies" as const,
-      label: "Compagnies des navires",
+      label: "Compagnies",
+      title: "Compagnies des navires",
       count: companies.length,
-      icon: <Flag className="size-3 md:size-4" />,
+      icon: <Building2 className={icon} />,
     },
     {
       id: "ports" as const,
-      label: "Ports et liaisons",
+      label: "Ports",
+      title: "Ports et liaisons",
       count: portsCount,
-      icon: <Anchor className="size-3 md:size-4" />,
+      icon: <LighthouseIcon className={icon} />,
     },
   ];
   return (
@@ -139,20 +153,30 @@ export function MapStats({
     >
       {/* Raccourcis empilés à la verticale (ordinateur et mobile) : ils prennent moins de place sur la carte. */}
       <div className="ml-auto flex w-max flex-col items-stretch gap-0.5 rounded-2xl border border-border bg-background/95 p-1 shadow-md backdrop-blur md:shadow-lg">
-        {shortcuts.map(({ id, label, count, icon }) => (
+        {shortcuts.map(({ id, label, title, count, icon }) => (
           <button
             key={id}
             type="button"
-            className={item}
+            className={`${item} group relative`}
             data-active={activeShortcut === id}
-            aria-label={`${label} : ${count}`}
+            aria-label={`${title} : ${count}`}
             aria-pressed={activeShortcut === id}
             aria-expanded={activeShortcut === id && menuOpen}
-            title={`${label} : ${count}`}
             onClick={() => onToggle(id)}
           >
-            {icon}
+            <span aria-hidden className="inline-flex">
+              {icon}
+            </span>
             {count}
+            {/* Libellé court au survol (ordinateur), à gauche de la colonne. */}
+            {!(activeShortcut === id && menuOpen) ? (
+              <span
+                aria-hidden
+                className="pointer-events-none absolute right-full top-1/2 mr-2 hidden -translate-y-1/2 whitespace-nowrap rounded-lg bg-foreground px-2 py-1 text-xs font-semibold text-background shadow-md md:group-hover:block"
+              >
+                {label}
+              </span>
+            ) : null}
           </button>
         ))}
       </div>
@@ -233,7 +257,7 @@ export function MapStats({
                   {company.logoUrl ? (
                     <img src={company.logoUrl} alt="" className="size-5 shrink-0 object-contain" />
                   ) : (
-                    <Flag className="size-4 shrink-0 text-primary" />
+                    <Building2 className="size-4 shrink-0 text-primary" />
                   )}
                   <span className="truncate" title={company.name}>
                     {shortCompanyName(company.name)} ({company.count})

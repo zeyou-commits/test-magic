@@ -1488,7 +1488,6 @@ export default function FerryMap({
         display: "grid",
         gridTemplateColumns: "1fr 1fr",
         gap: "4px",
-        padding: "4px",
         margin: isMobile ? "6px 0 4px" : "10px 0 8px",
         padding: isMobile ? "2px" : "4px",
         borderRadius: "12px",

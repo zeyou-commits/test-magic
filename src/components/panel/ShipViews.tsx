@@ -122,27 +122,28 @@ export function VesselView({
         </div>
         <div className="bw-ship-hero-photo">
           <ShipPhoto key={photo?.url ?? vesselId} url={photo?.url} name={vessel.name} />
-          <dl className="bw-ship-hero-stats" aria-label="Le bateau en chiffres">
-            <div>
-              <CalendarDays size={12} aria-hidden />
-              <dt>Âge</dt>
-              <dd>
-                {vessel.build_year && vessel.build_year <= new Date().getFullYear()
-                  ? `${new Date().getFullYear() - vessel.build_year} ans`
-                  : "—"}
-              </dd>
-            </div>
-            <div>
-              <Users size={12} aria-hidden />
-              <dt>Passagers</dt>
-              <dd>{vessel.passenger_capacity?.toLocaleString("fr-FR") ?? "—"}</dd>
-            </div>
-            <div>
-              <CarFront size={12} aria-hidden />
-              <dt>Véhicules</dt>
-              <dd>{vessel.car_capacity?.toLocaleString("fr-FR") ?? "—"}</dd>
-            </div>
-          </dl>
+        </div>
+        <dl className="bw-ship-hero-stats" aria-label="Le bateau en chiffres">
+          <div>
+            <CalendarDays size={12} aria-hidden />
+            <dt>Âge</dt>
+            <dd>
+              {vessel.build_year && vessel.build_year <= new Date().getFullYear()
+                ? `${new Date().getFullYear() - vessel.build_year} ans`
+                : "—"}
+            </dd>
+          </div>
+          <div>
+            <Users size={12} aria-hidden />
+            <dt>Passagers</dt>
+            <dd>{vessel.passenger_capacity?.toLocaleString("fr-FR") ?? "—"}</dd>
+          </div>
+          <div>
+            <CarFront size={12} aria-hidden />
+            <dt>Véhicules</dt>
+            <dd>{vessel.car_capacity?.toLocaleString("fr-FR") ?? "—"}</dd>
+          </div>
+        </dl>
         </div>
       </header>
       {departure && from && to ? (

@@ -1389,17 +1389,6 @@ export default function FerryMap({
           selectRef.current({ type: "port", id: port.id });
           if (!insetsRef.current.isMobile)
             requestAnimationFrame(() => positionPortTip(map, marker, tip, tipInset()));
-          else
-            // Le port se recentre dans la bande de carte visible au-dessus du tiroir ouvert.
-            window.setTimeout(() => {
-              const visibleTop = 64;
-              const inset = insetsRef.current.mobileBottomInset;
-              map.easeTo({
-                center: [port.longitude, port.latitude],
-                offset: [0, -(inset - visibleTop) / 2],
-                duration: cameraDuration(350),
-              });
-            }, 60);
         };
 
         dot.addEventListener("click", select);

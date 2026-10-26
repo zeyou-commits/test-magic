@@ -2909,31 +2909,27 @@ html {
   margin: 0; overflow-wrap: anywhere;
 }
 .bw-ship-hero-company { margin: 1px 0 0; font-size: 12px; color: var(--muted-foreground); }
-.bw-ship-hero-photo { position: relative; border-radius: 18px; overflow: hidden; }
+.bw-ship-hero-photo { border-radius: 18px; overflow: hidden; }
 .bw-ship-hero-photo .bw-ship-photo { width: 100%; height: auto; aspect-ratio: 16 / 9; border-radius: 0; }
-.bw-ship-hero-photo .bw-ship-photo img { object-fit: cover; }
+.bw-ship-hero-photo .bw-ship-photo img { object-fit: cover; object-position: center 40%; }
+/* Réglette chiffres, posée sous la photo, aux couleurs du site. */
 .bw-ship-hero-stats {
-  position: absolute; left: 8px; right: 8px; bottom: 8px; margin: 0;
-  display: flex; justify-content: space-between; gap: 6px;
+  margin: 6px 0 0;
+  display: flex; justify-content: space-between; align-items: center; gap: 8px;
+  background: var(--muted); border: 1px solid var(--border); border-radius: 12px;
+  padding: 6px 12px;
 }
-.bw-ship-hero-stats > div {
-  display: flex; align-items: baseline; gap: 4px; flex: none;
-  background: color-mix(in oklab, var(--card) 88%, transparent);
-  backdrop-filter: blur(6px); border-radius: 999px; padding: 3px 9px;
-  box-shadow: 0 1px 6px rgba(9, 40, 56, 0.18);
-}
+.bw-ship-hero-stats > div { display: flex; align-items: baseline; gap: 4px; flex: none; }
 .bw-ship-hero-stats svg { flex: none; align-self: center; color: var(--primary); }
 .bw-ship-hero-stats dt { font-size: 10px; color: var(--muted-foreground); white-space: nowrap; }
 .bw-ship-hero-stats dt::after { content: " :"; }
 .bw-ship-hero-stats dd { margin: 0; font-size: 12px; font-weight: 750; white-space: nowrap; }
 @media (max-width: 430px) {
-  .bw-ship-hero-stats { gap: 4px; }
-  .bw-ship-hero-stats > div { padding: 2px 7px; gap: 3px; }
+  .bw-ship-hero-stats { padding: 5px 9px; gap: 4px; }
   .bw-ship-hero-stats dt { font-size: 9px; }
   .bw-ship-hero-stats dd { font-size: 11px; }
 }
 /* Tout petit écran : le libellé suffit, l'icône céde la place. */
 @media (max-width: 360px) {
-  .bw-ship-hero-stats { left: 5px; right: 5px; gap: 3px; }
   .bw-ship-hero-stats svg { display: none; }
 }

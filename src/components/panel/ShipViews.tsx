@@ -144,7 +144,6 @@ export function VesselView({
             <dd>{vessel.car_capacity?.toLocaleString("fr-FR") ?? "—"}</dd>
           </div>
         </dl>
-        </div>
       </header>
       {departure && from && to ? (
         <div className="bw-ship-crossing-first">

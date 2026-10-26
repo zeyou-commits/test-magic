@@ -350,7 +350,17 @@ export function DepartureView({
           </span>
           <ArrowRight size={18} aria-hidden />
         </button>
-      ) : null}
+      ) : departure.vessel_id ? null : (
+        <div className="bw-vessel-switch" role="note" aria-label="Navire non identifié">
+          <span className="bw-vessel-switch-icon">
+            <Ship size={22} aria-hidden />
+          </span>
+          <span>
+            <small>En attente d’affectation par la compagnie</small>
+            <strong>Navire non identifié</strong>
+          </span>
+        </div>
+      )}
       {from ? <BoardingGuide departure={departure} port={from} /> : null}
       <div className="bw-port-links">
         {[from, to].map((port, i) =>

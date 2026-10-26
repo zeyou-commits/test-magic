@@ -5,6 +5,7 @@ import { CommercialPrograms } from "@/components/admin/CommercialPrograms";
 import { UsersAdmin } from "@/components/admin/UsersAdmin";
 import { canUseAdminTab } from "@/lib/admin/permissions";
 import { communityQuery } from "@/lib/ferry/community";
+import { NewsAdmin, PlacesAdmin } from "@/components/admin/ContentAdmin";
 import { CommunityModeration } from "@/components/panel/CommunityModeration";
 import { cloneElement, isValidElement, useEffect, useId, useRef, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
@@ -292,6 +293,12 @@ function AdminTabs() {
         </TabsContent>
         <TabsContent value="notifications">
           <NotificationOverview />
+        </TabsContent>
+        <TabsContent value="flash">
+          <NewsAdmin />
+        </TabsContent>
+        <TabsContent value="places">
+          <PlacesAdmin />
         </TabsContent>
         <TabsContent value="companies">
           <CompaniesAdmin />

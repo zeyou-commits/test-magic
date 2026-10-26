@@ -1,0 +1,597 @@
+/* BledWay · Flash info, Ma traversée, lieux pratiques et signalements façon Waze. */
+
+/* ---------- Avatars voyageurs ---------- */
+.bw-signal-avatars {
+  display: inline-flex;
+  align-items: center;
+  vertical-align: middle;
+  margin-right: 6px;
+}
+.bw-signal-avatars > svg + svg {
+  margin-left: -6px;
+}
+.bw-signal-list small.bw-signal-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 2px;
+}
+.bw-signal-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+}
+.bw-signal-actions .bw-signal-deny {
+  color: #6a7873;
+}
+
+/* Marqueur de carte : pastille de situation + avatars et nombre de voyageurs. */
+.bw-travel-marker > .bw-travel-marker__crowd {
+  position: absolute;
+  left: 26px;
+  top: 24px;
+  display: inline-flex;
+  align-items: center;
+  gap: 0;
+  width: auto;
+  height: auto;
+  padding: 1px 6px 1px 2px;
+  background: #ffffff;
+  border: 1px solid #e5e7df;
+  border-radius: 999px;
+  box-shadow: 0 2px 8px #16324a2e;
+  color: #16324a;
+}
+.bw-travel-marker__crowd > svg + svg {
+  margin-left: -5px;
+}
+.bw-travel-marker__crowd > small {
+  font-size: 10px;
+  font-weight: 700;
+  margin-left: 3px;
+  position: static;
+  background: none;
+  border: none;
+  width: auto;
+  height: auto;
+  color: #16324a;
+}
+
+/* ---------- Flash info ---------- */
+.bw-flash {
+  margin: 4px 0 16px;
+}
+.bw-flash-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 700;
+  color: #16324a;
+  margin-bottom: 8px;
+}
+.bw-flash-title svg {
+  color: #0e7a43;
+}
+.bw-flash-empty {
+  background: #f2f1eb;
+  border-radius: 14px;
+  padding: 12px 14px;
+  font-size: 12px;
+  line-height: 1.5;
+  color: #61716f;
+}
+.bw-flash-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+}
+.bw-flash-card {
+  border: 1px solid #e5e7df;
+  border-radius: 16px;
+  padding: 12px 14px;
+  background: #ffffff;
+}
+.bw-flash-card[data-tone="warning"] {
+  background: #fff8e6;
+  border-color: #f3dfa8;
+}
+.bw-flash-card[data-tone="official"] {
+  background: #eef6f1;
+  border-color: #cfe5d8;
+}
+.bw-flash-card[data-tone="community"] {
+  background: #f5f2fb;
+  border-color: #e2dbf1;
+}
+.bw-flash-kicker {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 8px;
+  font-size: 11px;
+  color: #61716f;
+}
+.bw-flash-kicker time {
+  margin-left: auto;
+}
+.bw-flash-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  font-size: 10.5px;
+}
+.bw-flash-badge[data-tone="warning"] {
+  color: #8a5a00;
+}
+.bw-flash-badge[data-tone="official"],
+.bw-flash-badge[data-tone="brand"] {
+  color: #0e7a43;
+}
+.bw-flash-badge[data-tone="media"] {
+  color: #16324a;
+}
+.bw-flash-badge[data-tone="community"] {
+  color: #6b4fa8;
+}
+.bw-flash-headline {
+  display: block;
+  margin-top: 6px;
+  font-size: 14px;
+  line-height: 1.35;
+  color: #16324a;
+}
+.bw-flash-card p {
+  margin-top: 3px;
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: #3e4d55;
+}
+.bw-flash-chip {
+  display: inline-block;
+  margin-top: 8px;
+  padding: 2px 9px;
+  border-radius: 999px;
+  background: #16324a0d;
+  font-size: 11px;
+  font-weight: 600;
+  color: #16324a;
+}
+.bw-flash-footer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px 12px;
+  margin-top: 8px;
+}
+.bw-flash-footer small {
+  font-size: 10.5px;
+  color: #6a7873;
+}
+.bw-flash-actions {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 4px 14px;
+}
+.bw-flash-actions a,
+.bw-flash-actions button,
+.bw-flash-footer > button {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 32px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #0e7a43;
+}
+.bw-flash-actions a:hover,
+.bw-flash-actions button:hover,
+.bw-flash-footer > button:hover {
+  text-decoration: underline;
+}
+.bw-flash-crowd {
+  display: inline-flex;
+  align-items: center;
+  font-size: 11px;
+  color: #6a7873;
+}
+
+/* ---------- Ma traversée ---------- */
+.bw-my-trip {
+  margin: 12px 0 4px;
+}
+.bw-trip-changes {
+  margin-bottom: 14px;
+}
+.bw-trip-changes ol {
+  list-style: none;
+  margin: 0;
+  padding: 0 0 0 14px;
+  border-left: 2px solid #e5e7df;
+  display: grid;
+  gap: 10px;
+}
+.bw-trip-changes li {
+  position: relative;
+}
+.bw-trip-changes li::before {
+  content: "";
+  position: absolute;
+  left: -20px;
+  top: 4px;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #c9d2cc;
+  border: 2px solid #ffffff;
+}
+.bw-trip-changes li[data-latest="true"]::before {
+  background: #e0a100;
+}
+.bw-trip-change-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+}
+.bw-trip-change-head strong {
+  font-size: 12.5px;
+  color: #16324a;
+}
+.bw-trip-change-head time {
+  flex: none;
+  font-size: 11px;
+  color: #6a7873;
+}
+.bw-trip-changes li p {
+  font-size: 12px;
+  line-height: 1.5;
+  color: #3e4d55;
+  margin-top: 2px;
+}
+.bw-trip-prepare {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-height: 56px;
+  padding: 10px 14px;
+  border-radius: 16px;
+  border: 1px solid #cfe5d8;
+  background: #eef6f1;
+  color: #0e7a43;
+  text-align: left;
+  margin-bottom: 12px;
+}
+.bw-trip-prepare span {
+  flex: 1;
+  min-width: 0;
+}
+.bw-trip-prepare small {
+  display: block;
+  font-size: 11px;
+  color: #3e6b52;
+}
+.bw-trip-prepare strong {
+  display: block;
+  font-size: 13px;
+  color: #16324a;
+}
+.bw-my-trips {
+  display: grid;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+.bw-my-trip-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-height: 56px;
+  padding: 10px 14px;
+  border-radius: 16px;
+  background: #0e7a43;
+  color: #ffffff;
+  text-align: left;
+  box-shadow: 0 6px 18px -8px #0e7a4399;
+}
+.bw-my-trip-card small {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  opacity: 0.9;
+}
+.bw-my-trip-card strong {
+  display: block;
+  font-size: 14px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.bw-my-trip-icon {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  flex: none;
+  border-radius: 11px;
+  background: #ffffff26;
+}
+
+/* ---------- Lieux pratiques ---------- */
+.bw-places {
+  margin: 16px 0;
+}
+.bw-places-group + .bw-places-group {
+  margin-top: 12px;
+}
+.bw-places-group h4 {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 4px 8px;
+  font-size: 12.5px;
+  font-weight: 700;
+  color: #16324a;
+  margin-bottom: 6px;
+}
+.bw-places-group h4 small {
+  font-weight: 400;
+  font-size: 11px;
+  color: #6a7873;
+}
+.bw-places-group ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+}
+.bw-place {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 10px 12px;
+  border: 1px solid #e5e7df;
+  border-radius: 14px;
+  background: #ffffff;
+}
+.bw-place-icon {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  flex: none;
+  border-radius: 11px;
+  background: #eef6f1;
+  color: #0e7a43;
+}
+.bw-place-kind {
+  font-size: 10.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: #6a7873;
+}
+.bw-place strong {
+  display: block;
+  font-size: 13px;
+  color: #16324a;
+}
+.bw-place-line {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11.5px;
+  color: #3e4d55;
+  margin-top: 2px;
+}
+.bw-place-note {
+  font-size: 11.5px;
+  line-height: 1.45;
+  color: #3e4d55;
+  margin-top: 4px;
+}
+.bw-place-verified {
+  display: block;
+  margin-top: 4px;
+  font-size: 10.5px;
+  color: #3e6b52;
+}
+.bw-place-go {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  flex: none;
+  min-height: 36px;
+  padding: 0 12px;
+  border-radius: 999px;
+  border: 1px solid #cfe5d8;
+  background: #eef6f1;
+  font-size: 12px;
+  font-weight: 700;
+  color: #0e7a43;
+}
+.bw-place-go:hover {
+  background: #e1efe6;
+}
+
+/* ---------- « Utile » sur les avis ---------- */
+.bw-review-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 14px;
+  margin-top: 6px;
+}
+.bw-helpful {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  min-height: 32px;
+  padding: 0 10px;
+  border-radius: 999px;
+  border: 1px solid #e5e7df;
+  font-size: 12px;
+  font-weight: 600;
+  color: #3e4d55;
+  background: #ffffff;
+}
+.bw-helpful[aria-pressed="true"] {
+  border-color: #0e7a43;
+  background: #eef6f1;
+  color: #0e7a43;
+}
+.bw-helpful:disabled {
+  cursor: default;
+  opacity: 0.75;
+}
+.bw-helpful span {
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---------- Back-office des contenus ---------- */
+.bw-content-admin form {
+  display: grid;
+  gap: 10px;
+}
+.bw-content-admin label {
+  display: grid;
+  gap: 4px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #3e4d55;
+}
+.bw-content-admin input,
+.bw-content-admin select,
+.bw-content-admin textarea {
+  min-height: 40px;
+  border: 1px solid #d9ddd5;
+  border-radius: 10px;
+  padding: 8px 10px;
+  font-size: 13px;
+  font-weight: 400;
+  background: #ffffff;
+}
+.bw-content-admin select[multiple] {
+  min-height: 110px;
+}
+.bw-content-admin .bw-admin-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 10px 12px;
+  border: 1px solid #e5e7df;
+  border-radius: 12px;
+  background: #ffffff;
+}
+
+/* ---------- Flash info : panneau à droite de la carte (ordinateur) ---------- */
+.bw-flash-panel {
+  display: none;
+}
+@media (min-width: 768px) {
+  .bw-flash-panel {
+    display: flex;
+    flex-direction: column;
+    position: absolute;
+    right: 20px;
+    top: 76px;
+    z-index: 20;
+    width: 340px;
+    max-height: min(62vh, 560px);
+    border: 1px solid #e5e7df;
+    border-radius: 18px;
+    background: #fbfaf6f2;
+    backdrop-filter: blur(10px);
+    box-shadow: 0 12px 32px -14px #16324a59;
+    overflow: hidden;
+    pointer-events: auto;
+  }
+}
+.bw-flash-panel__head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  min-height: 46px;
+  padding: 0 14px;
+  color: #16324a;
+  font-size: 14px;
+  text-align: left;
+}
+.bw-flash-panel__head > svg:first-child {
+  color: #0e7a43;
+}
+.bw-flash-panel__head:hover {
+  background: #16324a08;
+}
+.bw-flash-panel__chevron {
+  margin-left: auto;
+  transition: transform 0.2s ease;
+}
+.bw-flash-panel[data-collapsed="true"] .bw-flash-panel__chevron {
+  transform: rotate(-90deg);
+}
+.bw-flash-panel__body {
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 0 12px 12px;
+  border-top: 1px solid #e5e7df;
+}
+.bw-flash-panel__body .bw-flash {
+  margin: 12px 0 0;
+}
+.bw-flash-count {
+  display: inline-grid;
+  place-items: center;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  border-radius: 999px;
+  background: #16324a;
+  color: #ffffff;
+  font-size: 11px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.bw-flash-count[data-urgent="true"] {
+  background: #c2410c;
+}
+
+/* ---------- Flash info : bouton de l'en-tête (mobile) ---------- */
+.bw-flash-bell {
+  position: relative;
+  color: #16324a;
+}
+.bw-flash-bell .bw-flash-count {
+  position: absolute;
+  top: 2px;
+  right: 0;
+  min-width: 17px;
+  height: 17px;
+  padding: 0 4px;
+  font-size: 10px;
+  border: 2px solid #fbfaf6;
+}
+.bw-flash-sheet .bw-flash {
+  margin-top: 4px;
+}
+@media (min-width: 768px) {
+  /* Sur ordinateur, le fil est déjà affiché à droite de la carte. */
+  .bw-flash-bell {
+    display: none;
+  }
+}
+/* Fil plein écran sur mobile : passe devant l'en-tête du site (z-index 80) tant qu'il est ouvert. */
+body:has(.bw-flash-sheet[data-state="open"]) .bw-header {
+  z-index: 40;
+}

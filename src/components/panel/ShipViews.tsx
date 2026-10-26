@@ -28,6 +28,7 @@ import { TravelSignals, VesselReviews } from "./TravelCommunity";
 import { ReportButton } from "./ReportButton";
 import { FollowButton } from "./FollowButton";
 import { JourneyChecklist } from "./JourneyChecklist";
+import { MyTripPanel } from "./MyTrip";
 
 function useShipData() {
   const { data: vessels = [] } = useQuery(vesselsQuery);
@@ -328,6 +329,18 @@ export function DepartureView({
           demo={Boolean(departure.is_demo)}
         />
       </div>
+      {route ? (
+        <MyTripPanel
+          departureId={departureId}
+          routeId={route.id}
+          fromPortId={from?.id}
+          toPortId={to?.id}
+          companyId={departure.company_id}
+          vesselId={departure.vessel_id}
+          fromName={from?.name}
+          onSelect={onSelect}
+        />
+      ) : null}
       {from && (
         <JourneyChecklist
           departureId={departureId}

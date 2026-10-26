@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   ArrowDownLeft,
   ArrowUpRight,
@@ -11,7 +11,12 @@ import {
   PenLine,
   Route as RouteIcon,
   Star,
+  ThumbsUp,
 } from "lucide-react";
+import { useAuth } from "@/hooks/useAuth";
+import { helpfulKey, reviewHelpfulQuery, toggleReviewHelpful } from "@/lib/ferry/flash";
+import { FlashFeed } from "./FlashFeed";
+import { PortPlaces } from "./PortPlaces";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
@@ -49,6 +54,13 @@ export function PortView({
   portId: string;
   onSelect: (selection: Selection) => void;
 }) {
+  const { user } = useAuth();
+  const queryClient = useQueryClient();
+  const helpful = useQuery(reviewHelpfulQuery(portId, user?.id));
+  const helpfulVote = useMutation({
+    mutationFn: toggleReviewHelpful,
+    onSuccess: () => void queryClient.invalidateQueries({ queryKey: helpfulKey }),
+  });
   const { data: ports = [] } = useQuery(portsQuery);
   const { data: routes = [] } = useQuery(routesQuery);
   const { data: companies = [] } = useQuery(companiesQuery);
@@ -56,12 +68,8 @@ export function PortView({
   const { data: criteria = [] } = useQuery(ratingCriteriaQuery);
   const reviewsResult = useQuery(portReviewsQuery(portId));
   const reviews = useMemo(() => reviewsResult.data ?? [], [reviewsResult.data]);
-  const [activeTab, setActiveTab] = useState(() =>
-    typeof window !== "undefined" &&
-    window.sessionStorage.getItem("bledway:pending-travel-signal") === `port:${portId}`
-      ? "practical"
-      : "community",
-  );
+  // « En direct » d'abord : c'est aussi là que s'ouvre un signalement en attente.
+  const [activeTab, setActiveTab] = useState("live");
   const [scheduleTab, setScheduleTab] = useState("departures");
   const [writeReview, setWriteReview] = useState(false);
   const port = ports.find((item) => item.id === portId);
@@ -99,7 +107,7 @@ export function PortView({
   }, [criteria, reviews]);
 
   const requestPortSignal = useCallback(() => {
-    setActiveTab("practical");
+    setActiveTab("live");
     window.setTimeout(
       () =>
         window.dispatchEvent(
@@ -210,8 +218,6 @@ export function PortView({
         </details>
       ) : null}
 
-      {servicesSection}
-
       <div className="port-community-summary">
         <button
           type="button"
@@ -263,16 +269,17 @@ export function PortView({
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="port-profile-tabs">
         <TabsList aria-label={`Explorer le port de ${port.name}`} className="port-profile-nav">
+          <TabsTrigger value="live">En direct</TabsTrigger>
+          <TabsTrigger value="practical">Préparer</TabsTrigger>
           <TabsTrigger value="community">
-            Avis{" "}
+            Voyageurs{" "}
             <span>{reviewsResult.isPending || reviewsResult.isError ? "—" : reviews.length}</span>
           </TabsTrigger>
-          <TabsTrigger value="practical">Sur place</TabsTrigger>
-          <TabsTrigger value="schedules">Horaires</TabsTrigger>
         </TabsList>
 
         <TabsContent value="practical" className="port-tab-content">
-          <TravelSignals key={portId} kind="port" target={portId} />
+          {servicesSection}
+          <PortPlaces portId={portId} portName={port.name} />
           {port.notes ? (
             <details className="port-practical-details">
               <summary>
@@ -328,7 +335,16 @@ export function PortView({
           </div>
         </TabsContent>
 
-        <TabsContent value="schedules" className="port-tab-content">
+        <TabsContent value="live" className="port-tab-content">
+          <FlashFeed
+            title={`À la une · ${port.name}`}
+            context={{ portIds: [portId], routeIds: portRoutes.map((route) => route.id) }}
+            signalPortIds={[portId]}
+            withSignals={false}
+            currentPortId={portId}
+            onSelect={onSelect}
+          />
+          <TravelSignals key={portId} kind="port" target={portId} />
           <div className="port-section-heading">
             <div>
               <h3>Les prochains mouvements</h3>
@@ -509,11 +525,28 @@ export function PortView({
                             Ce voyageur a partagé ses notes sans commentaire.
                           </p>
                         )}
-                        <ReportButton
-                          targetType="review"
-                          targetId={review.id}
-                          label="Signaler cet avis"
-                        />
+                        <div className="bw-review-actions">
+                          {helpful.data ? (
+                            <button
+                              type="button"
+                              className="bw-helpful"
+                              aria-pressed={helpful.data.get(review.id)?.mine ?? false}
+                              disabled={!user || helpfulVote.isPending}
+                              title={user ? undefined : "Connectez-vous pour voter"}
+                              onClick={() => helpfulVote.mutate(review.id)}
+                            >
+                              <ThumbsUp size={14} aria-hidden /> Utile
+                              {helpful.data.get(review.id)?.helpful ? (
+                                <span>{helpful.data.get(review.id)?.helpful}</span>
+                              ) : null}
+                            </button>
+                          ) : null}
+                          <ReportButton
+                            targetType="review"
+                            targetId={review.id}
+                            label="Signaler cet avis"
+                          />
+                        </div>
                       </article>
                     </li>
                   );

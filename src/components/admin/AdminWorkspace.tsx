@@ -17,6 +17,8 @@ import {
   Star,
   Waves,
   Users,
+  Zap,
+  Fuel,
 } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import { UserMenu } from "@/components/layout/UserMenu";
@@ -49,6 +51,13 @@ const sections = [
     description: "Préparez, vérifiez et diffusez les ouvertures de traversées.",
     group: "Pilotage",
     icon: Bell,
+  },
+  {
+    id: "flash",
+    label: "Flash info",
+    description: "Actualités et perturbations Europe ↔ Algérie, sourcées.",
+    group: "Pilotage",
+    icon: Zap,
   },
   {
     id: "alerts",
@@ -91,6 +100,13 @@ const sections = [
     description: "Accès, informations pratiques et points sur la carte.",
     group: "Réseau général",
     icon: MapPin,
+  },
+  {
+    id: "places",
+    label: "Lieux pratiques",
+    description: "Stations-service, change, distributeurs autour des ports.",
+    group: "Réseau général",
+    icon: Fuel,
   },
   {
     id: "routes",

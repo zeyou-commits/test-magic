@@ -20,6 +20,7 @@ import { portTimeZone, dateKeyInZone } from "@/lib/ferry/time";
 import { emptyFilters, type Filters, type Selection } from "@/lib/ferry/types";
 import { CompanyBadge } from "./CompanyBadge";
 import { FollowButton } from "./FollowButton";
+import { MyTripsShortcut } from "./MyTrip";
 import type { MapPreview } from "@/lib/ferry/mapPresentation";
 
 export function HomeTraffic({
@@ -95,6 +96,7 @@ export function HomeTraffic({
     .sort((a, b) => Date.parse(a.iso!) - Date.parse(b.iso!));
   return (
     <div className="bw-home-traffic">
+      <MyTripsShortcut onSelect={onSelect} />
       <section aria-label="Traversées en navigation">
         <h2 className="mb-2 flex items-center gap-2 text-sm font-bold">
           <Ship size={16} aria-hidden /> En navigation{" "}

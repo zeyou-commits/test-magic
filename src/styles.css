@@ -3,6 +3,7 @@
 @import "tw-animate-css";
 @import "./home.css";
 @import "./account-admin.css";
+@import "./flash.css";
 
 @custom-variant dark (&:is(.dark *));
 

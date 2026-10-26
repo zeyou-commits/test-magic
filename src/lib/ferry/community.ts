@@ -10,21 +10,29 @@ export type CommunityKind = "vessel" | "port";
 export const alertCategories = {
   delay: { label: "Retard au départ", kind: "vessel" },
   boarding: { label: "Embarquement commencé", kind: "vessel" },
-  queue: { label: "Attente aux contrôles", kind: "port" },
+  disembarking: { label: "Débarquement commencé", kind: "vessel" },
+  queue: { label: "File d’attente importante", kind: "port" },
   access: { label: "Accès difficile", kind: "port" },
+  parking: { label: "Parking complet", kind: "port" },
+  fluid: { label: "Passage fluide", kind: "port" },
 } as const;
+/** Catégories proposées par défaut : celles connues avant le script SQL du 26/10/2026. */
+export const legacyAlertCategories = new Set(["delay", "boarding", "queue", "access"]);
 export type AlertCategory = keyof typeof alertCategories;
 const alertSchema = z.object({
   id: z.string(),
   target_kind: z.enum(["vessel", "port"]),
   target_id: z.string(),
-  category: z.enum(["delay", "boarding", "queue", "access"]),
+  category: z.enum(["delay", "boarding", "disembarking", "queue", "access", "parking", "fluid"]),
   delay_minutes: z.number().nullable(),
   created_at: z.string(),
   expires_at: z.string(),
   own: z.boolean().nullable(),
   confirmations: z.number(),
   confirmed: z.boolean(),
+  // Ajoutés par le script du 26/10/2026 : valeurs neutres tant qu'il n'est pas appliqué.
+  denials: z.number().optional().default(0),
+  denied: z.boolean().optional().default(false),
 });
 const reviewSchema = z.object({
   id: z.string(),

@@ -2,14 +2,18 @@ import { useCallback, useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Check,
+  CircleOff,
   Clock3,
   Flag,
   MessageCircle,
+  ParkingCircle,
   Star,
   ThumbsUp,
   Users,
   Navigation,
   Ship,
+  Sparkles,
+  LogOut,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -24,12 +28,15 @@ import {
   alertCategories,
   alertLabel,
   communityKey,
+  legacyAlertCategories,
   communityQuery,
   type AlertCategory,
   type CommunityKind,
   type VesselReview,
 } from "@/lib/ferry/community";
 import { formatAge } from "@/lib/ferry/tracking";
+import { newsQuery } from "@/lib/ferry/flash";
+import { SignalAvatars } from "./SignalAvatars";
 
 export function AlertIcon({ category, size = 17 }: { category: AlertCategory; size?: number }) {
   const Icon =
@@ -37,9 +44,15 @@ export function AlertIcon({ category, size = 17 }: { category: AlertCategory; si
       ? Clock3
       : category === "boarding"
         ? Ship
-        : category === "queue"
-          ? Users
-          : Navigation;
+        : category === "disembarking"
+          ? LogOut
+          : category === "queue"
+            ? Users
+            : category === "parking"
+              ? ParkingCircle
+              : category === "fluid"
+                ? Sparkles
+                : Navigation;
   return <Icon size={size} aria-hidden />;
 }
 const failure = (message?: string) =>
@@ -52,6 +65,8 @@ export function TravelSignals({ kind, target }: { kind: CommunityKind; target: s
   const { user, loading: authLoading } = useAuth();
   const queryClient = useQueryClient();
   const feed = useQuery(communityQuery(kind, target, false, user?.id));
+  // Le script SQL du 26/10/2026 crée bw_news : sa présence active les nouvelles situations et « Plus le cas ».
+  const upgraded = useQuery(newsQuery).data != null;
   const [open, setOpen] = useState(false);
   const [category, setCategory] = useState<AlertCategory | null>(null);
   const [delay, setDelay] = useState(30);
@@ -101,7 +116,7 @@ export function TravelSignals({ kind, target }: { kind: CommunityKind; target: s
   }, [kind, target, user, authLoading, signalKey, startSignal]);
   const mutation = useMutation({
     mutationFn: async (
-      action: { type: "report" } | { type: "confirm" | "resolve"; id: string },
+      action: { type: "report" } | { type: "confirm" | "resolve" | "deny"; id: string },
     ) => {
       const result =
         action.type === "report"
@@ -170,9 +185,11 @@ export function TravelSignals({ kind, target }: { kind: CommunityKind; target: s
               </span>
               <div>
                 <strong>{alertLabel(alert)}</strong>
-                <small>
+                <small className="bw-signal-meta">
+                  <SignalAvatars count={1 + alert.confirmations} seed={alert.id} />
                   {1 + alert.confirmations} voyageur{alert.confirmations ? "s" : ""} ·{" "}
                   {formatAge(Math.max(0, (Date.now() - Date.parse(alert.created_at)) / 60_000))}
+                  {alert.denials ? ` · ${alert.denials} « plus le cas »` : ""}
                 </small>
                 <div className="bw-signal-actions">
                   {alert.own ? (
@@ -185,14 +202,27 @@ export function TravelSignals({ kind, target }: { kind: CommunityKind; target: s
                       C’est terminé
                     </button>
                   ) : user ? (
-                    <button
-                      type="button"
-                      disabled={mutation.isPending || alert.confirmed}
-                      onClick={() => mutation.mutate({ type: "confirm", id: alert.id })}
-                    >
-                      <ThumbsUp size={14} aria-hidden />
-                      {alert.confirmed ? "Confirmé par vous" : "Je confirme"}
-                    </button>
+                    <>
+                      <button
+                        type="button"
+                        disabled={mutation.isPending || alert.confirmed}
+                        onClick={() => mutation.mutate({ type: "confirm", id: alert.id })}
+                      >
+                        <ThumbsUp size={14} aria-hidden />
+                        {alert.confirmed ? "Confirmé par vous" : "Je confirme"}
+                      </button>
+                      {upgraded ? (
+                        <button
+                          type="button"
+                          className="bw-signal-deny"
+                          disabled={mutation.isPending || alert.denied}
+                          onClick={() => mutation.mutate({ type: "deny", id: alert.id })}
+                        >
+                          <CircleOff size={14} aria-hidden />
+                          {alert.denied ? "Noté, merci" : "Ce n’est plus le cas"}
+                        </button>
+                      ) : null}
+                    </>
                   ) : null}
                 </div>
               </div>
@@ -234,7 +264,7 @@ export function TravelSignals({ kind, target }: { kind: CommunityKind; target: s
                     { label: string; kind: string },
                   ][]
                 )
-                  .filter(([, c]) => c.kind === kind)
+                  .filter(([key, c]) => c.kind === kind && (upgraded || legacyAlertCategories.has(key)))
                   .map(([key, c]) => (
                     <label key={key}>
                       <input

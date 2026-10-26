@@ -7,6 +7,8 @@ export const adminTabs = [
   "reports",
   "alerts",
   "notifications",
+  "flash",
+  "places",
   "companies",
   "departures",
   "schedules",

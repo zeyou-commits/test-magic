@@ -38,6 +38,7 @@ import { Button } from "@/components/ui/button";
 import { MapStatusBar } from "@/components/map/MapStatusBar";
 import { MapLegend } from "@/components/map/MapLegend";
 import { MapStats, type MapShortcut } from "@/components/map/MapStats";
+import { FLASH_SELECT_EVENT, FlashMapPanel } from "@/components/panel/FlashCenter";
 import { filtersFromUrl, mapStateToSearch, selectionFromUrl } from "@/lib/ferry/urlState";
 import { hasActiveFilters, filterRoutes, summarizePorts } from "@/lib/ferry/filtering";
 import { portTimeZone } from "@/lib/ferry/time";
@@ -92,6 +93,17 @@ function Index() {
     }
     setFocusShipId(null);
   };
+  // Fil Flash info (en-tête mobile) : ouvre la fiche demandée sans recharger la page.
+  const handleSelectRef = useRef(handleSelect);
+  handleSelectRef.current = handleSelect;
+  useEffect(() => {
+    const onFlashSelect = (event: Event) => {
+      const detail = (event as CustomEvent<Selection>).detail;
+      if (detail?.type && detail.id) handleSelectRef.current(detail);
+    };
+    window.addEventListener(FLASH_SELECT_EVENT, onFlashSelect);
+    return () => window.removeEventListener(FLASH_SELECT_EVENT, onFlashSelect);
+  }, []);
   const handleBack = () => {
     setPeekSelectionKey(null);
     if (selectionHistory.length > 0) {
@@ -1115,6 +1127,7 @@ function Index() {
               onRetry={() => allResults.forEach((res) => void res.refetch())}
               panelOpen={desktopPanelOpen}
             />
+            <FlashMapPanel onSelect={handleSelect} />
             <MapStats
               atSea={atSea}
               upcomingShips={upcomingShips}

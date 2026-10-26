@@ -490,6 +490,35 @@ export default function FerryMap({
           ["get", "name"],
         ]);
       });
+      // Andorre masquée ; « Espagne » remontée vers l'Atlantique pour dégager les ports méditerranéens.
+      let countryFont: unknown;
+      map.getStyle().layers.forEach((layer) => {
+        if (layer.type !== "symbol" || !/^label_country/.test(layer.id)) return;
+        countryFont ??= map.getLayoutProperty(layer.id, "text-font");
+        const hide = ["!", ["in", ["get", "name"], ["literal", ["España", "Andorra"]]]];
+        const current = map.getFilter(layer.id);
+        map.setFilter(layer.id, (current ? ["all", current, hide] : hide) as never);
+      });
+      map.addSource("bw-country-spain", {
+        type: "geojson",
+        data: {
+          type: "Feature",
+          properties: {},
+          geometry: { type: "Point", coordinates: [-5.6, 41.9] },
+        },
+      });
+      map.addLayer({
+        id: "bw-country-spain",
+        type: "symbol",
+        source: "bw-country-spain",
+        layout: {
+          "text-field": "Espagne",
+          "text-size": 15,
+          "text-letter-spacing": 0.05,
+          ...(countryFont ? { "text-font": countryFont as string[] } : {}),
+        },
+        paint: { "text-color": "#627d8a", "text-halo-color": "#f6f2ea", "text-halo-width": 1.2 },
+      });
 
       map.addSource("algeria-highlight", { type: "geojson", data: algeriaGeoJson });
       map.addLayer({

@@ -1709,6 +1709,7 @@ function VesselsAdmin({ vesselIds }: { vesselIds?: string[] } = {}) {
                 </Button>
               </div>
               <VesselSpecsEditor vessel={vessel as unknown as VesselSpecsRow} />
+              <VesselDeleteButton id={vessel.id} name={vessel.name} />
             </li>
           );
         })}
@@ -1717,6 +1718,73 @@ function VesselsAdmin({ vesselIds }: { vesselIds?: string[] } = {}) {
         ) : null}
       </ul>
     </Panel>
+  );
+}
+
+/** Suppression d'un navire : on détache d'abord tout ce qui le référence, puis on l'efface. */
+function VesselDeleteButton({ id, name }: { id: string; name: string }) {
+  const queryClient = useQueryClient();
+  const remove = useMutation({
+    mutationFn: async () => {
+      const count = async (table: "departures" | "schedules" | "schedule_exceptions", col: string) => {
+        const { count, error } = await supabase
+          .from(table)
+          .select("id", { count: "exact", head: true })
+          .eq(col as never, id as never);
+        if (error) throw new Error(error.message);
+        return count ?? 0;
+      };
+      const [deps, scheds, excs] = await Promise.all([
+        count("departures", "vessel_id"),
+        count("schedules", "default_vessel_id"),
+        count("schedule_exceptions", "new_vessel_id"),
+      ]);
+      const linked = deps + scheds + excs;
+      const message = linked
+        ? `« ${name} » est encore rattaché à ${deps} traversée(s), ${scheds} programme(s) et ${excs} exception(s).\n\nCes éléments seront conservés mais passeront en « Navire à affecter ». Supprimer définitivement le navire ?`
+        : `Supprimer définitivement « ${name} » ? Aucun élément ne lui est rattaché.`;
+      if (!window.confirm(message)) return false;
+      if (deps) {
+        const { error } = await supabase.from("departures").update({ vessel_id: null }).eq("vessel_id", id);
+        if (error) throw new Error("Détachement des traversées impossible : " + error.message);
+      }
+      if (scheds) {
+        const { error } = await supabase
+          .from("schedules")
+          .update({ default_vessel_id: null })
+          .eq("default_vessel_id", id);
+        if (error) throw new Error("Détachement des programmes impossible : " + error.message);
+      }
+      if (excs) {
+        const { error } = await supabase
+          .from("schedule_exceptions")
+          .update({ new_vessel_id: null })
+          .eq("new_vessel_id", id);
+        if (error) throw new Error("Détachement des exceptions impossible : " + error.message);
+      }
+      const { data, error } = await supabase.from("vessels").delete().eq("id", id).select("id");
+      if (error) throw new Error("Suppression impossible : " + error.message);
+      if (!data?.length) throw new Error("Suppression refusée par la base (droits insuffisants).");
+      return true;
+    },
+    onSuccess: (done) => {
+      if (!done) return;
+      queryClient.invalidateQueries();
+      toast.success(`« ${name} » a été supprimé.`);
+    },
+    onError: (error: Error) => toast.error(error.message),
+  });
+  return (
+    <div className="flex justify-end">
+      <Button
+        size="sm"
+        variant="destructive"
+        disabled={remove.isPending}
+        onClick={() => remove.mutate()}
+      >
+        {remove.isPending ? "Suppression…" : "Supprimer le navire"}
+      </Button>
+    </div>
   );
 }
 

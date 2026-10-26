@@ -27,3 +27,9 @@
 - [x] Supprimer le bandeau replié tronqué du volet
 - [x] Fiche bateau : logo+nom, grande photo, âge/passagers/véhicules
 - [x] Page Bateaux premium par compagnie
+
+## Admin & carte (oct. 2026)
+- [x] Suppression d'un navire en admin (détache traversées/programmes puis efface ; disparaît du site)
+- [x] Bulle port mobile compacte (onglets plus fins, mention d'en-tête masquée)
+- [x] Bateau à quai prioritaire sur le port au toucher
+- [x] Carte : « Andorre » masquée, « Espagne » remontée vers l'Atlantique

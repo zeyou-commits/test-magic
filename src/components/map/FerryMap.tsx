@@ -490,6 +490,35 @@ export default function FerryMap({
           ["get", "name"],
         ]);
       });
+      // Andorre masquée ; « Espagne » remontée vers l'Atlantique pour dégager les ports méditerranéens.
+      let countryFont: unknown;
+      map.getStyle().layers.forEach((layer) => {
+        if (layer.type !== "symbol" || !/^label_country/.test(layer.id)) return;
+        countryFont ??= map.getLayoutProperty(layer.id, "text-font");
+        const hide = ["!", ["in", ["get", "name"], ["literal", ["España", "Andorra"]]]];
+        const current = map.getFilter(layer.id);
+        map.setFilter(layer.id, (current ? ["all", current, hide] : hide) as never);
+      });
+      map.addSource("bw-country-spain", {
+        type: "geojson",
+        data: {
+          type: "Feature",
+          properties: {},
+          geometry: { type: "Point", coordinates: [-5.6, 41.9] },
+        },
+      });
+      map.addLayer({
+        id: "bw-country-spain",
+        type: "symbol",
+        source: "bw-country-spain",
+        layout: {
+          "text-field": "Espagne",
+          "text-size": 15,
+          "text-letter-spacing": 0.05,
+          ...(countryFont ? { "text-font": countryFont as string[] } : {}),
+        },
+        paint: { "text-color": "#627d8a", "text-halo-color": "#f6f2ea", "text-halo-width": 1.2 },
+      });
 
       map.addSource("algeria-highlight", { type: "geojson", data: algeriaGeoJson });
       map.addLayer({
@@ -913,15 +942,24 @@ export default function FerryMap({
       };
       map.on("click", fleetLayers, pickFleet);
       pickFleetRef.current = (point, portDistance = 8) => {
-        const features = map.queryRenderedFeatures(point, { layers: fleetLayers });
+        // Zone de toucher élargie : un navire à quai se sélectionne même avec un doigt approximatif.
+        const r = 24;
+        const features = map.queryRenderedFeatures(
+          [
+            [point[0] - r, point[1] - r],
+            [point[0] + r, point[1] + r],
+          ],
+          { layers: fleetLayers },
+        );
         const event = { features, point: { x: point[0], y: point[1] } };
         const feature = closestShip(event);
         if (!feature || feature.geometry.type !== "Point") return false;
         const center = map.project(feature.geometry.coordinates as [number, number]);
         const badge = feature.layer.id === "fleet-count" || feature.layer.id === "fleet-count-bg";
         const shipDistance = Math.hypot(center.x - point[0], center.y - point[1]);
-        // Un seul élément s'ouvre : le plus proche du doigt (navire ou port).
-        if (!badge && (shipDistance > 18 || shipDistance >= portDistance)) return false;
+        // Le navire à quai a la priorité ; seul un toucher pile sur le point du port ouvre le port.
+        const onPortDot = portDistance < 5 && shipDistance > portDistance + 6;
+        if (!badge && (shipDistance > 30 || onPortDot)) return false;
         setTipPortId(null);
         pickFleet(event);
         return true;
@@ -1450,8 +1488,8 @@ export default function FerryMap({
         display: "grid",
         gridTemplateColumns: "1fr 1fr",
         gap: "4px",
-        padding: "4px",
-        margin: "10px 0 8px",
+        margin: isMobile ? "6px 0 4px" : "10px 0 8px",
+        padding: isMobile ? "2px" : "4px",
         borderRadius: "12px",
         background: "rgba(127,127,127,.12)",
       });
@@ -1466,10 +1504,10 @@ export default function FerryMap({
         button.setAttribute("aria-label", `${label} : ${count}`);
         button.setAttribute("aria-pressed", String(active));
         Object.assign(button.style, {
-          minHeight: "34px",
+          minHeight: isMobile ? "26px" : "34px",
           border: "0",
-          borderRadius: "3px",
-          padding: "6px 8px",
+          borderRadius: "8px",
+          padding: isMobile ? "2px 6px" : "6px 8px",
           fontSize: "12px",
           fontWeight: "650",
           cursor: "pointer",
@@ -1487,6 +1525,7 @@ export default function FerryMap({
       const scope = document.createElement("p");
       scope.className = "port-tip__scope";
       scope.textContent = "Horaires connus à venir · heure locale";
+      if (isMobile) scope.hidden = true;
       tip.append(scope);
       const departurePanel = document.createElement("div");
       departurePanel.className = "port-tip__schedule";

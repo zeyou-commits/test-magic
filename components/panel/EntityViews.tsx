@@ -216,7 +216,7 @@ export function VesselView({
         <div className="group relative grid size-13 shrink-0 place-items-center overflow-hidden rounded-xl border border-border bg-muted shadow-sm sm:size-14">
           {photo ? (
             <>
-              <img src={photo.url} alt={`Photo du navire ${vessel.name}`} loading="lazy" decoding="async" width={144} height={144} referrerPolicy="no-referrer" className="size-full object-cover" />
+              <img src={photo.url} alt={`Photo du navire ${vessel.name}`} loading="lazy" decoding="async" width={144} height={144} referrerPolicy="no-referrer" className="size-full object-contain p-1" />
               {photo.source === "commons" ? (
                 <div className="pointer-events-none absolute inset-0 flex items-end justify-center bg-black/60 p-1 opacity-0 backdrop-blur-[2px] transition-opacity duration-200 group-hover:pointer-events-auto group-hover:opacity-100 group-focus-within:pointer-events-auto group-focus-within:opacity-100">
                   <p className="line-clamp-2 text-center text-[9px] leading-tight text-white">

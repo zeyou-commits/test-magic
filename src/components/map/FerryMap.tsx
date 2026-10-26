@@ -1489,7 +1489,8 @@ export default function FerryMap({
         gridTemplateColumns: "1fr 1fr",
         gap: "4px",
         padding: "4px",
-        margin: "10px 0 8px",
+        margin: isMobile ? "6px 0 4px" : "10px 0 8px",
+        padding: isMobile ? "2px" : "4px",
         borderRadius: "12px",
         background: "rgba(127,127,127,.12)",
       });
@@ -1504,10 +1505,10 @@ export default function FerryMap({
         button.setAttribute("aria-label", `${label} : ${count}`);
         button.setAttribute("aria-pressed", String(active));
         Object.assign(button.style, {
-          minHeight: "34px",
+          minHeight: isMobile ? "26px" : "34px",
           border: "0",
-          borderRadius: "3px",
-          padding: "6px 8px",
+          borderRadius: "8px",
+          padding: isMobile ? "2px 6px" : "6px 8px",
           fontSize: "12px",
           fontWeight: "650",
           cursor: "pointer",
@@ -1525,6 +1526,7 @@ export default function FerryMap({
       const scope = document.createElement("p");
       scope.className = "port-tip__scope";
       scope.textContent = "Horaires connus à venir · heure locale";
+      if (isMobile) scope.hidden = true;
       tip.append(scope);
       const departurePanel = document.createElement("div");
       departurePanel.className = "port-tip__schedule";

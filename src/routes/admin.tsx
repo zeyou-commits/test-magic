@@ -1462,7 +1462,26 @@ function VesselsAdmin({ vesselIds }: { vesselIds?: string[] } = {}) {
       return data;
     },
   });
-  const vessels = allVessels.filter((v) => !vesselIds || vesselIds.includes(v.id));
+  const [vesselSearch, setVesselSearch] = useState("");
+  const [companyFilter, setCompanyFilter] = useState("all");
+  const scopedVessels = allVessels.filter((v) => !vesselIds || vesselIds.includes(v.id));
+  const normalizedVesselSearch = vesselSearch.trim().toLocaleLowerCase("fr");
+  const vessels = scopedVessels.filter((vessel) => {
+    const companyName = companies.find((item) => item.id === vessel.company_id)?.name ?? "Sans compagnie";
+    const matchesCompany = companyFilter === "all" || (companyFilter === "none" ? !vessel.company_id : vessel.company_id === companyFilter);
+    const haystack = `${vessel.name} ${companyName} ${vessel.mmsi ?? ""} ${vessel.imo ?? ""}`.toLocaleLowerCase("fr");
+    return matchesCompany && (!normalizedVesselSearch || haystack.includes(normalizedVesselSearch));
+  });
+  const groupedVessels = new Map<string, typeof vessels>();
+  for (const vessel of vessels) {
+    const key = vessel.company_id ?? "none";
+    groupedVessels.set(key, [...(groupedVessels.get(key) ?? []), vessel]);
+  }
+  const orderedGroups = [...groupedVessels.entries()].sort((a, b) => {
+    const nameA = a[0] === "none" ? "Sans compagnie" : companies.find((item) => item.id === a[0])?.name ?? "";
+    const nameB = b[0] === "none" ? "Sans compagnie" : companies.find((item) => item.id === b[0])?.name ?? "";
+    return nameA.localeCompare(nameB, "fr");
+  });
   const portLabel = (id: string) => ports.find((p) => p.id === id)?.name ?? "—";
   // Brouillons de saisie, par navire : { mmsi, imo, photo }.
   const [drafts, setDrafts] = useState<
@@ -1531,8 +1550,24 @@ function VesselsAdmin({ vesselIds }: { vesselIds?: string[] } = {}) {
         AVIF, 10 Mo max). Le téléversement remplace l’URL ; sans photo personnalisée, le site
         cherche une photo libre sur Wikimedia Commons.
       </p>
-      <ul className="mt-4 divide-y divide-border">
-        {vessels.map((vessel) => {
+      <div className="mt-4 grid gap-3 sm:grid-cols-[minmax(0,1fr)_16rem]">
+        <Input value={vesselSearch} onChange={(event) => setVesselSearch(event.target.value)} placeholder="Rechercher un navire, MMSI, IMO ou compagnie…" aria-label="Rechercher dans la flotte" />
+        <select value={companyFilter} onChange={(event) => setCompanyFilter(event.target.value)} aria-label="Filtrer par compagnie" className="h-10 rounded-md border border-input bg-background px-3 text-sm">
+          <option value="all">Toutes les compagnies</option>
+          <option value="none">Sans compagnie</option>
+          {companies.slice().sort((a, b) => a.name.localeCompare(b.name, "fr")).map((company) => <option key={company.id} value={company.id}>{company.name}</option>)}
+        </select>
+      </div>
+      <p className="mt-2 text-xs text-muted-foreground">{vessels.length} navire{vessels.length > 1 ? "s" : ""} affiché{vessels.length > 1 ? "s" : ""} sur {scopedVessels.length} · {orderedGroups.length} groupe{orderedGroups.length > 1 ? "s" : ""}</p>
+      <div className="mt-3 space-y-5">
+        {orderedGroups.map(([companyId, groupVessels]) => (
+          <section key={companyId} className="overflow-hidden rounded-xl border border-border">
+            <h3 className="flex items-center justify-between gap-3 bg-muted/40 px-3 py-2 text-sm font-semibold">
+              <span>{companyId === "none" ? "Sans compagnie" : companies.find((item) => item.id === companyId)?.name ?? "Compagnie inconnue"}</span>
+              <span className="rounded-full bg-background px-2 py-0.5 text-xs font-medium text-muted-foreground">{groupVessels.length}</span>
+            </h3>
+            <ul className="divide-y divide-border px-3">
+        {groupVessels.map((vessel) => {
           const draft = drafts[vessel.id] ?? {};
           const mmsi = draft.mmsi ?? (vessel.mmsi ? String(vessel.mmsi) : "");
           const imo = draft.imo ?? (vessel.imo ? String(vessel.imo) : "");
@@ -1713,10 +1748,13 @@ function VesselsAdmin({ vesselIds }: { vesselIds?: string[] } = {}) {
             </li>
           );
         })}
+            </ul>
+          </section>
+        ))}
         {vessels.length === 0 ? (
-          <li className="py-3 text-sm text-muted-foreground">Aucun navire enregistré.</li>
+          <p className="py-3 text-sm text-muted-foreground">{scopedVessels.length ? "Aucun navire ne correspond à cette recherche." : "Aucun navire enregistré."}</p>
         ) : null}
-      </ul>
+      </div>
     </Panel>
   );
 }

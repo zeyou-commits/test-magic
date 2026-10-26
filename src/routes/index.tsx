@@ -1259,7 +1259,11 @@ function Index() {
                       setPanelLevel(1);
                     } else if (kind === "vessel") setPanelLevel(2);
                     else if (kind === "route") setPanelLevel(2);
-                    else if (panelMode !== "itinerary") resetToMap();
+                    // Mobile : déplacer ou zoomer à deux doigts ne touche ni au volet ni au cadrage.
+                    else if (window.innerWidth < 768) {
+                      setTrafficPreview(null);
+                      window.dispatchEvent(new Event("batogo:close-filters"));
+                    } else if (panelMode !== "itinerary") resetToMap();
                   }}
                   mobileBottomInset={mobileBottomInset}
                   desktopLeftInset={desktopPanelOpen ? desktopPanelWidth + 80 : 50}

@@ -815,7 +815,7 @@ body:has(.bw-flash-sheet[data-state="open"]) .bw-header {
   position: absolute;
   z-index: 20;
   right: 1.25rem;
-  top: 13.5rem;
+  top: 14rem;
 }
 .bw-report-fab {
   display: grid;
@@ -846,9 +846,9 @@ body:has(.bw-flash-sheet[data-state="open"]) .bw-header {
 }
 @media (min-width: 768px) {
   .bw-report-fab {
-    width: 56px;
-    height: 56px;
-    border-radius: 18px;
+    width: 53px;
+    height: 53px;
+    border-radius: 16px;
   }
   .bw-report-fab > span {
     position: static;

@@ -95,7 +95,7 @@ export function MapStats({
   }, [menuOpen]);
   const { isAdmin } = useAuth();
   const item =
-    "flex min-h-9 w-full items-center justify-between gap-1.5 rounded-xl px-2 py-1 text-xs font-bold tabular-nums text-foreground transition-colors hover:bg-secondary data-[active=true]:bg-primary data-[active=true]:text-primary-foreground md:min-h-10 md:gap-2 md:px-2.5 md:text-sm";
+    "flex w-full flex-col items-center justify-center gap-0.5 rounded-xl px-1 py-1.5 text-[11px] font-bold leading-none tabular-nums text-foreground transition-colors hover:bg-secondary data-[active=true]:bg-primary data-[active=true]:text-primary-foreground md:min-w-11 md:text-xs";
   const shipList =
     activeShortcut === "sea" ? atSea : activeShortcut === "upcoming" ? upcomingShips : [];
   // Icônes parlantes sans légende : bateau qui tangue (en mer, avec point « en direct »),
@@ -149,10 +149,11 @@ export function MapStats({
   return (
     <div
       ref={rootRef}
-      className="pointer-events-auto absolute right-2 top-3 z-20 md:right-5 md:top-5"
+      className="pointer-events-auto absolute left-2 top-14 z-30 md:left-auto md:right-5 md:top-5"
     >
-      {/* Raccourcis empilés à la verticale (ordinateur et mobile) : ils prennent moins de place sur la carte. */}
-      <div className="ml-auto flex w-max flex-col items-stretch gap-0.5 rounded-2xl border border-border bg-background/95 p-1 shadow-md backdrop-blur md:shadow-lg">
+      {/* Raccourcis empilés à la verticale, icône au-dessus du nombre : colonne étroite.
+          Mobile : à gauche, sous la légende, pour dégager l'est de la carte (ports italiens). */}
+      <div className="flex w-max flex-col items-stretch md:ml-auto gap-0.5 rounded-2xl border border-border bg-background/95 p-1 shadow-md backdrop-blur md:shadow-lg">
         {shortcuts.map(({ id, label, title, count, icon }) => (
           <button
             key={id}
@@ -182,7 +183,7 @@ export function MapStats({
       </div>
       {menuOpen && activeShortcut && (
         <div
-          className="absolute right-full top-0 mr-2 max-h-[min(60dvh,24rem)] w-[min(18rem,calc(100vw-5.5rem))] overflow-y-auto rounded-2xl border border-border bg-background/95 p-1 shadow-lg backdrop-blur"
+          className="absolute left-full top-0 ml-2 max-h-[min(60dvh,24rem)] md:left-auto md:right-full md:ml-0 md:mr-2 w-[min(18rem,calc(100vw-5.5rem))] overflow-y-auto rounded-2xl border border-border bg-background/95 p-1 shadow-lg backdrop-blur"
           onPointerLeave={() => onPreview(null)}
           aria-label={
             activeShortcut === "companies" ? "Filtrer les compagnies" : "Choisir un navire"

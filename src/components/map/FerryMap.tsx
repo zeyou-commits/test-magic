@@ -1709,6 +1709,18 @@ export default function FerryMap({
           ),
         ),
       ].filter((item): item is Port => Boolean(item));
+      if (port && insetsRef.current.isMobile) {
+        // Mobile : la fiche s'ouvre dans le tiroir ; le port se place dans la bande de carte visible.
+        const timer = window.setTimeout(() => {
+          map.easeTo({
+            center: [port.longitude, port.latitude],
+            zoom: Math.max(map.getZoom(), 5.5),
+            padding: viewPadding(),
+            duration: cameraDuration(500),
+          });
+        }, 120);
+        return () => window.clearTimeout(timer);
+      }
       if (points.length > 1) {
         const lngs = points.map((item) => item.longitude);
         const lats = points.map((item) => item.latitude);

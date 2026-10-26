@@ -942,15 +942,24 @@ export default function FerryMap({
       };
       map.on("click", fleetLayers, pickFleet);
       pickFleetRef.current = (point, portDistance = 8) => {
-        const features = map.queryRenderedFeatures(point, { layers: fleetLayers });
+        // Zone de toucher élargie : un navire à quai se sélectionne même avec un doigt approximatif.
+        const r = 24;
+        const features = map.queryRenderedFeatures(
+          [
+            [point[0] - r, point[1] - r],
+            [point[0] + r, point[1] + r],
+          ],
+          { layers: fleetLayers },
+        );
         const event = { features, point: { x: point[0], y: point[1] } };
         const feature = closestShip(event);
         if (!feature || feature.geometry.type !== "Point") return false;
         const center = map.project(feature.geometry.coordinates as [number, number]);
         const badge = feature.layer.id === "fleet-count" || feature.layer.id === "fleet-count-bg";
         const shipDistance = Math.hypot(center.x - point[0], center.y - point[1]);
-        // Un seul élément s'ouvre : le plus proche du doigt (navire ou port).
-        if (!badge && (shipDistance > 18 || shipDistance >= portDistance)) return false;
+        // Le navire à quai a la priorité ; seul un toucher pile sur le point du port ouvre le port.
+        const onPortDot = portDistance < 5 && shipDistance > portDistance + 6;
+        if (!badge && (shipDistance > 30 || onPortDot)) return false;
         setTipPortId(null);
         pickFleet(event);
         return true;

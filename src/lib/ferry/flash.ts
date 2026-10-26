@@ -31,6 +31,11 @@ const newsSchema = z.object({
   route_ids: z.array(z.string()),
   port_ids: z.array(z.string()),
   company_ids: z.array(z.string()),
+  // Traversées datées concernées (script du 27/10/2026) : liste vide tant qu'il n'est pas appliqué.
+  departure_ids: z
+    .array(z.string())
+    .nullish()
+    .transform((value) => value ?? []),
   starts_at: z.string(),
   ends_at: z.string().nullable(),
   published: z.boolean(),
@@ -84,27 +89,45 @@ export const adminNewsQuery = queryOptions({
 });
 
 export interface NewsContext {
-  routeIds?: string[];
-  portIds?: string[];
-  companyIds?: string[];
+  routeIds?: string[] | undefined;
+  portIds?: string[] | undefined;
+  companyIds?: string[] | undefined;
+  departureIds?: string[] | undefined;
 }
+/** Pour relier une traversée datée à ses ports (une info sur le départ du 23/11 concerne ses deux ports). */
+export type DeparturePorts = Map<string, string[]>;
+
 /**
- * Actualités pertinentes pour un contexte (traversée, port…). Une actualité sans rattachement
- * concerne tout le réseau Europe ↔ Algérie : elle apparaît partout.
+ * Actualités pertinentes pour un contexte (traversée, port…). Une actualité sans rattachement concerne
+ * tout le réseau Europe ↔ Algérie : elle apparaît partout. Une info rattachée à une traversée datée
+ * n'apparaît que pour cette traversée et ses ports, jamais pour les autres départs du même trajet.
  */
-export function newsForContext(items: NewsItem[], context: NewsContext = {}) {
+export function newsForContext(
+  items: NewsItem[],
+  context: NewsContext = {},
+  departurePorts: DeparturePorts = new Map(),
+) {
   const routes = new Set(context.routeIds ?? []);
   const ports = new Set(context.portIds ?? []);
   const companies = new Set(context.companyIds ?? []);
-  const scoped = routes.size + ports.size + companies.size > 0;
+  const departures = new Set(context.departureIds ?? []);
+  const scoped = routes.size + ports.size + companies.size + departures.size > 0;
   return items
     .filter((item) => {
-      const general = !item.route_ids.length && !item.port_ids.length && !item.company_ids.length;
+      const general =
+        !item.route_ids.length &&
+        !item.port_ids.length &&
+        !item.company_ids.length &&
+        !item.departure_ids.length;
       if (!scoped || general) return true;
       return (
         item.route_ids.some((id) => routes.has(id)) ||
         item.port_ids.some((id) => ports.has(id)) ||
-        item.company_ids.some((id) => companies.has(id))
+        item.company_ids.some((id) => companies.has(id)) ||
+        item.departure_ids.some(
+          (id) =>
+            departures.has(id) || (departurePorts.get(id) ?? []).some((port) => ports.has(port)),
+        )
       );
     })
     .sort(
@@ -112,6 +135,25 @@ export function newsForContext(items: NewsItem[], context: NewsContext = {}) {
         Number(b.kind === "perturbation") - Number(a.kind === "perturbation") ||
         Date.parse(b.starts_at) - Date.parse(a.starts_at),
     );
+}
+
+// ---------- Infos déjà vues (pastille « nouveau ») ----------
+const SEEN_KEY = "bw-flash-seen";
+export function readSeenFlash(): Set<string> {
+  try {
+    return new Set(JSON.parse(window.localStorage.getItem(SEEN_KEY) ?? "[]") as string[]);
+  } catch {
+    return new Set();
+  }
+}
+export function markFlashSeen(keys: string[]) {
+  try {
+    const next = [...new Set([...readSeenFlash(), ...keys])].slice(-300);
+    window.localStorage.setItem(SEEN_KEY, JSON.stringify(next));
+    window.dispatchEvent(new Event("bledway:flash-seen"));
+  } catch {
+    /* stockage facultatif */
+  }
 }
 
 // ---------- Lieux pratiques ----------

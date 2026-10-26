@@ -234,5 +234,8 @@ BEGIN
 END
 $do$;
 
+-- 6. Traversées datées pour le Flash info (aussi fourni seul dans 20261027120000_flash_info_traversees.sql).
+ALTER TABLE public.bw_news ADD COLUMN IF NOT EXISTS departure_ids uuid[] NOT NULL DEFAULT '{}';
+
 NOTIFY pgrst, 'reload schema';
 COMMIT;

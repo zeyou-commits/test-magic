@@ -38,7 +38,8 @@ import { Button } from "@/components/ui/button";
 import { MapStatusBar } from "@/components/map/MapStatusBar";
 import { MapLegend } from "@/components/map/MapLegend";
 import { MapStats, type MapShortcut } from "@/components/map/MapStats";
-import { FLASH_SELECT_EVENT, FlashMapPanel } from "@/components/panel/FlashCenter";
+import { FLASH_SELECT_EVENT } from "@/components/panel/FlashCenter";
+import { FLASH_PREVIEW_EVENT } from "@/components/panel/FlashFeed";
 import { filtersFromUrl, mapStateToSearch, selectionFromUrl } from "@/lib/ferry/urlState";
 import { hasActiveFilters, filterRoutes, summarizePorts } from "@/lib/ferry/filtering";
 import { portTimeZone } from "@/lib/ferry/time";
@@ -101,8 +102,15 @@ function Index() {
       const detail = (event as CustomEvent<Selection>).detail;
       if (detail?.type && detail.id) handleSelectRef.current(detail);
     };
+    // Survol d'une info du fil : le trajet ou le port concerné s'éclaire sur la carte.
+    const onFlashPreview = (event: Event) =>
+      setTrafficPreview((event as CustomEvent<MapPreview | null>).detail ?? null);
     window.addEventListener(FLASH_SELECT_EVENT, onFlashSelect);
-    return () => window.removeEventListener(FLASH_SELECT_EVENT, onFlashSelect);
+    window.addEventListener(FLASH_PREVIEW_EVENT, onFlashPreview);
+    return () => {
+      window.removeEventListener(FLASH_SELECT_EVENT, onFlashSelect);
+      window.removeEventListener(FLASH_PREVIEW_EVENT, onFlashPreview);
+    };
   }, []);
   const handleBack = () => {
     setPeekSelectionKey(null);
@@ -1127,7 +1135,6 @@ function Index() {
               onRetry={() => allResults.forEach((res) => void res.refetch())}
               panelOpen={desktopPanelOpen}
             />
-            <FlashMapPanel onSelect={handleSelect} />
             <MapStats
               atSea={atSea}
               upcomingShips={upcomingShips}

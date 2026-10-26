@@ -342,6 +342,7 @@ export function PortView({
             signalPortIds={[portId]}
             withSignals={false}
             currentPortId={portId}
+            expandFirst
             onSelect={onSelect}
           />
           <TravelSignals key={portId} kind="port" target={portId} />

@@ -2,7 +2,14 @@ import { useState, type FormEvent } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { companiesQuery, portsQuery, routesQuery } from "@/lib/ferry/queries";
+import {
+  companiesQuery,
+  portsQuery,
+  routesQuery,
+  upcomingDeparturesQuery,
+} from "@/lib/ferry/queries";
+import { formatDateParts } from "@/lib/ferry/format";
+import { portTimeZone } from "@/lib/ferry/time";
 import {
   adminNewsQuery,
   flashClient,
@@ -25,8 +32,93 @@ const toLocalInput = (iso: string | null) => {
   return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
 };
 const fromLocalInput = (value: string) => (value ? new Date(value).toISOString() : null);
+const capitalize = (text: string) => (text ? text.charAt(0).toUpperCase() + text.slice(1) : text);
 const selected = (select: HTMLSelectElement) =>
   Array.from(select.selectedOptions).map((option) => option.value);
+
+/**
+ * Traversées datées concernées : on choisit un trajet, puis un ou plusieurs départs à venir.
+ * Exemple : « le départ du 23 novembre est reporté » concerne cette traversée, pas tout le trajet.
+ */
+function DeparturePicker({
+  value,
+  onChange,
+  routeLabel,
+}: {
+  value: string[];
+  onChange: (ids: string[]) => void;
+  routeLabel: (routeId: string) => string;
+}) {
+  const { data: departures = [] } = useQuery(upcomingDeparturesQuery());
+  const { data: routes = [] } = useQuery(routesQuery);
+  const { data: ports = [] } = useQuery(portsQuery);
+  const [routeId, setRouteId] = useState("");
+  const label = (id: string) => {
+    const departure = departures.find((item) => item.id === id);
+    if (!departure) return "Traversée passée ou introuvable";
+    const route = routes.find((item) => item.id === departure.route_id);
+    const from = ports.find((port) => port.id === route?.departure_port_id);
+    const parts = formatDateParts(departure.departure_at, portTimeZone(from));
+    return `${parts.weekday} ${parts.shortDate} · ${parts.time} · ${routeLabel(departure.route_id)}`;
+  };
+  const options = departures
+    .filter((item) => item.route_id === routeId && !value.includes(item.id))
+    .slice(0, 60);
+  const routeIds = [...new Set(departures.map((item) => item.route_id))];
+  return (
+    <fieldset className="grid gap-2 rounded-xl border border-dashed p-3">
+      <legend className="px-1 text-xs font-semibold">
+        Traversées datées concernées (facultatif)
+      </legend>
+      {value.length ? (
+        <ul className="flex flex-wrap gap-2">
+          {value.map((id) => (
+            <li key={id} className="bw-flash-chip !mt-0 inline-flex items-center gap-2">
+              {label(id)}
+              <button
+                type="button"
+                aria-label="Retirer cette traversée"
+                onClick={() => onChange(value.filter((item) => item !== id))}
+              >
+                ×
+              </button>
+            </li>
+          ))}
+        </ul>
+      ) : null}
+      <div className="grid gap-2 md:grid-cols-2">
+        <label>
+          Trajet
+          <select value={routeId} onChange={(e) => setRouteId(e.target.value)}>
+            <option value="">— Choisir un trajet —</option>
+            {routeIds.map((id) => (
+              <option key={id} value={id}>
+                {routeLabel(id)}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label>
+          Départ
+          <select
+            value=""
+            disabled={!routeId}
+            onChange={(e) => e.target.value && onChange([...value, e.target.value])}
+          >
+            <option value="">
+              {routeId ? "— Ajouter un départ —" : "Choisissez d’abord un trajet"}
+            </option>
+            {options.map((item) => (
+              <option key={item.id} value={item.id}>
+                {label(item.id)}
+              </option>
+            ))}
+          </select>
+        </label>
+      </div>
+    </fieldset>
+  );
+}
 
 type NewsDraft = {
   id?: string;
@@ -39,6 +131,9 @@ type NewsDraft = {
   route_ids: string[];
   port_ids: string[];
   company_ids: string[];
+  departure_ids: string[];
+  /** L'actualité avait déjà des traversées : on enregistre aussi leur retrait. */
+  hadDepartures?: boolean;
   starts_at: string;
   ends_at: string;
   published: boolean;
@@ -53,6 +148,7 @@ const emptyNews = (): NewsDraft => ({
   route_ids: [],
   port_ids: [],
   company_ids: [],
+  departure_ids: [],
   starts_at: toLocalInput(new Date().toISOString()),
   ends_at: "",
   published: true,
@@ -75,13 +171,17 @@ export function NewsAdmin() {
       const row = {
         kind: value.kind,
         origin: value.origin,
-        title: value.title.trim(),
-        summary: value.summary.trim(),
-        source_name: value.source_name.trim(),
+        title: capitalize(value.title.trim()),
+        summary: capitalize(value.summary.trim()),
+        source_name: capitalize(value.source_name.trim()),
         source_url: url || null,
         route_ids: value.route_ids,
         port_ids: value.port_ids,
         company_ids: value.company_ids,
+        // Colonne ajoutée par le script du 27/10/2026 : envoyée seulement si des traversées sont choisies.
+        ...(value.departure_ids.length || value.hadDepartures
+          ? { departure_ids: value.departure_ids }
+          : {}),
         starts_at: fromLocalInput(value.starts_at) ?? new Date().toISOString(),
         ends_at: fromLocalInput(value.ends_at),
         published: value.published,
@@ -90,7 +190,12 @@ export function NewsAdmin() {
       const result = value.id
         ? await flashClient.from("bw_news").update(row).eq("id", value.id)
         : await flashClient.from("bw_news").insert(row);
-      if (result.error) throw new Error(result.error.message);
+      if (result.error)
+        throw new Error(
+          /departure_ids/.test(result.error.message)
+            ? "Pour rattacher une traversée, exécutez d’abord le script supabase/migrations/20261027120000_flash_info_traversees.sql dans Supabase."
+            : result.error.message,
+        );
     },
     onSuccess: () => {
       toast.success("Flash info enregistré.");
@@ -163,7 +268,7 @@ export function NewsAdmin() {
             </label>
           </div>
           <label>
-            Titre (160 caractères max.)
+            Titre (idéal : 90 caractères, pour tenir sur une ligne)
             <input
               required
               minLength={4}
@@ -203,7 +308,7 @@ export function NewsAdmin() {
           </div>
           <div className="grid gap-3 md:grid-cols-3">
             <label>
-              Lignes concernées
+              Trajets concernés
               <select
                 multiple
                 value={draft.route_ids}
@@ -246,9 +351,14 @@ export function NewsAdmin() {
             </label>
           </div>
           <p className="text-xs text-muted-foreground">
-            Sans ligne, port ni compagnie, l’actualité concerne tout le réseau. Ctrl / Cmd + clic
-            pour choisir plusieurs éléments.
+            Sans trajet, traversée, port ni compagnie, l’actualité concerne tout le réseau. Ctrl /
+            Cmd + clic pour choisir plusieurs éléments.
           </p>
+          <DeparturePicker
+            value={draft.departure_ids}
+            onChange={(departure_ids) => setDraft({ ...draft, departure_ids })}
+            routeLabel={routeLabel}
+          />
           <div className="grid gap-3 md:grid-cols-3">
             <label>
               Visible à partir du
@@ -327,6 +437,8 @@ export function NewsAdmin() {
                         route_ids: item.route_ids,
                         port_ids: item.port_ids,
                         company_ids: item.company_ids,
+                        departure_ids: item.departure_ids,
+                        hadDepartures: item.departure_ids.length > 0,
                         starts_at: toLocalInput(item.starts_at),
                         ends_at: toLocalInput(item.ends_at),
                         published: item.published,

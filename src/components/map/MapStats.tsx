@@ -95,7 +95,7 @@ export function MapStats({
   }, [menuOpen]);
   const { isAdmin } = useAuth();
   const item =
-    "flex items-center gap-1 rounded-full px-1.5 py-0.5 text-[11px] font-bold tabular-nums text-foreground transition-colors hover:bg-secondary data-[active=true]:bg-primary data-[active=true]:text-primary-foreground md:gap-1.5 md:px-2.5 md:py-1.5 md:text-sm";
+    "flex min-h-9 w-full items-center justify-between gap-1.5 rounded-xl px-2 py-1 text-xs font-bold tabular-nums text-foreground transition-colors hover:bg-secondary data-[active=true]:bg-primary data-[active=true]:text-primary-foreground md:min-h-10 md:gap-2 md:px-2.5 md:text-sm";
   const shipList =
     activeShortcut === "sea" ? atSea : activeShortcut === "upcoming" ? upcomingShips : [];
   const shortcuts = [
@@ -137,7 +137,8 @@ export function MapStats({
       ref={rootRef}
       className="pointer-events-auto absolute right-2 top-3 z-20 md:right-5 md:top-5"
     >
-      <div className="ml-auto flex w-max items-center rounded-full border border-border bg-background/95 p-0.5 shadow-md backdrop-blur md:gap-0.5 md:p-1 md:shadow-lg">
+      {/* Raccourcis empilés à la verticale (ordinateur et mobile) : ils prennent moins de place sur la carte. */}
+      <div className="ml-auto flex w-max flex-col items-stretch gap-0.5 rounded-2xl border border-border bg-background/95 p-1 shadow-md backdrop-blur md:shadow-lg">
         {shortcuts.map(({ id, label, count, icon }) => (
           <button
             key={id}
@@ -157,7 +158,7 @@ export function MapStats({
       </div>
       {menuOpen && activeShortcut && (
         <div
-          className="ml-auto mt-2 max-h-[min(48dvh,20rem)] w-[min(18rem,calc(100vw-2rem))] overflow-y-auto rounded-2xl border border-border bg-background/95 p-1 shadow-lg backdrop-blur"
+          className="absolute right-full top-0 mr-2 max-h-[min(60dvh,24rem)] w-[min(18rem,calc(100vw-5.5rem))] overflow-y-auto rounded-2xl border border-border bg-background/95 p-1 shadow-lg backdrop-blur"
           onPointerLeave={() => onPreview(null)}
           aria-label={
             activeShortcut === "companies" ? "Filtrer les compagnies" : "Choisir un navire"

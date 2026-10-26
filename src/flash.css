@@ -57,7 +57,7 @@
   color: #16324a;
 }
 
-/* ---------- Flash info ---------- */
+/* ---------- Flash info : fil en lignes compactes ---------- */
 .bw-flash {
   margin: 4px 0 16px;
 }
@@ -86,71 +86,128 @@
   margin: 0;
   padding: 0;
   display: grid;
-  gap: 8px;
+  gap: 6px;
 }
-.bw-flash-card {
-  border: 1px solid #e5e7df;
-  border-radius: 16px;
-  padding: 12px 14px;
+.bw-flash-row {
+  --tone: #16324a;
+  --tone-soft: #16324a12;
+  position: relative;
+  border: 1px solid #e8e9e3;
+  border-radius: 14px;
   background: #ffffff;
+  overflow: hidden;
+  transition:
+    border-color 0.15s ease,
+    box-shadow 0.15s ease;
 }
-.bw-flash-card[data-tone="warning"] {
-  background: #fff8e6;
-  border-color: #f3dfa8;
+.bw-flash-row::before {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 3px;
+  background: var(--tone);
 }
-.bw-flash-card[data-tone="official"] {
-  background: #eef6f1;
-  border-color: #cfe5d8;
+.bw-flash-row[data-tone="warning"] {
+  --tone: #c27a00;
+  --tone-soft: #fff4dc;
 }
-.bw-flash-card[data-tone="community"] {
-  background: #f5f2fb;
-  border-color: #e2dbf1;
+.bw-flash-row[data-tone="official"],
+.bw-flash-row[data-tone="brand"] {
+  --tone: #0e7a43;
+  --tone-soft: #e6f3eb;
 }
-.bw-flash-kicker {
+.bw-flash-row[data-tone="community"] {
+  --tone: #7a5cc0;
+  --tone-soft: #efeafa;
+}
+.bw-flash-row[data-tone="media"] {
+  --tone: #4a6378;
+  --tone-soft: #e9eef2;
+}
+@media (hover: hover) {
+  .bw-flash-row:hover {
+    border-color: #d5d8cf;
+    box-shadow: 0 4px 14px -8px #16324a40;
+  }
+}
+.bw-flash-row[data-open="true"] {
+  border-color: #d5d8cf;
+}
+.bw-flash-row__head {
   display: flex;
-  flex-wrap: wrap;
   align-items: center;
-  gap: 4px 8px;
-  font-size: 11px;
-  color: #61716f;
+  gap: 10px;
+  width: 100%;
+  min-height: 52px;
+  padding: 8px 10px 8px 13px;
+  text-align: left;
 }
-.bw-flash-kicker time {
-  margin-left: auto;
+.bw-flash-row__icon {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  flex: none;
+  border-radius: 10px;
+  background: var(--tone-soft);
+  color: var(--tone);
 }
-.bw-flash-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.03em;
-  font-size: 10.5px;
+.bw-flash-row__text {
+  flex: 1;
+  min-width: 0;
 }
-.bw-flash-badge[data-tone="warning"] {
-  color: #8a5a00;
-}
-.bw-flash-badge[data-tone="official"],
-.bw-flash-badge[data-tone="brand"] {
-  color: #0e7a43;
-}
-.bw-flash-badge[data-tone="media"] {
-  color: #16324a;
-}
-.bw-flash-badge[data-tone="community"] {
-  color: #6b4fa8;
-}
-.bw-flash-headline {
+.bw-flash-row__text strong {
   display: block;
-  margin-top: 6px;
-  font-size: 14px;
-  line-height: 1.35;
+  font-size: 13px;
+  line-height: 1.3;
   color: #16324a;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
-.bw-flash-card p {
-  margin-top: 3px;
+.bw-flash-row[data-open="true"] .bw-flash-row__text strong {
+  white-space: normal;
+}
+.bw-flash-row__text small {
+  display: block;
+  margin-top: 2px;
+  font-size: 11px;
+  color: #6a7873;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.bw-flash-row__kind {
+  font-weight: 700;
+  color: var(--tone);
+}
+.bw-flash-row__chevron {
+  flex: none;
+  color: #8a968f;
+  transition: transform 0.2s ease;
+}
+.bw-flash-row[data-open="true"] .bw-flash-row__chevron {
+  transform: rotate(180deg);
+}
+.bw-flash-new {
+  width: 8px;
+  height: 8px;
+  flex: none;
+  border-radius: 50%;
+  background: #c2410c;
+}
+.bw-flash-row__body {
+  padding: 0 12px 12px 53px;
+}
+.bw-flash-row__body p {
   font-size: 12.5px;
   line-height: 1.5;
   color: #3e4d55;
+}
+.bw-flash-note {
+  margin-top: 6px;
+  font-size: 11.5px !important;
+  color: #6a7873 !important;
 }
 .bw-flash-chip {
   display: inline-block;
@@ -167,7 +224,7 @@
   flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
-  gap: 6px 12px;
+  gap: 4px 12px;
   margin-top: 8px;
 }
 .bw-flash-footer small {
@@ -180,8 +237,7 @@
   gap: 4px 14px;
 }
 .bw-flash-actions a,
-.bw-flash-actions button,
-.bw-flash-footer > button {
+.bw-flash-actions button {
   display: inline-flex;
   align-items: center;
   gap: 4px;
@@ -191,8 +247,7 @@
   color: #0e7a43;
 }
 .bw-flash-actions a:hover,
-.bw-flash-actions button:hover,
-.bw-flash-footer > button:hover {
+.bw-flash-actions button:hover {
   text-decoration: underline;
 }
 .bw-flash-crowd {
@@ -494,102 +549,86 @@
   background: #ffffff;
 }
 
-/* ---------- Flash info : panneau à droite de la carte (ordinateur) ---------- */
-.bw-flash-panel {
-  display: none;
-}
-@media (min-width: 768px) {
-  .bw-flash-panel {
-    display: flex;
-    flex-direction: column;
-    position: absolute;
-    right: 20px;
-    top: 76px;
-    z-index: 20;
-    width: 340px;
-    max-height: min(62vh, 560px);
-    border: 1px solid #e5e7df;
-    border-radius: 18px;
-    background: #fbfaf6f2;
-    backdrop-filter: blur(10px);
-    box-shadow: 0 12px 32px -14px #16324a59;
-    overflow: hidden;
-    pointer-events: auto;
-  }
-}
-.bw-flash-panel__head {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  width: 100%;
-  min-height: 46px;
-  padding: 0 14px;
+/* ---------- En-tête : icône Flash info + notifications ---------- */
+.bw-flash-bell {
+  position: relative;
   color: #16324a;
-  font-size: 14px;
-  text-align: left;
-}
-.bw-flash-panel__head > svg:first-child {
-  color: #0e7a43;
-}
-.bw-flash-panel__head:hover {
-  background: #16324a08;
-}
-.bw-flash-panel__chevron {
-  margin-left: auto;
-  transition: transform 0.2s ease;
-}
-.bw-flash-panel[data-collapsed="true"] .bw-flash-panel__chevron {
-  transform: rotate(-90deg);
-}
-.bw-flash-panel__body {
-  overflow-y: auto;
-  overscroll-behavior: contain;
-  padding: 0 12px 12px;
-  border-top: 1px solid #e5e7df;
-}
-.bw-flash-panel__body .bw-flash {
-  margin: 12px 0 0;
 }
 .bw-flash-count {
   display: inline-grid;
   place-items: center;
-  min-width: 20px;
-  height: 20px;
-  padding: 0 6px;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
   border-radius: 999px;
   background: #16324a;
   color: #ffffff;
-  font-size: 11px;
+  font-size: 10.5px;
   font-weight: 700;
   font-variant-numeric: tabular-nums;
 }
 .bw-flash-count[data-urgent="true"] {
   background: #c2410c;
 }
-
-/* ---------- Flash info : bouton de l'en-tête (mobile) ---------- */
-.bw-flash-bell {
-  position: relative;
-  color: #16324a;
-}
 .bw-flash-bell .bw-flash-count {
   position: absolute;
-  top: 2px;
-  right: 0;
-  min-width: 17px;
-  height: 17px;
-  padding: 0 4px;
-  font-size: 10px;
-  border: 2px solid #fbfaf6;
+  top: 1px;
+  right: -2px;
+  border: 2px solid #fcfaf6;
 }
-.bw-flash-sheet .bw-flash {
-  margin-top: 4px;
+.bw-inbox-popover {
+  width: min(400px, calc(100vw - 24px));
+  max-height: min(72vh, 620px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 12px;
+  border-radius: 18px;
+  z-index: 120;
 }
-@media (min-width: 768px) {
-  /* Sur ordinateur, le fil est déjà affiché à droite de la carte. */
-  .bw-flash-bell {
-    display: none;
-  }
+.bw-inbox-heading {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 2px 4px 10px;
+  font-size: 14px;
+  font-weight: 700;
+  color: #16324a;
+}
+.bw-inbox-tabs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px;
+  padding: 4px;
+  margin-bottom: 10px;
+  border-radius: 12px;
+  background: #f2f1eb;
+}
+.bw-inbox-tabs button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 36px;
+  border-radius: 9px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: #4a5a63;
+}
+.bw-inbox-tabs button[aria-selected="true"] {
+  background: #ffffff;
+  color: #16324a;
+  box-shadow: 0 1px 3px #16324a1f;
+}
+.bw-inbox-body .bw-flash {
+  margin: 0;
+}
+.bw-inbox-more {
+  display: block;
+  margin-top: 10px;
+  text-align: center;
+  font-size: 12px;
+  font-weight: 700;
+  color: #0e7a43;
 }
 /* Fil plein écran sur mobile : passe devant l'en-tête du site (z-index 80) tant qu'il est ouvert. */
 body:has(.bw-flash-sheet[data-state="open"]) .bw-header {

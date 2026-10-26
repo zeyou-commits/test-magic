@@ -74,17 +74,19 @@ export function MyTripPanel({
     <div className="bw-my-trip">
       <TripChanges departureId={departureId} />
       <FlashFeed
-        title="Infos sur votre trajet"
+        title="Infos sur votre traversée"
         context={{
+          departureIds: [departureId],
           routeIds: [routeId],
           portIds,
           companyIds: companyId ? [companyId] : [],
         }}
+        expandFirst
         signalPortIds={fromPortId ? [fromPortId] : []}
         signalVesselIds={vesselId ? [vesselId] : []}
         onSelect={onSelect}
         limit={5}
-        emptyText="Aucune perturbation connue sur ce trajet pour le moment."
+        emptyText="Aucune perturbation connue sur cette traversée pour le moment."
       />
       {fromPortId ? (
         <button

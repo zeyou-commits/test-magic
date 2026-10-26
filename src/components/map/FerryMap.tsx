@@ -1383,19 +1383,12 @@ export default function FerryMap({
           }
           dismissedPortIdsRef.current.delete(port.id);
           interactRef.current?.(insetsRef.current.isMobile ? "port" : undefined);
-          if (insetsRef.current.isMobile) {
-            setTipPortId(port.id);
-            // Le port se place au centre de la zone visible, au-dessus du tiroir.
-            map.easeTo({
-              center: [port.longitude, port.latitude],
-              offset: [0, -insetsRef.current.mobileBottomInset / 2 + 40],
-              duration: cameraDuration(350),
-            });
-          } else {
-            // Cliquer un port le sélectionne, sans modifier les filtres de recherche.
-            selectRef.current({ type: "port", id: port.id });
-          }
-          requestAnimationFrame(() => positionPortTip(map, marker, tip, tipInset()));
+          // Cliquer un port le sélectionne, sans modifier les filtres de recherche.
+          // Mobile (façon Google Maps) : la fiche s'ouvre dans le tiroir, sans bulle flottante.
+          setTipPortId(null);
+          selectRef.current({ type: "port", id: port.id });
+          if (!insetsRef.current.isMobile)
+            requestAnimationFrame(() => positionPortTip(map, marker, tip, tipInset()));
         };
 
         dot.addEventListener("click", select);
@@ -1716,6 +1709,18 @@ export default function FerryMap({
           ),
         ),
       ].filter((item): item is Port => Boolean(item));
+      if (port && insetsRef.current.isMobile) {
+        // Mobile : la fiche s'ouvre dans le tiroir ; le port se place dans la bande de carte visible.
+        const timer = window.setTimeout(() => {
+          map.easeTo({
+            center: [port.longitude, port.latitude],
+            zoom: Math.max(map.getZoom(), 5.5),
+            padding: viewPadding(),
+            duration: cameraDuration(500),
+          });
+        }, 120);
+        return () => window.clearTimeout(timer);
+      }
       if (points.length > 1) {
         const lngs = points.map((item) => item.longitude);
         const lats = points.map((item) => item.latitude);
@@ -1746,6 +1751,7 @@ export default function FerryMap({
         });
       }
     }
+    return undefined;
   }, [selection, mapReady]);
 
   useEffect(() => {

@@ -1383,19 +1383,12 @@ export default function FerryMap({
           }
           dismissedPortIdsRef.current.delete(port.id);
           interactRef.current?.(insetsRef.current.isMobile ? "port" : undefined);
-          if (insetsRef.current.isMobile) {
-            setTipPortId(port.id);
-            // Le port se place au centre de la zone visible, au-dessus du tiroir.
-            map.easeTo({
-              center: [port.longitude, port.latitude],
-              offset: [0, -insetsRef.current.mobileBottomInset / 2 + 40],
-              duration: cameraDuration(350),
-            });
-          } else {
-            // Cliquer un port le sélectionne, sans modifier les filtres de recherche.
-            selectRef.current({ type: "port", id: port.id });
-          }
-          requestAnimationFrame(() => positionPortTip(map, marker, tip, tipInset()));
+          // Cliquer un port le sélectionne, sans modifier les filtres de recherche.
+          // Mobile (façon Google Maps) : la fiche s'ouvre dans le tiroir, sans bulle flottante.
+          setTipPortId(null);
+          selectRef.current({ type: "port", id: port.id });
+          if (!insetsRef.current.isMobile)
+            requestAnimationFrame(() => positionPortTip(map, marker, tip, tipInset()));
         };
 
         dot.addEventListener("click", select);

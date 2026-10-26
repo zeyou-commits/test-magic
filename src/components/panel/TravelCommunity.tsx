@@ -26,6 +26,8 @@ const supabase = typedSupabase as unknown as SupabaseClient;
 import {
   activeAlerts,
   alertCategories,
+  alertDetails,
+  reportTravel,
   alertLabel,
   communityKey,
   legacyAlertCategories,
@@ -70,6 +72,7 @@ export function TravelSignals({ kind, target }: { kind: CommunityKind; target: s
   const [open, setOpen] = useState(false);
   const [category, setCategory] = useState<AlertCategory | null>(null);
   const [delay, setDelay] = useState(30);
+  const [detail, setDetail] = useState<string | null>(null);
   const [sent, setSent] = useState(false);
   const signalKey = `${kind}:${target}`;
   const startSignal = useCallback(() => {
@@ -118,22 +121,19 @@ export function TravelSignals({ kind, target }: { kind: CommunityKind; target: s
     mutationFn: async (
       action: { type: "report" } | { type: "confirm" | "resolve" | "deny"; id: string },
     ) => {
-      const result =
+      const error =
         action.type === "report"
-          ? await supabase.rpc("bw_report_travel", {
-              p_kind: kind,
-              p_target: target,
-              p_category: category!,
-              p_delay: category === "delay" ? delay : null,
-            })
-          : await supabase.rpc("bw_alert_action", { p_alert: action.id, p_action: action.type });
-      if (result.error) throw failure(result.error.message);
+          ? await reportTravel({ kind, target, category: category!, delay, detail })
+          : (await supabase.rpc("bw_alert_action", { p_alert: action.id, p_action: action.type }))
+              .error;
+      if (error) throw failure(error.message);
     },
     onSuccess: (_, action) => {
       if (action.type === "report") {
         setOpen(false);
         setSent(true);
         setCategory(null);
+        setDetail(null);
       } else setSent(false);
       void queryClient.invalidateQueries({ queryKey: communityKey });
     },
@@ -271,7 +271,10 @@ export function TravelSignals({ kind, target }: { kind: CommunityKind; target: s
                         type="radio"
                         name={`signal-${target}`}
                         checked={category === key}
-                        onChange={() => setCategory(key)}
+                        onChange={() => {
+                          setCategory(key);
+                          setDetail(null);
+                        }}
                       />
                       <span>
                         <AlertIcon category={key} />
@@ -293,6 +296,22 @@ export function TravelSignals({ kind, target }: { kind: CommunityKind; target: s
                       onChange={() => setDelay(m)}
                     />
                     <span>{m === 120 ? "2 h et +" : `${m} min`}</span>
+                  </label>
+                ))}
+              </fieldset>
+            ) : null}
+            {category && alertDetails[category] ? (
+              <fieldset className="bw-delay-choice" disabled={mutation.isPending}>
+                <legend>{alertDetails[category].question} (facultatif)</legend>
+                {alertDetails[category].options.map((option) => (
+                  <label key={option.code}>
+                    <input
+                      type="radio"
+                      name={`detail-${target}`}
+                      checked={detail === option.code}
+                      onChange={() => setDetail(option.code)}
+                    />
+                    <span>{option.label}</span>
                   </label>
                 ))}
               </fieldset>

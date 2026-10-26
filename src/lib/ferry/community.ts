@@ -18,6 +18,56 @@ export const alertCategories = {
 } as const;
 /** Catégories proposées par défaut : celles connues avant le script SQL du 26/10/2026. */
 export const legacyAlertCategories = new Set(["delay", "boarding", "queue", "access"]);
+/**
+ * Précisions proposées après le choix d'une situation (façon Waze), enregistrées dans `detail`
+ * (script SQL du 28/10/2026). Le retard garde ses durées historiques dans `delay_minutes`.
+ */
+export const alertDetails: Partial<
+  Record<AlertCategory, { short: string; question: string; options: { code: string; label: string }[] }>
+> = {
+  queue: {
+    short: "File d’attente",
+    question: "Combien de temps d’attente ?",
+    options: [
+      { code: "queue_30", label: "Moins de 30 min" },
+      { code: "queue_60", label: "Environ 1 h" },
+      { code: "queue_120", label: "2 h et plus" },
+    ],
+  },
+  access: {
+    short: "Accès difficile",
+    question: "Que se passe-t-il ?",
+    options: [
+      { code: "access_traffic", label: "Bouchon pour entrer au port" },
+      { code: "access_closed", label: "Accès fermé ou dévié" },
+      { code: "access_works", label: "Travaux" },
+    ],
+  },
+  parking: {
+    short: "Parking complet",
+    question: "Quel parking ?",
+    options: [
+      { code: "parking_boarding", label: "Parking d’embarquement" },
+      { code: "parking_visitors", label: "Parking accompagnants" },
+    ],
+  },
+  boarding: {
+    short: "Embarquement commencé",
+    question: "Pour qui ?",
+    options: [
+      { code: "boarding_vehicles", label: "Véhicules" },
+      { code: "boarding_foot", label: "Passagers à pied" },
+    ],
+  },
+  disembarking: {
+    short: "Débarquement commencé",
+    question: "Pour qui ?",
+    options: [
+      { code: "disembarking_vehicles", label: "Véhicules" },
+      { code: "disembarking_foot", label: "Passagers à pied" },
+    ],
+  },
+};
 export type AlertCategory = keyof typeof alertCategories;
 const alertSchema = z.object({
   id: z.string(),
@@ -25,6 +75,8 @@ const alertSchema = z.object({
   target_id: z.string(),
   category: z.enum(["delay", "boarding", "disembarking", "queue", "access", "parking", "fluid"]),
   delay_minutes: z.number().nullable(),
+  // Ajouté par le script du 28/10/2026.
+  detail: z.string().nullable().optional().default(null),
   created_at: z.string(),
   expires_at: z.string(),
   own: z.boolean().nullable(),
@@ -82,6 +134,9 @@ export function activeAlerts(alerts: TravelAlert[], now = Date.now()) {
   return alerts.filter((a) => Date.parse(a.expires_at) > now);
 }
 export function alertLabel(alert: TravelAlert) {
+  const precision = alertDetails[alert.category];
+  const option = precision?.options.find((item) => item.code === alert.detail);
+  if (precision && option) return `${precision.short} · ${option.label.toLowerCase()}`;
   return (
     alertCategories[alert.category].label +
     (alert.delay_minutes === 120
@@ -90,4 +145,30 @@ export function alertLabel(alert: TravelAlert) {
         ? ` · ≈ ${alert.delay_minutes} min`
         : "")
   );
+}
+
+/**
+ * Envoie un signalement. Sans le script du 28/10/2026, la précision est ignorée
+ * et le signalement part quand même (même comportement qu'avant).
+ */
+export async function reportTravel(input: {
+  kind: CommunityKind;
+  target: string;
+  category: AlertCategory;
+  delay: number | null;
+  detail: string | null;
+}) {
+  const base = {
+    p_kind: input.kind,
+    p_target: input.target,
+    p_category: input.category,
+    p_delay: input.category === "delay" ? input.delay : null,
+  };
+  let result = await supabase.rpc(
+    "bw_report_travel",
+    input.detail ? { ...base, p_detail: input.detail } : base,
+  );
+  if (input.detail && result.error?.code === "PGRST202")
+    result = await supabase.rpc("bw_report_travel", base);
+  return result.error;
 }

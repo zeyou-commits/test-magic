@@ -344,6 +344,8 @@ export default function FerryMap({
   const [mapViewportKey, setMapViewportKey] = useState("");
   const vesselPopupRef = useRef<Popup | null>(null);
   const fleetPickerRef = useRef<Popup | null>(null);
+  // Efface la fiche de survol d'un navire (appelé quand la souris passe sur un signalement).
+  const clearShipHoverRef = useRef<() => void>(() => {});
   const pickFleetRef = useRef<((point: [number, number], portDistance?: number) => boolean) | null>(null);
   const fleetRef = useRef<FleetShip[]>(fleet);
   const lastFleetFrame = useRef<{ source: GeoJSONSource; data: FleetFrame } | null>(null);
@@ -351,7 +353,9 @@ export default function FerryMap({
 
   selectRef.current = onSelect;
   interactRef.current = onMapInteract;
-  useTravelMarkers(mapRef, mapReady, ports, fleet, onSelect, onOpenPanel);
+  useTravelMarkers(mapRef, mapReady, ports, fleet, onSelect, onOpenPanel, () =>
+    clearShipHoverRef.current(),
+  );
   const isMobile = useIsMobile();
   // Mobile : un tap sur un port n'ouvre que la bulle ; le volet s'ouvre via « Voir la fiche du port ».
   const [tipPortId, setTipPortId] = useState<string | null>(null);
@@ -755,6 +759,10 @@ export default function FerryMap({
         hoveredShip = id;
         map.setFilter("fleet-hover-halo", id ? (["==", ["get", "shipId"], id] as never) : NO_SHIP);
         if (!id) hoverTip.remove();
+      };
+      clearShipHoverRef.current = () => {
+        setHoveredShip(null);
+        map.getCanvas().style.cursor = "";
       };
       const fleetLayers = ["fleet-ships", "fleet-labels", "fleet-count-bg", "fleet-count"];
       type FleetPickEvent = {

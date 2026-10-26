@@ -1,33 +1,15 @@
 import { Link } from "@tanstack/react-router";
-import { Route as RouteIcon, Clock, Map as MapIcon, MoreHorizontal, Search } from "lucide-react";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+import { Route as RouteIcon, Clock, Map as MapIcon, Megaphone, Search } from "lucide-react";
+import { QUICK_REPORT_EVENT, QUICK_REPORT_ON_LOAD } from "@/components/map/QuickReport";
 
 const itemClass =
   "flex h-full flex-1 flex-col items-center justify-center gap-1 text-[11px] font-medium text-muted-foreground transition-colors hover:text-foreground data-[active=true]:text-primary [&.active]:text-primary";
-
-const moreLinks = [
-  { to: "/horaires", label: "Tous les horaires" },
-  { to: "/ports", label: "Annuaire des ports" },
-  { to: "/lignes", label: "Lignes" },
-  { to: "/compagnies", label: "Compagnies" },
-  { to: "/guide", label: "Guide pratique" },
-  { to: "/vehicules-moins-3-ans", label: "Véhicules de moins de 3 ans" },
-  { to: "/bateaux", label: "Dossiers bateaux" },
-  { to: "/simulateurs", label: "Simulateurs" },
-  { to: "/covoiturage", label: "Covoiturage" },
-  { to: "/a-propos", label: "À propos" },
-  { to: "/contact", label: "Contact" },
-] as const;
 
 interface MobileTabBarProps {
   className?: string;
   activeTab?: "map" | "departures" | "search" | "ports" | "itinerary";
   onOpenMap?: () => void;
+  /** Conservé pour compatibilité : l'onglet « Plus » a été remplacé par « Signaler ». */
   onMoreToggle?: () => void;
   onOpenDepartures?: () => void;
   onOpenSearch?: () => void;
@@ -42,7 +24,6 @@ export function MobileTabBar({
   className = "",
   activeTab,
   onOpenMap,
-  onMoreToggle,
   onOpenDepartures,
   onOpenSearch,
   onShowPorts,
@@ -128,35 +109,30 @@ export function MobileTabBar({
           <span>Itinéraire</span>
         </Link>
       )}
-      <DropdownMenu
-        modal={false}
-        onOpenChange={(open) => {
-          if (open) onMoreToggle?.();
-        }}
-      >
-        <DropdownMenuTrigger className={itemClass} aria-label="Plus de pages">
-          <MoreHorizontal className="size-5" aria-hidden />
-          <span>Plus</span>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent side="top" align="end" className="w-52">
-          <DropdownMenuItem asChild>
-            {onOpenItinerary ? (
-              <button type="button" className="w-full" onClick={onOpenItinerary}>
-                Itinéraire porte à porte
-              </button>
-            ) : (
-              <Link to="/" onClick={() => rememberAction("itinerary")}>
-                Itinéraire porte à porte
-              </Link>
-            )}
-          </DropdownMenuItem>
-          {moreLinks.map((link) => (
-            <DropdownMenuItem key={link.to} asChild>
-              <Link to={link.to}>{link.label}</Link>
-            </DropdownMenuItem>
-          ))}
-        </DropdownMenuContent>
-      </DropdownMenu>
+      {/* « Signaler » remplace « Plus » : ces pages sont déjà dans le menu de l'en-tête. */}
+      {onOpenMap ? (
+        <button
+          type="button"
+          onClick={() => window.dispatchEvent(new CustomEvent(QUICK_REPORT_EVENT))}
+          className={itemClass}
+        >
+          <span className="grid size-6 place-items-center rounded-lg bg-[#ffc83d] text-[#4a3200]">
+            <Megaphone className="size-4" aria-hidden />
+          </span>
+          <span>Signaler</span>
+        </button>
+      ) : (
+        <Link
+          to="/"
+          onClick={() => window.sessionStorage.setItem(QUICK_REPORT_ON_LOAD, "1")}
+          className={itemClass}
+        >
+          <span className="grid size-6 place-items-center rounded-lg bg-[#ffc83d] text-[#4a3200]">
+            <Megaphone className="size-4" aria-hidden />
+          </span>
+          <span>Signaler</span>
+        </Link>
+      )}
     </nav>
   );
 }

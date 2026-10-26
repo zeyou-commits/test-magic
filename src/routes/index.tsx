@@ -37,6 +37,7 @@ import type { PortMeta } from "@/components/map/FerryMap";
 import { Button } from "@/components/ui/button";
 import { MapStatusBar } from "@/components/map/MapStatusBar";
 import { MapLegend } from "@/components/map/MapLegend";
+import { QuickReport } from "@/components/map/QuickReport";
 import { MapStats, type MapShortcut } from "@/components/map/MapStats";
 import { FLASH_SELECT_EVENT } from "@/components/panel/FlashCenter";
 import { FLASH_PREVIEW_EVENT } from "@/components/panel/FlashFeed";
@@ -1135,6 +1136,7 @@ function Index() {
               onRetry={() => allResults.forEach((res) => void res.refetch())}
               panelOpen={desktopPanelOpen}
             />
+            <QuickReport ports={ports} fleet={fleet} selection={selection} />
             <MapStats
               atSea={atSea}
               upcomingShips={upcomingShips}

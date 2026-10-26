@@ -1751,6 +1751,7 @@ export default function FerryMap({
         });
       }
     }
+    return undefined;
   }, [selection, mapReady]);
 
   useEffect(() => {

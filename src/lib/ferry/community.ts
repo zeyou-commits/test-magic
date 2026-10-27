@@ -8,8 +8,11 @@ const supabase = typedSupabase as unknown as SupabaseClient;
 
 export type CommunityKind = "vessel" | "port";
 
-/** Niveau de base de données requis : 0 = d'origine, 1 = script du 26/10, 2 = script du 29/10. */
-type Level = 0 | 1 | 2;
+/**
+ * Niveau de base de données requis : 0 = d'origine, 1 = script du 26/10, 2 = script du 29/10,
+ * 3 = script du 30/10 (situations du port le long de la file d'attente).
+ */
+export type Level = 0 | 1 | 2 | 3;
 export type SituationOption = {
   code: string;
   label: string;
@@ -18,6 +21,8 @@ export type SituationOption = {
   /** Signalement impactant : il faut être sur place (position vérifiée par le serveur). */
   onSite?: boolean;
   level?: Level;
+  /** Ancienne précision, proposée seulement tant que le script suivant n'est pas exécuté. */
+  upTo?: Level;
 };
 export type Situation = {
   label: string;
@@ -29,28 +34,83 @@ export type Situation = {
   level: Level;
   /** Plus proposée à la saisie ; les signalements existants restent lisibles. */
   retired?: boolean;
+  /** Retirée de la saisie à partir de ce niveau. */
+  retiredFrom?: Level;
   question?: string;
   /** Une précision doit être choisie (le retard). */
   required?: boolean;
   options?: SituationOption[];
 };
 
+/** Services du port signalés ouverts ou fermés (précision `service_<code>_<open|closed>`). */
+export const portServices = [
+  { code: "snack", label: "Snack, restauration", open: "ouvert", closed: "fermé" },
+  { code: "prayer", label: "Salle de prière", open: "disponible", closed: "indisponible" },
+  { code: "toilets", label: "Toilettes", open: "ouvertes", closed: "fermées" },
+  { code: "water", label: "Eau potable", open: "disponible", closed: "indisponible" },
+  { code: "atm", label: "Distributeur", open: "en service", closed: "hors service" },
+  { code: "exchange", label: "Bureau de change", open: "ouvert", closed: "fermé" },
+  { code: "fuel", label: "Station-service", open: "ouverte", closed: "fermée" },
+  { code: "kids", label: "Espace enfants", open: "ouvert", closed: "fermé" },
+] as const;
+export type PortService = (typeof portServices)[number]["code"];
+const serviceDetail = /^service_([a-z]+)_(open|closed)$/;
+/** « Snack, restauration · ouvert » à partir de la précision enregistrée. */
+export function serviceLabel(detail: string | null) {
+  const match = detail ? serviceDetail.exec(detail) : null;
+  const service = portServices.find((item) => item.code === match?.[1]);
+  if (!match || !service) return null;
+  return `${service.label} · ${match[2] === "open" ? service.open : service.closed}`;
+}
+
 /**
  * Catalogue unique des situations signalées par les voyageurs.
+ * Au port, dans l'ordre de la file d'attente : accès, enregistrement, file, formalités, appel, services.
  * Tout l'affichage (saisie, carte, fiches, Flash info, modération) en dépend.
  */
 export const situations = {
+  access: {
+    label: "Accès au port",
+    where: "port",
+    color: "#dc4c1d",
+    lifetime: 120,
+    level: 0,
+    question: "Comment ça se passe ?",
+    options: [
+      { code: "access_ok", label: "Ça roule", level: 3 },
+      { code: "access_traffic", label: "Bouchon pour entrer" },
+      { code: "access_closed", label: "Accès fermé ou dévié", onSite: true, level: 2 },
+      { code: "access_works", label: "Travaux" },
+    ],
+  },
+  checkin: {
+    label: "Enregistrement",
+    where: "port",
+    color: "#2563eb",
+    lifetime: 120,
+    level: 3,
+    required: true,
+    question: "Aux guichets de la compagnie",
+    options: [
+      { code: "checkin_open", label: "Ouvert" },
+      { code: "checkin_notyet", label: "Pas encore ouvert" },
+      { code: "checkin_queue", label: "Longue file au guichet" },
+    ],
+  },
   queue: {
     label: "File d’attente",
     where: "port",
     color: "#e0a100",
     lifetime: 90,
     level: 0,
-    question: "Combien de temps d’attente ?",
+    question: "Comment avance la file ?",
     options: [
-      { code: "queue_30", label: "Moins de 30 min" },
-      { code: "queue_60", label: "Environ 1 h" },
-      { code: "queue_120", label: "2 h et plus" },
+      { code: "queue_moving", label: "La file avance", level: 3 },
+      { code: "queue_stopped", label: "File à l’arrêt", level: 3 },
+      { code: "queue_long", label: "File très longue", level: 3 },
+      { code: "queue_30", label: "Moins de 30 min", upTo: 2 },
+      { code: "queue_60", label: "Environ 1 h", upTo: 2 },
+      { code: "queue_120", label: "2 h et plus", upTo: 2 },
     ],
   },
   formalities: {
@@ -59,25 +119,38 @@ export const situations = {
     color: "#c2410c",
     lifetime: 90,
     level: 2,
-    question: "Combien de temps d’attente ?",
+    question: "Aux contrôles",
     options: [
-      { code: "formalities_30", label: "Moins de 30 min" },
-      { code: "formalities_60", label: "Environ 1 h" },
-      { code: "formalities_120", label: "2 h et plus" },
+      { code: "formalities_open", label: "Ouvertes", level: 3 },
+      { code: "formalities_short", label: "Attente courte", level: 3 },
+      { code: "formalities_long", label: "Longue attente", level: 3 },
+      { code: "formalities_notyet", label: "Pas encore ouvertes", level: 3 },
+      { code: "formalities_30", label: "Moins de 30 min", upTo: 2 },
+      { code: "formalities_60", label: "Environ 1 h", upTo: 2 },
+      { code: "formalities_120", label: "2 h et plus", upTo: 2 },
     ],
   },
-  access: {
-    label: "Accès difficile",
+  call: {
+    label: "Appel à l’embarquement",
     where: "port",
-    color: "#dc4c1d",
-    lifetime: 120,
-    level: 0,
-    question: "Que se passe-t-il ?",
+    color: "#9333ea",
+    lifetime: 60,
+    level: 3,
+    required: true,
+    question: "Avant de monter à bord",
     options: [
-      { code: "access_traffic", label: "Bouchon pour entrer au port" },
-      { code: "access_closed", label: "Accès fermé ou dévié", onSite: true, level: 2 },
-      { code: "access_works", label: "Travaux" },
+      { code: "call_called", label: "Embarquement appelé" },
+      { code: "call_waiting", label: "Pas encore appelé, on patiente" },
     ],
+  },
+  service: {
+    label: "Services du port",
+    where: "port",
+    color: "#0f766e",
+    lifetime: 120,
+    level: 3,
+    required: true,
+    question: "Quel service ?",
   },
   parking: {
     label: "Parking complet",
@@ -97,6 +170,8 @@ export const situations = {
     color: "#2e9d6a",
     lifetime: 60,
     level: 1,
+    // Remplacé par les états positifs de chaque situation (« Ça roule », « La file avance »…).
+    retiredFrom: 3,
   },
   delay: {
     label: "Retard",
@@ -144,11 +219,13 @@ export const situationOf = (category: AlertCategory): Situation => situations[ca
 export function availableSituations(level: Level) {
   return (Object.keys(situations) as AlertCategory[]).filter((key) => {
     const s = situationOf(key);
-    return !s.retired && s.level <= level;
+    return !s.retired && s.level <= level && (s.retiredFrom === undefined || level < s.retiredFrom);
   });
 }
 export const optionsFor = (category: AlertCategory, level: Level) =>
-  (situationOf(category).options ?? []).filter((option) => (option.level ?? 0) <= level);
+  (situationOf(category).options ?? []).filter(
+    (option) => (option.level ?? 0) <= level && (option.upTo === undefined || level <= option.upTo),
+  );
 /** « Environ 1 h 30 » : durée d'affichage lisible. */
 export function lifetimeLabel(category: AlertCategory) {
   const minutes = situationOf(category).lifetime;
@@ -170,6 +247,9 @@ const alertSchema = z.object({
     "access",
     "parking",
     "fluid",
+    "checkin",
+    "call",
+    "service",
   ]),
   delay_minutes: z.number().nullable(),
   // Ajouté par le script du 28/10/2026.
@@ -230,7 +310,7 @@ export const communityQuery = (
     staleTime: 30_000,
     refetchInterval: (query) => (query.state.data === null ? false : 60_000),
   });
-/** Présence du script du 29/10/2026 (formalités, « sur place », durées par situation). */
+/** Version du catalogue en base : 2 = script du 29/10 (« sur place »), 3 = script du 30/10 (port). */
 export const catalogQuery = queryOptions({
   queryKey: ["bw-signal-catalog"],
   queryFn: async () => {
@@ -261,6 +341,7 @@ export const isPublicAlert = (alert: TravelAlert) =>
   (alert.denials ?? 0) <= alert.confirmations && (!isImpact(alert) || alert.confirmations >= 1);
 
 export function alertLabel(alert: TravelAlert) {
+  if (alert.category === "service") return serviceLabel(alert.detail) ?? situationOf("service").label;
   const situation = situationOf(alert.category);
   const option = situation.options?.find(
     (item) => item.code === alert.detail || (item.delay && item.delay === alert.delay_minutes),

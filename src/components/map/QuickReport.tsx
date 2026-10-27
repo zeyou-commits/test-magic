@@ -12,10 +12,12 @@ import {
   currentPosition,
   lifetimeLabel,
   optionsFor,
+  portServices,
   reportTravel,
   situationOf,
   type AlertCategory,
   type CommunityKind,
+  type Level,
 } from "@/lib/ferry/community";
 import { newsQuery } from "@/lib/ferry/flash";
 import type { FleetShip } from "@/lib/ferry/fleet";
@@ -28,7 +30,7 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
-import { SituationBadge } from "@/components/panel/SituationIcon";
+import { OptionIcon, SituationBadge } from "@/components/panel/SituationIcon";
 
 // Suivis du compte (table bw_follows), absente des types générés.
 const supabase = typedSupabase as unknown as SupabaseClient;
@@ -64,6 +66,8 @@ type Draft = {
   portId: string | null;
   vesselId: string | null;
   focus: CommunityKind | null;
+  /** Services du port : service choisi avant son état (ouvert / fermé). */
+  service: string | null;
 };
 const emptyDraft: Draft = {
   category: null,
@@ -72,6 +76,7 @@ const emptyDraft: Draft = {
   portId: null,
   vesselId: null,
   focus: null,
+  service: null,
 };
 
 function distanceKm(a: [number, number], b: [number, number]) {
@@ -108,7 +113,7 @@ export function QuickReport({
   // Scripts SQL exécutés : 26/10 (situations récentes), 29/10 (formalités, « sur place »).
   const upgraded = useQuery(newsQuery).data != null;
   const catalog = useQuery(catalogQuery).data ?? 0;
-  const level = catalog >= 2 ? 2 : upgraded ? 1 : 0;
+  const level: Level = catalog >= 3 ? 3 : catalog >= 2 ? 2 : upgraded ? 1 : 0;
   const follows = useQuery({
     queryKey: ["my-follows", user?.id],
     enabled: Boolean(user),
@@ -223,7 +228,11 @@ export function QuickReport({
   );
   const impact = Boolean(chosen?.onSite);
   const target = situation?.where === "port" ? draft.portId : draft.vesselId;
-  const ready = Boolean(situation && target && (!situation.required || chosen));
+  const ready = Boolean(
+    situation &&
+      target &&
+      (!situation.required || chosen || (draft.category === "service" && draft.detail)),
+  );
 
   const mutation = useMutation({
     mutationFn: async (input: Draft) => {
@@ -298,7 +307,13 @@ export function QuickReport({
               type="button"
               className="bw-report-tile"
               onClick={() => {
-                setDraft((current) => ({ ...current, category: key, detail: null, delay: null }));
+                setDraft((current) => ({
+                  ...current,
+                  category: key,
+                  detail: null,
+                  delay: null,
+                  service: null,
+                }));
                 setStep("detail");
               }}
             >
@@ -458,12 +473,58 @@ export function QuickReport({
                       })
                     }
                   >
+                    <OptionIcon code={option.code} />
                     {option.label}
                   </button>
                 );
               })}
             </div>
           </fieldset>
+        ) : null}
+
+        {draft.category === "service" ? (
+          <>
+            <fieldset className="bw-report-field" disabled={mutation.isPending}>
+              <legend>{situation.question}</legend>
+              <div className="bw-report-options">
+                {portServices.map((item) => (
+                  <button
+                    key={item.code}
+                    type="button"
+                    aria-pressed={draft.service === item.code}
+                    onClick={() => setDraft({ ...draft, service: item.code, detail: null })}
+                  >
+                    <OptionIcon code={item.code} />
+                    {item.label}
+                  </button>
+                ))}
+              </div>
+            </fieldset>
+            {draft.service ? (
+              <fieldset className="bw-report-field" disabled={mutation.isPending}>
+                <legend>En ce moment</legend>
+                <div className="bw-report-options">
+                  {(["open", "closed"] as const).map((state) => {
+                    const item = portServices.find((service) => service.code === draft.service)!;
+                    const code = `service_${item.code}_${state}`;
+                    const text = state === "open" ? item.open : item.closed;
+                    return (
+                      <button
+                        key={state}
+                        type="button"
+                        aria-pressed={draft.detail === code}
+                        data-state={state}
+                        onClick={() => setDraft({ ...draft, detail: code })}
+                      >
+                        <OptionIcon code={state} />
+                        {text.charAt(0).toUpperCase() + text.slice(1)}
+                      </button>
+                    );
+                  })}
+                </div>
+              </fieldset>
+            ) : null}
+          </>
         ) : null}
 
         {impact ? (

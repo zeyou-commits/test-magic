@@ -1090,6 +1090,9 @@ body:has(.bw-flash-sheet[data-state="open"]) .bw-header {
   gap: 8px;
 }
 .bw-report-options button {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
   min-height: 42px;
   padding: 0 16px;
   border: 1.5px solid #dcdad0;
@@ -1102,6 +1105,22 @@ body:has(.bw-flash-sheet[data-state="open"]) .bw-header {
 .bw-report-options button[aria-pressed="true"] {
   border-color: #16324a;
   background: #16324a;
+  color: #ffffff;
+}
+.bw-report-options button svg {
+  flex: none;
+  color: #5b6b66;
+}
+.bw-report-options button[aria-pressed="true"] svg {
+  color: #ffffff;
+}
+.bw-report-options button[data-state="open"] svg {
+  color: #16a34a;
+}
+.bw-report-options button[data-state="closed"] svg {
+  color: #dc2626;
+}
+.bw-report-options button[aria-pressed="true"][data-state] svg {
   color: #ffffff;
 }
 .bw-report-send {
@@ -1170,4 +1189,20 @@ body:has(.bw-report-sheet[data-state="open"]) .bw-header {
   font-size: 15px;
   font-weight: 700;
   text-transform: capitalize;
+}
+
+/* ---------- En-tête toujours visible au défilement ---------- */
+.bw-header {
+  position: sticky;
+  top: 0;
+  box-shadow: 0 1px 0 #16324a14;
+}
+/* Les ancres et « faire défiler jusqu'à » s'arrêtent sous l'en-tête. */
+html {
+  scroll-padding-top: 88px;
+}
+@media (max-width: 767px) {
+  html {
+    scroll-padding-top: 76px;
+  }
 }

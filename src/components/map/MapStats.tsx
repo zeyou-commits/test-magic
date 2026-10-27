@@ -245,7 +245,9 @@ export function MapStats({
                   className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left text-xs font-medium hover:bg-secondary data-[active=true]:bg-secondary"
                   data-active={selectedCompanyId === company.id}
                   aria-pressed={selectedCompanyId === company.id}
-                  onClick={() => onSelectCompany(company.id)}
+                  onClick={() =>
+                    onSelectCompany(selectedCompanyId === company.id ? null : company.id)
+                  }
                   onPointerEnter={(e) => {
                     if (e.pointerType === "mouse") onPreview({ companyId: company.id });
                   }}

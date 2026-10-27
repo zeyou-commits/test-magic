@@ -1175,6 +1175,14 @@ function Index() {
                   setShortcutMenuOpen(false);
                   return;
                 }
+                // Compagnie filtrée : re-cliquer le raccourci retire le filtre (comme En mer / À quai).
+                if (shortcut === "companies" && activeShortcut === "companies" && filters.companyId) {
+                  setTrafficPreview(null);
+                  setFilters((current) => ({ ...current, companyId: null }));
+                  setActiveShortcut(null);
+                  setShortcutMenuOpen(false);
+                  return;
+                }
                 if (activeShortcut === shortcut && shortcutMenuOpen) {
                   setActiveShortcut(null);
                   setShortcutMenuOpen(false);

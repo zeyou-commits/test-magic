@@ -1836,7 +1836,10 @@ export default function FerryMap({
       }
       const mast = document.createElement("div");
       mast.className = "bw-pennant-mast";
-      el.append(flag, mast);
+      const inner = document.createElement("div");
+      inner.className = "bw-pennant-inner";
+      inner.append(flag, mast);
+      el.append(inner);
       const at = ship.live
         ? ([ship.live.position.longitude, ship.live.position.latitude] as [number, number])
         : ship.lngLat;

@@ -14,6 +14,7 @@ import {
 import { pushCapability, registerPush } from "@/lib/notifications/push";
 import { AccountAccessForm } from "./AccountAccessForm";
 import { TripQuestion } from "./TripQuestion";
+import { PushStatusLine } from "@/components/panel/PushStatusLine";
 import { TravelActionContext as ActionContext } from "@/hooks/useTravelAction";
 
 export function TravelActionProvider({ children }: { children: ReactNode }) {
@@ -174,15 +175,8 @@ export function TravelActionProvider({ children }: { children: ReactNode }) {
                         ? "Alerte d’ouverture activée"
                         : "Ajouté à vos suivis"}
                     </p>
-                    {!pushMessage && (
-                      <button
-                        type="button"
-                        className="bw-action-primary w-full"
-                        onClick={() => void activate()}
-                      >
-                        <Bell className="size-4" /> Activer les notifications sur cet appareil
-                      </button>
-                    )}
+                    {/* État réel de ce téléphone : déjà actif, à activer, ou guide iPhone. */}
+                    <PushStatusLine key={pushMessage} />
                     <a href="/compte" className="bw-action-secondary w-full">
                       Mon espace voyageur
                     </a>
@@ -228,7 +222,7 @@ export function TravelActionProvider({ children }: { children: ReactNode }) {
                 </button>
               </p>
             )}
-            {pushMessage && (
+            {pushMessage && !saved && (
               <p role="status" className="mt-3 text-xs leading-relaxed text-muted-foreground">
                 {pushMessage}
               </p>

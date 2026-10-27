@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Bell, BellRing, CalendarClock, MessageSquare, Smartphone } from "lucide-react";
 import type { SupabaseClient } from "@supabase/supabase-js";
@@ -11,7 +10,7 @@ import {
   defaultNotificationPreferences,
   type NotificationPreferences,
 } from "@/lib/notifications/policy";
-import { disableDevicePush, pushCapability, registerPush } from "@/lib/notifications/push";
+import { PushStatusLine } from "@/components/panel/PushStatusLine";
 
 const options = [
   {
@@ -33,19 +32,11 @@ const options = [
     description: "Les liaisons et périodes que vous suivez, après vérification par notre équipe.",
     icon: BellRing,
   },
-  {
-    key: "push_enabled",
-    label: "Recevoir les notifications push",
-    description: "Sur vos appareils autorisés, même lorsque BledWay est fermé.",
-    icon: Smartphone,
-  },
 ] as const;
 
 export function NotificationSettings({ userId }: { userId: string }) {
   const queryClient = useQueryClient();
   const key = ["notification-preferences", userId];
-  const [deviceMessage, setDeviceMessage] = useState("");
-  const [deviceBusy, setDeviceBusy] = useState(false);
   const query = useQuery({
     queryKey: key,
     queryFn: async () => {
@@ -70,33 +61,6 @@ export function NotificationSettings({ userId }: { userId: string }) {
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: key }),
   });
-  async function configureDevice(enable: boolean) {
-    setDeviceBusy(true);
-    setDeviceMessage("");
-    try {
-      if (!enable) {
-        await disableDevicePush(userId);
-        setDeviceMessage(
-          "Notifications désactivées sur cet appareil. Vos suivis restent dans votre compte.",
-        );
-      } else {
-        const status = await registerPush(userId);
-        if (status === "enabled") {
-          await update.mutateAsync({ push_enabled: true });
-          setDeviceMessage("Cet appareil recevra vos prochaines notifications.");
-        } else
-          setDeviceMessage(
-            status === "denied"
-              ? "Autorisez les notifications dans les réglages de votre navigateur, puis réessayez."
-              : "Sur iPhone, ajoutez BledWay à l’écran d’accueil, ouvrez l’app et activez les notifications. Sur les autres appareils, utilisez un navigateur compatible.",
-          );
-      }
-    } catch {
-      setDeviceMessage("Activation impossible pour le moment. Réessayez.");
-    } finally {
-      setDeviceBusy(false);
-    }
-  }
   return (
     <section className="bw-account-section" aria-labelledby="notification-settings-title">
       <div className="bw-account-section-heading">
@@ -143,38 +107,11 @@ export function NotificationSettings({ userId }: { userId: string }) {
           La préférence n’a pas pu être enregistrée.
         </p>
       )}
-      <div className="mt-5 rounded-xl bg-secondary/60 p-4">
-        <h3 className="text-sm font-semibold">Cet appareil</h3>
-        <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
-          L’autorisation du navigateur est nécessaire une seule fois. Vos notifications restent
-          aussi accessibles dans votre espace voyageur.
-        </p>
-        <div className="mt-3 flex flex-wrap gap-2">
-          <button
-            type="button"
-            disabled={deviceBusy}
-            onClick={() => void configureDevice(true)}
-            className="bw-action-primary"
-          >
-            <Bell className="size-4" />
-            {deviceBusy ? "Patientez…" : "Activer sur cet appareil"}
-          </button>
-          {pushCapability() === "enabled" && (
-            <button
-              type="button"
-              disabled={deviceBusy}
-              onClick={() => void configureDevice(false)}
-              className="bw-action-secondary"
-            >
-              Désactiver cet appareil
-            </button>
-          )}
-        </div>
-        {deviceMessage && (
-          <p role="status" className="mt-3 text-xs leading-relaxed text-muted-foreground">
-            {deviceMessage}
-          </p>
-        )}
+      <div className="mt-5">
+        <h3 className="mb-2 flex items-center gap-2 text-sm font-semibold">
+          <Smartphone className="size-4 text-primary" aria-hidden /> Ce téléphone
+        </h3>
+        <PushStatusLine withDisable />
       </div>
     </section>
   );

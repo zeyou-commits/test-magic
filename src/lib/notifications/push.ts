@@ -58,16 +58,25 @@ export async function registerPush(userId: string, requestPermission = true): Pr
   const json = subscription.toJSON();
   if (!json.endpoint || !json.keys?.["p256dh"] || !json.keys["auth"])
     throw new Error("Abonnement push incomplet.");
-  const { error } = await supabase.from("bw_push_subscriptions").upsert(
-    {
-      user_id: userId,
-      endpoint: json.endpoint,
-      p256dh: json.keys["p256dh"],
-      auth_key: json.keys["auth"],
-    },
-    { onConflict: "endpoint" },
-  );
-  if (error) throw error;
+  // Le téléphone passe au compte connecté, même s'il était abonné avec un autre compte (script du 03/11).
+  const claimed = await supabase.rpc("bw_claim_push_subscription", {
+    p_endpoint: json.endpoint,
+    p_p256dh: json.keys["p256dh"],
+    p_auth: json.keys["auth"],
+  });
+  if (claimed.error) {
+    if (claimed.error.code !== "PGRST202") throw claimed.error;
+    const { error } = await supabase.from("bw_push_subscriptions").upsert(
+      {
+        user_id: userId,
+        endpoint: json.endpoint,
+        p256dh: json.keys["p256dh"],
+        auth_key: json.keys["auth"],
+      },
+      { onConflict: "endpoint" },
+    );
+    if (error) throw error;
+  }
   if (requestPermission) {
     const result = await supabase
       .from("bw_notification_preferences")
@@ -101,4 +110,46 @@ export async function disableDevicePush(userId: string) {
     .eq("endpoint", subscription.endpoint);
   if (error) throw error;
   await subscription.unsubscribe();
+}
+
+export type DevicePushState = "on" | "off" | "denied" | "ios-install" | "unsupported";
+const isIos = () =>
+  /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+  (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+const isStandalone = () =>
+  window.matchMedia("(display-mode: standalone)").matches ||
+  (navigator as Navigator & { standalone?: boolean }).standalone === true;
+/**
+ * État réel de ce téléphone pour le compte connecté : autorisation du navigateur, abonnement
+ * présent sur l'appareil ET enregistré pour ce compte.
+ */
+export async function devicePushState(userId: string): Promise<DevicePushState> {
+  if (typeof window === "undefined") return "unsupported";
+  if (isIos() && !isStandalone()) return "ios-install";
+  const capability = pushCapability();
+  if (capability === "unavailable") return "unsupported";
+  if (capability === "denied") return "denied";
+  if (capability === "prompt") return "off";
+  try {
+    if (localStorage.getItem(`bledway:push-device-disabled:${userId}`) === "true") return "off";
+  } catch {
+    /* stockage facultatif */
+  }
+  const registration = await navigator.serviceWorker.getRegistration("/sw.js");
+  const subscription = await registration?.pushManager.getSubscription();
+  if (!subscription) return "off";
+  const { data, error } = await supabase
+    .from("bw_push_subscriptions")
+    .select("id")
+    .eq("user_id", userId)
+    .eq("endpoint", subscription.endpoint)
+    .maybeSingle();
+  if (error || !data) return "off";
+  // Push coupé pour tout le compte dans les préférences : rien ne partira sur ce téléphone.
+  const prefs = await supabase
+    .from("bw_notification_preferences")
+    .select("push_enabled")
+    .eq("user_id", userId)
+    .maybeSingle();
+  return prefs.data?.push_enabled === false ? "off" : "on";
 }

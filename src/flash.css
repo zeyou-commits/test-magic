@@ -2163,3 +2163,18 @@ html {
   align-items: center;
   gap: 8px;
 }
+.bw-push-line > button.bw-push-line__quiet {
+  border: 1px solid #c9d8cf;
+  background: #ffffff;
+  color: #145c36;
+}
+.bw-push-line > button {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.bw-push-line__note {
+  flex-basis: 100%;
+  font-size: 12px;
+  color: #b42318;
+}

@@ -1,52 +1,53 @@
-import { useEffect, useState } from "react";
-import { Bell, BellOff, Check, Share, SquarePlus } from "lucide-react";
+import { useCallback, useEffect, useState } from "react";
+import { Bell, BellOff, Check, LoaderCircle, Share, SquarePlus } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
-import { pushCapability, registerPush } from "@/lib/notifications/push";
-
-type State = "checking" | "on" | "off" | "denied" | "ios-install" | "unsupported";
-
-const isIos = () =>
-  /iPad|iPhone|iPod/.test(navigator.userAgent) ||
-  (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
-const isStandalone = () =>
-  window.matchMedia("(display-mode: standalone)").matches ||
-  (navigator as Navigator & { standalone?: boolean }).standalone === true;
+import {
+  devicePushState,
+  disableDevicePush,
+  registerPush,
+  type DevicePushState,
+} from "@/lib/notifications/push";
 
 /**
- * « Alertes sur ce téléphone » : où en est cet appareil, et le geste pour les activer.
+ * « Alertes sur ce téléphone » : l'état réel de cet appareil pour le compte connecté,
+ * et un seul geste à la fois (Activer, ou Désactiver dans l'espace voyageur).
  * Sur iPhone, Apple n'envoie les alertes qu'à BledWay ouvert depuis l'écran d'accueil : on le guide.
  */
-export function PushStatusLine() {
+export function PushStatusLine({ withDisable = false }: { withDisable?: boolean }) {
   const { user } = useAuth();
-  const [state, setState] = useState<State>("checking");
+  const [state, setState] = useState<DevicePushState | "checking">("checking");
   const [busy, setBusy] = useState(false);
   const [guide, setGuide] = useState(false);
+  const [note, setNote] = useState("");
+  const refresh = useCallback(async () => {
+    if (!user) return;
+    setState(await devicePushState(user.id).catch(() => "off" as const));
+  }, [user]);
   useEffect(() => {
-    let cancelled = false;
-    const check = async () => {
-      if (isIos() && !isStandalone()) return "ios-install" as const;
-      const capability = pushCapability();
-      if (capability === "unavailable") return "unsupported" as const;
-      if (capability === "denied") return "denied" as const;
-      if (capability === "prompt") return "off" as const;
-      const registration = await navigator.serviceWorker.getRegistration("/sw.js");
-      return (await registration?.pushManager.getSubscription()) ? ("on" as const) : ("off" as const);
-    };
-    void check()
-      .catch(() => "off" as const)
-      .then((next) => !cancelled && setState(next));
-    return () => {
-      cancelled = true;
-    };
-  }, []);
+    void refresh();
+  }, [refresh]);
   if (!user || state === "checking") return null;
   const activate = async () => {
     setBusy(true);
+    setNote("");
     try {
       const result = await registerPush(user.id);
-      setState(result === "enabled" ? "on" : result === "denied" ? "denied" : "unsupported");
+      if (result === "denied") setNote("Le navigateur a refusé. Autorisez les notifications pour BledWay dans ses réglages.");
+      await refresh();
     } catch {
-      setState("off");
+      setNote("L’activation n’a pas abouti. Réessayez.");
+    } finally {
+      setBusy(false);
+    }
+  };
+  const disable = async () => {
+    setBusy(true);
+    setNote("");
+    try {
+      await disableDevicePush(user.id);
+      await refresh();
+    } catch {
+      setNote("La désactivation n’a pas abouti. Réessayez.");
     } finally {
       setBusy(false);
     }
@@ -54,22 +55,31 @@ export function PushStatusLine() {
   return (
     <div className="bw-push-line" data-state={state}>
       {state === "on" ? (
-        <p>
-          <Check size={15} aria-hidden /> Alertes activées sur ce téléphone
-        </p>
+        <>
+          <p>
+            <Check size={15} aria-hidden /> Alertes activées sur ce téléphone
+          </p>
+          {withDisable ? (
+            <button type="button" className="bw-push-line__quiet" disabled={busy} onClick={() => void disable()}>
+              {busy ? <LoaderCircle size={14} className="animate-spin" aria-hidden /> : null} Désactiver
+            </button>
+          ) : null}
+        </>
       ) : state === "off" ? (
         <>
           <p>
-            <Bell size={15} aria-hidden /> Recevez les alertes de votre traversée sur ce téléphone.
+            <Bell size={15} aria-hidden /> Recevez les alertes de vos traversées sur ce téléphone, même
+            BledWay fermé.
           </p>
           <button type="button" disabled={busy} onClick={() => void activate()}>
-            {busy ? "Activation…" : "Activer"}
+            {busy ? <LoaderCircle size={14} className="animate-spin" aria-hidden /> : null}
+            {busy ? " Activation…" : "Activer"}
           </button>
         </>
       ) : state === "denied" ? (
         <p>
-          <BellOff size={15} aria-hidden /> Alertes bloquées : autorisez les notifications pour BledWay
-          dans les réglages du navigateur.
+          <BellOff size={15} aria-hidden /> Alertes bloquées par le navigateur : autorisez les
+          notifications pour BledWay dans ses réglages, puis revenez ici.
         </p>
       ) : state === "ios-install" ? (
         <>
@@ -101,6 +111,7 @@ export function PushStatusLine() {
           la cloche, en haut à droite.
         </p>
       )}
+      {note ? <p className="bw-push-line__note">{note}</p> : null}
     </div>
   );
 }

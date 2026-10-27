@@ -865,7 +865,7 @@
 @media (prefers-reduced-motion: reduce) { .bw-journey-guide__vehicle { display: none; } }
 
 /* Fanion de compagnie au-dessus des navires sélectionnés */
-.bw-pennant {
+.bw-pennant-inner {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
@@ -909,5 +909,5 @@
   to { opacity: 1; transform: none; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .bw-pennant, .bw-pennant-flag { animation: none; }
+  .bw-pennant-inner, .bw-pennant-flag { animation: none; }
 }

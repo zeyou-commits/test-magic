@@ -350,7 +350,7 @@ function Index() {
     if (activeShortcut === "upcoming") return upcomingShips;
     return trafficFleet;
   }, [activeShortcut, atSea, upcomingShips, trafficFleet]);
-  const companyFocusShips = activeShortcut === "companies" && shortcutCompanyId ? mapFleet : [];
+  const companyFocusShips = shortcutCompanyId ? mapFleet : [];
   const displayedFleet = trafficPreview?.companyId ? companyContextFleet : mapFleet;
   const hoverCompanyShipIds = useMemo(() => {
     if (!trafficPreview?.companyId) return [];

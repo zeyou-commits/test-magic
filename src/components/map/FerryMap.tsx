@@ -1814,6 +1814,44 @@ export default function FerryMap({
     }
   }, [companyFocusShips.map((ship) => ship.id).join("|"), mapReady]);
 
+  // Fanion de compagnie : petit drapeau sur mât qui flotte au-dessus de chaque navire sélectionné.
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !mapReady || !companyFocusShips.length) return undefined;
+    const markers = companyFocusShips.map((ship) => {
+      const info = vesselCardsRef.current[String(ship.vesselId ?? "")];
+      const el = document.createElement("div");
+      el.className = "bw-pennant";
+      el.style.pointerEvents = "none";
+      const flag = document.createElement("div");
+      flag.className = "bw-pennant-flag";
+      if (info?.logoUrl) {
+        const logo = document.createElement("img");
+        logo.src = info.logoUrl;
+        logo.alt = info.companyName ?? "";
+        logo.onerror = () => logo.remove();
+        flag.append(logo);
+      } else if (info?.companyName) {
+        flag.textContent = info.companyName.slice(0, 3).toUpperCase();
+      }
+      const mast = document.createElement("div");
+      mast.className = "bw-pennant-mast";
+      el.append(flag, mast);
+      const at = ship.live
+        ? ([ship.live.position.longitude, ship.live.position.latitude] as [number, number])
+        : ship.lngLat;
+      return new Marker({ element: el, anchor: "bottom", offset: [0, -14] })
+        .setLngLat(at)
+        .addTo(map);
+    });
+    return () => markers.forEach((marker) => marker.remove());
+  }, [
+    companyFocusShips
+      .map((ship) => `${ship.id}:${ship.live?.position.longitude ?? ship.lngLat[0]}`)
+      .join("|"),
+    mapReady,
+  ]);
+
   useEffect(() => {
     const map = mapRef.current;
     const container = containerRef.current;

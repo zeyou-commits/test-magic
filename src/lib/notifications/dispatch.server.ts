@@ -66,12 +66,20 @@ async function collect<T>(
 }
 
 export async function dispatchPush(
-  options: { openingCampaignId?: string; onlyOpenings?: boolean; messageId?: string } = {},
+  options: {
+    openingCampaignId?: string;
+    onlyOpenings?: boolean;
+    messageId?: string;
+    /** Rattrapage d'un seul compte : juste après un suivi ou l'activation d'un téléphone. */
+    userId?: string;
+  } = {},
 ) {
   const publicKey = process.env["VAPID_PUBLIC_KEY"];
   const privateKey = process.env["VAPID_PRIVATE_KEY"];
   const subject = process.env["VAPID_SUBJECT"];
   const pushConfigured = Boolean(publicKey && privateKey && subject);
+  // Mode « un seul compte » : les requêtes de suivis et d'alertes sont limitées à lui.
+  const onlyUser = options.userId ? [options.userId] : undefined;
   if (pushConfigured) webpush.setVapidDetails(subject!, publicKey!, privateKey!);
   const now = Date.now();
   // La préparation est sans effet externe ; seules les campagnes validées seront diffusées.
@@ -80,14 +88,13 @@ export async function dispatchPush(
   const [follows, routes, ports, vessels] = await Promise.all([
     options.onlyOpenings || options.messageId
       ? Promise.resolve([])
-      : collect((from, to) =>
-          db
+      : collect((from, to) => {
+          const query = db
             .from("bw_follows")
             .select("id,user_id,target_kind,target_id,created_at")
-            .eq("active", true)
-            .order("id")
-            .range(from, to),
-        ),
+            .eq("active", true);
+          return (onlyUser ? query.in("user_id", onlyUser) : query).order("id").range(from, to);
+        }),
     collect((from, to) =>
       db
         .from("routes")
@@ -152,7 +159,7 @@ export async function dispatchPush(
       if (existing.error) throw existing.error;
       id = existing.data.id;
     }
-    if (notice.category === "openings") focusIds.add(id);
+    if (notice.category === "openings" || options.userId) focusIds.add(id);
     if (prefs?.push_enabled === false) return;
     const subscriptions = await db.from("bw_push_subscriptions").select("id").eq("user_id", userId);
     if (subscriptions.error) throw subscriptions.error;
@@ -372,12 +379,13 @@ export async function dispatchPush(
     }
   }
 
-  const campaigns = options.messageId
-    ? { data: [], error: null }
-    : await db
-        .from("bw_notification_campaigns")
-        .select("id,route_id,period_month,status")
-        .eq("status", "approved");
+  const campaigns =
+    options.messageId || options.userId
+      ? { data: [], error: null }
+      : await db
+          .from("bw_notification_campaigns")
+          .select("id,route_id,period_month,status")
+          .eq("status", "approved");
   if (campaigns.error) throw campaigns.error;
   for (const campaign of campaigns.data ?? []) {
     if (
@@ -473,14 +481,16 @@ export async function dispatchPush(
       const from = route ? portById.get(route.departure_port_id) : undefined;
       const to = route ? portById.get(route.arrival_port_id) : undefined;
       if (!route || route.status !== "active" || !from || !to) continue;
-      const watches = await db
+      const watchQuery = db
         .from("bw_itinerary_watches")
         .select("id,user_id,origin_label,destination_label")
         .eq("route_id", campaign.route_id)
         .eq("period_month", campaign.period_month)
         .eq("active", true)
-        .gt("created_at", campaign.sent_at)
-        .limit(2000);
+        .gt("created_at", campaign.sent_at);
+      const watches = await (onlyUser ? watchQuery.in("user_id", onlyUser) : watchQuery).limit(
+        2000,
+      );
       if (watches.error) throw watches.error;
       const month = new Intl.DateTimeFormat("fr-FR", { month: "long", year: "numeric" }).format(
         new Date(`${campaign.period_month}T12:00:00Z`),
@@ -498,8 +508,44 @@ export async function dispatchPush(
   // Messages de l'équipe : celui envoyé tout de suite, ou ceux planifiés arrivés à échéance.
   const adminMessages = options.onlyOpenings
     ? { messages: 0, notificationIds: [] }
-    : await queueAdminMessages(options.messageId ? { messageId: options.messageId } : {});
+    : await queueAdminMessages(
+        options.messageId
+          ? { messageId: options.messageId }
+          : options.userId
+            ? { userId: options.userId }
+            : {},
+      );
   for (const id of adminMessages.notificationIds) focusIds.add(id);
+  // Téléphone activé après coup : ses notifications récentes non lues (24 h, 3 au plus) partent
+  // aussi sur ce téléphone. Celles déjà envoyées à un appareil ne sont pas renvoyées à cet appareil.
+  if (options.userId) {
+    const [recent, devices] = await Promise.all([
+      db
+        .from("bw_notifications")
+        .select("id")
+        .eq("user_id", options.userId)
+        .is("read_at", null)
+        .gte("created_at", new Date(now - 24 * HOUR).toISOString())
+        .order("created_at", { ascending: false })
+        .limit(3),
+      db.from("bw_push_subscriptions").select("id").eq("user_id", options.userId),
+    ]);
+    if (recent.error) throw recent.error;
+    if (devices.error) throw devices.error;
+    const rows = (recent.data ?? []).flatMap((notice) =>
+      (devices.data ?? []).map((device) => ({
+        notification_id: notice.id,
+        subscription_id: device.id,
+      })),
+    );
+    if (rows.length) {
+      const queued = await db
+        .from("bw_push_deliveries")
+        .upsert(rows, { onConflict: "notification_id,subscription_id", ignoreDuplicates: true });
+      if (queued.error) throw queued.error;
+    }
+    for (const notice of recent.data ?? []) focusIds.add(notice.id);
+  }
   // Les messages sont toujours créés dans le compte, même sans configuration VAPID.
   const pendingRows = (ids?: string[]) => {
     const query = db
@@ -519,7 +565,7 @@ export async function dispatchPush(
     if (part.error) throw part.error;
     queuedRows.push(...part.data);
   }
-  if (!options.onlyOpenings) {
+  if (!options.onlyOpenings && !options.userId) {
     const rest = await pendingRows();
     if (rest.error) throw rest.error;
     const seen = new Set(queuedRows.map((row) => `${row.notification_id}:${row.subscription_id}`));

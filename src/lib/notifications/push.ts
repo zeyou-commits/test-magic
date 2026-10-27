@@ -91,6 +91,8 @@ export async function registerPush(userId: string, requestPermission = true): Pr
       /* stockage facultatif */
     }
   }
+  // Ce téléphone reçoit aussi ce qui est encore d'actualité pour ce compte.
+  void requestCatchUp();
   return "enabled";
 }
 export async function disableDevicePush(userId: string) {
@@ -152,4 +154,23 @@ export async function devicePushState(userId: string): Promise<DevicePushState> 
     .eq("user_id", userId)
     .maybeSingle();
   return prefs.data?.push_enabled === false ? "off" : "on";
+}
+
+/**
+ * Demande au serveur d'envoyer à ce compte ce qui est encore d'actualité pour ses suivis, et de
+ * pousser ses notifications récentes sur ce téléphone. Sans effet bloquant : en cas d'échec,
+ * le passage automatique suivant s'en charge.
+ */
+export async function requestCatchUp() {
+  try {
+    const { data } = await supabase.auth.getSession();
+    const token = data.session?.access_token;
+    if (!token) return;
+    await fetch("/api/push-catchup", {
+      method: "POST",
+      headers: { authorization: `Bearer ${token}` },
+    });
+  } catch {
+    /* le passage automatique prendra le relais */
+  }
 }

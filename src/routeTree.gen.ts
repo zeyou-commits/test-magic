@@ -34,6 +34,7 @@ import { Route as VehiculesMoins3AnsRouteImport } from './routes/vehicules-moins
 import { Route as VoyageAlgerieRouteImport } from './routes/voyage-algerie'
 import { Route as ApiAdminUsersRouteImport } from './routes/api.admin-users'
 import { Route as ApiPushAdminRouteImport } from './routes/api.push-admin'
+import { Route as ApiPushCatchupRouteImport } from './routes/api.push-catchup'
 import { Route as ApiPushDispatchRouteImport } from './routes/api.push-dispatch'
 import { Route as ApiVesselPositionsRouteImport } from './routes/api.vessel-positions'
 import { Route as BateauxIndexRouteImport } from './routes/bateaux.index'
@@ -174,6 +175,11 @@ const ApiPushAdminRoute = ApiPushAdminRouteImport.update({
   path: '/api/push-admin',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPushCatchupRoute = ApiPushCatchupRouteImport.update({
+  id: '/api/push-catchup',
+  path: '/api/push-catchup',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPushDispatchRoute = ApiPushDispatchRouteImport.update({
   id: '/api/push-dispatch',
   path: '/api/push-dispatch',
@@ -271,6 +277,7 @@ export interface FileRoutesByFullPath {
   '/voyage-algerie': typeof VoyageAlgerieRoute
   '/api/admin-users': typeof ApiAdminUsersRoute
   '/api/push-admin': typeof ApiPushAdminRoute
+  '/api/push-catchup': typeof ApiPushCatchupRoute
   '/api/push-dispatch': typeof ApiPushDispatchRoute
   '/api/vessel-positions': typeof ApiVesselPositionsRoute
   '/bateaux/$slug': typeof BateauxSlugRoute
@@ -306,6 +313,7 @@ export interface FileRoutesByTo {
   '/voyage-algerie': typeof VoyageAlgerieRoute
   '/api/admin-users': typeof ApiAdminUsersRoute
   '/api/push-admin': typeof ApiPushAdminRoute
+  '/api/push-catchup': typeof ApiPushCatchupRoute
   '/api/push-dispatch': typeof ApiPushDispatchRoute
   '/api/vessel-positions': typeof ApiVesselPositionsRoute
   '/bateaux/$slug': typeof BateauxSlugRoute
@@ -348,6 +356,7 @@ export interface FileRoutesById {
   '/voyage-algerie': typeof VoyageAlgerieRoute
   '/api/admin-users': typeof ApiAdminUsersRoute
   '/api/push-admin': typeof ApiPushAdminRoute
+  '/api/push-catchup': typeof ApiPushCatchupRoute
   '/api/push-dispatch': typeof ApiPushDispatchRoute
   '/api/vessel-positions': typeof ApiVesselPositionsRoute
   '/bateaux/$slug': typeof BateauxSlugRoute
@@ -391,6 +400,7 @@ export interface FileRouteTypes {
     | '/voyage-algerie'
     | '/api/admin-users'
     | '/api/push-admin'
+    | '/api/push-catchup'
     | '/api/push-dispatch'
     | '/api/vessel-positions'
     | '/bateaux/$slug'
@@ -426,6 +436,7 @@ export interface FileRouteTypes {
     | '/voyage-algerie'
     | '/api/admin-users'
     | '/api/push-admin'
+    | '/api/push-catchup'
     | '/api/push-dispatch'
     | '/api/vessel-positions'
     | '/bateaux/$slug'
@@ -467,6 +478,7 @@ export interface FileRouteTypes {
     | '/voyage-algerie'
     | '/api/admin-users'
     | '/api/push-admin'
+    | '/api/push-catchup'
     | '/api/push-dispatch'
     | '/api/vessel-positions'
     | '/bateaux/$slug'
@@ -509,6 +521,7 @@ export interface RootRouteChildren {
   VoyageAlgerieRoute: typeof VoyageAlgerieRoute
   ApiAdminUsersRoute: typeof ApiAdminUsersRoute
   ApiPushAdminRoute: typeof ApiPushAdminRoute
+  ApiPushCatchupRoute: typeof ApiPushCatchupRoute
   ApiPushDispatchRoute: typeof ApiPushDispatchRoute
   ApiVesselPositionsRoute: typeof ApiVesselPositionsRoute
 }
@@ -688,6 +701,13 @@ declare module '@tanstack/react-router' {
       path: '/api/push-admin'
       fullPath: '/api/push-admin'
       preLoaderRoute: typeof ApiPushAdminRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/push-catchup': {
+      id: '/api/push-catchup'
+      path: '/api/push-catchup'
+      fullPath: '/api/push-catchup'
+      preLoaderRoute: typeof ApiPushCatchupRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/push-dispatch': {
@@ -895,6 +915,7 @@ const rootRouteChildren: RootRouteChildren = {
   VoyageAlgerieRoute: VoyageAlgerieRoute,
   ApiAdminUsersRoute: ApiAdminUsersRoute,
   ApiPushAdminRoute: ApiPushAdminRoute,
+  ApiPushCatchupRoute: ApiPushCatchupRoute,
   ApiPushDispatchRoute: ApiPushDispatchRoute,
   ApiVesselPositionsRoute: ApiVesselPositionsRoute,
 }

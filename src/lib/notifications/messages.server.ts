@@ -445,7 +445,7 @@ const parisStamp = (iso: string) =>
  * téléphones. Sans doublon : la clé du message est unique par compte. `late` : compte arrivé
  * après l'envoi (suivi tardif), le texte rappelle alors la date de l'information.
  */
-async function deliverAdminMessage(message: MessageRow, late: boolean) {
+async function deliverAdminMessage(message: MessageRow, late: boolean, onlyUser?: string) {
   const resolved = await resolveAudience(message.audience);
   const key = `admin-msg:${message.category}:${message.id}`;
   const already = new Set<string>();
@@ -460,7 +460,9 @@ async function deliverAdminMessage(message: MessageRow, late: boolean) {
     for (const row of page.data ?? []) already.add(row.user_id as string);
     if ((page.data ?? []).length < 1000) break;
   }
-  const ids = [...resolved.recipients.keys()].filter((id) => !already.has(id));
+  const ids = [...resolved.recipients.keys()].filter(
+    (id) => !already.has(id) && (!onlyUser || id === onlyUser),
+  );
   const prefs = await preferencesOf(ids);
   const allowed = ids.filter((id) => notificationAllowed(prefs.get(id), message.category));
   const body =
@@ -511,7 +513,10 @@ async function deliverAdminMessage(message: MessageRow, late: boolean) {
  * un message encore d'actualité part aussi vers ceux qui ont rejoint la cible après l'envoi.
  * Renvoie les notifications créées, pour que l'envoi les traite en priorité.
  */
-export async function queueAdminMessages(options: { messageId?: string } = {}) {
+export async function queueAdminMessages(options: { messageId?: string; userId?: string } = {}) {
+  // Un seul compte : uniquement le rattrapage des messages encore valables, pour lui.
+  if (options.userId)
+    return { messages: 0, notificationIds: await catchUpAdminMessages(options.userId) };
   let due = db
     .from("bw_admin_messages")
     .select("id,audience,category,title,body,url")
@@ -572,7 +577,7 @@ export async function queueAdminMessages(options: { messageId?: string } = {}) {
 }
 
 /** Rattrapage des messages envoyés encore valables (colonne valid_until, script du 04/11/2026). */
-async function catchUpAdminMessages() {
+async function catchUpAdminMessages(onlyUser?: string) {
   const live = await db
     .from("bw_admin_messages")
     .select("id,audience,category,title,body,url,sent_at,late_recipients")
@@ -589,7 +594,7 @@ async function catchUpAdminMessages() {
   for (const message of (live.data ?? []) as MessageRow[]) {
     if (message.audience.kind === "all") continue;
     try {
-      const result = await deliverAdminMessage(message, true);
+      const result = await deliverAdminMessage(message, true, onlyUser);
       if (!result.created.length) continue;
       ids.push(...result.created.map((notice) => notice.id));
       await db

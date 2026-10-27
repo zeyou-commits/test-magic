@@ -443,4 +443,45 @@ describe("Suivi déclaré après coup (rattrapage)", () => {
       mock.tables["bw_notifications"]!.filter((n) => n["event_key"] === "admin-msg:reminders:msg"),
     ).toHaveLength(2);
   });
+  it("pousse sur le téléphone activé après le suivi, sans toucher aux autres comptes", async () => {
+    // Le cas vécu : le suivi crée la notification (cloche) alors que le téléphone n'est pas encore abonné.
+    const device = mock.tables["bw_push_subscriptions"]![0]!;
+    mock.tables["bw_push_subscriptions"] = [];
+    mock.tables["bw_follows"] = [
+      {
+        id: "trip",
+        user_id: "user",
+        target_kind: "departure",
+        target_id: "dep",
+        active: true,
+        created_at: ago(5),
+      },
+      {
+        id: "other",
+        user_id: "someone",
+        target_kind: "departure",
+        target_id: "dep",
+        active: true,
+        created_at: ago(5),
+      },
+    ];
+    mock.tables["bw_voyage_events"] = [
+      {
+        id: "new",
+        departure_id: "dep",
+        title: "Horaire",
+        body: "Changement.",
+        created_at: ago(60),
+      },
+    ];
+    const first = await dispatchPush({ userId: "user" });
+    expect(first).toMatchObject({ created: 1, pushed: 0 });
+    expect(mock.tables["bw_notifications"]!.map((n) => n["user_id"])).toEqual(["user"]);
+    mock.tables["bw_push_subscriptions"] = [device];
+    const second = await dispatchPush({ userId: "user" });
+    expect(second).toMatchObject({ created: 0, pushed: 1 });
+    expect(mock.send).toHaveBeenCalledTimes(1);
+    await dispatchPush({ userId: "user" });
+    expect(mock.send).toHaveBeenCalledTimes(1);
+  });
 });

@@ -105,6 +105,14 @@ export const Route = createFileRoute("/api/push-admin")({
                     ? null
                     : env["VITE_VAPID_PUBLIC_KEY"] === env["VAPID_PUBLIC_KEY"],
                 cronSecret: Boolean(env["CRON_SECRET"]),
+                scheduler: await db
+                  .rpc("bw_push_scheduler_active")
+                  .then(({ data, error }) => !error && data === true),
+                catchUp: await db
+                  .from("bw_admin_messages")
+                  .select("valid_until")
+                  .limit(1)
+                  .then(({ error }) => !error),
                 subscriptions: await count("bw_push_subscriptions"),
                 mySubscriptions: await count("bw_push_subscriptions", {
                   column: "user_id",

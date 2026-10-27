@@ -11,7 +11,7 @@ import {
   travelActionLabel,
   type TravelAction,
 } from "@/lib/notifications/actions";
-import { pushCapability, registerPush } from "@/lib/notifications/push";
+import { pushCapability, registerPush, requestCatchUp } from "@/lib/notifications/push";
 import { AccountAccessForm } from "./AccountAccessForm";
 import { TripQuestion } from "./TripQuestion";
 import { PushStatusLine } from "@/components/panel/PushStatusLine";
@@ -45,14 +45,19 @@ export function TravelActionProvider({ children }: { children: ReactNode }) {
             queryClient.invalidateQueries({ queryKey: [key] }),
           ),
         );
+        // Ce qui est déjà publié et toujours d'actualité pour ce suivi arrive tout de suite :
+        // registerPush le demande une fois le téléphone abonné, sinon on le demande ici.
+        let caughtUp = false;
         if (pushCapability() === "enabled") {
           try {
             const status = await registerPush(userId, false);
+            caughtUp = status === "enabled";
             if (status === "enabled") setPushMessage("Notifications activées sur cet appareil.");
           } catch {
             setPushMessage("Votre suivi est enregistré. Réessayez l’activation des notifications.");
           }
         }
+        if (!caughtUp) void requestCatchUp();
       } catch (cause) {
         setError(cause instanceof Error ? cause.message : "Enregistrement impossible.");
       } finally {
@@ -163,7 +168,9 @@ export function TravelActionProvider({ children }: { children: ReactNode }) {
                 </div>
               </div>
             )}
-            {action?.type === "follow" && action.traveller === undefined && !saved ? null : !user ? (
+            {action?.type === "follow" &&
+            action.traveller === undefined &&
+            !saved ? null : !user ? (
               <AccountAccessForm onAwaitingConfirmation={() => setAwaitingConfirmation(true)} />
             ) : (
               <>

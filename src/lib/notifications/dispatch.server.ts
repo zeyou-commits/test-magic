@@ -152,7 +152,7 @@ export async function dispatchPush(
       collect((from, to) =>
         db
           .from("bw_travel_alerts")
-          .select("id,target_kind,target_id,category,delay_minutes,created_at")
+          .select("id,target_kind,target_id,category,delay_minutes,detail,created_at")
           .eq("resolved", false)
           .gte("created_at", since)
           .gt("expires_at", new Date(now).toISOString())
@@ -228,6 +228,26 @@ export async function dispatchPush(
             url: `/?select=departure&id=${next.id}`,
           });
         }
+      }
+      // Accès au port de départ fermé ou dévié, signalé moins de 24 h avant sa traversée.
+      if (next && Date.parse(next.departure_at) - now <= 24 * HOUR) {
+        const route = routeById.get(next.route_id);
+        const port = route ? portById.get(route.departure_port_id) : undefined;
+        for (const signal of signals)
+          if (
+            port &&
+            signal.target_kind === "port" &&
+            signal.target_id === port.id &&
+            signal.detail === "access_closed" &&
+            signal.created_at >= follow.created_at
+          )
+            await deliver(follow.user_id, follow.id, {
+              key: `port-access:${follow.id}:${signal.id}`,
+              category: "community",
+              title: `${port.name} · accès au port fermé ou dévié`,
+              body: "Signalé sur place par des voyageurs. Prévoyez de la marge et vérifiez auprès de la compagnie.",
+              url: `/?select=port&id=${port.id}`,
+            });
       }
       const vesselId = follow.target_kind === "vessel" ? follow.target_id : next?.vessel_id;
       if (!vesselId) continue;

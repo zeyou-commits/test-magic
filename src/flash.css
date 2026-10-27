@@ -2106,3 +2106,60 @@ html {
   border-color: #0e7a43;
   background: #eef7f1;
 }
+
+/* ---------- Alertes sur ce téléphone ---------- */
+.bw-push-line {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 10px 12px;
+  border-radius: 14px;
+  background: #f1f6fb;
+  font-size: 13px;
+  color: #16324a;
+}
+.bw-push-line[data-state="on"] {
+  background: #eef7f1;
+  color: #145c36;
+}
+.bw-push-line[data-state="denied"],
+.bw-push-line[data-state="unsupported"] {
+  background: #f6f5ef;
+  color: #5b6b66;
+}
+.bw-push-line p {
+  display: flex;
+  flex: 1 1 220px;
+  align-items: flex-start;
+  gap: 6px;
+  margin: 0;
+}
+.bw-push-line p svg {
+  flex: none;
+  margin-top: 2px;
+}
+.bw-push-line > button {
+  padding: 6px 14px;
+  border-radius: 999px;
+  background: #0e7a43;
+  font-size: 12.5px;
+  font-weight: 800;
+  color: #ffffff;
+}
+.bw-push-line__guide {
+  display: grid;
+  flex-basis: 100%;
+  gap: 6px;
+  margin: 4px 0 0;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: #ffffff;
+  list-style: none;
+}
+.bw-push-line__guide li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}

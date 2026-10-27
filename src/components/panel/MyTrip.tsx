@@ -8,6 +8,7 @@ import type { Selection } from "@/lib/ferry/types";
 import { requestQuickReport } from "@/components/map/QuickReport";
 import { FlashFeed } from "./FlashFeed";
 import { TripStatusPicker } from "./TripPresence";
+import { PushStatusLine } from "./PushStatusLine";
 
 /** Historique des changements d'un départ (horaire, navire, annulation), alimenté par la base. */
 function TripChanges({ departureId }: { departureId: string }) {
@@ -80,6 +81,7 @@ export function MyTripPanel({
       {departureAt ? (
         <TripStatusPicker departureId={departureId} departureAt={departureAt} fromPortId={fromPortId} />
       ) : null}
+      <PushStatusLine />
       <TripChanges departureId={departureId} />
       <FlashFeed
         title="Infos sur votre traversée"

@@ -21,6 +21,7 @@ import { AdminWorkspace, type AdminSearchItem } from "@/components/admin/AdminWo
 import { AdminDrawer, AdminListToolbar, matches } from "@/components/admin/AdminDrawer";
 import { SignalsAdmin } from "@/components/admin/SignalsAdmin";
 import { CompaniesAdmin } from "@/components/admin/CompaniesAdmin";
+import { PushDiagnostic } from "@/components/admin/PushDiagnostic";
 import { AdminFilterNotice } from "@/components/admin/AdminFilterNotice";
 import {
   adminSearch,
@@ -336,6 +337,7 @@ function AdminTabs() {
           />
         </TabsContent>
         <TabsContent value="notifications">
+          <PushDiagnostic />
           <NotificationOverview />
         </TabsContent>
         <TabsContent value="flash">

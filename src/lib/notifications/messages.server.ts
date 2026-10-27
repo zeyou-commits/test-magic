@@ -34,6 +34,8 @@ export type ResolvedAudience = {
   category: NotificationCategory;
   recipients: Map<string, Recipient>;
   travellerKnown: boolean;
+  /** Fin de l'actualité de la cible (départ passé, jour terminé) ; null si elle n'en a pas. */
+  relevantUntil: string | null;
 };
 
 const missing = (error: { code?: string } | null) =>
@@ -181,6 +183,7 @@ export async function resolveAudience(audience: Audience): Promise<ResolvedAudie
       category: "reminders",
       recipients,
       travellerKnown: travellerColumn,
+      relevantUntil: new Date(Date.parse(departure.departure_at) + 2 * 3_600_000).toISOString(),
     };
   }
   if (audience.kind === "vessel") {
@@ -209,6 +212,7 @@ export async function resolveAudience(audience: Audience): Promise<ResolvedAudie
       category: "reminders",
       recipients,
       travellerKnown: travellerColumn,
+      relevantUntil: null,
     };
   }
   if (audience.kind === "port_day") {
@@ -248,6 +252,7 @@ export async function resolveAudience(audience: Audience): Promise<ResolvedAudie
       category: "reminders",
       recipients,
       travellerKnown: travellerColumn,
+      relevantUntil: end.toISOString(),
     };
   }
   if (audience.kind === "route") {
@@ -285,6 +290,7 @@ export async function resolveAudience(audience: Audience): Promise<ResolvedAudie
       category: "reminders",
       recipients,
       travellerKnown: false,
+      relevantUntil: null,
     };
   }
   if (audience.kind === "port") {
@@ -321,6 +327,7 @@ export async function resolveAudience(audience: Audience): Promise<ResolvedAudie
       category: "reminders",
       recipients,
       travellerKnown: travellerColumn,
+      relevantUntil: null,
     };
   }
   // Tout le monde : chaque compte, qu'il suive ou non une traversée.
@@ -338,6 +345,7 @@ export async function resolveAudience(audience: Audience): Promise<ResolvedAudie
     category: "community",
     recipients,
     travellerKnown: false,
+    relevantUntil: null,
   };
 }
 
@@ -387,6 +395,7 @@ export async function previewAudience(audience: Audience): Promise<AudiencePrevi
   return {
     label: resolved.label,
     context: resolved.context,
+    relevantUntil: resolved.relevantUntil,
     accounts: ids.length,
     reachable: reachable.length,
     devices,
@@ -419,10 +428,87 @@ type MessageRow = {
   title: string;
   body: string;
   url: string;
+  sent_at?: string | null;
+  late_recipients?: number | null;
 };
+const parisStamp = (iso: string) =>
+  new Intl.DateTimeFormat("fr-FR", {
+    day: "numeric",
+    month: "short",
+    hour: "2-digit",
+    minute: "2-digit",
+    timeZone: "Europe/Paris",
+  }).format(new Date(iso));
+
 /**
- * Messages de l'équipe arrivés à échéance (ou celui qu'on envoie tout de suite) : création des
- * notifications dans les comptes, puis mise en file pour les téléphones, en lots.
+ * Crée le message dans les comptes qui ne l'ont pas encore, puis le met en file pour leurs
+ * téléphones. Sans doublon : la clé du message est unique par compte. `late` : compte arrivé
+ * après l'envoi (suivi tardif), le texte rappelle alors la date de l'information.
+ */
+async function deliverAdminMessage(message: MessageRow, late: boolean) {
+  const resolved = await resolveAudience(message.audience);
+  const key = `admin-msg:${message.category}:${message.id}`;
+  const already = new Set<string>();
+  for (let offset = 0; ; offset += 1000) {
+    const page = await db
+      .from("bw_notifications")
+      .select("user_id")
+      .eq("event_key", key)
+      .order("user_id")
+      .range(offset, offset + 999);
+    if (page.error) throw page.error;
+    for (const row of page.data ?? []) already.add(row.user_id as string);
+    if ((page.data ?? []).length < 1000) break;
+  }
+  const ids = [...resolved.recipients.keys()].filter((id) => !already.has(id));
+  const prefs = await preferencesOf(ids);
+  const allowed = ids.filter((id) => notificationAllowed(prefs.get(id), message.category));
+  const body =
+    late && message.sent_at
+      ? `Info du ${parisStamp(message.sent_at)} · ${message.body}`
+      : message.body;
+  const created: { id: string; user_id: string }[] = [];
+  for (const part of chunks(allowed, 300)) {
+    const inserted = await db
+      .from("bw_notifications")
+      .upsert(
+        part.map((userId) => ({
+          user_id: userId,
+          follow_id: resolved.recipients.get(userId)?.followId ?? null,
+          event_key: key,
+          title: message.title,
+          body,
+          url: message.url,
+        })),
+        { onConflict: "user_id,event_key", ignoreDuplicates: true },
+      )
+      .select("id,user_id");
+    if (inserted.error) throw inserted.error;
+    created.push(...((inserted.data ?? []) as { id: string; user_id: string }[]));
+  }
+  const noticeOf = new Map(created.map((notice) => [notice.user_id, notice.id]));
+  const pushUsers = created
+    .map((notice) => notice.user_id)
+    .filter((id) => prefs.get(id)?.push_enabled !== false);
+  for (const part of chunks(pushUsers)) {
+    const devices = await db.from("bw_push_subscriptions").select("id,user_id").in("user_id", part);
+    if (devices.error) throw devices.error;
+    const rows = (devices.data ?? []).flatMap((device) => {
+      const id = noticeOf.get(device.user_id as string);
+      return id ? [{ notification_id: id, subscription_id: device.id }] : [];
+    });
+    if (!rows.length) continue;
+    const queued = await db
+      .from("bw_push_deliveries")
+      .upsert(rows, { onConflict: "notification_id,subscription_id", ignoreDuplicates: true });
+    if (queued.error) throw queued.error;
+  }
+  return { created, total: already.size + created.length };
+}
+
+/**
+ * Messages de l'équipe arrivés à échéance (ou celui qu'on envoie tout de suite), puis rattrapage :
+ * un message encore d'actualité part aussi vers ceux qui ont rejoint la cible après l'envoi.
  * Renvoie les notifications créées, pour que l'envoi les traite en priorité.
  */
 export async function queueAdminMessages(options: { messageId?: string } = {}) {
@@ -454,61 +540,13 @@ export async function queueAdminMessages(options: { messageId?: string } = {}) {
     if (claim.error) throw claim.error;
     if (!claim.data) continue;
     try {
-      const resolved = await resolveAudience(message.audience);
-      const ids = [...resolved.recipients.keys()];
-      const prefs = await preferencesOf(ids);
-      const allowed = ids.filter((id) => notificationAllowed(prefs.get(id), message.category));
-      const key = `admin-msg:${message.category}:${message.id}`;
-      for (const part of chunks(allowed, 300)) {
-        const inserted = await db.from("bw_notifications").upsert(
-          part.map((userId) => ({
-            user_id: userId,
-            follow_id: resolved.recipients.get(userId)?.followId ?? null,
-            event_key: key,
-            title: message.title,
-            body: message.body,
-            url: message.url,
-          })),
-          { onConflict: "user_id,event_key", ignoreDuplicates: true },
-        );
-        if (inserted.error) throw inserted.error;
-      }
-      const notices: { id: string; user_id: string }[] = [];
-      for (let offset = 0; ; offset += 1000) {
-        const page = await db
-          .from("bw_notifications")
-          .select("id,user_id")
-          .eq("event_key", key)
-          .order("id")
-          .range(offset, offset + 999);
-        if (page.error) throw page.error;
-        notices.push(...(page.data as { id: string; user_id: string }[]));
-        if (page.data.length < 1000) break;
-      }
-      const noticeOf = new Map(notices.map((notice) => [notice.user_id, notice.id]));
-      const pushUsers = allowed.filter((id) => prefs.get(id)?.push_enabled !== false);
-      for (const part of chunks(pushUsers)) {
-        const devices = await db
-          .from("bw_push_subscriptions")
-          .select("id,user_id")
-          .in("user_id", part);
-        if (devices.error) throw devices.error;
-        const rows = (devices.data ?? []).flatMap((device) => {
-          const id = noticeOf.get(device.user_id as string);
-          return id ? [{ notification_id: id, subscription_id: device.id }] : [];
-        });
-        if (!rows.length) continue;
-        const queued = await db
-          .from("bw_push_deliveries")
-          .upsert(rows, { onConflict: "notification_id,subscription_id", ignoreDuplicates: true });
-        if (queued.error) throw queued.error;
-      }
-      notificationIds.push(...notices.map((notice) => notice.id));
+      const result = await deliverAdminMessage(message, false);
+      notificationIds.push(...result.created.map((notice) => notice.id));
       const done = await db
         .from("bw_admin_messages")
         .update({
           status: "sent",
-          recipients: notices.length,
+          recipients: result.total,
           sent_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
           last_error: null,
@@ -529,7 +567,44 @@ export async function queueAdminMessages(options: { messageId?: string } = {}) {
         .eq("id", message.id);
     }
   }
+  if (!options.messageId) notificationIds.push(...(await catchUpAdminMessages()));
   return { messages, notificationIds };
+}
+
+/** Rattrapage des messages envoyés encore valables (colonne valid_until, script du 04/11/2026). */
+async function catchUpAdminMessages() {
+  const live = await db
+    .from("bw_admin_messages")
+    .select("id,audience,category,title,body,url,sent_at,late_recipients")
+    .eq("status", "sent")
+    .gt("valid_until", new Date().toISOString())
+    .order("sent_at", { ascending: false })
+    .limit(30);
+  // Script de rattrapage pas encore exécuté : rien à rattraper, sans erreur.
+  if (live.error) {
+    if (missing(live.error) || live.error.code === "42703") return [];
+    throw live.error;
+  }
+  const ids: string[] = [];
+  for (const message of (live.data ?? []) as MessageRow[]) {
+    if (message.audience.kind === "all") continue;
+    try {
+      const result = await deliverAdminMessage(message, true);
+      if (!result.created.length) continue;
+      ids.push(...result.created.map((notice) => notice.id));
+      await db
+        .from("bw_admin_messages")
+        .update({
+          recipients: result.total,
+          late_recipients: (message.late_recipients ?? 0) + result.created.length,
+        })
+        .eq("id", message.id);
+    } catch (failure) {
+      // Un message en erreur ne bloque pas les autres ; il sera retenté au passage suivant.
+      console.error("[admin-msg catch-up]", message.id, failure);
+    }
+  }
+  return ids;
 }
 
 /** La liste des comptes prévenus (300 au plus), avec la raison et leurs téléphones. */

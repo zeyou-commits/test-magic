@@ -21,6 +21,35 @@ type Notice = {
   category: NotificationCategory;
 };
 const HOUR = 3_600_000;
+/** Rattrapage : une information publiée avant le suivi, encore d'actualité, est envoyée avec sa date. */
+const CATCH_UP_WINDOW = 7 * 24 * HOUR;
+const stamp = (iso: string) =>
+  new Intl.DateTimeFormat("fr-FR", {
+    day: "numeric",
+    month: "short",
+    hour: "2-digit",
+    minute: "2-digit",
+    timeZone: "Europe/Paris",
+  }).format(new Date(iso));
+function ago(iso: string, now: number) {
+  const minutes = Math.max(1, Math.round((now - Date.parse(iso)) / 60_000));
+  return minutes < 60 ? `il y a ${minutes} min` : `il y a ${Math.round(minutes / 60)} h`;
+}
+/** Le plus récent de chaque groupe (même sujet) : un nouvel abonné reçoit l'état actuel, pas tout l'historique. */
+function latestBy<T extends { created_at: string }>(items: T[], group: (item: T) => string) {
+  const latest = new Map<string, T>();
+  for (const item of items) {
+    const current = latest.get(group(item));
+    if (!current || item.created_at > current.created_at) latest.set(group(item), item);
+  }
+  return [...latest.values()];
+}
+/** « départ dans 30 h », « départ dans 5 jours » : le vrai délai, même pour un suivi tardif. */
+function remainingLabel(remaining: number) {
+  return remaining < 48 * HOUR
+    ? `${Math.max(1, Math.round(remaining / HOUR))} h`
+    : `${Math.round(remaining / (24 * HOUR))} jours`;
+}
 async function collect<T>(
   page: (
     from: number,
@@ -139,6 +168,7 @@ export async function dispatchPush(
   }
   if (follows.length) {
     const since = new Date(now - 26 * HOUR).toISOString();
+    const catchUpSince = new Date(now - CATCH_UP_WINDOW).toISOString();
     const [departures, signals, reviews, updates] = await Promise.all([
       collect((from, to) =>
         db
@@ -174,20 +204,30 @@ export async function dispatchPush(
         db
           .from("bw_voyage_events")
           .select("id,departure_id,vessel_id,previous_vessel_id,title,body,created_at")
-          .gte("created_at", since)
+          .gte("created_at", catchUpSince)
           .order("id")
           .range(from, to),
       ),
     ]);
+    // Date des traversées concernées par une mise à jour : le rattrapage s'arrête au départ.
+    const eventDepartureIds = [...new Set(updates.map((update) => update.departure_id))];
+    const eventDepartureAt = new Map<string, string>();
+    for (let index = 0; index < eventDepartureIds.length; index += 200) {
+      const part = await db
+        .from("departures")
+        .select("id,departure_at")
+        .in("id", eventDepartureIds.slice(index, index + 200));
+      if (part.error) throw part.error;
+      for (const row of part.data ?? []) eventDepartureAt.set(row.id, row.departure_at);
+    }
     for (const follow of follows) {
-      for (const update of updates)
-        if (
-          update.created_at >= follow.created_at &&
-          (follow.target_kind === "departure"
-            ? update.departure_id === follow.target_id
-            : update.vessel_id === follow.target_id ||
-              update.previous_vessel_id === follow.target_id)
-        ) {
+      const followUpdates = updates.filter((update) =>
+        follow.target_kind === "departure"
+          ? update.departure_id === follow.target_id
+          : update.vessel_id === follow.target_id || update.previous_vessel_id === follow.target_id,
+      );
+      for (const update of followUpdates)
+        if (update.created_at >= follow.created_at && update.created_at >= since)
           await deliver(follow.user_id, follow.id, {
             key: `voyage-update:${follow.id}:${update.id}`,
             category: "reminders",
@@ -195,7 +235,23 @@ export async function dispatchPush(
             body: update.body,
             url: `/?select=departure&id=${update.departure_id}`,
           });
-        }
+      // Suivi (ou « Ma traversée ») déclaré après coup : la dernière mise à jour, si le départ est à venir.
+      const earlier =
+        follow.target_kind === "departure"
+          ? latestBy(
+              followUpdates.filter((update) => update.created_at < follow.created_at),
+              () => "departure",
+            )[0]
+          : undefined;
+      const earlierAt = earlier ? eventDepartureAt.get(earlier.departure_id) : undefined;
+      if (earlier && earlierAt && Date.parse(earlierAt) > now)
+        await deliver(follow.user_id, follow.id, {
+          key: `voyage-update:${follow.id}:${earlier.id}`,
+          category: "reminders",
+          title: earlier.title,
+          body: `Mise à jour du ${stamp(earlier.created_at)} · ${earlier.body}`,
+          url: `/?select=departure&id=${earlier.departure_id}`,
+        });
       const next = departures
         .filter((departure) =>
           follow.target_kind === "departure"
@@ -225,7 +281,7 @@ export async function dispatchPush(
           await deliver(follow.user_id, follow.id, {
             key: `departure:${follow.id}:${next.id}:${stage}`,
             category: "reminders",
-            title: `${from?.name ?? "Départ"} → ${to?.name ?? "arrivée"} · départ dans ${stage}`,
+            title: `${from?.name ?? "Départ"} → ${to?.name ?? "arrivée"} · départ dans ${remainingLabel(remaining)}`,
             body: `Présentez-vous à ${from?.name ?? "votre port"} le ${portTime} (4 h avant, à confirmer auprès de la compagnie). Checklist : billets, pièces d’identité, documents du véhicule et essentiels à bord.`,
             url: `/?select=departure&id=${next.id}`,
           });
@@ -235,31 +291,54 @@ export async function dispatchPush(
       if (next && Date.parse(next.departure_at) - now <= 24 * HOUR) {
         const route = routeById.get(next.route_id);
         const port = route ? portById.get(route.departure_port_id) : undefined;
-        for (const signal of signals)
-          if (
+        const access = signals.filter(
+          (signal) =>
             port &&
             signal.target_kind === "port" &&
             signal.target_id === port.id &&
-            signal.detail === "access_closed" &&
-            signal.created_at >= follow.created_at
-          )
-            await deliver(follow.user_id, follow.id, {
-              key: `port-access:${follow.id}:${signal.id}`,
-              category: "community",
-              title: `${port.name} · accès au port fermé ou dévié`,
-              body: "Signalé sur place par des voyageurs. Prévoyez de la marge et vérifiez auprès de la compagnie.",
-              url: `/?select=port&id=${port.id}`,
-            });
+            signal.detail === "access_closed",
+        );
+        const fresh = access.filter((signal) => signal.created_at >= follow.created_at);
+        // Avant le suivi : seul le plus récent, toujours actif (non résolu, non expiré).
+        const late = fresh.length
+          ? []
+          : latestBy(
+              access.filter((signal) => signal.created_at < follow.created_at),
+              () => "access",
+            );
+        for (const signal of [...fresh, ...late])
+          await deliver(follow.user_id, follow.id, {
+            key: `port-access:${follow.id}:${signal.id}`,
+            category: "community",
+            title: `${port!.name} · accès au port fermé ou dévié`,
+            body: `Signalé sur place par des voyageurs${late.includes(signal) ? ` ${ago(signal.created_at, now)}` : ""}. Prévoyez de la marge et vérifiez auprès de la compagnie.`,
+            url: `/?select=port&id=${port!.id}`,
+          });
       }
       const vesselId = follow.target_kind === "vessel" ? follow.target_id : next?.vessel_id;
       if (!vesselId) continue;
       const vesselName = vesselById.get(vesselId)?.name ?? "Votre bateau";
-      for (const signal of signals)
-        if (
-          signal.target_kind === "vessel" &&
-          signal.target_id === vesselId &&
-          signal.created_at >= follow.created_at
-        ) {
+      const vesselSignals = signals.filter(
+        (signal) => signal.target_kind === "vessel" && signal.target_id === vesselId,
+      );
+      // Signalements encore actifs publiés avant le suivi : le plus récent de chaque sujet.
+      const lateSignals = latestBy(
+        vesselSignals.filter((signal) => signal.created_at < follow.created_at),
+        (signal) => `${signal.category}:${signal.detail ?? ""}`,
+      ).filter(
+        (late) =>
+          !vesselSignals.some(
+            (signal) =>
+              signal.created_at >= follow.created_at &&
+              signal.category === late.category &&
+              (signal.detail ?? "") === (late.detail ?? ""),
+          ),
+      );
+      for (const signal of [
+        ...vesselSignals.filter((signal) => signal.created_at >= follow.created_at),
+        ...lateSignals,
+      ]) {
+        {
           const topic =
             signal.category === "delay"
               ? `Retard signalé${signal.delay_minutes ? ` · environ ${signal.delay_minutes} min` : ""}`
@@ -270,10 +349,13 @@ export async function dispatchPush(
             key: `signal:${follow.id}:${signal.id}`,
             category: "community",
             title: `${vesselName} · ${topic}`,
-            body: "Un voyageur a publié un signalement. Consultez la fiche et vérifiez auprès de la compagnie.",
+            body: lateSignals.includes(signal)
+              ? `Signalé par un voyageur ${ago(signal.created_at, now)}, toujours d’actualité. Consultez la fiche et vérifiez auprès de la compagnie.`
+              : "Un voyageur a publié un signalement. Consultez la fiche et vérifiez auprès de la compagnie.",
             url: `/?select=vessel&id=${vesselId}`,
           });
         }
+      }
       for (const review of reviews)
         if (
           review.vessel_id === vesselId &&
@@ -376,6 +458,42 @@ export async function dispatchPush(
       .eq("status", "approved");
     if (updated.error) throw updated.error;
     publishedCampaigns++;
+  }
+  // Alerte « prévenez-moi » créée après l'annonce d'ouverture : on l'annonce aussi, une fois.
+  if (!options.messageId && !options.onlyOpenings) {
+    const opened = await db
+      .from("bw_notification_campaigns")
+      .select("route_id,period_month,sent_at")
+      .eq("status", "sent")
+      .gte("period_month", `${new Date(now).toISOString().slice(0, 7)}-01`);
+    if (opened.error) throw opened.error;
+    for (const campaign of opened.data ?? []) {
+      if (!campaign.sent_at) continue;
+      const route = routeById.get(campaign.route_id);
+      const from = route ? portById.get(route.departure_port_id) : undefined;
+      const to = route ? portById.get(route.arrival_port_id) : undefined;
+      if (!route || route.status !== "active" || !from || !to) continue;
+      const watches = await db
+        .from("bw_itinerary_watches")
+        .select("id,user_id,origin_label,destination_label")
+        .eq("route_id", campaign.route_id)
+        .eq("period_month", campaign.period_month)
+        .eq("active", true)
+        .gt("created_at", campaign.sent_at)
+        .limit(2000);
+      if (watches.error) throw watches.error;
+      const month = new Intl.DateTimeFormat("fr-FR", { month: "long", year: "numeric" }).format(
+        new Date(`${campaign.period_month}T12:00:00Z`),
+      );
+      for (const watch of watches.data ?? [])
+        await deliver(watch.user_id, null, {
+          key: `opening:${watch.id}`,
+          category: "openings",
+          title: `${from.name} → ${to.name} : les traversées sont déjà publiées`,
+          body: `Des départs sont disponibles en ${month}. Retrouvez votre parcours ${watch.origin_label} → ${watch.destination_label} et comparez les traversées.`,
+          url: `/horaires?from=${route.departure_port_id}&to=${route.arrival_port_id}&month=${String(campaign.period_month).slice(0, 7)}`,
+        });
+    }
   }
   // Messages de l'équipe : celui envoyé tout de suite, ou ceux planifiés arrivés à échéance.
   const adminMessages = options.onlyOpenings

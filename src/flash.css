@@ -2809,3 +2809,32 @@ html {
     flex-wrap: wrap;
   }
 }
+
+.bw-msg__catchup {
+  align-items: flex-start;
+}
+.bw-msg__catchup input {
+  margin-top: 2px;
+}
+.bw-msg__catchup small {
+  display: block;
+  margin-top: 2px;
+  font-size: 12px;
+  color: var(--muted-foreground);
+}
+.bw-msg__item-live {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin-top: 4px;
+  font-size: 12px;
+  color: var(--primary);
+}
+.bw-msg__item-live button {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 1px 8px;
+  font-size: 11px;
+  color: var(--foreground);
+}

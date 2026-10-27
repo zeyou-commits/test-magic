@@ -1,6 +1,13 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { z } from "zod";
-import { audienceSchema, BODY_MAX, templateIds, TITLE_MAX } from "@/lib/notifications/messages";
+import {
+  audienceSchema,
+  BODY_MAX,
+  catchUpUntil,
+  templateIds,
+  TITLE_MAX,
+  type TemplateId,
+} from "@/lib/notifications/messages";
 
 const actionSchema = z.discriminatedUnion("action", [
   z.object({ action: z.literal("refresh") }),
@@ -27,10 +34,13 @@ const actionSchema = z.discriminatedUnion("action", [
       .max(300),
     sendAt: z.string().datetime().nullable(),
     flash: z.boolean(),
+    catchUp: z.boolean().default(true),
     confirmCount: z.number().int().optional(),
     replaces: z.string().uuid().optional(),
   }),
   z.object({ action: z.literal("message-cancel"), id: z.string().uuid() }),
+  // Ne plus envoyer un message aux nouveaux abonnés (l'information n'est plus d'actualité).
+  z.object({ action: z.literal("message-stop"), id: z.string().uuid() }),
 ]);
 export const Route = createFileRoute("/api/push-admin")({
   server: {
@@ -162,14 +172,29 @@ export const Route = createFileRoute("/api/push-admin")({
               headers: { "cache-control": "no-store" },
             });
           }
-          if (action.action === "messages") {
-            const { data, error } = await db
+          if (action.action === "message-stop") {
+            const { error } = await db
               .from("bw_admin_messages")
-              .select(
-                "id,audience,audience_label,template,title,body,url,scheduled_at,status,recipients,last_error,created_at,sent_at,news_id",
-              )
-              .order("scheduled_at", { ascending: false })
-              .limit(40);
+              .update({
+                valid_until: new Date().toISOString(),
+                updated_at: new Date().toISOString(),
+              })
+              .eq("id", action.id);
+            if (error) throw error;
+            return Response.json({ stopped: true });
+          }
+          if (action.action === "messages") {
+            const columns =
+              "id,audience,audience_label,template,title,body,url,scheduled_at,status,recipients,last_error,created_at,sent_at,news_id";
+            const list = (extra: string) =>
+              db
+                .from("bw_admin_messages")
+                .select(columns + extra)
+                .order("scheduled_at", { ascending: false })
+                .limit(40);
+            // Colonnes du rattrapage absentes tant que le script du 04/11 (13 h) n'est pas exécuté.
+            let { data, error } = await list(",valid_until,late_recipients");
+            if (error?.code === "42703") ({ data, error } = await list(""));
             if (error && ["PGRST205", "42P01"].includes(error.code))
               return Response.json({ messages: [], ready: false });
             if (error) throw error;
@@ -288,23 +313,33 @@ export const Route = createFileRoute("/api/push-admin")({
               if (news.error) flashSkipped = true;
               else newsId = news.data.id as string;
             }
-            const inserted = await db
-              .from("bw_admin_messages")
-              .insert({
-                audience: action.audience,
-                audience_label: preview.label.slice(0, 200),
-                category: action.audience.kind === "all" ? "community" : "reminders",
-                template: action.template,
-                title: action.title,
-                body: action.body,
-                url: action.url,
-                scheduled_at: startsAt.toISOString(),
-                status: "scheduled",
-                news_id: newsId,
-                created_by: auth.user.id,
-              })
-              .select("id")
-              .single();
+            const validUntil = action.catchUp
+              ? catchUpUntil(
+                  action.audience.kind,
+                  action.template as TemplateId,
+                  startsAt,
+                  preview.relevantUntil,
+                )
+              : null;
+            const row = {
+              audience: action.audience,
+              audience_label: preview.label.slice(0, 200),
+              category: action.audience.kind === "all" ? "community" : "reminders",
+              template: action.template,
+              title: action.title,
+              body: action.body,
+              url: action.url,
+              scheduled_at: startsAt.toISOString(),
+              status: "scheduled",
+              news_id: newsId,
+              created_by: auth.user.id,
+            };
+            const insert = (values: Record<string, unknown>) =>
+              db.from("bw_admin_messages").insert(values).select("id").single();
+            let inserted = await insert({ ...row, valid_until: validUntil?.toISOString() ?? null });
+            // Sans le script de rattrapage, le message part quand même (sans renvoi aux nouveaux).
+            if (inserted.error?.code === "42703" || inserted.error?.code === "PGRST204")
+              inserted = await insert(row);
             if (inserted.error) throw inserted.error;
             if (sendAt !== null)
               return Response.json({

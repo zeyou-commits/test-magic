@@ -25,6 +25,7 @@ import {
   ChevronDown,
   TriangleAlert,
   Users,
+  UserPlus,
   X,
   type LucideIcon,
 } from "lucide-react";
@@ -37,6 +38,7 @@ import { dateKeyInZone, portTimeZone, zonedTimeToUtc } from "@/lib/ferry/time";
 import type { Departure } from "@/lib/ferry/types";
 import {
   adminMessagesQuery,
+  catchUpUntil,
   audienceRecipientsQuery,
   type AudienceRecipient,
   audiencePreviewQuery,
@@ -163,6 +165,7 @@ export function MessageCenter() {
   const [body, setBody] = useState("");
   const [touched, setTouched] = useState(false);
   const [flash, setFlash] = useState(false);
+  const [catchUp, setCatchUp] = useState(true);
   const [flashTouched, setFlashTouched] = useState(false);
   const [when, setWhen] = useState<"now" | "later">("now");
   const [later, setLater] = useState(() => tomorrowAt("08:00"));
@@ -283,6 +286,7 @@ export function MessageCenter() {
     setTouched(false);
     setFlash(false);
     setFlashTouched(false);
+    setCatchUp(true);
     setWhen("now");
     setLater(tomorrowAt("08:00"));
     setReplaces(null);
@@ -328,6 +332,9 @@ export function MessageCenter() {
       : null;
   const sendDate = sendAt ?? new Date();
   const quiet = inQuietHours(sendDate);
+  const catchUpEnd = audience
+    ? catchUpUntil(audience.kind, template, sendDate, preview.data?.relevantUntil ?? null)
+    : null;
   const tooSoon = sendAt !== null && sendAt.getTime() < Date.now() + 2 * 60_000;
   const reachable = preview.data?.reachable ?? 0;
   const ready = Boolean(
@@ -371,6 +378,7 @@ export function MessageCenter() {
         url: context?.url ?? "/",
         sendAt: sendAt ? sendAt.toISOString() : null,
         flash,
+        catchUp: catchUp && kind !== "all",
         ...(kind === "all" ? { confirmCount: Number(typed) } : {}),
         ...(replaces ? { replaces } : {}),
       }),
@@ -857,6 +865,25 @@ export function MessageCenter() {
                   dans le diagnostic plus bas.
                 </p>
               ) : null}
+              {audience && kind !== "all" ? (
+                <label className="bw-msg__check bw-msg__catchup">
+                  <input
+                    type="checkbox"
+                    checked={catchUp && Boolean(catchUpEnd)}
+                    disabled={!catchUpEnd}
+                    onChange={(e) => setCatchUp(e.target.checked)}
+                  />
+                  <UserPlus size={16} aria-hidden />
+                  <span>
+                    Envoyer aussi à ceux qui suivront cette cible ensuite
+                    <small>
+                      {catchUpEnd
+                        ? `Tant que l’info est d’actualité : jusqu’au ${parisLabel(catchUpEnd.toISOString())}. Ils le recevront avec sa date.`
+                        : "Cette cible est déjà passée."}
+                    </small>
+                  </span>
+                </label>
+              ) : null}
               {counts?.duplicates.length ? (
                 <p className="bw-msg__warning">
                   <History size={16} aria-hidden /> Déjà{" "}
@@ -936,6 +963,12 @@ export function MessageCenter() {
                 <div>
                   <dt>Flash info</dt>
                   <dd>Publié aussi, pendant 24 h</dd>
+                </div>
+              ) : null}
+              {catchUp && catchUpEnd && kind !== "all" ? (
+                <div>
+                  <dt>Nouveaux abonnés</dt>
+                  <dd>Le recevront aussi jusqu’au {parisLabel(catchUpEnd.toISOString())}</dd>
                 </div>
               ) : null}
             </dl>
@@ -1127,6 +1160,14 @@ function MessageHistory({
     },
     onError: (error: Error) => toast.error(error.message),
   });
+  const stop = useMutation({
+    mutationFn: (id: string) => messageAction({ action: "message-stop", id }),
+    onSuccess: () => {
+      toast.success("Les nouveaux abonnés ne recevront plus ce message.");
+      void queryClient.invalidateQueries({ queryKey: ["admin", "messages"] });
+    },
+    onError: (error: Error) => toast.error(error.message),
+  });
   const scheduled = messages.filter((message) => message.status === "scheduled");
   const past = messages.filter((message) => message.status !== "scheduled");
   const row = (message: AdminMessage) => (
@@ -1145,7 +1186,19 @@ function MessageHistory({
             ? ` · ${message.recipients} compte${message.recipients > 1 ? "s" : ""}`
             : ""}
           {message.news_id ? " · Flash info" : ""}
+          {message.late_recipients ? ` (dont ${message.late_recipients} arrivé(s) après)` : ""}
         </p>
+        {message.status === "sent" &&
+        message.valid_until &&
+        Date.parse(message.valid_until) > Date.now() ? (
+          <p className="bw-msg__item-live">
+            <UserPlus size={13} aria-hidden /> Envoyé aussi aux nouveaux abonnés jusqu’au{" "}
+            {parisLabel(message.valid_until)}
+            <button type="button" disabled={stop.isPending} onClick={() => stop.mutate(message.id)}>
+              Arrêter
+            </button>
+          </p>
+        ) : null}
         {message.last_error ? (
           <p className="text-xs text-destructive">{message.last_error}</p>
         ) : null}

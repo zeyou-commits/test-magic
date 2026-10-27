@@ -75,9 +75,12 @@ vi.mock("@/integrations/supabase/client.server", () => {
         toIndex = limit;
         return builder;
       },
-      upsert: (value: Record<string, unknown>, options: { onConflict: string }) => {
+      upsert: (
+        value: Record<string, unknown> | Record<string, unknown>[],
+        options: { onConflict: string },
+      ) => {
         action = "upsert";
-        values = [value];
+        values = Array.isArray(value) ? value : [value];
         conflict = options.onConflict.split(",");
         return builder;
       },
@@ -259,5 +262,185 @@ describe("Diffusion des ouvertures de lignes", () => {
       event_key: "voyage-update:follow:change",
       follow_id: "follow",
     });
+  });
+});
+
+describe("Suivi déclaré après coup (rattrapage)", () => {
+  const ago = (minutes: number) => new Date(Date.now() - minutes * 60_000).toISOString();
+  beforeEach(() => {
+    mock.tables["bw_notification_campaigns"] = [];
+  });
+  it("envoie la dernière mise à jour de la traversée, avec sa date, une seule fois", async () => {
+    mock.tables["bw_follows"] = [
+      {
+        id: "trip",
+        user_id: "user",
+        target_kind: "departure",
+        target_id: "dep",
+        traveller: true,
+        active: true,
+        created_at: ago(5),
+      },
+    ];
+    mock.tables["bw_voyage_events"] = [
+      {
+        id: "old",
+        departure_id: "dep",
+        title: "Horaire 1",
+        body: "Premier changement.",
+        created_at: ago(300),
+      },
+      {
+        id: "new",
+        departure_id: "dep",
+        title: "Horaire 2",
+        body: "Dernier changement.",
+        created_at: ago(60),
+      },
+    ];
+    const result = await dispatchPush();
+    expect(result.created).toBe(1);
+    expect(mock.tables["bw_notifications"]![0]).toMatchObject({
+      event_key: "voyage-update:trip:new",
+      body: expect.stringMatching(/^Mise à jour du .* · Dernier changement\.$/),
+    });
+    await dispatchPush();
+    expect(mock.tables["bw_notifications"]).toHaveLength(1);
+  });
+  it("n'envoie rien si la traversée est déjà partie", async () => {
+    mock.tables["departures"]![0]!["departure_at"] = ago(600);
+    mock.tables["bw_follows"] = [
+      {
+        id: "trip",
+        user_id: "user",
+        target_kind: "departure",
+        target_id: "dep",
+        active: true,
+        created_at: ago(5),
+      },
+    ];
+    mock.tables["bw_voyage_events"] = [
+      {
+        id: "new",
+        departure_id: "dep",
+        title: "Horaire",
+        body: "Changement.",
+        created_at: ago(60),
+      },
+    ];
+    expect((await dispatchPush()).created).toBe(0);
+  });
+  it("envoie un signalement encore actif publié avant le suivi du bateau", async () => {
+    mock.tables["bw_follows"] = [
+      {
+        id: "boat",
+        user_id: "user",
+        target_kind: "vessel",
+        target_id: "ship",
+        active: true,
+        created_at: ago(5),
+      },
+    ];
+    mock.tables["bw_travel_alerts"] = [
+      {
+        id: "delay",
+        target_kind: "vessel",
+        target_id: "ship",
+        category: "delay",
+        delay_minutes: 90,
+        detail: null,
+        resolved: false,
+        expires_at: new Date(Date.now() + 3_600_000).toISOString(),
+        created_at: ago(120),
+      },
+      {
+        id: "gone",
+        target_kind: "vessel",
+        target_id: "ship",
+        category: "boarding",
+        detail: null,
+        resolved: true,
+        expires_at: new Date(Date.now() + 3_600_000).toISOString(),
+        created_at: ago(100),
+      },
+    ];
+    const result = await dispatchPush();
+    expect(result.created).toBe(1);
+    expect(mock.tables["bw_notifications"]![0]).toMatchObject({
+      event_key: "signal:boat:delay",
+      body: expect.stringContaining("toujours d’actualité"),
+    });
+  });
+  it("annonce une ouverture déjà publiée à une alerte créée ensuite", async () => {
+    mock.tables["bw_notification_campaigns"] = [
+      { id: "c", route_id: "route", period_month: "2030-07-01", status: "sent", sent_at: ago(600) },
+    ];
+    mock.tables["bw_itinerary_watches"]![0]!["created_at"] = ago(5);
+    const result = await dispatchPush();
+    expect(result.created).toBe(1);
+    expect(mock.tables["bw_notifications"]![0]).toMatchObject({ event_key: "opening:watch" });
+  });
+  it("envoie un message de l'équipe encore valable à un voyageur arrivé après, sans renvoi aux autres", async () => {
+    mock.tables["vessels"] = [];
+    mock.tables["bw_follows"] = [
+      {
+        id: "a",
+        user_id: "early",
+        target_kind: "departure",
+        target_id: "dep",
+        traveller: true,
+        active: true,
+        created_at: ago(300),
+      },
+      {
+        id: "b",
+        user_id: "user",
+        target_kind: "departure",
+        target_id: "dep",
+        traveller: true,
+        active: true,
+        created_at: ago(5),
+      },
+    ];
+    mock.tables["bw_notifications"] = [
+      {
+        id: "n0",
+        user_id: "early",
+        event_key: "admin-msg:reminders:msg",
+        title: "Retard",
+        body: "Retard de 2 h.",
+        url: "/",
+      },
+    ];
+    mock.tables["bw_admin_messages"] = [
+      {
+        id: "msg",
+        audience: { kind: "departure", departureId: "dep", who: "everyone" },
+        category: "reminders",
+        title: "Retard",
+        body: "Retard de 2 h.",
+        url: "/",
+        status: "sent",
+        sent_at: ago(240),
+        valid_until: new Date(Date.now() + 3_600_000).toISOString(),
+        late_recipients: 0,
+      },
+    ];
+    await dispatchPush();
+    const late = mock.tables["bw_notifications"]!.filter(
+      (n) => n["event_key"] === "admin-msg:reminders:msg",
+    );
+    expect(late).toHaveLength(2);
+    expect(late.find((n) => n["user_id"] === "user")).toMatchObject({
+      body: expect.stringMatching(/^Info du .* · Retard de 2 h\.$/),
+    });
+    expect(mock.tables["bw_admin_messages"]![0]).toMatchObject({
+      late_recipients: 1,
+      recipients: 2,
+    });
+    await dispatchPush();
+    expect(
+      mock.tables["bw_notifications"]!.filter((n) => n["event_key"] === "admin-msg:reminders:msg"),
+    ).toHaveLength(2);
   });
 });

@@ -1,5 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { audienceSchema, inQuietHours, templateText, type AudienceContext } from "./messages";
+import {
+  audienceSchema,
+  catchUpUntil,
+  inQuietHours,
+  templateText,
+  type AudienceContext,
+} from "./messages";
 
 const departure: AudienceContext = {
   subject: "Marseille → Alger",
@@ -56,5 +62,26 @@ describe("garde-fous", () => {
   it("refuse une cible incomplète", () => {
     expect(audienceSchema.safeParse({ kind: "departure", departureId: "x" }).success).toBe(false);
     expect(audienceSchema.safeParse({ kind: "all" }).success).toBe(true);
+  });
+});
+
+describe("rattrapage des nouveaux abonnés", () => {
+  const start = new Date("2026-11-04T10:00:00Z");
+  it("suit la traversée jusqu'à 2 h après son départ", () => {
+    expect(catchUpUntil("departure", "delay", start, "2026-11-04T21:00:00Z")?.toISOString()).toBe(
+      "2026-11-04T21:00:00.000Z",
+    );
+  });
+  it("garde 48 h pour un bateau et 7 jours pour un port fermé", () => {
+    expect(catchUpUntil("vessel", "delay", start, null)?.toISOString()).toBe(
+      "2026-11-06T10:00:00.000Z",
+    );
+    expect(catchUpUntil("port", "port_closed", start, null)?.toISOString()).toBe(
+      "2026-11-11T10:00:00.000Z",
+    );
+  });
+  it("ne renvoie jamais un message à tout le monde, ni pour une cible passée", () => {
+    expect(catchUpUntil("all", "free", start, null)).toBeNull();
+    expect(catchUpUntil("departure", "delay", start, "2026-11-04T09:00:00Z")).toBeNull();
   });
 });

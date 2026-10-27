@@ -39,6 +39,7 @@ export type AudienceContext = {
 export type AudiencePreview = {
   label: string;
   context: AudienceContext;
+  relevantUntil: string | null;
   /** Comptes concernés, puis ceux qui acceptent ce type de message, puis leurs téléphones. */
   accounts: number;
   reachable: number;
@@ -89,6 +90,9 @@ export type AdminMessage = {
   created_at: string;
   sent_at: string | null;
   news_id: string | null;
+  /** Jusqu'à quand le message part aussi vers ceux qui rejoignent la cible ensuite. */
+  valid_until?: string | null;
+  late_recipients?: number | null;
 };
 
 export const TITLE_MAX = 80;
@@ -117,6 +121,24 @@ export const templateLabels: Record<TemplateId, string> = {
   documents: "Rappel documents",
   free: "Message libre",
 };
+/**
+ * Rattrapage : jusqu'à quand un message part aussi vers les nouveaux abonnés de la cible.
+ * Traversée : jusqu'à 2 h après le départ. Port un jour : fin du jour. Bateau, ligne, port :
+ * 48 h (7 jours pour un port fermé). Tout le monde : jamais (un nouveau compte n'est pas concerné).
+ */
+export function catchUpUntil(
+  kind: AudienceKind,
+  template: TemplateId | null,
+  start: Date,
+  relevantUntil: string | null,
+): Date | null {
+  if (kind === "all") return null;
+  const end = relevantUntil
+    ? new Date(relevantUntil)
+    : new Date(start.getTime() + (template === "port_closed" ? 7 * 24 : 48) * 3_600_000);
+  return end.getTime() > start.getTime() ? end : null;
+}
+
 /** Modèles qui méritent aussi un Flash info visible de tous. */
 export const flashByDefault = new Set<TemplateId>([
   "delay",

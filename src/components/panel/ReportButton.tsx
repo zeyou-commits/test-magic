@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { Flag } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -37,12 +38,15 @@ export function ReportButton({
   label = "Signaler une erreur",
   initialDetails = "",
   initialReason = "wrong_schedule",
+  variant = "button",
 }: {
   targetType: "port" | "route" | "departure" | "review" | "schedule";
   targetId: string;
   label?: string;
   initialDetails?: string;
   initialReason?: string;
+  /** « link » : lien discret en pied de fiche. */
+  variant?: "button" | "link";
 }) {
   const { user } = useAuth();
   const [open, setOpen] = useState(false);
@@ -75,9 +79,15 @@ export function ReportButton({
   return (
     <Dialog open={open} onOpenChange={(next) => { setOpen(next); if (next) { setDetails(initialDetails); setReason(initialReason); } }}>
       <DialogTrigger asChild>
-        <Button variant="outline" size="sm">
-          {label}
-        </Button>
+        {variant === "link" ? (
+          <button type="button" className="bw-report-link">
+            <Flag size={13} aria-hidden /> {label}
+          </button>
+        ) : (
+          <Button variant="outline" size="sm">
+            {label}
+          </Button>
+        )}
       </DialogTrigger>
       <DialogContent>
         <DialogHeader>

@@ -2,7 +2,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { communityQuery } from "@/lib/ferry/community";
 import { useCallback, useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowRight, CalendarDays, CarFront, ExternalLink, MapPin, Megaphone, Ship, Star, Users } from "lucide-react";
+import { ArrowRight, CalendarDays, CarFront, ExternalLink, MapPin, Megaphone, Star, Users } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import {
@@ -19,16 +19,13 @@ import { vesselPhotoQuery } from "@/lib/ferry/vesselPhoto";
 import { departureForSignal } from "@/lib/ferry/tracking";
 import { portTimeZone } from "@/lib/ferry/time";
 import { formatDateTime } from "@/lib/ferry/format";
-import { getBoardingMilestones } from "@/lib/ferry/boarding";
-import type { Departure, Port, Selection, Vessel } from "@/lib/ferry/types";
-import { BookingLink, DemoBadge, EmptyNote, ReliabilityNote } from "./shared";
+import type { Selection } from "@/lib/ferry/types";
+import { DemoBadge, EmptyNote } from "./shared";
 import { CompanyBadge } from "./CompanyBadge";
 import { CrossingCard } from "./CrossingCard";
 import { TravelSignals, VesselReviews } from "./TravelCommunity";
-import { ReportButton } from "./ReportButton";
-import { FollowButton } from "./FollowButton";
-import { JourneyChecklist } from "./JourneyChecklist";
-import { MyTripPanel } from "./MyTrip";
+import { TripRecap } from "./TripRecap";
+import { ShipPhoto, VesselSpecs } from "./VesselBits";
 import { TripStatusPicker, VesselPresence } from "./TripPresence";
 
 function useShipData() {
@@ -317,195 +314,16 @@ export function DepartureView({
   const route = data.routes.find((r) => r.id === departure.route_id);
   const from = data.ports.find((p) => p.id === route?.departure_port_id);
   const to = data.ports.find((p) => p.id === route?.arrival_port_id);
-  const vessel = data.vessels.find((v) => v.id === departure.vessel_id);
-  const company = data.companies.find((c) => c.id === departure.company_id);
-  const live = data.live.find((s) => s.departure.id === departureId);
+  if (!from || !to) return <EmptyNote>Traversée introuvable.</EmptyNote>;
   return (
-    <article className="bw-departure-profile">
-      <header className="bw-section-heading">
-        <div>
-          <span className="bw-eyebrow">Votre voyage</span>
-          <h2>Cap sur {to?.name ?? "votre destination"}</h2>
-        </div>
-        <ReportButton targetType="departure" targetId={departureId} />
-      </header>
-      {from && to ? <CrossingCard departure={departure} from={from} to={to} live={live} /> : null}
-      <div className="my-3">
-        <FollowButton
-          kind="departure"
-          targetId={departureId}
-          label={`${from?.name ?? "Départ"} → ${to?.name ?? "Arrivée"}`}
-          demo={Boolean(departure.is_demo)}
-        />
-      </div>
-      {route ? (
-        <MyTripPanel
-          departureId={departureId}
-          routeId={route.id}
-          fromPortId={from?.id}
-          toPortId={to?.id}
-          companyId={departure.company_id}
-          vesselId={departure.vessel_id}
-          fromName={from?.name}
-          departureAt={departure.departure_at}
-          onSelect={onSelect}
-        />
-      ) : null}
-      {from && (
-        <JourneyChecklist
-          departureId={departureId}
-          departureAt={departure.departure_at}
-          port={from}
-        />
-      )}
-      {vessel ? (
-        <button
-          className="bw-vessel-switch"
-          type="button"
-          onClick={() => onSelect({ type: "vessel", id: vessel.id })}
-        >
-          <span className="bw-vessel-switch-icon">
-            <Ship size={22} aria-hidden />
-          </span>
-          <span>
-            <small>Votre bateau · avis et vie à bord</small>
-            <strong>{vessel.name}</strong>
-          </span>
-          <ArrowRight size={18} aria-hidden />
-        </button>
-      ) : departure.vessel_id ? null : (
-        <div className="bw-vessel-switch" role="note" aria-label="Navire non identifié">
-          <span className="bw-vessel-switch-icon">
-            <Ship size={22} aria-hidden />
-          </span>
-          <span>
-            <small>En attente d’affectation par la compagnie</small>
-            <strong>Navire non identifié</strong>
-          </span>
-        </div>
-      )}
-      {from ? <BoardingGuide departure={departure} port={from} /> : null}
-      <div className="bw-port-links">
-        {[from, to].map((port, i) =>
-          port ? (
-            <button
-              type="button"
-              key={`${i}-${port.id}`}
-              onClick={() => onSelect({ type: "port", id: port.id })}
-            >
-              <MapPin size={17} aria-hidden />
-              <span>
-                <small>{i === 0 ? "Port de départ" : "Port d’arrivée"}</small>
-                <strong>{port.name}</strong>
-              </span>
-              <ArrowRight size={15} aria-hidden />
-            </button>
-          ) : null,
-        )}
-      </div>
-      {vessel ? <TravelSignals key={vessel.id} kind="vessel" target={vessel.id} /> : null}
-      {departure.status !== "cancelled" ? <BookingLink company={company} /> : null}
-      {company ? (
-        <button
-          className="bw-detail-link"
-          type="button"
-          onClick={() => onSelect({ type: "company", id: company.id })}
-        >
-          <CompanyBadge name={company.name} logoUrl={company.logo_url} size={20} />
-          {company.name}
-          <ArrowRight size={15} aria-hidden />
-        </button>
-      ) : null}
-      {departure.notes ? (
-        <section className="bw-onboard">
-          <h3>À savoir avant de partir</h3>
-          <p>{departure.notes}</p>
-        </section>
-      ) : null}
-      <details className="bw-source-details">
-        <summary>Source des horaires</summary>
-        <ReliabilityNote
-          reliability={departure.reliability}
-          sourceName={departure.source_name}
-          sourceUrl={departure.source_url}
-          verifiedAt={departure.last_verified_at}
-        />
-      </details>
-    </article>
-  );
-}
-function BoardingGuide({ departure, port }: { departure: Departure; port: Port }) {
-  const car = getBoardingMilestones(departure.departure_at, port, { hasVehicle: true });
-  const pedestrian = getBoardingMilestones(departure.departure_at, port, { hasVehicle: false });
-  if (
-    !car ||
-    !pedestrian ||
-    departure.status === "cancelled" ||
-    Date.parse(departure.departure_at) < Date.now()
-  )
-    return null;
-  return (
-    <details className="bw-boarding-guide">
-      <summary>Quand arriver au port ?</summary>
-      <div>
-        <p>Repères conseillés · heure locale du port</p>
-        <dl>
-          <div>
-            <dt>
-              <CarFront size={18} aria-hidden />
-              Avec un véhicule
-            </dt>
-            <dd>{car.callLabel}</dd>
-          </div>
-          <div>
-            <dt>
-              <Users size={18} aria-hidden />À pied
-            </dt>
-            <dd>{pedestrian.callLabel}</dd>
-          </div>
-        </dl>
-        <small>L’heure de convocation de votre billet reste la référence.</small>
-      </div>
-    </details>
-  );
-}
-function VesselSpecs({ vessel }: { vessel: Vessel }) {
-  const items = [
-    { label: "Passagers", value: vessel.passenger_capacity?.toLocaleString("fr-FR") },
-    { label: "Véhicules", value: vessel.car_capacity?.toLocaleString("fr-FR") },
-    { label: "Longueur", value: vessel.length_meters ? `${vessel.length_meters} m` : null },
-    { label: "Mise en service", value: vessel.build_year },
-    { label: "Vitesse", value: vessel.speed_knots ? `${vessel.speed_knots} nœuds` : null },
-    { label: "Type", value: vessel.vessel_type },
-  ].filter((i) => i.value !== null && i.value !== undefined && i.value !== "");
-  return items.length ? (
-    <dl className="bw-vessel-specs">
-      {items.map((i) => (
-        <div key={i.label}>
-          <dt>{i.label}</dt>
-          <dd>{i.value}</dd>
-        </div>
-      ))}
-    </dl>
-  ) : null;
-}
-
-function ShipPhoto({ url, name }: { url: string | undefined; name: string }) {
-  const [failed, setFailed] = useState(false);
-  return (
-    <div className="bw-ship-photo">
-      <Ship size={32} aria-hidden />
-      {url && !failed ? (
-        <img
-          src={url}
-          alt={name}
-          width={88}
-          height={80}
-          loading="lazy"
-          referrerPolicy="no-referrer"
-          onError={() => setFailed(true)}
-        />
-      ) : null}
-    </div>
+    <TripRecap
+      departure={departure}
+      from={from}
+      to={to}
+      vessel={data.vessels.find((v) => v.id === departure.vessel_id)}
+      company={data.companies.find((c) => c.id === departure.company_id)}
+      live={data.live.find((s) => s.departure.id === departureId)}
+      onSelect={onSelect}
+    />
   );
 }

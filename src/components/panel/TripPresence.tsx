@@ -153,6 +153,20 @@ export function TripStatusPicker({
     }
     update.mutate(current === status ? null : status);
   };
+  if (tooEarly)
+    return (
+      <p className="bw-trip-status-teaser">
+        <span aria-hidden>
+          {steps.map((step) => (
+            <img key={step.id} src={step.image} alt="" width={26} height={26} loading="lazy" />
+          ))}
+        </span>
+        <span>
+          <strong>Où en êtes-vous ?</strong> En route, au port, à bord : à partir de la veille du
+          départ.
+        </span>
+      </p>
+    );
   const queueOptions = catalog >= 3 ? optionsFor("queue", 3).filter((option) => !option.code.match(/_\d+$/)) : [];
   return (
     <section className="bw-trip-status" aria-label="Où en êtes-vous ?">

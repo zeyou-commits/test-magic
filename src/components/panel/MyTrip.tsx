@@ -11,7 +11,7 @@ import { TripStatusPicker } from "./TripPresence";
 import { PushStatusLine } from "./PushStatusLine";
 
 /** Historique des changements d'un départ (horaire, navire, annulation), alimenté par la base. */
-function TripChanges({ departureId }: { departureId: string }) {
+export function TripChanges({ departureId }: { departureId: string }) {
   const events = useQuery(departureEventsQuery(departureId));
   if (events.isPending || events.data === null) return null;
   if (events.isError)

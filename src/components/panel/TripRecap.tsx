@@ -1,0 +1,447 @@
+import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import {
+  Anchor,
+  ArrowRight,
+  CarFront,
+  ChevronRight,
+  ClipboardCheck,
+  Footprints,
+  MapPin,
+  Megaphone,
+  Ship,
+  Radio,
+  Timer,
+} from "lucide-react";
+import { crossingProgress } from "@/lib/ferry/crossingProgress";
+import { getBoardingMilestones } from "@/lib/ferry/boarding";
+import { alertLabel } from "@/lib/ferry/community";
+import { departureEventsQuery } from "@/lib/ferry/flash";
+import { formatDuration } from "@/lib/ferry/format";
+import { dateKeyInZone, portTimeZone, zoneLabel } from "@/lib/ferry/time";
+import type { LiveShip } from "@/lib/ferry/tracking";
+import type { Company, Departure, Port, Selection, Vessel } from "@/lib/ferry/types";
+import { vesselPhotoQuery } from "@/lib/ferry/vesselPhoto";
+import { requestQuickReport } from "@/components/map/QuickReport";
+import { BookingLink, ReliabilityNote } from "./shared";
+import { CompanyBadge } from "./CompanyBadge";
+import { FlashFeed, useFlashCards } from "./FlashFeed";
+import { FollowButton } from "./FollowButton";
+import { JourneyChecklist } from "./JourneyChecklist";
+import { MiniFerry } from "./MiniFerry";
+import { TripChanges } from "./MyTrip";
+import { PushStatusLine } from "./PushStatusLine";
+import { ReportButton } from "./ReportButton";
+import { TravelSignals } from "./TravelCommunity";
+import { PortPresence, TripStatusPicker, VesselPresence } from "./TripPresence";
+import { ShipPhoto, VesselSpecs } from "./VesselBits";
+
+const HOUR = 3_600_000;
+const time = (iso: string, timeZone: string) =>
+  new Intl.DateTimeFormat("fr-FR", { hour: "2-digit", minute: "2-digit", timeZone }).format(
+    new Date(iso),
+  );
+const day = (iso: string, timeZone: string) => {
+  const label = new Intl.DateTimeFormat("fr-FR", {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+    timeZone,
+  }).format(new Date(iso));
+  return label.charAt(0).toUpperCase() + label.slice(1);
+};
+/** Jours calendaires entre aujourd'hui et le départ, vus depuis le port de départ. */
+function daysUntil(iso: string, timeZone: string) {
+  const today = Date.parse(`${dateKeyInZone(new Date(), timeZone)}T12:00:00Z`);
+  const target = Date.parse(`${dateKeyInZone(iso, timeZone)}T12:00:00Z`);
+  return Math.round((target - today) / 86_400_000);
+}
+
+type Tab = "prepare" | "live" | "ship";
+
+/**
+ * « Votre traversée » : un récapitulatif lisible d'un coup d'œil (billet, ce qui se passe, bateau),
+ * puis le détail en trois onglets. Les données viennent des mêmes sources que la carte.
+ */
+export function TripRecap({
+  departure,
+  from,
+  to,
+  vessel,
+  company,
+  live,
+  onSelect,
+}: {
+  departure: Departure;
+  from: Port;
+  to: Port;
+  vessel: Vessel | undefined;
+  company: Company | undefined;
+  live: LiveShip | undefined;
+  onSelect: (selection: Selection) => void;
+}) {
+  const fromZone = portTimeZone(from);
+  const toZone = portTimeZone(to);
+  const progress = crossingProgress(departure, from, to, live);
+  const { times } = progress;
+  const departIso = times.departure.iso ?? departure.departure_at;
+  const arriveIso = times.arrival.iso;
+  const nextDay =
+    arriveIso && dateKeyInZone(arriveIso, toZone) !== dateKeyInZone(departIso, fromZone);
+  const shift = times.departure.shiftMinutes ?? times.arrival.shiftMinutes;
+  const now = Date.now();
+  const cancelled = departure.status === "cancelled";
+  const arrived =
+    times.arrival.kind === "observed" || (arriveIso ? Date.parse(arriveIso) < now : false);
+  const atSea = !arrived && (progress.signal?.phase === "sea" || Date.parse(departIso) < now);
+  const status = cancelled
+    ? { tone: "bad", label: "Annulée" }
+    : arrived
+      ? { tone: "done", label: "Arrivée" }
+      : atSea
+        ? { tone: "live", label: "En mer" }
+        : shift !== null && shift >= 5
+          ? { tone: "warn", label: `Retard ≈ ${formatDuration(shift)}` }
+          : departure.status === "modified"
+            ? { tone: "warn", label: "Horaire modifié" }
+            : { tone: "ok", label: "Prévue" };
+  const days = daysUntil(departIso, fromZone);
+  const countdown =
+    cancelled || arrived || atSea
+      ? null
+      : days <= 0
+        ? "Aujourd’hui"
+        : days === 1
+          ? "Demain"
+          : `J-${days}`;
+  const duration =
+    arriveIso && Date.parse(arriveIso) > Date.parse(departIso)
+      ? Math.round((Date.parse(arriveIso) - Date.parse(departIso)) / 60_000)
+      : departure.duration_minutes;
+
+  // Ce qui se passe : changements récents, Flash info et signalements (port de départ, bateau).
+  const events = useQuery(departureEventsQuery(departure.id)).data ?? [];
+  const recentEvents = events.filter((event) => now - Date.parse(event.created_at) < 72 * HOUR);
+  const flash = useFlashCards({
+    context: {
+      departureIds: [departure.id],
+      routeIds: [departure.route_id],
+      portIds: [from.id, to.id],
+      companyIds: departure.company_id ? [departure.company_id] : [],
+    },
+    signalPortIds: [from.id],
+    signalVesselIds: vessel ? [vessel.id] : [],
+  });
+  const headlines = [
+    ...recentEvents.map((event) => ({ key: event.id, label: event.title, warn: true })),
+    ...flash.cards.map((card) =>
+      card.type === "signal"
+        ? { key: card.key, label: alertLabel(card.alert), warn: true }
+        : { key: card.key, label: card.item.title, warn: card.item.kind === "perturbation" },
+    ),
+  ];
+  const liveCount = headlines.length;
+  const [tab, setTab] = useState<Tab | null>(null);
+  const activeTab: Tab = tab ?? (liveCount ? "live" : "prepare");
+  const report = () =>
+    requestQuickReport({
+      type: "departure",
+      id: departure.id,
+      portId: from.id,
+      vesselId: vessel?.id ?? null,
+    });
+
+  const car = getBoardingMilestones(departure.departure_at, from, { hasVehicle: true });
+  const walk = getBoardingMilestones(departure.departure_at, from, { hasVehicle: false });
+  const upcoming = !cancelled && Date.parse(departure.departure_at) > now;
+  const photo = useQuery({
+    ...vesselPhotoQuery(vessel ?? { id: "", name: "", photo_url: null }),
+    enabled: Boolean(vessel),
+  }).data;
+
+  return (
+    <article className="bw-recap">
+      {/* 1. Le billet */}
+      <section className="bw-recap__ticket" data-tone={status.tone} aria-label="Votre traversée">
+        <header className="bw-recap__head">
+          <div>
+            <span className="bw-recap__kicker">
+              Votre traversée{countdown ? <b>{countdown}</b> : null}
+            </span>
+            <p className="bw-recap__date">
+              {day(departIso, fromZone)}
+              <span className="bw-recap__status" data-tone={status.tone}>
+                {status.tone === "live" ? <Radio size={12} aria-hidden /> : null}
+                {status.label}
+              </span>
+            </p>
+          </div>
+          <FollowButton
+            kind="departure"
+            targetId={departure.id}
+            iconOnly
+            label={`${from.name} → ${to.name}`}
+            demo={Boolean(departure.is_demo)}
+          />
+        </header>
+
+        <div className="bw-recap__route">
+          <button
+            type="button"
+            className="bw-recap__end"
+            onClick={() => onSelect({ type: "port", id: from.id })}
+          >
+            <strong>{time(departIso, fromZone)}</strong>
+            <span>{from.name}</span>
+            <small>{zoneLabel(fromZone)}</small>
+          </button>
+          <div className="bw-recap__line" aria-hidden={progress.ratio === null}>
+            <span className="bw-recap__anchor">
+              <Anchor size={13} aria-hidden />
+            </span>
+            <span className="bw-recap__track">
+              <span style={{ width: `${(progress.ratio ?? 0) * 100}%` }} />
+              <i style={{ left: `${Math.max(6, Math.min(94, (progress.ratio ?? 0) * 100))}%` }}>
+                <MiniFerry size={40} />
+              </i>
+            </span>
+            <span className="bw-recap__anchor">
+              <Anchor size={13} aria-hidden />
+            </span>
+            <small className="bw-recap__duration">
+              <Timer size={11} aria-hidden /> {formatDuration(duration)}
+              {progress.ratio !== null && progress.ratio > 0 && !arrived
+                ? ` · ${Math.round(progress.ratio * 100)} %`
+                : ""}
+            </small>
+          </div>
+          <button
+            type="button"
+            className="bw-recap__end bw-recap__end--to"
+            onClick={() => onSelect({ type: "port", id: to.id })}
+          >
+            <strong>
+              {arriveIso ? time(arriveIso, toZone) : "—"}
+              {nextDay ? <sup>+1</sup> : null}
+            </strong>
+            <span>{to.name}</span>
+            <small>{zoneLabel(toZone)}</small>
+          </button>
+        </div>
+        {shift !== null && Math.abs(shift) >= 5 && times.departure.scheduledIso ? (
+          <p className="bw-recap__shift">
+            Prévu à {time(times.departure.scheduledIso, fromZone)} ·{" "}
+            {shift > 0
+              ? `retard estimé ${formatDuration(shift)}`
+              : `avance ${formatDuration(-shift)}`}
+          </p>
+        ) : null}
+
+        <div className="bw-recap__chips">
+          {vessel ? (
+            <button type="button" onClick={() => onSelect({ type: "vessel", id: vessel.id })}>
+              <Ship size={14} aria-hidden /> {vessel.name}
+              <ChevronRight size={13} aria-hidden />
+            </button>
+          ) : (
+            <span className="bw-recap__chip-muted">
+              <Ship size={14} aria-hidden /> Navire à confirmer
+            </span>
+          )}
+          {company ? (
+            <button type="button" onClick={() => onSelect({ type: "company", id: company.id })}>
+              <CompanyBadge name={company.name} logoUrl={company.logo_url} size={16} />
+              {company.name}
+              <ChevronRight size={13} aria-hidden />
+            </button>
+          ) : null}
+        </div>
+      </section>
+
+      {/* 2. Ce qui se passe, d'un coup d'œil */}
+      <div className="bw-recap__pulse" data-alert={liveCount > 0}>
+        <button type="button" className="bw-recap__pulse-main" onClick={() => setTab("live")}>
+          <span className="bw-recap__megaphone" aria-hidden>
+            <Megaphone size={17} />
+            {liveCount ? <b>{liveCount > 9 ? "9+" : liveCount}</b> : null}
+          </span>
+          <span className="min-w-0 flex-1">
+            <strong>
+              {liveCount
+                ? `${liveCount} info${liveCount > 1 ? "s" : ""} en direct`
+                : "Rien à signaler pour le moment"}
+            </strong>
+            <small>
+              {liveCount
+                ? headlines
+                    .slice(0, 2)
+                    .map((item) => item.label)
+                    .join(" · ")
+                : "Changements, Flash info et voyageurs sur place"}
+            </small>
+          </span>
+          {liveCount ? <ChevronRight size={16} aria-hidden /> : null}
+        </button>
+        {upcoming || atSea ? (
+          <button type="button" className="bw-recap__pulse-add" onClick={report}>
+            <Megaphone size={15} aria-hidden /> Signaler
+          </button>
+        ) : null}
+      </div>
+
+      {/* 3. Où en êtes-vous ? (une ligne tant que ce n'est pas la veille) */}
+      {!cancelled ? (
+        <TripStatusPicker
+          departureId={departure.id}
+          departureAt={departure.departure_at}
+          fromPortId={from.id}
+        />
+      ) : null}
+
+      {/* 4. Le détail */}
+      <div className="bw-recap__tabs" role="tablist" aria-label="Détail de la traversée">
+        {(
+          [
+            ["prepare", "Préparer", ClipboardCheck],
+            ["live", "En direct", Radio],
+            ["ship", "Bateau", Ship],
+          ] as const
+        ).map(([id, label, Icon]) => (
+          <button
+            key={id}
+            type="button"
+            role="tab"
+            aria-selected={activeTab === id}
+            onClick={() => setTab(id)}
+          >
+            <Icon size={14} aria-hidden /> {label}
+            {id === "live" && liveCount ? <b>{liveCount}</b> : null}
+          </button>
+        ))}
+      </div>
+
+      {activeTab === "prepare" ? (
+        <div className="bw-recap__panel" role="tabpanel">
+          {upcoming && car && walk ? (
+            <div className="bw-recap__arrive">
+              <p>
+                Être à {from.name} <small>(repère, {zoneLabel(fromZone)})</small>
+              </p>
+              <div>
+                <span>
+                  <CarFront size={16} aria-hidden /> Véhicule <strong>{car.callLabel}</strong>
+                </span>
+                <span>
+                  <Footprints size={16} aria-hidden /> À pied <strong>{walk.callLabel}</strong>
+                </span>
+              </div>
+              <small>L’heure de convocation de votre billet reste la référence.</small>
+            </div>
+          ) : null}
+          <JourneyChecklist
+            departureId={departure.id}
+            departureAt={departure.departure_at}
+            port={from}
+            compact
+          />
+          <PushStatusLine />
+          <div className="bw-recap__ports">
+            {[from, to].map((port, index) => (
+              <button
+                key={port.id}
+                type="button"
+                onClick={() => onSelect({ type: "port", id: port.id })}
+              >
+                <MapPin size={15} aria-hidden />
+                <span>
+                  <small>{index === 0 ? "Port de départ" : "Port d’arrivée"}</small>
+                  <strong>{port.name}</strong>
+                </span>
+                <ArrowRight size={14} aria-hidden />
+              </button>
+            ))}
+          </div>
+          {departure.notes ? (
+            <p className="bw-recap__note">
+              <strong>À savoir :</strong> {departure.notes}
+            </p>
+          ) : null}
+          {!cancelled ? (
+            <div className="bw-recap__book">
+              <BookingLink company={company} compact />
+            </div>
+          ) : null}
+        </div>
+      ) : activeTab === "live" ? (
+        <div className="bw-recap__panel" role="tabpanel">
+          <TripChanges departureId={departure.id} />
+          <FlashFeed
+            title="Infos sur votre traversée"
+            context={{
+              departureIds: [departure.id],
+              routeIds: [departure.route_id],
+              portIds: [from.id, to.id],
+              companyIds: departure.company_id ? [departure.company_id] : [],
+            }}
+            expandFirst
+            signalPortIds={[from.id]}
+            signalVesselIds={[]}
+            onSelect={onSelect}
+            limit={6}
+            emptyText="Aucune perturbation connue sur cette traversée pour le moment."
+          />
+          {vessel ? (
+            <TravelSignals key={vessel.id} kind="vessel" target={vessel.id} compact />
+          ) : null}
+          <PortPresence portId={from.id} />
+          {upcoming || atSea ? (
+            <button type="button" className="bw-recap__share" onClick={report}>
+              <Megaphone size={15} aria-hidden /> Partager ce que je vois (file, retard,
+              embarquement…)
+            </button>
+          ) : null}
+        </div>
+      ) : (
+        <div className="bw-recap__panel" role="tabpanel">
+          {vessel ? (
+            <>
+              <button
+                type="button"
+                className="bw-recap__ship"
+                onClick={() => onSelect({ type: "vessel", id: vessel.id })}
+              >
+                <ShipPhoto key={photo?.url ?? vessel.id} url={photo?.url} name={vessel.name} />
+                <span>
+                  <small>Votre bateau</small>
+                  <strong>{vessel.name}</strong>
+                  <em>Avis, vie à bord et position</em>
+                </span>
+                <ArrowRight size={16} aria-hidden />
+              </button>
+              <VesselPresence vesselId={vessel.id} />
+              <VesselSpecs vessel={vessel} />
+            </>
+          ) : (
+            <p className="bw-recap__empty">
+              <Ship size={16} aria-hidden /> Le bateau n’est pas encore affecté par la compagnie. Il
+              apparaîtra ici dès qu’il sera connu.
+            </p>
+          )}
+        </div>
+      )}
+
+      <footer className="bw-recap__foot">
+        <details>
+          <summary>Source des horaires</summary>
+          <ReliabilityNote
+            reliability={departure.reliability}
+            sourceName={departure.source_name}
+            sourceUrl={departure.source_url}
+            verifiedAt={departure.last_verified_at}
+          />
+        </details>
+        <ReportButton targetType="departure" targetId={departure.id} variant="link" />
+      </footer>
+    </article>
+  );
+}

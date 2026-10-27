@@ -15,6 +15,29 @@ export const tripSteps: { id: TripStatus; label: string; short: string; image: s
 ];
 export const presenceKey = ["bw-trip-presence"] as const;
 
+export type TripStep = (typeof tripSteps)[number];
+/** Libellés et illustrations des étapes, modifiables dans l'admin (script du 02/11/2026). */
+export const tripStepsQuery = queryOptions({
+  queryKey: ["bw-trip-steps"],
+  queryFn: async () => {
+    const { data, error } = await supabase
+      .from("bw_trip_steps")
+      .select("code,label,short_label,image,sort")
+      .order("sort");
+    if (error) return null;
+    return (data ?? []) as TripStepRow[];
+  },
+  retry: false,
+  staleTime: 10 * 60_000,
+});
+/** Étapes affichées : celles de l'admin si elles existent, sinon les valeurs par défaut. */
+export type TripStepRow = { code: TripStatus; label: string; short_label: string; image: string; sort: number };
+export const mergeTripSteps = (rows: TripStepRow[] | null | undefined) =>
+  tripSteps.map((step) => {
+    const row = rows?.find((item) => item.code === step.id);
+    return row ? { ...step, label: row.label, short: row.short_label, image: row.image } : step;
+  });
+
 export type PresenceRow = {
   departure_id: string;
   vessel_id: string | null;
@@ -81,3 +104,48 @@ export const avatarFor = (seed: string, index: number) => {
   for (const char of seed) hash = (hash * 31 + char.charCodeAt(0)) >>> 0;
   return `/cabas/avatar-${(hash % 6) + 1}.webp`;
 };
+
+/** Illustrations proposées dans l'admin pour les étapes (dossier public/cabas). */
+export const cabasImages = [
+  "/cabas/statut-en-route.webp",
+  "/cabas/statut-au-port.webp",
+  "/cabas/statut-a-bord.webp",
+  "/cabas/statut-arrive.webp",
+  "/cabas/humeurs/01_valise_pleine.webp",
+  "/cabas/humeurs/02_glaciere.webp",
+  "/cabas/humeurs/03_surpoids.webp",
+  "/cabas/humeurs/04_reveil_4h.webp",
+  "/cabas/humeurs/05_yallah.webp",
+  "/cabas/humeurs/06_galerie.webp",
+  "/cabas/humeurs/07_mobylette.webp",
+  "/cabas/humeurs/08_bouchon.webp",
+  "/cabas/humeurs/09_pneu_creve.webp",
+  "/cabas/humeurs/10_route_longue.webp",
+  "/cabas/humeurs/11_file_attente.webp",
+  "/cabas/humeurs/12_chemma.webp",
+  "/cabas/humeurs/13_billet_perdu.webp",
+  "/cabas/humeurs/14_controle.webp",
+  "/cabas/humeurs/15_retard.webp",
+  "/cabas/humeurs/16_annule.webp",
+  "/cabas/humeurs/17_embarquement.webp",
+  "/cabas/humeurs/18_mal_de_mer.webp",
+  "/cabas/humeurs/19_dodo_pont.webp",
+  "/cabas/humeurs/20_tempete.webp",
+  "/cabas/humeurs/21_selfie.webp",
+  "/cabas/humeurs/22_msemen.webp",
+  "/cabas/humeurs/23_pas_de_reseau.webp",
+  "/cabas/humeurs/24_ambiance.webp",
+  "/cabas/humeurs/25_ennui_traversee.webp",
+  "/cabas/humeurs/26_la_cote.webp",
+  "/cabas/humeurs/27_debarquement.webp",
+  "/cabas/humeurs/28_fouille.webp",
+  "/cabas/humeurs/29_douane_ok.webp",
+  "/cabas/humeurs/30_chaleur.webp",
+  "/cabas/humeurs/31_chaise_plastique.webp",
+  "/cabas/humeurs/32_accueil.webp",
+  "/cabas/humeurs/33_bien_arrive.webp",
+  "/cabas/humeurs/34_ko_total.webp",
+  "/cabas/humeurs/35_adieux.webp",
+  "/cabas/humeurs/36_bidons_huile.webp",
+  "/cabas/humeurs/37_deja_nostalgique.webp",
+];

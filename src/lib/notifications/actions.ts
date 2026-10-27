@@ -10,6 +10,10 @@ const followSchema = z.object({
   kind: z.enum(["vessel", "departure"]),
   targetId: z.string().uuid(),
   label: z.string().max(200),
+  /** Réponse à « Vous voyagez sur ce bateau ? » : vrai = « Ma traversée », faux = un proche. */
+  traveller: z.boolean().optional(),
+  /** Traversée choisie quand on suit un bateau et qu'on voyage à bord. */
+  departureId: z.string().uuid().optional(),
 });
 const watchSchema = z.object({
   type: z.literal("opening"),
@@ -58,16 +62,34 @@ export function travelActionLabel(action: TravelAction) {
     ? action.label
     : `${action.from} → ${action.to} · ${new Intl.DateTimeFormat("fr-FR", { month: "long", year: "numeric" }).format(new Date(`${action.period}-15T12:00:00`))}`;
 }
+/** Suivi d'un bateau ou d'une traversée ; « je voyage » enregistré si la base le connaît (script du 02/11). */
+async function upsertFollow(
+  userId: string,
+  kind: "vessel" | "departure",
+  targetId: string,
+  traveller: boolean | undefined,
+) {
+  const row = { user_id: userId, target_kind: kind, target_id: targetId, active: true };
+  const options = { onConflict: "user_id,target_kind,target_id" };
+  if (kind === "departure" && traveller !== undefined) {
+    const result = await supabase.from("bw_follows").upsert({ ...row, traveller }, options);
+    // Colonne absente tant que le script n'est pas exécuté : on suit quand même.
+    if (!result.error || !/traveller|PGRST204|42703/.test(`${result.error.code} ${result.error.message}`))
+      return result;
+  }
+  return supabase.from("bw_follows").upsert(row, options);
+}
+
 export async function saveTravelAction(userId: string, rawAction: TravelAction) {
   const action = travelActionSchema.parse(rawAction);
+  if (action.type === "follow" && action.kind === "vessel" && action.traveller && action.departureId) {
+    // « Je voyage sur ce bateau » : la traversée choisie devient « Ma traversée ».
+    const trip = await upsertFollow(userId, "departure", action.departureId, true);
+    if (trip.error) throw new Error("Enregistrement impossible. Réessayez dans un instant.");
+  }
   const result =
     action.type === "follow"
-      ? await supabase
-          .from("bw_follows")
-          .upsert(
-            { user_id: userId, target_kind: action.kind, target_id: action.targetId, active: true },
-            { onConflict: "user_id,target_kind,target_id" },
-          )
+      ? await upsertFollow(userId, action.kind, action.targetId, action.traveller)
       : await supabase.from("bw_itinerary_watches").upsert(
           {
             user_id: userId,

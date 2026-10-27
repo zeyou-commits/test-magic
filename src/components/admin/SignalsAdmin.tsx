@@ -14,6 +14,7 @@ import {
   type SituationRow,
 } from "@/lib/ferry/community";
 import { NamedIcon, iconRegistry } from "@/components/panel/SituationIcon";
+import { cabasImages, tripStepsQuery, type TripStepRow } from "@/lib/ferry/presence";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { AdminDrawer, AdminListToolbar, matches } from "./AdminDrawer";
@@ -140,7 +141,7 @@ export function SignalsAdmin() {
   const client = useQueryClient();
   const version = useQuery(catalogQuery).data ?? 0;
   const tables = useQuery({ ...signalTablesQuery, enabled: version >= 4 });
-  const [view, setView] = useState<"situations" | "services">("situations");
+  const [view, setView] = useState<"situations" | "services" | "steps">("situations");
   const [search, setSearch] = useState("");
   const [editing, setEditing] = useState<SituationRow | "new" | null>(null);
   const [service, setService] = useState<ServiceRow | "new" | null>(null);
@@ -197,6 +198,7 @@ export function SignalsAdmin() {
           [
             ["situations", `Situations (${data.situations.length})`],
             ["services", `Services du port (${data.services.length})`],
+            ["steps", "Étapes Ma traversée"],
           ] as const
         ).map(([id, label]) => (
           <button key={id} type="button" role="tab" aria-selected={view === id} onClick={() => setView(id)}>
@@ -205,7 +207,9 @@ export function SignalsAdmin() {
         ))}
       </div>
 
-      {view === "situations" ? (
+      {view === "steps" ? (
+        <TripStepsAdmin />
+      ) : view === "situations" ? (
         <div className="bw-admin-surface p-4">
           <AdminListToolbar
             search={search}
@@ -779,6 +783,122 @@ function ServiceEditor({
           <input type="checkbox" checked={!draft.active} onChange={(e) => set({ active: !e.target.checked })} />
           Masquer (plus proposé aux voyageurs)
         </label>
+      </div>
+    </AdminDrawer>
+  );
+}
+
+/** Les 4 étapes de « Ma traversée » : libellés et cabas modifiables, codes fixes. */
+function TripStepsAdmin() {
+  const client = useQueryClient();
+  const steps = useQuery(tripStepsQuery);
+  const [open, setOpen] = useState<TripStepRow | null>(null);
+  if (steps.data === null)
+    return (
+      <div className="bw-admin-surface p-5 text-sm">
+        <p className="font-semibold">Étapes modifiables : à activer</p>
+        <p className="mt-1 text-muted-foreground">
+          Exécutez le script <code>supabase/migrations/20261102120000_ma_traversee_suivi.sql</code>{" "}
+          dans Supabase. Les étapes actuelles y sont reprises.
+        </p>
+      </div>
+    );
+  return (
+    <div className="bw-admin-surface p-4">
+      <p className="text-xs text-muted-foreground">
+        Les 4 étapes proposées aux voyageurs dans « Ma traversée ». Leur ordre et leur rôle ne
+        changent pas ; vous modifiez les libellés et le cabas affiché.
+      </p>
+      <ul className="bw-admin-list mt-3">
+        {(steps.data ?? []).map((row) => (
+          <li key={row.code}>
+            <button type="button" className="bw-admin-list__main" onClick={() => setOpen(row)}>
+              <img src={row.image} alt="" width={44} height={44} className="rounded-full" />
+              <span className="min-w-0">
+                <strong>{row.short_label}</strong>
+                <small>{row.label}</small>
+              </span>
+            </button>
+          </li>
+        ))}
+      </ul>
+      {open ? (
+        <TripStepEditor
+          key={open.code}
+          row={open}
+          onClose={() => setOpen(null)}
+          onSaved={() => void client.invalidateQueries({ queryKey: ["bw-trip-steps"] })}
+        />
+      ) : null}
+    </div>
+  );
+}
+
+function TripStepEditor({ row, onClose, onSaved }: { row: TripStepRow; onClose: () => void; onSaved: () => void }) {
+  const [label, setLabel] = useState(row.label);
+  const [short, setShort] = useState(row.short_label);
+  const [image, setImage] = useState(row.image);
+  const save = useMutation({
+    mutationFn: async () => {
+      if (label.trim().length < 2 || short.trim().length < 2) throw new Error("Libellés trop courts.");
+      const { error } = await supabase
+        .from("bw_trip_steps")
+        .update({ label: label.trim(), short_label: short.trim(), image })
+        .eq("code", row.code);
+      if (error) throw new Error(friendly(error.message));
+    },
+    onSuccess: () => {
+      onSaved();
+      toast.success("Étape mise à jour.");
+      onClose();
+    },
+    onError: (error: Error) => toast.error(error.message),
+  });
+  return (
+    <AdminDrawer
+      open
+      onOpenChange={(next) => !next && onClose()}
+      title={`Étape « ${row.short_label} »`}
+      description="Le libellé court s’affiche sous le cabas ; le libellé long dans les explications."
+      footer={
+        <>
+          <Button variant="outline" onClick={onClose}>
+            Annuler
+          </Button>
+          <Button disabled={save.isPending} onClick={() => save.mutate()}>
+            Enregistrer
+          </Button>
+        </>
+      }
+    >
+      <div className="grid gap-4">
+        <div className="flex items-center gap-3 rounded-xl bg-muted/50 p-3">
+          <img src={image} alt="" width={64} height={64} />
+          <span className="text-sm font-semibold">{short || "Aperçu"}</span>
+        </div>
+        <Label text="Libellé court (sous le cabas, 20 caractères)">
+          <Input value={short} maxLength={20} onChange={(e) => setShort(e.target.value)} />
+        </Label>
+        <Label text="Libellé long">
+          <Input value={label} maxLength={60} onChange={(e) => setLabel(e.target.value)} />
+        </Label>
+        <div className="grid gap-1.5 text-sm font-medium">
+          Cabas affiché
+          <div className="bw-cabas-picker" role="radiogroup" aria-label="Cabas">
+            {cabasImages.map((src) => (
+              <button
+                key={src}
+                type="button"
+                role="radio"
+                aria-checked={image === src}
+                onClick={() => setImage(src)}
+                title={src.split("/").pop()?.replace(/\.webp$/, "").replace(/^\d+_/, "").replace(/_/g, " ")}
+              >
+                <img src={src} alt="" width={52} height={52} loading="lazy" />
+              </button>
+            ))}
+          </div>
+        </div>
       </div>
     </AdminDrawer>
   );

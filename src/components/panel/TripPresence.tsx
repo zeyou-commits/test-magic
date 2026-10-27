@@ -7,8 +7,9 @@ import {
   myTripStatusQuery,
   presenceKey,
   presenceQuery,
+  mergeTripSteps,
   setTripStatus,
-  tripSteps,
+  tripStepsQuery,
   type TripStatus,
 } from "@/lib/ferry/presence";
 import {
@@ -86,6 +87,7 @@ export function TripStatusPicker({
   const { user } = useAuth();
   const client = useQueryClient();
   const presence = useQuery(presenceQuery);
+  const steps = mergeTripSteps(useQuery(tripStepsQuery).data);
   const mine = useQuery(myTripStatusQuery(departureId, user?.id));
   const catalog = useQuery(catalogQuery).data ?? 0;
   const [asked, setAsked] = useState<"queue" | "thanks" | null>(null);
@@ -163,7 +165,7 @@ export function TripStatusPicker({
         </small>
       </div>
       <ol className="bw-trip-status__steps">
-        {tripSteps.map((step) => (
+        {steps.map((step) => (
           <li key={step.id}>
             <button
               type="button"

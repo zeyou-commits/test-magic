@@ -38,6 +38,7 @@ import { Button } from "@/components/ui/button";
 import { MapStatusBar } from "@/components/map/MapStatusBar";
 import { MapLegend } from "@/components/map/MapLegend";
 import { QuickReport } from "@/components/map/QuickReport";
+import { MyTripMapChip } from "@/components/panel/MyTripHero";
 import { MapStats, type MapShortcut } from "@/components/map/MapStats";
 import { FLASH_SELECT_EVENT } from "@/components/panel/FlashCenter";
 import { FLASH_PREVIEW_EVENT } from "@/components/panel/FlashFeed";
@@ -1137,6 +1138,8 @@ function Index() {
               panelOpen={desktopPanelOpen}
             />
             <QuickReport ports={ports} fleet={fleet} selection={selection} />
+            {/* Ma traversée pas encore sur la carte : chrono flottant. */}
+            <MyTripMapChip fleet={fleet} onOpen={(next) => handleSelectRef.current(next)} />
             <MapStats
               atSea={atSea}
               upcomingShips={upcomingShips}

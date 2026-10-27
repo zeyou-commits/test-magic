@@ -1836,3 +1836,273 @@ html {
   flex-direction: row;
   align-items: center;
 }
+
+/* ---------- Ma traversée : carte d'accueil, chrono, cabas sur la carte ---------- */
+.bw-mytrip-hero {
+  display: grid;
+  gap: 10px;
+  margin: 0 0 14px;
+  padding: 12px 14px;
+  border-radius: 20px;
+  background: linear-gradient(135deg, #0e5e35 0%, #0e7a43 60%, #1f9a5c 100%);
+  color: #ffffff;
+  box-shadow: 0 10px 24px #0e7a4333;
+}
+.bw-mytrip-hero[data-phase="cancelled"] {
+  background: linear-gradient(135deg, #8a1c1c, #b42318);
+}
+.bw-mytrip-hero__main {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  text-align: left;
+  color: inherit;
+}
+.bw-mytrip-hero__main img {
+  flex: none;
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: #ffffff;
+  box-shadow: 0 0 0 3px #ffffff55;
+}
+.bw-mytrip-hero__text {
+  display: grid;
+  flex: 1;
+  min-width: 0;
+  gap: 1px;
+}
+.bw-mytrip-hero__text small {
+  font-size: 11.5px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  opacity: 0.85;
+}
+.bw-mytrip-hero__text strong {
+  font-size: 17px;
+  font-weight: 800;
+}
+.bw-mytrip-hero__date {
+  font-size: 12.5px;
+  opacity: 0.9;
+}
+.bw-mytrip-hero__clock {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 8px 12px;
+  border-radius: 14px;
+  background: #ffffff1f;
+  font-size: 13px;
+}
+.bw-mytrip-hero__clock strong {
+  font-size: 22px;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+}
+.bw-mytrip-hero__progress {
+  position: relative;
+  flex: 1;
+  height: 8px;
+  border-radius: 999px;
+  background: #ffffff33;
+  overflow: hidden;
+}
+.bw-mytrip-hero__progress > span {
+  position: absolute;
+  inset: 0 auto 0 0;
+  border-radius: inherit;
+  background: #ffc83d;
+}
+.bw-mytrip-hero__foot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 12.5px;
+  opacity: 0.95;
+}
+.bw-mytrip-hero__foot button {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 10px;
+  border-radius: 999px;
+  background: #ffffff;
+  font-size: 12px;
+  font-weight: 800;
+  color: #0e5e35;
+}
+.bw-mytrip-chip {
+  position: absolute;
+  z-index: 25;
+  top: 12px;
+  left: 50%;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 14px 6px 6px;
+  border-radius: 999px;
+  background: #ffffff;
+  box-shadow: 0 6px 18px #16324a33;
+  transform: translateX(-50%);
+  text-align: left;
+  white-space: nowrap;
+}
+.bw-mytrip-chip__icon {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: #0e7a43;
+  color: #ffffff;
+}
+.bw-mytrip-chip > span:last-child {
+  display: grid;
+  line-height: 1.15;
+}
+.bw-mytrip-chip small {
+  font-size: 10.5px;
+  font-weight: 700;
+  color: #6a7873;
+}
+.bw-mytrip-chip strong {
+  font-size: 13.5px;
+  color: #16324a;
+}
+@media (min-width: 768px) {
+  .bw-mytrip-chip {
+    left: calc(50% + var(--desktop-panel-width, 0px) / 2);
+  }
+}
+.bw-mytrip-pin {
+  display: grid;
+  justify-items: center;
+  gap: 2px;
+  z-index: 8;
+  cursor: pointer;
+}
+.bw-mytrip-pin img {
+  width: 44px;
+  height: 44px;
+  border: 3px solid #ffc83d;
+  border-radius: 50%;
+  background: #ffffff;
+  box-shadow:
+    0 0 0 0 #ffc83d99,
+    0 6px 14px #16324a40;
+  animation: bw-mytrip-pulse 2.2s ease-out infinite;
+}
+.bw-mytrip-pin small {
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: #16324a;
+  font-size: 10px;
+  font-weight: 800;
+  color: #ffffff;
+  white-space: nowrap;
+}
+@keyframes bw-mytrip-pulse {
+  0% {
+    box-shadow:
+      0 0 0 0 #ffc83d99,
+      0 6px 14px #16324a40;
+  }
+  70% {
+    box-shadow:
+      0 0 0 14px #ffc83d00,
+      0 6px 14px #16324a40;
+  }
+  100% {
+    box-shadow:
+      0 0 0 0 #ffc83d00,
+      0 6px 14px #16324a40;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .bw-mytrip-pin img {
+    animation: none;
+  }
+}
+.bw-trip-question {
+  display: grid;
+  gap: 10px;
+  margin: 16px 0 4px;
+}
+.bw-trip-question__title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  font-size: 16px;
+  font-weight: 800;
+}
+.bw-trip-question__choice {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border: 1.5px solid #e3e1d8;
+  border-radius: 16px;
+  background: #ffffff;
+  text-align: left;
+  color: #0e7a43;
+}
+.bw-trip-question__choice:hover {
+  border-color: #0e7a43;
+  background: #f3faf6;
+}
+.bw-trip-question__choice span {
+  display: grid;
+  gap: 2px;
+  color: #16324a;
+}
+.bw-trip-question__choice small {
+  font-size: 12px;
+  color: #6a7873;
+}
+.bw-trip-question__date {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border: 1.5px solid #e3e1d8;
+  border-radius: 14px;
+  cursor: pointer;
+}
+.bw-trip-question__date[data-on] {
+  border-color: #0e7a43;
+  background: #f3faf6;
+}
+.bw-trip-question__date span {
+  display: grid;
+}
+.bw-trip-question__date small {
+  font-size: 12px;
+  color: #6a7873;
+}
+.bw-cabas-picker {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(60px, 1fr));
+  gap: 6px;
+  max-height: 260px;
+  overflow-y: auto;
+  padding: 6px;
+  border: 1px solid #ecebe4;
+  border-radius: 12px;
+}
+.bw-cabas-picker button {
+  display: grid;
+  place-items: center;
+  padding: 4px;
+  border: 2px solid transparent;
+  border-radius: 14px;
+}
+.bw-cabas-picker button[aria-checked="true"] {
+  border-color: #0e7a43;
+  background: #eef7f1;
+}

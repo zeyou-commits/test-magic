@@ -13,6 +13,7 @@ import {
 } from "@/lib/notifications/actions";
 import { pushCapability, registerPush } from "@/lib/notifications/push";
 import { AccountAccessForm } from "./AccountAccessForm";
+import { TripQuestion } from "./TripQuestion";
 import { TravelActionContext as ActionContext } from "@/hooks/useTravelAction";
 
 export function TravelActionProvider({ children }: { children: ReactNode }) {
@@ -39,7 +40,7 @@ export function TravelActionProvider({ children }: { children: ReactNode }) {
         clearTravelAction();
         setSaved(true);
         await Promise.all(
-          ["follow", "my-follows", "my-itinerary-watches"].map((key) =>
+          ["follow", "my-follows", "my-itinerary-watches", "my-trips"].map((key) =>
             queryClient.invalidateQueries({ queryKey: [key] }),
           ),
         );
@@ -125,12 +126,24 @@ export function TravelActionProvider({ children }: { children: ReactNode }) {
             </DialogTitle>
             <DialogDescription className="mt-2 text-sm leading-relaxed">
               {saved
-                ? "Retrouvez ce voyage et ses actualités dans votre espace personnel."
+                ? action?.type === "follow" && action.traveller
+                  ? "C’est votre traversée : retrouvez-la en haut de l’accueil, avec le compte à rebours et votre cabas sur la carte."
+                  : "Retrouvez ce voyage et ses actualités dans votre espace personnel."
                 : user
                   ? "Les prochaines informations seront regroupées dans votre espace voyageur."
                   : "Connectez-vous ou créez votre compte pour retrouver ce suivi et recevoir les informations utiles."}
             </DialogDescription>
-            {action && (
+            {action?.type === "follow" && action.traveller === undefined && !saved ? (
+              <TripQuestion
+                action={action}
+                onAnswer={(next) => {
+                  // La réponse est gardée si une connexion est demandée ensuite.
+                  rememberTravelAction(next);
+                  setAction(next);
+                }}
+              />
+            ) : null}
+            {action && !(action.type === "follow" && action.traveller === undefined && !saved) && (
               <div className="my-5 flex items-start gap-3 rounded-xl border border-primary/15 bg-primary/5 p-3 text-sm">
                 <span className="mt-0.5 text-primary">
                   {action.type === "opening" ? (
@@ -149,7 +162,7 @@ export function TravelActionProvider({ children }: { children: ReactNode }) {
                 </div>
               </div>
             )}
-            {!user ? (
+            {action?.type === "follow" && action.traveller === undefined && !saved ? null : !user ? (
               <AccountAccessForm onAwaitingConfirmation={() => setAwaitingConfirmation(true)} />
             ) : (
               <>

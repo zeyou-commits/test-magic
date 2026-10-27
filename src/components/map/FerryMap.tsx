@@ -2164,6 +2164,7 @@ export default function FerryMap({
     hoverPortId,
     focusRouteIds,
     focusShipId,
+    companyFocusShips.map((ship) => ship.id).join("|"),
     selectedVesselId,
     hoverRouteId,
     selection?.type,

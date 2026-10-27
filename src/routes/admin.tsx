@@ -23,7 +23,7 @@ import { SignalsAdmin } from "@/components/admin/SignalsAdmin";
 import { CompaniesAdmin } from "@/components/admin/CompaniesAdmin";
 import { PushDiagnostic } from "@/components/admin/PushDiagnostic";
 import { MessageCenter } from "@/components/admin/MessageComposer";
-import { storeMessagePrefill } from "@/lib/notifications/messages";
+import { storeMessagePrefill, type MessagePrefill } from "@/lib/notifications/messages";
 import { AdminFilterNotice } from "@/components/admin/AdminFilterNotice";
 import {
   adminSearch,
@@ -633,6 +633,23 @@ function ReportsModeration({
   );
 }
 
+/** Après une modification qui touche des voyageurs : confirmation + bouton « Prévenir les voyageurs ». */
+function useWarnTravellers() {
+  const navigate = Route.useNavigate();
+  return (message: string, prefill: MessagePrefill, description?: string) =>
+    toast.success(message, {
+      duration: 15_000,
+      description: description ?? "Les voyageurs concernés ne sont pas encore prévenus.",
+      action: {
+        label: "Prévenir les voyageurs",
+        onClick: () => {
+          storeMessagePrefill(prefill);
+          void navigate({ search: adminSearch({ tab: "notifications" }), resetScroll: false });
+        },
+      },
+    });
+}
+
 function DepartureEditor({
   departure,
   timeZone,
@@ -809,6 +826,7 @@ function DeparturesAdmin({
   const [routeFilter, setRouteFilter] = useState("");
   const [search, setSearch] = useState("");
   const [editing, setEditing] = useState<string | null>(null);
+  const warnTravellers = useWarnTravellers();
 
   const update = useMutation({
     mutationFn: async ({
@@ -824,9 +842,14 @@ function DeparturesAdmin({
         .eq("id", id);
       if (error) throw new Error(error.message);
     },
-    onSuccess: () => {
+    onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({ queryKey: ["departures"] });
-      toast.success("Départ mis à jour.");
+      if (variables.values.status === "cancelled")
+        warnTravellers("Départ annulé.", {
+          audience: { kind: "departure", departureId: variables.id, who: "everyone" },
+          template: "cancel",
+        });
+      else toast.success("Départ mis à jour.");
     },
     onError: (error: Error) => toast.error(error.message),
   });
@@ -1135,6 +1158,7 @@ function SchedulesAdmin({ companyId, routeId }: { companyId?: string; routeId?: 
   const [draft, setDraft] = useState(scopedDraft);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [formOpen, setFormOpen] = useState(false);
+  const warnTravellers = useWarnTravellers();
   const closeForm = () => {
     setFormOpen(false);
     setEditingId(null);
@@ -1180,10 +1204,17 @@ function SchedulesAdmin({ companyId, routeId }: { companyId?: string; routeId?: 
     },
     onSuccess: () => {
       invalidate();
+      const routeId = draft.route_id;
       setDraft(scopedDraft);
       setEditingId(null);
       setFormOpen(false);
-      toast.success(editingId ? "Calendrier modifié." : "Calendrier ajouté.");
+      if (editingId)
+        warnTravellers(
+          "Calendrier modifié.",
+          { audience: { kind: "route", routeId }, template: "reschedule" },
+          "Les voyageurs de cette ligne ne sont pas encore prévenus.",
+        );
+      else toast.success("Calendrier ajouté.");
     },
     onError: (error: Error) => toast.error(error.message),
   });
@@ -2438,6 +2469,7 @@ function slugify(value: string) {
 
 function PortsAdmin({ itemId }: { itemId?: string | undefined } = {}) {
   const queryClient = useQueryClient();
+  const warnTravellers = useWarnTravellers();
   const [formOpen, setFormOpen] = useState(false);
   const [search, setSearch] = useState("");
   const { data: ports = [] } = useQuery(adminPortsQuery);
@@ -2600,13 +2632,15 @@ function PortsAdmin({ itemId }: { itemId?: string | undefined } = {}) {
       }
       return routeIds.length;
     },
-    onSuccess: (count) => {
+    onSuccess: (count, port) => {
       invalidateAll();
       setPendingClose(null);
-      toast.success(
+      warnTravellers(
         count > 0
           ? `Port fermé temporairement. ${count} ligne(s) suspendue(s).`
           : "Port fermé temporairement.",
+        { audience: { kind: "port", portId: port.id }, template: "port_closed" },
+        "Les voyageurs des traversées de ce port ne sont pas encore prévenus.",
       );
     },
     onError: (error: Error) => toast.error(error.message),

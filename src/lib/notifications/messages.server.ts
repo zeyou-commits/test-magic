@@ -1,7 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { supabaseAdmin as typedDb } from "@/integrations/supabase/client.server";
 import { portTimeZone, zonedTimeToUtc } from "@/lib/ferry/time";
-import type { Audience, AudienceContext, AudiencePreview } from "./messages";
+import type { Audience, AudienceContext, AudiencePreview, AudienceRecipient } from "./messages";
 import {
   notificationAllowed,
   type NotificationCategory,
@@ -23,7 +23,11 @@ type Follow = {
   target_id: string;
   traveller?: boolean;
 };
-export type Recipient = { followId: string | null; traveller: boolean | null };
+export type Recipient = {
+  followId: string | null;
+  traveller: boolean | null;
+  via: "departure" | "vessel" | "watch" | "account";
+};
 export type ResolvedAudience = {
   label: string;
   context: AudienceContext;
@@ -135,7 +139,11 @@ export async function resolveAudience(audience: Audience): Promise<ResolvedAudie
       const current = recipients.get(follow.user_id);
       const traveller = travellerColumn ? Boolean(follow.traveller) : null;
       if (!current || (traveller && !current.traveller))
-        recipients.set(follow.user_id, { followId: follow.id, traveller });
+        recipients.set(follow.user_id, {
+          followId: follow.id,
+          traveller,
+          via: follow.target_kind === "vessel" ? "vessel" : "departure",
+        });
     }
   };
   if (audience.kind === "departure") {
@@ -263,7 +271,7 @@ export async function resolveAudience(audience: Audience): Promise<ResolvedAudie
     if (watches.error) throw watches.error;
     for (const watch of watches.data ?? [])
       if (!recipients.has(watch.user_id as string))
-        recipients.set(watch.user_id as string, { followId: null, traveller: null });
+        recipients.set(watch.user_id as string, { followId: null, traveller: null, via: "watch" });
     const subject = `${from?.name ?? "Départ"} → ${to?.name ?? "arrivée"}`;
     return {
       label: `Ligne ${subject} · suivis et alertes`,
@@ -279,13 +287,49 @@ export async function resolveAudience(audience: Audience): Promise<ResolvedAudie
       travellerKnown: false,
     };
   }
+  if (audience.kind === "port") {
+    // Toutes les traversées à venir qui partent de ce port ou y arrivent.
+    const port = await single<Port>("ports", "id,name,country_code", audience.portId);
+    if (!port) throw new Error("Port introuvable.");
+    const { data: routes, error } = await db
+      .from("routes")
+      .select("id")
+      .or(`departure_port_id.eq.${port.id},arrival_port_id.eq.${port.id}`);
+    if (error) throw error;
+    const routeIds = (routes ?? []).map((route) => route.id as string);
+    const departures = routeIds.length
+      ? await upcomingDepartures({
+          routeIds,
+          from: new Date().toISOString(),
+          to: new Date(Date.now() + HORIZON).toISOString(),
+        })
+      : [];
+    add(
+      await followsOf(
+        "departure",
+        departures.map((d) => d.id),
+      ),
+    );
+    return {
+      label: `${port.name} · traversées des 60 prochains jours (${departures.length})`,
+      context: {
+        subject: port.name,
+        port: port.name,
+        url: `/?select=port&id=${port.id}`,
+        urlLabel: "la fiche du port",
+      },
+      category: "reminders",
+      recipients,
+      travellerKnown: travellerColumn,
+    };
+  }
   // Tout le monde : chaque compte, qu'il suive ou non une traversée.
   for (let page = 1; ; page++) {
     const { data, error } = await db.auth.admin.listUsers({ page, perPage: 1000 });
     if (error) throw error;
     for (const user of data.users)
       if (!user.banned_until || Date.parse(user.banned_until) <= Date.now())
-        recipients.set(user.id, { followId: null, traveller: null });
+        recipients.set(user.id, { followId: null, traveller: null, via: "account" });
     if (data.users.length < 1000) break;
   }
   return {
@@ -486,4 +530,63 @@ export async function queueAdminMessages(options: { messageId?: string } = {}) {
     }
   }
   return { messages, notificationIds };
+}
+
+/** La liste des comptes prévenus (300 au plus), avec la raison et leurs téléphones. */
+export async function listAudience(audience: Audience) {
+  const resolved = await resolveAudience(audience);
+  const ids = [...resolved.recipients.keys()];
+  const prefs = await preferencesOf(ids);
+  const shown = ids.slice(0, 300);
+  const devices = new Map<string, number>();
+  const names = new Map<string, string>();
+  for (const part of chunks(shown)) {
+    const [subs, profiles] = await Promise.all([
+      db.from("bw_push_subscriptions").select("user_id").in("user_id", part),
+      db.from("profiles").select("id,display_name").in("id", part),
+    ]);
+    if (subs.error) throw subs.error;
+    if (profiles.error) throw profiles.error;
+    for (const row of subs.data ?? [])
+      devices.set(row.user_id as string, (devices.get(row.user_id as string) ?? 0) + 1);
+    for (const row of profiles.data ?? [])
+      if (row.display_name) names.set(row.id as string, String(row.display_name));
+  }
+  // Adresses e-mail : lues dans les comptes, seulement pour les comptes affichés.
+  const emails = new Map<string, string>();
+  const wanted = new Set(shown);
+  for (let page = 1; wanted.size; page++) {
+    const { data, error } = await db.auth.admin.listUsers({ page, perPage: 1000 });
+    if (error) throw error;
+    for (const user of data.users)
+      if (wanted.has(user.id)) {
+        emails.set(user.id, user.email ?? "");
+        wanted.delete(user.id);
+      }
+    if (data.users.length < 1000) break;
+  }
+  const recipients: AudienceRecipient[] = shown.map((id) => {
+    const recipient = resolved.recipients.get(id)!;
+    const pref = prefs.get(id);
+    return {
+      id,
+      name: names.get(id) ?? "",
+      email: emails.get(id) ?? "",
+      via:
+        recipient.via === "departure" && recipient.traveller !== null
+          ? recipient.traveller
+            ? "traveller"
+            : "relative"
+          : recipient.via,
+      devices: pref?.push_enabled === false ? 0 : (devices.get(id) ?? 0),
+      excluded: !notificationAllowed(pref, resolved.category),
+    };
+  });
+  // Les voyageurs d'abord, puis ceux qui ont un téléphone, les exclus à la fin.
+  const rank = (r: AudienceRecipient) =>
+    (r.excluded ? 100 : 0) + (r.via === "traveller" ? 0 : 10) + (r.devices ? 0 : 1);
+  recipients.sort(
+    (a, b) => rank(a) - rank(b) || (a.name || a.email).localeCompare(b.name || b.email, "fr"),
+  );
+  return { recipients, total: ids.length };
 }

@@ -17,6 +17,8 @@ export const audienceSchema = z.discriminatedUnion("kind", [
     date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
   }),
   z.object({ kind: z.literal("route"), routeId: uuid }),
+  // Un port sur toute la période à venir (fermeture, travaux) : départs et arrivées.
+  z.object({ kind: z.literal("port"), portId: uuid }),
   z.object({ kind: z.literal("all") }),
 ]);
 export type Audience = z.infer<typeof audienceSchema>;
@@ -48,6 +50,29 @@ export type AudiencePreview = {
   /** false tant que le script 20261104120000 n'est pas exécuté. */
   ready: boolean;
 };
+/** Un compte destinataire, pour vérifier qui sera prévenu. */
+export type AudienceRecipient = {
+  id: string;
+  name: string;
+  email: string;
+  /** Pourquoi il est prévenu. */
+  via: "traveller" | "relative" | "departure" | "vessel" | "watch" | "account";
+  devices: number;
+  /** A désactivé ce type de message : il ne recevra rien. */
+  excluded: boolean;
+};
+export const audienceRecipientsQuery = (userId: string | undefined, audience: Audience | null) =>
+  queryOptions({
+    queryKey: ["admin", "message-recipients", userId, audience],
+    enabled: Boolean(userId && audience),
+    queryFn: () =>
+      messageAction<{ recipients: AudienceRecipient[]; total: number }>({
+        action: "message-recipients",
+        audience,
+      }),
+    staleTime: 20_000,
+    retry: false,
+  });
 export type MessageStatus = "scheduled" | "sending" | "sent" | "cancelled" | "failed";
 export type AdminMessage = {
   id: string;
@@ -72,12 +97,14 @@ export const BODY_MAX = 300;
 export const TITLE_SHOWN = 50;
 export const BODY_SHOWN = 120;
 
-export type TemplateId = "delay" | "cancel" | "reschedule" | "port_access" | "documents" | "free";
+export type TemplateId =
+  "delay" | "cancel" | "reschedule" | "port_access" | "port_closed" | "documents" | "free";
 export const templateIds: TemplateId[] = [
   "delay",
   "cancel",
   "reschedule",
   "port_access",
+  "port_closed",
   "documents",
   "free",
 ];
@@ -86,11 +113,17 @@ export const templateLabels: Record<TemplateId, string> = {
   cancel: "Annulation",
   reschedule: "Nouvel horaire",
   port_access: "Accès au port",
+  port_closed: "Port fermé",
   documents: "Rappel documents",
   free: "Message libre",
 };
 /** Modèles qui méritent aussi un Flash info visible de tous. */
-export const flashByDefault = new Set<TemplateId>(["delay", "cancel", "port_access"]);
+export const flashByDefault = new Set<TemplateId>([
+  "delay",
+  "cancel",
+  "port_access",
+  "port_closed",
+]);
 
 /** oldTime : l'ancien horaire, quand le départ vient d'être déplacé dans l'admin (« when » est alors le nouveau). */
 export type TemplateFields = { minutes: string; newTime: string; oldTime: string };
@@ -136,6 +169,11 @@ export function templateText(
       return {
         title: `${context.port ?? subject} · accès au port perturbé`,
         body: `L’accès au port est perturbé${when}. Prévoyez de la marge et suivez les indications sur place.`,
+      };
+    case "port_closed":
+      return {
+        title: `${context.port ?? subject} · port fermé temporairement`,
+        body: "Le port est fermé temporairement. Votre traversée peut être déplacée ou annulée : vérifiez auprès de la compagnie avant de partir.",
       };
     case "documents":
       return {

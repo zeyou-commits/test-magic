@@ -2701,3 +2701,111 @@ html {
     width: 100%;
   }
 }
+.bw-msg__people {
+  margin-top: 10px;
+  border-top: 1px solid color-mix(in srgb, var(--border) 80%, transparent);
+  padding-top: 8px;
+}
+.bw-msg__people-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--primary);
+}
+.bw-msg__people-toggle svg {
+  transition: transform 0.15s;
+}
+.bw-msg__people-toggle svg[data-open="true"] {
+  transform: rotate(180deg);
+}
+.bw-msg__people-search {
+  margin-top: 8px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: white;
+}
+.bw-msg__people-search input {
+  height: 34px;
+  font-size: 13px;
+}
+.bw-msg__people-list {
+  max-height: 280px;
+  margin-top: 8px !important;
+  overflow-y: auto;
+  border-radius: 10px;
+  background: white;
+}
+.bw-msg__people-list li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 10px;
+  color: var(--foreground);
+}
+.bw-msg__people-list li + li {
+  border-top: 1px solid var(--border);
+}
+.bw-msg__people-list li[data-excluded="true"] {
+  opacity: 0.55;
+}
+.bw-msg__people-list strong,
+.bw-msg__people-list small {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.bw-msg__people-list strong {
+  font-size: 13px;
+}
+.bw-msg__people-list small {
+  font-size: 11px;
+  color: var(--muted-foreground);
+}
+.bw-msg__avatar {
+  display: grid;
+  width: 28px;
+  height: 28px;
+  flex-shrink: 0;
+  place-items: center;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--primary) 12%, white);
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--primary);
+}
+.bw-msg__tag {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 4px;
+  border-radius: 999px;
+  background: var(--secondary);
+  padding: 2px 8px;
+  font-size: 11px;
+  white-space: nowrap;
+  color: var(--muted-foreground);
+}
+.bw-msg__tag[data-via="traveller"] {
+  background: #fff3cf;
+  color: #7a5200;
+}
+.bw-msg__tag[data-device="true"] {
+  background: color-mix(in srgb, var(--primary) 12%, white);
+  color: var(--primary);
+}
+.bw-msg__people-note {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 6px;
+  font-size: 12px;
+  color: var(--muted-foreground);
+}
+@media (max-width: 640px) {
+  .bw-msg__people-list li {
+    flex-wrap: wrap;
+  }
+}

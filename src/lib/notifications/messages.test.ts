@@ -34,7 +34,14 @@ describe("modèles de messages", () => {
     expect(templateText("free", departure, fields)).toEqual({ title: "", body: "" });
   });
   it("tient les titres des modèles sous la limite de 80 caractères", () => {
-    for (const id of ["delay", "cancel", "reschedule", "port_access", "documents"] as const)
+    for (const id of [
+      "delay",
+      "cancel",
+      "reschedule",
+      "port_access",
+      "port_closed",
+      "documents",
+    ] as const)
       expect(
         templateText(id, departure, { ...fields, minutes: "120" }).title.length,
       ).toBeLessThanOrEqual(80);

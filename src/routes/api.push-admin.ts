@@ -14,6 +14,7 @@ const actionSchema = z.discriminatedUnion("action", [
   // Messages de l'équipe : cible et nombre de destinataires, envoi ou planification, historique.
   z.object({ action: z.literal("message-preview"), audience: audienceSchema }),
   z.object({ action: z.literal("messages") }),
+  z.object({ action: z.literal("message-recipients"), audience: audienceSchema }),
   z.object({
     action: z.literal("message-create"),
     audience: audienceSchema,
@@ -155,6 +156,12 @@ export const Route = createFileRoute("/api/push-admin")({
               headers: { "cache-control": "no-store" },
             });
           }
+          if (action.action === "message-recipients") {
+            const { listAudience } = await import("@/lib/notifications/messages.server");
+            return Response.json(await listAudience(action.audience), {
+              headers: { "cache-control": "no-store" },
+            });
+          }
           if (action.action === "messages") {
             const { data, error } = await db
               .from("bw_admin_messages")
@@ -248,7 +255,8 @@ export const Route = createFileRoute("/api/push-admin")({
               const routeIds: string[] = [];
               const portIds: string[] = [];
               if (action.audience.kind === "route") routeIds.push(action.audience.routeId);
-              if (action.audience.kind === "port_day") portIds.push(action.audience.portId);
+              if (action.audience.kind === "port_day" || action.audience.kind === "port")
+                portIds.push(action.audience.portId);
               if (action.audience.kind === "departure") {
                 const departure = await db
                   .from("departures")
@@ -260,7 +268,9 @@ export const Route = createFileRoute("/api/push-admin")({
               const news = await db
                 .from("bw_news")
                 .insert({
-                  kind: ["delay", "cancel", "reschedule", "port_access"].includes(action.template)
+                  kind: ["delay", "cancel", "reschedule", "port_access", "port_closed"].includes(
+                    action.template,
+                  )
                     ? "perturbation"
                     : "info",
                   origin: "bledway",

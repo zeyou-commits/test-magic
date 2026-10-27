@@ -21,6 +21,8 @@ import {
   Ship,
   Smartphone,
   TrafficCone,
+  Construction,
+  ChevronDown,
   TriangleAlert,
   Users,
   X,
@@ -35,6 +37,8 @@ import { dateKeyInZone, portTimeZone, zonedTimeToUtc } from "@/lib/ferry/time";
 import type { Departure } from "@/lib/ferry/types";
 import {
   adminMessagesQuery,
+  audienceRecipientsQuery,
+  type AudienceRecipient,
   audiencePreviewQuery,
   BODY_MAX,
   BODY_SHOWN,
@@ -65,8 +69,8 @@ const kinds: { id: AudienceKind; label: string; hint: string; icon: LucideIcon }
   },
   {
     id: "port_day",
-    label: "Un port, un jour",
-    hint: "Tous les départs du port ce jour-là",
+    label: "Un port",
+    hint: "Ses départs d’un jour, ou toutes ses traversées à venir",
     icon: Anchor,
   },
   { id: "vessel", label: "Un bateau", hint: "Ses suivis et ses traversées à venir", icon: Ship },
@@ -83,6 +87,7 @@ const templateIcons: Record<TemplateId, LucideIcon> = {
   cancel: Ban,
   reschedule: CalendarClock,
   port_access: TrafficCone,
+  port_closed: Construction,
   documents: FileCheck2,
   free: PenLine,
 };
@@ -150,6 +155,7 @@ export function MessageCenter() {
   const [vesselId, setVesselId] = useState("");
   const [portId, setPortId] = useState("");
   const [day, setDay] = useState(() => dateKeyInZone(new Date(), PARIS));
+  const [portScope, setPortScope] = useState<"day" | "all">("day");
   const [routeId, setRouteId] = useState("");
   const [template, setTemplate] = useState<TemplateId | null>(null);
   const [fields, setFields] = useState<TemplateFields>(emptyFields);
@@ -203,9 +209,13 @@ export function MessageCenter() {
           ? { kind, vesselId }
           : null
         : kind === "port_day"
-          ? portId && day
-            ? { kind, portId, date: day }
-            : null
+          ? !portId
+            ? null
+            : portScope === "all"
+              ? { kind: "port", portId }
+              : day
+                ? { kind, portId, date: day }
+                : null
           : kind === "route"
             ? routeId
               ? { kind, routeId }
@@ -243,6 +253,11 @@ export function MessageCenter() {
         setDay(target.date);
       }
       if (target.kind === "route") setRouteId(target.routeId);
+      if (target.kind === "port") {
+        setKind("port_day");
+        setPortScope("all");
+        setPortId(target.portId);
+      }
       setTemplate(prefill.template);
       setFields({ ...emptyFields, ...prefill.fields });
       requestAnimationFrame(() =>
@@ -260,6 +275,7 @@ export function MessageCenter() {
     setVesselId("");
     setPortId("");
     setRouteId("");
+    setPortScope("day");
     setTemplate(null);
     setFields(emptyFields);
     setTitle("");
@@ -286,6 +302,11 @@ export function MessageCenter() {
       setDay(target.date);
     }
     if (target.kind === "route") setRouteId(target.routeId);
+    if (target.kind === "port") {
+      setKind("port_day");
+      setPortScope("all");
+      setPortId(target.portId);
+    }
     setTemplate(message.template);
     setTitle(message.title);
     setBody(message.body);
@@ -520,27 +541,51 @@ export function MessageCenter() {
                 </select>
               ) : null}
               {kind === "port_day" ? (
+                <div className="bw-msg__seg" role="radiogroup" aria-label="Période">
+                  <button
+                    type="button"
+                    role="radio"
+                    aria-checked={portScope === "day"}
+                    onClick={() => setPortScope("day")}
+                  >
+                    Départs d’un jour
+                  </button>
+                  <button
+                    type="button"
+                    role="radio"
+                    aria-checked={portScope === "all"}
+                    onClick={() => setPortScope("all")}
+                  >
+                    Toutes ses traversées (60 jours)
+                  </button>
+                </div>
+              ) : null}
+              {kind === "port_day" ? (
                 <div className="bw-msg__row">
                   <select
                     className="bw-msg__select"
                     value={portId}
                     onChange={(e) => setPortId(e.target.value)}
-                    aria-label="Port de départ"
+                    aria-label="Port"
                   >
-                    <option value="">Choisir un port de départ…</option>
+                    <option value="">
+                      {portScope === "day" ? "Choisir un port de départ…" : "Choisir un port…"}
+                    </option>
                     {ports.map((port) => (
                       <option key={port.id} value={port.id}>
                         {port.name}
                       </option>
                     ))}
                   </select>
-                  <input
-                    className="bw-msg__select"
-                    type="date"
-                    value={day}
-                    onChange={(e) => setDay(e.target.value)}
-                    aria-label="Jour"
-                  />
+                  {portScope === "day" ? (
+                    <input
+                      className="bw-msg__select"
+                      type="date"
+                      value={day}
+                      onChange={(e) => setDay(e.target.value)}
+                      aria-label="Jour"
+                    />
+                  ) : null}
                 </div>
               ) : null}
               {kind === "route" ? (
@@ -608,6 +653,9 @@ export function MessageCenter() {
                         ) : null}
                         {!counts.accounts ? <li>Personne ne suit encore cette cible.</li> : null}
                       </ul>
+                      {counts.accounts && audience ? (
+                        <RecipientList audience={audience} total={counts.accounts} />
+                      ) : null}
                     </>
                   ) : null}
                 </div>
@@ -926,6 +974,100 @@ export function MessageCenter() {
           </div>
         </DialogContent>
       </Dialog>
+    </div>
+  );
+}
+
+const viaLabels: Record<AudienceRecipient["via"], string> = {
+  traveller: "Voyageur",
+  relative: "Proche",
+  departure: "Suit la traversée",
+  vessel: "Suit le bateau",
+  watch: "Alerte d’ouverture",
+  account: "Compte",
+};
+/** Qui sera prévenu : nom, e-mail, raison, téléphones. Chargé seulement à l'ouverture. */
+function RecipientList({ audience, total }: { audience: Audience; total: number }) {
+  const { user } = useAuth();
+  const [open, setOpen] = useState(false);
+  const [filter, setFilter] = useState("");
+  const list = useQuery({
+    ...audienceRecipientsQuery(user?.id, audience),
+    enabled: open && Boolean(user),
+  });
+  const words = filter.trim().toLowerCase();
+  const rows = (list.data?.recipients ?? []).filter(
+    (row) => !words || `${row.name} ${row.email}`.toLowerCase().includes(words),
+  );
+  return (
+    <div className="bw-msg__people">
+      <button
+        type="button"
+        className="bw-msg__people-toggle"
+        aria-expanded={open}
+        onClick={() => setOpen(!open)}
+      >
+        <ChevronDown size={15} aria-hidden data-open={open} />
+        {open ? "Masquer les comptes" : `Voir les ${total} compte${total > 1 ? "s" : ""}`}
+      </button>
+      {open ? (
+        list.isPending ? (
+          <p className="bw-msg__people-note">
+            <LoaderCircle size={14} className="animate-spin" aria-hidden /> Chargement…
+          </p>
+        ) : list.error ? (
+          <p className="bw-msg__people-note text-destructive">{list.error.message}</p>
+        ) : (
+          <>
+            {(list.data?.recipients.length ?? 0) > 8 ? (
+              <label className="bw-msg__searchbox bw-msg__people-search">
+                <Search size={14} aria-hidden />
+                <input
+                  value={filter}
+                  onChange={(event) => setFilter(event.target.value)}
+                  placeholder="Chercher un nom ou un e-mail"
+                  aria-label="Chercher un compte"
+                />
+              </label>
+            ) : null}
+            <ul className="bw-msg__people-list">
+              {rows.map((row) => (
+                <li key={row.id} data-excluded={row.excluded}>
+                  <span className="bw-msg__avatar" aria-hidden>
+                    {(row.name || row.email || "?").slice(0, 1).toUpperCase()}
+                  </span>
+                  <span className="min-w-0 flex-1">
+                    <strong>{row.name || row.email || "Compte sans nom"}</strong>
+                    {row.name && row.email ? <small>{row.email}</small> : null}
+                  </span>
+                  <span className="bw-msg__tag" data-via={row.via}>
+                    {viaLabels[row.via]}
+                  </span>
+                  <span className="bw-msg__tag" data-device={row.devices > 0}>
+                    {row.excluded ? (
+                      "Exclu (réglages)"
+                    ) : row.devices ? (
+                      <>
+                        <Smartphone size={12} aria-hidden /> {row.devices}
+                      </>
+                    ) : (
+                      <>
+                        <Bell size={12} aria-hidden /> Cloche
+                      </>
+                    )}
+                  </span>
+                </li>
+              ))}
+              {!rows.length ? <li className="bw-msg__people-note">Aucun compte trouvé.</li> : null}
+            </ul>
+            {list.data && list.data.total > list.data.recipients.length ? (
+              <p className="bw-msg__people-note">
+                Les {list.data.recipients.length} premiers sur {list.data.total} sont affichés.
+              </p>
+            ) : null}
+          </>
+        )
+      ) : null}
     </div>
   );
 }

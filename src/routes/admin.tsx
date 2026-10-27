@@ -20,6 +20,7 @@ import { useAdminCounts } from "@/hooks/useAdminCounts";
 import { AdminWorkspace, type AdminSearchItem } from "@/components/admin/AdminWorkspace";
 import { AdminDrawer, AdminListToolbar, matches } from "@/components/admin/AdminDrawer";
 import { SignalsAdmin } from "@/components/admin/SignalsAdmin";
+import { CompaniesAdmin } from "@/components/admin/CompaniesAdmin";
 import { AdminFilterNotice } from "@/components/admin/AdminFilterNotice";
 import {
   adminSearch,
@@ -210,6 +211,7 @@ function AdminTabs() {
   const { data: searchPorts = [] } = useQuery(portsQuery);
   const { data: searchVessels = [] } = useQuery(vesselsQuery);
   const { data: searchCompanies = [] } = useQuery(companiesQuery);
+  const { data: searchRoutes = [] } = useQuery(routesQuery);
   const searchItems: AdminSearchItem[] = [
     ...searchPorts.map((port) => ({
       tab: "ports",
@@ -223,6 +225,15 @@ function AdminTabs() {
       label: vessel.name,
       hint: `Navire${vessel.mmsi ? ` · MMSI ${vessel.mmsi}` : ""}`,
     })),
+    ...searchRoutes.map((route) => {
+      const name = (id: string) => searchPorts.find((port) => port.id === id)?.name ?? "?";
+      return {
+        tab: "routes",
+        id: route.id,
+        label: `${name(route.departure_port_id)} → ${name(route.arrival_port_id)}`,
+        hint: "Liaison",
+      };
+    }),
     ...searchCompanies.map((company) => ({
       tab: "companies",
       id: company.id,
@@ -352,7 +363,7 @@ function AdminTabs() {
           <PortsAdmin itemId={tab === "ports" ? item : undefined} />
         </TabsContent>
         <TabsContent value="routes">
-          <RoutesAdmin />
+          <RoutesAdmin itemId={tab === "routes" ? item : undefined} />
         </TabsContent>
         <TabsContent value="vessels">
           <VesselsAdmin itemId={tab === "vessels" ? item : undefined} />
@@ -403,120 +414,6 @@ function AlertDepartureEditor({
       vessels={data.vessels.filter((v) => !v.company_id || v.company_id === data.dep.company_id)}
       onDone={onDone}
     />
-  );
-}
-
-function CompaniesAdmin({ itemId }: { itemId?: string | undefined } = {}) {
-  const { data: companies = [] } = useQuery(companiesQuery);
-  const [search, setSearch] = useState("");
-  const [openId, setOpenId] = useState<string | null>(itemId ?? null);
-  useEffect(() => {
-    if (itemId) setOpenId(itemId);
-  }, [itemId]);
-  const list = companies.filter((c) => matches(search, c.name, c.website_url));
-  const open = companies.find((c) => c.id === openId);
-  return (
-    <Panel>
-      <AdminListToolbar
-        search={search}
-        onSearch={setSearch}
-        placeholder="Chercher une compagnie"
-        count={list.length}
-        total={companies.length}
-      />
-      <ul className="bw-admin-list mt-3">
-        {list.map((c) => (
-          <li key={c.id}>
-            <button type="button" className="bw-admin-list__main" onClick={() => setOpenId(c.id)}>
-              <CompanyBadge name={c.name} logoUrl={c.logo_url} size={36} />
-              <span className="min-w-0">
-                <strong>{c.name}</strong>
-                <small>
-                  {c.website_url ?? "Pas de site officiel"}
-                  {c.logo_url ? "" : " · sans logo"}
-                </small>
-              </span>
-              {!c.logo_url ? <span className="bw-admin-chip">Logo manquant</span> : null}
-            </button>
-          </li>
-        ))}
-      </ul>
-      {open ? (
-        <AdminDrawer
-          open
-          onOpenChange={(next) => !next && setOpenId(null)}
-          title={open.name}
-          description="Collez l'adresse (URL) du logo officiel. Sans logo, une pastille avec les initiales s'affiche."
-        >
-          <CompanyRow key={open.id} company={open} onSaved={() => setOpenId(null)} />
-        </AdminDrawer>
-      ) : null}
-    </Panel>
-  );
-}
-
-function CompanyRow({
-  company,
-  onSaved,
-}: {
-  onSaved?: () => void;
-  company: {
-    id: string;
-    name: string;
-    logo_url: string | null;
-    website_url: string | null;
-    description: string | null;
-  };
-}) {
-  const queryClient = useQueryClient();
-  const [name, setName] = useState(company.name);
-  const [logo, setLogo] = useState(company.logo_url ?? "");
-  const [site, setSite] = useState(company.website_url ?? "");
-  const [desc, setDesc] = useState(company.description ?? "");
-  const save = useMutation({
-    mutationFn: async () => {
-      if (!name.trim()) throw new Error("Nom requis.");
-      const { error } = await supabase
-        .from("companies")
-        .update({
-          name: name.trim(),
-          logo_url: logo.trim() || null,
-          website_url: site.trim() || null,
-          description: desc.trim() || null,
-        })
-        .eq("id", company.id);
-      if (error) throw new Error(error.message);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["companies"] });
-      toast.success("Compagnie mise à jour.");
-      onSaved?.();
-    },
-    onError: (e: Error) => toast.error(e.message),
-  });
-  return (
-    <div className="grid gap-3">
-      <CompanyBadge name={name} logoUrl={logo} size={56} />
-      <label className="text-xs">
-        Nom
-        <Input value={name} onChange={(e) => setName(e.target.value)} />
-      </label>
-      <label className="min-w-56 flex-1 text-xs">
-        URL du logo
-        <Input value={logo} placeholder="https://…" onChange={(e) => setLogo(e.target.value)} />
-      </label>
-      <label className="min-w-48 flex-1 text-xs">
-        Site officiel
-        <Input value={site} placeholder="https://…" onChange={(e) => setSite(e.target.value)} />
-      </label>
-      <label className="w-full text-xs">
-        Description
-        <Input value={desc} onChange={(e) => setDesc(e.target.value)} />
-      </label>
-      <Button size="sm" className="justify-self-end" disabled={save.isPending} onClick={() => save.mutate()}>
-        Enregistrer
-      </Button>
-    </div>
   );
 }
 
@@ -869,6 +766,8 @@ function DeparturesAdmin({
     },
   });
   const [companyFilter, setCompanyFilter] = useState(companyId ?? "");
+  const [routeFilter, setRouteFilter] = useState("");
+  const [search, setSearch] = useState("");
   const [editing, setEditing] = useState<string | null>(null);
 
   const update = useMutation({
@@ -894,12 +793,31 @@ function DeparturesAdmin({
 
   const portName = (id: string) => ports.find((port) => port.id === id)?.name ?? "—";
   const now = new Date();
+  const routeOptions = routes
+    .filter((route) => !routeId || route.id === routeId)
+    .map((route) => ({
+      id: route.id,
+      label: `${portName(route.departure_port_id)} → ${portName(route.arrival_port_id)}`,
+    }))
+    .sort((a, b) => a.label.localeCompare(b.label, "fr"));
   const shown = periodDepartures.filter((departure) => {
     if (companyId && departure.company_id !== companyId) return false;
     if (routeId && departure.route_id !== routeId) return false;
     if (!matchesDepartureScope(departure, scope, now)) return false;
     if (companyFilter && departure.company_id !== companyFilter) return false;
+    if (routeFilter && departure.route_id !== routeFilter) return false;
     const route = routes.find((item) => item.id === departure.route_id);
+    if (
+      search &&
+      !matches(
+        search,
+        route ? portName(route.departure_port_id) : "",
+        route ? portName(route.arrival_port_id) : "",
+        vessels.find((vessel) => vessel.id === departure.vessel_id)?.name,
+        companies.find((company) => company.id === departure.company_id)?.name,
+      )
+    )
+      return false;
     const zone = portTimeZone(ports.find((port) => port.id === route?.departure_port_id));
     return !dateFilter || dateKeyInZone(departure.departure_at, zone) === dateFilter;
   });
@@ -925,6 +843,27 @@ function DeparturesAdmin({
         </p>
       )}
       <div className="mb-3 flex flex-wrap items-center gap-2">
+        <label className="bw-admin-toolbar__search max-w-xs">
+          <input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Port, navire ou compagnie…"
+            aria-label="Chercher un départ"
+          />
+        </label>
+        <select
+          aria-label="Filtrer par liaison"
+          className="h-9 max-w-56 rounded-md border border-input bg-background px-2 text-sm"
+          value={routeFilter}
+          onChange={(e) => setRouteFilter(e.target.value)}
+        >
+          <option value="">Toutes les liaisons</option>
+          {routeOptions.map((option) => (
+            <option key={option.id} value={option.id}>
+              {option.label}
+            </option>
+          ))}
+        </select>
         <label className="text-sm text-muted-foreground" htmlFor="dep-company">
           Compagnie
         </label>
@@ -1025,7 +964,7 @@ function DeparturesAdmin({
                 <Button
                   size="sm"
                   variant="outline"
-                  onClick={() => setEditing(editing === departure.id ? null : departure.id)}
+                  onClick={() => setEditing(departure.id)}
                 >
                   Modifier
                 </Button>
@@ -1061,20 +1000,33 @@ function DeparturesAdmin({
                   {departure.status === "cancelled" ? "Rétablir le départ" : "Annuler le départ"}
                 </Button>
               </div>
-              {editing === departure.id && (
-                <DepartureEditor
-                  departure={departure}
-                  timeZone={tz}
-                  vessels={vessels.filter(
-                    (v) => !company || !v.company_id || v.company_id === company.id,
-                  )}
-                  onDone={() => setEditing(null)}
-                />
-              )}
             </li>
           );
         })}
       </ul>
+      {(() => {
+        // Édition d'un départ dans le panneau latéral (la liste reste visible).
+        const departure = periodDepartures.find((item) => item.id === editing);
+        if (!departure) return null;
+        const route = routes.find((item) => item.id === departure.route_id);
+        const company = companies.find((item) => item.id === departure.company_id);
+        const tz = portTimeZone(ports.find((port) => port.id === route?.departure_port_id));
+        return (
+          <AdminDrawer
+            open
+            onOpenChange={(next) => !next && setEditing(null)}
+            title={route ? `${portName(route.departure_port_id)} → ${portName(route.arrival_port_id)}` : "Départ"}
+            description={`${formatDateTime(departure.departure_at, tz)} (${zoneLabel(tz)})${company ? ` · ${company.name}` : ""}`}
+          >
+            <DepartureEditor
+              departure={departure}
+              timeZone={tz}
+              vessels={vessels.filter((v) => !company || !v.company_id || v.company_id === company.id)}
+              onDone={() => setEditing(null)}
+            />
+          </AdminDrawer>
+        );
+      })()}
     </Panel>
   );
 }
@@ -1127,7 +1079,6 @@ function durationBetweenTimes(departure: string, arrival: string): number | null
 
 function SchedulesAdmin({ companyId, routeId }: { companyId?: string; routeId?: string } = {}) {
   const queryClient = useQueryClient();
-  const editorRef = useRef<HTMLDetailsElement>(null);
   const { data: allSchedules = [] } = useQuery(schedulesQuery);
   const { data: routes = [] } = useQuery(adminRoutesQuery);
   const { data: ports = [] } = useQuery(adminPortsQuery);
@@ -1141,6 +1092,12 @@ function SchedulesAdmin({ companyId, routeId }: { companyId?: string; routeId?: 
   const scopedDraft = { ...emptyDraft, company_id: companyId ?? "", route_id: routeId ?? "" };
   const [draft, setDraft] = useState(scopedDraft);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [formOpen, setFormOpen] = useState(false);
+  const closeForm = () => {
+    setFormOpen(false);
+    setEditingId(null);
+    setDraft(scopedDraft);
+  };
 
   const portName = (id: string) => ports.find((port) => port.id === id)?.name ?? "—";
   const routeLabel = (id: string) => {
@@ -1183,6 +1140,7 @@ function SchedulesAdmin({ companyId, routeId }: { companyId?: string; routeId?: 
       invalidate();
       setDraft(scopedDraft);
       setEditingId(null);
+      setFormOpen(false);
       toast.success(editingId ? "Calendrier modifié." : "Calendrier ajouté.");
     },
     onError: (error: Error) => toast.error(error.message),
@@ -1253,19 +1211,14 @@ function SchedulesAdmin({ companyId, routeId }: { companyId?: string; routeId?: 
 
   return (
     <>
-      <details
-        ref={editorRef}
-        open={editingId ? true : undefined}
-        className="rounded-2xl border bg-card p-3"
+      <AdminDrawer
+        open={formOpen}
+        onOpenChange={(next) => !next && closeForm()}
+        title={editingId ? "Modifier le calendrier" : "Nouveau calendrier de traversées"}
+        description="Liaison, jours, horaires, période de validité et source officielle."
       >
-        <summary className="cursor-pointer text-sm font-semibold text-primary">
-          {editingId ? "Modifier ce calendrier" : "Ajouter un calendrier récurrent"}
-        </summary>
-        <Panel>
-          <h2 className="text-sm font-semibold">
-            {editingId ? "Modifier le calendrier" : "Nouveau calendrier de traversées"}
-          </h2>
-          <div className="mt-3 grid gap-3 sm:grid-cols-2">
+        <div>
+          <div className="grid gap-3 sm:grid-cols-2">
             <Field label="Ligne">
               <NativeSelect
                 value={draft.route_id}
@@ -1399,24 +1352,28 @@ function SchedulesAdmin({ companyId, routeId }: { companyId?: string; routeId?: 
             <Button size="sm" disabled={save.isPending} onClick={() => save.mutate()}>
               {editingId ? "Enregistrer les modifications" : "Ajouter le calendrier"}
             </Button>
-            {editingId ? (
-              <Button
-                size="sm"
-                variant="ghost"
-                onClick={() => {
-                  setEditingId(null);
-                  setDraft(scopedDraft);
-                }}
-              >
-                Annuler
-              </Button>
-            ) : null}
+            <Button size="sm" variant="ghost" onClick={closeForm}>
+              Annuler
+            </Button>
           </div>
-        </Panel>
-      </details>
+        </div>
+      </AdminDrawer>
 
       <Panel>
-        <h2 className="text-sm font-semibold">Calendriers existants</h2>
+        <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+          <h2 className="text-sm font-semibold">Calendriers existants ({schedules.length})</h2>
+          <button
+            type="button"
+            className="bw-admin-toolbar__create"
+            onClick={() => {
+              setEditingId(null);
+              setDraft(scopedDraft);
+              setFormOpen(true);
+            }}
+          >
+            + Nouveau calendrier
+          </button>
+        </div>
         <ul className="divide-y divide-border">
           {schedules.map((schedule) => (
             <li key={schedule.id} className="flex flex-wrap items-center gap-3 py-3">
@@ -1444,16 +1401,7 @@ function SchedulesAdmin({ companyId, routeId }: { companyId?: string; routeId?: 
                   variant="outline"
                   onClick={() => {
                     setEditingId(schedule.id);
-                    window.setTimeout(
-                      () =>
-                        editorRef.current?.scrollIntoView({
-                          block: "start",
-                          behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches
-                            ? "instant"
-                            : "smooth",
-                        }),
-                      0,
-                    );
+                    setFormOpen(true);
                     setDraft({
                       route_id: schedule.route_id,
                       company_id: schedule.company_id,
@@ -2934,8 +2882,10 @@ const routeStatusLabel: Record<string, string> = {
   draft: "Brouillon",
 };
 
-function RoutesAdmin() {
+function RoutesAdmin({ itemId }: { itemId?: string | undefined } = {}) {
   const queryClient = useQueryClient();
+  const [formOpen, setFormOpen] = useState(false);
+  const [search, setSearch] = useState("");
   const { data: ports = [] } = useQuery(adminPortsQuery);
   const { data: routes = [] } = useQuery(adminRoutesQuery);
   const { data: companies = [] } = useQuery(companiesQuery);
@@ -2957,7 +2907,33 @@ function RoutesAdmin() {
   const reset = () => {
     setDraft(emptyRouteDraft);
     setEditingId(null);
+    setFormOpen(false);
   };
+  const startNew = () => {
+    setDraft(emptyRouteDraft);
+    setEditingId(null);
+    setFormOpen(true);
+  };
+  const startEdit = (route: (typeof routes)[number]) => {
+    setEditingId(route.id);
+    setDraft({
+      departure_port_id: route.departure_port_id,
+      arrival_port_id: route.arrival_port_id,
+      typical_duration_minutes: String(route.typical_duration_minutes ?? ""),
+      distance_km: String(route.distance_km ?? ""),
+      color: route.color ?? "",
+      status: route.status,
+      notes: route.notes ?? "",
+      company_ids: route.company_ids,
+    });
+    setFormOpen(true);
+  };
+  // Fiche demandée depuis la recherche du menu.
+  useEffect(() => {
+    const route = itemId ? routes.find((item) => item.id === itemId) : undefined;
+    if (route) startEdit(route);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [itemId, routes.length]);
 
   const save = useMutation({
     mutationFn: async () => {
@@ -3047,13 +3023,12 @@ function RoutesAdmin() {
 
   return (
     <>
-      <Panel>
-        <h2 className="text-sm font-semibold">
-          {editingId ? "Modifier la ligne" : "Nouvelle ligne maritime"}
-        </h2>
-        <p className="mt-1 text-xs text-muted-foreground">
-          Le départ comme l'arrivée peuvent être en Algérie ou en Europe.
-        </p>
+      <AdminDrawer
+        open={formOpen}
+        onOpenChange={(next) => !next && reset()}
+        title={editingId ? "Modifier la liaison" : "Nouvelle liaison"}
+        description="Le départ comme l'arrivée peuvent être en Algérie ou en Europe."
+      >
         <div className="mt-3 grid gap-3 sm:grid-cols-2">
           <Field label="Port de départ">
             <NativeSelect
@@ -3158,20 +3133,28 @@ function RoutesAdmin() {
         </div>
         <div className="mt-4 flex gap-2">
           <Button size="sm" disabled={save.isPending} onClick={() => save.mutate()}>
-            {editingId ? "Enregistrer les modifications" : "Ajouter la ligne"}
+            {editingId ? "Enregistrer les modifications" : "Ajouter la liaison"}
           </Button>
-          {editingId ? (
-            <Button size="sm" variant="ghost" onClick={reset}>
-              Annuler
-            </Button>
-          ) : null}
+          <Button size="sm" variant="ghost" onClick={reset}>
+            Annuler
+          </Button>
         </div>
-      </Panel>
+      </AdminDrawer>
 
       <Panel>
-        <h2 className="text-sm font-semibold">Lignes existantes ({routes.length})</h2>
+        <AdminListToolbar
+          search={search}
+          onSearch={setSearch}
+          placeholder="Chercher une liaison (port de départ ou d'arrivée)"
+          count={routes.filter((route) => matches(search, portName(route.departure_port_id), portName(route.arrival_port_id))).length}
+          total={routes.length}
+          onCreate={startNew}
+          createLabel="Nouvelle liaison"
+        />
         <ul className="divide-y divide-border">
-          {routes.map((route) => (
+          {routes
+            .filter((route) => matches(search, portName(route.departure_port_id), portName(route.arrival_port_id)))
+            .map((route) => (
             <li key={route.id} className="flex flex-wrap items-center gap-3 py-3">
               <span
                 className="h-3 w-6 shrink-0 rounded-full"
@@ -3193,19 +3176,7 @@ function RoutesAdmin() {
                 <Button
                   size="sm"
                   variant="outline"
-                  onClick={() => {
-                    setEditingId(route.id);
-                    setDraft({
-                      departure_port_id: route.departure_port_id,
-                      arrival_port_id: route.arrival_port_id,
-                      typical_duration_minutes: String(route.typical_duration_minutes ?? ""),
-                      distance_km: String(route.distance_km ?? ""),
-                      color: route.color ?? "",
-                      status: route.status,
-                      notes: route.notes ?? "",
-                      company_ids: route.company_ids,
-                    });
-                  }}
+                  onClick={() => startEdit(route)}
                 >
                   Modifier
                 </Button>

@@ -25,7 +25,7 @@ export type AdminFilter = "today" | "unassigned" | "new" | "pending";
 export type DepartureScope = Extract<AdminFilter, "today" | "unassigned">;
 
 /** Rubriques où une fiche précise peut s'ouvrir directement (recherche du menu). */
-const itemTabs = new Set<AdminTab>(["ports", "vessels", "companies"]);
+const itemTabs = new Set<AdminTab>(["ports", "vessels", "companies", "routes"]);
 
 export function adminSearch(search: Record<string, unknown>): {
   tab?: AdminTab;

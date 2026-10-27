@@ -29,7 +29,7 @@ import { ReportButton } from "./ReportButton";
 import { FollowButton } from "./FollowButton";
 import { JourneyChecklist } from "./JourneyChecklist";
 import { MyTripPanel } from "./MyTrip";
-import { VesselPresence } from "./TripPresence";
+import { TripStatusPicker, VesselPresence } from "./TripPresence";
 
 function useShipData() {
   const { data: vessels = [] } = useQuery(vesselsQuery);
@@ -212,6 +212,12 @@ export function VesselView({
         <TabsContent value="tracking" forceMount hidden={activeTab !== "tracking"}>
           {departure && from && to ? (
             <>
+              {/* Où en êtes-vous ? Les 4 cabas, pour la traversée en cours ou la prochaine. */}
+              <TripStatusPicker
+                departureId={departure.id}
+                departureAt={departure.departure_at}
+                fromPortId={from.id}
+              />
               <button
                 className="bw-detail-link"
                 type="button"

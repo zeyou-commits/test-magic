@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { z } from "zod";
+import { audienceSchema, BODY_MAX, templateIds, TITLE_MAX } from "@/lib/notifications/messages";
 
 const actionSchema = z.discriminatedUnion("action", [
   z.object({ action: z.literal("refresh") }),
@@ -10,6 +11,25 @@ const actionSchema = z.discriminatedUnion("action", [
   z.object({ action: z.literal("test") }),
   z.object({ action: z.literal("send"), campaignId: z.string().uuid() }),
   z.object({ action: z.literal("dismiss"), campaignId: z.string().uuid() }),
+  // Messages de l'équipe : cible et nombre de destinataires, envoi ou planification, historique.
+  z.object({ action: z.literal("message-preview"), audience: audienceSchema }),
+  z.object({ action: z.literal("messages") }),
+  z.object({
+    action: z.literal("message-create"),
+    audience: audienceSchema,
+    template: z.enum(templateIds as [string, ...string[]]),
+    title: z.string().trim().min(4).max(TITLE_MAX),
+    body: z.string().trim().min(4).max(BODY_MAX),
+    url: z
+      .string()
+      .regex(/^\/(?!\/)/)
+      .max(300),
+    sendAt: z.string().datetime().nullable(),
+    flash: z.boolean(),
+    confirmCount: z.number().int().optional(),
+    replaces: z.string().uuid().optional(),
+  }),
+  z.object({ action: z.literal("message-cancel"), id: z.string().uuid() }),
 ]);
 export const Route = createFileRoute("/api/push-admin")({
   server: {
@@ -65,7 +85,9 @@ export const Route = createFileRoute("/api/push-admin")({
             return Response.json(
               {
                 // Clés VAPID côté serveur (envoi) et côté site (abonnement des téléphones).
-                serverKeys: Boolean(env["VAPID_PUBLIC_KEY"] && env["VAPID_PRIVATE_KEY"] && env["VAPID_SUBJECT"]),
+                serverKeys: Boolean(
+                  env["VAPID_PUBLIC_KEY"] && env["VAPID_PRIVATE_KEY"] && env["VAPID_SUBJECT"],
+                ),
                 siteKey: Boolean(env["VITE_VAPID_PUBLIC_KEY"]),
                 keysMatch:
                   !env["VITE_VAPID_PUBLIC_KEY"] || !env["VAPID_PUBLIC_KEY"]
@@ -78,13 +100,19 @@ export const Route = createFileRoute("/api/push-admin")({
                   op: "eq",
                   value: auth.user.id,
                 }),
-                pending: await count("bw_push_deliveries", { column: "sent_at", op: "is", value: null }),
+                pending: await count("bw_push_deliveries", {
+                  column: "sent_at",
+                  op: "is",
+                  value: null,
+                }),
                 sent24h: await count("bw_push_deliveries", {
                   column: "sent_at",
                   op: "gte",
                   value: new Date(Date.now() - 24 * 3_600_000).toISOString(),
                 }),
-                errors: [...new Set((failures.data ?? []).map((row) => String(row.last_error)))].slice(0, 5),
+                errors: [
+                  ...new Set((failures.data ?? []).map((row) => String(row.last_error))),
+                ].slice(0, 5),
               },
               { headers: { "cache-control": "no-store" } },
             );
@@ -117,7 +145,171 @@ export const Route = createFileRoute("/api/push-admin")({
               }
             }
             const { dispatchPush } = await import("@/lib/notifications/dispatch.server");
-            return Response.json(await dispatchPush(), { headers: { "cache-control": "no-store" } });
+            return Response.json(await dispatchPush(), {
+              headers: { "cache-control": "no-store" },
+            });
+          }
+          if (action.action === "message-preview") {
+            const { previewAudience } = await import("@/lib/notifications/messages.server");
+            return Response.json(await previewAudience(action.audience), {
+              headers: { "cache-control": "no-store" },
+            });
+          }
+          if (action.action === "messages") {
+            const { data, error } = await db
+              .from("bw_admin_messages")
+              .select(
+                "id,audience,audience_label,template,title,body,url,scheduled_at,status,recipients,last_error,created_at,sent_at,news_id",
+              )
+              .order("scheduled_at", { ascending: false })
+              .limit(40);
+            if (error && ["PGRST205", "42P01"].includes(error.code))
+              return Response.json({ messages: [], ready: false });
+            if (error) throw error;
+            return Response.json(
+              { messages: data, ready: true },
+              { headers: { "cache-control": "no-store" } },
+            );
+          }
+          if (action.action === "message-cancel") {
+            const { data, error } = await db
+              .from("bw_admin_messages")
+              .update({ status: "cancelled", updated_at: new Date().toISOString() })
+              .eq("id", action.id)
+              .eq("status", "scheduled")
+              .select("news_id")
+              .maybeSingle();
+            if (error) throw error;
+            if (!data)
+              return Response.json(
+                { error: "Ce message est déjà parti ou annulé." },
+                { status: 409 },
+              );
+            // Le Flash info préparé avec le message disparaît avec lui.
+            if (data.news_id)
+              await db.from("bw_news").update({ published: false }).eq("id", data.news_id);
+            return Response.json({ cancelled: true });
+          }
+          if (action.action === "message-create") {
+            const { previewAudience } = await import("@/lib/notifications/messages.server");
+            const preview = await previewAudience(action.audience);
+            if (!preview.ready)
+              return Response.json(
+                {
+                  error:
+                    "Exécutez d’abord le script supabase/migrations/20261104120000_messages_admin.sql dans Supabase.",
+                },
+                { status: 409 },
+              );
+            if (!preview.reachable)
+              return Response.json(
+                { error: "Personne à prévenir pour cette cible." },
+                { status: 409 },
+              );
+            if (action.audience.kind === "all" && action.confirmCount !== preview.reachable)
+              return Response.json(
+                {
+                  error: `Le nombre de destinataires a changé (${preview.reachable}). Vérifiez et confirmez à nouveau.`,
+                },
+                { status: 409 },
+              );
+            const now = Date.now();
+            const sendAt = action.sendAt ? Date.parse(action.sendAt) : null;
+            if (sendAt !== null && (sendAt < now + 60_000 || sendAt > now + 60 * 86_400_000))
+              return Response.json(
+                { error: "Choisissez une heure d’envoi entre maintenant et 60 jours." },
+                { status: 400 },
+              );
+            if (action.replaces) {
+              const replaced = await db
+                .from("bw_admin_messages")
+                .update({ status: "cancelled", updated_at: new Date().toISOString() })
+                .eq("id", action.replaces)
+                .eq("status", "scheduled")
+                .select("news_id")
+                .maybeSingle();
+              if (replaced.error) throw replaced.error;
+              if (!replaced.data)
+                return Response.json(
+                  { error: "Le message d’origine est déjà parti : il ne peut plus être modifié." },
+                  { status: 409 },
+                );
+              if (replaced.data.news_id)
+                await db
+                  .from("bw_news")
+                  .update({ published: false })
+                  .eq("id", replaced.data.news_id);
+            }
+            const startsAt = new Date(sendAt ?? now);
+            let newsId: string | null = null;
+            let flashSkipped = false;
+            if (action.flash) {
+              // Flash info visible de tous, rattaché à la ligne ou au port quand on les connaît.
+              const routeIds: string[] = [];
+              const portIds: string[] = [];
+              if (action.audience.kind === "route") routeIds.push(action.audience.routeId);
+              if (action.audience.kind === "port_day") portIds.push(action.audience.portId);
+              if (action.audience.kind === "departure") {
+                const departure = await db
+                  .from("departures")
+                  .select("route_id")
+                  .eq("id", action.audience.departureId)
+                  .maybeSingle();
+                if (departure.data?.route_id) routeIds.push(departure.data.route_id as string);
+              }
+              const news = await db
+                .from("bw_news")
+                .insert({
+                  kind: ["delay", "cancel", "reschedule", "port_access"].includes(action.template)
+                    ? "perturbation"
+                    : "info",
+                  origin: "bledway",
+                  title: action.title,
+                  summary: action.body,
+                  route_ids: routeIds,
+                  port_ids: portIds,
+                  starts_at: startsAt.toISOString(),
+                  ends_at: new Date(startsAt.getTime() + 24 * 3_600_000).toISOString(),
+                  published: true,
+                  created_by: auth.user.id,
+                })
+                .select("id")
+                .single();
+              if (news.error) flashSkipped = true;
+              else newsId = news.data.id as string;
+            }
+            const inserted = await db
+              .from("bw_admin_messages")
+              .insert({
+                audience: action.audience,
+                audience_label: preview.label.slice(0, 200),
+                category: action.audience.kind === "all" ? "community" : "reminders",
+                template: action.template,
+                title: action.title,
+                body: action.body,
+                url: action.url,
+                scheduled_at: startsAt.toISOString(),
+                status: "scheduled",
+                news_id: newsId,
+                created_by: auth.user.id,
+              })
+              .select("id")
+              .single();
+            if (inserted.error) throw inserted.error;
+            if (sendAt !== null)
+              return Response.json({
+                scheduled: true,
+                at: startsAt.toISOString(),
+                reachable: preview.reachable,
+                schedulerActive: preview.schedulerActive,
+                flashSkipped,
+              });
+            const { dispatchPush } = await import("@/lib/notifications/dispatch.server");
+            const result = await dispatchPush({ messageId: inserted.data.id as string });
+            return Response.json(
+              { ...result, sent: true, reachable: preview.reachable, flashSkipped },
+              { headers: { "cache-control": "no-store" } },
+            );
           }
           if (action.action === "refresh") {
             const { data, error } = await db.rpc("bw_prepare_opening_campaigns", {});

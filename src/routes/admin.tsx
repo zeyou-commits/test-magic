@@ -22,6 +22,8 @@ import { AdminDrawer, AdminListToolbar, matches } from "@/components/admin/Admin
 import { SignalsAdmin } from "@/components/admin/SignalsAdmin";
 import { CompaniesAdmin } from "@/components/admin/CompaniesAdmin";
 import { PushDiagnostic } from "@/components/admin/PushDiagnostic";
+import { MessageCenter } from "@/components/admin/MessageComposer";
+import { storeMessagePrefill } from "@/lib/notifications/messages";
 import { AdminFilterNotice } from "@/components/admin/AdminFilterNotice";
 import {
   adminSearch,
@@ -337,7 +339,10 @@ function AdminTabs() {
           />
         </TabsContent>
         <TabsContent value="notifications">
-          <PushDiagnostic />
+          <MessageCenter />
+          <div className="mt-5">
+            <PushDiagnostic />
+          </div>
           <NotificationOverview />
         </TabsContent>
         <TabsContent value="flash">
@@ -646,6 +651,7 @@ function DepartureEditor({
   onDone: () => void;
 }) {
   const queryClient = useQueryClient();
+  const navigate = Route.useNavigate();
   const [date, setDate] = useState(dateKeyInZone(departure.departure_at, timeZone));
   const [time, setTime] = useState(wallTimeInZone(departure.departure_at, timeZone).slice(0, 5));
   const [hours, setHours] = useState(String(Math.floor((departure.duration_minutes ?? 0) / 60)));
@@ -672,7 +678,39 @@ function DepartureEditor({
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["departures"] });
       queryClient.invalidateQueries({ queryKey: ["admin", "planning-alerts"] });
-      toast.success("Départ modifié.");
+      // Horaire ou bateau changé : on propose tout de suite de prévenir ceux qui suivent ce départ.
+      const oldDate = dateKeyInZone(departure.departure_at, timeZone);
+      const oldTime = wallTimeInZone(departure.departure_at, timeZone).slice(0, 5);
+      const moved = oldDate !== date || oldTime !== time;
+      const vesselChanged = (departure.vessel_id ?? "") !== vesselId;
+      const oldDay = new Intl.DateTimeFormat("fr-FR", {
+        weekday: "short",
+        day: "numeric",
+        month: "short",
+        timeZone,
+      }).format(new Date(departure.departure_at));
+      toast.success("Départ modifié.", {
+        ...(moved || vesselChanged
+          ? {
+              duration: 15_000,
+              description: "Les voyageurs qui suivent ce départ ne sont pas encore prévenus.",
+              action: {
+                label: "Prévenir les voyageurs",
+                onClick: () => {
+                  storeMessagePrefill({
+                    audience: { kind: "departure", departureId: departure.id, who: "everyone" },
+                    template: moved ? "reschedule" : "free",
+                    fields: { oldTime: oldDate === date ? oldTime : `${oldDay} à ${oldTime}` },
+                  });
+                  void navigate({
+                    search: adminSearch({ tab: "notifications" }),
+                    resetScroll: false,
+                  });
+                },
+              },
+            }
+          : {}),
+      });
       onDone();
     },
     onError: (error: Error) => toast.error(error.message),
@@ -963,11 +1001,7 @@ function DeparturesAdmin({
                 </p>
               </div>
               <div className="flex flex-wrap gap-2">
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => setEditing(departure.id)}
-                >
+                <Button size="sm" variant="outline" onClick={() => setEditing(departure.id)}>
                   Modifier
                 </Button>
                 <Button
@@ -1017,13 +1051,19 @@ function DeparturesAdmin({
           <AdminDrawer
             open
             onOpenChange={(next) => !next && setEditing(null)}
-            title={route ? `${portName(route.departure_port_id)} → ${portName(route.arrival_port_id)}` : "Départ"}
+            title={
+              route
+                ? `${portName(route.departure_port_id)} → ${portName(route.arrival_port_id)}`
+                : "Départ"
+            }
             description={`${formatDateTime(departure.departure_at, tz)} (${zoneLabel(tz)})${company ? ` · ${company.name}` : ""}`}
           >
             <DepartureEditor
               departure={departure}
               timeZone={tz}
-              vessels={vessels.filter((v) => !company || !v.company_id || v.company_id === company.id)}
+              vessels={vessels.filter(
+                (v) => !company || !v.company_id || v.company_id === company.id,
+              )}
               onDone={() => setEditing(null)}
             />
           </AdminDrawer>
@@ -1460,7 +1500,10 @@ function SchedulesAdmin({ companyId, routeId }: { companyId?: string; routeId?: 
 }
 
 /** Suivi en direct : identifiant MMSI de chaque navire et état de la dernière position reçue. */
-function VesselsAdmin({ vesselIds, itemId }: { vesselIds?: string[]; itemId?: string | undefined } = {}) {
+function VesselsAdmin({
+  vesselIds,
+  itemId,
+}: { vesselIds?: string[]; itemId?: string | undefined } = {}) {
   const queryClient = useQueryClient();
   const [openId, setOpenId] = useState<string | null>(itemId ?? null);
   useEffect(() => {
@@ -1499,9 +1542,15 @@ function VesselsAdmin({ vesselIds, itemId }: { vesselIds?: string[]; itemId?: st
   const scopedVessels = allVessels.filter((v) => !vesselIds || vesselIds.includes(v.id));
   const normalizedVesselSearch = vesselSearch.trim().toLocaleLowerCase("fr");
   const vessels = scopedVessels.filter((vessel) => {
-    const companyName = companies.find((item) => item.id === vessel.company_id)?.name ?? "Sans compagnie";
-    const matchesCompany = companyFilter === "all" || (companyFilter === "none" ? !vessel.company_id : vessel.company_id === companyFilter);
-    const haystack = `${vessel.name} ${companyName} ${vessel.mmsi ?? ""} ${vessel.imo ?? ""}`.toLocaleLowerCase("fr");
+    const companyName =
+      companies.find((item) => item.id === vessel.company_id)?.name ?? "Sans compagnie";
+    const matchesCompany =
+      companyFilter === "all" ||
+      (companyFilter === "none" ? !vessel.company_id : vessel.company_id === companyFilter);
+    const haystack =
+      `${vessel.name} ${companyName} ${vessel.mmsi ?? ""} ${vessel.imo ?? ""}`.toLocaleLowerCase(
+        "fr",
+      );
     return matchesCompany && (!normalizedVesselSearch || haystack.includes(normalizedVesselSearch));
   });
   const groupedVessels = new Map<string, typeof vessels>();
@@ -1510,8 +1559,10 @@ function VesselsAdmin({ vesselIds, itemId }: { vesselIds?: string[]; itemId?: st
     groupedVessels.set(key, [...(groupedVessels.get(key) ?? []), vessel]);
   }
   const orderedGroups = [...groupedVessels.entries()].sort((a, b) => {
-    const nameA = a[0] === "none" ? "Sans compagnie" : companies.find((item) => item.id === a[0])?.name ?? "";
-    const nameB = b[0] === "none" ? "Sans compagnie" : companies.find((item) => item.id === b[0])?.name ?? "";
+    const nameA =
+      a[0] === "none" ? "Sans compagnie" : (companies.find((item) => item.id === a[0])?.name ?? "");
+    const nameB =
+      b[0] === "none" ? "Sans compagnie" : (companies.find((item) => item.id === b[0])?.name ?? "");
     return nameA.localeCompare(nameB, "fr");
   });
   const portLabel = (id: string) => ports.find((p) => p.id === id)?.name ?? "—";
@@ -1572,191 +1623,187 @@ function VesselsAdmin({ vesselIds, itemId }: { vesselIds?: string[]; itemId?: st
   const positionByMmsi = new Map(positions.map((position) => [position.mmsi, position]));
   /** Fiche complète d'un navire (dans le panneau latéral). */
   const editorFor = (vessel: (typeof allVessels)[number]) => {
-          const draft = drafts[vessel.id] ?? {};
-          const mmsi = draft.mmsi ?? (vessel.mmsi ? String(vessel.mmsi) : "");
-          const imo = draft.imo ?? (vessel.imo ? String(vessel.imo) : "");
-          const photo = draft.photo ?? vessel.photo_url ?? "";
-          const photoFile = draft.photoFile ?? null;
-          const mmsiOk = mmsi === "" || /^\d{9}$/.test(mmsi);
-          const imoOk = imo === "" || /^\d{7}$/.test(imo);
-          const photoOk = photo === "" || /^https:\/\//i.test(photo);
-          const changed =
-            photoFile !== null ||
-            mmsi !== (vessel.mmsi ? String(vessel.mmsi) : "") ||
-            imo !== (vessel.imo ? String(vessel.imo) : "") ||
-            photo !== (vessel.photo_url ?? "");
-          const position = vessel.mmsi ? positionByMmsi.get(vessel.mmsi) : undefined;
-          const company = companies.find((item) => item.id === vessel.company_id);
-          return (
-            <div className="grid gap-3">
-              <div className="min-w-0">
-                <div className="flex items-center gap-3">
-                  {photo && photoOk ? (
-                    <img
-                      src={photo}
-                      alt={vessel.name}
-                      width={80}
-                      height={56}
-                      loading="lazy"
-                      referrerPolicy="no-referrer"
-                      className="h-14 w-20 rounded-lg border object-cover"
-                    />
-                  ) : null}
-                  <p className="text-sm font-medium">{vessel.name}</p>
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  {company?.name ?? "Sans compagnie"}
-                  {position?.reported_at
-                    ? ` · dernière position le ${new Date(position.reported_at).toLocaleString("fr-FR")}`
-                    : vessel.mmsi
-                      ? " · pas encore de position"
-                      : ""}
-                  {position?.last_error ? ` · erreur : ${position.last_error}` : ""}
+    const draft = drafts[vessel.id] ?? {};
+    const mmsi = draft.mmsi ?? (vessel.mmsi ? String(vessel.mmsi) : "");
+    const imo = draft.imo ?? (vessel.imo ? String(vessel.imo) : "");
+    const photo = draft.photo ?? vessel.photo_url ?? "";
+    const photoFile = draft.photoFile ?? null;
+    const mmsiOk = mmsi === "" || /^\d{9}$/.test(mmsi);
+    const imoOk = imo === "" || /^\d{7}$/.test(imo);
+    const photoOk = photo === "" || /^https:\/\//i.test(photo);
+    const changed =
+      photoFile !== null ||
+      mmsi !== (vessel.mmsi ? String(vessel.mmsi) : "") ||
+      imo !== (vessel.imo ? String(vessel.imo) : "") ||
+      photo !== (vessel.photo_url ?? "");
+    const position = vessel.mmsi ? positionByMmsi.get(vessel.mmsi) : undefined;
+    const company = companies.find((item) => item.id === vessel.company_id);
+    return (
+      <div className="grid gap-3">
+        <div className="min-w-0">
+          <div className="flex items-center gap-3">
+            {photo && photoOk ? (
+              <img
+                src={photo}
+                alt={vessel.name}
+                width={80}
+                height={56}
+                loading="lazy"
+                referrerPolicy="no-referrer"
+                className="h-14 w-20 rounded-lg border object-cover"
+              />
+            ) : null}
+            <p className="text-sm font-medium">{vessel.name}</p>
+          </div>
+          <p className="text-xs text-muted-foreground">
+            {company?.name ?? "Sans compagnie"}
+            {position?.reported_at
+              ? ` · dernière position le ${new Date(position.reported_at).toLocaleString("fr-FR")}`
+              : vessel.mmsi
+                ? " · pas encore de position"
+                : ""}
+            {position?.last_error ? ` · erreur : ${position.last_error}` : ""}
+          </p>
+          {(() => {
+            const dep = nextDeps.find((d) => d.vessel_id === vessel.id);
+            const route = dep ? routes.find((r) => r.id === dep.route_id) : undefined;
+            const declared = position as
+              { destination?: string | null; eta?: string | null } | undefined;
+            const link = vessel.imo
+              ? `https://www.vesselfinder.com/?imo=${vessel.imo}`
+              : vessel.mmsi
+                ? `https://www.vesselfinder.com/?mmsi=${vessel.mmsi}`
+                : null;
+            return (
+              <div className="mt-1 grid gap-0.5 text-xs">
+                <p>
+                  <span className="text-muted-foreground">Prévu BledWay : </span>
+                  {route && dep
+                    ? `${portLabel(route.departure_port_id)} → ${portLabel(route.arrival_port_id)} · ${new Date(dep.departure_at).toLocaleString("fr-FR")}`
+                    : "aucun départ à venir"}
                 </p>
-                {(() => {
-                  const dep = nextDeps.find((d) => d.vessel_id === vessel.id);
-                  const route = dep ? routes.find((r) => r.id === dep.route_id) : undefined;
-                  const declared = position as
-                    { destination?: string | null; eta?: string | null } | undefined;
-                  const link = vessel.imo
-                    ? `https://www.vesselfinder.com/?imo=${vessel.imo}`
-                    : vessel.mmsi
-                      ? `https://www.vesselfinder.com/?mmsi=${vessel.mmsi}`
-                      : null;
-                  return (
-                    <div className="mt-1 grid gap-0.5 text-xs">
-                      <p>
-                        <span className="text-muted-foreground">Prévu BledWay : </span>
-                        {route && dep
-                          ? `${portLabel(route.departure_port_id)} → ${portLabel(route.arrival_port_id)} · ${new Date(dep.departure_at).toLocaleString("fr-FR")}`
-                          : "aucun départ à venir"}
-                      </p>
-                      <p>
-                        <span className="text-muted-foreground">Déclaré par le navire : </span>
-                        {declared?.destination
-                          ? `« ${declared.destination} »${declared.eta ? ` · arrivée estimée ${declared.eta}` : ""}`
-                          : "pas encore reçu"}
-                      </p>
-                      {link ? (
-                        <a
-                          href={link}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="font-semibold text-primary underline underline-offset-2"
-                        >
-                          Suivre sur VesselFinder ↗
-                        </a>
-                      ) : null}
-                    </div>
-                  );
-                })()}
+                <p>
+                  <span className="text-muted-foreground">Déclaré par le navire : </span>
+                  {declared?.destination
+                    ? `« ${declared.destination} »${declared.eta ? ` · arrivée estimée ${declared.eta}` : ""}`
+                    : "pas encore reçu"}
+                </p>
+                {link ? (
+                  <a
+                    href={link}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="font-semibold text-primary underline underline-offset-2"
+                  >
+                    Suivre sur VesselFinder ↗
+                  </a>
+                ) : null}
               </div>
-              <div className="flex flex-wrap items-center gap-2">
-                <label className="grid gap-1 text-xs font-medium">
-                  MMSI
-                  <Input
-                    inputMode="numeric"
-                    maxLength={9}
-                    placeholder="MMSI"
-                    aria-label={`MMSI de ${vessel.name}`}
-                    aria-invalid={!mmsiOk}
-                    value={mmsi}
-                    onChange={(event) =>
-                      setDraft(vessel.id, { mmsi: event.target.value.replace(/\D/g, "") })
-                    }
-                    className="w-32"
-                  />
-                </label>
-                <label className="grid gap-1 text-xs font-medium">
-                  IMO
-                  <Input
-                    inputMode="numeric"
-                    maxLength={7}
-                    placeholder="IMO"
-                    aria-label={`IMO de ${vessel.name}`}
-                    aria-invalid={!imoOk}
-                    value={imo}
-                    onChange={(event) =>
-                      setDraft(vessel.id, { imo: event.target.value.replace(/\D/g, "") })
-                    }
-                    className="w-28"
-                  />
-                </label>
-                <div className="grid min-w-56 flex-1 gap-1">
-                  <Input
-                    type="url"
-                    placeholder="URL de la photo (https://…)"
-                    aria-label={"URL de la photo de " + vessel.name}
-                    aria-invalid={!photoOk}
-                    value={photo}
-                    onChange={(event) =>
-                      setDraft(vessel.id, { photo: event.target.value.trim(), photoFile: null })
-                    }
-                    className="w-full"
-                    disabled={Boolean(photoFile)}
-                  />
-                  <label className="grid gap-1 text-xs text-muted-foreground">
-                    <span>Ou téléverser une image {photoFile ? "— " + photoFile.name : ""}</span>
-                    <input
-                      type="file"
-                      accept="image/jpeg,image/png,image/webp,image/avif"
-                      aria-label={"Téléverser une photo de " + vessel.name}
-                      className="block w-full text-xs file:mr-2 file:rounded-md file:border file:border-border file:bg-background file:px-2 file:py-1"
-                      onChange={(event) => {
-                        const file = event.target.files?.[0] ?? null;
-                        if (file && file.size > 10 * 1024 * 1024) {
-                          toast.error("La photo doit faire 10 Mo maximum.");
-                          event.target.value = "";
-                          return;
-                        }
-                        if (
-                          file &&
-                          !["image/jpeg", "image/png", "image/webp", "image/avif"].includes(
-                            file.type,
-                          )
-                        ) {
-                          toast.error("Format accepté : JPG, PNG, WebP ou AVIF.");
-                          event.target.value = "";
-                          return;
-                        }
-                        setDraft(vessel.id, { photoFile: file, ...(file ? { photo: "" } : {}) });
-                      }}
-                    />
-                  </label>
-                  {photoFile ? (
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={() =>
-                        setDraft(vessel.id, { photoFile: null, photo: vessel.photo_url ?? "" })
-                      }
-                    >
-                      Annuler le téléversement
-                    </Button>
-                  ) : null}
-                </div>
-                <Button
-                  size="sm"
-                  disabled={
-                    !mmsiOk || !imoOk || (!photoFile && !photoOk) || !changed || save.isPending
+            );
+          })()}
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
+          <label className="grid gap-1 text-xs font-medium">
+            MMSI
+            <Input
+              inputMode="numeric"
+              maxLength={9}
+              placeholder="MMSI"
+              aria-label={`MMSI de ${vessel.name}`}
+              aria-invalid={!mmsiOk}
+              value={mmsi}
+              onChange={(event) =>
+                setDraft(vessel.id, { mmsi: event.target.value.replace(/\D/g, "") })
+              }
+              className="w-32"
+            />
+          </label>
+          <label className="grid gap-1 text-xs font-medium">
+            IMO
+            <Input
+              inputMode="numeric"
+              maxLength={7}
+              placeholder="IMO"
+              aria-label={`IMO de ${vessel.name}`}
+              aria-invalid={!imoOk}
+              value={imo}
+              onChange={(event) =>
+                setDraft(vessel.id, { imo: event.target.value.replace(/\D/g, "") })
+              }
+              className="w-28"
+            />
+          </label>
+          <div className="grid min-w-56 flex-1 gap-1">
+            <Input
+              type="url"
+              placeholder="URL de la photo (https://…)"
+              aria-label={"URL de la photo de " + vessel.name}
+              aria-invalid={!photoOk}
+              value={photo}
+              onChange={(event) =>
+                setDraft(vessel.id, { photo: event.target.value.trim(), photoFile: null })
+              }
+              className="w-full"
+              disabled={Boolean(photoFile)}
+            />
+            <label className="grid gap-1 text-xs text-muted-foreground">
+              <span>Ou téléverser une image {photoFile ? "— " + photoFile.name : ""}</span>
+              <input
+                type="file"
+                accept="image/jpeg,image/png,image/webp,image/avif"
+                aria-label={"Téléverser une photo de " + vessel.name}
+                className="block w-full text-xs file:mr-2 file:rounded-md file:border file:border-border file:bg-background file:px-2 file:py-1"
+                onChange={(event) => {
+                  const file = event.target.files?.[0] ?? null;
+                  if (file && file.size > 10 * 1024 * 1024) {
+                    toast.error("La photo doit faire 10 Mo maximum.");
+                    event.target.value = "";
+                    return;
                   }
-                  onClick={() =>
-                    save.mutate({
-                      id: vessel.id,
-                      mmsi: mmsi === "" ? null : Number(mmsi),
-                      imo: imo === "" ? null : Number(imo),
-                      photo_url: photo === "" ? null : photo,
-                      photoFile,
-                    })
+                  if (
+                    file &&
+                    !["image/jpeg", "image/png", "image/webp", "image/avif"].includes(file.type)
+                  ) {
+                    toast.error("Format accepté : JPG, PNG, WebP ou AVIF.");
+                    event.target.value = "";
+                    return;
                   }
-                >
-                  Enregistrer
-                </Button>
-              </div>
-              <VesselSpecsEditor vessel={vessel as unknown as VesselSpecsRow} />
-              <VesselDeleteButton id={vessel.id} name={vessel.name} />
-            </div>
-          );
+                  setDraft(vessel.id, { photoFile: file, ...(file ? { photo: "" } : {}) });
+                }}
+              />
+            </label>
+            {photoFile ? (
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() =>
+                  setDraft(vessel.id, { photoFile: null, photo: vessel.photo_url ?? "" })
+                }
+              >
+                Annuler le téléversement
+              </Button>
+            ) : null}
+          </div>
+          <Button
+            size="sm"
+            disabled={!mmsiOk || !imoOk || (!photoFile && !photoOk) || !changed || save.isPending}
+            onClick={() =>
+              save.mutate({
+                id: vessel.id,
+                mmsi: mmsi === "" ? null : Number(mmsi),
+                imo: imo === "" ? null : Number(imo),
+                photo_url: photo === "" ? null : photo,
+                photoFile,
+              })
+            }
+          >
+            Enregistrer
+          </Button>
+        </div>
+        <VesselSpecsEditor vessel={vessel as unknown as VesselSpecsRow} />
+        <VesselDeleteButton id={vessel.id} name={vessel.name} />
+      </div>
+    );
   };
   const openVessel = allVessels.find((vessel) => vessel.id === openId);
 
@@ -1766,76 +1813,113 @@ function VesselsAdmin({ vesselIds, itemId }: { vesselIds?: string[]; itemId?: st
         <summary className="cursor-pointer text-sm font-semibold text-foreground">
           Aide : MMSI, IMO et photo
         </summary>
-      <p className="mt-1 text-xs text-muted-foreground">
-        <strong>MMSI</strong> (9 chiffres) : active le suivi en direct. Le site suit un navire de 6
-        h avant son départ jusqu'à son arrivée et ne redemande sa position qu'au bout de 20 minutes.{" "}
-        <strong>IMO</strong> (7 chiffres) : ajoute le lien « Voir sur VesselFinder » dans la fiche.{" "}
-        <strong>Photo</strong> : collez une URL ou téléversez un fichier image (JPG, PNG, WebP ou
-        AVIF, 10 Mo max). Le téléversement remplace l’URL ; sans photo personnalisée, le site
-        cherche une photo libre sur Wikimedia Commons.
-      </p>
+        <p className="mt-1 text-xs text-muted-foreground">
+          <strong>MMSI</strong> (9 chiffres) : active le suivi en direct. Le site suit un navire de
+          6 h avant son départ jusqu'à son arrivée et ne redemande sa position qu'au bout de 20
+          minutes. <strong>IMO</strong> (7 chiffres) : ajoute le lien « Voir sur VesselFinder » dans
+          la fiche. <strong>Photo</strong> : collez une URL ou téléversez un fichier image (JPG,
+          PNG, WebP ou AVIF, 10 Mo max). Le téléversement remplace l’URL ; sans photo personnalisée,
+          le site cherche une photo libre sur Wikimedia Commons.
+        </p>
       </details>
       <div className="mt-4 grid gap-3 sm:grid-cols-[minmax(0,1fr)_16rem]">
-        <Input value={vesselSearch} onChange={(event) => setVesselSearch(event.target.value)} placeholder="Rechercher un navire, MMSI, IMO ou compagnie…" aria-label="Rechercher dans la flotte" />
-        <select value={companyFilter} onChange={(event) => setCompanyFilter(event.target.value)} aria-label="Filtrer par compagnie" className="h-10 rounded-md border border-input bg-background px-3 text-sm">
+        <Input
+          value={vesselSearch}
+          onChange={(event) => setVesselSearch(event.target.value)}
+          placeholder="Rechercher un navire, MMSI, IMO ou compagnie…"
+          aria-label="Rechercher dans la flotte"
+        />
+        <select
+          value={companyFilter}
+          onChange={(event) => setCompanyFilter(event.target.value)}
+          aria-label="Filtrer par compagnie"
+          className="h-10 rounded-md border border-input bg-background px-3 text-sm"
+        >
           <option value="all">Toutes les compagnies</option>
           <option value="none">Sans compagnie</option>
-          {companies.slice().sort((a, b) => a.name.localeCompare(b.name, "fr")).map((company) => <option key={company.id} value={company.id}>{company.name}</option>)}
+          {companies
+            .slice()
+            .sort((a, b) => a.name.localeCompare(b.name, "fr"))
+            .map((company) => (
+              <option key={company.id} value={company.id}>
+                {company.name}
+              </option>
+            ))}
         </select>
       </div>
-      <p className="mt-2 text-xs text-muted-foreground">{vessels.length} navire{vessels.length > 1 ? "s" : ""} affiché{vessels.length > 1 ? "s" : ""} sur {scopedVessels.length} · {orderedGroups.length} groupe{orderedGroups.length > 1 ? "s" : ""}</p>
+      <p className="mt-2 text-xs text-muted-foreground">
+        {vessels.length} navire{vessels.length > 1 ? "s" : ""} affiché
+        {vessels.length > 1 ? "s" : ""} sur {scopedVessels.length} · {orderedGroups.length} groupe
+        {orderedGroups.length > 1 ? "s" : ""}
+      </p>
       <div className="mt-3 space-y-5">
         {orderedGroups.map(([companyId, groupVessels]) => (
           <section key={companyId} className="overflow-hidden rounded-xl border border-border">
             <h3 className="flex items-center justify-between gap-3 bg-muted/40 px-3 py-2 text-sm font-semibold">
-              <span>{companyId === "none" ? "Sans compagnie" : companies.find((item) => item.id === companyId)?.name ?? "Compagnie inconnue"}</span>
-              <span className="rounded-full bg-background px-2 py-0.5 text-xs font-medium text-muted-foreground">{groupVessels.length}</span>
+              <span>
+                {companyId === "none"
+                  ? "Sans compagnie"
+                  : (companies.find((item) => item.id === companyId)?.name ?? "Compagnie inconnue")}
+              </span>
+              <span className="rounded-full bg-background px-2 py-0.5 text-xs font-medium text-muted-foreground">
+                {groupVessels.length}
+              </span>
             </h3>
             <ul className="bw-admin-list px-2 py-1">
-        {groupVessels.map((vessel) => {
-          const position = vessel.mmsi ? positionByMmsi.get(vessel.mmsi) : undefined;
-          return (
-            <li key={vessel.id}>
-              <button
-                type="button"
-                className="bw-admin-list__main"
-                onClick={() => setOpenId(vessel.id)}
-              >
-                {vessel.photo_url ? (
-                  <img
-                    src={vessel.photo_url}
-                    alt=""
-                    width={56}
-                    height={40}
-                    loading="lazy"
-                    referrerPolicy="no-referrer"
-                    className="h-10 w-14 shrink-0 rounded-md border object-cover"
-                  />
-                ) : (
-                  <span className="grid h-10 w-14 shrink-0 place-items-center rounded-md border bg-muted text-[10px] text-muted-foreground">
-                    sans photo
-                  </span>
-                )}
-                <span className="min-w-0">
-                  <strong>{vessel.name}</strong>
-                  <small>
-                    {vessel.mmsi ? `MMSI ${vessel.mmsi}` : "Pas de MMSI : suivi en direct inactif"}
-                    {position?.reported_at
-                      ? ` · position du ${new Date(position.reported_at).toLocaleString("fr-FR", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}`
-                      : ""}
-                  </small>
-                </span>
-                {position?.last_error ? <span className="bw-admin-chip" data-tone="warn">Erreur de suivi</span> : null}
-                {!vessel.mmsi ? <span className="bw-admin-chip">Sans MMSI</span> : null}
-              </button>
-            </li>
-          );
-        })}
+              {groupVessels.map((vessel) => {
+                const position = vessel.mmsi ? positionByMmsi.get(vessel.mmsi) : undefined;
+                return (
+                  <li key={vessel.id}>
+                    <button
+                      type="button"
+                      className="bw-admin-list__main"
+                      onClick={() => setOpenId(vessel.id)}
+                    >
+                      {vessel.photo_url ? (
+                        <img
+                          src={vessel.photo_url}
+                          alt=""
+                          width={56}
+                          height={40}
+                          loading="lazy"
+                          referrerPolicy="no-referrer"
+                          className="h-10 w-14 shrink-0 rounded-md border object-cover"
+                        />
+                      ) : (
+                        <span className="grid h-10 w-14 shrink-0 place-items-center rounded-md border bg-muted text-[10px] text-muted-foreground">
+                          sans photo
+                        </span>
+                      )}
+                      <span className="min-w-0">
+                        <strong>{vessel.name}</strong>
+                        <small>
+                          {vessel.mmsi
+                            ? `MMSI ${vessel.mmsi}`
+                            : "Pas de MMSI : suivi en direct inactif"}
+                          {position?.reported_at
+                            ? ` · position du ${new Date(position.reported_at).toLocaleString("fr-FR", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}`
+                            : ""}
+                        </small>
+                      </span>
+                      {position?.last_error ? (
+                        <span className="bw-admin-chip" data-tone="warn">
+                          Erreur de suivi
+                        </span>
+                      ) : null}
+                      {!vessel.mmsi ? <span className="bw-admin-chip">Sans MMSI</span> : null}
+                    </button>
+                  </li>
+                );
+              })}
             </ul>
           </section>
         ))}
         {vessels.length === 0 ? (
-          <p className="py-3 text-sm text-muted-foreground">{scopedVessels.length ? "Aucun navire ne correspond à cette recherche." : "Aucun navire enregistré."}</p>
+          <p className="py-3 text-sm text-muted-foreground">
+            {scopedVessels.length
+              ? "Aucun navire ne correspond à cette recherche."
+              : "Aucun navire enregistré."}
+          </p>
         ) : null}
       </div>
       {openVessel ? (
@@ -1857,7 +1941,10 @@ function VesselDeleteButton({ id, name }: { id: string; name: string }) {
   const queryClient = useQueryClient();
   const remove = useMutation({
     mutationFn: async () => {
-      const count = async (table: "departures" | "schedules" | "schedule_exceptions", col: string) => {
+      const count = async (
+        table: "departures" | "schedules" | "schedule_exceptions",
+        col: string,
+      ) => {
         const { count, error } = await supabase
           .from(table)
           .select("id", { count: "exact", head: true })
@@ -1876,7 +1963,10 @@ function VesselDeleteButton({ id, name }: { id: string; name: string }) {
         : `Supprimer définitivement « ${name} » ? Aucun élément ne lui est rattaché.`;
       if (!window.confirm(message)) return false;
       if (deps) {
-        const { error } = await supabase.from("departures").update({ vessel_id: null }).eq("vessel_id", id);
+        const { error } = await supabase
+          .from("departures")
+          .update({ vessel_id: null })
+          .eq("vessel_id", id);
         if (error) throw new Error("Détachement des traversées impossible : " + error.message);
       }
       if (scheds) {
@@ -2802,53 +2892,53 @@ function PortsAdmin({ itemId }: { itemId?: string | undefined } = {}) {
           search={search}
           onSearch={setSearch}
           placeholder="Chercher un port"
-          count={ports.filter((port) => matches(search, port.name, port.country_name, port.city)).length}
+          count={
+            ports.filter((port) => matches(search, port.name, port.country_name, port.city)).length
+          }
           total={ports.length}
           onCreate={startNew}
           createLabel="Nouveau port"
         />
         <ul className="divide-y divide-border">
-          {ports.filter((port) => matches(search, port.name, port.country_name, port.city)).map((port) => (
-            <li key={port.id} className="flex flex-wrap items-center gap-3 py-3">
-              <div className="min-w-0 flex-1">
-                <p className="text-sm font-medium">
-                  {port.name}{" "}
-                  <span className="font-normal text-muted-foreground">· {port.country_name}</span>
-                </p>
-                <p className="text-xs text-muted-foreground">
-                  {portStatusLabel[port.status] ?? port.status} · {port.latitude.toFixed(3)},{" "}
-                  {port.longitude.toFixed(3)}
-                </p>
-              </div>
-              <div className="flex flex-wrap gap-2">
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => startEdit(port)}
-                >
-                  Modifier
-                </Button>
-                {port.status === "inactive" ? (
-                  <Button size="sm" variant="outline" onClick={() => setPendingReopen(port)}>
-                    Réouvrir
+          {ports
+            .filter((port) => matches(search, port.name, port.country_name, port.city))
+            .map((port) => (
+              <li key={port.id} className="flex flex-wrap items-center gap-3 py-3">
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-medium">
+                    {port.name}{" "}
+                    <span className="font-normal text-muted-foreground">· {port.country_name}</span>
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    {portStatusLabel[port.status] ?? port.status} · {port.latitude.toFixed(3)},{" "}
+                    {port.longitude.toFixed(3)}
+                  </p>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  <Button size="sm" variant="outline" onClick={() => startEdit(port)}>
+                    Modifier
                   </Button>
-                ) : (
-                  <Button size="sm" variant="outline" onClick={() => setPendingClose(port)}>
-                    Fermer temporairement
-                  </Button>
-                )}
-                {port.status === "draft" ? (
-                  <Button
-                    size="sm"
-                    disabled={setStatus.isPending}
-                    onClick={() => setStatus.mutate({ id: port.id, status: "active" })}
-                  >
-                    Publier
-                  </Button>
-                ) : null}
-              </div>
-            </li>
-          ))}
+                  {port.status === "inactive" ? (
+                    <Button size="sm" variant="outline" onClick={() => setPendingReopen(port)}>
+                      Réouvrir
+                    </Button>
+                  ) : (
+                    <Button size="sm" variant="outline" onClick={() => setPendingClose(port)}>
+                      Fermer temporairement
+                    </Button>
+                  )}
+                  {port.status === "draft" ? (
+                    <Button
+                      size="sm"
+                      disabled={setStatus.isPending}
+                      onClick={() => setStatus.mutate({ id: port.id, status: "active" })}
+                    >
+                      Publier
+                    </Button>
+                  ) : null}
+                </div>
+              </li>
+            ))}
         </ul>
         <p className="mt-3 text-xs text-muted-foreground">
           Un port fermé temporairement reste visible sur la carte avec la mention « Temporairement
@@ -3148,58 +3238,60 @@ function RoutesAdmin({ itemId }: { itemId?: string | undefined } = {}) {
           search={search}
           onSearch={setSearch}
           placeholder="Chercher une liaison (port de départ ou d'arrivée)"
-          count={routes.filter((route) => matches(search, portName(route.departure_port_id), portName(route.arrival_port_id))).length}
+          count={
+            routes.filter((route) =>
+              matches(search, portName(route.departure_port_id), portName(route.arrival_port_id)),
+            ).length
+          }
           total={routes.length}
           onCreate={startNew}
           createLabel="Nouvelle liaison"
         />
         <ul className="divide-y divide-border">
           {routes
-            .filter((route) => matches(search, portName(route.departure_port_id), portName(route.arrival_port_id)))
+            .filter((route) =>
+              matches(search, portName(route.departure_port_id), portName(route.arrival_port_id)),
+            )
             .map((route) => (
-            <li key={route.id} className="flex flex-wrap items-center gap-3 py-3">
-              <span
-                className="h-3 w-6 shrink-0 rounded-full"
-                style={{
-                  background: routeColor(route.color, port(route.departure_port_id)?.slug ?? ""),
-                }}
-              />
-              <div className="min-w-0 flex-1">
-                <p className="text-sm font-medium">
-                  {portName(route.departure_port_id)} → {portName(route.arrival_port_id)}
-                </p>
-                <p className="text-xs text-muted-foreground">
-                  {formatDuration(route.typical_duration_minutes)} ·{" "}
-                  {routeStatusLabel[route.status] ?? route.status}
-                  {route.color ? " · couleur personnalisée" : " · couleur automatique"}
-                </p>
-              </div>
-              <div className="flex flex-wrap gap-2">
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => startEdit(route)}
-                >
-                  Modifier
-                </Button>
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  disabled={remove.isPending}
-                  onClick={() => {
-                    if (
-                      confirmAction(
-                        "Supprimer définitivement cette ligne ? Ses calendriers et départs peuvent être perdus.",
-                      )
-                    )
-                      remove.mutate(route.id);
+              <li key={route.id} className="flex flex-wrap items-center gap-3 py-3">
+                <span
+                  className="h-3 w-6 shrink-0 rounded-full"
+                  style={{
+                    background: routeColor(route.color, port(route.departure_port_id)?.slug ?? ""),
                   }}
-                >
-                  Supprimer
-                </Button>
-              </div>
-            </li>
-          ))}
+                />
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-medium">
+                    {portName(route.departure_port_id)} → {portName(route.arrival_port_id)}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    {formatDuration(route.typical_duration_minutes)} ·{" "}
+                    {routeStatusLabel[route.status] ?? route.status}
+                    {route.color ? " · couleur personnalisée" : " · couleur automatique"}
+                  </p>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  <Button size="sm" variant="outline" onClick={() => startEdit(route)}>
+                    Modifier
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    disabled={remove.isPending}
+                    onClick={() => {
+                      if (
+                        confirmAction(
+                          "Supprimer définitivement cette ligne ? Ses calendriers et départs peuvent être perdus.",
+                        )
+                      )
+                        remove.mutate(route.id);
+                    }}
+                  >
+                    Supprimer
+                  </Button>
+                </div>
+              </li>
+            ))}
         </ul>
       </Panel>
     </>

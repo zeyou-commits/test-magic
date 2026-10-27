@@ -11,6 +11,7 @@ import {
   type NotificationCategory,
   type NotificationPreferences,
 } from "./policy";
+import { queueAdminMessages } from "./messages.server";
 
 type Notice = {
   key: string;
@@ -36,7 +37,7 @@ async function collect<T>(
 }
 
 export async function dispatchPush(
-  options: { openingCampaignId?: string; onlyOpenings?: boolean } = {},
+  options: { openingCampaignId?: string; onlyOpenings?: boolean; messageId?: string } = {},
 ) {
   const publicKey = process.env["VAPID_PUBLIC_KEY"];
   const privateKey = process.env["VAPID_PRIVATE_KEY"];
@@ -48,7 +49,7 @@ export async function dispatchPush(
   const prepared = await db.rpc("bw_prepare_opening_campaigns", {});
   if (prepared.error) throw prepared.error;
   const [follows, routes, ports, vessels] = await Promise.all([
-    options.onlyOpenings
+    options.onlyOpenings || options.messageId
       ? Promise.resolve([])
       : collect((from, to) =>
           db
@@ -89,7 +90,8 @@ export async function dispatchPush(
   let created = 0;
   let pushed = 0;
   let publishedCampaigns = 0;
-  const campaignNotificationIds = new Set<string>();
+  // Notifications à envoyer en priorité (campagne validée ou message de l'équipe envoyé tout de suite).
+  const focusIds = new Set<string>();
   async function deliver(userId: string, followId: string | null, notice: Notice) {
     const prefs = await preferences(userId);
     if (!notificationAllowed(prefs, notice.category)) return;
@@ -121,7 +123,7 @@ export async function dispatchPush(
       if (existing.error) throw existing.error;
       id = existing.data.id;
     }
-    if (notice.category === "openings") campaignNotificationIds.add(id);
+    if (notice.category === "openings") focusIds.add(id);
     if (prefs?.push_enabled === false) return;
     const subscriptions = await db.from("bw_push_subscriptions").select("id").eq("user_id", userId);
     if (subscriptions.error) throw subscriptions.error;
@@ -288,10 +290,12 @@ export async function dispatchPush(
     }
   }
 
-  const campaigns = await db
-    .from("bw_notification_campaigns")
-    .select("id,route_id,period_month,status")
-    .eq("status", "approved");
+  const campaigns = options.messageId
+    ? { data: [], error: null }
+    : await db
+        .from("bw_notification_campaigns")
+        .select("id,route_id,period_month,status")
+        .eq("status", "approved");
   if (campaigns.error) throw campaigns.error;
   for (const campaign of campaigns.data ?? []) {
     if (
@@ -373,23 +377,40 @@ export async function dispatchPush(
     if (updated.error) throw updated.error;
     publishedCampaigns++;
   }
+  // Messages de l'équipe : celui envoyé tout de suite, ou ceux planifiés arrivés à échéance.
+  const adminMessages = options.onlyOpenings
+    ? { messages: 0, notificationIds: [] }
+    : await queueAdminMessages(options.messageId ? { messageId: options.messageId } : {});
+  for (const id of adminMessages.notificationIds) focusIds.add(id);
   // Les messages sont toujours créés dans le compte, même sans configuration VAPID.
-  let pending = db
-    .from("bw_push_deliveries")
-    .select("notification_id,subscription_id,attempts")
-    .is("sent_at", null)
-    .lt("attempts", 5)
-    .order("notification_id")
-    .limit(500);
-  if (options.onlyOpenings)
-    pending = pending.in("notification_id", [
-      ...campaignNotificationIds,
-      "00000000-0000-0000-0000-000000000000",
-    ]);
-  const queued = await pending;
-  if (queued.error) throw queued.error;
+  const pendingRows = (ids?: string[]) => {
+    const query = db
+      .from("bw_push_deliveries")
+      .select("notification_id,subscription_id,attempts")
+      .is("sent_at", null)
+      .lt("attempts", 5)
+      .order("notification_id")
+      .limit(500);
+    return ids ? query.in("notification_id", ids) : query;
+  };
+  const queuedRows: { notification_id: string; subscription_id: string; attempts: number }[] = [];
+  // D'abord les envois prioritaires (par lots, pour garder des requêtes courtes), puis le reste.
+  const focus = [...focusIds];
+  for (let index = 0; index < focus.length; index += 100) {
+    const part = await pendingRows(focus.slice(index, index + 100));
+    if (part.error) throw part.error;
+    queuedRows.push(...part.data);
+  }
+  if (!options.onlyOpenings) {
+    const rest = await pendingRows();
+    if (rest.error) throw rest.error;
+    const seen = new Set(queuedRows.map((row) => `${row.notification_id}:${row.subscription_id}`));
+    queuedRows.push(
+      ...rest.data.filter((row) => !seen.has(`${row.notification_id}:${row.subscription_id}`)),
+    );
+  }
   if (pushConfigured)
-    for (const row of queued.data ?? []) {
+    for (const row of queuedRows) {
       const [notice, subscription] = await Promise.all([
         db
           .from("bw_notifications")
@@ -404,11 +425,15 @@ export async function dispatchPush(
       ]);
       if (notice.error || subscription.error) continue;
       const prefs = await preferences(notice.data.user_id);
+      const adminCategory = /^admin-msg:(reminders|community):/.exec(notice.data.event_key)?.[1] as
+        "reminders" | "community" | undefined;
       const category = notice.data.event_key.startsWith("opening:")
         ? "openings"
-        : /^(departure|voyage-update):/.test(notice.data.event_key)
-          ? "reminders"
-          : "community";
+        : adminCategory
+          ? adminCategory
+          : /^(departure|voyage-update):/.test(notice.data.event_key)
+            ? "reminders"
+            : "community";
       const follow = notice.data.follow_id
         ? await db.from("bw_follows").select("active").eq("id", notice.data.follow_id).maybeSingle()
         : null;
@@ -490,6 +515,7 @@ export async function dispatchPush(
     created,
     pushed,
     publishedCampaigns,
+    adminMessages: adminMessages.messages,
     pending: outstanding.count ?? 0,
     pushConfigured,
   };

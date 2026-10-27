@@ -863,3 +863,51 @@
 @keyframes bw-journey-ship { 0%, 32% { left: 37.5%; opacity: 0; } 36%, 61% { opacity: 1; } 65% { left: 62.5%; opacity: 0; } 66%, 100% { left: 62.5%; opacity: 0; } }
 @keyframes bw-journey-car-last { 0%, 65% { left: 62.5%; opacity: 0; } 69%, 95% { opacity: 1; } 99%, 100% { left: 87.5%; opacity: 0; } }
 @media (prefers-reduced-motion: reduce) { .bw-journey-guide__vehicle { display: none; } }
+
+/* Fanion de compagnie au-dessus des navires sélectionnés */
+.bw-pennant {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  animation: bw-pennant-in 0.45s ease-out both;
+}
+.bw-pennant-flag {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 2.25rem;
+  height: 1.5rem;
+  padding: 0.125rem 0.5rem 0.125rem 0.3rem;
+  background: var(--card);
+  color: var(--foreground);
+  font-size: 0.6rem;
+  font-weight: 700;
+  border: 1px solid var(--border);
+  clip-path: polygon(0 0, 100% 0, 84% 50%, 100% 100%, 0 100%);
+  box-shadow: var(--shadow-sm, 0 2px 6px rgb(0 0 0 / 0.18));
+  transform-origin: left center;
+  animation: bw-pennant-wave 2.4s ease-in-out infinite;
+}
+.bw-pennant-flag img {
+  height: 1.1rem;
+  max-width: 2.5rem;
+  object-fit: contain;
+}
+.bw-pennant-mast {
+  width: 2px;
+  height: 1.1rem;
+  background: var(--foreground);
+  opacity: 0.7;
+  border-radius: 1px;
+}
+@keyframes bw-pennant-wave {
+  0%, 100% { transform: skewY(0deg) scaleX(1); }
+  50% { transform: skewY(-4deg) scaleX(0.94); }
+}
+@keyframes bw-pennant-in {
+  from { opacity: 0; transform: translateY(8px) scale(0.7); }
+  to { opacity: 1; transform: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .bw-pennant, .bw-pennant-flag { animation: none; }
+}

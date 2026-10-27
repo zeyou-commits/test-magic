@@ -11,7 +11,13 @@ import {
   Zap,
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
-import { activeAlerts, alertLabel, communityQuery, type TravelAlert } from "@/lib/ferry/community";
+import {
+  activeAlerts,
+  alertLabel,
+  communityQuery,
+  isPublicAlert,
+  type TravelAlert,
+} from "@/lib/ferry/community";
 import {
   newsForContext,
   newsQuery,
@@ -139,7 +145,7 @@ export function useFlashCards({
   const signals = withSignals
     ? activeAlerts(community.data?.alerts ?? []).filter(
         (alert) =>
-          (alert.denials ?? 0) <= alert.confirmations &&
+          isPublicAlert(alert) &&
           (!scoped
             ? alert.target_kind === "port"
             : (alert.target_kind === "port" && portFilter.has(alert.target_id)) ||

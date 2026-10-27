@@ -7,26 +7,45 @@ import { supabase as typedSupabase } from "@/integrations/supabase/client";
 const supabase = typedSupabase as unknown as SupabaseClient;
 
 export type CommunityKind = "vessel" | "port";
-export const alertCategories = {
-  delay: { label: "Retard au départ", kind: "vessel" },
-  boarding: { label: "Embarquement commencé", kind: "vessel" },
-  disembarking: { label: "Débarquement commencé", kind: "vessel" },
-  queue: { label: "File d’attente importante", kind: "port" },
-  access: { label: "Accès difficile", kind: "port" },
-  parking: { label: "Parking complet", kind: "port" },
-  fluid: { label: "Passage fluide", kind: "port" },
-} as const;
-/** Catégories proposées par défaut : celles connues avant le script SQL du 26/10/2026. */
-export const legacyAlertCategories = new Set(["delay", "boarding", "queue", "access"]);
+
+/** Niveau de base de données requis : 0 = d'origine, 1 = script du 26/10, 2 = script du 29/10. */
+type Level = 0 | 1 | 2;
+export type SituationOption = {
+  code: string;
+  label: string;
+  /** Retard : durée enregistrée dans `delay_minutes` (pas de précision). */
+  delay?: number;
+  /** Signalement impactant : il faut être sur place (position vérifiée par le serveur). */
+  onSite?: boolean;
+  level?: Level;
+};
+export type Situation = {
+  label: string;
+  where: CommunityKind;
+  /** Couleur unique de la situation : tuiles, pastilles de carte, bulles et fiches. */
+  color: string;
+  /** Durée d'affichage en minutes (appliquée par le serveur à partir du script du 29/10). */
+  lifetime: number;
+  level: Level;
+  /** Plus proposée à la saisie ; les signalements existants restent lisibles. */
+  retired?: boolean;
+  question?: string;
+  /** Une précision doit être choisie (le retard). */
+  required?: boolean;
+  options?: SituationOption[];
+};
+
 /**
- * Précisions proposées après le choix d'une situation (façon Waze), enregistrées dans `detail`
- * (script SQL du 28/10/2026). Le retard garde ses durées historiques dans `delay_minutes`.
+ * Catalogue unique des situations signalées par les voyageurs.
+ * Tout l'affichage (saisie, carte, fiches, Flash info, modération) en dépend.
  */
-export const alertDetails: Partial<
-  Record<AlertCategory, { short: string; question: string; options: { code: string; label: string }[] }>
-> = {
+export const situations = {
   queue: {
-    short: "File d’attente",
+    label: "File d’attente",
+    where: "port",
+    color: "#e0a100",
+    lifetime: 90,
+    level: 0,
     question: "Combien de temps d’attente ?",
     options: [
       { code: "queue_30", label: "Moins de 30 min" },
@@ -34,25 +53,72 @@ export const alertDetails: Partial<
       { code: "queue_120", label: "2 h et plus" },
     ],
   },
+  formalities: {
+    label: "Formalités (police, douane)",
+    where: "port",
+    color: "#c2410c",
+    lifetime: 90,
+    level: 2,
+    question: "Combien de temps d’attente ?",
+    options: [
+      { code: "formalities_30", label: "Moins de 30 min" },
+      { code: "formalities_60", label: "Environ 1 h" },
+      { code: "formalities_120", label: "2 h et plus" },
+    ],
+  },
   access: {
-    short: "Accès difficile",
+    label: "Accès difficile",
+    where: "port",
+    color: "#dc4c1d",
+    lifetime: 120,
+    level: 0,
     question: "Que se passe-t-il ?",
     options: [
       { code: "access_traffic", label: "Bouchon pour entrer au port" },
-      { code: "access_closed", label: "Accès fermé ou dévié" },
+      { code: "access_closed", label: "Accès fermé ou dévié", onSite: true, level: 2 },
       { code: "access_works", label: "Travaux" },
     ],
   },
   parking: {
-    short: "Parking complet",
-    question: "Quel parking ?",
+    label: "Parking complet",
+    where: "port",
+    color: "#2f6fd6",
+    lifetime: 120,
+    level: 1,
+    retired: true,
     options: [
       { code: "parking_boarding", label: "Parking d’embarquement" },
       { code: "parking_visitors", label: "Parking accompagnants" },
     ],
   },
+  fluid: {
+    label: "Ça passe bien",
+    where: "port",
+    color: "#2e9d6a",
+    lifetime: 60,
+    level: 1,
+  },
+  delay: {
+    label: "Retard",
+    where: "vessel",
+    color: "#d6336c",
+    lifetime: 180,
+    level: 0,
+    question: "Retard annoncé sur place",
+    required: true,
+    options: [
+      { code: "delay_30", label: "≈ 30 min", delay: 30 },
+      { code: "delay_60", label: "≈ 1 h", delay: 60 },
+      { code: "delay_120", label: "2 h et plus", delay: 120 },
+      { code: "delay_postponed", label: "Reporté ou annulé", onSite: true, level: 2 },
+    ],
+  },
   boarding: {
-    short: "Embarquement commencé",
+    label: "Embarquement commencé",
+    where: "vessel",
+    color: "#0c8599",
+    lifetime: 60,
+    level: 0,
     question: "Pour qui ?",
     options: [
       { code: "boarding_vehicles", label: "Véhicules" },
@@ -60,23 +126,57 @@ export const alertDetails: Partial<
     ],
   },
   disembarking: {
-    short: "Débarquement commencé",
+    label: "Débarquement commencé",
+    where: "vessel",
+    color: "#6741d9",
+    lifetime: 60,
+    level: 1,
     question: "Pour qui ?",
     options: [
       { code: "disembarking_vehicles", label: "Véhicules" },
       { code: "disembarking_foot", label: "Passagers à pied" },
     ],
   },
-};
-export type AlertCategory = keyof typeof alertCategories;
+} satisfies Record<string, Situation>;
+export type AlertCategory = keyof typeof situations;
+export const situationOf = (category: AlertCategory): Situation => situations[category];
+/** Situations proposées à la saisie selon les scripts SQL exécutés. */
+export function availableSituations(level: Level) {
+  return (Object.keys(situations) as AlertCategory[]).filter((key) => {
+    const s = situationOf(key);
+    return !s.retired && s.level <= level;
+  });
+}
+export const optionsFor = (category: AlertCategory, level: Level) =>
+  (situationOf(category).options ?? []).filter((option) => (option.level ?? 0) <= level);
+/** « Environ 1 h 30 » : durée d'affichage lisible. */
+export function lifetimeLabel(category: AlertCategory) {
+  const minutes = situationOf(category).lifetime;
+  const hours = Math.floor(minutes / 60);
+  const rest = minutes % 60;
+  return hours ? `${hours} h${rest ? ` ${rest}` : ""}` : `${minutes} min`;
+}
+
 const alertSchema = z.object({
   id: z.string(),
   target_kind: z.enum(["vessel", "port"]),
   target_id: z.string(),
-  category: z.enum(["delay", "boarding", "disembarking", "queue", "access", "parking", "fluid"]),
+  category: z.enum([
+    "delay",
+    "boarding",
+    "disembarking",
+    "queue",
+    "formalities",
+    "access",
+    "parking",
+    "fluid",
+  ]),
   delay_minutes: z.number().nullable(),
   // Ajouté par le script du 28/10/2026.
   detail: z.string().nullable().optional().default(null),
+  // Ajoutés par le script du 29/10/2026 : auteur sur place et confirmations faites sur place.
+  on_site: z.boolean().nullable().optional().default(false),
+  on_site_confirmations: z.number().optional().default(0),
   created_at: z.string(),
   expires_at: z.string(),
   own: z.boolean().nullable(),
@@ -130,26 +230,65 @@ export const communityQuery = (
     staleTime: 30_000,
     refetchInterval: (query) => (query.state.data === null ? false : 60_000),
   });
+/** Présence du script du 29/10/2026 (formalités, « sur place », durées par situation). */
+export const catalogQuery = queryOptions({
+  queryKey: ["bw-signal-catalog"],
+  queryFn: async () => {
+    const { data, error } = await supabase.rpc("bw_signal_catalog_version");
+    if (error) return 0;
+    return typeof data === "number" ? data : 0;
+  },
+  retry: false,
+  staleTime: 10 * 60_000,
+});
+
 export function activeAlerts(alerts: TravelAlert[], now = Date.now()) {
   return alerts.filter((a) => Date.parse(a.expires_at) > now);
 }
-export function alertLabel(alert: TravelAlert) {
-  const precision = alertDetails[alert.category];
-  const option = precision?.options.find((item) => item.code === alert.detail);
-  if (precision && option) return `${precision.short} · ${option.label.toLowerCase()}`;
-  return (
-    alertCategories[alert.category].label +
-    (alert.delay_minutes === 120
-      ? " · 2 h ou plus"
-      : alert.delay_minutes
-        ? ` · ≈ ${alert.delay_minutes} min`
-        : "")
+/** Signalement impactant (report, annulation, accès fermé) : il a fallu être sur place. */
+export const isImpact = (alert: TravelAlert) =>
+  Boolean(
+    situationOf(alert.category).options?.find((option) => option.code === alert.detail)?.onSite,
   );
+/** Voyageurs sur place parmi l'auteur et ceux qui ont confirmé. */
+export const onSiteCount = (alert: TravelAlert) =>
+  (alert.on_site ? 1 : 0) + (alert.on_site_confirmations ?? 0);
+/**
+ * Affiché sur la carte et dans le Flash info : pas désavoué par la majorité, et pour un
+ * signalement impactant, confirmé par au moins un second voyageur.
+ */
+export const isPublicAlert = (alert: TravelAlert) =>
+  (alert.denials ?? 0) <= alert.confirmations && (!isImpact(alert) || alert.confirmations >= 1);
+
+export function alertLabel(alert: TravelAlert) {
+  const situation = situationOf(alert.category);
+  const option = situation.options?.find(
+    (item) => item.code === alert.detail || (item.delay && item.delay === alert.delay_minutes),
+  );
+  return option ? `${situation.label} · ${option.label.toLowerCase()}` : situation.label;
 }
 
+/** Position du voyageur, demandée au moment du geste ; jamais enregistrée par BledWay. */
+export function currentPosition(timeout = 8_000): Promise<[number, number] | null> {
+  if (typeof navigator === "undefined" || !("geolocation" in navigator))
+    return Promise.resolve(null);
+  return new Promise((resolve) =>
+    navigator.geolocation.getCurrentPosition(
+      (position) => resolve([position.coords.latitude, position.coords.longitude]),
+      () => resolve(null),
+      { enableHighAccuracy: true, timeout, maximumAge: 120_000 },
+    ),
+  );
+}
+// Arrondi à ~100 m : suffisant pour la vérification « sur place ».
+const coords = (position: [number, number] | null) =>
+  position
+    ? { p_lat: Math.round(position[0] * 1000) / 1000, p_lng: Math.round(position[1] * 1000) / 1000 }
+    : {};
+
 /**
- * Envoie un signalement. Sans le script du 28/10/2026, la précision est ignorée
- * et le signalement part quand même (même comportement qu'avant).
+ * Envoie un signalement et indique si le serveur l'a reconnu « sur place ».
+ * Sans les scripts récents, la précision et la position sont ignorées (comportement d'origine).
  */
 export async function reportTravel(input: {
   kind: CommunityKind;
@@ -157,18 +296,36 @@ export async function reportTravel(input: {
   category: AlertCategory;
   delay: number | null;
   detail: string | null;
-}) {
+  position: [number, number] | null;
+}): Promise<{ error: { message: string } | null; onSite: boolean }> {
   const base = {
     p_kind: input.kind,
     p_target: input.target,
     p_category: input.category,
     p_delay: input.category === "delay" ? input.delay : null,
   };
-  let result = await supabase.rpc(
-    "bw_report_travel",
-    input.detail ? { ...base, p_detail: input.detail } : base,
-  );
-  if (input.detail && result.error?.code === "PGRST202")
-    result = await supabase.rpc("bw_report_travel", base);
+  const attempts = [
+    { ...base, p_detail: input.detail, ...coords(input.position) },
+    ...(input.detail ? [{ ...base, p_detail: input.detail }] : []),
+    base,
+  ];
+  for (const params of attempts) {
+    const result = await supabase.rpc("bw_report_travel", params);
+    if (result.error?.code === "PGRST202") continue;
+    return { error: result.error, onSite: result.data === true };
+  }
+  return { error: { message: "" }, onSite: false };
+}
+
+/** Confirmer, « Ce n'est plus le cas » ou clore, avec la position si elle est connue. */
+export async function alertAction(
+  id: string,
+  action: "confirm" | "deny" | "resolve",
+  position: [number, number] | null = null,
+) {
+  const base = { p_alert: id, p_action: action };
+  let result = await supabase.rpc("bw_alert_action", { ...base, ...coords(position) });
+  if (position && result.error?.code === "PGRST202")
+    result = await supabase.rpc("bw_alert_action", base);
   return result.error;
 }

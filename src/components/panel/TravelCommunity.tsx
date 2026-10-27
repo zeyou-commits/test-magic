@@ -1,23 +1,19 @@
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Check,
   CircleOff,
-  Clock3,
   Flag,
+  MapPin,
   MessageCircle,
-  ParkingCircle,
   Star,
   ThumbsUp,
   Users,
-  Navigation,
-  Ship,
-  Sparkles,
-  LogOut,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/hooks/useAuth";
+import { useIsMobile } from "@/hooks/use-mobile";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { supabase as typedSupabase } from "@/integrations/supabase/client";
 
@@ -25,37 +21,27 @@ import { supabase as typedSupabase } from "@/integrations/supabase/client";
 const supabase = typedSupabase as unknown as SupabaseClient;
 import {
   activeAlerts,
-  alertCategories,
-  alertDetails,
-  reportTravel,
+  alertAction,
   alertLabel,
+  catalogQuery,
   communityKey,
-  legacyAlertCategories,
   communityQuery,
+  currentPosition,
+  isImpact,
+  onSiteCount,
   type AlertCategory,
   type CommunityKind,
   type VesselReview,
 } from "@/lib/ferry/community";
 import { formatAge } from "@/lib/ferry/tracking";
 import { newsQuery } from "@/lib/ferry/flash";
+import { requestQuickReport } from "@/components/map/QuickReport";
 import { SignalAvatars } from "./SignalAvatars";
+import { SituationBadge, SituationIcon } from "./SituationIcon";
 
+/** Picto d'une situation (nom conservé pour les écrans existants). */
 export function AlertIcon({ category, size = 17 }: { category: AlertCategory; size?: number }) {
-  const Icon =
-    category === "delay"
-      ? Clock3
-      : category === "boarding"
-        ? Ship
-        : category === "disembarking"
-          ? LogOut
-          : category === "queue"
-            ? Users
-            : category === "parking"
-              ? ParkingCircle
-              : category === "fluid"
-                ? Sparkles
-                : Navigation;
-  return <Icon size={size} aria-hidden />;
+  return <SituationIcon category={category} size={size} />;
 }
 const failure = (message?: string) =>
   new Error(
@@ -63,78 +49,41 @@ const failure = (message?: string) =>
       ? message
       : "L’envoi n’a pas abouti. Réessayez dans quelques instants.",
   );
+
+/**
+ * Signalements en cours d'un port ou d'un navire, avec « Je confirme » et « Ce n'est plus le cas ».
+ * « Signaler » ouvre le parcours unique (le même que l'onglet de la barre du bas).
+ */
 export function TravelSignals({ kind, target }: { kind: CommunityKind; target: string }) {
-  const { user, loading: authLoading } = useAuth();
+  const { user } = useAuth();
+  const isMobile = useIsMobile();
   const queryClient = useQueryClient();
   const feed = useQuery(communityQuery(kind, target, false, user?.id));
-  // Le script SQL du 26/10/2026 crée bw_news : sa présence active les nouvelles situations et « Plus le cas ».
+  // Le script SQL du 26/10/2026 crée bw_news : sa présence active « Ce n'est plus le cas ».
   const upgraded = useQuery(newsQuery).data != null;
-  const [open, setOpen] = useState(false);
-  const [category, setCategory] = useState<AlertCategory | null>(null);
-  const [delay, setDelay] = useState(30);
-  const [detail, setDetail] = useState<string | null>(null);
-  const [sent, setSent] = useState(false);
-  const signalKey = `${kind}:${target}`;
-  const startSignal = useCallback(() => {
-    setSent(false);
-    if (!user) {
-      window.sessionStorage.setItem("bledway:pending-travel-signal", signalKey);
-      const next = `${window.location.pathname}${window.location.search}`;
-      window.location.assign(`/auth?next=${encodeURIComponent(next)}`);
-      return;
-    }
-    setOpen(true);
-    window.setTimeout(
-      () =>
-        document
-          .getElementById(`signal-${signalKey}`)
-          ?.scrollIntoView({ behavior: "smooth", block: "center" }),
-      80,
-    );
-  }, [signalKey, user]);
+  const located = (useQuery(catalogQuery).data ?? 0) >= 2;
+  const signal = () => requestQuickReport({ type: kind, id: target });
+  // Boutons « Signaler une info sur ce port / ce bateau » des fiches.
   useEffect(() => {
-    const pending = window.sessionStorage.getItem("bledway:pending-travel-signal");
-    if (pending === signalKey && !authLoading) {
-      if (user) {
-        window.sessionStorage.removeItem("bledway:pending-travel-signal");
-        setOpen(true);
-        window.setTimeout(
-          () =>
-            document
-              .getElementById(`signal-${signalKey}`)
-              ?.scrollIntoView({ behavior: "smooth", block: "center" }),
-          80,
-        );
-      } else startSignal();
-    }
     const onRequest = (event: Event) => {
       const detail = (event as CustomEvent<{ kind: CommunityKind; target: string }>).detail;
-      if (detail?.kind === kind && detail.target === target) {
-        if (user) window.sessionStorage.removeItem("bledway:pending-travel-signal");
-        startSignal();
-      }
+      if (detail?.kind === kind && detail.target === target)
+        requestQuickReport({ type: kind, id: target });
     };
     window.addEventListener("batogo:open-signal", onRequest);
     return () => window.removeEventListener("batogo:open-signal", onRequest);
-  }, [kind, target, user, authLoading, signalKey, startSignal]);
+  }, [kind, target]);
+  const [done, setDone] = useState<string | null>(null);
   const mutation = useMutation({
-    mutationFn: async (
-      action: { type: "report" } | { type: "confirm" | "resolve" | "deny"; id: string },
-    ) => {
-      const error =
-        action.type === "report"
-          ? await reportTravel({ kind, target, category: category!, delay, detail })
-          : (await supabase.rpc("bw_alert_action", { p_alert: action.id, p_action: action.type }))
-              .error;
+    mutationFn: async (action: { type: "confirm" | "resolve" | "deny"; id: string }) => {
+      // Sur mobile, la confirmation porte la mention « sur place » si la position le permet.
+      const here =
+        action.type === "confirm" && located && isMobile ? await currentPosition(6_000) : null;
+      const error = await alertAction(action.id, action.type, here);
       if (error) throw failure(error.message);
     },
     onSuccess: (_, action) => {
-      if (action.type === "report") {
-        setOpen(false);
-        setSent(true);
-        setCategory(null);
-        setDetail(null);
-      } else setSent(false);
+      setDone(action.id);
       void queryClient.invalidateQueries({ queryKey: communityKey });
     },
   });
@@ -150,7 +99,7 @@ export function TravelSignals({ kind, target }: { kind: CommunityKind; target: s
   const alerts = activeAlerts(feed.data.alerts);
   return (
     <section
-      id={`signal-${signalKey}`}
+      id={`signal-${kind}:${target}`}
       className="bw-signals"
       aria-label="Informations des voyageurs"
     >
@@ -162,72 +111,84 @@ export function TravelSignals({ kind, target }: { kind: CommunityKind; target: s
           </span>
           <h3>Sur place, en ce moment</h3>
         </div>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => {
-            if (open) setOpen(false);
-            else startSignal();
-            mutation.reset();
-          }}
-          aria-expanded={open}
-        >
+        <Button variant="outline" size="sm" onClick={signal}>
           <Flag size={15} aria-hidden />
           Signaler
         </Button>
       </div>
       {alerts.length ? (
         <ul className="bw-signal-list">
-          {alerts.map((alert) => (
-            <li key={alert.id}>
-              <span className="bw-signal-icon">
-                <AlertIcon category={alert.category} />
-              </span>
-              <div>
-                <strong>{alertLabel(alert)}</strong>
-                <small className="bw-signal-meta">
-                  <SignalAvatars count={1 + alert.confirmations} seed={alert.id} />
-                  {1 + alert.confirmations} voyageur{alert.confirmations ? "s" : ""} ·{" "}
-                  {formatAge(Math.max(0, (Date.now() - Date.parse(alert.created_at)) / 60_000))}
-                  {alert.denials ? ` · ${alert.denials} « plus le cas »` : ""}
-                </small>
-                <div className="bw-signal-actions">
-                  {alert.own ? (
-                    <button
-                      type="button"
-                      disabled={mutation.isPending}
-                      onClick={() => mutation.mutate({ type: "resolve", id: alert.id })}
-                    >
-                      <Check size={14} aria-hidden />
-                      C’est terminé
-                    </button>
-                  ) : user ? (
-                    <>
+          {alerts.map((alert) => {
+            const travelers = 1 + alert.confirmations;
+            const onSite = onSiteCount(alert);
+            const pending = isImpact(alert) && alert.confirmations < 1;
+            return (
+              <li key={alert.id}>
+                <SituationBadge category={alert.category} className="bw-signal-icon" />
+                <div>
+                  <strong>{alertLabel(alert)}</strong>
+                  {onSite || pending ? (
+                    <span className="bw-signal-chips">
+                      {onSite ? (
+                        <span className="bw-onsite-chip">
+                          <MapPin size={12} aria-hidden />
+                          {onSite === travelers ? "Sur place" : `${onSite} sur place`}
+                        </span>
+                      ) : null}
+                      {pending ? (
+                        <span className="bw-pending-chip">À confirmer par un autre voyageur</span>
+                      ) : null}
+                    </span>
+                  ) : null}
+                  <small className="bw-signal-meta">
+                    <SignalAvatars count={travelers} seed={alert.id} />
+                    {travelers} voyageur{travelers > 1 ? "s" : ""} ·{" "}
+                    {formatAge(Math.max(0, (Date.now() - Date.parse(alert.created_at)) / 60_000))}
+                    {alert.denials ? ` · ${alert.denials} « plus le cas »` : ""}
+                  </small>
+                  <div className="bw-signal-actions">
+                    {alert.own ? (
                       <button
                         type="button"
-                        disabled={mutation.isPending || alert.confirmed}
-                        onClick={() => mutation.mutate({ type: "confirm", id: alert.id })}
+                        disabled={mutation.isPending}
+                        onClick={() => mutation.mutate({ type: "resolve", id: alert.id })}
                       >
-                        <ThumbsUp size={14} aria-hidden />
-                        {alert.confirmed ? "Confirmé par vous" : "Je confirme"}
+                        <Check size={14} aria-hidden />
+                        C’est terminé
                       </button>
-                      {upgraded ? (
+                    ) : user ? (
+                      <>
                         <button
                           type="button"
-                          className="bw-signal-deny"
-                          disabled={mutation.isPending || alert.denied}
-                          onClick={() => mutation.mutate({ type: "deny", id: alert.id })}
+                          disabled={mutation.isPending || alert.confirmed}
+                          onClick={() => mutation.mutate({ type: "confirm", id: alert.id })}
                         >
-                          <CircleOff size={14} aria-hidden />
-                          {alert.denied ? "Noté, merci" : "Ce n’est plus le cas"}
+                          <ThumbsUp size={14} aria-hidden />
+                          {alert.confirmed ? "Confirmé par vous" : "Je confirme"}
                         </button>
-                      ) : null}
-                    </>
+                        {upgraded ? (
+                          <button
+                            type="button"
+                            className="bw-signal-deny"
+                            disabled={mutation.isPending || alert.denied}
+                            onClick={() => mutation.mutate({ type: "deny", id: alert.id })}
+                          >
+                            <CircleOff size={14} aria-hidden />
+                            {alert.denied ? "Noté, merci" : "Ce n’est plus le cas"}
+                          </button>
+                        ) : null}
+                      </>
+                    ) : null}
+                  </div>
+                  {done === alert.id && !mutation.isPending ? (
+                    <small className="bw-community-success" role="status">
+                      <Check size={13} aria-hidden /> Merci, c’est pris en compte.
+                    </small>
                   ) : null}
                 </div>
-              </div>
-            </li>
-          ))}
+              </li>
+            );
+          })}
         </ul>
       ) : (
         <p className="bw-community-empty">
@@ -236,94 +197,9 @@ export function TravelSignals({ kind, target }: { kind: CommunityKind; target: s
       )}
       {alerts.length ? (
         <p className="bw-community-caption">
-          Informations voyageurs · expiration après 2 h. Consultez aussi les annonces de la
-          compagnie.
+          Informations voyageurs, effacées seules après 1 à 3 h selon la situation. « Sur place » :
+          envoyé près du port ou du bateau. Consultez aussi les annonces de la compagnie.
         </p>
-      ) : null}
-      {sent ? (
-        <p className="bw-community-success" role="status">
-          <Check size={16} aria-hidden />
-          Merci, votre signalement est visible pendant 2 h.
-        </p>
-      ) : null}
-      {open ? (
-        <div className="bw-signal-compose">
-          <form
-            aria-label="Signaler une information"
-            onSubmit={(e) => {
-              e.preventDefault();
-              if (category) mutation.mutate({ type: "report" });
-            }}
-          >
-            <fieldset disabled={mutation.isPending}>
-              <legend>Que voyez-vous ?</legend>
-              <div className="bw-signal-choices">
-                {(
-                  Object.entries(alertCategories) as [
-                    AlertCategory,
-                    { label: string; kind: string },
-                  ][]
-                )
-                  .filter(([key, c]) => c.kind === kind && (upgraded || legacyAlertCategories.has(key)))
-                  .map(([key, c]) => (
-                    <label key={key}>
-                      <input
-                        type="radio"
-                        name={`signal-${target}`}
-                        checked={category === key}
-                        onChange={() => {
-                          setCategory(key);
-                          setDetail(null);
-                        }}
-                      />
-                      <span>
-                        <AlertIcon category={key} />
-                        {c.label}
-                      </span>
-                    </label>
-                  ))}
-              </div>
-            </fieldset>
-            {category === "delay" ? (
-              <fieldset className="bw-delay-choice" disabled={mutation.isPending}>
-                <legend>Retard annoncé sur place</legend>
-                {[30, 60, 120].map((m) => (
-                  <label key={m}>
-                    <input
-                      type="radio"
-                      name={`delay-${target}`}
-                      checked={delay === m}
-                      onChange={() => setDelay(m)}
-                    />
-                    <span>{m === 120 ? "2 h et +" : `${m} min`}</span>
-                  </label>
-                ))}
-              </fieldset>
-            ) : null}
-            {category && alertDetails[category] ? (
-              <fieldset className="bw-delay-choice" disabled={mutation.isPending}>
-                <legend>{alertDetails[category].question} (facultatif)</legend>
-                {alertDetails[category].options.map((option) => (
-                  <label key={option.code}>
-                    <input
-                      type="radio"
-                      name={`detail-${target}`}
-                      checked={detail === option.code}
-                      onChange={() => setDetail(option.code)}
-                    />
-                    <span>{option.label}</span>
-                  </label>
-                ))}
-              </fieldset>
-            ) : null}
-            <p className="bw-community-caption">
-              Partagez uniquement ce que vous constatez ou ce qui est annoncé sur place.
-            </p>
-            <Button disabled={!category || mutation.isPending} type="submit">
-              {mutation.isPending ? "Envoi…" : "Partager l’info"}
-            </Button>
-          </form>
-        </div>
       ) : null}
       {mutation.isError ? (
         <p role="alert" className="bw-community-error">

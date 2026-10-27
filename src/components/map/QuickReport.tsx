@@ -1,16 +1,21 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { ArrowLeft, Check, LocateFixed, Megaphone, X } from "lucide-react";
+import { ArrowLeft, Check, LocateFixed, MapPin, Megaphone, X } from "lucide-react";
 import { supabase as typedSupabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useIsMobile } from "@/hooks/use-mobile";
 import {
-  alertDetails,
+  availableSituations,
+  catalogQuery,
   communityKey,
-  legacyAlertCategories,
+  currentPosition,
+  lifetimeLabel,
+  optionsFor,
   reportTravel,
+  situationOf,
   type AlertCategory,
+  type CommunityKind,
 } from "@/lib/ferry/community";
 import { newsQuery } from "@/lib/ferry/flash";
 import type { FleetShip } from "@/lib/ferry/fleet";
@@ -23,33 +28,34 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
-import { AlertIcon } from "@/components/panel/TravelCommunity";
+import { SituationBadge } from "@/components/panel/SituationIcon";
 
 // Suivis du compte (table bw_follows), absente des types générés.
 const supabase = typedSupabase as unknown as SupabaseClient;
 
 const PENDING_KEY = "bledway:pending-quick-report";
-/** Ouverture demandée depuis l'onglet « Signaler » de la barre mobile. */
+/** Ouverture demandée depuis l'onglet « Signaler » ou un bouton « Signaler » d'une fiche. */
 export const QUICK_REPORT_EVENT = "bledway:quick-report";
 /** Même demande depuis une autre page : la carte s'ouvre puis le signalement. */
 export const QUICK_REPORT_ON_LOAD = "bledway:open-quick-report";
 /** Rayon dans lequel « Me localiser » retient le port le plus proche. */
 const NEAR_PORT_KM = 30;
 
-const tiles: { category: AlertCategory; label: string; where: "port" | "vessel" }[] = [
-  { category: "queue", label: "File d’attente", where: "port" },
-  { category: "access", label: "Accès difficile", where: "port" },
-  { category: "parking", label: "Parking complet", where: "port" },
-  { category: "fluid", label: "Ça passe bien", where: "port" },
-  { category: "delay", label: "Retard", where: "vessel" },
-  { category: "boarding", label: "Embarquement", where: "vessel" },
-  { category: "disembarking", label: "Débarquement", where: "vessel" },
-];
-const delays = [
-  { value: 30, label: "≈ 30 min" },
-  { value: 60, label: "≈ 1 h" },
-  { value: 120, label: "2 h et plus" },
-];
+let mounted = 0;
+/** Cible d'un signalement ; pour une traversée, son port de départ et son navire si connus. */
+export type ReportTarget = Selection & { portId?: string | null; vesselId?: string | null };
+/**
+ * Point d'entrée unique pour signaler une situation, depuis n'importe quel écran.
+ * `target` préremplit le port, le bateau ou la traversée concernés.
+ */
+export function requestQuickReport(target?: ReportTarget) {
+  if (mounted) {
+    window.dispatchEvent(new CustomEvent(QUICK_REPORT_EVENT, { detail: target ?? null }));
+    return;
+  }
+  window.sessionStorage.setItem(QUICK_REPORT_ON_LOAD, JSON.stringify(target ?? null));
+  window.location.assign("/");
+}
 
 type Draft = {
   category: AlertCategory | null;
@@ -57,27 +63,35 @@ type Draft = {
   delay: number | null;
   portId: string | null;
   vesselId: string | null;
+  focus: CommunityKind | null;
 };
-const emptyDraft: Draft = { category: null, detail: null, delay: null, portId: null, vesselId: null };
+const emptyDraft: Draft = {
+  category: null,
+  detail: null,
+  delay: null,
+  portId: null,
+  vesselId: null,
+  focus: null,
+};
 
 function distanceKm(a: [number, number], b: [number, number]) {
   const rad = Math.PI / 180;
-  const dLat = (b[1] - a[1]) * rad;
-  const dLng = (b[0] - a[0]) * rad;
+  const dLat = (b[0] - a[0]) * rad;
+  const dLng = (b[1] - a[1]) * rad;
   const h =
-    Math.sin(dLat / 2) ** 2 + Math.cos(a[1] * rad) * Math.cos(b[1] * rad) * Math.sin(dLng / 2) ** 2;
+    Math.sin(dLat / 2) ** 2 + Math.cos(a[0] * rad) * Math.cos(b[0] * rad) * Math.sin(dLng / 2) ** 2;
   return 12742 * Math.asin(Math.sqrt(h));
 }
 
 const failure = (message?: string) =>
-  message && /Patientez|Maximum|déjà signalé|introuvable/.test(message)
+  message && /Patientez|Maximum|déjà signalé|introuvable|sur place/.test(message)
     ? message
     : "L’envoi n’a pas abouti. Réessayez dans quelques instants.";
 
 /**
- * Bouton « Signaler » de la carte, façon Waze : « Que voyez-vous ? », une précision, envoyer.
- * Le lieu est déduit de la fiche ouverte ou de la traversée suivie ; sinon « Me localiser »
- * (position utilisée une fois, jamais enregistrée) ou un choix dans la liste.
+ * Signaler une situation, façon Waze : « Que voyez-vous ? », une précision, envoyer.
+ * Le lieu est déduit de la fiche ou de la traversée ; la position (si autorisée) sert à
+ * vérifier « sur place » et à trouver le port, elle n'est jamais enregistrée.
  */
 export function QuickReport({
   ports,
@@ -91,8 +105,10 @@ export function QuickReport({
   const isMobile = useIsMobile();
   const { user, loading } = useAuth();
   const queryClient = useQueryClient();
-  // Le script SQL du 26/10/2026 active les situations récentes (débarquement, parking, fluide).
+  // Scripts SQL exécutés : 26/10 (situations récentes), 29/10 (formalités, « sur place »).
   const upgraded = useQuery(newsQuery).data != null;
+  const catalog = useQuery(catalogQuery).data ?? 0;
+  const level = catalog >= 2 ? 2 : upgraded ? 1 : 0;
   const follows = useQuery({
     queryKey: ["my-follows", user?.id],
     enabled: Boolean(user),
@@ -111,55 +127,78 @@ export function QuickReport({
   const [open, setOpen] = useState(false);
   const [step, setStep] = useState<"pick" | "detail" | "done">("pick");
   const [draft, setDraft] = useState<Draft>(emptyDraft);
+  const [position, setPosition] = useState<[number, number] | null>(null);
   const [locating, setLocating] = useState<"idle" | "busy" | "far" | "denied">("idle");
+  const [sentOnSite, setSentOnSite] = useState(false);
 
   const vessels = fleet.filter(
     (ship, index) => ship.vesselId && fleet.findIndex((s) => s.vesselId === ship.vesselId) === index,
   );
   const portName = (id: string | null) => ports.find((p) => p.id === id)?.name;
 
-  /** Lieu probable : fiche ouverte, sinon traversée suivie en cours ou toute proche. */
-  const guess = (): Pick<Draft, "portId" | "vesselId"> => {
+  /** Lieu probable : écran demandé, sinon fiche ouverte, sinon traversée suivie. */
+  const guess = (target: ReportTarget | null): Pick<Draft, "portId" | "vesselId" | "focus"> => {
     const fromShip = (ship: FleetShip | undefined) =>
-      ship ? { vesselId: ship.vesselId, portId: ship.state === "docked" ? ship.portId : null } : null;
-    if (selection?.type === "port") return { portId: selection.id, vesselId: null };
-    if (selection?.type === "vessel")
+      ship
+        ? {
+            vesselId: ship.vesselId,
+            portId: ship.state === "docked" ? ship.portId : null,
+            focus: "vessel" as const,
+          }
+        : null;
+    const from = target ?? selection;
+    if (from?.type === "port") return { portId: from.id, vesselId: null, focus: "port" };
+    if (from?.type === "vessel")
       return (
-        fromShip(fleet.find((s) => s.vesselId === selection.id)) ?? {
+        fromShip(fleet.find((s) => s.vesselId === from.id)) ?? {
           portId: null,
-          vesselId: selection.id,
+          vesselId: from.id,
+          focus: "vessel",
         }
       );
-    if (selection?.type === "departure") {
-      const found = fromShip(fleet.find((s) => s.departureId === selection.id));
+    if (from?.type === "departure") {
+      const found = fromShip(fleet.find((s) => s.departureId === from.id));
       if (found) return found;
+      if (target?.portId || target?.vesselId)
+        return { portId: target.portId ?? null, vesselId: target.vesselId ?? null, focus: null };
     }
     for (const follow of follows.data ?? []) {
       if (follow.target_kind !== "departure") continue;
       const found = fromShip(fleet.find((s) => s.departureId === follow.target_id));
-      if (found) return found;
+      if (found) return { ...found, focus: null };
     }
-    return { portId: null, vesselId: null };
+    return { portId: null, vesselId: null, focus: null };
   };
 
-  const start = () => {
+  const start = (target: ReportTarget | null = null) => {
     setStep("pick");
     setLocating("idle");
-    setDraft({ ...emptyDraft, ...guess() });
+    setDraft({ ...emptyDraft, ...guess(target) });
     mutation.reset();
     setOpen(true);
   };
-
   const startRef = useRef(start);
   startRef.current = start;
   useEffect(() => {
-    const onRequest = () => startRef.current();
+    mounted += 1;
+    const onRequest = (event: Event) =>
+      startRef.current((event as CustomEvent<ReportTarget | null>).detail ?? null);
     window.addEventListener(QUICK_REPORT_EVENT, onRequest);
-    if (window.sessionStorage.getItem(QUICK_REPORT_ON_LOAD)) {
+    const onLoad = window.sessionStorage.getItem(QUICK_REPORT_ON_LOAD);
+    if (onLoad) {
       window.sessionStorage.removeItem(QUICK_REPORT_ON_LOAD);
-      startRef.current();
+      let target: ReportTarget | null = null;
+      try {
+        target = JSON.parse(onLoad) as ReportTarget | null;
+      } catch {
+        /* ancienne valeur « 1 » : sans cible */
+      }
+      startRef.current(target && typeof target === "object" ? target : null);
     }
-    return () => window.removeEventListener(QUICK_REPORT_EVENT, onRequest);
+    return () => {
+      mounted -= 1;
+      window.removeEventListener(QUICK_REPORT_EVENT, onRequest);
+    };
   }, []);
 
   // Retour de la page de connexion : on reprend le signalement là où il en était.
@@ -177,56 +216,67 @@ export function QuickReport({
     }
   }, [loading, user]);
 
+  const situation = draft.category ? situationOf(draft.category) : undefined;
+  const options = draft.category ? optionsFor(draft.category, level) : [];
+  const chosen = options.find(
+    (option) => option.code === draft.detail || (option.delay && option.delay === draft.delay),
+  );
+  const impact = Boolean(chosen?.onSite);
+  const target = situation?.where === "port" ? draft.portId : draft.vesselId;
+  const ready = Boolean(situation && target && (!situation.required || chosen));
+
   const mutation = useMutation({
     mutationFn: async (input: Draft) => {
       const category = input.category!;
-      const where = tiles.find((t) => t.category === category)!.where;
-      const error = await reportTravel({
+      const where = situationOf(category).where;
+      // Position demandée au moment d'envoyer (mobile), ou obligatoire pour un signalement impactant.
+      let here = position;
+      if (!here && level >= 2 && (isMobile || impact)) here = await currentPosition();
+      if (impact && !here)
+        throw new Error(
+          "Ce signalement doit être fait sur place : autorisez la localisation puis réessayez.",
+        );
+      const result = await reportTravel({
         kind: where,
         target: (where === "port" ? input.portId : input.vesselId)!,
         category,
         delay: input.delay,
         detail: input.detail,
+        position: here,
       });
-      if (error) throw new Error(failure(error.message));
+      if (result.error) throw new Error(failure(result.error.message));
+      return result.onSite;
     },
-    onSuccess: () => {
+    onSuccess: (onSite) => {
+      setSentOnSite(onSite);
       setStep("done");
       void queryClient.invalidateQueries({ queryKey: communityKey });
     },
   });
 
-  const locate = () => {
-    if (!("geolocation" in navigator)) return setLocating("denied");
+  const locate = async () => {
     setLocating("busy");
-    navigator.geolocation.getCurrentPosition(
-      (position) => {
-        const here: [number, number] = [position.coords.longitude, position.coords.latitude];
-        const nearest = ports
-          .map((port) => ({ port, km: distanceKm(here, [port.longitude, port.latitude]) }))
-          .sort((a, b) => a.km - b.km)[0];
-        if (!nearest || nearest.km > NEAR_PORT_KM) return setLocating("far");
-        const docked = fleet.filter((s) => s.state === "docked" && s.portId === nearest.port.id);
-        setDraft((current) => ({
-          ...current,
-          portId: nearest.port.id,
-          vesselId: docked.length === 1 ? (docked[0]!.vesselId ?? current.vesselId) : current.vesselId,
-        }));
-        setLocating("idle");
-      },
-      () => setLocating("denied"),
-      { enableHighAccuracy: false, timeout: 10_000, maximumAge: 300_000 },
-    );
+    const here = await currentPosition(10_000);
+    if (!here) return setLocating("denied");
+    setPosition(here);
+    const nearest = ports
+      .map((port) => ({ port, km: distanceKm(here, [port.latitude, port.longitude]) }))
+      .sort((a, b) => a.km - b.km)[0];
+    if (!nearest || nearest.km > NEAR_PORT_KM) return setLocating("far");
+    const docked = fleet.filter((s) => s.state === "docked" && s.portId === nearest.port.id);
+    setDraft((current) => ({
+      ...current,
+      portId: nearest.port.id,
+      vesselId:
+        docked.length === 1 ? (docked[0]!.vesselId ?? current.vesselId) : current.vesselId,
+    }));
+    setLocating("idle");
   };
-
-  const tile = draft.category ? tiles.find((t) => t.category === draft.category) : undefined;
-  const precision = draft.category ? alertDetails[draft.category] : undefined;
-  const target = tile?.where === "port" ? draft.portId : draft.vesselId;
-  const ready = Boolean(tile && target && (draft.category !== "delay" || draft.delay));
 
   const send = () => {
     if (!ready) return;
     if (!user) {
+      // La position n'est pas conservée : elle sera redemandée à l'envoi.
       window.sessionStorage.setItem(PENDING_KEY, JSON.stringify(draft));
       const next = `${window.location.pathname}${window.location.search}`;
       window.location.assign(`/auth?next=${encodeURIComponent(next)}`);
@@ -235,33 +285,32 @@ export function QuickReport({
     mutation.mutate(draft);
   };
 
-  const available = tiles.filter((t) => upgraded || legacyAlertCategories.has(t.category));
-  const group = (where: "port" | "vessel", title: string) => (
-    <section className="bw-report-group" aria-label={title}>
+  const available = availableSituations(level);
+  const group = (where: CommunityKind, title: string) => (
+    <section className="bw-report-group" aria-label={title} key={where}>
       <h3>{title}</h3>
       <div className="bw-report-tiles">
         {available
-          .filter((t) => t.where === where)
-          .map((t) => (
+          .filter((key) => situationOf(key).where === where)
+          .map((key) => (
             <button
-              key={t.category}
+              key={key}
               type="button"
               className="bw-report-tile"
-              data-cat={t.category}
               onClick={() => {
-                setDraft((current) => ({ ...current, category: t.category, detail: null, delay: null }));
+                setDraft((current) => ({ ...current, category: key, detail: null, delay: null }));
                 setStep("detail");
               }}
             >
-              <span aria-hidden>
-                <AlertIcon category={t.category} size={24} />
-              </span>
-              {t.label}
+              <SituationBadge category={key} size={24} className="bw-report-tile__badge" />
+              {situationOf(key).label}
             </button>
           ))}
       </div>
     </section>
   );
+  const groups = [group("port", "Au port"), group("vessel", "Le bateau")];
+  if (draft.focus === "vessel") groups.reverse();
 
   let body: ReactNode;
   if (step === "done")
@@ -271,16 +320,23 @@ export function QuickReport({
           <Check size={30} />
         </span>
         <strong>Merci, c’est partagé !</strong>
+        {sentOnSite ? (
+          <span className="bw-onsite-chip">
+            <MapPin size={13} aria-hidden /> Sur place
+          </span>
+        ) : null}
         <p>
-          Votre signalement est visible sur la carte pendant 2 h. Les autres voyageurs peuvent le
-          confirmer ou dire que ce n’est plus le cas.
+          {draft.category ? `Visible environ ${lifetimeLabel(draft.category)}. ` : ""}
+          {impact
+            ? "Il apparaîtra sur la carte dès qu’un autre voyageur le confirme."
+            : "Les autres voyageurs peuvent le confirmer ou dire que ce n’est plus le cas."}
         </p>
         <button type="button" className="bw-report-send" onClick={() => setOpen(false)}>
           Fermer
         </button>
       </div>
     );
-  else if (step === "pick" || !tile)
+  else if (step === "pick" || !situation || !draft.category)
     body = (
       <div className="bw-report-pick">
         {draft.portId || draft.vesselId ? (
@@ -290,8 +346,7 @@ export function QuickReport({
               .join(" · ")}
           </p>
         ) : null}
-        {group("port", "Au port")}
-        {group("vessel", "Le bateau")}
+        {groups}
         <p className="bw-report-note">
           Votre nom n’est jamais affiché. {user ? "" : "Une connexion sera demandée pour envoyer."}
         </p>
@@ -306,7 +361,7 @@ export function QuickReport({
           send();
         }}
       >
-        <div className="bw-report-detail__head" data-cat={tile.category}>
+        <div className="bw-report-detail__head">
           <button
             type="button"
             className="bw-report-back"
@@ -315,15 +370,13 @@ export function QuickReport({
           >
             <ArrowLeft size={18} aria-hidden />
           </button>
-          <span aria-hidden>
-            <AlertIcon category={tile.category} size={22} />
-          </span>
-          <strong>{tile.label}</strong>
+          <SituationBadge category={draft.category} size={20} className="bw-report-detail__badge" />
+          <strong>{situation.label}</strong>
         </div>
 
         <fieldset className="bw-report-field" disabled={mutation.isPending}>
-          <legend>{tile.where === "port" ? "Où êtes-vous ?" : "Quel bateau ?"}</legend>
-          {tile.where === "port" ? (
+          <legend>{situation.where === "port" ? "Où êtes-vous ?" : "Quel bateau ?"}</legend>
+          {situation.where === "port" ? (
             <div className="bw-report-where-row">
               <select
                 value={draft.portId ?? ""}
@@ -339,7 +392,7 @@ export function QuickReport({
                     </option>
                   ))}
               </select>
-              <button type="button" onClick={locate} disabled={locating === "busy"}>
+              <button type="button" onClick={() => void locate()} disabled={locating === "busy"}>
                 <LocateFixed size={16} aria-hidden />
                 {locating === "busy" ? "…" : "Me localiser"}
               </button>
@@ -367,7 +420,10 @@ export function QuickReport({
                   .sort((a, b) => a.name.localeCompare(b.name, "fr"))
                   .map((s) => (
                     <option key={s.vesselId} value={s.vesselId!}>
-                      {s.name} · {s.state === "sea" ? "en mer" : `à quai${s.portId ? ` à ${portName(s.portId) ?? ""}` : ""}`}
+                      {s.name} ·{" "}
+                      {s.state === "sea"
+                        ? "en mer"
+                        : `à quai${s.portId ? ` à ${portName(s.portId) ?? ""}` : ""}`}
                     </option>
                   ))}
               </optgroup>
@@ -376,50 +432,47 @@ export function QuickReport({
           {locating === "far" ? (
             <small>Aucun port à moins de {NEAR_PORT_KM} km : choisissez-le dans la liste.</small>
           ) : locating === "denied" ? (
-            <small>Position indisponible : choisissez le port dans la liste.</small>
-          ) : tile.where === "port" ? (
-            <small>Votre position sert seulement à trouver le port, elle n’est pas enregistrée.</small>
+            <small>Position indisponible : choisissez dans la liste.</small>
           ) : null}
         </fieldset>
 
-        {draft.category === "delay" ? (
-          <fieldset className="bw-report-field" disabled={mutation.isPending}>
-            <legend>Retard annoncé sur place</legend>
-            <div className="bw-report-options">
-              {delays.map((option) => (
-                <button
-                  key={option.value}
-                  type="button"
-                  aria-pressed={draft.delay === option.value}
-                  onClick={() => setDraft({ ...draft, delay: option.value })}
-                >
-                  {option.label}
-                </button>
-              ))}
-            </div>
-          </fieldset>
-        ) : precision ? (
+        {options.length ? (
           <fieldset className="bw-report-field" disabled={mutation.isPending}>
             <legend>
-              {precision.question} <span>facultatif</span>
+              {situation.question} {situation.required ? null : <span>facultatif</span>}
             </legend>
             <div className="bw-report-options">
-              {precision.options.map((option) => (
-                <button
-                  key={option.code}
-                  type="button"
-                  aria-pressed={draft.detail === option.code}
-                  onClick={() =>
-                    setDraft({ ...draft, detail: draft.detail === option.code ? null : option.code })
-                  }
-                >
-                  {option.label}
-                </button>
-              ))}
+              {options.map((option) => {
+                const selected = chosen?.code === option.code;
+                return (
+                  <button
+                    key={option.code}
+                    type="button"
+                    aria-pressed={selected}
+                    data-impact={option.onSite ? "true" : undefined}
+                    onClick={() =>
+                      setDraft({
+                        ...draft,
+                        delay: option.delay && !selected ? option.delay : null,
+                        detail: !option.delay && !selected ? option.code : null,
+                      })
+                    }
+                  >
+                    {option.label}
+                  </button>
+                );
+              })}
             </div>
           </fieldset>
         ) : null}
 
+        {impact ? (
+          <p className="bw-report-impact" role="note">
+            <MapPin size={15} aria-hidden />
+            Signalement important : il faut être sur place, localisation activée. Il s’affiche sur
+            la carte quand un second voyageur le confirme.
+          </p>
+        ) : null}
         {mutation.isError ? (
           <p role="alert" className="bw-community-error">
             {mutation.error.message}
@@ -429,17 +482,15 @@ export function QuickReport({
           {mutation.isPending ? "Envoi…" : user ? "Envoyer" : "Se connecter et envoyer"}
         </button>
         <p className="bw-report-note">
-          Uniquement ce que vous constatez ou ce qui est annoncé sur place.
+          {level >= 2
+            ? "Si vous l’autorisez, votre position indique « Sur place ». Elle n’est pas enregistrée."
+            : "Uniquement ce que vous constatez ou ce qui est annoncé sur place."}
         </p>
       </form>
     );
 
   const trigger = (
-    <button
-      type="button"
-      className="bw-report-fab"
-      aria-label="Signaler une situation"
-    >
+    <button type="button" className="bw-report-fab" aria-label="Signaler une situation">
       <Megaphone size={20} aria-hidden />
       <span>Signaler</span>
     </button>
@@ -449,20 +500,18 @@ export function QuickReport({
   return (
     <div className="bw-report">
       {isMobile ? (
-        <>
-          {/* Sur mobile, le bouton est l'onglet « Signaler » de la barre du bas. */}
-          <Sheet open={open} onOpenChange={setOpen}>
-            <SheetContent side="bottom" className="bw-report-sheet">
-              <SheetHeader className="text-left">
-                <SheetTitle>{title}</SheetTitle>
-                <SheetDescription className="sr-only">
-                  Signaler une situation au port ou à bord, visible 2 h par les autres voyageurs.
-                </SheetDescription>
-              </SheetHeader>
-              {body}
-            </SheetContent>
-          </Sheet>
-        </>
+        /* Sur mobile, le bouton est l'onglet « Signaler » de la barre du bas. */
+        <Sheet open={open} onOpenChange={setOpen}>
+          <SheetContent side="bottom" className="bw-report-sheet">
+            <SheetHeader className="text-left">
+              <SheetTitle>{title}</SheetTitle>
+              <SheetDescription className="sr-only">
+                Signaler une situation au port ou à bord, visible par les autres voyageurs.
+              </SheetDescription>
+            </SheetHeader>
+            {body}
+          </SheetContent>
+        </Sheet>
       ) : (
         <Popover
           open={open}
@@ -486,3 +535,4 @@ export function QuickReport({
     </div>
   );
 }
+

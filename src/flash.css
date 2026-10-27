@@ -48,7 +48,7 @@
   padding: 2px 8px 2px 2px;
   border-radius: 999px;
   background: #ffffff;
-  border: 1.5px solid #f2c14e;
+  border: 1.5px solid var(--situation-color, #f2c14e);
   box-shadow: 0 3px 10px #16324a33;
   color: #16324a;
   transition:
@@ -81,20 +81,26 @@
   right: 7px;
 }
 .bw-signal-pin__icon {
+  position: relative;
   display: grid;
   place-items: center;
   width: 22px;
   height: 22px;
   border-radius: 50%;
-  background: #ffc83d;
-  color: #5c3d00;
-}
-.bw-signal-pin[data-tone="good"] .bw-signal-pin__body {
-  border-color: #3fb27f;
-}
-.bw-signal-pin[data-tone="good"] .bw-signal-pin__icon {
-  background: #3fb27f;
+  background: var(--situation-color, #e0a100);
   color: #ffffff;
+}
+/* Au moins un voyageur sur place : petit repère vert sur le picto. */
+.bw-signal-pin[data-onsite="true"] .bw-signal-pin__icon::after {
+  content: "";
+  position: absolute;
+  right: -2px;
+  bottom: -2px;
+  width: 9px;
+  height: 9px;
+  border: 2px solid #ffffff;
+  border-radius: 50%;
+  background: #16a34a;
 }
 .bw-signal-pin__crowd {
   display: inline-flex;
@@ -119,7 +125,7 @@
 .bw-signal-pin:focus-visible .bw-signal-pin__body {
   transform: scale(1.12);
   box-shadow:
-    0 0 0 3px #ffc83d66,
+    0 0 0 3px color-mix(in srgb, var(--situation-color, #ffc83d) 40%, transparent),
     0 6px 16px #16324a40;
 }
 /* Une pastille survolée : les autres s'effacent un peu pour la lire sans chevauchement. */
@@ -196,11 +202,7 @@
   width: 24px;
   height: 24px;
   border-radius: 50%;
-  background: #ffc83d;
-  color: #5c3d00;
-}
-.bw-signal-bubble__list li[data-tone="good"] .bw-signal-bubble__icon {
-  background: #3fb27f;
+  background: var(--situation-color, #e0a100);
   color: #ffffff;
 }
 .bw-signal-bubble__cta {
@@ -943,27 +945,72 @@ body:has(.bw-flash-sheet[data-state="open"]) .bw-header {
   outline: 2px solid #0e7a43;
   outline-offset: 2px;
 }
-.bw-report-tile > span,
-.bw-report-detail__head > span {
+/* Pastille de situation : couleur du catalogue, picto blanc (tuiles, fiches, Flash info). */
+.bw-situation-badge,
+.bw-report-tile__badge,
+.bw-report-detail__badge {
   display: grid;
+  flex: none;
   place-items: center;
-  width: 48px;
-  height: 48px;
+  width: 32px;
+  height: 32px;
   border-radius: 50%;
   color: #ffffff;
-  background: var(--report-color, #f0a500);
+  background: var(--situation-color, #e0a100);
 }
-.bw-report-detail__head > span {
+.bw-report-tile__badge {
+  width: 48px;
+  height: 48px;
+}
+.bw-report-detail__badge {
   width: 38px;
   height: 38px;
 }
-[data-cat="queue"] { --report-color: #f0a500; }
-[data-cat="access"] { --report-color: #e8590c; }
-[data-cat="parking"] { --report-color: #2f6fd6; }
-[data-cat="fluid"] { --report-color: #2e9d6a; }
-[data-cat="delay"] { --report-color: #d6336c; }
-[data-cat="boarding"] { --report-color: #0c8599; }
-[data-cat="disembarking"] { --report-color: #6741d9; }
+.bw-signal-list .bw-signal-icon {
+  color: #ffffff;
+  background: var(--situation-color, #e0a100);
+}
+.bw-signal-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin: 3px 0 2px;
+}
+.bw-onsite-chip,
+.bw-pending-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 11.5px;
+  font-weight: 700;
+}
+.bw-onsite-chip {
+  background: #e6f6ec;
+  color: #11703a;
+}
+.bw-pending-chip {
+  background: #fff1ce;
+  color: #805712;
+}
+.bw-report-options button[data-impact="true"] {
+  border-style: dashed;
+}
+.bw-report-impact {
+  display: flex;
+  gap: 8px;
+  margin: 0;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: #fff6e0;
+  font-size: 13px;
+  color: #6b4a00;
+}
+.bw-report-impact svg {
+  flex: none;
+  margin-top: 2px;
+}
 .bw-report-note {
   margin: 12px 0 0;
   font-size: 12px;
@@ -1106,4 +1153,8 @@ body:has(.bw-flash-sheet[data-state="open"]) .bw-header {
 body:has(.bw-report-sheet[data-state="open"]) .bw-map-stage,
 body:has(.bw-report-sheet[data-state="open"]) .bw-header {
   z-index: 40;
+}
+.bw-trip-signal {
+  border-color: #f2c14e;
+  background: #fffaf0;
 }

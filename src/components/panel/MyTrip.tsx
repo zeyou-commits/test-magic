@@ -1,9 +1,10 @@
 import { useQuery } from "@tanstack/react-query";
-import { ArrowRight, CalendarClock, History, MapPin, Ship } from "lucide-react";
+import { ArrowRight, CalendarClock, Flag, History, MapPin, Ship } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useTravelFollows } from "@/hooks/useTravelFollows";
 import { departureEventsQuery, relativeAge } from "@/lib/ferry/flash";
 import type { Selection } from "@/lib/ferry/types";
+import { requestQuickReport } from "@/components/map/QuickReport";
 import { FlashFeed } from "./FlashFeed";
 
 /** Historique des changements d'un départ (horaire, navire, annulation), alimenté par la base. */
@@ -88,6 +89,26 @@ export function MyTripPanel({
         limit={5}
         emptyText="Aucune perturbation connue sur cette traversée pour le moment."
       />
+      {/* Le jour J : signaler ce que l'on voit, port et bateau déjà renseignés. */}
+      <button
+        type="button"
+        className="bw-trip-prepare bw-trip-signal"
+        onClick={() =>
+          requestQuickReport({
+            type: "departure",
+            id: departureId,
+            portId: fromPortId ?? null,
+            vesselId: vesselId ?? null,
+          })
+        }
+      >
+        <Flag size={18} aria-hidden />
+        <span>
+          <small>Au port ou à bord ?</small>
+          <strong>Signaler une situation (file, retard, embarquement…)</strong>
+        </span>
+        <ArrowRight size={16} aria-hidden />
+      </button>
       {fromPortId ? (
         <button
           type="button"

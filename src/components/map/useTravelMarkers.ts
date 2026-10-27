@@ -1,48 +1,36 @@
-import { useEffect, useRef, type RefObject } from "react";
+import { createElement, useEffect, useRef, type RefObject } from "react";
+import { createRoot, type Root } from "react-dom/client";
 import { useQuery } from "@tanstack/react-query";
 import { Marker, Popup, type Map as MapLibreMap } from "maplibre-gl";
 import { useAuth } from "@/hooks/useAuth";
-import { activeAlerts, alertLabel, communityQuery, type TravelAlert } from "@/lib/ferry/community";
+import {
+  activeAlerts,
+  alertLabel,
+  communityQuery,
+  isPublicAlert,
+  onSiteCount,
+  situationOf,
+  type TravelAlert,
+} from "@/lib/ferry/community";
 import type { FleetShip } from "@/lib/ferry/fleet";
 import type { MapPreview } from "@/lib/ferry/mapPresentation";
 import { formatAge } from "@/lib/ferry/tracking";
 import type { Port, Selection } from "@/lib/ferry/types";
 import { FLASH_PREVIEW_EVENT } from "@/components/panel/FlashFeed";
+import { SituationIcon } from "@/components/panel/SituationIcon";
 
-const paths = {
-  delay: ["M12 8v4l3 2", "M22 12a10 10 0 1 1-20 0 10 10 0 0 1 20 0"],
-  boarding: ["M4 16l8 4 8-4v-5l-8-4-8 4v5Z", "M12 7V3M8 7V5h8v2M12 7v13"],
-  queue: [
-    "M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2",
-    "M13 7a4 4 0 1 1-8 0 4 4 0 0 1 8 0M20 21v-2a4 4 0 0 0-3-3.87M17 3.13a4 4 0 0 1 0 7.75",
-  ],
-  access: ["m12 3 10 18H2L12 3Z", "M12 9v4M12 17h.01"],
-  disembarking: ["M4 16l8 4 8-4v-5l-8-4-8 4v5Z", "M12 13V3M8 7l4-4 4 4"],
-  parking: ["M4 4h16v16H4z", "M9 17V7h4a3 3 0 0 1 0 6H9"],
-  fluid: ["M5 12l4 4 10-10", "M3 20h18"],
-};
-
-function icon(category: TravelAlert["category"], size: number) {
-  const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
-  for (const [name, value] of Object.entries({
-    viewBox: "0 0 24 24",
-    width: String(size),
-    height: String(size),
-    fill: "none",
-    stroke: "currentColor",
-    "stroke-width": "1.9",
-    "stroke-linecap": "round",
-    "stroke-linejoin": "round",
-    "aria-hidden": "true",
-  }))
-    svg.setAttribute(name, value);
-  for (const d of paths[category]) {
-    const path = document.createElementNS(svg.namespaceURI, "path");
-    path.setAttribute("d", d);
-    svg.append(path);
-  }
-  return svg;
+// Pictos et couleurs : les mêmes que dans la saisie et les fiches (catalogue unique).
+function iconInto(host: HTMLElement, category: TravelAlert["category"], size: number, roots: Root[]) {
+  host.style.setProperty("--situation-color", situationOf(category).color);
+  const root = createRoot(host);
+  root.render(createElement(SituationIcon, { category, size }));
+  roots.push(root);
 }
+// Démonter après le rendu en cours (React refuse un démontage synchrone pendant un rendu).
+const unmountLater = (roots: Root[]) => {
+  const list = roots.splice(0);
+  window.setTimeout(() => list.forEach((root) => root.unmount()), 0);
+};
 
 // Avatars génériques façon Waze (aucune photo, aucune donnée personnelle).
 const FACE_COLORS = ["#f6c99a", "#a8d8c8", "#b9c8f2", "#f2b8c6"];
@@ -89,12 +77,14 @@ export function useTravelMarkers(
     if (!ready || !map || !feed.data) return;
     const groups = new Map<string, TravelAlert[]>();
     for (const alert of activeAlerts(feed.data.alerts)) {
-      // Une situation que la majorité dit terminée n'est plus affichée sur la carte.
-      if ((alert.denials ?? 0) > alert.confirmations) continue;
+      // Situation dite terminée par la majorité, ou impactante pas encore confirmée : pas sur la carte.
+      if (!isPublicAlert(alert)) continue;
       const key = `${alert.target_kind}:${alert.target_id}`;
       groups.set(key, [...(groups.get(key) ?? []), alert]);
     }
     const markers: Marker[] = [];
+    const roots: Root[] = [];
+    const bubbleRoots: Root[] = [];
     const bubble = new Popup({
       closeButton: false,
       closeOnClick: true,
@@ -124,6 +114,7 @@ export function useTravelMarkers(
       const name = port?.name ?? ship?.name ?? "";
       const travelers = alerts.reduce((sum, item) => sum + 1 + item.confirmations, 0);
       const good = alerts.every((item) => item.category === "fluid");
+      const onSite = alerts.reduce((sum, item) => sum + onSiteCount(item), 0);
       // Les navires amarrés sont décalés en pixels à côté du port : la pastille suit le navire.
       const shift: [number, number] = ship && !ship.live ? [ship.dx, ship.dy] : [0, 0];
 
@@ -131,14 +122,16 @@ export function useTravelMarkers(
       button.type = "button";
       button.dataset["side"] = isPort ? "port" : "vessel";
       button.dataset["tone"] = good ? "good" : "warn";
+      if (onSite) button.dataset["onsite"] = "true";
+      button.style.setProperty("--situation-color", situationOf(alert.category).color);
       button.setAttribute(
         "aria-label",
-        `${name} : ${alerts.map(alertLabel).join(", ")}. ${voyageurs(travelers)}. Afficher le détail`,
+        `${name} : ${alerts.map(alertLabel).join(", ")}. ${voyageurs(travelers)}${onSite ? `, dont ${onSite} sur place` : ""}. Afficher le détail`,
       );
       // Le contenu est dans un bloc à part : MapLibre positionne le bouton par transform.
       const body = el("span", "bw-signal-pin__body");
       const badge = el("span", "bw-signal-pin__icon");
-      badge.append(icon(alert.category, 15));
+      iconInto(badge, alert.category, 15, roots);
       body.append(badge);
       const crowd = el("span", "bw-signal-pin__crowd");
       for (let index = 0; index < Math.min(2, travelers); index += 1)
@@ -166,6 +159,7 @@ export function useTravelMarkers(
         callbacks.current.onOpen?.();
       };
       const show = () => {
+        unmountLater(bubbleRoots);
         const card = el("button", "bw-signal-bubble__card");
         card.type = "button";
         card.setAttribute("aria-label", `Ouvrir la fiche ${name}`);
@@ -180,12 +174,16 @@ export function useTravelMarkers(
           const row = el("li", "");
           row.dataset["tone"] = item.category === "fluid" ? "good" : "warn";
           const mark = el("span", "bw-signal-bubble__icon");
-          mark.append(icon(item.category, 14));
+          iconInto(mark, item.category, 14, bubbleRoots);
           const text = el("span", "");
           const age = Math.max(0, (Date.now() - Date.parse(item.created_at)) / 60_000);
           text.append(
             el("strong", "", alertLabel(item)),
-            el("small", "", `${formatAge(age)} · ${voyageurs(1 + item.confirmations)}`),
+            el(
+              "small",
+              "",
+              `${formatAge(age)} · ${voyageurs(1 + item.confirmations)}${onSiteCount(item) ? ` · ${onSiteCount(item)} sur place` : ""}`,
+            ),
           );
           row.append(mark, text);
           list.append(row);
@@ -225,6 +223,8 @@ export function useTravelMarkers(
     return () => {
       disposed = true;
       bubble.remove();
+      unmountLater(roots);
+      unmountLater(bubbleRoots);
       markers.forEach((marker) => marker.remove());
     };
   }, [mapRef, ready, ports, fleet, feed.data]);

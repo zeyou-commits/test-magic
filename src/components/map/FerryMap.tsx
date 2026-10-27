@@ -1840,7 +1840,7 @@ export default function FerryMap({
       const at = ship.live
         ? ([ship.live.position.longitude, ship.live.position.latitude] as [number, number])
         : ship.lngLat;
-      return new Marker({ element: el, anchor: "bottom", offset: [0, -14] })
+      return new Marker({ element: el, anchor: "bottom", offset: [ship.dx, ship.dy - 14] })
         .setLngLat(at)
         .addTo(map);
     });
@@ -2031,6 +2031,7 @@ export default function FerryMap({
           const focused =
             (!previewing &&
               (focusShipId === ship.id ||
+                companyFocusShips.some((item) => item.id === ship.id) ||
                 (selectedVesselId !== null && selectedVesselId === ship.vesselId) ||
                 (selection?.type === "vessel" && selection.id === ship.vesselId) ||
                 (selection?.type === "departure" && selection.id === ship.departureId))) ||

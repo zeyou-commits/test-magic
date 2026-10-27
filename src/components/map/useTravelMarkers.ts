@@ -10,6 +10,7 @@ import {
   isPublicAlert,
   onSiteCount,
   situationOf,
+  useSignalCatalog,
   type TravelAlert,
 } from "@/lib/ferry/community";
 import type { FleetShip } from "@/lib/ferry/fleet";
@@ -68,6 +69,8 @@ export function useTravelMarkers(
 ) {
   const { user } = useAuth();
   const feed = useQuery(communityQuery(undefined, undefined, false, user?.id));
+  // Catalogue (libellés, couleurs, pictos) : les pastilles sont redessinées dès qu'il est chargé.
+  const { ready: catalogReady } = useSignalCatalog();
   const callbacks = useRef({ onSelect, onOpen, onMarkerHover });
   callbacks.current = { onSelect, onOpen, onMarkerHover };
   // Bulle ouverte : conservée quand la flotte se met à jour (les pastilles sont recréées).
@@ -227,5 +230,5 @@ export function useTravelMarkers(
       unmountLater(bubbleRoots);
       markers.forEach((marker) => marker.remove());
     };
-  }, [mapRef, ready, ports, fleet, feed.data]);
+  }, [mapRef, ready, ports, fleet, feed.data, catalogReady]);
 }

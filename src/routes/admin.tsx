@@ -17,7 +17,9 @@ import { PlanningAlerts, usePlanningAlerts } from "@/components/admin/PlanningAl
 import { NotificationOverview } from "@/components/admin/NotificationOverview";
 import { DashboardOverview } from "@/components/admin/DashboardOverview";
 import { useAdminCounts } from "@/hooks/useAdminCounts";
-import { AdminWorkspace } from "@/components/admin/AdminWorkspace";
+import { AdminWorkspace, type AdminSearchItem } from "@/components/admin/AdminWorkspace";
+import { AdminDrawer, AdminListToolbar, matches } from "@/components/admin/AdminDrawer";
+import { SignalsAdmin } from "@/components/admin/SignalsAdmin";
 import { AdminFilterNotice } from "@/components/admin/AdminFilterNotice";
 import {
   adminSearch,
@@ -188,6 +190,7 @@ function AdminTabs() {
     filter,
     company,
     route: commercialRoute,
+    item,
   } = Route.useSearch();
   const tab = canUseAdminTab(roles, requestedTab)
     ? requestedTab
@@ -203,6 +206,34 @@ function AdminTabs() {
   const queryClient = useQueryClient();
   const notificationOverview = useQuery(adminNotificationQuery(isAdmin ? user?.id : undefined));
   const { data: counts } = useAdminCounts();
+  // Recherche du menu (Ctrl+K) : rubriques et fiches (ports, navires, compagnies).
+  const { data: searchPorts = [] } = useQuery(portsQuery);
+  const { data: searchVessels = [] } = useQuery(vesselsQuery);
+  const { data: searchCompanies = [] } = useQuery(companiesQuery);
+  const searchItems: AdminSearchItem[] = [
+    ...searchPorts.map((port) => ({
+      tab: "ports",
+      id: port.id,
+      label: port.name,
+      hint: `Port · ${port.country_name}`,
+    })),
+    ...searchVessels.map((vessel) => ({
+      tab: "vessels",
+      id: vessel.id,
+      label: vessel.name,
+      hint: `Navire${vessel.mmsi ? ` · MMSI ${vessel.mmsi}` : ""}`,
+    })),
+    ...searchCompanies.map((company) => ({
+      tab: "companies",
+      id: company.id,
+      label: company.name,
+      hint: "Compagnie",
+    })),
+  ];
+  const openItem = (id: string, itemId: string) => {
+    if (!canUseAdminTab(roles, id)) return;
+    void navigate({ search: adminSearch({ tab: id, item: itemId }), resetScroll: false });
+  };
   const { data: alerts } = usePlanningAlerts();
   useEffect(
     () =>
@@ -231,6 +262,8 @@ function AdminTabs() {
         onNavigate={navigateTo}
         badges={badges}
         canAccess={(id) => canUseAdminTab(roles, id)}
+        searchItems={searchItems}
+        onOpenItem={openItem}
       >
         <TabsContent value="commercial">
           <CommercialPrograms
@@ -297,11 +330,14 @@ function AdminTabs() {
         <TabsContent value="flash">
           <NewsAdmin />
         </TabsContent>
+        <TabsContent value="signals">
+          <SignalsAdmin />
+        </TabsContent>
         <TabsContent value="places">
           <PlacesAdmin />
         </TabsContent>
         <TabsContent value="companies">
-          <CompaniesAdmin />
+          <CompaniesAdmin itemId={tab === "companies" ? item : undefined} />
         </TabsContent>
         <TabsContent value="departures">
           <DeparturesAdmin
@@ -313,13 +349,13 @@ function AdminTabs() {
           <SchedulesAdmin />
         </TabsContent>
         <TabsContent value="ports">
-          <PortsAdmin />
+          <PortsAdmin itemId={tab === "ports" ? item : undefined} />
         </TabsContent>
         <TabsContent value="routes">
           <RoutesAdmin />
         </TabsContent>
         <TabsContent value="vessels">
-          <VesselsAdmin />
+          <VesselsAdmin itemId={tab === "vessels" ? item : undefined} />
         </TabsContent>
         <TabsContent value="import">
           <ImportAdmin />
@@ -370,26 +406,60 @@ function AlertDepartureEditor({
   );
 }
 
-function CompaniesAdmin() {
+function CompaniesAdmin({ itemId }: { itemId?: string | undefined } = {}) {
   const { data: companies = [] } = useQuery(companiesQuery);
+  const [search, setSearch] = useState("");
+  const [openId, setOpenId] = useState<string | null>(itemId ?? null);
+  useEffect(() => {
+    if (itemId) setOpenId(itemId);
+  }, [itemId]);
+  const list = companies.filter((c) => matches(search, c.name, c.website_url));
+  const open = companies.find((c) => c.id === openId);
   return (
     <Panel>
-      <p className="mb-3 text-sm text-muted-foreground">
-        Collez l'adresse (URL) du logo officiel. Sans logo, une pastille avec les initiales
-        s'affiche.
-      </p>
-      <ul className="divide-y divide-border">
-        {companies.map((c) => (
-          <CompanyRow key={c.id} company={c} />
+      <AdminListToolbar
+        search={search}
+        onSearch={setSearch}
+        placeholder="Chercher une compagnie"
+        count={list.length}
+        total={companies.length}
+      />
+      <ul className="bw-admin-list mt-3">
+        {list.map((c) => (
+          <li key={c.id}>
+            <button type="button" className="bw-admin-list__main" onClick={() => setOpenId(c.id)}>
+              <CompanyBadge name={c.name} logoUrl={c.logo_url} size={36} />
+              <span className="min-w-0">
+                <strong>{c.name}</strong>
+                <small>
+                  {c.website_url ?? "Pas de site officiel"}
+                  {c.logo_url ? "" : " · sans logo"}
+                </small>
+              </span>
+              {!c.logo_url ? <span className="bw-admin-chip">Logo manquant</span> : null}
+            </button>
+          </li>
         ))}
       </ul>
+      {open ? (
+        <AdminDrawer
+          open
+          onOpenChange={(next) => !next && setOpenId(null)}
+          title={open.name}
+          description="Collez l'adresse (URL) du logo officiel. Sans logo, une pastille avec les initiales s'affiche."
+        >
+          <CompanyRow key={open.id} company={open} onSaved={() => setOpenId(null)} />
+        </AdminDrawer>
+      ) : null}
     </Panel>
   );
 }
 
 function CompanyRow({
   company,
+  onSaved,
 }: {
+  onSaved?: () => void;
   company: {
     id: string;
     name: string;
@@ -420,11 +490,12 @@ function CompanyRow({
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["companies"] });
       toast.success("Compagnie mise à jour.");
+      onSaved?.();
     },
     onError: (e: Error) => toast.error(e.message),
   });
   return (
-    <li className="flex flex-wrap items-end gap-3 py-3">
+    <div className="grid gap-3">
       <CompanyBadge name={name} logoUrl={logo} size={56} />
       <label className="text-xs">
         Nom
@@ -442,10 +513,10 @@ function CompanyRow({
         Description
         <Input value={desc} onChange={(e) => setDesc(e.target.value)} />
       </label>
-      <Button size="sm" disabled={save.isPending} onClick={() => save.mutate()}>
+      <Button size="sm" className="justify-self-end" disabled={save.isPending} onClick={() => save.mutate()}>
         Enregistrer
       </Button>
-    </li>
+    </div>
   );
 }
 
@@ -1439,8 +1510,12 @@ function SchedulesAdmin({ companyId, routeId }: { companyId?: string; routeId?: 
 }
 
 /** Suivi en direct : identifiant MMSI de chaque navire et état de la dernière position reçue. */
-function VesselsAdmin({ vesselIds }: { vesselIds?: string[] } = {}) {
+function VesselsAdmin({ vesselIds, itemId }: { vesselIds?: string[]; itemId?: string | undefined } = {}) {
   const queryClient = useQueryClient();
+  const [openId, setOpenId] = useState<string | null>(itemId ?? null);
+  useEffect(() => {
+    if (itemId) setOpenId(itemId);
+  }, [itemId]);
   const { data: allVessels = [] } = useQuery(vesselsQuery);
   const { data: companies = [] } = useQuery(companiesQuery);
   const { data: positions = [] } = useQuery({
@@ -1545,36 +1620,8 @@ function VesselsAdmin({ vesselIds }: { vesselIds?: string[] } = {}) {
   });
 
   const positionByMmsi = new Map(positions.map((position) => [position.mmsi, position]));
-
-  return (
-    <Panel>
-      <h2 className="text-sm font-semibold">Navires : suivi en direct, IMO et photo</h2>
-      <p className="mt-1 text-xs text-muted-foreground">
-        <strong>MMSI</strong> (9 chiffres) : active le suivi en direct. Le site suit un navire de 6
-        h avant son départ jusqu'à son arrivée et ne redemande sa position qu'au bout de 20 minutes.{" "}
-        <strong>IMO</strong> (7 chiffres) : ajoute le lien « Voir sur VesselFinder » dans la fiche.{" "}
-        <strong>Photo</strong> : collez une URL ou téléversez un fichier image (JPG, PNG, WebP ou
-        AVIF, 10 Mo max). Le téléversement remplace l’URL ; sans photo personnalisée, le site
-        cherche une photo libre sur Wikimedia Commons.
-      </p>
-      <div className="mt-4 grid gap-3 sm:grid-cols-[minmax(0,1fr)_16rem]">
-        <Input value={vesselSearch} onChange={(event) => setVesselSearch(event.target.value)} placeholder="Rechercher un navire, MMSI, IMO ou compagnie…" aria-label="Rechercher dans la flotte" />
-        <select value={companyFilter} onChange={(event) => setCompanyFilter(event.target.value)} aria-label="Filtrer par compagnie" className="h-10 rounded-md border border-input bg-background px-3 text-sm">
-          <option value="all">Toutes les compagnies</option>
-          <option value="none">Sans compagnie</option>
-          {companies.slice().sort((a, b) => a.name.localeCompare(b.name, "fr")).map((company) => <option key={company.id} value={company.id}>{company.name}</option>)}
-        </select>
-      </div>
-      <p className="mt-2 text-xs text-muted-foreground">{vessels.length} navire{vessels.length > 1 ? "s" : ""} affiché{vessels.length > 1 ? "s" : ""} sur {scopedVessels.length} · {orderedGroups.length} groupe{orderedGroups.length > 1 ? "s" : ""}</p>
-      <div className="mt-3 space-y-5">
-        {orderedGroups.map(([companyId, groupVessels]) => (
-          <section key={companyId} className="overflow-hidden rounded-xl border border-border">
-            <h3 className="flex items-center justify-between gap-3 bg-muted/40 px-3 py-2 text-sm font-semibold">
-              <span>{companyId === "none" ? "Sans compagnie" : companies.find((item) => item.id === companyId)?.name ?? "Compagnie inconnue"}</span>
-              <span className="rounded-full bg-background px-2 py-0.5 text-xs font-medium text-muted-foreground">{groupVessels.length}</span>
-            </h3>
-            <ul className="divide-y divide-border px-3">
-        {groupVessels.map((vessel) => {
+  /** Fiche complète d'un navire (dans le panneau latéral). */
+  const editorFor = (vessel: (typeof allVessels)[number]) => {
           const draft = drafts[vessel.id] ?? {};
           const mmsi = draft.mmsi ?? (vessel.mmsi ? String(vessel.mmsi) : "");
           const imo = draft.imo ?? (vessel.imo ? String(vessel.imo) : "");
@@ -1591,7 +1638,7 @@ function VesselsAdmin({ vesselIds }: { vesselIds?: string[] } = {}) {
           const position = vessel.mmsi ? positionByMmsi.get(vessel.mmsi) : undefined;
           const company = companies.find((item) => item.id === vessel.company_id);
           return (
-            <li key={vessel.id} className="grid gap-2 py-3">
+            <div className="grid gap-3">
               <div className="min-w-0">
                 <div className="flex items-center gap-3">
                   {photo && photoOk ? (
@@ -1655,30 +1702,36 @@ function VesselsAdmin({ vesselIds }: { vesselIds?: string[] } = {}) {
                 })()}
               </div>
               <div className="flex flex-wrap items-center gap-2">
-                <Input
-                  inputMode="numeric"
-                  maxLength={9}
-                  placeholder="MMSI"
-                  aria-label={`MMSI de ${vessel.name}`}
-                  aria-invalid={!mmsiOk}
-                  value={mmsi}
-                  onChange={(event) =>
-                    setDraft(vessel.id, { mmsi: event.target.value.replace(/\D/g, "") })
-                  }
-                  className="w-32"
-                />
-                <Input
-                  inputMode="numeric"
-                  maxLength={7}
-                  placeholder="IMO"
-                  aria-label={`IMO de ${vessel.name}`}
-                  aria-invalid={!imoOk}
-                  value={imo}
-                  onChange={(event) =>
-                    setDraft(vessel.id, { imo: event.target.value.replace(/\D/g, "") })
-                  }
-                  className="w-28"
-                />
+                <label className="grid gap-1 text-xs font-medium">
+                  MMSI
+                  <Input
+                    inputMode="numeric"
+                    maxLength={9}
+                    placeholder="MMSI"
+                    aria-label={`MMSI de ${vessel.name}`}
+                    aria-invalid={!mmsiOk}
+                    value={mmsi}
+                    onChange={(event) =>
+                      setDraft(vessel.id, { mmsi: event.target.value.replace(/\D/g, "") })
+                    }
+                    className="w-32"
+                  />
+                </label>
+                <label className="grid gap-1 text-xs font-medium">
+                  IMO
+                  <Input
+                    inputMode="numeric"
+                    maxLength={7}
+                    placeholder="IMO"
+                    aria-label={`IMO de ${vessel.name}`}
+                    aria-invalid={!imoOk}
+                    value={imo}
+                    onChange={(event) =>
+                      setDraft(vessel.id, { imo: event.target.value.replace(/\D/g, "") })
+                    }
+                    className="w-28"
+                  />
+                </label>
                 <div className="grid min-w-56 flex-1 gap-1">
                   <Input
                     type="url"
@@ -1752,6 +1805,79 @@ function VesselsAdmin({ vesselIds }: { vesselIds?: string[] } = {}) {
               </div>
               <VesselSpecsEditor vessel={vessel as unknown as VesselSpecsRow} />
               <VesselDeleteButton id={vessel.id} name={vessel.name} />
+            </div>
+          );
+  };
+  const openVessel = allVessels.find((vessel) => vessel.id === openId);
+
+  return (
+    <Panel>
+      <details className="text-xs text-muted-foreground">
+        <summary className="cursor-pointer text-sm font-semibold text-foreground">
+          Aide : MMSI, IMO et photo
+        </summary>
+      <p className="mt-1 text-xs text-muted-foreground">
+        <strong>MMSI</strong> (9 chiffres) : active le suivi en direct. Le site suit un navire de 6
+        h avant son départ jusqu'à son arrivée et ne redemande sa position qu'au bout de 20 minutes.{" "}
+        <strong>IMO</strong> (7 chiffres) : ajoute le lien « Voir sur VesselFinder » dans la fiche.{" "}
+        <strong>Photo</strong> : collez une URL ou téléversez un fichier image (JPG, PNG, WebP ou
+        AVIF, 10 Mo max). Le téléversement remplace l’URL ; sans photo personnalisée, le site
+        cherche une photo libre sur Wikimedia Commons.
+      </p>
+      </details>
+      <div className="mt-4 grid gap-3 sm:grid-cols-[minmax(0,1fr)_16rem]">
+        <Input value={vesselSearch} onChange={(event) => setVesselSearch(event.target.value)} placeholder="Rechercher un navire, MMSI, IMO ou compagnie…" aria-label="Rechercher dans la flotte" />
+        <select value={companyFilter} onChange={(event) => setCompanyFilter(event.target.value)} aria-label="Filtrer par compagnie" className="h-10 rounded-md border border-input bg-background px-3 text-sm">
+          <option value="all">Toutes les compagnies</option>
+          <option value="none">Sans compagnie</option>
+          {companies.slice().sort((a, b) => a.name.localeCompare(b.name, "fr")).map((company) => <option key={company.id} value={company.id}>{company.name}</option>)}
+        </select>
+      </div>
+      <p className="mt-2 text-xs text-muted-foreground">{vessels.length} navire{vessels.length > 1 ? "s" : ""} affiché{vessels.length > 1 ? "s" : ""} sur {scopedVessels.length} · {orderedGroups.length} groupe{orderedGroups.length > 1 ? "s" : ""}</p>
+      <div className="mt-3 space-y-5">
+        {orderedGroups.map(([companyId, groupVessels]) => (
+          <section key={companyId} className="overflow-hidden rounded-xl border border-border">
+            <h3 className="flex items-center justify-between gap-3 bg-muted/40 px-3 py-2 text-sm font-semibold">
+              <span>{companyId === "none" ? "Sans compagnie" : companies.find((item) => item.id === companyId)?.name ?? "Compagnie inconnue"}</span>
+              <span className="rounded-full bg-background px-2 py-0.5 text-xs font-medium text-muted-foreground">{groupVessels.length}</span>
+            </h3>
+            <ul className="bw-admin-list px-2 py-1">
+        {groupVessels.map((vessel) => {
+          const position = vessel.mmsi ? positionByMmsi.get(vessel.mmsi) : undefined;
+          return (
+            <li key={vessel.id}>
+              <button
+                type="button"
+                className="bw-admin-list__main"
+                onClick={() => setOpenId(vessel.id)}
+              >
+                {vessel.photo_url ? (
+                  <img
+                    src={vessel.photo_url}
+                    alt=""
+                    width={56}
+                    height={40}
+                    loading="lazy"
+                    referrerPolicy="no-referrer"
+                    className="h-10 w-14 shrink-0 rounded-md border object-cover"
+                  />
+                ) : (
+                  <span className="grid h-10 w-14 shrink-0 place-items-center rounded-md border bg-muted text-[10px] text-muted-foreground">
+                    sans photo
+                  </span>
+                )}
+                <span className="min-w-0">
+                  <strong>{vessel.name}</strong>
+                  <small>
+                    {vessel.mmsi ? `MMSI ${vessel.mmsi}` : "Pas de MMSI : suivi en direct inactif"}
+                    {position?.reported_at
+                      ? ` · position du ${new Date(position.reported_at).toLocaleString("fr-FR", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}`
+                      : ""}
+                  </small>
+                </span>
+                {position?.last_error ? <span className="bw-admin-chip" data-tone="warn">Erreur de suivi</span> : null}
+                {!vessel.mmsi ? <span className="bw-admin-chip">Sans MMSI</span> : null}
+              </button>
             </li>
           );
         })}
@@ -1762,6 +1888,16 @@ function VesselsAdmin({ vesselIds }: { vesselIds?: string[] } = {}) {
           <p className="py-3 text-sm text-muted-foreground">{scopedVessels.length ? "Aucun navire ne correspond à cette recherche." : "Aucun navire enregistré."}</p>
         ) : null}
       </div>
+      {openVessel ? (
+        <AdminDrawer
+          open
+          onOpenChange={(next) => !next && setOpenId(null)}
+          title={openVessel.name}
+          description="Suivi en direct (MMSI), lien VesselFinder (IMO), photo et caractéristiques."
+        >
+          {editorFor(openVessel)}
+        </AdminDrawer>
+      ) : null}
     </Panel>
   );
 }
@@ -2260,8 +2396,10 @@ function slugify(value: string) {
     .replace(/^-|-$/g, "");
 }
 
-function PortsAdmin() {
+function PortsAdmin({ itemId }: { itemId?: string | undefined } = {}) {
   const queryClient = useQueryClient();
+  const [formOpen, setFormOpen] = useState(false);
+  const [search, setSearch] = useState("");
   const { data: ports = [] } = useQuery(adminPortsQuery);
   const { data: routes = [] } = useQuery(adminRoutesQuery);
   const { data: schedules = [] } = useQuery(schedulesQuery);
@@ -2297,7 +2435,41 @@ function PortsAdmin() {
     setDraft(emptyPortDraft);
     setFacilities({});
     setEditingId(null);
+    setFormOpen(false);
   };
+  const startNew = () => {
+    setDraft(emptyPortDraft);
+    setFacilities({});
+    setEditingId(null);
+    setPresetName("");
+    setFormOpen(true);
+  };
+  const startEdit = (port: Port) => {
+    setEditingId(port.id);
+    setFacilities((port.facilities ?? {}) as Record<string, string>);
+    setDraft({
+      name: port.name,
+      city: port.city ?? "",
+      country_code: port.country_code,
+      latitude: String(port.latitude),
+      longitude: String(port.longitude),
+      label_anchor: port.label_anchor,
+      label_offset_x: String(port.label_offset_x),
+      label_offset_y: String(port.label_offset_y),
+      notes: port.notes ?? "",
+      info_source: port.info_source ?? "",
+      info_source_url: port.info_source_url ?? "",
+      photo_url: port.photo_url ?? "",
+      status: port.status,
+    });
+    setFormOpen(true);
+  };
+  // Fiche demandée depuis la recherche du menu.
+  useEffect(() => {
+    const port = itemId ? ports.find((item) => item.id === itemId) : undefined;
+    if (port) startEdit(port);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [itemId, ports.length]);
 
   const save = useMutation({
     mutationFn: async () => {
@@ -2537,8 +2709,12 @@ function PortsAdmin() {
         </Panel>
       ) : null}
 
-      <Panel>
-        <h2 className="text-sm font-semibold">{editingId ? "Modifier le port" : "Nouveau port"}</h2>
+      <AdminDrawer
+        open={formOpen}
+        onOpenChange={(next) => !next && reset()}
+        title={editingId ? `Modifier ${draft.name || "le port"}` : "Nouveau port"}
+        description="Position sur la carte, informations pratiques et services."
+      >
         <div className="mt-3">
           <Field label="Pré-sélection d'un grand port (Algérie et Europe)">
             <NativeSelect
@@ -2665,18 +2841,24 @@ function PortsAdmin() {
           <Button size="sm" disabled={save.isPending} onClick={() => save.mutate()}>
             {editingId ? "Enregistrer les modifications" : "Ajouter le port"}
           </Button>
-          {editingId ? (
-            <Button size="sm" variant="ghost" onClick={reset}>
-              Annuler
-            </Button>
-          ) : null}
+          <Button size="sm" variant="ghost" onClick={reset}>
+            Annuler
+          </Button>
         </div>
-      </Panel>
+      </AdminDrawer>
 
       <Panel>
-        <h2 className="text-sm font-semibold">Ports existants ({ports.length})</h2>
+        <AdminListToolbar
+          search={search}
+          onSearch={setSearch}
+          placeholder="Chercher un port"
+          count={ports.filter((port) => matches(search, port.name, port.country_name, port.city)).length}
+          total={ports.length}
+          onCreate={startNew}
+          createLabel="Nouveau port"
+        />
         <ul className="divide-y divide-border">
-          {ports.map((port) => (
+          {ports.filter((port) => matches(search, port.name, port.country_name, port.city)).map((port) => (
             <li key={port.id} className="flex flex-wrap items-center gap-3 py-3">
               <div className="min-w-0 flex-1">
                 <p className="text-sm font-medium">
@@ -2692,25 +2874,7 @@ function PortsAdmin() {
                 <Button
                   size="sm"
                   variant="outline"
-                  onClick={() => {
-                    setEditingId(port.id);
-                    setFacilities((port.facilities ?? {}) as Record<string, string>);
-                    setDraft({
-                      name: port.name,
-                      city: port.city ?? "",
-                      country_code: port.country_code,
-                      latitude: String(port.latitude),
-                      longitude: String(port.longitude),
-                      label_anchor: port.label_anchor,
-                      label_offset_x: String(port.label_offset_x),
-                      label_offset_y: String(port.label_offset_y),
-                      notes: port.notes ?? "",
-                      info_source: port.info_source ?? "",
-                      info_source_url: port.info_source_url ?? "",
-                      photo_url: port.photo_url ?? "",
-                      status: port.status,
-                    });
-                  }}
+                  onClick={() => startEdit(port)}
                 >
                   Modifier
                 </Button>

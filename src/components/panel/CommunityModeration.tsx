@@ -8,10 +8,11 @@ const supabase = typedSupabase as unknown as SupabaseClient;
 import { communityKey, communityQuery } from "@/lib/ferry/community";
 import { vesselsQuery, portsQuery } from "@/lib/ferry/queries";
 import { Button } from "@/components/ui/button";
-import { alertLabel } from "@/lib/ferry/community";
+import { alertLabel, useSignalCatalog } from "@/lib/ferry/community";
 
 export function CommunityModeration() {
   const { user } = useAuth();
+  useSignalCatalog();
   const client = useQueryClient();
   const feed = useQuery(communityQuery(undefined, undefined, true, user?.id));
   const { data: vessels = [] } = useQuery(vesselsQuery);

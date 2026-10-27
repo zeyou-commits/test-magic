@@ -29,6 +29,7 @@ import {
   currentPosition,
   isImpact,
   onSiteCount,
+  useSignalCatalog,
   type AlertCategory,
   type CommunityKind,
   type VesselReview,
@@ -56,6 +57,7 @@ const failure = (message?: string) =>
  */
 export function TravelSignals({ kind, target }: { kind: CommunityKind; target: string }) {
   const { user } = useAuth();
+  useSignalCatalog();
   const isMobile = useIsMobile();
   const queryClient = useQueryClient();
   const feed = useQuery(communityQuery(kind, target, false, user?.id));

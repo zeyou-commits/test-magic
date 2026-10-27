@@ -1,4 +1,4 @@
-import { queryOptions } from "@tanstack/react-query";
+import { queryOptions, useQuery } from "@tanstack/react-query";
 import { z } from "zod";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { supabase as typedSupabase } from "@/integrations/supabase/client";
@@ -12,7 +12,7 @@ export type CommunityKind = "vessel" | "port";
  * Niveau de base de données requis : 0 = d'origine, 1 = script du 26/10, 2 = script du 29/10,
  * 3 = script du 30/10 (situations du port le long de la file d'attente).
  */
-export type Level = 0 | 1 | 2 | 3;
+export type Level = 0 | 1 | 2 | 3 | 4;
 export type SituationOption = {
   code: string;
   label: string;
@@ -23,12 +23,18 @@ export type SituationOption = {
   level?: Level;
   /** Ancienne précision, proposée seulement tant que le script suivant n'est pas exécuté. */
   upTo?: Level;
+  /** Nom du picto (voir `iconRegistry`). */
+  icon?: string;
+  /** Masquée depuis l'admin : plus proposée, mais toujours lisible. */
+  hidden?: boolean;
 };
 export type Situation = {
   label: string;
   where: CommunityKind;
   /** Couleur unique de la situation : tuiles, pastilles de carte, bulles et fiches. */
   color: string;
+  /** Nom du picto (voir `iconRegistry`). */
+  icon: string;
   /** Durée d'affichage en minutes (appliquée par le serveur à partir du script du 29/10). */
   lifetime: number;
   level: Level;
@@ -42,111 +48,115 @@ export type Situation = {
   options?: SituationOption[];
 };
 
+export type ServiceDef = {
+  code: string;
+  label: string;
+  open: string;
+  closed: string;
+  icon: string;
+  active?: boolean;
+};
 /** Services du port signalés ouverts ou fermés (précision `service_<code>_<open|closed>`). */
-export const portServices = [
-  { code: "snack", label: "Snack, restauration", open: "ouvert", closed: "fermé" },
-  { code: "prayer", label: "Salle de prière", open: "disponible", closed: "indisponible" },
-  { code: "toilets", label: "Toilettes", open: "ouvertes", closed: "fermées" },
-  { code: "water", label: "Eau potable", open: "disponible", closed: "indisponible" },
-  { code: "atm", label: "Distributeur", open: "en service", closed: "hors service" },
-  { code: "exchange", label: "Bureau de change", open: "ouvert", closed: "fermé" },
-  { code: "fuel", label: "Station-service", open: "ouverte", closed: "fermée" },
-  { code: "kids", label: "Espace enfants", open: "ouvert", closed: "fermé" },
-] as const;
-export type PortService = (typeof portServices)[number]["code"];
-const serviceDetail = /^service_([a-z]+)_(open|closed)$/;
-/** « Snack, restauration · ouvert » à partir de la précision enregistrée. */
-export function serviceLabel(detail: string | null) {
-  const match = detail ? serviceDetail.exec(detail) : null;
-  const service = portServices.find((item) => item.code === match?.[1]);
-  if (!match || !service) return null;
-  return `${service.label} · ${match[2] === "open" ? service.open : service.closed}`;
-}
+const builtinServices: ServiceDef[] = [
+  { code: "snack", label: "Snack, restauration", open: "ouvert", closed: "fermé", icon: "utensils" },
+  { code: "prayer", label: "Salle de prière", open: "disponible", closed: "indisponible", icon: "moon-star" },
+  { code: "toilets", label: "Toilettes", open: "ouvertes", closed: "fermées", icon: "toilet" },
+  { code: "water", label: "Eau potable", open: "disponible", closed: "indisponible", icon: "glass-water" },
+  { code: "atm", label: "Distributeur", open: "en service", closed: "hors service", icon: "banknote" },
+  { code: "exchange", label: "Bureau de change", open: "ouvert", closed: "fermé", icon: "coins" },
+  { code: "fuel", label: "Station-service", open: "ouverte", closed: "fermée", icon: "fuel" },
+  { code: "kids", label: "Espace enfants", open: "ouvert", closed: "fermé", icon: "baby" },
+];
 
 /**
- * Catalogue unique des situations signalées par les voyageurs.
- * Au port, dans l'ordre de la file d'attente : accès, enregistrement, file, formalités, appel, services.
- * Tout l'affichage (saisie, carte, fiches, Flash info, modération) en dépend.
+ * Catalogue de secours, identique au contenu initial des tables du script du 31/10 :
+ * utilisé tant que ces tables n'existent pas. Ensuite, c'est l'admin qui fait foi.
  */
-export const situations = {
+const builtinSituations: Record<string, Situation> = {
   access: {
     label: "Accès au port",
     where: "port",
     color: "#dc4c1d",
+    icon: "traffic-cone",
     lifetime: 120,
     level: 0,
     question: "Comment ça se passe ?",
     options: [
-      { code: "access_ok", label: "Ça roule", level: 3 },
-      { code: "access_traffic", label: "Bouchon pour entrer" },
-      { code: "access_closed", label: "Accès fermé ou dévié", onSite: true, level: 2 },
-      { code: "access_works", label: "Travaux" },
+      { code: "access_ok", label: "Ça roule", icon: "circle-check", level: 3 },
+      { code: "access_traffic", label: "Bouchon pour entrer", icon: "car" },
+      { code: "access_closed", label: "Accès fermé ou dévié", icon: "ban", onSite: true, level: 2 },
+      { code: "access_works", label: "Travaux", icon: "construction" },
     ],
   },
   checkin: {
     label: "Enregistrement",
     where: "port",
     color: "#2563eb",
+    icon: "ticket",
     lifetime: 120,
     level: 3,
     required: true,
     question: "Aux guichets de la compagnie",
     options: [
-      { code: "checkin_open", label: "Ouvert" },
-      { code: "checkin_notyet", label: "Pas encore ouvert" },
-      { code: "checkin_queue", label: "Longue file au guichet" },
+      { code: "checkin_open", label: "Ouvert", icon: "door-open" },
+      { code: "checkin_notyet", label: "Pas encore ouvert", icon: "clock" },
+      { code: "checkin_queue", label: "Longue file au guichet", icon: "users" },
     ],
   },
   queue: {
     label: "File d’attente",
     where: "port",
     color: "#e0a100",
+    icon: "users",
     lifetime: 90,
     level: 0,
     question: "Comment avance la file ?",
     options: [
-      { code: "queue_moving", label: "La file avance", level: 3 },
-      { code: "queue_stopped", label: "File à l’arrêt", level: 3 },
-      { code: "queue_long", label: "File très longue", level: 3 },
-      { code: "queue_30", label: "Moins de 30 min", upTo: 2 },
-      { code: "queue_60", label: "Environ 1 h", upTo: 2 },
-      { code: "queue_120", label: "2 h et plus", upTo: 2 },
+      { code: "queue_moving", label: "La file avance", icon: "chevrons-right", level: 3 },
+      { code: "queue_stopped", label: "File à l’arrêt", icon: "pause", level: 3 },
+      { code: "queue_long", label: "File très longue", icon: "list-ordered", level: 3 },
+      { code: "queue_30", label: "Moins de 30 min", icon: "timer", upTo: 2 },
+      { code: "queue_60", label: "Environ 1 h", icon: "hourglass", upTo: 2 },
+      { code: "queue_120", label: "2 h et plus", icon: "hourglass", upTo: 2 },
     ],
   },
   formalities: {
     label: "Formalités (police, douane)",
     where: "port",
     color: "#c2410c",
+    icon: "stamp",
     lifetime: 90,
     level: 2,
     question: "Aux contrôles",
     options: [
-      { code: "formalities_open", label: "Ouvertes", level: 3 },
-      { code: "formalities_short", label: "Attente courte", level: 3 },
-      { code: "formalities_long", label: "Longue attente", level: 3 },
-      { code: "formalities_notyet", label: "Pas encore ouvertes", level: 3 },
-      { code: "formalities_30", label: "Moins de 30 min", upTo: 2 },
-      { code: "formalities_60", label: "Environ 1 h", upTo: 2 },
-      { code: "formalities_120", label: "2 h et plus", upTo: 2 },
+      { code: "formalities_open", label: "Ouvertes", icon: "door-open", level: 3 },
+      { code: "formalities_short", label: "Attente courte", icon: "timer", level: 3 },
+      { code: "formalities_long", label: "Longue attente", icon: "hourglass", level: 3 },
+      { code: "formalities_notyet", label: "Pas encore ouvertes", icon: "clock", level: 3 },
+      { code: "formalities_30", label: "Moins de 30 min", icon: "timer", upTo: 2 },
+      { code: "formalities_60", label: "Environ 1 h", icon: "hourglass", upTo: 2 },
+      { code: "formalities_120", label: "2 h et plus", icon: "hourglass", upTo: 2 },
     ],
   },
   call: {
     label: "Appel à l’embarquement",
     where: "port",
     color: "#9333ea",
+    icon: "bell-ring",
     lifetime: 60,
     level: 3,
     required: true,
     question: "Avant de monter à bord",
     options: [
-      { code: "call_called", label: "Embarquement appelé" },
-      { code: "call_waiting", label: "Pas encore appelé, on patiente" },
+      { code: "call_called", label: "Embarquement appelé", icon: "bell-ring" },
+      { code: "call_waiting", label: "Pas encore appelé, on patiente", icon: "hourglass" },
     ],
   },
   service: {
     label: "Services du port",
     where: "port",
     color: "#0f766e",
+    icon: "store",
     lifetime: 120,
     level: 3,
     required: true,
@@ -156,18 +166,20 @@ export const situations = {
     label: "Parking complet",
     where: "port",
     color: "#2f6fd6",
+    icon: "parking-circle",
     lifetime: 120,
     level: 1,
     retired: true,
     options: [
-      { code: "parking_boarding", label: "Parking d’embarquement" },
-      { code: "parking_visitors", label: "Parking accompagnants" },
+      { code: "parking_boarding", label: "Parking d’embarquement", icon: "parking-circle" },
+      { code: "parking_visitors", label: "Parking accompagnants", icon: "parking-circle" },
     ],
   },
   fluid: {
     label: "Ça passe bien",
     where: "port",
     color: "#2e9d6a",
+    icon: "circle-check",
     lifetime: 60,
     level: 1,
     // Remplacé par les états positifs de chaque situation (« Ça roule », « La file avance »…).
@@ -177,54 +189,215 @@ export const situations = {
     label: "Retard",
     where: "vessel",
     color: "#d6336c",
+    icon: "clock",
     lifetime: 180,
     level: 0,
     question: "Retard annoncé sur place",
     required: true,
     options: [
-      { code: "delay_30", label: "≈ 30 min", delay: 30 },
-      { code: "delay_60", label: "≈ 1 h", delay: 60 },
-      { code: "delay_120", label: "2 h et plus", delay: 120 },
-      { code: "delay_postponed", label: "Reporté ou annulé", onSite: true, level: 2 },
+      { code: "delay_30", label: "≈ 30 min", icon: "timer", delay: 30 },
+      { code: "delay_60", label: "≈ 1 h", icon: "hourglass", delay: 60 },
+      { code: "delay_120", label: "2 h et plus", icon: "hourglass", delay: 120 },
+      { code: "delay_postponed", label: "Reporté ou annulé", icon: "calendar-x", onSite: true, level: 2 },
     ],
   },
   boarding: {
     label: "Embarquement commencé",
     where: "vessel",
     color: "#0c8599",
+    icon: "log-in",
     lifetime: 60,
     level: 0,
     question: "Pour qui ?",
     options: [
-      { code: "boarding_vehicles", label: "Véhicules" },
-      { code: "boarding_foot", label: "Passagers à pied" },
+      { code: "boarding_vehicles", label: "Véhicules", icon: "car" },
+      { code: "boarding_foot", label: "Passagers à pied", icon: "footprints" },
     ],
   },
   disembarking: {
     label: "Débarquement commencé",
     where: "vessel",
     color: "#6741d9",
+    icon: "log-out",
     lifetime: 60,
     level: 1,
     question: "Pour qui ?",
     options: [
-      { code: "disembarking_vehicles", label: "Véhicules" },
-      { code: "disembarking_foot", label: "Passagers à pied" },
+      { code: "disembarking_vehicles", label: "Véhicules", icon: "car" },
+      { code: "disembarking_foot", label: "Passagers à pied", icon: "footprints" },
     ],
   },
-} satisfies Record<string, Situation>;
-export type AlertCategory = keyof typeof situations;
-export const situationOf = (category: AlertCategory): Situation => situations[category];
+};
+
+/** Catalogue en cours : celui de secours, remplacé par celui de la base dès qu'il est chargé. */
+let catalog: { fromDb: boolean; situations: Record<string, Situation>; services: ServiceDef[] } = {
+  fromDb: false,
+  situations: builtinSituations,
+  services: builtinServices,
+};
+export const catalogFromDb = () => catalog.fromDb;
+/** Services proposés à la saisie (actifs, dans l'ordre de l'admin). */
+export const portServices = () => catalog.services.filter((item) => item.active !== false);
+
+const serviceDetail = /^service_([a-z0-9]+)_(open|closed)$/;
+/** « Snack, restauration · ouvert » à partir de la précision enregistrée. */
+export function serviceLabel(detail: string | null) {
+  const match = detail ? serviceDetail.exec(detail) : null;
+  const service = catalog.services.find((item) => item.code === match?.[1]);
+  if (!match || !service) return null;
+  return `${service.label} · ${match[2] === "open" ? service.open : service.closed}`;
+}
+/** Picto d'un service à partir de la précision enregistrée. */
+export function serviceIcon(detail: string | null) {
+  const match = detail ? serviceDetail.exec(detail) : null;
+  return catalog.services.find((item) => item.code === match?.[1])?.icon ?? null;
+}
+
+// ---- Tables du catalogue (script du 31/10) ----
+const situationRow = z.object({
+  code: z.string(),
+  label: z.string(),
+  target_kind: z.enum(["port", "vessel"]),
+  color: z.string(),
+  icon: z.string(),
+  lifetime_minutes: z.number(),
+  question: z.string(),
+  required: z.boolean(),
+  sort: z.number(),
+  active: z.boolean(),
+  builtin: z.boolean(),
+});
+const optionRow = z.object({
+  code: z.string(),
+  situation: z.string(),
+  label: z.string(),
+  icon: z.string(),
+  on_site: z.boolean(),
+  delay_minutes: z.number().nullable(),
+  lifetime_minutes: z.number().nullable(),
+  sort: z.number(),
+  active: z.boolean(),
+});
+const serviceRow = z.object({
+  code: z.string(),
+  label: z.string(),
+  open_label: z.string(),
+  closed_label: z.string(),
+  icon: z.string(),
+  sort: z.number(),
+  active: z.boolean(),
+});
+export type SituationRow = z.infer<typeof situationRow>;
+export type OptionRow = z.infer<typeof optionRow>;
+export type ServiceRow = z.infer<typeof serviceRow>;
+export const signalTablesKey = ["bw-signal-tables"] as const;
+/** Contenu brut des tables du catalogue (admin et site) ; null si le script n'est pas exécuté. */
+export const signalTablesQuery = queryOptions({
+  queryKey: signalTablesKey,
+  queryFn: async () => {
+    const [situations, options, services] = await Promise.all([
+      supabase.from("bw_signal_situations").select("*").order("sort").order("label"),
+      supabase.from("bw_signal_options").select("*").order("sort").order("label"),
+      supabase.from("bw_signal_services").select("*").order("sort").order("label"),
+    ]);
+    const error = situations.error ?? options.error ?? services.error;
+    if (error) {
+      if (["PGRST205", "42P01", "PGRST202"].includes(error.code)) return null;
+      throw new Error("Le catalogue des signalements est momentanément indisponible.");
+    }
+    return {
+      situations: z.array(situationRow).parse(situations.data),
+      options: z.array(optionRow).parse(options.data),
+      services: z.array(serviceRow).parse(services.data),
+    };
+  },
+  retry: false,
+  staleTime: 5 * 60_000,
+});
+type Tables = {
+  situations: SituationRow[];
+  options: OptionRow[];
+  services: ServiceRow[];
+};
+let applied: Tables | null = null;
+function applyTables(tables: Tables) {
+  const situations: Record<string, Situation> = {};
+  for (const row of tables.situations) {
+    const options = tables.options
+      .filter((option) => option.situation === row.code)
+      .map((option) => ({
+        code: option.code,
+        label: option.label,
+        icon: option.icon,
+        onSite: option.on_site,
+        ...(option.delay_minutes ? { delay: option.delay_minutes } : {}),
+        ...(option.active ? {} : { hidden: true }),
+      }));
+    situations[row.code] = {
+      label: row.label,
+      where: row.target_kind,
+      color: row.color,
+      icon: row.icon,
+      lifetime: row.lifetime_minutes,
+      level: 0,
+      question: row.question,
+      required: row.required,
+      ...(row.active ? {} : { retired: true }),
+      ...(options.length ? { options } : {}),
+    };
+  }
+  catalog = {
+    fromDb: true,
+    situations,
+    services: tables.services.map((row) => ({
+      code: row.code,
+      label: row.label,
+      open: row.open_label,
+      closed: row.closed_label,
+      icon: row.icon,
+      active: row.active,
+    })),
+  };
+}
+
+/**
+ * À appeler dans les écrans qui affichent ou saisissent des signalements :
+ * charge la version du catalogue et, à partir du script du 31/10, son contenu en base.
+ */
+export function useSignalCatalog() {
+  const version = useQuery(catalogQuery).data ?? 0;
+  const tables = useQuery({ ...signalTablesQuery, enabled: version >= 4 });
+  if (tables.data && tables.data !== applied) {
+    applied = tables.data;
+    applyTables(tables.data);
+  }
+  return { version, ready: version < 4 || tables.data != null || tables.isError };
+}
+/** Code d'une situation : défini dans le catalogue (et, à partir du 31/10, depuis l'admin). */
+export type AlertCategory = string;
+const unknownSituation: Situation = {
+  label: "Information voyageurs",
+  where: "port",
+  color: "#64748b",
+  icon: "flag",
+  lifetime: 120,
+  level: 0,
+};
+export const situationOf = (category: AlertCategory): Situation =>
+  catalog.situations[category] ?? { ...unknownSituation, label: category };
 /** Situations proposées à la saisie selon les scripts SQL exécutés. */
 export function availableSituations(level: Level) {
-  return (Object.keys(situations) as AlertCategory[]).filter((key) => {
+  return Object.keys(catalog.situations).filter((key) => {
     const s = situationOf(key);
     return !s.retired && s.level <= level && (s.retiredFrom === undefined || level < s.retiredFrom);
   });
 }
 export const optionsFor = (category: AlertCategory, level: Level) =>
   (situationOf(category).options ?? []).filter(
-    (option) => (option.level ?? 0) <= level && (option.upTo === undefined || level <= option.upTo),
+    (option) =>
+      !option.hidden &&
+      (option.level ?? 0) <= level &&
+      (option.upTo === undefined || level <= option.upTo),
   );
 /** « Environ 1 h 30 » : durée d'affichage lisible. */
 export function lifetimeLabel(category: AlertCategory) {
@@ -238,19 +411,7 @@ const alertSchema = z.object({
   id: z.string(),
   target_kind: z.enum(["vessel", "port"]),
   target_id: z.string(),
-  category: z.enum([
-    "delay",
-    "boarding",
-    "disembarking",
-    "queue",
-    "formalities",
-    "access",
-    "parking",
-    "fluid",
-    "checkin",
-    "call",
-    "service",
-  ]),
+  category: z.string(),
   delay_minutes: z.number().nullable(),
   // Ajouté par le script du 28/10/2026.
   detail: z.string().nullable().optional().default(null),

@@ -10,6 +10,7 @@ const editorial = new Set([
   "alerts",
   "data",
   "flash",
+  "signals",
   "places",
 ]);
 const moderation = new Set(["reviews", "community", "reports"]);

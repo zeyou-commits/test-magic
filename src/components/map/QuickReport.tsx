@@ -7,7 +7,6 @@ import { useAuth } from "@/hooks/useAuth";
 import { useIsMobile } from "@/hooks/use-mobile";
 import {
   availableSituations,
-  catalogQuery,
   communityKey,
   currentPosition,
   lifetimeLabel,
@@ -15,6 +14,7 @@ import {
   portServices,
   reportTravel,
   situationOf,
+  useSignalCatalog,
   type AlertCategory,
   type CommunityKind,
   type Level,
@@ -112,8 +112,11 @@ export function QuickReport({
   const queryClient = useQueryClient();
   // Scripts SQL exécutés : 26/10 (situations récentes), 29/10 (formalités, « sur place »).
   const upgraded = useQuery(newsQuery).data != null;
-  const catalog = useQuery(catalogQuery).data ?? 0;
-  const level: Level = catalog >= 3 ? 3 : catalog >= 2 ? 2 : upgraded ? 1 : 0;
+  // Version 4 : le catalogue vient de la base et se gère dans l'admin.
+  const { version: catalog } = useSignalCatalog();
+  const level: Level =
+    catalog >= 4 ? 4 : catalog >= 3 ? 3 : catalog >= 2 ? 2 : upgraded ? 1 : 0;
+  const services = portServices();
   const follows = useQuery({
     queryKey: ["my-follows", user?.id],
     enabled: Boolean(user),
@@ -473,7 +476,7 @@ export function QuickReport({
                       })
                     }
                   >
-                    <OptionIcon code={option.code} />
+                    <OptionIcon name={option.icon} />
                     {option.label}
                   </button>
                 );
@@ -487,14 +490,14 @@ export function QuickReport({
             <fieldset className="bw-report-field" disabled={mutation.isPending}>
               <legend>{situation.question}</legend>
               <div className="bw-report-options">
-                {portServices.map((item) => (
+                {services.map((item) => (
                   <button
                     key={item.code}
                     type="button"
                     aria-pressed={draft.service === item.code}
                     onClick={() => setDraft({ ...draft, service: item.code, detail: null })}
                   >
-                    <OptionIcon code={item.code} />
+                    <OptionIcon name={item.icon} />
                     {item.label}
                   </button>
                 ))}
@@ -505,7 +508,8 @@ export function QuickReport({
                 <legend>En ce moment</legend>
                 <div className="bw-report-options">
                   {(["open", "closed"] as const).map((state) => {
-                    const item = portServices.find((service) => service.code === draft.service)!;
+                    const item = services.find((service) => service.code === draft.service);
+                    if (!item) return null;
                     const code = `service_${item.code}_${state}`;
                     const text = state === "open" ? item.open : item.closed;
                     return (
@@ -516,7 +520,7 @@ export function QuickReport({
                         data-state={state}
                         onClick={() => setDraft({ ...draft, detail: code })}
                       >
-                        <OptionIcon code={state} />
+                        <OptionIcon name={state === "open" ? "circle-check" : "circle-x"} />
                         {text.charAt(0).toUpperCase() + text.slice(1)}
                       </button>
                     );

@@ -16,6 +16,7 @@ import {
   alertLabel,
   communityQuery,
   isPublicAlert,
+  useSignalCatalog,
   type TravelAlert,
 } from "@/lib/ferry/community";
 import {
@@ -132,6 +133,7 @@ export function useFlashCards({
   signalVesselIds,
 }: FlashScope = {}) {
   const { user } = useAuth();
+  useSignalCatalog();
   const news = useQuery(newsQuery);
   const community = useQuery({
     ...communityQuery(undefined, undefined, false, user?.id),

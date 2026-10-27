@@ -55,7 +55,16 @@ const failure = (message?: string) =>
  * Signalements en cours d'un port ou d'un navire, avec « Je confirme » et « Ce n'est plus le cas ».
  * « Signaler » ouvre le parcours unique (le même que l'onglet de la barre du bas).
  */
-export function TravelSignals({ kind, target }: { kind: CommunityKind; target: string }) {
+export function TravelSignals({
+  kind,
+  target,
+  compact = false,
+}: {
+  kind: CommunityKind;
+  target: string;
+  /** Fiche qui a déjà son bouton « Signaler » : pas de second bouton ici. */
+  compact?: boolean;
+}) {
   const { user } = useAuth();
   useSignalCatalog();
   const isMobile = useIsMobile();
@@ -103,20 +112,25 @@ export function TravelSignals({ kind, target }: { kind: CommunityKind; target: s
     <section
       id={`signal-${kind}:${target}`}
       className="bw-signals"
+      data-compact={compact || undefined}
       aria-label="Informations des voyageurs"
     >
       <div className="bw-section-heading">
         <div>
-          <span className="bw-eyebrow">
-            <Users size={13} aria-hidden />
-            Entre voyageurs
-          </span>
-          <h3>Sur place, en ce moment</h3>
+          {compact ? null : (
+            <span className="bw-eyebrow">
+              <Users size={13} aria-hidden />
+              Entre voyageurs
+            </span>
+          )}
+          <h3>{compact ? "Signalé par les voyageurs" : "Sur place, en ce moment"}</h3>
         </div>
-        <Button variant="outline" size="sm" onClick={signal}>
-          <Flag size={15} aria-hidden />
-          Signaler
-        </Button>
+        {compact ? null : (
+          <Button variant="outline" size="sm" onClick={signal}>
+            <Flag size={15} aria-hidden />
+            Signaler
+          </Button>
+        )}
       </div>
       {alerts.length ? (
         <ul className="bw-signal-list">
@@ -194,10 +208,12 @@ export function TravelSignals({ kind, target }: { kind: CommunityKind; target: s
         </ul>
       ) : (
         <p className="bw-community-empty">
-          Sur place ? Un petit signalement peut aider tout le monde.
+          {compact
+            ? "Rien de signalé en ce moment. Sur place ? Touchez « Signaler »."
+            : "Sur place ? Un petit signalement peut aider tout le monde."}
         </p>
       )}
-      {alerts.length ? (
+      {alerts.length && !compact ? (
         <p className="bw-community-caption">
           Informations voyageurs, effacées seules après 1 à 3 h selon la situation. « Sur place » :
           envoyé près du port ou du bateau. Consultez aussi les annonces de la compagnie.

@@ -2,7 +2,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { communityQuery } from "@/lib/ferry/community";
 import { useCallback, useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowRight, CalendarDays, CarFront, ExternalLink, Flag, MapPin, Ship, Star, Users } from "lucide-react";
+import { ArrowRight, CalendarDays, CarFront, ExternalLink, MapPin, Megaphone, Ship, Star, Users } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import {
@@ -29,6 +29,7 @@ import { ReportButton } from "./ReportButton";
 import { FollowButton } from "./FollowButton";
 import { JourneyChecklist } from "./JourneyChecklist";
 import { MyTripPanel } from "./MyTrip";
+import { VesselPresence } from "./TripPresence";
 
 function useShipData() {
   const { data: vessels = [] } = useQuery(vesselsQuery);
@@ -173,13 +174,15 @@ export function VesselView({
           </a>
         </aside>
       ) : null}
-      <button
-        type="button"
-        onClick={requestVesselSignal}
-        className="mb-4 flex min-h-11 w-full items-center justify-center gap-2 rounded-xl border border-primary/30 bg-primary/5 px-3 text-sm font-semibold text-primary transition hover:bg-primary/10"
-      >
-        <Flag size={17} aria-hidden /> Signaler une info sur ce bateau
-      </button>
+      <VesselPresence vesselId={vesselId} />
+      <div className="pv-actions pv-actions--single">
+        <button type="button" onClick={requestVesselSignal} className="pv-action pv-action--signal">
+          <span aria-hidden>
+            <Megaphone size={18} />
+          </span>
+          Signaler une situation à bord ou au départ
+        </button>
+      </div>
       {photo?.source === "commons" ? (
         <details className="bw-photo-credit">
           <summary>Crédit photo</summary>
@@ -237,7 +240,7 @@ export function VesselView({
               Repérer sur la carte
             </button>
           ) : null}
-          <TravelSignals key={vesselId} kind="vessel" target={vesselId} />
+          <TravelSignals key={vesselId} kind="vessel" target={vesselId} compact />
           {next.length ? (
             <section className="bw-next-crossings">
               <div className="bw-section-heading">
@@ -338,6 +341,7 @@ export function DepartureView({
           companyId={departure.company_id}
           vesselId={departure.vessel_id}
           fromName={from?.name}
+          departureAt={departure.departure_at}
           onSelect={onSelect}
         />
       ) : null}

@@ -1,4 +1,5 @@
 import { useTravelMarkers } from "./useTravelMarkers";
+import { usePresenceMarkers } from "./usePresenceMarkers";
 import { useEffect, useRef, useState } from "react";
 import {
   Map as MapLibreMap,
@@ -356,6 +357,7 @@ export default function FerryMap({
   useTravelMarkers(mapRef, mapReady, ports, fleet, onSelect, onOpenPanel, () =>
     clearShipHoverRef.current(),
   );
+  usePresenceMarkers(mapRef, mapReady, ports, fleet, onSelect, onOpenPanel);
   const isMobile = useIsMobile();
   // Mobile : un tap sur un port n'ouvre que la bulle ; le volet s'ouvre via « Voir la fiche du port ».
   const [tipPortId, setTipPortId] = useState<string | null>(null);

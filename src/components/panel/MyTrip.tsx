@@ -6,6 +6,7 @@ import { departureEventsQuery, relativeAge } from "@/lib/ferry/flash";
 import type { Selection } from "@/lib/ferry/types";
 import { requestQuickReport } from "@/components/map/QuickReport";
 import { FlashFeed } from "./FlashFeed";
+import { TripStatusPicker } from "./TripPresence";
 
 /** Historique des changements d'un départ (horaire, navire, annulation), alimenté par la base. */
 function TripChanges({ departureId }: { departureId: string }) {
@@ -59,8 +60,10 @@ export function MyTripPanel({
   companyId,
   vesselId,
   fromName,
+  departureAt,
   onSelect,
 }: {
+  departureAt?: string | undefined;
   departureId: string;
   routeId: string;
   fromPortId?: string | undefined;
@@ -73,6 +76,9 @@ export function MyTripPanel({
   const portIds = [fromPortId, toPortId].filter((id): id is string => Boolean(id));
   return (
     <div className="bw-my-trip">
+      {departureAt ? (
+        <TripStatusPicker departureId={departureId} departureAt={departureAt} fromPortId={fromPortId} />
+      ) : null}
       <TripChanges departureId={departureId} />
       <FlashFeed
         title="Infos sur votre traversée"

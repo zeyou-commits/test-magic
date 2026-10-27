@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   ArrowDownLeft,
@@ -6,17 +6,18 @@ import {
   Camera,
   ChevronRight,
   Clock3,
-  Flag,
-  MessageSquare,
+  Megaphone,
+  Navigation,
   PenLine,
-  Route as RouteIcon,
   Star,
   ThumbsUp,
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { helpfulKey, reviewHelpfulQuery, toggleReviewHelpful } from "@/lib/ferry/flash";
+import { requestQuickReport } from "@/components/map/QuickReport";
 import { FlashFeed } from "./FlashFeed";
 import { PortPlaces } from "./PortPlaces";
+import { PortPresence } from "./TripPresence";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
@@ -37,15 +38,32 @@ import { portTraffic } from "@/lib/ferry/portTraffic";
 import { portTimeZone, zoneLabel } from "@/lib/ferry/time";
 import type { Selection } from "@/lib/ferry/types";
 import { portPhotoQuery } from "@/lib/ferry/vesselPhoto";
-import { DemoBadge, EmptyNote, ReliabilityNote, Stars } from "./shared";
+import { DemoBadge, EmptyNote, ReliabilityNote } from "./shared";
 import { ReportButton } from "./ReportButton";
 import { CompanyBadge } from "./CompanyBadge";
 import { FacilityIcons } from "./FacilityIcons";
 import { TravelSignals } from "./TravelCommunity";
-import { PortReviewForm } from "./PortReviewForm";
+import { PortReviewForm, globalCriterionQuery } from "./PortReviewForm";
 
 const scoreLabel = (value: number) =>
   value.toLocaleString("fr-FR", { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+
+/** Cinq étoiles, lisibles d'un coup d'œil. */
+function StarRow({ value, size = 15 }: { value: number; size?: number }) {
+  return (
+    <span className="pv-stars" aria-label={value ? `${scoreLabel(value)} sur 5` : "Pas encore noté"}>
+      {[1, 2, 3, 4, 5].map((n) => (
+        <Star
+          key={n}
+          size={size}
+          aria-hidden
+          fill={value >= n - 0.25 ? "currentColor" : "none"}
+          className={value >= n - 0.75 ? "is-on" : undefined}
+        />
+      ))}
+    </span>
+  );
+}
 
 export function PortView({
   portId,
@@ -66,9 +84,9 @@ export function PortView({
   const { data: companies = [] } = useQuery(companiesQuery);
   const departuresResult = useQuery(upcomingDeparturesQuery());
   const { data: criteria = [] } = useQuery(ratingCriteriaQuery);
+  const globalCriterion = useQuery(globalCriterionQuery).data ?? null;
   const reviewsResult = useQuery(portReviewsQuery(portId));
   const reviews = useMemo(() => reviewsResult.data ?? [], [reviewsResult.data]);
-  // « En direct » d'abord : c'est aussi là que s'ouvre un signalement en attente.
   const [activeTab, setActiveTab] = useState("live");
   const [scheduleTab, setScheduleTab] = useState("departures");
   const [writeReview, setWriteReview] = useState(false);
@@ -78,7 +96,14 @@ export function PortView({
   const portRoutes = routes.filter(
     (route) => route.departure_port_id === portId || route.arrival_port_id === portId,
   );
+  // « Ligne » seulement s'il existe au moins une traversée programmée à venir.
+  const scheduledRoutes = new Set(
+    (departuresResult.data ?? [])
+      .filter((departure) => portRoutes.some((route) => route.id === departure.route_id))
+      .map((departure) => departure.route_id),
+  );
   const averages = useMemo(() => {
+    const mean = (values: number[]) => values.reduce((sum, value) => sum + value, 0) / values.length;
     const entries = criteria.flatMap((criterion) => {
       const scores = reviews.flatMap((review) =>
         review.ratings
@@ -88,42 +113,30 @@ export function PortView({
           )
           .map((rating) => rating.score),
       );
-      return scores.length
-        ? [
-            {
-              label: criterion.label,
-              value: scores.reduce((sum, score) => sum + score, 0) / scores.length,
-              count: scores.length,
-            },
-          ]
-        : [];
+      return scores.length ? [{ label: criterion.label, value: mean(scores) }] : [];
     });
-    return {
-      entries,
-      overall: entries.length
-        ? entries.reduce((sum, entry) => sum + entry.value, 0) / entries.length
-        : null,
-    };
-  }, [criteria, reviews]);
+    // Note globale de chaque avis : celle donnée par le voyageur, sinon la moyenne de ses critères.
+    const perReview = reviews.flatMap((review) => {
+      const own = globalCriterion
+        ? review.ratings.find((rating) => rating.criterion_id === globalCriterion)?.score
+        : undefined;
+      if (own) return [own];
+      const detailed = review.ratings.filter((rating) => rating.criterion_id !== globalCriterion);
+      return detailed.length ? [mean(detailed.map((rating) => rating.score))] : [];
+    });
+    return { entries, overall: perReview.length ? mean(perReview) : null };
+  }, [criteria, reviews, globalCriterion]);
 
-  const requestPortSignal = useCallback(() => {
-    setActiveTab("live");
-    window.setTimeout(
-      () =>
-        window.dispatchEvent(
-          new CustomEvent("batogo:open-signal", { detail: { kind: "port", target: portId } }),
-        ),
-      80,
-    );
-  }, [portId]);
+  // Ancien bouton des écrans existants : ouvre le parcours « Signaler » commun.
   useEffect(() => {
     const onRequest = (event: Event) => {
       const detail = (event as CustomEvent<{ kind: string; target: string }>).detail;
-      if (detail?.kind === "port" && detail.target === portId) requestPortSignal();
+      if (detail?.kind === "port" && detail.target === portId)
+        requestQuickReport({ type: "port", id: portId });
     };
     window.addEventListener("batogo:show-signal", onRequest);
     return () => window.removeEventListener("batogo:show-signal", onRequest);
-  }, [portId, requestPortSignal]);
+  }, [portId]);
 
   if (!port) return <EmptyNote>Port introuvable.</EmptyNote>;
   const photo = photoQuery.data;
@@ -135,24 +148,9 @@ export function PortView({
       isFacilityFilled(value) &&
       !/^(non|indisponible|absent|no)$/i.test(value.trim()),
   );
-  const servicesSection = (
-    <section
-      className="port-profile-section port-services-compact"
-      aria-labelledby={`services-${portId}`}
-    >
-      <div className="port-section-heading">
-        <h3 id={`services-${portId}`}>Services sur place</h3>
-      </div>
-      {facilities.length ? (
-        <FacilityIcons items={facilities} />
-      ) : (
-        <p className="text-xs text-muted-foreground">Services non renseignés pour ce port.</p>
-      )}
-    </section>
-  );
-  const contribute = () => {
+  const openReviews = (write = false) => {
     setActiveTab("community");
-    setWriteReview(true);
+    if (write) setWriteReview(true);
   };
   const movements =
     scheduleTab === "departures"
@@ -168,120 +166,222 @@ export function PortView({
           time: arrivalAt,
           place: portName(route.departure_port_id),
         }));
+  const directions = `https://www.google.com/maps/dir/?api=1&destination=${port.latitude},${port.longitude}`;
+  const getScore = (review: (typeof reviews)[number]) => {
+    const own = globalCriterion
+      ? review.ratings.find((rating) => rating.criterion_id === globalCriterion)?.score
+      : undefined;
+    const detailed = review.ratings.filter((rating) => rating.criterion_id !== globalCriterion);
+    return (
+      own ??
+      (detailed.length
+        ? detailed.reduce((sum, rating) => sum + rating.score, 0) / detailed.length
+        : null)
+    );
+  };
 
   return (
-    <article className="port-profile" aria-label={`Fiche du port de ${port.name}`}>
-      <header className="port-profile-heading">
-        <div>
-          <p className="port-profile-country">
-            {port.country_name}
-            {port.city && port.city !== port.name ? ` · ${port.city}` : ""}
-          </p>
-          <h2>{port.name}</h2>
-          <div className="port-profile-badges">
-            <span>
-              <RouteIcon size={13} aria-hidden /> {portRoutes.length}{" "}
-              {portRoutes.length === 1 ? "ligne" : "lignes"}
-            </span>
-            {port.status === "inactive" ? <span>Temporairement fermé</span> : null}
-            {port.is_demo ? <DemoBadge /> : null}
-          </div>
-        </div>
+    <article className="port-profile pv" aria-label={`Fiche du port de ${port.name}`}>
+      <header className={`pv-hero ${photo ? "has-photo" : ""}`}>
         {photo ? (
           <img
-            className="port-profile-photo"
+            className="pv-hero__photo"
             src={photo.url}
-            alt={`Port de ${port.name}`}
+            alt=""
             loading="lazy"
             decoding="async"
             referrerPolicy="no-referrer"
           />
         ) : null}
-      </header>
-      {photo?.source === "commons" ? (
-        <details className="port-photo-credit">
-          <summary>
-            <Camera size={12} aria-hidden /> Crédit photo
-          </summary>
-          <p>
-            Photo{photo.credit ? ` : ${photo.credit}` : ""}
-            {photo.license ? ` · ${photo.license}` : ""} ·{" "}
-            {photo.pageUrl ? (
-              <a href={photo.pageUrl} target="_blank" rel="noopener noreferrer">
-                Wikimedia Commons
-              </a>
-            ) : (
-              "Wikimedia Commons"
-            )}
-            . Photo indicative.
+        <div className="pv-hero__text">
+          <p className="pv-hero__country">
+            {port.country_name}
+            {port.city && port.city !== port.name ? ` · ${port.city}` : ""}
           </p>
-        </details>
-      ) : null}
+          <h2>{port.name}</h2>
+          <p className="pv-hero__meta">
+            {scheduledRoutes.size
+              ? `${scheduledRoutes.size} ligne${scheduledRoutes.size > 1 ? "s" : ""} · ${traffic.departures.length} départ${traffic.departures.length > 1 ? "s" : ""} à venir`
+              : "Aucune traversée programmée pour le moment"}
+            {port.status === "inactive" ? " · Temporairement fermé" : ""}
+          </p>
+        </div>
+        {photo?.source === "commons" ? (
+          <details className="pv-hero__credit">
+            <summary aria-label="Crédit photo">
+              <Camera size={12} aria-hidden />
+            </summary>
+            <p>
+              Photo{photo.credit ? ` : ${photo.credit}` : ""}
+              {photo.license ? ` · ${photo.license}` : ""} ·{" "}
+              {photo.pageUrl ? (
+                <a href={photo.pageUrl} target="_blank" rel="noopener noreferrer">
+                  Wikimedia Commons
+                </a>
+              ) : (
+                "Wikimedia Commons"
+              )}
+              . Photo indicative.
+            </p>
+          </details>
+        ) : null}
+      </header>
 
-      <div className="port-community-summary">
+      <button type="button" className="pv-rating" onClick={() => openReviews()}>
+        {reviewsResult.isPending ? (
+          <span>Lecture des avis…</span>
+        ) : averages.overall != null ? (
+          <>
+            <StarRow value={averages.overall} />
+            <strong>{scoreLabel(averages.overall)}</strong>
+            <span>· {reviews.length} avis</span>
+          </>
+        ) : (
+          <>
+            <StarRow value={0} />
+            <span>Pas encore d’avis</span>
+          </>
+        )}
+        {port.is_demo ? <DemoBadge /> : null}
+        <ChevronRight size={15} aria-hidden />
+      </button>
+
+      <div className="pv-actions">
         <button
           type="button"
-          className="port-community-score"
-          onClick={() => setActiveTab("community")}
+          className="pv-action pv-action--signal"
+          onClick={() => requestQuickReport({ type: "port", id: portId })}
         >
-          <Star size={20} aria-hidden />
-          <span>
-            {reviewsResult.isPending ? (
-              <strong>Lecture des avis…</strong>
-            ) : reviewsResult.isError ? (
-              <strong>Avis indisponibles</strong>
-            ) : averages.overall != null ? (
-              <>
-                <strong>
-                  {scoreLabel(averages.overall)} <small>/ 5</small>
-                </strong>
-                <small>
-                  {reviews.length} {reviews.length === 1 ? "avis de voyageur" : "avis de voyageurs"}
-                </small>
-              </>
-            ) : reviews.length ? (
-              <>
-                <strong>
-                  {reviews.length} {reviews.length === 1 ? "avis publié" : "avis publiés"}
-                </strong>
-                <small>Les retours de la communauté</small>
-              </>
-            ) : (
-              <>
-                <strong>À vous de commencer</strong>
-                <small>Aucun avis publié pour le moment</small>
-              </>
-            )}
+          <span aria-hidden>
+            <Megaphone size={18} />
           </span>
+          Signaler
         </button>
-        <button type="button" onClick={contribute} className="port-review-cta">
-          <PenLine size={15} aria-hidden /> Donner un avis
+        <a className="pv-action" href={directions} target="_blank" rel="noopener noreferrer">
+          <span aria-hidden>
+            <Navigation size={18} />
+          </span>
+          Y aller
+        </a>
+        <button type="button" className="pv-action" onClick={() => openReviews(true)}>
+          <span aria-hidden>
+            <PenLine size={18} />
+          </span>
+          Noter
         </button>
       </div>
 
-      <button
-        type="button"
-        onClick={requestPortSignal}
-        className="mb-4 flex min-h-11 w-full items-center justify-center gap-2 rounded-xl border border-primary/30 bg-primary/5 px-3 text-sm font-semibold text-primary transition hover:bg-primary/10"
-      >
-        <Flag size={17} aria-hidden /> Signaler une info sur ce port
-      </button>
+      <PortPresence portId={portId} />
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="port-profile-tabs">
         <TabsList aria-label={`Explorer le port de ${port.name}`} className="port-profile-nav">
           <TabsTrigger value="live">En direct</TabsTrigger>
           <TabsTrigger value="practical">Préparer</TabsTrigger>
           <TabsTrigger value="community">
-            Voyageurs{" "}
+            Avis{" "}
             <span>{reviewsResult.isPending || reviewsResult.isError ? "—" : reviews.length}</span>
           </TabsTrigger>
         </TabsList>
 
+        <TabsContent value="live" className="port-tab-content">
+          <TravelSignals key={portId} kind="port" target={portId} compact />
+          <FlashFeed
+            title={`À la une · ${port.name}`}
+            context={{ portIds: [portId], routeIds: portRoutes.map((route) => route.id) }}
+            signalPortIds={[portId]}
+            withSignals={false}
+            currentPortId={portId}
+            expandFirst
+            onSelect={onSelect}
+          />
+          <section className="pv-section" aria-label="Prochains mouvements">
+            <div className="pv-section__head">
+              <h3>Prochains mouvements</h3>
+              <small>{zoneLabel(timeZone)}</small>
+            </div>
+            {departuresResult.isPending ? (
+              <p role="status" className="pv-empty">
+                Chargement des horaires…
+              </p>
+            ) : departuresResult.isError ? (
+              <div role="alert" className="port-soft-note">
+                <p>Les horaires n’ont pas pu être chargés.</p>
+                <Button variant="outline" onClick={() => void departuresResult.refetch()}>
+                  Réessayer
+                </Button>
+              </div>
+            ) : (
+              <Tabs value={scheduleTab} onValueChange={setScheduleTab}>
+                <TabsList aria-label="Départs ou arrivées" className="port-traffic-tabs">
+                  <TabsTrigger value="departures">
+                    <ArrowUpRight size={15} aria-hidden /> Départs{" "}
+                    <span>{traffic.departures.length}</span>
+                  </TabsTrigger>
+                  <TabsTrigger value="arrivals">
+                    <ArrowDownLeft size={15} aria-hidden /> Arrivées{" "}
+                    <span>{traffic.arrivals.length}</span>
+                  </TabsTrigger>
+                </TabsList>
+                <TabsContent value={scheduleTab} className="port-movements">
+                  {movements.length ? (
+                    <ul>
+                      {movements.slice(0, 8).map(({ departure, time, place }) => {
+                        const company = companies.find((item) => item.id === departure.company_id);
+                        return (
+                          <li key={departure.id}>
+                            <button
+                              type="button"
+                              onClick={() => onSelect({ type: "departure", id: departure.id })}
+                            >
+                              <div>
+                                <time dateTime={time}>{formatDateTime(time, timeZone)}</time>
+                                <strong>
+                                  {scheduleTab === "departures" ? "Vers" : "Depuis"} {place}
+                                </strong>
+                                {company ? (
+                                  <span className="port-movement-company">
+                                    <CompanyBadge
+                                      name={company.name}
+                                      logoUrl={company.logo_url}
+                                      size={18}
+                                    />
+                                    {company.name}
+                                  </span>
+                                ) : null}
+                              </div>
+                              <ChevronRight size={16} aria-hidden />
+                            </button>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  ) : (
+                    <p className="pv-empty">
+                      {scheduleTab === "departures"
+                        ? "Aucun départ connu à venir depuis ce port."
+                        : "Aucune arrivée connue à venir dans ce port."}
+                    </p>
+                  )}
+                </TabsContent>
+              </Tabs>
+            )}
+          </section>
+        </TabsContent>
+
         <TabsContent value="practical" className="port-tab-content">
-          {servicesSection}
+          <section className="pv-section" aria-labelledby={`services-${portId}`}>
+            <div className="pv-section__head">
+              <h3 id={`services-${portId}`}>Services sur place</h3>
+            </div>
+            {facilities.length ? (
+              <FacilityIcons items={facilities} />
+            ) : (
+              <p className="pv-empty">Services non renseignés pour ce port.</p>
+            )}
+          </section>
           <PortPlaces portId={portId} portName={port.name} />
           {port.notes ? (
-            <details className="port-practical-details">
+            <details className="port-practical-details" open>
               <summary>
                 À savoir avant votre passage <ChevronRight size={16} aria-hidden />
               </summary>
@@ -294,12 +394,9 @@ export function PortView({
               />
             </details>
           ) : null}
-          <div className="port-timezone">
-            <Clock3 size={15} aria-hidden /> Les horaires sont affichés à l’{zoneLabel(timeZone)}.
-          </div>
           <details className="port-practical-details">
             <summary>
-              Les lignes de ce port <span>{portRoutes.length}</span>
+              Liaisons de ce port <span>{portRoutes.length}</span>
               <ChevronRight size={16} aria-hidden />
             </summary>
             {portRoutes.length ? (
@@ -310,115 +407,26 @@ export function PortView({
                       <span>
                         {portName(route.departure_port_id)} → {portName(route.arrival_port_id)}
                       </span>
-                      <small>{formatDuration(route.typical_duration_minutes)}</small>
+                      <small>
+                        {scheduledRoutes.has(route.id)
+                          ? formatDuration(route.typical_duration_minutes)
+                          : "pas de traversée programmée"}
+                      </small>
                       <ChevronRight size={14} aria-hidden />
                     </button>
                   </li>
                 ))}
               </ul>
             ) : (
-              <EmptyNote>Aucune ligne enregistrée.</EmptyNote>
+              <EmptyNote>Aucune liaison enregistrée.</EmptyNote>
             )}
           </details>
-          <div className="port-contribute-inline">
-            <MessageSquare size={20} aria-hidden />
-            <div>
-              <h3>Vous connaissez ce port ?</h3>
-              <p>Partagez les petits conseils qui changent un voyage.</p>
-              <button type="button" onClick={contribute}>
-                Raconter mon expérience <ArrowUpRight size={14} aria-hidden />
-              </button>
-            </div>
+          <div className="pv-footnote">
+            <span>
+              <Clock3 size={14} aria-hidden /> Horaires affichés à l’{zoneLabel(timeZone)}.
+            </span>
+            <ReportButton targetType="port" targetId={portId} />
           </div>
-          <div className="port-report">
-            <ReportButton targetType="port" targetId={portId} label="Suggérer une correction" />
-          </div>
-        </TabsContent>
-
-        <TabsContent value="live" className="port-tab-content">
-          <FlashFeed
-            title={`À la une · ${port.name}`}
-            context={{ portIds: [portId], routeIds: portRoutes.map((route) => route.id) }}
-            signalPortIds={[portId]}
-            withSignals={false}
-            currentPortId={portId}
-            expandFirst
-            onSelect={onSelect}
-          />
-          <TravelSignals key={portId} kind="port" target={portId} />
-          <div className="port-section-heading">
-            <div>
-              <h3>Les prochains mouvements</h3>
-              <p>Horaires connus à venir · {zoneLabel(timeZone)}</p>
-            </div>
-          </div>
-          {departuresResult.isPending ? (
-            <p role="status">Chargement des horaires…</p>
-          ) : departuresResult.isError ? (
-            <div role="alert" className="port-soft-note">
-              <p>Les horaires n’ont pas pu être chargés.</p>
-              <Button variant="outline" onClick={() => void departuresResult.refetch()}>
-                Réessayer
-              </Button>
-            </div>
-          ) : (
-            <Tabs value={scheduleTab} onValueChange={setScheduleTab}>
-              <TabsList aria-label="Départs ou arrivées" className="port-traffic-tabs">
-                <TabsTrigger value="departures">
-                  <ArrowUpRight size={15} aria-hidden /> Départs{" "}
-                  <span>{traffic.departures.length}</span>
-                </TabsTrigger>
-                <TabsTrigger value="arrivals">
-                  <ArrowDownLeft size={15} aria-hidden /> Arrivées{" "}
-                  <span>{traffic.arrivals.length}</span>
-                </TabsTrigger>
-              </TabsList>
-              <TabsContent value={scheduleTab} className="port-movements">
-                {movements.length ? (
-                  <ul>
-                    {movements.map(({ departure, time, place }) => {
-                      const company = companies.find((item) => item.id === departure.company_id);
-                      return (
-                        <li key={departure.id}>
-                          <button
-                            type="button"
-                            onClick={() => onSelect({ type: "departure", id: departure.id })}
-                          >
-                            <div>
-                              <time dateTime={time}>{formatDateTime(time, timeZone)}</time>
-                              <strong>
-                                {scheduleTab === "departures" ? "Vers" : "Depuis"} {place}
-                              </strong>
-                              {company ? (
-                                <span className="port-movement-company">
-                                  <CompanyBadge
-                                    name={company.name}
-                                    logoUrl={company.logo_url}
-                                    size={18}
-                                  />
-                                  {company.name}
-                                </span>
-                              ) : null}
-                            </div>
-                            <ChevronRight size={16} aria-hidden />
-                          </button>
-                        </li>
-                      );
-                    })}
-                  </ul>
-                ) : (
-                  <div className="port-soft-note">
-                    <p>
-                      {scheduleTab === "departures"
-                        ? "Aucun départ connu à venir depuis ce port."
-                        : "Aucune arrivée connue à venir dans ce port."}
-                    </p>
-                    <small>Les programmes peuvent évoluer selon la saison.</small>
-                  </div>
-                )}
-              </TabsContent>
-            </Tabs>
-          )}
         </TabsContent>
 
         <TabsContent
@@ -427,15 +435,7 @@ export function PortView({
           hidden={activeTab !== "community"}
           className="port-tab-content"
         >
-          <div className="port-section-heading">
-            <div>
-              <h3>Le port, côté voyageurs</h3>
-              <p>Des expériences vécues pour mieux préparer la vôtre.</p>
-            </div>
-          </div>
-          {reviewsResult.isPending ? (
-            <p role="status">Chargement des avis…</p>
-          ) : reviewsResult.isError ? (
+          {reviewsResult.isError ? (
             <div role="alert" className="port-soft-note">
               <p>Les avis ne sont pas disponibles pour le moment.</p>
               <Button variant="outline" onClick={() => void reviewsResult.refetch()}>
@@ -444,116 +444,94 @@ export function PortView({
             </div>
           ) : (
             <>
-              {averages.entries.length ? (
-                <ul className="port-rating-breakdown">
-                  {averages.entries.map((entry) => (
-                    <li key={entry.label}>
-                      <span>{entry.label}</span>
-                      <div className="port-rating-track" aria-hidden>
-                        <span style={{ width: `${entry.value * 20}%` }} />
-                      </div>
-                      <strong>
-                        {scoreLabel(entry.value)}
-                        <small> / 5</small>
-                      </strong>
-                      <span className="sr-only">{entry.count} notes</span>
-                    </li>
-                  ))}
-                </ul>
-              ) : !reviews.length && !writeReview ? (
-                <div className="port-community-empty">
-                  <MessageSquare size={28} aria-hidden />
-                  <h4>Le premier conseil pourrait être le vôtre.</h4>
-                  <p>
-                    Un embarquement facile, une attente à prévoir, un service pratique… Votre retour
-                    aidera les prochains voyageurs.
-                  </p>
+              <div className="pv-score">
+                <strong>{averages.overall != null ? scoreLabel(averages.overall) : "—"}</strong>
+                <div>
+                  <StarRow value={averages.overall ?? 0} size={18} />
+                  <small>
+                    {reviews.length
+                      ? `${reviews.length} avis de voyageur${reviews.length > 1 ? "s" : ""}`
+                      : "Aucun avis pour le moment"}
+                  </small>
                 </div>
+                {!writeReview ? (
+                  <Button size="sm" onClick={() => setWriteReview(true)}>
+                    <PenLine size={15} aria-hidden /> Noter
+                  </Button>
+                ) : null}
+              </div>
+              {averages.entries.length ? (
+                <details className="port-practical-details">
+                  <summary>
+                    Détail par critère <ChevronRight size={16} aria-hidden />
+                  </summary>
+                  <ul className="port-rating-breakdown">
+                    {averages.entries.map((entry) => (
+                      <li key={entry.label}>
+                        <span>{entry.label}</span>
+                        <div className="port-rating-track" aria-hidden>
+                          <span style={{ width: `${entry.value * 20}%` }} />
+                        </div>
+                        <strong>{scoreLabel(entry.value)}</strong>
+                      </li>
+                    ))}
+                  </ul>
+                </details>
               ) : null}
               {writeReview ? (
-                <PortReviewForm portId={portId} />
-              ) : (
-                <Button onClick={contribute} className="w-full">
-                  <PenLine size={16} aria-hidden />{" "}
-                  {reviews.length ? "Partager mon expérience" : "Écrire le premier avis"}
-                </Button>
-              )}
+                <PortReviewForm portId={portId} onDone={() => setWriteReview(false)} />
+              ) : null}
             </>
           )}
           {!reviewsResult.isPending && !reviewsResult.isError && reviews.length ? (
-            <section className="port-reviews" aria-labelledby={`reviews-${portId}`}>
-              <div className="port-section-heading">
-                <h4 id={`reviews-${portId}`}>
-                  {reviews.length} {reviews.length === 1 ? "avis publié" : "avis publiés"}
-                </h4>
-                <span>Les plus récents</span>
-              </div>
-              <ul>
-                {reviews.map((review) => {
-                  const score = review.ratings.length
-                    ? review.ratings.reduce((sum, rating) => sum + rating.score, 0) /
-                      review.ratings.length
-                    : null;
-                  const name = review.author?.trim() || "Voyageur";
-                  return (
-                    <li key={review.id}>
-                      <article>
-                        <header>
-                          <span className="port-review-avatar" aria-hidden>
-                            {name
-                              .split(/\s+/)
-                              .slice(0, 2)
-                              .map((part) => part.charAt(0))
-                              .join("")
-                              .toUpperCase()}
-                          </span>
-                          <div>
-                            <h5>{name}</h5>
-                            <time dateTime={review.created_at}>
-                              {new Date(review.created_at).toLocaleDateString("fr-FR", {
-                                day: "numeric",
-                                month: "short",
-                                year: "numeric",
-                              })}
-                            </time>
-                          </div>
-                        </header>
-                        {score != null ? <Stars value={score} /> : null}
-                        {review.comment ? (
-                          <p>{review.comment}</p>
-                        ) : (
-                          <p className="port-review-no-comment">
-                            Ce voyageur a partagé ses notes sans commentaire.
-                          </p>
-                        )}
-                        <div className="bw-review-actions">
-                          {helpful.data ? (
-                            <button
-                              type="button"
-                              className="bw-helpful"
-                              aria-pressed={helpful.data.get(review.id)?.mine ?? false}
-                              disabled={!user || helpfulVote.isPending}
-                              title={user ? undefined : "Connectez-vous pour voter"}
-                              onClick={() => helpfulVote.mutate(review.id)}
-                            >
-                              <ThumbsUp size={14} aria-hidden /> Utile
-                              {helpful.data.get(review.id)?.helpful ? (
-                                <span>{helpful.data.get(review.id)?.helpful}</span>
-                              ) : null}
-                            </button>
+            <ul className="pv-reviews">
+              {reviews.map((review) => {
+                const score = getScore(review);
+                const name = review.author?.trim() || "Voyageur";
+                return (
+                  <li key={review.id}>
+                    <div className="pv-review__head">
+                      <span className="port-review-avatar" aria-hidden>
+                        {name
+                          .split(/\s+/)
+                          .slice(0, 2)
+                          .map((part) => part.charAt(0))
+                          .join("")
+                          .toUpperCase()}
+                      </span>
+                      <strong>{name}</strong>
+                      {score != null ? <StarRow value={score} size={13} /> : null}
+                      <time dateTime={review.created_at}>
+                        {new Date(review.created_at).toLocaleDateString("fr-FR", {
+                          day: "numeric",
+                          month: "short",
+                          year: "numeric",
+                        })}
+                      </time>
+                    </div>
+                    {review.comment ? <p>{review.comment}</p> : null}
+                    <div className="bw-review-actions">
+                      {helpful.data ? (
+                        <button
+                          type="button"
+                          className="bw-helpful"
+                          aria-pressed={helpful.data.get(review.id)?.mine ?? false}
+                          disabled={!user || helpfulVote.isPending}
+                          title={user ? undefined : "Connectez-vous pour voter"}
+                          onClick={() => helpfulVote.mutate(review.id)}
+                        >
+                          <ThumbsUp size={14} aria-hidden /> Utile
+                          {helpful.data.get(review.id)?.helpful ? (
+                            <span>{helpful.data.get(review.id)?.helpful}</span>
                           ) : null}
-                          <ReportButton
-                            targetType="review"
-                            targetId={review.id}
-                            label="Signaler cet avis"
-                          />
-                        </div>
-                      </article>
-                    </li>
-                  );
-                })}
-              </ul>
-            </section>
+                        </button>
+                      ) : null}
+                      <ReportButton targetType="review" targetId={review.id} label="Signaler cet avis" />
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
           ) : null}
         </TabsContent>
       </Tabs>

@@ -1400,3 +1400,439 @@ html {
   font-size: 10px;
   color: #8a958f;
 }
+
+/* ---------- Fiche port : compacte, une seule entrée « Signaler » ---------- */
+.pv .port-profile-tabs {
+  margin-top: 12px;
+}
+.pv-hero {
+  position: relative;
+  overflow: hidden;
+  border-radius: 18px;
+}
+.pv-hero.has-photo {
+  min-height: 150px;
+  display: flex;
+  align-items: flex-end;
+  color: #ffffff;
+}
+.pv-hero__photo {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.pv-hero.has-photo::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, #0b1d2b00 20%, #0b1d2bcc 100%);
+}
+.pv-hero__text {
+  position: relative;
+  z-index: 1;
+  padding: 14px 16px;
+}
+.pv-hero:not(.has-photo) .pv-hero__text {
+  padding: 2px 0 6px;
+}
+.pv-hero__country {
+  margin: 0;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  opacity: 0.9;
+}
+.pv-hero h2 {
+  margin: 2px 0 2px;
+  font-size: 28px;
+  font-weight: 800;
+  line-height: 1.1;
+  letter-spacing: -0.03em;
+}
+.pv-hero__meta {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 600;
+  opacity: 0.95;
+}
+.pv-hero__credit {
+  position: absolute;
+  z-index: 2;
+  right: 8px;
+  top: 8px;
+}
+.pv-hero__credit summary {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: #00000055;
+  color: #ffffff;
+  list-style: none;
+  cursor: pointer;
+}
+.pv-hero__credit summary::-webkit-details-marker {
+  display: none;
+}
+.pv-hero__credit p {
+  position: absolute;
+  right: 0;
+  top: 30px;
+  width: 220px;
+  margin: 0;
+  padding: 8px 10px;
+  border-radius: 10px;
+  background: #ffffff;
+  font-size: 11px;
+  color: #3d4a46;
+  box-shadow: 0 6px 18px #16324a33;
+}
+.pv-rating {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 10px 0 0;
+  padding: 2px 0;
+  font-size: 13px;
+  color: #4b5a55;
+}
+.pv-rating strong {
+  color: #16324a;
+}
+.pv-rating > svg:last-child {
+  margin-left: auto;
+  color: #9aa49f;
+}
+.pv-stars {
+  display: inline-flex;
+  gap: 1px;
+  color: #d8d4c6;
+}
+.pv-stars svg.is-on,
+.pv-stars svg[fill="currentColor"] {
+  color: #f2a900;
+}
+.pv-actions {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  margin-top: 12px;
+}
+.pv-actions--single {
+  grid-template-columns: 1fr;
+  margin: 0 0 14px;
+}
+.pv-action {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 46px;
+  padding: 0 10px;
+  border: 1px solid #e3e1d8;
+  border-radius: 14px;
+  background: #ffffff;
+  font-size: 13.5px;
+  font-weight: 700;
+  color: #16324a;
+  text-decoration: none;
+  transition:
+    transform 0.12s ease,
+    box-shadow 0.12s ease;
+}
+.pv-action:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px #16324a14;
+}
+.pv-action > span {
+  display: grid;
+  place-items: center;
+  color: #0e7a43;
+}
+.pv-action--signal {
+  border-color: #f2c14e;
+  background: #fff8e1;
+  color: #4a3200;
+}
+.pv-action--signal > span {
+  width: 28px;
+  height: 28px;
+  border-radius: 9px;
+  background: #ffc83d;
+  color: #4a3200;
+}
+.pv-section {
+  display: grid;
+  gap: 8px;
+  margin-top: 16px;
+}
+.pv-section__head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+.pv-section__head h3 {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 750;
+}
+.pv-section__head small {
+  font-size: 12px;
+  color: #6a7873;
+}
+.pv-empty {
+  margin: 0;
+  font-size: 13px;
+  color: #6a7873;
+}
+.pv-footnote {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 14px;
+  font-size: 12px;
+  color: #6a7873;
+}
+.pv-footnote > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+.pv-score {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border-radius: 16px;
+  background: #faf8f1;
+}
+.pv-score > strong {
+  font-size: 32px;
+  font-weight: 800;
+  line-height: 1;
+  color: #16324a;
+}
+.pv-score > div {
+  display: grid;
+  flex: 1;
+  gap: 2px;
+}
+.pv-score small {
+  font-size: 12px;
+  color: #6a7873;
+}
+.pv-reviews {
+  display: grid;
+  gap: 10px;
+  margin: 12px 0 0;
+  padding: 0;
+  list-style: none;
+}
+.pv-reviews > li {
+  padding: 10px 12px;
+  border: 1px solid #ecebe4;
+  border-radius: 14px;
+}
+.pv-reviews p {
+  margin: 6px 0 0;
+  font-size: 13.5px;
+  line-height: 1.45;
+}
+.pv-review__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+}
+.pv-review__head time {
+  margin-left: auto;
+  font-size: 11.5px;
+  color: #8a958f;
+}
+.pv-review__head .port-review-avatar {
+  width: 28px;
+  height: 28px;
+  font-size: 11px;
+}
+.pv-review-form {
+  margin-top: 12px;
+}
+.pv .bw-signals {
+  margin-top: 4px;
+}
+
+/* ---------- Présence des voyageurs BledWay (cabas anonymes) ---------- */
+.bw-cabas-stack {
+  display: inline-flex;
+  flex: none;
+}
+.bw-cabas-stack img {
+  border: 2px solid #ffffff;
+  border-radius: 50%;
+  background: #fff3dd;
+  object-fit: cover;
+}
+.bw-cabas-stack img + img {
+  margin-left: -9px;
+}
+.bw-presence {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 10px 0 0;
+  padding: 6px 12px 6px 6px;
+  border-radius: 999px;
+  background: #eef7f1;
+  font-size: 13px;
+  color: #145c36;
+}
+.bw-presence-pin {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 7px 2px 2px;
+  border: 1.5px solid #ffffff;
+  border-radius: 999px;
+  background: #0e7a43;
+  box-shadow: 0 3px 10px #16324a40;
+  cursor: pointer;
+  z-index: 1;
+}
+.bw-presence-pin img {
+  width: 20px;
+  height: 20px;
+  border: 1.5px solid #0e7a43;
+  border-radius: 50%;
+  background: #fff3dd;
+}
+.bw-presence-pin img + img {
+  margin-left: -7px;
+}
+.bw-presence-pin small {
+  margin-left: 4px;
+  font-size: 11px;
+  font-weight: 800;
+  color: #ffffff;
+}
+
+/* ---------- « Ma traversée » : où en êtes-vous ? ---------- */
+.bw-trip-status {
+  display: grid;
+  gap: 10px;
+  padding: 14px;
+  border-radius: 18px;
+  background: #fffaf0;
+  border: 1px solid #f3e3bd;
+}
+.bw-trip-status__head h3 {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 800;
+}
+.bw-trip-status__head small {
+  font-size: 12px;
+  color: #6a7873;
+}
+.bw-trip-status__steps {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.bw-trip-status__steps button {
+  position: relative;
+  display: grid;
+  justify-items: center;
+  gap: 4px;
+  width: 100%;
+  padding: 8px 4px 8px;
+  border: 1.5px solid transparent;
+  border-radius: 14px;
+  background: #ffffff;
+  font-size: 12px;
+  font-weight: 700;
+  color: #16324a;
+  transition: transform 0.12s ease;
+}
+.bw-trip-status__steps button:hover:not(:disabled) {
+  transform: translateY(-1px);
+}
+.bw-trip-status__steps button:disabled {
+  opacity: 0.55;
+}
+.bw-trip-status__steps button[aria-pressed="true"] {
+  border-color: #0e7a43;
+  background: #eef7f1;
+}
+.bw-trip-status__steps img {
+  width: 52px;
+  height: 52px;
+}
+.bw-trip-status__steps small {
+  position: absolute;
+  top: 6px;
+  left: 6px;
+  min-width: 20px;
+  padding: 1px 5px;
+  border-radius: 999px;
+  background: #16324a;
+  font-size: 10.5px;
+  color: #ffffff;
+}
+.bw-trip-status__check {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  display: grid;
+  place-items: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #0e7a43;
+  color: #ffffff;
+}
+.bw-trip-status__ask {
+  display: grid;
+  gap: 8px;
+  padding: 10px 12px;
+  border-radius: 14px;
+  background: #ffffff;
+  font-size: 13px;
+}
+.bw-trip-status__ask p {
+  margin: 0;
+}
+.bw-signals[data-compact] .bw-section-heading {
+  display: flex;
+  justify-content: flex-start;
+  margin-bottom: 6px;
+  text-align: left;
+}
+.bw-signals[data-compact] .bw-section-heading h3 {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 750;
+}
+.bw-signals[data-compact] {
+  padding: 0;
+  border: 0;
+  background: none;
+}
+.bw-signals[data-compact] .bw-community-empty {
+  margin: 0;
+  font-size: 13px;
+  text-align: left;
+}
+.bw-signals[data-compact] .bw-section-heading {
+  flex-direction: row;
+  align-items: center;
+}

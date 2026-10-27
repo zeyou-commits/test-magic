@@ -3331,6 +3331,8 @@ html {
   }
 }
 .bw-checklist label {
+  /* La case (invisible) reste dans la ligne : sinon le navigateur défile jusqu'à elle au clic. */
+  position: relative;
   display: flex;
   cursor: pointer;
   align-items: center;

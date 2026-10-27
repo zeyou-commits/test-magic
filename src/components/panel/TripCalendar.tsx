@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { fr } from "react-day-picker/locale";
 import { Backpack, CalendarDays } from "lucide-react";
 import { Calendar } from "@/components/ui/calendar";
@@ -49,6 +49,8 @@ interface TripCalendarProps {
   anchor?: ReactNode;
   /** Affiché directement dans le panneau, sans fenêtre superposée. */
   inline?: boolean;
+  /** Fenêtre ordinateur : à droite du volet (sur la carte) plutôt qu'en dessous. */
+  side?: "bottom" | "right";
 }
 
 const keyToDate = (key: string) => {
@@ -107,6 +109,7 @@ export function TripCalendar({
   onHolidaysChange,
   anchor,
   inline = false,
+  side = "bottom",
 }: TripCalendarProps) {
   const [zones, setZones] = useState<SchoolZone[]>([]);
   const [month, setMonth] = useState<Date>(() => keyToDate(date ?? today));
@@ -162,6 +165,38 @@ export function TripCalendar({
 
   const lastAvailable = [...activeDays.keys()].sort().at(-1);
   const endMonth = keyToDate(lastAvailable ?? addDaysKey(today, 365));
+
+  // Mobile, dans le volet : les mois défilent les uns sous les autres (plus de flèches).
+  const stacked = inline && isMobile;
+  const firstMonth = keyToDate(today);
+  const monthCount = Math.min(
+    12,
+    Math.max(
+      2,
+      (endMonth.getFullYear() - firstMonth.getFullYear()) * 12 +
+        endMonth.getMonth() -
+        firstMonth.getMonth() +
+        1,
+    ),
+  );
+  const stackRef = useRef<HTMLDivElement>(null);
+  // On amène à l'écran le mois de la date en cours (aller, puis retour).
+  useEffect(() => {
+    if (!stacked || !open) return;
+    const target = keyToDate((field === "ret" ? (returnDate ?? date) : date) ?? today);
+    const index =
+      (target.getFullYear() - firstMonth.getFullYear()) * 12 +
+      target.getMonth() -
+      firstMonth.getMonth();
+    if (index <= 0) return;
+    const id = window.setTimeout(() => {
+      stackRef.current
+        ?.querySelectorAll(".rdp-month")
+        [index]?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 120);
+    return () => window.clearTimeout(id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [stacked, open, field]);
 
   const pick = (key: string) => {
     setNote(null);
@@ -355,13 +390,15 @@ export function TripCalendar({
         />
       ) : null}
 
+      <div ref={stackRef} className={stacked ? "bw-cal-stack" : undefined}>
       <Calendar
         mode="single"
         locale={fr}
         weekStartsOn={1}
-        numberOfMonths={isMobile || inline ? 1 : 2}
+        numberOfMonths={stacked ? monthCount : isMobile || inline ? 1 : 2}
+        hideNavigation={stacked}
         showOutsideDays={false}
-        month={month}
+        month={stacked ? firstMonth : month}
         onMonthChange={setMonth}
         startMonth={keyToDate(today)}
         endMonth={endMonth}
@@ -402,9 +439,15 @@ export function TripCalendar({
           between: "batogo-day-between",
           flex: "batogo-day-flex",
         }}
-        className="batogo-calendar w-full !p-0 [--cell-size:min(2.6rem,calc((100vw_-_6rem)/7))] md:[--cell-size:2.6rem]"
-        classNames={{ months: "relative flex flex-col gap-4 md:flex-row md:gap-8", root: "w-full" }}
+        className={`batogo-calendar w-full !p-0 ${stacked ? "[--cell-size:min(3.1rem,calc((100vw_-_3rem)/7))]" : "[--cell-size:min(2.6rem,calc((100vw_-_6rem)/7))] md:[--cell-size:2.6rem]"}`}
+        classNames={{
+          months: stacked
+            ? "relative flex flex-col gap-6"
+            : "relative flex flex-col gap-4 md:flex-row md:gap-8",
+          root: "w-full",
+        }}
       />
+      </div>
 
       {note ? (
         <p className="rounded-xl bg-primary/10 px-3 py-2 text-xs text-primary">{note}</p>
@@ -570,6 +613,8 @@ export function TripCalendar({
       <PopoverAnchor asChild>{anchor}</PopoverAnchor>
       <PopoverContent
         align="start"
+        side={side}
+        sideOffset={side === "right" ? 28 : 4}
         collisionPadding={12}
         className="batogo-cal-pop w-[640px] max-h-[var(--radix-popover-content-available-height)] max-w-[calc(100vw-1.5rem)] space-y-4 overflow-y-auto overscroll-contain rounded-2xl border-border/60 p-0 shadow-2xl"
         onOpenAutoFocus={(event) => event.preventDefault()}

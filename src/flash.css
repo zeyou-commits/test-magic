@@ -1158,3 +1158,16 @@ body:has(.bw-report-sheet[data-state="open"]) .bw-header {
   border-color: #f2c14e;
   background: #fffaf0;
 }
+
+/* ---------- Recherche : calendrier mobile, mois qui défilent ---------- */
+.bw-cal-stack .rdp-month_caption {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  justify-content: flex-start;
+  padding: 6px 2px;
+  background: var(--card, #ffffff);
+  font-size: 15px;
+  font-weight: 700;
+  text-transform: capitalize;
+}

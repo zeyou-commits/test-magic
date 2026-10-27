@@ -147,13 +147,40 @@ export function SearchPanel({
     // Sur mobile, le volet passe en plein écran pour la recherche.
     if (isMobileView()) window.dispatchEvent(new Event("batogo:panel-full"));
   };
+  // « Modifier » : la recherche en cours est mémorisée à l'ouverture du formulaire.
+  // Fermer sans valider la restaure et ramène aux résultats (l'accueil seulement s'il n'y en avait pas).
+  const snapshot = useRef<{
+    filters: Filters;
+    profile: TripProfileValue;
+    hadSearch: boolean;
+  } | null>(null);
+  const latest = useRef({ filters, profile });
+  latest.current = { filters, profile };
+  useEffect(() => {
+    if (!editing) return;
+    const { filters: current, profile: currentProfile } = latest.current;
+    snapshot.current = {
+      filters: current,
+      profile: currentProfile,
+      hadSearch: hasActiveFilters(current),
+    };
+  }, [editing]);
   const closeSearch = () => {
+    const saved = snapshot.current;
+    snapshot.current = null;
+    if (saved?.hadSearch) {
+      if (JSON.stringify(saved.filters) !== JSON.stringify(filters)) onFiltersChange(saved.filters);
+      setProfile(saved.profile);
+      showResults();
+      return;
+    }
     setEditing(false);
     setStep(firstStep);
     searchRef.current?.closest(".batogo-panel-scroll")?.scrollTo({ top: 0, behavior: "instant" });
     window.dispatchEvent(new Event("batogo:close-panel"));
   };
   const showResults = () => {
+    snapshot.current = null;
     setEditing(false);
     setStep(firstStep);
     if (isMobileView()) {
@@ -218,6 +245,9 @@ export function SearchPanel({
     return () => window.removeEventListener("batogo:open-companies", open);
   }, []);
   const [calOpen, setCalOpen] = useState(false);
+  useEffect(() => {
+    setCalOpen(step === 2 && editing && isDesktop);
+  }, [step, editing, isDesktop]);
   const [calField, setCalField] = useState<CalendarField>("out");
   const [holidaysOn, setHolidaysOnState] = useState(false);
   const setHolidaysOn = (on: boolean) => {
@@ -395,8 +425,17 @@ export function SearchPanel({
   const portsLabel = (ids: string[]) =>
     ids.length === 0 ? "Tous ports" : ids.length === 1 ? fromName(ids) : `${ids.length} ports`;
   const datesLabel = filters.date
-    ? `${shortDay(filters.date)}${filters.roundTrip && filters.returnDate ? ` → ${shortDay(filters.returnDate)}` : ""}${filters.flexDays ? ` ±${filters.flexDays}j` : ""}`
+    ? `${shortDay(filters.date)}${filters.roundTrip ? ` → ${filters.returnDate ? shortDay(filters.returnDate) : "retour à définir"}` : ""}${filters.flexDays ? ` ±${filters.flexDays}j` : ""}`
     : "Dates flexibles";
+  // Bouton principal : il dit ce qu'il va faire, selon ce qui est déjà rempli.
+  const nextLabel =
+    step === 1
+      ? "Suivant : dates →"
+      : !filters.date
+        ? "Pas de date précise →"
+        : filters.roundTrip && !filters.returnDate
+          ? "Retour pas encore décidé →"
+          : "Suivant : voyageurs →";
 
   return (
     <FareProfileContext.Provider value={profile}>
@@ -574,9 +613,50 @@ export function SearchPanel({
           </StepLabel>
           <div className={step === 2 ? "-mt-1" : "hidden"}>
             <TripCalendar
-              inline
-              open={step === 2}
-              onOpenChange={() => {}}
+              {...(isDesktop
+                ? {
+                    side: "right" as const,
+                    anchor: (
+                      <div className="space-y-2">
+                        <div
+                          className={`grid gap-1.5 ${filters.roundTrip ? "grid-cols-2" : "grid-cols-1"}`}
+                        >
+                          {(filters.roundTrip ? (["out", "ret"] as const) : (["out"] as const)).map(
+                            (leg) => {
+                              const value = leg === "out" ? filters.date : filters.returnDate;
+                              const on = calOpen && calField === leg;
+                              return (
+                                <button
+                                  key={leg}
+                                  type="button"
+                                  disabled={leg === "ret" && !filters.date}
+                                  onClick={() => {
+                                    setCalField(leg);
+                                    setCalOpen(true);
+                                  }}
+                                  className={`flex min-h-12 flex-col items-start justify-center rounded-xl border px-3 py-1.5 text-left transition disabled:opacity-50 ${on ? "border-primary bg-primary/5 ring-2 ring-primary/30" : "border-border bg-card hover:border-primary/60"}`}
+                                >
+                                  <span className="text-[11px] font-bold uppercase tracking-wider text-primary">
+                                    {leg === "out" ? "Aller" : "Retour"}
+                                  </span>
+                                  <span className="text-sm font-semibold">
+                                    {value ? shortDay(value) : "Choisir une date"}
+                                  </span>
+                                </button>
+                              );
+                            },
+                          )}
+                        </div>
+                        <p className="text-[11px] text-muted-foreground">
+                          Le calendrier s’ouvre à droite, sur la carte : jours de départ, vacances
+                          scolaires et souplesse.
+                        </p>
+                      </div>
+                    ),
+                  }
+                : { inline: true })}
+              open={isDesktop ? calOpen : step === 2}
+              onOpenChange={isDesktop ? setCalOpen : () => {}}
               holidaysOn={holidaysOn}
               onHolidaysChange={setHolidaysOn}
               field={calField}
@@ -656,19 +736,7 @@ export function SearchPanel({
               />
             </div>
           </div>
-          <div className="sticky bottom-0 z-10 -mx-4 flex items-center justify-between gap-1 border-t bg-card/95 px-4 py-2.5 backdrop-blur md:-mx-5 md:px-5">
-            <button
-              type="button"
-              onClick={() => {
-                onFiltersChange({ ...emptyFilters, roundTrip: filters.roundTrip });
-                setStep(firstStep);
-              }}
-              className="text-sm font-semibold text-foreground underline underline-offset-2 disabled:opacity-40"
-              disabled={!active}
-            >
-              <span className="md:hidden">Effacer</span>
-              <span className="max-md:hidden">Effacer tout</span>
-            </button>
+          <div className="sticky bottom-0 z-10 -mx-4 flex items-center justify-end gap-1 border-t bg-card/95 px-4 py-2.5 backdrop-blur md:-mx-5 md:px-5">
             <div className="flex items-center gap-1">
               {step > firstStep ? (
                 <button
@@ -693,12 +761,12 @@ export function SearchPanel({
                 <button
                   type="button"
                   onClick={() => {
-                    if (step === 1) setCalField("out");
+                    if (step === 1) setCalField(filters.date && filters.roundTrip ? "ret" : "out");
                     setStep((s) => (s + 1) as 1 | 2 | 3);
                   }}
                   className="flex h-11 whitespace-nowrap items-center justify-center gap-2 rounded-xl bg-primary px-3 text-sm font-bold text-primary-foreground shadow-md transition hover:opacity-90"
                 >
-                  Suivant →
+                  {nextLabel}
                 </button>
               ) : (
                 <button

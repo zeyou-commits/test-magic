@@ -34,7 +34,7 @@ export function CrossingCard({
             ? progress.signal.phase === "sea"
               ? "En mer"
               : "Au port"
-            : "Votre traversée";
+            : "Traversée en cours";
   return (
     <section className="bw-crossing" aria-label="Avancement de la traversée">
       <div className="bw-crossing-top">

@@ -172,6 +172,7 @@ function Index() {
   }, [activeShortcut, shortcutMenuOpen]);
   const [desktopPanelOpen, setDesktopPanelOpen] = useState(true);
   const [desktopPanelWidth, setDesktopPanelWidth] = useState(DESKTOP_PANEL);
+  const [companionWidth, setCompanionWidth] = useState(0);
   const resizingPanel = useRef(false);
   const [focusTarget, setFocusTarget] = useState<{ center: [number, number]; key: number } | null>(
     null,
@@ -1025,6 +1026,8 @@ function Index() {
               className={`${collapsed ? "hidden md:block" : "min-h-0 flex-1"} md:h-full ${desktopPanelOpen ? "" : "md:invisible md:pointer-events-none"}`}
             >
               <SidePanel
+                companionEnabled={desktopPanelOpen}
+                onCompanionWidth={setCompanionWidth}
                 selection={selection}
                 onSelect={handleSelect}
                 onBack={handleBack}
@@ -1266,7 +1269,7 @@ function Index() {
                     } else if (panelMode !== "itinerary") resetToMap();
                   }}
                   mobileBottomInset={mobileBottomInset}
-                  desktopLeftInset={desktopPanelOpen ? desktopPanelWidth + 80 : 50}
+                  desktopLeftInset={desktopPanelOpen ? desktopPanelWidth + 80 + companionWidth : 50}
                 />
               </Suspense>
             </ClientOnly>

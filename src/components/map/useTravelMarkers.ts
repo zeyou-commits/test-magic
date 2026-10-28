@@ -1,5 +1,6 @@
 import { createElement, useEffect, useRef, type RefObject } from "react";
 import { requestSignalFocus } from "@/components/panel/LivePulse";
+import { bringTooltipToFront } from "./tooltipStack";
 import { createRoot, type Root } from "react-dom/client";
 import { useQuery } from "@tanstack/react-query";
 import { Marker, Popup, type Map as MapLibreMap } from "maplibre-gl";
@@ -148,6 +149,7 @@ export function useTravelMarkers(
       // Survol : la carte ne réagit plus au navire dessous (pas de fiche de survol parasite).
       button.addEventListener("mousemove", (event) => event.stopPropagation());
       button.addEventListener("mouseenter", () => {
+        bringTooltipToFront(button);
         callbacks.current.onMarkerHover?.();
         button.parentElement?.classList.add("bw-signal-pins--focus");
         preview(isPort ? { portId: alert.target_id } : { vesselId: alert.target_id });
@@ -207,6 +209,7 @@ export function useTravelMarkers(
           .setDOMContent(card)
           .setOffset([shift[0] + lift, shift[1] - 46])
           .addTo(map);
+        bringTooltipToFront(bubble.getElement());
         openKey.current = key;
       };
       showers.set(key, show);

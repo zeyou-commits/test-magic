@@ -1,3 +1,4 @@
+import { MyEntityReviews } from "@/components/account/MyEntityReviews";
 import { useEffect, useState } from "react";
 import { myTravellerQuery } from "@/lib/community/travellers";
 import { TravellerAvatar } from "@/components/community/TravellerAvatar";
@@ -103,7 +104,7 @@ function AccountPage() {
         <TabsContent value="voyages"><FollowCenter userId={user.id}/></TabsContent>
         <TabsContent value="notifications"><NotificationSettings userId={user.id}/></TabsContent>
         <TabsContent value="profil"><section className="bw-account-section"><h2 className="font-display text-xl font-semibold">Votre profil voyageur</h2><p className="mt-1 text-sm text-muted-foreground">Votre cabas, votre pseudo et votre humeur accompagnent vos contributions.</p><MyTravellerEditor /><div className="mt-5 border-t border-border pt-4"><p className="text-xs text-muted-foreground">Adresse de connexion (jamais visible des autres voyageurs)</p><p className="mt-1 break-all text-sm font-medium">{user.email}</p></div>{isAdmin && <Link to="/admin" className="mt-6 inline-flex text-xs font-semibold text-primary underline">Ouvrir l’espace équipe</Link>}</section></TabsContent>
-        <TabsContent value="contributions"><section className="bw-account-section"><h2 className="font-display text-xl font-semibold">Mes contributions</h2><MyReviews userId={user.id}/><MyReports userId={user.id}/></section></TabsContent>
+        <TabsContent value="contributions"><section className="bw-account-section"><h2 className="font-display text-xl font-semibold">Mes contributions</h2><MyEntityReviews userId={user.id}/><MyReviews userId={user.id}/><MyReports userId={user.id}/></section></TabsContent>
       </Tabs>
     </div>
   );

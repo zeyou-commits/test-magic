@@ -4,6 +4,7 @@
 @import "./home.css";
 @import "./account-admin.css";
 @import "./flash.css";
+@import "./entity.css";
 
 @custom-variant dark (&:is(.dark *));
 

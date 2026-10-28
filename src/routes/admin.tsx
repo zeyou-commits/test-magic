@@ -1,3 +1,4 @@
+import { EntityReviewsModeration } from "@/components/admin/EntityReviewsModeration";
 import { commercialArrival } from "@/lib/admin/commercial";
 import { trackingTimes } from "@/lib/ferry/tracking";
 import type { Departure } from "@/lib/ferry/types";
@@ -325,6 +326,7 @@ function AdminTabs() {
           )}
         </TabsContent>
         <TabsContent value="reviews">
+          <EntityReviewsModeration pendingOnly={filter === "pending"} />
           <ReviewsModeration pendingOnly={filter === "pending"} onClearFilter={clearFilter} />
         </TabsContent>
         <TabsContent value="community">

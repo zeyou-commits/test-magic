@@ -90,7 +90,7 @@ function distanceKm(a: [number, number], b: [number, number]) {
 }
 
 const failure = (message?: string) =>
-  message && /Patientez|Maximum|déjà signalé|introuvable|sur place/.test(message)
+  message && /Patientez|Maximum|déjà signalé|introuvable|sur place|Vos signalements concernent/.test(message)
     ? message
     : "L’envoi n’a pas abouti. Réessayez dans quelques instants.";
 

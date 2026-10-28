@@ -1,8 +1,10 @@
+import { EntityReviews } from "./EntityReviews";
+import { entityReviewsQuery } from "@/lib/ferry/entityReviews";
 import { useEffect, useMemo, useState } from "react";
 import { LikeButton, useContributions } from "@/components/community/Contributions";
 import { TravellerAvatar } from "@/components/community/TravellerAvatar";
 import { hasSignalFocus, LivePulse, revealLive, useLiveInfo } from "./LivePulse";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import {
   ArrowDownLeft,
   ArrowUpRight,
@@ -45,7 +47,7 @@ import { ReportButton } from "./ReportButton";
 import { CompanyBadge } from "./CompanyBadge";
 import { FacilityIcons } from "./FacilityIcons";
 import { TravelSignals } from "./TravelCommunity";
-import { PortReviewForm, globalCriterionQuery } from "./PortReviewForm";
+import { globalCriterionQuery } from "./PortReviewForm";
 
 const scoreLabel = (value: number) =>
   value.toLocaleString("fr-FR", { minimumFractionDigits: 1, maximumFractionDigits: 1 });
@@ -78,7 +80,6 @@ export function PortView({
   onSelect: (selection: Selection) => void;
 }) {
   const { user } = useAuth();
-  const queryClient = useQueryClient();
   const { data: ports = [] } = useQuery(portsQuery);
   const { data: routes = [] } = useQuery(routesQuery);
   const { data: companies = [] } = useQuery(companiesQuery);
@@ -86,11 +87,17 @@ export function PortView({
   const { data: criteria = [] } = useQuery(ratingCriteriaQuery);
   const globalCriterion = useQuery(globalCriterionQuery).data ?? null;
   const reviewsResult = useQuery(portReviewsQuery(portId));
+  const guided = useQuery(entityReviewsQuery("port", portId));
   const reviews = useMemo(() => reviewsResult.data ?? [], [reviewsResult.data]);
   const [chosenTab, setChosenTab] = useState<string | null>(null);
   const [scheduleTab, setScheduleTab] = useState("departures");
   const [visibleCount, setVisibleCount] = useState(8);
   const [writeReview, setWriteReview] = useState(false);
+
+  useEffect(() => {
+    if (user && window.sessionStorage.getItem(`bledway:rating:port:${portId}`))
+      setChosenTab("community");
+  }, [user, portId]);
   const port = ports.find((item) => item.id === portId);
   const photoQuery = useQuery(portPhotoQuery(port ?? { id: "", name: "", photo_url: null }));
   // Départs récents (traversées en cours) + à venir : une arrivée d'un bateau parti hier compte.
@@ -261,11 +268,11 @@ export function PortView({
       <button type="button" className="pv-rating" onClick={() => openReviews()}>
         {reviewsResult.isPending ? (
           <span>Lecture des avis…</span>
-        ) : averages.overall != null ? (
+        ) : (guided.data?.average ?? averages.overall) != null ? (
           <>
-            <StarRow value={averages.overall} />
-            <strong>{scoreLabel(averages.overall)}</strong>
-            <span>· {reviews.length} avis</span>
+            <StarRow value={guided.data?.average ?? averages.overall ?? 0} />
+            <strong>{scoreLabel(guided.data?.average ?? averages.overall ?? 0)}</strong>
+            <span>· {guided.data?.count ?? reviews.length} avis</span>
           </>
         ) : (
           <>
@@ -485,54 +492,15 @@ export function PortView({
           hidden={activeTab !== "community"}
           className="port-tab-content"
         >
-          {reviewsResult.isError ? (
-            <div role="alert" className="port-soft-note">
-              <p>Les avis ne sont pas disponibles pour le moment.</p>
-              <Button variant="outline" onClick={() => void reviewsResult.refetch()}>
-                Réessayer
-              </Button>
-            </div>
-          ) : (
-            <>
-              <div className="pv-score">
-                <strong>{averages.overall != null ? scoreLabel(averages.overall) : "—"}</strong>
-                <div>
-                  <StarRow value={averages.overall ?? 0} size={18} />
-                  <small>
-                    {reviews.length
-                      ? `${reviews.length} avis de voyageur${reviews.length > 1 ? "s" : ""}`
-                      : "Aucun avis pour le moment"}
-                  </small>
-                </div>
-                {!writeReview ? (
-                  <Button size="sm" onClick={() => setWriteReview(true)}>
-                    <PenLine size={15} aria-hidden /> Noter
-                  </Button>
-                ) : null}
-              </div>
-              {averages.entries.length ? (
-                <details className="port-practical-details">
-                  <summary>
-                    Détail par critère <ChevronRight size={16} aria-hidden />
-                  </summary>
-                  <ul className="port-rating-breakdown">
-                    {averages.entries.map((entry) => (
-                      <li key={entry.label}>
-                        <span>{entry.label}</span>
-                        <div className="port-rating-track" aria-hidden>
-                          <span style={{ width: `${entry.value * 20}%` }} />
-                        </div>
-                        <strong>{scoreLabel(entry.value)}</strong>
-                      </li>
-                    ))}
-                  </ul>
-                </details>
-              ) : null}
-              {writeReview ? (
-                <PortReviewForm portId={portId} onDone={() => setWriteReview(false)} />
-              ) : null}
-            </>
-          )}
+          <EntityReviews
+            kind="port"
+            target={portId}
+            openForm={writeReview}
+            onFormClosed={() => setWriteReview(false)}
+          />
+          {reviews.length ? (
+            <h3 className="mt-5 text-sm font-semibold">Anciens avis des voyageurs</h3>
+          ) : null}
           {!reviewsResult.isPending && !reviewsResult.isError && reviews.length ? (
             <ul className="pv-reviews">
               {reviews.map((review) => {

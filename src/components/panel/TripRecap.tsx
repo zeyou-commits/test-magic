@@ -1,11 +1,15 @@
 import { useState } from "react";
 import { TripTravellers } from "@/components/community/TripTravellers";
 import { useQuery } from "@tanstack/react-query";
+import type { SupabaseClient } from "@supabase/supabase-js";
+import { supabase as typedSupabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
+import { TripShare } from "./TripShare";
+import { VesselMiniCard } from "./VesselMiniCard";
 import {
   Anchor,
   ArrowRight,
   CarFront,
-  ChevronRight,
   ClipboardCheck,
   Footprints,
   MapPin,
@@ -20,10 +24,8 @@ import { formatDuration } from "@/lib/ferry/format";
 import { dateKeyInZone, portTimeZone, zoneLabel } from "@/lib/ferry/time";
 import type { LiveShip } from "@/lib/ferry/tracking";
 import type { Company, Departure, Port, Selection, Vessel } from "@/lib/ferry/types";
-import { vesselPhotoQuery } from "@/lib/ferry/vesselPhoto";
 import { requestQuickReport } from "@/components/map/QuickReport";
 import { BookingLink, ReliabilityNote } from "./shared";
-import { CompanyBadge } from "./CompanyBadge";
 import { FlashFeed } from "./FlashFeed";
 import { hasSignalFocus, LivePulse, revealLive, useLiveInfo } from "./LivePulse";
 import { FollowButton } from "./FollowButton";
@@ -34,7 +36,7 @@ import { PushStatusLine } from "./PushStatusLine";
 import { ReportButton } from "./ReportButton";
 import { TravelSignals } from "./TravelCommunity";
 import { PortPresence, TripStatusPicker, VesselPresence } from "./TripPresence";
-import { ShipPhoto, VesselSpecs } from "./VesselBits";
+import { VesselSpecs } from "./VesselBits";
 
 const HOUR = 3_600_000;
 const time = (iso: string, timeZone: string) =>
@@ -80,6 +82,24 @@ export function TripRecap({
   live: LiveShip | undefined;
   onSelect: (selection: Selection) => void;
 }) {
+  const { user } = useAuth();
+  const follow = useQuery({
+    queryKey: ["follow", user?.id, "departure", departure.id],
+    enabled: Boolean(user),
+    queryFn: async () => {
+      const { data, error } = await (typedSupabase as unknown as SupabaseClient)
+        .from("bw_follows")
+        .select("id,active")
+        .eq("user_id", user!.id)
+        .eq("target_kind", "departure")
+        .eq("target_id", departure.id)
+        .maybeSingle();
+      if (error) throw error;
+      return data as { id: string; active: boolean } | null;
+    },
+    retry: false,
+  });
+  const heading = follow.data?.active ? "Ma traversée" : "Cette traversée";
   const fromZone = portTimeZone(from);
   const toZone = portTimeZone(to);
   const progress = crossingProgress(departure, from, to, live);
@@ -147,19 +167,16 @@ export function TripRecap({
   const car = getBoardingMilestones(departure.departure_at, from, { hasVehicle: true });
   const walk = getBoardingMilestones(departure.departure_at, from, { hasVehicle: false });
   const upcoming = !cancelled && Date.parse(departure.departure_at) > now;
-  const photo = useQuery({
-    ...vesselPhotoQuery(vessel ?? { id: "", name: "", photo_url: null }),
-    enabled: Boolean(vessel),
-  }).data;
 
   return (
     <article className="bw-recap">
       {/* 1. Le billet */}
-      <section className="bw-recap__ticket" data-tone={status.tone} aria-label="Votre traversée">
+      <section className="bw-recap__ticket" data-tone={status.tone} aria-label={heading}>
         <header className="bw-recap__head">
           <div>
             <span className="bw-recap__kicker">
-              Votre traversée{countdown ? <b>{countdown}</b> : null}
+              {heading}
+              {countdown ? <b>{countdown}</b> : null}
             </span>
             <p className="bw-recap__date">
               {day(departIso, fromZone)}
@@ -169,13 +186,22 @@ export function TripRecap({
               </span>
             </p>
           </div>
-          <FollowButton
-            kind="departure"
-            targetId={departure.id}
-            iconOnly
-            label={`${from.name} → ${to.name}`}
-            demo={Boolean(departure.is_demo)}
-          />
+          <div className="bw-recap__personal-actions">
+            <TripShare
+              departureId={departure.id}
+              from={from.name}
+              to={to.name}
+              departureAt={departIso}
+              timeZone={fromZone}
+            />
+            <FollowButton
+              kind="departure"
+              targetId={departure.id}
+              iconOnly
+              label={`${from.name} → ${to.name}`}
+              demo={Boolean(departure.is_demo)}
+            />
+          </div>
         </header>
 
         <div className="bw-recap__route">
@@ -230,22 +256,22 @@ export function TripRecap({
           </p>
         ) : null}
 
-        <div className="bw-recap__chips">
+        <div className="bw-recap__vessel-summary">
           {vessel ? (
-            <button type="button" onClick={() => onSelect({ type: "vessel", id: vessel.id })}>
-              <Ship size={14} aria-hidden /> {vessel.name}
-              <ChevronRight size={13} aria-hidden />
-            </button>
+            <VesselMiniCard
+              vessel={vessel}
+              company={company}
+              onOpen={() => onSelect({ type: "vessel", id: vessel.id })}
+              onCompanyOpen={
+                company ? () => onSelect({ type: "company", id: company.id }) : undefined
+              }
+            />
           ) : (
-            <span className="bw-recap__chip-muted">
-              <Ship size={14} aria-hidden /> Navire à confirmer
-            </span>
+            <span className="bw-recap__chip-muted">Navire à confirmer</span>
           )}
-          {company ? (
+          {!vessel && company ? (
             <button type="button" onClick={() => onSelect({ type: "company", id: company.id })}>
-              <CompanyBadge name={company.name} logoUrl={company.logo_url} size={16} />
               {company.name}
-              <ChevronRight size={13} aria-hidden />
             </button>
           ) : null}
         </div>
@@ -390,19 +416,7 @@ export function TripRecap({
         <div className="bw-recap__panel" role="tabpanel">
           {vessel ? (
             <>
-              <button
-                type="button"
-                className="bw-recap__ship"
-                onClick={() => onSelect({ type: "vessel", id: vessel.id })}
-              >
-                <ShipPhoto key={photo?.url ?? vessel.id} url={photo?.url} name={vessel.name} />
-                <span>
-                  <small>Votre bateau</small>
-                  <strong>{vessel.name}</strong>
-                  <em>Avis, vie à bord et position</em>
-                </span>
-                <ArrowRight size={16} aria-hidden />
-              </button>
+              {vessel.description ? <p className="mb-3 text-sm">{vessel.description}</p> : null}
               <VesselPresence vesselId={vessel.id} />
               <VesselSpecs vessel={vessel} />
             </>

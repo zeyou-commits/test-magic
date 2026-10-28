@@ -1,4 +1,5 @@
 import { useEffect, useRef, type RefObject } from "react";
+import { bringTooltipToFront } from "./tooltipStack";
 import { placeMoodsQuery } from "@/lib/community/travellers";
 import { useQuery } from "@tanstack/react-query";
 import { Marker, type Map as MapLibreMap } from "maplibre-gl";
@@ -76,6 +77,8 @@ export function usePresenceMarkers(
         );
       }
       button.addEventListener("mousemove", (event) => event.stopPropagation());
+      button.addEventListener("pointerenter", () => bringTooltipToFront(button));
+      button.addEventListener("focusin", () => bringTooltipToFront(button));
       button.addEventListener("click", (event) => {
         event.stopPropagation();
         callbacks.current.onSelect(selection);

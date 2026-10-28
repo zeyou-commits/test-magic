@@ -1,0 +1,497 @@
+/* Fiches partagées : mêmes proportions, mêmes interactions, sur ordinateur et mobile. */
+.bw-ship-hero-photo--compact {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  background: var(--card);
+}
+.bw-ship-hero-photo--compact > .bw-ship-hero-stats {
+  order: 0;
+  margin: 0;
+  padding: 10px 12px;
+  border: 0;
+  border-bottom: 1px solid var(--border);
+  border-radius: 0;
+  background: var(--secondary);
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.bw-ship-hero-photo--compact > :last-child {
+  max-height: 232px;
+  min-height: 136px;
+}
+.bw-ship-hero-photo--compact .bw-ship-photo {
+  margin: 0;
+  border: 0;
+  border-radius: 0;
+}
+.bw-recap__personal-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.bw-trip-share-trigger {
+  display: grid;
+  flex: none;
+  width: 36px;
+  height: 36px;
+  place-items: center;
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  color: var(--primary);
+  background: var(--card);
+}
+.bw-trip-share-dialog [role="group"] {
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.bw-trip-share-dialog [role="group"] > * {
+  min-height: 44px;
+}
+.bw-vessel-mini {
+  position: relative;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: var(--card);
+  overflow: hidden;
+  margin-top: 12px;
+}
+.bw-vessel-mini__open {
+  display: grid;
+  grid-template-columns: 64px minmax(0, 1fr) 18px;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-height: 84px;
+  padding: 10px 12px;
+  text-align: left;
+  color: var(--foreground);
+}
+.bw-vessel-mini__open:hover {
+  background: var(--secondary);
+}
+.bw-vessel-mini__photo {
+  display: grid;
+  width: 64px;
+  height: 58px;
+  place-items: center;
+  overflow: hidden;
+  border-radius: 10px;
+  background: var(--background);
+}
+.bw-vessel-mini__photo img {
+  width: 100%;
+  height: 58px;
+  object-fit: contain;
+}
+.bw-vessel-mini__identity {
+  min-width: 0;
+  align-self: start;
+  padding-top: 4px;
+}
+.bw-vessel-mini__identity strong {
+  display: block;
+  overflow-wrap: anywhere;
+  font-size: 15px;
+  line-height: 1.25;
+}
+.bw-vessel-mini:has(.bw-vessel-mini__company) .bw-vessel-mini__identity {
+  padding-bottom: 28px;
+}
+.bw-vessel-mini__identity small {
+  display: block;
+  color: var(--muted-foreground);
+  font-size: 12px;
+  margin-top: 4px;
+}
+.bw-vessel-mini__company {
+  position: absolute;
+  left: 88px;
+  right: 32px;
+  bottom: 12px;
+  display: flex;
+  min-height: 24px;
+  align-items: center;
+  gap: 5px;
+  color: var(--muted-foreground);
+  text-align: left;
+  font-size: 12px;
+}
+.bw-vessel-mini__company > span:last-child {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.bw-vessel-mini__company:hover {
+  color: var(--primary);
+  text-decoration: underline;
+}
+.bw-companion {
+  position: absolute;
+  z-index: 42;
+  top: 20px;
+  bottom: 20px;
+  left: calc(var(--desktop-panel-width) + 32px);
+  width: 340px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: 24px;
+  background: var(--background);
+  box-shadow: 0 8px 26px color-mix(in srgb, var(--foreground) 9%, transparent);
+}
+.bw-companion > header {
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  gap: 8px;
+  border-bottom: 1px solid var(--border);
+  color: var(--muted-foreground);
+  font-size: 12px;
+}
+.bw-companion > header > button {
+  display: grid;
+  width: 36px;
+  height: 36px;
+  flex: none;
+  place-items: center;
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  color: var(--foreground);
+}
+.bw-companion__scroll {
+  min-height: 0;
+  flex: 1;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 16px;
+}
+.bw-companion .bw-ship-hero-title {
+  margin-top: 0;
+}
+.bw-companion .bw-ship-hero-photo--compact > :last-child {
+  max-height: 180px;
+}
+@media (max-width: 767px) {
+  .bw-ship-hero-photo--compact > .bw-ship-hero-stats {
+    padding: 8px 10px;
+    font-size: 12px;
+    justify-content: space-between;
+  }
+  .bw-ship-hero-photo--compact > :last-child {
+    max-height: 210px;
+  }
+  .bw-vessel-mini__open {
+    min-height: 88px;
+  }
+  .bw-trip-share-trigger {
+    width: 40px;
+    height: 40px;
+  }
+}
+@media (min-width: 1280px) {
+  .bw-map-stage:has(.bw-companion) > .bw-map-panel > button[aria-controls="map-side-panel"] {
+    transform: translate(352px, -50%);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .bw-companion {
+    animation: none;
+  }
+}
+.bw-company-profile {
+  padding: 4px 4px 20px;
+}
+.bw-company-hero {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin: 8px 0 14px;
+}
+.bw-company-hero > div {
+  min-width: 0;
+}
+.bw-company-hero p {
+  font-size: 10px;
+  font-weight: 750;
+  letter-spacing: 0.12em;
+  color: var(--muted-foreground);
+  margin: 0 0 4px;
+}
+.bw-company-hero h2 {
+  font-size: clamp(20px, 2vw, 25px);
+  font-weight: 750;
+  line-height: 1.2;
+  overflow-wrap: anywhere;
+  margin: 0;
+}
+.bw-company-stats {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: var(--secondary);
+  padding: 12px;
+  margin: 16px 0;
+}
+.bw-company-stats dt {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  color: var(--muted-foreground);
+  font-size: 12px;
+}
+.bw-company-stats dd {
+  font-size: 22px;
+  font-weight: 750;
+  margin: 2px 0 0;
+}
+.bw-company-description {
+  font-size: 13px;
+  line-height: 1.6;
+  margin: 0 0 12px;
+}
+.bw-company-site {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 40px;
+  padding: 8px 14px;
+  border: 1px solid var(--border);
+  border-radius: 24px;
+  color: var(--primary);
+  font-size: 13px;
+  font-weight: 650;
+  margin-bottom: 18px;
+}
+.bw-company-profile [role="tablist"] {
+  display: flex;
+  width: 100%;
+}
+.bw-company-profile [role="tab"] {
+  flex: 1;
+  min-height: 40px;
+  padding-inline: 8px;
+}
+.bw-company-profile [role="tabpanel"] > h3 {
+  margin: 18px 0 8px;
+  font-size: 15px;
+  font-weight: 700;
+}
+.bw-company-programmes li {
+  border-bottom: 1px solid var(--border);
+}
+.bw-company-programmes button {
+  display: flex;
+  flex-direction: column;
+  text-align: left;
+  width: 100%;
+  gap: 4px;
+  padding: 12px 6px;
+  border-radius: 8px;
+}
+.bw-company-programmes button:hover {
+  background: var(--secondary);
+}
+.bw-company-programmes strong {
+  font-size: 14px;
+}
+.bw-company-programmes span {
+  color: var(--primary);
+  font-size: 13px;
+}
+.bw-company-programmes small {
+  font-size: 12px;
+  color: var(--muted-foreground);
+}
+.bw-company-more {
+  width: 100%;
+  min-height: 44px;
+  font-size: 13px;
+  font-weight: 650;
+  color: var(--primary);
+}
+.bw-entity-reviews {
+  font-size: 13px;
+  padding: 16px 0;
+}
+.bw-entity-reviews__summary {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+.bw-entity-reviews__summary > svg {
+  color: var(--primary);
+}
+.bw-entity-reviews__summary > strong {
+  font-size: 20px;
+}
+.bw-entity-reviews__summary > span {
+  color: var(--muted-foreground);
+}
+.bw-entity-reviews__summary > button {
+  margin-left: auto;
+  min-height: 40px;
+}
+.bw-rating-notice {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  background: var(--secondary);
+  border-radius: 12px;
+  padding: 10px 12px;
+  font-size: 12px;
+  line-height: 1.5;
+  margin: 12px 0;
+}
+.bw-rating-form {
+  margin-top: 14px;
+  padding: 14px 12px;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+}
+.bw-rating-form > p {
+  color: var(--muted-foreground);
+  font-size: 12px;
+  line-height: 1.5;
+  margin-bottom: 12px;
+}
+.bw-rating-form fieldset {
+  min-width: 0;
+  border: 0;
+  padding: 6px 0 10px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 10px;
+}
+.bw-rating-form legend {
+  font-size: 13px;
+  font-weight: 650;
+}
+.bw-rating-choices {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1px;
+}
+.bw-rating-choices label {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  color: var(--primary);
+  cursor: pointer;
+  border-radius: 8px;
+}
+.bw-rating-choices label:has(:checked) {
+  background: var(--secondary);
+}
+.bw-rating-choices label:has(:focus-visible) {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+.bw-rating-choices input {
+  position: absolute;
+  opacity: 0;
+  width: 1px;
+  height: 1px;
+}
+.bw-rating-choices .bw-rating-na {
+  width: auto;
+  padding: 4px 8px;
+  margin-left: 3px;
+  font-size: 11px;
+  color: var(--muted-foreground);
+}
+.bw-rating-form > button {
+  margin-top: 6px;
+  min-height: 44px;
+  max-width: 100%;
+  white-space: normal;
+}
+.bw-rating-login {
+  display: block;
+  padding: 12px;
+  border-radius: 12px;
+  background: var(--primary);
+  color: var(--primary-foreground);
+  text-align: center;
+  font-weight: 650;
+}
+.bw-rating-detail {
+  margin: 16px 0;
+  border-top: 1px solid var(--border);
+  padding-top: 12px;
+}
+.bw-rating-detail summary,
+.bw-rating-list summary {
+  cursor: pointer;
+  color: var(--primary);
+  padding-block: 8px;
+}
+.bw-rating-detail dl > div,
+.bw-rating-list dl > div {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 7px 0;
+}
+.bw-rating-detail dd,
+.bw-rating-list dd {
+  text-align: right;
+  flex: none;
+  color: var(--muted-foreground);
+}
+.bw-rating-list {
+  margin-top: 14px;
+}
+.bw-rating-list > li {
+  padding: 12px 0;
+  border-top: 1px solid var(--border);
+}
+.bw-rating-list > li > div {
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.bw-rating-list time {
+  font-size: 11px;
+  color: var(--muted-foreground);
+}
+.bw-vessel-mini__photo .bw-ship-photo {
+  width: 64px;
+  height: 58px;
+  border-radius: 0;
+}
+.bw-vessel-mini__photo .bw-ship-photo img {
+  width: 64px;
+  height: 58px;
+}
+
+.bw-companion .bw-ship-hero-stats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+  padding: 8px;
+}
+.bw-companion .bw-ship-hero-stats > div {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+}
+.bw-companion .bw-ship-hero-stats svg {
+  display: none;
+}
+.bw-companion .bw-ship-hero-stats dt::after {
+  content: none;
+}

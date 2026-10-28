@@ -9,7 +9,10 @@ const PUBLIC_ORIGIN = "https://www.bledway.com";
 export function stableShareUrl(href: string) {
   try {
     const u = new URL(href);
-    if (/(^|\.)bledway\.com$/.test(u.hostname) || u.hostname.endsWith(".lovable.app") && !u.hostname.includes("preview")) {
+    if (
+      /(^|\.)bledway\.com$/.test(u.hostname) ||
+      (u.hostname.endsWith(".lovable.app") && !u.hostname.includes("preview"))
+    ) {
       return `${PUBLIC_ORIGIN}${u.pathname}${u.search}`;
     }
     return u.toString();
@@ -51,6 +54,7 @@ export function ShareButtons({
   className = "",
   title = SHARE_TITLE,
   text,
+  getUrl,
 }: {
   label?: string;
   compact?: boolean;
@@ -58,6 +62,7 @@ export function ShareButtons({
   title?: string;
   /** Résumé partagé (trajet, date, heures locales, nature de l'information). */
   text?: string;
+  getUrl?: () => string;
 }) {
   const [copied, setCopied] = useState(false);
   const [canShare, setCanShare] = useState(false);
@@ -67,7 +72,7 @@ export function ShareButtons({
   }, []);
 
   const copy = async () => {
-    const ok = await copyText(stableShareUrl(window.location.href));
+    const ok = await copyText(stableShareUrl(getUrl?.() ?? window.location.href));
     if (ok) {
       setCopied(true);
       toast.success("Lien copié");
@@ -79,7 +84,11 @@ export function ShareButtons({
 
   const share = async () => {
     try {
-      await navigator.share({ title, ...(text ? { text } : {}), url: stableShareUrl(window.location.href) });
+      await navigator.share({
+        title,
+        ...(text ? { text } : {}),
+        url: stableShareUrl(getUrl?.() ?? window.location.href),
+      });
     } catch {
       // Fenêtre de partage fermée par l'utilisateur.
     }
@@ -121,7 +130,11 @@ export function ShareButtons({
         href="#"
         onClick={(e) => {
           e.preventDefault();
-          window.open(whatsappUrl(text ?? title, stableShareUrl(window.location.href)), "_blank", "noopener,noreferrer");
+          window.open(
+            whatsappUrl(text ?? title, stableShareUrl(getUrl?.() ?? window.location.href)),
+            "_blank",
+            "noopener,noreferrer",
+          );
         }}
         className={base}
         title="Envoyer sur WhatsApp"

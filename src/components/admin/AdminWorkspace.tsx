@@ -122,7 +122,7 @@ const sections = [
   },
   {
     id: "reviews",
-    label: "Avis sur les ports",
+    label: "Avis des voyageurs",
     description: "Relisez les contributions avant de les rendre publiques.",
     group: "Voyageurs",
     icon: Star,

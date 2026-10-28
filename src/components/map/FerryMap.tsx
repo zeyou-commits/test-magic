@@ -1,4 +1,5 @@
 import { useTravelMarkers } from "./useTravelMarkers";
+import { bringTooltipToFront } from "./tooltipStack";
 import { usePresenceMarkers } from "./usePresenceMarkers";
 import { useMyTripMarker } from "./useMyTripMarker";
 import { useEffect, useRef, useState } from "react";
@@ -985,6 +986,7 @@ export default function FerryMap({
           } else card.append(name, status);
           hoverTip.setLngLat(coordinates).setDOMContent(card).addTo(map);
         } else hoverTip.setLngLat(coordinates);
+        bringTooltipToFront(hoverTip.getElement());
       });
       map.on("mouseleave", fleetLayers, () => setHoveredShip(null));
       const closeFleetPopups = () => {
@@ -1041,6 +1043,7 @@ export default function FerryMap({
           const popup = fleetPickerRef.current;
           if (!popup?.isOpen()) return;
           const element = popup.getElement();
+          bringTooltipToFront(element);
           const bounds = container.getBoundingClientRect();
           const insets = insetsRef.current;
           const left =
@@ -1528,11 +1531,13 @@ export default function FerryMap({
         // Survol à la souris : la bulle s'affiche pour tous les ports (fermés ou sans liaison compris).
         el.addEventListener("pointerenter", (event) => {
           if (event.pointerType !== "mouse") return;
+          bringTooltipToFront(el);
           el.dataset["hover"] = "true";
           tip.inert = false;
           tip.setAttribute("aria-hidden", "false");
           requestAnimationFrame(() => positionPortTip(map, marker, tip, tipInset()));
         });
+        el.addEventListener("focusin", () => bringTooltipToFront(el));
         el.addEventListener("pointerleave", (event) => {
           if (event.pointerType !== "mouse") return;
           el.dataset["hover"] = "false";
@@ -2332,5 +2337,5 @@ export default function FerryMap({
     else map.once("load", apply);
   }, [isMobile, hasFocus, mapReady, itineraryPreview]);
 
-  return <div ref={containerRef} className="h-full w-full" />;
+  return <div ref={containerRef} className="isolate h-full w-full" />;
 }

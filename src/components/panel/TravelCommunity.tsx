@@ -264,7 +264,7 @@ export function TravelSignals({
   );
 }
 
-export function VesselReviews({ vesselId }: { vesselId: string }) {
+export function VesselReviews({ vesselId, readOnly = true }: { vesselId: string; readOnly?: boolean }) {
   const { user } = useAuth();
   const feed = useQuery(communityQuery("vessel", vesselId, false, user?.id));
   const [write, setWrite] = useState(false);
@@ -299,8 +299,10 @@ export function VesselReviews({ vesselId }: { vesselId: string }) {
   const own = feed.data.reviews.find((r) => r.own);
   const average = feed.data.rating_average;
   const count = feed.data.rating_count;
+  if (readOnly && !published.length) return null;
   return (
     <section className="bw-vessel-reviews" aria-label="Avis sur ce navire">
+      {readOnly ? <h3>Anciens avis des voyageurs</h3> : <>
       <div className="bw-review-summary">
         <span className="bw-review-score">
           <Star size={24} aria-hidden />
@@ -350,6 +352,7 @@ export function VesselReviews({ vesselId }: { vesselId: string }) {
           onDone={() => setWrite(false)}
         />
       ) : null}
+      </>}
       {count > published.length ? (
         <p className="bw-community-caption">
           Les {published.length} avis les plus récents sont affichés.

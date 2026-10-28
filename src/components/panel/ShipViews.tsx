@@ -1,6 +1,7 @@
+import { EntityReviews } from "./EntityReviews";
+import { entityReviewsQuery } from "@/lib/ferry/entityReviews";
 import { useAuth } from "@/hooks/useAuth";
 import { LivePulse, revealLive, useLiveInfo } from "./LivePulse";
-import { communityQuery } from "@/lib/ferry/community";
 import { useCallback, useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import {
@@ -31,6 +32,8 @@ import { departureForSignal } from "@/lib/ferry/tracking";
 import { portTimeZone } from "@/lib/ferry/time";
 import { formatDateTime } from "@/lib/ferry/format";
 import type { Selection } from "@/lib/ferry/types";
+import type { Departure } from "@/lib/ferry/types";
+import { supabase } from "@/integrations/supabase/client";
 import { DemoBadge, EmptyNote, Stars } from "./shared";
 import { CompanyBadge } from "./CompanyBadge";
 import { CrossingCard } from "./CrossingCard";
@@ -39,7 +42,22 @@ import { TripRecap } from "./TripRecap";
 import { ShipPhoto, VesselSpecs } from "./VesselBits";
 import { TripStatusPicker, VesselPresence } from "./TripPresence";
 
-function useShipData() {
+function useShipData(exactDepartureId?: string) {
+  const exact = useQuery({
+    queryKey: ["departure", exactDepartureId],
+    enabled: Boolean(exactDepartureId),
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("departures")
+        .select("*")
+        .eq("id", exactDepartureId!)
+        .maybeSingle();
+      if (error) throw new Error("Le suivi est momentanément indisponible.");
+      return data as Departure | null;
+    },
+    retry: false,
+    refetchInterval: 60_000,
+  });
   const { data: vessels = [] } = useQuery(vesselsQuery);
   const { data: companies = [] } = useQuery(companiesQuery);
   const { data: routes = [] } = useQuery(routesQuery);
@@ -48,32 +66,38 @@ function useShipData() {
   const { data: recent = [] } = useQuery(fleetDeparturesQuery);
   const live = useLiveShips();
   const fleet = useFleet();
-  const departures = [...new Map([...recent, ...upcoming].map((d) => [d.id, d])).values()];
-  return { vessels, companies, routes, ports, departures, live, fleet };
+  const departures = [
+    ...new Map(
+      [...recent, ...upcoming, ...(exact.data ? [exact.data] : [])].map((d) => [d.id, d]),
+    ).values(),
+  ];
+  return { vessels, companies, routes, ports, departures, live, fleet, exact };
 }
 
 export function VesselView({
   vesselId,
   onSelect,
+  contextDepartureId,
 }: {
   vesselId: string;
   onSelect: (s: Selection) => void;
+  contextDepartureId?: string;
 }) {
-  const data = useShipData();
+  const data = useShipData(contextDepartureId);
   const { user, isAdmin } = useAuth();
-  const community = useQuery(communityQuery("vessel", vesselId, false, user?.id));
-  const communityAvailable = Boolean(community.data);
-  const [tab, setTab] = useState("tracking");
+  const communityAvailable = true;
+  const guided = useQuery(entityReviewsQuery("vessel", vesselId));
+  const [writeRating, setWriteRating] = useState(false);
+  const [tab, setTab] = useState(contextDepartureId ? "onboard" : "tracking");
+
+  useEffect(() => {
+    if (user && window.sessionStorage.getItem(`bledway:rating:vessel:${vesselId}`))
+      setTab("reviews");
+  }, [user, vesselId]);
   // « Noter » : onglet Avis, formulaire ouvert (après connexion si besoin).
   const rateVessel = () => {
-    if (!user) {
-      window.sessionStorage.setItem("bledway:pending-vessel-review", vesselId);
-      const next = `${window.location.pathname}${window.location.search}`;
-      window.location.assign(`/auth?next=${encodeURIComponent(next)}`);
-      return;
-    }
     setTab("reviews");
-    window.dispatchEvent(new CustomEvent("bledway:write-vessel-review", { detail: { vesselId } }));
+    setWriteRating(true);
   };
   // Infos BledWay de ses lignes à venir et de sa compagnie, signalements à bord.
   const vesselCompany = data.vessels.find((v) => v.id === vesselId)?.company_id;
@@ -119,7 +143,10 @@ export function VesselView({
   }).data;
   if (!vessel) return <EmptyNote>Navire introuvable.</EmptyNote>;
   const company = data.companies.find((c) => c.id === vessel.company_id);
-  const live = data.live.find((s) => s.vessel.id === vesselId);
+  const live = data.live.find(
+    (s) =>
+      s.vessel.id === vesselId && (!contextDepartureId || s.departure.id === contextDepartureId),
+  );
   const ship = data.fleet.find((s) => s.vesselId === vesselId);
   const next = data.departures
     .filter(
@@ -130,12 +157,15 @@ export function VesselView({
     )
     .sort((a, b) => a.departure_at.localeCompare(b.departure_at))
     .slice(0, 5);
-  const departure =
+  const automaticDeparture =
     (live
       ? departureForSignal(data.departures, vessel, live.position, data.routes, Date.now())
       : null) ??
     data.departures.find((d) => d.id === ship?.departureId) ??
     next[0];
+  const departure = contextDepartureId
+    ? data.departures.find((d) => d.id === contextDepartureId && d.vessel_id === vesselId)
+    : automaticDeparture;
   const route = data.routes.find((r) => r.id === departure?.route_id);
   const from = data.ports.find((p) => p.id === route?.departure_port_id);
   const to = data.ports.find((p) => p.id === route?.arrival_port_id);
@@ -159,32 +189,33 @@ export function VesselView({
           </div>
           {vessel.is_demo ? <DemoBadge /> : null}
         </div>
-        <div className="bw-ship-hero-photo">
+        <div className="bw-ship-hero-photo bw-ship-hero-photo--compact">
+          <dl className="bw-ship-hero-stats" aria-label="Le bateau en chiffres">
+            <div>
+              <CalendarDays size={12} aria-hidden />
+              <dt>Âge</dt>
+              <dd>
+                {vessel.build_year && vessel.build_year <= new Date().getFullYear()
+                  ? `${new Date().getFullYear() - vessel.build_year} ans`
+                  : "—"}
+              </dd>
+            </div>
+            <div>
+              <Users size={12} aria-hidden />
+              <dt>Passagers</dt>
+              <dd>{vessel.passenger_capacity?.toLocaleString("fr-FR") ?? "—"}</dd>
+            </div>
+            <div>
+              <CarFront size={12} aria-hidden />
+              <dt>Véhicules</dt>
+              <dd>{vessel.car_capacity?.toLocaleString("fr-FR") ?? "—"}</dd>
+            </div>
+          </dl>
+
           <ShipPhoto key={photo?.url ?? vesselId} url={photo?.url} name={vessel.name} />
         </div>
-        <dl className="bw-ship-hero-stats" aria-label="Le bateau en chiffres">
-          <div>
-            <CalendarDays size={12} aria-hidden />
-            <dt>Âge</dt>
-            <dd>
-              {vessel.build_year && vessel.build_year <= new Date().getFullYear()
-                ? `${new Date().getFullYear() - vessel.build_year} ans`
-                : "—"}
-            </dd>
-          </div>
-          <div>
-            <Users size={12} aria-hidden />
-            <dt>Passagers</dt>
-            <dd>{vessel.passenger_capacity?.toLocaleString("fr-FR") ?? "—"}</dd>
-          </div>
-          <div>
-            <CarFront size={12} aria-hidden />
-            <dt>Véhicules</dt>
-            <dd>{vessel.car_capacity?.toLocaleString("fr-FR") ?? "—"}</dd>
-          </div>
-        </dl>
       </header>
-      {departure && from && to ? (
+      {!contextDepartureId && departure && from && to ? (
         <div className="bw-ship-crossing-first">
           <CrossingCard departure={departure} from={from} to={to} live={live} />
         </div>
@@ -214,10 +245,10 @@ export function VesselView({
       <VesselPresence vesselId={vesselId} />
       {communityAvailable ? (
         <button type="button" className="pv-rating" onClick={() => setTab("reviews")}>
-          {community.data?.rating_count ? (
+          {guided.data?.count ? (
             <>
-              <Stars value={community.data.rating_average ?? 0} />
-              <span>· {community.data.rating_count} avis</span>
+              <Stars value={guided.data.average ?? 0} />
+              <span>· {guided.data.count} avis</span>
             </>
           ) : (
             <>
@@ -265,7 +296,7 @@ export function VesselView({
       ) : null}
       <Tabs value={activeTab} onValueChange={setTab} className="bw-ship-tabs">
         <TabsList aria-label="Fiche du navire">
-          <TabsTrigger value="tracking">Ma traversée</TabsTrigger>
+          <TabsTrigger value="tracking">Suivi</TabsTrigger>
           <TabsTrigger value="onboard">À bord</TabsTrigger>
           {communityAvailable ? (
             <TabsTrigger value="reviews">
@@ -364,7 +395,14 @@ export function VesselView({
           </section>
         </TabsContent>
         <TabsContent value="reviews" forceMount hidden={activeTab !== "reviews"}>
-          <VesselReviews key={vesselId} vesselId={vesselId} />
+          <EntityReviews
+            key={vesselId}
+            kind="vessel"
+            target={vesselId}
+            openForm={writeRating}
+            onFormClosed={() => setWriteRating(false)}
+          />
+          <VesselReviews key={`legacy-${vesselId}`} vesselId={vesselId} readOnly />
         </TabsContent>
       </Tabs>
     </article>
@@ -378,8 +416,15 @@ export function DepartureView({
   departureId: string;
   onSelect: (s: Selection) => void;
 }) {
-  const data = useShipData();
+  const data = useShipData(departureId);
   const departure = data.departures.find((d) => d.id === departureId);
+  if (!departure && data.exact.isPending) return <EmptyNote>Chargement du suivi…</EmptyNote>;
+  if (!departure && data.exact.isError)
+    return (
+      <EmptyNote>
+        Le suivi est momentanément indisponible. Réessayez dans quelques instants.
+      </EmptyNote>
+    );
   if (!departure) return <EmptyNote>Traversée introuvable.</EmptyNote>;
   const route = data.routes.find((r) => r.id === departure.route_id);
   const from = data.ports.find((p) => p.id === route?.departure_port_id);

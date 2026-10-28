@@ -1,5 +1,6 @@
 import { useAuth } from "@/hooks/useAuth";
-import { Anchor, Flag, Ship, Waves, type LucideProps } from "lucide-react";
+import { useEffect, useRef } from "react";
+import { Anchor, Building2, Ship, type LucideProps } from "lucide-react";
 import type { FleetShip } from "@/lib/ferry/fleet";
 import {
   shortCompanyName,
@@ -25,6 +26,7 @@ interface MapStatsProps {
   lineVisibility: LineVisibility;
   onLineVisibility: (value: LineVisibility) => void;
   onPreview: (preview: MapPreview | null) => void;
+  onDismiss: () => void;
 }
 
 function LighthouseIcon({ className }: LucideProps) {
@@ -64,95 +66,166 @@ export function MapStats({
   lineVisibility,
   onLineVisibility,
   onPreview,
+  onDismiss,
 }: MapStatsProps) {
+  const rootRef = useRef<HTMLDivElement>(null);
+  const dismissRef = useRef(onDismiss);
+  dismissRef.current = onDismiss;
+  useEffect(() => {
+    if (!menuOpen) return;
+    const outside = (event: Event) => {
+      if (event.target instanceof Node && !rootRef.current?.contains(event.target))
+        dismissRef.current();
+    };
+    const escape = (event: KeyboardEvent) => {
+      if (event.key !== "Escape") return;
+      event.preventDefault();
+      event.stopPropagation();
+      dismissRef.current();
+      rootRef.current?.querySelector<HTMLButtonElement>("button[data-active=true]")?.focus();
+    };
+    document.addEventListener("pointerdown", outside, true);
+    document.addEventListener("focusin", outside, true);
+    document.addEventListener("keydown", escape, true);
+    return () => {
+      document.removeEventListener("pointerdown", outside, true);
+      document.removeEventListener("focusin", outside, true);
+      document.removeEventListener("keydown", escape, true);
+    };
+  }, [menuOpen]);
   const { isAdmin } = useAuth();
   const item =
-    "flex items-center gap-1 rounded-full px-1.5 py-0.5 text-[11px] font-bold tabular-nums text-foreground transition-colors hover:bg-secondary data-[active=true]:bg-primary data-[active=true]:text-primary-foreground md:gap-1.5 md:px-2.5 md:py-1.5 md:text-sm";
+    "flex w-full flex-col items-center justify-center gap-0.5 rounded-xl px-1 py-1.5 text-[11px] font-bold leading-none tabular-nums text-foreground transition-colors hover:bg-secondary data-[active=true]:bg-primary data-[active=true]:text-primary-foreground md:min-w-11 md:text-xs";
   const shipList =
     activeShortcut === "sea" ? atSea : activeShortcut === "upcoming" ? upcomingShips : [];
+  // Icônes parlantes sans légende : bateau qui tangue (en mer, avec point « en direct »),
+  // bateau à l'ancre (à quai), bâtiment (compagnies), phare (ports).
+  const icon = "size-4 md:size-[18px]";
   const shortcuts = [
     {
       id: "sea" as const,
-      label: "Navires en mer",
+      label: "En mer",
+      title: "Navires en mer",
       count: atSea.length,
-      icon: <Waves className="size-3 md:size-4" />,
+      icon: (
+        <span className="relative inline-flex">
+          <Ship className={`${icon} bw-ship-sailing`} />
+          <span className="absolute -right-0.5 -top-0.5 inline-flex size-2" aria-hidden>
+            <span className="absolute inline-flex size-full rounded-full bg-success opacity-75 motion-safe:animate-ping" />
+            <span className="relative inline-flex size-2 rounded-full border border-background bg-success" />
+          </span>
+        </span>
+      ),
     },
     {
       id: "upcoming" as const,
-      label: "Navires à quai",
+      label: "À quai",
+      title: "Navires à quai",
       count: upcomingShips.length,
-      icon: <Anchor className="size-3 md:size-4" />,
+      icon: (
+        <span className="relative inline-flex">
+          <Ship className={icon} />
+          <span className="absolute -bottom-1 -right-1 grid size-3 place-items-center rounded-full bg-background">
+            <Anchor className="size-2.5" strokeWidth={2.5} />
+          </span>
+        </span>
+      ),
     },
     {
       id: "companies" as const,
-      label: "Compagnies des navires",
+      label: "Compagnies",
+      title: "Compagnies des navires",
       count: companies.length,
-      icon: <Flag className="size-3 md:size-4" />,
+      icon: <Building2 className={icon} />,
     },
     {
       id: "ports" as const,
-      label: "Ports et liaisons",
+      label: "Ports",
+      title: "Ports et liaisons",
       count: portsCount,
-      icon: <LighthouseIcon className="size-3 md:size-4" />,
+      icon: <LighthouseIcon className={icon} />,
     },
   ];
   return (
-    <div className="pointer-events-auto absolute right-2 top-3 z-20 md:right-5 md:top-5">
-      <div className="ml-auto flex w-max items-center rounded-full border border-border bg-background/95 p-0.5 shadow-md backdrop-blur md:gap-0.5 md:p-1 md:shadow-lg">
-        {shortcuts.map(({ id, label, count, icon }) => (
+    <div
+      ref={rootRef}
+      className="pointer-events-auto absolute left-2 top-14 z-30 md:left-auto md:right-5 md:top-5"
+    >
+      {/* Raccourcis empilés à la verticale, icône au-dessus du nombre : colonne étroite.
+          Mobile : à gauche, sous la légende, pour dégager l'est de la carte (ports italiens). */}
+      <div className="flex w-max flex-col items-stretch md:ml-auto gap-0.5 rounded-2xl border border-border bg-background/95 p-1 shadow-md backdrop-blur md:shadow-lg">
+        {shortcuts.map(({ id, label, title, count, icon }) => (
           <button
             key={id}
             type="button"
-            className={item}
+            className={`${item} group relative`}
             data-active={activeShortcut === id}
-            aria-label={`${label} : ${count}`}
+            aria-label={`${title} : ${count}`}
             aria-pressed={activeShortcut === id}
             aria-expanded={activeShortcut === id && menuOpen}
-            title={`${label} : ${count}`}
             onClick={() => onToggle(id)}
           >
-            {icon}
+            <span aria-hidden className="inline-flex">
+              {icon}
+            </span>
             {count}
+            {/* Libellé court au survol (ordinateur), à gauche de la colonne. */}
+            {!(activeShortcut === id && menuOpen) ? (
+              <span
+                aria-hidden
+                className="pointer-events-none absolute right-full top-1/2 mr-2 hidden -translate-y-1/2 whitespace-nowrap rounded-lg bg-foreground px-2 py-1 text-xs font-semibold text-background shadow-md md:group-hover:block"
+              >
+                {label}
+              </span>
+            ) : null}
           </button>
         ))}
       </div>
       {menuOpen && activeShortcut && (
         <div
-          className="ml-auto mt-2 max-h-[min(48dvh,20rem)] w-[min(18rem,calc(100vw-2rem))] overflow-y-auto rounded-2xl border border-border bg-background/95 p-1 shadow-lg backdrop-blur"
+          className="absolute left-full top-0 ml-2 max-h-[min(60dvh,24rem)] md:left-auto md:right-full md:ml-0 md:mr-2 w-[min(18rem,calc(100vw-5.5rem))] overflow-y-auto rounded-2xl border border-border bg-background/95 p-1 shadow-lg backdrop-blur"
           onPointerLeave={() => onPreview(null)}
           aria-label={
             activeShortcut === "companies" ? "Filtrer les compagnies" : "Choisir un navire"
           }
         >
           {activeShortcut === "ports" ? (
-            <fieldset className="p-2">
-              <legend className="px-1 pt-1 text-xs font-bold">Afficher les liaisons</legend>
+            <div role="radiogroup" aria-label="Afficher les liaisons" className="p-2">
+              <p className="px-1 pt-1 text-xs font-bold">Afficher les liaisons</p>
               {(
                 [
                   ["published", "Avec programme publié", "Tous les programmes futurs"],
                   ["all", "Toutes les liaisons", "Y compris sans programme à venir"],
                   ["none", "Aucune liaison", "Garder les ports et les bateaux"],
                 ] as const
-              ).map(([value, label, description]) => (
-                <label
-                  key={value}
-                  className="flex min-h-12 cursor-pointer items-center gap-2 rounded-xl px-2 py-2 hover:bg-secondary"
-                >
-                  <input
-                    type="radio"
-                    name="map-lines"
-                    value={value}
-                    checked={lineVisibility === value}
-                    onChange={() => onLineVisibility(value)}
-                    className="accent-primary"
-                  />
-                  <span>
-                    <b className="block text-xs">{label}</b>
-                    <span className="text-[10px] text-muted-foreground">{description}</span>
-                  </span>
-                </label>
-              ))}
-            </fieldset>
+              ).map(([value, label, description]) => {
+                const selected = lineVisibility === value;
+                return (
+                  <button
+                    key={value}
+                    type="button"
+                    role="radio"
+                    aria-checked={selected}
+                    onClick={() => {
+                      onLineVisibility(value);
+                      onDismiss();
+                    }}
+                    className={`flex min-h-12 w-full cursor-pointer items-center gap-2 rounded-xl px-2 py-2 text-left transition-colors hover:bg-secondary ${value === "published" ? "text-success" : "text-foreground"}`}
+                  >
+                    <span
+                      aria-hidden
+                      className={`grid size-4 shrink-0 place-items-center rounded-full border-2 ${selected ? "border-current" : "border-muted-foreground/40"}`}
+                    >
+                      {selected ? <span className="size-2 rounded-full bg-current" /> : null}
+                    </span>
+                    <span>
+                      <b className="block text-xs">{label}</b>
+                      <span className="text-[10px] text-muted-foreground">{description}</span>
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
           ) : activeShortcut === "companies" ? (
             <>
               <button
@@ -160,6 +233,8 @@ export function MapStats({
                 className="flex w-full items-center rounded-xl px-3 py-2 text-left text-xs font-semibold hover:bg-secondary"
                 aria-pressed={!selectedCompanyId}
                 onClick={() => onSelectCompany(null)}
+                onPointerEnter={() => onPreview(null)}
+                onFocus={() => onPreview(null)}
               >
                 Toutes les compagnies
               </button>
@@ -170,12 +245,22 @@ export function MapStats({
                   className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left text-xs font-medium hover:bg-secondary data-[active=true]:bg-secondary"
                   data-active={selectedCompanyId === company.id}
                   aria-pressed={selectedCompanyId === company.id}
-                  onClick={() => onSelectCompany(company.id)}
+                  onClick={() =>
+                    onSelectCompany(selectedCompanyId === company.id ? null : company.id)
+                  }
+                  onPointerEnter={(e) => {
+                    if (e.pointerType === "mouse") onPreview({ companyId: company.id });
+                  }}
+                  onPointerLeave={(e) => {
+                    if (e.pointerType === "mouse") onPreview(null);
+                  }}
+                  onFocus={() => onPreview({ companyId: company.id })}
+                  onBlur={() => onPreview(null)}
                 >
                   {company.logoUrl ? (
                     <img src={company.logoUrl} alt="" className="size-5 shrink-0 object-contain" />
                   ) : (
-                    <Flag className="size-4 shrink-0 text-primary" />
+                    <Building2 className="size-4 shrink-0 text-primary" />
                   )}
                   <span className="truncate" title={company.name}>
                     {shortCompanyName(company.name)} ({company.count})

@@ -1,4 +1,5 @@
 import { absoluteUrl, jsonLdString } from "@/lib/seo/site";
+import { ProfileHost } from "@/components/community/ProfileHost";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import {
   Outlet,
@@ -184,6 +185,7 @@ function RootComponent() {
           {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
           <Outlet />
           <PwaInstall />
+          <ProfileHost />
           <Toaster />
         </TravelActionProvider>
       </AuthProvider>

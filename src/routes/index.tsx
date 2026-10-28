@@ -1,7 +1,8 @@
+import { syncFilters, matchesTraffic } from "@/lib/ferry/filterSync";
 import { seoHead } from "@/lib/seo/site";
 import { DataUnavailableNotice } from "@/components/layout/DataUnavailableNotice";
 import type React from "react";
-import { ChevronLeft, ChevronRight, ArrowDown, Compass } from "lucide-react";
+import { ChevronLeft, ChevronRight, ArrowDown, Compass, Globe2 } from "lucide-react";
 import {
   lazy,
   Suspense,
@@ -12,7 +13,7 @@ import {
   useRef,
   useState,
 } from "react";
-import { ClientOnly, createFileRoute } from "@tanstack/react-router";
+import { ClientOnly, createFileRoute, useRouterState } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { SidePanel } from "@/components/panel/SidePanel";
 import {
@@ -22,6 +23,7 @@ import {
   routesQuery,
   upcomingDeparturesQuery,
   schedulesQuery,
+  vesselsQuery,
 } from "@/lib/ferry/queries";
 import { capitalizeFirst, formatDateParts } from "@/lib/ferry/format";
 import { emptyFilters, type Filters, type Selection, type RouteLine } from "@/lib/ferry/types";
@@ -35,7 +37,11 @@ import type { PortMeta } from "@/components/map/FerryMap";
 import { Button } from "@/components/ui/button";
 import { MapStatusBar } from "@/components/map/MapStatusBar";
 import { MapLegend } from "@/components/map/MapLegend";
+import { QuickReport } from "@/components/map/QuickReport";
+import { MyTripMapChip } from "@/components/panel/MyTripHero";
 import { MapStats, type MapShortcut } from "@/components/map/MapStats";
+import { FLASH_SELECT_EVENT } from "@/components/panel/FlashCenter";
+import { FLASH_PREVIEW_EVENT } from "@/components/panel/FlashFeed";
 import { filtersFromUrl, mapStateToSearch, selectionFromUrl } from "@/lib/ferry/urlState";
 import { hasActiveFilters, filterRoutes, summarizePorts } from "@/lib/ferry/filtering";
 import { portTimeZone } from "@/lib/ferry/time";
@@ -61,13 +67,15 @@ export const Route = createFileRoute("/")({
 
 /** Hauteurs du tiroir mobile : replié, intermédiaire, plein écran (hors barre d'onglets). */
 const TAB_BAR_HEIGHT = 56;
-const COLLAPSED_HEIGHT = 96;
+const COLLAPSED_HEIGHT = 128;
 const MIDDLE_RATIO = 0.68;
 const DESKTOP_PANEL = 420;
 
 function Index() {
+  // Même source côté serveur et navigateur : l'URL du routeur (évite les écarts de rendu).
+  const initialSearch = useRouterState({ select: (state) => state.location.searchStr });
   const [selection, setSelection] = useState<Selection | null>(() =>
-    typeof window === "undefined" ? null : selectionFromUrl(window.location.search),
+    selectionFromUrl(initialSearch),
   );
   const [selectionHistory, setSelectionHistory] = useState<Selection[]>([]);
   const handleSelect = (newSelection: Selection | null, peek = false) => {
@@ -90,6 +98,24 @@ function Index() {
     }
     setFocusShipId(null);
   };
+  // Fil Flash info (en-tête mobile) : ouvre la fiche demandée sans recharger la page.
+  const handleSelectRef = useRef(handleSelect);
+  handleSelectRef.current = handleSelect;
+  useEffect(() => {
+    const onFlashSelect = (event: Event) => {
+      const detail = (event as CustomEvent<Selection>).detail;
+      if (detail?.type && detail.id) handleSelectRef.current(detail);
+    };
+    // Survol d'une info du fil : le trajet ou le port concerné s'éclaire sur la carte.
+    const onFlashPreview = (event: Event) =>
+      setTrafficPreview((event as CustomEvent<MapPreview | null>).detail ?? null);
+    window.addEventListener(FLASH_SELECT_EVENT, onFlashSelect);
+    window.addEventListener(FLASH_PREVIEW_EVENT, onFlashPreview);
+    return () => {
+      window.removeEventListener(FLASH_SELECT_EVENT, onFlashSelect);
+      window.removeEventListener(FLASH_PREVIEW_EVENT, onFlashPreview);
+    };
+  }, []);
   const handleBack = () => {
     setPeekSelectionKey(null);
     if (selectionHistory.length > 0) {
@@ -112,17 +138,17 @@ function Index() {
           ? "Port"
           : "Précédent"
       : "Accueil";
-  const [filters, setFilters] = useState<Filters>(() =>
-    typeof window === "undefined" ? emptyFilters : filtersFromUrl(window.location.search),
+  const [filters, setFiltersState] = useState<Filters>(() =>
+    filtersFromUrl(initialSearch),
   );
   const [trafficPreview, setTrafficPreview] = useState<MapPreview | null>(null);
-  const [lineVisibility, setLineVisibility] = useState<LineVisibility>("published");
+  const [lineVisibility, setLineVisibility] = useState<LineVisibility>("all");
   const [highlightRouteId, setHighlightRouteId] = useState<string | null>(null);
   const [focusedRouteId, setFocusedRouteId] = useState<string | null>(null);
   const [panelLevel, setPanelLevel] = useState<0 | 1 | 2>(1);
   const [peekSelectionKey, setPeekSelectionKey] = useState<string | null>(null);
   const [panelMode, setPanelMode] = useState<"departures" | "search" | "itinerary" | null>(() =>
-    typeof window !== "undefined" && hasActiveFilters(filtersFromUrl(window.location.search))
+    hasActiveFilters(filtersFromUrl(initialSearch))
       ? "departures"
       : null,
   );
@@ -136,7 +162,7 @@ function Index() {
   }, [panelMode]);
   const [portsActive, setPortsActive] = useState(false);
   const [activeShortcut, setActiveShortcut] = useState<MapShortcut>(null);
-  const [shortcutCompanyId, setShortcutCompanyId] = useState<string | null>(null);
+  const shortcutCompanyId = filters.companyId;
   const [shortcutMenuOpen, setShortcutMenuOpen] = useState(false);
   const shortcutScrollY = useRef<number | null>(null);
   useLayoutEffect(() => {
@@ -223,30 +249,84 @@ function Index() {
   const { data: schedules = [] } = useQuery(schedulesQuery);
   const fleet = useFleet();
   const { data: fleetDepartures = [] } = useQuery(fleetDeparturesQuery);
-  const atSea = useMemo(() => fleet.filter((ship) => ship.state === "sea"), [fleet]);
-  const upcomingShips = useMemo(() => fleet.filter((ship) => ship.state === "docked"), [fleet]);
-  /* const upcomingShips = useMemo(() => {
-    const now = Date.now();
-    const future = new Set(
-      [...departures, ...fleetDepartures]
-        .filter(
-          (departure) =>
-            departure.status !== "cancelled" && new Date(departure.departure_at).getTime() > now,
-        )
-        .map((departure) => departure.id),
+  const { data: vessels = [] } = useQuery(vesselsQuery);
+  const vesselCards = useMemo(() => {
+    const byCompany = new Map(companies.map((c) => [c.id, c]));
+    return Object.fromEntries(
+      vessels.map((v) => {
+        const company = v.company_id ? byCompany.get(v.company_id) : undefined;
+        return [
+          v.id,
+          { photoUrl: v.photo_url, logoUrl: company?.logo_url ?? null, companyName: company?.name ?? null },
+        ];
+      }),
     );
-    return fleet.filter((ship) => ship.state === "docked" && future.has(ship.departureId));
-  }, [fleet, departures, fleetDepartures]); */
+  }, [vessels, companies]);
+  const allDepartures = useMemo(
+    () => [...new Map([...fleetDepartures, ...departures].map((d) => [d.id, d])).values()],
+    [fleetDepartures, departures],
+  );
+  const setFilters = useCallback(
+    (next: React.SetStateAction<Filters>) => {
+      setFiltersState((current) =>
+        syncFilters(
+          current,
+          typeof next === "function" ? next(current) : next,
+          vessels,
+          allDepartures,
+        ),
+      );
+    },
+    [vessels, allDepartures],
+  );
+  const trafficFleet = useMemo(
+    () =>
+      fleet.filter((ship) => {
+        const departure = allDepartures.find((d) => d.id === ship.departureId);
+        return departure ? matchesTraffic(departure, routes, ports, filters) : false;
+      }),
+    [fleet, allDepartures, routes, ports, filters],
+  );
+  const companyContextFleet = useMemo(
+    () =>
+      fleet.filter((ship) => {
+        const departure = allDepartures.find((d) => d.id === ship.departureId);
+        return departure
+          ? matchesTraffic(departure, routes, ports, {
+              ...filters,
+              companyId: null,
+              vesselId: null,
+            })
+          : false;
+      }),
+    [fleet, allDepartures, routes, ports, filters],
+  );
+  // Les compteurs ignorent le navire choisi : un seul est sélectionné à la fois, le total reste réel.
+  const shortcutFleet = useMemo(
+    () =>
+      fleet.filter((ship) => {
+        const departure = allDepartures.find((d) => d.id === ship.departureId);
+        return departure
+          ? matchesTraffic(departure, routes, ports, { ...filters, vesselId: null })
+          : false;
+      }),
+    [fleet, allDepartures, routes, ports, filters],
+  );
+  const atSea = useMemo(() => shortcutFleet.filter((ship) => ship.state === "sea"), [shortcutFleet]);
+  const upcomingShips = useMemo(
+    () => shortcutFleet.filter((ship) => ship.state === "docked"),
+    [shortcutFleet],
+  );
   const shipCompanyIds = useMemo(() => {
     const byDeparture = new Map(
       [...departures, ...fleetDepartures].map((departure) => [departure.id, departure.company_id]),
     );
     return new Set(
-      [...atSea, ...upcomingShips]
+      companyContextFleet
         .map((ship) => byDeparture.get(ship.departureId))
         .filter((id): id is string => Boolean(id)),
     );
-  }, [atSea, upcomingShips, departures, fleetDepartures]);
+  }, [companyContextFleet, departures, fleetDepartures]);
   const shortcutCompanies = useMemo(
     () =>
       companies
@@ -256,7 +336,7 @@ function Index() {
           name: company.name,
           logoUrl: company.logo_url,
           count: new Set(
-            fleet
+            companyContextFleet
               .filter((ship) =>
                 [...departures, ...fleetDepartures].some(
                   (d) => d.id === ship.departureId && d.company_id === company.id,
@@ -265,25 +345,24 @@ function Index() {
               .map((ship) => ship.vesselId ?? ship.id),
           ).size,
         })),
-    [companies, shipCompanyIds, fleet, departures, fleetDepartures],
+    [companies, shipCompanyIds, companyContextFleet, departures, fleetDepartures],
   );
   const mapFleet = useMemo(() => {
     if (activeShortcut === "sea") return atSea;
     if (activeShortcut === "upcoming") return upcomingShips;
-    if (activeShortcut === "companies" && shortcutCompanyId) {
-      const byDeparture = new Map(
-        [...departures, ...fleetDepartures].map((departure) => [
-          departure.id,
-          departure.company_id,
-        ]),
-      );
-      return [...atSea, ...upcomingShips].filter(
-        (ship) => byDeparture.get(ship.departureId) === shortcutCompanyId,
-      );
-    }
-    return fleet;
-  }, [activeShortcut, shortcutCompanyId, atSea, upcomingShips, fleet, departures, fleetDepartures]);
-  const companyFocusShips = activeShortcut === "companies" && shortcutCompanyId ? mapFleet : [];
+    return trafficFleet;
+  }, [activeShortcut, atSea, upcomingShips, trafficFleet]);
+  const companyFocusShips = shortcutCompanyId ? mapFleet : [];
+  const displayedFleet = trafficPreview?.companyId ? companyContextFleet : mapFleet;
+  const hoverCompanyShipIds = useMemo(() => {
+    if (!trafficPreview?.companyId) return [];
+    const departureIds = new Set(
+      [...departures, ...fleetDepartures]
+        .filter((d) => d.company_id === trafficPreview.companyId)
+        .map((d) => d.id),
+    );
+    return fleet.filter((ship) => departureIds.has(ship.departureId)).map((ship) => ship.id);
+  }, [trafficPreview?.companyId, departures, fleetDepartures, fleet]);
 
   const allResults = [portsResult, routesResult, departuresResult, companiesResult];
   const isLoadingData = allResults.some((res) => res.isPending);
@@ -300,7 +379,7 @@ function Index() {
   }, [filters, selection]);
 
   const homeMode = panelMode === null && !selection;
-  const mapFilters = homeMode ? emptyFilters : filters;
+  const mapFilters = filters;
   const previewRouteId = trafficPreview?.routeId ?? highlightRouteId;
   const scheduledRouteIds = useMemo(
     () => publishedRouteIds(departures, schedules, routes, ports, Date.now()),
@@ -308,8 +387,12 @@ function Index() {
   );
   // Un seul état de recherche alimente la carte, la liste et le tiroir mobile.
   const matchingRoutes = useMemo(
-    () => filterRoutes(routes, ports, departures, { ...mapFilters, date: null }),
-    [routes, ports, departures, mapFilters],
+    () =>
+      filterRoutes(routes, ports, allDepartures, { ...mapFilters, date: null }, {
+        companies,
+        vessels,
+      }),
+    [routes, ports, allDepartures, mapFilters, companies, vessels],
   );
   const fleetVisibleRouteIds = useMemo(
     () =>
@@ -338,8 +421,21 @@ function Index() {
   );
   const matchingSailings = useMemo(
     () =>
-      legSailings(sailings, filters.departurePortIds, filters.arrivalPortIds, filters.companyId),
-    [sailings, filters.departurePortIds, filters.arrivalPortIds, filters.companyId],
+      legSailings(
+        sailings,
+        filters.departurePortIds,
+        filters.arrivalPortIds,
+        filters.companyId,
+        null,
+        filters.direction,
+      ),
+    [
+      sailings,
+      filters.departurePortIds,
+      filters.arrivalPortIds,
+      filters.companyId,
+      filters.direction,
+    ],
   );
 
   const hasPair =
@@ -432,7 +528,7 @@ function Index() {
   // Cadrage automatique : les ports du trajet cherché (sans sélection).
   // Un trajet ouvert dans les résultats prime ; un seul côté choisi inclut ses destinations actives.
   const fitPortIds = useMemo(() => {
-    if (mapSelection || homeMode) return [];
+    if (mapSelection) return [];
     if (focusedRouteId) {
       const route = routes.find((item) => item.id === focusedRouteId);
       if (route) return [route.departure_port_id, route.arrival_port_id];
@@ -440,6 +536,13 @@ function Index() {
     const from = filters.departurePortIds;
     const to = filters.arrivalPortIds;
     const ids = new Set([...from, ...to]);
+    if (filters.companyId || filters.vesselId) {
+      for (const route of matchingRoutes) {
+        ids.add(route.departure_port_id);
+        ids.add(route.arrival_port_id);
+      }
+      return [...ids];
+    }
     if (from.length === 0 || to.length === 0) {
       const chosen = from.length ? from : to;
       routes
@@ -452,9 +555,11 @@ function Index() {
     return [...ids];
   }, [
     mapSelection,
-    homeMode,
     focusedRouteId,
     routes,
+    matchingRoutes,
+    filters.companyId,
+    filters.vesselId,
     filters.departurePortIds,
     filters.arrivalPortIds,
   ]);
@@ -480,7 +585,7 @@ function Index() {
       );
 
       const timeZone = portTimeZone(port);
-      const traffic = portTraffic(port.id, routes, departures);
+      const traffic = portTraffic(port.id, routes, allDepartures);
       meta[port.id] = {
         departureCount: traffic.departures.length,
         arrivalCount: traffic.arrivals.length,
@@ -560,7 +665,7 @@ function Index() {
     const h = dragHeightRef.current;
     const v = lastMove.current.v;
     let target: 0 | 1 | 2;
-    if (Math.abs(v) > 0.5) {
+    if (Math.abs(v) > 0.35) {
       const above = snaps.findIndex((s) => s > h + 1);
       const below = [...snaps].reverse().findIndex((s) => s < h - 1);
       target = (v > 0 ? (above === -1 ? 2 : above) : below === -1 ? 0 : 2 - below) as 0 | 1 | 2;
@@ -576,6 +681,57 @@ function Index() {
       dragMoved.current = false;
     }, 50);
   };
+  // Relais défilement → volet (façon Google Maps) : en haut de la liste, continuer à tirer
+  // vers le bas fait descendre le volet sous le doigt ; un geste vif le fait changer de cran.
+  const panelGesture = useRef({ start: startPanelDrag, move: movePanelDrag, finish: finishPanelDrag, level: panelLevel });
+  panelGesture.current = { start: startPanelDrag, move: movePanelDrag, finish: finishPanelDrag, level: panelLevel };
+  useEffect(() => {
+    const aside = asideRef.current;
+    if (!aside) return;
+    let touchY: number | null = null;
+    let scroller: HTMLElement | null = null;
+    let handoff = false;
+    const onStart = (e: TouchEvent) => {
+      if (window.innerWidth >= 768 || e.touches.length !== 1) return;
+      const target = e.target as Element | null;
+      if (!target?.closest("#map-side-panel")) return;
+      touchY = e.touches[0]!.clientY;
+      scroller = target.closest<HTMLElement>(".batogo-panel-scroll, .overflow-y-auto");
+      handoff = false;
+    };
+    const onMove = (e: TouchEvent) => {
+      if (touchY === null) return;
+      const y = e.touches[0]!.clientY;
+      const g = panelGesture.current;
+      if (!handoff) {
+        const down = y - touchY;
+        const atTop = !scroller || scroller.scrollTop <= 0;
+        const pullDown = down > 8 && atTop;
+        const pullUp = down < -8 && g.level < 2;
+        if (!pullDown && !pullUp) return;
+        handoff = true;
+        g.start(y);
+      }
+      e.preventDefault();
+      g.move(y);
+    };
+    const onEnd = () => {
+      if (handoff) panelGesture.current.finish();
+      touchY = null;
+      handoff = false;
+    };
+    aside.addEventListener("touchstart", onStart, { passive: true });
+    aside.addEventListener("touchmove", onMove, { passive: false });
+    aside.addEventListener("touchend", onEnd);
+    aside.addEventListener("touchcancel", onEnd);
+    return () => {
+      aside.removeEventListener("touchstart", onStart);
+      aside.removeEventListener("touchmove", onMove);
+      aside.removeEventListener("touchend", onEnd);
+      aside.removeEventListener("touchcancel", onEnd);
+    };
+  }, []);
+
   const dragHandlers = {
     onPointerDown: (e: React.PointerEvent<HTMLElement>) => {
       e.currentTarget.setPointerCapture(e.pointerId);
@@ -595,13 +751,13 @@ function Index() {
   );
   const mobileBottomInset =
     panelLevel === 0
-      ? 0
+      ? TAB_BAR_HEIGHT + COLLAPSED_HEIGHT
       : panelLevel === 2
         ? viewportHeight - TAB_BAR_HEIGHT
         : TAB_BAR_HEIGHT +
           (isPeekSelection
             ? peekHeight
-            : Math.round(viewportHeight * (panelMode === "itinerary" ? 0.64 : middleRatio)));
+            : Math.round(viewportHeight * (panelMode === "itinerary" ? 0.5 : middleRatio)));
   const mobilePanelHeight = mobileBottomInset;
   // Sur mobile, choisir un navire, un port ou une traversée rouvre le tiroir s'il était replié.
   useEffect(() => {
@@ -649,7 +805,8 @@ function Index() {
     return () => window.removeEventListener("batogo:focus-vessel", focusVessel);
   }, [fleet]);
 
-  const collapsed = panelLevel === 0 && (dragHeight === null || dragHeight < 140);
+  // Le résumé replié est désactivé : le vrai volet reste toujours affiché (pas de capsule tronquée).
+  const collapsed = false as boolean;
 
   const resetToMap = () => {
     document.querySelector(".bw-home")?.scrollIntoView({ behavior: "instant", block: "start" });
@@ -664,7 +821,6 @@ function Index() {
     setHighlightRouteId(null);
     setPortsActive(false);
     setActiveShortcut(null);
-    setShortcutCompanyId(null);
     setShortcutMenuOpen(false);
     window.dispatchEvent(new Event("batogo:close-filters"));
   };
@@ -677,7 +833,6 @@ function Index() {
     resetToMap();
     setPortsActive(false);
     setActiveShortcut(null);
-    setShortcutCompanyId(null);
     setShortcutMenuOpen(false);
     setPanelMode("departures");
     setPanelLevel(2);
@@ -691,7 +846,6 @@ function Index() {
     resetToMap();
     setPortsActive(false);
     setActiveShortcut(null);
-    setShortcutCompanyId(null);
     setShortcutMenuOpen(false);
     setPanelMode("search");
     setPanelLevel(2);
@@ -788,7 +942,7 @@ function Index() {
           id="carte"
           aria-label="Carte et recherche de traversées"
           className="bw-map-stage"
-          data-panel-open={panelLevel !== 0}
+          data-panel-open={true}
           data-panel-full={panelLevel === 2}
           ref={mapStageRef}
           style={
@@ -819,9 +973,9 @@ function Index() {
                 "--desktop-panel-width": `${desktopPanelWidth}px`,
               } as React.CSSProperties
             }
-            className={`bw-map-panel absolute bottom-0 left-0 right-0 z-[60] flex flex-col overflow-hidden bg-transparent ${panelLevel === 0 && dragHeight === null ? "max-md:invisible max-md:pointer-events-none" : ""} ${dragHeight !== null ? "transition-none" : "transition-[height,width,transform] duration-[420ms] ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none"} md:bottom-5 md:left-5 md:right-auto md:top-5 md:h-auto md:w-[var(--desktop-panel-width)] md:overflow-visible md:rounded-3xl md:z-40 ${
+            className={`bw-map-panel absolute bottom-0 left-0 right-0 z-[60] flex flex-col overflow-hidden bg-transparent ${dragHeight !== null ? "transition-none" : "transition-[height,width,transform] duration-[420ms] ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none"} md:bottom-5 md:left-5 md:right-auto md:top-5 md:h-auto md:w-[var(--desktop-panel-width)] md:overflow-visible md:rounded-3xl md:z-40 ${
               desktopPanelOpen ? "md:translate-x-0" : "md:translate-x-[calc(-100%-1.25rem)]"
-            } ${panelLevel === 0 ? "h-24 rounded-t-3xl" : panelLevel === 1 ? (isPeekSelection ? "h-[var(--mobile-peek-height)] rounded-t-3xl" : panelMode === "itinerary" ? "h-[calc(var(--stage-height)*0.64)] rounded-t-3xl" : "h-[var(--middle-panel-height)] rounded-t-3xl") : "h-[calc(var(--stage-height)-3.5rem)] rounded-t-3xl"}`}
+            } ${panelLevel === 0 ? "h-32 rounded-t-3xl" : panelLevel === 1 ? (isPeekSelection ? "h-[var(--mobile-peek-height)] rounded-t-3xl" : panelMode === "itinerary" ? "h-[calc(var(--stage-height)*0.5)] rounded-t-3xl" : "h-[var(--middle-panel-height)] rounded-t-3xl") : "h-[calc(var(--stage-height)-3.5rem)] rounded-t-3xl"}`}
           >
             {collapsed ? (
               <CollapsedPanelSummary
@@ -893,6 +1047,20 @@ function Index() {
                 onItineraryPreview={updateItineraryPreview}
                 onItineraryResultsReady={() => {
                   if (window.innerWidth < 768) setPanelLevel(1);
+                }}
+                onBookPeriod={(period) => {
+                  setPanelMode("search");
+                  setActiveShortcut(null);
+                  setShortcutMenuOpen(false);
+                  setDesktopPanelOpen(true);
+                  if (window.innerWidth < 768) setPanelLevel(2);
+                  setFilters((current) => ({
+                    ...current,
+                    date: `${period}-01`,
+                    returnDate: null,
+                    roundTrip: false,
+                    flexDays: 15,
+                  }));
                 }}
               />
             </div>
@@ -971,6 +1139,9 @@ function Index() {
               onRetry={() => allResults.forEach((res) => void res.refetch())}
               panelOpen={desktopPanelOpen}
             />
+            <QuickReport ports={ports} fleet={fleet} selection={selection} />
+            {/* Ma traversée pas encore sur la carte : chrono flottant. */}
+            <MyTripMapChip fleet={fleet} onOpen={(next) => handleSelectRef.current(next)} />
             <MapStats
               atSea={atSea}
               upcomingShips={upcomingShips}
@@ -978,7 +1149,11 @@ function Index() {
               portsCount={ports.length}
               activeShortcut={activeShortcut}
               menuOpen={shortcutMenuOpen}
-              selectedCompanyId={shortcutCompanyId}
+              selectedCompanyId={filters.companyId}
+              onDismiss={() => {
+                setShortcutMenuOpen(false);
+                setTrafficPreview(null);
+              }}
               lineVisibility={lineVisibility}
               onLineVisibility={setLineVisibility}
               onPreview={setTrafficPreview}
@@ -994,22 +1169,43 @@ function Index() {
               onToggle={(shortcut) => {
                 if (window.innerWidth >= 768) shortcutScrollY.current = window.scrollY;
                 resetToMap();
-                if (activeShortcut === shortcut) {
+                // Un navire choisi depuis ce raccourci : re-cliquer revient à la carte complète.
+                if ((shortcut === "sea" || shortcut === "upcoming") && (focusShipId || filters.vesselId)) {
+                  setFocusShipId(null);
+                  setFilters((current) => ({ ...current, vesselId: null, companyId: null }));
                   setActiveShortcut(null);
-                  setShortcutCompanyId(null);
+                  setShortcutMenuOpen(false);
+                  return;
+                }
+                // Compagnie filtrée : re-cliquer le raccourci retire le filtre (comme En mer / À quai).
+                if (shortcut === "companies" && activeShortcut === "companies" && filters.companyId) {
+                  setTrafficPreview(null);
+                  setFilters((current) => ({ ...current, companyId: null }));
+                  setActiveShortcut(null);
+                  setShortcutMenuOpen(false);
+                  return;
+                }
+                if (activeShortcut === shortcut && shortcutMenuOpen) {
+                  setActiveShortcut(null);
                   setShortcutMenuOpen(false);
                   return;
                 }
                 setActiveShortcut(shortcut);
-                setShortcutCompanyId(null);
                 setShortcutMenuOpen(true);
                 if (shortcut === "ports") setPortsPulseKey(Date.now());
               }}
               onSelectCompany={(companyId) => {
-                setShortcutCompanyId(companyId);
+                setTrafficPreview(null);
+                setFilters((current) => ({ ...current, companyId }));
                 setShortcutMenuOpen(false);
               }}
               onSelectShip={(ship) => {
+                const departure = allDepartures.find((d) => d.id === ship.departureId);
+                setFilters((current) => ({
+                  ...current,
+                  vesselId: ship.vesselId,
+                  companyId: departure?.company_id ?? current.companyId,
+                }));
                 setShortcutMenuOpen(false);
                 if (ship.vesselId) handleSelect({ type: "vessel", id: ship.vesselId }, true);
                 else handleSelect({ type: "departure", id: ship.departureId }, true);
@@ -1037,11 +1233,13 @@ function Index() {
                   portsMode={activeShortcut === "ports"}
                   companyFocusShips={companyFocusShips}
                   focusShipId={focusShipId}
+                  vesselCards={vesselCards}
                   ports={ports}
                   routes={routes}
                   visibleRouteIds={displayedRouteIds}
                   fleetVisibleRouteIds={fleetVisibleRouteIds}
                   hoverVesselId={trafficPreview?.vesselId ?? null}
+                  hoverShipIds={hoverCompanyShipIds}
                   hoverPortId={trafficPreview?.portId ?? null}
                   dateActiveRouteIds={scheduledRouteIds.length ? scheduledRouteIds : ["__none__"]}
                   focusRouteIds={focusRouteIds}
@@ -1049,7 +1247,7 @@ function Index() {
                   highlightedPortIds={highlightedPortIds}
                   fitPortIds={fitPortIds}
                   hoverRouteId={previewRouteId}
-                  fleet={mapFleet}
+                  fleet={displayedFleet}
                   selectedVesselId={selection?.type === "vessel" ? selection.id : null}
                   portMeta={portMeta}
                   onSelect={handleSelect}
@@ -1061,7 +1259,11 @@ function Index() {
                       setPanelLevel(1);
                     } else if (kind === "vessel") setPanelLevel(2);
                     else if (kind === "route") setPanelLevel(2);
-                    else if (panelMode !== "itinerary") resetToMap();
+                    // Mobile : déplacer ou zoomer à deux doigts ne touche ni au volet ni au cadrage.
+                    else if (window.innerWidth < 768) {
+                      setTrafficPreview(null);
+                      window.dispatchEvent(new Event("batogo:close-filters"));
+                    } else if (panelMode !== "itinerary") resetToMap();
                   }}
                   mobileBottomInset={mobileBottomInset}
                   desktopLeftInset={desktopPanelOpen ? desktopPanelWidth + 80 : 50}

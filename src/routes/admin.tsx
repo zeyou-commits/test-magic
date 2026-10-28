@@ -5,7 +5,6 @@ import { CommercialPrograms } from "@/components/admin/CommercialPrograms";
 import { UsersAdmin } from "@/components/admin/UsersAdmin";
 import { canUseAdminTab } from "@/lib/admin/permissions";
 import { communityQuery } from "@/lib/ferry/community";
-import { NewsAdmin, PlacesAdmin } from "@/components/admin/ContentAdmin";
 import { CommunityModeration } from "@/components/panel/CommunityModeration";
 import { cloneElement, isValidElement, useEffect, useId, useRef, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
@@ -17,13 +16,7 @@ import { PlanningAlerts, usePlanningAlerts } from "@/components/admin/PlanningAl
 import { NotificationOverview } from "@/components/admin/NotificationOverview";
 import { DashboardOverview } from "@/components/admin/DashboardOverview";
 import { useAdminCounts } from "@/hooks/useAdminCounts";
-import { AdminWorkspace, type AdminSearchItem } from "@/components/admin/AdminWorkspace";
-import { AdminDrawer, AdminListToolbar, matches } from "@/components/admin/AdminDrawer";
-import { SignalsAdmin } from "@/components/admin/SignalsAdmin";
-import { CompaniesAdmin } from "@/components/admin/CompaniesAdmin";
-import { PushDiagnostic } from "@/components/admin/PushDiagnostic";
-import { MessageCenter } from "@/components/admin/MessageComposer";
-import { storeMessagePrefill, type MessagePrefill } from "@/lib/notifications/messages";
+import { AdminWorkspace } from "@/components/admin/AdminWorkspace";
 import { AdminFilterNotice } from "@/components/admin/AdminFilterNotice";
 import {
   adminSearch,
@@ -194,7 +187,6 @@ function AdminTabs() {
     filter,
     company,
     route: commercialRoute,
-    item,
   } = Route.useSearch();
   const tab = canUseAdminTab(roles, requestedTab)
     ? requestedTab
@@ -210,44 +202,6 @@ function AdminTabs() {
   const queryClient = useQueryClient();
   const notificationOverview = useQuery(adminNotificationQuery(isAdmin ? user?.id : undefined));
   const { data: counts } = useAdminCounts();
-  // Recherche du menu (Ctrl+K) : rubriques et fiches (ports, navires, compagnies).
-  const { data: searchPorts = [] } = useQuery(portsQuery);
-  const { data: searchVessels = [] } = useQuery(vesselsQuery);
-  const { data: searchCompanies = [] } = useQuery(companiesQuery);
-  const { data: searchRoutes = [] } = useQuery(routesQuery);
-  const searchItems: AdminSearchItem[] = [
-    ...searchPorts.map((port) => ({
-      tab: "ports",
-      id: port.id,
-      label: port.name,
-      hint: `Port · ${port.country_name}`,
-    })),
-    ...searchVessels.map((vessel) => ({
-      tab: "vessels",
-      id: vessel.id,
-      label: vessel.name,
-      hint: `Navire${vessel.mmsi ? ` · MMSI ${vessel.mmsi}` : ""}`,
-    })),
-    ...searchRoutes.map((route) => {
-      const name = (id: string) => searchPorts.find((port) => port.id === id)?.name ?? "?";
-      return {
-        tab: "routes",
-        id: route.id,
-        label: `${name(route.departure_port_id)} → ${name(route.arrival_port_id)}`,
-        hint: "Liaison",
-      };
-    }),
-    ...searchCompanies.map((company) => ({
-      tab: "companies",
-      id: company.id,
-      label: company.name,
-      hint: "Compagnie",
-    })),
-  ];
-  const openItem = (id: string, itemId: string) => {
-    if (!canUseAdminTab(roles, id)) return;
-    void navigate({ search: adminSearch({ tab: id, item: itemId }), resetScroll: false });
-  };
   const { data: alerts } = usePlanningAlerts();
   useEffect(
     () =>
@@ -276,8 +230,6 @@ function AdminTabs() {
         onNavigate={navigateTo}
         badges={badges}
         canAccess={(id) => canUseAdminTab(roles, id)}
-        searchItems={searchItems}
-        onOpenItem={openItem}
       >
         <TabsContent value="commercial">
           <CommercialPrograms
@@ -339,23 +291,10 @@ function AdminTabs() {
           />
         </TabsContent>
         <TabsContent value="notifications">
-          <MessageCenter />
-          <div className="mt-5">
-            <PushDiagnostic />
-          </div>
           <NotificationOverview />
         </TabsContent>
-        <TabsContent value="flash">
-          <NewsAdmin />
-        </TabsContent>
-        <TabsContent value="signals">
-          <SignalsAdmin />
-        </TabsContent>
-        <TabsContent value="places">
-          <PlacesAdmin />
-        </TabsContent>
         <TabsContent value="companies">
-          <CompaniesAdmin itemId={tab === "companies" ? item : undefined} />
+          <CompaniesAdmin />
         </TabsContent>
         <TabsContent value="departures">
           <DeparturesAdmin
@@ -367,13 +306,13 @@ function AdminTabs() {
           <SchedulesAdmin />
         </TabsContent>
         <TabsContent value="ports">
-          <PortsAdmin itemId={tab === "ports" ? item : undefined} />
+          <PortsAdmin />
         </TabsContent>
         <TabsContent value="routes">
-          <RoutesAdmin itemId={tab === "routes" ? item : undefined} />
+          <RoutesAdmin />
         </TabsContent>
         <TabsContent value="vessels">
-          <VesselsAdmin itemId={tab === "vessels" ? item : undefined} />
+          <VesselsAdmin />
         </TabsContent>
         <TabsContent value="import">
           <ImportAdmin />
@@ -421,6 +360,85 @@ function AlertDepartureEditor({
       vessels={data.vessels.filter((v) => !v.company_id || v.company_id === data.dep.company_id)}
       onDone={onDone}
     />
+  );
+}
+
+function CompaniesAdmin() {
+  const { data: companies = [] } = useQuery(companiesQuery);
+  return (
+    <Panel>
+      <p className="mb-3 text-sm text-muted-foreground">
+        Collez l'adresse (URL) du logo officiel. Sans logo, une pastille avec les initiales
+        s'affiche.
+      </p>
+      <ul className="divide-y divide-border">
+        {companies.map((c) => (
+          <CompanyRow key={c.id} company={c} />
+        ))}
+      </ul>
+    </Panel>
+  );
+}
+
+function CompanyRow({
+  company,
+}: {
+  company: {
+    id: string;
+    name: string;
+    logo_url: string | null;
+    website_url: string | null;
+    description: string | null;
+  };
+}) {
+  const queryClient = useQueryClient();
+  const [name, setName] = useState(company.name);
+  const [logo, setLogo] = useState(company.logo_url ?? "");
+  const [site, setSite] = useState(company.website_url ?? "");
+  const [desc, setDesc] = useState(company.description ?? "");
+  const save = useMutation({
+    mutationFn: async () => {
+      if (!name.trim()) throw new Error("Nom requis.");
+      const { error } = await supabase
+        .from("companies")
+        .update({
+          name: name.trim(),
+          logo_url: logo.trim() || null,
+          website_url: site.trim() || null,
+          description: desc.trim() || null,
+        })
+        .eq("id", company.id);
+      if (error) throw new Error(error.message);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["companies"] });
+      toast.success("Compagnie mise à jour.");
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+  return (
+    <li className="flex flex-wrap items-end gap-3 py-3">
+      <CompanyBadge name={name} logoUrl={logo} size={56} />
+      <label className="text-xs">
+        Nom
+        <Input value={name} onChange={(e) => setName(e.target.value)} />
+      </label>
+      <label className="min-w-56 flex-1 text-xs">
+        URL du logo
+        <Input value={logo} placeholder="https://…" onChange={(e) => setLogo(e.target.value)} />
+      </label>
+      <label className="min-w-48 flex-1 text-xs">
+        Site officiel
+        <Input value={site} placeholder="https://…" onChange={(e) => setSite(e.target.value)} />
+      </label>
+      <label className="w-full text-xs">
+        Description
+        <Input value={desc} onChange={(e) => setDesc(e.target.value)} />
+      </label>
+      <Button size="sm" disabled={save.isPending} onClick={() => save.mutate()}>
+        Enregistrer
+      </Button>
+    </li>
   );
 }
 
@@ -633,23 +651,6 @@ function ReportsModeration({
   );
 }
 
-/** Après une modification qui touche des voyageurs : confirmation + bouton « Prévenir les voyageurs ». */
-function useWarnTravellers() {
-  const navigate = Route.useNavigate();
-  return (message: string, prefill: MessagePrefill, description?: string) =>
-    toast.success(message, {
-      duration: 15_000,
-      description: description ?? "Les voyageurs concernés ne sont pas encore prévenus.",
-      action: {
-        label: "Prévenir les voyageurs",
-        onClick: () => {
-          storeMessagePrefill(prefill);
-          void navigate({ search: adminSearch({ tab: "notifications" }), resetScroll: false });
-        },
-      },
-    });
-}
-
 function DepartureEditor({
   departure,
   timeZone,
@@ -668,7 +669,6 @@ function DepartureEditor({
   onDone: () => void;
 }) {
   const queryClient = useQueryClient();
-  const navigate = Route.useNavigate();
   const [date, setDate] = useState(dateKeyInZone(departure.departure_at, timeZone));
   const [time, setTime] = useState(wallTimeInZone(departure.departure_at, timeZone).slice(0, 5));
   const [hours, setHours] = useState(String(Math.floor((departure.duration_minutes ?? 0) / 60)));
@@ -695,39 +695,7 @@ function DepartureEditor({
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["departures"] });
       queryClient.invalidateQueries({ queryKey: ["admin", "planning-alerts"] });
-      // Horaire ou bateau changé : on propose tout de suite de prévenir ceux qui suivent ce départ.
-      const oldDate = dateKeyInZone(departure.departure_at, timeZone);
-      const oldTime = wallTimeInZone(departure.departure_at, timeZone).slice(0, 5);
-      const moved = oldDate !== date || oldTime !== time;
-      const vesselChanged = (departure.vessel_id ?? "") !== vesselId;
-      const oldDay = new Intl.DateTimeFormat("fr-FR", {
-        weekday: "short",
-        day: "numeric",
-        month: "short",
-        timeZone,
-      }).format(new Date(departure.departure_at));
-      toast.success("Départ modifié.", {
-        ...(moved || vesselChanged
-          ? {
-              duration: 15_000,
-              description: "Les voyageurs qui suivent ce départ ne sont pas encore prévenus.",
-              action: {
-                label: "Prévenir les voyageurs",
-                onClick: () => {
-                  storeMessagePrefill({
-                    audience: { kind: "departure", departureId: departure.id, who: "everyone" },
-                    template: moved ? "reschedule" : "free",
-                    fields: { oldTime: oldDate === date ? oldTime : `${oldDay} à ${oldTime}` },
-                  });
-                  void navigate({
-                    search: adminSearch({ tab: "notifications" }),
-                    resetScroll: false,
-                  });
-                },
-              },
-            }
-          : {}),
-      });
+      toast.success("Départ modifié.");
       onDone();
     },
     onError: (error: Error) => toast.error(error.message),
@@ -823,10 +791,7 @@ function DeparturesAdmin({
     },
   });
   const [companyFilter, setCompanyFilter] = useState(companyId ?? "");
-  const [routeFilter, setRouteFilter] = useState("");
-  const [search, setSearch] = useState("");
   const [editing, setEditing] = useState<string | null>(null);
-  const warnTravellers = useWarnTravellers();
 
   const update = useMutation({
     mutationFn: async ({
@@ -842,45 +807,21 @@ function DeparturesAdmin({
         .eq("id", id);
       if (error) throw new Error(error.message);
     },
-    onSuccess: (_data, variables) => {
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["departures"] });
-      if (variables.values.status === "cancelled")
-        warnTravellers("Départ annulé.", {
-          audience: { kind: "departure", departureId: variables.id, who: "everyone" },
-          template: "cancel",
-        });
-      else toast.success("Départ mis à jour.");
+      toast.success("Départ mis à jour.");
     },
     onError: (error: Error) => toast.error(error.message),
   });
 
   const portName = (id: string) => ports.find((port) => port.id === id)?.name ?? "—";
   const now = new Date();
-  const routeOptions = routes
-    .filter((route) => !routeId || route.id === routeId)
-    .map((route) => ({
-      id: route.id,
-      label: `${portName(route.departure_port_id)} → ${portName(route.arrival_port_id)}`,
-    }))
-    .sort((a, b) => a.label.localeCompare(b.label, "fr"));
   const shown = periodDepartures.filter((departure) => {
     if (companyId && departure.company_id !== companyId) return false;
     if (routeId && departure.route_id !== routeId) return false;
     if (!matchesDepartureScope(departure, scope, now)) return false;
     if (companyFilter && departure.company_id !== companyFilter) return false;
-    if (routeFilter && departure.route_id !== routeFilter) return false;
     const route = routes.find((item) => item.id === departure.route_id);
-    if (
-      search &&
-      !matches(
-        search,
-        route ? portName(route.departure_port_id) : "",
-        route ? portName(route.arrival_port_id) : "",
-        vessels.find((vessel) => vessel.id === departure.vessel_id)?.name,
-        companies.find((company) => company.id === departure.company_id)?.name,
-      )
-    )
-      return false;
     const zone = portTimeZone(ports.find((port) => port.id === route?.departure_port_id));
     return !dateFilter || dateKeyInZone(departure.departure_at, zone) === dateFilter;
   });
@@ -906,27 +847,6 @@ function DeparturesAdmin({
         </p>
       )}
       <div className="mb-3 flex flex-wrap items-center gap-2">
-        <label className="bw-admin-toolbar__search max-w-xs">
-          <input
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Port, navire ou compagnie…"
-            aria-label="Chercher un départ"
-          />
-        </label>
-        <select
-          aria-label="Filtrer par liaison"
-          className="h-9 max-w-56 rounded-md border border-input bg-background px-2 text-sm"
-          value={routeFilter}
-          onChange={(e) => setRouteFilter(e.target.value)}
-        >
-          <option value="">Toutes les liaisons</option>
-          {routeOptions.map((option) => (
-            <option key={option.id} value={option.id}>
-              {option.label}
-            </option>
-          ))}
-        </select>
         <label className="text-sm text-muted-foreground" htmlFor="dep-company">
           Compagnie
         </label>
@@ -1024,7 +944,11 @@ function DeparturesAdmin({
                 </p>
               </div>
               <div className="flex flex-wrap gap-2">
-                <Button size="sm" variant="outline" onClick={() => setEditing(departure.id)}>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => setEditing(editing === departure.id ? null : departure.id)}
+                >
                   Modifier
                 </Button>
                 <Button
@@ -1059,39 +983,20 @@ function DeparturesAdmin({
                   {departure.status === "cancelled" ? "Rétablir le départ" : "Annuler le départ"}
                 </Button>
               </div>
+              {editing === departure.id && (
+                <DepartureEditor
+                  departure={departure}
+                  timeZone={tz}
+                  vessels={vessels.filter(
+                    (v) => !company || !v.company_id || v.company_id === company.id,
+                  )}
+                  onDone={() => setEditing(null)}
+                />
+              )}
             </li>
           );
         })}
       </ul>
-      {(() => {
-        // Édition d'un départ dans le panneau latéral (la liste reste visible).
-        const departure = periodDepartures.find((item) => item.id === editing);
-        if (!departure) return null;
-        const route = routes.find((item) => item.id === departure.route_id);
-        const company = companies.find((item) => item.id === departure.company_id);
-        const tz = portTimeZone(ports.find((port) => port.id === route?.departure_port_id));
-        return (
-          <AdminDrawer
-            open
-            onOpenChange={(next) => !next && setEditing(null)}
-            title={
-              route
-                ? `${portName(route.departure_port_id)} → ${portName(route.arrival_port_id)}`
-                : "Départ"
-            }
-            description={`${formatDateTime(departure.departure_at, tz)} (${zoneLabel(tz)})${company ? ` · ${company.name}` : ""}`}
-          >
-            <DepartureEditor
-              departure={departure}
-              timeZone={tz}
-              vessels={vessels.filter(
-                (v) => !company || !v.company_id || v.company_id === company.id,
-              )}
-              onDone={() => setEditing(null)}
-            />
-          </AdminDrawer>
-        );
-      })()}
     </Panel>
   );
 }
@@ -1144,6 +1049,7 @@ function durationBetweenTimes(departure: string, arrival: string): number | null
 
 function SchedulesAdmin({ companyId, routeId }: { companyId?: string; routeId?: string } = {}) {
   const queryClient = useQueryClient();
+  const editorRef = useRef<HTMLDetailsElement>(null);
   const { data: allSchedules = [] } = useQuery(schedulesQuery);
   const { data: routes = [] } = useQuery(adminRoutesQuery);
   const { data: ports = [] } = useQuery(adminPortsQuery);
@@ -1157,13 +1063,6 @@ function SchedulesAdmin({ companyId, routeId }: { companyId?: string; routeId?: 
   const scopedDraft = { ...emptyDraft, company_id: companyId ?? "", route_id: routeId ?? "" };
   const [draft, setDraft] = useState(scopedDraft);
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [formOpen, setFormOpen] = useState(false);
-  const warnTravellers = useWarnTravellers();
-  const closeForm = () => {
-    setFormOpen(false);
-    setEditingId(null);
-    setDraft(scopedDraft);
-  };
 
   const portName = (id: string) => ports.find((port) => port.id === id)?.name ?? "—";
   const routeLabel = (id: string) => {
@@ -1204,17 +1103,9 @@ function SchedulesAdmin({ companyId, routeId }: { companyId?: string; routeId?: 
     },
     onSuccess: () => {
       invalidate();
-      const routeId = draft.route_id;
       setDraft(scopedDraft);
       setEditingId(null);
-      setFormOpen(false);
-      if (editingId)
-        warnTravellers(
-          "Calendrier modifié.",
-          { audience: { kind: "route", routeId }, template: "reschedule" },
-          "Les voyageurs de cette ligne ne sont pas encore prévenus.",
-        );
-      else toast.success("Calendrier ajouté.");
+      toast.success(editingId ? "Calendrier modifié." : "Calendrier ajouté.");
     },
     onError: (error: Error) => toast.error(error.message),
   });
@@ -1284,14 +1175,19 @@ function SchedulesAdmin({ companyId, routeId }: { companyId?: string; routeId?: 
 
   return (
     <>
-      <AdminDrawer
-        open={formOpen}
-        onOpenChange={(next) => !next && closeForm()}
-        title={editingId ? "Modifier le calendrier" : "Nouveau calendrier de traversées"}
-        description="Liaison, jours, horaires, période de validité et source officielle."
+      <details
+        ref={editorRef}
+        open={editingId ? true : undefined}
+        className="rounded-2xl border bg-card p-3"
       >
-        <div>
-          <div className="grid gap-3 sm:grid-cols-2">
+        <summary className="cursor-pointer text-sm font-semibold text-primary">
+          {editingId ? "Modifier ce calendrier" : "Ajouter un calendrier récurrent"}
+        </summary>
+        <Panel>
+          <h2 className="text-sm font-semibold">
+            {editingId ? "Modifier le calendrier" : "Nouveau calendrier de traversées"}
+          </h2>
+          <div className="mt-3 grid gap-3 sm:grid-cols-2">
             <Field label="Ligne">
               <NativeSelect
                 value={draft.route_id}
@@ -1425,28 +1321,24 @@ function SchedulesAdmin({ companyId, routeId }: { companyId?: string; routeId?: 
             <Button size="sm" disabled={save.isPending} onClick={() => save.mutate()}>
               {editingId ? "Enregistrer les modifications" : "Ajouter le calendrier"}
             </Button>
-            <Button size="sm" variant="ghost" onClick={closeForm}>
-              Annuler
-            </Button>
+            {editingId ? (
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() => {
+                  setEditingId(null);
+                  setDraft(scopedDraft);
+                }}
+              >
+                Annuler
+              </Button>
+            ) : null}
           </div>
-        </div>
-      </AdminDrawer>
+        </Panel>
+      </details>
 
       <Panel>
-        <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
-          <h2 className="text-sm font-semibold">Calendriers existants ({schedules.length})</h2>
-          <button
-            type="button"
-            className="bw-admin-toolbar__create"
-            onClick={() => {
-              setEditingId(null);
-              setDraft(scopedDraft);
-              setFormOpen(true);
-            }}
-          >
-            + Nouveau calendrier
-          </button>
-        </div>
+        <h2 className="text-sm font-semibold">Calendriers existants</h2>
         <ul className="divide-y divide-border">
           {schedules.map((schedule) => (
             <li key={schedule.id} className="flex flex-wrap items-center gap-3 py-3">
@@ -1474,7 +1366,16 @@ function SchedulesAdmin({ companyId, routeId }: { companyId?: string; routeId?: 
                   variant="outline"
                   onClick={() => {
                     setEditingId(schedule.id);
-                    setFormOpen(true);
+                    window.setTimeout(
+                      () =>
+                        editorRef.current?.scrollIntoView({
+                          block: "start",
+                          behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches
+                            ? "instant"
+                            : "smooth",
+                        }),
+                      0,
+                    );
                     setDraft({
                       route_id: schedule.route_id,
                       company_id: schedule.company_id,
@@ -1531,15 +1432,8 @@ function SchedulesAdmin({ companyId, routeId }: { companyId?: string; routeId?: 
 }
 
 /** Suivi en direct : identifiant MMSI de chaque navire et état de la dernière position reçue. */
-function VesselsAdmin({
-  vesselIds,
-  itemId,
-}: { vesselIds?: string[]; itemId?: string | undefined } = {}) {
+function VesselsAdmin({ vesselIds }: { vesselIds?: string[] } = {}) {
   const queryClient = useQueryClient();
-  const [openId, setOpenId] = useState<string | null>(itemId ?? null);
-  useEffect(() => {
-    if (itemId) setOpenId(itemId);
-  }, [itemId]);
   const { data: allVessels = [] } = useQuery(vesselsQuery);
   const { data: companies = [] } = useQuery(companiesQuery);
   const { data: positions = [] } = useQuery({
@@ -1568,34 +1462,7 @@ function VesselsAdmin({
       return data;
     },
   });
-  const [vesselSearch, setVesselSearch] = useState("");
-  const [companyFilter, setCompanyFilter] = useState("all");
-  const scopedVessels = allVessels.filter((v) => !vesselIds || vesselIds.includes(v.id));
-  const normalizedVesselSearch = vesselSearch.trim().toLocaleLowerCase("fr");
-  const vessels = scopedVessels.filter((vessel) => {
-    const companyName =
-      companies.find((item) => item.id === vessel.company_id)?.name ?? "Sans compagnie";
-    const matchesCompany =
-      companyFilter === "all" ||
-      (companyFilter === "none" ? !vessel.company_id : vessel.company_id === companyFilter);
-    const haystack =
-      `${vessel.name} ${companyName} ${vessel.mmsi ?? ""} ${vessel.imo ?? ""}`.toLocaleLowerCase(
-        "fr",
-      );
-    return matchesCompany && (!normalizedVesselSearch || haystack.includes(normalizedVesselSearch));
-  });
-  const groupedVessels = new Map<string, typeof vessels>();
-  for (const vessel of vessels) {
-    const key = vessel.company_id ?? "none";
-    groupedVessels.set(key, [...(groupedVessels.get(key) ?? []), vessel]);
-  }
-  const orderedGroups = [...groupedVessels.entries()].sort((a, b) => {
-    const nameA =
-      a[0] === "none" ? "Sans compagnie" : (companies.find((item) => item.id === a[0])?.name ?? "");
-    const nameB =
-      b[0] === "none" ? "Sans compagnie" : (companies.find((item) => item.id === b[0])?.name ?? "");
-    return nameA.localeCompare(nameB, "fr");
-  });
+  const vessels = allVessels.filter((v) => !vesselIds || vesselIds.includes(v.id));
   const portLabel = (id: string) => ports.find((p) => p.id === id)?.name ?? "—";
   // Brouillons de saisie, par navire : { mmsi, imo, photo }.
   const [drafts, setDrafts] = useState<
@@ -1626,7 +1493,7 @@ function VesselsAdmin({
         const path = id + "/" + Date.now() + "." + extension.replace(/[^a-z0-9]/g, "");
         const { error: uploadError } = await supabase.storage
           .from("vessel-photos")
-          .upload(path, photoFile, { contentType: photoFile.type });
+          .upload(path, photoFile, { upsert: true, contentType: photoFile.type });
         if (uploadError)
           throw new Error("Téléversement de la photo impossible : " + uploadError.message);
         const { data: publicUrl } = supabase.storage.from("vessel-photos").getPublicUrl(path);
@@ -1652,391 +1519,204 @@ function VesselsAdmin({
   });
 
   const positionByMmsi = new Map(positions.map((position) => [position.mmsi, position]));
-  /** Fiche complète d'un navire (dans le panneau latéral). */
-  const editorFor = (vessel: (typeof allVessels)[number]) => {
-    const draft = drafts[vessel.id] ?? {};
-    const mmsi = draft.mmsi ?? (vessel.mmsi ? String(vessel.mmsi) : "");
-    const imo = draft.imo ?? (vessel.imo ? String(vessel.imo) : "");
-    const photo = draft.photo ?? vessel.photo_url ?? "";
-    const photoFile = draft.photoFile ?? null;
-    const mmsiOk = mmsi === "" || /^\d{9}$/.test(mmsi);
-    const imoOk = imo === "" || /^\d{7}$/.test(imo);
-    const photoOk = photo === "" || /^https:\/\//i.test(photo);
-    const changed =
-      photoFile !== null ||
-      mmsi !== (vessel.mmsi ? String(vessel.mmsi) : "") ||
-      imo !== (vessel.imo ? String(vessel.imo) : "") ||
-      photo !== (vessel.photo_url ?? "");
-    const position = vessel.mmsi ? positionByMmsi.get(vessel.mmsi) : undefined;
-    const company = companies.find((item) => item.id === vessel.company_id);
-    return (
-      <div className="grid gap-3">
-        <div className="min-w-0">
-          <div className="flex items-center gap-3">
-            {photo && photoOk ? (
-              <img
-                src={photo}
-                alt={vessel.name}
-                width={80}
-                height={56}
-                loading="lazy"
-                referrerPolicy="no-referrer"
-                className="h-14 w-20 rounded-lg border object-cover"
-              />
-            ) : null}
-            <p className="text-sm font-medium">{vessel.name}</p>
-          </div>
-          <p className="text-xs text-muted-foreground">
-            {company?.name ?? "Sans compagnie"}
-            {position?.reported_at
-              ? ` · dernière position le ${new Date(position.reported_at).toLocaleString("fr-FR")}`
-              : vessel.mmsi
-                ? " · pas encore de position"
-                : ""}
-            {position?.last_error ? ` · erreur : ${position.last_error}` : ""}
-          </p>
-          {(() => {
-            const dep = nextDeps.find((d) => d.vessel_id === vessel.id);
-            const route = dep ? routes.find((r) => r.id === dep.route_id) : undefined;
-            const declared = position as
-              { destination?: string | null; eta?: string | null } | undefined;
-            const link = vessel.imo
-              ? `https://www.vesselfinder.com/?imo=${vessel.imo}`
-              : vessel.mmsi
-                ? `https://www.vesselfinder.com/?mmsi=${vessel.mmsi}`
-                : null;
-            return (
-              <div className="mt-1 grid gap-0.5 text-xs">
-                <p>
-                  <span className="text-muted-foreground">Prévu BledWay : </span>
-                  {route && dep
-                    ? `${portLabel(route.departure_port_id)} → ${portLabel(route.arrival_port_id)} · ${new Date(dep.departure_at).toLocaleString("fr-FR")}`
-                    : "aucun départ à venir"}
-                </p>
-                <p>
-                  <span className="text-muted-foreground">Déclaré par le navire : </span>
-                  {declared?.destination
-                    ? `« ${declared.destination} »${declared.eta ? ` · arrivée estimée ${declared.eta}` : ""}`
-                    : "pas encore reçu"}
-                </p>
-                {link ? (
-                  <a
-                    href={link}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="font-semibold text-primary underline underline-offset-2"
-                  >
-                    Suivre sur VesselFinder ↗
-                  </a>
-                ) : null}
-              </div>
-            );
-          })()}
-        </div>
-        <div className="flex flex-wrap items-center gap-2">
-          <label className="grid gap-1 text-xs font-medium">
-            MMSI
-            <Input
-              inputMode="numeric"
-              maxLength={9}
-              placeholder="MMSI"
-              aria-label={`MMSI de ${vessel.name}`}
-              aria-invalid={!mmsiOk}
-              value={mmsi}
-              onChange={(event) =>
-                setDraft(vessel.id, { mmsi: event.target.value.replace(/\D/g, "") })
-              }
-              className="w-32"
-            />
-          </label>
-          <label className="grid gap-1 text-xs font-medium">
-            IMO
-            <Input
-              inputMode="numeric"
-              maxLength={7}
-              placeholder="IMO"
-              aria-label={`IMO de ${vessel.name}`}
-              aria-invalid={!imoOk}
-              value={imo}
-              onChange={(event) =>
-                setDraft(vessel.id, { imo: event.target.value.replace(/\D/g, "") })
-              }
-              className="w-28"
-            />
-          </label>
-          <div className="grid min-w-56 flex-1 gap-1">
-            <Input
-              type="url"
-              placeholder="URL de la photo (https://…)"
-              aria-label={"URL de la photo de " + vessel.name}
-              aria-invalid={!photoOk}
-              value={photo}
-              onChange={(event) =>
-                setDraft(vessel.id, { photo: event.target.value.trim(), photoFile: null })
-              }
-              className="w-full"
-              disabled={Boolean(photoFile)}
-            />
-            <label className="grid gap-1 text-xs text-muted-foreground">
-              <span>Ou téléverser une image {photoFile ? "— " + photoFile.name : ""}</span>
-              <input
-                type="file"
-                accept="image/jpeg,image/png,image/webp,image/avif"
-                aria-label={"Téléverser une photo de " + vessel.name}
-                className="block w-full text-xs file:mr-2 file:rounded-md file:border file:border-border file:bg-background file:px-2 file:py-1"
-                onChange={(event) => {
-                  const file = event.target.files?.[0] ?? null;
-                  if (file && file.size > 10 * 1024 * 1024) {
-                    toast.error("La photo doit faire 10 Mo maximum.");
-                    event.target.value = "";
-                    return;
-                  }
-                  if (
-                    file &&
-                    !["image/jpeg", "image/png", "image/webp", "image/avif"].includes(file.type)
-                  ) {
-                    toast.error("Format accepté : JPG, PNG, WebP ou AVIF.");
-                    event.target.value = "";
-                    return;
-                  }
-                  setDraft(vessel.id, { photoFile: file, ...(file ? { photo: "" } : {}) });
-                }}
-              />
-            </label>
-            {photoFile ? (
-              <Button
-                size="sm"
-                variant="ghost"
-                onClick={() =>
-                  setDraft(vessel.id, { photoFile: null, photo: vessel.photo_url ?? "" })
-                }
-              >
-                Annuler le téléversement
-              </Button>
-            ) : null}
-          </div>
-          <Button
-            size="sm"
-            disabled={!mmsiOk || !imoOk || (!photoFile && !photoOk) || !changed || save.isPending}
-            onClick={() =>
-              save.mutate({
-                id: vessel.id,
-                mmsi: mmsi === "" ? null : Number(mmsi),
-                imo: imo === "" ? null : Number(imo),
-                photo_url: photo === "" ? null : photo,
-                photoFile,
-              })
-            }
-          >
-            Enregistrer
-          </Button>
-        </div>
-        <VesselSpecsEditor vessel={vessel as unknown as VesselSpecsRow} />
-        <VesselDeleteButton id={vessel.id} name={vessel.name} />
-      </div>
-    );
-  };
-  const openVessel = allVessels.find((vessel) => vessel.id === openId);
 
   return (
     <Panel>
-      <details className="text-xs text-muted-foreground">
-        <summary className="cursor-pointer text-sm font-semibold text-foreground">
-          Aide : MMSI, IMO et photo
-        </summary>
-        <p className="mt-1 text-xs text-muted-foreground">
-          <strong>MMSI</strong> (9 chiffres) : active le suivi en direct. Le site suit un navire de
-          6 h avant son départ jusqu'à son arrivée et ne redemande sa position qu'au bout de 20
-          minutes. <strong>IMO</strong> (7 chiffres) : ajoute le lien « Voir sur VesselFinder » dans
-          la fiche. <strong>Photo</strong> : collez une URL ou téléversez un fichier image (JPG,
-          PNG, WebP ou AVIF, 10 Mo max). Le téléversement remplace l’URL ; sans photo personnalisée,
-          le site cherche une photo libre sur Wikimedia Commons.
-        </p>
-      </details>
-      <div className="mt-4 grid gap-3 sm:grid-cols-[minmax(0,1fr)_16rem]">
-        <Input
-          value={vesselSearch}
-          onChange={(event) => setVesselSearch(event.target.value)}
-          placeholder="Rechercher un navire, MMSI, IMO ou compagnie…"
-          aria-label="Rechercher dans la flotte"
-        />
-        <select
-          value={companyFilter}
-          onChange={(event) => setCompanyFilter(event.target.value)}
-          aria-label="Filtrer par compagnie"
-          className="h-10 rounded-md border border-input bg-background px-3 text-sm"
-        >
-          <option value="all">Toutes les compagnies</option>
-          <option value="none">Sans compagnie</option>
-          {companies
-            .slice()
-            .sort((a, b) => a.name.localeCompare(b.name, "fr"))
-            .map((company) => (
-              <option key={company.id} value={company.id}>
-                {company.name}
-              </option>
-            ))}
-        </select>
-      </div>
-      <p className="mt-2 text-xs text-muted-foreground">
-        {vessels.length} navire{vessels.length > 1 ? "s" : ""} affiché
-        {vessels.length > 1 ? "s" : ""} sur {scopedVessels.length} · {orderedGroups.length} groupe
-        {orderedGroups.length > 1 ? "s" : ""}
+      <h2 className="text-sm font-semibold">Navires : suivi en direct, IMO et photo</h2>
+      <p className="mt-1 text-xs text-muted-foreground">
+        <strong>MMSI</strong> (9 chiffres) : active le suivi en direct. Le site suit un navire de 6
+        h avant son départ jusqu'à son arrivée et ne redemande sa position qu'au bout de 20 minutes.{" "}
+        <strong>IMO</strong> (7 chiffres) : ajoute le lien « Voir sur VesselFinder » dans la fiche.{" "}
+        <strong>Photo</strong> : collez une URL ou téléversez un fichier image (JPG, PNG, WebP ou
+        AVIF, 10 Mo max). Le téléversement remplace l’URL ; sans photo personnalisée, le site
+        cherche une photo libre sur Wikimedia Commons.
       </p>
-      <div className="mt-3 space-y-5">
-        {orderedGroups.map(([companyId, groupVessels]) => (
-          <section key={companyId} className="overflow-hidden rounded-xl border border-border">
-            <h3 className="flex items-center justify-between gap-3 bg-muted/40 px-3 py-2 text-sm font-semibold">
-              <span>
-                {companyId === "none"
-                  ? "Sans compagnie"
-                  : (companies.find((item) => item.id === companyId)?.name ?? "Compagnie inconnue")}
-              </span>
-              <span className="rounded-full bg-background px-2 py-0.5 text-xs font-medium text-muted-foreground">
-                {groupVessels.length}
-              </span>
-            </h3>
-            <ul className="bw-admin-list px-2 py-1">
-              {groupVessels.map((vessel) => {
-                const position = vessel.mmsi ? positionByMmsi.get(vessel.mmsi) : undefined;
-                return (
-                  <li key={vessel.id}>
-                    <button
-                      type="button"
-                      className="bw-admin-list__main"
-                      onClick={() => setOpenId(vessel.id)}
-                    >
-                      {vessel.photo_url ? (
-                        <img
-                          src={vessel.photo_url}
-                          alt=""
-                          width={56}
-                          height={40}
-                          loading="lazy"
-                          referrerPolicy="no-referrer"
-                          className="h-10 w-14 shrink-0 rounded-md border object-cover"
-                        />
-                      ) : (
-                        <span className="grid h-10 w-14 shrink-0 place-items-center rounded-md border bg-muted text-[10px] text-muted-foreground">
-                          sans photo
-                        </span>
-                      )}
-                      <span className="min-w-0">
-                        <strong>{vessel.name}</strong>
-                        <small>
-                          {vessel.mmsi
-                            ? `MMSI ${vessel.mmsi}`
-                            : "Pas de MMSI : suivi en direct inactif"}
-                          {position?.reported_at
-                            ? ` · position du ${new Date(position.reported_at).toLocaleString("fr-FR", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}`
-                            : ""}
-                        </small>
-                      </span>
-                      {position?.last_error ? (
-                        <span className="bw-admin-chip" data-tone="warn">
-                          Erreur de suivi
-                        </span>
+      <ul className="mt-4 divide-y divide-border">
+        {vessels.map((vessel) => {
+          const draft = drafts[vessel.id] ?? {};
+          const mmsi = draft.mmsi ?? (vessel.mmsi ? String(vessel.mmsi) : "");
+          const imo = draft.imo ?? (vessel.imo ? String(vessel.imo) : "");
+          const photo = draft.photo ?? vessel.photo_url ?? "";
+          const photoFile = draft.photoFile ?? null;
+          const mmsiOk = mmsi === "" || /^\d{9}$/.test(mmsi);
+          const imoOk = imo === "" || /^\d{7}$/.test(imo);
+          const photoOk = photo === "" || /^https:\/\//i.test(photo);
+          const changed =
+            photoFile !== null ||
+            mmsi !== (vessel.mmsi ? String(vessel.mmsi) : "") ||
+            imo !== (vessel.imo ? String(vessel.imo) : "") ||
+            photo !== (vessel.photo_url ?? "");
+          const position = vessel.mmsi ? positionByMmsi.get(vessel.mmsi) : undefined;
+          const company = companies.find((item) => item.id === vessel.company_id);
+          return (
+            <li key={vessel.id} className="grid gap-2 py-3">
+              <div className="min-w-0">
+                <div className="flex items-center gap-3">
+                  {photo && photoOk ? (
+                    <img
+                      src={photo}
+                      alt={vessel.name}
+                      width={80}
+                      height={56}
+                      loading="lazy"
+                      referrerPolicy="no-referrer"
+                      className="h-14 w-20 rounded-lg border object-cover"
+                    />
+                  ) : null}
+                  <p className="text-sm font-medium">{vessel.name}</p>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  {company?.name ?? "Sans compagnie"}
+                  {position?.reported_at
+                    ? ` · dernière position le ${new Date(position.reported_at).toLocaleString("fr-FR")}`
+                    : vessel.mmsi
+                      ? " · pas encore de position"
+                      : ""}
+                  {position?.last_error ? ` · erreur : ${position.last_error}` : ""}
+                </p>
+                {(() => {
+                  const dep = nextDeps.find((d) => d.vessel_id === vessel.id);
+                  const route = dep ? routes.find((r) => r.id === dep.route_id) : undefined;
+                  const declared = position as
+                    { destination?: string | null; eta?: string | null } | undefined;
+                  const link = vessel.imo
+                    ? `https://www.vesselfinder.com/?imo=${vessel.imo}`
+                    : vessel.mmsi
+                      ? `https://www.vesselfinder.com/?mmsi=${vessel.mmsi}`
+                      : null;
+                  return (
+                    <div className="mt-1 grid gap-0.5 text-xs">
+                      <p>
+                        <span className="text-muted-foreground">Prévu BledWay : </span>
+                        {route && dep
+                          ? `${portLabel(route.departure_port_id)} → ${portLabel(route.arrival_port_id)} · ${new Date(dep.departure_at).toLocaleString("fr-FR")}`
+                          : "aucun départ à venir"}
+                      </p>
+                      <p>
+                        <span className="text-muted-foreground">Déclaré par le navire : </span>
+                        {declared?.destination
+                          ? `« ${declared.destination} »${declared.eta ? ` · arrivée estimée ${declared.eta}` : ""}`
+                          : "pas encore reçu"}
+                      </p>
+                      {link ? (
+                        <a
+                          href={link}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="font-semibold text-primary underline underline-offset-2"
+                        >
+                          Suivre sur VesselFinder ↗
+                        </a>
                       ) : null}
-                      {!vessel.mmsi ? <span className="bw-admin-chip">Sans MMSI</span> : null}
-                    </button>
-                  </li>
-                );
-              })}
-            </ul>
-          </section>
-        ))}
+                    </div>
+                  );
+                })()}
+              </div>
+              <div className="flex flex-wrap items-center gap-2">
+                <Input
+                  inputMode="numeric"
+                  maxLength={9}
+                  placeholder="MMSI"
+                  aria-label={`MMSI de ${vessel.name}`}
+                  aria-invalid={!mmsiOk}
+                  value={mmsi}
+                  onChange={(event) =>
+                    setDraft(vessel.id, { mmsi: event.target.value.replace(/\D/g, "") })
+                  }
+                  className="w-32"
+                />
+                <Input
+                  inputMode="numeric"
+                  maxLength={7}
+                  placeholder="IMO"
+                  aria-label={`IMO de ${vessel.name}`}
+                  aria-invalid={!imoOk}
+                  value={imo}
+                  onChange={(event) =>
+                    setDraft(vessel.id, { imo: event.target.value.replace(/\D/g, "") })
+                  }
+                  className="w-28"
+                />
+                <div className="grid min-w-56 flex-1 gap-1">
+                  <Input
+                    type="url"
+                    placeholder="URL de la photo (https://…)"
+                    aria-label={"URL de la photo de " + vessel.name}
+                    aria-invalid={!photoOk}
+                    value={photo}
+                    onChange={(event) =>
+                      setDraft(vessel.id, { photo: event.target.value.trim(), photoFile: null })
+                    }
+                    className="w-full"
+                    disabled={Boolean(photoFile)}
+                  />
+                  <label className="grid gap-1 text-xs text-muted-foreground">
+                    <span>Ou téléverser une image {photoFile ? "— " + photoFile.name : ""}</span>
+                    <input
+                      type="file"
+                      accept="image/jpeg,image/png,image/webp,image/avif"
+                      aria-label={"Téléverser une photo de " + vessel.name}
+                      className="block w-full text-xs file:mr-2 file:rounded-md file:border file:border-border file:bg-background file:px-2 file:py-1"
+                      onChange={(event) => {
+                        const file = event.target.files?.[0] ?? null;
+                        if (file && file.size > 10 * 1024 * 1024) {
+                          toast.error("La photo doit faire 10 Mo maximum.");
+                          event.target.value = "";
+                          return;
+                        }
+                        if (
+                          file &&
+                          !["image/jpeg", "image/png", "image/webp", "image/avif"].includes(
+                            file.type,
+                          )
+                        ) {
+                          toast.error("Format accepté : JPG, PNG, WebP ou AVIF.");
+                          event.target.value = "";
+                          return;
+                        }
+                        setDraft(vessel.id, { photoFile: file, ...(file ? { photo: "" } : {}) });
+                      }}
+                    />
+                  </label>
+                  {photoFile ? (
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() =>
+                        setDraft(vessel.id, { photoFile: null, photo: vessel.photo_url ?? "" })
+                      }
+                    >
+                      Annuler le téléversement
+                    </Button>
+                  ) : null}
+                </div>
+                <Button
+                  size="sm"
+                  disabled={
+                    !mmsiOk || !imoOk || (!photoFile && !photoOk) || !changed || save.isPending
+                  }
+                  onClick={() =>
+                    save.mutate({
+                      id: vessel.id,
+                      mmsi: mmsi === "" ? null : Number(mmsi),
+                      imo: imo === "" ? null : Number(imo),
+                      photo_url: photo === "" ? null : photo,
+                      photoFile,
+                    })
+                  }
+                >
+                  Enregistrer
+                </Button>
+              </div>
+              <VesselSpecsEditor vessel={vessel as unknown as VesselSpecsRow} />
+            </li>
+          );
+        })}
         {vessels.length === 0 ? (
-          <p className="py-3 text-sm text-muted-foreground">
-            {scopedVessels.length
-              ? "Aucun navire ne correspond à cette recherche."
-              : "Aucun navire enregistré."}
-          </p>
+          <li className="py-3 text-sm text-muted-foreground">Aucun navire enregistré.</li>
         ) : null}
-      </div>
-      {openVessel ? (
-        <AdminDrawer
-          open
-          onOpenChange={(next) => !next && setOpenId(null)}
-          title={openVessel.name}
-          description="Suivi en direct (MMSI), lien VesselFinder (IMO), photo et caractéristiques."
-        >
-          {editorFor(openVessel)}
-        </AdminDrawer>
-      ) : null}
+      </ul>
     </Panel>
-  );
-}
-
-/** Suppression d'un navire : on détache d'abord tout ce qui le référence, puis on l'efface. */
-function VesselDeleteButton({ id, name }: { id: string; name: string }) {
-  const queryClient = useQueryClient();
-  const remove = useMutation({
-    mutationFn: async () => {
-      const count = async (
-        table: "departures" | "schedules" | "schedule_exceptions",
-        col: string,
-      ) => {
-        const { count, error } = await supabase
-          .from(table)
-          .select("id", { count: "exact", head: true })
-          .eq(col as never, id as never);
-        if (error) throw new Error(error.message);
-        return count ?? 0;
-      };
-      const [deps, scheds, excs] = await Promise.all([
-        count("departures", "vessel_id"),
-        count("schedules", "default_vessel_id"),
-        count("schedule_exceptions", "new_vessel_id"),
-      ]);
-      const linked = deps + scheds + excs;
-      const message = linked
-        ? `« ${name} » est encore rattaché à ${deps} traversée(s), ${scheds} programme(s) et ${excs} exception(s).\n\nCes éléments seront conservés mais passeront en « Navire à affecter ». Supprimer définitivement le navire ?`
-        : `Supprimer définitivement « ${name} » ? Aucun élément ne lui est rattaché.`;
-      if (!window.confirm(message)) return false;
-      if (deps) {
-        const { error } = await supabase
-          .from("departures")
-          .update({ vessel_id: null })
-          .eq("vessel_id", id);
-        if (error) throw new Error("Détachement des traversées impossible : " + error.message);
-      }
-      if (scheds) {
-        const { error } = await supabase
-          .from("schedules")
-          .update({ default_vessel_id: null })
-          .eq("default_vessel_id", id);
-        if (error) throw new Error("Détachement des programmes impossible : " + error.message);
-      }
-      if (excs) {
-        const { error } = await supabase
-          .from("schedule_exceptions")
-          .update({ new_vessel_id: null })
-          .eq("new_vessel_id", id);
-        if (error) throw new Error("Détachement des exceptions impossible : " + error.message);
-      }
-      const { data, error } = await supabase.from("vessels").delete().eq("id", id).select("id");
-      if (error) throw new Error("Suppression impossible : " + error.message);
-      if (!data?.length) throw new Error("Suppression refusée par la base (droits insuffisants).");
-      return true;
-    },
-    onSuccess: (done) => {
-      if (!done) return;
-      queryClient.invalidateQueries();
-      toast.success(`« ${name} » a été supprimé.`);
-    },
-    onError: (error: Error) => toast.error(error.message),
-  });
-  return (
-    <div className="flex justify-end">
-      <Button
-        size="sm"
-        variant="destructive"
-        disabled={remove.isPending}
-        onClick={() => remove.mutate()}
-      >
-        {remove.isPending ? "Suppression…" : "Supprimer le navire"}
-      </Button>
-    </div>
   );
 }
 
@@ -2467,11 +2147,8 @@ function slugify(value: string) {
     .replace(/^-|-$/g, "");
 }
 
-function PortsAdmin({ itemId }: { itemId?: string | undefined } = {}) {
+function PortsAdmin() {
   const queryClient = useQueryClient();
-  const warnTravellers = useWarnTravellers();
-  const [formOpen, setFormOpen] = useState(false);
-  const [search, setSearch] = useState("");
   const { data: ports = [] } = useQuery(adminPortsQuery);
   const { data: routes = [] } = useQuery(adminRoutesQuery);
   const { data: schedules = [] } = useQuery(schedulesQuery);
@@ -2507,41 +2184,7 @@ function PortsAdmin({ itemId }: { itemId?: string | undefined } = {}) {
     setDraft(emptyPortDraft);
     setFacilities({});
     setEditingId(null);
-    setFormOpen(false);
   };
-  const startNew = () => {
-    setDraft(emptyPortDraft);
-    setFacilities({});
-    setEditingId(null);
-    setPresetName("");
-    setFormOpen(true);
-  };
-  const startEdit = (port: Port) => {
-    setEditingId(port.id);
-    setFacilities((port.facilities ?? {}) as Record<string, string>);
-    setDraft({
-      name: port.name,
-      city: port.city ?? "",
-      country_code: port.country_code,
-      latitude: String(port.latitude),
-      longitude: String(port.longitude),
-      label_anchor: port.label_anchor,
-      label_offset_x: String(port.label_offset_x),
-      label_offset_y: String(port.label_offset_y),
-      notes: port.notes ?? "",
-      info_source: port.info_source ?? "",
-      info_source_url: port.info_source_url ?? "",
-      photo_url: port.photo_url ?? "",
-      status: port.status,
-    });
-    setFormOpen(true);
-  };
-  // Fiche demandée depuis la recherche du menu.
-  useEffect(() => {
-    const port = itemId ? ports.find((item) => item.id === itemId) : undefined;
-    if (port) startEdit(port);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [itemId, ports.length]);
 
   const save = useMutation({
     mutationFn: async () => {
@@ -2632,15 +2275,13 @@ function PortsAdmin({ itemId }: { itemId?: string | undefined } = {}) {
       }
       return routeIds.length;
     },
-    onSuccess: (count, port) => {
+    onSuccess: (count) => {
       invalidateAll();
       setPendingClose(null);
-      warnTravellers(
+      toast.success(
         count > 0
           ? `Port fermé temporairement. ${count} ligne(s) suspendue(s).`
           : "Port fermé temporairement.",
-        { audience: { kind: "port", portId: port.id }, template: "port_closed" },
-        "Les voyageurs des traversées de ce port ne sont pas encore prévenus.",
       );
     },
     onError: (error: Error) => toast.error(error.message),
@@ -2783,12 +2424,8 @@ function PortsAdmin({ itemId }: { itemId?: string | undefined } = {}) {
         </Panel>
       ) : null}
 
-      <AdminDrawer
-        open={formOpen}
-        onOpenChange={(next) => !next && reset()}
-        title={editingId ? `Modifier ${draft.name || "le port"}` : "Nouveau port"}
-        description="Position sur la carte, informations pratiques et services."
-      >
+      <Panel>
+        <h2 className="text-sm font-semibold">{editingId ? "Modifier le port" : "Nouveau port"}</h2>
         <div className="mt-3">
           <Field label="Pré-sélection d'un grand port (Algérie et Europe)">
             <NativeSelect
@@ -2915,64 +2552,76 @@ function PortsAdmin({ itemId }: { itemId?: string | undefined } = {}) {
           <Button size="sm" disabled={save.isPending} onClick={() => save.mutate()}>
             {editingId ? "Enregistrer les modifications" : "Ajouter le port"}
           </Button>
-          <Button size="sm" variant="ghost" onClick={reset}>
-            Annuler
-          </Button>
+          {editingId ? (
+            <Button size="sm" variant="ghost" onClick={reset}>
+              Annuler
+            </Button>
+          ) : null}
         </div>
-      </AdminDrawer>
+      </Panel>
 
       <Panel>
-        <AdminListToolbar
-          search={search}
-          onSearch={setSearch}
-          placeholder="Chercher un port"
-          count={
-            ports.filter((port) => matches(search, port.name, port.country_name, port.city)).length
-          }
-          total={ports.length}
-          onCreate={startNew}
-          createLabel="Nouveau port"
-        />
+        <h2 className="text-sm font-semibold">Ports existants ({ports.length})</h2>
         <ul className="divide-y divide-border">
-          {ports
-            .filter((port) => matches(search, port.name, port.country_name, port.city))
-            .map((port) => (
-              <li key={port.id} className="flex flex-wrap items-center gap-3 py-3">
-                <div className="min-w-0 flex-1">
-                  <p className="text-sm font-medium">
-                    {port.name}{" "}
-                    <span className="font-normal text-muted-foreground">· {port.country_name}</span>
-                  </p>
-                  <p className="text-xs text-muted-foreground">
-                    {portStatusLabel[port.status] ?? port.status} · {port.latitude.toFixed(3)},{" "}
-                    {port.longitude.toFixed(3)}
-                  </p>
-                </div>
-                <div className="flex flex-wrap gap-2">
-                  <Button size="sm" variant="outline" onClick={() => startEdit(port)}>
-                    Modifier
+          {ports.map((port) => (
+            <li key={port.id} className="flex flex-wrap items-center gap-3 py-3">
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-medium">
+                  {port.name}{" "}
+                  <span className="font-normal text-muted-foreground">· {port.country_name}</span>
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  {portStatusLabel[port.status] ?? port.status} · {port.latitude.toFixed(3)},{" "}
+                  {port.longitude.toFixed(3)}
+                </p>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => {
+                    setEditingId(port.id);
+                    setFacilities((port.facilities ?? {}) as Record<string, string>);
+                    setDraft({
+                      name: port.name,
+                      city: port.city ?? "",
+                      country_code: port.country_code,
+                      latitude: String(port.latitude),
+                      longitude: String(port.longitude),
+                      label_anchor: port.label_anchor,
+                      label_offset_x: String(port.label_offset_x),
+                      label_offset_y: String(port.label_offset_y),
+                      notes: port.notes ?? "",
+                      info_source: port.info_source ?? "",
+                      info_source_url: port.info_source_url ?? "",
+                      photo_url: port.photo_url ?? "",
+                      status: port.status,
+                    });
+                  }}
+                >
+                  Modifier
+                </Button>
+                {port.status === "inactive" ? (
+                  <Button size="sm" variant="outline" onClick={() => setPendingReopen(port)}>
+                    Réouvrir
                   </Button>
-                  {port.status === "inactive" ? (
-                    <Button size="sm" variant="outline" onClick={() => setPendingReopen(port)}>
-                      Réouvrir
-                    </Button>
-                  ) : (
-                    <Button size="sm" variant="outline" onClick={() => setPendingClose(port)}>
-                      Fermer temporairement
-                    </Button>
-                  )}
-                  {port.status === "draft" ? (
-                    <Button
-                      size="sm"
-                      disabled={setStatus.isPending}
-                      onClick={() => setStatus.mutate({ id: port.id, status: "active" })}
-                    >
-                      Publier
-                    </Button>
-                  ) : null}
-                </div>
-              </li>
-            ))}
+                ) : (
+                  <Button size="sm" variant="outline" onClick={() => setPendingClose(port)}>
+                    Fermer temporairement
+                  </Button>
+                )}
+                {port.status === "draft" ? (
+                  <Button
+                    size="sm"
+                    disabled={setStatus.isPending}
+                    onClick={() => setStatus.mutate({ id: port.id, status: "active" })}
+                  >
+                    Publier
+                  </Button>
+                ) : null}
+              </div>
+            </li>
+          ))}
         </ul>
         <p className="mt-3 text-xs text-muted-foreground">
           Un port fermé temporairement reste visible sur la carte avec la mention « Temporairement
@@ -3008,10 +2657,8 @@ const routeStatusLabel: Record<string, string> = {
   draft: "Brouillon",
 };
 
-function RoutesAdmin({ itemId }: { itemId?: string | undefined } = {}) {
+function RoutesAdmin() {
   const queryClient = useQueryClient();
-  const [formOpen, setFormOpen] = useState(false);
-  const [search, setSearch] = useState("");
   const { data: ports = [] } = useQuery(adminPortsQuery);
   const { data: routes = [] } = useQuery(adminRoutesQuery);
   const { data: companies = [] } = useQuery(companiesQuery);
@@ -3033,33 +2680,7 @@ function RoutesAdmin({ itemId }: { itemId?: string | undefined } = {}) {
   const reset = () => {
     setDraft(emptyRouteDraft);
     setEditingId(null);
-    setFormOpen(false);
   };
-  const startNew = () => {
-    setDraft(emptyRouteDraft);
-    setEditingId(null);
-    setFormOpen(true);
-  };
-  const startEdit = (route: (typeof routes)[number]) => {
-    setEditingId(route.id);
-    setDraft({
-      departure_port_id: route.departure_port_id,
-      arrival_port_id: route.arrival_port_id,
-      typical_duration_minutes: String(route.typical_duration_minutes ?? ""),
-      distance_km: String(route.distance_km ?? ""),
-      color: route.color ?? "",
-      status: route.status,
-      notes: route.notes ?? "",
-      company_ids: route.company_ids,
-    });
-    setFormOpen(true);
-  };
-  // Fiche demandée depuis la recherche du menu.
-  useEffect(() => {
-    const route = itemId ? routes.find((item) => item.id === itemId) : undefined;
-    if (route) startEdit(route);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [itemId, routes.length]);
 
   const save = useMutation({
     mutationFn: async () => {
@@ -3149,12 +2770,13 @@ function RoutesAdmin({ itemId }: { itemId?: string | undefined } = {}) {
 
   return (
     <>
-      <AdminDrawer
-        open={formOpen}
-        onOpenChange={(next) => !next && reset()}
-        title={editingId ? "Modifier la liaison" : "Nouvelle liaison"}
-        description="Le départ comme l'arrivée peuvent être en Algérie ou en Europe."
-      >
+      <Panel>
+        <h2 className="text-sm font-semibold">
+          {editingId ? "Modifier la ligne" : "Nouvelle ligne maritime"}
+        </h2>
+        <p className="mt-1 text-xs text-muted-foreground">
+          Le départ comme l'arrivée peuvent être en Algérie ou en Europe.
+        </p>
         <div className="mt-3 grid gap-3 sm:grid-cols-2">
           <Field label="Port de départ">
             <NativeSelect
@@ -3259,73 +2881,75 @@ function RoutesAdmin({ itemId }: { itemId?: string | undefined } = {}) {
         </div>
         <div className="mt-4 flex gap-2">
           <Button size="sm" disabled={save.isPending} onClick={() => save.mutate()}>
-            {editingId ? "Enregistrer les modifications" : "Ajouter la liaison"}
+            {editingId ? "Enregistrer les modifications" : "Ajouter la ligne"}
           </Button>
-          <Button size="sm" variant="ghost" onClick={reset}>
-            Annuler
-          </Button>
+          {editingId ? (
+            <Button size="sm" variant="ghost" onClick={reset}>
+              Annuler
+            </Button>
+          ) : null}
         </div>
-      </AdminDrawer>
+      </Panel>
 
       <Panel>
-        <AdminListToolbar
-          search={search}
-          onSearch={setSearch}
-          placeholder="Chercher une liaison (port de départ ou d'arrivée)"
-          count={
-            routes.filter((route) =>
-              matches(search, portName(route.departure_port_id), portName(route.arrival_port_id)),
-            ).length
-          }
-          total={routes.length}
-          onCreate={startNew}
-          createLabel="Nouvelle liaison"
-        />
+        <h2 className="text-sm font-semibold">Lignes existantes ({routes.length})</h2>
         <ul className="divide-y divide-border">
-          {routes
-            .filter((route) =>
-              matches(search, portName(route.departure_port_id), portName(route.arrival_port_id)),
-            )
-            .map((route) => (
-              <li key={route.id} className="flex flex-wrap items-center gap-3 py-3">
-                <span
-                  className="h-3 w-6 shrink-0 rounded-full"
-                  style={{
-                    background: routeColor(route.color, port(route.departure_port_id)?.slug ?? ""),
+          {routes.map((route) => (
+            <li key={route.id} className="flex flex-wrap items-center gap-3 py-3">
+              <span
+                className="h-3 w-6 shrink-0 rounded-full"
+                style={{
+                  background: routeColor(route.color, port(route.departure_port_id)?.slug ?? ""),
+                }}
+              />
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-medium">
+                  {portName(route.departure_port_id)} → {portName(route.arrival_port_id)}
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  {formatDuration(route.typical_duration_minutes)} ·{" "}
+                  {routeStatusLabel[route.status] ?? route.status}
+                  {route.color ? " · couleur personnalisée" : " · couleur automatique"}
+                </p>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => {
+                    setEditingId(route.id);
+                    setDraft({
+                      departure_port_id: route.departure_port_id,
+                      arrival_port_id: route.arrival_port_id,
+                      typical_duration_minutes: String(route.typical_duration_minutes ?? ""),
+                      distance_km: String(route.distance_km ?? ""),
+                      color: route.color ?? "",
+                      status: route.status,
+                      notes: route.notes ?? "",
+                      company_ids: route.company_ids,
+                    });
                   }}
-                />
-                <div className="min-w-0 flex-1">
-                  <p className="text-sm font-medium">
-                    {portName(route.departure_port_id)} → {portName(route.arrival_port_id)}
-                  </p>
-                  <p className="text-xs text-muted-foreground">
-                    {formatDuration(route.typical_duration_minutes)} ·{" "}
-                    {routeStatusLabel[route.status] ?? route.status}
-                    {route.color ? " · couleur personnalisée" : " · couleur automatique"}
-                  </p>
-                </div>
-                <div className="flex flex-wrap gap-2">
-                  <Button size="sm" variant="outline" onClick={() => startEdit(route)}>
-                    Modifier
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    disabled={remove.isPending}
-                    onClick={() => {
-                      if (
-                        confirmAction(
-                          "Supprimer définitivement cette ligne ? Ses calendriers et départs peuvent être perdus.",
-                        )
+                >
+                  Modifier
+                </Button>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  disabled={remove.isPending}
+                  onClick={() => {
+                    if (
+                      confirmAction(
+                        "Supprimer définitivement cette ligne ? Ses calendriers et départs peuvent être perdus.",
                       )
-                        remove.mutate(route.id);
-                    }}
-                  >
-                    Supprimer
-                  </Button>
-                </div>
-              </li>
-            ))}
+                    )
+                      remove.mutate(route.id);
+                  }}
+                >
+                  Supprimer
+                </Button>
+              </div>
+            </li>
+          ))}
         </ul>
       </Panel>
     </>

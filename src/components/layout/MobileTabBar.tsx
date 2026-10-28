@@ -1,15 +1,33 @@
 import { Link } from "@tanstack/react-router";
-import { Route as RouteIcon, Clock, Map as MapIcon, Search } from "lucide-react";
-import { MeTab } from "@/components/community/MeTab";
+import { Route as RouteIcon, Clock, Map as MapIcon, MoreHorizontal, Search } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 const itemClass =
   "flex h-full flex-1 flex-col items-center justify-center gap-1 text-[11px] font-medium text-muted-foreground transition-colors hover:text-foreground data-[active=true]:text-primary [&.active]:text-primary";
+
+const moreLinks = [
+  { to: "/horaires", label: "Tous les horaires" },
+  { to: "/ports", label: "Annuaire des ports" },
+  { to: "/lignes", label: "Lignes" },
+  { to: "/compagnies", label: "Compagnies" },
+  { to: "/guide", label: "Guide pratique" },
+  { to: "/vehicules-moins-3-ans", label: "Véhicules de moins de 3 ans" },
+  { to: "/bateaux", label: "Dossiers bateaux" },
+  { to: "/simulateurs", label: "Simulateurs" },
+  { to: "/covoiturage", label: "Covoiturage" },
+  { to: "/a-propos", label: "À propos" },
+  { to: "/contact", label: "Contact" },
+] as const;
 
 interface MobileTabBarProps {
   className?: string;
   activeTab?: "map" | "departures" | "search" | "ports" | "itinerary";
   onOpenMap?: () => void;
-  /** Conservé pour compatibilité : l'onglet « Plus » a été remplacé par « Moi ». */
   onMoreToggle?: () => void;
   onOpenDepartures?: () => void;
   onOpenSearch?: () => void;
@@ -24,6 +42,7 @@ export function MobileTabBar({
   className = "",
   activeTab,
   onOpenMap,
+  onMoreToggle,
   onOpenDepartures,
   onOpenSearch,
   onShowPorts,
@@ -109,8 +128,35 @@ export function MobileTabBar({
           <span>Itinéraire</span>
         </Link>
       )}
-      {/* « Moi » : mon cabas et mon humeur. « Signaler » est le bouton jaune flottant de la carte. */}
-      <MeTab className={itemClass} />
+      <DropdownMenu
+        modal={false}
+        onOpenChange={(open) => {
+          if (open) onMoreToggle?.();
+        }}
+      >
+        <DropdownMenuTrigger className={itemClass} aria-label="Plus de pages">
+          <MoreHorizontal className="size-5" aria-hidden />
+          <span>Plus</span>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent side="top" align="end" className="w-52">
+          <DropdownMenuItem asChild>
+            {onOpenItinerary ? (
+              <button type="button" className="w-full" onClick={onOpenItinerary}>
+                Itinéraire porte à porte
+              </button>
+            ) : (
+              <Link to="/" onClick={() => rememberAction("itinerary")}>
+                Itinéraire porte à porte
+              </Link>
+            )}
+          </DropdownMenuItem>
+          {moreLinks.map((link) => (
+            <DropdownMenuItem key={link.to} asChild>
+              <Link to={link.to}>{link.label}</Link>
+            </DropdownMenuItem>
+          ))}
+        </DropdownMenuContent>
+      </DropdownMenu>
     </nav>
   );
 }

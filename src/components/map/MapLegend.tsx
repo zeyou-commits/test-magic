@@ -65,22 +65,9 @@ export function MapLegend({
             </li>
           </ul>
           <p className="mt-2 text-[10px] leading-relaxed text-muted-foreground md:mt-3 md:text-xs">
-            Tracés et positions indicatifs. Horaires en heure locale.
-          </p>
-          <p className="mt-2 border-t border-border pt-2 text-[10px] text-muted-foreground md:text-[11px]">
-            Carte ©{" "}
-            <a href="https://openfreemap.org" target="_blank" rel="noreferrer" className="underline">
-              OpenFreeMap
-            </a>{" "}
-            ©{" "}
-            <a
-              href="https://www.openstreetmap.org/copyright"
-              target="_blank"
-              rel="noreferrer"
-              className="underline"
-            >
-              OpenStreetMap
-            </a>
+            Tracés indicatifs en ligne droite : ils ne représentent pas la route réelle du navire.
+            Les positions et l’avancement sont des repères estimés. Le sillage indique le sens du
+            trajet. Les horaires sont en heure locale du port.
           </p>
         </div>
       ) : (

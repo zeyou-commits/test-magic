@@ -26,15 +26,7 @@ export interface LivePosition {
 
 /** Un navire suivi, rattaché à sa traversée. */
 export type PhysicalVesselStatus =
-    | "boarding"
-  | "boarding_closed"
-  | "departing"
-  | "at_sea"
-  | "approaching"
-  | "anchored"
-  | "disembarking"
-  | "docked"
-  | "unknown";
+  "boarding" | "boarding_closed" | "departing" | "at_sea" | "approaching" | "docked" | "unknown";
 
 export interface PhysicalStatus {
   code: PhysicalVesselStatus;
@@ -336,10 +328,6 @@ export function physicalStatus(
     ? Math.min(...allPorts.map((port) => haversineKm(point, [port.longitude, port.latitude])))
     : Math.min(fromKm, toKm);
   const etaMinutes = speed >= 1.5 ? toKm / ((speed * KNOT_MS) / 1000) / 60 : Infinity;
-  const ata = position.ataAt ? Date.parse(position.ataAt) : NaN;
-  const sinceArrival = Number.isFinite(ata) ? (now - ata) / 60_000 : Infinity;
-  if (toKm < 2 && speed < 1.5 && sinceArrival >= 0 && sinceArrival <= 90)
-    return { code: "disembarking", label: "Débarquement en cours", tone: "info" };
   if (toKm < 1 && speed < 1.5) return { code: "docked", label: "Accosté à quai", tone: "info" };
   if (fromKm < 3 && speed >= 3)
     return { code: "departing", label: "Appareillage en cours", tone: "warning" };
@@ -350,9 +338,6 @@ export function physicalStatus(
   if (fromKm < 2 && speed < 1.5 && hoursToDeparture >= 0 && hoursToDeparture < 1)
     return { code: "boarding_closed", label: "Embarquement clos", tone: "warning" };
   if (nearestPortKm > 15 && speed >= 3) return { code: "at_sea", label: "En mer", tone: "success" };
-  // Arrêté en rade, hors du quai : attente d'autorisation d'accostage.
-  if (speed < 1.5 && nearestPortKm >= 2 && nearestPortKm <= 15)
-    return { code: "anchored", label: "Au mouillage · en attente", tone: "warning" };
   return { code: "unknown", label: "Position AIS reçue", tone: "muted" };
 }
 

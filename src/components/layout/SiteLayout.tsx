@@ -1,7 +1,6 @@
 import type { ReactNode } from "react";
 import { Link } from "@tanstack/react-router";
 import { UserMenu } from "./UserMenu";
-import { HeaderInbox } from "@/components/panel/FlashCenter";
 import { MobileTabBar } from "./MobileTabBar";
 import { DataUnavailableNotice } from "./DataUnavailableNotice";
 import { ChevronDown, Menu, ArrowUpRight, Route as RouteIcon } from "lucide-react";
@@ -107,8 +106,9 @@ export function SiteHeader() {
           ))}
         </nav>
         <div className="bw-header-actions">
-          <HeaderInbox />
-          {/* Sur mobile, le compte est l'onglet « Moi » de la barre du bas. */}
+          <span className="md:hidden">
+            <UserMenu compact iconOnly />
+          </span>
           <span className="hidden md:inline-flex">
             <UserMenu compact iconOnly />
           </span>

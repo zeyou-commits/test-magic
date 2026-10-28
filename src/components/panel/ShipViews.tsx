@@ -1,19 +1,8 @@
 import { useAuth } from "@/hooks/useAuth";
-import { LivePulse, revealLive, useLiveInfo } from "./LivePulse";
 import { communityQuery } from "@/lib/ferry/community";
 import { useCallback, useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import {
-  ArrowRight,
-  CalendarDays,
-  CarFront,
-  ExternalLink,
-  MapPin,
-  Megaphone,
-  PenLine,
-  Star,
-  Users,
-} from "lucide-react";
+import { ArrowRight, CarFront, ExternalLink, Flag, MapPin, Ship, Star, Users } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import {
@@ -30,14 +19,15 @@ import { vesselPhotoQuery } from "@/lib/ferry/vesselPhoto";
 import { departureForSignal } from "@/lib/ferry/tracking";
 import { portTimeZone } from "@/lib/ferry/time";
 import { formatDateTime } from "@/lib/ferry/format";
-import type { Selection } from "@/lib/ferry/types";
-import { DemoBadge, EmptyNote, Stars } from "./shared";
+import { getBoardingMilestones } from "@/lib/ferry/boarding";
+import type { Departure, Port, Selection, Vessel } from "@/lib/ferry/types";
+import { BookingLink, DemoBadge, EmptyNote, ReliabilityNote } from "./shared";
 import { CompanyBadge } from "./CompanyBadge";
 import { CrossingCard } from "./CrossingCard";
 import { TravelSignals, VesselReviews } from "./TravelCommunity";
-import { TripRecap } from "./TripRecap";
-import { ShipPhoto, VesselSpecs } from "./VesselBits";
-import { TripStatusPicker, VesselPresence } from "./TripPresence";
+import { ReportButton } from "./ReportButton";
+import { FollowButton } from "./FollowButton";
+import { JourneyChecklist } from "./JourneyChecklist";
 
 function useShipData() {
   const { data: vessels = [] } = useQuery(vesselsQuery);
@@ -64,35 +54,6 @@ export function VesselView({
   const community = useQuery(communityQuery("vessel", vesselId, false, user?.id));
   const communityAvailable = Boolean(community.data);
   const [tab, setTab] = useState("tracking");
-  // « Noter » : onglet Avis, formulaire ouvert (après connexion si besoin).
-  const rateVessel = () => {
-    if (!user) {
-      window.sessionStorage.setItem("bledway:pending-vessel-review", vesselId);
-      const next = `${window.location.pathname}${window.location.search}`;
-      window.location.assign(`/auth?next=${encodeURIComponent(next)}`);
-      return;
-    }
-    setTab("reviews");
-    window.dispatchEvent(new CustomEvent("bledway:write-vessel-review", { detail: { vesselId } }));
-  };
-  // Infos BledWay de ses lignes à venir et de sa compagnie, signalements à bord.
-  const vesselCompany = data.vessels.find((v) => v.id === vesselId)?.company_id;
-  const liveInfo = useLiveInfo({
-    routeIds: [
-      ...new Set(
-        data.departures
-          .filter((d) => d.vessel_id === vesselId && Date.parse(d.departure_at) > Date.now())
-          .map((d) => d.route_id),
-      ),
-    ],
-    companyIds: vesselCompany ? [vesselCompany] : [],
-    signalVesselIds: [vesselId],
-  });
-  const liveId = `live-vessel-${vesselId}`;
-  const openLive = () => {
-    setTab("tracking");
-    revealLive(liveId);
-  };
   const requestVesselSignal = useCallback(() => {
     setTab("tracking");
     window.setTimeout(
@@ -141,48 +102,48 @@ export function VesselView({
   const to = data.ports.find((p) => p.id === route?.arrival_port_id);
   return (
     <article className="bw-ship-profile">
-      <header className="bw-ship-hero">
-        <div className="bw-ship-hero-title">
+      <header className="bw-ship-heading">
+        <ShipPhoto key={photo?.url ?? vesselId} url={photo?.url} name={vessel.name} />
+        <div>
+          <span className="bw-eyebrow">Votre bateau</span>
+          <h2>{vessel.name}</h2>
           {company ? (
             <button
+              className="bw-company-link"
               type="button"
-              className="bw-ship-hero-logo"
-              aria-label={`Voir la compagnie ${company.name}`}
               onClick={() => onSelect({ type: "company", id: company.id })}
             >
-              <CompanyBadge name={company.name} logoUrl={company.logo_url} size={34} />
+              <CompanyBadge name={company.name} logoUrl={company.logo_url} size={38} />
+              {company.name}
             </button>
           ) : null}
-          <div className="min-w-0">
-            <h2>{vessel.name}</h2>
-            {company ? <p className="bw-ship-hero-company">{company.name}</p> : null}
-          </div>
           {vessel.is_demo ? <DemoBadge /> : null}
+          <dl
+            className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs"
+            aria-label="Le bateau en chiffres"
+          >
+            <div>
+              <dt className="text-[10px] text-muted-foreground">Âge</dt>
+              <dd className="font-bold">
+                {vessel.build_year && vessel.build_year <= new Date().getFullYear()
+                  ? `${new Date().getFullYear() - vessel.build_year} ans`
+                  : "À renseigner"}
+              </dd>
+            </div>
+            <div>
+              <dt className="text-[10px] text-muted-foreground">Passagers</dt>
+              <dd className="font-bold">
+                {vessel.passenger_capacity?.toLocaleString("fr-FR") ?? "À renseigner"}
+              </dd>
+            </div>
+            <div>
+              <dt className="text-[10px] text-muted-foreground">Véhicules</dt>
+              <dd className="font-bold">
+                {vessel.car_capacity?.toLocaleString("fr-FR") ?? "À renseigner"}
+              </dd>
+            </div>
+          </dl>
         </div>
-        <div className="bw-ship-hero-photo">
-          <ShipPhoto key={photo?.url ?? vesselId} url={photo?.url} name={vessel.name} />
-        </div>
-        <dl className="bw-ship-hero-stats" aria-label="Le bateau en chiffres">
-          <div>
-            <CalendarDays size={12} aria-hidden />
-            <dt>Âge</dt>
-            <dd>
-              {vessel.build_year && vessel.build_year <= new Date().getFullYear()
-                ? `${new Date().getFullYear() - vessel.build_year} ans`
-                : "—"}
-            </dd>
-          </div>
-          <div>
-            <Users size={12} aria-hidden />
-            <dt>Passagers</dt>
-            <dd>{vessel.passenger_capacity?.toLocaleString("fr-FR") ?? "—"}</dd>
-          </div>
-          <div>
-            <CarFront size={12} aria-hidden />
-            <dt>Véhicules</dt>
-            <dd>{vessel.car_capacity?.toLocaleString("fr-FR") ?? "—"}</dd>
-          </div>
-        </dl>
       </header>
       {departure && from && to ? (
         <div className="bw-ship-crossing-first">
@@ -211,43 +172,13 @@ export function VesselView({
           </a>
         </aside>
       ) : null}
-      <VesselPresence vesselId={vesselId} />
-      {communityAvailable ? (
-        <button type="button" className="pv-rating" onClick={() => setTab("reviews")}>
-          {community.data?.rating_count ? (
-            <>
-              <Stars value={community.data.rating_average ?? 0} />
-              <span>· {community.data.rating_count} avis</span>
-            </>
-          ) : (
-            <>
-              <span className="pv-stars-empty" aria-hidden>
-                {[1, 2, 3, 4, 5].map((n) => (
-                  <Star key={n} size={15} />
-                ))}
-              </span>
-              <span>Pas encore d’avis · soyez le premier à noter ce bateau</span>
-            </>
-          )}
-        </button>
-      ) : null}
-      <div className="pv-actions pv-actions--two">
-        <button type="button" onClick={requestVesselSignal} className="pv-action pv-action--signal">
-          <span aria-hidden>
-            <Megaphone size={18} />
-          </span>
-          Signaler
-        </button>
-        {communityAvailable ? (
-          <button type="button" className="pv-action" onClick={rateVessel}>
-            <span aria-hidden>
-              <PenLine size={18} />
-            </span>
-            Noter
-          </button>
-        ) : null}
-      </div>
-      <LivePulse info={liveInfo} onOpen={openLive} />
+      <button
+        type="button"
+        onClick={requestVesselSignal}
+        className="mb-4 flex min-h-11 w-full items-center justify-center gap-2 rounded-xl border border-primary/30 bg-primary/5 px-3 text-sm font-semibold text-primary transition hover:bg-primary/10"
+      >
+        <Flag size={17} aria-hidden /> Signaler une info sur ce bateau
+      </button>
       {photo?.source === "commons" ? (
         <details className="bw-photo-credit">
           <summary>Crédit photo</summary>
@@ -277,12 +208,6 @@ export function VesselView({
         <TabsContent value="tracking" forceMount hidden={activeTab !== "tracking"}>
           {departure && from && to ? (
             <>
-              {/* Où en êtes-vous ? Les 4 cabas, pour la traversée en cours ou la prochaine. */}
-              <TripStatusPicker
-                departureId={departure.id}
-                departureAt={departure.departure_at}
-                fromPortId={from.id}
-              />
               <button
                 className="bw-detail-link"
                 type="button"
@@ -311,9 +236,7 @@ export function VesselView({
               Repérer sur la carte
             </button>
           ) : null}
-          <div id={liveId} data-live-anchor>
-            <TravelSignals key={vesselId} kind="vessel" target={vesselId} compact />
-          </div>
+          <TravelSignals key={vesselId} kind="vessel" target={vesselId} />
           {next.length ? (
             <section className="bw-next-crossings">
               <div className="bw-section-heading">
@@ -384,16 +307,172 @@ export function DepartureView({
   const route = data.routes.find((r) => r.id === departure.route_id);
   const from = data.ports.find((p) => p.id === route?.departure_port_id);
   const to = data.ports.find((p) => p.id === route?.arrival_port_id);
-  if (!from || !to) return <EmptyNote>Traversée introuvable.</EmptyNote>;
+  const vessel = data.vessels.find((v) => v.id === departure.vessel_id);
+  const company = data.companies.find((c) => c.id === departure.company_id);
+  const live = data.live.find((s) => s.departure.id === departureId);
   return (
-    <TripRecap
-      departure={departure}
-      from={from}
-      to={to}
-      vessel={data.vessels.find((v) => v.id === departure.vessel_id)}
-      company={data.companies.find((c) => c.id === departure.company_id)}
-      live={data.live.find((s) => s.departure.id === departureId)}
-      onSelect={onSelect}
-    />
+    <article className="bw-departure-profile">
+      <header className="bw-section-heading">
+        <div>
+          <span className="bw-eyebrow">Votre voyage</span>
+          <h2>Cap sur {to?.name ?? "votre destination"}</h2>
+        </div>
+        <ReportButton targetType="departure" targetId={departureId} />
+      </header>
+      {from && to ? <CrossingCard departure={departure} from={from} to={to} live={live} /> : null}
+      <div className="my-3">
+        <FollowButton
+          kind="departure"
+          targetId={departureId}
+          label={`${from?.name ?? "Départ"} → ${to?.name ?? "Arrivée"}`}
+          demo={Boolean(departure.is_demo)}
+        />
+      </div>
+      {from && (
+        <JourneyChecklist
+          departureId={departureId}
+          departureAt={departure.departure_at}
+          port={from}
+        />
+      )}
+      {vessel ? (
+        <button
+          className="bw-vessel-switch"
+          type="button"
+          onClick={() => onSelect({ type: "vessel", id: vessel.id })}
+        >
+          <span className="bw-vessel-switch-icon">
+            <Ship size={22} aria-hidden />
+          </span>
+          <span>
+            <small>Votre bateau · avis et vie à bord</small>
+            <strong>{vessel.name}</strong>
+          </span>
+          <ArrowRight size={18} aria-hidden />
+        </button>
+      ) : null}
+      {from ? <BoardingGuide departure={departure} port={from} /> : null}
+      <div className="bw-port-links">
+        {[from, to].map((port, i) =>
+          port ? (
+            <button
+              type="button"
+              key={`${i}-${port.id}`}
+              onClick={() => onSelect({ type: "port", id: port.id })}
+            >
+              <MapPin size={17} aria-hidden />
+              <span>
+                <small>{i === 0 ? "Port de départ" : "Port d’arrivée"}</small>
+                <strong>{port.name}</strong>
+              </span>
+              <ArrowRight size={15} aria-hidden />
+            </button>
+          ) : null,
+        )}
+      </div>
+      {vessel ? <TravelSignals key={vessel.id} kind="vessel" target={vessel.id} /> : null}
+      {departure.status !== "cancelled" ? <BookingLink company={company} /> : null}
+      {company ? (
+        <button
+          className="bw-detail-link"
+          type="button"
+          onClick={() => onSelect({ type: "company", id: company.id })}
+        >
+          <CompanyBadge name={company.name} logoUrl={company.logo_url} size={20} />
+          {company.name}
+          <ArrowRight size={15} aria-hidden />
+        </button>
+      ) : null}
+      {departure.notes ? (
+        <section className="bw-onboard">
+          <h3>À savoir avant de partir</h3>
+          <p>{departure.notes}</p>
+        </section>
+      ) : null}
+      <details className="bw-source-details">
+        <summary>Source des horaires</summary>
+        <ReliabilityNote
+          reliability={departure.reliability}
+          sourceName={departure.source_name}
+          sourceUrl={departure.source_url}
+          verifiedAt={departure.last_verified_at}
+        />
+      </details>
+    </article>
+  );
+}
+function BoardingGuide({ departure, port }: { departure: Departure; port: Port }) {
+  const car = getBoardingMilestones(departure.departure_at, port, { hasVehicle: true });
+  const pedestrian = getBoardingMilestones(departure.departure_at, port, { hasVehicle: false });
+  if (
+    !car ||
+    !pedestrian ||
+    departure.status === "cancelled" ||
+    Date.parse(departure.departure_at) < Date.now()
+  )
+    return null;
+  return (
+    <details className="bw-boarding-guide">
+      <summary>Quand arriver au port ?</summary>
+      <div>
+        <p>Repères conseillés · heure locale du port</p>
+        <dl>
+          <div>
+            <dt>
+              <CarFront size={18} aria-hidden />
+              Avec un véhicule
+            </dt>
+            <dd>{car.callLabel}</dd>
+          </div>
+          <div>
+            <dt>
+              <Users size={18} aria-hidden />À pied
+            </dt>
+            <dd>{pedestrian.callLabel}</dd>
+          </div>
+        </dl>
+        <small>L’heure de convocation de votre billet reste la référence.</small>
+      </div>
+    </details>
+  );
+}
+function VesselSpecs({ vessel }: { vessel: Vessel }) {
+  const items = [
+    { label: "Passagers", value: vessel.passenger_capacity?.toLocaleString("fr-FR") },
+    { label: "Véhicules", value: vessel.car_capacity?.toLocaleString("fr-FR") },
+    { label: "Longueur", value: vessel.length_meters ? `${vessel.length_meters} m` : null },
+    { label: "Mise en service", value: vessel.build_year },
+    { label: "Vitesse", value: vessel.speed_knots ? `${vessel.speed_knots} nœuds` : null },
+    { label: "Type", value: vessel.vessel_type },
+  ].filter((i) => i.value !== null && i.value !== undefined && i.value !== "");
+  return items.length ? (
+    <dl className="bw-vessel-specs">
+      {items.map((i) => (
+        <div key={i.label}>
+          <dt>{i.label}</dt>
+          <dd>{i.value}</dd>
+        </div>
+      ))}
+    </dl>
+  ) : null;
+}
+
+function ShipPhoto({ url, name }: { url: string | undefined; name: string }) {
+  const [failed, setFailed] = useState(false);
+  return (
+    <div className="bw-ship-photo">
+      <Ship size={32} aria-hidden />
+      {url && !failed ? (
+        <img
+          src={url}
+          alt={name}
+          width={88}
+          height={80}
+          loading="lazy"
+          referrerPolicy="no-referrer"
+          onError={() => setFailed(true)}
+        />
+      ) : null}
+    </div>
   );
 }

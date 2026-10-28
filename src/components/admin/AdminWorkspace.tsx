@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import {
   ArrowUpRight,
   Bell,
@@ -17,155 +17,124 @@ import {
   Star,
   Waves,
   Users,
-  Zap,
-  Fuel,
-  Megaphone,
-  TriangleAlert,
 } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import { UserMenu } from "@/components/layout/UserMenu";
 
-/** Groupes du menu, dans l'ordre d'affichage. */
-const groups = ["Tableau de bord", "Planning", "Réseau", "Voyageurs", "À vérifier", "Équipe"];
 const sections = [
-  {
-    id: "overview",
-    label: "Vue d’ensemble",
-    description: "Les priorités du jour et les actions de votre équipe.",
-    group: "Tableau de bord",
-    icon: LayoutDashboard,
-  },
   {
     id: "commercial",
     label: "Programmes par compagnie",
     description: "Liaisons commerciales, départs, navires et sources officielles au même endroit.",
-    group: "Planning",
+    group: "Programmes commerciaux",
     icon: CalendarRange,
   },
   {
-    id: "departures",
-    label: "Départs",
-    description: "Retrouvez un départ et mettez à jour ses informations.",
-    group: "Planning",
-    icon: CalendarDays,
+    id: "users",
+    label: "Utilisateurs",
+    description: "Gérez les comptes voyageurs, les rôles et les accès de votre équipe.",
+    group: "Pilotage",
+    icon: Users,
   },
   {
-    id: "schedules",
-    label: "Calendriers récurrents",
-    description: "Gérez les programmes et les fréquences des lignes.",
-    group: "Planning",
-    icon: CalendarRange,
-  },
-  {
-    id: "import",
-    label: "Importer un planning",
-    description: "Contrôlez les lignes de votre fichier avant de les publier.",
-    group: "Planning",
-    icon: FileSpreadsheet,
-  },
-  {
-    id: "ports",
-    label: "Ports",
-    description: "Accès, informations pratiques et points sur la carte.",
-    group: "Réseau",
-    icon: MapPin,
-  },
-  {
-    id: "routes",
-    label: "Liaisons",
-    description: "Les liaisons entre les deux rives.",
-    group: "Réseau",
-    icon: Route,
-  },
-  {
-    id: "companies",
-    label: "Compagnies",
-    description: "Les transporteurs et leurs informations publiques.",
-    group: "Réseau",
-    icon: Building2,
-  },
-  {
-    id: "vessels",
-    label: "Navires",
-    description: "Suivi en direct, photos, caractéristiques et affectations de la flotte.",
-    group: "Réseau",
-    icon: Ship,
-  },
-  {
-    id: "places",
-    label: "Lieux pratiques",
-    description: "Stations-service, change, distributeurs autour des ports.",
-    group: "Réseau",
-    icon: Fuel,
-  },
-  {
-    id: "flash",
-    label: "Flash info",
-    description: "Actualités et perturbations Europe ↔ Algérie, sourcées.",
-    group: "Voyageurs",
-    icon: Zap,
-  },
-  {
-    id: "signals",
-    label: "Catalogue des signalements",
-    description:
-      "Situations, choix et services proposés aux voyageurs dans « Que voyez-vous ? ».",
-    group: "Voyageurs",
-    icon: Megaphone,
-  },
-  {
-    id: "community",
-    label: "Modération voyageurs",
-    description: "Avis sur les navires et signalements en cours, à vérifier ou à clore.",
-    group: "Voyageurs",
-    icon: MessageSquare,
-  },
-  {
-    id: "reviews",
-    label: "Avis sur les ports",
-    description: "Relisez les contributions avant de les rendre publiques.",
-    group: "Voyageurs",
-    icon: Star,
+    id: "overview",
+    label: "Vue d’ensemble",
+    description: "Les priorités du jour et les actions de votre équipe.",
+    group: "Pilotage",
+    icon: LayoutDashboard,
   },
   {
     id: "notifications",
     label: "Notifications",
     description: "Préparez, vérifiez et diffusez les ouvertures de traversées.",
-    group: "Voyageurs",
+    group: "Pilotage",
     icon: Bell,
   },
   {
     id: "alerts",
     label: "Alertes planning",
     description: "Les anomalies du calendrier à vérifier avant publication.",
-    group: "À vérifier",
+    group: "Pilotage",
     icon: Flag,
   },
   {
+    id: "departures",
+    label: "Départs",
+    description: "Retrouvez un départ et mettez à jour ses informations.",
+    group: "Programmes commerciaux",
+    icon: CalendarDays,
+  },
+  {
+    id: "schedules",
+    label: "Calendriers",
+    description: "Gérez les programmes et les fréquences des lignes.",
+    group: "Programmes commerciaux",
+    icon: CalendarRange,
+  },
+  {
+    id: "import",
+    label: "Importer un planning",
+    description: "Contrôlez les lignes de votre fichier avant de les publier.",
+    group: "Programmes commerciaux",
+    icon: FileSpreadsheet,
+  },
+  {
+    id: "vessels",
+    label: "Navires",
+    description: "Photos, caractéristiques et affectations de la flotte.",
+    group: "Réseau général",
+    icon: Ship,
+  },
+  {
+    id: "ports",
+    label: "Ports",
+    description: "Accès, informations pratiques et points sur la carte.",
+    group: "Réseau général",
+    icon: MapPin,
+  },
+  {
+    id: "routes",
+    label: "Liaisons du réseau",
+    description: "Les liaisons entre les deux rives.",
+    group: "Réseau général",
+    icon: Route,
+  },
+  {
+    id: "companies",
+    label: "Compagnies",
+    description: "Les transporteurs et leurs informations publiques.",
+    group: "Réseau général",
+    icon: Building2,
+  },
+  {
+    id: "reviews",
+    label: "Avis sur les ports",
+    description: "Relisez les contributions avant de les rendre publiques.",
+    group: "Communauté",
+    icon: Star,
+  },
+  {
+    id: "community",
+    label: "Vie à bord",
+    description: "Avis sur les navires et informations partagées par les voyageurs.",
+    group: "Communauté",
+    icon: MessageSquare,
+  },
+  {
     id: "reports",
-    label: "Erreurs signalées",
-    description: "Horaires ou fiches à corriger, remontés par les voyageurs (« Signaler une erreur »).",
-    group: "À vérifier",
-    icon: TriangleAlert,
+    label: "Signalements",
+    description: "Les informations à corriger, remontées par les voyageurs.",
+    group: "Communauté",
+    icon: Flag,
   },
   {
     id: "data",
     label: "Qualité des données",
     description: "Contrôlez la cohérence des informations publiées.",
-    group: "À vérifier",
+    group: "Réseau général",
     icon: Database,
   },
-  {
-    id: "users",
-    label: "Utilisateurs",
-    description: "Gérez les comptes voyageurs, les rôles et les accès de votre équipe.",
-    group: "Équipe",
-    icon: Users,
-  },
 ];
-
-/** Fiche retrouvable depuis la recherche du menu (port, navire, compagnie…). */
-export type AdminSearchItem = { tab: string; id: string; label: string; hint: string };
 
 export function AdminWorkspace({
   tab,
@@ -173,46 +142,20 @@ export function AdminWorkspace({
   badges,
   children,
   canAccess = () => true,
-  searchItems = [],
-  onOpenItem,
 }: {
   tab: string;
   onNavigate: (tab: string) => void;
   badges: Record<string, number>;
   children: ReactNode;
   canAccess?: (tab: string) => boolean;
-  searchItems?: AdminSearchItem[];
-  onOpenItem?: (tab: string, id: string) => void;
 }) {
   const [search, setSearch] = useState("");
-  const searchRef = useRef<HTMLInputElement>(null);
-  // Ctrl+K (ou Cmd+K) : chercher une rubrique ou une fiche depuis n'importe quel écran.
-  useEffect(() => {
-    const onKey = (event: KeyboardEvent) => {
-      if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "k") {
-        event.preventDefault();
-        searchRef.current?.focus();
-        searchRef.current?.select();
-      }
-    };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, []);
-  const plain = (value: string) =>
-    value
-      .normalize("NFD")
-      .replace(/[\u0300-\u036f]/g, "")
-      .toLocaleLowerCase("fr");
-  const foundItems =
-    search.trim().length >= 2
-      ? searchItems
-          .filter((item) => canAccess(item.tab) && plain(`${item.label} ${item.hint}`).includes(plain(search.trim())))
-          .slice(0, 8)
-      : [];
   const current = sections.find((section) => section.id === tab) ?? sections[0]!;
   const available = sections.filter((section) => canAccess(section.id));
   const filtered = available.filter((section) =>
-    plain(`${section.label} ${section.description}`).includes(plain(search.trim())),
+    `${section.label} ${section.description}`
+      .toLocaleLowerCase("fr")
+      .includes(search.toLocaleLowerCase("fr")),
   );
   const pending = badges["notifications"] ?? 0;
   return (
@@ -231,51 +174,14 @@ export function AdminWorkspace({
         <label className="bw-admin-search">
           <Search className="size-4" aria-hidden />
           <input
-            ref={searchRef}
             value={search}
             onChange={(event) => setSearch(event.target.value)}
-            onKeyDown={(event) => {
-              if (event.key === "Escape") setSearch("");
-              if (event.key === "Enter" && foundItems[0] && onOpenItem) {
-                onOpenItem(foundItems[0].tab, foundItems[0].id);
-                setSearch("");
-              }
-            }}
-            placeholder="Rubrique, port, navire…"
-            aria-label="Chercher une rubrique ou une fiche (Ctrl+K)"
+            placeholder="Chercher une rubrique"
+            aria-label="Chercher une rubrique d’administration"
           />
-          <kbd className="bw-admin-kbd" aria-hidden>
-            Ctrl K
-          </kbd>
         </label>
         <nav aria-label="Administration">
-          {foundItems.length ? (
-            <div className="bw-admin-nav-group">
-              <h2>Fiches</h2>
-              {foundItems.map((item) => {
-                const Icon = sections.find((section) => section.id === item.tab)?.icon ?? Search;
-                return (
-                  <button
-                    key={`${item.tab}:${item.id}`}
-                    type="button"
-                    onClick={() => {
-                      onOpenItem?.(item.tab, item.id);
-                      setSearch("");
-                    }}
-                  >
-                    <Icon className="size-4" aria-hidden />
-                    <span>
-                      {item.label}
-                      <small className="block text-[11px] font-normal text-muted-foreground">
-                        {item.hint}
-                      </small>
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
-          ) : null}
-          {groups.map((group) => {
+          {["Pilotage", "Réseau général", "Programmes commerciaux", "Communauté"].map((group) => {
             const items = filtered.filter((item) => item.group === group);
             return items.length ? (
               <div className="bw-admin-nav-group" key={group}>
@@ -297,7 +203,7 @@ export function AdminWorkspace({
               </div>
             ) : null;
           })}
-          {!filtered.length && !foundItems.length && (
+          {!filtered.length && (
             <p className="p-3 text-xs text-muted-foreground">Aucune rubrique ne correspond.</p>
           )}
         </nav>

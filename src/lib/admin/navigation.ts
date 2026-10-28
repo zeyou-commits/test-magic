@@ -7,9 +7,6 @@ export const adminTabs = [
   "reports",
   "alerts",
   "notifications",
-  "flash",
-  "signals",
-  "places",
   "companies",
   "departures",
   "schedules",
@@ -24,15 +21,11 @@ export type AdminTab = (typeof adminTabs)[number];
 export type AdminFilter = "today" | "unassigned" | "new" | "pending";
 export type DepartureScope = Extract<AdminFilter, "today" | "unassigned">;
 
-/** Rubriques où une fiche précise peut s'ouvrir directement (recherche du menu). */
-const itemTabs = new Set<AdminTab>(["ports", "vessels", "companies", "routes"]);
-
 export function adminSearch(search: Record<string, unknown>): {
   tab?: AdminTab;
   filter?: AdminFilter;
   company?: string;
   route?: string;
-  item?: string;
 } {
   const tab = adminTabs.includes(search["tab"] as AdminTab)
     ? (search["tab"] as AdminTab)
@@ -46,13 +39,6 @@ export function adminSearch(search: Record<string, unknown>): {
       route = uuid(search["route"]);
     return { tab, ...(company ? { company } : {}), ...(company && route ? { route } : {}) };
   }
-  const item = search["item"];
-  if (
-    itemTabs.has(tab) &&
-    typeof item === "string" &&
-    /^[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}$/i.test(item)
-  )
-    return { tab, item };
   const filter = search["filter"];
   if (
     (tab === "departures" && (filter === "today" || filter === "unassigned")) ||

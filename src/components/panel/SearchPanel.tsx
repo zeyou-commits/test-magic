@@ -1,4 +1,3 @@
-import { vesselCompanyIds } from "@/lib/ferry/filterSync";
 import { HomeTraffic } from "./HomeTraffic";
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { useQuery } from "@tanstack/react-query";
@@ -7,7 +6,6 @@ import {
   Backpack,
   CalendarDays,
   ChevronDown,
-  RotateCcw,
   Search,
   Route,
   SlidersHorizontal,
@@ -25,7 +23,6 @@ import {
 } from "@/components/ui/select";
 import {
   companiesQuery,
-  fleetDeparturesQuery,
   portsQuery,
   routesQuery,
   upcomingDeparturesQuery,
@@ -52,7 +49,6 @@ import { dateKeyInZone } from "@/lib/ferry/time";
 import { useLiveShips } from "@/lib/ferry/useLiveShips";
 import type { LiveShip } from "@/lib/ferry/tracking";
 import { PortMultiPicker } from "./PortFilters";
-import { SalesAlertForm } from "./SalesAlertForm";
 import { CompanyBadge } from "./CompanyBadge";
 import { RoundTripCard } from "./RoundTripCard";
 import { FareProfileContext } from "@/lib/ferry/pricing";
@@ -111,7 +107,6 @@ export function SearchPanel({
   const { data: companies = [] } = useQuery(companiesQuery);
   const { data: vessels = [] } = useQuery(vesselsQuery);
   const { data: departures = [], isLoading } = useQuery(upcomingDeparturesQuery());
-  const { data: recentDepartures = [] } = useQuery(fleetDeparturesQuery);
 
   const liveShips = useLiveShips();
   const liveByDeparture = useMemo(
@@ -135,8 +130,7 @@ export function SearchPanel({
   const lastStep = 3 as 2 | 3;
   void hidePickersOnMobile;
   // Sens du trajet : Europe → Algérie par défaut, inversé par le bouton ⇄.
-  // Le sens vit dans les filtres (et l'URL) : « Tous les ports » le respecte.
-  const reversed = filters.direction === "dz-eu";
+  const [reversed, setReversed] = useState(false);
   const searchRef = useRef<HTMLElement>(null);
   const isMobileView = () => typeof window !== "undefined" && window.innerWidth < 768;
   const startSearch = () => {
@@ -147,40 +141,13 @@ export function SearchPanel({
     // Sur mobile, le volet passe en plein écran pour la recherche.
     if (isMobileView()) window.dispatchEvent(new Event("batogo:panel-full"));
   };
-  // « Modifier » : la recherche en cours est mémorisée à l'ouverture du formulaire.
-  // Fermer sans valider la restaure et ramène aux résultats (l'accueil seulement s'il n'y en avait pas).
-  const snapshot = useRef<{
-    filters: Filters;
-    profile: TripProfileValue;
-    hadSearch: boolean;
-  } | null>(null);
-  const latest = useRef({ filters, profile });
-  latest.current = { filters, profile };
-  useEffect(() => {
-    if (!editing) return;
-    const { filters: current, profile: currentProfile } = latest.current;
-    snapshot.current = {
-      filters: current,
-      profile: currentProfile,
-      hadSearch: hasActiveFilters(current),
-    };
-  }, [editing]);
   const closeSearch = () => {
-    const saved = snapshot.current;
-    snapshot.current = null;
-    if (saved?.hadSearch) {
-      if (JSON.stringify(saved.filters) !== JSON.stringify(filters)) onFiltersChange(saved.filters);
-      setProfile(saved.profile);
-      showResults();
-      return;
-    }
     setEditing(false);
     setStep(firstStep);
     searchRef.current?.closest(".batogo-panel-scroll")?.scrollTo({ top: 0, behavior: "instant" });
     window.dispatchEvent(new Event("batogo:close-panel"));
   };
   const showResults = () => {
-    snapshot.current = null;
     setEditing(false);
     setStep(firstStep);
     if (isMobileView()) {
@@ -228,11 +195,13 @@ export function SearchPanel({
       window.removeEventListener("batogo:show-departures", showDepartures);
     };
   }, []);
-  // Drapeau du compteur : ouvre la liste des compagnies.
+  // Drapeau du compteur : déplie la section et ouvre la liste des compagnies.
   const [companyMenuOpen, setCompanyMenuOpen] = useState(false);
+  const [companyOpen, setCompanyOpen] = useState(false);
   useEffect(() => {
     const open = () => {
       setEditing(true);
+      setCompanyOpen(true);
       window.setTimeout(() => {
         const el = document.getElementById("filters-company");
         el?.scrollIntoView({ behavior: "smooth", block: "center" });
@@ -245,9 +214,6 @@ export function SearchPanel({
     return () => window.removeEventListener("batogo:open-companies", open);
   }, []);
   const [calOpen, setCalOpen] = useState(false);
-  useEffect(() => {
-    setCalOpen(step === 2 && editing && isDesktop);
-  }, [step, editing, isDesktop]);
   const [calField, setCalField] = useState<CalendarField>("out");
   const [holidaysOn, setHolidaysOnState] = useState(false);
   const setHolidaysOn = (on: boolean) => {
@@ -283,28 +249,6 @@ export function SearchPanel({
     () => buildSailings(departures, routes, ports, companies, vessels),
     [departures, routes, ports, companies, vessels],
   );
-  // Date cherchée au-delà du dernier départ publié : ventes pas encore ouvertes.
-  const salesClosed = useMemo(() => {
-    if (!filters.date || !departures.length) return null;
-    const last = departures.reduce((max, d) => (d.departure_at > max ? d.departure_at : max), "");
-    if (filters.date <= last.slice(0, 10)) return null;
-    const month = new Intl.DateTimeFormat("fr-FR", { month: "long", year: "numeric" }).format(
-      new Date(`${filters.date}T12:00:00`),
-    );
-    return month;
-  }, [filters.date, departures]);
-  // Ports ayant au moins un départ ou une arrivée planifiés (hors annulations).
-  const scheduledPortIds = useMemo(() => {
-    const byRoute = new Map(routes.map((r) => [r.id, r]));
-    const ids = new Set<string>();
-    departures.forEach((d) => {
-      if (d.status === "cancelled") return;
-      const route = byRoute.get(d.route_id);
-      if (route) ids.add(route.departure_port_id).add(route.arrival_port_id);
-    });
-    return ids;
-  }, [departures, routes],
-  );
   const outbound = useMemo(
     () =>
       legSailings(
@@ -313,16 +257,8 @@ export function SearchPanel({
         filters.arrivalPortIds,
         filters.companyId,
         filters.vesselId,
-        filters.direction,
       ),
-    [
-      all,
-      filters.departurePortIds,
-      filters.arrivalPortIds,
-      filters.companyId,
-      filters.vesselId,
-      filters.direction,
-    ],
+    [all, filters.departurePortIds, filters.arrivalPortIds, filters.companyId, filters.vesselId],
   );
   const hasPair = filters.departurePortIds.length > 0 && filters.arrivalPortIds.length > 0;
   const inbound = useMemo(
@@ -334,7 +270,6 @@ export function SearchPanel({
             filters.departurePortIds,
             filters.companyId,
             filters.vesselId,
-            filters.direction === "dz-eu" ? "eu-dz" : "dz-eu",
           )
         : [],
     [
@@ -425,17 +360,8 @@ export function SearchPanel({
   const portsLabel = (ids: string[]) =>
     ids.length === 0 ? "Tous ports" : ids.length === 1 ? fromName(ids) : `${ids.length} ports`;
   const datesLabel = filters.date
-    ? `${shortDay(filters.date)}${filters.roundTrip ? ` → ${filters.returnDate ? shortDay(filters.returnDate) : "retour à définir"}` : ""}${filters.flexDays ? ` ±${filters.flexDays}j` : ""}`
+    ? `${shortDay(filters.date)}${filters.roundTrip && filters.returnDate ? ` → ${shortDay(filters.returnDate)}` : ""}${filters.flexDays ? ` ±${filters.flexDays}j` : ""}`
     : "Dates flexibles";
-  // Bouton principal : il dit ce qu'il va faire, selon ce qui est déjà rempli.
-  const nextLabel =
-    step === 1
-      ? "Suivant : dates →"
-      : !filters.date
-        ? "Pas de date précise →"
-        : filters.roundTrip && !filters.returnDate
-          ? "Retour pas encore décidé →"
-          : "Suivant : voyageurs →";
 
   return (
     <FareProfileContext.Provider value={profile}>
@@ -443,9 +369,7 @@ export function SearchPanel({
         {!editing && homeMode ? (
           <div className="bw-search-welcome">
             <div className="flex items-center justify-between gap-2">
-              <h2>
-                On prend <strong className="bw-brand-red">la route du bled</strong> ?
-              </h2>
+              <h2>On prend le large ?</h2>
               <button
                 type="button"
                 onClick={onOpenItinerary}
@@ -481,58 +405,20 @@ export function SearchPanel({
             </button>
           </section>
         ) : null}
-        {!editing && (filters.companyId || filters.vesselId) ? (
-          <div className="flex flex-wrap gap-1 border-b px-4 py-2" aria-label="Filtres actifs">
-            {filters.companyId && (
-              <button
-                type="button"
-                className="rounded-full border bg-secondary px-2 py-1 text-[11px] font-semibold"
-                aria-label="Retirer le filtre compagnie"
-                onClick={() => set({ companyId: null, vesselId: null })}
-              >
-                {companies.find((c) => c.id === filters.companyId)?.name ?? "Compagnie"} ×
-              </button>
-            )}
-            {filters.vesselId && (
-              <button
-                type="button"
-                className="rounded-full border bg-secondary px-2 py-1 text-[11px] font-semibold"
-                aria-label="Retirer le filtre navire"
-                onClick={() => set({ vesselId: null })}
-              >
-                {vessels.find((v) => v.id === filters.vesselId)?.name ?? "Navire"} ×
-              </button>
-            )}
-          </div>
-        ) : null}
         <section
           ref={searchRef}
           className={`scroll-mt-0 space-y-3 border-b bg-card px-4 pb-4 pt-4 md:bg-white md:px-5 ${editing ? "" : "hidden"}`}
         >
           <div className="flex items-center justify-between gap-2">
             <span className="text-sm font-bold text-foreground">Trouver ma traversée</span>
-            <div className="flex items-center gap-1.5">
-              {active ? (
-                <button
-                  type="button"
-                  onClick={() =>
-                    onFiltersChange({ ...emptyFilters, roundTrip: filters.roundTrip })
-                  }
-                  className="inline-flex h-9 items-center gap-1.5 rounded-full border border-border bg-card px-3 text-xs font-semibold text-muted-foreground hover:bg-secondary hover:text-foreground"
-                >
-                  <RotateCcw className="size-3.5" aria-hidden />
-                  Réinitialiser
-                </button>
-              ) : null}
-              <button
-                type="button"
-                onClick={closeSearch}
-                aria-label="Fermer la recherche"
-                className="grid size-9 shrink-0 place-items-center rounded-full border border-border bg-card text-foreground hover:bg-secondary"
-              >
-                <X className="size-4" aria-hidden />
-              </button>
-            </div>
+            <button
+              type="button"
+              onClick={closeSearch}
+              aria-label="Fermer la recherche"
+              className="grid size-9 shrink-0 place-items-center rounded-full border border-border bg-card text-foreground hover:bg-secondary"
+            >
+              <X className="size-4" aria-hidden />
+            </button>
           </div>
           <div className="flex items-center justify-between gap-2">
             <div
@@ -560,7 +446,10 @@ export function SearchPanel({
               type="button"
               title="Inverser le sens"
               aria-label={`Inverser le sens : actuellement ${reversed ? "Algérie → Europe" : "Europe → Algérie"}`}
-              onClick={() => onFiltersChange(swapDirection(filters))}
+              onClick={() => {
+                setReversed((r) => !r);
+                onFiltersChange({ ...swapDirection(filters), date: null, returnDate: null });
+              }}
               className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-border bg-card px-2.5 py-1.5 text-xs font-semibold text-primary shadow-sm transition hover:bg-primary hover:text-primary-foreground"
             >
               <ArrowLeftRight className="size-3.5" />
@@ -579,7 +468,6 @@ export function SearchPanel({
           <div className={step === 1 ? "grid grid-cols-1 gap-3" : "hidden"}>
             <div className="min-w-0">
               <PortMultiPicker
-                onOpenPort={(id) => onSelect({ type: "port", id })}
                 title="Départ"
                 direction="departure"
                 ports={ports}
@@ -587,13 +475,17 @@ export function SearchPanel({
                 countryFilter={reversed ? isAlgeria : isNotAlgeria}
                 value={filters.departurePortIds}
                 otherSide={filters.arrivalPortIds}
-                scheduledPortIds={departures.length ? scheduledPortIds : undefined}
-                onChange={(ids) => onFiltersChange(withDeparturePorts(filters, ids, ports, routes))}
+                onChange={(ids) =>
+                  onFiltersChange({
+                    ...withDeparturePorts(filters, ids, ports, routes),
+                    date: null,
+                    returnDate: null,
+                  })
+                }
               />
             </div>
             <div className="min-w-0">
               <PortMultiPicker
-                onOpenPort={(id) => onSelect({ type: "port", id })}
                 title="Arrivée"
                 direction="arrival"
                 ports={ports}
@@ -601,8 +493,13 @@ export function SearchPanel({
                 countryFilter={reversed ? isNotAlgeria : isAlgeria}
                 value={filters.arrivalPortIds}
                 otherSide={filters.departurePortIds}
-                scheduledPortIds={departures.length ? scheduledPortIds : undefined}
-                onChange={(ids) => onFiltersChange(withArrivalPorts(filters, ids, ports, routes))}
+                onChange={(ids) =>
+                  onFiltersChange({
+                    ...withArrivalPorts(filters, ids, ports, routes),
+                    date: null,
+                    returnDate: null,
+                  })
+                }
               />
             </div>
           </div>
@@ -613,50 +510,9 @@ export function SearchPanel({
           </StepLabel>
           <div className={step === 2 ? "-mt-1" : "hidden"}>
             <TripCalendar
-              {...(isDesktop
-                ? {
-                    side: "right" as const,
-                    anchor: (
-                      <div className="space-y-2">
-                        <div
-                          className={`grid gap-1.5 ${filters.roundTrip ? "grid-cols-2" : "grid-cols-1"}`}
-                        >
-                          {(filters.roundTrip ? (["out", "ret"] as const) : (["out"] as const)).map(
-                            (leg) => {
-                              const value = leg === "out" ? filters.date : filters.returnDate;
-                              const on = calOpen && calField === leg;
-                              return (
-                                <button
-                                  key={leg}
-                                  type="button"
-                                  disabled={leg === "ret" && !filters.date}
-                                  onClick={() => {
-                                    setCalField(leg);
-                                    setCalOpen(true);
-                                  }}
-                                  className={`flex min-h-12 flex-col items-start justify-center rounded-xl border px-3 py-1.5 text-left transition disabled:opacity-50 ${on ? "border-primary bg-primary/5 ring-2 ring-primary/30" : "border-border bg-card hover:border-primary/60"}`}
-                                >
-                                  <span className="text-[11px] font-bold uppercase tracking-wider text-primary">
-                                    {leg === "out" ? "Aller" : "Retour"}
-                                  </span>
-                                  <span className="text-sm font-semibold">
-                                    {value ? shortDay(value) : "Choisir une date"}
-                                  </span>
-                                </button>
-                              );
-                            },
-                          )}
-                        </div>
-                        <p className="text-[11px] text-muted-foreground">
-                          Le calendrier s’ouvre à droite, sur la carte : jours de départ, vacances
-                          scolaires et souplesse.
-                        </p>
-                      </div>
-                    ),
-                  }
-                : { inline: true })}
-              open={isDesktop ? calOpen : step === 2}
-              onOpenChange={isDesktop ? setCalOpen : () => {}}
+              inline
+              open={step === 2}
+              onOpenChange={() => {}}
               holidaysOn={holidaysOn}
               onHolidaysChange={setHolidaysOn}
               field={calField}
@@ -697,14 +553,17 @@ export function SearchPanel({
             </div>
           </div>
 
-          <div
+          <details
             id="filters-company"
-            className="rounded-2xl border border-border bg-card p-3 text-xs shadow-sm transition-shadow data-[flash=true]:ring-2 data-[flash=true]:ring-primary/50"
+            className="group rounded-xl text-xs transition-shadow data-[flash=true]:ring-2 data-[flash=true]:ring-primary/50"
+            open={companyOpen || Boolean(filters.companyId || filters.vesselId)}
+            onToggle={(e) => setCompanyOpen((e.currentTarget as HTMLDetailsElement).open)}
           >
-            <p className="mb-2 text-[11px] font-bold uppercase tracking-wider text-primary">
-              Compagnie et navire
-            </p>
-            <div className="grid grid-cols-2 gap-1.5">
+            <summary className="flex cursor-pointer list-none items-center gap-1 font-semibold text-muted-foreground hover:text-foreground">
+              <ChevronDown className="size-3.5 transition-transform group-open:rotate-180" />{" "}
+              Compagnie, navire
+            </summary>
+            <div className="mt-2 grid grid-cols-2 gap-1.5">
               <FilterSelect
                 label="Compagnie"
                 open={companyMenuOpen}
@@ -723,20 +582,23 @@ export function SearchPanel({
                 label="Navire"
                 value={filters.vesselId}
                 onChange={(value) => set({ vesselId: value })}
-                options={vessels
-                  .filter(
-                    (vessel) =>
-                      !filters.companyId ||
-                      vesselCompanyIds(vessel.id, vessels, [
-                        ...recentDepartures,
-                        ...departures,
-                      ]).includes(filters.companyId),
-                  )
-                  .map((vessel) => ({ value: vessel.id, label: vessel.name }))}
+                options={vessels.map((vessel) => ({ value: vessel.id, label: vessel.name }))}
               />
             </div>
-          </div>
-          <div className="sticky bottom-0 z-10 -mx-4 flex items-center justify-end gap-1 border-t bg-card/95 px-4 py-2.5 backdrop-blur md:-mx-5 md:px-5">
+          </details>
+          <div className="sticky bottom-0 z-10 -mx-4 flex items-center justify-between gap-1 border-t bg-card/95 px-4 py-2.5 backdrop-blur md:-mx-5 md:px-5">
+            <button
+              type="button"
+              onClick={() => {
+                onFiltersChange({ ...emptyFilters, roundTrip: filters.roundTrip });
+                setStep(firstStep);
+              }}
+              className="text-sm font-semibold text-foreground underline underline-offset-2 disabled:opacity-40"
+              disabled={!active}
+            >
+              <span className="md:hidden">Effacer</span>
+              <span className="max-md:hidden">Effacer tout</span>
+            </button>
             <div className="flex items-center gap-1">
               {step > firstStep ? (
                 <button
@@ -761,12 +623,12 @@ export function SearchPanel({
                 <button
                   type="button"
                   onClick={() => {
-                    if (step === 1) setCalField(filters.date && filters.roundTrip ? "ret" : "out");
+                    if (step === 1) setCalField("out");
                     setStep((s) => (s + 1) as 1 | 2 | 3);
                   }}
                   className="flex h-11 whitespace-nowrap items-center justify-center gap-2 rounded-xl bg-primary px-3 text-sm font-bold text-primary-foreground shadow-md transition hover:opacity-90"
                 >
-                  {nextLabel}
+                  Suivant →
                 </button>
               ) : (
                 <button
@@ -791,7 +653,6 @@ export function SearchPanel({
 
         {!editing && homeMode ? (
           <HomeTraffic
-            filters={filters}
             onSelect={onSelect}
             {...(onTrafficPreview ? { onPreview: onTrafficPreview } : {})}
           />
@@ -816,7 +677,7 @@ export function SearchPanel({
             </div>
           ) : (
             <>
-              {filters.roundTrip ? (
+              {filters.roundTrip && hasPair ? (
                 <RoundTripSection
                   trips={roundTrips}
                   hasPorts={filters.departurePortIds.length + filters.arrivalPortIds.length > 0}
@@ -831,18 +692,6 @@ export function SearchPanel({
                   reportContext={reportContext}
                 />
               ) : (
-                <>
-                {salesClosed && filters.date ? (
-                  <div className="mb-3">
-                    <SalesAlertForm
-                      periodLabel={salesClosed}
-                      periodStart={filters.date}
-                      periodEnd={filters.returnDate ?? filters.date}
-                      fromLabel={filters.departurePortIds.length ? fromName(filters.departurePortIds) : null}
-                      toLabel={filters.arrivalPortIds.length ? fromName(filters.arrivalPortIds) : null}
-                    />
-                  </div>
-                ) : null}
                 <ResultBlock
                   liveByDeparture={liveByDeparture}
                   title={
@@ -889,7 +738,6 @@ export function SearchPanel({
                       : undefined
                   }
                 />
-                </>
               )}
             </>
           )}
@@ -1175,25 +1023,15 @@ function RoundTripSection({
       ))}
     </div>
   );
-  const allMirror = trips.main.length > 0 && trips.main.every((trip) => trip.mirror);
   return (
     <div className="space-y-5">
       <div className="space-y-2.5">
         <div className="flex items-baseline justify-between gap-2">
           <h2 className="font-display text-base font-bold leading-tight">
-            {allMirror
-              ? "Aller-retour même port"
-              : hasPorts
-                ? "Allers-retours pour votre trajet"
-                : "Allers-retours possibles"}
+            {hasPorts ? "Allers-retours pour votre trajet" : "Allers-retours possibles"}
           </h2>
           <span className="text-[11px] text-muted-foreground">Heures locales des ports</span>
         </div>
-        {allMirror ? (
-          <p className="text-[11px] leading-snug text-muted-foreground">
-            Départ et retour depuis les mêmes ports, dans les deux sens.
-          </p>
-        ) : null}
         {trips.main.length ? (
           list(trips.main)
         ) : (
@@ -1215,16 +1053,10 @@ function RoundTripSection({
         )}
       </div>
       {trips.alternatives.length ? (
-        <div className="space-y-2.5 rounded-2xl border border-dashed border-[#c2410c]/40 bg-[#c2410c]/[0.03] p-3">
-          <div>
-            <h2 className="font-display text-base font-bold leading-tight">
-              {hasPorts ? "Alternatives par d’autres ports" : "Retour depuis un autre port"}
-            </h2>
-            <p className="mt-0.5 text-[11px] leading-snug text-muted-foreground">
-              Le retour part d’un port différent de l’arrivée (ex. aller Oran, retour Alger) —
-              pratique pour un road trip ou quand aucune ligne directe n’est publiée.
-            </p>
-          </div>
+        <div className="space-y-2.5">
+          <h2 className="font-display text-base font-bold leading-tight">
+            {hasPorts ? "Alternatives par d’autres ports" : "Combinaisons avec ports différents"}
+          </h2>
           {list(trips.alternatives)}
         </div>
       ) : null}

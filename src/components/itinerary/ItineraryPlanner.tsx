@@ -14,11 +14,7 @@ import {
   Ship,
   Sparkles,
   Wallet,
-  SlidersHorizontal as SlidersHorizontalIcon,
-  Star as StarIcon,
 } from "lucide-react";
-const SlidersHorizontal = SlidersHorizontalIcon;
-const Star = StarIcon;
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import {
   companiesQuery,
@@ -201,7 +197,7 @@ function AddressField({
   const [open, setOpen] = useState(false);
   const [pending, setPending] = useState(false);
   useEffect(() => {
-    if (point || value.trim().length < 2) {
+    if (point || value.trim().length < 3) {
       setSuggestions([]);
       return;
     }
@@ -248,7 +244,7 @@ function AddressField({
           onFocus={() => setOpen(true)}
           onBlur={() => window.setTimeout(() => setOpen(false), 150)}
           required
-          minLength={2}
+          minLength={5}
         />
         {onLocate && (
           <button
@@ -301,14 +297,12 @@ export function ItineraryPlanner({
   onClose,
   onPreview,
   onResultsReady,
-  onBookPeriod,
   active = true,
 }: {
   active?: boolean;
   onClose: () => void;
   onPreview: (preview: ItineraryMapPreview | null) => void;
   onResultsReady?: () => void;
-  onBookPeriod?: (period: string) => void;
 }) {
   const { data: ports = [], isPending: portsPending } = useQuery(portsQuery);
   const { data: routes = [], isPending: routesPending } = useQuery(routesQuery);
@@ -637,87 +631,9 @@ export function ItineraryPlanner({
     );
   }
 
-  const priorityTabs = (compact = false) => (
-    <div
-      className={
-        compact
-          ? "flex shrink-0 items-center rounded-lg bg-secondary p-0.5"
-          : "grid grid-cols-3 gap-1 rounded-xl bg-secondary p-1"
-      }
-      role="group"
-      aria-label="Classer les itinéraires"
-    >
-      {priorities.map(({ id, label, icon: Icon }) => (
-        <div
-          key={id}
-          className={`flex min-w-0 items-center justify-center rounded-lg ${priority === id ? "bg-white text-primary shadow-sm" : "text-muted-foreground"}`}
-        >
-          {id === "recommended" && !compact && (
-            <Popover>
-              <PopoverTrigger asChild>
-                <button
-                  type="button"
-                  aria-label="Comment est choisi le trajet recommandé ?"
-                  className="grid min-h-10 w-7 shrink-0 place-items-center rounded-lg hover:bg-primary/5"
-                >
-                  <Info className="size-3.5" aria-hidden />
-                </button>
-              </PopoverTrigger>
-              <PopoverContent
-                side="bottom"
-                align="start"
-                className="z-[110] w-64 text-xs leading-relaxed"
-              >
-                <p className="font-semibold">Pourquoi ce trajet ?</p>
-                <p className="mt-1 text-muted-foreground">
-                  La distance en voiture compte d’abord ; le prix ne prime que lorsque l’écart est
-                  important. Pour le tarif seul, choisissez « Prix ».
-                </p>
-              </PopoverContent>
-            </Popover>
-          )}
-          <button
-            type="button"
-            title={
-              id === "driving"
-                ? "Moins de kilomètres en voiture"
-                : id === "recommended"
-                  ? "Distance d’abord, prix si l’écart est important"
-                  : undefined
-            }
-            aria-pressed={priority === id}
-            onClick={() => {
-              setPriority(id);
-              setSelectedId(null);
-            }}
-            aria-label={compact ? label : undefined}
-            className={
-              compact
-                ? "grid size-7 place-items-center rounded-lg"
-                : "inline-flex min-h-10 min-w-0 flex-1 items-center justify-center gap-1 rounded-lg pr-1 text-[11px] font-semibold"
-            }
-          >
-            {compact ? (
-              id === "recommended" ? (
-                <Star className="size-4" fill={priority === id ? "currentColor" : "none"} aria-hidden />
-              ) : (
-                <Icon className="size-4" aria-hidden />
-              )
-            ) : (
-              <>
-                {id !== "recommended" && <Icon className="size-3.5 shrink-0" aria-hidden />}
-                {label}
-              </>
-            )}
-          </button>
-        </div>
-      ))}
-    </div>
-  );
-
   return (
     <section id="itineraire" className="min-h-full min-w-0 w-full bg-[#fffdf8]">
-      <div className="sticky top-0 z-10 flex items-center justify-between gap-3 border-b border-border bg-[#e9f3ef] px-4 py-1.5">
+      <div className="sticky top-0 z-10 flex items-center justify-between gap-3 border-b border-border bg-[#e9f3ef] px-4 py-2.5">
         <div>
           <h2 className="font-display text-base font-bold uppercase tracking-tight text-foreground sm:text-lg">
             Le trajet porte à porte
@@ -732,8 +648,8 @@ export function ItineraryPlanner({
         </button>
       </div>
       {roadAccess && !filtersOpen && (
-        <div className="flex items-center gap-1.5 border-b border-border px-3 py-1.5">
-          <div className="min-w-0 flex-1">
+        <div className="flex items-center justify-between gap-3 border-b border-border px-4 py-2.5">
+          <div className="min-w-0">
             <p className="truncate text-xs font-semibold">
               {roadAccess.origin} → {roadAccess.destination}
             </p>
@@ -746,15 +662,12 @@ export function ItineraryPlanner({
               {children > 0 ? ` · ${children} enfant${children > 1 ? "s" : ""}` : ""}
             </p>
           </div>
-          {priorityTabs(true)}
           <button
             type="button"
             onClick={() => setFiltersOpen(true)}
-            aria-label="Modifier la recherche"
-            title="Modifier la recherche"
-            className="grid size-8 shrink-0 place-items-center rounded-lg border border-border text-primary"
+            className="shrink-0 rounded-lg border border-border px-2.5 py-1.5 text-xs font-bold text-primary"
           >
-            <SlidersHorizontal className="size-4" aria-hidden />
+            Modifier
           </button>
         </div>
       )}
@@ -922,14 +835,69 @@ export function ItineraryPlanner({
         )}
       </form>
       {roadAccess && (
-        <div className="px-3 py-2 sm:px-4">
-          {filtersOpen && priorityTabs()}
+        <div className="border-t border-border px-3 py-3 sm:px-4">
+          <div
+            className="grid grid-cols-3 gap-1 rounded-xl bg-secondary p-1"
+            role="group"
+            aria-label="Classer les itinéraires"
+          >
+            {priorities.map(({ id, label, icon: Icon }) => (
+              <div
+                key={id}
+                className={`flex min-w-0 items-center justify-center rounded-lg ${priority === id ? "bg-white text-primary shadow-sm" : "text-muted-foreground"}`}
+              >
+                {id === "recommended" && (
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <button
+                        type="button"
+                        aria-label="Comment est choisi le trajet recommandé ?"
+                        className="grid min-h-10 w-7 shrink-0 place-items-center rounded-lg hover:bg-primary/5"
+                      >
+                        <Info className="size-3.5" aria-hidden />
+                      </button>
+                    </PopoverTrigger>
+                    <PopoverContent
+                      side="bottom"
+                      align="start"
+                      className="z-[110] w-64 text-xs leading-relaxed"
+                    >
+                      <p className="font-semibold">Pourquoi ce trajet ?</p>
+                      <p className="mt-1 text-muted-foreground">
+                        Équilibre entre prix estimé, kilomètres en voiture et durée totale. Avec des
+                        enfants, la route et la durée comptent davantage. Pour le tarif seul,
+                        choisissez « Prix ».
+                      </p>
+                    </PopoverContent>
+                  </Popover>
+                )}
+                <button
+                  type="button"
+                  title={id === "driving" ? "Moins de kilomètres en voiture" : undefined}
+                  aria-pressed={priority === id}
+                  onClick={() => {
+                    setPriority(id);
+                    setSelectedId(null);
+                  }}
+                  className="inline-flex min-h-10 min-w-0 flex-1 items-center justify-center gap-1 rounded-lg pr-1 text-[11px] font-semibold"
+                >
+                  {id !== "recommended" && <Icon className="size-3.5 shrink-0" aria-hidden />}
+                  {label}
+                </button>
+              </div>
+            ))}
+          </div>
+          {sorted.some((option) => option.sailing.isSimulation) && (
+            <p className="mt-2 text-[11px] text-muted-foreground">
+              Simulation : liaisons et prix estimés, sans départ confirmé pour cette période.
+            </p>
+          )}
           {sorted.length === 0 ? (
-            <p className="mt-2 rounded-xl bg-secondary p-3 text-sm">
+            <p className="mt-3 rounded-xl bg-secondary p-3 text-sm">
               Aucune liaison connue pour comparer ces ports.
             </p>
           ) : (
-            <div className="-mx-1 flex snap-x snap-mandatory gap-2 overflow-x-auto px-1 pb-1">
+            <div className="mt-3 grid min-w-0 grid-cols-1 gap-2">
               {sorted.slice(0, 6).map((option, index) => (
                 <article
                   key={option.sailing.departure.id}
@@ -954,7 +922,7 @@ export function ItineraryPlanner({
                       setSelectedId(option.sailing.departure.id);
                     }
                   }}
-                  className={`w-[82%] min-w-[250px] max-w-[330px] shrink-0 cursor-pointer snap-start rounded-2xl border bg-white p-3 transition-colors hover:border-primary/60 focus-visible:outline-2 focus-visible:outline-primary ${selected?.sailing.departure.id === option.sailing.departure.id ? "border-primary ring-2 ring-primary/20" : "border-border"}`}
+                  className={`min-w-0 w-full cursor-pointer rounded-2xl border bg-white p-3 transition-colors hover:border-primary/60 focus-visible:outline-2 focus-visible:outline-primary ${selected?.sailing.departure.id === option.sailing.departure.id ? "border-primary ring-2 ring-primary/20" : "border-border"}`}
                 >
                   <div className="flex items-start justify-between gap-2">
                     <div className="min-w-0">
@@ -976,6 +944,22 @@ export function ItineraryPlanner({
                     <strong className="shrink-0 whitespace-nowrap text-base text-primary">
                       ~{numberFormat.format(option.totalEuro)} €
                     </strong>
+                  </div>
+                  <div className="mt-2">
+                    <JourneyGuide
+                      animated={selected?.sailing.departure.id === option.sailing.departure.id}
+                    />
+                  </div>
+                  <div className="mt-1 grid grid-cols-3 gap-1 text-center text-[10px] font-semibold text-foreground">
+                    <span>
+                      {formatDuration(option.originRoad.durationMin)} ·{" "}
+                      {Math.round(option.originRoad.distanceKm)} km
+                    </span>
+                    <span>{formatDuration(option.sailing.durationMin ?? 0)} de ferry</span>
+                    <span>
+                      {formatDuration(option.destinationRoad.durationMin)} ·{" "}
+                      {Math.round(option.destinationRoad.distanceKm)} km
+                    </span>
                   </div>
                   <div className="mt-2 flex flex-wrap items-center justify-between gap-x-2 gap-y-1 border-t border-border pt-2 text-[11px]">
                     <strong>{formatDuration(option.totalMinutes)} porte à porte</strong>
@@ -1002,61 +986,21 @@ export function ItineraryPlanner({
                         : "Voir les traversées"}
                     </a>
                   </div>
-                  <div className="mt-2">
-                    <JourneyGuide
-                      animated={selected?.sailing.departure.id === option.sailing.departure.id}
+                  {option.sailing.isSimulation && !hasPublishedForPeriod && (
+                    <ItineraryAlertForm
+                      routeId={option.sailing.route.id}
+                      from={option.sailing.from.name}
+                      to={option.sailing.to.name}
+                      period={period}
+                      origin={roadAccess.origin}
+                      destination={roadAccess.destination}
+                      vehicle={vehicle}
+                      adults={adults}
+                      children={children}
                     />
-                  </div>
-                  <div className="mt-1 grid grid-cols-3 gap-1 text-center text-[10px] font-semibold text-foreground">
-                    <span>
-                      {formatDuration(option.originRoad.durationMin)} ·{" "}
-                      {Math.round(option.originRoad.distanceKm)} km
-                    </span>
-                    <span>{formatDuration(option.sailing.durationMin ?? 0)} de ferry</span>
-                    <span>
-                      {formatDuration(option.destinationRoad.durationMin)} ·{" "}
-                      {Math.round(option.destinationRoad.distanceKm)} km
-                    </span>
-                  </div>
+                  )}
                 </article>
               ))}
-            </div>
-          )}
-          {sorted.some((option) => option.sailing.isSimulation) && (
-            <p className="mt-1 text-[11px] leading-snug text-muted-foreground">
-              Simulation : liaisons et prix estimés, sans départ confirmé pour cette période.
-            </p>
-          )}
-          {sorted.length > 0 && hasPublishedForPeriod && onBookPeriod && (
-            <div className="mt-3 rounded-xl border border-primary/30 bg-primary/5 p-3 text-xs">
-              <p className="font-semibold">
-                Des départs sont publiés pour cette période : vous pouvez réserver.
-              </p>
-              <button
-                type="button"
-                onClick={() => onBookPeriod(period)}
-                className="mt-2 inline-flex min-h-10 w-full items-center justify-center gap-2 rounded-lg bg-primary px-3 font-bold text-white transition hover:brightness-110"
-              >
-                Voir les traversées et réserver <ArrowRight className="size-4" aria-hidden />
-              </button>
-            </div>
-          )}
-          {sorted.length > 0 && !hasPublishedForPeriod && (
-            <div className="mt-3 rounded-xl border border-red-200 bg-red-50/60 p-3 text-xs">
-              <p className="font-semibold text-red-800">
-                Aucun calendrier commercial n’est encore publié pour cette période.
-              </p>
-              <ItineraryAlertForm
-                routeId={(selected ?? sorted[0]!).sailing.route.id}
-                from={(selected ?? sorted[0]!).sailing.from.name}
-                to={(selected ?? sorted[0]!).sailing.to.name}
-                period={period}
-                origin={roadAccess.origin}
-                destination={roadAccess.destination}
-                vehicle={vehicle}
-                adults={adults}
-                children={children}
-              />
             </div>
           )}
           {geometryNote && (

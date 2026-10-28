@@ -30,11 +30,9 @@ export interface FleetShip {
 }
 
 const HOUR = 3600_000;
-// 48 h avant le départ (pour voir les départs des 2 prochains jours)
-const DOCK_BEFORE_DEPARTURE = 48 * HOUR;
+const DOCK_BEFORE_DEPARTURE = 36 * HOUR;
 const DOCK_AFTER_ARRIVAL = 12 * HOUR;
-// Même fenêtre de 48 h pour un navire non identifié
-const ANONYMOUS_DOCK_BEFORE = 48 * HOUR;
+const ANONYMOUS_DOCK_BEFORE = 6 * HOUR;
 
 function bearing(from: LngLat, to: LngLat): number {
   const dLng = ((to[0] - from[0]) * Math.PI) / 180;
@@ -54,7 +52,7 @@ export function buildFleet(
   now: number,
 ): FleetShip[] {
   const routeById = new Map(
-    routes.map((route) => [route.id, route]),
+    routes.filter((route) => route.status === "active").map((route) => [route.id, route]),
   );
   const portById = new Map(
     ports.filter((port) => port.status === "active").map((port) => [port.id, port]),
@@ -127,7 +125,7 @@ export function buildFleet(
   groups.forEach((legs, key) => {
     legs.sort((a, b) => a.start - b.start);
     const vessel = key.startsWith("anon:") ? undefined : vesselById.get(key);
-    const name = vessel?.name ?? "Navire non identifié";
+    const name = vessel?.name ?? "Ferry";
     const live = vessel ? liveByVessel.get(vessel.id) : undefined;
 
     // Signal AIS récent : la position réelle prime sur l'horaire (en mer ou à quai).
@@ -222,9 +220,9 @@ export function buildFleet(
     const offshoreDown = port?.country_code !== "DZ"; // ports européens : mer au sud ; ports algériens : mer au nord
     list.sort((a, b) => a.name.localeCompare(b.name));
     list.forEach((ship, index) => {
-            // Collés au quai : léger éventail le long de la côte, sans partir au large.
-      ship.dx = (index - (list.length - 1) / 2) * 18;
-      ship.dy = offshoreDown ? 10 : -10;
+      // L'icône reste hors de la cible tactile du port (44 px) et des ferrys voisins.
+      ship.dx = (index - (list.length - 1) / 2) * 52;
+      ship.dy = offshoreDown ? 38 : -38;
       ship.course = index % 2 === 0 ? 90 : 270;
     });
   });

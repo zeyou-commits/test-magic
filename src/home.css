@@ -1111,23 +1111,6 @@ html {
   pointer-events: none;
   z-index: 35;
 }
-.bw-fleet-picker {
-  z-index: 35;
-}
-.bw-fleet-picker .maplibregl-popup-tip {
-  display: none;
-}
-.bw-fleet-picker .maplibregl-popup-content {
-  border: 1px solid var(--border);
-  border-radius: 16px;
-  background: var(--background);
-  color: var(--foreground);
-  box-shadow: 0 8px 28px rgb(21 51 67 / 16%);
-}
-.bw-fleet-picker [role="dialog"] {
-  max-height: min(38dvh, 18rem);
-  overflow-y: auto;
-}
 .bw-vessel-tooltip .maplibregl-popup-content {
   padding: 12px 14px;
   border: 1px solid var(--border);
@@ -1850,15 +1833,14 @@ html {
   flex: 1;
 }
 .bw-ship-photo {
-  width: 132px;
-  height: 100px;
+  width: 84px;
+  height: 76px;
   flex: none;
   border-radius: 18px;
   overflow: hidden;
   display: grid;
   place-items: center;
-  /* Fond blanc : les bateaux détourés flottent proprement, sans effet gris. */
-  background: #ffffff;
+  background: #e7efef;
   color: #1e5b7a;
 }
 .bw-ship-photo img {
@@ -2009,105 +1991,17 @@ html {
 }
 .bw-crossing-track > i {
   position: absolute;
-  bottom: -6px;
-  transform: translateX(-50%);
-  display: block;
-  line-height: 0;
-  pointer-events: none;
-}
-/* Mini-ferry : flotte librement sur la barre, sans pastille. */
-.bw-mini-ferry {
-  overflow: visible;
-  filter: drop-shadow(0 2px 2px rgba(22, 50, 74, 0.18));
-}
-.bw-mini-ferry-hull {
-  transform-box: view-box;
-  transform-origin: 34px 28px;
-  animation: bw-float 2.4s ease-in-out infinite;
-}
-.bw-mf-hull {
-  fill: #16324a;
-}
-.bw-mf-stripe {
-  stroke: #e63946;
-  stroke-width: 1.6;
-}
-.bw-mf-white {
-  fill: #ffffff;
-}
-.bw-mf-stroke {
-  stroke: #c9d6de;
-  stroke-width: 0.6;
-}
-.bw-mf-window {
-  fill: #2a9fd6;
-}
-.bw-mf-funnel {
-  fill: #f4732a;
-}
-.bw-mf-water {
-  fill: none;
-  stroke: #5fb3e0;
-  stroke-width: 1.4;
-  stroke-linecap: round;
-  stroke-dasharray: 6 4;
-  animation: bw-wake 1.2s linear infinite;
-}
-.bw-mini-ferry-wake path {
-  fill: none;
-  stroke: #8fcbea;
-  stroke-width: 1.4;
-  stroke-linecap: round;
-  stroke-dasharray: 3 3;
-  animation: bw-wake 0.8s linear infinite;
-}
-.bw-smoke {
-  fill: #9aa5ad;
-  transform-box: fill-box;
-  transform-origin: center;
-  animation: bw-smoke 2.2s ease-out infinite;
-  opacity: 0;
-}
-.bw-smoke-2 {
-  animation-delay: 0.73s;
-}
-.bw-smoke-3 {
-  animation-delay: 1.46s;
-}
-@keyframes bw-smoke {
-  0% {
-    transform: translate(0, 0) scale(0.5);
-    opacity: 0;
-  }
-  20% {
-    opacity: 0.85;
-  }
-  100% {
-    transform: translate(-14px, -8px) scale(2);
-    opacity: 0;
-  }
-}
-@keyframes bw-float {
-  0%,
-  100% {
-    transform: translateY(0) rotate(-2deg);
-  }
-  50% {
-    transform: translateY(-1.5px) rotate(2deg);
-  }
-}
-@keyframes bw-wake {
-  to {
-    stroke-dashoffset: -10;
-  }
-}
-@media (prefers-reduced-motion: reduce) {
-  .bw-smoke,
-  .bw-mini-ferry-hull,
-  .bw-mf-water,
-  .bw-mini-ferry-wake path {
-    animation: none;
-  }
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 25px;
+  height: 25px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: #0e7a43;
+  color: white;
+  border: 3px solid #fffdf9;
+  box-shadow: 0 2px 7px #16324a15;
 }
 .bw-crossing-metrics {
   display: flex;
@@ -2656,8 +2550,8 @@ html {
 }
 @media (max-width: 359px) {
   .bw-ship-photo {
-    width: 104px;
-    height: 80px;
+    width: 62px;
+    height: 62px;
     border-radius: 14px;
   }
   .bw-ship-heading {
@@ -2838,7 +2732,7 @@ html {
 .bw-compact-track {
   position: relative;
   height: 4px;
-  margin: 6px 2px 8px;
+  margin: 10px 2px 15px;
   border-radius: 8px;
   background: #d8e7de;
 }
@@ -2848,25 +2742,20 @@ html {
   border-radius: inherit;
   background: #0b8145;
 }
-.bw-compact-track {
-  margin-top: 26px;
-}
 .bw-compact-track > i {
   position: absolute;
-  bottom: -5px;
-  transform: translateX(-50%);
+  top: 50%;
   display: flex;
-  align-items: flex-end;
-  gap: 2px;
-  line-height: 0;
+  align-items: center;
+  gap: 3px;
+  transform: translate(-50%, -50%);
+  padding: 3px 5px;
+  border-radius: 9px;
+  background: #fff;
+  border: 1px solid #d2e5d7;
   color: #08783f;
-  font: 800 10px/1 sans-serif;
-  font-style: normal;
+  font: 700 10px/1.2 sans-serif;
   white-space: nowrap;
-  pointer-events: none;
-}
-.bw-compact-track > i > b {
-  margin-bottom: 12px;
 }
 
 @media (max-width: 767px) {
@@ -2894,43 +2783,4 @@ html {
   .bw-home-traffic {
     padding-top: 8px;
   }
-}
-
-.bw-brand-red {
-  color: #cf4427;
-  font-weight: 800;
-}
-
-/* Fiche navire : en-tête logo + nom, grande photo, chiffres incrustés */
-.bw-ship-hero { margin-bottom: 12px; }
-.bw-ship-hero-title { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
-.bw-ship-hero-logo { flex: none; border-radius: 12px; }
-.bw-ship-hero-title h2 {
-  font-size: 19px; line-height: 1.15; font-weight: 750; letter-spacing: -0.3px;
-  margin: 0; overflow-wrap: anywhere;
-}
-.bw-ship-hero-company { margin: 1px 0 0; font-size: 12px; color: var(--muted-foreground); }
-.bw-ship-hero-photo { border-radius: 18px; overflow: hidden; background: #ffffff; border: 1px solid #e8eee9; }
-.bw-ship-hero-photo .bw-ship-photo { width: 100%; height: auto; aspect-ratio: 16 / 9; border-radius: 0; }
-.bw-ship-hero-photo .bw-ship-photo img { object-fit: contain; object-position: center; }
-/* Réglette chiffres, posée sous la photo, aux couleurs du site. */
-.bw-ship-hero-stats {
-  margin: 6px 0 0;
-  display: flex; justify-content: space-between; align-items: center; gap: 8px;
-  background: var(--muted); border: 1px solid var(--border); border-radius: 12px;
-  padding: 6px 12px;
-}
-.bw-ship-hero-stats > div { display: flex; align-items: baseline; gap: 4px; flex: none; }
-.bw-ship-hero-stats svg { flex: none; align-self: center; color: var(--primary); }
-.bw-ship-hero-stats dt { font-size: 10px; color: var(--muted-foreground); white-space: nowrap; }
-.bw-ship-hero-stats dt::after { content: " :"; }
-.bw-ship-hero-stats dd { margin: 0; font-size: 12px; font-weight: 750; white-space: nowrap; }
-@media (max-width: 430px) {
-  .bw-ship-hero-stats { padding: 5px 9px; gap: 4px; }
-  .bw-ship-hero-stats dt { font-size: 9px; }
-  .bw-ship-hero-stats dd { font-size: 11px; }
-}
-/* Tout petit écran : le libellé suffit, l'icône céde la place. */
-@media (max-width: 360px) {
-  .bw-ship-hero-stats svg { display: none; }
 }

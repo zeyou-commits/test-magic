@@ -1,12 +1,10 @@
 import { useAuth } from "@/hooks/useAuth";
-import { ArrowRight, Navigation, Waves } from "lucide-react";
+import { ArrowRight, Navigation, Ship, Waves } from "lucide-react";
 import { crossingProgress } from "@/lib/ferry/crossingProgress";
 import type { Departure, Port } from "@/lib/ferry/types";
 import { formatAge, type LiveShip } from "@/lib/ferry/tracking";
 import { portTimeZone } from "@/lib/ferry/time";
 import { TrackingTimes } from "./TrackingTimes";
-
-import { MiniFerry } from "./MiniFerry";
 
 export function CrossingCard({
   departure,
@@ -51,7 +49,8 @@ export function CrossingCard({
         <ArrowRight size={17} aria-hidden />
         <strong>{to.name}</strong>
       </div>
-      {progress.ratio !== null ? (
+      {progress.ratio !== null &&
+      (at >= Date.parse(departure.departure_at) || progress.signal?.phase === "sea") ? (
         <div className="bw-crossing-progress">
           <div className="bw-crossing-progress-label">
             <span>{sourceLabel}</span>
@@ -67,7 +66,7 @@ export function CrossingCard({
           >
             <span style={{ width: `${progress.ratio * 100}%` }} />
             <i style={{ left: `${Math.max(4, Math.min(96, progress.ratio * 100))}%` }}>
-              <MiniFerry size={62} />
+              <Ship size={15} aria-hidden />
             </i>
           </div>
         </div>

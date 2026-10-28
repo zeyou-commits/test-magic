@@ -373,7 +373,18 @@ export function PortView({
                         );
                       })}
                     </ul>
-                  ) : (
+                  ) : null}
+                  {movements.length > visibleCount ? (
+                    <Button
+                      variant="outline"
+                      className="mt-2 w-full"
+                      onClick={() => setVisibleCount((count) => count + 8)}
+                    >
+                      Voir les {Math.min(8, movements.length - visibleCount)} suivants (
+                      {movements.length - visibleCount} restants)
+                    </Button>
+                  ) : null}
+                  {movements.length ? null : (
                     <p className="pv-empty">
                       {scheduleTab === "departures"
                         ? "Aucun départ connu à venir depuis ce port."

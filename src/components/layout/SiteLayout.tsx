@@ -108,9 +108,7 @@ export function SiteHeader() {
         </nav>
         <div className="bw-header-actions">
           <HeaderInbox />
-          <span className="md:hidden">
-            <UserMenu compact iconOnly />
-          </span>
+          {/* Sur mobile, le compte est l'onglet « Moi » de la barre du bas. */}
           <span className="hidden md:inline-flex">
             <UserMenu compact iconOnly />
           </span>

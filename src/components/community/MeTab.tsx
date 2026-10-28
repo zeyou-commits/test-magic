@@ -1,7 +1,18 @@
 import { useState } from "react";
-import { Link } from "@tanstack/react-router";
+import { Link, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ChevronRight, Eye, Heart, Plus, Smile, UserRound, X } from "lucide-react";
+import {
+  Bell,
+  ChevronRight,
+  Eye,
+  Heart,
+  LogOut,
+  Plus,
+  Shield,
+  Smile,
+  UserRound,
+  X,
+} from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
 import { useMyTrip, tripEnd } from "@/lib/ferry/myTrip";
@@ -82,7 +93,8 @@ export function MeTab({ className }: { className: string }) {
 }
 
 function MeSheet({ open, onOpenChange }: { open: boolean; onOpenChange: (open: boolean) => void }) {
-  const { user } = useAuth();
+  const { user, roles, signOut } = useAuth();
+  const navigate = useNavigate();
   const client = useQueryClient();
   const me = useQuery(myTravellerQuery(user?.id)).data;
   const moods = useQuery(moodsQuery).data ?? [];
@@ -155,6 +167,28 @@ function MeSheet({ open, onOpenChange }: { open: boolean; onOpenChange: (open: b
               }}
             >
               <Eye size={16} aria-hidden /> Mon profil public <ChevronRight size={15} aria-hidden />
+            </button>
+            <Link to="/compte" hash="notifications" onClick={close}>
+              <Bell size={16} aria-hidden /> Mes notifications{" "}
+              <ChevronRight size={15} aria-hidden />
+            </Link>
+            {roles.length ? (
+              <Link to="/admin" onClick={close}>
+                <Shield size={16} aria-hidden /> Back-office <ChevronRight size={15} aria-hidden />
+              </Link>
+            ) : null}
+            {/* Le menu du compte n'est plus dans l'en-tête sur mobile : la déconnexion est ici. */}
+            <button
+              type="button"
+              className="bw-me-sheet__logout"
+              onClick={async () => {
+                close();
+                client.clear();
+                await signOut();
+                void navigate({ to: "/auth", replace: true });
+              }}
+            >
+              <LogOut size={16} aria-hidden /> Se déconnecter
             </button>
           </nav>
         </SheetContent>

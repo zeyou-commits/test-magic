@@ -4366,6 +4366,8 @@ button.bw-tavatar:focus-visible {
   border-width: 1.5px;
 }
 .bw-me-tab__bubble {
+  /* Devant le rond du cabas. */
+  z-index: 2;
   position: absolute;
   top: -12px;
   left: 50%;
@@ -4502,11 +4504,21 @@ button.bw-tavatar:focus-visible {
 /* ── Bouton « Signaler » flottant sur mobile, fixe au-dessus de la barre du bas ──
    Il est dans la carte : le volet le recouvre quand il monte. */
 @media (max-width: 767px) {
+  /* Flotte au-dessus du bord du volet (position calculée), caché en plein écran. */
   .bw-report {
+    position: fixed;
     top: auto;
     right: 14px;
-    /* Juste au-dessus du volet replié (8 rem) : visible sur la carte, recouvert dès que le volet monte. */
-    bottom: calc(3.5rem + env(safe-area-inset-bottom) + 8rem + 12px);
+    bottom: var(--fab-bottom, calc(3.5rem + env(safe-area-inset-bottom) + 8rem + 12px));
+    z-index: 65;
+    transition:
+      opacity 0.2s ease,
+      transform 0.2s ease;
+  }
+  .bw-report[data-hidden] {
+    opacity: 0;
+    pointer-events: none;
+    transform: translateY(12px);
   }
   .bw-report-fab--mobile {
     position: relative;
@@ -4635,4 +4647,10 @@ button.bw-tavatar:focus-visible {
   display: inline-flex;
   gap: 1px;
   color: #c9d3ce;
+}
+.bw-me-sheet__logout {
+  color: #b42318 !important;
+}
+.bw-me-sheet__logout svg:first-child {
+  color: #b42318 !important;
 }

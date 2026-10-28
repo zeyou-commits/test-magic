@@ -112,6 +112,37 @@ export function QuickReport({
   // Point vert sur le bouton quand on est près d'un port (moins de 3 km). Seulement si la position
   // est déjà autorisée : on ne la demande jamais pour ça. Rien n'est enregistré.
   const [nearPort, setNearPort] = useState<string | null>(null);
+  // Mobile : le bouton flotte juste au-dessus du bord du volet (replié ou à mi-hauteur) et ne se
+  // cache que lorsque le volet est en plein écran.
+  const wrapRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!isMobile) return;
+    const wrap = wrapRef.current;
+    const panel = document.querySelector<HTMLElement>(".bw-map-panel");
+    const stage = document.querySelector<HTMLElement>(".bw-map-stage");
+    if (!wrap) return;
+    const place = () => {
+      const full = stage?.dataset["panelFull"] === "true";
+      const top = panel ? panel.getBoundingClientRect().top : window.innerHeight - 56;
+      const hidden = full || top < window.innerHeight * 0.3;
+      wrap.toggleAttribute("data-hidden", hidden);
+      wrap.style.setProperty("--fab-bottom", `${Math.round(window.innerHeight - top + 12)}px`);
+    };
+    place();
+    const resize = new ResizeObserver(place);
+    if (panel) resize.observe(panel);
+    const attributes = new MutationObserver(place);
+    if (stage)
+      attributes.observe(stage, { attributes: true, attributeFilter: ["data-panel-full"] });
+    window.addEventListener("resize", place);
+    window.addEventListener("scroll", place, { passive: true });
+    return () => {
+      resize.disconnect();
+      attributes.disconnect();
+      window.removeEventListener("resize", place);
+      window.removeEventListener("scroll", place);
+    };
+  }, [isMobile]);
   useEffect(() => {
     if (!isMobile || !ports.length || !("permissions" in navigator) || !navigator.geolocation)
       return;
@@ -597,7 +628,7 @@ export function QuickReport({
   const title = step === "done" ? "Signalement envoyé" : "Que voyez-vous ?";
 
   return (
-    <div className="bw-report">
+    <div className="bw-report" ref={wrapRef}>
       {isMobile ? (
         /* Sur mobile : bouton jaune fixe au-dessus de la barre du bas, comme Waze. Le volet le recouvre
            quand il monte. Point vert : vous êtes près d'un port. */

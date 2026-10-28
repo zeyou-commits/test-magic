@@ -3,18 +3,18 @@
 > Information indépendante pour les ferries Europe–Algérie et la préparation du voyage.
 
 ## Pages principales
-- [Carte des ferries](https://test-magic.lovable.app/)
-- [Horaires](https://test-magic.lovable.app/horaires)
-- [Ports](https://test-magic.lovable.app/ports)
-- [Lignes](https://test-magic.lovable.app/lignes)
-- [Compagnies](https://test-magic.lovable.app/compagnies)
-- [Guide et dossiers](https://test-magic.lovable.app/guide)
-- [Véhicules de moins de trois ans](https://test-magic.lovable.app/vehicules-moins-3-ans)
-- [Voyage en Algérie](https://test-magic.lovable.app/voyage-algerie)
-- [Dossiers bateaux](https://test-magic.lovable.app/bateaux)
-- [Points de covoiturage](https://test-magic.lovable.app/covoiturage)
-- [Simulateurs](https://test-magic.lovable.app/simulateurs)
-- [Méthode et sources](https://test-magic.lovable.app/methode-editoriale)
+- [Carte des ferries](https://www.bledway.com/)
+- [Horaires](https://www.bledway.com/horaires)
+- [Ports](https://www.bledway.com/ports)
+- [Lignes](https://www.bledway.com/lignes)
+- [Compagnies](https://www.bledway.com/compagnies)
+- [Guide et dossiers](https://www.bledway.com/guide)
+- [Véhicules de moins de trois ans](https://www.bledway.com/vehicules-moins-3-ans)
+- [Voyage en Algérie](https://www.bledway.com/voyage-algerie)
+- [Dossiers bateaux](https://www.bledway.com/bateaux)
+- [Points de covoiturage](https://www.bledway.com/covoiturage)
+- [Simulateurs](https://www.bledway.com/simulateurs)
+- [Méthode et sources](https://www.bledway.com/methode-editoriale)
 
 ## Portée des informations
 Les horaires et affectations se confirment auprès des compagnies. Les formalités se confirment auprès des autorités compétentes. Les simulateurs utilisent les données saisies par le visiteur et ne certifient ni prix ni éligibilité.

@@ -2,4 +2,4 @@ User-agent: *
 Allow: /
 Disallow: /api/
 
-Sitemap: https://test-magic.lovable.app/sitemap.xml
+Sitemap: https://www.bledway.com/sitemap.xml

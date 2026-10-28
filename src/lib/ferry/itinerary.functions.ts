@@ -54,7 +54,7 @@ async function photonSearch(text: string, countryCode?: string): Promise<Place[]
   url.searchParams.set("limit", "12");
   url.searchParams.set("lang", "fr");
   if (countryCode) url.searchParams.set("countrycode", countryCode);
-  const response = await fetch(url, { headers: { "User-Agent": "BledWay/1.0 (https://test-magic.vercel.app)" }, signal: AbortSignal.timeout(12000) });
+  const response = await fetch(url, { headers: { "User-Agent": "BledWay/1.0 (https://www.bledway.com)" }, signal: AbortSignal.timeout(12000) });
   if (!response.ok) throw new Error("La recherche d'adresse est momentanément indisponible.");
   const data = await response.json() as { features?: { geometry?: { coordinates?: number[] }; properties?: { name?: string; housenumber?: string; street?: string; postcode?: string; city?: string; country?: string; countrycode?: string } }[] };
   return (data.features ?? []).flatMap((feature) => {

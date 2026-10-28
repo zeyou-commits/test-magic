@@ -13,7 +13,7 @@ import {
   useRef,
   useState,
 } from "react";
-import { ClientOnly, createFileRoute } from "@tanstack/react-router";
+import { ClientOnly, createFileRoute, useRouterState } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { SidePanel } from "@/components/panel/SidePanel";
 import {
@@ -72,8 +72,10 @@ const MIDDLE_RATIO = 0.68;
 const DESKTOP_PANEL = 420;
 
 function Index() {
+  // Même source côté serveur et navigateur : l'URL du routeur (évite les écarts de rendu).
+  const initialSearch = useRouterState({ select: (state) => state.location.searchStr });
   const [selection, setSelection] = useState<Selection | null>(() =>
-    typeof window === "undefined" ? null : selectionFromUrl(window.location.search),
+    selectionFromUrl(initialSearch),
   );
   const [selectionHistory, setSelectionHistory] = useState<Selection[]>([]);
   const handleSelect = (newSelection: Selection | null, peek = false) => {
@@ -137,7 +139,7 @@ function Index() {
           : "Précédent"
       : "Accueil";
   const [filters, setFiltersState] = useState<Filters>(() =>
-    typeof window === "undefined" ? emptyFilters : filtersFromUrl(window.location.search),
+    filtersFromUrl(initialSearch),
   );
   const [trafficPreview, setTrafficPreview] = useState<MapPreview | null>(null);
   const [lineVisibility, setLineVisibility] = useState<LineVisibility>("all");
@@ -146,7 +148,7 @@ function Index() {
   const [panelLevel, setPanelLevel] = useState<0 | 1 | 2>(1);
   const [peekSelectionKey, setPeekSelectionKey] = useState<string | null>(null);
   const [panelMode, setPanelMode] = useState<"departures" | "search" | "itinerary" | null>(() =>
-    typeof window !== "undefined" && hasActiveFilters(filtersFromUrl(window.location.search))
+    hasActiveFilters(filtersFromUrl(initialSearch))
       ? "departures"
       : null,
   );
@@ -583,7 +585,7 @@ function Index() {
       );
 
       const timeZone = portTimeZone(port);
-      const traffic = portTraffic(port.id, routes, departures);
+      const traffic = portTraffic(port.id, routes, allDepartures);
       meta[port.id] = {
         departureCount: traffic.departures.length,
         arrivalCount: traffic.arrivals.length,

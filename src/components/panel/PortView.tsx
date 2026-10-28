@@ -27,6 +27,7 @@ import {
   ratingCriteriaQuery,
   routesQuery,
   upcomingDeparturesQuery,
+  fleetDeparturesQuery,
 } from "@/lib/ferry/queries";
 import {
   formatDateTime,
@@ -89,10 +90,21 @@ export function PortView({
   const reviews = useMemo(() => reviewsResult.data ?? [], [reviewsResult.data]);
   const [activeTab, setActiveTab] = useState("live");
   const [scheduleTab, setScheduleTab] = useState("departures");
+  const [visibleCount, setVisibleCount] = useState(8);
   const [writeReview, setWriteReview] = useState(false);
   const port = ports.find((item) => item.id === portId);
   const photoQuery = useQuery(portPhotoQuery(port ?? { id: "", name: "", photo_url: null }));
-  const traffic = portTraffic(portId, routes, departuresResult.data ?? []);
+  // Départs récents (traversées en cours) + à venir : une arrivée d'un bateau parti hier compte.
+  const { data: recentDepartures = [] } = useQuery(fleetDeparturesQuery);
+  const knownDepartures = useMemo(
+    () => [
+      ...new Map(
+        [...recentDepartures, ...(departuresResult.data ?? [])].map((d) => [d.id, d]),
+      ).values(),
+    ],
+    [recentDepartures, departuresResult.data],
+  );
+  const traffic = portTraffic(portId, routes, knownDepartures);
   const portRoutes = routes.filter(
     (route) => route.departure_port_id === portId || route.arrival_port_id === portId,
   );
@@ -311,7 +323,13 @@ export function PortView({
                 </Button>
               </div>
             ) : (
-              <Tabs value={scheduleTab} onValueChange={setScheduleTab}>
+              <Tabs
+                value={scheduleTab}
+                onValueChange={(value) => {
+                  setScheduleTab(value);
+                  setVisibleCount(8);
+                }}
+              >
                 <TabsList aria-label="Départs ou arrivées" className="port-traffic-tabs">
                   <TabsTrigger value="departures">
                     <ArrowUpRight size={15} aria-hidden /> Départs{" "}
@@ -325,7 +343,7 @@ export function PortView({
                 <TabsContent value={scheduleTab} className="port-movements">
                   {movements.length ? (
                     <ul>
-                      {movements.slice(0, 8).map(({ departure, time, place }) => {
+                      {movements.slice(0, visibleCount).map(({ departure, time, place }) => {
                         const company = companies.find((item) => item.id === departure.company_id);
                         return (
                           <li key={departure.id}>
@@ -355,7 +373,18 @@ export function PortView({
                         );
                       })}
                     </ul>
-                  ) : (
+                  ) : null}
+                  {movements.length > visibleCount ? (
+                    <Button
+                      variant="outline"
+                      className="mt-2 w-full"
+                      onClick={() => setVisibleCount((count) => count + 8)}
+                    >
+                      Voir les {Math.min(8, movements.length - visibleCount)} suivants (
+                      {movements.length - visibleCount} restants)
+                    </Button>
+                  ) : null}
+                  {movements.length ? null : (
                     <p className="pv-empty">
                       {scheduleTab === "departures"
                         ? "Aucun départ connu à venir depuis ce port."

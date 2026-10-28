@@ -847,7 +847,7 @@ export default function FerryMap({
               const photo = document.createElement("img");
               photo.src = info.photoUrl;
               photo.alt = String(feature.properties["name"] ?? "");
-              photo.className = "h-28 w-full rounded-lg object-contain bg-card p-1";
+              photo.className = "h-28 w-full rounded-lg object-contain bg-white p-1";
               const row = document.createElement("div");
               row.className = "flex items-center gap-2 pr-1";
               row.append(badge, text);

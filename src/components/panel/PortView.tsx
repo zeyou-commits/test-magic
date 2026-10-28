@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { hasSignalFocus, LivePulse, revealLive, useLiveInfo } from "./LivePulse";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   ArrowDownLeft,
@@ -52,7 +53,10 @@ const scoreLabel = (value: number) =>
 /** Cinq étoiles, lisibles d'un coup d'œil. */
 function StarRow({ value, size = 15 }: { value: number; size?: number }) {
   return (
-    <span className="pv-stars" aria-label={value ? `${scoreLabel(value)} sur 5` : "Pas encore noté"}>
+    <span
+      className="pv-stars"
+      aria-label={value ? `${scoreLabel(value)} sur 5` : "Pas encore noté"}
+    >
       {[1, 2, 3, 4, 5].map((n) => (
         <Star
           key={n}
@@ -88,7 +92,7 @@ export function PortView({
   const globalCriterion = useQuery(globalCriterionQuery).data ?? null;
   const reviewsResult = useQuery(portReviewsQuery(portId));
   const reviews = useMemo(() => reviewsResult.data ?? [], [reviewsResult.data]);
-  const [activeTab, setActiveTab] = useState("live");
+  const [chosenTab, setChosenTab] = useState<string | null>(null);
   const [scheduleTab, setScheduleTab] = useState("departures");
   const [visibleCount, setVisibleCount] = useState(8);
   const [writeReview, setWriteReview] = useState(false);
@@ -115,7 +119,8 @@ export function PortView({
       .map((departure) => departure.route_id),
   );
   const averages = useMemo(() => {
-    const mean = (values: number[]) => values.reduce((sum, value) => sum + value, 0) / values.length;
+    const mean = (values: number[]) =>
+      values.reduce((sum, value) => sum + value, 0) / values.length;
     const entries = criteria.flatMap((criterion) => {
       const scores = reviews.flatMap((review) =>
         review.ratings
@@ -139,6 +144,21 @@ export function PortView({
     return { entries, overall: perReview.length ? mean(perReview) : null };
   }, [criteria, reviews, globalCriterion]);
 
+  // Bandeau « en direct » : compté comme sur les fiches traversée et bateau. L'onglet « En direct »
+  // s'ouvre d'office seulement s'il s'y passe quelque chose.
+  const live = useLiveInfo({
+    routeIds: portRoutes.map((route) => route.id),
+    portIds: [portId],
+    signalPortIds: [portId],
+  });
+  const liveId = `live-port-${portId}`;
+  const activeTab =
+    chosenTab ?? (live.official + live.travellers || hasSignalFocus() ? "live" : "practical");
+  const openLive = () => {
+    setChosenTab("live");
+    revealLive(liveId);
+  };
+
   // Ancien bouton des écrans existants : ouvre le parcours « Signaler » commun.
   useEffect(() => {
     const onRequest = (event: Event) => {
@@ -161,7 +181,7 @@ export function PortView({
       !/^(non|indisponible|absent|no)$/i.test(value.trim()),
   );
   const openReviews = (write = false) => {
-    setActiveTab("community");
+    setChosenTab("community");
     if (write) setWriteReview(true);
   };
   const movements =
@@ -283,9 +303,11 @@ export function PortView({
         </button>
       </div>
 
+      <LivePulse info={live} onOpen={openLive} />
+
       <PortPresence portId={portId} />
 
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="port-profile-tabs">
+      <Tabs value={activeTab} onValueChange={setChosenTab} className="port-profile-tabs">
         <TabsList aria-label={`Explorer le port de ${port.name}`} className="port-profile-nav">
           <TabsTrigger value="live">En direct</TabsTrigger>
           <TabsTrigger value="practical">Préparer</TabsTrigger>
@@ -295,8 +317,7 @@ export function PortView({
           </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="live" className="port-tab-content">
-          <TravelSignals key={portId} kind="port" target={portId} compact />
+        <TabsContent value="live" className="port-tab-content" id={liveId} data-live-anchor>
           <FlashFeed
             title={`À la une · ${port.name}`}
             context={{ portIds: [portId], routeIds: portRoutes.map((route) => route.id) }}
@@ -306,6 +327,7 @@ export function PortView({
             expandFirst
             onSelect={onSelect}
           />
+          <TravelSignals key={portId} kind="port" target={portId} compact />
           <section className="pv-section" aria-label="Prochains mouvements">
             <div className="pv-section__head">
               <h3>Prochains mouvements</h3>
@@ -555,7 +577,11 @@ export function PortView({
                           ) : null}
                         </button>
                       ) : null}
-                      <ReportButton targetType="review" targetId={review.id} label="Signaler cet avis" />
+                      <ReportButton
+                        targetType="review"
+                        targetId={review.id}
+                        label="Signaler cet avis"
+                      />
                     </div>
                   </li>
                 );

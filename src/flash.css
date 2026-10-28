@@ -1980,16 +1980,16 @@ html {
   }
 }
 .bw-mytrip-pin {
+  position: relative;
   display: grid;
   justify-items: center;
-  gap: 2px;
   z-index: 8;
   cursor: pointer;
 }
 .bw-mytrip-pin img {
-  width: 44px;
-  height: 44px;
-  border: 3px solid #ffc83d;
+  width: 34px;
+  height: 34px;
+  border: 2.5px solid #ffc83d;
   border-radius: 50%;
   background: #ffffff;
   box-shadow:
@@ -1997,14 +1997,40 @@ html {
     0 6px 14px #16324a40;
   animation: bw-mytrip-pulse 2.2s ease-out infinite;
 }
+/* Étiquette au-dessus du rond : au survol, au focus clavier, ou 3 s au premier affichage. */
 .bw-mytrip-pin small {
-  padding: 1px 7px;
+  position: absolute;
+  bottom: calc(100% + 5px);
+  left: 50%;
+  transform: translate(-50%, 4px);
+  opacity: 0;
+  pointer-events: none;
+  transition:
+    opacity 0.18s ease,
+    transform 0.18s ease;
+  box-shadow: 0 3px 8px #16324a40;
+  padding: 2px 8px;
   border-radius: 999px;
   background: #16324a;
   font-size: 10px;
   font-weight: 800;
   color: #ffffff;
   white-space: nowrap;
+}
+.bw-mytrip-pin small::after {
+  content: "";
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  border: 4px solid transparent;
+  border-top-color: #16324a;
+  transform: translateX(-50%);
+}
+.bw-mytrip-pin:hover small,
+.bw-mytrip-pin:focus-visible small,
+.bw-mytrip-pin.is-hinting small {
+  opacity: 1;
+  transform: translate(-50%, 0);
 }
 @keyframes bw-mytrip-pulse {
   0% {
@@ -3535,4 +3561,143 @@ html {
 }
 .bw-recap .bw-trip-status__steps button {
   padding-block: 6px;
+}
+
+/* ── Bandeau « en direct » commun (port, traversée, bateau) ─────────────────── */
+.bw-pulse {
+  display: flex;
+  align-items: stretch;
+  overflow: hidden;
+  margin: 10px 0;
+  border: 1px solid #d4e3db;
+  border-radius: 16px;
+  background: white;
+}
+.bw-recap .bw-pulse {
+  margin: 0;
+}
+.bw-pulse[data-alert="true"] {
+  border-color: #f2d58a;
+  background: #fffaf0;
+}
+.bw-pulse[data-urgent] {
+  border-color: #f0b4ae;
+  background: #fff6f5;
+}
+.bw-pulse__main {
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  align-items: center;
+  gap: 12px;
+  padding: 9px 10px;
+  text-align: left;
+}
+.bw-pulse__main strong {
+  display: block;
+  font-size: 13px;
+  color: #16324a;
+}
+.bw-pulse__main small {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 11.5px;
+  color: #6b7c74;
+}
+.bw-pulse__icon {
+  position: relative;
+  display: grid;
+  width: 34px;
+  height: 34px;
+  flex-shrink: 0;
+  place-items: center;
+  border-radius: 999px;
+  background: #eef5f1;
+  color: var(--primary);
+}
+.bw-pulse[data-alert="true"] .bw-pulse__icon {
+  background: #ffd75e;
+  color: #3d2a00;
+}
+.bw-pulse[data-alert="true"] .bw-pulse__icon::after {
+  content: "";
+  position: absolute;
+  inset: -3px;
+  border: 2px solid #ffd75e;
+  border-radius: 999px;
+  animation: bw-recap-pulse 2.2s ease-out infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .bw-pulse[data-alert="true"] .bw-pulse__icon::after {
+    animation: none;
+  }
+}
+/* Deux compteurs : vert = infos BledWay, rouge = signalements voyageurs. */
+.bw-pulse__counts {
+  position: absolute;
+  top: -6px;
+  right: -12px;
+  z-index: 1;
+  display: flex;
+  gap: 2px;
+}
+.bw-pulse__counts b,
+.bw-recap__tabs b {
+  min-width: 17px;
+  border: 2px solid white;
+  border-radius: 999px;
+  background: #d14343;
+  padding: 0 4px;
+  font-size: 10px;
+  line-height: 13px;
+  text-align: center;
+  color: white;
+}
+.bw-pulse__counts b[data-kind="official"],
+.bw-recap__tabs b[data-kind="official"] {
+  background: var(--primary);
+}
+.bw-recap__tabs b {
+  border: 0;
+  line-height: 16px;
+}
+.bw-pulse__add {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 5px;
+  border-left: 1px solid #ece3cf;
+  padding: 0 12px;
+  font-size: 12px;
+  font-weight: 650;
+  color: #16324a;
+}
+.bw-pulse__add svg {
+  color: #b07800;
+}
+.bw-pulse__add:hover {
+  background: #fff3cf;
+}
+/* Liste « en direct » : cadrée sous l'en-tête du volet, puis mise en évidence un instant. */
+[data-live-anchor] {
+  scroll-margin-top: 72px;
+}
+[data-live-anchor].is-revealed,
+.bw-signal-list li.is-revealed {
+  animation: bw-live-reveal 1.6s ease-out;
+}
+@keyframes bw-live-reveal {
+  0% {
+    box-shadow: 0 0 0 3px #ffd75e;
+    border-radius: 14px;
+  }
+  100% {
+    box-shadow: 0 0 0 3px transparent;
+    border-radius: 14px;
+  }
+}
+.bw-signal-list li {
+  scroll-margin-top: 72px;
 }

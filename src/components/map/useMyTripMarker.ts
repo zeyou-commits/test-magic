@@ -7,9 +7,13 @@ import { useMyTrip } from "@/lib/ferry/myTrip";
 import { mergeTripSteps, myTripStatusQuery, tripStepsQuery } from "@/lib/ferry/presence";
 import type { Selection } from "@/lib/ferry/types";
 
+/** L'étiquette « Ma traversée » ne se montre d'elle-même qu'une fois par visite. */
+const HINT_KEY = "bledway:mytrip-hint";
+
 /**
- * Mon bateau sur la carte : mon cabas (celui de mon étape) au-dessus du navire, avec un halo.
- * Un toucher ouvre « Ma traversée ».
+ * Mon bateau sur la carte : un petit rond avec mon cabas (celui de mon étape) au-dessus du navire.
+ * L'étiquette « Ma traversée » apparaît au-dessus du rond au survol ; sur téléphone, 3 secondes au
+ * premier affichage. Un toucher ouvre « Ma traversée ».
  */
 export function useMyTripMarker(
   mapRef: RefObject<MapLibreMap | null>,
@@ -46,8 +50,8 @@ export function useMyTripMarker(
     const img = document.createElement("img");
     img.src = image;
     img.alt = "";
-    img.width = 44;
-    img.height = 44;
+    img.width = 34;
+    img.height = 34;
     const label = document.createElement("small");
     label.textContent = "Ma traversée";
     button.append(img, label);
@@ -57,10 +61,27 @@ export function useMyTripMarker(
       callbacks.current.onSelect({ type: "departure", id: departureId });
       callbacks.current.onOpen?.();
     });
-    const marker = new Marker({ element: button, anchor: "bottom", offset: [shift[0], shift[1] - 14] })
+    let hintTimer: number | undefined;
+    let hinted = true;
+    try {
+      hinted = window.sessionStorage.getItem(HINT_KEY) === "1";
+      window.sessionStorage.setItem(HINT_KEY, "1");
+    } catch {
+      hinted = false;
+    }
+    if (!hinted) {
+      button.classList.add("is-hinting");
+      hintTimer = window.setTimeout(() => button.classList.remove("is-hinting"), 3000);
+    }
+    const marker = new Marker({
+      element: button,
+      anchor: "bottom",
+      offset: [shift[0], shift[1] - 14],
+    })
       .setLngLat(point)
       .addTo(map);
     return () => {
+      window.clearTimeout(hintTimer);
       marker.remove();
     };
   }, [mapRef, ready, fleet, departureId, vesselId, vesselName, image]);

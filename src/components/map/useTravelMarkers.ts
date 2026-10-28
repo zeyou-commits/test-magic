@@ -1,4 +1,5 @@
 import { createElement, useEffect, useRef, type RefObject } from "react";
+import { requestSignalFocus } from "@/components/panel/LivePulse";
 import { createRoot, type Root } from "react-dom/client";
 import { useQuery } from "@tanstack/react-query";
 import { Marker, Popup, type Map as MapLibreMap } from "maplibre-gl";
@@ -158,6 +159,8 @@ export function useTravelMarkers(
 
       const open = () => {
         bubble.remove();
+        // La fiche s'ouvrira cadrée sur le signalement le plus récent de cette pastille.
+        requestSignalFocus(alerts[0]!.id);
         callbacks.current.onSelect({ type: alert.target_kind, id: alert.target_id });
         callbacks.current.onOpen?.();
       };

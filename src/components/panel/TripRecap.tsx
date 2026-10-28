@@ -15,8 +15,6 @@ import {
 } from "lucide-react";
 import { crossingProgress } from "@/lib/ferry/crossingProgress";
 import { getBoardingMilestones } from "@/lib/ferry/boarding";
-import { alertLabel } from "@/lib/ferry/community";
-import { departureEventsQuery } from "@/lib/ferry/flash";
 import { formatDuration } from "@/lib/ferry/format";
 import { dateKeyInZone, portTimeZone, zoneLabel } from "@/lib/ferry/time";
 import type { LiveShip } from "@/lib/ferry/tracking";
@@ -25,7 +23,8 @@ import { vesselPhotoQuery } from "@/lib/ferry/vesselPhoto";
 import { requestQuickReport } from "@/components/map/QuickReport";
 import { BookingLink, ReliabilityNote } from "./shared";
 import { CompanyBadge } from "./CompanyBadge";
-import { FlashFeed, useFlashCards } from "./FlashFeed";
+import { FlashFeed } from "./FlashFeed";
+import { hasSignalFocus, LivePulse, revealLive, useLiveInfo } from "./LivePulse";
 import { FollowButton } from "./FollowButton";
 import { JourneyChecklist } from "./JourneyChecklist";
 import { MiniFerry } from "./MiniFerry";
@@ -119,30 +118,23 @@ export function TripRecap({
       ? Math.round((Date.parse(arriveIso) - Date.parse(departIso)) / 60_000)
       : departure.duration_minutes;
 
-  // Ce qui se passe : changements récents, Flash info et signalements (port de départ, bateau).
-  const events = useQuery(departureEventsQuery(departure.id)).data ?? [];
-  const recentEvents = events.filter((event) => now - Date.parse(event.created_at) < 72 * HOUR);
-  const flash = useFlashCards({
-    context: {
-      departureIds: [departure.id],
-      routeIds: [departure.route_id],
-      portIds: [from.id, to.id],
-      companyIds: departure.company_id ? [departure.company_id] : [],
-    },
+  // Ce qui se passe : même calcul que sur les fiches port et bateau.
+  const info = useLiveInfo({
+    departureId: departure.id,
+    routeIds: [departure.route_id],
+    portIds: [from.id, to.id],
+    companyIds: departure.company_id ? [departure.company_id] : [],
     signalPortIds: [from.id],
     signalVesselIds: vessel ? [vessel.id] : [],
   });
-  const headlines = [
-    ...recentEvents.map((event) => ({ key: event.id, label: event.title, warn: true })),
-    ...flash.cards.map((card) =>
-      card.type === "signal"
-        ? { key: card.key, label: alertLabel(card.alert), warn: true }
-        : { key: card.key, label: card.item.title, warn: card.item.kind === "perturbation" },
-    ),
-  ];
-  const liveCount = headlines.length;
+  const liveCount = info.official + info.travellers;
+  const liveId = `live-${departure.id}`;
   const [tab, setTab] = useState<Tab | null>(null);
-  const activeTab: Tab = tab ?? (liveCount ? "live" : "prepare");
+  const activeTab: Tab = tab ?? (liveCount || hasSignalFocus() ? "live" : "prepare");
+  const openLive = () => {
+    setTab("live");
+    revealLive(liveId);
+  };
   const report = () =>
     requestQuickReport({
       type: "departure",
@@ -259,35 +251,7 @@ export function TripRecap({
       </section>
 
       {/* 2. Ce qui se passe, d'un coup d'œil */}
-      <div className="bw-recap__pulse" data-alert={liveCount > 0}>
-        <button type="button" className="bw-recap__pulse-main" onClick={() => setTab("live")}>
-          <span className="bw-recap__megaphone" aria-hidden>
-            <Megaphone size={17} />
-            {liveCount ? <b>{liveCount > 9 ? "9+" : liveCount}</b> : null}
-          </span>
-          <span className="min-w-0 flex-1">
-            <strong>
-              {liveCount
-                ? `${liveCount} info${liveCount > 1 ? "s" : ""} en direct`
-                : "Rien à signaler pour le moment"}
-            </strong>
-            <small>
-              {liveCount
-                ? headlines
-                    .slice(0, 2)
-                    .map((item) => item.label)
-                    .join(" · ")
-                : "Changements, Flash info et voyageurs sur place"}
-            </small>
-          </span>
-          {liveCount ? <ChevronRight size={16} aria-hidden /> : null}
-        </button>
-        {upcoming || atSea ? (
-          <button type="button" className="bw-recap__pulse-add" onClick={report}>
-            <Megaphone size={15} aria-hidden /> Signaler
-          </button>
-        ) : null}
-      </div>
+      <LivePulse info={info} onOpen={openLive} onReport={upcoming || atSea ? report : undefined} />
 
       {/* 3. Où en êtes-vous ? (une ligne tant que ce n'est pas la veille) */}
       {!cancelled ? (
@@ -315,7 +279,8 @@ export function TripRecap({
             onClick={() => setTab(id)}
           >
             <Icon size={14} aria-hidden /> {label}
-            {id === "live" && liveCount ? <b>{liveCount}</b> : null}
+            {id === "live" && info.official ? <b data-kind="official">{info.official}</b> : null}
+            {id === "live" && info.travellers ? <b>{info.travellers}</b> : null}
           </button>
         ))}
       </div>
@@ -373,25 +338,37 @@ export function TripRecap({
           ) : null}
         </div>
       ) : activeTab === "live" ? (
-        <div className="bw-recap__panel" role="tabpanel">
+        <div className="bw-recap__panel" role="tabpanel" id={liveId} data-live-anchor>
           <TripChanges departureId={departure.id} />
           <FlashFeed
-            title="Infos sur votre traversée"
+            title="Infos BledWay sur votre traversée"
             context={{
               departureIds: [departure.id],
               routeIds: [departure.route_id],
               portIds: [from.id, to.id],
               companyIds: departure.company_id ? [departure.company_id] : [],
             }}
+            withSignals={false}
             expandFirst
-            signalPortIds={[from.id]}
-            signalVesselIds={[]}
             onSelect={onSelect}
             limit={6}
-            emptyText="Aucune perturbation connue sur cette traversée pour le moment."
+            emptyText="Aucune information BledWay sur cette traversée pour le moment."
+          />
+          <TravelSignals
+            key={from.id}
+            kind="port"
+            target={from.id}
+            compact
+            title={`Voyageurs · port de ${from.name}`}
           />
           {vessel ? (
-            <TravelSignals key={vessel.id} kind="vessel" target={vessel.id} compact />
+            <TravelSignals
+              key={vessel.id}
+              kind="vessel"
+              target={vessel.id}
+              compact
+              title={`Voyageurs · à bord de ${vessel.name}`}
+            />
           ) : null}
           <PortPresence portId={from.id} />
           {upcoming || atSea ? (

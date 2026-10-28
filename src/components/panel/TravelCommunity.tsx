@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { scrollWithin, takeSignalFocus } from "./LivePulse";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Check,
@@ -59,9 +60,12 @@ export function TravelSignals({
   kind,
   target,
   compact = false,
+  title,
 }: {
   kind: CommunityKind;
   target: string;
+  /** Titre de la liste (fiche traversée : port de départ, puis bateau). */
+  title?: string;
   /** Fiche qui a déjà son bouton « Signaler » : pas de second bouton ici. */
   compact?: boolean;
 }) {
@@ -85,6 +89,20 @@ export function TravelSignals({
     return () => window.removeEventListener("batogo:open-signal", onRequest);
   }, [kind, target]);
   const [done, setDone] = useState<string | null>(null);
+  // Pastille touchée sur la carte : la fiche s'ouvre cadrée sur ce signalement.
+  const alertIds = (feed.data?.alerts ?? []).map((alert) => alert.id).join(",");
+  useEffect(() => {
+    if (!alertIds) return;
+    const focus = takeSignalFocus(alertIds.split(","));
+    if (!focus) return;
+    window.setTimeout(() => {
+      const row = document.querySelector<HTMLElement>(`[data-alert-id="${focus}"]`);
+      if (!row) return;
+      scrollWithin(row, "center");
+      row.classList.add("is-revealed");
+      window.setTimeout(() => row.classList.remove("is-revealed"), 1800);
+    }, 250);
+  }, [alertIds]);
   const mutation = useMutation({
     mutationFn: async (action: { type: "confirm" | "resolve" | "deny"; id: string }) => {
       // Sur mobile, la confirmation porte la mention « sur place » si la position le permet.
@@ -123,7 +141,7 @@ export function TravelSignals({
               Entre voyageurs
             </span>
           )}
-          <h3>{compact ? "Signalé par les voyageurs" : "Sur place, en ce moment"}</h3>
+          <h3>{title ?? (compact ? "Signalé par les voyageurs" : "Sur place, en ce moment")}</h3>
         </div>
         {compact ? null : (
           <Button variant="outline" size="sm" onClick={signal}>
@@ -139,7 +157,7 @@ export function TravelSignals({
             const onSite = onSiteCount(alert);
             const pending = isImpact(alert) && alert.confirmations < 1;
             return (
-              <li key={alert.id}>
+              <li key={alert.id} data-alert-id={alert.id}>
                 <SituationBadge category={alert.category} className="bw-signal-icon" />
                 <div>
                   <strong>{alertLabel(alert)}</strong>

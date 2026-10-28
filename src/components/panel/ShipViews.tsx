@@ -1,8 +1,18 @@
 import { useAuth } from "@/hooks/useAuth";
+import { LivePulse, revealLive, useLiveInfo } from "./LivePulse";
 import { communityQuery } from "@/lib/ferry/community";
 import { useCallback, useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowRight, CalendarDays, CarFront, ExternalLink, MapPin, Megaphone, Star, Users } from "lucide-react";
+import {
+  ArrowRight,
+  CalendarDays,
+  CarFront,
+  ExternalLink,
+  MapPin,
+  Megaphone,
+  Star,
+  Users,
+} from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import {
@@ -53,6 +63,24 @@ export function VesselView({
   const community = useQuery(communityQuery("vessel", vesselId, false, user?.id));
   const communityAvailable = Boolean(community.data);
   const [tab, setTab] = useState("tracking");
+  // Infos BledWay de ses lignes à venir et de sa compagnie, signalements à bord.
+  const vesselCompany = data.vessels.find((v) => v.id === vesselId)?.company_id;
+  const liveInfo = useLiveInfo({
+    routeIds: [
+      ...new Set(
+        data.departures
+          .filter((d) => d.vessel_id === vesselId && Date.parse(d.departure_at) > Date.now())
+          .map((d) => d.route_id),
+      ),
+    ],
+    companyIds: vesselCompany ? [vesselCompany] : [],
+    signalVesselIds: [vesselId],
+  });
+  const liveId = `live-vessel-${vesselId}`;
+  const openLive = () => {
+    setTab("tracking");
+    revealLive(liveId);
+  };
   const requestVesselSignal = useCallback(() => {
     setTab("tracking");
     window.setTimeout(
@@ -180,6 +208,7 @@ export function VesselView({
           Signaler une situation à bord ou au départ
         </button>
       </div>
+      <LivePulse info={liveInfo} onOpen={openLive} />
       {photo?.source === "commons" ? (
         <details className="bw-photo-credit">
           <summary>Crédit photo</summary>
@@ -243,7 +272,9 @@ export function VesselView({
               Repérer sur la carte
             </button>
           ) : null}
-          <TravelSignals key={vesselId} kind="vessel" target={vesselId} compact />
+          <div id={liveId} data-live-anchor>
+            <TravelSignals key={vesselId} kind="vessel" target={vesselId} compact />
+          </div>
           {next.length ? (
             <section className="bw-next-crossings">
               <div className="bw-section-heading">

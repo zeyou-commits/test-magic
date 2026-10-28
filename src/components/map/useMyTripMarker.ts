@@ -6,37 +6,15 @@ import type { FleetShip } from "@/lib/ferry/fleet";
 import { useMyTrip } from "@/lib/ferry/myTrip";
 import { mergeTripSteps, myTripStatusQuery, tripStepsQuery } from "@/lib/ferry/presence";
 import type { Selection } from "@/lib/ferry/types";
+import { shipTokenRadius } from "./shipIcons";
 
 /** L'étiquette « Ma traversée » ne se montre d'elle-même qu'une fois par visite. */
 const HINT_KEY = "bledway:mytrip-hint";
 
-/** Taille du bateau dessiné (suit l'« icon-size » de la couche des navires). */
-function shipScale(zoom: number) {
-  const steps: [number, number][] = [
-    [3, 0.68],
-    [5, 0.82],
-    [7, 0.96],
-    [9, 1.08],
-    [11, 1.55],
-    [13, 2.1],
-    [15, 2.4],
-  ];
-  if (zoom <= steps[0]![0]) return steps[0]![1];
-  for (let i = 1; i < steps.length; i++) {
-    const [z1, s1] = steps[i]!;
-    const [z0, s0] = steps[i - 1]!;
-    if (zoom <= z1) return s0 + ((zoom - z0) / (z1 - z0)) * (s1 - s0);
-  }
-  return steps.at(-1)![1];
-}
-/** Demi-longueur et demi-largeur de la coque à l'échelle 1, en pixels écran. */
-const HALF_LENGTH = 17.5;
-const HALF_BEAM = 10.5;
-
 /**
- * Mon bateau sur la carte : un petit badge avec mon cabas (celui de mon étape), collé à l'arrière
- * du navire, côté haut de l'écran, pour ne jamais cacher le bateau. Il grossit avec le zoom sans
- * dépasser 40 % de la longueur du bateau ; en vue très large, un halo jaune pulse autour du navire.
+ * Mon bateau sur la carte : un petit badge avec mon cabas (celui de mon étape), collé en haut à
+ * droite du jeton du navire, pour ne jamais le cacher. Il grossit avec le zoom sans dépasser 40 %
+ * du jeton ; en vue très large, un anneau jaune pulse autour du navire.
  * L'étiquette « Ma traversée » apparaît au survol, et 3 secondes au premier affichage.
  * Un toucher ouvre « Ma traversée ».
  */
@@ -68,7 +46,6 @@ export function useMyTripMarker(
       : ship?.lngLat;
     if (!ship || !point) return;
     const shift: [number, number] = ship.live ? [0, 0] : [ship.dx, ship.dy];
-    const course = ship.live?.position.courseDeg ?? ship.course ?? 0;
     const button = document.createElement("button");
     button.type = "button";
     button.className = "bw-mytrip-pin";
@@ -102,7 +79,7 @@ export function useMyTripMarker(
     const marker = new Marker({ element: button, anchor: "center", offset: shift })
       .setLngLat(point)
       .addTo(map);
-    // Position à l'arrière du bateau, recalculée au zoom et à la rotation de la carte.
+    // Badge collé en haut à droite du jeton du bateau, à une taille qui ne le cache jamais.
     const place = () => {
       const zoom = map.getZoom();
       if (zoom < 5.5) {
@@ -111,28 +88,16 @@ export function useMyTripMarker(
         return;
       }
       button.classList.remove("is-halo");
-      const scale = shipScale(zoom);
-      const size = Math.round(Math.min(30, Math.max(14, 0.4 * 2 * HALF_LENGTH * scale)));
+      const r = shipTokenRadius(zoom);
+      const size = Math.round(Math.min(26, Math.max(14, r * 0.62)));
       button.style.setProperty("--pin", `${size}px`);
-      const angle = ((course - map.getBearing()) * Math.PI) / 180;
-      const bow: [number, number] = [Math.sin(angle), -Math.cos(angle)];
-      // Des deux flancs, celui tourné vers le haut de l'écran (le nom du bateau est dessous).
-      const right: [number, number] = [Math.cos(angle), Math.sin(angle)];
-      const side: [number, number] = right[1] <= 0 ? right : [-right[0], -right[1]];
-      const back = HALF_LENGTH * scale * 0.75;
-      const lateral = HALF_BEAM * scale + size * 0.35;
-      marker.setOffset([
-        shift[0] - bow[0] * back + side[0] * lateral,
-        shift[1] - bow[1] * back + side[1] * lateral,
-      ]);
+      marker.setOffset([shift[0] + r * 0.78, shift[1] - r * 0.78]);
     };
     place();
     map.on("zoom", place);
-    map.on("rotate", place);
     return () => {
       window.clearTimeout(hintTimer);
       map.off("zoom", place);
-      map.off("rotate", place);
       marker.remove();
     };
   }, [mapRef, ready, fleet, departureId, vesselId, vesselName, image]);

@@ -19,7 +19,7 @@ import { formatDuration } from "@/lib/ferry/format";
 import { algeriaGeoJson } from "@/lib/ferry/algeriaGeoJson";
 import { routeArc } from "@/lib/ferry/geo";
 import type { FleetShip } from "@/lib/ferry/fleet";
-import { addShipImages, wakeLevel } from "./shipIcons";
+import { addShipImages, shipIcon, shipTokenRadius, wakeLevel } from "./shipIcons";
 import { fleetGroups } from "./fleetVisibility";
 import { physicalStatus, projectedPosition } from "@/lib/ferry/tracking";
 import { portTimeZone, wallTimeInZone } from "@/lib/ferry/time";
@@ -647,17 +647,19 @@ export default function FerryMap({
             ["linear"],
             ["zoom"],
             3,
-            12,
-            6,
-            18,
+            19.5,
+            5,
+            22,
+            7,
+            24.5,
             9,
-            25,
+            27.5,
             11,
-            36,
+            31.5,
             13,
-            48,
+            35,
             15,
-            56,
+            38,
           ],
           "circle-color": ["get", "haloColor"],
           "circle-opacity": ["get", "haloOpacity"],
@@ -670,32 +672,31 @@ export default function FerryMap({
         source: "fleet",
         layout: {
           "icon-image": ["get", "icon"],
-          // Proue et sillage tournent ensemble ; le nom reste toujours lisible.
-          "icon-rotation-alignment": "map",
-          "icon-rotate": ["get", "course"],
+          // Jeton rond, ferry de profil : il reste droit ; la flèche de cap tourne à part.
+          "icon-rotation-alignment": "viewport",
           "icon-pitch-alignment": "viewport",
           "icon-allow-overlap": true,
           "icon-ignore-placement": true,
           "icon-padding": 0,
-          // Au-delà du zoom 9, les bateaux grossissent avec la carte (×2,4 au plus, icônes en 2x).
+          // De 32 px en vue large à 80 px au zoom fort.
           "icon-size": [
             "interpolate",
             ["linear"],
             ["zoom"],
             3,
-            0.68,
+            0.5,
             5,
-            0.82,
+            0.6,
             7,
-            0.96,
+            0.7,
             9,
-            1.08,
+            0.82,
             11,
-            1.55,
+            0.98,
             13,
-            2.1,
+            1.12,
             15,
-            2.4,
+            1.24,
           ],
           "symbol-sort-key": ["-", 5, ["get", "priority"]],
         },
@@ -703,6 +704,39 @@ export default function FerryMap({
           "icon-opacity": ["get", "opacity"],
           "icon-opacity-transition": { duration: 200 },
         },
+      });
+      map.addLayer({
+        id: "fleet-heading",
+        type: "symbol",
+        source: "fleet",
+        filter: ["==", ["get", "state"], "sea"],
+        layout: {
+          "icon-image": "ship-heading",
+          "icon-rotation-alignment": "map",
+          "icon-rotate": ["get", "course"],
+          "icon-allow-overlap": true,
+          "icon-ignore-placement": true,
+          "icon-size": [
+            "interpolate",
+            ["linear"],
+            ["zoom"],
+            3,
+            0.5,
+            5,
+            0.6,
+            7,
+            0.7,
+            9,
+            0.82,
+            11,
+            0.98,
+            13,
+            1.12,
+            15,
+            1.24,
+          ],
+        },
+        paint: { "icon-opacity": ["get", "opacity"] },
       });
       map.addLayer({
         id: "fleet-labels",
@@ -713,19 +747,23 @@ export default function FerryMap({
           "text-field": ["get", "name"],
           "text-font": ["Noto Sans Bold"],
           "text-size": ["interpolate", ["linear"], ["zoom"], 3, 9, 6, 10, 9, 12],
-          // Le nom s'éloigne du bateau à mesure qu'il grossit.
+          // Le nom passe juste sous le jeton, quelle que soit sa taille.
           "text-offset": [
             "interpolate",
             ["linear"],
             ["zoom"],
+            3,
+            ["literal", [0, 1.7]],
+            6,
+            ["literal", [0, 1.9]],
             9,
-            ["literal", [0, 2.3]],
+            ["literal", [0, 2]],
             11,
-            ["literal", [0, 3.1]],
+            ["literal", [0, 2.3]],
             13,
-            ["literal", [0, 4]],
+            ["literal", [0, 2.6]],
             15,
-            ["literal", [0, 4.4]],
+            ["literal", [0, 2.8]],
           ],
           "text-anchor": "top",
           "text-allow-overlap": false,
@@ -755,12 +793,14 @@ export default function FerryMap({
             "interpolate",
             ["linear"],
             ["zoom"],
+            3,
+            ["literal", [9.5, -9.5]],
             9,
-            ["literal", [12, -12]],
+            ["literal", [15.5, -15.5]],
             13,
-            ["literal", [23, -23]],
+            ["literal", [21, -21]],
             15,
-            ["literal", [26, -26]],
+            ["literal", [23, -23]],
           ],
           "circle-translate-anchor": "viewport",
         },
@@ -778,12 +818,14 @@ export default function FerryMap({
             "interpolate",
             ["linear"],
             ["zoom"],
+            3,
+            ["literal", [0.95, -0.95]],
             9,
-            ["literal", [1.2, -1.2]],
+            ["literal", [1.55, -1.55]],
             13,
-            ["literal", [2.3, -2.3]],
+            ["literal", [2.1, -2.1]],
             15,
-            ["literal", [2.6, -2.6]],
+            ["literal", [2.3, -2.3]],
           ],
           "text-allow-overlap": true,
           "text-ignore-placement": true,
@@ -798,7 +840,21 @@ export default function FerryMap({
         source: "fleet",
         filter: NO_SHIP,
         paint: {
-          "circle-radius": ["interpolate", ["linear"], ["zoom"], 3, 18, 6, 27, 9, 40],
+          "circle-radius": [
+            "interpolate",
+            ["linear"],
+            ["zoom"],
+            3,
+            24,
+            6,
+            28,
+            9,
+            32,
+            13,
+            40,
+            15,
+            43,
+          ],
           "circle-color": "#0e7a43",
           "circle-opacity": 0.18,
           "circle-blur": 0.6,
@@ -1877,26 +1933,29 @@ export default function FerryMap({
     }
   }, [companyFocusShips.map((ship) => ship.id).join("|"), mapReady]);
 
-  // Fanion de compagnie : petit drapeau sur mât qui flotte au-dessus de chaque navire sélectionné.
+  // Fanion de compagnie : petit drapeau planté sur le bord haut-gauche du jeton de chaque navire
+  // de la compagnie choisie. Taille fixe, logo dans un cartouche blanc ; il suit le zoom.
   useEffect(() => {
     const map = mapRef.current;
     if (!map || !mapReady || !companyFocusShips.length) return undefined;
-    const markers = companyFocusShips.map((ship) => {
+    const placed = companyFocusShips.map((ship) => {
       const info = vesselCardsRef.current[String(ship.vesselId ?? "")];
       const el = document.createElement("div");
       el.className = "bw-pennant";
       el.style.pointerEvents = "none";
       const flag = document.createElement("div");
       flag.className = "bw-pennant-flag";
+      const initials = (info?.companyName ?? "").slice(0, 3).toUpperCase();
       if (info?.logoUrl) {
         const logo = document.createElement("img");
         logo.src = info.logoUrl;
         logo.alt = info.companyName ?? "";
-        logo.onerror = () => logo.remove();
+        logo.onerror = () => {
+          logo.remove();
+          flag.textContent = initials;
+        };
         flag.append(logo);
-      } else if (info?.companyName) {
-        flag.textContent = info.companyName.slice(0, 3).toUpperCase();
-      }
+      } else flag.textContent = initials;
       const mast = document.createElement("div");
       mast.className = "bw-pennant-mast";
       const inner = document.createElement("div");
@@ -1906,11 +1965,23 @@ export default function FerryMap({
       const at = ship.live
         ? ([ship.live.position.longitude, ship.live.position.latitude] as [number, number])
         : ship.lngLat;
-      return new Marker({ element: el, anchor: "bottom", offset: [ship.dx, ship.dy - 14] })
+      const shift: [number, number] = ship.live ? [0, 0] : [ship.dx, ship.dy];
+      const marker = new Marker({ element: el, anchor: "bottom-left", offset: shift })
         .setLngLat(at)
         .addTo(map);
+      return { marker, shift };
     });
-    return () => markers.forEach((marker) => marker.remove());
+    const place = () => {
+      const r = shipTokenRadius(map.getZoom());
+      for (const { marker, shift } of placed)
+        marker.setOffset([shift[0] - r * 0.72, shift[1] - r * 0.72]);
+    };
+    place();
+    map.on("zoom", place);
+    return () => {
+      map.off("zoom", place);
+      placed.forEach(({ marker }) => marker.remove());
+    };
   }, [
     companyFocusShips
       .map((ship) => `${ship.id}:${ship.live?.position.longitude ?? ship.lngLat[0]}`)
@@ -2153,7 +2224,7 @@ export default function FerryMap({
             type: "Feature" as const,
             properties: {
               state: ship.state,
-              icon: `ship-${wakeLevel(ship.state, live ? speed : null)}`,
+              icon: shipIcon(wakeLevel(ship.state, live ? speed : null), course),
               course,
               name: ship.name,
               allure,

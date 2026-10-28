@@ -7,7 +7,6 @@ import {
   Marker,
   Popup,
   NavigationControl,
-  AttributionControl,
   setWorkerUrl,
   type GeoJSONSource,
   type MapLayerMouseEvent,

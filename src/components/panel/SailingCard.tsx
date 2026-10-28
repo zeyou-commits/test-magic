@@ -280,7 +280,10 @@ export function SailingDetail({
         </button>
         <ReportButton targetType="departure" targetId={departure.id} />
         <FollowButton kind="departure" targetId={departure.id} compact label={`${sailing.from.name} → ${sailing.to.name}`} demo={Boolean(departure.is_demo)} />
-        <ShareButtons />
+        <ShareButtons
+          title={`${sailing.from.name} → ${sailing.to.name}`}
+          text={`⛴️ ${sailing.from.name} → ${sailing.to.name} · ${formatShortDay(departure.departure_at, sailing.fromZone)} · départ ${sailing.depTime}${sailing.arrTime ? `, arrivée ${sailing.arrTime}${sailing.arrDayOffset > 0 ? ` (+${sailing.arrDayOffset} j)` : ""}` : ""} (heures locales)${sailing.company ? ` · ${sailing.company.name}` : ""}\nHoraire ${departure.reliability === "confirmed" ? "confirmé" : "indicatif"} — vérifiez auprès de la compagnie. Via Bledway`}
+        />
         {bookingHref ? (
           <a
             href={bookingHref}

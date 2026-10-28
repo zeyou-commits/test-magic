@@ -415,25 +415,7 @@ export default function FerryMap({
     map.touchZoomRotate.disableRotation();
 
     map.addControl(new NavigationControl({ showCompass: false }), "bottom-right");
-    map.addControl(new AttributionControl({ compact: true }), "bottom-right");
-    const attribution = map
-      .getContainer()
-      .querySelector<HTMLDetailsElement>("details.maplibregl-ctrl-attrib");
-    if (attribution) {
-      attribution.open = false;
-      attribution.classList.remove("maplibregl-compact-show");
-    }
-    map.once("load", () => {
-      const control = map.getContainer().querySelector(".maplibregl-ctrl-attrib");
-      control?.classList.remove("maplibregl-compact-show");
-      if (control instanceof HTMLDetailsElement) control.open = false;
-    });
-    map.once("idle", () => {
-      if (attribution) {
-        attribution.open = false;
-        attribution.classList.remove("maplibregl-compact-show");
-      }
-    });
+    // Crédits OpenFreeMap / OpenStreetMap affichés dans la légende (bouton « i » unique).
 
     map.touchZoomRotate.disableRotation();
     mapRef.current = map;

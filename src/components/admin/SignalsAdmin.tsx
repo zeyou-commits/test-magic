@@ -18,6 +18,7 @@ import { cabasImages, tripStepsQuery, type TripStepRow } from "@/lib/ferry/prese
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { AdminDrawer, AdminListToolbar, matches } from "./AdminDrawer";
+import { MoodsAdmin } from "./MoodsAdmin";
 
 // Tables du catalogue, absentes des types générés.
 const supabase = typedSupabase as unknown as SupabaseClient;
@@ -38,7 +39,9 @@ const palette = [
 ];
 const lifetimes = [30, 45, 60, 90, 120, 180, 240, 360, 720];
 const lifetimeText = (minutes: number) =>
-  minutes < 60 ? `${minutes} min` : `${Math.floor(minutes / 60)} h${minutes % 60 ? ` ${minutes % 60}` : ""}`;
+  minutes < 60
+    ? `${minutes} min`
+    : `${Math.floor(minutes / 60)} h${minutes % 60 ? ` ${minutes % 60}` : ""}`;
 
 /** Code technique tiré du libellé : minuscules, sans accents ni espaces. */
 function codeFrom(label: string, separator = "") {
@@ -141,7 +144,7 @@ export function SignalsAdmin() {
   const client = useQueryClient();
   const version = useQuery(catalogQuery).data ?? 0;
   const tables = useQuery({ ...signalTablesQuery, enabled: version >= 4 });
-  const [view, setView] = useState<"situations" | "services" | "steps">("situations");
+  const [view, setView] = useState<"situations" | "services" | "steps" | "moods">("situations");
   const [search, setSearch] = useState("");
   const [editing, setEditing] = useState<SituationRow | "new" | null>(null);
   const [service, setService] = useState<ServiceRow | "new" | null>(null);
@@ -153,14 +156,22 @@ export function SignalsAdmin() {
   const reorder = useMutation({
     mutationFn: async (input: { table: string; rows: { code: string; sort: number }[] }) => {
       for (const row of input.rows) {
-        const { error } = await supabase.from(input.table).update({ sort: row.sort }).eq("code", row.code);
+        const { error } = await supabase
+          .from(input.table)
+          .update({ sort: row.sort })
+          .eq("code", row.code);
         if (error) throw new Error(friendly(error.message));
       }
     },
     onSuccess: refresh,
     onError: (error: Error) => toast.error(error.message),
   });
-  const move = <T extends { code: string; sort: number }>(table: string, list: T[], index: number, step: -1 | 1) => {
+  const move = <T extends { code: string; sort: number }>(
+    table: string,
+    list: T[],
+    index: number,
+    step: -1 | 1,
+  ) => {
     const next = [...list];
     const [item] = next.splice(index, 1);
     next.splice(index + step, 0, item!);
@@ -175,8 +186,8 @@ export function SignalsAdmin() {
       <div className="bw-admin-surface mt-4 p-5 text-sm">
         <p className="font-semibold">Catalogue géré en base : à activer</p>
         <p className="mt-1 text-muted-foreground">
-          Exécutez le script <code>supabase/migrations/{SCRIPT}</code> dans Supabase (SQL Editor). Il
-          reprend le catalogue actuel ; vous pourrez ensuite ajouter, modifier ou masquer les
+          Exécutez le script <code>supabase/migrations/{SCRIPT}</code> dans Supabase (SQL Editor).
+          Il reprend le catalogue actuel ; vous pourrez ensuite ajouter, modifier ou masquer les
           situations, leurs choix et les services du port ici.
         </p>
       </div>
@@ -199,15 +210,24 @@ export function SignalsAdmin() {
             ["situations", `Situations (${data.situations.length})`],
             ["services", `Services du port (${data.services.length})`],
             ["steps", "Étapes Ma traversée"],
+            ["moods", "Humeurs des voyageurs"],
           ] as const
         ).map(([id, label]) => (
-          <button key={id} type="button" role="tab" aria-selected={view === id} onClick={() => setView(id)}>
+          <button
+            key={id}
+            type="button"
+            role="tab"
+            aria-selected={view === id}
+            onClick={() => setView(id)}
+          >
             {label}
           </button>
         ))}
       </div>
 
-      {view === "steps" ? (
+      {view === "moods" ? (
+        <MoodsAdmin />
+      ) : view === "steps" ? (
         <TripStepsAdmin />
       ) : view === "situations" ? (
         <div className="bw-admin-surface p-4">
@@ -226,14 +246,20 @@ export function SignalsAdmin() {
             if (!group.length) return null;
             return (
               <section key={kind} className="mt-4">
-                <h3 className="bw-admin-group-title">{kind === "port" ? "Au port" : "Le bateau"}</h3>
+                <h3 className="bw-admin-group-title">
+                  {kind === "port" ? "Au port" : "Le bateau"}
+                </h3>
                 <ul className="bw-admin-list">
                   {group.map((row) => {
                     const options = data.options.filter((option) => option.situation === row.code);
                     const index = all.findIndex((item) => item.code === row.code);
                     return (
                       <li key={row.code} data-muted={!row.active || undefined}>
-                        <button type="button" className="bw-admin-list__main" onClick={() => setEditing(row)}>
+                        <button
+                          type="button"
+                          className="bw-admin-list__main"
+                          onClick={() => setEditing(row)}
+                        >
                           <Badge color={row.color} icon={row.icon} />
                           <span className="min-w-0">
                             <strong>{row.label}</strong>
@@ -259,7 +285,9 @@ export function SignalsAdmin() {
                           <button
                             type="button"
                             aria-label={`Descendre ${row.label}`}
-                            disabled={index >= all.length - 1 || reorder.isPending || Boolean(search)}
+                            disabled={
+                              index >= all.length - 1 || reorder.isPending || Boolean(search)
+                            }
                             onClick={() => move("bw_signal_situations", all, index, 1)}
                           >
                             <ArrowDown className="size-4" />
@@ -273,8 +301,8 @@ export function SignalsAdmin() {
             );
           })}
           <p className="mt-4 text-xs text-muted-foreground">
-            L’ordre est celui des tuiles « Que voyez-vous ? ». Une situation masquée n’est plus proposée,
-            mais les signalements déjà faits restent lisibles.
+            L’ordre est celui des tuiles « Que voyez-vous ? ». Une situation masquée n’est plus
+            proposée, mais les signalements déjà faits restent lisibles.
           </p>
         </div>
       ) : (
@@ -293,7 +321,11 @@ export function SignalsAdmin() {
               const index = data.services.findIndex((item) => item.code === row.code);
               return (
                 <li key={row.code} data-muted={!row.active || undefined}>
-                  <button type="button" className="bw-admin-list__main" onClick={() => setService(row)}>
+                  <button
+                    type="button"
+                    className="bw-admin-list__main"
+                    onClick={() => setService(row)}
+                  >
                     <Badge color="#0f766e" icon={row.icon} />
                     <span className="min-w-0">
                       <strong>{row.label}</strong>
@@ -315,7 +347,9 @@ export function SignalsAdmin() {
                     <button
                       type="button"
                       aria-label={`Descendre ${row.label}`}
-                      disabled={index >= data.services.length - 1 || reorder.isPending || Boolean(search)}
+                      disabled={
+                        index >= data.services.length - 1 || reorder.isPending || Boolean(search)
+                      }
                       onClick={() => move("bw_signal_services", data.services, index, 1)}
                     >
                       <ArrowDown className="size-4" />
@@ -332,7 +366,11 @@ export function SignalsAdmin() {
         <SituationEditor
           key={editing === "new" ? "new" : editing.code}
           row={editing === "new" ? null : editing}
-          options={editing === "new" ? [] : data.options.filter((option) => option.situation === editing.code)}
+          options={
+            editing === "new"
+              ? []
+              : data.options.filter((option) => option.situation === editing.code)
+          }
           takenCodes={data.situations.map((item) => item.code)}
           nextSort={(data.situations.at(-1)?.sort ?? 0) + 10}
           onClose={() => setEditing(null)}
@@ -417,7 +455,11 @@ function SituationEditor({
       open
       onOpenChange={(open) => !open && onClose()}
       title={row ? row.label : "Nouvelle situation"}
-      description={row ? "Libellé, apparence, durée et choix proposés aux voyageurs." : "Elle apparaîtra comme une tuile dans « Que voyez-vous ? »."}
+      description={
+        row
+          ? "Libellé, apparence, durée et choix proposés aux voyageurs."
+          : "Elle apparaîtra comme une tuile dans « Que voyez-vous ? »."
+      }
       footer={
         <>
           {row && !row.builtin ? (
@@ -426,7 +468,12 @@ function SituationEditor({
               className="mr-auto text-destructive"
               disabled={remove.isPending}
               onClick={() => {
-                if (window.confirm(`Supprimer « ${row.label} » ? Si elle a déjà servi, masquez-la plutôt.`)) remove.mutate();
+                if (
+                  window.confirm(
+                    `Supprimer « ${row.label} » ? Si elle a déjà servi, masquez-la plutôt.`,
+                  )
+                )
+                  remove.mutate();
               }}
             >
               <Trash2 className="size-4" aria-hidden /> Supprimer
@@ -447,7 +494,11 @@ function SituationEditor({
           <span className="text-sm font-semibold">{draft.label || "Aperçu de la tuile"}</span>
         </div>
         <Label text="Libellé">
-          <Input value={draft.label} maxLength={60} onChange={(e) => set({ label: e.target.value })} />
+          <Input
+            value={draft.label}
+            maxLength={60}
+            onChange={(e) => set({ label: e.target.value })}
+          />
         </Label>
         {!row ? (
           <Label text="Concerne">
@@ -483,15 +534,28 @@ function SituationEditor({
             </select>
           </Label>
           <Label text="Question au-dessus des choix">
-            <Input value={draft.question} maxLength={80} placeholder="Ex. Comment avance la file ?" onChange={(e) => set({ question: e.target.value })} />
+            <Input
+              value={draft.question}
+              maxLength={80}
+              placeholder="Ex. Comment avance la file ?"
+              onChange={(e) => set({ question: e.target.value })}
+            />
           </Label>
         </div>
         <label className="flex items-center gap-2 text-sm">
-          <input type="checkbox" checked={draft.required} onChange={(e) => set({ required: e.target.checked })} />
+          <input
+            type="checkbox"
+            checked={draft.required}
+            onChange={(e) => set({ required: e.target.checked })}
+          />
           Une précision doit être choisie
         </label>
         <label className="flex items-center gap-2 text-sm">
-          <input type="checkbox" checked={!draft.active} onChange={(e) => set({ active: !e.target.checked })} />
+          <input
+            type="checkbox"
+            checked={!draft.active}
+            onChange={(e) => set({ active: !e.target.checked })}
+          />
           <EyeOff className="size-4 text-muted-foreground" aria-hidden />
           Masquer (plus proposée aux voyageurs)
         </label>
@@ -550,7 +614,8 @@ function OptionsEditor({
     const [item] = next.splice(index, 1);
     next.splice(index + step, 0, item!);
     next.forEach((row, i) => {
-      if (row.sort !== (i + 1) * 10) write.mutate({ code: row.code, values: { sort: (i + 1) * 10 } });
+      if (row.sort !== (i + 1) * 10)
+        write.mutate({ code: row.code, values: { sort: (i + 1) * 10 } });
     });
   };
   return (
@@ -574,7 +639,11 @@ function OptionsEditor({
             </li>
           ) : (
             <li key={option.code} data-muted={!option.active || undefined}>
-              <button type="button" className="bw-admin-list__main" onClick={() => setEditing(option.code)}>
+              <button
+                type="button"
+                className="bw-admin-list__main"
+                onClick={() => setEditing(option.code)}
+              >
                 <span className="grid size-8 place-items-center rounded-full bg-muted text-foreground">
                   <NamedIcon name={option.icon} size={16} />
                 </span>
@@ -585,21 +654,38 @@ function OptionsEditor({
                     {option.on_site ? " · sur place obligatoire" : ""}
                   </small>
                 </span>
-                {option.on_site ? <MapPin className="size-4 text-amber-600" aria-label="Sur place obligatoire" /> : null}
+                {option.on_site ? (
+                  <MapPin className="size-4 text-amber-600" aria-label="Sur place obligatoire" />
+                ) : null}
                 {!option.active ? <span className="bw-admin-chip">Masqué</span> : null}
               </button>
               <span className="bw-admin-list__order">
-                <button type="button" aria-label={`Monter ${option.label}`} disabled={index === 0} onClick={() => swap(index, -1)}>
+                <button
+                  type="button"
+                  aria-label={`Monter ${option.label}`}
+                  disabled={index === 0}
+                  onClick={() => swap(index, -1)}
+                >
                   <ArrowUp className="size-4" />
                 </button>
-                <button type="button" aria-label={`Descendre ${option.label}`} disabled={index === options.length - 1} onClick={() => swap(index, 1)}>
+                <button
+                  type="button"
+                  aria-label={`Descendre ${option.label}`}
+                  disabled={index === options.length - 1}
+                  onClick={() => swap(index, 1)}
+                >
                   <ArrowDown className="size-4" />
                 </button>
                 <button
                   type="button"
                   aria-label={`Supprimer ${option.label}`}
                   onClick={() => {
-                    if (window.confirm(`Supprimer « ${option.label} » ? S’il a déjà servi, masquez-le plutôt.`)) remove.mutate(option.code);
+                    if (
+                      window.confirm(
+                        `Supprimer « ${option.label} » ? S’il a déjà servi, masquez-le plutôt.`,
+                      )
+                    )
+                      remove.mutate(option.code);
                   }}
                 >
                   <Trash2 className="size-4" />
@@ -608,7 +694,11 @@ function OptionsEditor({
             </li>
           ),
         )}
-        {!options.length && !adding ? <li className="p-3 text-xs text-muted-foreground">Aucun choix : la situation s’envoie telle quelle.</li> : null}
+        {!options.length && !adding ? (
+          <li className="p-3 text-xs text-muted-foreground">
+            Aucun choix : la situation s’envoie telle quelle.
+          </li>
+        ) : null}
       </ul>
       {adding ? (
         <OptionForm
@@ -619,7 +709,11 @@ function OptionsEditor({
               values: {
                 ...values,
                 situation,
-                code: uniqueCode(`${situation}_${codeFrom(values.label ?? "", "_")}`, options.map((o) => o.code), "_"),
+                code: uniqueCode(
+                  `${situation}_${codeFrom(values.label ?? "", "_")}`,
+                  options.map((o) => o.code),
+                  "_",
+                ),
                 sort: (options.at(-1)?.sort ?? 0) + 10,
               },
             })
@@ -712,7 +806,13 @@ function ServiceEditor({
       if (values.label.length < 2) throw new Error("Indiquez un libellé.");
       const { error } = row
         ? await supabase.from("bw_signal_services").update(values).eq("code", row.code)
-        : await supabase.from("bw_signal_services").insert({ ...values, code: uniqueCode(codeFrom(values.label), takenCodes), sort: nextSort });
+        : await supabase
+            .from("bw_signal_services")
+            .insert({
+              ...values,
+              code: uniqueCode(codeFrom(values.label), takenCodes),
+              sort: nextSort,
+            });
       if (error) throw new Error(friendly(error.message));
     },
     onSuccess: () => {
@@ -748,7 +848,12 @@ function ServiceEditor({
               className="mr-auto text-destructive"
               disabled={remove.isPending}
               onClick={() => {
-                if (window.confirm(`Supprimer « ${row.label} » ? S’il a déjà servi, masquez-le plutôt.`)) remove.mutate();
+                if (
+                  window.confirm(
+                    `Supprimer « ${row.label} » ? S’il a déjà servi, masquez-le plutôt.`,
+                  )
+                )
+                  remove.mutate();
               }}
             >
               <Trash2 className="size-4" aria-hidden /> Supprimer
@@ -765,14 +870,26 @@ function ServiceEditor({
     >
       <div className="grid gap-4">
         <Label text="Libellé">
-          <Input value={draft.label} maxLength={60} onChange={(e) => set({ label: e.target.value })} />
+          <Input
+            value={draft.label}
+            maxLength={60}
+            onChange={(e) => set({ label: e.target.value })}
+          />
         </Label>
         <div className="grid gap-4 sm:grid-cols-2">
           <Label text="État « ouvert »">
-            <Input value={draft.open_label} maxLength={30} onChange={(e) => set({ open_label: e.target.value })} />
+            <Input
+              value={draft.open_label}
+              maxLength={30}
+              onChange={(e) => set({ open_label: e.target.value })}
+            />
           </Label>
           <Label text="État « fermé »">
-            <Input value={draft.closed_label} maxLength={30} onChange={(e) => set({ closed_label: e.target.value })} />
+            <Input
+              value={draft.closed_label}
+              maxLength={30}
+              onChange={(e) => set({ closed_label: e.target.value })}
+            />
           </Label>
         </div>
         <div className="grid gap-1.5 text-sm font-medium">
@@ -780,7 +897,11 @@ function ServiceEditor({
           <IconPicker value={draft.icon} onChange={(icon) => set({ icon })} />
         </div>
         <label className="flex items-center gap-2 text-sm">
-          <input type="checkbox" checked={!draft.active} onChange={(e) => set({ active: !e.target.checked })} />
+          <input
+            type="checkbox"
+            checked={!draft.active}
+            onChange={(e) => set({ active: !e.target.checked })}
+          />
           Masquer (plus proposé aux voyageurs)
         </label>
       </div>
@@ -834,13 +955,22 @@ function TripStepsAdmin() {
   );
 }
 
-function TripStepEditor({ row, onClose, onSaved }: { row: TripStepRow; onClose: () => void; onSaved: () => void }) {
+function TripStepEditor({
+  row,
+  onClose,
+  onSaved,
+}: {
+  row: TripStepRow;
+  onClose: () => void;
+  onSaved: () => void;
+}) {
   const [label, setLabel] = useState(row.label);
   const [short, setShort] = useState(row.short_label);
   const [image, setImage] = useState(row.image);
   const save = useMutation({
     mutationFn: async () => {
-      if (label.trim().length < 2 || short.trim().length < 2) throw new Error("Libellés trop courts.");
+      if (label.trim().length < 2 || short.trim().length < 2)
+        throw new Error("Libellés trop courts.");
       const { error } = await supabase
         .from("bw_trip_steps")
         .update({ label: label.trim(), short_label: short.trim(), image })
@@ -892,7 +1022,12 @@ function TripStepEditor({ row, onClose, onSaved }: { row: TripStepRow; onClose: 
                 role="radio"
                 aria-checked={image === src}
                 onClick={() => setImage(src)}
-                title={src.split("/").pop()?.replace(/\.webp$/, "").replace(/^\d+_/, "").replace(/_/g, " ")}
+                title={src
+                  .split("/")
+                  .pop()
+                  ?.replace(/\.webp$/, "")
+                  .replace(/^\d+_/, "")
+                  .replace(/_/g, " ")}
               >
                 <img src={src} alt="" width={52} height={52} loading="lazy" />
               </button>

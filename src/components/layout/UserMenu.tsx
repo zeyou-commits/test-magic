@@ -1,5 +1,5 @@
 import { Link, useNavigate } from "@tanstack/react-router";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { UserRound } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -12,6 +12,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useAuth } from "@/hooks/useAuth";
+import { avatarColors, myTravellerQuery, personaImage } from "@/lib/community/travellers";
 
 function initials(name: string) {
   return name
@@ -32,6 +33,7 @@ export function UserMenu({
   const { user, profile, roles, signOut } = useAuth();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const traveller = useQuery(myTravellerQuery(user?.id)).data;
 
   if (!user) {
     if (iconOnly) {
@@ -79,7 +81,15 @@ export function UserMenu({
           className="rounded-full ring-offset-2 ring-offset-card outline-none focus-visible:ring-2 focus-visible:ring-ring"
         >
           <Avatar className={`${compact ? "size-8" : "size-9"} border border-border`}>
-            {profile?.avatar_url ? <AvatarImage src={profile.avatar_url} alt={name} /> : null}
+            {/* Mon cabas (profil voyageur) ; sans profil, les initiales. */}
+            {traveller ? (
+              <AvatarImage
+                src={personaImage(traveller.avatar)}
+                alt={traveller.pseudo}
+                style={{ background: avatarColors[traveller.color] }}
+                className="object-contain p-0.5"
+              />
+            ) : null}
             <AvatarFallback className="bg-primary text-xs font-semibold text-primary-foreground">
               {initials(name) || "?"}
             </AvatarFallback>
@@ -98,13 +108,19 @@ export function UserMenu({
           <Link to="/compte">Mon espace voyageur</Link>
         </DropdownMenuItem>
         <DropdownMenuItem asChild>
-          <Link to="/compte" hash="voyages">Mes bateaux et traversées suivis</Link>
+          <Link to="/compte" hash="voyages">
+            Mes bateaux et traversées suivis
+          </Link>
         </DropdownMenuItem>
         <DropdownMenuItem asChild>
-          <Link to="/compte" hash="notifications">Mes notifications</Link>
+          <Link to="/compte" hash="notifications">
+            Mes notifications
+          </Link>
         </DropdownMenuItem>
         <DropdownMenuItem asChild>
-          <Link to="/compte" hash="profil">Mon profil</Link>
+          <Link to="/compte" hash="profil">
+            Mon profil
+          </Link>
         </DropdownMenuItem>
         <DropdownMenuItem asChild>
           <Link to="/compte" hash="contributions">

@@ -1,4 +1,6 @@
 import { useEffect, useState } from "react";
+import { TravellerAvatar } from "@/components/community/TravellerAvatar";
+import { ContributionAuthor, ReactionBar, useContributions } from "@/components/community/Contributions";
 import { scrollWithin, takeSignalFocus } from "./LivePulse";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
@@ -89,6 +91,10 @@ export function TravelSignals({
     return () => window.removeEventListener("batogo:open-signal", onRequest);
   }, [kind, target]);
   const [done, setDone] = useState<string | null>(null);
+  const contributions = useContributions(
+    "alert",
+    activeAlerts(feed.data?.alerts ?? []).map((alert) => alert.id),
+  );
   // Pastille touchée sur la carte : la fiche s'ouvre cadrée sur ce signalement.
   const alertIds = (feed.data?.alerts ?? []).map((alert) => alert.id).join(",");
   useEffect(() => {
@@ -174,12 +180,17 @@ export function TravelSignals({
                       ) : null}
                     </span>
                   ) : null}
+                  <ContributionAuthor
+                    card={contributions.authors?.[alert.id]}
+                    prefix={alert.own ? "Par vous ·" : "Par"}
+                  />
                   <small className="bw-signal-meta">
                     <SignalAvatars count={travelers} seed={alert.id} />
                     {travelers} voyageur{travelers > 1 ? "s" : ""} ·{" "}
                     {formatAge(Math.max(0, (Date.now() - Date.parse(alert.created_at)) / 60_000))}
                     {alert.denials ? ` · ${alert.denials} « plus le cas »` : ""}
                   </small>
+                  <ReactionBar kind="alert" id={alert.id} counts={contributions.counts} />
                   <div className="bw-signal-actions">
                     {alert.own ? (
                       <button
@@ -257,6 +268,10 @@ export function VesselReviews({ vesselId }: { vesselId: string }) {
     window.sessionStorage.removeItem("bledway:pending-vessel-review");
     setWrite(true);
   }, [user, vesselId]);
+  const reviewAuthors = useContributions(
+    "vessel_review",
+    (feed.data?.reviews ?? []).filter((r) => r.status === "published").map((r) => r.id),
+  );
   if (feed.data === null) return null;
   if (!feed.data)
     return feed.isPending ? (
@@ -328,10 +343,18 @@ export function VesselReviews({ vesselId }: { vesselId: string }) {
         {published.map((review) => (
           <li key={review.id}>
             <div>
-              <span className="bw-review-avatar">
-                <Users size={18} aria-hidden />
-              </span>
-              <strong>{review.own ? "Vous" : "Voyageur BledWay"}</strong>
+              {reviewAuthors.authors?.[review.id] ? (
+                <TravellerAvatar card={reviewAuthors.authors[review.id]!} size={36} />
+              ) : (
+                <span className="bw-review-avatar">
+                  <Users size={18} aria-hidden />
+                </span>
+              )}
+              <strong>
+                {review.own
+                  ? "Vous"
+                  : (reviewAuthors.authors?.[review.id]?.pseudo ?? "Voyageur BledWay")}
+              </strong>
               <time dateTime={review.created_at}>
                 {new Date(review.created_at).toLocaleDateString("fr-FR")}
               </time>
@@ -349,6 +372,7 @@ export function VesselReviews({ vesselId }: { vesselId: string }) {
             {review.comment ? (
               <p className="whitespace-pre-wrap break-words">{review.comment}</p>
             ) : null}
+            <ReactionBar kind="vessel_review" id={review.id} counts={reviewAuthors.counts} />
           </li>
         ))}
       </ul>

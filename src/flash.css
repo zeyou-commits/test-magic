@@ -2868,6 +2868,8 @@ html {
 /* ── Fiche « Votre traversée » : récapitulatif compact ─────────────────────── */
 .bw-recap {
   display: grid;
+  /* Une colonne qui ne s'élargit jamais au contenu (rangée des voyageurs qui défile). */
+  grid-template-columns: minmax(0, 1fr);
   gap: 10px;
 }
 .bw-recap__ticket {
@@ -3700,4 +3702,557 @@ html {
 }
 .bw-signal-list li {
   scroll-margin-top: 72px;
+}
+
+/* ── Communauté : avatars cabas, humeurs, voyageurs de la traversée, profil ── */
+.bw-tavatar {
+  position: relative;
+  display: inline-grid;
+  width: var(--tavatar, 40px);
+  height: var(--tavatar, 40px);
+  flex-shrink: 0;
+  place-items: center;
+  border-radius: 999px;
+}
+button.bw-tavatar {
+  cursor: pointer;
+}
+button.bw-tavatar:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+.bw-tavatar__disc {
+  display: grid;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  place-items: center;
+  border: 2px solid white;
+  border-radius: 999px;
+  box-shadow: 0 2px 6px #16324a26;
+}
+.bw-tavatar__disc img {
+  width: 92%;
+  height: 92%;
+  margin-top: 6%;
+  object-fit: contain;
+}
+/* La bulle d'humeur, posée en haut à droite du cabas, façon réseau social. */
+.bw-tavatar__mood {
+  position: absolute;
+  top: -6px;
+  right: -8px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  border-radius: 999px;
+  background: white;
+  padding: 2px;
+  box-shadow: 0 2px 6px #16324a33;
+  white-space: nowrap;
+}
+.bw-tavatar__mood img {
+  width: 18px;
+  height: 18px;
+  border-radius: 999px;
+  object-fit: cover;
+}
+.bw-tavatar__mood[data-label] {
+  position: relative;
+  top: auto;
+  right: auto;
+  padding: 3px 10px 3px 3px;
+  font-size: 12px;
+  font-weight: 650;
+  color: #16324a;
+}
+.bw-tavatar__mood[data-label]::before {
+  /* Petite pointe de bulle de BD vers le cabas. */
+  content: "";
+  position: absolute;
+  bottom: -4px;
+  left: 14px;
+  width: 9px;
+  height: 9px;
+  background: white;
+  transform: rotate(45deg);
+  box-shadow: 2px 2px 3px #16324a14;
+}
+.bw-tavatar:has(.bw-tavatar__mood[data-label]) {
+  width: auto;
+  height: auto;
+  display: inline-flex;
+  flex-direction: column-reverse;
+  align-items: center;
+  gap: 8px;
+}
+.bw-tavatar:has(.bw-tavatar__mood[data-label]) .bw-tavatar__disc {
+  width: var(--tavatar);
+  height: var(--tavatar);
+}
+
+/* « N voyageurs sur cette traversée » */
+.bw-trip-people {
+  min-width: 0;
+  border: 1px solid #e3ebe6;
+  border-radius: 16px;
+  background: white;
+  padding: 10px 12px;
+}
+.bw-trip-people__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 12.5px;
+  color: #16324a;
+}
+.bw-trip-people__head button {
+  flex-shrink: 0;
+  white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  border-radius: 999px;
+  background: #fff3cf;
+  padding: 4px 10px;
+  font-size: 12px;
+  font-weight: 650;
+  color: #6d4a00;
+}
+.bw-trip-people__row {
+  display: flex;
+  gap: 10px;
+  overflow-x: auto;
+  margin-top: 10px;
+  padding: 8px 4px 2px;
+  scrollbar-width: none;
+}
+.bw-trip-people__item {
+  display: grid;
+  width: 52px;
+  flex-shrink: 0;
+  justify-items: center;
+  gap: 4px;
+}
+.bw-trip-people__item small {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 10.5px;
+  color: #4f6b5e;
+}
+.bw-trip-people__item[data-me] small {
+  font-weight: 700;
+  color: var(--primary);
+}
+.bw-trip-people__more {
+  display: grid;
+  width: 40px;
+  height: 40px;
+  flex-shrink: 0;
+  place-items: center;
+  border-radius: 999px;
+  background: #eef3ef;
+  font-size: 12px;
+  font-weight: 700;
+  color: #4f6b5e;
+}
+
+/* Profil public */
+.bw-profile-dialog {
+  max-width: 400px;
+}
+.bw-profile__loading {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+}
+.bw-profile {
+  display: grid;
+  gap: 14px;
+}
+.bw-profile__head {
+  display: grid;
+  justify-items: center;
+  gap: 6px;
+  text-align: center;
+}
+.bw-profile__name {
+  font-size: 20px;
+  font-weight: 800;
+  color: #16324a;
+}
+.bw-profile__stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+}
+.bw-profile__stats > div {
+  border-radius: 12px;
+  background: #f2f8f4;
+  padding: 8px;
+  text-align: center;
+}
+.bw-profile__stats dt {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  font-size: 11px;
+  color: #4f6b5e;
+}
+.bw-profile__stats dd {
+  font-size: 20px;
+  font-weight: 800;
+  color: #16324a;
+}
+.bw-profile__favs {
+  display: grid;
+  gap: 4px;
+  font-size: 13px;
+  color: #4f6b5e;
+}
+.bw-profile__favs li {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.bw-profile__favs svg {
+  color: var(--primary);
+}
+.bw-profile__favs strong {
+  margin-left: auto;
+  color: #16324a;
+}
+.bw-profile__badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.bw-profile__badges span {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  border-radius: 999px;
+  background: #fff3cf;
+  padding: 4px 10px;
+  font-size: 12px;
+  font-weight: 650;
+  color: #6d4a00;
+}
+.bw-profile__empty,
+.bw-profile__note {
+  font-size: 12px;
+  color: #6b7c74;
+  text-align: center;
+}
+
+/* Choix de l'humeur */
+.bw-mood-dialog {
+  max-width: 520px;
+}
+.bw-mood-scroll {
+  max-height: min(60vh, 520px);
+  overflow-y: auto;
+  margin-top: 8px;
+}
+.bw-mood-group {
+  margin: 10px 0 6px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: #6b7c74;
+}
+.bw-mood-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 6px;
+}
+.bw-mood-grid button {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid #e3ebe6;
+  border-radius: 14px;
+  background: white;
+  padding: 6px 8px;
+  text-align: left;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: #16324a;
+}
+.bw-mood-grid button:hover {
+  border-color: var(--primary);
+}
+.bw-mood-grid button[aria-pressed="true"] {
+  border-color: var(--primary);
+  background: #f2f8f4;
+}
+.bw-mood-grid img {
+  width: 40px;
+  height: 40px;
+  flex-shrink: 0;
+  border-radius: 12px;
+  object-fit: cover;
+}
+.bw-mood-grid svg {
+  margin-left: auto;
+  flex-shrink: 0;
+  color: var(--primary);
+}
+.bw-mood-clear {
+  display: inline-flex;
+  justify-self: start;
+  align-items: center;
+  gap: 5px;
+  margin-top: 10px;
+  font-size: 12.5px;
+  color: #6b7c74;
+  text-decoration: underline;
+}
+
+/* Mon profil voyageur (espace compte) */
+.bw-traveller-editor {
+  display: grid;
+  gap: 18px;
+  margin-top: 16px;
+}
+.bw-traveller-editor__loading {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+}
+.bw-traveller-editor__preview {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  border-radius: 18px;
+  background: linear-gradient(150deg, #f3faf6, #fffdf8);
+  padding: 16px;
+}
+.bw-traveller-editor__preview strong {
+  font-size: 18px;
+  color: #16324a;
+}
+.bw-traveller-editor__preview p {
+  margin-top: 2px;
+  font-size: 12px;
+  color: #6b7c74;
+}
+.bw-traveller-editor__links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+}
+.bw-traveller-editor__links button {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  border: 1px solid #d4e3db;
+  border-radius: 999px;
+  background: white;
+  padding: 4px 10px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #16324a;
+}
+.bw-traveller-editor fieldset {
+  border: 0;
+  padding: 0;
+}
+.bw-traveller-editor legend {
+  margin-bottom: 8px;
+  font-size: 13px;
+  font-weight: 700;
+  color: #16324a;
+}
+.bw-persona-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(76px, 1fr));
+  gap: 8px;
+}
+.bw-persona-grid button {
+  position: relative;
+  display: grid;
+  justify-items: center;
+  gap: 2px;
+  border: 2px solid transparent;
+  border-radius: 16px;
+  padding: 6px 4px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #16324a;
+}
+.bw-persona-grid button[aria-checked="true"] {
+  border-color: var(--primary);
+  box-shadow: 0 4px 10px #0a5c3626;
+}
+.bw-persona-grid img {
+  width: 52px;
+  height: 52px;
+  object-fit: contain;
+}
+.bw-persona-grid svg {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  border-radius: 999px;
+  background: var(--primary);
+  padding: 2px;
+  color: white;
+}
+.bw-color-row {
+  display: flex;
+  gap: 10px;
+}
+.bw-color-row button {
+  width: 32px;
+  height: 32px;
+  border: 2px solid white;
+  border-radius: 999px;
+  box-shadow: 0 0 0 1px #d4e3db;
+}
+.bw-color-row button[aria-checked="true"] {
+  box-shadow: 0 0 0 2px var(--primary);
+}
+.bw-traveller-editor__field {
+  display: grid;
+  gap: 5px;
+  font-size: 13px;
+  font-weight: 700;
+  color: #16324a;
+}
+.bw-traveller-editor__field input {
+  max-width: 320px;
+  min-height: 42px;
+  border: 1px solid #d4e3db;
+  border-radius: 10px;
+  background: white;
+  padding: 8px 12px;
+  font-size: 14px;
+  font-weight: 500;
+}
+.bw-traveller-editor__field small {
+  font-size: 11.5px;
+  font-weight: 400;
+  color: #6b7c74;
+}
+.bw-traveller-editor__field small[data-error] {
+  color: #b42318;
+}
+.bw-traveller-editor__toggle {
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  font-size: 13px;
+}
+.bw-traveller-editor__toggle input {
+  width: 18px;
+  height: 18px;
+  margin-top: 1px;
+  accent-color: var(--primary);
+}
+.bw-traveller-editor__toggle strong {
+  display: block;
+  color: #16324a;
+}
+.bw-traveller-editor__toggle small {
+  display: block;
+  font-size: 11.5px;
+  color: #6b7c74;
+}
+.bw-traveller-editor__save {
+  display: flex;
+  justify-content: flex-end;
+}
+
+/* Auteur et réactions sous un signalement ou un avis */
+.bw-contrib-author {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin: 4px 0 2px;
+  font-size: 11.5px;
+  color: #6b7c74;
+}
+.bw-contrib-author strong {
+  color: #16324a;
+}
+.bw-contrib-author .bw-tavatar__mood {
+  top: -5px;
+  right: -7px;
+  padding: 1px;
+}
+.bw-contrib-author .bw-tavatar__mood img {
+  width: 12px;
+  height: 12px;
+}
+.bw-reactions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin: 6px 0 2px;
+}
+.bw-reactions button {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  border: 1px solid #e3ebe6;
+  border-radius: 999px;
+  background: white;
+  padding: 2px 7px 2px 3px;
+  font-size: 11px;
+  font-weight: 700;
+  color: #4f6b5e;
+  transition: transform 0.12s ease;
+}
+.bw-reactions button:active {
+  transform: scale(0.92);
+}
+.bw-reactions button[aria-pressed="true"] {
+  border-color: #f2d58a;
+  background: #fff6dc;
+  color: #6d4a00;
+}
+.bw-reactions img {
+  width: 20px;
+  height: 20px;
+}
+.bw-reactions button:not(:has(b)) {
+  padding-right: 3px;
+}
+.bw-admin-chip-check {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 4px 10px;
+  font-size: 12.5px;
+  font-weight: 500;
+}
+.bw-traveller-editor__links button {
+  white-space: nowrap;
+}
+@media (max-width: 560px) {
+  .bw-traveller-editor__preview {
+    flex-direction: column;
+    text-align: center;
+  }
+  .bw-traveller-editor__links {
+    justify-content: center;
+  }
+  .bw-persona-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
 }

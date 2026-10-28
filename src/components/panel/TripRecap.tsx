@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { TripTravellers } from "@/components/community/TripTravellers";
 import { useQuery } from "@tanstack/react-query";
 import {
   Anchor,
@@ -261,6 +262,13 @@ export function TripRecap({
           fromPortId={from.id}
         />
       ) : null}
+
+      {/* 3 bis. Les voyageurs de la traversée, leur cabas et leur humeur */}
+      <TripTravellers
+        departureId={departure.id}
+        departureAt={departure.departure_at}
+        arrivalAt={arriveIso ?? null}
+      />
 
       {/* 4. Le détail */}
       <div className="bw-recap__tabs" role="tablist" aria-label="Détail de la traversée">

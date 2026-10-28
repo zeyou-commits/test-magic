@@ -1,4 +1,7 @@
 import { useEffect, useState } from "react";
+import { myTravellerQuery } from "@/lib/community/travellers";
+import { TravellerAvatar } from "@/components/community/TravellerAvatar";
+import { MyTravellerEditor } from "@/components/community/MyTravellerEditor";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -12,7 +15,6 @@ import { portsQuery } from "@/lib/ferry/queries";
 import { formatDate } from "@/lib/ferry/format";
 import { FollowCenter } from "@/components/panel/FollowCenter";
 import { NotificationSettings } from "@/components/account/NotificationSettings";
-import { AvatarUpload } from "@/components/account/AvatarUpload";
 import { Bell, Heart, MessageSquare, UserRound, LogOut, ArrowLeft } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
@@ -93,14 +95,14 @@ function AccountPage() {
   return (
     <div className="bw-account-page">
       <header className="bw-account-header"><Link to="/" className="inline-flex items-center gap-2 text-xs font-semibold text-primary"><ArrowLeft className="size-4"/>Retour à la carte</Link><img src="/bledway-brand.png" alt="BledWay" className="h-9 w-auto"/><button type="button" onClick={() => void signOut()} aria-label="Se déconnecter" className="grid size-10 place-items-center rounded-full border border-border text-muted-foreground"><LogOut className="size-4"/></button></header>
-      <div className="bw-account-welcome"><Avatar className="size-16 border-4 border-white shadow-sm">{profile?.avatar_url && <AvatarImage src={profile.avatar_url} alt=""/>}<AvatarFallback className="bg-primary text-xl font-semibold text-white">{(profile?.display_name || user.email || "V").slice(0, 1).toUpperCase()}</AvatarFallback></Avatar><div className="min-w-0"><span className="bw-account-kicker">Mon espace voyageur</span><h1>Bonjour{profile?.display_name ? ` ${profile.display_name.split(" ")[0]}` : ""}.</h1><p>Les retrouvailles se préparent ici.</p></div></div>
+      <div className="bw-account-welcome"><MyCabas fallback={(profile?.display_name || user.email || "V").slice(0, 1).toUpperCase()} /><div className="min-w-0"><span className="bw-account-kicker">Mon espace voyageur</span><h1>Bonjour{profile?.display_name ? ` ${profile.display_name.split(" ")[0]}` : ""}.</h1><p>Les retrouvailles se préparent ici.</p></div></div>
       <Tabs value={section} onValueChange={(value) => { setSection(value); window.history.replaceState(null, "", `/compte${value === "voyages" ? "" : `#${value}`}`); }}>
         <TabsList className="bw-account-tabs" aria-label="Mon espace voyageur">
           <TabsTrigger value="voyages"><Heart className="size-4"/>Mes voyages</TabsTrigger><TabsTrigger value="notifications"><Bell className="size-4"/>Notifications</TabsTrigger><TabsTrigger value="profil"><UserRound className="size-4"/>Mon profil</TabsTrigger><TabsTrigger value="contributions"><MessageSquare className="size-4"/>Contributions</TabsTrigger>
         </TabsList>
         <TabsContent value="voyages"><FollowCenter userId={user.id}/></TabsContent>
         <TabsContent value="notifications"><NotificationSettings userId={user.id}/></TabsContent>
-        <TabsContent value="profil"><section className="bw-account-section"><h2 className="font-display text-xl font-semibold">Votre profil voyageur</h2><p className="mt-1 text-sm text-muted-foreground">Ce prénom ou pseudo accompagne vos contributions publiques.</p><ProfileCard userId={user.id} displayName={profile?.display_name ?? ""} avatarUrl={profile?.avatar_url ?? ""} onSaved={refreshProfile}/><div className="mt-5 border-t border-border pt-4"><p className="text-xs text-muted-foreground">Adresse de connexion</p><p className="mt-1 break-all text-sm font-medium">{user.email}</p></div>{isAdmin && <Link to="/admin" className="mt-6 inline-flex text-xs font-semibold text-primary underline">Ouvrir l’espace équipe</Link>}</section></TabsContent>
+        <TabsContent value="profil"><section className="bw-account-section"><h2 className="font-display text-xl font-semibold">Votre profil voyageur</h2><p className="mt-1 text-sm text-muted-foreground">Votre cabas, votre pseudo et votre humeur accompagnent vos contributions.</p><MyTravellerEditor /><div className="mt-5 border-t border-border pt-4"><p className="text-xs text-muted-foreground">Adresse de connexion (jamais visible des autres voyageurs)</p><p className="mt-1 break-all text-sm font-medium">{user.email}</p></div>{isAdmin && <Link to="/admin" className="mt-6 inline-flex text-xs font-semibold text-primary underline">Ouvrir l’espace équipe</Link>}</section></TabsContent>
         <TabsContent value="contributions"><section className="bw-account-section"><h2 className="font-display text-xl font-semibold">Mes contributions</h2><MyReviews userId={user.id}/><MyReports userId={user.id}/></section></TabsContent>
       </Tabs>
     </div>
@@ -119,87 +121,16 @@ function Card({ children }: { children: React.ReactNode }) {
   return <div className="mt-4 rounded-xl border border-border bg-card p-4">{children}</div>;
 }
 
-function ProfileCard({
-  userId,
-  displayName,
-  avatarUrl,
-  onSaved,
-}: {
-  userId: string;
-  displayName: string;
-  avatarUrl: string;
-  onSaved: () => Promise<void>;
-}) {
-  const [name, setName] = useState(displayName);
-  const [avatar, setAvatar] = useState(avatarUrl);
-
-  useEffect(() => {
-    setName(displayName);
-    setAvatar(avatarUrl);
-  }, [displayName, avatarUrl]);
-
-  const save = useMutation({
-    mutationFn: async () => {
-      if (!name.trim() || name.trim().length > 80) throw new Error("Indiquez un prénom ou un pseudo de 80 caractères maximum.");
-      if (avatar.trim()) {
-        try { if (new URL(avatar.trim()).protocol !== "https:") throw new Error(); }
-        catch { throw new Error("La photo doit utiliser une adresse HTTPS valide."); }
-      }
-      const { error } = await supabase
-        .from("profiles")
-        .update({
-          display_name: name.trim() || null,
-          avatar_url: avatar.trim() || null,
-        })
-        .eq("id", userId).select("id").single();
-      if (error) throw new Error(error.message);
-    },
-    onSuccess: async () => {
-      await onSaved();
-      toast.success("Profil mis à jour.");
-    },
-    onError: (error: Error) => toast.error(error.message),
-  });
-
-  return (
-    <Card>
-      <div className="flex flex-col items-start gap-4 sm:flex-row sm:items-center">
-        <Avatar className="size-14 border border-border">
-          {avatar ? <AvatarImage src={avatar} alt={name} /> : null}
-          <AvatarFallback className="bg-primary text-primary-foreground">
-            {(name || "?").slice(0, 2).toUpperCase()}
-          </AvatarFallback>
-        </Avatar>
-        <div className="grid w-full min-w-0 flex-1 gap-3 sm:grid-cols-2">
-          <div className="grid gap-1.5">
-            <Label htmlFor="display-name">Nom affiché</Label>
-            <Input
-              id="display-name"
-              value={name}
-              onChange={(event) => setName(event.target.value)}
-              placeholder="Amine"
-              maxLength={80}
-            />
-          </div>
-          <div className="grid gap-1.5">
-            <Label htmlFor="avatar-url">Photo de profil · lien HTTPS</Label>
-            <Input
-              id="avatar-url"
-              type="url"
-              value={avatar}
-              onChange={(event) => setAvatar(event.target.value)}
-              placeholder="https://…"
-            />
-          </div>
-        </div>
-      </div>
-      <AvatarUpload userId={userId} onUploaded={setAvatar}/>
-      <div className="mt-4 flex justify-end">
-        <Button size="sm" disabled={save.isPending} onClick={() => save.mutate()}>
-          Enregistrer
-        </Button>
-      </div>
-    </Card>
+/** Mon cabas en tête de l'espace voyageur (initiale tant que le profil n'est pas prêt). */
+function MyCabas({ fallback }: { fallback: string }) {
+  const { user } = useAuth();
+  const me = useQuery(myTravellerQuery(user?.id)).data;
+  return me ? (
+    <TravellerAvatar card={me} size={64} static />
+  ) : (
+    <Avatar className="size-16 border-4 border-white shadow-sm">
+      <AvatarFallback className="bg-primary text-xl font-semibold text-white">{fallback}</AvatarFallback>
+    </Avatar>
   );
 }
 

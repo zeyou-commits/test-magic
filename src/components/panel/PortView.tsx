@@ -1,4 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
+import { ReactionBar, useContributions } from "@/components/community/Contributions";
+import { TravellerAvatar } from "@/components/community/TravellerAvatar";
 import { hasSignalFocus, LivePulse, revealLive, useLiveInfo } from "./LivePulse";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
@@ -146,6 +148,10 @@ export function PortView({
 
   // Bandeau « en direct » : compté comme sur les fiches traversée et bateau. L'onglet « En direct »
   // s'ouvre d'office seulement s'il s'y passe quelque chose.
+  const reviewCommunity = useContributions(
+    "port_review",
+    (reviewsResult.data ?? []).map((review) => review.id),
+  );
   const live = useLiveInfo({
     routeIds: portRoutes.map((route) => route.id),
     portIds: [portId],
@@ -538,18 +544,24 @@ export function PortView({
             <ul className="pv-reviews">
               {reviews.map((review) => {
                 const score = getScore(review);
-                const name = review.author?.trim() || "Voyageur";
+                // Le cabas et le pseudo du voyageur (jamais son nom) dès que la communauté est active.
+                const card = reviewCommunity.authors?.[review.id];
+                const name = card?.pseudo ?? (review.author?.trim() || "Voyageur");
                 return (
                   <li key={review.id}>
                     <div className="pv-review__head">
-                      <span className="port-review-avatar" aria-hidden>
-                        {name
-                          .split(/\s+/)
-                          .slice(0, 2)
-                          .map((part) => part.charAt(0))
-                          .join("")
-                          .toUpperCase()}
-                      </span>
+                      {card ? (
+                        <TravellerAvatar card={card} size={32} />
+                      ) : (
+                        <span className="port-review-avatar" aria-hidden>
+                          {name
+                            .split(/\s+/)
+                            .slice(0, 2)
+                            .map((part) => part.charAt(0))
+                            .join("")
+                            .toUpperCase()}
+                        </span>
+                      )}
                       <strong>{name}</strong>
                       {score != null ? <StarRow value={score} size={13} /> : null}
                       <time dateTime={review.created_at}>
@@ -561,6 +573,7 @@ export function PortView({
                       </time>
                     </div>
                     {review.comment ? <p>{review.comment}</p> : null}
+                    <ReactionBar kind="port_review" id={review.id} counts={reviewCommunity.counts} />
                     <div className="bw-review-actions">
                       {helpful.data ? (
                         <button

@@ -10,6 +10,7 @@ import {
   ExternalLink,
   MapPin,
   Megaphone,
+  PenLine,
   Star,
   Users,
 } from "lucide-react";
@@ -30,7 +31,7 @@ import { departureForSignal } from "@/lib/ferry/tracking";
 import { portTimeZone } from "@/lib/ferry/time";
 import { formatDateTime } from "@/lib/ferry/format";
 import type { Selection } from "@/lib/ferry/types";
-import { DemoBadge, EmptyNote } from "./shared";
+import { DemoBadge, EmptyNote, Stars } from "./shared";
 import { CompanyBadge } from "./CompanyBadge";
 import { CrossingCard } from "./CrossingCard";
 import { TravelSignals, VesselReviews } from "./TravelCommunity";
@@ -63,6 +64,17 @@ export function VesselView({
   const community = useQuery(communityQuery("vessel", vesselId, false, user?.id));
   const communityAvailable = Boolean(community.data);
   const [tab, setTab] = useState("tracking");
+  // « Noter » : onglet Avis, formulaire ouvert (après connexion si besoin).
+  const rateVessel = () => {
+    if (!user) {
+      window.sessionStorage.setItem("bledway:pending-vessel-review", vesselId);
+      const next = `${window.location.pathname}${window.location.search}`;
+      window.location.assign(`/auth?next=${encodeURIComponent(next)}`);
+      return;
+    }
+    setTab("reviews");
+    window.dispatchEvent(new CustomEvent("bledway:write-vessel-review", { detail: { vesselId } }));
+  };
   // Infos BledWay de ses lignes à venir et de sa compagnie, signalements à bord.
   const vesselCompany = data.vessels.find((v) => v.id === vesselId)?.company_id;
   const liveInfo = useLiveInfo({
@@ -200,13 +212,40 @@ export function VesselView({
         </aside>
       ) : null}
       <VesselPresence vesselId={vesselId} />
-      <div className="pv-actions pv-actions--single">
+      {communityAvailable ? (
+        <button type="button" className="pv-rating" onClick={() => setTab("reviews")}>
+          {community.data?.rating_count ? (
+            <>
+              <Stars value={community.data.rating_average ?? 0} />
+              <span>· {community.data.rating_count} avis</span>
+            </>
+          ) : (
+            <>
+              <span className="pv-stars-empty" aria-hidden>
+                {[1, 2, 3, 4, 5].map((n) => (
+                  <Star key={n} size={15} />
+                ))}
+              </span>
+              <span>Pas encore d’avis · soyez le premier à noter ce bateau</span>
+            </>
+          )}
+        </button>
+      ) : null}
+      <div className="pv-actions pv-actions--two">
         <button type="button" onClick={requestVesselSignal} className="pv-action pv-action--signal">
           <span aria-hidden>
             <Megaphone size={18} />
           </span>
-          Signaler une situation à bord ou au départ
+          Signaler
         </button>
+        {communityAvailable ? (
+          <button type="button" className="pv-action" onClick={rateVessel}>
+            <span aria-hidden>
+              <PenLine size={18} />
+            </span>
+            Noter
+          </button>
+        ) : null}
       </div>
       <LivePulse info={liveInfo} onOpen={openLive} />
       {photo?.source === "commons" ? (

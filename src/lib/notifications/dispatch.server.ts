@@ -505,6 +505,78 @@ export async function dispatchPush(
         });
     }
   }
+  // « Merci » reçus : l'auteur d'un signalement ou d'un avis est prévenu, une fois par jour au plus
+  // (« Jeddi 1934 et 2 autres vous remercient »). Ses réglages « actualités » sont respectés.
+  if (!options.onlyOpenings && !options.messageId && !options.userId) {
+    const thanks = await db
+      .from("bw_reactions")
+      .select("target_kind,target_id,user_id")
+      .eq("code", "merci")
+      .gte("created_at", new Date(now - 26 * HOUR).toISOString())
+      .limit(2000);
+    // Script communauté pas encore exécuté : rien à faire.
+    if (thanks.error && !["PGRST205", "42P01"].includes(thanks.error.code ?? ""))
+      throw thanks.error;
+    const rows = (thanks.data ?? []) as {
+      target_kind: string;
+      target_id: string;
+      user_id: string;
+    }[];
+    if (rows.length) {
+      const authorOf = new Map<string, string>();
+      for (const [kind, table] of [
+        ["alert", "bw_travel_alerts"],
+        ["port_review", "port_reviews"],
+        ["vessel_review", "bw_vessel_reviews"],
+      ] as const) {
+        const ids = [
+          ...new Set(rows.filter((row) => row.target_kind === kind).map((row) => row.target_id)),
+        ];
+        for (let index = 0; index < ids.length; index += 200) {
+          const part = await db
+            .from(table)
+            .select("id,user_id")
+            .in("id", ids.slice(index, index + 200));
+          if (part.error) throw part.error;
+          for (const row of part.data ?? [])
+            authorOf.set(`${kind}:${row.id}`, row.user_id as string);
+        }
+      }
+      const thankers = new Map<string, Set<string>>();
+      for (const row of rows) {
+        const author = authorOf.get(`${row.target_kind}:${row.target_id}`);
+        if (!author || author === row.user_id) continue;
+        if (!thankers.has(author)) thankers.set(author, new Set());
+        thankers.get(author)!.add(row.user_id);
+      }
+      const everyone = [...new Set([...thankers.values()].flatMap((set) => [...set]))];
+      const pseudo = new Map<string, string>();
+      for (let index = 0; index < everyone.length; index += 200) {
+        const part = await db
+          .from("bw_traveller_profiles")
+          .select("user_id,pseudo")
+          .in("user_id", everyone.slice(index, index + 200));
+        if (part.error) throw part.error;
+        for (const row of part.data ?? []) pseudo.set(row.user_id as string, row.pseudo as string);
+      }
+      const day = new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Paris" }).format(
+        new Date(now),
+      );
+      for (const [author, set] of thankers) {
+        const names = [...set].map((id) => pseudo.get(id) ?? "Un voyageur");
+        const others = names.length - 1;
+        await deliver(author, null, {
+          key: `thanks:${author}:${day}`,
+          category: "community",
+          title: "Merci pour vos infos ❤",
+          body: others
+            ? `${names[0]} et ${others} autre${others > 1 ? "s" : ""} vous remercient pour votre aide.`
+            : `${names[0]} vous remercie pour votre aide.`,
+          url: "/compte#contributions",
+        });
+      }
+    }
+  }
   // Messages de l'équipe : celui envoyé tout de suite, ou ceux planifiés arrivés à échéance.
   const adminMessages = options.onlyOpenings
     ? { messages: 0, notificationIds: [] }

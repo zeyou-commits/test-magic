@@ -485,3 +485,58 @@ describe("Suivi déclaré après coup (rattrapage)", () => {
     expect(mock.send).toHaveBeenCalledTimes(1);
   });
 });
+
+describe("Remerciements", () => {
+  it("prévient l'auteur une fois par jour, sans compter ses propres mercis", async () => {
+    mock.tables["bw_notification_campaigns"] = [];
+    const recent = new Date(Date.now() - 10 * 60_000).toISOString();
+    mock.tables["bw_travel_alerts"] = [
+      {
+        id: "info",
+        user_id: "user",
+        target_kind: "port",
+        target_id: "fr",
+        resolved: true,
+        expires_at: recent,
+        created_at: recent,
+      },
+    ];
+    mock.tables["bw_reactions"] = [
+      {
+        target_kind: "alert",
+        target_id: "info",
+        user_id: "fan1",
+        code: "merci",
+        created_at: recent,
+      },
+      {
+        target_kind: "alert",
+        target_id: "info",
+        user_id: "fan2",
+        code: "merci",
+        created_at: recent,
+      },
+      {
+        target_kind: "alert",
+        target_id: "info",
+        user_id: "user",
+        code: "merci",
+        created_at: recent,
+      },
+    ];
+    mock.tables["bw_traveller_profiles"] = [{ user_id: "fan1", pseudo: "Jeddi 1934" }];
+    await dispatchPush();
+    const notices = mock.tables["bw_notifications"]!.filter((n) =>
+      String(n["event_key"]).startsWith("thanks:"),
+    );
+    expect(notices).toHaveLength(1);
+    expect(notices[0]).toMatchObject({
+      user_id: "user",
+      body: expect.stringContaining("et 1 autre vous remercient"),
+    });
+    await dispatchPush();
+    expect(
+      mock.tables["bw_notifications"]!.filter((n) => String(n["event_key"]).startsWith("thanks:")),
+    ).toHaveLength(1);
+  });
+});

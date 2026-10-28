@@ -103,7 +103,10 @@ interface FerryMapProps {
   focusShipId?: string | null;
   /** Logo de la compagnie et photo du navire, affichés au survol. */
   vesselCards?:
-    | Record<string, { photoUrl: string | null; logoUrl: string | null; companyName: string | null }>
+    | Record<
+        string,
+        { photoUrl: string | null; logoUrl: string | null; companyName: string | null }
+      >
     | undefined;
 }
 
@@ -347,7 +350,9 @@ export default function FerryMap({
   const fleetPickerRef = useRef<Popup | null>(null);
   // Efface la fiche de survol d'un navire (appelé quand la souris passe sur un signalement).
   const clearShipHoverRef = useRef<() => void>(() => {});
-  const pickFleetRef = useRef<((point: [number, number], portDistance?: number) => boolean) | null>(null);
+  const pickFleetRef = useRef<((point: [number, number], portDistance?: number) => boolean) | null>(
+    null,
+  );
   const fleetRef = useRef<FleetShip[]>(fleet);
   const lastFleetFrame = useRef<{ source: GeoJSONSource; data: FleetFrame } | null>(null);
   fleetRef.current = fleet;
@@ -637,7 +642,23 @@ export default function FerryMap({
         type: "circle",
         source: "fleet",
         paint: {
-          "circle-radius": ["interpolate", ["linear"], ["zoom"], 3, 12, 6, 18, 9, 25],
+          "circle-radius": [
+            "interpolate",
+            ["linear"],
+            ["zoom"],
+            3,
+            12,
+            6,
+            18,
+            9,
+            25,
+            11,
+            36,
+            13,
+            48,
+            15,
+            56,
+          ],
           "circle-color": ["get", "haloColor"],
           "circle-opacity": ["get", "haloOpacity"],
           "circle-blur": 0.6,
@@ -656,7 +677,26 @@ export default function FerryMap({
           "icon-allow-overlap": true,
           "icon-ignore-placement": true,
           "icon-padding": 0,
-          "icon-size": ["interpolate", ["linear"], ["zoom"], 3, 0.68, 5, 0.82, 7, 0.96, 9, 1.08],
+          // Au-delà du zoom 9, les bateaux grossissent avec la carte (×2,4 au plus, icônes en 2x).
+          "icon-size": [
+            "interpolate",
+            ["linear"],
+            ["zoom"],
+            3,
+            0.68,
+            5,
+            0.82,
+            7,
+            0.96,
+            9,
+            1.08,
+            11,
+            1.55,
+            13,
+            2.1,
+            15,
+            2.4,
+          ],
           "symbol-sort-key": ["-", 5, ["get", "priority"]],
         },
         paint: {
@@ -673,7 +713,20 @@ export default function FerryMap({
           "text-field": ["get", "name"],
           "text-font": ["Noto Sans Bold"],
           "text-size": ["interpolate", ["linear"], ["zoom"], 3, 9, 6, 10, 9, 12],
-          "text-offset": [0, 2.3],
+          // Le nom s'éloigne du bateau à mesure qu'il grossit.
+          "text-offset": [
+            "interpolate",
+            ["linear"],
+            ["zoom"],
+            9,
+            ["literal", [0, 2.3]],
+            11,
+            ["literal", [0, 3.1]],
+            13,
+            ["literal", [0, 4]],
+            15,
+            ["literal", [0, 4.4]],
+          ],
           "text-anchor": "top",
           "text-allow-overlap": false,
           "text-ignore-placement": false,
@@ -698,7 +751,17 @@ export default function FerryMap({
           "circle-color": "#0e7a43",
           "circle-stroke-color": "#fffefb",
           "circle-stroke-width": 1.5,
-          "circle-translate": [12, -12],
+          "circle-translate": [
+            "interpolate",
+            ["linear"],
+            ["zoom"],
+            9,
+            ["literal", [12, -12]],
+            13,
+            ["literal", [23, -23]],
+            15,
+            ["literal", [26, -26]],
+          ],
           "circle-translate-anchor": "viewport",
         },
       });
@@ -711,7 +774,17 @@ export default function FerryMap({
           "text-field": ["to-string", ["get", "groupCount"]],
           "text-font": ["Noto Sans Bold"],
           "text-size": 10,
-          "text-offset": [1.2, -1.2],
+          "text-offset": [
+            "interpolate",
+            ["linear"],
+            ["zoom"],
+            9,
+            ["literal", [1.2, -1.2]],
+            13,
+            ["literal", [2.3, -2.3]],
+            15,
+            ["literal", [2.6, -2.6]],
+          ],
           "text-allow-overlap": true,
           "text-ignore-placement": true,
         },
@@ -1216,7 +1289,12 @@ export default function FerryMap({
     ];
     // Le centre géographique peut sortir de l'itinéraire avec un volet asymétrique :
     // c'est normal. MapLibre place alors le trajet dans la partie réellement visible.
-    map.fitBounds(bounds, { padding, maxZoom: 5.8, linear: true, duration: insetsRef.current.isMobile ? 0 : cameraDuration(700) });
+    map.fitBounds(bounds, {
+      padding,
+      maxZoom: 5.8,
+      linear: true,
+      duration: insetsRef.current.isMobile ? 0 : cameraDuration(700),
+    });
   }, [
     itineraryPreview?.key,
     mapReady,
@@ -1364,7 +1442,11 @@ export default function FerryMap({
         const select = (event: Event) => {
           event.stopPropagation();
           // La cible tactile transparente d'un port ne doit pas intercepter une coque ou son compteur.
-          if (event.currentTarget === dot && event instanceof MouseEvent && (event.clientX || event.clientY)) {
+          if (
+            event.currentTarget === dot &&
+            event instanceof MouseEvent &&
+            (event.clientX || event.clientY)
+          ) {
             const bounds = map.getCanvas().getBoundingClientRect();
             const point: [number, number] = [
               event.clientX - bounds.left,

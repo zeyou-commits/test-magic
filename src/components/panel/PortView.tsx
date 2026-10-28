@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { ReactionBar, useContributions } from "@/components/community/Contributions";
+import { LikeButton, useContributions } from "@/components/community/Contributions";
 import { TravellerAvatar } from "@/components/community/TravellerAvatar";
 import { hasSignalFocus, LivePulse, revealLive, useLiveInfo } from "./LivePulse";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -13,10 +13,8 @@ import {
   Navigation,
   PenLine,
   Star,
-  ThumbsUp,
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
-import { helpfulKey, reviewHelpfulQuery, toggleReviewHelpful } from "@/lib/ferry/flash";
 import { requestQuickReport } from "@/components/map/QuickReport";
 import { FlashFeed } from "./FlashFeed";
 import { PortPlaces } from "./PortPlaces";
@@ -81,11 +79,6 @@ export function PortView({
 }) {
   const { user } = useAuth();
   const queryClient = useQueryClient();
-  const helpful = useQuery(reviewHelpfulQuery(portId, user?.id));
-  const helpfulVote = useMutation({
-    mutationFn: toggleReviewHelpful,
-    onSuccess: () => void queryClient.invalidateQueries({ queryKey: helpfulKey }),
-  });
   const { data: ports = [] } = useQuery(portsQuery);
   const { data: routes = [] } = useQuery(routesQuery);
   const { data: companies = [] } = useQuery(companiesQuery);
@@ -573,23 +566,12 @@ export function PortView({
                       </time>
                     </div>
                     {review.comment ? <p>{review.comment}</p> : null}
-                    <ReactionBar kind="port_review" id={review.id} counts={reviewCommunity.counts} />
                     <div className="bw-review-actions">
-                      {helpful.data ? (
-                        <button
-                          type="button"
-                          className="bw-helpful"
-                          aria-pressed={helpful.data.get(review.id)?.mine ?? false}
-                          disabled={!user || helpfulVote.isPending}
-                          title={user ? undefined : "Connectez-vous pour voter"}
-                          onClick={() => helpfulVote.mutate(review.id)}
-                        >
-                          <ThumbsUp size={14} aria-hidden /> Utile
-                          {helpful.data.get(review.id)?.helpful ? (
-                            <span>{helpful.data.get(review.id)?.helpful}</span>
-                          ) : null}
-                        </button>
-                      ) : null}
+                      <LikeButton
+                        kind="port_review"
+                        id={review.id}
+                        counts={reviewCommunity.counts}
+                      />
                       <ReportButton
                         targetType="review"
                         targetId={review.id}

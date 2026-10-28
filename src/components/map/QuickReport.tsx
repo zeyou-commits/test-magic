@@ -21,6 +21,7 @@ import {
 } from "@/lib/ferry/community";
 import { newsQuery } from "@/lib/ferry/flash";
 import type { FleetShip } from "@/lib/ferry/fleet";
+import { haversineKm } from "@/lib/ferry/tracking";
 import type { Port, Selection } from "@/lib/ferry/types";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import {
@@ -108,14 +109,47 @@ export function QuickReport({
   selection: Selection | null;
 }) {
   const isMobile = useIsMobile();
+  // Point vert sur le bouton quand on est près d'un port (moins de 3 km). Seulement si la position
+  // est déjà autorisée : on ne la demande jamais pour ça. Rien n'est enregistré.
+  const [nearPort, setNearPort] = useState<string | null>(null);
+  useEffect(() => {
+    if (!isMobile || !ports.length || !("permissions" in navigator) || !navigator.geolocation)
+      return;
+    let stopped = false;
+    const check = () =>
+      navigator.permissions
+        .query({ name: "geolocation" as PermissionName })
+        .then((state) => {
+          if (state.state !== "granted" || stopped) return;
+          navigator.geolocation.getCurrentPosition(
+            (position) => {
+              if (stopped) return;
+              const here: [number, number] = [position.coords.longitude, position.coords.latitude];
+              const near = ports
+                .map((port) => ({ port, km: haversineKm(here, [port.longitude, port.latitude]) }))
+                .filter((item) => item.km < 3)
+                .sort((a, b) => a.km - b.km)[0];
+              setNearPort(near?.port.name ?? null);
+            },
+            () => undefined,
+            { enableHighAccuracy: false, maximumAge: 5 * 60_000, timeout: 10_000 },
+          );
+        })
+        .catch(() => undefined);
+    void check();
+    const timer = window.setInterval(check, 3 * 60_000);
+    return () => {
+      stopped = true;
+      window.clearInterval(timer);
+    };
+  }, [isMobile, ports]);
   const { user, loading } = useAuth();
   const queryClient = useQueryClient();
   // Scripts SQL exécutés : 26/10 (situations récentes), 29/10 (formalités, « sur place »).
   const upgraded = useQuery(newsQuery).data != null;
   // Version 4 : le catalogue vient de la base et se gère dans l'admin.
   const { version: catalog } = useSignalCatalog();
-  const level: Level =
-    catalog >= 4 ? 4 : catalog >= 3 ? 3 : catalog >= 2 ? 2 : upgraded ? 1 : 0;
+  const level: Level = catalog >= 4 ? 4 : catalog >= 3 ? 3 : catalog >= 2 ? 2 : upgraded ? 1 : 0;
   const services = portServices();
   const follows = useQuery({
     queryKey: ["my-follows", user?.id],
@@ -140,7 +174,8 @@ export function QuickReport({
   const [sentOnSite, setSentOnSite] = useState(false);
 
   const vessels = fleet.filter(
-    (ship, index) => ship.vesselId && fleet.findIndex((s) => s.vesselId === ship.vesselId) === index,
+    (ship, index) =>
+      ship.vesselId && fleet.findIndex((s) => s.vesselId === ship.vesselId) === index,
   );
   const portName = (id: string | null) => ports.find((p) => p.id === id)?.name;
 
@@ -233,8 +268,8 @@ export function QuickReport({
   const target = situation?.where === "port" ? draft.portId : draft.vesselId;
   const ready = Boolean(
     situation &&
-      target &&
-      (!situation.required || chosen || (draft.category === "service" && draft.detail)),
+    target &&
+    (!situation.required || chosen || (draft.category === "service" && draft.detail)),
   );
 
   const mutation = useMutation({
@@ -279,8 +314,7 @@ export function QuickReport({
     setDraft((current) => ({
       ...current,
       portId: nearest.port.id,
-      vesselId:
-        docked.length === 1 ? (docked[0]!.vesselId ?? current.vesselId) : current.vesselId,
+      vesselId: docked.length === 1 ? (docked[0]!.vesselId ?? current.vesselId) : current.vesselId,
     }));
     setLocating("idle");
   };
@@ -565,18 +599,32 @@ export function QuickReport({
   return (
     <div className="bw-report">
       {isMobile ? (
-        /* Sur mobile, le bouton est l'onglet « Signaler » de la barre du bas. */
-        <Sheet open={open} onOpenChange={setOpen}>
-          <SheetContent side="bottom" className="bw-report-sheet">
-            <SheetHeader className="text-left">
-              <SheetTitle>{title}</SheetTitle>
-              <SheetDescription className="sr-only">
-                Signaler une situation au port ou à bord, visible par les autres voyageurs.
-              </SheetDescription>
-            </SheetHeader>
-            {body}
-          </SheetContent>
-        </Sheet>
+        /* Sur mobile : bouton jaune fixe au-dessus de la barre du bas, comme Waze. Le volet le recouvre
+           quand il monte. Point vert : vous êtes près d'un port. */
+        <>
+          <button
+            type="button"
+            className="bw-report-fab bw-report-fab--mobile"
+            aria-label={
+              nearPort ? `Signaler une situation à ${nearPort}` : "Signaler une situation"
+            }
+            data-near={nearPort ? true : undefined}
+            onClick={() => start()}
+          >
+            <Megaphone size={22} aria-hidden />
+          </button>
+          <Sheet open={open} onOpenChange={setOpen}>
+            <SheetContent side="bottom" className="bw-report-sheet">
+              <SheetHeader className="text-left">
+                <SheetTitle>{title}</SheetTitle>
+                <SheetDescription className="sr-only">
+                  Signaler une situation au port ou à bord, visible par les autres voyageurs.
+                </SheetDescription>
+              </SheetHeader>
+              {body}
+            </SheetContent>
+          </Sheet>
+        </>
       ) : (
         <Popover
           open={open}
@@ -600,4 +648,3 @@ export function QuickReport({
     </div>
   );
 }
-

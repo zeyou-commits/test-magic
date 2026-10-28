@@ -1,6 +1,15 @@
 import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Anchor, Award, CheckCheck, LoaderCircle, Megaphone, Ship, Waves } from "lucide-react";
+import {
+  Anchor,
+  Award,
+  CheckCheck,
+  Heart,
+  LoaderCircle,
+  Megaphone,
+  Ship,
+  Waves,
+} from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import { OPEN_PROFILE_EVENT, publicProfileQuery } from "@/lib/community/travellers";
 import { TravellerAvatar } from "./TravellerAvatar";
@@ -55,6 +64,12 @@ export function ProfileHost() {
                   <CheckCheck size={14} aria-hidden /> Confirmées
                 </dt>
                 <dd>{data.confirmed}</dd>
+              </div>
+              <div>
+                <dt>
+                  <Heart size={14} aria-hidden /> Mercis
+                </dt>
+                <dd>{data.thanks ?? 0}</dd>
               </div>
               <div>
                 <dt>

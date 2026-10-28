@@ -1,6 +1,6 @@
 import { Link } from "@tanstack/react-router";
-import { Route as RouteIcon, Clock, Map as MapIcon, Megaphone, Search } from "lucide-react";
-import { QUICK_REPORT_EVENT, QUICK_REPORT_ON_LOAD } from "@/components/map/QuickReport";
+import { Route as RouteIcon, Clock, Map as MapIcon, Search } from "lucide-react";
+import { MeTab } from "@/components/community/MeTab";
 
 const itemClass =
   "flex h-full flex-1 flex-col items-center justify-center gap-1 text-[11px] font-medium text-muted-foreground transition-colors hover:text-foreground data-[active=true]:text-primary [&.active]:text-primary";
@@ -9,7 +9,7 @@ interface MobileTabBarProps {
   className?: string;
   activeTab?: "map" | "departures" | "search" | "ports" | "itinerary";
   onOpenMap?: () => void;
-  /** Conservé pour compatibilité : l'onglet « Plus » a été remplacé par « Signaler ». */
+  /** Conservé pour compatibilité : l'onglet « Plus » a été remplacé par « Moi ». */
   onMoreToggle?: () => void;
   onOpenDepartures?: () => void;
   onOpenSearch?: () => void;
@@ -109,30 +109,8 @@ export function MobileTabBar({
           <span>Itinéraire</span>
         </Link>
       )}
-      {/* « Signaler » remplace « Plus » : ces pages sont déjà dans le menu de l'en-tête. */}
-      {onOpenMap ? (
-        <button
-          type="button"
-          onClick={() => window.dispatchEvent(new CustomEvent(QUICK_REPORT_EVENT))}
-          className={itemClass}
-        >
-          <span className="grid size-6 place-items-center rounded-lg bg-[#ffc83d] text-[#4a3200]">
-            <Megaphone className="size-4" aria-hidden />
-          </span>
-          <span>Signaler</span>
-        </button>
-      ) : (
-        <Link
-          to="/"
-          onClick={() => window.sessionStorage.setItem(QUICK_REPORT_ON_LOAD, "1")}
-          className={itemClass}
-        >
-          <span className="grid size-6 place-items-center rounded-lg bg-[#ffc83d] text-[#4a3200]">
-            <Megaphone className="size-4" aria-hidden />
-          </span>
-          <span>Signaler</span>
-        </Link>
-      )}
+      {/* « Moi » : mon cabas et mon humeur. « Signaler » est le bouton jaune flottant de la carte. */}
+      <MeTab className={itemClass} />
     </nav>
   );
 }

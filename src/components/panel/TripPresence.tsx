@@ -1,4 +1,11 @@
 import { useEffect, useState } from "react";
+import {
+  communityKey as travellersKey,
+  moodsFor,
+  moodsQuery,
+  myTravellerQuery,
+  setMood,
+} from "@/lib/community/travellers";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Check } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
@@ -25,11 +32,26 @@ import { OptionIcon } from "./SituationIcon";
 const PENDING_STATUS = "bledway:pending-trip-status";
 
 /** Trois cabas empilés et un nombre : la présence des voyageurs BledWay, sans jamais dire qui. */
-export function CabasStack({ count, seed, size = 26 }: { count: number; seed: string; size?: number }) {
+export function CabasStack({
+  count,
+  seed,
+  size = 26,
+}: {
+  count: number;
+  seed: string;
+  size?: number;
+}) {
   return (
     <span className="bw-cabas-stack" aria-hidden>
       {Array.from({ length: Math.min(3, count) }, (_, index) => (
-        <img key={index} src={avatarFor(seed, index)} alt="" width={size} height={size} loading="lazy" />
+        <img
+          key={index}
+          src={avatarFor(seed, index)}
+          alt=""
+          width={size}
+          height={size}
+          loading="lazy"
+        />
       ))}
     </span>
   );
@@ -41,17 +63,33 @@ const voyageurs = (n: number) => `${n} voyageur${n > 1 ? "s" : ""} BledWay`;
 export function PortPresence({ portId }: { portId: string }) {
   const rows = useQuery(presenceQuery).data;
   if (!rows) return null;
-  const atPort = rows.filter((row) => row.departure_port_id === portId).reduce((sum, row) => sum + row.at_port, 0);
-  const enRoute = rows.filter((row) => row.departure_port_id === portId).reduce((sum, row) => sum + row.en_route, 0);
-  const arrived = rows.filter((row) => row.arrival_port_id === portId).reduce((sum, row) => sum + row.arrived, 0);
+  const atPort = rows
+    .filter((row) => row.departure_port_id === portId)
+    .reduce((sum, row) => sum + row.at_port, 0);
+  const enRoute = rows
+    .filter((row) => row.departure_port_id === portId)
+    .reduce((sum, row) => sum + row.en_route, 0);
+  const arrived = rows
+    .filter((row) => row.arrival_port_id === portId)
+    .reduce((sum, row) => sum + row.arrived, 0);
   if (!atPort && !enRoute && !arrived) return null;
   return (
     <p className="bw-presence">
       <CabasStack count={atPort || enRoute || arrived} seed={portId} />
       <span>
         {atPort ? <strong>{voyageurs(atPort)} au port</strong> : null}
-        {enRoute ? <span>{atPort ? " · " : ""}{enRoute} en route</span> : null}
-        {arrived ? <span>{atPort || enRoute ? " · " : ""}{arrived} arrivé{arrived > 1 ? "s" : ""} ici</span> : null}
+        {enRoute ? (
+          <span>
+            {atPort ? " · " : ""}
+            {enRoute} en route
+          </span>
+        ) : null}
+        {arrived ? (
+          <span>
+            {atPort || enRoute ? " · " : ""}
+            {arrived} arrivé{arrived > 1 ? "s" : ""} ici
+          </span>
+        ) : null}
       </span>
     </p>
   );
@@ -61,7 +99,9 @@ export function PortPresence({ portId }: { portId: string }) {
 export function VesselPresence({ vesselId }: { vesselId: string }) {
   const rows = useQuery(presenceQuery).data;
   if (!rows) return null;
-  const onboard = rows.filter((row) => row.vessel_id === vesselId).reduce((sum, row) => sum + row.onboard, 0);
+  const onboard = rows
+    .filter((row) => row.vessel_id === vesselId)
+    .reduce((sum, row) => sum + row.onboard, 0);
   if (!onboard) return null;
   return (
     <p className="bw-presence">
@@ -91,11 +131,14 @@ export function TripStatusPicker({
   const mine = useQuery(myTripStatusQuery(departureId, user?.id));
   const catalog = useQuery(catalogQuery).data ?? 0;
   const [asked, setAsked] = useState<"queue" | "thanks" | null>(null);
+  // Étape choisie : on propose aussitôt 3 humeurs de ce moment (« Reste calme » au port…).
+  const [moodFor, setMoodFor] = useState<TripStatus | null>(null);
   const update = useMutation({
     mutationFn: (status: TripStatus | null) => setTripStatus(departureId, status),
     onSuccess: (_, status) => {
       void client.invalidateQueries({ queryKey: presenceKey });
       setAsked(status === "port" && fromPortId ? "queue" : null);
+      setMoodFor(status);
     },
   });
   const queue = useMutation({
@@ -167,7 +210,8 @@ export function TripStatusPicker({
         </span>
       </p>
     );
-  const queueOptions = catalog >= 3 ? optionsFor("queue", 3).filter((option) => !option.code.match(/_\d+$/)) : [];
+  const queueOptions =
+    catalog >= 3 ? optionsFor("queue", 3).filter((option) => !option.code.match(/_\d+$/)) : [];
   return (
     <section className="bw-trip-status" aria-label="Où en êtes-vous ?">
       <div className="bw-trip-status__head">
@@ -199,6 +243,7 @@ export function TripStatusPicker({
           </li>
         ))}
       </ol>
+      {moodFor ? <QuickMoods moment={moodFor} onDone={() => setMoodFor(null)} /> : null}
       {update.isError ? (
         <p role="alert" className="bw-community-error">
           {update.error.message}
@@ -207,8 +252,8 @@ export function TripStatusPicker({
       {asked === "queue" ? (
         <div className="bw-trip-status__ask">
           <p>
-            <strong>Vous êtes au port : la file avance ?</strong> Un toucher suffit, ça aide ceux qui
-            arrivent.
+            <strong>Vous êtes au port : la file avance ?</strong> Un toucher suffit, ça aide ceux
+            qui arrivent.
           </p>
           {queueOptions.length ? (
             <div className="bw-report-options">
@@ -243,10 +288,54 @@ export function TripStatusPicker({
         </div>
       ) : asked === "thanks" ? (
         <p className="bw-community-success" role="status">
-          <Check size={15} aria-hidden /> Merci ! « {situationOf("queue").label} » est partagé avec les
-          voyageurs.
+          <Check size={15} aria-hidden /> Merci ! « {situationOf("queue").label} » est partagé avec
+          les voyageurs.
         </p>
       ) : null}
     </section>
+  );
+}
+
+/** « Et votre humeur ? » : 3 humeurs du moment, en un toucher. */
+function QuickMoods({ moment, onDone }: { moment: string; onDone: () => void }) {
+  const { user } = useAuth();
+  const client = useQueryClient();
+  const me = useQuery(myTravellerQuery(user?.id)).data;
+  const moods = useQuery(moodsQuery).data ?? [];
+  const save = useMutation({
+    mutationFn: (code: string) => setMood(code),
+    onSuccess: () => {
+      void client.invalidateQueries({ queryKey: travellersKey });
+      onDone();
+    },
+  });
+  const choices = moodsFor(moods, moment)
+    .filter((mood) => mood.moments.includes(moment))
+    .slice(0, 3);
+  if (!me || !choices.length) return null;
+  return (
+    <div className="bw-quick-moods" role="group" aria-label="Votre humeur">
+      <span>Et votre humeur ?</span>
+      {choices.map((mood) => (
+        <button
+          key={mood.code}
+          type="button"
+          disabled={save.isPending}
+          aria-pressed={me.mood?.code === mood.code}
+          onClick={() => save.mutate(mood.code)}
+        >
+          <img src={mood.image} alt="" width={22} height={22} loading="lazy" />
+          {mood.label}
+        </button>
+      ))}
+      <button
+        type="button"
+        className="bw-quick-moods__skip"
+        onClick={onDone}
+        aria-label="Plus tard"
+      >
+        ×
+      </button>
+    </div>
   );
 }

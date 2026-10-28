@@ -59,6 +59,8 @@ export type PublicProfile = TravellerCard & {
   confirmed: number;
   confirmations: number;
   reviews: number;
+  /** « Merci » reçus (script du 06/11/2026). */
+  thanks?: number;
   trips: number;
   favorite_vessel: string | null;
   favorite_port: string | null;
@@ -144,6 +146,16 @@ export const reactionsQuery = (kind: ContributionKind, ids: string[], viewer?: s
     staleTime: 30_000,
     retry: false,
   });
+
+/** Humeur la plus partagée par les voyageurs au port ou à bord (cabas de présence sur la carte). */
+export type PlaceMood = { kind: "port" | "vessel"; target: string; count: number; mood: Mood };
+export const placeMoodsQuery = queryOptions({
+  queryKey: [...communityKey, "place-moods"],
+  queryFn: () => rpc<PlaceMood[]>("bw_place_moods"),
+  staleTime: 2 * 60_000,
+  refetchInterval: 5 * 60_000,
+  retry: false,
+});
 
 export const saveTraveller = (input: {
   pseudo: string;

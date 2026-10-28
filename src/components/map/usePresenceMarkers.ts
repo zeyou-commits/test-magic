@@ -1,4 +1,5 @@
 import { useEffect, useRef, type RefObject } from "react";
+import { placeMoodsQuery } from "@/lib/community/travellers";
 import { useQuery } from "@tanstack/react-query";
 import { Marker, type Map as MapLibreMap } from "maplibre-gl";
 import type { FleetShip } from "@/lib/ferry/fleet";
@@ -19,6 +20,8 @@ export function usePresenceMarkers(
   onOpen?: () => void,
 ) {
   const rows = useQuery(presenceQuery).data;
+  // Humeur la plus partagée sur place, affichée au zoom fort (script du 06/11/2026).
+  const moods = useQuery(placeMoodsQuery).data ?? null;
   const callbacks = useRef({ onSelect, onOpen });
   callbacks.current = { onSelect, onOpen };
   useEffect(() => {
@@ -27,15 +30,22 @@ export function usePresenceMarkers(
     const byVessel = new Map<string, number>();
     const byPort = new Map<string, number>();
     for (const row of rows) {
-      if (row.vessel_id && row.onboard) byVessel.set(row.vessel_id, (byVessel.get(row.vessel_id) ?? 0) + row.onboard);
-      if (row.at_port) byPort.set(row.departure_port_id, (byPort.get(row.departure_port_id) ?? 0) + row.at_port);
+      if (row.vessel_id && row.onboard)
+        byVessel.set(row.vessel_id, (byVessel.get(row.vessel_id) ?? 0) + row.onboard);
+      if (row.at_port)
+        byPort.set(row.departure_port_id, (byPort.get(row.departure_port_id) ?? 0) + row.at_port);
     }
     const markers: Marker[] = [];
+    const moodOf = (kind: "port" | "vessel", target: string) =>
+      moods?.find((item) => item.kind === kind && item.target === target)?.mood;
     const pin = (count: number, seed: string, label: string, selection: Selection) => {
       const button = document.createElement("button");
       button.type = "button";
       button.className = "bw-presence-pin";
-      button.setAttribute("aria-label", `${label} : ${count} voyageur${count > 1 ? "s" : ""} BledWay`);
+      button.setAttribute(
+        "aria-label",
+        `${label} : ${count} voyageur${count > 1 ? "s" : ""} BledWay`,
+      );
       for (let index = 0; index < Math.min(3, count); index += 1) {
         const img = document.createElement("img");
         img.src = avatarFor(seed, index);
@@ -47,6 +57,24 @@ export function usePresenceMarkers(
       const small = document.createElement("small");
       small.textContent = String(count);
       button.append(small);
+      const mood = moodOf(selection.type === "port" ? "port" : "vessel", selection.id);
+      if (mood) {
+        const bubble = document.createElement("span");
+        bubble.className = "bw-presence-pin__mood";
+        const img = document.createElement("img");
+        img.src = mood.image;
+        img.alt = "";
+        img.width = 16;
+        img.height = 16;
+        const text = document.createElement("span");
+        text.textContent = mood.label;
+        bubble.append(img, text);
+        button.append(bubble);
+        button.setAttribute(
+          "aria-label",
+          `${button.getAttribute("aria-label")} · ambiance : ${mood.label}`,
+        );
+      }
       button.addEventListener("mousemove", (event) => event.stopPropagation());
       button.addEventListener("click", (event) => {
         event.stopPropagation();
@@ -85,6 +113,16 @@ export function usePresenceMarkers(
           .addTo(map),
       );
     }
-    return () => markers.forEach((marker) => marker.remove());
-  }, [mapRef, ready, ports, fleet, rows]);
+    // L'ambiance (bulle d'humeur) n'apparaît qu'au zoom fort, pour ne pas charger la carte.
+    const zoomed = () => {
+      const close = map.getZoom() >= 8;
+      for (const marker of markers) marker.getElement().classList.toggle("is-zoomed", close);
+    };
+    zoomed();
+    map.on("zoomend", zoomed);
+    return () => {
+      map.off("zoomend", zoomed);
+      markers.forEach((marker) => marker.remove());
+    };
+  }, [mapRef, ready, ports, fleet, rows, moods]);
 }

@@ -1987,9 +1987,9 @@ html {
   cursor: pointer;
 }
 .bw-mytrip-pin img {
-  width: 34px;
-  height: 34px;
-  border: 2.5px solid #ffc83d;
+  width: var(--pin, 18px);
+  height: var(--pin, 18px);
+  border: 2px solid #ffc83d;
   border-radius: 50%;
   background: #ffffff;
   box-shadow:
@@ -3887,7 +3887,7 @@ button.bw-tavatar:focus-visible {
 }
 .bw-profile__stats {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(4, 1fr);
   gap: 6px;
 }
 .bw-profile__stats > div {
@@ -4255,4 +4255,384 @@ button.bw-tavatar:focus-visible {
   .bw-persona-grid {
     grid-template-columns: repeat(4, 1fr);
   }
+}
+.pv-actions--two {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin: 0 0 14px;
+}
+
+/* Vue très large : plus de cabas, un anneau jaune qui pulse autour de mon bateau. */
+.bw-mytrip-pin.is-halo img {
+  width: 30px;
+  height: 30px;
+  border: 3px solid #ffc83d;
+  background: transparent;
+  object-position: -999px -999px;
+}
+
+/* ── Signalement : contenu à gauche, actions (♥, confirmer, plus le cas) à droite ── */
+.bw-signal-list > li.bw-signal-card {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: start;
+  gap: 10px;
+}
+.bw-signal-body > strong {
+  font-size: 13px;
+}
+.bw-signal-list small.bw-signal-byline {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin-top: 5px;
+  font-size: 11.5px;
+}
+.bw-signal-byline .bw-contrib-author {
+  margin: 0;
+}
+.bw-signal-byline .bw-contrib-author > span {
+  font-size: 11.5px;
+}
+.bw-signal-side {
+  display: grid;
+  justify-items: end;
+  gap: 4px;
+}
+.bw-signal-side__main {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  border: 1px solid #cfe4d8;
+  border-radius: 999px;
+  background: #f2f8f4;
+  padding: 4px 9px;
+  font-size: 11.5px;
+  font-weight: 650;
+  white-space: nowrap;
+  color: var(--primary);
+}
+.bw-signal-side__main:disabled {
+  opacity: 0.7;
+}
+.bw-signal-side__deny {
+  padding: 0 4px;
+  font-size: 11px;
+  white-space: nowrap;
+  color: #6a7873;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+/* Le ♥ « merci » */
+.bw-like {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  border-radius: 999px;
+  padding: 3px 6px;
+  font-size: 12px;
+  color: #8a9a92;
+  transition: transform 0.12s ease;
+}
+.bw-like:hover:not(:disabled) {
+  color: #d14343;
+}
+.bw-like:active:not(:disabled) {
+  transform: scale(0.88);
+}
+.bw-like[aria-pressed="true"] {
+  color: #d14343;
+}
+.bw-like:disabled {
+  cursor: default;
+  opacity: 1;
+}
+.bw-like b {
+  font-size: 12px;
+}
+.bw-review-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* ── Onglet « Moi » de la barre du bas : mon cabas + la bulle de mon humeur ── */
+.bw-me-tab {
+  position: relative;
+  gap: 2px !important;
+}
+.bw-me-tab .bw-tavatar__disc {
+  border-width: 1.5px;
+}
+.bw-me-tab__bubble {
+  position: absolute;
+  top: -12px;
+  left: 50%;
+  display: inline-flex;
+  max-width: 92px;
+  align-items: center;
+  gap: 3px;
+  transform: translateX(-50%);
+  border-radius: 999px;
+  background: white;
+  padding: 2px 7px 2px 2px;
+  box-shadow: 0 2px 8px #16324a33;
+  font-size: 9.5px;
+  font-weight: 700;
+  line-height: 1.2;
+  color: #16324a;
+}
+.bw-me-tab__bubble span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.bw-me-tab__bubble img {
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
+  border-radius: 999px;
+}
+.bw-me-tab__bubble[data-empty] {
+  width: 18px;
+  height: 18px;
+  justify-content: center;
+  padding: 0;
+  background: #ffc83d;
+  color: #3d2a00;
+  top: -6px;
+  left: calc(50% + 12px);
+}
+.bw-me-tab__ghost {
+  display: grid;
+  width: 30px;
+  height: 30px;
+  place-items: center;
+  border-radius: 999px;
+  background: #e9eeeb;
+  color: #6b7c74;
+}
+.bw-me-sheet {
+  border-radius: 22px 22px 0 0;
+  padding-bottom: calc(18px + env(safe-area-inset-bottom));
+}
+.bw-me-sheet__head {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 14px;
+  text-align: left;
+}
+.bw-me-sheet__head .bw-tavatar {
+  flex-shrink: 0;
+}
+.bw-me-sheet__moods {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
+  margin-top: 14px;
+}
+.bw-me-sheet__moods button {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid #e3ebe6;
+  border-radius: 14px;
+  background: white;
+  padding: 5px 8px;
+  text-align: left;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: #16324a;
+}
+.bw-me-sheet__moods button[aria-pressed="true"] {
+  border-color: var(--primary);
+  background: #f2f8f4;
+}
+.bw-me-sheet__moods img {
+  width: 34px;
+  height: 34px;
+  flex-shrink: 0;
+  border-radius: 10px;
+  object-fit: cover;
+}
+.bw-me-sheet__row {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+}
+.bw-me-sheet__row button {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  border-radius: 999px;
+  background: #eef3ef;
+  padding: 6px 12px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: #16324a;
+}
+.bw-me-sheet__links {
+  display: grid;
+  margin-top: 14px;
+  border-top: 1px solid #e8eee9;
+}
+.bw-me-sheet__links a,
+.bw-me-sheet__links button {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border-bottom: 1px solid #f0f3f1;
+  padding: 12px 2px;
+  text-align: left;
+  font-size: 14px;
+  font-weight: 600;
+  color: #16324a;
+}
+.bw-me-sheet__links svg:first-child {
+  color: var(--primary);
+}
+.bw-me-sheet__links svg:last-child {
+  margin-left: auto;
+  color: #9aa9a2;
+}
+
+/* ── Bouton « Signaler » flottant sur mobile, fixe au-dessus de la barre du bas ──
+   Il est dans la carte : le volet le recouvre quand il monte. */
+@media (max-width: 767px) {
+  .bw-report {
+    top: auto;
+    right: 14px;
+    /* Juste au-dessus du volet replié (8 rem) : visible sur la carte, recouvert dès que le volet monte. */
+    bottom: calc(3.5rem + env(safe-area-inset-bottom) + 8rem + 12px);
+  }
+  .bw-report-fab--mobile {
+    position: relative;
+    width: 54px;
+    height: 54px;
+    border-width: 3px;
+    box-shadow:
+      0 6px 16px #16324a4d,
+      0 0 0 1px #16324a14;
+  }
+  .bw-report-fab--mobile[data-near]::after {
+    /* Point vert : vous êtes près d'un port. */
+    content: "";
+    position: absolute;
+    top: 2px;
+    right: 2px;
+    width: 12px;
+    height: 12px;
+    border: 2px solid white;
+    border-radius: 999px;
+    background: #12a150;
+  }
+}
+@media (min-width: 768px) {
+  .bw-report-fab--mobile {
+    display: none;
+  }
+}
+
+/* ── « Et votre humeur ? » après le choix d'une étape ── */
+.bw-quick-moods {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin-top: 10px;
+  border-radius: 14px;
+  background: #fff8e8;
+  padding: 8px 10px;
+  font-size: 12.5px;
+}
+.bw-quick-moods > span {
+  font-weight: 700;
+  color: #6d4a00;
+}
+.bw-quick-moods button {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  border: 1px solid #f2d58a;
+  border-radius: 999px;
+  background: white;
+  padding: 2px 9px 2px 2px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #16324a;
+}
+.bw-quick-moods button[aria-pressed="true"] {
+  border-color: var(--primary);
+}
+.bw-quick-moods img {
+  border-radius: 999px;
+}
+.bw-quick-moods .bw-quick-moods__skip {
+  margin-left: auto;
+  border: 0;
+  background: none;
+  padding: 0 4px;
+  font-size: 16px;
+  color: #8a7a55;
+}
+
+/* ── Humeur sur l'avatar de l'en-tête (ordinateur) ── */
+.bw-usermenu-mood {
+  position: absolute;
+  top: -4px;
+  right: -6px;
+  display: grid;
+  width: 18px;
+  height: 18px;
+  place-items: center;
+  border-radius: 999px;
+  background: white;
+  box-shadow: 0 1px 4px #16324a40;
+}
+.bw-usermenu-mood img {
+  border-radius: 999px;
+}
+
+/* ── Ambiance d'un port ou d'un bateau sur la carte (zoom fort) ── */
+.bw-presence-pin {
+  position: relative;
+}
+.bw-presence-pin__mood {
+  position: absolute;
+  bottom: calc(100% + 4px);
+  left: 0;
+  display: none;
+  align-items: center;
+  gap: 4px;
+  border-radius: 999px;
+  background: white;
+  padding: 2px 8px 2px 2px;
+  box-shadow: 0 2px 8px #16324a40;
+  font-size: 11px;
+  font-weight: 700;
+  white-space: nowrap;
+  color: #16324a;
+}
+.bw-presence-pin__mood img {
+  width: 16px !important;
+  height: 16px !important;
+  margin: 0 !important;
+  border: 0 !important;
+}
+.is-zoomed .bw-presence-pin__mood,
+.bw-presence-pin.is-zoomed .bw-presence-pin__mood {
+  display: inline-flex;
+}
+@media (max-width: 420px) {
+  .bw-profile__stats {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+.pv-stars-empty {
+  display: inline-flex;
+  gap: 1px;
+  color: #c9d3ce;
 }

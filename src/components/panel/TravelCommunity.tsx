@@ -1,18 +1,13 @@
 import { useEffect, useState } from "react";
 import { TravellerAvatar } from "@/components/community/TravellerAvatar";
-import { ContributionAuthor, ReactionBar, useContributions } from "@/components/community/Contributions";
+import {
+  ContributionAuthor,
+  LikeButton,
+  useContributions,
+} from "@/components/community/Contributions";
 import { scrollWithin, takeSignalFocus } from "./LivePulse";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import {
-  Check,
-  CircleOff,
-  Flag,
-  MapPin,
-  MessageCircle,
-  Star,
-  ThumbsUp,
-  Users,
-} from "lucide-react";
+import { Check, CircleOff, Flag, MapPin, MessageCircle, Star, ThumbsUp, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/hooks/useAuth";
@@ -163,9 +158,9 @@ export function TravelSignals({
             const onSite = onSiteCount(alert);
             const pending = isImpact(alert) && alert.confirmations < 1;
             return (
-              <li key={alert.id} data-alert-id={alert.id}>
+              <li key={alert.id} data-alert-id={alert.id} className="bw-signal-card">
                 <SituationBadge category={alert.category} className="bw-signal-icon" />
-                <div>
+                <div className="bw-signal-body">
                   <strong>{alertLabel(alert)}</strong>
                   {onSite || pending ? (
                     <span className="bw-signal-chips">
@@ -180,55 +175,67 @@ export function TravelSignals({
                       ) : null}
                     </span>
                   ) : null}
-                  <ContributionAuthor
-                    card={contributions.authors?.[alert.id]}
-                    prefix={alert.own ? "Par vous ·" : "Par"}
-                  />
-                  <small className="bw-signal-meta">
-                    <SignalAvatars count={travelers} seed={alert.id} />
-                    {travelers} voyageur{travelers > 1 ? "s" : ""} ·{" "}
-                    {formatAge(Math.max(0, (Date.now() - Date.parse(alert.created_at)) / 60_000))}
-                    {alert.denials ? ` · ${alert.denials} « plus le cas »` : ""}
+                  {/* Une seule ligne : qui, quand, combien. */}
+                  <small className="bw-signal-byline">
+                    {contributions.authors?.[alert.id] ? (
+                      <ContributionAuthor
+                        card={contributions.authors?.[alert.id]}
+                        prefix={alert.own ? "Vous ·" : ""}
+                      />
+                    ) : (
+                      <SignalAvatars count={travelers} seed={alert.id} />
+                    )}
+                    <span>
+                      {formatAge(Math.max(0, (Date.now() - Date.parse(alert.created_at)) / 60_000))}
+                      {travelers > 1 ? ` · ${travelers} voyageurs` : ""}
+                      {alert.denials ? ` · ${alert.denials} « plus le cas »` : ""}
+                    </span>
                   </small>
-                  <ReactionBar kind="alert" id={alert.id} counts={contributions.counts} />
-                  <div className="bw-signal-actions">
-                    {alert.own ? (
-                      <button
-                        type="button"
-                        disabled={mutation.isPending}
-                        onClick={() => mutation.mutate({ type: "resolve", id: alert.id })}
-                      >
-                        <Check size={14} aria-hidden />
-                        C’est terminé
-                      </button>
-                    ) : user ? (
-                      <>
-                        <button
-                          type="button"
-                          disabled={mutation.isPending || alert.confirmed}
-                          onClick={() => mutation.mutate({ type: "confirm", id: alert.id })}
-                        >
-                          <ThumbsUp size={14} aria-hidden />
-                          {alert.confirmed ? "Confirmé par vous" : "Je confirme"}
-                        </button>
-                        {upgraded ? (
-                          <button
-                            type="button"
-                            className="bw-signal-deny"
-                            disabled={mutation.isPending || alert.denied}
-                            onClick={() => mutation.mutate({ type: "deny", id: alert.id })}
-                          >
-                            <CircleOff size={14} aria-hidden />
-                            {alert.denied ? "Noté, merci" : "Ce n’est plus le cas"}
-                          </button>
-                        ) : null}
-                      </>
-                    ) : null}
-                  </div>
                   {done === alert.id && !mutation.isPending ? (
                     <small className="bw-community-success" role="status">
                       <Check size={13} aria-hidden /> Merci, c’est pris en compte.
                     </small>
+                  ) : null}
+                </div>
+                <div className="bw-signal-side">
+                  <LikeButton
+                    kind="alert"
+                    id={alert.id}
+                    counts={contributions.counts}
+                    own={Boolean(alert.own)}
+                  />
+                  {alert.own ? (
+                    <button
+                      type="button"
+                      className="bw-signal-side__main"
+                      disabled={mutation.isPending}
+                      onClick={() => mutation.mutate({ type: "resolve", id: alert.id })}
+                    >
+                      <Check size={14} aria-hidden />
+                      Terminé
+                    </button>
+                  ) : user ? (
+                    <>
+                      <button
+                        type="button"
+                        className="bw-signal-side__main"
+                        disabled={mutation.isPending || alert.confirmed}
+                        onClick={() => mutation.mutate({ type: "confirm", id: alert.id })}
+                      >
+                        <ThumbsUp size={14} aria-hidden />
+                        {alert.confirmed ? "Confirmé" : "Je confirme"}
+                      </button>
+                      {upgraded ? (
+                        <button
+                          type="button"
+                          className="bw-signal-side__deny"
+                          disabled={mutation.isPending || alert.denied}
+                          onClick={() => mutation.mutate({ type: "deny", id: alert.id })}
+                        >
+                          {alert.denied ? "Noté" : "Plus le cas"}
+                        </button>
+                      ) : null}
+                    </>
                   ) : null}
                 </div>
               </li>
@@ -268,6 +275,15 @@ export function VesselReviews({ vesselId }: { vesselId: string }) {
     window.sessionStorage.removeItem("bledway:pending-vessel-review");
     setWrite(true);
   }, [user, vesselId]);
+  // Bouton « Noter » de la fiche bateau.
+  useEffect(() => {
+    const open = (event: Event) => {
+      if ((event as CustomEvent<{ vesselId: string }>).detail?.vesselId === vesselId)
+        setWrite(true);
+    };
+    window.addEventListener("bledway:write-vessel-review", open);
+    return () => window.removeEventListener("bledway:write-vessel-review", open);
+  }, [vesselId]);
   const reviewAuthors = useContributions(
     "vessel_review",
     (feed.data?.reviews ?? []).filter((r) => r.status === "published").map((r) => r.id),
@@ -372,7 +388,12 @@ export function VesselReviews({ vesselId }: { vesselId: string }) {
             {review.comment ? (
               <p className="whitespace-pre-wrap break-words">{review.comment}</p>
             ) : null}
-            <ReactionBar kind="vessel_review" id={review.id} counts={reviewAuthors.counts} />
+            <LikeButton
+              kind="vessel_review"
+              id={review.id}
+              counts={reviewAuthors.counts}
+              own={Boolean(review.own)}
+            />
           </li>
         ))}
       </ul>

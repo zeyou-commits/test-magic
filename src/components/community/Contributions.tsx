@@ -1,12 +1,11 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { Heart } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
 import {
   authorsQuery,
   communityKey,
   react,
-  reactionImage,
-  reactions,
   reactionsQuery,
   type ContributionKind,
   type ReactionCounts,
@@ -41,50 +40,47 @@ export function ContributionAuthor({
   );
 }
 
-/** Merci, courage, bon voyage, bien vu : un toucher pour réagir, un second pour retirer. */
-export function ReactionBar({
+/** Un seul ♥ : « merci pour l'info ». Un toucher pour remercier, un second pour retirer. */
+export function LikeButton({
   kind,
   id,
   counts,
+  own = false,
 }: {
   kind: ContributionKind;
   id: string;
   counts: ReactionCounts | null;
+  /** Sa propre contribution : on voit le compteur, sans pouvoir se remercier soi-même. */
+  own?: boolean;
 }) {
   const { user } = useAuth();
   const client = useQueryClient();
-  const mine = counts?.[id] ?? {};
+  const value = counts?.[id]?.merci;
   const toggle = useMutation({
-    mutationFn: (code: (typeof reactions)[number]["code"]) => react(kind, id, code),
+    mutationFn: () => react(kind, id, "merci"),
     onSuccess: () => void client.invalidateQueries({ queryKey: [...communityKey, "reactions"] }),
     onError: (error: Error) => toast.error(error.message),
   });
   if (counts === null) return null;
+  const n = value?.n ?? 0;
   return (
-    <div className="bw-reactions" aria-label="Réactions">
-      {reactions.map((reaction) => {
-        const value = mine[reaction.code];
-        return (
-          <button
-            key={reaction.code}
-            type="button"
-            aria-pressed={Boolean(value?.mine)}
-            disabled={toggle.isPending}
-            title={reaction.label}
-            onClick={() => {
-              if (!user) {
-                toast.info("Connectez-vous pour réagir.");
-                return;
-              }
-              toggle.mutate(reaction.code);
-            }}
-          >
-            <img src={reactionImage(reaction.code)} alt="" width={20} height={20} loading="lazy" />
-            <span className="sr-only">{reaction.label}</span>
-            {value?.n ? <b>{value.n}</b> : null}
-          </button>
-        );
-      })}
-    </div>
+    <button
+      type="button"
+      className="bw-like"
+      aria-pressed={Boolean(value?.mine)}
+      disabled={toggle.isPending || own}
+      aria-label={`${value?.mine ? "Retirer mon merci" : "Merci pour l’info"}${n ? ` (${n})` : ""}`}
+      title={own ? "Mercis reçus" : "Merci pour l’info"}
+      onClick={() => {
+        if (!user) {
+          toast.info("Connectez-vous pour remercier.");
+          return;
+        }
+        toggle.mutate();
+      }}
+    >
+      <Heart size={16} aria-hidden fill={value?.mine ? "currentColor" : "none"} />
+      {n ? <b>{n}</b> : null}
+    </button>
   );
 }

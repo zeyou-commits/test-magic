@@ -1,8 +1,26 @@
 import { useEffect, useState } from "react";
-import { Check, Link2, Share2 } from "lucide-react";
+import { Check, Link2, MessageCircle, Share2 } from "lucide-react";
 import { toast } from "sonner";
 
-const SHARE_TITLE = "Batogo — traversées en ferry";
+const SHARE_TITLE = "Bledway — traversées en ferry";
+const PUBLIC_ORIGIN = "https://www.bledway.com";
+
+/** Lien stable : domaine public en production, origine courante en aperçu/local. */
+export function stableShareUrl(href: string) {
+  try {
+    const u = new URL(href);
+    if (/(^|\.)bledway\.com$/.test(u.hostname) || u.hostname.endsWith(".lovable.app") && !u.hostname.includes("preview")) {
+      return `${PUBLIC_ORIGIN}${u.pathname}${u.search}`;
+    }
+    return u.toString();
+  } catch {
+    return href;
+  }
+}
+
+export function whatsappUrl(text: string, url: string) {
+  return `https://wa.me/?text=${encodeURIComponent(`${text}\n${url}`)}`;
+}
 
 async function copyText(text: string) {
   try {
@@ -31,10 +49,15 @@ export function ShareButtons({
   label = "Partager",
   compact = false,
   className = "",
+  title = SHARE_TITLE,
+  text,
 }: {
   label?: string;
   compact?: boolean;
   className?: string;
+  title?: string;
+  /** Résumé partagé (trajet, date, heures locales, nature de l'information). */
+  text?: string;
 }) {
   const [copied, setCopied] = useState(false);
   const [canShare, setCanShare] = useState(false);
@@ -44,7 +67,7 @@ export function ShareButtons({
   }, []);
 
   const copy = async () => {
-    const ok = await copyText(window.location.href);
+    const ok = await copyText(stableShareUrl(window.location.href));
     if (ok) {
       setCopied(true);
       toast.success("Lien copié");
@@ -56,7 +79,7 @@ export function ShareButtons({
 
   const share = async () => {
     try {
-      await navigator.share({ title: SHARE_TITLE, url: window.location.href });
+      await navigator.share({ title, text, url: stableShareUrl(window.location.href) });
     } catch {
       // Fenêtre de partage fermée par l'utilisateur.
     }
@@ -94,6 +117,19 @@ export function ShareButtons({
           {compact ? null : "Partager"}
         </button>
       ) : null}
+      <a
+        href="#"
+        onClick={(e) => {
+          e.preventDefault();
+          window.open(whatsappUrl(text ?? title, stableShareUrl(window.location.href)), "_blank", "noopener,noreferrer");
+        }}
+        className={base}
+        title="Envoyer sur WhatsApp"
+        aria-label="Envoyer sur WhatsApp"
+      >
+        <MessageCircle className="size-3.5" aria-hidden />
+        {compact ? null : "WhatsApp"}
+      </a>
     </div>
   );
 }

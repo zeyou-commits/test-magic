@@ -79,7 +79,7 @@ export function ShareButtons({
 
   const share = async () => {
     try {
-      await navigator.share({ title, text, url: stableShareUrl(window.location.href) });
+      await navigator.share({ title, ...(text ? { text } : {}), url: stableShareUrl(window.location.href) });
     } catch {
       // Fenêtre de partage fermée par l'utilisateur.
     }

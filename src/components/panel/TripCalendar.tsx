@@ -212,15 +212,17 @@ export function TripCalendar({
   };
   const touchStart = useRef<{ x: number; y: number } | null>(null);
   const handleTouchStart = (e: React.TouchEvent) => {
-    if (e.touches.length !== 1) return;
-    touchStart.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+    const t = e.touches[0];
+    if (e.touches.length !== 1 || !t) return;
+    touchStart.current = { x: t.clientX, y: t.clientY };
   };
   const handleTouchEnd = (e: React.TouchEvent) => {
     const start = touchStart.current;
     touchStart.current = null;
-    if (!start || e.changedTouches.length !== 1) return;
-    const dx = e.changedTouches[0].clientX - start.x;
-    const dy = e.changedTouches[0].clientY - start.y;
+    const t = e.changedTouches[0];
+    if (!start || e.changedTouches.length !== 1 || !t) return;
+    const dx = t.clientX - start.x;
+    const dy = t.clientY - start.y;
     const main = Math.abs(dx) > Math.abs(dy) ? dx : dy;
     if (Math.abs(main) < 40) return;
     shiftMonth(main < 0 ? 1 : -1);

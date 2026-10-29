@@ -193,13 +193,19 @@ export function TripCalendar({
 
   // Changement de mois au pavé tactile / molette et au glissement du doigt (les flèches restent).
   const [slideDir, setSlideDir] = useState<1 | -1 | 0>(0);
+  // Mois sortant, affiché le temps du glissement pour voir les deux mois bouger ensemble.
+  const [ghost, setGhost] = useState<Date | null>(null);
+  const ghostTimer = useRef<number | undefined>(undefined);
   const changeMonth = (next: Date) => {
-    setMonth((cur) => {
-      const d = next.getTime() - cur.getTime();
-      setSlideDir(d > 0 ? 1 : d < 0 ? -1 : 0);
-      return next;
-    });
+    const d = next.getTime() - month.getTime();
+    if (d === 0) return;
+    setSlideDir(d > 0 ? 1 : -1);
+    setGhost(month);
+    setMonth(next);
+    window.clearTimeout(ghostTimer.current);
+    ghostTimer.current = window.setTimeout(() => setGhost(null), 340);
   };
+  useEffect(() => () => window.clearTimeout(ghostTimer.current), []);
   const shiftMonth = (step: 1 | -1) => {
     const min = keyToDate(today);
     const next = new Date(month.getFullYear(), month.getMonth() + step, 1);

@@ -69,7 +69,8 @@ export const presenceQuery = queryOptions({
 export const myTripStatusQuery = (departureId: string, userId: string | undefined) =>
   queryOptions({
     queryKey: [...presenceKey, "mine", departureId, userId ?? "anonyme"],
-    enabled: Boolean(userId),
+    // Sans traversée suivie, pas de requête : un identifiant vide ferait répondre 400 à Supabase.
+    enabled: Boolean(userId && departureId),
     queryFn: async () => {
       const { data, error } = await supabase
         .from("bw_trip_status")

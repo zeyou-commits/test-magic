@@ -4655,63 +4655,70 @@ button.bw-tavatar:focus-visible {
   color: #b42318 !important;
 }
 
-/* Taux de change posé sur l'Algérie : une annotation de carte, sans cadre ni fond plein. */
+/* Taux de change posé sur l'Algérie : étiquette secondaire, taille strictement bornée. */
 .bw-fx {
   position: relative;
 }
 .bw-fx-label {
   display: flex;
   flex-direction: column;
-  align-items: center;
-  gap: 1px;
-  padding: 4px 8px;
-  border: 0;
-  border-radius: 10px;
-  background: transparent;
+  align-items: flex-start;
+  box-sizing: border-box;
+  max-width: 116px;
+  max-height: 34px;
+  overflow: hidden;
+  padding: 3px 7px;
+  border: 1px solid #16324a14;
+  border-radius: 8px;
+  background: #ffffffe6;
+  box-shadow: 0 1px 4px #16324a1f;
   color: #16324a;
   font-family: var(--font-sans);
-  line-height: 1.15;
-  text-shadow:
-    0 0 2px #ffffff,
-    0 0 6px #ffffffd9,
-    0 0 12px #ffffffb3;
+  line-height: 1.2;
+  text-align: left;
+  white-space: nowrap;
   cursor: pointer;
-  transition: background 0.2s ease;
 }
 .bw-fx-label:hover,
 .bw-fx.is-open .bw-fx-label {
-  background: #ffffffcc;
-  box-shadow: 0 2px 10px #16324a26;
-  backdrop-filter: blur(4px);
+  background: #ffffff;
+  box-shadow: 0 2px 8px #16324a33;
 }
 .bw-fx-label:focus-visible {
   outline: 2px solid #0e7a43;
   outline-offset: 2px;
 }
-.bw-fx-kicker {
-  font-size: 9px;
-  font-weight: 700;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
-  opacity: 0.62;
-}
 .bw-fx-value {
-  display: inline-flex;
-  align-items: baseline;
-  gap: 4px;
-  font-size: 15px;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: 11.5px;
   font-weight: 700;
   font-variant-numeric: tabular-nums;
-  letter-spacing: -0.01em;
-  white-space: nowrap;
 }
-.bw-fx-hint {
+.bw-fx-sub {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 3px;
+  max-width: 100%;
+  overflow: hidden;
   font-size: 9.5px;
-  font-style: italic;
-  opacity: 0.55;
+  font-variant-numeric: tabular-nums;
+  opacity: 0.62;
+}
+/* Vue large : une seule ligne, encore plus petite. */
+.bw-fx.is-compact .bw-fx-label {
+  max-height: 20px;
+  padding: 2px 6px;
+}
+.bw-fx.is-compact .bw-fx-value {
+  font-size: 10.5px;
+}
+.bw-fx.is-compact .bw-fx-sub {
+  display: none;
 }
 .bw-fx-trend {
-  font-size: 9px;
+  font-size: 8px;
   animation: bw-fx-trend 6s ease forwards;
 }
 .bw-fx-trend.is-up {
@@ -4731,29 +4738,30 @@ button.bw-tavatar:focus-visible {
 }
 .bw-fx-sheet {
   position: absolute;
-  bottom: calc(100% + 8px);
+  bottom: calc(100% + 6px);
   left: 50%;
-  width: 272px;
+  box-sizing: border-box;
+  width: 196px;
+  max-height: 168px;
+  overflow: hidden auto;
   transform: translateX(-50%);
-  padding: 10px 12px;
-  border-radius: 14px;
+  padding: 7px 9px;
+  border-radius: 10px;
   background: #ffffff;
-  box-shadow: 0 8px 28px #16324a33;
+  box-shadow: 0 6px 20px #16324a33;
   color: #16324a;
-  font-size: 12px;
+  font-size: 11px;
   text-align: left;
-  animation: bw-fx-in 0.16s ease-out;
+  animation: bw-fx-in 0.14s ease-out;
+}
+.bw-fx-sheet.is-expanded {
+  max-height: 220px;
 }
 @keyframes bw-fx-in {
   from {
     opacity: 0;
-    transform: translate(-50%, 4px);
+    transform: translate(-50%, 3px);
   }
-}
-.bw-fx-sheet-title {
-  margin: 0 0 6px;
-  font-size: 11px;
-  font-weight: 700;
 }
 .bw-fx-sheet table {
   width: 100%;
@@ -4762,11 +4770,11 @@ button.bw-tavatar:focus-visible {
 }
 .bw-fx-sheet th,
 .bw-fx-sheet td {
-  padding: 2px 0;
+  padding: 1.5px 0;
   text-align: right;
 }
 .bw-fx-sheet thead th {
-  font-size: 10px;
+  font-size: 9.5px;
   font-weight: 600;
   opacity: 0.55;
 }
@@ -4775,21 +4783,32 @@ button.bw-tavatar:focus-visible {
   text-align: left;
   font-weight: 600;
 }
-.bw-fx-sheet tbody tr:first-child {
+.bw-fx-sheet td.bw-fx-official {
   font-weight: 700;
 }
-.bw-fx-sheet tbody tr + tr {
+.bw-fx-sheet td:last-child {
+  padding-left: 8px;
+  opacity: 0.65;
+}
+.bw-fx-sheet tbody tr {
   border-top: 1px solid #16324a12;
 }
-.bw-fx-sheet td.bw-fx-official {
-  padding-left: 10px;
-  opacity: 0.7;
+.bw-fx-more {
+  margin-top: 3px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: #0e7a43;
+  font: inherit;
+  font-size: 10.5px;
+  font-weight: 600;
+  cursor: pointer;
 }
 .bw-fx-sheet-note {
-  margin: 8px 0 0;
-  font-size: 10px;
-  line-height: 1.35;
-  opacity: 0.7;
+  margin: 4px 0 0;
+  font-size: 9px;
+  line-height: 1.3;
+  opacity: 0.65;
 }
 .bw-fx-sheet-note a {
   color: inherit;

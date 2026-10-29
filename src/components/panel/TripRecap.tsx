@@ -9,7 +9,9 @@ import { VesselMiniCard } from "./VesselMiniCard";
 import {
   Anchor,
   ArrowRight,
+  CarFront,
   ClipboardCheck,
+  Footprints,
   MapPin,
   Megaphone,
   Ship,
@@ -98,14 +100,20 @@ export function TripRecap({
     },
     retry: false,
   });
-  const myDeparture = Boolean(follow.data?.active && follow.data.traveller);
+  // Toute traversée suivie est « Ma traversée » (comme avant l'aller-retour) : les suivis créés
+  // avant le motif « voyageur » gardent leur checklist et leur statut.
+  const myDeparture = Boolean(follow.data?.active);
   const heading = myDeparture ? "Ma traversée" : "Cette traversée";
   const fromZone = portTimeZone(from);
   const toZone = portTimeZone(to);
   const progress = crossingProgress(departure, from, to, live);
   const { times } = progress;
   const departIso = times.departure.iso ?? departure.departure_at;
-  const presentation = getBoardingMilestones(departIso, from, { presentationMinutes: departure.presentation_minutes });
+  const car = getBoardingMilestones(departIso, from, { presentationMinutes: departure.presentation_minutes });
+  const walk = getBoardingMilestones(departIso, from, {
+    presentationMinutes: departure.presentation_minutes,
+    onFoot: true,
+  });
   const arriveIso = times.arrival.iso;
   const nextDay =
     arriveIso && dateKeyInZone(arriveIso, toZone) !== dateKeyInZone(departIso, fromZone);
@@ -322,10 +330,24 @@ export function TripRecap({
 
       {activeTab === "prepare" ? (
         <div className="bw-recap__panel" role="tabpanel">
-          {upcoming && myDeparture ? (
+          {upcoming && car && walk ? (
             <div className="bw-recap__arrive">
-              <p>Au port de {from.name} : {presentation ? `${day(presentation.callTime.toISOString(), fromZone)} à ${presentation.callLabel}` : "heure à vérifier"}</p>
-              <small>{departure.presentation_minutes != null ? "Horaire de présentation renseigné pour cette traversée. Vérifiez votre billet et les consignes de la compagnie." : "Repère indicatif : 4 h avant le départ. L’heure inscrite sur votre billet ou donnée par la compagnie prévaut."}</small>
+              <p>
+                Être à {from.name} <small>({day(car.callTime.toISOString(), fromZone)}, {zoneLabel(fromZone)})</small>
+              </p>
+              <div>
+                <span>
+                  <CarFront size={16} aria-hidden /> Véhicule <strong>{car.callLabel}</strong>
+                </span>
+                <span>
+                  <Footprints size={16} aria-hidden /> À pied <strong>{walk.callLabel}</strong>
+                </span>
+              </div>
+              <small>
+                {departure.presentation_minutes != null
+                  ? "Consigne renseignée pour cette traversée. L’heure de convocation de votre billet reste la référence."
+                  : "Repère : 4 h avant en véhicule, 3 h à pied. L’heure de convocation de votre billet reste la référence."}
+              </small>
             </div>
           ) : null}
           {myDeparture ? <JourneyChecklist departureId={departure.id} departureAt={departure.departure_at} presentationMinutes={departure.presentation_minutes} port={from} compact /> : null}

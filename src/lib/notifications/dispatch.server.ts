@@ -5,7 +5,7 @@ import { supabaseAdmin as typedDb } from "@/integrations/supabase/client.server"
 // Tables communautaires pas encore présentes dans les types générés.
 const db = typedDb as unknown as SupabaseClient;
 import { portTimeZone, zonedTimeToUtc } from "@/lib/ferry/time";
-import { presentationLeadMinutes } from "@/lib/ferry/boarding";
+import { leadMinutesFor } from "@/lib/ferry/boarding";
 import {
   notificationAllowed,
   openingApproved,
@@ -290,14 +290,16 @@ export async function dispatchPush(
           const route = routeById.get(next.route_id);
           const from = route ? portById.get(route.departure_port_id) : undefined;
           const to = route ? portById.get(route.arrival_port_id) : undefined;
-          const presentation = new Date(Date.parse(next.departure_at) - presentationLeadMinutes(next.presentation_minutes) * 60_000);
+          const presentation = new Date(Date.parse(next.departure_at) - leadMinutesFor(next.presentation_minutes, false) * 60_000);
+          const onFoot = new Date(Date.parse(next.departure_at) - leadMinutesFor(next.presentation_minutes, true) * 60_000);
           const portTime = new Intl.DateTimeFormat("fr-FR", { dateStyle: "medium", timeStyle: "short", timeZone: portTimeZone(from) }).format(presentation);
+          const footTime = new Intl.DateTimeFormat("fr-FR", { timeStyle: "short", timeZone: portTimeZone(from) }).format(onFoot);
           await deliver(follow.user_id, follow.id, {
             key: `departure:${follow.id}:${next.id}:${stage}`,
             category: "reminders",
             title: `${from?.name ?? "Départ"} → ${to?.name ?? "arrivée"} · départ dans ${remainingLabel(remaining)}`,
             body: personalTrip
-              ? `Présentation à ${from?.name ?? "votre port"} : ${portTime}${next.presentation_minutes == null ? " (repère indicatif : 4 h avant)" : " (consigne renseignée)"}. Vérifiez votre billet et vos préparatifs encore ouverts.`
+              ? `Présentation à ${from?.name ?? "votre port"} : ${portTime} en véhicule, ${footTime} à pied${next.presentation_minutes == null ? " (repères indicatifs : 4 h avant en véhicule, 3 h à pied)" : " (consigne renseignée)"}. Vérifiez votre billet et vos préparatifs encore ouverts.`
               : "Retrouvez les horaires et les changements publiés pour cette traversée.",
             url: `/?select=departure&id=${next.id}`,
           });

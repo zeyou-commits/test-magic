@@ -11,6 +11,27 @@ import { WALLET_MEDIA_BUCKET, walletMediaUrl, type WalletMediaRow, type WalletMe
 const supabase = typedSupabase as unknown as SupabaseClient;
 const notes = DENOMINATIONS.filter((item) => item.kind === "note");
 const mimeExtensions: Record<string, string> = { "image/jpeg": "jpg", "image/png": "png", "image/webp": "webp" };
+const MAX_BYTES = 3 * 1024 * 1024;
+const MAX_SIDE = 1800;
+
+/** Photo de téléphone (souvent 4 à 10 Mo) : réduite à 1 800 px et convertie en WebP avant l'envoi. */
+async function prepareImage(file: File): Promise<Blob> {
+  if (mimeExtensions[file.type] && file.size <= MAX_BYTES) return file;
+  let bitmap: ImageBitmap;
+  try { bitmap = await createImageBitmap(file); }
+  catch { throw new Error("Format d’image non lu (HEIC ?). Enregistrez la photo en JPG ou PNG, puis réessayez."); }
+  const scale = Math.min(1, MAX_SIDE / Math.max(bitmap.width, bitmap.height));
+  const canvas = document.createElement("canvas");
+  canvas.width = Math.round(bitmap.width * scale);
+  canvas.height = Math.round(bitmap.height * scale);
+  canvas.getContext("2d")?.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+  bitmap.close();
+  for (const quality of [0.86, 0.72, 0.58]) {
+    const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, "image/webp", quality));
+    if (blob && blob.type === "image/webp" && blob.size <= MAX_BYTES) return blob;
+  }
+  throw new Error("Image trop lourde même après réduction : choisissez une photo plus légère.");
+}
 
 export function WalletMediaAdmin() {
   const { user } = useAuth();
@@ -42,15 +63,22 @@ export function WalletMediaAdmin() {
 
   async function save() {
     if (!file || !user || busy) return;
-    const ext = mimeExtensions[file.type];
-    if (!ext || file.size > 3 * 1024 * 1024) { toast.error("Choisissez une image JPG, PNG ou WebP de 3 Mo maximum."); return; }
     if (!creditLabel.trim()) { toast.error("Indiquez le crédit de l’image."); return; }
     if (creditUrl.trim() && !/^https?:\/\//i.test(creditUrl.trim())) { toast.error("Le lien de crédit doit commencer par https://."); return; }
     setBusy(true);
-    const path = `${value}/${slot}/${crypto.randomUUID()}.${ext}`;
+    let path = "";
     try {
-      const upload = await supabase.storage.from(WALLET_MEDIA_BUCKET).upload(path, file, { contentType: file.type, cacheControl: "86400" });
-      if (upload.error) throw upload.error;
+      const image = await prepareImage(file);
+      const ext = mimeExtensions[image.type] ?? "webp";
+      path = `${value}/${slot}/${crypto.randomUUID()}.${ext}`;
+      const upload = await supabase.storage.from(WALLET_MEDIA_BUCKET).upload(path, image, { contentType: image.type, cacheControl: "86400" });
+      if (upload.error) {
+        // Message lisible pour les causes connues (bucket absent, droits) au lieu de l'erreur brute.
+        const text = upload.error.message;
+        if (/bucket not found/i.test(text)) throw new Error("Espace de stockage « bledway-banknotes » absent : lancez le script SQL fourni.");
+        if (/row-level security|unauthorized|403/i.test(text)) throw new Error("Envoi refusé : votre compte doit avoir le rôle admin ou éditeur, et le script SQL doit être appliqué.");
+        throw upload.error;
+      }
       const saved = await supabase.from("bw_wallet_media").upsert({
         value, slot, storage_path: path, credit_label: creditLabel.trim(), credit_url: creditUrl.trim() || null,
         updated_at: new Date().toISOString(), updated_by: user.id,
@@ -83,7 +111,7 @@ export function WalletMediaAdmin() {
   }
 
   return <section className="bw-admin-surface mt-4 space-y-4 p-4 sm:p-6" aria-labelledby="wallet-media-title">
-    <div><h2 id="wallet-media-title" className="text-xl font-bold">Images de Ma bezass</h2><p className="text-sm text-muted-foreground">Ajoutez une photo par valeur et, si besoin, une variante. Votre image prime sur le lien officiel. JPG, PNG ou WebP, 3 Mo maximum.</p></div>
+    <div><h2 id="wallet-media-title" className="text-xl font-bold">Images de Ma bezass</h2><p className="text-sm text-muted-foreground">Ajoutez une photo par valeur et, si besoin, une variante. Votre image prime sur le lien officiel. Toute photo est acceptée : elle est réduite et convertie automatiquement.</p></div>
     {error ? <p role="alert" className="rounded-xl bg-amber-50 p-3 text-sm text-amber-900">Gestion indisponible : appliquez la migration <code>20261108130000_bezass_media_admin.sql</code> dans Supabase.</p> : null}
     <div className="grid gap-3 sm:grid-cols-3">{notes.map((note) => {
       const front = rows.find((row) => row.value === note.value && row.slot === "front");
@@ -95,7 +123,7 @@ export function WalletMediaAdmin() {
     <div className="grid gap-4 md:grid-cols-[minmax(0,240px)_1fr]">
       <div className="grid min-h-40 place-items-center rounded-xl border bg-stone-50 p-3">{previewUrl || current || officialImage ? <img src={previewUrl || (current ? walletMediaUrl(current.storage_path) : officialImage) || ""} alt={`Aperçu du billet de ${value} dinars`} className="max-h-44 w-full object-contain" /> : <span className="text-sm text-muted-foreground">Aucun visuel</span>}</div>
       <div className="space-y-3">
-        <label className="block text-sm font-semibold">Nouvelle image<input type="file" accept="image/jpeg,image/png,image/webp" className="mt-1 block w-full rounded-lg border bg-white p-2 text-sm" onChange={(event) => setFile(event.target.files?.[0] ?? null)} /></label>
+        <label className="block text-sm font-semibold">Nouvelle image<input type="file" accept="image/*" className="mt-1 block w-full rounded-lg border bg-white p-2 text-sm" onChange={(event) => setFile(event.target.files?.[0] ?? null)} /></label>
         <label className="block text-sm font-semibold">Crédit photo<input value={creditLabel} onChange={(event) => setCreditLabel(event.target.value)} placeholder="Ex. Banque d’Algérie" className="mt-1 w-full rounded-lg border bg-white p-2" /></label>
         <label className="block text-sm font-semibold">Lien vers la source (facultatif)<input type="url" value={creditUrl} onChange={(event) => setCreditUrl(event.target.value)} placeholder="https://…" className="mt-1 w-full rounded-lg border bg-white p-2" /></label>
         <div className="flex flex-wrap gap-2"><button type="button" onClick={save} disabled={!file || busy || !!error} className="inline-flex items-center gap-2 rounded-lg bg-emerald-700 px-4 py-2 text-sm font-semibold text-white disabled:opacity-50"><ImagePlus size={16} aria-hidden />{busy ? "Enregistrement…" : "Enregistrer l’image"}</button>{current ? <button type="button" onClick={remove} disabled={busy} className="inline-flex items-center gap-2 rounded-lg border px-4 py-2 text-sm font-semibold text-red-700 disabled:opacity-50"><Trash2 size={16} aria-hidden />Retirer</button> : null}</div>

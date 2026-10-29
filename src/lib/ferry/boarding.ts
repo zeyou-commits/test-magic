@@ -15,11 +15,19 @@ export interface BoardingMilestones {
 
 export interface BoardingOptions {
   presentationMinutes?: number | null | undefined;
+  /** Piéton : une heure de moins que les véhicules (repère 3 h au lieu de 4 h). */
+  onFoot?: boolean;
 }
 
-/** Consigne renseignée si connue ; sinon repère de quatre heures avant le départ. */
+/** Consigne véhicule renseignée si connue ; sinon repère de quatre heures avant le départ. */
 export function presentationLeadMinutes(value?: number | null): number {
   return Number.isInteger(value) && value! >= 30 && value! <= 720 ? value! : 240;
+}
+
+/** Délai de présentation selon le mode : les piétons se présentent une heure plus tard (30 min avant au plus tôt). */
+export function leadMinutesFor(value: number | null | undefined, onFoot: boolean): number {
+  const vehicle = presentationLeadMinutes(value);
+  return onFoot ? Math.max(30, vehicle - 60) : vehicle;
 }
 
 /** Jalons indicatifs, affichés dans le fuseau local du port de départ. */
@@ -32,7 +40,9 @@ export function getBoardingMilestones(
   if (!Number.isFinite(departureMs)) return null;
   const timeZone = portTimeZone(departurePort);
   const departureTime = new Date(departureMs);
-  const callTime = new Date(departureMs - presentationLeadMinutes(options.presentationMinutes) * 60_000);
+  const callTime = new Date(
+    departureMs - leadMinutesFor(options.presentationMinutes, options.onFoot === true) * 60_000,
+  );
   const boardingTime = new Date(departureMs - 3 * 3_600_000);
   const lastBoardingTime = new Date(departureMs - 1 * 3_600_000);
   return {

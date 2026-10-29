@@ -131,6 +131,9 @@ describe("fiabilité AIS", () => {
     const port = { country_code: "ES" };
     expect(getBoardingMilestones(departure.departure_at, port)?.callTime.toISOString()).toBe("2026-10-19T16:30:00.000Z");
     expect(getBoardingMilestones(departure.departure_at, port, { presentationMinutes: 180 })?.callTime.toISOString()).toBe("2026-10-19T17:30:00.000Z");
+    // Piéton : une heure plus tard que le véhicule, avec ou sans consigne renseignée.
+    expect(getBoardingMilestones(departure.departure_at, port, { onFoot: true })?.callTime.toISOString()).toBe("2026-10-19T17:30:00.000Z");
+    expect(getBoardingMilestones(departure.departure_at, port, { presentationMinutes: 180, onFoot: true })?.callTime.toISOString()).toBe("2026-10-19T18:30:00.000Z");
   });
 });
 describe("horaires compacts avec durée publiée", () => {

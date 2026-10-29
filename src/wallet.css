@@ -82,3 +82,24 @@
 .bw-wallet-hero__breakdown b{font-size:17px;line-height:1.2;white-space:nowrap}
 .bw-wallet-hero__other{font-size:10px;color:#c5e6d3;margin:2px 0 0;position:relative;z-index:1}
 @media(max-width:480px){.bw-wallet-hero{padding:12px 16px 10px}.bw-wallet-hero>strong{font-size:35px}.bw-wallet-hero__breakdown b{font-size:15px}.bw-wallet-hero__breakdown span{font-size:10px}}
+/* En-tête resserré et taux visibles avant le comptage. */
+.bw-wallet-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:9px}
+.bw-wallet-heading h1{font-size:clamp(30px,6vw,44px);font-weight:900;line-height:1;letter-spacing:-.055em;margin:0}
+.bw-wallet-heading .bw-wallet-back{margin:0;white-space:nowrap}
+.bw-wallet-heading .bw-wallet-spark{font-size:18px;margin-left:3px}
+.bw-wallet-rate-summary{border:1px solid #d7e7dc;border-radius:16px;background:#f7faf6;padding:9px 11px;margin-bottom:9px}
+.bw-wallet-rate-summary__title{display:flex;justify-content:space-between;gap:8px;align-items:center;color:#18384b;font-size:11px}
+.bw-wallet-rate-summary__title>span{color:#64766e;white-space:nowrap}
+.bw-wallet-rate-summary__options{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;margin-top:6px}
+.bw-wallet-rate-summary__options button{text-align:left;border:1px solid #dce6dd;border-radius:10px;background:#fff;padding:6px 9px;min-width:0}
+.bw-wallet-rate-summary__options button[aria-pressed="true"]{border-color:#07834e;background:#eaf5ed;box-shadow:inset 0 0 0 1px #07834e}
+.bw-wallet-rate-summary__options span{display:flex;justify-content:space-between;gap:4px;font-size:11px;font-weight:800;color:#244331}
+.bw-wallet-rate-summary__options small{font-size:10px;font-weight:500;color:#66786c;white-space:nowrap}
+.bw-wallet-rate-summary__options b{display:block;font-size:15px;line-height:1.1;color:#0c3447;white-space:nowrap}
+.bw-wallet-rate-summary__options em{display:block;font-size:10px;font-style:normal;color:#5c7164}
+.bw-wallet-rate-summary__options .bw-wallet-rate-summary__personal{grid-column:1/-1;display:grid;grid-template-columns:1fr auto auto;align-items:center;gap:8px}
+.bw-wallet-note--empty{opacity:1;filter:none}
+.bw-wallet-note__fallback{position:absolute!important;inset:0!important;display:grid;place-items:center;background:#eadcca!important;color:#4a3a2c!important;font-size:10px!important;padding:2px!important;text-align:center}
+.bw-wallet-note[data-value="2000"]:not(.bw-wallet-note--portrait) img:not(.bw-wallet-note__variant){position:static;width:100%;height:100%;max-width:100%;transform:none;object-fit:contain}
+.bw-wallet-note[data-value="2000"] .bw-wallet-note__variant{position:absolute;left:auto;right:0;top:0;width:18%!important;height:100%!important;transform:none;object-fit:cover!important}
+@media(max-width:480px){.bw-wallet-page{padding-top:7px}.bw-wallet-heading{margin-bottom:7px}.bw-wallet-heading h1{font-size:30px}.bw-wallet-rate-summary{padding:7px 8px}.bw-wallet-rate-summary__title{font-size:10px}.bw-wallet-rate-summary__options b{font-size:13px}.bw-wallet-rate-summary__options small{font-size:9px}}

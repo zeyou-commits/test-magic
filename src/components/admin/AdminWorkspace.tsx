@@ -19,6 +19,7 @@ import {
   Users,
   Zap,
   Fuel,
+  Images,
   Megaphone,
   TriangleAlert,
 } from "lucide-react";
@@ -97,6 +98,13 @@ const sections = [
     description: "Stations-service, change, distributeurs autour des ports.",
     group: "Réseau",
     icon: Fuel,
+  },
+  {
+    id: "walletMedia",
+    label: "Images des billets",
+    description: "Choisissez les photos et crédits affichés dans Ma bezass.",
+    group: "Voyageurs",
+    icon: Images,
   },
   {
     id: "flash",

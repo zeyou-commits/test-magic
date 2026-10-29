@@ -97,9 +97,9 @@ export function exchangeCurrency(wallet: WalletState, currency: Currency, amount
 // Dernier relevé vérifié, conservé comme secours si la collecte est temporairement indisponible.
 // Les dates restent visibles dans l'interface ; ce jeu ne doit jamais être présenté comme un cours du jour.
 export const LAST_KNOWN_RATES: RatesResponse = { checkedAt: null, rates: {
-  EUR: { official: 150.5966, parallel: 277, officialDate: "2026-10-28", parallelDate: "2026-10-20T18:00:29.328Z" },
-  USD: { official: 135.1187, parallel: 242.5, officialDate: "2026-10-28", parallelDate: "2026-10-20T18:00:29.328Z" },
-  GBP: { official: 179.9903, parallel: 317.5, officialDate: "2026-10-28", parallelDate: "2026-10-20T18:00:29.328Z" },
-  CAD: { official: 96.2899, parallel: 171.5, officialDate: "2026-10-28", parallelDate: "2026-10-20T18:00:29.328Z" },
-  CHF: { official: 162.9605, parallel: 289.75, officialDate: "2026-10-28", parallelDate: "2026-10-20T18:00:29.328Z" },
+  EUR: { official: 150.5966, parallel: 277, officialDate: "2026-10-28", parallelDate: "2026-10-29T04:30:28.601Z" },
+  USD: { official: 135.1187, parallel: 244.5, officialDate: "2026-10-28", parallelDate: "2026-10-29T04:30:28.601Z" },
+  GBP: { official: 179.9903, parallel: 322.5, officialDate: "2026-10-28", parallelDate: "2026-10-29T04:30:28.601Z" },
+  CAD: { official: 96.2899, parallel: 173.5, officialDate: "2026-10-28", parallelDate: "2026-10-29T04:30:28.601Z" },
+  CHF: { official: 162.9605, parallel: 289.75, officialDate: "2026-10-28", parallelDate: "2026-10-29T04:30:28.601Z" },
 } };

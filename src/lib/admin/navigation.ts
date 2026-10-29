@@ -10,6 +10,7 @@ export const adminTabs = [
   "flash",
   "signals",
   "places",
+  "walletMedia",
   "companies",
   "departures",
   "schedules",

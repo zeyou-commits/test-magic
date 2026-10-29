@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import type * as React from "react";
 import { fr } from "react-day-picker/locale";
 import { Backpack, CalendarDays } from "lucide-react";
 import { Calendar } from "@/components/ui/calendar";
@@ -189,6 +190,43 @@ export function TripCalendar({
     ),
   );
   const stackRef = useRef<HTMLDivElement>(null);
+
+  // Changement de mois au pavé tactile / molette et au glissement du doigt (les flèches restent).
+  const shiftMonth = (step: 1 | -1) => {
+    setMonth((cur) => {
+      const next = new Date(cur.getFullYear(), cur.getMonth() + step, 1);
+      const min = keyToDate(today);
+      if (next < new Date(min.getFullYear(), min.getMonth(), 1)) return cur;
+      if (next > new Date(endMonth.getFullYear(), endMonth.getMonth(), 1)) return cur;
+      return next;
+    });
+  };
+  const lastWheel = useRef(0);
+  const handleWheel = (e: React.WheelEvent) => {
+    const delta = Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : e.deltaY;
+    if (Math.abs(delta) < 20) return;
+    const now = Date.now();
+    if (now - lastWheel.current < 350) return;
+    lastWheel.current = now;
+    shiftMonth(delta > 0 ? 1 : -1);
+  };
+  const touchStart = useRef<{ x: number; y: number } | null>(null);
+  const handleTouchStart = (e: React.TouchEvent) => {
+    const t = e.touches[0];
+    if (e.touches.length !== 1 || !t) return;
+    touchStart.current = { x: t.clientX, y: t.clientY };
+  };
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    const start = touchStart.current;
+    touchStart.current = null;
+    const t = e.changedTouches[0];
+    if (!start || e.changedTouches.length !== 1 || !t) return;
+    const dx = t.clientX - start.x;
+    const dy = t.clientY - start.y;
+    const main = Math.abs(dx) > Math.abs(dy) ? dx : dy;
+    if (Math.abs(main) < 40) return;
+    shiftMonth(main < 0 ? 1 : -1);
+  };
   // On amène à l'écran le mois de la date en cours (aller, puis retour).
   useEffect(() => {
     if (!stacked || !open) return;
@@ -399,7 +437,13 @@ export function TripCalendar({
         />
       ) : null}
 
-      <div ref={stackRef} className={stacked ? "bw-cal-stack" : undefined}>
+      <div
+        ref={stackRef}
+        className={stacked ? "bw-cal-stack" : "touch-pan-y"}
+        onWheel={stacked ? undefined : handleWheel}
+        onTouchStart={stacked ? undefined : handleTouchStart}
+        onTouchEnd={stacked ? undefined : handleTouchEnd}
+      >
       <Calendar
         mode="single"
         locale={fr}

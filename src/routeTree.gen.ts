@@ -23,6 +23,7 @@ import { Route as CovoiturageRouteImport } from './routes/covoiturage'
 import { Route as GuideRouteImport } from './routes/guide'
 import { Route as HorairesRouteImport } from './routes/horaires'
 import { Route as LignesRouteImport } from './routes/lignes'
+import { Route as MaBezassRouteImport } from './routes/ma-bezass'
 import { Route as MentionsLegalesRouteImport } from './routes/mentions-legales'
 import { Route as MethodeEditorialeRouteImport } from './routes/methode-editoriale'
 import { Route as PortsRouteImport } from './routes/ports'
@@ -37,6 +38,7 @@ import { Route as ApiPushAdminRouteImport } from './routes/api.push-admin'
 import { Route as ApiPushCatchupRouteImport } from './routes/api.push-catchup'
 import { Route as ApiPushDispatchRouteImport } from './routes/api.push-dispatch'
 import { Route as ApiVesselPositionsRouteImport } from './routes/api.vessel-positions'
+import { Route as ApiWalletRatesRouteImport } from './routes/api.wallet-rates'
 import { Route as BateauxIndexRouteImport } from './routes/bateaux.index'
 import { Route as BateauxSlugRouteImport } from './routes/bateaux.$slug'
 import { Route as CovoiturageIndexRouteImport } from './routes/covoiturage.index'
@@ -120,6 +122,11 @@ const LignesRoute = LignesRouteImport.update({
   path: '/lignes',
   getParentRoute: () => rootRouteImport,
 } as any)
+const MaBezassRoute = MaBezassRouteImport.update({
+  id: '/ma-bezass',
+  path: '/ma-bezass',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const MentionsLegalesRoute = MentionsLegalesRouteImport.update({
   id: '/mentions-legales',
   path: '/mentions-legales',
@@ -188,6 +195,11 @@ const ApiPushDispatchRoute = ApiPushDispatchRouteImport.update({
 const ApiVesselPositionsRoute = ApiVesselPositionsRouteImport.update({
   id: '/api/vessel-positions',
   path: '/api/vessel-positions',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiWalletRatesRoute = ApiWalletRatesRouteImport.update({
+  id: '/api/wallet-rates',
+  path: '/api/wallet-rates',
   getParentRoute: () => rootRouteImport,
 } as any)
 const BateauxIndexRoute = BateauxIndexRouteImport.update({
@@ -266,6 +278,7 @@ export interface FileRoutesByFullPath {
   '/guide': typeof GuideRouteWithChildren
   '/horaires': typeof HorairesRoute
   '/lignes': typeof LignesRouteWithChildren
+  '/ma-bezass': typeof MaBezassRoute
   '/mentions-legales': typeof MentionsLegalesRoute
   '/methode-editoriale': typeof MethodeEditorialeRoute
   '/ports': typeof PortsRouteWithChildren
@@ -280,6 +293,7 @@ export interface FileRoutesByFullPath {
   '/api/push-catchup': typeof ApiPushCatchupRoute
   '/api/push-dispatch': typeof ApiPushDispatchRoute
   '/api/vessel-positions': typeof ApiVesselPositionsRoute
+  '/api/wallet-rates': typeof ApiWalletRatesRoute
   '/bateaux/$slug': typeof BateauxSlugRoute
   '/covoiturage/$slug': typeof CovoiturageSlugRoute
   '/guide/$slug': typeof GuideSlugRoute
@@ -304,6 +318,7 @@ export interface FileRoutesByTo {
   '/confidentialite': typeof ConfidentialiteRoute
   '/contact': typeof ContactRoute
   '/horaires': typeof HorairesRoute
+  '/ma-bezass': typeof MaBezassRoute
   '/mentions-legales': typeof MentionsLegalesRoute
   '/methode-editoriale': typeof MethodeEditorialeRoute
   '/sitemap-maritime.xml': typeof SitemapMaritimeDotxmlRoute
@@ -316,6 +331,7 @@ export interface FileRoutesByTo {
   '/api/push-catchup': typeof ApiPushCatchupRoute
   '/api/push-dispatch': typeof ApiPushDispatchRoute
   '/api/vessel-positions': typeof ApiVesselPositionsRoute
+  '/api/wallet-rates': typeof ApiWalletRatesRoute
   '/bateaux/$slug': typeof BateauxSlugRoute
   '/covoiturage/$slug': typeof CovoiturageSlugRoute
   '/guide/$slug': typeof GuideSlugRoute
@@ -345,6 +361,7 @@ export interface FileRoutesById {
   '/guide': typeof GuideRouteWithChildren
   '/horaires': typeof HorairesRoute
   '/lignes': typeof LignesRouteWithChildren
+  '/ma-bezass': typeof MaBezassRoute
   '/mentions-legales': typeof MentionsLegalesRoute
   '/methode-editoriale': typeof MethodeEditorialeRoute
   '/ports': typeof PortsRouteWithChildren
@@ -359,6 +376,7 @@ export interface FileRoutesById {
   '/api/push-catchup': typeof ApiPushCatchupRoute
   '/api/push-dispatch': typeof ApiPushDispatchRoute
   '/api/vessel-positions': typeof ApiVesselPositionsRoute
+  '/api/wallet-rates': typeof ApiWalletRatesRoute
   '/bateaux/$slug': typeof BateauxSlugRoute
   '/covoiturage/$slug': typeof CovoiturageSlugRoute
   '/guide/$slug': typeof GuideSlugRoute
@@ -389,6 +407,7 @@ export interface FileRouteTypes {
     | '/guide'
     | '/horaires'
     | '/lignes'
+    | '/ma-bezass'
     | '/mentions-legales'
     | '/methode-editoriale'
     | '/ports'
@@ -403,6 +422,7 @@ export interface FileRouteTypes {
     | '/api/push-catchup'
     | '/api/push-dispatch'
     | '/api/vessel-positions'
+    | '/api/wallet-rates'
     | '/bateaux/$slug'
     | '/covoiturage/$slug'
     | '/guide/$slug'
@@ -427,6 +447,7 @@ export interface FileRouteTypes {
     | '/confidentialite'
     | '/contact'
     | '/horaires'
+    | '/ma-bezass'
     | '/mentions-legales'
     | '/methode-editoriale'
     | '/sitemap-maritime.xml'
@@ -439,6 +460,7 @@ export interface FileRouteTypes {
     | '/api/push-catchup'
     | '/api/push-dispatch'
     | '/api/vessel-positions'
+    | '/api/wallet-rates'
     | '/bateaux/$slug'
     | '/covoiturage/$slug'
     | '/guide/$slug'
@@ -467,6 +489,7 @@ export interface FileRouteTypes {
     | '/guide'
     | '/horaires'
     | '/lignes'
+    | '/ma-bezass'
     | '/mentions-legales'
     | '/methode-editoriale'
     | '/ports'
@@ -481,6 +504,7 @@ export interface FileRouteTypes {
     | '/api/push-catchup'
     | '/api/push-dispatch'
     | '/api/vessel-positions'
+    | '/api/wallet-rates'
     | '/bateaux/$slug'
     | '/covoiturage/$slug'
     | '/guide/$slug'
@@ -510,6 +534,7 @@ export interface RootRouteChildren {
   GuideRoute: typeof GuideRouteWithChildren
   HorairesRoute: typeof HorairesRoute
   LignesRoute: typeof LignesRouteWithChildren
+  MaBezassRoute: typeof MaBezassRoute
   MentionsLegalesRoute: typeof MentionsLegalesRoute
   MethodeEditorialeRoute: typeof MethodeEditorialeRoute
   PortsRoute: typeof PortsRouteWithChildren
@@ -524,6 +549,7 @@ export interface RootRouteChildren {
   ApiPushCatchupRoute: typeof ApiPushCatchupRoute
   ApiPushDispatchRoute: typeof ApiPushDispatchRoute
   ApiVesselPositionsRoute: typeof ApiVesselPositionsRoute
+  ApiWalletRatesRoute: typeof ApiWalletRatesRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -626,6 +652,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LignesRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/ma-bezass': {
+      id: '/ma-bezass'
+      path: '/ma-bezass'
+      fullPath: '/ma-bezass'
+      preLoaderRoute: typeof MaBezassRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/mentions-legales': {
       id: '/mentions-legales'
       path: '/mentions-legales'
@@ -722,6 +755,13 @@ declare module '@tanstack/react-router' {
       path: '/api/vessel-positions'
       fullPath: '/api/vessel-positions'
       preLoaderRoute: typeof ApiVesselPositionsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/wallet-rates': {
+      id: '/api/wallet-rates'
+      path: '/api/wallet-rates'
+      fullPath: '/api/wallet-rates'
+      preLoaderRoute: typeof ApiWalletRatesRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/bateaux/': {
@@ -904,6 +944,7 @@ const rootRouteChildren: RootRouteChildren = {
   GuideRoute: GuideRouteWithChildren,
   HorairesRoute: HorairesRoute,
   LignesRoute: LignesRouteWithChildren,
+  MaBezassRoute: MaBezassRoute,
   MentionsLegalesRoute: MentionsLegalesRoute,
   MethodeEditorialeRoute: MethodeEditorialeRoute,
   PortsRoute: PortsRouteWithChildren,
@@ -918,6 +959,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPushCatchupRoute: ApiPushCatchupRoute,
   ApiPushDispatchRoute: ApiPushDispatchRoute,
   ApiVesselPositionsRoute: ApiVesselPositionsRoute,
+  ApiWalletRatesRoute: ApiWalletRatesRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

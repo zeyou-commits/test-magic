@@ -11,6 +11,7 @@ import {
   Shield,
   Smile,
   UserRound,
+  Wallet,
   X,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -158,6 +159,9 @@ function MeSheet({ open, onOpenChange }: { open: boolean; onOpenChange: (open: b
             </Link>
             <Link to="/compte" onClick={close}>
               <Heart size={16} aria-hidden /> Mes voyages <ChevronRight size={15} aria-hidden />
+            </Link>
+            <Link to="/ma-bezass" onClick={close}>
+              <Wallet size={16} aria-hidden /> Ma bezass <ChevronRight size={15} aria-hidden />
             </Link>
             <button
               type="button"

@@ -4,7 +4,7 @@ import { UserMenu } from "./UserMenu";
 import { HeaderInbox } from "@/components/panel/FlashCenter";
 import { MobileTabBar } from "./MobileTabBar";
 import { DataUnavailableNotice } from "./DataUnavailableNotice";
-import { ChevronDown, Menu, ArrowUpRight, Route as RouteIcon } from "lucide-react";
+import { ChevronDown, Menu, ArrowUpRight, Route as RouteIcon, Wallet } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -22,6 +22,7 @@ export const navLinks = [
   { to: "/bateaux", label: "Bateaux" },
   { to: "/simulateurs", label: "Simulateurs" },
   { to: "/barometre-prix", label: "Baromètre des prix" },
+  { to: "/ma-bezass", label: "Ma bezass" },
 ] as const;
 
 const footerLinks = [
@@ -32,6 +33,7 @@ const footerLinks = [
   { to: "/bateaux", label: "Bateaux" },
   { to: "/simulateurs", label: "Simulateurs" },
   { to: "/barometre-prix", label: "Baromètre des prix" },
+  { to: "/ma-bezass", label: "Ma bezass" },
   { to: "/methode-editoriale", label: "Méthode éditoriale" },
   { to: "/compagnies", label: "Compagnies" },
   { to: "/a-propos", label: "À propos" },
@@ -98,6 +100,9 @@ export function SiteHeader() {
                   <Link to={item.to}>{item.label}</Link>
                 </DropdownMenuItem>
               ))}
+              <DropdownMenuItem asChild>
+                <Link to="/ma-bezass"><Wallet size={16} aria-hidden /> Outils de voyage · Ma bezass</Link>
+              </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
           {primary.slice(2).map((item) => (
@@ -174,6 +179,7 @@ export function SiteFooter() {
                 "/simulateurs",
                 "/covoiturage",
                 "/barometre-prix",
+                "/ma-bezass",
               ].includes(item.to),
             )
             .map((item) => (

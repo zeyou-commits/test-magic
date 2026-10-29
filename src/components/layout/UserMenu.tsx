@@ -2,7 +2,7 @@ import { Link, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { MoodPicker } from "@/components/community/MoodPicker";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { UserRound } from "lucide-react";
+import { UserRound, Wallet } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import {
@@ -135,6 +135,9 @@ export function UserMenu({
           ) : null}
           <DropdownMenuItem asChild>
             <Link to="/compte">Mon espace voyageur</Link>
+          </DropdownMenuItem>
+          <DropdownMenuItem asChild>
+            <Link to="/ma-bezass"><Wallet size={16} aria-hidden /> Ma bezass</Link>
           </DropdownMenuItem>
           <DropdownMenuItem asChild>
             <Link to="/compte" hash="voyages">

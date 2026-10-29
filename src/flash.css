@@ -4742,8 +4742,6 @@ button.bw-tavatar:focus-visible {
   left: 50%;
   box-sizing: border-box;
   width: 196px;
-  max-height: 168px;
-  overflow: hidden auto;
   transform: translateX(-50%);
   padding: 7px 9px;
   border-radius: 10px;
@@ -4751,11 +4749,9 @@ button.bw-tavatar:focus-visible {
   box-shadow: 0 6px 20px #16324a33;
   color: #16324a;
   font-size: 11px;
+  line-height: 1.25;
   text-align: left;
   animation: bw-fx-in 0.14s ease-out;
-}
-.bw-fx-sheet.is-expanded {
-  max-height: 220px;
 }
 @keyframes bw-fx-in {
   from {
@@ -4818,5 +4814,37 @@ button.bw-tavatar:focus-visible {
   .bw-fx-trend,
   .bw-fx-sheet {
     animation: none;
+  }
+}
+/* Mobile : étiquette encore plus discrète (environ 84 × 26 px), bulle resserrée. */
+@media (max-width: 767px) {
+  .bw-fx-label {
+    max-width: 92px;
+    max-height: 27px;
+    padding: 2px 5px;
+    border-radius: 6px;
+    line-height: 1.15;
+  }
+  .bw-fx-value {
+    font-size: 10px;
+  }
+  .bw-fx-sub {
+    font-size: 8px;
+  }
+  .bw-fx.is-compact .bw-fx-label {
+    max-height: 17px;
+    padding: 1px 5px;
+  }
+  .bw-fx.is-compact .bw-fx-value {
+    font-size: 9.5px;
+  }
+  .bw-fx-sheet {
+    width: 176px;
+    padding: 6px 8px;
+    font-size: 10.5px;
+  }
+  .bw-fx-sheet th,
+  .bw-fx-sheet td {
+    padding: 1px 0;
   }
 }

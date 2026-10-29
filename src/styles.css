@@ -920,3 +920,12 @@
 @media (prefers-reduced-motion: reduce) {
   .bw-pennant-inner, .bw-pennant-flag { animation: none; }
 }
+
+/* Calendrier : glissement doux au changement de mois (flèches, pavé tactile, doigt). */
+@keyframes bw-cal-in-next { from { transform: translateX(28%); opacity: 0; } to { transform: none; opacity: 1; } }
+@keyframes bw-cal-in-prev { from { transform: translateX(-28%); opacity: 0; } to { transform: none; opacity: 1; } }
+.bw-cal-slide-next .rdp-month { animation: bw-cal-in-next 280ms cubic-bezier(0.22, 1, 0.36, 1); }
+.bw-cal-slide-prev .rdp-month { animation: bw-cal-in-prev 280ms cubic-bezier(0.22, 1, 0.36, 1); }
+@media (prefers-reduced-motion: reduce) {
+  .bw-cal-slide-next .rdp-month, .bw-cal-slide-prev .rdp-month { animation: none; }
+}

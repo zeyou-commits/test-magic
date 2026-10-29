@@ -445,7 +445,12 @@ export function TripCalendar({
 
       <div
         ref={stackRef}
-        className={stacked ? "bw-cal-stack" : "touch-pan-y"}
+        key={stacked ? "stack" : `${month.getFullYear()}-${month.getMonth()}`}
+        className={
+          stacked
+            ? "bw-cal-stack"
+            : `touch-pan-y overflow-hidden ${slideDir === 1 ? "bw-cal-slide-next" : slideDir === -1 ? "bw-cal-slide-prev" : ""}`
+        }
         onWheel={stacked ? undefined : handleWheel}
         onTouchStart={stacked ? undefined : handleTouchStart}
         onTouchEnd={stacked ? undefined : handleTouchEnd}
@@ -458,7 +463,7 @@ export function TripCalendar({
         hideNavigation={stacked}
         showOutsideDays={false}
         month={stacked ? firstMonth : month}
-        onMonthChange={setMonth}
+        onMonthChange={changeMonth}
         startMonth={keyToDate(today)}
         endMonth={endMonth}
         selected={activeValue ? keyToDate(activeValue) : undefined}

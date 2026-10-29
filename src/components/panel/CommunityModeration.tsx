@@ -17,6 +17,25 @@ export function CommunityModeration() {
   const feed = useQuery(communityQuery(undefined, undefined, true, user?.id));
   const { data: vessels = [] } = useQuery(vesselsQuery);
   const { data: ports = [] } = useQuery(portsQuery);
+  const anomalies = useQuery({
+    queryKey: ["admin", "report-anomalies"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("bw_report_anomalies")
+        .select("id,vessel_id,departure_id,category,detail,reason,status,created_at")
+        .eq("status", "pending").order("created_at", { ascending: false }).limit(100);
+      if (error) throw error;
+      return data as { id: string; vessel_id: string; departure_id: string | null; category: string; detail: string | null; reason: string; status: string; created_at: string }[];
+    },
+    retry: false,
+  });
+  const triage = useMutation({
+    mutationFn: async ({ id, status }: { id: string; status: "handled" | "dismissed" }) => {
+      const { error } = await supabase.from("bw_report_anomalies")
+        .update({ status, handled_at: new Date().toISOString() }).eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => void client.invalidateQueries({ queryKey: ["admin", "report-anomalies"] }),
+  });
   const action = useMutation({
     mutationFn: async (
       input: { type: "review"; id: string; status: string } | { type: "alert"; id: string },
@@ -48,6 +67,28 @@ export function CommunityModeration() {
     );
   return (
     <div className="space-y-6 py-4">
+      <section>
+        <h2 className="mb-2 text-lg font-semibold">Observations à vérifier · {anomalies.data?.length ?? 0}</h2>
+        <p className="mb-4 text-sm text-muted-foreground">Ces observations contredisent l’horaire ou la position connue. Elles ne sont ni publiées ni envoyées par notification.</p>
+        {anomalies.isError ? <p role="alert">File indisponible : appliquez la migration des signalements par traversée.</p> : null}
+        {anomalies.isPending ? <p>Chargement…</p> : null}
+        {anomalies.data?.length === 0 ? <p>Aucune observation à vérifier.</p> : null}
+        <ul className="space-y-3">
+          {anomalies.data?.map((item) => (
+            <li key={item.id} className="rounded-xl border bg-card p-4">
+              <strong>{vessels.find((v) => v.id === item.vessel_id)?.name ?? "Bateau"} · {item.category}</strong>
+              <p className="text-sm">{item.detail ? `${item.detail} · ` : ""}{item.reason}</p>
+              <p className="text-xs text-muted-foreground">{new Date(item.created_at).toLocaleString("fr-FR")}</p>
+              <div className="mt-3 flex flex-wrap gap-2">
+                {item.departure_id ? <a className="text-sm underline" href={`/?select=departure&id=${item.departure_id}`}>Voir la traversée</a> : null}
+                <Button size="sm" disabled={triage.isPending} onClick={() => triage.mutate({ id: item.id, status: "handled" })}>Vérifié</Button>
+                <Button size="sm" variant="outline" disabled={triage.isPending} onClick={() => triage.mutate({ id: item.id, status: "dismissed" })}>Écarter</Button>
+              </div>
+            </li>
+          ))}
+        </ul>
+        {triage.isError ? <p role="alert">La mise à jour a échoué.</p> : null}
+      </section>
       <section>
         <h2 className="text-lg font-semibold">Avis navires · modération</h2>
         <p className="mb-4 text-sm text-muted-foreground">

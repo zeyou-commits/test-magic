@@ -56,11 +56,13 @@ const failure = (message?: string) =>
 export function TravelSignals({
   kind,
   target,
+  departureId,
   compact = false,
   title,
 }: {
   kind: CommunityKind;
   target: string;
+  departureId?: string;
   /** Titre de la liste (fiche traversée : port de départ, puis bateau). */
   title?: string;
   /** Fiche qui a déjà son bouton « Signaler » : pas de second bouton ici. */
@@ -88,10 +90,10 @@ export function TravelSignals({
   const [done, setDone] = useState<string | null>(null);
   const contributions = useContributions(
     "alert",
-    activeAlerts(feed.data?.alerts ?? []).map((alert) => alert.id),
+    activeAlerts(feed.data?.alerts ?? []).filter((alert) => !departureId || alert.departure_id === departureId).map((alert) => alert.id),
   );
   // Pastille touchée sur la carte : la fiche s'ouvre cadrée sur ce signalement.
-  const alertIds = (feed.data?.alerts ?? []).map((alert) => alert.id).join(",");
+  const alertIds = (feed.data?.alerts ?? []).filter((alert) => !departureId || alert.departure_id === departureId).map((alert) => alert.id).join(",");
   useEffect(() => {
     if (!alertIds) return;
     const focus = takeSignalFocus(alertIds.split(","));
@@ -126,7 +128,7 @@ export function TravelSignals({
         </button>
       </p>
     ) : null;
-  const alerts = activeAlerts(feed.data.alerts);
+  const alerts = activeAlerts(feed.data.alerts).filter((alert) => !departureId || alert.departure_id === departureId);
   return (
     <section
       id={`signal-${kind}:${target}`}

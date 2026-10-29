@@ -9,9 +9,7 @@ import { VesselMiniCard } from "./VesselMiniCard";
 import {
   Anchor,
   ArrowRight,
-  CarFront,
   ClipboardCheck,
-  Footprints,
   MapPin,
   Megaphone,
   Ship,
@@ -30,6 +28,7 @@ import { FlashFeed } from "./FlashFeed";
 import { hasSignalFocus, LivePulse, revealLive, useLiveInfo } from "./LivePulse";
 import { FollowButton } from "./FollowButton";
 import { JourneyChecklist } from "./JourneyChecklist";
+import { JourneyPlanner } from "./JourneyPlanner";
 import { MiniFerry } from "./MiniFerry";
 import { TripChanges } from "./MyTrip";
 import { PushStatusLine } from "./PushStatusLine";
@@ -89,22 +88,24 @@ export function TripRecap({
     queryFn: async () => {
       const { data, error } = await (typedSupabase as unknown as SupabaseClient)
         .from("bw_follows")
-        .select("id,active")
+        .select("id,active,traveller,follow_purpose")
         .eq("user_id", user!.id)
         .eq("target_kind", "departure")
         .eq("target_id", departure.id)
         .maybeSingle();
       if (error) throw error;
-      return data as { id: string; active: boolean } | null;
+      return data as { id: string; active: boolean; traveller: boolean; follow_purpose: string | null } | null;
     },
     retry: false,
   });
-  const heading = follow.data?.active ? "Ma traversée" : "Cette traversée";
+  const myDeparture = Boolean(follow.data?.active && follow.data.traveller);
+  const heading = myDeparture ? "Ma traversée" : "Cette traversée";
   const fromZone = portTimeZone(from);
   const toZone = portTimeZone(to);
   const progress = crossingProgress(departure, from, to, live);
   const { times } = progress;
   const departIso = times.departure.iso ?? departure.departure_at;
+  const presentation = getBoardingMilestones(departIso, from, { presentationMinutes: departure.presentation_minutes });
   const arriveIso = times.arrival.iso;
   const nextDay =
     arriveIso && dateKeyInZone(arriveIso, toZone) !== dateKeyInZone(departIso, fromZone);
@@ -164,8 +165,6 @@ export function TripRecap({
       vesselId: vessel?.id ?? null,
     });
 
-  const car = getBoardingMilestones(departure.departure_at, from, { hasVehicle: true });
-  const walk = getBoardingMilestones(departure.departure_at, from, { hasVehicle: false });
   const upcoming = !cancelled && Date.parse(departure.departure_at) > now;
 
   return (
@@ -277,11 +276,13 @@ export function TripRecap({
         </div>
       </section>
 
+      {myDeparture ? <JourneyPlanner departureId={departure.id} onSelect={onSelect} /> : null}
+
       {/* 2. Ce qui se passe, d'un coup d'œil */}
       <LivePulse info={info} onOpen={openLive} onReport={upcoming || atSea ? report : undefined} />
 
       {/* 3. Où en êtes-vous ? (une ligne tant que ce n'est pas la veille) */}
-      {!cancelled ? (
+      {!cancelled && myDeparture ? (
         <TripStatusPicker
           departureId={departure.id}
           departureAt={departure.departure_at}
@@ -321,28 +322,14 @@ export function TripRecap({
 
       {activeTab === "prepare" ? (
         <div className="bw-recap__panel" role="tabpanel">
-          {upcoming && car && walk ? (
+          {upcoming && myDeparture ? (
             <div className="bw-recap__arrive">
-              <p>
-                Être à {from.name} <small>(repère, {zoneLabel(fromZone)})</small>
-              </p>
-              <div>
-                <span>
-                  <CarFront size={16} aria-hidden /> Véhicule <strong>{car.callLabel}</strong>
-                </span>
-                <span>
-                  <Footprints size={16} aria-hidden /> À pied <strong>{walk.callLabel}</strong>
-                </span>
-              </div>
-              <small>L’heure de convocation de votre billet reste la référence.</small>
+              <p>Au port de {from.name} : {presentation ? `${day(presentation.callTime.toISOString(), fromZone)} à ${presentation.callLabel}` : "heure à vérifier"}</p>
+              <small>{departure.presentation_minutes != null ? "Horaire de présentation renseigné pour cette traversée. Vérifiez votre billet et les consignes de la compagnie." : "Repère indicatif : 4 h avant le départ. L’heure inscrite sur votre billet ou donnée par la compagnie prévaut."}</small>
             </div>
           ) : null}
-          <JourneyChecklist
-            departureId={departure.id}
-            departureAt={departure.departure_at}
-            port={from}
-            compact
-          />
+          {myDeparture ? <JourneyChecklist departureId={departure.id} departureAt={departure.departure_at} presentationMinutes={departure.presentation_minutes} port={from} compact /> : null}
+          {myDeparture ? <a href="/ma-bezass" className="flex items-center justify-between rounded-xl border border-primary/15 bg-primary/5 px-3 py-2 text-xs font-semibold text-primary">Découvrir Ma bezass · compter mes billets et devises <ArrowRight size={14} aria-hidden /></a> : null}
           <PushStatusLine />
           <div className="bw-recap__ports">
             {[from, to].map((port, index) => (
@@ -400,6 +387,7 @@ export function TripRecap({
               key={vessel.id}
               kind="vessel"
               target={vessel.id}
+              departureId={departure.id}
               compact
               title={`Voyageurs · à bord de ${vessel.name}`}
             />

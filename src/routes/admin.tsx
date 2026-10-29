@@ -11,6 +11,7 @@ import { NewsAdmin, PlacesAdmin } from "@/components/admin/ContentAdmin";
 import { CommunityModeration } from "@/components/panel/CommunityModeration";
 import { cloneElement, isValidElement, useEffect, useId, useRef, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -269,7 +270,7 @@ function AdminTabs() {
     reviews: counts?.reviews ?? 0,
     reports: counts?.reports ?? 0,
     alerts: alerts?.length ?? 0,
-    community: community.data?.reviews.filter((review) => review.status === "pending").length ?? 0,
+    community: (community.data?.reviews.filter((review) => review.status === "pending").length ?? 0) + (counts?.anomalies ?? 0),
   };
   return (
     <Tabs value={tab} onValueChange={navigateTo}>
@@ -666,6 +667,7 @@ function DepartureEditor({
     id: string;
     departure_at: string;
     duration_minutes: number | null;
+    presentation_minutes?: number | null;
     vessel_id: string | null;
     status: string;
   };
@@ -679,17 +681,21 @@ function DepartureEditor({
   const [time, setTime] = useState(wallTimeInZone(departure.departure_at, timeZone).slice(0, 5));
   const [hours, setHours] = useState(String(Math.floor((departure.duration_minutes ?? 0) / 60)));
   const [mins, setMins] = useState(String((departure.duration_minutes ?? 0) % 60));
+  const [presentationHours, setPresentationHours] = useState(departure.presentation_minutes == null ? "" : String(departure.presentation_minutes / 60));
   const [vesselId, setVesselId] = useState(departure.vessel_id ?? "");
   const save = useMutation({
     mutationFn: async () => {
       const start = zonedTimeToUtc(date, time, timeZone);
       const duration = Number(hours) * 60 + Number(mins);
       if (!Number.isFinite(duration) || duration <= 0) throw new Error("Durée invalide.");
-      const { error } = await supabase
+      const presentationMinutes = presentationHours.trim() ? Math.round(Number(presentationHours) * 60) : null;
+      if (presentationMinutes !== null && (!Number.isFinite(presentationMinutes) || presentationMinutes < 30 || presentationMinutes > 720)) throw new Error("La présentation doit être comprise entre 30 minutes et 12 heures.");
+      const { error } = await (supabase as unknown as SupabaseClient)
         .from("departures")
         .update({
           departure_at: start.toISOString(),
           duration_minutes: duration,
+          presentation_minutes: presentationMinutes,
           arrival_at: new Date(start.getTime() + duration * 60_000).toISOString(),
           vessel_id: vesselId || null,
           status: departure.status === "cancelled" ? "cancelled" : "modified",
@@ -768,6 +774,11 @@ function DepartureEditor({
           value={mins}
           onChange={(e) => setMins(e.target.value)}
         />
+      </label>
+      <label className="text-xs">
+        Présentation au port (h avant départ)
+        <Input className="w-28" type="number" min={0.5} max={12} step={0.5} placeholder="Défaut : 4 h" value={presentationHours} onChange={(e) => setPresentationHours(e.target.value)} />
+        <small className="block max-w-44 text-muted-foreground">Renseigner seulement si la compagnie publie une consigne. Vide = repère indicatif de 4 h.</small>
       </label>
       <label className="text-xs">
         Navire

@@ -5,6 +5,7 @@ import { supabaseAdmin as typedDb } from "@/integrations/supabase/client.server"
 // Tables communautaires pas encore présentes dans les types générés.
 const db = typedDb as unknown as SupabaseClient;
 import { portTimeZone, zonedTimeToUtc } from "@/lib/ferry/time";
+import { presentationLeadMinutes } from "@/lib/ferry/boarding";
 import {
   notificationAllowed,
   openingApproved,
@@ -91,7 +92,7 @@ export async function dispatchPush(
       : collect((from, to) => {
           const query = db
             .from("bw_follows")
-            .select("id,user_id,target_kind,target_id,created_at")
+            .select("id,user_id,target_kind,target_id,created_at,traveller,follow_purpose")
             .eq("active", true);
           return (onlyUser ? query.in("user_id", onlyUser) : query).order("id").range(from, to);
         }),
@@ -180,7 +181,7 @@ export async function dispatchPush(
       collect((from, to) =>
         db
           .from("departures")
-          .select("id,route_id,vessel_id,departure_at,status")
+          .select("id,route_id,vessel_id,departure_at,status,presentation_minutes")
           .gte("departure_at", new Date(now).toISOString())
           .lte("departure_at", new Date(now + 8 * 24 * HOUR).toISOString())
           .neq("status", "cancelled")
@@ -191,7 +192,7 @@ export async function dispatchPush(
       collect((from, to) =>
         db
           .from("bw_travel_alerts")
-          .select("id,target_kind,target_id,category,delay_minutes,detail,created_at")
+          .select("id,target_kind,target_id,departure_id,category,delay_minutes,detail,created_at")
           .eq("resolved", false)
           .gte("created_at", since)
           .gt("expires_at", new Date(now).toISOString())
@@ -216,6 +217,13 @@ export async function dispatchPush(
           .range(from, to),
       ),
     ]);
+    const signalDepartureIds = [...new Set(signals.filter((signal) => signal.target_kind === "vessel" && signal.departure_id).map((signal) => signal.departure_id as string))];
+    const signalDepartures = signalDepartureIds.length
+      ? await collect((from, to) => db.from("departures")
+          .select("id,vessel_id,departure_at,arrival_at,status")
+          .in("id", signalDepartureIds).order("id").range(from, to))
+      : [];
+    const signalDepartureById = new Map(signalDepartures.map((departure) => [departure.id, departure]));
     // Date des traversées concernées par une mise à jour : le rattrapage s'arrête au départ.
     const eventDepartureIds = [...new Set(updates.map((update) => update.departure_id))];
     const eventDepartureAt = new Map<string, string>();
@@ -276,20 +284,21 @@ export async function dispatchPush(
               : remaining <= 7 * 24 * HOUR
                 ? "7j"
                 : null;
-        if (stage && remaining > 0) {
+        const personalTrip = follow.target_kind === "departure" && follow.traveller === true;
+        // Le suivi d'un navire associé à « je voyage » ne double pas les rappels de la traversée.
+        if (stage && remaining > 0 && (personalTrip || (stage === "24h" && follow.follow_purpose !== "voyageur"))) {
           const route = routeById.get(next.route_id);
           const from = route ? portById.get(route.departure_port_id) : undefined;
           const to = route ? portById.get(route.arrival_port_id) : undefined;
-          const portTime = new Intl.DateTimeFormat("fr-FR", {
-            dateStyle: "medium",
-            timeStyle: "short",
-            timeZone: portTimeZone(from),
-          }).format(new Date(Date.parse(next.departure_at) - 4 * HOUR));
+          const presentation = new Date(Date.parse(next.departure_at) - presentationLeadMinutes(next.presentation_minutes) * 60_000);
+          const portTime = new Intl.DateTimeFormat("fr-FR", { dateStyle: "medium", timeStyle: "short", timeZone: portTimeZone(from) }).format(presentation);
           await deliver(follow.user_id, follow.id, {
             key: `departure:${follow.id}:${next.id}:${stage}`,
             category: "reminders",
             title: `${from?.name ?? "Départ"} → ${to?.name ?? "arrivée"} · départ dans ${remainingLabel(remaining)}`,
-            body: `Présentez-vous à ${from?.name ?? "votre port"} le ${portTime} (4 h avant, à confirmer auprès de la compagnie). Checklist : billets, pièces d’identité, documents du véhicule et essentiels à bord.`,
+            body: personalTrip
+              ? `Présentation à ${from?.name ?? "votre port"} : ${portTime}${next.presentation_minutes == null ? " (repère indicatif : 4 h avant)" : " (consigne renseignée)"}. Vérifiez votre billet et vos préparatifs encore ouverts.`
+              : "Retrouvez les horaires et les changements publiés pour cette traversée.",
             url: `/?select=departure&id=${next.id}`,
           });
         }
@@ -326,7 +335,17 @@ export async function dispatchPush(
       if (!vesselId) continue;
       const vesselName = vesselById.get(vesselId)?.name ?? "Votre bateau";
       const vesselSignals = signals.filter(
-        (signal) => signal.target_kind === "vessel" && signal.target_id === vesselId,
+        (signal) => signal.target_kind === "vessel" && signal.target_id === vesselId &&
+          Boolean(signal.departure_id && (() => {
+            const crossing = signalDepartureById.get(signal.departure_id);
+            if (!crossing || crossing.status === "cancelled" || crossing.vessel_id !== vesselId) return false;
+            if (follow.target_kind === "departure") return crossing.id === follow.target_id;
+            // A vessel follower receives the current rotation only, including
+            // a crossing already at sea, but never a previous one.
+            const start = Date.parse(crossing.departure_at);
+            const end = crossing.arrival_at ? Date.parse(crossing.arrival_at) : start + 48 * HOUR;
+            return now >= start - 24 * HOUR && now <= end + 2 * HOUR;
+          })()),
       );
       // Signalements encore actifs publiés avant le suivi : le plus récent de chaque sujet.
       const lateSignals = latestBy(

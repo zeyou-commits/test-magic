@@ -411,6 +411,7 @@ const alertSchema = z.object({
   id: z.string(),
   target_kind: z.enum(["vessel", "port"]),
   target_id: z.string(),
+  departure_id: z.string().nullable().optional().default(null),
   category: z.string(),
   delay_minutes: z.number().nullable(),
   // Ajouté par le script du 28/10/2026.
@@ -539,24 +540,39 @@ export async function reportTravel(input: {
   delay: number | null;
   detail: string | null;
   position: [number, number] | null;
-}): Promise<{ error: { message: string } | null; onSite: boolean }> {
+  departureId?: string | null;
+}): Promise<{ error: { message: string } | null; onSite: boolean; pendingReview: boolean }> {
   const base = {
     p_kind: input.kind,
     p_target: input.target,
     p_category: input.category,
     p_delay: input.category === "delay" ? input.delay : null,
+    p_departure: input.kind === "vessel" ? input.departureId : null,
   };
+  // A vessel report must never fall back to an older RPC that loses its crossing.
+  if (input.kind === "vessel") {
+    const result = await supabase.rpc("bw_report_travel", {
+      ...base,
+      p_detail: input.detail,
+      p_lat: null,
+      p_lng: null,
+      ...coords(input.position),
+    });
+    const data = result.data as { status?: string; on_site?: boolean } | null;
+    return { error: result.error, onSite: data?.on_site === true, pendingReview: data?.status === "review" };
+  }
   const attempts = [
-    { ...base, p_detail: input.detail, ...coords(input.position) },
+    { ...base, p_detail: input.detail, p_lat: null, p_lng: null, ...coords(input.position) },
     ...(input.detail ? [{ ...base, p_detail: input.detail }] : []),
     base,
   ];
   for (const params of attempts) {
     const result = await supabase.rpc("bw_report_travel", params);
     if (result.error?.code === "PGRST202") continue;
-    return { error: result.error, onSite: result.data === true };
+    const data = result.data as { status?: string; on_site?: boolean } | boolean | null;
+    return { error: result.error, onSite: data === true || (typeof data === "object" && data?.on_site === true), pendingReview: typeof data === "object" && data?.status === "review" };
   }
-  return { error: { message: "" }, onSite: false };
+  return { error: { message: "" }, onSite: false, pendingReview: false };
 }
 
 /** Confirmer, « Ce n'est plus le cas » ou clore, avec la position si elle est connue. */

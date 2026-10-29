@@ -1142,7 +1142,7 @@ function Index() {
               onRetry={() => allResults.forEach((res) => void res.refetch())}
               panelOpen={desktopPanelOpen}
             />
-            <QuickReport ports={ports} fleet={fleet} selection={selection} />
+            <QuickReport ports={ports} fleet={fleet} departures={departures} selection={selection} />
             {/* Ma traversée pas encore sur la carte : chrono flottant. */}
             <MyTripMapChip fleet={fleet} onOpen={(next) => handleSelectRef.current(next)} />
             <MapStats

@@ -45,6 +45,13 @@ export function DashboardOverview({
       warn: true,
     },
     {
+      id: "community",
+      label: "Observations à vérifier",
+      value: data?.anomalies,
+      icon: AlertTriangle,
+      warn: true,
+    },
+    {
       id: "reviews",
       filter: "pending" as const,
       label: "Avis ports en attente",

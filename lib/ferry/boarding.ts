@@ -14,7 +14,12 @@ export interface BoardingMilestones {
 }
 
 export interface BoardingOptions {
-  hasVehicle?: boolean;
+  presentationMinutes?: number | null | undefined;
+}
+
+/** Consigne renseignée si connue ; sinon repère de quatre heures avant le départ. */
+export function presentationLeadMinutes(value?: number | null): number {
+  return Number.isInteger(value) && value! >= 30 && value! <= 720 ? value! : 240;
 }
 
 /** Jalons indicatifs, affichés dans le fuseau local du port de départ. */
@@ -27,7 +32,7 @@ export function getBoardingMilestones(
   if (!Number.isFinite(departureMs)) return null;
   const timeZone = portTimeZone(departurePort);
   const departureTime = new Date(departureMs);
-  const callTime = new Date(departureMs - (options.hasVehicle === false ? 3 : 4) * 3_600_000);
+  const callTime = new Date(departureMs - presentationLeadMinutes(options.presentationMinutes) * 60_000);
   const boardingTime = new Date(departureMs - 3 * 3_600_000);
   const lastBoardingTime = new Date(departureMs - 1 * 3_600_000);
   return {

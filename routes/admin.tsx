@@ -1,11 +1,40 @@
-import { useState } from "react";
+import { EntityReviewsModeration } from "@/components/admin/EntityReviewsModeration";
+import { WalletMediaAdmin } from "@/components/admin/WalletMediaAdmin";
+import { commercialArrival } from "@/lib/admin/commercial";
+import { trackingTimes } from "@/lib/ferry/tracking";
+import type { Departure } from "@/lib/ferry/types";
+import { CommercialPrograms } from "@/components/admin/CommercialPrograms";
+import { UsersAdmin } from "@/components/admin/UsersAdmin";
+import { canUseAdminTab } from "@/lib/admin/permissions";
+import { communityQuery } from "@/lib/ferry/community";
+import { NewsAdmin, PlacesAdmin } from "@/components/admin/ContentAdmin";
+import { CommunityModeration } from "@/components/panel/CommunityModeration";
+import { cloneElement, isValidElement, useEffect, useId, useRef, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { PlanningAlerts, usePlanningAlerts } from "@/components/admin/PlanningAlerts";
-import { DashboardOverview, useAdminCounts } from "@/components/admin/DashboardOverview";
+import { NotificationOverview } from "@/components/admin/NotificationOverview";
+import { DashboardOverview } from "@/components/admin/DashboardOverview";
+import { useAdminCounts } from "@/hooks/useAdminCounts";
+import { AdminWorkspace, type AdminSearchItem } from "@/components/admin/AdminWorkspace";
+import { AdminDrawer, AdminListToolbar, matches } from "@/components/admin/AdminDrawer";
+import { SignalsAdmin } from "@/components/admin/SignalsAdmin";
+import { CompaniesAdmin } from "@/components/admin/CompaniesAdmin";
+import { PushDiagnostic } from "@/components/admin/PushDiagnostic";
+import { MessageCenter } from "@/components/admin/MessageComposer";
+import { storeMessagePrefill, type MessagePrefill } from "@/lib/notifications/messages";
+import { AdminFilterNotice } from "@/components/admin/AdminFilterNotice";
+import {
+  adminSearch,
+  matchesDepartureScope,
+  type AdminFilter,
+  type DepartureScope,
+} from "@/lib/admin/navigation";
+import { adminNotificationQuery } from "@/lib/notifications/admin";
 import { CompanyBadge } from "@/components/panel/CompanyBadge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -31,7 +60,13 @@ import {
 import { routeColor, routePalette } from "@/lib/ferry/colors";
 import { portPresets } from "@/lib/ferry/portPresets";
 import type { Port } from "@/lib/ferry/types";
-import { dateKeyInZone, portTimeZone, wallTimeInZone, zonedTimeToUtc, zoneLabel } from "@/lib/ferry/time";
+import {
+  dateKeyInZone,
+  portTimeZone,
+  wallTimeInZone,
+  zonedTimeToUtc,
+  zoneLabel,
+} from "@/lib/ferry/time";
 
 // Libellés français des statuts et motifs (la base stocke des codes en anglais).
 const reviewStatusLabel: Record<string, string> = {
@@ -81,21 +116,22 @@ const departureStatusLabel: Record<string, string> = {
 };
 
 export const Route = createFileRoute("/admin")({
+  validateSearch: adminSearch,
   head: () => ({
     meta: [
       { name: "robots", content: "noindex, nofollow" },
-      { title: "Back-office — Batogo" },
+      { title: "Back-office — BledWay" },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
       {
         name: "description",
         content:
-          "Espace d'administration Batogo : modération des avis, signalements, calendriers et départs.",
+          "Espace d'administration BledWay : modération des avis, signalements, calendriers et départs.",
       },
-      { property: "og:title", content: "Back-office — Batogo" },
+      { property: "og:title", content: "Back-office — BledWay" },
       {
         property: "og:description",
-        content: "Modération des avis, signalements et gestion des départs Batogo.",
+        content: "Modération des avis, signalements et gestion des départs BledWay.",
       },
     ],
   }),
@@ -103,7 +139,7 @@ export const Route = createFileRoute("/admin")({
 });
 
 function AdminPage() {
-  const { isAdmin, loading, user } = useAuth();
+  const { roles, loading, user } = useAuth();
 
   if (loading) {
     return <CenteredNote>Chargement…</CenteredNote>;
@@ -114,16 +150,16 @@ function AdminPage() {
       <CenteredNote>
         <p>Connectez-vous pour accéder au back-office.</p>
         <Button asChild className="mt-3">
-          <Link to="/auth">Se connecter</Link>
+          <a href="/auth?next=%2Fadmin">Se connecter</a>
         </Button>
       </CenteredNote>
     );
   }
 
-  if (!isAdmin) {
+  if (!roles.some((role) => ["admin", "editor", "moderator"].includes(role))) {
     return (
       <CenteredNote>
-        <p>Cet espace est réservé à l'équipe Batogo.</p>
+        <p>Cet espace est réservé à l'équipe BledWay.</p>
         <Button asChild variant="outline" className="mt-3">
           <Link to="/">Retour à la carte</Link>
         </Button>
@@ -131,26 +167,16 @@ function AdminPage() {
     );
   }
 
-  return (
-    <div className="mx-auto w-full max-w-5xl px-4 py-6">
-      <div className="flex items-center justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-semibold">Back-office</h1>
-          <p className="text-sm text-muted-foreground">
-            Modération et mise à jour des informations publiées.
-          </p>
-        </div>
-        <Button asChild variant="outline" size="sm">
-          <Link to="/">Voir la carte</Link>
-        </Button>
-      </div>
-
-      <AdminTabs />
-    </div>
-  );
+  return <AdminTabs />;
 }
 
-function CountBadge({ value, tone = "warn" }: { value: number | undefined; tone?: "warn" | "muted" }) {
+function CountBadge({
+  value,
+  tone = "warn",
+}: {
+  value: number | undefined;
+  tone?: "warn" | "muted";
+}) {
   if (!value) return null;
   return (
     <span
@@ -164,56 +190,197 @@ function CountBadge({ value, tone = "warn" }: { value: number | undefined; tone?
 }
 
 function AdminTabs() {
-  const [tab, setTab] = useState("reviews");
+  const { user, roles, isAdmin } = useAuth();
+  const community = useQuery(communityQuery(undefined, undefined, true, user?.id));
+  const {
+    tab: requestedTab = "overview",
+    filter,
+    company,
+    route: commercialRoute,
+    item,
+  } = Route.useSearch();
+  const tab = canUseAdminTab(roles, requestedTab)
+    ? requestedTab
+    : roles.includes("editor")
+      ? "departures"
+      : "reviews";
+  const navigate = Route.useNavigate();
+  const navigateTo = (id: string, nextFilter?: AdminFilter) => {
+    if (!canUseAdminTab(roles, id)) return;
+    void navigate({ search: adminSearch({ tab: id, filter: nextFilter }), resetScroll: false });
+  };
+  const clearFilter = () => navigateTo(tab);
+  const queryClient = useQueryClient();
+  const notificationOverview = useQuery(adminNotificationQuery(isAdmin ? user?.id : undefined));
   const { data: counts } = useAdminCounts();
+  // Recherche du menu (Ctrl+K) : rubriques et fiches (ports, navires, compagnies).
+  const { data: searchPorts = [] } = useQuery(portsQuery);
+  const { data: searchVessels = [] } = useQuery(vesselsQuery);
+  const { data: searchCompanies = [] } = useQuery(companiesQuery);
+  const { data: searchRoutes = [] } = useQuery(routesQuery);
+  const searchItems: AdminSearchItem[] = [
+    ...searchPorts.map((port) => ({
+      tab: "ports",
+      id: port.id,
+      label: port.name,
+      hint: `Port · ${port.country_name}`,
+    })),
+    ...searchVessels.map((vessel) => ({
+      tab: "vessels",
+      id: vessel.id,
+      label: vessel.name,
+      hint: `Navire${vessel.mmsi ? ` · MMSI ${vessel.mmsi}` : ""}`,
+    })),
+    ...searchRoutes.map((route) => {
+      const name = (id: string) => searchPorts.find((port) => port.id === id)?.name ?? "?";
+      return {
+        tab: "routes",
+        id: route.id,
+        label: `${name(route.departure_port_id)} → ${name(route.arrival_port_id)}`,
+        hint: "Liaison",
+      };
+    }),
+    ...searchCompanies.map((company) => ({
+      tab: "companies",
+      id: company.id,
+      label: company.name,
+      hint: "Compagnie",
+    })),
+  ];
+  const openItem = (id: string, itemId: string) => {
+    if (!canUseAdminTab(roles, id)) return;
+    void navigate({ search: adminSearch({ tab: id, item: itemId }), resetScroll: false });
+  };
   const { data: alerts } = usePlanningAlerts();
+  useEffect(
+    () =>
+      queryClient.getMutationCache().subscribe((event) => {
+        if (event.type === "updated" && event.action.type === "success") {
+          void queryClient.invalidateQueries({ queryKey: ["admin", "notification-overview"] });
+          void queryClient.invalidateQueries({ queryKey: ["admin", "counts"] });
+        }
+      }),
+    [queryClient],
+  );
+  const badges = {
+    notifications:
+      notificationOverview.data?.campaigns.filter((campaign) =>
+        ["pending", "approved"].includes(campaign.status),
+      ).length ?? 0,
+    reviews: counts?.reviews ?? 0,
+    reports: counts?.reports ?? 0,
+    alerts: alerts?.length ?? 0,
+    community: community.data?.reviews.filter((review) => review.status === "pending").length ?? 0,
+  };
   return (
-    <>
-      <div className="mt-6">
-        <DashboardOverview onNavigate={setTab} can={() => true} />
-      </div>
-      <Tabs value={tab} onValueChange={setTab} className="mt-6">
-        <TabsList className="h-auto w-full justify-start overflow-x-auto">
-          <TabsTrigger value="reviews">Avis<CountBadge value={counts?.reviews} /></TabsTrigger>
-          <TabsTrigger value="reports">Signalements<CountBadge value={counts?.reports} /></TabsTrigger>
-          <TabsTrigger value="alerts">Alertes planning<CountBadge value={alerts?.length} /></TabsTrigger>
-          <TabsTrigger value="departures">Départs</TabsTrigger>
-          <TabsTrigger value="schedules">Calendriers</TabsTrigger>
-          <TabsTrigger value="ports">Ports</TabsTrigger>
-          <TabsTrigger value="routes">Lignes</TabsTrigger>
-          <TabsTrigger value="companies">Compagnies</TabsTrigger>
-          <TabsTrigger value="vessels">Navires</TabsTrigger>
-          <TabsTrigger value="import">Import Excel</TabsTrigger>
-          <TabsTrigger value="data">Données</TabsTrigger>
-        </TabsList>
+    <Tabs value={tab} onValueChange={navigateTo}>
+      <AdminWorkspace
+        tab={tab}
+        onNavigate={navigateTo}
+        badges={badges}
+        canAccess={(id) => canUseAdminTab(roles, id)}
+        searchItems={searchItems}
+        onOpenItem={openItem}
+      >
+        <TabsContent value="commercial">
+          <CommercialPrograms
+            companyId={company}
+            routeId={commercialRoute}
+            onContext={(companyId, routeId) =>
+              void navigate({
+                search: adminSearch({ tab: "commercial", company: companyId, route: routeId }),
+                resetScroll: false,
+              })
+            }
+            onNetwork={() => navigateTo("routes")}
+            renderSchedules={(companyId, routeId) => (
+              <SchedulesAdmin
+                key={`${companyId}:${routeId}`}
+                companyId={companyId}
+                routeId={routeId}
+              />
+            )}
+            renderDepartures={(companyId, routeId) => (
+              <DeparturesAdmin
+                key={`${companyId}:${routeId}`}
+                scope={undefined}
+                onClearFilter={() => {}}
+                companyId={companyId}
+                routeId={routeId}
+              />
+            )}
+            renderVessels={(_companyId, ids) => <VesselsAdmin vesselIds={ids} />}
+          />
+        </TabsContent>
+        <TabsContent value="users">
+          <UsersAdmin />
+        </TabsContent>
+        <TabsContent value="overview">
+          <DashboardOverview onNavigate={navigateTo} can={() => true} />
+          {notificationOverview.error && (
+            <p
+              role="alert"
+              className="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900"
+            >
+              Le centre de notifications n’est pas disponible. Vérifiez la migration des campagnes
+              et la configuration serveur.
+            </p>
+          )}
+        </TabsContent>
         <TabsContent value="reviews">
-          <ReviewsModeration />
+          <EntityReviewsModeration pendingOnly={filter === "pending"} />
+          <ReviewsModeration pendingOnly={filter === "pending"} onClearFilter={clearFilter} />
+        </TabsContent>
+        <TabsContent value="community">
+          <CommunityModeration />
         </TabsContent>
         <TabsContent value="reports">
-          <ReportsModeration />
+          <ReportsModeration newOnly={filter === "new"} onClearFilter={clearFilter} />
         </TabsContent>
         <TabsContent value="alerts">
           <PlanningAlerts
             renderEditor={(id, onDone) => <AlertDepartureEditor departureId={id} onDone={onDone} />}
           />
         </TabsContent>
+        <TabsContent value="notifications">
+          <MessageCenter />
+          <div className="mt-5">
+            <PushDiagnostic />
+          </div>
+          <NotificationOverview />
+        </TabsContent>
+        <TabsContent value="flash">
+          <NewsAdmin />
+        </TabsContent>
+        <TabsContent value="signals">
+          <SignalsAdmin />
+        </TabsContent>
+        <TabsContent value="places">
+          <PlacesAdmin />
+        </TabsContent>
+        <TabsContent value="walletMedia">
+          <WalletMediaAdmin />
+        </TabsContent>
         <TabsContent value="companies">
-          <CompaniesAdmin />
+          <CompaniesAdmin itemId={tab === "companies" ? item : undefined} />
         </TabsContent>
         <TabsContent value="departures">
-          <DeparturesAdmin />
+          <DeparturesAdmin
+            scope={filter === "today" || filter === "unassigned" ? filter : undefined}
+            onClearFilter={clearFilter}
+          />
         </TabsContent>
         <TabsContent value="schedules">
           <SchedulesAdmin />
         </TabsContent>
         <TabsContent value="ports">
-          <PortsAdmin />
+          <PortsAdmin itemId={tab === "ports" ? item : undefined} />
         </TabsContent>
         <TabsContent value="routes">
-          <RoutesAdmin />
+          <RoutesAdmin itemId={tab === "routes" ? item : undefined} />
         </TabsContent>
         <TabsContent value="vessels">
-          <VesselsAdmin />
+          <VesselsAdmin itemId={tab === "vessels" ? item : undefined} />
         </TabsContent>
         <TabsContent value="import">
           <ImportAdmin />
@@ -221,12 +388,18 @@ function AdminTabs() {
         <TabsContent value="data">
           <DataAdmin />
         </TabsContent>
-      </Tabs>
-    </>
+      </AdminWorkspace>
+    </Tabs>
   );
 }
 
-function AlertDepartureEditor({ departureId, onDone }: { departureId: string; onDone: () => void }) {
+function AlertDepartureEditor({
+  departureId,
+  onDone,
+}: {
+  departureId: string;
+  onDone: () => void;
+}) {
   const { data, isLoading } = useQuery({
     queryKey: ["admin", "departure-edit", departureId],
     queryFn: async () => {
@@ -258,64 +431,6 @@ function AlertDepartureEditor({ departureId, onDone }: { departureId: string; on
   );
 }
 
-function CompaniesAdmin() {
-  const { data: companies = [] } = useQuery(companiesQuery);
-  return (
-    <Panel>
-      <p className="mb-3 text-sm text-muted-foreground">
-        Collez l'adresse (URL) du logo officiel. Sans logo, une pastille avec les initiales s'affiche.
-      </p>
-      <ul className="divide-y divide-border">
-        {companies.map((c) => (
-          <CompanyRow key={c.id} company={c} />
-        ))}
-      </ul>
-    </Panel>
-  );
-}
-
-function CompanyRow({
-  company,
-}: {
-  company: { id: string; name: string; logo_url: string | null; website_url: string | null; description: string | null };
-}) {
-  const queryClient = useQueryClient();
-  const [name, setName] = useState(company.name);
-  const [logo, setLogo] = useState(company.logo_url ?? "");
-  const [site, setSite] = useState(company.website_url ?? "");
-  const [desc, setDesc] = useState(company.description ?? "");
-  const save = useMutation({
-    mutationFn: async () => {
-      if (!name.trim()) throw new Error("Nom requis.");
-      const { error } = await supabase
-        .from("companies")
-        .update({
-          name: name.trim(),
-          logo_url: logo.trim() || null,
-          website_url: site.trim() || null,
-          description: desc.trim() || null,
-        })
-        .eq("id", company.id);
-      if (error) throw new Error(error.message);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["companies"] });
-      toast.success("Compagnie mise à jour.");
-    },
-    onError: (e: Error) => toast.error(e.message),
-  });
-  return (
-    <li className="flex flex-wrap items-end gap-3 py-3">
-      <CompanyBadge name={name} logoUrl={logo} size={56} />
-      <label className="text-xs">Nom<Input value={name} onChange={(e) => setName(e.target.value)} /></label>
-      <label className="min-w-56 flex-1 text-xs">URL du logo<Input value={logo} placeholder="https://…" onChange={(e) => setLogo(e.target.value)} /></label>
-      <label className="min-w-48 flex-1 text-xs">Site officiel<Input value={site} placeholder="https://…" onChange={(e) => setSite(e.target.value)} /></label>
-      <label className="w-full text-xs">Description<Input value={desc} onChange={(e) => setDesc(e.target.value)} /></label>
-      <Button size="sm" disabled={save.isPending} onClick={() => save.mutate()}>Enregistrer</Button>
-    </li>
-  );
-}
-
 function CenteredNote({ children }: { children: React.ReactNode }) {
   return (
     <div className="grid min-h-dvh place-items-center px-4 text-center text-sm text-muted-foreground">
@@ -325,19 +440,32 @@ function CenteredNote({ children }: { children: React.ReactNode }) {
 }
 
 function Panel({ children }: { children: React.ReactNode }) {
-  return <div className="mt-4 rounded-xl border border-border bg-card p-4">{children}</div>;
+  return (
+    <div className="bw-admin-surface bw-admin-editor mt-4 overflow-x-auto p-4 sm:p-5">
+      {children}
+    </div>
+  );
 }
 
-function ReviewsModeration() {
+function ReviewsModeration({
+  pendingOnly,
+  onClearFilter,
+}: {
+  pendingOnly: boolean;
+  onClearFilter: () => void;
+}) {
   const queryClient = useQueryClient();
   const { data: ports = [] } = useQuery(adminPortsQuery);
   const { data: reviews = [], isLoading } = useQuery({
-    queryKey: ["admin", "reviews"],
+    queryKey: ["admin", "reviews", pendingOnly],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("port_reviews")
         .select("*")
-        .in("status", ["pending", "approved", "published", "hidden", "rejected"])
+        .in(
+          "status",
+          pendingOnly ? ["pending"] : ["pending", "approved", "published", "hidden", "rejected"],
+        )
         .order("created_at", { ascending: false });
       if (error) throw new Error(error.message);
       return data;
@@ -367,6 +495,9 @@ function ReviewsModeration() {
 
   return (
     <Panel>
+      {pendingOnly && (
+        <AdminFilterNotice label="Avis ports en attente de modération" onClear={onClearFilter} />
+      )}
       {isLoading ? (
         <p className="text-sm text-muted-foreground">Chargement…</p>
       ) : reviews.length === 0 ? (
@@ -425,15 +556,20 @@ function ReviewsModeration() {
   );
 }
 
-function ReportsModeration() {
+function ReportsModeration({
+  newOnly,
+  onClearFilter,
+}: {
+  newOnly: boolean;
+  onClearFilter: () => void;
+}) {
   const queryClient = useQueryClient();
   const { data: reports = [], isLoading } = useQuery({
-    queryKey: ["admin", "reports"],
+    queryKey: ["admin", "reports", newOnly],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("reports")
-        .select("*")
-        .order("created_at", { ascending: false });
+      let query = supabase.from("reports").select("*").order("created_at", { ascending: false });
+      if (newOnly) query = query.eq("status", "new");
+      const { data, error } = await query;
       if (error) throw new Error(error.message);
       return data;
     },
@@ -456,6 +592,9 @@ function ReportsModeration() {
 
   return (
     <Panel>
+      {newOnly && (
+        <AdminFilterNotice label="Nouveaux signalements à traiter" onClear={onClearFilter} />
+      )}
       {isLoading ? (
         <p className="text-sm text-muted-foreground">Chargement…</p>
       ) : reports.length === 0 ? (
@@ -501,33 +640,62 @@ function ReportsModeration() {
   );
 }
 
+/** Après une modification qui touche des voyageurs : confirmation + bouton « Prévenir les voyageurs ». */
+function useWarnTravellers() {
+  const navigate = Route.useNavigate();
+  return (message: string, prefill: MessagePrefill, description?: string) =>
+    toast.success(message, {
+      duration: 15_000,
+      description: description ?? "Les voyageurs concernés ne sont pas encore prévenus.",
+      action: {
+        label: "Prévenir les voyageurs",
+        onClick: () => {
+          storeMessagePrefill(prefill);
+          void navigate({ search: adminSearch({ tab: "notifications" }), resetScroll: false });
+        },
+      },
+    });
+}
+
 function DepartureEditor({
   departure,
   timeZone,
   vessels,
   onDone,
 }: {
-  departure: { id: string; departure_at: string; duration_minutes: number | null; vessel_id: string | null; status: string };
+  departure: {
+    id: string;
+    departure_at: string;
+    duration_minutes: number | null;
+    presentation_minutes?: number | null;
+    vessel_id: string | null;
+    status: string;
+  };
   timeZone: string;
   vessels: { id: string; name: string }[];
   onDone: () => void;
 }) {
   const queryClient = useQueryClient();
+  const navigate = Route.useNavigate();
   const [date, setDate] = useState(dateKeyInZone(departure.departure_at, timeZone));
   const [time, setTime] = useState(wallTimeInZone(departure.departure_at, timeZone).slice(0, 5));
   const [hours, setHours] = useState(String(Math.floor((departure.duration_minutes ?? 0) / 60)));
   const [mins, setMins] = useState(String((departure.duration_minutes ?? 0) % 60));
+  const [presentationHours, setPresentationHours] = useState(departure.presentation_minutes == null ? "" : String(departure.presentation_minutes / 60));
   const [vesselId, setVesselId] = useState(departure.vessel_id ?? "");
   const save = useMutation({
     mutationFn: async () => {
       const start = zonedTimeToUtc(date, time, timeZone);
       const duration = Number(hours) * 60 + Number(mins);
       if (!Number.isFinite(duration) || duration <= 0) throw new Error("Durée invalide.");
-      const { error } = await supabase
+      const presentationMinutes = presentationHours.trim() ? Math.round(Number(presentationHours) * 60) : null;
+      if (presentationMinutes !== null && (!Number.isFinite(presentationMinutes) || presentationMinutes < 30 || presentationMinutes > 720)) throw new Error("La présentation doit être comprise entre 30 minutes et 12 heures.");
+      const { error } = await (supabase as unknown as SupabaseClient)
         .from("departures")
         .update({
           departure_at: start.toISOString(),
           duration_minutes: duration,
+          presentation_minutes: presentationMinutes,
           arrival_at: new Date(start.getTime() + duration * 60_000).toISOString(),
           vessel_id: vesselId || null,
           status: departure.status === "cancelled" ? "cancelled" : "modified",
@@ -539,50 +707,143 @@ function DepartureEditor({
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["departures"] });
       queryClient.invalidateQueries({ queryKey: ["admin", "planning-alerts"] });
-      toast.success("Départ modifié.");
+      // Horaire ou bateau changé : on propose tout de suite de prévenir ceux qui suivent ce départ.
+      const oldDate = dateKeyInZone(departure.departure_at, timeZone);
+      const oldTime = wallTimeInZone(departure.departure_at, timeZone).slice(0, 5);
+      const moved = oldDate !== date || oldTime !== time;
+      const vesselChanged = (departure.vessel_id ?? "") !== vesselId;
+      const oldDay = new Intl.DateTimeFormat("fr-FR", {
+        weekday: "short",
+        day: "numeric",
+        month: "short",
+        timeZone,
+      }).format(new Date(departure.departure_at));
+      toast.success("Départ modifié.", {
+        ...(moved || vesselChanged
+          ? {
+              duration: 15_000,
+              description: "Les voyageurs qui suivent ce départ ne sont pas encore prévenus.",
+              action: {
+                label: "Prévenir les voyageurs",
+                onClick: () => {
+                  storeMessagePrefill({
+                    audience: { kind: "departure", departureId: departure.id, who: "everyone" },
+                    template: moved ? "reschedule" : "free",
+                    fields: { oldTime: oldDate === date ? oldTime : `${oldDay} à ${oldTime}` },
+                  });
+                  void navigate({
+                    search: adminSearch({ tab: "notifications" }),
+                    resetScroll: false,
+                  });
+                },
+              },
+            }
+          : {}),
+      });
       onDone();
     },
     onError: (error: Error) => toast.error(error.message),
   });
   return (
     <div className="mt-2 flex w-full flex-wrap items-end gap-2 rounded-md border border-border p-2">
-      <label className="text-xs">Date<Input type="date" value={date} onChange={(e) => setDate(e.target.value)} /></label>
-      <label className="text-xs">Heure ({zoneLabel(timeZone)})<Input type="time" value={time} onChange={(e) => setTime(e.target.value)} /></label>
-      <label className="text-xs">Durée h<Input className="w-16" type="number" min={0} value={hours} onChange={(e) => setHours(e.target.value)} /></label>
-      <label className="text-xs">min<Input className="w-16" type="number" min={0} max={59} value={mins} onChange={(e) => setMins(e.target.value)} /></label>
-      <label className="text-xs">Navire
-        <select className="block h-9 rounded-md border border-input bg-background px-2 text-sm" value={vesselId} onChange={(e) => setVesselId(e.target.value)}>
+      <label className="text-xs">
+        Date
+        <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
+      </label>
+      <label className="text-xs">
+        Heure ({zoneLabel(timeZone)})
+        <Input type="time" value={time} onChange={(e) => setTime(e.target.value)} />
+      </label>
+      <label className="text-xs">
+        Durée h
+        <Input
+          className="w-16"
+          type="number"
+          min={0}
+          value={hours}
+          onChange={(e) => setHours(e.target.value)}
+        />
+      </label>
+      <label className="text-xs">
+        min
+        <Input
+          className="w-16"
+          type="number"
+          min={0}
+          max={59}
+          value={mins}
+          onChange={(e) => setMins(e.target.value)}
+        />
+      </label>
+      <label className="text-xs">
+        Présentation au port (h avant départ)
+        <Input className="w-28" type="number" min={0.5} max={12} step={0.5} placeholder="Défaut : 4 h" value={presentationHours} onChange={(e) => setPresentationHours(e.target.value)} />
+        <small className="block max-w-44 text-muted-foreground">Renseigner seulement si la compagnie publie une consigne. Vide = repère indicatif de 4 h.</small>
+      </label>
+      <label className="text-xs">
+        Navire
+        <select
+          className="block h-9 rounded-md border border-input bg-background px-2 text-sm"
+          value={vesselId}
+          onChange={(e) => setVesselId(e.target.value)}
+        >
           <option value="">—</option>
-          {vessels.map((v) => <option key={v.id} value={v.id}>{v.name}</option>)}
+          {vessels.map((v) => (
+            <option key={v.id} value={v.id}>
+              {v.name}
+            </option>
+          ))}
         </select>
       </label>
-      <Button size="sm" disabled={save.isPending} onClick={() => save.mutate()}>Enregistrer</Button>
-      <Button size="sm" variant="ghost" onClick={onDone}>Fermer</Button>
+      <Button size="sm" disabled={save.isPending} onClick={() => save.mutate()}>
+        Enregistrer
+      </Button>
+      <Button size="sm" variant="ghost" onClick={onDone}>
+        Fermer
+      </Button>
     </div>
   );
 }
 
-function DeparturesAdmin() {
+function DeparturesAdmin({
+  scope,
+  onClearFilter,
+  companyId,
+  routeId,
+}: {
+  companyId?: string;
+  routeId?: string;
+  scope: DepartureScope | undefined;
+  onClearFilter: () => void;
+}) {
   const queryClient = useQueryClient();
   const [period, setPeriod] = useState<"upcoming" | "recent" | "all">("upcoming");
   const [dateFilter, setDateFilter] = useState("");
-  const { data: periodDepartures = [], isLoading: loadingDeps } = useQuery(adminDeparturesQuery(period));
-  const departures = dateFilter
-    ? periodDepartures.filter((d) => d.departure_at.slice(0, 10) === dateFilter)
-    : periodDepartures;
+  const {
+    data: periodDepartures = [],
+    isLoading: loadingDeps,
+    error: departuresError,
+    refetch,
+  } = useQuery(adminDeparturesQuery(scope ? "upcoming" : period));
   const { data: routes = [] } = useQuery(adminRoutesQuery);
   const { data: ports = [] } = useQuery(adminPortsQuery);
   const { data: companies = [] } = useQuery(companiesQuery);
   const { data: vessels = [] } = useQuery({
     queryKey: ["admin", "vessels-lite"],
     queryFn: async () => {
-      const { data, error } = await supabase.from("vessels").select("id,name,company_id").order("name");
+      const { data, error } = await supabase
+        .from("vessels")
+        .select("id,name,company_id")
+        .order("name");
       if (error) throw new Error(error.message);
       return data ?? [];
     },
   });
-  const [companyFilter, setCompanyFilter] = useState("");
+  const [companyFilter, setCompanyFilter] = useState(companyId ?? "");
+  const [routeFilter, setRouteFilter] = useState("");
+  const [search, setSearch] = useState("");
   const [editing, setEditing] = useState<string | null>(null);
+  const warnTravellers = useWarnTravellers();
 
   const update = useMutation({
     mutationFn: async ({
@@ -598,22 +859,94 @@ function DeparturesAdmin() {
         .eq("id", id);
       if (error) throw new Error(error.message);
     },
-    onSuccess: () => {
+    onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({ queryKey: ["departures"] });
-      toast.success("Départ mis à jour.");
+      if (variables.values.status === "cancelled")
+        warnTravellers("Départ annulé.", {
+          audience: { kind: "departure", departureId: variables.id, who: "everyone" },
+          template: "cancel",
+        });
+      else toast.success("Départ mis à jour.");
     },
     onError: (error: Error) => toast.error(error.message),
   });
 
   const portName = (id: string) => ports.find((port) => port.id === id)?.name ?? "—";
-  const shown = companyFilter
-    ? departures.filter((d) => d.company_id === companyFilter)
-    : departures;
+  const now = new Date();
+  const routeOptions = routes
+    .filter((route) => !routeId || route.id === routeId)
+    .map((route) => ({
+      id: route.id,
+      label: `${portName(route.departure_port_id)} → ${portName(route.arrival_port_id)}`,
+    }))
+    .sort((a, b) => a.label.localeCompare(b.label, "fr"));
+  const shown = periodDepartures.filter((departure) => {
+    if (companyId && departure.company_id !== companyId) return false;
+    if (routeId && departure.route_id !== routeId) return false;
+    if (!matchesDepartureScope(departure, scope, now)) return false;
+    if (companyFilter && departure.company_id !== companyFilter) return false;
+    if (routeFilter && departure.route_id !== routeFilter) return false;
+    const route = routes.find((item) => item.id === departure.route_id);
+    if (
+      search &&
+      !matches(
+        search,
+        route ? portName(route.departure_port_id) : "",
+        route ? portName(route.arrival_port_id) : "",
+        vessels.find((vessel) => vessel.id === departure.vessel_id)?.name,
+        companies.find((company) => company.id === departure.company_id)?.name,
+      )
+    )
+      return false;
+    const zone = portTimeZone(ports.find((port) => port.id === route?.departure_port_id));
+    return !dateFilter || dateKeyInZone(departure.departure_at, zone) === dateFilter;
+  });
 
   return (
     <Panel>
+      {scope && (
+        <AdminFilterNotice
+          label={
+            scope === "unassigned"
+              ? "Départs à venir sans navire · hors annulations"
+              : "Départs aujourd’hui"
+          }
+          onClear={onClearFilter}
+        />
+      )}
+      {departuresError && (
+        <p role="alert" className="mb-3 text-sm text-destructive">
+          Impossible de charger les départs.{" "}
+          <button type="button" className="underline" onClick={() => void refetch()}>
+            Réessayer
+          </button>
+        </p>
+      )}
       <div className="mb-3 flex flex-wrap items-center gap-2">
-        <label className="text-sm text-muted-foreground" htmlFor="dep-company">Compagnie</label>
+        <label className="bw-admin-toolbar__search max-w-xs">
+          <input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Port, navire ou compagnie…"
+            aria-label="Chercher un départ"
+          />
+        </label>
+        <select
+          aria-label="Filtrer par liaison"
+          className="h-9 max-w-56 rounded-md border border-input bg-background px-2 text-sm"
+          value={routeFilter}
+          onChange={(e) => setRouteFilter(e.target.value)}
+        >
+          <option value="">Toutes les liaisons</option>
+          {routeOptions.map((option) => (
+            <option key={option.id} value={option.id}>
+              {option.label}
+            </option>
+          ))}
+        </select>
+        <label className="text-sm text-muted-foreground" htmlFor="dep-company">
+          Compagnie
+        </label>
         <select
           id="dep-company"
           className="h-9 rounded-md border border-input bg-background px-2 text-sm"
@@ -621,13 +954,22 @@ function DeparturesAdmin() {
           onChange={(e) => setCompanyFilter(e.target.value)}
         >
           <option value="">Toutes</option>
-          {companies.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+          {companies
+            .filter((c) => !companyId || c.id === companyId)
+            .map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.name}
+              </option>
+            ))}
         </select>
-        <label className="ml-2 text-sm text-muted-foreground" htmlFor="dep-period">Période</label>
+        <label className="ml-2 text-sm text-muted-foreground" htmlFor="dep-period">
+          Période
+        </label>
         <select
           id="dep-period"
           className="h-9 rounded-md border border-input bg-background px-2 text-sm"
           value={period}
+          disabled={!!scope}
           onChange={(e) => setPeriod(e.target.value as typeof period)}
         >
           <option value="upcoming">Aujourd'hui et à venir</option>
@@ -641,21 +983,36 @@ function DeparturesAdmin() {
           value={dateFilter}
           onChange={(e) => {
             setDateFilter(e.target.value);
-            if (e.target.value && e.target.value < new Date().toISOString().slice(0, 10)) setPeriod("all");
+            if (e.target.value && e.target.value < new Date().toISOString().slice(0, 10))
+              setPeriod("all");
           }}
         />
         <span className="text-xs text-muted-foreground">
           {loadingDeps ? "Chargement…" : `${shown.length} départ(s)`}
         </span>
       </div>
+      {!loadingDeps && !departuresError && shown.length === 0 && (
+        <p role="status" className="rounded-xl bg-secondary/40 p-4 text-sm text-muted-foreground">
+          Aucun départ ne correspond aux filtres.{" "}
+          {scope === "unassigned" &&
+            !companyFilter &&
+            !dateFilter &&
+            "Tous les départs à venir ont un navire affecté."}
+        </p>
+      )}
       <ul className="divide-y divide-border">
         {shown.map((departure) => {
+          const arrival = trackingTimes(departure as Departure).arrival.iso;
           const route = routes.find((item) => item.id === departure.route_id);
           const company = companies.find((item) => item.id === departure.company_id);
           const tz = portTimeZone(ports.find((port) => port.id === route?.departure_port_id));
           const vessel = vessels.find((v) => v.id === departure.vessel_id);
           return (
-            <li key={departure.id} className="flex flex-wrap items-center gap-3 py-3">
+            <li
+              key={departure.id}
+              className="flex flex-wrap items-center gap-3 py-3"
+              data-departure-id={departure.id}
+            >
               <div className="min-w-0 flex-1">
                 <p className="text-sm font-medium">
                   {formatDateTime(departure.departure_at, tz)}
@@ -663,19 +1020,28 @@ function DeparturesAdmin() {
                     ({zoneLabel(tz)})
                   </span>
                 </p>
+                {arrival && (
+                  <p className="text-xs font-medium">
+                    Arrivée :{" "}
+                    {formatDateTime(
+                      arrival,
+                      portTimeZone(ports.find((p) => p.id === route?.arrival_port_id)),
+                    )}
+                  </p>
+                )}
                 <p className="text-xs text-muted-foreground">
                   {route
                     ? `${portName(route.departure_port_id)} → ${portName(route.arrival_port_id)}`
                     : "—"}
                   {company ? ` · ${company.name}` : ""}
-                  {vessel ? ` · ${vessel.name}` : ""} ·{" "}
+                  {vessel ? ` · ${vessel.name}` : " · Navire à affecter"} ·{" "}
                   {formatDuration(departure.duration_minutes)} ·{" "}
                   {departureStatusLabel[departure.status] ?? departure.status} ·{" "}
                   {reliabilityLabel[departure.reliability]}
                 </p>
               </div>
-              <div className="flex gap-2">
-                <Button size="sm" variant="outline" onClick={() => setEditing(editing === departure.id ? null : departure.id)}>
+              <div className="flex flex-wrap gap-2">
+                <Button size="sm" variant="outline" onClick={() => setEditing(departure.id)}>
                   Modifier
                 </Button>
                 <Button
@@ -710,18 +1076,39 @@ function DeparturesAdmin() {
                   {departure.status === "cancelled" ? "Rétablir le départ" : "Annuler le départ"}
                 </Button>
               </div>
-              {editing === departure.id && (
-                <DepartureEditor
-                  departure={departure}
-                  timeZone={tz}
-                  vessels={vessels.filter((v) => !company || !v.company_id || v.company_id === company.id)}
-                  onDone={() => setEditing(null)}
-                />
-              )}
             </li>
           );
         })}
       </ul>
+      {(() => {
+        // Édition d'un départ dans le panneau latéral (la liste reste visible).
+        const departure = periodDepartures.find((item) => item.id === editing);
+        if (!departure) return null;
+        const route = routes.find((item) => item.id === departure.route_id);
+        const company = companies.find((item) => item.id === departure.company_id);
+        const tz = portTimeZone(ports.find((port) => port.id === route?.departure_port_id));
+        return (
+          <AdminDrawer
+            open
+            onOpenChange={(next) => !next && setEditing(null)}
+            title={
+              route
+                ? `${portName(route.departure_port_id)} → ${portName(route.arrival_port_id)}`
+                : "Départ"
+            }
+            description={`${formatDateTime(departure.departure_at, tz)} (${zoneLabel(tz)})${company ? ` · ${company.name}` : ""}`}
+          >
+            <DepartureEditor
+              departure={departure}
+              timeZone={tz}
+              vessels={vessels.filter(
+                (v) => !company || !v.company_id || v.company_id === company.id,
+              )}
+              onDone={() => setEditing(null)}
+            />
+          </AdminDrawer>
+        );
+      })()}
     </Panel>
   );
 }
@@ -757,29 +1144,43 @@ function addMinutesToTime(time: string, minutes: number): string {
   return `${String(Math.floor(total / 60)).padStart(2, "0")}:${String(total % 60).padStart(2, "0")}`;
 }
 
-function durationBetweenTimes(departure: string, arrival: string): number | null {
-  const from = timeToMinutes(departure);
-  const to = timeToMinutes(arrival);
-  if (from === null || to === null) return null;
-  const diff = to - from;
-  return diff > 0 ? diff : diff + 1440;
-}
-
 // Indique si l'arrivée théorique tombe le lendemain (ou plus tard).
 function dayShift(minutes: number): string {
   const days = Math.floor(minutes / 1440);
   return days > 0 ? ` (+${days} j)` : "";
 }
 
-function SchedulesAdmin() {
+// Conversion de deux heures d'une même journée pour les anciens imports.
+function durationBetweenTimes(departure: string, arrival: string): number | null {
+  const from = timeToMinutes(departure),
+    to = timeToMinutes(arrival);
+  if (from === null || to === null) return null;
+  const diff = to - from;
+  return diff > 0 ? diff : diff + 1440;
+}
+
+function SchedulesAdmin({ companyId, routeId }: { companyId?: string; routeId?: string } = {}) {
   const queryClient = useQueryClient();
-  const { data: schedules = [] } = useQuery(schedulesQuery);
+  const { data: allSchedules = [] } = useQuery(schedulesQuery);
   const { data: routes = [] } = useQuery(adminRoutesQuery);
   const { data: ports = [] } = useQuery(adminPortsQuery);
   const { data: companies = [] } = useQuery(companiesQuery);
   const { data: vessels = [] } = useQuery(vesselsQuery);
-  const [draft, setDraft] = useState(emptyDraft);
+  const schedules = allSchedules.filter(
+    (schedule) =>
+      (!companyId || schedule.company_id === companyId) &&
+      (!routeId || schedule.route_id === routeId),
+  );
+  const scopedDraft = { ...emptyDraft, company_id: companyId ?? "", route_id: routeId ?? "" };
+  const [draft, setDraft] = useState(scopedDraft);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [formOpen, setFormOpen] = useState(false);
+  const warnTravellers = useWarnTravellers();
+  const closeForm = () => {
+    setFormOpen(false);
+    setEditingId(null);
+    setDraft(scopedDraft);
+  };
 
   const portName = (id: string) => ports.find((port) => port.id === id)?.name ?? "—";
   const routeLabel = (id: string) => {
@@ -809,8 +1210,8 @@ function SchedulesAdmin() {
         valid_to: draft.valid_to || null,
         source_name: draft.source_name || null,
         source_url: draft.source_url || null,
-        reliability: "verified" as const,
-        last_verified_at: new Date().toISOString(),
+        reliability: "to_verify" as const,
+        last_verified_at: null,
         status: "active" as const,
       };
       const { error } = editingId
@@ -820,9 +1221,17 @@ function SchedulesAdmin() {
     },
     onSuccess: () => {
       invalidate();
-      setDraft(emptyDraft);
+      const routeId = draft.route_id;
+      setDraft(scopedDraft);
       setEditingId(null);
-      toast.success(editingId ? "Calendrier modifié." : "Calendrier ajouté.");
+      setFormOpen(false);
+      if (editingId)
+        warnTravellers(
+          "Calendrier modifié.",
+          { audience: { kind: "route", routeId }, template: "reschedule" },
+          "Les voyageurs de cette ligne ne sont pas encore prévenus.",
+        );
+      else toast.success("Calendrier ajouté.");
     },
     onError: (error: Error) => toast.error(error.message),
   });
@@ -842,61 +1251,46 @@ function SchedulesAdmin() {
   // Génère les départs des 60 prochains jours à partir d'un calendrier.
   const generate = useMutation({
     mutationFn: async (scheduleId: string) => {
-      const schedule = schedules.find((item) => item.id === scheduleId);
-      if (!schedule) throw new Error("Calendrier introuvable.");
-      const today = new Date();
-      const rows: Array<Record<string, unknown>> = [];
-      for (let offset = 0; offset < 60; offset += 1) {
-        const day = new Date(today);
-        day.setUTCDate(day.getUTCDate() + offset);
-        const isoDate = day.toISOString().slice(0, 10);
-        const weekday = ((day.getUTCDay() + 6) % 7) + 1; // 1 = lundi
-        if (!schedule.weekdays.includes(weekday)) continue;
-        if (isoDate < schedule.valid_from) continue;
-        if (schedule.valid_to && isoDate > schedule.valid_to) continue;
-        // L'heure du calendrier est l'heure locale du port de départ (celle du billet).
-        const route = routes.find((item) => item.id === schedule.route_id);
-        const fromPort = ports.find((port) => port.id === route?.departure_port_id);
-        const departureAt = zonedTimeToUtc(
-          isoDate,
-          schedule.departure_time.slice(0, 5),
-          portTimeZone(fromPort),
-        );
-        rows.push({
-          route_id: schedule.route_id,
-          company_id: schedule.company_id,
-          vessel_id: schedule.default_vessel_id,
-          schedule_id: schedule.id,
-          departure_at: departureAt.toISOString(),
-          arrival_at: new Date(
-            departureAt.getTime() + schedule.duration_minutes * 60000,
-          ).toISOString(),
-          duration_minutes: schedule.duration_minutes,
-          status: "scheduled",
-          reliability: schedule.reliability,
-          source_name: schedule.source_name,
-          source_url: schedule.source_url,
-          last_verified_at: new Date().toISOString(),
-        });
-      }
-      const { error: deleteError } = await supabase
-        .from("departures")
-        .delete()
-        .eq("schedule_id", schedule.id)
-        .gte("departure_at", new Date().toISOString());
-      if (deleteError) throw new Error(deleteError.message);
-      if (rows.length === 0) return 0;
-      const { error } = await supabase.from("departures").insert(rows as never);
-      if (error) throw new Error(error.message);
-      return rows.length;
+      const { data, error } = await (
+        supabase.rpc as unknown as (
+          name: string,
+          args: Record<string, unknown>,
+        ) => Promise<{ data: number | null; error: { message: string } | null }>
+      )("bw_generate_schedule_missing", { _schedule: scheduleId });
+      if (error)
+        throw new Error("Génération impossible : vérifiez la migration commerciale et vos droits.");
+      return data ?? 0;
     },
     onSuccess: (count) => {
       invalidate();
-      toast.success(`${count} départ(s) généré(s).`);
+      toast.success(
+        `${count} nouveau(x) départ(s) ajouté(s), sans modifier les départs existants.`,
+      );
     },
     onError: (error: Error) => toast.error(error.message),
   });
 
+  const draftRoute = routes.find((r) => r.id === draft.route_id);
+  const fromZone = portTimeZone(ports.find((p) => p.id === draftRoute?.departure_port_id));
+  const toZone = portTimeZone(ports.find((p) => p.id === draftRoute?.arrival_port_id));
+  const previewArrival = commercialArrival(
+    draft.valid_from,
+    draft.departure_time,
+    Number(draft.duration_minutes),
+    fromZone,
+  );
+  const schedulePreview = (schedule: (typeof allSchedules)[number]) => {
+    const line = routes.find((r) => r.id === schedule.route_id);
+    const departureZone = portTimeZone(ports.find((p) => p.id === line?.departure_port_id));
+    const arrivalZone = portTimeZone(ports.find((p) => p.id === line?.arrival_port_id));
+    const iso = commercialArrival(
+      schedule.valid_from,
+      schedule.departure_time.slice(0, 5),
+      schedule.duration_minutes,
+      departureZone,
+    );
+    return iso ? `${formatDateTime(iso, arrivalZone)} · ${zoneLabel(arrivalZone)}` : "À confirmer";
+  };
   const toggleDay = (day: number) =>
     setDraft((prev) => ({
       ...prev,
@@ -907,172 +1301,180 @@ function SchedulesAdmin() {
 
   return (
     <>
-      <Panel>
-        <h2 className="text-sm font-semibold">
-          {editingId ? "Modifier le calendrier" : "Nouveau calendrier de traversées"}
-        </h2>
-        <div className="mt-3 grid gap-3 sm:grid-cols-2">
-          <Field label="Ligne">
-            <NativeSelect
-              value={draft.route_id}
-              onChange={(value) => setDraft((prev) => ({ ...prev, route_id: value }))}
-              options={routes.map((route) => ({ value: route.id, label: routeLabel(route.id) }))}
-            />
-          </Field>
-          <Field label="Compagnie">
-            <NativeSelect
-              value={draft.company_id}
-              onChange={(value) => setDraft((prev) => ({ ...prev, company_id: value }))}
-              options={companies.map((company) => ({ value: company.id, label: company.name }))}
-            />
-          </Field>
-          <Field label="Navire (facultatif)">
-            <NativeSelect
-              value={draft.default_vessel_id}
-              onChange={(value) => setDraft((prev) => ({ ...prev, default_vessel_id: value }))}
-              options={vessels.map((vessel) => ({ value: vessel.id, label: vessel.name }))}
-            />
-          </Field>
-          <Field label="Heure de départ">
-            <Input
-              type="time"
-              value={draft.departure_time}
-              onChange={(event) =>
-                setDraft((prev) => {
-                  const departure_time = event.target.value;
-                  const duration = durationBetweenTimes(departure_time, prev.arrival_time);
-                  return {
-                    ...prev,
-                    departure_time,
-                    duration_minutes: duration ?? prev.duration_minutes,
-                  };
-                })
-              }
-            />
-          </Field>
-          <Field label="Heure d'arrivée théorique">
-            <Input
-              type="time"
-              value={draft.arrival_time}
-              onChange={(event) =>
-                setDraft((prev) => {
-                  const arrival_time = event.target.value;
-                  const duration = durationBetweenTimes(prev.departure_time, arrival_time);
-                  return {
-                    ...prev,
-                    arrival_time,
-                    duration_minutes: duration ?? prev.duration_minutes,
-                  };
-                })
-              }
-            />
-          </Field>
-          <Field label="Durée (minutes)">
-            <Input
-              type="number"
-              min={30}
-              value={draft.duration_minutes}
-              onChange={(event) =>
-                setDraft((prev) => {
-                  const duration_minutes = Number(event.target.value);
-                  return {
-                    ...prev,
-                    duration_minutes,
-                    arrival_time:
-                      addMinutesToTime(prev.departure_time, duration_minutes) || prev.arrival_time,
-                  };
-                })
-              }
-            />
-          </Field>
-          <Field label="Valide du">
-            <Input
-              type="date"
-              value={draft.valid_from}
-              onChange={(event) =>
-                setDraft((prev) => ({ ...prev, valid_from: event.target.value }))
-              }
-            />
-          </Field>
-          <Field label="Valide jusqu'au (facultatif)">
-            <Input
-              type="date"
-              value={draft.valid_to}
-              onChange={(event) => setDraft((prev) => ({ ...prev, valid_to: event.target.value }))}
-            />
-          </Field>
-          <Field label="Source de l'information">
-            <Input
-              value={draft.source_name}
-              placeholder="Site officiel de la compagnie"
-              onChange={(event) =>
-                setDraft((prev) => ({ ...prev, source_name: event.target.value }))
-              }
-            />
-          </Field>
-          <Field label="Lien de la source">
-            <Input
-              value={draft.source_url}
-              placeholder="https://…"
-              onChange={(event) =>
-                setDraft((prev) => ({ ...prev, source_url: event.target.value }))
-              }
-            />
-          </Field>
-        </div>
-        <div className="mt-3">
-          <p className="text-xs font-medium text-muted-foreground">Jours de départ</p>
-          <div className="mt-2 flex flex-wrap gap-2">
-            {weekdayLabels.map((label, index) => {
-              const day = index + 1;
-              const active = draft.weekdays.includes(day);
-              return (
-                <Button
-                  key={label}
-                  type="button"
-                  size="sm"
-                  variant={active ? "default" : "outline"}
-                  onClick={() => toggleDay(day)}
-                >
-                  {label}
-                </Button>
-              );
-            })}
+      <AdminDrawer
+        open={formOpen}
+        onOpenChange={(next) => !next && closeForm()}
+        title={editingId ? "Modifier le calendrier" : "Nouveau calendrier de traversées"}
+        description="Liaison, jours, horaires, période de validité et source officielle."
+      >
+        <div>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <Field label="Ligne">
+              <NativeSelect
+                value={draft.route_id}
+                onChange={(value) => setDraft((prev) => ({ ...prev, route_id: value }))}
+                options={routes
+                  .filter((r) => !routeId || r.id === routeId)
+                  .map((route) => ({ value: route.id, label: routeLabel(route.id) }))}
+              />
+            </Field>
+            <Field label="Compagnie">
+              <NativeSelect
+                value={draft.company_id}
+                onChange={(value) => setDraft((prev) => ({ ...prev, company_id: value }))}
+                options={companies
+                  .filter((c) => !companyId || c.id === companyId)
+                  .map((company) => ({ value: company.id, label: company.name }))}
+              />
+            </Field>
+            <Field label="Navire (facultatif)">
+              <NativeSelect
+                value={draft.default_vessel_id}
+                onChange={(value) => setDraft((prev) => ({ ...prev, default_vessel_id: value }))}
+                options={vessels
+                  .filter(
+                    (v) => !draft.company_id || !v.company_id || v.company_id === draft.company_id,
+                  )
+                  .map((vessel) => ({ value: vessel.id, label: vessel.name }))}
+              />
+            </Field>
+            <Field label="Heure de départ">
+              <Input
+                type="time"
+                value={draft.departure_time}
+                onChange={(event) =>
+                  setDraft((prev) => ({ ...prev, departure_time: event.target.value }))
+                }
+              />
+            </Field>
+            <Field label="Arrivée calculée · heure du port d’arrivée">
+              <Input
+                readOnly
+                value={
+                  previewArrival
+                    ? `${formatDateTime(previewArrival, toZone)} (${zoneLabel(toZone)})`
+                    : "À renseigner"
+                }
+              />
+            </Field>
+            <Field label="Durée (minutes)">
+              <Input
+                type="number"
+                min={30}
+                value={draft.duration_minutes}
+                onChange={(event) =>
+                  setDraft((prev) => {
+                    const duration_minutes = Number(event.target.value);
+                    return {
+                      ...prev,
+                      duration_minutes,
+                      arrival_time:
+                        addMinutesToTime(prev.departure_time, duration_minutes) ||
+                        prev.arrival_time,
+                    };
+                  })
+                }
+              />
+            </Field>
+            <Field label="Valide du">
+              <Input
+                type="date"
+                value={draft.valid_from}
+                onChange={(event) =>
+                  setDraft((prev) => ({ ...prev, valid_from: event.target.value }))
+                }
+              />
+            </Field>
+            <Field label="Valide jusqu'au (facultatif)">
+              <Input
+                type="date"
+                value={draft.valid_to}
+                onChange={(event) =>
+                  setDraft((prev) => ({ ...prev, valid_to: event.target.value }))
+                }
+              />
+            </Field>
+            <Field label="Source de l'information">
+              <Input
+                value={draft.source_name}
+                placeholder="Site officiel de la compagnie"
+                onChange={(event) =>
+                  setDraft((prev) => ({ ...prev, source_name: event.target.value }))
+                }
+              />
+            </Field>
+            <Field label="Lien de la source">
+              <Input
+                value={draft.source_url}
+                placeholder="https://…"
+                onChange={(event) =>
+                  setDraft((prev) => ({ ...prev, source_url: event.target.value }))
+                }
+              />
+            </Field>
           </div>
-        </div>
-        <div className="mt-4 flex gap-2">
-          <Button size="sm" disabled={save.isPending} onClick={() => save.mutate()}>
-            {editingId ? "Enregistrer les modifications" : "Ajouter le calendrier"}
-          </Button>
-          {editingId ? (
-            <Button
-              size="sm"
-              variant="ghost"
-              onClick={() => {
-                setEditingId(null);
-                setDraft(emptyDraft);
-              }}
-            >
+          <div className="mt-3">
+            <p className="text-xs font-medium text-muted-foreground">Jours de départ</p>
+            <div className="mt-2 flex flex-wrap gap-2">
+              {weekdayLabels.map((label, index) => {
+                const day = index + 1;
+                const active = draft.weekdays.includes(day);
+                return (
+                  <Button
+                    key={label}
+                    type="button"
+                    size="sm"
+                    variant={active ? "default" : "outline"}
+                    onClick={() => toggleDay(day)}
+                  >
+                    {label}
+                  </Button>
+                );
+              })}
+            </div>
+          </div>
+          <p className="mt-3 text-[11px] text-muted-foreground">
+            L’arrivée affichée est un aperçu au début de validité. Les nouveaux départs seront
+            calculés dans les fuseaux des ports à leur date. Les départs déjà publiés se modifient
+            dans Départs / arrivées.
+          </p>
+          <div className="mt-4 flex gap-2">
+            <Button size="sm" disabled={save.isPending} onClick={() => save.mutate()}>
+              {editingId ? "Enregistrer les modifications" : "Ajouter le calendrier"}
+            </Button>
+            <Button size="sm" variant="ghost" onClick={closeForm}>
               Annuler
             </Button>
-          ) : null}
+          </div>
         </div>
-      </Panel>
+      </AdminDrawer>
 
       <Panel>
-        <h2 className="text-sm font-semibold">Calendriers existants</h2>
+        <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+          <h2 className="text-sm font-semibold">Calendriers existants ({schedules.length})</h2>
+          <button
+            type="button"
+            className="bw-admin-toolbar__create"
+            onClick={() => {
+              setEditingId(null);
+              setDraft(scopedDraft);
+              setFormOpen(true);
+            }}
+          >
+            + Nouveau calendrier
+          </button>
+        </div>
         <ul className="divide-y divide-border">
           {schedules.map((schedule) => (
             <li key={schedule.id} className="flex flex-wrap items-center gap-3 py-3">
               <div className="min-w-0 flex-1">
                 <p className="text-sm font-medium">
-                  {routeLabel(schedule.route_id)} · départ {schedule.departure_time.slice(0, 5)} →
-                  arrivée théorique{" "}
-                  {addMinutesToTime(schedule.departure_time.slice(0, 5), schedule.duration_minutes)}
-                  {dayShift(
-                    (timeToMinutes(schedule.departure_time.slice(0, 5)) ?? 0) +
-                      schedule.duration_minutes,
-                  )}
+                  {routeLabel(schedule.route_id)} · départ {schedule.departure_time.slice(0, 5)}
+                </p>
+                <p className="mt-1 text-[11px] text-muted-foreground">
+                  Du {schedule.valid_from}
+                  {schedule.valid_to ? ` au ${schedule.valid_to}` : " · fin à préciser"} · Aperçu
+                  d’arrivée au début de validité : {schedulePreview(schedule)}
                 </p>
                 <p className="text-xs text-muted-foreground">
                   {schedule.weekdays
@@ -1089,6 +1491,7 @@ function SchedulesAdmin() {
                   variant="outline"
                   onClick={() => {
                     setEditingId(schedule.id);
+                    setFormOpen(true);
                     setDraft({
                       route_id: schedule.route_id,
                       company_id: schedule.company_id,
@@ -1116,13 +1519,13 @@ function SchedulesAdmin() {
                   onClick={() => {
                     if (
                       confirmAction(
-                        "Générer les départs des 60 prochains jours ? Les départs à venir déjà créés par ce calendrier seront remplacés.",
+                        "Ajouter les départs manquants sur 60 jours, à partir du début de validité ou d’aujourd’hui ? Les départs existants, corrections et annulations sont conservés.",
                       )
                     )
                       generate.mutate(schedule.id);
                   }}
                 >
-                  Générer les départs
+                  Ajouter les départs manquants
                 </Button>
                 <Button
                   size="sm"
@@ -1145,9 +1548,16 @@ function SchedulesAdmin() {
 }
 
 /** Suivi en direct : identifiant MMSI de chaque navire et état de la dernière position reçue. */
-function VesselsAdmin() {
+function VesselsAdmin({
+  vesselIds,
+  itemId,
+}: { vesselIds?: string[]; itemId?: string | undefined } = {}) {
   const queryClient = useQueryClient();
-  const { data: vessels = [] } = useQuery(vesselsQuery);
+  const [openId, setOpenId] = useState<string | null>(itemId ?? null);
+  useEffect(() => {
+    if (itemId) setOpenId(itemId);
+  }, [itemId]);
+  const { data: allVessels = [] } = useQuery(vesselsQuery);
   const { data: companies = [] } = useQuery(companiesQuery);
   const { data: positions = [] } = useQuery({
     queryKey: ["admin", "vessel_positions"],
@@ -1175,13 +1585,43 @@ function VesselsAdmin() {
       return data;
     },
   });
+  const [vesselSearch, setVesselSearch] = useState("");
+  const [companyFilter, setCompanyFilter] = useState("all");
+  const scopedVessels = allVessels.filter((v) => !vesselIds || vesselIds.includes(v.id));
+  const normalizedVesselSearch = vesselSearch.trim().toLocaleLowerCase("fr");
+  const vessels = scopedVessels.filter((vessel) => {
+    const companyName =
+      companies.find((item) => item.id === vessel.company_id)?.name ?? "Sans compagnie";
+    const matchesCompany =
+      companyFilter === "all" ||
+      (companyFilter === "none" ? !vessel.company_id : vessel.company_id === companyFilter);
+    const haystack =
+      `${vessel.name} ${companyName} ${vessel.mmsi ?? ""} ${vessel.imo ?? ""}`.toLocaleLowerCase(
+        "fr",
+      );
+    return matchesCompany && (!normalizedVesselSearch || haystack.includes(normalizedVesselSearch));
+  });
+  const groupedVessels = new Map<string, typeof vessels>();
+  for (const vessel of vessels) {
+    const key = vessel.company_id ?? "none";
+    groupedVessels.set(key, [...(groupedVessels.get(key) ?? []), vessel]);
+  }
+  const orderedGroups = [...groupedVessels.entries()].sort((a, b) => {
+    const nameA =
+      a[0] === "none" ? "Sans compagnie" : (companies.find((item) => item.id === a[0])?.name ?? "");
+    const nameB =
+      b[0] === "none" ? "Sans compagnie" : (companies.find((item) => item.id === b[0])?.name ?? "");
+    return nameA.localeCompare(nameB, "fr");
+  });
   const portLabel = (id: string) => ports.find((p) => p.id === id)?.name ?? "—";
   // Brouillons de saisie, par navire : { mmsi, imo, photo }.
   const [drafts, setDrafts] = useState<
     Record<string, { mmsi?: string; imo?: string; photo?: string; photoFile?: File | null }>
   >({});
-  const setDraft = (id: string, patch: { mmsi?: string; imo?: string; photo?: string; photoFile?: File | null }) =>
-    setDrafts((prev) => ({ ...prev, [id]: { ...prev[id], ...patch } }));
+  const setDraft = (
+    id: string,
+    patch: { mmsi?: string; imo?: string; photo?: string; photoFile?: File | null },
+  ) => setDrafts((prev) => ({ ...prev, [id]: { ...prev[id], ...patch } }));
 
   const save = useMutation({
     mutationFn: async ({
@@ -1203,8 +1643,9 @@ function VesselsAdmin() {
         const path = id + "/" + Date.now() + "." + extension.replace(/[^a-z0-9]/g, "");
         const { error: uploadError } = await supabase.storage
           .from("vessel-photos")
-          .upload(path, photoFile, { upsert: true, contentType: photoFile.type });
-        if (uploadError) throw new Error("Téléversement de la photo impossible : " + uploadError.message);
+          .upload(path, photoFile, { contentType: photoFile.type });
+        if (uploadError)
+          throw new Error("Téléversement de la photo impossible : " + uploadError.message);
         const { data: publicUrl } = supabase.storage.from("vessel-photos").getPublicUrl(path);
         finalPhotoUrl = publicUrl.publicUrl;
       }
@@ -1228,195 +1669,424 @@ function VesselsAdmin() {
   });
 
   const positionByMmsi = new Map(positions.map((position) => [position.mmsi, position]));
+  /** Fiche complète d'un navire (dans le panneau latéral). */
+  const editorFor = (vessel: (typeof allVessels)[number]) => {
+    const draft = drafts[vessel.id] ?? {};
+    const mmsi = draft.mmsi ?? (vessel.mmsi ? String(vessel.mmsi) : "");
+    const imo = draft.imo ?? (vessel.imo ? String(vessel.imo) : "");
+    const photo = draft.photo ?? vessel.photo_url ?? "";
+    const photoFile = draft.photoFile ?? null;
+    const mmsiOk = mmsi === "" || /^\d{9}$/.test(mmsi);
+    const imoOk = imo === "" || /^\d{7}$/.test(imo);
+    const photoOk = photo === "" || /^https:\/\//i.test(photo);
+    const changed =
+      photoFile !== null ||
+      mmsi !== (vessel.mmsi ? String(vessel.mmsi) : "") ||
+      imo !== (vessel.imo ? String(vessel.imo) : "") ||
+      photo !== (vessel.photo_url ?? "");
+    const position = vessel.mmsi ? positionByMmsi.get(vessel.mmsi) : undefined;
+    const company = companies.find((item) => item.id === vessel.company_id);
+    return (
+      <div className="grid gap-3">
+        <div className="min-w-0">
+          <div className="flex items-center gap-3">
+            {photo && photoOk ? (
+              <img
+                src={photo}
+                alt={vessel.name}
+                width={80}
+                height={56}
+                loading="lazy"
+                referrerPolicy="no-referrer"
+                className="h-14 w-20 rounded-lg border object-cover"
+              />
+            ) : null}
+            <p className="text-sm font-medium">{vessel.name}</p>
+          </div>
+          <p className="text-xs text-muted-foreground">
+            {company?.name ?? "Sans compagnie"}
+            {position?.reported_at
+              ? ` · dernière position le ${new Date(position.reported_at).toLocaleString("fr-FR")}`
+              : vessel.mmsi
+                ? " · pas encore de position"
+                : ""}
+            {position?.last_error ? ` · erreur : ${position.last_error}` : ""}
+          </p>
+          {(() => {
+            const dep = nextDeps.find((d) => d.vessel_id === vessel.id);
+            const route = dep ? routes.find((r) => r.id === dep.route_id) : undefined;
+            const declared = position as
+              { destination?: string | null; eta?: string | null } | undefined;
+            const link = vessel.imo
+              ? `https://www.vesselfinder.com/?imo=${vessel.imo}`
+              : vessel.mmsi
+                ? `https://www.vesselfinder.com/?mmsi=${vessel.mmsi}`
+                : null;
+            return (
+              <div className="mt-1 grid gap-0.5 text-xs">
+                <p>
+                  <span className="text-muted-foreground">Prévu BledWay : </span>
+                  {route && dep
+                    ? `${portLabel(route.departure_port_id)} → ${portLabel(route.arrival_port_id)} · ${new Date(dep.departure_at).toLocaleString("fr-FR")}`
+                    : "aucun départ à venir"}
+                </p>
+                <p>
+                  <span className="text-muted-foreground">Déclaré par le navire : </span>
+                  {declared?.destination
+                    ? `« ${declared.destination} »${declared.eta ? ` · arrivée estimée ${declared.eta}` : ""}`
+                    : "pas encore reçu"}
+                </p>
+                {link ? (
+                  <a
+                    href={link}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="font-semibold text-primary underline underline-offset-2"
+                  >
+                    Suivre sur VesselFinder ↗
+                  </a>
+                ) : null}
+              </div>
+            );
+          })()}
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
+          <label className="grid gap-1 text-xs font-medium">
+            MMSI
+            <Input
+              inputMode="numeric"
+              maxLength={9}
+              placeholder="MMSI"
+              aria-label={`MMSI de ${vessel.name}`}
+              aria-invalid={!mmsiOk}
+              value={mmsi}
+              onChange={(event) =>
+                setDraft(vessel.id, { mmsi: event.target.value.replace(/\D/g, "") })
+              }
+              className="w-32"
+            />
+          </label>
+          <label className="grid gap-1 text-xs font-medium">
+            IMO
+            <Input
+              inputMode="numeric"
+              maxLength={7}
+              placeholder="IMO"
+              aria-label={`IMO de ${vessel.name}`}
+              aria-invalid={!imoOk}
+              value={imo}
+              onChange={(event) =>
+                setDraft(vessel.id, { imo: event.target.value.replace(/\D/g, "") })
+              }
+              className="w-28"
+            />
+          </label>
+          <div className="grid min-w-56 flex-1 gap-1">
+            <Input
+              type="url"
+              placeholder="URL de la photo (https://…)"
+              aria-label={"URL de la photo de " + vessel.name}
+              aria-invalid={!photoOk}
+              value={photo}
+              onChange={(event) =>
+                setDraft(vessel.id, { photo: event.target.value.trim(), photoFile: null })
+              }
+              className="w-full"
+              disabled={Boolean(photoFile)}
+            />
+            <label className="grid gap-1 text-xs text-muted-foreground">
+              <span>Ou téléverser une image {photoFile ? "— " + photoFile.name : ""}</span>
+              <input
+                type="file"
+                accept="image/jpeg,image/png,image/webp,image/avif"
+                aria-label={"Téléverser une photo de " + vessel.name}
+                className="block w-full text-xs file:mr-2 file:rounded-md file:border file:border-border file:bg-background file:px-2 file:py-1"
+                onChange={(event) => {
+                  const file = event.target.files?.[0] ?? null;
+                  if (file && file.size > 10 * 1024 * 1024) {
+                    toast.error("La photo doit faire 10 Mo maximum.");
+                    event.target.value = "";
+                    return;
+                  }
+                  if (
+                    file &&
+                    !["image/jpeg", "image/png", "image/webp", "image/avif"].includes(file.type)
+                  ) {
+                    toast.error("Format accepté : JPG, PNG, WebP ou AVIF.");
+                    event.target.value = "";
+                    return;
+                  }
+                  setDraft(vessel.id, { photoFile: file, ...(file ? { photo: "" } : {}) });
+                }}
+              />
+            </label>
+            {photoFile ? (
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() =>
+                  setDraft(vessel.id, { photoFile: null, photo: vessel.photo_url ?? "" })
+                }
+              >
+                Annuler le téléversement
+              </Button>
+            ) : null}
+          </div>
+          <Button
+            size="sm"
+            disabled={!mmsiOk || !imoOk || (!photoFile && !photoOk) || !changed || save.isPending}
+            onClick={() =>
+              save.mutate({
+                id: vessel.id,
+                mmsi: mmsi === "" ? null : Number(mmsi),
+                imo: imo === "" ? null : Number(imo),
+                photo_url: photo === "" ? null : photo,
+                photoFile,
+              })
+            }
+          >
+            Enregistrer
+          </Button>
+        </div>
+        <VesselSpecsEditor vessel={vessel as unknown as VesselSpecsRow} />
+        <VesselDeleteButton id={vessel.id} name={vessel.name} />
+      </div>
+    );
+  };
+  const openVessel = allVessels.find((vessel) => vessel.id === openId);
 
   return (
     <Panel>
-      <h2 className="text-sm font-semibold">Navires : suivi en direct, IMO et photo</h2>
-      <p className="mt-1 text-xs text-muted-foreground">
-        <strong>MMSI</strong> (9 chiffres) : active le suivi en direct. Le site suit un navire de 6
-        h avant son départ jusqu'à son arrivée et ne redemande sa position qu'au bout de 20 minutes.{" "}
-        <strong>IMO</strong> (7 chiffres) : ajoute le lien « Voir sur VesselFinder » dans la fiche.{" "}
-        <strong>Photo</strong> : collez une URL ou téléversez un fichier image (JPG, PNG, WebP ou AVIF, 10 Mo max). Le téléversement remplace l’URL ; sans photo personnalisée, le site cherche une photo libre sur Wikimedia Commons.
+      <details className="text-xs text-muted-foreground">
+        <summary className="cursor-pointer text-sm font-semibold text-foreground">
+          Aide : MMSI, IMO et photo
+        </summary>
+        <p className="mt-1 text-xs text-muted-foreground">
+          <strong>MMSI</strong> (9 chiffres) : active le suivi en direct. Le site suit un navire de
+          6 h avant son départ jusqu'à son arrivée et ne redemande sa position qu'au bout de 20
+          minutes. <strong>IMO</strong> (7 chiffres) : ajoute le lien « Voir sur VesselFinder » dans
+          la fiche. <strong>Photo</strong> : collez une URL ou téléversez un fichier image (JPG,
+          PNG, WebP ou AVIF, 10 Mo max). Le téléversement remplace l’URL ; sans photo personnalisée,
+          le site cherche une photo libre sur Wikimedia Commons.
+        </p>
+      </details>
+      <div className="mt-4 grid gap-3 sm:grid-cols-[minmax(0,1fr)_16rem]">
+        <Input
+          value={vesselSearch}
+          onChange={(event) => setVesselSearch(event.target.value)}
+          placeholder="Rechercher un navire, MMSI, IMO ou compagnie…"
+          aria-label="Rechercher dans la flotte"
+        />
+        <select
+          value={companyFilter}
+          onChange={(event) => setCompanyFilter(event.target.value)}
+          aria-label="Filtrer par compagnie"
+          className="h-10 rounded-md border border-input bg-background px-3 text-sm"
+        >
+          <option value="all">Toutes les compagnies</option>
+          <option value="none">Sans compagnie</option>
+          {companies
+            .slice()
+            .sort((a, b) => a.name.localeCompare(b.name, "fr"))
+            .map((company) => (
+              <option key={company.id} value={company.id}>
+                {company.name}
+              </option>
+            ))}
+        </select>
+      </div>
+      <p className="mt-2 text-xs text-muted-foreground">
+        {vessels.length} navire{vessels.length > 1 ? "s" : ""} affiché
+        {vessels.length > 1 ? "s" : ""} sur {scopedVessels.length} · {orderedGroups.length} groupe
+        {orderedGroups.length > 1 ? "s" : ""}
       </p>
-      <ul className="mt-4 divide-y divide-border">
-        {vessels.map((vessel) => {
-          const draft = drafts[vessel.id] ?? {};
-          const mmsi = draft.mmsi ?? (vessel.mmsi ? String(vessel.mmsi) : "");
-          const imo = draft.imo ?? (vessel.imo ? String(vessel.imo) : "");
-          const photo = draft.photo ?? vessel.photo_url ?? "";
-          const photoFile = draft.photoFile ?? null;
-          const mmsiOk = mmsi === "" || /^\d{9}$/.test(mmsi);
-          const imoOk = imo === "" || /^\d{7}$/.test(imo);
-          const photoOk = photo === "" || /^https:\/\//i.test(photo);
-          const changed =
-            photoFile !== null ||
-            mmsi !== (vessel.mmsi ? String(vessel.mmsi) : "") ||
-            imo !== (vessel.imo ? String(vessel.imo) : "") ||
-            photo !== (vessel.photo_url ?? "");
-          const position = vessel.mmsi ? positionByMmsi.get(vessel.mmsi) : undefined;
-          const company = companies.find((item) => item.id === vessel.company_id);
-          return (
-            <li key={vessel.id} className="grid gap-2 py-3">
-              <div className="min-w-0">
-                <p className="text-sm font-medium">{vessel.name}</p>
-                <p className="text-xs text-muted-foreground">
-                  {company?.name ?? "Sans compagnie"}
-                  {position?.reported_at
-                    ? ` · dernière position le ${new Date(position.reported_at).toLocaleString("fr-FR")}`
-                    : vessel.mmsi
-                      ? " · pas encore de position"
-                      : ""}
-                  {position?.last_error ? ` · erreur : ${position.last_error}` : ""}
-                </p>
-                {(() => {
-                  const dep = nextDeps.find((d) => d.vessel_id === vessel.id);
-                  const route = dep ? routes.find((r) => r.id === dep.route_id) : undefined;
-                  const declared = position as
-                    { destination?: string | null; eta?: string | null } | undefined;
-                  const link = vessel.imo
-                    ? `https://www.vesselfinder.com/?imo=${vessel.imo}`
-                    : vessel.mmsi
-                      ? `https://www.vesselfinder.com/?mmsi=${vessel.mmsi}`
-                      : null;
-                  return (
-                    <div className="mt-1 grid gap-0.5 text-xs">
-                      <p>
-                        <span className="text-muted-foreground">Prévu Batogo : </span>
-                        {route && dep
-                          ? `${portLabel(route.departure_port_id)} → ${portLabel(route.arrival_port_id)} · ${new Date(dep.departure_at).toLocaleString("fr-FR")}`
-                          : "aucun départ à venir"}
-                      </p>
-                      <p>
-                        <span className="text-muted-foreground">Déclaré par le navire : </span>
-                        {declared?.destination
-                          ? `« ${declared.destination} »${declared.eta ? ` · arrivée estimée ${declared.eta}` : ""}`
-                          : "pas encore reçu"}
-                      </p>
-                      {link ? (
-                        <a
-                          href={link}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="font-semibold text-primary underline underline-offset-2"
-                        >
-                          Suivre sur VesselFinder ↗
-                        </a>
+      <div className="mt-3 space-y-5">
+        {orderedGroups.map(([companyId, groupVessels]) => (
+          <section key={companyId} className="overflow-hidden rounded-xl border border-border">
+            <h3 className="flex items-center justify-between gap-3 bg-muted/40 px-3 py-2 text-sm font-semibold">
+              <span>
+                {companyId === "none"
+                  ? "Sans compagnie"
+                  : (companies.find((item) => item.id === companyId)?.name ?? "Compagnie inconnue")}
+              </span>
+              <span className="rounded-full bg-background px-2 py-0.5 text-xs font-medium text-muted-foreground">
+                {groupVessels.length}
+              </span>
+            </h3>
+            <ul className="bw-admin-list px-2 py-1">
+              {groupVessels.map((vessel) => {
+                const position = vessel.mmsi ? positionByMmsi.get(vessel.mmsi) : undefined;
+                return (
+                  <li key={vessel.id}>
+                    <button
+                      type="button"
+                      className="bw-admin-list__main"
+                      onClick={() => setOpenId(vessel.id)}
+                    >
+                      {vessel.photo_url ? (
+                        <img
+                          src={vessel.photo_url}
+                          alt=""
+                          width={56}
+                          height={40}
+                          loading="lazy"
+                          referrerPolicy="no-referrer"
+                          className="h-10 w-14 shrink-0 rounded-md border object-cover"
+                        />
+                      ) : (
+                        <span className="grid h-10 w-14 shrink-0 place-items-center rounded-md border bg-muted text-[10px] text-muted-foreground">
+                          sans photo
+                        </span>
+                      )}
+                      <span className="min-w-0">
+                        <strong>{vessel.name}</strong>
+                        <small>
+                          {vessel.mmsi
+                            ? `MMSI ${vessel.mmsi}`
+                            : "Pas de MMSI : suivi en direct inactif"}
+                          {position?.reported_at
+                            ? ` · position du ${new Date(position.reported_at).toLocaleString("fr-FR", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}`
+                            : ""}
+                        </small>
+                      </span>
+                      {position?.last_error ? (
+                        <span className="bw-admin-chip" data-tone="warn">
+                          Erreur de suivi
+                        </span>
                       ) : null}
-                    </div>
-                  );
-                })()}
-              </div>
-              <div className="flex flex-wrap items-center gap-2">
-                <Input
-                  inputMode="numeric"
-                  maxLength={9}
-                  placeholder="MMSI"
-                  aria-label={`MMSI de ${vessel.name}`}
-                  aria-invalid={!mmsiOk}
-                  value={mmsi}
-                  onChange={(event) =>
-                    setDraft(vessel.id, { mmsi: event.target.value.replace(/\D/g, "") })
-                  }
-                  className="w-32"
-                />
-                <Input
-                  inputMode="numeric"
-                  maxLength={7}
-                  placeholder="IMO"
-                  aria-label={`IMO de ${vessel.name}`}
-                  aria-invalid={!imoOk}
-                  value={imo}
-                  onChange={(event) =>
-                    setDraft(vessel.id, { imo: event.target.value.replace(/\D/g, "") })
-                  }
-                  className="w-28"
-                />
-                <div className="grid min-w-56 flex-1 gap-1">
-                  <Input
-                    type="url"
-                    placeholder="URL de la photo (https://…)"
-                    aria-label={"URL de la photo de " + vessel.name}
-                    aria-invalid={!photoOk}
-                    value={photo}
-                    onChange={(event) => setDraft(vessel.id, { photo: event.target.value.trim(), photoFile: null })}
-                    className="w-full"
-                    disabled={Boolean(photoFile)}
-                  />
-                  <label className="grid gap-1 text-xs text-muted-foreground">
-                    <span>Ou téléverser une image {photoFile ? "— " + photoFile.name : ""}</span>
-                    <input
-                      type="file"
-                      accept="image/jpeg,image/png,image/webp,image/avif"
-                      aria-label={"Téléverser une photo de " + vessel.name}
-                      className="block w-full text-xs file:mr-2 file:rounded-md file:border file:border-border file:bg-background file:px-2 file:py-1"
-                      onChange={(event) => {
-                        const file = event.target.files?.[0] ?? null;
-                        if (file && file.size > 10 * 1024 * 1024) {
-                          toast.error("La photo doit faire 10 Mo maximum.");
-                          event.target.value = "";
-                          return;
-                        }
-                        if (file && !["image/jpeg", "image/png", "image/webp", "image/avif"].includes(file.type)) {
-                          toast.error("Format accepté : JPG, PNG, WebP ou AVIF.");
-                          event.target.value = "";
-                          return;
-                        }
-                        setDraft(vessel.id, { photoFile: file, ...(file ? { photo: "" } : {}) });
-                      }}
-                    />
-                  </label>
-                  {photoFile ? (
-                    <Button size="sm" variant="ghost" onClick={() => setDraft(vessel.id, { photoFile: null, photo: vessel.photo_url ?? "" })}>Annuler le téléversement</Button>
-                  ) : null}
-                </div>
-                <Button
-                  size="sm"
-                  disabled={!mmsiOk || !imoOk || (!photoFile && !photoOk) || !changed || save.isPending}
-                  onClick={() =>
-                    save.mutate({
-                      id: vessel.id,
-                      mmsi: mmsi === "" ? null : Number(mmsi),
-                      imo: imo === "" ? null : Number(imo),
-                      photo_url: photo === "" ? null : photo,
-                      photoFile,
-                    })
-                  }
-                >
-                  Enregistrer
-                </Button>
-              </div>
-              <VesselSpecsEditor vessel={vessel as unknown as VesselSpecsRow} />
-            </li>
-          );
-        })}
+                      {!vessel.mmsi ? <span className="bw-admin-chip">Sans MMSI</span> : null}
+                    </button>
+                  </li>
+                );
+              })}
+            </ul>
+          </section>
+        ))}
         {vessels.length === 0 ? (
-          <li className="py-3 text-sm text-muted-foreground">Aucun navire enregistré.</li>
+          <p className="py-3 text-sm text-muted-foreground">
+            {scopedVessels.length
+              ? "Aucun navire ne correspond à cette recherche."
+              : "Aucun navire enregistré."}
+          </p>
         ) : null}
-      </ul>
+      </div>
+      {openVessel ? (
+        <AdminDrawer
+          open
+          onOpenChange={(next) => !next && setOpenId(null)}
+          title={openVessel.name}
+          description="Suivi en direct (MMSI), lien VesselFinder (IMO), photo et caractéristiques."
+        >
+          {editorFor(openVessel)}
+        </AdminDrawer>
+      ) : null}
     </Panel>
   );
 }
 
+/** Suppression d'un navire : on détache d'abord tout ce qui le référence, puis on l'efface. */
+function VesselDeleteButton({ id, name }: { id: string; name: string }) {
+  const queryClient = useQueryClient();
+  const remove = useMutation({
+    mutationFn: async () => {
+      const count = async (
+        table: "departures" | "schedules" | "schedule_exceptions",
+        col: string,
+      ) => {
+        const { count, error } = await supabase
+          .from(table)
+          .select("id", { count: "exact", head: true })
+          .eq(col as never, id as never);
+        if (error) throw new Error(error.message);
+        return count ?? 0;
+      };
+      const [deps, scheds, excs] = await Promise.all([
+        count("departures", "vessel_id"),
+        count("schedules", "default_vessel_id"),
+        count("schedule_exceptions", "new_vessel_id"),
+      ]);
+      const linked = deps + scheds + excs;
+      const message = linked
+        ? `« ${name} » est encore rattaché à ${deps} traversée(s), ${scheds} programme(s) et ${excs} exception(s).\n\nCes éléments seront conservés mais passeront en « Navire à affecter ». Supprimer définitivement le navire ?`
+        : `Supprimer définitivement « ${name} » ? Aucun élément ne lui est rattaché.`;
+      if (!window.confirm(message)) return false;
+      if (deps) {
+        const { error } = await supabase
+          .from("departures")
+          .update({ vessel_id: null })
+          .eq("vessel_id", id);
+        if (error) throw new Error("Détachement des traversées impossible : " + error.message);
+      }
+      if (scheds) {
+        const { error } = await supabase
+          .from("schedules")
+          .update({ default_vessel_id: null })
+          .eq("default_vessel_id", id);
+        if (error) throw new Error("Détachement des programmes impossible : " + error.message);
+      }
+      if (excs) {
+        const { error } = await supabase
+          .from("schedule_exceptions")
+          .update({ new_vessel_id: null })
+          .eq("new_vessel_id", id);
+        if (error) throw new Error("Détachement des exceptions impossible : " + error.message);
+      }
+      const { data, error } = await supabase.from("vessels").delete().eq("id", id).select("id");
+      if (error) throw new Error("Suppression impossible : " + error.message);
+      if (!data?.length) throw new Error("Suppression refusée par la base (droits insuffisants).");
+      return true;
+    },
+    onSuccess: (done) => {
+      if (!done) return;
+      queryClient.invalidateQueries();
+      toast.success(`« ${name} » a été supprimé.`);
+    },
+    onError: (error: Error) => toast.error(error.message),
+  });
+  return (
+    <div className="flex justify-end">
+      <Button
+        size="sm"
+        variant="destructive"
+        disabled={remove.isPending}
+        onClick={() => remove.mutate()}
+      >
+        {remove.isPending ? "Suppression…" : "Supprimer le navire"}
+      </Button>
+    </div>
+  );
+}
+
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
+  const labelId = useId();
+  const control =
+    isValidElement(children) && (children.type === NativeSelect || children.type === Input)
+      ? cloneElement(children as React.ReactElement<{ "aria-labelledby"?: string }>, {
+          "aria-labelledby": labelId,
+        })
+      : children;
   return (
     <label className="grid gap-1.5 text-xs font-medium text-muted-foreground">
-      {label}
-      {children}
+      <span id={labelId}>{label}</span>
+      {control}
     </label>
   );
 }
 
 function NativeSelect({
+  "aria-labelledby": labelledBy,
   value,
   onChange,
   options,
 }: {
+  "aria-labelledby"?: string;
   value: string;
   onChange: (value: string) => void;
   options: Array<{ value: string; label: string }>;
 }) {
   return (
     <select
+      aria-labelledby={labelledBy}
       value={value}
       onChange={(event) => onChange(event.target.value)}
       className="h-9 w-full rounded-md border border-input bg-transparent px-2 text-sm text-foreground"
@@ -1598,8 +2268,8 @@ function DataAdmin() {
           <Counter label="Navires" value={vessels.length} />
         </div>
         <p className="mt-4 text-xs text-muted-foreground">
-          Les fiches marquées « démonstration » servent d'exemples et doivent être remplacées par
-          des informations vérifiées avant publication.
+          Les fiches signalées « à confirmer » servent d'exemples et doivent être remplacées par des
+          informations vérifiées avant publication.
         </p>
       </Panel>
 
@@ -1814,8 +2484,11 @@ function slugify(value: string) {
     .replace(/^-|-$/g, "");
 }
 
-function PortsAdmin() {
+function PortsAdmin({ itemId }: { itemId?: string | undefined } = {}) {
   const queryClient = useQueryClient();
+  const warnTravellers = useWarnTravellers();
+  const [formOpen, setFormOpen] = useState(false);
+  const [search, setSearch] = useState("");
   const { data: ports = [] } = useQuery(adminPortsQuery);
   const { data: routes = [] } = useQuery(adminRoutesQuery);
   const { data: schedules = [] } = useQuery(schedulesQuery);
@@ -1851,7 +2524,41 @@ function PortsAdmin() {
     setDraft(emptyPortDraft);
     setFacilities({});
     setEditingId(null);
+    setFormOpen(false);
   };
+  const startNew = () => {
+    setDraft(emptyPortDraft);
+    setFacilities({});
+    setEditingId(null);
+    setPresetName("");
+    setFormOpen(true);
+  };
+  const startEdit = (port: Port) => {
+    setEditingId(port.id);
+    setFacilities((port.facilities ?? {}) as Record<string, string>);
+    setDraft({
+      name: port.name,
+      city: port.city ?? "",
+      country_code: port.country_code,
+      latitude: String(port.latitude),
+      longitude: String(port.longitude),
+      label_anchor: port.label_anchor,
+      label_offset_x: String(port.label_offset_x),
+      label_offset_y: String(port.label_offset_y),
+      notes: port.notes ?? "",
+      info_source: port.info_source ?? "",
+      info_source_url: port.info_source_url ?? "",
+      photo_url: port.photo_url ?? "",
+      status: port.status,
+    });
+    setFormOpen(true);
+  };
+  // Fiche demandée depuis la recherche du menu.
+  useEffect(() => {
+    const port = itemId ? ports.find((item) => item.id === itemId) : undefined;
+    if (port) startEdit(port);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [itemId, ports.length]);
 
   const save = useMutation({
     mutationFn: async () => {
@@ -1942,13 +2649,15 @@ function PortsAdmin() {
       }
       return routeIds.length;
     },
-    onSuccess: (count) => {
+    onSuccess: (count, port) => {
       invalidateAll();
       setPendingClose(null);
-      toast.success(
+      warnTravellers(
         count > 0
           ? `Port fermé temporairement. ${count} ligne(s) suspendue(s).`
           : "Port fermé temporairement.",
+        { audience: { kind: "port", portId: port.id }, template: "port_closed" },
+        "Les voyageurs des traversées de ce port ne sont pas encore prévenus.",
       );
     },
     onError: (error: Error) => toast.error(error.message),
@@ -2091,8 +2800,12 @@ function PortsAdmin() {
         </Panel>
       ) : null}
 
-      <Panel>
-        <h2 className="text-sm font-semibold">{editingId ? "Modifier le port" : "Nouveau port"}</h2>
+      <AdminDrawer
+        open={formOpen}
+        onOpenChange={(next) => !next && reset()}
+        title={editingId ? `Modifier ${draft.name || "le port"}` : "Nouveau port"}
+        description="Position sur la carte, informations pratiques et services."
+      >
         <div className="mt-3">
           <Field label="Pré-sélection d'un grand port (Algérie et Europe)">
             <NativeSelect
@@ -2219,76 +2932,64 @@ function PortsAdmin() {
           <Button size="sm" disabled={save.isPending} onClick={() => save.mutate()}>
             {editingId ? "Enregistrer les modifications" : "Ajouter le port"}
           </Button>
-          {editingId ? (
-            <Button size="sm" variant="ghost" onClick={reset}>
-              Annuler
-            </Button>
-          ) : null}
+          <Button size="sm" variant="ghost" onClick={reset}>
+            Annuler
+          </Button>
         </div>
-      </Panel>
+      </AdminDrawer>
 
       <Panel>
-        <h2 className="text-sm font-semibold">Ports existants ({ports.length})</h2>
+        <AdminListToolbar
+          search={search}
+          onSearch={setSearch}
+          placeholder="Chercher un port"
+          count={
+            ports.filter((port) => matches(search, port.name, port.country_name, port.city)).length
+          }
+          total={ports.length}
+          onCreate={startNew}
+          createLabel="Nouveau port"
+        />
         <ul className="divide-y divide-border">
-          {ports.map((port) => (
-            <li key={port.id} className="flex flex-wrap items-center gap-3 py-3">
-              <div className="min-w-0 flex-1">
-                <p className="text-sm font-medium">
-                  {port.name}{" "}
-                  <span className="font-normal text-muted-foreground">· {port.country_name}</span>
-                </p>
-                <p className="text-xs text-muted-foreground">
-                  {portStatusLabel[port.status] ?? port.status} · {port.latitude.toFixed(3)},{" "}
-                  {port.longitude.toFixed(3)}
-                </p>
-              </div>
-              <div className="flex flex-wrap gap-2">
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => {
-                    setEditingId(port.id);
-                    setFacilities((port.facilities ?? {}) as Record<string, string>);
-                    setDraft({
-                      name: port.name,
-                      city: port.city ?? "",
-                      country_code: port.country_code,
-                      latitude: String(port.latitude),
-                      longitude: String(port.longitude),
-                      label_anchor: port.label_anchor,
-                      label_offset_x: String(port.label_offset_x),
-                      label_offset_y: String(port.label_offset_y),
-                      notes: port.notes ?? "",
-                      info_source: port.info_source ?? "",
-                      info_source_url: port.info_source_url ?? "",
-                      photo_url: port.photo_url ?? "",
-                      status: port.status,
-                    });
-                  }}
-                >
-                  Modifier
-                </Button>
-                {port.status === "inactive" ? (
-                  <Button size="sm" variant="outline" onClick={() => setPendingReopen(port)}>
-                    Réouvrir
+          {ports
+            .filter((port) => matches(search, port.name, port.country_name, port.city))
+            .map((port) => (
+              <li key={port.id} className="flex flex-wrap items-center gap-3 py-3">
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-medium">
+                    {port.name}{" "}
+                    <span className="font-normal text-muted-foreground">· {port.country_name}</span>
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    {portStatusLabel[port.status] ?? port.status} · {port.latitude.toFixed(3)},{" "}
+                    {port.longitude.toFixed(3)}
+                  </p>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  <Button size="sm" variant="outline" onClick={() => startEdit(port)}>
+                    Modifier
                   </Button>
-                ) : (
-                  <Button size="sm" variant="outline" onClick={() => setPendingClose(port)}>
-                    Fermer temporairement
-                  </Button>
-                )}
-                {port.status === "draft" ? (
-                  <Button
-                    size="sm"
-                    disabled={setStatus.isPending}
-                    onClick={() => setStatus.mutate({ id: port.id, status: "active" })}
-                  >
-                    Publier
-                  </Button>
-                ) : null}
-              </div>
-            </li>
-          ))}
+                  {port.status === "inactive" ? (
+                    <Button size="sm" variant="outline" onClick={() => setPendingReopen(port)}>
+                      Réouvrir
+                    </Button>
+                  ) : (
+                    <Button size="sm" variant="outline" onClick={() => setPendingClose(port)}>
+                      Fermer temporairement
+                    </Button>
+                  )}
+                  {port.status === "draft" ? (
+                    <Button
+                      size="sm"
+                      disabled={setStatus.isPending}
+                      onClick={() => setStatus.mutate({ id: port.id, status: "active" })}
+                    >
+                      Publier
+                    </Button>
+                  ) : null}
+                </div>
+              </li>
+            ))}
         </ul>
         <p className="mt-3 text-xs text-muted-foreground">
           Un port fermé temporairement reste visible sur la carte avec la mention « Temporairement
@@ -2324,8 +3025,10 @@ const routeStatusLabel: Record<string, string> = {
   draft: "Brouillon",
 };
 
-function RoutesAdmin() {
+function RoutesAdmin({ itemId }: { itemId?: string | undefined } = {}) {
   const queryClient = useQueryClient();
+  const [formOpen, setFormOpen] = useState(false);
+  const [search, setSearch] = useState("");
   const { data: ports = [] } = useQuery(adminPortsQuery);
   const { data: routes = [] } = useQuery(adminRoutesQuery);
   const { data: companies = [] } = useQuery(companiesQuery);
@@ -2347,7 +3050,33 @@ function RoutesAdmin() {
   const reset = () => {
     setDraft(emptyRouteDraft);
     setEditingId(null);
+    setFormOpen(false);
   };
+  const startNew = () => {
+    setDraft(emptyRouteDraft);
+    setEditingId(null);
+    setFormOpen(true);
+  };
+  const startEdit = (route: (typeof routes)[number]) => {
+    setEditingId(route.id);
+    setDraft({
+      departure_port_id: route.departure_port_id,
+      arrival_port_id: route.arrival_port_id,
+      typical_duration_minutes: String(route.typical_duration_minutes ?? ""),
+      distance_km: String(route.distance_km ?? ""),
+      color: route.color ?? "",
+      status: route.status,
+      notes: route.notes ?? "",
+      company_ids: route.company_ids,
+    });
+    setFormOpen(true);
+  };
+  // Fiche demandée depuis la recherche du menu.
+  useEffect(() => {
+    const route = itemId ? routes.find((item) => item.id === itemId) : undefined;
+    if (route) startEdit(route);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [itemId, routes.length]);
 
   const save = useMutation({
     mutationFn: async () => {
@@ -2382,14 +3111,28 @@ function RoutesAdmin() {
         routeId = data.id;
       }
       if (routeId) {
-        await supabase.from("route_operators").delete().eq("route_id", routeId);
-        if (draft.company_ids.length > 0) {
-          const { error } = await supabase
+        const { data: operators, error: operatorsError } = await supabase
+          .from("route_operators")
+          .select("company_id")
+          .eq("route_id", routeId);
+        if (operatorsError) throw operatorsError;
+        const removed = (operators ?? [])
+          .map((o) => o.company_id)
+          .filter((id) => !draft.company_ids.includes(id));
+        if (removed.length) {
+          const result = await supabase
             .from("route_operators")
-            .insert(
-              draft.company_ids.map((company_id) => ({ route_id: routeId as string, company_id })),
-            );
-          if (error) throw new Error(error.message);
+            .delete()
+            .eq("route_id", routeId)
+            .in("company_id", removed);
+          if (result.error) throw result.error;
+        }
+        if (draft.company_ids.length) {
+          const result = await supabase.from("route_operators").upsert(
+            draft.company_ids.map((company_id) => ({ route_id: routeId as string, company_id })),
+            { onConflict: "route_id,company_id", ignoreDuplicates: true },
+          );
+          if (result.error) throw result.error;
         }
       }
     },
@@ -2423,13 +3166,12 @@ function RoutesAdmin() {
 
   return (
     <>
-      <Panel>
-        <h2 className="text-sm font-semibold">
-          {editingId ? "Modifier la ligne" : "Nouvelle ligne maritime"}
-        </h2>
-        <p className="mt-1 text-xs text-muted-foreground">
-          Le départ comme l'arrivée peuvent être en Algérie ou en Europe.
-        </p>
+      <AdminDrawer
+        open={formOpen}
+        onOpenChange={(next) => !next && reset()}
+        title={editingId ? "Modifier la liaison" : "Nouvelle liaison"}
+        description="Le départ comme l'arrivée peuvent être en Algérie ou en Europe."
+      >
         <div className="mt-3 grid gap-3 sm:grid-cols-2">
           <Field label="Port de départ">
             <NativeSelect
@@ -2534,75 +3276,73 @@ function RoutesAdmin() {
         </div>
         <div className="mt-4 flex gap-2">
           <Button size="sm" disabled={save.isPending} onClick={() => save.mutate()}>
-            {editingId ? "Enregistrer les modifications" : "Ajouter la ligne"}
+            {editingId ? "Enregistrer les modifications" : "Ajouter la liaison"}
           </Button>
-          {editingId ? (
-            <Button size="sm" variant="ghost" onClick={reset}>
-              Annuler
-            </Button>
-          ) : null}
+          <Button size="sm" variant="ghost" onClick={reset}>
+            Annuler
+          </Button>
         </div>
-      </Panel>
+      </AdminDrawer>
 
       <Panel>
-        <h2 className="text-sm font-semibold">Lignes existantes ({routes.length})</h2>
+        <AdminListToolbar
+          search={search}
+          onSearch={setSearch}
+          placeholder="Chercher une liaison (port de départ ou d'arrivée)"
+          count={
+            routes.filter((route) =>
+              matches(search, portName(route.departure_port_id), portName(route.arrival_port_id)),
+            ).length
+          }
+          total={routes.length}
+          onCreate={startNew}
+          createLabel="Nouvelle liaison"
+        />
         <ul className="divide-y divide-border">
-          {routes.map((route) => (
-            <li key={route.id} className="flex flex-wrap items-center gap-3 py-3">
-              <span
-                className="h-3 w-6 shrink-0 rounded-full"
-                style={{
-                  background: routeColor(route.color, port(route.departure_port_id)?.slug ?? ""),
-                }}
-              />
-              <div className="min-w-0 flex-1">
-                <p className="text-sm font-medium">
-                  {portName(route.departure_port_id)} → {portName(route.arrival_port_id)}
-                </p>
-                <p className="text-xs text-muted-foreground">
-                  {formatDuration(route.typical_duration_minutes)} ·{" "}
-                  {routeStatusLabel[route.status] ?? route.status}
-                  {route.color ? " · couleur personnalisée" : " · couleur automatique"}
-                </p>
-              </div>
-              <div className="flex flex-wrap gap-2">
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => {
-                    setEditingId(route.id);
-                    setDraft({
-                      departure_port_id: route.departure_port_id,
-                      arrival_port_id: route.arrival_port_id,
-                      typical_duration_minutes: String(route.typical_duration_minutes ?? ""),
-                      distance_km: String(route.distance_km ?? ""),
-                      color: route.color ?? "",
-                      status: route.status,
-                      notes: route.notes ?? "",
-                      company_ids: route.company_ids,
-                    });
+          {routes
+            .filter((route) =>
+              matches(search, portName(route.departure_port_id), portName(route.arrival_port_id)),
+            )
+            .map((route) => (
+              <li key={route.id} className="flex flex-wrap items-center gap-3 py-3">
+                <span
+                  className="h-3 w-6 shrink-0 rounded-full"
+                  style={{
+                    background: routeColor(route.color, port(route.departure_port_id)?.slug ?? ""),
                   }}
-                >
-                  Modifier
-                </Button>
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  disabled={remove.isPending}
-                  onClick={() => {
-                    if (
-                      confirmAction(
-                        "Supprimer définitivement cette ligne ? Ses calendriers et départs peuvent être perdus.",
+                />
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-medium">
+                    {portName(route.departure_port_id)} → {portName(route.arrival_port_id)}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    {formatDuration(route.typical_duration_minutes)} ·{" "}
+                    {routeStatusLabel[route.status] ?? route.status}
+                    {route.color ? " · couleur personnalisée" : " · couleur automatique"}
+                  </p>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  <Button size="sm" variant="outline" onClick={() => startEdit(route)}>
+                    Modifier
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    disabled={remove.isPending}
+                    onClick={() => {
+                      if (
+                        confirmAction(
+                          "Supprimer définitivement cette ligne ? Ses calendriers et départs peuvent être perdus.",
+                        )
                       )
-                    )
-                      remove.mutate(route.id);
-                  }}
-                >
-                  Supprimer
-                </Button>
-              </div>
-            </li>
-          ))}
+                        remove.mutate(route.id);
+                    }}
+                  >
+                    Supprimer
+                  </Button>
+                </div>
+              </li>
+            ))}
         </ul>
       </Panel>
     </>
@@ -3346,7 +4086,10 @@ function VesselSpecsEditor({ vessel }: { vessel: VesselSpecsRow }) {
       const patch = Object.fromEntries(
         SPEC_FIELDS.map(([k]) => [k, !values[k] ? null : Number(values[k]!.replace(",", "."))]),
       ) as Record<string, number | null>;
-      const { error } = await supabase.from("vessels").update(patch as never).eq("id", vessel.id);
+      const { error } = await supabase
+        .from("vessels")
+        .update(patch as never)
+        .eq("id", vessel.id);
       if (error) throw new Error("Enregistrement des caractéristiques impossible.");
     },
     onSuccess: () => {
@@ -3369,7 +4112,12 @@ function VesselSpecsEditor({ vessel }: { vessel: VesselSpecsRow }) {
           />
         </label>
       ))}
-      <Button size="sm" variant="outline" disabled={!changed || !valid || save.isPending} onClick={() => save.mutate()}>
+      <Button
+        size="sm"
+        variant="outline"
+        disabled={!changed || !valid || save.isPending}
+        onClick={() => save.mutate()}
+      >
         Enregistrer les caractéristiques
       </Button>
     </div>

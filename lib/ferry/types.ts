@@ -98,6 +98,7 @@ export interface Departure {
   departure_at: string;
   arrival_at: string | null;
   duration_minutes: number | null;
+  presentation_minutes?: number | null;
   status: DepartureStatus;
   source_name: string | null;
   source_url: string | null;
@@ -141,11 +142,17 @@ export interface Filters {
   date: string | null;
   /** Jour de départ du retour (AAAA-MM-JJ), dans l'heure locale du port de retour. */
   returnDate: string | null;
-  /** Aller-retour (par défaut) ou aller simple. */
+  /** Aller-retour ou aller simple (par défaut). */
   roundTrip: boolean;
   /** Souplesse sur la date d'aller : 0 = jour exact, sinon ± N jours. */
   flexDays: number;
   schoolZone: "A" | "B" | "C" | null;
+  /**
+   * Sens de la traversée : Europe → Algérie (par défaut) ou Algérie → Europe.
+   * Quand un côté reste sur « Tous les ports », ce sens verrouille le pays :
+   * jamais de départ algérien en mode Europe → Algérie, et inversement.
+   */
+  direction: "eu-dz" | "dz-eu";
 }
 
 export const emptyFilters: Filters = {
@@ -159,4 +166,5 @@ export const emptyFilters: Filters = {
   roundTrip: true,
   flexDays: 0,
   schoolZone: null,
+  direction: "eu-dz",
 };

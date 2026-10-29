@@ -346,12 +346,14 @@ describe("Suivi déclaré après coup (rattrapage)", () => {
     expect((await dispatchPush()).created).toBe(0);
   });
   it("envoie un signalement encore actif publié avant le suivi du bateau", async () => {
+    mock.tables["departures"] = [{ id: "dep", route_id: "route", vessel_id: "ship", departure_at: new Date(Date.now() + 4 * 3_600_000).toISOString(), arrival_at: new Date(Date.now() + 24 * 3_600_000).toISOString(), status: "scheduled", is_demo: false }];
     mock.tables["bw_follows"] = [
       {
         id: "boat",
         user_id: "user",
         target_kind: "vessel",
         target_id: "ship",
+        follow_purpose: "voyageur",
         active: true,
         created_at: ago(5),
       },
@@ -361,6 +363,7 @@ describe("Suivi déclaré après coup (rattrapage)", () => {
         id: "delay",
         target_kind: "vessel",
         target_id: "ship",
+        departure_id: "dep",
         category: "delay",
         delay_minutes: 90,
         detail: null,
@@ -372,6 +375,7 @@ describe("Suivi déclaré après coup (rattrapage)", () => {
         id: "gone",
         target_kind: "vessel",
         target_id: "ship",
+        departure_id: "dep",
         category: "boarding",
         detail: null,
         resolved: true,
@@ -385,6 +389,17 @@ describe("Suivi déclaré après coup (rattrapage)", () => {
       event_key: "signal:boat:delay",
       body: expect.stringContaining("toujours d’actualité"),
     });
+  });
+  it("n'envoie pas un signalement de l'ancienne rotation à la traversée suivie", async () => {
+    mock.tables["bw_notification_campaigns"] = [];
+    mock.tables["departures"] = [
+      { id: "old", route_id: "route", vessel_id: "ship", departure_at: ago(26 * 60), arrival_at: ago(6 * 60), status: "scheduled", is_demo: false },
+      { id: "next", route_id: "route", vessel_id: "ship", departure_at: new Date(Date.now() + 36 * 3_600_000).toISOString(), arrival_at: new Date(Date.now() + 56 * 3_600_000).toISOString(), status: "scheduled", is_demo: false },
+    ];
+    mock.tables["bw_follows"] = [{ id: "trip", user_id: "user", target_kind: "departure", target_id: "next", active: true, created_at: ago(5) }];
+    mock.tables["bw_travel_alerts"] = [{ id: "old-boarding", target_kind: "vessel", target_id: "ship", departure_id: "old", category: "boarding", detail: "boarding_foot", resolved: false, expires_at: new Date(Date.now() + 3_600_000).toISOString(), created_at: ago(10) }];
+    await dispatchPush();
+    expect(mock.tables["bw_notifications"]!.some((item) => item["event_key"] === "signal:trip:old-boarding")).toBe(false);
   });
   it("annonce une ouverture déjà publiée à une alerte créée ensuite", async () => {
     mock.tables["bw_notification_campaigns"] = [

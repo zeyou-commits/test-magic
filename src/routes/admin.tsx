@@ -270,7 +270,7 @@ function AdminTabs() {
     reviews: counts?.reviews ?? 0,
     reports: counts?.reports ?? 0,
     alerts: alerts?.length ?? 0,
-    community: community.data?.reviews.filter((review) => review.status === "pending").length ?? 0,
+    community: (community.data?.reviews.filter((review) => review.status === "pending").length ?? 0) + (counts?.anomalies ?? 0),
   };
   return (
     <Tabs value={tab} onValueChange={navigateTo}>

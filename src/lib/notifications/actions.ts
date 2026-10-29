@@ -12,6 +12,9 @@ const followSchema = z.object({
   label: z.string().max(200),
   /** Réponse à « Vous voyagez sur ce bateau ? » : vrai = « Ma traversée », faux = un proche. */
   traveller: z.boolean().optional(),
+  purpose: z.enum(["voyageur", "proche", "curieux"]).optional(),
+  journeyLeg: z.enum(["outbound", "inbound"]).optional(),
+  returnDepartureId: z.string().uuid().optional(),
   /** Traversée choisie quand on suit un bateau et qu'on voyage à bord. */
   departureId: z.string().uuid().optional(),
 });
@@ -68,28 +71,28 @@ async function upsertFollow(
   kind: "vessel" | "departure",
   targetId: string,
   traveller: boolean | undefined,
+  purpose: "voyageur" | "proche" | "curieux" | undefined,
 ) {
-  const row = { user_id: userId, target_kind: kind, target_id: targetId, active: true };
+  const row = { user_id: userId, target_kind: kind, target_id: targetId, active: true, follow_purpose: purpose ?? (traveller ? "voyageur" : "curieux") };
   const options = { onConflict: "user_id,target_kind,target_id" };
   if (kind === "departure" && traveller !== undefined) {
     const result = await supabase.from("bw_follows").upsert({ ...row, traveller }, options);
-    // Colonne absente tant que le script n'est pas exécuté : on suit quand même.
-    if (!result.error || !/traveller|PGRST204|42703/.test(`${result.error.code} ${result.error.message}`))
-      return result;
+    return result;
   }
   return supabase.from("bw_follows").upsert(row, options);
 }
 
 export async function saveTravelAction(userId: string, rawAction: TravelAction) {
   const action = travelActionSchema.parse(rawAction);
+  const purpose = action.type === "follow" ? action.purpose ?? (action.traveller ? "voyageur" : "curieux") : undefined;
   if (action.type === "follow" && action.kind === "vessel" && action.traveller && action.departureId) {
     // « Je voyage sur ce bateau » : la traversée choisie devient « Ma traversée ».
-    const trip = await upsertFollow(userId, "departure", action.departureId, true);
+    const trip = await upsertFollow(userId, "departure", action.departureId, true, "voyageur");
     if (trip.error) throw new Error("Enregistrement impossible. Réessayez dans un instant.");
   }
   const result =
     action.type === "follow"
-      ? await upsertFollow(userId, action.kind, action.targetId, action.traveller)
+      ? await upsertFollow(userId, action.kind, action.targetId, action.traveller, purpose)
       : await supabase.from("bw_itinerary_watches").upsert(
           {
             user_id: userId,
@@ -107,4 +110,19 @@ export async function saveTravelAction(userId: string, rawAction: TravelAction) 
           { onConflict: "user_id,route_id,period_month" },
         );
   if (result.error) throw new Error("Enregistrement impossible. Réessayez dans un instant.");
+  if (action.type === "follow" && action.traveller) {
+    const selected = action.departureId ?? (action.kind === "departure" ? action.targetId : null);
+    if (!selected) return;
+    const inbound = action.journeyLeg === "inbound";
+    const journey = await supabase.from("bw_journeys").upsert({
+      user_id: userId,
+      outbound_departure_id: inbound ? null : selected,
+      inbound_departure_id: inbound ? selected : action.returnDepartureId ?? null,
+    }, { onConflict: inbound ? "user_id,inbound_departure_id" : "user_id,outbound_departure_id" });
+    if (journey.error) throw new Error("La traversée est suivie, mais le voyage n’a pas pu être créé. Réessayez après la mise à jour de la base.");
+    if (action.returnDepartureId && !inbound) {
+      const returning = await upsertFollow(userId, "departure", action.returnDepartureId, true, "voyageur");
+      if (returning.error) throw new Error("L’aller est enregistré, mais le retour n’a pas pu être suivi. Réessayez.");
+    }
+  }
 }

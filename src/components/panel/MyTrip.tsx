@@ -163,7 +163,7 @@ function MyTripsList({
   const { trip: myTrip } = useMyTrip();
   const now = Date.now();
   const trips = (follows.data ?? [])
-    .filter((follow) => follow.target_kind === "departure" && follow.target_id !== myTrip?.departure.id)
+    .filter((follow) => follow.target_kind === "departure" && follow.traveller && follow.target_id !== myTrip?.departure.id)
     .flatMap((follow) => {
       const detail = details.data?.[follow.target_id];
       if (!detail?.departureAt || Date.parse(detail.departureAt) < now - 36 * 3_600_000) return [];

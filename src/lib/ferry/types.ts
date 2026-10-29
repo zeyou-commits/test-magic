@@ -98,6 +98,7 @@ export interface Departure {
   departure_at: string;
   arrival_at: string | null;
   duration_minutes: number | null;
+  presentation_minutes?: number | null;
   status: DepartureStatus;
   source_name: string | null;
   source_url: string | null;

@@ -75,4 +75,29 @@ describe("Reprise d’une alerte après connexion", () => {
     mocks.upsert.mockResolvedValueOnce({ error: { message: "database unavailable" } });
     await expect(saveTravelAction("voyageur", intent)).rejects.toThrow("Enregistrement impossible");
   });
+  it("enregistre l’aller et le retour dans un même voyage, puis suit les deux départs", async () => {
+    const outward = "00000000-0000-4000-8000-000000000011";
+    const returning = "00000000-0000-4000-8000-000000000012";
+    await saveTravelAction("voyageur", {
+      type: "follow", kind: "departure", targetId: outward, label: "Sète → Béjaïa",
+      traveller: true, purpose: "voyageur", journeyLeg: "outbound", returnDepartureId: returning,
+    });
+    expect(mocks.from).toHaveBeenCalledWith("bw_journeys");
+    expect(mocks.upsert).toHaveBeenCalledWith(expect.objectContaining({
+      user_id: "voyageur", outbound_departure_id: outward, inbound_departure_id: returning,
+    }), { onConflict: "user_id,outbound_departure_id" });
+    expect(mocks.upsert).toHaveBeenCalledWith(expect.objectContaining({
+      target_id: returning, traveller: true, follow_purpose: "voyageur",
+    }), { onConflict: "user_id,target_kind,target_id" });
+  });
+  it("ne crée pas de voyage personnel pour un proche ou un curieux", async () => {
+    await saveTravelAction("proche", {
+      type: "follow", kind: "departure", targetId: "00000000-0000-4000-8000-000000000011",
+      label: "Alger → Marseille", traveller: false, purpose: "proche",
+    });
+    expect(mocks.from).not.toHaveBeenCalledWith("bw_journeys");
+    expect(mocks.upsert).toHaveBeenCalledWith(expect.objectContaining({
+      traveller: false, follow_purpose: "proche",
+    }), { onConflict: "user_id,target_kind,target_id" });
+  });
 });

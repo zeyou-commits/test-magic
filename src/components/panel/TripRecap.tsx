@@ -387,7 +387,6 @@ export function TripRecap({
               key={vessel.id}
               kind="vessel"
               target={vessel.id}
-              departureId={departure.id}
               compact
               title={`Voyageurs · à bord de ${vessel.name}`}
             />

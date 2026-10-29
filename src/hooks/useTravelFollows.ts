@@ -10,6 +10,7 @@ type FollowDetail = {
   label: string;
   departureAt?: string;
   departureId?: string;
+  presentationMinutes?: number | null;
   port?: { name: string; country_code: string };
 };
 export function useTravelFollows(userId: string) {
@@ -19,7 +20,7 @@ export function useTravelFollows(userId: string) {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("bw_follows")
-        .select("id,target_kind,target_id,created_at")
+        .select("id,target_kind,target_id,created_at,traveller,follow_purpose")
         .eq("user_id", userId)
         .eq("active", true)
         .order("created_at", { ascending: false });
@@ -59,11 +60,11 @@ export function useTravelFollows(userId: string) {
         supabase.from("vessels").select("id,name").in("id", vesselIds),
         supabase
           .from("departures")
-          .select("id,route_id,departure_at,vessel_id")
+          .select("id,route_id,departure_at,vessel_id,presentation_minutes")
           .in("id", departureIds),
         supabase
           .from("departures")
-          .select("id,route_id,departure_at,vessel_id")
+          .select("id,route_id,departure_at,vessel_id,presentation_minutes")
           .in("vessel_id", vesselIds)
           .gte("departure_at", new Date().toISOString())
           .neq("status", "cancelled")
@@ -90,6 +91,7 @@ export function useTravelFollows(userId: string) {
           label,
           departureAt: departure.departure_at,
           departureId: departure.id,
+          presentationMinutes: departure.presentation_minutes,
           ...(port ? { port } : {}),
         };
         result[departure.id] = detail;
@@ -124,6 +126,7 @@ export function useTravelFollows(userId: string) {
       queryClient.invalidateQueries({ queryKey: ["my-follows", userId] }),
       queryClient.invalidateQueries({ queryKey: ["my-itinerary-watches", userId] }),
       queryClient.invalidateQueries({ queryKey: ["follow", userId] }),
+      queryClient.invalidateQueries({ queryKey: ["my-trips"] }),
     ]);
     toast.success("Suivi arrêté.");
   }

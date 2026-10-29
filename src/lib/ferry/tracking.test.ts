@@ -127,6 +127,11 @@ describe("fiabilité AIS", () => {
       })?.lastBoardingTime.toISOString(),
     ).toBe("2026-10-19T19:30:00.000Z");
   });
+  it("présente quatre heures avant par défaut et respecte une consigne de compagnie", () => {
+    const port = { country_code: "ES" };
+    expect(getBoardingMilestones(departure.departure_at, port)?.callTime.toISOString()).toBe("2026-10-19T16:30:00.000Z");
+    expect(getBoardingMilestones(departure.departure_at, port, { presentationMinutes: 180 })?.callTime.toISOString()).toBe("2026-10-19T17:30:00.000Z");
+  });
 });
 describe("horaires compacts avec durée publiée", () => {
   it("retrouve une arrivée le lendemain sans la présenter comme un signal", () => {

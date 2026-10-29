@@ -41,7 +41,7 @@ export function TravelActionProvider({ children }: { children: ReactNode }) {
         clearTravelAction();
         setSaved(true);
         await Promise.all(
-          ["follow", "my-follows", "my-itinerary-watches", "my-trips"].map((key) =>
+          ["follow", "my-follows", "my-itinerary-watches", "my-trips", "my-journeys", "journey"].map((key) =>
             queryClient.invalidateQueries({ queryKey: [key] }),
           ),
         );
@@ -133,7 +133,11 @@ export function TravelActionProvider({ children }: { children: ReactNode }) {
             <DialogDescription className="mt-2 text-sm leading-relaxed">
               {saved
                 ? action?.type === "follow" && action.traveller
-                  ? "C’est votre traversée : retrouvez-la en haut de l’accueil, avec le compte à rebours et votre cabas sur la carte."
+                  ? action.returnDepartureId
+                    ? "Votre aller et votre retour sont suivis. Retrouvez les deux traversées dans votre espace voyageur."
+                    : "Votre traversée est suivie. Vous pourrez ajouter votre retour depuis sa fiche."
+                  : action?.type === "follow" && action.purpose === "curieux"
+                    ? "Le bateau est ajouté à vos suivis, sans créer de voyage personnel."
                   : "Retrouvez ce voyage et ses actualités dans votre espace personnel."
                 : user
                   ? "Les prochaines informations seront regroupées dans votre espace voyageur."
@@ -235,8 +239,8 @@ export function TravelActionProvider({ children }: { children: ReactNode }) {
               </p>
             )}
             <p className="mt-5 text-xs leading-relaxed text-muted-foreground">
-              Rappels, préparatifs et actualités du bateau. Vos préférences restent modifiables à
-              tout moment.
+              Les préparatifs concernent uniquement vos traversées personnelles. Vous pouvez
+              modifier vos préférences de notification à tout moment.
             </p>
           </div>
         </DialogContent>

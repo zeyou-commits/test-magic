@@ -5,6 +5,8 @@ const OFFICIAL_URL = "https://www.bank-of-algeria.dz/taux-de-change-journalier/"
 const PARALLEL_URL = "https://squarealgerie.com/api/rates";
 
 async function fetchText(url: string) {
+  // Le site de la Banque d'Algérie n'envoie pas son certificat intermédiaire : lecteur dédié.
+  if (url === OFFICIAL_URL) return (await import("@/lib/fx/bankOfAlgeria.server")).fetchBankOfAlgeria(url);
   const response = await fetch(url, { signal: AbortSignal.timeout(9000), headers: { accept: "text/html,application/json" } });
   if (!response.ok) throw new Error(`Source indisponible (${response.status})`);
   return response.text();

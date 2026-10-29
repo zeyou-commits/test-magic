@@ -34,6 +34,7 @@ import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as VehiculesMoins3AnsRouteImport } from './routes/vehicules-moins-3-ans'
 import { Route as VoyageAlgerieRouteImport } from './routes/voyage-algerie'
 import { Route as ApiAdminUsersRouteImport } from './routes/api.admin-users'
+import { Route as ApiFxTickerRouteImport } from './routes/api.fx-ticker'
 import { Route as ApiPushAdminRouteImport } from './routes/api.push-admin'
 import { Route as ApiPushCatchupRouteImport } from './routes/api.push-catchup'
 import { Route as ApiPushDispatchRouteImport } from './routes/api.push-dispatch'
@@ -177,6 +178,11 @@ const ApiAdminUsersRoute = ApiAdminUsersRouteImport.update({
   path: '/api/admin-users',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiFxTickerRoute = ApiFxTickerRouteImport.update({
+  id: '/api/fx-ticker',
+  path: '/api/fx-ticker',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPushAdminRoute = ApiPushAdminRouteImport.update({
   id: '/api/push-admin',
   path: '/api/push-admin',
@@ -289,6 +295,7 @@ export interface FileRoutesByFullPath {
   '/vehicules-moins-3-ans': typeof VehiculesMoins3AnsRoute
   '/voyage-algerie': typeof VoyageAlgerieRoute
   '/api/admin-users': typeof ApiAdminUsersRoute
+  '/api/fx-ticker': typeof ApiFxTickerRoute
   '/api/push-admin': typeof ApiPushAdminRoute
   '/api/push-catchup': typeof ApiPushCatchupRoute
   '/api/push-dispatch': typeof ApiPushDispatchRoute
@@ -327,6 +334,7 @@ export interface FileRoutesByTo {
   '/vehicules-moins-3-ans': typeof VehiculesMoins3AnsRoute
   '/voyage-algerie': typeof VoyageAlgerieRoute
   '/api/admin-users': typeof ApiAdminUsersRoute
+  '/api/fx-ticker': typeof ApiFxTickerRoute
   '/api/push-admin': typeof ApiPushAdminRoute
   '/api/push-catchup': typeof ApiPushCatchupRoute
   '/api/push-dispatch': typeof ApiPushDispatchRoute
@@ -372,6 +380,7 @@ export interface FileRoutesById {
   '/vehicules-moins-3-ans': typeof VehiculesMoins3AnsRoute
   '/voyage-algerie': typeof VoyageAlgerieRoute
   '/api/admin-users': typeof ApiAdminUsersRoute
+  '/api/fx-ticker': typeof ApiFxTickerRoute
   '/api/push-admin': typeof ApiPushAdminRoute
   '/api/push-catchup': typeof ApiPushCatchupRoute
   '/api/push-dispatch': typeof ApiPushDispatchRoute
@@ -418,6 +427,7 @@ export interface FileRouteTypes {
     | '/vehicules-moins-3-ans'
     | '/voyage-algerie'
     | '/api/admin-users'
+    | '/api/fx-ticker'
     | '/api/push-admin'
     | '/api/push-catchup'
     | '/api/push-dispatch'
@@ -456,6 +466,7 @@ export interface FileRouteTypes {
     | '/vehicules-moins-3-ans'
     | '/voyage-algerie'
     | '/api/admin-users'
+    | '/api/fx-ticker'
     | '/api/push-admin'
     | '/api/push-catchup'
     | '/api/push-dispatch'
@@ -500,6 +511,7 @@ export interface FileRouteTypes {
     | '/vehicules-moins-3-ans'
     | '/voyage-algerie'
     | '/api/admin-users'
+    | '/api/fx-ticker'
     | '/api/push-admin'
     | '/api/push-catchup'
     | '/api/push-dispatch'
@@ -545,6 +557,7 @@ export interface RootRouteChildren {
   VehiculesMoins3AnsRoute: typeof VehiculesMoins3AnsRoute
   VoyageAlgerieRoute: typeof VoyageAlgerieRoute
   ApiAdminUsersRoute: typeof ApiAdminUsersRoute
+  ApiFxTickerRoute: typeof ApiFxTickerRoute
   ApiPushAdminRoute: typeof ApiPushAdminRoute
   ApiPushCatchupRoute: typeof ApiPushCatchupRoute
   ApiPushDispatchRoute: typeof ApiPushDispatchRoute
@@ -727,6 +740,13 @@ declare module '@tanstack/react-router' {
       path: '/api/admin-users'
       fullPath: '/api/admin-users'
       preLoaderRoute: typeof ApiAdminUsersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/fx-ticker': {
+      id: '/api/fx-ticker'
+      path: '/api/fx-ticker'
+      fullPath: '/api/fx-ticker'
+      preLoaderRoute: typeof ApiFxTickerRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/push-admin': {
@@ -955,6 +975,7 @@ const rootRouteChildren: RootRouteChildren = {
   VehiculesMoins3AnsRoute: VehiculesMoins3AnsRoute,
   VoyageAlgerieRoute: VoyageAlgerieRoute,
   ApiAdminUsersRoute: ApiAdminUsersRoute,
+  ApiFxTickerRoute: ApiFxTickerRoute,
   ApiPushAdminRoute: ApiPushAdminRoute,
   ApiPushCatchupRoute: ApiPushCatchupRoute,
   ApiPushDispatchRoute: ApiPushDispatchRoute,

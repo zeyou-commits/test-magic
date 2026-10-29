@@ -192,14 +192,20 @@ export function TripCalendar({
   const stackRef = useRef<HTMLDivElement>(null);
 
   // Changement de mois au pavé tactile / molette et au glissement du doigt (les flèches restent).
-  const shiftMonth = (step: 1 | -1) => {
+  const [slideDir, setSlideDir] = useState<1 | -1 | 0>(0);
+  const changeMonth = (next: Date) => {
     setMonth((cur) => {
-      const next = new Date(cur.getFullYear(), cur.getMonth() + step, 1);
-      const min = keyToDate(today);
-      if (next < new Date(min.getFullYear(), min.getMonth(), 1)) return cur;
-      if (next > new Date(endMonth.getFullYear(), endMonth.getMonth(), 1)) return cur;
+      const d = next.getTime() - cur.getTime();
+      setSlideDir(d > 0 ? 1 : d < 0 ? -1 : 0);
       return next;
     });
+  };
+  const shiftMonth = (step: 1 | -1) => {
+    const min = keyToDate(today);
+    const next = new Date(month.getFullYear(), month.getMonth() + step, 1);
+    if (next < new Date(min.getFullYear(), min.getMonth(), 1)) return;
+    if (next > new Date(endMonth.getFullYear(), endMonth.getMonth(), 1)) return;
+    changeMonth(next);
   };
   const lastWheel = useRef(0);
   const handleWheel = (e: React.WheelEvent) => {

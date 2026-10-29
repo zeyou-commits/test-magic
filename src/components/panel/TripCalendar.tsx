@@ -115,6 +115,15 @@ export function TripCalendar({
   const [month, setMonth] = useState<Date>(() => keyToDate(date ?? today));
   const [note, setNote] = useState<string | null>(null);
   const isMobile = useIsMobile();
+  // Deux mois côte à côte seulement quand la carte a la place (volet + 640 px).
+  const [isWide, setIsWide] = useState(true);
+  useEffect(() => {
+    const mql = window.matchMedia("(min-width: 1200px)");
+    const onChange = () => setIsWide(mql.matches);
+    onChange();
+    mql.addEventListener("change", onChange);
+    return () => mql.removeEventListener("change", onChange);
+  }, []);
 
   // Aucune zone de vacances n'est cochée par défaut à l'arrivée sur le calendrier.
   const toggleZone = (item: SchoolZone) => {
@@ -395,7 +404,7 @@ export function TripCalendar({
         mode="single"
         locale={fr}
         weekStartsOn={1}
-        numberOfMonths={stacked ? monthCount : isMobile || inline ? 1 : 2}
+        numberOfMonths={stacked ? monthCount : isMobile || inline || !isWide ? 1 : 2}
         hideNavigation={stacked}
         showOutsideDays={false}
         month={stacked ? firstMonth : month}
@@ -443,7 +452,9 @@ export function TripCalendar({
         classNames={{
           months: stacked
             ? "relative flex flex-col gap-6"
-            : "relative flex flex-col gap-4 md:flex-row md:gap-8",
+            : isWide
+              ? "relative flex flex-col gap-4 md:flex-row md:gap-8"
+              : "relative flex flex-col gap-4",
           root: "w-full",
         }}
       />
@@ -616,7 +627,7 @@ export function TripCalendar({
         side={side}
         sideOffset={side === "right" ? 28 : 4}
         collisionPadding={12}
-        className="batogo-cal-pop w-[640px] max-h-[var(--radix-popover-content-available-height)] max-w-[calc(100vw-1.5rem)] space-y-4 overflow-y-auto overscroll-contain rounded-2xl border-border/60 p-0 shadow-2xl"
+        className={`batogo-cal-pop ${isWide ? "w-[640px]" : "w-[360px]"} max-h-[var(--radix-popover-content-available-height)] max-w-[calc(100vw-1.5rem)] space-y-4 overflow-y-auto overscroll-contain rounded-2xl border-border/60 p-0 shadow-2xl`}
         onOpenAutoFocus={(event) => event.preventDefault()}
       >
         {headerBlock}

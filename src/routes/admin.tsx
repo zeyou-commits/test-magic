@@ -19,6 +19,8 @@ import { useAuth } from "@/hooks/useAuth";
 import { PlanningAlerts, usePlanningAlerts } from "@/components/admin/PlanningAlerts";
 import { NotificationOverview } from "@/components/admin/NotificationOverview";
 import { DashboardOverview } from "@/components/admin/DashboardOverview";
+import { TodayInbox } from "@/components/admin/TodayInbox";
+import { PlanningBoard } from "@/components/admin/PlanningBoard";
 import { useAdminCounts } from "@/hooks/useAdminCounts";
 import { AdminWorkspace, type AdminSearchItem } from "@/components/admin/AdminWorkspace";
 import { AdminDrawer, AdminListToolbar, matches } from "@/components/admin/AdminDrawer";
@@ -198,6 +200,7 @@ function AdminTabs() {
     company,
     route: commercialRoute,
     item,
+    date: planningDate,
   } = Route.useSearch();
   const tab = canUseAdminTab(roles, requestedTab)
     ? requestedTab
@@ -250,6 +253,10 @@ function AdminTabs() {
   const openItem = (id: string, itemId: string) => {
     if (!canUseAdminTab(roles, id)) return;
     void navigate({ search: adminSearch({ tab: id, item: itemId }), resetScroll: false });
+  };
+  const openPlanning = (date?: string, nextFilter?: "unassigned" | "issues") => {
+    if (!canUseAdminTab(roles, "planning")) return;
+    void navigate({ search: adminSearch({ tab: "planning", date, filter: nextFilter }) });
   };
   const { data: alerts } = usePlanningAlerts();
   useEffect(
@@ -316,6 +323,13 @@ function AdminTabs() {
           <UsersAdmin />
         </TabsContent>
         <TabsContent value="overview">
+          {canUseAdminTab(roles, "planning") && (
+            <TodayInbox
+              onOpenPlanning={openPlanning}
+              onOpenVessel={(id) => openItem("vessels", id)}
+              onImport={() => navigateTo("import")}
+            />
+          )}
           <DashboardOverview onNavigate={navigateTo} can={() => true} />
           {notificationOverview.error && (
             <p
@@ -363,6 +377,14 @@ function AdminTabs() {
         </TabsContent>
         <TabsContent value="companies">
           <CompaniesAdmin itemId={tab === "companies" ? item : undefined} />
+        </TabsContent>
+        <TabsContent value="planning">
+          <PlanningBoard
+            key={`${planningDate ?? ""}:${filter ?? ""}`}
+            initialDate={planningDate}
+            initialFilter={filter === "unassigned" || filter === "issues" ? filter : undefined}
+            renderEditor={(id, onDone) => <AlertDepartureEditor departureId={id} onDone={onDone} />}
+          />
         </TabsContent>
         <TabsContent value="departures">
           <DeparturesAdmin

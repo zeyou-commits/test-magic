@@ -26,43 +26,67 @@ import {
 import { Link } from "@tanstack/react-router";
 import { UserMenu } from "@/components/layout/UserMenu";
 
-/** Groupes du menu, dans l'ordre d'affichage. */
-const groups = ["Tableau de bord", "Planning", "Réseau", "Voyageurs", "À vérifier", "Équipe"];
+/**
+ * Groupes du menu, dans l'ordre d'affichage. Le premier (sans titre) réunit le travail
+ * quotidien ; les suivants se replient pour garder le menu court.
+ */
+const groups = ["", "Planning détaillé", "Réseau", "Voyageurs", "Contrôles", "Équipe"];
 const sections = [
   {
     id: "overview",
-    label: "Vue d’ensemble",
-    description: "Les priorités du jour et les actions de votre équipe.",
-    group: "Tableau de bord",
+    label: "Aujourd'hui",
+    description: "Ce qui demande votre attention, classé par urgence. Chaque point se règle ici.",
+    group: "",
     icon: LayoutDashboard,
+  },
+  {
+    id: "planning",
+    label: "Traversées",
+    description: "Le planning de la semaine : une ligne par liaison, une colonne par jour.",
+    group: "",
+    icon: CalendarDays,
+  },
+  {
+    id: "vessels",
+    label: "Navires",
+    description: "Suivi en direct, photos, caractéristiques et affectations de la flotte.",
+    group: "",
+    icon: Ship,
+  },
+  {
+    id: "companies",
+    label: "Compagnies",
+    description: "Les transporteurs, leurs informations publiques et la fusion des doublons.",
+    group: "",
+    icon: Building2,
+  },
+  {
+    id: "import",
+    label: "Import de saison",
+    description: "Contrôlez les lignes de votre fichier avant de les publier.",
+    group: "",
+    icon: FileSpreadsheet,
   },
   {
     id: "commercial",
     label: "Programmes par compagnie",
     description: "Liaisons commerciales, départs, navires et sources officielles au même endroit.",
-    group: "Planning",
+    group: "Planning détaillé",
     icon: CalendarRange,
-  },
-  {
-    id: "departures",
-    label: "Départs",
-    description: "Retrouvez un départ et mettez à jour ses informations.",
-    group: "Planning",
-    icon: CalendarDays,
   },
   {
     id: "schedules",
     label: "Calendriers récurrents",
     description: "Gérez les programmes et les fréquences des lignes.",
-    group: "Planning",
+    group: "Planning détaillé",
     icon: CalendarRange,
   },
   {
-    id: "import",
-    label: "Importer un planning",
-    description: "Contrôlez les lignes de votre fichier avant de les publier.",
-    group: "Planning",
-    icon: FileSpreadsheet,
+    id: "departures",
+    label: "Liste des départs",
+    description: "Retrouvez un départ par sa date et mettez à jour ses informations.",
+    group: "Planning détaillé",
+    icon: CalendarDays,
   },
   {
     id: "ports",
@@ -77,20 +101,6 @@ const sections = [
     description: "Les liaisons entre les deux rives.",
     group: "Réseau",
     icon: Route,
-  },
-  {
-    id: "companies",
-    label: "Compagnies",
-    description: "Les transporteurs et leurs informations publiques.",
-    group: "Réseau",
-    icon: Building2,
-  },
-  {
-    id: "vessels",
-    label: "Navires",
-    description: "Suivi en direct, photos, caractéristiques et affectations de la flotte.",
-    group: "Réseau",
-    icon: Ship,
   },
   {
     id: "places",
@@ -146,21 +156,21 @@ const sections = [
     id: "alerts",
     label: "Alertes planning",
     description: "Les anomalies du calendrier à vérifier avant publication.",
-    group: "À vérifier",
+    group: "Contrôles",
     icon: Flag,
   },
   {
     id: "reports",
     label: "Erreurs signalées",
     description: "Horaires ou fiches à corriger, remontés par les voyageurs (« Signaler une erreur »).",
-    group: "À vérifier",
+    group: "Contrôles",
     icon: TriangleAlert,
   },
   {
     id: "data",
     label: "Qualité des données",
     description: "Contrôlez la cohérence des informations publiées.",
-    group: "À vérifier",
+    group: "Contrôles",
     icon: Database,
   },
   {
@@ -285,25 +295,38 @@ export function AdminWorkspace({
           ) : null}
           {groups.map((group) => {
             const items = filtered.filter((item) => item.group === group);
-            return items.length ? (
-              <div className="bw-admin-nav-group" key={group}>
-                <h2>{group}</h2>
-                {items.map(({ id, label, icon: Icon }) => (
-                  <button
-                    key={id}
-                    type="button"
-                    aria-current={tab === id ? "page" : undefined}
-                    onClick={() => onNavigate(id)}
-                  >
-                    <Icon className="size-4" aria-hidden />
-                    <span>{label}</span>
-                    {Boolean(badges[id]) && (
-                      <span className="bw-admin-nav-badge">{badges[id]}</span>
-                    )}
-                  </button>
-                ))}
-              </div>
-            ) : null;
+            if (!items.length) return null;
+            const links = items.map(({ id, label, icon: Icon }) => (
+              <button
+                key={id}
+                type="button"
+                aria-current={tab === id ? "page" : undefined}
+                onClick={() => onNavigate(id)}
+              >
+                <Icon className="size-4" aria-hidden />
+                <span>{label}</span>
+                {Boolean(badges[id]) && <span className="bw-admin-nav-badge">{badges[id]}</span>}
+              </button>
+            ));
+            if (!group) {
+              return (
+                <div className="bw-admin-nav-group bw-admin-nav-group--main" key="main">
+                  {links}
+                </div>
+              );
+            }
+            // Groupe secondaire : replié, sauf s'il contient la rubrique ouverte ou une recherche.
+            const pendingInGroup = items.reduce((sum, item) => sum + (badges[item.id] ?? 0), 0);
+            const open = items.some((item) => item.id === tab) || search.trim().length > 0;
+            return (
+              <details className="bw-admin-nav-group" key={`${group}:${open}`} open={open}>
+                <summary>
+                  <span>{group}</span>
+                  {pendingInGroup > 0 && <span className="bw-admin-nav-badge">{pendingInGroup}</span>}
+                </summary>
+                {links}
+              </details>
+            );
           })}
           {!filtered.length && !foundItems.length && (
             <p className="p-3 text-xs text-muted-foreground">Aucune rubrique ne correspond.</p>

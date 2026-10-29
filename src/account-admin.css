@@ -355,6 +355,51 @@
   text-transform: uppercase;
   color: var(--muted-foreground);
 }
+.bw-admin-nav-group--main button {
+  font-size: 13px;
+  color: var(--foreground);
+}
+.bw-admin-nav-group summary {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  list-style: none;
+  border-radius: 9px;
+  padding: 8px 12px;
+  font-size: 9px;
+  font-weight: 650;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--muted-foreground);
+}
+.bw-admin-nav-group summary::-webkit-details-marker {
+  display: none;
+}
+.bw-admin-nav-group summary::after {
+  content: "";
+  margin-left: auto;
+  width: 6px;
+  height: 6px;
+  border-right: 1.5px solid currentColor;
+  border-bottom: 1.5px solid currentColor;
+  transform: rotate(-45deg);
+  transition: transform 0.15s;
+}
+.bw-admin-nav-group summary .bw-admin-nav-badge {
+  margin-left: auto;
+  letter-spacing: 0;
+}
+.bw-admin-nav-group summary .bw-admin-nav-badge + * {
+  margin-left: 0;
+}
+.bw-admin-nav-group[open] summary::after {
+  transform: rotate(45deg);
+}
+.bw-admin-nav-group summary:hover {
+  background: #f1f4ef;
+  color: var(--foreground);
+}
 .bw-admin-nav-group button {
   display: flex;
   width: 100%;

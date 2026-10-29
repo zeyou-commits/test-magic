@@ -1,5 +1,6 @@
 export const adminTabs = [
   "overview",
+  "planning",
   "commercial",
   "users",
   "reviews",
@@ -22,7 +23,7 @@ export const adminTabs = [
 ] as const;
 
 export type AdminTab = (typeof adminTabs)[number];
-export type AdminFilter = "today" | "unassigned" | "new" | "pending";
+export type AdminFilter = "today" | "unassigned" | "new" | "pending" | "issues";
 export type DepartureScope = Extract<AdminFilter, "today" | "unassigned">;
 
 /** Rubriques où une fiche précise peut s'ouvrir directement (recherche du menu). */
@@ -34,10 +35,23 @@ export function adminSearch(search: Record<string, unknown>): {
   company?: string;
   route?: string;
   item?: string;
+  date?: string;
 } {
   const tab = adminTabs.includes(search["tab"] as AdminTab)
     ? (search["tab"] as AdminTab)
     : "overview";
+  if (tab === "planning") {
+    // Planning : une semaine (date AAAA-MM-JJ dans la semaine) et un filtre facultatif.
+    const date =
+      typeof search["date"] === "string" && /^\d{4}-\d{2}-\d{2}$/.test(search["date"])
+        ? search["date"]
+        : undefined;
+    const filter =
+      search["filter"] === "unassigned" || search["filter"] === "issues"
+        ? (search["filter"] as AdminFilter)
+        : undefined;
+    return { tab, ...(date ? { date } : {}), ...(filter ? { filter } : {}) };
+  }
   if (tab === "commercial") {
     const uuid = (value: unknown) =>
       typeof value === "string" && /^[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}$/i.test(value)

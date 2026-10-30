@@ -31,7 +31,7 @@ export function MapLegend({
           <ul className="space-y-1.5 text-[11px] md:space-y-2.5 md:text-[13px]">
             <li className="flex items-center gap-2 md:gap-3">
               <span className="h-[3px] w-6 shrink-0 rounded-full bg-primary md:w-8" aria-hidden />
-              Liaison avec un programme publié
+              Ligne avec un programme publié
             </li>
             <li className="flex items-center gap-2 md:gap-3">
               <span className="h-[4px] w-6 shrink-0 rounded-full bg-primary md:w-8" aria-hidden />

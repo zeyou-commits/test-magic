@@ -112,7 +112,7 @@ export function CommercialPrograms({
           </select>
         </div>
         <div className="mt-3 flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
-          <span>{linked.length} liaison(s)</span>
+          <span>{linked.length} ligne(s)</span>
           <span>
             {
               departures.filter((d) => d.company_id === companyId && d.status !== "cancelled")
@@ -132,12 +132,12 @@ export function CommercialPrograms({
           )}
         </div>
         <p className="mt-2 text-xs text-muted-foreground">
-          Ouvrez une liaison pour mettre à jour son programme commercial. Les ports et les tracés
+          Ouvrez une ligne pour mettre à jour son programme commercial. Les ports et les tracés
           restent gérés dans le réseau général.
         </p>
       </div>
       <Input
-        aria-label="Rechercher une liaison commerciale"
+        aria-label="Rechercher une ligne commerciale"
         placeholder="Rechercher un port ou une liaison"
         value={search}
         onChange={(e) => setSearch(e.target.value)}
@@ -188,7 +188,7 @@ export function CommercialPrograms({
                   {rows.some((d) => !d.vessel_id && d.status !== "cancelled")
                     ? " · Navire à affecter"
                     : ""}
-                  {route.status !== "active" ? " · Liaison hors publication" : ""}
+                  {route.status !== "active" ? " · Ligne hors publication" : ""}
                 </span>
               </span>
               <ChevronDown
@@ -215,7 +215,7 @@ export function CommercialPrograms({
                       renderVessels(companyId, vesselIds)
                     ) : (
                       <p className="p-3 text-sm text-muted-foreground">
-                        Aucun navire affecté. Choisissez un bateau dans le calendrier ou dans le
+                        Aucun navire affecté. Choisissez un navire dans le calendrier ou dans le
                         départ.
                       </p>
                     )
@@ -231,13 +231,13 @@ export function CommercialPrograms({
       {!displayed.length && (
         <p className="rounded-xl border p-4 text-sm">
           {operators.isPending
-            ? "Chargement des liaisons…"
-            : "Aucune liaison ne correspond. Rattachez une liaison du réseau à cette compagnie."}
+            ? "Chargement des lignes…"
+            : "Aucune ligne ne correspond. Rattachez une ligne du réseau à cette compagnie."}
         </p>
       )}
       <details className="rounded-2xl border bg-card p-4">
         <summary className="cursor-pointer text-sm font-semibold">
-          Ajouter une liaison à cette compagnie
+          Ajouter une ligne à cette compagnie
         </summary>
         <p className="mt-2 text-xs text-muted-foreground">
           Ce rattachement ne crée aucun horaire ni départ.
@@ -271,7 +271,7 @@ export function CommercialPrograms({
           className="mt-3 min-h-9 text-xs font-semibold text-primary underline"
           onClick={onNetwork}
         >
-          Créer ou modifier une liaison dans le réseau général
+          Créer ou modifier une ligne dans le réseau général
         </button>
       </details>
     </div>

@@ -75,7 +75,7 @@ export function PortMultiPicker({
       if (p.status !== "active") reasons.set(p.id, "Port inactif");
       else if (scheduledPortIds && !scheduledPortIds.has(p.id))
         reasons.set(p.id, "Aucun départ planifié pour le moment");
-      else if (otherSide.length) reasons.set(p.id, "Pas de liaison avec votre choix");
+      else if (otherSide.length) reasons.set(p.id, "Pas de ligne avec votre choix");
       else if (otherIds.has(p.id))
         reasons.set(p.id, direction === "departure" ? "Arrivée uniquement" : "Départ uniquement");
       else reasons.set(p.id, "Aucune ligne active");

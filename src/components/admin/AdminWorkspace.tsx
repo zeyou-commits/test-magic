@@ -9,6 +9,8 @@ import {
   FileSpreadsheet,
   Flag,
   LayoutDashboard,
+  LineChart,
+  Radio,
   MapPin,
   MessageSquare,
   Route,
@@ -42,7 +44,7 @@ const sections = [
   {
     id: "planning",
     label: "Traversées",
-    description: "Le planning de la semaine : une ligne par liaison, une colonne par jour.",
+    description: "Le planning de la semaine : une ligne par ligne, une colonne par jour.",
     group: "",
     icon: CalendarDays,
   },
@@ -65,7 +67,7 @@ const sections = [
     id: "assign",
     label: "Affectation auto",
     description:
-      "Les règles qui choisissent le bateau d'une traversée, et compagnie par compagnie : automatique, proposé ou manuel.",
+      "Les règles qui choisissent le navire d'une traversée, et compagnie par compagnie : automatique, proposé ou manuel.",
     group: "",
     icon: Zap,
   },
@@ -107,7 +109,7 @@ const sections = [
   {
     id: "routes",
     label: "Liaisons",
-    description: "Les liaisons entre les deux rives.",
+    description: "Les lignes entre les deux rives.",
     group: "Réseau",
     icon: Route,
   },
@@ -188,6 +190,20 @@ const sections = [
     description: "Contrôlez la cohérence des informations publiées.",
     group: "Contrôles",
     icon: Database,
+  },
+  {
+    id: "health",
+    label: "Santé technique",
+    description: "Le signal des navires et les fiches sans identifiant.",
+    group: "Contrôles",
+    icon: Radio,
+  },
+  {
+    id: "usage",
+    label: "Mesure d'usage",
+    description: "Les pages vues et ce que devient une recherche, sur 7 jours.",
+    group: "Contrôles",
+    icon: LineChart,
   },
   {
     id: "users",
@@ -381,7 +397,7 @@ export function AdminWorkspace({
           </div>
         </header>
         <div className="bw-admin-mobile-nav">
-          <label htmlFor="admin-section">Rubrique</label>
+          <label htmlFor="admin-section">Toutes les rubriques</label>
           <select
             id="admin-section"
             value={tab}

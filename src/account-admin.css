@@ -468,6 +468,9 @@
 .bw-admin-mobile-nav {
   display: none;
 }
+.bw-admin-incident-mobile {
+  display: none;
+}
 .bw-admin-content {
   max-width: 1440px;
   margin: auto;
@@ -759,6 +762,13 @@
     border-bottom: 1px solid var(--border);
     background: white;
     padding: 12px 16px;
+  }
+  .bw-admin-incident-mobile {
+    display: block;
+    margin-bottom: 20px;
+  }
+  .bw-admin-desktop-only {
+    display: none;
   }
   .bw-admin-mobile-nav label {
     font-size: 11px;

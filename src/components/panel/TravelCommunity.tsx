@@ -63,7 +63,7 @@ export function TravelSignals({
   kind: CommunityKind;
   target: string;
   departureId?: string;
-  /** Titre de la liste (fiche traversée : port de départ, puis bateau). */
+  /** Titre de la liste (fiche traversée : port de départ, puis navire). */
   title?: string;
   /** Fiche qui a déjà son bouton « Signaler » : pas de second bouton ici. */
   compact?: boolean;
@@ -77,7 +77,7 @@ export function TravelSignals({
   const upgraded = useQuery(newsQuery).data != null;
   const located = (useQuery(catalogQuery).data ?? 0) >= 2;
   const signal = () => requestQuickReport({ type: kind, id: target });
-  // Boutons « Signaler une info sur ce port / ce bateau » des fiches.
+  // Boutons « Signaler une info sur ce port / ce navire » des fiches.
   useEffect(() => {
     const onRequest = (event: Event) => {
       const detail = (event as CustomEvent<{ kind: CommunityKind; target: string }>).detail;

@@ -98,7 +98,7 @@ export function MyTripPanel({
         limit={5}
         emptyText="Aucune perturbation connue sur cette traversée pour le moment."
       />
-      {/* Le jour J : signaler ce que l'on voit, port et bateau déjà renseignés. */}
+      {/* Le jour J : signaler ce que l'on voit, port et navire déjà renseignés. */}
       <button
         type="button"
         className="bw-trip-prepare bw-trip-signal"

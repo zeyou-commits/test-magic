@@ -5068,6 +5068,37 @@ button.bw-tavatar:focus-visible {
   border-top-color: #a51616;
   color: #ffffff;
 }
+.bw-alert-ticker[data-tone="quiet"] {
+  background: #f6f1e7;
+  border-top-color: #e6dcc8;
+  color: #4a3b22;
+}
+.bw-alert-ticker[data-tone="quiet"] .bw-alert-ticker__close:hover {
+  background: #e6dcc8;
+}
+.bw-alert-ticker[data-tone="quiet"] svg:first-child {
+  color: #c81e1e;
+}
+@media (max-width: 767px) {
+  .bw-alert-ticker[data-tone="quiet"][data-single] {
+    padding-left: 12px;
+  }
+  .bw-alert-ticker[data-tone="quiet"] .bw-alert-ticker__single {
+    flex-wrap: nowrap;
+    justify-content: flex-start;
+    gap: 8px;
+  }
+  .bw-alert-ticker[data-tone="quiet"] .bw-alert-ticker__single strong {
+    overflow: hidden;
+    min-width: 0;
+    font-weight: 600;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .bw-alert-ticker[data-tone="quiet"] .bw-alert-ticker__single button:nth-of-type(n + 2) {
+    display: none;
+  }
+}
 .bw-alert-ticker[data-tone="critical"] .bw-alert-ticker__close:hover {
   background: #a51616;
 }

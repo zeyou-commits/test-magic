@@ -28,14 +28,14 @@ const RULES: {
     key: "schedule",
     reason: "schedule",
     title: "Bateau prévu par le programme",
-    text: "Le calendrier récurrent qui a créé la traversée indique un bateau par défaut.",
+    text: "Le calendrier récurrent qui a créé la traversée indique un navire par défaut.",
     level: "Sûre",
   },
   {
     key: "usualSlot",
     reason: "usual-slot",
     title: "Même créneau que d'habitude",
-    text: "Même liaison, même jour de la semaine, même heure : toujours le même bateau jusqu'ici.",
+    text: "Même ligne, même jour de la semaine, même heure : toujours le même navire jusqu'ici.",
     level: "Probable",
   },
 ];
@@ -117,9 +117,9 @@ export function AssignSettings() {
     onSuccess: (_data, { mode }) => {
       toast.success(
         mode === "auto"
-          ? "Automatique : les bateaux sûrs seront affectés seuls (chaque matin et à l'ouverture de l'espace équipe)."
+          ? "Automatique : les navires sûrs seront affectés seuls (chaque matin et à l'ouverture de l'espace équipe)."
           : mode === "suggest"
-            ? "Proposer : les bateaux sûrs attendent votre clic dans « Aujourd'hui »."
+            ? "Proposer : les navires sûrs attendent votre clic dans « Aujourd'hui »."
             : "Manuel : plus aucune proposition pour cette compagnie.",
       );
       refresh();
@@ -154,7 +154,7 @@ export function AssignSettings() {
       return data as number;
     },
     onSuccess: (count) => {
-      toast.success(`${count} bateau(x) retiré(s) : ces traversées sont de nouveau « à choisir ».`);
+      toast.success(`${count} navire(x) retiré(s) : ces traversées sont de nouveau « à choisir ».`);
       refresh();
     },
     onError: (error: Error) => toast.error(error.message),
@@ -250,7 +250,7 @@ export function AssignSettings() {
                 <p className="text-xs text-muted-foreground">
                   {fleet} navire(s) ·{" "}
                   {unassigned
-                    ? `${unassigned} traversée(s) sans bateau, dont ${sure} avec une proposition sûre`
+                    ? `${unassigned} traversée(s) sans navire, dont ${sure} avec une proposition sûre`
                     : "toutes les traversées ont un bateau"}
                 </p>
               </div>

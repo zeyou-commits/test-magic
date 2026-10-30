@@ -401,7 +401,7 @@ export function SeasonImport() {
         }
       }
 
-      // Liaisons manquantes entre deux ports connus : créées avec la compagnie comme opérateur.
+      // Lignes manquantes entre deux ports connus : créées avec la compagnie comme opérateur.
       const routeList = [...routes];
       const rejected: { line: number; reason: string }[] = [];
       const departures: ImportedDeparture[] = [];
@@ -545,7 +545,7 @@ export function SeasonImport() {
     onSuccess: (result) => {
       refresh();
       setStep({ name: "done", ...result });
-      // Les nouvelles traversées des compagnies en « Automatique » reçoivent leur bateau tout de suite.
+      // Les nouvelles traversées des compagnies en « Automatique » reçoivent leur navire tout de suite.
       void (async () => {
         const [departures, config, scheduleVessel] = await Promise.all([
           queryClient.fetchQuery({ ...planningDeparturesQuery, staleTime: 0 }),
@@ -560,7 +560,7 @@ export function SeasonImport() {
           source: "import",
         });
         if (count) {
-          toast.success(`${count} traversée(s) importée(s) ont reçu leur bateau automatiquement.`);
+          toast.success(`${count} traversée(s) importée(s) ont reçu leur navire automatiquement.`);
           refresh();
         }
       })().catch((error: Error) => toast.error(`Affectation automatique : ${error.message}`));
@@ -626,7 +626,7 @@ export function SeasonImport() {
             <h2 className="text-base font-semibold">Mettre à jour le planning d'une compagnie</h2>
             <p className="text-sm text-muted-foreground">
               Téléchargez le modèle de la compagnie : il contient déjà son planning publié et la
-              liste de ses liaisons et navires. Modifiez-le, puis importez-le : seules les
+              liste de ses lignes et navires. Modifiez-le, puis importez-le : seules les
               traversées de cette compagnie sont comparées et mises à jour.
             </p>
             <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
@@ -790,7 +790,7 @@ export function SeasonImport() {
               (c) =>
                 `${routeLabel(c.after.route_id)} · ${localWhen(c.before)}${
                   c.fields.includes("time") ? ` → ${localWhen(c.after)}` : ""
-                }${c.fields.includes("vessel") ? ` · bateau : ${vesselName(c.before.vessel_id)} → ${vesselName(c.after.vessel_id)}` : ""}${
+                }${c.fields.includes("vessel") ? ` · navire : ${vesselName(c.before.vessel_id)} → ${vesselName(c.after.vessel_id)}` : ""}${
                   c.fields.includes("duration")
                     ? ` · durée ${c.before.duration_minutes} → ${c.after.duration_minutes} min`
                     : ""
@@ -1090,7 +1090,7 @@ function NamesStep({
       <p className="text-xs text-muted-foreground">
         « Nouveau » crée la compagnie ou le navire avec ce nom. Un port inconnu ne peut pas être
         créé ici (il faut ses coordonnées) : ajoutez-le dans « Ports » ou ignorez ses lignes. Les
-        liaisons manquantes entre deux ports connus sont créées automatiquement.
+        lignes manquantes entre deux ports connus sont créées automatiquement.
       </p>
       <div className="flex flex-wrap gap-2">
         <Button variant="ghost" onClick={onBack}>

@@ -7,8 +7,10 @@ import {
   createRootRouteWithContext,
   HeadContent,
   Scripts,
+  useRouterState,
   type ErrorComponentProps,
 } from "@tanstack/react-router";
+import { track } from "@/lib/usage";
 import { useEffect, useMemo, type ReactNode } from "react";
 
 import appCss from "../styles.css?url";
@@ -177,6 +179,10 @@ function RootShell({ children }: { children: ReactNode }) {
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
+  const pathname = useRouterState({ select: (state) => state.location.pathname });
+  useEffect(() => {
+    track("page_view");
+  }, [pathname]);
 
   return (
     <QueryClientProvider client={queryClient}>

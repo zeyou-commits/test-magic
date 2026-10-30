@@ -482,7 +482,7 @@ export function MessageCenter() {
                       <input
                         value={search}
                         onChange={(event) => setSearch(event.target.value)}
-                        placeholder="Port, bateau ou jour : « Alger », « Tassili », « 4 nov »…"
+                        placeholder="Port, navire ou jour : « Alger », « Tassili », « 4 nov »…"
                         aria-label="Chercher une traversée"
                       />
                     </label>
@@ -541,7 +541,7 @@ export function MessageCenter() {
                   onChange={(e) => setVesselId(e.target.value)}
                   aria-label="Bateau"
                 >
-                  <option value="">Choisir un bateau…</option>
+                  <option value="">Choisir un navire…</option>
                   {vessels.map((vessel) => (
                     <option key={vessel.id} value={vessel.id}>
                       {vessel.name}

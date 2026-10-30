@@ -141,7 +141,7 @@ export function UserMenu({
           </DropdownMenuItem>
           <DropdownMenuItem asChild>
             <Link to="/compte" hash="voyages">
-              Mes bateaux et traversées suivis
+              Mes navires et traversées suivis
             </Link>
           </DropdownMenuItem>
           <DropdownMenuItem asChild>

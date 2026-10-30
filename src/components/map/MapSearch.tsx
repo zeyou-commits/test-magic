@@ -2,7 +2,7 @@ import { VesselAlertTag } from "@/components/panel/VesselAlert";
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { Building2, Heart, LocateFixed, MapPin, Route as RouteIcon, Ship } from "lucide-react";
+import { Building2, Heart, Search, MapPin, Route as RouteIcon, Ship } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -67,7 +67,7 @@ function ResultRow({
 }
 
 /**
- * Repérer un navire, une compagnie ou un port, même sans traversée sur la carte. Une liaison
+ * Rechercher un navire, un port ou une compagnie, même sans traversée sur la carte. Une ligne
  * renvoie vers les traversées : réserver reste le rôle de « Trouver ma traversée ».
  */
 export function MapSearch({
@@ -132,27 +132,27 @@ export function MapSearch({
     <>
       <button
         type="button"
-        aria-label="Repérer un navire, une compagnie ou un port"
-        title="Repérer un navire, une compagnie ou un port"
+        aria-label="Rechercher un navire, un port ou une compagnie"
+        title="Rechercher un navire, un port ou une compagnie"
         onClick={() => {
           onOpen();
           setOpen(true);
         }}
         className="flex w-full flex-col items-center justify-center gap-0.5 rounded-xl px-1 py-1.5 text-[9px] font-bold leading-none text-primary transition-colors hover:bg-secondary md:min-w-11 md:text-[10px] [@media(max-width:767px)_and_(max-height:700px)]:py-1"
       >
-        <LocateFixed className="size-4 md:size-[18px]" aria-hidden />
-        <span className="[@media(max-width:767px)_and_(max-height:700px)]:hidden">Repérer</span>
+        <Search className="size-4 md:size-[18px]" aria-hidden />
+        <span className="[@media(max-width:767px)_and_(max-height:700px)]:hidden">Loupe</span>
       </button>
       <Dialog open={open} onOpenChange={(next) => (next ? setOpen(true) : close())}>
         <DialogContent className="top-0 flex h-dvh max-w-none translate-y-0 flex-col gap-3 rounded-none sm:top-[12%] sm:h-auto sm:max-h-[76dvh] sm:max-w-lg sm:rounded-2xl">
           <DialogHeader className="text-left">
-            <DialogTitle>Repérer sur la carte</DialogTitle>
+            <DialogTitle>Rechercher</DialogTitle>
             <DialogDescription>
               Un navire, une compagnie ou un port, même sans traversée en ce moment.
             </DialogDescription>
           </DialogHeader>
           <label className="flex min-h-11 items-center gap-2 rounded-xl border border-input px-3">
-            <LocateFixed className="size-4 text-muted-foreground" aria-hidden />
+            <Search className="size-4 text-muted-foreground" aria-hidden />
             <input
               autoFocus
               type="search"

@@ -11,6 +11,7 @@ import {
 } from "@/lib/ferry/queries";
 import {
   assignVessels,
+  findConsistencyIssues,
   findPlanningIssues,
   mergeDepartures,
   parisKey,
@@ -61,10 +62,13 @@ type IssueGroup = {
  * directement sur la carte. Les séries (même doublon chaque semaine) se règlent en une fois.
  */
 export function TodayInbox({
+  view = "today",
   onOpenPlanning,
   onOpenVessel,
   onImport,
 }: {
+  /** « health » : la page Santé technique, séparée de la file du matin. */
+  view?: "today" | "health";
   onOpenPlanning: (date?: string, filter?: "unassigned" | "issues") => void;
   onOpenVessel: (id: string) => void;
   onImport: () => void;
@@ -101,7 +105,7 @@ export function TodayInbox({
     return <VerifyLinks directFerries={links.directFerries} search={links.search} />;
   };
 
-  // Problèmes à venir, regroupés en séries : même liaison, même bateau, même jour de semaine.
+  // Problèmes à venir, regroupés en séries : même ligne, même navire, même jour de semaine.
   const issues = findPlanningIssues(departures).filter(
     (issue) => Date.parse(issue.first.departure_at) >= now && !ignored.includes(issue.key),
   );
@@ -163,6 +167,7 @@ export function TodayInbox({
   const autoRan = useRef(false);
   useEffect(() => {
     if (
+      view !== "today" ||
       autoRan.current ||
       !config?.installed ||
       !departuresQuery.data ||
@@ -224,7 +229,7 @@ export function TodayInbox({
     mutationFn: () => assignVessels(suggestions),
     onSuccess: (count) => {
       toast.success(`${count} traversée${count > 1 ? "s" : ""} affectée${count > 1 ? "s" : ""}.`, {
-        description: "Chaque bateau peut encore être changé depuis le planning.",
+        description: "Chaque navire peut encore être changé depuis le planning.",
       });
       refresh();
     },
@@ -274,6 +279,7 @@ export function TodayInbox({
   };
 
   const cards: ReactNode[] = [];
+  const health: ReactNode[] = [];
 
   for (const group of duplicateGroups) {
     const sample = group.issues[0]!;
@@ -351,9 +357,9 @@ export function TodayInbox({
         key={group.key}
         tone="danger"
         icon={<AlertTriangle className="size-5" aria-hidden />}
-        kind={count > 1 ? `Conflit de bateau · ${count} cas` : "Conflit de bateau"}
+        kind={count > 1 ? `Conflit de navire · ${count} cas` : "Conflit de bateau"}
         title={`${vesselName(sample.first.vessel_id)} repart avant d'être arrivé`}
-        detail={`Premier cas : ${routeLabel(sample.first.route_id)} le ${dayLabel(sample.first.departure_at)} à ${parisKey(sample.first.departure_at).time}, puis ${routeLabel(sample.second.route_id)} à ${parisKey(sample.second.departure_at).time} le ${dayLabel(sample.second.departure_at, { weekday: undefined })}. Une durée ou un bateau est sans doute faux.`}
+        detail={`Premier cas : ${routeLabel(sample.first.route_id)} le ${dayLabel(sample.first.departure_at)} à ${parisKey(sample.first.departure_at).time}, puis ${routeLabel(sample.second.route_id)} à ${parisKey(sample.second.departure_at).time} le ${dayLabel(sample.second.departure_at, { weekday: undefined })}. Une durée ou un navire est sans doute faux.`}
         links={verify(sample.first)}
       >
         <Button size="sm" variant="ghost" onClick={() => ignore(group.issues.map((i) => i.key))}>
@@ -364,6 +370,36 @@ export function TodayInbox({
           onClick={() => onOpenPlanning(parisKey(sample.first.departure_at).day, "issues")}
         >
           Corriger dans le planning
+        </Button>
+      </InboxCard>,
+    );
+  }
+
+  const consistency = findConsistencyIssues(
+    upcoming,
+    vessels,
+    routes.map((route) => ({ id: route.id, company_ids: route.company_ids ?? [] })),
+  ).filter((issue) => !ignored.includes(issue.key));
+  for (const issue of consistency) {
+    cards.push(
+      <InboxCard
+        key={issue.key}
+        tone="warn"
+        icon={<AlertTriangle className="size-5" aria-hidden />}
+        kind={issue.kind === "foreign-vessel" ? "Navire d'une autre compagnie" : "Compagnie absente de la ligne"}
+        title={
+          issue.kind === "foreign-vessel"
+            ? `${vesselName(issue.vesselId)} est affecté à ${issue.count} départ${issue.count > 1 ? "s" : ""} ${companyName(issue.companyId)}`
+            : `${companyName(issue.companyId)} a ${issue.count} départ${issue.count > 1 ? "s" : ""} sur une ligne où elle n'est pas indiquée`
+        }
+        detail={`${routeLabel(issue.routeId)}, à partir du ${dayLabel(issue.first.departure_at)}.`}
+        links={verify(issue.first)}
+      >
+        <Button size="sm" variant="ghost" onClick={() => ignore([issue.key])}>
+          Ignorer
+        </Button>
+        <Button size="sm" onClick={() => onOpenPlanning(parisKey(issue.first.departure_at).day)}>
+          Ouvrir dans le planning
         </Button>
       </InboxCard>,
     );
@@ -380,8 +416,8 @@ export function TodayInbox({
         tone="success"
         icon={<Ship className="size-5" aria-hidden />}
         kind="Affectation proposée"
-        title={`${suggestions.length} traversée${suggestions.length > 1 ? "s" : ""} sans bateau ont une proposition sûre`}
-        detail={`${breakdown}. Proposé quand la compagnie n'a qu'un navire ou quand le même bateau fait toujours ce créneau, et jamais s'il est déjà pris à cette heure-là.${
+        title={`${suggestions.length} traversée${suggestions.length > 1 ? "s" : ""} sans navire ont une proposition sûre`}
+        detail={`${breakdown}. Proposé quand la compagnie n'a qu'un navire ou quand le même navire fait toujours ce créneau, et jamais s'il est déjà pris à cette heure-là.${
           unassigned.length > suggestions.length
             ? ` Les ${unassigned.length - suggestions.length} autres restent à choisir.`
             : ""
@@ -394,7 +430,7 @@ export function TodayInbox({
           size="sm"
           disabled={accept.isPending}
           onClick={() => {
-            if (window.confirm(`Affecter les ${suggestions.length} bateaux proposés ?`))
+            if (window.confirm(`Affecter les ${suggestions.length} navires proposés ?`))
               accept.mutate();
           }}
         >
@@ -410,7 +446,7 @@ export function TodayInbox({
         icon={<Ship className="size-5" aria-hidden />}
         kind="Bateau à choisir"
         title={`${unassigned.length} traversée${unassigned.length > 1 ? "s" : ""} à venir sans bateau`}
-        detail="Aucune proposition sûre : choisissez le bateau dans le planning, les navires indisponibles y sont grisés."
+        detail="Aucune proposition sûre : choisissez le navire dans le planning, les navires indisponibles y sont grisés."
       >
         <Button size="sm" onClick={() => onOpenPlanning(undefined, "unassigned")}>
           Ouvrir le planning
@@ -423,7 +459,7 @@ export function TodayInbox({
   if (aisHealth) {
     const seen = aisHealth.collectorSeen;
     if (!seen || now - Date.parse(seen) > COLLECTOR_STALE_MINUTES * 60_000) {
-      cards.push(
+      health.push(
         <InboxCard
           key="ais-collector"
           tone="warn"
@@ -431,10 +467,10 @@ export function TodayInbox({
           kind="Suivi en direct"
           title={
             seen
-              ? `L'écoute AIS ciblée ne passe plus (dernier passage ${ageLabel(seen, now)})`
-              : "L'écoute AIS ciblée n'est pas encore programmée"
+              ? `L'écoute des navires ne passe plus (dernier passage ${ageLabel(seen, now)})`
+              : "L'écoute des navires n'est pas encore programmée"
           }
-          detail="Toutes les 10 minutes, Supabase demande au site d'écouter 40 secondes les navires proches d'un départ ou d'une arrivée. Sans elle, les positions ne bougent que lorsqu'un visiteur ouvre la carte. À installer : script SQL « ais_ecoute_ciblee » (mêmes prérequis que l'envoi immédiat des notifications)."
+          detail="Sans elle, les positions ne bougent que lorsqu'un visiteur ouvre la carte. Le réglage se fait dans l'éditeur Supabase."
         >
           <Button size="sm" variant="outline" asChild>
             <a
@@ -505,7 +541,7 @@ export function TodayInbox({
           icon={<Ship className="size-5" aria-hidden />}
           kind="Navire au mauvais port"
           title={`${vessel.name} est à ${portName(elsewhere.portId)}, mais il est prévu au départ de ${routeLabel(d.route_id)} ${dayLabel(d.departure_at)} à ${parisKey(d.departure_at).time}`}
-          detail={`Signal AIS ${ageLabel(elsewhere.reportedAt, now)}. Soit le départ sera retardé, soit un autre bateau fera la traversée : vérifiez auprès de la compagnie, puis corrigez le bateau ou l'horaire. Les voyageurs voient déjà « ${vessel.name} est encore à ${portName(elsewhere.portId)} ».`}
+          detail={`Signal AIS ${ageLabel(elsewhere.reportedAt, now)}. Soit le départ sera retardé, soit un autre navire fera la traversée : vérifiez auprès de la compagnie, puis corrigez le navire ou l'horaire. Les voyageurs voient déjà « ${vessel.name} est encore à ${portName(elsewhere.portId)} ».`}
           links={verify(d)}
         >
           <Button size="sm" onClick={() => onOpenPlanning(parisKey(d.departure_at).day)}>
@@ -521,18 +557,18 @@ export function TodayInbox({
       return !last || now - Date.parse(last) > SILENT_HOURS * 3_600_000;
     });
     if (silent.length) {
-      cards.push(
+      health.push(
         <InboxCard
           key="ais-silent"
           tone="info"
           icon={<Radio className="size-5" aria-hidden />}
-          kind="Signal AIS"
+          kind="Signal des navires"
           title={`${silent.length} navire(s) sans signal depuis plus de ${SILENT_HOURS} h`}
           detail={`${silent
             .map((v) => `${v.name} (${ageLabel(aisHealth.lastSignal.get(Number(v.mmsi)), now)})`)
             .join(
               ", ",
-            )}. Un navire jamais reçu a souvent un MMSI faux : vérifiez-le sur VesselFinder. Les autres peuvent être en arrêt technique ou hors de portée des antennes.`}
+            )}. Un navire jamais reçu a souvent un identifiant faux. Les autres peuvent être en arrêt technique ou hors de portée des antennes.`}
         >
           <Button size="sm" variant="outline" onClick={() => onOpenVessel(silent[0]!.id)}>
             Vérifier la fiche
@@ -543,17 +579,17 @@ export function TodayInbox({
   }
 
   for (const vessel of withoutMmsi) {
-    cards.push(
+    health.push(
       <InboxCard
         key={`mmsi-${vessel.id}`}
         tone="info"
         icon={<Radio className="size-5" aria-hidden />}
         kind="Fiche incomplète"
-        title={`${vessel.name} n'a pas de MMSI : sa position n'apparaît pas sur la carte`}
-        detail="Le MMSI (9 chiffres) se trouve sur MarineTraffic ou VesselFinder."
+        title={`${vessel.name} n'a pas d'identifiant : sa position n'apparaît pas sur la carte`}
+        detail="L'identifiant (MMSI, 9 chiffres) se trouve sur MarineTraffic ou VesselFinder."
       >
         <Button size="sm" onClick={() => onOpenVessel(vessel.id)}>
-          Ajouter le MMSI
+          Ajouter l'identifiant
         </Button>
       </InboxCard>,
     );
@@ -582,15 +618,21 @@ export function TodayInbox({
     );
   }
 
+  if (view === "health")
+    return health.length ? (
+      <div className="grid gap-3">{health}</div>
+    ) : (
+      <p className="flex items-center gap-2 rounded-xl border border-border bg-white p-4 text-sm">
+        <CheckCircle2 className="size-5 text-primary" aria-hidden /> Tout fonctionne normalement.
+      </p>
+    );
+
   return (
     <section aria-labelledby="today-title" className="mb-8">
       <div className="mb-3 flex flex-wrap items-baseline justify-between gap-2">
         <h2 id="today-title" className="text-lg font-semibold">
-          À régler
+          {cards.length ? `${cards.length} point${cards.length > 1 ? "s" : ""} à régler` : "À régler"}
         </h2>
-        <span className="text-sm text-muted-foreground">
-          {upcoming.length} traversées à venir · {unassigned.length} sans bateau
-        </span>
       </div>
       {cards.length ? (
         <div className="grid gap-3">{cards}</div>
@@ -664,7 +706,7 @@ function InboxCard({
   );
 }
 
-/** Vérifier l'horaire ailleurs avant de trancher : page de la liaison et recherche datée. */
+/** Vérifier l'horaire ailleurs avant de trancher : page de la ligne et recherche datée. */
 export function VerifyLinks({ directFerries, search }: { directFerries: string; search: string }) {
   return (
     <p className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs font-semibold">

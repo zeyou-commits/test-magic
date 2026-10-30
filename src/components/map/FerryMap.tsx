@@ -3,7 +3,6 @@ import { useTravelMarkers } from "./useTravelMarkers";
 import { bringTooltipToFront } from "./tooltipStack";
 import { usePresenceMarkers } from "./usePresenceMarkers";
 import { useMyTripMarker } from "./useMyTripMarker";
-import { useFxMarker } from "./useFxMarker";
 import { useEffect, useRef, useState } from "react";
 import {
   Map as MapLibreMap,
@@ -177,7 +176,7 @@ function routeFeatures(
   const selectedRouteId = selection?.type === "route" ? selection.id : null;
   const selectedPortId = selection?.type === "port" ? selection.id : null;
 
-  // Le nombre de liaisons au départ donne un poids visuel à chaque ligne.
+  // Le nombre de lignes au départ donne un poids visuel à chaque ligne.
   const departureLineCounts = new Map<string, number>();
   visibleRoutes.forEach((route) => {
     departureLineCounts.set(
@@ -372,7 +371,6 @@ export default function FerryMap({
   );
   usePresenceMarkers(mapRef, mapReady, ports, fleet, onSelect, onOpenPanel);
   useMyTripMarker(mapRef, mapReady, fleet, onSelect, onOpenPanel);
-  useFxMarker(mapRef, mapReady);
   const isMobile = useIsMobile();
   // Mobile : un tap sur un port n'ouvre que la bulle ; le volet s'ouvre via « Voir la fiche du port ».
   const [tipPortId, setTipPortId] = useState<string | null>(null);
@@ -976,7 +974,7 @@ export default function FerryMap({
           const members = membersOf(feature.properties["groupId"]);
           name.textContent =
             members.length > 1
-              ? `${members.length} bateaux à proximité`
+              ? `${members.length} navires à proximité`
               : String(feature.properties["name"] ?? "Navire");
           status.textContent =
             members.length > 1
@@ -1051,7 +1049,7 @@ export default function FerryMap({
         card.setAttribute("aria-label", "Choisir un bateau");
         card.className = "min-w-48 space-y-1 p-1";
         const heading = document.createElement("strong");
-        heading.textContent = `${members.length} bateaux à proximité`;
+        heading.textContent = `${members.length} navires à proximité`;
         heading.className = "mb-2 block pr-4 text-sm";
         card.append(heading);
         for (const member of members) {
@@ -1567,7 +1565,7 @@ export default function FerryMap({
         dot.addEventListener("click", select);
         label.addEventListener("click", select);
 
-        // Survol à la souris : la bulle s'affiche pour tous les ports (fermés ou sans liaison compris).
+        // Survol à la souris : la bulle s'affiche pour tous les ports (fermés ou sans ligne compris).
         el.addEventListener("pointerenter", (event) => {
           if (event.pointerType !== "mouse") return;
           bringTooltipToFront(el);
@@ -1611,7 +1609,7 @@ export default function FerryMap({
         port.status !== "inactive" &&
           (routeCount === 0 || (meta?.departureCount ?? 0) + (meta?.arrivalCount ?? 0) === 0),
       );
-      // Les ports secondaires (une seule liaison, éventuellement dans les deux sens) ont un libellé plus discret, mais toujours lisible.
+      // Les ports secondaires (une seule ligne, éventuellement dans les deux sens) ont un libellé plus discret, mais toujours lisible.
       element.dataset["minor"] = String(routeCount <= 2);
       marker.setLngLat([port.longitude, port.latitude]);
 

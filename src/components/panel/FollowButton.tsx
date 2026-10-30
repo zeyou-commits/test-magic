@@ -53,7 +53,7 @@ export function FollowButton({
     setMessage("");
     if (demo) {
       setMessage(
-        "Ce bateau de démonstration ne déclenche aucune notification. Choisissez un bateau publié pour le suivre.",
+        "Ce navire de démonstration ne déclenche aucune notification. Choisissez un navire publié pour le suivre.",
       );
       return;
     }

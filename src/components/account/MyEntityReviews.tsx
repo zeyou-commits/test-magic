@@ -30,7 +30,7 @@ export function MyEntityReviews({ userId }: { userId: string }) {
         <p role="alert">{query.error.message}</p>
       ) : !query.data.length ? (
         <p className="mt-2 text-sm text-muted-foreground">
-          Vos notes sur les ports, les bateaux et les compagnies apparaîtront ici.
+          Vos notes sur les ports, les navires et les compagnies apparaîtront ici.
         </p>
       ) : (
         <ul className="divide-y">

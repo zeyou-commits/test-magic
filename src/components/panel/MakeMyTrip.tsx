@@ -10,7 +10,7 @@ import type { Selection } from "@/lib/ferry/types";
 const supabase = typedSupabase as unknown as SupabaseClient;
 
 /**
- * « C'est votre traversée ? » sur les fiches, en une ligne discrète : le bateau de ma traversée y
+ * « C'est votre traversée ? » sur les fiches, en une ligne discrète : le navire de ma traversée y
  * mène directement, les autres proposent de la déclarer. Le parcours guide le remplacement.
  */
 export function MakeMyTrip({
@@ -55,7 +55,7 @@ export function MakeMyTrip({
         className="bw-make-trip"
         onClick={() => onSelect({ type: "departure", id: trip.departure.id })}
       >
-        <Ship size={14} aria-hidden /> Le bateau de votre traversée · <b>Voir ma traversée</b>
+        <Ship size={14} aria-hidden /> Le navire de votre traversée · <b>Voir ma traversée</b>
         <ArrowRight size={13} aria-hidden />
       </button>
     ) : null;

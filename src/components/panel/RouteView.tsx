@@ -1,19 +1,19 @@
-import { VesselAlertTag } from "@/components/panel/VesselAlert";
+import { LineAlertNotice, VesselAlertTag } from "@/components/panel/VesselAlert";
+import { LineCalendar } from "./LineCalendar";
 import { useQuery } from "@tanstack/react-query";
 import { ArrowLeftRight, CalendarDays, ChevronRight } from "lucide-react";
 import {
   companiesQuery,
   portsQuery,
   routesQuery,
-  schedulesQuery,
   upcomingDeparturesQuery,
   vesselsQuery,
 } from "@/lib/ferry/queries";
-import { formatDateTime, formatDuration, weekdayLabels } from "@/lib/ferry/format";
+import { formatDateTime, formatDuration } from "@/lib/ferry/format";
 import { portTimeZone, zoneLabel } from "@/lib/ferry/time";
 import type { RouteLine, Selection } from "@/lib/ferry/types";
 import { Button } from "@/components/ui/button";
-import { BookingLink, DemoBadge, EmptyNote, PanelHeader, Section, SourceNote } from "./shared";
+import { BookingLink, DemoBadge, EmptyNote, PanelHeader, Section } from "./shared";
 import { ReportButton } from "./ReportButton";
 
 export function RouteView({
@@ -29,7 +29,6 @@ export function RouteView({
   const { data: ports = [] } = useQuery(portsQuery);
   const { data: companies = [] } = useQuery(companiesQuery);
   const { data: vessels = [] } = useQuery(vesselsQuery);
-  const { data: schedules = [] } = useQuery(schedulesQuery);
   const { data: departures = [] } = useQuery(upcomingDeparturesQuery());
 
   const route = routes.find((item) => item.id === routeId);
@@ -38,11 +37,13 @@ export function RouteView({
   const from = ports.find((port) => port.id === route.departure_port_id);
   const to = ports.find((port) => port.id === route.arrival_port_id);
   const timeZone = portTimeZone(from);
-  const operators = companies.filter((company) => route.company_ids.includes(company.id));
-  const routeSchedules = schedules.filter((schedule) => schedule.route_id === routeId);
-  const routeDepartures = departures
-    .filter((departure) => departure.route_id === routeId)
-    .slice(0, 8);
+  const lineDepartures = departures.filter((departure) => departure.route_id === routeId);
+  const operators = companies.filter(
+    (company) =>
+      route.company_ids.includes(company.id) ||
+      lineDepartures.some((departure) => departure.company_id === company.id),
+  );
+  const routeDepartures = lineDepartures.slice(0, 8);
   // Sens inverse : indispensable pour préparer le retour (Algérie → Europe ou l'inverse).
   const reverse = routes.find(
     (item) =>
@@ -118,7 +119,8 @@ export function RouteView({
                       {departure.duration_minutes
                         ? ` · ${formatDuration(departure.duration_minutes)}`
                         : ""}
-                      {departure.status === "cancelled" ? " · Annulé" : ""}
+                      {departure.status === "cancelled" ? " · Annulé" : ""}{" "}
+                      <VesselAlertTag vesselId={departure.vessel_id} />
                     </span>
                   </div>
                   <ChevronRight className="size-4 text-muted-foreground transition-transform group-hover:translate-x-1" />
@@ -134,6 +136,7 @@ export function RouteView({
           <EmptyNote>Aucune compagnie renseignée.</EmptyNote>
         ) : (
           <div className="flex flex-col gap-3">
+            <LineAlertNotice departures={lineDepartures} vessels={vessels} />
             {operators.map((company) => (
               <div key={company.id} className="rounded-xl border border-border p-3">
                 <button
@@ -151,44 +154,8 @@ export function RouteView({
         )}
       </Section>
 
-      <Section title="Calendrier habituel connu">
-        {routeSchedules.length === 0 ? (
-          <EmptyNote>Aucun calendrier connu pour cette ligne.</EmptyNote>
-        ) : (
-          <div className="flex flex-col gap-3">
-            {routeSchedules.map((schedule) => {
-              const company = companies.find((item) => item.id === schedule.company_id);
-              const vessel = vessels.find((item) => item.id === schedule.default_vessel_id);
-              return (
-                <div
-                  key={schedule.id}
-                  className="flex flex-col gap-1 rounded-lg border p-3 text-sm"
-                >
-                  <div className="flex items-center justify-between font-semibold">
-                    <span>
-                      {schedule.departure_time.slice(0, 5)}{" "}
-                      <span className="font-normal text-muted-foreground">
-                        ({zoneLabel(timeZone)})
-                      </span>
-                    </span>
-                    <span className="text-muted-foreground">
-                      {formatDuration(schedule.duration_minutes)}
-                    </span>
-                  </div>
-                  <div className="text-muted-foreground">
-                    {schedule.weekdays
-                      .map((day) => weekdayLabels[day - 1] ?? "")
-                      .filter(Boolean)
-                      .join(", ")}
-                    {company ? ` · ${company.name}` : ""}
-                    {vessel ? ` · ${vessel.name}` : ""} <VesselAlertTag vesselId={vessel?.id} />
-                  </div>
-                  <SourceNote sourceName={schedule.source_name} sourceUrl={schedule.source_url} />
-                </div>
-              );
-            })}
-          </div>
-        )}
+      <Section title="Jours et heures de départ">
+        <LineCalendar departures={lineDepartures} companies={companies} timeZone={timeZone} />
       </Section>
 
       <Section title="Ports reliés">

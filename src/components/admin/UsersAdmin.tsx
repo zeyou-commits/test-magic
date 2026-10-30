@@ -47,7 +47,7 @@ const roleHelp: { role: Role; can: string; cannot: string }[] = [
   },
   {
     role: "editor",
-    can: "Traversées, imports, affectation, flotte, ports, liaisons, Flash info, lieux, catalogue des signalements.",
+    can: "Traversées, imports, affectation, flotte, ports, lignes, Flash info, lieux, catalogue des signalements.",
     cannot: "Ni les comptes, ni la modération des avis, ni l'envoi de notifications.",
   },
   {

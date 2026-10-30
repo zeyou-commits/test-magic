@@ -46,8 +46,8 @@ const sections: Section[] = [
     id: "independance",
     title: "Une information indépendante, sans classement inventé",
     paragraphs: [
-      "BledWay ne se présente pas comme une autorité douanière ou une compagnie maritime. Les nouvelles fiches de covoiturage ne classent pas les lieux par notoriété ou fréquentation, faute de mesure disponible. Aucun avis de voyageur, score ou témoignage n'a été fabriqué pour ces dossiers.",
-      "La page Contact indique les canaux disponibles et la préparation d'une correction : URL, passage concerné et référence datée. Le contact pour les nouveaux dossiers reste à renseigner. Évitez d'envoyer des documents personnels qui ne sont pas nécessaires à la correction.",
+      "BledWay ne se présente pas comme une autorité douanière ou une compagnie maritime. Les nouvelles fiches de covoiturage ne classent pas les lieux par notoriété ou fréquentation, faute de mesure disponible. Aucun avis de voyageur, score ou témoignage n'a été fabriqué pour ces dossiers. Si un lien devient un jour rémunéré, il portera la mention « lien partenaire » et n'influencera jamais le classement.",
+      "La page Contact indique les canaux disponibles et la préparation d'une correction : URL, passage concerné et référence datée. Évitez d'envoyer des documents personnels qui ne sont pas nécessaires à la correction.",
     ],
   },
 ];

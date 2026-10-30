@@ -1379,7 +1379,7 @@ function CollapsedPanelSummary({
           </span>
         </span>
         <span className="shrink-0 text-sm font-bold text-primary">
-          {nextLabel === "Ports, dates et voyageurs" ? "Chercher" : "Voir"}
+          {nextLabel === "Ports, dates et voyageurs" ? "Trouver" : "Voir"}
         </span>
       </span>
     </Button>

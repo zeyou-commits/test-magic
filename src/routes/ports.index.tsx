@@ -4,7 +4,7 @@ import { useSuspenseQuery } from "@tanstack/react-query";
 import { Card, PageHero, SiteLayout } from "@/components/layout/SiteLayout";
 import { portsQuery, routesQuery } from "@/lib/ferry/queries";
 
-const title = "Ports de ferry vers l'Algérie — BledWay";
+const title = "Ports de ferry Europe ↔ Algérie — BledWay";
 const description =
   "Tous les ports desservis : Alger, Oran, Béjaïa, Skikda, Annaba, Marseille, Sète, Alicante, Barcelone et plus. Lignes, durées et services de chaque port.";
 
@@ -31,7 +31,7 @@ function PortsPage() {
     <SiteLayout>
       <PageHero
         overline="Ports"
-        title="Les ports des traversées vers l'Algérie"
+        title="Les ports des traversées entre l'Europe et l'Algérie"
         intro="Chaque port est décrit avec ses lignes, ses durées de traversée et les services utiles avant l'embarquement."
       />
       <div className="mt-10 space-y-10">

@@ -51,7 +51,7 @@ const longDay = (day: string) =>
   }).format(new Date(`${day}T12:00:00Z`));
 
 /**
- * Planning de la semaine : une ligne par liaison, une colonne par jour (heure locale du port
+ * Planning de la semaine : une ligne par ligne, une colonne par jour (heure locale du port
  * de départ, celle imprimée sur les billets). Un clic ouvre la traversée à droite.
  */
 export function PlanningBoard({
@@ -212,7 +212,7 @@ export function PlanningBoard({
         {(
           [
             ["all", `Toutes (${counts.all})`],
-            ["unassigned", `Sans bateau (${counts.unassigned})`],
+            ["unassigned", `Sans navire (${counts.unassigned})`],
             ["issues", `Conflits et doublons (${counts.issues})`],
           ] as const
         ).map(([id, label]) => (
@@ -253,7 +253,7 @@ export function PlanningBoard({
         <div className="bw-admin-surface overflow-x-auto">
           <div className="min-w-[56rem]">
             <div className="grid grid-cols-[11rem_repeat(7,minmax(0,1fr))] border-b border-border bg-muted/40 text-xs font-semibold text-muted-foreground">
-              <span className="px-3 py-2">Liaison</span>
+              <span className="px-3 py-2">Ligne</span>
               {days.map((day) => (
                 <span
                   key={day}
@@ -309,8 +309,8 @@ export function PlanningBoard({
             )}
           </div>
           <div className="flex flex-wrap gap-4 border-t border-border px-3 py-2 text-xs text-muted-foreground">
-            <Legend className="border-blue-200 bg-blue-50">Bateau affecté</Legend>
-            <Legend className="border-dashed border-amber-500 bg-amber-50">Bateau à choisir</Legend>
+            <Legend className="border-blue-200 bg-blue-50">Navire affecté</Legend>
+            <Legend className="border-dashed border-amber-500 bg-amber-50">Navire à choisir</Legend>
             <Legend className="border-red-300 bg-red-50">Conflit ou doublon</Legend>
             <span>Heures locales du port de départ.</span>
           </div>
@@ -334,7 +334,7 @@ export function PlanningBoard({
                 </p>
                 <p className="mt-1 leading-relaxed">
                   {openIssue.kind === "duplicate"
-                    ? `Même liaison, même jour : un autre départ à ${localTime(openIssue.other)}${
+                    ? `Même ligne, même jour : un autre départ à ${localTime(openIssue.other)}${
                         openIssue.other.source_name ? ` (${openIssue.other.source_name})` : ""
                       }. Celui-ci vient de : ${open.source_name ?? "source inconnue"}.`
                     : `${vesselName(open.vessel_id)} fait aussi ${routeLabel(openIssue.other.route_id)} le ${longDay(localDay(openIssue.other))} à ${localTime(openIssue.other)} : les deux trajets se chevauchent.`}
@@ -373,7 +373,7 @@ export function PlanningBoard({
             )}
 
             <section>
-              <h3 className="text-sm font-semibold">Bateau</h3>
+              <h3 className="text-sm font-semibold">Navire</h3>
               <ul className="mt-2 grid gap-2">
                 {fleet.map(({ vessel, blocker, suggested }) => {
                   const current = open.vessel_id === vessel.id;

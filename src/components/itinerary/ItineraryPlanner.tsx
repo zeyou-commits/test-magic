@@ -41,6 +41,8 @@ import {
 import { calculateRoadGeometry } from "@/lib/ferry/itinerary.functions";
 import { bookingSite, bookingUrl } from "@/lib/ferry/booking";
 import { estimateFare, estimateFerryFare, formatFareRange, priceSeason } from "@/lib/ferry/pricing";
+import { useVesselAlerts } from "@/lib/ferry/vesselAlerts";
+import { track } from "@/lib/usage";
 import { routeArc } from "@/lib/ferry/geo";
 import { defaultTripProfile, VEHICLES, type VehicleKind } from "@/components/panel/TripProfile";
 import { ItineraryAlertForm } from "./ItineraryAlertForm";
@@ -316,6 +318,7 @@ export function ItineraryPlanner({
   const { data: departures = [], isPending: departuresPending } =
     useQuery(upcomingDeparturesQuery());
   const { data: companies = [] } = useQuery(companiesQuery);
+  const vesselAlerts = useVesselAlerts();
   const activeRef = useRef(active);
   activeRef.current = active;
   const [origin, setOrigin] = useState("");
@@ -353,6 +356,9 @@ export function ItineraryPlanner({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  useEffect(() => {
+    if (selectedId) track("search_choice");
+  }, [selectedId]);
   const [geometryNote, setGeometryNote] = useState<string | null>(null);
   const geometryCache = useRef(
     new Map<string, { toPort: [number, number][]; fromPort: [number, number][] }>(),
@@ -566,7 +572,7 @@ export function ItineraryPlanner({
       return;
     }
     if (!departurePorts.length || !arrivalPorts.length) {
-      setError("Aucune liaison Europe–Algérie active n'est disponible pour cette comparaison.");
+      setError("Aucune ligne Europe–Algérie active n'est disponible pour cette comparaison.");
       return;
     }
     setLoading(true);
@@ -926,7 +932,7 @@ export function ItineraryPlanner({
           {filtersOpen && priorityTabs()}
           {sorted.length === 0 ? (
             <p className="mt-2 rounded-xl bg-secondary p-3 text-sm">
-              Aucune liaison connue pour comparer ces ports.
+              Aucune ligne connue pour comparer ces ports.
             </p>
           ) : (
             <div className="-mx-1 flex snap-x snap-mandatory gap-2 overflow-x-auto px-1 pb-1">
@@ -991,7 +997,9 @@ export function ItineraryPlanner({
                     </span>
                     <span>Ferry ~{option.ferryEuro} € · voiture incluse</span>
                     <span>
-                      Fourchette {formatFareRange(estimateFerryFare(option.sailing, profile))}
+                      {vesselAlerts.has(option.sailing.vessel?.id ?? "")
+                        ? "Départ à confirmer auprès de la compagnie"
+                        : `Fourchette ${formatFareRange(estimateFerryFare(option.sailing, profile))}`}
                     </span>
                     <a
                       href={`/horaires?from=${option.sailing.from.id}&to=${option.sailing.to.id}&month=${period}`}
@@ -1024,7 +1032,7 @@ export function ItineraryPlanner({
           )}
           {sorted.some((option) => option.sailing.isSimulation) && (
             <p className="mt-1 text-[11px] leading-snug text-muted-foreground">
-              Simulation : liaisons et prix estimés, sans départ confirmé pour cette période.
+              Simulation : lignes et prix estimés, sans départ confirmé pour cette période.
             </p>
           )}
           {sorted.length > 0 && hasPublishedForPeriod && onBookPeriod && (

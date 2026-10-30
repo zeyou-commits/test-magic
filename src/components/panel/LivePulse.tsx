@@ -18,7 +18,7 @@ export type LiveInfo = {
 };
 
 /**
- * Ce qui se passe autour d'une fiche (port, traversée, bateau), compté de la même façon partout.
+ * Ce qui se passe autour d'une fiche (port, traversée, navire), compté de la même façon partout.
  * - Une info BledWay rattachée à aucune ligne, aucun port ni aucune compagnie ne compte pas.
  * - Une info BledWay sort du compteur après 24 h (elle reste dans la liste) ; un changement de
  *   traversée après 72 h.

@@ -62,7 +62,7 @@ const failure = (error: { code?: string; message: string }) =>
         ? "Droits insuffisants : rôle admin requis."
         : "L’opération n’a pas abouti. Réessayez.";
 
-/** Nombre de départs, navires et liaisons par compagnie (lecture publique, calcul côté admin). */
+/** Nombre de départs, navires et lignes par compagnie (lecture publique, calcul côté admin). */
 function useCompanyCounts() {
   const { data: vessels = [] } = useQuery(vesselsQuery);
   const links = useQuery({
@@ -385,7 +385,7 @@ function CompanyEditor({
               <Combine className="size-4" aria-hidden /> Fusionner un doublon
             </h3>
             <p className="text-xs text-muted-foreground">
-              Tous les départs, navires, calendriers, liaisons et Flash info de la compagnie supprimée
+              Tous les départs, navires, calendriers, lignes et Flash info de la compagnie supprimée
               passent sur celle qui est gardée. Les logo, site et description manquants sont repris.
             </p>
             <select

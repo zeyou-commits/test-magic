@@ -29,7 +29,7 @@ export const Route = createFileRoute("/compte")({
       {
         name: "description",
         content:
-          "Gérez votre profil BledWay : nom affiché, photo, avis publiés et signalements envoyés.",
+          "Gérez votre profil BledWay : nom affiché, avis publiés et signalements envoyés.",
       },
       { property: "og:title", content: "Mon compte — BledWay" },
       {

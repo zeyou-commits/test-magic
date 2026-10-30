@@ -49,7 +49,7 @@ let mounted = 0;
 export type ReportTarget = Selection & { portId?: string | null; vesselId?: string | null };
 /**
  * Point d'entrée unique pour signaler une situation, depuis n'importe quel écran.
- * `target` préremplit le port, le bateau ou la traversée concernés.
+ * `target` préremplit le port, le navire ou la traversée concernés.
  */
 export function requestQuickReport(target?: ReportTarget) {
   if (mounted) {
@@ -479,7 +479,7 @@ export function QuickReport({
         </div>
 
         <fieldset className="bw-report-field" disabled={mutation.isPending}>
-          <legend>{situation.where === "port" ? "Où êtes-vous ?" : "Quel bateau ?"}</legend>
+          <legend>{situation.where === "port" ? "Où êtes-vous ?" : "Quel navire ?"}</legend>
           {situation.where === "port" ? (
             <div className="bw-report-where-row">
               <select
@@ -510,7 +510,7 @@ export function QuickReport({
               }}
               aria-label="Bateau"
             >
-              <option value="">Choisir le bateau…</option>
+              <option value="">Choisir le navire…</option>
               {draft.portId ? (
                 <optgroup label={`À quai à ${portName(draft.portId) ?? "ce port"}`}>
                   {vessels

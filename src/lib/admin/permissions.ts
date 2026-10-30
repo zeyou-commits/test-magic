@@ -16,6 +16,7 @@ const editorial = new Set([
   "signals",
   "places",
   "walletMedia",
+  "health",
 ]);
 const moderation = new Set(["reviews", "community", "reports"]);
 export function canUseAdminTab(roles: readonly string[], tab: string) {

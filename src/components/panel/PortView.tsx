@@ -118,7 +118,7 @@ export function PortView({
   }, [portId]);
   const port = ports.find((item) => item.id === portId);
   const photoQuery = useQuery(portPhotoQuery(port ?? { id: "", name: "", photo_url: null }));
-  // Départs récents (traversées en cours) + à venir : une arrivée d'un bateau parti hier compte.
+  // Départs récents (traversées en cours) + à venir : une arrivée d'un navire parti hier compte.
   const { data: recentDepartures = [] } = useQuery(fleetDeparturesQuery);
   const knownDepartures = useMemo(
     () => [
@@ -468,7 +468,7 @@ export function PortView({
           ) : null}
           <details className="port-practical-details">
             <summary>
-              Liaisons de ce port <span>{portRoutes.length}</span>
+              Lignes de ce port <span>{portRoutes.length}</span>
               <ChevronRight size={16} aria-hidden />
             </summary>
             {portRoutes.length ? (
@@ -490,7 +490,7 @@ export function PortView({
                 ))}
               </ul>
             ) : (
-              <EmptyNote>Aucune liaison enregistrée.</EmptyNote>
+              <EmptyNote>Aucune ligne enregistrée.</EmptyNote>
             )}
           </details>
           <div className="pv-footnote">

@@ -137,7 +137,7 @@ function Label({ text, children }: { text: string; children: React.ReactNode }) 
 }
 
 /**
- * Catalogue des signalements voyageurs : situations (port, bateau), leurs choix et les
+ * Catalogue des signalements voyageurs : situations (port, navire), leurs choix et les
  * services du port. Ce qui est masqué n'est plus proposé mais reste lisible sur les anciens signalements.
  */
 export function SignalsAdmin() {
@@ -508,7 +508,7 @@ function SituationEditor({
               className="h-10 rounded-md border border-input bg-background px-3 text-sm"
             >
               <option value="port">Le port</option>
-              <option value="vessel">Le bateau</option>
+              <option value="vessel">Le navire</option>
             </select>
           </Label>
         ) : null}

@@ -3,6 +3,11 @@ export function capitalizeFirst(value: string): string {
   return value ? value.charAt(0).toUpperCase() + value.slice(1) : value;
 }
 
+/** « de Marseille », « d'Alger » : pour un nom propre, en français. */
+export function deName(name: string): string {
+  return /^[aeiouyàâäéèêëîïôöùûü]/i.test(name) ? `d'${name}` : `de ${name}`;
+}
+
 export function formatDuration(minutes: number | null | undefined): string {
   if (!minutes || minutes <= 0) return "—";
   const h = Math.floor(minutes / 60);

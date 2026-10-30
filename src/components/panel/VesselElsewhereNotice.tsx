@@ -64,8 +64,8 @@ export function VesselElsewhereNotice({ departure }: { departure: Departure }) {
       </strong>{" "}
       (signal {formatAge((now - Date.parse(elsewhere.reportedAt)) / 60_000)}).{" "}
       {started
-        ? "Départ probablement retardé ou bateau remplacé : renseignez-vous auprès de la compagnie."
-        : "Si le bateau ne change pas, ce départ risque d'être retardé."}
+        ? "Départ probablement retardé ou navire remplacé : renseignez-vous auprès de la compagnie."
+        : "Si le navire ne change pas, ce départ risque d'être retardé."}
     </p>
   );
 }

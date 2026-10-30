@@ -1,5 +1,5 @@
 import { Link } from "@tanstack/react-router";
-import { Route as RouteIcon, Clock, Map as MapIcon, Search } from "lucide-react";
+import { Route as RouteIcon, Clock, Map as MapIcon, Ship } from "lucide-react";
 import { MeTab } from "@/components/community/MeTab";
 
 const itemClass =
@@ -73,24 +73,24 @@ export function MobileTabBar({
           onClick={onOpenSearch}
           data-active={activeTab === "search"}
           className={`${itemClass} text-primary`}
-          aria-label="Chercher une traversée"
+          aria-label="Trouver une traversée"
         >
           <span className="grid size-10 place-items-center rounded-full bg-primary text-primary-foreground shadow-md">
-            <Search className="size-5" aria-hidden />
+            <Ship className="size-5" aria-hidden />
           </span>
-          <span>Chercher</span>
+          <span>Trouver</span>
         </button>
       ) : (
         <Link
           to="/"
           onClick={() => rememberAction("search")}
           className={`${itemClass} text-primary`}
-          aria-label="Chercher une traversée"
+          aria-label="Trouver une traversée"
         >
           <span className="grid size-10 place-items-center rounded-full bg-primary text-primary-foreground shadow-md">
-            <Search className="size-5" aria-hidden />
+            <Ship className="size-5" aria-hidden />
           </span>
-          <span>Chercher</span>
+          <span>Trouver</span>
         </Link>
       )}
       {onOpenItinerary ? (
@@ -101,12 +101,12 @@ export function MobileTabBar({
           className={itemClass}
         >
           <RouteIcon className="size-5" aria-hidden />
-          <span>Itinéraire</span>
+          <span>Route</span>
         </button>
       ) : (
         <Link to="/" onClick={() => rememberAction("itinerary")} className={itemClass}>
           <RouteIcon className="size-5" aria-hidden />
-          <span>Itinéraire</span>
+          <span>Route</span>
         </Link>
       )}
       {/* « Moi » : mon cabas et mon humeur. « Signaler » est le bouton jaune flottant de la carte. */}

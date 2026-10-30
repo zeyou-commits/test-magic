@@ -1,4 +1,6 @@
 import { VesselAlertTag } from "@/components/panel/VesselAlert";
+import { useVesselAlert } from "@/lib/ferry/vesselAlerts";
+import { track } from "@/lib/usage";
 import { useState, type ReactNode } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { ArrowUpRight, ChevronDown, Moon, Repeat2, Ship, Undo2 } from "lucide-react";
@@ -61,6 +63,7 @@ function Leg({
   const panelId = `rt-${label}-${sailing.departure.id}`;
   const overnight = sailing.depHour >= 20 || sailing.depHour < 5;
   const fare = estimateFare(sailing, useFareProfile());
+  const alert = useVesselAlert(sailing.vessel?.id);
   const colors = LEG_TONES[tone];
   return (
     <div>
@@ -160,7 +163,7 @@ function Leg({
             className="shrink-0 text-xs font-bold tabular-nums text-success"
             title="Tarif moyen indicatif"
           >
-            {formatEuro(fare)}
+            {alert ? "À confirmer" : formatEuro(fare)}
           </span>
           <span className="inline-flex shrink-0 items-center gap-0.5 text-[11px] font-semibold text-primary">
             {expanded ? "Masquer" : "Détails"}
@@ -235,6 +238,8 @@ export function RoundTripCard({
   const total = estimateFare(trip.out, profile) + estimateFare(trip.back, profile);
   const bookHref = bookingUrl(trip.out, profile, trip.back);
   const bookSite = bookingSite(trip.out, trip.back);
+  const outAlert = useVesselAlert(trip.out.vessel?.id);
+  const backAlert = useVesselAlert(trip.back.vessel?.id);
   return (
     <article
       style={{ animationDelay: `${Math.min(index, 8) * 45}ms` }}
@@ -281,16 +286,23 @@ export function RoundTripCard({
         <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
           Estimation A/R
         </span>
+        {outAlert || backAlert ? (
+          <span className="ml-auto text-right text-[11px] font-semibold text-destructive">
+            Départ à confirmer auprès de la compagnie
+          </span>
+        ) : (
         <a
           href={bookHref}
           target="_blank"
           rel="noopener noreferrer"
+          onClick={() => track("booking_click", bookSite)}
           title="Tarif moyen indicatif aller + retour"
           className="ml-auto inline-flex h-8 shrink-0 items-center gap-1 rounded-full bg-cta px-3 text-xs font-semibold tabular-nums text-cta-foreground shadow-sm transition hover:brightness-110 active:scale-95"
         >
           ≈ {formatEuro(total)} <ArrowUpRight className="size-3.5" aria-hidden />
           <span className="sr-only">sur {bookSite} (nouvel onglet)</span>
         </a>
+        )}
       </footer>
     </article>
   );

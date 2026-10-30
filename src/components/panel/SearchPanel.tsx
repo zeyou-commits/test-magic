@@ -1,4 +1,5 @@
 import { vesselCompanyIds } from "@/lib/ferry/filterSync";
+import { track } from "@/lib/usage";
 import { HomeTraffic } from "./HomeTraffic";
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { useQuery } from "@tanstack/react-query";
@@ -10,6 +11,7 @@ import {
   RotateCcw,
   Search,
   Route,
+  Ship,
   SlidersHorizontal,
   Users,
   X,
@@ -56,7 +58,7 @@ import { SalesAlertForm } from "./SalesAlertForm";
 import { isNorthShore, isSouthShore } from "@/lib/ferry/markets";
 import { CompanyBadge } from "./CompanyBadge";
 import { RoundTripCard } from "./RoundTripCard";
-import { FareProfileContext } from "@/lib/ferry/pricing";
+import { estimateFare, FareProfileContext, useFareProfile } from "@/lib/ferry/pricing";
 import { buildRoundTrips, type RoundTrip } from "@/lib/ferry/roundTrips";
 import { DayStrip, SailingCard } from "./SailingCard";
 import { ShareButtons } from "./ShareButtons";
@@ -274,6 +276,7 @@ export function SearchPanel({
         ? null
         : { id: sailing.departure.id, routeId: sailing.route.id };
     setOpenCard(next);
+    if (next) track("search_choice");
     onFocusRoute?.(next?.routeId ?? null);
   };
 
@@ -375,6 +378,7 @@ export function SearchPanel({
     [inbound, filters.date, today],
   );
 
+  const [sortBy, setSortBy] = useState<SortBy>("date");
   // Date d'aller « intelligente » : jour exact, ou fenêtre de ± N jours si la souplesse est activée.
   const outList = filters.date
     ? outbound.filter((item) => Math.abs(diffDays(filters.date!, item.dayKey)) <= filters.flexDays)
@@ -382,7 +386,8 @@ export function SearchPanel({
   const backList = filters.returnDate
     ? inbound.filter((item) => item.dayKey === filters.returnDate)
     : inbound.filter((item) => !filters.date || item.dayKey >= filters.date);
-  const outShown = filters.date || showAllOut ? outList : outList.slice(0, PAGE);
+  const outSorted = sortBy === "date" ? outList : [...outList].sort(bySailing(sortBy, profile));
+  const outShown = filters.date || showAllOut ? outSorted : outSorted.slice(0, PAGE);
   const backShown = filters.returnDate || showAllBack ? backList : backList.slice(0, PAGE);
   const outRecommended = filters.date ? recommendedId(outList, traveler) : null;
   const backRecommended = filters.returnDate ? recommendedId(backList, traveler) : null;
@@ -420,7 +425,9 @@ export function SearchPanel({
         : null;
   const reportContext = `Recherche sans départ affiché : ${fromName(filters.departurePortIds) || "tous ports"} → ${fromName(filters.arrivalPortIds) || "tous ports"}${filters.date ? `, le ${filters.date}` : ""}.`;
 
-  const resultCount = filters.roundTrip
+  // Sans date de retour, un voyageur n'a pas encore d'aller-retour à comparer.
+  const showTrips = filters.roundTrip && Boolean(filters.returnDate);
+  const resultCount = showTrips
     ? roundTrips.main.length + roundTrips.alternatives.length
     : outList.length;
   const portsLabel = (ids: string[]) =>
@@ -450,8 +457,8 @@ export function SearchPanel({
               <button
                 type="button"
                 onClick={onOpenItinerary}
-                aria-label="Simuler mon itinéraire porte à porte"
-                title="Itinéraire porte à porte"
+                aria-label="Préparer ma route jusqu'au port"
+                title="Route jusqu'au port"
                 className="grid size-9 shrink-0 place-items-center rounded-xl border border-primary/20 bg-white text-primary hover:bg-primary/5"
               >
                 <Route className="size-4" aria-hidden />
@@ -463,7 +470,7 @@ export function SearchPanel({
         {!editing ? (
           <section className="border-b px-3 py-2.5 md:px-5">
             <button type="button" onClick={startSearch} className="bw-search-summary">
-              <Search className="size-4 shrink-0 text-primary" aria-hidden />
+              <Ship className="size-4 shrink-0 text-primary" aria-hidden />
               <span className="min-w-0 flex-1 leading-tight">
                 <span className="block truncate text-sm font-bold">
                   {active
@@ -773,11 +780,12 @@ export function SearchPanel({
                 <button
                   type="button"
                   onClick={() => {
+                    track("search_results", String(resultCount));
                     showResults();
                   }}
                   className="flex h-11 items-center justify-center gap-2 rounded-xl bg-primary px-4 text-sm font-bold text-primary-foreground shadow-md transition hover:opacity-90"
                 >
-                  <Search className="size-4" aria-hidden />
+                  <Ship className="size-4" aria-hidden />
                   <span className="md:hidden">
                     Voir{active && resultCount ? ` (${resultCount})` : ""}
                   </span>
@@ -817,10 +825,22 @@ export function SearchPanel({
             </div>
           ) : (
             <>
-              {filters.roundTrip ? (
+              <label className="flex items-center justify-end gap-2 text-xs font-semibold text-muted-foreground">
+                Trier par
+                <select
+                  value={sortBy}
+                  onChange={(event) => setSortBy(event.target.value as SortBy)}
+                  className="h-9 rounded-lg border border-input bg-background px-2 text-xs text-foreground"
+                >
+                  <option value="date">Date</option>
+                  <option value="price">Prix estimé</option>
+                  <option value="duration">Durée</option>
+                </select>
+              </label>
+              {showTrips ? (
                 <RoundTripSection
                   trips={roundTrips}
-                  hasPorts={filters.departurePortIds.length + filters.arrivalPortIds.length > 0}
+                  sortBy={sortBy}
                   onOpenVessel={(id) => onSelect({ type: "vessel", id })}
                   onOpenRoute={(id) => onSelect({ type: "route", id })}
                   onHoverRoute={setHoverRouteId}
@@ -855,7 +875,7 @@ export function SearchPanel({
                   }
                   subtitle={
                     filters.roundTrip
-                      ? "Départs aller · heures locales"
+                      ? "Allers · ajoutez une date de retour pour comparer les allers-retours"
                       : "Aller simple · heures locales"
                   }
                   days={outDays}
@@ -899,6 +919,13 @@ export function SearchPanel({
     </FareProfileContext.Provider>
   );
 }
+
+type SortBy = "date" | "price" | "duration";
+
+const bySailing = (sortBy: SortBy, profile: TripProfileValue) => (a: Sailing, b: Sailing) =>
+  sortBy === "price"
+    ? estimateFare(a, profile) - estimateFare(b, profile)
+    : (a.durationMin ?? Infinity) - (b.durationMin ?? Infinity);
 
 function ResultBlock({
   liveByDeparture,
@@ -1144,7 +1171,7 @@ function FilterSelect({
 
 function RoundTripSection({
   trips,
-  hasPorts,
+  sortBy,
   onOpenVessel,
   onOpenRoute,
   onHoverRoute,
@@ -1153,7 +1180,7 @@ function RoundTripSection({
   reportContext,
 }: {
   trips: { main: RoundTrip[]; alternatives: RoundTrip[] };
-  hasPorts: boolean;
+  sortBy: SortBy;
   onOpenVessel: (id: string) => void;
   onOpenRoute: (id: string) => void;
   onHoverRoute: (routeId: string | null) => void;
@@ -1176,31 +1203,32 @@ function RoundTripSection({
       ))}
     </div>
   );
-  const allMirror = trips.main.length > 0 && trips.main.every((trip) => trip.mirror);
+  const profile = useFareProfile();
+  const sorted = (items: RoundTrip[]) => {
+    if (sortBy === "date") return items;
+    const value = (trip: RoundTrip) =>
+      sortBy === "price"
+        ? estimateFare(trip.out, profile) + estimateFare(trip.back, profile)
+        : (trip.out.durationMin ?? Infinity) + (trip.back.durationMin ?? Infinity);
+    return [...items].sort((a, b) => value(a) - value(b));
+  };
+  // Même port d'abord ; les retours par un autre port restent repliés.
+  const samePort = trips.main.filter((trip) => trip.mirror);
+  const otherPorts = [...trips.main.filter((trip) => !trip.mirror), ...trips.alternatives];
   return (
     <div className="space-y-5">
       <div className="space-y-2.5">
         <div className="flex items-baseline justify-between gap-2">
           <h2 className="font-display text-base font-bold leading-tight">
-            {allMirror
-              ? "Aller-retour même port"
-              : hasPorts
-                ? "Allers-retours pour votre trajet"
-                : "Allers-retours possibles"}
+            Aller-retour par le même port
           </h2>
           <span className="text-[11px] text-muted-foreground">Heures locales des ports</span>
         </div>
-        {allMirror ? (
-          <p className="text-[11px] leading-snug text-muted-foreground">
-            Départ et retour depuis les mêmes ports, dans les deux sens.
-          </p>
-        ) : null}
-        {trips.main.length ? (
-          list(trips.main)
+        {samePort.length ? (
+          list(sorted(samePort))
         ) : (
           <div className="rounded-2xl border border-dashed p-5 text-center text-sm text-muted-foreground">
-            Aucun aller-retour connu pour ces ports et ces dates.
-            {trips.alternatives.length ? " Voici des alternatives ci-dessous." : ""}
+            Aucun aller-retour connu par le même port à ces dates.
             {reportTarget && (
               <div className="mt-3">
                 <ReportButton
@@ -1215,19 +1243,13 @@ function RoundTripSection({
           </div>
         )}
       </div>
-      {trips.alternatives.length ? (
-        <div className="space-y-2.5 rounded-2xl border border-dashed border-[#c2410c]/40 bg-[#c2410c]/[0.03] p-3">
-          <div>
-            <h2 className="font-display text-base font-bold leading-tight">
-              {hasPorts ? "Alternatives par d’autres ports" : "Retour depuis un autre port"}
-            </h2>
-            <p className="mt-0.5 text-[11px] leading-snug text-muted-foreground">
-              Le retour part d’un port différent de l’arrivée (ex. aller Oran, retour Alger) —
-              pratique pour un road trip ou quand aucune ligne directe n’est publiée.
-            </p>
-          </div>
-          {list(trips.alternatives)}
-        </div>
+      {otherPorts.length ? (
+        <details className="rounded-2xl border border-dashed p-3">
+          <summary className="cursor-pointer font-display text-sm font-bold">
+            Retour par un autre port ({otherPorts.length})
+          </summary>
+          <div className="mt-2.5">{list(sorted(otherPorts))}</div>
+        </details>
       ) : null}
     </div>
   );

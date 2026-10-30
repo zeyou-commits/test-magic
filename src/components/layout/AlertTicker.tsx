@@ -7,6 +7,8 @@ import { incidentHeadline, incidentsQuery } from "@/lib/ferry/incidents";
 import { portsQuery, vesselsQuery } from "@/lib/ferry/queries";
 import { useMyTrip } from "@/lib/ferry/myTrip";
 import { useTravelAction } from "@/hooks/useTravelAction";
+import { useAuth } from "@/hooks/useAuth";
+import { supabase } from "@/integrations/supabase/client";
 
 const DISMISSED_KEY = "bledway:alert-ticker-dismissed";
 
@@ -19,8 +21,9 @@ function readDismissed() {
 }
 
 /**
- * Bandeau en haut de toutes les pages : alertes graves en rouge (dossiers confirmés et alertes
- * Flash), et perturbations de moins de 48 h en ambre s'il n'y a pas d'alerte.
+ * Bandeau en haut de toutes les pages : alertes graves en rouge pour les personnes concernées
+ * (navire suivi ou de leur traversée) et sur une ligne discrète pour les autres, perturbations de
+ * moins de 48 h en ambre s'il n'y a pas d'alerte.
  * Absent s'il n'y a rien. Fermé, il revient à la prochaine information.
  */
 export function AlertTicker() {
@@ -48,6 +51,28 @@ export function AlertTicker() {
   }, []);
   const request = useTravelAction();
   const { trip } = useMyTrip();
+  const { user } = useAuth();
+  const followed = useQuery({
+    queryKey: ["ticker-followed-vessels", user?.id],
+    enabled: Boolean(user),
+    staleTime: 60_000,
+    queryFn: async () => {
+      const { data } = await (supabase as unknown as import("@supabase/supabase-js").SupabaseClient)
+        .from("bw_follows")
+        .select("target_kind,target_id")
+        .eq("user_id", user!.id)
+        .eq("active", true);
+      const rows = (data ?? []) as { target_kind: string; target_id: string }[];
+      const ids = rows.filter((r) => r.target_kind === "departure").map((r) => r.target_id);
+      const departures = ids.length
+        ? await supabase.from("departures").select("vessel_id").in("id", ids)
+        : { data: [] as { vessel_id: string | null }[] };
+      return [
+        ...rows.filter((r) => r.target_kind === "vessel").map((r) => r.target_id),
+        ...(departures.data ?? []).flatMap((d) => (d.vessel_id ? [d.vessel_id] : [])),
+      ];
+    },
+  });
   useEffect(() => {
     setDismissed(readDismissed());
     setReady(true);
@@ -137,7 +162,11 @@ export function AlertTicker() {
       <X size={15} aria-hidden />
     </button>
   );
-  const tone = critical.length ? "critical" : "warning";
+  // Une alerte sans navire ne se rattache à personne en particulier : elle reste en rouge.
+  const concerned = critical.some(
+    (alert) => !alert.id || alert.id === trip?.vessel?.id || followed.data?.includes(alert.id),
+  );
+  const tone = critical.length ? (concerned ? "critical" : "quiet") : "warning";
   const label = critical.length ? "Alertes graves" : "Perturbations";
   // Une seule information : fixe, centrée et avec ses actions. Le défilement sert quand il y en a plusieurs.
   if (alerts.length === 1) {

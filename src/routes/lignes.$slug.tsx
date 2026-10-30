@@ -1,4 +1,5 @@
-import { VesselAlertTag } from "@/components/panel/VesselAlert";
+import { LineAlertNotice, VesselAlertTag } from "@/components/panel/VesselAlert";
+import { LineCalendar } from "@/components/panel/LineCalendar";
 import { absoluteUrl, breadcrumbSchema, jsonLdString, seoHead } from "@/lib/seo/site";
 import { Breadcrumbs } from "@/components/editorial/Editorial";
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
@@ -8,11 +9,10 @@ import {
   companiesQuery,
   portsQuery,
   routesQuery,
-  schedulesQuery,
   upcomingDeparturesQuery,
   vesselsQuery,
 } from "@/lib/ferry/queries";
-import { formatDateTime, formatDuration, weekdayLabels } from "@/lib/ferry/format";
+import { deName, formatDateTime, formatDuration } from "@/lib/ferry/format";
 import { portTimeZone, zoneLabel } from "@/lib/ferry/time";
 import { BookingLink } from "@/components/panel/shared";
 
@@ -27,7 +27,6 @@ export const Route = createFileRoute("/lignes/$slug")({
     await Promise.all([
       context.queryClient.ensureQueryData(companiesQuery),
       context.queryClient.ensureQueryData(vesselsQuery),
-      context.queryClient.ensureQueryData(schedulesQuery),
       context.queryClient.ensureQueryData(upcomingDeparturesQuery()),
     ]);
     return {
@@ -44,7 +43,7 @@ export const Route = createFileRoute("/lignes/$slug")({
       };
     }
     const title = `Ferry ${loaderData.from} — ${loaderData.to} : durée, horaires, compagnies | BledWay`;
-    const description = `Traversée en ferry ${loaderData.from} → ${loaderData.to} : durée typique de ${loaderData.duration}, calendrier habituel, compagnies et prochains départs connus.`;
+    const description = `Traversée en ferry ${loaderData.from} → ${loaderData.to} : durée typique de ${loaderData.duration}, jours de départ, compagnies et prochains départs connus.`;
     return seoHead(title, description, `/lignes/${loaderData.slug}`);
   },
   component: LignePage,
@@ -56,18 +55,19 @@ function LignePage() {
   const { data: ports } = useSuspenseQuery(portsQuery);
   const { data: companies } = useSuspenseQuery(companiesQuery);
   const { data: vessels } = useSuspenseQuery(vesselsQuery);
-  const { data: schedules } = useSuspenseQuery(schedulesQuery);
   const { data: departures } = useSuspenseQuery(upcomingDeparturesQuery());
 
   const route = routes.find((item) => item.slug === slug);
   if (!route) return null;
   const from = ports.find((port) => port.id === route.departure_port_id);
   const to = ports.find((port) => port.id === route.arrival_port_id);
-  const routeSchedules = schedules.filter((schedule) => schedule.route_id === route.id);
-  const nextDepartures = departures
-    .filter((departure) => departure.route_id === route.id)
-    .slice(0, 10);
-  const operators = companies.filter((company) => route.company_ids.includes(company.id));
+  const lineDepartures = departures.filter((departure) => departure.route_id === route.id);
+  const nextDepartures = lineDepartures.slice(0, 10);
+  const operators = companies.filter(
+    (company) =>
+      route.company_ids.includes(company.id) ||
+      lineDepartures.some((departure) => departure.company_id === company.id),
+  );
   const timeZone = portTimeZone(from);
   const reverse = routes.find(
     (item) =>
@@ -131,7 +131,7 @@ function LignePage() {
               params={{ slug: port.slug }}
               className="rounded-full bg-secondary px-3 py-1 text-sm hover:bg-secondary/70"
             >
-              Port de {port.name}
+              Port {deName(port.name)}
             </Link>
           ) : null,
         )}
@@ -143,6 +143,9 @@ function LignePage() {
           <p className="mt-1 text-sm text-muted-foreground">
             La réservation se fait directement auprès de la compagnie.
           </p>
+          <div className="mt-4 empty:hidden">
+            <LineAlertNotice departures={lineDepartures} vessels={vessels} />
+          </div>
           <div className="mt-4 grid gap-3 sm:grid-cols-2">
             {operators.map((company) => (
               <Card key={company.id}>
@@ -155,33 +158,9 @@ function LignePage() {
       ) : null}
 
       <section className="mt-10">
-        <h2 className="text-xl font-semibold">Calendrier habituel</h2>
-        <div className="mt-4 grid gap-4 sm:grid-cols-2">
-          {routeSchedules.map((schedule) => {
-            const company = companies.find((item) => item.id === schedule.company_id);
-            const vessel = vessels.find((item) => item.id === schedule.default_vessel_id);
-            return (
-              <Card key={schedule.id}>
-                <p className="font-display font-semibold">
-                  Départ {schedule.departure_time.slice(0, 5)} ({zoneLabel(timeZone)}) ·{" "}
-                  {formatDuration(schedule.duration_minutes)}
-                </p>
-                <p className="mt-1 text-sm text-muted-foreground">
-                  {schedule.weekdays
-                    .map((day) => weekdayLabels[day - 1] ?? "")
-                    .filter(Boolean)
-                    .join(", ")}
-                  {company ? ` · ${company.name}` : ""}
-                  {vessel ? ` · ${vessel.name}` : ""} <VesselAlertTag vesselId={vessel?.id} />
-                </p>
-              </Card>
-            );
-          })}
-          {routeSchedules.length === 0 ? (
-            <p className="text-sm text-muted-foreground">
-              Aucun calendrier vérifié pour cette ligne pour le moment.
-            </p>
-          ) : null}
+        <h2 className="text-xl font-semibold">Jours et heures de départ</h2>
+        <div className="mt-4">
+          <LineCalendar departures={lineDepartures} companies={companies} timeZone={timeZone} />
         </div>
       </section>
 
@@ -195,6 +174,7 @@ function LignePage() {
         <ul className="mt-4 divide-y divide-border rounded-2xl border border-border bg-card">
           {nextDepartures.map((departure) => {
             const company = companies.find((item) => item.id === departure.company_id);
+            const vessel = vessels.find((item) => item.id === departure.vessel_id);
             return (
               <li
                 key={departure.id}
@@ -209,6 +189,8 @@ function LignePage() {
                     ? ` · ${formatDuration(departure.duration_minutes)}`
                     : ""}
                   {departure.status === "cancelled" ? " · Annulé" : ""}
+                  {vessel ? ` · ${vessel.name} ` : ""}
+                  <VesselAlertTag vesselId={vessel?.id} />
                 </span>
               </li>
             );

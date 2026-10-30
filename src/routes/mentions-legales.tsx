@@ -17,7 +17,7 @@ function LegalPage() {
       <PageHero
         overline="Informations légales"
         title="Mentions légales"
-        intro="BledWay est un service d'information indépendant sur les traversées maritimes vers l'Algérie."
+        intro="BledWay est un service d'information indépendant sur les traversées maritimes entre l'Europe et l'Algérie."
       />
       <div className="mx-auto mt-8 max-w-3xl space-y-6 text-sm leading-relaxed text-muted-foreground">
         <section>

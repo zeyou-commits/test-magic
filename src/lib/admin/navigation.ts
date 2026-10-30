@@ -22,6 +22,8 @@ export const adminTabs = [
   "vessels",
   "import",
   "data",
+  "health",
+  "usage",
 ] as const;
 
 export type AdminTab = (typeof adminTabs)[number];

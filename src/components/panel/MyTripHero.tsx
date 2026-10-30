@@ -76,7 +76,7 @@ export function MyTripHero({ onSelect }: { onSelect: (selection: Selection) => v
         : phase.phase === "today"
           ? `Rejoindre le port${trip.from ? ` ${/^[aeiouyhâéèêîôûAEIOUYHÂÉÈÊÎÔÛ]/.test(trip.from.name) ? "d’" : "de "}${trip.from.name}` : ""} et dire « Au port »`
           : phase.phase === "sea"
-            ? "Suivre le bateau et l’arrivée estimée"
+            ? "Suivre le navire et l’arrivée estimée"
             : "Partager l’arrivée avec ses proches";
   return (
     <section
@@ -136,7 +136,7 @@ export function MyTripHero({ onSelect }: { onSelect: (selection: Selection) => v
               )
             }
           >
-            <Crosshair size={14} aria-hidden /> Voir mon bateau
+            <Crosshair size={14} aria-hidden /> Voir mon navire
           </button>
         ) : null}
       </div>
@@ -145,7 +145,7 @@ export function MyTripHero({ onSelect }: { onSelect: (selection: Selection) => v
 }
 
 /**
- * Carte : quand mon bateau n'y est pas encore (départ lointain, bateau hors zone), une pastille
+ * Carte : quand mon navire n'y est pas encore (départ lointain, navire hors zone), une pastille
  * flottante avec le chrono ; un toucher ouvre « Ma traversée ».
  */
 export function MyTripMapChip({

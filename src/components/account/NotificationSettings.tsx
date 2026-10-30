@@ -23,13 +23,13 @@ const options = [
   {
     key: "community",
     label: "Actualités de mes bateaux",
-    description: "Signalements et nouveaux avis des voyageurs sur les bateaux suivis.",
+    description: "Signalements et nouveaux avis des voyageurs sur les navires suivis.",
     icon: MessageSquare,
   },
   {
     key: "openings",
     label: "Ouverture des traversées",
-    description: "Les liaisons et périodes que vous suivez, après vérification par notre équipe.",
+    description: "Les lignes et périodes que vous suivez, après vérification par notre équipe.",
     icon: BellRing,
   },
 ] as const;

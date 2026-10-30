@@ -82,7 +82,7 @@ export function ProfileHost() {
               <ul className="bw-profile__favs">
                 {data.favorite_vessel ? (
                   <li>
-                    <Ship size={15} aria-hidden /> Bateau préféré{" "}
+                    <Ship size={15} aria-hidden /> Navire préféré{" "}
                     <strong>{data.favorite_vessel}</strong>
                   </li>
                 ) : null}

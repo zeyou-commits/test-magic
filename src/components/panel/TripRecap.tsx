@@ -70,7 +70,7 @@ function daysUntil(iso: string, timeZone: string) {
 type Tab = "prepare" | "live" | "ship";
 
 /**
- * « Votre traversée » : un récapitulatif lisible d'un coup d'œil (billet, ce qui se passe, bateau),
+ * « Votre traversée » : un récapitulatif lisible d'un coup d'œil (billet, ce qui se passe, navire),
  * puis le détail en trois onglets. Les données viennent des mêmes sources que la carte.
  */
 export function TripRecap({
@@ -491,7 +491,7 @@ export function TripRecap({
             </>
           ) : (
             <p className="bw-recap__empty">
-              <Ship size={16} aria-hidden /> Le bateau n’est pas encore affecté par la compagnie. Il
+              <Ship size={16} aria-hidden /> Le navire n’est pas encore affecté par la compagnie. Il
               apparaîtra ici dès qu’il sera connu.
             </p>
           )}

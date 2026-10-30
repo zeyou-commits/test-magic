@@ -207,7 +207,7 @@ export function VesselView({
           <MakeMyTrip kind="vessel" targetId={vessel.id} label={vessel.name} onSelect={onSelect} />
         ) : null}
         <div className="bw-ship-hero-photo bw-ship-hero-photo--compact">
-          <dl className="bw-ship-hero-stats" aria-label="Le bateau en chiffres">
+          <dl className="bw-ship-hero-stats" aria-label="Le navire en chiffres">
             <div>
               <CalendarDays size={12} aria-hidden />
               <dt>Âge</dt>
@@ -280,7 +280,7 @@ export function VesselView({
                   <Star key={n} size={15} />
                 ))}
               </span>
-              <span>Pas encore d’avis · soyez le premier à noter ce bateau</span>
+              <span>Pas encore d’avis · soyez le premier à noter ce navire</span>
             </>
           )}
         </button>
@@ -361,7 +361,7 @@ export function VesselView({
               }
             >
               <MapPin size={16} aria-hidden />
-              Repérer sur la carte
+              Voir sur la carte
             </button>
           ) : null}
           <div id={liveId} data-live-anchor>
@@ -419,7 +419,7 @@ export function VesselView({
             {communityAvailable ? (
               <div className="bw-community-invite">
                 <Users size={25} aria-hidden />
-                <h3>Vous connaissez ce bateau ?</h3>
+                <h3>Vous connaissez ce navire ?</h3>
                 <p>Votre expérience aide les familles à préparer leur voyage.</p>
                 <Button variant="outline" onClick={() => setTab("reviews")}>
                   Partager mon avis

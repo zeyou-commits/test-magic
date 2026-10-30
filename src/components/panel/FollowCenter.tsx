@@ -35,7 +35,7 @@ export function FollowCenter({ userId }: { userId: string }) {
           </span>
           <div>
             <h2 id="my-travel-title">Mes voyages suivis</h2>
-            <p>Vos bateaux, traversées et alertes d’ouverture.</p>
+            <p>Vos navires, traversées et alertes d’ouverture.</p>
           </div>
         </div>
         <div className="bw-account-filter" role="group" aria-label="Filtrer mes suivis">
@@ -76,7 +76,7 @@ export function FollowCenter({ userId }: { userId: string }) {
             <Ship className="size-8 text-primary" />
             <h3>Votre prochain voyage commence ici</h3>
             <p>
-              Sur une fiche bateau ou traversée, touchez le cœur « Suivre ». Nous regrouperons ici
+              Sur une fiche navire ou traversée, touchez le cœur « Suivre ». Nous regrouperons ici
               les informations utiles.
             </p>
             <a href="/" className="bw-action-primary">

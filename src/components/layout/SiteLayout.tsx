@@ -89,7 +89,7 @@ export function SiteHeader() {
             className="inline-flex items-center gap-1.5"
           >
             <RouteIcon size={16} aria-hidden />
-            Itinéraire
+            Route
           </Link>
           <DropdownMenu>
             <DropdownMenuTrigger className="bw-explore-trigger">
@@ -131,7 +131,7 @@ export function SiteHeader() {
               <DropdownMenuItem asChild>
                 <Link to="/" onClick={openItineraryFromHeader}>
                   <RouteIcon size={16} aria-hidden />
-                  Itinéraire porte à porte
+                  Route jusqu'au port
                 </Link>
               </DropdownMenuItem>
               {navLinks.map((item) => (

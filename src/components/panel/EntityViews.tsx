@@ -153,7 +153,7 @@ export function CompanyView({
             <EmptyNote>Aucun départ publié à venir.</EmptyNote>
           )}
           <details className="bw-rating-detail">
-            <summary>Liaisons référencées · {lines.length}</summary>
+            <summary>Lignes référencées · {lines.length}</summary>
             <ul className="bw-company-programmes">
               {lines.map((r) => (
                 <li key={r.id}>

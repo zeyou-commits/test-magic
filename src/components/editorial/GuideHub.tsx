@@ -12,7 +12,7 @@ const topics: { id: Topic; name: string; path: string; intro: string }[] = [
   },
   {
     id: "voyage",
-    name: "Le voyage vers l'Algérie",
+    name: "Le voyage Europe ↔ Algérie",
     path: "/voyage-algerie",
     intro:
       "Choisir son billet, préparer la voiture et organiser la traversée jusqu'à la sortie du port.",
@@ -53,7 +53,7 @@ export function GuideHub({ topic }: { topic?: Topic }) {
           href="/bateaux"
           className="inline-flex min-h-11 items-center rounded-xl border px-5 text-sm font-semibold hover:bg-secondary"
         >
-          Les dossiers bateaux
+          Les dossiers navires
         </a>
       </div>
       {!topic ? (

@@ -22,8 +22,8 @@ import type { Port, RouteLine, Vessel } from "@/lib/ferry/types";
 export const Route = createFileRoute("/bateaux/")({
   head: () =>
     seoHead(
-      "Navires et compagnies vers l'Algérie : flotte, lignes et caractéristiques | Bledway",
-      "Toute la flotte des ferries vers l'Algérie par compagnie : photos des navires, lignes desservies, capacité passagers et véhicules, âge et vitesse.",
+      "Navires et compagnies Europe ↔ Algérie : flotte, lignes et caractéristiques | BledWay",
+      "Toute la flotte des ferries entre l'Europe et l'Algérie par compagnie : photos des navires, lignes desservies, capacité passagers et véhicules, âge et vitesse.",
       "/bateaux",
     ),
   component: Boats,
@@ -55,13 +55,13 @@ function Boats() {
       <Breadcrumbs items={[{ name: "Bateaux", path: "/bateaux" }]} />
       <CollectionSchema
         path="/bateaux"
-        name="Flotte des ferries vers l'Algérie"
+        name="Flotte des ferries Europe ↔ Algérie"
         items={vesselDossiers.map((v) => ({ name: v.name, path: `/bateaux/${v.slug}` }))}
       />
       <EditorialHero
         label="La flotte"
         title="Les compagnies, leurs navires et leurs lignes"
-        intro="Chaque armateur, chaque bateau en photo avec ses caractéristiques et les traversées qu'il assure. Les capacités générales ne sont pas des places disponibles."
+        intro="Chaque armateur, chaque navire en photo avec ses caractéristiques et les traversées qu'il assure. Les capacités générales ne sont pas des places disponibles."
       />
       {groups.length === 0 ? (
         <p className="text-sm text-muted-foreground">Chargement de la flotte…</p>

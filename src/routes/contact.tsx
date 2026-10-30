@@ -5,7 +5,7 @@ import { Card, PageHero, SiteLayout } from "@/components/layout/SiteLayout";
 
 const title = "Contact et signalement d'erreur — BledWay";
 const description =
-  "Signaler un horaire erroné, une ligne manquante ou un port à ajouter sur BledWay, la carte des ferries vers l'Algérie.";
+  "Signaler un horaire erroné, une ligne manquante ou un port à ajouter sur BledWay, la carte des ferries Europe ↔ Algérie.";
 
 export const Route = createFileRoute("/contact")({
   head: () => seoHead(title, description, "/contact"),

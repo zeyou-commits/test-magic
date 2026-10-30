@@ -144,7 +144,7 @@ export function IncidentMessages({
           route_ids: [],
           port_ids: [],
           starts_at: startsAt.toISOString(),
-          ends_at: new Date(startsAt.getTime() + 72 * 3_600_000).toISOString(),
+          ends_at: null,
           published: true,
           created_by: user?.id,
         });
@@ -157,7 +157,7 @@ export function IncidentMessages({
       if (sent) toast.success(`${sent} message(s) envoyé(s) à ${accounts} destinataire(s).`);
       else if (!flash || flashFailed) toast.info("Aucun message envoyé : personne à prévenir.");
       if (failed.length) toast.error(`Échec pour : ${failed.join(", ")}. Vous pouvez réessayer.`);
-      if (flash && !flashFailed) toast.success("Alerte publiée en Flash info pour 72 h.");
+      if (flash && !flashFailed) toast.success("Alerte publiée en Flash info jusqu'à la clôture du dossier.");
       if (flashFailed) toast.error("Le Flash info n'a pas pu être publié.");
       void client.invalidateQueries({ queryKey: ["admin", "message-audience"] });
       void client.invalidateQueries({ queryKey: ["admin", "messages"] });
@@ -255,8 +255,8 @@ export function IncidentMessages({
           onChange={(e) => setFlash(e.target.checked)}
         />
         <span>
-          Publier une alerte en Flash info, visible de tous pendant 72 h
-          <small className="block text-muted-foreground">En rouge, en tête du fil.</small>
+          Publier une alerte en Flash info, visible de tous tant que le dossier est ouvert
+          <small className="block text-muted-foreground">Elle se lève seule à la clôture du dossier.</small>
         </span>
       </label>
       <label className="grid gap-1 font-medium">

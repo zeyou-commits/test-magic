@@ -1,4 +1,4 @@
-/** Logo BledWay : une coque de bateau qui file vers la droite. Même pictogramme sur toutes les pages. */
+/** Logo BledWay : une coque de navire qui file vers la droite. Même pictogramme sur toutes les pages. */
 export function BrandMark({ className = "size-8" }: { className?: string }) {
   return (
     <span

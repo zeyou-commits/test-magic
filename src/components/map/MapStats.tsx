@@ -28,7 +28,7 @@ interface MapStatsProps {
   onLineVisibility: (value: LineVisibility) => void;
   onPreview: (preview: MapPreview | null) => void;
   onDismiss: () => void;
-  /** Bouton « Repérer », en tête de colonne : il ouvre une recherche, il ne filtre pas. */
+  /** Bouton loupe, en tête de colonne : il ouvre une recherche, il ne filtre pas. */
   search?: ReactNode;
 }
 
@@ -124,8 +124,8 @@ export function MapStats({
     "flex w-full flex-col items-center justify-center gap-0.5 rounded-xl px-1 py-1.5 text-[11px] font-bold leading-none tabular-nums text-foreground transition-colors hover:bg-secondary data-[active=true]:bg-primary data-[active=true]:text-primary-foreground md:min-w-11 md:text-xs [@media(max-width:767px)_and_(max-height:700px)]:flex-row [@media(max-width:767px)_and_(max-height:700px)]:gap-1 [@media(max-width:767px)_and_(max-height:700px)]:py-1";
   const shipList =
     activeShortcut === "sea" ? atSea : activeShortcut === "upcoming" ? upcomingShips : [];
-  // Icônes parlantes sans légende : bateau qui tangue (en mer, avec point « en direct »),
-  // bateau à l'ancre (à quai), bâtiment (compagnies), phare (ports).
+  // Icônes parlantes sans légende : navire qui tangue (en mer, avec point « en direct »),
+  // navire à l'ancre (à quai), bâtiment (compagnies), phare (ports).
   const icon = "size-4 md:size-[18px]";
   const shortcuts = [
     {
@@ -220,7 +220,7 @@ export function MapStats({
         >
           {activeShortcut === "ports" ? (
             <div role="radiogroup" aria-label="Afficher les liaisons" className="p-2">
-              <p className="px-1 pt-1 text-xs font-bold">Afficher les liaisons</p>
+              <p className="px-1 pt-1 text-xs font-bold">Afficher les lignes</p>
               {(
                 [
                   ["published", "Avec programme publié", "Tous les programmes futurs"],

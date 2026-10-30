@@ -37,6 +37,13 @@ function PrivacyPage() {
           </p>
         </section>
         <section>
+          <h2 className="text-base font-semibold text-foreground">Mesure d'audience</h2>
+          <p className="mt-1">
+            Nous comptons les pages vues et les étapes de recherche de façon anonyme : sans compte,
+            sans adresse IP et sans cookie. Ces chiffres servent seulement à améliorer le service.
+          </p>
+        </section>
+        <section>
           <h2 className="text-base font-semibold text-foreground">Vos droits</h2>
           <p className="mt-1">
             Depuis votre espace « Mon profil », vous pouvez modifier vos informations et supprimer

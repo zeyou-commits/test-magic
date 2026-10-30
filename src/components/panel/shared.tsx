@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { ExternalLink, Star } from "lucide-react";
+import { deName } from "@/lib/ferry/format";
 import type { Company } from "@/lib/ferry/types";
 
 export function PanelHeader({
@@ -129,7 +130,7 @@ export function BookingLink({
       rel="noopener noreferrer"
       className={`inline-flex items-center justify-center gap-2 rounded-xl bg-cta font-semibold text-cta-foreground shadow-sm transition hover:bg-cta/90 ${compact ? "h-9 px-3 text-xs" : "h-11 w-full px-4 text-sm"}`}
     >
-      Réserver sur le site de {company.name}
+      Réserver sur le site {deName(company.name)}
       <ExternalLink className="size-4" aria-hidden />
       <span className="sr-only">(nouvel onglet)</span>
     </a>

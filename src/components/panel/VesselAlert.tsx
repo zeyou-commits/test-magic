@@ -1,5 +1,5 @@
 import { CircleAlert, ExternalLink, Megaphone } from "lucide-react";
-import { useVesselAlert } from "@/lib/ferry/vesselAlerts";
+import { useVesselAlert, useVesselAlerts } from "@/lib/ferry/vesselAlerts";
 import { safeExternalUrl } from "./shared";
 
 /** Étiquette à côté du nom d'un navire, partout où il est mentionné. */
@@ -10,6 +10,43 @@ export function VesselAlertTag({ vesselId }: { vesselId: string | null | undefin
     <span className="bw-vessel-alert-tag" data-level={alert.level} title={alert.label}>
       <b aria-hidden>!</b> {alert.short}
     </span>
+  );
+}
+
+/**
+ * Avant de réserver sur une ligne : les navires en alerte parmi ses prochains départs.
+ * Seule la compagnie décide du sort d'un départ, le message reste donc une invitation à vérifier.
+ */
+export function LineAlertNotice({
+  departures,
+  vessels,
+}: {
+  departures: { vessel_id: string | null; status: string }[];
+  vessels: { id: string; name: string }[];
+}) {
+  const alerts = useVesselAlerts();
+  const touched = [
+    ...new Set(
+      departures.flatMap((d) =>
+        d.vessel_id && d.status !== "cancelled" && alerts.has(d.vessel_id) ? [d.vessel_id] : [],
+      ),
+    ),
+  ];
+  if (!touched.length) return null;
+  const count = departures.filter((d) => d.vessel_id && touched.includes(d.vessel_id)).length;
+  return (
+    <div role="status" className="bw-vessel-alert-banner">
+      <p className="bw-vessel-alert-banner__title">
+        <CircleAlert size={17} aria-hidden />{" "}
+        {touched.map((id) => vessels.find((v) => v.id === id)?.name ?? "Un navire").join(", ")} :{" "}
+        {touched.map((id) => alerts.get(id)?.short.toLowerCase()).join(", ")}
+      </p>
+      <p>
+        {count} prochain{count > 1 ? "s" : ""} départ{count > 1 ? "s" : ""} de cette ligne{" "}
+        {count > 1 ? "sont concernés" : "est concerné"}. Vérifiez auprès de la compagnie avant de
+        réserver.
+      </p>
+    </div>
   );
 }
 

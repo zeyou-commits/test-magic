@@ -1,4 +1,6 @@
 import { VesselAlertTag } from "@/components/panel/VesselAlert";
+import { useVesselAlert } from "@/lib/ferry/vesselAlerts";
+import { track } from "@/lib/usage";
 import { useEffect, useRef, useState } from "react";
 import {
   ArrowUpRight,
@@ -66,6 +68,8 @@ export function SailingCard({
   const departure = sailing.departure;
   const panelId = `sailing-${departure.id}`;
   const fare = estimateFerryFare(sailing, profile);
+  // Navire en alerte : un prix laisserait croire que ce départ se réserve normalement.
+  const alert = useVesselAlert(sailing.vessel?.id);
 
   return (
     <article
@@ -172,6 +176,11 @@ export function SailingCard({
             ) : null}
           </div>
         </div>
+        {alert ? (
+          <span className="ml-auto shrink-0 text-right text-[11px] font-semibold text-destructive">
+            Départ à confirmer auprès de la compagnie
+          </span>
+        ) : (
         <a
           href={`/simulateurs/budget-voyage?ticket=${Math.round(fare.amount)}`}
           title="Budget porte-à-porte : route, péages et bateau"
@@ -180,11 +189,13 @@ export function SailingCard({
         >
           <Calculator className="size-3.5" aria-hidden /> Budget
         </a>
-        {href ? (
+        )}
+        {href && !alert ? (
           <a
             href={href}
             target="_blank"
             rel="noopener noreferrer"
+            onClick={() => track("booking_click", sailing.company?.name)}
             className="inline-flex h-8 shrink-0 items-center gap-1 rounded-full bg-cta px-3 text-xs font-semibold text-cta-foreground shadow-sm transition hover:brightness-110 active:scale-95"
             title={`Voir l’offre sur ${bookingSite(sailing)} · budget estimé ${formatEuro(fare.amount)} (${formatFareRange(fare)})`}
           >

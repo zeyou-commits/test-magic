@@ -122,6 +122,43 @@ export function findPlanningIssues(departures: PlanningDeparture[]): PlanningIss
   return issues.sort((a, b) => startOf(a.first) - startOf(b.first));
 }
 
+export type ConsistencyIssue = {
+  kind: "foreign-vessel" | "non-operator";
+  key: string;
+  routeId: string;
+  companyId: string;
+  vesselId: string | null;
+  count: number;
+  first: PlanningDeparture;
+};
+
+/**
+ * Incohérences de fiche, regroupées : navire d'une autre compagnie que celle du départ, et
+ * compagnie absente des opérateurs de la ligne.
+ */
+export function findConsistencyIssues(
+  departures: PlanningDeparture[],
+  vessels: Pick<PlanningVessel, "id" | "company_id">[],
+  routes: { id: string; company_ids: string[] }[],
+): ConsistencyIssue[] {
+  const found = new Map<string, ConsistencyIssue>();
+  const push = (issue: Omit<ConsistencyIssue, "key" | "count">) => {
+    const key = `${issue.kind}|${issue.routeId}|${issue.companyId}|${issue.vesselId ?? ""}`;
+    const existing = found.get(key);
+    if (existing) existing.count += 1;
+    else found.set(key, { ...issue, key, count: 1 });
+  };
+  for (const d of departures.filter(active)) {
+    const vessel = vessels.find((item) => item.id === d.vessel_id);
+    if (vessel?.company_id && vessel.company_id !== d.company_id)
+      push({ kind: "foreign-vessel", routeId: d.route_id, companyId: d.company_id, vesselId: vessel.id, first: d });
+    const route = routes.find((item) => item.id === d.route_id);
+    if (route && !route.company_ids.includes(d.company_id))
+      push({ kind: "non-operator", routeId: d.route_id, companyId: d.company_id, vesselId: null, first: d });
+  }
+  return [...found.values()];
+}
+
 /** Le départ qui empêche ce bateau de prendre `target`, ou null s'il est libre. */
 export function vesselBlocker(
   vesselId: string,

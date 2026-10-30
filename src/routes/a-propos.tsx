@@ -2,9 +2,9 @@ import { seoHead } from "@/lib/seo/site";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Card, PageHero, SiteLayout } from "@/components/layout/SiteLayout";
 
-const title = "À propos de BledWay, la carte des ferries vers l'Algérie";
+const title = "À propos de BledWay, la carte des ferries Europe ↔ Algérie";
 const description =
-  "BledWay rassemble ports, lignes, durées et départs des traversées vers l'Algérie, et le suivi en direct des navires avec l'aide des voyageurs.";
+  "BledWay rassemble ports, lignes, durées et départs des traversées entre l'Europe et l'Algérie, et le suivi en direct des navires avec l'aide des voyageurs.";
 
 export const Route = createFileRoute("/a-propos")({
   head: () => seoHead(title, description, "/a-propos"),
@@ -17,7 +17,7 @@ function AboutPage() {
       <PageHero
         overline="À propos"
         title="BledWay, l'information maritime rendue lisible"
-        intro="Une carte unique pour comprendre en quelques secondes comment rejoindre l'Algérie par la mer, et savoir où en est votre bateau."
+        intro="Une carte unique pour comprendre en quelques secondes comment traverser entre l'Europe et l'Algérie, et savoir où en est votre bateau."
       />
       <div className="mt-10 grid gap-4 sm:grid-cols-3">
         <Card>

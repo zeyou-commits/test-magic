@@ -187,7 +187,7 @@ export function FleetBoard({
               <p className="text-xs text-muted-foreground">
                 {shown.filter((v) => v.status === "active").length} navire(s) actif(s)
                 {fleetOf(selectedCompany).filter((v) => v.status === "active").length === 1
-                  ? " · un seul navire : ses traversées sans bateau lui sont proposées automatiquement"
+                  ? " · un seul navire : ses traversées sans navire lui sont proposées automatiquement"
                   : ""}
               </p>
             </div>
@@ -499,7 +499,7 @@ function RemoveVesselDialog({
               checked={release}
               onChange={(e) => setRelease(e.target.checked)}
             />
-            Passer ses {upcoming} traversée(s) à venir en « bateau à choisir »
+            Passer ses {upcoming} traversée(s) à venir en « navire à choisir »
           </label>
         )}
         {(mode === "replace" || mode === "merge") && (

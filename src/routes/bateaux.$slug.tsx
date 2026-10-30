@@ -55,7 +55,7 @@ function Boat() {
       <VesselDossierFollow slug={v.slug} />
       <ReadingLayout sections={v.sections}>
         <AnswerBox>
-          Les caractéristiques décrivent un navire. Pour connaître le bateau affecté, les places
+          Les caractéristiques décrivent un navire. Pour connaître le navire affecté, les places
           disponibles et les prestations incluses, vérifiez votre départ auprès de la compagnie.
         </AnswerBox>
         <section className="mt-8">

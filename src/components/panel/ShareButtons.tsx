@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Check, Link2, MessageCircle, Share2 } from "lucide-react";
 import { toast } from "sonner";
 
-const SHARE_TITLE = "Bledway — traversées en ferry";
+const SHARE_TITLE = "BledWay — traversées en ferry";
 const PUBLIC_ORIGIN = "https://www.bledway.com";
 
 /** Lien stable : domaine public en production, origine courante en aperçu/local. */

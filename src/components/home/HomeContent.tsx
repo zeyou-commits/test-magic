@@ -19,8 +19,8 @@ const questions = [
     "BledWay vous aide à explorer les lignes et les départs connus. Les liens d’offres vous dirigent vers la compagnie ou le distributeur indiqué. La réservation et le paiement se font sur leur site.",
   ],
   [
-    "Les positions des bateaux sont-elles en temps réel ?",
-    "La carte donne des repères de position et d’avancement estimés, notamment à partir des horaires de la traversée. Le sillage montre son sens de déplacement ; il n’accélère pas le bateau sur la carte. Ces repères ne constituent pas un suivi GPS de navigation.",
+    "Les positions des navires sont-elles en temps réel ?",
+    "La carte donne des repères de position et d’avancement estimés, notamment à partir des horaires de la traversée. Le sillage montre son sens de déplacement ; il n’accélère pas le navire sur la carte. Ces repères ne constituent pas un suivi GPS de navigation.",
   ],
   [
     "Puis-je voyager avec ma voiture ?",
@@ -94,7 +94,7 @@ export function HomeContent({
           </h2>
           <p>
             La voiture chargée, les retrouvailles en tête, la mer devant soi. BledWay rassemble les
-            repères utiles pour préparer votre traversée vers l’Algérie — et votre retour.
+            repères utiles pour préparer votre traversée, depuis l’Europe comme depuis l’Algérie.
           </p>
           <div className="bw-inline-note">
             <ShieldCheck size={20} />
@@ -178,7 +178,7 @@ export function HomeContent({
       <section className="bw-vessel-section" aria-labelledby="vessels-title" data-reveal>
         <div className="bw-container bw-vessel-grid">
           <div className="bw-vessel-copy">
-            <p className="bw-eyebrow">Rencontrez votre bateau</p>
+            <p className="bw-eyebrow">Rencontrez votre navire</p>
             <h2 id="vessels-title">
               Il fait déjà
               <br />
@@ -189,7 +189,7 @@ export function HomeContent({
               services et les informations de position disponibles.
             </p>
             <Link to="/bateaux" className="bw-primary-link">
-              Découvrir les bateaux{" "}
+              Découvrir les navires{" "}
               <span>
                 <ArrowUpRight size={19} />
               </span>

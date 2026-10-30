@@ -20,6 +20,8 @@ import { PlanningAlerts, usePlanningAlerts } from "@/components/admin/PlanningAl
 import { NotificationOverview } from "@/components/admin/NotificationOverview";
 import { DashboardOverview } from "@/components/admin/DashboardOverview";
 import { TodayInbox } from "@/components/admin/TodayInbox";
+import { MobileIncidentPanel } from "@/components/admin/MobileIncidentPanel";
+import { UsageAdmin } from "@/components/admin/UsageAdmin";
 import { PlanningBoard } from "@/components/admin/PlanningBoard";
 import { SeasonImport } from "@/components/admin/SeasonImport";
 import { FleetBoard } from "@/components/admin/FleetBoard";
@@ -264,7 +266,6 @@ function AdminTabs() {
     if (!canUseAdminTab(roles, "planning")) return;
     void navigate({ search: adminSearch({ tab: "planning", date, filter: nextFilter }) });
   };
-  const { data: alerts } = usePlanningAlerts();
   useEffect(
     () =>
       queryClient.getMutationCache().subscribe((event) => {
@@ -282,7 +283,6 @@ function AdminTabs() {
       ).length ?? 0,
     reviews: counts?.reviews ?? 0,
     reports: counts?.reports ?? 0,
-    alerts: alerts?.length ?? 0,
     community: (community.data?.reviews.filter((review) => review.status === "pending").length ?? 0) + (counts?.anomalies ?? 0),
   };
   return (
@@ -330,22 +330,37 @@ function AdminTabs() {
         </TabsContent>
         <TabsContent value="overview">
           {canUseAdminTab(roles, "planning") && (
+            <MobileIncidentPanel
+              onNavigate={navigateTo}
+              renderEditor={(id, onDone) => <AlertDepartureEditor departureId={id} onDone={onDone} />}
+            />
+          )}
+          {canUseAdminTab(roles, "planning") && (
             <TodayInbox
               onOpenPlanning={openPlanning}
               onOpenVessel={(id) => openItem("vessels", id)}
               onImport={() => navigateTo("import")}
             />
           )}
-          <DashboardOverview onNavigate={navigateTo} can={() => true} />
           {notificationOverview.error && (
             <p
               role="alert"
               className="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900"
             >
-              Le centre de notifications n’est pas disponible. Vérifiez la migration des campagnes
-              et la configuration serveur.
+              Le centre de notifications n’est pas disponible pour le moment.
             </p>
           )}
+        </TabsContent>
+        <TabsContent value="health">
+          <TodayInbox
+            view="health"
+            onOpenPlanning={openPlanning}
+            onOpenVessel={(id) => openItem("vessels", id)}
+            onImport={() => navigateTo("import")}
+          />
+        </TabsContent>
+        <TabsContent value="usage">
+          <UsageAdmin />
         </TabsContent>
         <TabsContent value="reviews">
           <EntityReviewsModeration pendingOnly={filter === "pending"} />
@@ -385,12 +400,18 @@ function AdminTabs() {
           <CompaniesAdmin itemId={tab === "companies" ? item : undefined} />
         </TabsContent>
         <TabsContent value="planning">
+          <MobileIncidentPanel
+            onNavigate={navigateTo}
+            renderEditor={(id, onDone) => <AlertDepartureEditor departureId={id} onDone={onDone} />}
+          />
+          <div className="bw-admin-desktop-only">
           <PlanningBoard
             key={`${planningDate ?? ""}:${filter ?? ""}`}
             initialDate={planningDate}
             initialFilter={filter === "unassigned" || filter === "issues" ? filter : undefined}
             renderEditor={(id, onDone) => <AlertDepartureEditor departureId={id} onDone={onDone} />}
           />
+          </div>
         </TabsContent>
         <TabsContent value="assign">
           <AssignSettings />
@@ -751,7 +772,7 @@ function DepartureEditor({
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["departures"] });
       queryClient.invalidateQueries({ queryKey: ["admin", "planning-alerts"] });
-      // Horaire ou bateau changé : on propose tout de suite de prévenir ceux qui suivent ce départ.
+      // Horaire ou navire changé : on propose tout de suite de prévenir ceux qui suivent ce départ.
       const oldDate = dateKeyInZone(departure.departure_at, timeZone);
       const oldTime = wallTimeInZone(departure.departure_at, timeZone).slice(0, 5);
       const moved = oldDate !== date || oldTime !== time;
@@ -981,7 +1002,7 @@ function DeparturesAdmin({
           value={routeFilter}
           onChange={(e) => setRouteFilter(e.target.value)}
         >
-          <option value="">Toutes les liaisons</option>
+          <option value="">Toutes les lignes</option>
           {routeOptions.map((option) => (
             <option key={option.id} value={option.id}>
               {option.label}
@@ -3333,7 +3354,7 @@ function RoutesAdmin({ itemId }: { itemId?: string | undefined } = {}) {
         <AdminListToolbar
           search={search}
           onSearch={setSearch}
-          placeholder="Chercher une liaison (port de départ ou d'arrivée)"
+          placeholder="Chercher une ligne (port de départ ou d'arrivée)"
           count={
             routes.filter((route) =>
               matches(search, portName(route.departure_port_id), portName(route.arrival_port_id)),

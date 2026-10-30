@@ -13,9 +13,13 @@ export const usersActionSchema = z.discriminatedUnion("action", [
     action: z.literal("list"),
     search: z.string().trim().max(150).default(""),
     page: z.number().int().min(1).max(100000).default(1),
-    filter: z.enum(["all", "team", "banned"]).default("all"),
+    filter: z.enum(["all", "team", "travellers", "banned"]).default("all"),
   }),
   z.object({ action: z.literal("invite"), email: z.string().trim().email().max(255) }),
+  z.object({ action: z.literal("stats") }),
+  z.object({ action: z.literal("audit") }),
+  z.object({ action: z.literal("detail"), userId: z.string().uuid() }),
+  z.object({ action: z.literal("export"), userId: z.string().uuid() }),
   z.object({
     action: z.literal("role"),
     ...target,
@@ -64,6 +68,40 @@ export async function handleUsersAdmin(request: Request, db: SupabaseClient<Data
       503,
     );
   if (input.action === "list") return respond(page.data);
+  // Lectures (chiffres, historique, fiche, export) : fonctions de la migration « utilisateurs ».
+  if (
+    input.action === "stats" ||
+    input.action === "audit" ||
+    input.action === "detail" ||
+    input.action === "export"
+  ) {
+    const read =
+      input.action === "stats"
+        ? await rpc("bw_admin_users_stats", { _actor: auth.user.id })
+        : input.action === "audit"
+          ? await rpc("bw_admin_audit_page", { _actor: auth.user.id, _limit: 60 })
+          : await rpc(input.action === "detail" ? "bw_admin_user_detail" : "bw_admin_user_export", {
+              _actor: auth.user.id,
+              _target: input.userId,
+            });
+    if (read.error)
+      return respond(
+        {
+          error:
+            "Information indisponible : exécutez le script SQL « utilisateurs » (supabase/migrations/20261110160000_utilisateurs.sql) dans Supabase.",
+        },
+        503,
+      );
+    if (input.action === "export") {
+      await rpc("bw_admin_user_audit", {
+        _actor: auth.user.id,
+        _target: input.userId,
+        _action: "export_completed",
+        _details: {},
+      });
+    }
+    return respond(read.data);
+  }
   const audit = async (
     action: string,
     id: string | null,

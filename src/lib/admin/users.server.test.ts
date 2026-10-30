@@ -135,6 +135,42 @@ describe("Gestion des utilisateurs côté serveur", () => {
     });
     expect(mocks.rpc).not.toHaveBeenCalledWith("bw_admin_set_user_role", expect.anything());
   });
+  it("lit chiffres, fiche et historique par les fonctions réservées au serveur", async () => {
+    expect((await call({ action: "stats" })).status).toBe(200);
+    expect(mocks.rpc).toHaveBeenCalledWith("bw_admin_users_stats", { _actor: actor });
+    expect((await call({ action: "detail", userId: target })).status).toBe(200);
+    expect(mocks.rpc).toHaveBeenCalledWith("bw_admin_user_detail", {
+      _actor: actor,
+      _target: target,
+    });
+    expect((await call({ action: "audit" })).status).toBe(200);
+    expect(mocks.rpc).toHaveBeenCalledWith("bw_admin_audit_page", { _actor: actor, _limit: 60 });
+  });
+  it("inscrit chaque export de données au journal", async () => {
+    expect((await call({ action: "export", userId: target })).status).toBe(200);
+    expect(mocks.rpc).toHaveBeenCalledWith("bw_admin_user_export", {
+      _actor: actor,
+      _target: target,
+    });
+    expect(mocks.rpc).toHaveBeenCalledWith("bw_admin_user_audit", {
+      _actor: actor,
+      _target: target,
+      _action: "export_completed",
+      _details: {},
+    });
+  });
+  it("signale le script SQL manquant au lieu d'échouer en silence", async () => {
+    mocks.rpc.mockImplementation((name: string) =>
+      Promise.resolve(
+        name === "bw_admin_users_stats"
+          ? { data: null, error: { message: "function does not exist" } }
+          : { data: { total: 0, members: [] }, error: null },
+      ),
+    );
+    const response = await call({ action: "stats" });
+    expect(response.status).toBe(503);
+    expect((await response.json()).error).toContain("utilisateurs");
+  });
   it("respecte les périmètres admin, édition et modération", () => {
     expect(canUseAdminTab(["editor"], "users")).toBe(false);
     expect(canUseAdminTab(["moderator"], "notifications")).toBe(false);

@@ -39,7 +39,11 @@ export function CrossingCard({
       ? "Traversée annulée"
       : progress.times.arrival.kind === "observed"
         ? "Arrivée constatée"
-        : stopped || awaited
+        : progress.hold
+          ? progress.hold.fresh
+            ? "Encore à quai · en retard"
+            : "Départ à confirmer · en retard"
+          : stopped || awaited
           ? `${alert?.label ?? "Navire immobilisé"}${awaited ? " · départ à confirmer" : ""}`
           : at < Date.parse(departure.departure_at) && progress.signal?.phase !== "sea"
             ? "Prochaine traversée"

@@ -28,6 +28,9 @@ describe("écoute AIS ciblée", () => {
     ]);
     // Au milieu de la nuit : v1 est en mer depuis plus de 3 h, rien à écouter.
     expect(aisTargets(departures, vessels, at("2026-11-07T01:00:00Z")).size).toBe(0);
+    // Vu à l'arrêt : le retard reste écouté, au-delà des 3 h après l'heure prévue.
+    const stoppedMmsi = new Set(vessels.flatMap((v) => (v.mmsi ? [Number(v.mmsi)] : [])));
+    expect(aisTargets(departures, vessels, at("2026-11-07T01:00:00Z"), stoppedMmsi).size).toBe(1);
     expect([...aisTargets(departures, vessels, at("2026-11-07T05:00:00Z"))]).toEqual([
       [111111111, "arrival"],
     ]);

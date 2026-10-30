@@ -152,7 +152,8 @@ export type EtaBasis = "arrived" | "approach" | "departure" | "docked";
  * Heure d'arrivée estimée d'une traversée, sans dépendre du tracé en mer :
  * 1. approche finale (moins de 30 km, en mouvement, signal récent) : distance ÷ vitesse ;
  * 2. départ réel capté par l'AIS : heure de départ réelle + durée prévue de la traversée ;
- * 3. navire encore à quai au port de départ après l'heure prévue : heure du signal + durée prévue.
+ * 3. navire vu à quai au port de départ après l'heure prévue : heure du signal + durée prévue.
+ *    Même si ce signal a quelques heures, c'est un minimum sûr (« pas avant »), jamais une heure promise.
  * Sinon aucune estimation : l'horaire prévu reste affiché comme tel. Toujours ancrée au signal.
  */
 export function estimateCrossingArrival(
@@ -212,7 +213,7 @@ export function estimateCrossingArrival(
     etaMs = Date.parse(position.atdAt) + durationMs;
     etaBasis = "departure";
   } else if (
-    fresh &&
+    recent &&
     speed < 1.5 &&
     departurePort &&
     Number.isFinite(durationMs) &&

@@ -5314,3 +5314,45 @@ button.bw-tavatar:focus-visible {
   max-height: 90dvh;
   overflow-y: auto;
 }
+
+/* Navire en retard : la question aux voyageurs sur place. */
+.bw-state-ask {
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid #f1d58a;
+}
+.bw-state-ask > p:first-child {
+  font-weight: 700;
+}
+.bw-state-ask__choices {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 6px;
+}
+.bw-state-ask__choices button {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  min-height: 40px;
+  padding: 0 12px;
+  border: 1px solid #e0b64f;
+  border-radius: 10px;
+  background: #ffffff;
+  color: #5c3f00;
+  font-size: 12.5px;
+  font-weight: 700;
+}
+.bw-state-ask__choices b {
+  padding: 0 6px;
+  border-radius: 999px;
+  background: #fff4d6;
+  font-size: 11px;
+}
+.bw-state-ask__hint {
+  margin-top: 4px;
+}
+.bw-state-ask__hint a {
+  font-weight: 700;
+  text-decoration: underline;
+}

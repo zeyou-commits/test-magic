@@ -23,7 +23,7 @@ interface MapStatsProps {
   onSelectCompany: (companyId: string | null) => void;
   onSelectShip: (ship: FleetShip) => void;
   companyOf: (ship: FleetShip) => string | undefined;
-  infoOf: (ship: FleetShip) => { route: string; dock: string; destination: string; status: string };
+  infoOf: (ship: FleetShip) => { route: string; dock: string; destination: string; status: string; late?: boolean };
   lineVisibility: LineVisibility;
   onLineVisibility: (value: LineVisibility) => void;
   onPreview: (preview: MapPreview | null) => void;
@@ -351,7 +351,9 @@ export function MapStats({
                         {infoOf(ship).dock} → {infoOf(ship).destination}
                       </span>
                       {!alerts.has(ship.vesselId ?? "") ? (
-                        <span className="block text-[10px] font-normal text-primary">
+                        <span
+                          className={`block text-[10px] ${infoOf(ship).late ? "font-bold text-amber-800" : "font-normal text-primary"}`}
+                        >
                           {infoOf(ship).status}
                         </span>
                       ) : null}

@@ -12,7 +12,7 @@ export async function listenToTargets(
   host: "vercel" | "supabase",
 ) {
   const now = Date.now();
-  const [departures, vessels] = await Promise.all([
+  const [departures, vessels, positions] = await Promise.all([
     db
       .from("departures")
       .select("vessel_id, departure_at, arrival_at, duration_minutes, status")
@@ -20,12 +20,18 @@ export async function listenToTargets(
       .gte("departure_at", new Date(now - 48 * 3600_000).toISOString())
       .lte("departure_at", new Date(now + 3600_000).toISOString()),
     db.from("vessels").select("id, mmsi, status"),
+    db.from("vessel_positions").select("mmsi, speed_knots"),
   ]);
   if (departures.error) throw new Error(departures.error.message);
   const targets = aisTargets(
     (departures.data ?? []) as Parameters<typeof aisTargets>[0],
     (vessels.data ?? []) as Parameters<typeof aisTargets>[1],
     now,
+    new Set(
+      ((positions.data ?? []) as { mmsi: number; speed_knots: number | null }[])
+        .filter((position) => (position.speed_knots ?? 0) < 1.5)
+        .map((position) => Number(position.mmsi)),
+    ),
   );
   const heard: number[] = [];
   const startedAt = Date.now();

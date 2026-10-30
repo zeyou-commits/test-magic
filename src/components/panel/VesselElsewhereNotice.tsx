@@ -1,3 +1,4 @@
+import { VesselStateAsk } from "./VesselStateAsk";
 import { useQuery } from "@tanstack/react-query";
 import type { Departure } from "@/lib/ferry/types";
 import { departureHold, formatAge, vesselElsewhere } from "@/lib/ferry/tracking";
@@ -28,26 +29,27 @@ export function VesselElsewhereNotice({ departure }: { departure: Departure }) {
     const hold = departureHold(departure, position, from, now);
     if (!hold || !from) return null;
     return (
-      <p
-        role="status"
-        className="mt-3 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs leading-relaxed text-amber-900"
-      >
-        {hold.fresh ? (
-          <>
-            <strong>
-              Encore à quai à {formatDateParts(hold.reportedAt, portTimeZone(from)).time}
-            </strong>{" "}
-            selon le signal AIS. Départ probablement retardé : vérifiez auprès de la compagnie.
-          </>
-        ) : (
-          <>
-            <strong>
-              Dernier signal à quai {formatAge((now - Date.parse(hold.reportedAt)) / 60_000)}
-            </strong>
-            . Départ non confirmé : vérifiez auprès de la compagnie.
-          </>
-        )}
-      </p>
+      <div className="mt-3 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs leading-relaxed text-amber-950">
+        <p role="status">
+          {hold.fresh ? (
+            <>
+              <strong>
+                Encore à quai à {formatDateParts(hold.reportedAt, portTimeZone(from)).time}
+              </strong>{" "}
+              selon le signal du navire. Départ en retard : vérifiez auprès de la compagnie.
+            </>
+          ) : (
+            <>
+              <strong>
+                Dernier signal à quai {formatAge((now - Date.parse(hold.reportedAt)) / 60_000)}
+              </strong>
+              , après l'heure prévue. Aucun départ constaté depuis : vérifiez auprès de la
+              compagnie.
+            </>
+          )}
+        </p>
+        <VesselStateAsk vesselId={vessel.id} vesselName={vessel.name} departureId={departure.id} />
+      </div>
     );
   }
   const port = ports.find((p) => p.id === elsewhere.portId)?.name ?? "un autre port";

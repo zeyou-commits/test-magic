@@ -94,8 +94,26 @@ export function fleetShortcutInfo(
 ) {
   const current = departures.find((d) => d.id === ship.departureId);
   const dock = ports.find((p) => p.id === ship.portId);
-  const next =
-    ship.state === "docked"
+  // Vu à quai par son signal alors que son départ est passé : il est en retard, pas « sans départ ».
+  const late =
+    ship.state === "docked" && ship.source === "live" && ship.vesselId
+      ? departures
+          .filter((d) => {
+            const start = Date.parse(d.departure_at);
+            const end = d.arrival_at ? Date.parse(d.arrival_at) : NaN;
+            return (
+              d.status !== "cancelled" &&
+              d.vessel_id === ship.vesselId &&
+              start < now &&
+              end > now &&
+              routes.some((r) => r.id === d.route_id && r.departure_port_id === ship.portId)
+            );
+          })
+          .sort((a, b) => Date.parse(b.departure_at) - Date.parse(a.departure_at))[0]
+      : undefined;
+  const next = late
+    ? late
+    : ship.state === "docked"
       ? departures
           .filter(
             (d) =>
@@ -114,7 +132,9 @@ export function fleetShortcutInfo(
     : null;
   const delay =
     minutes === null
-      ? "En attente d’un départ publié"
+      ? "Aucun départ publié pour le moment"
+      : late
+        ? "En retard · départ non constaté"
       : minutes < 60
         ? `Départ prévu dans ${minutes} min`
         : `Départ prévu dans ${Math.floor(minutes / 60)} h${minutes % 60 ? ` ${minutes % 60}` : ""}`;
@@ -123,5 +143,6 @@ export function fleetShortcutInfo(
     dock: dock?.name ?? from?.name ?? "Port à confirmer",
     destination: to?.name ?? "Destination à confirmer",
     status: delay,
+    late: Boolean(late),
   };
 }

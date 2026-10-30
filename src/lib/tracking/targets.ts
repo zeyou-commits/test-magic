@@ -19,6 +19,8 @@ export function aisTargets(
   departures: TargetDeparture[],
   vessels: { id: string; mmsi: number | null; status: string }[],
   now: number,
+  /** Navires vus à l'arrêt : en retard, on continue de les écouter jusqu'à l'arrivée prévue. */
+  stopped: Set<number> = new Set(),
 ): Map<number, "departure" | "arrival"> {
   const mmsiOf = new Map(
     vessels.filter((v) => v.mmsi && v.status === "active").map((v) => [v.id, Number(v.mmsi)]),
@@ -33,6 +35,8 @@ export function aisTargets(
       ? Date.parse(d.arrival_at)
       : start + (d.duration_minutes ?? 0) * 60_000;
     if (now >= start - DEPARTURE_WINDOW.before && now <= start + DEPARTURE_WINDOW.after) {
+      targets.set(mmsi, "departure");
+    } else if (now > start && now < end && stopped.has(mmsi)) {
       targets.set(mmsi, "departure");
     } else if (
       end > start &&

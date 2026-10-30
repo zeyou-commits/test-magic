@@ -1212,7 +1212,7 @@ function Index() {
               infoOf={(ship) =>
                 fleetShortcutInfo(
                   ship,
-                  [...departures, ...fleetDepartures],
+                  allDepartures,
                   routes,
                   ports,
                   Date.now(),

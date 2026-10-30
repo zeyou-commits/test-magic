@@ -201,6 +201,20 @@ const builtinSituations: Record<string, Situation> = {
       { code: "delay_postponed", label: "Reporté ou annulé", icon: "calendar-x", onSite: true, level: 2 },
     ],
   },
+  state: {
+    label: "État du navire",
+    where: "vessel",
+    color: "#d97706",
+    icon: "ship",
+    lifetime: 120,
+    level: 0,
+    question: "Où en est le navire ?",
+    required: true,
+    options: [
+      { code: "state_quay", label: "Encore à quai", icon: "anchor" },
+      { code: "state_departed", label: "Il est parti", icon: "ship" },
+    ],
+  },
   boarding: {
     label: "Embarquement commencé",
     where: "vessel",

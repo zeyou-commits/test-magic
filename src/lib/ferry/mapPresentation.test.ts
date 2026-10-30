@@ -95,7 +95,28 @@ describe("Raccourcis et programmes de la carte", () => {
     ).toMatchObject({
       dock: "Béjaïa",
       destination: "Destination à confirmer",
-      status: "En attente d’un départ publié",
+      status: "Aucun départ publié pour le moment",
+    }));
+  it("vu à quai après l'heure de départ : en retard, avec sa destination", () =>
+    expect(
+      fleetShortcutInfo(
+        { ...ship, source: "live", vesselId: "v" },
+        [
+          {
+            ...departure,
+            vessel_id: "v",
+            departure_at: new Date(now - 3600000).toISOString(),
+            arrival_at: new Date(now + 3600000).toISOString(),
+          },
+        ],
+        routes,
+        ports,
+        now,
+      ),
+    ).toMatchObject({
+      destination: "Béjaïa",
+      status: "En retard · départ non constaté",
+      late: true,
     }));
   it("n'invente pas un embarquement à partir de l'heure", () =>
     expect(

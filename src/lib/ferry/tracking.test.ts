@@ -424,6 +424,18 @@ describe("départ retardé à quai", () => {
       estimateCrossingArrival(position, dep, marseille, { longitude: 3, latitude: 36.8 }, now),
     ).toMatchObject({ etaBasis: "docked", etaIso: "2026-10-31T07:52:00.000Z" });
   });
+  it("signal de 3 h : l'arrivée reste un minimum calculé depuis ce signal (cas Jean Nicoli)", () => {
+    const start = { ...dep, departure_at: "2026-10-30T09:00:00Z", arrival_at: "2026-10-31T07:00:00Z" };
+    expect(
+      estimateCrossingArrival(
+        quay("2026-10-30T11:13:00Z"),
+        start,
+        marseille,
+        { longitude: 3, latitude: 36.8 },
+        at("2026-10-30T14:35:00Z"),
+      ),
+    ).toMatchObject({ etaBasis: "docked", etaIso: "2026-10-31T09:13:00.000Z", delayMinutes: 133 });
+  });
   it("signal ancien : départ non confirmé", () => {
     expect(
       departureHold(dep, quay("2026-10-30T08:50:00Z"), marseille, at("2026-10-30T10:00:00Z")),

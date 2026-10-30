@@ -28,6 +28,7 @@ const reasons = [
   { value: "wrong_schedule", label: "Horaire inexact" },
   { value: "outdated_info", label: "Information obsolète" },
   { value: "missing_info", label: "Information manquante" },
+  { value: "vessel_immobilized", label: "Navire immobilisé" },
   { value: "inappropriate", label: "Contenu inapproprié" },
   { value: "other", label: "Autre" },
 ];
@@ -40,7 +41,7 @@ export function ReportButton({
   initialReason = "wrong_schedule",
   variant = "button",
 }: {
-  targetType: "port" | "route" | "departure" | "review" | "schedule";
+  targetType: "port" | "route" | "departure" | "review" | "schedule" | "vessel" | "company";
   targetId: string;
   label?: string;
   initialDetails?: string;

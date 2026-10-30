@@ -100,6 +100,13 @@ function Index() {
   };
   // Fil Flash info (en-tête mobile) : ouvre la fiche demandée sans recharger la page.
   const handleSelectRef = useRef(handleSelect);
+  // Recherche de l'en-tête : ouvre la fiche, même sans traversée visible sur la carte.
+  useEffect(() => {
+    const onSelect = (event: Event) =>
+      handleSelectRef.current((event as CustomEvent<Selection>).detail);
+    window.addEventListener("bledway:select", onSelect);
+    return () => window.removeEventListener("bledway:select", onSelect);
+  }, []);
   handleSelectRef.current = handleSelect;
   useEffect(() => {
     const onFlashSelect = (event: Event) => {

@@ -2784,6 +2784,9 @@ html {
   }
   .bw-map-stage {
     height: max(320px, calc(100svh - 88px));
+    /* La barre du bas vit dans ce calque : il doit passer au-dessus du reste de la page,
+       sinon les images positionnées plus bas la recouvrent au défilement. */
+    z-index: 1;
   }
   .bw-map-stage[data-panel-open="true"] {
     height: calc(100dvh - var(--bw-header-height, 64px));

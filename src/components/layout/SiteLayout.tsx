@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import { Link } from "@tanstack/react-router";
 import { UserMenu } from "./UserMenu";
 import { HeaderInbox } from "@/components/panel/FlashCenter";
+import { GlobalSearch } from "./GlobalSearch";
 import { MobileTabBar } from "./MobileTabBar";
 import { DataUnavailableNotice } from "./DataUnavailableNotice";
 import { ChevronDown, Menu, ArrowUpRight, Route as RouteIcon, Wallet } from "lucide-react";
@@ -112,6 +113,7 @@ export function SiteHeader() {
           ))}
         </nav>
         <div className="bw-header-actions">
+          <GlobalSearch />
           <HeaderInbox />
           {/* Sur mobile, le compte est l'onglet « Moi » de la barre du bas. */}
           <span className="hidden md:inline-flex">

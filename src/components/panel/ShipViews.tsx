@@ -39,6 +39,8 @@ import { CompanyBadge } from "./CompanyBadge";
 import { CrossingCard } from "./CrossingCard";
 import { TravelSignals, VesselReviews } from "./TravelCommunity";
 import { TripRecap } from "./TripRecap";
+import { VesselIncidentNotice } from "./VesselIncidentNotice";
+import { ReportButton } from "./ReportButton";
 import { ShipPhoto, VesselSpecs } from "./VesselBits";
 import { TripStatusPicker, VesselPresence } from "./TripPresence";
 
@@ -196,6 +198,7 @@ export function VesselView({
           </div>
           {vessel.is_demo ? <DemoBadge /> : null}
         </div>
+        <VesselIncidentNotice vesselId={vessel.id} vesselName={vessel.name} />
         <div className="bw-ship-hero-photo bw-ship-hero-photo--compact">
           <dl className="bw-ship-hero-stats" aria-label="Le bateau en chiffres">
             <div>
@@ -412,6 +415,15 @@ export function VesselView({
           <VesselReviews key={`legacy-${vesselId}`} vesselId={vesselId} readOnly />
         </TabsContent>
       </Tabs>
+      <div className="mt-2 px-1">
+        <ReportButton
+          targetType="vessel"
+          targetId={vesselId}
+          label="Ce navire semble immobilisé ?"
+          initialReason="vessel_immobilized"
+          variant="link"
+        />
+      </div>
     </article>
   );
 }

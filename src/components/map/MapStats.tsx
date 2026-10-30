@@ -1,5 +1,5 @@
 import { useAuth } from "@/hooks/useAuth";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Anchor, Building2, Ship, type LucideProps } from "lucide-react";
 import type { FleetShip } from "@/lib/ferry/fleet";
 import {
@@ -93,6 +93,27 @@ export function MapStats({
       document.removeEventListener("keydown", escape, true);
     };
   }, [menuOpen]);
+  // Mobile : la liste s'arrête au bord du volet (qui passe devant) et défile en entier.
+  const listRef = useRef<HTMLDivElement>(null);
+  const [listMaxHeight, setListMaxHeight] = useState<number | null>(null);
+  useEffect(() => {
+    if (!menuOpen || window.innerWidth >= 768) {
+      setListMaxHeight(null);
+      return;
+    }
+    const panel = document.querySelector<HTMLElement>(".bw-map-panel");
+    const measure = () => {
+      const list = listRef.current;
+      if (!list || !panel) return;
+      setListMaxHeight(
+        Math.max(120, panel.getBoundingClientRect().top - list.getBoundingClientRect().top - 8),
+      );
+    };
+    measure();
+    const observer = new ResizeObserver(measure);
+    if (panel) observer.observe(panel);
+    return () => observer.disconnect();
+  }, [menuOpen, activeShortcut]);
   const { isAdmin } = useAuth();
   const item =
     "flex w-full flex-col items-center justify-center gap-0.5 rounded-xl px-1 py-1.5 text-[11px] font-bold leading-none tabular-nums text-foreground transition-colors hover:bg-secondary data-[active=true]:bg-primary data-[active=true]:text-primary-foreground md:min-w-11 md:text-xs";
@@ -183,7 +204,9 @@ export function MapStats({
       </div>
       {menuOpen && activeShortcut && (
         <div
-          className="absolute left-full top-0 ml-2 max-h-[min(60dvh,24rem)] md:left-auto md:right-full md:ml-0 md:mr-2 w-[min(18rem,calc(100vw-5.5rem))] overflow-y-auto rounded-2xl border border-border bg-background/95 p-1 shadow-lg backdrop-blur"
+          ref={listRef}
+          style={listMaxHeight ? { maxHeight: listMaxHeight } : undefined}
+          className="absolute left-full top-0 ml-2 max-h-[min(60dvh,24rem)] md:left-auto md:right-full md:ml-0 md:mr-2 w-[min(18rem,calc(100vw-5.5rem))] touch-pan-y overflow-y-auto overscroll-contain rounded-2xl border border-border bg-background/95 p-1 shadow-lg backdrop-blur"
           onPointerLeave={() => onPreview(null)}
           aria-label={
             activeShortcut === "companies" ? "Filtrer les compagnies" : "Choisir un navire"

@@ -53,6 +53,7 @@ import { useLiveShips } from "@/lib/ferry/useLiveShips";
 import type { LiveShip } from "@/lib/ferry/tracking";
 import { PortMultiPicker } from "./PortFilters";
 import { SalesAlertForm } from "./SalesAlertForm";
+import { isNorthShore, isSouthShore } from "@/lib/ferry/markets";
 import { CompanyBadge } from "./CompanyBadge";
 import { RoundTripCard } from "./RoundTripCard";
 import { FareProfileContext } from "@/lib/ferry/pricing";
@@ -584,7 +585,7 @@ export function SearchPanel({
                 direction="departure"
                 ports={ports}
                 routes={routes}
-                countryFilter={reversed ? isAlgeria : isNotAlgeria}
+                countryFilter={reversed ? isSouthShore : isNorthShore}
                 value={filters.departurePortIds}
                 otherSide={filters.arrivalPortIds}
                 scheduledPortIds={departures.length ? scheduledPortIds : undefined}
@@ -598,7 +599,7 @@ export function SearchPanel({
                 direction="arrival"
                 ports={ports}
                 routes={routes}
-                countryFilter={reversed ? isNotAlgeria : isAlgeria}
+                countryFilter={reversed ? isNorthShore : isSouthShore}
                 value={filters.arrivalPortIds}
                 otherSide={filters.departurePortIds}
                 scheduledPortIds={departures.length ? scheduledPortIds : undefined}
@@ -1242,9 +1243,6 @@ function shortDay(key: string) {
 }
 
 /** En-tête d'étape façon Airbnb : titre quand l'étape est ouverte, ligne résumé cliquable sinon. */
-const isAlgeria = (code: string) => code === "DZ";
-const isNotAlgeria = (code: string) => code !== "DZ";
-
 function StepLabel({
   open,
   onOpen,

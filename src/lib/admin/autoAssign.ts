@@ -20,14 +20,17 @@ export type AssignConfig = {
   rules: AssignRules;
   /** Mode par compagnie ; une compagnie absente est en « suggest ». */
   modes: Map<string, AssignMode>;
+  /** Navires immobilisés (dossier ouvert) : jamais proposés ni affectés. */
+  blockedVessels?: Set<string>;
   /** false tant que le script SQL « affectation_auto » n'est pas installé. */
   installed: boolean;
 };
 
 export async function loadAssignConfig(db: SupabaseClient): Promise<AssignConfig> {
-  const [settings, rules] = await Promise.all([
+  const [settings, rules, incidents] = await Promise.all([
     db.from("bw_assign_settings").select("company_id, mode"),
     db.from("bw_admin_settings").select("value").eq("key", "assign_rules").maybeSingle(),
+    db.from("bw_vessel_incidents").select("vessel_id").in("status", ["verifying", "confirmed"]),
   ]);
   if (settings.error || rules.error) {
     return { rules: DEFAULT_RULES, modes: new Map(), installed: false };
@@ -40,6 +43,9 @@ export async function loadAssignConfig(db: SupabaseClient): Promise<AssignConfig
         row.mode,
       ]),
     ),
+    blockedVessels: new Set(
+      ((incidents.data ?? []) as { vessel_id: string }[]).map((row) => row.vessel_id),
+    ),
     installed: true,
   };
 }
@@ -48,12 +54,13 @@ export async function loadAssignConfig(db: SupabaseClient): Promise<AssignConfig
 export function visibleSuggestions(
   departures: PlanningDeparture[],
   vessels: PlanningVessel[],
-  config: Pick<AssignConfig, "rules" | "modes">,
+  config: Pick<AssignConfig, "rules" | "modes" | "blockedVessels">,
   scheduleVessel: Map<string, string | null>,
   now = Date.now(),
 ): VesselSuggestion[] {
   const byId = new Map(departures.map((d) => [d.id, d]));
-  return suggestVessels(departures, vessels, now, config.rules, scheduleVessel).filter(
+  const usable = vessels.filter((v) => !config.blockedVessels?.has(v.id));
+  return suggestVessels(departures, usable, now, config.rules, scheduleVessel).filter(
     (s) => config.modes.get(byId.get(s.departureId)?.company_id ?? "") !== "manual",
   );
 }

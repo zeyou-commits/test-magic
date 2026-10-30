@@ -34,6 +34,14 @@ export interface Company {
   logo_url: string | null;
   description: string | null;
   website_url: string | null;
+  /** Contacts vérifiables (script « contacts_incidents_entraide »). */
+  booking_url?: string | null;
+  contact_url?: string | null;
+  claims_url?: string | null;
+  phone?: string | null;
+  contact_email?: string | null;
+  contact_source_url?: string | null;
+  contact_verified_at?: string | null;
   status: EntityStatus;
   is_demo: boolean;
 }

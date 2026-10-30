@@ -24,6 +24,7 @@ import { PlanningBoard } from "@/components/admin/PlanningBoard";
 import { SeasonImport } from "@/components/admin/SeasonImport";
 import { FleetBoard } from "@/components/admin/FleetBoard";
 import { AssignSettings } from "@/components/admin/AssignSettings";
+import { IncidentsAdmin } from "@/components/admin/IncidentsAdmin";
 import { useAdminCounts } from "@/hooks/useAdminCounts";
 import { AdminWorkspace, type AdminSearchItem } from "@/components/admin/AdminWorkspace";
 import { AdminDrawer, AdminListToolbar, matches } from "@/components/admin/AdminDrawer";
@@ -94,11 +95,14 @@ const reportTargetLabel: Record<string, string> = {
   departure: "Départ",
   review: "Avis",
   schedule: "Calendrier",
+  vessel: "Navire",
+  company: "Compagnie",
 };
 const reportReasonLabel: Record<string, string> = {
   wrong_schedule: "Horaire inexact",
   outdated_info: "Information obsolète",
   missing_info: "Information manquante",
+  vessel_immobilized: "Navire immobilisé",
   inappropriate: "Contenu inapproprié",
   other: "Autre",
 };
@@ -391,6 +395,14 @@ function AdminTabs() {
         </TabsContent>
         <TabsContent value="assign">
           <AssignSettings />
+        </TabsContent>
+        <TabsContent value="incidents">
+          <IncidentsAdmin
+            onPrepare={(prefill) => {
+              storeMessagePrefill(prefill);
+              void navigate({ search: adminSearch({ tab: "notifications" }), resetScroll: false });
+            }}
+          />
         </TabsContent>
         <TabsContent value="departures">
           <DeparturesAdmin

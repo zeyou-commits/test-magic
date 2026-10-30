@@ -29,6 +29,8 @@ import { BookingLink, ReliabilityNote } from "./shared";
 import { FlashFeed } from "./FlashFeed";
 import { hasSignalFocus, LivePulse, revealLive, useLiveInfo } from "./LivePulse";
 import { VesselElsewhereNotice } from "./VesselElsewhereNotice";
+import { DepartureIncidentNotice } from "./VesselIncidentNotice";
+import { HelpRequests } from "@/components/community/HelpRequests";
 import { FollowButton } from "./FollowButton";
 import { JourneyChecklist } from "./JourneyChecklist";
 import { JourneyPlanner } from "./JourneyPlanner";
@@ -297,6 +299,8 @@ export function TripRecap({
       {/* 2. Ce qui se passe, d'un coup d'œil */}
       <LivePulse info={info} onOpen={openLive} onReport={upcoming || atSea ? report : undefined} />
       {!cancelled ? <VesselElsewhereNotice departure={departure} /> : null}
+      {!cancelled ? <DepartureIncidentNotice departure={departure} /> : null}
+      {!cancelled && upcoming ? <HelpRequests kind="departure" scopeId={departure.id} /> : null}
 
       {/* 3. Où en êtes-vous ? (une ligne tant que ce n'est pas la veille) */}
       {!cancelled && myDeparture ? (

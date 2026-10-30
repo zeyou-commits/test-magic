@@ -132,6 +132,21 @@ export function TodayInbox({
 
   const withoutMmsi = vessels.filter((v) => v.status === "active" && !v.mmsi);
   const aisHealth = useQuery(aisHealthQuery).data;
+  const staffReports = useQuery({
+    queryKey: ["admin", "staff-reports"],
+    queryFn: async () => {
+      const { data } = await assignDb
+        .from("reports")
+        .select("target_type")
+        .in("target_type", ["vessel", "company"])
+        .eq("status", "new");
+      const rows = (data ?? []) as { target_type: string }[];
+      return {
+        vessel: rows.filter((r) => r.target_type === "vessel").length,
+        company: rows.filter((r) => r.target_type === "company").length,
+      };
+    },
+  }).data ?? { vessel: 0, company: 0 };
   const ends = [...programmeEnds(upcoming).entries()]
     .filter(([, last]) => Date.parse(last) < now + 120 * 86_400_000)
     .sort((a, b) => a[1].localeCompare(b[1]));
@@ -427,6 +442,23 @@ export function TodayInbox({
             >
               Ouvrir l'éditeur SQL
             </a>
+          </Button>
+        </InboxCard>,
+      );
+    }
+    // Signalements de voyageurs à vérifier vite : navire immobilisé, contact de compagnie périmé.
+    if (staffReports.vessel + staffReports.company > 0) {
+      cards.unshift(
+        <InboxCard
+          key="staff-reports"
+          tone="danger"
+          icon={<AlertTriangle className="size-5" aria-hidden />}
+          kind="Signalement à vérifier"
+          title={`${staffReports.vessel} navire(s) et ${staffReports.company} contact(s) de compagnie signalés`}
+          detail="Rien n'est public sans votre validation."
+        >
+          <Button size="sm" asChild>
+            <a href={staffReports.vessel ? "/admin?tab=incidents" : "/admin?tab=reports"}>Vérifier</a>
           </Button>
         </InboxCard>,
       );

@@ -1,3 +1,4 @@
+import { isTowardsSouth } from "@/lib/ferry/markets";
 import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import { useQuery } from "@tanstack/react-query";
 import {
@@ -365,8 +366,7 @@ export function ItineraryPlanner({
         return (
           from?.status === "active" &&
           to?.status === "active" &&
-          from.country_code !== "DZ" &&
-          to.country_code === "DZ"
+          isTowardsSouth(from.country_code, to.country_code)
         );
       }),
     [ports, routes],

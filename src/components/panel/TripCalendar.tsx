@@ -10,12 +10,15 @@ import {
   SCHOOL_ZONES,
   addDaysKey,
   diffDays,
+  holidayCoverage,
   holidayPeriods,
   type HolidayPeriod,
   type SchoolZone,
 } from "@/lib/ferry/schoolCalendar";
 import { capitalizeFirst } from "@/lib/ferry/format";
 import { SalesAlertForm } from "./SalesAlertForm";
+import { useQuery } from "@tanstack/react-query";
+import { companiesQuery, upcomingDeparturesQuery } from "@/lib/ferry/queries";
 import { useIsMobile } from "@/hooks/use-mobile";
 
 const ZONE_STORAGE_KEY = "batogo:school-zone";
@@ -126,6 +129,35 @@ export function TripCalendar({
     return () => mql.removeEventListener("change", onChange);
   }, []);
 
+  const jumpToDay = (key: string) => {
+    const target = keyToDate(key);
+    setMonth(target);
+    if (!stackRef.current) return;
+    const index =
+      (target.getFullYear() - firstMonth.getFullYear()) * 12 +
+      target.getMonth() -
+      firstMonth.getMonth();
+    window.setTimeout(() => {
+      stackRef.current
+        ?.querySelectorAll(".rdp-month")
+        [Math.max(0, index)]?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 80);
+  };
+  // Dernier jour publié par chaque compagnie : dit ce qui peut encore arriver.
+  const { data: upcomingForEnds = [] } = useQuery(upcomingDeparturesQuery());
+  const { data: companiesForEnds = [] } = useQuery(companiesQuery);
+  const programmeEnds = useMemo(() => {
+    const last = new Map<string, string>();
+    for (const d of upcomingForEnds) {
+      const day = String(d.departure_at).slice(0, 10);
+      if (d.status !== "cancelled" && day > (last.get(d.company_id) ?? ""))
+        last.set(d.company_id, day);
+    }
+    return companiesForEnds
+      .filter((c) => c.status === "active" && last.has(c.id))
+      .map((c) => ({ name: c.name, lastDay: last.get(c.id)! }));
+  }, [upcomingForEnds, companiesForEnds]);
+
   // Aucune zone de vacances n'est cochée par défaut à l'arrivée sur le calendrier.
   const toggleZone = (item: SchoolZone) => {
     const next = zones.includes(item)
@@ -133,6 +165,11 @@ export function TripCalendar({
       : ([...zones, item].sort() as SchoolZone[]);
     setZones(next);
     setNote(null);
+    // Une zone ajoutée : on va directement à ses prochaines vacances dans le calendrier.
+    if (next.includes(item) && !zones.includes(item)) {
+      const first = holidayPeriods(item, today)[0];
+      if (first) jumpToDay(first.start);
+    }
     if (next.length > 0 && !holidaysOn) onHolidaysChange(true);
     if (next.length === 0 && holidaysOn) onHolidaysChange(false);
     try {
@@ -432,6 +469,22 @@ export function TripCalendar({
               ))}
             </div>
           ) : null}
+          {periods[0]
+            ? (() => {
+                const coverage = holidayCoverage(periods[0], outDays.keys(), programmeEnds);
+                return (
+                  <p className="rounded-lg bg-secondary px-2.5 py-1.5 text-[11px] leading-relaxed">
+                    <strong>{periods[0].name} : </strong>
+                    {coverage.state === "open"
+                      ? `${coverage.dayCount} jour(s) de départ publiés, à partir du ${short(coverage.firstDay!)}.`
+                      : "les dates ne sont pas encore ouvertes pour cette période."}
+                    {coverage.pending.length
+                      ? ` ${coverage.pending.join(", ")} ${coverage.pending.length > 1 ? "n'ont" : "n'a"} pas encore publié ces dates : c'est normal, les programmes sortent au fil de la saison.`
+                      : ""}
+                  </p>
+                );
+              })()
+            : null}
         </div>
       ) : (
         <p className="text-[10px] text-muted-foreground max-md:hidden">

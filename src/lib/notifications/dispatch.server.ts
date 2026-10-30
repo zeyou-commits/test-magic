@@ -66,6 +66,139 @@ async function collect<T>(
   }
 }
 
+type Deliver = (userId: string, followId: string | null, notice: Notice) => Promise<unknown>;
+const HELP_NEEDS: Record<string, string> = {
+  medical: "SOS médical",
+  baby: "couches, lait, bébé",
+  water: "eau",
+  charger: "chargeur",
+  luggage: "aide pour les bagages",
+  elderly: "aide pour une personne âgée",
+};
+
+/**
+ * Retours d'interaction : l'auteur d'un signalement apprend qu'il est confirmé ou contredit (un
+ * regroupement par jour), l'équipe reçoit les signalements navire et compagnie, et l'entraide
+ * prévient le demandeur et les voyageurs du même départ. Une table absente ne bloque rien.
+ */
+async function notifyFeedback(deliver: Deliver, now: number) {
+  const since = new Date(now - 26 * HOUR).toISOString();
+  const day = new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Paris" }).format(new Date(now));
+  const read = async <T,>(query: PromiseLike<{ data: unknown; error: unknown }>) => {
+    const { data, error } = await query;
+    return error ? [] : ((data ?? []) as T[]);
+  };
+
+  for (const [table, kind] of [
+    ["bw_alert_confirmations", "confirmed"],
+    ["bw_alert_denials", "denied"],
+  ] as const) {
+    const rows = await read<{ alert_id: string; user_id: string }>(
+      db.from(table).select("alert_id,user_id").gte("created_at", since).limit(2000),
+    );
+    const ids = [...new Set(rows.map((row) => row.alert_id))];
+    if (!ids.length) continue;
+    const alerts = await read<{ id: string; user_id: string | null }>(
+      db.from("bw_travel_alerts").select("id,user_id").in("id", ids.slice(0, 500)),
+    );
+    for (const alert of alerts) {
+      if (!alert.user_id) continue;
+      const count = new Set(
+        rows.filter((r) => r.alert_id === alert.id && r.user_id !== alert.user_id).map((r) => r.user_id),
+      ).size;
+      if (!count) continue;
+      await deliver(alert.user_id, null, {
+        key: `alert-feedback:${kind}:${alert.id}:${day}`,
+        category: "community",
+        title: kind === "confirmed" ? "Votre signalement est confirmé" : "Du nouveau sur votre signalement",
+        body:
+          kind === "confirmed"
+            ? `${count} voyageur${count > 1 ? "s ont" : " a"} confirmé votre signalement. Merci !`
+            : `${count} voyageur${count > 1 ? "s indiquent" : " indique"} que ce n'est plus le cas.`,
+        url: "/compte#contributions",
+      });
+    }
+  }
+
+  // Équipe : un signalement sur un navire ou une compagnie demande une réaction rapide.
+  const reports = await read<{ id: string; target_type: string; reason: string }>(
+    db
+      .from("reports")
+      .select("id,target_type,reason")
+      .in("target_type", ["vessel", "company"])
+      .eq("status", "new")
+      .gte("created_at", since),
+  );
+  if (reports.length) {
+    const staff = await read<{ user_id: string }>(
+      db.from("user_roles").select("user_id").in("role", ["admin", "editor"]),
+    );
+    for (const report of reports) {
+      for (const userId of new Set(staff.map((row) => row.user_id))) {
+        await deliver(userId, null, {
+          key: `staff-report:${report.id}`,
+          category: "reminders",
+          title:
+            report.target_type === "vessel" ? "Navire signalé par un voyageur" : "Contact compagnie à vérifier",
+          body: "Un voyageur a envoyé un signalement à vérifier. Rien n'est public sans votre validation.",
+          url: report.target_type === "vessel" ? "/admin?tab=incidents" : "/admin?tab=reports",
+        });
+      }
+    }
+  }
+
+  // Entraide : le demandeur sait que quelqu'un arrive ; les voyageurs du départ voient la demande.
+  const responses = await read<{ request_id: string; user_id: string }>(
+    db.from("bw_help_responses").select("request_id,user_id").gte("created_at", since),
+  );
+  const answered = [...new Set(responses.map((row) => row.request_id))];
+  if (answered.length) {
+    const asked = await read<{ id: string; user_id: string; closed_at: string | null }>(
+      db.from("bw_help_requests").select("id,user_id,closed_at").in("id", answered),
+    );
+    for (const request of asked) {
+      if (request.closed_at) continue;
+      await deliver(request.user_id, null, {
+        key: `help-reply:${request.id}`,
+        category: "community",
+        title: "Quelqu'un vient vous aider",
+        body: "Un voyageur a répondu à votre demande et se rend au point de rendez-vous.",
+        url: "/",
+      });
+    }
+  }
+  const fresh = await read<{ id: string; user_id: string; scope_id: string; need: string }>(
+    db
+      .from("bw_help_requests")
+      .select("id,user_id,scope_id,need")
+      .eq("scope_kind", "departure")
+      .is("closed_at", null)
+      .gte("created_at", new Date(now - HOUR).toISOString()),
+  );
+  for (const request of fresh) {
+    const travellers = await read<{ user_id: string }>(
+      db
+        .from("bw_follows")
+        .select("user_id")
+        .eq("target_kind", "departure")
+        .eq("target_id", request.scope_id)
+        .eq("active", true)
+        .eq("traveller", true),
+    );
+    for (const { user_id: userId } of travellers) {
+      if (userId === request.user_id) continue;
+      await deliver(userId, null, {
+        key: `help-new:${request.id}`,
+        category: "community",
+        title:
+          request.need === "medical" ? "SOS médical sur votre traversée" : "Un voyageur demande de l'aide",
+        body: `Sur votre traversée : ${HELP_NEEDS[request.need] ?? "besoin d'aide"}. Ouvrez la fiche pour voir le point de rendez-vous.`,
+        url: `/?select=departure&id=${request.scope_id}`,
+      });
+    }
+  }
+}
+
 export async function dispatchPush(
   options: {
     openingCampaignId?: string;
@@ -597,6 +730,9 @@ export async function dispatchPush(
         });
       }
     }
+  }
+  if (!options.onlyOpenings && !options.messageId && !options.userId) {
+    await notifyFeedback(deliver, now);
   }
   // Messages de l'équipe : celui envoyé tout de suite, ou ceux planifiés arrivés à échéance.
   const adminMessages = options.onlyOpenings

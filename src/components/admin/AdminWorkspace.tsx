@@ -70,6 +70,13 @@ const sections = [
     icon: Zap,
   },
   {
+    id: "incidents",
+    label: "Navires immobilisés",
+    description: "Source, vérification, départs concernés, messages à préparer et signalements à traiter.",
+    group: "",
+    icon: TriangleAlert,
+  },
+  {
     id: "commercial",
     label: "Programmes par compagnie",
     description: "Liaisons commerciales, départs, navires et sources officielles au même endroit.",

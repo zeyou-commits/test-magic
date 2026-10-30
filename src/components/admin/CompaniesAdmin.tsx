@@ -205,6 +205,15 @@ function CompanyEditor({
   const [name, setName] = useState(company?.name ?? "");
   const [logo, setLogo] = useState(company?.logo_url ?? "");
   const [site, setSite] = useState(company?.website_url ?? "");
+  const [booking, setBooking] = useState(company?.booking_url ?? "");
+  const [contact, setContact] = useState(company?.contact_url ?? "");
+  const [claims, setClaims] = useState(company?.claims_url ?? "");
+  const [phone, setPhone] = useState(company?.phone ?? "");
+  const [email, setEmail] = useState(company?.contact_email ?? "");
+  const [contactSource, setContactSource] = useState(company?.contact_source_url ?? "");
+  const [contactVerified, setContactVerified] = useState(
+    company?.contact_verified_at?.slice(0, 10) ?? "",
+  );
   const [description, setDescription] = useState(company?.description ?? "");
   const [other, setOther] = useState<string>(initialMerge ?? "");
   // Sens de la fusion : par défaut, la fiche ouverte est gardée et l'autre disparaît.
@@ -216,10 +225,17 @@ function CompanyEditor({
         name: name.trim(),
         logo_url: logo.trim() || null,
         website_url: site.trim() || null,
+        booking_url: booking.trim() || null,
+        contact_url: contact.trim() || null,
+        claims_url: claims.trim() || null,
+        phone: phone.trim() || null,
+        contact_email: email.trim() || null,
+        contact_source_url: contactSource.trim() || null,
+        contact_verified_at: contactVerified ? new Date(contactVerified).toISOString() : null,
         description: description.trim() || null,
       };
       if (!values.name) throw new Error("Indiquez le nom de la compagnie.");
-      for (const url of [values.logo_url, values.website_url])
+      for (const url of [values.logo_url, values.website_url, values.booking_url, values.contact_url, values.claims_url, values.contact_source_url])
         if (url && !/^https:\/\//i.test(url)) throw new Error("Les adresses doivent commencer par https://");
       const { error } = company
         ? await supabase.from("companies").update(values).eq("id", company.id)
@@ -321,6 +337,47 @@ function CompanyEditor({
           Site officiel
           <Input value={site} placeholder="https://…" onChange={(e) => setSite(e.target.value)} />
         </label>
+        <fieldset className="grid gap-2 rounded-xl border border-border p-3">
+          <legend className="px-1 text-sm font-semibold">Contacts affichés aux voyageurs</legend>
+          <label className="grid gap-1 text-xs font-medium">
+            Page de réservation
+            <Input value={booking} placeholder="https://…" onChange={(e) => setBooking(e.target.value)} />
+          </label>
+          <label className="grid gap-1 text-xs font-medium">
+            Page de contact
+            <Input value={contact} placeholder="https://…" onChange={(e) => setContact(e.target.value)} />
+          </label>
+          <label className="grid gap-1 text-xs font-medium">
+            Réclamations et droits des passagers
+            <Input value={claims} placeholder="https://…" onChange={(e) => setClaims(e.target.value)} />
+          </label>
+          <label className="grid gap-1 text-xs font-medium">
+            Téléphone
+            <Input value={phone} onChange={(e) => setPhone(e.target.value)} />
+          </label>
+          <label className="grid gap-1 text-xs font-medium">
+            E-mail
+            <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} />
+          </label>
+          <label className="grid gap-1 text-xs font-medium">
+            Où vérifier ces informations
+            <Input value={contactSource} placeholder="https://…" onChange={(e) => setContactSource(e.target.value)} />
+          </label>
+          {contactSource.startsWith("https://") ? (
+            <a
+              href={contactSource}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-xs font-semibold text-primary underline"
+            >
+              Ouvrir la page de vérification ↗
+            </a>
+          ) : null}
+          <label className="grid gap-1 text-xs font-medium">
+            Vérifié le (vide : affiché « non vérifié »)
+            <Input type="date" value={contactVerified} onChange={(e) => setContactVerified(e.target.value)} />
+          </label>
+        </fieldset>
         <label className="grid gap-1.5 text-sm font-medium">
           Description
           <Input value={description} onChange={(e) => setDescription(e.target.value)} />

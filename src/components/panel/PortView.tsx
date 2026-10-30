@@ -47,6 +47,7 @@ import { ReportButton } from "./ReportButton";
 import { CompanyBadge } from "./CompanyBadge";
 import { FacilityIcons } from "./FacilityIcons";
 import { TravelSignals } from "./TravelCommunity";
+import { HelpRequests } from "@/components/community/HelpRequests";
 import { globalCriterionQuery } from "./PortReviewForm";
 
 const scoreLabel = (value: number) =>
@@ -334,6 +335,7 @@ export function PortView({
             onSelect={onSelect}
           />
           <TravelSignals key={portId} kind="port" target={portId} compact />
+          <HelpRequests kind="port" scopeId={portId} />
           <section className="pv-section" aria-label="Prochains mouvements">
             <div className="pv-section__head">
               <h3>Prochains mouvements</h3>

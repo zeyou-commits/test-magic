@@ -61,6 +61,24 @@ export function diffDays(a: string, b: string): number {
 }
 
 /** Périodes de vacances d'une zone qui ne sont pas encore terminées à la date donnée. */
+/**
+ * Ce qu'on sait d'une période de vacances : aucun départ publié, ou des départs mais des
+ * compagnies dont le programme s'arrête avant la fin (leurs dates peuvent encore arriver).
+ */
+export function holidayCoverage(
+  period: Pick<HolidayPeriod, "start" | "lastDay">,
+  days: Iterable<string>,
+  programmeEnds: { name: string; lastDay: string }[],
+) {
+  const inPeriod = [...days].filter((day) => day >= period.start && day <= period.lastDay).sort();
+  return {
+    state: inPeriod.length ? ("open" as const) : ("none" as const),
+    firstDay: inPeriod[0] ?? null,
+    dayCount: inPeriod.length,
+    pending: programmeEnds.filter((company) => company.lastDay < period.lastDay).map((c) => c.name),
+  };
+}
+
 export function holidayPeriods(zone: SchoolZone, fromDay: string): HolidayPeriod[] {
   return SCHOOL_BREAKS_2026_2027.filter((item) => item.zones.includes(zone) && item.end > fromDay)
     .map((item) => ({

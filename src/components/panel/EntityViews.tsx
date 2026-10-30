@@ -1,3 +1,4 @@
+import { CompanyContacts } from "./CompanyContacts";
 import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { ExternalLink, Ship, Star, CalendarDays } from "lucide-react";
@@ -74,6 +75,7 @@ export function CompanyView({
             : "Avis des voyageurs"}
         </span>
       </button>
+      <CompanyContacts company={company} />
       <dl className="bw-company-stats">
         <div>
           <dt>

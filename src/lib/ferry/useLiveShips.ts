@@ -11,6 +11,7 @@ import { routeArc, pointAlong } from "./geo";
 import {
   departureForSignal,
   estimateArrival,
+  estimateCrossingArrival,
   LIVE_MAX_AGE_MINUTES,
   phaseFromSignal,
   type LivePosition,
@@ -128,7 +129,8 @@ export function useLiveShips(): LiveShip[] {
       const route = routeById.get(departure.route_id);
       const to = route ? portById.get(route.arrival_port_id) : undefined;
       if (!route || !to) return;
-      const estimate = estimateArrival(position, to, departure.arrival_at, now);
+      const from = portById.get(route.departure_port_id) ?? null;
+      const estimate = estimateCrossingArrival(position, departure, from, to, now);
       ships.push({
         vessel,
         departure,

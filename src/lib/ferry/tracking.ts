@@ -26,7 +26,7 @@ export interface LivePosition {
 
 /** Un navire suivi, rattaché à sa traversée. */
 export type PhysicalVesselStatus =
-    | "boarding"
+  | "boarding"
   | "boarding_closed"
   | "departing"
   | "at_sea"
@@ -56,6 +56,8 @@ export interface LiveShip {
   /** Heure d'arrivée estimée (ISO) et retard par rapport à l'horaire (minutes, négatif = avance). */
   etaIso: string | null;
   delayMinutes: number | null;
+  /** Sur quoi repose l'estimation (approche finale, départ réel, encore à quai). */
+  etaBasis?: "approach" | "departure" | "docked" | null;
   /** Mode démonstration (développement) : position fictive. */
   demo?: boolean;
 }
@@ -137,6 +139,86 @@ export function estimateArrival(
     ? Math.round((etaMs - Date.parse(scheduledArrivalIso)) / 60_000)
     : null;
   return { remainingKm, etaIso: new Date(etaMs).toISOString(), delayMinutes };
+}
+
+/** En deçà, la ligne droite jusqu'au port est fiable : on passe à distance ÷ vitesse. */
+export const FINAL_APPROACH_KM = 30;
+/** Âge maximal d'un signal pour l'utiliser en approche finale ou pour dire « encore à quai ». */
+const FRESH_SIGNAL_MINUTES = 30;
+
+export type EtaBasis = "approach" | "departure" | "docked";
+
+/**
+ * Heure d'arrivée estimée d'une traversée, sans dépendre du tracé en mer :
+ * 1. approche finale (moins de 30 km, en mouvement, signal récent) : distance ÷ vitesse ;
+ * 2. départ réel capté par l'AIS : heure de départ réelle + durée prévue de la traversée ;
+ * 3. navire encore à quai au port de départ après l'heure prévue : heure du signal + durée prévue.
+ * Sinon aucune estimation : l'horaire prévu reste affiché comme tel. Toujours ancrée au signal.
+ */
+export function estimateCrossingArrival(
+  position: LivePosition,
+  departure: Pick<Departure, "id" | "departure_at" | "arrival_at" | "duration_minutes">,
+  departurePort: Pick<Port, "longitude" | "latitude"> | null,
+  arrivalPort: Pick<Port, "longitude" | "latitude">,
+  now: number,
+): {
+  remainingKm: number;
+  etaIso: string | null;
+  delayMinutes: number | null;
+  etaBasis: EtaBasis | null;
+} {
+  const here: LngLat = [position.longitude, position.latitude];
+  const remainingKm = haversineKm(here, [arrivalPort.longitude, arrivalPort.latitude]);
+  const start = Date.parse(departure.departure_at);
+  const plannedEnd = departure.arrival_at ? Date.parse(departure.arrival_at) : NaN;
+  const durationMs =
+    Number.isFinite(plannedEnd) && plannedEnd > start
+      ? plannedEnd - start
+      : departure.duration_minutes && departure.duration_minutes > 0
+        ? departure.duration_minutes * 60_000
+        : NaN;
+  const scheduledArrival = Number.isFinite(durationMs) ? start + durationMs : NaN;
+  const reported = position.reportedAt ? Date.parse(position.reportedAt) : NaN;
+  const fresh =
+    Number.isFinite(reported) &&
+    reported <= now + 60_000 &&
+    now - reported <= FRESH_SIGNAL_MINUTES * 60_000;
+  const speed = position.speedKnots ?? 0;
+  const none = { remainingKm, etaIso: null, delayMinutes: null, etaBasis: null };
+
+  let etaMs = NaN;
+  let etaBasis: EtaBasis | null = null;
+  if (fresh && speed >= 3 && speed <= 50 && remainingKm < FINAL_APPROACH_KM) {
+    etaMs = reported + ((remainingKm * 1000) / (speed * KNOT_MS)) * 1000;
+    etaBasis = "approach";
+  } else if (
+    position.atdAt &&
+    position.eventDepartureId === departure.id &&
+    Number.isFinite(durationMs) &&
+    !position.ataAt
+  ) {
+    etaMs = Date.parse(position.atdAt) + durationMs;
+    etaBasis = "departure";
+  } else if (
+    fresh &&
+    speed < 1.5 &&
+    departurePort &&
+    Number.isFinite(durationMs) &&
+    reported > start &&
+    haversineKm(here, [departurePort.longitude, departurePort.latitude]) < 2
+  ) {
+    etaMs = reported + durationMs;
+    etaBasis = "docked";
+  }
+  if (!Number.isFinite(etaMs) || !etaBasis) return none;
+  return {
+    remainingKm,
+    etaIso: new Date(etaMs).toISOString(),
+    delayMinutes: Number.isFinite(scheduledArrival)
+      ? Math.round((etaMs - scheduledArrival) / 60_000)
+      : null,
+    etaBasis,
+  };
 }
 
 /** Traversée en cours ou imminente d'un navire (ou null). */

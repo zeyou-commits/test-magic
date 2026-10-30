@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   departureForSignal,
   estimateArrival,
+  estimateCrossingArrival,
   projectedPosition,
   trackingTimes,
   type LivePosition,
@@ -39,6 +40,102 @@ const live = (p = position): LiveShip => ({
   phase: "sea",
   ageMinutes: 0,
   ...estimateArrival(p, arrival, departure.arrival_at, now),
+});
+
+describe("ETA d'une traversée : départ réel + durée prévue", () => {
+  const alger = { longitude: 3.07, latitude: 36.77 };
+  const marseille = { longitude: 5.36, latitude: 43.3 };
+  // Départ prévu 18:30 UTC, arrivée prévue le lendemain 07:30 : 13 h de traversée.
+  const crossing = {
+    id: "dep-1",
+    departure_at: "2026-11-06T18:30:00Z",
+    arrival_at: "2026-11-07T07:30:00Z",
+    duration_minutes: 780,
+  };
+  const at = (iso: string) => Date.parse(iso);
+  const signal = (extra: Partial<LivePosition>): LivePosition => ({
+    ...position,
+    latitude: 40,
+    longitude: 4.5,
+    speedKnots: 20,
+    reportedAt: "2026-11-06T22:00:00Z",
+    ...extra,
+  });
+
+  it("parti avec 1 h 10 de retard : arrivée = départ réel + 13 h", () => {
+    const result = estimateCrossingArrival(
+      signal({ atdAt: "2026-11-06T19:40:00Z", eventDepartureId: "dep-1" }),
+      crossing,
+      alger,
+      marseille,
+      at("2026-11-06T23:00:00Z"),
+    );
+    expect(result).toMatchObject({
+      etaIso: "2026-11-07T08:40:00.000Z",
+      delayMinutes: 70,
+      etaBasis: "departure",
+    });
+  });
+
+  it("même sans nouveau signal en pleine mer, l'estimation reste celle du départ réel", () => {
+    const result = estimateCrossingArrival(
+      signal({
+        atdAt: "2026-11-06T19:40:00Z",
+        eventDepartureId: "dep-1",
+        reportedAt: "2026-11-06T20:30:00Z",
+      }),
+      crossing,
+      alger,
+      marseille,
+      at("2026-11-07T03:00:00Z"),
+    );
+    expect(result.etaIso).toBe("2026-11-07T08:40:00.000Z");
+  });
+
+  it("encore à quai 45 min après l'heure prévue : arrivée repoussée d'autant", () => {
+    const result = estimateCrossingArrival(
+      signal({
+        latitude: 36.77,
+        longitude: 3.07,
+        speedKnots: 0,
+        reportedAt: "2026-11-06T19:15:00Z",
+      }),
+      crossing,
+      alger,
+      marseille,
+      at("2026-11-06T19:20:00Z"),
+    );
+    expect(result).toMatchObject({ delayMinutes: 45, etaBasis: "docked" });
+  });
+
+  it("en approche finale, distance ÷ vitesse prend le relais", () => {
+    const result = estimateCrossingArrival(
+      signal({
+        latitude: 43.2,
+        longitude: 5.3,
+        speedKnots: 15,
+        reportedAt: "2026-11-07T07:00:00Z",
+      }),
+      crossing,
+      alger,
+      marseille,
+      at("2026-11-07T07:05:00Z"),
+    );
+    expect(result.etaBasis).toBe("approach");
+    expect(Date.parse(result.etaIso!)).toBeLessThan(at("2026-11-07T08:00:00Z"));
+  });
+
+  it("le départ réel d'une autre traversée n'est jamais utilisé", () => {
+    expect(
+      estimateCrossingArrival(
+        signal({ atdAt: "2026-11-06T19:40:00Z", eventDepartureId: "autre" }),
+        crossing,
+        alger,
+        marseille,
+        at("2026-11-06T23:00:00Z"),
+      ).etaIso,
+    ).toBeNull();
+  });
 });
 
 describe("fiabilité AIS", () => {
@@ -129,11 +226,24 @@ describe("fiabilité AIS", () => {
   });
   it("présente quatre heures avant par défaut et respecte une consigne de compagnie", () => {
     const port = { country_code: "ES" };
-    expect(getBoardingMilestones(departure.departure_at, port)?.callTime.toISOString()).toBe("2026-10-19T16:30:00.000Z");
-    expect(getBoardingMilestones(departure.departure_at, port, { presentationMinutes: 180 })?.callTime.toISOString()).toBe("2026-10-19T17:30:00.000Z");
+    expect(getBoardingMilestones(departure.departure_at, port)?.callTime.toISOString()).toBe(
+      "2026-10-19T16:30:00.000Z",
+    );
+    expect(
+      getBoardingMilestones(departure.departure_at, port, {
+        presentationMinutes: 180,
+      })?.callTime.toISOString(),
+    ).toBe("2026-10-19T17:30:00.000Z");
     // Piéton : une heure plus tard que le véhicule, avec ou sans consigne renseignée.
-    expect(getBoardingMilestones(departure.departure_at, port, { onFoot: true })?.callTime.toISOString()).toBe("2026-10-19T17:30:00.000Z");
-    expect(getBoardingMilestones(departure.departure_at, port, { presentationMinutes: 180, onFoot: true })?.callTime.toISOString()).toBe("2026-10-19T18:30:00.000Z");
+    expect(
+      getBoardingMilestones(departure.departure_at, port, { onFoot: true })?.callTime.toISOString(),
+    ).toBe("2026-10-19T17:30:00.000Z");
+    expect(
+      getBoardingMilestones(departure.departure_at, port, {
+        presentationMinutes: 180,
+        onFoot: true,
+      })?.callTime.toISOString(),
+    ).toBe("2026-10-19T18:30:00.000Z");
   });
 });
 describe("horaires compacts avec durée publiée", () => {

@@ -23,6 +23,7 @@ import {
 import type { Vessel } from "@/lib/ferry/types";
 import { planningDeparturesQuery } from "@/lib/admin/planning";
 import { aliasKey, matchName, REVIEW_SCORE } from "@/lib/admin/importMatching";
+import { aisHealthQuery, ageLabel } from "@/lib/admin/aisHealth";
 
 // Fonctions de la flotte (script SQL « admin_flotte ») pas encore présentes dans les types générés.
 const supabase = typedSupabase as unknown as SupabaseClient;
@@ -59,6 +60,7 @@ export function FleetBoard({
   const { data: planning = [] } = useQuery(planningDeparturesQuery);
   const { data: routes = [] } = useQuery(adminRoutesQuery);
   const { data: ports = [] } = useQuery(adminPortsQuery);
+  const aisHealth = useQuery(aisHealthQuery).data;
   const initial = vessels.find((v) => v.id === initialVesselId);
   // Rien de choisi : la compagnie du navire demandé, sinon la première (données parfois pas encore chargées).
   const [companyId, setCompanyId] = useState<string | null>(null);
@@ -242,7 +244,7 @@ export function FleetBoard({
                   <div className="flex flex-wrap gap-1.5">
                     {vessel.mmsi ? (
                       <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-[11px] font-semibold text-emerald-700">
-                        Suivi en direct
+                        Signal AIS {ageLabel(aisHealth?.lastSignal.get(Number(vessel.mmsi)))}
                       </span>
                     ) : (
                       <span className="rounded-full bg-amber-50 px-2 py-0.5 text-[11px] font-semibold text-amber-800">

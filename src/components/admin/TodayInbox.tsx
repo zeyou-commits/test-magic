@@ -21,6 +21,12 @@ import {
   type PlanningIssue,
 } from "@/lib/admin/planning";
 import { runAutoAssign, visibleSuggestions } from "@/lib/admin/autoAssign";
+import {
+  aisHealthQuery,
+  ageLabel,
+  COLLECTOR_STALE_MINUTES,
+  SILENT_HOURS,
+} from "@/lib/admin/aisHealth";
 import { assignConfigQuery, assignDb, scheduleVesselsQuery } from "@/lib/admin/assignQueries";
 
 const IGNORED_KEY = "bw-admin-ignored-issues";
@@ -124,6 +130,7 @@ export function TodayInbox({
   }
 
   const withoutMmsi = vessels.filter((v) => v.status === "active" && !v.mmsi);
+  const aisHealth = useQuery(aisHealthQuery).data;
   const ends = [...programmeEnds(upcoming).entries()]
     .filter(([, last]) => Date.parse(last) < now + 120 * 86_400_000)
     .sort((a, b) => a[1].localeCompare(b[1]));
@@ -392,6 +399,62 @@ export function TodayInbox({
         </Button>
       </InboxCard>,
     );
+  }
+
+  // Santé du signal AIS : collecteur permanent, puis navires muets.
+  if (aisHealth) {
+    const seen = aisHealth.collectorSeen;
+    if (!seen || now - Date.parse(seen) > COLLECTOR_STALE_MINUTES * 60_000) {
+      cards.push(
+        <InboxCard
+          key="ais-collector"
+          tone="warn"
+          icon={<Radio className="size-5" aria-hidden />}
+          kind="Suivi en direct"
+          title={
+            seen
+              ? `L'écoute AIS ciblée ne passe plus (dernier passage ${ageLabel(seen, now)})`
+              : "L'écoute AIS ciblée n'est pas encore programmée"
+          }
+          detail="Toutes les 10 minutes, Supabase demande au site d'écouter 40 secondes les navires proches d'un départ ou d'une arrivée. Sans elle, les positions ne bougent que lorsqu'un visiteur ouvre la carte. À installer : script SQL « ais_ecoute_ciblee » (mêmes prérequis que l'envoi immédiat des notifications)."
+        >
+          <Button size="sm" variant="outline" asChild>
+            <a
+              href="https://supabase.com/dashboard/project/lwyjhgyuqyflaanrbgkq/sql/new"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              Ouvrir l'éditeur SQL
+            </a>
+          </Button>
+        </InboxCard>,
+      );
+    }
+    const silent = vessels.filter((v) => {
+      if (v.status !== "active" || !v.mmsi) return false;
+      const last = aisHealth.lastSignal.get(Number(v.mmsi));
+      return !last || now - Date.parse(last) > SILENT_HOURS * 3_600_000;
+    });
+    if (silent.length) {
+      cards.push(
+        <InboxCard
+          key="ais-silent"
+          tone="info"
+          icon={<Radio className="size-5" aria-hidden />}
+          kind="Signal AIS"
+          title={`${silent.length} navire(s) sans signal depuis plus de ${SILENT_HOURS} h`}
+          detail={`${silent
+            .map((v) => `${v.name} (${ageLabel(aisHealth.lastSignal.get(Number(v.mmsi)), now)})`)
+            .join(
+              ", ",
+            )}. Un navire jamais reçu a souvent un MMSI faux : vérifiez-le sur VesselFinder. Les autres peuvent être en arrêt technique ou hors de portée des antennes.`}
+        >
+          <Button size="sm" variant="outline" onClick={() => onOpenVessel(silent[0]!.id)}>
+            Vérifier la fiche
+          </Button>
+        </InboxCard>,
+      );
+    }
   }
 
   for (const vessel of withoutMmsi) {

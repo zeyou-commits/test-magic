@@ -1,4 +1,5 @@
 import { VesselAlertTag } from "@/components/panel/VesselAlert";
+import { VesselPalmares, VesselPhotoBadge } from "@/components/panel/VesselFacts";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
@@ -52,7 +53,7 @@ function Boats() {
 
   return (
     <SiteLayout>
-      <Breadcrumbs items={[{ name: "Bateaux", path: "/bateaux" }]} />
+      <Breadcrumbs items={[{ name: "Navires", path: "/bateaux" }]} />
       <CollectionSchema
         path="/bateaux"
         name="Flotte des ferries Europe ↔ Algérie"
@@ -66,6 +67,7 @@ function Boats() {
       {groups.length === 0 ? (
         <p className="text-sm text-muted-foreground">Chargement de la flotte…</p>
       ) : null}
+      <VesselPalmares />
       <div className="space-y-10">
         {groups.map(({ company, vessels: list }) => {
           const companyRoutes = routes.filter((r) => r.company_ids.includes(company.id));
@@ -153,6 +155,7 @@ function VesselCard({ vessel, routes, ports }: { vessel: Vessel; routes: RouteLi
             <Ship size={40} aria-hidden />
           </div>
         )}
+        <VesselPhotoBadge vesselId={vessel.id} />
       </div>
       <div className="flex flex-1 flex-col p-4">
         <h3 className="font-display text-lg font-bold">

@@ -46,6 +46,7 @@ import { MakeMyTrip } from "./MakeMyTrip";
 import { VesselAlertDepartures } from "./VesselAlertDepartures";
 import { ReportButton } from "./ReportButton";
 import { ShipPhoto, VesselSpecs } from "./VesselBits";
+import { VesselIdentity, VesselPhotoBadge } from "./VesselFacts";
 import { TripStatusPicker, VesselPresence } from "./TripPresence";
 
 function useShipData(exactDepartureId?: string) {
@@ -232,6 +233,7 @@ export function VesselView({
           <div className="relative">
             <ShipPhoto key={photo?.url ?? vesselId} url={photo?.url} name={vessel.name} />
             <VesselPhotoAlert vesselId={vessel.id} />
+            <VesselPhotoBadge vesselId={vessel.id} />
             <VesselPhotoInfo count={liveInfo.official + liveInfo.travellers} onOpen={openLive} />
           </div>
         </div>
@@ -415,6 +417,7 @@ export function VesselView({
           <section className="bw-onboard">
             <h3>Faites connaissance avec {vessel.name}</h3>
             {vessel.description ? <p>{vessel.description}</p> : null}
+            <VesselIdentity vesselId={vessel.id} />
             <VesselSpecs vessel={vessel} />
             {communityAvailable ? (
               <div className="bw-community-invite">

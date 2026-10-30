@@ -33,6 +33,7 @@ import { VesselElsewhereNotice } from "./VesselElsewhereNotice";
 import { DepartureIncidentNotice } from "./VesselIncidentNotice";
 import { useVesselAlert } from "@/lib/ferry/vesselAlerts";
 import { VesselAlertBanner } from "./VesselAlert";
+import { VesselBoardingNote, VesselIdentity } from "./VesselFacts";
 import { MakeMyTrip } from "./MakeMyTrip";
 import { HelpRequests } from "@/components/community/HelpRequests";
 import { FollowButton } from "./FollowButton";
@@ -490,6 +491,8 @@ export function TripRecap({
             <>
               {vessel.description ? <p className="mb-3 text-sm">{vessel.description}</p> : null}
               <VesselPresence vesselId={vessel.id} />
+              <VesselBoardingNote vesselId={vessel.id} />
+              <VesselIdentity vesselId={vessel.id} />
               <VesselSpecs vessel={vessel} />
             </>
           ) : (

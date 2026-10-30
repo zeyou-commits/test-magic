@@ -48,17 +48,11 @@ const sections = [
   },
   {
     id: "vessels",
-    label: "Navires",
-    description: "Suivi en direct, photos, caractéristiques et affectations de la flotte.",
+    label: "Flotte & compagnies",
+    description:
+      "Une compagnie à gauche, ses navires à droite. Ajouter, archiver, remplacer ou fusionner un navire.",
     group: "",
     icon: Ship,
-  },
-  {
-    id: "companies",
-    label: "Compagnies",
-    description: "Les transporteurs, leurs informations publiques et la fusion des doublons.",
-    group: "",
-    icon: Building2,
   },
   {
     id: "import",
@@ -101,6 +95,13 @@ const sections = [
     description: "Les liaisons entre les deux rives.",
     group: "Réseau",
     icon: Route,
+  },
+  {
+    id: "companies",
+    label: "Fiches compagnies",
+    description: "Logo, site, description, fusion des doublons et suppression des compagnies.",
+    group: "Réseau",
+    icon: Building2,
   },
   {
     id: "places",

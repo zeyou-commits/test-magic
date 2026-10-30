@@ -43,7 +43,8 @@ function Boats() {
     set.add(d.route_id);
     routesByVessel.set(d.vessel_id, set);
   }
-  const publicVessels = vessels.filter((v) => v.status !== "draft");
+  // Brouillons et navires archivés (inactifs) ne sont pas présentés.
+  const publicVessels = vessels.filter((v) => v.status === "active");
   const groups = companies
     .map((c) => ({ company: c, vessels: publicVessels.filter((v) => v.company_id === c.id) }))
     .filter((g) => g.vessels.length);

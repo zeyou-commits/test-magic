@@ -22,6 +22,7 @@ import { DashboardOverview } from "@/components/admin/DashboardOverview";
 import { TodayInbox } from "@/components/admin/TodayInbox";
 import { PlanningBoard } from "@/components/admin/PlanningBoard";
 import { SeasonImport } from "@/components/admin/SeasonImport";
+import { FleetBoard } from "@/components/admin/FleetBoard";
 import { useAdminCounts } from "@/hooks/useAdminCounts";
 import { AdminWorkspace, type AdminSearchItem } from "@/components/admin/AdminWorkspace";
 import { AdminDrawer, AdminListToolbar, matches } from "@/components/admin/AdminDrawer";
@@ -62,7 +63,7 @@ import {
 } from "@/lib/ferry/format";
 import { routeColor, routePalette } from "@/lib/ferry/colors";
 import { portPresets } from "@/lib/ferry/portPresets";
-import type { Port } from "@/lib/ferry/types";
+import type { Port, Vessel } from "@/lib/ferry/types";
 import {
   dateKeyInZone,
   portTimeZone,
@@ -403,7 +404,12 @@ function AdminTabs() {
           <RoutesAdmin itemId={tab === "routes" ? item : undefined} />
         </TabsContent>
         <TabsContent value="vessels">
-          <VesselsAdmin itemId={tab === "vessels" ? item : undefined} />
+          <FleetBoard
+            key={tab === "vessels" ? (item ?? "") : ""}
+            initialVesselId={tab === "vessels" ? item : undefined}
+            renderEditor={(vessel) => <VesselEditor vessel={vessel} />}
+            onOpenCompany={(id) => openItem("companies", id)}
+          />
         </TabsContent>
         <TabsContent value="import">
           <SeasonImport />
@@ -1591,23 +1597,6 @@ function VesselsAdmin({
     },
     refetchInterval: 60_000,
   });
-  const { data: routes = [] } = useQuery(routesQuery);
-  const { data: ports = [] } = useQuery(portsQuery);
-  const { data: nextDeps = [] } = useQuery({
-    queryKey: ["admin", "vessel_next_departures"],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("departures")
-        .select("vessel_id, route_id, departure_at")
-        .not("vessel_id", "is", null)
-        .neq("status", "cancelled")
-        .gte("departure_at", new Date(Date.now() - 36 * 3600_000).toISOString())
-        .order("departure_at")
-        .limit(1000);
-      if (error) throw new Error(error.message);
-      return data;
-    },
-  });
   const [vesselSearch, setVesselSearch] = useState("");
   const [companyFilter, setCompanyFilter] = useState("all");
   const scopedVessels = allVessels.filter((v) => !vesselIds || vesselIds.includes(v.id));
@@ -1636,246 +1625,7 @@ function VesselsAdmin({
       b[0] === "none" ? "Sans compagnie" : (companies.find((item) => item.id === b[0])?.name ?? "");
     return nameA.localeCompare(nameB, "fr");
   });
-  const portLabel = (id: string) => ports.find((p) => p.id === id)?.name ?? "—";
-  // Brouillons de saisie, par navire : { mmsi, imo, photo }.
-  const [drafts, setDrafts] = useState<
-    Record<string, { mmsi?: string; imo?: string; photo?: string; photoFile?: File | null }>
-  >({});
-  const setDraft = (
-    id: string,
-    patch: { mmsi?: string; imo?: string; photo?: string; photoFile?: File | null },
-  ) => setDrafts((prev) => ({ ...prev, [id]: { ...prev[id], ...patch } }));
-
-  const save = useMutation({
-    mutationFn: async ({
-      id,
-      mmsi,
-      imo,
-      photo_url,
-      photoFile,
-    }: {
-      id: string;
-      mmsi: number | null;
-      imo: number | null;
-      photo_url: string | null;
-      photoFile: File | null;
-    }) => {
-      let finalPhotoUrl = photo_url;
-      if (photoFile) {
-        const extension = photoFile.name.split(".").pop()?.toLowerCase() || "jpg";
-        const path = id + "/" + Date.now() + "." + extension.replace(/[^a-z0-9]/g, "");
-        const { error: uploadError } = await supabase.storage
-          .from("vessel-photos")
-          .upload(path, photoFile, { contentType: photoFile.type });
-        if (uploadError)
-          throw new Error("Téléversement de la photo impossible : " + uploadError.message);
-        const { data: publicUrl } = supabase.storage.from("vessel-photos").getPublicUrl(path);
-        finalPhotoUrl = publicUrl.publicUrl;
-      }
-      const { error } = await supabase
-        .from("vessels")
-        .update({ mmsi, imo, photo_url: finalPhotoUrl })
-        .eq("id", id);
-      if (error)
-        throw new Error(
-          error.message.includes("unique")
-            ? "Ce MMSI est déjà utilisé par un autre navire."
-            : "Enregistrement impossible. Vérifiez le MMSI (9 chiffres) et l'IMO (7 chiffres).",
-        );
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["vessels"] });
-      queryClient.invalidateQueries({ queryKey: ["vessel-photo"] });
-      toast.success("Navire enregistré.");
-    },
-    onError: (error: Error) => toast.error(error.message),
-  });
-
   const positionByMmsi = new Map(positions.map((position) => [position.mmsi, position]));
-  /** Fiche complète d'un navire (dans le panneau latéral). */
-  const editorFor = (vessel: (typeof allVessels)[number]) => {
-    const draft = drafts[vessel.id] ?? {};
-    const mmsi = draft.mmsi ?? (vessel.mmsi ? String(vessel.mmsi) : "");
-    const imo = draft.imo ?? (vessel.imo ? String(vessel.imo) : "");
-    const photo = draft.photo ?? vessel.photo_url ?? "";
-    const photoFile = draft.photoFile ?? null;
-    const mmsiOk = mmsi === "" || /^\d{9}$/.test(mmsi);
-    const imoOk = imo === "" || /^\d{7}$/.test(imo);
-    const photoOk = photo === "" || /^https:\/\//i.test(photo);
-    const changed =
-      photoFile !== null ||
-      mmsi !== (vessel.mmsi ? String(vessel.mmsi) : "") ||
-      imo !== (vessel.imo ? String(vessel.imo) : "") ||
-      photo !== (vessel.photo_url ?? "");
-    const position = vessel.mmsi ? positionByMmsi.get(vessel.mmsi) : undefined;
-    const company = companies.find((item) => item.id === vessel.company_id);
-    return (
-      <div className="grid gap-3">
-        <div className="min-w-0">
-          <div className="flex items-center gap-3">
-            {photo && photoOk ? (
-              <img
-                src={photo}
-                alt={vessel.name}
-                width={80}
-                height={56}
-                loading="lazy"
-                referrerPolicy="no-referrer"
-                className="h-14 w-20 rounded-lg border object-cover"
-              />
-            ) : null}
-            <p className="text-sm font-medium">{vessel.name}</p>
-          </div>
-          <p className="text-xs text-muted-foreground">
-            {company?.name ?? "Sans compagnie"}
-            {position?.reported_at
-              ? ` · dernière position le ${new Date(position.reported_at).toLocaleString("fr-FR")}`
-              : vessel.mmsi
-                ? " · pas encore de position"
-                : ""}
-            {position?.last_error ? ` · erreur : ${position.last_error}` : ""}
-          </p>
-          {(() => {
-            const dep = nextDeps.find((d) => d.vessel_id === vessel.id);
-            const route = dep ? routes.find((r) => r.id === dep.route_id) : undefined;
-            const declared = position as
-              { destination?: string | null; eta?: string | null } | undefined;
-            const link = vessel.imo
-              ? `https://www.vesselfinder.com/?imo=${vessel.imo}`
-              : vessel.mmsi
-                ? `https://www.vesselfinder.com/?mmsi=${vessel.mmsi}`
-                : null;
-            return (
-              <div className="mt-1 grid gap-0.5 text-xs">
-                <p>
-                  <span className="text-muted-foreground">Prévu BledWay : </span>
-                  {route && dep
-                    ? `${portLabel(route.departure_port_id)} → ${portLabel(route.arrival_port_id)} · ${new Date(dep.departure_at).toLocaleString("fr-FR")}`
-                    : "aucun départ à venir"}
-                </p>
-                <p>
-                  <span className="text-muted-foreground">Déclaré par le navire : </span>
-                  {declared?.destination
-                    ? `« ${declared.destination} »${declared.eta ? ` · arrivée estimée ${declared.eta}` : ""}`
-                    : "pas encore reçu"}
-                </p>
-                {link ? (
-                  <a
-                    href={link}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="font-semibold text-primary underline underline-offset-2"
-                  >
-                    Suivre sur VesselFinder ↗
-                  </a>
-                ) : null}
-              </div>
-            );
-          })()}
-        </div>
-        <div className="flex flex-wrap items-center gap-2">
-          <label className="grid gap-1 text-xs font-medium">
-            MMSI
-            <Input
-              inputMode="numeric"
-              maxLength={9}
-              placeholder="MMSI"
-              aria-label={`MMSI de ${vessel.name}`}
-              aria-invalid={!mmsiOk}
-              value={mmsi}
-              onChange={(event) =>
-                setDraft(vessel.id, { mmsi: event.target.value.replace(/\D/g, "") })
-              }
-              className="w-32"
-            />
-          </label>
-          <label className="grid gap-1 text-xs font-medium">
-            IMO
-            <Input
-              inputMode="numeric"
-              maxLength={7}
-              placeholder="IMO"
-              aria-label={`IMO de ${vessel.name}`}
-              aria-invalid={!imoOk}
-              value={imo}
-              onChange={(event) =>
-                setDraft(vessel.id, { imo: event.target.value.replace(/\D/g, "") })
-              }
-              className="w-28"
-            />
-          </label>
-          <div className="grid min-w-56 flex-1 gap-1">
-            <Input
-              type="url"
-              placeholder="URL de la photo (https://…)"
-              aria-label={"URL de la photo de " + vessel.name}
-              aria-invalid={!photoOk}
-              value={photo}
-              onChange={(event) =>
-                setDraft(vessel.id, { photo: event.target.value.trim(), photoFile: null })
-              }
-              className="w-full"
-              disabled={Boolean(photoFile)}
-            />
-            <label className="grid gap-1 text-xs text-muted-foreground">
-              <span>Ou téléverser une image {photoFile ? "— " + photoFile.name : ""}</span>
-              <input
-                type="file"
-                accept="image/jpeg,image/png,image/webp,image/avif"
-                aria-label={"Téléverser une photo de " + vessel.name}
-                className="block w-full text-xs file:mr-2 file:rounded-md file:border file:border-border file:bg-background file:px-2 file:py-1"
-                onChange={(event) => {
-                  const file = event.target.files?.[0] ?? null;
-                  if (file && file.size > 10 * 1024 * 1024) {
-                    toast.error("La photo doit faire 10 Mo maximum.");
-                    event.target.value = "";
-                    return;
-                  }
-                  if (
-                    file &&
-                    !["image/jpeg", "image/png", "image/webp", "image/avif"].includes(file.type)
-                  ) {
-                    toast.error("Format accepté : JPG, PNG, WebP ou AVIF.");
-                    event.target.value = "";
-                    return;
-                  }
-                  setDraft(vessel.id, { photoFile: file, ...(file ? { photo: "" } : {}) });
-                }}
-              />
-            </label>
-            {photoFile ? (
-              <Button
-                size="sm"
-                variant="ghost"
-                onClick={() =>
-                  setDraft(vessel.id, { photoFile: null, photo: vessel.photo_url ?? "" })
-                }
-              >
-                Annuler le téléversement
-              </Button>
-            ) : null}
-          </div>
-          <Button
-            size="sm"
-            disabled={!mmsiOk || !imoOk || (!photoFile && !photoOk) || !changed || save.isPending}
-            onClick={() =>
-              save.mutate({
-                id: vessel.id,
-                mmsi: mmsi === "" ? null : Number(mmsi),
-                imo: imo === "" ? null : Number(imo),
-                photo_url: photo === "" ? null : photo,
-                photoFile,
-              })
-            }
-          >
-            Enregistrer
-          </Button>
-        </div>
-        <VesselSpecsEditor vessel={vessel as unknown as VesselSpecsRow} />
-        <VesselDeleteButton id={vessel.id} name={vessel.name} />
-      </div>
-    );
-  };
   const openVessel = allVessels.find((vessel) => vessel.id === openId);
 
   return (
@@ -2000,13 +1750,282 @@ function VesselsAdmin({
           title={openVessel.name}
           description="Suivi en direct (MMSI), lien VesselFinder (IMO), photo et caractéristiques."
         >
-          {editorFor(openVessel)}
+          <VesselEditor vessel={openVessel} />
         </AdminDrawer>
       ) : null}
     </Panel>
   );
 }
 
+
+/** Fiche complète d'un navire (dans le panneau latéral) : suivi en direct, photo, caractéristiques. */
+export function VesselEditor({ vessel }: { vessel: Vessel }) {
+  const queryClient = useQueryClient();
+  const { data: companies = [] } = useQuery(companiesQuery);
+  const { data: positions = [] } = useQuery({
+    queryKey: ["admin", "vessel_positions"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("vessel_positions").select("*");
+      if (error) throw new Error(error.message);
+      return data;
+    },
+    refetchInterval: 60_000,
+  });
+  const { data: routes = [] } = useQuery(routesQuery);
+  const { data: ports = [] } = useQuery(portsQuery);
+  const { data: nextDeps = [] } = useQuery({
+    queryKey: ["admin", "vessel_next_departures"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("departures")
+        .select("vessel_id, route_id, departure_at")
+        .not("vessel_id", "is", null)
+        .neq("status", "cancelled")
+        .gte("departure_at", new Date(Date.now() - 36 * 3600_000).toISOString())
+        .order("departure_at")
+        .limit(1000);
+      if (error) throw new Error(error.message);
+      return data;
+    },
+  });
+  const portLabel = (id: string) => ports.find((p) => p.id === id)?.name ?? "—";
+  // Brouillons de saisie, par navire : { mmsi, imo, photo }.
+  const [drafts, setDrafts] = useState<
+    Record<string, { mmsi?: string; imo?: string; photo?: string; photoFile?: File | null }>
+  >({});
+  const setDraft = (
+    id: string,
+    patch: { mmsi?: string; imo?: string; photo?: string; photoFile?: File | null },
+  ) => setDrafts((prev) => ({ ...prev, [id]: { ...prev[id], ...patch } }));
+
+  const save = useMutation({
+    mutationFn: async ({
+      id,
+      mmsi,
+      imo,
+      photo_url,
+      photoFile,
+    }: {
+      id: string;
+      mmsi: number | null;
+      imo: number | null;
+      photo_url: string | null;
+      photoFile: File | null;
+    }) => {
+      let finalPhotoUrl = photo_url;
+      if (photoFile) {
+        const extension = photoFile.name.split(".").pop()?.toLowerCase() || "jpg";
+        const path = id + "/" + Date.now() + "." + extension.replace(/[^a-z0-9]/g, "");
+        const { error: uploadError } = await supabase.storage
+          .from("vessel-photos")
+          .upload(path, photoFile, { contentType: photoFile.type });
+        if (uploadError)
+          throw new Error("Téléversement de la photo impossible : " + uploadError.message);
+        const { data: publicUrl } = supabase.storage.from("vessel-photos").getPublicUrl(path);
+        finalPhotoUrl = publicUrl.publicUrl;
+      }
+      const { error } = await supabase
+        .from("vessels")
+        .update({ mmsi, imo, photo_url: finalPhotoUrl })
+        .eq("id", id);
+      if (error)
+        throw new Error(
+          error.message.includes("unique")
+            ? "Ce MMSI est déjà utilisé par un autre navire."
+            : "Enregistrement impossible. Vérifiez le MMSI (9 chiffres) et l'IMO (7 chiffres).",
+        );
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["vessels"] });
+      queryClient.invalidateQueries({ queryKey: ["vessel-photo"] });
+      toast.success("Navire enregistré.");
+    },
+    onError: (error: Error) => toast.error(error.message),
+  });
+
+  const positionByMmsi = new Map(positions.map((position) => [position.mmsi, position]));
+  const draft = drafts[vessel.id] ?? {};
+  const mmsi = draft.mmsi ?? (vessel.mmsi ? String(vessel.mmsi) : "");
+  const imo = draft.imo ?? (vessel.imo ? String(vessel.imo) : "");
+  const photo = draft.photo ?? vessel.photo_url ?? "";
+  const photoFile = draft.photoFile ?? null;
+  const mmsiOk = mmsi === "" || /^\d{9}$/.test(mmsi);
+  const imoOk = imo === "" || /^\d{7}$/.test(imo);
+  const photoOk = photo === "" || /^https:\/\//i.test(photo);
+  const changed =
+    photoFile !== null ||
+    mmsi !== (vessel.mmsi ? String(vessel.mmsi) : "") ||
+    imo !== (vessel.imo ? String(vessel.imo) : "") ||
+    photo !== (vessel.photo_url ?? "");
+  const position = vessel.mmsi ? positionByMmsi.get(vessel.mmsi) : undefined;
+  const company = companies.find((item) => item.id === vessel.company_id);
+  return (
+    <div className="grid gap-3">
+      <div className="min-w-0">
+        <div className="flex items-center gap-3">
+          {photo && photoOk ? (
+            <img
+              src={photo}
+              alt={vessel.name}
+              width={80}
+              height={56}
+              loading="lazy"
+              referrerPolicy="no-referrer"
+              className="h-14 w-20 rounded-lg border object-cover"
+            />
+          ) : null}
+          <p className="text-sm font-medium">{vessel.name}</p>
+        </div>
+        <p className="text-xs text-muted-foreground">
+          {company?.name ?? "Sans compagnie"}
+          {position?.reported_at
+            ? ` · dernière position le ${new Date(position.reported_at).toLocaleString("fr-FR")}`
+            : vessel.mmsi
+              ? " · pas encore de position"
+              : ""}
+          {position?.last_error ? ` · erreur : ${position.last_error}` : ""}
+        </p>
+        {(() => {
+          const dep = nextDeps.find((d) => d.vessel_id === vessel.id);
+          const route = dep ? routes.find((r) => r.id === dep.route_id) : undefined;
+          const declared = position as
+            { destination?: string | null; eta?: string | null } | undefined;
+          const link = vessel.imo
+            ? `https://www.vesselfinder.com/?imo=${vessel.imo}`
+            : vessel.mmsi
+              ? `https://www.vesselfinder.com/?mmsi=${vessel.mmsi}`
+              : null;
+          return (
+            <div className="mt-1 grid gap-0.5 text-xs">
+              <p>
+                <span className="text-muted-foreground">Prévu BledWay : </span>
+                {route && dep
+                  ? `${portLabel(route.departure_port_id)} → ${portLabel(route.arrival_port_id)} · ${new Date(dep.departure_at).toLocaleString("fr-FR")}`
+                  : "aucun départ à venir"}
+              </p>
+              <p>
+                <span className="text-muted-foreground">Déclaré par le navire : </span>
+                {declared?.destination
+                  ? `« ${declared.destination} »${declared.eta ? ` · arrivée estimée ${declared.eta}` : ""}`
+                  : "pas encore reçu"}
+              </p>
+              {link ? (
+                <a
+                  href={link}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="font-semibold text-primary underline underline-offset-2"
+                >
+                  Suivre sur VesselFinder ↗
+                </a>
+              ) : null}
+            </div>
+          );
+        })()}
+      </div>
+      <div className="flex flex-wrap items-center gap-2">
+        <label className="grid gap-1 text-xs font-medium">
+          MMSI
+          <Input
+            inputMode="numeric"
+            maxLength={9}
+            placeholder="MMSI"
+            aria-label={`MMSI de ${vessel.name}`}
+            aria-invalid={!mmsiOk}
+            value={mmsi}
+            onChange={(event) =>
+              setDraft(vessel.id, { mmsi: event.target.value.replace(/\D/g, "") })
+            }
+            className="w-32"
+          />
+        </label>
+        <label className="grid gap-1 text-xs font-medium">
+          IMO
+          <Input
+            inputMode="numeric"
+            maxLength={7}
+            placeholder="IMO"
+            aria-label={`IMO de ${vessel.name}`}
+            aria-invalid={!imoOk}
+            value={imo}
+            onChange={(event) =>
+              setDraft(vessel.id, { imo: event.target.value.replace(/\D/g, "") })
+            }
+            className="w-28"
+          />
+        </label>
+        <div className="grid min-w-56 flex-1 gap-1">
+          <Input
+            type="url"
+            placeholder="URL de la photo (https://…)"
+            aria-label={"URL de la photo de " + vessel.name}
+            aria-invalid={!photoOk}
+            value={photo}
+            onChange={(event) =>
+              setDraft(vessel.id, { photo: event.target.value.trim(), photoFile: null })
+            }
+            className="w-full"
+            disabled={Boolean(photoFile)}
+          />
+          <label className="grid gap-1 text-xs text-muted-foreground">
+            <span>Ou téléverser une image {photoFile ? "— " + photoFile.name : ""}</span>
+            <input
+              type="file"
+              accept="image/jpeg,image/png,image/webp,image/avif"
+              aria-label={"Téléverser une photo de " + vessel.name}
+              className="block w-full text-xs file:mr-2 file:rounded-md file:border file:border-border file:bg-background file:px-2 file:py-1"
+              onChange={(event) => {
+                const file = event.target.files?.[0] ?? null;
+                if (file && file.size > 10 * 1024 * 1024) {
+                  toast.error("La photo doit faire 10 Mo maximum.");
+                  event.target.value = "";
+                  return;
+                }
+                if (
+                  file &&
+                  !["image/jpeg", "image/png", "image/webp", "image/avif"].includes(file.type)
+                ) {
+                  toast.error("Format accepté : JPG, PNG, WebP ou AVIF.");
+                  event.target.value = "";
+                  return;
+                }
+                setDraft(vessel.id, { photoFile: file, ...(file ? { photo: "" } : {}) });
+              }}
+            />
+          </label>
+          {photoFile ? (
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={() =>
+                setDraft(vessel.id, { photoFile: null, photo: vessel.photo_url ?? "" })
+              }
+            >
+              Annuler le téléversement
+            </Button>
+          ) : null}
+        </div>
+        <Button
+          size="sm"
+          disabled={!mmsiOk || !imoOk || (!photoFile && !photoOk) || !changed || save.isPending}
+          onClick={() =>
+            save.mutate({
+              id: vessel.id,
+              mmsi: mmsi === "" ? null : Number(mmsi),
+              imo: imo === "" ? null : Number(imo),
+              photo_url: photo === "" ? null : photo,
+              photoFile,
+            })
+          }
+        >
+          Enregistrer
+        </Button>
+      </div>
+      <VesselSpecsEditor vessel={vessel as unknown as VesselSpecsRow} />
+      <VesselDeleteButton id={vessel.id} name={vessel.name} />
+    </div>
+  );
+}
 /** Suppression d'un navire : on détache d'abord tout ce qui le référence, puis on l'efface. */
 function VesselDeleteButton({ id, name }: { id: string; name: string }) {
   const queryClient = useQueryClient();

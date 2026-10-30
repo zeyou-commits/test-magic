@@ -40,7 +40,10 @@ function CompagniesPage() {
       <div className="mt-10 grid gap-6 lg:grid-cols-2">
         {companies.map((company) => {
           const lines = routes.filter((route) => route.company_ids.includes(company.id));
-          const fleet = vessels.filter((vessel) => vessel.company_id === company.id);
+          // Les navires archivés depuis l'espace équipe ne sont plus présentés.
+          const fleet = vessels.filter(
+            (vessel) => vessel.company_id === company.id && vessel.status === "active",
+          );
           return (
             <Card key={company.id}>
               <h2 className="font-display text-xl font-semibold">{company.name}</h2>

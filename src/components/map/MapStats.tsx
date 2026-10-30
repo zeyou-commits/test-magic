@@ -1,5 +1,5 @@
 import { useAuth } from "@/hooks/useAuth";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { Anchor, Building2, Ship, type LucideProps } from "lucide-react";
 import type { FleetShip } from "@/lib/ferry/fleet";
 import {
@@ -27,6 +27,8 @@ interface MapStatsProps {
   onLineVisibility: (value: LineVisibility) => void;
   onPreview: (preview: MapPreview | null) => void;
   onDismiss: () => void;
+  /** Bouton « Repérer », en tête de colonne : il ouvre une recherche, il ne filtre pas. */
+  search?: ReactNode;
 }
 
 function LighthouseIcon({ className }: LucideProps) {
@@ -67,6 +69,7 @@ export function MapStats({
   onLineVisibility,
   onPreview,
   onDismiss,
+  search,
 }: MapStatsProps) {
   const rootRef = useRef<HTMLDivElement>(null);
   const dismissRef = useRef(onDismiss);
@@ -116,7 +119,7 @@ export function MapStats({
   }, [menuOpen, activeShortcut]);
   const { isAdmin } = useAuth();
   const item =
-    "flex w-full flex-col items-center justify-center gap-0.5 rounded-xl px-1 py-1.5 text-[11px] font-bold leading-none tabular-nums text-foreground transition-colors hover:bg-secondary data-[active=true]:bg-primary data-[active=true]:text-primary-foreground md:min-w-11 md:text-xs";
+    "flex w-full flex-col items-center justify-center gap-0.5 rounded-xl px-1 py-1.5 text-[11px] font-bold leading-none tabular-nums text-foreground transition-colors hover:bg-secondary data-[active=true]:bg-primary data-[active=true]:text-primary-foreground md:min-w-11 md:text-xs [@media(max-width:767px)_and_(max-height:700px)]:flex-row [@media(max-width:767px)_and_(max-height:700px)]:gap-1 [@media(max-width:767px)_and_(max-height:700px)]:py-1";
   const shipList =
     activeShortcut === "sea" ? atSea : activeShortcut === "upcoming" ? upcomingShips : [];
   // Icônes parlantes sans légende : bateau qui tangue (en mer, avec point « en direct »),
@@ -175,6 +178,7 @@ export function MapStats({
       {/* Raccourcis empilés à la verticale, icône au-dessus du nombre : colonne étroite.
           Mobile : à gauche, sous la légende, pour dégager l'est de la carte (ports italiens). */}
       <div className="flex w-max flex-col items-stretch md:ml-auto gap-0.5 rounded-2xl border border-border bg-background/95 p-1 shadow-md backdrop-blur md:shadow-lg">
+        {search ? <div className="border-b border-border pb-0.5">{search}</div> : null}
         {shortcuts.map(({ id, label, title, count, icon }) => (
           <button
             key={id}

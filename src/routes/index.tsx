@@ -39,6 +39,7 @@ import { MapStatusBar } from "@/components/map/MapStatusBar";
 import { MapLegend } from "@/components/map/MapLegend";
 import { QuickReport } from "@/components/map/QuickReport";
 import { MyTripMapChip } from "@/components/panel/MyTripHero";
+import { MapSearch } from "@/components/map/MapSearch";
 import { MapStats, type MapShortcut } from "@/components/map/MapStats";
 import { FLASH_SELECT_EVENT } from "@/components/panel/FlashCenter";
 import { FLASH_PREVIEW_EVENT } from "@/components/panel/FlashFeed";
@@ -100,13 +101,6 @@ function Index() {
   };
   // Fil Flash info (en-tête mobile) : ouvre la fiche demandée sans recharger la page.
   const handleSelectRef = useRef(handleSelect);
-  // Recherche de l'en-tête : ouvre la fiche, même sans traversée visible sur la carte.
-  useEffect(() => {
-    const onSelect = (event: Event) =>
-      handleSelectRef.current((event as CustomEvent<Selection>).detail);
-    window.addEventListener("bledway:select", onSelect);
-    return () => window.removeEventListener("bledway:select", onSelect);
-  }, []);
   handleSelectRef.current = handleSelect;
   useEffect(() => {
     const onFlashSelect = (event: Event) => {
@@ -145,9 +139,7 @@ function Index() {
           ? "Port"
           : "Précédent"
       : "Accueil";
-  const [filters, setFiltersState] = useState<Filters>(() =>
-    filtersFromUrl(initialSearch),
-  );
+  const [filters, setFiltersState] = useState<Filters>(() => filtersFromUrl(initialSearch));
   const [trafficPreview, setTrafficPreview] = useState<MapPreview | null>(null);
   const [lineVisibility, setLineVisibility] = useState<LineVisibility>("all");
   const [highlightRouteId, setHighlightRouteId] = useState<string | null>(null);
@@ -155,9 +147,7 @@ function Index() {
   const [panelLevel, setPanelLevel] = useState<0 | 1 | 2>(1);
   const [peekSelectionKey, setPeekSelectionKey] = useState<string | null>(null);
   const [panelMode, setPanelMode] = useState<"departures" | "search" | "itinerary" | null>(() =>
-    hasActiveFilters(filtersFromUrl(initialSearch))
-      ? "departures"
-      : null,
+    hasActiveFilters(filtersFromUrl(initialSearch)) ? "departures" : null,
   );
   const [itineraryPreview, setItineraryPreview] = useState<ItineraryMapPreview | null>(null);
   const updateItineraryPreview = useCallback((preview: ItineraryMapPreview | null) => {
@@ -267,7 +257,11 @@ function Index() {
         const company = v.company_id ? byCompany.get(v.company_id) : undefined;
         return [
           v.id,
-          { photoUrl: v.photo_url, logoUrl: company?.logo_url ?? null, companyName: company?.name ?? null },
+          {
+            photoUrl: v.photo_url,
+            logoUrl: company?.logo_url ?? null,
+            companyName: company?.name ?? null,
+          },
         ];
       }),
     );
@@ -322,7 +316,10 @@ function Index() {
       }),
     [fleet, allDepartures, routes, ports, filters, companyFromShip],
   );
-  const atSea = useMemo(() => shortcutFleet.filter((ship) => ship.state === "sea"), [shortcutFleet]);
+  const atSea = useMemo(
+    () => shortcutFleet.filter((ship) => ship.state === "sea"),
+    [shortcutFleet],
+  );
   const upcomingShips = useMemo(
     () => shortcutFleet.filter((ship) => ship.state === "docked"),
     [shortcutFleet],
@@ -398,10 +395,16 @@ function Index() {
   // Un seul état de recherche alimente la carte, la liste et le tiroir mobile.
   const matchingRoutes = useMemo(
     () =>
-      filterRoutes(routes, ports, allDepartures, { ...mapFilters, date: null }, {
-        companies,
-        vessels,
-      }),
+      filterRoutes(
+        routes,
+        ports,
+        allDepartures,
+        { ...mapFilters, date: null },
+        {
+          companies,
+          vessels,
+        },
+      ),
     [routes, ports, allDepartures, mapFilters, companies, vessels],
   );
   const fleetVisibleRouteIds = useMemo(
@@ -693,8 +696,18 @@ function Index() {
   };
   // Relais défilement → volet (façon Google Maps) : en haut de la liste, continuer à tirer
   // vers le bas fait descendre le volet sous le doigt ; un geste vif le fait changer de cran.
-  const panelGesture = useRef({ start: startPanelDrag, move: movePanelDrag, finish: finishPanelDrag, level: panelLevel });
-  panelGesture.current = { start: startPanelDrag, move: movePanelDrag, finish: finishPanelDrag, level: panelLevel };
+  const panelGesture = useRef({
+    start: startPanelDrag,
+    move: movePanelDrag,
+    finish: finishPanelDrag,
+    level: panelLevel,
+  });
+  panelGesture.current = {
+    start: startPanelDrag,
+    move: movePanelDrag,
+    finish: finishPanelDrag,
+    level: panelLevel,
+  };
   useEffect(() => {
     const aside = asideRef.current;
     if (!aside) return;
@@ -1151,10 +1164,23 @@ function Index() {
               onRetry={() => allResults.forEach((res) => void res.refetch())}
               panelOpen={desktopPanelOpen}
             />
-            <QuickReport ports={ports} fleet={fleet} departures={departures} selection={selection} />
+            <QuickReport
+              ports={ports}
+              fleet={fleet}
+              departures={departures}
+              selection={selection}
+            />
             {/* Ma traversée pas encore sur la carte : chrono flottant. */}
             <MyTripMapChip fleet={fleet} onOpen={(next) => handleSelectRef.current(next)} />
             <MapStats
+              search={
+                <MapSearch
+                  atSea={atSea}
+                  onOpen={() => setShortcutMenuOpen(false)}
+                  onSelect={(next) => handleSelectRef.current(next)}
+                  onRoute={exploreRoute}
+                />
+              }
               atSea={atSea}
               upcomingShips={upcomingShips}
               companies={shortcutCompanies}
@@ -1182,7 +1208,10 @@ function Index() {
                 if (window.innerWidth >= 768) shortcutScrollY.current = window.scrollY;
                 resetToMap();
                 // Un navire choisi depuis ce raccourci : re-cliquer revient à la carte complète.
-                if ((shortcut === "sea" || shortcut === "upcoming") && (focusShipId || filters.vesselId)) {
+                if (
+                  (shortcut === "sea" || shortcut === "upcoming") &&
+                  (focusShipId || filters.vesselId)
+                ) {
                   setFocusShipId(null);
                   setFilters((current) => ({ ...current, vesselId: null, companyId: null }));
                   setActiveShortcut(null);
@@ -1190,7 +1219,11 @@ function Index() {
                   return;
                 }
                 // Compagnie filtrée : re-cliquer le raccourci retire le filtre (comme En mer / À quai).
-                if (shortcut === "companies" && activeShortcut === "companies" && filters.companyId) {
+                if (
+                  shortcut === "companies" &&
+                  activeShortcut === "companies" &&
+                  filters.companyId
+                ) {
                   setTrafficPreview(null);
                   setFilters((current) => ({ ...current, companyId: null }));
                   setActiveShortcut(null);

@@ -5,6 +5,7 @@ import { ArrowRight, CalendarDays } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase as typedSupabase } from "@/integrations/supabase/client";
 import { useJourneyForDeparture } from "@/lib/ferry/journey";
+import { keepOnlyTrip } from "@/lib/notifications/actions";
 import { ReturnDepartureSearch } from "./ReturnDepartureSearch";
 import type { Selection } from "@/lib/ferry/types";
 
@@ -45,6 +46,7 @@ export function JourneyPlanner({ departureId, onSelect }: {
       if (saved.error) throw saved.error;
       const followed = await db.from("bw_follows").upsert({ user_id: user.id, target_kind: "departure", target_id: returnId, active: true, traveller: true, follow_purpose: "voyageur" }, { onConflict: "user_id,target_kind,target_id" });
       if (followed.error) throw followed.error;
+      await keepOnlyTrip(user.id, [departureId, returnId]);
       await Promise.all([client.invalidateQueries({ queryKey: ["journey"] }), client.invalidateQueries({ queryKey: ["my-trips"] }), client.invalidateQueries({ queryKey: ["my-follows"] }), client.invalidateQueries({ queryKey: ["my-journeys"] })]);
       setOpen(false);
     } catch { setError("Le retour n’a pas pu être enregistré. Réessayez."); }

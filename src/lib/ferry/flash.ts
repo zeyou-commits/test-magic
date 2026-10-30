@@ -12,6 +12,7 @@ const missingModule = (code?: string) =>
 
 // ---------- Flash info ----------
 export const newsKinds = {
+  alerte: { label: "Alerte" },
   perturbation: { label: "Perturbation" },
   info: { label: "Info voyage" },
 } as const;
@@ -22,7 +23,7 @@ export const newsOrigins = {
 } as const;
 const newsSchema = z.object({
   id: z.string(),
-  kind: z.enum(["perturbation", "info"]),
+  kind: z.enum(["alerte", "perturbation", "info"]),
   origin: z.enum(["official", "media", "bledway"]),
   title: z.string(),
   summary: z.string(),
@@ -130,12 +131,27 @@ export function newsForContext(
         )
       );
     })
-    .sort(
-      (a, b) =>
-        Number(b.kind === "perturbation") - Number(a.kind === "perturbation") ||
-        Date.parse(b.starts_at) - Date.parse(a.starts_at),
-    );
+    .sort((a, b) => newsRank(b) - newsRank(a) || Date.parse(b.starts_at) - Date.parse(a.starts_at));
 }
+
+/** Au-delà, une info n'a plus de priorité : elle se classe seulement par date. */
+const FRESH_MS = 48 * 3_600_000;
+/**
+ * Hiérarchie du fil : alerte tant qu'elle est en cours, perturbation récente, info récente de
+ * l'équipe ou d'une compagnie, autre info récente (média, voyageurs), puis tout le reste par date.
+ * Une vieille perturbation ne passe donc jamais devant une alerte ou une info du jour.
+ */
+export function newsRank(
+  item: Pick<NewsItem, "kind" | "origin" | "starts_at">,
+  now = Date.now(),
+): number {
+  if (item.kind === "alerte") return 4;
+  if (now - Date.parse(item.starts_at) > FRESH_MS) return 0;
+  if (item.kind === "perturbation") return 3;
+  return item.origin === "media" ? 1 : 2;
+}
+export const signalRank = (createdAt: string, now = Date.now()) =>
+  now - Date.parse(createdAt) > FRESH_MS ? 0 : 1;
 
 // ---------- Infos déjà vues (pastille « nouveau ») ----------
 const SEEN_KEY = "bw-flash-seen";

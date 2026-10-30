@@ -265,6 +265,10 @@
   width: 3px;
   background: var(--tone);
 }
+.bw-flash-row[data-tone="critical"] {
+  --tone: #c62f22;
+  --tone-soft: #fde8e5;
+}
 .bw-flash-row[data-tone="warning"] {
   --tone: #c27a00;
   --tone-soft: #fff4dc;

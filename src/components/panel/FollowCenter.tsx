@@ -12,9 +12,14 @@ export function FollowCenter({ userId }: { userId: string }) {
   const activeDepartures = new Set((follows.data ?? []).filter((follow) => follow.target_kind === "departure" && follow.traveller).map((follow) => follow.target_id));
   const journeyRows = (journeys.data ?? []).filter((journey) => (journey.outbound_departure_id && activeDepartures.has(journey.outbound_departure_id)) || (journey.inbound_departure_id && activeDepartures.has(journey.inbound_departure_id)));
   const grouped = new Set(journeyRows.flatMap((journey) => [journey.outbound_departure_id, journey.inbound_departure_id].filter((id): id is string => Boolean(id))));
-  const list = (follows.data ?? []).filter(
-    (follow) => (filter === "all" || follow.target_kind === filter) && !(follow.target_kind === "departure" && grouped.has(follow.target_id)),
-  );
+  // « Ma traversée » d'abord, puis les proches, puis les suivis par curiosité.
+  const weight = (follow: { traveller?: boolean | null; follow_purpose?: string | null; target_kind: string }) =>
+    follow.traveller && follow.target_kind === "departure" ? 2 : follow.follow_purpose === "proche" ? 1 : 0;
+  const list = (follows.data ?? [])
+    .filter(
+      (follow) => (filter === "all" || follow.target_kind === filter) && !(follow.target_kind === "departure" && grouped.has(follow.target_id)),
+    )
+    .sort((a, b) => weight(b) - weight(a));
   const loading = follows.isPending || watches.isPending;
   const failed = follows.error || watches.error;
   const empty = !follows.data?.length && !watches.data?.length;

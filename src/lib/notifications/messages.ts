@@ -11,6 +11,8 @@ export const audienceSchema = z.discriminatedUnion("kind", [
     who: z.enum(["travellers", "everyone"]),
   }),
   z.object({ kind: z.literal("vessel"), vesselId: uuid }),
+  // Seulement ceux qui suivent le bateau lui-même : les voyageurs sont prévenus date par date.
+  z.object({ kind: z.literal("vessel_followers"), vesselId: uuid }),
   z.object({
     kind: z.literal("port_day"),
     portId: uuid,
@@ -102,8 +104,16 @@ export const TITLE_SHOWN = 50;
 export const BODY_SHOWN = 120;
 
 export type TemplateId =
-  "delay" | "cancel" | "reschedule" | "port_access" | "port_closed" | "documents" | "free";
+  | "immobilized"
+  | "delay"
+  | "cancel"
+  | "reschedule"
+  | "port_access"
+  | "port_closed"
+  | "documents"
+  | "free";
 export const templateIds: TemplateId[] = [
+  "immobilized",
   "delay",
   "cancel",
   "reschedule",
@@ -113,6 +123,7 @@ export const templateIds: TemplateId[] = [
   "free",
 ];
 export const templateLabels: Record<TemplateId, string> = {
+  immobilized: "Navire immobilisé",
   delay: "Retard",
   cancel: "Annulation",
   reschedule: "Nouvel horaire",
@@ -141,6 +152,7 @@ export function catchUpUntil(
 
 /** Modèles qui méritent aussi un Flash info visible de tous. */
 export const flashByDefault = new Set<TemplateId>([
+  "immobilized",
   "delay",
   "cancel",
   "port_access",
@@ -158,6 +170,11 @@ export function templateText(
   const when = context.when ? ` ${context.when}` : "";
   const single = Boolean(context.when && context.from);
   switch (template) {
+    case "immobilized":
+      return {
+        title: `${context.vessel ?? subject} · navire immobilisé`,
+        body: `Le navire est annoncé immobilisé${when ? `, traversée prévue${when}` : ""}. Vérifiez votre réservation auprès de la compagnie avant de partir pour le port.`,
+      };
     case "delay": {
       const minutes = Number(fields.minutes);
       const about =

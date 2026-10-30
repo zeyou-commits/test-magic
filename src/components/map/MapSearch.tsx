@@ -20,6 +20,7 @@ import {
 } from "@/lib/ferry/queries";
 import { searchCatalog, type CatalogResult } from "@/lib/ferry/catalogSearch";
 import type { FleetShip } from "@/lib/ferry/fleet";
+import { useMyTrip } from "@/lib/ferry/myTrip";
 import type { RouteLine, Selection } from "@/lib/ferry/types";
 
 // Table communautaire pas encore présente dans les types générés.
@@ -77,6 +78,7 @@ export function MapSearch({
   const [open, setOpen] = useState(false);
   const [term, setTerm] = useState("");
   const { user } = useAuth();
+  const { trip: myTrip } = useMyTrip();
   const { data: vessels = [] } = useQuery({ ...vesselsQuery, enabled: open });
   const { data: companies = [] } = useQuery({ ...companiesQuery, enabled: open });
   const { data: ports = [] } = useQuery({ ...portsQuery, enabled: open });
@@ -158,6 +160,19 @@ export function MapSearch({
           <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
             {empty ? (
               <>
+                {myTrip ? (
+                  <div className="mb-2">
+                    <p className="px-2 pb-1 text-[11px] font-bold uppercase tracking-wide text-muted-foreground">
+                      Ma traversée
+                    </p>
+                    <ResultRow
+                      icon={Ship}
+                      label={`${myTrip.from?.name ?? "Départ"} → ${myTrip.to?.name ?? "Arrivée"}`}
+                      hint={myTrip.vessel?.name ?? "Voir ma traversée"}
+                      onClick={() => select({ type: "departure", id: myTrip.departure.id })}
+                    />
+                  </div>
+                ) : null}
                 {followed.length ? (
                   <div className="mb-2">
                     <p className="px-2 pb-1 text-[11px] font-bold uppercase tracking-wide text-muted-foreground">

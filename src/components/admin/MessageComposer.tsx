@@ -85,6 +85,7 @@ const kinds: { id: AudienceKind; label: string; hint: string; icon: LucideIcon }
   { id: "all", label: "Tout le monde", hint: "Chaque compte BledWay", icon: Globe },
 ];
 const templateIcons: Record<TemplateId, LucideIcon> = {
+  immobilized: TriangleAlert,
   delay: Clock,
   cancel: Ban,
   reschedule: CalendarClock,

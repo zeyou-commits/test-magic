@@ -15,7 +15,7 @@ import {
   type IncidentStatus,
   type VesselIncident,
 } from "@/lib/ferry/incidents";
-import type { MessagePrefill } from "@/lib/notifications/messages";
+import { IncidentMessages } from "./IncidentMessages";
 
 const SQL_HINT =
   "Exécutez d'abord le script SQL « contacts_incidents_entraide » (supabase/migrations/20261111120000_contacts_incidents_entraide.sql).";
@@ -51,7 +51,7 @@ type EventRow = {
  * Un signalement voyageur arrive ici sans jamais devenir public seul. Les messages sont préparés
  * dans le centre de messages, où l'équipe voit les destinataires avant d'envoyer.
  */
-export function IncidentsAdmin({ onPrepare }: { onPrepare: (prefill: MessagePrefill) => void }) {
+export function IncidentsAdmin() {
   const client = useQueryClient();
   const { data: vessels = [] } = useQuery(vesselsQuery);
   const incidents = useQuery({
@@ -230,7 +230,6 @@ export function IncidentsAdmin({ onPrepare }: { onPrepare: (prefill: MessagePref
           vesselName={nameOf(open.vessel_id)}
           onClose={() => setOpenId(null)}
           onSaved={refresh}
-          onPrepare={onPrepare}
         />
       ) : null}
     </div>
@@ -284,13 +283,11 @@ function IncidentDrawer({
   vesselName,
   onClose,
   onSaved,
-  onPrepare,
 }: {
   incident: VesselIncident;
   vesselName: string;
   onClose: () => void;
   onSaved: () => void;
-  onPrepare: (prefill: MessagePrefill) => void;
 }) {
   const { data: planning = [] } = useQuery(planningDeparturesQuery);
   const { data: routes = [] } = useQuery(adminRoutesQuery);
@@ -315,7 +312,8 @@ function IncidentDrawer({
   const [impacts, setImpacts] = useState<Record<string, IncidentImpact>>(() =>
     Object.fromEntries(incident.bw_incident_departures.map((d) => [d.departure_id, d.impact])),
   );
-  const list = departuresToReview(planning, incident.vessel_id);
+  const [horizon, setHorizon] = useState(14);
+  const list = departuresToReview(planning, incident.vessel_id, Date.now(), horizon);
   const label = (routeId: string) => {
     const route = routes.find((r) => r.id === routeId);
     const name = (id?: string) => ports.find((p) => p.id === id)?.name ?? "?";
@@ -325,7 +323,6 @@ function IncidentDrawer({
     portTimeZone(
       ports.find((p) => p.id === routes.find((r) => r.id === routeId)?.departure_port_id),
     );
-  const touched = list.filter((d) => (impacts[d.id] ?? "possible") !== "none");
 
   const save = useMutation({
     mutationFn: async () => {
@@ -360,9 +357,7 @@ function IncidentDrawer({
       }
     },
     onSuccess: () => {
-      toast.success(
-        "Dossier enregistré. Aucun message n'est parti : préparez-les ci-dessous si besoin.",
-      );
+      toast.success("Dossier enregistré.");
       onSaved();
     },
     onError: (error: Error) => toast.error(error.message),
@@ -464,7 +459,7 @@ function IncidentDrawer({
         </section>
 
         <section>
-          <h3 className="font-semibold">Départs des 14 prochains jours</h3>
+          <h3 className="font-semibold">Départs des {horizon} prochains jours</h3>
           <p className="text-xs text-muted-foreground">
             Qualifiez-les un par un : un navire immobilisé n'annule rien automatiquement.
           </p>
@@ -490,20 +485,6 @@ function IncidentDrawer({
                         </option>
                       ))}
                     </select>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      disabled={(impacts[d.id] ?? "possible") === "none"}
-                      onClick={() =>
-                        onPrepare({
-                          audience: { kind: "departure", departureId: d.id, who: "everyone" },
-                          template: "free",
-                          fields: {},
-                        })
-                      }
-                    >
-                      Préparer le message
-                    </Button>
                   </div>
                 </li>
               ))}
@@ -513,28 +494,29 @@ function IncidentDrawer({
               Aucun départ à venir sur ce navire.
             </p>
           )}
-          <div className="mt-3 rounded-lg bg-muted/50 p-3 text-xs leading-relaxed">
-            <p>
-              {touched.length} départ(s) à prévenir. Chaque bouton ouvre le centre de messages :
-              vous y voyez les destinataires (voyageurs et proches) et rien ne part sans votre
-              validation.
-            </p>
-            <Button
-              size="sm"
-              variant="ghost"
-              className="mt-1"
-              onClick={() =>
-                onPrepare({
-                  audience: { kind: "vessel", vesselId: incident.vessel_id },
-                  template: "free",
-                  fields: {},
-                })
-              }
-            >
-              Préparer l'information aux personnes qui suivent le navire
+          {horizon === 14 ? (
+            <Button size="sm" variant="ghost" className="mt-1" onClick={() => setHorizon(60)}>
+              Voir les 60 prochains jours
             </Button>
-          </div>
+          ) : null}
         </section>
+
+        <IncidentMessages
+          key={horizon}
+          vesselId={incident.vessel_id}
+          vesselName={vesselName}
+          portName={ports.find((p) => p.id === portId)?.name}
+          status={status}
+          sourceName={sourceName}
+          sourceUrl={sourceUrl}
+          targets={list.map((d) => ({
+            id: d.id,
+            label: label(d.route_id),
+            date: formatDateTime(d.departure_at, zone(d.route_id)),
+            impact: impacts[d.id] ?? "possible",
+          }))}
+          onBeforeSend={() => save.mutateAsync()}
+        />
 
         <section>
           <h3 className="font-semibold">Historique</h3>

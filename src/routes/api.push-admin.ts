@@ -301,11 +301,14 @@ export const Route = createFileRoute("/api/push-admin")({
               const news = await db
                 .from("bw_news")
                 .insert({
-                  kind: ["delay", "cancel", "reschedule", "port_access", "port_closed"].includes(
-                    action.template,
-                  )
-                    ? "perturbation"
-                    : "info",
+                  kind:
+                    action.template === "immobilized"
+                      ? "alerte"
+                      : ["delay", "cancel", "reschedule", "port_access", "port_closed"].includes(
+                            action.template,
+                          )
+                        ? "perturbation"
+                        : "info",
                   origin: "bledway",
                   title: action.title,
                   summary: action.body,

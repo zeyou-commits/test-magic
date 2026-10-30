@@ -78,6 +78,29 @@ export function incidentHeadline(
   return `${vesselName} : alerte levée`;
 }
 
+/** Texte de message pré-rempli, selon l'effet retenu sur le départ. Modifiable avant envoi. */
+export function incidentMessageText(
+  incident: { status: IncidentStatus; source_name: string },
+  vesselName: string,
+  portName: string | null | undefined,
+  impact: IncidentImpact | "followers",
+) {
+  const where = portName ? ` à ${portName}` : "";
+  const fact =
+    incident.status === "verifying"
+      ? `Possible immobilisation du navire ${vesselName}${where}, en cours de vérification.`
+      : `Selon ${incident.source_name || "notre source"}, le navire ${vesselName} est immobilisé${where}.`;
+  const effect = {
+    confirmed:
+      "Votre traversée est touchée selon cette source. Contactez la compagnie avant de partir.",
+    possible:
+      "Votre traversée pourrait être touchée : aucune décision de la compagnie à ce stade. Vérifiez auprès d'elle avant de partir.",
+    none: "Aucune conséquence connue sur votre traversée à ce stade. Consultez les informations de la compagnie.",
+    followers: "Si vous voyagez sur ce navire, vérifiez votre réservation auprès de la compagnie.",
+  }[impact];
+  return `${fact} ${effect}`;
+}
+
 /**
  * Un départ ne doit pas apparaître en cours : touché selon le dossier, ou déjà commencé alors
  * que le navire reste immobilisé.

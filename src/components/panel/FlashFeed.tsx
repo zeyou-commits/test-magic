@@ -22,6 +22,8 @@ import {
 import {
   newsForContext,
   newsQuery,
+  newsRank,
+  signalRank,
   relativeAge,
   type DeparturePorts,
   type NewsContext,
@@ -64,6 +66,8 @@ const safeHttps = (value: string | null) => {
 function tone(card: FlashCard) {
   if (card.type === "signal") return { label: "Voyageurs", icon: null, tone: "community" as const };
   const item = card.item;
+  if (item.kind === "alerte")
+    return { label: "Alerte", icon: AlertTriangle, tone: "critical" as const };
   if (item.kind === "perturbation")
     return { label: "Perturbation", icon: AlertTriangle, tone: "warning" as const };
   if (item.origin === "official")
@@ -155,7 +159,9 @@ export function useFlashCards({
       )
     : [];
   const urgent = (card: FlashCard) =>
-    card.type === "news" && card.item.kind === "perturbation" ? 1 : 0;
+    card.type === "news" && card.item.kind !== "info" ? 1 : 0;
+  const rank = (card: FlashCard) =>
+    card.type === "news" ? newsRank(card.item) : signalRank(card.at);
   const cards: FlashCard[] = [
     ...items.map((item): FlashCard => ({
       key: `n-${item.id}`,
@@ -169,7 +175,7 @@ export function useFlashCards({
       at: alert.created_at,
       alert,
     })),
-  ].sort((a, b) => urgent(b) - urgent(a) || Date.parse(b.at) - Date.parse(a.at));
+  ].sort((a, b) => rank(b) - rank(a) || Date.parse(b.at) - Date.parse(a.at));
   return {
     cards,
     /** Le module SQL n'est pas encore activé (aucune actualité possible). */

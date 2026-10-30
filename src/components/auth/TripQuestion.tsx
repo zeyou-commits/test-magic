@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { CalendarDays, Heart, Ship, Users } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { useMyTrip } from "@/lib/ferry/myTrip";
 import { portsQuery, routesQuery } from "@/lib/ferry/queries";
 import { ReturnDepartureSearch } from "@/components/panel/ReturnDepartureSearch";
 import { formatDateTime } from "@/lib/ferry/format";
@@ -19,6 +20,7 @@ export function TripQuestion({ action, onAnswer }: { action: Follow; onAnswer: (
   const [datePurpose, setDatePurpose] = useState<"voyageur" | "proche">("voyageur");
   const { data: routes = [] } = useQuery(routesQuery);
   const { data: ports = [] } = useQuery(portsQuery);
+  const { trip: myTrip } = useMyTrip();
   const departures = useQuery({
     queryKey: ["vessel-next-departures", action.targetId],
     enabled: action.kind === "vessel" && stage === "date",
@@ -67,6 +69,9 @@ export function TripQuestion({ action, onAnswer }: { action: Follow; onAnswer: (
 
   if (stage === "leg") return <div className="bw-trip-question">
     <p className="bw-trip-question__title">À quelle étape de votre voyage correspond-elle ?</p>
+    {myTrip && myTrip.departure.id !== selected ? <p className="rounded-lg bg-secondary px-3 py-2 text-xs leading-relaxed">
+      « Ma traversée » est unique : un aller, ou un aller-retour. {myTrip.from?.name ?? "Votre voyage"} → {myTrip.to?.name ?? ""} restera suivie, mais ne sera plus « Ma traversée » sauf si celle-ci est son retour.
+    </p> : null}
     <button type="button" className="bw-trip-question__choice" onClick={() => setStage("return")}><Ship size={20} aria-hidden /><span><strong>C’est mon aller</strong><small>Je peux ajouter mon retour maintenant ou plus tard.</small></span></button>
     <button type="button" className="bw-trip-question__choice" onClick={() => confirm("inbound")}><Ship size={20} aria-hidden /><span><strong>C’est mon retour</strong><small>J’ai déjà fait l’aller ou je ne souhaite suivre que le retour.</small></span></button>
     <button type="button" className="w-full py-2 text-sm text-muted-foreground" onClick={() => setStage(action.kind === "vessel" ? "date" : "intent")}>Retour</button>

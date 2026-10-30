@@ -82,6 +82,66 @@ async function upsertFollow(
   return supabase.from("bw_follows").upsert(row, options);
 }
 
+type TripRow = { id: string; departure_at: string; arrival_at: string | null };
+
+/**
+ * « Ma traversée » est unique : un aller, ou un aller-retour. Traversées à déclasser, parmi celles
+ * pas encore finies. Pour un retour déclaré seul, l'aller le plus proche qui le précède reste.
+ */
+export function tripsToDemote(
+  trips: TripRow[],
+  keep: string[],
+  leg: "outbound" | "inbound" | undefined,
+  now = Date.now(),
+) {
+  const kept = new Set(keep);
+  const current = trips.filter(
+    (trip) => Date.parse(trip.arrival_at ?? trip.departure_at) > now || kept.has(trip.id),
+  );
+  if (leg === "inbound") {
+    const start = Math.min(
+      ...current.filter((t) => kept.has(t.id)).map((t) => Date.parse(t.departure_at)),
+    );
+    const outward = current
+      .filter((t) => !kept.has(t.id) && Date.parse(t.departure_at) < start)
+      .sort((a, b) => b.departure_at.localeCompare(a.departure_at))[0];
+    if (outward) kept.add(outward.id);
+  }
+  return current.filter((trip) => !kept.has(trip.id)).map((trip) => trip.id);
+}
+
+/** Les autres voyages déclarés restent suivis, simplement plus comme « Ma traversée ». */
+export async function keepOnlyTrip(
+  userId: string,
+  keep: string[],
+  leg?: "outbound" | "inbound",
+) {
+  const follows = await supabase
+    .from("bw_follows")
+    .select("target_id")
+    .eq("user_id", userId)
+    .eq("target_kind", "departure")
+    .eq("active", true)
+    .eq("traveller", true);
+  if (follows.error) throw new Error("Enregistrement impossible. Réessayez dans un instant.");
+  const ids = ((follows.data ?? []) as { target_id: string }[]).map((row) => row.target_id);
+  if (ids.length <= 1) return;
+  const { data, error } = await supabase
+    .from("departures")
+    .select("id,departure_at,arrival_at")
+    .in("id", ids);
+  if (error) throw new Error("Enregistrement impossible. Réessayez dans un instant.");
+  const demote = tripsToDemote((data ?? []) as TripRow[], keep, leg);
+  if (!demote.length) return;
+  const updated = await supabase
+    .from("bw_follows")
+    .update({ traveller: false, follow_purpose: "curieux" })
+    .eq("user_id", userId)
+    .eq("target_kind", "departure")
+    .in("target_id", demote);
+  if (updated.error) throw new Error("Enregistrement impossible. Réessayez dans un instant.");
+}
+
 export async function saveTravelAction(userId: string, rawAction: TravelAction) {
   const action = travelActionSchema.parse(rawAction);
   const purpose = action.type === "follow" ? action.purpose ?? (action.traveller ? "voyageur" : "curieux") : undefined;
@@ -124,5 +184,10 @@ export async function saveTravelAction(userId: string, rawAction: TravelAction) 
       const returning = await upsertFollow(userId, "departure", action.returnDepartureId, true, "voyageur");
       if (returning.error) throw new Error("L’aller est enregistré, mais le retour n’a pas pu être suivi. Réessayez.");
     }
+    await keepOnlyTrip(
+      userId,
+      [selected, ...(action.returnDepartureId ? [action.returnDepartureId] : [])],
+      action.journeyLeg,
+    );
   }
 }

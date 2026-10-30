@@ -133,7 +133,7 @@ export function HeaderInbox() {
   const [tab, setTab] = useState<"flash" | "notices">("flash");
   const unseen = cards.filter((card) => !seen.has(card.key));
   const unread = (notices.data ?? []).filter((notice) => !notice.read_at).length;
-  const urgent = unseen.some((card) => card.type === "news" && card.item.kind === "perturbation");
+  const urgent = unseen.some((card) => card.type === "news" && card.item.kind !== "info");
   const count = unseen.length + unread;
   // Ni module Flash info, ni compte : rien à afficher.
   if (disabled && !user) return null;

@@ -397,12 +397,7 @@ function AdminTabs() {
           <AssignSettings />
         </TabsContent>
         <TabsContent value="incidents">
-          <IncidentsAdmin
-            onPrepare={(prefill) => {
-              storeMessagePrefill(prefill);
-              void navigate({ search: adminSearch({ tab: "notifications" }), resetScroll: false });
-            }}
-          />
+          <IncidentsAdmin />
         </TabsContent>
         <TabsContent value="departures">
           <DeparturesAdmin

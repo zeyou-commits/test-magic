@@ -20,6 +20,7 @@ import {
   type NewsItem,
   type PlaceKind,
   type PortPlace,
+  newsKinds,
 } from "@/lib/ferry/flash";
 
 const MISSING_SQL =
@@ -250,6 +251,7 @@ export function NewsAdmin() {
                 onChange={(e) => setDraft({ ...draft, kind: e.target.value as NewsDraft["kind"] })}
               >
                 <option value="info">Info voyage</option>
+                <option value="alerte">Alerte grave</option>
                 <option value="perturbation">Perturbation</option>
               </select>
             </label>
@@ -415,7 +417,7 @@ export function NewsAdmin() {
               <li key={item.id} className="bw-admin-row">
                 <div className="min-w-0">
                   <p className="text-xs text-muted-foreground">
-                    {item.kind === "perturbation" ? "Perturbation" : "Info"} ·{" "}
+                    {newsKinds[item.kind].label} ·{" "}
                     {item.source_name || "sans source"} ·{" "}
                     {live ? "en ligne" : item.published ? "programmée ou expirée" : "brouillon"}
                   </p>

@@ -186,6 +186,28 @@ export async function resolveAudience(audience: Audience): Promise<ResolvedAudie
       relevantUntil: new Date(Date.parse(departure.departure_at) + 2 * 3_600_000).toISOString(),
     };
   }
+  if (audience.kind === "vessel_followers") {
+    const vessel = await single<{ id: string; name: string }>(
+      "vessels",
+      "id,name",
+      audience.vesselId,
+    );
+    if (!vessel) throw new Error("Bateau introuvable.");
+    add(await followsOf("vessel", [vessel.id]));
+    return {
+      label: `Personnes qui suivent ${vessel.name}`,
+      context: {
+        subject: vessel.name,
+        vessel: vessel.name,
+        url: `/?select=vessel&id=${vessel.id}`,
+        urlLabel: "la fiche du bateau",
+      },
+      category: "reminders",
+      recipients,
+      travellerKnown: false,
+      relevantUntil: null,
+    };
+  }
   if (audience.kind === "vessel") {
     const vessel = await single<{ id: string; name: string }>(
       "vessels",

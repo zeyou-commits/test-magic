@@ -5,6 +5,7 @@ import { HeartHandshake, Siren } from "lucide-react";
 import { toast } from "sonner";
 import { supabase as typedSupabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { currentPosition } from "@/lib/ferry/community";
 import { Button } from "@/components/ui/button";
 
 // Fonctions du script « contacts_incidents_entraide », pas encore dans les types générés.
@@ -128,6 +129,31 @@ export function HelpRequests({ scopeId }: { kind: "departure"; scopeId: string }
     onSuccess: refresh,
     onError: (error: Error) => toast.error(error.message),
   });
+  // La position vérifie qu'on est au port de départ, et n'est pas enregistrée.
+  const ask = useMutation({
+    mutationFn: async () => {
+      const position = await currentPosition();
+      if (!position)
+        throw new Error(
+          "Demande non envoyée : autorisez le partage de votre position pour vérifier que vous êtes au port.",
+        );
+      const { error } = await db.rpc("bw_help_open", {
+        p_kind: kind,
+        p_scope: scopeId,
+        p_need: need,
+        p_point: point,
+        p_lat: position[0],
+        p_lng: position[1],
+      });
+      if (error) throw new Error(error.message);
+    },
+    onSuccess: () => {
+      setFormOpen(false);
+      setNeed(null);
+      refresh();
+    },
+    onError: (error: Error) => toast.error(error.message),
+  });
   const requests = list.data ?? [];
 
   return (
@@ -235,8 +261,9 @@ export function HelpRequests({ scopeId }: { kind: "departure"; scopeId: string }
             </select>
           </label>
           <p className="text-[11px] text-muted-foreground">
-            Seuls votre pseudo, le besoin et ce point sont visibles, pendant 6 h au plus. Ne
-            partagez pas de médicaments entre voyageurs.
+            Votre position vérifie seulement que vous êtes au port de départ : elle n'est ni
+            affichée ni enregistrée. Seuls votre pseudo, le besoin et ce point sont visibles, pendant
+            6 h au plus. Ne partagez pas de médicaments entre voyageurs.
           </p>
           <div className="flex justify-end gap-2">
             <Button size="sm" variant="ghost" onClick={() => setFormOpen(false)}>
@@ -244,17 +271,10 @@ export function HelpRequests({ scopeId }: { kind: "departure"; scopeId: string }
             </Button>
             <Button
               size="sm"
-              disabled={!need || call.isPending}
-              onClick={() => {
-                call.mutate({
-                  name: "bw_help_open",
-                  args: { p_kind: kind, p_scope: scopeId, p_need: need, p_point: point },
-                });
-                setFormOpen(false);
-                setNeed(null);
-              }}
+              disabled={!need || ask.isPending}
+              onClick={() => ask.mutate()}
             >
-              Envoyer
+              {ask.isPending ? "Vérification de la position…" : "Partager ma position et envoyer"}
             </Button>
           </div>
         </div>

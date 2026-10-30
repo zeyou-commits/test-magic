@@ -37,6 +37,13 @@ function PrivacyPage() {
           </p>
         </section>
         <section>
+          <h2 className="text-base font-semibold text-foreground">Position</h2>
+          <p className="mt-1">
+            Une demande d'entraide exige de partager votre position, pour vérifier que vous êtes au
+            port de départ. Elle sert à ce seul contrôle et n'est pas enregistrée.
+          </p>
+        </section>
+        <section>
           <h2 className="text-base font-semibold text-foreground">Mesure d'audience</h2>
           <p className="mt-1">
             Nous comptons les pages vues et les étapes de recherche de façon anonyme : sans compte,

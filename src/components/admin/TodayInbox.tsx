@@ -22,6 +22,7 @@ import {
   type PlanningIssue,
 } from "@/lib/admin/planning";
 import { runAutoAssign, visibleSuggestions } from "@/lib/admin/autoAssign";
+import { fixChanges, isOverlap, proposeFix, type FixProposal } from "@/lib/admin/fixProposals";
 import { incidentContradiction, incidentsQuery } from "@/lib/ferry/incidents";
 import { vesselElsewhere } from "@/lib/ferry/tracking";
 import {
@@ -259,6 +260,41 @@ export function TodayInbox({
     },
   });
 
+  // Corrections proposées : appliquées d'un clic, et annulables tout de suite.
+  const writeChanges = async (rows: { id: string; values: Record<string, unknown> }[]) => {
+    for (const row of rows) {
+      const { error } = await assignDb.from("departures").update(row.values).eq("id", row.id);
+      if (error) throw new Error(error.message);
+    }
+  };
+  const applyFixes = useMutation({
+    mutationFn: async (fixes: FixProposal[]) => {
+      const changes = fixes.map(fixChanges);
+      await writeChanges(changes.map((c) => ({ id: c.id, values: c.apply })));
+      return changes;
+    },
+    onSuccess: (changes) => {
+      refresh();
+      toast.success(`${changes.length} correction${changes.length > 1 ? "s" : ""} appliquée${changes.length > 1 ? "s" : ""}.`, {
+        duration: 20_000,
+        action: {
+          label: "Annuler",
+          onClick: () =>
+            void writeChanges(changes.map((c) => ({ id: c.id, values: c.undo })))
+              .then(() => {
+                refresh();
+                toast.success("Corrections annulées.");
+              })
+              .catch((error: Error) => toast.error(error.message)),
+        },
+      });
+    },
+    onError: (error: Error) => {
+      toast.error(error.message);
+      refresh();
+    },
+  });
+
   if (departuresQuery.isPending) {
     return <p className="text-sm text-muted-foreground">Analyse du planning…</p>;
   }
@@ -352,25 +388,91 @@ export function TodayInbox({
   for (const group of conflictGroups) {
     const sample = group.issues[0]!;
     const count = group.issues.length;
+    const overlaps = group.issues.some(isOverlap);
+    // Un même départ peut être en cause dans deux conflits : une seule correction par départ.
+    const fixes = [
+      ...new Map(
+        group.issues.flatMap((issue) => {
+          const fix = proposeFix(issue, departures);
+          return fix ? [[fix.departure.id, fix] as const] : [];
+        }),
+      ).values(),
+    ];
+    const describe = (fix: FixProposal) => {
+      const when = `${routeLabel(fix.departure.route_id)} du ${dayLabel(fix.departure.departure_at, { weekday: undefined })}`;
+      return fix.kind === "shift"
+        ? `${when} : passer le départ de ${parisKey(fix.departure.departure_at).time} à ${fix.toTime}`
+        : `${when} : retirer ce navire, le départ reste publié avec « navire à choisir »`;
+    };
+    const covered = group.issues.filter((issue) => proposeFix(issue, departures)).length;
     cards.push(
       <InboxCard
         key={group.key}
-        tone="danger"
+        tone={overlaps ? "danger" : "warn"}
         icon={<AlertTriangle className="size-5" aria-hidden />}
-        kind={count > 1 ? `Conflit de navire · ${count} cas` : "Conflit de bateau"}
-        title={`${vesselName(sample.first.vessel_id)} repart avant d'être arrivé`}
-        detail={`Premier cas : ${routeLabel(sample.first.route_id)} le ${dayLabel(sample.first.departure_at)} à ${parisKey(sample.first.departure_at).time}, puis ${routeLabel(sample.second.route_id)} à ${parisKey(sample.second.departure_at).time} le ${dayLabel(sample.second.departure_at, { weekday: undefined })}. Une durée ou un navire est sans doute faux.`}
-        links={verify(sample.first)}
+        kind={`${overlaps ? "Conflit de navire" : "Escale courte"}${count > 1 ? ` · ${count} cas` : ""}`}
+        title={
+          overlaps
+            ? `${vesselName(sample.first.vessel_id)} est prévu à deux endroits en même temps`
+            : `${vesselName(sample.first.vessel_id)} repart moins de 3 h après son arrivée`
+        }
+        detail={`Premier cas : ${routeLabel(sample.first.route_id)} le ${dayLabel(sample.first.departure_at)} à ${parisKey(sample.first.departure_at).time}, puis ${routeLabel(sample.second.route_id)} à ${parisKey(sample.second.departure_at).time} le ${dayLabel(sample.second.departure_at, { weekday: undefined })}.`}
+        links={
+          <>
+            {fixes.length ? (
+              <div className="mt-2 rounded-lg bg-emerald-50 p-2.5 text-sm text-emerald-950">
+                <p className="font-semibold">
+                  Correction proposée{fixes.length > 1 ? `s (${fixes.length})` : ""}
+                </p>
+                <ul className="mt-1 grid gap-0.5">
+                  {fixes.slice(0, 3).map((fix) => (
+                    <li key={fix.departure.id}>{describe(fix)}</li>
+                  ))}
+                  {fixes.length > 3 ? <li>et {fixes.length - 3} autre(s)</li> : null}
+                </ul>
+                <p className="mt-1 text-xs">Preuve : {fixes[0]!.evidence}</p>
+                <p className="mt-1 text-xs text-emerald-900/80">
+                  Déduit des données de BledWay, pas d'un horaire publié par la compagnie.
+                </p>
+              </div>
+            ) : null}
+            {covered < count ? (
+              <p className="mt-2 text-xs text-muted-foreground">
+                {fixes.length ? `${count - covered} cas sans proposition : ` : ""}
+                Rien dans les données ne permet de trancher, et aucun programme officiel n'est
+                enregistré pour cette période. Seule la compagnie peut confirmer.
+              </p>
+            ) : null}
+            {verify(sample.first)}
+          </>
+        }
       >
         <Button size="sm" variant="ghost" onClick={() => ignore(group.issues.map((i) => i.key))}>
-          Ignorer
+          {overlaps ? "Ignorer" : "Escale acceptée"}
         </Button>
         <Button
           size="sm"
+          variant={fixes.length ? "outline" : "default"}
           onClick={() => onOpenPlanning(parisKey(sample.first.departure_at).day, "issues")}
         >
-          Corriger dans le planning
+          Voir dans le planning
         </Button>
+        {fixes.length ? (
+          <Button
+            size="sm"
+            disabled={applyFixes.isPending}
+            onClick={() => {
+              if (
+                window.confirm(
+                  `Appliquer ${fixes.length} correction(s) ?\n\n${fixes.map(describe).join("\n")}\n\nLes voyageurs qui suivent ces départs verront la mise à jour. Vous pourrez annuler juste après.`,
+                )
+              )
+                applyFixes.mutate(fixes);
+            }}
+          >
+            Appliquer {fixes.length > 1 ? `les ${fixes.length}` : "la correction"}
+          </Button>
+        ) : null}
       </InboxCard>,
     );
   }

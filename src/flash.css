@@ -5167,3 +5167,74 @@ button.bw-tavatar:focus-visible {
   flex-shrink: 0;
   margin-top: 2px;
 }
+
+/* Bandeau avec une seule information : centré, actions à côté du message. */
+.bw-alert-ticker[data-single] {
+  padding-left: 40px;
+}
+.bw-alert-ticker__single {
+  display: flex;
+  flex: 1;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 4px 14px;
+  min-width: 0;
+  padding: 6px 0;
+  text-align: center;
+}
+.bw-alert-ticker__single strong {
+  font-weight: 700;
+}
+.bw-alert-ticker__single button {
+  min-height: 24px;
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  white-space: nowrap;
+}
+.bw-vessel-alert-trips {
+  margin: 10px 0;
+  padding: 10px 12px;
+  border: 1px solid #f5b5b5;
+  border-radius: 12px;
+  background: #ffffff;
+}
+.bw-vessel-alert-trips h3 {
+  margin: 0 0 4px;
+  color: #7f1414;
+  font-size: 13px;
+  font-weight: 700;
+}
+.bw-vessel-alert-trips button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  min-height: 44px;
+  padding: 6px 0;
+  border-top: 1px solid #f3ecec;
+  text-align: left;
+}
+.bw-vessel-alert-trips button > span {
+  flex: 1;
+  min-width: 0;
+}
+.bw-vessel-alert-trips strong,
+.bw-vessel-alert-trips small {
+  display: block;
+}
+.bw-vessel-alert-trips strong {
+  font-size: 13px;
+}
+.bw-vessel-alert-trips small {
+  color: #5b6b7a;
+  font-size: 11.5px;
+}
+.bw-vessel-alert-trips em {
+  color: #a51616;
+  font-size: 11px;
+  font-style: normal;
+  font-weight: 700;
+  white-space: nowrap;
+}

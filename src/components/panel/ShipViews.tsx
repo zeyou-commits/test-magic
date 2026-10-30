@@ -42,6 +42,7 @@ import { TripRecap } from "./TripRecap";
 import { VesselIncidentNotice } from "./VesselIncidentNotice";
 import { VesselAlertBanner, VesselPhotoAlert } from "./VesselAlert";
 import { MakeMyTrip } from "./MakeMyTrip";
+import { VesselAlertDepartures } from "./VesselAlertDepartures";
 import { ReportButton } from "./ReportButton";
 import { ShipPhoto, VesselSpecs } from "./VesselBits";
 import { TripStatusPicker, VesselPresence } from "./TripPresence";
@@ -234,6 +235,7 @@ export function VesselView({
           </div>
         </div>
       </header>
+      <VesselAlertDepartures vesselId={vessel.id} onSelect={onSelect} />
       {!vessel.is_demo ? (
         <MakeMyTrip kind="vessel" targetId={vessel.id} label={vessel.name} onSelect={onSelect} />
       ) : null}

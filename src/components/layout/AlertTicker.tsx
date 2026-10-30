@@ -5,6 +5,8 @@ import { CircleAlert, X } from "lucide-react";
 import { newsQuery } from "@/lib/ferry/flash";
 import { incidentHeadline, incidentsQuery } from "@/lib/ferry/incidents";
 import { portsQuery, vesselsQuery } from "@/lib/ferry/queries";
+import { useMyTrip } from "@/lib/ferry/myTrip";
+import { useTravelAction } from "@/hooks/useTravelAction";
 
 const DISMISSED_KEY = "bledway:alert-ticker-dismissed";
 
@@ -29,6 +31,8 @@ export function AlertTicker() {
   const pathname = useRouterState({ select: (state) => state.location.pathname });
   const [dismissed, setDismissed] = useState<string | null>(null);
   const [ready, setReady] = useState(false);
+  const request = useTravelAction();
+  const { trip } = useMyTrip();
   useEffect(() => {
     setDismissed(readDismissed());
     setReady(true);
@@ -81,6 +85,78 @@ export function AlertTicker() {
     }
     window.location.assign(`/?select=vessel&id=${vesselId}`);
   };
+  const openDeparture = (departureId: string) => {
+    if (pathname === "/")
+      window.dispatchEvent(
+        new CustomEvent("bledway:flash-select", { detail: { type: "departure", id: departureId } }),
+      );
+    else window.location.assign(`/?select=departure&id=${departureId}`);
+  };
+  const close = (
+    <button
+      type="button"
+      className="bw-alert-ticker__close"
+      aria-label="Masquer les alertes"
+      onClick={() => {
+        setDismissed(version);
+        try {
+          window.localStorage.setItem(DISMISSED_KEY, version);
+        } catch {
+          /* sans stockage, le bandeau reviendra au prochain chargement */
+        }
+      }}
+    >
+      <X size={15} aria-hidden />
+    </button>
+  );
+  const tone = critical.length ? "critical" : "warning";
+  const label = critical.length ? "Alertes graves" : "Perturbations";
+  // Une seule information : fixe, centrée et avec ses actions. Le défilement sert quand il y en a plusieurs.
+  if (alerts.length === 1) {
+    const alert = alerts[0]!;
+    const vesselId = alert.id;
+    const mine = vesselId && trip?.vessel?.id === vesselId ? trip : null;
+    return (
+      <div className="bw-alert-ticker" data-tone={tone} data-single role="region" aria-label={label}>
+        <div className="bw-alert-ticker__single">
+          <CircleAlert size={16} aria-hidden className="shrink-0" />
+          <strong>{alert.text}</strong>
+          {vesselId ? (
+            <>
+              <button type="button" onClick={() => open(vesselId)}>
+                Voir les traversées
+              </button>
+              {mine ? (
+                <button type="button" onClick={() => openDeparture(mine.departure.id)}>
+                  Voir ma traversée
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() =>
+                    request({
+                      type: "follow",
+                      kind: "vessel",
+                      targetId: vesselId,
+                      label: vessels.find((v) => v.id === vesselId)?.name ?? "Ce navire",
+                      upgrade: true,
+                    })
+                  }
+                >
+                  Je voyage sur ce navire
+                </button>
+              )}
+            </>
+          ) : (
+            <button type="button" onClick={() => open(null)}>
+              Voir le détail
+            </button>
+          )}
+        </div>
+        {close}
+      </div>
+    );
+  }
   const items = (copy: boolean) => (
     <span className="bw-alert-ticker__group" aria-hidden={copy || undefined}>
       {alerts.map((alert) => (
@@ -99,9 +175,9 @@ export function AlertTicker() {
   return (
     <div
       className="bw-alert-ticker"
-      data-tone={critical.length ? "critical" : "warning"}
+      data-tone={tone}
       role="region"
-      aria-label={critical.length ? "Alertes graves" : "Perturbations"}
+      aria-label={label}
     >
       <CircleAlert size={16} aria-hidden className="shrink-0" />
       <div className="bw-alert-ticker__window">
@@ -110,21 +186,7 @@ export function AlertTicker() {
           {items(true)}
         </div>
       </div>
-      <button
-        type="button"
-        className="bw-alert-ticker__close"
-        aria-label="Masquer les alertes"
-        onClick={() => {
-          setDismissed(version);
-          try {
-            window.localStorage.setItem(DISMISSED_KEY, version);
-          } catch {
-            /* sans stockage, le bandeau reviendra au prochain chargement */
-          }
-        }}
-      >
-        <X size={15} aria-hidden />
-      </button>
+      {close}
     </div>
   );
 }

@@ -65,6 +65,15 @@ export interface Vessel {
   car_capacity?: number | null;
   freight_lane_meters?: number | null;
   speed_knots?: number | null;
+  builder?: string | null;
+  gross_tonnage?: number | null;
+  beam_meters?: number | null;
+  deck_count?: number | null;
+  cabin_capacity?: number | null;
+  seat_capacity?: number | null;
+  specs_source_name?: string | null;
+  specs_source_url?: string | null;
+  specs_checked_at?: string | null;
 }
 export interface RouteLine {
   id: string;

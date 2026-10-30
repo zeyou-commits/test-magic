@@ -130,7 +130,11 @@ function VesselCard({ vessel, routes, ports }: { vessel: Vessel; routes: RouteLi
     { icon: Users, label: "Passagers", value: vessel.passenger_capacity?.toLocaleString("fr-FR") },
     { icon: CarFront, label: "Véhicules", value: vessel.car_capacity?.toLocaleString("fr-FR") },
     { icon: Ruler, label: "Longueur", value: vessel.length_meters ? `${vessel.length_meters} m` : null },
-    { icon: Gauge, label: "Vitesse", value: vessel.speed_knots ? `${vessel.speed_knots} nœuds` : null },
+    { icon: Gauge, label: "Vitesse", value: vessel.speed_knots ? `${Math.round(vessel.speed_knots * 1.852)} km/h` : null },
+    { icon: Ship, label: "Cabines", value: vessel.cabin_capacity?.toLocaleString("fr-FR") },
+    { icon: Ship, label: "Jauge brute", value: vessel.gross_tonnage ? `${vessel.gross_tonnage.toLocaleString("fr-FR")} t` : null },
+    { icon: Ruler, label: "Largeur", value: vessel.beam_meters ? `${vessel.beam_meters.toLocaleString("fr-FR")} m` : null },
+    { icon: Ship, label: "Ponts", value: vessel.deck_count?.toLocaleString("fr-FR") },
   ].filter((s) => s.value);
   return (
     <article className="flex flex-col overflow-hidden rounded-2xl border bg-background shadow-sm transition hover:shadow-md">

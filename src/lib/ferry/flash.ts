@@ -96,6 +96,10 @@ export interface NewsContext {
   portIds?: string[] | undefined;
   companyIds?: string[] | undefined;
   departureIds?: string[] | undefined;
+  /** Fiche d'un navire ou d'une traversée : une info qui nomme un autre navire n'y figure jamais. */
+  vesselId?: string | null | undefined;
+  /** Sans les infos générales du réseau : seulement ce qui est rattaché à la fiche. */
+  attachedOnly?: boolean | undefined;
 }
 /** Pour relier une traversée datée à ses ports (une info sur le départ du 23/11 concerne ses deux ports). */
 export type DeparturePorts = Map<string, string[]>;
@@ -117,11 +121,16 @@ export function newsForContext(
   const scoped = routes.size + ports.size + companies.size + departures.size > 0;
   return items
     .filter((item) => {
+      if (context.vesselId !== undefined && item.vessel_id) {
+        if (item.vessel_id !== context.vesselId) return false;
+        return true;
+      }
       const general =
         !item.route_ids.length &&
         !item.port_ids.length &&
         !item.company_ids.length &&
         !item.departure_ids.length;
+      if (general && context.attachedOnly) return false;
       if (!scoped || general) return true;
       return (
         item.route_ids.some((id) => routes.has(id)) ||

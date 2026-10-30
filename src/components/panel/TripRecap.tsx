@@ -185,6 +185,7 @@ export function TripRecap({
     companyIds: departure.company_id ? [departure.company_id] : [],
     signalPortIds: [from.id],
     signalVesselIds: vessel ? [vessel.id] : [],
+    vesselId: departure.vessel_id,
   });
   const liveCount = info.official + info.travellers;
   const liveId = `live-${departure.id}`;
@@ -447,6 +448,7 @@ export function TripRecap({
               routeIds: [departure.route_id],
               portIds: [from.id, to.id],
               companyIds: departure.company_id ? [departure.company_id] : [],
+              vesselId: departure.vessel_id,
             }}
             withSignals={false}
             expandFirst

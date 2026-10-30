@@ -1,4 +1,4 @@
-import { CircleAlert, ExternalLink } from "lucide-react";
+import { CircleAlert, ExternalLink, Megaphone } from "lucide-react";
 import { useVesselAlert } from "@/lib/ferry/vesselAlerts";
 import { safeExternalUrl } from "./shared";
 
@@ -21,6 +21,22 @@ export function VesselPhotoAlert({ vesselId }: { vesselId: string | null | undef
     <span className="bw-vessel-photo-alert" data-level={alert.level}>
       <CircleAlert size={15} aria-hidden /> {alert.label}
     </span>
+  );
+}
+
+/** Sur la photo : ce qui concerne ce navire. Rien à signaler, aucun picto. */
+export function VesselPhotoInfo({ count, onOpen }: { count: number; onOpen: () => void }) {
+  if (!count) return null;
+  return (
+    <button
+      type="button"
+      className="bw-vessel-photo-info"
+      onClick={onOpen}
+      aria-label={`Voir ${count} info${count > 1 ? "s" : ""} sur ce navire`}
+    >
+      <Megaphone size={19} aria-hidden />
+      <b>{count > 9 ? "9+" : count}</b>
+    </button>
   );
 }
 

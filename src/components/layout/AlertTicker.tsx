@@ -1,7 +1,7 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useRouterState } from "@tanstack/react-router";
-import { CircleAlert, X } from "lucide-react";
+import { CircleAlert, Share2, X } from "lucide-react";
 import { newsQuery } from "@/lib/ferry/flash";
 import { incidentHeadline, incidentsQuery } from "@/lib/ferry/incidents";
 import { portsQuery, vesselsQuery } from "@/lib/ferry/queries";
@@ -31,6 +31,21 @@ export function AlertTicker() {
   const pathname = useRouterState({ select: (state) => state.location.pathname });
   const [dismissed, setDismissed] = useState<string | null>(null);
   const [ready, setReady] = useState(false);
+  const [copied, setCopied] = useState(false);
+  const observer = useRef<ResizeObserver | null>(null);
+  // Hauteur du bandeau : sur mobile, une fiche en plein écran se place juste en dessous.
+  const measure = useCallback((node: HTMLDivElement | null) => {
+    observer.current?.disconnect();
+    const root = document.documentElement;
+    if (!node) {
+      root.style.removeProperty("--bw-ticker-h");
+      return;
+    }
+    observer.current = new ResizeObserver(() =>
+      root.style.setProperty("--bw-ticker-h", `${node.offsetHeight}px`),
+    );
+    observer.current.observe(node);
+  }, []);
   const request = useTravelAction();
   const { trip } = useMyTrip();
   useEffect(() => {
@@ -92,6 +107,19 @@ export function AlertTicker() {
       );
     else window.location.assign(`/?select=departure&id=${departureId}`);
   };
+  const share = async (text: string, vesselId: string | null) => {
+    const url = `${window.location.origin}/${vesselId ? `?select=vessel&id=${vesselId}` : ""}`;
+    try {
+      if (navigator.share) await navigator.share({ title: text, text, url });
+      else {
+        await navigator.clipboard.writeText(`${text} ${url}`);
+        setCopied(true);
+        window.setTimeout(() => setCopied(false), 2000);
+      }
+    } catch {
+      /* partage annulé */
+    }
+  };
   const close = (
     <button
       type="button"
@@ -117,7 +145,14 @@ export function AlertTicker() {
     const vesselId = alert.id;
     const mine = vesselId && trip?.vessel?.id === vesselId ? trip : null;
     return (
-      <div className="bw-alert-ticker" data-tone={tone} data-single role="region" aria-label={label}>
+      <div
+        ref={measure}
+        className="bw-alert-ticker"
+        data-tone={tone}
+        data-single
+        role="region"
+        aria-label={label}
+      >
         <div className="bw-alert-ticker__single">
           <CircleAlert size={16} aria-hidden className="shrink-0" />
           <strong>{alert.text}</strong>
@@ -152,6 +187,13 @@ export function AlertTicker() {
               Voir le détail
             </button>
           )}
+          <button
+            type="button"
+            className="inline-flex items-center gap-1"
+            onClick={() => void share(alert.text, vesselId)}
+          >
+            <Share2 size={13} aria-hidden /> {copied ? "Lien copié" : "Partager"}
+          </button>
         </div>
         {close}
       </div>
@@ -174,6 +216,7 @@ export function AlertTicker() {
   const seconds = Math.max(18, alerts.map((a) => a.text).join("").length * 0.22);
   return (
     <div
+      ref={measure}
       className="bw-alert-ticker"
       data-tone={tone}
       role="region"

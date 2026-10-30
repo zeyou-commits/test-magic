@@ -31,6 +31,7 @@ export function useLiveInfo(scope: {
   companyIds?: string[];
   signalPortIds?: string[];
   signalVesselIds?: string[];
+  vesselId?: string | null | undefined;
 }): LiveInfo {
   const now = Date.now();
   const events =
@@ -44,6 +45,7 @@ export function useLiveInfo(scope: {
       routeIds: scope.routeIds ?? [],
       portIds: scope.portIds ?? [],
       companyIds: scope.companyIds ?? [],
+      vesselId: scope.vesselId,
     },
     signalPortIds: scope.signalPortIds ?? [],
     signalVesselIds: scope.signalVesselIds ?? [],
@@ -54,6 +56,7 @@ export function useLiveInfo(scope: {
   // Sans ligne, port, compagnie ni traversée, aucune info BledWay ne concerne la fiche.
   const scoped =
     Boolean(scope.departureId) ||
+    Boolean(scope.vesselId) ||
     (scope.routeIds?.length ?? 0) + (scope.portIds?.length ?? 0) + (scope.companyIds?.length ?? 0) >
       0;
   const news: LiveItem[] = flash.cards.flatMap((card) =>
@@ -63,7 +66,8 @@ export function useLiveInfo(scope: {
     card.item.route_ids.length +
       card.item.port_ids.length +
       card.item.company_ids.length +
-      card.item.departure_ids.length >
+      card.item.departure_ids.length +
+      (card.item.vessel_id ? 1 : 0) >
       0
       ? [
           {

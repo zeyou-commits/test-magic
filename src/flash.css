@@ -5073,41 +5073,54 @@ button.bw-tavatar:focus-visible {
 }
 /* Ma traversée et installation sur téléphone */
 .bw-make-trip {
-  display: flex;
+  display: inline-flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 10px;
-  margin: 10px 0;
-  padding: 10px 12px;
-  border: 1px solid rgb(14 122 67 / 0.25);
-  border-radius: 12px;
-  background: rgb(14 122 67 / 0.06);
+  gap: 4px 6px;
+  min-height: 32px;
+  color: #55626f;
+  font-size: 12.5px;
+  text-align: left;
+}
+.bw-make-trip svg {
+  flex-shrink: 0;
   color: #0e7a43;
 }
-.bw-make-trip strong,
-.bw-make-trip small {
-  display: block;
+.bw-make-trip b {
+  color: #0b6b3a;
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 2px;
 }
-.bw-make-trip strong {
+.bw-vessel-photo-info {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 2;
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 999px;
+  background: #ffc83d;
+  box-shadow: 0 4px 14px rgb(22 50 74 / 0.25);
   color: #16324a;
-  font-size: 13px;
 }
-.bw-make-trip small {
-  color: #5b6b7a;
-  font-size: 11.5px;
-  line-height: 1.4;
-}
-.bw-make-trip button {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  min-height: 36px;
-  padding: 0 12px;
-  border-radius: 10px;
+.bw-vessel-photo-info b {
+  position: absolute;
+  top: -3px;
+  right: -3px;
+  display: grid;
+  place-items: center;
+  min-width: 19px;
+  height: 19px;
+  padding: 0 4px;
+  border: 2px solid #ffffff;
+  border-radius: 999px;
   background: #0e7a43;
   color: #ffffff;
-  font-size: 12px;
-  font-weight: 700;
+  font-size: 10.5px;
+  font-weight: 800;
 }
 .bw-phone-install {
   display: flex;
@@ -5255,4 +5268,49 @@ button.bw-tavatar:focus-visible {
   .bw-board-rise {
     animation: none;
   }
+}
+
+/* Profil mobile : fermeture entière et facile à toucher, au-dessus du contenu. */
+.bw-me-sheet > button:has(> svg.h-4) {
+  top: 8px;
+  right: 8px;
+  z-index: 3;
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 999px;
+  background: #f3f0e9;
+  opacity: 1;
+}
+.bw-me-sheet > button:has(> svg.h-4) svg {
+  width: 18px;
+  height: 18px;
+}
+.bw-me-sheet__head {
+  padding-right: 48px;
+}
+
+/* Mobile : le bandeau général reste visible au-dessus d'une fiche en plein écran. */
+@media (max-width: 767px) {
+  body:has(.bw-map-stage[data-panel-full="true"]) .bw-header {
+    z-index: 95;
+    background: transparent;
+    border: 0;
+  }
+  body:has(.bw-map-stage[data-panel-full="true"]) .bw-header-inner {
+    display: none;
+  }
+  .bw-map-stage[data-panel-full="true"] {
+    top: var(--bw-ticker-h, 0px) !important;
+    height: calc(100dvh - var(--bw-ticker-h, 0px)) !important;
+    min-height: 0 !important;
+  }
+  .bw-map-stage[data-panel-full="true"] .bw-map-panel {
+    height: calc(100dvh - 4.25rem - env(safe-area-inset-bottom) - var(--bw-ticker-h, 0px)) !important;
+  }
+}
+.bw-me-sheet {
+  max-height: 90dvh;
+  overflow-y: auto;
 }

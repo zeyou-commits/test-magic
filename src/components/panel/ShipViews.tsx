@@ -1,7 +1,8 @@
 import { EntityReviews } from "./EntityReviews";
 import { entityReviewsQuery } from "@/lib/ferry/entityReviews";
 import { useAuth } from "@/hooks/useAuth";
-import { LivePulse, revealLive, useLiveInfo } from "./LivePulse";
+import { revealLive, useLiveInfo } from "./LivePulse";
+import { FlashFeed } from "./FlashFeed";
 import { useCallback, useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import {
@@ -40,7 +41,7 @@ import { CrossingCard } from "./CrossingCard";
 import { TravelSignals, VesselReviews } from "./TravelCommunity";
 import { TripRecap } from "./TripRecap";
 import { VesselIncidentNotice } from "./VesselIncidentNotice";
-import { VesselAlertBanner, VesselPhotoAlert } from "./VesselAlert";
+import { VesselPhotoAlert, VesselPhotoInfo } from "./VesselAlert";
 import { MakeMyTrip } from "./MakeMyTrip";
 import { VesselAlertDepartures } from "./VesselAlertDepartures";
 import { ReportButton } from "./ReportButton";
@@ -116,6 +117,7 @@ export function VesselView({
     ],
     companyIds: vesselCompany ? [vesselCompany] : [],
     signalVesselIds: [vesselId],
+    vesselId,
   });
   const liveId = `live-vessel-${vesselId}`;
   const openLive = () => {
@@ -201,10 +203,8 @@ export function VesselView({
           </div>
           {vessel.is_demo ? <DemoBadge /> : null}
         </div>
-        <VesselAlertBanner vesselId={vessel.id} />
-        <VesselIncidentNotice vesselId={vessel.id} vesselName={vessel.name} />
-        {liveInfo.official + liveInfo.travellers > 0 ? (
-          <LivePulse info={liveInfo} onOpen={openLive} />
+        {!vessel.is_demo ? (
+          <MakeMyTrip kind="vessel" targetId={vessel.id} label={vessel.name} onSelect={onSelect} />
         ) : null}
         <div className="bw-ship-hero-photo bw-ship-hero-photo--compact">
           <dl className="bw-ship-hero-stats" aria-label="Le bateau en chiffres">
@@ -232,13 +232,12 @@ export function VesselView({
           <div className="relative">
             <ShipPhoto key={photo?.url ?? vesselId} url={photo?.url} name={vessel.name} />
             <VesselPhotoAlert vesselId={vessel.id} />
+            <VesselPhotoInfo count={liveInfo.official + liveInfo.travellers} onOpen={openLive} />
           </div>
         </div>
       </header>
+      <VesselIncidentNotice vesselId={vessel.id} vesselName={vessel.name} />
       <VesselAlertDepartures vesselId={vessel.id} onSelect={onSelect} />
-      {!vessel.is_demo ? (
-        <MakeMyTrip kind="vessel" targetId={vessel.id} label={vessel.name} onSelect={onSelect} />
-      ) : null}
       {!contextDepartureId && departure && from && to ? (
         <div className="bw-ship-crossing-first">
           <CrossingCard departure={departure} from={from} to={to} live={live} />
@@ -302,9 +301,6 @@ export function VesselView({
           </button>
         ) : null}
       </div>
-      {liveInfo.official + liveInfo.travellers === 0 ? (
-        <LivePulse info={liveInfo} onOpen={openLive} />
-      ) : null}
       {photo?.source === "commons" ? (
         <details className="bw-photo-credit">
           <summary>Crédit photo</summary>
@@ -369,6 +365,18 @@ export function VesselView({
             </button>
           ) : null}
           <div id={liveId} data-live-anchor>
+            <FlashFeed
+              title="Infos sur ce navire"
+              context={{
+                vesselId,
+                attachedOnly: true,
+                routeIds: [...new Set(next.map((d) => d.route_id))],
+                companyIds: vessel.company_id ? [vessel.company_id] : [],
+              }}
+              withSignals={false}
+              expandFirst
+              onSelect={onSelect}
+            />
             <TravelSignals key={vesselId} kind="vessel" target={vesselId} compact />
           </div>
           {next.length ? (

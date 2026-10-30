@@ -35,3 +35,36 @@ describe("hiérarchie du fil Flash", () => {
     ]);
   });
 });
+
+describe("newsForContext : fiche d'un navire", () => {
+  const item = (over: Partial<NewsItem>) =>
+    ({
+      id: "x",
+      kind: "alerte",
+      origin: "bledway",
+      starts_at: "2026-10-30T10:00:00Z",
+      route_ids: ["line"],
+      port_ids: [],
+      company_ids: [],
+      departure_ids: [],
+      vessel_id: null,
+      ...over,
+    }) as NewsItem;
+  it("n'affiche jamais une info qui nomme un autre navire", () => {
+    const other = item({ vessel_id: "tariq" });
+    expect(newsForContext([other], { routeIds: ["line"], vesselId: "nicoli" })).toEqual([]);
+    expect(newsForContext([other], { routeIds: ["line"], vesselId: null })).toEqual([]);
+  });
+  it("garde son propre navire et les infos de ligne sans navire", () => {
+    const own = item({ id: "a", vessel_id: "nicoli", route_ids: [] });
+    const line = item({ id: "b" });
+    const ids = newsForContext([own, line], { routeIds: ["line"], vesselId: "nicoli" }).map(
+      (n) => n.id,
+    );
+    expect(ids.sort()).toEqual(["a", "b"]);
+  });
+  it("écarte les infos générales si la fiche le demande", () => {
+    const general = item({ route_ids: [] });
+    expect(newsForContext([general], { vesselId: "nicoli", attachedOnly: true })).toEqual([]);
+  });
+});

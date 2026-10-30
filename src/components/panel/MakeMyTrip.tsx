@@ -4,16 +4,14 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { useAuth } from "@/hooks/useAuth";
 import { useTravelAction } from "@/hooks/useTravelAction";
 import { supabase as typedSupabase } from "@/integrations/supabase/client";
-import { formatDateTime } from "@/lib/ferry/format";
 import { useMyTrip } from "@/lib/ferry/myTrip";
-import { portTimeZone } from "@/lib/ferry/time";
 import type { Selection } from "@/lib/ferry/types";
 
 const supabase = typedSupabase as unknown as SupabaseClient;
 
 /**
- * « C'est votre traversée ? » sur les fiches : le bateau de ma traversée y mène directement, les
- * autres proposent de la déclarer. Le parcours guide le remplacement d'une traversée existante.
+ * « C'est votre traversée ? » sur les fiches, en une ligne discrète : le bateau de ma traversée y
+ * mène directement, les autres proposent de la déclarer. Le parcours guide le remplacement.
  */
 export function MakeMyTrip({
   kind,
@@ -50,49 +48,30 @@ export function MakeMyTrip({
     },
   });
   if (user && follow.isPending) return null;
-  const route = trip ? `${trip.from?.name ?? "Départ"} → ${trip.to?.name ?? "Arrivée"}` : "";
   if (trip && kind === "vessel" && trip.vessel?.id === targetId)
-    return (
-      <div className="bw-make-trip">
-        <Ship size={18} aria-hidden />
-        <span className="min-w-0 flex-1">
-          <strong>C’est le bateau de votre traversée</strong>
-          <small>
-            {route}, {formatDateTime(trip.departure.departure_at, portTimeZone(trip.from))}
-          </small>
-        </span>
-        {onSelect ? (
-          <button
-            type="button"
-            onClick={() => onSelect({ type: "departure", id: trip.departure.id })}
-          >
-            Voir ma traversée <ArrowRight size={14} aria-hidden />
-          </button>
-        ) : null}
-      </div>
-    );
+    return onSelect ? (
+      <button
+        type="button"
+        className="bw-make-trip"
+        onClick={() => onSelect({ type: "departure", id: trip.departure.id })}
+      >
+        <Ship size={14} aria-hidden /> Le bateau de votre traversée · <b>Voir ma traversée</b>
+        <ArrowRight size={13} aria-hidden />
+      </button>
+    ) : null;
   const active = follow.data?.active ? follow.data : null;
   // Déjà « Ma traversée », ou suivi déclaré pour un proche : rien à proposer.
   if (active?.follow_purpose === "proche" || (kind === "departure" && active?.traveller))
     return null;
   return (
-    <div className="bw-make-trip">
-      <Ship size={18} aria-hidden />
-      <span className="min-w-0 flex-1">
-        <strong>C’est votre traversée ?</strong>
-        <small>
-          {trip
-            ? `Vous avez déjà ${route} : nous vous guidons pour choisir.`
-            : "Checklist, heure au port et alertes prioritaires."}
-        </small>
-      </span>
-      <button
-        type="button"
-        onClick={() => request({ type: "follow", kind, targetId, label, upgrade: true })}
-      >
-        {kind === "vessel" ? "Voir ses traversées" : "En faire ma traversée"}{" "}
-        <ArrowRight size={14} aria-hidden />
-      </button>
-    </div>
+    <button
+      type="button"
+      className="bw-make-trip"
+      onClick={() => request({ type: "follow", kind, targetId, label, upgrade: true })}
+    >
+      <Ship size={14} aria-hidden /> C’est votre traversée ?{" "}
+      <b>{kind === "vessel" ? "Voir ses traversées" : "En faire ma traversée"}</b>
+      <ArrowRight size={13} aria-hidden />
+    </button>
   );
 }

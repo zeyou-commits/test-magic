@@ -23,6 +23,7 @@ import { TodayInbox } from "@/components/admin/TodayInbox";
 import { PlanningBoard } from "@/components/admin/PlanningBoard";
 import { SeasonImport } from "@/components/admin/SeasonImport";
 import { FleetBoard } from "@/components/admin/FleetBoard";
+import { AssignSettings } from "@/components/admin/AssignSettings";
 import { useAdminCounts } from "@/hooks/useAdminCounts";
 import { AdminWorkspace, type AdminSearchItem } from "@/components/admin/AdminWorkspace";
 import { AdminDrawer, AdminListToolbar, matches } from "@/components/admin/AdminDrawer";
@@ -387,6 +388,9 @@ function AdminTabs() {
             initialFilter={filter === "unassigned" || filter === "issues" ? filter : undefined}
             renderEditor={(id, onDone) => <AlertDepartureEditor departureId={id} onDone={onDone} />}
           />
+        </TabsContent>
+        <TabsContent value="assign">
+          <AssignSettings />
         </TabsContent>
         <TabsContent value="departures">
           <DeparturesAdmin

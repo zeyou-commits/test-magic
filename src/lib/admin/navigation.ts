@@ -1,6 +1,7 @@
 export const adminTabs = [
   "overview",
   "planning",
+  "assign",
   "commercial",
   "users",
   "reviews",

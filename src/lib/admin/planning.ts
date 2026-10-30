@@ -146,18 +146,24 @@ export function vesselBlocker(
 export type VesselSuggestion = {
   departureId: string;
   vesselId: string;
-  reason: "only-vessel" | "usual-slot";
+  reason: "only-vessel" | "schedule" | "usual-slot";
 };
+
+export type AssignRules = { onlyVessel: boolean; schedule: boolean; usualSlot: boolean };
+export const DEFAULT_RULES: AssignRules = { onlyVessel: true, schedule: true, usualSlot: true };
 
 /**
  * Propositions sûres pour les départs à venir sans bateau, dans l'ordre des règles :
- * 1. la compagnie n'a qu'un navire actif ; 2. même liaison, même jour de semaine, même heure,
- * toujours le même bateau. Un bateau déjà pris à cette heure-là n'est jamais proposé.
+ * 1. la compagnie n'a qu'un navire actif ; 2. le calendrier récurrent qui a créé le départ
+ * prévoit un bateau ; 3. même liaison, même jour de semaine, même heure, toujours le même bateau.
+ * Un bateau déjà pris à cette heure-là n'est jamais proposé.
  */
 export function suggestVessels(
   departures: PlanningDeparture[],
   vessels: PlanningVessel[],
   now = Date.now(),
+  rules: AssignRules = DEFAULT_RULES,
+  scheduleVessel: Map<string, string | null> = new Map(),
 ): VesselSuggestion[] {
   const fleet = new Map<string, PlanningVessel[]>();
   for (const v of vessels) {
@@ -175,21 +181,24 @@ export function suggestVessels(
     usual.set(key, (usual.get(key) ?? new Set()).add(d.vessel_id));
   }
   // Les propositions déjà faites occupent le bateau, comme une affectation réelle.
-  const planned = departures.map((d) => ({ ...d }));
+  const occupied = departures.map((d) => ({ ...d }));
   const suggestions: VesselSuggestion[] = [];
-  for (const d of planned) {
+  for (const d of occupied) {
     if (d.vessel_id || !active(d) || startOf(d) < now) continue;
     const own = fleet.get(d.company_id) ?? [];
     const slot = usual.get(slotKey(d));
+    const planned = d.schedule_id ? scheduleVessel.get(d.schedule_id) : null;
     let candidate: VesselSuggestion | null = null;
-    if (own.length === 1)
+    if (rules.onlyVessel && own.length === 1)
       candidate = { departureId: d.id, vesselId: own[0]!.id, reason: "only-vessel" };
-    else if (slot?.size === 1) {
+    else if (rules.schedule && planned && own.some((v) => v.id === planned))
+      candidate = { departureId: d.id, vesselId: planned, reason: "schedule" };
+    else if (rules.usualSlot && slot?.size === 1) {
       const [vesselId] = [...slot];
       if (own.some((v) => v.id === vesselId))
         candidate = { departureId: d.id, vesselId: vesselId!, reason: "usual-slot" };
     }
-    if (!candidate || vesselBlocker(candidate.vesselId, d, planned)) continue;
+    if (!candidate || vesselBlocker(candidate.vesselId, d, occupied)) continue;
     d.vessel_id = candidate.vesselId;
     suggestions.push(candidate);
   }

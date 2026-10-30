@@ -18,11 +18,12 @@ import {
   mergeDepartures,
   parisKey,
   planningDeparturesQuery,
-  suggestVessels,
   vesselBlocker,
   verificationLinks,
   type PlanningDeparture,
 } from "@/lib/admin/planning";
+import { visibleSuggestions } from "@/lib/admin/autoAssign";
+import { assignConfigQuery, scheduleVesselsQuery } from "@/lib/admin/assignQueries";
 
 type Filter = "all" | "unassigned" | "issues";
 
@@ -69,6 +70,8 @@ export function PlanningBoard({
   const { data: routes = [] } = useQuery(adminRoutesQuery);
   const { data: ports = [] } = useQuery(adminPortsQuery);
   const departures = departuresQuery.data ?? [];
+  const assignConfig = useQuery(assignConfigQuery).data;
+  const scheduleVessels = useQuery(scheduleVesselsQuery).data;
 
   const today = parisKey(new Date().toISOString()).day;
   const [week, setWeek] = useState(() => mondayOf(initialDate ?? today));
@@ -100,7 +103,10 @@ export function PlanningBoard({
     issueOf.set(issue.second.id, { kind: issue.kind, other: issue.first });
   }
   const suggestionOf = new Map(
-    suggestVessels(departures, vessels).map((s) => [s.departureId, s] as const),
+    (assignConfig
+      ? visibleSuggestions(departures, vessels, assignConfig, scheduleVessels ?? new Map())
+      : []
+    ).map((s) => [s.departureId, s] as const),
   );
 
   const inWeek = departures.filter((d) => {

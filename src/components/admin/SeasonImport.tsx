@@ -13,6 +13,8 @@ import {
 } from "@/lib/ferry/queries";
 import { dateKeyInZone, portTimeZone, wallTimeInZone } from "@/lib/ferry/time";
 import { planningDeparturesQuery } from "@/lib/admin/planning";
+import { runAutoAssign } from "@/lib/admin/autoAssign";
+import { assignConfigQuery, assignDb, scheduleVesselsQuery } from "@/lib/admin/assignQueries";
 import {
   aliasKey,
   matchName,
@@ -543,6 +545,25 @@ export function SeasonImport() {
     onSuccess: (result) => {
       refresh();
       setStep({ name: "done", ...result });
+      // Les nouvelles traversées des compagnies en « Automatique » reçoivent leur bateau tout de suite.
+      void (async () => {
+        const [departures, config, scheduleVessel] = await Promise.all([
+          queryClient.fetchQuery({ ...planningDeparturesQuery, staleTime: 0 }),
+          queryClient.fetchQuery({ ...assignConfigQuery, staleTime: 0 }),
+          queryClient.fetchQuery(scheduleVesselsQuery),
+        ]);
+        const { count } = await runAutoAssign(assignDb, {
+          departures,
+          vessels,
+          config,
+          scheduleVessel,
+          source: "import",
+        });
+        if (count) {
+          toast.success(`${count} traversée(s) importée(s) ont reçu leur bateau automatiquement.`);
+          refresh();
+        }
+      })().catch((error: Error) => toast.error(`Affectation automatique : ${error.message}`));
     },
     onError: (error: Error) => toast.error(error.message),
   });

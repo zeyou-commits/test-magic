@@ -62,6 +62,14 @@ const sections = [
     icon: FileSpreadsheet,
   },
   {
+    id: "assign",
+    label: "Affectation auto",
+    description:
+      "Les règles qui choisissent le bateau d'une traversée, et compagnie par compagnie : automatique, proposé ou manuel.",
+    group: "",
+    icon: Zap,
+  },
+  {
     id: "commercial",
     label: "Programmes par compagnie",
     description: "Liaisons commerciales, départs, navires et sources officielles au même endroit.",

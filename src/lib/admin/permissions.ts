@@ -1,5 +1,6 @@
 const editorial = new Set([
   "planning",
+  "assign",
   "commercial",
   "departures",
   "schedules",

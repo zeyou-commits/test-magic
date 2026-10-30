@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { AlertTriangle, CalendarRange, CheckCircle2, Copy, Radio, Ship } from "lucide-react";
 import { toast } from "sonner";
@@ -16,11 +16,12 @@ import {
   parisKey,
   planningDeparturesQuery,
   programmeEnds,
-  suggestVessels,
   verificationLinks,
   type PlanningDeparture,
   type PlanningIssue,
 } from "@/lib/admin/planning";
+import { runAutoAssign, visibleSuggestions } from "@/lib/admin/autoAssign";
+import { assignConfigQuery, assignDb, scheduleVesselsQuery } from "@/lib/admin/assignQueries";
 
 const IGNORED_KEY = "bw-admin-ignored-issues";
 
@@ -110,7 +111,11 @@ export function TodayInbox({
   const duplicateGroups = [...groups.values()].filter((g) => g.kind === "duplicate");
   const conflictGroups = [...groups.values()].filter((g) => g.kind === "conflict");
 
-  const suggestions = suggestVessels(departures, vessels, now);
+  const config = useQuery(assignConfigQuery).data;
+  const scheduleVessels = useQuery(scheduleVesselsQuery).data;
+  const suggestions = config
+    ? visibleSuggestions(departures, vessels, config, scheduleVessels ?? new Map(), now)
+    : [];
   const unassigned = upcoming.filter((d) => !d.vessel_id && d.status !== "cancelled");
   const suggestionByCompany = new Map<string, number>();
   for (const s of suggestions) {
@@ -127,6 +132,59 @@ export function TodayInbox({
     void queryClient.invalidateQueries({ queryKey: ["departures"] });
     void queryClient.invalidateQueries({ queryKey: ["admin"] });
   };
+
+  // Compagnies en « Automatique » : leurs propositions sont appliquées dès l'ouverture,
+  // une fois par visite, avec un bouton pour annuler le passage.
+  const autoRan = useRef(false);
+  useEffect(() => {
+    if (
+      autoRan.current ||
+      !config?.installed ||
+      !departuresQuery.data ||
+      !vessels.length ||
+      !scheduleVessels
+    )
+      return;
+    if (![...config.modes.values()].includes("auto")) return;
+    autoRan.current = true;
+    void runAutoAssign(assignDb, {
+      departures: departuresQuery.data,
+      vessels,
+      config,
+      scheduleVessel: scheduleVessels,
+      source: "admin",
+    })
+      .then(({ count, logId }) => {
+        if (!count) return;
+        refresh();
+        toast.success(
+          `${count} traversée${count > 1 ? "s" : ""} affectée${count > 1 ? "s" : ""} automatiquement.`,
+          {
+            duration: 15_000,
+            description: "Compagnies réglées en « Automatique » dans Affectation auto.",
+            ...(logId
+              ? {
+                  action: {
+                    label: "Annuler",
+                    onClick: () =>
+                      void assignDb
+                        .rpc("bw_admin_undo_assign", { p_log: logId })
+                        .then(({ error }) =>
+                          error
+                            ? toast.error(error.message)
+                            : (toast.success("Affectation annulée."), refresh()),
+                        ),
+                  },
+                }
+              : {}),
+          },
+        );
+      })
+      .catch((error: Error) => toast.error(`Affectation automatique : ${error.message}`));
+    // refresh ne dépend que du client de requêtes, stable.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [config, departuresQuery.data, vessels, scheduleVessels]);
+
   const ignore = (keys: string[]) => {
     const next = [...new Set([...ignored, ...keys])];
     setIgnored(next);

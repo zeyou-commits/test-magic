@@ -15,7 +15,7 @@ import {
 
 export const navLinks = [
   { to: "/", label: "Carte" },
-  { to: "/horaires", label: "Horaires" },
+  { to: "/horaires", label: "Départs & arrivées" },
   { to: "/ports", label: "Ports" },
   { to: "/lignes", label: "Lignes" },
   { to: "/compagnies", label: "Compagnies" },

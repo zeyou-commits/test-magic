@@ -5238,3 +5238,21 @@ button.bw-tavatar:focus-visible {
   font-weight: 700;
   white-space: nowrap;
 }
+
+/* Départs & arrivées */
+.bw-board-rise {
+  animation: bw-board-rise 0.28s ease-out;
+}
+@keyframes bw-board-rise {
+  from {
+    transform: translateY(8px);
+  }
+  to {
+    transform: none;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .bw-board-rise {
+    animation: none;
+  }
+}

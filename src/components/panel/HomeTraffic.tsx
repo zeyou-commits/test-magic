@@ -56,7 +56,6 @@ export function HomeTraffic({
   const signals = useLiveShips();
   const [now, setNow] = useState(() => Date.now());
   const [filter, setFilter] = useState<"all" | "departure" | "arrival">("all");
-  const [expanded, setExpanded] = useState(true);
   useEffect(() => {
     const timer = window.setInterval(() => setNow(Date.now()), 30_000);
     return () => window.clearInterval(timer);
@@ -248,7 +247,7 @@ export function HomeTraffic({
         {(() => {
           // Mouvements regroupés par port, dans l'ordre du premier mouvement de chaque port.
           const groups = new Map<string, typeof events>();
-          events.slice(0, expanded ? 60 : 6).forEach((e) => {
+          events.slice(0, 6).forEach((e) => {
             groups.set(e.port.id, [...(groups.get(e.port.id) ?? []), e]);
           });
           return [...groups.values()].map((list) => (
@@ -327,14 +326,13 @@ export function HomeTraffic({
               : "Aucun mouvement publié à venir."}
           </p>
         )}
-        {events.length > 5 && !expanded && (
-          <button
-            type="button"
-            onClick={() => setExpanded(true)}
-            className="mt-2 min-h-10 w-full text-xs font-semibold text-primary"
+        {events.length > 6 && (
+          <a
+            href="/horaires"
+            className="mt-2 flex min-h-10 w-full items-center justify-center text-xs font-semibold text-primary"
           >
-            Voir plus de mouvements
-          </button>
+            Voir tous les départs et arrivées
+          </a>
         )}
       </section>
     </div>

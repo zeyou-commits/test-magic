@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueries, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { HeartHandshake, Siren } from "lucide-react";
 import { toast } from "sonner";
@@ -39,25 +39,85 @@ type HelpRequest = {
   pseudo: string;
 };
 
+const helpListQuery = (departureId: string) => ({
+  queryKey: ["help-requests", "departure", departureId],
+  queryFn: async () => {
+    const { data, error } = await db.rpc("bw_help_list", {
+      p_kind: "departure",
+      p_scope: departureId,
+    });
+    if (error) return [];
+    return (data ?? []) as HelpRequest[];
+  },
+  refetchInterval: 60_000,
+});
+
 /**
- * Entraide entre voyageurs d'un même port ou d'un même départ : besoin et point de rendez-vous
- * choisis dans une liste, sans position ni message libre. Pas de réseau en mer : surtout à terre.
+ * Depuis un port : l'entraide passe toujours par une traversée du jour, que le voyageur choisit.
+ * Sans départ aujourd'hui, la rubrique reste visible et dit quand elle s'ouvre.
  */
-export function HelpRequests({ kind, scopeId }: { kind: "port" | "departure"; scopeId: string }) {
+export function PortHelpRequests({
+  crossings,
+}: {
+  crossings: { id: string; label: string; next: boolean }[];
+}) {
+  const [picked, setPicked] = useState<string | null>(null);
+  const counts = useQueries({ queries: crossings.map((item) => helpListQuery(item.id)) });
+  const current = crossings.some((item) => item.id === picked)
+    ? picked
+    : (crossings.find((item) => item.next) ?? crossings[0])?.id;
+  if (!current)
+    return (
+      <section
+        className="rounded-xl border border-border bg-card p-3"
+        aria-label="Entraide entre voyageurs"
+      >
+        <div className="flex items-center gap-2">
+          <HeartHandshake className="size-4 text-primary" aria-hidden />
+          <h3 className="text-sm font-semibold">Entraide entre voyageurs</h3>
+        </div>
+        <p className="mt-1 text-xs text-muted-foreground">
+          Aucun départ aujourd'hui depuis ce port. L'entraide s'ouvre le jour d'une traversée.
+        </p>
+      </section>
+    );
+  return (
+    <div className="grid gap-2">
+      <label className="grid gap-1 text-xs font-semibold">
+        Votre traversée d'aujourd'hui
+        <select
+          value={current}
+          onChange={(event) => setPicked(event.target.value)}
+          className="h-10 rounded-md border border-input bg-background px-2 font-normal"
+        >
+          {crossings.map((item, index) => {
+            const open = counts[index]?.data?.length ?? 0;
+            return (
+              <option key={item.id} value={item.id}>
+                {item.label}
+                {open ? ` · ${open} demande${open > 1 ? "s" : ""}` : ""}
+              </option>
+            );
+          })}
+        </select>
+      </label>
+      <HelpRequests key={current} kind="departure" scopeId={current} />
+    </div>
+  );
+}
+
+/**
+ * Entraide entre voyageurs d'une même traversée : besoin et point de rendez-vous choisis dans une
+ * liste, sans position ni message libre. Pas de réseau en mer : surtout à terre.
+ */
+export function HelpRequests({ scopeId }: { kind: "departure"; scopeId: string }) {
+  const kind = "departure";
   const { user } = useAuth();
   const client = useQueryClient();
-  const key = ["help-requests", kind, scopeId];
-  const list = useQuery({
-    queryKey: key,
-    queryFn: async () => {
-      const { data, error } = await db.rpc("bw_help_list", { p_kind: kind, p_scope: scopeId });
-      if (error) return [];
-      return (data ?? []) as HelpRequest[];
-    },
-    refetchInterval: 60_000,
-  });
+  const key = helpListQuery(scopeId).queryKey;
+  const list = useQuery(helpListQuery(scopeId));
   const [need, setNeed] = useState<Need | null>(null);
-  const [point, setPoint] = useState<Point>(kind === "port" ? "checkin" : "boarding_control");
+  const [point, setPoint] = useState<Point>("boarding_control");
   const [formOpen, setFormOpen] = useState(false);
   const refresh = () => void client.invalidateQueries({ queryKey: key });
   const call = useMutation({

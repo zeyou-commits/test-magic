@@ -39,7 +39,7 @@ import {
   ratingOnlyFacilities,
 } from "@/lib/ferry/format";
 import { portTraffic } from "@/lib/ferry/portTraffic";
-import { portTimeZone, zoneLabel } from "@/lib/ferry/time";
+import { dateKeyInZone, portTimeZone, wallTimeInZone, zoneLabel } from "@/lib/ferry/time";
 import type { Selection } from "@/lib/ferry/types";
 import { portPhotoQuery } from "@/lib/ferry/vesselPhoto";
 import { DemoBadge, EmptyNote, SourceNote } from "./shared";
@@ -47,7 +47,7 @@ import { ReportButton } from "./ReportButton";
 import { CompanyBadge } from "./CompanyBadge";
 import { FacilityIcons } from "./FacilityIcons";
 import { TravelSignals } from "./TravelCommunity";
-import { HelpRequests } from "@/components/community/HelpRequests";
+import { PortHelpRequests } from "@/components/community/HelpRequests";
 import { globalCriterionQuery } from "./PortReviewForm";
 
 const scoreLabel = (value: number) =>
@@ -441,7 +441,27 @@ export function PortView({
               onSelect={onSelect}
             />
             <TravelSignals key={portId} kind="port" target={portId} compact />
-            <HelpRequests kind="port" scopeId={portId} />
+            <PortHelpRequests
+              crossings={knownDepartures
+                .filter(
+                  (departure) =>
+                    departure.status !== "cancelled" &&
+                    routes.find((route) => route.id === departure.route_id)?.departure_port_id ===
+                      portId &&
+                    dateKeyInZone(departure.departure_at, timeZone) ===
+                      dateKeyInZone(new Date(), timeZone),
+                )
+                .sort((a, b) => a.departure_at.localeCompare(b.departure_at))
+                .map((departure) => {
+                  const route = routes.find((item) => item.id === departure.route_id);
+                  const to = ports.find((item) => item.id === route?.arrival_port_id)?.name ?? "?";
+                  return {
+                    id: departure.id,
+                    label: `${wallTimeInZone(departure.departure_at, timeZone).slice(0, 5)} → ${to}`,
+                    next: Date.parse(departure.departure_at) > Date.now(),
+                  };
+                })}
+            />
           </div>
         </TabsContent>
 

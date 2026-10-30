@@ -1,5 +1,15 @@
 import { describe, expect, it } from "vitest";
-import { matchesTraffic, syncFilters, vesselCompanyIds } from "./filterSync";
+import { counterFilters, matchesTraffic, syncFilters, vesselCompanyIds } from "./filterSync";
+
+describe("compteurs de la carte", () => {
+  const filters = { ...emptyFilters, vesselId: "a", companyId: "A" };
+  it("ignorent le navire choisi et la compagnie posée par ce choix", () => {
+    expect(counterFilters(filters, "A")).toMatchObject({ vesselId: null, companyId: null });
+  });
+  it("respectent une compagnie choisie par l'utilisateur", () => {
+    expect(counterFilters(filters, null)).toMatchObject({ vesselId: null, companyId: "A" });
+  });
+});
 import { emptyFilters, type Departure, type Port, type RouteLine, type Vessel } from "./types";
 const vessels = [
   { id: "a", company_id: "A" },

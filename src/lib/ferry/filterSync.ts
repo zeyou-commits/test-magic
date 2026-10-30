@@ -37,6 +37,18 @@ export function syncFilters(
 }
 
 /** La carte et son accueil décrivent le trafic actuel, avec le même contexte géographique et les mêmes identités. */
+/**
+ * Filtres des compteurs « En mer / À quai » : le navire choisi et la compagnie posée
+ * automatiquement par ce choix ne les changent pas ; une compagnie choisie par l'utilisateur, si.
+ */
+export function counterFilters(filters: Filters, companyFromShip: string | null): Filters {
+  return {
+    ...filters,
+    vesselId: null,
+    companyId: filters.companyId === companyFromShip ? null : filters.companyId,
+  };
+}
+
 export function matchesTraffic(
   departure: Departure,
   routes: RouteLine[],

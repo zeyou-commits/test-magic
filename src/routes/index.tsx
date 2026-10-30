@@ -1,4 +1,4 @@
-import { syncFilters, matchesTraffic } from "@/lib/ferry/filterSync";
+import { counterFilters, syncFilters, matchesTraffic } from "@/lib/ferry/filterSync";
 import { seoHead } from "@/lib/seo/site";
 import { DataUnavailableNotice } from "@/components/layout/DataUnavailableNotice";
 import type React from "react";
@@ -163,6 +163,8 @@ function Index() {
   const [portsActive, setPortsActive] = useState(false);
   const [activeShortcut, setActiveShortcut] = useState<MapShortcut>(null);
   const shortcutCompanyId = filters.companyId;
+  // Compagnie posée automatiquement par le choix d'un navire (pas par l'utilisateur).
+  const [companyFromShip, setCompanyFromShip] = useState<string | null>(null);
   const [shortcutMenuOpen, setShortcutMenuOpen] = useState(false);
   const shortcutScrollY = useRef<number | null>(null);
   useLayoutEffect(() => {
@@ -308,10 +310,10 @@ function Index() {
       fleet.filter((ship) => {
         const departure = allDepartures.find((d) => d.id === ship.departureId);
         return departure
-          ? matchesTraffic(departure, routes, ports, { ...filters, vesselId: null })
+          ? matchesTraffic(departure, routes, ports, counterFilters(filters, companyFromShip))
           : false;
       }),
-    [fleet, allDepartures, routes, ports, filters],
+    [fleet, allDepartures, routes, ports, filters, companyFromShip],
   );
   const atSea = useMemo(() => shortcutFleet.filter((ship) => ship.state === "sea"), [shortcutFleet]);
   const upcomingShips = useMemo(
@@ -1199,11 +1201,15 @@ function Index() {
               }}
               onSelectCompany={(companyId) => {
                 setTrafficPreview(null);
+                setCompanyFromShip(null);
                 setFilters((current) => ({ ...current, companyId }));
                 setShortcutMenuOpen(false);
               }}
               onSelectShip={(ship) => {
                 const departure = allDepartures.find((d) => d.id === ship.departureId);
+                // Une compagnie déjà choisie par l'utilisateur reste un vrai filtre.
+                if (!filters.companyId || filters.companyId === companyFromShip)
+                  setCompanyFromShip(departure?.company_id ?? null);
                 setFilters((current) => ({
                   ...current,
                   vesselId: ship.vesselId,

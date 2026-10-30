@@ -1,3 +1,4 @@
+import { dockedAt } from "./tracking";
 import type { Departure, Port, RouteLine, Schedule } from "./types";
 import type { FleetShip } from "./fleet";
 import { dateKeyInZone, portTimeZone, zonedTimeToUtc } from "./time";
@@ -92,8 +93,10 @@ export function fleetShortcutInfo(
   ports: Port[],
   now: number,
 ) {
+  // Un navire suivi par son signal n'a pas de place à quai attribuée : son port vient de sa position.
+  const portId = ship.portId ?? (ship.live ? dockedAt(ship.live.position, ports) : null);
   const current = departures.find((d) => d.id === ship.departureId);
-  const dock = ports.find((p) => p.id === ship.portId);
+  const dock = ports.find((p) => p.id === portId);
   // Vu à quai par son signal alors que son départ est passé : il est en retard, pas « sans départ ».
   const late =
     ship.state === "docked" && ship.source === "live" && ship.vesselId
@@ -106,7 +109,7 @@ export function fleetShortcutInfo(
               d.vessel_id === ship.vesselId &&
               start < now &&
               end > now &&
-              routes.some((r) => r.id === d.route_id && r.departure_port_id === ship.portId)
+              routes.some((r) => r.id === d.route_id && r.departure_port_id === portId)
             );
           })
           .sort((a, b) => Date.parse(b.departure_at) - Date.parse(a.departure_at))[0]
@@ -120,7 +123,7 @@ export function fleetShortcutInfo(
               d.status !== "cancelled" &&
               (ship.vesselId ? d.vessel_id === ship.vesselId : d.id === ship.departureId) &&
               Date.parse(d.departure_at) >= now &&
-              routes.some((r) => r.id === d.route_id && r.departure_port_id === ship.portId),
+              routes.some((r) => r.id === d.route_id && r.departure_port_id === portId),
           )
           .sort((a, b) => Date.parse(a.departure_at) - Date.parse(b.departure_at))[0]
       : current;
@@ -135,9 +138,9 @@ export function fleetShortcutInfo(
       ? "Aucun départ publié pour le moment"
       : late
         ? "En retard · départ non constaté"
-      : minutes < 60
-        ? `Départ prévu dans ${minutes} min`
-        : `Départ prévu dans ${Math.floor(minutes / 60)} h${minutes % 60 ? ` ${minutes % 60}` : ""}`;
+        : minutes < 60
+          ? `Départ prévu dans ${minutes} min`
+          : `Départ prévu dans ${Math.floor(minutes / 60)} h${minutes % 60 ? ` ${minutes % 60}` : ""}`;
   return {
     route: `${portCode(ship.state === "docked" ? (dock ?? from) : from)} → ${portCode(to)}`,
     dock: dock?.name ?? from?.name ?? "Port à confirmer",

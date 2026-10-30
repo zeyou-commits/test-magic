@@ -118,6 +118,28 @@ describe("Raccourcis et programmes de la carte", () => {
       status: "En retard · départ non constaté",
       late: true,
     }));
+  it("navire suivi par son signal, sans port attribué : son port vient de sa position", () => {
+    const located = ports.map((p, i) => ({ ...p, longitude: 3.7 + i, latitude: 43.4 - i * 7 }));
+    const sete = located[0]!;
+    const info = fleetShortcutInfo(
+      {
+        ...ship,
+        portId: null,
+        source: "live",
+        vesselId: "v",
+        live: { position: { longitude: sete.longitude, latitude: sete.latitude, speedKnots: 0 } },
+      } as never,
+      [{ ...departure, vessel_id: "v" }],
+      routes,
+      located,
+      now,
+    );
+    expect(info).toMatchObject({
+      dock: "Sète",
+      destination: "Béjaïa",
+      status: "Départ prévu dans 3 h",
+    });
+  });
   it("n'invente pas un embarquement à partir de l'heure", () =>
     expect(
       fleetShortcutInfo(ship, [departure], routes, ports, now + 2.9 * 3600000).status,

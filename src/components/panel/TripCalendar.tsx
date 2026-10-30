@@ -197,6 +197,9 @@ export function TripCalendar({
       shownZones.flatMap((z) => periodsByZone[z]).sort((a, b) => a.start.localeCompare(b.start)),
     [shownZones, periodsByZone],
   );
+  // L'encart d'état suit la période touchée, sinon les prochaines vacances.
+  const [focusedPeriodId, setFocusedPeriodId] = useState<string | null>(null);
+  const focusedPeriod = periods.find((p) => p.id === focusedPeriodId) ?? periods[0];
   const inZone = (z: SchoolZone, key: string) =>
     periodsByZone[z].some((period) => key >= period.start && key <= period.lastDay);
 
@@ -313,7 +316,7 @@ export function TripCalendar({
   };
 
   // Prochaines vacances sans aucun départ programmé : on le dit, et on propose une alerte.
-  const nextEmpty = periods[0] && isUnscheduled(periods[0]) ? periods[0] : null;
+  const nextEmpty = focusedPeriod && isUnscheduled(focusedPeriod) ? focusedPeriod : null;
 
   const hasRange = Boolean(date && returnDate && roundTrip);
   const stay = date && returnDate ? diffDays(date, returnDate) : null;
@@ -332,25 +335,26 @@ export function TripCalendar({
 
   /** Un geste : aller au plus près du début des vacances, retour au plus près de la reprise (souplesse incluse). */
   const pickPeriod = (period: HolidayPeriod) => {
+    setFocusedPeriodId(period.id);
     const tolerance = Math.max(flexDays, 1);
     const out = nearest(outDays, period.start, tolerance, tolerance + 2, today);
     if (!out) {
       setNote(
         `Aucun départ connu autour du début des vacances de ${period.name} (± ${tolerance} j).`,
       );
-      setMonth(keyToDate(period.start));
+      jumpToDay(period.start);
       return;
     }
     if (!roundTrip) {
       onChange({ date: out, returnDate: null });
-      setMonth(keyToDate(out));
+      jumpToDay(out);
       setNote(`Aller le ${long(out)} pour les vacances de ${period.name}.`);
       return;
     }
     const backPool = backDays.size > 0 ? backDays : outDays;
     const back = nearest(backPool, period.lastDay, tolerance + 2, tolerance, addDaysKey(out, 1));
     onChange({ date: out, returnDate: back });
-    setMonth(keyToDate(out));
+    jumpToDay(out);
     setNote(
       back
         ? `${period.name} : aller le ${long(out)}, retour le ${long(back)} (${diffDays(out, back)} jours).`
@@ -469,14 +473,14 @@ export function TripCalendar({
               ))}
             </div>
           ) : null}
-          {periods[0]
+          {focusedPeriod
             ? (() => {
-                const coverage = holidayCoverage(periods[0], outDays.keys(), programmeEnds);
+                const coverage = holidayCoverage(focusedPeriod, outDays.keys(), programmeEnds);
                 return (
                   <p className="rounded-lg bg-secondary px-2.5 py-1.5 text-[11px] leading-relaxed">
-                    <strong>{periods[0].name} : </strong>
+                    <strong>{focusedPeriod.name} : </strong>
                     {coverage.state === "open"
-                      ? `${coverage.dayCount} jour(s) de départ publiés, à partir du ${short(coverage.firstDay!)}.`
+                      ? `${coverage.dayCount} jour(s) de départ publiés, à partir du ${short(coverage.firstDay!).replace(/\.$/, "")}.`
                       : "les dates ne sont pas encore ouvertes pour cette période."}
                     {coverage.pending.length
                       ? ` ${coverage.pending.join(", ")} ${coverage.pending.length > 1 ? "n'ont" : "n'a"} pas encore publié ces dates : c'est normal, les programmes sortent au fil de la saison.`
@@ -514,64 +518,64 @@ export function TripCalendar({
         onTouchStart={stacked ? undefined : handleTouchStart}
         onTouchEnd={stacked ? undefined : handleTouchEnd}
       >
-      <Calendar
-        mode="single"
-        locale={fr}
-        weekStartsOn={1}
-        numberOfMonths={stacked ? monthCount : isMobile || inline || !isWide ? 1 : 2}
-        hideNavigation={stacked}
-        showOutsideDays={false}
-        month={stacked ? firstMonth : month}
-        onMonthChange={changeMonth}
-        startMonth={keyToDate(today)}
-        endMonth={endMonth}
-        selected={activeValue ? keyToDate(activeValue) : undefined}
-        onSelect={(day) => {
-          if (day) pick(dateToKey(day));
-        }}
-        hidden={(day) => dateToKey(day) < today}
-        disabled={(day) => {
-          const key = dateToKey(day);
-          if (key < today) return true;
-          if (field === "ret" && date && key < date) return true;
-          return !activeDays.has(key);
-        }}
-        modifiers={{
-          avail: (day) => activeDays.has(dateToKey(day)),
-          zoneA: (day) => inZone("A", dateToKey(day)),
-          zoneB: (day) => inZone("B", dateToKey(day)),
-          zoneC: (day) => inZone("C", dateToKey(day)),
-          out: (day) => dateToKey(day) === date,
-          ret: (day) => roundTrip && dateToKey(day) === returnDate,
-          between: (day) => {
+        <Calendar
+          mode="single"
+          locale={fr}
+          weekStartsOn={1}
+          numberOfMonths={stacked ? monthCount : isMobile || inline || !isWide ? 1 : 2}
+          hideNavigation={stacked}
+          showOutsideDays={false}
+          month={stacked ? firstMonth : month}
+          onMonthChange={changeMonth}
+          startMonth={keyToDate(today)}
+          endMonth={endMonth}
+          selected={activeValue ? keyToDate(activeValue) : undefined}
+          onSelect={(day) => {
+            if (day) pick(dateToKey(day));
+          }}
+          hidden={(day) => dateToKey(day) < today}
+          disabled={(day) => {
             const key = dateToKey(day);
-            return hasRange && key > date! && key < returnDate!;
-          },
-          flex: (day) => {
-            if (field !== "out" || !date || flexDays === 0) return false;
-            return Math.abs(diffDays(date, dateToKey(day))) <= flexDays;
-          },
-        }}
-        modifiersClassNames={{
-          avail: "batogo-day-avail",
-          zoneA: "batogo-zone-a",
-          zoneB: "batogo-zone-b",
-          zoneC: "batogo-zone-c",
-          out: "batogo-day-out",
-          ret: "batogo-day-ret",
-          between: "batogo-day-between",
-          flex: "batogo-day-flex",
-        }}
-        className={`batogo-calendar w-full !p-0 ${stacked ? "[--cell-size:min(3.1rem,calc((100vw_-_3rem)/7))]" : "[--cell-size:min(2.6rem,calc((100vw_-_6rem)/7))] md:[--cell-size:2.6rem]"}`}
-        classNames={{
-          months: stacked
-            ? "relative flex flex-col gap-6"
-            : isWide
-              ? "relative flex flex-col gap-4 md:flex-row md:gap-8"
-              : "relative flex flex-col gap-4",
-          root: "w-full",
-        }}
-      />
+            if (key < today) return true;
+            if (field === "ret" && date && key < date) return true;
+            return !activeDays.has(key);
+          }}
+          modifiers={{
+            avail: (day) => activeDays.has(dateToKey(day)),
+            zoneA: (day) => inZone("A", dateToKey(day)),
+            zoneB: (day) => inZone("B", dateToKey(day)),
+            zoneC: (day) => inZone("C", dateToKey(day)),
+            out: (day) => dateToKey(day) === date,
+            ret: (day) => roundTrip && dateToKey(day) === returnDate,
+            between: (day) => {
+              const key = dateToKey(day);
+              return hasRange && key > date! && key < returnDate!;
+            },
+            flex: (day) => {
+              if (field !== "out" || !date || flexDays === 0) return false;
+              return Math.abs(diffDays(date, dateToKey(day))) <= flexDays;
+            },
+          }}
+          modifiersClassNames={{
+            avail: "batogo-day-avail",
+            zoneA: "batogo-zone-a",
+            zoneB: "batogo-zone-b",
+            zoneC: "batogo-zone-c",
+            out: "batogo-day-out",
+            ret: "batogo-day-ret",
+            between: "batogo-day-between",
+            flex: "batogo-day-flex",
+          }}
+          className={`batogo-calendar w-full !p-0 ${stacked ? "[--cell-size:min(3.1rem,calc((100vw_-_3rem)/7))]" : "[--cell-size:min(2.6rem,calc((100vw_-_6rem)/7))] md:[--cell-size:2.6rem]"}`}
+          classNames={{
+            months: stacked
+              ? "relative flex flex-col gap-6"
+              : isWide
+                ? "relative flex flex-col gap-4 md:flex-row md:gap-8"
+                : "relative flex flex-col gap-4",
+            root: "w-full",
+          }}
+        />
       </div>
 
       {note ? (

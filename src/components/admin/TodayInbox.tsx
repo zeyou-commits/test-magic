@@ -436,7 +436,7 @@ export function TodayInbox({
       if (!d.vessel_id || Date.parse(d.departure_at) > now + 12 * 3_600_000) continue;
       const vessel = vessels.find((v) => v.id === d.vessel_id);
       const position = vessel?.mmsi ? aisHealth.positions.get(Number(vessel.mmsi)) : undefined;
-      const elsewhere = position ? vesselElsewhere(d, position, routes, now) : null;
+      const elsewhere = position ? vesselElsewhere(d, position, routes, now, ports) : null;
       if (!vessel || !elsewhere) continue;
       cards.push(
         <InboxCard

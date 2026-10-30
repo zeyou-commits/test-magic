@@ -29,11 +29,19 @@ const p: ParsedPosition = {
   reportedAt: new Date(now).toISOString(),
 };
 describe("événements portuaires observés", () => {
-  it("un passage du quai à plus de 3 km en navigation constate le départ à la date du signal", () => {
-    expect(observePortEvent(p, previous, ports, now)).toMatchObject({
-      atd_at: "2026-10-20T00:00:00.000Z",
+  it("vu à quai 10 min avant puis en route à 10 km : départ juste après la dernière observation à quai", () => {
+    expect(observePortEvent({ ...p, latitude: 37.09 }, previous, ports, now)).toMatchObject({
+      atd_at: "2026-10-19T23:50:00.000Z",
       atd_after: "2026-10-19T23:50:00.000Z",
       departure_port_id: "from",
+    });
+  });
+  it("encore dans le rayon du port (terminal à 5 km du point du port), le navire n'est pas parti", () => {
+    expect(observePortEvent(p, previous, ports, now).atd_at).toBeUndefined();
+  });
+  it("amarré à 4,3 km du point du port (terminal de Marseille) : vu à quai dans ce port", () => {
+    expect(observePortEvent({ ...p, latitude: 37.039, speedKnots: 0 }, null, ports, now)).toEqual({
+      last_port_id: "from",
     });
   });
   it("sans observation préalable au quai, aucune heure de départ n'est inventée", () => {

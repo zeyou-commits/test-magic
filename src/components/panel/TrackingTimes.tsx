@@ -27,8 +27,13 @@ function Time({ time, label, zone }: { time: TrackingTime; label: string; zone: 
               : "prévu"}
       </p>
       <p className="text-sm font-bold tabular-nums text-foreground">
-        {time.iso ? formatDateTime(time.iso, zone) : "À confirmer"}
+        {time.seenOnly ? "À quai" : time.iso ? formatDateTime(time.iso, zone) : "À confirmer"}
       </p>
+      {time.seenOnly && time.iso ? (
+        <p className="text-[10px] text-muted-foreground">
+          vu à quai {formatDateTime(time.iso, zone)}
+        </p>
+      ) : null}
       <p className="text-[10px] text-muted-foreground">{zoneLabel(zone)}</p>
       {changed && time.scheduledIso ? (
         <p className={`mt-0.5 text-[10px] text-muted-foreground ${changed ? "line-through" : ""}`}>

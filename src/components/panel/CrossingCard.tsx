@@ -82,7 +82,7 @@ export function CrossingCard({
       (progress.signal.remainingKm !== null || progress.signal.position.speedKnots !== null) ? (
         <div className="bw-crossing-metrics">
           <Navigation size={13} aria-hidden />
-          {progress.signal.remainingKm !== null ? (
+          {progress.signal.remainingKm !== null && progress.times.arrival.kind !== "observed" ? (
             <span>≈ {Math.round(progress.signal.remainingKm)} km à parcourir</span>
           ) : null}
           {progress.signal.position.speedKnots !== null ? (

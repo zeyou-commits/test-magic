@@ -159,7 +159,14 @@ export function VesselView({
     .slice(0, 5);
   const automaticDeparture =
     (live
-      ? departureForSignal(data.departures, vessel, live.position, data.routes, Date.now())
+      ? departureForSignal(
+          data.departures,
+          vessel,
+          live.position,
+          data.routes,
+          Date.now(),
+          data.ports,
+        )
       : null) ??
     data.departures.find((d) => d.id === ship?.departureId) ??
     next[0];

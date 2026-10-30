@@ -57,7 +57,7 @@ export interface LiveShip {
   etaIso: string | null;
   delayMinutes: number | null;
   /** Sur quoi repose l'estimation (approche finale, départ réel, encore à quai). */
-  etaBasis?: "approach" | "departure" | "docked" | null;
+  etaBasis?: "arrived" | "approach" | "departure" | "docked" | null;
   /** Mode démonstration (développement) : position fictive. */
   demo?: boolean;
 }
@@ -146,7 +146,7 @@ export const FINAL_APPROACH_KM = 30;
 /** Âge maximal d'un signal pour l'utiliser en approche finale ou pour dire « encore à quai ». */
 const FRESH_SIGNAL_MINUTES = 30;
 
-export type EtaBasis = "approach" | "departure" | "docked";
+export type EtaBasis = "arrived" | "approach" | "departure" | "docked";
 
 /**
  * Heure d'arrivée estimée d'une traversée, sans dépendre du tracé en mer :
@@ -188,7 +188,19 @@ export function estimateCrossingArrival(
 
   let etaMs = NaN;
   let etaBasis: EtaBasis | null = null;
-  if (fresh && speed >= 3 && speed <= 50 && remainingKm < FINAL_APPROACH_KM) {
+  const recent =
+    Number.isFinite(reported) &&
+    reported <= now + 60_000 &&
+    now - reported <= LIVE_MAX_AGE_MINUTES * 60_000;
+  if (recent && speed < 1.5 && remainingKm < PORT_RADIUS_KM && reported >= start) {
+    // À quai au port d'arrivée : arrivé. Heure réelle si l'AIS l'a constatée, sinon l'heure du signal.
+    const ata =
+      position.ataAt && position.eventDepartureId === departure.id
+        ? Date.parse(position.ataAt)
+        : NaN;
+    etaMs = Number.isFinite(ata) ? ata : reported;
+    etaBasis = "arrived";
+  } else if (fresh && speed >= 3 && speed <= 50 && remainingKm < FINAL_APPROACH_KM) {
     etaMs = reported + ((remainingKm * 1000) / (speed * KNOT_MS)) * 1000;
     etaBasis = "approach";
   } else if (
@@ -304,12 +316,27 @@ export function courseLabel(course: number | null): string {
   return names[Math.round(((course % 360) + 360) / 45) % 8] ?? "—";
 }
 
-/** Port où le navire est à quai d'après le signal (null s'il navigue ou si on ne sait pas). */
-export function dockedAt(position: LivePosition): string | null {
+/**
+ * Rayon d'un port : les terminaux ferry sont souvent à plusieurs kilomètres du point « port »
+ * (Marseille : terminal à 4,3 km). En deçà, un navire à l'arrêt est considéré à quai.
+ */
+export const PORT_RADIUS_KM = 6;
+
+type PortPoint = Pick<Port, "id" | "latitude" | "longitude">;
+
+/**
+ * Port où le navire est à quai d'après le signal (null s'il navigue ou si on ne sait pas) :
+ * d'abord sa position (à l'arrêt dans le rayon d'un port), sinon le dernier port enregistré.
+ */
+export function dockedAt(position: LivePosition, ports: PortPoint[] = []): string | null {
+  if ((position.speedKnots ?? 0) >= 1.5) return null;
+  const here: LngLat = [position.longitude, position.latitude];
+  const nearest = ports
+    .map((port) => ({ id: port.id, km: haversineKm(here, [port.longitude, port.latitude]) }))
+    .sort((a, b) => a.km - b.km)[0];
+  if (nearest && nearest.km < PORT_RADIUS_KM) return nearest.id;
   const atSea = Boolean(position.atdAt && !position.ataAt);
-  return !atSea && position.lastPortId && (position.speedKnots ?? 0) < 1.5
-    ? position.lastPortId
-    : null;
+  return !atSea && position.lastPortId ? position.lastPortId : null;
 }
 
 /**
@@ -322,11 +349,12 @@ export function vesselElsewhere(
   position: LivePosition,
   routes: Pick<RouteLine, "id" | "departure_port_id">[],
   now: number,
+  ports: PortPoint[] = [],
 ): { portId: string; reportedAt: string } | null {
   if (!departure.vessel_id || departure.status === "cancelled" || !position.reportedAt) return null;
   const reported = Date.parse(position.reportedAt);
   if (!Number.isFinite(reported) || now - reported > LIVE_MAX_AGE_MINUTES * 60_000) return null;
-  const port = dockedAt(position);
+  const port = dockedAt(position, ports);
   if (!port) return null;
   const start = Date.parse(departure.departure_at);
   if (now < start - 12 * 3600_000 || now > start + 3 * 3600_000) return null;
@@ -342,6 +370,7 @@ export function departureForSignal(
   position: LivePosition,
   routes: RouteLine[],
   now: number,
+  ports: PortPoint[] = [],
 ): Departure | null {
   const candidates = departures.filter(
     (d) => d.vessel_id === vessel.id && d.status !== "cancelled",
@@ -352,20 +381,28 @@ export function departureForSignal(
   const routeById = new Map(routes.map((r) => [r.id, r]));
   // À quai : seulement une traversée qui part de ce port, ou qui vient d'y arriver.
   // Un navire à Marseille n'est jamais rattaché à un départ d'Alger (voir vesselElsewhere).
-  const port = dockedAt(position);
+  const port = dockedAt(position, ports);
   const atSea = Boolean(position.atdAt && !position.ataAt);
   const eligible = candidates.filter((d) => {
     const start = Date.parse(d.departure_at);
     const end = d.arrival_at ? Date.parse(d.arrival_at) : start + 36 * 3600_000;
     const route = routeById.get(d.route_id);
+    // À quai au port d'arrivée d'une traversée commencée : il est arrivé (même en avance).
     const samePort = port
-      ? route?.departure_port_id === port ||
-        (route?.arrival_port_id === port && now >= end - 2 * 3600_000)
+      ? route?.departure_port_id === port || (route?.arrival_port_id === port && now >= start)
       : !atSea ||
         !position.departurePortId ||
         route?.departure_port_id === position.departurePortId;
     return now >= start - 6 * 3600_000 && now <= end + 6 * 3600_000 && samePort;
   });
+  // À quai entre une arrivée et le départ suivant du même port : l'arrivée tant que le départ
+  // n'est pas dans moins de 2 h, ensuite le départ.
+  if (port && eligible.length === 2) {
+    const leaving = eligible.find((d) => routeById.get(d.route_id)?.departure_port_id === port);
+    const arrived = eligible.find((d) => routeById.get(d.route_id)?.arrival_port_id === port);
+    if (leaving && arrived && leaving !== arrived)
+      return now >= Date.parse(leaving.departure_at) - 2 * 3600_000 ? leaving : arrived;
+  }
   // En cas de chevauchement, pas de rattachement arbitraire à la traversée la plus proche.
   return eligible.length === 1 ? (eligible[0] ?? null) : null;
 }
@@ -376,6 +413,8 @@ export interface TrackingTime {
   scheduledIso: string | null;
   kind: TimeKind;
   shiftMinutes: number | null;
+  /** Arrivée vue (navire à quai) sans heure exacte : `iso` est l'heure du signal, au plus tard. */
+  seenOnly?: boolean;
 }
 export function trackingTimes(departure: Departure, live?: LiveShip | null) {
   const start = Date.parse(departure.departure_at);
@@ -422,13 +461,19 @@ export function trackingTimes(departure: Departure, live?: LiveShip | null) {
     Date.parse(live.position.ataAt) >= Date.parse(actualDeparture)
       ? live.position.ataAt
       : null;
+  const sameCrossing = live?.departure.id === departure.id;
+  // À quai au port d'arrivée : arrivée constatée. Sans heure AIS exacte, c'est l'heure à
+  // laquelle on l'a vu à quai (« au plus tard »), jamais présentée comme l'heure d'arrivée.
+  const seenArrived =
+    !actualArrival && sameCrossing && live?.etaBasis === "arrived" ? live.etaIso : null;
+  const arrival = make(
+    scheduledArrival,
+    actualArrival ?? seenArrived,
+    sameCrossing && live?.etaBasis !== "arrived" ? (live?.etaIso ?? null) : null,
+  );
   return {
     departure: make(departure.departure_at, actualDeparture, null),
-    arrival: make(
-      scheduledArrival,
-      actualArrival,
-      live?.departure.id === departure.id ? live.etaIso : null,
-    ),
+    arrival: seenArrived ? { ...arrival, seenOnly: true, shiftMinutes: null } : arrival,
   };
 }
 

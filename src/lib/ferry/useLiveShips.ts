@@ -124,7 +124,7 @@ export function useLiveShips(): LiveShip[] {
       const ageMinutes = Math.max(0, (now - reported) / 60_000);
       // Le signal AIS récent fait foi : il est affiché même si aucun départ n'est prévu à cette heure.
       if (ageMinutes > LIVE_MAX_AGE_MINUTES) return;
-      const departure = departureForSignal(departures, vessel, position, routes, now);
+      const departure = departureForSignal(departures, vessel, position, routes, now, ports);
       if (!departure) return;
       const route = routeById.get(departure.route_id);
       const to = route ? portById.get(route.arrival_port_id) : undefined;

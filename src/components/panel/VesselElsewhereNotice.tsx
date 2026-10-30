@@ -17,7 +17,7 @@ export function VesselElsewhereNotice({ departure }: { departure: Departure }) {
   const position = vessel?.mmsi ? positions.find((p) => p.mmsi === vessel.mmsi) : undefined;
   if (!vessel || !position) return null;
   const now = Date.now();
-  const elsewhere = vesselElsewhere(departure, position, routes, now);
+  const elsewhere = vesselElsewhere(departure, position, routes, now, ports);
   if (!elsewhere) return null;
   const port = ports.find((p) => p.id === elsewhere.portId)?.name ?? "un autre port";
   const started = now >= Date.parse(departure.departure_at);

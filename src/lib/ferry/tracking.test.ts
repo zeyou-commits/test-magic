@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   departureForSignal,
   estimateArrival,
+  dockedAt,
   estimateCrossingArrival,
   vesselElsewhere,
   projectedPosition,
@@ -136,6 +137,60 @@ describe("ETA d'une traversée : départ réel + durée prévue", () => {
         at("2026-11-06T23:00:00Z"),
       ).etaIso,
     ).toBeNull();
+  });
+});
+
+describe("cas réel : Jean Nicoli amarré à Marseille le 30/10 (VesselFinder : arrivé le 29 à 14:45 UTC)", () => {
+  const ports = [
+    { id: "alger", latitude: 36.77, longitude: 3.06 },
+    { id: "marseille", latitude: 43.3, longitude: 5.36 },
+  ];
+  const routes = [
+    { id: "alg-mrs", departure_port_id: "alger", arrival_port_id: "marseille" },
+  ] as RouteLine[];
+  const crossing = {
+    id: "d-29",
+    route_id: "alg-mrs",
+    vessel_id: "nicoli",
+    departure_at: "2026-10-29T08:00:00Z",
+    arrival_at: "2026-10-30T08:00:00Z",
+    duration_minutes: 1440,
+    status: "modified",
+  } as Departure;
+  // Position réelle enregistrée : terminal ferry, à 4,3 km du point « Marseille », à l'arrêt.
+  const moored: LivePosition = {
+    ...position,
+    latitude: 43.337395,
+    longitude: 5.34466,
+    speedKnots: 0,
+    reportedAt: "2026-10-29T23:43:23Z",
+    lastPortId: null,
+    atdAt: null,
+    ataAt: null,
+  };
+  const t = Date.parse("2026-10-30T01:36:00Z");
+
+  it("le navire est reconnu à quai à Marseille malgré les 4,3 km", () => {
+    expect(dockedAt(moored, ports)).toBe("marseille");
+  });
+  it("la traversée affiche « Arrivée constatée », à quai, et non 73 % d'avancement", () => {
+    const departure = departureForSignal(
+      [crossing],
+      { id: "nicoli" } as Vessel,
+      moored,
+      routes,
+      t,
+      ports,
+    );
+    expect(departure?.id).toBe("d-29");
+    const estimate = estimateCrossingArrival(moored, crossing, ports[0]!, ports[1]!, t);
+    expect(estimate.etaBasis).toBe("arrived");
+    const times = trackingTimes(crossing, {
+      ...live(moored),
+      departure: crossing,
+      ...estimate,
+    } as LiveShip);
+    expect(times.arrival).toMatchObject({ kind: "observed", seenOnly: true, shiftMinutes: null });
   });
 });
 

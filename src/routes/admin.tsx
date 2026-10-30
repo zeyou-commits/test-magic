@@ -2963,12 +2963,45 @@ function PortsAdmin({ itemId }: { itemId?: string | undefined } = {}) {
               onChange={(event) => set("info_source_url")(event.target.value)}
             />
           </Field>
-          <Field label="Photo du port (lien https, facultatif)">
+          <Field label="Photo du port (lien https ou fichier, facultatif)">
             <Input
               value={draft.photo_url}
               placeholder="https://… (sinon photo libre Wikimedia Commons)"
               onChange={(event) => set("photo_url")(event.target.value)}
             />
+            <input
+              type="file"
+              accept="image/jpeg,image/png,image/webp,image/avif"
+              aria-label="Téléverser une photo du port"
+              className="mt-2 block w-full text-xs"
+              onChange={(event) => {
+                const file = event.target.files?.[0];
+                event.target.value = "";
+                if (!file) return;
+                const extension = file.name.split(".").pop()?.toLowerCase() || "jpg";
+                const path = `ports/${Date.now()}.${extension.replace(/[^a-z0-9]/g, "")}`;
+                void supabase.storage
+                  .from("vessel-photos")
+                  .upload(path, file, { contentType: file.type })
+                  .then(({ error }) => {
+                    if (error) {
+                      toast.error("Téléversement de la photo impossible : " + error.message);
+                      return;
+                    }
+                    set("photo_url")(
+                      supabase.storage.from("vessel-photos").getPublicUrl(path).data.publicUrl,
+                    );
+                    toast.success("Photo prête : enregistrez la fiche du port.");
+                  });
+              }}
+            />
+            {draft.photo_url ? (
+              <img
+                src={draft.photo_url}
+                alt="Aperçu de la photo du port"
+                className="mt-2 h-24 rounded-lg object-cover"
+              />
+            ) : null}
           </Field>
         </div>
         <div className="mt-3">

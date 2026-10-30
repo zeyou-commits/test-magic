@@ -1,12 +1,15 @@
 import { useState } from "react";
 import { ArrowUpRight, Bell, Heart, Ship, Trash2 } from "lucide-react";
 import { JourneyChecklist } from "./JourneyChecklist";
+import { VesselAlertTag } from "./VesselAlert";
+import { useTravelAction } from "@/hooks/useTravelAction";
 import { NotificationInbox } from "@/components/account/NotificationInbox";
 import { useTravelFollows } from "@/hooks/useTravelFollows";
 import { useMyJourneys } from "@/lib/ferry/journey";
 
 export function FollowCenter({ userId }: { userId: string }) {
   const [filter, setFilter] = useState("all");
+  const request = useTravelAction();
   const { follows, watches, details, remove } = useTravelFollows(userId);
   const journeys = useMyJourneys(userId);
   const activeDepartures = new Set((follows.data ?? []).filter((follow) => follow.target_kind === "departure" && follow.traveller).map((follow) => follow.target_id));
@@ -87,7 +90,7 @@ export function FollowCenter({ userId }: { userId: string }) {
               <h3 className="mt-1 font-semibold">{journey.outbound_departure_id && activeDepartures.has(journey.outbound_departure_id) && journey.inbound_departure_id && activeDepartures.has(journey.inbound_departure_id) ? "Aller et retour" : journey.inbound_departure_id && activeDepartures.has(journey.inbound_departure_id) ? "Mon retour" : "Mon aller"}</h3>
               <div className="mt-3 grid gap-2 sm:grid-cols-2">
                 {([ ["Aller", journey.outbound_departure_id], ["Retour", journey.inbound_departure_id] ] as const).map(([leg, id]) => id && activeDepartures.has(id) ? <a key={leg} href={`/?select=departure&id=${id}`} className="flex min-h-12 items-center justify-between rounded-lg border bg-background px-3 py-2 text-sm font-semibold text-primary">
-                  <span><small className="block text-[11px] font-normal text-muted-foreground">{leg}</small>{details.data?.[id]?.label ?? "Traversée suivie"}</span><ArrowUpRight size={15} aria-hidden />
+                  <span><small className="block text-[11px] font-normal text-muted-foreground">{leg}</small>{details.data?.[id]?.label ?? "Traversée suivie"} <VesselAlertTag vesselId={details.data?.[id]?.vesselId} /></span><ArrowUpRight size={15} aria-hidden />
                 </a> : <div key={leg} className="rounded-lg border border-dashed px-3 py-2 text-sm text-muted-foreground"><small className="block text-[11px]">{leg}</small>{leg === "Retour" && journey.outbound_departure_id ? "À ajouter depuis l’aller" : "Non suivi"}</div>)}
               </div>
             </article>)}
@@ -110,6 +113,10 @@ export function FollowCenter({ userId }: { userId: string }) {
                   </div>
                   <h3 className="font-semibold">
                     {detail?.label ?? (details.error ? "Détail indisponible" : "Chargement…")}
+                    {" "}
+                    <VesselAlertTag
+                      vesselId={follow.target_kind === "vessel" ? follow.target_id : detail?.vesselId}
+                    />
                   </h3>
                   {detail?.departureAt && (
                     <p className="mt-1 text-xs text-muted-foreground">
@@ -127,6 +134,23 @@ export function FollowCenter({ userId }: { userId: string }) {
                     Voir sur la carte
                     <ArrowUpRight className="size-3.5" />
                   </a>
+                  {follow.follow_purpose === "curieux" && !follow.traveller ? (
+                    <button
+                      type="button"
+                      className="ml-3 inline-flex min-h-9 items-center gap-1 text-xs font-semibold text-primary"
+                      onClick={() =>
+                        request({
+                          type: "follow",
+                          kind: follow.target_kind as "vessel" | "departure",
+                          targetId: follow.target_id,
+                          label: detail?.label ?? "Ma traversée",
+                          upgrade: true,
+                        })
+                      }
+                    >
+                      <Ship className="size-3.5" /> En faire ma traversée
+                    </button>
+                  ) : null}
                   {follow.traveller && detail?.departureId && detail.port && detail.departureAt && (
                     <details className="mt-2 border-t border-border pt-3">
                       <summary className="cursor-pointer text-xs font-semibold text-primary">

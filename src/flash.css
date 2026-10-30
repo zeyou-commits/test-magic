@@ -4918,3 +4918,230 @@ button.bw-tavatar:focus-visible {
     display: none;
   }
 }
+
+/* Navire en alerte : même signal partout où il est mentionné. */
+.bw-alert-mark {
+  display: inline-grid;
+  flex-shrink: 0;
+  place-items: center;
+  width: 16px;
+  height: 16px;
+  border-radius: 999px;
+  background: #c81e1e;
+  color: #ffffff;
+  font-size: 11px;
+  font-weight: 800;
+  line-height: 1;
+}
+.bw-vessel-alert-tag {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 3px;
+  padding: 1px 7px 1px 2px;
+  border-radius: 999px;
+  background: #fde8e8;
+  color: #a51616;
+  font-family: inherit;
+  font-size: 10.5px;
+  font-weight: 700;
+  line-height: 16px;
+  vertical-align: middle;
+  white-space: nowrap;
+}
+.bw-vessel-alert-tag b {
+  display: inline-grid;
+  place-items: center;
+  width: 14px;
+  height: 14px;
+  border-radius: 999px;
+  background: #c81e1e;
+  color: #ffffff;
+  font-size: 10px;
+  font-weight: 800;
+}
+.bw-vessel-alert-tag[data-level="possible"] {
+  background: #fef3c7;
+  color: #854d0e;
+}
+.bw-vessel-alert-tag[data-level="possible"] b {
+  background: #b45309;
+}
+.bw-vessel-photo-alert {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 10px;
+  background: #c81e1e;
+  box-shadow: 0 4px 14px rgb(120 20 20 / 0.3);
+  color: #ffffff;
+  font-size: 13px;
+  font-weight: 700;
+}
+.bw-vessel-photo-alert[data-level="possible"] {
+  background: #b45309;
+}
+.bw-vessel-alert-banner {
+  margin-bottom: 10px;
+  padding: 10px 12px;
+  border: 1px solid #f5b5b5;
+  border-left: 4px solid #c81e1e;
+  border-radius: 12px;
+  background: #fef2f2;
+  color: #7f1414;
+  font-size: 13px;
+  line-height: 1.45;
+}
+.bw-vessel-alert-banner__title {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 14px;
+  font-weight: 700;
+}
+.bw-vessel-alert-banner__meta {
+  margin-top: 3px;
+  font-size: 11.5px;
+  opacity: 0.9;
+}
+.bw-vessel-alert-banner__meta a {
+  font-weight: 600;
+  text-decoration: underline;
+}
+.bw-crossing-top[data-alert] > span:first-child {
+  gap: 6px;
+  color: #a51616;
+}
+/* Cloche : l'alerte grave a sa propre pastille, à gauche du compteur ordinaire. */
+.bw-flash-bell[data-alert] {
+  color: #c81e1e;
+}
+.bw-flash-alert-badge {
+  position: absolute;
+  top: 1px;
+  left: -2px;
+  display: grid;
+  place-items: center;
+  width: 18px;
+  height: 18px;
+  border: 2px solid #fcfaf6;
+  border-radius: 999px;
+  background: #c81e1e;
+  color: #ffffff;
+  font-size: 11px;
+  font-weight: 800;
+  line-height: 1;
+}
+.bw-flash-alert-badge[data-fresh] {
+  animation: bw-flash-alert-pulse 1.8s ease-out infinite;
+}
+@keyframes bw-flash-alert-pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgb(200 30 30 / 0.55);
+  }
+  100% {
+    box-shadow: 0 0 0 9px rgb(200 30 30 / 0);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .bw-flash-alert-badge[data-fresh] {
+    animation: none;
+  }
+}
+.bw-flash-more {
+  width: 100%;
+  margin-top: 8px;
+  padding: 9px;
+  border-radius: 10px;
+  background: #f3f0e9;
+  color: #16324a;
+  font-size: 12.5px;
+  font-weight: 600;
+}
+.bw-alert-ticker[data-tone="critical"] {
+  background: #c81e1e;
+  border-top-color: #a51616;
+  color: #ffffff;
+}
+.bw-alert-ticker[data-tone="critical"] .bw-alert-ticker__close:hover {
+  background: #a51616;
+}
+/* Ma traversée et installation sur téléphone */
+.bw-make-trip {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  margin: 10px 0;
+  padding: 10px 12px;
+  border: 1px solid rgb(14 122 67 / 0.25);
+  border-radius: 12px;
+  background: rgb(14 122 67 / 0.06);
+  color: #0e7a43;
+}
+.bw-make-trip strong,
+.bw-make-trip small {
+  display: block;
+}
+.bw-make-trip strong {
+  color: #16324a;
+  font-size: 13px;
+}
+.bw-make-trip small {
+  color: #5b6b7a;
+  font-size: 11.5px;
+  line-height: 1.4;
+}
+.bw-make-trip button {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  min-height: 36px;
+  padding: 0 12px;
+  border-radius: 10px;
+  background: #0e7a43;
+  color: #ffffff;
+  font-size: 12px;
+  font-weight: 700;
+}
+.bw-phone-install {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 10px;
+}
+.bw-phone-install img {
+  flex-shrink: 0;
+  border-radius: 8px;
+  background: #ffffff;
+}
+.bw-phone-install strong,
+.bw-phone-install small {
+  display: block;
+}
+.bw-phone-install strong {
+  color: #16324a;
+  font-size: 13.5px;
+}
+.bw-phone-install small {
+  margin-top: 3px;
+  color: #5b6b7a;
+  font-size: 12px;
+  line-height: 1.4;
+}
+.bw-inbox-phone {
+  margin-top: 10px;
+  padding: 9px 2px 0;
+  border-top: 1px solid #ebe6da;
+}
+.bw-inbox-phone summary {
+  cursor: pointer;
+  color: #0e7a43;
+  font-size: 12.5px;
+  font-weight: 600;
+}

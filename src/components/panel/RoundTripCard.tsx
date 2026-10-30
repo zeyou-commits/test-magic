@@ -1,3 +1,4 @@
+import { VesselAlertTag } from "@/components/panel/VesselAlert";
 import { useState, type ReactNode } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { ArrowUpRight, ChevronDown, Moon, Repeat2, Ship, Undo2 } from "lucide-react";
@@ -152,7 +153,8 @@ function Leg({
             <span className="font-semibold text-foreground">
               {sailing.company?.name ?? "Compagnie"}
             </span>
-            {sailing.vessel ? ` · ${sailing.vessel.name}` : ""}
+            {sailing.vessel ? ` · ${sailing.vessel.name}` : ""}{" "}
+            <VesselAlertTag vesselId={sailing.vessel?.id} />
           </span>
           <span
             className="shrink-0 text-xs font-bold tabular-nums text-success"

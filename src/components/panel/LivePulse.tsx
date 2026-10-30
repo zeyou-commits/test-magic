@@ -59,13 +59,19 @@ export function useLiveInfo(scope: {
   const news: LiveItem[] = flash.cards.flatMap((card) =>
     scoped &&
     card.type === "news" &&
-    now - Date.parse(card.item.starts_at) < 24 * HOUR &&
+    (card.item.kind === "alerte" || now - Date.parse(card.item.starts_at) < 24 * HOUR) &&
     card.item.route_ids.length +
       card.item.port_ids.length +
       card.item.company_ids.length +
       card.item.departure_ids.length >
       0
-      ? [{ key: card.key, label: card.item.title, tone: "official" as const }]
+      ? [
+          {
+            key: card.key,
+            label: card.item.title,
+            tone: card.item.kind === "alerte" ? ("alert" as const) : ("official" as const),
+          },
+        ]
       : [],
   );
   const signals = flash.cards.flatMap((card) => (card.type === "signal" ? [card.alert] : []));
@@ -74,9 +80,14 @@ export function useLiveInfo(scope: {
     label: alertLabel(alert),
     tone: isImpact(alert) ? "alert" : "traveller",
   }));
-  const ordered = [...changes, ...news, ...travellerItems];
+  const ordered = [
+    ...news.filter((item) => item.tone === "alert"),
+    ...changes,
+    ...news.filter((item) => item.tone !== "alert"),
+    ...travellerItems,
+  ];
   const headlines = ordered.slice(0, 2);
-  const urgent = travellerItems.find((item) => item.tone === "alert");
+  const urgent = ordered.find((item) => item.tone === "alert");
   if (urgent && !headlines.includes(urgent)) headlines.splice(1, 1, urgent);
   return {
     official: changes.length + news.length,

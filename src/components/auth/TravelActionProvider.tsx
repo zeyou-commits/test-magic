@@ -15,6 +15,7 @@ import { pushCapability, registerPush, requestCatchUp } from "@/lib/notification
 import { AccountAccessForm } from "./AccountAccessForm";
 import { TripQuestion } from "./TripQuestion";
 import { PushStatusLine } from "@/components/panel/PushStatusLine";
+import { PhoneInstallCard } from "@/components/layout/PhoneInstallCard";
 import { TravelActionContext as ActionContext } from "@/hooks/useTravelAction";
 
 export function TravelActionProvider({ children }: { children: ReactNode }) {
@@ -143,6 +144,7 @@ export function TravelActionProvider({ children }: { children: ReactNode }) {
                   ? "Les prochaines informations seront regroupées dans votre espace voyageur."
                   : "Connectez-vous ou créez votre compte pour retrouver ce suivi et recevoir les informations utiles."}
             </DialogDescription>
+            {saved ? <PhoneInstallCard /> : null}
             {action?.type === "follow" && action.traveller === undefined && !saved ? (
               <TripQuestion
                 action={action}

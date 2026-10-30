@@ -1,3 +1,4 @@
+import { VesselAlertTag } from "@/components/panel/VesselAlert";
 import { matchesTraffic } from "@/lib/ferry/filterSync";
 import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
@@ -155,7 +156,8 @@ export function HomeTraffic({
                       </span>
                     </div>
                     {c.vessel && (
-                      <span className="pointer-events-auto">
+                      <span className="pointer-events-auto flex items-center gap-1.5">
+                        <VesselAlertTag vesselId={c.vessel.id} />
                         <FollowButton
                           kind="vessel"
                           targetId={c.vessel.id}
@@ -308,7 +310,8 @@ export function HomeTraffic({
                           : `Départ vers ${event.to.name}`}
                       </span>
                       <span className="block truncate text-[10px] text-muted-foreground">
-                        {[event.vessel?.name, event.company?.name].filter(Boolean).join(" · ")}
+                        {[event.vessel?.name, event.company?.name].filter(Boolean).join(" · ")}{" "}
+                        <VesselAlertTag vesselId={event.vessel?.id} />
                       </span>
                     </div>
                   </div>

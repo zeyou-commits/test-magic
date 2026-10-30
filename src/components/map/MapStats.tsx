@@ -2,6 +2,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { Anchor, Building2, Ship, type LucideProps } from "lucide-react";
 import type { FleetShip } from "@/lib/ferry/fleet";
+import { useVesselAlerts } from "@/lib/ferry/vesselAlerts";
 import {
   shortCompanyName,
   type LineVisibility,
@@ -118,6 +119,7 @@ export function MapStats({
     return () => observer.disconnect();
   }, [menuOpen, activeShortcut]);
   const { isAdmin } = useAuth();
+  const alerts = useVesselAlerts();
   const item =
     "flex w-full flex-col items-center justify-center gap-0.5 rounded-xl px-1 py-1.5 text-[11px] font-bold leading-none tabular-nums text-foreground transition-colors hover:bg-secondary data-[active=true]:bg-primary data-[active=true]:text-primary-foreground md:min-w-11 md:text-xs [@media(max-width:767px)_and_(max-height:700px)]:flex-row [@media(max-width:767px)_and_(max-height:700px)]:gap-1 [@media(max-width:767px)_and_(max-height:700px)]:py-1";
   const shipList =
@@ -324,9 +326,18 @@ export function MapStats({
                 onBlur={() => onPreview(null)}
                 className="flex w-full items-center gap-2 rounded-xl px-2.5 py-1.5 text-left text-xs font-medium hover:bg-secondary"
               >
-                <Ship className="size-3.5 shrink-0 text-primary" />
+                {alerts.has(ship.vesselId ?? "") ? (
+                  <b className="bw-alert-mark" aria-hidden>!</b>
+                ) : (
+                  <Ship className="size-3.5 shrink-0 text-primary" />
+                )}
                 <span className="min-w-0 flex-1 leading-tight">
                   <span className="block truncate">{ship.name}</span>
+                  {alerts.has(ship.vesselId ?? "") ? (
+                    <span className="block truncate text-[10px] font-bold text-red-700">
+                      {alerts.get(ship.vesselId ?? "")?.label} · départ à confirmer
+                    </span>
+                  ) : null}
                   <span
                     className="block truncate text-[10px] font-normal text-muted-foreground"
                     title={companyOf(ship)}
@@ -339,9 +350,11 @@ export function MapStats({
                       <span className="mt-1 block truncate text-[10px]">
                         {infoOf(ship).dock} → {infoOf(ship).destination}
                       </span>
-                      <span className="block text-[10px] font-normal text-primary">
-                        {infoOf(ship).status}
-                      </span>
+                      {!alerts.has(ship.vesselId ?? "") ? (
+                        <span className="block text-[10px] font-normal text-primary">
+                          {infoOf(ship).status}
+                        </span>
+                      ) : null}
                     </>
                   )}
                 </span>

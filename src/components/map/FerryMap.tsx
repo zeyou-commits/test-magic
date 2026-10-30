@@ -1,3 +1,4 @@
+import { useVesselAlerts } from "@/lib/ferry/vesselAlerts";
 import { useTravelMarkers } from "./useTravelMarkers";
 import { bringTooltipToFront } from "./tooltipStack";
 import { usePresenceMarkers } from "./usePresenceMarkers";
@@ -356,6 +357,9 @@ export default function FerryMap({
     null,
   );
   const fleetRef = useRef<FleetShip[]>(fleet);
+  const vesselAlertsNow = useVesselAlerts();
+  const vesselAlertsRef = useRef(vesselAlertsNow);
+  vesselAlertsRef.current = vesselAlertsNow;
   const lastFleetFrame = useRef<{ source: GeoJSONSource; data: FleetFrame } | null>(null);
   fleetRef.current = fleet;
 
@@ -717,6 +721,37 @@ export default function FerryMap({
           "icon-image": "ship-heading",
           "icon-rotation-alignment": "map",
           "icon-rotate": ["get", "course"],
+          "icon-allow-overlap": true,
+          "icon-ignore-placement": true,
+          "icon-size": [
+            "interpolate",
+            ["linear"],
+            ["zoom"],
+            3,
+            0.5,
+            5,
+            0.6,
+            7,
+            0.7,
+            9,
+            0.82,
+            11,
+            0.98,
+            13,
+            1.12,
+            15,
+            1.24,
+          ],
+        },
+        paint: { "icon-opacity": ["get", "opacity"] },
+      });
+      map.addLayer({
+        id: "fleet-alert",
+        type: "symbol",
+        source: "fleet",
+        filter: ["==", ["get", "alert"], 1],
+        layout: {
+          "icon-image": "ship-alert",
           "icon-allow-overlap": true,
           "icon-ignore-placement": true,
           "icon-size": [
@@ -2227,16 +2262,19 @@ export default function FerryMap({
           } else {
             allure = dockName ? `⚓ À quai · ${dockName}` : "⚓ À quai";
           }
+          const shipAlert = ship.vesselId ? vesselAlertsRef.current.get(ship.vesselId) : undefined;
           return {
             type: "Feature" as const,
             properties: {
+              alert: shipAlert ? 1 : 0,
               state: ship.state,
               icon: shipIcon(wakeLevel(ship.state, live ? speed : null), course),
               course,
               name: ship.name,
-              allure,
-              allureColor:
-                physical?.tone === "success"
+              allure: shipAlert ? `⚠ ${shipAlert.label}` : allure,
+              allureColor: shipAlert
+                ? "#c81e1e"
+                : physical?.tone === "success"
                   ? "#059669"
                   : physical?.tone === "warning"
                     ? "#d97706"

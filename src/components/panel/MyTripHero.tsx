@@ -1,3 +1,4 @@
+import { VesselAlertTag } from "@/components/panel/VesselAlert";
 import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { ArrowRight, Crosshair, Ship } from "lucide-react";
@@ -81,7 +82,10 @@ export function MyTripHero({ onSelect }: { onSelect: (selection: Selection) => v
       >
         <img src={image} alt="" width={64} height={64} />
         <span className="bw-mytrip-hero__text">
-          <small>Ma traversée{trip.vessel ? ` · ${trip.vessel.name}` : ""}</small>
+          <small>
+            Ma traversée{trip.vessel ? ` · ${trip.vessel.name}` : ""}{" "}
+            <VesselAlertTag vesselId={trip.vessel?.id} />
+          </small>
           <strong>
             {trip.from?.name ?? "Départ"} → {trip.to?.name ?? "Arrivée"}
           </strong>

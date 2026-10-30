@@ -236,6 +236,30 @@ function drawHeading(): ImageData | null {
   return ctx.getImageData(0, 0, SIZE, SIZE);
 }
 
+/** Point d'exclamation sur le jeton d'un navire en alerte (couche « fleet-alert »). */
+function drawAlert(): ImageData | null {
+  const canvas = document.createElement("canvas");
+  canvas.width = SIZE;
+  canvas.height = SIZE;
+  const ctx = canvas.getContext("2d");
+  if (!ctx) return null;
+  const x = CENTER + RADIUS * 0.68;
+  const y = CENTER + RADIUS * 0.68;
+  ctx.fillStyle = "#c81e1e";
+  ctx.strokeStyle = "#ffffff";
+  ctx.lineWidth = 3;
+  ctx.beginPath();
+  ctx.arc(x, y, 15, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.stroke();
+  ctx.fillStyle = "#ffffff";
+  ctx.font = "800 23px system-ui, sans-serif";
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.fillText("!", x, y + 1);
+  return ctx.getImageData(0, 0, SIZE, SIZE);
+}
+
 export function addShipImages(map: MapLibreMap) {
   const media = window.matchMedia("(prefers-reduced-motion: reduce)");
   const animated: { id: string; frames: ImageData[] }[] = [];
@@ -270,6 +294,8 @@ export function addShipImages(map: MapLibreMap) {
   const heading = drawHeading();
   if (heading && !map.hasImage("ship-heading"))
     map.addImage("ship-heading", heading, { pixelRatio: 2 });
+  const alert = drawAlert();
+  if (alert && !map.hasImage("ship-alert")) map.addImage("ship-alert", alert, { pixelRatio: 2 });
   syncMotion();
   media.addEventListener("change", syncMotion);
   map.once("remove", () => {

@@ -1,3 +1,4 @@
+import { VesselAlertTag } from "@/components/panel/VesselAlert";
 import { vesselDossiers } from "@/content/vessels";
 import { seoHead } from "@/lib/seo/site";
 import { createFileRoute, Link } from "@tanstack/react-router";
@@ -82,7 +83,8 @@ function CompagniesPage() {
                           </a>
                         ) : (
                           <span className="text-muted-foreground">{vessel.name}</span>
-                        )}
+                        )}{" "}
+                        <VesselAlertTag vesselId={vessel.id} />
                       </li>
                     ))}
                   </ul>

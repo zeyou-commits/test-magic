@@ -1,3 +1,4 @@
+import { VesselAlertTag } from "@/components/panel/VesselAlert";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
@@ -150,7 +151,9 @@ function VesselCard({ vessel, routes, ports }: { vessel: Vessel; routes: RouteLi
         )}
       </div>
       <div className="flex flex-1 flex-col p-4">
-        <h3 className="font-display text-lg font-bold">{vessel.name}</h3>
+        <h3 className="font-display text-lg font-bold">
+          {vessel.name} <VesselAlertTag vesselId={vessel.id} />
+        </h3>
         {stats.length ? (
           <dl className="mt-3 grid grid-cols-3 gap-2 text-xs">
             {stats.map((s) => (

@@ -1,3 +1,4 @@
+import { VesselAlertTag } from "@/components/panel/VesselAlert";
 import { absoluteUrl, breadcrumbSchema, jsonLdString, seoHead } from "@/lib/seo/site";
 import { Breadcrumbs } from "@/components/editorial/Editorial";
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
@@ -171,7 +172,7 @@ function LignePage() {
                     .filter(Boolean)
                     .join(", ")}
                   {company ? ` · ${company.name}` : ""}
-                  {vessel ? ` · ${vessel.name}` : ""}
+                  {vessel ? ` · ${vessel.name}` : ""} <VesselAlertTag vesselId={vessel?.id} />
                 </p>
               </Card>
             );

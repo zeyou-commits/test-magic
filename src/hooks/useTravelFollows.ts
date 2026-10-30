@@ -10,6 +10,7 @@ type FollowDetail = {
   label: string;
   departureAt?: string;
   departureId?: string;
+  vesselId?: string | null;
   presentationMinutes?: number | null;
   port?: { name: string; country_code: string };
 };
@@ -91,6 +92,7 @@ export function useTravelFollows(userId: string) {
           label,
           departureAt: departure.departure_at,
           departureId: departure.id,
+          vesselId: departure.vessel_id,
           presentationMinutes: departure.presentation_minutes,
           ...(port ? { port } : {}),
         };

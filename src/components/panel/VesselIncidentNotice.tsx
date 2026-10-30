@@ -26,6 +26,14 @@ import { safeExternalUrl } from "./shared";
 
 const day = (iso: string) => new Date(iso).toLocaleDateString("fr-FR");
 
+/** Rouge si l'immobilisation est vérifiée, ambre pendant la vérification, vert une fois levée. */
+const incidentTone = (incident: VesselIncident) =>
+  incident.status === "confirmed"
+    ? "border-red-300 bg-red-50 text-red-950"
+    : isOpenIncident(incident)
+      ? "border-amber-300 bg-amber-50 text-amber-950"
+      : "border-emerald-200 bg-emerald-50 text-emerald-900";
+
 function SourceLine({ incident }: { incident: VesselIncident }) {
   const href = safeExternalUrl(incident.source_url);
   return (
@@ -71,7 +79,7 @@ export function VesselIncidentNotice({
   return (
     <div
       role="status"
-      className={`rounded-xl border p-3 text-sm ${open ? "border-amber-300 bg-amber-50 text-amber-950" : "border-emerald-200 bg-emerald-50 text-emerald-900"}`}
+      className={`rounded-xl border p-3 text-sm ${incidentTone(incident)}`}
     >
       <p className="flex items-center gap-2 font-semibold">
         <CircleAlert size={16} aria-hidden /> {incidentHeadline(incident, vesselName, port)}
@@ -132,7 +140,7 @@ export function DepartureIncidentNotice({ departure }: { departure: Departure })
     <section className="grid gap-3" aria-label="Information sur le navire">
       <div
         role="status"
-        className={`rounded-xl border p-3 text-sm ${open ? "border-amber-300 bg-amber-50 text-amber-950" : "border-emerald-200 bg-emerald-50 text-emerald-900"}`}
+        className={`rounded-xl border p-3 text-sm ${incidentTone(incident)}`}
       >
         <p className="flex items-center gap-2 font-semibold">
           <CircleAlert size={16} aria-hidden />{" "}

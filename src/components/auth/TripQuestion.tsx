@@ -14,7 +14,7 @@ type Stage = "intent" | "date" | "leg" | "return";
 
 /** Le cœur sert au voyageur, à un proche et au simple amateur de navires. */
 export function TripQuestion({ action, onAnswer }: { action: Follow; onAnswer: (next: Follow) => void }) {
-  const [stage, setStage] = useState<Stage>("intent");
+  const [stage, setStage] = useState<Stage>(!action.upgrade ? "intent" : action.kind === "vessel" ? "date" : "leg");
   const [chosen, setChosen] = useState<string | null>(null);
   const [chosenReturn, setChosenReturn] = useState<string | null>(null);
   const [datePurpose, setDatePurpose] = useState<"voyageur" | "proche">("voyageur");
@@ -70,11 +70,11 @@ export function TripQuestion({ action, onAnswer }: { action: Follow; onAnswer: (
   if (stage === "leg") return <div className="bw-trip-question">
     <p className="bw-trip-question__title">À quelle étape de votre voyage correspond-elle ?</p>
     {myTrip && myTrip.departure.id !== selected ? <p className="rounded-lg bg-secondary px-3 py-2 text-xs leading-relaxed">
-      « Ma traversée » est unique : un aller, ou un aller-retour. {myTrip.from?.name ?? "Votre voyage"} → {myTrip.to?.name ?? ""} restera suivie, mais ne sera plus « Ma traversée » sauf si celle-ci est son retour.
+      <strong>Vous avez déjà une traversée :</strong> {myTrip.from?.name ?? "Votre voyage"} → {myTrip.to?.name ?? ""}, {formatDateTime(myTrip.departure.departure_at, portTimeZone(myTrip.from))}. « Ma traversée » est unique (un aller, ou un aller-retour) : si celle-ci est un nouvel aller, l’ancienne reste suivie par curiosité. Si c’est le retour de ce voyage, les deux sont conservées.
     </p> : null}
     <button type="button" className="bw-trip-question__choice" onClick={() => setStage("return")}><Ship size={20} aria-hidden /><span><strong>C’est mon aller</strong><small>Je peux ajouter mon retour maintenant ou plus tard.</small></span></button>
     <button type="button" className="bw-trip-question__choice" onClick={() => confirm("inbound")}><Ship size={20} aria-hidden /><span><strong>C’est mon retour</strong><small>J’ai déjà fait l’aller ou je ne souhaite suivre que le retour.</small></span></button>
-    <button type="button" className="w-full py-2 text-sm text-muted-foreground" onClick={() => setStage(action.kind === "vessel" ? "date" : "intent")}>Retour</button>
+    <button type="button" className="w-full py-2 text-sm text-muted-foreground" onClick={() => setStage(action.kind === "vessel" ? "date" : "intent")}>{action.upgrade && action.kind === "departure" ? "Autre raison de suivre" : "Retour"}</button>
   </div>;
 
   if (stage === "return") return <div className="bw-trip-question">

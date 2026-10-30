@@ -17,7 +17,8 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import { noticeHref, noticeKind, noticeRank } from "@/lib/notifications/noticeStyle";
-import { FlashFeed, useFlashCards } from "./FlashFeed";
+import { isDesktopBrowser, isInstalledApp, PhoneInstallCard } from "@/components/layout/PhoneInstallCard";
+import { FlashFeed, isCriticalCard, useFlashCards } from "./FlashFeed";
 import { noticeLook } from "./NoticeFocus";
 
 // Notifications personnelles (table bw_notifications), absentes des types générés.
@@ -25,6 +26,8 @@ const supabase = typedSupabase as unknown as SupabaseClient;
 
 /** Demande d'ouverture d'une fiche sur la page carte depuis le fil de l'en-tête. */
 export const FLASH_SELECT_EVENT = "bledway:flash-select";
+/** Ouvre le fil depuis le bandeau, pour une info qui n'a pas de fiche à elle. */
+export const OPEN_INBOX_EVENT = "bledway:open-inbox";
 
 type Notice = {
   id: string;
@@ -152,9 +155,25 @@ export function HeaderInbox() {
   const [open, setOpen] = useState(false);
   const [tab, setTab] = useState<"flash" | "notices">("flash");
   const unseen = cards.filter((card) => !seen.has(card.key));
-  const unread = (notices.data ?? []).filter((notice) => !notice.read_at).length;
-  const urgent = unseen.some((card) => card.type === "news" && card.item.kind !== "info");
-  const count = unseen.length + unread;
+  const unreadNotices = (notices.data ?? []).filter((notice) => !notice.read_at);
+  const unread = unreadNotices.length;
+  const isAlertNotice = (notice: Notice) => noticeKind(notice.event_key, notice.title) === "alert";
+  const alertNotices = unreadNotices.filter(isAlertNotice).length;
+  const alertCards = cards.filter(isCriticalCard);
+  // Une alerte grave ne se noie pas dans le compteur : elle a son « ! » tant qu'elle est en cours.
+  const hasAlert = alertCards.length + alertNotices > 0;
+  const freshAlert = alertNotices > 0 || alertCards.some((card) => !seen.has(card.key));
+  const urgent = unseen.some((card) => card.type === "news" && card.item.kind === "perturbation");
+  const count =
+    unseen.filter((card) => !isCriticalCard(card)).length + unread - alertNotices;
+  useEffect(() => {
+    const show = () => {
+      setTab("flash");
+      setOpen(true);
+    };
+    window.addEventListener(OPEN_INBOX_EVENT, show);
+    return () => window.removeEventListener(OPEN_INBOX_EVENT, show);
+  }, []);
   // Ni module Flash info, ni compte : rien à afficher.
   if (disabled && !user) return null;
 
@@ -166,6 +185,8 @@ export function HeaderInbox() {
     else router.history.push(`/?select=${selection.type}&id=${encodeURIComponent(selection.id)}`);
   };
   const onOpenChange = (next: boolean) => {
+    // Une alerte personnelle non lue, sans alerte générale : on arrive directement dessus.
+    if (next) setTab(!alertCards.length && alertNotices > 0 ? "notices" : "flash");
     setOpen(next);
     // À la fermeture, les infos affichées deviennent « vues » (le point disparaît au prochain passage).
     if (!next && tab === "flash") markFlashSeen(cards.map((card) => card.key));
@@ -204,6 +225,7 @@ export function HeaderInbox() {
             hideTitle
             limit={30}
             seen={seen}
+            focusAlerts
             onSelect={select}
             emptyText="Aucune perturbation ni information en cours sur les traversées Europe ↔ Algérie."
           />
@@ -215,6 +237,12 @@ export function HeaderInbox() {
           <NoticeList userId={user.id} notices={notices.data ?? []} />
         )}
       </div>
+      {open && isDesktopBrowser() && !isInstalledApp() ? (
+        <details className="bw-inbox-phone">
+          <summary>Recevoir ces alertes sur mon téléphone</summary>
+          <PhoneInstallCard text="Scannez avec l’appareil photo pour installer BledWay." />
+        </details>
+      ) : null}
       {user && tab === "notices" ? (
         <Link to="/compte" className="bw-inbox-more" onClick={() => setOpen(false)}>
           Mes voyages suivis et préférences
@@ -227,10 +255,16 @@ export function HeaderInbox() {
     <button
       type="button"
       className="bw-icon-button bw-flash-bell"
-      aria-label={`Flash info et notifications${count ? ` : ${count} nouvelle${count > 1 ? "s" : ""}` : ""}`}
-      onClick={isMobile ? () => setOpen(true) : undefined}
+      data-alert={hasAlert || undefined}
+      aria-label={`Flash info et notifications${hasAlert ? " : alerte grave en cours" : ""}${count ? ` : ${count} nouvelle${count > 1 ? "s" : ""}` : ""}`}
+      onClick={isMobile ? () => onOpenChange(true) : undefined}
     >
       <Bell size={20} aria-hidden />
+      {hasAlert ? (
+        <span className="bw-flash-alert-badge" data-fresh={freshAlert || undefined} aria-hidden>
+          !
+        </span>
+      ) : null}
       {count ? (
         <span className="bw-flash-count" data-urgent={urgent}>
           {count > 9 ? "9+" : count}

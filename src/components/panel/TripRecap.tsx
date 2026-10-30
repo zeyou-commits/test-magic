@@ -31,6 +31,9 @@ import { FlashFeed } from "./FlashFeed";
 import { hasSignalFocus, LivePulse, revealLive, useLiveInfo } from "./LivePulse";
 import { VesselElsewhereNotice } from "./VesselElsewhereNotice";
 import { DepartureIncidentNotice } from "./VesselIncidentNotice";
+import { useVesselAlert } from "@/lib/ferry/vesselAlerts";
+import { VesselAlertBanner } from "./VesselAlert";
+import { MakeMyTrip } from "./MakeMyTrip";
 import { HelpRequests } from "@/components/community/HelpRequests";
 import { FollowButton } from "./FollowButton";
 import { JourneyChecklist } from "./JourneyChecklist";
@@ -109,14 +112,14 @@ export function TripRecap({
     },
     retry: false,
   });
-  // Toute traversée suivie est « Ma traversée » (comme avant l'aller-retour) : les suivis créés
-  // avant le motif « voyageur » gardent leur checklist et leur statut.
-  const myDeparture = Boolean(follow.data?.active);
+  // Une traversée suivie par curiosité ou pour un proche n'est pas « Ma traversée ».
+  const myDeparture = Boolean(follow.data?.active && follow.data.traveller);
   const heading = myDeparture ? "Ma traversée" : "Cette traversée";
   const fromZone = portTimeZone(from);
   const toZone = portTimeZone(to);
   const { data: incidents = [] } = useQuery(incidentsQuery);
   const stopped = departureStopped(incidentForVessel(incidents, departure.vessel_id), departure);
+  const vesselAlert = useVesselAlert(departure.vessel_id);
   const progress = crossingProgress(departure, from, to, live, Date.now(), stopped);
   const { times } = progress;
   const departIso = times.departure.iso ?? departure.departure_at;
@@ -146,7 +149,9 @@ export function TripRecap({
     : arrived && !stopped
       ? { tone: "done", label: "Arrivée" }
       : stopped
-        ? { tone: "warn", label: "Navire immobilisé" }
+        ? { tone: "bad", label: vesselAlert?.label ?? "Navire immobilisé" }
+        : vesselAlert && Date.parse(departIso) > now
+          ? { tone: "bad", label: `${vesselAlert.label} · départ à confirmer` }
         : hold
           ? { tone: "warn", label: hold.fresh ? "Encore à quai" : "Départ à confirmer" }
           : atSea
@@ -158,7 +163,7 @@ export function TripRecap({
                 : { tone: "ok", label: "Prévue" };
   const days = daysUntil(departIso, fromZone);
   const countdown =
-    cancelled || arrived || atSea || hold
+    cancelled || arrived || atSea || hold || vesselAlert
       ? null
       : days <= 0
         ? "Aujourd’hui"
@@ -201,6 +206,9 @@ export function TripRecap({
 
   return (
     <article className="bw-recap">
+      {/* Une alerte passe avant tout le reste. */}
+      {!cancelled && !arrived ? <VesselAlertBanner vesselId={departure.vessel_id} onDeparture /> : null}
+      {!cancelled ? <DepartureIncidentNotice departure={departure} /> : null}
       {/* 1. Le billet */}
       <section className="bw-recap__ticket" data-tone={status.tone} aria-label={heading}>
         <header className="bw-recap__head">
@@ -310,11 +318,13 @@ export function TripRecap({
       </section>
 
       {myDeparture ? <JourneyPlanner departureId={departure.id} onSelect={onSelect} /> : null}
+      {upcoming ? (
+        <MakeMyTrip kind="departure" targetId={departure.id} label={`${from.name} → ${to.name}`} />
+      ) : null}
 
       {/* 2. Ce qui se passe, d'un coup d'œil */}
       <LivePulse info={info} onOpen={openLive} onReport={upcoming || atSea ? report : undefined} />
       {!cancelled ? <VesselElsewhereNotice departure={departure} /> : null}
-      {!cancelled ? <DepartureIncidentNotice departure={departure} /> : null}
       {!cancelled && upcoming ? <HelpRequests kind="departure" scopeId={departure.id} /> : null}
 
       {/* 3. Où en êtes-vous ? (une ligne tant que ce n'est pas la veille) */}

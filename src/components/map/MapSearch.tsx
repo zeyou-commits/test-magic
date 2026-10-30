@@ -1,3 +1,4 @@
+import { VesselAlertTag } from "@/components/panel/VesselAlert";
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import type { SupabaseClient } from "@supabase/supabase-js";
@@ -38,11 +39,13 @@ function ResultRow({
   icon: Icon,
   label,
   hint,
+  vesselId,
   onClick,
 }: {
   icon: typeof Ship;
   label: string;
   hint: string;
+  vesselId?: string | null | undefined;
   onClick: () => void;
 }) {
   return (
@@ -53,7 +56,10 @@ function ResultRow({
     >
       <Icon className="size-4 shrink-0 text-primary" aria-hidden />
       <span className="min-w-0 flex-1">
-        <span className="block truncate text-sm font-semibold">{label}</span>
+        <span className="flex items-center gap-1.5 text-sm font-semibold">
+          <span className="truncate">{label}</span>
+          <VesselAlertTag vesselId={vesselId} />
+        </span>
         <span className="block truncate text-xs text-muted-foreground">{hint}</span>
       </span>
     </button>
@@ -169,6 +175,7 @@ export function MapSearch({
                       icon={Ship}
                       label={`${myTrip.from?.name ?? "Départ"} → ${myTrip.to?.name ?? "Arrivée"}`}
                       hint={myTrip.vessel?.name ?? "Voir ma traversée"}
+                      vesselId={myTrip.vessel?.id}
                       onClick={() => select({ type: "departure", id: myTrip.departure.id })}
                     />
                   </div>
@@ -184,6 +191,7 @@ export function MapSearch({
                         icon={Heart}
                         label={vessel.name}
                         hint="Voir sa fiche"
+                        vesselId={vessel.id}
                         onClick={() => select({ type: "vessel", id: vessel.id })}
                       />
                     ))}
@@ -200,6 +208,7 @@ export function MapSearch({
                         icon={Ship}
                         label={ship.name}
                         hint="Voir sa fiche"
+                        vesselId={ship.vesselId}
                         onClick={() => select({ type: "vessel", id: ship.vesselId! })}
                       />
                     ))}
@@ -225,6 +234,7 @@ export function MapSearch({
                       icon={icons[kind]}
                       label={result.label}
                       hint={result.hint}
+                      vesselId={kind === "vessel" ? result.id : undefined}
                       onClick={() => go(result)}
                     />
                   ))}

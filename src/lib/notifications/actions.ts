@@ -17,6 +17,8 @@ const followSchema = z.object({
   returnDepartureId: z.string().uuid().optional(),
   /** Traversée choisie quand on suit un bateau et qu'on voyage à bord. */
   departureId: z.string().uuid().optional(),
+  /** Suivi par curiosité qui devient « Ma traversée » : le parcours va droit au choix du voyage. */
+  upgrade: z.boolean().optional(),
 });
 const watchSchema = z.object({
   type: z.literal("opening"),

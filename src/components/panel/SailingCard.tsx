@@ -1,3 +1,4 @@
+import { VesselAlertTag } from "@/components/panel/VesselAlert";
 import { useEffect, useRef, useState } from "react";
 import {
   ArrowUpRight,
@@ -165,6 +166,12 @@ export function SailingCard({
             {sailing.vessel?.name ? (
               <span className="font-normal text-muted-foreground"> · {sailing.vessel.name}</span>
             ) : null}
+            {sailing.vessel?.name ? (
+              <>
+                {" "}
+                <VesselAlertTag vesselId={sailing.vessel.id} />
+              </>
+            ) : null}
           </div>
         </div>
         <a
@@ -253,6 +260,7 @@ export function SailingDetail({
             className="inline-flex items-center gap-1 font-semibold text-primary hover:underline"
           >
             <Ship className="size-3.5" aria-hidden /> {sailing.vessel.name}
+            <VesselAlertTag vesselId={sailing.vessel.id} />
             <span className="font-normal text-muted-foreground">(fiche + photo)</span>
           </button>
         ) : null}

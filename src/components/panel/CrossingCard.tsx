@@ -4,6 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { crossingProgress } from "@/lib/ferry/crossingProgress";
 import { departureStopped, incidentForVessel, incidentsQuery } from "@/lib/ferry/incidents";
 import type { Departure, Port } from "@/lib/ferry/types";
+import { useVesselAlert } from "@/lib/ferry/vesselAlerts";
 import { formatAge, type LiveShip } from "@/lib/ferry/tracking";
 import { portTimeZone } from "@/lib/ferry/time";
 import { TrackingTimes } from "./TrackingTimes";
@@ -29,6 +30,8 @@ export function CrossingCard({
     departure,
     at,
   );
+  const alert = useVesselAlert(departure.vessel_id);
+  const awaited = Boolean(alert) && at < Date.parse(departure.departure_at);
   const progress = crossingProgress(departure, from, to, live, at, stopped);
   const sourceLabel = isAdmin ? progress.source : "Avancement";
   const status =
@@ -36,8 +39,8 @@ export function CrossingCard({
       ? "Traversée annulée"
       : progress.times.arrival.kind === "observed"
         ? "Arrivée constatée"
-        : stopped
-          ? "Navire immobilisé"
+        : stopped || awaited
+          ? `${alert?.label ?? "Navire immobilisé"}${awaited ? " · départ à confirmer" : ""}`
           : at < Date.parse(departure.departure_at) && progress.signal?.phase !== "sea"
             ? "Prochaine traversée"
             : progress.signal
@@ -47,9 +50,9 @@ export function CrossingCard({
               : "Traversée en cours";
   return (
     <section className="bw-crossing" aria-label="Avancement de la traversée">
-      <div className="bw-crossing-top">
+      <div className="bw-crossing-top" data-alert={stopped || awaited || undefined}>
         <span>
-          <Waves size={16} aria-hidden />
+          {stopped || awaited ? <b className="bw-alert-mark" aria-hidden>!</b> : <Waves size={16} aria-hidden />}
           {status}
         </span>
         {isAdmin && progress.signal ? (
@@ -61,7 +64,7 @@ export function CrossingCard({
         <ArrowRight size={17} aria-hidden />
         <strong>{to.name}</strong>
       </div>
-      {progress.ratio !== null ? (
+      {progress.ratio !== null && !awaited ? (
         <div className="bw-crossing-progress">
           <div className="bw-crossing-progress-label">
             <span>{sourceLabel}</span>

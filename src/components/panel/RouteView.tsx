@@ -1,3 +1,4 @@
+import { VesselAlertTag } from "@/components/panel/VesselAlert";
 import { useQuery } from "@tanstack/react-query";
 import { ArrowLeftRight, CalendarDays, ChevronRight } from "lucide-react";
 import {
@@ -180,7 +181,7 @@ export function RouteView({
                       .filter(Boolean)
                       .join(", ")}
                     {company ? ` · ${company.name}` : ""}
-                    {vessel ? ` · ${vessel.name}` : ""}
+                    {vessel ? ` · ${vessel.name}` : ""} <VesselAlertTag vesselId={vessel?.id} />
                   </div>
                   <ReliabilityNote
                     reliability={schedule.reliability}

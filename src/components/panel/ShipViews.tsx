@@ -40,6 +40,8 @@ import { CrossingCard } from "./CrossingCard";
 import { TravelSignals, VesselReviews } from "./TravelCommunity";
 import { TripRecap } from "./TripRecap";
 import { VesselIncidentNotice } from "./VesselIncidentNotice";
+import { VesselAlertBanner, VesselPhotoAlert } from "./VesselAlert";
+import { MakeMyTrip } from "./MakeMyTrip";
 import { ReportButton } from "./ReportButton";
 import { ShipPhoto, VesselSpecs } from "./VesselBits";
 import { TripStatusPicker, VesselPresence } from "./TripPresence";
@@ -198,7 +200,11 @@ export function VesselView({
           </div>
           {vessel.is_demo ? <DemoBadge /> : null}
         </div>
+        <VesselAlertBanner vesselId={vessel.id} />
         <VesselIncidentNotice vesselId={vessel.id} vesselName={vessel.name} />
+        {liveInfo.official + liveInfo.travellers > 0 ? (
+          <LivePulse info={liveInfo} onOpen={openLive} />
+        ) : null}
         <div className="bw-ship-hero-photo bw-ship-hero-photo--compact">
           <dl className="bw-ship-hero-stats" aria-label="Le bateau en chiffres">
             <div>
@@ -222,9 +228,13 @@ export function VesselView({
             </div>
           </dl>
 
-          <ShipPhoto key={photo?.url ?? vesselId} url={photo?.url} name={vessel.name} />
+          <div className="relative">
+            <ShipPhoto key={photo?.url ?? vesselId} url={photo?.url} name={vessel.name} />
+            <VesselPhotoAlert vesselId={vessel.id} />
+          </div>
         </div>
       </header>
+      <MakeMyTrip kind="vessel" targetId={vessel.id} label={vessel.name} />
       {!contextDepartureId && departure && from && to ? (
         <div className="bw-ship-crossing-first">
           <CrossingCard departure={departure} from={from} to={to} live={live} />
@@ -288,7 +298,9 @@ export function VesselView({
           </button>
         ) : null}
       </div>
-      <LivePulse info={liveInfo} onOpen={openLive} />
+      {liveInfo.official + liveInfo.travellers === 0 ? (
+        <LivePulse info={liveInfo} onOpen={openLive} />
+      ) : null}
       {photo?.source === "commons" ? (
         <details className="bw-photo-credit">
           <summary>Crédit photo</summary>

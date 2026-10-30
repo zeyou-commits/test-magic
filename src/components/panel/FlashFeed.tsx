@@ -77,6 +77,9 @@ function tone(card: FlashCard) {
   return { label: "Média", icon: Newspaper, tone: "media" as const };
 }
 
+export const isCriticalCard = (card: FlashCard) =>
+  card.type === "news" && card.item.kind === "alerte";
+
 export interface FlashScope {
   context?: NewsContext | undefined;
   withSignals?: boolean | undefined;
@@ -200,6 +203,7 @@ export function FlashFeed({
   hideTitle = false,
   expandFirst = false,
   seen,
+  focusAlerts = false,
 }: FlashScope & {
   title?: string;
   limit?: number;
@@ -210,10 +214,16 @@ export function FlashFeed({
   expandFirst?: boolean;
   /** Infos déjà vues : les autres portent un point « nouveau ». */
   seen?: Set<string> | undefined;
+  /** S'il y a une alerte grave, elle seule s'affiche d'abord : le reste est à un clic. */
+  focusAlerts?: boolean;
 }) {
   const network = useNetwork();
   const flash = useFlashCards({ context, withSignals, signalPortIds, signalVesselIds });
-  const cards = flash.cards.slice(0, limit);
+  const [showAll, setShowAll] = useState(false);
+  const critical = flash.cards.filter(isCriticalCard);
+  const focused = focusAlerts && critical.length > 0 && !showAll;
+  const cards = (focused ? critical : flash.cards).slice(0, limit);
+  const others = flash.cards.length - critical.length;
   const [open, setOpen] = useState<string | null>(null);
   const openKey = open ?? (expandFirst ? (cards[0]?.key ?? null) : null);
   const heading = hideTitle ? null : (
@@ -319,6 +329,11 @@ export function FlashFeed({
           );
         })}
       </ul>
+      {focused && others > 0 ? (
+        <button type="button" className="bw-flash-more" onClick={() => setShowAll(true)}>
+          Voir les {others} autre{others > 1 ? "s" : ""} info{others > 1 ? "s" : ""}
+        </button>
+      ) : null}
     </section>
   );
 }

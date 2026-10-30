@@ -134,7 +134,7 @@
   top: 20px;
   bottom: 20px;
   left: calc(var(--desktop-panel-width) + 32px);
-  width: 340px;
+  width: 380px;
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -153,6 +153,13 @@
   border-bottom: 1px solid var(--border);
   color: var(--muted-foreground);
   font-size: 12px;
+}
+.bw-companion > header > span:first-child {
+  min-width: 0;
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 .bw-companion > header > button {
   display: grid;
@@ -196,7 +203,7 @@
 }
 @media (min-width: 1280px) {
   .bw-map-stage:has(.bw-companion) > .bw-map-panel > button[aria-controls="map-side-panel"] {
-    transform: translate(352px, -50%);
+    transform: translate(392px, -50%);
   }
 }
 @media (prefers-reduced-motion: reduce) {

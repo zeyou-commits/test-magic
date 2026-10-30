@@ -41,9 +41,9 @@ export function useCompanionPanel(
     window.addEventListener("popstate", back);
     return () => window.removeEventListener("popstate", back);
   }, [restoreFocus]);
-  const shown = Boolean(wide && enabled && secondary && selection?.type === "departure");
+  const shown = Boolean(wide && enabled && secondary);
   useEffect(() => {
-    onWidth?.(shown ? 352 : 0);
+    onWidth?.(shown ? 392 : 0);
     return () => onWidth?.(0);
   }, [shown, onWidth]);
   const close = useCallback(() => {
@@ -52,13 +52,8 @@ export function useCompanionPanel(
     if (window.history.state?.[HISTORY_KEY]) window.history.back();
   }, [restoreFocus]);
   const open = (next: Selection | null) => {
-    if (
-      wide &&
-      enabled &&
-      selection?.type === "departure" &&
-      next &&
-      ["vessel", "company", "port"].includes(next.type)
-    ) {
+    // Une fiche du même type que le volet principal le remplace (ligne en sens inverse…).
+    if (wide && enabled && next && next.type !== selection?.type) {
       if (!secondary)
         opener.current =
           document.activeElement instanceof HTMLElement ? document.activeElement : null;

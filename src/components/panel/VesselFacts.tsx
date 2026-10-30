@@ -42,7 +42,8 @@ export function VesselPhotoBadge({ vesselId }: { vesselId: string }) {
   if (!fact || alert) return null;
   return (
     <span className="bw-vessel-photo-badge">
-      <Award size={13} aria-hidden /> {fact.label}
+      <b>{fact.value}</b>
+      <small>{fact.label}</small>
     </span>
   );
 }
@@ -59,7 +60,8 @@ export function VesselIdentity({ vesselId }: { vesselId: string }) {
       <ul>
         {facts.slice(0, 4).map((fact) => (
           <li key={fact.key}>
-            <b>{fact.label}</b> · {fact.value}
+            <b>{fact.value}</b> {fact.label.charAt(0).toLowerCase()}
+            {fact.label.slice(1)}
           </li>
         ))}
       </ul>
@@ -74,8 +76,8 @@ export function VesselBoardingNote({ vesselId }: { vesselId: string }) {
   if (!fact || alert) return null;
   return (
     <p className="bw-vessel-boarding-note">
-      <Award size={14} aria-hidden /> À bord : {fact.label.charAt(0).toLowerCase()}
-      {fact.label.slice(1)} ({fact.value})
+      <Award size={14} aria-hidden /> <b>{fact.value}</b> {fact.label.charAt(0).toLowerCase()}
+      {fact.label.slice(1)}
     </p>
   );
 }

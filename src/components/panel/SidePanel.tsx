@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { vesselsQuery } from "@/lib/ferry/queries";
+import { upcomingDeparturesQuery, vesselsQuery } from "@/lib/ferry/queries";
 import { FollowButton } from "./FollowButton";
 import { useEffect, useRef } from "react";
 import type { Filters, RouteLine, Selection } from "@/lib/ferry/types";
@@ -70,6 +70,19 @@ export function SidePanel({
 }: SidePanelProps) {
   const companion = useCompanionPanel(selection, companionEnabled, onSelect, onCompanionWidth);
   const { data: vessels = [] } = useQuery(vesselsQuery);
+  const { data: upcoming = [] } = useQuery(upcomingDeparturesQuery());
+  // La carte éclaire la ligne de la fiche ouverte dans le second volet.
+  const secondary = companion.secondary;
+  const secondaryRoute =
+    secondary?.type === "route"
+      ? secondary.id
+      : secondary?.type === "departure"
+        ? (upcoming.find((d) => d.id === secondary.id)?.route_id ?? null)
+        : null;
+  useEffect(() => {
+    if (secondary) onHighlightRoute?.(secondaryRoute);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [secondary, secondaryRoute]);
   const followedVessel =
     selection?.type === "vessel" ? vessels.find((v) => v.id === selection.id) : null;
   const detailRef = useRef<HTMLDivElement>(null);
@@ -122,7 +135,7 @@ export function SidePanel({
               filters={filters}
               onFiltersChange={onFiltersChange}
               selection={selection}
-              onSelect={onSelect}
+              onSelect={companion.open}
               hidePickersOnMobile={hidePickersOnMobile}
               {...(onHighlightRoute ? { onHighlightRoute } : {})}
               {...(onFocusRoute ? { onFocusRoute } : {})}
@@ -181,13 +194,13 @@ export function SidePanel({
             <div className="batogo-panel-scroll flex-1 overflow-y-auto p-4 md:p-6">
               {noticeId ? <NoticeFocus noticeId={noticeId} /> : null}
               {selection.type === "port" ? (
-                <PortView key={selection.id} portId={selection.id} onSelect={onSelect} />
+                <PortView key={selection.id} portId={selection.id} onSelect={companion.open} />
               ) : selection.type === "route" ? (
-                <RouteView routeId={selection.id} onSelect={onSelect} onPlanRoute={planRoute} />
+                <RouteView routeId={selection.id} onSelect={companion.open} onPlanRoute={planRoute} />
               ) : selection.type === "company" ? (
-                <CompanyView companyId={selection.id} onSelect={onSelect} />
+                <CompanyView companyId={selection.id} onSelect={companion.open} />
               ) : selection.type === "vessel" ? (
-                <VesselView key={selection.id} vesselId={selection.id} onSelect={onSelect} />
+                <VesselView key={selection.id} vesselId={selection.id} onSelect={companion.open} />
               ) : (
                 <DepartureView
                   key={selection.id}
@@ -199,10 +212,10 @@ export function SidePanel({
           </div>
         ) : null}
       </div>
-      {companion.secondary && selection?.type === "departure" ? (
+      {companion.secondary ? (
         <CompanionPanel
           selection={companion.secondary}
-          departureId={selection.id}
+          primary={selection}
           onSelect={companion.open}
           onClose={companion.close}
         />

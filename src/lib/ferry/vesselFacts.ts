@@ -16,6 +16,10 @@ export type FactKey =
   | "freight"
   | "intimate";
 
+const age = (year: number) => new Date().getFullYear() - year;
+const record = "Record de la flotte";
+const placed = (rank: number) => `${rank}ᵉ de la flotte`;
+
 type Stats = { upcoming: number; rating: number | null };
 
 /** Dans l'ordre où un titre est mis en avant sur la photo. Les comparaisons se font sur `value`. */
@@ -41,10 +45,10 @@ const FACTS: {
     key: "doyen",
     podium: "Les doyens",
     title: "Le doyen de la flotte",
-    ranked: (r) => `${r}ᵉ doyen de la flotte`,
+    ranked: (r) => `${r}ᵉ plus ancien`,
     order: "asc",
     value: (v) => v.build_year,
-    show: String,
+    show: (n) => `${age(n)} ans`,
   },
   {
     key: "longest",
@@ -62,13 +66,13 @@ const FACTS: {
     ranked: (r) => `${r}ᵉ plus imposant`,
     order: "desc",
     value: (v) => v.gross_tonnage,
-    show: (n) => `${n.toLocaleString("fr-FR")} t de jauge`,
+    show: (n) => `${n.toLocaleString("fr-FR")} t`,
   },
   {
     key: "cars",
     podium: "Le plus de véhicules",
-    title: "Le plus de véhicules",
-    ranked: (r) => `${r}ᵉ pour les véhicules`,
+    title: record,
+    ranked: placed,
     order: "desc",
     value: (v) => v.car_capacity,
     show: (n) => `${n.toLocaleString("fr-FR")} véhicules`,
@@ -76,8 +80,8 @@ const FACTS: {
   {
     key: "passengers",
     podium: "Le plus de passagers",
-    title: "Le plus de passagers",
-    ranked: (r) => `${r}ᵉ pour les passagers`,
+    title: record,
+    ranked: placed,
     order: "desc",
     value: (v) => v.passenger_capacity,
     show: (n) => `${n.toLocaleString("fr-FR")} passagers`,
@@ -85,38 +89,38 @@ const FACTS: {
   {
     key: "cabins",
     podium: "Le plus de cabines",
-    title: "Le plus de cabines",
-    ranked: (r) => `${r}ᵉ pour les cabines`,
+    title: record,
+    ranked: placed,
     order: "desc",
     value: (v) => v.cabin_capacity,
     show: (n) => `${n.toLocaleString("fr-FR")} cabines`,
   },
   {
     key: "youngest",
-    podium: "Les benjamins",
-    title: "Le benjamin de la flotte",
-    ranked: (r) => `${r}ᵉ benjamin de la flotte`,
+    podium: "Les plus récents",
+    title: "Le plus récent",
+    ranked: (r) => `${r}ᵉ plus récent`,
     order: "desc",
     value: (v) => v.build_year,
-    show: String,
+    show: (n) => `${age(n)} ans`,
   },
   {
     key: "regular",
-    podium: "Les plus assidus",
-    title: "Le plus assidu",
-    ranked: (r) => `${r}ᵉ plus assidu`,
+    podium: "Le plus de traversées à venir",
+    title: record,
+    ranked: placed,
     order: "desc",
     value: (_, s) => s.upcoming,
-    show: (n) => `${n} départs à venir`,
+    show: (n) => `${n} traversées à venir`,
   },
   {
     key: "freight",
     podium: "Le plus de fret",
-    title: "Le plus de fret",
-    ranked: (r) => `${r}ᵉ pour le fret`,
+    title: record,
+    ranked: placed,
     order: "desc",
     value: (v) => v.freight_lane_meters,
-    show: (n) => `${n.toLocaleString("fr-FR")} m linéaires`,
+    show: (n) => `${n.toLocaleString("fr-FR")} m de fret`,
   },
   {
     key: "intimate",

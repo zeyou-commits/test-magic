@@ -91,15 +91,9 @@ export function EmptyNote({ children }: { children: ReactNode }) {
   return <div className="text-sm text-muted-foreground">{children}</div>;
 }
 
+/** Plus aucun statut de fiabilité affiché au public : le badge ne montre rien. */
 export function DemoBadge() {
-  return (
-    <span
-      className="inline-flex items-center rounded-full bg-warning/15 px-2 py-0.5 text-xs font-semibold text-warning-foreground"
-      title="Données d'exemple, non vérifiées"
-    >
-      À confirmer
-    </span>
-  );
+  return null;
 }
 
 /** N'accepte que les liens web (http/https), pour ne jamais ouvrir un lien piégé saisi dans l'admin. */

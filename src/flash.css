@@ -5391,21 +5391,30 @@ button.bw-tavatar:focus-visible {
 /* Titres d'un navire : photo, carte d'identité, clin d'œil sur la traversée. */
 .bw-vessel-photo-badge {
   position: absolute;
-  bottom: 8px;
-  left: 8px;
+  bottom: 10px;
+  left: 10px;
   z-index: 2;
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  max-width: calc(100% - 16px);
-  padding: 3px 8px;
-  border-radius: 999px;
-  background: rgb(255 255 255 / 0.94);
-  box-shadow: 0 2px 8px rgb(15 40 60 / 0.18);
-  color: #0f5c46;
+  display: grid;
+  gap: 1px;
+  max-width: calc(100% - 20px);
+  padding: 6px 12px;
+  border-radius: 12px;
+  background: rgb(14 42 58 / 0.86);
+  box-shadow: 0 6px 18px rgb(14 42 58 / 0.28);
+  backdrop-filter: blur(6px);
+  color: #ffffff;
+  line-height: 1.15;
+}
+.bw-vessel-photo-badge b {
+  font-size: 16px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
+}
+.bw-vessel-photo-badge small {
+  color: #ffd98a;
   font-size: 11px;
-  font-weight: 700;
-  line-height: 1.25;
+  font-weight: 600;
 }
 .bw-vessel-identity {
   margin: 10px 0;
@@ -5425,6 +5434,11 @@ button.bw-tavatar:focus-visible {
 .bw-vessel-identity ul {
   display: grid;
   gap: 2px;
+}
+.bw-vessel-identity b,
+.bw-vessel-boarding-note b {
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
 }
 .bw-vessel-boarding-note {
   display: flex;

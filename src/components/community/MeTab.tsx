@@ -75,14 +75,19 @@ export function MeTab({ className }: { className: string }) {
         onClick={() => setOpen(true)}
         aria-label={`Mon profil${me.mood ? ` · humeur : ${me.mood.label}` : " · ajouter une humeur"}`}
       >
-        <span className="bw-me-tab__bubble" data-empty={!me.mood || undefined} aria-hidden>
-          {me.mood ? (
-            <img src={me.mood.image} alt="" width={20} height={20} />
-          ) : (
-            <Plus size={11} />
-          )}
-        </span>
-        <TravellerAvatar card={me} size={30} mood={false} static />
+        {/* Avec une humeur, le cabas qui l'exprime prend la place de l'avatar. */}
+        {me.mood ? (
+          <span className="bw-me-tab__mood bw-mood-face" aria-hidden>
+            <img src={me.mood.image} alt="" />
+          </span>
+        ) : (
+          <>
+            <span className="bw-me-tab__bubble" data-empty aria-hidden>
+              <Plus size={11} />
+            </span>
+            <TravellerAvatar card={me} size={30} mood={false} static />
+          </>
+        )}
         <span>Moi</span>
       </button>
       <MeSheet open={open} onOpenChange={setOpen} />

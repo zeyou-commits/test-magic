@@ -3756,8 +3756,8 @@ button.bw-tavatar:focus-visible {
   white-space: nowrap;
 }
 .bw-tavatar__mood img {
-  width: 18px;
-  height: 18px;
+  width: 24px;
+  height: 24px;
   border-radius: 999px;
   object-fit: cover;
 }
@@ -4409,6 +4409,11 @@ button.bw-tavatar:focus-visible {
   top: -6px;
   left: calc(50% + 12px);
 }
+.bw-me-tab__mood {
+  width: 32px;
+  height: 32px;
+  box-shadow: 0 0 0 1.5px var(--border);
+}
 .bw-me-tab__ghost {
   display: grid;
   width: 30px;
@@ -4595,44 +4600,53 @@ button.bw-tavatar:focus-visible {
 }
 
 /* ── Humeur sur l'avatar de l'en-tête (ordinateur) ── */
+/* Les images d'humeur sont des scènes : en petit, on cadre sur le cabas. */
+.bw-mood-face {
+  display: block;
+  overflow: hidden;
+  flex: none;
+  border-radius: 999px;
+  background: #dcebf7;
+}
+.bw-mood-face img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transform: scale(1.6);
+  transform-origin: 28% 62%;
+}
+/* Écran moyen : le cabas de l'humeur prend la place de l'avatar. */
 .bw-usermenu-mood {
   position: absolute;
-  right: -7px;
-  bottom: -6px;
-  display: grid;
-  width: 24px;
-  height: 24px;
-  place-items: center;
-  border-radius: 999px;
-  background: white;
-  box-shadow: 0 1px 5px #16324a40;
+  top: 0;
+  right: 0;
+  width: 100%;
+  height: 100%;
+  border: 1px solid var(--border);
 }
-.bw-usermenu-mood img,
-.bw-usermenu-moodchip img {
-  border-radius: 999px;
-}
-/* Écran large : l'humeur se lit en entier à côté de l'avatar. */
+/* Écran large : une seule capsule, cabas de l'humeur, texte entier et avatar. */
 .bw-usermenu-moodchip {
   display: none;
-  max-width: 170px;
   align-items: center;
-  gap: 6px;
-  padding: 3px 12px 3px 4px;
-  border: 1px solid var(--border);
-  border-radius: 999px;
-  background: white;
+  gap: 8px;
   color: var(--foreground);
-  font-size: 12.5px;
-  font-weight: 600;
-}
-.bw-usermenu-moodchip span {
-  overflow: hidden;
-  text-overflow: ellipsis;
+  font-size: 13px;
+  font-weight: 650;
   white-space: nowrap;
 }
+.bw-usermenu-moodchip .bw-mood-face {
+  width: 32px;
+  height: 32px;
+}
 @media (min-width: 1280px) {
+  .bw-usermenu-trigger[data-mood] {
+    padding: 3px 3px 3px 3px;
+    border: 1px solid var(--border);
+    background: white;
+  }
   .bw-usermenu-moodchip {
     display: inline-flex;
+    padding-right: 2px;
   }
   .bw-usermenu-mood {
     display: none;

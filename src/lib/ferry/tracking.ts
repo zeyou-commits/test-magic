@@ -217,7 +217,7 @@ export function estimateCrossingArrival(
     departurePort &&
     Number.isFinite(durationMs) &&
     reported > start &&
-    haversineKm(here, [departurePort.longitude, departurePort.latitude]) < 2
+    haversineKm(here, [departurePort.longitude, departurePort.latitude]) < PORT_RADIUS_KM
   ) {
     etaMs = reported + durationMs;
     etaBasis = "docked";
@@ -363,6 +363,51 @@ export function vesselElsewhere(
   return { portId: port, reportedAt: position.reportedAt };
 }
 
+/** Marge avant de parler de retard : un départ peut être constaté avec quelques minutes d'écart. */
+const HOLD_GRACE_MINUTES = 20;
+
+/**
+ * Navire à l'arrêt à son port de départ après l'heure prévue, sans départ constaté.
+ * `fresh` : signal récent, postérieur à l'heure prévue, donc « encore à quai ».
+ * Sinon, seul le dernier signal est connu : le départ n'est ni confirmé ni exclu.
+ */
+export function departureHold(
+  departure: Pick<Departure, "id" | "departure_at" | "arrival_at" | "duration_minutes" | "status">,
+  position: LivePosition,
+  departurePort: Pick<Port, "longitude" | "latitude"> | null | undefined,
+  now: number,
+): { fresh: boolean; reportedAt: string; overdueMinutes: number } | null {
+  if (!departurePort || departure.status === "cancelled" || !position.reportedAt) return null;
+  if (position.atdAt && position.eventDepartureId === departure.id) return null;
+  const start = Date.parse(departure.departure_at);
+  const reported = Date.parse(position.reportedAt);
+  const end = departure.arrival_at
+    ? Date.parse(departure.arrival_at)
+    : start + (departure.duration_minutes ?? 0) * 60_000;
+  const overdueMinutes = (now - start) / 60_000;
+  if (
+    !Number.isFinite(start) ||
+    !Number.isFinite(reported) ||
+    overdueMinutes < HOLD_GRACE_MINUTES ||
+    now >= end ||
+    reported > now + 60_000 ||
+    now - reported > LIVE_MAX_AGE_MINUTES * 60_000 ||
+    position.speedKnots === null ||
+    position.speedKnots >= 1.5
+  )
+    return null;
+  const km = haversineKm(
+    [position.longitude, position.latitude],
+    [departurePort.longitude, departurePort.latitude],
+  );
+  if (km >= PORT_RADIUS_KM) return null;
+  return {
+    fresh: reported > start && now - reported <= FRESH_SIGNAL_MINUTES * 60_000,
+    reportedAt: position.reportedAt,
+    overdueMinutes: Math.round(overdueMinutes),
+  };
+}
+
 /** Rattachement unique ; aucun événement d'une ancienne rotation ne doit être réutilisé. */
 export function departureForSignal(
   departures: Departure[],
@@ -413,6 +458,8 @@ export interface TrackingTime {
   scheduledIso: string | null;
   kind: TimeKind;
   shiftMinutes: number | null;
+  /** Navire encore à quai au départ : `iso` est un minimum, pas une heure sûre. */
+  notBefore?: boolean;
   /** Arrivée vue (navire à quai) sans heure exacte : `iso` est l'heure du signal, au plus tard. */
   seenOnly?: boolean;
 }
@@ -473,7 +520,11 @@ export function trackingTimes(departure: Departure, live?: LiveShip | null) {
   );
   return {
     departure: make(departure.departure_at, actualDeparture, null),
-    arrival: seenArrived ? { ...arrival, seenOnly: true, shiftMinutes: null } : arrival,
+    arrival: seenArrived
+      ? { ...arrival, seenOnly: true, shiftMinutes: null }
+      : sameCrossing && live?.etaBasis === "docked"
+        ? { ...arrival, notBefore: true }
+        : arrival,
   };
 }
 
@@ -502,20 +553,21 @@ export function physicalStatus(
   const etaMinutes = speed >= 1.5 ? toKm / ((speed * KNOT_MS) / 1000) / 60 : Infinity;
   const ata = position.ataAt ? Date.parse(position.ataAt) : NaN;
   const sinceArrival = Number.isFinite(ata) ? (now - ata) / 60_000 : Infinity;
-  if (toKm < 2 && speed < 1.5 && sinceArrival >= 0 && sinceArrival <= 90)
+  if (toKm < PORT_RADIUS_KM && speed < 1.5 && sinceArrival >= 0 && sinceArrival <= 90)
     return { code: "disembarking", label: "Débarquement en cours", tone: "info" };
-  if (toKm < 1 && speed < 1.5) return { code: "docked", label: "Accosté à quai", tone: "info" };
-  if (fromKm < 3 && speed >= 3)
+  if (toKm < PORT_RADIUS_KM && speed < 1.5)
+    return { code: "docked", label: "Accosté à quai", tone: "info" };
+  if (fromKm < PORT_RADIUS_KM && speed >= 3)
     return { code: "departing", label: "Appareillage en cours", tone: "warning" };
   if (toKm < 15 && etaMinutes < 45)
     return { code: "approaching", label: "En approche", tone: "warning" };
-  if (fromKm < 2 && speed < 1.5 && hoursToDeparture >= 1 && hoursToDeparture <= 3)
+  if (fromKm < PORT_RADIUS_KM && speed < 1.5 && hoursToDeparture >= 1 && hoursToDeparture <= 3)
     return { code: "boarding", label: "Embarquement en cours", tone: "info" };
-  if (fromKm < 2 && speed < 1.5 && hoursToDeparture >= 0 && hoursToDeparture < 1)
+  if (fromKm < PORT_RADIUS_KM && speed < 1.5 && hoursToDeparture >= 0 && hoursToDeparture < 1)
     return { code: "boarding_closed", label: "Embarquement clos", tone: "warning" };
   if (nearestPortKm > 15 && speed >= 3) return { code: "at_sea", label: "En mer", tone: "success" };
   // Arrêté en rade, hors du quai : attente d'autorisation d'accostage.
-  if (speed < 1.5 && nearestPortKm >= 2 && nearestPortKm <= 15)
+  if (speed < 1.5 && nearestPortKm >= PORT_RADIUS_KM && nearestPortKm <= 15)
     return { code: "anchored", label: "Au mouillage · en attente", tone: "warning" };
   return { code: "unknown", label: "Position AIS reçue", tone: "muted" };
 }

@@ -18,13 +18,15 @@ function Time({ time, label, zone }: { time: TrackingTime; label: string; zone: 
           ? label === "Arrivée"
             ? `constatée${isAdmin ? " (AIS)" : ""}`
             : `constaté${isAdmin ? " (AIS)" : ""}`
-          : time.kind === "estimated"
-            ? label === "Arrivée"
-              ? `estimée${isAdmin ? " (AIS)" : ""}`
-              : `estimé${isAdmin ? " (AIS)" : ""}`
-            : label === "Arrivée"
-              ? "prévue"
-              : "prévu"}
+          : time.notBefore
+            ? "pas avant"
+            : time.kind === "estimated"
+              ? label === "Arrivée"
+                ? `estimée${isAdmin ? " (AIS)" : ""}`
+                : `estimé${isAdmin ? " (AIS)" : ""}`
+              : label === "Arrivée"
+                ? "prévue"
+                : "prévu"}
       </p>
       <p className="text-sm font-bold tabular-nums text-foreground">
         {time.seenOnly ? "À quai" : time.iso ? formatDateTime(time.iso, zone) : "À confirmer"}
@@ -46,7 +48,9 @@ function Time({ time, label, zone }: { time: TrackingTime; label: string; zone: 
             ? "En avance de "
             : time.kind === "observed"
               ? "Écart constaté : +"
-              : "Retard estimé de "}
+              : time.notBefore
+                ? "Retard d'au moins "
+                : "Retard estimé de "}
           {formatDuration(Math.abs(shift))}
         </p>
       ) : null}

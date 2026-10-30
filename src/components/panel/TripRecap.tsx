@@ -132,30 +132,36 @@ export function TripRecap({
   const cancelled = departure.status === "cancelled";
   const arrived =
     times.arrival.kind === "observed" || (arriveIso ? Date.parse(arriveIso) < now : false);
-  const atSea = !arrived && (progress.signal?.phase === "sea" || Date.parse(departIso) < now);
+  const { hold } = progress;
+  const atSea =
+    !arrived && !hold && (progress.signal?.phase === "sea" || Date.parse(departIso) < now);
   const status = cancelled
     ? { tone: "bad", label: "Annulée" }
     : arrived
       ? { tone: "done", label: "Arrivée" }
-      : atSea
-        ? { tone: "live", label: "En mer" }
-        : shift !== null && shift >= 5
-          ? { tone: "warn", label: `Retard ≈ ${formatDuration(shift)}` }
-          : departure.status === "modified"
-            ? { tone: "warn", label: "Horaire modifié" }
-            : { tone: "ok", label: "Prévue" };
+      : hold
+        ? { tone: "warn", label: hold.fresh ? "Encore à quai" : "Départ à confirmer" }
+        : atSea
+          ? { tone: "live", label: "En mer" }
+          : shift !== null && shift >= 5
+            ? { tone: "warn", label: `Retard ≈ ${formatDuration(shift)}` }
+            : departure.status === "modified"
+              ? { tone: "warn", label: "Horaire modifié" }
+              : { tone: "ok", label: "Prévue" };
   const days = daysUntil(departIso, fromZone);
   const countdown =
-    cancelled || arrived || atSea
+    cancelled || arrived || atSea || hold
       ? null
       : days <= 0
         ? "Aujourd’hui"
         : days === 1
           ? "Demain"
           : `J-${days}`;
+  // Arrivée « pas avant » : un minimum, la durée de traversée reste celle de l'horaire.
+  const durationEnd = times.arrival.notBefore ? times.arrival.scheduledIso : arriveIso;
   const duration =
-    arriveIso && Date.parse(arriveIso) > Date.parse(departIso)
-      ? Math.round((Date.parse(arriveIso) - Date.parse(departIso)) / 60_000)
+    durationEnd && Date.parse(durationEnd) > Date.parse(departIso)
+      ? Math.round((Date.parse(durationEnd) - Date.parse(departIso)) / 60_000)
       : departure.duration_minutes;
 
   // Ce qui se passe : même calcul que sur les fiches port et bateau.
@@ -256,6 +262,7 @@ export function TripRecap({
             className="bw-recap__end bw-recap__end--to"
             onClick={() => onSelect({ type: "port", id: to.id })}
           >
+            {times.arrival.notBefore ? <small>pas avant</small> : null}
             <strong>
               {arriveIso ? time(arriveIso, toZone) : "—"}
               {nextDay ? <sup>+1</sup> : null}
@@ -268,7 +275,7 @@ export function TripRecap({
           <p className="bw-recap__shift">
             Prévu à {time(times.departure.scheduledIso, fromZone)} ·{" "}
             {shift > 0
-              ? `retard estimé ${formatDuration(shift)}`
+              ? `${times.arrival.notBefore ? "retard d'au moins" : "retard estimé"} ${formatDuration(shift)}`
               : `avance ${formatDuration(-shift)}`}
           </p>
         ) : null}

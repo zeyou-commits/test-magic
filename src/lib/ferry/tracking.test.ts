@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  departureHold,
   departureForSignal,
   estimateArrival,
   dockedAt,
@@ -385,5 +386,73 @@ describe("projection de position sans déplacement fictif", () => {
       projectedPosition({ ...position, reportedAt: new Date(now + 3600_000).toISOString() }, now),
     ).toEqual([2, 37]);
     expect(projectedPosition({ ...position, speedKnots: 100 }, now + 3600_000)).toEqual([2, 37]);
+  });
+});
+
+describe("départ retardé à quai", () => {
+  const marseille = { longitude: 5.36, latitude: 43.3 };
+  const dep = {
+    id: "d",
+    departure_at: "2026-10-30T09:00:00Z",
+    arrival_at: "2026-10-31T07:00:00Z",
+    duration_minutes: null,
+    status: "scheduled" as const,
+  };
+  // Terminal de Marseille : 4,3 km du point « port ».
+  const quay = (reportedAt: string, speedKnots: number | null = 0) =>
+    ({
+      mmsi: 1,
+      vesselName: null,
+      status: "5",
+      latitude: 43.337405,
+      longitude: 5.34465,
+      speedKnots,
+      courseDeg: null,
+      reportedAt,
+      fetchedAt: reportedAt,
+    }) as Parameters<typeof departureHold>[1];
+  const at = (iso: string) => Date.parse(iso);
+
+  it("signal récent après l'heure prévue : encore à quai, et une arrivée minimale", () => {
+    const now = at("2026-10-30T10:00:00Z");
+    const position = quay("2026-10-30T09:52:00Z");
+    expect(departureHold(dep, position, marseille, now)).toMatchObject({
+      fresh: true,
+      overdueMinutes: 60,
+    });
+    expect(
+      estimateCrossingArrival(position, dep, marseille, { longitude: 3, latitude: 36.8 }, now),
+    ).toMatchObject({ etaBasis: "docked", etaIso: "2026-10-31T07:52:00.000Z" });
+  });
+  it("signal ancien : départ non confirmé", () => {
+    expect(
+      departureHold(dep, quay("2026-10-30T08:50:00Z"), marseille, at("2026-10-30T10:00:00Z")),
+    ).toMatchObject({ fresh: false });
+  });
+  it("pas de retard avant 20 min, en mouvement, ou loin du port", () => {
+    expect(
+      departureHold(dep, quay("2026-10-30T09:10:00Z"), marseille, at("2026-10-30T09:15:00Z")),
+    ).toBeNull();
+    expect(
+      departureHold(dep, quay("2026-10-30T09:50:00Z", 12), marseille, at("2026-10-30T10:00:00Z")),
+    ).toBeNull();
+    expect(
+      departureHold(
+        dep,
+        quay("2026-10-30T09:50:00Z"),
+        { longitude: 3, latitude: 36.8 },
+        at("2026-10-30T10:00:00Z"),
+      ),
+    ).toBeNull();
+  });
+  it("départ constaté sur cette traversée : plus de retard à quai", () => {
+    expect(
+      departureHold(
+        dep,
+        { ...quay("2026-10-30T09:50:00Z"), atdAt: "2026-10-30T09:40:00Z", eventDepartureId: "d" },
+        marseille,
+        at("2026-10-30T10:00:00Z"),
+      ),
+    ).toBeNull();
   });
 });

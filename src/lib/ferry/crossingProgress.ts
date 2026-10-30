@@ -1,4 +1,4 @@
-import { haversineKm, trackingTimes, type LiveShip } from "./tracking";
+import { departureHold, haversineKm, trackingTimes, type LiveShip } from "./tracking";
 import type { Departure, Port } from "./types";
 
 /** The card never invents a duration or interprets a timetable as a confirmed position. */
@@ -20,25 +20,33 @@ export function crossingProgress(
       ? start + departure.duration_minutes * 60_000
       : NaN;
   const scheduled = Number.isFinite(start) && Number.isFinite(end) && end > start;
+  // Encore à quai : aucun avancement. Dernier signal à quai trop ancien : on ne sait pas.
+  const hold = signal ? departureHold(departure, signal.position, from, now) : null;
   const ratio =
     departure.status === "cancelled"
       ? null
-      : times.arrival.kind === "observed"
-        ? 1
-        : geographic
-          ? 1 - signal.remainingKm! / total
-          : scheduled
-            ? (now - start) / (end - start)
-            : null;
+      : hold
+        ? hold.fresh
+          ? 0
+          : null
+        : times.arrival.kind === "observed"
+          ? 1
+          : geographic
+            ? 1 - signal.remainingKm! / total
+            : scheduled
+              ? (now - start) / (end - start)
+              : null;
   return {
     times,
     ratio: ratio === null ? null : Math.max(0, Math.min(1, ratio)),
-    source:
-      times.arrival.kind === "observed"
+    source: hold
+      ? "Signal AIS à quai"
+      : times.arrival.kind === "observed"
         ? "Arrivée constatée (AIS)"
         : geographic
           ? "Position AIS · distance indicative"
           : "Repère horaire",
     signal,
+    hold,
   };
 }

@@ -1,12 +1,15 @@
 import { useQuery } from "@tanstack/react-query";
 import type { Departure } from "@/lib/ferry/types";
-import { formatAge, vesselElsewhere } from "@/lib/ferry/tracking";
+import { departureHold, formatAge, vesselElsewhere } from "@/lib/ferry/tracking";
+import { formatDateParts } from "@/lib/ferry/format";
+import { portTimeZone } from "@/lib/ferry/time";
 import { portsQuery, routesQuery, vesselsQuery } from "@/lib/ferry/queries";
 import { vesselPositionsQuery } from "@/lib/ferry/useLiveShips";
 
 /**
  * « Le navire est encore à Marseille » : le dernier signal AIS (moins de 6 h) le place à quai
- * dans un autre port que celui de ce départ. Rien ne s'affiche sinon.
+ * dans un autre port que celui de ce départ, ou encore à son port de départ après l'heure prévue.
+ * Rien ne s'affiche sinon.
  */
 export function VesselElsewhereNotice({ departure }: { departure: Departure }) {
   const { data: positions = [] } = useQuery(vesselPositionsQuery);
@@ -18,7 +21,35 @@ export function VesselElsewhereNotice({ departure }: { departure: Departure }) {
   if (!vessel || !position) return null;
   const now = Date.now();
   const elsewhere = vesselElsewhere(departure, position, routes, now, ports);
-  if (!elsewhere) return null;
+  if (!elsewhere) {
+    const from = ports.find(
+      (p) => p.id === routes.find((r) => r.id === departure.route_id)?.departure_port_id,
+    );
+    const hold = departureHold(departure, position, from, now);
+    if (!hold || !from) return null;
+    return (
+      <p
+        role="status"
+        className="mt-3 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs leading-relaxed text-amber-900"
+      >
+        {hold.fresh ? (
+          <>
+            <strong>
+              Encore à quai à {formatDateParts(hold.reportedAt, portTimeZone(from)).time}
+            </strong>{" "}
+            selon le signal AIS. Départ probablement retardé : vérifiez auprès de la compagnie.
+          </>
+        ) : (
+          <>
+            <strong>
+              Dernier signal à quai {formatAge((now - Date.parse(hold.reportedAt)) / 60_000)}
+            </strong>
+            . Départ non confirmé : vérifiez auprès de la compagnie.
+          </>
+        )}
+      </p>
+    );
+  }
   const port = ports.find((p) => p.id === elsewhere.portId)?.name ?? "un autre port";
   const started = now >= Date.parse(departure.departure_at);
   return (

@@ -326,7 +326,10 @@ export function TripRecap({
       {/* 2. Ce qui se passe, d'un coup d'œil */}
       <LivePulse info={info} onOpen={openLive} onReport={upcoming || atSea ? report : undefined} />
       {!cancelled ? <VesselElsewhereNotice departure={departure} /> : null}
-      {!cancelled && upcoming ? <HelpRequests kind="departure" scopeId={departure.id} /> : null}
+      {/* L'entraide sert au port, le jour même : y compris si le départ est retardé. */}
+      {!cancelled && !arrived && !atSea && (days === 0 || daysUntil(departure.departure_at, fromZone) === 0) ? (
+        <HelpRequests kind="departure" scopeId={departure.id} />
+      ) : null}
 
       {/* 3. Où en êtes-vous ? (une ligne tant que ce n'est pas la veille) */}
       {!cancelled && myDeparture ? (

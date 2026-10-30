@@ -1,7 +1,14 @@
 import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { fleetDeparturesQuery, upcomingDeparturesQuery, portsQuery, routesQuery, vesselsQuery } from "./queries";
+import {
+  fleetDeparturesQuery,
+  upcomingDeparturesQuery,
+  portsQuery,
+  routesQuery,
+  vesselsQuery,
+} from "./queries";
 import { buildFleet, type FleetShip } from "./fleet";
+import { immobilizedVessels, incidentsQuery } from "./incidents";
 import { useLiveShips } from "./useLiveShips";
 
 let shiftMs: number | null = null;
@@ -24,12 +31,15 @@ export function useFleet(): FleetShip[] {
   // fasse disparaître un navire pourtant associé à une traversée publiée.
   const { data: upcomingDepartures = [] } = useQuery(upcomingDeparturesQuery());
   const allDepartures = useMemo(() => {
-    const byId = new Map([...departures, ...upcomingDepartures].map((departure) => [departure.id, departure]));
+    const byId = new Map(
+      [...departures, ...upcomingDepartures].map((departure) => [departure.id, departure]),
+    );
     return [...byId.values()];
   }, [departures, upcomingDepartures]);
   const { data: routes = [] } = useQuery(routesQuery);
   const { data: ports = [] } = useQuery(portsQuery);
   const { data: vessels = [] } = useQuery(vesselsQuery);
+  const { data: incidents = [] } = useQuery(incidentsQuery);
   const liveShips = useLiveShips();
   const [tick, setTick] = useState(0);
 
@@ -40,8 +50,17 @@ export function useFleet(): FleetShip[] {
   }, []);
 
   return useMemo(
-    () => buildFleet(allDepartures, routes, ports, vessels, liveShips, Date.now() + clockShiftMs()),
+    () =>
+      buildFleet(
+        allDepartures,
+        routes,
+        ports,
+        vessels,
+        liveShips,
+        Date.now() + clockShiftMs(),
+        immobilizedVessels(incidents),
+      ),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [allDepartures, routes, ports, vessels, liveShips, tick],
+    [allDepartures, routes, ports, vessels, liveShips, incidents, tick],
   );
 }

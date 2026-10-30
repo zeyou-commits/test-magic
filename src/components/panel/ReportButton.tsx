@@ -29,6 +29,7 @@ const reasons = [
   { value: "outdated_info", label: "Information obsolète" },
   { value: "missing_info", label: "Information manquante" },
   { value: "vessel_immobilized", label: "Navire immobilisé" },
+  { value: "incident_feedback", label: "Alerte navire inexacte ou dépassée" },
   { value: "inappropriate", label: "Contenu inapproprié" },
   { value: "other", label: "Autre" },
 ];

@@ -52,10 +52,10 @@ export function buildFleet(
   vessels: Vessel[],
   liveShips: LiveShip[],
   now: number,
+  /** Navires immobilisés selon un dossier public, avec leur port s'il est connu. */
+  immobilized: Map<string, string | null> = new Map(),
 ): FleetShip[] {
-  const routeById = new Map(
-    routes.map((route) => [route.id, route]),
-  );
+  const routeById = new Map(routes.map((route) => [route.id, route]));
   const portById = new Map(
     ports.filter((port) => port.status === "active").map((port) => [port.id, port]),
   );
@@ -150,9 +150,33 @@ export function buildFleet(
       return;
     }
 
-    const current = legs.find(
-      (leg) => leg.start <= now && now <= leg.end && !unreliable.has(leg.departure.id),
-    );
+    // Immobilisé selon un dossier : le port de la source prime sur l'horaire, jamais « en mer ».
+    const stopped = Boolean(vessel && immobilized.has(vessel.id));
+    const heldPort = stopped ? portById.get(immobilized.get(vessel!.id) ?? "") : undefined;
+    if (heldPort) {
+      const leg = legs.find((l) => l.start > now) ?? legs[legs.length - 1]!;
+      const ship: FleetShip = {
+        id: `dock:${key}`,
+        name,
+        vesselId: vessel!.id,
+        state: "docked",
+        source: "schedule",
+        lngLat: [heldPort.longitude, heldPort.latitude],
+        course: 90,
+        dx: 0,
+        dy: 0,
+        routeId: leg.route.id,
+        departureId: leg.departure.id,
+        portId: heldPort.id,
+      };
+      ships.push(ship);
+      dockedAt.set(heldPort.id, [...(dockedAt.get(heldPort.id) ?? []), ship]);
+      return;
+    }
+
+    const current = stopped
+      ? undefined
+      : legs.find((leg) => leg.start <= now && now <= leg.end && !unreliable.has(leg.departure.id));
     if (current) {
       const progress = Math.min(
         1,
@@ -222,7 +246,7 @@ export function buildFleet(
     const offshoreDown = port?.country_code !== "DZ"; // ports européens : mer au sud ; ports algériens : mer au nord
     list.sort((a, b) => a.name.localeCompare(b.name));
     list.forEach((ship, index) => {
-            // Collés au quai : léger éventail le long de la côte, sans partir au large.
+      // Collés au quai : léger éventail le long de la côte, sans partir au large.
       ship.dx = (index - (list.length - 1) / 2) * 18;
       ship.dy = offshoreDown ? 10 : -10;
       ship.course = index % 2 === 0 ? 90 : 270;

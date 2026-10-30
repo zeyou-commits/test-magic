@@ -1,3 +1,4 @@
+import { AlertTicker } from "./AlertTicker";
 import type { ReactNode } from "react";
 import { Link } from "@tanstack/react-router";
 import { UserMenu } from "./UserMenu";
@@ -142,6 +143,7 @@ export function SiteHeader() {
           </DropdownMenu>
         </div>
       </div>
+      <AlertTicker />
     </header>
   );
 }

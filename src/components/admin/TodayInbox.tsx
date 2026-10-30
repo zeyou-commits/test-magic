@@ -21,6 +21,7 @@ import {
   type PlanningIssue,
 } from "@/lib/admin/planning";
 import { runAutoAssign, visibleSuggestions } from "@/lib/admin/autoAssign";
+import { incidentContradiction, incidentsQuery } from "@/lib/ferry/incidents";
 import { vesselElsewhere } from "@/lib/ferry/tracking";
 import {
   aisHealthQuery,
@@ -132,6 +133,7 @@ export function TodayInbox({
 
   const withoutMmsi = vessels.filter((v) => v.status === "active" && !v.mmsi);
   const aisHealth = useQuery(aisHealthQuery).data;
+  const { data: incidents = [] } = useQuery(incidentsQuery);
   const staffReports = useQuery({
     queryKey: ["admin", "staff-reports"],
     queryFn: async () => {
@@ -459,6 +461,32 @@ export function TodayInbox({
         >
           <Button size="sm" asChild>
             <a href={staffReports.vessel ? "/admin?tab=incidents" : "/admin?tab=reports"}>Vérifier</a>
+          </Button>
+        </InboxCard>,
+      );
+    }
+    // Le signal AIS contredit un dossier public : à revoir, le dossier n'est jamais levé seul.
+    for (const incident of incidents) {
+      const vessel = vessels.find((v) => v.id === incident.vessel_id);
+      const conflict = vessel?.mmsi
+        ? incidentContradiction(incident, aisHealth.positions.get(Number(vessel.mmsi)), ports)
+        : null;
+      if (!conflict) continue;
+      cards.unshift(
+        <InboxCard
+          key={`incident-ais-${incident.id}`}
+          tone="danger"
+          icon={<AlertTriangle className="size-5" aria-hidden />}
+          kind="Dossier à revoir"
+          title={`${vessel?.name} : le signal AIS contredit le dossier`}
+          detail={
+            conflict === "moving"
+              ? "Le navire semble en mouvement alors qu'il est annoncé immobilisé."
+              : "Le navire semble ailleurs que dans le port du dossier."
+          }
+        >
+          <Button size="sm" asChild>
+            <a href="/admin?tab=incidents">Revoir le dossier</a>
           </Button>
         </InboxCard>,
       );

@@ -4848,3 +4848,69 @@ button.bw-tavatar:focus-visible {
     padding: 1px 0;
   }
 }
+
+/* ---------- Bandeau des alertes graves ---------- */
+.bw-alert-ticker {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 32px;
+  padding: 0 8px 0 12px;
+  background: #fff4d6;
+  border-top: 1px solid #f1d58a;
+  color: #5c3f00;
+  font-size: 12.5px;
+  font-weight: 600;
+}
+.bw-alert-ticker__window {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+}
+.bw-alert-ticker__track {
+  display: flex;
+  width: max-content;
+  animation: bw-alert-ticker linear infinite;
+}
+.bw-alert-ticker__group {
+  display: flex;
+  flex-shrink: 0;
+}
+.bw-alert-ticker__group button {
+  padding: 6px 48px 6px 0;
+  white-space: nowrap;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.bw-alert-ticker:hover .bw-alert-ticker__track,
+.bw-alert-ticker:focus-within .bw-alert-ticker__track,
+.bw-alert-ticker:active .bw-alert-ticker__track {
+  animation-play-state: paused;
+}
+.bw-alert-ticker__close {
+  display: grid;
+  flex-shrink: 0;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+}
+.bw-alert-ticker__close:hover {
+  background: #f8e4ab;
+}
+@keyframes bw-alert-ticker {
+  to {
+    transform: translateX(-50%);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .bw-alert-ticker__window {
+    overflow-x: auto;
+  }
+  .bw-alert-ticker__track {
+    animation: none;
+  }
+  .bw-alert-ticker__group[aria-hidden="true"] {
+    display: none;
+  }
+}

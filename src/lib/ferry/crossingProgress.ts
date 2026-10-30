@@ -8,6 +8,8 @@ export function crossingProgress(
   to: Port,
   live?: LiveShip | null,
   now = Date.now(),
+  /** Navire immobilisé selon un dossier : aucun avancement à montrer. */
+  stopped = false,
 ) {
   const signal = live?.departure.id === departure.id ? live : null;
   const times = trackingTimes(departure, signal);
@@ -23,7 +25,7 @@ export function crossingProgress(
   // Encore à quai : aucun avancement. Dernier signal à quai trop ancien : on ne sait pas.
   const hold = signal ? departureHold(departure, signal.position, from, now) : null;
   const ratio =
-    departure.status === "cancelled"
+    departure.status === "cancelled" || stopped
       ? null
       : hold
         ? hold.fresh

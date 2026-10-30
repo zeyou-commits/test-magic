@@ -139,7 +139,11 @@ async function notifyFeedback(deliver: Deliver, now: number) {
           key: `staff-report:${report.id}`,
           category: "reminders",
           title:
-            report.target_type === "vessel" ? "Navire signalé par un voyageur" : "Contact compagnie à vérifier",
+            report.reason === "incident_feedback"
+              ? "Alerte navire contestée par un voyageur"
+              : report.target_type === "vessel"
+                ? "Navire signalé par un voyageur"
+                : "Contact compagnie à vérifier",
           body: "Un voyageur a envoyé un signalement à vérifier. Rien n'est public sans votre validation.",
           url: report.target_type === "vessel" ? "/admin?tab=incidents" : "/admin?tab=reports",
         });

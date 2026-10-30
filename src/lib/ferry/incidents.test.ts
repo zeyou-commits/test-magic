@@ -4,9 +4,13 @@ vi.mock("@/integrations/supabase/client", () => ({ supabase: {} }));
 
 import {
   alternativeDepartures,
+  departureStopped,
   departuresToReview,
+  immobilizedVessels,
   impactOnDeparture,
+  incidentContradiction,
   incidentForVessel,
+  incidentHeadline,
   type VesselIncident,
 } from "./incidents";
 import type { Departure } from "./types";
@@ -54,6 +58,37 @@ describe("navire immobilisé", () => {
       now,
     );
     expect(list.map((d) => d.id)).toEqual(["ok"]);
+  });
+  it("dit où le navire est immobilisé, toujours selon la source", () => {
+    expect(
+      incidentHeadline(incident({ source_name: "Le Marin" }), "Tariq Ibn Ziyad", "Alicante"),
+    ).toBe("Tariq Ibn Ziyad : immobilisé à Alicante selon Le Marin");
+    expect(immobilizedVessels([incident({ location_port_id: "ali" })]).get("v1")).toBe("ali");
+    expect(immobilizedVessels([incident({ status: "reported" })]).size).toBe(0);
+  });
+  it("un départ commencé ou touché n'est plus présenté en cours, sauf s'il était fini avant", () => {
+    const open = incident({ created_at: "2026-10-27T00:00:00Z" });
+    const at = (id: string, iso: string) => ({ id, departure_at: iso, arrival_at: iso });
+    expect(departureStopped(open, at("d1", "2026-12-01T10:00:00Z"), now)).toBe(true);
+    expect(departureStopped(open, at("d2", "2026-10-30T10:00:00Z"), now)).toBe(true);
+    expect(departureStopped(open, at("d2", "2026-12-01T10:00:00Z"), now)).toBe(false);
+    expect(departureStopped(open, at("d2", "2026-10-20T10:00:00Z"), now)).toBe(false);
+  });
+  it("signale à l'équipe un AIS récent qui contredit le dossier", () => {
+    const open = incident({ updated_at: "2026-10-31T00:00:00Z", location_port_id: "ali" });
+    const ports = [{ id: "ali", longitude: -0.48, latitude: 38.33 }];
+    const signal = (reportedAt: string, speedKnots: number, longitude = -0.48) => ({
+      reportedAt,
+      speedKnots,
+      latitude: 38.33,
+      longitude,
+    });
+    expect(incidentContradiction(open, signal("2026-10-31T01:00:00Z", 14), ports)).toBe("moving");
+    expect(incidentContradiction(open, signal("2026-10-31T01:00:00Z", 0, 5), ports)).toBe(
+      "elsewhere",
+    );
+    expect(incidentContradiction(open, signal("2026-10-31T01:00:00Z", 0), ports)).toBeNull();
+    expect(incidentContradiction(open, signal("2026-10-30T01:00:00Z", 14), ports)).toBeNull();
   });
   it("propose d'autres départs : même liaison d'abord, jamais le navire immobilisé", () => {
     const routes = [

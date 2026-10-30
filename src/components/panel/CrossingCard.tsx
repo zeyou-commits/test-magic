@@ -1,6 +1,8 @@
 import { useAuth } from "@/hooks/useAuth";
 import { ArrowRight, Navigation, Waves } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
 import { crossingProgress } from "@/lib/ferry/crossingProgress";
+import { departureStopped, incidentForVessel, incidentsQuery } from "@/lib/ferry/incidents";
 import type { Departure, Port } from "@/lib/ferry/types";
 import { formatAge, type LiveShip } from "@/lib/ferry/tracking";
 import { portTimeZone } from "@/lib/ferry/time";
@@ -20,21 +22,29 @@ export function CrossingCard({
   live?: LiveShip | null | undefined;
 }) {
   const { isAdmin } = useAuth();
-  const progress = crossingProgress(departure, from, to, live);
-  const sourceLabel = isAdmin ? progress.source : "Avancement";
+  const { data: incidents = [] } = useQuery(incidentsQuery);
   const at = Date.now();
+  const stopped = departureStopped(
+    incidentForVessel(incidents, departure.vessel_id),
+    departure,
+    at,
+  );
+  const progress = crossingProgress(departure, from, to, live, at, stopped);
+  const sourceLabel = isAdmin ? progress.source : "Avancement";
   const status =
     departure.status === "cancelled"
       ? "Traversée annulée"
       : progress.times.arrival.kind === "observed"
         ? "Arrivée constatée"
-        : at < Date.parse(departure.departure_at) && progress.signal?.phase !== "sea"
-          ? "Prochaine traversée"
-          : progress.signal
-            ? progress.signal.phase === "sea"
-              ? "En mer"
-              : "Au port"
-            : "Traversée en cours";
+        : stopped
+          ? "Navire immobilisé"
+          : at < Date.parse(departure.departure_at) && progress.signal?.phase !== "sea"
+            ? "Prochaine traversée"
+            : progress.signal
+              ? progress.signal.phase === "sea"
+                ? "En mer"
+                : "Au port"
+              : "Traversée en cours";
   return (
     <section className="bw-crossing" aria-label="Avancement de la traversée">
       <div className="bw-crossing-top">

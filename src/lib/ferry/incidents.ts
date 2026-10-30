@@ -1,7 +1,8 @@
 import { queryOptions } from "@tanstack/react-query";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { supabase as typedSupabase } from "@/integrations/supabase/client";
-import type { Departure, RouteLine } from "./types";
+import { haversineKm, PORT_RADIUS_KM, type LivePosition } from "./tracking";
+import type { Departure, Port, RouteLine } from "./types";
 
 /** Tables du script « contacts_incidents_entraide », pas encore dans les types générés. */
 export const incidentsDb = typedSupabase as unknown as SupabaseClient;
@@ -17,6 +18,8 @@ export type VesselIncident = {
   source_name: string;
   source_url: string | null;
   verified_at: string | null;
+  /** Port où le navire est immobilisé selon la source (colonne absente avant le script). */
+  location_port_id?: string | null;
   report_id: string | null;
   created_at: string;
   updated_at: string;
@@ -52,6 +55,62 @@ export function incidentForVessel(
     (i) => i.vessel_id === vesselId && (isOpenIncident(i) || i.status === "resolved"),
   );
   return own.find(isOpenIncident) ?? own[0] ?? null;
+}
+
+/** Navires à ne plus placer en mer selon l'horaire, avec le port du dossier s'il est connu. */
+export function immobilizedVessels(incidents: VesselIncident[]) {
+  return new Map(
+    incidents.filter(isOpenIncident).map((i) => [i.vessel_id, i.location_port_id ?? null]),
+  );
+}
+
+/** Le texte public de l'alerte : toujours rattaché à sa source. */
+export function incidentHeadline(
+  incident: VesselIncident,
+  vesselName: string,
+  portName?: string | null,
+) {
+  const where = portName ? ` à ${portName}` : "";
+  if (incident.status === "confirmed")
+    return `${vesselName} : immobilisé${where} selon ${incident.source_name}`;
+  if (incident.status === "verifying")
+    return `${vesselName} : possible immobilisation${where}, en cours de vérification`;
+  return `${vesselName} : alerte levée`;
+}
+
+/**
+ * Un départ ne doit pas apparaître en cours : touché selon le dossier, ou déjà commencé alors
+ * que le navire reste immobilisé.
+ */
+export function departureStopped(
+  incident: VesselIncident | null,
+  departure: Pick<Departure, "id" | "departure_at" | "arrival_at">,
+  now = Date.now(),
+) {
+  if (!incident || !isOpenIncident(incident)) return false;
+  // Une traversée terminée avant le dossier reste une traversée terminée.
+  const end = Date.parse(departure.arrival_at ?? departure.departure_at);
+  if (end < Date.parse(incident.created_at)) return false;
+  return (
+    impactOnDeparture(incident, departure.id) !== "none" ||
+    Date.parse(departure.departure_at) <= now
+  );
+}
+
+/** Signal AIS postérieur au dossier qui le contredit : à revoir par l'équipe, jamais levé seul. */
+export function incidentContradiction(
+  incident: VesselIncident,
+  position:
+    Pick<LivePosition, "reportedAt" | "speedKnots" | "latitude" | "longitude"> | null | undefined,
+  ports: Pick<Port, "id" | "longitude" | "latitude">[],
+): "moving" | "elsewhere" | null {
+  if (!isOpenIncident(incident) || !position?.reportedAt) return null;
+  if (Date.parse(position.reportedAt) <= Date.parse(incident.updated_at)) return null;
+  if ((position.speedKnots ?? 0) >= 3) return "moving";
+  const port = ports.find((p) => p.id === incident.location_port_id);
+  if (!port) return null;
+  const km = haversineKm([position.longitude, position.latitude], [port.longitude, port.latitude]);
+  return km >= PORT_RADIUS_KM ? "elsewhere" : null;
 }
 
 /**

@@ -32,7 +32,13 @@ const impactLabel: Record<IncidentImpact, string> = {
   none: "Sans conséquence connue",
 };
 
-type ReportRow = { id: string; target_id: string; message: string | null; created_at: string };
+type ReportRow = {
+  id: string;
+  target_id: string;
+  reason: string;
+  message: string | null;
+  created_at: string;
+};
 type EventRow = {
   id: number;
   status: IncidentStatus;
@@ -66,7 +72,7 @@ export function IncidentsAdmin({ onPrepare }: { onPrepare: (prefill: MessagePref
     queryFn: async () => {
       const { data, error } = await db
         .from("reports")
-        .select("id, target_id, message, created_at")
+        .select("id, target_id, reason, message, created_at")
         .eq("target_type", "vessel")
         .eq("status", "new")
         .order("created_at", { ascending: false });
@@ -134,32 +140,42 @@ export function IncidentsAdmin({ onPrepare }: { onPrepare: (prefill: MessagePref
             Rien n'est public tant que vous ne l'avez pas validé.
           </p>
           <ul className="mt-2 divide-y divide-border">
-            {reports.data!.map((report) => (
-              <li key={report.id} className="flex flex-wrap items-center gap-2 py-2 text-sm">
-                <span className="min-w-52 flex-1">
-                  <strong>{nameOf(report.target_id)}</strong>
-                  {report.message ? ` : ${report.message}` : ""}
-                  <span className="block text-xs text-muted-foreground">
-                    {new Date(report.created_at).toLocaleString("fr-FR")}
+            {reports.data!.map((report) => {
+              const existing = active.find((i) => i.vessel_id === report.target_id);
+              return (
+                <li key={report.id} className="flex flex-wrap items-center gap-2 py-2 text-sm">
+                  <span className="min-w-52 flex-1">
+                    <strong>{nameOf(report.target_id)}</strong>
+                    {report.reason === "incident_feedback" ? " · alerte contestée" : ""}
+                    {report.message ? ` : ${report.message}` : ""}
+                    <span className="block text-xs text-muted-foreground">
+                      {new Date(report.created_at).toLocaleString("fr-FR")}
+                    </span>
                   </span>
-                </span>
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  disabled={dismiss.isPending}
-                  onClick={() => dismiss.mutate(report.id)}
-                >
-                  Écarter
-                </Button>
-                <Button
-                  size="sm"
-                  disabled={create.isPending}
-                  onClick={() => create.mutate({ vesselId: report.target_id, report })}
-                >
-                  Ouvrir un dossier
-                </Button>
-              </li>
-            ))}
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    disabled={dismiss.isPending}
+                    onClick={() => dismiss.mutate(report.id)}
+                  >
+                    Écarter
+                  </Button>
+                  {existing ? (
+                    <Button size="sm" onClick={() => setOpenId(existing.id)}>
+                      Voir le dossier
+                    </Button>
+                  ) : (
+                    <Button
+                      size="sm"
+                      disabled={create.isPending}
+                      onClick={() => create.mutate({ vesselId: report.target_id, report })}
+                    >
+                      Ouvrir un dossier
+                    </Button>
+                  )}
+                </li>
+              );
+            })}
           </ul>
         </section>
       )}
@@ -294,6 +310,7 @@ function IncidentDrawer({
   const [sourceName, setSourceName] = useState(incident.source_name);
   const [sourceUrl, setSourceUrl] = useState(incident.source_url ?? "");
   const [note, setNote] = useState(incident.public_note);
+  const [portId, setPortId] = useState(incident.location_port_id ?? "");
   const [verified, setVerified] = useState(incident.verified_at?.slice(0, 16) ?? "");
   const [impacts, setImpacts] = useState<Record<string, IncidentImpact>>(() =>
     Object.fromEntries(incident.bw_incident_departures.map((d) => [d.departure_id, d.impact])),
@@ -325,6 +342,7 @@ function IncidentDrawer({
           source_name: sourceName.trim(),
           source_url: sourceUrl.trim() || null,
           public_note: note.trim(),
+          location_port_id: portId || null,
           verified_at: verified ? new Date(verified).toISOString() : null,
           updated_at: new Date().toISOString(),
         })
@@ -382,6 +400,32 @@ function IncidentDrawer({
                 </option>
               ))}
             </select>
+            {status === "reported" ? (
+              <span className="text-xs font-normal text-amber-800">
+                Invisible du public : passez à « en cours de vérification » ou « immobilisé » pour
+                l'afficher.
+              </span>
+            ) : null}
+          </label>
+          <label className="grid gap-1 font-medium">
+            Port d'immobilisation
+            <select
+              value={portId}
+              onChange={(e) => setPortId(e.target.value)}
+              className="h-10 rounded-md border border-input bg-background px-2 font-normal"
+            >
+              <option value="">Inconnu</option>
+              {[...ports]
+                .sort((a, b) => a.name.localeCompare(b.name))
+                .map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {p.name}
+                  </option>
+                ))}
+            </select>
+            <span className="text-xs font-normal text-muted-foreground">
+              Le navire y est affiché sur la carte, sauf signal AIS récent.
+            </span>
           </label>
           <label className="grid gap-1 font-medium">
             Source (affichée : « immobilisé selon … »)

@@ -19,6 +19,7 @@ import {
   Timer,
 } from "lucide-react";
 import { crossingProgress } from "@/lib/ferry/crossingProgress";
+import { departureStopped, incidentForVessel, incidentsQuery } from "@/lib/ferry/incidents";
 import { getBoardingMilestones } from "@/lib/ferry/boarding";
 import { formatDuration } from "@/lib/ferry/format";
 import { dateKeyInZone, portTimeZone, zoneLabel } from "@/lib/ferry/time";
@@ -114,7 +115,9 @@ export function TripRecap({
   const heading = myDeparture ? "Ma traversée" : "Cette traversée";
   const fromZone = portTimeZone(from);
   const toZone = portTimeZone(to);
-  const progress = crossingProgress(departure, from, to, live);
+  const { data: incidents = [] } = useQuery(incidentsQuery);
+  const stopped = departureStopped(incidentForVessel(incidents, departure.vessel_id), departure);
+  const progress = crossingProgress(departure, from, to, live, Date.now(), stopped);
   const { times } = progress;
   const departIso = times.departure.iso ?? departure.departure_at;
   const car = getBoardingMilestones(departIso, from, {
@@ -134,20 +137,25 @@ export function TripRecap({
     times.arrival.kind === "observed" || (arriveIso ? Date.parse(arriveIso) < now : false);
   const { hold } = progress;
   const atSea =
-    !arrived && !hold && (progress.signal?.phase === "sea" || Date.parse(departIso) < now);
+    !arrived &&
+    !hold &&
+    !stopped &&
+    (progress.signal?.phase === "sea" || Date.parse(departIso) < now);
   const status = cancelled
     ? { tone: "bad", label: "Annulée" }
-    : arrived
+    : arrived && !stopped
       ? { tone: "done", label: "Arrivée" }
-      : hold
-        ? { tone: "warn", label: hold.fresh ? "Encore à quai" : "Départ à confirmer" }
-        : atSea
-          ? { tone: "live", label: "En mer" }
-          : shift !== null && shift >= 5
-            ? { tone: "warn", label: `Retard ≈ ${formatDuration(shift)}` }
-            : departure.status === "modified"
-              ? { tone: "warn", label: "Horaire modifié" }
-              : { tone: "ok", label: "Prévue" };
+      : stopped
+        ? { tone: "warn", label: "Navire immobilisé" }
+        : hold
+          ? { tone: "warn", label: hold.fresh ? "Encore à quai" : "Départ à confirmer" }
+          : atSea
+            ? { tone: "live", label: "En mer" }
+            : shift !== null && shift >= 5
+              ? { tone: "warn", label: `Retard ≈ ${formatDuration(shift)}` }
+              : departure.status === "modified"
+                ? { tone: "warn", label: "Horaire modifié" }
+                : { tone: "ok", label: "Prévue" };
   const days = daysUntil(departIso, fromZone);
   const countdown =
     cancelled || arrived || atSea || hold

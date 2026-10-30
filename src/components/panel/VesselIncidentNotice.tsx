@@ -5,6 +5,7 @@ import {
   alternativeDepartures,
   impactOnDeparture,
   incidentForVessel,
+  incidentHeadline,
   incidentsQuery,
   isOpenIncident,
   type IncidentImpact,
@@ -20,18 +21,10 @@ import {
   vesselsQuery,
 } from "@/lib/ferry/queries";
 import { CompanyContacts } from "./CompanyContacts";
+import { ReportButton } from "./ReportButton";
 import { safeExternalUrl } from "./shared";
 
 const day = (iso: string) => new Date(iso).toLocaleDateString("fr-FR");
-
-/** « Immobilisé selon [source] » : jamais de cause, jamais d'affirmation sans source. */
-function headline(incident: VesselIncident, vesselName: string) {
-  if (incident.status === "confirmed")
-    return `${vesselName} : immobilisé selon ${incident.source_name}`;
-  if (incident.status === "verifying")
-    return `${vesselName} : possible immobilisation, en cours de vérification`;
-  return `${vesselName} : alerte levée`;
-}
 
 function SourceLine({ incident }: { incident: VesselIncident }) {
   const href = safeExternalUrl(incident.source_url);
@@ -70,16 +63,18 @@ export function VesselIncidentNotice({
   vesselName: string;
 }) {
   const { data: incidents = [] } = useQuery(incidentsQuery);
+  const { data: ports = [] } = useQuery(portsQuery);
   const incident = incidentForVessel(incidents, vesselId);
   if (!incident) return null;
   const open = isOpenIncident(incident);
+  const port = ports.find((p) => p.id === incident.location_port_id)?.name;
   return (
     <div
       role="status"
       className={`rounded-xl border p-3 text-sm ${open ? "border-amber-300 bg-amber-50 text-amber-950" : "border-emerald-200 bg-emerald-50 text-emerald-900"}`}
     >
       <p className="flex items-center gap-2 font-semibold">
-        <CircleAlert size={16} aria-hidden /> {headline(incident, vesselName)}
+        <CircleAlert size={16} aria-hidden /> {incidentHeadline(incident, vesselName, port)}
       </p>
       {incident.public_note ? (
         <p className="mt-1 text-xs leading-relaxed">{incident.public_note}</p>
@@ -90,6 +85,17 @@ export function VesselIncidentNotice({
           Ouvrez votre traversée pour savoir si elle est concernée. Seule la compagnie décide du
           sort d'une réservation.
         </p>
+      ) : null}
+      {open ? (
+        <div className="mt-1">
+          <ReportButton
+            targetType="vessel"
+            targetId={vesselId}
+            label="Cette information n'est pas bonne ou a changé"
+            initialReason="incident_feedback"
+            variant="link"
+          />
+        </div>
       ) : null}
     </div>
   );
@@ -129,7 +135,12 @@ export function DepartureIncidentNotice({ departure }: { departure: Departure })
         className={`rounded-xl border p-3 text-sm ${open ? "border-amber-300 bg-amber-50 text-amber-950" : "border-emerald-200 bg-emerald-50 text-emerald-900"}`}
       >
         <p className="flex items-center gap-2 font-semibold">
-          <CircleAlert size={16} aria-hidden /> {headline(incident, vessel?.name ?? "Le navire")}
+          <CircleAlert size={16} aria-hidden />{" "}
+          {incidentHeadline(
+            incident,
+            vessel?.name ?? "Le navire",
+            ports.find((p) => p.id === incident.location_port_id)?.name,
+          )}
         </p>
         <p className="mt-1 text-xs font-medium leading-relaxed">
           {open ? impactText[impact] : "L'information a été levée : suivez les horaires publiés."}

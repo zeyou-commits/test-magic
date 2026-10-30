@@ -817,7 +817,7 @@ body:has(.bw-flash-sheet[data-state="open"]) .bw-header {
   position: absolute;
   z-index: 20;
   right: 1.25rem;
-  top: 14rem;
+  top: 17rem;
 }
 .bw-report-fab {
   display: grid;

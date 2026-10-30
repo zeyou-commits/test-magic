@@ -4373,17 +4373,16 @@ button.bw-tavatar:focus-visible {
   /* Devant le rond du cabas. */
   z-index: 2;
   position: absolute;
-  top: -12px;
-  left: 50%;
+  top: 16px;
+  left: calc(50% + 6px);
   display: inline-flex;
-  max-width: 92px;
+  width: 24px;
+  height: 24px;
   align-items: center;
-  gap: 3px;
-  transform: translateX(-50%);
+  justify-content: center;
   border-radius: 999px;
   background: white;
-  padding: 2px 7px 2px 2px;
-  box-shadow: 0 2px 8px #16324a33;
+  box-shadow: 0 1px 5px #16324a40;
   font-size: 9.5px;
   font-weight: 700;
   line-height: 1.2;
@@ -4395,8 +4394,8 @@ button.bw-tavatar:focus-visible {
   white-space: nowrap;
 }
 .bw-me-tab__bubble img {
-  width: 14px;
-  height: 14px;
+  width: 20px;
+  height: 20px;
   flex-shrink: 0;
   border-radius: 999px;
 }
@@ -4598,18 +4597,46 @@ button.bw-tavatar:focus-visible {
 /* ── Humeur sur l'avatar de l'en-tête (ordinateur) ── */
 .bw-usermenu-mood {
   position: absolute;
-  top: -4px;
-  right: -6px;
+  right: -7px;
+  bottom: -6px;
   display: grid;
-  width: 18px;
-  height: 18px;
+  width: 24px;
+  height: 24px;
   place-items: center;
   border-radius: 999px;
   background: white;
-  box-shadow: 0 1px 4px #16324a40;
+  box-shadow: 0 1px 5px #16324a40;
 }
-.bw-usermenu-mood img {
+.bw-usermenu-mood img,
+.bw-usermenu-moodchip img {
   border-radius: 999px;
+}
+/* Écran large : l'humeur se lit en entier à côté de l'avatar. */
+.bw-usermenu-moodchip {
+  display: none;
+  max-width: 170px;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 12px 3px 4px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: white;
+  color: var(--foreground);
+  font-size: 12.5px;
+  font-weight: 600;
+}
+.bw-usermenu-moodchip span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+@media (min-width: 1280px) {
+  .bw-usermenu-moodchip {
+    display: inline-flex;
+  }
+  .bw-usermenu-mood {
+    display: none;
+  }
 }
 
 /* ── Ambiance d'un port ou d'un bateau sur la carte (zoom fort) ── */

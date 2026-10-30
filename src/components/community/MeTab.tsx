@@ -77,10 +77,7 @@ export function MeTab({ className }: { className: string }) {
       >
         <span className="bw-me-tab__bubble" data-empty={!me.mood || undefined} aria-hidden>
           {me.mood ? (
-            <>
-              <img src={me.mood.image} alt="" width={14} height={14} />
-              <span>{me.mood.label}</span>
-            </>
+            <img src={me.mood.image} alt="" width={20} height={20} />
           ) : (
             <Plus size={11} />
           )}

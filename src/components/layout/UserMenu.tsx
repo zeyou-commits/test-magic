@@ -84,8 +84,14 @@ export function UserMenu({
             aria-label={
               traveller?.mood ? `Mon compte · humeur : ${traveller.mood.label}` : "Mon compte"
             }
-            className="relative rounded-full ring-offset-2 ring-offset-card outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            className="relative flex items-center gap-2 rounded-full ring-offset-2 ring-offset-card outline-none focus-visible:ring-2 focus-visible:ring-ring"
           >
+            {traveller?.mood ? (
+              <span className="bw-usermenu-moodchip" aria-hidden>
+                <img src={traveller.mood.image} alt="" width={22} height={22} />
+                <span>{traveller.mood.label}</span>
+              </span>
+            ) : null}
             <Avatar className={`${compact ? "size-8" : "size-9"} border border-border`}>
               {/* Mon cabas (profil voyageur) ; sans profil, les initiales. */}
               {traveller ? (
@@ -102,7 +108,7 @@ export function UserMenu({
             </Avatar>
             {traveller?.mood ? (
               <span className="bw-usermenu-mood" title={traveller.mood.label} aria-hidden>
-                <img src={traveller.mood.image} alt="" width={14} height={14} />
+                <img src={traveller.mood.image} alt="" width={20} height={20} />
               </span>
             ) : null}
           </button>

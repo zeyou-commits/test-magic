@@ -1,5 +1,5 @@
 // Fuseaux horaires des ports.
-// Règle Batogo : une heure de départ s'affiche toujours dans l'heure locale du port
+// Règle BledWay : une heure de départ s'affiche toujours dans l'heure locale du port
 // de départ, et une heure d'arrivée dans l'heure locale du port d'arrivée.
 // Ainsi, un voyageur qui consulte depuis Alger, Paris ou Londres voit la même heure,
 // celle imprimée sur son billet.

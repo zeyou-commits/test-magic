@@ -47,6 +47,21 @@ describe("lecture du fichier", () => {
       departure: { departure_at: "2026-11-06T17:30:00.000Z", duration_minutes: 660 },
     });
   });
+
+  it("garde le lendemain quand l'heure d'arrivée suit de peu l'heure de départ", () => {
+    const [row] = readRows([{ date: "2026-11-06", heure: "18:30", heure_arrivee: "20:30" }]);
+    const result = toDeparture(
+      row!,
+      {
+        fromPort: { id: "set", country_code: "FR" },
+        toPort: { id: "bja", country_code: "DZ" },
+        routeId: "r",
+        companyId: "c",
+      },
+      1560,
+    );
+    expect(result).toMatchObject({ departure: { duration_minutes: 26 * 60 } });
+  });
 });
 
 const vessels = [

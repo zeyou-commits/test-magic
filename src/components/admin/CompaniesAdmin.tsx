@@ -373,10 +373,6 @@ function CompanyEditor({
               Ouvrir la page de vérification ↗
             </a>
           ) : null}
-          <label className="grid gap-1 text-xs font-medium">
-            Vérifié le (vide : affiché « non vérifié »)
-            <Input type="date" value={contactVerified} onChange={(e) => setContactVerified(e.target.value)} />
-          </label>
         </fieldset>
         <label className="grid gap-1.5 text-sm font-medium">
           Description

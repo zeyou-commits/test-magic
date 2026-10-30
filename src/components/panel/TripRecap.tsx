@@ -26,7 +26,7 @@ import { dateKeyInZone, portTimeZone, zoneLabel } from "@/lib/ferry/time";
 import type { LiveShip } from "@/lib/ferry/tracking";
 import type { Company, Departure, Port, Selection, Vessel } from "@/lib/ferry/types";
 import { requestQuickReport } from "@/components/map/QuickReport";
-import { BookingLink, ReliabilityNote } from "./shared";
+import { BookingLink, isInternalSource, SourceNote } from "./shared";
 import { FlashFeed } from "./FlashFeed";
 import { hasSignalFocus, LivePulse, revealLive, useLiveInfo } from "./LivePulse";
 import { VesselElsewhereNotice } from "./VesselElsewhereNotice";
@@ -499,15 +499,12 @@ export function TripRecap({
       )}
 
       <footer className="bw-recap__foot">
-        <details>
-          <summary>Source des horaires</summary>
-          <ReliabilityNote
-            reliability={departure.reliability}
-            sourceName={departure.source_name}
-            sourceUrl={departure.source_url}
-            verifiedAt={departure.last_verified_at}
-          />
-        </details>
+        {departure.source_name && !isInternalSource(departure.source_name) ? (
+          <details>
+            <summary>Source des horaires</summary>
+            <SourceNote sourceName={departure.source_name} sourceUrl={departure.source_url} />
+          </details>
+        ) : null}
         <ReportButton targetType="departure" targetId={departure.id} variant="link" />
       </footer>
     </article>

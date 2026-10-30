@@ -1,5 +1,3 @@
-import type { Reliability } from "./types";
-
 /** Majuscule à la première lettre seulement (règle typographique française). */
 export function capitalizeFirst(value: string): string {
   return value ? value.charAt(0).toUpperCase() + value.slice(1) : value;
@@ -65,18 +63,6 @@ export function formatDateParts(iso: string, timeZone?: string) {
     ),
   };
 }
-
-export const reliabilityLabel: Record<Reliability, string> = {
-  verified: "Vérifié",
-  to_verify: "À vérifier",
-  possibly_outdated: "Potentiellement obsolète",
-};
-
-export const reliabilityTone: Record<Reliability, string> = {
-  verified: "text-success",
-  to_verify: "text-warning",
-  possibly_outdated: "text-destructive",
-};
 
 export const facilityLabels: Record<string, string> = {
   priere: "Lieu de prière",

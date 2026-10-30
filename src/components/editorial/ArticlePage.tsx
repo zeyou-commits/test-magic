@@ -28,7 +28,7 @@ export function ArticlePage({ article }: { article: Article }) {
           mainEntityOfPage: absoluteUrl(`/guide/${article.slug}`),
           inLanguage: "fr",
           dateModified: EDITORIAL_DATE,
-          author: { "@type": "Organization", name: "Batogo", url: absoluteUrl("/a-propos") },
+          author: { "@type": "Organization", name: "BledWay", url: absoluteUrl("/a-propos") },
           publisher: { "@id": absoluteUrl("/#organisation") },
           citation: article.sources.map((id) => sources[id]?.url).filter(Boolean),
         }}
@@ -42,7 +42,7 @@ export function ArticlePage({ article }: { article: Article }) {
       <article>
         <EditorialHero label="Dossier pratique" title={article.title} intro={article.description} />
         <p className="mb-6 text-sm text-muted-foreground">
-          Batogo · Dossier documentaire ·{" "}
+          BledWay · Dossier documentaire ·{" "}
           <time dateTime={EDITORIAL_DATE}>Mis à jour le {displayDate(EDITORIAL_DATE)}</time>
         </p>
         <ReadingLayout sections={article.sections}>

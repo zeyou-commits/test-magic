@@ -4,7 +4,7 @@ import { useSuspenseQuery } from "@tanstack/react-query";
 import { Card, PageHero, SiteLayout } from "@/components/layout/SiteLayout";
 import { portsQuery, routesQuery } from "@/lib/ferry/queries";
 
-const title = "Ports de ferry vers l'Algérie — Batogo";
+const title = "Ports de ferry vers l'Algérie — BledWay";
 const description =
   "Tous les ports desservis : Alger, Oran, Béjaïa, Skikda, Annaba, Marseille, Sète, Alicante, Barcelone et plus. Lignes, durées et services de chaque port.";
 

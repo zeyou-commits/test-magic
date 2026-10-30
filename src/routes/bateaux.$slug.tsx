@@ -22,12 +22,12 @@ export const Route = createFileRoute("/bateaux/$slug")({
   head: ({ loaderData: v }) =>
     v
       ? seoHead(
-          `${v.name} : caractéristiques et voyage à bord | Batogo`,
+          `${v.name} : caractéristiques et voyage à bord | BledWay`,
           v.summary,
           `/bateaux/${v.slug}`,
         )
       : {
-          meta: [{ title: "Bateau introuvable | Batogo" }, { name: "robots", content: "noindex" }],
+          meta: [{ title: "Bateau introuvable | BledWay" }, { name: "robots", content: "noindex" }],
         },
   component: Boat,
 });

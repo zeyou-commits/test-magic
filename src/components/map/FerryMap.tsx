@@ -477,7 +477,7 @@ export default function FerryMap({
           map.setPaintProperty(layer.id, "text-halo-color", "#f6f2ea");
         }
       }
-      // Les ports sont étiquetés par Batogo ; on masque les villes du fond de carte pour éviter les doublons.
+      // Les ports sont étiquetés par BledWay ; on masque les villes du fond de carte pour éviter les doublons.
       ["label_other", "label_village", "label_town", "label_city", "label_city_capital"].forEach(
         (layerId) => {
           if (map.getLayer(layerId)) map.setLayoutProperty(layerId, "visibility", "none");

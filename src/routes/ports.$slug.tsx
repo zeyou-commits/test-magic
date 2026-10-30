@@ -25,10 +25,10 @@ export const Route = createFileRoute("/ports/$slug")({
   head: ({ loaderData }) => {
     if (!loaderData) {
       return {
-        meta: [{ title: "Port indisponible — Batogo" }, { name: "robots", content: "noindex" }],
+        meta: [{ title: "Port indisponible — BledWay" }, { name: "robots", content: "noindex" }],
       };
     }
-    const title = `Ferry ${loaderData.name} (${loaderData.country}) — lignes et durées | Batogo`;
+    const title = `Ferry ${loaderData.name} (${loaderData.country}) — lignes et durées | BledWay`;
     const description = `Traversées en ferry au départ et à l'arrivée du port de ${loaderData.name} : lignes desservies, durées, compagnies et services du port.`;
     return seoHead(title, description, `/ports/${loaderData.slug}`);
   },

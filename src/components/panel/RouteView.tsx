@@ -13,7 +13,7 @@ import { formatDateTime, formatDuration, weekdayLabels } from "@/lib/ferry/forma
 import { portTimeZone, zoneLabel } from "@/lib/ferry/time";
 import type { RouteLine, Selection } from "@/lib/ferry/types";
 import { Button } from "@/components/ui/button";
-import { BookingLink, DemoBadge, EmptyNote, PanelHeader, ReliabilityNote, Section } from "./shared";
+import { BookingLink, DemoBadge, EmptyNote, PanelHeader, Section, SourceNote } from "./shared";
 import { ReportButton } from "./ReportButton";
 
 export function RouteView({
@@ -183,12 +183,7 @@ export function RouteView({
                     {company ? ` · ${company.name}` : ""}
                     {vessel ? ` · ${vessel.name}` : ""} <VesselAlertTag vesselId={vessel?.id} />
                   </div>
-                  <ReliabilityNote
-                    reliability={schedule.reliability}
-                    sourceName={schedule.source_name}
-                    sourceUrl={schedule.source_url}
-                    verifiedAt={schedule.last_verified_at}
-                  />
+                  <SourceNote sourceName={schedule.source_name} sourceUrl={schedule.source_url} />
                 </div>
               );
             })}

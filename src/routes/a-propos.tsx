@@ -2,9 +2,9 @@ import { seoHead } from "@/lib/seo/site";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Card, PageHero, SiteLayout } from "@/components/layout/SiteLayout";
 
-const title = "À propos de Batogo, la carte des ferries vers l'Algérie";
+const title = "À propos de BledWay, la carte des ferries vers l'Algérie";
 const description =
-  "Batogo rassemble ports, lignes, durées et départs des traversées vers l'Algérie, avec la source et la date de vérification de chaque information.";
+  "BledWay rassemble ports, lignes, durées et départs des traversées vers l'Algérie, et le suivi en direct des navires avec l'aide des voyageurs.";
 
 export const Route = createFileRoute("/a-propos")({
   head: () => seoHead(title, description, "/a-propos"),
@@ -16,22 +16,22 @@ function AboutPage() {
     <SiteLayout>
       <PageHero
         overline="À propos"
-        title="Batogo, l'information maritime rendue lisible"
-        intro="« Bato » pour le bateau, « go » pour le départ : une carte unique pour comprendre en quelques secondes comment rejoindre l'Algérie par la mer."
+        title="BledWay, l'information maritime rendue lisible"
+        intro="Une carte unique pour comprendre en quelques secondes comment rejoindre l'Algérie par la mer, et savoir où en est votre bateau."
       />
       <div className="mt-10 grid gap-4 sm:grid-cols-3">
         <Card>
           <h2 className="font-display font-semibold">Informer d'abord</h2>
           <p className="mt-2 text-sm text-muted-foreground">
-            Nous ne vendons pas de billets. Nous rassemblons, vérifions et présentons clairement les
-            ports, lignes, durées et départs.
+            Nous ne vendons pas de billets. Nous rassemblons et présentons clairement les ports,
+            lignes, durées et départs.
           </p>
         </Card>
         <Card>
-          <h2 className="font-display font-semibold">Sources visibles</h2>
+          <h2 className="font-display font-semibold">Avec les voyageurs</h2>
           <p className="mt-2 text-sm text-muted-foreground">
-            Chaque calendrier et chaque départ affiche sa source et sa date de vérification, ainsi
-            que son niveau de fiabilité.
+            Le signal des navires et les remontées des voyageurs sur place complètent les horaires.
+            Une erreur signalée est corrigée pour tous.
           </p>
         </Card>
         <Card>

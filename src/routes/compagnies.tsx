@@ -7,7 +7,7 @@ import { Card, PageHero, SiteLayout } from "@/components/layout/SiteLayout";
 import { companiesQuery, portsQuery, routesQuery, vesselsQuery } from "@/lib/ferry/queries";
 import { formatDuration } from "@/lib/ferry/format";
 
-const title = "Compagnies de ferry vers l'Algérie — Batogo";
+const title = "Compagnies de ferry vers l'Algérie — BledWay";
 const description =
   "Les compagnies maritimes qui relient l'Europe à l'Algérie : lignes desservies, flotte et durées de traversée.";
 

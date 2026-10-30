@@ -31,11 +31,6 @@ const icons: Record<PlaceKind, LucideIcon> = {
   other: MapPin,
 };
 
-const verified = (iso: string | null) =>
-  iso
-    ? `Vérifié le ${new Date(iso).toLocaleDateString("fr-FR", { day: "numeric", month: "short", year: "numeric" })}`
-    : null;
-
 function PlaceRow({ place, portName }: { place: PortPlace; portName: string }) {
   const Icon = icons[place.kind] ?? MapPin;
   return (
@@ -56,9 +51,6 @@ function PlaceRow({ place, portName }: { place: PortPlace; portName: string }) {
           </p>
         ) : null}
         {place.note ? <p className="bw-place-note">{place.note}</p> : null}
-        {verified(place.verified_at) ? (
-          <small className="bw-place-verified">{verified(place.verified_at)}</small>
-        ) : null}
       </div>
       <a
         className="bw-place-go"

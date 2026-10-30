@@ -51,7 +51,7 @@ export const articles: Article[] = [
         a: "Non. Le pays d'achat ne remplace pas les conditions du régime douanier, les contrôles du véhicule et le dossier requis.",
       },
       {
-        q: "Le simulateur Batogo confirme-t-il mon éligibilité ?",
+        q: "Le simulateur BledWay confirme-t-il mon éligibilité ?",
         a: "Non. Il calcule un âge ou un budget à partir de vos entrées. L'admission du véhicule appartient aux autorités compétentes.",
       },
     ],
@@ -197,7 +197,7 @@ export const articles: Article[] = [
         id: "taxes",
         title: "Saisir une fiscalité confirmée",
         paragraphs: [
-          "Batogo ne transforme pas un pourcentage générique trouvé sur internet en barème officiel. Le calculateur demande le montant des droits et taxes en DZD et le taux de conversion que vous choisissez. Il affiche les hypothèses, sans récupérer de taux de change ni certifier une estimation douanière.",
+          "BledWay ne transforme pas un pourcentage générique trouvé sur internet en barème officiel. Le calculateur demande le montant des droits et taxes en DZD et le taux de conversion que vous choisissez. Il affiche les hypothèses, sans récupérer de taux de change ni certifier une estimation douanière.",
           "Si la ligne des taxes est vide, le résultat reste incomplet. Un zéro saisi explicitement est une hypothèse de votre part : il faut pouvoir le justifier. Faites aussi confirmer les frais de stationnement, de manutention ou d'intervention qui pourraient s'ajouter.",
         ],
       },
@@ -206,7 +206,7 @@ export const articles: Article[] = [
         title: "Comparer deux solutions à périmètre égal",
         paragraphs: [
           "Comparez le coût rendu avec une offre locale de même version, de kilométrage comparable et avec un niveau de garantie proche. Ajoutez votre temps de déplacement et le coût d'une éventuelle immobilisation. Une différence de prix faible peut disparaître dès le premier imprévu.",
-          "Conservez deux budgets datés : le scénario avec les devis actuels et un scénario moins favorable. Le simulateur peut être recalculé sans compte ; aucune donnée du formulaire n'est envoyée à Batogo par cet outil.",
+          "Conservez deux budgets datés : le scénario avec les devis actuels et un scénario moins favorable. Le simulateur peut être recalculé sans compte ; aucune donnée du formulaire n'est envoyée à BledWay par cet outil.",
         ],
       },
     ],
@@ -259,7 +259,7 @@ export const articles: Article[] = [
         title: "Ne pas oublier le retour",
         paragraphs: [
           "Une bonne préparation porte aussi sur la sortie du territoire : conducteur, papiers, date prévue et éventuel changement de programme. Demandez comment signaler une immobilisation ou une difficulté de retour au service compétent.",
-          "Pour un changement de résidence, utilisez les informations de votre consulat et des douanes propres à cette démarche. Batogo ne transpose pas une condition de ce régime à l'importation ordinaire d'un véhicule de moins de trois ans.",
+          "Pour un changement de résidence, utilisez les informations de votre consulat et des douanes propres à cette démarche. BledWay ne transpose pas une condition de ce régime à l'importation ordinaire d'un véhicule de moins de trois ans.",
         ],
       },
     ],
@@ -474,7 +474,7 @@ export const articles: Article[] = [
         title: "Préparer le retour avant le départ",
         paragraphs: [
           "La difficulté se découvre parfois au retour : une formalité supplémentaire ne peut pas toujours être accomplie au dernier moment. Faites établir un calendrier par le professionnel ou l'autorité compétente avant d'acheter l'aller-retour.",
-          "Ne choisissez pas de traitement ou de sédation à partir d'un conseil de forum. Pour le bien-être de l'animal pendant la traversée, adressez-vous à votre vétérinaire. Batogo aide à organiser les questions et le voyage, sans prescrire de démarche médicale.",
+          "Ne choisissez pas de traitement ou de sédation à partir d'un conseil de forum. Pour le bien-être de l'animal pendant la traversée, adressez-vous à votre vétérinaire. BledWay aide à organiser les questions et le voyage, sans prescrire de démarche médicale.",
         ],
       },
     ],
@@ -538,7 +538,7 @@ export const articles: Article[] = [
     related: ["cabine-ou-fauteuil-ferry", "voyage-algerie-voiture-checklist"],
     faq: [
       {
-        q: "Batogo garantit-il le prix d'un billet ?",
+        q: "BledWay garantit-il le prix d'un billet ?",
         a: "Non. Le prix et les places disponibles se confirment directement auprès de la compagnie au moment de réserver.",
       },
       {
@@ -681,7 +681,7 @@ export const articles: Article[] = [
     faq: [
       {
         q: "Combien de temps faut-il pour sortir du port ?",
-        a: "Le délai dépend du départ, des opérations portuaires et des contrôles. Batogo ne fournit pas de durée garantie.",
+        a: "Le délai dépend du départ, des opérations portuaires et des contrôles. BledWay ne fournit pas de durée garantie.",
       },
       {
         q: "Qui confirme les formalités du véhicule ?",
@@ -735,7 +735,7 @@ export const articles: Article[] = [
     faq: [
       {
         q: "Ces aires sont-elles les plus fréquentées ?",
-        a: "Batogo ne dispose pas d'un classement de fréquentation. La sélection repose sur des sources publiques et l'utilité possible sur les axes vers les ports.",
+        a: "BledWay ne dispose pas d'un classement de fréquentation. La sélection repose sur des sources publiques et l'utilité possible sur les axes vers les ports.",
       },
       {
         q: "Peut-on y laisser sa voiture pendant les vacances ?",

@@ -2,9 +2,9 @@ import { seoHead } from "@/lib/seo/site";
 import { createFileRoute } from "@tanstack/react-router";
 import { PageHero, SiteLayout } from "@/components/layout/SiteLayout";
 
-const title = "Mentions légales — Batogo";
+const title = "Mentions légales — BledWay";
 const description =
-  "Mentions légales du site Batogo : éditeur, hébergement, propriété intellectuelle et limites de responsabilité sur les informations maritimes publiées.";
+  "Mentions légales du site BledWay : éditeur, hébergement, propriété intellectuelle et limites de responsabilité sur les informations maritimes publiées.";
 
 export const Route = createFileRoute("/mentions-legales")({
   head: () => seoHead(title, description, "/mentions-legales"),
@@ -17,7 +17,7 @@ function LegalPage() {
       <PageHero
         overline="Informations légales"
         title="Mentions légales"
-        intro="Batogo est un service d'information indépendant sur les traversées maritimes vers l'Algérie."
+        intro="BledWay est un service d'information indépendant sur les traversées maritimes vers l'Algérie."
       />
       <div className="mx-auto mt-8 max-w-3xl space-y-6 text-sm leading-relaxed text-muted-foreground">
         <section>
@@ -31,7 +31,7 @@ function LegalPage() {
           <h2 className="text-base font-semibold text-foreground">Responsabilité</h2>
           <p className="mt-1">
             Les horaires, durées et disponibilités publiés sont donnés à titre indicatif. Seules les
-            compagnies maritimes et les autorités portuaires font foi. Batogo ne vend aucun billet
+            compagnies maritimes et les autorités portuaires font foi. BledWay ne vend aucun billet
             et ne garantit pas l'exactitude des informations transmises par des tiers.
           </p>
         </section>

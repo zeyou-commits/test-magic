@@ -676,15 +676,6 @@ export function PlacesAdmin() {
                   />
                   Publié
                 </label>
-                <label className="!flex items-center gap-2">
-                  <input
-                    type="checkbox"
-                    className="!min-h-0"
-                    checked={draft.verified}
-                    onChange={(e) => setDraft({ ...draft, verified: e.target.checked })}
-                  />
-                  Vérifié aujourd’hui
-                </label>
               </div>
               <div className="flex flex-wrap gap-2">
                 <Button type="submit" disabled={save.isPending}>
@@ -704,9 +695,6 @@ export function PlacesAdmin() {
                     <p className="text-xs text-muted-foreground">
                       {placeKinds[place.kind].label}
                       {place.published ? "" : " · masqué"}
-                      {place.verified_at
-                        ? ` · vérifié le ${new Date(place.verified_at).toLocaleDateString("fr-FR")}`
-                        : ""}
                     </p>
                     <strong className="text-sm">{place.name}</strong>
                   </div>

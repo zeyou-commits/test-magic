@@ -6,7 +6,7 @@ import { seoHead } from "@/lib/seo/site";
 export const Route = createFileRoute("/simulateurs/")({
   head: () =>
     seoHead(
-      "Simulateurs Algérie : âge voiture et budgets de voyage | Batogo",
+      "Simulateurs Algérie : âge voiture et budgets de voyage | BledWay",
       "Quatre outils gratuits pour calculer l'âge d'une voiture, construire un budget d'importation, comparer deux voyages et partager les frais de la route.",
       "/simulateurs",
     ),
@@ -18,11 +18,11 @@ function Tools() {
       <Breadcrumbs items={[{ name: "Simulateurs", path: "/simulateurs" }]} />
       <CollectionSchema
         path="/simulateurs"
-        name="Simulateurs Batogo"
+        name="Simulateurs BledWay"
         items={toolsCatalog.map((t) => ({ name: t.title, path: `/simulateurs/${t.slug}` }))}
       />
       <EditorialHero
-        label="Les outils Batogo"
+        label="Les outils BledWay"
         title="Préparer avec vos chiffres"
         intro="Des calculs transparents, sans compte : vous choisissez les dates, les devis et les hypothèses. Les résultats restent des aides à la préparation et sont accompagnés de leur méthode."
       />

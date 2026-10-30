@@ -19,11 +19,11 @@ export const Route = createFileRoute("/covoiturage/$slug")({
   head: ({ loaderData: p }) =>
     p
       ? seoHead(
-          `Covoiturage ${p.name} : accès et rendez-vous | Batogo`,
+          `Covoiturage ${p.name} : accès et rendez-vous | BledWay`,
           p.relevance,
           `/covoiturage/${p.slug}`,
         )
-      : { meta: [{ title: "Aire introuvable | Batogo" }, { name: "robots", content: "noindex" }] },
+      : { meta: [{ title: "Aire introuvable | BledWay" }, { name: "robots", content: "noindex" }] },
   component: Place,
 });
 function Place() {

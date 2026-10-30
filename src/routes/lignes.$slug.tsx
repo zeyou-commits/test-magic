@@ -40,10 +40,10 @@ export const Route = createFileRoute("/lignes/$slug")({
   head: ({ loaderData }) => {
     if (!loaderData) {
       return {
-        meta: [{ title: "Ligne indisponible — Batogo" }, { name: "robots", content: "noindex" }],
+        meta: [{ title: "Ligne indisponible — BledWay" }, { name: "robots", content: "noindex" }],
       };
     }
-    const title = `Ferry ${loaderData.from} — ${loaderData.to} : durée, horaires, compagnies | Batogo`;
+    const title = `Ferry ${loaderData.from} — ${loaderData.to} : durée, horaires, compagnies | BledWay`;
     const description = `Traversée en ferry ${loaderData.from} → ${loaderData.to} : durée typique de ${loaderData.duration}, calendrier habituel, compagnies et prochains départs connus.`;
     return seoHead(title, description, `/lignes/${loaderData.slug}`);
   },

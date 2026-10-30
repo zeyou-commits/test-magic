@@ -140,7 +140,7 @@ export function MobileMapControls({
       className={`pointer-events-auto absolute inset-x-0 top-0 w-full p-2 md:hidden ${picker ? "z-[90]" : "z-40"}`}
     >
       <div className="grid h-14 grid-cols-[2rem_minmax(0,1fr)_2rem_minmax(0,1fr)_2rem] items-center gap-1 rounded-xl border bg-background/95 px-2 shadow-md backdrop-blur-md">
-        <Link to="/" aria-label="Accueil Batogo" className="grid size-8 place-items-center">
+        <Link to="/" aria-label="Accueil BledWay" className="grid size-8 place-items-center">
           <BrandMark className="size-8" />
         </Link>
         <Button

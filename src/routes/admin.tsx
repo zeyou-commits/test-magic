@@ -60,7 +60,6 @@ import {
   facilityLabels,
   formatDateTime,
   formatDuration,
-  reliabilityLabel,
   weekdayLabels,
 } from "@/lib/ferry/format";
 import { routeColor, routePalette } from "@/lib/ferry/colors";
@@ -730,7 +729,7 @@ function DepartureEditor({
       if (!Number.isFinite(duration) || duration <= 0) throw new Error("Durée invalide.");
       const presentationMinutes = presentationHours.trim() ? Math.round(Number(presentationHours) * 60) : null;
       if (presentationMinutes !== null && (!Number.isFinite(presentationMinutes) || presentationMinutes < 30 || presentationMinutes > 720)) throw new Error("La présentation doit être comprise entre 30 minutes et 12 heures.");
-      const { error } = await (supabase as unknown as SupabaseClient)
+      const { data, error } = await (supabase as unknown as SupabaseClient)
         .from("departures")
         .update({
           departure_at: start.toISOString(),
@@ -739,10 +738,15 @@ function DepartureEditor({
           arrival_at: new Date(start.getTime() + duration * 60_000).toISOString(),
           vessel_id: vesselId || null,
           status: departure.status === "cancelled" ? "cancelled" : "modified",
-          last_verified_at: new Date().toISOString(),
         })
-        .eq("id", departure.id);
+        .eq("id", departure.id)
+        .select("duration_minutes")
+        .single();
       if (error) throw new Error(error.message);
+      if (data.duration_minutes !== duration)
+        toast.warning(
+          "Durée hors de la plage de la ligne : la durée standard a été appliquée. Pour la changer, modifiez la durée de la ligne.",
+        );
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["departures"] });
@@ -891,11 +895,11 @@ function DeparturesAdmin({
       values,
     }: {
       id: string;
-      values: { status?: "scheduled" | "cancelled"; reliability?: "verified" };
+      values: { status?: "scheduled" | "cancelled" };
     }) => {
       const { error } = await supabase
         .from("departures")
-        .update({ ...values, last_verified_at: new Date().toISOString() })
+        .update(values)
         .eq("id", id);
       if (error) throw new Error(error.message);
     },
@@ -1076,23 +1080,12 @@ function DeparturesAdmin({
                   {company ? ` · ${company.name}` : ""}
                   {vessel ? ` · ${vessel.name}` : " · Navire à affecter"} ·{" "}
                   {formatDuration(departure.duration_minutes)} ·{" "}
-                  {departureStatusLabel[departure.status] ?? departure.status} ·{" "}
-                  {reliabilityLabel[departure.reliability]}
+                  {departureStatusLabel[departure.status] ?? departure.status}
                 </p>
               </div>
               <div className="flex flex-wrap gap-2">
                 <Button size="sm" variant="outline" onClick={() => setEditing(departure.id)}>
                   Modifier
-                </Button>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  disabled={update.isPending}
-                  onClick={() =>
-                    update.mutate({ id: departure.id, values: { reliability: "verified" } })
-                  }
-                >
-                  Marquer vérifié
                 </Button>
                 <Button
                   size="sm"
@@ -1521,8 +1514,7 @@ function SchedulesAdmin({ companyId, routeId }: { companyId?: string; routeId?: 
                     .map((day) => weekdayLabels[day - 1] ?? "")
                     .filter(Boolean)
                     .join(", ")}{" "}
-                  · {formatDuration(schedule.duration_minutes)} ·{" "}
-                  {reliabilityLabel[schedule.reliability]}
+                  · {formatDuration(schedule.duration_minutes)}
                 </p>
               </div>
               <div className="flex flex-wrap gap-2">

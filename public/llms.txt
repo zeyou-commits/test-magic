@@ -1,20 +1,20 @@
-# BledWay
+# Batogo
 
 > Information indépendante pour les ferries Europe–Algérie et la préparation du voyage.
 
 ## Pages principales
-- [Carte des ferries](https://www.bledway.com/)
-- [Horaires](https://www.bledway.com/horaires)
-- [Ports](https://www.bledway.com/ports)
-- [Lignes](https://www.bledway.com/lignes)
-- [Compagnies](https://www.bledway.com/compagnies)
-- [Guide et dossiers](https://www.bledway.com/guide)
-- [Véhicules de moins de trois ans](https://www.bledway.com/vehicules-moins-3-ans)
-- [Voyage en Algérie](https://www.bledway.com/voyage-algerie)
-- [Dossiers bateaux](https://www.bledway.com/bateaux)
-- [Points de covoiturage](https://www.bledway.com/covoiturage)
-- [Simulateurs](https://www.bledway.com/simulateurs)
-- [Méthode et sources](https://www.bledway.com/methode-editoriale)
+- [Carte des ferries](https://test-magic-three.vercel.app/)
+- [Horaires](https://test-magic-three.vercel.app/horaires)
+- [Ports](https://test-magic-three.vercel.app/ports)
+- [Lignes](https://test-magic-three.vercel.app/lignes)
+- [Compagnies](https://test-magic-three.vercel.app/compagnies)
+- [Guide et dossiers](https://test-magic-three.vercel.app/guide)
+- [Véhicules de moins de trois ans](https://test-magic-three.vercel.app/vehicules-moins-3-ans)
+- [Voyage en Algérie](https://test-magic-three.vercel.app/voyage-algerie)
+- [Dossiers bateaux](https://test-magic-three.vercel.app/bateaux)
+- [Points de covoiturage](https://test-magic-three.vercel.app/covoiturage)
+- [Simulateurs](https://test-magic-three.vercel.app/simulateurs)
+- [Méthode et sources](https://test-magic-three.vercel.app/methode-editoriale)
 
 ## Portée des informations
 Les horaires et affectations se confirment auprès des compagnies. Les formalités se confirment auprès des autorités compétentes. Les simulateurs utilisent les données saisies par le visiteur et ne certifient ni prix ni éligibilité.

@@ -61,7 +61,7 @@ export const vesselDossiers: VesselDossier[] = [
         id: "capacite",
         title: "Pourquoi les chiffres diffèrent parfois",
         paragraphs: [
-          "Des fiches anciennes ou tierces peuvent afficher un autre nombre de voitures. Batogo retient ici la fiche officielle française consultée et indique sa source. Ce nombre de présentation n'est ni le nombre de places libres ni une garantie pour un véhicule de dimensions particulières.",
+          "Des fiches anciennes ou tierces peuvent afficher un autre nombre de voitures. BledWay retient ici la fiche officielle française consultée et indique sa source. Ce nombre de présentation n'est ni le nombre de places libres ni une garantie pour un véhicule de dimensions particulières.",
           "La disponibilité réelle, l'affectation et les prestations se confirment auprès du transporteur pour la date et le sens du voyage choisis.",
         ],
       },
@@ -125,7 +125,7 @@ export const vesselDossiers: VesselDossier[] = [
         title: "Ce que documente la source du concepteur",
         paragraphs: [
           "OSK Design présente un travail portant sur le concept, l'analyse des lignes, l'architecture extérieure et intérieure et l'assistance au projet. La conception prend en compte les flux de passagers et de véhicules entre l'Algérie et l'Europe du Sud.",
-          "Cette présentation du projet ne sert pas de suivi d'exploitation. Batogo n'en déduit ni un départ à venir, ni une reprise de service, ni une position en direct.",
+          "Cette présentation du projet ne sert pas de suivi d'exploitation. BledWay n'en déduit ni un départ à venir, ni une reprise de service, ni une position en direct.",
         ],
       },
       {

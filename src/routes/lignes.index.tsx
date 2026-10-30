@@ -5,7 +5,7 @@ import { Card, PageHero, SiteLayout } from "@/components/layout/SiteLayout";
 import { companiesQuery, portsQuery, routesQuery } from "@/lib/ferry/queries";
 import { formatDuration } from "@/lib/ferry/format";
 
-const title = "Lignes de ferry vers l'Algérie : durées et compagnies — Batogo";
+const title = "Lignes de ferry vers l'Algérie : durées et compagnies — BledWay";
 const description =
   "Toutes les liaisons maritimes vers l'Algérie avec leur durée typique et les compagnies qui les opèrent : Marseille, Sète, Alicante, Barcelone, Marseille–Alger, Oran, Béjaïa…";
 

@@ -12,8 +12,6 @@ import {
 } from "lucide-react";
 import {
   formatDuration,
-  reliabilityLabel,
-  reliabilityTone,
   capitalizeFirst,
   formatShortDay,
 } from "@/lib/ferry/format";
@@ -218,7 +216,7 @@ export function SailingCard({
   );
 }
 
-/** Détail d'une traversée (durée, arrivée, navire, fiabilité, actions), affiché en accordéon. */
+/** Détail d'une traversée (durée, arrivée, navire, actions), affiché en accordéon. */
 export function SailingDetail({
   sailing,
   onOpenVessel,
@@ -264,14 +262,6 @@ export function SailingDetail({
             <span className="font-normal text-muted-foreground">(fiche + photo)</span>
           </button>
         ) : null}
-        <span className={`font-semibold ${reliabilityTone[departure.reliability]}`}>
-          {reliabilityLabel[departure.reliability]}
-        </span>
-        {departure.last_verified_at ? (
-          <span className="text-muted-foreground">
-            vérifié le {new Date(departure.last_verified_at).toLocaleDateString("fr-FR")}
-          </span>
-        ) : null}
       </div>
 
       {departure.notes ? (
@@ -290,7 +280,7 @@ export function SailingDetail({
         <FollowButton kind="departure" targetId={departure.id} compact label={`${sailing.from.name} → ${sailing.to.name}`} demo={Boolean(departure.is_demo)} />
         <ShareButtons
           title={`${sailing.from.name} → ${sailing.to.name}`}
-          text={`⛴️ ${sailing.from.name} → ${sailing.to.name} · ${formatShortDay(departure.departure_at, sailing.fromZone)} · départ ${sailing.depTime}${sailing.arrTime ? `, arrivée ${sailing.arrTime}${sailing.arrDayOffset > 0 ? ` (+${sailing.arrDayOffset} j)` : ""}` : ""} (heures locales)${sailing.company ? ` · ${sailing.company.name}` : ""}\nHoraire ${reliabilityLabel[departure.reliability].toLowerCase()} — vérifiez auprès de la compagnie. Via Bledway`}
+          text={`⛴️ ${sailing.from.name} → ${sailing.to.name} · ${formatShortDay(departure.departure_at, sailing.fromZone)} · départ ${sailing.depTime}${sailing.arrTime ? `, arrivée ${sailing.arrTime}${sailing.arrDayOffset > 0 ? ` (+${sailing.arrDayOffset} j)` : ""}` : ""} (heures locales)${sailing.company ? ` · ${sailing.company.name}` : ""}\nVérifiez auprès de la compagnie. Via BledWay`}
         />
         {bookingHref ? (
           <a

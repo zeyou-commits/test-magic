@@ -2,4 +2,4 @@ User-agent: *
 Allow: /
 Disallow: /api/
 
-Sitemap: https://www.bledway.com/sitemap.xml
+Sitemap: https://test-magic-three.vercel.app/sitemap.xml

@@ -1,7 +1,6 @@
 import type { ReactNode } from "react";
 import { ExternalLink, Star } from "lucide-react";
-import { reliabilityLabel, reliabilityTone } from "@/lib/ferry/format";
-import type { Company, Reliability } from "@/lib/ferry/types";
+import type { Company } from "@/lib/ferry/types";
 
 export function PanelHeader({
   overline,
@@ -59,41 +58,30 @@ export function isInternalSource(name?: string | null) {
   return !!name && /import|excel|\.xlsx?|\.csv/i.test(name);
 }
 
-export function ReliabilityNote({
-  reliability,
+export function SourceNote({
   sourceName,
   sourceUrl,
-  verifiedAt,
 }: {
-  reliability: Reliability;
   sourceName?: string | null;
   sourceUrl?: string | null;
-  verifiedAt?: string | null;
 }) {
+  if (!sourceName || isInternalSource(sourceName)) return null;
   const href = safeExternalUrl(sourceUrl);
   return (
     <div className="mt-2 text-xs text-muted-foreground">
-      <span className={`font-semibold ${reliabilityTone[reliability]}`}>
-        {reliabilityLabel[reliability]}
-      </span>
-      {sourceName && !isInternalSource(sourceName) ? (
-        <>
-          {" · Source : "}
-          {href ? (
-            <a
-              href={href}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="underline hover:text-foreground"
-            >
-              {sourceName}
-            </a>
-          ) : (
-            sourceName
-          )}
-        </>
-      ) : null}
-      {verifiedAt ? ` · Vérifié le ${new Date(verifiedAt).toLocaleDateString("fr-FR")}` : null}
+      {"Source : "}
+      {href ? (
+        <a
+          href={href}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="underline hover:text-foreground"
+        >
+          {sourceName}
+        </a>
+      ) : (
+        sourceName
+      )}
     </div>
   );
 }
@@ -124,7 +112,7 @@ export function safeExternalUrl(value: string | null | undefined): string | null
   }
 }
 
-/** Bouton de sortie vers la compagnie : Batogo informe, la réservation se fait chez l'opérateur. */
+/** Bouton de sortie vers la compagnie : BledWay informe, la réservation se fait chez l'opérateur. */
 export function BookingLink({
   company,
   compact = false,

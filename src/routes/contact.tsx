@@ -3,9 +3,9 @@ import { seoHead } from "@/lib/seo/site";
 import { createFileRoute } from "@tanstack/react-router";
 import { Card, PageHero, SiteLayout } from "@/components/layout/SiteLayout";
 
-const title = "Contact et signalement d'erreur — Batogo";
+const title = "Contact et signalement d'erreur — BledWay";
 const description =
-  "Signaler un horaire erroné, une ligne manquante ou un port à ajouter sur Batogo, la carte des ferries vers l'Algérie.";
+  "Signaler un horaire erroné, une ligne manquante ou un port à ajouter sur BledWay, la carte des ferries vers l'Algérie.";
 
 export const Route = createFileRoute("/contact")({
   head: () => seoHead(title, description, "/contact"),
@@ -32,7 +32,7 @@ function ContactPage() {
           <h2 className="font-display font-semibold">Nous écrire</h2>
           {seoConfig.contactEmail ? (
             <a
-              href={`mailto:${seoConfig.contactEmail}?subject=${encodeURIComponent("Correction documentaire Batogo")}`}
+              href={`mailto:${seoConfig.contactEmail}?subject=${encodeURIComponent("Correction documentaire BledWay")}`}
               className="mt-3 inline-flex min-h-11 items-center font-semibold text-primary underline underline-offset-4"
             >
               {seoConfig.contactEmail}

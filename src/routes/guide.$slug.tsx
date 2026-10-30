@@ -11,13 +11,13 @@ export const Route = createFileRoute("/guide/$slug")({
   head: ({ loaderData }) =>
     loaderData
       ? seoHead(
-          `${loaderData.title} | Batogo`,
+          `${loaderData.title} | BledWay`,
           loaderData.description,
           `/guide/${loaderData.slug}`,
           true,
         )
       : {
-          meta: [{ title: "Dossier introuvable | Batogo" }, { name: "robots", content: "noindex" }],
+          meta: [{ title: "Dossier introuvable | BledWay" }, { name: "robots", content: "noindex" }],
         },
   component: ArticleRoute,
 });

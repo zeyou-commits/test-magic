@@ -11,8 +11,8 @@ import type { Section } from "@/content/types";
 export const Route = createFileRoute("/methode-editoriale")({
   head: () =>
     seoHead(
-      "Sources, calculs et méthode éditoriale | Batogo",
-      "Comment Batogo distingue sources officielles, dossiers documentaires, informations évolutives et calculs personnels pour préparer un voyage en Algérie.",
+      "Sources, calculs et méthode éditoriale | BledWay",
+      "Comment BledWay distingue sources officielles, dossiers documentaires, informations évolutives et calculs personnels pour préparer un voyage en Algérie.",
       "/methode-editoriale",
     ),
   component: Method,
@@ -46,7 +46,7 @@ const sections: Section[] = [
     id: "independance",
     title: "Une information indépendante, sans classement inventé",
     paragraphs: [
-      "Batogo ne se présente pas comme une autorité douanière ou une compagnie maritime. Les nouvelles fiches de covoiturage ne classent pas les lieux par notoriété ou fréquentation, faute de mesure disponible. Aucun avis de voyageur, score ou témoignage n'a été fabriqué pour ces dossiers.",
+      "BledWay ne se présente pas comme une autorité douanière ou une compagnie maritime. Les nouvelles fiches de covoiturage ne classent pas les lieux par notoriété ou fréquentation, faute de mesure disponible. Aucun avis de voyageur, score ou témoignage n'a été fabriqué pour ces dossiers.",
       "La page Contact indique les canaux disponibles et la préparation d'une correction : URL, passage concerné et référence datée. Le contact pour les nouveaux dossiers reste à renseigner. Évitez d'envoyer des documents personnels qui ne sont pas nécessaires à la correction.",
     ],
   },
@@ -58,7 +58,7 @@ function Method() {
       <EditorialHero
         label="La confiance se documente"
         title="Ce que nos informations permettent de décider"
-        intro="Préparer un voyage exige des repères utiles et des limites explicites. Voici comment lire les dossiers, les sources et les résultats des nouveaux outils Batogo."
+        intro="Préparer un voyage exige des repères utiles et des limites explicites. Voici comment lire les dossiers, les sources et les résultats des nouveaux outils BledWay."
       />
       <div className="max-w-3xl">
         <time dateTime={EDITORIAL_DATE} className="text-sm text-muted-foreground">

@@ -20,8 +20,8 @@ export const Route = createFileRoute("/simulateurs/$slug")({
   },
   head: ({ loaderData: t }) =>
     t
-      ? seoHead(`${t.title} : simulateur | Batogo`, t.description, `/simulateurs/${t.slug}`)
-      : { meta: [{ title: "Outil introuvable | Batogo" }, { name: "robots", content: "noindex" }] },
+      ? seoHead(`${t.title} : simulateur | BledWay`, t.description, `/simulateurs/${t.slug}`)
+      : { meta: [{ title: "Outil introuvable | BledWay" }, { name: "robots", content: "noindex" }] },
   component: Tool,
 });
 function Tool() {

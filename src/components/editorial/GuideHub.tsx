@@ -38,7 +38,7 @@ export function GuideHub({ topic }: { topic?: Topic }) {
         items={selected.map((a) => ({ name: a.title, path: `/guide/${a.slug}` }))}
       />
       <EditorialHero
-        label="La bibliothèque Batogo"
+        label="La bibliothèque BledWay"
         title={title}
         intro={
           current?.intro ??

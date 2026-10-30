@@ -12,7 +12,7 @@ import { seoHead } from "@/lib/seo/site";
 export const Route = createFileRoute("/covoiturage/")({
   head: () =>
     seoHead(
-      "Aires de covoiturage sur la route des ports | Batogo",
+      "Aires de covoiturage sur la route des ports | BledWay",
       "Grans–Salon, Avignon Nord, Gallargues et Narbonne : des points documentés pour organiser un rendez-vous sur la route d'un ferry vers l'Algérie.",
       "/covoiturage",
     ),

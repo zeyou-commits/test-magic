@@ -65,12 +65,10 @@ export function CompanyContacts({ company }: { company: Company }) {
           ) : null}
         </ul>
       ) : (
-        <p className="mt-1 text-xs text-muted-foreground">Coordonnées en cours de vérification.</p>
+        <p className="mt-1 text-xs text-muted-foreground">Coordonnées non renseignées.</p>
       )}
       <p className="mt-2 text-[11px] text-muted-foreground">
-        {company.contact_verified_at
-          ? `Vérifié le ${new Date(company.contact_verified_at).toLocaleDateString("fr-FR")} sur le site de la compagnie.`
-          : "Non vérifié par BledWay : à confirmer sur le site de la compagnie."}
+        Le site de la compagnie fait foi.
       </p>
       <div className="mt-1">
         <ReportButton

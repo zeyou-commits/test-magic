@@ -42,7 +42,7 @@ import { portTraffic } from "@/lib/ferry/portTraffic";
 import { portTimeZone, zoneLabel } from "@/lib/ferry/time";
 import type { Selection } from "@/lib/ferry/types";
 import { portPhotoQuery } from "@/lib/ferry/vesselPhoto";
-import { DemoBadge, EmptyNote, ReliabilityNote } from "./shared";
+import { DemoBadge, EmptyNote, SourceNote } from "./shared";
 import { ReportButton } from "./ReportButton";
 import { CompanyBadge } from "./CompanyBadge";
 import { FacilityIcons } from "./FacilityIcons";
@@ -463,12 +463,7 @@ export function PortView({
                 À savoir avant votre passage <ChevronRight size={16} aria-hidden />
               </summary>
               <p>{port.notes}</p>
-              <ReliabilityNote
-                reliability="to_verify"
-                sourceName={port.info_source}
-                sourceUrl={port.info_source_url}
-                verifiedAt={port.info_verified_at}
-              />
+              <SourceNote sourceName={port.info_source} sourceUrl={port.info_source_url} />
             </details>
           ) : null}
           <details className="port-practical-details">

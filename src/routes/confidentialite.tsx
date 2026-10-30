@@ -2,9 +2,9 @@ import { seoHead } from "@/lib/seo/site";
 import { createFileRoute } from "@tanstack/react-router";
 import { PageHero, SiteLayout } from "@/components/layout/SiteLayout";
 
-const title = "Politique de confidentialité — Batogo";
+const title = "Politique de confidentialité — BledWay";
 const description =
-  "Quelles données Batogo collecte lors de la création d'un compte, de la publication d'un avis ou d'un signalement, et comment les supprimer.";
+  "Quelles données BledWay collecte lors de la création d'un compte, de la publication d'un avis ou d'un signalement, et comment les supprimer.";
 
 export const Route = createFileRoute("/confidentialite")({
   head: () => seoHead(title, description, "/confidentialite"),
@@ -16,7 +16,7 @@ function PrivacyPage() {
     <SiteLayout>
       <PageHero
         overline="Confidentialité"
-        title="Vos données sur Batogo"
+        title="Vos données sur BledWay"
         intro="Nous collectons le minimum nécessaire pour permettre les avis, les signalements et la gestion de votre compte."
       />
       <div className="mx-auto mt-8 max-w-3xl space-y-6 text-sm leading-relaxed text-muted-foreground">

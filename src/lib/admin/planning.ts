@@ -28,7 +28,7 @@ export type PlanningVessel = {
 };
 
 /** Temps minimal à quai entre une arrivée et le départ suivant du même bateau. */
-export const TURNAROUND_MINUTES = 60;
+export const TURNAROUND_MINUTES = 180;
 /** Deux départs de la même liaison et de la même compagnie aussi proches sont suspects. */
 export const DUPLICATE_WINDOW_MINUTES = 180;
 

@@ -81,7 +81,7 @@ export function CommunityModeration() {
               <p className="text-xs text-muted-foreground">{new Date(item.created_at).toLocaleString("fr-FR")}</p>
               <div className="mt-3 flex flex-wrap gap-2">
                 {item.departure_id ? <a className="text-sm underline" href={`/?select=departure&id=${item.departure_id}`}>Voir la traversée</a> : null}
-                <Button size="sm" disabled={triage.isPending} onClick={() => triage.mutate({ id: item.id, status: "handled" })}>Vérifié</Button>
+                <Button size="sm" disabled={triage.isPending} onClick={() => triage.mutate({ id: item.id, status: "handled" })}>Traité</Button>
                 <Button size="sm" variant="outline" disabled={triage.isPending} onClick={() => triage.mutate({ id: item.id, status: "dismissed" })}>Écarter</Button>
               </div>
             </li>

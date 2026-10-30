@@ -119,17 +119,21 @@ export function toDeparture(
   if (Number.isNaN(start.getTime())) return { error: "Date et heure illisibles" };
   let duration: number | null = null;
   if (row.arrivalTime) {
-    // L'heure d'arrivée est locale au port d'arrivée : premier jour qui donne une durée positive.
+    // L'heure d'arrivée est locale au port d'arrivée : le jour qui donne la durée la plus proche
+    // de celle de la ligne, sinon le premier jour qui donne une durée positive.
     for (const offset of [0, 1, 2]) {
       const day = new Date(Date.parse(`${row.date}T12:00:00Z`) + offset * 86_400_000)
         .toISOString()
         .slice(0, 10);
       const end = zonedTimeToUtc(day, row.arrivalTime, portTimeZone(ids.toPort));
       const minutes = Math.round((end.getTime() - start.getTime()) / 60_000);
-      if (minutes > 0) {
+      if (minutes <= 0) continue;
+      if (
+        duration === null ||
+        (typicalDuration !== null &&
+          Math.abs(minutes - typicalDuration) < Math.abs(duration - typicalDuration))
+      )
         duration = minutes;
-        break;
-      }
     }
   }
   duration ??= row.durationMinutes ?? typicalDuration;

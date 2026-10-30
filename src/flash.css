@@ -5514,3 +5514,176 @@ button.bw-tavatar:focus-visible {
   color: #5b6b66;
   font-size: 11.5px;
 }
+
+/* Page Navires : la flotte en chiffres, puis le classement. */
+.bw-fleet {
+  margin-bottom: 40px;
+  overflow: hidden;
+  border-radius: 24px;
+  border: 1px solid var(--border);
+  background: var(--card);
+}
+.bw-fleet__tiles {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 1px;
+  background: #0e2a3a;
+  color: #ffffff;
+}
+.bw-fleet__tiles > div {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 22px 18px;
+  background: #0e2a3a;
+}
+.bw-fleet__tiles dd {
+  font-size: 30px;
+  font-weight: 800;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+}
+.bw-fleet__tiles dt {
+  color: #ffd98a;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.25;
+}
+.bw-fleet__ranking {
+  padding: 20px 24px 18px;
+}
+.bw-fleet__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px 16px;
+  margin-bottom: 12px;
+}
+.bw-fleet__head h2 {
+  font-size: 22px;
+  font-weight: 800;
+}
+.bw-fleet__head > div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+.bw-fleet__head button {
+  min-height: 36px;
+  padding: 0 12px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 600;
+}
+.bw-fleet__head button[aria-pressed="true"] {
+  border-color: #0e2a3a;
+  background: #0e2a3a;
+  color: #ffffff;
+}
+.bw-fleet ol {
+  display: grid;
+  gap: 2px;
+}
+.bw-fleet li {
+  display: grid;
+  grid-template-columns: 22px 56px minmax(150px, 240px) minmax(0, 1fr) 90px;
+  align-items: center;
+  gap: 12px;
+  padding: 6px 4px;
+  border-radius: 10px;
+}
+.bw-fleet li:hover {
+  background: var(--secondary);
+}
+.bw-fleet__rank {
+  color: #0e7a43;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+.bw-fleet__photo {
+  display: grid;
+  width: 56px;
+  height: 36px;
+  place-items: center;
+  overflow: hidden;
+  border-radius: 8px;
+  background: #ffffff;
+  color: var(--muted-foreground);
+}
+.bw-fleet__photo img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+.bw-fleet__name {
+  min-width: 0;
+  font-size: 14px;
+  font-weight: 700;
+}
+.bw-fleet__name a:hover {
+  text-decoration: underline;
+}
+.bw-fleet__name small {
+  display: block;
+  overflow: hidden;
+  color: var(--muted-foreground);
+  font-size: 11.5px;
+  font-weight: 500;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.bw-fleet__bar {
+  height: 10px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: var(--secondary);
+}
+.bw-fleet__bar i {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #0e7a43, #2bb673);
+  transition: width 0.3s ease;
+}
+.bw-fleet li > strong {
+  font-size: 14px;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+.bw-fleet__ranking > p {
+  margin-top: 10px;
+  color: var(--muted-foreground);
+  font-size: 12px;
+}
+@media (max-width: 900px) {
+  .bw-fleet__tiles {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+@media (max-width: 640px) {
+  .bw-fleet__tiles {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .bw-fleet__tiles > div {
+    padding: 16px 14px;
+  }
+  .bw-fleet__tiles dd {
+    font-size: 24px;
+  }
+  .bw-fleet__ranking {
+    padding: 16px 12px 14px;
+  }
+  .bw-fleet li {
+    grid-template-columns: 20px 44px minmax(0, 1fr) auto;
+    gap: 8px;
+  }
+  .bw-fleet__photo {
+    width: 44px;
+  }
+  .bw-fleet__bar {
+    display: none;
+  }
+}

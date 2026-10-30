@@ -1,10 +1,31 @@
 import { describe, expect, it } from "vitest";
-import { computeVesselFacts } from "./vesselFacts";
+import { computeVesselFacts, fleetOverview } from "./vesselFacts";
 import type { Vessel } from "./types";
 
 const vessel = (id: string, values: Partial<Vessel>) =>
   ({ id, name: id, status: "active", ...values }) as Vessel;
 const upcoming = (...ids: string[]) => new Map(ids.map((id) => [id, 3]));
+
+describe("fleetOverview", () => {
+  it("résume les navires en service seulement", () => {
+    const overview = fleetOverview(
+      [
+        vessel("a", { company_id: "c1", build_year: 2000, passenger_capacity: 1000 }),
+        vessel("b", { company_id: "c1", build_year: 2010, passenger_capacity: 500 }),
+        vessel("idle", { company_id: "c2", build_year: 1970, passenger_capacity: 9000 }),
+      ],
+      upcoming("a", "b"),
+      2026,
+    );
+    expect(overview).toMatchObject({
+      vessels: 2,
+      companies: 1,
+      averageAge: 21,
+      passengers: 1500,
+      crossings: 6,
+    });
+  });
+});
 
 describe("computeVesselFacts", () => {
   it("ne classe que les navires qui ont un départ à venir", () => {

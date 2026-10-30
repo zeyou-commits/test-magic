@@ -133,6 +133,31 @@ const FACTS: {
   },
 ];
 
+/** La flotte en chiffres : les navires actifs qui ont au moins un départ à venir. */
+export function fleetOverview(
+  vessels: Vessel[],
+  upcomingByVessel: Map<string, number>,
+  year = new Date().getFullYear(),
+) {
+  const fleet = vessels.filter(
+    (vessel) => vessel.status === "active" && (upcomingByVessel.get(vessel.id) ?? 0) > 0,
+  );
+  const years = fleet.flatMap((vessel) => (vessel.build_year ? [vessel.build_year] : []));
+  const sum = (pick: (vessel: Vessel) => number | null | undefined) =>
+    fleet.reduce((total, vessel) => total + (pick(vessel) ?? 0), 0);
+  return {
+    fleet,
+    vessels: fleet.length,
+    companies: new Set(fleet.map((vessel) => vessel.company_id).filter(Boolean)).size,
+    averageAge: years.length
+      ? Math.round(years.reduce((total, built) => total + (year - built), 0) / years.length)
+      : null,
+    passengers: sum((vessel) => vessel.passenger_capacity),
+    cars: sum((vessel) => vessel.car_capacity),
+    crossings: fleet.reduce((total, vessel) => total + (upcomingByVessel.get(vessel.id) ?? 0), 0),
+  };
+}
+
 export type VesselFact = { key: FactKey; rank: number; label: string; value: string };
 export type Podium = {
   key: FactKey;

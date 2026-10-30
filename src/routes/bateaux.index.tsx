@@ -1,11 +1,12 @@
 import { VesselAlertTag } from "@/components/panel/VesselAlert";
 import { VesselPalmares, VesselPhotoBadge } from "@/components/panel/VesselFacts";
+import { FleetOverview } from "@/components/panel/FleetOverview";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { ArrowRight, CarFront, Gauge, Ruler, Ship, Users } from "lucide-react";
 import { SiteLayout } from "@/components/layout/SiteLayout";
-import { Breadcrumbs, CollectionSchema, EditorialHero } from "@/components/editorial/Editorial";
+import { Breadcrumbs, CollectionSchema } from "@/components/editorial/Editorial";
 import { CompanyBadge } from "@/components/panel/CompanyBadge";
 import { vesselDossiers } from "@/content/vessels";
 import { seoHead } from "@/lib/seo/site";
@@ -59,14 +60,13 @@ function Boats() {
         name="Flotte des ferries Europe ↔ Algérie"
         items={vesselDossiers.map((v) => ({ name: v.name, path: `/bateaux/${v.slug}` }))}
       />
-      <EditorialHero
-        label="La flotte"
-        title="Les compagnies, leurs navires et leurs lignes"
-        intro="Chaque armateur, chaque navire en photo avec ses caractéristiques et les traversées qu'il assure. Les capacités générales ne sont pas des places disponibles."
-      />
+      <h1 className="mb-4 font-display text-3xl font-bold md:text-4xl">
+        La flotte entre l'Europe et l'Algérie
+      </h1>
       {groups.length === 0 ? (
         <p className="text-sm text-muted-foreground">Chargement de la flotte…</p>
       ) : null}
+      <FleetOverview />
       <VesselPalmares />
       <div className="space-y-10">
         {groups.map(({ company, vessels: list }) => {

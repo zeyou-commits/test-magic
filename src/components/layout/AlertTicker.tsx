@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useRouterState } from "@tanstack/react-router";
 import { CircleAlert, Share2, X } from "lucide-react";
-import { newsQuery } from "@/lib/ferry/flash";
+import { newsQuery, setFlashIgnored, shareAlert, useIgnoredFlash } from "@/lib/ferry/flash";
 import { incidentHeadline, incidentsQuery } from "@/lib/ferry/incidents";
 import { portsQuery, vesselsQuery } from "@/lib/ferry/queries";
 import { useMyTrip } from "@/lib/ferry/myTrip";
@@ -35,6 +35,7 @@ export function AlertTicker() {
   const [dismissed, setDismissed] = useState<string | null>(null);
   const [ready, setReady] = useState(false);
   const [copied, setCopied] = useState(false);
+  const ignored = useIgnoredFlash();
   const observer = useRef<ResizeObserver | null>(null);
   // Hauteur du bandeau : sur mobile, une fiche en plein écran se place juste en dessous.
   const measure = useCallback((node: HTMLDivElement | null) => {
@@ -77,8 +78,12 @@ export function AlertTicker() {
     setDismissed(readDismissed());
     setReady(true);
   }, []);
+  // Ignorer l'alerte d'un navire vaut aussi pour son dossier : le bandeau et la pastille se taisent.
+  const ignoredVessels = new Set(
+    (news ?? []).filter((item) => ignored.has(`n-${item.id}`)).map((item) => item.vessel_id),
+  );
   const confirmed = incidents
-    .filter((i) => i.status === "confirmed")
+    .filter((i) => i.status === "confirmed" && !ignoredVessels.has(i.vessel_id))
     .map((i) => ({
       key: i.id,
       id: i.vessel_id as string | null,
@@ -95,11 +100,12 @@ export function AlertTicker() {
       .filter(
         (item) =>
           item.kind === kind &&
+          !ignored.has(`n-${item.id}`) &&
           !(item.vessel_id && covered.has(item.vessel_id)) &&
           (kind === "alerte" || Date.now() - Date.parse(item.starts_at) < 48 * 3_600_000),
       )
       .map((item) => ({
-        key: item.id,
+        key: `n-${item.id}`,
         id: item.vessel_id ?? null,
         version: `${item.id}:${item.title}`,
         text: item.title,
@@ -133,17 +139,9 @@ export function AlertTicker() {
     else window.location.assign(`/?select=departure&id=${departureId}`);
   };
   const share = async (text: string, vesselId: string | null) => {
-    const url = `${window.location.origin}/${vesselId ? `?select=vessel&id=${vesselId}` : ""}`;
-    try {
-      if (navigator.share) await navigator.share({ title: text, text, url });
-      else {
-        await navigator.clipboard.writeText(`${text} ${url}`);
-        setCopied(true);
-        window.setTimeout(() => setCopied(false), 2000);
-      }
-    } catch {
-      /* partage annulé */
-    }
+    if (!(await shareAlert(text, vesselId))) return;
+    setCopied(true);
+    window.setTimeout(() => setCopied(false), 2000);
   };
   const close = (
     <button
@@ -151,6 +149,17 @@ export function AlertTicker() {
       className="bw-alert-ticker__close"
       aria-label="Masquer les alertes"
       onClick={() => {
+        // Fermer le bandeau, c'est aussi retirer la pastille de ces alertes.
+        setFlashIgnored(
+          (news ?? [])
+            .filter(
+              (item) =>
+                alerts.some((alert) => alert.key === `n-${item.id}`) ||
+                (item.vessel_id && alerts.some((alert) => alert.id === item.vessel_id)),
+            )
+            .map((item) => `n-${item.id}`),
+          true,
+        );
         setDismissed(version);
         try {
           window.localStorage.setItem(DISMISSED_KEY, version);

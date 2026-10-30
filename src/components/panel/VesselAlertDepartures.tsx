@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { ChevronRight } from "lucide-react";
+import { DepartureAlternatives } from "./DepartureAlternatives";
 import { formatDateTime } from "@/lib/ferry/format";
 import { impactOnDeparture, incidentForVessel, incidentsQuery } from "@/lib/ferry/incidents";
 import { portsQuery, routesQuery, upcomingDeparturesQuery } from "@/lib/ferry/queries";
@@ -57,6 +58,7 @@ export function VesselAlertDepartures({
           );
         })}
       </ul>
+      <DepartureAlternatives departure={list[0]!} onSelect={onSelect} always />
     </section>
   );
 }

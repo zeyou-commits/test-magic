@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import { queryOptions } from "@tanstack/react-query";
 import { z } from "zod";
 import type { SupabaseClient } from "@supabase/supabase-js";
@@ -181,6 +182,58 @@ export function markFlashSeen(keys: string[]) {
   } catch {
     /* stockage facultatif */
   }
+}
+
+// Alertes qu'un visiteur choisit d'ignorer : plus de pastille ni de bandeau, l'info reste dans le fil.
+const IGNORED_KEY = "bw-flash-ignored";
+export function readIgnoredFlash(): Set<string> {
+  try {
+    return new Set(JSON.parse(window.localStorage.getItem(IGNORED_KEY) ?? "[]") as string[]);
+  } catch {
+    return new Set();
+  }
+}
+export function setFlashIgnored(keys: string[], ignored: boolean) {
+  try {
+    const next = readIgnoredFlash();
+    for (const key of keys) {
+      if (ignored) next.add(key);
+      else next.delete(key);
+    }
+    window.localStorage.setItem(IGNORED_KEY, JSON.stringify([...next].slice(-100)));
+    window.dispatchEvent(new Event("bledway:flash-seen"));
+  } catch {
+    /* stockage facultatif */
+  }
+}
+export function useIgnoredFlash() {
+  const [ignored, setIgnored] = useState<Set<string>>(() => new Set());
+  useEffect(() => {
+    const sync = () => setIgnored(readIgnoredFlash());
+    sync();
+    window.addEventListener("bledway:flash-seen", sync);
+    window.addEventListener("storage", sync);
+    return () => {
+      window.removeEventListener("bledway:flash-seen", sync);
+      window.removeEventListener("storage", sync);
+    };
+  }, []);
+  return ignored;
+}
+
+/** Partage une alerte : feuille du téléphone, sinon lien copié. Vrai si le lien a été copié. */
+export async function shareAlert(text: string, vesselId: string | null) {
+  const url = `${window.location.origin}/${vesselId ? `?select=vessel&id=${vesselId}` : ""}`;
+  try {
+    if (navigator.share) await navigator.share({ title: text, text, url });
+    else {
+      await navigator.clipboard.writeText(`${text} ${url}`);
+      return true;
+    }
+  } catch {
+    /* partage annulé */
+  }
+  return false;
 }
 
 // ---------- Lieux pratiques ----------

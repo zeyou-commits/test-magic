@@ -5449,3 +5449,68 @@ button.bw-tavatar:focus-visible {
   font-size: 13px;
   font-weight: 600;
 }
+
+/* Autres départs autour d'un départ touché. */
+.bw-alternatives {
+  margin: 10px 0;
+  padding: 12px;
+  border: 1px solid #cfe5d8;
+  border-radius: 14px;
+  background: #f4faf6;
+  font-size: 13px;
+}
+.bw-alternatives h3 {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #0f5c46;
+  font-size: 14px;
+  font-weight: 700;
+}
+.bw-alternatives h4 {
+  margin-top: 10px;
+  color: #5b6b66;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+.bw-alternatives ul {
+  display: grid;
+  gap: 4px;
+  margin-top: 4px;
+}
+.bw-alternatives li > button {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 8px;
+  border-radius: 10px;
+  background: #ffffff;
+  text-align: left;
+}
+.bw-alternatives li > button:hover {
+  background: #e9f5ee;
+}
+.bw-alternatives li > button > span {
+  display: grid;
+  min-width: 0;
+  flex: 1;
+}
+.bw-alternatives small {
+  color: #5b6b66;
+  font-size: 11.5px;
+}
+.bw-alternatives em {
+  flex: none;
+  color: #0f5c46;
+  font-size: 12px;
+  font-style: normal;
+  font-weight: 700;
+}
+.bw-alternatives > p {
+  margin-top: 8px;
+  color: #5b6b66;
+  font-size: 11.5px;
+}

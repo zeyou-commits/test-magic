@@ -6,7 +6,7 @@ import { Bell, Check, Zap } from "lucide-react";
 import { supabase as typedSupabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { markFlashSeen, readSeenFlash, relativeAge } from "@/lib/ferry/flash";
+import { markFlashSeen, readSeenFlash, relativeAge, useIgnoredFlash } from "@/lib/ferry/flash";
 import type { Selection } from "@/lib/ferry/types";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import {
@@ -159,7 +159,8 @@ export function HeaderInbox() {
   const unread = unreadNotices.length;
   const isAlertNotice = (notice: Notice) => noticeKind(notice.event_key, notice.title) === "alert";
   const alertNotices = unreadNotices.filter(isAlertNotice).length;
-  const alertCards = cards.filter(isCriticalCard);
+  const ignored = useIgnoredFlash();
+  const alertCards = cards.filter((card) => isCriticalCard(card) && !ignored.has(card.key));
   // Une alerte grave ne se noie pas dans le compteur : elle a son « ! » tant qu'elle est en cours.
   const hasAlert = alertCards.length + alertNotices > 0;
   const freshAlert = alertNotices > 0 || alertCards.some((card) => !seen.has(card.key));

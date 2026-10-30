@@ -33,6 +33,7 @@ import { VesselElsewhereNotice } from "./VesselElsewhereNotice";
 import { DepartureIncidentNotice } from "./VesselIncidentNotice";
 import { useVesselAlert } from "@/lib/ferry/vesselAlerts";
 import { VesselAlertBanner } from "./VesselAlert";
+import { DepartureAlternatives } from "./DepartureAlternatives";
 import { VesselBoardingNote, VesselIdentity } from "./VesselFacts";
 import { MakeMyTrip } from "./MakeMyTrip";
 import { HelpRequests } from "@/components/community/HelpRequests";
@@ -319,6 +320,7 @@ export function TripRecap({
         </div>
       </section>
 
+      <DepartureAlternatives departure={departure} onSelect={onSelect} />
       {myDeparture ? <JourneyPlanner departureId={departure.id} onSelect={onSelect} /> : null}
       {upcoming && !departure.is_demo ? (
         <MakeMyTrip kind="departure" targetId={departure.id} label={`${from.name} → ${to.name}`} />

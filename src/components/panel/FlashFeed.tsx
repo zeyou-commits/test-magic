@@ -5,11 +5,15 @@ import {
   ArrowRight,
   ArrowUpRight,
   Building2,
+  BellOff,
   ChevronDown,
   Megaphone,
   Newspaper,
+  Share2,
   Zap,
 } from "lucide-react";
+import { useMyTrip } from "@/lib/ferry/myTrip";
+import { useTravelAction } from "@/hooks/useTravelAction";
 import { useAuth } from "@/hooks/useAuth";
 import {
   activeAlerts,
@@ -25,6 +29,9 @@ import {
   newsRank,
   signalRank,
   relativeAge,
+  setFlashIgnored,
+  shareAlert,
+  useIgnoredFlash,
   type DeparturePorts,
   type NewsContext,
   type NewsItem,
@@ -220,7 +227,8 @@ export function FlashFeed({
   const network = useNetwork();
   const flash = useFlashCards({ context, withSignals, signalPortIds, signalVesselIds });
   const [showAll, setShowAll] = useState(false);
-  const critical = flash.cards.filter(isCriticalCard);
+  const ignored = useIgnoredFlash();
+  const critical = flash.cards.filter((card) => isCriticalCard(card) && !ignored.has(card.key));
   const focused = focusAlerts && critical.length > 0 && !showAll;
   const cards = (focused ? critical : flash.cards).slice(0, limit);
   const others = flash.cards.length - critical.length;
@@ -323,6 +331,7 @@ export function FlashFeed({
                   network={network}
                   currentPortId={currentPortId}
                   onSelect={onSelect}
+                  ignored={ignored.has(card.key)}
                 />
               ) : null}
             </li>
@@ -343,7 +352,9 @@ function FlashDetail({
   network,
   currentPortId,
   onSelect,
+  ignored = false,
 }: {
+  ignored?: boolean;
   card: FlashCard;
   network: ReturnType<typeof useNetwork>;
   currentPortId?: string | undefined;
@@ -404,7 +415,14 @@ function FlashDetail({
               <span className="sr-only"> (nouvel onglet)</span>
             </a>
           ) : null}
-          {onSelect && item.vessel_id ? (
+          {item.kind !== "info" ? (
+            <AlertActions
+              card={card as Extract<FlashCard, { type: "news" }>}
+              ignored={ignored}
+              onSelect={onSelect}
+            />
+          ) : null}
+          {item.kind !== "info" && item.vessel_id ? null : onSelect && item.vessel_id ? (
             <button type="button" onClick={() => onSelect({ type: "vessel", id: item.vessel_id! })}>
               Voir le navire <ArrowRight size={14} aria-hidden />
             </button>
@@ -424,5 +442,66 @@ function FlashDetail({
         </span>
       </div>
     </div>
+  );
+}
+
+/** Les mêmes gestes que dans le bandeau, et la possibilité de ne plus être dérangé. */
+function AlertActions({
+  card,
+  ignored,
+  onSelect,
+}: {
+  card: Extract<FlashCard, { type: "news" }>;
+  ignored: boolean;
+  onSelect?: ((selection: Selection) => void) | undefined;
+}) {
+  const vesselId = card.item.vessel_id ?? null;
+  const request = useTravelAction();
+  const { trip } = useMyTrip();
+  const { data: vessels = [] } = useQuery(vesselsQuery);
+  const [copied, setCopied] = useState(false);
+  const mine = vesselId && trip?.vessel?.id === vesselId ? trip : null;
+  return (
+    <>
+      {vesselId && onSelect ? (
+        <button type="button" onClick={() => onSelect({ type: "vessel", id: vesselId })}>
+          Voir les traversées <ArrowRight size={14} aria-hidden />
+        </button>
+      ) : null}
+      {vesselId && mine && onSelect ? (
+        <button type="button" onClick={() => onSelect({ type: "departure", id: mine.departure.id })}>
+          Voir ma traversée
+        </button>
+      ) : vesselId ? (
+        <button
+          type="button"
+          onClick={() =>
+            request({
+              type: "follow",
+              kind: "vessel",
+              targetId: vesselId,
+              label: vessels.find((v) => v.id === vesselId)?.name ?? "Ce navire",
+              upgrade: true,
+            })
+          }
+        >
+          Je voyage sur ce navire
+        </button>
+      ) : null}
+      <button
+        type="button"
+        onClick={() =>
+          void shareAlert(card.item.title, vesselId).then((done) => {
+            setCopied(done);
+            if (done) window.setTimeout(() => setCopied(false), 2000);
+          })
+        }
+      >
+        <Share2 size={13} aria-hidden /> {copied ? "Lien copié" : "Partager"}
+      </button>
+      <button type="button" onClick={() => setFlashIgnored([card.key], !ignored)}>
+        <BellOff size={13} aria-hidden /> {ignored ? "Ne plus ignorer" : "Ignorer"}
+      </button>
+    </>
   );
 }

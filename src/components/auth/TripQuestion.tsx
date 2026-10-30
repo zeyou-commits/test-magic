@@ -1,19 +1,30 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { CalendarDays, Heart, Ship, Users } from "lucide-react";
+import { CalendarDays, CircleAlert, Heart, Ship, Users } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useMyTrip } from "@/lib/ferry/myTrip";
-import { portsQuery, routesQuery } from "@/lib/ferry/queries";
+import { portsQuery, routesQuery, upcomingDeparturesQuery } from "@/lib/ferry/queries";
+import { useVesselAlert } from "@/lib/ferry/vesselAlerts";
 import { ReturnDepartureSearch } from "@/components/panel/ReturnDepartureSearch";
 import { formatDateTime } from "@/lib/ferry/format";
 import { portTimeZone } from "@/lib/ferry/time";
 import type { TravelAction } from "@/lib/notifications/actions";
 
 type Follow = Extract<TravelAction, { type: "follow" }>;
-type Stage = "intent" | "date" | "leg" | "return";
+type Stage = "intent" | "date" | "leg" | "returnAsk" | "return";
 
 /** Le cœur sert au voyageur, à un proche et au simple amateur de navires. */
 export function TripQuestion({ action, onAnswer }: { action: Follow; onAnswer: (next: Follow) => void }) {
+  const { data: upcoming = [] } = useQuery(upcomingDeparturesQuery());
+  const vesselId = action.kind === "vessel" ? action.targetId : upcoming.find((d) => d.id === action.targetId)?.vessel_id;
+  const alert = useVesselAlert(vesselId);
+  return <>
+    {alert ? <p role="alert" className="bw-trip-question__alert"><CircleAlert size={16} aria-hidden /><span><strong>{alert.label}.</strong> Vérifiez auprès de la compagnie avant de partir. Vous pouvez tout de même enregistrer votre traversée pour recevoir les informations.</span></p> : null}
+    <TripSteps action={action} onAnswer={onAnswer} />
+  </>;
+}
+
+function TripSteps({ action, onAnswer }: { action: Follow; onAnswer: (next: Follow) => void }) {
   const [stage, setStage] = useState<Stage>(!action.upgrade ? "intent" : action.kind === "vessel" ? "date" : "leg");
   const [chosen, setChosen] = useState<string | null>(null);
   const [chosenReturn, setChosenReturn] = useState<string | null>(null);
@@ -72,18 +83,24 @@ export function TripQuestion({ action, onAnswer }: { action: Follow; onAnswer: (
     {myTrip && myTrip.departure.id !== selected ? <p className="rounded-lg bg-secondary px-3 py-2 text-xs leading-relaxed">
       <strong>Vous avez déjà une traversée :</strong> {myTrip.from?.name ?? "Votre voyage"} → {myTrip.to?.name ?? ""}, {formatDateTime(myTrip.departure.departure_at, portTimeZone(myTrip.from))}. « Ma traversée » est unique (un aller, ou un aller-retour) : si celle-ci est un nouvel aller, l’ancienne reste suivie par curiosité. Si c’est le retour de ce voyage, les deux sont conservées.
     </p> : null}
-    <button type="button" className="bw-trip-question__choice" onClick={() => setStage("return")}><Ship size={20} aria-hidden /><span><strong>C’est mon aller</strong><small>Je peux ajouter mon retour maintenant ou plus tard.</small></span></button>
+    <button type="button" className="bw-trip-question__choice" onClick={() => setStage("returnAsk")}><Ship size={20} aria-hidden /><span><strong>C’est mon aller</strong><small>Je peux ajouter mon retour maintenant ou plus tard.</small></span></button>
     <button type="button" className="bw-trip-question__choice" onClick={() => confirm("inbound")}><Ship size={20} aria-hidden /><span><strong>C’est mon retour</strong><small>J’ai déjà fait l’aller ou je ne souhaite suivre que le retour.</small></span></button>
     <button type="button" className="w-full py-2 text-sm text-muted-foreground" onClick={() => setStage(action.kind === "vessel" ? "date" : "intent")}>{action.upgrade && action.kind === "departure" ? "Autre raison de suivre" : "Retour"}</button>
   </div>;
 
+  if (stage === "returnAsk") return <div className="bw-trip-question">
+    <p className="bw-trip-question__title"><CalendarDays size={18} aria-hidden /> Voulez-vous ajouter votre retour ?</p>
+    <p className="text-sm text-muted-foreground">Vous pourrez aussi le faire plus tard, depuis Ma traversée.</p>
+    <button type="button" className="bw-action-primary w-full" onClick={() => setStage("return")}>Oui, ajouter mon retour</button>
+    <button type="button" className="bw-action-secondary w-full" onClick={() => confirm("outbound")}>Plus tard</button>
+    <button type="button" className="w-full py-2 text-sm text-muted-foreground" onClick={() => setStage("leg")}>Retour</button>
+  </div>;
+
   if (stage === "return") return <div className="bw-trip-question">
-    <p className="bw-trip-question__title"><CalendarDays size={18} aria-hidden /> Ajouter votre retour ?</p>
-    <p className="text-sm text-muted-foreground">Facultatif : vous pourrez le renseigner depuis Ma traversée.</p>
+    <p className="bw-trip-question__title"><CalendarDays size={18} aria-hidden /> Quel jour rentrez-vous ?</p>
     {selected ? <ReturnDepartureSearch departureId={selected} selectedId={chosenReturn} onChoose={setChosenReturn} /> : null}
     {chosenReturn ? <button type="button" className="bw-action-primary w-full" onClick={() => confirm("outbound", chosenReturn)}>Suivre l’aller et le retour</button> : null}
-    <button type="button" className="bw-action-secondary w-full" onClick={() => confirm("outbound")}>Ajouter le retour plus tard</button>
-    <button type="button" className="w-full py-2 text-sm text-muted-foreground" onClick={() => setStage("leg")}>Retour</button>
+    <button type="button" className="w-full py-2 text-sm text-muted-foreground" onClick={() => setStage("returnAsk")}>Retour</button>
   </div>;
 
   return <div className="bw-trip-question">

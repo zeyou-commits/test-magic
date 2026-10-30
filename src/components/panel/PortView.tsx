@@ -3,7 +3,7 @@ import { entityReviewsQuery } from "@/lib/ferry/entityReviews";
 import { useEffect, useMemo, useState } from "react";
 import { LikeButton, useContributions } from "@/components/community/Contributions";
 import { TravellerAvatar } from "@/components/community/TravellerAvatar";
-import { hasSignalFocus, LivePulse, revealLive, useLiveInfo } from "./LivePulse";
+import { LivePulse, revealLive, useLiveInfo } from "./LivePulse";
 import { useQuery } from "@tanstack/react-query";
 import {
   ArrowDownLeft,
@@ -99,6 +99,23 @@ export function PortView({
     if (user && window.sessionStorage.getItem(`bledway:rating:port:${portId}`))
       setChosenTab("community");
   }, [user, portId]);
+  // Arrivée depuis la bulle de la carte : mêmes horaires que ceux qu'on regardait.
+  useEffect(() => {
+    const apply = () => {
+      try {
+        const wanted = window.sessionStorage.getItem("bledway:port-schedule");
+        if (!wanted) return;
+        window.sessionStorage.removeItem("bledway:port-schedule");
+        setScheduleTab(wanted === "arrivals" ? "arrivals" : "departures");
+        setChosenTab("live");
+      } catch {
+        /* stockage facultatif */
+      }
+    };
+    apply();
+    window.addEventListener("bledway:port-schedule", apply);
+    return () => window.removeEventListener("bledway:port-schedule", apply);
+  }, [portId]);
   const port = ports.find((item) => item.id === portId);
   const photoQuery = useQuery(portPhotoQuery(port ?? { id: "", name: "", photo_url: null }));
   // Départs récents (traversées en cours) + à venir : une arrivée d'un bateau parti hier compte.
@@ -147,8 +164,8 @@ export function PortView({
     return { entries, overall: perReview.length ? mean(perReview) : null };
   }, [criteria, reviews, globalCriterion]);
 
-  // Bandeau « en direct » : compté comme sur les fiches traversée et bateau. L'onglet « En direct »
-  // s'ouvre d'office seulement s'il s'y passe quelque chose.
+  // Bandeau « en direct » : compté comme sur les fiches traversée et bateau. On vient d'abord
+  // chercher les horaires : leur onglet est ouvert par défaut, les infos suivent.
   const reviewCommunity = useContributions(
     "port_review",
     (reviewsResult.data ?? []).map((review) => review.id),
@@ -159,8 +176,7 @@ export function PortView({
     signalPortIds: [portId],
   });
   const liveId = `live-port-${portId}`;
-  const activeTab =
-    chosenTab ?? (live.official + live.travellers || hasSignalFocus() ? "live" : "practical");
+  const activeTab = chosenTab ?? "live";
   const openLive = () => {
     setChosenTab("live");
     revealLive(liveId);
@@ -316,7 +332,7 @@ export function PortView({
 
       <Tabs value={activeTab} onValueChange={setChosenTab} className="port-profile-tabs">
         <TabsList aria-label={`Explorer le port de ${port.name}`} className="port-profile-nav">
-          <TabsTrigger value="live">En direct</TabsTrigger>
+          <TabsTrigger value="live">Horaires</TabsTrigger>
           <TabsTrigger value="practical">Préparer</TabsTrigger>
           <TabsTrigger value="community">
             Avis{" "}
@@ -324,21 +340,10 @@ export function PortView({
           </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="live" className="port-tab-content" id={liveId} data-live-anchor>
-          <FlashFeed
-            title={`À la une · ${port.name}`}
-            context={{ portIds: [portId], routeIds: portRoutes.map((route) => route.id) }}
-            signalPortIds={[portId]}
-            withSignals={false}
-            currentPortId={portId}
-            expandFirst
-            onSelect={onSelect}
-          />
-          <TravelSignals key={portId} kind="port" target={portId} compact />
-          <HelpRequests kind="port" scopeId={portId} />
-          <section className="pv-section" aria-label="Prochains mouvements">
+        <TabsContent value="live" className="port-tab-content">
+          <section className="pv-section" aria-label="Départs et arrivées">
             <div className="pv-section__head">
-              <h3>Prochains mouvements</h3>
+              <h3>Départs et arrivées</h3>
               <small>{zoneLabel(timeZone)}</small>
             </div>
             {departuresResult.isPending ? (
@@ -425,6 +430,19 @@ export function PortView({
               </Tabs>
             )}
           </section>
+          <div id={liveId} data-live-anchor>
+            <FlashFeed
+              title={`À la une · ${port.name}`}
+              context={{ portIds: [portId], routeIds: portRoutes.map((route) => route.id) }}
+              signalPortIds={[portId]}
+              withSignals={false}
+              currentPortId={portId}
+              expandFirst
+              onSelect={onSelect}
+            />
+            <TravelSignals key={portId} kind="port" target={portId} compact />
+            <HelpRequests kind="port" scopeId={portId} />
+          </div>
         </TabsContent>
 
         <TabsContent value="practical" className="port-tab-content">

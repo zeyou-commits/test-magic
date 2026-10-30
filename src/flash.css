@@ -5145,3 +5145,25 @@ button.bw-tavatar:focus-visible {
   font-size: 12.5px;
   font-weight: 600;
 }
+
+/* Ma traversée sur un navire en alerte : pas de vert rassurant. */
+.bw-mytrip-hero[data-alert] {
+  background: linear-gradient(135deg, #8f1515 0%, #c81e1e 100%);
+  box-shadow: 0 10px 24px rgb(200 30 30 / 0.2);
+}
+.bw-trip-question__alert {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+  padding: 10px 12px;
+  border: 1px solid #f5b5b5;
+  border-radius: 12px;
+  background: #fef2f2;
+  color: #7f1414;
+  font-size: 12.5px;
+  line-height: 1.45;
+}
+.bw-trip-question__alert svg {
+  flex-shrink: 0;
+  margin-top: 2px;
+}

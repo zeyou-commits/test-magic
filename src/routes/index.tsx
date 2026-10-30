@@ -616,6 +616,7 @@ function Index() {
           const route = routes.find((item) => item.id === departure.route_id);
           const parts = formatDateParts(departure.departure_at, timeZone);
           return {
+            departureId: departure.id,
             date: capitalizeFirst(`${parts.weekday} ${parts.shortDate}`),
             time: parts.time,
             to: route ? (portById.get(route.arrival_port_id)?.name ?? null) : null,
@@ -626,6 +627,7 @@ function Index() {
         upcomingArrivals: traffic.arrivals.slice(0, 3).map(({ departure, route, arrivalAt }) => {
           const parts = formatDateParts(arrivalAt, timeZone);
           return {
+            departureId: departure.id,
             date: capitalizeFirst(`${parts.weekday} ${parts.shortDate}`),
             time: parts.time,
             from: portById.get(route.departure_port_id)?.name ?? null,

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { Bell, BellOff, Check, LoaderCircle, Share, SquarePlus } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
+import { isDesktopBrowser } from "@/components/layout/PhoneInstallCard";
 import {
   devicePushState,
   disableDevicePush,
@@ -27,6 +28,7 @@ export function PushStatusLine({ withDisable = false }: { withDisable?: boolean 
     void refresh();
   }, [refresh]);
   if (!user || state === "checking") return null;
+  const device = isDesktopBrowser() ? "cet ordinateur" : "ce téléphone";
   const activate = async () => {
     setBusy(true);
     setNote("");
@@ -57,7 +59,7 @@ export function PushStatusLine({ withDisable = false }: { withDisable?: boolean 
       {state === "on" ? (
         <>
           <p>
-            <Check size={15} aria-hidden /> Alertes activées sur ce téléphone
+            <Check size={15} aria-hidden /> Alertes activées sur {device}
           </p>
           {withDisable ? (
             <button type="button" className="bw-push-line__quiet" disabled={busy} onClick={() => void disable()}>
@@ -68,7 +70,7 @@ export function PushStatusLine({ withDisable = false }: { withDisable?: boolean 
       ) : state === "off" ? (
         <>
           <p>
-            <Bell size={15} aria-hidden /> Recevez les alertes de vos traversées sur ce téléphone, même
+            <Bell size={15} aria-hidden /> Recevez les alertes de vos traversées sur {device}, même
             BledWay fermé.
           </p>
           <button type="button" disabled={busy} onClick={() => void activate()}>

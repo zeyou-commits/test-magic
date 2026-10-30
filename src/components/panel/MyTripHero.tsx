@@ -9,6 +9,7 @@ import type { FleetShip } from "@/lib/ferry/fleet";
 import type { Selection } from "@/lib/ferry/types";
 import { formatDateTime } from "@/lib/ferry/format";
 import { portTimeZone } from "@/lib/ferry/time";
+import { useVesselAlert } from "@/lib/ferry/vesselAlerts";
 
 /** Heure courante, rafraîchie chaque seconde le jour J, chaque minute sinon. */
 export function useNow(fast: boolean) {
@@ -57,14 +58,18 @@ export function MyTripHero({ onSelect }: { onSelect: (selection: Selection) => v
   const status = useQuery(myTripStatusQuery(trip?.departure.id ?? "", user?.id)).data ?? null;
   const start = trip ? Date.parse(trip.departure.departure_at) : 0;
   const now = useNow(Boolean(trip) && start - Date.now() < 86_400_000);
+  const alert = useVesselAlert(trip?.vessel?.id);
   if (!trip) return null;
   const phase = tripPhase(trip, now);
+  // Navire en alerte : plus de compte à rebours ni d'« En mer », le départ reste à confirmer.
+  const held = Boolean(alert) && phase.phase !== "cancelled" && phase.phase !== "arrived";
   const zone = portTimeZone(trip.from);
   const image =
     steps.find((step) => step.id === status)?.image ??
     (phase.phase === "sea" ? steps[2]!.image : phase.phase === "arrived" ? steps[3]!.image : steps[0]!.image);
-  const next =
-    phase.phase === "cancelled"
+  const next = held
+    ? "Contactez la compagnie avant de partir et consultez les informations à jour"
+    : phase.phase === "cancelled"
       ? "Voir les autres départs et les informations de la compagnie"
       : phase.phase === "before"
         ? "Préparer ma traversée : papiers, horaires, heure de présentation"
@@ -74,7 +79,12 @@ export function MyTripHero({ onSelect }: { onSelect: (selection: Selection) => v
             ? "Suivre le bateau et l’arrivée estimée"
             : "Partager l’arrivée avec ses proches";
   return (
-    <section className="bw-mytrip-hero" data-phase={phase.phase} aria-label="Ma traversée">
+    <section
+      className="bw-mytrip-hero"
+      data-phase={phase.phase}
+      data-alert={held || undefined}
+      aria-label="Ma traversée"
+    >
       <button
         type="button"
         className="bw-mytrip-hero__main"
@@ -97,7 +107,9 @@ export function MyTripHero({ onSelect }: { onSelect: (selection: Selection) => v
         <ArrowRight size={18} aria-hidden />
       </button>
       <div className="bw-mytrip-hero__clock" aria-live="off">
-        {phase.phase === "today" ? (
+        {held ? (
+          <strong>{alert?.label} · départ à confirmer</strong>
+        ) : phase.phase === "today" ? (
           <>
             <span>{phase.text}</span>
             <strong className="tabular-nums">{phase.countdown}</strong>
@@ -115,7 +127,7 @@ export function MyTripHero({ onSelect }: { onSelect: (selection: Selection) => v
       </div>
       <div className="bw-mytrip-hero__foot">
         <span>{next}</span>
-        {trip.vessel && (phase.phase === "today" || phase.phase === "sea") ? (
+        {trip.vessel && !held && (phase.phase === "today" || phase.phase === "sea") ? (
           <button
             type="button"
             onClick={() =>
@@ -146,6 +158,7 @@ export function MyTripMapChip({
   const { trip } = useMyTrip();
   const start = trip ? Date.parse(trip.departure.departure_at) : 0;
   const now = useNow(Boolean(trip) && start - Date.now() < 86_400_000);
+  const alert = useVesselAlert(trip?.vessel?.id);
   if (!trip) return null;
   const onMap = fleet.some((ship) => ship.vesselId && ship.vesselId === trip.departure.vessel_id);
   const phase = tripPhase(trip, now);
@@ -162,7 +175,11 @@ export function MyTripMapChip({
       <span>
         <small>Ma traversée{trip.vessel ? ` · ${trip.vessel.name}` : ""}</small>
         <strong className="tabular-nums">
-          {phase.phase === "today" ? `Départ dans ${phase.countdown}` : phase.text}
+          {alert && phase.phase !== "cancelled"
+            ? "Départ à confirmer"
+            : phase.phase === "today"
+              ? `Départ dans ${phase.countdown}`
+              : phase.text}
         </strong>
       </span>
     </button>

@@ -318,7 +318,7 @@ export function TripRecap({
       </section>
 
       {myDeparture ? <JourneyPlanner departureId={departure.id} onSelect={onSelect} /> : null}
-      {upcoming ? (
+      {upcoming && !departure.is_demo ? (
         <MakeMyTrip kind="departure" targetId={departure.id} label={`${from.name} → ${to.name}`} />
       ) : null}
 

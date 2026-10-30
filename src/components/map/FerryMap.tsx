@@ -51,6 +51,7 @@ export interface PortMeta {
   companies: { name: string; logoUrl: string | null }[];
   /** Prochains départs depuis ce port, déjà formatés en heure locale du port. */
   upcoming: {
+    departureId: string;
     date: string;
     time: string;
     to: string | null;
@@ -59,6 +60,7 @@ export interface PortMeta {
   }[];
   /** Prochaines arrivées prévues dans ce port, en heure locale. */
   upcomingArrivals: {
+    departureId: string;
     date: string;
     time: string;
     from: string | null;
@@ -1704,6 +1706,7 @@ export default function FerryMap({
       arrivalPanel.hidden = true;
       const makeRows = (
         items: {
+          departureId: string;
           date: string;
           time: string;
           place: string | null;
@@ -1723,6 +1726,20 @@ export default function FerryMap({
         items.slice(0, isMobile ? 2 : 3).forEach((item) => {
           const row = document.createElement("li");
           row.className = "port-tip__departure";
+          // Chaque ligne mène à sa traversée.
+          row.tabIndex = 0;
+          row.setAttribute("role", "button");
+          row.style.cursor = "pointer";
+          const openDeparture = (event: Event) => {
+            event.stopPropagation();
+            setTipPortId(null);
+            selectRef.current({ type: "departure", id: item.departureId });
+            onOpenPanel?.();
+          };
+          row.addEventListener("click", openDeparture);
+          row.addEventListener("keydown", (event) => {
+            if (event.key === "Enter") openDeparture(event);
+          });
           const date = document.createElement("span");
           date.className = "port-tip__departure-date";
           date.textContent = item.date;
@@ -1769,6 +1786,7 @@ export default function FerryMap({
       departurePanel.append(
         makeRows(
           (meta?.upcoming ?? []).map((item) => ({
+            departureId: item.departureId,
             date: item.date,
             time: item.time,
             place: item.to ? `→ ${item.to}` : null,
@@ -1781,6 +1799,7 @@ export default function FerryMap({
       arrivalPanel.append(
         makeRows(
           (meta?.upcomingArrivals ?? []).map((item) => ({
+            departureId: item.departureId,
             date: item.date,
             time: item.time,
             place: item.from ? `← ${item.from}` : null,
@@ -1790,6 +1809,16 @@ export default function FerryMap({
           "Aucune arrivée prévue connue pour le moment.",
         ),
       );
+      // Le bouton suit ce que l'on regardait : la fiche s'ouvre sur les mêmes horaires.
+      let showing: "departures" | "arrivals" = "departures";
+      const moreLabel = () =>
+        showing === "arrivals"
+          ? meta?.upcomingArrivals.length
+            ? "Voir toutes les arrivées"
+            : "Voir la fiche du port"
+          : meta?.upcoming.length
+            ? "Voir tous les départs"
+            : "Voir la fiche du port";
       const activateTab = (arrivals: boolean) => {
         departurePanel.hidden = arrivals;
         arrivalPanel.hidden = !arrivals;
@@ -1803,6 +1832,8 @@ export default function FerryMap({
         };
         setTabState(departureTab, !arrivals);
         setTabState(arrivalTab, arrivals);
+        showing = arrivals ? "arrivals" : "departures";
+        more.textContent = moreLabel();
       };
       departureTab.addEventListener("click", () => activateTab(false));
       arrivalTab.addEventListener("click", () => activateTab(true));
@@ -1811,11 +1842,18 @@ export default function FerryMap({
       const more = document.createElement("button");
       more.type = "button";
       more.className = "port-tip__more";
-      more.textContent = "Voir la fiche du port";
+      more.textContent = moreLabel();
       more.addEventListener("click", (event) => {
         event.stopPropagation();
         setTipPortId(null);
+        try {
+          window.sessionStorage.setItem("bledway:port-schedule", showing);
+        } catch {
+          /* la fiche s'ouvrira sur les départs */
+        }
         selectRef.current({ type: "port", id: port.id });
+        // Fiche déjà ouverte sur ce port (ordinateur) : elle change d'onglet sans se recharger.
+        window.dispatchEvent(new Event("bledway:port-schedule"));
         onOpenPanel?.();
       });
       tip.append(more);

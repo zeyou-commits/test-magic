@@ -20,6 +20,7 @@ export type ReturnDeparture = {
   to_name: string;
   from_country_code: string;
   company_name: string | null;
+  vessel_id: string | null;
   vessel_name: string | null;
 };
 
@@ -55,9 +56,9 @@ export function useJourneyForDeparture(userId: string | undefined, departureId: 
 }
 
 /** La traversée inverse est cherchée sur la ligne, jamais par nom de port. */
-export function useReturnDepartures(departureId: string | null, search = "", date = "") {
+export function useReturnDepartures(departureId: string | null, search = "", date = "", sameLine = false) {
   return useQuery({
-    queryKey: ["return-departures", departureId, normalize(search), date],
+    queryKey: ["return-departures", departureId, normalize(search), date, sameLine],
     enabled: Boolean(departureId),
     queryFn: async () => {
       const selected = await db.from("departures").select("id,departure_at,arrival_at,duration_minutes,route_id")
@@ -81,7 +82,7 @@ export function useReturnDepartures(departureId: string | null, search = "", dat
       const incoming = portById.get(originalRoute.data.arrival_port_id);
       if (!outgoing || !incoming) return [] as ReturnDeparture[];
       // L'utilisateur peut rentrer par un autre port européen ; seul le sens doit être inverse.
-      const opposite = (routes.data ?? []).filter((route) => {
+      const anyPort = (routes.data ?? []).filter((route) => {
         const from = portById.get(route.departure_port_id);
         const to = portById.get(route.arrival_port_id);
         if (route.status !== "active" || !from || !to) return false;
@@ -89,6 +90,14 @@ export function useReturnDepartures(departureId: string | null, search = "", dat
         if (outgoing.country_code === "DZ") return from.country_code !== "DZ" && to.country_code === "DZ";
         return from.country_code === incoming.country_code && to.country_code === outgoing.country_code;
       });
+      // Par défaut, le retour est la même ligne en sens inverse.
+      const opposite = sameLine
+        ? anyPort.filter(
+            (route) =>
+              route.departure_port_id === originalRoute.data.arrival_port_id &&
+              route.arrival_port_id === originalRoute.data.departure_port_id,
+          )
+        : anyPort;
       const routeIds = opposite.map((route) => route.id as string);
       if (!routeIds.length) return [] as ReturnDeparture[];
       const companyById = new Map((companies.data ?? []).map((company) => [company.id as string, company.name as string]));

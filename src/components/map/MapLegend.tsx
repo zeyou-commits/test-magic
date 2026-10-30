@@ -12,9 +12,11 @@ export function MapLegend({
   const [open, setOpen] = useState(false);
 
   return (
-    <div className="absolute left-3 top-3 z-20 transition-all duration-200 md:bottom-6 md:left-auto md:right-32 md:top-auto">
+    <div
+      className={`absolute left-3 top-3 z-20 md:left-auto md:top-auto ${open ? "md:bottom-2.5 md:right-[60px]" : "md:bottom-[100px] md:right-2.5"}`}
+    >
       {open ? (
-        <div className="mt-10 w-56 max-w-[calc(100vw-1.5rem)] rounded-2xl border border-border bg-background/95 p-3 text-xs shadow-[var(--shadow-panel)] backdrop-blur md:mt-0 md:w-64 md:p-4 md:text-sm">
+        <div className="mt-10 w-56 md:mt-0 max-w-[calc(100vw-1.5rem)] rounded-2xl border border-border bg-background/95 p-3 text-xs shadow-[var(--shadow-panel)] backdrop-blur md:mt-0 md:w-64 md:p-4 md:text-sm">
           <div className="mb-2 flex items-center justify-between md:mb-3">
             <p className="font-display text-sm font-semibold">Légende</p>
             <button
@@ -88,11 +90,11 @@ export function MapLegend({
           type="button"
           onClick={() => setOpen(true)}
           aria-label="Afficher la légende"
+          title="Légende"
           aria-expanded={false}
-          className="inline-flex size-8 items-center justify-center rounded-full border border-border bg-background/95 text-sm font-semibold text-foreground shadow-sm backdrop-blur hover:bg-secondary md:size-auto md:min-h-9 md:gap-2 md:px-3"
+          className="inline-flex size-8 items-center justify-center rounded-full border border-border bg-background/95 shadow md:size-10 md:rounded-xl"
         >
           <Info className="size-4 text-primary" />
-          <span className="sr-only md:not-sr-only">Légende</span>
         </button>
       )}
     </div>

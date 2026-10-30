@@ -234,7 +234,9 @@ export function VesselView({
           </div>
         </div>
       </header>
-      <MakeMyTrip kind="vessel" targetId={vessel.id} label={vessel.name} />
+      {!vessel.is_demo ? (
+        <MakeMyTrip kind="vessel" targetId={vessel.id} label={vessel.name} onSelect={onSelect} />
+      ) : null}
       {!contextDepartureId && departure && from && to ? (
         <div className="bw-ship-crossing-first">
           <CrossingCard departure={departure} from={from} to={to} live={live} />

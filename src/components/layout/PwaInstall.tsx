@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Download, X } from "lucide-react";
-import { isDesktopBrowser, PhoneInstallCard } from "./PhoneInstallCard";
+import { isDesktopBrowser } from "./PhoneInstallCard";
 
 interface InstallPromptEvent extends Event {
   prompt: () => Promise<void>;
@@ -15,8 +15,6 @@ export function PwaInstall() {
   const [prompt, setPrompt] = useState<InstallPromptEvent | null>(null);
   const [showIos, setShowIos] = useState(false);
   const [dismissed, setDismissed] = useState(true);
-  const [desktop, setDesktop] = useState(false);
-  const [desktopReady, setDesktopReady] = useState(false);
   const [manual, setManual] = useState(false);
 
   useEffect(() => {
@@ -32,11 +30,7 @@ export function PwaInstall() {
         window.location.pathname === "/auth" ||
         (!fromQr && Date.now() - lastDismissed < 7 * 24 * 60 * 60 * 1000),
     );
-    const onDesktop = isDesktopBrowser();
-    setDesktop(onDesktop);
-    setManual(fromQr && !onDesktop);
-    // Sur ordinateur, on laisse le temps de découvrir le site avant de proposer le téléphone.
-    const desktopTimer = window.setTimeout(() => setDesktopReady(true), 30_000);
+    setManual(fromQr && !isDesktopBrowser());
     setShowIos(/iPhone|iPad|iPod/.test(navigator.userAgent) && !standalone);
     const onInstall = (event: Event) => {
       event.preventDefault();
@@ -90,7 +84,6 @@ export function PwaInstall() {
     window.addEventListener("pageshow", checkBuild);
     return () => {
       stopped = true;
-      window.clearTimeout(desktopTimer);
       window.removeEventListener("beforeinstallprompt", onInstall);
       window.removeEventListener("appinstalled", onInstalled);
       document.removeEventListener("visibilitychange", update);
@@ -100,19 +93,13 @@ export function PwaInstall() {
     };
   }, []);
 
-  if (dismissed || (desktop ? !desktopReady : !prompt && !showIos && !manual)) return null;
+  if (dismissed || (!prompt && !showIos && !manual)) return null;
   return (
     <aside
       className="fixed bottom-20 left-4 right-4 z-[90] mx-auto max-w-sm rounded-2xl border border-primary/15 bg-card p-4 shadow-2xl md:bottom-5 md:left-auto md:right-5"
       aria-label="Installer BledWay"
     >
       <div className="flex items-start gap-3">
-        {desktop ? (
-          <div className="min-w-0 flex-1">
-            <PhoneInstallCard />
-          </div>
-        ) : (
-          <>
             <img src="/pwa-icon-192.png" alt="" className="size-11 rounded-xl" />
             <div className="min-w-0 flex-1">
               <strong className="block text-sm text-foreground">BledWay à portée de main</strong>
@@ -124,8 +111,6 @@ export function PwaInstall() {
                     : "Ouvrez le menu de votre navigateur (⋮), puis « Installer l’application » ou « Ajouter à l’écran d’accueil »."}
               </p>
             </div>
-          </>
-        )}
         <button
           type="button"
           onClick={() => {
@@ -149,7 +134,7 @@ export function PwaInstall() {
           }}
           className="mt-3 flex h-10 w-full items-center justify-center gap-2 rounded-xl bg-primary text-sm font-semibold text-primary-foreground"
         >
-          <Download size={16} aria-hidden /> {desktop ? "Installer aussi sur cet ordinateur" : "Installer BledWay"}
+          <Download size={16} aria-hidden /> Installer BledWay
         </button>
       ) : null}
     </aside>

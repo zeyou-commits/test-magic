@@ -79,6 +79,11 @@ function Index() {
     selectionFromUrl(initialSearch),
   );
   const [selectionHistory, setSelectionHistory] = useState<Selection[]>([]);
+  // Ouverture depuis une notification : son message s'affiche en tête de la fiche demandée.
+  const [noticeTarget] = useState(() => ({
+    id: new URLSearchParams(initialSearch).get("notice"),
+    selection: selectionFromUrl(initialSearch),
+  }));
   const handleSelect = (newSelection: Selection | null, peek = false) => {
     setTrafficPreview(null);
     setHighlightRouteId(null);
@@ -1048,6 +1053,13 @@ function Index() {
               className={`${collapsed ? "hidden md:block" : "min-h-0 flex-1"} md:h-full ${desktopPanelOpen ? "" : "md:invisible md:pointer-events-none"}`}
             >
               <SidePanel
+                noticeId={
+                  noticeTarget.id &&
+                  selection?.type === noticeTarget.selection?.type &&
+                  selection?.id === noticeTarget.selection?.id
+                    ? noticeTarget.id
+                    : null
+                }
                 companionEnabled={desktopPanelOpen}
                 onCompanionWidth={setCompanionWidth}
                 selection={selection}

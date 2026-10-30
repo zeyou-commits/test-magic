@@ -37,6 +37,8 @@ const newsSchema = z.object({
     .array(z.string())
     .nullish()
     .transform((value) => value ?? []),
+  // Navire concerné (script du 12/11/2026) : ouvre directement sa fiche.
+  vessel_id: z.string().nullish(),
   starts_at: z.string(),
   ends_at: z.string().nullable(),
   published: z.boolean(),

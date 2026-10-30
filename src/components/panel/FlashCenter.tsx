@@ -16,7 +16,9 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
+import { noticeHref, noticeKind, noticeRank } from "@/lib/notifications/noticeStyle";
 import { FlashFeed, useFlashCards } from "./FlashFeed";
+import { noticeLook } from "./NoticeFocus";
 
 // Notifications personnelles (table bw_notifications), absentes des types générés.
 const supabase = typedSupabase as unknown as SupabaseClient;
@@ -31,6 +33,7 @@ type Notice = {
   created_at: string;
   read_at: string | null;
   url: string;
+  event_key: string;
 };
 
 function useNotices(userId: string | undefined) {
@@ -40,7 +43,7 @@ function useNotices(userId: string | undefined) {
     queryFn: async (): Promise<Notice[]> => {
       const { data, error } = await supabase
         .from("bw_notifications")
-        .select("id,title,body,created_at,read_at,url")
+        .select("id,title,body,created_at,read_at,url,event_key")
         .eq("user_id", userId!)
         .order("created_at", { ascending: false })
         .limit(40);
@@ -84,36 +87,53 @@ function NoticeList({ userId, notices }: { userId: string; notices: Notice[] }) 
         Rien de nouveau. Les informations sur vos traversées suivies arriveront ici.
       </p>
     );
+  // Une alerte non lue passe devant le reste ; sinon, du plus récent au plus ancien.
+  const rank = (notice: Notice) =>
+    notice.read_at ? 0 : noticeRank(noticeKind(notice.event_key, notice.title));
+  const ordered = [...notices].sort(
+    (a, b) => rank(b) - rank(a) || b.created_at.localeCompare(a.created_at),
+  );
   return (
     <ul className="bw-flash-list">
-      {notices.slice(0, 15).map((notice) => (
-        <li key={notice.id} className="bw-flash-row" data-tone="brand" data-open="true">
-          <div className="bw-flash-row__head" role="presentation">
-            <span className="bw-flash-row__icon" aria-hidden>
-              <Bell size={15} />
-            </span>
-            <span className="bw-flash-row__text">
-              <strong>{notice.title}</strong>
-              <small>{relativeAge(notice.created_at)}</small>
-            </span>
-            {!notice.read_at ? <span className="bw-flash-new" aria-label="Non lue" /> : null}
-          </div>
-          <div className="bw-flash-row__body">
-            <p>{notice.body}</p>
-            <div className="bw-flash-footer">
-              <span />
-              <span className="bw-flash-actions">
-                {!notice.read_at ? (
-                  <button type="button" onClick={() => void markRead(notice.id)}>
-                    <Check size={14} aria-hidden /> Marquer comme lue
-                  </button>
-                ) : null}
-                <a href={notice.url}>Voir</a>
+      {ordered.slice(0, 15).map((notice) => {
+        const look = noticeLook[noticeKind(notice.event_key, notice.title)];
+        const Icon = look.icon;
+        return (
+          <li key={notice.id} className="bw-flash-row" data-tone={look.tone} data-open="true">
+            <a
+              className="bw-flash-row__head"
+              href={noticeHref(notice.url, notice.id)}
+              onClick={() => void markRead(notice.id)}
+            >
+              <span className="bw-flash-row__icon" aria-hidden>
+                <Icon size={15} />
               </span>
+              <span className="bw-flash-row__text">
+                <strong>{notice.title}</strong>
+                <small>
+                  <span className="bw-flash-row__kind">{look.label}</span> ·{" "}
+                  {relativeAge(notice.created_at)}
+                </small>
+              </span>
+              {!notice.read_at ? <span className="bw-flash-new" aria-label="Non lue" /> : null}
+            </a>
+            <div className="bw-flash-row__body">
+              <p>{notice.body}</p>
+              <div className="bw-flash-footer">
+                <span />
+                <span className="bw-flash-actions">
+                  {!notice.read_at ? (
+                    <button type="button" onClick={() => void markRead(notice.id)}>
+                      <Check size={14} aria-hidden /> Marquer comme lue
+                    </button>
+                  ) : null}
+                  <a href={noticeHref(notice.url, notice.id)}>Voir le détail</a>
+                </span>
+              </div>
             </div>
-          </div>
-        </li>
-      ))}
+          </li>
+        );
+      })}
     </ul>
   );
 }

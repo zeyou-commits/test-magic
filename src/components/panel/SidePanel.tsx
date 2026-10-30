@@ -17,6 +17,8 @@ import { CompanyView, DepartureView, VesselView } from "./EntityViews";
 import { CompanionPanel } from "./CompanionPanel";
 import { useCompanionPanel } from "@/hooks/useCompanionPanel";
 
+import { NoticeFocus } from "./NoticeFocus";
+
 interface SidePanelProps {
   selection: Selection | null;
   onSelect: (selection: Selection | null) => void;
@@ -38,6 +40,8 @@ interface SidePanelProps {
   onBookPeriod?: (period: string) => void;
   companionEnabled?: boolean;
   onCompanionWidth?: (width: number) => void;
+  /** Notification à l'origine de l'ouverture de cette fiche. */
+  noticeId?: string | null;
 }
 
 /** Un seul volet : la recherche en permanence, et le détail d'un port, d'une ligne ou d'un départ par-dessus. */
@@ -49,6 +53,7 @@ export function SidePanel({
   filters,
   onFiltersChange,
   hidePickersOnMobile = false,
+  noticeId,
   onHighlightRoute,
   onFocusRoute,
   homeMode = false,
@@ -174,6 +179,7 @@ export function SidePanel({
               </div>
             </div>
             <div className="batogo-panel-scroll flex-1 overflow-y-auto p-4 md:p-6">
+              {noticeId ? <NoticeFocus noticeId={noticeId} /> : null}
               {selection.type === "port" ? (
                 <PortView key={selection.id} portId={selection.id} onSelect={onSelect} />
               ) : selection.type === "route" ? (

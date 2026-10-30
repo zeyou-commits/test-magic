@@ -3,6 +3,7 @@ import { Bell, Check } from "lucide-react";
 import { toast } from "sonner";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { supabase as typedSupabase } from "@/integrations/supabase/client";
+import { noticeHref } from "@/lib/notifications/noticeStyle";
 
 // Tables communautaires pas encore présentes dans les types générés.
 const supabase = typedSupabase as unknown as SupabaseClient;
@@ -75,7 +76,10 @@ export function NotificationInbox({ userId }: { userId: string }) {
               </div>
               <p className="mt-1 text-xs leading-relaxed text-muted-foreground">{notice.body}</p>
               <div className="mt-2 flex flex-wrap gap-4">
-                <a href={notice.url} className="text-xs font-semibold text-primary underline">
+                <a
+                  href={noticeHref(notice.url, notice.id)}
+                  className="text-xs font-semibold text-primary underline"
+                >
                   Voir les détails
                 </a>
                 {!notice.read_at && (

@@ -8,8 +8,12 @@ self.addEventListener("push", (event) => {
   const title = typeof data.title === "string" ? data.title : "BledWay";
   const body = typeof data.body === "string" ? data.body : "Une information sur votre voyage est disponible.";
   const url = typeof data.url === "string" && data.url.startsWith("/") && !data.url.startsWith("//") ? data.url : "/compte";
+  // Un picto par nature de message ; à défaut, l'icône de l'application.
+  const icon = ["alert", "warning", "trip", "community", "info"].includes(data.kind)
+    ? `/notification-icons/${data.kind}.png`
+    : "/pwa-icon-192.png";
   event.waitUntil(self.registration.showNotification(title, {
-    body, icon: "/pwa-icon-192.png", badge: "/notification-badge.png", tag: data.tag || undefined,
+    body, icon, badge: "/notification-badge.png", tag: data.tag || undefined,
     data: { url },
   }));
 });

@@ -13,6 +13,7 @@ import {
   type NotificationPreferences,
 } from "./policy";
 import { queueAdminMessages } from "./messages.server";
+import { noticeHref, noticeKind } from "./noticeStyle";
 
 type Notice = {
   key: string;
@@ -871,8 +872,9 @@ export async function dispatchPush(
           JSON.stringify({
             title: notice.data.title,
             body: notice.data.body,
-            url: notice.data.url,
+            url: noticeHref(notice.data.url, row.notification_id),
             tag: notice.data.event_key,
+            kind: noticeKind(notice.data.event_key, notice.data.title),
           }),
           { TTL: 24 * 3600, timeout: 15_000 },
         );

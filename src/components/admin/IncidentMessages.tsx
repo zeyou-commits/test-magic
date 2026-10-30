@@ -54,9 +54,10 @@ export function IncidentMessages({
   const incident = { status, source_name: sourceName };
   const generated = (impact: IncidentImpact) =>
     incidentMessageText(incident, vesselName, portName, impact);
-  const [picked, setPicked] = useState<Set<string>>(
-    () => new Set(targets.filter((t) => t.impact !== "none").map((t) => t.id)),
-  );
+  // Sélection de l'équipe ; à défaut, les départs concernés (le planning peut arriver après).
+  const [manual, setManual] = useState<Set<string> | null>(null);
+  const picked = manual ?? new Set(targets.filter((t) => t.impact !== "none").map((t) => t.id));
+  const setPicked = setManual;
   const [title, setTitle] = useState(`${vesselName} : navire immobilisé`);
   const [edited, setEdited] = useState<Partial<Record<IncidentImpact, string>>>({});
   const [followers, setFollowers] = useState(true);
@@ -75,7 +76,7 @@ export function IncidentMessages({
       ...(followers ? [{ kind: "vessel_followers", vesselId } as Audience] : []),
     ],
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [picked, followers, vesselId, targets],
+    [chosen.map((t) => t.id).join(), followers, vesselId],
   );
   const previews = useQueries({
     queries: audiences.map((audience) => audiencePreviewQuery(user?.id, audience)),
@@ -135,6 +136,7 @@ export function IncidentMessages({
         const { error } = await flashClient.from("bw_news").insert({
           kind: "alerte",
           origin: "bledway",
+          vessel_id: vesselId,
           title: `${vesselName} : immobilisé${portName ? ` à ${portName}` : ""}`,
           summary: incidentMessageText(incident, vesselName, portName, "followers"),
           source_name: sourceName.trim().slice(0, 80),

@@ -158,8 +158,7 @@ export function useFlashCards({
               (alert.target_kind === "vessel" && vesselFilter.has(alert.target_id))),
       )
     : [];
-  const urgent = (card: FlashCard) =>
-    card.type === "news" && card.item.kind !== "info" ? 1 : 0;
+  const urgent = (card: FlashCard) => (card.type === "news" && card.item.kind !== "info" ? 1 : 0);
   const rank = (card: FlashCard) =>
     card.type === "news" ? newsRank(card.item) : signalRank(card.at);
   const cards: FlashCard[] = [
@@ -390,7 +389,11 @@ function FlashDetail({
               <span className="sr-only"> (nouvel onglet)</span>
             </a>
           ) : null}
-          {onSelect && departureId && departure ? (
+          {onSelect && item.vessel_id ? (
+            <button type="button" onClick={() => onSelect({ type: "vessel", id: item.vessel_id! })}>
+              Voir le navire <ArrowRight size={14} aria-hidden />
+            </button>
+          ) : onSelect && departureId && departure ? (
             <button type="button" onClick={() => onSelect({ type: "departure", id: departureId })}>
               Voir la traversée <ArrowRight size={14} aria-hidden />
             </button>

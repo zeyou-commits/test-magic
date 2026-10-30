@@ -2,6 +2,8 @@ import { haversineKm } from "../ferry/tracking";
 import type { ParsedPosition } from "./parse";
 
 type PortPoint = { id: string; latitude: number; longitude: number };
+/** Au-delà, trop loin du port pour recalculer l'heure de départ de façon fiable. */
+export const INFERRED_DEPARTURE_MAX_KM = 60;
 export interface PreviousObservation {
   latitude: number | null; longitude: number | null; speed_knots: number | null; reported_at: string | null;
   last_port_id: string | null; departure_port_id: string | null; arrival_port_id: string | null;
@@ -31,6 +33,16 @@ export function observePortEvent(position: ParsedPosition, previous: PreviousObs
   }
   if (!voyageOpen && previouslyDocked && previousAge <= 30 * 60_000 && previousPort && distance(previousPort) >= 3 && speed !== null && speed >= 3) {
     return { atd_at: position.reportedAt, atd_after: previous?.reported_at ?? null, departure_port_id: previousPort.id, ata_at: null, ata_after: null, arrival_port_id: null, event_departure_id: null };
+  }
+  // Vu à quai plus de 30 min avant (l'écoute est courte et un navire à quai n'émet que toutes les
+  // 3 min), puis en route près de ce port : l'heure de départ est recalculée d'après la distance
+  // parcourue et la vitesse, sans jamais remonter avant la dernière observation à quai.
+  const away = previousPort ? distance(previousPort) : 0;
+  if (!voyageOpen && previouslyDocked && previousPort && previousAge > 30 * 60_000 && previousAge <= 18 * 3600_000 &&
+    away >= 3 && away <= INFERRED_DEPARTURE_MAX_KM && speed !== null && speed >= 5) {
+    const sailedMs = ((away * 1000) / (speed * 0.514444)) * 1000;
+    const atd = Math.max(Date.parse(previous!.reported_at!), Date.parse(position.reportedAt) - sailedMs);
+    return { atd_at: new Date(atd).toISOString(), atd_after: previous?.reported_at ?? null, departure_port_id: previousPort.id, ata_at: null, ata_after: null, arrival_port_id: null, event_departure_id: null };
   }
   if (!voyageOpen && nearest && nearest.km < 2 && speed !== null && speed < 1.5) return { last_port_id: nearest.port.id };
   return {};

@@ -32,13 +32,28 @@ export async function ingestPosition(
   now = Date.now(),
 ): Promise<boolean> {
   const mmsi = position.mmsi;
-  const { data: previous } = await db
+  // « * » plutôt qu'une liste : une colonne absente de la base ne doit pas faire perdre
+  // la position précédente (sans elle, aucun départ ni arrivée ne serait jamais constaté).
+  const { data: row, error: previousError } = await db
     .from("vessel_positions")
-    .select(
-      "latitude, longitude, speed_knots, course_deg, reported_at, atd_at, ata_at, last_port_id, departure_port_id, arrival_port_id, event_departure_id",
-    )
+    .select("*")
     .eq("mmsi", mmsi)
     .maybeSingle();
+  if (previousError) console.error("[tracking] position précédente illisible", previousError.code);
+  const previous = row
+    ? {
+        latitude: row.latitude ?? null,
+        longitude: row.longitude ?? null,
+        speed_knots: row.speed_knots ?? null,
+        reported_at: row.reported_at ?? null,
+        last_port_id: row.last_port_id ?? null,
+        departure_port_id: row.departure_port_id ?? null,
+        arrival_port_id: row.arrival_port_id ?? null,
+        atd_at: row.atd_at ?? null,
+        ata_at: row.ata_at ?? null,
+        event_departure_id: row.event_departure_id ?? null,
+      }
+    : null;
 
   if (!acceptableReport(position, previous, now)) return false;
   const event = observePortEvent(position, previous, context.ports, now);
@@ -72,22 +87,29 @@ export async function ingestPosition(
     },
     { onConflict: "mmsi,reported_at", ignoreDuplicates: true },
   );
-  const { error } = await db
-    .from("vessel_positions")
-    .update({
-      ...event,
-      last_error: null,
-      vessel_name: position.vesselName,
-      status: position.status,
-      latitude: position.latitude,
-      longitude: position.longitude,
-      // Ne pas conserver l'ancienne vitesse sous le nouvel horodatage.
-      speed_knots: position.speedKnots,
-      course_deg: position.courseDeg,
-      reported_at: position.reportedAt,
-      fetched_at: new Date(now).toISOString(),
-    })
-    .eq("mmsi", mmsi);
+  const values = {
+    ...event,
+    last_error: null,
+    vessel_name: position.vesselName,
+    status: position.status,
+    latitude: position.latitude,
+    longitude: position.longitude,
+    // Ne pas conserver l'ancienne vitesse sous le nouvel horodatage.
+    speed_knots: position.speedKnots,
+    course_deg: position.courseDeg,
+    reported_at: position.reportedAt,
+    fetched_at: new Date(now).toISOString(),
+  };
+  let { error } = await db.from("vessel_positions").update(values).eq("mmsi", mmsi);
+  if (error) {
+    // Colonnes d'événements absentes (script « ais_evenements_port » pas encore passé) :
+    // on enregistre au moins la position, seulement avec les colonnes que la table possède.
+    const known = row ? new Set(Object.keys(row)) : null;
+    const safe = known
+      ? Object.fromEntries(Object.entries(values).filter(([column]) => known.has(column)))
+      : values;
+    ({ error } = await db.from("vessel_positions").update(safe).eq("mmsi", mmsi));
+  }
   if (error) console.error("[tracking] position non enregistrée", error.code);
   return !error;
 }

@@ -3,6 +3,7 @@ import type { Departure } from "@/lib/ferry/types";
 import { trackingTimes, type LiveShip, type TrackingTime } from "@/lib/ferry/tracking";
 import { formatDateTime, formatDuration } from "@/lib/ferry/format";
 import { zoneLabel } from "@/lib/ferry/time";
+import { VesselElsewhereNotice } from "./VesselElsewhereNotice";
 
 function Time({ time, label, zone }: { time: TrackingTime; label: string; zone: string }) {
   const { isAdmin } = useAuth();
@@ -61,12 +62,15 @@ export function TrackingTimes({
 }) {
   const times = trackingTimes(departure, live);
   return (
-    <div
-      className="mt-3 grid grid-cols-2 gap-3 border-t border-border pt-3"
-      aria-label="Horaires de la traversée"
-    >
-      <Time time={times.departure} label="Départ" zone={fromZone} />
-      <Time time={times.arrival} label="Arrivée" zone={toZone} />
-    </div>
+    <>
+      <VesselElsewhereNotice departure={departure} />
+      <div
+        className="mt-3 grid grid-cols-2 gap-3 border-t border-border pt-3"
+        aria-label="Horaires de la traversée"
+      >
+        <Time time={times.departure} label="Départ" zone={fromZone} />
+        <Time time={times.arrival} label="Arrivée" zone={toZone} />
+      </div>
+    </>
   );
 }

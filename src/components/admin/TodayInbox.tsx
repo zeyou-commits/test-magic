@@ -21,6 +21,7 @@ import {
   type PlanningIssue,
 } from "@/lib/admin/planning";
 import { runAutoAssign, visibleSuggestions } from "@/lib/admin/autoAssign";
+import { vesselElsewhere } from "@/lib/ferry/tracking";
 import {
   aisHealthQuery,
   ageLabel,
@@ -430,6 +431,30 @@ export function TodayInbox({
         </InboxCard>,
       );
     }
+    // Navire à quai dans un autre port que son prochain départ : retard probable ou mauvais bateau.
+    for (const d of upcoming) {
+      if (!d.vessel_id || Date.parse(d.departure_at) > now + 12 * 3_600_000) continue;
+      const vessel = vessels.find((v) => v.id === d.vessel_id);
+      const position = vessel?.mmsi ? aisHealth.positions.get(Number(vessel.mmsi)) : undefined;
+      const elsewhere = position ? vesselElsewhere(d, position, routes, now) : null;
+      if (!vessel || !elsewhere) continue;
+      cards.push(
+        <InboxCard
+          key={`elsewhere-${d.id}`}
+          tone="danger"
+          icon={<Ship className="size-5" aria-hidden />}
+          kind="Navire au mauvais port"
+          title={`${vessel.name} est à ${portName(elsewhere.portId)}, mais il est prévu au départ de ${routeLabel(d.route_id)} ${dayLabel(d.departure_at)} à ${parisKey(d.departure_at).time}`}
+          detail={`Signal AIS ${ageLabel(elsewhere.reportedAt, now)}. Soit le départ sera retardé, soit un autre bateau fera la traversée : vérifiez auprès de la compagnie, puis corrigez le bateau ou l'horaire. Les voyageurs voient déjà « ${vessel.name} est encore à ${portName(elsewhere.portId)} ».`}
+          links={verify(d)}
+        >
+          <Button size="sm" onClick={() => onOpenPlanning(parisKey(d.departure_at).day)}>
+            Ouvrir dans le planning
+          </Button>
+        </InboxCard>,
+      );
+    }
+
     const silent = vessels.filter((v) => {
       if (v.status !== "active" || !v.mmsi) return false;
       const last = aisHealth.lastSignal.get(Number(v.mmsi));

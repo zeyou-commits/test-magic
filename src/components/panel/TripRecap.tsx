@@ -28,6 +28,7 @@ import { requestQuickReport } from "@/components/map/QuickReport";
 import { BookingLink, ReliabilityNote } from "./shared";
 import { FlashFeed } from "./FlashFeed";
 import { hasSignalFocus, LivePulse, revealLive, useLiveInfo } from "./LivePulse";
+import { VesselElsewhereNotice } from "./VesselElsewhereNotice";
 import { FollowButton } from "./FollowButton";
 import { JourneyChecklist } from "./JourneyChecklist";
 import { JourneyPlanner } from "./JourneyPlanner";
@@ -96,7 +97,12 @@ export function TripRecap({
         .eq("target_id", departure.id)
         .maybeSingle();
       if (error) throw error;
-      return data as { id: string; active: boolean; traveller: boolean; follow_purpose: string | null } | null;
+      return data as {
+        id: string;
+        active: boolean;
+        traveller: boolean;
+        follow_purpose: string | null;
+      } | null;
     },
     retry: false,
   });
@@ -109,7 +115,9 @@ export function TripRecap({
   const progress = crossingProgress(departure, from, to, live);
   const { times } = progress;
   const departIso = times.departure.iso ?? departure.departure_at;
-  const car = getBoardingMilestones(departIso, from, { presentationMinutes: departure.presentation_minutes });
+  const car = getBoardingMilestones(departIso, from, {
+    presentationMinutes: departure.presentation_minutes,
+  });
   const walk = getBoardingMilestones(departIso, from, {
     presentationMinutes: departure.presentation_minutes,
     onFoot: true,
@@ -288,6 +296,7 @@ export function TripRecap({
 
       {/* 2. Ce qui se passe, d'un coup d'œil */}
       <LivePulse info={info} onOpen={openLive} onReport={upcoming || atSea ? report : undefined} />
+      {!cancelled ? <VesselElsewhereNotice departure={departure} /> : null}
 
       {/* 3. Où en êtes-vous ? (une ligne tant que ce n'est pas la veille) */}
       {!cancelled && myDeparture ? (
@@ -333,7 +342,10 @@ export function TripRecap({
           {upcoming && car && walk ? (
             <div className="bw-recap__arrive">
               <p>
-                Être à {from.name} <small>({day(car.callTime.toISOString(), fromZone)}, {zoneLabel(fromZone)})</small>
+                Être à {from.name}{" "}
+                <small>
+                  ({day(car.callTime.toISOString(), fromZone)}, {zoneLabel(fromZone)})
+                </small>
               </p>
               <div>
                 <span>
@@ -350,8 +362,24 @@ export function TripRecap({
               </small>
             </div>
           ) : null}
-          {myDeparture ? <JourneyChecklist departureId={departure.id} departureAt={departure.departure_at} presentationMinutes={departure.presentation_minutes} port={from} compact /> : null}
-          {myDeparture ? <a href="/ma-bezass" className="flex items-center justify-between rounded-xl border border-primary/15 bg-primary/5 px-3 py-2 text-xs font-semibold text-primary">Découvrir Ma bezass · compter mes billets et devises <ArrowRight size={14} aria-hidden /></a> : null}
+          {myDeparture ? (
+            <JourneyChecklist
+              departureId={departure.id}
+              departureAt={departure.departure_at}
+              presentationMinutes={departure.presentation_minutes}
+              port={from}
+              compact
+            />
+          ) : null}
+          {myDeparture ? (
+            <a
+              href="/ma-bezass"
+              className="flex items-center justify-between rounded-xl border border-primary/15 bg-primary/5 px-3 py-2 text-xs font-semibold text-primary"
+            >
+              Découvrir Ma bezass · compter mes billets et devises{" "}
+              <ArrowRight size={14} aria-hidden />
+            </a>
+          ) : null}
           <PushStatusLine />
           <div className="bw-recap__ports">
             {[from, to].map((port, index) => (

@@ -3,6 +3,7 @@ import {
   departureForSignal,
   estimateArrival,
   estimateCrossingArrival,
+  vesselElsewhere,
   projectedPosition,
   trackingTimes,
   type LivePosition,
@@ -134,6 +135,53 @@ describe("ETA d'une traversée : départ réel + durée prévue", () => {
         marseille,
         at("2026-11-06T23:00:00Z"),
       ).etaIso,
+    ).toBeNull();
+  });
+});
+
+describe("navire vu dans un autre port que son départ", () => {
+  const routes = [
+    { id: "alg-mrs", departure_port_id: "alger", arrival_port_id: "marseille" },
+    { id: "mrs-alg", departure_port_id: "marseille", arrival_port_id: "alger" },
+  ] as RouteLine[];
+  const vessel = { id: "tariq" } as Vessel;
+  const fromAlger = {
+    id: "d-alg",
+    route_id: "alg-mrs",
+    vessel_id: "tariq",
+    departure_at: "2026-11-06T17:00:00Z",
+    arrival_at: "2026-11-07T06:00:00Z",
+    status: "scheduled",
+  } as Departure;
+  // À quai à Marseille, signal de 14:00, après une traversée Alger → Marseille terminée la veille.
+  const atMarseille: LivePosition = {
+    ...position,
+    speedKnots: 0,
+    reportedAt: "2026-11-06T14:00:00Z",
+    lastPortId: "marseille",
+    departurePortId: "alger",
+    atdAt: "2026-11-05T09:00:00Z",
+    ataAt: "2026-11-05T22:00:00Z",
+  };
+  const t = Date.parse("2026-11-06T15:00:00Z");
+
+  it("n'est pas rattaché au départ d'Alger", () => {
+    expect(departureForSignal([fromAlger], vessel, atMarseille, routes, t)).toBeNull();
+  });
+  it("est signalé « encore à Marseille » pour ce départ", () => {
+    expect(vesselElsewhere(fromAlger, atMarseille, routes, t)).toEqual({
+      portId: "marseille",
+      reportedAt: "2026-11-06T14:00:00Z",
+    });
+  });
+  it("reste rattaché à un départ de Marseille", () => {
+    const fromMarseille = { ...fromAlger, id: "d-mrs", route_id: "mrs-alg" } as Departure;
+    expect(departureForSignal([fromMarseille], vessel, atMarseille, routes, t)?.id).toBe("d-mrs");
+    expect(vesselElsewhere(fromMarseille, atMarseille, routes, t)).toBeNull();
+  });
+  it("un signal de plus de 6 h ne déclenche rien", () => {
+    expect(
+      vesselElsewhere(fromAlger, atMarseille, routes, Date.parse("2026-11-06T21:00:00Z")),
     ).toBeNull();
   });
 });

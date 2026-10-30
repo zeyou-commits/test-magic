@@ -304,6 +304,37 @@ export function courseLabel(course: number | null): string {
   return names[Math.round(((course % 360) + 360) / 45) % 8] ?? "—";
 }
 
+/** Port où le navire est à quai d'après le signal (null s'il navigue ou si on ne sait pas). */
+export function dockedAt(position: LivePosition): string | null {
+  const atSea = Boolean(position.atdAt && !position.ataAt);
+  return !atSea && position.lastPortId && (position.speedKnots ?? 0) < 1.5
+    ? position.lastPortId
+    : null;
+}
+
+/**
+ * Navire vu à quai dans un autre port que celui de son prochain départ (signal de moins de 6 h,
+ * départ prévu dans les 12 h ou parti depuis moins de 3 h) : départ probablement retardé,
+ * ou mauvais bateau affecté. Renvoie le port où il se trouve.
+ */
+export function vesselElsewhere(
+  departure: Pick<Departure, "route_id" | "vessel_id" | "departure_at"> & { status: string },
+  position: LivePosition,
+  routes: Pick<RouteLine, "id" | "departure_port_id">[],
+  now: number,
+): { portId: string; reportedAt: string } | null {
+  if (!departure.vessel_id || departure.status === "cancelled" || !position.reportedAt) return null;
+  const reported = Date.parse(position.reportedAt);
+  if (!Number.isFinite(reported) || now - reported > LIVE_MAX_AGE_MINUTES * 60_000) return null;
+  const port = dockedAt(position);
+  if (!port) return null;
+  const start = Date.parse(departure.departure_at);
+  if (now < start - 12 * 3600_000 || now > start + 3 * 3600_000) return null;
+  const route = routes.find((r) => r.id === departure.route_id);
+  if (!route || route.departure_port_id === port) return null;
+  return { portId: port, reportedAt: position.reportedAt };
+}
+
 /** Rattachement unique ; aucun événement d'une ancienne rotation ne doit être réutilisé. */
 export function departureForSignal(
   departures: Departure[],
@@ -319,15 +350,21 @@ export function departureForSignal(
   if (linked && !position.ataAt) return linked;
   if (linked && position.ataAt && now - Date.parse(position.ataAt) < 3600_000) return linked;
   const routeById = new Map(routes.map((r) => [r.id, r]));
+  // À quai : seulement une traversée qui part de ce port, ou qui vient d'y arriver.
+  // Un navire à Marseille n'est jamais rattaché à un départ d'Alger (voir vesselElsewhere).
+  const port = dockedAt(position);
+  const atSea = Boolean(position.atdAt && !position.ataAt);
   const eligible = candidates.filter((d) => {
     const start = Date.parse(d.departure_at);
     const end = d.arrival_at ? Date.parse(d.arrival_at) : start + 36 * 3600_000;
     const route = routeById.get(d.route_id);
-    return (
-      now >= start - 6 * 3600_000 &&
-      now <= end + 6 * 3600_000 &&
-      (!position.departurePortId || route?.departure_port_id === position.departurePortId)
-    );
+    const samePort = port
+      ? route?.departure_port_id === port ||
+        (route?.arrival_port_id === port && now >= end - 2 * 3600_000)
+      : !atSea ||
+        !position.departurePortId ||
+        route?.departure_port_id === position.departurePortId;
+    return now >= start - 6 * 3600_000 && now <= end + 6 * 3600_000 && samePort;
   });
   // En cas de chevauchement, pas de rattachement arbitraire à la traversée la plus proche.
   return eligible.length === 1 ? (eligible[0] ?? null) : null;

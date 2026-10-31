@@ -7052,3 +7052,68 @@ button.bw-tavatar:focus-visible {
 label:has(> input.sr-only) {
   position: relative;
 }
+
+/* Pastilles de mer : le mot et la vague animée, sur fond neutre ; la couleur dit l'état de la mer. */
+.bw-sea-badge,
+.bw-sea-pill {
+  --sea-ink: #0f6fa8;
+  display: inline-flex;
+  align-items: center;
+  border: 0;
+  border-radius: 999px;
+  background: rgb(255 255 255 / 0.94);
+  box-shadow: 0 2px 10px #16324a2e;
+  color: #16324a;
+  font-weight: 800;
+  white-space: nowrap;
+}
+.bw-sea-badge[data-level="moderate"],
+.bw-sea-pill[data-level="moderate"] {
+  --sea-ink: #b67c00;
+  background: rgb(255 255 255 / 0.94);
+}
+.bw-sea-badge[data-level="rough"],
+.bw-sea-badge[data-level="high"],
+.bw-sea-pill[data-level="rough"],
+.bw-sea-pill[data-level="high"] {
+  --sea-ink: #c8452a;
+  background: rgb(255 255 255 / 0.94);
+}
+.bw-sea-badge .bw-sea-icon,
+.bw-sea-pill .bw-sea-icon {
+  color: var(--sea-ink);
+}
+/* Petit format : à cheval sur le bord de la carte, il ne couvre ni la photo ni le nom. */
+.bw-sea-badge {
+  top: -11px;
+  left: 12px;
+  width: auto;
+  height: 24px;
+  gap: 5px;
+  padding: 0 10px 0 7px;
+  border: 1px solid #e3ebe6;
+  font-size: 11.5px;
+}
+.bw-sea-pill {
+  gap: 6px;
+  padding: 4px 12px 4px 8px;
+  font-size: 13px;
+}
+/* Encart Ma traversée : la mer se détache du vert. */
+.bw-mytrip-hero__sea {
+  background: #e3f3fc;
+  color: #123f5c;
+}
+.bw-mytrip-hero__sea .bw-sea-icon {
+  color: #0f6fa8;
+}
+.bw-mytrip-hero__sea small {
+  opacity: 0.75;
+}
+.bw-mytrip-hero__sea[data-level="moderate"] .bw-sea-icon {
+  color: #b67c00;
+}
+.bw-mytrip-hero__sea[data-level="rough"] .bw-sea-icon,
+.bw-mytrip-hero__sea[data-level="high"] .bw-sea-icon {
+  color: #c8452a;
+}

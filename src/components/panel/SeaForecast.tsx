@@ -49,13 +49,14 @@ export function SeaIcon({ peak, size = 24 }: { peak: number; size?: number }) {
 export function SeaPhotoBadge({ peak }: { peak: number }) {
   const level = seaLevel(peak);
   return (
-    <span className="bw-sea-badge" data-level={level.id} title={`${level.label} prévue sur le trajet`} role="img" aria-label={`${level.label} prévue sur le trajet`}>
-      <SeaIcon peak={peak} size={15} />
+    <span className="bw-sea-badge" data-level={level.id} title={`${level.label} prévue sur le trajet`}>
+      <SeaIcon peak={peak} size={16} />
+      {level.label}
     </span>
   );
 }
 
-/** Fiche bateau : la mer de sa traversée en cours ou de la prochaine, trajet indiqué. */
+/** Fiche bateau : la mer de sa traversée en cours ou de la prochaine, détaillée juste en dessous. */
 export function VesselSeaBadge({
   departureId,
   from,
@@ -64,8 +65,8 @@ export function VesselSeaBadge({
   arrivalAt,
 }: {
   departureId: string;
-  from: Point & { name: string };
-  to: Point & { name: string };
+  from: Point;
+  to: Point;
   departureAt: string;
   arrivalAt: string | null;
 }) {
@@ -74,13 +75,8 @@ export function VesselSeaBadge({
   const level = seaLevel(peak);
   return (
     <span className="bw-sea-pill" data-level={level.id}>
-      <SeaIcon peak={peak} size={17} />
-      <span>
-        <b>{level.short}</b>
-        <small>
-          {from.name} → {to.name}
-        </small>
-      </span>
+      <SeaIcon peak={peak} size={24} />
+      {level.label}
     </span>
   );
 }

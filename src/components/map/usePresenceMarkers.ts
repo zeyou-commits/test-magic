@@ -5,7 +5,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Marker, type Map as MapLibreMap } from "maplibre-gl";
 import type { FleetShip } from "@/lib/ferry/fleet";
 import { vesselMapIcon } from "@/lib/ferry/vesselVisuals";
-import { dockSpread, vesselScreenHeight } from "./shipIcons";
+import { arcGap, dockSpread, vesselScreenHeight } from "./shipIcons";
 import { avatarFor, presenceQuery } from "@/lib/ferry/presence";
 import type { Port, Selection } from "@/lib/ferry/types";
 
@@ -130,7 +130,7 @@ export function usePresenceMarkers(
         element.classList.toggle("is-zoomed", zoom >= 8);
       }
     };
-    // De près, le sommet de l'arc au-dessus du navire, centré sur lui ; à quai, il suit le navire.
+    // À tous les zooms, le sommet de l'arc au-dessus du navire, centré sur lui ; à quai, il suit le navire.
     const place = () => {
       const zoom = map.getZoom();
       for (const { marker, ship, shift } of aboard) {
@@ -138,10 +138,10 @@ export function usePresenceMarkers(
         const x = shift[0] * (slug ? dockSpread(zoom) : 1);
         const element = marker.getElement();
         marker.setOffset(
-          zoom >= 7 && slug
+          slug
             ? [
                 x - element.offsetWidth / 2,
-                shift[1] - vesselScreenHeight(slug, zoom) - element.offsetHeight - 20,
+                shift[1] - vesselScreenHeight(slug, zoom) - element.offsetHeight - 20 * arcGap(zoom),
               ]
             : [x + 6, shift[1] + 10],
         );
@@ -149,10 +149,15 @@ export function usePresenceMarkers(
     };
     zoomed();
     place();
-    map.on("zoomend", zoomed);
+    // La bulle change de largeur à la fin du zoom (chiffre seul, puis cabas) : on la recentre.
+    const settle = () => {
+      zoomed();
+      place();
+    };
+    map.on("zoomend", settle);
     map.on("zoom", place);
     return () => {
-      map.off("zoomend", zoomed);
+      map.off("zoomend", settle);
       map.off("zoom", place);
       markers.forEach((marker) => marker.remove());
     };

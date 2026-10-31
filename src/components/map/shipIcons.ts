@@ -297,6 +297,9 @@ const heightRatios = new Map<string, number>();
 export const vesselScreenHeight = (slug: string, zoom: number) =>
   vesselScreenWidth(zoom) * (heightRatios.get(slug) ?? 0.5);
 
+/** Écarts de l'arc de la communauté : ils suivent la taille du navire, de loin comme de près. */
+export const arcGap = (zoom: number) => Math.min(1, Math.max(0.2, vesselScreenWidth(zoom) / 170));
+
 export const vesselImageId = (slug: string, width: number) => `vessel-${slug}-${width}`;
 
 /**

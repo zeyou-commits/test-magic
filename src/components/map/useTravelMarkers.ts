@@ -1,5 +1,5 @@
 import { vesselMapIcon } from "@/lib/ferry/vesselVisuals";
-import { dockSpread, vesselScreenHeight } from "./shipIcons";
+import { arcGap, dockSpread, vesselScreenHeight } from "./shipIcons";
 import { createElement, useEffect, useRef, type RefObject } from "react";
 import { requestSignalFocus } from "@/components/panel/LivePulse";
 import { bringTooltipToFront } from "./tooltipStack";
@@ -206,7 +206,7 @@ export function useTravelMarkers(
         // Bulle ouverte : au-dessus de l'arc, quand le navire est debout.
         const shipSlug = ship ? vesselMapIcon(ship.name) : null;
         const zoomNow = map.getZoom();
-        const above = shipSlug && zoomNow >= 7 ? vesselScreenHeight(shipSlug, zoomNow) + 50 : 46;
+        const above = shipSlug ? vesselScreenHeight(shipSlug, zoomNow) + 50 * arcGap(zoomNow) : 46;
         // Pas assez de place au-dessus : la carte glisse vers le bas le temps de lire la bulle.
         const room = map.project(point).y + shift[1] - above;
         const needed = 70 + 64 * alerts.length + 40;
@@ -235,24 +235,29 @@ export function useTravelMarkers(
       markers.push(marker);
       if (ship) aboard.push({ marker, ship, shift, button });
     }
-    // De près, le départ de l'arc : au-dessus de la proue, un peu plus bas que la bulle des voyageurs.
+    // À tous les zooms, le départ de l'arc : au-dessus de la proue, un peu plus bas que la bulle des voyageurs.
     const place = () => {
       const zoom = map.getZoom();
       for (const { marker, ship, shift, button } of aboard) {
         const slug = vesselMapIcon(ship.name);
         const x = shift[0] * (slug ? dockSpread(zoom) : 1);
         marker.setOffset(
-          zoom >= 7 && slug
-            ? [x - button.offsetWidth - 34, shift[1] - vesselScreenHeight(slug, zoom) - 4]
+          slug
+            ? [
+                x - button.offsetWidth - 34 * arcGap(zoom),
+                shift[1] - vesselScreenHeight(slug, zoom) - 4 * arcGap(zoom),
+              ]
             : [x - 4, shift[1] - 8],
         );
       }
     };
     place();
     map.on("zoom", place);
+    map.on("zoomend", place);
     if (openKey.current) showers.get(openKey.current)?.();
     return () => {
       map.off("zoom", place);
+      map.off("zoomend", place);
       disposed = true;
       bubble.remove();
       unmountLater(roots);

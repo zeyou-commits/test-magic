@@ -5,8 +5,11 @@ import { supabase as typedSupabase } from "@/integrations/supabase/client";
 // Fonctions de la communauté pas encore présentes dans les types générés.
 const db = typedSupabase as unknown as SupabaseClient;
 
-/** Les 12 cabas personnages (banque BledWay). */
+/** Les nouveaux avatars d'abord, puis les 12 cabas personnages (banque BledWay). */
 export const personas = [
+  { id: "jeune_degrade", name: "Le dégradé" },
+  { id: "fille_bled", name: "La fille du bled" },
+  { id: "voiture_504", name: "La 504" },
   { id: "jeddi", name: "Jeddi" },
   { id: "jedda", name: "Jedda" },
   { id: "papa", name: "Papa" },

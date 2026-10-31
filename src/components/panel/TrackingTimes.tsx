@@ -47,7 +47,7 @@ function Time({ time, label, zone }: { time: TrackingTime; label: string; zone: 
         </p>
       ) : null}
       {changed && shift !== null ? (
-        <p className={`text-[10px] font-semibold ${shift < 0 ? "text-success" : "text-warning"}`}>
+        <p className={`text-[10px] font-semibold ${shift < 0 ? "text-success" : "text-warning-foreground"}`}>
           {time.reported ? "Signalement validé · " : ""}
           {shift < 0
             ? "En avance de "

@@ -113,7 +113,6 @@ export function PlaceReactions({ kind, target }: { kind: PlaceKind; target: stri
         className="bw-react__main"
         data-mine={mine?.code}
         aria-label={mine ? `Votre réaction : ${mine.label}` : "J’aime"}
-        title={mine?.label ?? "J’aime"}
         aria-pressed={Boolean(mine)}
         aria-expanded={tray}
         onContextMenu={(event) => event.preventDefault()}

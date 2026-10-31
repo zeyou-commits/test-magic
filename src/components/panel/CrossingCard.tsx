@@ -5,7 +5,7 @@ import { crossingProgress, ferryLeft, sceneLabel } from "@/lib/ferry/crossingPro
 import { departureStopped, incidentForVessel, incidentsQuery } from "@/lib/ferry/incidents";
 import type { Departure, Port } from "@/lib/ferry/types";
 import { useVesselAlert } from "@/lib/ferry/vesselAlerts";
-import { formatAge, type LiveShip } from "@/lib/ferry/tracking";
+import { delayLabel, formatAge, type LiveShip } from "@/lib/ferry/tracking";
 import { portTimeZone } from "@/lib/ferry/time";
 import { TrackingTimes } from "./TrackingTimes";
 
@@ -37,6 +37,7 @@ export function CrossingCard({
   const atSeaLabel = estimated ? "En mer · estimé" : "En mer";
   const scene = awaited ? "stopped" : progress.scene;
   const label = sceneLabel(scene);
+  const delay = progress.reportedPostponed ? null : delayLabel(progress.times);
   const status =
     departure.status === "cancelled"
       ? "Traversée annulée"
@@ -70,6 +71,7 @@ export function CrossingCard({
           {stopped || awaited ? <b className="bw-alert-mark" aria-hidden>!</b> : <Waves size={16} aria-hidden />}
           {status}
         </span>
+        {delay ? <b className="bw-delay-badge">Retardé · {delay}</b> : null}
         {isAdmin ? (
           <small>
             {progress.source}

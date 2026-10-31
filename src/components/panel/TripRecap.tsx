@@ -517,7 +517,7 @@ export function TripRecap({
           {vessel ? (
             <>
               {vessel.description ? <p className="mb-3 text-sm">{vessel.description}</p> : null}
-              <VesselPresence vesselId={vessel.id} />
+              <VesselPresence vesselId={vessel.id} departureId={departure.id} />
               <VesselBoardingNote vesselId={vessel.id} />
               <VesselIdentity vesselId={vessel.id} />
               <VesselSpecs vessel={vessel} />

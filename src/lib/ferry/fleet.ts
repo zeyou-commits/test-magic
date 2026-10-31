@@ -8,7 +8,13 @@
 //  - avec le suivi en direct, la position réelle remplace la position déduite.
 import { pointAlong, routeArc, type LngLat } from "./geo";
 import { overlappingDepartureIds } from "./conflicts";
-import { LIVE_MAX_AGE_MINUTES, reportedCrossing, type LiveShip } from "./tracking";
+import {
+  delayLabel,
+  LIVE_MAX_AGE_MINUTES,
+  reportedCrossing,
+  trackingTimes,
+  type LiveShip,
+} from "./tracking";
 import type { Departure, Port, RouteLine, Vessel } from "./types";
 
 export interface FleetShip {
@@ -27,6 +33,8 @@ export interface FleetShip {
   departureId: string;
   portId: string | null;
   live?: LiveShip;
+  /** Retard à afficher sur la carte (« ≈ +2 h »), s'il y en a un. */
+  delay?: string | null;
 }
 
 const HOUR = 3600_000;
@@ -262,5 +270,11 @@ export function buildFleet(
     });
   });
 
+  const departureById = new Map(departures.map((departure) => [departure.id, departure]));
+  for (const ship of ships) {
+    const departure = departureById.get(ship.departureId);
+    if (departure && departure.status !== "cancelled")
+      ship.delay = delayLabel(trackingTimes(departure, ship.live));
+  }
   return ships;
 }

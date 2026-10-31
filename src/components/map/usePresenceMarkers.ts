@@ -4,6 +4,8 @@ import { placeMoodsQuery } from "@/lib/community/travellers";
 import { useQuery } from "@tanstack/react-query";
 import { Marker, type Map as MapLibreMap } from "maplibre-gl";
 import type { FleetShip } from "@/lib/ferry/fleet";
+import { vesselMapIcon } from "@/lib/ferry/vesselVisuals";
+import { dockSpread } from "./shipIcons";
 import { avatarFor, presenceQuery } from "@/lib/ferry/presence";
 import type { Port, Selection } from "@/lib/ferry/types";
 
@@ -29,14 +31,17 @@ export function usePresenceMarkers(
     const map = mapRef.current;
     if (!ready || !map || !rows?.length) return;
     const byVessel = new Map<string, number>();
+    // Seule la traversée où se trouve le navire compte : pas celle d'hier, restée « à bord ».
+    const crossingOf = new Map(fleet.map((ship) => [ship.vesselId, ship.departureId]));
     const byPort = new Map<string, number>();
     for (const row of rows) {
-      if (row.vessel_id && row.onboard)
+      if (row.vessel_id && row.onboard && crossingOf.get(row.vessel_id) === row.departure_id)
         byVessel.set(row.vessel_id, (byVessel.get(row.vessel_id) ?? 0) + row.onboard);
       if (row.at_port)
         byPort.set(row.departure_port_id, (byPort.get(row.departure_port_id) ?? 0) + row.at_port);
     }
     const markers: Marker[] = [];
+    const aboard: { marker: Marker; ship: FleetShip; shift: [number, number] }[] = [];
     const moodOf = (kind: "port" | "vessel", target: string) =>
       moods?.find((item) => item.kind === kind && item.target === target)?.mood;
     const pin = (count: number, seed: string, label: string, selection: Selection) => {
@@ -93,15 +98,15 @@ export function usePresenceMarkers(
         : ship?.lngLat;
       if (!ship || !point) continue;
       const shift: [number, number] = ship.live ? [0, 0] : [ship.dx, ship.dy];
-      markers.push(
-        new Marker({
-          element: pin(count, vesselId, `À bord · ${ship.name}`, { type: "vessel", id: vesselId }),
-          anchor: "top-left",
-          offset: [shift[0] + 6, shift[1] + 10],
-        })
-          .setLngLat(point)
-          .addTo(map),
-      );
+      const marker = new Marker({
+        element: pin(count, vesselId, `À bord · ${ship.name}`, { type: "vessel", id: vesselId }),
+        anchor: "top-left",
+        offset: [shift[0] + 6, shift[1] + 10],
+      })
+        .setLngLat(point)
+        .addTo(map);
+      markers.push(marker);
+      aboard.push({ marker, ship, shift });
     }
     for (const [portId, count] of byPort) {
       const port = ports.find((item) => item.id === portId);
@@ -125,10 +130,24 @@ export function usePresenceMarkers(
         element.classList.toggle("is-zoomed", zoom >= 8);
       }
     };
+    // De près, sous le nom du navire (qui passe entre le navire et les bulles), et avec lui à quai.
+    const place = () => {
+      const zoom = map.getZoom();
+      for (const { marker, ship, shift } of aboard) {
+        const standing = zoom >= 7 && vesselMapIcon(ship.name);
+        const spread = vesselMapIcon(ship.name) ? dockSpread(zoom) : 1;
+        marker.setOffset(
+          standing ? [shift[0] * spread + 3, shift[1] + 58] : [shift[0] * spread + 6, shift[1] + 10],
+        );
+      }
+    };
     zoomed();
+    place();
     map.on("zoomend", zoomed);
+    map.on("zoom", place);
     return () => {
       map.off("zoomend", zoomed);
+      map.off("zoom", place);
       markers.forEach((marker) => marker.remove());
     };
   }, [mapRef, ready, ports, fleet, rows, moods]);

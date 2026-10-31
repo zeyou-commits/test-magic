@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { crossingProgress, ferryLeft, sceneLabel } from "./crossingProgress";
+import { delayLabel } from "./tracking";
 import type { Departure, Port } from "./types";
 import type { LiveShip } from "./tracking";
 
@@ -65,6 +66,14 @@ describe("signalements validés", () => {
     expect(p.times.arrival.iso).toBe("2026-10-21T17:40:00.000Z");
     expect(p.ratio).toBe(1);
     expect(p.scene).toBe("disembarking");
+  });
+  it("résume le retard pour l'afficher tout de suite", () => {
+    const of = (d: Partial<typeof departure>) =>
+      delayLabel(crossingProgress({ ...departure, ...d }, from, to, null, Date.parse(at)).times);
+    expect(of({ reported_delay_minutes: 120 })).toBe("≈ +2 h");
+    expect(of({ reported_quay_at: "2026-10-21T09:25:00Z" })).toBe("au moins +1 h 25");
+    expect(of({ reported_delay_minutes: 10 })).toBeNull();
+    expect(of({})).toBeNull();
   });
   it("n'invente aucun avancement pour un report signalé", () => {
     const off = { ...departure, reported_postponed_at: "2026-10-21T07:00:00Z" };

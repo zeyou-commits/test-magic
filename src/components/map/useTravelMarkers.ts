@@ -1,3 +1,5 @@
+import { vesselMapIcon } from "@/lib/ferry/vesselVisuals";
+import { dockSpread } from "./shipIcons";
 import { createElement, useEffect, useRef, type RefObject } from "react";
 import { requestSignalFocus } from "@/components/panel/LivePulse";
 import { bringTooltipToFront } from "./tooltipStack";
@@ -88,6 +90,7 @@ export function useTravelMarkers(
       groups.set(key, [...(groups.get(key) ?? []), alert]);
     }
     const markers: Marker[] = [];
+    const aboard: { marker: Marker; ship: FleetShip; shift: [number, number]; button: HTMLElement }[] = [];
     const roots: Root[] = [];
     const bubbleRoots: Root[] = [];
     const bubble = new Popup({
@@ -218,18 +221,34 @@ export function useTravelMarkers(
         callbacks.current.onMarkerHover?.();
         show();
       });
-      markers.push(
-        new Marker({
-          element: button,
-          anchor: isPort ? "bottom-right" : "bottom-left",
-          offset: [shift[0] + (isPort ? 4 : -4), shift[1] - 8],
-        })
-          .setLngLat(point)
-          .addTo(map),
-      );
+      const marker = new Marker({
+        element: button,
+        anchor: isPort ? "bottom-right" : "bottom-left",
+        offset: [shift[0] + (isPort ? 4 : -4), shift[1] - 8],
+      })
+        .setLngLat(point)
+        .addTo(map);
+      markers.push(marker);
+      if (ship) aboard.push({ marker, ship, shift, button });
     }
+    // De près, le signalement rejoint la bulle des voyageurs, sous le nom du navire, plutôt que sur sa coque.
+    const place = () => {
+      const zoom = map.getZoom();
+      for (const { marker, ship, shift, button } of aboard) {
+        const photo = vesselMapIcon(ship.name);
+        const x = shift[0] * (photo ? dockSpread(zoom) : 1);
+        marker.setOffset(
+          zoom >= 7 && photo
+            ? [x - button.offsetWidth - 3, shift[1] + 58 + button.offsetHeight]
+            : [x - 4, shift[1] - 8],
+        );
+      }
+    };
+    place();
+    map.on("zoom", place);
     if (openKey.current) showers.get(openKey.current)?.();
     return () => {
+      map.off("zoom", place);
       disposed = true;
       bubble.remove();
       unmountLater(roots);

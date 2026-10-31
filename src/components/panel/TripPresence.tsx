@@ -6,9 +6,11 @@ import {
   moodsQuery,
   myTravellerQuery,
   setMood,
+  tripTravellersQuery,
 } from "@/lib/community/travellers";
+import { TravellerAvatar } from "@/components/community/TravellerAvatar";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Check } from "lucide-react";
+import { Check, ChevronDown } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import {
   avatarFor,
@@ -96,19 +98,79 @@ export function PortPresence({ portId }: { portId: string }) {
   );
 }
 
-/** Fiche navire : combien de voyageurs BledWay sont à bord. */
-export function VesselPresence({ vesselId }: { vesselId: string }) {
+/**
+ * Fiche navire : combien de voyageurs BledWay sont à bord, et qui, pour ceux qui acceptent d'être vus.
+ * Consultation libre ; n'y figurent qu'un pseudo et un cabas (réglage « show_on_trip » respecté en base).
+ */
+export function VesselPresence({
+  vesselId,
+  departureId: crossingId,
+}: {
+  vesselId: string;
+  /** Traversée en cours : un voyageur resté « à bord » d'une traversée passée n'y est pas compté. */
+  departureId?: string | undefined;
+}) {
+  const { user } = useAuth();
+  const [open, setOpen] = useState(false);
   const rows = useQuery(presenceQuery).data;
-  if (!rows) return null;
-  const onboard = rows
-    .filter((row) => row.vessel_id === vesselId)
-    .reduce((sum, row) => sum + row.onboard, 0);
+  const aboard = (rows ?? []).filter(
+    (row) =>
+      row.vessel_id === vesselId &&
+      row.onboard > 0 &&
+      (!crossingId || row.departure_id === crossingId),
+  );
+  const onboard = aboard.reduce((sum, row) => sum + row.onboard, 0);
+  const departureId = [...aboard].sort((a, b) => b.onboard - a.onboard)[0]?.departure_id ?? "";
+  const list = useQuery({
+    ...tripTravellersQuery(departureId, user?.id),
+    enabled: open && Boolean(departureId),
+  });
   if (!onboard) return null;
+  const shown = (list.data?.travellers ?? []).filter((traveller) => traveller.step === "onboard");
+  const hidden = Math.max(0, onboard - shown.length);
   return (
-    <p className="bw-presence">
-      <CabasStack count={onboard} seed={vesselId} />
-      <strong>{voyageurs(onboard)} à bord</strong>
-    </p>
+    <>
+      <button
+        type="button"
+        className="bw-presence bw-presence--open"
+        aria-expanded={open}
+        onClick={() => setOpen((value) => !value)}
+      >
+        <CabasStack count={onboard} seed={vesselId} />
+        <strong>{voyageurs(onboard)} à bord</strong>
+        <ChevronDown size={16} aria-hidden />
+      </button>
+      {open ? (
+        <ul className="bw-presence-list" aria-label="Voyageurs à bord">
+          {list.isPending ? (
+            <li>
+              <p role="status">Chargement…</p>
+            </li>
+          ) : list.isError ? (
+            <li>
+              <p role="alert">La liste est momentanément indisponible.</p>
+            </li>
+          ) : (
+            <>
+              {shown.map((traveller) => (
+                <li key={traveller.handle}>
+                  <TravellerAvatar card={traveller} size={36} />
+                  {traveller.me ? "Vous" : traveller.pseudo}
+                </li>
+              ))}
+              {hidden ? (
+                <li>
+                  <p>
+                    {hidden} voyageur{hidden > 1 ? "s préfèrent" : " préfère"} rester discret
+                    {hidden > 1 ? "s" : ""}.
+                  </p>
+                </li>
+              ) : null}
+            </>
+          )}
+        </ul>
+      ) : null}
+    </>
   );
 }
 

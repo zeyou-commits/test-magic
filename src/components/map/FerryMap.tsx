@@ -466,6 +466,12 @@ export default function FerryMap({
     const updateZoomState = () => {
       container.dataset["lowZoom"] = String(map.getZoom() < 5.2);
       container.dataset["midZoom"] = String(map.getZoom() >= 5.2 && map.getZoom() < 7);
+      // De près, le nom d'un navire ne s'efface plus devant les lignes.
+      if (map.getLayer("fleet-labels")) {
+        const near = map.getZoom() >= 7;
+        map.setLayoutProperty("fleet-labels", "text-allow-overlap", near);
+        map.setLayoutProperty("fleet-labels", "text-ignore-placement", near);
+      }
     };
     updateZoomState();
     map.on("zoom", updateZoomState);
@@ -790,7 +796,7 @@ export default function FerryMap({
             1.24,
           ],
         },
-        paint: { "icon-opacity": ["get", "opacity"] },
+        paint: { "icon-opacity": ["get", "photoOpacity"] },
       });
       map.addLayer({
         id: "fleet-alert",
@@ -821,7 +827,7 @@ export default function FerryMap({
             1.24,
           ],
         },
-        paint: { "icon-opacity": ["get", "opacity"] },
+        paint: { "icon-opacity": ["get", "photoOpacity"] },
       });
       map.addLayer({
         id: "fleet-labels",
@@ -829,7 +835,22 @@ export default function FerryMap({
         source: "fleet",
         layout: {
           "symbol-sort-key": ["get", "priority"],
-          "text-field": ["get", "name"],
+          // Le nom, et le retard dès que le navire est assez grand pour être lu.
+          "text-field": [
+            "step",
+            ["zoom"],
+            ["get", "name"],
+            6.5,
+            [
+              "format",
+              ["get", "name"],
+              {},
+              ["case", ["==", ["get", "late"], ""], "", "\n"],
+              {},
+              ["get", "late"],
+              { "text-color": "#b45309", "font-scale": 1.05 },
+            ],
+          ] as never,
           "text-font": ["Noto Sans Bold"],
           "text-size": ["interpolate", ["linear"], ["zoom"], 3, 9, 6, 10, 9, 12],
           // Le nom passe juste sous le jeton, quelle que soit sa taille.
@@ -861,7 +882,7 @@ export default function FerryMap({
           "text-halo-color": "#fffefb",
           "text-halo-width": 1.8,
           "text-halo-blur": 0.4,
-          "text-opacity": ["get", "opacity"],
+          "text-opacity": ["get", "photoOpacity"],
         },
       });
       map.addLayer({
@@ -2113,7 +2134,8 @@ export default function FerryMap({
         inner.style.scale = String(Math.min(1.25, Math.max(0.7, width / 110)));
         marker.setOffset(
           ratio
-            ? [shift[0] * dockSpread(zoom), shift[1] - width * ratio * 0.55]
+            ? // Planté à l'avant : le drapeau flotte au-dessus du navire, sans cacher la cheminée.
+              [shift[0] * dockSpread(zoom) - width * 0.26, shift[1] - width * ratio * 0.82]
             : [shift[0] - r * 0.72, shift[1] - r * 0.72],
         );
       }
@@ -2215,7 +2237,7 @@ export default function FerryMap({
       });
       if (!map.getStyle()) return;
       if (map.getLayer("fleet-labels"))
-        map.setPaintProperty("fleet-labels", "text-opacity", ["get", "opacity"]);
+        map.setPaintProperty("fleet-labels", "text-opacity", ["get", "photoOpacity"]);
       if (map.getLayer("fleet-ships"))
         map.setPaintProperty("fleet-ships", "icon-opacity", ["get", "opacity"]);
     };
@@ -2373,6 +2395,7 @@ export default function FerryMap({
             type: "Feature" as const,
             properties: {
               alert: shipAlert ? 1 : 0,
+              late: ship.delay ? `Retardé ${ship.delay}` : "",
               state: ship.state,
               icon: shipIcon(wakeLevel(ship.state, live ? speed : null), course),
               course,

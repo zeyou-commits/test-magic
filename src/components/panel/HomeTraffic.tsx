@@ -15,7 +15,7 @@ import {
 import { useFleet } from "@/lib/ferry/useFleet";
 import { useLiveShips } from "@/lib/ferry/useLiveShips";
 import { crossingProgress, ferryLeft } from "@/lib/ferry/crossingProgress";
-import { trackingTimes } from "@/lib/ferry/tracking";
+import { delayLabel, trackingTimes } from "@/lib/ferry/tracking";
 import { formatDateParts } from "@/lib/ferry/format";
 import { portTimeZone, dateKeyInZone } from "@/lib/ferry/time";
 import { emptyFilters, type Filters, type Selection } from "@/lib/ferry/types";
@@ -187,6 +187,11 @@ export function HomeTraffic({
                       </button>
                     ))}
                   </div>
+                  {delayLabel(progress.times) ? (
+                    <b className="bw-delay-badge bw-delay-badge--compact">
+                      Retardé · {delayLabel(progress.times)}
+                    </b>
+                  ) : null}
                   <div
                     className="bw-compact-track"
                     data-estimated={estimated || undefined}

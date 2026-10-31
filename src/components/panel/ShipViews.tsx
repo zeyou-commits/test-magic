@@ -279,7 +279,7 @@ export function VesselView({
           </a>
         </aside>
       ) : null}
-      <VesselPresence vesselId={vesselId} />
+      <VesselPresence vesselId={vesselId} departureId={departure?.id} />
       {communityAvailable ? (
         <button type="button" className="pv-rating" onClick={() => setTab("reviews")}>
           {guided.data?.count ? (

@@ -485,6 +485,25 @@ export type CrossingSchedule = Pick<
     >
   > & { status: string };
 
+/**
+ * Retard à afficher tout de suite, ou null s'il est négligeable :
+ * « ≈ +2 h » estimé, « au moins +1 h 25 » quand le navire était encore à quai, « +40 min » constaté.
+ */
+export function delayLabel(times: { departure: TrackingTime; arrival: TrackingTime }) {
+  const worst = [times.arrival, times.departure]
+    .filter((time) => (time.shiftMinutes ?? 0) >= 15)
+    .sort((a, b) => b.shiftMinutes! - a.shiftMinutes!)[0];
+  if (!worst) return null;
+  const minutes = worst.shiftMinutes!;
+  const hours = Math.floor(minutes / 60);
+  const rest = minutes % 60;
+  const text = hours
+    ? `${hours} h${rest ? ` ${String(rest).padStart(2, "0")}` : ""}`
+    : `${rest} min`;
+  if (worst.notBefore) return `au moins +${text}`;
+  return worst.kind === "observed" ? `+${text}` : `≈ +${text}`;
+}
+
 /** Après ce délai, un navire signalé à quai est supposé parti : il n'en reste qu'une heure minimale. */
 export const REPORTED_QUAY_MINUTES = 60;
 

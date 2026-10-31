@@ -7457,3 +7457,99 @@ label:has(> input.sr-only) {
   font-size: 12px;
   user-select: all;
 }
+
+/* Réactions : sous le bouton, pour ne pas passer sous l'en-tête du volet. */
+.bw-react__tray {
+  top: 100%;
+  bottom: auto;
+  padding: 8px 6px 4px;
+}
+.bw-react__tray::before {
+  inset: 4px 0 0;
+}
+.bw-react__main {
+  cursor: pointer;
+  transition:
+    transform 0.15s ease,
+    background-color 0.15s ease,
+    border-color 0.15s ease;
+}
+.bw-react__main:hover,
+.bw-react__main[aria-expanded="true"] {
+  transform: scale(1.08);
+  border-color: #0e7a43;
+  background: #f1f8f4;
+}
+.bw-react__main:active {
+  transform: scale(0.94);
+}
+
+/* Retard : visible d'un coup d'œil, avant les horaires. */
+.bw-delay-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 9px;
+  border-radius: 999px;
+  background: #b45309;
+  color: #ffffff;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+.bw-delay-badge--compact {
+  justify-self: start;
+  width: fit-content;
+  margin: 2px 0;
+  font-size: 11px;
+}
+
+/* Voyageurs à bord : la liste se déplie sous le compteur. */
+.bw-presence--open {
+  width: 100%;
+  border: 0;
+  text-align: left;
+  cursor: pointer;
+}
+.bw-presence--open:hover {
+  background: #e2f2e8;
+}
+.bw-presence--open > svg {
+  margin-left: auto;
+  flex: none;
+  transition: transform 0.15s ease;
+}
+.bw-presence--open[aria-expanded="true"] > svg {
+  transform: rotate(180deg);
+}
+.bw-presence-list {
+  display: grid;
+  gap: 8px;
+  margin: 6px 0 0;
+  padding: 10px 12px;
+  border-radius: 14px;
+  background: #f6fbf8;
+  list-style: none;
+}
+.bw-presence-list li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #16324a;
+}
+.bw-presence-list p {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--muted-foreground);
+}
+
+/* Au zoom, l'humeur s'écarte à droite de la bulle au lieu de la recouvrir. */
+.bw-presence-pin.is-zoomed .bw-presence-pin__mood {
+  top: 50%;
+  bottom: auto;
+  left: calc(100% + 6px);
+  transform: translateY(-50%);
+}

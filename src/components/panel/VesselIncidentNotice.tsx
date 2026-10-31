@@ -38,7 +38,7 @@ function SourceLine({ incident }: { incident: VesselIncident }) {
   const href = safeExternalUrl(incident.source_url);
   return (
     <p className="mt-1 text-xs">
-      {incident.verified_at ? `Vérifié le ${day(incident.verified_at)}` : "Pas encore vérifié"}
+      {incident.verified_at ? `Dernière confirmation le ${day(incident.verified_at)}` : "Pas encore vérifié"}
       {href ? (
         <>
           {" · "}

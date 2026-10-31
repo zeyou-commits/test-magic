@@ -18,6 +18,8 @@ declare const Deno: {
 const USER_AGENT = "BledWay-Veille/1.0 (+https://www.bledway.com)";
 /** Pages d'articles lues par passage, pour rester discret auprès des sites. */
 const MAX_ARTICLE_FETCHES = 8;
+/** Articles gardés par navire ou compagnie : un même événement est repris par beaucoup de journaux. */
+const MAX_PER_NAME = 3;
 
 interface Source {
   id: string;
@@ -43,7 +45,37 @@ async function fetchText(url: string) {
   return await response.text();
 }
 
+/** Une recherche d'actualités par navire et par compagnie : leur nom figure toujours dans le titre retenu. */
+async function readByName(db: SupabaseClient, source: Source, now: number) {
+  const [vessels, companies] = await Promise.all([
+    db.from("vessels").select("name").eq("status", "active"),
+    db.from("companies").select("name"),
+  ]);
+  const names = [
+    ...(vessels.data ?? []).map((row: { name: string }) => row.name),
+    ...(companies.data ?? []).map((row: { name: string }) => row.name.split(" - ")[0]!),
+  ];
+  const articles = new Map<string, FoundArticle>();
+  for (const name of new Set(names)) {
+    try {
+      const found = rssEntries(await fetchText(source.url.replace("{name}", encodeURIComponent(name))))
+        .filter(
+          (article) =>
+            isRecent(article.publishedAt, now) &&
+            article.title.toLowerCase().includes(name.toLowerCase()),
+        )
+        .sort((a, b) => (b.publishedAt ?? "").localeCompare(a.publishedAt ?? ""))
+        .slice(0, MAX_PER_NAME);
+      for (const article of found) articles.set(article.url, article);
+    } catch (error) {
+      console.error("[watch-collect] recherche illisible", name, String(error));
+    }
+  }
+  return [...articles.values()];
+}
+
 async function readSource(db: SupabaseClient, source: Source, now: number): Promise<FoundArticle[]> {
+  if (source.url.includes("{name}")) return await readByName(db, source, now);
   if (source.kind === "rss") {
     return rssEntries(await fetchText(source.url)).filter(
       (article) =>

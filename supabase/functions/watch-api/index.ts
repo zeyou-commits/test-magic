@@ -43,7 +43,7 @@ Deno.serve(async (request) => {
       return json({ items: [] });
     }
     const now = Date.now();
-    const [departures, vessels, companies, routes, ports] = await Promise.all([
+    const [departures, vessels, companies, routes, ports, incidents] = await Promise.all([
       db
         .from("departures")
         .select("id,route_id,company_id,vessel_id,departure_at,arrival_at,status")
@@ -54,6 +54,7 @@ Deno.serve(async (request) => {
       db.from("companies").select("id,name"),
       db.from("routes").select("id,departure_port_id,arrival_port_id"),
       db.from("ports").select("id,name"),
+      db.from("bw_vessel_incidents").select("vessel_id,status,public_note,source_url,verified_at").eq("status", "confirmed"),
     ]);
     const portName = new Map((ports.data ?? []).map((p: { id: string; name: string }) => [p.id, p.name]));
     const routeName = new Map(
@@ -69,6 +70,7 @@ Deno.serve(async (request) => {
       items,
       vessels: vessels.data ?? [],
       companies: companies.data ?? [],
+      incidents: incidents.data ?? [],
       departures: (departures.data ?? []).map((d: Record<string, unknown>) => ({
         ...d,
         route: routeName.get(d.route_id as string) ?? null,

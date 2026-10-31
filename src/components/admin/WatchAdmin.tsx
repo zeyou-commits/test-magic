@@ -14,7 +14,7 @@ const db = supabase as unknown as SupabaseClient;
 type Status = "pending" | "standby" | "approved" | "rejected";
 interface Proposal {
   id: string;
-  kind: "flash" | "departure" | "vessel" | "note";
+  kind: "flash" | "departure" | "vessel" | "note" | "incident";
   title: string;
   summary: string;
   confidence: "high" | "medium" | "low";
@@ -45,12 +45,14 @@ const KIND: Record<Proposal["kind"], string> = {
   departure: "Modifier une traversée",
   vessel: "Modifier un navire",
   note: "À lire, rien d’automatique",
+  incident: "Mettre à jour un incident",
 };
 const FIELD: Record<string, string> = {
   status: "Statut",
   departure_at: "Heure de départ",
   arrival_at: "Heure d’arrivée",
   vessel_id: "Navire",
+  verified_at: "Dernière confirmation",
 };
 const STATUS_VALUE: Record<string, string> = {
   scheduled: "Prévue",
@@ -58,6 +60,9 @@ const STATUS_VALUE: Record<string, string> = {
   cancelled: "Annulée",
   active: "Actif",
   inactive: "Retiré",
+  verifying: "En vérification",
+  confirmed: "Confirmé",
+  resolved: "Levé",
 };
 const CONFIDENCE: Record<Proposal["confidence"], string> = {
   high: "Confiance haute",
@@ -184,7 +189,7 @@ export function WatchAdmin() {
     if (!raw) return "—";
     if (proposal.field === "vessel_id") return vessels.find((v) => v.id === raw)?.name ?? raw;
     if (proposal.field === "status") return STATUS_VALUE[raw] ?? raw;
-    if (proposal.field === "departure_at" || proposal.field === "arrival_at") return dateTime(raw);
+    if (proposal.field === "verified_at" || proposal.field === "departure_at" || proposal.field === "arrival_at") return dateTime(raw);
     return raw;
   };
   const all = proposals.data ?? [];

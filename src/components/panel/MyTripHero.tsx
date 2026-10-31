@@ -1,7 +1,8 @@
 import { VesselAlertTag } from "@/components/panel/VesselAlert";
 import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowRight, Crosshair, Ship } from "lucide-react";
+import { ArrowRight, ChevronDown, Crosshair, Ship } from "lucide-react";
+import { TripPreparation } from "./TripPreparation";
 import { TravellerAvatar } from "@/components/community/TravellerAvatar";
 import { myTravellerQuery } from "@/lib/community/travellers";
 import { prepProgress, preparationQuery } from "@/lib/ferry/preparation";
@@ -64,6 +65,7 @@ export function MyTripHero({ onSelect }: { onSelect: (selection: Selection) => v
   const alert = useVesselAlert(trip?.vessel?.id);
   const me = useQuery(myTravellerQuery(user?.id)).data;
   const preparation = useQuery(preparationQuery(trip?.departure.id, user?.id)).data;
+  const [prepOpen, setPrepOpen] = useState(false);
   if (!trip) return null;
   const phase = tripPhase(trip, now);
   const prep = preparation ? prepProgress(preparation) : null;
@@ -85,6 +87,7 @@ export function MyTripHero({ onSelect }: { onSelect: (selection: Selection) => v
             ? "Suivre le navire et l’arrivée estimée"
             : "Partager l’arrivée avec ses proches";
   return (
+    <>
     <section
       className="bw-mytrip-hero"
       data-phase={phase.phase}
@@ -137,17 +140,18 @@ export function MyTripHero({ onSelect }: { onSelect: (selection: Selection) => v
           <strong>{phase.text}</strong>
         )}
       </div>
-      {prep && prep.done < prep.total && phase.phase !== "arrived" && phase.phase !== "cancelled" ? (
+      {prep && phase.phase !== "cancelled" ? (
         <button
           type="button"
           className="bw-mytrip-hero__prep"
-          onClick={() => onSelect({ type: "departure", id: trip.departure.id })}
+          aria-expanded={prepOpen}
+          onClick={() => setPrepOpen((current) => !current)}
         >
           <b>
             {prep.done}/{prep.total}
           </b>
-          <span>{prep.next?.label ?? "Préparer ma traversée"}</span>
-          <ArrowRight size={14} aria-hidden />
+          <span>{prep.next ? `À faire : ${prep.next.label}` : "Préparation terminée"}</span>
+          <ChevronDown size={16} aria-hidden />
         </button>
       ) : null}
       <div className="bw-mytrip-hero__foot">
@@ -166,6 +170,17 @@ export function MyTripHero({ onSelect }: { onSelect: (selection: Selection) => v
         ) : null}
       </div>
     </section>
+    {/* Le parcours s'ouvre sur place : tout est à portée, sans changer d'écran. */}
+    {prepOpen && user ? (
+      <div className="bw-mytrip-prep">
+        <TripPreparation
+          departureId={trip.departure.id}
+          departureAt={trip.departure.departure_at}
+          userId={user.id}
+        />
+      </div>
+    ) : null}
+    </>
   );
 }
 

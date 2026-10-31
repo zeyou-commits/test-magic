@@ -192,7 +192,7 @@ export function TripRecap({
   const liveCount = info.official + info.travellers;
   const liveId = `live-${departure.id}`;
   const [tab, setTab] = useState<Tab | null>(null);
-  const activeTab: Tab = tab ?? (liveCount || hasSignalFocus() ? "live" : "prepare");
+  const activeTab: Tab = tab ?? (hasSignalFocus() || (liveCount && !myDeparture) ? "live" : "prepare");
   const openLive = () => {
     setTab("live");
     revealLive(liveId);
@@ -375,6 +375,13 @@ export function TripRecap({
 
       {activeTab === "prepare" ? (
         <div className="bw-recap__panel" role="tabpanel">
+          {myDeparture && user ? (
+            <TripPreparation
+              departureId={departure.id}
+              departureAt={departure.departure_at}
+              userId={user.id}
+            />
+          ) : null}
           {upcoming && car && walk ? (
             <div className="bw-recap__arrive">
               <p>
@@ -397,13 +404,6 @@ export function TripRecap({
                   : "Repère : 4 h avant en véhicule, 3 h à pied. L’heure de convocation de votre billet reste la référence."}
               </small>
             </div>
-          ) : null}
-          {myDeparture && user ? (
-            <TripPreparation
-              departureId={departure.id}
-              departureAt={departure.departure_at}
-              userId={user.id}
-            />
           ) : null}
           <PushStatusLine />
           <div className="bw-recap__ports">

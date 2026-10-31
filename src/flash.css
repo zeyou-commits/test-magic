@@ -6577,3 +6577,9 @@ button.bw-tavatar:focus-visible {
   font-size: 12px;
   font-weight: 700;
 }
+.bw-mytrip-hero__prep[aria-expanded="true"] svg {
+  transform: rotate(180deg);
+}
+.bw-mytrip-prep {
+  margin: -4px 0 14px;
+}

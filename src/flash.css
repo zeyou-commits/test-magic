@@ -7048,3 +7048,7 @@ button.bw-tavatar:focus-visible {
 .bw-vessel-photo-alert ~ .bw-sea-pill {
   top: 48px;
 }
+/* Une case masquée reste dans son libellé : sinon, cocher fait défiler tout le volet dans le vide. */
+label:has(> input.sr-only) {
+  position: relative;
+}

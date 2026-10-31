@@ -116,10 +116,14 @@ export function usePresenceMarkers(
           .addTo(map),
       );
     }
-    // L'ambiance (bulle d'humeur) n'apparaît qu'au zoom fort, pour ne pas charger la carte.
+    // Trois niveaux : le chiffre seul en vue large, un cabas et le chiffre, puis le détail et l'ambiance.
     const zoomed = () => {
-      const close = map.getZoom() >= 8;
-      for (const marker of markers) marker.getElement().classList.toggle("is-zoomed", close);
+      const zoom = map.getZoom();
+      for (const marker of markers) {
+        const element = marker.getElement();
+        element.classList.toggle("is-far", zoom < 6);
+        element.classList.toggle("is-zoomed", zoom >= 8);
+      }
     };
     zoomed();
     map.on("zoomend", zoomed);

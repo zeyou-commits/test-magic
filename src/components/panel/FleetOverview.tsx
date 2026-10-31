@@ -1,7 +1,17 @@
 import { useState } from "react";
 import { useQueries, useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
-import { Ship } from "lucide-react";
+import {
+  BedDouble,
+  CalendarDays,
+  CarFront,
+  Medal,
+  Route,
+  Ruler,
+  Ship,
+  Users,
+  type LucideIcon,
+} from "lucide-react";
 import { companiesQuery, upcomingDeparturesQuery, vesselsQuery } from "@/lib/ferry/queries";
 import type { Vessel } from "@/lib/ferry/types";
 import { vesselPhotoQuery } from "@/lib/ferry/vesselPhoto";
@@ -14,21 +24,24 @@ const number = (value: number) => value.toLocaleString("fr-FR");
 const rankings: {
   id: string;
   label: string;
+  icon: LucideIcon;
   value: (vessel: Vessel) => number | null | undefined;
   show: (value: number) => string;
 }[] = [
-  { id: "passengers", label: "Passagers", value: (v) => v.passenger_capacity, show: number },
-  { id: "cars", label: "Véhicules", value: (v) => v.car_capacity, show: number },
-  { id: "cabins", label: "Cabines", value: (v) => v.cabin_capacity, show: number },
+  { id: "passengers", label: "Passagers", icon: Users, value: (v) => v.passenger_capacity, show: number },
+  { id: "cars", label: "Véhicules", icon: CarFront, value: (v) => v.car_capacity, show: number },
+  { id: "cabins", label: "Cabines", icon: BedDouble, value: (v) => v.cabin_capacity, show: number },
   {
     id: "length",
     label: "Longueur",
+    icon: Ruler,
     value: (v) => v.length_meters,
     show: (n) => `${number(n)} m`,
   },
   {
     id: "age",
     label: "Âge",
+    icon: CalendarDays,
     value: (v) => (v.build_year ? year - v.build_year : null),
     show: (n) => `${n} ans`,
   },
@@ -57,18 +70,19 @@ export function FleetOverview() {
   if (!overview.vessels) return null;
   const max = rows[0]?.value ?? 1;
   const tiles = [
-    { value: number(overview.vessels), label: "navires en service" },
-    { value: number(overview.companies), label: "compagnies" },
-    { value: overview.averageAge ? `${overview.averageAge} ans` : "—", label: "d'âge moyen" },
-    { value: number(overview.passengers), label: "places passagers" },
-    { value: number(overview.cars), label: "places véhicules" },
-    { value: number(overview.crossings), label: "traversées à venir" },
+    { icon: Ship, value: number(overview.vessels), label: "navires en service" },
+    { icon: Medal, value: number(overview.companies), label: "compagnies" },
+    { icon: CalendarDays, value: overview.averageAge ? `${overview.averageAge} ans` : "—", label: "d'âge moyen" },
+    { icon: Users, value: number(overview.passengers), label: "places passagers" },
+    { icon: CarFront, value: number(overview.cars), label: "places véhicules" },
+    { icon: Route, value: number(overview.crossings), label: "traversées à venir" },
   ];
   return (
     <section className="bw-fleet" aria-label="La flotte en chiffres">
       <dl className="bw-fleet__tiles">
         {tiles.map((tile) => (
           <div key={tile.label}>
+            <tile.icon size={20} aria-hidden />
             <dd>{tile.value}</dd>
             <dt>{tile.label}</dt>
           </div>
@@ -85,13 +99,44 @@ export function FleetOverview() {
                 aria-pressed={item.id === ranking.id}
                 onClick={() => setRankingId(item.id)}
               >
+                <item.icon size={15} aria-hidden />
                 {item.label}
               </button>
             ))}
           </div>
         </div>
-        <ol>
-          {rows.map(({ vessel, value }, index) => (
+        {/* Le podium : 2e, 1er, 3e sur grand écran ; le 1er d'abord sur mobile. */}
+        <ol className="bw-podium">
+          {rows.slice(0, 3).map(({ vessel, value }, index) => (
+            <li key={vessel.id} data-rank={index + 1}>
+              <span className="bw-podium__photo">
+                {photos[index]?.data?.url ? (
+                  <img src={photos[index]!.data!.url} alt={vessel.name} loading="lazy" referrerPolicy="no-referrer" />
+                ) : (
+                  <Ship size={48} aria-hidden />
+                )}
+              </span>
+              <span className="bw-podium__name">
+                <Link to="/" search={{ select: "vessel", id: vessel.id } as never}>
+                  {vessel.name}
+                </Link>{" "}
+                <VesselAlertTag vesselId={vessel.id} />
+                <small>{companies.find((company) => company.id === vessel.company_id)?.name}</small>
+              </span>
+              <span className="bw-podium__step">
+                <b>{index + 1}</b>
+                <strong>
+                  <ranking.icon size={16} aria-hidden />
+                  {ranking.show(value)}
+                </strong>
+              </span>
+            </li>
+          ))}
+        </ol>
+        <ol className="bw-fleet__list" start={4}>
+          {rows.slice(3).map(({ vessel, value }, rest) => {
+            const index = rest + 3;
+            return (
             <li key={vessel.id}>
               <b className="bw-fleet__rank">{index + 1}</b>
               <span className="bw-fleet__photo">
@@ -113,7 +158,8 @@ export function FleetOverview() {
               </span>
               <strong>{ranking.show(value)}</strong>
             </li>
-          ))}
+            );
+          })}
         </ol>
         <p>Capacités générales, pas des places disponibles. Sources indiquées sur chaque fiche.</p>
       </div>

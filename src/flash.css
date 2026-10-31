@@ -5849,3 +5849,233 @@ button.bw-tavatar:focus-visible {
 .bw-mood-dialog {
   z-index: 96 !important;
 }
+
+/* Présence des voyageurs : discrète, le détail vient avec le zoom. */
+.bw-presence-pin {
+  padding: 1px 6px 1px 1px;
+  border: 1px solid #0e7a4340;
+  background: #ffffff;
+  box-shadow: 0 1px 4px #16324a33;
+}
+.bw-presence-pin small {
+  margin-left: 3px;
+  color: #0e7a43;
+}
+.bw-presence-pin:not(.is-zoomed) > img + img {
+  display: none;
+}
+.bw-presence-pin.is-far {
+  min-width: 18px;
+  justify-content: center;
+  padding: 0 5px;
+}
+.bw-presence-pin.is-far > img {
+  display: none;
+}
+.bw-presence-pin.is-far small {
+  margin-left: 0;
+}
+
+/* Ma traversée : avatar du profil ; sur mobile, une carte courte. */
+.bw-mytrip-hero__avatar {
+  display: grid;
+  flex: none;
+  place-items: center;
+}
+@media (max-width: 767px) {
+  .bw-mytrip-hero {
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 10px;
+    padding: 10px 12px;
+    border-radius: 16px;
+    box-shadow: 0 4px 14px #0e7a4326;
+  }
+  .bw-mytrip-hero__main {
+    grid-column: 1 / -1;
+    gap: 10px;
+  }
+  .bw-mytrip-hero__main img {
+    width: 44px;
+    height: 44px;
+  }
+  .bw-mytrip-hero__text small {
+    overflow: hidden;
+    font-size: 10.5px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .bw-mytrip-hero__text strong {
+    overflow: hidden;
+    font-size: 15px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .bw-mytrip-hero__date {
+    font-size: 12px;
+  }
+  .bw-mytrip-hero__clock {
+    align-items: center;
+    min-height: 32px;
+    padding: 4px 10px;
+    border-radius: 10px;
+    font-size: 12px;
+  }
+  .bw-mytrip-hero__clock strong {
+    font-size: 15px;
+  }
+  .bw-mytrip-hero:not(:has(.bw-mytrip-hero__foot button)) .bw-mytrip-hero__clock {
+    grid-column: 1 / -1;
+  }
+  .bw-mytrip-hero__foot > span,
+  .bw-mytrip-hero__foot:not(:has(button)) {
+    display: none;
+  }
+  .bw-mytrip-hero__foot button {
+    min-height: 32px;
+    white-space: nowrap;
+  }
+}
+
+/* Page Navires : podium sportif et pictos. */
+.bw-fleet {
+  box-shadow: 0 18px 50px #16324a14;
+}
+.bw-fleet__tiles,
+.bw-fleet__tiles > div {
+  background: linear-gradient(135deg, #0e2a3a, #123f4f);
+}
+.bw-fleet__tiles > svg,
+.bw-fleet__tiles > div > svg {
+  color: #ffd98a;
+}
+.bw-fleet__head button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.bw-fleet ol.bw-podium {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  align-items: end;
+  gap: 16px;
+  margin: 20px 0 22px;
+}
+.bw-fleet .bw-podium > li {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 0;
+  text-align: center;
+}
+.bw-fleet .bw-podium > li:hover {
+  background: none;
+}
+.bw-podium > li[data-rank="1"] {
+  order: 2;
+}
+.bw-podium > li[data-rank="2"] {
+  order: 1;
+}
+.bw-podium > li[data-rank="3"] {
+  order: 3;
+}
+.bw-podium__photo {
+  display: grid;
+  aspect-ratio: 16 / 10;
+  place-items: center;
+  overflow: hidden;
+  border-radius: 18px;
+  background: linear-gradient(180deg, #eaf4fa, #ffffff);
+  color: var(--muted-foreground);
+}
+.bw-podium__photo img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  padding: 8px;
+  transition: transform 0.5s;
+}
+.bw-podium > li:hover .bw-podium__photo img {
+  transform: scale(1.05);
+}
+.bw-podium > li[data-rank="1"] .bw-podium__photo {
+  box-shadow: 0 0 0 3px #e9b949, 0 16px 34px #e9b94940;
+}
+.bw-podium__name {
+  font-size: 16px;
+  font-weight: 800;
+}
+.bw-podium > li[data-rank="1"] .bw-podium__name {
+  font-size: 19px;
+}
+.bw-podium__name a:hover {
+  color: var(--primary);
+}
+.bw-podium__name small {
+  display: block;
+  color: var(--muted-foreground);
+  font-size: 12.5px;
+  font-weight: 500;
+}
+.bw-podium__step {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  border-radius: 14px 14px 0 0;
+  color: #16324a;
+}
+.bw-podium__step b {
+  font-size: 34px;
+  font-weight: 900;
+  line-height: 1;
+}
+.bw-podium__step strong {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 15px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+.bw-podium > li[data-rank="1"] .bw-podium__step {
+  height: 124px;
+  background: linear-gradient(180deg, #f6d365, #e9b949);
+}
+.bw-podium > li[data-rank="2"] .bw-podium__step {
+  height: 96px;
+  background: linear-gradient(180deg, #e8edf1, #c5ced6);
+}
+.bw-podium > li[data-rank="3"] .bw-podium__step {
+  height: 76px;
+  background: linear-gradient(180deg, #ecc6a2, #cf9465);
+}
+@media (max-width: 767px) {
+  .bw-fleet ol.bw-podium {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .bw-podium > li[data-rank] {
+    order: 0;
+  }
+  .bw-fleet .bw-podium__step {
+    flex-direction: row;
+    gap: 12px;
+    height: 48px;
+    border-radius: 12px;
+  }
+  .bw-podium__step b {
+    font-size: 24px;
+  }
+}
+.bw-fleet .bw-podium > li {
+  align-items: stretch;
+  grid-template-columns: none;
+}
+/* Photos sur fond blanc : un dégradé ferait ressortir leur cadre. */
+.bw-podium__photo {
+  border: 1px solid var(--border);
+  background: #ffffff;
+}

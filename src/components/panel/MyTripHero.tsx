@@ -2,6 +2,8 @@ import { VesselAlertTag } from "@/components/panel/VesselAlert";
 import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { ArrowRight, Crosshair, Ship } from "lucide-react";
+import { TravellerAvatar } from "@/components/community/TravellerAvatar";
+import { myTravellerQuery } from "@/lib/community/travellers";
 import { useAuth } from "@/hooks/useAuth";
 import { tripEnd, useMyTrip, type MyTrip } from "@/lib/ferry/myTrip";
 import { mergeTripSteps, myTripStatusQuery, tripStepsQuery } from "@/lib/ferry/presence";
@@ -49,7 +51,7 @@ export function tripPhase(trip: MyTrip, now: number) {
 
 /**
  * Accueil : « Ma traversée » toujours en tête, avec le compte à rebours, l'état et l'action utile.
- * Le cabas affiché est celui de mon étape (en route, au port, à bord, arrivé).
+ * L'avatar est celui de mon profil ; sans profil, le cabas de mon étape.
  */
 export function MyTripHero({ onSelect }: { onSelect: (selection: Selection) => void }) {
   const { user } = useAuth();
@@ -59,6 +61,7 @@ export function MyTripHero({ onSelect }: { onSelect: (selection: Selection) => v
   const start = trip ? Date.parse(trip.departure.departure_at) : 0;
   const now = useNow(Boolean(trip) && start - Date.now() < 86_400_000);
   const alert = useVesselAlert(trip?.vessel?.id);
+  const me = useQuery(myTravellerQuery(user?.id)).data;
   if (!trip) return null;
   const phase = tripPhase(trip, now);
   // Navire en alerte : plus de compte à rebours ni d'« En mer », le départ reste à confirmer.
@@ -90,7 +93,13 @@ export function MyTripHero({ onSelect }: { onSelect: (selection: Selection) => v
         className="bw-mytrip-hero__main"
         onClick={() => onSelect({ type: "departure", id: trip.departure.id })}
       >
-        <img src={image} alt="" width={64} height={64} />
+        <span className="bw-mytrip-hero__avatar">
+          {me ? (
+            <TravellerAvatar card={me} size={48} static />
+          ) : (
+            <img src={image} alt="" width={64} height={64} />
+          )}
+        </span>
         <span className="bw-mytrip-hero__text">
           <small>
             Ma traversée{trip.vessel ? ` · ${trip.vessel.name}` : ""}{" "}

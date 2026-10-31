@@ -4,7 +4,19 @@ import { FleetOverview } from "@/components/panel/FleetOverview";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
-import { ArrowRight, CarFront, Gauge, Ruler, Ship, Users } from "lucide-react";
+import {
+  ArrowRight,
+  BedDouble,
+  CalendarDays,
+  CarFront,
+  Gauge,
+  Layers,
+  MoveHorizontal,
+  Ruler,
+  Scale,
+  Ship,
+  Users,
+} from "lucide-react";
 import { SiteLayout } from "@/components/layout/SiteLayout";
 import { Breadcrumbs, CollectionSchema } from "@/components/editorial/Editorial";
 import { CompanyBadge } from "@/components/panel/CompanyBadge";
@@ -60,7 +72,7 @@ function Boats() {
         name="Flotte des ferries Europe ↔ Algérie"
         items={vesselDossiers.map((v) => ({ name: v.name, path: `/bateaux/${v.slug}` }))}
       />
-      <h1 className="mb-4 font-display text-3xl font-bold md:text-4xl">
+      <h1 className="mb-5 font-display text-4xl font-extrabold tracking-tight md:text-5xl">
         La flotte entre l'Europe et l'Algérie
       </h1>
       {groups.length === 0 ? (
@@ -128,19 +140,19 @@ function VesselCard({ vessel, routes, ports }: { vessel: Vessel; routes: RouteLi
   const year = new Date().getFullYear();
   const dossier = vesselDossiers.find((d) => d.name.toLowerCase() === vessel.name.toLowerCase());
   const stats = [
-    { icon: Ship, label: "Âge", value: vessel.build_year && vessel.build_year <= year ? `${year - vessel.build_year} ans` : null },
+    { icon: CalendarDays, label: "Âge", value: vessel.build_year && vessel.build_year <= year ? `${year - vessel.build_year} ans` : null },
     { icon: Users, label: "Passagers", value: vessel.passenger_capacity?.toLocaleString("fr-FR") },
     { icon: CarFront, label: "Véhicules", value: vessel.car_capacity?.toLocaleString("fr-FR") },
     { icon: Ruler, label: "Longueur", value: vessel.length_meters ? `${vessel.length_meters} m` : null },
     { icon: Gauge, label: "Vitesse", value: vessel.speed_knots ? `${Math.round(vessel.speed_knots * 1.852)} km/h` : null },
-    { icon: Ship, label: "Cabines", value: vessel.cabin_capacity?.toLocaleString("fr-FR") },
-    { icon: Ship, label: "Jauge brute", value: vessel.gross_tonnage ? `${vessel.gross_tonnage.toLocaleString("fr-FR")} t` : null },
-    { icon: Ruler, label: "Largeur", value: vessel.beam_meters ? `${vessel.beam_meters.toLocaleString("fr-FR")} m` : null },
-    { icon: Ship, label: "Ponts", value: vessel.deck_count?.toLocaleString("fr-FR") },
+    { icon: BedDouble, label: "Cabines", value: vessel.cabin_capacity?.toLocaleString("fr-FR") },
+    { icon: Scale, label: "Jauge brute", value: vessel.gross_tonnage ? `${vessel.gross_tonnage.toLocaleString("fr-FR")} t` : null },
+    { icon: MoveHorizontal, label: "Largeur", value: vessel.beam_meters ? `${vessel.beam_meters.toLocaleString("fr-FR")} m` : null },
+    { icon: Layers, label: "Ponts", value: vessel.deck_count?.toLocaleString("fr-FR") },
   ].filter((s) => s.value);
   return (
-    <article className="flex flex-col overflow-hidden rounded-2xl border bg-background shadow-sm transition hover:shadow-md">
-      <div className="relative aspect-[16/9] bg-white">
+    <article className="group flex flex-col overflow-hidden rounded-2xl border bg-background shadow-sm transition duration-300 hover:-translate-y-1 hover:shadow-xl">
+      <div className="relative aspect-[16/9] overflow-hidden bg-white">
         {photo?.url && !failed ? (
           <img
             src={photo.url}
@@ -148,7 +160,7 @@ function VesselCard({ vessel, routes, ports }: { vessel: Vessel; routes: RouteLi
             loading="lazy"
             referrerPolicy="no-referrer"
             onError={() => setFailed(true)}
-            className="h-full w-full object-contain p-2"
+            className="h-full w-full object-contain p-2 transition duration-500 group-hover:scale-105"
           />
         ) : (
           <div className="grid h-full place-items-center text-muted-foreground">
@@ -166,7 +178,7 @@ function VesselCard({ vessel, routes, ports }: { vessel: Vessel; routes: RouteLi
             {stats.map((s) => (
               <div key={s.label} className="rounded-lg bg-muted/60 px-2 py-1.5">
                 <dt className="flex items-center gap-1 text-[10px] text-muted-foreground">
-                  <s.icon size={11} aria-hidden /> {s.label}
+                  <s.icon size={13} className="text-primary" aria-hidden /> {s.label}
                 </dt>
                 <dd className="font-bold">{s.value}</dd>
               </div>

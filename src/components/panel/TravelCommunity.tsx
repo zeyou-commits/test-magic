@@ -44,7 +44,7 @@ export function AlertIcon({ category, size = 17 }: { category: AlertCategory; si
 }
 const failure = (message?: string) =>
   new Error(
-    message && /Patientez|Maximum|déjà signalé|expiré/.test(message)
+    message && /Patientez|Maximum|déjà signalé|expiré|sur place/.test(message)
       ? message
       : "L’envoi n’a pas abouti. Réessayez dans quelques instants.",
   );
@@ -108,9 +108,14 @@ export function TravelSignals({
   }, [alertIds]);
   const mutation = useMutation({
     mutationFn: async (action: { type: "confirm" | "resolve" | "deny"; id: string }) => {
-      // Sur mobile, la confirmation porte la mention « sur place » si la position le permet.
+      // Au port, confirmer ou démentir exige d'être sur place. Ailleurs, sur mobile, la confirmation
+      // porte la mention « sur place » si la position le permet.
       const here =
-        action.type === "confirm" && located && isMobile ? await currentPosition(6_000) : null;
+        kind === "port" && action.type !== "resolve"
+          ? await currentPosition(8_000)
+          : action.type === "confirm" && located && isMobile
+            ? await currentPosition(6_000)
+            : null;
       const error = await alertAction(action.id, action.type, here);
       if (error) throw failure(error.message);
     },

@@ -1,7 +1,7 @@
 import { useAuth } from "@/hooks/useAuth";
 import { ArrowRight, Navigation, Waves } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
-import { crossingProgress } from "@/lib/ferry/crossingProgress";
+import { crossingProgress, ferryLeft, sceneLabel } from "@/lib/ferry/crossingProgress";
 import { departureStopped, incidentForVessel, incidentsQuery } from "@/lib/ferry/incidents";
 import type { Departure, Port } from "@/lib/ferry/types";
 import { useVesselAlert } from "@/lib/ferry/vesselAlerts";
@@ -35,9 +35,13 @@ export function CrossingCard({
   const progress = crossingProgress(departure, from, to, live, at, stopped);
   const estimated = progress.trust !== "live" && progress.trust !== "observed";
   const atSeaLabel = estimated ? "En mer · estimé" : "En mer";
+  const scene = awaited ? "stopped" : progress.scene;
+  const label = sceneLabel(scene);
   const status =
     departure.status === "cancelled"
       ? "Traversée annulée"
+      : label && !progress.hold
+        ? label
       : progress.times.arrival.kind === "observed"
         ? "Arrivée constatée"
         : progress.hold
@@ -74,7 +78,18 @@ export function CrossingCard({
         <ArrowRight size={17} aria-hidden />
         <strong>{to.name}</strong>
       </div>
-      {progress.ratio !== null && !awaited ? (
+      {scene === "stopped" ? (
+        <div className="bw-crossing-progress">
+          <div className="bw-crossing-progress-label">
+            <span>{alert?.label ?? "Navire immobilisé"}</span>
+          </div>
+          <div className="bw-crossing-track">
+            <i style={{ left: ferryLeft(0, 62, scene, 4) }}>
+              <MiniFerry size={62} scene={scene} />
+            </i>
+          </div>
+        </div>
+      ) : progress.ratio !== null ? (
         <div className="bw-crossing-progress">
           <div className="bw-crossing-progress-label">
             <span>{progress.trustLabel}</span>
@@ -93,8 +108,8 @@ export function CrossingCard({
             aria-valuemax={100}
           >
             <span style={{ width: `${progress.ratio * 100}%` }} />
-            <i style={{ left: `${Math.max(4, Math.min(96, progress.ratio * 100))}%` }}>
-              <MiniFerry size={62} />
+            <i style={{ left: ferryLeft(progress.ratio * 100, 62, scene, 4) }}>
+              <MiniFerry size={62} scene={scene} />
             </i>
           </div>
         </div>

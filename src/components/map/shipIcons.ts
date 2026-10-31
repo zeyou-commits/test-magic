@@ -260,6 +260,34 @@ function drawAlert(): ImageData | null {
   return ctx.getImageData(0, 0, SIZE, SIZE);
 }
 
+/**
+ * Vraie image d'un navire, proue vers le nord pour tourner selon son cap. Une carte ne lisse pas une grande
+ * image réduite : elle est préparée à trois tailles, chacune pour une plage de zoom.
+ */
+export const VESSEL_IMAGE_STEPS = [
+  { size: 96, minzoom: 0, maxzoom: 6 },
+  { size: 192, minzoom: 6, maxzoom: 9 },
+  { size: 384, minzoom: 9, maxzoom: 24 },
+];
+
+export function addVesselImage(map: MapLibreMap, id: string, url: string, onReady: () => void) {
+  const source = new Image();
+  source.onload = () => {
+    for (const { size } of VESSEL_IMAGE_STEPS) {
+      const canvas = document.createElement("canvas");
+      canvas.width = canvas.height = size;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) return;
+      ctx.imageSmoothingQuality = "high";
+      ctx.drawImage(source, 0, 0, size, size);
+      const name = `${id}-${size}`;
+      if (!map.hasImage(name)) map.addImage(name, ctx.getImageData(0, 0, size, size));
+    }
+    onReady();
+  };
+  source.src = url;
+}
+
 export function addShipImages(map: MapLibreMap) {
   const media = window.matchMedia("(prefers-reduced-motion: reduce)");
   const animated: { id: string; frames: ImageData[] }[] = [];

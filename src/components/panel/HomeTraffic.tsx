@@ -14,7 +14,7 @@ import {
 } from "@/lib/ferry/queries";
 import { useFleet } from "@/lib/ferry/useFleet";
 import { useLiveShips } from "@/lib/ferry/useLiveShips";
-import { crossingProgress } from "@/lib/ferry/crossingProgress";
+import { crossingProgress, ferryLeft } from "@/lib/ferry/crossingProgress";
 import { trackingTimes } from "@/lib/ferry/tracking";
 import { formatDateParts } from "@/lib/ferry/format";
 import { portTimeZone, dateKeyInZone } from "@/lib/ferry/time";
@@ -197,8 +197,8 @@ export function HomeTraffic({
                     {...(percent === null ? {} : { "aria-valuenow": percent })}
                   >
                     <span style={{ width: `${percent ?? 0}%` }} />
-                    <i style={{ left: `${Math.max(8, Math.min(92, percent ?? 0))}%` }}>
-                      <MiniFerry size={58} />
+                    <i style={{ left: ferryLeft(percent ?? 0, 58, progress.scene, 8) }}>
+                      <MiniFerry size={58} scene={progress.scene} />
                       <b>{percent === null ? "—" : `${estimated ? "≈ " : ""}${percent} %`}</b>
                     </i>
                   </div>

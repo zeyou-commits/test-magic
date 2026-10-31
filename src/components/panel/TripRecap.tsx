@@ -21,7 +21,7 @@ import {
   Radio,
   Timer,
 } from "lucide-react";
-import { crossingProgress } from "@/lib/ferry/crossingProgress";
+import { crossingProgress, ferryLeft } from "@/lib/ferry/crossingProgress";
 import { departureStopped, incidentForVessel, incidentsQuery } from "@/lib/ferry/incidents";
 import { getBoardingMilestones } from "@/lib/ferry/boarding";
 import { formatDuration } from "@/lib/ferry/format";
@@ -290,8 +290,8 @@ export function TripRecap({
             </span>
             <span className="bw-recap__track">
               <span style={{ width: `${(progress.ratio ?? 0) * 100}%` }} />
-              <i style={{ left: `${Math.max(6, Math.min(94, (progress.ratio ?? 0) * 100))}%` }}>
-                <MiniFerry size={40} />
+              <i style={{ left: ferryLeft((progress.ratio ?? 0) * 100, 40, progress.scene, 6) }}>
+                <MiniFerry size={40} scene={progress.scene} />
               </i>
             </span>
             <span className="bw-recap__anchor">

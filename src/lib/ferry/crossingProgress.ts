@@ -2,6 +2,7 @@ import {
   departureHold,
   formatAge,
   haversineKm,
+  physicalStatus,
   trackingTimes,
   TRUSTED_SIGNAL_MINUTES,
   type CrossingSchedule,
@@ -20,6 +21,39 @@ export function trustLabel(trust: TrackingTrust, ageMinutes: number | null) {
   if (trust === "live") return `Position réelle · ${formatAge(ageMinutes ?? 0)}`;
   if (trust === "aged") return `Estimation · dernière position ${formatAge(ageMinutes ?? 0)}`;
   return "Estimation d’après l’horaire · position non captée";
+}
+
+/** Ce que fait le navire, pour l'indicateur : animation à bord, et mention « estimé » quand c'est déduit. */
+export type CrossingScene =
+  | "boarding"
+  | "closed"
+  | "departing"
+  | "sea"
+  | "approaching"
+  | "anchored"
+  | "disembarking"
+  | "docked"
+  | "stopped"
+  | "stale";
+
+const SCENE_LABELS: Partial<Record<CrossingScene, string>> = {
+  boarding: "Embarquement en cours · estimé",
+  closed: "Embarquement clos · estimé",
+  departing: "Appareillage en cours",
+  approaching: "En approche",
+  anchored: "Au mouillage · en attente",
+  disembarking: "Débarquement en cours · estimé",
+};
+
+export function sceneLabel(scene: CrossingScene | null) {
+  return scene ? (SCENE_LABELS[scene] ?? null) : null;
+}
+
+/** Les scènes à quai laissent la place du quai et des voyageurs derrière le navire. */
+export function ferryLeft(percent: number, size: number, scene: CrossingScene | null, margin: number) {
+  const left = `${Math.max(margin, Math.min(100 - margin, percent))}%`;
+  const quay = scene === "boarding" || scene === "closed" || scene === "docked" || scene === "stopped";
+  return quay && percent < 50 ? `max(${Math.round(size * 1.15)}px, ${left})` : left;
 }
 
 /** The card never invents a duration or interprets a timetable as a confirmed position. */
@@ -69,12 +103,34 @@ export function crossingProgress(
         : "aged";
   // L'heure passée ne prouve pas l'arrivée : seul un signal peut la constater.
   const arrivalIso = times.arrival.iso;
+  const arrivalDue = !observedArrival && !hold && Boolean(arrivalIso) && Date.parse(arrivalIso!) < now;
+  const scene = ((): CrossingScene | null => {
+    if (departure.status === "cancelled") return null;
+    if (stopped) return "stopped";
+    if (observedArrival) {
+      const since = (now - Date.parse(arrivalIso!)) / 60_000;
+      return since <= 90 ? "disembarking" : "docked";
+    }
+    if (hold) return hold.fresh ? "closed" : "stale";
+    if (signal && trust === "live") {
+      const code = physicalStatus(signal.position, from, to, departure.departure_at, now).code;
+      if (code === "boarding_closed") return "closed";
+      if (code === "at_sea") return "sea";
+      if (code !== "unknown") return code;
+    }
+    if (arrivalDue) return "stale";
+    if (Number.isFinite(start) && now < start) {
+      const hours = (start - now) / 3_600_000;
+      return hours > 3 ? "docked" : hours >= 1 ? "boarding" : "closed";
+    }
+    return ratio === null ? null : "sea";
+  })();
   return {
+    scene,
     times,
     trust,
     trustLabel: trustLabel(trust, signal?.ageMinutes ?? null),
-    arrivalDue:
-      !observedArrival && !hold && Boolean(arrivalIso) && Date.parse(arrivalIso!) < now,
+    arrivalDue,
     ratio: ratio === null ? null : Math.max(0, Math.min(1, ratio)),
     source: hold
       ? "Signal AIS à quai"

@@ -21,7 +21,15 @@ import { formatDuration } from "@/lib/ferry/format";
 import { algeriaGeoJson } from "@/lib/ferry/algeriaGeoJson";
 import { routeArc } from "@/lib/ferry/geo";
 import type { FleetShip } from "@/lib/ferry/fleet";
-import { addShipImages, shipIcon, shipTokenRadius, wakeLevel } from "./shipIcons";
+import {
+  addShipImages,
+  addVesselImage,
+  shipIcon,
+  shipTokenRadius,
+  VESSEL_IMAGE_STEPS,
+  wakeLevel,
+} from "./shipIcons";
+import { ROSALIND_MAP_ICON, ROSALIND_MAP_ICON_URL, vesselMapIcon } from "@/lib/ferry/vesselVisuals";
 import { fleetGroups } from "./fleetVisibility";
 import { physicalStatus, projectedPosition } from "@/lib/ferry/tracking";
 import { portTimeZone, wallTimeInZone } from "@/lib/ferry/time";
@@ -712,11 +720,43 @@ export default function FerryMap({
           "icon-opacity-transition": { duration: 200 },
         },
       });
+      addVesselImage(map, ROSALIND_MAP_ICON, ROSALIND_MAP_ICON_URL, () => {
+        if (!map.getStyle()) return;
+        // Taille à l'écran, en pixels, selon le zoom : discrète de loin, détaillée de près.
+        const screen = [3, 34, 5, 46, 7, 74, 9, 118, 11, 180, 13, 260, 15, 320];
+        for (const { size, minzoom, maxzoom } of VESSEL_IMAGE_STEPS)
+          map.addLayer(
+            {
+              id: `fleet-photo-${size}`,
+              type: "symbol",
+              source: "fleet",
+              minzoom,
+              maxzoom,
+              filter: ["==", ["get", "photo"], 1],
+              layout: {
+                "icon-image": `${ROSALIND_MAP_ICON}-${size}`,
+                "icon-rotation-alignment": "map",
+                "icon-pitch-alignment": "map",
+                "icon-rotate": ["get", "course"],
+                "icon-allow-overlap": true,
+                "icon-ignore-placement": true,
+                "icon-size": [
+                  "interpolate",
+                  ["linear"],
+                  ["zoom"],
+                  ...screen.map((value, index) => (index % 2 ? value / size : value)),
+                ] as never,
+              },
+              paint: { "icon-opacity": ["get", "photoOpacity"] },
+            },
+            "fleet-heading",
+          );
+      });
       map.addLayer({
         id: "fleet-heading",
         type: "symbol",
         source: "fleet",
-        filter: ["==", ["get", "state"], "sea"],
+        filter: ["all", ["==", ["get", "state"], "sea"], ["==", ["get", "photo"], 0]],
         layout: {
           "icon-image": "ship-heading",
           "icon-rotation-alignment": "map",
@@ -2325,9 +2365,12 @@ export default function FerryMap({
               priority: focused ? 0 : selected ? 1 : live ? 2 : ship.state === "sea" ? 3 : 4,
               departureId: ship.departureId,
               vesselId: ship.vesselId ?? "",
-              opacity: dimmed ? 0.35 : 1,
+              // Navire à image : le jeton invisible reste la zone de clic.
+              photo: vesselMapIcon(ship.name) ? 1 : 0,
+              photoOpacity: dimmed ? 0.35 : 1,
+              opacity: vesselMapIcon(ship.name) ? 0 : dimmed ? 0.35 : 1,
               haloColor: selected ? "#0e7a43" : "#1e5b7a",
-              haloOpacity: selected ? 0.18 : 0,
+              haloOpacity: selected && !vesselMapIcon(ship.name) ? 0.18 : 0,
             },
             geometry: { type: "Point" as const, coordinates },
           };

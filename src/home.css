@@ -2937,3 +2937,51 @@ html {
 @media (max-width: 360px) {
   .bw-ship-hero-stats svg { display: none; }
 }
+
+/* Indicateur d'avancement : le navire montre lui-même son état. */
+.bw-mini-ferry[data-scene="boarding"] .bw-mini-ferry-hull,
+.bw-mini-ferry[data-scene="closed"] .bw-mini-ferry-hull,
+.bw-mini-ferry[data-scene="disembarking"] .bw-mini-ferry-hull,
+.bw-mini-ferry[data-scene="docked"] .bw-mini-ferry-hull,
+.bw-mini-ferry[data-scene="stopped"] .bw-mini-ferry-hull,
+.bw-mini-ferry[data-scene="stale"] .bw-mini-ferry-hull { animation: none; }
+.bw-mini-ferry[data-scene="boarding"] .bw-mini-ferry-wake,
+.bw-mini-ferry[data-scene="closed"] .bw-mini-ferry-wake,
+.bw-mini-ferry[data-scene="disembarking"] .bw-mini-ferry-wake,
+.bw-mini-ferry[data-scene="docked"] .bw-mini-ferry-wake,
+.bw-mini-ferry[data-scene="stopped"] .bw-mini-ferry-wake,
+.bw-mini-ferry[data-scene="anchored"] .bw-mini-ferry-wake,
+.bw-mini-ferry[data-scene="stale"] .bw-mini-ferry-wake { display: none; }
+.bw-mini-ferry[data-scene="closed"] .bw-smoke,
+.bw-mini-ferry[data-scene="docked"] .bw-smoke,
+.bw-mini-ferry[data-scene="stopped"] .bw-smoke,
+.bw-mini-ferry[data-scene="anchored"] .bw-smoke,
+.bw-mini-ferry[data-scene="stale"] .bw-smoke { display: none; }
+.bw-mini-ferry[data-scene="stale"] { opacity: 0.45; }
+.bw-mf-quay { fill: #cfc9bb; }
+.bw-mf-ramp { fill: none; stroke: #6f7d86; stroke-width: 1.500; stroke-linecap: round; }
+.bw-mf-anchor { fill: none; stroke: #16324a; stroke-width: 1.100; stroke-linecap: round; }
+.bw-mf-traveller { opacity: 0; animation: 4.800s linear infinite; }
+.bw-mf-in { animation-name: bw-mf-in; }
+.bw-mf-out { animation-name: bw-mf-out; }
+.bw-mf-later { animation-delay: 1.600s; }
+.bw-mf-latest { animation-delay: 3.200s; }
+@keyframes bw-mf-in {
+  0% { transform: translate(-40px, 25px); opacity: 0; }
+  8% { opacity: 1; }
+  55% { transform: translate(-10px, 25px); }
+  90% { opacity: 1; }
+  100% { transform: translate(10px, 19px); opacity: 0; }
+}
+@keyframes bw-mf-out {
+  0% { transform: translate(10px, 19px); opacity: 0; }
+  10% { opacity: 1; }
+  45% { transform: translate(-10px, 25px); }
+  92% { opacity: 1; }
+  100% { transform: translate(-40px, 25px); opacity: 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .bw-mf-traveller { animation: none; opacity: 1; transform: translate(-16px, 25px); }
+  .bw-mf-later { transform: translate(-28px, 25px); }
+  .bw-mf-latest { transform: translate(-36px, 25px); }
+}

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { crossingProgress } from "./crossingProgress";
+import { crossingProgress, ferryLeft, sceneLabel } from "./crossingProgress";
 import type { Departure, Port } from "./types";
 import type { LiveShip } from "./tracking";
 
@@ -13,6 +13,30 @@ const departure = {
 const from = { longitude: 5, latitude: 43 } as Port;
 const to = { longitude: 5, latitude: 37 } as Port;
 const now = Date.parse("2026-10-21T13:00:00Z");
+describe("crossing scene", () => {
+  const at = (iso: string) => crossingProgress(departure, from, to, null, Date.parse(iso)).scene;
+  it("déduit les états à quai de l'horaire, sans les présenter comme constatés", () => {
+    expect(at("2026-10-21T03:00:00Z")).toBe("docked");
+    expect(at("2026-10-21T06:00:00Z")).toBe("boarding");
+    expect(at("2026-10-21T07:30:00Z")).toBe("closed");
+    expect(sceneLabel("boarding")).toContain("estimé");
+    expect(sceneLabel("disembarking")).toContain("estimé");
+  });
+  it("suit l'horaire en mer, puis ne prétend pas que le navire est arrivé", () => {
+    expect(at("2026-10-21T13:00:00Z")).toBe("sea");
+    expect(at("2026-10-21T19:00:00Z")).toBe("stale");
+  });
+  it("montre un navire immobilisé et n'anime pas une traversée annulée", () => {
+    expect(crossingProgress(departure, from, to, null, now, true).scene).toBe("stopped");
+    expect(crossingProgress({ ...departure, status: "cancelled" }, from, to, null, now).scene).toBeNull();
+  });
+  it("laisse la place du quai seulement au départ", () => {
+    expect(ferryLeft(0, 62, "boarding", 4)).toBe("max(71px, 4%)");
+    expect(ferryLeft(100, 62, "docked", 4)).toBe("96%");
+    expect(ferryLeft(40, 62, "sea", 4)).toBe("40%");
+  });
+});
+
 describe("crossing progress provenance", () => {
   it("labels timetable progress without claiming a live position", () => {
     const p = crossingProgress(departure, from, to, null, now);

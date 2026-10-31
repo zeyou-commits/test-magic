@@ -151,9 +151,15 @@ export function MyTripHero({ onSelect }: { onSelect: (selection: Selection) => v
               <VesselAlertTag vesselId={trip.vessel?.id} />
             </small>
           )}
-          <strong>
-            {trip.from?.name ?? "Départ"} → {trip.to?.name ?? "Arrivée"}
-          </strong>
+          {underway ? (
+            <strong className="bw-mytrip-hero__title">
+              Ma traversée : {trip.from?.name ?? "Départ"} - {trip.to?.name ?? "Arrivée"}
+            </strong>
+          ) : (
+            <strong>
+              {trip.from?.name ?? "Départ"} → {trip.to?.name ?? "Arrivée"}
+            </strong>
+          )}
           {underway ? null : (
             <span className="bw-mytrip-hero__date">
               {formatDateTime(departureIso, zone)}

@@ -7686,3 +7686,15 @@ label:has(> input.sr-only) {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+
+/* Une seule ligne, y compris avec deux noms de ports longs. */
+.bw-mytrip-hero:has(.bw-mytrip-hero__voyage) .bw-mytrip-hero__text {
+  min-width: 0;
+}
+.bw-mytrip-hero:has(.bw-mytrip-hero__voyage) .bw-mytrip-hero__text .bw-mytrip-hero__title {
+  display: block;
+  overflow: hidden;
+  font-size: clamp(12.5px, 3.6vw, 15px);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

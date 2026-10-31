@@ -1,17 +1,18 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
-import { ArrowLeft, ArrowRightLeft, Info, Minus, Plus, Wallet } from "lucide-react";
+import { useEffect, useState } from "react";
+import { ArrowLeftRight, ArrowRightLeft, ChevronDown, Delete, Fuel, Plus, Receipt, Trash2, Wallet } from "lucide-react";
 import { SiteFooter, SiteHeader } from "@/components/layout/SiteLayout";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase as typedSupabase } from "@/integrations/supabase/client";
 import { seoHead } from "@/lib/seo/site";
-import { CURRENCIES, DENOMINATIONS, LAST_KNOWN_RATES, dinarTotal, emptyWallet, exchangeCurrency, sanitizeWallet, walletTotal, type Currency, type RatesResponse, type WalletState } from "@/lib/wallet/wallet";
+import { CURRENCIES, DENOMINATIONS, EXPENSE_CATEGORIES, LAST_KNOWN_RATES, addExpense, dinarTotal, emptyWallet, recordExchange, remainingDinars, removeExchange, sanitizeWallet, type Currency, type RatesResponse, type WalletState } from "@/lib/wallet/wallet";
 import { walletMediaUrl, type WalletMediaRow } from "@/lib/wallet/media";
 import "@/wallet.css";
 
 const supabase = typedSupabase as unknown as import("@supabase/supabase-js").SupabaseClient;
 const LOCAL_KEY = "bledway:bezass:v1";
 const money = (value: number, currency: Currency | "DZD", digits = 0) => currency === "DZD" ? `${new Intl.NumberFormat("fr-FR", { maximumFractionDigits: digits }).format(value)} DA` : new Intl.NumberFormat("fr-FR", { style: "currency", currency, maximumFractionDigits: digits }).format(value);
+const parseAmount = (value: string) => Number(value.replace(/\s/g, "").replace(",", "."));
 const sourceDay = (date: string | null | undefined, today: string) => !date ? "Date inconnue" : date.slice(0, 10) === today ? "Aujourd’hui" : new Date(date).toLocaleDateString("fr-FR", { day: "numeric", month: "short" });
 
 function NoteVisual({ image, fallback, variant, value, kind, empty }: { image: string | null; fallback?: string | null; variant?: string | null; value: number; kind: string; empty: boolean }) {
@@ -28,7 +29,7 @@ function NoteVisual({ image, fallback, variant, value, kind, empty }: { image: s
 }
 
 export const Route = createFileRoute("/mes-dinars")({
-  head: () => seoHead("Mes dinars, mon portefeuille de voyage | BledWay", "Comptez vos billets et pièces en dinars et gardez le fil de vos devises non échangées.", "/mes-dinars"),
+  head: () => seoHead("Mes dinars, mon portefeuille de voyage | BledWay", "Convertissez un prix entre dinars et euros, et suivez ce qu'il vous reste pendant le voyage.", "/mes-dinars"),
   component: WalletPage,
 });
 
@@ -43,16 +44,16 @@ function WalletPage() {
   const [ready, setReady] = useState(false);
   const [syncError, setSyncError] = useState(false);
   const [rates, setRates] = useState<RatesResponse>(LAST_KNOWN_RATES);
-  const [mode, setMode] = useState<"official" | "parallel" | "personal">("parallel");
+  const [mode, setMode] = useState<"official" | "parallel" | "personal">("official");
   const [mediaRows, setMediaRows] = useState<WalletMediaRow[]>([]);
-  const [cashTab, setCashTab] = useState<"note" | "coin">("note");
-  const [foreignInput, setForeignInput] = useState("");
-  const [exchangeOpen, setExchangeOpen] = useState(false);
-  const [exchangeAmount, setExchangeAmount] = useState("");
-  const [receivedAmount, setReceivedAmount] = useState("");
-  const [exchangeDate, setExchangeDate] = useState(() => new Date().toLocaleDateString("en-CA"));
-  const [personalRateInput, setPersonalRateInput] = useState("");
-  const [personalRateDate, setPersonalRateDate] = useState(() => new Date().toLocaleDateString("en-CA"));
+  const [dinars, setDinars] = useState("");
+  const [foreign, setForeign] = useState("");
+  const [action, setAction] = useState<"exchange" | "expense" | "cash" | null>(null);
+  const [spent, setSpent] = useState("");
+  const [received, setReceived] = useState("");
+  const [expense, setExpense] = useState("");
+  const [category, setCategory] = useState<string>(EXPENSE_CATEGORIES[0]);
+  const [cash, setCash] = useState("");
 
   useEffect(() => {
     fetch("/api/wallet-rates").then((res) => res.json()).then((data: RatesResponse) => {
@@ -107,129 +108,151 @@ function WalletPage() {
   }, [wallet, ready, user?.id, syncError]);
 
   const currency = wallet.currency;
-  const totalDinars = dinarTotal(wallet);
-  const officialTotal = walletTotal(wallet, currency, rates, "official");
-  const parallelTotal = walletTotal(wallet, currency, rates, "parallel");
   const personalRate = wallet.personalRates[currency];
-  const parallelPublishedAt = rates.rates[currency]?.parallelDate;
-  const parallelIsOld = !parallelPublishedAt || Date.now() - Date.parse(parallelPublishedAt) > 2 * 86_400_000;
-  const personalTotal = personalRate ? walletTotal(wallet, currency, { ...rates, rates: { ...rates.rates, [currency]: {
-    official: rates.rates[currency]?.official ?? null,
-    parallel: personalRate.rate,
-    officialDate: rates.rates[currency]?.officialDate ?? null,
-    parallelDate: personalRate.day,
-  } } }, "parallel") : null;
-  const headlineTotal = mode === "personal" && personalTotal !== null ? personalTotal : mode === "official" ? officialTotal : parallelTotal;
-  const headlineBasis = mode === "personal" && personalTotal !== null ? `À votre taux du ${personalRate?.day}` : mode === "official" ? "Au taux officiel" : "Au taux du marché parallèle";
-  const foreignRemaining = wallet.foreign[currency] || 0;
-  const otherForeign = CURRENCIES.filter((code) => code !== currency && (wallet.foreign[code] || 0) > 0);
-  const mediaCredits = [...new Map(mediaRows.map((row) => [`${row.credit_label}|${row.credit_url || ""}`, row])).values()];
-  const visibleDenominations = useMemo(() => DENOMINATIONS.filter((denom) => denom.kind === cashTab), [cashTab]);
-  const today = new Date().toLocaleDateString("en-CA");
+  // Le taux réellement obtenu devient la référence dès qu'il existe.
   useEffect(() => { if (personalRate) setMode("personal"); }, [personalRate?.rate, personalRate?.day]);
+  const published = rates.rates[currency];
+  const rate = mode === "personal" && personalRate ? personalRate.rate : mode === "parallel" ? published?.parallel ?? null : published?.official ?? null;
+  const basis = mode === "personal" && personalRate ? "à votre taux" : mode === "parallel" ? "au taux parallèle indicatif" : "au taux officiel";
 
-  function updateWallet(updater: (current: WalletState) => WalletState) {
-    setWallet((current) => ({ ...updater(current), updatedAt: new Date().toISOString() }));
-  }
-  function updateCount(value: number, delta: number) {
-    updateWallet((current) => {
-      const before = current.counts[value] || 0;
-      const after = Math.max(0, Math.min(100000, before + delta));
-      return { ...current, counts: { ...current.counts, [value]: after }, looseDinars: after > before ? Math.max(0, current.looseDinars - Math.min(value, current.looseDinars)) : current.looseDinars };
-    });
-  }
-  function saveForeign() {
-    const amount = Number(foreignInput.replace(",", "."));
-    if (!Number.isFinite(amount) || amount < 0 || amount > 100000000) return;
-    updateWallet((current) => ({ ...current, foreign: { ...current.foreign, [currency]: Math.round(amount * 100) / 100 } }));
-    setForeignInput("");
-  }
-  function saveExchange() {
-    const amount = Number(exchangeAmount.replace(",", "."));
-    const received = Number(receivedAmount.replace(",", "."));
-    const next = exchangeCurrency(wallet, currency, amount, received, exchangeDate);
-    if (!next) return;
-    updateWallet(() => next);
-    setExchangeAmount(""); setReceivedAmount(""); setExchangeOpen(false);
-  }
-  function savePersonalRate() {
-    const rate = Number(personalRateInput.replace(",", "."));
-    if (!Number.isFinite(rate) || rate <= 10 || rate >= 1000 || !/^\d{4}-\d{2}-\d{2}$/.test(personalRateDate)) return;
-    updateWallet((current) => ({ ...current, personalRates: { ...current.personalRates, [currency]: { rate, day: personalRateDate } } }));
-    setPersonalRateInput("");
-  }
-  function saveSnapshot() {
-    updateWallet((current) => ({ ...current, snapshots: [...current.snapshots.filter((snapshot) => snapshot.day !== today), { day: today, dinars: dinarTotal(current), foreign: { ...current.foreign } }].slice(-31) }));
-  }
+  const update = (next: WalletState | null) => {
+    if (next) setWallet({ ...next, updatedAt: new Date().toISOString() });
+    return Boolean(next);
+  };
+  const fromDinars = (value: string) => {
+    setDinars(value);
+    const amount = parseAmount(value);
+    setForeign(value && rate && Number.isFinite(amount) ? String(Math.round((amount / rate) * 100) / 100) : "");
+  };
+  const fromForeign = (value: string) => {
+    setForeign(value);
+    const amount = parseAmount(value);
+    setDinars(value && rate && Number.isFinite(amount) ? String(Math.round(amount * rate)) : "");
+  };
+  // Le taux change : le montant en dinars saisi reste, l'équivalent suit.
+  useEffect(() => { if (dinars) fromDinars(dinars); }, [rate]);
+  const addNote = (value: number) => fromDinars(String((parseAmount(dinars) || 0) + value));
+
+  const left = remainingDinars(wallet);
+  const entered = dinarTotal(wallet);
+  const totalSpent = wallet.expenses.reduce((sum, item) => sum + item.amount, 0);
+  const started = entered > 0 || totalSpent > 0;
+  const percentLeft = entered > 0 ? Math.round((left / entered) * 100) : 0;
+  const movements = [
+    ...wallet.expenses.map((item) => ({ key: item.id, day: item.day, label: item.category, value: `− ${money(item.amount, "DZD")}`, remove: () => update({ ...wallet, expenses: wallet.expenses.filter((entry) => entry.id !== item.id) }) })),
+    ...wallet.exchanges.map((item) => ({ key: item.id, day: item.day, label: `Change · ${money(item.spent, item.currency)}`, value: `+ ${money(item.received, "DZD")}`, remove: () => update(removeExchange(wallet, item.id)) })),
+  ].sort((a, b) => b.day.localeCompare(a.day)).slice(0, 12);
+
+  const saveExchange = () => {
+    if (update(recordExchange(wallet, currency, parseAmount(spent), parseAmount(received)))) { setSpent(""); setReceived(""); setAction(null); }
+  };
+  const saveExpense = () => {
+    if (update(addExpense(wallet, parseAmount(expense), category))) { setExpense(""); setAction(null); }
+  };
+  const saveCash = () => {
+    const amount = parseAmount(cash);
+    if (!Number.isFinite(amount) || amount <= 0) return;
+    update({ ...wallet, looseDinars: wallet.looseDinars + amount });
+    setCash(""); setAction(null);
+  };
+  const reset = () => {
+    if (window.confirm("Effacer le budget de ce voyage : changes, dépenses et dinars enregistrés ?")) update({ ...emptyWallet(), currency });
+  };
+  const today = new Date().toLocaleDateString("en-CA");
+  const notes = DENOMINATIONS.filter((denom) => denom.value >= 100);
+  const mediaCredits = [...new Map(mediaRows.map((row) => [`${row.credit_label}|${row.credit_url || ""}`, row])).values()];
 
   return <>
     <SiteHeader />
     <main className="bw-wallet-page" id="contenu">
       <div className="bw-wallet-shell">
-        <div className="bw-wallet-heading"><Link to="/" className="bw-wallet-back"><ArrowLeft size={17} aria-hidden /> Carte</Link><h1>Mes dinars<span className="bw-wallet-spark" aria-hidden>✦</span></h1></div>
+        <header className="bw-dz-head">
+          <h1>Mes dinars<span className="bw-wallet-spark" aria-hidden>✦</span></h1>
+          <p>Combien ça fait, et combien il me reste.</p>
+        </header>
 
-        <section className="bw-wallet-rate-summary" aria-label={`Taux de change de ${currency} vers le dinar`}>
-          <div className="bw-wallet-rate-summary__title"><strong>Taux de change · 1 {currency} en DA</strong><span>Pour vos {money(totalDinars, "DZD")}</span></div>
-          <div className="bw-wallet-rate-summary__options">
-            <button type="button" aria-pressed={mode === "official"} onClick={() => setMode("official")}><span>Officiel <small>{sourceDay(rates.rates[currency]?.officialDate, today)}</small></span><b>{rates.rates[currency]?.official ? money(rates.rates[currency]!.official!, "DZD", 2) : "—"}</b><em>{rates.rates[currency]?.official ? `≈ ${money(totalDinars / rates.rates[currency]!.official!, currency)}` : "Conversion indisponible"}</em></button>
-            <button type="button" aria-pressed={mode === "parallel"} onClick={() => setMode("parallel")}><span>Parallèle <small>{sourceDay(rates.rates[currency]?.parallelDate, today)}</small></span><b>{rates.rates[currency]?.parallel ? money(rates.rates[currency]!.parallel!, "DZD", 2) : "—"}</b><em>{rates.rates[currency]?.parallel ? `≈ ${money(totalDinars / rates.rates[currency]!.parallel!, currency)}` : "Conversion indisponible"}</em></button>
-            {personalRate ? <button type="button" className="bw-wallet-rate-summary__personal" aria-pressed={mode === "personal"} onClick={() => setMode("personal")}><span>Mon taux <small>{sourceDay(personalRate.day, today)}</small></span><b>{money(personalRate.rate, "DZD", 2)}</b><em>≈ {money(totalDinars / personalRate.rate, currency)}</em></button> : null}
+        <section className="bw-dz-convert" aria-labelledby="dz-convert-title">
+          <h2 id="dz-convert-title"><ArrowLeftRight size={19} aria-hidden /> Combien ça fait ?</h2>
+          <div className="bw-dz-fields">
+            <label>
+              <span>Dinars</span>
+              <span className="bw-dz-input">
+                <input inputMode="decimal" placeholder="0" value={dinars} onChange={(event) => fromDinars(event.target.value)} aria-label="Montant en dinars" />
+                <b>DA</b>
+              </span>
+            </label>
+            <label>
+              <span>Soit</span>
+              <span className="bw-dz-input">
+                <input inputMode="decimal" placeholder="0" value={foreign} onChange={(event) => fromForeign(event.target.value)} aria-label={`Montant en ${currency}`} />
+                <select aria-label="Devise" value={currency} onChange={(event) => update({ ...wallet, currency: event.target.value as Currency })}>
+                  {CURRENCIES.map((code) => <option key={code}>{code}</option>)}
+                </select>
+              </span>
+            </label>
           </div>
-        </section>
-
-        <section className="bw-wallet-hero" aria-label="Récapitulatif de votre argent restant">
-          <div className="bw-wallet-hero__art" aria-hidden>☀︎　𓆰　✦</div>
-          <span>Votre argent restant · {currency}</span>
-          <strong>{headlineTotal !== null ? `≈ ${money(headlineTotal, currency)}` : "Conversion indisponible"}</strong>
-          <small>{headlineBasis}{mode === "parallel" && parallelIsOld ? " · dernier relevé ancien" : ""}</small>
-          <div className="bw-wallet-hero__breakdown">
-            <div><span>Dans le portefeuille</span><b>{money(totalDinars, "DZD")}</b></div>
-            <div><span>Encore à échanger</span><b>{money(foreignRemaining, currency, 2)}</b></div>
-          </div>
-          {otherForeign.length ? <p className="bw-wallet-hero__other">Autres devises : {otherForeign.map((code) => money(wallet.foreign[code] || 0, code, 2)).join(" · ")}</p> : null}
-        </section>
-
-        <section className="bw-wallet-leather" aria-labelledby="wallet-cash-title">
-          <h2 id="wallet-cash-title"><Wallet size={22} aria-hidden /> Billets & pièces</h2>
-          <div className="bw-wallet-tabs" role="tablist" aria-label="Type d’espèces">
-            <button type="button" role="tab" aria-selected={cashTab === "note"} aria-controls="wallet-cash-panel" onClick={() => setCashTab("note")}>Billets</button>
-            <button type="button" role="tab" aria-selected={cashTab === "coin"} aria-controls="wallet-cash-panel" onClick={() => setCashTab("coin")}>Pièces</button>
-          </div>
-          <div className="bw-wallet-pockets" id="wallet-cash-panel" role="tabpanel" aria-label={cashTab === "note" ? "Billets" : "Pièces"}>
-            {visibleDenominations.map((denom) => {
-              const count = wallet.counts[String(denom.value)] || 0;
+          <div className="bw-dz-notes" role="group" aria-label="Ajouter un billet ou une pièce au calcul">
+            {notes.map((denom) => {
               const front = mediaRows.find((row) => row.value === denom.value && row.slot === "front");
-              const variant = mediaRows.find((row) => row.value === denom.value && row.slot === "variant");
-              return <div className="bw-wallet-pocket" data-kind={denom.kind} key={denom.value}>
-                <NoteVisual image={front ? walletMediaUrl(front.storage_path) : denom.image} fallback={front ? denom.image : null} variant={variant ? walletMediaUrl(variant.storage_path) : "variant" in denom ? denom.variant : null} value={denom.value} kind={denom.kind} empty={!count} />
-                <div className="bw-wallet-quantity" aria-label={`Nombre de ${denom.value} dinars`}>
-                  <button type="button" aria-label={`Ajouter ${denom.value} dinars`} onClick={() => updateCount(denom.value, 1)}><Plus size={17} /></button>
-                  <output aria-live="polite">{count}</output>
-                  <button type="button" aria-label={`Retirer ${denom.value} dinars`} disabled={!count} onClick={() => updateCount(denom.value, -1)}><Minus size={17} /></button>
-                </div>
-                <div className="bw-wallet-equivalent" aria-label={`Équivalent d’un ${denom.kind === "note" ? "billet" : "pièce"} de ${denom.value} dinars`}>
-                  <span>Officiel <strong>{rates.rates[currency]?.official ? `≈ ${money(denom.value / rates.rates[currency]!.official!, currency, 2)}` : "—"}</strong></span>
-                  <span>Parallèle <strong>{rates.rates[currency]?.parallel ? `≈ ${money(denom.value / rates.rates[currency]!.parallel!, currency, 2)}` : "—"}</strong></span>
-                  {personalRate ? <span>Mon taux <strong>≈ {money(denom.value / personalRate.rate, currency, 2)}</strong></span> : null}
-                </div>
-              </div>;
+              return <button key={denom.value} type="button" data-kind={denom.kind} aria-label={`Ajouter ${denom.value} dinars`} onClick={() => addNote(denom.value)}>
+                <NoteVisual image={front ? walletMediaUrl(front.storage_path) : denom.image} fallback={front ? denom.image : null} variant={null} value={denom.value} kind={denom.kind} empty={false} />
+              </button>;
             })}
+            {dinars ? <button type="button" className="bw-dz-clear" aria-label="Effacer le calcul" onClick={() => fromDinars("")}><Delete size={18} aria-hidden /></button> : null}
           </div>
-          {wallet.looseDinars > 0 ? <div className="bw-wallet-loose"><span>Dinars reçus au change <small>À répartir en billets et pièces avec les boutons +</small></span><strong>{money(wallet.looseDinars, "DZD")}</strong></div> : null}
+          <div className="bw-dz-rates" role="group" aria-label="Taux utilisé">
+            {personalRate ? <button type="button" aria-pressed={mode === "personal"} onClick={() => setMode("personal")}>Mon taux <b>{money(personalRate.rate, "DZD", 1)}</b></button> : null}
+            <button type="button" aria-pressed={mode === "official"} onClick={() => setMode("official")}>Officiel <b>{published?.official ? money(published.official, "DZD", 1) : "—"}</b></button>
+            <button type="button" aria-pressed={mode === "parallel"} onClick={() => setMode("parallel")}>Parallèle, indicatif <b>{published?.parallel ? money(published.parallel, "DZD", 1) : "—"}</b></button>
+          </div>
         </section>
 
-        <section className="bw-wallet-foreign" aria-labelledby="wallet-foreign-title"><div className="bw-wallet-foreign__heading"><div><h2 id="wallet-foreign-title">Devises non échangées</h2><p>Encore dans votre poche, sans conversion.</p></div><select aria-label="Devise du voyageur" value={currency} onChange={(event) => updateWallet((current) => ({ ...current, currency: event.target.value as Currency }))}>{CURRENCIES.map((code) => <option key={code} value={code}>{code}</option>)}</select></div><div className="bw-wallet-foreign__balance"><strong>{money(wallet.foreign[currency] || 0, currency, 2)}</strong><span>{CURRENCIES.filter((code) => code !== currency && (wallet.foreign[code] || 0) > 0).map((code) => `${money(wallet.foreign[code] || 0, code)} conservés`).join(" · ")}</span></div><div className="bw-wallet-foreign__actions"><label>Modifier le solde <input inputMode="decimal" aria-label={`Montant non échangé en ${currency}`} type="number" min="0" step="0.01" value={foreignInput} onChange={(event) => setForeignInput(event.target.value)} placeholder="Montant" /></label><button type="button" onClick={saveForeign} disabled={!foreignInput}>Enregistrer</button><button type="button" className="bw-wallet-exchange-trigger" onClick={() => setExchangeOpen(!exchangeOpen)} aria-expanded={exchangeOpen}><ArrowRightLeft size={16} aria-hidden /> J’ai changé des devises</button></div>
-          {exchangeOpen ? <div className="bw-wallet-exchange"><p>Indiquez le montant remis et les dinars réellement reçus. Les deux soldes seront ajustés ensemble, au taux de ce jour-là.</p><label>Date du change<input type="date" value={exchangeDate} max={today} onChange={(event) => setExchangeDate(event.target.value)} /></label><label>{currency} remis<input type="number" min="0.01" max={wallet.foreign[currency] || 0} step="0.01" inputMode="decimal" value={exchangeAmount} onChange={(event) => setExchangeAmount(event.target.value)} /></label><label>Dinars reçus<input type="number" min="0.01" step="0.01" inputMode="decimal" value={receivedAmount} onChange={(event) => setReceivedAmount(event.target.value)} /></label><button type="button" onClick={saveExchange} disabled={!exchangeAmount || !receivedAmount || Number(exchangeAmount) <= 0 || Number(receivedAmount) <= 0 || Number(exchangeAmount) > (wallet.foreign[currency] || 0)}>Valider le change</button></div> : null}</section>
+        <section className="bw-dz-budget" aria-labelledby="dz-budget-title">
+          <h2 id="dz-budget-title"><Wallet size={19} aria-hidden /> Mon budget du voyage</h2>
+          {started ? <>
+            <p className="bw-dz-left"><small>Il vous reste</small><strong>{money(left, "DZD")}</strong><span>{rate ? `soit environ ${money(left / rate, currency)}, ${basis}` : "Conversion indisponible"}</span></p>
+            <div className="bw-dz-meter" role="img" aria-label={`${percentLeft} % restant`}><i style={{ width: `${percentLeft}%` }} /></div>
+            <p className="bw-dz-sums"><span>Reçu {money(entered, "DZD")}</span><span>Dépensé {money(totalSpent, "DZD")}</span></p>
+          </> : <p className="bw-dz-empty">Vous avez changé de l’argent ? Notez-le ici, on calcule votre vrai taux et ce qu’il vous reste au fil du voyage.</p>}
+          <div className="bw-dz-actions">
+            <button type="button" aria-expanded={action === "exchange"} onClick={() => setAction(action === "exchange" ? null : "exchange")}><ArrowRightLeft size={16} aria-hidden /> J’ai changé</button>
+            <button type="button" aria-expanded={action === "expense"} onClick={() => setAction(action === "expense" ? null : "expense")}><Receipt size={16} aria-hidden /> J’ai dépensé</button>
+            <button type="button" aria-expanded={action === "cash"} onClick={() => setAction(action === "cash" ? null : "cash")}><Plus size={16} aria-hidden /> J’ai déjà des dinars</button>
+          </div>
+          {action === "exchange" ? <form className="bw-dz-form" onSubmit={(event) => { event.preventDefault(); saveExchange(); }}>
+            <label>J’ai donné ({currency})<input inputMode="decimal" value={spent} onChange={(event) => setSpent(event.target.value)} placeholder="500" autoFocus /></label>
+            <label>J’ai reçu (DA)<input inputMode="decimal" value={received} onChange={(event) => setReceived(event.target.value)} placeholder="137000" /></label>
+            {parseAmount(spent) > 0 && parseAmount(received) > 0 ? <p>Soit {money(parseAmount(received) / parseAmount(spent), "DZD", 1)} pour 1 {currency}</p> : null}
+            <button type="submit">Enregistrer</button>
+          </form> : null}
+          {action === "expense" ? <form className="bw-dz-form" onSubmit={(event) => { event.preventDefault(); saveExpense(); }}>
+            <label>Montant (DA)<input inputMode="decimal" value={expense} onChange={(event) => setExpense(event.target.value)} placeholder="5000" autoFocus /></label>
+            <div className="bw-dz-cats" role="group" aria-label="Catégorie">
+              {EXPENSE_CATEGORIES.map((item) => <button key={item} type="button" aria-pressed={category === item} onClick={() => setCategory(item)}>{item === "Essence" ? <Fuel size={13} aria-hidden /> : null}{item}</button>)}
+            </div>
+            <button type="submit">Enregistrer</button>
+          </form> : null}
+          {action === "cash" ? <form className="bw-dz-form" onSubmit={(event) => { event.preventDefault(); saveCash(); }}>
+            <label>Dinars déjà en poche<input inputMode="decimal" value={cash} onChange={(event) => setCash(event.target.value)} placeholder="20000" autoFocus /></label>
+            <button type="submit">Ajouter</button>
+          </form> : null}
+          {movements.length ? <ul className="bw-dz-moves" aria-label="Derniers mouvements">
+            {movements.map((item) => <li key={item.key}>
+              <span>{item.label}<small>{item.day === today ? "Aujourd’hui" : new Date(`${item.day}T12:00:00`).toLocaleDateString("fr-FR", { day: "numeric", month: "short" })}</small></span>
+              <b>{item.value}</b>
+              <button type="button" aria-label={`Supprimer : ${item.label}`} onClick={item.remove}><Trash2 size={15} aria-hidden /></button>
+            </li>)}
+          </ul> : null}
+        </section>
 
-        <section className="bw-wallet-rates" aria-label="Sources et taux personnel"><h2><ArrowRightLeft size={18} aria-hidden /> Sources et mon taux</h2><p className="bw-wallet-source"><Info size={14} aria-hidden /> Officiel : <a href="https://www.bank-of-algeria.dz/taux-de-change-journalier/" target="_blank" rel="noopener noreferrer">Banque d’Algérie</a> ({rates.rates[currency]?.officialDate || "—"}) · Marché parallèle : <a href="https://squarealgerie.com/euro-dinar" target="_blank" rel="noopener noreferrer">Square Algérie</a> ({rates.rates[currency]?.parallelDate ? new Date(rates.rates[currency]!.parallelDate!).toLocaleDateString("fr-FR") : "—"}). Repère moyen achat/vente, sans garantie de transaction. {parallelIsOld ? "Le taux du marché parallèle est ancien : vérifiez la date avant de l'utiliser." : rates.checkedAt ? "Taux récupérés par BledWay." : "Derniers relevés connus."}</p><div className="bw-wallet-personal"><h3>Mon taux de change</h3><p>{personalRate ? `1 ${currency} = ${money(personalRate.rate, "DZD", 2)} · renseigné pour le ${new Date(`${personalRate.day}T12:00:00`).toLocaleDateString("fr-FR")}` : "Renseignez le taux réellement obtenu, même après le voyage."}</p><div><label>Taux obtenu (DA pour 1 {currency})<input type="number" inputMode="decimal" min="10" max="1000" step="0.01" value={personalRateInput} onChange={(event) => setPersonalRateInput(event.target.value)} placeholder="Ex. 275" /></label><label>Date<input type="date" value={personalRateDate} max={today} onChange={(event) => setPersonalRateDate(event.target.value)} /></label><button type="button" onClick={savePersonalRate} disabled={!personalRateInput}>Enregistrer mon taux</button></div></div></section>
+        <details className="bw-dz-details">
+          <summary>D’où viennent les taux ? <ChevronDown size={16} aria-hidden /></summary>
+          <p>Officiel : <a href="https://www.bank-of-algeria.dz/" target="_blank" rel="noopener noreferrer">Banque d’Algérie</a> ({sourceDay(published?.officialDate, today)}). Parallèle : relevé public de Square Algérie ({sourceDay(published?.parallelDate, today)}), repère indicatif sans garantie, BledWay n’encourage aucune opération de change. Renseignez-vous sur les règles en vigueur et déclarez ce qui doit l’être.</p>
+          {started ? <button type="button" onClick={reset}>Effacer ce budget et repartir de zéro</button> : null}
+        </details>
 
-        <section className="bw-wallet-total" aria-label="Comparer les valeurs selon le taux"><h2>Comparer les valeurs selon le taux</h2><div><span>Au taux officiel <b>{officialTotal !== null ? `≈ ${money(officialTotal, currency)}` : "—"}</b></span><span>Au taux du marché parallèle <b>{parallelTotal !== null ? `≈ ${money(parallelTotal, currency)}` : "—"}</b></span>{personalTotal !== null ? <span>À mon taux du {personalRate?.day} <b>≈ {money(personalTotal, currency)}</b></span> : null}</div><p>Espèces en dinars converties + devises encore détenues. Le taux parallèle donne davantage de DA pour 1 euro : le même billet en DA vaut donc moins d’euros. Estimations, sans garantie de change.</p></section>
-        {wallet.exchanges.length ? <section className="bw-wallet-history"><h2>Mes changes enregistrés</h2>{wallet.exchanges.slice(-3).reverse().map((entry) => <p key={entry.id}><time dateTime={entry.day}>{new Date(`${entry.day}T12:00:00`).toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" })}</time><strong>{money(entry.spent, entry.currency)} → {money(entry.received, "DZD")}</strong></p>)}</section> : null}
-
-        <button type="button" className="bw-wallet-evening" onClick={saveSnapshot}>{wallet.snapshots.some((snapshot) => snapshot.day === today) ? "Point du jour enregistré · mettre à jour" : "Faire le point ce soir"} <ArrowRightLeft size={18} aria-hidden /></button>
-        {wallet.snapshots.length ? <section className="bw-wallet-history"><h2>Mes derniers points</h2>{wallet.snapshots.slice(-5).reverse().map((snapshot) => <p key={snapshot.day}><time dateTime={snapshot.day}>{new Date(`${snapshot.day}T12:00:00`).toLocaleDateString("fr-FR", { day: "numeric", month: "long" })}</time><strong>{money(snapshot.dinars, "DZD")}</strong></p>)}</section> : null}
         <p className="bw-wallet-privacy">{user ? syncError ? "Enregistré sur cet appareil. La synchronisation du compte est indisponible." : "Enregistré sur cet appareil et dans votre compte BledWay." : <>Enregistré sur cet appareil. <Link to="/auth">Connectez-vous</Link> pour le retrouver sur votre compte.</>}</p>
-        <p className="bw-wallet-credit">Visuels par défaut : <a href="https://www.bank-of-algeria.dz/pieces-et-billets-algeriens/" target="_blank" rel="noopener noreferrer">Banque d’Algérie ↗</a>{mediaCredits.length ? <> · Images ajoutées : {mediaCredits.map((row, index) => <span key={`${row.value}-${row.slot}`}>{index ? ", " : ""}{row.credit_url ? <a href={row.credit_url} target="_blank" rel="noopener noreferrer">{row.credit_label} ↗</a> : row.credit_label}</span>)}</> : null}</p>
+        <p className="bw-wallet-credit">Visuels par défaut : <a href="https://www.bank-of-algeria.dz/pieces-et-billets-algeriens/" target="_blank" rel="noopener noreferrer">Banque d’Algérie ↗</a>{mediaCredits.length ? <> · Images ajoutées : {mediaCredits.map((row, index) => <span key={`${row.credit_label}${index}`}>{index ? ", " : ""}{row.credit_label}</span>)}</> : null}</p>
       </div>
     </main>
     <SiteFooter />

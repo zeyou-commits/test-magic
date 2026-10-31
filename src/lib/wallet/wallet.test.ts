@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { dinarTotal, emptyWallet, exchangeCurrency, sanitizeWallet, walletTotal, type RatesResponse } from "./wallet";
+import { addExpense, dinarTotal, emptyWallet, exchangeCurrency, recordExchange, remainingDinars, removeExchange, sanitizeWallet, walletTotal, type RatesResponse } from "./wallet";
 import { parseOfficial, parseParallel } from "./rates.server";
 
 const rates: RatesResponse = { checkedAt: "2026-10-29T00:00:00Z", rates: {
@@ -22,6 +22,24 @@ describe("Mes dinars", () => {
     expect(changed && dinarTotal(changed)).toBe(27500);
     expect(changed && walletTotal(changed, "EUR", rates, "parallel")).toBe(300);
     expect(exchangeCurrency(wallet, "EUR", 301, 1000)).toBeNull();
+  });
+
+  it("déduit le taux réel d'un change et suit ce qu'il reste", () => {
+    const changed = recordExchange(emptyWallet(), "EUR", 500, 137000, "2026-11-02");
+    expect(changed?.personalRates.EUR?.rate).toBe(274);
+    expect(recordExchange(emptyWallet(), "EUR", 500, 100)).toBeNull();
+    const spent = addExpense(changed!, 5000, "Essence");
+    expect(remainingDinars(spent!)).toBe(132000);
+    expect(addExpense(changed!, -1, "Autre")).toBeNull();
+    const undone = removeExchange(spent!, changed!.exchanges[0]!.id);
+    expect(remainingDinars(undone)).toBe(0);
+    expect(undone.personalRates.EUR).toBeUndefined();
+  });
+
+  it("garde les anciens billets comptés dans le total", () => {
+    const old = sanitizeWallet({ counts: { "2000": 5 }, expenses: [{ id: "a", day: "2026-11-02", amount: 1000, category: "Resto" }, { id: "b", amount: -5 }] });
+    expect(old.expenses).toHaveLength(1);
+    expect(remainingDinars(old)).toBe(9000);
   });
 
   it("neutralise les quantités invalides", () => {

@@ -18,6 +18,8 @@ export const DENOMINATIONS = [
 export type WalletSnapshot = { day: string; dinars: number; foreign: Partial<Record<Currency, number>> };
 export type PersonalRate = { rate: number; day: string };
 export type ExchangeRecord = { id: string; day: string; currency: Currency; spent: number; received: number; rate: number };
+export const EXPENSE_CATEGORIES = ["Essence", "Courses", "Resto", "Cadeaux", "Autre"] as const;
+export type ExpenseRecord = { id: string; day: string; amount: number; category: string };
 export type WalletState = {
   counts: Record<string, number>;
   looseDinars: number;
@@ -26,12 +28,13 @@ export type WalletState = {
   personalRates: Partial<Record<Currency, PersonalRate>>;
   exchanges: ExchangeRecord[];
   snapshots: WalletSnapshot[];
+  expenses: ExpenseRecord[];
   updatedAt: string;
 };
 export type Rate = { official: number | null; parallel: number | null; officialDate: string | null; parallelDate: string | null };
 export type RatesResponse = { rates: Partial<Record<Currency, Rate>>; checkedAt: string | null };
 
-export const emptyWallet = (): WalletState => ({ counts: {}, looseDinars: 0, foreign: {}, currency: "EUR", personalRates: {}, exchanges: [], snapshots: [], updatedAt: new Date().toISOString() });
+export const emptyWallet = (): WalletState => ({ counts: {}, looseDinars: 0, foreign: {}, currency: "EUR", personalRates: {}, exchanges: [], snapshots: [], expenses: [], updatedAt: new Date().toISOString() });
 
 export function sanitizeWallet(input: unknown): WalletState {
   const raw = input && typeof input === "object" ? input as Record<string, unknown> : {};
@@ -53,7 +56,10 @@ export function sanitizeWallet(input: unknown): WalletState {
   const snapshots = Array.isArray(raw['snapshots']) ? raw['snapshots'].slice(-31).filter((item): item is WalletSnapshot =>
     !!item && typeof item === "object" && typeof item.day === "string" && /^\d{4}-\d{2}-\d{2}$/.test(item.day) && Number.isFinite(item.dinars) && item.dinars >= 0,
   ).map((item) => ({ day: item.day, dinars: item.dinars, foreign: item.foreign && typeof item.foreign === "object" ? item.foreign : {} })) : [];
-  return { counts, looseDinars: clampMoney(raw['looseDinars']), foreign, currency: CURRENCIES.includes(raw['currency'] as Currency) ? raw['currency'] as Currency : "EUR", personalRates, exchanges, snapshots, updatedAt: typeof raw['updatedAt'] === "string" ? raw['updatedAt'] : new Date().toISOString() };
+  const expenses: ExpenseRecord[] = Array.isArray(raw['expenses']) ? raw['expenses'].slice(-500).filter((item): item is ExpenseRecord =>
+    !!item && typeof item === "object" && typeof item.id === "string" && /^\d{4}-\d{2}-\d{2}$/.test(item.day) && Number.isFinite(item.amount) && item.amount > 0 && typeof item.category === "string",
+  ) : [];
+  return { expenses, counts, looseDinars: clampMoney(raw['looseDinars']), foreign, currency: CURRENCIES.includes(raw['currency'] as Currency) ? raw['currency'] as Currency : "EUR", personalRates, exchanges, snapshots, updatedAt: typeof raw['updatedAt'] === "string" ? raw['updatedAt'] : new Date().toISOString() };
 }
 
 function clampInt(value: unknown) { return Math.min(100000, Math.max(0, Math.trunc(Number(value) || 0))); }
@@ -61,6 +67,39 @@ function clampMoney(value: unknown) { return Math.min(100000000, Math.max(0, Mat
 
 export function dinarTotal(wallet: WalletState) {
   return DENOMINATIONS.reduce((sum, note) => sum + note.value * (wallet.counts[String(note.value)] || 0), wallet.looseDinars);
+}
+
+/** Tout ce qui est entré en dinars : changes, dinars déjà en poche, anciens billets comptés. */
+export const remainingDinars = (wallet: WalletState) =>
+  Math.max(0, dinarTotal(wallet) - wallet.expenses.reduce((sum, item) => sum + item.amount, 0));
+
+/** « J'ai changé 500 € et reçu 137 000 DA » : le taux réel en découle. */
+export function recordExchange(wallet: WalletState, currency: Currency, amount: number, received: number, day = new Date().toLocaleDateString("en-CA")): WalletState | null {
+  const rate = received / amount;
+  if (!Number.isFinite(rate) || amount <= 0 || received <= 0 || rate <= 10 || rate >= 1000) return null;
+  return {
+    ...wallet,
+    looseDinars: clampMoney(wallet.looseDinars + received),
+    foreign: { ...wallet.foreign, [currency]: clampMoney((wallet.foreign[currency] || 0) - amount) },
+    personalRates: { ...wallet.personalRates, [currency]: { rate: Math.round(rate * 100) / 100, day } },
+    exchanges: [...wallet.exchanges, { id: crypto.randomUUID(), day, currency, spent: amount, received, rate }].slice(-100),
+  };
+}
+
+export function removeExchange(wallet: WalletState, id: string): WalletState {
+  const entry = wallet.exchanges.find((item) => item.id === id);
+  if (!entry) return wallet;
+  const exchanges = wallet.exchanges.filter((item) => item.id !== id);
+  const last = [...exchanges].reverse().find((item) => item.currency === entry.currency);
+  const personalRates = { ...wallet.personalRates };
+  if (last) personalRates[entry.currency] = { rate: Math.round(last.rate * 100) / 100, day: last.day };
+  else delete personalRates[entry.currency];
+  return { ...wallet, exchanges, personalRates, looseDinars: clampMoney(wallet.looseDinars - entry.received) };
+}
+
+export function addExpense(wallet: WalletState, amount: number, category: string, day = new Date().toLocaleDateString("en-CA")): WalletState | null {
+  if (!Number.isFinite(amount) || amount <= 0 || amount > 100000000) return null;
+  return { ...wallet, expenses: [...wallet.expenses, { id: crypto.randomUUID(), day, amount: clampMoney(amount), category }].slice(-500) };
 }
 
 export function convertedForeign(wallet: WalletState, selected: Currency, rates: RatesResponse, mode: "official" | "parallel") {

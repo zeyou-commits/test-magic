@@ -1,6 +1,6 @@
 import { scrollWithin } from "./LivePulse";
 import { useEffect, useState } from "react";
-import { takePrepFocus } from "@/lib/ferry/preparation";
+import { takePrepFocus, tripDirection } from "@/lib/ferry/preparation";
 import { TripTravellers } from "@/components/community/TripTravellers";
 import { useQuery } from "@tanstack/react-query";
 import type { SupabaseClient } from "@supabase/supabase-js";
@@ -392,7 +392,7 @@ export function TripRecap({
             <TripPreparation
               departureId={departure.id}
               departureAt={departure.departure_at}
-              userId={user.id}
+              userId={user.id} direction={tripDirection(from)}
             />
           ) : null}
           {upcoming && car && walk ? (

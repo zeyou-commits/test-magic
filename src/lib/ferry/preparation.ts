@@ -8,6 +8,10 @@ const db = typedSupabase as unknown as SupabaseClient;
 export type TripProfile = { vehicle: boolean; kids: boolean; pet: boolean; cabin: boolean };
 export type Preparation = { profile: TripProfile; done: string[] };
 export type PrepPhase = "papers" | "bags" | "eve" | "arrival";
+/** Départ d'Algérie : c'est un retour, ce qui a été vérifié à l'aller ne se redemande pas. */
+export type TripDirection = "outbound" | "return";
+export const tripDirection = (from: { country_code?: string | null } | null | undefined): TripDirection =>
+  from?.country_code === "DZ" ? "return" : "outbound";
 
 export const defaultProfile: TripProfile = { vehicle: true, kids: false, pet: false, cabin: false };
 export const profileLabels: { key: keyof TripProfile; label: string }[] = [
@@ -31,6 +35,8 @@ export type PrepItem = {
   href?: string;
   linkLabel?: string;
   only?: keyof TripProfile;
+  /** Sans précision : aller et retour. */
+  direction?: TripDirection;
   /** Ouvre l'itinéraire de la carte. */
   itinerary?: boolean;
 };
@@ -43,6 +49,7 @@ export const prepItems: PrepItem[] = [
     label: "Passeports, titres et documents d’entrée",
     href: "/guide/arrivee-algerie-port-formalites",
     linkLabel: "Les formalités",
+    direction: "outbound",
   },
   {
     id: "vehicle",
@@ -51,6 +58,7 @@ export const prepItems: PrepItem[] = [
     href: "/guide/voyage-algerie-voiture-checklist",
     linkLabel: "La checklist voiture",
     only: "vehicle",
+    direction: "outbound",
   },
   {
     id: "admission",
@@ -59,6 +67,7 @@ export const prepItems: PrepItem[] = [
     href: "/guide/voiture-vacances-admission-temporaire",
     linkLabel: "Lire le guide",
     only: "vehicle",
+    direction: "outbound",
   },
   {
     id: "kids",
@@ -67,6 +76,7 @@ export const prepItems: PrepItem[] = [
     href: "/guide/ferry-algerie-enfants-famille",
     linkLabel: "Lire le guide",
     only: "kids",
+    direction: "outbound",
   },
   {
     id: "pet",
@@ -77,11 +87,41 @@ export const prepItems: PrepItem[] = [
     only: "pet",
   },
   {
+    id: "return-papers",
+    phase: "papers",
+    label: "Passeports et billet retour à portée de main",
+    direction: "return",
+  },
+  {
+    id: "return-vehicle",
+    phase: "papers",
+    label: "Retrouver les papiers remis à l’entrée pour le véhicule",
+    href: "/guide/voiture-vacances-admission-temporaire",
+    linkLabel: "Lire le guide",
+    only: "vehicle",
+    direction: "return",
+  },
+  {
     id: "dinars",
     phase: "bags",
     label: "Compter mes dinars et mes devises",
+    direction: "outbound",
     href: "/mes-dinars",
     linkLabel: "Ouvrir Mes dinars",
+  },
+  {
+    id: "return-dinars",
+    phase: "bags",
+    label: "Faire le point sur mes dinars avant de repartir",
+    href: "/mes-dinars",
+    linkLabel: "Ouvrir Mes dinars",
+    direction: "return",
+  },
+  {
+    id: "return-gifts",
+    phase: "bags",
+    label: "Vérifier ce que je peux rapporter en Europe",
+    direction: "return",
   },
   { id: "luggage", phase: "bags", label: "Bagages, médicaments et essentiels à bord" },
   {
@@ -107,16 +147,20 @@ export const prepItems: PrepItem[] = [
     label: "Revoir le déroulé de l’arrivée au port",
     href: "/guide/arrivee-algerie-port-formalites",
     linkLabel: "Lire le guide",
+    direction: "outbound",
   },
   { id: "family", phase: "arrival", label: "Prévenir mes proches de mon arrivée" },
 ];
 
 /** Les lignes qui concernent ce voyage. */
-export const itemsFor = (profile: TripProfile) =>
-  prepItems.filter((item) => !item.only || profile[item.only]);
+export const itemsFor = (profile: TripProfile, direction: TripDirection = "outbound") =>
+  prepItems.filter(
+    (item) =>
+      (!item.only || profile[item.only]) && (!item.direction || item.direction === direction),
+  );
 
-export function prepProgress(preparation: Preparation) {
-  const items = itemsFor(preparation.profile);
+export function prepProgress(preparation: Preparation, direction: TripDirection = "outbound") {
+  const items = itemsFor(preparation.profile, direction);
   const done = items.filter((item) => preparation.done.includes(item.id)).length;
   return { done, total: items.length, next: items.find((item) => !preparation.done.includes(item.id)) ?? null };
 }

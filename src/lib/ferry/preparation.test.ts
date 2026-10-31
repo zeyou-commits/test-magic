@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { articles } from "@/content/articles";
-import { currentPhase, defaultProfile, itemsFor, prepItems, prepProgress } from "./preparation";
+import { currentPhase, defaultProfile, itemsFor, prepItems, prepProgress, tripDirection } from "./preparation";
 
 describe("parcours de préparation", () => {
   it("n'affiche que les lignes du voyage", () => {
@@ -8,6 +8,16 @@ describe("parcours de préparation", () => {
     expect(onFoot).not.toContain("vehicle");
     expect(onFoot).not.toContain("route");
     expect(itemsFor({ ...defaultProfile, kids: true }).map((item) => item.id)).toContain("kids");
+  });
+  it("ne redemande pas au retour ce qui a été vérifié à l'aller", () => {
+    const back = itemsFor(defaultProfile, "return").map((item) => item.id);
+    expect(back).not.toContain("identity");
+    expect(back).not.toContain("admission");
+    expect(back).not.toContain("landing");
+    expect(back).toContain("return-papers");
+    expect(itemsFor(defaultProfile).map((item) => item.id)).not.toContain("return-papers");
+    expect(tripDirection({ country_code: "DZ" })).toBe("return");
+    expect(tripDirection({ country_code: "FR" })).toBe("outbound");
   });
   it("compte seulement les lignes concernées et trouve la suivante", () => {
     const progress = prepProgress({

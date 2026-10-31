@@ -14,6 +14,7 @@ import {
   savePreparation,
   type PrepItem,
   type PrepPhase,
+  type TripDirection,
   type Preparation,
 } from "@/lib/ferry/preparation";
 
@@ -43,10 +44,12 @@ export function TripPreparation({
   departureId,
   departureAt,
   userId,
+  direction = "outbound",
 }: {
   departureId: string;
   departureAt: string;
   userId: string;
+  direction?: TripDirection;
 }) {
   const client = useQueryClient();
   const query = preparationQuery(departureId, userId);
@@ -64,8 +67,8 @@ export function TripPreparation({
       void client.invalidateQueries({ queryKey: preparationKey });
     },
   });
-  const items = itemsFor(data.profile);
-  const progress = prepProgress(data);
+  const items = itemsFor(data.profile, direction);
+  const progress = prepProgress(data, direction);
   const steps = phases
     .map((phase) => {
       const list = items.filter((item) => item.phase === phase.id);
@@ -87,7 +90,7 @@ export function TripPreparation({
     <section className="bw-prep" aria-label="Préparer ma traversée">
       <header className="bw-prep__head">
         <h3>
-          <ClipboardCheck size={17} aria-hidden /> Mon parcours
+          <ClipboardCheck size={17} aria-hidden /> {direction === "return" ? "Mon retour" : "Mon parcours"}
         </h3>
         <strong>
           {progress.done}/{progress.total}
@@ -110,7 +113,7 @@ export function TripPreparation({
         </div>
       ) : (
         <p className="bw-prep__next" data-complete>
-          <PartyPopper size={18} aria-hidden /> Tout est prêt. Bonne traversée !
+          <PartyPopper size={18} aria-hidden /> {direction === "return" ? "Tout est prêt. Bon retour !" : "Tout est prêt. Bonne traversée !"}
         </p>
       )}
 

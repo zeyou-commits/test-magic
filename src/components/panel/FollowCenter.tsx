@@ -2,6 +2,7 @@ import { useState } from "react";
 import { ArrowUpRight, Bell, Heart, Ship, Trash2 } from "lucide-react";
 import { JourneyChecklist } from "./JourneyChecklist";
 import { TripPreparation } from "./TripPreparation";
+import { tripDirection } from "@/lib/ferry/preparation";
 import { VesselAlertTag } from "./VesselAlert";
 import { useTravelAction } from "@/hooks/useTravelAction";
 import { NotificationInbox } from "@/components/account/NotificationInbox";
@@ -165,7 +166,7 @@ export function FollowCenter({ userId }: { userId: string }) {
                       <TripPreparation
                         departureId={detail.departureId}
                         departureAt={detail.departureAt}
-                        userId={userId}
+                        userId={userId} direction={tripDirection(detail.port)}
                       />
                     </details>
                   )}

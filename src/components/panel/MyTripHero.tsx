@@ -4,7 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { ArrowRight, Crosshair, Ship } from "lucide-react";
 import { TravellerAvatar } from "@/components/community/TravellerAvatar";
 import { myTravellerQuery } from "@/lib/community/travellers";
-import { prepProgress, preparationQuery, requestPrepFocus } from "@/lib/ferry/preparation";
+import { prepProgress, preparationQuery, requestPrepFocus, tripDirection } from "@/lib/ferry/preparation";
 import { useAuth } from "@/hooks/useAuth";
 import { tripEnd, useMyTrip, type MyTrip } from "@/lib/ferry/myTrip";
 import { mergeTripSteps, myTripStatusQuery, tripStepsQuery } from "@/lib/ferry/presence";
@@ -66,7 +66,7 @@ export function MyTripHero({ onSelect }: { onSelect: (selection: Selection) => v
   const preparation = useQuery(preparationQuery(trip?.departure.id, user?.id)).data;
   if (!trip) return null;
   const phase = tripPhase(trip, now);
-  const prep = preparation ? prepProgress(preparation) : null;
+  const prep = preparation ? prepProgress(preparation, tripDirection(trip.from)) : null;
   // Navire en alerte : plus de compte à rebours ni d'« En mer », le départ reste à confirmer.
   const held = Boolean(alert) && phase.phase !== "cancelled" && phase.phase !== "arrived";
   const zone = portTimeZone(trip.from);

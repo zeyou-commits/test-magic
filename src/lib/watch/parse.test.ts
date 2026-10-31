@@ -4,6 +4,7 @@ import {
   isRecent,
   latestPostSitemap,
   matchesKeywords,
+  pageLinks,
   rssEntries,
   sitemapEntries,
 } from "../../../supabase/functions/watch-collect/parse";
@@ -64,5 +65,15 @@ describe("collecte de la veille", () => {
     expect(isRecent("2026-09-01T00:00:00Z", now)).toBe(false);
     expect(isRecent("2026-11-05T00:00:00Z", now)).toBe(false);
     expect(isRecent(null, now)).toBe(false);
+  });
+  it("lit les annonces d'une compagnie sans flux, avec leur date", () => {
+    const html = `<a href="/actualites/a">A</a><a href="/actualites/a#x">A</a><a href="/contact">C</a>
+      <a href="https://autre.test/actualites/b">B</a><a href="/actualites/">Toutes</a>`;
+    expect(pageLinks("https://c.test/actualites", html)).toEqual(["https://c.test/actualites/a"]);
+    const article = articleMeta(
+      "https://c.test/actualites/a",
+      '<title>Report</title><time datetime="2026-10-30T10:00:00+00:00">30 octobre</time>',
+    );
+    expect(article?.publishedAt).toBe("2026-10-30T10:00:00.000Z");
   });
 });

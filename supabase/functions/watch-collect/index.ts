@@ -5,6 +5,7 @@ import {
   isRecent,
   latestPostSitemap,
   matchesKeywords,
+  pageLinks,
   rssEntries,
   sitemapEntries,
   type FoundArticle,
@@ -24,7 +25,7 @@ const MAX_PER_NAME = 3;
 interface Source {
   id: string;
   url: string;
-  kind: "sitemap" | "rss";
+  kind: "sitemap" | "rss" | "page";
   keywords: string[];
   check_minutes: number;
   last_checked_at: string | null;
@@ -84,10 +85,12 @@ async function readSource(db: SupabaseClient, source: Source, now: number): Prom
     );
   }
   const index = await fetchText(source.url);
-  const sitemap = latestPostSitemap(index) ?? source.url;
-  const entries = sitemapEntries(await fetchText(sitemap))
-    .filter((entry) => !entry.lastmod || isRecent(entry.lastmod, now))
-    .slice(-40);
+  const entries =
+    source.kind === "page"
+      ? pageLinks(source.url, index).map((url) => ({ url, lastmod: null }))
+      : sitemapEntries(await fetchText(latestPostSitemap(index) ?? source.url))
+          .filter((entry) => !entry.lastmod || isRecent(entry.lastmod, now))
+          .slice(-40);
   const { data: seen } = await db
     .from("bw_watch_items")
     .select("url")

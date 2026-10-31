@@ -45,6 +45,23 @@ export function sitemapEntries(xml: string): { url: string; lastmod: string | nu
   });
 }
 
+/** Page d'annonces d'une compagnie sans flux : les liens vers ses articles, sous la même adresse. */
+export function pageLinks(pageUrl: string, html: string) {
+  const page = new URL(pageUrl);
+  const prefix = `${page.pathname.replace(/\/$/, "")}/`;
+  const links = [...html.matchAll(/href=["']([^"'#?]+)["']/gi)].flatMap((match) => {
+    try {
+      const url = new URL(match[1]!, page);
+      return url.origin === page.origin && url.pathname.startsWith(prefix) && url.pathname !== prefix
+        ? [url.href]
+        : [];
+    } catch {
+      return [];
+    }
+  });
+  return [...new Set(links)];
+}
+
 export function rssEntries(xml: string): FoundArticle[] {
   return [...xml.matchAll(/<item\b[^>]*>([\s\S]*?)<\/item>/g)].flatMap((match) => {
     const body = match[1]!;
@@ -76,7 +93,9 @@ export function articleMeta(url: string, html: string): FoundArticle | null {
   };
   const title = clean(meta("og:title") ?? /<title[^>]*>([\s\S]*?)<\/title>/i.exec(html)?.[1] ?? "");
   if (!title) return null;
-  const published = Date.parse(meta("article:published_time") ?? "");
+  const published = Date.parse(
+    meta("article:published_time") ?? /<time\b[^>]*datetime=["']([^"']+)["']/i.exec(html)?.[1] ?? "",
+  );
   return {
     url,
     title,

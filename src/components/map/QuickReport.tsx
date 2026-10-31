@@ -9,6 +9,7 @@ import {
   availableSituations,
   communityKey,
   currentPosition,
+  lastPositionAccuracy,
   lifetimeLabel,
   optionsFor,
   portServices,
@@ -23,6 +24,12 @@ import {
 } from "@/lib/ferry/community";
 import { newsQuery } from "@/lib/ferry/flash";
 import type { FleetShip } from "@/lib/ferry/fleet";
+import {
+  distanceKm,
+  farFromPortsNote,
+  offSitePortMessage,
+  offSiteVesselMessage,
+} from "@/lib/ferry/locationHelp";
 import { haversineKm } from "@/lib/ferry/tracking";
 import type { Departure, Port, Selection } from "@/lib/ferry/types";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -45,6 +52,8 @@ export const QUICK_REPORT_EVENT = "bledway:quick-report";
 export const QUICK_REPORT_ON_LOAD = "bledway:open-quick-report";
 /** Rayon dans lequel « Me localiser » retient le port le plus proche. */
 const NEAR_PORT_KM = 30;
+/** Rayon du contrôle « sur place » au port, le même que celui du serveur. */
+const ON_SITE_PORT_KM = 3;
 
 let mounted = 0;
 /** Cible d'un signalement ; pour une traversée, son port de départ et son navire si connus. */
@@ -83,15 +92,6 @@ const emptyDraft: Draft = {
   focus: null,
   service: null,
 };
-
-function distanceKm(a: [number, number], b: [number, number]) {
-  const rad = Math.PI / 180;
-  const dLat = (b[0] - a[0]) * rad;
-  const dLng = (b[1] - a[1]) * rad;
-  const h =
-    Math.sin(dLat / 2) ** 2 + Math.cos(a[0] * rad) * Math.cos(b[0] * rad) * Math.sin(dLng / 2) ** 2;
-  return 12742 * Math.asin(Math.sqrt(h));
-}
 
 const failure = (message?: string) =>
   message && /Patientez|Maximum|déjà signalé|introuvable|sur place|Vos signalements concernent/.test(message)
@@ -208,6 +208,7 @@ export function QuickReport({
   const [draft, setDraft] = useState<Draft>(emptyDraft);
   const [position, setPosition] = useState<[number, number] | null>(null);
   const [locating, setLocating] = useState<"idle" | "busy" | "far" | "denied">("idle");
+  const [farNote, setFarNote] = useState<string | null>(null);
   const [finding, setFinding] = useState(false);
   const [sentOnSite, setSentOnSite] = useState(false);
   const [sentForReview, setSentForReview] = useState(false);
@@ -354,6 +355,15 @@ export function QuickReport({
       });
       if (result.error) {
         logLocation("report", "report_refused", { where, category, message: result.error.message });
+        const action = `signaler « ${situationOf(category).label} »`;
+        const port = ports.find((item) => item.id === input.portId);
+        const accuracyM = lastPositionAccuracy();
+        if (here && /sur place/.test(result.error.message))
+          throw new Error(
+            where === "port" && port
+              ? offSitePortMessage({ action, port, limitKm: ON_SITE_PORT_KM, here, ports, accuracyM })
+              : offSiteVesselMessage({ action, here, ports, accuracyM }),
+          );
         throw new Error(failure(result.error.message));
       }
       logLocation("report", "report_ok", { where, category, onSite: result.onSite });
@@ -372,6 +382,8 @@ export function QuickReport({
     const here = await requirePosition(10_000);
     if (!here) return setLocating("denied");
     setPosition(here);
+    const note = farFromPortsNote(here, ports, ON_SITE_PORT_KM);
+    setFarNote(note);
     const nearest = ports
       .map((port) => ({ port, km: distanceKm(here, [port.latitude, port.longitude]) }))
       .sort((a, b) => a.km - b.km)[0];
@@ -383,7 +395,7 @@ export function QuickReport({
       vesselId: docked.length === 1 ? (docked[0]!.vesselId ?? current.vesselId) : current.vesselId,
       departureId: docked.length === 1 ? docked[0]!.departureId : current.departureId,
     }));
-    setLocating("idle");
+    setLocating(note ? "far" : "idle");
   };
 
   const send = () => {
@@ -551,7 +563,7 @@ export function QuickReport({
             </select>
           )}
           {locating === "far" ? (
-            <small>Aucun port à moins de {NEAR_PORT_KM} km : choisissez-le dans la liste.</small>
+            <small>{farNote}</small>
           ) : locating === "denied" ? (
             <small>Position indisponible : choisissez dans la liste.</small>
           ) : null}

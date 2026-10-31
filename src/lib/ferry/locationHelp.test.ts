@@ -1,5 +1,13 @@
 import { describe, expect, it } from "vitest";
-import { chromeIntentUrl, deniedSteps, isInAppBrowser, unavailableSteps } from "./locationHelp";
+import {
+  chromeIntentUrl,
+  deniedSteps,
+  farFromPortsNote,
+  isInAppBrowser,
+  offSitePortMessage,
+  offSiteVesselMessage,
+  unavailableSteps,
+} from "./locationHelp";
 
 const chromeAndroid =
   "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/156.0.0.0 Mobile Safari/537.36";
@@ -36,5 +44,52 @@ describe("aide à la position", () => {
     expect(link).toContain("intent://bledway.test/port/alger?tab=1#Intent;scheme=https");
     expect(link).toContain("package=com.android.chrome");
     expect(link).toContain("S.browser_fallback_url=https%3A%2F%2Fbledway.test");
+  });
+});
+
+describe("refus parce que le voyageur n'est pas sur place", () => {
+  const marseille = { name: "Marseille", latitude: 43.3, longitude: 5.36 };
+  const alger = { name: "Alger", latitude: 36.77, longitude: 3.06 };
+  const sete = { name: "Sète", latitude: 43.4, longitude: 3.7 };
+  const ports = [marseille, alger, sete];
+  const base = { action: "signaler « Accès au port »", limitKm: 3, ports, accuracyM: 20 };
+
+  it("dit ce qu'il faut et où la position place le voyageur", () => {
+    const message = offSitePortMessage({ ...base, port: alger, here: [43.3, 5.36] });
+    expect(message).toContain(
+      "Pour signaler « Accès au port », vous devez être à moins de 3 km du port d’Alger.",
+    );
+    expect(message).toMatch(
+      /Votre position indique que vous êtes à \d+ km de ce port, près du port de Marseille\./,
+    );
+  });
+
+  it("une position approximative est signalée", () => {
+    const message = offSitePortMessage({
+      ...base,
+      port: marseille,
+      here: [43.34, 5.36],
+      accuracyM: 4_500,
+    });
+    expect(message).toContain("à 4,4 km de ce port.");
+    expect(message).toContain("à environ 4,5 km près");
+  });
+
+  it("sur un navire, donne le port le plus proche", () => {
+    const message = offSiteVesselMessage({
+      action: "signaler « Retard »",
+      here: [43.4, 3.7],
+      ports,
+      accuracyM: null,
+    });
+    expect(message).toContain("près de ce navire");
+    expect(message).toContain("à 0,0 km du port de Sète, le plus proche");
+  });
+
+  it("« Me localiser » ne prévient que si le port est trop loin", () => {
+    expect(farFromPortsNote([43.3, 5.36], ports, 3)).toBeNull();
+    expect(farFromPortsNote([48.85, 2.35], ports, 3)).toMatch(
+      /à \d+ km du port de Sète, le plus proche/,
+    );
   });
 });

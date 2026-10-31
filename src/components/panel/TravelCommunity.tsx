@@ -25,6 +25,7 @@ import {
   communityKey,
   communityQuery,
   currentPosition,
+  lastPositionAccuracy,
   requirePosition,
   isImpact,
   onSiteCount,
@@ -33,6 +34,8 @@ import {
   type CommunityKind,
   type VesselReview,
 } from "@/lib/ferry/community";
+import { offSitePortMessage } from "@/lib/ferry/locationHelp";
+import { portsQuery } from "@/lib/ferry/queries";
 import { formatAge } from "@/lib/ferry/tracking";
 import { newsQuery } from "@/lib/ferry/flash";
 import { requestQuickReport } from "@/components/map/QuickReport";
@@ -77,6 +80,7 @@ export function TravelSignals({
   // Le script SQL du 26/10/2026 crée bw_news : sa présence active « Ce n'est plus le cas ».
   const upgraded = useQuery(newsQuery).data != null;
   const located = (useQuery(catalogQuery).data ?? 0) >= 2;
+  const { data: ports = [] } = useQuery(portsQuery);
   const signal = () => requestQuickReport({ type: kind, id: target });
   // Boutons « Signaler une info sur ce port / ce navire » des fiches.
   useEffect(() => {
@@ -118,6 +122,18 @@ export function TravelSignals({
             ? await currentPosition(6_000)
             : null;
       const error = await alertAction(action.id, action.type, here);
+      const port = kind === "port" ? ports.find((item) => item.id === target) : undefined;
+      if (error && here && port && /sur place/.test(error.message))
+        throw new Error(
+          offSitePortMessage({
+            action: action.type === "confirm" ? "confirmer ce signalement" : "répondre à ce signalement",
+            port,
+            limitKm: 3,
+            here,
+            ports,
+            accuracyM: lastPositionAccuracy(),
+          }),
+        );
       if (error) throw failure(error.message);
     },
     onSuccess: (_, action) => {

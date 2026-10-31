@@ -88,3 +88,74 @@ export function unavailableSteps(agent: string) {
     "Revenez ici et cliquez sur « Réessayer ».",
   ];
 }
+
+type Place = { name: string; latitude: number; longitude: number };
+type Here = [number, number];
+
+export function distanceKm(a: Here, b: Here) {
+  const rad = Math.PI / 180;
+  const dLat = (b[0] - a[0]) * rad;
+  const dLng = (b[1] - a[1]) * rad;
+  const h =
+    Math.sin(dLat / 2) ** 2 + Math.cos(a[0] * rad) * Math.cos(b[0] * rad) * Math.sin(dLng / 2) ** 2;
+  return 12742 * Math.asin(Math.sqrt(h));
+}
+
+const kmFrom = (here: Here, place: Place) => distanceKm(here, [place.latitude, place.longitude]);
+const formatKm = (km: number) =>
+  km < 10 ? `${km.toFixed(1).replace(".", ",")} km` : `${Math.round(km)} km`;
+const ofPort = (name: string) =>
+  `du port ${/^[aeiouyhàâéèêîïôöû]/i.test(name) ? "d’" : "de "}${name}`;
+
+function nearestPort(here: Here, ports: Place[]) {
+  return ports
+    .map((port) => ({ port, km: kmFrom(here, port) }))
+    .sort((a, b) => a.km - b.km)[0];
+}
+
+/** Une position réseau peut se tromper de plusieurs kilomètres : on le dit plutôt que d'accuser le voyageur. */
+function roughHint(accuracyM: number | null) {
+  return accuracyM !== null && accuracyM > 1_000
+    ? ` Cette position est approximative, à environ ${formatKm(accuracyM / 1_000)} près : si elle est fausse, activez la position précise du téléphone, sortez à l’extérieur, puis réessayez.`
+    : "";
+}
+
+/** Refus au port : ce qu'il faut, et où la position place le voyageur. Calculé sur l'appareil, rien n'est envoyé. */
+export function offSitePortMessage(input: {
+  action: string;
+  port: Place;
+  limitKm: number;
+  here: Here;
+  ports: Place[];
+  accuracyM: number | null;
+}) {
+  const { action, port, limitKm, here, ports, accuracyM } = input;
+  const nearest = nearestPort(here, ports);
+  const nearby =
+    nearest && nearest.port.name !== port.name && nearest.km <= 30
+      ? `, près ${ofPort(nearest.port.name)}`
+      : "";
+  return `Pour ${action}, vous devez être à moins de ${limitKm} km ${ofPort(port.name)}. Votre position indique que vous êtes à ${formatKm(kmFrom(here, port))} de ce port${nearby}.${roughHint(accuracyM)}`;
+}
+
+/** Refus sur un navire : la règle du serveur accepte ses ports du moment ou sa dernière position. */
+export function offSiteVesselMessage(input: {
+  action: string;
+  here: Here;
+  ports: Place[];
+  accuracyM: number | null;
+}) {
+  const { action, here, ports, accuracyM } = input;
+  const nearest = nearestPort(here, ports);
+  const where = nearest
+    ? ` Votre position indique que vous êtes à ${formatKm(nearest.km)} ${ofPort(nearest.port.name)}, le plus proche.`
+    : "";
+  return `Pour ${action}, vous devez être près de ce navire, ou à moins de 3 km du port de départ ou d’arrivée de sa traversée.${where}${roughHint(accuracyM)}`;
+}
+
+/** « Me localiser » : prévient tout de suite si le port le plus proche est trop loin pour signaler. */
+export function farFromPortsNote(here: Here, ports: Place[], limitKm: number) {
+  const nearest = nearestPort(here, ports);
+  if (!nearest || nearest.km <= limitKm) return null;
+  return `Votre position indique que vous êtes à ${formatKm(nearest.km)} ${ofPort(nearest.port.name)}, le plus proche. Pour signaler une situation au port, vous devez être à moins de ${limitKm} km.`;
+}

@@ -586,6 +586,7 @@ export function currentPosition(timeout = 8_000): Promise<[number, number] | nul
         (position) => {
           window.clearTimeout(guard);
           lastProblem = null;
+          lastAccuracy = position.coords.accuracy;
           done("ok", { accuracyM: Math.round(position.coords.accuracy) });
           resolve([position.coords.latitude, position.coords.longitude]);
         },
@@ -609,6 +610,9 @@ export type LocationProblem = "denied" | "unavailable" | "unsupported" | "silent
 export const LOCATION_HELP_EVENT = "bledway:location-help";
 let lastProblem: LocationProblem | null = null;
 export const locationProblem = (): LocationProblem => lastProblem ?? "unavailable";
+let lastAccuracy: number | null = null;
+/** Précision annoncée par l'appareil pour la dernière position, en mètres. */
+export const lastPositionAccuracy = () => lastAccuracy;
 
 /** Position exigée par l'action : sinon, explique au voyageur comment l'autoriser. */
 export async function requirePosition(timeout = 8_000) {

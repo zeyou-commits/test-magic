@@ -5,7 +5,9 @@ import { HeartHandshake, Siren } from "lucide-react";
 import { toast } from "sonner";
 import { supabase as typedSupabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { requirePosition } from "@/lib/ferry/community";
+import { lastPositionAccuracy, requirePosition } from "@/lib/ferry/community";
+import { offSitePortMessage } from "@/lib/ferry/locationHelp";
+import { portsQuery } from "@/lib/ferry/queries";
 import { Button } from "@/components/ui/button";
 
 // Fonctions du script « contacts_incidents_entraide », pas encore dans les types générés.
@@ -117,6 +119,7 @@ export function HelpRequests({ scopeId }: { kind: "departure"; scopeId: string }
   const client = useQueryClient();
   const key = helpListQuery(scopeId).queryKey;
   const list = useQuery(helpListQuery(scopeId));
+  const { data: ports = [] } = useQuery(portsQuery);
   const [need, setNeed] = useState<Need | null>(null);
   const [point, setPoint] = useState<Point>("boarding_control");
   const [formOpen, setFormOpen] = useState(false);
@@ -145,6 +148,26 @@ export function HelpRequests({ scopeId }: { kind: "departure"; scopeId: string }
         p_lat: position[0],
         p_lng: position[1],
       });
+      if (error && /port de départ/.test(error.message)) {
+        const { data } = await db
+          .from("departures")
+          .select("route:routes(departure_port_id)")
+          .eq("id", scopeId)
+          .maybeSingle();
+        const route = (data as { route?: { departure_port_id?: string } } | null)?.route;
+        const port = ports.find((item) => item.id === route?.departure_port_id);
+        if (port)
+          throw new Error(
+            offSitePortMessage({
+              action: "demander de l’aide",
+              port,
+              limitKm: 6,
+              here: position,
+              ports,
+              accuracyM: lastPositionAccuracy(),
+            }),
+          );
+      }
       if (error) throw new Error(error.message);
     },
     onSuccess: () => {
@@ -152,7 +175,7 @@ export function HelpRequests({ scopeId }: { kind: "departure"; scopeId: string }
       setNeed(null);
       refresh();
     },
-    onError: (error: Error) => toast.error(error.message),
+    onError: (error: Error) => toast.error(error.message, { duration: 12_000 }),
   });
   const requests = list.data ?? [];
 

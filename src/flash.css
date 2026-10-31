@@ -7239,9 +7239,10 @@ label:has(> input.sr-only) {
   font-size: 12px;
 }
 .bw-port-live li + li {
+  margin-top: 8px;
   border-top: 1px solid var(--border);
 }
-.bw-port-live li button {
+.bw-port-live__trip {
   display: flex;
   align-items: center;
   gap: 8px;

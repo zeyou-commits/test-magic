@@ -273,8 +273,8 @@ export const VESSEL_IMAGE_STEPS = [
 /** Largeur à l'écran, en pixels : minuscule en vue générale, détaillé de près. */
 export const VESSEL_SCREEN_WIDTH = [3, 22, 5, 32, 6, 46, 7, 84, 9, 170, 11, 320, 13, 480];
 
-/** Écart entre navires à quai : la file s'élargit avec eux pour qu'ils ne s'empilent pas au zoom. */
-export function dockSpread(zoom: number) {
+/** Largeur du navire à l'écran à ce zoom. */
+export function vesselScreenWidth(zoom: number) {
   const steps = VESSEL_SCREEN_WIDTH;
   let width = steps.at(-1)!;
   for (let i = 0; i < steps.length; i += 2) {
@@ -286,8 +286,11 @@ export function dockSpread(zoom: number) {
     }
     break;
   }
-  return Math.max(1, width / 26);
+  return width;
 }
+
+/** Écart entre navires à quai : la file s'élargit avec eux pour qu'ils ne s'empilent pas au zoom. */
+export const dockSpread = (zoom: number) => Math.max(1, vesselScreenWidth(zoom) / 26);
 
 export const vesselImageId = (slug: string, width: number) => `vessel-${slug}-${width}`;
 
@@ -458,6 +461,11 @@ export function addVesselImages(map: MapLibreMap, slugs: string[]) {
   });
 
   return {
+    /** Hauteur du navire rapportée à sa largeur, une fois son image chargée. */
+    heightRatio(slug: string) {
+      const source = sources.get(slug)?.image;
+      return source ? source.height / source.width : null;
+    },
     /** Navires qui font route : les autres reprennent leur image immobile. */
     setSailing(next: Set<string>) {
       if (next.size === sailing.size && [...next].every((slug) => sailing.has(slug))) return;

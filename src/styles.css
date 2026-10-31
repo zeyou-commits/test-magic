@@ -304,6 +304,26 @@
     background-color 0.22s ease,
     box-shadow 0.22s ease;
 }
+/* De loin, le point de port s'efface devant les navires ; la zone de clic reste de 44 px. */
+[data-low-zoom="true"] .port-marker__dot::after {
+  width: 6px;
+  height: 6px;
+  border-width: 1px;
+  box-shadow: 0 0 0 0.5px rgba(8, 28, 60, 0.25);
+}
+[data-mid-zoom="true"] .port-marker__dot::after {
+  width: 9px;
+  height: 9px;
+  border-width: 1.5px;
+}
+/* Communauté sur la carte : discrète de loin, pour laisser voir les navires et les ports. */
+[data-low-zoom="true"] .bw-signal-pin__body { zoom: 0.55; }
+[data-mid-zoom="true"] .bw-signal-pin__body { zoom: 0.75; }
+[data-low-zoom="true"] .bw-signal-pin { padding-bottom: 4px; }
+/* La bulle elle-même est positionnée par la carte : seul son contenu est réduit. */
+[data-low-zoom="true"] .bw-presence-pin { padding: 1px 4px 1px 1px; }
+[data-low-zoom="true"] .bw-presence-pin > * { zoom: 0.6; }
+[data-mid-zoom="true"] .bw-presence-pin > * { zoom: 0.8; }
 .port-marker__dot:hover::after {
   transform: scale(1.3);
   box-shadow:
@@ -873,6 +893,7 @@
   display: flex;
   flex-direction: column;
   align-items: flex-start;
+  filter: drop-shadow(0 3px 5px rgba(22, 50, 74, 0.4));
   animation: bw-pennant-in 0.45s ease-out both;
   transform-origin: bottom left;
 }
@@ -880,12 +901,12 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  max-width: 64px;
-  height: 20px;
-  padding: 2px 10px 2px 5px;
+  max-width: 112px;
+  height: 34px;
+  padding: 4px 18px 4px 8px;
   background: #ffffff;
   color: #16324a;
-  font-size: 9px;
+  font-size: 12px;
   font-weight: 800;
   line-height: 1;
   border-radius: 3px 0 0 3px;
@@ -897,14 +918,14 @@
 .bw-pennant-flag img {
   display: block;
   width: auto;
-  max-width: 46px;
+  max-width: 84px;
   height: auto;
-  max-height: 14px;
+  max-height: 26px;
   object-fit: contain;
 }
 .bw-pennant-mast {
-  width: 2px;
-  height: 10px;
+  width: 3px;
+  height: 22px;
   margin-left: 0;
   background: #16324a;
   border-radius: 1px;

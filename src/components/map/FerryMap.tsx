@@ -30,6 +30,7 @@ import {
   shipTokenRadius,
   VESSEL_IMAGE_STEPS,
   VESSEL_SCREEN_WIDTH,
+  vesselScreenWidth,
   vesselImageId,
   wakeLevel,
 } from "./shipIcons";
@@ -464,6 +465,7 @@ export default function FerryMap({
     // À faible zoom, les libellés des petits ports se masquent pour éviter les chevauchements.
     const updateZoomState = () => {
       container.dataset["lowZoom"] = String(map.getZoom() < 5.2);
+      container.dataset["midZoom"] = String(map.getZoom() >= 5.2 && map.getZoom() < 7);
     };
     updateZoomState();
     map.on("zoom", updateZoomState);
@@ -2099,12 +2101,22 @@ export default function FerryMap({
       const marker = new Marker({ element: el, anchor: "bottom-left", offset: shift })
         .setLngLat(at)
         .addTo(map);
-      return { marker, shift };
+      return { marker, shift, inner, slug: vesselMapIcon(ship.name) };
     });
     const place = () => {
-      const r = shipTokenRadius(map.getZoom());
-      for (const { marker, shift } of placed)
-        marker.setOffset([shift[0] - r * 0.72, shift[1] - r * 0.72]);
+      const zoom = map.getZoom();
+      const r = shipTokenRadius(zoom);
+      // Le mât est planté sur le navire debout, et le drapeau grandit avec lui.
+      const width = vesselScreenWidth(zoom);
+      for (const { marker, shift, inner, slug } of placed) {
+        const ratio = slug ? vesselImagesRef.current?.heightRatio(slug) : null;
+        inner.style.scale = String(Math.min(1.25, Math.max(0.7, width / 110)));
+        marker.setOffset(
+          ratio
+            ? [shift[0] * dockSpread(zoom), shift[1] - width * ratio * 0.55]
+            : [shift[0] - r * 0.72, shift[1] - r * 0.72],
+        );
+      }
     };
     place();
     map.on("zoom", place);

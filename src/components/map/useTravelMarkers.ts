@@ -1,5 +1,5 @@
 import { vesselMapIcon } from "@/lib/ferry/vesselVisuals";
-import { dockSpread } from "./shipIcons";
+import { dockSpread, vesselScreenHeight } from "./shipIcons";
 import { createElement, useEffect, useRef, type RefObject } from "react";
 import { requestSignalFocus } from "@/components/panel/LivePulse";
 import { bringTooltipToFront } from "./tooltipStack";
@@ -203,14 +203,18 @@ export function useTravelMarkers(
         card.append(el("span", "bw-signal-bubble__cta", "Ouvrir la fiche ›"));
         card.addEventListener("click", open);
         const lift = isPort ? -22 : 22;
+        // Bulle ouverte : au-dessus de l'arc, quand le navire est debout.
+        const shipSlug = ship ? vesselMapIcon(ship.name) : null;
+        const zoomNow = map.getZoom();
+        const above = shipSlug && zoomNow >= 7 ? vesselScreenHeight(shipSlug, zoomNow) + 50 : 46;
         // Pas assez de place au-dessus : la carte glisse vers le bas le temps de lire la bulle.
-        const room = map.project(point).y + shift[1] - 46;
+        const room = map.project(point).y + shift[1] - above;
         const needed = 70 + 64 * alerts.length + 40;
         if (room < needed) map.panBy([0, room - needed], { duration: 250 });
         bubble
           .setLngLat(point)
           .setDOMContent(card)
-          .setOffset([shift[0] + lift, shift[1] - 46])
+          .setOffset([shift[0] + lift, shift[1] - above])
           .addTo(map);
         bringTooltipToFront(bubble.getElement());
         openKey.current = key;
@@ -231,15 +235,15 @@ export function useTravelMarkers(
       markers.push(marker);
       if (ship) aboard.push({ marker, ship, shift, button });
     }
-    // De près, le signalement rejoint la bulle des voyageurs, sous le nom du navire, plutôt que sur sa coque.
+    // De près, le départ de l'arc : au-dessus de la proue, un peu plus bas que la bulle des voyageurs.
     const place = () => {
       const zoom = map.getZoom();
       for (const { marker, ship, shift, button } of aboard) {
-        const photo = vesselMapIcon(ship.name);
-        const x = shift[0] * (photo ? dockSpread(zoom) : 1);
+        const slug = vesselMapIcon(ship.name);
+        const x = shift[0] * (slug ? dockSpread(zoom) : 1);
         marker.setOffset(
-          zoom >= 7 && photo
-            ? [x - button.offsetWidth - 3, shift[1] + 58 + button.offsetHeight]
+          zoom >= 7 && slug
+            ? [x - button.offsetWidth - 34, shift[1] - vesselScreenHeight(slug, zoom) - 4]
             : [x - 4, shift[1] - 8],
         );
       }

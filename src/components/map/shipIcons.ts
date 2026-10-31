@@ -292,6 +292,11 @@ export function vesselScreenWidth(zoom: number) {
 /** Écart entre navires à quai : la file s'élargit avec eux pour qu'ils ne s'empilent pas au zoom. */
 export const dockSpread = (zoom: number) => Math.max(1, vesselScreenWidth(zoom) / 26);
 
+const heightRatios = new Map<string, number>();
+/** Hauteur à l'écran d'un navire debout : les bulles de la communauté se placent au-dessus. */
+export const vesselScreenHeight = (slug: string, zoom: number) =>
+  vesselScreenWidth(zoom) * (heightRatios.get(slug) ?? 0.5);
+
 export const vesselImageId = (slug: string, width: number) => `vessel-${slug}-${width}`;
 
 /**
@@ -444,6 +449,7 @@ export function addVesselImages(map: MapLibreMap, slugs: string[]) {
             funnelY = y / h;
             break search;
           }
+      heightRatios.set(slug, image.height / image.width);
       sources.set(slug, { image, bowY: edge(0, w, 1), sternY: edge(w - 1, -1, -1), funnelX, funnelY });
       for (const { width } of VESSEL_IMAGE_STEPS) {
         const still = frame(slug, width, null);

@@ -5,7 +5,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Marker, type Map as MapLibreMap } from "maplibre-gl";
 import type { FleetShip } from "@/lib/ferry/fleet";
 import { vesselMapIcon } from "@/lib/ferry/vesselVisuals";
-import { dockSpread } from "./shipIcons";
+import { dockSpread, vesselScreenHeight } from "./shipIcons";
 import { avatarFor, presenceQuery } from "@/lib/ferry/presence";
 import type { Port, Selection } from "@/lib/ferry/types";
 
@@ -130,14 +130,20 @@ export function usePresenceMarkers(
         element.classList.toggle("is-zoomed", zoom >= 8);
       }
     };
-    // De près, sous le nom du navire (qui passe entre le navire et les bulles), et avec lui à quai.
+    // De près, le sommet de l'arc au-dessus du navire, centré sur lui ; à quai, il suit le navire.
     const place = () => {
       const zoom = map.getZoom();
       for (const { marker, ship, shift } of aboard) {
-        const standing = zoom >= 7 && vesselMapIcon(ship.name);
-        const spread = vesselMapIcon(ship.name) ? dockSpread(zoom) : 1;
+        const slug = vesselMapIcon(ship.name);
+        const x = shift[0] * (slug ? dockSpread(zoom) : 1);
+        const element = marker.getElement();
         marker.setOffset(
-          standing ? [shift[0] * spread + 3, shift[1] + 58] : [shift[0] * spread + 6, shift[1] + 10],
+          zoom >= 7 && slug
+            ? [
+                x - element.offsetWidth / 2,
+                shift[1] - vesselScreenHeight(slug, zoom) - element.offsetHeight - 20,
+              ]
+            : [x + 6, shift[1] + 10],
         );
       }
     };

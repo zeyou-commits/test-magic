@@ -129,6 +129,10 @@ interface FerryMapProps {
 
 // Limite de dézoom : on ne peut pas s'éloigner plus que « toute la Méditerranée occidentale visible »
 // (plancher relevé selon la largeur d'écran pour empêcher une vue planisphère).
+/** Entre ces deux zooms, les lignes passent de discrètes à pleinement lisibles. */
+const ROUTES_FAR_ZOOM = 5;
+const ROUTES_NEAR_ZOOM = 7;
+
 function cameraDuration(milliseconds: number) {
   return window.matchMedia("(prefers-reduced-motion: reduce)").matches ? 0 : milliseconds;
 }
@@ -598,13 +602,30 @@ export default function FerryMap({
         layout: { "line-cap": "round", "line-join": "round" },
         paint: {
           "line-color": mapColor("--map-route-casing", "rgb(255, 255, 255)"),
+          // De loin, les lignes s'effacent devant les navires et les ports.
           "line-width": [
-            "case",
-            ["get", "selected"],
-            6,
-            ["interpolate", ["linear"], ["get", "lineCount"], 1, 3, 5, 3.6, 20, 4.6],
+            "interpolate",
+            ["linear"],
+            ["zoom"],
+            ROUTES_FAR_ZOOM,
+            ["case", ["get", "selected"], 5, ["get", "focused"], 3.6, 1.6],
+            ROUTES_NEAR_ZOOM,
+            [
+              "case",
+              ["get", "selected"],
+              6,
+              ["interpolate", ["linear"], ["get", "lineCount"], 1, 3, 5, 3.6, 20, 4.6],
+            ],
           ],
-          "line-opacity": ["case", ["get", "dateDimmed"], 0.25, ["get", "dimmed"], 0.15, 0.85],
+          "line-opacity": [
+            "interpolate",
+            ["linear"],
+            ["zoom"],
+            ROUTES_FAR_ZOOM,
+            ["case", ["any", ["get", "selected"], ["get", "focused"]], 0.85, 0.3],
+            ROUTES_NEAR_ZOOM,
+            ["case", ["get", "dateDimmed"], 0.25, ["get", "dimmed"], 0.15, 0.85],
+          ],
         },
       });
       map.addLayer({
@@ -622,14 +643,46 @@ export default function FerryMap({
             ["get", "color"],
           ],
           "line-width": [
-            "case",
-            ["get", "selected"],
-            4,
-            ["get", "focused"],
-            3.2,
-            ["interpolate", ["linear"], ["get", "lineCount"], 1, 1.4, 5, 1.8, 10, 2.2, 20, 2.8],
+            "interpolate",
+            ["linear"],
+            ["zoom"],
+            ROUTES_FAR_ZOOM,
+            [
+              "case",
+              ["get", "selected"],
+              3.2,
+              ["get", "focused"],
+              2.4,
+              ["interpolate", ["linear"], ["get", "lineCount"], 1, 0.7, 20, 1.3],
+            ],
+            ROUTES_NEAR_ZOOM,
+            [
+              "case",
+              ["get", "selected"],
+              4,
+              ["get", "focused"],
+              3.2,
+              ["interpolate", ["linear"], ["get", "lineCount"], 1, 1.4, 5, 1.8, 10, 2.2, 20, 2.8],
+            ],
           ],
-          "line-opacity": ["case", ["get", "dateDimmed"], 0.45, ["get", "dimmed"], 0.18, 1],
+          "line-opacity": [
+            "interpolate",
+            ["linear"],
+            ["zoom"],
+            ROUTES_FAR_ZOOM,
+            [
+              "case",
+              ["any", ["get", "selected"], ["get", "focused"]],
+              1,
+              ["get", "dateDimmed"],
+              0.28,
+              ["get", "dimmed"],
+              0.14,
+              0.5,
+            ],
+            ROUTES_NEAR_ZOOM,
+            ["case", ["get", "dateDimmed"], 0.45, ["get", "dimmed"], 0.18, 1],
+          ],
           // Seules les lignes sans départ à la date choisie sont en pointillés (voir la légende).
           "line-dasharray": [
             "case",
@@ -853,24 +906,8 @@ export default function FerryMap({
           ] as never,
           "text-font": ["Noto Sans Bold"],
           "text-size": ["interpolate", ["linear"], ["zoom"], 3, 9, 6, 10, 9, 12],
-          // Le nom passe juste sous le jeton, quelle que soit sa taille.
-          "text-offset": [
-            "interpolate",
-            ["linear"],
-            ["zoom"],
-            3,
-            ["literal", [0, 1.7]],
-            6,
-            ["literal", [0, 1.9]],
-            9,
-            ["literal", [0, 2]],
-            11,
-            ["literal", [0, 2.3]],
-            13,
-            ["literal", [0, 2.6]],
-            15,
-            ["literal", [0, 2.8]],
-          ],
+          // Le navire debout repose sur son point : le nom et le retard collent à sa coque.
+          "text-offset": ["literal", [0, 0.5]],
           "text-anchor": "top",
           "text-allow-overlap": false,
           "text-ignore-placement": false,

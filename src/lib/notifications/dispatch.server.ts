@@ -153,6 +153,31 @@ async function notifyFeedback(deliver: Deliver, now: number) {
     }
   }
 
+  // Veille : Claude propose, l'équipe décide. Rien n'est appliqué sans sa validation.
+  const proposals = await read<{ id: string; title: string }>(
+    db
+      .from("bw_watch_proposals")
+      .select("id,title")
+      .eq("status", "pending")
+      .gte("created_at", since),
+  );
+  if (proposals.length) {
+    const staff = await read<{ user_id: string }>(
+      db.from("user_roles").select("user_id").in("role", ["admin", "editor"]),
+    );
+    for (const proposal of proposals) {
+      for (const userId of new Set(staff.map((row) => row.user_id))) {
+        await deliver(userId, null, {
+          key: `staff-watch:${proposal.id}`,
+          category: "reminders",
+          title: "Veille : une proposition à valider",
+          body: proposal.title,
+          url: "/admin?tab=watch",
+        });
+      }
+    }
+  }
+
   // Entraide : le demandeur sait que quelqu'un arrive ; les voyageurs du départ voient la demande.
   const responses = await read<{ request_id: string; user_id: string }>(
     db.from("bw_help_responses").select("request_id,user_id").gte("created_at", since),

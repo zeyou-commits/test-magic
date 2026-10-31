@@ -13,6 +13,7 @@ import {
   optionsFor,
   portServices,
   reportTravel,
+  requirePosition,
   situationOf,
   useSignalCatalog,
   type AlertCategory,
@@ -329,7 +330,8 @@ export function QuickReport({
       // Position demandée au moment d'envoyer. Obligatoire au port et pour un signalement impactant.
       const onSiteRequired = impact || where === "port";
       let here = position;
-      if (!here && level >= 2 && (isMobile || onSiteRequired)) here = await currentPosition();
+      if (!here && level >= 2 && onSiteRequired) here = await requirePosition();
+      else if (!here && level >= 2 && isMobile) here = await currentPosition();
       if (onSiteRequired && !here)
         throw new Error(
           "Ce signalement doit être fait sur place : autorisez la localisation puis réessayez.",
@@ -356,7 +358,7 @@ export function QuickReport({
 
   const locate = async () => {
     setLocating("busy");
-    const here = await currentPosition(10_000);
+    const here = await requirePosition(10_000);
     if (!here) return setLocating("denied");
     setPosition(here);
     const nearest = ports

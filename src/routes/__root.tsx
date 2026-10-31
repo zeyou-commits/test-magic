@@ -18,6 +18,7 @@ import { reportLovableError } from "../lib/lovable-error-reporting";
 import { AuthProvider } from "@/hooks/useAuth";
 import { Toaster } from "@/components/ui/sonner";
 import { PwaInstall } from "@/components/layout/PwaInstall";
+import { LocationHelp } from "@/components/layout/LocationHelp";
 import { MobileTabBar } from "@/components/layout/MobileTabBar";
 import { SiteHeader } from "@/components/layout/SiteLayout";
 import { TravelActionProvider } from "@/components/auth/TravelActionProvider";
@@ -205,6 +206,7 @@ function RootComponent() {
             </div>
           )}
           <PwaInstall />
+          <LocationHelp />
           <ProfileHost />
           <Toaster />
         </TravelActionProvider>

@@ -527,15 +527,41 @@ export function alertLabel(alert: TravelAlert) {
 
 /** Position du voyageur, demandée au moment du geste ; jamais enregistrée par BledWay. */
 export function currentPosition(timeout = 8_000): Promise<[number, number] | null> {
-  if (typeof navigator === "undefined" || !("geolocation" in navigator))
+  if (typeof navigator === "undefined" || !("geolocation" in navigator)) {
+    lastProblem = "unsupported";
     return Promise.resolve(null);
-  return new Promise((resolve) =>
-    navigator.geolocation.getCurrentPosition(
-      (position) => resolve([position.coords.latitude, position.coords.longitude]),
-      () => resolve(null),
-      { enableHighAccuracy: true, timeout, maximumAge: 120_000 },
-    ),
+  }
+  const attempt = (highAccuracy: boolean) =>
+    new Promise<[number, number] | null>((resolve) =>
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          lastProblem = null;
+          resolve([position.coords.latitude, position.coords.longitude]);
+        },
+        (error) => {
+          lastProblem = error.code === error.PERMISSION_DENIED ? "denied" : "unavailable";
+          resolve(null);
+        },
+        { enableHighAccuracy: highAccuracy, timeout, maximumAge: 120_000 },
+      ),
+    );
+  // Le GPS ne répond pas (intérieur, gare maritime) : la position du réseau suffit à vérifier 3 km.
+  return attempt(true).then((here) =>
+    here || lastProblem === "denied" ? here : attempt(false),
   );
+}
+
+export type LocationProblem = "denied" | "unavailable" | "unsupported";
+export const LOCATION_HELP_EVENT = "bledway:location-help";
+let lastProblem: LocationProblem | null = null;
+export const locationProblem = (): LocationProblem => lastProblem ?? "unavailable";
+
+/** Position exigée par l'action : sinon, explique au voyageur comment l'autoriser. */
+export async function requirePosition(timeout = 8_000) {
+  const here = await currentPosition(timeout);
+  if (!here)
+    window.dispatchEvent(new CustomEvent(LOCATION_HELP_EVENT, { detail: locationProblem() }));
+  return here;
 }
 // Arrondi à ~100 m : suffisant pour la vérification « sur place ».
 const coords = (position: [number, number] | null) =>

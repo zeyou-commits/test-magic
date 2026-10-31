@@ -5847,7 +5847,7 @@ button.bw-tavatar:focus-visible {
   }
 }
 .bw-mood-dialog {
-  z-index: 96 !important;
+  z-index: 101 !important;
 }
 
 /* Présence des voyageurs : discrète, le détail vient avec le zoom. */
@@ -6078,4 +6078,8 @@ button.bw-tavatar:focus-visible {
 .bw-podium__photo {
   border: 1px solid var(--border);
   background: #ffffff;
+}
+
+.bw-location-help {
+  z-index: 101 !important;
 }

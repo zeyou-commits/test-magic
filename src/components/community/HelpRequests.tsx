@@ -5,7 +5,7 @@ import { HeartHandshake, Siren } from "lucide-react";
 import { toast } from "sonner";
 import { supabase as typedSupabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { currentPosition } from "@/lib/ferry/community";
+import { requirePosition } from "@/lib/ferry/community";
 import { Button } from "@/components/ui/button";
 
 // Fonctions du script « contacts_incidents_entraide », pas encore dans les types générés.
@@ -132,7 +132,7 @@ export function HelpRequests({ scopeId }: { kind: "departure"; scopeId: string }
   // La position vérifie qu'on est au port de départ, et n'est pas enregistrée.
   const ask = useMutation({
     mutationFn: async () => {
-      const position = await currentPosition();
+      const position = await requirePosition();
       if (!position)
         throw new Error(
           "Demande non envoyée : autorisez le partage de votre position pour vérifier que vous êtes au port.",

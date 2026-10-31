@@ -3,7 +3,6 @@ import { ClientOnly, createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useSuspenseQuery } from "@tanstack/react-query";
 import { ArrowRight, Map as MapIcon, Search, Share2, Ship, X } from "lucide-react";
 import { DataUnavailableNotice } from "@/components/layout/DataUnavailableNotice";
-import { MobileTabBar } from "@/components/layout/MobileTabBar";
 import { SiteFooter, SiteHeader } from "@/components/layout/SiteLayout";
 import { CompanyBadge } from "@/components/panel/CompanyBadge";
 import { FollowButton } from "@/components/panel/FollowButton";
@@ -647,9 +646,6 @@ function BoardPage() {
         </div>
       </main>
       <SiteFooter />
-      <div className="fixed bottom-0 left-0 right-0 z-50 md:hidden">
-        <MobileTabBar />
-      </div>
     </>
   );
 }

@@ -25,6 +25,7 @@ import {
   communityKey,
   communityQuery,
   currentPosition,
+  requirePosition,
   isImpact,
   onSiteCount,
   useSignalCatalog,
@@ -112,7 +113,7 @@ export function TravelSignals({
       // porte la mention « sur place » si la position le permet.
       const here =
         kind === "port" && action.type !== "resolve"
-          ? await currentPosition(8_000)
+          ? await requirePosition(8_000)
           : action.type === "confirm" && located && isMobile
             ? await currentPosition(6_000)
             : null;

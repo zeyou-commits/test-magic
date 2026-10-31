@@ -2,7 +2,6 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { ArrowLeft, ArrowRightLeft, Info, Minus, Plus, Wallet } from "lucide-react";
 import { SiteFooter, SiteHeader } from "@/components/layout/SiteLayout";
-import { MobileTabBar } from "@/components/layout/MobileTabBar";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase as typedSupabase } from "@/integrations/supabase/client";
 import { seoHead } from "@/lib/seo/site";
@@ -234,6 +233,5 @@ function WalletPage() {
       </div>
     </main>
     <SiteFooter />
-    <div className="fixed bottom-0 left-0 right-0 z-50 md:hidden"><MobileTabBar /></div>
   </>;
 }

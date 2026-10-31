@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ArrowRight, Check, ChevronDown, ClipboardCheck, PartyPopper } from "lucide-react";
+import { ArrowRight, Check, ChevronDown, ClipboardCheck, PartyPopper, Waves } from "lucide-react";
+import { seaLevel } from "@/lib/ferry/seaState";
 import { toast } from "sonner";
 import {
   currentPhase,
@@ -45,11 +46,14 @@ export function TripPreparation({
   departureAt,
   userId,
   direction = "outbound",
+  seaPeak = null,
 }: {
   departureId: string;
   departureAt: string;
   userId: string;
   direction?: TripDirection;
+  /** Vagues prévues : un rappel la veille si la mer s'annonce agitée. */
+  seaPeak?: number | null;
 }) {
   const client = useQueryClient();
   const query = preparationQuery(departureId, userId);
@@ -139,6 +143,12 @@ export function TripPreparation({
       {active ? (
         <div role="tabpanel" aria-label={active.title}>
           <p className="bw-prep__when">{active.when}</p>
+          {active.id === "eve" && seaPeak != null && seaPeak >= 1.25 ? (
+            <p className="bw-prep__sea" role="note">
+              <Waves size={15} aria-hidden /> {seaLevel(seaPeak).label} prévue : si vous êtes sensible au
+              mal de mer, prévoyez de quoi vous soulager.
+            </p>
+          ) : null}
           <ul className="bw-prep__list">
             {active.list.map((item) => {
               const done = data.done.includes(item.id);

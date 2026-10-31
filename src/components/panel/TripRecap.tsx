@@ -1,4 +1,4 @@
-import { SeaForecast } from "./SeaForecast";
+import { SeaForecast, useSeaPeak } from "./SeaForecast";
 import { scrollWithin } from "./LivePulse";
 import { useEffect, useState } from "react";
 import { takePrepFocus, tripDirection } from "@/lib/ferry/preparation";
@@ -136,6 +136,7 @@ export function TripRecap({
     onFoot: true,
   });
   const arriveIso = times.arrival.iso;
+  const seaPeak = useSeaPeak(departure.id, from, to, departure.departure_at, arriveIso ?? null);
   const nextDay =
     arriveIso && dateKeyInZone(arriveIso, toZone) !== dateKeyInZone(departIso, fromZone);
   const shift = times.departure.shiftMinutes ?? times.arrival.shiftMinutes;
@@ -401,7 +402,7 @@ export function TripRecap({
             <TripPreparation
               departureId={departure.id}
               departureAt={departure.departure_at}
-              userId={user.id} direction={tripDirection(from)}
+              userId={user.id} direction={tripDirection(from)} seaPeak={seaPeak}
             />
           ) : null}
           {upcoming && car && walk ? (

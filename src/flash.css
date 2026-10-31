@@ -6820,3 +6820,34 @@ button.bw-tavatar:focus-visible {
 .bw-sea a {
   text-decoration: underline;
 }
+.bw-mytrip-hero__sea {
+  display: inline-flex;
+  grid-column: 1 / -1;
+  align-items: center;
+  gap: 6px;
+  justify-self: start;
+  padding: 2px 9px;
+  border-radius: 999px;
+  background: #ffffff26;
+  font-size: 12px;
+  font-weight: 700;
+}
+.bw-mytrip-hero__sea[data-lively] {
+  background: #ffd98a;
+  color: #5a3d00;
+}
+.bw-prep__sea {
+  display: flex;
+  gap: 7px;
+  margin-bottom: 8px;
+  padding: 9px 10px;
+  border-radius: 12px;
+  background: #fff4d6;
+  color: #6b4a00;
+  font-size: 13px;
+  font-weight: 600;
+}
+.bw-prep__sea svg {
+  flex: none;
+  margin-top: 2px;
+}

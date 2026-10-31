@@ -31,6 +31,7 @@ describe("parcours de préparation", () => {
     expect(currentPhase(40)).toBe("papers");
     expect(currentPhase(5)).toBe("bags");
     expect(currentPhase(1)).toBe("eve");
+    expect(currentPhase(0)).toBe("eve");
     expect(currentPhase(-1)).toBe("arrival");
   });
   it("renvoie vers des articles qui existent", () => {

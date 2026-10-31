@@ -24,7 +24,7 @@ export const phases: { id: PrepPhase; title: string; when: string; startDays: nu
   { id: "papers", title: "Les papiers", when: "dès maintenant", startDays: Infinity },
   { id: "bags", title: "Budget et valises", when: "la semaine d’avant", startDays: 7 },
   { id: "eve", title: "La veille", when: "la veille du départ", startDays: 1 },
-  { id: "arrival", title: "L’arrivée", when: "avant de débarquer", startDays: 0 },
+  { id: "arrival", title: "L’arrivée", when: "avant de débarquer", startDays: -1 },
 ];
 
 export type PrepItem = {

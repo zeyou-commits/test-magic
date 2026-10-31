@@ -1,7 +1,9 @@
 import { VesselAlertTag } from "@/components/panel/VesselAlert";
 import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowRight, Crosshair, Ship } from "lucide-react";
+import { ArrowRight, Crosshair, Ship, Waves } from "lucide-react";
+import { useSeaPeak } from "./SeaForecast";
+import { seaLevel } from "@/lib/ferry/seaState";
 import { TravellerAvatar } from "@/components/community/TravellerAvatar";
 import { myTravellerQuery } from "@/lib/community/travellers";
 import { prepProgress, preparationQuery, requestPrepFocus, tripDirection } from "@/lib/ferry/preparation";
@@ -64,6 +66,13 @@ export function MyTripHero({ onSelect }: { onSelect: (selection: Selection) => v
   const alert = useVesselAlert(trip?.vessel?.id);
   const me = useQuery(myTravellerQuery(user?.id)).data;
   const preparation = useQuery(preparationQuery(trip?.departure.id, user?.id)).data;
+  const seaPeak = useSeaPeak(
+    trip?.departure.id,
+    trip?.from,
+    trip?.to,
+    trip?.departure.departure_at,
+    trip ? new Date(tripEnd(trip.departure)).toISOString() : null,
+  );
   if (!trip) return null;
   const phase = tripPhase(trip, now);
   const prep = preparation ? prepProgress(preparation, tripDirection(trip.from)) : null;
@@ -118,6 +127,11 @@ export function MyTripHero({ onSelect }: { onSelect: (selection: Selection) => v
         </span>
         <ArrowRight size={18} aria-hidden />
       </button>
+      {seaPeak != null && phase.phase !== "cancelled" && phase.phase !== "arrived" ? (
+        <p className="bw-mytrip-hero__sea" data-lively={seaPeak >= 1.25 || undefined}>
+          <Waves size={14} aria-hidden /> {seaLevel(seaPeak).label} prévue
+        </p>
+      ) : null}
       <div className="bw-mytrip-hero__clock" aria-live="off">
         {held ? (
           <strong>{alert?.label} · départ à confirmer</strong>

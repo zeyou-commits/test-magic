@@ -3,6 +3,31 @@ import { Waves } from "lucide-react";
 import { SEA_FORECAST_DAYS, seaForecastQuery, seaLevel } from "@/lib/ferry/seaState";
 
 type Point = { latitude: number; longitude: number };
+const ORIGIN: Point = { latitude: 0, longitude: 0 };
+
+/** La plus forte hauteur de vagues prévue sur la traversée ; null hors de portée des prévisions. */
+export function useSeaPeak(
+  departureId: string | undefined,
+  from: Point | null | undefined,
+  to: Point | null | undefined,
+  departureAt: string | undefined,
+  arrivalAt: string | null | undefined,
+) {
+  const start = departureAt ? Date.parse(departureAt) : 0;
+  const end = arrivalAt ? Date.parse(arrivalAt) : start + 24 * 3_600_000;
+  const now = Date.now();
+  const useful =
+    Boolean(departureId && from && to && departureAt) &&
+    end > now &&
+    start - now < SEA_FORECAST_DAYS * 86_400_000;
+  const { data } = useQuery({
+    ...seaForecastQuery(departureId ?? "", from ?? ORIGIN, to ?? ORIGIN, start, end),
+    enabled: useful,
+  });
+  return useful ? (data ?? null) : null;
+}
+
+export const isLivelySea = (peak: number) => peak >= 1.25;
 
 /** La mer prévue sur le trajet : une information de confort, sans prédire le comportement du navire. */
 export function SeaForecast({
@@ -18,17 +43,10 @@ export function SeaForecast({
   departureAt: string;
   arrivalAt: string | null;
 }) {
-  const start = Date.parse(departureAt);
-  const end = arrivalAt ? Date.parse(arrivalAt) : start + 24 * 3_600_000;
-  const now = Date.now();
-  const useful = end > now && start - now < SEA_FORECAST_DAYS * 86_400_000;
-  const { data: peak } = useQuery({
-    ...seaForecastQuery(departureId, from, to, start, end),
-    enabled: useful,
-  });
-  if (!useful || peak == null) return null;
+  const peak = useSeaPeak(departureId, from, to, departureAt, arrivalAt);
+  if (peak == null) return null;
   const level = seaLevel(peak);
-  const lively = level.id === "moderate" || level.id === "rough" || level.id === "high";
+  const lively = isLivelySea(peak);
   return (
     <section className="bw-sea" data-level={level.id} aria-label="Prévisions de mer">
       <Waves size={20} aria-hidden />

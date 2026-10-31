@@ -6777,3 +6777,46 @@ button.bw-tavatar:focus-visible {
   background: #0e7a43;
   color: #ffffff;
 }
+
+/* Prévisions de mer. */
+.bw-sea {
+  display: flex;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 14px;
+  background: #e8f3fa;
+  color: #123f5c;
+}
+.bw-sea[data-level="moderate"] {
+  background: #fff4d6;
+  color: #6b4a00;
+}
+.bw-sea[data-level="rough"],
+.bw-sea[data-level="high"] {
+  background: #fde8e0;
+  color: #8a2c12;
+}
+.bw-sea > svg {
+  flex: none;
+  margin-top: 2px;
+}
+.bw-sea strong {
+  font-size: 14px;
+  font-weight: 800;
+}
+.bw-sea strong span {
+  font-weight: 600;
+}
+.bw-sea p {
+  margin-top: 2px;
+  font-size: 12.5px;
+}
+.bw-sea small {
+  display: block;
+  margin-top: 2px;
+  font-size: 11px;
+  opacity: 0.8;
+}
+.bw-sea a {
+  text-decoration: underline;
+}

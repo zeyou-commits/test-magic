@@ -37,6 +37,14 @@ function PrivacyPage() {
           </p>
         </section>
         <section>
+          <h2 className="text-base font-semibold text-foreground">Prévisions de mer</h2>
+          <p className="mt-1">
+            Pour afficher l’état de la mer d’une traversée, votre navigateur interroge le service
+            Open-Meteo, qui reçoit votre adresse IP et les coordonnées du trajet, jamais votre position
+            ni votre compte.
+          </p>
+        </section>
+        <section>
           <h2 className="text-base font-semibold text-foreground">Position</h2>
           <p className="mt-1">
             Une demande d'entraide exige de partager votre position, pour vérifier que vous êtes au

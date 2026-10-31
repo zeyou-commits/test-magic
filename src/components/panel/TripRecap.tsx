@@ -1,3 +1,4 @@
+import { SeaForecast } from "./SeaForecast";
 import { scrollWithin } from "./LivePulse";
 import { useEffect, useState } from "react";
 import { takePrepFocus, tripDirection } from "@/lib/ferry/preparation";
@@ -355,6 +356,14 @@ export function TripRecap({
           fromPortId={from.id}
         />
       ) : null}
+
+      <SeaForecast
+        departureId={departure.id}
+        from={from}
+        to={to}
+        departureAt={departure.departure_at}
+        arrivalAt={arriveIso ?? null}
+      />
 
       {/* 3 bis. Les voyageurs de la traversée, leur cabas et leur humeur */}
       <TripTravellers

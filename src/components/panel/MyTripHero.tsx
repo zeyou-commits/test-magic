@@ -145,10 +145,12 @@ export function MyTripHero({ onSelect }: { onSelect: (selection: Selection) => v
           )}
         </span>
         <span className="bw-mytrip-hero__text">
-          <small>
-            {underway && trip.vessel ? trip.vessel.name : `Ma traversée${trip.vessel ? ` · ${trip.vessel.name}` : ""}`}{" "}
-            <VesselAlertTag vesselId={trip.vessel?.id} />
-          </small>
+          {underway ? null : (
+            <small>
+              Ma traversée{trip.vessel ? ` · ${trip.vessel.name}` : ""}{" "}
+              <VesselAlertTag vesselId={trip.vessel?.id} />
+            </small>
+          )}
           <strong>
             {trip.from?.name ?? "Départ"} → {trip.to?.name ?? "Arrivée"}
           </strong>
@@ -158,7 +160,7 @@ export function MyTripHero({ onSelect }: { onSelect: (selection: Selection) => v
               {trip.departure.status === "modified" ? " · horaire modifié" : ""}
             </span>
           )}
-          {delay ? <b className="bw-delay-badge">Retardé · {delay}</b> : null}
+          {delay && !underway ? <b className="bw-delay-badge">Retardé · {delay}</b> : null}
         </span>
         <ArrowRight size={18} aria-hidden />
       </button>
@@ -239,9 +241,12 @@ export function MyTripHero({ onSelect }: { onSelect: (selection: Selection) => v
           )}
           <div className="bw-mytrip-hero__voyage-times">
             {arrivalIso ? (
-              <span>
-                Arrivée <b>{formatDateParts(arrivalIso, arrivalZone).time}</b>
-                {dayDelta > 0 ? <sup>+{dayDelta} j</sup> : null}
+              <span className="bw-mytrip-hero__arrival">
+                <span>
+                  Arrivée <b>{formatDateParts(arrivalIso, arrivalZone).time}</b>
+                  {dayDelta > 0 ? <sup>+{dayDelta} j</sup> : null}
+                </span>
+                {delay ? <small>Retard {delay}</small> : null}
               </span>
             ) : null}
             {trip.vessel ? (
@@ -253,7 +258,7 @@ export function MyTripHero({ onSelect }: { onSelect: (selection: Selection) => v
                   )
                 }
               >
-                <Crosshair size={13} aria-hidden /> Voir sur la carte
+                <Crosshair size={13} aria-hidden /> {trip.vessel.name}
               </button>
             ) : null}
           </div>

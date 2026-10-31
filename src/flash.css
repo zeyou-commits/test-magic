@@ -7668,3 +7668,21 @@ label:has(> input.sr-only) {
   font-size: 11.5px;
   line-height: 1.2;
 }
+
+/* Aperçu : le retard sous l'arrivée, le nom du navire ouvre la carte. */
+.bw-mytrip-hero__arrival {
+  display: grid;
+  gap: 1px;
+}
+.bw-mytrip-hero__voyage .bw-mytrip-hero__arrival small {
+  color: #a85606;
+  font-size: 10.5px;
+  font-weight: 700;
+}
+.bw-mytrip-hero__voyage-times button {
+  min-width: 0;
+  overflow: hidden;
+  text-align: right;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

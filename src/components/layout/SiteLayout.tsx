@@ -1,9 +1,8 @@
 import { AlertTicker } from "./AlertTicker";
-import type { ReactNode } from "react";
+import { useEffect, useRef, type ReactNode } from "react";
 import { Link } from "@tanstack/react-router";
 import { UserMenu } from "./UserMenu";
 import { HeaderInbox } from "@/components/panel/FlashCenter";
-import { MobileTabBar } from "./MobileTabBar";
 import { DataUnavailableNotice } from "./DataUnavailableNotice";
 import { ChevronDown, Menu, ArrowUpRight, Route as RouteIcon, Wallet } from "lucide-react";
 import {
@@ -72,8 +71,20 @@ export function SiteHeader() {
   const explore = navLinks.filter((item) =>
     ["/ports", "/lignes", "/compagnies", "/bateaux"].includes(item.to),
   );
+  // Hauteur réelle du bandeau (bandeau d'alertes compris), pour caler ce qui reste collé dessous.
+  const headerRef = useRef<HTMLElement>(null);
+  useEffect(() => {
+    const header = headerRef.current;
+    if (!header) return;
+    const publish = () =>
+      document.documentElement.style.setProperty("--bw-header-h", `${header.offsetHeight}px`);
+    publish();
+    const observer = new ResizeObserver(publish);
+    observer.observe(header);
+    return () => observer.disconnect();
+  }, []);
   return (
-    <header className="bw-header">
+    <header className="bw-header" ref={headerRef}>
       <div className="bw-header-inner">
         <BrandLink />
         <nav aria-label="Navigation principale" className="bw-desktop-nav">
@@ -242,9 +253,6 @@ export function SiteLayout({ children }: { children: ReactNode }) {
       </main>
 
       <SiteFooter />
-      <div className="fixed bottom-0 left-0 right-0 z-50 md:hidden">
-        <MobileTabBar />
-      </div>
     </div>
   );
 }

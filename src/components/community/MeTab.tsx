@@ -74,7 +74,7 @@ export function MeTab({ className }: { className: string }) {
       <button
         type="button"
         className={`${className} bw-me-tab`}
-        onClick={() => setOpen(true)}
+        onClick={() => setOpen((current) => !current)}
         aria-label={`Mon profil${me.mood ? ` · humeur : ${me.mood.label}` : " · ajouter une humeur"}`}
       >
         {/* L'avatar reste toujours le même ; l'humeur vit dans sa bulle (badge picto sur l'avatar). */}
@@ -114,8 +114,17 @@ function MeSheet({ open, onOpenChange }: { open: boolean; onOpenChange: (open: b
   const close = () => onOpenChange(false);
   return (
     <>
-      <Sheet open={open} onOpenChange={onOpenChange}>
-        <SheetContent side="bottom" className="bw-me-sheet">
+      {/* Comme les autres volets : la barre du bas reste visible et utilisable. */}
+      <Sheet open={open} onOpenChange={onOpenChange} modal={false}>
+        <SheetContent
+          side="bottom"
+          className="bw-me-sheet"
+          onOpenAutoFocus={(event) => event.preventDefault()}
+          onInteractOutside={(event) => {
+            // L'onglet « Moi » referme lui-même le volet.
+            if ((event.target as Element | null)?.closest?.(".bw-me-tab")) event.preventDefault();
+          }}
+        >
           <SheetHeader className="bw-me-sheet__head">
             <TravellerAvatar card={me} size={56} moodLabel static />
             <div>
@@ -143,7 +152,13 @@ function MeSheet({ open, onOpenChange }: { open: boolean; onOpenChange: (open: b
             ))}
           </div>
           <div className="bw-me-sheet__row">
-            <button type="button" onClick={() => setAll(true)}>
+            <button
+              type="button"
+              onClick={() => {
+                close();
+                setAll(true);
+              }}
+            >
               <Smile size={15} aria-hidden /> Toutes les humeurs
             </button>
             {me.mood ? (

@@ -326,10 +326,11 @@ export function QuickReport({
     mutationFn: async (input: Draft) => {
       const category = input.category!;
       const where = situationOf(category).where;
-      // Position demandée au moment d'envoyer (mobile), ou obligatoire pour un signalement impactant.
+      // Position demandée au moment d'envoyer. Obligatoire au port et pour un signalement impactant.
+      const onSiteRequired = impact || where === "port";
       let here = position;
-      if (!here && level >= 2 && (isMobile || impact)) here = await currentPosition();
-      if (impact && !here)
+      if (!here && level >= 2 && (isMobile || onSiteRequired)) here = await currentPosition();
+      if (onSiteRequired && !here)
         throw new Error(
           "Ce signalement doit être fait sur place : autorisez la localisation puis réessayez.",
         );
@@ -642,7 +643,9 @@ export function QuickReport({
           {mutation.isPending ? "Envoi…" : user ? "Envoyer" : "Se connecter et envoyer"}
         </button>
         <p className="bw-report-note">
-          {level >= 2
+          {situation.where === "port"
+            ? "Au port, il faut être sur place, à moins de 3 km, localisation activée. Votre position n’est pas enregistrée."
+            : level >= 2
             ? "Si vous l’autorisez, votre position indique « Sur place ». Elle n’est pas enregistrée."
             : "Uniquement ce que vous constatez ou ce qui est annoncé sur place."}
         </p>

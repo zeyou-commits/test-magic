@@ -5811,3 +5811,41 @@ button.bw-tavatar:focus-visible {
     display: none;
   }
 }
+
+/* Bandeau général toujours visible sur PC, barre du bas toujours visible sur mobile. */
+@media (min-width: 768px) {
+  .bw-header {
+    position: sticky;
+    top: 0;
+  }
+  .bw-global-header {
+    position: sticky;
+    top: 0;
+    z-index: 80;
+  }
+  .bw-admin-sidebar {
+    top: var(--bw-header-h, 0px);
+    height: calc(100dvh - var(--bw-header-h, 0px));
+  }
+  .bw-admin-topbar {
+    top: var(--bw-header-h, 0px);
+  }
+  .bw-account-header {
+    display: none;
+  }
+}
+@media (max-width: 767px) {
+  body:has(.bw-global-tabs) {
+    padding-bottom: calc(3.5rem + env(safe-area-inset-bottom));
+  }
+  /* Volet « Moi » : posé au-dessus de la barre du bas et de tout volet de la carte. */
+  .bw-me-sheet {
+    z-index: 92 !important;
+    bottom: calc(3.5rem + env(safe-area-inset-bottom)) !important;
+    max-height: calc(100dvh - 3.5rem - env(safe-area-inset-bottom) - var(--bw-ticker-h, 0px) - 8px);
+    padding-bottom: 18px;
+  }
+}
+.bw-mood-dialog {
+  z-index: 96 !important;
+}

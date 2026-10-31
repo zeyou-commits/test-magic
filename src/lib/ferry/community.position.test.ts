@@ -6,7 +6,7 @@ import { currentPosition, locationProblem } from "./community";
 const located = { coords: { latitude: 43.3, longitude: 5.3 } };
 function stub(getCurrentPosition: unknown) {
   vi.stubGlobal("navigator", { geolocation: { getCurrentPosition } });
-  vi.stubGlobal("window", { setTimeout, clearTimeout });
+  vi.stubGlobal("window", { setTimeout, clearTimeout, location: { pathname: "/" } });
 }
 
 describe("position de l'appareil", () => {

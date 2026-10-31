@@ -526,28 +526,72 @@ export function alertLabel(alert: TravelAlert) {
 }
 
 /** Position du voyageur, demandée au moment du geste ; jamais enregistrée par BledWay. */
+/** Journal de diagnostic : l'appareil et le résultat, jamais les coordonnées. Ne bloque jamais l'action. */
+export function logLocation(attempt: string, event: string, detail: Record<string, unknown> = {}) {
+  try {
+    const standalone = window.matchMedia?.("(display-mode: standalone)").matches ?? false;
+    void Promise.resolve(
+      (supabase.rpc as unknown as (name: string, args: unknown) => PromiseLike<unknown>)(
+        "bw_log_location",
+        {
+          p_attempt: attempt,
+          p_event: event,
+          p_detail: {
+            ...detail,
+            ua: navigator.userAgent,
+            standalone,
+            online: navigator.onLine,
+            visible: document.visibilityState,
+            secure: window.isSecureContext,
+            path: window.location.pathname,
+          },
+        },
+      ),
+    ).catch(() => undefined);
+  } catch {
+    /* le diagnostic ne doit jamais gêner le voyageur */
+  }
+}
+
 export function currentPosition(timeout = 8_000): Promise<[number, number] | null> {
+  const trace = Math.random().toString(36).slice(2, 12);
   if (typeof navigator === "undefined" || !("geolocation" in navigator)) {
     lastProblem = "unsupported";
+    logLocation(trace, "unsupported");
     return Promise.resolve(null);
+  }
+  try {
+    void navigator.permissions
+      ?.query({ name: "geolocation" as PermissionName })
+      .then((state) => logLocation(trace, "start", { permission: state.state, timeout }))
+      .catch((error: unknown) => logLocation(trace, "start", { permission: String(error), timeout }));
+    if (!navigator.permissions) logLocation(trace, "start", { permission: "no-api", timeout });
+  } catch (error) {
+    logLocation(trace, "start", { permission: String(error), timeout });
   }
   const attempt = (highAccuracy: boolean) =>
     new Promise<[number, number] | null>((resolve) => {
+      const started = Date.now();
+      const done = (event: string, detail: Record<string, unknown> = {}) =>
+        logLocation(trace, event, { highAccuracy, ms: Date.now() - started, ...detail });
       // Certains navigateurs (applis Facebook, WhatsApp…) ne répondent jamais, ni position ni erreur.
       // Le délai du navigateur ne court pas tant que sa demande d'autorisation reste affichée : marge large.
       const guard = window.setTimeout(() => {
         lastProblem = "silent";
+        done("silent");
         resolve(null);
       }, timeout + NO_ANSWER_MARGIN_MS);
       navigator.geolocation.getCurrentPosition(
         (position) => {
           window.clearTimeout(guard);
           lastProblem = null;
+          done("ok", { accuracyM: Math.round(position.coords.accuracy) });
           resolve([position.coords.latitude, position.coords.longitude]);
         },
         (error) => {
           window.clearTimeout(guard);
           lastProblem = error.code === error.PERMISSION_DENIED ? "denied" : "unavailable";
+          done("error", { code: error.code, message: error.message });
           resolve(null);
         },
         { enableHighAccuracy: highAccuracy, timeout, maximumAge: 120_000 },

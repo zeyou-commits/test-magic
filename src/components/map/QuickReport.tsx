@@ -14,6 +14,7 @@ import {
   portServices,
   reportTravel,
   requirePosition,
+  logLocation,
   situationOf,
   useSignalCatalog,
   type AlertCategory,
@@ -339,6 +340,7 @@ export function QuickReport({
         throw new Error(
           "Ce signalement doit être fait sur place : autorisez la localisation puis réessayez.",
         );
+      logLocation("report", "report_send", { where, category, hasPosition: Boolean(here) });
       const result = await reportTravel({
         kind: where,
         target: (where === "port" ? input.portId : input.vesselId)!,
@@ -348,7 +350,11 @@ export function QuickReport({
         position: here,
         departureId: input.departureId,
       });
-      if (result.error) throw new Error(failure(result.error.message));
+      if (result.error) {
+        logLocation("report", "report_refused", { where, category, message: result.error.message });
+        throw new Error(failure(result.error.message));
+      }
+      logLocation("report", "report_ok", { where, category, onSite: result.onSite });
       return result;
     },
     onSuccess: (result) => {

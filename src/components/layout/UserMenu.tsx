@@ -133,7 +133,7 @@ export function UserMenu({
             <Link to="/compte">Mon espace voyageur</Link>
           </DropdownMenuItem>
           <DropdownMenuItem asChild>
-            <Link to="/ma-bezass"><Wallet size={16} aria-hidden /> Ma bezass</Link>
+            <Link to="/mes-dinars"><Wallet size={16} aria-hidden /> Mes dinars</Link>
           </DropdownMenuItem>
           <DropdownMenuItem asChild>
             <Link to="/compte" hash="voyages">

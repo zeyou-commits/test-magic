@@ -7,7 +7,7 @@ const rates: RatesResponse = { checkedAt: "2026-10-29T00:00:00Z", rates: {
   USD: { official: 135, parallel: 240, officialDate: "2026-10-28", parallelDate: "2026-10-28" },
 } };
 
-describe("Ma bezass", () => {
+describe("Mes dinars", () => {
   it("compte chaque valeur une seule fois et garde les devises séparées", () => {
     const wallet = sanitizeWallet({ counts: { "2000": 5, "1000": 2, "500": 1 }, foreign: { EUR: 300 }, currency: "EUR" });
     expect(dinarTotal(wallet)).toBe(12500);

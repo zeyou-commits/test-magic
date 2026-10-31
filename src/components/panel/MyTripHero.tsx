@@ -4,6 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { ArrowRight, Crosshair, Ship } from "lucide-react";
 import { TravellerAvatar } from "@/components/community/TravellerAvatar";
 import { myTravellerQuery } from "@/lib/community/travellers";
+import { prepProgress, preparationQuery } from "@/lib/ferry/preparation";
 import { useAuth } from "@/hooks/useAuth";
 import { tripEnd, useMyTrip, type MyTrip } from "@/lib/ferry/myTrip";
 import { mergeTripSteps, myTripStatusQuery, tripStepsQuery } from "@/lib/ferry/presence";
@@ -62,8 +63,10 @@ export function MyTripHero({ onSelect }: { onSelect: (selection: Selection) => v
   const now = useNow(Boolean(trip) && start - Date.now() < 86_400_000);
   const alert = useVesselAlert(trip?.vessel?.id);
   const me = useQuery(myTravellerQuery(user?.id)).data;
+  const preparation = useQuery(preparationQuery(trip?.departure.id, user?.id)).data;
   if (!trip) return null;
   const phase = tripPhase(trip, now);
+  const prep = preparation ? prepProgress(preparation) : null;
   // Navire en alerte : plus de compte à rebours ni d'« En mer », le départ reste à confirmer.
   const held = Boolean(alert) && phase.phase !== "cancelled" && phase.phase !== "arrived";
   const zone = portTimeZone(trip.from);
@@ -134,6 +137,19 @@ export function MyTripHero({ onSelect }: { onSelect: (selection: Selection) => v
           <strong>{phase.text}</strong>
         )}
       </div>
+      {prep && prep.done < prep.total && phase.phase !== "arrived" && phase.phase !== "cancelled" ? (
+        <button
+          type="button"
+          className="bw-mytrip-hero__prep"
+          onClick={() => onSelect({ type: "departure", id: trip.departure.id })}
+        >
+          <b>
+            {prep.done}/{prep.total}
+          </b>
+          <span>{prep.next?.label ?? "Préparer ma traversée"}</span>
+          <ArrowRight size={14} aria-hidden />
+        </button>
+      ) : null}
       <div className="bw-mytrip-hero__foot">
         <span>{next}</span>
         {trip.vessel && !held && (phase.phase === "today" || phase.phase === "sea") ? (

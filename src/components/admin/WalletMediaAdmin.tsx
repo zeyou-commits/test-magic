@@ -92,7 +92,7 @@ export function WalletMediaAdmin() {
       }
       setFile(null);
       await queryClient.invalidateQueries({ queryKey: ["admin", "wallet-media"] });
-      toast.success("Visuel enregistré. Il apparaîtra dans Ma bezass après actualisation.");
+      toast.success("Visuel enregistré. Il apparaîtra dans Mes dinars après actualisation.");
     } catch (cause) { toast.error(cause instanceof Error ? cause.message : "Impossible d’enregistrer l’image."); }
     finally { setBusy(false); }
   }
@@ -111,7 +111,7 @@ export function WalletMediaAdmin() {
   }
 
   return <section className="bw-admin-surface mt-4 space-y-4 p-4 sm:p-6" aria-labelledby="wallet-media-title">
-    <div><h2 id="wallet-media-title" className="text-xl font-bold">Images de Ma bezass</h2><p className="text-sm text-muted-foreground">Ajoutez une photo par valeur et, si besoin, une variante. Votre image prime sur le lien officiel. Toute photo est acceptée : elle est réduite et convertie automatiquement.</p></div>
+    <div><h2 id="wallet-media-title" className="text-xl font-bold">Images de Mes dinars</h2><p className="text-sm text-muted-foreground">Ajoutez une photo par valeur et, si besoin, une variante. Votre image prime sur le lien officiel. Toute photo est acceptée : elle est réduite et convertie automatiquement.</p></div>
     {error ? <p role="alert" className="rounded-xl bg-amber-50 p-3 text-sm text-amber-900">Gestion indisponible : appliquez la migration <code>20261108130000_bezass_media_admin.sql</code> dans Supabase.</p> : null}
     <div className="grid gap-3 sm:grid-cols-3">{notes.map((note) => {
       const front = rows.find((row) => row.value === note.value && row.slot === "front");

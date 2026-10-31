@@ -130,7 +130,7 @@ const sections = [
   {
     id: "walletMedia",
     label: "Images des billets",
-    description: "Choisissez les photos et crédits affichés dans Ma bezass.",
+    description: "Choisissez les photos et crédits affichés dans Mes dinars.",
     group: "Voyageurs",
     icon: Images,
   },

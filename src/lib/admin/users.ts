@@ -64,7 +64,7 @@ export const activityLabels: Record<string, string> = {
   "public.bw_itinerary_watches.user_id": "Alertes d'itinéraire",
   "public.bw_notifications.user_id": "Notifications reçues",
   "public.bw_notification_preferences.user_id": "Préférences de notification",
-  "public.bw_wallets.user_id": "Portefeuille (Ma bezass)",
+  "public.bw_wallets.user_id": "Portefeuille (Mes dinars)",
 };
 /** Colonnes d'actions de l'équipe (créé par, validé par…) : regroupées sous un seul libellé. */
 export const isStaffColumn = (key: string) =>

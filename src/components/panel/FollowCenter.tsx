@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { ArrowUpRight, Bell, Heart, Ship, Trash2 } from "lucide-react";
 import { JourneyChecklist } from "./JourneyChecklist";
+import { TripPreparation } from "./TripPreparation";
 import { VesselAlertTag } from "./VesselAlert";
 import { useTravelAction } from "@/hooks/useTravelAction";
 import { NotificationInbox } from "@/components/account/NotificationInbox";
@@ -154,13 +155,17 @@ export function FollowCenter({ userId }: { userId: string }) {
                   {follow.traveller && detail?.departureId && detail.port && detail.departureAt && (
                     <details className="mt-2 border-t border-border pt-3">
                       <summary className="cursor-pointer text-xs font-semibold text-primary">
-                        Ma checklist et l’heure au port
+                        Ma préparation et l’heure au port
                       </summary>
                       <JourneyChecklist
-                        departureId={detail.departureId}
                         departureAt={detail.departureAt}
                         presentationMinutes={detail.presentationMinutes}
                         port={detail.port}
+                      />
+                      <TripPreparation
+                        departureId={detail.departureId}
+                        departureAt={detail.departureAt}
+                        userId={userId}
                       />
                     </details>
                   )}

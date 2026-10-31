@@ -12,6 +12,21 @@ import {
 /** Réglages à ouvrir : une fois la position refusée, seul le voyageur peut la rétablir. */
 function deniedSteps() {
   const agent = typeof navigator === "undefined" ? "" : navigator.userAgent;
+  // Application installée : il n'y a pas de barre d'adresse, tout passe par les réglages du téléphone.
+  const installed =
+    typeof window !== "undefined" && window.matchMedia("(display-mode: standalone)").matches;
+  if (installed && /Android/.test(agent))
+    return [
+      "Restez appuyé sur l’icône BledWay de votre écran d’accueil, puis touchez « Infos sur l’application » (ⓘ).",
+      "Ouvrez « Autorisations », puis « Position », et choisissez « Autoriser ». Si vous ne la trouvez pas, faites de même pour votre navigateur (Chrome).",
+      "Vérifiez que la localisation du téléphone est activée, revenez ici et touchez « Réessayer ».",
+    ];
+  if (installed && /iPhone|iPad|iPod/.test(agent))
+    return [
+      "Ouvrez Réglages › Confidentialité et sécurité › Service de localisation, et activez-le.",
+      "Dans la liste, ouvrez « Sites web Safari » et choisissez « Lorsque l’app est active ».",
+      "Revenez ici et touchez « Réessayer ». Si besoin, fermez puis rouvrez BledWay.",
+    ];
   if (/iPhone|iPad|iPod/.test(agent))
     return [
       "Ouvrez Réglages › Confidentialité et sécurité › Service de localisation, et activez-le.",

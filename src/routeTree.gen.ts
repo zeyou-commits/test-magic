@@ -25,6 +25,7 @@ import { Route as HorairesRouteImport } from './routes/horaires'
 import { Route as LignesRouteImport } from './routes/lignes'
 import { Route as MaBezassRouteImport } from './routes/ma-bezass'
 import { Route as MentionsLegalesRouteImport } from './routes/mentions-legales'
+import { Route as MesDinarsRouteImport } from './routes/mes-dinars'
 import { Route as MethodeEditorialeRouteImport } from './routes/methode-editoriale'
 import { Route as PortsRouteImport } from './routes/ports'
 import { Route as SimulateursRouteImport } from './routes/simulateurs'
@@ -132,6 +133,11 @@ const MaBezassRoute = MaBezassRouteImport.update({
 const MentionsLegalesRoute = MentionsLegalesRouteImport.update({
   id: '/mentions-legales',
   path: '/mentions-legales',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MesDinarsRoute = MesDinarsRouteImport.update({
+  id: '/mes-dinars',
+  path: '/mes-dinars',
   getParentRoute: () => rootRouteImport,
 } as any)
 const MethodeEditorialeRoute = MethodeEditorialeRouteImport.update({
@@ -292,6 +298,7 @@ export interface FileRoutesByFullPath {
   '/lignes': typeof LignesRouteWithChildren
   '/ma-bezass': typeof MaBezassRoute
   '/mentions-legales': typeof MentionsLegalesRoute
+  '/mes-dinars': typeof MesDinarsRoute
   '/methode-editoriale': typeof MethodeEditorialeRoute
   '/ports': typeof PortsRouteWithChildren
   '/simulateurs': typeof SimulateursRouteWithChildren
@@ -334,6 +341,7 @@ export interface FileRoutesByTo {
   '/horaires': typeof HorairesRoute
   '/ma-bezass': typeof MaBezassRoute
   '/mentions-legales': typeof MentionsLegalesRoute
+  '/mes-dinars': typeof MesDinarsRoute
   '/methode-editoriale': typeof MethodeEditorialeRoute
   '/sitemap-maritime.xml': typeof SitemapMaritimeDotxmlRoute
   '/sitemap-pages.xml': typeof SitemapPagesDotxmlRoute
@@ -379,6 +387,7 @@ export interface FileRoutesById {
   '/lignes': typeof LignesRouteWithChildren
   '/ma-bezass': typeof MaBezassRoute
   '/mentions-legales': typeof MentionsLegalesRoute
+  '/mes-dinars': typeof MesDinarsRoute
   '/methode-editoriale': typeof MethodeEditorialeRoute
   '/ports': typeof PortsRouteWithChildren
   '/simulateurs': typeof SimulateursRouteWithChildren
@@ -427,6 +436,7 @@ export interface FileRouteTypes {
     | '/lignes'
     | '/ma-bezass'
     | '/mentions-legales'
+    | '/mes-dinars'
     | '/methode-editoriale'
     | '/ports'
     | '/simulateurs'
@@ -469,6 +479,7 @@ export interface FileRouteTypes {
     | '/horaires'
     | '/ma-bezass'
     | '/mentions-legales'
+    | '/mes-dinars'
     | '/methode-editoriale'
     | '/sitemap-maritime.xml'
     | '/sitemap-pages.xml'
@@ -513,6 +524,7 @@ export interface FileRouteTypes {
     | '/lignes'
     | '/ma-bezass'
     | '/mentions-legales'
+    | '/mes-dinars'
     | '/methode-editoriale'
     | '/ports'
     | '/simulateurs'
@@ -560,6 +572,7 @@ export interface RootRouteChildren {
   LignesRoute: typeof LignesRouteWithChildren
   MaBezassRoute: typeof MaBezassRoute
   MentionsLegalesRoute: typeof MentionsLegalesRoute
+  MesDinarsRoute: typeof MesDinarsRoute
   MethodeEditorialeRoute: typeof MethodeEditorialeRoute
   PortsRoute: typeof PortsRouteWithChildren
   SimulateursRoute: typeof SimulateursRouteWithChildren
@@ -690,6 +703,13 @@ declare module '@tanstack/react-router' {
       path: '/mentions-legales'
       fullPath: '/mentions-legales'
       preLoaderRoute: typeof MentionsLegalesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/mes-dinars': {
+      id: '/mes-dinars'
+      path: '/mes-dinars'
+      fullPath: '/mes-dinars'
+      preLoaderRoute: typeof MesDinarsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/methode-editoriale': {
@@ -986,6 +1006,7 @@ const rootRouteChildren: RootRouteChildren = {
   LignesRoute: LignesRouteWithChildren,
   MaBezassRoute: MaBezassRoute,
   MentionsLegalesRoute: MentionsLegalesRoute,
+  MesDinarsRoute: MesDinarsRoute,
   MethodeEditorialeRoute: MethodeEditorialeRoute,
   PortsRoute: PortsRouteWithChildren,
   SimulateursRoute: SimulateursRouteWithChildren,

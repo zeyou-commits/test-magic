@@ -6083,3 +6083,227 @@ button.bw-tavatar:focus-visible {
 .bw-location-help {
   z-index: 101 !important;
 }
+
+/* Réactions sur un navire, un port, une compagnie. */
+.bw-react {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 10px 0;
+}
+.bw-react__main {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 36px;
+  padding: 4px 12px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--card);
+  font-size: 13px;
+  font-weight: 700;
+  touch-action: manipulation;
+  user-select: none;
+  -webkit-touch-callout: none;
+}
+.bw-react__main[aria-pressed="true"] {
+  border-color: #0e7a43;
+  background: #e8f5ee;
+  color: #0e5e35;
+}
+.bw-react__sum {
+  color: var(--muted-foreground);
+  font-size: 12.5px;
+  font-weight: 600;
+}
+.bw-react__tray {
+  position: absolute;
+  bottom: 100%;
+  left: 0;
+  z-index: 30;
+  display: flex;
+  gap: 2px;
+  padding: 4px 6px 8px;
+  background: transparent;
+}
+.bw-react__tray::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 4px;
+  z-index: -1;
+  border-radius: 999px;
+  background: #ffffff;
+  box-shadow: 0 6px 22px #16324a33;
+}
+.bw-react__tray button {
+  display: grid;
+  width: 40px;
+  height: 40px;
+  place-items: center;
+  border-radius: 50%;
+  font-size: 25px;
+  line-height: 1;
+  transition: transform 0.15s;
+}
+.bw-react__tray button:hover,
+.bw-react__tray button[aria-pressed="true"] {
+  transform: scale(1.25) translateY(-3px);
+}
+
+/* Parcours de préparation. */
+.bw-prep {
+  display: grid;
+  gap: 10px;
+  padding: 14px;
+  border: 1px solid #0e7a4326;
+  border-radius: 18px;
+  background: #f4faf6;
+}
+.bw-prep__head {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 6px 10px;
+}
+.bw-prep__head h3 {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 15px;
+  font-weight: 800;
+}
+.bw-prep__head strong {
+  color: #0e7a43;
+  font-variant-numeric: tabular-nums;
+}
+.bw-prep__bar {
+  grid-column: 1 / -1;
+  height: 6px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: #0e7a431f;
+}
+.bw-prep__bar i {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: #0e7a43;
+  transition: width 0.3s;
+}
+.bw-prep__profile {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.bw-prep__profile button {
+  min-height: 32px;
+  padding: 3px 10px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: #ffffff;
+  color: var(--muted-foreground);
+  font-size: 12px;
+  font-weight: 600;
+}
+.bw-prep__profile button[aria-pressed="true"] {
+  border-color: #0e7a43;
+  background: #0e7a43;
+  color: #ffffff;
+}
+.bw-prep__phase {
+  border-radius: 12px;
+  background: #ffffff;
+}
+.bw-prep__phase summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  min-height: 44px;
+  padding: 6px 12px;
+  cursor: pointer;
+  font-size: 13.5px;
+  font-weight: 700;
+}
+.bw-prep__phase summary small {
+  margin-left: 4px;
+  color: var(--muted-foreground);
+  font-size: 11.5px;
+  font-weight: 500;
+}
+.bw-prep__phase summary b {
+  color: var(--muted-foreground);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+.bw-prep__phase summary b[data-complete] {
+  color: #0e7a43;
+}
+.bw-prep__phase ul {
+  display: grid;
+  gap: 2px;
+  padding: 0 8px 8px;
+}
+.bw-prep__phase li {
+  padding: 5px 4px;
+  font-size: 13px;
+}
+.bw-prep__phase label {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  cursor: pointer;
+}
+.bw-prep__phase label > span {
+  display: grid;
+  flex: none;
+  width: 20px;
+  height: 20px;
+  place-items: center;
+  border: 1.5px solid #0e7a4380;
+  border-radius: 6px;
+  color: #ffffff;
+}
+.bw-prep__phase li[data-done] label > span {
+  background: #0e7a43;
+}
+.bw-prep__phase li[data-done] label {
+  color: var(--muted-foreground);
+  text-decoration: line-through;
+}
+.bw-prep__phase li > a,
+.bw-prep__phase li > button {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin: 3px 0 0 28px;
+  color: #0e7a43;
+  font-size: 12px;
+  font-weight: 700;
+}
+.bw-prep__note {
+  color: var(--muted-foreground);
+  font-size: 11.5px;
+}
+.bw-mytrip-hero__prep {
+  display: flex;
+  grid-column: 1 / -1;
+  align-items: center;
+  gap: 8px;
+  min-height: 34px;
+  padding: 4px 10px;
+  border-radius: 10px;
+  background: #ffffff;
+  color: #0e5e35;
+  font-size: 12.5px;
+  font-weight: 600;
+  text-align: left;
+}
+.bw-mytrip-hero__prep span {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

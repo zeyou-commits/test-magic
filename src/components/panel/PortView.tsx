@@ -1,3 +1,4 @@
+import { PlaceReactions } from "./PlaceReactions";
 import { EntityReviews } from "./EntityReviews";
 import { entityReviewsQuery } from "@/lib/ferry/entityReviews";
 import { useEffect, useMemo, useState } from "react";
@@ -281,6 +282,7 @@ export function PortView({
           </details>
         ) : null}
       </header>
+      <PlaceReactions kind="port" target={port.id} />
 
       <button type="button" className="pv-rating" onClick={() => openReviews()}>
         {reviewsResult.isPending ? (

@@ -1,3 +1,4 @@
+import { PlaceReactions } from "@/components/panel/PlaceReactions";
 import { VesselAlertTag } from "@/components/panel/VesselAlert";
 import { vesselDossiers } from "@/content/vessels";
 import { seoHead } from "@/lib/seo/site";
@@ -48,6 +49,7 @@ function CompagniesPage() {
           return (
             <Card key={company.id}>
               <h2 className="font-display text-xl font-semibold">{company.name}</h2>
+              <PlaceReactions kind="company" target={company.id} />
               {company.description ? (
                 <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
                   {company.description}

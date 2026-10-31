@@ -38,7 +38,7 @@ import { VesselBoardingNote, VesselIdentity } from "./VesselFacts";
 import { MakeMyTrip } from "./MakeMyTrip";
 import { HelpRequests } from "@/components/community/HelpRequests";
 import { FollowButton } from "./FollowButton";
-import { JourneyChecklist } from "./JourneyChecklist";
+import { TripPreparation } from "./TripPreparation";
 import { JourneyPlanner } from "./JourneyPlanner";
 import { MiniFerry } from "./MiniFerry";
 import { TripChanges } from "./MyTrip";
@@ -398,23 +398,12 @@ export function TripRecap({
               </small>
             </div>
           ) : null}
-          {myDeparture ? (
-            <JourneyChecklist
+          {myDeparture && user ? (
+            <TripPreparation
               departureId={departure.id}
               departureAt={departure.departure_at}
-              presentationMinutes={departure.presentation_minutes}
-              port={from}
-              compact
+              userId={user.id}
             />
-          ) : null}
-          {myDeparture ? (
-            <a
-              href="/ma-bezass"
-              className="flex items-center justify-between rounded-xl border border-primary/15 bg-primary/5 px-3 py-2 text-xs font-semibold text-primary"
-            >
-              Découvrir Ma bezass · compter mes billets et devises{" "}
-              <ArrowRight size={14} aria-hidden />
-            </a>
           ) : null}
           <PushStatusLine />
           <div className="bw-recap__ports">

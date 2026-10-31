@@ -1,3 +1,4 @@
+import { PlaceReactions } from "./PlaceReactions";
 import { CompanyContacts } from "./CompanyContacts";
 import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
@@ -67,6 +68,7 @@ export function CompanyView({
           {company.is_demo ? <DemoBadge /> : null}
         </div>
       </header>
+      <PlaceReactions kind="company" target={companyId} />
       <button className="pv-rating" type="button" onClick={() => setTab("avis")}>
         <Star size={16} aria-hidden />
         <span>

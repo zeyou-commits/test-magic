@@ -1,3 +1,4 @@
+import { PlaceReactions } from "./PlaceReactions";
 import { EntityReviews } from "./EntityReviews";
 import { entityReviewsQuery } from "@/lib/ferry/entityReviews";
 import { useAuth } from "@/hooks/useAuth";
@@ -238,6 +239,7 @@ export function VesselView({
           </div>
         </div>
       </header>
+      <PlaceReactions kind="vessel" target={vesselId} />
       <VesselIncidentNotice vesselId={vessel.id} vesselName={vessel.name} />
       <VesselAlertDepartures vesselId={vessel.id} onSelect={onSelect} />
       {!contextDepartureId && departure && from && to ? (

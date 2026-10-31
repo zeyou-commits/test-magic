@@ -22,7 +22,7 @@ export const navLinks = [
   { to: "/bateaux", label: "Navires" },
   { to: "/simulateurs", label: "Simulateurs" },
   { to: "/barometre-prix", label: "Baromètre des prix" },
-  { to: "/ma-bezass", label: "Ma bezass" },
+  { to: "/mes-dinars", label: "Mes dinars" },
 ] as const;
 
 const footerLinks = [
@@ -33,7 +33,7 @@ const footerLinks = [
   { to: "/bateaux", label: "Navires" },
   { to: "/simulateurs", label: "Simulateurs" },
   { to: "/barometre-prix", label: "Baromètre des prix" },
-  { to: "/ma-bezass", label: "Ma bezass" },
+  { to: "/mes-dinars", label: "Mes dinars" },
   { to: "/methode-editoriale", label: "Méthode éditoriale" },
   { to: "/compagnies", label: "Compagnies" },
   { to: "/a-propos", label: "À propos" },
@@ -113,8 +113,8 @@ export function SiteHeader() {
                 </DropdownMenuItem>
               ))}
               <DropdownMenuItem asChild>
-                <Link to="/ma-bezass">
-                  <Wallet size={16} aria-hidden /> Outils de voyage · Ma bezass
+                <Link to="/mes-dinars">
+                  <Wallet size={16} aria-hidden /> Outils de voyage · Mes dinars
                 </Link>
               </DropdownMenuItem>
             </DropdownMenuContent>
@@ -194,7 +194,7 @@ export function SiteFooter() {
                 "/simulateurs",
                 "/covoiturage",
                 "/barometre-prix",
-                "/ma-bezass",
+                "/mes-dinars",
               ].includes(item.to),
             )
             .map((item) => (

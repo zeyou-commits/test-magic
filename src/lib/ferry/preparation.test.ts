@@ -1,6 +1,14 @@
 import { describe, expect, it } from "vitest";
 import { articles } from "@/content/articles";
-import { currentPhase, defaultProfile, itemsFor, prepItems, prepProgress, tripDirection } from "./preparation";
+import {
+  currentPhase,
+  defaultProfile,
+  itemForCompany,
+  itemsFor,
+  prepItems,
+  prepProgress,
+  tripDirection,
+} from "./preparation";
 
 describe("parcours de préparation", () => {
   it("n'affiche que les lignes du voyage", () => {
@@ -31,8 +39,25 @@ describe("parcours de préparation", () => {
     expect(currentPhase(40)).toBe("papers");
     expect(currentPhase(5)).toBe("bags");
     expect(currentPhase(1)).toBe("eve");
-    expect(currentPhase(0)).toBe("eve");
+    expect(currentPhase(2)).toBe("eve");
+    expect(currentPhase(0)).toBe("port");
     expect(currentPhase(-1)).toBe("arrival");
+  });
+  it("donne le conseil d'enregistrement de la compagnie, sans en inventer", () => {
+    const checkin = prepItems.find((item) => item.id === "checkin")!;
+    expect(itemForCompany(checkin, "GNV").tip).toContain("guichet");
+    expect(itemForCompany(checkin, "Baleària").href).toContain("balearia");
+    expect(itemForCompany(checkin, "Algérie Ferries").tip).toContain("au port");
+    expect(itemForCompany(checkin, "Nouris Elbahr Ferries").tip).toContain("confirmation");
+    expect(itemForCompany(checkin, null).href).toBeUndefined();
+    expect(itemForCompany(prepItems[0]!, "GNV")).toBe(prepItems[0]);
+  });
+  it("demande le TPD à l'aller, et sa restitution au retour, seulement avec un véhicule", () => {
+    const ids = (vehicle: boolean, direction: "outbound" | "return") =>
+      itemsFor({ ...defaultProfile, vehicle }, direction).map((item) => item.id);
+    expect(ids(true, "outbound")).toContain("admission");
+    expect(ids(true, "return")).toContain("return-vehicle");
+    expect(ids(false, "outbound")).not.toContain("admission");
   });
   it("renvoie vers des articles qui existent", () => {
     for (const item of prepItems) {

@@ -146,20 +146,23 @@ export function MyTripHero({ onSelect }: { onSelect: (selection: Selection) => v
         </span>
         <span className="bw-mytrip-hero__text">
           <small>
-            Ma traversée{trip.vessel ? ` · ${trip.vessel.name}` : ""}{" "}
+            {underway && trip.vessel ? trip.vessel.name : `Ma traversée${trip.vessel ? ` · ${trip.vessel.name}` : ""}`}{" "}
             <VesselAlertTag vesselId={trip.vessel?.id} />
           </small>
           <strong>
             {trip.from?.name ?? "Départ"} → {trip.to?.name ?? "Arrivée"}
           </strong>
-          <span className="bw-mytrip-hero__date">
-            {formatDateTime(departureIso, zone)}
-            {trip.departure.status === "modified" ? " · horaire modifié" : ""}
-          </span>
+          {underway ? null : (
+            <span className="bw-mytrip-hero__date">
+              {formatDateTime(departureIso, zone)}
+              {trip.departure.status === "modified" ? " · horaire modifié" : ""}
+            </span>
+          )}
           {delay ? <b className="bw-delay-badge">Retardé · {delay}</b> : null}
         </span>
         <ArrowRight size={18} aria-hidden />
       </button>
+      {underway ? null : (
       <div className="bw-mytrip-hero__status">
       <div className="bw-mytrip-hero__clock" aria-live="off">
         {held ? (
@@ -175,10 +178,6 @@ export function MyTripHero({ onSelect }: { onSelect: (selection: Selection) => v
           </>
         ) : progress?.hold ? (
           <strong>{progress.hold.fresh ? "Encore à quai" : "Départ à confirmer"}</strong>
-        ) : phase.phase === "sea" ? (
-          <>
-            <strong>{estimated ? "En mer · estimé" : "En mer"}</strong>
-          </>
         ) : phase.phase === "arrived" && !arrivedForSure ? (
           <>
             <strong>Arrivée à confirmer</strong>
@@ -202,12 +201,19 @@ export function MyTripHero({ onSelect }: { onSelect: (selection: Selection) => v
         </div>
       ) : null}
       </div>
+      )}
       {underway && progress ? (
         <div className="bw-mytrip-hero__voyage">
           {percent !== null ? (
             <>
               <div className="bw-mytrip-hero__voyage-head">
-                <small>{progress.trustLabel}</small>
+                <small>
+                  {progress.reportedQuay || progress.hold
+                    ? "Encore à quai"
+                    : estimated
+                      ? "En mer · estimé"
+                      : "En mer"}
+                </small>
                 <strong>
                   {estimated ? "≈ " : ""}
                   {percent} %
@@ -229,22 +235,31 @@ export function MyTripHero({ onSelect }: { onSelect: (selection: Selection) => v
               </div>
             </>
           ) : (
-            <small>{progress.trustLabel}</small>
+            <small>Départ à confirmer</small>
           )}
           <div className="bw-mytrip-hero__voyage-times">
-            <span>
-              Départ <b>{formatDateParts(departureIso, zone).time}</b>
-            </span>
             {arrivalIso ? (
               <span>
                 Arrivée <b>{formatDateParts(arrivalIso, arrivalZone).time}</b>
                 {dayDelta > 0 ? <sup>+{dayDelta} j</sup> : null}
               </span>
             ) : null}
+            {trip.vessel ? (
+              <button
+                type="button"
+                onClick={() =>
+                  window.dispatchEvent(
+                    new CustomEvent("batogo:focus-vessel", { detail: { vesselId: trip.vessel!.id } }),
+                  )
+                }
+              >
+                <Crosshair size={13} aria-hidden /> Voir sur la carte
+              </button>
+            ) : null}
           </div>
         </div>
       ) : null}
-      {prep && phase.phase !== "cancelled" ? (
+      {prep && phase.phase !== "cancelled" && !underway ? (
         <button
           type="button"
           className="bw-mytrip-hero__prep"
@@ -260,6 +275,7 @@ export function MyTripHero({ onSelect }: { onSelect: (selection: Selection) => v
           <ArrowRight size={14} aria-hidden />
         </button>
       ) : null}
+      {underway ? null : (
       <div className="bw-mytrip-hero__foot">
         {prep ? null : <span>{next}</span>}
         {trip.vessel && !held && (phase.phase === "today" || phase.phase === "sea") ? (
@@ -275,6 +291,7 @@ export function MyTripHero({ onSelect }: { onSelect: (selection: Selection) => v
           </button>
         ) : null}
       </div>
+      )}
     </section>
   );
 }

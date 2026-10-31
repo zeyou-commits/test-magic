@@ -415,7 +415,7 @@ export function TripRecap({
             <TripPreparation
               departureId={departure.id}
               departureAt={departure.departure_at}
-              userId={user.id} direction={tripDirection(from)} seaPeak={seaPeak}
+              userId={user.id} direction={tripDirection(from)} seaPeak={seaPeak} company={company?.name}
             />
           ) : null}
           {upcoming && car && walk ? (

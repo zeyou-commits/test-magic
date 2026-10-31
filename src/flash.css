@@ -7604,3 +7604,67 @@ label:has(> input.sr-only) {
   margin-left: 2px;
   color: #0e7a43;
 }
+
+/* Parcours : le conseil pratique sous chaque ligne. */
+.bw-prep__tip {
+  flex-basis: 100%;
+  margin: 3px 0 2px;
+  color: var(--muted-foreground);
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 1.4;
+}
+
+/* Ma traversée en cours : un aperçu, tout le détail est dans la fiche. */
+.bw-mytrip-hero:has(.bw-mytrip-hero__voyage) {
+  gap: 6px;
+  padding: 10px 12px;
+}
+.bw-mytrip-hero:has(.bw-mytrip-hero__voyage) .bw-mytrip-hero__avatar {
+  display: none;
+}
+.bw-mytrip-hero:has(.bw-mytrip-hero__voyage) .bw-mytrip-hero__text strong {
+  font-size: 15px;
+}
+.bw-mytrip-hero__voyage {
+  gap: 6px;
+  padding: 8px 12px;
+  border-radius: 12px;
+}
+.bw-mytrip-hero__voyage-head {
+  align-items: center;
+  margin-bottom: 22px;
+}
+.bw-mytrip-hero__voyage-times {
+  align-items: center;
+}
+.bw-mytrip-hero__voyage-times button {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 32px;
+  color: #0e7a43;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+/* Parcours en cinq étapes : le conseil reste lisible, sur fond clair comme sur fond vert. */
+.bw-prep__list .bw-prep__tip {
+  margin: 4px 0 0 32px;
+}
+.bw-prep__next .bw-prep__tip {
+  margin: 0 0 6px;
+  color: #ffffffdb;
+}
+.bw-prep__steps {
+  grid-template-columns: none;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(0, 1fr);
+  gap: 4px;
+}
+.bw-prep__steps button {
+  padding: 8px 2px;
+  font-size: 11.5px;
+  line-height: 1.2;
+}

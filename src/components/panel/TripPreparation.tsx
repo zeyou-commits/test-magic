@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import {
   currentPhase,
   defaultProfile,
+  itemForCompany,
   itemsFor,
   phases,
   prepProgress,
@@ -48,6 +49,7 @@ export function TripPreparation({
   userId,
   direction = "outbound",
   seaPeak = null,
+  company = null,
 }: {
   departureId: string;
   departureAt: string;
@@ -55,6 +57,8 @@ export function TripPreparation({
   direction?: TripDirection;
   /** Vagues prévues : un rappel la veille si la mer s'annonce agitée. */
   seaPeak?: number | null;
+  /** Compagnie du voyage : l'enregistrement et la carte d'embarquement en dépendent. */
+  company?: string | null | undefined;
 }) {
   const client = useQueryClient();
   const query = preparationQuery(departureId, userId);
@@ -72,8 +76,9 @@ export function TripPreparation({
       void client.invalidateQueries({ queryKey: preparationKey });
     },
   });
-  const items = itemsFor(data.profile, direction);
+  const items = itemsFor(data.profile, direction).map((item) => itemForCompany(item, company));
   const progress = prepProgress(data, direction);
+  const nextItem = progress.next ? itemForCompany(progress.next, company) : null;
   const steps = phases
     .map((phase) => {
       const list = items.filter((item) => item.phase === phase.id);
@@ -105,15 +110,16 @@ export function TripPreparation({
         </span>
       </header>
 
-      {progress.next ? (
+      {nextItem ? (
         <div className="bw-prep__next">
           <small>Prochaine étape</small>
-          <strong>{progress.next.label}</strong>
+          <strong>{nextItem.label}</strong>
+          {nextItem.tip ? <p className="bw-prep__tip">{nextItem.tip}</p> : null}
           <div>
-            <button type="button" onClick={() => toggle(progress.next!)}>
+            <button type="button" onClick={() => toggle(nextItem)}>
               <Check size={14} aria-hidden /> C’est fait
             </button>
-            <ItemLink item={progress.next} />
+            <ItemLink item={nextItem} />
           </div>
         </div>
       ) : (
@@ -165,6 +171,7 @@ export function TripPreparation({
                     <span aria-hidden>{done ? <Check size={13} /> : null}</span>
                     <em>{item.label}</em>
                   </label>
+                  {item.tip ? <p className="bw-prep__tip">{item.tip}</p> : null}
                   <ItemLink item={item} />
                 </li>
               );

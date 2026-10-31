@@ -8,6 +8,7 @@ import {
 import { scrollWithin, takeSignalFocus } from "./LivePulse";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Check, CircleOff, Flag, MapPin, MessageCircle, Star, ThumbsUp, Users } from "lucide-react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/hooks/useAuth";
@@ -33,6 +34,7 @@ import {
 } from "@/lib/ferry/community";
 import { offSitePortMessage, offSiteVesselMessage } from "@/lib/ferry/locationHelp";
 import { portsQuery } from "@/lib/ferry/queries";
+import { useNotificationReply } from "@/lib/notifications/reply";
 import { formatAge } from "@/lib/ferry/tracking";
 import { newsQuery } from "@/lib/ferry/flash";
 import { requestQuickReport } from "@/components/map/QuickReport";
@@ -134,6 +136,23 @@ export function TravelSignals({
       void queryClient.invalidateQueries({ queryKey: communityKey });
     },
   });
+  // Bouton touché dans une notification : la position est demandée ici, puis la réponse part.
+  useNotificationReply(
+    "alert",
+    (feed.data?.alerts ?? []).map((alert) => alert.id),
+    (reply) => {
+      if (reply.action === "go") return;
+      if (!user) {
+        toast.error("Connectez-vous pour répondre à ce signalement.");
+        return;
+      }
+      if (feed.data?.alerts.find((alert) => alert.id === reply.id)?.own) {
+        toast.info("C’est votre signalement : d’autres voyageurs peuvent le confirmer.");
+        return;
+      }
+      mutation.mutate({ type: reply.action, id: reply.id });
+    },
+  );
   if (!feed.data)
     return feed.isError ? (
       <p className="bw-community-error" role="status">

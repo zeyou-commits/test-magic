@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { Bell, Clock, Megaphone, Ship, TriangleAlert, X, type LucideIcon } from "lucide-react";
+import { Bell, Megaphone, Ship, TriangleAlert, X, type LucideIcon } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase as typedSupabase } from "@/integrations/supabase/client";
 import { relativeAge } from "@/lib/ferry/flash";
@@ -11,7 +11,7 @@ const supabase = typedSupabase as unknown as SupabaseClient;
 
 export const noticeLook: Record<NoticeKind, { icon: LucideIcon; tone: string; label: string }> = {
   alert: { icon: TriangleAlert, tone: "critical", label: "Alerte" },
-  warning: { icon: Clock, tone: "warning", label: "À vérifier" },
+  warning: { icon: TriangleAlert, tone: "warning", label: "À vérifier" },
   trip: { icon: Ship, tone: "brand", label: "Votre traversée" },
   community: { icon: Megaphone, tone: "community", label: "Voyageurs" },
   info: { icon: Bell, tone: "official", label: "Information" },

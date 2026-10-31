@@ -1,4 +1,5 @@
 import webpush from "web-push";
+import { noticePicto, noticeReply } from "./noticeStyle";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { supabaseAdmin as typedDb } from "@/integrations/supabase/client.server";
 
@@ -158,8 +159,8 @@ async function notifyFeedback(deliver: Deliver, now: number) {
   );
   const answered = [...new Set(responses.map((row) => row.request_id))];
   if (answered.length) {
-    const asked = await read<{ id: string; user_id: string; closed_at: string | null }>(
-      db.from("bw_help_requests").select("id,user_id,closed_at").in("id", answered),
+    const asked = await read<{ id: string; user_id: string; scope_id: string; closed_at: string | null }>(
+      db.from("bw_help_requests").select("id,user_id,scope_id,closed_at").in("id", answered),
     );
     for (const request of asked) {
       if (request.closed_at) continue;
@@ -168,7 +169,7 @@ async function notifyFeedback(deliver: Deliver, now: number) {
         category: "community",
         title: "Quelqu'un vient vous aider",
         body: "Un voyageur a répondu à votre demande et se rend au point de rendez-vous.",
-        url: "/",
+        url: `/?select=departure&id=${request.scope_id}&help=${request.id}`,
       });
     }
   }
@@ -198,7 +199,7 @@ async function notifyFeedback(deliver: Deliver, now: number) {
         title:
           request.need === "medical" ? "SOS médical sur votre traversée" : "Un voyageur demande de l'aide",
         body: `Sur votre traversée : ${HELP_NEEDS[request.need] ?? "besoin d'aide"}. Ouvrez la fiche pour voir le point de rendez-vous.`,
-        url: `/?select=departure&id=${request.scope_id}`,
+        url: `/?select=departure&id=${request.scope_id}&help=${request.id}`,
       });
     }
   }
@@ -470,8 +471,8 @@ export async function dispatchPush(
               signal.detail === "access_moved"
                 ? `${port!.name} · l’entrée habituelle du port a changé`
                 : `${port!.name} · accès au port fermé ou dévié`,
-            body: `Signalé sur place par des voyageurs${late.includes(signal) ? ` ${ago(signal.created_at, now)}` : ""}. Prévoyez de la marge et vérifiez auprès de la compagnie.`,
-            url: `/?select=port&id=${port!.id}`,
+            body: `Signalé sur place par un voyageur${late.includes(signal) ? ` ${ago(signal.created_at, now)}` : ""}. Prévoyez de la marge et vérifiez auprès de la compagnie.`,
+            url: `/?select=port&id=${port!.id}&signal=${signal.id}`,
           });
       }
       const vesselId = follow.target_kind === "vessel" ? follow.target_id : next?.vessel_id;
@@ -521,7 +522,7 @@ export async function dispatchPush(
             body: lateSignals.includes(signal)
               ? `Signalé par un voyageur ${ago(signal.created_at, now)}, toujours d’actualité. Consultez la fiche et vérifiez auprès de la compagnie.`
               : "Un voyageur a publié un signalement. Consultez la fiche et vérifiez auprès de la compagnie.",
-            url: `/?select=vessel&id=${vesselId}`,
+            url: `/?select=vessel&id=${vesselId}&signal=${signal.id}`,
           });
         }
       }
@@ -878,6 +879,8 @@ export async function dispatchPush(
             url: noticeHref(notice.data.url, row.notification_id),
             tag: notice.data.event_key,
             kind: noticeKind(notice.data.event_key, notice.data.title),
+            picto: noticePicto(notice.data.event_key, notice.data.title),
+            ...noticeReply(notice.data.event_key),
           }),
           { TTL: 24 * 3600, timeout: 15_000 },
         );

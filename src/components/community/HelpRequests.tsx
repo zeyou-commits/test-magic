@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useMutation, useQueries, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { HeartHandshake, Siren } from "lucide-react";
@@ -7,6 +7,7 @@ import { supabase as typedSupabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { lastPositionAccuracy, requirePosition } from "@/lib/ferry/community";
 import { offSitePortMessage } from "@/lib/ferry/locationHelp";
+import { useNotificationReply } from "@/lib/notifications/reply";
 import { portsQuery } from "@/lib/ferry/queries";
 import { Button } from "@/components/ui/button";
 
@@ -28,6 +29,9 @@ const POINTS = {
   vehicle_queue: "File des véhicules",
   ship_reception: "Réception du navire",
 } as const;
+// Lien d'une notification : lu à l'ouverture, avant que l'adresse ne change.
+const linkedHelp =
+  typeof window === "undefined" ? null : new URLSearchParams(window.location.search).get("help");
 type Need = keyof typeof NEEDS;
 type Point = keyof typeof POINTS;
 
@@ -196,6 +200,24 @@ export function HelpRequests({ scopeId }: { kind: "departure"; scopeId: string }
     onError: (error: Error) => toast.error(error.message, { duration: 12_000 }),
   });
   const requests = list.data ?? [];
+  useNotificationReply(
+    "help",
+    requests.map((request) => request.id),
+    (reply) => {
+      if (reply.action !== "go") return;
+      if (!user) toast.error("Connectez-vous pour proposer votre aide.");
+      else if (!requests.find((request) => request.id === reply.id)?.responded)
+        respond.mutate(reply.id);
+    },
+  );
+  // Lien d'une notification : la fiche s'ouvre cadrée sur la demande.
+  const linked = requests.some((request) => request.id === linkedHelp);
+  useEffect(() => {
+    if (!linked || !linkedHelp) return;
+    document
+      .querySelector(`[data-help-id="${CSS.escape(linkedHelp)}"]`)
+      ?.scrollIntoView({ block: "center", behavior: "smooth" });
+  }, [linked]);
 
   return (
     <section
@@ -217,6 +239,7 @@ export function HelpRequests({ scopeId }: { kind: "departure"; scopeId: string }
           {requests.map((request) => (
             <li
               key={request.id}
+              data-help-id={request.id}
               className={`rounded-lg border p-2 text-xs ${request.need === "medical" ? "border-red-300 bg-red-50" : "border-border"}`}
             >
               <p className="font-semibold">

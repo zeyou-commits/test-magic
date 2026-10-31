@@ -206,9 +206,17 @@ export function requestSignalFocus(alertId: string) {
     /* stockage indisponible : la fiche s'ouvre simplement */
   }
 }
+// Lien d'une notification : le signalement visé est lu à l'ouverture, avant que l'adresse ne change.
+const linkedSignal =
+  typeof window === "undefined" ? null : new URLSearchParams(window.location.search).get("signal");
+let linkedSignalUsed = false;
 /** Lu une seule fois par la liste qui contient ce signalement. */
 export function takeSignalFocus(ids: string[]) {
   try {
+    if (!linkedSignalUsed && linkedSignal && ids.includes(linkedSignal)) {
+      linkedSignalUsed = true;
+      return linkedSignal;
+    }
     const wanted = window.sessionStorage.getItem(FOCUS_KEY);
     if (!wanted || !ids.includes(wanted)) return null;
     window.sessionStorage.removeItem(FOCUS_KEY);

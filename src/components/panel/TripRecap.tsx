@@ -1,7 +1,7 @@
 import { SeaForecast, SeaPhotoBadge, useSeaPeak } from "./SeaForecast";
 import { scrollWithin } from "./LivePulse";
 import { useEffect, useState } from "react";
-import { takePrepFocus, tripDirection } from "@/lib/ferry/preparation";
+import { PREP_FOCUS_EVENT, takePrepFocus, tripDirection } from "@/lib/ferry/preparation";
 import { TripTravellers } from "@/components/community/TripTravellers";
 import { useQuery } from "@tanstack/react-query";
 import type { SupabaseClient } from "@supabase/supabase-js";
@@ -97,7 +97,8 @@ export function TripRecap({
 }) {
   const { user } = useAuth();
   const follow = useQuery({
-    queryKey: ["follow", user?.id, "departure", departure.id],
+    // Clé distincte de FollowButton, qui lit moins de colonnes pour la même ligne.
+    queryKey: ["follow", user?.id, "departure", departure.id, "trip"],
     enabled: Boolean(user),
     queryFn: async () => {
       const { data, error } = await (typedSupabase as unknown as SupabaseClient)
@@ -199,14 +200,20 @@ export function TripRecap({
   const activeTab: Tab = tab ?? (hasSignalFocus() || (liveCount && !myDeparture) ? "live" : "prepare");
   // Arrivée depuis l'encart Ma traversée : le parcours, tout de suite.
   useEffect(() => {
-    if (!myDeparture || !takePrepFocus(departure.id)) return;
-    setTab("prepare");
-    if (window.matchMedia("(max-width: 767px)").matches)
-      window.dispatchEvent(new Event("batogo:panel-full"));
-    window.setTimeout(() => {
-      const target = document.querySelector<HTMLElement>(".bw-prep");
-      if (target) scrollWithin(target);
-    }, 350);
+    const focus = () => {
+      if (!myDeparture || !takePrepFocus(departure.id)) return;
+      setTab("prepare");
+      if (window.matchMedia("(max-width: 767px)").matches)
+        window.dispatchEvent(new Event("batogo:panel-full"));
+      window.setTimeout(() => {
+        const target = document.querySelector<HTMLElement>(".bw-prep");
+        if (target) scrollWithin(target);
+      }, 350);
+    };
+    focus();
+    // La fiche est déjà ouverte sur cette traversée : elle ne se recharge pas.
+    window.addEventListener(PREP_FOCUS_EVENT, focus);
+    return () => window.removeEventListener(PREP_FOCUS_EVENT, focus);
   }, [myDeparture, departure.id]);
   const openLive = () => {
     setTab("live");

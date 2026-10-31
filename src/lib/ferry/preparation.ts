@@ -198,8 +198,10 @@ function readLocal(departureId: string): string[] {
 
 /** Depuis l'encart Ma traversée : la fiche s'ouvre directement sur le parcours. */
 const FOCUS_KEY = "bledway:prep-focus";
+export const PREP_FOCUS_EVENT = "bledway:prep-focus";
 export function requestPrepFocus(departureId: string) {
   window.sessionStorage.setItem(FOCUS_KEY, departureId);
+  window.dispatchEvent(new Event(PREP_FOCUS_EVENT));
 }
 export function takePrepFocus(departureId: string) {
   if (window.sessionStorage.getItem(FOCUS_KEY) !== departureId) return false;

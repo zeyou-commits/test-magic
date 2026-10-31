@@ -7,6 +7,7 @@ import { supabase as typedSupabase } from "@/integrations/supabase/client";
 import { seoHead } from "@/lib/seo/site";
 import { CURRENCIES, DENOMINATIONS, EXPENSE_CATEGORIES, LAST_KNOWN_RATES, addExpense, dinarTotal, emptyWallet, recordExchange, remainingDinars, removeExchange, sanitizeWallet, type Currency, type RatesResponse, type WalletState } from "@/lib/wallet/wallet";
 import { walletMediaUrl, type WalletMediaRow } from "@/lib/wallet/media";
+import { SPOKEN_EXAMPLES, parseSpoken, saidAs } from "@/lib/wallet/jargon";
 import "@/wallet.css";
 
 const supabase = typedSupabase as unknown as import("@supabase/supabase-js").SupabaseClient;
@@ -54,6 +55,7 @@ function WalletPage() {
   const [expense, setExpense] = useState("");
   const [category, setCategory] = useState<string>(EXPENSE_CATEGORIES[0]);
   const [cash, setCash] = useState("");
+  const [heard, setHeard] = useState("");
 
   useEffect(() => {
     fetch("/api/wallet-rates").then((res) => res.json()).then((data: RatesResponse) => {
@@ -133,6 +135,8 @@ function WalletPage() {
   useEffect(() => { if (dinars) fromDinars(dinars); }, [rate]);
   const addNote = (value: number) => fromDinars(String((parseAmount(dinars) || 0) + value));
 
+  const spoken = saidAs(parseAmount(dinars));
+  const heardDinars = parseSpoken(heard);
   const left = remainingDinars(wallet);
   const entered = dinarTotal(wallet);
   const totalSpent = wallet.expenses.reduce((sum, item) => sum + item.amount, 0);
@@ -200,11 +204,32 @@ function WalletPage() {
             })}
             {dinars ? <button type="button" className="bw-dz-clear" aria-label="Effacer le calcul" onClick={() => fromDinars("")}><Delete size={18} aria-hidden /></button> : null}
           </div>
+          {spoken ? <p className="bw-dz-said">Ça se dit : <b>« {spoken} »</b></p> : null}
           <div className="bw-dz-rates" role="group" aria-label="Taux utilisé">
             {personalRate ? <button type="button" aria-pressed={mode === "personal"} onClick={() => setMode("personal")}>Mon taux <b>{money(personalRate.rate, "DZD", 1)}</b></button> : null}
             <button type="button" aria-pressed={mode === "official"} onClick={() => setMode("official")}>Officiel <b>{published?.official ? money(published.official, "DZD", 1) : "—"}</b></button>
             <button type="button" aria-pressed={mode === "parallel"} onClick={() => setMode("parallel")}>Parallèle, indicatif <b>{published?.parallel ? money(published.parallel, "DZD", 1) : "—"}</b></button>
           </div>
+        </section>
+
+        <section className="bw-dz-jargon" aria-labelledby="dz-jargon-title">
+          <h2 id="dz-jargon-title">On vous a dit un prix ?</h2>
+          <p>Au bled, on compte souvent en centimes : « melyoun » veut dire 10 000 DA, pas un million.</p>
+          <label>
+            <span className="sr-only">Le prix entendu</span>
+            <input value={heard} onChange={(event) => setHeard(event.target.value)} placeholder="Ex. : 3 melyoun, mitine alf" />
+          </label>
+          {heard ? heardDinars ? <div className="bw-dz-heard">
+            <p><b>{money(heardDinars, "DZD")}</b>{rate ? ` soit environ ${money(heardDinars / rate, currency)}` : ""}</p>
+            <button type="button" onClick={() => fromDinars(String(heardDinars))}>Mettre dans le calcul</button>
+          </div> : <p className="bw-dz-unknown">Je ne reconnais pas ce montant. Essayez « 2 melyoun » ou « cent mille ».</p> : null}
+          <details>
+            <summary>Parler dinar <ChevronDown size={16} aria-hidden /></summary>
+            <dl>
+              {SPOKEN_EXAMPLES.map((item) => <div key={item.said}><dt>{item.said}</dt><dd>{money(item.dinars, "DZD")}</dd></div>)}
+            </dl>
+            <small>Les habitudes changent selon les régions et les personnes. En cas de doute, faites préciser « en dinars ».</small>
+          </details>
         </section>
 
         <section className="bw-dz-budget" aria-labelledby="dz-budget-title">

@@ -156,3 +156,20 @@
 .bw-dz-details p{padding-bottom:8px;color:#55666f;line-height:1.5}
 .bw-dz-details a{color:#047747;text-decoration:underline}
 .bw-dz-details>button{min-height:36px;margin-bottom:6px;color:#b42318;font-weight:700}
+
+.bw-dz-said{margin-top:8px;color:#e9d8c1;font-size:14px}
+.bw-dz-said b{color:#ffd98a}
+.bw-dz-jargon{margin-top:16px;padding:18px;border:1px solid #f1d58a;border-radius:24px;background:#fffaf0}
+.bw-dz-jargon h2{font-size:18px;font-weight:800}
+.bw-dz-jargon>p{margin:4px 0 10px;color:#5f6f7a;font-size:13.5px;line-height:1.4}
+.bw-dz-jargon input{width:100%;min-height:48px;padding:0 12px;border:1px solid #e3cf9f;border-radius:12px;background:#fff;font-size:16px;font-weight:600}
+.bw-dz-heard{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px;margin-top:10px;font-size:14.5px}
+.bw-dz-heard b{color:#00663f;font-size:20px}
+.bw-dz-heard button{min-height:36px;padding:0 12px;border-radius:999px;background:#102c43;color:#fff;font-size:12.5px;font-weight:700}
+.bw-dz-unknown{margin-top:8px;color:#8a5a00;font-size:13px}
+.bw-dz-jargon summary{display:flex;align-items:center;justify-content:space-between;min-height:44px;margin-top:6px;cursor:pointer;font-size:14px;font-weight:700;list-style:none}
+.bw-dz-jargon dl{display:grid;gap:2px}
+.bw-dz-jargon dl>div{display:flex;justify-content:space-between;gap:12px;padding:7px 0;border-top:1px solid #f1e3c0;font-size:14px}
+.bw-dz-jargon dt{font-weight:700}
+.bw-dz-jargon dd{font-variant-numeric:tabular-nums}
+.bw-dz-jargon small{display:block;margin-top:6px;color:#7a6a45;font-size:12px}

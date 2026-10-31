@@ -70,6 +70,21 @@ export const prepItems: PrepItem[] = [
     direction: "outbound",
   },
   {
+    id: "cash-dz",
+    phase: "papers",
+    label: "Vérifier les règles de la douane algérienne sur les devises et les dinars",
+    href: "https://www.douane.gov.dz/",
+    linkLabel: "Douane algérienne",
+    direction: "outbound",
+  },
+  {
+    id: "cash-eu",
+    phase: "papers",
+    label: "Déclarer mes espèces si j’ai 10 000 € ou plus en quittant ou en rejoignant l’Union européenne",
+    href: "https://taxation-customs.ec.europa.eu/customs/prohibitions-restrictions/eu-cash-controls_en",
+    linkLabel: "La règle européenne",
+  },
+  {
     id: "kids",
     phase: "papers",
     label: "Papiers et organisation pour les enfants",
@@ -112,9 +127,9 @@ export const prepItems: PrepItem[] = [
   {
     id: "return-dinars",
     phase: "bags",
-    label: "Faire le point sur mes dinars avant de repartir",
-    href: "/mes-dinars",
-    linkLabel: "Ouvrir Mes dinars",
+    label: "Vérifier ce que je peux ressortir d’Algérie en dinars et en devises",
+    href: "https://www.douane.gov.dz/",
+    linkLabel: "Douane algérienne",
     direction: "return",
   },
   {

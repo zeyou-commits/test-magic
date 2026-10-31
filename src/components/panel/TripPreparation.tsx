@@ -33,7 +33,7 @@ function ItemLink({ item }: { item: PrepItem }) {
     );
   if (!item.href) return null;
   return (
-    <a href={item.href}>
+    <a href={item.href} {...(item.href.startsWith("http") ? { target: "_blank", rel: "noreferrer" } : {})}>
       {item.linkLabel} <ArrowRight size={13} aria-hidden />
     </a>
   );

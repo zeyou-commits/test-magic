@@ -375,6 +375,7 @@ export default function FerryMap({
   vesselAlertsRef.current = vesselAlertsNow;
   const lastFleetFrame = useRef<{ source: GeoJSONSource; data: FleetFrame } | null>(null);
   fleetRef.current = fleet;
+  const vesselImagesRef = useRef<ReturnType<typeof addVesselImages> | null>(null);
 
   selectRef.current = onSelect;
   interactRef.current = onMapInteract;
@@ -730,7 +731,7 @@ export default function FerryMap({
           "icon-opacity-transition": { duration: 200 },
         },
       });
-      addVesselImages(map, MAP_VESSELS);
+      vesselImagesRef.current = addVesselImages(map, MAP_VESSELS);
       for (const { width, minzoom, maxzoom } of VESSEL_IMAGE_STEPS)
         map.addLayer({
           id: `fleet-photo-${width}`,
@@ -2282,6 +2283,7 @@ export default function FerryMap({
       const source = map.getSource("fleet") as GeoJSONSource | undefined;
       if (!source) return;
       const clock = Date.now();
+      const sailing = new Set<string>();
       const data: FleetFrame = {
         type: "FeatureCollection",
         features: fleetRef.current.map((ship) => {
@@ -2354,6 +2356,7 @@ export default function FerryMap({
           // Le jeton reste affiché tant que l'image n'est pas chargée.
           const slug = vesselMapIcon(ship.name);
           const photoSlug = slug && map.hasImage(vesselImageId(slug, VESSEL_IMAGE_STEPS[0]!.width)) ? slug : null;
+          if (photoSlug && wakeLevel(ship.state, live ? speed : null) !== "dock") sailing.add(photoSlug);
           return {
             type: "Feature" as const,
             properties: {
@@ -2391,6 +2394,7 @@ export default function FerryMap({
           };
         }),
       };
+      vesselImagesRef.current?.setSailing(sailing);
       const groups = fleetGroups(
         data.features.map((feature) => {
           const point = map.project(feature.geometry.coordinates);

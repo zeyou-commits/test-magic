@@ -291,24 +291,145 @@ export function dockSpread(zoom: number) {
 
 export const vesselImageId = (slug: string, width: number) => `vessel-${slug}-${width}`;
 
+/**
+ * Prépare les navires, et anime ceux qui font route : tangage, écume à la proue, sillage derrière la poupe.
+ * Seule la largeur affichée au zoom courant est redessinée, et rien pour un navire à quai.
+ */
 export function addVesselImages(map: MapLibreMap, slugs: string[]) {
+  const media = window.matchMedia("(prefers-reduced-motion: reduce)");
+  const sources = new Map<string, { image: HTMLImageElement; bowY: number; sternY: number }>();
+  const canvases = new Map<string, CanvasRenderingContext2D>();
+  let sailing = new Set<string>();
+  let timer: ReturnType<typeof setInterval> | undefined;
+
+  const contextFor = (width: number, height: number) => {
+    const key = `${width}x${height}`;
+    let ctx = canvases.get(key);
+    if (!ctx) {
+      const canvas = document.createElement("canvas");
+      canvas.width = width;
+      canvas.height = height;
+      ctx = canvas.getContext("2d", { willReadFrequently: true }) ?? undefined;
+      if (ctx) canvases.set(key, ctx);
+    }
+    return ctx;
+  };
+
+  /** `phase` en secondes ; `null` pour un navire immobile. La marge autour accueille le sillage. */
+  const frame = (slug: string, width: number, phase: number | null) => {
+    const source = sources.get(slug);
+    if (!source) return null;
+    const height = Math.round((source.image.height * width) / source.image.width);
+    const fullWidth = Math.round(width * 1.3);
+    const fullHeight = Math.round(height * 1.12);
+    const ctx = contextFor(fullWidth, fullHeight);
+    if (!ctx) return null;
+    const left = (fullWidth - width) / 2;
+    const top = fullHeight - height;
+    ctx.clearRect(0, 0, fullWidth, fullHeight);
+    ctx.imageSmoothingQuality = "high";
+    const bowY = top + source.bowY * height;
+    const sternY = top + source.sternY * height;
+    if (phase !== null) {
+      const unit = width / 100;
+      for (let i = 0; i < 4; i++) {
+        const t = (phase / 1.8 + i / 4) % 1;
+        const x = left + width * 0.93 + t * 15 * unit;
+        const y = sternY + (i % 2 ? 1 : -1) * (1 + t * 3) * unit;
+        ctx.strokeStyle = `rgba(120, 205, 218, ${0.8 * (1 - t)})`;
+        ctx.lineCap = "round";
+        ctx.lineWidth = Math.max(1, 1.4 * unit);
+        ctx.beginPath();
+        ctx.moveTo(x, y);
+        ctx.lineTo(x + 5 * unit, y);
+        ctx.stroke();
+      }
+    }
+    ctx.save();
+    if (phase !== null) {
+      ctx.translate(fullWidth / 2, fullHeight);
+      ctx.rotate((Math.sin((phase * Math.PI * 2) / 3.4) * 1.3 * Math.PI) / 180);
+      ctx.translate(-fullWidth / 2, -fullHeight + Math.sin((phase * Math.PI * 2) / 2.3) * width * 0.006);
+    }
+    ctx.drawImage(source.image, left, top, width, height);
+    ctx.restore();
+    if (phase !== null) {
+      const unit = width / 100;
+      for (let i = 0; i < 3; i++) {
+        const t = (phase / 1.3 + i / 3) % 1;
+        ctx.fillStyle = `rgba(255, 255, 255, ${0.85 * Math.sin(t * Math.PI)})`;
+        ctx.beginPath();
+        ctx.ellipse(left + width * 0.07 - t * 5 * unit, bowY - i * unit, (1 + t * 2) * unit, unit, 0, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+    return ctx.getImageData(0, 0, fullWidth, fullHeight);
+  };
+
+  const widthNow = () =>
+    VESSEL_IMAGE_STEPS.find(({ minzoom, maxzoom }) => map.getZoom() >= minzoom && map.getZoom() < maxzoom)?.width ??
+    VESSEL_IMAGE_STEPS.at(-1)!.width;
+
+  const repaint = (slug: string, width: number, phase: number | null) => {
+    const id = vesselImageId(slug, width);
+    const image = map.hasImage(id) ? frame(slug, width, phase) : null;
+    if (image) map.updateImage(id, image);
+  };
+
+  const sync = () => {
+    if (timer) clearInterval(timer);
+    timer = undefined;
+    if (!sailing.size || media.matches) return;
+    timer = setInterval(() => {
+      if (document.hidden) return;
+      const phase = performance.now() / 1000;
+      const width = widthNow();
+      sailing.forEach((slug) => repaint(slug, width, phase));
+    }, 90);
+  };
+
   for (const slug of slugs) {
-    const source = new Image();
-    source.onload = () => {
+    const image = new Image();
+    image.onload = () => {
+      // La proue et la poupe du socle : le point opaque le plus à gauche et le plus à droite.
+      const probe = contextFor(120, Math.round((image.height * 120) / image.width));
+      if (!probe) return;
+      const { width: w, height: h } = probe.canvas;
+      probe.clearRect(0, 0, w, h);
+      probe.drawImage(image, 0, 0, w, h);
+      const { data } = probe.getImageData(0, 0, w, h);
+      const edge = (from: number, to: number, step: number) => {
+        for (let x = from; x !== to; x += step)
+          for (let y = h - 1; y >= 0; y--) if (data[(y * w + x) * 4 + 3]! > 200) return y / h;
+        return 0.8;
+      };
+      sources.set(slug, { image, bowY: edge(0, w, 1), sternY: edge(w - 1, -1, -1) });
       for (const { width } of VESSEL_IMAGE_STEPS) {
-        const canvas = document.createElement("canvas");
-        canvas.width = width;
-        canvas.height = Math.round((source.height * width) / source.width);
-        const ctx = canvas.getContext("2d");
-        if (!ctx) return;
-        ctx.imageSmoothingQuality = "high";
-        ctx.drawImage(source, 0, 0, canvas.width, canvas.height);
+        const still = frame(slug, width, null);
         const id = vesselImageId(slug, width);
-        if (!map.hasImage(id)) map.addImage(id, ctx.getImageData(0, 0, canvas.width, canvas.height));
+        if (still && !map.hasImage(id)) map.addImage(id, still);
       }
     };
-    source.src = `/vessel-visuals/map/${slug}.webp`;
+    image.src = `/vessel-visuals/map/${slug}.webp`;
   }
+
+  media.addEventListener("change", sync);
+  map.once("remove", () => {
+    if (timer) clearInterval(timer);
+    media.removeEventListener("change", sync);
+  });
+
+  return {
+    /** Navires qui font route : les autres reprennent leur image immobile. */
+    setSailing(next: Set<string>) {
+      if (next.size === sailing.size && [...next].every((slug) => sailing.has(slug))) return;
+      const stopped = [...sailing].filter((slug) => !next.has(slug));
+      sailing = next;
+      for (const slug of stopped)
+        for (const { width } of VESSEL_IMAGE_STEPS) repaint(slug, width, null);
+      sync();
+    },
+  };
 }
 
 /** La carte reste à plate de loin, où l'on lit les lignes, et s'incline quand on s'approche des navires. */

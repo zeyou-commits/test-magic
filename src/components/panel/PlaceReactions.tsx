@@ -112,6 +112,8 @@ export function PlaceReactions({ kind, target }: { kind: PlaceKind; target: stri
         type="button"
         className="bw-react__main"
         data-mine={mine?.code}
+        aria-label={mine ? `Votre réaction : ${mine.label}` : "J’aime"}
+        title={mine?.label ?? "J’aime"}
         aria-pressed={Boolean(mine)}
         aria-expanded={tray}
         onContextMenu={(event) => event.preventDefault()}
@@ -134,7 +136,7 @@ export function PlaceReactions({ kind, target }: { kind: PlaceKind; target: stri
           choose(mine ? null : "like");
         }}
       >
-        <span aria-hidden>{mine?.emoji ?? "👍"}</span> {mine?.label ?? "J’aime"}
+        <span aria-hidden>{mine?.emoji ?? "👍"}</span>
       </button>
       {total ? (
         <span className="bw-react__sum" aria-label={`${total} réaction${total > 1 ? "s" : ""}`}>

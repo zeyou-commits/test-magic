@@ -205,6 +205,7 @@ export function VesselView({
             {company ? <p className="bw-ship-hero-company">{company.name}</p> : null}
           </div>
           {vessel.is_demo ? <DemoBadge /> : null}
+          <PlaceReactions kind="vessel" target={vesselId} />
         </div>
         {!vessel.is_demo ? (
           <MakeMyTrip kind="vessel" targetId={vessel.id} label={vessel.name} onSelect={onSelect} />
@@ -249,7 +250,6 @@ export function VesselView({
           </div>
         </div>
       </header>
-      <PlaceReactions kind="vessel" target={vesselId} />
       <VesselIncidentNotice vesselId={vessel.id} vesselName={vessel.name} />
       <VesselAlertDepartures vesselId={vessel.id} onSelect={onSelect} />
       {!contextDepartureId && departure && from && to ? (

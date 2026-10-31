@@ -67,8 +67,8 @@ export function CompanyView({
           <h2>{company.name}</h2>
           {company.is_demo ? <DemoBadge /> : null}
         </div>
+        <PlaceReactions kind="company" target={companyId} />
       </header>
-      <PlaceReactions kind="company" target={companyId} />
       <button className="pv-rating" type="button" onClick={() => setTab("avis")}>
         <Star size={16} aria-hidden />
         <span>

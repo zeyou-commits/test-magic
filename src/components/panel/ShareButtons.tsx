@@ -98,6 +98,24 @@ export function ShareButtons({
     ? "grid size-7 place-items-center rounded-full border bg-card text-muted-foreground transition hover:bg-secondary hover:text-foreground"
     : "inline-flex h-9 items-center gap-1.5 rounded-full border bg-card px-3 text-xs font-semibold text-foreground transition hover:bg-secondary";
 
+  // En-tête de fiche : un seul bouton, le partage de l'appareil ; à défaut, la copie du lien.
+  if (compact)
+    return (
+      <button
+        type="button"
+        onClick={() => void (canShare ? share() : copy())}
+        className={`${base} ${className}`}
+        title={label}
+        aria-label={label}
+      >
+        {copied ? (
+          <Check className="size-3.5 text-success" aria-hidden />
+        ) : (
+          <Share2 className="size-3.5" aria-hidden />
+        )}
+      </button>
+    );
+
   return (
     <div className={`flex items-center gap-1.5 ${className}`} role="group" aria-label={label}>
       <button

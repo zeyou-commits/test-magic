@@ -6082,6 +6082,55 @@ button.bw-tavatar:focus-visible {
 
 .bw-location-help {
   z-index: 101 !important;
+  max-height: 90dvh;
+  overflow-y: auto;
+}
+.bw-location-help__action {
+  display: flex;
+  justify-content: center;
+}
+/* Bouton du navigateur : il se désactive si le contraste ou la taille ne conviennent pas. */
+.bw-location-help__browser {
+  padding: 14px 24px;
+  border: 0;
+  border-radius: 14px;
+  background-color: #ffc83d;
+  color: #3d2a00;
+  font-size: 16px;
+  font-weight: 800;
+}
+.bw-location-help__open {
+  display: grid;
+  gap: 8px;
+}
+.bw-location-help__open a {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+.bw-location-help__open button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 44px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  font-size: 14px;
+  font-weight: 700;
+}
+.bw-location-help__more {
+  font-size: 13px;
+}
+.bw-location-help__more summary {
+  min-height: 32px;
+  color: var(--muted-foreground);
+  font-weight: 700;
+  cursor: pointer;
+}
+.bw-location-help__more ol {
+  margin: 8px 0 12px;
 }
 
 /* Réactions sur un navire, un port, une compagnie. */

@@ -1,5 +1,4 @@
 import { useQuery } from "@tanstack/react-query";
-import { Waves } from "lucide-react";
 import { SEA_FORECAST_DAYS, seaForecastQuery, seaLevel } from "@/lib/ferry/seaState";
 
 type Point = { latitude: number; longitude: number };
@@ -29,6 +28,33 @@ export function useSeaPeak(
 
 export const isLivelySea = (peak: number) => peak >= 1.25;
 
+/** Le picto de la mer : la houle se creuse à mesure que la mer se forme. */
+export function SeaIcon({ peak, size = 24 }: { peak: number; size?: number }) {
+  const { rank, id } = seaLevel(peak);
+  const swell = 1 + rank * 1.1;
+  const wave = (y: number) =>
+    `M1 ${y} q5.5 ${-swell} 11 0 t11 0 t11 0 t11 0`;
+  return (
+    <svg className="bw-sea-icon" data-level={id} width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden>
+      <g strokeWidth="2.3" strokeLinecap="round" stroke="currentColor">
+        <path className="bw-sea-icon__w1" d={wave(7)} opacity={rank >= 3 ? 1 : 0.35} />
+        <path className="bw-sea-icon__w2" d={wave(13)} opacity={rank >= 2 ? 1 : 0.5} />
+        <path className="bw-sea-icon__w3" d={wave(19)} />
+      </g>
+    </svg>
+  );
+}
+
+/** Pastille posée sur la photo du navire. */
+export function SeaPhotoBadge({ peak }: { peak: number }) {
+  const level = seaLevel(peak);
+  return (
+    <span className="bw-sea-badge" data-level={level.id} title={`${level.label} prévue sur le trajet`} role="img" aria-label={`${level.label} prévue sur le trajet`}>
+      <SeaIcon peak={peak} size={15} />
+    </span>
+  );
+}
+
 /** La mer prévue sur le trajet : une information de confort, sans prédire le comportement du navire. */
 export function SeaForecast({
   departureId,
@@ -49,7 +75,7 @@ export function SeaForecast({
   const lively = isLivelySea(peak);
   return (
     <section className="bw-sea" data-level={level.id} aria-label="Prévisions de mer">
-      <Waves size={20} aria-hidden />
+      <SeaIcon peak={peak} size={26} />
       <div>
         <strong>
           {level.label} <span>· vagues jusqu’à {peak.toLocaleString("fr-FR", { maximumFractionDigits: 1 })} m</span>

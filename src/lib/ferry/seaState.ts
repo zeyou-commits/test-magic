@@ -2,11 +2,11 @@ import { queryOptions } from "@tanstack/react-query";
 
 /** Échelle de Douglas, d'après la hauteur des vagues en mètres. */
 export function seaLevel(height: number) {
-  if (height < 0.5) return { id: "calm", label: "Mer belle" } as const;
-  if (height < 1.25) return { id: "slight", label: "Mer peu agitée" } as const;
-  if (height < 2.5) return { id: "moderate", label: "Mer agitée" } as const;
-  if (height < 4) return { id: "rough", label: "Mer forte" } as const;
-  return { id: "high", label: "Mer très forte" } as const;
+  if (height < 0.5) return { id: "calm", label: "Mer belle", short: "Belle", rank: 1 } as const;
+  if (height < 1.25) return { id: "slight", label: "Mer peu agitée", short: "Peu agitée", rank: 2 } as const;
+  if (height < 2.5) return { id: "moderate", label: "Mer agitée", short: "Agitée", rank: 3 } as const;
+  if (height < 4) return { id: "rough", label: "Mer forte", short: "Forte", rank: 4 } as const;
+  return { id: "high", label: "Mer très forte", short: "Très forte", rank: 5 } as const;
 }
 
 type Point = { latitude: number; longitude: number };

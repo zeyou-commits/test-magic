@@ -6851,3 +6851,112 @@ button.bw-tavatar:focus-visible {
   flex: none;
   margin-top: 2px;
 }
+
+/* Picto de la mer et encart Ma traversée resserré. */
+.bw-sea-icon {
+  flex: none;
+  overflow: hidden;
+}
+.bw-sea-icon path {
+  animation: bw-sea-swell 3.2s linear infinite;
+}
+.bw-sea-icon__w2 {
+  animation-delay: -1s !important;
+}
+.bw-sea-icon__w3 {
+  animation-delay: -2s !important;
+}
+.bw-sea-icon[data-level="moderate"] path,
+.bw-sea-icon[data-level="rough"] path,
+.bw-sea-icon[data-level="high"] path {
+  animation-duration: 1.8s;
+}
+@keyframes bw-sea-swell {
+  to {
+    transform: translateX(-11px);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .bw-sea-icon path {
+    animation: none;
+  }
+}
+.bw-sea-badge {
+  position: absolute;
+  z-index: 2;
+  top: 4px;
+  left: 4px;
+  display: grid;
+  width: 24px;
+  height: 24px;
+  place-items: center;
+  border: 1.5px solid #ffffff;
+  border-radius: 50%;
+  background: #1f7fb5;
+  box-shadow: 0 2px 6px #16324a40;
+  color: #ffffff;
+}
+.bw-sea-badge[data-level="moderate"] {
+  background: #d99a12;
+}
+.bw-sea-badge[data-level="rough"],
+.bw-sea-badge[data-level="high"] {
+  background: #c8452a;
+}
+.bw-recap__vessel-summary {
+  position: relative;
+}
+.bw-mytrip-hero {
+  gap: 8px;
+}
+.bw-mytrip-hero__status {
+  display: flex;
+  grid-column: 1 / -1;
+  align-items: stretch;
+  gap: 8px;
+}
+.bw-mytrip-hero__status .bw-mytrip-hero__clock {
+  flex: 1;
+  min-width: 0;
+  align-items: center;
+  grid-column: auto !important;
+}
+.bw-mytrip-hero__clock strong {
+  font-size: 19px;
+  white-space: nowrap;
+}
+.bw-mytrip-hero__sea {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 7px;
+  padding: 5px 11px 5px 9px;
+  border-radius: 14px;
+  background: #ffffff1f;
+  color: #ffffff;
+}
+.bw-mytrip-hero__sea[data-level="moderate"] {
+  background: #ffd98a;
+  color: #5a3d00;
+}
+.bw-mytrip-hero__sea[data-level="rough"],
+.bw-mytrip-hero__sea[data-level="high"] {
+  background: #ffc9b8;
+  color: #7a240c;
+}
+.bw-mytrip-hero__sea span {
+  display: grid;
+  line-height: 1.1;
+}
+.bw-mytrip-hero__sea small {
+  font-size: 10px;
+  opacity: 0.85;
+}
+.bw-mytrip-hero__sea b {
+  font-size: 12.5px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+.bw-mytrip-hero__foot:not(:has(button, span)) {
+  display: none;
+}

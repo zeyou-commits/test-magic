@@ -1,4 +1,4 @@
-import { SeaForecast, useSeaPeak } from "./SeaForecast";
+import { SeaForecast, SeaPhotoBadge, useSeaPeak } from "./SeaForecast";
 import { scrollWithin } from "./LivePulse";
 import { useEffect, useState } from "react";
 import { takePrepFocus, tripDirection } from "@/lib/ferry/preparation";
@@ -314,7 +314,7 @@ export function TripRecap({
           </p>
         ) : null}
 
-        <div className="bw-recap__vessel-summary">
+        <div className="bw-recap__vessel-summary">{seaPeak != null && vessel ? <SeaPhotoBadge peak={seaPeak} /> : null}
           {vessel ? (
             <VesselMiniCard
               vessel={vessel}

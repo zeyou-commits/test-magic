@@ -1,8 +1,8 @@
 import { VesselAlertTag } from "@/components/panel/VesselAlert";
 import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowRight, Crosshair, Ship, Waves } from "lucide-react";
-import { useSeaPeak } from "./SeaForecast";
+import { ArrowRight, Crosshair, Ship } from "lucide-react";
+import { SeaIcon, useSeaPeak } from "./SeaForecast";
 import { seaLevel } from "@/lib/ferry/seaState";
 import { TravellerAvatar } from "@/components/community/TravellerAvatar";
 import { myTravellerQuery } from "@/lib/community/travellers";
@@ -127,11 +127,7 @@ export function MyTripHero({ onSelect }: { onSelect: (selection: Selection) => v
         </span>
         <ArrowRight size={18} aria-hidden />
       </button>
-      {seaPeak != null && phase.phase !== "cancelled" && phase.phase !== "arrived" ? (
-        <p className="bw-mytrip-hero__sea" data-lively={seaPeak >= 1.25 || undefined}>
-          <Waves size={14} aria-hidden /> {seaLevel(seaPeak).label} prévue
-        </p>
-      ) : null}
+      <div className="bw-mytrip-hero__status">
       <div className="bw-mytrip-hero__clock" aria-live="off">
         {held ? (
           <strong>{alert?.label} · départ à confirmer</strong>
@@ -151,6 +147,20 @@ export function MyTripHero({ onSelect }: { onSelect: (selection: Selection) => v
           <strong>{phase.text}</strong>
         )}
       </div>
+      {seaPeak != null && phase.phase !== "cancelled" && phase.phase !== "arrived" ? (
+        <div
+          className="bw-mytrip-hero__sea"
+          data-level={seaLevel(seaPeak).id}
+          aria-label={`${seaLevel(seaPeak).label} prévue`}
+        >
+          <SeaIcon peak={seaPeak} size={24} />
+          <span>
+            <small>Mer</small>
+            <b>{seaLevel(seaPeak).short}</b>
+          </span>
+        </div>
+      ) : null}
+      </div>
       {prep && phase.phase !== "cancelled" ? (
         <button
           type="button"
@@ -168,7 +178,7 @@ export function MyTripHero({ onSelect }: { onSelect: (selection: Selection) => v
         </button>
       ) : null}
       <div className="bw-mytrip-hero__foot">
-        <span>{next}</span>
+        {prep ? null : <span>{next}</span>}
         {trip.vessel && !held && (phase.phase === "today" || phase.phase === "sea") ? (
           <button
             type="button"

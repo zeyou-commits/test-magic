@@ -1,3 +1,4 @@
+import { checkPseudo, pseudoError, suggestPseudo } from "@/lib/community/travellers";
 import { useEffect, useState } from "react";
 import { ArrowRight, Eye, EyeOff, ShieldCheck, Star } from "lucide-react";
 import { createFileRoute, Link } from "@tanstack/react-router";
@@ -84,7 +85,7 @@ function AuthPage() {
   );
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [displayName, setDisplayName] = useState("");
+  const [displayName, setDisplayName] = useState(suggestPseudo);
   const [confirmPassword, setConfirmPassword] = useState("");
   const [signupSent, setSignupSent] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -114,8 +115,9 @@ function AuthPage() {
     setLoading(true);
     try {
       if (mode === "signup") {
-        if (!displayName.trim()) {
-          toast.error("Indiquez un prénom ou un pseudo pour votre profil.");
+        const problem = pseudoError(displayName) ?? (await checkPseudo(displayName));
+        if (problem) {
+          toast.error(problem);
           return;
         }
         if (password !== confirmPassword) {
@@ -127,7 +129,7 @@ function AuthPage() {
           password,
           options: {
             emailRedirectTo: `${window.location.origin}/auth?next=${encodeURIComponent(next)}`,
-            data: { display_name: displayName.trim() || null },
+            data: { display_name: displayName.trim(), pseudo: displayName.trim() },
           },
         });
         if (error) throw error;
@@ -276,16 +278,28 @@ function AuthPage() {
             <form onSubmit={handleSubmit} className="flex flex-col gap-4">
               {mode === "signup" ? (
                 <div className="flex flex-col gap-2">
-                  <Label htmlFor="displayName">Comment vous appeler ?</Label>
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="displayName">Votre pseudo</Label>
+                    <button
+                      type="button"
+                      onClick={() => setDisplayName(suggestPseudo())}
+                      className="text-xs font-medium text-primary hover:underline"
+                    >
+                      En proposer un autre
+                    </button>
+                  </div>
                   <Input
                     id="displayName"
                     value={displayName}
                     onChange={(e) => setDisplayName(e.target.value)}
                     autoComplete="nickname"
-                    placeholder="Prénom ou pseudo"
+                    maxLength={24}
                     required
                     className="batogo-control"
                   />
+                  <span className="text-xs text-muted-foreground">
+                    Visible par les autres voyageurs. Vous pourrez le changer une seule fois.
+                  </span>
                 </div>
               ) : null}
               {showEmail ? (

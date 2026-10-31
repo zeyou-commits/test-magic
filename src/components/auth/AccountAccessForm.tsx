@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from "react";
 import { LoaderCircle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { checkPseudo, pseudoError, suggestPseudo } from "@/lib/community/travellers";
 import { GoogleMark } from "./GoogleMark";
 
 export function AccountAccessForm({
@@ -10,7 +11,7 @@ export function AccountAccessForm({
 }) {
   const [mode, setMode] = useState<"signin" | "signup">("signup");
   const [email, setEmail] = useState("");
-  const [name, setName] = useState("");
+  const [name, setName] = useState(suggestPseudo);
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
@@ -20,6 +21,13 @@ export function AccountAccessForm({
     setBusy(true);
     setError("");
     try {
+      if (mode === "signup") {
+        const problem = pseudoError(name) ?? (await checkPseudo(name));
+        if (problem) {
+          setError(problem);
+          return;
+        }
+      }
       const result =
         mode === "signin"
           ? await supabase.auth.signInWithPassword({ email, password })
@@ -27,7 +35,7 @@ export function AccountAccessForm({
               email,
               password,
               options: {
-                data: { display_name: name.trim() },
+                data: { display_name: name.trim(), pseudo: name.trim() },
                 emailRedirectTo: `${window.location.origin}/auth?next=%2Fcompte`,
               },
             });
@@ -100,15 +108,18 @@ export function AccountAccessForm({
       <form onSubmit={(event) => void submit(event)} className="space-y-3">
         {mode === "signup" && (
           <label className="grid gap-1 text-sm font-medium">
-            Prénom ou pseudo
+            Votre pseudo
             <input
               className="bw-account-input"
               autoComplete="nickname"
               required
-              maxLength={80}
+              maxLength={24}
               value={name}
               onChange={(event) => setName(event.target.value)}
             />
+            <small className="font-normal text-muted-foreground">
+              Visible par les autres voyageurs. Vous pourrez le changer une seule fois.
+            </small>
           </label>
         )}
         <label className="grid gap-1 text-sm font-medium">

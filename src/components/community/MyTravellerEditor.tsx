@@ -35,7 +35,9 @@ export function MyTravellerEditor() {
     setColor(me.data.color);
     setVisible(me.data.show_on_trip);
   }, [me.data]);
-  const error = pseudoError(pseudo);
+  const locked = Boolean(me.data?.pseudo_locked);
+  const renamed = Boolean(me.data) && pseudo.trim().replace(/\s+/g, " ") !== me.data!.pseudo;
+  const error = locked ? null : pseudoError(pseudo);
   const save = useMutation({
     mutationFn: () => saveTraveller({ pseudo, avatar, color, showOnTrip: visible }),
     onSuccess: () => {
@@ -118,11 +120,15 @@ export function MyTravellerEditor() {
         <input
           value={pseudo}
           maxLength={24}
+          disabled={locked}
           onChange={(event) => setPseudo(event.target.value)}
           aria-invalid={Boolean(error)}
         />
         <small data-error={Boolean(error) || undefined}>
-          {error ?? "Évitez votre nom complet : un prénom, un surnom ou celui proposé suffisent."}
+          {error ??
+            (locked
+              ? "Vous avez déjà utilisé votre unique changement de pseudo."
+              : "Attention : vous ne pouvez le changer qu'une seule fois. Évitez votre nom complet.")}
         </small>
       </label>
 
@@ -143,7 +149,15 @@ export function MyTravellerEditor() {
           type="button"
           className="bw-action-primary"
           disabled={Boolean(error) || save.isPending}
-          onClick={() => save.mutate()}
+          onClick={() => {
+            if (
+              !renamed ||
+              window.confirm(
+                `Changer votre pseudo pour « ${pseudo.trim()} » ? Ce changement est unique et définitif.`,
+              )
+            )
+              save.mutate();
+          }}
         >
           {save.isPending ? <LoaderCircle className="size-4 animate-spin" aria-hidden /> : null}
           Enregistrer

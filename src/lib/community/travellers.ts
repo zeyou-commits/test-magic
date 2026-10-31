@@ -74,7 +74,12 @@ export type TravellerCard = {
   color: AvatarColor;
   mood: Mood | null;
 };
-export type MyTraveller = TravellerCard & { show_on_trip: boolean; mood_until: string | null };
+export type MyTraveller = TravellerCard & {
+  show_on_trip: boolean;
+  mood_until: string | null;
+  /** Le changement unique de pseudo a déjà été utilisé. */
+  pseudo_locked?: boolean;
+};
 export type TripTraveller = TravellerCard & { step: string | null; me: boolean };
 export type PublicProfile = TravellerCard & {
   since: number | null;
@@ -195,6 +200,16 @@ export const saveTraveller = (input: {
 export const setMood = (code: string | null) => rpc<MyTraveller>("bw_set_mood", { p_code: code });
 export const react = (kind: ContributionKind, id: string, code: ReactionCode) =>
   rpc<boolean>("bw_react", { p_kind: kind, p_target: id, p_code: code });
+
+/** Contrôle complet côté serveur (mots interdits compris) : le message à afficher, ou null. */
+export const checkPseudo = (pseudo: string) => rpc<string>("bw_pseudo_check", { p_pseudo: pseudo });
+
+/** Pseudo proposé à l'inscription, modifiable par le voyageur. */
+export function suggestPseudo() {
+  const names = ["Voyageur", "Yallah", "Traversée", "Bled", "Cabas", "Galerie", "Marin", "Escale"];
+  const name = names[Math.floor(Math.random() * names.length)]!;
+  return `${name} ${1000 + Math.floor(Math.random() * 9000)}`;
+}
 
 /** Pseudo : 3 à 24 caractères, lettres, chiffres, espaces, point, tiret, apostrophe. */
 export function pseudoError(value: string) {

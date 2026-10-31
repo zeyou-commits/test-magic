@@ -411,6 +411,8 @@ export function addVesselImages(map: MapLibreMap, slugs: string[]) {
       const phase = performance.now() / 1000;
       const width = widthNow();
       sailing.forEach((slug) => repaint(slug, width, phase));
+      // updateImage ne redessine pas la carte : sans cela, l'animation se fige dès qu'on ne la touche plus.
+      map.triggerRepaint();
     }, 60);
   };
 
@@ -486,6 +488,7 @@ export function addShipImages(map: MapLibreMap) {
       if (!map.hasImage(id) || !frames.length) return;
       map.updateImage(id, frames[media.matches ? 0 : frame % frames.length]!);
     });
+    map.triggerRepaint();
   };
   const syncMotion = () => {
     if (timer) clearInterval(timer);

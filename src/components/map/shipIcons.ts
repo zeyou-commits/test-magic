@@ -297,7 +297,7 @@ export const vesselImageId = (slug: string, width: number) => `vessel-${slug}-${
  */
 export function addVesselImages(map: MapLibreMap, slugs: string[]) {
   const media = window.matchMedia("(prefers-reduced-motion: reduce)");
-  const sources = new Map<string, { image: HTMLImageElement; bowY: number; sternY: number }>();
+  const sources = new Map<string, { image: HTMLImageElement; bowY: number; sternY: number; funnelX: number; funnelY: number }>();
   const canvases = new Map<string, CanvasRenderingContext2D>();
   let sailing = new Set<string>();
   let timer: ReturnType<typeof setInterval> | undefined;
@@ -320,8 +320,8 @@ export function addVesselImages(map: MapLibreMap, slugs: string[]) {
     const source = sources.get(slug);
     if (!source) return null;
     const height = Math.round((source.image.height * width) / source.image.width);
-    const fullWidth = Math.round(width * 1.3);
-    const fullHeight = Math.round(height * 1.12);
+    const fullWidth = Math.round(width * 1.7);
+    const fullHeight = Math.round(height * 1.4);
     const ctx = contextFor(fullWidth, fullHeight);
     if (!ctx) return null;
     const left = (fullWidth - width) / 2;
@@ -330,36 +330,62 @@ export function addVesselImages(map: MapLibreMap, slugs: string[]) {
     ctx.imageSmoothingQuality = "high";
     const bowY = top + source.bowY * height;
     const sternY = top + source.sternY * height;
+    const unit = width / 100;
     if (phase !== null) {
-      const unit = width / 100;
-      for (let i = 0; i < 4; i++) {
-        const t = (phase / 1.8 + i / 4) % 1;
-        const x = left + width * 0.93 + t * 15 * unit;
-        const y = sternY + (i % 2 ? 1 : -1) * (1 + t * 3) * unit;
-        ctx.strokeStyle = `rgba(120, 205, 218, ${0.8 * (1 - t)})`;
-        ctx.lineCap = "round";
-        ctx.lineWidth = Math.max(1, 1.4 * unit);
+      // Sillage en V derrière la poupe : large, blanc au cœur, qui s'ouvre et s'efface.
+      ctx.lineCap = "round";
+      for (let i = 0; i < 10; i++) {
+        const t = (phase / 1.1 + i / 10) % 1;
+        const side = i % 2 ? 1 : -1;
+        const x = left + width * 0.92 + t * 32 * unit;
+        const y = sternY + side * (0.8 + t * 8) * unit;
+        ctx.strokeStyle = `rgba(70, 185, 205, ${0.75 * (1 - t)})`;
+        ctx.lineWidth = Math.max(1.5, (3.4 - t * 1.4) * unit);
         ctx.beginPath();
         ctx.moveTo(x, y);
-        ctx.lineTo(x + 5 * unit, y);
+        ctx.lineTo(x + 8 * unit, y + side * 2 * unit);
+        ctx.stroke();
+        ctx.strokeStyle = `rgba(255, 255, 255, ${0.95 * (1 - t)})`;
+        ctx.lineWidth = Math.max(1, (1.8 - t) * unit);
         ctx.stroke();
       }
     }
     ctx.save();
     if (phase !== null) {
-      ctx.translate(fullWidth / 2, fullHeight);
-      ctx.rotate((Math.sin((phase * Math.PI * 2) / 3.4) * 1.3 * Math.PI) / 180);
-      ctx.translate(-fullWidth / 2, -fullHeight + Math.sin((phase * Math.PI * 2) / 2.3) * width * 0.006);
+      ctx.translate(fullWidth / 2 + Math.sin((phase * Math.PI * 2) / 3.1) * 0.8 * unit, fullHeight);
+      ctx.rotate((Math.sin((phase * Math.PI * 2) / 2.3) * 2.8 * Math.PI) / 180);
+      ctx.translate(-fullWidth / 2, -fullHeight + Math.sin((phase * Math.PI * 2) / 1.6) * 1.5 * unit);
     }
     ctx.drawImage(source.image, left, top, width, height);
     ctx.restore();
     if (phase !== null) {
-      const unit = width / 100;
-      for (let i = 0; i < 3; i++) {
-        const t = (phase / 1.3 + i / 3) % 1;
-        ctx.fillStyle = `rgba(255, 255, 255, ${0.85 * Math.sin(t * Math.PI)})`;
+      // Fumée emportée vers l'arrière.
+      for (let i = 0; i < 5; i++) {
+        const t = (phase / 1.7 + i / 5) % 1;
+        ctx.fillStyle = `rgba(120, 132, 142, ${0.5 * (1 - t)})`;
         ctx.beginPath();
-        ctx.ellipse(left + width * 0.07 - t * 5 * unit, bowY - i * unit, (1 + t * 2) * unit, unit, 0, 0, Math.PI * 2);
+        ctx.arc(
+          left + source.funnelX * width + t * 16 * unit,
+          top + source.funnelY * height - t * 13 * unit,
+          (1.4 + t * 3.6) * unit,
+          0,
+          Math.PI * 2,
+        );
+        ctx.fill();
+      }
+      // Gerbes d'eau projetées par la proue.
+      for (let i = 0; i < 8; i++) {
+        const t = (phase / 0.8 + i / 8) % 1;
+        const spread = (i % 4) + 1;
+        ctx.fillStyle = `rgba(255, 255, 255, ${Math.sin(t * Math.PI)})`;
+        ctx.beginPath();
+        ctx.arc(
+          left + width * 0.05 - t * spread * 2.6 * unit,
+          bowY - Math.sin(t * Math.PI) * (2 + spread * 1.6) * unit,
+          Math.max(0.7, (1.5 - t * 0.6) * unit),
+          0,
+          Math.PI * 2,
+        );
         ctx.fill();
       }
     }
@@ -385,7 +411,7 @@ export function addVesselImages(map: MapLibreMap, slugs: string[]) {
       const phase = performance.now() / 1000;
       const width = widthNow();
       sailing.forEach((slug) => repaint(slug, width, phase));
-    }, 90);
+    }, 60);
   };
 
   for (const slug of slugs) {
@@ -403,7 +429,17 @@ export function addVesselImages(map: MapLibreMap, slugs: string[]) {
           for (let y = h - 1; y >= 0; y--) if (data[(y * w + x) * 4 + 3]! > 200) return y / h;
         return 0.8;
       };
-      sources.set(slug, { image, bowY: edge(0, w, 1), sternY: edge(w - 1, -1, -1) });
+      // Le sommet de la moitié arrière : la cheminée, le mât étant vers la proue.
+      let funnelX = 0.7;
+      let funnelY = 0.1;
+      search: for (let y = 0; y < h; y++)
+        for (let x = Math.round(w * 0.5); x < w; x++)
+          if (data[(y * w + x) * 4 + 3]! > 200) {
+            funnelX = x / w;
+            funnelY = y / h;
+            break search;
+          }
+      sources.set(slug, { image, bowY: edge(0, w, 1), sternY: edge(w - 1, -1, -1), funnelX, funnelY });
       for (const { width } of VESSEL_IMAGE_STEPS) {
         const still = frame(slug, width, null);
         const id = vesselImageId(slug, width);

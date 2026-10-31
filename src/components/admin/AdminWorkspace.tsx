@@ -24,6 +24,7 @@ import {
   Images,
   Megaphone,
   TriangleAlert,
+  Newspaper,
 } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import { UserMenu } from "@/components/layout/UserMenu";
@@ -77,6 +78,14 @@ const sections = [
     description: "Source, vérification, départs concernés, messages à préparer et signalements à traiter.",
     group: "",
     icon: TriangleAlert,
+  },
+  {
+    id: "watch",
+    label: "Veille actualité",
+    description:
+      "Ce que Claude a repéré dans la presse et chez les compagnies : approuvez, refusez ou mettez en attente. Rien n'est appliqué sans vous.",
+    group: "",
+    icon: Newspaper,
   },
   {
     id: "commercial",

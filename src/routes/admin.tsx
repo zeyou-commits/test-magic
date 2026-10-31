@@ -21,6 +21,7 @@ import { PlanningAlerts, usePlanningAlerts } from "@/components/admin/PlanningAl
 import { NotificationOverview } from "@/components/admin/NotificationOverview";
 import { DashboardOverview } from "@/components/admin/DashboardOverview";
 import { TodayInbox } from "@/components/admin/TodayInbox";
+import { WatchAdmin } from "@/components/admin/WatchAdmin";
 import { MobileIncidentPanel } from "@/components/admin/MobileIncidentPanel";
 import { UsageAdmin } from "@/components/admin/UsageAdmin";
 import { PlanningBoard } from "@/components/admin/PlanningBoard";
@@ -284,6 +285,7 @@ function AdminTabs() {
       ).length ?? 0,
     reviews: counts?.reviews ?? 0,
     reports: counts?.reports ?? 0,
+    watch: counts?.watch ?? 0,
     community: (community.data?.reviews.filter((review) => review.status === "pending").length ?? 0) + (counts?.anomalies ?? 0),
   };
   return (
@@ -420,6 +422,9 @@ function AdminTabs() {
         </TabsContent>
         <TabsContent value="incidents">
           <IncidentsAdmin />
+        </TabsContent>
+        <TabsContent value="watch">
+          <WatchAdmin />
         </TabsContent>
         <TabsContent value="departures">
           <DeparturesAdmin

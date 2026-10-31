@@ -9,7 +9,7 @@ export function useAdminCounts() {
     queryFn: async () => {
       const now = new Date();
       const { start, end } = adminDayRange(now);
-      const [today, reports, reviews, unlinked, guided, anomalies] = await Promise.all([
+      const [today, reports, reviews, unlinked, guided, anomalies, watch] = await Promise.all([
         supabase
           .from("departures")
           .select("id", { count: "exact", head: true })
@@ -32,6 +32,8 @@ export function useAdminCounts() {
           .eq("status", "pending"),
         reviewsDb.from("bw_report_anomalies")
           .select("id", { count: "exact", head: true }).eq("status", "pending"),
+        reviewsDb.from("bw_watch_proposals")
+          .select("id", { count: "exact", head: true }).eq("status", "pending"),
       ]);
       const error = [today, reports, reviews, unlinked, guided].find(
         (result) => result.error,
@@ -43,6 +45,7 @@ export function useAdminCounts() {
         reviews: (reviews.count ?? 0) + (guided.count ?? 0),
         unlinked: unlinked.count ?? 0,
         anomalies: anomalies.error ? 0 : (anomalies.count ?? 0),
+        watch: watch.error ? 0 : (watch.count ?? 0),
       };
     },
   });

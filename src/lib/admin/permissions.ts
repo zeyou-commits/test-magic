@@ -2,6 +2,7 @@ const editorial = new Set([
   "planning",
   "assign",
   "incidents",
+  "watch",
   "commercial",
   "departures",
   "schedules",

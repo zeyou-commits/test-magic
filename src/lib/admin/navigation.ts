@@ -3,6 +3,7 @@ export const adminTabs = [
   "planning",
   "assign",
   "incidents",
+  "watch",
   "commercial",
   "users",
   "reviews",

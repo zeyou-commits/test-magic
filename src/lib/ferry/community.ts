@@ -491,10 +491,11 @@ export const catalogQuery = queryOptions({
   queryKey: ["bw-signal-catalog"],
   queryFn: async () => {
     const { data, error } = await supabase.rpc("bw_signal_catalog_version");
-    if (error) return 0;
+    // Un réseau faible au port ne doit pas figer l'ancien catalogue pendant 10 minutes.
+    if (error) throw error;
     return typeof data === "number" ? data : 0;
   },
-  retry: false,
+  retry: 2,
   staleTime: 10 * 60_000,
 });
 

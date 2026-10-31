@@ -333,13 +333,15 @@ export function QuickReport({
       const onSiteRequired = impact || where === "port";
       let here = position;
       setFinding(true);
-      if (!here && level >= 2 && onSiteRequired) here = await requirePosition();
-      else if (!here && level >= 2 && isMobile) here = await currentPosition();
+      if (!here && onSiteRequired) here = await requirePosition();
+      else if (!here && isMobile) here = await currentPosition();
       setFinding(false);
-      if (onSiteRequired && !here)
+      if (onSiteRequired && !here) {
+        logLocation("report", "report_no_position", { where, category, level });
         throw new Error(
           "Ce signalement doit être fait sur place : autorisez la localisation puis réessayez.",
         );
+      }
       logLocation("report", "report_send", { where, category, hasPosition: Boolean(here) });
       const result = await reportTravel({
         kind: where,

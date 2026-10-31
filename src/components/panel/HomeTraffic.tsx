@@ -23,6 +23,7 @@ import { CompanyBadge } from "./CompanyBadge";
 import { FollowButton } from "./FollowButton";
 import { MyTripsShortcut } from "./MyTrip";
 import { MyTripHero } from "./MyTripHero";
+import { useMyTrip } from "@/lib/ferry/myTrip";
 import type { MapPreview } from "@/lib/ferry/mapPresentation";
 
 export function HomeTraffic({
@@ -82,9 +83,13 @@ export function HomeTraffic({
       },
     ];
   });
-  const sailing = crossings.filter((c) =>
+  const { trip } = useMyTrip();
+  const allSailing = crossings.filter((c) =>
     fleet.some((s) => s.state === "sea" && s.departureId === c.departure.id),
   );
+  // Ma traversée est déjà suivie dans son bloc, en tête : pas de doublon dans la liste.
+  const sailing = allSailing.filter((c) => c.departure.id !== trip?.departure.id);
+  const mineSailing = sailing.length !== allSailing.length;
   const events = crossings
     .flatMap((c) => [
       { ...c, kind: "departure" as const, iso: c.times.departure.iso, port: c.from },
@@ -99,9 +104,10 @@ export function HomeTraffic({
     <div className="bw-home-traffic">
       <MyTripHero onSelect={onSelect} />
       <MyTripsShortcut onSelect={onSelect} />
+      {mineSailing && !sailing.length ? null : (
       <section aria-label="Traversées en navigation">
         <h2 className="mb-2 flex items-center gap-2 text-sm font-bold">
-          <Ship size={16} aria-hidden /> En navigation{" "}
+          <Ship size={16} aria-hidden /> {mineSailing ? "Autres navires en route" : "En navigation"}{" "}
           <span className="text-xs font-normal text-muted-foreground">{sailing.length || ""}</span>
         </h2>
         {sailing.length ? (
@@ -229,6 +235,7 @@ export function HomeTraffic({
           </p>
         )}
       </section>
+      )}
       <section className="mt-4" aria-label="Prochains départs et arrivées">
         <h2 className="mb-2 text-sm font-bold">Départs & arrivées</h2>
         <div className="mb-2 flex rounded-xl bg-secondary p-1" aria-label="Filtrer les mouvements">

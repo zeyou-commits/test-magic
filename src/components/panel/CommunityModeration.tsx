@@ -62,6 +62,7 @@ export function CommunityModeration() {
       void client.invalidateQueries({ queryKey: communityKey });
       // Un signalement validé corrige les horaires et la position du navire.
       void client.invalidateQueries({ queryKey: ["departures"] });
+      void client.invalidateQueries({ queryKey: ["my-trips"] });
     },
   });
   if (feed.isPending) return <p role="status">Chargement de la communauté…</p>;

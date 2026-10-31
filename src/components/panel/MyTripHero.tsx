@@ -1,4 +1,6 @@
-import { crossingProgress } from "@/lib/ferry/crossingProgress";
+import { crossingProgress, ferryLeft } from "@/lib/ferry/crossingProgress";
+import { delayLabel, reportedCrossing } from "@/lib/ferry/tracking";
+import { MiniFerry } from "./MiniFerry";
 import { useLiveShips } from "@/lib/ferry/useLiveShips";
 import { VesselAlertTag } from "@/components/panel/VesselAlert";
 import { useEffect, useState } from "react";
@@ -14,8 +16,8 @@ import { tripEnd, useMyTrip, type MyTrip } from "@/lib/ferry/myTrip";
 import { mergeTripSteps, myTripStatusQuery, tripStepsQuery } from "@/lib/ferry/presence";
 import type { FleetShip } from "@/lib/ferry/fleet";
 import type { Selection } from "@/lib/ferry/types";
-import { formatDateTime } from "@/lib/ferry/format";
-import { portTimeZone } from "@/lib/ferry/time";
+import { formatDateParts, formatDateTime } from "@/lib/ferry/format";
+import { dateKeyInZone, portTimeZone } from "@/lib/ferry/time";
 import { useVesselAlert } from "@/lib/ferry/vesselAlerts";
 
 /** Heure courante, rafraîchie chaque seconde le jour J, chaque minute sinon. */
@@ -31,7 +33,8 @@ export function useNow(fast: boolean) {
 const pad = (value: number) => String(value).padStart(2, "0");
 /** « Départ dans 2 j 05 h », « 03 : 12 : 45 », « En mer », « Bien arrivés ». */
 export function tripPhase(trip: MyTrip, now: number) {
-  const start = Date.parse(trip.departure.departure_at);
+  // Un retard validé décale le compte à rebours et l'arrivée.
+  const start = reportedCrossing(trip.departure, now).start;
   const end = tripEnd(trip.departure);
   if (trip.departure.status === "cancelled") return { phase: "cancelled" as const, text: "Traversée annulée" };
   if (now < start) {
@@ -82,11 +85,30 @@ export function MyTripHero({ onSelect }: { onSelect: (selection: Selection) => v
   const progress =
     trip.from && trip.to ? crossingProgress(trip.departure, trip.from, trip.to, live, now) : null;
   const estimated = progress?.trust !== "live";
+  const delay = progress && !progress.reportedPostponed ? delayLabel(progress.times) : null;
+  const percent = progress?.ratio == null ? null : Math.round(progress.ratio * 100);
   const arrivedForSure = progress?.trust === "observed" || status === "arrived";
   const prep = preparation ? prepProgress(preparation, tripDirection(trip.from)) : null;
   // Navire en alerte : plus de compte à rebours ni d'« En mer », le départ reste à confirmer.
   const held = Boolean(alert) && phase.phase !== "cancelled" && phase.phase !== "arrived";
   const zone = portTimeZone(trip.from);
+  const arrivalZone = portTimeZone(trip.to);
+  const departureIso = progress?.times.departure.iso ?? trip.departure.departure_at;
+  const arrivalIso = progress?.times.arrival.iso ?? null;
+  const dayDelta =
+    arrivalIso && trip.to
+      ? Math.round(
+          (Date.parse(`${dateKeyInZone(arrivalIso, arrivalZone)}T00:00:00Z`) -
+            Date.parse(`${dateKeyInZone(departureIso, zone)}T00:00:00Z`)) /
+            86_400_000,
+        )
+      : 0;
+  // Le suivi prend toute la place dès que le voyage a commencé : c'est le même bloc que « En navigation ».
+  const underway =
+    Boolean(progress) &&
+    !held &&
+    !progress?.reportedPostponed &&
+    (phase.phase === "sea" || Boolean(progress?.reportedQuay) || Boolean(progress?.hold));
   const image =
     steps.find((step) => step.id === status)?.image ??
     (phase.phase === "sea" ? steps[2]!.image : phase.phase === "arrived" ? steps[3]!.image : steps[0]!.image);
@@ -131,9 +153,10 @@ export function MyTripHero({ onSelect }: { onSelect: (selection: Selection) => v
             {trip.from?.name ?? "Départ"} → {trip.to?.name ?? "Arrivée"}
           </strong>
           <span className="bw-mytrip-hero__date">
-            {formatDateTime(trip.departure.departure_at, zone)}
+            {formatDateTime(departureIso, zone)}
             {trip.departure.status === "modified" ? " · horaire modifié" : ""}
           </span>
+          {delay ? <b className="bw-delay-badge">Retardé · {delay}</b> : null}
         </span>
         <ArrowRight size={18} aria-hidden />
       </button>
@@ -141,6 +164,10 @@ export function MyTripHero({ onSelect }: { onSelect: (selection: Selection) => v
       <div className="bw-mytrip-hero__clock" aria-live="off">
         {held ? (
           <strong>{alert?.label} · départ à confirmer</strong>
+        ) : progress?.reportedPostponed ? (
+          <strong>Report ou annulation signalé</strong>
+        ) : progress?.reportedQuay ? (
+          <strong>Encore à quai</strong>
         ) : phase.phase === "today" ? (
           <>
             <span>{phase.text}</span>
@@ -150,14 +177,7 @@ export function MyTripHero({ onSelect }: { onSelect: (selection: Selection) => v
           <strong>{progress.hold.fresh ? "Encore à quai" : "Départ à confirmer"}</strong>
         ) : phase.phase === "sea" ? (
           <>
-            <span>{estimated ? "En mer · estimé" : "En mer"}</span>
-            <span
-              className="bw-mytrip-hero__progress"
-              aria-label={`${Math.round((progress?.ratio ?? phase.progress) * 100)} % du trajet`}
-            >
-              <span style={{ width: `${(progress?.ratio ?? phase.progress) * 100}%` }} />
-            </span>
-            {progress ? <small className="bw-trust">{progress.trustLabel}</small> : null}
+            <strong>{estimated ? "En mer · estimé" : "En mer"}</strong>
           </>
         ) : phase.phase === "arrived" && !arrivedForSure ? (
           <>
@@ -182,6 +202,48 @@ export function MyTripHero({ onSelect }: { onSelect: (selection: Selection) => v
         </div>
       ) : null}
       </div>
+      {underway && progress ? (
+        <div className="bw-mytrip-hero__voyage">
+          {percent !== null ? (
+            <>
+              <div className="bw-mytrip-hero__voyage-head">
+                <small>{progress.trustLabel}</small>
+                <strong>
+                  {estimated ? "≈ " : ""}
+                  {percent} %
+                </strong>
+              </div>
+              <div
+                className="bw-crossing-track"
+                data-estimated={estimated || undefined}
+                role="progressbar"
+                aria-label="Avancement de la traversée"
+                aria-valuenow={percent}
+                aria-valuemin={0}
+                aria-valuemax={100}
+              >
+                <span style={{ width: `${percent}%` }} />
+                <i style={{ left: ferryLeft(percent, 54, progress.scene, 4) }}>
+                  <MiniFerry size={54} scene={progress.scene} />
+                </i>
+              </div>
+            </>
+          ) : (
+            <small>{progress.trustLabel}</small>
+          )}
+          <div className="bw-mytrip-hero__voyage-times">
+            <span>
+              Départ <b>{formatDateParts(departureIso, zone).time}</b>
+            </span>
+            {arrivalIso ? (
+              <span>
+                Arrivée <b>{formatDateParts(arrivalIso, arrivalZone).time}</b>
+                {dayDelta > 0 ? <sup>+{dayDelta} j</sup> : null}
+              </span>
+            ) : null}
+          </div>
+        </div>
+      ) : null}
       {prep && phase.phase !== "cancelled" ? (
         <button
           type="button"

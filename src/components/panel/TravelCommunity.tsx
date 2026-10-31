@@ -135,6 +135,7 @@ export function TravelSignals({
       setDone(action.id);
       void queryClient.invalidateQueries({ queryKey: communityKey });
       void queryClient.invalidateQueries({ queryKey: ["departures"] });
+      void queryClient.invalidateQueries({ queryKey: ["my-trips"] });
     },
   });
   // Bouton touché dans une notification : la position est demandée ici, puis la réponse part.

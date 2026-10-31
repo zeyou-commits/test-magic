@@ -1,4 +1,6 @@
-import { useState } from "react";
+import { scrollWithin } from "./LivePulse";
+import { useEffect, useState } from "react";
+import { takePrepFocus } from "@/lib/ferry/preparation";
 import { TripTravellers } from "@/components/community/TripTravellers";
 import { useQuery } from "@tanstack/react-query";
 import type { SupabaseClient } from "@supabase/supabase-js";
@@ -193,6 +195,17 @@ export function TripRecap({
   const liveId = `live-${departure.id}`;
   const [tab, setTab] = useState<Tab | null>(null);
   const activeTab: Tab = tab ?? (hasSignalFocus() || (liveCount && !myDeparture) ? "live" : "prepare");
+  // Arrivée depuis l'encart Ma traversée : le parcours, tout de suite.
+  useEffect(() => {
+    if (!myDeparture || !takePrepFocus(departure.id)) return;
+    setTab("prepare");
+    if (window.matchMedia("(max-width: 767px)").matches)
+      window.dispatchEvent(new Event("batogo:panel-full"));
+    window.setTimeout(() => {
+      const target = document.querySelector<HTMLElement>(".bw-prep");
+      if (target) scrollWithin(target);
+    }, 350);
+  }, [myDeparture, departure.id]);
   const openLive = () => {
     setTab("live");
     revealLive(liveId);

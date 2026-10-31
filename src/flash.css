@@ -6583,3 +6583,197 @@ button.bw-tavatar:focus-visible {
 .bw-mytrip-prep {
   margin: -4px 0 14px;
 }
+
+/* Parcours, version par étapes. */
+.bw-prep {
+  gap: 12px;
+  background: #ffffff;
+  box-shadow: 0 6px 20px #16324a0f;
+}
+.bw-prep__next {
+  display: grid;
+  gap: 4px;
+  padding: 12px;
+  border-radius: 14px;
+  background: linear-gradient(135deg, #0e5e35, #0e7a43);
+  color: #ffffff;
+}
+.bw-prep__next small {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  opacity: 0.85;
+}
+.bw-prep__next strong {
+  font-size: 15px;
+  line-height: 1.25;
+}
+.bw-prep__next[data-complete] {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 700;
+}
+.bw-prep__next > div {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  margin-top: 6px;
+}
+.bw-prep__next > div > button:first-child {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  min-height: 36px;
+  padding: 0 12px;
+  border-radius: 999px;
+  background: #ffffff;
+  color: #0e5e35;
+  font-size: 13px;
+  font-weight: 800;
+}
+.bw-prep__next > div > a,
+.bw-prep__next > div > button:not(:first-child) {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12.5px;
+  font-weight: 700;
+}
+.bw-prep__steps {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 6px;
+}
+.bw-prep__steps button {
+  display: grid;
+  justify-items: center;
+  gap: 3px;
+  min-height: 72px;
+  padding: 8px 4px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: #ffffff;
+  color: var(--muted-foreground);
+  text-align: center;
+}
+.bw-prep__steps button[aria-selected="true"] {
+  border-color: #0e7a43;
+  background: #e8f5ee;
+  color: #0e5e35;
+}
+.bw-prep__steps b {
+  display: grid;
+  width: 22px;
+  height: 22px;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--secondary);
+  font-size: 12px;
+}
+.bw-prep__steps button[aria-selected="true"] b,
+.bw-prep__steps button[data-complete] b {
+  background: #0e7a43;
+  color: #ffffff;
+}
+.bw-prep__steps span {
+  font-size: 11.5px;
+  font-weight: 700;
+  line-height: 1.15;
+}
+.bw-prep__steps small {
+  font-size: 10.5px;
+  font-variant-numeric: tabular-nums;
+}
+.bw-prep__when {
+  margin-bottom: 6px;
+  color: var(--muted-foreground);
+  font-size: 12px;
+}
+.bw-prep__when::first-letter {
+  text-transform: uppercase;
+}
+.bw-prep__list {
+  display: grid;
+  gap: 6px;
+}
+.bw-prep__list li {
+  padding: 10px;
+  border-radius: 12px;
+  background: var(--secondary);
+  font-size: 13.5px;
+}
+.bw-prep__list label {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  cursor: pointer;
+  font-weight: 600;
+}
+.bw-prep__list em {
+  font-style: normal;
+}
+.bw-prep__list label > span {
+  display: grid;
+  flex: none;
+  width: 22px;
+  height: 22px;
+  place-items: center;
+  border: 1.5px solid #0e7a4380;
+  border-radius: 7px;
+  background: #ffffff;
+  color: #ffffff;
+}
+.bw-prep__list li[data-done] label > span {
+  border-color: #0e7a43;
+  background: #0e7a43;
+}
+.bw-prep__list li[data-done] em {
+  color: var(--muted-foreground);
+  text-decoration: line-through;
+}
+.bw-prep__list li > a,
+.bw-prep__list li > button {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 28px;
+  margin: 4px 0 0 32px;
+  color: #0e7a43;
+  font-size: 12.5px;
+  font-weight: 700;
+}
+.bw-prep__trip summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-height: 36px;
+  cursor: pointer;
+  font-size: 12.5px;
+  font-weight: 600;
+  list-style: none;
+}
+.bw-prep__trip > div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding-top: 4px;
+}
+.bw-prep__trip button {
+  min-height: 34px;
+  padding: 3px 10px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: #ffffff;
+  color: var(--muted-foreground);
+  font-size: 12px;
+  font-weight: 600;
+}
+.bw-prep__trip button[aria-pressed="true"] {
+  border-color: #0e7a43;
+  background: #0e7a43;
+  color: #ffffff;
+}

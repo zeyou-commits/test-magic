@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ArrowRight, Check, ClipboardCheck } from "lucide-react";
+import { ArrowRight, Check, ChevronDown, ClipboardCheck, PartyPopper } from "lucide-react";
 import { toast } from "sonner";
 import {
   currentPhase,
@@ -27,18 +27,18 @@ function ItemLink({ item }: { item: PrepItem }) {
   if (item.itinerary)
     return (
       <button type="button" onClick={openRoute}>
-        {item.linkLabel} <ArrowRight size={12} aria-hidden />
+        {item.linkLabel} <ArrowRight size={13} aria-hidden />
       </button>
     );
   if (!item.href) return null;
   return (
     <a href={item.href}>
-      {item.linkLabel} <ArrowRight size={12} aria-hidden />
+      {item.linkLabel} <ArrowRight size={13} aria-hidden />
     </a>
   );
 }
 
-/** Le parcours de préparation d'une traversée : les bonnes choses, au bon moment. */
+/** Le parcours d'une traversée : une étape à la fois, et toujours la prochaine chose à faire. */
 export function TripPreparation({
   departureId,
   departureAt,
@@ -52,8 +52,8 @@ export function TripPreparation({
   const query = preparationQuery(departureId, userId);
   const data = useQuery(query).data ?? { profile: defaultProfile, done: [] };
   const daysLeft = Math.floor((Date.parse(departureAt) - Date.now()) / 86_400_000);
-  const [open, setOpen] = useState<PrepPhase>(() => currentPhase(daysLeft));
-  useEffect(() => setOpen(currentPhase(daysLeft)), [departureId, daysLeft]);
+  const [step, setStep] = useState<PrepPhase>(() => currentPhase(daysLeft));
+  useEffect(() => setStep(currentPhase(daysLeft)), [departureId, daysLeft]);
   const save = useMutation({
     mutationFn: (next: Preparation) => savePreparation(departureId, userId, next),
     onMutate: (next) => {
@@ -66,11 +66,28 @@ export function TripPreparation({
   });
   const items = itemsFor(data.profile);
   const progress = prepProgress(data);
+  const steps = phases
+    .map((phase) => {
+      const list = items.filter((item) => item.phase === phase.id);
+      return { ...phase, list, count: list.filter((item) => data.done.includes(item.id)).length };
+    })
+    .filter((phase) => phase.list.length);
+  const active = steps.find((phase) => phase.id === step) ?? steps[0];
+  const toggle = (item: PrepItem) => {
+    const done = data.done.includes(item.id)
+      ? data.done.filter((id) => id !== item.id)
+      : [...data.done, item.id];
+    save.mutate({ ...data, done });
+  };
+  const summary = profileLabels
+    .filter(({ key }) => data.profile[key])
+    .map(({ label }) => label.replace(/^(Avec des?|Avec un|En) /, ""))
+    .join(" · ");
   return (
     <section className="bw-prep" aria-label="Préparer ma traversée">
       <header className="bw-prep__head">
         <h3>
-          <ClipboardCheck size={16} aria-hidden /> Préparer ma traversée
+          <ClipboardCheck size={17} aria-hidden /> Mon parcours
         </h3>
         <strong>
           {progress.done}/{progress.total}
@@ -79,71 +96,89 @@ export function TripPreparation({
           <i style={{ width: `${progress.total ? (progress.done / progress.total) * 100 : 0}%` }} />
         </span>
       </header>
-      <div className="bw-prep__profile" role="group" aria-label="Mon voyage">
-        {profileLabels.map(({ key, label }) => (
+
+      {progress.next ? (
+        <div className="bw-prep__next">
+          <small>Prochaine étape</small>
+          <strong>{progress.next.label}</strong>
+          <div>
+            <button type="button" onClick={() => toggle(progress.next!)}>
+              <Check size={14} aria-hidden /> C’est fait
+            </button>
+            <ItemLink item={progress.next} />
+          </div>
+        </div>
+      ) : (
+        <p className="bw-prep__next" data-complete>
+          <PartyPopper size={18} aria-hidden /> Tout est prêt. Bonne traversée !
+        </p>
+      )}
+
+      <div className="bw-prep__steps" role="tablist" aria-label="Étapes">
+        {steps.map((phase, index) => (
           <button
-            key={key}
+            key={phase.id}
             type="button"
-            aria-pressed={data.profile[key]}
-            onClick={() =>
-              save.mutate({ ...data, profile: { ...data.profile, [key]: !data.profile[key] } })
-            }
+            role="tab"
+            aria-selected={phase.id === active?.id}
+            data-complete={phase.count === phase.list.length || undefined}
+            onClick={() => setStep(phase.id)}
           >
-            {label}
+            <b>{phase.count === phase.list.length ? <Check size={13} aria-hidden /> : index + 1}</b>
+            <span>{phase.title}</span>
+            <small>
+              {phase.count}/{phase.list.length}
+            </small>
           </button>
         ))}
       </div>
-      {phases.map((phase) => {
-        const list = items.filter((item) => item.phase === phase.id);
-        if (!list.length) return null;
-        const count = list.filter((item) => data.done.includes(item.id)).length;
-        return (
-          <details
-            key={phase.id}
-            className="bw-prep__phase"
-            open={open === phase.id}
-            onToggle={(event) => {
-              if (event.currentTarget.open) setOpen(phase.id);
-            }}
-          >
-            <summary>
-              <span>
-                {phase.title} <small>{phase.when}</small>
-              </span>
-              <b data-complete={count === list.length || undefined}>
-                {count}/{list.length}
-              </b>
-            </summary>
-            <ul>
-              {list.map((item) => {
-                const done = data.done.includes(item.id);
-                return (
-                  <li key={item.id} data-done={done || undefined}>
-                    <label>
-                      <input
-                        type="checkbox"
-                        className="sr-only"
-                        checked={done}
-                        onChange={() =>
-                          save.mutate({
-                            ...data,
-                            done: done
-                              ? data.done.filter((id) => id !== item.id)
-                              : [...data.done, item.id],
-                          })
-                        }
-                      />
-                      <span aria-hidden>{done ? <Check size={12} /> : null}</span>
-                      {item.label}
-                    </label>
-                    <ItemLink item={item} />
-                  </li>
-                );
-              })}
-            </ul>
-          </details>
-        );
-      })}
+
+      {active ? (
+        <div role="tabpanel" aria-label={active.title}>
+          <p className="bw-prep__when">{active.when}</p>
+          <ul className="bw-prep__list">
+            {active.list.map((item) => {
+              const done = data.done.includes(item.id);
+              return (
+                <li key={item.id} data-done={done || undefined}>
+                  <label>
+                    <input
+                      type="checkbox"
+                      className="sr-only"
+                      checked={done}
+                      onChange={() => toggle(item)}
+                    />
+                    <span aria-hidden>{done ? <Check size={13} /> : null}</span>
+                    <em>{item.label}</em>
+                  </label>
+                  <ItemLink item={item} />
+                </li>
+              );
+            })}
+          </ul>
+        </div>
+      ) : null}
+
+      <details className="bw-prep__trip">
+        <summary>
+          <span>Mon voyage : {summary || "à pied, sans cabine"}</span>
+          <ChevronDown size={15} aria-hidden />
+        </summary>
+        <div role="group" aria-label="Mon voyage">
+          {profileLabels.map(({ key, label }) => (
+            <button
+              key={key}
+              type="button"
+              aria-pressed={data.profile[key]}
+              onClick={() =>
+                save.mutate({ ...data, profile: { ...data.profile, [key]: !data.profile[key] } })
+              }
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+      </details>
       <p className="bw-prep__note">
         Un aide-mémoire : les règles officielles et votre billet restent la référence.
       </p>

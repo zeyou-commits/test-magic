@@ -207,6 +207,7 @@ export function QuickReport({
   const [draft, setDraft] = useState<Draft>(emptyDraft);
   const [position, setPosition] = useState<[number, number] | null>(null);
   const [locating, setLocating] = useState<"idle" | "busy" | "far" | "denied">("idle");
+  const [finding, setFinding] = useState(false);
   const [sentOnSite, setSentOnSite] = useState(false);
   const [sentForReview, setSentForReview] = useState(false);
 
@@ -330,8 +331,10 @@ export function QuickReport({
       // Position demandée au moment d'envoyer. Obligatoire au port et pour un signalement impactant.
       const onSiteRequired = impact || where === "port";
       let here = position;
+      setFinding(true);
       if (!here && level >= 2 && onSiteRequired) here = await requirePosition();
       else if (!here && level >= 2 && isMobile) here = await currentPosition();
+      setFinding(false);
       if (onSiteRequired && !here)
         throw new Error(
           "Ce signalement doit être fait sur place : autorisez la localisation puis réessayez.",
@@ -501,7 +504,7 @@ export function QuickReport({
               </select>
               <button type="button" onClick={() => void locate()} disabled={locating === "busy"}>
                 <LocateFixed size={16} aria-hidden />
-                {locating === "busy" ? "…" : "Me localiser"}
+                {locating === "busy" ? "Recherche…" : "Me localiser"}
               </button>
             </div>
           ) : (
@@ -642,7 +645,7 @@ export function QuickReport({
           </p>
         ) : null}
         <button type="submit" className="bw-report-send" disabled={!ready || mutation.isPending}>
-          {mutation.isPending ? "Envoi…" : user ? "Envoyer" : "Se connecter et envoyer"}
+          {finding ? "Recherche de votre position…" : mutation.isPending ? "Envoi…" : user ? "Envoyer" : "Se connecter et envoyer"}
         </button>
         <p className="bw-report-note">
           {situation.where === "port"

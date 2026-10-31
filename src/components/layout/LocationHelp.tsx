@@ -9,6 +9,12 @@ import {
   type LocationProblem,
 } from "@/lib/ferry/community";
 
+/** Navigateur intégré à une appli (Facebook, Instagram, WhatsApp…) : la position y marche rarement. */
+function inAppBrowser() {
+  const agent = typeof navigator === "undefined" ? "" : navigator.userAgent;
+  return /FBAN|FBAV|FB_IAB|Instagram|WhatsApp|Snapchat|TikTok|musical_ly|Line\/|; wv\)/.test(agent);
+}
+
 /** Réglages à ouvrir : une fois la position refusée, seul le voyageur peut la rétablir. */
 function deniedSteps() {
   const agent = typeof navigator === "undefined" ? "" : navigator.userAgent;
@@ -50,14 +56,19 @@ function deniedSteps() {
 export function LocationHelp() {
   const [problem, setProblem] = useState<LocationProblem | null>(null);
   const [busy, setBusy] = useState(false);
+  const [failedAgain, setFailedAgain] = useState(false);
   useEffect(() => {
-    const open = (event: Event) => setProblem((event as CustomEvent<LocationProblem>).detail);
+    const open = (event: Event) => {
+      setFailedAgain(false);
+      setProblem((event as CustomEvent<LocationProblem>).detail);
+    };
     window.addEventListener(LOCATION_HELP_EVENT, open);
     return () => window.removeEventListener(LOCATION_HELP_EVENT, open);
   }, []);
   // Tant que la position n'est pas refusée, ce nouvel essai fait réapparaître la demande de l'appareil.
   const retry = async () => {
     setBusy(true);
+    setFailedAgain(false);
     const here = await currentPosition(10_000);
     setBusy(false);
     if (here) {
@@ -65,8 +76,10 @@ export function LocationHelp() {
       toast.success("Position activée : vous pouvez renvoyer votre action.");
     } else {
       setProblem(locationProblem());
+      setFailedAgain(true);
     }
   };
+  const inApp = inAppBrowser();
   return (
     <Dialog open={problem !== null} onOpenChange={(open) => !open && setProblem(null)}>
       <DialogContent className="bw-location-help">
@@ -74,18 +87,27 @@ export function LocationHelp() {
           <LocateFixed className="size-5 text-primary" aria-hidden /> Activez votre position
         </DialogTitle>
         <DialogDescription>
-          {problem === "denied"
+          {inApp
+            ? "Vous êtes dans le navigateur intégré d’une application (Facebook, WhatsApp…), qui ne donne pas la position. Ouvrez BledWay dans Chrome ou Safari : touchez le menu (⋮ ou …), puis « Ouvrir dans le navigateur »."
+            : problem === "silent"
+            ? "Ce navigateur ne répond pas à la demande de position. Fermez cette page, ouvrez BledWay dans Chrome ou Safari, puis réessayez."
+            : problem === "denied"
             ? "Le partage de position est bloqué pour BledWay sur cet appareil. Pour votre sécurité, le site ne peut pas redemander l’autorisation : il faut la rétablir une fois dans les réglages."
             : problem === "unsupported"
               ? "Cet appareil ou ce navigateur ne donne pas de position. Essayez depuis votre téléphone."
-              : "Votre position n’a pas pu être trouvée. Activez la localisation de l’appareil, si possible à l’extérieur, puis réessayez."}
+              : "Votre position n’a pas pu être trouvée. Activez la localisation de l’appareil (sur ordinateur : Paramètres › Confidentialité › Localisation), si possible à l’extérieur, puis réessayez."}
         </DialogDescription>
-        {problem === "denied" ? (
+        {problem === "denied" && !inApp ? (
           <ol className="list-decimal space-y-2 pl-5 text-sm">
             {deniedSteps().map((step) => (
               <li key={step}>{step}</li>
             ))}
           </ol>
+        ) : null}
+        {failedAgain ? (
+          <p role="alert" className="text-sm font-semibold text-destructive">
+            Toujours pas de position sur cet appareil.
+          </p>
         ) : null}
         <p className="text-xs text-muted-foreground">
           Votre position sert uniquement à vérifier que vous êtes sur place. Elle n’est pas

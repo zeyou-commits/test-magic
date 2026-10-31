@@ -532,26 +532,35 @@ export function currentPosition(timeout = 8_000): Promise<[number, number] | nul
     return Promise.resolve(null);
   }
   const attempt = (highAccuracy: boolean) =>
-    new Promise<[number, number] | null>((resolve) =>
+    new Promise<[number, number] | null>((resolve) => {
+      // Certains navigateurs (applis Facebook, WhatsApp…) ne répondent jamais, ni position ni erreur.
+      // Le délai du navigateur ne court pas tant que sa demande d'autorisation reste affichée : marge large.
+      const guard = window.setTimeout(() => {
+        lastProblem = "silent";
+        resolve(null);
+      }, timeout + NO_ANSWER_MARGIN_MS);
       navigator.geolocation.getCurrentPosition(
         (position) => {
+          window.clearTimeout(guard);
           lastProblem = null;
           resolve([position.coords.latitude, position.coords.longitude]);
         },
         (error) => {
+          window.clearTimeout(guard);
           lastProblem = error.code === error.PERMISSION_DENIED ? "denied" : "unavailable";
           resolve(null);
         },
         { enableHighAccuracy: highAccuracy, timeout, maximumAge: 120_000 },
-      ),
-    );
-  // Le GPS ne répond pas (intérieur, gare maritime) : la position du réseau suffit à vérifier 3 km.
-  return attempt(true).then((here) =>
-    here || lastProblem === "denied" ? here : attempt(false),
+      );
+    });
+  // La position du réseau est rapide et suffit à vérifier 3 km ; le GPS seulement à défaut.
+  return attempt(false).then((here) =>
+    here || lastProblem !== "unavailable" ? here : attempt(true),
   );
 }
 
-export type LocationProblem = "denied" | "unavailable" | "unsupported";
+const NO_ANSWER_MARGIN_MS = 12_000;
+export type LocationProblem = "denied" | "unavailable" | "unsupported" | "silent";
 export const LOCATION_HELP_EVENT = "bledway:location-help";
 let lastProblem: LocationProblem | null = null;
 export const locationProblem = (): LocationProblem => lastProblem ?? "unavailable";

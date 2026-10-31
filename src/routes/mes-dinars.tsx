@@ -1,13 +1,15 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { ArrowLeftRight, ArrowRightLeft, ChevronDown, Delete, Fuel, Plus, Receipt, Trash2, Wallet } from "lucide-react";
+import { ArrowRightLeft, ChevronDown, Delete, Fuel, Plus, Receipt, Trash2, Volume2, Wallet } from "lucide-react";
 import { SiteFooter, SiteHeader } from "@/components/layout/SiteLayout";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase as typedSupabase } from "@/integrations/supabase/client";
 import { seoHead } from "@/lib/seo/site";
 import { CURRENCIES, DENOMINATIONS, EXPENSE_CATEGORIES, LAST_KNOWN_RATES, addExpense, dinarTotal, emptyWallet, recordExchange, remainingDinars, removeExchange, sanitizeWallet, type Currency, type RatesResponse, type WalletState } from "@/lib/wallet/wallet";
 import { walletMediaUrl, type WalletMediaRow } from "@/lib/wallet/media";
+import { useQuery } from "@tanstack/react-query";
 import { SPOKEN_EXAMPLES, parseSpoken, saidAs } from "@/lib/wallet/jargon";
+import { dinarVoicesQuery, playVoice } from "@/lib/wallet/voices";
 import "@/wallet.css";
 
 const supabase = typedSupabase as unknown as import("@supabase/supabase-js").SupabaseClient;
@@ -56,6 +58,9 @@ function WalletPage() {
   const [category, setCategory] = useState<string>(EXPENSE_CATEGORIES[0]);
   const [cash, setCash] = useState("");
   const [heard, setHeard] = useState("");
+  const [tab, setTab] = useState<"convert" | "budget">("convert");
+  const [entry, setEntry] = useState<"dinars" | "foreign" | "heard">("dinars");
+  const voices = useQuery(dinarVoicesQuery).data;
 
   useEffect(() => {
     fetch("/api/wallet-rates").then((res) => res.json()).then((data: RatesResponse) => {
@@ -136,7 +141,7 @@ function WalletPage() {
   const addNote = (value: number) => fromDinars(String((parseAmount(dinars) || 0) + value));
 
   const spoken = saidAs(parseAmount(dinars));
-  const heardDinars = parseSpoken(heard);
+  const spokenVoice = spoken ? voices?.find((row) => row.said === spoken) : undefined;
   const left = remainingDinars(wallet);
   const entered = dinarTotal(wallet);
   const totalSpent = wallet.expenses.reduce((sum, item) => sum + item.amount, 0);
@@ -175,63 +180,78 @@ function WalletPage() {
           <p>Combien ça fait, et combien il me reste.</p>
         </header>
 
-        <section className="bw-dz-convert" aria-labelledby="dz-convert-title">
-          <h2 id="dz-convert-title"><ArrowLeftRight size={19} aria-hidden /> Combien ça fait ?</h2>
-          <div className="bw-dz-fields">
-            <label>
-              <span>Dinars</span>
-              <span className="bw-dz-input">
-                <input inputMode="decimal" placeholder="0" value={dinars} onChange={(event) => fromDinars(event.target.value)} aria-label="Montant en dinars" />
-                <b>DA</b>
-              </span>
-            </label>
-            <label>
-              <span>Soit</span>
-              <span className="bw-dz-input">
-                <input inputMode="decimal" placeholder="0" value={foreign} onChange={(event) => fromForeign(event.target.value)} aria-label={`Montant en ${currency}`} />
-                <select aria-label="Devise" value={currency} onChange={(event) => update({ ...wallet, currency: event.target.value as Currency })}>
-                  {CURRENCIES.map((code) => <option key={code}>{code}</option>)}
-                </select>
-              </span>
-            </label>
+        <div className="bw-dz-tabs" role="tablist" aria-label="Mes dinars">
+          <button type="button" role="tab" aria-selected={tab === "convert"} onClick={() => setTab("convert")}>Convertir</button>
+          <button type="button" role="tab" aria-selected={tab === "budget"} onClick={() => setTab("budget")}>Mon budget{started ? <small>{money(left, "DZD")}</small> : null}</button>
+        </div>
+
+        {tab === "convert" ? <>
+        <section className="bw-dz-convert" aria-label="Convertir un montant">
+          <div className="bw-dz-modes" role="group" aria-label="Je saisis">
+            <button type="button" aria-pressed={entry === "dinars"} onClick={() => setEntry("dinars")}>En dinars</button>
+            <button type="button" aria-pressed={entry === "foreign"} onClick={() => setEntry("foreign")}>En {currency}</button>
+            <button type="button" aria-pressed={entry === "heard"} onClick={() => setEntry("heard")}>On m’a dit…</button>
+          </div>
+          <div className="bw-dz-entry">
+            {entry === "heard"
+              ? <input value={heard} onChange={(event) => { setHeard(event.target.value); const found = parseSpoken(event.target.value); fromDinars(found ? String(found) : ""); }} placeholder="3 melyoun" aria-label="Le prix entendu" autoComplete="off" />
+              : entry === "dinars"
+                ? <input inputMode="decimal" value={dinars} onChange={(event) => fromDinars(event.target.value)} placeholder="0" aria-label="Montant en dinars" />
+                : <input inputMode="decimal" value={foreign} onChange={(event) => fromForeign(event.target.value)} placeholder="0" aria-label={`Montant en ${currency}`} />}
+            {entry === "heard" ? null : <b>{entry === "dinars" ? "DA" : currency}</b>}
+            {dinars || heard ? <button type="button" aria-label="Effacer" onClick={() => { setHeard(""); fromDinars(""); }}><Delete size={20} aria-hidden /></button> : null}
+          </div>
+          <div className="bw-dz-result" aria-live="polite">
+            {dinars ? <>
+              <strong>{entry === "foreign" ? money(parseAmount(dinars), "DZD") : `≈ ${money(parseAmount(foreign) || 0, currency, 2)}`}</strong>
+              {entry === "heard" ? <span>{money(parseAmount(dinars), "DZD")}</span> : null}
+              {spoken ? <span className="bw-dz-said">
+                Ça se dit « {spoken} »
+                {spokenVoice ? <button type="button" aria-label={`Écouter : ${spoken}`} onClick={() => playVoice(spokenVoice.storage_path)}><Volume2 size={18} aria-hidden /></button> : null}
+              </span> : null}
+            </> : heard ? <span className="bw-dz-unknown">Essayez « 2 melyoun » ou « cent mille ».</span> : <span>Touchez un billet ou saisissez un montant</span>}
           </div>
           <div className="bw-dz-notes" role="group" aria-label="Ajouter un billet ou une pièce au calcul">
             {notes.map((denom) => {
               const front = mediaRows.find((row) => row.value === denom.value && row.slot === "front");
-              return <button key={denom.value} type="button" data-kind={denom.kind} aria-label={`Ajouter ${denom.value} dinars`} onClick={() => addNote(denom.value)}>
-                <NoteVisual image={front ? walletMediaUrl(front.storage_path) : denom.image} fallback={front ? denom.image : null} variant={null} value={denom.value} kind={denom.kind} empty={false} />
+              return <button key={denom.value} type="button" data-kind={denom.kind} aria-label={`Ajouter ${denom.value} dinars`} onClick={() => { setEntry("dinars"); setHeard(""); addNote(denom.value); }}>
+                {denom.kind === "coin" ? <span className="bw-dz-coin">{denom.value} DA</span> : <NoteVisual image={front ? walletMediaUrl(front.storage_path) : denom.image} fallback={front ? denom.image : null} variant={null} value={denom.value} kind={denom.kind} empty={false} />}
               </button>;
             })}
-            {dinars ? <button type="button" className="bw-dz-clear" aria-label="Effacer le calcul" onClick={() => fromDinars("")}><Delete size={18} aria-hidden /></button> : null}
           </div>
-          {spoken ? <p className="bw-dz-said">Ça se dit : <b>« {spoken} »</b></p> : null}
-          <div className="bw-dz-rates" role="group" aria-label="Taux utilisé">
-            {personalRate ? <button type="button" aria-pressed={mode === "personal"} onClick={() => setMode("personal")}>Mon taux <b>{money(personalRate.rate, "DZD", 1)}</b></button> : null}
-            <button type="button" aria-pressed={mode === "official"} onClick={() => setMode("official")}>Officiel <b>{published?.official ? money(published.official, "DZD", 1) : "—"}</b></button>
-            <button type="button" aria-pressed={mode === "parallel"} onClick={() => setMode("parallel")}>Parallèle, indicatif <b>{published?.parallel ? money(published.parallel, "DZD", 1) : "—"}</b></button>
+          <div className="bw-dz-rateline">
+            <label><span className="sr-only">Taux utilisé</span>
+              <select value={mode} onChange={(event) => setMode(event.target.value as typeof mode)}>
+                {personalRate ? <option value="personal">Mon taux · {money(personalRate.rate, "DZD", 1)}</option> : null}
+                <option value="official">Taux officiel · {published?.official ? money(published.official, "DZD", 1) : "—"}</option>
+                <option value="parallel">Parallèle, indicatif · {published?.parallel ? money(published.parallel, "DZD", 1) : "—"}</option>
+              </select>
+            </label>
+            <label><span className="sr-only">Devise</span>
+              <select value={currency} onChange={(event) => update({ ...wallet, currency: event.target.value as Currency })}>
+                {CURRENCIES.map((code) => <option key={code}>{code}</option>)}
+              </select>
+            </label>
           </div>
         </section>
-
-        <section className="bw-dz-jargon" aria-labelledby="dz-jargon-title">
-          <h2 id="dz-jargon-title">On vous a dit un prix ?</h2>
+        <details className="bw-dz-lexicon">
+          <summary>Parler dinar : melyoun, cent mille… <ChevronDown size={16} aria-hidden /></summary>
           <p>Au bled, on compte souvent en centimes : « melyoun » veut dire 10 000 DA, pas un million.</p>
-          <label>
-            <span className="sr-only">Le prix entendu</span>
-            <input value={heard} onChange={(event) => setHeard(event.target.value)} placeholder="Ex. : 3 melyoun, mitine alf" />
-          </label>
-          {heard ? heardDinars ? <div className="bw-dz-heard">
-            <p><b>{money(heardDinars, "DZD")}</b>{rate ? ` soit environ ${money(heardDinars / rate, currency)}` : ""}</p>
-            <button type="button" onClick={() => fromDinars(String(heardDinars))}>Mettre dans le calcul</button>
-          </div> : <p className="bw-dz-unknown">Je ne reconnais pas ce montant. Essayez « 2 melyoun » ou « cent mille ».</p> : null}
-          <details>
-            <summary>Parler dinar <ChevronDown size={16} aria-hidden /></summary>
-            <dl>
-              {SPOKEN_EXAMPLES.map((item) => <div key={item.said}><dt>{item.said}</dt><dd>{money(item.dinars, "DZD")}</dd></div>)}
-            </dl>
-            <small>Les habitudes changent selon les régions et les personnes. En cas de doute, faites préciser « en dinars ».</small>
-          </details>
-        </section>
+          <ul>
+            {SPOKEN_EXAMPLES.map((item) => {
+              const voice = voices?.find((row) => row.said === item.said);
+              return <li key={item.said}>
+                <span>{item.said}</span>
+                <b>{money(item.dinars, "DZD")}</b>
+                {voice ? <button type="button" aria-label={`Écouter : ${item.said}`} onClick={() => playVoice(voice.storage_path)}><Volume2 size={18} aria-hidden /></button> : <i />}
+              </li>;
+            })}
+          </ul>
+          <small>Les habitudes changent selon les régions et les personnes. En cas de doute, faites préciser « en dinars ».</small>
+        </details>
+        </> : null}
 
+        {tab === "budget" ? <>
         <section className="bw-dz-budget" aria-labelledby="dz-budget-title">
           <h2 id="dz-budget-title"><Wallet size={19} aria-hidden /> Mon budget du voyage</h2>
           {started ? <>
@@ -269,6 +289,7 @@ function WalletPage() {
             </li>)}
           </ul> : null}
         </section>
+        </> : null}
 
         <details className="bw-dz-details">
           <summary>D’où viennent les taux ? <ChevronDown size={16} aria-hidden /></summary>

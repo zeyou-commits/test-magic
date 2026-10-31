@@ -6960,3 +6960,9 @@ button.bw-tavatar:focus-visible {
 .bw-mytrip-hero__foot:not(:has(button, span)) {
   display: none;
 }
+/* Le titre du navire en bas à droite de la photo ; la mer reste en haut à gauche. */
+.bw-vessel-photo-badge {
+  right: 10px;
+  left: auto;
+  text-align: right;
+}

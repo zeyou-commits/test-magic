@@ -173,3 +173,47 @@
 .bw-dz-jargon dt{font-weight:700}
 .bw-dz-jargon dd{font-variant-numeric:tabular-nums}
 .bw-dz-jargon small{display:block;margin-top:6px;color:#7a6a45;font-size:12px}
+
+/* Mes dinars, un écran par usage. */
+.bw-dz-head{margin-bottom:10px}
+.bw-dz-head h1{font-size:30px}
+.bw-dz-head p{font-size:13.5px}
+.bw-dz-tabs{display:grid;grid-template-columns:1fr 1fr;gap:4px;margin-bottom:12px;padding:4px;border-radius:14px;background:#e9efe9}
+.bw-dz-tabs button{display:grid;align-content:center;justify-items:center;min-height:46px;border-radius:11px;color:#55666f;font-size:14px;font-weight:800;line-height:1.15}
+.bw-dz-tabs button small{color:#00663f;font-size:11px;font-weight:700}
+.bw-dz-tabs button[aria-selected=true]{background:#fff;color:#102c43;box-shadow:0 2px 6px #16324a1f}
+.bw-dz-convert{padding:14px;border-width:3px;border-radius:22px}
+.bw-dz-modes{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:4px;padding:3px;border-radius:12px;background:#21150f}
+.bw-dz-modes button{min-height:36px;border-radius:9px;color:#e9d5bd;font-size:12.5px;font-weight:700}
+.bw-dz-modes button[aria-pressed=true]{background:#f5eee0;color:#2e211a}
+.bw-dz-entry{display:flex;align-items:center;gap:6px;min-height:64px;margin-top:10px;padding:0 12px;border-radius:15px;background:#fffaf0;color:#102c43}
+.bw-dz-entry input{width:100%;min-width:0;border:0;background:transparent;font-size:30px;font-weight:800;letter-spacing:-.02em;outline-offset:6px}
+.bw-dz-entry b{flex:none;font-size:15px}
+.bw-dz-entry button{display:grid;flex:none;width:36px;height:36px;place-items:center;color:#7a6a58}
+.bw-dz-result{display:grid;gap:2px;min-height:76px;align-content:center;padding:8px 2px;text-align:center}
+.bw-dz-result strong{color:#ffd98a;font-size:30px;font-weight:900;letter-spacing:-.02em;line-height:1.1;font-variant-numeric:tabular-nums}
+.bw-dz-result>span{color:#e9d8c1;font-size:13.5px}
+.bw-dz-result .bw-dz-said{display:inline-flex;align-items:center;justify-content:center;gap:6px;margin:0;color:#fff;font-weight:600}
+.bw-dz-said button{display:grid;width:34px;height:34px;place-items:center;border-radius:50%;background:#ffd98a;color:#3a2410}
+.bw-dz-result .bw-dz-unknown{margin:0;color:#ffd98a}
+.bw-dz-convert .bw-dz-notes{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:6px;margin:0;padding:0;overflow:visible}
+.bw-dz-convert .bw-dz-notes>button{grid-column:span 2;min-width:0}
+.bw-dz-convert .bw-dz-notes>button[data-kind=coin]{grid-column:span 3;display:grid;place-items:center;min-height:50px;border-radius:12px;background:#ffffff14}
+.bw-dz-convert .bw-dz-notes .bw-wallet-note{width:100%;max-width:none;height:50px;box-shadow:2px 2px 0 #b89477}
+.bw-dz-convert .bw-dz-notes .bw-wallet-note span{font-size:11px}
+.bw-dz-convert .bw-dz-notes [data-kind=coin] .bw-wallet-note{width:42px;height:42px;box-shadow:none}
+.bw-dz-rateline{display:flex;gap:6px;margin-top:10px}
+.bw-dz-rateline label:first-child{flex:1;min-width:0}
+.bw-dz-rateline select{width:100%;min-height:36px;padding:0 8px;border:1px solid #896c58;border-radius:10px;background:#2c1c15;color:#e9d8c1;font-size:12.5px;font-weight:600}
+.bw-dz-lexicon{margin-top:12px;padding:2px 14px;border:1px solid #f1d58a;border-radius:16px;background:#fffaf0}
+.bw-dz-lexicon summary{display:flex;align-items:center;justify-content:space-between;gap:8px;min-height:46px;cursor:pointer;font-size:14px;font-weight:700;list-style:none}
+.bw-dz-lexicon p{color:#5f6f7a;font-size:13px;line-height:1.4}
+.bw-dz-lexicon ul{margin-top:6px}
+.bw-dz-lexicon li{display:grid;grid-template-columns:minmax(0,1fr) auto 38px;align-items:center;gap:8px;min-height:44px;border-top:1px solid #f1e3c0;font-size:14px}
+.bw-dz-lexicon li span{font-weight:700}
+.bw-dz-lexicon li b{font-weight:600;font-variant-numeric:tabular-nums}
+.bw-dz-lexicon li button{display:grid;width:36px;height:36px;place-items:center;border-radius:50%;background:#0e7a43;color:#fff}
+.bw-dz-lexicon small{display:block;margin:6px 0 10px;color:#7a6a45;font-size:12px}
+.bw-dz-budget{margin-top:0}
+.bw-dz-coin{color:#ffd98a;font-size:14px;font-weight:800}
+.bw-dz-convert .bw-dz-notes>button[data-kind=coin]{min-height:40px}

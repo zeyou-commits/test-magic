@@ -129,8 +129,8 @@ const sections = [
   },
   {
     id: "walletMedia",
-    label: "Images des billets",
-    description: "Choisissez les photos et crédits affichés dans Mes dinars.",
+    label: "Mes dinars : images et voix",
+    description: "Choisissez les photos des billets et enregistrez les montants à l’oral.",
     group: "Voyageurs",
     icon: Images,
   },

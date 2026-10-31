@@ -21,6 +21,8 @@ const USER_AGENT = "BledWay-Veille/1.0 (+https://www.bledway.com)";
 const MAX_ARTICLE_FETCHES = 8;
 /** Articles gardés par navire ou compagnie : un même événement est repris par beaucoup de journaux. */
 const MAX_PER_NAME = 3;
+/** Temps accordé à une source : le passage entier doit finir avant la coupure à 120 s. */
+const SOURCE_LIMIT_MS = 90_000;
 
 interface Source {
   id: string;
@@ -40,7 +42,7 @@ const json = (body: unknown, status = 200) =>
 async function fetchText(url: string) {
   const response = await fetch(url, {
     headers: { "user-agent": USER_AGENT, accept: "text/html,application/xml,text/xml,*/*" },
-    signal: AbortSignal.timeout(20_000),
+    signal: AbortSignal.timeout(10_000),
   });
   if (!response.ok) throw new Error(`HTTP ${response.status}`);
   return await response.text();
@@ -135,12 +137,18 @@ Deno.serve(async (request) => {
 
   let found = 0;
   let errors = 0;
-  for (const source of (sources ?? []) as Source[]) {
+  // En parallèle, avec une limite : un site lent ne prive plus les autres de leur passage.
+  await Promise.all(((sources ?? []) as Source[]).map(async (source) => {
     const last = source.last_checked_at ? Date.parse(source.last_checked_at) : 0;
-    if (!force && now - last < (source.check_minutes - 2) * 60_000) continue;
+    if (!force && now - last < (source.check_minutes - 2) * 60_000) return;
     let lastError: string | null = null;
     try {
-      const articles = await readSource(db, source, now);
+      const articles = await Promise.race([
+        readSource(db, source, now),
+        new Promise<never>((_, reject) =>
+          setTimeout(() => reject(new Error("Source trop lente")), SOURCE_LIMIT_MS),
+        ),
+      ]);
       if (articles.length) {
         const { data } = await db
           .from("bw_watch_items")
@@ -166,7 +174,7 @@ Deno.serve(async (request) => {
       .from("bw_watch_sources")
       .update({ last_checked_at: new Date(now).toISOString(), last_error: lastError })
       .eq("id", source.id);
-  }
+  }));
 
   // Articles sans suite : inutile de les garder au-delà de 60 jours.
   const { data: kept } = await db.from("bw_watch_proposals").select("item_id");

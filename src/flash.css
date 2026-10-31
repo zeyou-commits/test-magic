@@ -6966,3 +6966,45 @@ button.bw-tavatar:focus-visible {
   left: auto;
   text-align: right;
 }
+/* Encart Ma traversée : tout tient sur un téléphone étroit. */
+.bw-mytrip-hero__avatar {
+  width: 46px;
+  height: 46px;
+  overflow: hidden;
+  border-radius: 50%;
+  background: #ffffff;
+}
+.bw-mytrip-hero__avatar > * {
+  max-width: 100%;
+  max-height: 100%;
+}
+.bw-mytrip-hero__main .bw-mytrip-hero__avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  box-shadow: none;
+  background: transparent;
+}
+.bw-mytrip-hero__text > * {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.bw-mytrip-hero__status .bw-mytrip-hero__clock {
+  display: grid;
+  gap: 0;
+  justify-content: start;
+  padding: 6px 12px;
+  font-size: 11.5px;
+  line-height: 1.2;
+}
+.bw-mytrip-hero__status .bw-mytrip-hero__clock:has(.bw-mytrip-hero__progress) {
+  justify-content: stretch;
+}
+.bw-mytrip-hero__status .bw-mytrip-hero__clock strong {
+  font-size: 18px;
+}
+.bw-mytrip-hero__status .bw-mytrip-hero__progress {
+  flex: none;
+  margin-top: 5px;
+}

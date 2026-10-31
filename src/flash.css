@@ -7698,3 +7698,40 @@ label:has(> input.sr-only) {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+
+/* Mon bateau : le fanion « Moi », planté à l'avant, flotte vers l'extérieur du navire. */
+.bw-mytrip-flag {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+  z-index: 3;
+}
+.bw-mytrip-flag::before {
+  content: '';
+  position: absolute;
+  inset: -10px;
+}
+.bw-mytrip-flag__cloth {
+  display: block;
+  padding: calc(3px * var(--flag-scale, 1)) calc(7px * var(--flag-scale, 1)) calc(3px * var(--flag-scale, 1)) calc(13px * var(--flag-scale, 1));
+  background: #0e7a43;
+  color: #ffffff;
+  font-size: calc(12px * var(--flag-scale, 1));
+  font-weight: 800;
+  line-height: 1.15;
+  white-space: nowrap;
+  clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%, 16% 50%);
+  filter: drop-shadow(0 1px 1px rgba(22, 50, 74, 0.35));
+}
+.bw-mytrip-flag__mast {
+  display: block;
+  width: 2px;
+  height: calc(14px * var(--flag-scale, 1));
+  background: #0b5e33;
+  border-radius: 1px;
+}

@@ -13,6 +13,68 @@ const departure = {
 const from = { longitude: 5, latitude: 43 } as Port;
 const to = { longitude: 5, latitude: 37 } as Port;
 const now = Date.parse("2026-10-21T13:00:00Z");
+describe("signalements validés", () => {
+  // Départ prévu 08:00, arrivée 18:00 (10 h).
+  const at = "2026-10-21T09:00:00Z";
+  it("recalcule l'arrivée à partir de l'heure du signalement « encore à quai »", () => {
+    const late = { ...departure, reported_quay_at: "2026-10-21T09:30:00Z" };
+    const p = crossingProgress(late, from, to, null, Date.parse("2026-10-21T10:00:00Z"));
+    expect(p.times.arrival.iso).toBe("2026-10-21T19:30:00.000Z");
+    expect(p.times.arrival.notBefore).toBe(true);
+    expect(p.times.arrival.reported).toBe(true);
+    expect(p.times.arrival.shiftMinutes).toBe(90);
+    expect(p.times.departure.iso).toBe("2026-10-21T09:30:00.000Z");
+    expect(p.ratio).toBe(0);
+    expect(p.reportedQuay).toBe(true);
+    expect(p.scene).toBe("docked");
+    expect(p.trust).toBe("reported");
+  });
+  it("reprend l'avancement depuis le signalement une fois le délai à quai passé", () => {
+    const late = { ...departure, reported_quay_at: "2026-10-21T09:30:00Z" };
+    const p = crossingProgress(late, from, to, null, Date.parse("2026-10-21T14:30:00Z"));
+    expect(p.ratio).toBe(0.5);
+    expect(p.reportedQuay).toBe(false);
+  });
+  it("garde un « à quai » d'avant l'heure prévue sans rien changer", () => {
+    const early = { ...departure, reported_quay_at: "2026-10-21T07:00:00Z" };
+    const p = crossingProgress(early, from, to, null, Date.parse(at));
+    expect(p.times.arrival.iso).toBe("2026-10-21T18:00:00.000Z");
+    expect(p.times.arrival.kind).toBe("scheduled");
+  });
+  it("fait repartir la durée du départ signalé, plus récent que le signalement à quai", () => {
+    const left = {
+      ...departure,
+      reported_quay_at: "2026-10-21T09:30:00Z",
+      reported_departed_at: "2026-10-21T10:00:00Z",
+    };
+    const p = crossingProgress(left, from, to, null, Date.parse("2026-10-21T15:00:00Z"));
+    expect(p.times.departure.kind).toBe("observed");
+    expect(p.times.departure.reported).toBe(true);
+    expect(p.times.arrival.iso).toBe("2026-10-21T20:00:00.000Z");
+    expect(p.times.arrival.notBefore).toBeUndefined();
+    expect(p.ratio).toBe(0.5);
+  });
+  it("applique un retard validé, et constate l'arrivée signalée", () => {
+    const delayed = { ...departure, reported_delay_minutes: 120 };
+    expect(crossingProgress(delayed, from, to, null, Date.parse(at)).times.arrival.iso).toBe(
+      "2026-10-21T20:00:00.000Z",
+    );
+    const arrived = { ...departure, reported_arrived_at: "2026-10-21T17:40:00Z" };
+    const p = crossingProgress(arrived, from, to, null, Date.parse("2026-10-21T18:00:00Z"));
+    expect(p.times.arrival.kind).toBe("observed");
+    expect(p.times.arrival.iso).toBe("2026-10-21T17:40:00.000Z");
+    expect(p.ratio).toBe(1);
+    expect(p.scene).toBe("disembarking");
+  });
+  it("n'invente aucun avancement pour un report signalé", () => {
+    const off = { ...departure, reported_postponed_at: "2026-10-21T07:00:00Z" };
+    const p = crossingProgress(off, from, to, null, Date.parse(at));
+    expect(p.ratio).toBeNull();
+    expect(p.scene).toBe("stopped");
+    expect(p.reportedPostponed).toBe(true);
+  });
+});
+
 describe("crossing scene", () => {
   const at = (iso: string) => crossingProgress(departure, from, to, null, Date.parse(iso)).scene;
   it("déduit les états à quai de l'horaire, sans les présenter comme constatés", () => {

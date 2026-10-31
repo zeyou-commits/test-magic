@@ -467,11 +467,70 @@ export interface TrackingTime {
   notBefore?: boolean;
   /** Arrivée vue (navire à quai) sans heure exacte : `iso` est l'heure du signal, au plus tard. */
   seenOnly?: boolean;
+  /** Heure issue d'un signalement validé par l'équipe, pas d'un signal AIS. */
+  reported?: boolean;
 }
 export type CrossingSchedule = Pick<
   Departure,
   "id" | "departure_at" | "arrival_at" | "duration_minutes"
-> & { status: string };
+> &
+  Partial<
+    Pick<
+      Departure,
+      | "reported_quay_at"
+      | "reported_departed_at"
+      | "reported_arrived_at"
+      | "reported_delay_minutes"
+      | "reported_postponed_at"
+    >
+  > & { status: string };
+
+/** Après ce délai, un navire signalé à quai est supposé parti : il n'en reste qu'une heure minimale. */
+export const REPORTED_QUAY_MINUTES = 60;
+
+const reportedMs = (iso: string | null | undefined) => {
+  const ms = iso ? Date.parse(iso) : NaN;
+  return Number.isFinite(ms) ? ms : null;
+};
+
+/**
+ * Horaires corrigés par les signalements validés. Le plus récent entre « à quai » et « parti » l'emporte :
+ * la durée de traversée repart de l'heure du signalement, jamais de l'heure de validation.
+ */
+export function reportedCrossing(departure: CrossingSchedule, now = Date.now()) {
+  const scheduled = Date.parse(departure.departure_at);
+  const declared = departure.arrival_at ? Date.parse(departure.arrival_at) : NaN;
+  const minutes = departure.duration_minutes;
+  const scheduledEnd =
+    Number.isFinite(declared) && declared > scheduled
+      ? declared
+      : minutes && minutes > 0
+        ? scheduled + minutes * 60_000
+        : NaN;
+  const duration = scheduledEnd - scheduled;
+  const quay = reportedMs(departure.reported_quay_at);
+  const left = reportedMs(departure.reported_departed_at);
+  const arrived = reportedMs(departure.reported_arrived_at);
+  const postponed = reportedMs(departure.reported_postponed_at);
+  const delay = departure.reported_delay_minutes ?? 0;
+  const departedAt = left !== null && (quay === null || left >= quay) ? left : null;
+  const lateByQuay = departedAt === null && quay !== null && quay > scheduled ? quay : null;
+  const start = departedAt ?? Math.max(scheduled + delay * 60_000, lateByQuay ?? scheduled);
+  const end = arrived ?? (Number.isFinite(duration) ? start + duration : NaN);
+  return {
+    start,
+    end,
+    changed: departedAt !== null || start !== scheduled || arrived !== null,
+    departedAt,
+    arrivedAt: arrived,
+    /** Le départ reste un minimum : le navire était encore à quai à cette heure. */
+    notBefore: departedAt === null && lateByQuay !== null && start === lateByQuay,
+    /** Vu à quai il y a peu, après l'heure prévue : aucun avancement. */
+    atQuayNow:
+      lateByQuay !== null && arrived === null && now - lateByQuay <= REPORTED_QUAY_MINUTES * 60_000,
+    postponed: postponed !== null && departedAt === null && arrived === null,
+  };
+}
 export function trackingTimes(departure: CrossingSchedule, live?: LiveShip | null) {
   const start = Date.parse(departure.departure_at);
   const declaredArrival = departure.arrival_at ? Date.parse(departure.arrival_at) : NaN;
@@ -522,13 +581,39 @@ export function trackingTimes(departure: CrossingSchedule, live?: LiveShip | nul
   // laquelle on l'a vu à quai (« au plus tard »), jamais présentée comme l'heure d'arrivée.
   const seenArrived =
     !actualArrival && sameCrossing && live?.etaBasis === "arrived" ? live.etaIso : null;
-  const arrival = make(
-    scheduledArrival,
-    actualArrival ?? seenArrived,
-    sameCrossing && live?.etaBasis !== "arrived" ? (live?.etaIso ?? null) : null,
+  // Un signal AIS exact prime ; sinon, un signalement validé corrige l'horaire.
+  const report = reportedCrossing(departure);
+  const useReport = report.changed && !report.postponed;
+  const reportedEnd =
+    useReport && Number.isFinite(report.end) ? new Date(report.end).toISOString() : null;
+  const liveEta = sameCrossing && live?.etaBasis !== "arrived" ? (live?.etaIso ?? null) : null;
+  const reportedArrival =
+    !actualArrival && !seenArrived && report.arrivedAt !== null ? reportedEnd : null;
+  const estimatedEnd =
+    !reportedArrival && reportedEnd && !report.departedAt
+      ? liveEta && Date.parse(liveEta) > Date.parse(reportedEnd)
+        ? liveEta
+        : reportedEnd
+      : (liveEta ?? (reportedArrival ? null : reportedEnd));
+  const arrival = make(scheduledArrival, actualArrival ?? seenArrived ?? reportedArrival, estimatedEnd);
+  const reportedDeparture = !actualDeparture && report.departedAt !== null;
+  const departureTime = make(
+    departure.departure_at,
+    actualDeparture ?? (reportedDeparture ? new Date(report.departedAt!).toISOString() : null),
+    !actualDeparture && !reportedDeparture && useReport && report.start !== start
+      ? new Date(report.start).toISOString()
+      : null,
   );
+  const fromReport = Boolean(!seenArrived && !actualArrival && reportedEnd && arrival.iso === reportedEnd);
+  if (fromReport) {
+    arrival.reported = true;
+    if (report.notBefore) arrival.notBefore = true;
+  }
+  if (reportedDeparture || (!actualDeparture && useReport && report.start !== start))
+    departureTime.reported = true;
+  if (!actualDeparture && report.notBefore) departureTime.notBefore = true;
   return {
-    departure: make(departure.departure_at, actualDeparture, null),
+    departure: departureTime,
     arrival: seenArrived
       ? { ...arrival, seenOnly: true, shiftMinutes: null }
       : sameCrossing && live?.etaBasis === "docked"

@@ -8,7 +8,7 @@
 //  - avec le suivi en direct, la position réelle remplace la position déduite.
 import { pointAlong, routeArc, type LngLat } from "./geo";
 import { overlappingDepartureIds } from "./conflicts";
-import { LIVE_MAX_AGE_MINUTES, type LiveShip } from "./tracking";
+import { LIVE_MAX_AGE_MINUTES, reportedCrossing, type LiveShip } from "./tracking";
 import type { Departure, Port, RouteLine, Vessel } from "./types";
 
 export interface FleetShip {
@@ -94,9 +94,18 @@ export function buildFleet(
     const from = portById.get(route.departure_port_id);
     const to = portById.get(route.arrival_port_id);
     if (!from || !to) return;
-    const start = Date.parse(departure.departure_at);
+    const scheduled = Date.parse(departure.departure_at);
     const minutes = departure.duration_minutes ?? route.typical_duration_minutes ?? 24 * 60;
-    const end = departure.arrival_at ? Date.parse(departure.arrival_at) : start + minutes * 60_000;
+    const scheduledEnd = departure.arrival_at
+      ? Date.parse(departure.arrival_at)
+      : scheduled + minutes * 60_000;
+    // Signalement validé : encore à quai, parti ou reporté, il place le navire avant l'horaire.
+    const report = reportedCrossing({ ...departure, duration_minutes: minutes }, now);
+    const hold = report.postponed || report.atQuayNow;
+    const start = hold ? Math.max(now + 60_000, report.start) : report.changed ? report.start : scheduled;
+    const end = report.changed || hold
+      ? Math.max(start + 60_000, Number.isFinite(report.end) && !report.postponed ? report.end : start + (scheduledEnd - scheduled))
+      : scheduledEnd;
     const key = departure.vessel_id ?? `anon:${departure.id}`;
     const legs = groups.get(key) ?? [];
     legs.push({ departure, route, from, to, start, end });

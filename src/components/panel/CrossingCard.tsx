@@ -40,6 +40,10 @@ export function CrossingCard({
   const status =
     departure.status === "cancelled"
       ? "Traversée annulée"
+      : progress.reportedPostponed
+        ? "Report ou annulation signalé"
+      : progress.reportedQuay
+        ? "Encore à quai · en retard"
       : label && !progress.hold
         ? label
       : progress.times.arrival.kind === "observed"
@@ -81,7 +85,11 @@ export function CrossingCard({
       {scene === "stopped" ? (
         <div className="bw-crossing-progress">
           <div className="bw-crossing-progress-label">
-            <span>{alert?.label ?? "Navire immobilisé"}</span>
+            <span>
+              {progress.reportedPostponed
+                ? "Signalé sur place et validé par BledWay, à confirmer auprès de la compagnie"
+                : (alert?.label ?? "Navire immobilisé")}
+            </span>
           </div>
           <div className="bw-crossing-track">
             <i style={{ left: ferryLeft(0, 62, scene, 4) }}>

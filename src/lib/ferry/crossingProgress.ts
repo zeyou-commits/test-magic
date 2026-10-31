@@ -3,6 +3,7 @@ import {
   formatAge,
   haversineKm,
   physicalStatus,
+  reportedCrossing,
   trackingTimes,
   TRUSTED_SIGNAL_MINUTES,
   type CrossingSchedule,
@@ -14,10 +15,11 @@ import type { Port } from "./types";
  * D'où vient l'état affiché : arrivée constatée, position récente, position ancienne, ou horaire seul.
  * Le voyageur doit toujours pouvoir distinguer ce qui est observé de ce qui est calculé.
  */
-export type TrackingTrust = "observed" | "live" | "aged" | "schedule";
+export type TrackingTrust = "observed" | "live" | "aged" | "schedule" | "reported";
 
 export function trustLabel(trust: TrackingTrust, ageMinutes: number | null) {
   if (trust === "observed") return "Arrivée constatée";
+  if (trust === "reported") return "Estimation d’après un signalement validé par BledWay";
   if (trust === "live") return `Position réelle · ${formatAge(ageMinutes ?? 0)}`;
   if (trust === "aged") return `Estimation · dernière position ${formatAge(ageMinutes ?? 0)}`;
   return "Estimation d’après l’horaire · position non captée";
@@ -70,18 +72,17 @@ export function crossingProgress(
   const times = trackingTimes(departure, signal);
   const total = haversineKm([from.longitude, from.latitude], [to.longitude, to.latitude]);
   const geographic = signal && signal.ageMinutes <= 30 && signal.remainingKm !== null && total > 0;
-  const start = Date.parse(departure.departure_at);
-  const end = departure.arrival_at
-    ? Date.parse(departure.arrival_at)
-    : departure.duration_minutes && departure.duration_minutes > 0
-      ? start + departure.duration_minutes * 60_000
-      : NaN;
+  const report = reportedCrossing(departure, now);
+  const start = report.start;
+  const end = report.end;
   const scheduled = Number.isFinite(start) && Number.isFinite(end) && end > start;
   // Encore à quai : aucun avancement. Dernier signal à quai trop ancien : on ne sait pas.
   const hold = signal ? departureHold(departure, signal.position, from, now) : null;
   const ratio =
-    departure.status === "cancelled" || stopped
+    departure.status === "cancelled" || stopped || (report.postponed && !signal)
       ? null
+      : report.atQuayNow && !geographic
+        ? 0
       : hold
         ? hold.fresh
           ? 0
@@ -101,17 +102,20 @@ export function crossingProgress(
       : signal.ageMinutes <= TRUSTED_SIGNAL_MINUTES
         ? "live"
         : "aged";
+  const shownTrust: TrackingTrust =
+    report.changed && (trust === "schedule" || trust === "aged") ? "reported" : trust;
   // L'heure passée ne prouve pas l'arrivée : seul un signal peut la constater.
   const arrivalIso = times.arrival.iso;
   const arrivalDue = !observedArrival && !hold && Boolean(arrivalIso) && Date.parse(arrivalIso!) < now;
   const scene = ((): CrossingScene | null => {
     if (departure.status === "cancelled") return null;
-    if (stopped) return "stopped";
+    if (stopped || (report.postponed && !signal)) return "stopped";
     if (observedArrival) {
       const since = (now - Date.parse(arrivalIso!)) / 60_000;
       return since <= 90 ? "disembarking" : "docked";
     }
     if (hold) return hold.fresh ? "closed" : "stale";
+    if (report.atQuayNow && trust !== "live") return "docked";
     if (signal && trust === "live") {
       const code = physicalStatus(signal.position, from, to, departure.departure_at, now).code;
       if (code === "boarding_closed") return "closed";
@@ -127,9 +131,11 @@ export function crossingProgress(
   })();
   return {
     scene,
+    reportedQuay: report.atQuayNow && !hold,
+    reportedPostponed: report.postponed && !signal,
     times,
-    trust,
-    trustLabel: trustLabel(trust, signal?.ageMinutes ?? null),
+    trust: shownTrust,
+    trustLabel: trustLabel(shownTrust, signal?.ageMinutes ?? null),
     arrivalDue,
     ratio: ratio === null ? null : Math.max(0, Math.min(1, ratio)),
     source: hold
@@ -138,7 +144,9 @@ export function crossingProgress(
         ? "Arrivée constatée (AIS)"
         : geographic
           ? "Position AIS · distance indicative"
-          : "Repère horaire",
+          : report.changed
+            ? "Signalement validé"
+            : "Repère horaire",
     signal,
     hold,
   };

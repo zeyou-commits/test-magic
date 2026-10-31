@@ -14,7 +14,11 @@ function Time({ time, label, zone }: { time: TrackingTime; label: string; zone: 
     <div className="min-w-0">
       <p className="text-[10px] font-medium text-muted-foreground">
         {label}{" "}
-        {time.kind === "observed"
+        {time.kind === "observed" && time.reported
+          ? label === "Arrivée"
+            ? "signalée"
+            : "signalé"
+          : time.kind === "observed"
           ? label === "Arrivée"
             ? `constatée${isAdmin ? " (AIS)" : ""}`
             : `constaté${isAdmin ? " (AIS)" : ""}`
@@ -22,8 +26,8 @@ function Time({ time, label, zone }: { time: TrackingTime; label: string; zone: 
             ? "pas avant"
             : time.kind === "estimated"
               ? label === "Arrivée"
-                ? `estimée${isAdmin ? " (AIS)" : ""}`
-                : `estimé${isAdmin ? " (AIS)" : ""}`
+                ? `estimée${isAdmin && !time.reported ? " (AIS)" : ""}`
+                : `estimé${isAdmin && !time.reported ? " (AIS)" : ""}`
               : label === "Arrivée"
                 ? "prévue"
                 : "prévu"}
@@ -44,9 +48,10 @@ function Time({ time, label, zone }: { time: TrackingTime; label: string; zone: 
       ) : null}
       {changed && shift !== null ? (
         <p className={`text-[10px] font-semibold ${shift < 0 ? "text-success" : "text-warning"}`}>
+          {time.reported ? "Signalement validé · " : ""}
           {shift < 0
             ? "En avance de "
-            : time.kind === "observed"
+            : time.kind === "observed" && !time.reported
               ? "Écart constaté : +"
               : time.notBefore
                 ? "Retard d'au moins "

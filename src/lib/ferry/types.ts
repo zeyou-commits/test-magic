@@ -123,6 +123,12 @@ export interface Departure {
   reliability: Reliability;
   notes: string | null;
   is_demo: boolean;
+  /** Signalements validés par l'équipe (script du 27/11/2026). */
+  reported_quay_at?: string | null;
+  reported_departed_at?: string | null;
+  reported_arrived_at?: string | null;
+  reported_delay_minutes?: number | null;
+  reported_postponed_at?: string | null;
 }
 export interface RatingCriterion {
   id: string;

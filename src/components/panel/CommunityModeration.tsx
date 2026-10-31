@@ -58,7 +58,11 @@ export function CommunityModeration() {
           : await supabase.rpc("bw_alert_action", { p_alert: input.id, p_action: input.verdict });
       if (error) throw new Error("La modification a échoué. Vérifiez vos droits et réessayez.");
     },
-    onSuccess: () => void client.invalidateQueries({ queryKey: communityKey }),
+    onSuccess: () => {
+      void client.invalidateQueries({ queryKey: communityKey });
+      // Un signalement validé corrige les horaires et la position du navire.
+      void client.invalidateQueries({ queryKey: ["departures"] });
+    },
   });
   if (feed.isPending) return <p role="status">Chargement de la communauté…</p>;
   if (feed.isError)

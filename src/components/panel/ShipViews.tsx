@@ -1,3 +1,4 @@
+import { VesselSeaBadge } from "./SeaForecast";
 import { PlaceReactions } from "./PlaceReactions";
 import { EntityReviews } from "./EntityReviews";
 import { entityReviewsQuery } from "@/lib/ferry/entityReviews";
@@ -235,6 +236,15 @@ export function VesselView({
             <ShipPhoto key={photo?.url ?? vesselId} url={photo?.url} name={vessel.name} />
             <VesselPhotoAlert vesselId={vessel.id} />
             <VesselPhotoBadge vesselId={vessel.id} />
+            {departure && from && to ? (
+              <VesselSeaBadge
+                departureId={departure.id}
+                from={from}
+                to={to}
+                departureAt={departure.departure_at}
+                arrivalAt={departure.arrival_at ?? null}
+              />
+            ) : null}
             <VesselPhotoInfo count={liveInfo.official + liveInfo.travellers} onOpen={openLive} />
           </div>
         </div>

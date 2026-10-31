@@ -55,6 +55,36 @@ export function SeaPhotoBadge({ peak }: { peak: number }) {
   );
 }
 
+/** Fiche bateau : la mer de sa traversée en cours ou de la prochaine, trajet indiqué. */
+export function VesselSeaBadge({
+  departureId,
+  from,
+  to,
+  departureAt,
+  arrivalAt,
+}: {
+  departureId: string;
+  from: Point & { name: string };
+  to: Point & { name: string };
+  departureAt: string;
+  arrivalAt: string | null;
+}) {
+  const peak = useSeaPeak(departureId, from, to, departureAt, arrivalAt);
+  if (peak == null) return null;
+  const level = seaLevel(peak);
+  return (
+    <span className="bw-sea-pill" data-level={level.id}>
+      <SeaIcon peak={peak} size={17} />
+      <span>
+        <b>{level.short}</b>
+        <small>
+          {from.name} → {to.name}
+        </small>
+      </span>
+    </span>
+  );
+}
+
 /** La mer prévue sur le trajet : une information de confort, sans prédire le comportement du navire. */
 export function SeaForecast({
   departureId,

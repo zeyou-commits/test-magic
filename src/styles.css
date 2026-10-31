@@ -950,3 +950,26 @@
 @media (prefers-reduced-motion: reduce) {
   .bw-cal-slide-next .rdp-month, .bw-cal-slide-prev .rdp-month { animation: none; }
 }
+
+/* Logo de compagnie sous le nom d'un navire debout (filtre « Compagnies »). */
+.bw-pennant--label .bw-pennant-inner {
+  align-items: center;
+  filter: none;
+  transform-origin: top center;
+}
+.bw-pennant--label .bw-pennant-mast {
+  display: none;
+}
+.bw-pennant--label .bw-pennant-flag {
+  max-width: 96px;
+  height: 26px;
+  padding: 3px 9px;
+  border-radius: 8px;
+  box-shadow: 0 1px 5px rgba(22, 50, 74, 0.28);
+  clip-path: none;
+  animation: none;
+}
+.bw-pennant--label .bw-pennant-flag img {
+  max-width: 78px;
+  max-height: 20px;
+}

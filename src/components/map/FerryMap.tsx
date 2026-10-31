@@ -2131,7 +2131,9 @@ export default function FerryMap({
     const placed = companyFocusShips.map((ship) => {
       const info = vesselCardsRef.current[String(ship.vesselId ?? "")];
       const el = document.createElement("div");
-      el.className = "bw-pennant";
+      // Navire debout : le logo se range sous son nom, le dessus du navire reste à la communauté.
+      const slug = vesselMapIcon(ship.name);
+      el.className = slug ? "bw-pennant bw-pennant--label" : "bw-pennant";
       el.style.pointerEvents = "none";
       const flag = document.createElement("div");
       flag.className = "bw-pennant-flag";
@@ -2156,25 +2158,23 @@ export default function FerryMap({
         ? ([ship.live.position.longitude, ship.live.position.latitude] as [number, number])
         : ship.lngLat;
       const shift: [number, number] = ship.live ? [0, 0] : [ship.dx, ship.dy];
-      const marker = new Marker({ element: el, anchor: "bottom-left", offset: shift })
+      const marker = new Marker({ element: el, anchor: slug ? "top" : "bottom-left", offset: shift })
         .setLngLat(at)
         .addTo(map);
-      return { marker, shift, inner, slug: vesselMapIcon(ship.name) };
+      return { marker, shift, inner, slug, late: Boolean(ship.delay) };
     });
     const place = () => {
       const zoom = map.getZoom();
       const r = shipTokenRadius(zoom);
-      // Le mât est planté sur le navire debout, et le drapeau grandit avec lui.
-      const width = vesselScreenWidth(zoom);
-      for (const { marker, shift, inner, slug } of placed) {
-        const ratio = slug ? vesselImagesRef.current?.heightRatio(slug) : null;
-        inner.style.scale = String(Math.min(1.25, Math.max(0.7, width / 110)));
-        marker.setOffset(
-          ratio
-            ? // Planté à l'avant : le drapeau flotte au-dessus du navire, sans cacher la cheminée.
-              [shift[0] * dockSpread(zoom) - width * 0.26, shift[1] - width * ratio * 0.82]
-            : [shift[0] - r * 0.72, shift[1] - r * 0.72],
-        );
+      for (const { marker, shift, inner, slug, late } of placed) {
+        if (!slug) {
+          marker.setOffset([shift[0] - r * 0.72, shift[1] - r * 0.72]);
+          continue;
+        }
+        // Sous le libellé : une ligne pour le nom, une de plus pour le retard dès qu'il s'affiche.
+        const lines = late && zoom >= 6.5 ? 2 : 1;
+        inner.style.scale = zoom < 6 ? "0.75" : "1";
+        marker.setOffset([shift[0] * dockSpread(zoom), shift[1] + 10 + lines * 16]);
       }
     };
     place();

@@ -3,11 +3,28 @@ const visuals: Record<string, string> = {
   "rosalind franklin": "/vessel-visuals/rosalind-franklin.jpeg",
 };
 
-export const ROSALIND_MAP_ICON = "vessel-rosalind-franklin";
-export const ROSALIND_MAP_ICON_URL = "/vessel-visuals/rosalind-franklin-map.png";
+/** Navires détourés pour la carte (public/vessel-visuals/map), proue vers la gauche. */
+export const MAP_VESSELS = [
+  "almariya",
+  "badji-mokhtar-iii",
+  "danielle-casanova",
+  "el-djazair-ii",
+  "fantastic",
+  "gnv-auriga",
+  "gnv-cristal",
+  "hypatia-de-alejandria",
+  "jean-nicoli",
+  "le-cracovia",
+  "mediterranee",
+  "regina-baltica",
+  "rosalind-franklin",
+  "tariq-ibn-ziyad",
+  "tassili-ii",
+];
 
 export function vesselMapIcon(name: string): string | null {
-  return normalizedName(name) === "rosalind franklin" ? ROSALIND_MAP_ICON : null;
+  const slug = normalizedName(name).replace(/ /g, "-");
+  return MAP_VESSELS.includes(slug) ? slug : null;
 }
 
 function normalizedName(name: string): string {

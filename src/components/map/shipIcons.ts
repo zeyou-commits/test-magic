@@ -261,31 +261,59 @@ function drawAlert(): ImageData | null {
 }
 
 /**
- * Vraie image d'un navire, proue vers le nord pour tourner selon son cap. Une carte ne lisse pas une grande
- * image réduite : elle est préparée à trois tailles, chacune pour une plage de zoom.
+ * Navire debout, face à nous : un rendu 3D ne se tourne pas sans paraître couché. Une carte ne lisse pas
+ * une grande image réduite : chacune est préparée à trois largeurs, une par plage de zoom.
  */
 export const VESSEL_IMAGE_STEPS = [
-  { size: 96, minzoom: 0, maxzoom: 6 },
-  { size: 192, minzoom: 6, maxzoom: 9 },
-  { size: 384, minzoom: 9, maxzoom: 24 },
+  { width: 120, minzoom: 0, maxzoom: 6.5 },
+  { width: 240, minzoom: 6.5, maxzoom: 9 },
+  { width: 480, minzoom: 9, maxzoom: 24 },
 ];
 
-export function addVesselImage(map: MapLibreMap, id: string, url: string, onReady: () => void) {
-  const source = new Image();
-  source.onload = () => {
-    for (const { size } of VESSEL_IMAGE_STEPS) {
-      const canvas = document.createElement("canvas");
-      canvas.width = canvas.height = size;
-      const ctx = canvas.getContext("2d");
-      if (!ctx) return;
-      ctx.imageSmoothingQuality = "high";
-      ctx.drawImage(source, 0, 0, size, size);
-      const name = `${id}-${size}`;
-      if (!map.hasImage(name)) map.addImage(name, ctx.getImageData(0, 0, size, size));
+/** Largeur à l'écran, en pixels : minuscule en vue générale, détaillé de près. */
+export const VESSEL_SCREEN_WIDTH = [3, 22, 5, 32, 6, 46, 7, 84, 9, 170, 11, 320, 13, 480];
+
+/** Écart entre navires à quai : la file s'élargit avec eux pour qu'ils ne s'empilent pas au zoom. */
+export function dockSpread(zoom: number) {
+  const steps = VESSEL_SCREEN_WIDTH;
+  let width = steps.at(-1)!;
+  for (let i = 0; i < steps.length; i += 2) {
+    if (zoom > steps[i]!) continue;
+    if (i === 0) width = steps[1]!;
+    else {
+      const ratio = (zoom - steps[i - 2]!) / (steps[i]! - steps[i - 2]!);
+      width = steps[i - 1]! + ratio * (steps[i + 1]! - steps[i - 1]!);
     }
-    onReady();
-  };
-  source.src = url;
+    break;
+  }
+  return Math.max(1, width / 26);
+}
+
+export const vesselImageId = (slug: string, width: number) => `vessel-${slug}-${width}`;
+
+export function addVesselImages(map: MapLibreMap, slugs: string[]) {
+  for (const slug of slugs) {
+    const source = new Image();
+    source.onload = () => {
+      for (const { width } of VESSEL_IMAGE_STEPS) {
+        const canvas = document.createElement("canvas");
+        canvas.width = width;
+        canvas.height = Math.round((source.height * width) / source.width);
+        const ctx = canvas.getContext("2d");
+        if (!ctx) return;
+        ctx.imageSmoothingQuality = "high";
+        ctx.drawImage(source, 0, 0, canvas.width, canvas.height);
+        const id = vesselImageId(slug, width);
+        if (!map.hasImage(id)) map.addImage(id, ctx.getImageData(0, 0, canvas.width, canvas.height));
+      }
+    };
+    source.src = `/vessel-visuals/map/${slug}.webp`;
+  }
+}
+
+/** La carte reste à plate de loin, où l'on lit les lignes, et s'incline quand on s'approche des navires. */
+export function pitchForZoom(zoom: number) {
+  return zoom <= 5.5 ? 0 : zoom >= 8 ? 50 : ((zoom - 5.5) / 2.5) * 50;
 }
 
 export function addShipImages(map: MapLibreMap) {

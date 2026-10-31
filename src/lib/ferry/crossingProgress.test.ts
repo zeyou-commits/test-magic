@@ -61,6 +61,42 @@ describe("crossing progress provenance", () => {
       "Repère horaire",
     );
   });
+  it("dit toujours si la position est réelle ou estimée", () => {
+    const live = {
+      departure,
+      position: { eventDepartureId: "trip" },
+      ageMinutes: 12,
+      remainingKm: 200,
+      etaIso: null,
+    } as unknown as LiveShip;
+    expect(crossingProgress(departure, from, to, null, now).trust).toBe("schedule");
+    const fresh = crossingProgress(departure, from, to, live, now);
+    expect(fresh.trust).toBe("live");
+    expect(fresh.trustLabel).toBe("Position réelle · il y a 12 min");
+    const old = crossingProgress(departure, from, to, { ...live, ageMinutes: 130 }, now);
+    expect(old.trust).toBe("aged");
+    expect(old.trustLabel).toBe("Estimation · dernière position il y a 2 h 10");
+  });
+  it("l'heure passée ne vaut pas arrivée, et un navire resté à quai n'est jamais « arrivé »", () => {
+    const after = Date.parse("2026-10-21T20:00:00Z");
+    expect(crossingProgress(departure, from, to, null, after).arrivalDue).toBe(true);
+    const quay = {
+      departure,
+      position: {
+        latitude: 43,
+        longitude: 5,
+        speedKnots: 0,
+        reportedAt: "2026-10-21T19:50:00Z",
+      },
+      ageMinutes: 10,
+      remainingKm: 660,
+      etaIso: null,
+    } as unknown as LiveShip;
+    const stuck = crossingProgress(departure, from, to, quay, after);
+    expect(stuck.hold).toMatchObject({ fresh: true });
+    expect(stuck.arrivalDue).toBe(false);
+    expect(stuck.ratio).toBe(0);
+  });
   it("labels an observed arrival as AIS rather than timetable progress", () => {
     const live = {
       departure,

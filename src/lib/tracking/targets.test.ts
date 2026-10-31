@@ -21,19 +21,25 @@ describe("écoute AIS ciblée", () => {
     crossing("v2", "2026-11-06T10:00:00Z", "2026-11-06T20:00:00Z"),
   ];
 
-  it("écoute autour du départ et de l'arrivée, pas en pleine traversée", () => {
+  it("écoute autour du départ, de l'arrivée et pendant toute la traversée", () => {
     expect([...aisTargets(departures, vessels, at("2026-11-06T18:00:00Z"))]).toEqual([
       [111111111, "departure"],
-      [222222222, "arrival"],
+      [222222222, "sea"],
     ]);
-    // Au milieu de la nuit : v1 est en mer depuis plus de 3 h, rien à écouter.
-    expect(aisTargets(departures, vessels, at("2026-11-07T01:00:00Z")).size).toBe(0);
-    // Vu à l'arrêt : le retard reste écouté, au-delà des 3 h après l'heure prévue.
+    // Au milieu de la nuit : v1 est en mer depuis plus de 3 h, il reste écouté.
+    expect([...aisTargets(departures, vessels, at("2026-11-07T01:00:00Z"))]).toEqual([
+      [111111111, "sea"],
+    ]);
+    // Vu à l'arrêt : le retard reste écouté comme un départ.
     const stoppedMmsi = new Set(vessels.flatMap((v) => (v.mmsi ? [Number(v.mmsi)] : [])));
-    expect(aisTargets(departures, vessels, at("2026-11-07T01:00:00Z"), stoppedMmsi).size).toBe(1);
-    expect([...aisTargets(departures, vessels, at("2026-11-07T05:00:00Z"))]).toEqual([
+    expect([...aisTargets(departures, vessels, at("2026-11-07T01:00:00Z"), stoppedMmsi)]).toEqual([
+      [111111111, "departure"],
+    ]);
+    // Arrivée prévue dépassée : encore écouté 2 h.
+    expect([...aisTargets(departures, vessels, at("2026-11-07T08:30:00Z"))]).toEqual([
       [111111111, "arrival"],
     ]);
+    expect(aisTargets(departures, vessels, at("2026-11-07T10:00:00Z")).size).toBe(0);
   });
 
   it("ignore traversées annulées et navires sans MMSI", () => {

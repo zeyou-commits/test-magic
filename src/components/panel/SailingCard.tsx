@@ -19,7 +19,7 @@ import {
 } from "@/lib/ferry/format";
 import { relativeDay, type Sailing } from "@/lib/ferry/trips";
 import { bookingSite, bookingUrl } from "@/lib/ferry/booking";
-import { formatAge, formatDelay, type LiveShip } from "@/lib/ferry/tracking";
+import { formatAge, formatDelay, TRUSTED_SIGNAL_MINUTES, type LiveShip } from "@/lib/ferry/tracking";
 import { wallTimeInZone, zoneLabel } from "@/lib/ferry/time";
 import { ReportButton } from "./ReportButton";
 import { FollowButton } from "./FollowButton";
@@ -460,6 +460,7 @@ export function DayStrip({
 export function LiveStrip({ live, arrivalZone }: { live: LiveShip; arrivalZone: string }) {
   const delay = formatDelay(live.delayMinutes);
   const atSea = live.phase === "sea";
+  const fresh = live.ageMinutes <= TRUSTED_SIGNAL_MINUTES;
   return (
     <div
       className={`flex items-center justify-between gap-3 px-4 py-2 text-xs ${atSea ? "bg-success/10" : "bg-secondary/60"}`}
@@ -467,15 +468,15 @@ export function LiveStrip({ live, arrivalZone }: { live: LiveShip; arrivalZone: 
       <span className="flex min-w-0 items-center gap-2 font-semibold">
         <span className="relative flex size-2.5 shrink-0" aria-hidden>
           <span
-            className={`absolute inline-flex size-full rounded-full ${atSea ? "animate-ping bg-success/60" : ""}`}
+            className={`absolute inline-flex size-full rounded-full ${atSea && fresh ? "animate-ping bg-success/60" : ""}`}
           />
           <span
-            className={`relative inline-flex size-2.5 rounded-full ${atSea ? "bg-success" : "bg-muted-foreground"}`}
+            className={`relative inline-flex size-2.5 rounded-full ${atSea && fresh ? "bg-success" : "bg-muted-foreground"}`}
           />
         </span>
         <span className="truncate">
-          {atSea ? "En mer" : "Au port"}
-          {live.position.speedKnots ? ` · ${Math.round(live.position.speedKnots)} nœuds` : ""}
+          {atSea ? (fresh ? "En mer" : "En mer · estimé") : "Au port"}
+          {fresh && live.position.speedKnots ? ` · ${Math.round(live.position.speedKnots)} nœuds` : ""}
         </span>
       </span>
       <span className="shrink-0 text-right text-muted-foreground">

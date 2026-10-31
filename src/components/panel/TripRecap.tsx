@@ -143,14 +143,15 @@ export function TripRecap({
   const shift = times.departure.shiftMinutes ?? times.arrival.shiftMinutes;
   const now = Date.now();
   const cancelled = departure.status === "cancelled";
-  const arrived =
-    times.arrival.kind === "observed" || (arriveIso ? Date.parse(arriveIso) < now : false);
-  const { hold } = progress;
+  const arrived = times.arrival.kind === "observed";
+  const { hold, arrivalDue } = progress;
+  const departed = Date.parse(departIso) < now;
+  const confirmedAtSea = progress.signal?.phase === "sea";
   const atSea =
     !arrived &&
     !hold &&
     !stopped &&
-    (progress.signal?.phase === "sea" || Date.parse(departIso) < now);
+    (confirmedAtSea || (departed && !arrivalDue));
   const status = cancelled
     ? { tone: "bad", label: "Annulée" }
     : arrived && !stopped
@@ -162,15 +163,19 @@ export function TripRecap({
         : hold
           ? { tone: "warn", label: hold.fresh ? "Encore à quai" : "Départ à confirmer" }
           : atSea
-            ? { tone: "live", label: "En mer" }
-            : shift !== null && shift >= 5
+            ? progress.trust === "live"
+              ? { tone: "live", label: "En mer" }
+              : { tone: "ok", label: "En mer · estimé" }
+            : arrivalDue
+              ? { tone: "ok", label: "Arrivée à confirmer" }
+              : shift !== null && shift >= 5
               ? { tone: "warn", label: `Retard ≈ ${formatDuration(shift)}` }
               : departure.status === "modified"
                 ? { tone: "warn", label: "Horaire modifié" }
                 : { tone: "ok", label: "Prévue" };
   const days = daysUntil(departIso, fromZone);
   const countdown =
-    cancelled || arrived || atSea || hold || vesselAlert
+    cancelled || arrived || atSea || hold || vesselAlert || arrivalDue
       ? null
       : days <= 0
         ? "Aujourd’hui"
@@ -249,6 +254,7 @@ export function TripRecap({
                 {status.label}
               </span>
             </p>
+            {atSea || arrivalDue ? <p className="bw-trust">{progress.trustLabel}</p> : null}
           </div>
           <div className="bw-recap__personal-actions">
             <TripShare

@@ -108,6 +108,7 @@ export function HomeTraffic({
           sailing.map((c) => {
             const progress = crossingProgress(c.departure, c.from, c.to, c.live);
             const percent = progress.ratio === null ? null : Math.round(progress.ratio * 100);
+            const estimated = progress.trust !== "live" && progress.trust !== "observed";
             const preview = {
               routeId: c.departure.route_id,
               ...(c.vessel ? { vesselId: c.vessel.id } : {}),
@@ -188,6 +189,7 @@ export function HomeTraffic({
                   </div>
                   <div
                     className="bw-compact-track"
+                    data-estimated={estimated || undefined}
                     role="progressbar"
                     aria-label="Avancement de la traversée"
                     aria-valuemin={0}
@@ -197,7 +199,7 @@ export function HomeTraffic({
                     <span style={{ width: `${percent ?? 0}%` }} />
                     <i style={{ left: `${Math.max(8, Math.min(92, percent ?? 0))}%` }}>
                       <MiniFerry size={58} />
-                      <b>{percent === null ? "—" : `${percent} %`}</b>
+                      <b>{percent === null ? "—" : `${estimated ? "≈ " : ""}${percent} %`}</b>
                     </i>
                   </div>
                   <div className="flex justify-between text-[11px] tabular-nums">
@@ -209,6 +211,7 @@ export function HomeTraffic({
                       {dayDelta > 0 && <sup className="ml-0.5 text-primary">+{dayDelta} j</sup>}
                     </span>
                   </div>
+                  <p className="bw-trust">{progress.trustLabel}</p>
                 </div>
               </article>
             );

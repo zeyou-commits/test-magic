@@ -280,6 +280,9 @@ export function nearestDeparture(
   return best ? (best as { departure: Departure }).departure : null;
 }
 
+/** Jusqu'à cet âge, la position est présentée comme réelle ; au-delà, comme une estimation. */
+export const TRUSTED_SIGNAL_MINUTES = FRESH_SIGNAL_MINUTES;
+
 /** Au-delà de cet âge, un signal AIS n'est plus considéré comme l'état réel du navire. */
 export const LIVE_MAX_AGE_MINUTES = 6 * 60;
 
@@ -373,7 +376,7 @@ const HOLD_GRACE_MINUTES = 20;
  * Sinon, seul le dernier signal est connu : le départ n'est ni confirmé ni exclu.
  */
 export function departureHold(
-  departure: Pick<Departure, "id" | "departure_at" | "arrival_at" | "duration_minutes" | "status">,
+  departure: CrossingSchedule,
   position: LivePosition,
   departurePort: Pick<Port, "longitude" | "latitude"> | null | undefined,
   now: number,
@@ -390,7 +393,8 @@ export function departureHold(
     !Number.isFinite(start) ||
     !Number.isFinite(reported) ||
     overdueMinutes < HOLD_GRACE_MINUTES ||
-    now >= end ||
+    // Passé l'arrivée prévue, seul un signal postérieur au départ prévu prouve qu'il n'est pas parti.
+    (now >= end && reported <= start) ||
     reported > now + 60_000 ||
     now - reported > LIVE_MAX_AGE_MINUTES * 60_000 ||
     position.speedKnots === null ||
@@ -464,7 +468,11 @@ export interface TrackingTime {
   /** Arrivée vue (navire à quai) sans heure exacte : `iso` est l'heure du signal, au plus tard. */
   seenOnly?: boolean;
 }
-export function trackingTimes(departure: Departure, live?: LiveShip | null) {
+export type CrossingSchedule = Pick<
+  Departure,
+  "id" | "departure_at" | "arrival_at" | "duration_minutes"
+> & { status: string };
+export function trackingTimes(departure: CrossingSchedule, live?: LiveShip | null) {
   const start = Date.parse(departure.departure_at);
   const declaredArrival = departure.arrival_at ? Date.parse(departure.arrival_at) : NaN;
   const duration = departure.duration_minutes;

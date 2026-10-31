@@ -1,3 +1,5 @@
+import { crossingProgress } from "@/lib/ferry/crossingProgress";
+import { useLiveShips } from "@/lib/ferry/useLiveShips";
 import { VesselAlertTag } from "@/components/panel/VesselAlert";
 import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
@@ -59,6 +61,7 @@ export function tripPhase(trip: MyTrip, now: number) {
 export function MyTripHero({ onSelect }: { onSelect: (selection: Selection) => void }) {
   const { user } = useAuth();
   const { trip } = useMyTrip();
+  const ships = useLiveShips();
   const steps = mergeTripSteps(useQuery(tripStepsQuery).data);
   const status = useQuery(myTripStatusQuery(trip?.departure.id ?? "", user?.id)).data ?? null;
   const start = trip ? Date.parse(trip.departure.departure_at) : 0;
@@ -75,6 +78,11 @@ export function MyTripHero({ onSelect }: { onSelect: (selection: Selection) => v
   );
   if (!trip) return null;
   const phase = tripPhase(trip, now);
+  const live = ships.find((ship) => ship.departure.id === trip.departure.id) ?? null;
+  const progress =
+    trip.from && trip.to ? crossingProgress(trip.departure, trip.from, trip.to, live, now) : null;
+  const estimated = progress?.trust !== "live";
+  const arrivedForSure = progress?.trust === "observed" || status === "arrived";
   const prep = preparation ? prepProgress(preparation, tripDirection(trip.from)) : null;
   // Navire en alerte : plus de compte à rebours ni d'« En mer », le départ reste à confirmer.
   const held = Boolean(alert) && phase.phase !== "cancelled" && phase.phase !== "arrived";
@@ -92,7 +100,9 @@ export function MyTripHero({ onSelect }: { onSelect: (selection: Selection) => v
           ? `Rejoindre le port${trip.from ? ` ${/^[aeiouyhâéèêîôûAEIOUYHÂÉÈÊÎÔÛ]/.test(trip.from.name) ? "d’" : "de "}${trip.from.name}` : ""} et dire « Au port »`
           : phase.phase === "sea"
             ? "Suivre le navire et l’arrivée estimée"
-            : "Partager l’arrivée avec ses proches";
+            : arrivedForSure
+              ? "Partager l’arrivée avec ses proches"
+              : "Vous êtes arrivés ? Dites-le aux autres voyageurs";
   return (
     <section
       className="bw-mytrip-hero"
@@ -136,12 +146,23 @@ export function MyTripHero({ onSelect }: { onSelect: (selection: Selection) => v
             <span>{phase.text}</span>
             <strong className="tabular-nums">{phase.countdown}</strong>
           </>
+        ) : progress?.hold ? (
+          <strong>{progress.hold.fresh ? "Encore à quai" : "Départ à confirmer"}</strong>
         ) : phase.phase === "sea" ? (
           <>
-            <span>En mer</span>
-            <span className="bw-mytrip-hero__progress" aria-label={`${Math.round(phase.progress * 100)} % du trajet`}>
-              <span style={{ width: `${phase.progress * 100}%` }} />
+            <span>{estimated ? "En mer · estimé" : "En mer"}</span>
+            <span
+              className="bw-mytrip-hero__progress"
+              aria-label={`${Math.round((progress?.ratio ?? phase.progress) * 100)} % du trajet`}
+            >
+              <span style={{ width: `${(progress?.ratio ?? phase.progress) * 100}%` }} />
             </span>
+            {progress ? <small className="bw-trust">{progress.trustLabel}</small> : null}
+          </>
+        ) : phase.phase === "arrived" && !arrivedForSure ? (
+          <>
+            <strong>Arrivée à confirmer</strong>
+            {progress ? <small className="bw-trust">{progress.trustLabel}</small> : null}
           </>
         ) : (
           <strong>{phase.text}</strong>

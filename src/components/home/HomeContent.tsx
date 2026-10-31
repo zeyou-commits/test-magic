@@ -20,7 +20,7 @@ const questions = [
   ],
   [
     "Les positions des navires sont-elles en temps réel ?",
-    "La carte donne des repères de position et d’avancement estimés, notamment à partir des horaires de la traversée. Le sillage montre son sens de déplacement ; il n’accélère pas le navire sur la carte. Ces repères ne constituent pas un suivi GPS de navigation.",
+    "Pas toujours, et BledWay l’indique à chaque fois. « Position réelle » : le signal du navire a été reçu il y a moins de 30 minutes. « Estimation » : le signal n’est pas capté, souvent en pleine mer ou près des côtes algériennes, et l’avancement est calculé d’après l’horaire. Ces repères ne constituent pas un suivi GPS de navigation.",
   ],
   [
     "Puis-je voyager avec ma voiture ?",

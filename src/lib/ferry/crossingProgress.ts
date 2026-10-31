@@ -1,9 +1,30 @@
-import { departureHold, haversineKm, trackingTimes, type LiveShip } from "./tracking";
-import type { Departure, Port } from "./types";
+import {
+  departureHold,
+  formatAge,
+  haversineKm,
+  trackingTimes,
+  TRUSTED_SIGNAL_MINUTES,
+  type CrossingSchedule,
+  type LiveShip,
+} from "./tracking";
+import type { Port } from "./types";
+
+/**
+ * D'où vient l'état affiché : arrivée constatée, position récente, position ancienne, ou horaire seul.
+ * Le voyageur doit toujours pouvoir distinguer ce qui est observé de ce qui est calculé.
+ */
+export type TrackingTrust = "observed" | "live" | "aged" | "schedule";
+
+export function trustLabel(trust: TrackingTrust, ageMinutes: number | null) {
+  if (trust === "observed") return "Arrivée constatée";
+  if (trust === "live") return `Position réelle · ${formatAge(ageMinutes ?? 0)}`;
+  if (trust === "aged") return `Estimation · dernière position ${formatAge(ageMinutes ?? 0)}`;
+  return "Estimation d’après l’horaire · position non captée";
+}
 
 /** The card never invents a duration or interprets a timetable as a confirmed position. */
 export function crossingProgress(
-  departure: Departure,
+  departure: CrossingSchedule,
   from: Port,
   to: Port,
   live?: LiveShip | null,
@@ -38,8 +59,22 @@ export function crossingProgress(
             : scheduled
               ? (now - start) / (end - start)
               : null;
+  const observedArrival = times.arrival.kind === "observed";
+  const trust: TrackingTrust = observedArrival
+    ? "observed"
+    : !signal
+      ? "schedule"
+      : signal.ageMinutes <= TRUSTED_SIGNAL_MINUTES
+        ? "live"
+        : "aged";
+  // L'heure passée ne prouve pas l'arrivée : seul un signal peut la constater.
+  const arrivalIso = times.arrival.iso;
   return {
     times,
+    trust,
+    trustLabel: trustLabel(trust, signal?.ageMinutes ?? null),
+    arrivalDue:
+      !observedArrival && !hold && Boolean(arrivalIso) && Date.parse(arrivalIso!) < now,
     ratio: ratio === null ? null : Math.max(0, Math.min(1, ratio)),
     source: hold
       ? "Signal AIS à quai"

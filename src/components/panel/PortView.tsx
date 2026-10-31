@@ -21,6 +21,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { requestQuickReport } from "@/components/map/QuickReport";
 import { FlashFeed } from "./FlashFeed";
 import { PortPlaces } from "./PortPlaces";
+import { PortLiveBoard } from "./PortLiveBoard";
 import { PortPresence } from "./TripPresence";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -331,6 +332,14 @@ export function PortView({
       <LivePulse info={live} onOpen={openLive} />
 
       <PortPresence portId={portId} />
+
+      <PortLiveBoard
+        portId={portId}
+        departures={knownDepartures}
+        routes={routes}
+        ports={ports}
+        onSelect={onSelect}
+      />
 
       <Tabs value={activeTab} onValueChange={setChosenTab} className="port-profile-tabs">
         <TabsList aria-label={`Explorer le port de ${port.name}`} className="port-profile-nav">

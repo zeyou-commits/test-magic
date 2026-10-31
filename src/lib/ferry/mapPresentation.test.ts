@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  dockedShipsOf,
   fleetShortcutInfo,
   portCode,
   publishedRouteIds,
@@ -83,6 +84,33 @@ describe("Raccourcis et programmes de la carte", () => {
       destination: "Béjaïa",
       status: "Départ prévu dans 3 h",
     }));
+  it("compte en jours au-delà de 48 h", () =>
+    expect(
+      fleetShortcutInfo(
+        ship,
+        [{ ...departure, departure_at: "2026-11-03T11:00:00Z" }],
+        routes,
+        ports,
+        now,
+      ).status,
+    ).toBe("Départ prévu dans 11 j 3 h"));
+  it("classe les bateaux à quai du prochain départ au plus lointain", () => {
+    const soon = { ...departure, id: "soon", departure_at: "2026-10-23T10:00:00Z" };
+    const later = { ...departure, id: "later", departure_at: "2026-10-24T10:00:00Z" };
+    const list = dockedShipsOf(
+      "a",
+      [
+        { ...ship, id: "s-later", departureId: "later", vesselId: null },
+        { ...ship, id: "s-none", departureId: "gone", vesselId: null },
+        { ...ship, id: "s-soon", departureId: "soon", vesselId: null },
+      ],
+      [soon, later],
+      routes,
+      ports,
+      now,
+    );
+    expect(list.map(({ ship: item }) => item.id)).toEqual(["s-soon", "s-later", "s-none"]);
+  });
   it("ne confond pas une arrivée passée avec le prochain départ", () =>
     expect(
       fleetShortcutInfo(

@@ -226,6 +226,7 @@ export function MapStats({
                   ["published", "Avec programme publié", "Tous les programmes futurs"],
                   ["all", "Toutes les liaisons", "Y compris sans programme à venir"],
                   ["none", "Aucune liaison", "Garder les ports et les bateaux"],
+                  ["ports", "Ports uniquement", "Masquer les liaisons et les bateaux"],
                 ] as const
               ).map(([value, label, description]) => {
                 const selected = lineVisibility === value;

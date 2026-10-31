@@ -29,6 +29,7 @@ import { capitalizeFirst, formatDateParts } from "@/lib/ferry/format";
 import { emptyFilters, type Filters, type Selection, type RouteLine } from "@/lib/ferry/types";
 import {
   fleetShortcutInfo,
+  sortDockedByDeparture,
   publishedRouteIds,
   type LineVisibility,
   type MapPreview,
@@ -326,8 +327,15 @@ function Index() {
     [shortcutFleet],
   );
   const upcomingShips = useMemo(
-    () => shortcutFleet.filter((ship) => ship.state === "docked"),
-    [shortcutFleet],
+    () =>
+      sortDockedByDeparture(
+        shortcutFleet.filter((ship) => ship.state === "docked"),
+        allDepartures,
+        routes,
+        ports,
+        Date.now(),
+      ).map(({ ship }) => ship),
+    [shortcutFleet, allDepartures, routes, ports],
   );
   const shipCompanyIds = useMemo(() => {
     const byDeparture = new Map(
@@ -365,7 +373,14 @@ function Index() {
     return trafficFleet;
   }, [activeShortcut, atSea, upcomingShips, trafficFleet]);
   const companyFocusShips = shortcutCompanyId ? mapFleet : [];
-  const displayedFleet = trafficPreview?.companyId ? companyContextFleet : mapFleet;
+  // « Ports uniquement » cache les bateaux, sauf si on demande ensuite « En mer » ou « À quai ».
+  const hideShips =
+    lineVisibility === "ports" && activeShortcut !== "sea" && activeShortcut !== "upcoming";
+  const displayedFleet = hideShips
+    ? []
+    : trafficPreview?.companyId
+      ? companyContextFleet
+      : mapFleet;
   const hoverCompanyShipIds = useMemo(() => {
     if (!trafficPreview?.companyId) return [];
     const departureIds = new Set(
@@ -426,7 +441,7 @@ function Index() {
   );
   const mapVisibleRouteIds = useMemo(
     () =>
-      lineVisibility === "none"
+      lineVisibility === "none" || lineVisibility === "ports"
         ? []
         : fleetVisibleRouteIds.filter(
             (id) => lineVisibility === "all" || scheduledRouteIds.includes(id),
@@ -494,7 +509,7 @@ function Index() {
 
   const displayedRouteIds = useMemo(
     () =>
-      lineVisibility === "none"
+      lineVisibility === "none" || lineVisibility === "ports"
         ? []
         : [
             ...new Set([

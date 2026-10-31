@@ -3,7 +3,7 @@ import type { Departure, Port, RouteLine, Schedule } from "./types";
 import type { FleetShip } from "./fleet";
 import { dateKeyInZone, portTimeZone, zonedTimeToUtc } from "./time";
 
-export type LineVisibility = "published" | "all" | "none";
+export type LineVisibility = "published" | "all" | "none" | "ports";
 export type MapPreview = {
   routeId?: string;
   vesselId?: string;
@@ -140,12 +140,48 @@ export function fleetShortcutInfo(
         ? "En retard · départ non constaté"
         : minutes < 60
           ? `Départ prévu dans ${minutes} min`
-          : `Départ prévu dans ${Math.floor(minutes / 60)} h${minutes % 60 ? ` ${minutes % 60}` : ""}`;
+          : minutes >= 48 * 60
+            ? `Départ prévu dans ${Math.floor(minutes / 1440)} j${Math.floor((minutes % 1440) / 60) ? ` ${Math.floor((minutes % 1440) / 60)} h` : ""}`
+            : `Départ prévu dans ${Math.floor(minutes / 60)} h${minutes % 60 ? ` ${minutes % 60}` : ""}`;
   return {
     route: `${portCode(ship.state === "docked" ? (dock ?? from) : from)} → ${portCode(to)}`,
     dock: dock?.name ?? from?.name ?? "Port à confirmer",
     destination: to?.name ?? "Destination à confirmer",
     status: delay,
     late: Boolean(late),
+    portId: dock?.id ?? null,
+    departureId: next?.id ?? null,
+    departureAt: next ? Date.parse(next.departure_at) : Number.POSITIVE_INFINITY,
   };
+}
+
+/** Bateaux à quai, le prochain départ d'abord ; sans départ publié, en fin de liste. */
+export function sortDockedByDeparture(
+  ships: FleetShip[],
+  departures: Departure[],
+  routes: RouteLine[],
+  ports: Port[],
+  now: number,
+) {
+  return ships
+    .map((ship) => ({ ship, info: fleetShortcutInfo(ship, departures, routes, ports, now) }))
+    .sort((a, b) => a.info.departureAt - b.info.departureAt);
+}
+
+/** Les bateaux à quai d'un port, dans ce même ordre. */
+export function dockedShipsOf(
+  portId: string,
+  ships: FleetShip[],
+  departures: Departure[],
+  routes: RouteLine[],
+  ports: Port[],
+  now: number,
+) {
+  return sortDockedByDeparture(
+    ships.filter((ship) => ship.state === "docked"),
+    departures,
+    routes,
+    ports,
+    now,
+  ).filter(({ info }) => info.portId === portId);
 }

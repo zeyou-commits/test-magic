@@ -1,3 +1,4 @@
+import { offSitePortMessage, offSiteVesselMessage } from "./locationHelp";
 import { queryOptions, useQuery } from "@tanstack/react-query";
 import { z } from "zod";
 import type { SupabaseClient } from "@supabase/supabase-js";
@@ -85,6 +86,7 @@ const builtinSituations: Record<string, Situation> = {
       { code: "access_ok", label: "Ça roule", icon: "circle-check", level: 3 },
       { code: "access_traffic", label: "Bouchon pour entrer", icon: "car" },
       { code: "access_closed", label: "Accès fermé ou dévié", icon: "ban", onSite: true, level: 2 },
+      { code: "access_moved", label: "L’entrée habituelle a changé", icon: "door-open", onSite: true, level: 2 },
       { code: "access_works", label: "Travaux", icon: "construction" },
     ],
   },
@@ -441,6 +443,7 @@ const alertSchema = z.object({
   // Ajoutés par le script du 26/10/2026 : valeurs neutres tant qu'il n'est pas appliqué.
   denials: z.number().optional().default(0),
   denied: z.boolean().optional().default(false),
+  validated: z.boolean().optional().default(false),
 });
 const reviewSchema = z.object({
   id: z.string(),
@@ -511,11 +514,12 @@ export const isImpact = (alert: TravelAlert) =>
 export const onSiteCount = (alert: TravelAlert) =>
   (alert.on_site ? 1 : 0) + (alert.on_site_confirmations ?? 0);
 /**
- * Affiché sur la carte et dans le Flash info : pas désavoué par la majorité, et pour un
- * signalement impactant, confirmé par au moins un second voyageur.
+ * Affiché sur la carte et dans le Flash info : validé par l'équipe, ou pas désavoué par la majorité
+ * et, pour un signalement impactant, confirmé par au moins un second voyageur.
  */
 export const isPublicAlert = (alert: TravelAlert) =>
-  (alert.denials ?? 0) <= alert.confirmations && (!isImpact(alert) || alert.confirmations >= 1);
+  alert.validated ||
+  ((alert.denials ?? 0) <= alert.confirmations && (!isImpact(alert) || alert.confirmations >= 1));
 
 export function alertLabel(alert: TravelAlert) {
   if (alert.category === "service") return serviceLabel(alert.detail) ?? situationOf("service").label;
@@ -525,6 +529,10 @@ export function alertLabel(alert: TravelAlert) {
   );
   return option ? `${situation.label} · ${option.label.toLowerCase()}` : situation.label;
 }
+
+type Place = { id: string; name: string; latitude: number; longitude: number };
+/** Rayon du contrôle « sur place » au port, le même que celui du serveur. */
+export const ON_SITE_PORT_KM = 3;
 
 /** Position du voyageur, demandée au moment du geste ; jamais enregistrée par BledWay. */
 /** Journal de diagnostic : l'appareil et le résultat, jamais les coordonnées. Ne bloque jamais l'action. */
@@ -614,6 +622,52 @@ let lastAccuracy: number | null = null;
 /** Précision annoncée par l'appareil pour la dernière position, en mètres. */
 export const lastPositionAccuracy = () => lastAccuracy;
 
+/** Refus « pas sur place » du serveur : ce qu'il faut pour agir, et où la position place le voyageur. */
+export function explainOffSite(input: {
+  category: AlertCategory;
+  kind: CommunityKind;
+  portId?: string | null | undefined;
+  here: [number, number];
+  ports: Place[];
+}) {
+  const { category, kind, portId, here, ports } = input;
+  const action = `signaler « ${situationOf(category).label} »`;
+  const accuracyM = lastPositionAccuracy();
+  const port = kind === "port" ? ports.find((item) => item.id === portId) : undefined;
+  return port
+    ? offSitePortMessage({ action, port, limitKm: ON_SITE_PORT_KM, here, ports, accuracyM })
+    : offSiteVesselMessage({ action, category, here, ports, accuracyM });
+}
+
+/** Signalement depuis une question en un toucher : la position est demandée au moment du geste. */
+export async function reportFromHere(
+  input: Omit<Parameters<typeof reportTravel>[0], "position">,
+  ports: Place[],
+) {
+  const here = await requirePosition();
+  if (!here)
+    return {
+      error: { message: "Ce signalement doit être fait sur place : autorisez la localisation puis réessayez." },
+      onSite: false,
+      pendingReview: false,
+    };
+  const result = await reportTravel({ ...input, position: here });
+  if (result.error && /sur place/.test(result.error.message))
+    return {
+      ...result,
+      error: {
+        message: explainOffSite({
+          category: input.category,
+          kind: input.kind,
+          portId: input.target,
+          here,
+          ports,
+        }),
+      },
+    };
+  return result;
+}
+
 /** Position exigée par l'action : sinon, explique au voyageur comment l'autoriser. */
 export async function requirePosition(timeout = 8_000) {
   const here = await currentPosition(timeout);
@@ -676,7 +730,7 @@ export async function reportTravel(input: {
 /** Confirmer, « Ce n'est plus le cas » ou clore, avec la position si elle est connue. */
 export async function alertAction(
   id: string,
-  action: "confirm" | "deny" | "resolve",
+  action: "confirm" | "deny" | "resolve" | "validate",
   position: [number, number] | null = null,
 ) {
   const base = { p_alert: id, p_action: action };

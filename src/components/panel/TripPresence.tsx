@@ -1,3 +1,4 @@
+import { portsQuery } from "@/lib/ferry/queries";
 import { useEffect, useState } from "react";
 import {
   communityKey as travellersKey,
@@ -23,7 +24,7 @@ import {
   catalogQuery,
   communityKey,
   optionsFor,
-  reportTravel,
+  reportFromHere,
   situationOf,
 } from "@/lib/ferry/community";
 import { requestQuickReport } from "@/components/map/QuickReport";
@@ -130,6 +131,7 @@ export function TripStatusPicker({
   const steps = mergeTripSteps(useQuery(tripStepsQuery).data);
   const mine = useQuery(myTripStatusQuery(departureId, user?.id));
   const catalog = useQuery(catalogQuery).data ?? 0;
+  const { data: ports = [] } = useQuery(portsQuery);
   const [asked, setAsked] = useState<"queue" | "thanks" | null>(null);
   // Étape choisie : on propose aussitôt 3 humeurs de ce moment (« Reste calme » au port…).
   const [moodFor, setMoodFor] = useState<TripStatus | null>(null);
@@ -143,14 +145,10 @@ export function TripStatusPicker({
   });
   const queue = useMutation({
     mutationFn: async (code: string) => {
-      const result = await reportTravel({
-        kind: "port",
-        target: fromPortId!,
-        category: "queue",
-        delay: null,
-        detail: code,
-        position: null,
-      });
+      const result = await reportFromHere(
+        { kind: "port", target: fromPortId!, category: "queue", delay: null, detail: code },
+        ports,
+      );
       if (result.error) throw new Error(result.error.message);
     },
     onSuccess: () => {

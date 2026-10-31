@@ -11,7 +11,6 @@ import { Check, CircleOff, Flag, MapPin, MessageCircle, Star, ThumbsUp, Users } 
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/hooks/useAuth";
-import { useIsMobile } from "@/hooks/use-mobile";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { supabase as typedSupabase } from "@/integrations/supabase/client";
 
@@ -21,10 +20,8 @@ import {
   activeAlerts,
   alertAction,
   alertLabel,
-  catalogQuery,
   communityKey,
   communityQuery,
-  currentPosition,
   lastPositionAccuracy,
   requirePosition,
   isImpact,
@@ -34,7 +31,7 @@ import {
   type CommunityKind,
   type VesselReview,
 } from "@/lib/ferry/community";
-import { offSitePortMessage } from "@/lib/ferry/locationHelp";
+import { offSitePortMessage, offSiteVesselMessage } from "@/lib/ferry/locationHelp";
 import { portsQuery } from "@/lib/ferry/queries";
 import { formatAge } from "@/lib/ferry/tracking";
 import { newsQuery } from "@/lib/ferry/flash";
@@ -72,14 +69,13 @@ export function TravelSignals({
   /** Fiche qui a déjà son bouton « Signaler » : pas de second bouton ici. */
   compact?: boolean;
 }) {
-  const { user } = useAuth();
+  const { user, roles } = useAuth();
+  const staff = roles.includes("admin") || roles.includes("moderator");
   useSignalCatalog();
-  const isMobile = useIsMobile();
   const queryClient = useQueryClient();
   const feed = useQuery(communityQuery(kind, target, false, user?.id));
   // Le script SQL du 26/10/2026 crée bw_news : sa présence active « Ce n'est plus le cas ».
   const upgraded = useQuery(newsQuery).data != null;
-  const located = (useQuery(catalogQuery).data ?? 0) >= 2;
   const { data: ports = [] } = useQuery(portsQuery);
   const signal = () => requestQuickReport({ type: kind, id: target });
   // Boutons « Signaler une info sur ce port / ce navire » des fiches.
@@ -112,28 +108,25 @@ export function TravelSignals({
     }, 250);
   }, [alertIds]);
   const mutation = useMutation({
-    mutationFn: async (action: { type: "confirm" | "resolve" | "deny"; id: string }) => {
-      // Au port, confirmer ou démentir exige d'être sur place. Ailleurs, sur mobile, la confirmation
-      // porte la mention « sur place » si la position le permet.
+    mutationFn: async (action: { type: "confirm" | "resolve" | "deny" | "validate"; id: string }) => {
+      // Confirmer ou démentir exige d'être sur place : deux démentis ferment un signalement.
       const here =
-        kind === "port" && action.type !== "resolve"
-          ? await requirePosition(8_000)
-          : action.type === "confirm" && located && isMobile
-            ? await currentPosition(6_000)
-            : null;
+        action.type === "resolve" || action.type === "validate" ? null : await requirePosition(8_000);
       const error = await alertAction(action.id, action.type, here);
-      const port = kind === "port" ? ports.find((item) => item.id === target) : undefined;
-      if (error && here && port && /sur place/.test(error.message))
+      if (error && here && /sur place/.test(error.message)) {
+        const port = ports.find((item) => item.id === target);
+        const reply = {
+          action: action.type === "confirm" ? "confirmer ce signalement" : "répondre à ce signalement",
+          here,
+          ports,
+          accuracyM: lastPositionAccuracy(),
+        };
         throw new Error(
-          offSitePortMessage({
-            action: action.type === "confirm" ? "confirmer ce signalement" : "répondre à ce signalement",
-            port,
-            limitKm: 3,
-            here,
-            ports,
-            accuracyM: lastPositionAccuracy(),
-          }),
+          kind === "port" && port
+            ? offSitePortMessage({ ...reply, port, limitKm: 3 })
+            : offSiteVesselMessage(reply),
         );
+      }
       if (error) throw failure(error.message);
     },
     onSuccess: (_, action) => {
@@ -180,18 +173,23 @@ export function TravelSignals({
           {alerts.map((alert) => {
             const travelers = 1 + alert.confirmations;
             const onSite = onSiteCount(alert);
-            const pending = isImpact(alert) && alert.confirmations < 1;
+            const pending = isImpact(alert) && alert.confirmations < 1 && !alert.validated;
             return (
               <li key={alert.id} data-alert-id={alert.id} className="bw-signal-card">
                 <SituationBadge category={alert.category} className="bw-signal-icon" />
                 <div className="bw-signal-body">
                   <strong>{alertLabel(alert)}</strong>
-                  {onSite || pending ? (
+                  {onSite || pending || alert.validated ? (
                     <span className="bw-signal-chips">
                       {onSite ? (
                         <span className="bw-onsite-chip">
                           <MapPin size={12} aria-hidden />
                           {onSite === travelers ? "Sur place" : `${onSite} sur place`}
+                        </span>
+                      ) : null}
+                      {alert.validated ? (
+                        <span className="bw-onsite-chip">
+                          <Check size={12} aria-hidden /> Validé par l’équipe BledWay
                         </span>
                       ) : null}
                       {pending ? (
@@ -228,6 +226,17 @@ export function TravelSignals({
                     counts={contributions.counts}
                     own={Boolean(alert.own)}
                   />
+                  {staff && !alert.validated ? (
+                    <button
+                      type="button"
+                      className="bw-signal-side__main"
+                      disabled={mutation.isPending}
+                      onClick={() => mutation.mutate({ type: "validate", id: alert.id })}
+                    >
+                      <Check size={14} aria-hidden />
+                      Valider
+                    </button>
+                  ) : null}
                   {alert.own ? (
                     <button
                       type="button"
@@ -275,7 +284,7 @@ export function TravelSignals({
       )}
       {alerts.length && !compact ? (
         <p className="bw-community-caption">
-          Informations voyageurs, effacées seules après 1 à 3 h selon la situation. « Sur place » :
+          Informations voyageurs, effacées seules après 1 à 24 h selon la situation. « Sur place » :
           envoyé près du port ou du bateau. Consultez aussi les annonces de la compagnie.
         </p>
       ) : null}

@@ -138,19 +138,26 @@ export function offSitePortMessage(input: {
   return `Pour ${action}, vous devez être à moins de ${limitKm} km ${ofPort(port.name)}. Votre position indique que vous êtes à ${formatKm(kmFrom(here, port))} de ce port${nearby}.${roughHint(accuracyM)}`;
 }
 
-/** Refus sur un navire : la règle du serveur accepte ses ports du moment ou sa dernière position. */
+/** Refus sur un navire : la règle du serveur accepte le port de la phase, ou la dernière position du navire. */
 export function offSiteVesselMessage(input: {
   action: string;
+  category?: string;
   here: Here;
   ports: Place[];
   accuracyM: number | null;
 }) {
-  const { action, here, ports, accuracyM } = input;
+  const { action, category, here, ports, accuracyM } = input;
   const nearest = nearestPort(here, ports);
+  const port =
+    category === "boarding"
+      ? "du port de départ"
+      : category === "disembarking"
+        ? "du port d’arrivée"
+        : "du port de départ ou d’arrivée";
   const where = nearest
     ? ` Votre position indique que vous êtes à ${formatKm(nearest.km)} ${ofPort(nearest.port.name)}, le plus proche.`
     : "";
-  return `Pour ${action}, vous devez être près de ce navire, ou à moins de 3 km du port de départ ou d’arrivée de sa traversée.${where}${roughHint(accuracyM)}`;
+  return `Pour ${action}, vous devez être près de ce navire, ou à moins de 3 km ${port} de sa traversée.${where}${roughHint(accuracyM)}`;
 }
 
 /** « Me localiser » : prévient tout de suite si le port le plus proche est trop loin pour signaler. */

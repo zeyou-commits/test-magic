@@ -36,14 +36,26 @@ export function CommunityModeration() {
     },
     onSuccess: () => void client.invalidateQueries({ queryKey: ["admin", "report-anomalies"] }),
   });
+  const publish = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.rpc("bw_anomaly_publish", { p_id: id });
+      if (error) throw new Error(error.message);
+    },
+    onSuccess: () => {
+      void client.invalidateQueries({ queryKey: ["admin", "report-anomalies"] });
+      void client.invalidateQueries({ queryKey: communityKey });
+    },
+  });
   const action = useMutation({
     mutationFn: async (
-      input: { type: "review"; id: string; status: string } | { type: "alert"; id: string },
+      input:
+        | { type: "review"; id: string; status: string }
+        | { type: "alert"; id: string; verdict: "resolve" | "validate" },
     ) => {
       const { error } =
         input.type === "review"
           ? await supabase.rpc("bw_moderate_review", { p_review: input.id, p_status: input.status })
-          : await supabase.rpc("bw_alert_action", { p_alert: input.id, p_action: "resolve" });
+          : await supabase.rpc("bw_alert_action", { p_alert: input.id, p_action: input.verdict });
       if (error) throw new Error("La modification a échoué. Vérifiez vos droits et réessayez.");
     },
     onSuccess: () => void client.invalidateQueries({ queryKey: communityKey }),
@@ -81,13 +93,15 @@ export function CommunityModeration() {
               <p className="text-xs text-muted-foreground">{new Date(item.created_at).toLocaleString("fr-FR")}</p>
               <div className="mt-3 flex flex-wrap gap-2">
                 {item.departure_id ? <a className="text-sm underline" href={`/?select=departure&id=${item.departure_id}`}>Voir la traversée</a> : null}
-                <Button size="sm" disabled={triage.isPending} onClick={() => triage.mutate({ id: item.id, status: "handled" })}>Traité</Button>
+                <Button size="sm" disabled={publish.isPending || !item.departure_id} onClick={() => publish.mutate(item.id)}>Valider et publier</Button>
+                <Button size="sm" variant="outline" disabled={triage.isPending} onClick={() => triage.mutate({ id: item.id, status: "handled" })}>Traité</Button>
                 <Button size="sm" variant="outline" disabled={triage.isPending} onClick={() => triage.mutate({ id: item.id, status: "dismissed" })}>Écarter</Button>
               </div>
             </li>
           ))}
         </ul>
         {triage.isError ? <p role="alert">La mise à jour a échoué.</p> : null}
+        {publish.isError ? <p role="alert">{publish.error.message}</p> : null}
       </section>
       <section>
         <h2 className="text-lg font-semibold">Avis navires · modération</h2>
@@ -147,16 +161,28 @@ export function CommunityModeration() {
                 </strong>
                 <p className="text-sm">
                   {alertLabel(a)} · {1 + a.confirmations} voyageur(s)
+                  {a.validated ? " · validé par l’équipe" : ""}
                 </p>
               </div>
-              <Button
-                size="sm"
-                variant="outline"
-                disabled={action.isPending}
-                onClick={() => action.mutate({ type: "alert", id: a.id })}
-              >
-                Retirer
-              </Button>
+              <div className="flex gap-2">
+                {a.validated ? null : (
+                  <Button
+                    size="sm"
+                    disabled={action.isPending}
+                    onClick={() => action.mutate({ type: "alert", id: a.id, verdict: "validate" })}
+                  >
+                    Valider
+                  </Button>
+                )}
+                <Button
+                  size="sm"
+                  variant="outline"
+                  disabled={action.isPending}
+                  onClick={() => action.mutate({ type: "alert", id: a.id, verdict: "resolve" })}
+                >
+                  Retirer
+                </Button>
+              </div>
             </li>
           ))}
         </ul>

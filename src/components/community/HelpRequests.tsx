@@ -132,6 +132,44 @@ export function HelpRequests({ scopeId }: { kind: "departure"; scopeId: string }
     onSuccess: refresh,
     onError: (error: Error) => toast.error(error.message),
   });
+  /** Refus de distance : ce qu'il faut pour agir, et où la position place le voyageur. */
+  const explain = async (message: string, action: string, here: [number, number]) => {
+    if (!/port de départ/.test(message)) return message;
+    const { data } = await db
+      .from("departures")
+      .select("route:routes(departure_port_id)")
+      .eq("id", scopeId)
+      .maybeSingle();
+    const route = (data as { route?: { departure_port_id?: string } } | null)?.route;
+    const port = ports.find((item) => item.id === route?.departure_port_id);
+    return port
+      ? offSitePortMessage({
+          action,
+          port,
+          limitKm: 6,
+          here,
+          ports,
+          accuracyM: lastPositionAccuracy(),
+        })
+      : message;
+  };
+  const respond = useMutation({
+    mutationFn: async (requestId: string) => {
+      const position = await requirePosition();
+      if (!position)
+        throw new Error(
+          "Réponse non envoyée : autorisez le partage de votre position pour vérifier que vous êtes au port.",
+        );
+      const { error } = await db.rpc("bw_help_respond", {
+        p_request: requestId,
+        p_lat: position[0],
+        p_lng: position[1],
+      });
+      if (error) throw new Error(await explain(error.message, "proposer votre aide", position));
+    },
+    onSuccess: refresh,
+    onError: (error: Error) => toast.error(error.message, { duration: 12_000 }),
+  });
   // La position vérifie qu'on est au port de départ, et n'est pas enregistrée.
   const ask = useMutation({
     mutationFn: async () => {
@@ -148,27 +186,7 @@ export function HelpRequests({ scopeId }: { kind: "departure"; scopeId: string }
         p_lat: position[0],
         p_lng: position[1],
       });
-      if (error && /port de départ/.test(error.message)) {
-        const { data } = await db
-          .from("departures")
-          .select("route:routes(departure_port_id)")
-          .eq("id", scopeId)
-          .maybeSingle();
-        const route = (data as { route?: { departure_port_id?: string } } | null)?.route;
-        const port = ports.find((item) => item.id === route?.departure_port_id);
-        if (port)
-          throw new Error(
-            offSitePortMessage({
-              action: "demander de l’aide",
-              port,
-              limitKm: 6,
-              here: position,
-              ports,
-              accuracyM: lastPositionAccuracy(),
-            }),
-          );
-      }
-      if (error) throw new Error(error.message);
+      if (error) throw new Error(await explain(error.message, "demander de l’aide", position));
     },
     onSuccess: () => {
       setFormOpen(false);
@@ -225,11 +243,10 @@ export function HelpRequests({ scopeId }: { kind: "departure"; scopeId: string }
                 ) : user && !request.responded ? (
                   <Button
                     size="sm"
-                    onClick={() =>
-                      call.mutate({ name: "bw_help_respond", args: { p_request: request.id } })
-                    }
+                    disabled={respond.isPending}
+                    onClick={() => respond.mutate(request.id)}
                   >
-                    J'y vais
+                    {respond.isPending ? "Vérification…" : "J'y vais"}
                   </Button>
                 ) : request.responded ? (
                   <span className="font-semibold text-primary">Vous avez répondu</span>
@@ -241,7 +258,9 @@ export function HelpRequests({ scopeId }: { kind: "departure"; scopeId: string }
       ) : !formOpen ? (
         <p className="mt-1 text-xs text-muted-foreground">
           Couches, eau, chargeur, bagages : demandez aux voyageurs autour de vous.
-          {user ? "" : " Connectez-vous pour demander ou proposer de l'aide."}
+          {user
+            ? " Pour demander ou proposer de l'aide, il faut être au port de départ."
+            : " Connectez-vous pour demander ou proposer de l'aide."}
         </p>
       ) : null}
 

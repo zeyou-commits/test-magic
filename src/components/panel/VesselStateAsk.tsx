@@ -2,7 +2,8 @@ import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Anchor, Ship } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
-import { activeAlerts, communityKey, communityQuery, reportTravel } from "@/lib/ferry/community";
+import { activeAlerts, communityKey, communityQuery, reportFromHere } from "@/lib/ferry/community";
+import { portsQuery } from "@/lib/ferry/queries";
 
 /**
  * Navire en retard, sans départ constaté : les voyageurs sur place complètent le signal. Leurs
@@ -21,6 +22,7 @@ export function VesselStateAsk({
   const client = useQueryClient();
   const [message, setMessage] = useState("");
   const feed = useQuery(communityQuery("vessel", vesselId, false, user?.id));
+  const { data: ports = [] } = useQuery(portsQuery);
   const answers = activeAlerts(feed.data?.alerts ?? []).filter(
     (alert) => alert.category === "state" && alert.departure_id === departureId,
   );
@@ -30,20 +32,17 @@ export function VesselStateAsk({
       .reduce((sum, alert) => sum + 1 + alert.confirmations, 0);
   const send = useMutation({
     mutationFn: (detail: string) =>
-      reportTravel({
-        kind: "vessel",
-        target: vesselId,
-        category: "state",
-        delay: null,
-        detail,
-        position: null,
-        departureId,
-      }),
+      reportFromHere(
+        { kind: "vessel", target: vesselId, category: "state", delay: null, detail, departureId },
+        ports,
+      ),
     onSuccess: async (result) => {
       setMessage(
-        result.error
-          ? "Votre réponse n'a pas pu être enregistrée, ou vous avez déjà répondu."
-          : "Merci, votre réponse aide les autres voyageurs.",
+        !result.error
+          ? "Merci, votre réponse aide les autres voyageurs."
+          : /sur place|position/.test(result.error.message)
+            ? result.error.message
+            : "Votre réponse n'a pas pu être enregistrée, ou vous avez déjà répondu.",
       );
       await client.invalidateQueries({ queryKey: communityKey });
     },

@@ -47,8 +47,9 @@ function PrivacyPage() {
         <section>
           <h2 className="text-base font-semibold text-foreground">Position</h2>
           <p className="mt-1">
-            Une demande d'entraide exige de partager votre position, pour vérifier que vous êtes au
-            port de départ. Elle sert à ce seul contrôle et n'est pas enregistrée.
+            Signaler une situation, confirmer ou démentir un signalement, demander ou proposer de
+            l'aide exige de partager votre position, pour vérifier que vous êtes sur place. Elle
+            sert à ce seul contrôle et n'est pas enregistrée.
           </p>
           <p className="mt-1">
             Pour corriger les pannes de localisation, nous gardons 14 jours un journal technique :

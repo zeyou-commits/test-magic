@@ -8,14 +8,14 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import {
   availableSituations,
   communityKey,
-  currentPosition,
-  lastPositionAccuracy,
+  explainOffSite,
   lifetimeLabel,
   optionsFor,
   portServices,
   reportTravel,
   requirePosition,
   logLocation,
+  ON_SITE_PORT_KM,
   situationOf,
   useSignalCatalog,
   type AlertCategory,
@@ -24,12 +24,7 @@ import {
 } from "@/lib/ferry/community";
 import { newsQuery } from "@/lib/ferry/flash";
 import type { FleetShip } from "@/lib/ferry/fleet";
-import {
-  distanceKm,
-  farFromPortsNote,
-  offSitePortMessage,
-  offSiteVesselMessage,
-} from "@/lib/ferry/locationHelp";
+import { distanceKm, farFromPortsNote } from "@/lib/ferry/locationHelp";
 import { haversineKm } from "@/lib/ferry/tracking";
 import type { Departure, Port, Selection } from "@/lib/ferry/types";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -52,8 +47,6 @@ export const QUICK_REPORT_EVENT = "bledway:quick-report";
 export const QUICK_REPORT_ON_LOAD = "bledway:open-quick-report";
 /** Rayon dans lequel « Me localiser » retient le port le plus proche. */
 const NEAR_PORT_KM = 30;
-/** Rayon du contrôle « sur place » au port, le même que celui du serveur. */
-const ON_SITE_PORT_KM = 3;
 
 let mounted = 0;
 /** Cible d'un signalement ; pour une traversée, son port de départ et son navire si connus. */
@@ -330,14 +323,12 @@ export function QuickReport({
     mutationFn: async (input: Draft) => {
       const category = input.category!;
       const where = situationOf(category).where;
-      // Position demandée au moment d'envoyer. Obligatoire au port et pour un signalement impactant.
-      const onSiteRequired = impact || where === "port";
+      // Position demandée au moment d'envoyer : un signalement affirme ce qu'on voit sur place.
       let here = position;
       setFinding(true);
-      if (!here && onSiteRequired) here = await requirePosition();
-      else if (!here && isMobile) here = await currentPosition();
+      if (!here) here = await requirePosition();
       setFinding(false);
-      if (onSiteRequired && !here) {
+      if (!here) {
         logLocation("report", "report_no_position", { where, category, level });
         throw new Error(
           "Ce signalement doit être fait sur place : autorisez la localisation puis réessayez.",
@@ -355,14 +346,9 @@ export function QuickReport({
       });
       if (result.error) {
         logLocation("report", "report_refused", { where, category, message: result.error.message });
-        const action = `signaler « ${situationOf(category).label} »`;
-        const port = ports.find((item) => item.id === input.portId);
-        const accuracyM = lastPositionAccuracy();
-        if (here && /sur place/.test(result.error.message))
+        if (/sur place/.test(result.error.message))
           throw new Error(
-            where === "port" && port
-              ? offSitePortMessage({ action, port, limitKm: ON_SITE_PORT_KM, here, ports, accuracyM })
-              : offSiteVesselMessage({ action, here, ports, accuracyM }),
+            explainOffSite({ category, kind: where, portId: input.portId, here, ports }),
           );
         throw new Error(failure(result.error.message));
       }
@@ -670,9 +656,7 @@ export function QuickReport({
         <p className="bw-report-note">
           {situation.where === "port"
             ? "Au port, il faut être sur place, à moins de 3 km, localisation activée. Votre position n’est pas enregistrée."
-            : level >= 2
-            ? "Si vous l’autorisez, votre position indique « Sur place ». Elle n’est pas enregistrée."
-            : "Uniquement ce que vous constatez ou ce qui est annoncé sur place."}
+            : "Il faut être près du bateau ou à son port, localisation activée. Votre position n’est pas enregistrée."}
         </p>
       </form>
     );

@@ -84,6 +84,17 @@ describe("refus parce que le voyageur n'est pas sur place", () => {
     });
     expect(message).toContain("près de ce navire");
     expect(message).toContain("à 0,0 km du port de Sète, le plus proche");
+    expect(message).toContain("du port de départ ou d’arrivée de sa traversée");
+  });
+
+  it("l'embarquement et le débarquement nomment le bon port", () => {
+    const common = { action: "signaler", here: [43.4, 3.7] as [number, number], ports, accuracyM: null };
+    expect(offSiteVesselMessage({ ...common, category: "boarding" })).toContain(
+      "à moins de 3 km du port de départ de sa traversée",
+    );
+    expect(offSiteVesselMessage({ ...common, category: "disembarking" })).toContain(
+      "à moins de 3 km du port d’arrivée de sa traversée",
+    );
   });
 
   it("« Me localiser » ne prévient que si le port est trop loin", () => {

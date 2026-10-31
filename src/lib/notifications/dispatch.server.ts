@@ -452,7 +452,7 @@ export async function dispatchPush(
             port &&
             signal.target_kind === "port" &&
             signal.target_id === port.id &&
-            signal.detail === "access_closed",
+            (signal.detail === "access_closed" || signal.detail === "access_moved"),
         );
         const fresh = access.filter((signal) => signal.created_at >= follow.created_at);
         // Avant le suivi : seul le plus récent, toujours actif (non résolu, non expiré).
@@ -466,7 +466,10 @@ export async function dispatchPush(
           await deliver(follow.user_id, follow.id, {
             key: `port-access:${follow.id}:${signal.id}`,
             category: "community",
-            title: `${port!.name} · accès au port fermé ou dévié`,
+            title:
+              signal.detail === "access_moved"
+                ? `${port!.name} · l’entrée habituelle du port a changé`
+                : `${port!.name} · accès au port fermé ou dévié`,
             body: `Signalé sur place par des voyageurs${late.includes(signal) ? ` ${ago(signal.created_at, now)}` : ""}. Prévoyez de la marge et vérifiez auprès de la compagnie.`,
             url: `/?select=port&id=${port!.id}`,
           });

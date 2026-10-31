@@ -7228,6 +7228,64 @@ label:has(> input.sr-only) {
   background: #ffffff;
 }
 .bw-port-live h3 {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
+  font-weight: 800;
+}
+.bw-port-live__summary {
+  color: var(--muted-foreground);
+  font-size: 12px;
+}
+.bw-port-live li + li {
+  border-top: 1px solid var(--border);
+}
+.bw-port-live li button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  min-height: 44px;
+  padding: 8px 0;
+  text-align: left;
+}
+.bw-port-live__main {
+  display: grid;
+  flex: 1;
+  gap: 2px;
+  min-width: 0;
+  font-size: 13px;
+}
+.bw-port-live__main em {
+  color: var(--muted-foreground);
+  font-size: 12px;
+  font-style: normal;
+  font-weight: 600;
+}
+.bw-port-live__main em[data-tone="signal"] {
+  color: #0e7a43;
+  font-weight: 700;
+}
+.bw-port-live__main em[data-tone="alert"] {
+  color: #b42318;
+  font-weight: 700;
+}
+.bw-port-live__main small {
+  color: var(--muted-foreground);
+  font-size: 11.5px;
+}
+.bw-port-live__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.bw-port-live__meta span {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+}
+
 /* Admin : veille d'actualité. */
 .bw-watch {
   display: grid;
@@ -7378,56 +7436,6 @@ label:has(> input.sr-only) {
   font-size: 14px;
   font-weight: 800;
 }
-.bw-port-live__summary {
-  color: var(--muted-foreground);
-  font-size: 12px;
-}
-.bw-port-live li + li {
-  border-top: 1px solid var(--border);
-}
-.bw-port-live li button {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  width: 100%;
-  min-height: 44px;
-  padding: 8px 0;
-  text-align: left;
-}
-.bw-port-live__main {
-  display: grid;
-  flex: 1;
-  gap: 2px;
-  min-width: 0;
-  font-size: 13px;
-}
-.bw-port-live__main em {
-  color: var(--muted-foreground);
-  font-size: 12px;
-  font-style: normal;
-  font-weight: 600;
-}
-.bw-port-live__main em[data-tone="signal"] {
-  color: #0e7a43;
-  font-weight: 700;
-}
-.bw-port-live__main em[data-tone="alert"] {
-  color: #b42318;
-  font-weight: 700;
-}
-.bw-port-live__main small {
-  color: var(--muted-foreground);
-  font-size: 11.5px;
-}
-.bw-port-live__meta {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-}
-.bw-port-live__meta span {
-  display: inline-flex;
-  align-items: center;
-  gap: 3px;
 .bw-watch__sources li {
   display: flex;
   align-items: center;

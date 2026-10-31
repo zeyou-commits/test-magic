@@ -4409,11 +4409,6 @@ button.bw-tavatar:focus-visible {
   top: -6px;
   left: calc(50% + 12px);
 }
-.bw-me-tab__mood {
-  width: 32px;
-  height: 32px;
-  box-shadow: 0 0 0 1.5px var(--border);
-}
 .bw-me-tab__ghost {
   display: grid;
   width: 30px;
@@ -4599,8 +4594,8 @@ button.bw-tavatar:focus-visible {
   color: #8a7a55;
 }
 
-/* ── Humeur sur l'avatar de l'en-tête (ordinateur) ── */
-/* Les images d'humeur sont des scènes : en petit, on cadre sur le cabas. */
+/* ── Humeur : bulle de BD accrochée à mon avatar, réduite en badge picto ── */
+/* Grandes illustrations d'humeur (cabas) recadrées en rond : choix de l'humeur seulement. */
 .bw-mood-face {
   display: block;
   overflow: hidden;
@@ -4615,42 +4610,130 @@ button.bw-tavatar:focus-visible {
   transform: scale(1.6);
   transform-origin: 28% 62%;
 }
-/* Écran moyen : le cabas de l'humeur prend la place de l'avatar. */
-.bw-usermenu-mood {
+.bw-mood-bubble {
   position: absolute;
-  top: 0;
-  right: 0;
-  width: 100%;
-  height: 100%;
-  border: 1px solid var(--border);
+  inset: 0;
+  pointer-events: none;
 }
-/* Écran large : une seule capsule, cabas de l'humeur, texte entier et avatar. */
-.bw-usermenu-moodchip {
-  display: none;
+.bw-mood-bubble__badge {
+  position: absolute;
+  right: -7px;
+  bottom: -5px;
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border: 0;
+  border-radius: 999px;
+  background: white;
+  box-shadow: 0 1px 5px #16324a40;
+  color: #0e7a43;
+  cursor: pointer;
+  pointer-events: auto;
+}
+.bw-mood-bubble__badge img {
+  width: 18px;
+  height: 18px;
+  object-fit: contain;
+}
+.bw-mood-bubble__panel {
+  position: absolute;
+  right: -6px;
+  z-index: 60;
+  display: inline-flex;
   align-items: center;
-  gap: 8px;
-  color: var(--foreground);
+  gap: 7px;
+  max-width: min(78vw, 280px);
+  padding: 5px 4px 5px 7px;
+  border-radius: 16px;
+  background: white;
+  box-shadow: 0 6px 22px #16324a33;
+  color: #16324a;
   font-size: 13px;
   font-weight: 650;
+  line-height: 1.2;
   white-space: nowrap;
+  pointer-events: auto;
+  transform-origin: calc(100% - 18px) 0;
+  animation: bw-mood-pop 0.2s cubic-bezier(0.3, 1.5, 0.6, 1);
 }
-.bw-usermenu-moodchip .bw-mood-face {
-  width: 32px;
+.bw-mood-bubble__panel > span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.bw-mood-bubble__panel img {
+  flex: none;
+  width: 26px;
+  height: 26px;
+  object-fit: contain;
+}
+/* La pointe de BD, tournée vers l'avatar. */
+.bw-mood-bubble__panel::before {
+  content: "";
+  position: absolute;
+  right: 14px;
+  width: 11px;
+  height: 11px;
+  background: white;
+  transform: rotate(45deg);
+}
+.bw-mood-bubble[data-placement="below"] .bw-mood-bubble__panel {
+  top: calc(100% + 11px);
+}
+.bw-mood-bubble[data-placement="below"] .bw-mood-bubble__panel::before {
+  top: -5px;
+  box-shadow: -2px -2px 3px #16324a10;
+}
+.bw-mood-bubble[data-placement="above"] .bw-mood-bubble__panel {
+  bottom: calc(100% + 11px);
+  transform-origin: calc(100% - 18px) 100%;
+}
+.bw-mood-bubble[data-placement="above"] .bw-mood-bubble__panel::before {
+  bottom: -5px;
+  box-shadow: 2px 2px 3px #16324a10;
+}
+.bw-mood-bubble__close {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border: 0;
+  border-radius: 999px;
+  background: #16324a0d;
+  color: #16324a;
+  cursor: pointer;
+}
+@keyframes bw-mood-pop {
+  from {
+    opacity: 0;
+    transform: scale(0.6);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .bw-mood-bubble__panel {
+    animation: none;
+  }
+}
+/* Onglet « Moi » (téléphone) : badge au coin de l'avatar, bulle au-dessus de la barre. */
+.bw-me-tab__wrap {
+  position: relative;
+  display: flex;
+  flex: 1;
+  height: 100%;
+}
+.bw-me-tab__wrap .bw-mood-bubble {
+  inset: 6px 0 auto;
   height: 32px;
 }
-@media (min-width: 1280px) {
-  .bw-usermenu-trigger[data-mood] {
-    padding: 3px 3px 3px 3px;
-    border: 1px solid var(--border);
-    background: white;
-  }
-  .bw-usermenu-moodchip {
-    display: inline-flex;
-    padding-right: 2px;
-  }
-  .bw-usermenu-mood {
-    display: none;
-  }
+.bw-me-tab__wrap .bw-mood-bubble__badge {
+  right: calc(50% - 26px);
+  bottom: -4px;
+}
+.bw-me-tab__wrap .bw-mood-bubble__panel {
+  right: 2px;
 }
 
 /* ── Ambiance d'un port ou d'un bateau sur la carte (zoom fort) ── */

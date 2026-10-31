@@ -1,5 +1,7 @@
+import { MessageCircle } from "lucide-react";
 import {
   avatarColors,
+  moodIcon,
   openTravellerProfile,
   personaImage,
   type TravellerCard,
@@ -38,7 +40,12 @@ export function TravellerAvatar({
           data-label={moodLabel || undefined}
           title={card.mood.label}
         >
-          <img src={card.mood.image} alt="" width={18} height={18} loading="lazy" />
+          {/* Picto 3D si l'humeur en a un ; sinon une petite bulle (le texte est au toucher). */}
+          {moodIcon(card.mood.code) ? (
+            <img src={moodIcon(card.mood.code)!} alt="" width={18} height={18} loading="lazy" />
+          ) : moodLabel ? null : (
+            <MessageCircle size={13} aria-hidden />
+          )}
           {moodLabel ? (
             <span>
               {card.mood.emoji ? `${card.mood.emoji} ` : ""}

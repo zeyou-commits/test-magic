@@ -46,6 +46,26 @@ export type ReactionCode = (typeof reactions)[number]["code"];
 export const reactionImage = (code: string) => `/cabas/reactions/${code}.webp`;
 
 export type Mood = { code: string; label: string; emoji: string; image: string };
+
+/**
+ * Pictos 3D des humeurs (un objet, lisible dès 24 px), par code d'humeur. Les grandes illustrations
+ * de cabas (`image`) restent pour le choix de l'humeur ; une humeur sans picto s'affiche en texte seul.
+ */
+const MOOD_ICONS = new Set([
+  "viva_algerie",
+  "yallah",
+  "zen",
+  "valise_pleine",
+  "surpoids",
+  "route_longue",
+  "bouchon",
+  "file",
+  "controle",
+  "msemen",
+  "chaleur",
+]);
+export const moodIcon = (code: string | null | undefined) =>
+  code && MOOD_ICONS.has(code) ? `/cabas/pictos/${code}.webp` : null;
 /** Ce que tout le monde peut voir d'un voyageur : rien qui permette de l'identifier. */
 export type TravellerCard = {
   handle: string;

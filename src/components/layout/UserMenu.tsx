@@ -1,5 +1,6 @@
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
+import { MoodBubble } from "@/components/community/MoodBubble";
 import { MoodPicker } from "@/components/community/MoodPicker";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { UserRound, Wallet } from "lucide-react";
@@ -14,7 +15,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useAuth } from "@/hooks/useAuth";
-import { avatarColors, myTravellerQuery, personaImage } from "@/lib/community/travellers";
+import { avatarColors, moodIcon, myTravellerQuery, personaImage } from "@/lib/community/travellers";
 
 function initials(name: string) {
   return name
@@ -76,7 +77,7 @@ export function UserMenu({
   }
 
   return (
-    <>
+    <span className="relative inline-flex">
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <button
@@ -84,17 +85,8 @@ export function UserMenu({
             aria-label={
               traveller?.mood ? `Mon compte · humeur : ${traveller.mood.label}` : "Mon compte"
             }
-            data-mood={traveller?.mood ? "" : undefined}
             className="bw-usermenu-trigger relative flex items-center gap-2 rounded-full ring-offset-2 ring-offset-card outline-none focus-visible:ring-2 focus-visible:ring-ring"
           >
-            {traveller?.mood ? (
-              <span className="bw-usermenu-moodchip" aria-hidden>
-                <span className="bw-mood-face">
-                  <img src={traveller.mood.image} alt="" />
-                </span>
-                <span>{traveller.mood.label}</span>
-              </span>
-            ) : null}
             <Avatar className={`${compact ? "size-8" : "size-9"} border border-border`}>
               {/* Mon cabas (profil voyageur) ; sans profil, les initiales. */}
               {traveller ? (
@@ -109,11 +101,6 @@ export function UserMenu({
                 {initials(name) || "?"}
               </AvatarFallback>
             </Avatar>
-            {traveller?.mood ? (
-              <span className="bw-usermenu-mood bw-mood-face" title={traveller.mood.label} aria-hidden>
-                <img src={traveller.mood.image} alt="" />
-              </span>
-            ) : null}
           </button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-56">
@@ -129,7 +116,7 @@ export function UserMenu({
               {traveller.mood ? (
                 <>
                   <img
-                    src={traveller.mood.image}
+                    src={moodIcon(traveller.mood.code) ?? traveller.mood.image}
                     alt=""
                     width={18}
                     height={18}
@@ -177,6 +164,8 @@ export function UserMenu({
           <DropdownMenuItem onSelect={() => void handleSignOut()}>Se déconnecter</DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
+      {/* Bulle d'humeur sous l'avatar, réduite en badge après quelques secondes. */}
+      {traveller ? <MoodBubble mood={traveller.mood} placement="below" /> : null}
       {traveller ? (
         <MoodPicker
           open={moodOpen}
@@ -185,6 +174,6 @@ export function UserMenu({
           current={traveller.mood?.code ?? null}
         />
       ) : null}
-    </>
+    </span>
   );
 }

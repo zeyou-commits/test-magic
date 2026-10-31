@@ -33,6 +33,7 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
+import { MoodBubble } from "./MoodBubble";
 import { MoodPicker } from "./MoodPicker";
 import { TravellerAvatar } from "./TravellerAvatar";
 
@@ -69,27 +70,24 @@ export function MeTab({ className }: { className: string }) {
     );
   return (
     <>
+      <span className="bw-me-tab__wrap">
       <button
         type="button"
         className={`${className} bw-me-tab`}
         onClick={() => setOpen(true)}
         aria-label={`Mon profil${me.mood ? ` · humeur : ${me.mood.label}` : " · ajouter une humeur"}`}
       >
-        {/* Avec une humeur, le cabas qui l'exprime prend la place de l'avatar. */}
-        {me.mood ? (
-          <span className="bw-me-tab__mood bw-mood-face" aria-hidden>
-            <img src={me.mood.image} alt="" />
+        {/* L'avatar reste toujours le même ; l'humeur vit dans sa bulle (badge picto sur l'avatar). */}
+        {me.mood ? null : (
+          <span className="bw-me-tab__bubble" data-empty aria-hidden>
+            <Plus size={11} />
           </span>
-        ) : (
-          <>
-            <span className="bw-me-tab__bubble" data-empty aria-hidden>
-              <Plus size={11} />
-            </span>
-            <TravellerAvatar card={me} size={30} mood={false} static />
-          </>
         )}
+        <TravellerAvatar card={me} size={30} mood={false} static />
         <span>Moi</span>
       </button>
+      <MoodBubble mood={me.mood} placement="above" />
+      </span>
       <MeSheet open={open} onOpenChange={setOpen} />
     </>
   );

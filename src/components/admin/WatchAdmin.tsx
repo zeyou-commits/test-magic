@@ -109,7 +109,7 @@ export function WatchAdmin() {
     queryKey: ["admin", "watch", "state"],
     queryFn: async () => {
       const [sources, runs, claude] = await Promise.all([
-        db.from("bw_watch_sources").select("id,name,url,active,last_checked_at,last_error").order("name"),
+        db.from("bw_watch_sources").select("id,name,url,active,last_checked_at,last_error").not("url", "like", "%/interne/%").order("name"),
         db
           .from("bw_watch_runs")
           .select("finished_at,items_found,errors,requested_by")

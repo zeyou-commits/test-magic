@@ -58,14 +58,6 @@ REVOKE ALL ON FUNCTION public.bw_trip_presence() FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION public.bw_trip_presence() TO anon, authenticated;
 
 -- 2. Depuis quand le navire est à quai : premier arrêt observé près du port d'arrivée.
-CREATE OR REPLACE FUNCTION private.bw_km(lat1 double precision, lon1 double precision, lat2 double precision, lon2 double precision)
-RETURNS double precision LANGUAGE sql IMMUTABLE SET search_path TO '' AS $$
-  SELECT 6371 * 2 * asin(least(1, sqrt(
-    power(sin(radians(lat2 - lat1) / 2), 2)
-    + cos(radians(lat1)) * cos(radians(lat2)) * power(sin(radians(lon2 - lon1) / 2), 2))));
-$$;
-REVOKE ALL ON FUNCTION private.bw_km(double precision, double precision, double precision, double precision) FROM PUBLIC, anon, authenticated;
-
 CREATE OR REPLACE FUNCTION public.bw_docked_since(p_departure uuid)
 RETURNS timestamptz LANGUAGE sql STABLE SECURITY DEFINER SET search_path TO '' AS $$
   SELECT min(o.reported_at)
@@ -134,6 +126,7 @@ CREATE POLICY bw_chat_words_staff ON public.bw_chat_words FOR ALL TO authenticat
 REVOKE ALL ON public.bw_chat_messages, public.bw_chat_reactions, public.bw_chat_reports, public.bw_chat_strikes FROM anon, authenticated;
 REVOKE ALL ON public.bw_chat_words FROM anon;
 GRANT SELECT, INSERT, DELETE ON public.bw_chat_words TO authenticated;
+GRANT ALL ON public.bw_chat_messages, public.bw_chat_strikes TO service_role;
 
 -- Règles appliquées avant publication. Renvoie le motif du refus, ou null.
 CREATE OR REPLACE FUNCTION private.bw_chat_refusal(p_body text)

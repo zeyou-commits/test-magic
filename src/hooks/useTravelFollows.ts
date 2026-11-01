@@ -57,7 +57,10 @@ export function useTravelFollows(userId: string) {
       const departureIds = rows
         .filter((follow) => follow.target_kind === "departure")
         .map((follow) => follow.target_id);
-      const [vessels, departures, next, routes, ports] = await Promise.all([
+      const companyIds = rows
+        .filter((follow) => follow.target_kind === "company")
+        .map((follow) => follow.target_id);
+      const [vessels, departures, next, routes, ports, companies] = await Promise.all([
         supabase.from("vessels").select("id,name").in("id", vesselIds),
         supabase
           .from("departures")
@@ -73,8 +76,9 @@ export function useTravelFollows(userId: string) {
           .limit(100),
         supabase.from("routes").select("id,departure_port_id,arrival_port_id"),
         supabase.from("ports").select("id,name,country_code"),
+        supabase.from("companies").select("id,name").in("id", companyIds),
       ]);
-      const error = [vessels, departures, next, routes, ports].find(
+      const error = [vessels, departures, next, routes, ports, companies].find(
         (result) => result.error,
       )?.error;
       if (error) throw error;
@@ -82,6 +86,7 @@ export function useTravelFollows(userId: string) {
       const portById = new Map((ports.data ?? []).map((port) => [port.id, port]));
       const result: Record<string, FollowDetail> = {};
       for (const vessel of vessels.data ?? []) result[vessel.id] = { label: vessel.name };
+      for (const company of companies.data ?? []) result[company.id] = { label: company.name };
       for (const departure of [...(departures.data ?? []), ...(next.data ?? [])]) {
         const route = routeById.get(departure.route_id);
         const port = route ? portById.get(route.departure_port_id) : undefined;

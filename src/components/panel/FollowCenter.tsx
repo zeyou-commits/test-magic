@@ -37,7 +37,7 @@ export function FollowCenter({ userId }: { userId: string }) {
           </span>
           <div>
             <h2 id="my-travel-title">Mes voyages suivis</h2>
-            <p>Vos navires, traversées et alertes d’ouverture.</p>
+            <p>Vos navires, compagnies, traversées et alertes d’ouverture.</p>
           </div>
         </div>
         <div className="bw-account-filter" role="group" aria-label="Filtrer mes suivis">
@@ -45,6 +45,7 @@ export function FollowCenter({ userId }: { userId: string }) {
             { id: "all", label: "Tout" },
             { id: "vessel", label: "Bateaux" },
             { id: "departure", label: "Traversées" },
+            { id: "company", label: "Compagnies" },
             { id: "opening", label: "Alertes" },
           ].map((item) => (
             <button
@@ -102,7 +103,7 @@ export function FollowCenter({ userId }: { userId: string }) {
                 <article key={follow.id} className="bw-follow-card">
                   <div className="flex items-start justify-between gap-2">
                     <span className="bw-account-kicker">
-                      {follow.traveller && follow.target_kind === "departure" ? "Ma traversée" : follow.follow_purpose === "proche" ? "Suivi pour un proche" : follow.target_kind === "vessel" ? "Bateau suivi" : "Traversée suivie"}
+                      {follow.traveller && follow.target_kind === "departure" ? "Ma traversée" : follow.follow_purpose === "proche" ? "Suivi pour un proche" : follow.target_kind === "vessel" ? "Bateau suivi" : follow.target_kind === "company" ? "Compagnie suivie" : "Traversée suivie"}
                     </span>
                     <button
                       type="button"
@@ -136,7 +137,7 @@ export function FollowCenter({ userId }: { userId: string }) {
                     Voir sur la carte
                     <ArrowUpRight className="size-3.5" />
                   </a>
-                  {follow.follow_purpose === "curieux" && !follow.traveller ? (
+                  {follow.follow_purpose === "curieux" && !follow.traveller && follow.target_kind !== "company" ? (
                     <button
                       type="button"
                       className="ml-3 inline-flex min-h-9 items-center gap-1 text-xs font-semibold text-primary"

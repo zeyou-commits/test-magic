@@ -17,7 +17,7 @@ export function FollowButton({
   label,
   demo = false,
 }: {
-  kind: "vessel" | "departure";
+  kind: "vessel" | "departure" | "company";
   targetId: string;
   compact?: boolean;
   iconOnly?: boolean;
@@ -62,7 +62,9 @@ export function FollowButton({
         type: "follow",
         kind,
         targetId,
-        label: label ?? (kind === "vessel" ? "Votre bateau" : "Votre traversée"),
+        label: label ?? (kind === "vessel" ? "Votre bateau" : kind === "company" ? "Cette compagnie" : "Votre traversée"),
+        // Suivre une compagnie ne crée aucun voyage : pas de question « vous voyagez ? ».
+        ...(kind === "company" ? { traveller: false, purpose: "curieux" as const } : {}),
       });
       return;
     }
@@ -95,10 +97,10 @@ export function FollowButton({
         aria-pressed={Boolean(follow?.active)}
         aria-label={
           iconOnly
-            ? `${follow?.active ? "Ne plus suivre" : "Suivre"} ${label ?? (kind === "vessel" ? "ce bateau" : "cette traversée")}`
+            ? `${follow?.active ? "Ne plus suivre" : "Suivre"} ${label ?? (kind === "vessel" ? "ce bateau" : kind === "company" ? "cette compagnie" : "cette traversée")}`
             : undefined
         }
-        title={iconOnly ? (follow?.active ? "Suivi activé" : "Suivre ce bateau") : undefined}
+        title={iconOnly ? (follow?.active ? "Suivi activé" : kind === "company" ? "Suivre cette compagnie" : "Suivre ce bateau") : undefined}
         className={`inline-flex ${iconOnly ? "size-8 rounded-full !min-h-8 !gap-0 !px-0" : compact ? "h-7 !gap-1 !rounded-lg !px-2 !text-[11px]" : "min-h-10"} items-center justify-center gap-2 rounded-xl border px-3 text-xs font-semibold transition-colors disabled:opacity-50 ${follow?.active ? "border-primary/30 bg-primary/10 text-primary" : "border-primary/25 bg-primary/5 text-primary hover:bg-primary/10"}`}
       >
         {busy ? (
@@ -114,6 +116,8 @@ export function FollowButton({
               ? "Suivre"
               : kind === "vessel"
                 ? "Suivre ce bateau"
+                : kind === "company"
+                  ? "Suivre cette compagnie"
                 : "Suivre cette traversée"}
       </button>
       {(message || error) && (

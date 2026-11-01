@@ -7,7 +7,7 @@ const supabase = typedSupabase as unknown as SupabaseClient;
 
 const followSchema = z.object({
   type: z.literal("follow"),
-  kind: z.enum(["vessel", "departure"]),
+  kind: z.enum(["vessel", "departure", "company"]),
   targetId: z.string().uuid(),
   label: z.string().max(200),
   /** Réponse à « Vous voyagez sur ce bateau ? » : vrai = « Ma traversée », faux = un proche. */
@@ -70,7 +70,7 @@ export function travelActionLabel(action: TravelAction) {
 /** Suivi d'un bateau ou d'une traversée ; « je voyage » enregistré si la base le connaît (script du 02/11). */
 async function upsertFollow(
   userId: string,
-  kind: "vessel" | "departure",
+  kind: "vessel" | "departure" | "company",
   targetId: string,
   traveller: boolean | undefined,
   purpose: "voyageur" | "proche" | "curieux" | undefined,

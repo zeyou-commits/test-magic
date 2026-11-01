@@ -1,3 +1,4 @@
+import { FollowButton } from "./FollowButton";
 import { PlaceReactions } from "./PlaceReactions";
 import { CompanyContacts } from "./CompanyContacts";
 import { useEffect, useState } from "react";
@@ -69,6 +70,7 @@ export function CompanyView({
         </div>
         <PlaceReactions kind="company" target={companyId} />
       </header>
+      <FollowButton kind="company" targetId={companyId} label={company.name} demo={company.is_demo} />
       <button className="pv-rating" type="button" onClick={() => setTab("avis")}>
         <Star size={16} aria-hidden />
         <span>

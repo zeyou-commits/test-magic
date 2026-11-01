@@ -20,6 +20,7 @@ import {
 import { SiteLayout } from "@/components/layout/SiteLayout";
 import { Breadcrumbs, CollectionSchema } from "@/components/editorial/Editorial";
 import { CompanyBadge } from "@/components/panel/CompanyBadge";
+import { FollowButton } from "@/components/panel/FollowButton";
 import { vesselDossiers } from "@/content/vessels";
 import { seoHead } from "@/lib/seo/site";
 import {
@@ -104,6 +105,7 @@ function Boats() {
                     {companyRoutes.length > 1 ? "s" : ""}
                   </p>
                 </div>
+                <FollowButton kind="company" targetId={company.id} label={company.name} compact />
               </header>
               {companyRoutes.length ? (
                 <div className="mb-5 flex flex-wrap gap-2">

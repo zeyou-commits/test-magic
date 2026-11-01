@@ -137,7 +137,9 @@ export function TravelActionProvider({ children }: { children: ReactNode }) {
                     ? "Votre aller et votre retour sont suivis. Retrouvez les deux traversées dans votre espace voyageur."
                     : "Votre traversée est suivie. Vous pourrez ajouter votre retour depuis sa fiche."
                   : action?.type === "follow" && action.purpose === "curieux"
-                    ? "Le navire est ajouté à vos suivis, sans créer de voyage personnel."
+                    ? action.kind === "company"
+                      ? "La compagnie est ajoutée à vos suivis : ses actualités vous seront signalées."
+                      : "Le navire est ajouté à vos suivis, sans créer de voyage personnel."
                   : "Retrouvez ce voyage et ses actualités dans votre espace personnel."
                 : user
                   ? "Les prochaines informations seront regroupées dans votre espace voyageur."

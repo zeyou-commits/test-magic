@@ -8,6 +8,7 @@ import { useState } from "react";
 import { ArrowRight, ExternalLink, MapPin, Route as RouteIcon, Ship, Star, Users } from "lucide-react";
 import { SiteLayout } from "@/components/layout/SiteLayout";
 import { CompanyBadge } from "@/components/panel/CompanyBadge";
+import { FollowButton } from "@/components/panel/FollowButton";
 import { entityReviewsQuery } from "@/lib/ferry/entityReviews";
 import { vesselPhotoQuery } from "@/lib/ferry/vesselPhoto";
 import type { Company, RouteLine, Vessel } from "@/lib/ferry/types";
@@ -209,6 +210,7 @@ function CompanyCard({
             <dd>{big?.passenger_capacity ? big.passenger_capacity.toLocaleString("fr-FR") : "—"}</dd>
           </div>
         </dl>
+        <FollowButton kind="company" targetId={company.id} label={company.name} demo={company.is_demo} />
         {company.description ? <p className="bw-co-card__text">{company.description}</p> : null}
         {lines.length ? (
           <ul className="bw-co-card__lines" aria-label="Lignes">

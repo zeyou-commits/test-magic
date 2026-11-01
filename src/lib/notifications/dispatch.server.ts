@@ -320,7 +320,9 @@ export async function dispatchPush(
           const query = db
             .from("bw_follows")
             .select("id,user_id,target_kind,target_id,created_at,traveller,follow_purpose")
-            .eq("active", true);
+            .eq("active", true)
+            // Une compagnie suivie ne reçoit que ses actualités, pas les rappels de traversée.
+            .neq("target_kind", "company");
           return (onlyUser ? query.in("user_id", onlyUser) : query).order("id").range(from, to);
         }),
     collect((from, to) =>

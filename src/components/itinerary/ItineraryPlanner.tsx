@@ -36,8 +36,11 @@ import {
   DISEMBARK_BUFFER_MIN,
   buildItineraryOptions,
   buildSimulatedSailings,
+  compareItineraries,
   distinctItineraries,
-  itineraryChoices,
+  gapLabel,
+  legWithPauses,
+  TIE_MIN,
   type ItineraryMapPreview,
   type ItineraryPriority,
 } from "@/lib/ferry/itinerary";
@@ -56,6 +59,8 @@ import {
   PAUSE_MIN,
   drivingPauses,
   filmTimes,
+  pausingAt,
+  publishJourneyLayout,
   raceRanking,
   minuteAtProgress,
   progressAtMinute,
@@ -111,16 +116,16 @@ function formatDayTime(ms: number, timeZone: string) {
 
 const DEMO_LOOP_MS = 30_000;
 
-/** Conseil, pas une promesse : les pauses ne sont pas ajoutées aux heures affichées. */
+/** Les pauses sont comptées dans les heures affichées. */
 function pauseNote(driveMin: number) {
   const pauses = drivingPauses(driveMin);
   if (!pauses) return "";
-  return ` · ${pauses} pause${pauses > 1 ? "s" : ""} de ${PAUSE_MIN} min conseillée${pauses > 1 ? "s" : ""} (une toutes les ${PAUSE_EVERY_MIN / 60} h), à ajouter`;
+  return ` · ${pauses} pause${pauses > 1 ? "s" : ""} de ${PAUSE_MIN} min comprise${pauses > 1 ? "s" : ""}`;
 }
 
 function pauseSummary(pauses: number) {
   const plural = pauses > 1 ? "s" : "";
-  return `${pauses} pause${plural} de ${PAUSE_MIN} min conseillée${plural}, une toutes les ${PAUSE_EVERY_MIN / 60} h, à ajouter à ces durées.`;
+  return `${pauses} pause${plural} de ${PAUSE_MIN} min comprise${plural} (repère : une toutes les ${PAUSE_EVERY_MIN / 60} h), sans aire précise.`;
 }
 
 function formatDuration(minutes: number) {
@@ -434,16 +439,17 @@ export function ItineraryPlanner({
   );
   // Les vrais départs passent toujours d'abord ; une simulation n'est jamais recommandée à leur place.
   const realOptions = useMemo(() => sorted.filter((option) => !option.sailing.isSimulation), [sorted]);
-  const choices = useMemo(
-    () => itineraryChoices(realOptions.length ? realOptions : sorted),
+  const compared = useMemo(
+    () => compareItineraries(realOptions.length ? realOptions : sorted),
     [realOptions, sorted],
   );
+  const dated = realOptions.length > 0;
   const estimatedChoices = realOptions.length
     ? sorted.filter((option) => option.sailing.isSimulation).slice(0, 3)
     : [];
   const selected =
     sorted.find((option) => option.sailing.departure.id === selectedId) ??
-    choices[0]?.option ??
+    realOptions[0] ??
     sorted[0];
   const previewed = sorted.find((option) => option.sailing.departure.id === hoveredId) ?? selected;
   const alternativeKey = sorted
@@ -574,72 +580,95 @@ export function ItineraryPlanner({
   const [pullBack, setPullBack] = useState(0);
   const [picking, setPicking] = useState<PickTarget | null>(null);
   const selectedKey = selected?.sailing.departure.id ?? null;
-  const film = useMemo<JourneyFilm | null>(() => {
-    if (!selected || !roadAccess) return null;
-    const from: LngLat = [selected.sailing.from.longitude, selected.sailing.from.latitude];
-    const to: LngLat = [selected.sailing.to.longitude, selected.sailing.to.latitude];
-    const roads = filmRoads?.id === selectedKey ? filmRoads : null;
-    const slug = selected.sailing.vessel ? vesselMapIcon(selected.sailing.vessel.name) : null;
+  const filmFor = (option: NonNullable<typeof selected>, roads: { toPort: LngLat[]; fromPort: LngLat[] } | null | undefined): JourneyFilm => {
+    const from: LngLat = [option.sailing.from.longitude, option.sailing.from.latitude];
+    const to: LngLat = [option.sailing.to.longitude, option.sailing.to.latitude];
+    const slug = option.sailing.vessel ? vesselMapIcon(option.sailing.vessel.name) : null;
     return {
-      key: selectedKey ?? "",
-      road: roads?.toPort ?? [roadAccess.originPoint, from],
-      sea: routeArc(selected.sailing.from, selected.sailing.to),
-      last: roads?.fromPort ?? [to, roadAccess.destinationPoint],
-      roadMin: selected.originRoad.durationMin,
+      key: option.sailing.departure.id,
+      road: roads?.toPort ?? [roadAccess!.originPoint, from],
+      sea: routeArc(option.sailing.from, option.sailing.to),
+      last: roads?.fromPort ?? [to, roadAccess!.destinationPoint],
+      roadMin: legWithPauses(option.originRoad.durationMin),
+      roadPauses: drivingPauses(option.originRoad.durationMin),
       boardMin: BOARDING_BUFFER_MIN,
-      ferryMin: selected.sailing.durationMin ?? 0,
+      ferryMin: option.sailing.durationMin ?? 0,
       disembarkMin: DISEMBARK_BUFFER_MIN,
-      lastMin: selected.destinationRoad.durationMin,
-      roadKm: selected.originRoad.distanceKm,
-      lastKm: selected.destinationRoad.distanceKm,
+      lastMin: legWithPauses(option.destinationRoad.durationMin),
+      lastPauses: drivingPauses(option.destinationRoad.durationMin),
+      roadKm: option.originRoad.distanceKm,
+      lastKm: option.destinationRoad.distanceKm,
       shipImage: slug ? `/vessel-visuals/map/${slug}.webp` : "/images/ferry-3d-marker.png",
       pins: [],
     };
+  };
+  const film = useMemo<JourneyFilm | null>(() => {
+    if (!selected || !roadAccess) return null;
+    return filmFor(selected, filmRoads?.id === selectedKey ? filmRoads : null);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selected, selectedKey, roadAccess, filmRoads]);
 
-  // La course : tous les trajets partent en même temps, le plus court de porte à porte gagne.
+  // La course : chacun part quand il le faut pour son bateau, le premier arrivé gagne.
   const [racing, setRacing] = useState(false);
   const [raceMinute, setRaceMinute] = useState(0);
+  const [raceRoadsTick, setRaceRoadsTick] = useState(0);
+  // Sur mobile, le film occupe l'écran : le volet se réduit à sa barre de lecture.
+  const [cinema, setCinema] = useState(false);
   const race = useMemo(() => {
     if (!roadAccess) return [];
-    const entries = sorted.slice(0, 6).map((option) => {
+    const firstLeave = Math.min(...compared.map(({ option }) => option.leaveHomeAt));
+    const entries = compared.map(({ option }) => {
       const id = option.sailing.departure.id;
-      const from: LngLat = [option.sailing.from.longitude, option.sailing.from.latitude];
-      const to: LngLat = [option.sailing.to.longitude, option.sailing.to.latitude];
-      const roads = filmRoads?.id === id ? filmRoads : null;
-      const ferryMin = option.sailing.durationMin ?? 0;
-      const slug = option.sailing.vessel ? vesselMapIcon(option.sailing.vessel.name) : null;
-      const raceFilm: JourneyFilm = {
-        key: id,
-        road: roads?.toPort ?? [roadAccess.originPoint, from],
-        sea: routeArc(option.sailing.from, option.sailing.to),
-        last: roads?.fromPort ?? [to, roadAccess.destinationPoint],
-        roadMin: option.originRoad.durationMin,
-        boardMin: BOARDING_BUFFER_MIN,
-        ferryMin,
-        disembarkMin: DISEMBARK_BUFFER_MIN,
-        lastMin: option.destinationRoad.durationMin,
-        shipImage: slug ? `/vessel-visuals/map/${slug}.webp` : "/images/ferry-3d-marker.png",
-        pins: [],
-      };
+      const raceFilm = filmFor(option, geometryCache.current.get(id) ?? (filmRoads?.id === id ? filmRoads : null));
+      const startMin = dated ? Math.round((option.leaveHomeAt - firstLeave) / 60_000) : 0;
       return {
         id,
         label: `${option.sailing.from.name} → ${option.sailing.to.name}`,
-        totalMin: filmTimes(raceFilm).total,
+        startMin,
+        totalMin: dated ? Math.round((option.arrivalAt - option.leaveHomeAt) / 60_000) : filmTimes(raceFilm).total,
         estimated: Boolean(option.sailing.isSimulation),
         film: raceFilm,
       };
     });
     return raceRanking(entries);
-  }, [sorted, roadAccess, filmRoads]);
-  const raceEnd = race.at(-1)?.totalMin ?? 0;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [compared, dated, roadAccess, filmRoads, raceRoadsTick]);
+  const raceEnd = race.at(-1)?.arriveMin ?? 0;
   const raceWinner = race[0];
+  const raceTied = race.filter((entry) => entry.gapMin < TIE_MIN);
+  const raceEntry = (id: string) => race.find((entry) => entry.id === id);
   const startRace = () => {
     setPlaying(false);
     setPullBack(0);
     setRaceMinute(0);
     setRacing(true);
+    if (window.innerWidth < 768) setCinema(true);
+    // Les vraies routes de chaque trajet, chargées une seule fois.
+    if (roadAccess?.roadMode === "estimate") return;
+    for (const { option } of compared) {
+      const id = option.sailing.departure.id;
+      if (geometryCache.current.has(id)) continue;
+      void calculateRoadGeometry({
+        data: {
+          origin: roadAccess!.originPoint,
+          destination: roadAccess!.destinationPoint,
+          departurePort: [option.sailing.from.longitude, option.sailing.from.latitude],
+          arrivalPort: [option.sailing.to.longitude, option.sailing.to.latitude],
+        },
+      })
+        .then((geometry) => {
+          geometryCache.current.set(id, geometry);
+          setRaceRoadsTick((count) => count + 1);
+        })
+        .catch(() => undefined);
+    }
   };
+  const launchFilm = () => {
+    setRacing(false);
+    setPlaying(true);
+    if (window.innerWidth < 768) setCinema(true);
+  };
+  const raceDone = racing && raceMinute >= raceEnd;
   useEffect(() => {
     if (!racing || !raceEnd) return;
     const startedAt = performance.now();
@@ -651,7 +680,9 @@ export function ItineraryPlanner({
     };
     frame = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(frame);
-  }, [racing, raceEnd]);
+    // Une route qui arrive en chemin ne relance pas la course.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [racing]);
   const showingResults = active && Boolean(roadAccess) && !filtersOpen;
   useEffect(() => {
     if (!pullBack) return;
@@ -670,8 +701,21 @@ export function ItineraryPlanner({
     setPullBack(0);
     setMinute(0);
     setWide(1);
-    setRacing(false);
+    if (!racing) setCinema(false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedKey]);
+  useEffect(() => {
+    if (!showingResults) setCinema(false);
+    publishJourneyLayout({ wide: showingResults });
+    return () => publishJourneyLayout({ wide: false });
+  }, [showingResults]);
+  const cinemaSeen = useRef(false);
+  useEffect(() => {
+    if (!cinema && !cinemaSeen.current) return;
+    cinemaSeen.current = true;
+    if (active) publishJourneyLayout({ cinema });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [cinema]);
   useEffect(() => {
     if (!showingResults || !film) return;
     if (racing) {
@@ -683,13 +727,21 @@ export function ItineraryPlanner({
         caption: "",
         racers: race.map((entry) => ({
           film: entry.film,
-          label: entry.film.key === raceWinner?.id && raceMinute >= entry.totalMin ? `1er · ${entry.label}` : entry.label,
-          winner: entry.id === raceWinner?.id && raceMinute >= entry.totalMin,
+          startMin: entry.startMin ?? 0,
+          label: entry.label,
+          winner: entry.id === raceWinner?.id && raceMinute >= entry.arriveMin,
         })),
       });
       return;
     }
-    publishFilmFrame({ film, minute, wide, demo: false, caption: "" });
+    publishFilmFrame({
+      film,
+      minute,
+      wide,
+      demo: false,
+      maxZoom: 7.4,
+      caption: pausingAt(film, minute) ? `Pause conseillée · ${PAUSE_MIN} min` : "",
+    });
   }, [showingResults, film, minute, wide, racing, raceMinute, race, raceWinner?.id]);
   useEffect(() => {
     if (!showingResults) return;
@@ -736,7 +788,9 @@ export function ItineraryPlanner({
         wide: spread,
         demo: true,
         maxZoom: 6.3,
-        caption: `Exemple · ${DEMO_CAPTIONS[stageAt(DEMO_FILM, at)]}`,
+        caption: pausingAt(DEMO_FILM, at)
+          ? `Exemple · Pause conseillée, ${PAUSE_MIN} min`
+          : `Exemple · ${DEMO_CAPTIONS[stageAt(DEMO_FILM, at)]}`,
       });
     };
     if (still) {
@@ -801,6 +855,7 @@ export function ItineraryPlanner({
     setError(null);
     setRoadAccess(null);
     setRacing(false);
+    setCinema(false);
     geometryCache.current.clear();
     const timestamp = Math.max(Date.now(), Date.parse(`${period}-01T00:00:00`));
     if (!Number.isFinite(timestamp)) {
@@ -917,39 +972,127 @@ export function ItineraryPlanner({
             id: "road",
             at: 0,
             title: "Départ de chez vous",
+            source: roadAccess?.roadMode === "osrm" ? "Route calculée" : "Route estimée",
             text: `${Math.round(selected.originRoad.distanceKm)} km, ${formatDuration(selected.originRoad.durationMin)} jusqu'à ${selected.sailing.from.name}${pauseNote(selected.originRoad.durationMin)}`,
           },
           {
             id: "port",
             at: times.port,
             title: `Au port de ${selected.sailing.from.name}`,
+            source: "Marge repère",
             text: "Marge repère avant le départ : l'heure de convocation de votre billet fait foi",
           },
           {
             id: "sea",
             at: times.sea,
             title: "La traversée",
+            source: selected.sailing.isSimulation ? "Durée estimée" : "Horaire publié",
             text: `${formatDuration(selected.sailing.durationMin ?? 0)} de mer jusqu'à ${selected.sailing.to.name}`,
           },
           {
             id: "disembark",
             at: times.disembark,
             title: `Arrivée à ${selected.sailing.to.name}`,
+            source: "Marge repère",
             text: "Débarquement, contrôles et sortie du port, marge repère",
           },
           {
             id: "last",
             at: times.last,
             title: "La dernière route",
+            source: roadAccess?.roadMode === "osrm" ? "Route calculée" : "Route estimée",
             text: `${Math.round(selected.destinationRoad.distanceKm)} km, ${formatDuration(selected.destinationRoad.durationMin)}${pauseNote(selected.destinationRoad.durationMin)}`,
           },
-          { id: "done", at: times.total, title: "Arrivée à destination", text: roadAccess?.destination ?? "" },
+          { id: "done", at: times.total, title: "Arrivée à destination", source: "", text: roadAccess?.destination ?? "" },
         ]
       : [];
   const currentStep = steps.find((step) => step.id === stage) ?? steps[0];
+  const pausingNow = film ? pausingAt(film, minute) : false;
+  const raceLeader = race
+    .filter((entry) => raceMinute >= entry.arriveMin)
+    .at(0);
+  const raceTitle = !raceDone && !raceLeader
+    ? "La course est lancée"
+    : raceTied.length > 1
+      ? `${raceTied[0]!.label} et ${raceTied[1]!.label} à égalité`
+      : `${raceWinner?.label} arrive le premier`;
+  const closeCinema = () => {
+    setPlaying(false);
+    setCinema(false);
+  };
 
   return (
-    <section id="itineraire" className="min-h-full min-w-0 w-full bg-[#fffdf8]">
+    <section id="itineraire" className="@container min-h-full min-w-0 w-full bg-[#fffdf8]">
+      {cinema && film && times && currentStep ? (
+        <div className="grid gap-1.5 px-3 py-2">
+          <div className="flex items-center gap-2">
+            <div className="min-w-0 flex-1">
+              <strong className="block truncate text-sm">
+                {racing
+                  ? raceLeader
+                    ? raceDone && raceTied.length > 1
+                      ? "Égalité en tête"
+                      : `1er : ${raceLeader.label}`
+                    : "La course est lancée"
+                  : pausingNow
+                    ? `Pause conseillée · ${PAUSE_MIN} min`
+                    : currentStep.title}
+              </strong>
+              <span className="block truncate text-xs font-semibold tabular-nums text-primary">
+                {racing
+                  ? raceDone && raceWinner
+                    ? raceTied.length > 1
+                      ? "Écart de moins d'une heure"
+                      : gapLabel(race[1]?.gapMin ?? 0) + " pour le suivant"
+                    : `${race.filter((entry) => raceMinute >= entry.arriveMin).length} sur ${race.length} arrivés`
+                  : moment(Math.round(minute))}
+              </span>
+            </div>
+            {racing ? null : (
+              <button
+                type="button"
+                aria-label={playing ? "Mettre en pause" : minute >= times.total ? "Revoir mon voyage" : "Reprendre"}
+                onClick={() => setPlaying((value) => !value)}
+                className="inline-flex size-11 shrink-0 items-center justify-center rounded-full bg-secondary"
+              >
+                {playing ? <Pause className="size-4" aria-hidden /> : <Play className="size-4" aria-hidden />}
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={closeCinema}
+              className="inline-flex min-h-11 shrink-0 items-center rounded-xl bg-primary px-3 text-xs font-bold text-white"
+            >
+              Voir le détail
+            </button>
+          </div>
+          {racing ? (
+            <span className="block h-1.5 overflow-hidden rounded-full bg-secondary" aria-hidden>
+              <span
+                className="block h-full bg-primary"
+                style={{ width: `${raceEnd ? Math.min(100, (raceMinute / raceEnd) * 100) : 0}%` }}
+              />
+            </span>
+          ) : (
+            <input
+              type="range"
+              aria-label="Parcourir le voyage dans le temps"
+              min={0}
+              max={times.total}
+              step={1}
+              value={minute}
+              onChange={(event) => {
+                setPlaying(false);
+                setPullBack(0);
+                setWide(0);
+                setMinute(Number(event.target.value));
+              }}
+              className="h-6 w-full accent-[#0e7a43]"
+            />
+          )}
+        </div>
+      ) : null}
+      <div hidden={cinema}>
       <div className="sticky top-0 z-10 flex items-center justify-between gap-3 border-b border-border bg-[#e9f3ef] px-4 py-1.5">
         <h2 className="font-display text-base font-bold uppercase tracking-tight text-foreground sm:text-lg">
           Le trajet porte à porte
@@ -1156,242 +1299,270 @@ export function ItineraryPlanner({
             </p>
           ) : (
             <>
-              <div>
-                <p className="font-display text-xl font-bold leading-tight">
-                  {estimatedTrip
-                    ? `Comptez ${formatDuration(selected.totalMinutes)} de porte à porte`
-                    : `Partez ${moment(0)}`}
-                </p>
-                <p className="mt-1 text-sm text-muted-foreground">
-                  {estimatedTrip
-                    ? `Date à confirmer en ${periodLabel}`
-                    : `Arrivée ${moment(times?.total ?? 0)}`}{" "}
-                  · ≈ {numberFormat.format(selected.totalEuro)} €
-                </p>
-                <p className="mt-0.5 text-xs text-muted-foreground">
-                  {selected.sailing.from.name} → {selected.sailing.to.name}
-                  {selected.sailing.company ? ` · ${selected.sailing.company.name}` : ""} · aller simple
-                </p>
-                {vesselAlerts.has(selected.sailing.vessel?.id ?? "") ? (
-                  <p role="alert" className="mt-1 text-xs font-semibold text-warning-foreground">
-                    Départ à confirmer auprès de la compagnie
-                  </p>
-                ) : null}
-              </div>
-
-              <div
-                className="grid gap-1.5"
-                style={{ gridTemplateColumns: `repeat(${choices.length}, minmax(0, 1fr))` }}
-                role="group"
-                aria-label="Choisir son voyage"
-              >
-                {choices.map((choice) => {
-                  const on = choice.option.sailing.departure.id === selected.sailing.departure.id;
-                  return (
-                    <button
-                      key={choice.option.sailing.departure.id}
-                      type="button"
-                      aria-pressed={on}
-                      onMouseEnter={() => setHoveredId(choice.option.sailing.departure.id)}
-                      onMouseLeave={() => setHoveredId(null)}
-                      onClick={() => setSelectedId(choice.option.sailing.departure.id)}
-                      className={`flex min-h-[72px] min-w-0 flex-col items-start gap-0.5 rounded-xl border p-2 text-left ${on ? "border-primary bg-primary/10" : "border-border bg-white"}`}
-                    >
-                      <span className="text-[11px] font-bold text-primary">{choice.tag}</span>
-                      <span className="w-full truncate text-xs font-bold">
-                        {choice.option.sailing.from.name}
-                      </span>
-                      <span className="text-[11px] leading-tight text-muted-foreground">{choice.delta}</span>
-                    </button>
-                  );
-                })}
-              </div>
-
-              {film && times && currentStep ? (
-                <div className="rounded-2xl border border-border bg-white p-3">
-                  <div className="flex items-baseline justify-between gap-2">
-                    <strong className="min-w-0 truncate text-sm">{currentStep.title}</strong>
-                    <span className="shrink-0 text-xs font-bold tabular-nums text-primary">
-                      {moment(Math.round(minute))}
-                    </span>
-                  </div>
-                  <p className="mt-0.5 min-h-8 text-xs leading-snug text-muted-foreground">
-                    {currentStep.text}
-                  </p>
-                  <div className="mt-2 flex h-1.5 gap-0.5 overflow-hidden rounded-full" aria-hidden>
-                    {[
-                      [film.roadMin, "#0e7a43"],
-                      [film.boardMin, "#b9a57a"],
-                      [film.ferryMin, "#1769a8"],
-                      [film.disembarkMin, "#b9a57a"],
-                      [film.lastMin, "#0e7a43"],
-                    ].map(([flex, color], index) => (
-                      <span key={index} style={{ flex: `${flex} 1 0`, background: String(color) }} />
-                    ))}
-                  </div>
-                  <ul className="mt-1.5 flex flex-wrap gap-x-2.5 gap-y-0.5 text-[11px] leading-snug text-muted-foreground">
-                    {[
-                      ["Route", film.roadMin, 0],
-                      ["Port", film.boardMin, times.port],
-                      ["Mer", film.ferryMin, times.sea],
-                      ["Sortie", film.disembarkMin, times.disembark],
-                      ["Route", film.lastMin, times.last],
-                    ].map(([label, length, start], index) => {
-                      const on = minute >= Number(start) && minute < Number(start) + Number(length);
-                      return (
-                        <li key={index} className={on ? "font-bold text-foreground" : undefined}>
-                          {label} <span className="tabular-nums">{formatDuration(Number(length))}</span>
-                        </li>
-                      );
-                    })}
-                  </ul>
-                  {drivingPauses(film.roadMin) + drivingPauses(film.lastMin) > 0 ? (
-                    <p className="mt-0.5 text-[11px] leading-snug text-[#8a4b00]">
-                      {pauseSummary(drivingPauses(film.roadMin) + drivingPauses(film.lastMin))}
+              <div className="grid items-start gap-3 @min-[600px]:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)]">
+                <div className="grid min-w-0 gap-3">
+                  <div>
+                    <p className="font-display text-2xl font-bold leading-tight">
+                      {estimatedTrip
+                        ? `Comptez ${formatDuration(selected.totalMinutes)} de porte à porte`
+                        : `Partez ${moment(0)}`}
                     </p>
-                  ) : null}
-                  <input
-                    type="range"
-                    aria-label="Parcourir le voyage dans le temps"
-                    min={0}
-                    max={times.total}
-                    step={1}
-                    value={minute}
-                    onChange={(event) => {
-                      setPlaying(false);
-                      setPullBack(0);
-                      setWide(0);
-                      setMinute(Number(event.target.value));
-                    }}
-                    className="h-7 w-full accent-[#0e7a43]"
-                  />
+                    <p className="mt-1 text-sm text-muted-foreground">
+                      {estimatedTrip
+                        ? `Date à confirmer en ${periodLabel}`
+                        : `Arrivée ${moment(times?.total ?? 0)}`}{" "}
+                      · ≈ {numberFormat.format(selected.totalEuro)} €
+                    </p>
+                    <p className="mt-0.5 text-xs text-muted-foreground">
+                      {selected.sailing.from.name} → {selected.sailing.to.name}
+                      {selected.sailing.company ? ` · ${selected.sailing.company.name}` : ""} · aller simple
+                      {film && (film.roadPauses ?? 0) + (film.lastPauses ?? 0) > 0 ? " · pauses comprises" : ""}
+                    </p>
+                    {vesselAlerts.has(selected.sailing.vessel?.id ?? "") ? (
+                      <p role="alert" className="mt-1 text-xs font-semibold text-warning-foreground">
+                        Départ à confirmer auprès de la compagnie
+                      </p>
+                    ) : null}
+                  </div>
                   <button
                     type="button"
-                    onClick={() => setPlaying((value) => !value)}
-                    className="inline-flex min-h-10 w-full items-center justify-center gap-2 rounded-xl bg-secondary text-sm font-bold"
+                    onClick={launchFilm}
+                    className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-secondary font-bold @min-[600px]:hidden"
                   >
-                    {playing ? <Pause className="size-4" aria-hidden /> : <Play className="size-4" aria-hidden />}
-                    {playing ? "Pause" : minute >= times.total ? "Revoir mon voyage" : "Lancer mon voyage"}
+                    <Play className="size-4" aria-hidden /> Voir mon voyage sur la carte
                   </button>
-                </div>
-              ) : null}
 
-              {race.length > 1 ? (
-                <div className="rounded-2xl border border-border bg-white p-3">
-                  <div className="flex items-center justify-between gap-2">
-                    <strong className="text-sm">
-                      {racing && raceWinner && raceMinute >= raceWinner.totalMin
-                        ? `${raceWinner.label} gagne`
-                        : "La course des trajets"}
-                    </strong>
-                    <button
-                      type="button"
-                      onClick={racing ? () => setRacing(false) : startRace}
-                      className="inline-flex min-h-9 shrink-0 items-center gap-1 rounded-lg bg-primary px-3 text-xs font-bold text-white"
-                    >
-                      {racing ? "Arrêter" : (
-                        <>
-                          <Play className="size-3.5" aria-hidden /> Lancer tous les trajets
-                        </>
-                      )}
-                    </button>
-                  </div>
-                  <p className="mt-0.5 text-[11px] text-muted-foreground">
-                    Tous partent en même temps : seul le temps de porte à porte compte, pas les dates.
-                  </p>
-                  {racing ? (
+                  <div className="rounded-2xl border border-border bg-white p-3">
+                    <div className="flex items-center justify-between gap-2">
+                      <strong className="min-w-0 text-sm">
+                        {racing ? raceTitle : dated ? "Quel trajet arrive le premier ?" : "Quel trajet est le plus court ?"}
+                      </strong>
+                      {compared.length > 1 ? (
+                        <button
+                          type="button"
+                          onClick={racing ? () => setRacing(false) : startRace}
+                          className="inline-flex min-h-9 shrink-0 items-center gap-1 rounded-lg bg-primary px-3 text-xs font-bold text-white"
+                        >
+                          {racing ? (
+                            "Arrêter"
+                          ) : (
+                            <>
+                              <Play className="size-3.5" aria-hidden /> Lancer la course
+                            </>
+                          )}
+                        </button>
+                      ) : null}
+                    </div>
+                    <p className="mt-0.5 text-[11px] leading-snug text-muted-foreground">
+                      {dated
+                        ? "Vous êtes prêt à la même heure : chacun part quand il le faut pour son bateau. Moins d'une heure d'écart, c'est une égalité vu nos marges."
+                        : "Aucune date publiée : on ne compare que les durées."}
+                    </p>
                     <ol className="mt-2 grid gap-1">
-                      {race.map((entry) => {
-                        const arrived = raceMinute >= entry.totalMin;
-                        const share = Math.min(100, (raceMinute / entry.totalMin) * 100);
+                      {compared.map(({ option, tags, gapMin, euroDelta }) => {
+                        const id = option.sailing.departure.id;
+                        const on = id === selected.sailing.departure.id;
+                        const entry = raceEntry(id);
+                        const arrived = racing && entry ? raceMinute >= entry.arriveMin : false;
+                        const share =
+                          racing && entry
+                            ? Math.max(0, Math.min(100, ((raceMinute - (entry.startMin ?? 0)) / entry.totalMin) * 100))
+                            : 0;
+                        const waiting = racing && entry ? raceMinute < (entry.startMin ?? 0) : false;
                         return (
-                          <li key={entry.id}>
+                          <li key={id}>
                             <button
                               type="button"
-                              onClick={() => setSelectedId(entry.id)}
-                              className={`grid min-h-11 w-full gap-1 rounded-lg p-2 text-left ${arrived && entry.rank === 1 ? "bg-primary/10" : "bg-secondary"}`}
+                              aria-pressed={on}
+                              onMouseEnter={() => setHoveredId(id)}
+                              onMouseLeave={() => setHoveredId(null)}
+                              onClick={() => setSelectedId(id)}
+                              className={`grid w-full gap-0.5 rounded-xl border p-2 text-left ${on ? "border-primary bg-primary/10" : "border-border bg-white"}`}
                             >
-                              <span className="flex items-baseline justify-between gap-2 text-xs">
-                                <strong className="min-w-0 truncate">
-                                  {arrived ? `${entry.rank}. ` : ""}
-                                  {entry.label}
-                                  {entry.estimated ? " · estimé" : ""}
+                              {tags.length ? (
+                                <span className="flex flex-wrap gap-x-2 text-[11px] font-bold text-primary">
+                                  {tags.map((tag) => (
+                                    <span key={tag}>{tag}</span>
+                                  ))}
+                                </span>
+                              ) : null}
+                              <span className="flex items-baseline justify-between gap-2">
+                                <strong className="min-w-0 truncate text-sm">
+                                  {option.sailing.from.name} → {option.sailing.to.name}
                                 </strong>
-                                <span className="shrink-0 font-bold tabular-nums text-primary">
-                                  {!arrived
-                                    ? `${Math.round(share)} %`
-                                    : entry.rank === 1
-                                      ? formatDuration(entry.totalMin)
-                                      : `+${formatDuration(entry.gapMin)}`}
+                                <span className="shrink-0 text-xs font-bold tabular-nums">
+                                  {racing && !arrived
+                                    ? waiting
+                                      ? "À la maison"
+                                      : `${Math.round(share)} %`
+                                    : gapMin === 0
+                                      ? dated
+                                        ? "1er"
+                                        : formatDuration(option.totalMinutes)
+                                      : gapLabel(gapMin)}
                                 </span>
                               </span>
-                              <span className="block h-1 overflow-hidden rounded-full bg-white" aria-hidden>
-                                <span className="block h-full bg-primary" style={{ width: `${share}%` }} />
+                              <span className="text-[11px] leading-snug text-muted-foreground">
+                                {dated
+                                  ? `Départ ${formatDayTime(option.leaveHomeAt, portTimeZone(option.sailing.from))} · arrivée ${formatDayTime(option.arrivalAt, portTimeZone(option.sailing.to))}`
+                                  : `≈ ${formatDuration(option.totalMinutes)} de porte à porte`}
                               </span>
+                              <span className="text-[11px] leading-snug text-muted-foreground">
+                                ≈ {numberFormat.format(option.totalEuro)} €
+                                {euroDelta ? ` (${euroDelta > 0 ? "+" : "−"}${Math.abs(euroDelta)} €)` : ""} ·{" "}
+                                {Math.round(option.roadKm)} km de route
+                                {option.sailing.isSimulation ? " · estimé" : ""}
+                              </span>
+                              {racing ? (
+                                <span className="mt-0.5 block h-1 overflow-hidden rounded-full bg-secondary" aria-hidden>
+                                  <span className="block h-full bg-primary" style={{ width: `${share}%` }} />
+                                </span>
+                              ) : null}
                             </button>
                           </li>
                         );
                       })}
                     </ol>
-                  ) : null}
+                    <p className="mt-1.5 text-[11px] leading-snug text-muted-foreground">
+                      Recommandé : le moins de route, sauf si un autre trajet coûte nettement moins cher.
+                    </p>
+                  </div>
+
+                  <div className="grid gap-1.5">
+                    {selected.sailing.isSimulation ? null : (
+                      <a
+                        href={bookingUrl(selected.sailing, profile)}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-primary px-4 text-center font-bold text-white"
+                      >
+                        Réserver sur {bookingSite(selected.sailing)} <ArrowRight className="size-4" aria-hidden />
+                      </a>
+                    )}
+                    <a
+                      href={`/horaires?from=${selected.sailing.from.id}&to=${selected.sailing.to.id}&month=${period}`}
+                      className="inline-flex min-h-10 w-full items-center justify-center rounded-xl border border-border bg-white text-sm font-semibold text-primary"
+                    >
+                      {selected.sailing.isSimulation ? "Voir les horaires publiés" : "Voir les autres traversées"}
+                    </a>
+                  </div>
                 </div>
-              ) : null}
 
-              <div className="grid gap-1.5">
-                {selected.sailing.isSimulation ? null : (
-                  <a
-                    href={bookingUrl(selected.sailing, profile)}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-primary px-4 text-center font-bold text-white"
-                  >
-                    Réserver sur {bookingSite(selected.sailing)} <ArrowRight className="size-4" aria-hidden />
-                  </a>
-                )}
-                <a
-                  href={`/horaires?from=${selected.sailing.from.id}&to=${selected.sailing.to.id}&month=${period}`}
-                  className="inline-flex min-h-10 w-full items-center justify-center rounded-xl border border-border bg-white text-sm font-semibold text-primary"
-                >
-                  {selected.sailing.isSimulation ? "Voir les horaires publiés" : "Voir les autres traversées"}
-                </a>
-              </div>
-
-              <details className="rounded-xl border border-border bg-white px-3 py-2 text-sm">
-                <summary className="flex min-h-8 cursor-pointer items-center justify-between font-semibold">
-                  Le détail étape par étape
-                </summary>
-                <ol className="mt-2 grid gap-1">
-                  {steps.map((step) => (
-                    <li key={step.id}>
-                      <button
-                        type="button"
-                        onClick={() => {
+                <div className="grid min-w-0 gap-3">
+                  {film && times && currentStep ? (
+                    <div className="rounded-2xl border border-border bg-white p-3">
+                      <div className="flex items-baseline justify-between gap-2">
+                        <strong className="min-w-0 text-sm leading-snug">
+                          {pausingNow ? `Pause conseillée · ${PAUSE_MIN} min` : currentStep.title}
+                        </strong>
+                        <span className="shrink-0 text-xs font-bold tabular-nums text-primary">
+                          {moment(Math.round(minute))}
+                        </span>
+                      </div>
+                      <p className="mt-0.5 min-h-8 text-xs leading-snug text-muted-foreground">
+                        {currentStep.text}
+                      </p>
+                      <div className="mt-2 flex h-2 gap-0.5 overflow-hidden rounded-full" aria-hidden>
+                        {[
+                          [film.roadMin, "#0e7a43"],
+                          [film.boardMin, "#b9a57a"],
+                          [film.ferryMin, "#1769a8"],
+                          [film.disembarkMin, "#b9a57a"],
+                          [film.lastMin, "#0e7a43"],
+                        ].map(([flex, color], index) => (
+                          <span key={index} style={{ flex: `${flex} 1 0`, background: String(color) }} />
+                        ))}
+                      </div>
+                      <ul className="mt-1.5 flex flex-wrap gap-x-2.5 gap-y-0.5 text-[11px] leading-snug text-muted-foreground">
+                        {[
+                          ["Route", film.roadMin, 0],
+                          ["Port", film.boardMin, times.port],
+                          ["Mer", film.ferryMin, times.sea],
+                          ["Sortie", film.disembarkMin, times.disembark],
+                          ["Route", film.lastMin, times.last],
+                        ].map(([label, length, start], index) => {
+                          const current = minute >= Number(start) && minute < Number(start) + Number(length);
+                          return (
+                            <li key={index} className={current ? "font-bold text-foreground" : undefined}>
+                              {label} <span className="tabular-nums">{formatDuration(Number(length))}</span>
+                            </li>
+                          );
+                        })}
+                      </ul>
+                      {(film.roadPauses ?? 0) + (film.lastPauses ?? 0) > 0 ? (
+                        <p className="mt-0.5 text-[11px] leading-snug text-[#8a4b00]">
+                          {pauseSummary((film.roadPauses ?? 0) + (film.lastPauses ?? 0))}
+                        </p>
+                      ) : null}
+                      <input
+                        type="range"
+                        aria-label="Parcourir le voyage dans le temps"
+                        min={0}
+                        max={times.total}
+                        step={1}
+                        value={minute}
+                        onChange={(event) => {
                           setPlaying(false);
                           setPullBack(0);
+                          setRacing(false);
                           setWide(0);
-                          setMinute(step.at);
+                          setMinute(Number(event.target.value));
                         }}
-                        className={`grid w-full grid-cols-[68px_minmax(0,1fr)] gap-2 rounded-lg p-2 text-left ${stage === step.id ? "bg-primary/10" : ""}`}
+                        className="h-7 w-full accent-[#0e7a43]"
+                      />
+                      <button
+                        type="button"
+                        onClick={playing ? () => setPlaying(false) : launchFilm}
+                        className="inline-flex min-h-10 w-full items-center justify-center gap-2 rounded-xl bg-secondary text-sm font-bold"
                       >
-                        <span className="text-[11px] font-bold tabular-nums text-primary">
-                          {estimatedTrip ? moment(step.at) : moment(step.at).split(" à ").pop()}
-                        </span>
-                        <span className="min-w-0">
-                          <strong className="block text-xs">{step.title}</strong>
-                          <span className="block text-[11px] leading-snug text-muted-foreground">
-                            {step.text}
-                          </span>
-                        </span>
+                        {playing ? <Pause className="size-4" aria-hidden /> : <Play className="size-4" aria-hidden />}
+                        {playing ? "Pause" : minute >= times.total ? "Revoir mon voyage" : "Lancer mon voyage"}
                       </button>
-                    </li>
-                  ))}
-                </ol>
-                <p className="mt-2 border-t border-border pt-2 text-xs text-muted-foreground">
-                  Route ≈ {numberFormat.format(selected.roadEuro)} € · Ferry et voiture ≈{" "}
-                  {numberFormat.format(selected.ferryEuro)} €, fourchette{" "}
-                  {formatFareRange(estimateFerryFare(selected.sailing, profile))}
-                </p>
-              </details>
+                    </div>
+                  ) : null}
+
+                  <div className="rounded-2xl border border-border bg-white p-3">
+                    <strong className="text-sm">Votre voyage, étape par étape</strong>
+                    <ol className="mt-2 grid gap-1">
+                      {steps.map((step) => (
+                        <li key={step.id}>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setPlaying(false);
+                              setPullBack(0);
+                              setRacing(false);
+                              setWide(0);
+                              setMinute(step.at);
+                            }}
+                            className={`grid w-full grid-cols-[84px_minmax(0,1fr)] gap-2 rounded-lg p-2 text-left ${stage === step.id ? "bg-primary/10" : ""}`}
+                          >
+                            <span className="text-[11px] font-bold leading-snug tabular-nums text-primary">
+                              {moment(step.at)}
+                            </span>
+                            <span className="min-w-0">
+                              <strong className="block text-xs">{step.title}</strong>
+                              <span className="block text-[11px] leading-snug text-muted-foreground">
+                                {step.text}
+                              </span>
+                              {step.source ? (
+                                <span className="mt-0.5 block text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+                                  {step.source}
+                                </span>
+                              ) : null}
+                            </span>
+                          </button>
+                        </li>
+                      ))}
+                    </ol>
+                    <p className="mt-2 border-t border-border pt-2 text-xs text-muted-foreground">
+                      Route ≈ {numberFormat.format(selected.roadEuro)} € · Ferry et voiture ≈{" "}
+                      {numberFormat.format(selected.ferryEuro)} €, fourchette{" "}
+                      {formatFareRange(estimateFerryFare(selected.sailing, profile))}
+                    </p>
+                  </div>
+                </div>
+              </div>
 
               {estimatedChoices.length > 0 ? (
                 <div className="rounded-xl bg-secondary p-3">
@@ -1470,6 +1641,7 @@ export function ItineraryPlanner({
           </details>
         </div>
       )}
+      </div>
     </section>
   );
 }

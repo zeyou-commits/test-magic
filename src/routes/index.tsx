@@ -1,3 +1,4 @@
+import { JOURNEY_LAYOUT_EVENT, type JourneyLayout } from "@/lib/ferry/journeyFilm";
 import { counterFilters, syncFilters, matchesTraffic } from "@/lib/ferry/filterSync";
 import { seoHead } from "@/lib/seo/site";
 import { DataUnavailableNotice } from "@/components/layout/DataUnavailableNotice";
@@ -178,6 +179,8 @@ function Index() {
   const [desktopPanelOpen, setDesktopPanelOpen] = useState(true);
   const [desktopPanelWidth, setDesktopPanelWidth] = useState(DESKTOP_PANEL);
   const [companionWidth, setCompanionWidth] = useState(0);
+  // Le résultat du trajet porte à porte prend la moitié de l'écran sur PC.
+  const [journeyWide, setJourneyWide] = useState(false);
   const resizingPanel = useRef(false);
   const [focusTarget, setFocusTarget] = useState<{ center: [number, number]; key: number } | null>(
     null,
@@ -787,6 +790,10 @@ function Index() {
     onPointerCancel: () => finishPanelDrag(),
   };
 
+  const panelWidth = journeyWide
+    ? Math.max(desktopPanelWidth, Math.min(720, Math.round(window.innerWidth * 0.5)))
+    : desktopPanelWidth;
+
   // Espace masqué par le tiroir mobile : la carte se recentre au-dessus de lui.
   const isPeekSelection =
     peekSelectionKey !== null && peekSelectionKey === `${selection?.type}:${selection?.id}`;
@@ -811,6 +818,16 @@ function Index() {
     else if (selection && panelLevel === 0) setPanelLevel(1);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selection?.type, selection?.id, isPeekSelection]);
+
+  useEffect(() => {
+    const onLayout = (event: Event) => {
+      const { wide, cinema } = (event as CustomEvent<JourneyLayout>).detail;
+      if (wide !== undefined) setJourneyWide(wide);
+      if (cinema !== undefined && window.innerWidth < 768) setPanelLevel(cinema ? 0 : 2);
+    };
+    window.addEventListener(JOURNEY_LAYOUT_EVENT, onLayout);
+    return () => window.removeEventListener(JOURNEY_LAYOUT_EVENT, onLayout);
+  }, []);
 
   // La recherche ouverte sur mobile prend toute la hauteur.
   useEffect(() => {
@@ -992,7 +1009,7 @@ function Index() {
           ref={mapStageRef}
           style={
             {
-              "--desktop-panel-width": `${desktopPanelWidth}px`,
+              "--desktop-panel-width": `${panelWidth}px`,
               "--stage-height": `${viewportHeight}px`,
               "--mobile-panel-height": `${mobilePanelHeight}px`,
               "--mobile-peek-height": `${peekHeight}px`,
@@ -1015,7 +1032,7 @@ function Index() {
             style={
               {
                 ...(dragHeight !== null ? { height: dragHeight } : {}),
-                "--desktop-panel-width": `${desktopPanelWidth}px`,
+                "--desktop-panel-width": `${panelWidth}px`,
               } as React.CSSProperties
             }
             className={`bw-map-panel absolute bottom-0 left-0 right-0 z-[60] flex flex-col overflow-hidden bg-transparent ${dragHeight !== null ? "transition-none" : "transition-[height,width,transform] duration-[420ms] ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none"} md:bottom-5 md:left-5 md:right-auto md:top-5 md:h-auto md:w-[var(--desktop-panel-width)] md:overflow-visible md:rounded-3xl md:z-40 ${
@@ -1100,7 +1117,7 @@ function Index() {
                 onCloseItinerary={resetToMap}
                 onItineraryPreview={updateItineraryPreview}
                 onItineraryResultsReady={() => {
-                  if (window.innerWidth < 768) setPanelLevel(1);
+                  if (window.innerWidth < 768) setPanelLevel(2);
                 }}
                 onBookPeriod={(period) => {
                   setPanelMode("search");
@@ -1344,7 +1361,7 @@ function Index() {
                     } else if (panelMode !== "itinerary") resetToMap();
                   }}
                   mobileBottomInset={mobileBottomInset}
-                  desktopLeftInset={desktopPanelOpen ? desktopPanelWidth + 80 + companionWidth : 50}
+                  desktopLeftInset={desktopPanelOpen ? panelWidth + 80 + companionWidth : 50}
                 />
               </Suspense>
             </ClientOnly>

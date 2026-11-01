@@ -1,12 +1,14 @@
 import { useEffect, useRef, type RefObject } from "react";
 import { Marker, type GeoJSONSource, type LngLatBoundsLike, type Map as MapLibreMap, MercatorCoordinate } from "maplibre-gl";
 import {
+  boardingBlend,
   filmChips,
   filmFrame,
   filmZoom,
   JOURNEY_FILM_EVENT,
   JOURNEY_PICK_EVENT,
   JOURNEY_PICKED_EVENT,
+  pausingAt,
   type JourneyFilmFrame,
   type LngLat,
   type PickTarget,
@@ -30,6 +32,18 @@ const QUIET_LAYERS = [
   "fleet-count-bg",
   "fleet-count",
   "fleet-hover-halo",
+];
+
+/** La surcouche de l'itinéraire : utile à l'arrêt, elle ferait doublon avec le tracé qui se dessine. */
+const OVERLAY_LAYERS = [
+  "itinerary-alternatives",
+  "itinerary-road-casing",
+  "itinerary-road",
+  "itinerary-estimate",
+  "itinerary-ferry-casing",
+  "itinerary-ferry",
+  "itinerary-ends",
+  "itinerary-end-labels",
 ];
 
 type Padding = { top: number; right: number; bottom: number; left: number };
@@ -133,6 +147,14 @@ export function useJourneyFilm(
           map.setLayoutProperty(id, "visibility", hide || previewRef.current ? "none" : "visible");
     };
 
+    let overlayHidden = false;
+    const hideOverlay = (hide: boolean) => {
+      if (overlayHidden === hide) return;
+      overlayHidden = hide;
+      for (const id of OVERLAY_LAYERS)
+        if (map.getLayer(id)) map.setLayoutProperty(id, "visibility", hide ? "none" : "visible");
+    };
+
     const vehicle = document.createElement("div");
     vehicle.className = "bw-film-vehicle";
     vehicle.setAttribute("aria-hidden", "true");
@@ -152,6 +174,7 @@ export function useJourneyFilm(
     container.append(caption);
 
     const hideFrame = () => {
+      hideOverlay(false);
       if (!shown) return;
       shown = false;
       marker.remove();
@@ -176,9 +199,11 @@ export function useJourneyFilm(
       chipsKey = "";
     };
     const syncChips = (frame: JourneyFilmFrame) => {
-      if (chipsKey !== frame.film.key) {
+      // Le tracé routier arrive après le premier dessin : les étiquettes suivent la vraie route.
+      const key = `${frame.film.key}|${frame.film.road.length}|${frame.film.last.length}`;
+      if (chipsKey !== key) {
         clearChips();
-        chipsKey = frame.film.key;
+        chipsKey = key;
         chips = filmChips(frame.film).map((chip) => {
           const element = document.createElement("div");
           element.className = "bw-film-chip";
@@ -226,13 +251,12 @@ export function useJourneyFilm(
       const east = Math.max(...lngs) + margin;
       const south = Math.min(...lats) - margin;
       const north = Math.max(...lats) + margin;
-      const camera = map.cameraForBounds(
-        [
-          [west, south],
-          [east, north],
-        ],
-        { padding },
-      );
+      // cameraForBounds ajoute le décalage déjà posé sur la carte : on ne le lui donne qu'une fois.
+      map.setPadding(padding);
+      const camera = map.cameraForBounds([
+        [west, south],
+        [east, north],
+      ]);
       if (!camera) return null;
       const middle = MercatorCoordinate.fromLngLat({ lng: (west + east) / 2, lat: south });
       const top = MercatorCoordinate.fromLngLat({ lng: (west + east) / 2, lat: north });
@@ -249,9 +273,10 @@ export function useJourneyFilm(
     let raceKey = "";
     const drawRace = (frame: JourneyFilmFrame) => {
       ensureLayers();
+      hideOverlay(true);
       container.dataset["film"] = "true";
       const racers = frame.racers ?? [];
-      const states = racers.map((racer) => ({ racer, state: filmFrame(racer.film, frame.minute) }));
+      const states = racers.map((racer) => ({ racer, state: filmFrame(racer.film, frame.minute - racer.startMin) }));
       (map.getSource(SOURCE) as GeoJSONSource).setData({
         type: "FeatureCollection",
         features: states.flatMap(({ racer, state }) => [
@@ -332,6 +357,7 @@ export function useJourneyFilm(
         overview = camera ? { center: camera.center, zoom: camera.zoom - 0.2 } : null;
       }
       const blend = wide * wide * (3 - 2 * wide);
+      hideOverlay(!frame.demo && wide < 0.98);
       const followZoom = Math.min(filmZoom(film, minute), frame.maxZoom ?? 24);
       const target = {
         center: (overview
@@ -358,10 +384,16 @@ export function useJourneyFilm(
       map.jumpTo({ ...smoothCamera, bearing: 0, padding });
       syncChips(frame);
 
-      const onSea = state.stage === "sea";
-      car.hidden = onSea;
-      ship.hidden = !onSea;
-      if (onSea && shipImage.getAttribute("src") !== film.shipImage)
+      // La voiture embarque et ressort : les deux images se relaient au port, sans coupure.
+      const aboard = boardingBlend(film, minute);
+      car.hidden = aboard >= 1;
+      ship.hidden = aboard <= 0;
+      ship.style.opacity = String(aboard);
+      car.style.opacity = String(1 - aboard);
+      car.style.scale = String(1 - 0.55 * aboard);
+      vehicle.dataset["boarding"] = aboard > 0 && aboard < 1 ? "true" : "";
+      vehicle.dataset["stopped"] = state.stage === "port" || state.stage === "disembark" || pausingAt(film, minute) ? "true" : "";
+      if (aboard > 0 && shipImage.getAttribute("src") !== film.shipImage)
         shipImage.setAttribute("src", film.shipImage);
       const scale = 0.62 + 0.38 * (1 - blend);
       vehicle.style.setProperty("--film-scale", scale.toFixed(3));
@@ -395,6 +427,7 @@ export function useJourneyFilm(
         draw(frame);
         return;
       }
+      hideOverlay(false);
       clearRacers();
       clearChips();
       smoothCamera = null;

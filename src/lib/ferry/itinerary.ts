@@ -44,6 +44,18 @@ export interface ItineraryOption {
 export const BOARDING_BUFFER_MIN = 240;
 export const DISEMBARK_BUFFER_MIN = 240;
 
+/** Repère de sécurité routière : une pause toutes les deux heures de conduite. */
+export const PAUSE_EVERY_MIN = 120;
+export const PAUSE_MIN = 15;
+/** Pas de pause conseillée à moins d'une demi-heure de l'arrivée. */
+export function drivingPauses(driveMin: number) {
+  return Math.max(0, Math.floor((driveMin - 30) / PAUSE_EVERY_MIN));
+}
+/** Le temps réel d'un trajet routier : conduite et pauses conseillées. */
+export function legWithPauses(driveMin: number) {
+  return driveMin + drivingPauses(driveMin) * PAUSE_MIN;
+}
+
 /** Un repère par liaison pour comparer les ports lorsqu'aucun horaire n'est publié.
  * Le 15 du mois ne représente pas un départ réservable.
  */
@@ -97,16 +109,16 @@ export function buildItineraryOptions(
     const last = onward.get(sailing.to.id);
     if (!first || !last || sailing.durationMin === null) return [];
     const departureAt = Date.parse(sailing.departure.departure_at);
-    if (!Number.isFinite(departureAt) || departureAt < startedAt + (first.durationMin + boardingBufferMin) * 60_000) return [];
+    if (!Number.isFinite(departureAt) || departureAt < startedAt + (legWithPauses(first.durationMin) + boardingBufferMin) * 60_000) return [];
     const ferryArrivalAt = sailing.departure.arrival_at
       ? Date.parse(sailing.departure.arrival_at)
       : departureAt + sailing.durationMin * 60_000;
     if (!Number.isFinite(ferryArrivalAt)) return [];
-    const arrivalAt = ferryArrivalAt + (disembarkBufferMin + last.durationMin) * 60_000;
+    const arrivalAt = ferryArrivalAt + (disembarkBufferMin + legWithPauses(last.durationMin)) * 60_000;
     const roadKm = first.distanceKm + last.distanceKm;
     const ferryEuro = ferryFare(sailing);
     const roadEuro = Math.round(roadKm * (fuelLitresPer100Km / 100 * fuelEuroPerLitre + tollEuroPerKm));
-    const leaveHomeAt = departureAt - (first.durationMin + boardingBufferMin) * 60_000;
+    const leaveHomeAt = departureAt - (legWithPauses(first.durationMin) + boardingBufferMin) * 60_000;
     return [{
       sailing, originRoad: first, destinationRoad: last, ferryEuro, roadEuro,
       totalEuro: ferryEuro + roadEuro, roadKm,
@@ -137,38 +149,49 @@ export function sortItineraries(options: ItineraryOption[], priority: ItineraryP
   });
 }
 
+/** En dessous d'une heure, l'écart est plus petit que nos marges : on ne désigne pas de gagnant. */
+export const TIE_MIN = 60;
+
+export function gapLabel(gapMin: number) {
+  if (gapMin < TIE_MIN) return "À égalité";
+  if (gapMin >= 2880) return `+${Math.round(gapMin / 1440)} j`;
+  const rounded = Math.round(gapMin / 30) * 30;
+  const hours = Math.floor(rounded / 60);
+  return `+${hours} h${rounded % 60 ? " 30" : ""}`;
+}
+
 /**
- * Trois choix au plus, chacun avec ce qu'il change par rapport au recommandé :
- * on arbitre mieux « 108 € de moins, 330 km de route en plus » qu'un tableau de chiffres.
+ * Le comparatif : avec des dates, celui qui arrive le premier ; sans date publiée, seulement la durée.
+ * Le premier de la liste reçue est le trajet recommandé ; il reste toujours dans le comparatif.
  */
-export function itineraryChoices(sorted: ItineraryOption[]) {
-  const first = sorted[0];
-  if (!first) return [];
-  const delta = (option: ItineraryOption) => {
-    const euro = Math.round(option.totalEuro - first.totalEuro);
-    const km = Math.round(option.roadKm - first.roadKm);
-    const price = euro === 0 ? "Même prix" : `${euro < 0 ? "−" : "+"}${Math.abs(euro)} €`;
-    const road = km === 0 ? "même route" : `${Math.abs(km)} km de route en ${km < 0 ? "moins" : "plus"}`;
-    return `${price}, ${road}`;
-  };
-  const choices = [
-    {
-      tag: "Recommandé",
-      option: first,
-      delta: `${Math.round(first.roadKm)} km de route`,
-    },
-  ];
-  const seen = new Set([first.sailing.departure.id]);
-  const add = (tag: string, score: (option: ItineraryOption) => number) => {
-    const best = [...sorted].sort((a, b) => score(a) - score(b))[0];
-    if (!best || seen.has(best.sailing.departure.id) || score(best) >= score(first)) return;
-    seen.add(best.sailing.departure.id);
-    choices.push({ tag, option: best, delta: delta(best) });
-  };
-  add("Moins cher", (option) => option.totalEuro);
-  add("Moins de route", (option) => option.roadKm);
-  if (choices.length < 3) add("Plus rapide", (option) => option.totalMinutes);
-  return choices.slice(0, 3);
+export function compareItineraries(options: ItineraryOption[], limit = 6) {
+  const recommended = options[0];
+  if (!recommended) return [];
+  const dated = !recommended.sailing.isSimulation;
+  const score = (option: ItineraryOption) => (dated ? option.arrivalAt / 60_000 : option.totalMinutes);
+  const best = (value: (option: ItineraryOption) => number) =>
+    [...options].sort((a, b) => value(a) - value(b))[0]!;
+  const fastest = best(score);
+  const cheapest = best((option) => option.totalEuro);
+  const nearest = best((option) => option.roadKm);
+  const must = [recommended, fastest, cheapest, nearest];
+  const others = [...options].sort((a, b) => score(a) - score(b)).filter((option) => !must.includes(option));
+  const kept = [...new Set(must), ...others].slice(0, limit);
+  return kept
+    .sort((a, b) => score(a) - score(b))
+    .map((option) => {
+      const tags: string[] = [];
+      if (option === recommended) tags.push("Recommandé");
+      if (option === fastest && options.length > 1) tags.push(dated ? "Arrive le premier" : "Le plus court");
+      if (option === cheapest && options.length > 1) tags.push("Moins cher");
+      if (option === nearest && options.length > 1) tags.push("Moins de route");
+      return {
+        option,
+        tags,
+        gapMin: Math.round(score(option) - score(fastest)),
+        euroDelta: Math.round(option.totalEuro - recommended.totalEuro),
+      };
+    });
 }
 
 /** Une proposition par couple de ports : le premier départ atteignable de chaque liaison.

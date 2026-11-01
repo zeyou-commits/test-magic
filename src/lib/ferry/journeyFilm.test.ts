@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   DEMO_FILM,
+  boardingBlend,
   drivingPauses,
   filmChips,
   filmFrame,
@@ -8,6 +9,7 @@ import {
   filmZoom,
   minuteAtProgress,
   pathUntil,
+  pausingAt,
   progressAtMinute,
   raceRanking,
   stageAt,
@@ -38,7 +40,38 @@ describe("durées et pauses du film", () => {
   });
 });
 
+describe("le film respecte les pauses et l'embarquement", () => {
+  it("arrête le véhicule pendant la pause, puis repart", () => {
+    expect(pausingAt(film, 119)).toBe(false);
+    expect(pausingAt(film, 125)).toBe(true);
+    expect(filmFrame(film, 121).point).toEqual(filmFrame(film, 134).point);
+    expect(filmFrame(film, 136).point).not.toEqual(filmFrame(film, 134).point);
+    expect(pausingAt(film, 200)).toBe(false);
+  });
+  it("arrive au port à la fin de la route, pauses comprises", () => {
+    expect(filmFrame(film, times.port - 0.01).point[1]).toBeCloseTo(film.road.at(-1)![1], 1);
+  });
+  it("fait embarquer la voiture à la fin de l'attente et la fait ressortir", () => {
+    expect(boardingBlend(film, 10)).toBe(0);
+    expect(boardingBlend(film, times.port + 10)).toBe(0);
+    expect(boardingBlend(film, times.sea - 0.01)).toBeGreaterThan(0.9);
+    expect(boardingBlend(film, times.sea + 60)).toBe(1);
+    expect(boardingBlend(film, times.disembark + 1)).toBeGreaterThan(0.9);
+    expect(boardingBlend(film, times.last - 1)).toBe(0);
+  });
+});
+
 describe("course entre les trajets", () => {
+  it("fait gagner le premier arrivé, pas le plus court", () => {
+    const ranking = raceRanking([
+      { id: "court", label: "Court", startMin: 3000, totalMin: 1500, estimated: false },
+      { id: "long", label: "Long", startMin: 0, totalMin: 2400, estimated: false },
+    ]);
+    expect(ranking.map((entry) => [entry.id, entry.arriveMin, entry.gapMin])).toEqual([
+      ["long", 2400, 0],
+      ["court", 4500, 2100],
+    ]);
+  });
   it("désigne le plus rapide et l'écart des autres", () => {
     const ranking = raceRanking([
       { id: "a", label: "Marseille", totalMin: 2200, estimated: false },

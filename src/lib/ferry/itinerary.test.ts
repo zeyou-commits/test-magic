@@ -2,8 +2,10 @@ import { test, assert } from "vitest";
 import {
   buildItineraryOptions,
   buildSimulatedSailings,
+  compareItineraries,
   distinctItineraries,
-  itineraryChoices,
+  gapLabel,
+  legWithPauses,
   sortItineraries,
 } from "./itinerary.ts";
 import type { Sailing } from "./trips";
@@ -30,20 +32,51 @@ test("écarte une traversée inaccessible avec la marge d'embarquement", () => {
   assert.equal(options[0]?.waitUntilTravelMin, 0);
 });
 
-test("propose trois choix qui disent ce qu'ils changent", () => {
-  const option = (id: string, totalEuro: number, roadKm: number, totalMinutes: number) =>
-    ({ sailing: { departure: { id } }, totalEuro, roadKm, totalMinutes }) as never;
-  const choices = itineraryChoices([
-    option("a", 800, 300, 2000),
-    option("b", 690, 640, 2100),
-    option("c", 900, 100, 2400),
-    option("d", 850, 400, 1900),
+test("classe par heure d'arrivée réelle, attente du bateau comprise", () => {
+  const option = (id: string, arrivalAt: number, totalMinutes: number, totalEuro: number, roadKm: number) =>
+    ({ sailing: { departure: { id } }, arrivalAt: arrivalAt * 60_000, totalMinutes, totalEuro, roadKm }) as never;
+  const rows = compareItineraries([
+    option("recommande", 3000, 2000, 800, 300),
+    // Le plus court, mais son bateau part bien plus tard : il n'arrive pas le premier.
+    option("court", 9000, 1500, 790, 500),
+    option("tot", 2900, 2400, 900, 100),
   ]);
-  assert.deepEqual(choices.map((choice) => choice.tag), ["Recommandé", "Moins cher", "Moins de route"]);
-  assert.equal(choices[1]!.delta, "−110 €, 340 km de route en plus");
-  assert.equal(choices[2]!.delta, "+100 €, 200 km de route en moins");
-  assert.equal(itineraryChoices([option("a", 800, 300, 2000)]).length, 1);
-  assert.deepEqual(itineraryChoices([]), []);
+  assert.deepEqual(rows.map((row) => row.option.sailing.departure.id), ["tot", "recommande", "court"]);
+  assert.deepEqual(rows[0]!.tags, ["Arrive le premier", "Moins de route"]);
+  assert.deepEqual(rows[1]!.tags, ["Recommandé"]);
+  assert.deepEqual(rows[2]!.tags, ["Moins cher"]);
+  assert.equal(rows[2]!.gapMin, 6100);
+  assert.deepEqual(compareItineraries([]), []);
+});
+
+test("sans date publiée, ne compare que les durées", () => {
+  const option = (id: string, totalMinutes: number) =>
+    ({ sailing: { isSimulation: true, departure: { id } }, arrivalAt: 0, totalMinutes, totalEuro: 500, roadKm: 200 }) as never;
+  const rows = compareItineraries([option("a", 2000), option("b", 1800)]);
+  assert.equal(rows[0]!.option.sailing.departure.id, "b");
+  assert.equal(rows[0]!.tags[0], "Le plus court");
+  assert.equal(rows[1]!.gapMin, 200);
+});
+
+test("n'annonce pas d'écart plus précis que nos marges", () => {
+  assert.equal(gapLabel(16), "À égalité");
+  assert.equal(gapLabel(59), "À égalité");
+  assert.equal(gapLabel(61), "+1 h");
+  assert.equal(gapLabel(95), "+1 h 30");
+  assert.equal(gapLabel(6100), "+4 j");
+});
+
+test("compte les pauses dans l'heure de départ et l'arrivée", () => {
+  const longIn = [{ portId: "europe", distanceKm: 900, durationMin: 500 }];
+  const longOut = [{ portId: "algerie", distanceKm: 300, durationMin: 210 }];
+  assert.equal(legWithPauses(500), 545);
+  assert.equal(legWithPauses(210), 225);
+  const option = buildItineraryOptions(
+    [sailing("a", "2026-10-25T13:00:00Z", "2026-10-26T01:00:00Z")],
+    longIn, longOut, startedAt, () => 200, 7, 2, 0.05,
+  )[0]!;
+  assert.equal(option.leaveHomeAt, Date.parse("2026-10-25T13:00:00Z") - (545 + 240) * 60_000);
+  assert.equal(option.arrivalAt, Date.parse("2026-10-26T01:00:00Z") + (240 + 225) * 60_000);
 });
 
 test("n'ajoute pas les jours d'attente à la durée porte à porte", () => {

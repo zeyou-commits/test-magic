@@ -2,6 +2,9 @@
  * Le film du trajet porte à porte : où se trouve le voyageur à chaque minute du voyage.
  * Tout est calculé ici, sans carte, pour que le curseur et l'animation disent la même chose.
  */
+import { PAUSE_EVERY_MIN, PAUSE_MIN, drivingPauses } from "./itinerary";
+
+export { PAUSE_EVERY_MIN, PAUSE_MIN, drivingPauses };
 export type LngLat = [number, number];
 export type FilmStage = "road" | "port" | "sea" | "disembark" | "last" | "done";
 
@@ -10,10 +13,14 @@ export interface JourneyFilm {
   road: LngLat[];
   sea: LngLat[];
   last: LngLat[];
+  /** Durée de la route, pauses comprises. */
   roadMin: number;
+  roadPauses?: number;
+  lastPauses?: number;
   boardMin: number;
   ferryMin: number;
   disembarkMin: number;
+  /** Durée de la dernière route, pauses comprises. */
   lastMin: number;
   /** Image du navire (détourée), s'il y en a une. */
   shipImage: string;
@@ -65,12 +72,43 @@ export function pathUntil(points: LngLat[], fraction: number): LngLat[] {
   return path;
 }
 
+/** Où en est la conduite à une minute donnée d'un trajet routier : le véhicule s'arrête pendant les pauses. */
+function legProgress(minute: number, legMin: number, pauses: number) {
+  const driveMin = legMin - pauses * PAUSE_MIN;
+  const elapsed = Math.max(0, minute);
+  const cycle = PAUSE_EVERY_MIN + PAUSE_MIN;
+  const done = Math.min(pauses, Math.floor(elapsed / cycle));
+  const rest = elapsed - done * cycle;
+  const pausing = done < pauses && rest >= PAUSE_EVERY_MIN;
+  const driven = done * PAUSE_EVERY_MIN + (pausing ? PAUSE_EVERY_MIN : rest);
+  return { fraction: driveMin > 0 ? clamp01(driven / driveMin) : 1, pausing };
+}
+
+/** Vrai pendant une pause conseillée : le voyageur est à l'arrêt. */
+export function pausingAt(film: JourneyFilm, minute: number) {
+  const times = filmTimes(film);
+  const stage = stageAt(film, minute);
+  if (stage === "road") return legProgress(minute, film.roadMin, film.roadPauses ?? 0).pausing;
+  if (stage === "last") return legProgress(minute - times.last, film.lastMin, film.lastPauses ?? 0).pausing;
+  return false;
+}
+
+/** 0 : en voiture ; 1 : à bord. La voiture embarque à la fin de l'attente et ressort au débarquement. */
+export function boardingBlend(film: JourneyFilm, minute: number) {
+  const times = filmTimes(film);
+  const stage = stageAt(film, minute);
+  if (stage === "sea") return 1;
+  if (stage === "port") return film.boardMin ? clamp01(((minute - times.port) / film.boardMin - 0.45) / 0.55) : 1;
+  if (stage === "disembark") return film.disembarkMin ? clamp01(1 - (minute - times.disembark) / film.disembarkMin / 0.55) : 0;
+  return 0;
+}
+
 export function filmFrame(film: JourneyFilm, minute: number) {
   const times = filmTimes(film);
   const stage = stageAt(film, minute);
-  const roadDone = pathUntil(film.road, film.roadMin ? minute / film.roadMin : 1);
+  const roadDone = pathUntil(film.road, legProgress(minute, film.roadMin, film.roadPauses ?? 0).fraction);
   const seaDone = pathUntil(film.sea, film.ferryMin ? (minute - times.sea) / film.ferryMin : 0);
-  const lastDone = pathUntil(film.last, film.lastMin ? (minute - times.last) / film.lastMin : 1);
+  const lastDone = pathUntil(film.last, legProgress(minute - times.last, film.lastMin, film.lastPauses ?? 0).fraction);
   const point =
     stage === "road"
       ? roadDone.at(-1)
@@ -177,7 +215,8 @@ export const DEMO_FILM: JourneyFilm = {
     [-1.2, 35.15],
     [-1.32, 34.88],
   ],
-  roadMin: 210,
+  roadMin: 225,
+  roadPauses: 1,
   boardMin: 240,
   ferryMin: 1440,
   disembarkMin: 240,
@@ -208,14 +247,6 @@ const formatMinutes = (minutes: number) => {
   return `${hours} h${rest ? ` ${String(rest).padStart(2, "0")}` : ""}`;
 };
 
-/** Repère de sécurité routière : une pause toutes les deux heures de conduite. */
-export const PAUSE_EVERY_MIN = 120;
-export const PAUSE_MIN = 15;
-/** Pas de pause conseillée à moins d'une demi-heure de l'arrivée. */
-export function drivingPauses(driveMin: number) {
-  return Math.max(0, Math.floor((driveMin - 30) / PAUSE_EVERY_MIN));
-}
-
 export interface FilmChip {
   id: string;
   kind: "road" | "port" | "sea" | "pause";
@@ -230,31 +261,33 @@ export function filmChips(film: JourneyFilm): FilmChip[] {
   const times = filmTimes(film);
   const middle = (points: LngLat[]) => pathUntil(points, 0.5).at(-1) ?? points[0]!;
   // Avant la première pause s'il y en a une : les deux étiquettes ne tombent pas au même endroit.
-  const roadLabelPoint = (points: LngLat[], driveMin: number) =>
-    drivingPauses(driveMin)
+  const roadDrive = film.roadMin - (film.roadPauses ?? 0) * PAUSE_MIN;
+  const lastDrive = film.lastMin - (film.lastPauses ?? 0) * PAUSE_MIN;
+  const roadLabelPoint = (points: LngLat[], driveMin: number, count: number) =>
+    count
       ? (pathUntil(points, PAUSE_EVERY_MIN / driveMin / 2).at(-1) ?? points[0]!)
       : middle(points);
   const km = (value?: number) => (value ? ` · ${Math.round(value)} km` : "");
-  const pauses = (points: LngLat[], driveMin: number, start: number, prefix: string): FilmChip[] =>
-    Array.from({ length: drivingPauses(driveMin) }, (_, index) => {
+  const pauses = (points: LngLat[], driveMin: number, count: number, start: number, prefix: string): FilmChip[] =>
+    Array.from({ length: count }, (_, index) => {
       const fraction = ((index + 1) * PAUSE_EVERY_MIN) / driveMin;
       return {
         id: `${prefix}-pause-${index}`,
         kind: "pause" as const,
         label: `Pause ${PAUSE_MIN} min`,
         point: pathUntil(points, fraction).at(-1) ?? points[0]!,
-        at: start + driveMin * fraction,
+        at: start + (index + 1) * PAUSE_EVERY_MIN + index * PAUSE_MIN,
       };
     });
   return [
     {
       id: "road",
       kind: "road",
-      label: `${formatMinutes(film.roadMin)}${km(film.roadKm)}`,
-      point: roadLabelPoint(film.road, film.roadMin),
+      label: `${formatMinutes(roadDrive)}${km(film.roadKm)}`,
+      point: roadLabelPoint(film.road, roadDrive, film.roadPauses ?? 0),
       at: 0,
     },
-    ...pauses(film.road, film.roadMin, 0, "road"),
+    ...pauses(film.road, roadDrive, film.roadPauses ?? 0, 0, "road"),
     {
       id: "port",
       kind: "port",
@@ -273,28 +306,32 @@ export function filmChips(film: JourneyFilm): FilmChip[] {
     {
       id: "last",
       kind: "road",
-      label: `${formatMinutes(film.lastMin)}${km(film.lastKm)}`,
-      point: roadLabelPoint(film.last, film.lastMin),
+      label: `${formatMinutes(lastDrive)}${km(film.lastKm)}`,
+      point: roadLabelPoint(film.last, lastDrive, film.lastPauses ?? 0),
       at: times.last,
     },
-    ...pauses(film.last, film.lastMin, times.last, "last"),
+    ...pauses(film.last, lastDrive, film.lastPauses ?? 0, times.last, "last"),
   ];
 }
 
-/** La course : tous les trajets partent ensemble, seul compte le temps de porte à porte. */
+/** La course : chacun part quand il le faut pour son bateau, le premier arrivé gagne. */
 export interface RaceEntry {
   id: string;
   label: string;
+  /** Minute à laquelle ce trajet quitte la maison, depuis le premier parti. */
+  startMin?: number;
   totalMin: number;
   estimated: boolean;
 }
 export function raceRanking<T extends RaceEntry>(entries: T[]) {
-  const ordered = [...entries].sort((a, b) => a.totalMin - b.totalMin);
-  const best = ordered[0]?.totalMin ?? 0;
+  const arrival = (entry: T) => (entry.startMin ?? 0) + entry.totalMin;
+  const ordered = [...entries].sort((a, b) => arrival(a) - arrival(b));
+  const best = ordered[0] ? arrival(ordered[0]) : 0;
   return ordered.map((entry, index) => ({
     ...entry,
     rank: index + 1,
-    gapMin: entry.totalMin - best,
+    arriveMin: arrival(entry),
+    gapMin: arrival(entry) - best,
   }));
 }
 
@@ -302,6 +339,16 @@ export function raceRanking<T extends RaceEntry>(entries: T[]) {
 export const JOURNEY_FILM_EVENT = "bledway:journey-film";
 export const JOURNEY_PICK_EVENT = "bledway:journey-pick";
 export const JOURNEY_PICKED_EVENT = "bledway:journey-picked";
+export const JOURNEY_LAYOUT_EVENT = "bledway:journey-layout";
+
+/** Ce que le volet demande à l'écran : la largeur du résultat sur PC, le film en grand sur mobile. */
+export interface JourneyLayout {
+  wide?: boolean;
+  cinema?: boolean;
+}
+export function publishJourneyLayout(layout: JourneyLayout) {
+  window.dispatchEvent(new CustomEvent(JOURNEY_LAYOUT_EVENT, { detail: layout }));
+}
 
 export interface JourneyFilmFrame {
   film: JourneyFilm;
@@ -314,7 +361,7 @@ export interface JourneyFilmFrame {
   /** Exemple en boucle : plus large, pour que le fond de carte suive sans se vider. */
   maxZoom?: number;
   /** Course : ces trajets avancent ensemble à la place du voyage choisi. */
-  racers?: { film: JourneyFilm; label: string; winner: boolean }[];
+  racers?: { film: JourneyFilm; label: string; winner: boolean; startMin: number }[];
 }
 
 export function publishFilmFrame(frame: JourneyFilmFrame | null) {

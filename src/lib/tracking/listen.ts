@@ -1,9 +1,9 @@
-// Écoute AIS ciblée, partagée par la route Vercel et la fonction Supabase « ais-listen » :
-// seuls les navires proches d'un départ ou d'une arrivée sont écoutés, `listenMs` au plus.
+// Écoute AIS, partagée par la route Vercel et la fonction Supabase « ais-listen » :
+// toute la flotte active est écoutée, `listenMs` au plus.
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { collectPositions } from "./aisstream.server";
+import { collectPositions, type StreamStats } from "./aisstream.server";
 import { COLLECTOR_KEY, ingestPosition, loadIngestContext } from "./ingest";
-import { aisTargets } from "./targets";
+import { aisTargets, fleetTargets } from "./targets";
 
 export async function listenToTargets(
   db: SupabaseClient,
@@ -23,28 +23,36 @@ export async function listenToTargets(
     db.from("vessel_positions").select("mmsi, speed_knots"),
   ]);
   if (departures.error) throw new Error(departures.error.message);
-  const targets = aisTargets(
-    (departures.data ?? []) as Parameters<typeof aisTargets>[0],
-    (vessels.data ?? []) as Parameters<typeof aisTargets>[1],
-    now,
-    new Set(
-      ((positions.data ?? []) as { mmsi: number; speed_knots: number | null }[])
-        .filter((position) => (position.speed_knots ?? 0) < 1.5)
-        .map((position) => Number(position.mmsi)),
+  const targets = fleetTargets(
+    aisTargets(
+      (departures.data ?? []) as Parameters<typeof aisTargets>[0],
+      (vessels.data ?? []) as Parameters<typeof aisTargets>[1],
+      now,
+      new Set(
+        ((positions.data ?? []) as { mmsi: number; speed_knots: number | null }[])
+          .filter((position) => (position.speed_knots ?? 0) < 1.5)
+          .map((position) => Number(position.mmsi)),
+      ),
     ),
+    (vessels.data ?? []) as { mmsi: number | null; status: string }[],
   );
   const heard: number[] = [];
+  const rejected: number[] = [];
+  const stream: StreamStats = { messages: 0, connections: 0, error: null };
   const startedAt = Date.now();
   if (targets.size && key) {
     const mmsis = [...targets.keys()];
     const statics = new Map<number, { destination: string | null; eta: string | null }>();
-    const found = await collectPositions(key, mmsis, listenMs, statics);
+    const found = await collectPositions(key, mmsis, listenMs, statics, stream);
     const context = await loadIngestContext(db);
     for (const mmsi of mmsis) {
       const declared = statics.get(mmsi);
       if (declared) await db.from("vessel_positions").update(declared).eq("mmsi", mmsi);
       const position = found.get(mmsi);
-      if (position && (await ingestPosition(db, position, context, Date.now()))) heard.push(mmsi);
+      if (!position) continue;
+      // Reçue mais refusée (trop ancienne, déjà connue) : à distinguer d'un navire muet.
+      if (await ingestPosition(db, position, context, Date.now())) heard.push(mmsi);
+      else rejected.push(mmsi);
     }
   }
   const listenedMs = Date.now() - startedAt;
@@ -53,11 +61,13 @@ export async function listenToTargets(
     key: COLLECTOR_KEY,
     value: {
       last_seen: new Date().toISOString(),
-      mode: "ciblé",
+      mode: "flotte",
       host,
       listened_ms: listenedMs,
       targeted: [...targets.entries()].map(([mmsi, reason]) => ({ mmsi, reason })),
       heard,
+      rejected,
+      stream,
       key_missing: !key,
     },
     updated_at: new Date().toISOString(),
@@ -65,6 +75,10 @@ export async function listenToTargets(
   return {
     targeted: targets.size,
     heard: heard.length,
+    rejected: rejected.length,
+    messages: stream.messages,
+    connections: stream.connections,
+    stream_error: stream.error,
     listened_ms: listenedMs,
     key_missing: !key,
   };

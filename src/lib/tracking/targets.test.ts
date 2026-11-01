@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { aisTargets } from "./targets";
+import { aisTargets, fleetTargets } from "./targets";
 
 const vessels = [
   { id: "v1", mmsi: 111111111, status: "active" },
@@ -14,6 +14,21 @@ const crossing = (vessel: string, start: string, end: string, status = "schedule
   status,
 });
 const at = (iso: string) => Date.parse(iso);
+
+describe("écoute de la flotte", () => {
+  it("écoute aussi les navires sans départ prévu, jamais ceux qui sont inactifs", () => {
+    const targets = fleetTargets(new Map([[111111111, "sea"]]), [
+      { mmsi: 111111111, status: "active" },
+      { mmsi: 222222222, status: "active" },
+      { mmsi: 333333333, status: "inactive" },
+      { mmsi: null, status: "active" },
+    ]);
+    expect([...targets]).toEqual([
+      [111111111, "sea"],
+      [222222222, "fleet"],
+    ]);
+  });
+});
 
 describe("écoute AIS ciblée", () => {
   const departures = [

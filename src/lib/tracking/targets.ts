@@ -1,4 +1,4 @@
-// Écoute AIS ciblée : on n'écoute que les navires dont une traversée est en cours ou proche.
+// Écoute AIS de la flotte : la raison dit pourquoi un navire compte en ce moment.
 // En mer, un navire émet souvent : le moindre passage à portée d'une antenne donne une position réelle.
 
 /** Autour du départ prévu : pour capter l'heure réelle de départ (ou le retard à quai). */
@@ -14,18 +14,37 @@ type TargetDeparture = {
   status: string;
 };
 
-/** MMSI à écouter maintenant, avec la raison (départ ou arrivée). */
+/**
+ * Toute la flotte active est écoutée, planning ou non : un navire peut naviguer hors calendrier,
+ * et écouter 15 navires ne coûte pas plus que 4 sur le même flux.
+ */
+export function fleetTargets(
+  planned: Map<number, AisReason>,
+  vessels: { mmsi: number | null; status: string }[],
+): Map<number, AisReason> {
+  const targets = new Map(planned);
+  for (const vessel of vessels) {
+    if (!vessel.mmsi || vessel.status !== "active") continue;
+    const mmsi = Number(vessel.mmsi);
+    if (!targets.has(mmsi)) targets.set(mmsi, "fleet");
+  }
+  return targets;
+}
+
+export type AisReason = "departure" | "sea" | "arrival" | "fleet";
+
+/** MMSI liés au planning en ce moment, avec la raison (départ, mer ou arrivée). */
 export function aisTargets(
   departures: TargetDeparture[],
   vessels: { id: string; mmsi: number | null; status: string }[],
   now: number,
   /** Navires vus à l'arrêt : en retard, on continue de les écouter jusqu'à l'arrivée prévue. */
   stopped: Set<number> = new Set(),
-): Map<number, "departure" | "sea" | "arrival"> {
+): Map<number, AisReason> {
   const mmsiOf = new Map(
     vessels.filter((v) => v.mmsi && v.status === "active").map((v) => [v.id, Number(v.mmsi)]),
   );
-  const targets = new Map<number, "departure" | "sea" | "arrival">();
+  const targets = new Map<number, AisReason>();
   for (const d of departures) {
     if (!d.vessel_id || d.status === "cancelled") continue;
     const mmsi = mmsiOf.get(d.vessel_id);

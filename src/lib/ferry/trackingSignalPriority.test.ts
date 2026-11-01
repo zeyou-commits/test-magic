@@ -120,8 +120,24 @@ describe("le signal AIS récent prime sur le signalement", () => {
     expect(delayLabel(result)).toBeNull();
   });
 
-  it("garde le départ signalé, qui reste une information sur le passé", () => {
-    expect(times(position()).departure.reported).toBe(true);
+  it("retire le retard signalé du départ, et revient à l'heure prévue sans retard", () => {
+    const { departure } = times(position());
+    expect(departure).toMatchObject({ kind: "scheduled", shiftMinutes: null });
+    expect(departure.reported).toBeUndefined();
+    expect(departure.notBefore).toBeUndefined();
+  });
+
+  it("garde un départ réellement constaté ou signalé", () => {
+    const web = { ...crossing, web_departed_at: "2026-10-31T20:42:00Z" };
+    const p = position();
+    const eta = estimate(p);
+    const { departure } = trackingTimes(web, {
+      departure: web,
+      position: p,
+      etaIso: eta.etaIso,
+      etaBasis: eta.etaBasis,
+    } as unknown as LiveShip);
+    expect(departure).toMatchObject({ kind: "observed", reported: true, shiftMinutes: 192 });
   });
 
   it("annonce le retard si le signal le montre", () => {

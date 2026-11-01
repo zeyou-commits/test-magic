@@ -665,10 +665,17 @@ export function trackingTimes(departure: CrossingSchedule, live?: LiveShip | nul
     arrival.signalAt = live?.position.reportedAt ?? null;
   }
   const reportedDeparture = !actualDeparture && report.departedAt !== null;
+  // Navire en route vers le port : un retard signalé avant le départ ne dit plus rien de sa traversée.
+  const reportedStart =
+    !actualDeparture &&
+    !reportedDeparture &&
+    !arrival.fromSignal &&
+    useReport &&
+    report.start !== start;
   const departureTime = make(
     departure.departure_at,
     actualDeparture ?? (reportedDeparture ? new Date(report.departedAt!).toISOString() : null),
-    !actualDeparture && !reportedDeparture && useReport && report.start !== start
+    reportedStart
       ? new Date(report.start).toISOString()
       : null,
   );
@@ -679,9 +686,8 @@ export function trackingTimes(departure: CrossingSchedule, live?: LiveShip | nul
     arrival.reported = true;
     if (report.notBefore) arrival.notBefore = true;
   }
-  if (reportedDeparture || (!actualDeparture && useReport && report.start !== start))
-    departureTime.reported = true;
-  if (!actualDeparture && report.notBefore) departureTime.notBefore = true;
+  if (reportedDeparture || reportedStart) departureTime.reported = true;
+  if (reportedStart && report.notBefore) departureTime.notBefore = true;
   return {
     departure: departureTime,
     arrival: seenArrived

@@ -500,6 +500,8 @@ export interface TrackingTime {
   reported?: boolean;
   /** Heure calculée sur un signal AIS récent : elle prime sur tout signalement et tout horaire. */
   fromSignal?: boolean;
+  /** Heure mise à jour par l'équipe : présentée comme un horaire suivi, sans dire d'où elle vient. */
+  updated?: boolean;
   /** Heure du signal AIS sur lequel repose cette estimation. */
   signalAt?: string | null;
 }
@@ -565,8 +567,10 @@ export function reportedCrossing(departure: CrossingSchedule, now = Date.now()) 
         : NaN;
   const duration = scheduledEnd - scheduled;
   const quay = reportedMs(departure.reported_quay_at);
-  const left = reportedMs(departure.reported_departed_at) ?? reportedMs(departure.web_departed_at);
-  const arrived = reportedMs(departure.reported_arrived_at) ?? reportedMs(departure.web_arrived_at);
+  const reportedLeft = reportedMs(departure.reported_departed_at);
+  const left = reportedLeft ?? reportedMs(departure.web_departed_at);
+  const reportedLanded = reportedMs(departure.reported_arrived_at);
+  const arrived = reportedLanded ?? reportedMs(departure.web_arrived_at);
   const webEta = reportedMs(departure.web_eta_at);
   const postponed = reportedMs(departure.reported_postponed_at);
   const delay = departure.reported_delay_minutes ?? 0;
@@ -574,12 +578,17 @@ export function reportedCrossing(departure: CrossingSchedule, now = Date.now()) 
   const lateByQuay = departedAt === null && quay !== null && quay > scheduled ? quay : null;
   const start = departedAt ?? Math.max(scheduled + delay * 60_000, lateByQuay ?? scheduled);
   const end = arrived ?? webEta ?? (Number.isFinite(duration) ? start + duration : NaN);
+  const departedUpdated = departedAt !== null && reportedLeft === null;
+  const arrivalUpdated =
+    arrived !== null ? reportedLanded === null : webEta !== null || departedUpdated;
   return {
     start,
     end,
     changed: departedAt !== null || start !== scheduled || arrived !== null || webEta !== null,
     departedAt,
     arrivedAt: arrived,
+    departedUpdated,
+    arrivalUpdated,
     /** Le départ reste un minimum : le navire était encore à quai à cette heure. */
     notBefore: departedAt === null && lateByQuay !== null && start === lateByQuay,
     /** Vu à quai il y a peu, après l'heure prévue : aucun avancement. */
@@ -682,11 +691,14 @@ export function trackingTimes(departure: CrossingSchedule, live?: LiveShip | nul
   const fromReport = Boolean(
     !seenArrived && !actualArrival && !arrival.fromSignal && reportedEnd && arrival.iso === reportedEnd,
   );
-  if (fromReport) {
+  if (fromReport && report.arrivalUpdated) {
+    arrival.updated = true;
+  } else if (fromReport) {
     arrival.reported = true;
     if (report.notBefore) arrival.notBefore = true;
   }
-  if (reportedDeparture || reportedStart) departureTime.reported = true;
+  if (reportedDeparture && report.departedUpdated) departureTime.updated = true;
+  else if (reportedDeparture || reportedStart) departureTime.reported = true;
   if (reportedStart && report.notBefore) departureTime.notBefore = true;
   return {
     departure: departureTime,

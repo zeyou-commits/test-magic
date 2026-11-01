@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AProposRouteImport } from './routes/a-propos'
+import { Route as ActualitesDotxmlRouteImport } from './routes/actualites[.]xml'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as BarometrePrixRouteImport } from './routes/barometre-prix'
@@ -36,6 +37,8 @@ import { Route as SitemapPagesDotxmlRouteImport } from './routes/sitemap-pages[.
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as VehiculesMoins3AnsRouteImport } from './routes/vehicules-moins-3-ans'
 import { Route as VoyageAlgerieRouteImport } from './routes/voyage-algerie'
+import { Route as ActualitesIndexRouteImport } from './routes/actualites.index'
+import { Route as ActualitesSlugRouteImport } from './routes/actualites.$slug'
 import { Route as ApiAdminUsersRouteImport } from './routes/api.admin-users'
 import { Route as ApiAisRefreshRouteImport } from './routes/api.ais-refresh'
 import { Route as ApiFxTickerRouteImport } from './routes/api.fx-ticker'
@@ -65,6 +68,11 @@ const IndexRoute = IndexRouteImport.update({
 const AProposRoute = AProposRouteImport.update({
   id: '/a-propos',
   path: '/a-propos',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ActualitesDotxmlRoute = ActualitesDotxmlRouteImport.update({
+  id: '/actualites.xml',
+  path: '/actualites.xml',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AdminRoute = AdminRouteImport.update({
@@ -192,6 +200,16 @@ const VoyageAlgerieRoute = VoyageAlgerieRouteImport.update({
   path: '/voyage-algerie',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ActualitesIndexRoute = ActualitesIndexRouteImport.update({
+  id: '/actualites/',
+  path: '/actualites/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ActualitesSlugRoute = ActualitesSlugRouteImport.update({
+  id: '/actualites/$slug',
+  path: '/actualites/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiAdminUsersRoute = ApiAdminUsersRouteImport.update({
   id: '/api/admin-users',
   path: '/api/admin-users',
@@ -296,6 +314,7 @@ const SimulateursSlugRoute = SimulateursSlugRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/a-propos': typeof AProposRoute
+  '/actualites.xml': typeof ActualitesDotxmlRoute
   '/admin': typeof AdminRoute
   '/auth': typeof AuthRoute
   '/barometre-prix': typeof BarometrePrixRoute
@@ -321,6 +340,7 @@ export interface FileRoutesByFullPath {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/vehicules-moins-3-ans': typeof VehiculesMoins3AnsRoute
   '/voyage-algerie': typeof VoyageAlgerieRoute
+  '/actualites/$slug': typeof ActualitesSlugRoute
   '/api/admin-users': typeof ApiAdminUsersRoute
   '/api/ais-refresh': typeof ApiAisRefreshRoute
   '/api/fx-ticker': typeof ApiFxTickerRoute
@@ -335,6 +355,7 @@ export interface FileRoutesByFullPath {
   '/lignes/$slug': typeof LignesSlugRoute
   '/ports/$slug': typeof PortsSlugRoute
   '/simulateurs/$slug': typeof SimulateursSlugRoute
+  '/actualites/': typeof ActualitesIndexRoute
   '/bateaux/': typeof BateauxIndexRoute
   '/covoiturage/': typeof CovoiturageIndexRoute
   '/guide/': typeof GuideIndexRoute
@@ -345,6 +366,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/a-propos': typeof AProposRoute
+  '/actualites.xml': typeof ActualitesDotxmlRoute
   '/admin': typeof AdminRoute
   '/auth': typeof AuthRoute
   '/barometre-prix': typeof BarometrePrixRoute
@@ -364,6 +386,7 @@ export interface FileRoutesByTo {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/vehicules-moins-3-ans': typeof VehiculesMoins3AnsRoute
   '/voyage-algerie': typeof VoyageAlgerieRoute
+  '/actualites/$slug': typeof ActualitesSlugRoute
   '/api/admin-users': typeof ApiAdminUsersRoute
   '/api/ais-refresh': typeof ApiAisRefreshRoute
   '/api/fx-ticker': typeof ApiFxTickerRoute
@@ -378,6 +401,7 @@ export interface FileRoutesByTo {
   '/lignes/$slug': typeof LignesSlugRoute
   '/ports/$slug': typeof PortsSlugRoute
   '/simulateurs/$slug': typeof SimulateursSlugRoute
+  '/actualites': typeof ActualitesIndexRoute
   '/bateaux': typeof BateauxIndexRoute
   '/covoiturage': typeof CovoiturageIndexRoute
   '/guide': typeof GuideIndexRoute
@@ -389,6 +413,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/a-propos': typeof AProposRoute
+  '/actualites.xml': typeof ActualitesDotxmlRoute
   '/admin': typeof AdminRoute
   '/auth': typeof AuthRoute
   '/barometre-prix': typeof BarometrePrixRoute
@@ -414,6 +439,7 @@ export interface FileRoutesById {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/vehicules-moins-3-ans': typeof VehiculesMoins3AnsRoute
   '/voyage-algerie': typeof VoyageAlgerieRoute
+  '/actualites/$slug': typeof ActualitesSlugRoute
   '/api/admin-users': typeof ApiAdminUsersRoute
   '/api/ais-refresh': typeof ApiAisRefreshRoute
   '/api/fx-ticker': typeof ApiFxTickerRoute
@@ -428,6 +454,7 @@ export interface FileRoutesById {
   '/lignes/$slug': typeof LignesSlugRoute
   '/ports/$slug': typeof PortsSlugRoute
   '/simulateurs/$slug': typeof SimulateursSlugRoute
+  '/actualites/': typeof ActualitesIndexRoute
   '/bateaux/': typeof BateauxIndexRoute
   '/covoiturage/': typeof CovoiturageIndexRoute
   '/guide/': typeof GuideIndexRoute
@@ -440,6 +467,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/a-propos'
+    | '/actualites.xml'
     | '/admin'
     | '/auth'
     | '/barometre-prix'
@@ -465,6 +493,7 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/vehicules-moins-3-ans'
     | '/voyage-algerie'
+    | '/actualites/$slug'
     | '/api/admin-users'
     | '/api/ais-refresh'
     | '/api/fx-ticker'
@@ -479,6 +508,7 @@ export interface FileRouteTypes {
     | '/lignes/$slug'
     | '/ports/$slug'
     | '/simulateurs/$slug'
+    | '/actualites/'
     | '/bateaux/'
     | '/covoiturage/'
     | '/guide/'
@@ -489,6 +519,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/a-propos'
+    | '/actualites.xml'
     | '/admin'
     | '/auth'
     | '/barometre-prix'
@@ -508,6 +539,7 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/vehicules-moins-3-ans'
     | '/voyage-algerie'
+    | '/actualites/$slug'
     | '/api/admin-users'
     | '/api/ais-refresh'
     | '/api/fx-ticker'
@@ -522,6 +554,7 @@ export interface FileRouteTypes {
     | '/lignes/$slug'
     | '/ports/$slug'
     | '/simulateurs/$slug'
+    | '/actualites'
     | '/bateaux'
     | '/covoiturage'
     | '/guide'
@@ -532,6 +565,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/a-propos'
+    | '/actualites.xml'
     | '/admin'
     | '/auth'
     | '/barometre-prix'
@@ -557,6 +591,7 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/vehicules-moins-3-ans'
     | '/voyage-algerie'
+    | '/actualites/$slug'
     | '/api/admin-users'
     | '/api/ais-refresh'
     | '/api/fx-ticker'
@@ -571,6 +606,7 @@ export interface FileRouteTypes {
     | '/lignes/$slug'
     | '/ports/$slug'
     | '/simulateurs/$slug'
+    | '/actualites/'
     | '/bateaux/'
     | '/covoiturage/'
     | '/guide/'
@@ -582,6 +618,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AProposRoute: typeof AProposRoute
+  ActualitesDotxmlRoute: typeof ActualitesDotxmlRoute
   AdminRoute: typeof AdminRoute
   AuthRoute: typeof AuthRoute
   BarometrePrixRoute: typeof BarometrePrixRoute
@@ -607,6 +644,7 @@ export interface RootRouteChildren {
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   VehiculesMoins3AnsRoute: typeof VehiculesMoins3AnsRoute
   VoyageAlgerieRoute: typeof VoyageAlgerieRoute
+  ActualitesSlugRoute: typeof ActualitesSlugRoute
   ApiAdminUsersRoute: typeof ApiAdminUsersRoute
   ApiAisRefreshRoute: typeof ApiAisRefreshRoute
   ApiFxTickerRoute: typeof ApiFxTickerRoute
@@ -615,6 +653,7 @@ export interface RootRouteChildren {
   ApiPushDispatchRoute: typeof ApiPushDispatchRoute
   ApiVesselPositionsRoute: typeof ApiVesselPositionsRoute
   ApiWalletRatesRoute: typeof ApiWalletRatesRoute
+  ActualitesIndexRoute: typeof ActualitesIndexRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -631,6 +670,13 @@ declare module '@tanstack/react-router' {
       path: '/a-propos'
       fullPath: '/a-propos'
       preLoaderRoute: typeof AProposRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/actualites.xml': {
+      id: '/actualites.xml'
+      path: '/actualites.xml'
+      fullPath: '/actualites.xml'
+      preLoaderRoute: typeof ActualitesDotxmlRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/admin': {
@@ -806,6 +852,20 @@ declare module '@tanstack/react-router' {
       path: '/voyage-algerie'
       fullPath: '/voyage-algerie'
       preLoaderRoute: typeof VoyageAlgerieRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/actualites/': {
+      id: '/actualites/'
+      path: '/actualites'
+      fullPath: '/actualites/'
+      preLoaderRoute: typeof ActualitesIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/actualites/$slug': {
+      id: '/actualites/$slug'
+      path: '/actualites/$slug'
+      fullPath: '/actualites/$slug'
+      preLoaderRoute: typeof ActualitesSlugRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/admin-users': {
@@ -1032,6 +1092,7 @@ const SimulateursRouteWithChildren = SimulateursRoute._addFileChildren(
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AProposRoute: AProposRoute,
+  ActualitesDotxmlRoute: ActualitesDotxmlRoute,
   AdminRoute: AdminRoute,
   AuthRoute: AuthRoute,
   BarometrePrixRoute: BarometrePrixRoute,
@@ -1057,6 +1118,7 @@ const rootRouteChildren: RootRouteChildren = {
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   VehiculesMoins3AnsRoute: VehiculesMoins3AnsRoute,
   VoyageAlgerieRoute: VoyageAlgerieRoute,
+  ActualitesSlugRoute: ActualitesSlugRoute,
   ApiAdminUsersRoute: ApiAdminUsersRoute,
   ApiAisRefreshRoute: ApiAisRefreshRoute,
   ApiFxTickerRoute: ApiFxTickerRoute,
@@ -1065,6 +1127,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPushDispatchRoute: ApiPushDispatchRoute,
   ApiVesselPositionsRoute: ApiVesselPositionsRoute,
   ApiWalletRatesRoute: ApiWalletRatesRoute,
+  ActualitesIndexRoute: ActualitesIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

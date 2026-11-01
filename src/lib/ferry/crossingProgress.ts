@@ -15,10 +15,11 @@ import type { Port } from "./types";
  * D'où vient l'état affiché : arrivée constatée, position récente, position ancienne, ou horaire seul.
  * Le voyageur doit toujours pouvoir distinguer ce qui est observé de ce qui est calculé.
  */
-export type TrackingTrust = "observed" | "live" | "aged" | "schedule" | "reported";
+export type TrackingTrust = "observed" | "live" | "aged" | "schedule" | "reported" | "updated";
 
 export function trustLabel(trust: TrackingTrust, ageMinutes: number | null) {
   if (trust === "observed") return "Arrivée constatée";
+  if (trust === "updated") return "Horaires mis à jour · position non captée";
   if (trust === "reported") return "Estimation d’après un signalement validé par BledWay";
   if (trust === "live") return `Position réelle · ${formatAge(ageMinutes ?? 0)}`;
   if (trust === "aged") return `Estimation · dernière position ${formatAge(ageMinutes ?? 0)}`;
@@ -104,7 +105,9 @@ export function crossingProgress(
         : "aged";
   const shownTrust: TrackingTrust =
     report.changed && !times.arrival.fromSignal && (trust === "schedule" || trust === "aged")
-      ? "reported"
+      ? report.departedUpdated || report.arrivalUpdated
+        ? "updated"
+        : "reported"
       : trust;
   // L'heure passée ne prouve pas l'arrivée : seul un signal peut la constater.
   const arrivalIso = times.arrival.iso;
@@ -146,7 +149,9 @@ export function crossingProgress(
         ? "Arrivée constatée (AIS)"
         : geographic || times.arrival.fromSignal
           ? "Position AIS · distance indicative"
-          : report.changed
+          : report.departedUpdated || report.arrivalUpdated
+            ? "Horaires mis à jour"
+            : report.changed
             ? "Signalement validé"
             : "Repère horaire",
     signal,

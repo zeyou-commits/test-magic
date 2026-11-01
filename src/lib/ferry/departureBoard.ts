@@ -61,7 +61,7 @@ export function boardStatus(input: {
     return {
       label: "Retard estimé",
       tone: "warning",
-      proof: `Retard estimé d'après le signal du navire. ${seen}`,
+      proof: "Horaire mis à jour : retard estimé.",
     };
   if (departure.status === "modified")
     return {

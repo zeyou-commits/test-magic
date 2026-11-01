@@ -1,4 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
+import { newsFeedItems, newsPath } from "@/lib/ferry/newsFeed";
 export async function maritimeEntries() {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 10_000);
@@ -21,7 +22,11 @@ export async function maritimeEntries() {
     throw new Error("Catalogue trop volumineux : partitionner le sitemap maritime");
   }
   try {
-    const [ports, lines] = await Promise.all([read("ports"), read("routes")]);
+    const [ports, lines, news] = await Promise.all([
+      read("ports"),
+      read("routes"),
+      newsFeedItems().catch(() => []),
+    ]);
     return [
       ...ports.map((p) => ({
         path: `/ports/${encodeURIComponent(p.slug)}`,
@@ -31,6 +36,7 @@ export async function maritimeEntries() {
         path: `/lignes/${encodeURIComponent(l.slug)}`,
         lastmod: l.updated_at,
       })),
+      ...news.map((item) => ({ path: newsPath(item), lastmod: item.starts_at })),
     ];
   } finally {
     clearTimeout(timeout);

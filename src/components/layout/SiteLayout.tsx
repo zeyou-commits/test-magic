@@ -15,6 +15,7 @@ import {
 export const navLinks = [
   { to: "/", label: "Carte" },
   { to: "/horaires", label: "Départs & arrivées" },
+  { to: "/actualites", label: "Actualités" },
   { to: "/ports", label: "Ports" },
   { to: "/lignes", label: "Lignes" },
   { to: "/compagnies", label: "Compagnies" },
@@ -26,6 +27,7 @@ export const navLinks = [
 ] as const;
 
 const footerLinks = [
+  { to: "/actualites", label: "Actualités" },
   { to: "/guide", label: "Tous les dossiers" },
   { to: "/questions-frequentes", label: "Questions fréquentes" },
   { to: "/vehicules-moins-3-ans", label: "Véhicules de moins de 3 ans" },
@@ -70,7 +72,7 @@ export function SiteHeader() {
     ["/", "/horaires", "/guide", "/simulateurs"].includes(item.to),
   );
   const explore = navLinks.filter((item) =>
-    ["/ports", "/lignes", "/compagnies", "/bateaux"].includes(item.to),
+    ["/actualites", "/ports", "/lignes", "/compagnies", "/bateaux"].includes(item.to),
   );
   // Hauteur réelle du bandeau (bandeau d'alertes compris), pour caler ce qui reste collé dessous.
   const headerRef = useRef<HTMLElement>(null);

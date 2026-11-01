@@ -22,7 +22,7 @@ export const newsOrigins = {
   media: { label: "Média" },
   bledway: { label: "BledWay" },
 } as const;
-const newsSchema = z.object({
+export const newsSchema = z.object({
   id: z.string(),
   kind: z.enum(["alerte", "perturbation", "info"]),
   origin: z.enum(["official", "media", "bledway"]),

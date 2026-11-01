@@ -14,7 +14,13 @@ function Time({ time, label, zone }: { time: TrackingTime; label: string; zone: 
     <div className="min-w-0">
       <p className="text-[10px] font-medium text-muted-foreground">
         {label}{" "}
-        {time.kind === "observed" && time.reported
+        {time.updated
+          ? label === "Arrivée"
+            ? time.kind === "observed"
+              ? "constatée"
+              : "estimée"
+            : "constaté"
+          : time.kind === "observed" && time.reported
           ? label === "Arrivée"
             ? "signalée"
             : "signalé"

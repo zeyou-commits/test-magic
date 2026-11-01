@@ -20,6 +20,7 @@ export const staticSitemapEntries = [
   ...[
     "/",
     "/horaires",
+    "/actualites",
     "/questions-frequentes",
     "/barometre-prix",
     "/mes-dinars",

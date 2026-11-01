@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Check, Clock, ExternalLink, KeyRound, Pause, RefreshCw, Undo2, X } from "lucide-react";
+import { Check, Clock, ExternalLink, KeyRound, Newspaper, Pause, RefreshCw, Undo2, X } from "lucide-react";
 import { toast } from "sonner";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { Button } from "@/components/ui/button";
@@ -25,10 +25,12 @@ interface Proposal {
   applied: boolean;
   decided_at: string | null;
   created_at: string;
+  vessel_id: string | null;
+  company_id: string | null;
   bw_watch_items: {
     url: string;
     published_at: string | null;
-    bw_watch_sources: { name: string } | null;
+    bw_watch_sources: { name: string; url: string; tier: "official" | "media" } | null;
   } | null;
 }
 interface Source {
@@ -44,7 +46,7 @@ const KIND: Record<Proposal["kind"], string> = {
   flash: "Flash info à publier",
   departure: "Modifier une traversée",
   vessel: "Modifier un navire",
-  note: "À lire, rien d’automatique",
+  note: "À lire, sans effet sur les horaires",
   incident: "Mettre à jour un incident",
   crossing: "Corriger l’heure affichée",
 };
@@ -101,7 +103,7 @@ export function WatchAdmin() {
     queryFn: async () => {
       const { data, error } = await db
         .from("bw_watch_proposals")
-        .select("*,bw_watch_items(url,published_at,bw_watch_sources(name))")
+        .select("*,bw_watch_items(url,published_at,bw_watch_sources(name,url,tier))")
         .order("created_at", { ascending: false })
         .limit(150);
       if (error) throw error;
@@ -164,6 +166,33 @@ export function WatchAdmin() {
     },
     onSuccess: () => {
       toast.success("Correction annulée");
+      refresh();
+    },
+    onError: (error: Error) => toast.error(error.message),
+  });
+  // Une note d'article peut rejoindre le fil public : c'est l'équipe qui le décide, carte par carte.
+  const publish = useMutation({
+    mutationFn: async (proposal: Proposal) => {
+      const item = proposal.bw_watch_items;
+      const { error } = await db.from("bw_news").insert({
+        kind: "info",
+        origin: item?.bw_watch_sources?.tier === "official" ? "official" : "media",
+        title: proposal.title,
+        summary: proposal.summary,
+        source_name: item?.bw_watch_sources?.name ?? "",
+        source_url: item?.url ?? null,
+        vessel_id: proposal.vessel_id,
+        company_ids: proposal.company_id ? [proposal.company_id] : [],
+        published: true,
+      });
+      if (error) throw error;
+      if (proposal.status === "pending" || proposal.status === "standby") {
+        const decided = await db.rpc("bw_watch_decide", { p_id: proposal.id, p_decision: "approved" });
+        if (decided.error) throw decided.error;
+      }
+    },
+    onSuccess: () => {
+      toast.success("Publiée dans les actualités");
       refresh();
     },
     onError: (error: Error) => toast.error(error.message),
@@ -298,6 +327,16 @@ export function WatchAdmin() {
                     >
                       <Check size={15} aria-hidden /> Approuver
                     </Button>
+                    {proposal.kind === "note" && !item?.bw_watch_sources?.url.includes("/interne/") ? (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        disabled={publish.isPending}
+                        onClick={() => publish.mutate(proposal)}
+                      >
+                        <Newspaper size={15} aria-hidden /> Publier en actualité
+                      </Button>
+                    ) : null}
                     <Button
                       size="sm"
                       variant="outline"

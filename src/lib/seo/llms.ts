@@ -22,6 +22,7 @@ const link = (label: string, path: string, note?: string) =>
 const mainPages: [string, string, string][] = [
   ["Carte des ferries", "/", "lignes, navires et départs connus"],
   ["Départs et arrivées", "/horaires", "tableau en heure locale du port"],
+  ["Actualités", "/actualites", "perturbations et informations des ferries, sources citées"],
   ["Questions fréquentes", "/questions-frequentes", "réponses directes et tableau des lignes"],
   ["Lignes", "/lignes", "toutes les lignes, dans les deux sens"],
   ["Ports", "/ports", "ports européens et algériens"],

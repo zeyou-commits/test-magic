@@ -63,7 +63,10 @@ describe("indices web approuvés", () => {
 
   it("le départ approuvé décale l'arrivée de la même durée", () => {
     const result = trackingTimes({ ...tassili, web_departed_at: "2026-10-31T11:51:00Z" });
-    expect(result.departure).toMatchObject({ kind: "observed", reported: true, shiftMinutes: 51 });
+    expect(result.departure).toMatchObject({ kind: "observed", updated: true, shiftMinutes: 51 });
+    expect(result.departure.reported).toBeUndefined();
+    expect(result.arrival.updated).toBe(true);
+    expect(result.arrival.reported).toBeUndefined();
     expect(result.arrival).toMatchObject({ iso: "2026-11-01T11:51:00.000Z", shiftMinutes: 51 });
   });
 
@@ -137,7 +140,8 @@ describe("le signal AIS récent prime sur le signalement", () => {
       etaIso: eta.etaIso,
       etaBasis: eta.etaBasis,
     } as unknown as LiveShip);
-    expect(departure).toMatchObject({ kind: "observed", reported: true, shiftMinutes: 192 });
+    expect(departure).toMatchObject({ kind: "observed", updated: true, shiftMinutes: 192 });
+    expect(departure.reported).toBeUndefined();
   });
 
   it("annonce le retard si le signal le montre", () => {

@@ -70,8 +70,11 @@ export const tripEnd = (departure: TripDeparture) => {
     : Date.parse(departure.departure_at) + (departure.duration_minutes ?? 24 * 60) * 60_000;
 };
 
+/** Une traversée passée s'efface vite : la suivante doit reprendre la première place. */
+export const TRIP_GRACE_MS = 3 * 3_600_000;
+
 /**
- * Ma traversée du moment : la prochaine (ou celle en cours, jusqu'à 12 h après l'arrivée),
+ * Ma traversée du moment : la prochaine (ou celle en cours, jusqu'à 3 h après l'arrivée),
  * avec son trajet, ses ports et son bateau.
  */
 export function useMyTrip() {
@@ -82,7 +85,7 @@ export function useMyTrip() {
   const { data: vessels = [] } = useQuery(vesselsQuery);
   const now = Date.now();
   // Une traversée annulée reste affichée (avec « Annulée ») tant que sa date n'est pas passée.
-  const departure = (trips.data ?? []).find((item) => tripEnd(item) + 12 * 3_600_000 > now);
+  const departure = (trips.data ?? []).find((item) => tripEnd(item) + TRIP_GRACE_MS > now);
   if (!departure) return { trip: null, others: [] as TripDeparture[], ready: !trips.isPending };
   const route = routes.find((item) => item.id === departure.route_id);
   return {

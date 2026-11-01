@@ -263,7 +263,9 @@ export function parseClue(raw: unknown, checks: SilentCheck[], now: number): Clu
     summary: `Indice à confirmer, source ${sourceName}. ${seen}${signal}${planned}`.slice(0, 400),
     // Une page publique n'est pas un horaire de compagnie : la confiance ne monte jamais plus haut.
     confidence:
-      samePort(lastPort, check.from_port) || samePort(destination, check.to_port)
+      samePort(lastPort, check.from_port) ||
+      samePort(destination, check.to_port) ||
+      samePort(currentPort, check.to_port)
         ? "medium"
         : "low",
   };

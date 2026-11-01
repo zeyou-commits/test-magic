@@ -169,6 +169,18 @@ describe("indice lu sur la fiche", () => {
     ).toBe("low");
   });
 
+  it("relève la confiance quand le navire est au port d'arrivée prévu", () => {
+    const here = {
+      key: check.key,
+      current_port: "Valence",
+      arrived_at: "2026-11-01T08:00:00Z",
+      source_name: "Site",
+      source_url: "https://site.example",
+    };
+    expect(parseClue(here, [check], NOW)?.confidence).toBe("medium");
+    expect(parseClue({ ...here, current_port: "Oran" }, [check], NOW)?.confidence).toBe("low");
+  });
+
   it("la même information donne le même lien, une nouvelle heure un autre lien", () => {
     const a = parseClue(clue, [check], NOW)?.url;
     expect(parseClue({ ...clue, position_age_minutes: 30 }, [check], NOW)?.url).toBe(a);

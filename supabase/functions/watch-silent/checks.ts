@@ -1,5 +1,5 @@
-// Navires muets : qui contrôler maintenant, et ce qu'une fiche VesselFinder doit montrer pour être déposée.
-// Sans navire à contrôler, l'agent s'arrête : aucune lecture pour rien.
+// Navires muets : qui contrôler maintenant, et ce qu'une information trouvée sur le web doit montrer pour être déposée.
+// Sans navire à contrôler, l'agent s'arrête : aucune recherche pour rien.
 
 const MINUTE = 60_000;
 const HOUR = 60 * MINUTE;
@@ -9,15 +9,15 @@ const DAY = 24 * HOUR;
 export const CHECK_AFTER_MS = 30 * MINUTE;
 /** Une arrivée peut glisser de plusieurs heures : le contrôle continue après l'heure prévue. */
 export const CHECK_UNTIL_MS = 6 * HOUR;
-/** Un navire qui a émis récemment est à portée de notre écoute : inutile de lire sa fiche. */
+/** Un navire qui a émis récemment est à portée de notre écoute : inutile de le chercher. */
 export const SIGNAL_FRESH_MS = 2 * HOUR;
 /** Une traversée sans heure d'arrivée connue n'est pas suivie plus longtemps. */
 const CROSSING_MAX_MS = 2 * DAY;
 /** Sans traversée prévue, un navire n'est contrôlé qu'après ce silence, et une fois par jour. */
 export const LONG_SILENCE_MS = 48 * HOUR;
-/** Après un indice, la même traversée n'est relue qu'au bout de ce délai. */
+/** Après un indice, la même traversée n'est recherchée qu'au bout de ce délai. */
 export const RECHECK_MS = 3 * HOUR;
-/** Lectures par passage, pour rester discret auprès du site. */
+/** Navires recherchés par passage, pour rester discret auprès des sites. */
 export const MAX_CHECKS = 5;
 const MAX_PAST_MS = 7 * DAY;
 const MAX_ETA_MS = 3 * DAY;
@@ -46,8 +46,7 @@ export interface SilentCheck {
   vessel_id: string;
   vessel: string;
   mmsi: number;
-  /** La seule page que l'agent peut lire : elle est donnée par le serveur, pas choisie par lui. */
-  page: string;
+  imo: string | number | null;
   last_signal_at: string | null;
   departure_id: string | null;
   from_port: string | null;
@@ -55,9 +54,6 @@ export interface SilentCheck {
   planned_departure_at: string | null;
   planned_arrival_at: string | null;
 }
-
-const pageOf = (vessel: SilentVessel) =>
-  `https://www.vesselfinder.com/fr/vessels/details/${vessel.imo ?? vessel.mmsi}`;
 
 export function silentChecks(input: {
   vessels: SilentVessel[];
@@ -81,7 +77,7 @@ export function silentChecks(input: {
     vessel_id: vessel.id,
     vessel: vessel.name,
     mmsi: Number(vessel.mmsi),
-    page: pageOf(vessel),
+    imo: vessel.imo ?? null,
     last_signal_at: lastSignal(vessel),
   });
   const planned = new Set<string>();
@@ -122,7 +118,7 @@ export function silentChecks(input: {
     (a, b) => Date.parse(b.planned_departure_at ?? "") - Date.parse(a.planned_departure_at ?? ""),
   );
 
-  // Silence sans traversée : chaque navire a son heure dans la journée, pour étaler les lectures.
+  // Silence sans traversée : chaque navire a son heure dans la journée, pour étaler les recherches.
   const hour = Math.floor(now / HOUR) % 24;
   for (const vessel of eligible.values()) {
     if (planned.has(vessel.id) || Number(vessel.mmsi) % 24 !== hour) continue;
@@ -145,7 +141,7 @@ export function silentChecks(input: {
 }
 
 /**
- * Lit une date de fiche. Ces fiches omettent souvent l'année (« MM-JJTHH:mm ») :
+ * Lit une date trouvée sur le web. Les pages de suivi omettent souvent l'année (« MM-JJTHH:mm ») :
  * elle est alors déduite, et seule l'année la plus proche d'aujourd'hui est retenue.
  */
 export function clueDate(value: unknown, now: number): number | null {
@@ -179,6 +175,8 @@ export interface Clue {
 const clean = (value: unknown, max: number) =>
   typeof value === "string" ? value.replace(/\s+/g, " ").trim().slice(0, max) : "";
 
+const SOURCE_MIN = 2;
+
 const samePort = (a: string, b: string | null) => !!a && !!b && a.toLowerCase() === b.toLowerCase();
 
 const when = (at: number) => {
@@ -187,8 +185,8 @@ const when = (at: number) => {
 };
 
 /**
- * Le titre, le résumé et le lien sont écrits ici, jamais par l'agent : un indice reste présenté comme un indice.
- * Renvoie null si la fiche n'apprend rien de daté : navire hors liste, dates absentes ou invraisemblables.
+ * Le titre et le résumé sont écrits ici, jamais par l'agent : un indice reste présenté comme un indice.
+ * Renvoie null si l'information n'apprend rien de daté : navire hors liste, source absente, dates invraisemblables.
  */
 export function parseClue(raw: unknown, checks: SilentCheck[], now: number): Clue | null {
   if (!raw || typeof raw !== "object") return null;
@@ -201,12 +199,24 @@ export function parseClue(raw: unknown, checks: SilentCheck[], now: number): Clu
       | "arrived_at"
       | "destination"
       | "eta"
-      | "position_age_minutes",
+      | "position_age_minutes"
+      | "source_name"
+      | "source_url",
       unknown
     >
   >;
   const check = checks.find((c) => c.key === entry.key);
   if (!check) return null;
+
+  const sourceName = clean(entry.source_name, 60);
+  if (sourceName.length < SOURCE_MIN) return null;
+  let url: URL;
+  try {
+    url = new URL(String(entry.source_url ?? ""));
+  } catch {
+    return null;
+  }
+  if (url.protocol !== "https:") return null;
 
   const past = (value: unknown) => {
     const at = clueDate(value, now);
@@ -231,7 +241,7 @@ export function parseClue(raw: unknown, checks: SilentCheck[], now: number): Clu
   const age = typeof entry.position_age_minutes === "number" ? entry.position_age_minutes : NaN;
   const seen =
     Number.isFinite(age) && age >= 0 && age <= 7 * 24 * 60
-      ? `Position vue il y a ${Math.round(age)} min par VesselFinder. `
+      ? `Position vue il y a ${Math.round(age)} min par ${sourceName}. `
       : "";
   const signal = check.last_signal_at
     ? `Dernier signal reçu par BledWay : ${check.last_signal_at.slice(0, 16).replace("T", " ")} UTC.`
@@ -240,7 +250,6 @@ export function parseClue(raw: unknown, checks: SilentCheck[], now: number): Clu
     ? ` Arrivée au planning : ${when(Date.parse(check.planned_arrival_at))}.`
     : "";
 
-  const url = new URL(check.page);
   url.hash = [check.mmsi, currentPort, arrived, lastPort, departed, destination, eta]
     .map((part) => part ?? "")
     .join("-")
@@ -251,8 +260,8 @@ export function parseClue(raw: unknown, checks: SilentCheck[], now: number): Clu
     event_at: new Date(main).toISOString(),
     url: url.toString(),
     title: `${check.vessel} : ${facts.join(", ")}`.slice(0, 160),
-    summary: `Indice à confirmer, source VesselFinder. ${seen}${signal}${planned}`.slice(0, 400),
-    // Une fiche publique n'est pas un horaire de compagnie : la confiance ne monte jamais plus haut.
+    summary: `Indice à confirmer, source ${sourceName}. ${seen}${signal}${planned}`.slice(0, 400),
+    // Une page publique n'est pas un horaire de compagnie : la confiance ne monte jamais plus haut.
     confidence:
       samePort(lastPort, check.from_port) || samePort(destination, check.to_port)
         ? "medium"

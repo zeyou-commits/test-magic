@@ -1,0 +1,10 @@
+# Depots de l'utilisateur, sauvegarde et etat local : jamais dans Git ni sur le site.
+*.png
+*.jpg
+*.jpeg
+*.webp
+/_sauvegarde-originaux/
+/_annulees/
+/_etat.json
+/etat.js
+__pycache__/

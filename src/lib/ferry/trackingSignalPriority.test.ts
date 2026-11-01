@@ -1,0 +1,97 @@
+import { describe, expect, it } from "vitest";
+import {
+  delayLabel,
+  estimateCrossingArrival,
+  trackingTimes,
+  type CrossingSchedule,
+  type LivePosition,
+  type LiveShip,
+} from "./tracking";
+
+// Cas réel du Rosalind Franklin, 01/11/2026 : parti en retard, le signal revient à 58 km de Valence.
+const crossing: CrossingSchedule = {
+  id: "d1",
+  departure_at: "2026-10-31T17:30:00Z",
+  arrival_at: "2026-11-01T13:00:00Z",
+  duration_minutes: 1170,
+  status: "modified",
+  reported_quay_at: "2026-10-31T18:55:30Z",
+  reported_delay_minutes: 120,
+};
+const valence = { latitude: 39.45, longitude: -0.32 };
+const mostaganem = { latitude: 35.94, longitude: 0.09 };
+const position = (over: Partial<LivePosition> = {}): LivePosition => ({
+  mmsi: 212805000,
+  vesselName: "ROSALIND FRANKLIN",
+  status: "0",
+  latitude: 39.0697,
+  longitude: 0.1557,
+  speedKnots: 14.4,
+  courseDeg: 320.2,
+  reportedAt: "2026-11-01T10:16:37Z",
+  fetchedAt: "2026-11-01T10:17:00Z",
+  ...over,
+});
+const NOW = Date.parse("2026-11-01T10:20:00Z");
+
+const estimate = (p: LivePosition, now = NOW) =>
+  estimateCrossingArrival(
+    p,
+    { ...crossing, duration_minutes: crossing.duration_minutes ?? null },
+    mostaganem,
+    valence,
+    now,
+  );
+const times = (p: LivePosition, now = NOW) => {
+  const eta = estimate(p, now);
+  return trackingTimes(crossing, {
+    departure: crossing,
+    position: p,
+    etaIso: eta.etaIso,
+    etaBasis: eta.etaBasis,
+  } as unknown as LiveShip);
+};
+
+describe("le signal AIS récent prime sur le signalement", () => {
+  it("calcule l'arrivée d'un navire en route vers le port, même à plus de 30 km", () => {
+    const result = estimate(position());
+    expect(result.etaBasis).toBe("approach");
+    expect(result.remainingKm).toBeGreaterThan(50);
+    expect(Date.parse(result.etaIso!)).toBeLessThan(Date.parse("2026-11-01T13:00:00Z"));
+  });
+
+  it("remplace l'arrivée +2 h du signalement, et retire le badge de retard", () => {
+    const result = times(position());
+    expect(result.arrival.fromSignal).toBe(true);
+    expect(result.arrival.reported).toBeUndefined();
+    expect(result.arrival.shiftMinutes).toBeLessThan(0);
+    expect(delayLabel(result)).toBeNull();
+  });
+
+  it("garde le départ signalé, qui reste une information sur le passé", () => {
+    expect(times(position()).departure.reported).toBe(true);
+  });
+
+  it("annonce le retard si le signal le montre", () => {
+    const result = times(position({ speedKnots: 4, reportedAt: "2026-11-01T10:16:37Z" }));
+    expect(result.arrival.fromSignal).toBe(true);
+    expect(delayLabel(result)).toMatch(/^≈ \+/);
+  });
+
+  it("ne suit pas un navire qui ne va pas vers le port", () => {
+    const result = times(position({ courseDeg: 150 }));
+    expect(result.arrival.fromSignal).toBeUndefined();
+    expect(result.arrival.reported).toBe(true);
+    expect(delayLabel(result)).toBe("≈ +2 h");
+  });
+
+  it("revient au signalement quand le signal n'est plus récent", () => {
+    const result = times(position(), Date.parse("2026-11-01T11:00:00Z"));
+    expect(result.arrival.fromSignal).toBeUndefined();
+    expect(result.arrival.reported).toBe(true);
+  });
+
+  it("ne suit pas un navire trop loin pour que la ligne droite soit fiable", () => {
+    expect(estimate(position({ latitude: 37.5, longitude: 0.8 })).etaBasis).toBeNull();
+  });
+});

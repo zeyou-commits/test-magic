@@ -143,6 +143,26 @@ export function estimateArrival(
 
 /** En deçà, la ligne droite jusqu'au port est fiable : on passe à distance ÷ vitesse. */
 export const FINAL_APPROACH_KM = 30;
+/** Plus loin, la ligne droite reste valable si le navire fait déjà route vers le port. */
+export const HEADING_APPROACH_KM = 150;
+const HEADING_TOLERANCE_DEG = 30;
+
+function headingToPort(position: LivePosition, port: LngLat) {
+  if (position.courseDeg === null) return false;
+  const here: LngLat = [position.longitude, position.latitude];
+  const lat1 = rad(here[1]);
+  const lat2 = rad(port[1]);
+  const dLng = rad(port[0] - here[0]);
+  const bearing = deg(
+    Math.atan2(
+      Math.sin(dLng) * Math.cos(lat2),
+      Math.cos(lat1) * Math.sin(lat2) - Math.sin(lat1) * Math.cos(lat2) * Math.cos(dLng),
+    ),
+  );
+  const gap = Math.abs(((position.courseDeg - bearing + 540) % 360) - 180);
+  return gap <= HEADING_TOLERANCE_DEG;
+}
+
 /** Âge maximal d'un signal pour l'utiliser en approche finale ou pour dire « encore à quai ». */
 const FRESH_SIGNAL_MINUTES = 30;
 
@@ -150,7 +170,7 @@ export type EtaBasis = "arrived" | "approach" | "departure" | "docked";
 
 /**
  * Heure d'arrivée estimée d'une traversée, sans dépendre du tracé en mer :
- * 1. approche finale (moins de 30 km, en mouvement, signal récent) : distance ÷ vitesse ;
+ * 1. approche (signal récent, en mouvement, à moins de 30 km, ou à moins de 150 km en route vers le port) : distance ÷ vitesse ;
  * 2. départ réel capté par l'AIS : heure de départ réelle + durée prévue de la traversée ;
  * 3. navire vu à quai au port de départ après l'heure prévue : heure du signal + durée prévue.
  *    Même si ce signal a quelques heures, c'est un minimum sûr (« pas avant »), jamais une heure promise.
@@ -201,7 +221,14 @@ export function estimateCrossingArrival(
         : NaN;
     etaMs = Number.isFinite(ata) ? ata : reported;
     etaBasis = "arrived";
-  } else if (fresh && speed >= 3 && speed <= 50 && remainingKm < FINAL_APPROACH_KM) {
+  } else if (
+    fresh &&
+    speed >= 3 &&
+    speed <= 50 &&
+    (remainingKm < FINAL_APPROACH_KM ||
+      (remainingKm < HEADING_APPROACH_KM &&
+        headingToPort(position, [arrivalPort.longitude, arrivalPort.latitude])))
+  ) {
     etaMs = reported + ((remainingKm * 1000) / (speed * KNOT_MS)) * 1000;
     etaBasis = "approach";
   } else if (
@@ -469,6 +496,8 @@ export interface TrackingTime {
   seenOnly?: boolean;
   /** Heure issue d'un signalement validé par l'équipe, pas d'un signal AIS. */
   reported?: boolean;
+  /** Heure calculée sur un signal AIS récent : elle prime sur tout signalement et tout horaire. */
+  fromSignal?: boolean;
 }
 export type CrossingSchedule = Pick<
   Departure,
@@ -490,7 +519,8 @@ export type CrossingSchedule = Pick<
  * « ≈ +2 h » estimé, « au moins +1 h 25 » quand le navire était encore à quai, « +40 min » constaté.
  */
 export function delayLabel(times: { departure: TrackingTime; arrival: TrackingTime }) {
-  const worst = [times.arrival, times.departure]
+  // Le navire en route vers le port dit lui-même quand il arrive : un retard au départ peut être rattrapé.
+  const worst = (times.arrival.fromSignal ? [times.arrival] : [times.arrival, times.departure])
     .filter((time) => (time.shiftMinutes ?? 0) >= 15)
     .sort((a, b) => b.shiftMinutes! - a.shiftMinutes!)[0];
   if (!worst) return null;
@@ -608,13 +638,21 @@ export function trackingTimes(departure: CrossingSchedule, live?: LiveShip | nul
   const liveEta = sameCrossing && live?.etaBasis !== "arrived" ? (live?.etaIso ?? null) : null;
   const reportedArrival =
     !actualArrival && !seenArrived && report.arrivedAt !== null ? reportedEnd : null;
+  // AISStream reste prioritaire : un navire en route vers le port passe avant tout signalement.
+  const approachEta = live?.etaBasis === "approach" ? liveEta : null;
   const estimatedEnd =
-    !reportedArrival && reportedEnd && !report.departedAt
+    approachEta ??
+    (!reportedArrival && reportedEnd && !report.departedAt
       ? liveEta && Date.parse(liveEta) > Date.parse(reportedEnd)
         ? liveEta
         : reportedEnd
-      : (liveEta ?? (reportedArrival ? null : reportedEnd));
-  const arrival = make(scheduledArrival, actualArrival ?? seenArrived ?? reportedArrival, estimatedEnd);
+      : (liveEta ?? (reportedArrival ? null : reportedEnd)));
+  const arrival = make(
+    scheduledArrival,
+    actualArrival ?? seenArrived ?? (approachEta ? null : reportedArrival),
+    estimatedEnd,
+  );
+  if (approachEta && arrival.iso === approachEta) arrival.fromSignal = true;
   const reportedDeparture = !actualDeparture && report.departedAt !== null;
   const departureTime = make(
     departure.departure_at,
@@ -623,7 +661,9 @@ export function trackingTimes(departure: CrossingSchedule, live?: LiveShip | nul
       ? new Date(report.start).toISOString()
       : null,
   );
-  const fromReport = Boolean(!seenArrived && !actualArrival && reportedEnd && arrival.iso === reportedEnd);
+  const fromReport = Boolean(
+    !seenArrived && !actualArrival && !arrival.fromSignal && reportedEnd && arrival.iso === reportedEnd,
+  );
   if (fromReport) {
     arrival.reported = true;
     if (report.notBefore) arrival.notBefore = true;

@@ -137,8 +137,15 @@ describe("le signal AIS récent prime sur le signalement", () => {
     expect(delayLabel(result)).toBe("≈ +2 h");
   });
 
-  it("revient au signalement quand le signal n'est plus récent", () => {
-    const result = times(position(), Date.parse("2026-11-01T11:00:00Z"));
+  it("garde l'estimation du dernier signal tant que son heure n'est pas passée", () => {
+    const result = times(position(), Date.parse("2026-11-01T11:10:00Z"));
+    expect(result.arrival.fromSignal).toBe(true);
+    expect(result.arrival.signalAt).toBe("2026-11-01T10:16:37Z");
+    expect(delayLabel(result)).toBeNull();
+  });
+
+  it("revient au signalement une fois l'heure estimée passée", () => {
+    const result = times(position(), Date.parse("2026-11-01T13:00:00Z"));
     expect(result.arrival.fromSignal).toBeUndefined();
     expect(result.arrival.reported).toBe(true);
   });

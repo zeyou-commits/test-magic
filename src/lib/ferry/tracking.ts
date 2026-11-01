@@ -222,12 +222,14 @@ export function estimateCrossingArrival(
     etaMs = Number.isFinite(ata) ? ata : reported;
     etaBasis = "arrived";
   } else if (
-    fresh &&
+    recent &&
     speed >= 3 &&
     speed <= 50 &&
     (remainingKm < FINAL_APPROACH_KM ||
       (remainingKm < HEADING_APPROACH_KM &&
-        headingToPort(position, [arrivalPort.longitude, arrivalPort.latitude])))
+        headingToPort(position, [arrivalPort.longitude, arrivalPort.latitude]))) &&
+    // Sans nouveau signal, l'heure reste celle du dernier point, jusqu'à ce qu'elle soit passée.
+    (fresh || reported + ((remainingKm * 1000) / (speed * KNOT_MS)) * 1000 > now)
   ) {
     etaMs = reported + ((remainingKm * 1000) / (speed * KNOT_MS)) * 1000;
     etaBasis = "approach";
@@ -498,6 +500,8 @@ export interface TrackingTime {
   reported?: boolean;
   /** Heure calculée sur un signal AIS récent : elle prime sur tout signalement et tout horaire. */
   fromSignal?: boolean;
+  /** Heure du signal AIS sur lequel repose cette estimation. */
+  signalAt?: string | null;
 }
 export type CrossingSchedule = Pick<
   Departure,
@@ -656,7 +660,10 @@ export function trackingTimes(departure: CrossingSchedule, live?: LiveShip | nul
     actualArrival ?? seenArrived ?? (approachEta ? null : reportedArrival),
     estimatedEnd,
   );
-  if (approachEta && arrival.iso === approachEta) arrival.fromSignal = true;
+  if (approachEta && arrival.iso === approachEta) {
+    arrival.fromSignal = true;
+    arrival.signalAt = live?.position.reportedAt ?? null;
+  }
   const reportedDeparture = !actualDeparture && report.departedAt !== null;
   const departureTime = make(
     departure.departure_at,

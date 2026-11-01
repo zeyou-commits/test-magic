@@ -103,7 +103,9 @@ export function crossingProgress(
         ? "live"
         : "aged";
   const shownTrust: TrackingTrust =
-    report.changed && (trust === "schedule" || trust === "aged") ? "reported" : trust;
+    report.changed && !times.arrival.fromSignal && (trust === "schedule" || trust === "aged")
+      ? "reported"
+      : trust;
   // L'heure passée ne prouve pas l'arrivée : seul un signal peut la constater.
   const arrivalIso = times.arrival.iso;
   const arrivalDue = !observedArrival && !hold && Boolean(arrivalIso) && Date.parse(arrivalIso!) < now;
@@ -142,7 +144,7 @@ export function crossingProgress(
       ? "Signal AIS à quai"
       : times.arrival.kind === "observed"
         ? "Arrivée constatée (AIS)"
-        : geographic
+        : geographic || times.arrival.fromSignal
           ? "Position AIS · distance indicative"
           : report.changed
             ? "Signalement validé"

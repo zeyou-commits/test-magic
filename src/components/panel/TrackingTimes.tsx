@@ -1,7 +1,7 @@
 import { useAuth } from "@/hooks/useAuth";
 import type { Departure } from "@/lib/ferry/types";
 import { trackingTimes, type LiveShip, type TrackingTime } from "@/lib/ferry/tracking";
-import { formatDateTime, formatDuration } from "@/lib/ferry/format";
+import { formatDateParts, formatDateTime, formatDuration } from "@/lib/ferry/format";
 import { zoneLabel } from "@/lib/ferry/time";
 import { VesselElsewhereNotice } from "./VesselElsewhereNotice";
 
@@ -41,6 +41,11 @@ function Time({ time, label, zone }: { time: TrackingTime; label: string; zone: 
         </p>
       ) : null}
       <p className="text-[10px] text-muted-foreground">{zoneLabel(zone)}</p>
+      {time.fromSignal && time.signalAt ? (
+        <p className="text-[10px] text-muted-foreground">
+          d’après le signal de {formatDateParts(time.signalAt, zone).time}
+        </p>
+      ) : null}
       {changed && time.scheduledIso ? (
         <p className={`mt-0.5 text-[10px] text-muted-foreground ${changed ? "line-through" : ""}`}>
           Prévu {formatDateTime(time.scheduledIso, zone)}

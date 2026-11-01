@@ -228,7 +228,7 @@ export function parseClue(raw: unknown, checks: SilentCheck[], now: number): Clu
     arrived === null && eta !== null ? `attendu à ${destination} ${when(eta)}` : null,
   ].filter(Boolean);
 
-  const age = Number(entry.position_age_minutes);
+  const age = typeof entry.position_age_minutes === "number" ? entry.position_age_minutes : NaN;
   const seen =
     Number.isFinite(age) && age >= 0 && age <= 7 * 24 * 60
       ? `Position vue il y a ${Math.round(age)} min par VesselFinder. `

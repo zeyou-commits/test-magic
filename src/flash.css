@@ -7928,3 +7928,12 @@ body:has([data-film="true"]) [data-map-rail] {
 .bw-film-vehicle[data-stopped="true"] .bw-film-ship i {
   display: none;
 }
+
+/* Ma traversée compacte : la mer tient dans la ligne d'avancement. */
+.bw-mytrip-hero__sea[data-compact] {
+  display: inline-flex;
+  gap: 4px;
+  margin-inline: auto;
+  padding: 1px 8px 1px 5px;
+  border-radius: 999px;
+}

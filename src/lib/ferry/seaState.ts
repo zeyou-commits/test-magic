@@ -9,6 +9,11 @@ export function seaLevel(height: number) {
   return { id: "high", label: "Mer très forte", short: "Très forte", rank: 5 } as const;
 }
 
+/** La hauteur de vagues, à une décimale. */
+export function seaHeight(height: number) {
+  return `${(Math.round(height * 10) / 10).toLocaleString("fr-FR", { maximumFractionDigits: 1 })} m`;
+}
+
 type Point = { latitude: number; longitude: number };
 
 /** Trois repères en mer, entre les deux ports. */

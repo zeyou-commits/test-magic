@@ -8,7 +8,7 @@ import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { ArrowRight, Crosshair, Ship } from "lucide-react";
 import { SeaIcon, useSeaPeak } from "./SeaForecast";
-import { seaLevel } from "@/lib/ferry/seaState";
+import { seaHeight, seaLevel } from "@/lib/ferry/seaState";
 import { TravellerAvatar } from "@/components/community/TravellerAvatar";
 import { myTravellerQuery } from "@/lib/community/travellers";
 import { prepProgress, preparationQuery, requestPrepFocus, tripDirection } from "@/lib/ferry/preparation";
@@ -205,7 +205,9 @@ export function MyTripHero({ onSelect }: { onSelect: (selection: Selection) => v
           <SeaIcon peak={seaPeak} size={24} />
           <span>
             <small>Mer</small>
-            <b>{seaLevel(seaPeak).short}</b>
+            <b>
+              {seaLevel(seaPeak).short} · {seaHeight(seaPeak)}
+            </b>
           </span>
         </div>
       ) : null}
@@ -223,6 +225,17 @@ export function MyTripHero({ onSelect }: { onSelect: (selection: Selection) => v
                       ? "En mer · estimé"
                       : "En mer"}
                 </small>
+                {seaPeak != null ? (
+                  <span
+                    className="bw-mytrip-hero__sea"
+                    data-compact
+                    data-level={seaLevel(seaPeak).id}
+                    aria-label={`${seaLevel(seaPeak).label} prévue sur le reste du trajet`}
+                  >
+                    <SeaIcon peak={seaPeak} size={16} />
+                    <b>{seaHeight(seaPeak)}</b>
+                  </span>
+                ) : null}
                 <strong>
                   {estimated ? "≈ " : ""}
                   {percent} %

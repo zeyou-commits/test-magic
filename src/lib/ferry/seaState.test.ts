@@ -1,5 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { crossingPoints, peakWaves, seaLevel } from "./seaState";
+import { crossingPoints, peakWaves, seaHeight, seaLevel } from "./seaState";
+
+describe("hauteur de vagues", () => {
+  it("s'écrit à la française, à une décimale", () => {
+    expect(seaHeight(0.84)).toMatch(/^0,8\sm$/);
+    expect(seaHeight(2)).toMatch(/^2\sm$/);
+  });
+});
 
 describe("état de la mer", () => {
   it("suit l'échelle de Douglas", () => {

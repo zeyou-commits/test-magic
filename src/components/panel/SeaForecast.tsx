@@ -1,10 +1,10 @@
 import { useQuery } from "@tanstack/react-query";
-import { SEA_FORECAST_DAYS, seaForecastQuery, seaLevel } from "@/lib/ferry/seaState";
+import { SEA_FORECAST_DAYS, seaForecastQuery, seaHeight, seaLevel } from "@/lib/ferry/seaState";
 
 type Point = { latitude: number; longitude: number };
 const ORIGIN: Point = { latitude: 0, longitude: 0 };
 
-/** La plus forte hauteur de vagues prévue sur la traversée ; null hors de portée des prévisions. */
+/** La plus forte hauteur de vagues prévue sur ce qu'il reste du trajet ; null hors de portée des prévisions. */
 export function useSeaPeak(
   departureId: string | undefined,
   from: Point | null | undefined,
@@ -20,7 +20,7 @@ export function useSeaPeak(
     end > now &&
     start - now < SEA_FORECAST_DAYS * 86_400_000;
   const { data } = useQuery({
-    ...seaForecastQuery(departureId ?? "", from ?? ORIGIN, to ?? ORIGIN, start, end),
+    ...seaForecastQuery(departureId ?? "", from ?? ORIGIN, to ?? ORIGIN, Math.max(start, now), end),
     enabled: useful,
   });
   return useful ? (data ?? null) : null;
@@ -76,7 +76,7 @@ export function VesselSeaBadge({
   return (
     <span className="bw-sea-pill" data-level={level.id}>
       <SeaIcon peak={peak} size={24} />
-      {level.label}
+      {level.label} · {seaHeight(peak)}
     </span>
   );
 }

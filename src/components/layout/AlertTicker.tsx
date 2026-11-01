@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { useRouterState } from "@tanstack/react-router";
+import { Link, useRouterState } from "@tanstack/react-router";
 import { CircleAlert, Share2, X } from "lucide-react";
+import { isPublicNews, newsSlug } from "@/lib/ferry/newsFeed";
 import { newsQuery, setFlashIgnored, shareAlert, useIgnoredFlash } from "@/lib/ferry/flash";
 import { incidentHeadline, incidentsQuery } from "@/lib/ferry/incidents";
 import { portsQuery, vesselsQuery } from "@/lib/ferry/queries";
@@ -11,10 +12,13 @@ import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 
 const DISMISSED_KEY = "bledway:alert-ticker-dismissed";
+const RAIL_DISMISSED_KEY = "bledway:news-rail-dismissed";
+/** Le bandeau montre les actualités récentes ; les plus anciennes restent sur la page Actualités. */
+const RAIL_MS = 7 * 24 * 3_600_000;
 
-function readDismissed() {
+function readDismissed(key = DISMISSED_KEY) {
   try {
-    return window.localStorage.getItem(DISMISSED_KEY);
+    return window.localStorage.getItem(key);
   } catch {
     return null;
   }
@@ -24,6 +28,7 @@ function readDismissed() {
  * Bandeau en haut de toutes les pages : alertes graves en rouge pour les personnes concernées
  * (navire suivi ou de leur traversée) et sur une ligne discrète pour les autres, perturbations de
  * moins de 48 h en ambre s'il n'y a pas d'alerte.
+ * En dessous ou à côté, le fil d'actualités défile sur fond sombre : deux niveaux, deux allures.
  * Absent s'il n'y a rien. Fermé, il revient à la prochaine information.
  */
 export function AlertTicker() {
@@ -33,6 +38,7 @@ export function AlertTicker() {
   const { data: ports = [] } = useQuery(portsQuery);
   const pathname = useRouterState({ select: (state) => state.location.pathname });
   const [dismissed, setDismissed] = useState<string | null>(null);
+  const [railDismissed, setRailDismissed] = useState<string | null>(null);
   const [ready, setReady] = useState(false);
   const [copied, setCopied] = useState(false);
   const ignored = useIgnoredFlash();
@@ -76,6 +82,7 @@ export function AlertTicker() {
   });
   useEffect(() => {
     setDismissed(readDismissed());
+    setRailDismissed(readDismissed(RAIL_DISMISSED_KEY));
     setReady(true);
   }, []);
   // Ignorer l'alerte d'un navire vaut aussi pour son dossier : le bandeau et la pastille se taisent.
@@ -100,6 +107,8 @@ export function AlertTicker() {
       .filter(
         (item) =>
           item.kind === kind &&
+          // Une perturbation avec sa source passe dans le fil, pas dans le niveau des alertes.
+          (kind === "alerte" || !isPublicNews(item)) &&
           !ignored.has(`n-${item.id}`) &&
           !(item.vessel_id && covered.has(item.vessel_id)) &&
           (kind === "alerte" || Date.now() - Date.parse(item.starts_at) < 48 * 3_600_000),
@@ -116,7 +125,19 @@ export function AlertTicker() {
     .map((a) => a.version)
     .sort()
     .join("|");
-  if (!ready || !alerts.length || dismissed === version) return null;
+  const rail = (news ?? [])
+    .filter(
+      (item) =>
+        item.kind !== "alerte" &&
+        isPublicNews(item) &&
+        !ignored.has(`n-${item.id}`) &&
+        Date.now() - Date.parse(item.starts_at) < RAIL_MS,
+    )
+    .slice(0, 8);
+  const railVersion = rail.map((item) => item.id).join("|");
+  const showAlerts = alerts.length > 0 && dismissed !== version;
+  const showRail = rail.length > 0 && railDismissed !== railVersion;
+  if (!ready || (!showAlerts && !showRail)) return null;
   const open = (vesselId: string | null) => {
     if (!vesselId) {
       window.dispatchEvent(new Event("bledway:open-inbox"));
@@ -178,13 +199,13 @@ export function AlertTicker() {
   const tone = critical.length ? (concerned ? "critical" : "quiet") : "warning";
   const label = critical.length ? "Alertes graves" : "Perturbations";
   // Une seule information : fixe, centrée et avec ses actions. Le défilement sert quand il y en a plusieurs.
+  const alertBlock = () => {
   if (alerts.length === 1) {
     const alert = alerts[0]!;
     const vesselId = alert.id;
     const mine = vesselId && trip?.vessel?.id === vesselId ? trip : null;
     return (
       <div
-        ref={measure}
         className="bw-alert-ticker"
         data-tone={tone}
         data-single
@@ -254,7 +275,6 @@ export function AlertTicker() {
   const seconds = Math.max(18, alerts.map((a) => a.text).join("").length * 0.22);
   return (
     <div
-      ref={measure}
       className="bw-alert-ticker"
       data-tone={tone}
       role="region"
@@ -268,6 +288,55 @@ export function AlertTicker() {
         </div>
       </div>
       {close}
+    </div>
+  );
+  };
+  const railGroup = (copy: boolean) => (
+    <span className="bw-news-rail__group" aria-hidden={copy || undefined}>
+      {rail.map((item) => (
+        <Link
+          key={item.id}
+          to="/actualites/$slug"
+          params={{ slug: newsSlug(item) }}
+          tabIndex={copy ? -1 : undefined}
+        >
+          {item.title}
+        </Link>
+      ))}
+    </span>
+  );
+  const railSeconds = Math.max(24, rail.map((item) => item.title).join("").length * 0.24);
+  return (
+    <div ref={measure} className="bw-top-rail" data-both={(showAlerts && showRail) || undefined}>
+      {showAlerts ? alertBlock() : null}
+      {showRail ? (
+        <div className="bw-news-rail" role="region" aria-label="Fil d'actualités">
+          <Link to="/actualites" className="bw-news-rail__chip">
+            <i aria-hidden /> Actus
+          </Link>
+          <div className="bw-news-rail__window">
+            <div className="bw-news-rail__track" style={{ animationDuration: `${railSeconds}s` }}>
+              {railGroup(false)}
+              {railGroup(true)}
+            </div>
+          </div>
+          <button
+            type="button"
+            className="bw-news-rail__close"
+            aria-label="Masquer le fil d'actualités"
+            onClick={() => {
+              setRailDismissed(railVersion);
+              try {
+                window.localStorage.setItem(RAIL_DISMISSED_KEY, railVersion);
+              } catch {
+                /* sans stockage, le fil reviendra au prochain chargement */
+              }
+            }}
+          >
+            <X size={15} aria-hidden />
+          </button>
+        </div>
+      ) : null}
     </div>
   );
 }

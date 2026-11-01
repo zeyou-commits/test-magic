@@ -1,3 +1,10 @@
+import { isPublicNews, newsPath } from "@/lib/ferry/newsFeed";
+import {
+  newsAudience,
+  type AudienceDeparture,
+  type AudienceFollow,
+  type AudienceVessel,
+} from "./newsAudience";
 import webpush from "web-push";
 import { noticePicto, noticeReply } from "./noticeStyle";
 import type { SupabaseClient } from "@supabase/supabase-js";
@@ -173,6 +180,62 @@ async function notifyFeedback(deliver: Deliver, now: number) {
           title: "Veille : une proposition à valider",
           body: proposal.title,
           url: "/admin?tab=watch",
+        });
+      }
+    }
+  }
+
+  // Actualités : ceux qui suivent le navire, sa compagnie ou une traversée concernée sont prévenus.
+  const news = (
+    await read<{
+      id: string;
+      title: string;
+      summary: string;
+      source_url: string | null;
+      vessel_id: string | null;
+      company_ids: string[];
+      departure_ids: string[] | null;
+    }>(
+      db
+        .from("bw_news")
+        .select("id,title,summary,source_url,vessel_id,company_ids,departure_ids")
+        .eq("published", true)
+        .gte("created_at", since),
+    )
+  ).filter((item) => isPublicNews(item) && (item.vessel_id || item.company_ids.length || item.departure_ids?.length));
+  if (news.length) {
+    const follows = await read<AudienceFollow>(
+      db
+        .from("bw_follows")
+        .select("user_id,target_kind,target_id")
+        .eq("active", true)
+        .in("target_kind", ["vessel", "company", "departure"]),
+    );
+    const vessels = await read<AudienceVessel>(db.from("vessels").select("id,company_id"));
+    const followedDepartures = await read<AudienceDeparture>(
+      db
+        .from("departures")
+        .select("id,vessel_id,company_id")
+        .in(
+          "id",
+          follows.filter((f) => f.target_kind === "departure").map((f) => f.target_id).slice(0, 500),
+        )
+        .gte("departure_at", new Date(now - 24 * HOUR).toISOString()),
+    );
+    for (const item of news) {
+      const audience = newsAudience(
+        { ...item, departure_ids: item.departure_ids ?? [] },
+        follows,
+        vessels,
+        followedDepartures,
+      );
+      for (const userId of audience) {
+        await deliver(userId, null, {
+          key: `news:${item.id}`,
+          category: "reminders",
+          title: "Actualité de votre traversée",
+          body: item.title,
+          url: newsPath(item),
         });
       }
     }

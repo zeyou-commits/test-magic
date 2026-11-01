@@ -91,7 +91,9 @@ export function MyTripHero({ onSelect }: { onSelect: (selection: Selection) => v
   const arrivedForSure = progress?.trust === "observed" || status === "arrived";
   const prep = preparation ? prepProgress(preparation, tripDirection(trip.from)) : null;
   // Navire en alerte : plus de compte à rebours ni d'« En mer », le départ reste à confirmer.
-  const held = Boolean(alert) && phase.phase !== "cancelled" && phase.phase !== "arrived";
+  const held = Boolean(alert) && phase.phase !== "cancelled" && !arrivedForSure;
+  // Une fois le départ passé, préparer le voyage n'a plus de sens.
+  const prepOpen = phase.phase === "before" || phase.phase === "today";
   const zone = portTimeZone(trip.from);
   const arrivalZone = portTimeZone(trip.to);
   const departureIso = progress?.times.departure.iso ?? trip.departure.departure_at;
@@ -196,7 +198,7 @@ export function MyTripHero({ onSelect }: { onSelect: (selection: Selection) => v
           <strong>{phase.text}</strong>
         )}
       </div>
-      {seaPeak != null && phase.phase !== "cancelled" && phase.phase !== "arrived" ? (
+      {seaPeak != null && !held && phase.phase !== "cancelled" && phase.phase !== "arrived" ? (
         <div
           className="bw-mytrip-hero__sea"
           data-level={seaLevel(seaPeak).id}
@@ -284,7 +286,7 @@ export function MyTripHero({ onSelect }: { onSelect: (selection: Selection) => v
           </div>
         </div>
       ) : null}
-      {prep && phase.phase !== "cancelled" && !underway ? (
+      {prep && prepOpen && !underway ? (
         <button
           type="button"
           className="bw-mytrip-hero__prep"

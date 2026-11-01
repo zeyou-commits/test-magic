@@ -102,12 +102,15 @@ export interface NewsContext {
   /** Sans les infos générales du réseau : seulement ce qui est rattaché à la fiche. */
   attachedOnly?: boolean | undefined;
 }
+/** Durée de vie d'une actualité sur les fiches. */
+const NEWS_ON_CARDS_MS = 14 * 24 * 3_600_000;
 /** Pour relier une traversée datée à ses ports (une info sur le départ du 23/11 concerne ses deux ports). */
 export type DeparturePorts = Map<string, string[]>;
 
 /**
- * Actualités pertinentes pour un contexte (traversée, port…). Une actualité sans rattachement concerne
- * tout le réseau Europe ↔ Algérie : elle apparaît partout. Une info rattachée à une traversée datée
+ * Actualités pertinentes pour un contexte (traversée, port…). Une actualité sans rattachement reste
+ * dans le fil et le bandeau, sauf une alerte, qui apparaît partout. Au-delà de 14 jours, une actualité
+ * sans date de fin quitte les fiches, pas la page Actualités. Une info rattachée à une traversée datée
  * n'apparaît que pour cette traversée et ses ports, jamais pour les autres départs du même trajet.
  */
 export function newsForContext(
@@ -122,6 +125,12 @@ export function newsForContext(
   const scoped = routes.size + ports.size + companies.size + departures.size > 0;
   return items
     .filter((item) => {
+      if (
+        item.kind !== "alerte" &&
+        !item.ends_at &&
+        Date.now() - Date.parse(item.starts_at) > NEWS_ON_CARDS_MS
+      )
+        return false;
       if (context.vesselId !== undefined && item.vessel_id) {
         if (item.vessel_id !== context.vesselId) return false;
         return true;
@@ -132,6 +141,7 @@ export function newsForContext(
         !item.company_ids.length &&
         !item.departure_ids.length;
       if (general && context.attachedOnly) return false;
+      if (general && item.kind !== "alerte" && (scoped || context.vesselId !== undefined)) return false;
       if (!scoped || general) return true;
       return (
         item.route_ids.some((id) => routes.has(id)) ||

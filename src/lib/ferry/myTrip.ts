@@ -70,11 +70,11 @@ export const tripEnd = (departure: TripDeparture) => {
     : Date.parse(departure.departure_at) + (departure.duration_minutes ?? 24 * 60) * 60_000;
 };
 
-/** Une traversée passée s'efface vite : la suivante doit reprendre la première place. */
-export const TRIP_GRACE_MS = 3 * 3_600_000;
+/** Après l'arrivée, la fiche reste 10 h pour laisser les passagers échanger, puis la suivante prend la place. */
+export const TRIP_GRACE_MS = 10 * 3_600_000;
 
 /**
- * Ma traversée du moment : la prochaine (ou celle en cours, jusqu'à 3 h après l'arrivée),
+ * Ma traversée du moment : la prochaine (ou celle en cours, jusqu'à 10 h après l'arrivée),
  * avec son trajet, ses ports et son bateau.
  */
 export function useMyTrip() {

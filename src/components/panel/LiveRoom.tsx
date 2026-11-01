@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { queryOptions, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Flag, MessagesSquare, Send, ThumbsUp } from "lucide-react";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { TravellerAvatar } from "@/components/community/TravellerAvatar";
@@ -50,14 +50,11 @@ const time = (iso: string) =>
     minute: "2-digit",
   }).format(new Date(iso));
 
-/** Salon en direct : tout le monde lit ; seuls les passagers et les personnes sur le port écrivent. */
-export function LiveRoom({ kind, room, title }: { kind: RoomKind; room: string; title: string }) {
-  const { user } = useAuth();
-  const client = useQueryClient();
-  const [text, setText] = useState("");
-  const key = [...roomKey(kind, room), user?.id ?? "anonyme"];
-  const feed = useQuery({
-    queryKey: key,
+/** Le fil d'un salon ; null tant que le module n'est pas activé en base. */
+export const chatFeedQuery = (kind: RoomKind, room: string, userId: string | undefined) =>
+  queryOptions({
+    queryKey: [...roomKey(kind, room), userId ?? "anonyme"],
+    enabled: Boolean(room),
     queryFn: async (): Promise<Feed | null> => {
       const { data, error } = await supabase.rpc("bw_chat_feed", { p_kind: kind, p_room: room });
       if (error) {
@@ -69,6 +66,37 @@ export function LiveRoom({ kind, room, title }: { kind: RoomKind; room: string; 
     retry: false,
     refetchInterval: 15_000,
   });
+
+/** Entrée du salon depuis Ma traversée : la fiche s'ouvre, puis on descend jusqu'au salon. */
+export function RoomButton({ departureId, onOpen }: { departureId: string; onOpen: () => void }) {
+  const { user } = useAuth();
+  const feed = useQuery({
+    ...chatFeedQuery("crossing", departureId, user?.id),
+    refetchInterval: 60_000,
+  });
+  if (feed.data === null) return null;
+  const count = feed.data?.messages.length ?? 0;
+  return (
+    <button
+      type="button"
+      className="bw-passage__room"
+      onClick={() => {
+        onOpen();
+        window.setTimeout(() => document.querySelector(".bw-room")?.scrollIntoView(), 700);
+      }}
+    >
+      <MessagesSquare size={15} aria-hidden /> Salon de la traversée
+      {count ? ` · ${count === 80 ? "80+" : count} message${count > 1 ? "s" : ""}` : ""}
+    </button>
+  );
+}
+
+/** Salon en direct : tout le monde lit ; seuls les passagers et les personnes sur le port écrivent. */
+export function LiveRoom({ kind, room, title }: { kind: RoomKind; room: string; title: string }) {
+  const { user } = useAuth();
+  const client = useQueryClient();
+  const [text, setText] = useState("");
+  const feed = useQuery(chatFeedQuery(kind, room, user?.id));
   const refresh = () => void client.invalidateQueries({ queryKey: roomKey(kind, room) });
   const send = useMutation({
     mutationFn: () => postToRoom(kind, room, text),
@@ -138,7 +166,7 @@ export function LiveRoom({ kind, room, title }: { kind: RoomKind; room: string; 
       ) : (
         <p className="bw-room__locked">
           {kind === "crossing"
-            ? "Vous pouvez lire. Réservé à l'écriture aux passagers de cette traversée."
+            ? "Vous pouvez lire. Pour écrire, indiquez que vous voyagez sur cette traversée."
             : "Vous pouvez lire. Réservé à l'écriture aux personnes présentes sur le port."}
         </p>
       )}

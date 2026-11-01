@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Check, MessagesSquare } from "lucide-react";
+import { Check } from "lucide-react";
 import { CabasImg } from "@/components/CabasImg";
 import { useAuth } from "@/hooks/useAuth";
 import {
@@ -23,13 +23,11 @@ export function PortPassage({
   portName,
   minutes,
   status,
-  onOpen,
 }: {
   departureId: string;
   portName: string;
   minutes: number | null;
   status: TripStatus | null;
-  onOpen: () => void;
 }) {
   const { user } = useAuth();
   const client = useQueryClient();
@@ -116,17 +114,6 @@ export function PortPassage({
           {(answer.error ?? step.error)?.message}
         </p>
       ) : null}
-      <button
-        type="button"
-        className="bw-passage__room"
-        onClick={() => {
-          onOpen();
-          // La fiche de la traversée s'ouvre d'abord : le salon est plus bas.
-          window.setTimeout(() => document.querySelector(".bw-room")?.scrollIntoView(), 700);
-        }}
-      >
-        <MessagesSquare size={15} aria-hidden /> Ouvrir le salon de la traversée
-      </button>
     </div>
   );
 }

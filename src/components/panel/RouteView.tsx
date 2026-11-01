@@ -14,6 +14,7 @@ import { portTimeZone, zoneLabel } from "@/lib/ferry/time";
 import type { RouteLine, Selection } from "@/lib/ferry/types";
 import { Button } from "@/components/ui/button";
 import { BookingLink, DemoBadge, EmptyNote, PanelHeader, Section } from "./shared";
+import { LineQuestions } from "./LineQuestions";
 import { ReportButton } from "./ReportButton";
 
 export function RouteView({
@@ -130,6 +131,13 @@ export function RouteView({
           </div>
         )}
       </Section>
+
+      <div className="px-4 md:px-6">
+        <LineQuestions
+          routeId={route.id}
+          title={`Questions sur ${from?.name ?? "—"} → ${to?.name ?? "—"}`}
+        />
+      </div>
 
       <Section title="Compagnies et réservation">
         {operators.length === 0 ? (

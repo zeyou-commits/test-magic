@@ -27,6 +27,7 @@ import {
 } from "@/lib/ferry/presence";
 import { portPassage } from "@/lib/ferry/portPassage";
 import { PortPassage } from "./PortPassage";
+import { RoomButton } from "./LiveRoom";
 import type { FleetShip } from "@/lib/ferry/fleet";
 import type { Selection } from "@/lib/ferry/types";
 import { formatDateParts, formatDateTime } from "@/lib/ferry/format";
@@ -206,7 +207,6 @@ export function MyTripHero({ onSelect }: { onSelect: (selection: Selection) => v
           portName={trip.to?.name ?? "d'arrivée"}
           minutes={passage.minutes}
           status={status}
-          onOpen={() => onSelect({ type: "departure", id: trip.departure.id })}
         />
       ) : null}
       {underway || inPassage ? null : (
@@ -357,6 +357,12 @@ export function MyTripHero({ onSelect }: { onSelect: (selection: Selection) => v
           ) : null}
         </div>
       )}
+      {phase.phase !== "cancelled" ? (
+        <RoomButton
+          departureId={trip.departure.id}
+          onOpen={() => onSelect({ type: "departure", id: trip.departure.id })}
+        />
+      ) : null}
     </section>
   );
 }

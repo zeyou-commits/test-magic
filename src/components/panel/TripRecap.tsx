@@ -48,6 +48,7 @@ import { TripChanges } from "./MyTrip";
 import { PushStatusLine } from "./PushStatusLine";
 import { ReportButton } from "./ReportButton";
 import { TravelSignals } from "./TravelCommunity";
+import { LineQuestions } from "./LineQuestions";
 import { LiveRoom } from "./LiveRoom";
 import { PortPresence, TripStatusPicker, VesselPresence } from "./TripPresence";
 import { VesselSpecs } from "./VesselBits";
@@ -148,11 +149,7 @@ export function TripRecap({
   const { hold, arrivalDue } = progress;
   const departed = Date.parse(departIso) < now;
   const confirmedAtSea = progress.signal?.phase === "sea";
-  const atSea =
-    !arrived &&
-    !hold &&
-    !stopped &&
-    (confirmedAtSea || (departed && !arrivalDue));
+  const atSea = !arrived && !hold && !stopped && (confirmedAtSea || (departed && !arrivalDue));
   const status = cancelled
     ? { tone: "bad", label: "Annulée" }
     : arrived && !stopped
@@ -161,19 +158,19 @@ export function TripRecap({
         ? { tone: "bad", label: vesselAlert?.label ?? "Navire immobilisé" }
         : vesselAlert && Date.parse(departIso) > now
           ? { tone: "bad", label: `${vesselAlert.label} · départ à confirmer` }
-        : hold
-          ? { tone: "warn", label: hold.fresh ? "Encore à quai" : "Départ à confirmer" }
-          : atSea
-            ? progress.trust === "live"
-              ? { tone: "live", label: "En mer" }
-              : { tone: "ok", label: "En mer · estimé" }
-            : arrivalDue
-              ? { tone: "ok", label: "Arrivée à confirmer" }
-              : shift !== null && shift >= 5
-              ? { tone: "warn", label: `Retard ≈ ${formatDuration(shift)}` }
-              : departure.status === "modified"
-                ? { tone: "warn", label: "Horaire modifié" }
-                : { tone: "ok", label: "Prévue" };
+          : hold
+            ? { tone: "warn", label: hold.fresh ? "Encore à quai" : "Départ à confirmer" }
+            : atSea
+              ? progress.trust === "live"
+                ? { tone: "live", label: "En mer" }
+                : { tone: "ok", label: "En mer · estimé" }
+              : arrivalDue
+                ? { tone: "ok", label: "Arrivée à confirmer" }
+                : shift !== null && shift >= 5
+                  ? { tone: "warn", label: `Retard ≈ ${formatDuration(shift)}` }
+                  : departure.status === "modified"
+                    ? { tone: "warn", label: "Horaire modifié" }
+                    : { tone: "ok", label: "Prévue" };
   const days = daysUntil(departIso, fromZone);
   const countdown =
     cancelled || arrived || atSea || hold || vesselAlert || arrivalDue
@@ -203,7 +200,8 @@ export function TripRecap({
   const liveCount = info.official + info.travellers;
   const liveId = `live-${departure.id}`;
   const [tab, setTab] = useState<Tab | null>(null);
-  const activeTab: Tab = tab ?? (hasSignalFocus() || (liveCount && !myDeparture) ? "live" : "prepare");
+  const activeTab: Tab =
+    tab ?? (hasSignalFocus() || (liveCount && !myDeparture) ? "live" : "prepare");
   // Arrivée depuis l'encart Ma traversée : le parcours, tout de suite.
   useEffect(() => {
     const focus = () => {
@@ -238,7 +236,9 @@ export function TripRecap({
   return (
     <article className="bw-recap">
       {/* Une alerte passe avant tout le reste. */}
-      {!cancelled && !arrived ? <VesselAlertBanner vesselId={departure.vessel_id} onDeparture /> : null}
+      {!cancelled && !arrived ? (
+        <VesselAlertBanner vesselId={departure.vessel_id} onDeparture />
+      ) : null}
       {!cancelled ? <DepartureIncidentNotice departure={departure} /> : null}
       {/* 1. Le billet */}
       <section className="bw-recap__ticket" data-tone={status.tone} aria-label={heading}>
@@ -328,7 +328,8 @@ export function TripRecap({
           </p>
         ) : null}
 
-        <div className="bw-recap__vessel-summary">{seaPeak != null && vessel ? <SeaPhotoBadge peak={seaPeak} /> : null}
+        <div className="bw-recap__vessel-summary">
+          {seaPeak != null && vessel ? <SeaPhotoBadge peak={seaPeak} /> : null}
           {vessel ? (
             <VesselMiniCard
               vessel={vessel}
@@ -359,7 +360,10 @@ export function TripRecap({
       <LivePulse info={info} onOpen={openLive} onReport={upcoming || atSea ? report : undefined} />
       {!cancelled ? <VesselElsewhereNotice departure={departure} /> : null}
       {/* L'entraide sert au port, le jour même : y compris si le départ est retardé. */}
-      {!cancelled && !arrived && !atSea && (days === 0 || daysUntil(departure.departure_at, fromZone) === 0) ? (
+      {!cancelled &&
+      !arrived &&
+      !atSea &&
+      (days === 0 || daysUntil(departure.departure_at, fromZone) === 0) ? (
         <HelpRequests kind="departure" scopeId={departure.id} />
       ) : null}
 
@@ -382,12 +386,13 @@ export function TripRecap({
       />
 
       {!cancelled ? (
-        <LiveRoom
-          kind="crossing"
-          room={departure.id}
-          title={`Salon · ${from.name} → ${to.name}`}
-        />
+        <LiveRoom kind="crossing" room={departure.id} title={`Salon · ${from.name} → ${to.name}`} />
       ) : null}
+
+      <LineQuestions
+        routeId={departure.route_id}
+        title={`Questions sur ${from.name} → ${to.name}`}
+      />
 
       {/* 3 bis. Les voyageurs de la traversée, leur cabas et leur humeur */}
       <TripTravellers
@@ -425,7 +430,10 @@ export function TripRecap({
             <TripPreparation
               departureId={departure.id}
               departureAt={departure.departure_at}
-              userId={user.id} direction={tripDirection(from)} seaPeak={seaPeak} company={company?.name}
+              userId={user.id}
+              direction={tripDirection(from)}
+              seaPeak={seaPeak}
+              company={company?.name}
             />
           ) : null}
           {upcoming && car && walk ? (

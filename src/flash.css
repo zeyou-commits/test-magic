@@ -8420,3 +8420,37 @@ body:has([data-film="true"]) [data-map-rail] {
   background: #f1f6f3;
   font-size: 12px;
 }
+
+/* Questions d'une ligne : la question, puis ses réponses en retrait. */
+.bw-room__who span[data-place="done"] {
+  background: #e1f4e8;
+  color: #0e6b3b;
+}
+.bw-room__replies {
+  max-height: none !important;
+  margin: 6px 0 0 !important;
+  padding-left: 10px !important;
+  border-left: 2px solid #e3ebe6;
+}
+.bw-room__reply {
+  min-height: 30px;
+  color: #0e7a43;
+  font-size: 12.5px;
+  font-weight: 700;
+}
+.bw-room li form {
+  margin-top: 6px;
+}
+.bw-room__empty a,
+.bw-room__locked a {
+  color: #0e7a43;
+  font-weight: 700;
+  text-decoration: underline;
+}
+.bw-passage__room {
+  grid-column: 1 / -1;
+}
+.bw-room,
+.bw-room ul {
+  grid-template-columns: minmax(0, 1fr);
+}

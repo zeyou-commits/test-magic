@@ -1,10 +1,12 @@
 import { absoluteUrl, breadcrumbSchema, jsonLdString, seoHead } from "@/lib/seo/site";
-import { Breadcrumbs } from "@/components/editorial/Editorial";
+import { Breadcrumbs, FaqSection } from "@/components/editorial/Editorial";
+import { portFaq } from "@/lib/seo/answers";
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { Card, PageHero, SiteLayout } from "@/components/layout/SiteLayout";
 import { companiesQuery, portsQuery, routesQuery } from "@/lib/ferry/queries";
 import {
+  deName,
   facilityLabels,
   formatDuration,
   isFacilityFilled,
@@ -29,7 +31,7 @@ export const Route = createFileRoute("/ports/$slug")({
       };
     }
     const title = `Ferry ${loaderData.name} (${loaderData.country}) — lignes et durées | BledWay`;
-    const description = `Traversées en ferry au départ et à l'arrivée du port de ${loaderData.name} : lignes desservies, durées, compagnies et services du port.`;
+    const description = `Traversées en ferry au départ et à l'arrivée du port ${deName(loaderData.name)} : lignes desservies, durées, compagnies et services du port.`;
     return seoHead(title, description, `/ports/${loaderData.slug}`);
   },
   component: PortPage,
@@ -58,8 +60,13 @@ function PortPage() {
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "Place",
-    name: `Port de ${port.name}`,
-    address: { "@type": "PostalAddress", addressCountry: port.country_code },
+    name: `Port ${deName(port.name)}`,
+    url: absoluteUrl(`/ports/${port.slug}`),
+    address: {
+      "@type": "PostalAddress",
+      addressCountry: port.country_code,
+      ...(port.city ? { addressLocality: port.city } : {}),
+    },
     geo: { "@type": "GeoCoordinates", latitude: port.latitude, longitude: port.longitude },
   };
 
@@ -77,10 +84,10 @@ function PortPage() {
       />
       <PageHero
         overline={`${port.country_name}${port.city ? ` · ${port.city}` : ""}`}
-        title={`Ferry au port de ${port.name}`}
+        title={`Ferry au port ${deName(port.name)}`}
         intro={
           port.notes ??
-          `Lignes maritimes, durées de traversée et compagnies desservant le port de ${port.name}.`
+          `Lignes maritimes, durées de traversée et compagnies desservant le port ${deName(port.name)}.`
         }
       />
       <div className="flex justify-center">
@@ -172,7 +179,31 @@ function PortPage() {
           ))}
         </ul>
       </section>
+      <FaqSection
+        path={`/ports/${port.slug}`}
+        faq={portFaq({
+          name: port.name,
+          country: port.country_name,
+          connected: [
+            ...new Set(
+              portRoutes.map((route) =>
+                portName(
+                  route.departure_port_id === port.id
+                    ? route.arrival_port_id
+                    : route.departure_port_id,
+                ),
+              ),
+            ),
+          ],
+          operators: operators.map((company) => company.name),
+          inactive: port.status === "inactive",
+        })}
+      />
       <p className="mt-10 text-sm">
+        <a href="/questions-frequentes" className="font-semibold text-primary underline underline-offset-4">
+          Questions fréquentes
+        </a>{" "}
+        ·{" "}
         <a
           href="/voyage-algerie"
           className="font-semibold text-primary underline underline-offset-4"

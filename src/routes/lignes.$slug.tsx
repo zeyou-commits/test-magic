@@ -1,7 +1,8 @@
 import { LineAlertNotice, VesselAlertTag } from "@/components/panel/VesselAlert";
 import { LineCalendar } from "@/components/panel/LineCalendar";
 import { absoluteUrl, breadcrumbSchema, jsonLdString, seoHead } from "@/lib/seo/site";
-import { Breadcrumbs } from "@/components/editorial/Editorial";
+import { AnswerBox, Breadcrumbs, FaqSection } from "@/components/editorial/Editorial";
+import { lineFaq, lineSummary } from "@/lib/seo/answers";
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { Card, PageHero, SiteLayout } from "@/components/layout/SiteLayout";
@@ -43,7 +44,7 @@ export const Route = createFileRoute("/lignes/$slug")({
       };
     }
     const title = `Ferry ${loaderData.from} — ${loaderData.to} : durée, horaires, compagnies | BledWay`;
-    const description = `Traversée en ferry ${loaderData.from} → ${loaderData.to} : durée typique de ${loaderData.duration}, jours de départ, compagnies et prochains départs connus.`;
+    const description = `Ferry ${loaderData.from} → ${loaderData.to} : durée typique estimée à ${loaderData.duration}, jours de départ, compagnies et prochains départs connus.`;
     return seoHead(title, description, `/lignes/${loaderData.slug}`);
   },
   component: LignePage,
@@ -102,6 +103,17 @@ function LignePage() {
           route.distance_km ? ` · ${route.distance_km} km` : ""
         }. ${route.notes ?? ""}`}
       />
+
+      <div className="mx-auto mb-6 max-w-3xl">
+        <AnswerBox>
+          {lineSummary(
+            from?.name ?? "—",
+            to?.name ?? "—",
+            route.typical_duration_minutes,
+            operators.map((company) => company.name),
+          )}
+        </AnswerBox>
+      </div>
 
       <div className="mx-auto grid max-w-xl gap-2 sm:grid-cols-2">
         <Link
@@ -202,7 +214,27 @@ function LignePage() {
           ) : null}
         </ul>
       </section>
+      <FaqSection
+        path={`/lignes/${route.slug}`}
+        faq={lineFaq({
+          from: from?.name ?? "—",
+          to: to?.name ?? "—",
+          fromSlug: from?.slug,
+          toSlug: to?.slug,
+          minutes: route.typical_duration_minutes,
+          operators: operators.map((company) => company.name),
+          hasReverse: Boolean(reverse),
+        })}
+      />
       <p className="mt-10 text-sm">
+        <a href="/barometre-prix" className="font-semibold text-primary underline underline-offset-4">
+          Repères de prix par ligne
+        </a>{" "}
+        ·{" "}
+        <a href="/questions-frequentes" className="font-semibold text-primary underline underline-offset-4">
+          Questions fréquentes
+        </a>{" "}
+        ·{" "}
         <a
           href="/voyage-algerie"
           className="font-semibold text-primary underline underline-offset-4"

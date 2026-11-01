@@ -1,6 +1,7 @@
 import { PlaceReactions } from "@/components/panel/PlaceReactions";
 import { VesselAlertTag } from "@/components/panel/VesselAlert";
-import { seoHead } from "@/lib/seo/site";
+import { absoluteUrl, breadcrumbSchema, seoHead } from "@/lib/seo/site";
+import { StructuredData } from "@/components/editorial/Editorial";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useSuspenseQuery } from "@tanstack/react-query";
 import { useState } from "react";
@@ -56,9 +57,31 @@ function CompagniesPage() {
 
   return (
     <SiteLayout>
+      <StructuredData value={breadcrumbSchema([{ name: "Compagnies", path: "/compagnies" }])} />
+      <StructuredData
+        value={{
+          "@context": "https://schema.org",
+          "@type": "CollectionPage",
+          name: "Compagnies de ferry Europe ↔ Algérie",
+          url: absoluteUrl("/compagnies"),
+          inLanguage: "fr",
+          mainEntity: {
+            "@type": "ItemList",
+            itemListElement: companies.map((company, index) => ({
+              "@type": "ListItem",
+              position: index + 1,
+              item: {
+                "@type": "Organization",
+                name: company.name,
+                ...(company.website_url ? { url: company.website_url } : {}),
+              },
+            })),
+          },
+        }}
+      />
       <header className="bw-co-head">
         <div>
-          <h1>Les compagnies vers l'Algérie</h1>
+          <h1>Les compagnies de ferry vers l'Algérie</h1>
           <p>Qui part d'où, avec quels navires, et ce qu'en disent les voyageurs.</p>
         </div>
         <label>

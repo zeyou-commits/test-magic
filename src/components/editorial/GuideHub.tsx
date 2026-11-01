@@ -27,7 +27,7 @@ const topics: { id: Topic; name: string; path: string; intro: string }[] = [
 export function GuideHub({ topic }: { topic?: Topic }) {
   const current = topics.find((t) => t.id === topic);
   const selected = articles.filter((a) => !topic || a.topic === topic);
-  const title = current?.name ?? "Votre voyage commence par les bonnes réponses";
+  const title = current?.name ?? "Guide du voyage en Algérie par ferry";
   const path = current?.path ?? "/guide";
   return (
     <SiteLayout>

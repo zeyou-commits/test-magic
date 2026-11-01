@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import type { Port, RouteLine } from "@/lib/ferry/types";
 import { JourneyArtwork } from "./JourneyArtwork";
+import { FaqSchema } from "@/components/editorial/Editorial";
 
 const questions = [
   [
@@ -103,7 +104,7 @@ export function HomeContent({
         </div>
         <figure className="bw-intro-art">
           <img
-            src="/images/bledway-horizon-algerien.png"
+            src="/images/bledway-horizon-algerien.webp"
             alt="Illustration de dunes, d’un dromadaire et de la mer à l’horizon"
             loading="lazy"
             decoding="async"
@@ -266,6 +267,7 @@ export function HomeContent({
         </div>
       </section>
       <section className="bw-container bw-faq" aria-labelledby="faq-title" data-reveal>
+        <FaqSchema faq={questions.map(([q, a]) => ({ q: q!, a: a! }))} path="/" />
         <div>
           <p className="bw-eyebrow">Avant de larguer les amarres</p>
           <h2 id="faq-title">On vous répond.</h2>
@@ -273,6 +275,10 @@ export function HomeContent({
             Encore une question ?<br />
             <Link to="/contact" className="bw-text-link">
               Écrivez-nous <ArrowUpRight size={17} />
+            </Link>
+            <br />
+            <Link to="/questions-frequentes" className="bw-text-link">
+              Toutes les réponses <ArrowUpRight size={17} />
             </Link>
           </p>
         </div>

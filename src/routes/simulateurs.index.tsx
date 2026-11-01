@@ -23,7 +23,7 @@ function Tools() {
       />
       <EditorialHero
         label="Les outils BledWay"
-        title="Préparer avec vos chiffres"
+        title="Simulateurs pour préparer le voyage en Algérie"
         intro="Des calculs transparents, sans compte : vous choisissez les dates, les devis et les hypothèses. Les résultats restent des aides à la préparation et sont accompagnés de leur méthode."
       />
       <div className="grid gap-5 md:grid-cols-2">

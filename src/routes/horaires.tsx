@@ -33,7 +33,8 @@ import { buildSailings, type Sailing } from "@/lib/ferry/trips";
 import type { Company } from "@/lib/ferry/types";
 import { useLiveShips } from "@/lib/ferry/useLiveShips";
 import { useVesselAlerts } from "@/lib/ferry/vesselAlerts";
-import { seoHead } from "@/lib/seo/site";
+import { breadcrumbSchema, seoHead } from "@/lib/seo/site";
+import { StructuredData } from "@/components/editorial/Editorial";
 
 const BoardMap = lazy(() => import("@/components/board/BoardMap"));
 
@@ -314,15 +315,17 @@ function BoardPage() {
         tabIndex={-1}
         className="mx-auto w-full max-w-[1440px] px-4 pb-24 pt-5 sm:px-6 md:pb-16"
       >
+        <StructuredData value={breadcrumbSchema([{ name: "Horaires", path: "/horaires" }])} />
         <DataUnavailableNotice className="mb-3" />
         <div className="flex flex-wrap items-end justify-between gap-2">
           <div>
             <h1 className="font-display text-2xl font-bold tracking-tight sm:text-3xl">
-              Départs &amp; arrivées
+              Départs et arrivées des ferries Europe ↔ Algérie
             </h1>
             <p className="mt-1 text-sm text-muted-foreground">
               Vers et depuis l'Algérie, en heure locale du port. « Prévu » reste un horaire publié,
-              « constaté » vient du signal du navire.
+              « constaté » vient du signal du navire. Confirmez toujours votre départ auprès de la
+              compagnie.
             </p>
           </div>
         </div>

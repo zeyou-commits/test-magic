@@ -59,6 +59,15 @@ import type { ItineraryMapPreview } from "@/lib/ferry/itinerary";
 const FerryMap = lazy(() => import("@/components/map/FerryMap"));
 
 export const Route = createFileRoute("/")({
+  // Les lignes phares de l'accueil doivent figurer dans le HTML servi :
+  // le navigateur reçoit les mêmes données pour hydrater sans écart.
+  loader: async ({ context }) => {
+    const [ports, routes] = await Promise.all([
+      context.queryClient.ensureQueryData(portsQuery),
+      context.queryClient.ensureQueryData(routesQuery),
+    ]);
+    return { ports, routes };
+  },
   head: () =>
     seoHead(
       "BledWay — Ferries Europe–Algérie, carte et départs",
@@ -245,8 +254,9 @@ function Index() {
       });
   }, [panelLevel]);
 
-  const portsResult = useQuery(portsQuery);
-  const routesResult = useQuery(routesQuery);
+  const initialData = Route.useLoaderData();
+  const portsResult = useQuery({ ...portsQuery, initialData: initialData.ports });
+  const routesResult = useQuery({ ...routesQuery, initialData: initialData.routes });
   const departuresResult = useQuery(upcomingDeparturesQuery());
   const companiesResult = useQuery(companiesQuery);
 
@@ -999,7 +1009,7 @@ function Index() {
       </a>
       <SiteHeader />
       <main id="contenu" tabIndex={-1}>
-        <h1 className="sr-only">BledWay — Carte des traversées</h1>
+        <h1 className="sr-only">Ferries Europe ↔ Algérie : carte des traversées, lignes et départs</h1>
         <section
           id="carte"
           aria-label="Carte et recherche de traversées"

@@ -2,7 +2,7 @@ import { VesselAlertTag } from "@/components/panel/VesselAlert";
 import { VesselPalmares, VesselPhotoBadge } from "@/components/panel/VesselFacts";
 import { FleetOverview } from "@/components/panel/FleetOverview";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useSuspenseQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import {
   ArrowRight,
@@ -34,9 +34,17 @@ import { vesselPhotoQuery } from "@/lib/ferry/vesselPhoto";
 import type { Port, RouteLine, Vessel } from "@/lib/ferry/types";
 
 export const Route = createFileRoute("/bateaux/")({
+  loader: async ({ context }) => {
+    await Promise.all([
+      context.queryClient.ensureQueryData(vesselsQuery),
+      context.queryClient.ensureQueryData(companiesQuery),
+      context.queryClient.ensureQueryData(routesQuery),
+      context.queryClient.ensureQueryData(portsQuery),
+    ]);
+  },
   head: () =>
     seoHead(
-      "Navires et compagnies Europe ↔ Algérie : flotte, lignes et caractéristiques | BledWay",
+      "Navires Europe ↔ Algérie : flotte et caractéristiques | BledWay",
       "Toute la flotte des ferries entre l'Europe et l'Algérie par compagnie : photos des navires, lignes desservies, capacité passagers et véhicules, âge et vitesse.",
       "/bateaux",
     ),
@@ -44,10 +52,10 @@ export const Route = createFileRoute("/bateaux/")({
 });
 
 function Boats() {
-  const { data: vessels = [] } = useQuery(vesselsQuery);
-  const { data: companies = [] } = useQuery(companiesQuery);
-  const { data: routes = [] } = useQuery(routesQuery);
-  const { data: ports = [] } = useQuery(portsQuery);
+  const { data: vessels } = useSuspenseQuery(vesselsQuery);
+  const { data: companies } = useSuspenseQuery(companiesQuery);
+  const { data: routes } = useSuspenseQuery(routesQuery);
+  const { data: ports } = useSuspenseQuery(portsQuery);
   const { data: upcoming = [] } = useQuery(upcomingDeparturesQuery());
   const { data: recent = [] } = useQuery(fleetDeparturesQuery);
 
@@ -75,9 +83,11 @@ function Boats() {
       <h1 className="mb-5 font-display text-4xl font-extrabold tracking-tight md:text-5xl">
         La flotte entre l'Europe et l'Algérie
       </h1>
-      {groups.length === 0 ? (
-        <p className="text-sm text-muted-foreground">Chargement de la flotte…</p>
-      ) : null}
+      <p className="mb-6 max-w-3xl text-lg leading-relaxed text-muted-foreground">
+        Les navires renseignés sur BledWay, classés par compagnie, avec leurs lignes et leurs
+        caractéristiques connues. L'affectation d'un navire à un départ peut changer : elle se
+        confirme auprès de la compagnie.
+      </p>
       <FleetOverview />
       <VesselPalmares />
       <div className="space-y-10">

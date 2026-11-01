@@ -32,7 +32,7 @@ function NoteVisual({ image, fallback, variant, value, kind, empty }: { image: s
 }
 
 export const Route = createFileRoute("/mes-dinars")({
-  head: () => seoHead("Mes dinars, mon portefeuille de voyage | BledWay", "Convertissez un prix entre dinars et euros, et suivez ce qu'il vous reste pendant le voyage.", "/mes-dinars"),
+  head: () => seoHead("Convertir euros et dinars algériens : Mes dinars | BledWay", "Convertissez un prix entre dinars algériens et euros, et suivez ce qu'il vous reste pendant votre voyage en Algérie.", "/mes-dinars"),
   component: WalletPage,
 });
 

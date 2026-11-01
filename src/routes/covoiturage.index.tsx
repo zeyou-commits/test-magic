@@ -29,7 +29,7 @@ function Carpool() {
       />
       <EditorialHero
         label="La route du port"
-        title="Se retrouver avant de traverser"
+        title="Aires de covoiturage sur la route des ports"
         intro="Une sélection de points documentés sur des axes vers les ports. Choisissez selon votre trajet, les bagages et l'accès au terminal, puis convenez des frais avant de partir."
       />
       <p className="mb-8 rounded-xl border bg-secondary/40 p-5 text-sm leading-7">

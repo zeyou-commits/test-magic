@@ -1,4 +1,5 @@
 import { absoluteUrl, jsonLdString } from "@/lib/seo/site";
+import seoConfig from "../../seo.config.json";
 import { ProfileHost } from "@/components/community/ProfileHost";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import {
@@ -137,6 +138,8 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
               "@id": absoluteUrl("/#organisation"),
               name: "BledWay",
               url: absoluteUrl("/"),
+              logo: absoluteUrl("/pwa-icon-512.png"),
+              email: seoConfig.contactEmail,
               description:
                 "Information indépendante sur les ferries Europe–Algérie et la préparation du voyage.",
             },

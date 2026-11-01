@@ -27,6 +27,7 @@ export const navLinks = [
 
 const footerLinks = [
   { to: "/guide", label: "Tous les dossiers" },
+  { to: "/questions-frequentes", label: "Questions fréquentes" },
   { to: "/vehicules-moins-3-ans", label: "Véhicules de moins de 3 ans" },
   { to: "/voyage-algerie", label: "Voyage en Algérie" },
   { to: "/covoiturage", label: "Covoiturage" },
@@ -190,6 +191,7 @@ export function SiteFooter() {
             .filter((item) =>
               [
                 "/guide",
+                "/questions-frequentes",
                 "/voyage-algerie",
                 "/simulateurs",
                 "/covoiturage",

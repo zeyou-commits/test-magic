@@ -8,6 +8,7 @@ import {
   Breadcrumbs,
   ContentSection,
   EditorialHero,
+  FaqSection,
   primaryLink,
   ReadingLayout,
   SourceList,
@@ -28,6 +29,7 @@ export function ArticlePage({ article }: { article: Article }) {
           mainEntityOfPage: absoluteUrl(`/guide/${article.slug}`),
           inLanguage: "fr",
           dateModified: EDITORIAL_DATE,
+          image: absoluteUrl("/bledway-brand.png"),
           author: { "@type": "Organization", name: "BledWay", url: absoluteUrl("/a-propos") },
           publisher: { "@id": absoluteUrl("/#organisation") },
           citation: article.sources.map((id) => sources[id]?.url).filter(Boolean),
@@ -58,19 +60,7 @@ export function ArticlePage({ article }: { article: Article }) {
               </a>
             </div>
           ) : null}
-          <section id="questions" className="mt-10">
-            <h2 className="font-display text-2xl font-bold">Questions fréquentes</h2>
-            <div className="mt-4 divide-y rounded-xl border">
-              {article.faq.map((item) => (
-                <details key={item.q} className="group px-5 py-4">
-                  <summary className="cursor-pointer font-semibold focus-visible:outline-2 focus-visible:outline-primary">
-                    {item.q}
-                  </summary>
-                  <p className="mt-3 leading-7 text-muted-foreground">{item.a}</p>
-                </details>
-              ))}
-            </div>
-          </section>
+          <FaqSection faq={article.faq} path={`/guide/${article.slug}`} />
           <SourceList ids={article.sources} />
         </ReadingLayout>
       </article>

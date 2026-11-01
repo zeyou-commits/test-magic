@@ -76,6 +76,51 @@ export function AnswerBox({ children }: { children: ReactNode }) {
     </div>
   );
 }
+/** Questions visibles et balisage FAQPage : les deux viennent toujours de la même liste. */
+export function FaqSection({
+  faq,
+  path,
+  title = "Questions fréquentes",
+}: {
+  faq: { q: string; a: string }[];
+  path: string;
+  title?: string;
+}) {
+  if (!faq.length) return null;
+  return (
+    <section id="questions" className="mt-10">
+      <FaqSchema faq={faq} path={path} />
+      <h2 className="font-display text-2xl font-bold">{title}</h2>
+      <div className="mt-4 divide-y rounded-xl border">
+        {faq.map((item) => (
+          <details key={item.q} className="group px-5 py-4">
+            <summary className="cursor-pointer font-semibold focus-visible:outline-2 focus-visible:outline-primary">
+              {item.q}
+            </summary>
+            <p className="mt-3 leading-7 text-muted-foreground">{item.a}</p>
+          </details>
+        ))}
+      </div>
+    </section>
+  );
+}
+export function FaqSchema({ faq, path }: { faq: { q: string; a: string }[]; path: string }) {
+  return (
+    <StructuredData
+      value={{
+        "@context": "https://schema.org",
+        "@type": "FAQPage",
+        url: absoluteUrl(path),
+        inLanguage: "fr",
+        mainEntity: faq.map((item) => ({
+          "@type": "Question",
+          name: item.q,
+          acceptedAnswer: { "@type": "Answer", text: item.a },
+        })),
+      }}
+    />
+  );
+}
 export function SourceList({ ids }: { ids: string[] }) {
   return (
     <section id="sources" className="mt-10 scroll-mt-20 border-t pt-6">

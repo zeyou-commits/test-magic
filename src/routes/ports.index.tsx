@@ -1,6 +1,7 @@
 import { seoHead } from "@/lib/seo/site";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useSuspenseQuery } from "@tanstack/react-query";
+import { Breadcrumbs } from "@/components/editorial/Editorial";
 import { Card, PageHero, SiteLayout } from "@/components/layout/SiteLayout";
 import { portsQuery, routesQuery } from "@/lib/ferry/queries";
 
@@ -29,6 +30,7 @@ function PortsPage() {
 
   return (
     <SiteLayout>
+      <Breadcrumbs items={[{ name: "Ports", path: "/ports" }]} />
       <PageHero
         overline="Ports"
         title="Les ports des traversées entre l'Europe et l'Algérie"

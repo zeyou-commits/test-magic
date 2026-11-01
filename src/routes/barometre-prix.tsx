@@ -3,10 +3,11 @@ import { ArrowRight, CarFront, Info, Ship, TrendingUp } from "lucide-react";
 import { PRICE_BENCHMARKS } from "@/lib/ferry/pricing";
 import { SiteFooter, SiteHeader } from "@/components/layout/SiteLayout";
 import { seoHead } from "@/lib/seo/site";
+import { Breadcrumbs, FaqSection } from "@/components/editorial/Editorial";
 
 export const Route = createFileRoute("/barometre-prix")({
   head: () => seoHead(
-    "Baromètre des prix ferry Algérie avec voiture | BledWay",
+    "Prix du ferry pour l'Algérie avec voiture : repères | BledWay",
     "Repères de prix par ligne, saison et véhicule pour préparer une traversée Europe–Algérie. Sources, méthode et périodes à privilégier.",
     "/barometre-prix",
   ),
@@ -23,6 +24,22 @@ const routes = [
   ["Oran", "Almería", "oran|almeria"],
 ] as const;
 
+const carPrices = routes.map(([, , key]) => PRICE_BENCHMARKS[key]!.withCar);
+const faq = [
+  {
+    q: "Combien coûte un ferry pour l'Algérie avec une voiture ?",
+    a: `Les repères d'aller simple avec voiture relevés en septembre–octobre 2026 vont d'environ ${Math.min(...carPrices)} € à ${Math.max(...carPrices)} € sur les lignes de ce tableau. Ce sont des estimations : le devis de la compagnie fait foi.`,
+  },
+  {
+    q: "Ces prix sont-ils ceux de la voiture seule ?",
+    a: "Non. La colonne « avec voiture » désigne un billet qui inclut un véhicule, pas le prix du véhicule seul.",
+  },
+  {
+    q: "Quelle est la période la plus demandée ?",
+    a: "La pointe estivale va de la mi-juillet à la fin août. Cette échelle est indicative et ne constitue pas un historique de prix mesurés.",
+  },
+];
+
 const seasons = [
   { label: "Janvier–mars, novembre", level: "Période calme", width: "w-[42%]", tone: "bg-emerald-600", hint: "Souvent plus souple côté prix ; l'offre de traversées peut être réduite." },
   { label: "Avril–mi-juin, mi-septembre–octobre, décembre", level: "Intermédiaire", width: "w-[58%]", tone: "bg-teal-500", hint: "Bon compromis entre choix de départs et budget, selon les lignes." },
@@ -34,10 +51,11 @@ function PriceBarometer() {
   return <>
     <SiteHeader />
     <main className="mx-auto max-w-6xl px-4 pb-20 pt-8 sm:px-6 sm:pt-14">
-      <p className="text-xs font-bold uppercase tracking-[.18em] text-primary">Le baromètre BledWay · octobre 2026</p>
+      <Breadcrumbs items={[{ name: "Baromètre des prix", path: "/barometre-prix" }]} />
+      <p className="mt-6 text-xs font-bold uppercase tracking-[.18em] text-primary">Le baromètre BledWay · octobre 2026</p>
       <div className="mt-3 grid gap-8 lg:grid-cols-[1.2fr_.8fr] lg:items-end">
         <div>
-          <h1 className="max-w-3xl font-display text-4xl font-bold leading-tight tracking-tight text-foreground sm:text-5xl">Le bon départ, au bon prix.</h1>
+          <h1 className="max-w-3xl font-display text-4xl font-bold leading-tight tracking-tight text-foreground sm:text-5xl">Prix du ferry pour l'Algérie : le bon départ, au bon prix.</h1>
           <p className="mt-4 max-w-2xl text-base leading-7 text-muted-foreground">Une voiture change réellement le budget d'une traversée. Comparez ici les ordres de grandeur par ligne, puis choisissez une date et un port sur la carte.</p>
         </div>
         <div className="flex items-center gap-3 rounded-2xl border border-primary/15 bg-primary/5 p-4 text-sm text-foreground"><Info className="size-5 shrink-0 text-primary" /><p>Ces montants sont des <strong>repères observés et estimés</strong>, jamais des prix disponibles à la réservation. Le devis de la compagnie fait foi.</p></div>
@@ -53,6 +71,8 @@ function PriceBarometer() {
         <div><p className="text-xs font-bold uppercase tracking-[.14em] text-primary">Quand partir ?</p><h2 id="season-title" className="mt-1 font-display text-2xl font-bold sm:text-3xl">La saison compte autant que le port.</h2><div className="mt-6 space-y-5">{seasons.map((season) => <div key={season.level}><div className="flex flex-wrap justify-between gap-1 text-sm"><strong>{season.label}</strong><span className="text-muted-foreground">{season.level}</span></div><div className="mt-2 h-2 rounded-full bg-secondary"><div className={`h-2 rounded-full ${season.width} ${season.tone}`} /></div><p className="mt-1 text-xs text-muted-foreground">{season.hint}</p></div>)}</div><p className="mt-5 text-xs leading-5 text-muted-foreground">Échelle indicative de pression tarifaire, pas un historique de prix mesurés. Les vacances, les promotions et la disponibilité d'une place véhicule peuvent changer le tarif d'un départ précis. <a className="font-semibold text-primary underline" href="https://www.corsicalinea.com/informations/legal/cgu-tarifs-generiques/" target="_blank" rel="noopener noreferrer">Corsica Linea confirme la variation par période</a> ; <a className="font-semibold text-primary underline" href="https://www.aferry.com/fr-fr/ferry-deals/746afm/ferry-algerie-ete-2026-reservations-ouvertes/" target="_blank" rel="noopener noreferrer">AFerry décrit la pointe de juillet–août</a>.</p></div>
         <aside className="rounded-3xl bg-[#e9f3ef] p-6 sm:p-8"><TrendingUp className="size-7 text-primary" /><h3 className="mt-4 font-display text-xl font-bold">Comment lire l'estimation BledWay ?</h3><ol className="mt-4 space-y-4 text-sm leading-6"><li className="flex gap-3"><span className="font-bold text-primary">01</span><span>Un repère de la ligne, avec le <CarFront className="inline size-4" /> véhicule lorsque vous en choisissez un.</span></li><li className="flex gap-3"><span className="font-bold text-primary">02</span><span>Une modulation selon la période de départ, les voyageurs et la catégorie du véhicule.</span></li><li className="flex gap-3"><span className="font-bold text-primary">03</span><span>Une fourchette élargie pour refléter les places restantes, les options et l'incertitude des sources.</span></li></ol><p className="mt-5 border-t border-primary/15 pt-4 text-xs leading-5 text-muted-foreground">Sans tarif temps réel, nous n'attribuons aucun prix à une compagnie précise. Cabine, repas, taxes et frais de réservation peuvent s'ajouter.</p></aside>
       </section>
+
+      <FaqSection faq={faq} path="/barometre-prix" />
 
       <section className="mt-14 rounded-3xl bg-[#0d3043] p-6 text-white sm:p-9"><Ship className="size-7 text-emerald-300" /><h2 className="mt-3 font-display text-2xl font-bold">Comparez un voyage complet, pas seulement le ferry.</h2><p className="mt-2 max-w-2xl text-sm leading-6 text-white/75">Un départ d'Espagne peut coûter moins cher en mer mais demander davantage de route. Le comparateur porte à porte additionne carburant, péages estimés et ferry avec votre voiture.</p><Link to="/" className="mt-6 inline-flex min-h-11 items-center gap-2 rounded-full bg-white px-5 text-sm font-bold text-[#0d3043]">Ouvrir la carte <ArrowRight className="size-4" /></Link></section>
     </main>

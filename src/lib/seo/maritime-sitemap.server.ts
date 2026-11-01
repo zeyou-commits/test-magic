@@ -9,7 +9,6 @@ export async function maritimeEntries() {
       let query = supabase
         .from(table)
         .select("slug, updated_at")
-        .eq("is_demo", false)
         .order("slug")
         .range(page * size, (page + 1) * size - 1)
         .abortSignal(controller.signal);

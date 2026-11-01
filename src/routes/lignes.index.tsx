@@ -1,13 +1,14 @@
 import { seoHead } from "@/lib/seo/site";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useSuspenseQuery } from "@tanstack/react-query";
+import { Breadcrumbs } from "@/components/editorial/Editorial";
 import { Card, PageHero, SiteLayout } from "@/components/layout/SiteLayout";
 import { companiesQuery, portsQuery, routesQuery } from "@/lib/ferry/queries";
 import { formatDuration } from "@/lib/ferry/format";
 
 const title = "Lignes de ferry Europe ↔ Algérie : durées et compagnies — BledWay";
 const description =
-  "Toutes les lignes maritimes entre l'Europe et l'Algérie, dans les deux sens, avec leur durée typique et les compagnies qui les opèrent : Marseille, Sète, Alicante, Barcelone, Marseille–Alger, Oran, Béjaïa…";
+  "Toutes les lignes de ferry entre l'Europe et l'Algérie, dans les deux sens, avec leur durée typique et leurs compagnies : Marseille, Sète, Alicante, Oran, Alger…";
 
 export const Route = createFileRoute("/lignes/")({
   loader: async ({ context }) => {
@@ -35,6 +36,7 @@ function LignesPage() {
 
   return (
     <SiteLayout>
+      <Breadcrumbs items={[{ name: "Lignes", path: "/lignes" }]} />
       <PageHero
         overline="Lignes"
         title="Toutes les lignes de ferry Europe ↔ Algérie"

@@ -23,11 +23,13 @@ import { Route as CovoiturageRouteImport } from './routes/covoiturage'
 import { Route as GuideRouteImport } from './routes/guide'
 import { Route as HorairesRouteImport } from './routes/horaires'
 import { Route as LignesRouteImport } from './routes/lignes'
+import { Route as LlmsDottxtRouteImport } from './routes/llms[.]txt'
 import { Route as MaBezassRouteImport } from './routes/ma-bezass'
 import { Route as MentionsLegalesRouteImport } from './routes/mentions-legales'
 import { Route as MesDinarsRouteImport } from './routes/mes-dinars'
 import { Route as MethodeEditorialeRouteImport } from './routes/methode-editoriale'
 import { Route as PortsRouteImport } from './routes/ports'
+import { Route as QuestionsFrequentesRouteImport } from './routes/questions-frequentes'
 import { Route as SimulateursRouteImport } from './routes/simulateurs'
 import { Route as SitemapMaritimeDotxmlRouteImport } from './routes/sitemap-maritime[.]xml'
 import { Route as SitemapPagesDotxmlRouteImport } from './routes/sitemap-pages[.]xml'
@@ -125,6 +127,11 @@ const LignesRoute = LignesRouteImport.update({
   path: '/lignes',
   getParentRoute: () => rootRouteImport,
 } as any)
+const LlmsDottxtRoute = LlmsDottxtRouteImport.update({
+  id: '/llms.txt',
+  path: '/llms.txt',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const MaBezassRoute = MaBezassRouteImport.update({
   id: '/ma-bezass',
   path: '/ma-bezass',
@@ -148,6 +155,11 @@ const MethodeEditorialeRoute = MethodeEditorialeRouteImport.update({
 const PortsRoute = PortsRouteImport.update({
   id: '/ports',
   path: '/ports',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const QuestionsFrequentesRoute = QuestionsFrequentesRouteImport.update({
+  id: '/questions-frequentes',
+  path: '/questions-frequentes',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SimulateursRoute = SimulateursRouteImport.update({
@@ -296,11 +308,13 @@ export interface FileRoutesByFullPath {
   '/guide': typeof GuideRouteWithChildren
   '/horaires': typeof HorairesRoute
   '/lignes': typeof LignesRouteWithChildren
+  '/llms.txt': typeof LlmsDottxtRoute
   '/ma-bezass': typeof MaBezassRoute
   '/mentions-legales': typeof MentionsLegalesRoute
   '/mes-dinars': typeof MesDinarsRoute
   '/methode-editoriale': typeof MethodeEditorialeRoute
   '/ports': typeof PortsRouteWithChildren
+  '/questions-frequentes': typeof QuestionsFrequentesRoute
   '/simulateurs': typeof SimulateursRouteWithChildren
   '/sitemap-maritime.xml': typeof SitemapMaritimeDotxmlRoute
   '/sitemap-pages.xml': typeof SitemapPagesDotxmlRoute
@@ -339,10 +353,12 @@ export interface FileRoutesByTo {
   '/confidentialite': typeof ConfidentialiteRoute
   '/contact': typeof ContactRoute
   '/horaires': typeof HorairesRoute
+  '/llms.txt': typeof LlmsDottxtRoute
   '/ma-bezass': typeof MaBezassRoute
   '/mentions-legales': typeof MentionsLegalesRoute
   '/mes-dinars': typeof MesDinarsRoute
   '/methode-editoriale': typeof MethodeEditorialeRoute
+  '/questions-frequentes': typeof QuestionsFrequentesRoute
   '/sitemap-maritime.xml': typeof SitemapMaritimeDotxmlRoute
   '/sitemap-pages.xml': typeof SitemapPagesDotxmlRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
@@ -385,11 +401,13 @@ export interface FileRoutesById {
   '/guide': typeof GuideRouteWithChildren
   '/horaires': typeof HorairesRoute
   '/lignes': typeof LignesRouteWithChildren
+  '/llms.txt': typeof LlmsDottxtRoute
   '/ma-bezass': typeof MaBezassRoute
   '/mentions-legales': typeof MentionsLegalesRoute
   '/mes-dinars': typeof MesDinarsRoute
   '/methode-editoriale': typeof MethodeEditorialeRoute
   '/ports': typeof PortsRouteWithChildren
+  '/questions-frequentes': typeof QuestionsFrequentesRoute
   '/simulateurs': typeof SimulateursRouteWithChildren
   '/sitemap-maritime.xml': typeof SitemapMaritimeDotxmlRoute
   '/sitemap-pages.xml': typeof SitemapPagesDotxmlRoute
@@ -434,11 +452,13 @@ export interface FileRouteTypes {
     | '/guide'
     | '/horaires'
     | '/lignes'
+    | '/llms.txt'
     | '/ma-bezass'
     | '/mentions-legales'
     | '/mes-dinars'
     | '/methode-editoriale'
     | '/ports'
+    | '/questions-frequentes'
     | '/simulateurs'
     | '/sitemap-maritime.xml'
     | '/sitemap-pages.xml'
@@ -477,10 +497,12 @@ export interface FileRouteTypes {
     | '/confidentialite'
     | '/contact'
     | '/horaires'
+    | '/llms.txt'
     | '/ma-bezass'
     | '/mentions-legales'
     | '/mes-dinars'
     | '/methode-editoriale'
+    | '/questions-frequentes'
     | '/sitemap-maritime.xml'
     | '/sitemap-pages.xml'
     | '/sitemap.xml'
@@ -522,11 +544,13 @@ export interface FileRouteTypes {
     | '/guide'
     | '/horaires'
     | '/lignes'
+    | '/llms.txt'
     | '/ma-bezass'
     | '/mentions-legales'
     | '/mes-dinars'
     | '/methode-editoriale'
     | '/ports'
+    | '/questions-frequentes'
     | '/simulateurs'
     | '/sitemap-maritime.xml'
     | '/sitemap-pages.xml'
@@ -570,11 +594,13 @@ export interface RootRouteChildren {
   GuideRoute: typeof GuideRouteWithChildren
   HorairesRoute: typeof HorairesRoute
   LignesRoute: typeof LignesRouteWithChildren
+  LlmsDottxtRoute: typeof LlmsDottxtRoute
   MaBezassRoute: typeof MaBezassRoute
   MentionsLegalesRoute: typeof MentionsLegalesRoute
   MesDinarsRoute: typeof MesDinarsRoute
   MethodeEditorialeRoute: typeof MethodeEditorialeRoute
   PortsRoute: typeof PortsRouteWithChildren
+  QuestionsFrequentesRoute: typeof QuestionsFrequentesRoute
   SimulateursRoute: typeof SimulateursRouteWithChildren
   SitemapMaritimeDotxmlRoute: typeof SitemapMaritimeDotxmlRoute
   SitemapPagesDotxmlRoute: typeof SitemapPagesDotxmlRoute
@@ -691,6 +717,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LignesRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/llms.txt': {
+      id: '/llms.txt'
+      path: '/llms.txt'
+      fullPath: '/llms.txt'
+      preLoaderRoute: typeof LlmsDottxtRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/ma-bezass': {
       id: '/ma-bezass'
       path: '/ma-bezass'
@@ -724,6 +757,13 @@ declare module '@tanstack/react-router' {
       path: '/ports'
       fullPath: '/ports'
       preLoaderRoute: typeof PortsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/questions-frequentes': {
+      id: '/questions-frequentes'
+      path: '/questions-frequentes'
+      fullPath: '/questions-frequentes'
+      preLoaderRoute: typeof QuestionsFrequentesRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/simulateurs': {
@@ -1004,11 +1044,13 @@ const rootRouteChildren: RootRouteChildren = {
   GuideRoute: GuideRouteWithChildren,
   HorairesRoute: HorairesRoute,
   LignesRoute: LignesRouteWithChildren,
+  LlmsDottxtRoute: LlmsDottxtRoute,
   MaBezassRoute: MaBezassRoute,
   MentionsLegalesRoute: MentionsLegalesRoute,
   MesDinarsRoute: MesDinarsRoute,
   MethodeEditorialeRoute: MethodeEditorialeRoute,
   PortsRoute: PortsRouteWithChildren,
+  QuestionsFrequentesRoute: QuestionsFrequentesRoute,
   SimulateursRoute: SimulateursRouteWithChildren,
   SitemapMaritimeDotxmlRoute: SitemapMaritimeDotxmlRoute,
   SitemapPagesDotxmlRoute: SitemapPagesDotxmlRoute,

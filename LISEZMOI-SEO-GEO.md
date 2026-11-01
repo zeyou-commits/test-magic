@@ -28,13 +28,13 @@ Les articles sont des entrées complètes dans `src/content/articles.ts`. Leur r
 
 ## Configuration conservée et points à compléter
 
-Comme demandé, le domaine reste `https://test-magic.lovable.app`. La source commune est `seo.config.json`.
+Le domaine de référence actuel est `https://test-magic-three.vercel.app`. La source commune est `seo.config.json`.
 
 L'adresse de contact éditoriale reste à renseigner plus tard : remplacer la chaîne vide de `contactEmail` dans ce fichier quand une adresse publique sera disponible. La page Contact l'affichera alors avec un lien e-mail. Aucun message n'est envoyé automatiquement par cette mise à jour.
 
 L'identité et les coordonnées de l'éditeur dans les mentions légales doivent être complétées avec vos informations réelles. Elles n'ont pas été inventées. La présente livraison ne remplace pas une validation juridique des mentions ou du régime d'importation.
 
-En cas de changement de domaine, modifier `siteUrl`, exécuter `npm run seo:discovery` puis déposer aussi les deux fichiers `public/robots.txt` et `public/llms.txt` régénérés. Le build les régénère également. Prévoir les redirections de l'ancien domaine dans l'hébergement avant toute migration.
+En cas de changement de domaine, modifier `siteUrl`, exécuter `npm run seo:discovery` puis déposer aussi le fichier `public/robots.txt` régénéré. Le build le régénère également. `/llms.txt` est servi par une route, à partir des données publiées. Prévoir les redirections de l'ancien domaine dans l'hébergement avant toute migration.
 
 ## Vérification locale habituelle
 

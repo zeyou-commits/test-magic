@@ -5,7 +5,9 @@ import { carpoolPlaces } from "@/content/carpool";
 import { toolsCatalog } from "@/content/tools";
 import { sources } from "@/content/sources";
 import { staticSitemapEntries } from "./paths";
-import { jsonLdString, seoHead, SITE_URL } from "./site";
+import { fitDescription, fitTitle, jsonLdString, seoHead, SITE_URL } from "./site";
+import { benchmarkFor, generalFaq, lineFaq } from "./answers";
+import { llmsText } from "./llms";
 import { escapeXml, sitemapXml } from "./sitemap";
 describe("Cohérence du maillage éditorial et des sources", () => {
   it("donne un slug unique, des sections et des références résolues à chaque dossier", () => {
@@ -48,5 +50,66 @@ describe("Encodage et canonical", () => {
     ]);
     expect(xml.match(/<url>/g)?.length).toBe(1);
     expect(xml).not.toContain("<lastmod>");
+  });
+});
+
+describe("Métadonnées et réponses factuelles", () => {
+  const ports = [
+    { id: "a", slug: "marseille", name: "Marseille", country_name: "France" },
+    { id: "b", slug: "alger", name: "Alger", country_name: "Algérie" },
+  ];
+  const routes = [
+    {
+      slug: "marseille-alger",
+      departure_port_id: "a",
+      arrival_port_id: "b",
+      typical_duration_minutes: 1320,
+      company_ids: ["c"],
+    },
+  ];
+  const companies = [{ id: "c", name: "Compagnie Test" }];
+  it("garde des titres et descriptions courts, avec une image de partage absolue", () => {
+    expect(fitTitle(`${"x".repeat(70)} | BledWay`)).toBe("x".repeat(70));
+    expect(fitTitle("Court | BledWay")).toBe("Court | BledWay");
+    expect(fitDescription("mot ".repeat(60)).length).toBeLessThanOrEqual(160);
+    const image = seoHead("T", "D", "/").meta.find((m) => m.property === "og:image");
+    expect(image?.content).toBe(`${SITE_URL}/bledway-brand.png`);
+  });
+  it("présente durées et prix comme des estimations, sans statut Vérifié", () => {
+    const faq = lineFaq({
+      from: "Marseille",
+      to: "Alger",
+      fromSlug: "marseille",
+      toSlug: "alger",
+      minutes: 1320,
+      operators: ["Compagnie Test"],
+      hasReverse: false,
+    });
+    const text = JSON.stringify([faq, generalFaq(ports, routes, companies)]);
+    expect(text).toContain("environ 22 h");
+    expect(text).toContain("estimation");
+    expect(text).toContain("repère de 4 h");
+    expect(text).not.toMatch(/undefined|NaN/);
+    expect(benchmarkFor("marseille", "alger")?.withCar).toBeGreaterThan(0);
+  });
+  it("n'invente pas de prix pour une ligne sans repère", () => {
+    const faq = lineFaq({
+      from: "A",
+      to: "B",
+      fromSlug: "a",
+      toSlug: "b",
+      minutes: null,
+      operators: [],
+      hasReverse: false,
+    });
+    expect(faq.some((item) => item.a.includes("€"))).toBe(false);
+    expect(faq.some((item) => item.q.startsWith("Combien de temps"))).toBe(false);
+  });
+  it("sert un llms.txt au nom de BledWay, même sans la base", () => {
+    expect(llmsText(null)).toContain("# BledWay");
+    expect(llmsText(null)).not.toContain("Batogo");
+    const full = llmsText({ ports, routes, companies });
+    expect(full).toContain("Marseille → Alger");
+    expect(full).toContain(`${SITE_URL}/lignes/marseille-alger`);
   });
 });

@@ -43,17 +43,14 @@ const run = (over: Partial<Parameters<typeof silentChecks>[0]> = {}) =>
   });
 
 describe("navires à contrôler", () => {
-  it("contrôle un navire muet en pleine traversée, sur la fiche donnée par le serveur", () => {
+  it("contrôle un navire muet en pleine traversée, avec ce qu'il faut pour le chercher", () => {
     expect(run()[0]).toMatchObject({
       phase: "crossing",
       from_port: "Mostaganem",
       to_port: "Valence",
-      page: "https://www.vesselfinder.com/fr/vessels/details/8707329",
+      imo: 8707329,
+      mmsi: 212805000,
     });
-  });
-
-  it("utilise le MMSI si l'IMO manque", () => {
-    expect(run({ vessels: [{ ...vessel, imo: null }] })[0]?.page).toMatch(/details\/212805000$/);
   });
 
   it("ne contrôle pas un navire entendu récemment", () => {
@@ -137,6 +134,8 @@ describe("indice lu sur la fiche", () => {
     destination: "Valence",
     eta: "2026-11-01T13:00:00Z",
     position_age_minutes: 1,
+    source_name: "MyShipTracking",
+    source_url: "https://www.myshiptracking.com/vessels/rosalind-franklin",
   };
 
   it("écrit lui-même une ligne simple, présentée comme un indice", () => {
@@ -145,7 +144,7 @@ describe("indice lu sur la fiche", () => {
       "Rosalind Franklin : parti de Mostaganem le 31/10 à 20:53 UTC, attendu à Valence le 01/11 à 13:00 UTC",
     );
     expect(parsed?.summary).toMatch(
-      /^Indice à confirmer, source VesselFinder\. Position vue il y a 1 min/,
+      /^Indice à confirmer, source MyShipTracking. Position vue il y a 1 min par MyShipTracking/,
     );
     expect(parsed?.confidence).toBe("medium");
   });
@@ -155,11 +154,12 @@ describe("indice lu sur la fiche", () => {
     expect(parsed?.summary).not.toMatch(/Position vue/);
   });
 
-  it("impose la fiche du serveur comme source, quoi que dise l'agent", () => {
-    const parsed = parseClue({ ...clue, source_url: "https://ailleurs.example" }, [check], NOW);
-    expect(parsed?.url).toMatch(
-      /^https:\/\/www\.vesselfinder\.com\/fr\/vessels\/details\/8707329#/,
-    );
+  it("accepte n'importe quelle source, à condition qu'elle soit nommée et en https", () => {
+    const parsed = parseClue({ ...clue, source_url: "https://ailleurs.example/x" }, [check], NOW);
+    expect(parsed?.url?.startsWith("https://ailleurs.example/x#")).toBe(true);
+    expect(parseClue({ ...clue, source_url: "http://ailleurs.example" }, [check], NOW)).toBeNull();
+    expect(parseClue({ ...clue, source_url: "pas un lien" }, [check], NOW)).toBeNull();
+    expect(parseClue({ ...clue, source_name: "" }, [check], NOW)).toBeNull();
   });
 
   it("n'accorde jamais une confiance haute, et baisse si les ports diffèrent", () => {
@@ -176,7 +176,13 @@ describe("indice lu sur la fiche", () => {
   });
 
   it("garde une arrivée estimée seule, si elle est plausible", () => {
-    const only = { key: check.key, destination: "Valence", eta: "11-01T13:00" };
+    const only = {
+      key: check.key,
+      destination: "Valence",
+      eta: "11-01T13:00",
+      source_name: "Site",
+      source_url: "https://site.example",
+    };
     expect(parseClue(only, [check], NOW)?.title).toBe(
       "Rosalind Franklin : attendu à Valence le 01/11 à 13:00 UTC",
     );

@@ -175,6 +175,7 @@ export function MapStats({
   return (
     <div
       ref={rootRef}
+      data-map-rail
       className="pointer-events-auto absolute left-2 top-14 z-30 md:left-auto md:right-5 md:top-5"
     >
       {/* Raccourcis empilés à la verticale, icône au-dessus du nombre : colonne étroite.

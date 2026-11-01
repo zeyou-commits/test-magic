@@ -1,5 +1,11 @@
 import { test, assert } from "vitest";
-import { buildItineraryOptions, buildSimulatedSailings, distinctItineraries, sortItineraries } from "./itinerary.ts";
+import {
+  buildItineraryOptions,
+  buildSimulatedSailings,
+  distinctItineraries,
+  itineraryChoices,
+  sortItineraries,
+} from "./itinerary.ts";
 import type { Sailing } from "./trips";
 import type { Port, RouteLine } from "./types";
 
@@ -22,6 +28,22 @@ test("écarte une traversée inaccessible avec la marge d'embarquement", () => {
   assert.equal(options[0]?.totalEuro, 229);
   assert.equal(options[0]?.totalMinutes, 60 + 240 + 720 + 240 + 45);
   assert.equal(options[0]?.waitUntilTravelMin, 0);
+});
+
+test("propose trois choix qui disent ce qu'ils changent", () => {
+  const option = (id: string, totalEuro: number, roadKm: number, totalMinutes: number) =>
+    ({ sailing: { departure: { id } }, totalEuro, roadKm, totalMinutes }) as never;
+  const choices = itineraryChoices([
+    option("a", 800, 300, 2000),
+    option("b", 690, 640, 2100),
+    option("c", 900, 100, 2400),
+    option("d", 850, 400, 1900),
+  ]);
+  assert.deepEqual(choices.map((choice) => choice.tag), ["Recommandé", "Moins cher", "Moins de route"]);
+  assert.equal(choices[1]!.delta, "−110 €, 340 km de route en plus");
+  assert.equal(choices[2]!.delta, "+100 €, 200 km de route en moins");
+  assert.equal(itineraryChoices([option("a", 800, 300, 2000)]).length, 1);
+  assert.deepEqual(itineraryChoices([]), []);
 });
 
 test("n'ajoute pas les jours d'attente à la durée porte à porte", () => {

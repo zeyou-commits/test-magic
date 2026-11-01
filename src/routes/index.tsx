@@ -905,7 +905,7 @@ function Index() {
     }
     resetToMap();
     setPanelMode("itinerary");
-    setPanelLevel(window.innerWidth < 768 ? 2 : 1);
+    setPanelLevel(1);
     setDesktopPanelOpen(true);
   };
 

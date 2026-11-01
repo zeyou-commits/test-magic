@@ -7735,3 +7735,180 @@ label:has(> input.sr-only) {
   background: #0b5e33;
   border-radius: 1px;
 }
+
+/* Le film du trajet porte à porte. */
+[data-film-quiet="true"] .maplibregl-marker:not(.bw-film-vehicle),
+[data-film-quiet="true"] .maplibregl-popup {
+  display: none;
+}
+.bw-film-vehicle {
+  z-index: 5;
+  pointer-events: none;
+  line-height: 0;
+}
+.bw-film-vehicle[data-east="true"] .bw-film-car {
+  transform: scaleX(-1);
+}
+.bw-film-car {
+  display: block;
+  width: calc(68px * var(--film-scale, 1));
+  filter: drop-shadow(0 5px 5px rgba(18, 48, 63, 0.35));
+}
+.bw-film-ship {
+  position: relative;
+  display: block;
+  width: calc(136px * var(--film-scale, 1));
+}
+.bw-film-ship[hidden],
+.bw-film-car[hidden] {
+  display: none;
+}
+.bw-film-ship img {
+  position: relative;
+  display: block;
+  width: 100%;
+  transform-origin: 50% 90%;
+  animation: bw-film-roll 2.6s ease-in-out infinite;
+  filter: drop-shadow(0 6px 6px rgba(18, 48, 63, 0.3));
+}
+.bw-film-ship i {
+  position: absolute;
+  left: 90%;
+  height: 3px;
+  width: 34%;
+  border-radius: 3px;
+  background: linear-gradient(90deg, #ffffff, rgba(255, 255, 255, 0));
+  animation: bw-film-foam 1.3s linear infinite;
+}
+.bw-film-ship i:nth-child(1) { top: 62%; }
+.bw-film-ship i:nth-child(2) { top: 74%; width: 44%; animation-delay: 0.4s; }
+.bw-film-ship i:nth-child(3) { top: 86%; animation-delay: 0.8s; }
+@keyframes bw-film-roll {
+  0%, 100% { transform: rotate(-1.4deg); }
+  50% { transform: rotate(1.4deg); }
+}
+@keyframes bw-film-foam {
+  0% { transform: translateX(0); opacity: 1; }
+  100% { transform: translateX(36px); opacity: 0; }
+}
+.bw-film-caption {
+  position: absolute;
+  top: 14px;
+  z-index: 6;
+  max-width: calc(100% - 120px);
+  transform: translateX(-50%);
+  padding: 7px 13px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.95);
+  box-shadow: 0 3px 14px rgba(18, 48, 63, 0.18);
+  color: #12303f;
+  font-size: 12.5px;
+  font-weight: 700;
+  line-height: 1.25;
+  text-align: center;
+  pointer-events: none;
+}
+.bw-film-caption[hidden] {
+  display: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  .bw-film-ship img,
+  .bw-film-ship i {
+    animation: none;
+  }
+}
+
+/* La course : un véhicule par trajet, le vainqueur ressort. */
+.bw-film-racer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+.bw-film-racer img {
+  display: block;
+  width: 38px;
+  filter: drop-shadow(0 3px 3px rgba(18, 48, 63, 0.35));
+}
+.bw-film-racer[data-sea="true"] img {
+  width: 60px;
+}
+.bw-film-racer span {
+  max-width: 130px;
+  overflow: hidden;
+  padding: 2px 6px;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.94);
+  color: #12303f;
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 1.3;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.bw-film-racer[data-winner="true"] {
+  z-index: 6;
+}
+.bw-film-racer[data-winner="true"] span {
+  background: #0e7a43;
+  color: #ffffff;
+}
+
+/* Les durées sur le trajet : discrètes tant que la portion n'est pas atteinte. */
+[data-film-quiet="true"] .maplibregl-marker.bw-film-chip {
+  display: block;
+}
+.bw-film-chip {
+  z-index: 4;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.9);
+  color: #3d5563;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1.25;
+  white-space: nowrap;
+  box-shadow: 0 2px 8px rgba(18, 48, 63, 0.16);
+  pointer-events: none;
+  transition: background-color 0.35s ease, color 0.35s ease;
+}
+.bw-film-chip[data-kind="pause"] {
+  background: #fff4db;
+  color: #8a4b00;
+}
+.bw-film-chip[data-reached="true"][data-kind="road"] {
+  background: #0e7a43;
+  color: #ffffff;
+}
+.bw-film-chip[data-reached="true"][data-kind="sea"] {
+  background: #1769a8;
+  color: #ffffff;
+}
+.bw-film-chip[data-reached="true"][data-kind="port"] {
+  background: #6f5e38;
+  color: #ffffff;
+}
+.bw-film-chip[data-reached="true"][data-kind="pause"] {
+  background: #8a4b00;
+  color: #ffffff;
+}
+.bw-film-car {
+  animation: bw-film-drive 0.7s ease-in-out infinite;
+}
+@keyframes bw-film-drive {
+  0%, 100% { translate: 0 0; }
+  50% { translate: 0 -1.5px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .bw-film-car {
+    animation: none;
+  }
+}
+
+/* Pendant le film, la carte appartient au voyage : les raccourcis s'effacent. */
+body:has([data-film="true"]) [data-map-rail] {
+  display: none;
+}
+.bw-film-racer span:empty {
+  display: none;
+}

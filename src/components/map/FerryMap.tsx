@@ -3,6 +3,7 @@ import { useTravelMarkers } from "./useTravelMarkers";
 import { bringTooltipToFront } from "./tooltipStack";
 import { usePresenceMarkers } from "./usePresenceMarkers";
 import { useMyTripMarker } from "./useMyTripMarker";
+import { useJourneyFilm } from "./useJourneyFilm";
 import { useEffect, useRef, useState } from "react";
 import {
   Map as MapLibreMap,
@@ -409,6 +410,22 @@ export default function FerryMap({
     const width = containerRef.current?.clientWidth ?? 1200;
     return { top: 120, right: 60, bottom: 60, left: Math.min(left + 36, Math.round(width * 0.56)) };
   };
+  useJourneyFilm(
+    mapRef,
+    containerRef,
+    mapReady,
+    viewPadding,
+    LIMIT_BOUNDS,
+    () =>
+      mapRef.current?.easeTo({
+        center: [4, 39],
+        zoom: 4.2,
+        pitch: 0,
+        padding: viewPadding(),
+        duration: cameraDuration(700),
+      }),
+    Boolean(itineraryPreview),
+  );
 
   useEffect(() => {
     const container = containerRef.current;
@@ -459,6 +476,8 @@ export default function FerryMap({
     window.addEventListener("resize", resize);
 
     map.on("moveend", () => {
+      // Le film du trajet pilote lui-même l'inclinaison.
+      if (container.dataset["film"] || container.dataset["picking"]) return;
       const pitch = pitchForZoom(map.getZoom());
       if (Math.abs(map.getPitch() - pitch) > 1.5)
         map.easeTo({ pitch, duration: cameraDuration(450) });
@@ -1416,7 +1435,9 @@ export default function FerryMap({
     map.setMinZoom(1.5);
     // Les anciens cadrages du volet peuvent laisser un padding persistant dans MapLibre.
     // Le remettre à zéro avant de calculer la caméra évite de déporter l'itinéraire dans l'Atlantique.
-    map.setPadding({ top: 0, right: 0, bottom: 0, left: 0 });
+    // Pendant le film, la caméra lui appartient : ce cadrage ne doit pas la reprendre.
+    const filmPlaying = Boolean(containerRef.current?.dataset["film"]);
+    if (!filmPlaying) map.setPadding({ top: 0, right: 0, bottom: 0, left: 0 });
     const preview = itineraryPreview;
     source.setData({
       type: "FeatureCollection",
@@ -1496,6 +1517,7 @@ export default function FerryMap({
     ];
     // Le centre géographique peut sortir de l'itinéraire avec un volet asymétrique :
     // c'est normal. MapLibre place alors le trajet dans la partie réellement visible.
+    if (filmPlaying) return;
     map.fitBounds(bounds, {
       padding,
       maxZoom: 5.8,

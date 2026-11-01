@@ -137,6 +137,40 @@ export function sortItineraries(options: ItineraryOption[], priority: ItineraryP
   });
 }
 
+/**
+ * Trois choix au plus, chacun avec ce qu'il change par rapport au recommandé :
+ * on arbitre mieux « 108 € de moins, 330 km de route en plus » qu'un tableau de chiffres.
+ */
+export function itineraryChoices(sorted: ItineraryOption[]) {
+  const first = sorted[0];
+  if (!first) return [];
+  const delta = (option: ItineraryOption) => {
+    const euro = Math.round(option.totalEuro - first.totalEuro);
+    const km = Math.round(option.roadKm - first.roadKm);
+    const price = euro === 0 ? "Même prix" : `${euro < 0 ? "−" : "+"}${Math.abs(euro)} €`;
+    const road = km === 0 ? "même route" : `${Math.abs(km)} km de route en ${km < 0 ? "moins" : "plus"}`;
+    return `${price}, ${road}`;
+  };
+  const choices = [
+    {
+      tag: "Recommandé",
+      option: first,
+      delta: `${Math.round(first.roadKm)} km de route`,
+    },
+  ];
+  const seen = new Set([first.sailing.departure.id]);
+  const add = (tag: string, score: (option: ItineraryOption) => number) => {
+    const best = [...sorted].sort((a, b) => score(a) - score(b))[0];
+    if (!best || seen.has(best.sailing.departure.id) || score(best) >= score(first)) return;
+    seen.add(best.sailing.departure.id);
+    choices.push({ tag, option: best, delta: delta(best) });
+  };
+  add("Moins cher", (option) => option.totalEuro);
+  add("Moins de route", (option) => option.roadKm);
+  if (choices.length < 3) add("Plus rapide", (option) => option.totalMinutes);
+  return choices.slice(0, 3);
+}
+
 /** Une proposition par couple de ports : le premier départ atteignable de chaque liaison.
  * Les autres dates restent disponibles dans la recherche des traversées.
  */

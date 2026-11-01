@@ -1,3 +1,4 @@
+import { CabasImg } from "@/components/CabasImg";
 import { MessageCircle } from "lucide-react";
 import {
   avatarColors,
@@ -32,7 +33,7 @@ export function TravellerAvatar({
         className="bw-tavatar__disc"
         style={{ background: avatarColors[card.color] ?? "#eef3ef" }}
       >
-        <img src={personaImage(card.avatar)} alt="" width={size} height={size} loading="lazy" />
+        <CabasImg src={personaImage(card.avatar)} alt="" width={size} height={size} loading="lazy" />
       </span>
       {mood && card.mood ? (
         <span
@@ -42,7 +43,7 @@ export function TravellerAvatar({
         >
           {/* Picto 3D si l'humeur en a un ; sinon une petite bulle (le texte est au toucher). */}
           {moodIcon(card.mood.code) ? (
-            <img src={moodIcon(card.mood.code)!} alt="" width={18} height={18} loading="lazy" />
+            <CabasImg src={moodIcon(card.mood.code)!} alt="" width={18} height={18} loading="lazy" />
           ) : moodLabel ? null : (
             <MessageCircle size={13} aria-hidden />
           )}

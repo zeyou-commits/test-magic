@@ -1,3 +1,5 @@
+import { useIllustrationName } from "@/lib/illustrations/store";
+import { CabasImg } from "@/components/CabasImg";
 import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Check, Eye, LoaderCircle, Smile } from "lucide-react";
@@ -90,8 +92,8 @@ export function MyTravellerEditor() {
               onClick={() => setAvatar(persona.id)}
               style={{ background: avatarColors[color] }}
             >
-              <img src={personaImage(persona.id)} alt="" width={56} height={56} loading="lazy" />
-              <span>{persona.name}</span>
+              <CabasImg src={personaImage(persona.id)} alt="" width={56} height={56} loading="lazy" />
+              <PersonaName src={personaImage(persona.id)} name={persona.name} />
               {avatar === persona.id ? <Check size={13} aria-hidden /> : null}
             </button>
           ))}
@@ -171,4 +173,8 @@ export function MyTravellerEditor() {
       />
     </div>
   );
+}
+
+function PersonaName({ src, name }: { src: string; name: string }) {
+  return <span>{useIllustrationName(src, name)}</span>;
 }

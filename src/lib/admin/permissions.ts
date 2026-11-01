@@ -16,6 +16,7 @@ const editorial = new Set([
   "flash",
   "signals",
   "places",
+  "illustrations",
   "walletMedia",
   "health",
 ]);

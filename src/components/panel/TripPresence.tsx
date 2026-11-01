@@ -1,3 +1,4 @@
+import { CabasImg } from "@/components/CabasImg";
 import { portsQuery } from "@/lib/ferry/queries";
 import { useEffect, useState } from "react";
 import {
@@ -47,7 +48,7 @@ export function CabasStack({
   return (
     <span className="bw-cabas-stack" aria-hidden>
       {Array.from({ length: Math.min(3, count) }, (_, index) => (
-        <img
+        <CabasImg
           key={index}
           src={avatarFor(seed, index)}
           alt=""
@@ -261,7 +262,7 @@ export function TripStatusPicker({
       <p className="bw-trip-status-teaser">
         <span aria-hidden>
           {steps.map((step) => (
-            <img key={step.id} src={step.image} alt="" width={26} height={26} loading="lazy" />
+            <CabasImg key={step.id} src={step.image} alt="" width={26} height={26} loading="lazy" />
           ))}
         </span>
         <span>
@@ -291,7 +292,7 @@ export function TripStatusPicker({
               disabled={tooEarly || update.isPending}
               onClick={() => choose(step.id)}
             >
-              <img src={step.image} alt="" width={56} height={56} loading="lazy" />
+              <CabasImg src={step.image} alt="" width={56} height={56} loading="lazy" />
               <span>{step.short}</span>
               {counts[step.id] ? <small>{counts[step.id]}</small> : null}
               {current === step.id ? (
@@ -384,7 +385,7 @@ function QuickMoods({ moment, onDone }: { moment: string; onDone: () => void }) 
           aria-pressed={me.mood?.code === mood.code}
           onClick={() => save.mutate(mood.code)}
         >
-          <img src={mood.image} alt="" width={22} height={22} loading="lazy" />
+          <CabasImg src={mood.image} alt="" width={22} height={22} loading="lazy" />
           {mood.label}
         </button>
       ))}

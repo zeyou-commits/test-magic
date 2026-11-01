@@ -1,3 +1,4 @@
+import { CabasImg } from "@/components/CabasImg";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { MoodBubble } from "@/components/community/MoodBubble";
@@ -115,7 +116,7 @@ export function UserMenu({
             <DropdownMenuItem onSelect={() => setMoodOpen(true)}>
               {traveller.mood ? (
                 <>
-                  <img
+                  <CabasImg
                     src={moodIcon(traveller.mood.code) ?? traveller.mood.image}
                     alt=""
                     width={18}

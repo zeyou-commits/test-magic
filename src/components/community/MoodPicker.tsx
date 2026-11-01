@@ -1,3 +1,4 @@
+import { CabasImg } from "@/components/CabasImg";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Check, X } from "lucide-react";
 import { toast } from "sonner";
@@ -43,7 +44,7 @@ export function MoodPicker({
           disabled={save.isPending}
           onClick={() => save.mutate(mood.code)}
         >
-          <img src={mood.image} alt="" width={44} height={44} loading="lazy" />
+          <CabasImg src={mood.image} alt="" width={44} height={44} loading="lazy" />
           <span>
             {mood.emoji ? `${mood.emoji} ` : ""}
             {mood.label}

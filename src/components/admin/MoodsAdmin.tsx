@@ -1,3 +1,4 @@
+import { CabasImg } from "@/components/CabasImg";
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { SupabaseClient } from "@supabase/supabase-js";
@@ -102,7 +103,7 @@ export function MoodsAdmin() {
           return (
             <li key={row.code} data-muted={!row.active || undefined}>
               <button type="button" className="bw-admin-list__main" onClick={() => setEditing(row)}>
-                <img src={row.image} alt="" width={40} height={40} className="rounded-full" />
+                <CabasImg src={row.image} alt="" width={40} height={40} className="rounded-full" />
                 <span className="min-w-0">
                   <strong>
                     {row.emoji ? `${row.emoji} ` : ""}
@@ -251,9 +252,9 @@ function MoodEditor({
     >
       <div className="grid gap-4">
         <div className="flex items-center gap-3 rounded-xl bg-muted/50 p-3">
-          <img src={image} alt="" width={56} height={56} className="rounded-full bg-white" />
+          <CabasImg src={image} alt="" width={56} height={56} className="rounded-full bg-white" />
           <span className="bw-tavatar__mood" data-label>
-            <img src={image} alt="" width={18} height={18} />
+            <CabasImg src={image} alt="" width={18} height={18} />
             <span>
               {emoji ? `${emoji} ` : ""}
               {label || "Aperçu de la bulle"}
@@ -321,7 +322,7 @@ function MoodEditor({
                   .replace(/^\d+_/, "")
                   .replace(/_/g, " ")}
               >
-                <img src={src} alt="" width={52} height={52} loading="lazy" />
+                <CabasImg src={src} alt="" width={52} height={52} loading="lazy" />
               </button>
             ))}
           </div>

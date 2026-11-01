@@ -1,5 +1,5 @@
 // Navires muets : la porte de l'agent de contrôle. Lire qui chercher, déposer des indices, rien d'autre.
-// Un indice devient une note de la veille : il ne touche ni aux positions ni aux traversées.
+// Un indice devient une proposition de la veille : rien ne change sans approbation, et jamais l'horaire officiel.
 import { createClient, type SupabaseClient } from "npm:@supabase/supabase-js@2";
 import {
   CHECK_UNTIL_MS,
@@ -160,15 +160,23 @@ Deno.serve(async (request) => {
         refused += 1;
         continue;
       }
-      proposals.push({
+      const base = {
         item_id: (item as { id: string }).id,
-        kind: "note",
         title: clue.title,
         summary: clue.summary,
         confidence: clue.confidence,
         vessel_id: clue.check.vessel_id,
         departure_id: clue.check.departure_id,
-      });
+      };
+      if (!clue.changes.length) proposals.push({ ...base, kind: "note" });
+      for (const change of clue.changes) {
+        proposals.push({
+          ...base,
+          kind: "crossing",
+          field: change.field,
+          proposed_value: change.value,
+        });
+      }
     }
     const { data, error } = await db.rpc("bw_watch_propose", {
       p_proposals: proposals,

@@ -129,6 +129,10 @@ export interface Departure {
   reported_arrived_at?: string | null;
   reported_delay_minutes?: number | null;
   reported_postponed_at?: string | null;
+  /** Heures lues sur le web et approuvées par l'équipe : elles passent après les signalements. */
+  web_departed_at?: string | null;
+  web_arrived_at?: string | null;
+  web_eta_at?: string | null;
 }
 export interface RatingCriterion {
   id: string;

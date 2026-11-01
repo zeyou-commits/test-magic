@@ -160,9 +160,18 @@ export function clueDate(value: unknown, now: number): number | null {
   return Number.isFinite(parsed) ? parsed : null;
 }
 
+/** Heure à appliquer si l'équipe approuve : champ de la traversée et valeur. */
+export type CrossingField = "web_departed_at" | "web_arrived_at" | "web_eta_at";
+export interface CrossingChange {
+  field: CrossingField;
+  value: string;
+}
+
 export interface Clue {
   key: string;
   check: SilentCheck;
+  /** Vide si l'indice ne correspond pas à la traversée : il reste alors une simple note. */
+  changes: CrossingChange[];
   /** Date principale de l'indice : ce qui a été constaté, sinon l'arrivée estimée. */
   event_at: string;
   /** Le lien porte le contenu : la même information relue plus tard ne crée pas de doublon. */
@@ -177,7 +186,12 @@ const clean = (value: unknown, max: number) =>
 
 const SOURCE_MIN = 2;
 
-const samePort = (a: string, b: string | null) => !!a && !!b && a.toLowerCase() === b.toLowerCase();
+const portKey = (name: string) =>
+  name
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase();
+const samePort = (a: string, b: string | null) => !!a && !!b && portKey(a) === portKey(b);
 
 const when = (at: number) => {
   const iso = new Date(at).toISOString();
@@ -250,6 +264,28 @@ export function parseClue(raw: unknown, checks: SilentCheck[], now: number): Clu
     ? ` Arrivée au planning : ${when(Date.parse(check.planned_arrival_at))}.`
     : "";
 
+  // Seule une heure du bon port et de la bonne période peut corriger cette traversée.
+  const plannedStart = check.planned_departure_at ? Date.parse(check.planned_departure_at) : NaN;
+  const changes: CrossingChange[] = [];
+  if (check.departure_id && Number.isFinite(plannedStart)) {
+    const plannedEnd = check.planned_arrival_at
+      ? Date.parse(check.planned_arrival_at)
+      : plannedStart + CROSSING_MAX_MS;
+    const add = (field: CrossingField, at: number) =>
+      changes.push({ field, value: new Date(at).toISOString() });
+    if (
+      departed !== null &&
+      samePort(lastPort, check.from_port) &&
+      departed >= plannedStart - CHECK_UNTIL_MS &&
+      departed <= plannedEnd
+    )
+      add("web_departed_at", departed);
+    if (arrived !== null && samePort(currentPort, check.to_port) && arrived >= plannedStart)
+      add("web_arrived_at", arrived);
+    if (arrived === null && eta !== null && eta >= now && samePort(destination, check.to_port))
+      add("web_eta_at", eta);
+  }
+
   url.hash = [check.mmsi, currentPort, arrived, lastPort, departed, destination, eta]
     .map((part) => part ?? "")
     .join("-")
@@ -257,6 +293,7 @@ export function parseClue(raw: unknown, checks: SilentCheck[], now: number): Clu
   return {
     key: check.key,
     check,
+    changes,
     event_at: new Date(main).toISOString(),
     url: url.toString(),
     title: `${check.vessel} : ${facts.join(", ")}`.slice(0, 160),

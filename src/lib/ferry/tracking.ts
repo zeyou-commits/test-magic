@@ -511,6 +511,9 @@ export type CrossingSchedule = Pick<
       | "reported_arrived_at"
       | "reported_delay_minutes"
       | "reported_postponed_at"
+      | "web_departed_at"
+      | "web_arrived_at"
+      | "web_eta_at"
     >
   > & { status: string };
 
@@ -543,7 +546,7 @@ const reportedMs = (iso: string | null | undefined) => {
 };
 
 /**
- * Horaires corrigés par les signalements validés. Le plus récent entre « à quai » et « parti » l'emporte :
+ * Horaires corrigés par les signalements validés, puis par les indices web approuvés. Le plus récent entre « à quai » et « parti » l'emporte :
  * la durée de traversée repart de l'heure du signalement, jamais de l'heure de validation.
  */
 export function reportedCrossing(departure: CrossingSchedule, now = Date.now()) {
@@ -558,18 +561,19 @@ export function reportedCrossing(departure: CrossingSchedule, now = Date.now()) 
         : NaN;
   const duration = scheduledEnd - scheduled;
   const quay = reportedMs(departure.reported_quay_at);
-  const left = reportedMs(departure.reported_departed_at);
-  const arrived = reportedMs(departure.reported_arrived_at);
+  const left = reportedMs(departure.reported_departed_at) ?? reportedMs(departure.web_departed_at);
+  const arrived = reportedMs(departure.reported_arrived_at) ?? reportedMs(departure.web_arrived_at);
+  const webEta = reportedMs(departure.web_eta_at);
   const postponed = reportedMs(departure.reported_postponed_at);
   const delay = departure.reported_delay_minutes ?? 0;
   const departedAt = left !== null && (quay === null || left >= quay) ? left : null;
   const lateByQuay = departedAt === null && quay !== null && quay > scheduled ? quay : null;
   const start = departedAt ?? Math.max(scheduled + delay * 60_000, lateByQuay ?? scheduled);
-  const end = arrived ?? (Number.isFinite(duration) ? start + duration : NaN);
+  const end = arrived ?? webEta ?? (Number.isFinite(duration) ? start + duration : NaN);
   return {
     start,
     end,
-    changed: departedAt !== null || start !== scheduled || arrived !== null,
+    changed: departedAt !== null || start !== scheduled || arrived !== null || webEta !== null,
     departedAt,
     arrivedAt: arrived,
     /** Le départ reste un minimum : le navire était encore à quai à cette heure. */

@@ -52,6 +52,58 @@ const times = (p: LivePosition, now = NOW) => {
   } as unknown as LiveShip);
 };
 
+describe("indices web approuvés", () => {
+  const tassili: CrossingSchedule = {
+    id: "d2",
+    departure_at: "2026-10-31T11:00:00Z",
+    arrival_at: "2026-11-01T11:00:00Z",
+    duration_minutes: 1440,
+    status: "scheduled",
+  };
+
+  it("le départ approuvé décale l'arrivée de la même durée", () => {
+    const result = trackingTimes({ ...tassili, web_departed_at: "2026-10-31T11:51:00Z" });
+    expect(result.departure).toMatchObject({ kind: "observed", reported: true, shiftMinutes: 51 });
+    expect(result.arrival).toMatchObject({ iso: "2026-11-01T11:51:00.000Z", shiftMinutes: 51 });
+  });
+
+  it("l'arrivée approuvée est présentée comme constatée", () => {
+    const result = trackingTimes({ ...tassili, web_arrived_at: "2026-11-01T10:30:00Z" });
+    expect(result.arrival).toMatchObject({ kind: "observed", shiftMinutes: -30 });
+  });
+
+  it("l'arrivée estimée approuvée remplace le calcul par la durée", () => {
+    const result = trackingTimes({
+      ...tassili,
+      web_departed_at: "2026-10-31T11:51:00Z",
+      web_eta_at: "2026-11-01T13:00:00Z",
+    });
+    expect(result.arrival).toMatchObject({ iso: "2026-11-01T13:00:00.000Z", shiftMinutes: 120 });
+  });
+
+  it("un signalement validé passe avant l'indice web", () => {
+    const result = trackingTimes({
+      ...tassili,
+      reported_departed_at: "2026-10-31T12:30:00Z",
+      web_departed_at: "2026-10-31T11:51:00Z",
+    });
+    expect(result.departure.iso).toBe("2026-10-31T12:30:00.000Z");
+  });
+
+  it("le signal AIS récent en approche passe avant l'indice web", () => {
+    const web = { ...crossing, web_eta_at: "2026-11-01T16:00:00Z" };
+    const p = position();
+    const eta = estimate(p);
+    const result = trackingTimes(web, {
+      departure: web,
+      position: p,
+      etaIso: eta.etaIso,
+      etaBasis: eta.etaBasis,
+    } as unknown as LiveShip);
+    expect(result.arrival.fromSignal).toBe(true);
+  });
+});
+
 describe("le signal AIS récent prime sur le signalement", () => {
   it("calcule l'arrivée d'un navire en route vers le port, même à plus de 30 km", () => {
     const result = estimate(position());

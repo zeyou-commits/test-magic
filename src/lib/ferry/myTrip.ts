@@ -23,6 +23,9 @@ type TripDeparture = {
   reported_arrived_at?: string | null;
   reported_delay_minutes?: number | null;
   reported_postponed_at?: string | null;
+  web_departed_at?: string | null;
+  web_arrived_at?: string | null;
+  web_eta_at?: string | null;
 };
 
 /** Traversées marquées « je voyage », de la plus proche à la plus lointaine ; null sans le script. */
@@ -47,7 +50,7 @@ export const myTripsQuery = (userId: string | undefined) =>
       const { data, error } = await supabase
         .from("departures")
         .select(
-          "id,departure_at,arrival_at,duration_minutes,vessel_id,route_id,status,reported_quay_at,reported_departed_at,reported_arrived_at,reported_delay_minutes,reported_postponed_at",
+          "id,departure_at,arrival_at,duration_minutes,vessel_id,route_id,status,reported_quay_at,reported_departed_at,reported_arrived_at,reported_delay_minutes,reported_postponed_at,web_departed_at,web_arrived_at,web_eta_at",
         )
         .in("id", ids)
         .order("departure_at");

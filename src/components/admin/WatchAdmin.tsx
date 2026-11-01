@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Check, Clock, ExternalLink, KeyRound, Pause, RefreshCw, X } from "lucide-react";
+import { Check, Clock, ExternalLink, KeyRound, Pause, RefreshCw, Undo2, X } from "lucide-react";
 import { toast } from "sonner";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { Button } from "@/components/ui/button";
@@ -14,7 +14,7 @@ const db = supabase as unknown as SupabaseClient;
 type Status = "pending" | "standby" | "approved" | "rejected";
 interface Proposal {
   id: string;
-  kind: "flash" | "departure" | "vessel" | "note" | "incident";
+  kind: "flash" | "departure" | "vessel" | "note" | "incident" | "crossing";
   title: string;
   summary: string;
   confidence: "high" | "medium" | "low";
@@ -46,6 +46,7 @@ const KIND: Record<Proposal["kind"], string> = {
   vessel: "Modifier un navire",
   note: "À lire, rien d’automatique",
   incident: "Mettre à jour un incident",
+  crossing: "Corriger l’heure affichée",
 };
 const FIELD: Record<string, string> = {
   status: "Statut",
@@ -53,6 +54,9 @@ const FIELD: Record<string, string> = {
   arrival_at: "Heure d’arrivée",
   vessel_id: "Navire",
   verified_at: "Dernière confirmation",
+  web_departed_at: "Départ constaté",
+  web_arrived_at: "Arrivée constatée",
+  web_eta_at: "Arrivée estimée",
 };
 const STATUS_VALUE: Record<string, string> = {
   scheduled: "Prévue",
@@ -153,6 +157,17 @@ export function WatchAdmin() {
     },
     onError: (error: Error) => toast.error(error.message),
   });
+  const revert = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await db.rpc("bw_watch_revert", { p_id: id });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("Correction annulée");
+      refresh();
+    },
+    onError: (error: Error) => toast.error(error.message),
+  });
   const relaunch = useMutation({
     mutationFn: async () => {
       const { error } = await db.rpc("bw_watch_relaunch");
@@ -189,7 +204,7 @@ export function WatchAdmin() {
     if (!raw) return "—";
     if (proposal.field === "vessel_id") return vessels.find((v) => v.id === raw)?.name ?? raw;
     if (proposal.field === "status") return STATUS_VALUE[raw] ?? raw;
-    if (proposal.field === "verified_at" || proposal.field === "departure_at" || proposal.field === "arrival_at") return dateTime(raw);
+    if (proposal.field === "verified_at" || proposal.field === "departure_at" || proposal.field === "arrival_at" || proposal.field?.startsWith("web_")) return dateTime(raw);
     return raw;
   };
   const all = proposals.data ?? [];
@@ -310,6 +325,16 @@ export function WatchAdmin() {
                         : "Approuvée, sans modification automatique"
                       : "Refusée"}
                     {proposal.decided_at ? ` · ${dateTime(proposal.decided_at)}` : ""}
+                    {proposal.kind === "crossing" && proposal.applied ? (
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        disabled={revert.isPending}
+                        onClick={() => revert.mutate(proposal.id)}
+                      >
+                        <Undo2 size={15} aria-hidden /> Annuler la correction
+                      </Button>
+                    ) : null}
                   </p>
                 )}
               </li>

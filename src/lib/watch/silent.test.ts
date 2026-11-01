@@ -181,6 +181,44 @@ describe("indice lu sur la fiche", () => {
     expect(parseClue({ ...here, current_port: "Oran" }, [check], NOW)?.confidence).toBe("low");
   });
 
+  it("propose la correction d'horaire quand le port et la période correspondent", () => {
+    expect(parseClue(clue, [check], NOW)?.changes).toEqual([
+      { field: "web_departed_at", value: "2026-10-31T20:53:00.000Z" },
+      { field: "web_eta_at", value: "2026-11-01T13:00:00.000Z" },
+    ]);
+  });
+
+  it("ignore les accents pour reconnaître un port", () => {
+    const here = {
+      key: check.key,
+      current_port: "VALÉNCE",
+      arrived_at: "2026-11-01T08:00:00Z",
+      source_name: "Site",
+      source_url: "https://site.example",
+    };
+    expect(parseClue(here, [check], NOW)?.changes).toEqual([
+      { field: "web_arrived_at", value: "2026-11-01T08:00:00.000Z" },
+    ]);
+  });
+
+  it("reste une simple note si le port ou la période ne correspondent pas", () => {
+    expect(
+      parseClue({ ...clue, last_port: "Oran", destination: "Alger" }, [check], NOW)?.changes,
+    ).toEqual([]);
+    expect(
+      parseClue({ ...clue, departed_at: "2026-10-28T10:00:00Z", eta: null }, [check], NOW)?.changes,
+    ).toEqual([]);
+  });
+
+  it("ne garde pas une arrivée estimée déjà passée", () => {
+    const late = { ...clue, departed_at: null, eta: "2026-11-01T09:00:00Z" };
+    expect(parseClue(late, [check], NOW)?.changes).toEqual([]);
+  });
+
+  it("ne propose aucune correction sans traversée", () => {
+    expect(parseClue(clue, [{ ...check, departure_id: null }], NOW)?.changes).toEqual([]);
+  });
+
   it("la même information donne le même lien, une nouvelle heure un autre lien", () => {
     const a = parseClue(clue, [check], NOW)?.url;
     expect(parseClue({ ...clue, position_age_minutes: 30 }, [check], NOW)?.url).toBe(a);

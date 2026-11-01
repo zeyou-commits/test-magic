@@ -4,6 +4,7 @@ import { Check, Clock, ExternalLink, KeyRound, Newspaper, Pause, RefreshCw, Undo
 import { toast } from "sonner";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { Button } from "@/components/ui/button";
+import { ChatModeration } from "./ChatModeration";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { formatAge } from "@/lib/ferry/tracking";
@@ -381,6 +382,8 @@ export function WatchAdmin() {
           })}
         </ul>
       )}
+
+      <ChatModeration />
 
       <section className="bw-watch__sources" aria-label="Sources surveillées">
         <h3>Sources surveillées</h3>

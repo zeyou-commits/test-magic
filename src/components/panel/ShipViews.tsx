@@ -348,6 +348,7 @@ export function VesselView({
               <TripStatusPicker
                 departureId={departure.id}
                 departureAt={departure.departure_at}
+                arrivalAt={departure.arrival_at}
                 fromPortId={from.id}
               />
               <button

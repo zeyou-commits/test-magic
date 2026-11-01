@@ -22,6 +22,7 @@ import { requestQuickReport } from "@/components/map/QuickReport";
 import { FlashFeed } from "./FlashFeed";
 import { PortPlaces } from "./PortPlaces";
 import { PortLiveBoard } from "./PortLiveBoard";
+import { LiveRoom } from "./LiveRoom";
 import { PortPresence } from "./TripPresence";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -332,6 +333,8 @@ export function PortView({
       <LivePulse info={live} onOpen={openLive} />
 
       <PortPresence portId={portId} />
+
+      <LiveRoom kind="port" room={portId} title={`Salon · Port de ${port.name}`} />
 
       <PortLiveBoard
         portId={portId}

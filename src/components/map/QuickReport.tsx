@@ -1,3 +1,4 @@
+import { PASSAGE_MAX_MS } from "@/lib/ferry/portPassage";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { SupabaseClient } from "@supabase/supabase-js";
@@ -310,8 +311,9 @@ export function QuickReport({
     const start = Date.parse(selectedDeparture.departure_at);
     const end = selectedDeparture.arrival_at ? Date.parse(selectedDeparture.arrival_at) : NaN;
     if (category === "boarding") return selectedShip?.state === "docked" && now >= start - 6 * 3_600_000 && now <= start + 30 * 60_000;
-    if (category === "disembarking") return selectedShip?.state === "docked" && Number.isFinite(end) && now >= end - 30 * 60_000 && now <= end + 2 * 3_600_000;
-    return now >= start - 24 * 3_600_000 && (!Number.isFinite(end) || now <= end + 2 * 3_600_000);
+    // Le débarquement et les contrôles durent des heures : la fenêtre va jusqu'à la sortie du port.
+    if (category === "disembarking") return Number.isFinite(end) && now >= end - 30 * 60_000 && now <= end + PASSAGE_MAX_MS;
+    return now >= start - 24 * 3_600_000 && (!Number.isFinite(end) || now <= end + PASSAGE_MAX_MS);
   };
   const ready = Boolean(
     situation &&

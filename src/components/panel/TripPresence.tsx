@@ -32,6 +32,7 @@ import {
 } from "@/lib/ferry/community";
 import { requestQuickReport } from "@/components/map/QuickReport";
 import { OptionIcon } from "./SituationIcon";
+import { visibleSteps } from "@/lib/ferry/portPassage";
 
 const PENDING_STATUS = "bledway:pending-trip-status";
 
@@ -76,10 +77,13 @@ export function PortPresence({ portId }: { portId: string }) {
   const arrived = rows
     .filter((row) => row.arrival_port_id === portId)
     .reduce((sum, row) => sum + row.arrived, 0);
-  if (!atPort && !enRoute && !arrived) return null;
+  const landing = rows
+    .filter((row) => row.arrival_port_id === portId)
+    .reduce((sum, row) => sum + (row.landing ?? 0) + (row.controls ?? 0), 0);
+  if (!atPort && !enRoute && !arrived && !landing) return null;
   return (
     <p className="bw-presence">
-      <CabasStack count={atPort || enRoute || arrived} seed={portId} />
+      <CabasStack count={atPort || landing || enRoute || arrived} seed={portId} />
       <span>
         {atPort ? <strong>{voyageurs(atPort)} au port</strong> : null}
         {enRoute ? (
@@ -92,6 +96,12 @@ export function PortPresence({ portId }: { portId: string }) {
           <span>
             {atPort || enRoute ? " · " : ""}
             {arrived} arrivé{arrived > 1 ? "s" : ""} ici
+          </span>
+        ) : null}
+        {landing ? (
+          <span>
+            {atPort || enRoute || arrived ? " · " : ""}
+            {landing} au débarquement
           </span>
         ) : null}
       </span>
@@ -182,10 +192,13 @@ export function VesselPresence({
 export function TripStatusPicker({
   departureId,
   departureAt,
+  arrivalAt,
   fromPortId,
 }: {
   departureId: string;
   departureAt: string;
+  /** Heure d'arrivée prévue : c'est elle qui fait passer aux étapes de l'arrivée. */
+  arrivalAt?: string | null | undefined;
   fromPortId?: string | undefined;
 }) {
   const { user } = useAuth();
@@ -245,9 +258,15 @@ export function TripStatusPicker({
     en_route: row?.en_route ?? 0,
     port: row?.at_port ?? 0,
     onboard: row?.onboard ?? 0,
+    landing: row?.landing ?? 0,
+    controls: row?.controls ?? 0,
     arrived: row?.arrived ?? 0,
   };
   const current = mine.data ?? null;
+  const scheduledEnd = arrivalAt ? Date.parse(arrivalAt) : Date.parse(departureAt) + 24 * 3_600_000;
+  const shown = visibleSteps(current, scheduledEnd, Date.now()).map(
+    (id) => steps.find((step) => step.id === id)!,
+  );
   const choose = (status: TripStatus) => {
     if (!user) {
       window.sessionStorage.setItem(PENDING_STATUS, JSON.stringify({ departureId, status }));
@@ -261,7 +280,7 @@ export function TripStatusPicker({
     return (
       <p className="bw-trip-status-teaser">
         <span aria-hidden>
-          {steps.map((step) => (
+          {shown.map((step) => (
             <CabasImg key={step.id} src={step.image} alt="" width={26} height={26} loading="lazy" />
           ))}
         </span>
@@ -284,7 +303,7 @@ export function TripStatusPicker({
         </small>
       </div>
       <ol className="bw-trip-status__steps">
-        {steps.map((step) => (
+        {shown.map((step) => (
           <li key={step.id}>
             <button
               type="button"
@@ -304,7 +323,7 @@ export function TripStatusPicker({
           </li>
         ))}
       </ol>
-      {moodFor ? <QuickMoods moment={moodFor} onDone={() => setMoodFor(null)} /> : null}
+      {moodFor ? <QuickMoods moment={moodFor === "landing" || moodFor === "controls" ? "arrived" : moodFor} onDone={() => setMoodFor(null)} /> : null}
       {update.isError ? (
         <p role="alert" className="bw-community-error">
           {update.error.message}

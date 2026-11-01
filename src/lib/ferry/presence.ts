@@ -5,13 +5,15 @@ import { supabase as typedSupabase } from "@/integrations/supabase/client";
 // Statuts de voyage (script du 01/11/2026), absents des types générés.
 const supabase = typedSupabase as unknown as SupabaseClient;
 
-export type TripStatus = "en_route" | "port" | "onboard" | "arrived";
-/** Les quatre étapes de « Ma traversée », chacune avec son cabas. */
+export type TripStatus = "en_route" | "port" | "onboard" | "landing" | "controls" | "arrived";
+/** Les étapes de « Ma traversée », chacune avec son cabas, jusqu'à la sortie du port. */
 export const tripSteps: { id: TripStatus; label: string; short: string; image: string }[] = [
   { id: "en_route", label: "En route vers le port", short: "En route", image: "/cabas/statut-en-route.webp" },
   { id: "port", label: "Au port", short: "Au port", image: "/cabas/statut-au-port.webp" },
   { id: "onboard", label: "À bord", short: "À bord", image: "/cabas/statut-a-bord.webp" },
-  { id: "arrived", label: "Arrivé", short: "Arrivé", image: "/cabas/statut-arrive.webp" },
+  { id: "landing", label: "Débarquement", short: "Débarquement", image: "/cabas/humeurs/27_debarquement.webp" },
+  { id: "controls", label: "Police et douane", short: "Contrôles", image: "/cabas/humeurs/14_controle.webp" },
+  { id: "arrived", label: "Sorti du port", short: "Sorti", image: "/cabas/statut-arrive.webp" },
 ];
 export const presenceKey = ["bw-trip-presence"] as const;
 
@@ -46,6 +48,8 @@ export type PresenceRow = {
   en_route: number;
   at_port: number;
   onboard: number;
+  landing: number;
+  controls: number;
   arrived: number;
 };
 const missing = (code?: string) => code === "PGRST202" || code === "PGRST205" || code === "42P01";
@@ -82,6 +86,20 @@ export const myTripStatusQuery = (departureId: string, userId: string | undefine
       return ((data?.status as TripStatus | undefined) ?? null) as TripStatus | null;
     },
     retry: false,
+  });
+
+/** Premier arrêt observé près du port d'arrivée ; null sans signal ou si le script manque. */
+export const dockedSinceQuery = (departureId: string) =>
+  queryOptions({
+    queryKey: [...presenceKey, "docked", departureId],
+    enabled: Boolean(departureId),
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc("bw_docked_since", { p_departure: departureId });
+      if (error) return null;
+      return (data as string | null) ?? null;
+    },
+    retry: false,
+    refetchInterval: 3 * 60_000,
   });
 
 export async function setTripStatus(departureId: string, status: TripStatus | null) {

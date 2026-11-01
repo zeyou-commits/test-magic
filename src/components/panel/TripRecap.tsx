@@ -48,6 +48,7 @@ import { TripChanges } from "./MyTrip";
 import { PushStatusLine } from "./PushStatusLine";
 import { ReportButton } from "./ReportButton";
 import { TravelSignals } from "./TravelCommunity";
+import { LiveRoom } from "./LiveRoom";
 import { PortPresence, TripStatusPicker, VesselPresence } from "./TripPresence";
 import { VesselSpecs } from "./VesselBits";
 
@@ -367,6 +368,7 @@ export function TripRecap({
         <TripStatusPicker
           departureId={departure.id}
           departureAt={departure.departure_at}
+          arrivalAt={departure.arrival_at}
           fromPortId={from.id}
         />
       ) : null}
@@ -378,6 +380,14 @@ export function TripRecap({
         departureAt={departure.departure_at}
         arrivalAt={arriveIso ?? null}
       />
+
+      {!cancelled ? (
+        <LiveRoom
+          kind="crossing"
+          room={departure.id}
+          title={`Salon · ${from.name} → ${to.name}`}
+        />
+      ) : null}
 
       {/* 3 bis. Les voyageurs de la traversée, leur cabas et leur humeur */}
       <TripTravellers

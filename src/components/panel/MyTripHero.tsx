@@ -11,10 +11,22 @@ import { SeaIcon, useSeaPeak } from "./SeaForecast";
 import { seaHeight, seaLevel } from "@/lib/ferry/seaState";
 import { TravellerAvatar } from "@/components/community/TravellerAvatar";
 import { myTravellerQuery } from "@/lib/community/travellers";
-import { prepProgress, preparationQuery, requestPrepFocus, tripDirection } from "@/lib/ferry/preparation";
+import {
+  prepProgress,
+  preparationQuery,
+  requestPrepFocus,
+  tripDirection,
+} from "@/lib/ferry/preparation";
 import { useAuth } from "@/hooks/useAuth";
 import { tripEnd, useMyTrip, type MyTrip } from "@/lib/ferry/myTrip";
-import { mergeTripSteps, myTripStatusQuery, tripStepsQuery } from "@/lib/ferry/presence";
+import {
+  dockedSinceQuery,
+  mergeTripSteps,
+  myTripStatusQuery,
+  tripStepsQuery,
+} from "@/lib/ferry/presence";
+import { portPassage } from "@/lib/ferry/portPassage";
+import { PortPassage } from "./PortPassage";
 import type { FleetShip } from "@/lib/ferry/fleet";
 import type { Selection } from "@/lib/ferry/types";
 import { formatDateParts, formatDateTime } from "@/lib/ferry/format";
@@ -37,7 +49,8 @@ export function tripPhase(trip: MyTrip, now: number) {
   // Un retard validé décale le compte à rebours et l'arrivée.
   const start = reportedCrossing(trip.departure, now).start;
   const end = tripEnd(trip.departure);
-  if (trip.departure.status === "cancelled") return { phase: "cancelled" as const, text: "Traversée annulée" };
+  if (trip.departure.status === "cancelled")
+    return { phase: "cancelled" as const, text: "Traversée annulée" };
   if (now < start) {
     const seconds = Math.floor((start - now) / 1000);
     const days = Math.floor(seconds / 86_400);
@@ -73,6 +86,7 @@ export function MyTripHero({ onSelect }: { onSelect: (selection: Selection) => v
   const alert = useVesselAlert(trip?.vessel?.id);
   const me = useQuery(myTravellerQuery(user?.id)).data;
   const preparation = useQuery(preparationQuery(trip?.departure.id, user?.id)).data;
+  const dockedSeen = useQuery(dockedSinceQuery(trip?.departure.id ?? "")).data ?? null;
   const seaPeak = useSeaPeak(
     trip?.departure.id,
     trip?.from,
@@ -94,6 +108,14 @@ export function MyTripHero({ onSelect }: { onSelect: (selection: Selection) => v
   const held = Boolean(alert) && phase.phase !== "cancelled" && !arrivedForSure;
   // Une fois le départ passé, préparer le voyage n'a plus de sens.
   const prepOpen = phase.phase === "before" || phase.phase === "today";
+  // Arrivée constatée d'abord, sinon le premier arrêt vu à quai.
+  const passage = portPassage({
+    dockedSince: trip.departure.reported_arrived_at ?? trip.departure.web_arrived_at ?? dockedSeen,
+    scheduledEnd: tripEnd(trip.departure),
+    status,
+    now,
+  });
+  const inPassage = passage.active && !held && phase.phase !== "cancelled";
   const zone = portTimeZone(trip.from);
   const arrivalZone = portTimeZone(trip.to);
   const departureIso = progress?.times.departure.iso ?? trip.departure.departure_at;
@@ -109,12 +131,17 @@ export function MyTripHero({ onSelect }: { onSelect: (selection: Selection) => v
   // Le suivi prend toute la place dès que le voyage a commencé : c'est le même bloc que « En navigation ».
   const underway =
     Boolean(progress) &&
+    !inPassage &&
     !held &&
     !progress?.reportedPostponed &&
     (phase.phase === "sea" || Boolean(progress?.reportedQuay) || Boolean(progress?.hold));
   const image =
     steps.find((step) => step.id === status)?.image ??
-    (phase.phase === "sea" ? steps[2]!.image : phase.phase === "arrived" ? steps[3]!.image : steps[0]!.image);
+    (phase.phase === "sea"
+      ? steps[2]!.image
+      : phase.phase === "arrived"
+        ? (steps.find((step) => step.id === "arrived") ?? steps[0]!).image
+        : steps[0]!.image);
   const next = held
     ? "Contactez la compagnie avant de partir et consultez les informations à jour"
     : phase.phase === "cancelled"
@@ -173,47 +200,56 @@ export function MyTripHero({ onSelect }: { onSelect: (selection: Selection) => v
         </span>
         <ArrowRight size={18} aria-hidden />
       </button>
-      {underway ? null : (
-      <div className="bw-mytrip-hero__status">
-      <div className="bw-mytrip-hero__clock" aria-live="off">
-        {held ? (
-          <strong>{alert?.label} · départ à confirmer</strong>
-        ) : progress?.reportedPostponed ? (
-          <strong>Report ou annulation signalé</strong>
-        ) : progress?.reportedQuay ? (
-          <strong>Encore à quai</strong>
-        ) : phase.phase === "today" ? (
-          <>
-            <span>{phase.text}</span>
-            <strong className="tabular-nums">{phase.countdown}</strong>
-          </>
-        ) : progress?.hold ? (
-          <strong>{progress.hold.fresh ? "Encore à quai" : "Départ à confirmer"}</strong>
-        ) : phase.phase === "arrived" && !arrivedForSure ? (
-          <>
-            <strong>Arrivée à confirmer</strong>
-            {progress ? <small className="bw-trust">{progress.trustLabel}</small> : null}
-          </>
-        ) : (
-          <strong>{phase.text}</strong>
-        )}
-      </div>
-      {seaPeak != null && !held && phase.phase !== "cancelled" && phase.phase !== "arrived" ? (
-        <div
-          className="bw-mytrip-hero__sea"
-          data-level={seaLevel(seaPeak).id}
-          aria-label={`${seaLevel(seaPeak).label} prévue`}
-        >
-          <SeaIcon peak={seaPeak} size={24} />
-          <span>
-            <small>Mer</small>
-            <b>
-              {seaLevel(seaPeak).short} · {seaHeight(seaPeak)}
-            </b>
-          </span>
-        </div>
+      {inPassage ? (
+        <PortPassage
+          departureId={trip.departure.id}
+          portName={trip.to?.name ?? "d'arrivée"}
+          minutes={passage.minutes}
+          status={status}
+          onOpen={() => onSelect({ type: "departure", id: trip.departure.id })}
+        />
       ) : null}
-      </div>
+      {underway || inPassage ? null : (
+        <div className="bw-mytrip-hero__status">
+          <div className="bw-mytrip-hero__clock" aria-live="off">
+            {held ? (
+              <strong>{alert?.label} · départ à confirmer</strong>
+            ) : progress?.reportedPostponed ? (
+              <strong>Report ou annulation signalé</strong>
+            ) : progress?.reportedQuay ? (
+              <strong>Encore à quai</strong>
+            ) : phase.phase === "today" ? (
+              <>
+                <span>{phase.text}</span>
+                <strong className="tabular-nums">{phase.countdown}</strong>
+              </>
+            ) : progress?.hold ? (
+              <strong>{progress.hold.fresh ? "Encore à quai" : "Départ à confirmer"}</strong>
+            ) : phase.phase === "arrived" && !arrivedForSure ? (
+              <>
+                <strong>Arrivée à confirmer</strong>
+                {progress ? <small className="bw-trust">{progress.trustLabel}</small> : null}
+              </>
+            ) : (
+              <strong>{phase.text}</strong>
+            )}
+          </div>
+          {seaPeak != null && !held && phase.phase !== "cancelled" && phase.phase !== "arrived" ? (
+            <div
+              className="bw-mytrip-hero__sea"
+              data-level={seaLevel(seaPeak).id}
+              aria-label={`${seaLevel(seaPeak).label} prévue`}
+            >
+              <SeaIcon peak={seaPeak} size={24} />
+              <span>
+                <small>Mer</small>
+                <b>
+                  {seaLevel(seaPeak).short} · {seaHeight(seaPeak)}
+                </b>
+              </span>
+            </div>
+          ) : null}
+        </div>
       )}
       {underway && progress ? (
         <div className="bw-mytrip-hero__voyage">
@@ -276,7 +312,9 @@ export function MyTripHero({ onSelect }: { onSelect: (selection: Selection) => v
                 type="button"
                 onClick={() =>
                   window.dispatchEvent(
-                    new CustomEvent("batogo:focus-vessel", { detail: { vesselId: trip.vessel!.id } }),
+                    new CustomEvent("batogo:focus-vessel", {
+                      detail: { vesselId: trip.vessel!.id },
+                    }),
                   )
                 }
               >
@@ -303,21 +341,21 @@ export function MyTripHero({ onSelect }: { onSelect: (selection: Selection) => v
         </button>
       ) : null}
       {underway ? null : (
-      <div className="bw-mytrip-hero__foot">
-        {prep ? null : <span>{next}</span>}
-        {trip.vessel && !held && (phase.phase === "today" || phase.phase === "sea") ? (
-          <button
-            type="button"
-            onClick={() =>
-              window.dispatchEvent(
-                new CustomEvent("batogo:focus-vessel", { detail: { vesselId: trip.vessel!.id } }),
-              )
-            }
-          >
-            <Crosshair size={14} aria-hidden /> Voir mon navire
-          </button>
-        ) : null}
-      </div>
+        <div className="bw-mytrip-hero__foot">
+          {prep ? null : <span>{next}</span>}
+          {trip.vessel && !held && (phase.phase === "today" || phase.phase === "sea") ? (
+            <button
+              type="button"
+              onClick={() =>
+                window.dispatchEvent(
+                  new CustomEvent("batogo:focus-vessel", { detail: { vesselId: trip.vessel!.id } }),
+                )
+              }
+            >
+              <Crosshair size={14} aria-hidden /> Voir mon navire
+            </button>
+          ) : null}
+        </div>
       )}
     </section>
   );

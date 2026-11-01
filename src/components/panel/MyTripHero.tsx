@@ -1,3 +1,4 @@
+import { CabasImg } from "@/components/CabasImg";
 import { crossingProgress, ferryLeft } from "@/lib/ferry/crossingProgress";
 import { delayLabel, reportedCrossing } from "@/lib/ferry/tracking";
 import { MiniFerry } from "./MiniFerry";
@@ -141,7 +142,7 @@ export function MyTripHero({ onSelect }: { onSelect: (selection: Selection) => v
           {me ? (
             <TravellerAvatar card={me} size={48} static />
           ) : (
-            <img src={image} alt="" width={64} height={64} />
+            <CabasImg src={image} alt="" width={64} height={64} />
           )}
         </span>
         <span className="bw-mytrip-hero__text">

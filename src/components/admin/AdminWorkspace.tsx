@@ -137,6 +137,13 @@ const sections = [
     icon: Fuel,
   },
   {
+    id: "illustrations",
+    label: "Illustrations",
+    description: "Avatars, personnages, humeurs et icônes : remplacer une image ou la renommer.",
+    group: "Voyageurs",
+    icon: Images,
+  },
+  {
     id: "walletMedia",
     label: "Mes dinars : images et voix",
     description: "Choisissez les photos des billets et enregistrez les montants à l’oral.",

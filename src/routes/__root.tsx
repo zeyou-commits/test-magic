@@ -13,6 +13,7 @@ import {
 } from "@tanstack/react-router";
 import { track } from "@/lib/usage";
 import { useEffect, useMemo, type ReactNode } from "react";
+import { loadIllustrations } from "@/lib/illustrations/store";
 
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
@@ -189,6 +190,9 @@ function RootComponent() {
   useEffect(() => {
     track("page_view");
   }, [pathname]);
+  useEffect(() => {
+    loadIllustrations();
+  }, []);
 
   return (
     <QueryClientProvider client={queryClient}>

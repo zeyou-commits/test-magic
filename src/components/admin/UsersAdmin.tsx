@@ -1,3 +1,4 @@
+import { CabasImg } from "@/components/CabasImg";
 import { AdminRequestError } from "@/lib/admin/request";
 import { useState } from "react";
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
@@ -661,7 +662,7 @@ function UserSheet({
         <div className="grid gap-5">
           <section className="flex items-center gap-3">
             {detail.data?.traveller?.avatar ? (
-              <img
+              <CabasImg
                 src={`/cabas/persos/${detail.data.traveller.avatar}.webp`}
                 alt=""
                 className="size-14 rounded-full bg-muted object-contain"

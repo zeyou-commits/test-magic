@@ -1,3 +1,4 @@
+import { CabasImg } from "@/components/CabasImg";
 import { useState } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -143,7 +144,7 @@ function MeSheet({ open, onOpenChange }: { open: boolean; onOpenChange: (open: b
                 disabled={save.isPending}
                 onClick={() => save.mutate(me.mood?.code === mood.code ? null : mood.code)}
               >
-                <img src={mood.image} alt="" width={36} height={36} loading="lazy" />
+                <CabasImg src={mood.image} alt="" width={36} height={36} loading="lazy" />
                 <span>
                   {mood.emoji ? `${mood.emoji} ` : ""}
                   {mood.label}

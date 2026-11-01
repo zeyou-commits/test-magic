@@ -1,3 +1,4 @@
+import { CabasImg } from "@/components/CabasImg";
 import { useState, type CSSProperties } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { SupabaseClient } from "@supabase/supabase-js";
@@ -934,7 +935,7 @@ function TripStepsAdmin() {
         {(steps.data ?? []).map((row) => (
           <li key={row.code}>
             <button type="button" className="bw-admin-list__main" onClick={() => setOpen(row)}>
-              <img src={row.image} alt="" width={44} height={44} className="rounded-full" />
+              <CabasImg src={row.image} alt="" width={44} height={44} className="rounded-full" />
               <span className="min-w-0">
                 <strong>{row.short_label}</strong>
                 <small>{row.label}</small>
@@ -1003,7 +1004,7 @@ function TripStepEditor({
     >
       <div className="grid gap-4">
         <div className="flex items-center gap-3 rounded-xl bg-muted/50 p-3">
-          <img src={image} alt="" width={64} height={64} />
+          <CabasImg src={image} alt="" width={64} height={64} />
           <span className="text-sm font-semibold">{short || "Aperçu"}</span>
         </div>
         <Label text="Libellé court (sous le cabas, 20 caractères)">
@@ -1029,7 +1030,7 @@ function TripStepEditor({
                   .replace(/^\d+_/, "")
                   .replace(/_/g, " ")}
               >
-                <img src={src} alt="" width={52} height={52} loading="lazy" />
+                <CabasImg src={src} alt="" width={52} height={52} loading="lazy" />
               </button>
             ))}
           </div>

@@ -7,6 +7,7 @@ import type { FleetShip } from "@/lib/ferry/fleet";
 import { vesselMapIcon } from "@/lib/ferry/vesselVisuals";
 import { arcGap, dockSpread, vesselScreenHeight } from "./shipIcons";
 import { avatarFor, presenceQuery } from "@/lib/ferry/presence";
+import { illustrationUrl } from "@/lib/illustrations/store";
 import type { Port, Selection } from "@/lib/ferry/types";
 
 /**
@@ -54,7 +55,7 @@ export function usePresenceMarkers(
       );
       for (let index = 0; index < Math.min(3, count); index += 1) {
         const img = document.createElement("img");
-        img.src = avatarFor(seed, index);
+        img.src = illustrationUrl(avatarFor(seed, index));
         img.alt = "";
         img.width = 20;
         img.height = 20;
@@ -68,7 +69,7 @@ export function usePresenceMarkers(
         const bubble = document.createElement("span");
         bubble.className = "bw-presence-pin__mood";
         const img = document.createElement("img");
-        img.src = mood.image;
+        img.src = illustrationUrl(mood.image);
         img.alt = "";
         img.width = 16;
         img.height = 16;

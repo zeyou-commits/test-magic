@@ -1,3 +1,4 @@
+import { CabasImg } from "@/components/CabasImg";
 import { useEffect, useSyncExternalStore } from "react";
 import { MessageCircle, X } from "lucide-react";
 import { moodIcon, type Mood } from "@/lib/community/travellers";
@@ -68,11 +69,11 @@ export function MoodBubble({ mood, placement }: { mood: Mood | null; placement: 
           setOpen(!isOpen);
         }}
       >
-        {icon ? <img src={icon} alt="" width={20} height={20} /> : <MessageCircle size={13} aria-hidden />}
+        {icon ? <CabasImg src={icon} alt="" width={20} height={20} /> : <MessageCircle size={13} aria-hidden />}
       </button>
       {isOpen ? (
         <span className="bw-mood-bubble__panel" role="status">
-          {icon ? <img src={icon} alt="" width={26} height={26} /> : null}
+          {icon ? <CabasImg src={icon} alt="" width={26} height={26} /> : null}
           <span>{mood.label}</span>
           <button
             type="button"

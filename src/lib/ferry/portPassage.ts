@@ -131,3 +131,38 @@ export const searchRows = (rows: PickerRow[], text: string) => {
   const words = plain(text).split(/\s+/).filter(Boolean);
   return rows.filter((row) => words.every((word) => row.search.includes(word)));
 };
+
+export type RoomMoment = "before" | "boarding" | "sea" | "arrival" | "over";
+
+/** Où en est la traversée, pour proposer les bons exemples et fermer l'écriture. */
+export function roomMoment(departureAt: string, arrivalAt: string | null, now: number): RoomMoment {
+  const start = Date.parse(departureAt);
+  const end = arrivalAt ? Date.parse(arrivalAt) : start + 48 * HOUR;
+  if (now > end + PASSAGE_MAX_MS) return "over";
+  if (now >= end - ARRIVAL_STEPS_BEFORE_MS) return "arrival";
+  if (now >= start) return "sea";
+  return now >= start - 8 * HOUR ? "boarding" : "before";
+}
+
+const EXAMPLES: Record<RoomMoment | "port" | "questions", string[]> = {
+  before: [
+    "Qui voyage avec un fourgon ?",
+    "Vous arrivez à quelle heure au port ?",
+    "Quelqu'un a déjà fait ce trajet ?",
+  ],
+  boarding: ["La file avance ?", "L'embarquement a commencé ?", "Où est l'entrée véhicules ?"],
+  sea: [
+    "Le restaurant est ouvert ?",
+    "La mer bouge de votre côté ?",
+    "Une prise libre quelque part ?",
+  ],
+  arrival: ["On descend quand ?", "La douane, ça avance ?", "Bien arrivés !"],
+  over: [],
+  port: ["La file est longue ?", "Le parking est plein ?", "Où trouver un café ?"],
+  questions: [
+    "À quelle heure arriver au port ?",
+    "Y a-t-il de quoi manger à bord ?",
+    "Comment embarquer avec une remorque ?",
+  ],
+};
+export const roomExamples = (moment: keyof typeof EXAMPLES) => EXAMPLES[moment];

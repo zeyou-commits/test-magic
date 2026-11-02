@@ -8566,3 +8566,115 @@ body:has([data-film="true"]) [data-map-rail] {
   max-height: 150px;
   overflow-y: auto;
 }
+
+/* Les grandes icônes communes aux fiches traversée, bateau et port. */
+.bw-hub {
+  display: grid;
+  grid-template-columns: repeat(var(--hub-tiles, 4), minmax(0, 1fr));
+  gap: 8px;
+  margin: 10px 0;
+}
+.bw-hub[data-tiles="3"] {
+  --hub-tiles: 3;
+}
+.bw-hub[data-tiles="2"] {
+  --hub-tiles: 2;
+}
+.bw-hub > button {
+  display: grid;
+  align-content: start;
+  justify-items: center;
+  gap: 4px;
+  min-height: 92px;
+  padding: 10px 4px;
+  border: 1px solid #e3ebe6;
+  border-radius: 16px;
+  background: #ffffff;
+  color: #123f2c;
+  text-align: center;
+}
+.bw-hub strong {
+  font-size: 12.5px;
+  font-weight: 800;
+  line-height: 1.15;
+}
+.bw-hub small {
+  color: #5b6b66;
+  font-size: 11px;
+  line-height: 1.1;
+}
+.bw-hub__icon {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: #f1f8f4;
+  color: #0e7a43;
+}
+.bw-hub__icon b {
+  position: absolute;
+  top: -5px;
+  right: -8px;
+  min-width: 19px;
+  padding: 0 5px;
+  border: 2px solid #ffffff;
+  border-radius: 999px;
+  background: #d9411e;
+  color: #ffffff;
+  font-size: 10.5px;
+  font-weight: 800;
+  line-height: 15px;
+}
+/* Le salon d'abord : c'est l'entrée la plus visible. */
+.bw-hub > button[data-tile="salon"] {
+  border-color: #0e7a43;
+  background: #0e7a43;
+  color: #ffffff;
+}
+.bw-hub > button[data-tile="salon"] .bw-hub__icon {
+  background: #ffffff;
+}
+.bw-hub > button[data-tile="salon"] small {
+  color: #dff3e7;
+}
+.bw-hub > button[data-tile="report"] .bw-hub__icon {
+  background: #fff1d0;
+  color: #8a5a00;
+}
+.bw-journey-line {
+  margin: -2px 0 8px;
+  font-size: 12.5px;
+  color: #5b6b66;
+}
+.bw-journey-line > p {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+.bw-note-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 36px;
+  color: #0e7a43;
+  font-size: 13px;
+  font-weight: 700;
+}
+.bw-room__examples {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.bw-room__examples button {
+  min-height: 32px;
+  padding: 0 10px;
+  border: 1px solid #cfe3d8;
+  border-radius: 999px;
+  background: #f1f8f4;
+  color: #0e6b3b;
+  font-size: 12px;
+  font-weight: 600;
+}

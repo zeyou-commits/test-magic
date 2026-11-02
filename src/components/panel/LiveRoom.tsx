@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { queryOptions, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Flag, MessagesSquare, Send, ThumbsUp } from "lucide-react";
 import type { SupabaseClient } from "@supabase/supabase-js";
@@ -6,8 +6,10 @@ import { TravellerAvatar } from "@/components/community/TravellerAvatar";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase as typedSupabase } from "@/integrations/supabase/client";
 import type { TravellerCard } from "@/lib/community/travellers";
+import { useTravelAction } from "@/hooks/useTravelAction";
+import { CHAT_SENT_EVENT, postToRoom, rememberPendingChat } from "@/lib/ferry/chat";
 import { currentPosition } from "@/lib/ferry/community";
-import { chatRefusal } from "@/lib/ferry/portPassage";
+import { chatRefusal, roomExamples, type RoomMoment } from "@/lib/ferry/portPassage";
 
 const supabase = typedSupabase as unknown as SupabaseClient;
 export const MAX_MESSAGE = 200;
@@ -30,20 +32,6 @@ type Feed = { access: "read" | "member" | "position"; messages: Message[] };
 const PLACE = { aboard: "à bord", port: "au port", trip: "passager" } as const;
 const missing = (code?: string) => code === "PGRST202" || code === "42883";
 export const roomKey = (kind: RoomKind, room: string) => ["bw-chat", kind, room] as const;
-
-export async function postToRoom(kind: RoomKind, room: string, body: string) {
-  const here = kind === "port" ? await currentPosition() : null;
-  const { data, error } = await supabase.rpc("bw_chat_post", {
-    p_kind: kind,
-    p_room: room,
-    p_body: body,
-    p_lat: here?.[1] ?? null,
-    p_lon: here?.[0] ?? null,
-  });
-  if (error) throw new Error("Message non envoyé. Réessayez.");
-  const result = data as { ok: boolean; refused?: string };
-  if (!result.ok) throw new Error(chatRefusal(result.refused ?? ""));
-}
 
 const time = (iso: string) =>
   new Intl.DateTimeFormat("fr-FR", {
@@ -94,12 +82,29 @@ export function RoomButton({ departureId, onOpen }: { departureId: string; onOpe
 }
 
 /** Salon en direct : tout le monde lit ; seuls les passagers et les personnes sur le port écrivent. */
-export function LiveRoom({ kind, room, title }: { kind: RoomKind; room: string; title: string }) {
+export function LiveRoom({
+  kind,
+  room,
+  title,
+  moment = "before",
+}: {
+  kind: RoomKind;
+  room: string;
+  title: string;
+  moment?: RoomMoment;
+}) {
   const { user } = useAuth();
+  const request = useTravelAction();
   const client = useQueryClient();
   const [text, setText] = useState("");
   const feed = useQuery(chatFeedQuery(kind, room, user?.id));
   const refresh = () => void client.invalidateQueries({ queryKey: roomKey(kind, room) });
+  // Parti après une inscription : le formulaire se vide.
+  useEffect(() => {
+    const clear = () => setText("");
+    window.addEventListener(CHAT_SENT_EVENT, clear);
+    return () => window.removeEventListener(CHAT_SENT_EVENT, clear);
+  }, []);
   const send = useMutation({
     mutationFn: () => postToRoom(kind, room, text),
     onSuccess: () => {
@@ -133,6 +138,28 @@ export function LiveRoom({ kind, room, title }: { kind: RoomKind; room: string; 
   const messages = feed.data?.messages ?? [];
   const canWrite = feed.data?.access === "member" || feed.data?.access === "position";
   const problem = send.error ?? react.error ?? report.error;
+  const closed = kind === "crossing" && moment === "over";
+  // On écrit d'abord ; l'inscription n'arrive qu'à l'envoi, et le message est gardé.
+  const submit = () => {
+    if (!text.trim()) return;
+    if (canWrite) {
+      send.mutate();
+      return;
+    }
+    rememberPendingChat({ kind, room, body: text });
+    request(
+      kind === "crossing"
+        ? {
+            type: "follow",
+            kind: "departure",
+            targetId: room,
+            label: title,
+            traveller: true,
+            purpose: "voyageur",
+          }
+        : { type: "chat", label: title },
+    );
+  };
   return (
     <section className="bw-room" aria-label={title}>
       <header>
@@ -144,33 +171,42 @@ export function LiveRoom({ kind, room, title }: { kind: RoomKind; room: string; 
             : "En direct"}
         </small>
       </header>
-      {canWrite ? (
-        <form
-          onSubmit={(event) => {
-            event.preventDefault();
-            if (text.trim()) send.mutate();
-          }}
-        >
-          <input
-            value={text}
-            maxLength={MAX_MESSAGE}
-            onChange={(event) => setText(event.target.value)}
-            placeholder={
-              kind === "port" ? "Que se passe-t-il sur le port ?" : "Que se passe-t-il ?"
-            }
-            aria-label="Votre message"
-          />
-          <small aria-hidden>{MAX_MESSAGE - text.length}</small>
-          <button type="submit" disabled={!text.trim() || send.isPending} aria-label="Envoyer">
-            <Send size={16} aria-hidden />
-          </button>
-        </form>
-      ) : (
+      {closed ? (
         <p className="bw-room__locked">
-          {kind === "crossing"
-            ? "Vous pouvez lire. Pour écrire, indiquez que vous voyagez sur cette traversée."
-            : "Vous pouvez lire. Connectez-vous pour écrire si vous êtes sur place."}
+          Ce salon est fermé à l'écriture. Vous pouvez encore le lire.
         </p>
+      ) : (
+        <>
+          <form
+            onSubmit={(event) => {
+              event.preventDefault();
+              submit();
+            }}
+          >
+            <input
+              value={text}
+              maxLength={MAX_MESSAGE}
+              onChange={(event) => setText(event.target.value)}
+              placeholder={
+                kind === "port" ? "Que se passe-t-il sur le port ?" : "Que se passe-t-il ?"
+              }
+              aria-label="Votre message"
+            />
+            <small aria-hidden>{MAX_MESSAGE - text.length}</small>
+            <button type="submit" disabled={!text.trim() || send.isPending} aria-label="Envoyer">
+              <Send size={16} aria-hidden />
+            </button>
+          </form>
+          {text ? null : (
+            <p className="bw-room__examples">
+              {roomExamples(kind === "port" ? "port" : moment).map((example) => (
+                <button key={example} type="button" onClick={() => setText(example)}>
+                  {example}
+                </button>
+              ))}
+            </p>
+          )}
+        </>
       )}
       {problem ? (
         <p role="alert" className="bw-community-error">

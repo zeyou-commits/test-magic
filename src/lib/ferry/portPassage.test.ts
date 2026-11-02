@@ -5,6 +5,8 @@ import {
   passageQuestion,
   pickerRows,
   portPassage,
+  roomExamples,
+  roomMoment,
   searchRows,
   visibleSteps,
 } from "./portPassage";
@@ -93,6 +95,18 @@ describe("le passage du port", () => {
     expect(searchRows(rows, "BEJAIA 12").map((row) => row.id)).toEqual(["b"]);
     expect(searchRows(rows, "alger")).toEqual([]);
     expect(searchRows(rows, "  ")).toHaveLength(2);
+  });
+
+  it("adapte les exemples au moment du voyage et ferme après la sortie du port", () => {
+    const start = "2026-11-01T01:00:00Z";
+    const arrive = "2026-11-01T13:00:00Z";
+    expect(roomMoment(start, arrive, Date.parse("2026-10-30T12:00:00Z"))).toBe("before");
+    expect(roomMoment(start, arrive, Date.parse("2026-10-31T20:00:00Z"))).toBe("boarding");
+    expect(roomMoment(start, arrive, Date.parse("2026-11-01T05:00:00Z"))).toBe("sea");
+    expect(roomMoment(start, arrive, at(2))).toBe("arrival");
+    expect(roomMoment(start, arrive, at(9))).toBe("over");
+    expect(roomExamples("over")).toEqual([]);
+    expect(roomExamples("arrival").length).toBeGreaterThan(0);
   });
 
   it("explique un refus", () => {

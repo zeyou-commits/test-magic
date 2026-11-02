@@ -50,7 +50,11 @@ import { PushStatusLine } from "./PushStatusLine";
 import { ReportButton } from "./ReportButton";
 import { TravelSignals } from "./TravelCommunity";
 import { LineQuestions } from "./LineQuestions";
-import { LiveRoom } from "./LiveRoom";
+import { ActionHub, revealBlock } from "./ActionHub";
+import { chatFeedQuery, LiveRoom } from "./LiveRoom";
+import { useTravelAction } from "@/hooks/useTravelAction";
+import { roomMoment } from "@/lib/ferry/portPassage";
+import { mergeTripSteps, myTripStatusQuery, tripStepsQuery } from "@/lib/ferry/presence";
 import { RoomPicker } from "./RoomPicker";
 import { PortPresence, TripStatusPicker, VesselPresence } from "./TripPresence";
 import { VesselSpecs } from "./VesselBits";
@@ -245,6 +249,16 @@ export function TripRecap({
     });
 
   const upcoming = !cancelled && Date.parse(departure.departure_at) > now;
+  const [picker, setPicker] = useState<"salon" | null>(null);
+  const requestTrip = useTravelAction();
+  const roomFeed = useQuery({
+    ...chatFeedQuery("crossing", departure.id, user?.id),
+    refetchInterval: 60_000,
+  }).data;
+  const myStatus = useQuery(myTripStatusQuery(departure.id, user?.id)).data ?? null;
+  const myStep = mergeTripSteps(useQuery(tripStepsQuery).data).find(
+    (step) => step.id === myStatus,
+  )?.short;
 
   return (
     <article className="bw-recap">
@@ -364,13 +378,47 @@ export function TripRecap({
       </section>
 
       <DepartureAlternatives departure={departure} onSelect={onSelect} />
+      {!cancelled ? (
+        <ActionHub
+          tiles={[
+            {
+              id: "salon",
+              label: "Salon",
+              count: roomFeed?.messages.length,
+              onClick: () => setPicker("salon"),
+            },
+            {
+              id: "questions",
+              label: "Questions",
+              onClick: () => revealBlock(".bw-room--questions"),
+            },
+            {
+              id: "where",
+              label: "Vous êtes où ?",
+              hint: myStep ?? undefined,
+              onClick: () =>
+                myDeparture
+                  ? revealBlock(".bw-trip-status, .bw-trip-status-teaser")
+                  : requestTrip({
+                      type: "follow",
+                      kind: "departure",
+                      targetId: departure.id,
+                      label: `${from.name} → ${to.name}`,
+                      traveller: true,
+                      purpose: "voyageur",
+                    }),
+            },
+            { id: "report", label: "Signaler", count: info.travellers, onClick: report },
+          ]}
+        />
+      ) : null}
       {myDeparture ? <JourneyPlanner departureId={departure.id} onSelect={onSelect} /> : null}
       {upcoming && !departure.is_demo ? (
         <MakeMyTrip kind="departure" targetId={departure.id} label={`${from.name} → ${to.name}`} />
       ) : null}
 
       {/* 2. Ce qui se passe, d'un coup d'œil */}
-      <LivePulse info={info} onOpen={openLive} onReport={upcoming || atSea ? report : undefined} />
+      <LivePulse info={info} onOpen={openLive} />
       {!cancelled ? <VesselElsewhereNotice departure={departure} /> : null}
       {/* L'entraide sert au port, le jour même : y compris si le départ est retardé. */}
       {!cancelled &&
@@ -399,11 +447,22 @@ export function TripRecap({
       />
 
       {!cancelled ? (
-        <RoomPicker departures={lineCrossings} currentId={departure.id} onSelect={onSelect} />
+        <RoomPicker
+          departures={lineCrossings}
+          currentId={departure.id}
+          onSelect={onSelect}
+          open={picker === "salon"}
+          onOpenChange={(next) => setPicker(next ? "salon" : null)}
+        />
       ) : null}
 
       {!cancelled ? (
-        <LiveRoom kind="crossing" room={departure.id} title={`Salon · ${from.name} → ${to.name}`} />
+        <LiveRoom
+          kind="crossing"
+          room={departure.id}
+          title={`Salon · ${from.name} → ${to.name}`}
+          moment={roomMoment(departIso, arriveIso ?? null, now)}
+        />
       ) : null}
 
       <LineQuestions

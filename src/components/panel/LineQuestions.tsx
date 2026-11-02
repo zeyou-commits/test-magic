@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { CircleHelp, Flag, Send, ThumbsUp } from "lucide-react";
@@ -7,7 +7,9 @@ import { TravellerAvatar } from "@/components/community/TravellerAvatar";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase as typedSupabase } from "@/integrations/supabase/client";
 import type { TravellerCard } from "@/lib/community/travellers";
-import { chatRefusal } from "@/lib/ferry/portPassage";
+import { useTravelAction } from "@/hooks/useTravelAction";
+import { CHAT_SENT_EVENT, postToRoom, rememberPendingChat } from "@/lib/ferry/chat";
+import { chatRefusal, roomExamples } from "@/lib/ferry/portPassage";
 import { MAX_MESSAGE } from "./LiveRoom";
 
 const supabase = typedSupabase as unknown as SupabaseClient;
@@ -91,6 +93,7 @@ function Line({
 /** Questions d'une ligne : tout le monde lit, tout compte connecté demande ou répond. */
 export function LineQuestions({ routeId, title }: { routeId: string; title: string }) {
   const { user } = useAuth();
+  const request = useTravelAction();
   const client = useQueryClient();
   const [text, setText] = useState("");
   const [replyTo, setReplyTo] = useState<string | null>(null);
@@ -110,18 +113,19 @@ export function LineQuestions({ routeId, title }: { routeId: string; title: stri
     refetchInterval: 60_000,
   });
   const refresh = () => void client.invalidateQueries({ queryKey: ["bw-chat", "route", routeId] });
+  // Parti après une inscription : les formulaires se vident.
+  useEffect(() => {
+    const clear = () => {
+      setText("");
+      setReply("");
+      setReplyTo(null);
+    };
+    window.addEventListener(CHAT_SENT_EVENT, clear);
+    return () => window.removeEventListener(CHAT_SENT_EVENT, clear);
+  }, []);
   const send = useMutation({
-    mutationFn: async (input: { body: string; parent?: string }) => {
-      const { data, error } = await supabase.rpc("bw_chat_post", {
-        p_kind: "route",
-        p_room: routeId,
-        p_body: input.body,
-        ...(input.parent ? { p_parent: input.parent } : {}),
-      });
-      if (error) throw new Error("Message non envoyé. Réessayez.");
-      const result = data as { ok: boolean; refused?: string };
-      if (!result.ok) throw new Error(chatRefusal(result.refused ?? ""));
-    },
+    mutationFn: (input: { body: string; parent?: string }) =>
+      postToRoom("route", routeId, input.body, input.parent),
     onSuccess: (_, input) => {
       if (input.parent) {
         setReply("");
@@ -152,6 +156,16 @@ export function LineQuestions({ routeId, title }: { routeId: string; title: stri
   const canAct = feed.data?.access === "member";
   const busy = react.isPending || report.isPending;
   const problem = send.error ?? react.error ?? report.error;
+  // On écrit d'abord ; l'inscription n'arrive qu'à l'envoi, et le message est gardé.
+  const submit = (body: string, parent?: string) => {
+    if (!body.trim()) return;
+    if (user) {
+      send.mutate({ body, ...(parent ? { parent } : {}) });
+      return;
+    }
+    rememberPendingChat({ kind: "route", room: routeId, body, ...(parent ? { parent } : {}) });
+    request({ type: "chat", label: title });
+  };
   return (
     <section className="bw-room bw-room--questions" aria-label={title}>
       <header>
@@ -163,28 +177,31 @@ export function LineQuestions({ routeId, title }: { routeId: string; title: stri
           </small>
         ) : null}
       </header>
-      {canAct ? (
-        <form
-          onSubmit={(event) => {
-            event.preventDefault();
-            if (text.trim()) send.mutate({ body: text });
-          }}
-        >
-          <input
-            value={text}
-            maxLength={MAX_MESSAGE}
-            onChange={(event) => setText(event.target.value)}
-            placeholder="Posez votre question sur cette ligne"
-            aria-label="Votre question"
-          />
-          <small aria-hidden>{MAX_MESSAGE - text.length}</small>
-          <button type="submit" disabled={!text.trim() || send.isPending} aria-label="Envoyer">
-            <Send size={16} aria-hidden />
-          </button>
-        </form>
-      ) : feed.isPending ? null : (
-        <p className="bw-room__locked">
-          <Link to="/auth">Connectez-vous</Link> pour poser une question ou répondre.
+      <form
+        onSubmit={(event) => {
+          event.preventDefault();
+          submit(text);
+        }}
+      >
+        <input
+          value={text}
+          maxLength={MAX_MESSAGE}
+          onChange={(event) => setText(event.target.value)}
+          placeholder="Posez votre question sur cette ligne"
+          aria-label="Votre question"
+        />
+        <small aria-hidden>{MAX_MESSAGE - text.length}</small>
+        <button type="submit" disabled={!text.trim() || send.isPending} aria-label="Envoyer">
+          <Send size={16} aria-hidden />
+        </button>
+      </form>
+      {text ? null : (
+        <p className="bw-room__examples">
+          {roomExamples("questions").map((example) => (
+            <button key={example} type="button" onClick={() => setText(example)}>
+              {example}
+            </button>
+          ))}
         </p>
       )}
       {problem ? (
@@ -225,44 +242,42 @@ export function LineQuestions({ routeId, title }: { routeId: string; title: stri
                     <Link to="/guide">guide du voyage</Link>.
                   </p>
                 )}
-                {canAct ? (
-                  replyTo === question.id ? (
-                    <form
-                      onSubmit={(event) => {
-                        event.preventDefault();
-                        if (reply.trim()) send.mutate({ body: reply, parent: question.id });
-                      }}
-                    >
-                      <input
-                        autoFocus
-                        value={reply}
-                        maxLength={MAX_MESSAGE}
-                        onChange={(event) => setReply(event.target.value)}
-                        placeholder="Votre réponse"
-                        aria-label="Votre réponse"
-                      />
-                      <small aria-hidden>{MAX_MESSAGE - reply.length}</small>
-                      <button
-                        type="submit"
-                        disabled={!reply.trim() || send.isPending}
-                        aria-label="Envoyer la réponse"
-                      >
-                        <Send size={16} aria-hidden />
-                      </button>
-                    </form>
-                  ) : (
+                {replyTo === question.id ? (
+                  <form
+                    onSubmit={(event) => {
+                      event.preventDefault();
+                      submit(reply, question.id);
+                    }}
+                  >
+                    <input
+                      autoFocus
+                      value={reply}
+                      maxLength={MAX_MESSAGE}
+                      onChange={(event) => setReply(event.target.value)}
+                      placeholder="Votre réponse"
+                      aria-label="Votre réponse"
+                    />
+                    <small aria-hidden>{MAX_MESSAGE - reply.length}</small>
                     <button
-                      type="button"
-                      className="bw-room__reply"
-                      onClick={() => {
-                        setReply("");
-                        setReplyTo(question.id);
-                      }}
+                      type="submit"
+                      disabled={!reply.trim() || send.isPending}
+                      aria-label="Envoyer la réponse"
                     >
-                      Répondre
+                      <Send size={16} aria-hidden />
                     </button>
-                  )
-                ) : null}
+                  </form>
+                ) : (
+                  <button
+                    type="button"
+                    className="bw-room__reply"
+                    onClick={() => {
+                      setReply("");
+                      setReplyTo(question.id);
+                    }}
+                  >
+                    Répondre
+                  </button>
+                )}
               </Line>
             </li>
           ))}

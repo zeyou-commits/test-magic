@@ -12,7 +12,8 @@ import {
   type TripStatus,
 } from "@/lib/ferry/presence";
 import { formatDocked, passageQuestion } from "@/lib/ferry/portPassage";
-import { postToRoom, roomKey } from "./LiveRoom";
+import { postToRoom } from "@/lib/ferry/chat";
+import { roomKey } from "./LiveRoom";
 
 const voyageurs = (n: number) => `${n} voyageur${n > 1 ? "s" : ""} BledWay`;
 const STEPS: TripStatus[] = ["landing", "controls", "arrived"];

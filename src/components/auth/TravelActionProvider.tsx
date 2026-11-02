@@ -11,6 +11,7 @@ import {
   travelActionLabel,
   type TravelAction,
 } from "@/lib/notifications/actions";
+import { clearPendingChat, flushPendingChat, pendingChat } from "@/lib/ferry/chat";
 import { pushCapability, registerPush, requestCatchUp } from "@/lib/notifications/push";
 import { AccountAccessForm } from "./AccountAccessForm";
 import { TripQuestion } from "./TripQuestion";
@@ -28,6 +29,8 @@ export function TravelActionProvider({ children }: { children: ReactNode }) {
   const [awaitingConfirmation, setAwaitingConfirmation] = useState(false);
   const [error, setError] = useState("");
   const [pushMessage, setPushMessage] = useState("");
+  const [draft, setDraft] = useState(false);
+  const [chatNote, setChatNote] = useState("");
   const savingRef = useRef(false);
 
   const complete = useCallback(
@@ -39,11 +42,23 @@ export function TravelActionProvider({ children }: { children: ReactNode }) {
       try {
         await saveTravelAction(userId, intent);
         clearTravelAction();
+        // Le message écrit avant l'inscription part maintenant ; le suivi reste acquis s'il est refusé.
+        try {
+          if (await flushPendingChat()) setChatNote("Votre message est publié.");
+        } catch (cause) {
+          setChatNote(cause instanceof Error ? cause.message : "Message non envoyé.");
+        }
         setSaved(true);
         await Promise.all(
-          ["follow", "my-follows", "my-itinerary-watches", "my-trips", "my-journeys", "journey"].map((key) =>
-            queryClient.invalidateQueries({ queryKey: [key] }),
-          ),
+          [
+            "follow",
+            "my-follows",
+            "my-itinerary-watches",
+            "my-trips",
+            "my-journeys",
+            "journey",
+            "bw-chat",
+          ].map((key) => queryClient.invalidateQueries({ queryKey: [key] })),
         );
         // Ce qui est déjà publié et toujours d'actualité pour ce suivi arrive tout de suite :
         // registerPush le demande une fois le téléphone abonné, sinon on le demande ici.
@@ -74,6 +89,7 @@ export function TravelActionProvider({ children }: { children: ReactNode }) {
     const pending = pendingTravelAction();
     if (pending) {
       setAction(pending);
+      setDraft(pendingChat() !== null);
       setOpen(true);
       void complete(pending, userId);
     }
@@ -88,6 +104,8 @@ export function TravelActionProvider({ children }: { children: ReactNode }) {
     setAwaitingConfirmation(false);
     setError("");
     setPushMessage("");
+    setDraft(pendingChat() !== null);
+    setChatNote("");
     setOpen(true);
   }, []);
 
@@ -114,7 +132,10 @@ export function TravelActionProvider({ children }: { children: ReactNode }) {
         onOpenChange={(value) => {
           if (saving) return;
           setOpen(value);
-          if (!value && !awaitingConfirmation) clearTravelAction();
+          if (!value && !awaitingConfirmation) {
+            clearTravelAction();
+            clearPendingChat();
+          }
         }}
       >
         <DialogContent className="bw-travel-dialog" onClick={(event) => event.stopPropagation()}>
@@ -125,25 +146,35 @@ export function TravelActionProvider({ children }: { children: ReactNode }) {
           <div className="bw-travel-dialog-body">
             <DialogTitle className="font-display text-2xl leading-tight">
               {saved
-                ? "C’est enregistré !"
-                : action?.type === "opening"
-                  ? "Soyez prêt à réserver"
-                  : "Gardez le cap sur votre voyage"}
+                ? action?.type === "chat"
+                  ? "C’est envoyé !"
+                  : "C’est enregistré !"
+                : draft
+                  ? "Votre message est prêt"
+                  : action?.type === "opening"
+                    ? "Soyez prêt à réserver"
+                    : "Gardez le cap sur votre voyage"}
             </DialogTitle>
             <DialogDescription className="mt-2 text-sm leading-relaxed">
-              {saved
-                ? action?.type === "follow" && action.traveller
-                  ? action.returnDepartureId
-                    ? "Votre aller et votre retour sont suivis. Retrouvez les deux traversées dans votre espace voyageur."
-                    : "Votre traversée est suivie. Vous pourrez ajouter votre retour depuis sa fiche."
-                  : action?.type === "follow" && action.purpose === "curieux"
-                    ? action.kind === "company"
-                      ? "La compagnie est ajoutée à vos suivis : ses actualités vous seront signalées."
-                      : "Le navire est ajouté à vos suivis, sans créer de voyage personnel."
-                  : "Retrouvez ce voyage et ses actualités dans votre espace personnel."
-                : user
-                  ? "Les prochaines informations seront regroupées dans votre espace voyageur."
-                  : "Connectez-vous ou créez votre compte pour retrouver ce suivi et recevoir les informations utiles."}
+              {!saved && draft
+                ? user
+                  ? "Confirmez que vous voyagez sur cette traversée : votre message part aussitôt."
+                  : "Créez votre compte en quelques secondes : il part dès votre inscription, sans rien réécrire."
+                : saved && action?.type === "chat"
+                  ? "Vous serez prévenu dans la cloche si quelqu’un vous répond."
+                  : saved
+                    ? action?.type === "follow" && action.traveller
+                      ? action.returnDepartureId
+                        ? "Votre aller et votre retour sont suivis. Retrouvez les deux traversées dans votre espace voyageur."
+                        : "Votre traversée est suivie. Vous pourrez ajouter votre retour depuis sa fiche."
+                      : action?.type === "follow" && action.purpose === "curieux"
+                        ? action.kind === "company"
+                          ? "La compagnie est ajoutée à vos suivis : ses actualités vous seront signalées."
+                          : "Le navire est ajouté à vos suivis, sans créer de voyage personnel."
+                        : "Retrouvez ce voyage et ses actualités dans votre espace personnel."
+                    : user
+                      ? "Les prochaines informations seront regroupées dans votre espace voyageur."
+                      : "Connectez-vous ou créez votre compte pour retrouver ce suivi et recevoir les informations utiles."}
             </DialogDescription>
             {action?.type === "follow" && action.traveller === undefined && !saved ? (
               <TripQuestion
@@ -166,6 +197,9 @@ export function TravelActionProvider({ children }: { children: ReactNode }) {
                 </span>
                 <div className="min-w-0">
                   <p className="font-semibold">{travelActionLabel(action)}</p>
+                  {draft && !saved ? (
+                    <p className="mt-1 text-xs text-muted-foreground">« {pendingChat()?.body} »</p>
+                  ) : null}
                   {action.type === "opening" && (
                     <p className="mt-1 text-xs text-muted-foreground">
                       {action.origin} → {action.destination}
@@ -177,17 +211,27 @@ export function TravelActionProvider({ children }: { children: ReactNode }) {
             {action?.type === "follow" &&
             action.traveller === undefined &&
             !saved ? null : !user ? (
-              <AccountAccessForm onAwaitingConfirmation={() => setAwaitingConfirmation(true)} />
+              <AccountAccessForm
+                onAwaitingConfirmation={() => setAwaitingConfirmation(true)}
+                {...(draft ? { signupLabel: "Créer mon compte et envoyer" } : {})}
+              />
             ) : (
               <>
                 {saved ? (
                   <div className="space-y-3">
-                    <p className="flex items-center gap-2 text-sm font-semibold text-primary">
-                      <Check className="size-4" />{" "}
-                      {action?.type === "opening"
-                        ? "Alerte d’ouverture activée"
-                        : "Ajouté à vos suivis"}
-                    </p>
+                    {chatNote ? (
+                      <p role="status" className="text-sm font-semibold text-primary">
+                        {chatNote}
+                      </p>
+                    ) : null}
+                    {action?.type === "chat" ? null : (
+                      <p className="flex items-center gap-2 text-sm font-semibold text-primary">
+                        <Check className="size-4" />{" "}
+                        {action?.type === "opening"
+                          ? "Alerte d’ouverture activée"
+                          : "Ajouté à vos suivis"}
+                      </p>
+                    )}
                     {/* État réel de ce téléphone : déjà actif, à activer, ou guide iPhone. */}
                     <PushStatusLine key={pushMessage} />
                     <a href="/compte" className="bw-action-secondary w-full">
@@ -215,9 +259,11 @@ export function TravelActionProvider({ children }: { children: ReactNode }) {
                     )}
                     {saving
                       ? "Enregistrement…"
-                      : action?.type === "opening"
-                        ? "Activer mon alerte"
-                        : "Suivre et recevoir les informations"}
+                      : draft
+                        ? "Je voyage, envoyer mon message"
+                        : action?.type === "opening"
+                          ? "Activer mon alerte"
+                          : "Suivre et recevoir les informations"}
                   </button>
                 )}
               </>

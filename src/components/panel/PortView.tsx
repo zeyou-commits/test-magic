@@ -12,7 +12,6 @@ import {
   Camera,
   ChevronRight,
   Clock3,
-  Megaphone,
   Navigation,
   PenLine,
   Star,
@@ -22,7 +21,9 @@ import { requestQuickReport } from "@/components/map/QuickReport";
 import { FlashFeed } from "./FlashFeed";
 import { PortPlaces } from "./PortPlaces";
 import { PortLiveBoard } from "./PortLiveBoard";
+import { ActionHub, revealBlock } from "./ActionHub";
 import { LiveRoom } from "./LiveRoom";
+import { RoomPicker } from "./RoomPicker";
 import { PortPresence } from "./TripPresence";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -132,6 +133,8 @@ export function PortView({
     [recentDepartures, departuresResult.data],
   );
   const traffic = portTraffic(portId, routes, knownDepartures);
+  const [questionsOpen, setQuestionsOpen] = useState(false);
+  const roomCrossings = traffic.departures.slice(0, 40);
   const portRoutes = routes.filter(
     (route) => route.departure_port_id === portId || route.arrival_port_id === portId,
   );
@@ -305,17 +308,40 @@ export function PortView({
         <ChevronRight size={15} aria-hidden />
       </button>
 
-      <div className="pv-actions">
-        <button
-          type="button"
-          className="pv-action pv-action--signal"
-          onClick={() => requestQuickReport({ type: "port", id: portId })}
-        >
-          <span aria-hidden>
-            <Megaphone size={18} />
-          </span>
-          Signaler
-        </button>
+      <ActionHub
+        tiles={[
+          {
+            id: "salon",
+            label: "Salon",
+            hint: "En direct",
+            onClick: () => revealBlock(".bw-room"),
+          },
+          ...(roomCrossings.length
+            ? ([
+                {
+                  id: "questions",
+                  label: "Questions",
+                  onClick: () => setQuestionsOpen(true),
+                },
+              ] as const)
+            : []),
+          {
+            id: "report",
+            label: "Signaler",
+            count: live.travellers,
+            onClick: () => requestQuickReport({ type: "port", id: portId }),
+          },
+        ]}
+      />
+      <RoomPicker
+        departures={roomCrossings}
+        onSelect={onSelect}
+        open={questionsOpen}
+        onOpenChange={setQuestionsOpen}
+        questionsFirst
+      />
+
+      <div className="pv-actions pv-actions--two">
         <a className="pv-action" href={directions} target="_blank" rel="noopener noreferrer">
           <span aria-hidden>
             <Navigation size={18} />

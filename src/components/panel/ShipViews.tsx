@@ -1,4 +1,5 @@
-import { RoomPicker } from "./RoomPicker";
+import { ActionHub, revealBlock, type HubTile } from "./ActionHub";
+import { RoomPicker, useRoomCounts } from "./RoomPicker";
 import { VesselSeaBadge } from "./SeaForecast";
 import { PlaceReactions } from "./PlaceReactions";
 import { EntityReviews } from "./EntityReviews";
@@ -14,7 +15,6 @@ import {
   CarFront,
   ExternalLink,
   MapPin,
-  Megaphone,
   PenLine,
   Star,
   Users,
@@ -307,22 +307,24 @@ export function VesselView({
           )}
         </button>
       ) : null}
-      <div className="pv-actions pv-actions--two">
-        <button type="button" onClick={requestVesselSignal} className="pv-action pv-action--signal">
-          <span aria-hidden>
-            <Megaphone size={18} />
-          </span>
-          Signaler
+      <VesselHub
+        departures={roomCrossings}
+        onWhere={
+          departure
+            ? () => {
+                setTab("tracking");
+                revealBlock(".bw-trip-status, .bw-trip-status-teaser");
+              }
+            : undefined
+        }
+        onSignal={requestVesselSignal}
+        onSelect={onSelect}
+      />
+      {communityAvailable ? (
+        <button type="button" className="bw-note-link" onClick={rateVessel}>
+          <PenLine size={15} aria-hidden /> Noter ce navire
         </button>
-        {communityAvailable ? (
-          <button type="button" className="pv-action" onClick={rateVessel}>
-            <span aria-hidden>
-              <PenLine size={18} />
-            </span>
-            Noter
-          </button>
-        ) : null}
-      </div>
+      ) : null}
       {photo?.source === "commons" ? (
         <details className="bw-photo-credit">
           <summary>Crédit photo</summary>
@@ -387,7 +389,6 @@ export function VesselView({
               Voir sur la carte
             </button>
           ) : null}
-          <RoomPicker departures={roomCrossings} onSelect={onSelect} />
           <div id={liveId} data-live-anchor>
             <FlashFeed
               title="Infos sur ce navire"
@@ -508,5 +509,44 @@ export function DepartureView({
       live={data.live.find((s) => s.departure.id === departureId)}
       onSelect={onSelect}
     />
+  );
+}
+
+/** Les tuiles de la fiche bateau, et le choix de la traversée ou de la ligne. */
+function VesselHub({
+  departures,
+  onWhere,
+  onSignal,
+  onSelect,
+}: {
+  departures: { id: string; departure_at: string; route_id: string }[];
+  onWhere: (() => void) | undefined;
+  onSignal: () => void;
+  onSelect: (selection: Selection) => void;
+}) {
+  const [picker, setPicker] = useState<"salon" | "questions" | null>(null);
+  const counts = useRoomCounts(departures.map((item) => item.id)).data;
+  const total = [...(counts?.values() ?? [])].reduce((sum, count) => sum + count, 0);
+  const tiles: HubTile[] = [
+    ...(departures.length
+      ? ([
+          { id: "salon", label: "Salon", count: total, onClick: () => setPicker("salon") },
+          { id: "questions", label: "Questions", onClick: () => setPicker("questions") },
+        ] as HubTile[])
+      : []),
+    ...(onWhere ? ([{ id: "where", label: "Vous êtes où ?", onClick: onWhere }] as HubTile[]) : []),
+    { id: "report", label: "Signaler", onClick: onSignal },
+  ];
+  return (
+    <>
+      <ActionHub tiles={tiles} />
+      <RoomPicker
+        departures={departures}
+        onSelect={onSelect}
+        open={picker !== null}
+        onOpenChange={(next) => setPicker(next ? "salon" : null)}
+        questionsFirst={picker === "questions"}
+      />
+    </>
   );
 }

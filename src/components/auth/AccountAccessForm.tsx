@@ -6,8 +6,10 @@ import { GoogleMark } from "./GoogleMark";
 
 export function AccountAccessForm({
   onAwaitingConfirmation,
+  signupLabel = "Créer mon compte et garder mon suivi",
 }: {
   onAwaitingConfirmation: () => void;
+  signupLabel?: string;
 }) {
   const [mode, setMode] = useState<"signin" | "signup">("signup");
   const [email, setEmail] = useState("");
@@ -148,9 +150,7 @@ export function AccountAccessForm({
         </label>
         <button type="submit" disabled={busy} className="bw-action-primary w-full">
           {busy && <LoaderCircle className="size-4 animate-spin" />}
-          {mode === "signup"
-            ? "Créer mon compte et garder mon suivi"
-            : "Me connecter et retrouver mon suivi"}
+          {mode === "signup" ? signupLabel : "Me connecter et retrouver mon suivi"}
         </button>
         {mode === "signin" && (
           <a

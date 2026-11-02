@@ -53,6 +53,7 @@ import { LineQuestions } from "./LineQuestions";
 import { ActionHub, revealBlock } from "./ActionHub";
 import { chatFeedQuery, LiveRoom } from "./LiveRoom";
 import { useTravelAction } from "@/hooks/useTravelAction";
+import { takeRoomFocus } from "@/lib/ferry/chat";
 import { roomMoment } from "@/lib/ferry/portPassage";
 import { myTripStatusQuery } from "@/lib/ferry/presence";
 import { LeaveTrip } from "./LeaveTrip";
@@ -255,6 +256,9 @@ export function TripRecap({
   const upcoming = !cancelled && Date.parse(departure.departure_at) > now;
   const [picker, setPicker] = useState<"salon" | null>(null);
   const requestTrip = useTravelAction();
+  useEffect(() => {
+    if (takeRoomFocus()) revealBlock(".bw-recap .bw-room", 700);
+  }, []);
   const roomFeed = useQuery({
     ...chatFeedQuery("crossing", departure.id, user?.id),
     refetchInterval: 60_000,

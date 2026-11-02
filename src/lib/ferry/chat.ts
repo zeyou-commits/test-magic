@@ -76,3 +76,11 @@ async function ownMessage(fn: string, args: Record<string, string>) {
 export const editOwnMessage = (id: string, body: string) =>
   ownMessage("bw_chat_edit", { p_message: id, p_body: body });
 export const deleteOwnMessage = (id: string) => ownMessage("bw_chat_delete", { p_message: id });
+
+// Ouvert depuis une invitation : on va droit au salon. Lu au chargement, l'adresse est réécrite ensuite.
+let roomFocus = typeof window !== "undefined" && /[?&]room=1\b/.test(window.location.search);
+export function takeRoomFocus() {
+  const wanted = roomFocus;
+  roomFocus = false;
+  return wanted;
+}

@@ -238,6 +238,8 @@ export function useChatBubbles(
         marker = new Marker({ element: build(message), anchor: "bottom", offset: spot.offset })
           .setLngLat(spot.at)
           .addTo(map);
+        // Au-dessus des noms de ports et des pastilles, même mis en avant au survol.
+        marker.getElement().style.zIndex = "100000";
         shown++;
         if (!message.report && shown % INVITE_EVERY === 0)
           window.dispatchEvent(new Event(CHAT_INVITE_EVENT));

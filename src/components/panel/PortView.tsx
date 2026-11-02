@@ -4,7 +4,7 @@ import { entityReviewsQuery } from "@/lib/ferry/entityReviews";
 import { useEffect, useMemo, useState } from "react";
 import { LikeButton, useContributions } from "@/components/community/Contributions";
 import { TravellerAvatar } from "@/components/community/TravellerAvatar";
-import { LivePulse, revealLive, useLiveInfo } from "./LivePulse";
+import { revealLive, useLiveInfo } from "./LivePulse";
 import { useQuery } from "@tanstack/react-query";
 import {
   ArrowDownLeft,
@@ -329,8 +329,11 @@ export function PortView({
           {
             id: "report",
             label: "Signaler",
-            count: live.travellers,
-            onClick: () => requestQuickReport({ type: "port", id: portId }),
+            count: live.official + live.travellers,
+            onClick: () =>
+              live.official + live.travellers
+                ? openLive()
+                : requestQuickReport({ type: "port", id: portId }),
           },
         ]}
       />
@@ -356,8 +359,6 @@ export function PortView({
           Noter
         </button>
       </div>
-
-      <LivePulse info={live} onOpen={openLive} />
 
       <PortPresence portId={portId} />
 

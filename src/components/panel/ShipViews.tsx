@@ -317,7 +317,8 @@ export function VesselView({
               }
             : undefined
         }
-        onSignal={requestVesselSignal}
+        signals={liveInfo.official + liveInfo.travellers}
+        onSignal={liveInfo.official + liveInfo.travellers ? openLive : requestVesselSignal}
         onSelect={onSelect}
       />
       {communityAvailable ? (
@@ -518,11 +519,13 @@ export function DepartureView({
 function VesselHub({
   departures,
   onWhere,
+  signals,
   onSignal,
   onSelect,
 }: {
   departures: { id: string; departure_at: string; route_id: string }[];
   onWhere: (() => void) | undefined;
+  signals: number;
   onSignal: () => void;
   onSelect: (selection: Selection) => void;
 }) {
@@ -537,7 +540,7 @@ function VesselHub({
         ] as HubTile[])
       : []),
     ...(onWhere ? ([{ id: "where", label: "Vous êtes où ?", onClick: onWhere }] as HubTile[]) : []),
-    { id: "report", label: "Signaler", onClick: onSignal },
+    { id: "report", label: "Signaler", count: signals, onClick: onSignal },
   ];
   return (
     <>

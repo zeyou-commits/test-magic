@@ -62,7 +62,7 @@ export function TripTravellers({
         {more > 0 ? (
           <span
             className="bw-trip-people__more"
-            title="Voyageurs qui préfèrent rester discrets ou non affichés"
+            title="Voyageurs qui préfèrent rester discrets"
           >
             +{more}
           </span>

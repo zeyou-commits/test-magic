@@ -1,6 +1,16 @@
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { Bell, Check, Heart, LoaderCircle, Ship } from "lucide-react";
+import {
+  Bell,
+  BellRing,
+  Check,
+  ClipboardCheck,
+  Heart,
+  LoaderCircle,
+  MessagesSquare,
+  Navigation,
+  Ship,
+} from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import {
@@ -173,9 +183,37 @@ export function TravelActionProvider({ children }: { children: ReactNode }) {
                           : "Le navire est ajouté à vos suivis, sans créer de voyage personnel."
                         : "Retrouvez ce voyage et ses actualités dans votre espace personnel."
                     : user
-                      ? "Les prochaines informations seront regroupées dans votre espace voyageur."
-                      : "Connectez-vous ou créez votre compte pour retrouver ce suivi et recevoir les informations utiles."}
+                      ? "Tout est gratuit et regroupé dans votre espace voyageur."
+                      : "C’est gratuit, et ça vous accompagne de la route jusqu’au bled."}
             </DialogDescription>
+            {!saved && !draft && action?.type === "follow" && action.kind !== "company" ? (
+              <ul className="bw-travel-perks">
+                <li>
+                  <BellRing size={17} aria-hidden />
+                  <span>
+                    <b>Prévenu du moindre changement</b> : retard, report, annulation
+                  </span>
+                </li>
+                <li>
+                  <Navigation size={17} aria-hidden />
+                  <span>
+                    <b>Votre bateau suivi</b>, du départ jusqu’à la sortie du port
+                  </span>
+                </li>
+                <li>
+                  <MessagesSquare size={17} aria-hidden />
+                  <span>
+                    <b>Le salon de votre traversée</b>, pour échanger avec les autres passagers
+                  </span>
+                </li>
+                <li>
+                  <ClipboardCheck size={17} aria-hidden />
+                  <span>
+                    <b>Vos préparatifs</b>, étape par étape, sans rien oublier
+                  </span>
+                </li>
+              </ul>
+            ) : null}
             {action?.type === "follow" && action.traveller === undefined && !saved ? (
               <TripQuestion
                 action={action}

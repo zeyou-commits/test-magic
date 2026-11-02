@@ -9680,3 +9680,60 @@ body:has([data-film="true"]) [data-map-rail] {
   background: #fff7e3;
   font-size: 13px;
 }
+
+/* Le panneau d'émoticônes : les cabas d'abord, puis les emojis. */
+.bw-chat__panel {
+  display: grid;
+  gap: 6px;
+  max-height: 38dvh;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+.bw-chat__panel .bw-chat__site-emotes {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(46px, 1fr));
+  overflow: visible;
+}
+.bw-presence--open {
+  width: 100%;
+  text-align: left;
+}
+.bw-presence__join {
+  margin-left: auto;
+  color: #0e7a43;
+  font-size: 12px;
+  font-weight: 800;
+}
+.bw-presence__room {
+  width: 100%;
+}
+.bw-recap .bw-trip-status__steps button {
+  min-width: 0;
+  padding-inline: 2px;
+  font-size: 11.5px;
+  letter-spacing: -0.02em;
+}
+.bw-travel-perks {
+  display: grid;
+  gap: 9px;
+  margin: 14px 0 4px;
+  padding: 0;
+  color: #29483b;
+  font-size: 13.5px;
+  line-height: 1.3;
+  list-style: none;
+}
+.bw-travel-perks li {
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+}
+.bw-travel-perks svg {
+  flex: none;
+  margin-top: 1px;
+  color: #0e7a43;
+}
+.bw-travel-perks b {
+  color: #123f2c;
+  font-weight: 700;
+}

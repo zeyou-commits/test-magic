@@ -31,7 +31,7 @@ import {
 } from "@/lib/ferry/chat";
 import { currentPosition } from "@/lib/ferry/community";
 import { chatRefusal, roomExamples, type RoomMoment } from "@/lib/ferry/portPassage";
-import { emoteToken } from "@/lib/ferry/chatEmotes";
+import { emoteToken, UNICODE_EMOTES } from "@/lib/ferry/chatEmotes";
 import { dmInboxQuery, dmKey, metQuery, takeDmFocus } from "@/lib/ferry/privateMessages";
 import { CabasImg } from "@/components/CabasImg";
 import { ChatText, useChatEmotes } from "./ChatText";
@@ -63,28 +63,6 @@ const missing = (code?: string) => code === "PGRST202" || code === "42883";
 /** En dessous, on considère que la personne suit le direct : le fil descend tout seul. */
 const FOLLOW_BOTTOM_PX = 80;
 const PREVIEW_MESSAGES = 3;
-const EMOTES = [
-  "😀",
-  "😂",
-  "😍",
-  "🙏",
-  "👍",
-  "👏",
-  "🔥",
-  "❤️",
-  "😴",
-  "🥵",
-  "😡",
-  "😭",
-  "🚢",
-  "⚓",
-  "🛂",
-  "🧳",
-  "🚗",
-  "🌊",
-  "☕",
-  "🇩🇿",
-];
 /** Un message fait seulement d'émoticônes s'affiche en grand. */
 const onlyEmotes = (text: string) =>
   text.replace(/\p{Extended_Pictographic}|\p{Regional_Indicator}|‍|️|\s/gu, "") === "";
@@ -528,7 +506,7 @@ function LiveChat({
             </p>
           ) : null}
           {showEmotes ? (
-            <>
+            <div className="bw-chat__panel">
               {siteEmotes.length ? (
                 <p className="bw-chat__site-emotes">
                   {siteEmotes.map((emote) => (
@@ -552,7 +530,7 @@ function LiveChat({
                 </p>
               ) : null}
               <p className="bw-chat__emotes">
-                {EMOTES.map((emote) => (
+                {UNICODE_EMOTES.map((emote) => (
                   <button
                     key={emote}
                     type="button"
@@ -563,7 +541,7 @@ function LiveChat({
                   </button>
                 ))}
               </p>
-            </>
+            </div>
           ) : text || replyTo ? null : (
             <p className="bw-chat__examples">
               {roomExamples(kind === "port" ? "port" : moment).map((example) => (
@@ -667,7 +645,7 @@ export function LiveRoom({
       ) : null}
       <button type="button" className="bw-room__enter" onClick={() => setOpen(true)}>
         <MessagesSquare size={18} aria-hidden />
-        {closed ? "Lire le salon" : "Entrer dans le salon"}
+        Rejoindre le salon
       </button>
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="bw-chat-window">

@@ -1,3 +1,6 @@
+import { MessagesSquare } from "lucide-react";
+import { enterRoom } from "@/lib/ferry/chat";
+import { FLASH_SELECT_EVENT } from "./FlashCenter";
 import { CabasImg } from "@/components/CabasImg";
 import { portsQuery } from "@/lib/ferry/queries";
 import { useEffect, useState } from "react";
@@ -82,7 +85,11 @@ export function PortPresence({ portId }: { portId: string }) {
     .reduce((sum, row) => sum + (row.landing ?? 0) + (row.controls ?? 0), 0);
   if (!atPort && !enRoute && !arrived && !landing) return null;
   return (
-    <p className="bw-presence">
+    <button
+      type="button"
+      className="bw-presence bw-presence--open"
+      onClick={() => enterRoom("port", portId)}
+    >
       <CabasStack count={atPort || landing || enRoute || arrived} seed={portId} />
       <span>
         {atPort ? <strong>{voyageurs(atPort)} au port</strong> : null}
@@ -105,7 +112,8 @@ export function PortPresence({ portId }: { portId: string }) {
           </span>
         ) : null}
       </span>
-    </p>
+      <small className="bw-presence__join">Discuter</small>
+    </button>
   );
 }
 
@@ -177,6 +185,22 @@ export function VesselPresence({
                   </p>
                 </li>
               ) : null}
+              <li>
+                <button
+                  type="button"
+                  className="bw-room__enter bw-presence__room"
+                  onClick={() => {
+                    window.dispatchEvent(
+                      new CustomEvent(FLASH_SELECT_EVENT, {
+                        detail: { type: "departure", id: departureId },
+                      }),
+                    );
+                    enterRoom("crossing", departureId);
+                  }}
+                >
+                  <MessagesSquare size={17} aria-hidden /> Leur parler dans le salon
+                </button>
+              </li>
             </>
           )}
         </ul>
@@ -264,8 +288,8 @@ export function TripStatusPicker({
   };
   const current = mine.data ?? null;
   const scheduledEnd = arrivalAt ? Date.parse(arrivalAt) : Date.parse(departureAt) + 24 * 3_600_000;
-  const shown = visibleSteps(current, scheduledEnd, Date.now()).map(
-    (id) => steps.find((step) => step.id === id)!,
+  const shown = visibleSteps(current, scheduledEnd, Date.now()).map((id) =>
+    steps.find((step) => step.id === id)!,
   );
   const choose = (status: TripStatus) => {
     if (!user) {
@@ -323,7 +347,12 @@ export function TripStatusPicker({
           </li>
         ))}
       </ol>
-      {moodFor ? <QuickMoods moment={moodFor === "landing" || moodFor === "controls" ? "arrived" : moodFor} onDone={() => setMoodFor(null)} /> : null}
+      {moodFor ? (
+        <QuickMoods
+          moment={moodFor === "landing" || moodFor === "controls" ? "arrived" : moodFor}
+          onDone={() => setMoodFor(null)}
+        />
+      ) : null}
       {update.isError ? (
         <p role="alert" className="bw-community-error">
           {update.error.message}

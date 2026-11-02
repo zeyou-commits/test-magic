@@ -68,7 +68,7 @@ export function TravelSignals({
   departureId?: string;
   /** Titre de la liste (fiche traversée : port de départ, puis navire). */
   title?: string;
-  /** Fiche qui a déjà son bouton « Signaler » : pas de second bouton ici. */
+  /** Liste courte, intégrée à une fiche. */
   compact?: boolean;
 }) {
   const { user, roles } = useAuth();
@@ -93,10 +93,15 @@ export function TravelSignals({
   const [done, setDone] = useState<string | null>(null);
   const contributions = useContributions(
     "alert",
-    activeAlerts(feed.data?.alerts ?? []).filter((alert) => !departureId || alert.departure_id === departureId).map((alert) => alert.id),
+    activeAlerts(feed.data?.alerts ?? [])
+      .filter((alert) => !departureId || alert.departure_id === departureId)
+      .map((alert) => alert.id),
   );
   // Pastille touchée sur la carte : la fiche s'ouvre cadrée sur ce signalement.
-  const alertIds = (feed.data?.alerts ?? []).filter((alert) => !departureId || alert.departure_id === departureId).map((alert) => alert.id).join(",");
+  const alertIds = (feed.data?.alerts ?? [])
+    .filter((alert) => !departureId || alert.departure_id === departureId)
+    .map((alert) => alert.id)
+    .join(",");
   useEffect(() => {
     if (!alertIds) return;
     const focus = takeSignalFocus(alertIds.split(","));
@@ -110,15 +115,21 @@ export function TravelSignals({
     }, 250);
   }, [alertIds]);
   const mutation = useMutation({
-    mutationFn: async (action: { type: "confirm" | "resolve" | "deny" | "validate"; id: string }) => {
+    mutationFn: async (action: {
+      type: "confirm" | "resolve" | "deny" | "validate";
+      id: string;
+    }) => {
       // Confirmer ou démentir exige d'être sur place : deux démentis ferment un signalement.
       const here =
-        action.type === "resolve" || action.type === "validate" ? null : await requirePosition(8_000);
+        action.type === "resolve" || action.type === "validate"
+          ? null
+          : await requirePosition(8_000);
       const error = await alertAction(action.id, action.type, here);
       if (error && here && /sur place/.test(error.message)) {
         const port = ports.find((item) => item.id === target);
         const reply = {
-          action: action.type === "confirm" ? "confirmer ce signalement" : "répondre à ce signalement",
+          action:
+            action.type === "confirm" ? "confirmer ce signalement" : "répondre à ce signalement",
           here,
           ports,
           accuracyM: lastPositionAccuracy(),
@@ -164,7 +175,9 @@ export function TravelSignals({
         </button>
       </p>
     ) : null;
-  const alerts = activeAlerts(feed.data.alerts).filter((alert) => !departureId || alert.departure_id === departureId);
+  const alerts = activeAlerts(feed.data.alerts).filter(
+    (alert) => !departureId || alert.departure_id === departureId,
+  );
   return (
     <section
       id={`signal-${kind}:${target}`}
@@ -182,12 +195,10 @@ export function TravelSignals({
           )}
           <h3>{title ?? (compact ? "Signalé par les voyageurs" : "Sur place, en ce moment")}</h3>
         </div>
-        {compact ? null : (
-          <Button variant="outline" size="sm" onClick={signal}>
-            <Flag size={15} aria-hidden />
-            Signaler
-          </Button>
-        )}
+        <Button variant="outline" size="sm" onClick={signal}>
+          <Flag size={15} aria-hidden />
+          Signaler
+        </Button>
       </div>
       {alerts.length ? (
         <ul className="bw-signal-list">
@@ -318,7 +329,13 @@ export function TravelSignals({
   );
 }
 
-export function VesselReviews({ vesselId, readOnly = true }: { vesselId: string; readOnly?: boolean }) {
+export function VesselReviews({
+  vesselId,
+  readOnly = true,
+}: {
+  vesselId: string;
+  readOnly?: boolean;
+}) {
   const { user } = useAuth();
   const feed = useQuery(communityQuery("vessel", vesselId, false, user?.id));
   const [write, setWrite] = useState(false);
@@ -356,57 +373,61 @@ export function VesselReviews({ vesselId, readOnly = true }: { vesselId: string;
   if (readOnly && !published.length) return null;
   return (
     <section className="bw-vessel-reviews" aria-label="Avis sur ce navire">
-      {readOnly ? <h3>Anciens avis des voyageurs</h3> : <>
-      <div className="bw-review-summary">
-        <span className="bw-review-score">
-          <Star size={24} aria-hidden />
-          {average !== null
-            ? average.toLocaleString("fr-FR", {
-                maximumFractionDigits: 1,
-                minimumFractionDigits: 1,
-              })
-            : "À vous"}
-          {average !== null ? <small>/ 5</small> : null}
-        </span>
-        <div>
-          <h3>{count ? `${count} avis` : "Le premier avis peut être le vôtre."}</h3>
-          <p>Confort, accueil, propreté : racontez votre traversée.</p>
-        </div>
-      </div>
-      {own?.status === "pending" ? (
-        <p role="status" className="bw-community-success">
-          Votre avis est en cours de vérification.
-        </p>
-      ) : own?.status === "hidden" ? (
-        <p className="bw-community-caption">
-          Votre avis n’a pas été publié. Vous pouvez le modifier.
-        </p>
-      ) : null}
-      <Button
-        variant="outline"
-        onClick={() => {
-          if (!user) {
-            window.sessionStorage.setItem("bledway:pending-vessel-review", vesselId);
-            const next = `${window.location.pathname}${window.location.search}`;
-            window.location.assign(`/auth?next=${encodeURIComponent(next)}`);
-            return;
-          }
-          setWrite(!write);
-        }}
-        aria-expanded={user ? write : undefined}
-      >
-        <MessageCircle size={16} aria-hidden />
-        {own ? "Modifier mon avis" : "Noter ce bateau"}
-      </Button>
-      {write && user ? (
-        <VesselReviewForm
-          key={`${own?.id}:${own?.score}:${own?.comment}`}
-          vesselId={vesselId}
-          review={own}
-          onDone={() => setWrite(false)}
-        />
-      ) : null}
-      </>}
+      {readOnly ? (
+        <h3>Anciens avis des voyageurs</h3>
+      ) : (
+        <>
+          <div className="bw-review-summary">
+            <span className="bw-review-score">
+              <Star size={24} aria-hidden />
+              {average !== null
+                ? average.toLocaleString("fr-FR", {
+                    maximumFractionDigits: 1,
+                    minimumFractionDigits: 1,
+                  })
+                : "À vous"}
+              {average !== null ? <small>/ 5</small> : null}
+            </span>
+            <div>
+              <h3>{count ? `${count} avis` : "Le premier avis peut être le vôtre."}</h3>
+              <p>Confort, accueil, propreté : racontez votre traversée.</p>
+            </div>
+          </div>
+          {own?.status === "pending" ? (
+            <p role="status" className="bw-community-success">
+              Votre avis est en cours de vérification.
+            </p>
+          ) : own?.status === "hidden" ? (
+            <p className="bw-community-caption">
+              Votre avis n’a pas été publié. Vous pouvez le modifier.
+            </p>
+          ) : null}
+          <Button
+            variant="outline"
+            onClick={() => {
+              if (!user) {
+                window.sessionStorage.setItem("bledway:pending-vessel-review", vesselId);
+                const next = `${window.location.pathname}${window.location.search}`;
+                window.location.assign(`/auth?next=${encodeURIComponent(next)}`);
+                return;
+              }
+              setWrite(!write);
+            }}
+            aria-expanded={user ? write : undefined}
+          >
+            <MessageCircle size={16} aria-hidden />
+            {own ? "Modifier mon avis" : "Noter ce bateau"}
+          </Button>
+          {write && user ? (
+            <VesselReviewForm
+              key={`${own?.id}:${own?.score}:${own?.comment}`}
+              vesselId={vesselId}
+              review={own}
+              onDone={() => setWrite(false)}
+            />
+          ) : null}
+        </>
+      )}
       {count > published.length ? (
         <p className="bw-community-caption">
           Les {published.length} avis les plus récents sont affichés.

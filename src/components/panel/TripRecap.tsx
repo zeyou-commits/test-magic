@@ -32,7 +32,7 @@ import type { Company, Departure, Port, Selection, Vessel } from "@/lib/ferry/ty
 import { requestQuickReport } from "@/components/map/QuickReport";
 import { BookingLink, isInternalSource, SourceNote } from "./shared";
 import { FlashFeed } from "./FlashFeed";
-import { hasSignalFocus, LivePulse, revealLive, useLiveInfo } from "./LivePulse";
+import { hasSignalFocus, revealLive, useLiveInfo } from "./LivePulse";
 import { VesselElsewhereNotice } from "./VesselElsewhereNotice";
 import { DepartureIncidentNotice } from "./VesselIncidentNotice";
 import { useVesselAlert } from "@/lib/ferry/vesselAlerts";
@@ -414,7 +414,13 @@ export function TripRecap({
                       purpose: "voyageur",
                     }),
             },
-            { id: "report", label: "Signaler", count: info.travellers, onClick: report },
+            {
+              id: "report",
+              label: "Signaler",
+              count: liveCount,
+              // Déjà des infos : on les montre, et on peut y ajouter la sienne.
+              onClick: liveCount ? openLive : report,
+            },
           ]}
         />
       ) : null}
@@ -425,7 +431,6 @@ export function TripRecap({
       ) : null}
 
       {/* 2. Ce qui se passe, d'un coup d'œil */}
-      <LivePulse info={info} onOpen={openLive} />
       {!cancelled ? <VesselElsewhereNotice departure={departure} /> : null}
       {/* L'entraide sert au port, le jour même : y compris si le départ est retardé. */}
       {!cancelled &&

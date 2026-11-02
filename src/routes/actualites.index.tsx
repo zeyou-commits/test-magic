@@ -65,7 +65,7 @@ function Logos({ companies }: { companies: Company[] }) {
   return (
     <span className="bw-news-logos">
       {companies.slice(0, 3).map((company) => (
-        <CompanyBadge key={company.id} name={company.name} logoUrl={company.logo_url} size={34} />
+        <CompanyBadge key={company.id} name={company.name} logoUrl={company.logo_url} size={40} />
       ))}
     </span>
   );
@@ -87,7 +87,7 @@ function LeadPhoto({
     return <img className="bw-news-lead__photo" src={photo.url} alt="" loading="lazy" />;
   return company ? (
     <span className="bw-news-lead__mark">
-      <CompanyBadge name={company.name} logoUrl={company.logo_url} size={88} />
+      <CompanyBadge name={company.name} logoUrl={company.logo_url} size={88} tone="dark" />
     </span>
   ) : null;
 }
@@ -163,7 +163,7 @@ function NewsPage() {
               aria-pressed={companyId === company.id}
               onClick={() => setCompanyId(companyId === company.id ? null : company.id)}
             >
-              <CompanyBadge name={company.name} logoUrl={company.logo_url} size={28} />
+              <CompanyBadge name={company.name} logoUrl={company.logo_url} size={34} />
               <span>{company.name}</span>
             </button>
           ))}

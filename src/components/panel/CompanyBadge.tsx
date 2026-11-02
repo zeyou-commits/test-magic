@@ -22,21 +22,53 @@ function initials(name: string) {
     .join("");
 }
 
-/** Logo de la compagnie ; à défaut (ou si l'image ne charge pas), pastille de couleur avec initiales. */
+/**
+ * Logo de la compagnie ; à défaut (ou si l'image ne charge pas), pastille de couleur avec initiales.
+ * Les fichiers ont un fond blanc incrusté : sans cadre, il disparaît à l'affichage (classes bw-logo).
+ * Sur fond sombre, ce fond doit être derrière un aplat opaque du même bloc, sinon il revient en noir.
+ */
 export function CompanyBadge({
   name,
   logoUrl,
   size = 40,
+  tone = "light",
 }: {
   name: string | undefined | null;
   logoUrl?: string | null | undefined;
   size?: number;
+  /** Fond sur lequel le logo est posé ; « framed » garde le cadre blanc, par exemple sur une photo. */
+  tone?: "light" | "dark" | "framed";
 }) {
   const [failed, setFailed] = useState(false);
   // Les logos carrés (ex. Baléaria) remplissent une pastille carrée au lieu de flotter dans un cadre large.
   const [square, setSquare] = useState(false);
+  // Sans cadre, le logo garde ses proportions : un logo très large reste lisible.
+  const [ratio, setRatio] = useState(1.7);
   const src = safeExternalUrl(logoUrl);
   const color = companyColor(name);
+  if (src && !failed && tone !== "framed") {
+    return (
+      <span
+        className="grid shrink-0 place-items-center"
+        style={{ width: Math.round(size * ratio), height: size }}
+        aria-hidden
+      >
+        <img
+          src={src}
+          alt=""
+          loading="lazy"
+          decoding="async"
+          onError={() => setFailed(true)}
+          onLoad={(event) => {
+            const { naturalWidth: w, naturalHeight: h } = event.currentTarget;
+            if (w && h) setRatio(Math.min(3.2, Math.max(1, w / h)));
+          }}
+          className="size-full object-contain"
+          data-logo={tone}
+        />
+      </span>
+    );
+  }
   if (src && !failed) {
     return (
       <span

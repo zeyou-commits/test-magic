@@ -302,7 +302,7 @@ export function AlertTicker() {
               (entry) => entry.id === newsCompanyIds(item, vessels)[0],
             );
             return company ? (
-              <CompanyBadge name={company.name} logoUrl={company.logo_url} size={20} />
+              <CompanyBadge name={company.name} logoUrl={company.logo_url} size={34} tone="dark" />
             ) : null;
           })()}
           {item.title}

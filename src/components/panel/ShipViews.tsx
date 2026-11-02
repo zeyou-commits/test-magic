@@ -205,7 +205,12 @@ export function VesselView({
               aria-label={`Voir la compagnie ${company.name}`}
               onClick={() => onSelect({ type: "company", id: company.id })}
             >
-              <CompanyBadge name={company.name} logoUrl={company.logo_url} size={34} />
+              <CompanyBadge
+                name={company.name}
+                logoUrl={company.logo_url}
+                size={34}
+                tone="framed"
+              />
             </button>
           ) : null}
           <div className="min-w-0">

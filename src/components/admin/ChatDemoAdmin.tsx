@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { supabase as typedSupabase } from "@/integrations/supabase/client";
 import { personas, type TravellerCard } from "@/lib/community/travellers";
 import { chatDemoKey, chatDemoQuery, type DemoMessage } from "@/lib/ferry/chatDemo";
+import { portsQuery, routesQuery } from "@/lib/ferry/queries";
 import { AdminDrawer, AdminListToolbar, matches } from "./AdminDrawer";
 
 // Table des exemples, absente des types générés.
@@ -151,23 +152,44 @@ function DemoEditor({
   onSaved: () => void;
 }) {
   const [pseudo, setPseudo] = useState(row?.pseudo ?? "");
-  const [label, setLabel] = useState(row?.label ?? "");
+  // Le lieu d'où sort la bulle : « port:<id> » ou « route:<id> ».
+  const [place, setPlace] = useState(
+    row?.route_id ? `route:${row.route_id}` : row?.port_id ? `port:${row.port_id}` : "",
+  );
+  const { data: ports = [] } = useQuery(portsQuery);
+  const { data: routes = [] } = useQuery(routesQuery);
+  const portName = (id: string) => ports.find((port) => port.id === id)?.name ?? "—";
+  const places = [
+    ...routes
+      .map((route) => ({
+        value: `route:${route.id}`,
+        label: `${portName(route.departure_port_id)} → ${portName(route.arrival_port_id)}`,
+      }))
+      .sort((a, b) => a.label.localeCompare(b.label)),
+    ...ports
+      .map((port) => ({ value: `port:${port.id}`, label: `Port de ${port.name}` }))
+      .sort((a, b) => a.label.localeCompare(b.label)),
+  ];
+  const label = places.find((item) => item.value === place)?.label ?? row?.label ?? "";
   const [body, setBody] = useState(row?.body ?? "");
   const [avatar, setAvatar] = useState<string>(row?.avatar ?? personas[0]!.id);
   const [active, setActive] = useState(row?.active ?? true);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const save = useMutation({
     mutationFn: async () => {
+      const [kind, id] = place.split(":");
       const values = {
         pseudo: pseudo.trim(),
         label: label.trim(),
+        port_id: kind === "port" ? id : null,
+        route_id: kind === "route" ? id : null,
         body: body.trim(),
         avatar,
         active,
         updated_at: new Date().toISOString(),
       };
       if (values.pseudo.length < 2) throw new Error("Prénom de 2 caractères au moins.");
-      if (values.label.length < 2) throw new Error("Indiquez la traversée ou le port.");
+      if (!place || values.label.length < 2) throw new Error("Choisissez la ligne ou le port.");
       if (values.body.length < 2 || values.body.length > 140)
         throw new Error("Message de 2 à 140 caractères.");
       const { error } = row
@@ -242,13 +264,32 @@ function DemoEditor({
           <Input value={pseudo} maxLength={30} onChange={(e) => setPseudo(e.target.value)} />
         </label>
         <label className="grid gap-1.5 text-sm font-medium">
-          Traversée ou port affiché
-          <Input
-            value={label}
-            maxLength={60}
-            onChange={(e) => setLabel(e.target.value)}
-            placeholder="Marseille → Alger, ou Port de Sète"
-          />
+          D'où sort la bulle sur la carte
+          <select
+            value={place}
+            onChange={(e) => setPlace(e.target.value)}
+            className="h-10 rounded-md border border-input bg-background px-3 text-sm"
+          >
+            <option value="">Choisir une ligne ou un port</option>
+            <optgroup label="Lignes (la bulle sort du navire, sinon du port de départ)">
+              {places
+                .filter((item) => item.value.startsWith("route:"))
+                .map((item) => (
+                  <option key={item.value} value={item.value}>
+                    {item.label}
+                  </option>
+                ))}
+            </optgroup>
+            <optgroup label="Ports">
+              {places
+                .filter((item) => item.value.startsWith("port:"))
+                .map((item) => (
+                  <option key={item.value} value={item.value}>
+                    {item.label}
+                  </option>
+                ))}
+            </optgroup>
+          </select>
         </label>
         <label className="grid gap-1.5 text-sm font-medium">
           Message (140 caractères)

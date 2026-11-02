@@ -10360,3 +10360,81 @@ img[data-logo="dark"] {
   background: #ffffff;
   color: #0e7a43;
 }
+
+/* Bulle d'un salon sur la carte : une à la fois, elle sort du navire ou du port et s'efface. */
+.bw-map-bubble {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  width: max-content;
+  max-width: 220px;
+  padding: 5px 10px 5px 5px;
+  border-radius: 16px 16px 16px 4px;
+  background: #ffffff;
+  box-shadow:
+    0 8px 20px #16324a33,
+    0 0 0 1px #16324a14;
+  text-align: left;
+  cursor: pointer;
+  transform-origin: bottom left;
+  animation: bw-map-bubble-in 0.45s cubic-bezier(0.22, 1.4, 0.36, 1);
+  transition:
+    opacity 0.3s ease,
+    transform 0.3s ease;
+}
+.bw-map-bubble[data-leaving] {
+  opacity: 0;
+  transform: translateY(-6px) scale(0.96);
+}
+.bw-map-bubble img {
+  flex: none;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: #eef7f1;
+  object-fit: cover;
+}
+.bw-map-bubble span {
+  display: grid;
+  min-width: 0;
+  line-height: 1.25;
+}
+.bw-map-bubble small {
+  overflow: hidden;
+  color: #0e6b3b;
+  font-size: 10.5px;
+  font-weight: 800;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.bw-map-bubble strong {
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  color: #16324a;
+  font-size: 12px;
+  font-weight: 600;
+}
+@keyframes bw-map-bubble-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.85);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .bw-map-bubble {
+    animation: none;
+  }
+}
+@media (max-width: 767px) {
+  .bw-map-bubble {
+    max-width: 190px;
+  }
+}
+.bw-map-bubble small em {
+  color: #9aa49f;
+  font-size: 9.5px;
+  font-style: normal;
+  font-weight: 500;
+}

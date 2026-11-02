@@ -9,7 +9,6 @@ import {
   Map as MapLibreMap,
   Marker,
   Popup,
-  NavigationControl,
   setWorkerUrl,
   type GeoJSONSource,
   type MapLayerMouseEvent,
@@ -494,7 +493,6 @@ export default function FerryMap({
     });
     map.touchZoomRotate.disableRotation();
 
-    map.addControl(new NavigationControl({ showCompass: false }), "bottom-right");
     // Crédits OpenFreeMap / OpenStreetMap affichés dans la légende (bouton « i » unique).
 
     map.touchZoomRotate.disableRotation();
@@ -930,7 +928,9 @@ export default function FerryMap({
         // Un petit « ! » rouge au coin du navire ; le motif s'affiche au survol.
         layout: {
           "icon-image": "ship-alert",
-          "icon-offset": ["interpolate", ["linear"], ["zoom"], 3, ["case", ["==", ["get", "photo"], ""], ["literal", [7, -7]], ["literal", [9, -9]]], 5, ["case", ["==", ["get", "photo"], ""], ["literal", [7, -7]], ["literal", [13, -13]]], 6, ["case", ["==", ["get", "photo"], ""], ["literal", [7, -7]], ["literal", [19, -19]]], 7, ["case", ["==", ["get", "photo"], ""], ["literal", [7, -7]], ["literal", [35, -35]]], 9, ["case", ["==", ["get", "photo"], ""], ["literal", [7, -7]], ["literal", [71, -71]]], 11, ["case", ["==", ["get", "photo"], ""], ["literal", [7, -7]], ["literal", [134, -134]]], 13, ["case", ["==", ["get", "photo"], ""], ["literal", [7, -7]], ["literal", [202, -202]]]] as never,
+          // Discret de loin, à la taille du navire de près.
+          "icon-size": ["interpolate", ["linear"], ["zoom"], 3, 0.5, 5, 0.6, 7, 0.8, 9, 1] as never,
+          "icon-offset": ["interpolate", ["linear"], ["zoom"], 3, ["case", ["==", ["get", "photo"], ""], ["literal", [14, -14]], ["literal", [18, -18]]], 5, ["case", ["==", ["get", "photo"], ""], ["literal", [12, -12]], ["literal", [22, -22]]], 6, ["case", ["==", ["get", "photo"], ""], ["literal", [10, -10]], ["literal", [27, -27]]], 7, ["case", ["==", ["get", "photo"], ""], ["literal", [9, -9]], ["literal", [44, -44]]], 9, ["case", ["==", ["get", "photo"], ""], ["literal", [7, -7]], ["literal", [71, -71]]], 11, ["case", ["==", ["get", "photo"], ""], ["literal", [7, -7]], ["literal", [134, -134]]], 13, ["case", ["==", ["get", "photo"], ""], ["literal", [7, -7]], ["literal", [202, -202]]]] as never,
           "icon-allow-overlap": true,
           "icon-ignore-placement": true,
         },
@@ -2588,6 +2588,8 @@ export default function FerryMap({
         }),
       };
       vesselImagesRef.current?.setSailing(sailing);
+      // Pas de regroupement « 2 » : chaque navire reste visible et nommé, la file indienne et le
+      // placement des noms évitent déjà les chevauchements. Seuls des navires pile au même endroit se groupent.
       const groups = fleetGroups(
         data.features.map((feature) => {
           const point = map.project(feature.geometry.coordinates);
@@ -2598,6 +2600,7 @@ export default function FerryMap({
             priority: Number(feature.properties["priority"]),
           };
         }),
+        1,
       );
       for (const feature of data.features)
         Object.assign(feature.properties, groups.get(String(feature.properties["shipId"])));

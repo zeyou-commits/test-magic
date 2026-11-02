@@ -81,7 +81,7 @@ const EMOTES = [
 ];
 /** Un message fait seulement d'émoticônes s'affiche en grand. */
 const onlyEmotes = (text: string) =>
-  text.replace(/p{Extended_Pictographic}|p{Regional_Indicator}|‍|️|s/gu, "") === "";
+  text.replace(/\p{Extended_Pictographic}|\p{Regional_Indicator}|‍|️|\s/gu, "") === "";
 type Present = { key: string; card: TravellerCard | null };
 export const roomKey = (kind: RoomKind, room: string) => ["bw-chat", kind, room] as const;
 

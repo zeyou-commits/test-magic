@@ -879,6 +879,23 @@ function Index() {
     return () => window.removeEventListener(JOURNEY_LAYOUT_EVENT, onLayout);
   }, []);
 
+  // Sur mobile, la carte passe devant : un toucher replie le volet tout de suite.
+  useEffect(() => {
+    const press = (event: PointerEvent) => {
+      if (window.innerWidth >= 768) return;
+      if ((event.target as Element | null)?.closest?.(".maplibregl-canvas")) setPanelLevel(0);
+    };
+    document.addEventListener("pointerdown", press, true);
+    return () => document.removeEventListener("pointerdown", press, true);
+  }, []);
+  // Un filtre de la carte actif replie le volet ; il se remet quand plus aucun ne l'est.
+  const mapFilterActive = activeShortcut !== null;
+  useEffect(() => {
+    if (window.innerWidth >= 768) return;
+    if (mapFilterActive) setPanelLevel(0);
+    else setPanelLevel((level) => (level === 0 ? 1 : level));
+  }, [mapFilterActive]);
+
   // La recherche ouverte sur mobile prend toute la hauteur.
   useEffect(() => {
     const full = () => setPanelLevel(2);
@@ -1274,7 +1291,10 @@ function Index() {
               search={
                 <MapSearch
                   atSea={atSea}
-                  onOpen={() => setShortcutMenuOpen(false)}
+                  onOpen={() => {
+                    setShortcutMenuOpen(false);
+                    if (window.innerWidth < 768) setPanelLevel(0);
+                  }}
                   onSelect={(next) => handleSelectRef.current(next)}
                   onRoute={exploreRoute}
                 />

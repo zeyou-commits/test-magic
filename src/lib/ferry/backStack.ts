@@ -39,3 +39,25 @@ export function useBackClose(open: boolean, close: () => void) {
     };
   }, [open]);
 }
+
+/**
+ * Après la fermeture d'une fenêtre, son retour d'historique part en différé : ouvrir une fiche
+ * tout de suite la ferait annuler par ce retour. On attend donc qu'il soit passé.
+ */
+export function afterOverlayClose(next: () => void) {
+  let done = false;
+  const run = () => {
+    if (done) return;
+    done = true;
+    window.removeEventListener("popstate", run);
+    window.setTimeout(next, 0);
+  };
+  window.setTimeout(() => {
+    if (ownBacks === 0) run();
+    else {
+      window.addEventListener("popstate", run);
+      // Filet : un navigateur qui n'émet rien ne bloque pas l'ouverture.
+      window.setTimeout(run, 500);
+    }
+  }, 0);
+}

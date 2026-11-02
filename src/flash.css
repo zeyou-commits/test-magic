@@ -9804,3 +9804,81 @@ img[data-logo="dark"] {
 .bw-news-logos > * + * {
   margin-left: 4px;
 }
+
+/* Équipe BledWay dans les salons : un repère officiel à côté du nom. */
+.bw-staff-badge {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: 3px;
+  margin-inline: 4px 2px;
+  padding: 1px 6px;
+  border-radius: 999px;
+  background: #1e3a5f;
+  color: #ffffff;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  line-height: 1.5;
+  vertical-align: middle;
+}
+.bw-staff-badge[data-kind="moderator"] {
+  background: #5b4bb7;
+}
+.bw-staff-badge[data-kind="official"] {
+  background: #0f6b4f;
+}
+.bw-official-avatar {
+  flex: none;
+  border-radius: 50%;
+  background: #ffffff;
+  box-shadow: 0 0 0 2px #0f6b4f;
+  object-fit: cover;
+}
+.bw-staff-tools {
+  display: flex;
+  flex-basis: 100%;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin-top: 4px;
+  padding-top: 6px;
+  border-top: 1px dashed color-mix(in srgb, #c8452a 35%, transparent);
+}
+.bw-staff-tools button {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 9px;
+  border: 1px solid color-mix(in srgb, #c8452a 40%, transparent);
+  border-radius: 999px;
+  background: #fff5f2;
+  color: #a3361f;
+  font-size: 11.5px;
+  font-weight: 700;
+}
+.bw-staff-tools button:disabled {
+  opacity: 0.5;
+}
+.bw-staff-tools__confirm {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  font-size: 11.5px;
+  font-weight: 600;
+}
+.bw-staff-tools__error {
+  color: #a3361f;
+  font-size: 11.5px;
+}
+.bw-chat__official {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: 4px;
+  padding: 0 6px;
+  color: #0f6b4f;
+  font-size: 11px;
+  font-weight: 800;
+}

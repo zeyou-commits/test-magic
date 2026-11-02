@@ -5,14 +5,13 @@ import { CircleHelp, Flag, Send, ThumbsUp } from "lucide-react";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { ChatText } from "./ChatText";
 import { OwnMessageActions } from "./OwnMessageActions";
-import { TravellerAvatar } from "@/components/community/TravellerAvatar";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase as typedSupabase } from "@/integrations/supabase/client";
-import type { TravellerCard } from "@/lib/community/travellers";
 import { useTravelAction } from "@/hooks/useTravelAction";
 import { CHAT_SENT_EVENT, postToRoom, rememberPendingChat } from "@/lib/ferry/chat";
 import { chatRefusal, roomExamples } from "@/lib/ferry/portPassage";
 import { MAX_MESSAGE } from "./LiveRoom";
+import { AuthorAvatar, StaffBadge, StaffTools, type ChatAuthor } from "./StaffChat";
 
 const supabase = typedSupabase as unknown as SupabaseClient;
 
@@ -22,14 +21,14 @@ type Entry = {
   place: "done" | "asker";
   created_at: string;
   me: boolean;
-  author: TravellerCard;
+  author: ChatAuthor;
   same: number;
   reacted: boolean;
   edited?: boolean;
   replies?: Entry[];
 };
 type Question = Entry & { replies: Entry[] };
-type Feed = { access: "read" | "member"; questions: Question[] };
+type Feed = { access: "read" | "member" | "staff"; staff?: boolean; questions: Question[] };
 
 const missing = (code?: string) => code === "PGRST202" || code === "42883";
 const day = (iso: string) =>
@@ -47,9 +46,11 @@ function Line({
   busy,
   onReact,
   onReport,
+  staff = false,
   children,
 }: {
   entry: Entry;
+  staff?: boolean;
   sameLabel: string;
   canAct: boolean;
   busy: boolean;
@@ -59,10 +60,11 @@ function Line({
 }) {
   return (
     <>
-      <TravellerAvatar card={entry.author} size={32} />
+      <AuthorAvatar author={entry.author} size={32} />
       <div>
         <p className="bw-room__who">
-          <b>{entry.me ? "Vous" : entry.author.pseudo}</b>
+          <b>{entry.me && !entry.author.official ? "Vous" : entry.author.pseudo}</b>
+          <StaffBadge author={entry.author} />
           {entry.place === "done" ? <span data-place="done">a fait cette ligne</span> : null}
           <time dateTime={entry.created_at}>
             {day(entry.created_at)}
@@ -102,6 +104,7 @@ function Line({
             }
           />
         ) : null}
+        {staff && !entry.me ? <StaffTools id={entry.id} author={entry.author} /> : null}
         {children}
       </div>
     </>
@@ -171,7 +174,7 @@ export function LineQuestions({ routeId, title }: { routeId: string; title: stri
   // Module pas encore activé en base : rien à afficher.
   if (feed.data === null) return null;
   const questions = feed.data?.questions ?? [];
-  const canAct = feed.data?.access === "member";
+  const canAct = feed.data?.access === "member" || feed.data?.access === "staff";
   const busy = react.isPending || report.isPending;
   const problem = send.error ?? react.error ?? report.error;
   // On écrit d'abord ; l'inscription n'arrive qu'à l'envoi, et le message est gardé.
@@ -235,6 +238,7 @@ export function LineQuestions({ routeId, title }: { routeId: string; title: stri
                 entry={question}
                 sameLabel="Même question"
                 canAct={canAct}
+              staff={Boolean(feed.data?.staff)}
                 busy={busy}
                 onReact={() => react.mutate(question.id)}
                 onReport={() => report.mutate(question.id)}
@@ -247,6 +251,7 @@ export function LineQuestions({ routeId, title }: { routeId: string; title: stri
                           entry={answer}
                           sameLabel="Utile"
                           canAct={canAct}
+              staff={Boolean(feed.data?.staff)}
                           busy={busy}
                           onReact={() => react.mutate(answer.id)}
                           onReport={() => report.mutate(answer.id)}

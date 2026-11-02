@@ -86,6 +86,8 @@ const REFUSALS: Record<string, string> = {
   word: "Ce message contient un mot refusé. Reformulez-le.",
   rate: "Doucement : attendez un peu avant de renvoyer un message.",
   muted: "Vous ne pouvez plus écrire pendant 24 h, après plusieurs messages refusés ou masqués.",
+  banned: "L'équipe BledWay vous a retiré l'accès aux salons pour le moment.",
+  staff_target: "Action impossible sur un membre de l'équipe.",
   not_member: "Réservé aux passagers de cette traversée.",
   not_here: "Réservé aux personnes présentes sur le port : votre position n'est pas à proximité.",
   account: "Connectez-vous pour écrire.",

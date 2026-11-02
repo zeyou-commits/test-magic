@@ -37,6 +37,7 @@ import { CabasImg } from "@/components/CabasImg";
 import { ChatText, useChatEmotes } from "./ChatText";
 import { OwnMessageActions } from "./OwnMessageActions";
 import { DmRequest, PrivateMessages } from "./PrivateMessages";
+import { AuthorAvatar, StaffBadge, StaffTools, type ChatAuthor } from "./StaffChat";
 
 const supabase = typedSupabase as unknown as SupabaseClient;
 export const MAX_MESSAGE = 200;
@@ -45,20 +46,25 @@ type RoomKind = "crossing" | "port";
 type Message = {
   id: string;
   body: string;
-  place: "aboard" | "port" | "trip";
+  place: "aboard" | "port" | "trip" | "staff";
   /** Fil du port : la traversée d'où vient le message. */
   crossing?: string | null;
   edited?: boolean;
   reply_to?: { id: string; body: string; me: boolean; pseudo: string } | null;
   created_at: string;
   me: boolean;
-  author: TravellerCard;
+  author: ChatAuthor;
   same: number;
   reacted: boolean;
 };
-type Feed = { access: "read" | "member" | "position"; messages: Message[] };
+type Feed = {
+  access: "read" | "member" | "position" | "staff";
+  /** La personne fait partie de l'équipe : outils de modération et message officiel. */
+  staff?: boolean;
+  messages: Message[];
+};
 
-const PLACE = { aboard: "à bord", port: "au port", trip: "passager" } as const;
+const PLACE = { aboard: "à bord", port: "au port", trip: "passager", staff: "équipe BledWay" } as const;
 const missing = (code?: string) => code === "PGRST202" || code === "42883";
 /** En dessous, on considère que la personne suit le direct : le fil descend tout seul. */
 const FOLLOW_BOTTOM_PX = 80;
@@ -163,6 +169,7 @@ function LiveChat({
   closed,
   people,
   myHandle,
+  staff = false,
 }: {
   kind: RoomKind;
   room: string;
@@ -173,11 +180,13 @@ function LiveChat({
   closed: boolean;
   people: Present[];
   myHandle: string | undefined;
+  staff?: boolean;
 }) {
   const { user } = useAuth();
   const request = useTravelAction();
   const client = useQueryClient();
   const [text, setText] = useState("");
+  const [official, setOfficial] = useState(false);
   const [selected, setSelected] = useState<string | null>(null);
   const [unread, setUnread] = useState(0);
   const [replyTo, setReplyTo] = useState<Message | null>(null);
@@ -220,7 +229,7 @@ function LiveChat({
     setUnread(0);
   };
   const send = useMutation({
-    mutationFn: () => postToRoom(kind, room, text, undefined, replyTo?.id),
+    mutationFn: () => postToRoom(kind, room, text, undefined, replyTo?.id, staff && official),
     onSuccess: () => {
       setText("");
       setReplyTo(null);
@@ -394,7 +403,7 @@ function LiveChat({
             data-me={message.me || undefined}
             data-mention={message.reply_to?.me || undefined}
           >
-            <TravellerAvatar card={message.author} size={26} mood={false} />
+            <AuthorAvatar author={message.author} size={26} />
             <div>
               {message.reply_to ? (
                 <p className="bw-chat__quote">
@@ -411,8 +420,12 @@ function LiveChat({
                 aria-expanded={selected === message.id}
                 onClick={() => setSelected(selected === message.id ? null : message.id)}
               >
-                <b>{message.me ? "Vous" : message.author.pseudo}</b>
-                <small data-place={message.place}>{message.crossing ?? PLACE[message.place]}</small>
+                <b>{message.me && !message.author.official ? "Vous" : message.author.pseudo}</b>
+                <StaffBadge author={message.author} />
+                {/* Le badge de l'équipe dit déjà d'où vient le message. */}
+                {message.place === "staff" && !message.crossing ? null : (
+                  <small data-place={message.place}>{message.crossing ?? PLACE[message.place]}</small>
+                )}
                 <span data-big={onlyEmotes(message.body) || undefined}>
                   <ChatText body={message.body} />
                 </span>
@@ -451,7 +464,7 @@ function LiveChat({
                   >
                     <ThumbsUp size={13} aria-hidden /> Pareil ici
                   </button>
-                  {canDm && !message.me ? (
+                  {canDm && !message.me && !message.author.official ? (
                     <button type="button" onClick={() => setDmTo(message.author)}>
                       <Mail size={13} aria-hidden /> Message privé
                     </button>
@@ -466,6 +479,7 @@ function LiveChat({
                     </button>
                   ) : null}
                   {message.me ? <OwnMessageActions id={message.id} body={message.body} /> : null}
+                  {staff && !message.me ? <StaffTools id={message.id} author={message.author} /> : null}
                 </div>
               ) : null}
             </div>
@@ -580,6 +594,16 @@ function LiveChat({
               aria-label="Votre message"
             />
             {text.length > MAX_MESSAGE - 40 ? <small>{MAX_MESSAGE - text.length}</small> : null}
+            {staff ? (
+              <label className="bw-chat__official" title="Le message s'affiche au nom de BledWay">
+                <input
+                  type="checkbox"
+                  checked={official}
+                  onChange={(event) => setOfficial(event.target.checked)}
+                />
+                BledWay
+              </label>
+            ) : null}
             <button type="submit" disabled={!text.trim() || send.isPending} aria-label="Envoyer">
               <Send size={17} aria-hidden />
             </button>
@@ -621,7 +645,10 @@ export function LiveRoom({
   // Module pas encore activé en base : rien à afficher.
   if (feed.data === null) return null;
   const messages = feed.data?.messages ?? [];
-  const canWrite = feed.data?.access === "member" || feed.data?.access === "position";
+  const canWrite =
+    feed.data?.access === "member" ||
+    feed.data?.access === "position" ||
+    feed.data?.access === "staff";
   const closed = kind === "crossing" && moment === "over";
   const preview = messages.slice(0, PREVIEW_MESSAGES).reverse();
   return (
@@ -637,7 +664,8 @@ export function LiveRoom({
         <ol className="bw-room__preview">
           {preview.map((message) => (
             <li key={message.id}>
-              <b>{message.me ? "Vous" : message.author.pseudo}</b>{" "}
+              <b>{message.me && !message.author.official ? "Vous" : message.author.pseudo}</b>{" "}
+              <StaffBadge author={message.author} />{" "}
               <ChatText body={message.body} size={18} />
             </li>
           ))}
@@ -659,6 +687,7 @@ export function LiveRoom({
             closed={closed}
             people={people}
             myHandle={card?.handle}
+            staff={Boolean(feed.data?.staff)}
           />
         </DialogContent>
       </Dialog>

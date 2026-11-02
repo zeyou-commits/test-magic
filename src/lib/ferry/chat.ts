@@ -26,6 +26,8 @@ export async function postToRoom(
   body: string,
   parent?: string,
   replyTo?: string,
+  /** Équipe seulement : le message part au nom de BledWay (refusé côté serveur sinon). */
+  official = false,
 ) {
   const here = kind === "port" ? await currentPosition() : null;
   const { data, error } = await supabase.rpc("bw_chat_post", {
@@ -36,6 +38,7 @@ export async function postToRoom(
     p_lon: here?.[0] ?? null,
     ...(parent ? { p_parent: parent } : {}),
     ...(replyTo ? { p_reply_to: replyTo } : {}),
+    ...(official ? { p_official: true } : {}),
   });
   if (error) throw new Error("Message non envoyé. Réessayez.");
   const result = data as { ok: boolean; refused?: string };

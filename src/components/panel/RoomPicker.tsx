@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { useBackClose } from "@/lib/ferry/backStack";
+import { afterOverlayClose, useBackClose } from "@/lib/ferry/backStack";
 import { enterRoom } from "@/lib/ferry/chat";
 import { revealBlock } from "./ActionHub";
 import { useQuery } from "@tanstack/react-query";
@@ -106,8 +106,10 @@ export function RoomPicker({
                       aria-current={row.id === currentId || undefined}
                       onClick={() => {
                         close();
-                        onSelect({ type: "departure", id: row.id });
-                        enterRoom("crossing", row.id);
+                        afterOverlayClose(() => {
+                          onSelect({ type: "departure", id: row.id });
+                          enterRoom("crossing", row.id);
+                        });
                       }}
                     >
                       <span>
@@ -138,8 +140,10 @@ export function RoomPicker({
                   type="button"
                   onClick={() => {
                     close();
-                    onSelect({ type: "route", id: routeId });
-                    scrollTo(".bw-room--questions");
+                    afterOverlayClose(() => {
+                      onSelect({ type: "route", id: routeId });
+                      scrollTo(".bw-room--questions");
+                    });
                   }}
                 >
                   Questions sur {line}

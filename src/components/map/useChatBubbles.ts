@@ -42,7 +42,7 @@ type Bubble = RecentMessage & { report?: TravelAlert };
 /** Un signalement s'invite toutes les 2 bulles de messages. */
 const REPORT_EVERY = 2;
 
-const MEGAPHONE = `<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m3 11 18-5v12L3 14v-3z"/><path d="M11.6 16.8a3 3 0 1 1-5.8-1.6"/></svg>`;
+const MEGAPHONE = `<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m3 11 18-5v12L3 14v-3z"/><path d="M11.6 16.8a3 3 0 1 1-5.8-1.6"/></svg>`;
 
 /**
  * La carte qui vit : une seule bulle à la fois sort du navire ou du port d'un salon, avec le prénom
@@ -169,54 +169,40 @@ export function useChatBubbles(
       );
       enterRoom(message.kind, message.room);
     };
+    // Façon Waze : l'avatar d'abord, puis une seule ligne courte. Le détail est au toucher.
     const build = (message: Bubble) => {
       const element = document.createElement("button");
       element.type = "button";
       element.className = "bw-map-bubble";
+      const face = document.createElement("i");
+      const line = document.createElement("span");
       if (message.report) {
-        // Un signalement : le mégaphone de « Signaler », la situation et ses confirmations.
         const { report } = message;
-        const place =
-          report.target_kind === "port"
-            ? `Port de ${latest.current.ports.find((port) => port.id === report.target_id)?.name ?? "—"}`
-            : (latest.current.fleet.find((ship) => ship.vesselId === report.target_id)?.name ??
-              "Navire");
         element.dataset["report"] = "true";
         element.style.setProperty("--situation-color", situationOf(report.category).color);
-        const icon = document.createElement("i");
-        icon.innerHTML = MEGAPHONE;
-        const text = document.createElement("span");
-        const who = document.createElement("small");
-        who.textContent = `Signalement · ${place}`;
-        const body = document.createElement("strong");
-        body.textContent = `${message.body}${report.confirmations ? ` · confirmé par ${report.confirmations}` : ""}`;
-        text.append(who, body);
-        element.append(icon, text);
-        element.addEventListener("click", (event) => {
-          event.stopPropagation();
-          open(message);
-        });
-        return element;
+        face.innerHTML = MEGAPHONE;
+        line.textContent = `${shortBody(message.body, 26)}${report.confirmations ? ` · ✓${report.confirmations}` : ""}`;
+        element.title = "Signalement de voyageurs";
+      } else {
+        const avatar = document.createElement("img");
+        avatar.alt = "";
+        avatar.src = message.author.official
+          ? "/pwa-icon-192.png"
+          : personaImage(message.author.avatar ?? "maman");
+        face.append(avatar);
+        const name = document.createElement("b");
+        name.textContent = message.author.pseudo;
+        line.append(name, ` ${shortBody(message.body, 24) || "…"}`);
+        if (message.label) element.title = message.label;
       }
-      const avatar = document.createElement("img");
-      avatar.alt = "";
-      avatar.src = message.author.official
-        ? "/pwa-icon-192.png"
-        : personaImage(message.author.avatar ?? "maman");
-      const text = document.createElement("span");
-      const who = document.createElement("small");
-      who.textContent = `${message.author.pseudo}${message.label ? ` · ${message.label}` : ""}`;
-      // Un exemple le dit discrètement, en fin de ligne : le prénom reste en premier.
+      element.append(face, line);
+      // Un exemple le dit, en tout petit et hors du texte coupé : la bulle reste légère.
       if (message.demo) {
         const note = document.createElement("em");
-        note.textContent = "illustration";
-        who.append(" ", note);
+        note.textContent = "ex.";
+        element.append(note);
+        element.title = "Message d'illustration au lancement";
       }
-      const body = document.createElement("strong");
-      body.textContent = shortBody(message.body, 60) || "…";
-      text.append(who, body);
-      element.append(avatar, text);
-      if (message.demo) element.title = "Message d'illustration au lancement";
       element.addEventListener("click", (event) => {
         event.stopPropagation();
         open(message);

@@ -10361,60 +10361,71 @@ img[data-logo="dark"] {
   color: #0e7a43;
 }
 
-/* Bulle d'un salon sur la carte : une à la fois, elle sort du navire ou du port et s'efface. */
+/* Bulle d'un salon sur la carte, façon Waze : petite, l'avatar en avant, une ligne. */
 .bw-map-bubble {
   display: flex;
   align-items: center;
-  gap: 7px;
+  gap: 5px;
   width: max-content;
-  max-width: 220px;
-  padding: 5px 10px 5px 5px;
-  border-radius: 16px 16px 16px 4px;
+  max-width: 190px;
+  height: 30px;
+  padding: 0 10px 0 2px;
+  border-radius: 999px;
   background: #ffffff;
   box-shadow:
-    0 8px 20px #16324a33,
-    0 0 0 1px #16324a14;
-  text-align: left;
+    0 4px 12px #16324a2e,
+    0 0 0 1px #16324a12;
   cursor: pointer;
   transform-origin: bottom left;
-  animation: bw-map-bubble-in 0.45s cubic-bezier(0.22, 1.4, 0.36, 1);
+  animation: bw-map-bubble-in 0.4s cubic-bezier(0.22, 1.4, 0.36, 1);
   transition:
     opacity 0.3s ease,
     transform 0.3s ease;
 }
 .bw-map-bubble[data-leaving] {
   opacity: 0;
-  transform: translateY(-6px) scale(0.96);
+  transform: translateY(-4px) scale(0.95);
 }
-.bw-map-bubble img {
+.bw-map-bubble > i {
+  display: grid;
   flex: none;
-  width: 28px;
-  height: 28px;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  overflow: hidden;
+  border: 2px solid #ffffff;
   border-radius: 50%;
   background: #eef7f1;
+  box-shadow: 0 0 0 1.5px #0e7a43;
+}
+.bw-map-bubble > i img {
+  width: 100%;
+  height: 100%;
   object-fit: cover;
 }
-.bw-map-bubble span {
-  display: grid;
-  min-width: 0;
-  line-height: 1.25;
-}
-.bw-map-bubble small {
+.bw-map-bubble > span {
   overflow: hidden;
-  color: #0e6b3b;
-  font-size: 10.5px;
-  font-weight: 800;
+  min-width: 0;
+  color: #16324a;
+  font-size: 11.5px;
+  font-weight: 500;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-.bw-map-bubble strong {
-  overflow: hidden;
-  display: -webkit-box;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 2;
-  color: #16324a;
-  font-size: 12px;
-  font-weight: 600;
+.bw-map-bubble > span b {
+  color: #0e6b3b;
+  font-weight: 800;
+}
+.bw-map-bubble > em {
+  flex: none;
+  color: #9aa49f;
+  font-size: 9.5px;
+  font-style: normal;
+}
+.bw-map-bubble[data-report] > i {
+  background: #ffc83d;
+  color: #4a3200;
+  box-shadow: 0 0 0 1.5px var(--situation-color, #e0a400);
 }
 @keyframes bw-map-bubble-in {
   from {
@@ -10429,29 +10440,6 @@ img[data-logo="dark"] {
 }
 @media (max-width: 767px) {
   .bw-map-bubble {
-    max-width: 190px;
+    max-width: 170px;
   }
-}
-.bw-map-bubble small em {
-  color: #9aa49f;
-  font-size: 9.5px;
-  font-style: normal;
-  font-weight: 500;
-}
-/* Un signalement dans le défilement : liseré et mégaphone aux couleurs de la situation. */
-.bw-map-bubble[data-report] {
-  border-left: 3px solid var(--situation-color, #e0a400);
-}
-.bw-map-bubble[data-report] > i {
-  display: grid;
-  flex: none;
-  place-items: center;
-  width: 28px;
-  height: 28px;
-  border-radius: 50%;
-  background: #ffc83d;
-  color: #4a3200;
-}
-.bw-map-bubble[data-report] small {
-  color: #8a5a00;
 }

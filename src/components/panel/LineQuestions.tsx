@@ -8,7 +8,12 @@ import { OwnMessageActions } from "./OwnMessageActions";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase as typedSupabase } from "@/integrations/supabase/client";
 import { useTravelAction } from "@/hooks/useTravelAction";
-import { CHAT_SENT_EVENT, postToRoom, rememberPendingChat } from "@/lib/ferry/chat";
+import {
+  CHAT_SENT_EVENT,
+  postToRoom,
+  rememberPendingChat,
+  takeQuestionDraft,
+} from "@/lib/ferry/chat";
 import { chatRefusal, roomExamples } from "@/lib/ferry/portPassage";
 import { MAX_MESSAGE } from "./LiveRoom";
 import { AuthorAvatar, StaffBadge, StaffTools, type ChatAuthor } from "./StaffChat";
@@ -123,7 +128,8 @@ export function LineQuestions({ routeId, title }: { routeId: string; title: stri
   const { user } = useAuth();
   const request = useTravelAction();
   const client = useQueryClient();
-  const [text, setText] = useState("");
+  // Venu du salon du port : la question déjà écrite est reprise ici.
+  const [text, setText] = useState(() => takeQuestionDraft(routeId));
   const [replyTo, setReplyTo] = useState<string | null>(null);
   const [reply, setReply] = useState("");
   const key = ["bw-chat", "route", routeId, user?.id ?? "anonyme"];

@@ -42,7 +42,32 @@ export async function postToRoom(
   });
   if (error) throw new Error("Message non envoyé. Réessayez.");
   const result = data as { ok: boolean; refused?: string };
-  if (!result.ok) throw new Error(chatRefusal(result.refused ?? ""));
+  // Le motif reste lisible par l'écran : « pas sur place » propose une autre voie.
+  if (!result.ok)
+    throw Object.assign(new Error(chatRefusal(result.refused ?? "")), { code: result.refused });
+}
+
+/** Une question préparée ailleurs (salon du port), reprise dans les questions de la ligne. */
+const QUESTION_DRAFT_KEY = "bledway:question-draft";
+export function rememberQuestionDraft(routeId: string, body: string) {
+  try {
+    sessionStorage.setItem(QUESTION_DRAFT_KEY, JSON.stringify({ routeId, body }));
+  } catch {
+    /* le brouillon est facultatif */
+  }
+}
+export function takeQuestionDraft(routeId: string) {
+  try {
+    const draft = JSON.parse(sessionStorage.getItem(QUESTION_DRAFT_KEY) ?? "null") as {
+      routeId?: string;
+      body?: string;
+    } | null;
+    if (draft?.routeId !== routeId || !draft.body) return "";
+    sessionStorage.removeItem(QUESTION_DRAFT_KEY);
+    return draft.body;
+  } catch {
+    return "";
+  }
 }
 
 export function rememberPendingChat(chat: PendingChat) {

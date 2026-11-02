@@ -22,7 +22,7 @@ import { FlashFeed } from "./FlashFeed";
 import { PortPlaces } from "./PortPlaces";
 import { PortLiveBoard } from "./PortLiveBoard";
 import { enterRoom } from "@/lib/ferry/chat";
-import { ActionHub } from "./ActionHub";
+import { ActionHub, revealBlock } from "./ActionHub";
 import { LiveRoom } from "./LiveRoom";
 import { RoomPicker } from "./RoomPicker";
 import { PortPresence } from "./TripPresence";
@@ -365,7 +365,15 @@ export function PortView({
 
       <PortPresence portId={portId} />
 
-      <LiveRoom kind="port" room={portId} title={`En direct sur le port de ${port.name}`} />
+      <LiveRoom
+        kind="port"
+        room={portId}
+        title={`En direct sur le port de ${port.name}`}
+        onAskLine={(routeId) => {
+          onSelect({ type: "route", id: routeId });
+          revealBlock(".bw-room--questions", 700);
+        }}
+      />
 
       <PortLiveBoard
         portId={portId}

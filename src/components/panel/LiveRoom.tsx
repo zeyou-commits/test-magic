@@ -5,6 +5,7 @@ import {
   AtSign,
   Bell,
   BellOff,
+  CircleHelp,
   CornerDownRight,
   Flag,
   Mail,
@@ -23,7 +24,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useTravelAction } from "@/hooks/useTravelAction";
 import { supabase as typedSupabase } from "@/integrations/supabase/client";
 import { myTravellerQuery, type TravellerCard } from "@/lib/community/travellers";
-import { useBackClose } from "@/lib/ferry/backStack";
+import { afterOverlayClose, useBackClose } from "@/lib/ferry/backStack";
 import {
   CHAT_SENT_EVENT,
   ENTER_ROOM_EVENT,
@@ -31,9 +32,11 @@ import {
   muteRoom,
   postToRoom,
   rememberPendingChat,
+  rememberQuestionDraft,
   roomWanted,
   withMentions,
 } from "@/lib/ferry/chat";
+import { portsQuery, routesQuery } from "@/lib/ferry/queries";
 import { useCharterGate } from "./CharterGate";
 import { currentPosition } from "@/lib/ferry/community";
 import { chatRefusal, roomExamples, type RoomMoment } from "@/lib/ferry/portPassage";
@@ -191,6 +194,7 @@ function LiveChat({
   staff = false,
   charter,
   muted = false,
+  onAskLine,
 }: {
   kind: RoomKind;
   room: string;
@@ -205,6 +209,8 @@ function LiveChat({
   staff?: boolean;
   charter?: boolean | undefined;
   muted?: boolean;
+  /** Salon du port, hors du port : passer la question aux voyageurs d'une ligne. */
+  onAskLine?: ((routeId: string) => void) | undefined;
 }) {
   const { user } = useAuth();
   const request = useTravelAction();
@@ -366,6 +372,28 @@ function LiveChat({
     );
     inputRef.current?.focus();
   };
+  // Pas sur le port : la question part aux voyageurs d'une des lignes de ce port.
+  const notHere =
+    kind === "port" && (send.error as (Error & { code?: string }) | null)?.code === "not_here";
+  const { data: allRoutes = [] } = useQuery({ ...routesQuery, enabled: notHere });
+  const { data: allPorts = [] } = useQuery({ ...portsQuery, enabled: notHere });
+  // Une seule liaison par port d'en face : la ligne au départ d'ici, sinon celle qui y arrive.
+  const portName = (id: string) => allPorts.find((port) => port.id === id)?.name ?? "—";
+  const portLines = notHere
+    ? [
+        ...new Map(
+          allRoutes
+            .filter((route) => route.departure_port_id === room || route.arrival_port_id === room)
+            .sort((a, b) => Number(b.departure_port_id === room) - Number(a.departure_port_id === room))
+            .map((route) => {
+              const other =
+                route.departure_port_id === room ? route.arrival_port_id : route.departure_port_id;
+              return [other, { id: route.id, line: `${portName(room)} ↔ ${portName(other)}` }] as const;
+            })
+            .reverse(),
+        ).values(),
+      ].sort((a, b) => a.line.localeCompare(b.line))
+    : [];
   if (dmTo)
     return (
       <DmRequest
@@ -608,7 +636,30 @@ function LiveChat({
           {unread > 1 ? "s" : ""}
         </button>
       ) : null}
-      {problem ? (
+      {notHere && onAskLine && portLines.length ? (
+        <div role="alert" className="bw-chat__elsewhere">
+          <p>
+            <b>Vous n'êtes pas sur le port.</b> Ce salon est réservé à ceux qui y sont. Posez
+            plutôt votre question aux voyageurs d'une ligne : ils vous répondront.
+          </p>
+          <div>
+            {portLines.map((item) => (
+              <button
+                key={item.id}
+                type="button"
+                onClick={() => {
+                  if (text.trim()) rememberQuestionDraft(item.id, text.trim());
+                  setText("");
+                  send.reset();
+                  onAskLine(item.id);
+                }}
+              >
+                <CircleHelp size={14} aria-hidden /> {item.line}
+              </button>
+            ))}
+          </div>
+        </div>
+      ) : problem ? (
         <p role="alert" className="bw-chat__error">
           {problem.message}
         </p>
@@ -748,11 +799,13 @@ export function LiveRoom({
   room,
   title,
   moment = "before",
+  onAskLine,
 }: {
   kind: RoomKind;
   room: string;
   title: string;
   moment?: RoomMoment;
+  onAskLine?: (routeId: string) => void;
 }) {
   const { user } = useAuth();
   const [open, setOpen] = useState(false);
@@ -818,6 +871,14 @@ export function LiveRoom({
             myPseudo={card?.pseudo}
             charter={feed.data?.charter}
             muted={Boolean(feed.data?.muted)}
+            onAskLine={
+              onAskLine
+                ? (routeId) => {
+                    setOpen(false);
+                    afterOverlayClose(() => onAskLine(routeId));
+                  }
+                : undefined
+            }
             staff={Boolean(feed.data?.staff)}
           />
         </DialogContent>

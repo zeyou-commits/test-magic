@@ -10049,3 +10049,36 @@ img[data-logo="dark"] {
   min-width: 0;
   margin: 0;
 }
+
+/* Salon du port, hors du port : la question part aux voyageurs d'une ligne. */
+.bw-chat__elsewhere {
+  display: grid;
+  gap: 8px;
+  margin: 0 10px 6px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: #fff8e8;
+  color: #5b4300;
+  font-size: 13px;
+  line-height: 1.4;
+}
+.bw-chat__elsewhere p {
+  margin: 0;
+}
+.bw-chat__elsewhere div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.bw-chat__elsewhere button {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 11px;
+  border: 1px solid #cfe3d8;
+  border-radius: 999px;
+  background: #ffffff;
+  color: #0e6b3b;
+  font-size: 12.5px;
+  font-weight: 700;
+}

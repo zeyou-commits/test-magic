@@ -4,6 +4,7 @@ import {
   ArrowDown,
   CornerDownRight,
   Flag,
+  Mail,
   MessagesSquare,
   Reply,
   Send,
@@ -30,7 +31,12 @@ import {
 } from "@/lib/ferry/chat";
 import { currentPosition } from "@/lib/ferry/community";
 import { chatRefusal, roomExamples, type RoomMoment } from "@/lib/ferry/portPassage";
+import { emoteToken } from "@/lib/ferry/chatEmotes";
+import { dmInboxQuery, dmKey, metQuery, takeDmFocus } from "@/lib/ferry/privateMessages";
+import { CabasImg } from "@/components/CabasImg";
+import { ChatText, useChatEmotes } from "./ChatText";
 import { OwnMessageActions } from "./OwnMessageActions";
+import { DmRequest, PrivateMessages } from "./PrivateMessages";
 
 const supabase = typedSupabase as unknown as SupabaseClient;
 export const MAX_MESSAGE = 200;
@@ -178,6 +184,7 @@ function LiveChat({
   canWrite,
   closed,
   people,
+  myHandle,
 }: {
   kind: RoomKind;
   room: string;
@@ -187,6 +194,7 @@ function LiveChat({
   canWrite: boolean;
   closed: boolean;
   people: Present[];
+  myHandle: string | undefined;
 }) {
   const { user } = useAuth();
   const request = useTravelAction();
@@ -197,6 +205,28 @@ function LiveChat({
   const [replyTo, setReplyTo] = useState<Message | null>(null);
   const [showPeople, setShowPeople] = useState(false);
   const [showEmotes, setShowEmotes] = useState(false);
+  const [dmView, setDmView] = useState<"inbox" | null>(() => (takeDmFocus() ? "inbox" : null));
+  const [dmTo, setDmTo] = useState<TravellerCard | null>(null);
+  const siteEmotes = useChatEmotes();
+  const met = useQuery(metQuery(kind === "crossing" ? room : "", user?.id)).data;
+  const metHere = new Set(met?.here ?? []);
+  const inbox = useQuery(dmInboxQuery(user?.id)).data;
+  const dmUnread = inbox?.reduce((sum, thread) => sum + thread.unread, 0) ?? 0;
+  // Réveil des messages privés : le signal ne dit rien de leur contenu.
+  useEffect(() => {
+    if (!user || inbox === null) return;
+    const channel = supabase
+      .channel(`dm:${user.id}`)
+      .on("broadcast", { event: "changed" }, () => {
+        void client.invalidateQueries({ queryKey: dmKey });
+      })
+      .subscribe();
+    return () => {
+      void supabase.removeChannel(channel);
+    };
+  }, [user, inbox === null, client]);
+  // Les passagers peuvent s'écrire : seulement sur une traversée, et en étant soi-même passager.
+  const canDm = kind === "crossing" && canWrite && !closed && Boolean(user) && inbox !== null;
   const inputRef = useRef<HTMLInputElement>(null);
   const online = people.length;
   const named = people.filter((person) => person.card);
@@ -286,9 +316,33 @@ function LiveChat({
     );
   };
   const problem = send.error ?? react.error ?? report.error;
+  if (dmTo)
+    return (
+      <DmRequest
+        departureId={room}
+        card={dmTo}
+        onCancel={() => setDmTo(null)}
+        onDone={() => {
+          setDmTo(null);
+          setDmView("inbox");
+        }}
+      />
+    );
+  if (dmView) return <PrivateMessages onBack={() => setDmView(null)} />;
   return (
     <div className="bw-chat">
       <header className="bw-chat__head">
+        {user && inbox !== null ? (
+          <button
+            type="button"
+            className="bw-chat__mail"
+            aria-label={dmUnread ? `Messages privés, ${dmUnread} non lus` : "Messages privés"}
+            onClick={() => setDmView("inbox")}
+          >
+            <Mail size={19} aria-hidden />
+            {dmUnread ? <b>{dmUnread}</b> : null}
+          </button>
+        ) : null}
         <span className="bw-chat__live">
           <i aria-hidden /> En direct
         </span>
@@ -312,9 +366,28 @@ function LiveChat({
                 <li key={person.key}>
                   <TravellerAvatar card={person.card!} size={30} mood={false} />
                   <span>{person.card!.pseudo}</span>
+                  {metHere.has(person.card!.handle) ? (
+                    <small className="bw-chat__met">déjà croisé</small>
+                  ) : null}
+                  {canDm && person.card!.handle !== myHandle ? (
+                    <button
+                      type="button"
+                      className="bw-chat__dm"
+                      aria-label={`Message privé à ${person.card!.pseudo}`}
+                      onClick={() => setDmTo(person.card)}
+                    >
+                      <Mail size={15} aria-hidden />
+                    </button>
+                  ) : null}
                 </li>
               ))}
             </ul>
+          ) : null}
+          {met?.total ? (
+            <p>
+              Vous avez déjà croisé {met.total} voyageur{met.total > 1 ? "s" : ""} sur BledWay
+              {metHere.size ? `, dont ${metHere.size} sur cette traversée` : ""}.
+            </p>
           ) : null}
           {online > named.length ? (
             <p>
@@ -349,7 +422,9 @@ function LiveChat({
                 <p className="bw-chat__quote">
                   <CornerDownRight size={12} aria-hidden />
                   <b>{message.reply_to.me ? "Vous" : message.reply_to.pseudo}</b>
-                  <span>{message.reply_to.body}</span>
+                  <span>
+                    <ChatText body={message.reply_to.body} size={14} />
+                  </span>
                 </p>
               ) : null}
               <button
@@ -360,7 +435,12 @@ function LiveChat({
               >
                 <b>{message.me ? "Vous" : message.author.pseudo}</b>
                 <small data-place={message.place}>{message.crossing ?? PLACE[message.place]}</small>
-                <span data-big={onlyEmotes(message.body) || undefined}>{message.body}</span>
+                <span data-big={onlyEmotes(message.body) || undefined}>
+                  <ChatText body={message.body} />
+                </span>
+                {metHere.has(message.author.handle) && !message.me ? (
+                  <small className="bw-chat__met">déjà croisé</small>
+                ) : null}
                 {message.same ? (
                   <em>
                     <ThumbsUp size={11} aria-hidden /> {message.same}
@@ -393,6 +473,11 @@ function LiveChat({
                   >
                     <ThumbsUp size={13} aria-hidden /> Pareil ici
                   </button>
+                  {canDm && !message.me ? (
+                    <button type="button" onClick={() => setDmTo(message.author)}>
+                      <Mail size={13} aria-hidden /> Message privé
+                    </button>
+                  ) : null}
                   {user && !message.me ? (
                     <button
                       type="button"
@@ -443,18 +528,42 @@ function LiveChat({
             </p>
           ) : null}
           {showEmotes ? (
-            <p className="bw-chat__emotes">
-              {EMOTES.map((emote) => (
-                <button
-                  key={emote}
-                  type="button"
-                  aria-label={`Ajouter ${emote}`}
-                  onClick={() => setText((value) => `${value}${emote}`.slice(0, MAX_MESSAGE))}
-                >
-                  {emote}
-                </button>
-              ))}
-            </p>
+            <>
+              {siteEmotes.length ? (
+                <p className="bw-chat__site-emotes">
+                  {siteEmotes.map((emote) => (
+                    <button
+                      key={emote.code}
+                      type="button"
+                      aria-label={emote.label}
+                      title={emote.label}
+                      onClick={() =>
+                        setText((value) =>
+                          `${value}${value && !value.endsWith(" ") ? " " : ""}${emoteToken(emote.code)} `.slice(
+                            0,
+                            MAX_MESSAGE,
+                          ),
+                        )
+                      }
+                    >
+                      <CabasImg src={emote.image} alt="" width={40} height={40} loading="lazy" />
+                    </button>
+                  ))}
+                </p>
+              ) : null}
+              <p className="bw-chat__emotes">
+                {EMOTES.map((emote) => (
+                  <button
+                    key={emote}
+                    type="button"
+                    aria-label={`Ajouter ${emote}`}
+                    onClick={() => setText((value) => `${value}${emote}`.slice(0, MAX_MESSAGE))}
+                  >
+                    {emote}
+                  </button>
+                ))}
+              </p>
+            </>
           ) : text || replyTo ? null : (
             <p className="bw-chat__examples">
               {roomExamples(kind === "port" ? "port" : moment).map((example) => (
@@ -464,6 +573,11 @@ function LiveChat({
               ))}
             </p>
           )}
+          {/:[a-z0-9_]+:/.test(text) ? (
+            <p className="bw-chat__draft">
+              <ChatText body={text} size={22} />
+            </p>
+          ) : null}
           <form
             onSubmit={(event) => {
               event.preventDefault();
@@ -545,7 +659,8 @@ export function LiveRoom({
         <ol className="bw-room__preview">
           {preview.map((message) => (
             <li key={message.id}>
-              <b>{message.me ? "Vous" : message.author.pseudo}</b> {message.body}
+              <b>{message.me ? "Vous" : message.author.pseudo}</b>{" "}
+              <ChatText body={message.body} size={18} />
             </li>
           ))}
         </ol>
@@ -565,6 +680,7 @@ export function LiveRoom({
             canWrite={canWrite}
             closed={closed}
             people={people}
+            myHandle={card?.handle}
           />
         </DialogContent>
       </Dialog>

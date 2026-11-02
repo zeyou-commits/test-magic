@@ -7,6 +7,14 @@ import { supabase } from "@/integrations/supabase/client";
 
 const db = supabase as unknown as SupabaseClient;
 
+type DmReport = {
+  id: string;
+  intro: string;
+  reporter: string;
+  reported: string;
+  messages: { from: string; body: string }[];
+};
+
 type Item = {
   id: string;
   body: string;
@@ -40,6 +48,27 @@ export function ChatModeration() {
       return (data as { word: string }[]).map((row) => row.word);
     },
     retry: false,
+  });
+  const dmReports = useQuery({
+    queryKey: ["admin", "chat", "dm"],
+    queryFn: async () => {
+      const { data, error } = await db.rpc("bw_dm_reported");
+      if (error) return null;
+      return data as DmReport[];
+    },
+    retry: false,
+    refetchInterval: 60_000,
+  });
+  const resolveDm = useMutation({
+    mutationFn: async (input: { id: string; sanction: boolean }) => {
+      const { error } = await db.rpc("bw_dm_report_resolve", {
+        p_thread: input.id,
+        p_sanction: input.sanction,
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => void client.invalidateQueries({ queryKey: ["admin", "chat"] }),
+    onError: (error: Error) => toast.error(error.message),
   });
   const refresh = () => void client.invalidateQueries({ queryKey: ["admin", "chat"] });
   const setHidden = useMutation({
@@ -102,6 +131,43 @@ export function ChatModeration() {
       ) : (
         <p>Rien à vérifier.</p>
       )}
+      {dmReports.data?.length ? (
+        <>
+          <h3>Messages privés signalés</h3>
+          <ul>
+            {dmReports.data.map((report) => (
+              <li key={report.id}>
+                <span>
+                  <small>
+                    {report.reporter} signale {report.reported}
+                  </small>
+                  <b>{report.intro}</b>
+                  {report.messages.map((message, index) => (
+                    <small key={index}>
+                      {message.from} : {message.body}
+                    </small>
+                  ))}
+                </span>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  disabled={resolveDm.isPending}
+                  onClick={() => resolveDm.mutate({ id: report.id, sanction: false })}
+                >
+                  Classer
+                </Button>
+                <Button
+                  size="sm"
+                  disabled={resolveDm.isPending}
+                  onClick={() => resolveDm.mutate({ id: report.id, sanction: true })}
+                >
+                  Bloquer l'écriture 24 h
+                </Button>
+              </li>
+            ))}
+          </ul>
+        </>
+      ) : null}
       <h3>Mots refusés</h3>
       <form
         className="bw-chat-words"

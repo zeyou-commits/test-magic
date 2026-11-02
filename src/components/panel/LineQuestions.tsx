@@ -3,6 +3,7 @@ import { Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { CircleHelp, Flag, Send, ThumbsUp } from "lucide-react";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { ChatText } from "./ChatText";
 import { OwnMessageActions } from "./OwnMessageActions";
 import { TravellerAvatar } from "@/components/community/TravellerAvatar";
 import { useAuth } from "@/hooks/useAuth";
@@ -68,7 +69,9 @@ function Line({
             {entry.edited ? " · modifié" : ""}
           </time>
         </p>
-        <p>{entry.body}</p>
+        <p>
+          <ChatText body={entry.body} />
+        </p>
         <p className="bw-room__actions">
           <button
             type="button"

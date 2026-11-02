@@ -90,6 +90,12 @@ const REFUSALS: Record<string, string> = {
   not_here: "Réservé aux personnes présentes sur le port : votre position n'est pas à proximité.",
   account: "Connectez-vous pour écrire.",
   length: "200 caractères au plus.",
+  dm_not_same: "Les messages privés se font entre passagers de la même traversée.",
+  dm_unavailable: "Vous ne pouvez pas écrire à cette personne.",
+  dm_exists: "Une conversation existe déjà avec cette personne sur cette traversée.",
+  dm_pending: "Vous avez déjà 3 demandes en attente. Patientez qu'on vous réponde.",
+  dm_closed: "Cette conversation est fermée.",
+  dm_quota: "Vous avez utilisé vos 3 messages sur cette traversée.",
 };
 export const chatRefusal = (code: string) => REFUSALS[code] ?? "Message refusé. Réessayez.";
 

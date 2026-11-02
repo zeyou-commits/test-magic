@@ -10032,3 +10032,20 @@ img[data-logo="dark"] {
     font-size: 10px;
   }
 }
+
+/* Fiche port : le bouton « j'aime » et la note des voyageurs côte à côte. */
+.pv-react-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 12px;
+  margin-top: 10px;
+}
+.pv-react-row > * {
+  margin-top: 0 !important;
+}
+.pv-react-row .pv-rating {
+  flex: 1 1 auto;
+  min-width: 0;
+  margin: 0;
+}

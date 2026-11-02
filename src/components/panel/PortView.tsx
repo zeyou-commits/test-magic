@@ -288,26 +288,29 @@ export function PortView({
           </details>
         ) : null}
       </header>
-      <PlaceReactions kind="port" target={port.id} />
+      {/* J'aime et note sur une seule ligne : une ligne de gagnée. */}
+      <div className="pv-react-row">
+        <PlaceReactions kind="port" target={port.id} />
 
-      <button type="button" className="pv-rating" onClick={() => openReviews()}>
-        {reviewsResult.isPending ? (
-          <span>Lecture des avis…</span>
-        ) : (guided.data?.average ?? averages.overall) != null ? (
-          <>
-            <StarRow value={guided.data?.average ?? averages.overall ?? 0} />
-            <strong>{scoreLabel(guided.data?.average ?? averages.overall ?? 0)}</strong>
-            <span>· {guided.data?.count ?? reviews.length} avis</span>
-          </>
-        ) : (
-          <>
-            <StarRow value={0} />
-            <span>Pas encore d’avis</span>
-          </>
-        )}
-        {port.is_demo ? <DemoBadge /> : null}
-        <ChevronRight size={15} aria-hidden />
-      </button>
+        <button type="button" className="pv-rating" onClick={() => openReviews()}>
+          {reviewsResult.isPending ? (
+            <span>Lecture des avis…</span>
+          ) : (guided.data?.average ?? averages.overall) != null ? (
+            <>
+              <StarRow value={guided.data?.average ?? averages.overall ?? 0} />
+              <strong>{scoreLabel(guided.data?.average ?? averages.overall ?? 0)}</strong>
+              <span>· {guided.data?.count ?? reviews.length} avis</span>
+            </>
+          ) : (
+            <>
+              <StarRow value={0} />
+              <span>Pas encore d’avis</span>
+            </>
+          )}
+          {port.is_demo ? <DemoBadge /> : null}
+          <ChevronRight size={15} aria-hidden />
+        </button>
+      </div>
 
       <ActionHub
         tiles={[

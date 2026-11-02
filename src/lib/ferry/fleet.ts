@@ -34,6 +34,8 @@ export interface FleetShip {
   departureId: string;
   portId: string | null;
   live?: LiveShip;
+  /** Immobilisé : posé sur la terre ferme près de son port, hors de l'eau et de la file. */
+  ashore?: boolean;
   /** Retard à afficher sur la carte (« ≈ +2 h »), s'il y en a un. */
   delay?: string | null;
 }
@@ -208,13 +210,14 @@ export function buildFleet(
         lngLat: [heldPort.longitude, heldPort.latitude],
         course: 90,
         dx: 0,
-        dy: 0,
         routeId: leg.route.id,
         departureId: leg.departure.id,
         portId: heldPort.id,
+        ashore: true,
+        // Le signe donne le côté de la terre : au nord des ports européens, au sud des ports algériens.
+        dy: heldPort.country_code === "DZ" ? 1 : -1,
       };
       ships.push(ship);
-      dockedAt.set(heldPort.id, [...(dockedAt.get(heldPort.id) ?? []), ship]);
       return;
     }
 

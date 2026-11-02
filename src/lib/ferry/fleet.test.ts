@@ -39,12 +39,26 @@ describe("navire immobilisé sur la carte", () => {
 });
 
 describe("plusieurs navires au même port", () => {
+  const two = [...vessels, { id: "w", name: "Le Cracovia" }] as Vessel[];
+  const fromAli = [{ id: "ra", departure_port_id: "ali", arrival_port_id: "alg" }] as RouteLine[];
+  // Deux départs d'Alicante dans quelques heures : les deux navires attendent à quai.
+  const soon = ["v", "w"].map((vessel) => ({
+    ...departures[0]!,
+    id: `d-${vessel}`,
+    route_id: "ra",
+    vessel_id: vessel,
+    departure_at: "2026-10-30T20:00:00Z",
+    arrival_at: "2026-10-31T06:00:00Z",
+  })) as Departure[];
   it("sont rangés en file indienne, sans se chevaucher", () => {
-    const two = [...vessels, { id: "w", name: "Le Cracovia" }] as Vessel[];
-    const legs = [...departures, { ...departures[0]!, id: "e", vessel_id: "w" }] as Departure[];
-    const fleet = buildFleet(legs, routes, ports, two, [], now, new Map([["v", "ali"], ["w", "ali"]]));
+    const fleet = buildFleet(soon, fromAli, ports, two, [], now);
     const gaps = fleet.map((ship) => ship.dx).sort((a, b) => a - b);
-    expect(fleet.every((ship) => ship.portId === "ali")).toBe(true);
+    expect(fleet.every((ship) => ship.portId === "ali" && ship.state === "docked")).toBe(true);
     expect(gaps[1]! - gaps[0]!).toBe(DOCK_GAP);
+  });
+  it("un navire immobilisé est posé à terre, hors de la file", () => {
+    const fleet = buildFleet(soon, fromAli, ports, two, [], now, new Map([["v", "ali"]]));
+    expect(fleet.find((ship) => ship.vesselId === "v")).toMatchObject({ ashore: true, dx: 0 });
+    expect(fleet.find((ship) => ship.vesselId === "w")?.dx).toBe(0);
   });
 });

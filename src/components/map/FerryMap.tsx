@@ -30,6 +30,7 @@ import {
   shipIcon,
   shipTokenRadius,
   VESSEL_IMAGE_STEPS,
+  vesselScreenHeight,
   VESSEL_SCREEN_WIDTH,
   vesselScreenWidth,
   vesselImageId,
@@ -149,6 +150,11 @@ const LIMIT_BOUNDS: [[number, number], [number, number]] = [
   [26, 54],
 ];
 const MAP_STYLE = "https://tiles.openfreemap.org/styles/liberty";
+/** Pays sans façade maritime, et micro-États qui encombrent la côte : leur nom est masqué. */
+const INLAND_COUNTRIES = [
+  "AD", "AT", "BA", "BF", "BY", "CF", "CH", "CZ", "ET", "GI", "HU", "LI", "LU", "MC", "MD", "MK",
+  "ML", "NE", "RS", "SK", "SM", "SS", "TD", "VA", "XK",
+];
 // Vue d'ensemble : toute la Méditerranée occidentale, de l'Espagne à l'Italie et toute la côte algérienne.
 const OVERVIEW_BOUNDS: [[number, number], [number, number]] = [
   [-3.5, 35],
@@ -525,8 +531,16 @@ export default function FerryMap({
           map.setPaintProperty(layer.id, "text-halo-color", "#f6f2ea");
         }
       }
-      // Les ports sont étiquetés par BledWay ; on masque les villes du fond de carte pour éviter les doublons.
-      ["label_other", "label_village", "label_town", "label_city", "label_city_capital"].forEach(
+      // Les ports sont étiquetés par BledWay ; on masque les villes, régions et rivières du fond de carte.
+      [
+        "label_other",
+        "label_village",
+        "label_town",
+        "label_city",
+        "label_city_capital",
+        "label_state",
+        "waterway_line_label",
+      ].forEach(
         (layerId) => {
           if (map.getLayer(layerId)) map.setLayoutProperty(layerId, "visibility", "none");
         },
@@ -546,7 +560,12 @@ export default function FerryMap({
       map.getStyle().layers.forEach((layer) => {
         if (layer.type !== "symbol" || !/^label_country/.test(layer.id)) return;
         countryFont ??= map.getLayoutProperty(layer.id, "text-font");
-        const hide = ["!", ["in", ["get", "name"], ["literal", ["España", "Andorra"]]]];
+        // Seuls les pays qui bordent la mer restent nommés : la carte est celle des traversées.
+        const hide = [
+          "all",
+          ["!", ["in", ["get", "name"], ["literal", ["España", "Andorra"]]]],
+          ["!", ["in", ["get", "iso_a2"], ["literal", INLAND_COUNTRIES]]],
+        ];
         const current = map.getFilter(layer.id);
         map.setFilter(layer.id, (current ? ["all", current, hide] : hide) as never);
       });
@@ -875,26 +894,14 @@ export default function FerryMap({
         type: "symbol",
         source: "fleet",
         filter: ["==", ["get", "alert"], 1],
-        // Une pastille rouge « Immobilisé » juste sous le nom du navire, lisible sans le masquer.
+        // Un petit « ! » rouge au coin du navire ; le motif s'affiche au survol.
         layout: {
           "icon-image": "ship-alert",
-          "icon-text-fit": "both",
-          "icon-text-fit-padding": [3, 8, 3, 8],
-          "text-field": ["get", "alertLabel"],
-          "text-font": ["Noto Sans Bold"],
-          "text-size": ["interpolate", ["linear"], ["zoom"], 3, 8.5, 6, 9.5, 9, 11],
-          "text-anchor": "top",
-          "text-offset": ["literal", [0, 2.4]],
-          "text-allow-overlap": true,
-          "text-ignore-placement": true,
+          "icon-offset": ["interpolate", ["linear"], ["zoom"], 3, ["case", ["==", ["get", "photo"], ""], ["literal", [7, -7]], ["literal", [9, -9]]], 5, ["case", ["==", ["get", "photo"], ""], ["literal", [7, -7]], ["literal", [13, -13]]], 6, ["case", ["==", ["get", "photo"], ""], ["literal", [7, -7]], ["literal", [19, -19]]], 7, ["case", ["==", ["get", "photo"], ""], ["literal", [7, -7]], ["literal", [35, -35]]], 9, ["case", ["==", ["get", "photo"], ""], ["literal", [7, -7]], ["literal", [71, -71]]], 11, ["case", ["==", ["get", "photo"], ""], ["literal", [7, -7]], ["literal", [134, -134]]], 13, ["case", ["==", ["get", "photo"], ""], ["literal", [7, -7]], ["literal", [202, -202]]]] as never,
           "icon-allow-overlap": true,
           "icon-ignore-placement": true,
         },
-        paint: {
-          "text-color": "#ffffff",
-          "icon-opacity": ["get", "photoOpacity"],
-          "text-opacity": ["get", "photoOpacity"],
-        },
+        paint: { "icon-opacity": ["get", "photoOpacity"] },
       });
       map.addLayer({
         id: "fleet-labels",
@@ -919,7 +926,8 @@ export default function FerryMap({
             ],
           ] as never,
           "text-font": ["Noto Sans Bold"],
-          "text-size": ["interpolate", ["linear"], ["zoom"], 3, 9, 6, 10, 9, 12],
+          // Le nom grandit avec le navire : discret de loin, lisible de près.
+          "text-size": ["interpolate", ["linear"], ["zoom"], 3, 8, 6, 9, 7, 10, 9, 12, 11, 15, 13, 18],
           // Le navire debout repose sur son point : le nom et le retard collent à sa coque.
           "text-offset": ["literal", [0, 0.5]],
           "text-anchor": "top",
@@ -2403,8 +2411,16 @@ export default function FerryMap({
           let coordinates = base;
           if (ship.dx !== 0 || ship.dy !== 0) {
             const point = map.project(base);
-            const spread = vesselMapIcon(ship.name) ? dockSpread(map.getZoom()) : 1;
-            const moved = map.unproject([point.x + ship.dx * spread, point.y + ship.dy]);
+            const zoom = map.getZoom();
+            const iconSlug = vesselMapIcon(ship.name);
+            const spread = iconSlug ? dockSpread(zoom) : 1;
+            // Immobilisé : sorti de l'eau, posé à terre à côté de son port, coque comprise.
+            const dy = ship.ashore
+              ? ship.dy < 0
+                ? -14 * spread
+                : (iconSlug ? vesselScreenHeight(iconSlug, zoom) : 12) + 10
+              : ship.dy;
+            const moved = map.unproject([point.x + ship.dx * spread, point.y + dy]);
             coordinates = [moved.lng, moved.lat];
           }
           const course = live ? (live.position.courseDeg ?? ship.course) : ship.course;
@@ -2448,7 +2464,6 @@ export default function FerryMap({
             type: "Feature" as const,
             properties: {
               alert: shipAlert ? 1 : 0,
-              alertLabel: shipAlert?.label ?? "",
               // Navire en alerte : sa pastille prend la place du retard sous son nom.
               late: ship.delay && !shipAlert ? `Retardé ${ship.delay}` : "",
               state: ship.state,

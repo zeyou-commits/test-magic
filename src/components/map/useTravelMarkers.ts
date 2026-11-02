@@ -1,5 +1,5 @@
 import { vesselMapIcon } from "@/lib/ferry/vesselVisuals";
-import { arcGap, dockSpread, vesselScreenHeight } from "./shipIcons";
+import { arcGap, dockSpread, shipShiftY, vesselScreenHeight } from "./shipIcons";
 import { createElement, useEffect, useRef, type RefObject } from "react";
 import { requestSignalFocus } from "@/components/panel/LivePulse";
 import { bringTooltipToFront } from "./tooltipStack";
@@ -245,7 +245,9 @@ export function useTravelMarkers(
           slug
             ? [
                 x - button.offsetWidth - 34 * arcGap(zoom),
-                shift[1] - vesselScreenHeight(slug, zoom) - 4 * arcGap(zoom),
+                shipShiftY(shift[1], ship.ashore, slug, zoom) -
+                  vesselScreenHeight(slug, zoom) -
+                  4 * arcGap(zoom),
               ]
             : [x - 4, shift[1] - 8],
         );

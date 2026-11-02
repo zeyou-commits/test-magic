@@ -295,6 +295,17 @@ export function vesselScreenWidth(zoom: number) {
 export const dockSpread = (zoom: number) => Math.max(1, vesselScreenWidth(zoom) / 26);
 
 const heightRatios = new Map<string, number>();
+
+/**
+ * Décalage vertical réel d'un navire à quai, en pixels : côté mer, il se pose entièrement sous le
+ * point du port (ports européens) ou au-dessus (ports algériens), sans jamais le couvrir.
+ * Immobilisé, il est posé côté terre. Le signe de `dy` donne le côté, la taille vient du zoom.
+ */
+export function shipShiftY(dy: number, ashore: boolean | undefined, slug: string | null, zoom: number) {
+  if (!slug || dy === 0) return dy;
+  if (ashore) return dy < 0 ? -14 * dockSpread(zoom) : vesselScreenHeight(slug, zoom) + 10;
+  return dy > 0 ? vesselScreenHeight(slug, zoom) + 8 : dy;
+}
 /** Hauteur à l'écran d'un navire debout : les bulles de la communauté se placent au-dessus. */
 export const vesselScreenHeight = (slug: string, zoom: number) =>
   vesselScreenWidth(zoom) * (heightRatios.get(slug) ?? 0.5);

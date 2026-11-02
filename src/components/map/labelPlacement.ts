@@ -2,7 +2,7 @@
 // gauche, sans couvrir un autre navire ni un autre nom. Tout se calcule en pixels écran.
 
 export type LabelAnchor = "top" | "bottom" | "left" | "right";
-export type LabelSpot = { anchor: LabelAnchor; offset: [number, number] };
+export type LabelSpot = { anchor: LabelAnchor; offset: [number, number]; box: Box };
 
 export type LabelItem = {
   id: string;
@@ -19,7 +19,7 @@ export type LabelItem = {
   priority: number;
 };
 
-type Box = { left: number; top: number; right: number; bottom: number };
+export type Box = { left: number; top: number; right: number; bottom: number };
 
 const overlap = (a: Box, b: Box) =>
   Math.max(0, Math.min(a.right, b.right) - Math.max(a.left, b.left)) *
@@ -55,7 +55,8 @@ function shipBox(item: LabelItem): Box {
       };
 }
 
-export function placeLabels(items: LabelItem[], size: number) {
+/** `obstacles` : ce qui ne doit pas être couvert non plus, comme le point des ports. */
+export function placeLabels(items: LabelItem[], size: number, obstacles: Box[] = []) {
   const ships = new Map(items.map((item) => [item.id, shipBox(item)]));
   const taken: Box[] = [];
   const spots = new Map<string, LabelSpot>();
@@ -67,7 +68,7 @@ export function placeLabels(items: LabelItem[], size: number) {
     const gap = size * 0.25;
     const midY = (own.top + own.bottom) / 2;
     // Les quatre places possibles, de la plus naturelle (sous la coque) à la moins naturelle.
-    const candidates: { spot: LabelSpot; box: Box }[] = [
+    const candidates: { spot: Omit<LabelSpot, "box">; box: Box }[] = [
       {
         spot: { anchor: "top", offset: [0, (own.bottom - item.y + gap) / size] },
         box: { left: item.x - w / 2, right: item.x + w / 2, top: own.bottom + gap, bottom: own.bottom + gap + h },
@@ -87,7 +88,8 @@ export function placeLabels(items: LabelItem[], size: number) {
     ];
     const cost = (box: Box) =>
       [...ships].reduce((sum, [id, other]) => sum + (id === item.id ? 0 : overlap(box, other)), 0) +
-      taken.reduce((sum, other) => sum + overlap(box, other) * 2, 0);
+      taken.reduce((sum, other) => sum + overlap(box, other) * 2, 0) +
+      obstacles.reduce((sum, other) => sum + overlap(box, other) * 3, 0);
     let best = candidates[0]!;
     let bestCost = cost(best.box);
     for (const candidate of candidates.slice(1)) {
@@ -100,9 +102,69 @@ export function placeLabels(items: LabelItem[], size: number) {
     }
     taken.push(best.box);
     spots.set(item.id, {
+      box: best.box,
       anchor: best.spot.anchor,
       offset: [Math.round(best.spot.offset[0] * 100) / 100, Math.round(best.spot.offset[1] * 100) / 100],
     });
+  }
+  return spots;
+}
+
+export type LineLabel = { id: string; text: string; points: [number, number][] };
+export type LineSpot = { x: number; y: number; angle: number };
+
+/**
+ * La durée d'une ligne : une seule fois par ligne, posée le long du tracé au plus près du milieu,
+ * là où elle ne couvre ni navire, ni nom, ni port, ni une autre durée.
+ */
+export function placeAlongLines(
+  lines: LineLabel[],
+  size: number,
+  obstacles: Box[],
+  view: Box,
+) {
+  const placed: Box[] = [];
+  const spots = new Map<string, LineSpot>();
+  for (const line of lines) {
+    const lengths = [0];
+    for (let i = 1; i < line.points.length; i++) {
+      const [ax, ay] = line.points[i - 1]!;
+      const [bx, by] = line.points[i]!;
+      lengths.push(lengths[i - 1]! + Math.hypot(bx - ax, by - ay));
+    }
+    const total = lengths.at(-1)!;
+    const w = line.text.length * size * 0.6 + 6;
+    const h = size * 1.3;
+    if (total < w * 1.4) continue;
+    let best: { spot: LineSpot; box: Box; cost: number } | null = null;
+    for (const t of [0.5, 0.42, 0.58, 0.34, 0.66, 0.26, 0.74, 0.18, 0.82]) {
+      const at = total * t;
+      const i = Math.max(1, lengths.findIndex((length) => length >= at));
+      const [ax, ay] = line.points[i - 1]!;
+      const [bx, by] = line.points[i]!;
+      const part = (at - lengths[i - 1]!) / Math.max(1e-6, lengths[i]! - lengths[i - 1]!);
+      const x = ax + (bx - ax) * part;
+      const y = ay + (by - ay) * part;
+      let angle = (Math.atan2(by - ay, bx - ax) * 180) / Math.PI;
+      if (angle > 90) angle -= 180;
+      if (angle < -90) angle += 180;
+      // Boîte englobante du texte incliné.
+      const rad = (angle * Math.PI) / 180;
+      const halfW = (Math.abs(Math.cos(rad)) * w + Math.abs(Math.sin(rad)) * h) / 2;
+      const halfH = (Math.abs(Math.sin(rad)) * w + Math.abs(Math.cos(rad)) * h) / 2;
+      const box = { left: x - halfW, right: x + halfW, top: y - halfH, bottom: y + halfH };
+      if (box.left < view.left || box.right > view.right || box.top < view.top || box.bottom > view.bottom)
+        continue;
+      const cost =
+        obstacles.reduce((sum, other) => sum + overlap(box, other), 0) +
+        placed.reduce((sum, other) => sum + overlap(box, other) * 2, 0);
+      if (!best || cost < best.cost) best = { spot: { x, y, angle }, box, cost };
+      if (cost === 0) break;
+    }
+    // Rien de lisible sans couvrir autre chose : la durée attend une meilleure vue.
+    if (!best || best.cost > w * h * 0.15) continue;
+    placed.push(best.box);
+    spots.set(line.id, { ...best.spot, angle: Math.round(best.spot.angle * 10) / 10 });
   }
   return spots;
 }

@@ -5,7 +5,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Marker, type Map as MapLibreMap } from "maplibre-gl";
 import { shipAnchor, type FleetShip } from "@/lib/ferry/fleet";
 import { vesselMapIcon } from "@/lib/ferry/vesselVisuals";
-import { arcGap, dockSpread, vesselScreenHeight } from "./shipIcons";
+import { arcGap, dockSpread, shipShiftY, vesselScreenHeight } from "./shipIcons";
 import { avatarFor, presenceQuery } from "@/lib/ferry/presence";
 import { illustrationUrl } from "@/lib/illustrations/store";
 import type { Port, Selection } from "@/lib/ferry/types";
@@ -140,7 +140,10 @@ export function usePresenceMarkers(
           slug
             ? [
                 x - element.offsetWidth / 2,
-                shift[1] - vesselScreenHeight(slug, zoom) - element.offsetHeight - 20 * arcGap(zoom),
+                shipShiftY(shift[1], ship.ashore, slug, zoom) -
+                  vesselScreenHeight(slug, zoom) -
+                  element.offsetHeight -
+                  20 * arcGap(zoom),
               ]
             : [x + 6, shift[1] + 10],
         );

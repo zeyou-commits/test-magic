@@ -973,3 +973,48 @@
   max-width: 78px;
   max-height: 20px;
 }
+
+/* De près, le point du port devient un phare, dressé côté terre ; les navires restent côté mer. */
+.port-marker__lighthouse {
+  position: absolute;
+  left: 50%;
+  bottom: 50%;
+  display: none;
+  width: 24px;
+  height: 38px;
+  transform: translateX(-50%);
+  filter: drop-shadow(0 2px 3px rgba(8, 28, 60, 0.3));
+  pointer-events: none;
+  transition: transform 0.2s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.port-marker[data-land="down"] .port-marker__lighthouse {
+  top: 50%;
+  bottom: auto;
+}
+[data-near-zoom="true"] .port-marker__lighthouse {
+  display: block;
+}
+[data-near-zoom="true"] .port-marker:not([data-closed="true"]) .port-marker__dot::after {
+  width: 7px;
+  height: 7px;
+  border-width: 1.5px;
+}
+.port-marker__dot:hover .port-marker__lighthouse {
+  transform: translateX(-50%) scale(1.12);
+}
+.port-marker[data-closed="true"] .port-marker__lighthouse {
+  display: none;
+}
+.port-marker[data-land="right"] .port-marker__lighthouse,
+.port-marker[data-land="left"] .port-marker__lighthouse {
+  top: auto;
+  bottom: calc(50% - 6px);
+  transform: none;
+}
+.port-marker[data-land="right"] .port-marker__lighthouse {
+  left: calc(50% + 7px);
+}
+.port-marker[data-land="left"] .port-marker__lighthouse {
+  left: auto;
+  right: calc(50% + 7px);
+}

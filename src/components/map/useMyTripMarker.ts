@@ -4,7 +4,13 @@ import { shipAnchor, type FleetShip } from "@/lib/ferry/fleet";
 import { useMyTrip } from "@/lib/ferry/myTrip";
 import type { Selection } from "@/lib/ferry/types";
 import { vesselMapIcon } from "@/lib/ferry/vesselVisuals";
-import { dockSpread, shipTokenRadius, vesselScreenHeight, vesselScreenWidth } from "./shipIcons";
+import {
+  dockSpread,
+  shipShiftY,
+  shipTokenRadius,
+  vesselScreenHeight,
+  vesselScreenWidth,
+} from "./shipIcons";
 
 /**
  * Mon bateau sur la carte : un fanion vert « Moi » planté à l'avant du navire, qui flotte vers
@@ -62,7 +68,7 @@ export function useMyTripMarker(
       }
       marker.setOffset([
         shift[0] * dockSpread(zoom) - vesselScreenWidth(zoom) * 0.38,
-        shift[1] - vesselScreenHeight(slug, zoom) * 0.3,
+        shipShiftY(shift[1], ship.ashore, slug, zoom) - vesselScreenHeight(slug, zoom) * 0.3,
       ]);
     };
     place();

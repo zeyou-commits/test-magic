@@ -22,7 +22,7 @@ import { formatDuration } from "@/lib/ferry/format";
 import { algeriaGeoJson } from "@/lib/ferry/algeriaGeoJson";
 import { routeArc } from "@/lib/ferry/geo";
 import { shipAnchor, type FleetShip } from "@/lib/ferry/fleet";
-import { LABEL_SIZE_STOPS, labelSize, placeLabels } from "./labelPlacement";
+import { LABEL_SIZE_STOPS, labelSize, placeAlongLines, placeLabels, type Box } from "./labelPlacement";
 import {
   addShipImages,
   addVesselImages,
@@ -32,6 +32,7 @@ import {
   shipTokenRadius,
   VESSEL_IMAGE_STEPS,
   vesselScreenHeight,
+  shipShiftY,
   VESSEL_SCREEN_WIDTH,
   vesselScreenWidth,
   vesselImageId,
@@ -150,7 +151,22 @@ const LIMIT_BOUNDS: [[number, number], [number, number]] = [
   [-16, 0],
   [26, 54],
 ];
+/** Taille des durées sur les lignes, en pixels. */
+const DURATION_SIZE = 9;
 const MAP_STYLE = "https://tiles.openfreemap.org/styles/liberty";
+/** Le phare d'un port, vu de près : tour blanche et rouge, lanterne allumée. */
+const LIGHTHOUSE_SVG = `<svg class="port-marker__lighthouse" viewBox="0 0 28 44" aria-hidden="true">
+<defs><radialGradient id="bw-lh-glow"><stop offset="0" stop-color="#ffe27a" stop-opacity=".85"/><stop offset="1" stop-color="#ffe27a" stop-opacity="0"/></radialGradient>
+<linearGradient id="bw-lh-tower" x1="0" x2="1"><stop offset="0" stop-color="#ffffff"/><stop offset=".7" stop-color="#f1efe9"/><stop offset="1" stop-color="#d9d6cd"/></linearGradient></defs>
+<circle cx="14" cy="10" r="10" fill="url(#bw-lh-glow)"/>
+<path d="M14 2.5 L19.5 7.5 H8.5 Z" fill="#b3261e"/>
+<rect x="10" y="7.5" width="8" height="5.5" rx="1.4" fill="#ffd65a" stroke="#16324a" stroke-width=".9"/>
+<rect x="8.6" y="13" width="10.8" height="2" rx="1" fill="#16324a"/>
+<path d="M10.2 15 H17.8 L19.8 38 H8.2 Z" fill="url(#bw-lh-tower)" stroke="#16324a" stroke-opacity=".35" stroke-width=".8"/>
+<path d="M9.8 20 H18.2 L18.6 24.5 H9.4 Z M9 29 H19 L19.4 33.5 H8.6 Z" fill="#c8452a"/>
+<rect x="12.6" y="25.5" width="2.8" height="3" rx="1.2" fill="#16324a" opacity=".55"/>
+<rect x="5.5" y="38" width="17" height="4.5" rx="2.2" fill="#7f97a3"/>
+</svg>`;
 /** Pays sans façade maritime, et micro-États qui encombrent la côte : leur nom est masqué. */
 const INLAND_COUNTRIES = [
   "AD", "AT", "BA", "BF", "BY", "CF", "CH", "CZ", "ET", "GI", "HU", "LI", "LU", "MC", "MD", "MK",
@@ -368,6 +384,10 @@ export default function FerryMap({
   const itineraryCameraRef = useRef<string | null>(null);
   const readyRef = useRef(false);
   const portMarkersRef = useRef<Map<string, Marker>>(new Map());
+  // Les lignes affichées, pour poser leurs durées à l'écart des navires.
+  const routeFeaturesRef = useRef<ReturnType<typeof routeFeatures>>([]);
+  const redrawFleetRef = useRef<(() => void) | null>(null);
+  const lastDurations = useRef("");
   const selectRef = useRef(onSelect);
   const vesselCardsRef = useRef(vesselCards);
   vesselCardsRef.current = vesselCards;
@@ -496,6 +516,8 @@ export default function FerryMap({
     const updateZoomState = () => {
       container.dataset["lowZoom"] = String(map.getZoom() < 5.2);
       container.dataset["midZoom"] = String(map.getZoom() >= 5.2 && map.getZoom() < 7);
+      // De près, le point du port devient un phare.
+      container.dataset["nearZoom"] = String(map.getZoom() >= 7);
       // De près, le nom d'un navire ne s'efface plus devant les lignes.
       if (map.getLayer("fleet-labels")) {
         const near = map.getZoom() >= 7;
@@ -731,23 +753,26 @@ export default function FerryMap({
           ],
         },
       });
+      // Une durée par ligne, posée par BledWay à la place libre la plus proche du milieu du tracé.
+      map.addSource("route-durations", {
+        type: "geojson",
+        data: { type: "FeatureCollection", features: [] },
+      });
       map.addLayer({
         id: "ferry-routes-duration",
         type: "symbol",
-        source: "ferry-routes",
+        source: "route-durations",
         minzoom: 5,
         layout: {
-          "symbol-placement": "line-center",
           "text-field": ["get", "label"],
           "text-font": ["Noto Sans Bold"],
-          "text-size": 9,
+          "text-size": DURATION_SIZE,
           // Les durées suivent l’orientation réelle des lignes pour rester discrètes et lisibles.
-          "text-rotation-alignment": "map",
-          "text-keep-upright": true,
-          "text-allow-overlap": false,
-          "text-ignore-placement": false,
-          "text-padding": 4,
-          "symbol-sort-key": ["case", ["get", "selected"], 0, ["get", "focused"], 1, 2],
+          "text-rotate": ["get", "angle"],
+          "text-rotation-alignment": "viewport",
+          "text-pitch-alignment": "viewport",
+          "text-allow-overlap": true,
+          "text-ignore-placement": true,
         },
         paint: {
           "text-color": "#1e3a4c",
@@ -1673,6 +1698,12 @@ export default function FerryMap({
         dot.type = "button";
         dot.className = "port-marker__dot";
         dot.setAttribute("aria-label", `Port de ${port.name}`);
+        // Le phare se dresse côté terre (nord des ports européens, sud des ports algériens) ;
+        // si le nom du port y est déjà, il se pose à côté du point, à l'opposé du nom.
+        const land = port.country_code === "DZ" ? "down" : "up";
+        const landSide = land === "up" ? "top" : "bottom";
+        el.dataset["land"] = (port.label_anchor ?? "left") === landSide ? "right" : land;
+        dot.innerHTML = LIGHTHOUSE_SVG;
 
         const label = document.createElement("span");
         label.className = "port-marker__label";
@@ -2213,12 +2244,12 @@ export default function FerryMap({
       const marker = new Marker({ element: el, anchor: slug ? "top" : "bottom-left", offset: shift })
         .setLngLat(at)
         .addTo(map);
-      return { marker, shift, inner, slug, late: Boolean(ship.delay) };
+      return { marker, shift, inner, slug, late: Boolean(ship.delay), ashore: ship.ashore };
     });
     const place = () => {
       const zoom = map.getZoom();
       const r = shipTokenRadius(zoom);
-      for (const { marker, shift, inner, slug, late } of placed) {
+      for (const { marker, shift, inner, slug, late, ashore } of placed) {
         if (!slug) {
           marker.setOffset([shift[0] - r * 0.72, shift[1] - r * 0.72]);
           continue;
@@ -2226,7 +2257,10 @@ export default function FerryMap({
         // Sous le libellé : une ligne pour le nom, une de plus pour le retard dès qu'il s'affiche.
         const lines = late && zoom >= 6.5 ? 2 : 1;
         inner.style.scale = zoom < 6 ? "0.75" : "1";
-        marker.setOffset([shift[0] * dockSpread(zoom), shift[1] + 10 + lines * 16]);
+        marker.setOffset([
+          shift[0] * dockSpread(zoom),
+          shipShiftY(shift[1], ashore, slug, zoom) + 10 + lines * 16,
+        ]);
       }
     };
     place();
@@ -2366,17 +2400,17 @@ export default function FerryMap({
     const apply = () => {
       const source = map.getSource("ferry-routes") as GeoJSONSource | undefined;
       if (!source) return;
-      source.setData({
-        type: "FeatureCollection",
-        features: routeFeatures(
-          routes,
-          portMap,
-          visible,
-          new Set(dateActiveRouteIds),
-          focus,
-          hoverRouteId ? { type: "route", id: hoverRouteId } : selection,
-        ),
-      });
+      const features = routeFeatures(
+        routes,
+        portMap,
+        visible,
+        new Set(dateActiveRouteIds),
+        focus,
+        hoverRouteId ? { type: "route", id: hoverRouteId } : selection,
+      );
+      routeFeaturesRef.current = features;
+      source.setData({ type: "FeatureCollection", features });
+      redrawFleetRef.current?.();
     };
 
     if (readyRef.current) apply();
@@ -2443,12 +2477,8 @@ export default function FerryMap({
             const zoom = map.getZoom();
             const iconSlug = vesselMapIcon(ship.name);
             const spread = iconSlug ? dockSpread(zoom) : 1;
-            // Immobilisé : sorti de l'eau, posé à terre à côté de son port, coque comprise.
-            const dy = ship.ashore
-              ? ship.dy < 0
-                ? -14 * spread
-                : (iconSlug ? vesselScreenHeight(iconSlug, zoom) : 12) + 10
-              : ship.dy;
+            // À quai côté mer sans couvrir le point du port ; immobilisé, posé à terre.
+            const dy = shipShiftY(ship.dy, ship.ashore, iconSlug, zoom);
             const moved = map.unproject([point.x + ship.dx * spread, point.y + dy]);
             coordinates = [moved.lng, moved.lat];
           }
@@ -2542,6 +2572,27 @@ export default function FerryMap({
       );
       for (const feature of data.features)
         Object.assign(feature.properties, groups.get(String(feature.properties["shipId"])));
+      // Le point de chaque port, et son nom tel qu'il est affiché à l'écran.
+      const canvasRect = map.getCanvas().getBoundingClientRect();
+      const portObstacles = (): Box[] => [
+        ...[...portById.values()].map((port) => {
+          const point = map.project([port.longitude, port.latitude]);
+          return { left: point.x - 10, right: point.x + 10, top: point.y - 10, bottom: point.y + 10 };
+        }),
+        ...[...portMarkersRef.current.values()].flatMap((marker) => {
+          const label = marker.getElement().querySelector(".port-marker__label");
+          const rect = label?.getBoundingClientRect();
+          if (!rect || !rect.width) return [];
+          return [
+            {
+              left: rect.left - canvasRect.left,
+              right: rect.right - canvasRect.left,
+              top: rect.top - canvasRect.top,
+              bottom: rect.bottom - canvasRect.top,
+            },
+          ];
+        }),
+      ];
       // Le nom de chaque navire va à la place libre la plus proche de sa coque.
       const zoom = map.getZoom();
       const size = labelSize(zoom);
@@ -2565,10 +2616,68 @@ export default function FerryMap({
           };
         }),
         size,
+        // Le point et le nom de chaque port restent dégagés.
+        portObstacles(),
       );
       for (const feature of data.features) {
         const spot = spots.get(String(feature.properties["shipId"]));
         if (spot) Object.assign(feature.properties, { labelAnchor: spot.anchor, labelOffset: spot.offset });
+      }
+      // Les durées des lignes : là où elles ne couvrent ni navire, ni nom, ni port.
+      const durations = map.getSource("route-durations") as GeoJSONSource | undefined;
+      if (durations) {
+        const canvas = map.getCanvas();
+        const obstacles: Box[] = [
+          ...[...spots.values()].map((spot) => spot.box),
+          ...data.features.map((feature) => {
+            const point = map.project(feature.geometry.coordinates);
+            const photo = String(feature.properties["photo"] ?? "");
+            const w = photo ? vesselScreenWidth(zoom) : token;
+            const h = photo ? vesselScreenHeight(photo, zoom) : token;
+            return photo
+              ? { left: point.x - w / 2, right: point.x + w / 2, top: point.y - h, bottom: point.y }
+              : { left: point.x - w / 2, right: point.x + w / 2, top: point.y - h / 2, bottom: point.y + h / 2 };
+          }),
+          ...portObstacles(),
+        ];
+        const lines = routeFeaturesRef.current
+          .filter((feature) => feature && feature.properties.label && !feature.properties.dimmed)
+          .map((feature) => ({
+            id: String(feature!.properties.id ?? feature!.properties.label),
+            text: String(feature!.properties.label),
+            points: (feature!.geometry.coordinates as [number, number][]).map((coordinate) => {
+              const point = map.project(coordinate);
+              return [point.x, point.y] as [number, number];
+            }),
+            properties: feature!.properties,
+          }));
+        const placedDurations =
+          zoom >= 5
+            ? placeAlongLines(lines, DURATION_SIZE, obstacles, {
+                left: 0,
+                top: 0,
+                right: canvas.clientWidth,
+                bottom: canvas.clientHeight,
+              })
+            : new Map();
+        const next = JSON.stringify(
+          lines.flatMap((line) => {
+            const spot = placedDurations.get(line.id);
+            if (!spot) return [];
+            const at = map.unproject([spot.x, spot.y]);
+            return [
+              {
+                type: "Feature",
+                properties: { ...line.properties, label: line.text, angle: spot.angle },
+                geometry: { type: "Point", coordinates: [at.lng, at.lat] },
+              },
+            ];
+          }),
+        );
+        if (next !== lastDurations.current) {
+          lastDurations.current = next;
+          durations.setData({ type: "FeatureCollection", features: JSON.parse(next) });
+        }
       }
       const previous = lastFleetFrame.current;
       const changed =
@@ -2590,6 +2699,7 @@ export default function FerryMap({
     };
 
     // Le sillage anime seulement la texture : les coordonnées gardent leur vitesse réelle.
+    redrawFleetRef.current = draw;
     draw();
     const timer = window.setInterval(draw, 1000);
     map.on("moveend", draw);

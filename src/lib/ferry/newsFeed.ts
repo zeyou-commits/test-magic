@@ -58,12 +58,36 @@ export const newsDay = (iso: string) =>
     year: "numeric",
   }).format(new Date(iso));
 
-/** Les compagnies d'une actualité : celles citées, sinon celle du navire concerné. */
+/** Sans accents ni ponctuation, mots séparés par une espace : « Algérie Ferries » → « algerie ferries ». */
+const plainWords = (text: string) =>
+  text
+    .normalize("NFD")
+    .replace(/[̀-ͯ]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim();
+
+/**
+ * Les compagnies d'une actualité : celles rattachées par l'équipe, sinon l'armateur du navire,
+ * sinon une compagnie nommée dans le titre (actualité de la veille pas encore rattachée).
+ */
 export function newsCompanyIds(
-  item: Pick<NewsItem, "company_ids" | "vessel_id">,
+  item: Pick<NewsItem, "company_ids" | "vessel_id" | "title">,
   vessels: { id: string; company_id: string | null }[],
+  companies: { id: string; name: string }[] = [],
 ) {
   if (item.company_ids.length) return item.company_ids;
   const owner = vessels.find((vessel) => vessel.id === item.vessel_id)?.company_id;
-  return owner ? [owner] : [];
+  if (owner) return [owner];
+  const title = ` ${plainWords(item.title)} `;
+  return companies
+    .filter((company) =>
+      // « Naviera Armas - Trasmediterránea » se reconnaît aussi par chacun de ses noms.
+      company.name
+        .split(/\s+-\s+/)
+        .map(plainWords)
+        .filter((name) => name.length >= 3)
+        .some((name) => title.includes(` ${name} `)),
+    )
+    .map((company) => company.id);
 }

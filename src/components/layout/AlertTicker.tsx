@@ -299,7 +299,7 @@ export function AlertTicker() {
         >
           {(() => {
             const company = companies.find(
-              (entry) => entry.id === newsCompanyIds(item, vessels)[0],
+              (entry) => entry.id === newsCompanyIds(item, vessels, companies)[0],
             );
             return company ? (
               <CompanyBadge name={company.name} logoUrl={company.logo_url} size={34} tone="dark" />

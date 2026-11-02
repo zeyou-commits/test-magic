@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { isPublicNews, newsIdFromSlug, newsPath } from "./newsFeed";
+import { isPublicNews, newsCompanyIds, newsIdFromSlug, newsPath } from "./newsFeed";
 
 const id = "3ed1cf29-b8a5-4ee4-9b89-fee896950f88";
 
@@ -22,5 +22,27 @@ describe("fil d'actualités", () => {
     expect(path).toBe(`/actualites/agence-corsica-linea-de-marseille-fermee-${id}`);
     expect(newsIdFromSlug(path.replace("/actualites/", ""))).toBe(id);
     expect(newsIdFromSlug("sans-identifiant")).toBeNull();
+  });
+});
+
+describe("newsCompanyIds", () => {
+  const companies = [
+    { id: "af", name: "Algérie Ferries" },
+    { id: "gnv", name: "GNV" },
+    { id: "armas", name: "Naviera Armas - Trasmediterránea" },
+  ];
+  const item = (title: string) => ({ title, company_ids: [] as string[], vessel_id: null });
+  it("reconnaît une compagnie nommée dans le titre, accents ou non", () => {
+    expect(newsCompanyIds(item("Algérie Ferries vendrait des places"), [], companies)).toEqual(["af"]);
+    expect(newsCompanyIds(item("Algerie Ferries : retard"), [], companies)).toEqual(["af"]);
+    expect(newsCompanyIds(item("Trasmediterránea renforce Almería"), [], companies)).toEqual(["armas"]);
+  });
+  it("ne confond pas un nom avec un bout de mot", () => {
+    expect(newsCompanyIds(item("Les GNVL arrivent"), [], companies)).toEqual([]);
+  });
+  it("garde en priorité le rattachement fait par l'équipe", () => {
+    expect(
+      newsCompanyIds({ title: "GNV", company_ids: ["af"], vessel_id: null }, [], companies),
+    ).toEqual(["af"]);
   });
 });

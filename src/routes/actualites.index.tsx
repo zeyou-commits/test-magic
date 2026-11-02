@@ -99,16 +99,16 @@ function NewsPage() {
   const [filter, setFilter] = useState("all");
   const [companyId, setCompanyId] = useState<string | null>(null);
   const companiesOf = (item: NewsItem) =>
-    newsCompanyIds(item, vessels)
+    newsCompanyIds(item, vessels, companies)
       .map((id) => companies.find((company) => company.id === id))
       .filter((company): company is Company => Boolean(company));
   const present = companies.filter((company) =>
-    items.some((item) => newsCompanyIds(item, vessels).includes(company.id)),
+    items.some((item) => newsCompanyIds(item, vessels, companies).includes(company.id)),
   );
   const shown = items.filter(
     (item) =>
       (filter === "all" || item.kind === filter) &&
-      (!companyId || newsCompanyIds(item, vessels).includes(companyId)),
+      (!companyId || newsCompanyIds(item, vessels, companies).includes(companyId)),
   );
   const [lead, ...rest] = shown;
   const leadCompanies = lead ? companiesOf(lead) : [];

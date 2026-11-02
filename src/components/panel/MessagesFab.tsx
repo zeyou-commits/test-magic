@@ -5,7 +5,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useMyTrip } from "@/lib/ferry/myTrip";
 import { upcomingDeparturesQuery } from "@/lib/ferry/queries";
 import type { Selection } from "@/lib/ferry/types";
-import { revealBlock } from "./ActionHub";
+import { enterRoom } from "@/lib/ferry/chat";
 import { chatFeedQuery } from "./LiveRoom";
 import { RoomPicker } from "./RoomPicker";
 
@@ -32,7 +32,7 @@ export function MessagesFab({ onSelect }: { onSelect: (selection: Selection) => 
             return;
           }
           onSelect({ type: "departure", id: trip.departure.id });
-          revealBlock(".bw-recap .bw-room", 700);
+          enterRoom("crossing", trip.departure.id);
         }}
       >
         <MessagesSquare size={22} aria-hidden />

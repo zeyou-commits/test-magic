@@ -9,7 +9,7 @@ import { dockedSinceQuery, myTripStatusQuery } from "@/lib/ferry/presence";
 import { activeInvite, activeWave, stageInvite, voyageStage } from "@/lib/ferry/roomInvites";
 import { useLiveShips } from "@/lib/ferry/useLiveShips";
 import type { Selection } from "@/lib/ferry/types";
-import { revealBlock } from "./ActionHub";
+import { enterRoom } from "@/lib/ferry/chat";
 import { chatFeedQuery } from "./LiveRoom";
 
 const DEFAULT_LEAD_MINUTES = 240;
@@ -117,7 +117,7 @@ export function RoomInvite({ onSelect }: { onSelect: (selection: Selection) => v
           onClick={() => {
             setOpen(null);
             onSelect({ type: "departure", id: departureId });
-            revealBlock(".bw-recap .bw-room", 700);
+            enterRoom("crossing", departureId);
           }}
         >
           Aller au salon

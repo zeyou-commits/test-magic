@@ -84,3 +84,16 @@ export function takeRoomFocus() {
   roomFocus = false;
   return wanted;
 }
+
+/** Entrer directement dans un salon, même si sa fiche n'est pas encore ouverte. */
+export const ENTER_ROOM_EVENT = "bledway:enter-room";
+let wantedRoom: string | null = null;
+export function enterRoom(kind: "crossing" | "port", room: string) {
+  wantedRoom = `${kind}:${room}`;
+  window.dispatchEvent(new Event(ENTER_ROOM_EVENT));
+}
+export function roomWanted(kind: "crossing" | "port", room: string) {
+  if (wantedRoom !== `${kind}:${room}`) return false;
+  wantedRoom = null;
+  return true;
+}

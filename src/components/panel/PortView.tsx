@@ -21,7 +21,8 @@ import { requestQuickReport } from "@/components/map/QuickReport";
 import { FlashFeed } from "./FlashFeed";
 import { PortPlaces } from "./PortPlaces";
 import { PortLiveBoard } from "./PortLiveBoard";
-import { ActionHub, revealBlock } from "./ActionHub";
+import { enterRoom } from "@/lib/ferry/chat";
+import { ActionHub } from "./ActionHub";
 import { LiveRoom } from "./LiveRoom";
 import { RoomPicker } from "./RoomPicker";
 import { PortPresence } from "./TripPresence";
@@ -314,7 +315,7 @@ export function PortView({
             id: "salon",
             label: "Salon",
 
-            onClick: () => revealBlock(".bw-room"),
+            onClick: () => enterRoom("port", portId),
           },
           ...(roomCrossings.length
             ? ([

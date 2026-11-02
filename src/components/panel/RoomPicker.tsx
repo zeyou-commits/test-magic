@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { enterRoom } from "@/lib/ferry/chat";
 import { revealBlock } from "./ActionHub";
 import { useQuery } from "@tanstack/react-query";
 import { CircleHelp, Search } from "lucide-react";
@@ -101,7 +102,7 @@ export function RoomPicker({
                       onClick={() => {
                         close();
                         onSelect({ type: "departure", id: row.id });
-                        scrollTo(".bw-recap .bw-room");
+                        enterRoom("crossing", row.id);
                       }}
                     >
                       <span>

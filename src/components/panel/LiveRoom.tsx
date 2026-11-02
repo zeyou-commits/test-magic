@@ -1,16 +1,24 @@
-import { useEffect, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { queryOptions, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Flag, MessagesSquare, Send, ThumbsUp } from "lucide-react";
+import { ArrowDown, Flag, MessagesSquare, Send, ThumbsUp, Users } from "lucide-react";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { OwnMessageActions } from "./OwnMessageActions";
 import { TravellerAvatar } from "@/components/community/TravellerAvatar";
+import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import { useAuth } from "@/hooks/useAuth";
+import { useTravelAction } from "@/hooks/useTravelAction";
 import { supabase as typedSupabase } from "@/integrations/supabase/client";
 import type { TravellerCard } from "@/lib/community/travellers";
-import { useTravelAction } from "@/hooks/useTravelAction";
-import { CHAT_SENT_EVENT, postToRoom, rememberPendingChat } from "@/lib/ferry/chat";
+import {
+  CHAT_SENT_EVENT,
+  ENTER_ROOM_EVENT,
+  enterRoom,
+  postToRoom,
+  rememberPendingChat,
+  roomWanted,
+} from "@/lib/ferry/chat";
 import { currentPosition } from "@/lib/ferry/community";
 import { chatRefusal, roomExamples, type RoomMoment } from "@/lib/ferry/portPassage";
+import { OwnMessageActions } from "./OwnMessageActions";
 
 const supabase = typedSupabase as unknown as SupabaseClient;
 export const MAX_MESSAGE = 200;
@@ -33,6 +41,9 @@ type Feed = { access: "read" | "member" | "position"; messages: Message[] };
 
 const PLACE = { aboard: "à bord", port: "au port", trip: "passager" } as const;
 const missing = (code?: string) => code === "PGRST202" || code === "42883";
+/** En dessous, on considère que la personne suit le direct : le fil descend tout seul. */
+const FOLLOW_BOTTOM_PX = 80;
+const PREVIEW_MESSAGES = 3;
 export const roomKey = (kind: RoomKind, room: string) => ["bw-chat", kind, room] as const;
 
 const time = (iso: string) =>
@@ -56,10 +67,36 @@ export const chatFeedQuery = (kind: RoomKind, room: string, userId: string | und
       return data as Feed;
     },
     retry: false,
-    refetchInterval: 15_000,
+    // Filet de sécurité : le direct passe par le canal, ceci rattrape un signal perdu.
+    refetchInterval: 20_000,
   });
 
-/** Entrée du salon depuis Ma traversée : la fiche s'ouvre, puis on descend jusqu'au salon. */
+/** Le direct : relire dès qu'un message bouge, et compter les personnes présentes dans le salon. */
+function useRoomChannel(kind: RoomKind, room: string, present: boolean) {
+  const client = useQueryClient();
+  const [online, setOnline] = useState(0);
+  useEffect(() => {
+    const channel = supabase.channel(`chat:${kind}:${room}`, {
+      config: { presence: { key: crypto.randomUUID() } },
+    });
+    channel
+      .on("broadcast", { event: "changed" }, () => {
+        void client.invalidateQueries({ queryKey: roomKey(kind, room) });
+      })
+      .on("presence", { event: "sync" }, () => {
+        setOnline(Object.keys(channel.presenceState()).length);
+      })
+      .subscribe((status) => {
+        if (status === "SUBSCRIBED" && present) void channel.track({ here: true });
+      });
+    return () => {
+      void supabase.removeChannel(channel);
+    };
+  }, [client, kind, room, present]);
+  return online;
+}
+
+/** Entrée du salon depuis Ma traversée. */
 export function RoomButton({ departureId, onOpen }: { departureId: string; onOpen: () => void }) {
   const { user } = useAuth();
   const feed = useQuery({
@@ -74,7 +111,7 @@ export function RoomButton({ departureId, onOpen }: { departureId: string; onOpe
       className="bw-passage__room"
       onClick={() => {
         onOpen();
-        window.setTimeout(() => document.querySelector(".bw-room")?.scrollIntoView(), 700);
+        enterRoom("crossing", departureId);
       }}
     >
       <MessagesSquare size={15} aria-hidden /> Salon de la traversée
@@ -83,34 +120,48 @@ export function RoomButton({ departureId, onOpen }: { departureId: string; onOpe
   );
 }
 
-/** Salon en direct : tout le monde lit ; seuls les passagers et les personnes sur le port écrivent. */
-export function LiveRoom({
+/** Le salon en direct : une conversation, les nouveaux messages arrivent en bas. */
+function LiveChat({
   kind,
   room,
   title,
-  moment = "before",
+  moment,
+  messages,
+  canWrite,
+  closed,
+  online,
 }: {
   kind: RoomKind;
   room: string;
   title: string;
-  moment?: RoomMoment;
+  moment: RoomMoment;
+  messages: Message[];
+  canWrite: boolean;
+  closed: boolean;
+  online: number;
 }) {
   const { user } = useAuth();
   const request = useTravelAction();
   const client = useQueryClient();
   const [text, setText] = useState("");
-  const feed = useQuery(chatFeedQuery(kind, room, user?.id));
+  const [selected, setSelected] = useState<string | null>(null);
+  const [unread, setUnread] = useState(0);
+  const listRef = useRef<HTMLOListElement>(null);
+  const following = useRef(true);
+  const lastId = useRef<string | null>(null);
+  const lines = [...messages].reverse();
   const refresh = () => void client.invalidateQueries({ queryKey: roomKey(kind, room) });
-  // Parti après une inscription : le formulaire se vide.
-  useEffect(() => {
-    const clear = () => setText("");
-    window.addEventListener(CHAT_SENT_EVENT, clear);
-    return () => window.removeEventListener(CHAT_SENT_EVENT, clear);
-  }, []);
+  const toBottom = () => {
+    const list = listRef.current;
+    if (list) list.scrollTop = list.scrollHeight;
+    following.current = true;
+    setUnread(0);
+  };
   const send = useMutation({
     mutationFn: () => postToRoom(kind, room, text),
     onSuccess: () => {
       setText("");
+      following.current = true;
       refresh();
     },
   });
@@ -135,12 +186,25 @@ export function LiveRoom({
     },
     onSuccess: refresh,
   });
-  // Module pas encore activé en base : rien à afficher.
-  if (feed.data === null) return null;
-  const messages = feed.data?.messages ?? [];
-  const canWrite = feed.data?.access === "member" || feed.data?.access === "position";
-  const problem = send.error ?? react.error ?? report.error;
-  const closed = kind === "crossing" && moment === "over";
+  // Parti après une inscription : le champ se vide.
+  useEffect(() => {
+    const clear = () => setText("");
+    window.addEventListener(CHAT_SENT_EVENT, clear);
+    return () => window.removeEventListener(CHAT_SENT_EVENT, clear);
+  }, []);
+  // On suit le direct, sauf si la personne est remontée lire : elle est alors prévenue.
+  const newest = lines[lines.length - 1]?.id ?? null;
+  useLayoutEffect(() => {
+    if (newest === lastId.current) return;
+    const first = lastId.current === null;
+    const fresh = first
+      ? 0
+      : lines.length - 1 - lines.findIndex((line) => line.id === lastId.current);
+    lastId.current = newest;
+    if (first || following.current) toBottom();
+    else setUnread((count) => count + Math.max(fresh, 1));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [newest]);
   // On écrit d'abord ; l'inscription n'arrive qu'à l'envoi, et le message est gardé.
   const submit = () => {
     if (!text.trim()) return;
@@ -162,23 +226,107 @@ export function LiveRoom({
         : { type: "chat", label: title },
     );
   };
+  const problem = send.error ?? react.error ?? report.error;
   return (
-    <section className="bw-room" aria-label={title}>
-      <header>
-        <MessagesSquare size={17} aria-hidden />
-        <h3>{title}</h3>
-        <small>
-          {messages.length
-            ? `${messages.length} message${messages.length > 1 ? "s" : ""}`
-            : "En direct"}
-        </small>
+    <div className="bw-chat">
+      <header className="bw-chat__head">
+        <span className="bw-chat__live">
+          <i aria-hidden /> En direct
+        </span>
+        <DialogTitle>{title}</DialogTitle>
+        <DialogDescription className="bw-chat__online">
+          <Users size={13} aria-hidden /> {online ? `${online} en ligne` : "Vous êtes ici"}
+        </DialogDescription>
       </header>
+      <ol
+        ref={listRef}
+        className="bw-chat__lines"
+        aria-live="polite"
+        onScroll={(event) => {
+          const list = event.currentTarget;
+          following.current =
+            list.scrollHeight - list.scrollTop - list.clientHeight < FOLLOW_BOTTOM_PX;
+          if (following.current) setUnread(0);
+        }}
+      >
+        {lines.length ? null : (
+          <li className="bw-chat__hello">Soyez le premier ou la première à écrire ici.</li>
+        )}
+        {lines.map((message) => (
+          <li key={message.id} data-me={message.me || undefined}>
+            <TravellerAvatar card={message.author} size={26} mood={false} />
+            <div>
+              <button
+                type="button"
+                className="bw-chat__line"
+                aria-expanded={selected === message.id}
+                onClick={() => setSelected(selected === message.id ? null : message.id)}
+              >
+                <b>{message.me ? "Vous" : message.author.pseudo}</b>
+                <small data-place={message.place}>{message.crossing ?? PLACE[message.place]}</small>
+                <span>{message.body}</span>
+                {message.same ? (
+                  <em>
+                    <ThumbsUp size={11} aria-hidden /> {message.same}
+                  </em>
+                ) : null}
+              </button>
+              {selected === message.id ? (
+                <div className="bw-chat__tools">
+                  <time dateTime={message.created_at}>
+                    {time(message.created_at)}
+                    {message.edited ? " · modifié" : ""}
+                  </time>
+                  <button
+                    type="button"
+                    aria-pressed={message.reacted}
+                    disabled={react.isPending}
+                    onClick={() => react.mutate(message.id)}
+                  >
+                    <ThumbsUp size={13} aria-hidden /> Pareil ici
+                  </button>
+                  {user && !message.me ? (
+                    <button
+                      type="button"
+                      disabled={report.isPending}
+                      onClick={() => report.mutate(message.id)}
+                    >
+                      <Flag size={13} aria-hidden /> Signaler
+                    </button>
+                  ) : null}
+                  {message.me ? <OwnMessageActions id={message.id} body={message.body} /> : null}
+                </div>
+              ) : null}
+            </div>
+          </li>
+        ))}
+      </ol>
+      {unread ? (
+        <button type="button" className="bw-chat__unread" onClick={toBottom}>
+          <ArrowDown size={14} aria-hidden /> {unread} nouveau{unread > 1 ? "x" : ""} message
+          {unread > 1 ? "s" : ""}
+        </button>
+      ) : null}
+      {problem ? (
+        <p role="alert" className="bw-chat__error">
+          {problem.message}
+        </p>
+      ) : null}
       {closed ? (
-        <p className="bw-room__locked">
+        <p className="bw-chat__closed">
           Ce salon est fermé à l'écriture. Vous pouvez encore le lire.
         </p>
       ) : (
-        <>
+        <div className="bw-chat__write">
+          {text ? null : (
+            <p className="bw-chat__examples">
+              {roomExamples(kind === "port" ? "port" : moment).map((example) => (
+                <button key={example} type="button" onClick={() => setText(example)}>
+                  {example}
+                </button>
+              ))}
+            </p>
+          )}
           <form
             onSubmit={(event) => {
               event.preventDefault();
@@ -189,78 +337,87 @@ export function LiveRoom({
               value={text}
               maxLength={MAX_MESSAGE}
               onChange={(event) => setText(event.target.value)}
-              placeholder={
-                kind === "port" ? "Que se passe-t-il sur le port ?" : "Que se passe-t-il ?"
-              }
+              placeholder="Envoyer un message"
               aria-label="Votre message"
             />
-            <small aria-hidden>{MAX_MESSAGE - text.length}</small>
+            {text.length > MAX_MESSAGE - 40 ? <small>{MAX_MESSAGE - text.length}</small> : null}
             <button type="submit" disabled={!text.trim() || send.isPending} aria-label="Envoyer">
-              <Send size={16} aria-hidden />
+              <Send size={17} aria-hidden />
             </button>
           </form>
-          {text ? null : (
-            <p className="bw-room__examples">
-              {roomExamples(kind === "port" ? "port" : moment).map((example) => (
-                <button key={example} type="button" onClick={() => setText(example)}>
-                  {example}
-                </button>
-              ))}
-            </p>
-          )}
-        </>
+        </div>
       )}
-      {problem ? (
-        <p role="alert" className="bw-community-error">
-          {problem.message}
-        </p>
-      ) : null}
-      {messages.length ? (
-        <ul>
-          {messages.map((message) => (
+    </div>
+  );
+}
+
+/** Dans la fiche : un aperçu du direct et la porte d'entrée du salon. */
+export function LiveRoom({
+  kind,
+  room,
+  title,
+  moment = "before",
+}: {
+  kind: RoomKind;
+  room: string;
+  title: string;
+  moment?: RoomMoment;
+}) {
+  const { user } = useAuth();
+  const [open, setOpen] = useState(false);
+  const feed = useQuery(chatFeedQuery(kind, room, user?.id));
+  const online = useRoomChannel(kind, room, open);
+  // Demandé depuis une tuile, une invitation ou le raccourci : on entre directement.
+  useEffect(() => {
+    const enter = () => {
+      if (roomWanted(kind, room)) setOpen(true);
+    };
+    enter();
+    window.addEventListener(ENTER_ROOM_EVENT, enter);
+    return () => window.removeEventListener(ENTER_ROOM_EVENT, enter);
+  }, [kind, room]);
+  // Module pas encore activé en base : rien à afficher.
+  if (feed.data === null) return null;
+  const messages = feed.data?.messages ?? [];
+  const canWrite = feed.data?.access === "member" || feed.data?.access === "position";
+  const closed = kind === "crossing" && moment === "over";
+  const preview = messages.slice(0, PREVIEW_MESSAGES).reverse();
+  return (
+    <section className="bw-room" aria-label={title}>
+      <header>
+        <MessagesSquare size={17} aria-hidden />
+        <h3>{title}</h3>
+        <small className="bw-chat__live">
+          <i aria-hidden /> {online ? `${online} en ligne` : "En direct"}
+        </small>
+      </header>
+      {preview.length ? (
+        <ol className="bw-room__preview">
+          {preview.map((message) => (
             <li key={message.id}>
-              <TravellerAvatar card={message.author} size={34} />
-              <div>
-                <p className="bw-room__who">
-                  <b>{message.me ? "Vous" : message.author.pseudo}</b>
-                  <span data-place={message.place}>{PLACE[message.place]}</span>
-                  {message.crossing ? <span>{message.crossing}</span> : null}
-                  <time dateTime={message.created_at}>
-                    {time(message.created_at)}
-                    {message.edited ? " · modifié" : ""}
-                  </time>
-                </p>
-                <p>{message.body}</p>
-                <p className="bw-room__actions">
-                  <button
-                    type="button"
-                    aria-pressed={message.reacted}
-                    disabled={!canWrite || react.isPending}
-                    onClick={() => react.mutate(message.id)}
-                  >
-                    <ThumbsUp size={13} aria-hidden /> Pareil ici
-                    {message.same ? ` · ${message.same}` : ""}
-                  </button>
-                  {user && !message.me ? (
-                    <button
-                      type="button"
-                      aria-label="Signaler ce message"
-                      disabled={report.isPending}
-                      onClick={() => report.mutate(message.id)}
-                    >
-                      <Flag size={13} aria-hidden />
-                    </button>
-                  ) : null}
-                </p>
-                {message.me ? <OwnMessageActions id={message.id} body={message.body} /> : null}
-              </div>
+              <b>{message.me ? "Vous" : message.author.pseudo}</b> {message.body}
             </li>
           ))}
-        </ul>
-      ) : feed.isPending ? null : (
-        <p className="bw-room__empty">Personne n'a encore écrit ici.</p>
-      )}
-      <footer>Messages courts et modérés. Pas de photo de contrôle, aucun agent nommé.</footer>
+        </ol>
+      ) : null}
+      <button type="button" className="bw-room__enter" onClick={() => setOpen(true)}>
+        <MessagesSquare size={18} aria-hidden />
+        {closed ? "Lire le salon" : "Entrer dans le salon"}
+      </button>
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent className="bw-chat-window">
+          <LiveChat
+            kind={kind}
+            room={room}
+            title={title}
+            moment={moment}
+            messages={messages}
+            canWrite={canWrite}
+            closed={closed}
+            online={online}
+          />
+        </DialogContent>
+      </Dialog>
     </section>
   );
 }

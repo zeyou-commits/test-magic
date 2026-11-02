@@ -16,7 +16,7 @@ import { useFleet } from "@/lib/ferry/useFleet";
 import type { Departure, Port, RouteLine, Selection } from "@/lib/ferry/types";
 import { formatDateTime } from "@/lib/ferry/format";
 import { portTimeZone } from "@/lib/ferry/time";
-import { revealBlock } from "./ActionHub";
+import { enterRoom } from "@/lib/ferry/chat";
 import { SeaPhotoBadge, useSeaPeak } from "./SeaForecast";
 import { VesselMiniCard } from "./VesselMiniCard";
 
@@ -118,7 +118,7 @@ function RoomLink({
       className="bw-port-live__room"
       onClick={() => {
         onSelect({ type: "departure", id: departureId });
-        revealBlock(".bw-recap .bw-room", 700);
+        enterRoom("crossing", departureId);
       }}
     >
       <MessagesSquare size={15} aria-hidden /> Salon

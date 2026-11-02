@@ -334,7 +334,7 @@ export function PortView({
 
       <PortPresence portId={portId} />
 
-      <LiveRoom kind="port" room={portId} title={`Salon · Port de ${port.name}`} />
+      <LiveRoom kind="port" room={portId} title={`En direct sur le port de ${port.name}`} />
 
       <PortLiveBoard
         portId={portId}

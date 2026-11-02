@@ -1,3 +1,4 @@
+import { RoomPicker } from "./RoomPicker";
 import { VesselSeaBadge } from "./SeaForecast";
 import { PlaceReactions } from "./PlaceReactions";
 import { EntityReviews } from "./EntityReviews";
@@ -167,6 +168,13 @@ export function VesselView({
     )
     .sort((a, b) => a.departure_at.localeCompare(b.departure_at))
     .slice(0, 5);
+  // Le choix du salon : les traversées à venir, et celle qui vient de partir ou d'arriver.
+  const roomCrossings = data.departures.filter(
+    (d) =>
+      d.vessel_id === vesselId &&
+      d.status !== "cancelled" &&
+      Date.parse(d.departure_at) >= Date.now() - 3 * 86_400_000,
+  );
   const automaticDeparture =
     (live
       ? departureForSignal(
@@ -379,6 +387,7 @@ export function VesselView({
               Voir sur la carte
             </button>
           ) : null}
+          <RoomPicker departures={roomCrossings} onSelect={onSelect} />
           <div id={liveId} data-live-anchor>
             <FlashFeed
               title="Infos sur ce navire"

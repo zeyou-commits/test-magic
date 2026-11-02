@@ -1,3 +1,4 @@
+import { upcomingDeparturesQuery } from "@/lib/ferry/queries";
 import { SeaForecast, SeaPhotoBadge, useSeaPeak } from "./SeaForecast";
 import { scrollWithin } from "./LivePulse";
 import { useEffect, useState } from "react";
@@ -50,6 +51,7 @@ import { ReportButton } from "./ReportButton";
 import { TravelSignals } from "./TravelCommunity";
 import { LineQuestions } from "./LineQuestions";
 import { LiveRoom } from "./LiveRoom";
+import { RoomPicker } from "./RoomPicker";
 import { PortPresence, TripStatusPicker, VesselPresence } from "./TripPresence";
 import { VesselSpecs } from "./VesselBits";
 
@@ -126,6 +128,17 @@ export function TripRecap({
   const fromZone = portTimeZone(from);
   const toZone = portTimeZone(to);
   const { data: incidents = [] } = useQuery(incidentsQuery);
+  const { data: lineUpcoming = [] } = useQuery(upcomingDeparturesQuery());
+  // Le choix du salon : cette traversée et les prochaines de la ligne.
+  const lineCrossings = [
+    departure,
+    ...lineUpcoming.filter(
+      (item) =>
+        item.route_id === departure.route_id &&
+        item.id !== departure.id &&
+        item.status !== "cancelled",
+    ),
+  ];
   const stopped = departureStopped(incidentForVessel(incidents, departure.vessel_id), departure);
   const vesselAlert = useVesselAlert(departure.vessel_id);
   const progress = crossingProgress(departure, from, to, live, Date.now(), stopped);
@@ -384,6 +397,10 @@ export function TripRecap({
         departureAt={departure.departure_at}
         arrivalAt={arriveIso ?? null}
       />
+
+      {!cancelled ? (
+        <RoomPicker departures={lineCrossings} currentId={departure.id} onSelect={onSelect} />
+      ) : null}
 
       {!cancelled ? (
         <LiveRoom kind="crossing" room={departure.id} title={`Salon · ${from.name} → ${to.name}`} />

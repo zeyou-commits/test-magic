@@ -92,3 +92,42 @@ const REFUSALS: Record<string, string> = {
   length: "200 caractères au plus.",
 };
 export const chatRefusal = (code: string) => REFUSALS[code] ?? "Message refusé. Réessayez.";
+
+export type PickerRow = { id: string; routeId: string; line: string; when: string; search: string };
+
+const plain = (text: string) =>
+  text
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase();
+
+/** Les lignes du choix de traversée, de la plus proche à la plus lointaine. */
+export function pickerRows<P extends { id: string; name: string }>(
+  departures: { id: string; departure_at: string; route_id: string }[],
+  routes: { id: string; departure_port_id: string; arrival_port_id: string }[],
+  ports: P[],
+  format: (iso: string, port: P | undefined) => string,
+): PickerRow[] {
+  return [...departures]
+    .sort((a, b) => a.departure_at.localeCompare(b.departure_at))
+    .map((departure) => {
+      const route = routes.find((item) => item.id === departure.route_id);
+      const from = ports.find((port) => port.id === route?.departure_port_id);
+      const to = ports.find((port) => port.id === route?.arrival_port_id);
+      const line = `${from?.name ?? "—"} → ${to?.name ?? "—"}`;
+      const when = format(departure.departure_at, from);
+      return {
+        id: departure.id,
+        routeId: departure.route_id,
+        line,
+        when,
+        search: plain(`${line} ${when}`),
+      };
+    });
+}
+
+/** Chaque mot doit se retrouver : « oran 12 nov » ; accents et majuscules ne comptent pas. */
+export const searchRows = (rows: PickerRow[], text: string) => {
+  const words = plain(text).split(/\s+/).filter(Boolean);
+  return rows.filter((row) => words.every((word) => row.search.includes(word)));
+};

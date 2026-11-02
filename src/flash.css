@@ -8454,3 +8454,115 @@ body:has([data-film="true"]) [data-map-rail] {
 .bw-room ul {
   grid-template-columns: minmax(0, 1fr);
 }
+
+/* Un seul bouton Salon, puis le choix de la traversée. */
+.bw-room-open {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  width: 100%;
+  min-height: 44px;
+  margin: 8px 0;
+  border: 1px solid #cfe3d8;
+  border-radius: 12px;
+  background: #f1f8f4;
+  color: #0e6b3b;
+  font-size: 14px;
+  font-weight: 800;
+}
+.bw-room-picker {
+  display: grid;
+  gap: 10px;
+  max-height: 85dvh;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: auto auto minmax(0, 1fr) auto;
+}
+.bw-room-picker__search {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 0 12px;
+  border: 1px solid #cfe3d8;
+  border-radius: 12px;
+  color: #5b6b66;
+}
+.bw-room-picker__search input {
+  flex: 1;
+  min-width: 0;
+  min-height: 44px;
+  background: transparent;
+  color: #123f2c;
+  font-size: 16px;
+  outline: none;
+}
+.bw-room-picker ul {
+  min-height: 0;
+  margin: 0;
+  padding: 0;
+  overflow-y: auto;
+  list-style: none;
+}
+.bw-room-picker li button {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  width: 100%;
+  min-height: 52px;
+  padding: 7px 8px;
+  border-bottom: 1px solid #eef3f0;
+  text-align: left;
+}
+.bw-room-picker li button[aria-current="true"] {
+  border-radius: 10px;
+  background: #f1f8f4;
+}
+.bw-room-picker li span {
+  display: grid;
+  min-width: 0;
+  font-size: 14px;
+}
+.bw-room-picker li small {
+  color: #5b6b66;
+  font-size: 12px;
+}
+.bw-room-picker li b {
+  flex: none;
+  color: #0e6b3b;
+  font-size: 12px;
+}
+.bw-room-picker__global {
+  display: grid;
+  gap: 4px;
+  padding-top: 8px;
+  border-top: 1px solid #e3ebe6;
+  font-size: 13px;
+}
+.bw-room-picker__global p {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #5b6b66;
+}
+.bw-room-picker__global button {
+  min-height: 36px;
+  color: #0e7a43;
+  font-weight: 700;
+  text-align: left;
+  text-decoration: underline;
+}
+.bw-room-picker__global summary {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 36px;
+  color: #123f2c;
+  font-weight: 700;
+  cursor: pointer;
+}
+.bw-room-picker__global > div {
+  display: grid;
+  max-height: 150px;
+  overflow-y: auto;
+}

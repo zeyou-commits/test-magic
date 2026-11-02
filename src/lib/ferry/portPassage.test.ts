@@ -3,7 +3,9 @@ import {
   chatRefusal,
   formatDocked,
   passageQuestion,
+  pickerRows,
   portPassage,
+  searchRows,
   visibleSteps,
 } from "./portPassage";
 
@@ -66,6 +68,31 @@ describe("le passage du port", () => {
     expect(passageQuestion("controls").question).toMatch(/contrôles/);
     expect(passageQuestion("landing").question).toMatch(/débarquement/i);
     expect(passageQuestion(null).answers.length).toBe(4);
+  });
+
+  it("retrouve une traversée par port ou date, sans tenir compte des accents", () => {
+    const rows = pickerRows(
+      [
+        { id: "b", departure_at: "2026-11-12T10:00:00Z", route_id: "r2" },
+        { id: "a", departure_at: "2026-11-05T10:00:00Z", route_id: "r1" },
+      ],
+      [
+        { id: "r1", departure_port_id: "p1", arrival_port_id: "p2" },
+        { id: "r2", departure_port_id: "p2", arrival_port_id: "p3" },
+      ],
+      [
+        { id: "p1", name: "Sète" },
+        { id: "p2", name: "Oran" },
+        { id: "p3", name: "Béjaïa" },
+      ],
+      (iso) => iso.slice(8, 10) + " nov",
+    );
+    expect(rows.map((row) => row.id)).toEqual(["a", "b"]);
+    expect(rows[1]!.line).toBe("Oran → Béjaïa");
+    expect(searchRows(rows, "sete").map((row) => row.id)).toEqual(["a"]);
+    expect(searchRows(rows, "BEJAIA 12").map((row) => row.id)).toEqual(["b"]);
+    expect(searchRows(rows, "alger")).toEqual([]);
+    expect(searchRows(rows, "  ")).toHaveLength(2);
   });
 
   it("explique un refus", () => {

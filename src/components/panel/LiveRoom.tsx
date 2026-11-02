@@ -17,6 +17,8 @@ type Message = {
   id: string;
   body: string;
   place: "aboard" | "port" | "trip";
+  /** Fil du port : la traversée d'où vient le message. */
+  crossing?: string | null;
   created_at: string;
   me: boolean;
   author: TravellerCard;
@@ -167,7 +169,7 @@ export function LiveRoom({ kind, room, title }: { kind: RoomKind; room: string; 
         <p className="bw-room__locked">
           {kind === "crossing"
             ? "Vous pouvez lire. Pour écrire, indiquez que vous voyagez sur cette traversée."
-            : "Vous pouvez lire. Réservé à l'écriture aux personnes présentes sur le port."}
+            : "Vous pouvez lire. Connectez-vous pour écrire si vous êtes sur place."}
         </p>
       )}
       {problem ? (
@@ -184,6 +186,7 @@ export function LiveRoom({ kind, room, title }: { kind: RoomKind; room: string; 
                 <p className="bw-room__who">
                   <b>{message.me ? "Vous" : message.author.pseudo}</b>
                   <span data-place={message.place}>{PLACE[message.place]}</span>
+                  {message.crossing ? <span>{message.crossing}</span> : null}
                   <time dateTime={message.created_at}>{time(message.created_at)}</time>
                 </p>
                 <p>{message.body}</p>

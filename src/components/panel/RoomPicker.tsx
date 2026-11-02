@@ -101,7 +101,7 @@ export function RoomPicker({
                       onClick={() => {
                         close();
                         onSelect({ type: "departure", id: row.id });
-                        scrollTo(".bw-room");
+                        scrollTo(".bw-recap .bw-room");
                       }}
                     >
                       <span>

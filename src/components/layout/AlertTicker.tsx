@@ -1,11 +1,12 @@
+import { CompanyBadge } from "@/components/panel/CompanyBadge";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link, useRouterState } from "@tanstack/react-router";
 import { CircleAlert, Share2, X } from "lucide-react";
-import { isPublicNews, newsSlug } from "@/lib/ferry/newsFeed";
+import { isPublicNews, newsSlug, newsCompanyIds } from "@/lib/ferry/newsFeed";
 import { newsQuery, setFlashIgnored, shareAlert, useIgnoredFlash } from "@/lib/ferry/flash";
 import { incidentHeadline, incidentsQuery } from "@/lib/ferry/incidents";
-import { portsQuery, vesselsQuery } from "@/lib/ferry/queries";
+import { portsQuery, vesselsQuery, companiesQuery } from "@/lib/ferry/queries";
 import { useMyTrip } from "@/lib/ferry/myTrip";
 import { useTravelAction } from "@/hooks/useTravelAction";
 import { useAuth } from "@/hooks/useAuth";
@@ -36,6 +37,7 @@ export function AlertTicker() {
   const { data: news } = useQuery(newsQuery);
   const { data: vessels = [] } = useQuery(vesselsQuery);
   const { data: ports = [] } = useQuery(portsQuery);
+  const { data: companies = [] } = useQuery(companiesQuery);
   const pathname = useRouterState({ select: (state) => state.location.pathname });
   const [dismissed, setDismissed] = useState<string | null>(null);
   const [railDismissed, setRailDismissed] = useState<string | null>(null);
@@ -200,96 +202,91 @@ export function AlertTicker() {
   const label = critical.length ? "Alertes graves" : "Perturbations";
   // Une seule information : fixe, centrée et avec ses actions. Le défilement sert quand il y en a plusieurs.
   const alertBlock = () => {
-  if (alerts.length === 1) {
-    const alert = alerts[0]!;
-    const vesselId = alert.id;
-    const mine = vesselId && trip?.vessel?.id === vesselId ? trip : null;
-    return (
-      <div
-        className="bw-alert-ticker"
-        data-tone={tone}
-        data-single
-        role="region"
-        aria-label={label}
-      >
-        <div className="bw-alert-ticker__single">
-          <CircleAlert size={16} aria-hidden className="shrink-0" />
-          <strong>{alert.text}</strong>
-          {vesselId ? (
-            <>
-              <button type="button" onClick={() => open(vesselId)}>
-                Voir les traversées
+    if (alerts.length === 1) {
+      const alert = alerts[0]!;
+      const vesselId = alert.id;
+      const mine = vesselId && trip?.vessel?.id === vesselId ? trip : null;
+      return (
+        <div
+          className="bw-alert-ticker"
+          data-tone={tone}
+          data-single
+          role="region"
+          aria-label={label}
+        >
+          <div className="bw-alert-ticker__single">
+            <CircleAlert size={16} aria-hidden className="shrink-0" />
+            <strong>{alert.text}</strong>
+            {vesselId ? (
+              <>
+                <button type="button" onClick={() => open(vesselId)}>
+                  Voir les traversées
+                </button>
+                {mine ? (
+                  <button type="button" onClick={() => openDeparture(mine.departure.id)}>
+                    Voir ma traversée
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() =>
+                      request({
+                        type: "follow",
+                        kind: "vessel",
+                        targetId: vesselId,
+                        label: vessels.find((v) => v.id === vesselId)?.name ?? "Ce navire",
+                        upgrade: true,
+                      })
+                    }
+                  >
+                    Je voyage sur ce navire
+                  </button>
+                )}
+              </>
+            ) : (
+              <button type="button" onClick={() => open(null)}>
+                Voir le détail
               </button>
-              {mine ? (
-                <button type="button" onClick={() => openDeparture(mine.departure.id)}>
-                  Voir ma traversée
-                </button>
-              ) : (
-                <button
-                  type="button"
-                  onClick={() =>
-                    request({
-                      type: "follow",
-                      kind: "vessel",
-                      targetId: vesselId,
-                      label: vessels.find((v) => v.id === vesselId)?.name ?? "Ce navire",
-                      upgrade: true,
-                    })
-                  }
-                >
-                  Je voyage sur ce navire
-                </button>
-              )}
-            </>
-          ) : (
-            <button type="button" onClick={() => open(null)}>
-              Voir le détail
+            )}
+            <button
+              type="button"
+              className="inline-flex items-center gap-1"
+              onClick={() => void share(alert.text, vesselId)}
+            >
+              <Share2 size={13} aria-hidden /> {copied ? "Lien copié" : "Partager"}
             </button>
-          )}
+          </div>
+          {close}
+        </div>
+      );
+    }
+    const items = (copy: boolean) => (
+      <span className="bw-alert-ticker__group" aria-hidden={copy || undefined}>
+        {alerts.map((alert) => (
           <button
+            key={alert.key}
             type="button"
-            className="inline-flex items-center gap-1"
-            onClick={() => void share(alert.text, vesselId)}
+            tabIndex={copy ? -1 : undefined}
+            onClick={() => open(alert.id)}
           >
-            <Share2 size={13} aria-hidden /> {copied ? "Lien copié" : "Partager"}
+            {alert.text}
           </button>
+        ))}
+      </span>
+    );
+    const seconds = Math.max(18, alerts.map((a) => a.text).join("").length * 0.22);
+    return (
+      <div className="bw-alert-ticker" data-tone={tone} role="region" aria-label={label}>
+        <CircleAlert size={16} aria-hidden className="shrink-0" />
+        <div className="bw-alert-ticker__window">
+          <div className="bw-alert-ticker__track" style={{ animationDuration: `${seconds}s` }}>
+            {items(false)}
+            {items(true)}
+          </div>
         </div>
         {close}
       </div>
     );
-  }
-  const items = (copy: boolean) => (
-    <span className="bw-alert-ticker__group" aria-hidden={copy || undefined}>
-      {alerts.map((alert) => (
-        <button
-          key={alert.key}
-          type="button"
-          tabIndex={copy ? -1 : undefined}
-          onClick={() => open(alert.id)}
-        >
-          {alert.text}
-        </button>
-      ))}
-    </span>
-  );
-  const seconds = Math.max(18, alerts.map((a) => a.text).join("").length * 0.22);
-  return (
-    <div
-      className="bw-alert-ticker"
-      data-tone={tone}
-      role="region"
-      aria-label={label}
-    >
-      <CircleAlert size={16} aria-hidden className="shrink-0" />
-      <div className="bw-alert-ticker__window">
-        <div className="bw-alert-ticker__track" style={{ animationDuration: `${seconds}s` }}>
-          {items(false)}
-          {items(true)}
-        </div>
-      </div>
-      {close}
-    </div>
-  );
   };
   const railGroup = (copy: boolean) => (
     <span className="bw-news-rail__group" aria-hidden={copy || undefined}>
@@ -300,6 +297,14 @@ export function AlertTicker() {
           params={{ slug: newsSlug(item) }}
           tabIndex={copy ? -1 : undefined}
         >
+          {(() => {
+            const company = companies.find(
+              (entry) => entry.id === newsCompanyIds(item, vessels)[0],
+            );
+            return company ? (
+              <CompanyBadge name={company.name} logoUrl={company.logo_url} size={20} />
+            ) : null;
+          })()}
           {item.title}
         </Link>
       ))}

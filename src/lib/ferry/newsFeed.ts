@@ -57,3 +57,13 @@ export const newsDay = (iso: string) =>
     month: "long",
     year: "numeric",
   }).format(new Date(iso));
+
+/** Les compagnies d'une actualité : celles citées, sinon celle du navire concerné. */
+export function newsCompanyIds(
+  item: Pick<NewsItem, "company_ids" | "vessel_id">,
+  vessels: { id: string; company_id: string | null }[],
+) {
+  if (item.company_ids.length) return item.company_ids;
+  const owner = vessels.find((vessel) => vessel.id === item.vessel_id)?.company_id;
+  return owner ? [owner] : [];
+}

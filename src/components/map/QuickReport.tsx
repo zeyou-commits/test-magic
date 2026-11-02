@@ -88,7 +88,8 @@ const emptyDraft: Draft = {
 };
 
 const failure = (message?: string) =>
-  message && /Patientez|Maximum|déjà signalé|introuvable|sur place|Vos signalements concernent/.test(message)
+  message &&
+  /Patientez|Maximum|déjà signalé|introuvable|sur place|Vos signalements concernent/.test(message)
     ? message
     : "L’envoi n’a pas abouti. Réessayez dans quelques instants.";
 
@@ -102,11 +103,14 @@ export function QuickReport({
   fleet,
   departures,
   selection,
+  children,
 }: {
   ports: Port[];
   fleet: FleetShip[];
   departures: Departure[];
   selection: Selection | null;
+  /** Raccourci affiché au-dessus du bouton, sur mobile. */
+  children?: React.ReactNode;
 }) {
   const isMobile = useIsMobile();
   // Point vert sur le bouton quand on est près d'un port (moins de 3 km). Seulement si la position
@@ -214,7 +218,9 @@ export function QuickReport({
   const portName = (id: string | null) => ports.find((p) => p.id === id)?.name;
 
   /** Lieu probable : écran demandé, sinon fiche ouverte, sinon traversée suivie. */
-  const guess = (target: ReportTarget | null): Pick<Draft, "portId" | "vesselId" | "departureId" | "focus"> => {
+  const guess = (
+    target: ReportTarget | null,
+  ): Pick<Draft, "portId" | "vesselId" | "departureId" | "focus"> => {
     const fromShip = (ship: FleetShip | undefined) =>
       ship
         ? {
@@ -225,7 +231,8 @@ export function QuickReport({
           }
         : null;
     const from = target ?? selection;
-    if (from?.type === "port") return { portId: from.id, vesselId: null, departureId: null, focus: "port" };
+    if (from?.type === "port")
+      return { portId: from.id, vesselId: null, departureId: null, focus: "port" };
     if (from?.type === "vessel")
       return (
         fromShip(fleet.find((s) => s.vesselId === from.id)) ?? {
@@ -239,7 +246,12 @@ export function QuickReport({
       const found = fromShip(fleet.find((s) => s.departureId === from.id));
       if (found) return found;
       if (target?.portId || target?.vesselId)
-        return { portId: target.portId ?? null, vesselId: target.vesselId ?? null, departureId: from.id, focus: null };
+        return {
+          portId: target.portId ?? null,
+          vesselId: target.vesselId ?? null,
+          departureId: from.id,
+          focus: null,
+        };
     }
     for (const follow of follows.data ?? []) {
       if (follow.target_kind !== "departure") continue;
@@ -303,16 +315,29 @@ export function QuickReport({
   const impact = Boolean(chosen?.onSite);
   const target = situation?.where === "port" ? draft.portId : draft.vesselId;
   const selectedDeparture = departures.find((item) => item.id === draft.departureId);
-  const selectedShip = fleet.find((ship) => ship.departureId === draft.departureId && ship.vesselId === draft.vesselId);
+  const selectedShip = fleet.find(
+    (ship) => ship.departureId === draft.departureId && ship.vesselId === draft.vesselId,
+  );
   const now = Date.now();
   const phaseAllowed = (category: AlertCategory | null) => {
     if (!category || situationOf(category).where === "port") return true;
-    if (!selectedDeparture || selectedDeparture.vessel_id !== draft.vesselId || selectedDeparture.status === "cancelled") return false;
+    if (
+      !selectedDeparture ||
+      selectedDeparture.vessel_id !== draft.vesselId ||
+      selectedDeparture.status === "cancelled"
+    )
+      return false;
     const start = Date.parse(selectedDeparture.departure_at);
     const end = selectedDeparture.arrival_at ? Date.parse(selectedDeparture.arrival_at) : NaN;
-    if (category === "boarding") return selectedShip?.state === "docked" && now >= start - 6 * 3_600_000 && now <= start + 30 * 60_000;
+    if (category === "boarding")
+      return (
+        selectedShip?.state === "docked" &&
+        now >= start - 6 * 3_600_000 &&
+        now <= start + 30 * 60_000
+      );
     // Le débarquement et les contrôles durent des heures : la fenêtre va jusqu'à la sortie du port.
-    if (category === "disembarking") return Number.isFinite(end) && now >= end - 30 * 60_000 && now <= end + PASSAGE_MAX_MS;
+    if (category === "disembarking")
+      return Number.isFinite(end) && now >= end - 30 * 60_000 && now <= end + PASSAGE_MAX_MS;
     return now >= start - 24 * 3_600_000 && (!Number.isFinite(end) || now <= end + PASSAGE_MAX_MS);
   };
   const ready = Boolean(
@@ -444,11 +469,15 @@ export function QuickReport({
             <MapPin size={13} aria-hidden /> Sur place
           </span>
         ) : null}
-        <p>{sentForReview
-          ? "L’horaire ou la position connue ne correspond pas à votre observation. Votre signalement est transmis à l’équipe, sans publication automatique."
-          : `${draft.category ? `Visible environ ${lifetimeLabel(draft.category)}. ` : ""}${impact
-              ? "Il apparaîtra sur la carte dès qu’un autre voyageur le confirme."
-              : "Les autres voyageurs peuvent le confirmer ou dire que ce n’est plus le cas."}`}</p>
+        <p>
+          {sentForReview
+            ? "L’horaire ou la position connue ne correspond pas à votre observation. Votre signalement est transmis à l’équipe, sans publication automatique."
+            : `${draft.category ? `Visible environ ${lifetimeLabel(draft.category)}. ` : ""}${
+                impact
+                  ? "Il apparaîtra sur la carte dès qu’un autre voyageur le confirme."
+                  : "Les autres voyageurs peuvent le confirmer ou dire que ce n’est plus le cas."
+              }`}
+        </p>
         <button type="button" className="bw-report-send" onClick={() => setOpen(false)}>
           Fermer
         </button>
@@ -520,7 +549,11 @@ export function QuickReport({
               value={draft.vesselId ?? ""}
               onChange={(e) => {
                 const ship = fleet.find((item) => item.vesselId === e.target.value);
-                setDraft({ ...draft, vesselId: e.target.value || null, departureId: ship?.departureId ?? null });
+                setDraft({
+                  ...draft,
+                  vesselId: e.target.value || null,
+                  departureId: ship?.departureId ?? null,
+                });
               }}
               aria-label="Bateau"
             >
@@ -559,7 +592,8 @@ export function QuickReport({
 
         {situation.where === "vessel" && draft.vesselId && !phaseAllowed(draft.category) ? (
           <p role="status" className="bw-report-note">
-            Cette observation ne correspond pas à la phase affichée. Vous pouvez l’envoyer pour vérification par l’équipe.
+            Cette observation ne correspond pas à la phase affichée. Vous pouvez l’envoyer pour
+            vérification par l’équipe.
           </p>
         ) : null}
 
@@ -653,7 +687,13 @@ export function QuickReport({
           </p>
         ) : null}
         <button type="submit" className="bw-report-send" disabled={!ready || mutation.isPending}>
-          {finding ? "Recherche de votre position…" : mutation.isPending ? "Envoi…" : user ? "Envoyer" : "Se connecter et envoyer"}
+          {finding
+            ? "Recherche de votre position…"
+            : mutation.isPending
+              ? "Envoi…"
+              : user
+                ? "Envoyer"
+                : "Se connecter et envoyer"}
         </button>
         <p className="bw-report-note">
           {situation.where === "port"
@@ -677,6 +717,7 @@ export function QuickReport({
         /* Sur mobile : bouton jaune fixe au-dessus de la barre du bas, comme Waze. Le volet le recouvre
            quand il monte. Point vert : vous êtes près d'un port. */
         <>
+          {children}
           <button
             type="button"
             className="bw-report-fab bw-report-fab--mobile"

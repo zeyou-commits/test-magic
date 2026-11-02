@@ -313,7 +313,7 @@ export function PortView({
           {
             id: "salon",
             label: "Salon",
-            hint: "En direct",
+
             onClick: () => revealBlock(".bw-room"),
           },
           ...(roomCrossings.length

@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { queryOptions, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Flag, MessagesSquare, Send, ThumbsUp } from "lucide-react";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { OwnMessageActions } from "./OwnMessageActions";
 import { TravellerAvatar } from "@/components/community/TravellerAvatar";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase as typedSupabase } from "@/integrations/supabase/client";
@@ -21,6 +22,7 @@ type Message = {
   place: "aboard" | "port" | "trip";
   /** Fil du port : la traversée d'où vient le message. */
   crossing?: string | null;
+  edited?: boolean;
   created_at: string;
   me: boolean;
   author: TravellerCard;
@@ -217,13 +219,16 @@ export function LiveRoom({
         <ul>
           {messages.map((message) => (
             <li key={message.id}>
-              <TravellerAvatar card={message.author} size={34} static />
+              <TravellerAvatar card={message.author} size={34} />
               <div>
                 <p className="bw-room__who">
                   <b>{message.me ? "Vous" : message.author.pseudo}</b>
                   <span data-place={message.place}>{PLACE[message.place]}</span>
                   {message.crossing ? <span>{message.crossing}</span> : null}
-                  <time dateTime={message.created_at}>{time(message.created_at)}</time>
+                  <time dateTime={message.created_at}>
+                    {time(message.created_at)}
+                    {message.edited ? " · modifié" : ""}
+                  </time>
                 </p>
                 <p>{message.body}</p>
                 <p className="bw-room__actions">
@@ -247,6 +252,7 @@ export function LiveRoom({
                     </button>
                   ) : null}
                 </p>
+                {message.me ? <OwnMessageActions id={message.id} body={message.body} /> : null}
               </div>
             </li>
           ))}

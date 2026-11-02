@@ -40,6 +40,7 @@ import { Button } from "@/components/ui/button";
 import { MapStatusBar } from "@/components/map/MapStatusBar";
 import { MapLegend } from "@/components/map/MapLegend";
 import { QuickReport } from "@/components/map/QuickReport";
+import { MessagesFab } from "@/components/panel/MessagesFab";
 import { MyTripMapChip } from "@/components/panel/MyTripHero";
 import { MapSearch } from "@/components/map/MapSearch";
 import { MapStats, type MapShortcut } from "@/components/map/MapStats";
@@ -133,7 +134,7 @@ function Index() {
       window.removeEventListener(FLASH_PREVIEW_EVENT, onFlashPreview);
     };
   }, []);
-  const handleBack = () => {
+  const closeCurrent = () => {
     setPeekSelectionKey(null);
     if (selectionHistory.length > 0) {
       const previous = selectionHistory[selectionHistory.length - 1];
@@ -418,6 +419,42 @@ function Index() {
     }
   }, [filters, selection]);
 
+  // Bouton retour du téléphone : chaque fiche ouverte a son entrée dans l'historique du navigateur.
+  const handleBack = () => {
+    if ((window.history.state as { bwPanel?: boolean } | null)?.bwPanel) window.history.back();
+    else closeCurrent();
+  };
+  const closeCurrentRef = useRef(closeCurrent);
+  closeCurrentRef.current = closeCurrent;
+  const closePanelRef = useRef(() => {});
+  const panelKey = selection ? `${selection.type}:${selection.id}` : panelMode;
+  const openPanelRef = useRef<{ selected: boolean; open: boolean }>({
+    selected: false,
+    open: false,
+  });
+  openPanelRef.current = { selected: Boolean(selection), open: Boolean(panelKey) };
+  const lastPanelKey = useRef<string | null>(null);
+  const fromHistory = useRef(false);
+  useEffect(() => {
+    if (panelKey && panelKey !== lastPanelKey.current && !fromHistory.current)
+      window.history.pushState({ ...(window.history.state as object | null), bwPanel: true }, "");
+    lastPanelKey.current = panelKey ?? null;
+    fromHistory.current = false;
+  }, [panelKey]);
+  useEffect(() => {
+    const onPop = (event: PopStateEvent) => {
+      if (!openPanelRef.current.open) {
+        // Fiche déjà fermée par sa croix : cette entrée ne sert plus.
+        if ((event.state as { bwPanel?: boolean } | null)?.bwPanel) window.history.back();
+        return;
+      }
+      fromHistory.current = true;
+      if (openPanelRef.current.selected) closeCurrentRef.current();
+      else closePanelRef.current();
+    };
+    window.addEventListener("popstate", onPop);
+    return () => window.removeEventListener("popstate", onPop);
+  }, []);
   const homeMode = panelMode === null && !selection;
   const mapFilters = filters;
   const previewRouteId = trafficPreview?.routeId ?? highlightRouteId;
@@ -897,6 +934,8 @@ function Index() {
     window.dispatchEvent(new Event("batogo:close-filters"));
   };
 
+  closePanelRef.current = resetToMap;
+
   const openMobileDepartures = () => {
     if (panelMode === "departures" && !selection) {
       resetToMap();
@@ -1009,7 +1048,9 @@ function Index() {
       </a>
       <SiteHeader />
       <main id="contenu" tabIndex={-1}>
-        <h1 className="sr-only">Ferries Europe ↔ Algérie : carte des traversées, lignes et départs</h1>
+        <h1 className="sr-only">
+          Ferries Europe ↔ Algérie : carte des traversées, lignes et départs
+        </h1>
         <section
           id="carte"
           aria-label="Carte et recherche de traversées"
@@ -1198,7 +1239,7 @@ function Index() {
                     ? "itinerary"
                     : (panelMode ?? "map")
               }
-              onOpenMap={resetToMap}
+              onOpenMap={() => setPanelLevel((level) => (level === 0 ? 1 : 0))}
               onMoreToggle={resetToMap}
               onOpenDepartures={openMobileDepartures}
               onOpenSearch={openMobileSearch}
@@ -1220,12 +1261,9 @@ function Index() {
               onRetry={() => allResults.forEach((res) => void res.refetch())}
               panelOpen={desktopPanelOpen}
             />
-            <QuickReport
-              ports={ports}
-              fleet={fleet}
-              departures={departures}
-              selection={selection}
-            />
+            <QuickReport ports={ports} fleet={fleet} departures={departures} selection={selection}>
+              <MessagesFab onSelect={(next) => handleSelectRef.current(next)} />
+            </QuickReport>
             {/* Ma traversée pas encore sur la carte : chrono flottant. */}
             <MyTripMapChip fleet={fleet} onOpen={(next) => handleSelectRef.current(next)} />
             <MapStats
@@ -1251,15 +1289,7 @@ function Index() {
               lineVisibility={lineVisibility}
               onLineVisibility={setLineVisibility}
               onPreview={setTrafficPreview}
-              infoOf={(ship) =>
-                fleetShortcutInfo(
-                  ship,
-                  allDepartures,
-                  routes,
-                  ports,
-                  Date.now(),
-                )
-              }
+              infoOf={(ship) => fleetShortcutInfo(ship, allDepartures, routes, ports, Date.now())}
               onToggle={(shortcut) => {
                 if (window.innerWidth >= 768) shortcutScrollY.current = window.scrollY;
                 resetToMap();

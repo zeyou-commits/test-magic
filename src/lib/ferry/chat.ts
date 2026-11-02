@@ -66,3 +66,13 @@ export async function flushPendingChat() {
   window.dispatchEvent(new Event(CHAT_SENT_EVENT));
   return true;
 }
+
+async function ownMessage(fn: string, args: Record<string, string>) {
+  const { data, error } = await supabase.rpc(fn, args);
+  if (error) throw new Error("Action impossible pour le moment. Réessayez.");
+  const result = data as { ok: boolean; refused?: string };
+  if (!result.ok) throw new Error(chatRefusal(result.refused ?? ""));
+}
+export const editOwnMessage = (id: string, body: string) =>
+  ownMessage("bw_chat_edit", { p_message: id, p_body: body });
+export const deleteOwnMessage = (id: string) => ownMessage("bw_chat_delete", { p_message: id });

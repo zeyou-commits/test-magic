@@ -54,7 +54,8 @@ import { ActionHub, revealBlock } from "./ActionHub";
 import { chatFeedQuery, LiveRoom } from "./LiveRoom";
 import { useTravelAction } from "@/hooks/useTravelAction";
 import { roomMoment } from "@/lib/ferry/portPassage";
-import { mergeTripSteps, myTripStatusQuery, tripStepsQuery } from "@/lib/ferry/presence";
+import { myTripStatusQuery } from "@/lib/ferry/presence";
+import { LeaveTrip } from "./LeaveTrip";
 import { RoomPicker } from "./RoomPicker";
 import { PortPresence, TripStatusPicker, VesselPresence } from "./TripPresence";
 import { VesselSpecs } from "./VesselBits";
@@ -217,8 +218,11 @@ export function TripRecap({
   const liveCount = info.official + info.travellers;
   const liveId = `live-${departure.id}`;
   const [tab, setTab] = useState<Tab | null>(null);
+  // Une fois parti, on ne prépare plus rien.
+  const started = Date.parse(departIso) <= now;
   const activeTab: Tab =
-    tab ?? (hasSignalFocus() || (liveCount && !myDeparture) ? "live" : "prepare");
+    (started && tab === "prepare" ? "live" : tab) ??
+    (started || hasSignalFocus() || (liveCount && !myDeparture) ? "live" : "prepare");
   // Arrivée depuis l'encart Ma traversée : le parcours, tout de suite.
   useEffect(() => {
     const focus = () => {
@@ -256,9 +260,6 @@ export function TripRecap({
     refetchInterval: 60_000,
   }).data;
   const myStatus = useQuery(myTripStatusQuery(departure.id, user?.id)).data ?? null;
-  const myStep = mergeTripSteps(useQuery(tripStepsQuery).data).find(
-    (step) => step.id === myStatus,
-  )?.short;
 
   return (
     <article className="bw-recap">
@@ -395,7 +396,7 @@ export function TripRecap({
             {
               id: "where",
               label: "Vous êtes où ?",
-              hint: myStep ?? undefined,
+              status: myStatus,
               onClick: () =>
                 myDeparture
                   ? revealBlock(".bw-trip-status, .bw-trip-status-teaser")
@@ -413,6 +414,7 @@ export function TripRecap({
         />
       ) : null}
       {myDeparture ? <JourneyPlanner departureId={departure.id} onSelect={onSelect} /> : null}
+      {myDeparture ? <LeaveTrip departureId={departure.id} /> : null}
       {upcoming && !departure.is_demo ? (
         <MakeMyTrip kind="departure" targetId={departure.id} label={`${from.name} → ${to.name}`} />
       ) : null}
@@ -485,19 +487,21 @@ export function TripRecap({
             ["live", "En direct", Radio],
             ["ship", "Bateau", Ship],
           ] as const
-        ).map(([id, label, Icon]) => (
-          <button
-            key={id}
-            type="button"
-            role="tab"
-            aria-selected={activeTab === id}
-            onClick={() => setTab(id)}
-          >
-            <Icon size={14} aria-hidden /> {label}
-            {id === "live" && info.official ? <b data-kind="official">{info.official}</b> : null}
-            {id === "live" && info.travellers ? <b>{info.travellers}</b> : null}
-          </button>
-        ))}
+        )
+          .filter(([id]) => !started || id !== "prepare")
+          .map(([id, label, Icon]) => (
+            <button
+              key={id}
+              type="button"
+              role="tab"
+              aria-selected={activeTab === id}
+              onClick={() => setTab(id)}
+            >
+              <Icon size={14} aria-hidden /> {label}
+              {id === "live" && info.official ? <b data-kind="official">{info.official}</b> : null}
+              {id === "live" && info.travellers ? <b>{info.travellers}</b> : null}
+            </button>
+          ))}
       </div>
 
       {activeTab === "prepare" ? (

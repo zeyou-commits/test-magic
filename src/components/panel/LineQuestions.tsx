@@ -3,6 +3,7 @@ import { Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { CircleHelp, Flag, Send, ThumbsUp } from "lucide-react";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { OwnMessageActions } from "./OwnMessageActions";
 import { TravellerAvatar } from "@/components/community/TravellerAvatar";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase as typedSupabase } from "@/integrations/supabase/client";
@@ -23,6 +24,8 @@ type Entry = {
   author: TravellerCard;
   same: number;
   reacted: boolean;
+  edited?: boolean;
+  replies?: Entry[];
 };
 type Question = Entry & { replies: Entry[] };
 type Feed = { access: "read" | "member"; questions: Question[] };
@@ -55,12 +58,15 @@ function Line({
 }) {
   return (
     <>
-      <TravellerAvatar card={entry.author} size={32} static />
+      <TravellerAvatar card={entry.author} size={32} />
       <div>
         <p className="bw-room__who">
           <b>{entry.me ? "Vous" : entry.author.pseudo}</b>
           {entry.place === "done" ? <span data-place="done">a fait cette ligne</span> : null}
-          <time dateTime={entry.created_at}>{day(entry.created_at)}</time>
+          <time dateTime={entry.created_at}>
+            {day(entry.created_at)}
+            {entry.edited ? " · modifié" : ""}
+          </time>
         </p>
         <p>{entry.body}</p>
         <p className="bw-room__actions">
@@ -84,6 +90,15 @@ function Line({
             </button>
           ) : null}
         </p>
+        {entry.me ? (
+          <OwnMessageActions
+            id={entry.id}
+            body={entry.body}
+            deleteHint={
+              entry.replies?.length ? "Supprimer cette question et ses réponses ?" : undefined
+            }
+          />
+        ) : null}
         {children}
       </div>
     </>

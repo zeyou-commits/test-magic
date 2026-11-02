@@ -366,7 +366,9 @@ export function VesselView({
                 type="button"
                 onClick={() => onSelect({ type: "departure", id: departure.id })}
               >
-                Préparer cette traversée
+                {Date.parse(departure.departure_at) <= Date.now()
+                  ? "Voir cette traversée"
+                  : "Préparer cette traversée"}
                 <ArrowRight size={16} aria-hidden />
               </button>
             </>

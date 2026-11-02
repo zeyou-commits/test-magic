@@ -7,14 +7,26 @@ import { chatRefusal } from "./portPassage";
 const supabase = typedSupabase as unknown as SupabaseClient;
 
 export type ChatKind = "crossing" | "port" | "route";
-export type PendingChat = { kind: ChatKind; room: string; body: string; parent?: string };
+export type PendingChat = {
+  kind: ChatKind;
+  room: string;
+  body: string;
+  parent?: string;
+  replyTo?: string;
+};
 
 /** Message parti après une inscription : les formulaires ouverts se vident. */
 export const CHAT_SENT_EVENT = "bledway:chat-sent";
 const storageKey = "bledway:pending-chat:v1";
 const LIFETIME = 7 * 86_400_000;
 
-export async function postToRoom(kind: ChatKind, room: string, body: string, parent?: string) {
+export async function postToRoom(
+  kind: ChatKind,
+  room: string,
+  body: string,
+  parent?: string,
+  replyTo?: string,
+) {
   const here = kind === "port" ? await currentPosition() : null;
   const { data, error } = await supabase.rpc("bw_chat_post", {
     p_kind: kind,
@@ -23,6 +35,7 @@ export async function postToRoom(kind: ChatKind, room: string, body: string, par
     p_lat: here?.[1] ?? null,
     p_lon: here?.[0] ?? null,
     ...(parent ? { p_parent: parent } : {}),
+    ...(replyTo ? { p_reply_to: replyTo } : {}),
   });
   if (error) throw new Error("Message non envoyé. Réessayez.");
   const result = data as { ok: boolean; refused?: string };
@@ -62,7 +75,7 @@ export async function flushPendingChat() {
   const chat = pendingChat();
   if (!chat) return false;
   clearPendingChat();
-  await postToRoom(chat.kind, chat.room, chat.body, chat.parent);
+  await postToRoom(chat.kind, chat.room, chat.body, chat.parent, chat.replyTo);
   window.dispatchEvent(new Event(CHAT_SENT_EVENT));
   return true;
 }

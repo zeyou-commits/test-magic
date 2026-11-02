@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { useBackClose } from "@/lib/ferry/backStack";
 import { enterRoom } from "@/lib/ferry/chat";
 import { revealBlock } from "./ActionHub";
 import { useQuery } from "@tanstack/react-query";
@@ -67,6 +68,10 @@ export function RoomPicker({
   );
   const shown = searchRows(rows, text);
   const lines = [...new Map(rows.map((row) => [row.routeId, row.line])).entries()];
+  useBackClose(open, () => {
+    onOpenChange(false);
+    setText("");
+  });
   if (!departures.length) return null;
   const close = () => {
     onOpenChange(false);

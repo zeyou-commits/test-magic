@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { MessagesSquare } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import { useAuth } from "@/hooks/useAuth";
+import { useBackClose } from "@/lib/ferry/backStack";
 import { crossingProgress } from "@/lib/ferry/crossingProgress";
 import { useMyTrip } from "@/lib/ferry/myTrip";
 import { dockedSinceQuery, myTripStatusQuery } from "@/lib/ferry/presence";
@@ -53,6 +54,7 @@ export function RoomInvite({ onSelect }: { onSelect: (selection: Selection) => v
     body: string;
     examples: string[];
   } | null>(null);
+  useBackClose(open !== null, () => setOpen(null));
   useEffect(() => {
     const timer = window.setInterval(() => setNow(Date.now()), CHECK_MS);
     return () => window.clearInterval(timer);

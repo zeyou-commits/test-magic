@@ -42,6 +42,7 @@ import { MapLegend } from "@/components/map/MapLegend";
 import { QuickReport } from "@/components/map/QuickReport";
 import { MessagesFab } from "@/components/panel/MessagesFab";
 import { RoomInvite } from "@/components/panel/RoomInvite";
+import { handleOverlayBack } from "@/lib/ferry/backStack";
 import { MyTripMapChip } from "@/components/panel/MyTripHero";
 import { MapSearch } from "@/components/map/MapSearch";
 import { MapStats, type MapShortcut } from "@/components/map/MapStats";
@@ -444,6 +445,7 @@ function Index() {
   }, [panelKey]);
   useEffect(() => {
     const onPop = (event: PopStateEvent) => {
+      if (handleOverlayBack()) return;
       if (!openPanelRef.current.open) {
         // Fiche déjà fermée par sa croix : cette entrée ne sert plus.
         if ((event.state as { bwPanel?: boolean } | null)?.bwPanel) window.history.back();

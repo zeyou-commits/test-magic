@@ -1,13 +1,25 @@
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { queryOptions, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ArrowDown, Flag, MessagesSquare, Send, ThumbsUp, Users } from "lucide-react";
+import {
+  ArrowDown,
+  CornerDownRight,
+  Flag,
+  MessagesSquare,
+  Reply,
+  Send,
+  Smile,
+  ThumbsUp,
+  Users,
+  X,
+} from "lucide-react";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { TravellerAvatar } from "@/components/community/TravellerAvatar";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import { useAuth } from "@/hooks/useAuth";
 import { useTravelAction } from "@/hooks/useTravelAction";
 import { supabase as typedSupabase } from "@/integrations/supabase/client";
-import type { TravellerCard } from "@/lib/community/travellers";
+import { myTravellerQuery, type TravellerCard } from "@/lib/community/travellers";
+import { useBackClose } from "@/lib/ferry/backStack";
 import {
   CHAT_SENT_EVENT,
   ENTER_ROOM_EVENT,
@@ -31,6 +43,7 @@ type Message = {
   /** Fil du port : la traversée d'où vient le message. */
   crossing?: string | null;
   edited?: boolean;
+  reply_to?: { id: string; body: string; me: boolean; pseudo: string } | null;
   created_at: string;
   me: boolean;
   author: TravellerCard;
@@ -44,6 +57,32 @@ const missing = (code?: string) => code === "PGRST202" || code === "42883";
 /** En dessous, on considère que la personne suit le direct : le fil descend tout seul. */
 const FOLLOW_BOTTOM_PX = 80;
 const PREVIEW_MESSAGES = 3;
+const EMOTES = [
+  "😀",
+  "😂",
+  "😍",
+  "🙏",
+  "👍",
+  "👏",
+  "🔥",
+  "❤️",
+  "😴",
+  "🥵",
+  "😡",
+  "😭",
+  "🚢",
+  "⚓",
+  "🛂",
+  "🧳",
+  "🚗",
+  "🌊",
+  "☕",
+  "🇩🇿",
+];
+/** Un message fait seulement d'émoticônes s'affiche en grand. */
+const onlyEmotes = (text: string) =>
+  text.replace(/p{Extended_Pictographic}|p{Regional_Indicator}|‍|️|s/gu, "") === "";
+type Present = { key: string; card: TravellerCard | null };
 export const roomKey = (kind: RoomKind, room: string) => ["bw-chat", kind, room] as const;
 
 const time = (iso: string) =>
@@ -72,9 +111,14 @@ export const chatFeedQuery = (kind: RoomKind, room: string, userId: string | und
   });
 
 /** Le direct : relire dès qu'un message bouge, et compter les personnes présentes dans le salon. */
-function useRoomChannel(kind: RoomKind, room: string, present: boolean) {
+function useRoomChannel(
+  kind: RoomKind,
+  room: string,
+  present: boolean,
+  card: TravellerCard | null,
+) {
   const client = useQueryClient();
-  const [online, setOnline] = useState(0);
+  const [people, setPeople] = useState<Present[]>([]);
   useEffect(() => {
     const channel = supabase.channel(`chat:${kind}:${room}`, {
       config: { presence: { key: crypto.randomUUID() } },
@@ -84,16 +128,20 @@ function useRoomChannel(kind: RoomKind, room: string, present: boolean) {
         void client.invalidateQueries({ queryKey: roomKey(kind, room) });
       })
       .on("presence", { event: "sync" }, () => {
-        setOnline(Object.keys(channel.presenceState()).length);
+        const state = channel.presenceState<{ card?: TravellerCard | null }>();
+        setPeople(
+          Object.entries(state).map(([key, entries]) => ({ key, card: entries[0]?.card ?? null })),
+        );
       })
       .subscribe((status) => {
-        if (status === "SUBSCRIBED" && present) void channel.track({ here: true });
+        // Seuls le pseudo et le cabas, déjà publics, sont partagés ; jamais la position.
+        if (status === "SUBSCRIBED" && present) void channel.track({ card });
       });
     return () => {
       void supabase.removeChannel(channel);
     };
-  }, [client, kind, room, present]);
-  return online;
+  }, [client, kind, room, present, card]);
+  return people;
 }
 
 /** Entrée du salon depuis Ma traversée. */
@@ -129,7 +177,7 @@ function LiveChat({
   messages,
   canWrite,
   closed,
-  online,
+  people,
 }: {
   kind: RoomKind;
   room: string;
@@ -138,7 +186,7 @@ function LiveChat({
   messages: Message[];
   canWrite: boolean;
   closed: boolean;
-  online: number;
+  people: Present[];
 }) {
   const { user } = useAuth();
   const request = useTravelAction();
@@ -146,6 +194,12 @@ function LiveChat({
   const [text, setText] = useState("");
   const [selected, setSelected] = useState<string | null>(null);
   const [unread, setUnread] = useState(0);
+  const [replyTo, setReplyTo] = useState<Message | null>(null);
+  const [showPeople, setShowPeople] = useState(false);
+  const [showEmotes, setShowEmotes] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const online = people.length;
+  const named = people.filter((person) => person.card);
   const listRef = useRef<HTMLOListElement>(null);
   const following = useRef(true);
   const lastId = useRef<string | null>(null);
@@ -158,9 +212,11 @@ function LiveChat({
     setUnread(0);
   };
   const send = useMutation({
-    mutationFn: () => postToRoom(kind, room, text),
+    mutationFn: () => postToRoom(kind, room, text, undefined, replyTo?.id),
     onSuccess: () => {
       setText("");
+      setReplyTo(null);
+      setShowEmotes(false);
       following.current = true;
       refresh();
     },
@@ -188,7 +244,10 @@ function LiveChat({
   });
   // Parti après une inscription : le champ se vide.
   useEffect(() => {
-    const clear = () => setText("");
+    const clear = () => {
+      setText("");
+      setReplyTo(null);
+    };
     window.addEventListener(CHAT_SENT_EVENT, clear);
     return () => window.removeEventListener(CHAT_SENT_EVENT, clear);
   }, []);
@@ -212,7 +271,7 @@ function LiveChat({
       send.mutate();
       return;
     }
-    rememberPendingChat({ kind, room, body: text });
+    rememberPendingChat({ kind, room, body: text, ...(replyTo ? { replyTo: replyTo.id } : {}) });
     request(
       kind === "crossing"
         ? {
@@ -234,10 +293,36 @@ function LiveChat({
           <i aria-hidden /> En direct
         </span>
         <DialogTitle>{title}</DialogTitle>
-        <DialogDescription className="bw-chat__online">
-          <Users size={13} aria-hidden /> {online ? `${online} en ligne` : "Vous êtes ici"}
+        <DialogDescription asChild>
+          <button
+            type="button"
+            className="bw-chat__online"
+            aria-expanded={showPeople}
+            onClick={() => setShowPeople((value) => !value)}
+          >
+            <Users size={13} aria-hidden /> {online ? `${online} en ligne` : "Vous êtes ici"}
+          </button>
         </DialogDescription>
       </header>
+      {showPeople ? (
+        <div className="bw-chat__people">
+          {named.length ? (
+            <ul>
+              {named.map((person) => (
+                <li key={person.key}>
+                  <TravellerAvatar card={person.card!} size={30} mood={false} />
+                  <span>{person.card!.pseudo}</span>
+                </li>
+              ))}
+            </ul>
+          ) : null}
+          {online > named.length ? (
+            <p>
+              {online - named.length} visiteur{online - named.length > 1 ? "s" : ""} sans compte
+            </p>
+          ) : null}
+        </div>
+      ) : null}
       <ol
         ref={listRef}
         className="bw-chat__lines"
@@ -253,9 +338,20 @@ function LiveChat({
           <li className="bw-chat__hello">Soyez le premier ou la première à écrire ici.</li>
         )}
         {lines.map((message) => (
-          <li key={message.id} data-me={message.me || undefined}>
+          <li
+            key={message.id}
+            data-me={message.me || undefined}
+            data-mention={message.reply_to?.me || undefined}
+          >
             <TravellerAvatar card={message.author} size={26} mood={false} />
             <div>
+              {message.reply_to ? (
+                <p className="bw-chat__quote">
+                  <CornerDownRight size={12} aria-hidden />
+                  <b>{message.reply_to.me ? "Vous" : message.reply_to.pseudo}</b>
+                  <span>{message.reply_to.body}</span>
+                </p>
+              ) : null}
               <button
                 type="button"
                 className="bw-chat__line"
@@ -264,7 +360,7 @@ function LiveChat({
               >
                 <b>{message.me ? "Vous" : message.author.pseudo}</b>
                 <small data-place={message.place}>{message.crossing ?? PLACE[message.place]}</small>
-                <span>{message.body}</span>
+                <span data-big={onlyEmotes(message.body) || undefined}>{message.body}</span>
                 {message.same ? (
                   <em>
                     <ThumbsUp size={11} aria-hidden /> {message.same}
@@ -277,6 +373,18 @@ function LiveChat({
                     {time(message.created_at)}
                     {message.edited ? " · modifié" : ""}
                   </time>
+                  {closed ? null : (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setReplyTo(message);
+                        setSelected(null);
+                        inputRef.current?.focus();
+                      }}
+                    >
+                      <Reply size={13} aria-hidden /> Répondre
+                    </button>
+                  )}
                   <button
                     type="button"
                     aria-pressed={message.reacted}
@@ -318,7 +426,36 @@ function LiveChat({
         </p>
       ) : (
         <div className="bw-chat__write">
-          {text ? null : (
+          {replyTo ? (
+            <p className="bw-chat__replying">
+              <Reply size={13} aria-hidden />
+              <span>
+                Répondre à <b>{replyTo.me ? "vous-même" : replyTo.author.pseudo}</b> :{" "}
+                {replyTo.body}
+              </span>
+              <button
+                type="button"
+                aria-label="Annuler la réponse"
+                onClick={() => setReplyTo(null)}
+              >
+                <X size={15} aria-hidden />
+              </button>
+            </p>
+          ) : null}
+          {showEmotes ? (
+            <p className="bw-chat__emotes">
+              {EMOTES.map((emote) => (
+                <button
+                  key={emote}
+                  type="button"
+                  aria-label={`Ajouter ${emote}`}
+                  onClick={() => setText((value) => `${value}${emote}`.slice(0, MAX_MESSAGE))}
+                >
+                  {emote}
+                </button>
+              ))}
+            </p>
+          ) : text || replyTo ? null : (
             <p className="bw-chat__examples">
               {roomExamples(kind === "port" ? "port" : moment).map((example) => (
                 <button key={example} type="button" onClick={() => setText(example)}>
@@ -333,11 +470,21 @@ function LiveChat({
               submit();
             }}
           >
+            <button
+              type="button"
+              className="bw-chat__emote-toggle"
+              aria-label="Émoticônes"
+              aria-expanded={showEmotes}
+              onClick={() => setShowEmotes((value) => !value)}
+            >
+              <Smile size={20} aria-hidden />
+            </button>
             <input
+              ref={inputRef}
               value={text}
               maxLength={MAX_MESSAGE}
               onChange={(event) => setText(event.target.value)}
-              placeholder="Envoyer un message"
+              placeholder={replyTo ? "Votre réponse" : "Envoyer un message"}
               aria-label="Votre message"
             />
             {text.length > MAX_MESSAGE - 40 ? <small>{MAX_MESSAGE - text.length}</small> : null}
@@ -366,7 +513,10 @@ export function LiveRoom({
   const { user } = useAuth();
   const [open, setOpen] = useState(false);
   const feed = useQuery(chatFeedQuery(kind, room, user?.id));
-  const online = useRoomChannel(kind, room, open);
+  const card = useQuery(myTravellerQuery(user?.id)).data ?? null;
+  const people = useRoomChannel(kind, room, open, card);
+  const online = people.length;
+  useBackClose(open, () => setOpen(false));
   // Demandé depuis une tuile, une invitation ou le raccourci : on entre directement.
   useEffect(() => {
     const enter = () => {
@@ -414,7 +564,7 @@ export function LiveRoom({
             messages={messages}
             canWrite={canWrite}
             closed={closed}
-            online={online}
+            people={people}
           />
         </DialogContent>
       </Dialog>

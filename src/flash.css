@@ -9264,3 +9264,107 @@ body:has([data-film="true"]) [data-map-rail] {
 .bw-chat__write form button:disabled {
   opacity: 0.45;
 }
+
+/* Salon : qui est là, répondre, émoticônes. */
+.bw-chat__head {
+  position: relative;
+  padding-right: 50px;
+}
+.bw-chat__close {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  color: #123f2c;
+}
+.bw-chat__online {
+  justify-self: start;
+  min-height: 24px;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.bw-chat__people {
+  max-height: 34%;
+  padding: 8px 14px;
+  overflow-y: auto;
+  border-bottom: 1px solid #e3ebe6;
+  background: #ffffff;
+  color: #5b6b66;
+  font-size: 12.5px;
+}
+.bw-chat__people ul {
+  display: grid;
+  gap: 6px;
+  margin: 0 0 4px;
+  padding: 0;
+  list-style: none;
+}
+.bw-chat__people li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #123f2c;
+  font-size: 13.5px;
+  font-weight: 600;
+}
+.bw-chat__lines > li[data-mention] {
+  background: #fff7e3;
+}
+.bw-chat__quote {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  overflow: hidden;
+  color: #5b6b66;
+  font-size: 11.5px;
+  white-space: nowrap;
+}
+.bw-chat__quote svg {
+  flex: none;
+}
+.bw-chat__quote span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.bw-chat__line span[data-big] {
+  font-size: 26px;
+  line-height: 1.2;
+}
+.bw-chat__replying {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 8px;
+  border-radius: 10px;
+  background: #f1f8f4;
+  color: #123f2c;
+  font-size: 12.5px;
+}
+.bw-chat__replying span {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.bw-chat__emotes {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(38px, 1fr));
+  gap: 2px;
+}
+.bw-chat__emotes button {
+  min-height: 38px;
+  font-size: 21px;
+}
+.bw-chat__write form .bw-chat__emote-toggle {
+  width: 32px;
+  height: 38px;
+  margin-left: -8px;
+  border-radius: 0;
+  background: transparent;
+  color: #5b6b66;
+}

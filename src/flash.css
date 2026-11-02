@@ -9986,3 +9986,26 @@ img[data-logo="dark"] {
   color: #a3361f;
   font-size: 12.5px;
 }
+
+/* Survol du « ! » d'un navire : la raison de l'alerte en bref. */
+.bw-alert-tip {
+  display: grid;
+  gap: 4px;
+  max-width: 230px;
+  padding: 2px 2px 0 8px;
+  border-left: 3px solid #c81e1e;
+  font-size: 12px;
+  line-height: 1.4;
+}
+.bw-alert-tip strong {
+  color: #a3161a;
+  font-size: 12.5px;
+}
+.bw-alert-tip p {
+  margin: 0;
+  color: var(--foreground);
+}
+.bw-alert-tip small {
+  color: var(--muted-foreground);
+  font-size: 10.5px;
+}

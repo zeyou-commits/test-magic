@@ -22,6 +22,7 @@ import { formatDuration } from "@/lib/ferry/format";
 import { algeriaGeoJson } from "@/lib/ferry/algeriaGeoJson";
 import { routeArc } from "@/lib/ferry/geo";
 import { shipAnchor, type FleetShip } from "@/lib/ferry/fleet";
+import { LABEL_SIZE_STOPS, labelSize, placeLabels } from "./labelPlacement";
 import {
   addShipImages,
   addVesselImages,
@@ -520,7 +521,7 @@ export default function FerryMap({
         }
         if (
           layer.type === "raster" ||
-          /hillshade|landcover|landuse|building|road|bridge|tunnel|aeroway|poi|railway|peak/.test(
+          /hillshade|landcover|landuse|building|road|highway|bridge|tunnel|aeroway|airport|poi|railway|peak/.test(
             layer.id,
           )
         ) {
@@ -927,10 +928,12 @@ export default function FerryMap({
           ] as never,
           "text-font": ["Noto Sans Bold"],
           // Le nom grandit avec le navire : discret de loin, lisible de près.
-          "text-size": ["interpolate", ["linear"], ["zoom"], 3, 8, 6, 9, 7, 10, 9, 12, 11, 15, 13, 18],
-          // Le navire debout repose sur son point : le nom et le retard collent à sa coque.
-          "text-offset": ["literal", [0, 0.5]],
-          "text-anchor": "top",
+          "text-size": ["interpolate", ["linear"], ["zoom"], ...LABEL_SIZE_STOPS] as never,
+          // Collé à la coque, du côté libre : sous le navire, sinon au-dessus, à droite ou à gauche.
+          "text-anchor": ["coalesce", ["get", "labelAnchor"], "top"] as never,
+          "text-offset": ["coalesce", ["get", "labelOffset"], ["literal", [0, 0.3]]] as never,
+          "text-pitch-alignment": "viewport",
+          "text-rotation-alignment": "viewport",
           "text-allow-overlap": false,
           "text-ignore-placement": false,
           "text-max-width": 12,
@@ -1034,8 +1037,11 @@ export default function FerryMap({
       });
       vesselPopupRef.current = hoverTip;
       let hoveredShip: string | null = null;
+      // La carte affichée : celle du navire, ou celle de son alerte quand on survole le « ! ».
+      let shownCard: string | null = null;
       const setHoveredShip = (id: string | null) => {
         hoveredShip = id;
+        if (!id) shownCard = null;
         map.setFilter("fleet-hover-halo", id ? (["==", ["get", "shipId"], id] as never) : NO_SHIP);
         if (!id) hoverTip.remove();
       };
@@ -1047,6 +1053,7 @@ export default function FerryMap({
         "fleet-ships",
         ...VESSEL_IMAGE_STEPS.map(({ width }) => `fleet-photo-${width}`),
         "fleet-labels",
+        "fleet-alert",
         "fleet-count-bg",
         "fleet-count",
       ];
@@ -1098,8 +1105,30 @@ export default function FerryMap({
           return;
         }
         const coordinates = feature.geometry.coordinates as [number, number];
-        if (id !== hoveredShip) {
+        const alertHit = (event.features ?? []).find((f) => f.layer.id === "fleet-alert");
+        const alert = alertHit
+          ? vesselAlertsRef.current.get(String(alertHit.properties?.["vesselId"] ?? ""))
+          : undefined;
+        const cardKey = alert ? `alert:${id}` : id;
+        if (alert && cardKey !== shownCard) {
+          // Le « ! » : la raison en bref, la source, et le détail d'un clic.
+          if (id !== hoveredShip) setHoveredShip(id);
+          shownCard = cardKey;
+          const card = document.createElement("div");
+          card.setAttribute("role", "tooltip");
+          card.className = "bw-alert-tip";
+          const title = document.createElement("strong");
+          title.textContent = `${String(alertHit!.properties?.["name"] ?? "Navire")} · ${alert.label}`;
+          const note = document.createElement("p");
+          const text = (alert.note || alert.title).trim();
+          note.textContent = text.length > 170 ? `${text.slice(0, 167).trimEnd()}…` : text;
+          const foot = document.createElement("small");
+          foot.textContent = `${alert.source ? `Source : ${alert.source} · ` : ""}cliquez pour le détail`;
+          card.append(title, ...(text ? [note] : []), foot);
+          hoverTip.setLngLat(coordinates).setDOMContent(card).addTo(map);
+        } else if (!alert && cardKey !== shownCard) {
           setHoveredShip(id);
+          shownCard = cardKey;
           const card = document.createElement("div");
           card.setAttribute("role", "tooltip");
           const name = document.createElement("strong"),
@@ -2513,6 +2542,34 @@ export default function FerryMap({
       );
       for (const feature of data.features)
         Object.assign(feature.properties, groups.get(String(feature.properties["shipId"])));
+      // Le nom de chaque navire va à la place libre la plus proche de sa coque.
+      const zoom = map.getZoom();
+      const size = labelSize(zoom);
+      const token = shipTokenRadius(zoom) * 2;
+      const spots = placeLabels(
+        data.features.map((feature) => {
+          const point = map.project(feature.geometry.coordinates);
+          const photo = String(feature.properties["photo"] ?? "");
+          const late = zoom >= 6.5 ? String(feature.properties["late"] ?? "") : "";
+          const name = String(feature.properties["name"] ?? "");
+          return {
+            id: String(feature.properties["shipId"]),
+            x: point.x,
+            y: point.y,
+            standing: Boolean(photo),
+            width: photo ? vesselScreenWidth(zoom) : token,
+            height: photo ? vesselScreenHeight(photo, zoom) : token,
+            text: late.length > name.length ? late : name,
+            lines: late ? 2 : 1,
+            priority: Number(feature.properties["priority"]),
+          };
+        }),
+        size,
+      );
+      for (const feature of data.features) {
+        const spot = spots.get(String(feature.properties["shipId"]));
+        if (spot) Object.assign(feature.properties, { labelAnchor: spot.anchor, labelOffset: spot.offset });
+      }
       const previous = lastFleetFrame.current;
       const changed =
         !previous ||

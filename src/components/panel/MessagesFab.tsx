@@ -11,6 +11,7 @@ import { enterRoom } from "@/lib/ferry/chat";
 import { chatFeedQuery } from "./LiveRoom";
 import { RoomPicker } from "./RoomPicker";
 import { AuthorAvatar, type ChatAuthor } from "./StaffChat";
+import { chatDemoQuery } from "@/lib/ferry/chatDemo";
 
 const supabase = typedSupabase as unknown as SupabaseClient;
 
@@ -41,8 +42,9 @@ const recentQuery = {
 /**
  * Messages d'exemple affichés au lancement, tant qu'il y a moins de 3 vrais messages récents.
  * Ils sont marqués « Exemple » et ouvrent le choix d'une traversée, jamais un faux salon.
+ * L'équipe les gère dans l'admin ; ceux-ci ne servent que si la liste n'est pas disponible.
  */
-const DEMO_MESSAGES: { pseudo: string; label: string; body: string }[] = [
+const DEMO_MESSAGES: { pseudo: string; label: string; body: string; avatar?: string }[] = [
   { pseudo: "Nadia", label: "Marseille → Alger", body: "On est déjà dans la file, ça avance doucement mais ça avance !" },
   { pseudo: "Karim", label: "Alicante → Oran", body: "Quelqu'un sait si le restaurant à bord est ouvert ce soir ?" },
   { pseudo: "Samia", label: "Port de Sète", body: "Parking plein côté gare maritime, prévoyez de l'avance." },
@@ -50,8 +52,10 @@ const DEMO_MESSAGES: { pseudo: string; label: string; body: string }[] = [
   { pseudo: "Lina", label: "Barcelone → Oran", body: "Contrôles rapides ce matin, 20 minutes à peine." },
 ];
 const DEMO_AVATARS = ["maman", "papa", "fille_bled", "jeune_degrade", "tata_houria"];
-const demoMessages = (): RecentMessage[] =>
-  DEMO_MESSAGES.map((message, index) => ({
+const demoMessages = (
+  list: { pseudo: string; label: string; body: string; avatar?: string }[],
+): RecentMessage[] =>
+  list.map((message, index) => ({
     id: `demo-${index}`,
     demo: true,
     kind: "crossing",
@@ -62,7 +66,7 @@ const demoMessages = (): RecentMessage[] =>
     author: {
       handle: `demo${index}`,
       pseudo: message.pseudo,
-      avatar: DEMO_AVATARS[index % DEMO_AVATARS.length],
+      avatar: message.avatar ?? DEMO_AVATARS[index % DEMO_AVATARS.length],
       color: "#2f7d5b",
       mood: null,
     } as unknown as ChatAuthor,
@@ -90,7 +94,9 @@ export function MessagesFab({ onSelect }: { onSelect: (selection: Selection) => 
   const count = room?.messages.length ?? 0;
   const real = useQuery(recentQuery).data ?? [];
   // Au lancement, des exemples complètent l'aperçu ; les vrais messages passent toujours devant.
-  const messages = real.length >= 3 ? real : [...real, ...demoMessages()];
+  const managed = useQuery(chatDemoQuery).data;
+  const demos = managed ? managed.filter((message) => message.active) : DEMO_MESSAGES;
+  const messages = real.length >= 3 ? real : [...real, ...demoMessages(demos)];
   // Tous les 3 messages, une bulle invite à raconter son propre voyage.
   const recent: (RecentMessage | "invite")[] = messages.flatMap((message, position) =>
     (position + 1) % 3 === 0 ? [message, "invite" as const] : [message],
@@ -172,8 +178,10 @@ export function MessagesFab({ onSelect }: { onSelect: (selection: Selection) => 
               <AuthorAvatar author={shown.author} size={26} />
               <span>
                 <small>
-                  {shown.demo ? <em>Exemple</em> : <i aria-hidden />} {shown.author.pseudo}
+                    {/* Le prénom d'abord ; un exemple le dit discrètement, en fin de ligne. */}
+                  {shown.demo ? null : <i aria-hidden />} {shown.author.pseudo}
                   {shown.label ? ` · ${shown.label}` : ""}
+                  {shown.demo ? <em title="Message d'illustration au lancement">illustration</em> : null}
                 </small>
                 <strong>{shortBody(shown.body) || "…"}</strong>
               </span>

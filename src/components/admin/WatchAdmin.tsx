@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { Button } from "@/components/ui/button";
 import { ChatModeration } from "./ChatModeration";
+import { ChatDemoAdmin } from "./ChatDemoAdmin";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { formatAge } from "@/lib/ferry/tracking";
@@ -384,6 +385,7 @@ export function WatchAdmin() {
       )}
 
       <ChatModeration />
+      <ChatDemoAdmin />
 
       <section className="bw-watch__sources" aria-label="Sources surveillées">
         <h3>Sources surveillées</h3>

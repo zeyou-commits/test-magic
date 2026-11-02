@@ -10334,13 +10334,11 @@ img[data-logo="dark"] {
   transform: translateY(-50%);
 }
 .bw-messages-preview__bubble small em {
-  padding: 0 5px;
-  border-radius: 999px;
-  background: #eef2f0;
-  color: #5b6b66;
+  margin-left: 2px;
+  color: #9aa49f;
   font-size: 9.5px;
   font-style: normal;
-  font-weight: 700;
+  font-weight: 500;
 }
 /* La bulle qui invite à partager : en vert BledWay, pour se détacher des messages. */
 .bw-messages-preview__bubble[data-invite] {

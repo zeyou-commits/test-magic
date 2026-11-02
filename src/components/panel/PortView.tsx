@@ -21,6 +21,7 @@ import { requestQuickReport } from "@/components/map/QuickReport";
 import { FlashFeed } from "./FlashFeed";
 import { PortPlaces } from "./PortPlaces";
 import { PortLiveBoard } from "./PortLiveBoard";
+import { PortRooms } from "./PortRooms";
 import { enterRoom } from "@/lib/ferry/chat";
 import { ActionHub, revealBlock } from "./ActionHub";
 import { LiveRoom } from "./LiveRoom";
@@ -364,6 +365,8 @@ export function PortView({
       </div>
 
       <PortPresence portId={portId} />
+
+      <PortRooms portId={portId} departures={knownDepartures} onSelect={onSelect} />
 
       <LiveRoom
         kind="port"

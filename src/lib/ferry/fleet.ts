@@ -41,6 +41,14 @@ export interface FleetShip {
 }
 
 const HOUR = 3600_000;
+/** Côté terre de chaque pays, pour poser un navire immobilisé hors de l'eau. */
+const ASHORE_SIDE: Record<string, { dx: number; dy: number }> = {
+  ES: { dx: -19, dy: 0 },
+  IT: { dx: 19, dy: 0 },
+  DZ: { dx: 0, dy: 1 },
+  TN: { dx: 0, dy: 1 },
+  FR: { dx: 0, dy: -1 },
+};
 /** Un navire vu à quai à moins de cette distance d'un port rejoint la file de ce port. */
 const QUAY_RADIUS_KM = 5;
 /** Écart entre deux navires de la file, en pixels de base : un peu plus d'une largeur de navire. */
@@ -209,13 +217,14 @@ export function buildFleet(
         source: "schedule",
         lngLat: [heldPort.longitude, heldPort.latitude],
         course: 90,
-        dx: 0,
         routeId: leg.route.id,
         departureId: leg.departure.id,
         portId: heldPort.id,
         ashore: true,
-        // Le signe donne le côté de la terre : au nord des ports européens, au sud des ports algériens.
-        dy: heldPort.country_code === "DZ" ? 1 : -1,
+        // Posé vers l'intérieur des terres, sans être pris pour un navire d'un port voisin :
+        // à l'ouest des ports espagnols (côte tournée vers l'est), à l'est des ports italiens,
+        // au sud des ports algériens et tunisiens, au nord des ports français.
+        ...ASHORE_SIDE[heldPort.country_code ?? ""] ?? { dx: 0, dy: -1 },
       };
       ships.push(ship);
       return;

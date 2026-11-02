@@ -2652,9 +2652,22 @@ export default function FerryMap({
           const order = [
             ...new Set([port.label_anchor ?? "left", "right", "left", "bottom", "top"]),
           ].filter((side) => side in boxes);
-          const cost = (box: Box) =>
-            [...hulls, ...towers, ...dots].reduce((sum, other) => sum + area(box, other), 0) +
-            taken.reduce((sum, other) => sum + area(box, other) * 2, 0);
+          const others = [...portById.values()]
+            .filter((item) => item.id !== port.id)
+            .map((item) => map.project([item.longitude, item.latitude]));
+          const cost = (box: Box) => {
+            // Un nom plus proche d'un autre port que du sien se lit comme le nom de l'autre.
+            const cx = (box.left + box.right) / 2;
+            const cy = (box.top + box.bottom) / 2;
+            const own = Math.hypot(cx - point.x, cy - point.y);
+            const misleading = others.some((other) => Math.hypot(cx - other.x, cy - other.y) < own);
+            return (
+              (misleading ? 1e6 : 0) +
+              [...hulls, ...towers].reduce((sum, other) => sum + area(box, other), 0) +
+              dots.reduce((sum, other) => sum + area(box, other) * 6, 0) +
+              taken.reduce((sum, other) => sum + area(box, other) * 4, 0)
+            );
+          };
           let side = order[0]!;
           let best = cost(boxes[side]!);
           for (const candidate of order.slice(1)) {

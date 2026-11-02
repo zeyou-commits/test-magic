@@ -9738,18 +9738,9 @@ body:has([data-film="true"]) [data-map-rail] {
   font-weight: 700;
 }
 
-/* Logos : le fond blanc incrusté dans les fichiers disparaît à l'affichage. */
-img[data-logo="light"] {
-  mix-blend-mode: multiply;
-}
+/* Logos transparents : sur fond sombre, en blanc uni pour rester lisibles quelle que soit leur couleur. */
 img[data-logo="dark"] {
-  filter: invert(1) hue-rotate(180deg) saturate(1.2);
-  mix-blend-mode: screen;
-}
-/* Le fil défile dans son propre calque : il lui faut un aplat pour que le fond du logo s'efface. */
-.bw-news-rail,
-.bw-news-rail__track {
-  background: #0f4a52;
+  filter: brightness(0) invert(1);
 }
 .bw-news-rail {
   min-height: 42px;

@@ -24,8 +24,7 @@ function initials(name: string) {
 
 /**
  * Logo de la compagnie ; à défaut (ou si l'image ne charge pas), pastille de couleur avec initiales.
- * Les fichiers ont un fond blanc incrusté : sans cadre, il disparaît à l'affichage (classes bw-logo).
- * Sur fond sombre, ce fond doit être derrière un aplat opaque du même bloc, sinon il revient en noir.
+ * Les fichiers sont transparents : sans cadre sur fond clair, en blanc uni sur fond sombre.
  */
 export function CompanyBadge({
   name,
@@ -44,7 +43,8 @@ export function CompanyBadge({
   const [square, setSquare] = useState(false);
   // Sans cadre, le logo garde ses proportions : un logo très large reste lisible.
   const [ratio, setRatio] = useState(1.7);
-  const src = safeExternalUrl(logoUrl);
+  // Un logo hébergé sur le site s'écrit /logos/… ; les autres viennent du site de la compagnie.
+  const src = logoUrl?.startsWith("/logos/") ? logoUrl : safeExternalUrl(logoUrl);
   const color = companyColor(name);
   if (src && !failed && tone !== "framed") {
     return (

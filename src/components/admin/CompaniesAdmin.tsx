@@ -235,8 +235,11 @@ function CompanyEditor({
         description: description.trim() || null,
       };
       if (!values.name) throw new Error("Indiquez le nom de la compagnie.");
-      for (const url of [values.logo_url, values.website_url, values.booking_url, values.contact_url, values.claims_url, values.contact_source_url])
+      for (const url of [values.website_url, values.booking_url, values.contact_url, values.claims_url, values.contact_source_url])
         if (url && !/^https:\/\//i.test(url)) throw new Error("Les adresses doivent commencer par https://");
+      // Un logo peut aussi être servi par le site lui-même.
+      if (values.logo_url && !/^(https:\/\/|\/logos\/)/i.test(values.logo_url))
+        throw new Error("Le logo doit commencer par https:// ou /logos/");
       const { error } = company
         ? await supabase.from("companies").update(values).eq("id", company.id)
         : await supabase.from("companies").insert({

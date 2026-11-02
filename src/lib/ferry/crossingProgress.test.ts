@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { crossingProgress, ferryLeft, sceneLabel } from "./crossingProgress";
+import { crossingProgress, ferryLeft, replacedTime, sceneLabel } from "./crossingProgress";
 import { delayLabel } from "./tracking";
 import type { Departure, Port } from "./types";
 import type { LiveShip } from "./tracking";
@@ -207,5 +207,15 @@ describe("crossing progress provenance", () => {
     const progress = crossingProgress(departure, from, to, live, now);
     expect(progress.ratio).toBe(1);
     expect(progress.source).toBe("Arrivée constatée (AIS)");
+  });
+});
+
+describe("replacedTime", () => {
+  it("ne barre un horaire que s'il a vraiment bougé", () => {
+    const iso = "2026-11-02T10:00:00Z";
+    expect(replacedTime({ scheduledIso: iso, shiftMinutes: 45 })).toBe(iso);
+    expect(replacedTime({ scheduledIso: iso, shiftMinutes: -20 })).toBe(iso);
+    expect(replacedTime({ scheduledIso: iso, shiftMinutes: 3 })).toBeNull();
+    expect(replacedTime({ scheduledIso: iso, shiftMinutes: null })).toBeNull();
   });
 });

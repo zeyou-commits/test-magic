@@ -73,6 +73,12 @@ export const tripEnd = (departure: TripDeparture) => {
 /** Après l'arrivée, la fiche reste 10 h pour laisser les passagers échanger, puis la suivante prend la place. */
 export const TRIP_GRACE_MS = 10 * 3_600_000;
 
+/** Les 2 dernières heures de la fiche : le temps restant, pour qu'elle ne disparaisse pas d'un coup. */
+export const tripClosingIn = (departure: TripDeparture, now = Date.now()) => {
+  const left = tripEnd(departure) + TRIP_GRACE_MS - now;
+  return left > 0 && left <= 2 * 3_600_000 ? left : null;
+};
+
 /**
  * Ma traversée du moment : la prochaine (ou celle en cours, jusqu'à 10 h après l'arrivée),
  * avec son trajet, ses ports et son bateau.

@@ -1259,7 +1259,16 @@ function Index() {
                     ? "itinerary"
                     : (panelMode ?? "map")
               }
-              onOpenMap={() => setPanelLevel((level) => (level === 0 ? 1 : 0))}
+              onOpenMap={() => {
+                // Plus bas dans la page, le bouton ramène d'abord à la carte, volet replié.
+                if (window.scrollY > 40) {
+                  setPanelLevel(0);
+                  // Après le repli du volet, qui décale encore la page.
+                  window.setTimeout(() => window.scrollTo({ top: 0, behavior: "instant" }), 60);
+                  return;
+                }
+                setPanelLevel((level) => (level === 0 ? 1 : 0));
+              }}
               onMoreToggle={resetToMap}
               onOpenDepartures={openMobileDepartures}
               onOpenSearch={openMobileSearch}

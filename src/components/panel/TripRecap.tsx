@@ -288,7 +288,9 @@ export function TripRecap({
                 {status.label}
               </span>
             </p>
-            {atSea || arrivalDue ? <p className="bw-trust">{progress.trustLabel}</p> : null}
+            {(atSea || arrivalDue) && (progress.trust === "live" || progress.trust === "aged") ? (
+              <p className="bw-trust">{progress.trustLabel}</p>
+            ) : null}
           </div>
           <div className="bw-recap__personal-actions">
             <TripShare

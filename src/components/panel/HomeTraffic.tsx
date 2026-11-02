@@ -14,7 +14,8 @@ import {
 } from "@/lib/ferry/queries";
 import { useFleet } from "@/lib/ferry/useFleet";
 import { useLiveShips } from "@/lib/ferry/useLiveShips";
-import { crossingProgress, ferryLeft } from "@/lib/ferry/crossingProgress";
+import { crossingProgress, ferryLeft, replacedTime } from "@/lib/ferry/crossingProgress";
+import { SeaChip } from "./SeaForecast";
 import { delayLabel, trackingTimes } from "@/lib/ferry/tracking";
 import { formatDateParts } from "@/lib/ferry/format";
 import { portTimeZone, dateKeyInZone } from "@/lib/ferry/time";
@@ -168,7 +169,7 @@ export function HomeTraffic({
                           kind="vessel"
                           targetId={c.vessel.id}
                           label={c.vessel.name}
-                          compact
+                          iconOnly
                           demo={c.vessel.is_demo}
                         />
                       </span>
@@ -193,11 +194,20 @@ export function HomeTraffic({
                       </button>
                     ))}
                   </div>
-                  {delayLabel(progress.times) ? (
-                    <b className="bw-delay-badge bw-delay-badge--compact">
-                      Retardé · {delayLabel(progress.times)}
-                    </b>
-                  ) : null}
+                  <div className="mt-1 flex flex-wrap items-center gap-1.5">
+                    <SeaChip
+                      departureId={c.departure.id}
+                      from={c.from}
+                      to={c.to}
+                      departureAt={c.departure.departure_at}
+                      arrivalAt={progress.times.arrival.iso}
+                    />
+                    {delayLabel(progress.times) ? (
+                      <b className="bw-delay-badge bw-delay-badge--compact">
+                        Retardé · {delayLabel(progress.times)}
+                      </b>
+                    ) : null}
+                  </div>
                   <div
                     className="bw-compact-track"
                     data-estimated={estimated || undefined}
@@ -216,13 +226,22 @@ export function HomeTraffic({
                   <div className="flex justify-between text-[11px] tabular-nums">
                     <span>
                       Départ <b>{time(c.times.departure.iso, c.from)}</b>
+                      {replacedTime(c.times.departure) ? (
+                        <s className="bw-old-time">{time(replacedTime(c.times.departure), c.from)}</s>
+                      ) : null}
                     </span>
-                    <span>
+                    <span className="text-right">
                       Arrivée <b>{time(c.times.arrival.iso, c.to)}</b>
                       {dayDelta > 0 && <sup className="ml-0.5 text-primary">+{dayDelta} j</sup>}
+                      {replacedTime(c.times.arrival) ? (
+                        <s className="bw-old-time">{time(replacedTime(c.times.arrival), c.to)}</s>
+                      ) : null}
                     </span>
                   </div>
-                  <p className="bw-trust">{progress.trustLabel}</p>
+                  {/* Sans position captée, le « ≈ » et les horaires barrés disent déjà tout. */}
+                  {progress.trust === "live" || progress.trust === "aged" || progress.trust === "observed" ? (
+                    <p className="bw-trust">{progress.trustLabel}</p>
+                  ) : null}
                 </div>
               </article>
             );
@@ -327,6 +346,13 @@ export function HomeTraffic({
                         {[event.vessel?.name, event.company?.name].filter(Boolean).join(" · ")}{" "}
                         <VesselAlertTag vesselId={event.vessel?.id} />
                       </span>
+                      <SeaChip
+                        departureId={event.departure.id}
+                        from={event.from}
+                        to={event.to}
+                        departureAt={event.departure.departure_at}
+                        arrivalAt={event.times.arrival.iso}
+                      />
                     </div>
                   </div>
                 );

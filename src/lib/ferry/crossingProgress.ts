@@ -19,12 +19,16 @@ export type TrackingTrust = "observed" | "live" | "aged" | "schedule" | "reporte
 
 export function trustLabel(trust: TrackingTrust, ageMinutes: number | null) {
   if (trust === "observed") return "Arrivée constatée";
-  if (trust === "updated") return "Horaires mis à jour · position non captée";
+  if (trust === "updated") return "Horaires mis à jour";
   if (trust === "reported") return "Estimation d’après un signalement validé par BledWay";
   if (trust === "live") return `Position réelle · ${formatAge(ageMinutes ?? 0)}`;
   if (trust === "aged") return `Estimation · dernière position ${formatAge(ageMinutes ?? 0)}`;
-  return "Estimation d’après l’horaire · position non captée";
+  return "Estimation d’après l’horaire";
 }
+
+/** L'ancien horaire à barrer : seulement s'il a vraiment bougé. */
+export const replacedTime = (time: { scheduledIso: string | null; shiftMinutes: number | null }) =>
+  Math.abs(time.shiftMinutes ?? 0) >= 5 ? time.scheduledIso : null;
 
 /** Ce que fait le navire, pour l'indicateur : animation à bord, et mention « estimé » quand c'est déduit. */
 export type CrossingScene =

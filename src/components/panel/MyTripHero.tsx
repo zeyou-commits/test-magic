@@ -1,5 +1,5 @@
 import { CabasImg } from "@/components/CabasImg";
-import { crossingProgress, ferryLeft } from "@/lib/ferry/crossingProgress";
+import { crossingProgress, ferryLeft, replacedTime } from "@/lib/ferry/crossingProgress";
 import { delayLabel, reportedCrossing } from "@/lib/ferry/tracking";
 import { MiniFerry } from "./MiniFerry";
 import { useLiveShips } from "@/lib/ferry/useLiveShips";
@@ -18,14 +18,14 @@ import {
   tripDirection,
 } from "@/lib/ferry/preparation";
 import { useAuth } from "@/hooks/useAuth";
-import { tripEnd, useMyTrip, type MyTrip } from "@/lib/ferry/myTrip";
+import { tripClosingIn, tripEnd, useMyTrip, type MyTrip } from "@/lib/ferry/myTrip";
 import {
   dockedSinceQuery,
   mergeTripSteps,
   myTripStatusQuery,
   tripStepsQuery,
 } from "@/lib/ferry/presence";
-import { portPassage } from "@/lib/ferry/portPassage";
+import { formatDocked, portPassage } from "@/lib/ferry/portPassage";
 import { PortPassage } from "./PortPassage";
 import { RoomButton } from "./LiveRoom";
 import type { FleetShip } from "@/lib/ferry/fleet";
@@ -117,6 +117,7 @@ export function MyTripHero({ onSelect }: { onSelect: (selection: Selection) => v
     now,
   });
   const inPassage = passage.active && !held && phase.phase !== "cancelled";
+  const closingIn = tripClosingIn(trip.departure, now);
   const zone = portTimeZone(trip.from);
   const arrivalZone = portTimeZone(trip.to);
   const departureIso = progress?.times.departure.iso ?? trip.departure.departure_at;
@@ -305,6 +306,11 @@ export function MyTripHero({ onSelect }: { onSelect: (selection: Selection) => v
                   {dayDelta > 0 ? <sup>+{dayDelta} j</sup> : null}
                 </span>
                 {delay ? <small>Retard {delay}</small> : null}
+                {replacedTime(progress.times.arrival) ? (
+                  <s className="bw-old-time">
+                    {formatDateParts(replacedTime(progress.times.arrival)!, arrivalZone).time}
+                  </s>
+                ) : null}
               </span>
             ) : null}
             {trip.vessel ? (
@@ -357,6 +363,15 @@ export function MyTripHero({ onSelect }: { onSelect: (selection: Selection) => v
           ) : null}
         </div>
       )}
+      {closingIn !== null ? (
+        <p className="bw-mytrip-hero__closing" role="status">
+          Voyage terminé : cette fiche se ferme{" "}
+          {closingIn < 60_000
+            ? "dans moins d’une minute"
+            : `dans ${formatDocked(Math.ceil(closingIn / 60_000))}`}
+          .
+        </p>
+      ) : null}
       {phase.phase !== "cancelled" ? (
         <RoomButton
           departureId={trip.departure.id}

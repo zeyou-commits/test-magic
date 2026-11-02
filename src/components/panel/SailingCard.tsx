@@ -23,6 +23,7 @@ import { formatAge, formatDelay, TRUSTED_SIGNAL_MINUTES, type LiveShip } from "@
 import { wallTimeInZone, zoneLabel } from "@/lib/ferry/time";
 import { ReportButton } from "./ReportButton";
 import { FollowButton } from "./FollowButton";
+import { SeaChip } from "./SeaForecast";
 import { ShareButtons } from "./ShareButtons";
 import { CompanyBadge } from "./CompanyBadge";
 import { estimateFerryFare, formatEuro, formatFareRange, useFareProfile } from "@/lib/ferry/pricing";
@@ -99,7 +100,14 @@ export function SailingCard({
               {relativeDay(sailing.dayKey, sailing.fromZone)}
             </span>
           </span>
-          <span className="flex items-center gap-1.5">
+          <span className="flex flex-wrap items-center justify-end gap-1.5">
+            <SeaChip
+              departureId={departure.id}
+              from={sailing.from}
+              to={sailing.to}
+              departureAt={departure.departure_at}
+              arrivalAt={departure.arrival_at}
+            />
             {recommended ? (
               <span className="inline-flex items-center gap-1 rounded-full bg-success/15 px-2 py-0.5 font-semibold text-success">
                 <Sparkles className="size-3" aria-hidden /> Recommandé

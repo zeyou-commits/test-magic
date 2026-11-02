@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { SEA_FORECAST_DAYS, seaForecastQuery, seaHeight, seaLevel } from "@/lib/ferry/seaState";
+import { peakWaves, SEA_FORECAST_DAYS, seaForecastQuery, seaHeight, seaLevel } from "@/lib/ferry/seaState";
 
 type Point = { latitude: number; longitude: number };
 const ORIGIN: Point = { latitude: 0, longitude: 0 };
@@ -20,28 +20,55 @@ export function useSeaPeak(
     end > now &&
     start - now < SEA_FORECAST_DAYS * 86_400_000;
   const { data } = useQuery({
-    ...seaForecastQuery(departureId ?? "", from ?? ORIGIN, to ?? ORIGIN, Math.max(start, now), end),
+    ...seaForecastQuery(from ?? ORIGIN, to ?? ORIGIN),
     enabled: useful,
+    select: (responses) => peakWaves(responses, Math.max(start, now), end),
   });
   return useful ? (data ?? null) : null;
 }
 
 export const isLivelySea = (peak: number) => peak >= 1.25;
 
-/** Le picto de la mer : la houle se creuse à mesure que la mer se forme. */
+/** Le picto de la mer : une pastille d'eau, la houle se creuse à mesure que la mer se forme. */
 export function SeaIcon({ peak, size = 24 }: { peak: number; size?: number }) {
   const { rank, id } = seaLevel(peak);
-  const swell = 1 + rank * 1.1;
-  const wave = (y: number) =>
-    `M1 ${y} q5.5 ${-swell} 11 0 t11 0 t11 0 t11 0`;
+  const swell = rank * 1.3;
+  // Motif de 24 unités répété : le glissement boucle sans saut.
+  const wave = (y: number) => `M0 ${y} q6 ${-swell} 12 0 t12 0 t12 0 t12 0 V24 H0 Z`;
   return (
-    <svg className="bw-sea-icon" data-level={id} width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden>
-      <g strokeWidth="2.3" strokeLinecap="round" stroke="currentColor">
-        <path className="bw-sea-icon__w1" d={wave(7)} opacity={rank >= 3 ? 1 : 0.35} />
-        <path className="bw-sea-icon__w2" d={wave(13)} opacity={rank >= 2 ? 1 : 0.5} />
-        <path className="bw-sea-icon__w3" d={wave(19)} />
-      </g>
+    <svg className="bw-sea-icon" data-level={id} width={size} height={size} viewBox="0 0 24 24" aria-hidden>
+      <path className="bw-sea-icon__back" d={wave(11)} />
+      <path className="bw-sea-icon__front" d={wave(15)} />
     </svg>
+  );
+}
+
+/** La mer d'une traversée, sur une ligne : présente partout, plus visible dès que la mer s'agite. */
+export function SeaChip({
+  departureId,
+  from,
+  to,
+  departureAt,
+  arrivalAt,
+}: {
+  departureId: string;
+  from: Point | null | undefined;
+  to: Point | null | undefined;
+  departureAt: string | undefined;
+  arrivalAt: string | null | undefined;
+}) {
+  const peak = useSeaPeak(departureId, from, to, departureAt, arrivalAt);
+  if (peak == null) return null;
+  const level = seaLevel(peak);
+  return (
+    <span
+      className="bw-sea-chip"
+      data-level={level.id}
+      title={`${level.label} prévue sur le trajet, prévision relue toutes les 30 min`}
+    >
+      <SeaIcon peak={peak} size={16} />
+      {level.short} · {seaHeight(peak)}
+    </span>
   );
 }
 

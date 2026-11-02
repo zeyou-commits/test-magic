@@ -45,10 +45,12 @@ export function peakWaves(responses: MarineResponse[], startMs: number, endMs: n
 /** Au-delà, la source ne prévoit plus rien. */
 export const SEA_FORECAST_DAYS = 7;
 
-export const seaForecastQuery = (id: string, from: Point, to: Point, startMs: number, endMs: number) =>
+/** Une seule requête par trajet, relue toutes les 30 min tant qu'une traversée est à l'écran. */
+export const seaForecastQuery = (from: Point, to: Point) =>
   queryOptions({
-    queryKey: ["sea-forecast", id],
-    staleTime: 60 * 60_000,
+    queryKey: ["sea-forecast", from.latitude, from.longitude, to.latitude, to.longitude],
+    staleTime: 30 * 60_000,
+    refetchInterval: 30 * 60_000,
     retry: false,
     queryFn: async () => {
       const points = crossingPoints(from, to);
@@ -60,6 +62,6 @@ export const seaForecastQuery = (id: string, from: Point, to: Point, startMs: nu
       const response = await fetch(url);
       if (!response.ok) throw new Error("Prévisions indisponibles");
       const data = (await response.json()) as MarineResponse | MarineResponse[];
-      return peakWaves(Array.isArray(data) ? data : [data], startMs, endMs);
+      return Array.isArray(data) ? data : [data];
     },
   });

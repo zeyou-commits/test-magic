@@ -10,6 +10,7 @@ import { portTimeZone } from "@/lib/ferry/time";
 import { TrackingTimes } from "./TrackingTimes";
 
 import { MiniFerry } from "./MiniFerry";
+import { SeaChip } from "./SeaForecast";
 
 export function CrossingCard({
   departure,
@@ -72,6 +73,15 @@ export function CrossingCard({
           {status}
         </span>
         {delay ? <b className="bw-delay-badge">Retardé · {delay}</b> : null}
+        {departure.status === "cancelled" ? null : (
+          <SeaChip
+            departureId={departure.id}
+            from={from}
+            to={to}
+            departureAt={departure.departure_at}
+            arrivalAt={progress.times.arrival.iso}
+          />
+        )}
         {isAdmin ? (
           <small>
             {progress.source}

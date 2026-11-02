@@ -6,6 +6,7 @@ import { DataUnavailableNotice } from "@/components/layout/DataUnavailableNotice
 import { SiteFooter, SiteHeader } from "@/components/layout/SiteLayout";
 import { CompanyBadge } from "@/components/panel/CompanyBadge";
 import { FollowButton } from "@/components/panel/FollowButton";
+import { SeaChip } from "@/components/panel/SeaForecast";
 import { MakeMyTrip } from "@/components/panel/MakeMyTrip";
 import { VesselAlertTag } from "@/components/panel/VesselAlert";
 import { safeExternalUrl } from "@/components/panel/shared";
@@ -685,6 +686,13 @@ function TripDetail({ row, arrivals, now }: { row: Row; arrivals: boolean; now: 
         <span className={`rounded-full px-2.5 py-1 text-xs font-bold ${toneClass[status.tone]}`}>
           {status.label}
         </span>
+        <SeaChip
+          departureId={departure.id}
+          from={from}
+          to={to}
+          departureAt={departure.departure_at}
+          arrivalAt={departure.arrival_at}
+        />
         <FollowButton
           kind="departure"
           targetId={departure.id}

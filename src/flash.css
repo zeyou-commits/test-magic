@@ -6905,30 +6905,78 @@ button.bw-tavatar:focus-visible {
 .bw-sea-icon {
   flex: none;
   overflow: hidden;
+  border-radius: 50%;
+  background: color-mix(in srgb, currentColor 16%, white);
+  color: #0f6fa8;
 }
 .bw-sea-icon path {
-  animation: bw-sea-swell 3.2s linear infinite;
+  fill: currentColor;
+  animation: bw-sea-swell 5s linear infinite;
 }
-.bw-sea-icon__w2 {
-  animation-delay: -1s !important;
-}
-.bw-sea-icon__w3 {
-  animation-delay: -2s !important;
+.bw-sea-icon__back {
+  opacity: 0.4;
+  animation-direction: reverse !important;
 }
 .bw-sea-icon[data-level="moderate"] path,
 .bw-sea-icon[data-level="rough"] path,
 .bw-sea-icon[data-level="high"] path {
-  animation-duration: 1.8s;
+  animation-duration: 2.6s;
 }
 @keyframes bw-sea-swell {
   to {
-    transform: translateX(-11px);
+    transform: translateX(-24px);
   }
 }
 @media (prefers-reduced-motion: reduce) {
   .bw-sea-icon path {
     animation: none;
   }
+}
+.bw-sea-chip {
+  --sea-ink: #0f6fa8;
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: 4px;
+  width: fit-content;
+  padding: 2px 8px 2px 3px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--sea-ink) 10%, white);
+  color: var(--sea-ink);
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1.3;
+  white-space: nowrap;
+}
+.bw-sea-chip .bw-sea-icon {
+  color: var(--sea-ink);
+}
+.bw-sea-chip[data-level="moderate"] {
+  --sea-ink: #b67c00;
+}
+.bw-sea-chip[data-level="rough"],
+.bw-sea-chip[data-level="high"] {
+  --sea-ink: #c8452a;
+}
+/* Mer agitée ou plus : la pastille passe en plein pour attirer l'œil. */
+.bw-sea-chip:is([data-level="moderate"], [data-level="rough"], [data-level="high"]) {
+  background: var(--sea-ink);
+  color: #ffffff;
+}
+.bw-old-time {
+  display: block;
+  color: var(--muted-foreground);
+  font-size: 10px;
+  font-weight: 500;
+  text-decoration: line-through;
+}
+.bw-mytrip-hero__closing {
+  flex: 1 1 100%;
+  grid-column: 1 / -1;
+  margin: 0;
+  font-size: 12px;
+  font-weight: 600;
+  opacity: 0.85;
 }
 .bw-sea-badge {
   position: absolute;

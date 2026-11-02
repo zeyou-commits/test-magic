@@ -92,7 +92,14 @@ export function SiteHeader() {
         <BrandLink />
         <nav aria-label="Navigation principale" className="bw-desktop-nav">
           {primary.slice(0, 2).map((item) => (
-            <Link key={item.to} to={item.to} activeOptions={{ exact: item.to === "/" }}>
+            <Link
+              key={item.to}
+              to={item.to}
+              activeOptions={{ exact: item.to === "/" }}
+              onClick={() => {
+                if (item.to === "/") window.scrollTo({ top: 0, behavior: "instant" });
+              }}
+            >
               {item.label}
             </Link>
           ))}

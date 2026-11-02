@@ -43,6 +43,8 @@ const footerLinks = [
   { to: "/contact", label: "Contact" },
   { to: "/mentions-legales", label: "Mentions légales" },
   { to: "/confidentialite", label: "Confidentialité" },
+  { to: "/charte", label: "Charte de la communauté" },
+  { to: "/conditions-utilisation", label: "Conditions d'utilisation" },
 ] as const;
 
 function openItineraryFromHeader() {
@@ -236,6 +238,8 @@ export function SiteFooter() {
         <div>
           <Link to="/mentions-legales">Mentions légales</Link>
           <Link to="/confidentialite">Confidentialité</Link>
+          <Link to="/conditions-utilisation">Conditions d'utilisation</Link>
+          <Link to="/charte">Charte</Link>
         </div>
       </div>
     </footer>

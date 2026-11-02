@@ -12,6 +12,7 @@ import { CHAT_SENT_EVENT, postToRoom, rememberPendingChat } from "@/lib/ferry/ch
 import { chatRefusal, roomExamples } from "@/lib/ferry/portPassage";
 import { MAX_MESSAGE } from "./LiveRoom";
 import { AuthorAvatar, StaffBadge, StaffTools, type ChatAuthor } from "./StaffChat";
+import { useCharterGate } from "./CharterGate";
 
 const supabase = typedSupabase as unknown as SupabaseClient;
 
@@ -25,10 +26,16 @@ type Entry = {
   same: number;
   reacted: boolean;
   edited?: boolean;
+  mentions?: Record<string, string>;
   replies?: Entry[];
 };
 type Question = Entry & { replies: Entry[] };
-type Feed = { access: "read" | "member" | "staff"; staff?: boolean; questions: Question[] };
+type Feed = {
+  access: "read" | "member" | "staff";
+  staff?: boolean;
+  charter?: boolean;
+  questions: Question[];
+};
 
 const missing = (code?: string) => code === "PGRST202" || code === "42883";
 const day = (iso: string) =>
@@ -72,7 +79,7 @@ function Line({
           </time>
         </p>
         <p>
-          <ChatText body={entry.body} />
+          <ChatText body={entry.body} mentions={entry.mentions} />
         </p>
         <p className="bw-room__actions">
           <button
@@ -171,6 +178,7 @@ export function LineQuestions({ routeId, title }: { routeId: string; title: stri
     },
     onSuccess: refresh,
   });
+  const gate = useCharterGate(feed.data?.charter);
   // Module pas encore activé en base : rien à afficher.
   if (feed.data === null) return null;
   const questions = feed.data?.questions ?? [];
@@ -181,7 +189,7 @@ export function LineQuestions({ routeId, title }: { routeId: string; title: stri
   const submit = (body: string, parent?: string) => {
     if (!body.trim()) return;
     if (user) {
-      send.mutate({ body, ...(parent ? { parent } : {}) });
+      gate.guard(() => send.mutate({ body, ...(parent ? { parent } : {}) }));
       return;
     }
     rememberPendingChat({ kind: "route", room: routeId, body, ...(parent ? { parent } : {}) });
@@ -189,6 +197,7 @@ export function LineQuestions({ routeId, title }: { routeId: string; title: stri
   };
   return (
     <section className="bw-room bw-room--questions" aria-label={title}>
+      {gate.dialog}
       <header>
         <CircleHelp size={17} aria-hidden />
         <h3>{title}</h3>

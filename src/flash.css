@@ -9882,3 +9882,107 @@ img[data-logo="dark"] {
   font-size: 11px;
   font-weight: 800;
 }
+
+/* Salon : mot d'accueil, mentions, sourdine, charte. */
+.bw-chat__welcome {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 6px;
+  padding: 8px 10px;
+  border-radius: 12px;
+  background: color-mix(in srgb, #0f6b4f 8%, white);
+  font-size: 13px;
+  line-height: 1.45;
+}
+.bw-chat__welcome p {
+  margin: 0;
+}
+.bw-chat__welcome-who b {
+  color: #0f6b4f;
+}
+.bw-chat__welcome a {
+  color: #0f6b4f;
+  font-weight: 700;
+  text-decoration: underline;
+}
+.bw-mention {
+  padding: 0 3px;
+  border-radius: 5px;
+  background: color-mix(in srgb, #1e5b7a 12%, transparent);
+  color: #1e5b7a;
+  font-weight: 700;
+}
+.bw-mention[data-me] {
+  background: #fde68a;
+  color: #7c4a03;
+}
+.bw-chat__mentions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0 0 6px;
+  padding: 0;
+  list-style: none;
+}
+.bw-chat__mentions button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 10px 3px 3px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: #ffffff;
+  font-size: 12.5px;
+  font-weight: 600;
+}
+.bw-chat__mute {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 999px;
+  color: var(--muted-foreground);
+}
+.bw-chat__mute[aria-pressed="true"] {
+  color: #c8452a;
+}
+.bw-charter {
+  display: grid;
+  gap: 10px;
+  max-width: 420px;
+}
+.bw-charter__icon {
+  color: #0f6b4f;
+}
+.bw-charter ul {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  padding-left: 18px;
+  font-size: 13.5px;
+  list-style: disc;
+}
+.bw-charter__note {
+  margin: 0;
+  color: var(--muted-foreground);
+  font-size: 12px;
+}
+.bw-charter__check {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  font-size: 13px;
+  line-height: 1.4;
+}
+.bw-charter__check input {
+  margin-top: 3px;
+}
+.bw-charter__check a {
+  color: #0f6b4f;
+  text-decoration: underline;
+}
+.bw-charter__error {
+  margin: 0;
+  color: #a3361f;
+  font-size: 12.5px;
+}

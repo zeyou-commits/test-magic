@@ -16,8 +16,10 @@ import { Route as AdminRouteImport } from './routes/admin'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as BarometrePrixRouteImport } from './routes/barometre-prix'
 import { Route as BateauxRouteImport } from './routes/bateaux'
+import { Route as CharteRouteImport } from './routes/charte'
 import { Route as CompagniesRouteImport } from './routes/compagnies'
 import { Route as CompteRouteImport } from './routes/compte'
+import { Route as ConditionsUtilisationRouteImport } from './routes/conditions-utilisation'
 import { Route as ConfidentialiteRouteImport } from './routes/confidentialite'
 import { Route as ContactRouteImport } from './routes/contact'
 import { Route as CovoiturageRouteImport } from './routes/covoiturage'
@@ -95,6 +97,11 @@ const BateauxRoute = BateauxRouteImport.update({
   path: '/bateaux',
   getParentRoute: () => rootRouteImport,
 } as any)
+const CharteRoute = CharteRouteImport.update({
+  id: '/charte',
+  path: '/charte',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const CompagniesRoute = CompagniesRouteImport.update({
   id: '/compagnies',
   path: '/compagnies',
@@ -103,6 +110,11 @@ const CompagniesRoute = CompagniesRouteImport.update({
 const CompteRoute = CompteRouteImport.update({
   id: '/compte',
   path: '/compte',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ConditionsUtilisationRoute = ConditionsUtilisationRouteImport.update({
+  id: '/conditions-utilisation',
+  path: '/conditions-utilisation',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ConfidentialiteRoute = ConfidentialiteRouteImport.update({
@@ -319,8 +331,10 @@ export interface FileRoutesByFullPath {
   '/auth': typeof AuthRoute
   '/barometre-prix': typeof BarometrePrixRoute
   '/bateaux': typeof BateauxRouteWithChildren
+  '/charte': typeof CharteRoute
   '/compagnies': typeof CompagniesRoute
   '/compte': typeof CompteRoute
+  '/conditions-utilisation': typeof ConditionsUtilisationRoute
   '/confidentialite': typeof ConfidentialiteRoute
   '/contact': typeof ContactRoute
   '/covoiturage': typeof CovoiturageRouteWithChildren
@@ -370,8 +384,10 @@ export interface FileRoutesByTo {
   '/admin': typeof AdminRoute
   '/auth': typeof AuthRoute
   '/barometre-prix': typeof BarometrePrixRoute
+  '/charte': typeof CharteRoute
   '/compagnies': typeof CompagniesRoute
   '/compte': typeof CompteRoute
+  '/conditions-utilisation': typeof ConditionsUtilisationRoute
   '/confidentialite': typeof ConfidentialiteRoute
   '/contact': typeof ContactRoute
   '/horaires': typeof HorairesRoute
@@ -418,8 +434,10 @@ export interface FileRoutesById {
   '/auth': typeof AuthRoute
   '/barometre-prix': typeof BarometrePrixRoute
   '/bateaux': typeof BateauxRouteWithChildren
+  '/charte': typeof CharteRoute
   '/compagnies': typeof CompagniesRoute
   '/compte': typeof CompteRoute
+  '/conditions-utilisation': typeof ConditionsUtilisationRoute
   '/confidentialite': typeof ConfidentialiteRoute
   '/contact': typeof ContactRoute
   '/covoiturage': typeof CovoiturageRouteWithChildren
@@ -472,8 +490,10 @@ export interface FileRouteTypes {
     | '/auth'
     | '/barometre-prix'
     | '/bateaux'
+    | '/charte'
     | '/compagnies'
     | '/compte'
+    | '/conditions-utilisation'
     | '/confidentialite'
     | '/contact'
     | '/covoiturage'
@@ -523,8 +543,10 @@ export interface FileRouteTypes {
     | '/admin'
     | '/auth'
     | '/barometre-prix'
+    | '/charte'
     | '/compagnies'
     | '/compte'
+    | '/conditions-utilisation'
     | '/confidentialite'
     | '/contact'
     | '/horaires'
@@ -570,8 +592,10 @@ export interface FileRouteTypes {
     | '/auth'
     | '/barometre-prix'
     | '/bateaux'
+    | '/charte'
     | '/compagnies'
     | '/compte'
+    | '/conditions-utilisation'
     | '/confidentialite'
     | '/contact'
     | '/covoiturage'
@@ -623,8 +647,10 @@ export interface RootRouteChildren {
   AuthRoute: typeof AuthRoute
   BarometrePrixRoute: typeof BarometrePrixRoute
   BateauxRoute: typeof BateauxRouteWithChildren
+  CharteRoute: typeof CharteRoute
   CompagniesRoute: typeof CompagniesRoute
   CompteRoute: typeof CompteRoute
+  ConditionsUtilisationRoute: typeof ConditionsUtilisationRoute
   ConfidentialiteRoute: typeof ConfidentialiteRoute
   ContactRoute: typeof ContactRoute
   CovoiturageRoute: typeof CovoiturageRouteWithChildren
@@ -707,6 +733,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof BateauxRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/charte': {
+      id: '/charte'
+      path: '/charte'
+      fullPath: '/charte'
+      preLoaderRoute: typeof CharteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/compagnies': {
       id: '/compagnies'
       path: '/compagnies'
@@ -719,6 +752,13 @@ declare module '@tanstack/react-router' {
       path: '/compte'
       fullPath: '/compte'
       preLoaderRoute: typeof CompteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/conditions-utilisation': {
+      id: '/conditions-utilisation'
+      path: '/conditions-utilisation'
+      fullPath: '/conditions-utilisation'
+      preLoaderRoute: typeof ConditionsUtilisationRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/confidentialite': {
@@ -1097,8 +1137,10 @@ const rootRouteChildren: RootRouteChildren = {
   AuthRoute: AuthRoute,
   BarometrePrixRoute: BarometrePrixRoute,
   BateauxRoute: BateauxRouteWithChildren,
+  CharteRoute: CharteRoute,
   CompagniesRoute: CompagniesRoute,
   CompteRoute: CompteRoute,
+  ConditionsUtilisationRoute: ConditionsUtilisationRoute,
   ConfidentialiteRoute: ConfidentialiteRoute,
   ContactRoute: ContactRoute,
   CovoiturageRoute: CovoiturageRouteWithChildren,

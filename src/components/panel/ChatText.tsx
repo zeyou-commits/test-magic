@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { CabasImg } from "@/components/CabasImg";
 import { moodsQuery, type MoodRow } from "@/lib/community/travellers";
 import { chatParts, emoteBank, emoteDictionary } from "@/lib/ferry/chatEmotes";
+import { MENTION_PATTERN } from "@/lib/ferry/chat";
 
 function useActiveMoods(): MoodRow[] {
   const moods = useQuery(moodsQuery).data;
@@ -13,9 +14,37 @@ export function useChatEmotes() {
   return emoteBank(useActiveMoods());
 }
 
-/** Un message : le texte, avec les cabas de la banque à la place de leurs codes. */
-export function ChatText({ body, size = 26 }: { body: string; size?: number }) {
-  const parts = chatParts(body, emoteDictionary(useActiveMoods()));
+/** Un message : le texte, avec les cabas de la banque à la place de leurs codes et les @mentions. */
+export function ChatText({
+  body,
+  size = 26,
+  mentions,
+  myHandle,
+}: {
+  body: string;
+  size?: number;
+  /** Identifiant → pseudo des personnes mentionnées. */
+  mentions?: Record<string, string> | undefined;
+  myHandle?: string | undefined;
+}) {
+  const dictionary = emoteDictionary(useActiveMoods());
+  // Une mention inconnue (compte supprimé) reste discrète : « @voyageur ».
+  const pieces = body.split(new RegExp(MENTION_PATTERN.source));
+  if (pieces.length > 1)
+    return (
+      <>
+        {pieces.map((piece, index) =>
+          index % 2 ? (
+            <b key={index} className="bw-mention" data-me={piece === myHandle || undefined}>
+              @{mentions?.[piece] ?? "voyageur"}
+            </b>
+          ) : piece ? (
+            <ChatText key={index} body={piece} size={size} />
+          ) : null,
+        )}
+      </>
+    );
+  const parts = chatParts(body, dictionary);
   const alone =
     parts.length > 0 && parts.every((part) => part.type === "emote" || !part.text.trim());
   return (

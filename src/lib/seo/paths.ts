@@ -31,6 +31,8 @@ export const staticSitemapEntries = [
     "/contact",
     "/mentions-legales",
     "/confidentialite",
+    "/charte",
+    "/conditions-utilisation",
   ].map((path) => ({ path, lastmod: null })),
   ...editorialPaths.map((path) => ({ path, lastmod: EDITORIAL_DATE })),
 ];

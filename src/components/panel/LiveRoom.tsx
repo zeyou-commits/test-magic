@@ -2,6 +2,9 @@ import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { queryOptions, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   ArrowDown,
+  AtSign,
+  Bell,
+  BellOff,
   CornerDownRight,
   Flag,
   Mail,
@@ -25,10 +28,13 @@ import {
   CHAT_SENT_EVENT,
   ENTER_ROOM_EVENT,
   enterRoom,
+  muteRoom,
   postToRoom,
   rememberPendingChat,
   roomWanted,
+  withMentions,
 } from "@/lib/ferry/chat";
+import { useCharterGate } from "./CharterGate";
 import { currentPosition } from "@/lib/ferry/community";
 import { chatRefusal, roomExamples, type RoomMoment } from "@/lib/ferry/portPassage";
 import { emoteToken, UNICODE_EMOTES } from "@/lib/ferry/chatEmotes";
@@ -50,6 +56,8 @@ type Message = {
   /** Fil du port : la traversée d'où vient le message. */
   crossing?: string | null;
   edited?: boolean;
+  /** Identifiant → pseudo des personnes mentionnées. */
+  mentions?: Record<string, string>;
   reply_to?: { id: string; body: string; me: boolean; pseudo: string } | null;
   created_at: string;
   me: boolean;
@@ -61,9 +69,19 @@ type Feed = {
   access: "read" | "member" | "position" | "staff";
   /** La personne fait partie de l'équipe : outils de modération et message officiel. */
   staff?: boolean;
+  /** Charte déjà acceptée par ce compte. */
+  charter?: boolean;
+  /** Salon en sourdine : pas de notification venue de lui. */
+  muted?: boolean;
   messages: Message[];
 };
 
+/** Le compte officiel, pour le mot d'accueil. */
+const BLEDWAY = {
+  handle: "bledway",
+  pseudo: "BledWay",
+  official: true,
+} as ChatAuthor;
 const PLACE = { aboard: "à bord", port: "au port", trip: "passager", staff: "équipe BledWay" } as const;
 const missing = (code?: string) => code === "PGRST202" || code === "42883";
 /** En dessous, on considère que la personne suit le direct : le fil descend tout seul. */
@@ -169,7 +187,10 @@ function LiveChat({
   closed,
   people,
   myHandle,
+  myPseudo,
   staff = false,
+  charter,
+  muted = false,
 }: {
   kind: RoomKind;
   room: string;
@@ -180,13 +201,19 @@ function LiveChat({
   closed: boolean;
   people: Present[];
   myHandle: string | undefined;
+  myPseudo?: string | undefined;
   staff?: boolean;
+  charter?: boolean | undefined;
+  muted?: boolean;
 }) {
   const { user } = useAuth();
   const request = useTravelAction();
   const client = useQueryClient();
   const [text, setText] = useState("");
   const [official, setOfficial] = useState(false);
+  // Les @Pseudo choisis dans la liste, transformés en mentions à l'envoi.
+  const chosen = useRef(new Map<string, string>());
+  const gate = useCharterGate(charter);
   const [selected, setSelected] = useState<string | null>(null);
   const [unread, setUnread] = useState(0);
   const [replyTo, setReplyTo] = useState<Message | null>(null);
@@ -229,7 +256,15 @@ function LiveChat({
     setUnread(0);
   };
   const send = useMutation({
-    mutationFn: () => postToRoom(kind, room, text, undefined, replyTo?.id, staff && official),
+    mutationFn: () =>
+      postToRoom(
+        kind,
+        room,
+        withMentions(text, chosen.current),
+        undefined,
+        replyTo?.id,
+        staff && official,
+      ),
     onSuccess: () => {
       setText("");
       setReplyTo(null);
@@ -285,7 +320,7 @@ function LiveChat({
   const submit = () => {
     if (!text.trim()) return;
     if (canWrite) {
-      send.mutate();
+      gate.guard(() => send.mutate());
       return;
     }
     rememberPendingChat({ kind, room, body: text, ...(replyTo ? { replyTo: replyTo.id } : {}) });
@@ -302,7 +337,35 @@ function LiveChat({
         : { type: "chat", label: title },
     );
   };
-  const problem = send.error ?? react.error ?? report.error;
+  const mute = useMutation({
+    mutationFn: () => muteRoom(kind, room, !muted),
+    onSuccess: refresh,
+  });
+  const problem = send.error ?? react.error ?? report.error ?? mute.error;
+  // Qui peut être mentionné : les auteurs du salon et les présents, sauf soi et le compte officiel.
+  const mentionable = [
+    ...new Map(
+      [...messages.map((message) => message.author as ChatAuthor), ...named.map((person) => person.card as ChatAuthor)]
+        .filter((card) => card && !card.official && card.handle !== myHandle)
+        .map((card) => [card.handle, card] as const),
+    ).values(),
+  ];
+  const typing = /(?:^|\s)@([^\s@]*)$/.exec(text);
+  const suggestions = typing
+    ? mentionable
+        .filter((card) => card.pseudo.toLowerCase().includes(typing[1]!.toLowerCase()))
+        .slice(0, 5)
+    : [];
+  const mention = (card: TravellerCard, replace: boolean) => {
+    chosen.current.set(card.pseudo, card.handle);
+    setText((value) =>
+      (replace
+        ? value.replace(/@([^\s@]*)$/, `@${card.pseudo} `)
+        : `${value}${value && !value.endsWith(" ") ? " " : ""}@${card.pseudo} `
+      ).slice(0, MAX_MESSAGE),
+    );
+    inputRef.current?.focus();
+  };
   if (dmTo)
     return (
       <DmRequest
@@ -318,6 +381,7 @@ function LiveChat({
   if (dmView) return <PrivateMessages onBack={() => setDmView(null)} />;
   return (
     <div className="bw-chat">
+      {gate.dialog}
       <header className="bw-chat__head">
         {user && inbox !== null ? (
           <button
@@ -328,6 +392,21 @@ function LiveChat({
           >
             <Mail size={19} aria-hidden />
             {dmUnread ? <b>{dmUnread}</b> : null}
+          </button>
+        ) : null}
+        {user ? (
+          <button
+            type="button"
+            className="bw-chat__mute"
+            aria-pressed={muted}
+            disabled={mute.isPending}
+            title={muted ? "Réactiver les notifications de ce salon" : "Mettre ce salon en sourdine"}
+            aria-label={
+              muted ? "Réactiver les notifications de ce salon" : "Mettre ce salon en sourdine"
+            }
+            onClick={() => mute.mutate()}
+          >
+            {muted ? <BellOff size={18} aria-hidden /> : <Bell size={18} aria-hidden />}
           </button>
         ) : null}
         <span className="bw-chat__live">
@@ -394,6 +473,28 @@ function LiveChat({
           if (following.current) setUnread(0);
         }}
       >
+        {/* Le mot d'accueil de BledWay : affiché à chacun, jamais enregistré dans le fil. */}
+        <li className="bw-chat__welcome">
+          <AuthorAvatar author={BLEDWAY} size={26} />
+          <div>
+            <p className="bw-chat__welcome-who">
+              <b>BledWay</b>
+              <StaffBadge author={BLEDWAY} />
+            </p>
+            <p>
+              Salam{myPseudo ? ` ${myPseudo}` : ""} et bienvenue ! Ici on s'entraide entre
+              voyageurs :{" "}
+              {kind === "port"
+                ? "la file, le parking, l'ambiance sur le port"
+                : "la file au port, l'ambiance à bord, l'état de la mer"}
+              . Restez courtois, ne partagez ni numéro ni lien, et signalez plutôt que de répondre
+              à un message gênant.{" "}
+              <a href="/charte" target="_blank" rel="noreferrer">
+                Lire la charte
+              </a>
+            </p>
+          </div>
+        </li>
         {lines.length ? null : (
           <li className="bw-chat__hello">Soyez le premier ou la première à écrire ici.</li>
         )}
@@ -401,7 +502,11 @@ function LiveChat({
           <li
             key={message.id}
             data-me={message.me || undefined}
-            data-mention={message.reply_to?.me || undefined}
+            data-mention={
+              message.reply_to?.me ||
+              Boolean(myHandle && message.body.includes(`@[${myHandle}]`)) ||
+              undefined
+            }
           >
             <AuthorAvatar author={message.author} size={26} />
             <div>
@@ -427,7 +532,7 @@ function LiveChat({
                   <small data-place={message.place}>{message.crossing ?? PLACE[message.place]}</small>
                 )}
                 <span data-big={onlyEmotes(message.body) || undefined}>
-                  <ChatText body={message.body} />
+                  <ChatText body={message.body} mentions={message.mentions} myHandle={myHandle} />
                 </span>
                 {metHere.has(message.author.handle) && !message.me ? (
                   <small className="bw-chat__met">déjà croisé</small>
@@ -464,6 +569,17 @@ function LiveChat({
                   >
                     <ThumbsUp size={13} aria-hidden /> Pareil ici
                   </button>
+                  {canWrite && !closed && !message.me && !message.author.official ? (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        mention(message.author, false);
+                        setSelected(null);
+                      }}
+                    >
+                      <AtSign size={13} aria-hidden /> Mentionner
+                    </button>
+                  ) : null}
                   {canDm && !message.me && !message.author.official ? (
                     <button type="button" onClick={() => setDmTo(message.author)}>
                       <Mail size={13} aria-hidden /> Message privé
@@ -565,6 +681,18 @@ function LiveChat({
               ))}
             </p>
           )}
+          {suggestions.length ? (
+            <ul className="bw-chat__mentions" aria-label="Mentionner un voyageur">
+              {suggestions.map((card) => (
+                <li key={card.handle}>
+                  <button type="button" onClick={() => mention(card, true)}>
+                    <TravellerAvatar card={card} size={22} mood={false} />
+                    {card.pseudo}
+                  </button>
+                </li>
+              ))}
+            </ul>
+          ) : null}
           {/:[a-z0-9_]+:/.test(text) ? (
             <p className="bw-chat__draft">
               <ChatText body={text} size={22} />
@@ -666,7 +794,7 @@ export function LiveRoom({
             <li key={message.id}>
               <b>{message.me && !message.author.official ? "Vous" : message.author.pseudo}</b>{" "}
               <StaffBadge author={message.author} />{" "}
-              <ChatText body={message.body} size={18} />
+              <ChatText body={message.body} size={18} mentions={message.mentions} />
             </li>
           ))}
         </ol>
@@ -687,6 +815,9 @@ export function LiveRoom({
             closed={closed}
             people={people}
             myHandle={card?.handle}
+            myPseudo={card?.pseudo}
+            charter={feed.data?.charter}
+            muted={Boolean(feed.data?.muted)}
             staff={Boolean(feed.data?.staff)}
           />
         </DialogContent>

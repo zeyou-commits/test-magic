@@ -67,7 +67,10 @@ export function StaffTools({ id, author }: { id: string; author: ChatAuthor }) {
   });
   const sanction = useMutation({
     mutationFn: async (days: 1 | 7) => {
-      const { data, error } = await supabase.rpc("bw_chat_sanction", { p_message: id, p_days: days });
+      const { data, error } = await supabase.rpc("bw_chat_sanction", {
+        p_message: id,
+        p_days: days,
+      });
       if (error) throw new Error("Action impossible pour le moment. Réessayez.");
       const result = data as { ok: boolean; refused?: string };
       if (!result.ok) throw new Error(chatRefusal(result.refused ?? ""));

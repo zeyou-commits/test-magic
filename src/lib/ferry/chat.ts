@@ -91,6 +91,33 @@ async function ownMessage(fn: string, args: Record<string, string>) {
 }
 export const editOwnMessage = (id: string, body: string) =>
   ownMessage("bw_chat_edit", { p_message: id, p_body: body });
+/** Version de la charte en vigueur, la même que côté serveur. */
+export const CHARTER_VERSION = 1;
+export async function acceptCharter() {
+  const { data, error } = await supabase.rpc("bw_charter_accept", { p_version: CHARTER_VERSION });
+  if (error) throw new Error("Acceptation non enregistrée. Réessayez.");
+  const result = data as { ok: boolean; refused?: string };
+  if (!result.ok) throw new Error(chatRefusal(result.refused ?? ""));
+}
+
+/** Sourdine d'un salon : plus de notification de mention ni de réponse venue de lui. */
+export async function muteRoom(kind: ChatKind, room: string, muted: boolean) {
+  const { error } = await supabase.rpc("bw_chat_mute", { p_kind: kind, p_room: room, p_muted: muted });
+  if (error) throw new Error("Réglage non enregistré. Réessayez.");
+}
+
+/** Une mention s'écrit @[identifiant] dans le message, et s'affiche @Pseudo. */
+export const mentionToken = (handle: string) => `@[${handle}]`;
+export const MENTION_PATTERN = /@\[([0-9a-f]{10})\]/g;
+
+/** Les @Pseudo choisis dans la liste deviennent des mentions au moment de l'envoi. */
+export function withMentions(text: string, chosen: Map<string, string>) {
+  let result = text;
+  for (const [pseudo, handle] of chosen)
+    result = result.split(`@${pseudo}`).join(mentionToken(handle));
+  return result;
+}
+
 export const deleteOwnMessage = (id: string) => ownMessage("bw_chat_delete", { p_message: id });
 
 // Ouvert depuis une invitation : on va droit au salon. Lu au chargement, l'adresse est réécrite ensuite.

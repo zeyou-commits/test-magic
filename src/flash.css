@@ -6905,26 +6905,19 @@ button.bw-tavatar:focus-visible {
 .bw-sea-icon {
   flex: none;
   overflow: hidden;
-  border-radius: 50%;
-  background: color-mix(in srgb, currentColor 16%, white);
-  color: #0f6fa8;
 }
 .bw-sea-icon path {
-  fill: currentColor;
-  animation: bw-sea-swell 5s linear infinite;
+  animation: bw-sea-swell 2.4s linear infinite;
 }
-.bw-sea-icon__back {
-  opacity: 0.4;
-  animation-direction: reverse !important;
+.bw-sea-icon__w2 {
+  animation-duration: 3s !important;
 }
-.bw-sea-icon[data-level="moderate"] path,
-.bw-sea-icon[data-level="rough"] path,
-.bw-sea-icon[data-level="high"] path {
-  animation-duration: 2.6s;
+.bw-sea-icon__w3 {
+  animation-duration: 3.6s !important;
 }
 @keyframes bw-sea-swell {
   to {
-    transform: translateX(-24px);
+    transform: translateX(-6px);
   }
 }
 @media (prefers-reduced-motion: reduce) {
@@ -10442,4 +10435,174 @@ img[data-logo="dark"] {
   .bw-map-bubble {
     max-width: 170px;
   }
+}
+
+/* Ma traversée allégée : le compte à rebours sur une ligne, la mer en petit, puis
+   la préparation et le salon côte à côte. */
+.bw-mytrip-hero__status {
+  align-items: center;
+}
+.bw-mytrip-hero__status .bw-mytrip-hero__clock {
+  padding: 0;
+  background: none;
+  gap: 6px;
+  justify-content: flex-start;
+}
+.bw-mytrip-hero__status .bw-mytrip-hero__clock strong {
+  font-size: 18px;
+}
+.bw-mytrip-hero__status .bw-mytrip-hero__sea {
+  gap: 4px;
+  padding: 3px 9px 3px 6px;
+  border-radius: 999px;
+}
+.bw-mytrip-hero__status .bw-mytrip-hero__sea b {
+  font-size: 12px;
+}
+.bw-mytrip-hero__actions {
+  display: flex;
+  grid-column: 1 / -1;
+  gap: 8px;
+}
+.bw-mytrip-hero__actions:empty {
+  display: none;
+}
+.bw-mytrip-hero__actions > * {
+  flex: 1 1 0;
+  min-width: 0;
+}
+.bw-mytrip-hero__actions .bw-mytrip-hero__prep {
+  min-height: 36px;
+  font-size: 12px;
+}
+.bw-mytrip-hero__actions .bw-passage__room {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 36px;
+  margin: 0;
+  padding: 0 10px;
+  overflow: hidden;
+  border-radius: 10px;
+  background: #ffffff1f;
+  color: #ffffff;
+  font-size: 12px;
+  font-weight: 700;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Choisir sa traversée : par jour, l'heure en avant, des lignes aérées. */
+.bw-room-picker {
+  gap: 12px;
+  width: min(440px, calc(100vw - 24px));
+  padding: 20px 18px 16px;
+  border-radius: 22px;
+  grid-template-rows: auto auto minmax(0, 1fr) auto;
+}
+.bw-room-picker__intro {
+  margin: 2px 0 0;
+  color: var(--muted-foreground);
+  font-size: 13px;
+}
+.bw-room-picker__search {
+  border: 0;
+  border-radius: 999px;
+  background: #f1f5f3;
+}
+.bw-room-picker__search:focus-within {
+  box-shadow: 0 0 0 2px #0e7a4333;
+}
+.bw-room-picker__list {
+  min-height: 0;
+  overflow-y: auto;
+  margin: 0 -6px;
+  padding: 0 6px;
+  scrollbar-width: thin;
+}
+.bw-room-picker__list section + section {
+  margin-top: 12px;
+}
+.bw-room-picker__list h3 {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  margin: 0;
+  padding: 4px 2px 6px;
+  background: var(--background, #ffffff);
+  color: #0e6b3b;
+  font-size: 11.5px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.bw-room-picker__list ul {
+  display: grid;
+  gap: 6px;
+  overflow: visible;
+}
+.bw-room-picker__list li button {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 48px;
+  padding: 8px 12px;
+  border: 1px solid #e6eeea;
+  border-bottom: 1px solid #e6eeea;
+  border-radius: 14px;
+  background: #ffffff;
+  transition:
+    border-color 0.15s ease,
+    background-color 0.15s ease,
+    transform 0.15s ease;
+}
+.bw-room-picker__list li button:hover {
+  border-color: #b9dcc7;
+  background: #f4faf6;
+}
+.bw-room-picker__list li button:active {
+  transform: scale(0.99);
+}
+.bw-room-picker__list li button[aria-current="true"] {
+  border-color: #0e7a43;
+  background: #eef8f2;
+}
+.bw-room-picker__list time {
+  flex: none;
+  min-width: 46px;
+  padding: 3px 0;
+  border-radius: 8px;
+  background: #eef5f1;
+  color: #16324a;
+  font-size: 13px;
+  font-weight: 800;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+.bw-room-picker__list strong {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  color: #16324a;
+  font-size: 14.5px;
+  font-weight: 700;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.bw-room-picker__list b {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: 3px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: #0e7a43;
+  color: #ffffff;
+  font-size: 11px;
+  font-weight: 800;
+}
+.bw-room-picker__global {
+  border-top: 0;
+  padding-top: 4px;
 }

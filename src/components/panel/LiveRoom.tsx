@@ -173,7 +173,7 @@ export function RoomButton({ departureId, onOpen }: { departureId: string; onOpe
         enterRoom("crossing", departureId);
       }}
     >
-      <MessagesSquare size={15} aria-hidden /> Salon de la traversée
+      <MessagesSquare size={15} aria-hidden /> Salon
       {count ? ` · ${count === 80 ? "80+" : count} message${count > 1 ? "s" : ""}` : ""}
     </button>
   );

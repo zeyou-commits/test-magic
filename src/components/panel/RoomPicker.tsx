@@ -3,11 +3,12 @@ import { afterOverlayClose, useBackClose } from "@/lib/ferry/backStack";
 import { enterRoom } from "@/lib/ferry/chat";
 import { revealBlock } from "./ActionHub";
 import { useQuery } from "@tanstack/react-query";
-import { CircleHelp, Search } from "lucide-react";
+import { CircleHelp, MessagesSquare, Search } from "lucide-react";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { supabase as typedSupabase } from "@/integrations/supabase/client";
-import { formatDateTime } from "@/lib/ferry/format";
+import { formatDateParts, formatDateTime } from "@/lib/ferry/format";
+import { dateKeyInZone } from "@/lib/ferry/time";
 import { pickerRows, searchRows } from "@/lib/ferry/portPassage";
 import { portsQuery, routesQuery } from "@/lib/ferry/queries";
 import { portTimeZone } from "@/lib/ferry/time";
@@ -67,6 +68,34 @@ export function RoomPicker({
     [departures, routes, ports],
   );
   const shown = searchRows(rows, text);
+  // Regroupés par jour, l'heure en avant : on retrouve son bateau d'un coup d'œil.
+  const departureOf = new Map(departures.map((item) => [item.id, item]));
+  const routeOf = new Map(routes.map((item) => [item.id, item]));
+  const dayLabel = (key: string) => {
+    const today = dateKeyInZone(new Date().toISOString(), "Europe/Paris");
+    const tomorrow = dateKeyInZone(new Date(Date.now() + 86_400_000).toISOString(), "Europe/Paris");
+    if (key === today) return "Aujourd'hui";
+    if (key === tomorrow) return "Demain";
+    const label = new Intl.DateTimeFormat("fr-FR", {
+      weekday: "long",
+      day: "numeric",
+      month: "long",
+      timeZone: "UTC",
+    }).format(new Date(`${key}T12:00:00Z`));
+    return label.charAt(0).toUpperCase() + label.slice(1);
+  };
+  const days = new Map<string, { row: (typeof shown)[number]; time: string }[]>();
+  for (const row of shown) {
+    const departure = departureOf.get(row.id);
+    if (!departure) continue;
+    const route = routeOf.get(departure.route_id);
+    const zone = portTimeZone(ports.find((port) => port.id === route?.departure_port_id));
+    const key = dateKeyInZone(departure.departure_at, zone);
+    days.set(key, [
+      ...(days.get(key) ?? []),
+      { row, time: formatDateParts(departure.departure_at, zone).time },
+    ]);
+  }
   const lines = [...new Map(rows.map((row) => [row.routeId, row.line])).entries()];
   useBackClose(open, () => {
     onOpenChange(false);
@@ -85,6 +114,11 @@ export function RoomPicker({
             <DialogTitle>
               {questionsFirst ? "Choisir votre ligne" : "Choisir votre traversée"}
             </DialogTitle>
+            <p className="bw-room-picker__intro">
+              {questionsFirst
+                ? "Posez votre question aux voyageurs de la ligne."
+                : "Rejoignez le salon des voyageurs de votre bateau."}
+            </p>
           </DialogHeader>
           <label className="bw-room-picker__search">
             <Search size={16} aria-hidden />
@@ -96,36 +130,41 @@ export function RoomPicker({
             />
           </label>
           {shown.length ? (
-            <ul>
-              {shown.map((row) => {
-                const count = counts.data?.get(row.id) ?? 0;
-                return (
-                  <li key={row.id}>
-                    <button
-                      type="button"
-                      aria-current={row.id === currentId || undefined}
-                      onClick={() => {
-                        close();
-                        afterOverlayClose(() => {
-                          onSelect({ type: "departure", id: row.id });
-                          enterRoom("crossing", row.id);
-                        });
-                      }}
-                    >
-                      <span>
-                        <strong>{row.line}</strong>
-                        <small>{row.when}</small>
-                      </span>
-                      {count ? (
-                        <b>
-                          {count} message{count > 1 ? "s" : ""}
-                        </b>
-                      ) : null}
-                    </button>
-                  </li>
-                );
-              })}
-            </ul>
+            <div className="bw-room-picker__list">
+              {[...days.entries()].map(([key, items]) => (
+                <section key={key}>
+                  <h3>{dayLabel(key)}</h3>
+                  <ul>
+                    {items.map(({ row, time }) => {
+                      const count = counts.data?.get(row.id) ?? 0;
+                      return (
+                        <li key={row.id}>
+                          <button
+                            type="button"
+                            aria-current={row.id === currentId || undefined}
+                            onClick={() => {
+                              close();
+                              afterOverlayClose(() => {
+                                onSelect({ type: "departure", id: row.id });
+                                enterRoom("crossing", row.id);
+                              });
+                            }}
+                          >
+                            <time>{time}</time>
+                            <strong>{row.line}</strong>
+                            {count ? (
+                              <b>
+                                <MessagesSquare size={12} aria-hidden /> {count}
+                              </b>
+                            ) : null}
+                          </button>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                </section>
+              ))}
+            </div>
           ) : (
             <p className="bw-room__empty">Aucune traversée ne correspond.</p>
           )}

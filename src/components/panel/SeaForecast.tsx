@@ -29,16 +29,25 @@ export function useSeaPeak(
 
 export const isLivelySea = (peak: number) => peak >= 1.25;
 
-/** Le picto de la mer : une pastille d'eau, la houle se creuse à mesure que la mer se forme. */
+/**
+ * Le picto de la mer : trois vagues qui ondulent, plus creusées et plus nombreuses quand la mer
+ * se forme. Le motif se répète tous les 6 points : le glissement boucle sans à-coup.
+ */
 export function SeaIcon({ peak, size = 24 }: { peak: number; size?: number }) {
   const { rank, id } = seaLevel(peak);
-  const swell = rank * 1.3;
-  // Motif de 24 unités répété : le glissement boucle sans saut.
-  const wave = (y: number) => `M0 ${y} q6 ${-swell} 12 0 t12 0 t12 0 t12 0 V24 H0 Z`;
+  const swell = 0.5 + rank * 0.45;
+  const wave = (y: number) => {
+    let d = `M-6 ${y}`;
+    for (let x = -6; x < 30; x += 6) d += ` q1.5 ${-swell} 3 0 t3 0`;
+    return d;
+  };
   return (
-    <svg className="bw-sea-icon" data-level={id} width={size} height={size} viewBox="0 0 24 24" aria-hidden>
-      <path className="bw-sea-icon__back" d={wave(11)} />
-      <path className="bw-sea-icon__front" d={wave(15)} />
+    <svg className="bw-sea-icon" data-level={id} width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden>
+      <g stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+        <path className="bw-sea-icon__w1" d={wave(6.5)} opacity={rank >= 3 ? 1 : 0.35} />
+        <path className="bw-sea-icon__w2" d={wave(12)} opacity={rank >= 2 ? 1 : 0.6} />
+        <path className="bw-sea-icon__w3" d={wave(17.5)} />
+      </g>
     </svg>
   );
 }

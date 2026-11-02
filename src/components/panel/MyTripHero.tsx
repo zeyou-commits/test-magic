@@ -241,13 +241,8 @@ export function MyTripHero({ onSelect }: { onSelect: (selection: Selection) => v
               data-level={seaLevel(seaPeak).id}
               aria-label={`${seaLevel(seaPeak).label} prévue`}
             >
-              <SeaIcon peak={seaPeak} size={24} />
-              <span>
-                <small>Mer</small>
-                <b>
-                  {seaLevel(seaPeak).short} · {seaHeight(seaPeak)}
-                </b>
-              </span>
+              <SeaIcon peak={seaPeak} size={18} />
+              <b>{seaHeight(seaPeak)}</b>
             </div>
           ) : null}
         </div>
@@ -330,22 +325,30 @@ export function MyTripHero({ onSelect }: { onSelect: (selection: Selection) => v
           </div>
         </div>
       ) : null}
-      {prep && prepOpen && !underway ? (
-        <button
-          type="button"
-          className="bw-mytrip-hero__prep"
-          onClick={() => {
-            requestPrepFocus(trip.departure.id);
-            onSelect({ type: "departure", id: trip.departure.id });
-          }}
-        >
-          <b>
-            {prep.done}/{prep.total}
-          </b>
-          <span>{prep.next ? `À faire : ${prep.next.label}` : "Préparation terminée"}</span>
-          <ArrowRight size={14} aria-hidden />
-        </button>
-      ) : null}
+      <div className="bw-mytrip-hero__actions">
+        {prep && prepOpen && !underway ? (
+          <button
+            type="button"
+            className="bw-mytrip-hero__prep"
+            onClick={() => {
+              requestPrepFocus(trip.departure.id);
+              onSelect({ type: "departure", id: trip.departure.id });
+            }}
+          >
+            <b>
+              {prep.done}/{prep.total}
+            </b>
+            <span>{prep.next ? prep.next.label : "Prêt"}</span>
+            <ArrowRight size={14} aria-hidden />
+          </button>
+        ) : null}
+        {phase.phase !== "cancelled" ? (
+          <RoomButton
+            departureId={trip.departure.id}
+            onOpen={() => onSelect({ type: "departure", id: trip.departure.id })}
+          />
+        ) : null}
+      </div>
       {underway ? null : (
         <div className="bw-mytrip-hero__foot">
           {prep ? null : <span>{next}</span>}
@@ -371,12 +374,6 @@ export function MyTripHero({ onSelect }: { onSelect: (selection: Selection) => v
             : `dans ${formatDocked(Math.ceil(closingIn / 60_000))}`}
           .
         </p>
-      ) : null}
-      {phase.phase !== "cancelled" ? (
-        <RoomButton
-          departureId={trip.departure.id}
-          onOpen={() => onSelect({ type: "departure", id: trip.departure.id })}
-        />
       ) : null}
     </section>
   );

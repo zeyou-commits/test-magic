@@ -71,8 +71,11 @@ const demoMessages = (): RecentMessage[] =>
 const DISMISS_KEY = "bledway:chat-preview-dismissed";
 const ROTATE_MS = 6_000;
 
-const shortBody = (text: string) =>
-  text.replace(/:[a-z0-9_]+:/g, "").trim().slice(0, 70) + (text.length > 70 ? "…" : "");
+/** Le début du message, sans couper un émoji en deux. */
+const shortBody = (text: string) => {
+  const chars = Array.from(text.replace(/:[a-z0-9_]+:/g, "").trim());
+  return chars.length > 70 ? `${chars.slice(0, 70).join("")}…` : chars.join("");
+};
 
 /** Raccourci des salons, à côté de Signaler : mon salon, ou le choix d'une traversée. */
 export function MessagesFab({ onSelect }: { onSelect: (selection: Selection) => void }) {
@@ -87,7 +90,12 @@ export function MessagesFab({ onSelect }: { onSelect: (selection: Selection) => 
   const count = room?.messages.length ?? 0;
   const real = useQuery(recentQuery).data ?? [];
   // Au lancement, des exemples complètent l'aperçu ; les vrais messages passent toujours devant.
-  const recent = real.length >= 3 ? real : [...real, ...demoMessages()];
+  const messages = real.length >= 3 ? real : [...real, ...demoMessages()];
+  // Tous les 3 messages, une bulle invite à raconter son propre voyage.
+  const recent: (RecentMessage | "invite")[] = messages.flatMap((message, position) =>
+    (position + 1) % 3 === 0 ? [message, "invite" as const] : [message],
+  );
+  if (messages.length && recent.at(-1) !== "invite") recent.push("invite");
   // L'aperçu défile d'un message à l'autre ; fermé, il ne revient pas de la visite.
   const [dismissed, setDismissed] = useState(() => {
     try {
@@ -103,6 +111,14 @@ export function MessagesFab({ onSelect }: { onSelect: (selection: Selection) => 
     return () => window.clearInterval(timer);
   }, [recent.length]);
   const shown = recent.length ? recent[index % recent.length] : undefined;
+  const openMine = () => {
+    if (!trip) {
+      setOpen(true);
+      return;
+    }
+    onSelect({ type: "departure", id: trip.departure.id });
+    enterRoom("crossing", trip.departure.id);
+  };
   const openMessage = (message: RecentMessage) => {
     if (message.demo) {
       setOpen(true);
@@ -118,14 +134,7 @@ export function MessagesFab({ onSelect }: { onSelect: (selection: Selection) => 
         type="button"
         className="bw-messages-fab"
         aria-label={count ? `Salons, ${count} messages` : "Salons"}
-        onClick={() => {
-          if (!trip) {
-            setOpen(true);
-            return;
-          }
-          onSelect({ type: "departure", id: trip.departure.id });
-          enterRoom("crossing", trip.departure.id);
-        }}
+        onClick={openMine}
       >
         <MessagesSquare size={22} aria-hidden />
         <span>Salons</span>
@@ -133,21 +142,43 @@ export function MessagesFab({ onSelect }: { onSelect: (selection: Selection) => 
       </button>
       {shown && !dismissed ? (
         <div className="bw-messages-preview" aria-live="polite">
-          <button
-            key={shown.id}
-            type="button"
-            className="bw-messages-preview__bubble"
-            onClick={() => openMessage(shown)}
-          >
-            <AuthorAvatar author={shown.author} size={26} />
-            <span>
-              <small>
-                {shown.demo ? <em>Exemple</em> : <i aria-hidden />} {shown.author.pseudo}
-                {shown.label ? ` · ${shown.label}` : ""}
-              </small>
-              <strong>{shortBody(shown.body) || "…"}</strong>
-            </span>
-          </button>
+          {shown === "invite" ? (
+            <button
+              key={`invite-${index}`}
+              type="button"
+              className="bw-messages-preview__bubble"
+              data-invite
+              onClick={openMine}
+            >
+              <span className="bw-messages-preview__invite-icon" aria-hidden>
+                <MessagesSquare size={15} />
+              </span>
+              <span>
+                <small>À vous</small>
+                <strong>
+                  {trip
+                    ? "Et vous, ça se passe comment ? Racontez-le dans votre salon"
+                    : "Vous voyagez bientôt ? Rejoignez le salon de votre traversée"}
+                </strong>
+              </span>
+            </button>
+          ) : (
+            <button
+              key={shown.id}
+              type="button"
+              className="bw-messages-preview__bubble"
+              onClick={() => openMessage(shown)}
+            >
+              <AuthorAvatar author={shown.author} size={26} />
+              <span>
+                <small>
+                  {shown.demo ? <em>Exemple</em> : <i aria-hidden />} {shown.author.pseudo}
+                  {shown.label ? ` · ${shown.label}` : ""}
+                </small>
+                <strong>{shortBody(shown.body) || "…"}</strong>
+              </span>
+            </button>
+          )}
           <button
             type="button"
             className="bw-messages-preview__close"

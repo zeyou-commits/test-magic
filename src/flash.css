@@ -10342,3 +10342,23 @@ img[data-logo="dark"] {
   font-style: normal;
   font-weight: 700;
 }
+/* La bulle qui invite à partager : en vert BledWay, pour se détacher des messages. */
+.bw-messages-preview__bubble[data-invite] {
+  background: #0e7a43;
+}
+.bw-messages-preview__bubble[data-invite] small {
+  color: #c9f0da;
+}
+.bw-messages-preview__bubble[data-invite] strong {
+  color: #ffffff;
+}
+.bw-messages-preview__invite-icon {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: #ffffff;
+  color: #0e7a43;
+}

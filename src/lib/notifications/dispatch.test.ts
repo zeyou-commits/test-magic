@@ -265,10 +265,30 @@ describe("Diffusion des ouvertures de lignes", () => {
   });
   it("réserve les préparatifs au voyageur et applique quatre heures par défaut", async () => {
     mock.tables["bw_notification_campaigns"] = [];
-    mock.tables["departures"]![0]!["departure_at"] = new Date(Date.now() + 23 * 3_600_000).toISOString();
+    mock.tables["departures"]![0]!["departure_at"] = new Date(
+      Date.now() + 23 * 3_600_000,
+    ).toISOString();
     mock.tables["bw_follows"] = [
-      { id: "mine", user_id: "user", target_kind: "departure", target_id: "dep", traveller: true, follow_purpose: "voyageur", active: true, created_at: new Date().toISOString() },
-      { id: "close", user_id: "friend", target_kind: "departure", target_id: "dep", traveller: false, follow_purpose: "proche", active: true, created_at: new Date().toISOString() },
+      {
+        id: "mine",
+        user_id: "user",
+        target_kind: "departure",
+        target_id: "dep",
+        traveller: true,
+        follow_purpose: "voyageur",
+        active: true,
+        created_at: new Date().toISOString(),
+      },
+      {
+        id: "close",
+        user_id: "friend",
+        target_kind: "departure",
+        target_id: "dep",
+        traveller: false,
+        follow_purpose: "proche",
+        active: true,
+        created_at: new Date().toISOString(),
+      },
     ];
     await dispatchPush();
     const mine = mock.tables["bw_notifications"]!.find((item) => item["user_id"] === "user");
@@ -346,7 +366,17 @@ describe("Suivi déclaré après coup (rattrapage)", () => {
     expect((await dispatchPush()).created).toBe(0);
   });
   it("envoie un signalement encore actif publié avant le suivi du bateau", async () => {
-    mock.tables["departures"] = [{ id: "dep", route_id: "route", vessel_id: "ship", departure_at: new Date(Date.now() + 4 * 3_600_000).toISOString(), arrival_at: new Date(Date.now() + 24 * 3_600_000).toISOString(), status: "scheduled", is_demo: false }];
+    mock.tables["departures"] = [
+      {
+        id: "dep",
+        route_id: "route",
+        vessel_id: "ship",
+        departure_at: new Date(Date.now() + 4 * 3_600_000).toISOString(),
+        arrival_at: new Date(Date.now() + 24 * 3_600_000).toISOString(),
+        status: "scheduled",
+        is_demo: false,
+      },
+    ];
     mock.tables["bw_follows"] = [
       {
         id: "boat",
@@ -393,13 +423,54 @@ describe("Suivi déclaré après coup (rattrapage)", () => {
   it("n'envoie pas un signalement de l'ancienne rotation à la traversée suivie", async () => {
     mock.tables["bw_notification_campaigns"] = [];
     mock.tables["departures"] = [
-      { id: "old", route_id: "route", vessel_id: "ship", departure_at: ago(26 * 60), arrival_at: ago(6 * 60), status: "scheduled", is_demo: false },
-      { id: "next", route_id: "route", vessel_id: "ship", departure_at: new Date(Date.now() + 36 * 3_600_000).toISOString(), arrival_at: new Date(Date.now() + 56 * 3_600_000).toISOString(), status: "scheduled", is_demo: false },
+      {
+        id: "old",
+        route_id: "route",
+        vessel_id: "ship",
+        departure_at: ago(26 * 60),
+        arrival_at: ago(6 * 60),
+        status: "scheduled",
+        is_demo: false,
+      },
+      {
+        id: "next",
+        route_id: "route",
+        vessel_id: "ship",
+        departure_at: new Date(Date.now() + 36 * 3_600_000).toISOString(),
+        arrival_at: new Date(Date.now() + 56 * 3_600_000).toISOString(),
+        status: "scheduled",
+        is_demo: false,
+      },
     ];
-    mock.tables["bw_follows"] = [{ id: "trip", user_id: "user", target_kind: "departure", target_id: "next", active: true, created_at: ago(5) }];
-    mock.tables["bw_travel_alerts"] = [{ id: "old-boarding", target_kind: "vessel", target_id: "ship", departure_id: "old", category: "boarding", detail: "boarding_foot", resolved: false, expires_at: new Date(Date.now() + 3_600_000).toISOString(), created_at: ago(10) }];
+    mock.tables["bw_follows"] = [
+      {
+        id: "trip",
+        user_id: "user",
+        target_kind: "departure",
+        target_id: "next",
+        active: true,
+        created_at: ago(5),
+      },
+    ];
+    mock.tables["bw_travel_alerts"] = [
+      {
+        id: "old-boarding",
+        target_kind: "vessel",
+        target_id: "ship",
+        departure_id: "old",
+        category: "boarding",
+        detail: "boarding_foot",
+        resolved: false,
+        expires_at: new Date(Date.now() + 3_600_000).toISOString(),
+        created_at: ago(10),
+      },
+    ];
     await dispatchPush();
-    expect(mock.tables["bw_notifications"]!.some((item) => item["event_key"] === "signal:trip:old-boarding")).toBe(false);
+    expect(
+      mock.tables["bw_notifications"]!.some(
+        (item) => item["event_key"] === "signal:trip:old-boarding",
+      ),
+    ).toBe(false);
   });
   it("annonce une ouverture déjà publiée à une alerte créée ensuite", async () => {
     mock.tables["bw_notification_campaigns"] = [
@@ -513,6 +584,56 @@ describe("Suivi déclaré après coup (rattrapage)", () => {
     expect(mock.send).toHaveBeenCalledTimes(1);
     await dispatchPush({ userId: "user" });
     expect(mock.send).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe("Mémoire des envois", () => {
+  it("ne repousse pas une notification déjà envoyée après une reconnexion", async () => {
+    const start = new Date(Date.now() + 12 * 3_600_000).toISOString();
+    mock.tables["bw_follows"] = [
+      {
+        id: "follow-1",
+        user_id: "user-1",
+        target_kind: "departure",
+        target_id: "departure-1",
+        created_at: "2026-01-01T00:00:00Z",
+        traveller: true,
+        follow_purpose: "voyageur",
+        active: true,
+      },
+    ];
+    mock.tables["departures"] = [
+      {
+        id: "departure-1",
+        route_id: "route-1",
+        vessel_id: null,
+        departure_at: start,
+        status: "scheduled",
+        is_demo: false,
+        presentation_minutes: null,
+      },
+    ];
+    mock.tables["bw_notifications"] = [
+      {
+        id: "notice-sent",
+        user_id: "user-1",
+        event_key: "departure:follow-1:departure-1:24h",
+        pushed_at: "2026-01-01T00:00:00Z",
+      },
+    ];
+    // Le téléphone reconnecté a un nouvel abonnement, sans aucune trace d'envoi.
+    mock.tables["bw_push_subscriptions"] = [
+      {
+        id: "sub-new",
+        user_id: "user-1",
+        endpoint: "https://push.test/new",
+        p256dh: "k",
+        auth_key: "a",
+      },
+    ];
+    mock.tables["bw_push_deliveries"] = [];
+    await dispatchPush();
+    expect(mock.tables["bw_push_deliveries"]).toEqual([]);
   });
 });
 

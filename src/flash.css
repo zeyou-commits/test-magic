@@ -8951,3 +8951,38 @@ body:has([data-film="true"]) [data-map-rail] {
   align-items: center;
   gap: 7px;
 }
+
+/* Invitation au salon, dans l'appli. */
+.bw-room-invite {
+  display: grid;
+  justify-items: center;
+  gap: 10px;
+  max-width: 380px;
+  text-align: center;
+}
+.bw-room-invite__icon {
+  color: #0e7a43;
+}
+.bw-room-invite ul {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.bw-room-invite li {
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: #f1f8f4;
+  color: #0e6b3b;
+  font-size: 12.5px;
+  font-weight: 600;
+}
+.bw-room-invite__later {
+  min-height: 36px;
+  color: #5b6b66;
+  font-size: 13px;
+  font-weight: 600;
+}

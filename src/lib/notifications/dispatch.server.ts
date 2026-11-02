@@ -7,17 +7,6 @@ import {
 } from "./newsAudience";
 import webpush from "web-push";
 import { noticePicto, noticeReply } from "./noticeStyle";
-import {
-  activeWave,
-  departedFromTrack,
-  dockedFromTrack,
-  quietHours,
-  reminderRoomLine,
-  stageFor,
-  stageNotice,
-  voyageStage,
-  type Observation,
-} from "./roomInvites";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { supabaseAdmin as typedDb } from "@/integrations/supabase/client.server";
 
@@ -361,13 +350,9 @@ export async function dispatchPush(
         .range(from, to),
     ),
     collect((from, to) =>
-      db
-        .from("ports")
-        .select("id,name,country_code,status,latitude,longitude")
-        .order("id")
-        .range(from, to),
+      db.from("ports").select("id,name,country_code,status").order("id").range(from, to),
     ),
-    collect((from, to) => db.from("vessels").select("id,name,mmsi").order("id").range(from, to)),
+    collect((from, to) => db.from("vessels").select("id,name").order("id").range(from, to)),
   ]);
   const routeById = new Map(routes.map((route) => [route.id, route]));
   const portById = new Map(ports.map((port) => [port.id, port]));
@@ -414,12 +399,14 @@ export async function dispatchPush(
     else {
       const existing = await db
         .from("bw_notifications")
-        .select("id")
+        .select("id,pushed_at")
         .eq("user_id", userId)
         .eq("event_key", notice.key)
         .single();
       if (existing.error) throw existing.error;
       id = existing.data.id;
+      // Déjà poussée une fois : elle ne repart pas, même sur un téléphone reconnecté.
+      if (existing.data.pushed_at) return;
     }
     if (notice.category === "openings" || options.userId) focusIds.add(id);
     if (prefs?.push_enabled === false) return;
@@ -509,120 +496,6 @@ export async function dispatchPush(
       if (part.error) throw part.error;
       for (const row of part.data ?? []) eventDepartureAt.set(row.id, row.departure_at);
     }
-    // Le salon : une invitation par état du voyage, et 2 rappels au plus quand il s'anime.
-    // Une panne ici ne doit pas priver les voyageurs de leurs rappels et alertes.
-    try {
-      const crossingFollows = follows.filter((follow) => follow.target_kind === "departure");
-      const crossingIds = [...new Set(crossingFollows.map((follow) => follow.target_id as string))];
-      const voyages = crossingIds.length
-        ? await collect((from, to) =>
-            db
-              .from("departures")
-              .select(
-                "id,route_id,vessel_id,departure_at,arrival_at,status,presentation_minutes,reported_departed_at,web_departed_at,reported_arrived_at,web_arrived_at,reported_postponed_at",
-              )
-              .in("id", crossingIds)
-              .gte("departure_at", new Date(now - 3 * 24 * HOUR).toISOString())
-              .lte("departure_at", new Date(now + 8 * 24 * HOUR).toISOString())
-              .neq("status", "cancelled")
-              .eq("is_demo", false)
-              .order("id")
-              .range(from, to),
-          )
-        : [];
-      const voyageIds = voyages.map((voyage) => voyage.id as string);
-      const [statuses, roomMessages] = voyageIds.length
-        ? await Promise.all([
-            collect((from, to) =>
-              db
-                .from("bw_trip_status")
-                .select("user_id,departure_id,status")
-                .in("departure_id", voyageIds)
-                .order("user_id")
-                .range(from, to),
-            ),
-            collect((from, to) =>
-              db
-                .from("bw_chat_messages")
-                .select("id,room_id,user_id")
-                .eq("room_kind", "crossing")
-                .in("room_id", voyageIds)
-                .is("hidden_at", null)
-                .order("id")
-                .range(from, to),
-            ),
-          ])
-        : [[], []];
-      for (const voyage of voyages) {
-        const route = routeById.get(voyage.route_id);
-        const from = route ? portById.get(route.departure_port_id) : undefined;
-        const to = route ? portById.get(route.arrival_port_id) : undefined;
-        const start = Date.parse(voyage.departure_at);
-        let departedAt: string | null =
-          voyage.reported_departed_at ?? voyage.web_departed_at ?? null;
-        let arrivedAt: string | null = voyage.reported_arrived_at ?? voyage.web_arrived_at ?? null;
-        const mmsi = vesselById.get(voyage.vessel_id)?.mmsi;
-        // La position n'est lue que le temps du voyage : avant, rien à observer.
-        if (mmsi && from && to && !arrivedAt && now >= start) {
-          const track = await db
-            .from("vessel_position_observations")
-            .select("reported_at,latitude,longitude,speed_knots")
-            .eq("mmsi", mmsi)
-            .gte("reported_at", new Date(start - 6 * HOUR).toISOString())
-            .order("reported_at")
-            .limit(1000);
-          if (track.error) throw track.error;
-          const points = (track.data ?? []) as Observation[];
-          departedAt ??= departedFromTrack(points, from, voyage.departure_at);
-          arrivedAt = dockedFromTrack(points, to, voyage.departure_at);
-        }
-        const stage = voyageStage({
-          departureAt: voyage.departure_at,
-          leadMinutes: leadMinutesFor(voyage.presentation_minutes, false),
-          departedAt,
-          arrivedAt,
-          postponed: Boolean(voyage.reported_postponed_at),
-          now,
-        });
-        const line = `${from?.name ?? "Départ"} → ${to?.name ?? "arrivée"}`;
-        const url = `/?select=departure&id=${voyage.id}&room=1`;
-        const underway = now >= start - leadMinutesFor(voyage.presentation_minutes, false) * 60_000;
-        const voyageOver =
-          arrivedAt !== null
-            ? stage === null
-            : now > Date.parse(voyage.arrival_at ?? voyage.departure_at) + 12 * HOUR;
-        for (const follow of crossingFollows.filter((item) => item.target_id === voyage.id)) {
-          const step = statuses.find(
-            (row) => row.user_id === follow.user_id && row.departure_id === voyage.id,
-          )?.status;
-          if (step === "arrived" || voyageOver) continue;
-          const passenger = follow.traveller === true || Boolean(step);
-          const invite = stageFor(stage, passenger);
-          if (invite)
-            await deliver(follow.user_id, follow.id, {
-              key: `room-state:${follow.id}:${voyage.id}:${invite}`,
-              category: "community",
-              ...stageNotice(invite, line, passenger),
-              url,
-            });
-          if (quietHours(now) && !underway) continue;
-          const others = roomMessages.filter(
-            (row) => row.room_id === voyage.id && row.user_id !== follow.user_id,
-          ).length;
-          const wave = activeWave(others);
-          if (wave)
-            await deliver(follow.user_id, follow.id, {
-              key: `room-active:${follow.id}:${voyage.id}:${wave}`,
-              category: "community",
-              title: `${line} · ça discute dans le salon`,
-              body: `${others} messages des autres voyageurs : venez lire et partager.`,
-              url,
-            });
-        }
-      }
-    } catch (cause) {
-      console.error("Invitations au salon", cause);
-    }
     for (const follow of follows) {
       const followUpdates = updates.filter((update) =>
         follow.target_kind === "departure"
@@ -704,7 +577,7 @@ export async function dispatchPush(
             category: "reminders",
             title: `${from?.name ?? "Départ"} → ${to?.name ?? "arrivée"} · départ dans ${remainingLabel(remaining)}`,
             body: personalTrip
-              ? `Présentation à ${from?.name ?? "votre port"} : ${portTime} en véhicule, ${footTime} à pied${next.presentation_minutes == null ? " (repères indicatifs : 4 h avant en véhicule, 3 h à pied)" : " (consigne renseignée)"}. Vérifiez votre billet et vos préparatifs encore ouverts.${reminderRoomLine(stage)}`
+              ? `Présentation à ${from?.name ?? "votre port"} : ${portTime} en véhicule, ${footTime} à pied${next.presentation_minutes == null ? " (repères indicatifs : 4 h avant en véhicule, 3 h à pied)" : " (consigne renseignée)"}. Vérifiez votre billet et vos préparatifs encore ouverts.`
               : "Retrouvez les horaires et les changements publiés pour cette traversée.",
             url: `/?select=departure&id=${next.id}`,
           });
@@ -1035,6 +908,8 @@ export async function dispatchPush(
         .select("id")
         .eq("user_id", options.userId)
         .is("read_at", null)
+        // Jamais envoyée à aucun téléphone : la déconnexion ne doit pas tout renvoyer.
+        .is("pushed_at", null)
         .gte("created_at", new Date(now - 24 * HOUR).toISOString())
         .order("created_at", { ascending: false })
         .limit(3),
@@ -1163,6 +1038,12 @@ export async function dispatchPush(
           .eq("notification_id", row.notification_id)
           .eq("subscription_id", row.subscription_id);
         if (delivered.error) throw delivered.error;
+        const remembered = await db
+          .from("bw_notifications")
+          .update({ pushed_at: new Date().toISOString() })
+          .eq("id", row.notification_id)
+          .is("pushed_at", null);
+        if (remembered.error) throw remembered.error;
         await db
           .from("bw_push_subscriptions")
           .update({ last_success_at: new Date().toISOString() })

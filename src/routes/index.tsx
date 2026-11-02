@@ -41,6 +41,7 @@ import { MapStatusBar } from "@/components/map/MapStatusBar";
 import { MapLegend } from "@/components/map/MapLegend";
 import { QuickReport } from "@/components/map/QuickReport";
 import { MessagesFab } from "@/components/panel/MessagesFab";
+import { RoomInvite } from "@/components/panel/RoomInvite";
 import { MyTripMapChip } from "@/components/panel/MyTripHero";
 import { MapSearch } from "@/components/map/MapSearch";
 import { MapStats, type MapShortcut } from "@/components/map/MapStats";
@@ -1264,6 +1265,7 @@ function Index() {
             <QuickReport ports={ports} fleet={fleet} departures={departures} selection={selection}>
               <MessagesFab onSelect={(next) => handleSelectRef.current(next)} />
             </QuickReport>
+            <RoomInvite onSelect={(next) => handleSelectRef.current(next)} />
             {/* Ma traversée pas encore sur la carte : chrono flottant. */}
             <MyTripMapChip fleet={fleet} onOpen={(next) => handleSelectRef.current(next)} />
             <MapStats

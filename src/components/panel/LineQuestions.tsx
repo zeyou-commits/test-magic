@@ -18,6 +18,7 @@ import { chatRefusal, roomExamples } from "@/lib/ferry/portPassage";
 import { MAX_MESSAGE } from "./LiveRoom";
 import { AuthorAvatar, StaffBadge, StaffTools, type ChatAuthor } from "./StaffChat";
 import { useCharterGate } from "./CharterGate";
+import { chatStartersQuery, startersFor, type StarterContext } from "@/lib/ferry/chatStarters";
 
 const supabase = typedSupabase as unknown as SupabaseClient;
 
@@ -124,7 +125,16 @@ function Line({
 }
 
 /** Questions d'une ligne : tout le monde lit, tout compte connecté demande ou répond. */
-export function LineQuestions({ routeId, title }: { routeId: string; title: string }) {
+export function LineQuestions({
+  routeId,
+  title,
+  starterContext,
+}: {
+  routeId: string;
+  title: string;
+  starterContext?: StarterContext;
+}) {
+  const starters = useQuery(chatStartersQuery).data;
   const { user } = useAuth();
   const request = useTravelAction();
   const client = useQueryClient();
@@ -233,11 +243,13 @@ export function LineQuestions({ routeId, title }: { routeId: string; title: stri
       </form>
       {text ? null : (
         <p className="bw-room__examples">
-          {roomExamples("questions").map((example) => (
-            <button key={example} type="button" onClick={() => setText(example)}>
-              {example}
-            </button>
-          ))}
+          {startersFor("questions", starters, starterContext ?? {}, roomExamples("questions")).map(
+            (example) => (
+              <button key={example} type="button" onClick={() => setText(example)}>
+                {example}
+              </button>
+            ),
+          )}
         </p>
       )}
       {problem ? (
@@ -253,7 +265,7 @@ export function LineQuestions({ routeId, title }: { routeId: string; title: stri
                 entry={question}
                 sameLabel="Même question"
                 canAct={canAct}
-              staff={Boolean(feed.data?.staff)}
+                staff={Boolean(feed.data?.staff)}
                 busy={busy}
                 onReact={() => react.mutate(question.id)}
                 onReport={() => report.mutate(question.id)}
@@ -266,7 +278,7 @@ export function LineQuestions({ routeId, title }: { routeId: string; title: stri
                           entry={answer}
                           sameLabel="Utile"
                           canAct={canAct}
-              staff={Boolean(feed.data?.staff)}
+                          staff={Boolean(feed.data?.staff)}
                           busy={busy}
                           onReact={() => react.mutate(answer.id)}
                           onReport={() => report.mutate(answer.id)}

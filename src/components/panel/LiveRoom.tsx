@@ -38,6 +38,7 @@ import {
 } from "@/lib/ferry/chat";
 import { portsQuery, routesQuery } from "@/lib/ferry/queries";
 import { useCharterGate } from "./CharterGate";
+import { chatStartersQuery, startersFor, type StarterContext } from "@/lib/ferry/chatStarters";
 import { currentPosition } from "@/lib/ferry/community";
 import { chatRefusal, roomExamples, type RoomMoment } from "@/lib/ferry/portPassage";
 import { emoteToken, UNICODE_EMOTES } from "@/lib/ferry/chatEmotes";
@@ -85,7 +86,12 @@ const BLEDWAY = {
   pseudo: "BledWay",
   official: true,
 } as ChatAuthor;
-const PLACE = { aboard: "à bord", port: "au port", trip: "passager", staff: "équipe BledWay" } as const;
+const PLACE = {
+  aboard: "à bord",
+  port: "au port",
+  trip: "passager",
+  staff: "équipe BledWay",
+} as const;
 const missing = (code?: string) => code === "PGRST202" || code === "42883";
 /** En dessous, on considère que la personne suit le direct : le fil descend tout seul. */
 const FOLLOW_BOTTOM_PX = 80;
@@ -195,6 +201,7 @@ function LiveChat({
   charter,
   muted = false,
   onAskLine,
+  starterContext,
 }: {
   kind: RoomKind;
   room: string;
@@ -211,7 +218,9 @@ function LiveChat({
   muted?: boolean;
   /** Salon du port, hors du port : passer la question aux voyageurs d'une ligne. */
   onAskLine?: ((routeId: string) => void) | undefined;
+  starterContext?: StarterContext | undefined;
 }) {
+  const starters = useQuery(chatStartersQuery).data;
   const { user } = useAuth();
   const request = useTravelAction();
   const client = useQueryClient();
@@ -351,7 +360,10 @@ function LiveChat({
   // Qui peut être mentionné : les auteurs du salon et les présents, sauf soi et le compte officiel.
   const mentionable = [
     ...new Map(
-      [...messages.map((message) => message.author as ChatAuthor), ...named.map((person) => person.card as ChatAuthor)]
+      [
+        ...messages.map((message) => message.author as ChatAuthor),
+        ...named.map((person) => person.card as ChatAuthor),
+      ]
         .filter((card) => card && !card.official && card.handle !== myHandle)
         .map((card) => [card.handle, card] as const),
     ).values(),
@@ -384,11 +396,16 @@ function LiveChat({
         ...new Map(
           allRoutes
             .filter((route) => route.departure_port_id === room || route.arrival_port_id === room)
-            .sort((a, b) => Number(b.departure_port_id === room) - Number(a.departure_port_id === room))
+            .sort(
+              (a, b) => Number(b.departure_port_id === room) - Number(a.departure_port_id === room),
+            )
             .map((route) => {
               const other =
                 route.departure_port_id === room ? route.arrival_port_id : route.departure_port_id;
-              return [other, { id: route.id, line: `${portName(room)} ↔ ${portName(other)}` }] as const;
+              return [
+                other,
+                { id: route.id, line: `${portName(room)} ↔ ${portName(other)}` },
+              ] as const;
             })
             .reverse(),
         ).values(),
@@ -428,7 +445,9 @@ function LiveChat({
             className="bw-chat__mute"
             aria-pressed={muted}
             disabled={mute.isPending}
-            title={muted ? "Réactiver les notifications de ce salon" : "Mettre ce salon en sourdine"}
+            title={
+              muted ? "Réactiver les notifications de ce salon" : "Mettre ce salon en sourdine"
+            }
             aria-label={
               muted ? "Réactiver les notifications de ce salon" : "Mettre ce salon en sourdine"
             }
@@ -510,13 +529,13 @@ function LiveChat({
               <StaffBadge author={BLEDWAY} />
             </p>
             <p>
-              Salam{myPseudo ? ` ${myPseudo}` : ""} et bienvenue ! Ici on s'entraide entre
-              voyageurs :{" "}
+              Salam{myPseudo ? ` ${myPseudo}` : ""} et bienvenue ! Ici on s'entraide entre voyageurs
+              :{" "}
               {kind === "port"
                 ? "la file, le parking, l'ambiance sur le port"
                 : "la file au port, l'ambiance à bord, l'état de la mer"}
-              . Restez courtois, ne partagez ni numéro ni lien, et signalez plutôt que de répondre
-              à un message gênant.{" "}
+              . Restez courtois, ne partagez ni numéro ni lien, et signalez plutôt que de répondre à
+              un message gênant.{" "}
               <a href="/charte" target="_blank" rel="noreferrer">
                 Lire la charte
               </a>
@@ -557,7 +576,9 @@ function LiveChat({
                 <StaffBadge author={message.author} />
                 {/* Le badge de l'équipe dit déjà d'où vient le message. */}
                 {message.place === "staff" && !message.crossing ? null : (
-                  <small data-place={message.place}>{message.crossing ?? PLACE[message.place]}</small>
+                  <small data-place={message.place}>
+                    {message.crossing ?? PLACE[message.place]}
+                  </small>
                 )}
                 <span data-big={onlyEmotes(message.body) || undefined}>
                   <ChatText body={message.body} mentions={message.mentions} myHandle={myHandle} />
@@ -623,7 +644,9 @@ function LiveChat({
                     </button>
                   ) : null}
                   {message.me ? <OwnMessageActions id={message.id} body={message.body} /> : null}
-                  {staff && !message.me ? <StaffTools id={message.id} author={message.author} /> : null}
+                  {staff && !message.me ? (
+                    <StaffTools id={message.id} author={message.author} />
+                  ) : null}
                 </div>
               ) : null}
             </div>
@@ -639,8 +662,8 @@ function LiveChat({
       {notHere && onAskLine && portLines.length ? (
         <div role="alert" className="bw-chat__elsewhere">
           <p>
-            <b>Vous n'êtes pas sur le port.</b> Ce salon est réservé à ceux qui y sont. Posez
-            plutôt votre question aux voyageurs d'une ligne : ils vous répondront.
+            <b>Vous n'êtes pas sur le port.</b> Ce salon est réservé à ceux qui y sont. Posez plutôt
+            votre question aux voyageurs d'une ligne : ils vous répondront.
           </p>
           <div>
             {portLines.map((item) => (
@@ -725,7 +748,12 @@ function LiveChat({
             </div>
           ) : text || replyTo ? null : (
             <p className="bw-chat__examples">
-              {roomExamples(kind === "port" ? "port" : moment).map((example) => (
+              {startersFor(
+                kind === "port" ? "port" : moment === "over" ? "sea" : moment,
+                starters,
+                starterContext ?? {},
+                roomExamples(kind === "port" ? "port" : moment),
+              ).map((example) => (
                 <button key={example} type="button" onClick={() => setText(example)}>
                   {example}
                 </button>
@@ -800,12 +828,15 @@ export function LiveRoom({
   title,
   moment = "before",
   onAskLine,
+  starterContext,
 }: {
   kind: RoomKind;
   room: string;
   title: string;
   moment?: RoomMoment;
   onAskLine?: (routeId: string) => void;
+  /** Ports, navire, compagnie : de quoi contextualiser les phrases d'amorce. */
+  starterContext?: StarterContext;
 }) {
   const { user } = useAuth();
   const [open, setOpen] = useState(false);
@@ -871,6 +902,7 @@ export function LiveRoom({
             myPseudo={card?.pseudo}
             charter={feed.data?.charter}
             muted={Boolean(feed.data?.muted)}
+            starterContext={starterContext}
             onAskLine={
               onAskLine
                 ? (routeId) => {

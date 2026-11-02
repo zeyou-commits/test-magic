@@ -372,6 +372,7 @@ export function PortView({
         kind="port"
         room={portId}
         title={`En direct sur le port de ${port.name}`}
+        starterContext={{ port: port.name }}
         onAskLine={(routeId) => {
           onSelect({ type: "route", id: routeId });
           revealBlock(".bw-room--questions", 700);

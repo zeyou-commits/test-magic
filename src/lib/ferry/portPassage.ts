@@ -155,23 +155,35 @@ export function roomMoment(departureAt: string, arrivalAt: string | null, now: n
 
 const EXAMPLES: Record<RoomMoment | "port" | "questions", string[]> = {
   before: [
-    "Qui voyage avec un fourgon ?",
-    "Vous arrivez à quelle heure au port ?",
-    "Quelqu'un a déjà fait ce trajet ?",
+    "Qui part aussi de {depart} sur le {navire} ?",
+    "Première traversée vers {arrivee}, des conseils ?",
+    "Vous comptez arriver à quelle heure au port de {depart} ?",
   ],
-  boarding: ["La file avance ?", "L'embarquement a commencé ?", "Où est l'entrée véhicules ?"],
+  boarding: [
+    "La file au port de {depart}, ça avance ?",
+    "L'embarquement du {navire} a commencé ?",
+    "Combien de temps pour les contrôles à {depart} ?",
+  ],
   sea: [
-    "Le restaurant est ouvert ?",
-    "La mer bouge de votre côté ?",
-    "Une prise libre quelque part ?",
+    "Ça bouge beaucoup de votre côté ?",
+    "Le restaurant du {navire} est ouvert ?",
+    "Une prise libre quelque part à bord ?",
   ],
-  arrival: ["On descend quand ?", "La douane, ça avance ?", "Bien arrivés !"],
+  arrival: [
+    "On débarque bientôt à {arrivee} ?",
+    "La douane à {arrivee}, ça avance ?",
+    "Bien arrivés à {arrivee} !",
+  ],
   over: [],
-  port: ["La file est longue ?", "Le parking est plein ?", "Où trouver un café ?"],
+  port: [
+    "La file au port de {port}, ça avance ?",
+    "Le parking du port de {port} est plein ?",
+    "Les contrôles à {port}, ça va vite ce matin ?",
+  ],
   questions: [
-    "À quelle heure arriver au port ?",
-    "Y a-t-il de quoi manger à bord ?",
-    "Comment embarquer avec une remorque ?",
+    "À quelle heure arriver au port de {depart} ?",
+    "Peut-on embarquer une remorque sur {depart} → {arrivee} ?",
+    "Combien de temps dure vraiment la traversée vers {arrivee} ?",
   ],
 };
 export const roomExamples = (moment: keyof typeof EXAMPLES) => EXAMPLES[moment];

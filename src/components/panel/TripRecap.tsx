@@ -476,12 +476,19 @@ export function TripRecap({
           room={departure.id}
           title={`Salon · ${from.name} → ${to.name}`}
           moment={roomMoment(departIso, arriveIso ?? null, now)}
+          starterContext={{
+            depart: from.name,
+            arrivee: to.name,
+            navire: vessel?.name,
+            compagnie: company?.name,
+          }}
         />
       ) : null}
 
       <LineQuestions
         routeId={departure.route_id}
         title={`Questions sur ${from.name} → ${to.name}`}
+        starterContext={{ depart: from.name, arrivee: to.name, compagnie: company?.name }}
       />
 
       {/* 3 bis. Les voyageurs de la traversée, leur cabas et leur humeur */}

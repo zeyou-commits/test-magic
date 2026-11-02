@@ -136,6 +136,7 @@ export function RouteView({
         <LineQuestions
           routeId={route.id}
           title={`Questions sur ${from?.name ?? "—"} → ${to?.name ?? "—"}`}
+          starterContext={{ depart: from?.name, arrivee: to?.name }}
         />
       </div>
 

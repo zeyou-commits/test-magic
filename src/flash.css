@@ -10438,3 +10438,20 @@ img[data-logo="dark"] {
   font-style: normal;
   font-weight: 500;
 }
+/* Un signalement dans le défilement : liseré et mégaphone aux couleurs de la situation. */
+.bw-map-bubble[data-report] {
+  border-left: 3px solid var(--situation-color, #e0a400);
+}
+.bw-map-bubble[data-report] > i {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: #ffc83d;
+  color: #4a3200;
+}
+.bw-map-bubble[data-report] small {
+  color: #8a5a00;
+}

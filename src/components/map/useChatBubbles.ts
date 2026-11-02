@@ -13,6 +13,16 @@ import {
   type RecentMessage,
 } from "@/lib/ferry/chatDemo";
 import { shipAnchor, type FleetShip } from "@/lib/ferry/fleet";
+import { useAuth } from "@/hooks/useAuth";
+import {
+  activeAlerts,
+  alertLabel,
+  communityQuery,
+  isPublicAlert,
+  situationOf,
+  type TravelAlert,
+} from "@/lib/ferry/community";
+import { requestSignalFocus } from "@/components/panel/LivePulse";
 import type { Port, RouteLine, Selection } from "@/lib/ferry/types";
 import { vesselMapIcon } from "@/lib/ferry/vesselVisuals";
 import { dockSpread, shipShiftY, vesselScreenHeight } from "./shipIcons";
@@ -26,6 +36,12 @@ const RESUME_MS = 4_000;
 const INVITE_EVERY = 3;
 
 type Spot = { at: [number, number]; offset: [number, number] };
+/** Une bulle : un message de salon, ou un signalement de voyageurs. */
+type Bubble = RecentMessage & { report?: TravelAlert };
+/** Un signalement s'invite toutes les 2 bulles de messages. */
+const REPORT_EVERY = 2;
+
+const MEGAPHONE = `<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m3 11 18-5v12L3 14v-3z"/><path d="M11.6 16.8a3 3 0 1 1-5.8-1.6"/></svg>`;
 
 /**
  * La carte qui vit : une seule bulle à la fois sort du navire ou du port d'un salon, avec le prénom
@@ -40,10 +56,35 @@ export function useChatBubbles(
   paused: boolean,
   onSelect: (selection: Selection | null) => void,
 ) {
+  const { user } = useAuth();
   const real = useQuery(recentChatQuery).data ?? [];
   const demos = useQuery(chatDemoQuery).data;
-  const latest = useRef({ fleet, ports, routes, onSelect, messages: [] as RecentMessage[] });
-  latest.current = { fleet, ports, routes, onSelect, messages: bubbleMessages(real, demos) };
+  const community = useQuery(communityQuery(undefined, undefined, false, user?.id)).data;
+  // Les signalements publics en cours, les plus récents d'abord, mêlés aux messages.
+  const reports: Bubble[] = activeAlerts(community?.alerts ?? [])
+    .filter(isPublicAlert)
+    .sort((a, b) => b.created_at.localeCompare(a.created_at))
+    .slice(0, 4)
+    .map((alert) => ({
+      id: `report-${alert.id}`,
+      kind: alert.target_kind === "port" ? "port" : "crossing",
+      room: "",
+      body: alertLabel(alert),
+      created_at: alert.created_at,
+      label: null,
+      author: { pseudo: "Signalement" },
+      report: alert,
+    }));
+  const messages: Bubble[] = bubbleMessages(real, demos);
+  const mixed: Bubble[] = [];
+  let next = 0;
+  messages.forEach((message, position) => {
+    mixed.push(message);
+    if ((position + 1) % REPORT_EVERY === 0 && next < reports.length) mixed.push(reports[next++]!);
+  });
+  mixed.push(...reports.slice(next));
+  const latest = useRef({ fleet, ports, routes, onSelect, messages: [] as Bubble[] });
+  latest.current = { fleet, ports, routes, onSelect, messages: mixed };
 
   useEffect(() => {
     const map = mapRef.current;
@@ -69,8 +110,13 @@ export function useChatBubbles(
       };
     };
     // D'où sort la bulle : le navire du salon, sinon le navire de la ligne, sinon son port.
-    const spotOf = (message: RecentMessage): Spot | null => {
+    const spotOf = (message: Bubble): Spot | null => {
       const { fleet, routes } = latest.current;
+      if (message.report) {
+        if (message.report.target_kind === "port") return portSpot(message.report.target_id);
+        const ship = fleet.find((item) => item.vesselId === message.report!.target_id);
+        return ship ? shipSpot(ship) : null;
+      }
       if (message.kind === "port") return portSpot(message.room);
       if (message.room) {
         const ship = fleet.find((item) => item.departureId === message.room);
@@ -101,7 +147,15 @@ export function useChatBubbles(
       marker = null;
       window.setTimeout(() => old?.remove(), 300);
     };
-    const open = (message: RecentMessage) => {
+    const open = (message: Bubble) => {
+      if (message.report) {
+        latest.current.onSelect({
+          type: message.report.target_kind === "port" ? "port" : "vessel",
+          id: message.report.target_id,
+        });
+        requestSignalFocus(message.report.id);
+        return;
+      }
       if (message.demo || !message.room) {
         window.dispatchEvent(new Event(OPEN_ROOM_PICKER_EVENT));
         return;
@@ -113,10 +167,34 @@ export function useChatBubbles(
       );
       enterRoom(message.kind, message.room);
     };
-    const build = (message: RecentMessage) => {
+    const build = (message: Bubble) => {
       const element = document.createElement("button");
       element.type = "button";
       element.className = "bw-map-bubble";
+      if (message.report) {
+        // Un signalement : le mégaphone de « Signaler », la situation et ses confirmations.
+        const { report } = message;
+        const place =
+          report.target_kind === "port"
+            ? `Port de ${latest.current.ports.find((port) => port.id === report.target_id)?.name ?? "—"}`
+            : (latest.current.fleet.find((ship) => ship.vesselId === report.target_id)?.name ?? "Navire");
+        element.dataset["report"] = "true";
+        element.style.setProperty("--situation-color", situationOf(report.category).color);
+        const icon = document.createElement("i");
+        icon.innerHTML = MEGAPHONE;
+        const text = document.createElement("span");
+        const who = document.createElement("small");
+        who.textContent = `Signalement · ${place}`;
+        const body = document.createElement("strong");
+        body.textContent = `${message.body}${report.confirmations ? ` · confirmé par ${report.confirmations}` : ""}`;
+        text.append(who, body);
+        element.append(icon, text);
+        element.addEventListener("click", (event) => {
+          event.stopPropagation();
+          open(message);
+        });
+        return element;
+      }
       const avatar = document.createElement("img");
       avatar.alt = "";
       avatar.src = message.author.official
@@ -161,7 +239,8 @@ export function useChatBubbles(
           .setLngLat(spot.at)
           .addTo(map);
         shown++;
-        if (shown % INVITE_EVERY === 0) window.dispatchEvent(new Event(CHAT_INVITE_EVENT));
+        if (!message.report && shown % INVITE_EVERY === 0)
+          window.dispatchEvent(new Event(CHAT_INVITE_EVENT));
         timer = window.setTimeout(() => {
           hide();
           timer = window.setTimeout(next, GAP_MS);

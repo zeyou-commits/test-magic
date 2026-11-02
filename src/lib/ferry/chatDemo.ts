@@ -24,10 +24,7 @@ export const chatDemoKey = ["bw-chat", "demo"] as const;
 export const chatDemoQuery = queryOptions({
   queryKey: chatDemoKey,
   queryFn: async (): Promise<DemoMessage[] | null> => {
-    const { data, error } = await supabase
-      .from("bw_chat_demo_messages")
-      .select("*")
-      .order("sort");
+    const { data, error } = await supabase.from("bw_chat_demo_messages").select("*").order("sort");
     if (error) return null;
     return data as DemoMessage[];
   },
@@ -66,33 +63,76 @@ export const recentChatQuery = queryOptions({
 
 /** Exemples intégrés, si la liste de l'admin n'est pas disponible. */
 export const BUILT_IN_DEMOS: Omit<DemoMessage, "id" | "sort" | "active">[] = [
-  { pseudo: "Nadia", avatar: "maman", label: "Marseille → Alger", body: "On est déjà dans la file, ça avance doucement mais ça avance !" },
-  { pseudo: "Karim", avatar: "papa", label: "Alicante → Oran", body: "Quelqu'un sait si le restaurant à bord est ouvert ce soir ?" },
-  { pseudo: "Samia", avatar: "fille_bled", label: "Port de Sète", body: "Parking plein côté gare maritime, prévoyez de l'avance." },
-  { pseudo: "Yacine", avatar: "jeune_degrade", label: "Valence → Alger", body: "Mer calme pour l'instant, les enfants dorment enfin 😄" },
-  { pseudo: "Lina", avatar: "tata_houria", label: "Barcelone → Oran", body: "Contrôles rapides ce matin, 20 minutes à peine." },
+  {
+    pseudo: "Nadia",
+    avatar: "maman",
+    label: "Marseille → Alger",
+    body: "On est déjà dans la file, ça avance doucement mais ça avance !",
+  },
+  {
+    pseudo: "Karim",
+    avatar: "papa",
+    label: "Alicante → Oran",
+    body: "Quelqu'un sait si le restaurant à bord est ouvert ce soir ?",
+  },
+  {
+    pseudo: "Samia",
+    avatar: "fille_bled",
+    label: "Port de Sète",
+    body: "Parking plein côté gare maritime, prévoyez de l'avance.",
+  },
+  {
+    pseudo: "Yacine",
+    avatar: "jeune_degrade",
+    label: "Valence → Alger",
+    body: "Mer calme pour l'instant, les enfants dorment enfin 😄",
+  },
+  {
+    pseudo: "Lina",
+    avatar: "tata_houria",
+    label: "Barcelone → Oran",
+    body: "Contrôles rapides ce matin, 20 minutes à peine.",
+  },
 ];
 
-/** Au lancement, des exemples complètent les vrais messages ; les vrais passent toujours devant. */
-export function bubbleMessages(real: RecentMessage[], demos: DemoMessage[] | null | undefined) {
-  if (real.length >= 3) return real;
+/** Quand montrer les exemples : sous un seuil de vrais messages, toujours, ou jamais. */
+export type DemoSetting = { mode: "auto" | "always" | "never"; threshold: number };
+export const DEFAULT_DEMO_SETTING: DemoSetting = { mode: "auto", threshold: 3 };
+export const chatDemoSettingKey = ["bw-chat", "demo-setting"] as const;
+export const chatDemoSettingQuery = queryOptions({
+  queryKey: chatDemoSettingKey,
+  queryFn: async (): Promise<DemoSetting> => {
+    const { data, error } = await supabase.rpc("bw_chat_demo_setting");
+    if (error || !data) return DEFAULT_DEMO_SETTING;
+    return { ...DEFAULT_DEMO_SETTING, ...(data as Partial<DemoSetting>) };
+  },
+  staleTime: 5 * 60_000,
+  retry: false,
+});
+
+/** Les vrais messages passent toujours devant ; les exemples complètent selon le réglage. */
+export function bubbleMessages(
+  real: RecentMessage[],
+  demos: DemoMessage[] | null | undefined,
+  setting: DemoSetting = DEFAULT_DEMO_SETTING,
+) {
+  if (setting.mode === "never") return real;
+  if (setting.mode === "auto" && real.length >= setting.threshold) return real;
   const list = demos ? demos.filter((demo) => demo.active) : BUILT_IN_DEMOS;
   return [
     ...real,
-    ...list.map(
-      (demo, index): RecentMessage => ({
-        id: `demo-${index}`,
-        demo: true,
-        kind: "crossing",
-        room: "",
-        body: demo.body,
-        created_at: "",
-        label: demo.label,
-        author: { pseudo: demo.pseudo, avatar: demo.avatar },
-        portId: demo.port_id ?? null,
-        routeId: demo.route_id ?? null,
-      }),
-    ),
+    ...list.map((demo, index): RecentMessage => ({
+      id: `demo-${index}`,
+      demo: true,
+      kind: "crossing",
+      room: "",
+      body: demo.body,
+      created_at: "",
+      label: demo.label,
+      author: { pseudo: demo.pseudo, avatar: demo.avatar },
+      portId: demo.port_id ?? null,
+      routeId: demo.route_id ?? null,
+    })),
   ];
 }
 

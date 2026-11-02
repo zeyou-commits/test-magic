@@ -8,7 +8,14 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { supabase as typedSupabase } from "@/integrations/supabase/client";
 import { personas, type TravellerCard } from "@/lib/community/travellers";
-import { chatDemoKey, chatDemoQuery, type DemoMessage } from "@/lib/ferry/chatDemo";
+import {
+  chatDemoKey,
+  chatDemoQuery,
+  chatDemoSettingKey,
+  chatDemoSettingQuery,
+  type DemoMessage,
+  type DemoSetting,
+} from "@/lib/ferry/chatDemo";
 import { portsQuery, routesQuery } from "@/lib/ferry/queries";
 import { AdminDrawer, AdminListToolbar, matches } from "./AdminDrawer";
 
@@ -69,9 +76,10 @@ export function ChatDemoAdmin() {
     <div className="bw-admin-surface mt-4 p-4">
       <h3 className="text-sm font-bold">Messages d'exemple des salons</h3>
       <p className="mt-1 text-xs text-muted-foreground">
-        Ils défilent à côté du bouton Salons tant qu'il y a moins de 3 vrais messages dans les 2
-        dernières heures. Les vrais messages passent toujours devant.
+        Ils sortent des ports et des navires sur la carte, une bulle à la fois. Les vrais messages
+        des 2 dernières heures passent toujours devant.
       </p>
+      <DemoSettingForm />
       <AdminListToolbar
         search={search}
         onSearch={setSearch}
@@ -329,5 +337,90 @@ function DemoEditor({
         </div>
       </div>
     </AdminDrawer>
+  );
+}
+
+/** Quand montrer les exemples : sous un seuil de vrais messages, toujours, ou jamais. */
+function DemoSettingForm() {
+  const client = useQueryClient();
+  const current = useQuery(chatDemoSettingQuery).data;
+  const [draft, setDraft] = useState<DemoSetting | null>(null);
+  const setting = draft ?? current ?? { mode: "auto", threshold: 3 };
+  const save = useMutation({
+    mutationFn: async (next: DemoSetting) => {
+      const { error } = await supabase
+        .from("bw_admin_settings")
+        .upsert({ key: "chat_demo", value: next, updated_at: new Date().toISOString() });
+      if (error) throw new Error(error.message);
+    },
+    onSuccess: () => {
+      void client.invalidateQueries({ queryKey: chatDemoSettingKey });
+      setDraft(null);
+      toast.success("Réglage enregistré.");
+    },
+    onError: (error: Error) => toast.error(error.message),
+  });
+  const options: { mode: DemoSetting["mode"]; label: string; hint: string }[] = [
+    {
+      mode: "auto",
+      label: "Automatique",
+      hint: "Les exemples complètent tant qu'il y a peu de vrais messages.",
+    },
+    { mode: "always", label: "Toujours", hint: "Les exemples restent mêlés aux vrais messages." },
+    {
+      mode: "never",
+      label: "Jamais",
+      hint: "Seulement les vrais messages ; sans eux, aucune bulle.",
+    },
+  ];
+  return (
+    <div className="mt-3 grid gap-2 rounded-xl border border-border p-3 text-sm">
+      <strong className="text-xs">Quand afficher les exemples</strong>
+      <div className="grid gap-1.5">
+        {options.map((option) => (
+          <label key={option.mode} className="flex items-start gap-2">
+            <input
+              type="radio"
+              name="chat-demo-mode"
+              checked={setting.mode === option.mode}
+              onChange={() => setDraft({ ...setting, mode: option.mode })}
+              className="mt-1"
+            />
+            <span>
+              <b>{option.label}</b>
+              <small className="block text-xs text-muted-foreground">{option.hint}</small>
+            </span>
+          </label>
+        ))}
+      </div>
+      {setting.mode === "auto" ? (
+        <label className="flex items-center gap-2 text-xs">
+          Exemples tant qu'il y a moins de
+          <Input
+            type="number"
+            min={1}
+            max={20}
+            value={setting.threshold}
+            onChange={(e) =>
+              setDraft({
+                ...setting,
+                threshold: Math.min(20, Math.max(1, Number(e.target.value) || 1)),
+              })
+            }
+            className="h-8 w-16"
+          />
+          vrais messages dans les 2 dernières heures
+        </label>
+      ) : null}
+      <div>
+        <Button
+          size="sm"
+          disabled={!draft || save.isPending}
+          onClick={() => draft && save.mutate(draft)}
+        >
+          Enregistrer le réglage
+        </Button>
+      </div>
+    </div>
   );
 }

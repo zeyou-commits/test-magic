@@ -6,6 +6,7 @@ import { enterRoom } from "@/lib/ferry/chat";
 import {
   bubbleMessages,
   chatDemoQuery,
+  chatDemoSettingQuery,
   CHAT_INVITE_EVENT,
   OPEN_ROOM_PICKER_EVENT,
   recentChatQuery,
@@ -75,7 +76,8 @@ export function useChatBubbles(
       author: { pseudo: "Signalement" },
       report: alert,
     }));
-  const messages: Bubble[] = bubbleMessages(real, demos);
+  const setting = useQuery(chatDemoSettingQuery).data;
+  const messages: Bubble[] = bubbleMessages(real, demos, setting);
   const mixed: Bubble[] = [];
   let next = 0;
   messages.forEach((message, position) => {
@@ -177,7 +179,8 @@ export function useChatBubbles(
         const place =
           report.target_kind === "port"
             ? `Port de ${latest.current.ports.find((port) => port.id === report.target_id)?.name ?? "—"}`
-            : (latest.current.fleet.find((ship) => ship.vesselId === report.target_id)?.name ?? "Navire");
+            : (latest.current.fleet.find((ship) => ship.vesselId === report.target_id)?.name ??
+              "Navire");
         element.dataset["report"] = "true";
         element.style.setProperty("--situation-color", situationOf(report.category).color);
         const icon = document.createElement("i");

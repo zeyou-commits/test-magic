@@ -166,6 +166,11 @@ const LIGHTHOUSE_SVG = `<svg class="port-marker__lighthouse" viewBox="0 0 28 44"
 <rect x="12.6" y="25.5" width="2.8" height="3" rx="1.2" fill="#16324a" opacity=".55"/>
 <rect x="5.5" y="38" width="17" height="4.5" rx="2.2" fill="#7f97a3"/>
 </svg>`;
+const INLAND_COUNTRY_NAMES = [
+  "Switzerland", "Austria", "Liechtenstein", "Luxembourg", "Czechia", "Czech Republic", "Slovakia",
+  "Hungary", "Serbia", "Kosovo", "North Macedonia", "Moldova", "Belarus", "Andorra", "San Marino",
+  "Vatican City", "Monaco", "Gibraltar", "Mali", "Niger", "Chad", "Burkina Faso",
+];
 /** Pays sans façade maritime, et micro-États qui encombrent la côte : leur nom est masqué. */
 const INLAND_COUNTRIES = [
   "AD", "AT", "BA", "BF", "BY", "CF", "CH", "CZ", "ET", "GI", "HU", "LI", "LU", "MC", "MD", "MK",
@@ -593,6 +598,8 @@ export default function FerryMap({
           "all",
           ["!", ["in", ["get", "name"], ["literal", ["España", "Andorra"]]]],
           ["!", ["in", ["get", "iso_a2"], ["literal", INLAND_COUNTRIES]]],
+          // Certaines tuiles n'ont pas le code pays : on reconnaît aussi le nom anglais.
+          ["!", ["in", ["get", "name:en"], ["literal", INLAND_COUNTRY_NAMES]]],
         ];
         const current = map.getFilter(layer.id);
         map.setFilter(layer.id, (current ? ["all", current, hide] : hide) as never);

@@ -166,12 +166,7 @@ export function AlertTicker() {
     setCopied(true);
     window.setTimeout(() => setCopied(false), 2000);
   };
-  const close = (
-    <button
-      type="button"
-      className="bw-alert-ticker__close"
-      aria-label="Masquer les alertes"
-      onClick={() => {
+  const dismissAlerts = () => {
         // Fermer le bandeau, c'est aussi retirer la pastille de ces alertes.
         setFlashIgnored(
           (news ?? [])
@@ -189,7 +184,13 @@ export function AlertTicker() {
         } catch {
           /* sans stockage, le bandeau reviendra au prochain chargement */
         }
-      }}
+  };
+  const close = (
+    <button
+      type="button"
+      className="bw-alert-ticker__close"
+      aria-label="Masquer les alertes"
+      onClick={dismissAlerts}
     >
       <X size={15} aria-hidden />
     </button>
@@ -288,8 +289,24 @@ export function AlertTicker() {
       </div>
     );
   };
+  // Alertes et actus ensemble : un seul bandeau qui défile, les alertes en tête, en rouge.
+  const merged = showAlerts && showRail;
   const railGroup = (copy: boolean) => (
     <span className="bw-news-rail__group" aria-hidden={copy || undefined}>
+      {merged
+        ? alerts.map((alert) => (
+            <button
+              key={alert.key}
+              type="button"
+              className="bw-news-rail__alert"
+              tabIndex={copy ? -1 : undefined}
+              onClick={() => open(alert.id)}
+            >
+              <CircleAlert size={16} aria-hidden />
+              {alert.text}
+            </button>
+          ))
+        : null}
       {rail.map((item) => (
         <Link
           key={item.id}
@@ -310,10 +327,14 @@ export function AlertTicker() {
       ))}
     </span>
   );
-  const railSeconds = Math.max(24, rail.map((item) => item.title).join("").length * 0.24);
+  const railSeconds = Math.max(
+    24,
+    [...rail.map((item) => item.title), ...(merged ? alerts.map((alert) => alert.text) : [])].join("")
+      .length * 0.24,
+  );
   return (
-    <div ref={measure} className="bw-top-rail" data-both={(showAlerts && showRail) || undefined}>
-      {showAlerts ? alertBlock() : null}
+    <div ref={measure} className="bw-top-rail">
+      {showAlerts && !merged ? alertBlock() : null}
       {showRail ? (
         <div className="bw-news-rail" role="region" aria-label="Fil d'actualités">
           <Link to="/actualites" className="bw-news-rail__chip">
@@ -330,6 +351,7 @@ export function AlertTicker() {
             className="bw-news-rail__close"
             aria-label="Masquer le fil d'actualités"
             onClick={() => {
+              if (merged) dismissAlerts();
               setRailDismissed(railVersion);
               try {
                 window.localStorage.setItem(RAIL_DISMISSED_KEY, railVersion);

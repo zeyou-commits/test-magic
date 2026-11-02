@@ -761,6 +761,8 @@ export function QuickReport({
           </PopoverContent>
         </Popover>
       )}
+      {/* Sur ordinateur, les salons se rangent sous Signaler. */}
+      {isMobile ? null : children}
     </div>
   );
 }

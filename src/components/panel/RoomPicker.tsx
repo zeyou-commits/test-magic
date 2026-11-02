@@ -10,7 +10,8 @@ import { supabase as typedSupabase } from "@/integrations/supabase/client";
 import { formatDateParts, formatDateTime } from "@/lib/ferry/format";
 import { dateKeyInZone } from "@/lib/ferry/time";
 import { pickerRows, searchRows } from "@/lib/ferry/portPassage";
-import { portsQuery, routesQuery } from "@/lib/ferry/queries";
+import { companiesQuery, portsQuery, routesQuery, vesselsQuery } from "@/lib/ferry/queries";
+import { CompanyBadge } from "./CompanyBadge";
 import { portTimeZone } from "@/lib/ferry/time";
 import type { Selection } from "@/lib/ferry/types";
 
@@ -49,7 +50,13 @@ export function RoomPicker({
   onOpenChange,
   questionsFirst = false,
 }: {
-  departures: { id: string; departure_at: string; route_id: string }[];
+  departures: {
+    id: string;
+    departure_at: string;
+    route_id: string;
+    company_id?: string | null;
+    vessel_id?: string | null;
+  }[];
   currentId?: string | undefined;
   onSelect: (selection: Selection) => void;
   open: boolean;
@@ -58,16 +65,38 @@ export function RoomPicker({
   questionsFirst?: boolean;
 }) {
   const [text, setText] = useState("");
+  const [companyId, setCompanyId] = useState<string | null>(null);
   const { data: routes = [] } = useQuery(routesQuery);
   const { data: ports = [] } = useQuery(portsQuery);
+  const { data: companies = [] } = useQuery(companiesQuery);
+  const { data: vessels = [] } = useQuery(vesselsQuery);
   const ids = departures.map((item) => item.id);
   const counts = useRoomCounts(open ? ids : []);
-  const rows = useMemo(
-    () =>
-      pickerRows(departures, routes, ports, (iso, port) => formatDateTime(iso, portTimeZone(port))),
-    [departures, routes, ports],
-  );
-  const shown = searchRows(rows, text);
+  // La compagnie et le navire de chaque départ : affichés, et retrouvés par la recherche.
+  const rows = useMemo(() => {
+    const plain = (value: string) =>
+      value
+        .normalize("NFD")
+        .replace(/[̀-ͯ]/g, "")
+        .toLowerCase();
+    const byId = new Map(departures.map((item) => [item.id, item]));
+    return pickerRows(departures, routes, ports, (iso, port) =>
+      formatDateTime(iso, portTimeZone(port)),
+    ).map((row) => {
+      const departure = byId.get(row.id);
+      const company = companies.find((item) => item.id === departure?.company_id);
+      const vessel = vessels.find((item) => item.id === departure?.vessel_id);
+      return {
+        ...row,
+        company,
+        vessel: vessel?.name ?? null,
+        search: `${row.search} ${plain(`${company?.name ?? ""} ${vessel?.name ?? ""}`)}`,
+      };
+    });
+  }, [departures, routes, ports, companies, vessels]);
+  // Les compagnies présentes dans la liste, pour filtrer d'un toucher.
+  const present = companies.filter((company) => rows.some((row) => row.company?.id === company.id));
+  const shown = searchRows(rows, text).filter((row) => !companyId || row.company?.id === companyId);
   // Regroupés par jour, l'heure en avant : on retrouve son bateau d'un coup d'œil.
   const departureOf = new Map(departures.map((item) => [item.id, item]));
   const routeOf = new Map(routes.map((item) => [item.id, item]));
@@ -105,6 +134,7 @@ export function RoomPicker({
   const close = () => {
     onOpenChange(false);
     setText("");
+    setCompanyId(null);
   };
   return (
     <>
@@ -125,10 +155,28 @@ export function RoomPicker({
             <input
               value={text}
               onChange={(event) => setText(event.target.value)}
-              placeholder="Port ou date"
+              placeholder="Port, date, compagnie ou navire"
               aria-label="Rechercher une traversée"
             />
           </label>
+          {present.length > 1 ? (
+            <div className="bw-room-picker__companies" role="group" aria-label="Filtrer par compagnie">
+              <button type="button" aria-pressed={!companyId} onClick={() => setCompanyId(null)}>
+                Toutes
+              </button>
+              {present.map((company) => (
+                <button
+                  key={company.id}
+                  type="button"
+                  aria-pressed={companyId === company.id}
+                  onClick={() => setCompanyId(companyId === company.id ? null : company.id)}
+                >
+                  <CompanyBadge name={company.name} logoUrl={company.logo_url} size={18} />
+                  {company.name}
+                </button>
+              ))}
+            </div>
+          ) : null}
           {shown.length ? (
             <div className="bw-room-picker__list">
               {[...days.entries()].map(([key, items]) => (
@@ -151,7 +199,20 @@ export function RoomPicker({
                             }}
                           >
                             <time>{time}</time>
-                            <strong>{row.line}</strong>
+                            <span className="bw-room-picker__what">
+                              <strong>{row.line}</strong>
+                              <small>
+                                {row.company ? (
+                                  <CompanyBadge
+                                    name={row.company.name}
+                                    logoUrl={row.company.logo_url}
+                                    size={14}
+                                  />
+                                ) : null}
+                                {[row.company?.name, row.vessel].filter(Boolean).join(" · ") ||
+                                  "Compagnie à confirmer"}
+                              </small>
+                            </span>
                             {count ? (
                               <b>
                                 <MessagesSquare size={12} aria-hidden /> {count}

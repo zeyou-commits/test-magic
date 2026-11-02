@@ -10606,3 +10606,45 @@ img[data-logo="dark"] {
   border-top: 0;
   padding-top: 4px;
 }
+/* Choisir sa traversée : la compagnie et le navire, et un filtre par compagnie. */
+.bw-room-picker__companies {
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.bw-room-picker__companies button {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: 5px;
+  min-height: 30px;
+  padding: 0 11px;
+  border: 1px solid #dfe9e3;
+  border-radius: 999px;
+  background: #ffffff;
+  color: #16324a;
+  font-size: 12px;
+  font-weight: 700;
+}
+.bw-room-picker__companies button[aria-pressed="true"] {
+  border-color: #0e7a43;
+  background: #0e7a43;
+  color: #ffffff;
+}
+.bw-room-picker__what {
+  display: grid;
+  flex: 1;
+  min-width: 0;
+  line-height: 1.3;
+}
+.bw-room-picker__what small {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  overflow: hidden;
+  color: var(--muted-foreground);
+  font-size: 11.5px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

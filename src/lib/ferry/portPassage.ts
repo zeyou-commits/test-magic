@@ -136,7 +136,7 @@ export function pickerRows<P extends { id: string; name: string }>(
 }
 
 /** Chaque mot doit se retrouver : « oran 12 nov » ; accents et majuscules ne comptent pas. */
-export const searchRows = (rows: PickerRow[], text: string) => {
+export const searchRows = <T extends PickerRow>(rows: T[], text: string) => {
   const words = plain(text).split(/\s+/).filter(Boolean);
   return rows.filter((row) => words.every((word) => row.search.includes(word)));
 };

@@ -3,7 +3,7 @@ import { bringTooltipToFront } from "./tooltipStack";
 import { placeMoodsQuery } from "@/lib/community/travellers";
 import { useQuery } from "@tanstack/react-query";
 import { Marker, type Map as MapLibreMap } from "maplibre-gl";
-import type { FleetShip } from "@/lib/ferry/fleet";
+import { shipAnchor, type FleetShip } from "@/lib/ferry/fleet";
 import { vesselMapIcon } from "@/lib/ferry/vesselVisuals";
 import { arcGap, dockSpread, vesselScreenHeight } from "./shipIcons";
 import { avatarFor, presenceQuery } from "@/lib/ferry/presence";
@@ -94,11 +94,9 @@ export function usePresenceMarkers(
     };
     for (const [vesselId, count] of byVessel) {
       const ship = fleet.find((item) => item.vesselId === vesselId);
-      const point: [number, number] | undefined = ship?.live
-        ? [ship.live.position.longitude, ship.live.position.latitude]
-        : ship?.lngLat;
+      const point = ship ? shipAnchor(ship) : undefined;
       if (!ship || !point) continue;
-      const shift: [number, number] = ship.live ? [0, 0] : [ship.dx, ship.dy];
+      const shift: [number, number] = [ship.dx, ship.dy];
       const marker = new Marker({
         element: pin(count, vesselId, `À bord · ${ship.name}`, { type: "vessel", id: vesselId }),
         anchor: "top-left",

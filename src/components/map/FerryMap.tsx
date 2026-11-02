@@ -21,7 +21,7 @@ import type { Port, RouteLine, Selection } from "@/lib/ferry/types";
 import { formatDuration } from "@/lib/ferry/format";
 import { algeriaGeoJson } from "@/lib/ferry/algeriaGeoJson";
 import { routeArc } from "@/lib/ferry/geo";
-import type { FleetShip } from "@/lib/ferry/fleet";
+import { shipAnchor, type FleetShip } from "@/lib/ferry/fleet";
 import {
   addShipImages,
   addVesselImages,
@@ -875,31 +875,26 @@ export default function FerryMap({
         type: "symbol",
         source: "fleet",
         filter: ["==", ["get", "alert"], 1],
+        // Une pastille rouge « Immobilisé » juste sous le nom du navire, lisible sans le masquer.
         layout: {
           "icon-image": "ship-alert",
+          "icon-text-fit": "both",
+          "icon-text-fit-padding": [3, 8, 3, 8],
+          "text-field": ["get", "alertLabel"],
+          "text-font": ["Noto Sans Bold"],
+          "text-size": ["interpolate", ["linear"], ["zoom"], 3, 8.5, 6, 9.5, 9, 11],
+          "text-anchor": "top",
+          "text-offset": ["literal", [0, 2.4]],
+          "text-allow-overlap": true,
+          "text-ignore-placement": true,
           "icon-allow-overlap": true,
           "icon-ignore-placement": true,
-          "icon-size": [
-            "interpolate",
-            ["linear"],
-            ["zoom"],
-            3,
-            0.5,
-            5,
-            0.6,
-            7,
-            0.7,
-            9,
-            0.82,
-            11,
-            0.98,
-            13,
-            1.12,
-            15,
-            1.24,
-          ],
         },
-        paint: { "icon-opacity": ["get", "photoOpacity"] },
+        paint: {
+          "text-color": "#ffffff",
+          "icon-opacity": ["get", "photoOpacity"],
+          "text-opacity": ["get", "photoOpacity"],
+        },
       });
       map.addLayer({
         id: "fleet-labels",
@@ -2176,10 +2171,8 @@ export default function FerryMap({
       inner.className = "bw-pennant-inner";
       inner.append(flag, mast);
       el.append(inner);
-      const at = ship.live
-        ? ([ship.live.position.longitude, ship.live.position.latitude] as [number, number])
-        : ship.lngLat;
-      const shift: [number, number] = ship.live ? [0, 0] : [ship.dx, ship.dy];
+      const at = shipAnchor(ship);
+      const shift: [number, number] = [ship.dx, ship.dy];
       const marker = new Marker({ element: el, anchor: slug ? "top" : "bottom-left", offset: shift })
         .setLngLat(at)
         .addTo(map);
@@ -2404,7 +2397,8 @@ export default function FerryMap({
               (focus.size > 0 && !focus.has(ship.routeId)));
           const selected = previewing ? previewed : selectedRouteId === ship.routeId || focused;
           const live = ship.live;
-          const base = live ? projectedPosition(live.position, clock) : ship.lngLat;
+          // Rangé dans la file d'un port : il reste à sa place, même avec un signal AIS.
+          const base = live && !ship.portId ? projectedPosition(live.position, clock) : ship.lngLat;
           // Les navires amarrés sont rangés en file à côté du port : le décalage est en pixels écran.
           let coordinates = base;
           if (ship.dx !== 0 || ship.dy !== 0) {
@@ -2454,7 +2448,9 @@ export default function FerryMap({
             type: "Feature" as const,
             properties: {
               alert: shipAlert ? 1 : 0,
-              late: ship.delay ? `Retardé ${ship.delay}` : "",
+              alertLabel: shipAlert?.label ?? "",
+              // Navire en alerte : sa pastille prend la place du retard sous son nom.
+              late: ship.delay && !shipAlert ? `Retardé ${ship.delay}` : "",
               state: ship.state,
               icon: shipIcon(wakeLevel(ship.state, live ? speed : null), course),
               course,

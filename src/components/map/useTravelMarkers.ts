@@ -17,7 +17,7 @@ import {
   useSignalCatalog,
   type TravelAlert,
 } from "@/lib/ferry/community";
-import type { FleetShip } from "@/lib/ferry/fleet";
+import { shipAnchor, type FleetShip } from "@/lib/ferry/fleet";
 import type { MapPreview } from "@/lib/ferry/mapPresentation";
 import { formatAge } from "@/lib/ferry/tracking";
 import type { Port, Selection } from "@/lib/ferry/types";
@@ -115,16 +115,16 @@ export function useTravelMarkers(
       const ship = !isPort ? fleet.find((s) => s.vesselId === alert.target_id) : undefined;
       const point: [number, number] | undefined = port
         ? [port.longitude, port.latitude]
-        : ship?.live
-          ? [ship.live.position.longitude, ship.live.position.latitude]
-          : ship?.lngLat;
+        : ship
+          ? shipAnchor(ship)
+          : undefined;
       if (!point) continue;
       const name = port?.name ?? ship?.name ?? "";
       const travelers = alerts.reduce((sum, item) => sum + 1 + item.confirmations, 0);
       const good = alerts.every((item) => item.category === "fluid");
       const onSite = alerts.reduce((sum, item) => sum + onSiteCount(item), 0);
       // Les navires amarrés sont décalés en pixels à côté du port : la pastille suit le navire.
-      const shift: [number, number] = ship && !ship.live ? [ship.dx, ship.dy] : [0, 0];
+      const shift: [number, number] = ship ? [ship.dx, ship.dy] : [0, 0];
 
       const button = el("button", "bw-signal-pin");
       button.type = "button";

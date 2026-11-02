@@ -10,6 +10,7 @@ import { pointAlong, routeArc, type LngLat } from "./geo";
 import { overlappingDepartureIds } from "./conflicts";
 import {
   delayLabel,
+  haversineKm,
   LIVE_MAX_AGE_MINUTES,
   reportedCrossing,
   trackingTimes,
@@ -38,6 +39,16 @@ export interface FleetShip {
 }
 
 const HOUR = 3600_000;
+/** Un navire vu à quai à moins de cette distance d'un port rejoint la file de ce port. */
+const QUAY_RADIUS_KM = 5;
+/** Écart entre deux navires de la file, en pixels de base : un peu plus d'une largeur de navire. */
+export const DOCK_GAP = 28;
+
+/** Où poser un navire : son port s'il est rangé dans la file, sinon sa position réelle ou déduite. */
+export function shipAnchor(ship: FleetShip): LngLat {
+  if (ship.portId || !ship.live) return ship.lngLat;
+  return [ship.live.position.longitude, ship.live.position.latitude];
+}
 // 48 h avant le départ (pour voir les départs des 2 prochains jours)
 const DOCK_BEFORE_DEPARTURE = 48 * HOUR;
 const DOCK_AFTER_ARRIVAL = 12 * HOUR;
@@ -149,21 +160,37 @@ export function buildFleet(
 
     // Signal AIS récent : la position réelle prime sur l'horaire (en mer ou à quai).
     if (live && vessel) {
-      ships.push({
+      // À quai d'après l'AIS : il prend sa place dans la file du port, comme les autres.
+      const quay =
+        live.phase === "sea"
+          ? undefined
+          : [...portById.values()]
+              .map((port) => ({
+                port,
+                km: haversineKm(
+                  [live.position.longitude, live.position.latitude],
+                  [port.longitude, port.latitude],
+                ),
+              }))
+              .filter((item) => item.km <= QUAY_RADIUS_KM)
+              .sort((a, b) => a.km - b.km)[0]?.port;
+      const ship: FleetShip = {
         id: `live:${vessel.id}`,
         name,
         vesselId: vessel.id,
         state: live.phase === "sea" ? "sea" : "docked",
         source: "live",
-        lngLat: [live.position.longitude, live.position.latitude],
+        lngLat: quay ? [quay.longitude, quay.latitude] : [live.position.longitude, live.position.latitude],
         course: live.position.courseDeg ?? 90,
         dx: 0,
         dy: 0,
         routeId: live.route.id,
         departureId: live.departure.id,
-        portId: null,
+        portId: quay?.id ?? null,
         live,
-      });
+      };
+      ships.push(ship);
+      if (quay) dockedAt.set(quay.id, [...(dockedAt.get(quay.id) ?? []), ship]);
       return;
     }
 
@@ -263,8 +290,8 @@ export function buildFleet(
     const offshoreDown = port?.country_code !== "DZ"; // ports européens : mer au sud ; ports algériens : mer au nord
     list.sort((a, b) => a.name.localeCompare(b.name));
     list.forEach((ship, index) => {
-      // Collés au quai : léger éventail le long de la côte, sans partir au large.
-      ship.dx = (index - (list.length - 1) / 2) * 18;
+      // En file indienne le long du quai : chaque navire à côté du précédent, sans se chevaucher.
+      ship.dx = (index - (list.length - 1) / 2) * DOCK_GAP;
       ship.dy = offshoreDown ? 10 : -10;
       ship.course = index % 2 === 0 ? 90 : 270;
     });

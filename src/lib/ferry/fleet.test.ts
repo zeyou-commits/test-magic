@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildFleet } from "./fleet";
+import { buildFleet, DOCK_GAP } from "./fleet";
 import type { Departure, Port, RouteLine, Vessel } from "./types";
 
 const now = Date.parse("2026-10-30T12:00:00Z");
@@ -35,5 +35,16 @@ describe("navire immobilisé sur la carte", () => {
   });
   it("sans port connu, il n'est jamais présenté en mer", () => {
     expect(build(new Map([["v", null]]))?.state).not.toBe("sea");
+  });
+});
+
+describe("plusieurs navires au même port", () => {
+  it("sont rangés en file indienne, sans se chevaucher", () => {
+    const two = [...vessels, { id: "w", name: "Le Cracovia" }] as Vessel[];
+    const legs = [...departures, { ...departures[0]!, id: "e", vessel_id: "w" }] as Departure[];
+    const fleet = buildFleet(legs, routes, ports, two, [], now, new Map([["v", "ali"], ["w", "ali"]]));
+    const gaps = fleet.map((ship) => ship.dx).sort((a, b) => a - b);
+    expect(fleet.every((ship) => ship.portId === "ali")).toBe(true);
+    expect(gaps[1]! - gaps[0]!).toBe(DOCK_GAP);
   });
 });

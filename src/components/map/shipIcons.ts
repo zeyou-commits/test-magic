@@ -237,27 +237,24 @@ function drawHeading(): ImageData | null {
 }
 
 /** Point d'exclamation sur le jeton d'un navire en alerte (couche « fleet-alert »). */
+/** Fond de la pastille d'alerte : une gélule rouge étirée autour du libellé (« Immobilisé »). */
+const ALERT_PILL = { width: 64, height: 40, radius: 20 };
 function drawAlert(): ImageData | null {
+  const { width, height, radius } = ALERT_PILL;
   const canvas = document.createElement("canvas");
-  canvas.width = SIZE;
-  canvas.height = SIZE;
+  canvas.width = width;
+  canvas.height = height;
   const ctx = canvas.getContext("2d");
   if (!ctx) return null;
-  const x = CENTER + RADIUS * 0.68;
-  const y = CENTER + RADIUS * 0.68;
-  ctx.fillStyle = "#c81e1e";
-  ctx.strokeStyle = "#ffffff";
-  ctx.lineWidth = 3;
-  ctx.beginPath();
-  ctx.arc(x, y, 15, 0, Math.PI * 2);
-  ctx.fill();
-  ctx.stroke();
   ctx.fillStyle = "#ffffff";
-  ctx.font = "800 23px system-ui, sans-serif";
-  ctx.textAlign = "center";
-  ctx.textBaseline = "middle";
-  ctx.fillText("!", x, y + 1);
-  return ctx.getImageData(0, 0, SIZE, SIZE);
+  ctx.beginPath();
+  ctx.roundRect(0, 0, width, height, radius);
+  ctx.fill();
+  ctx.fillStyle = "#c81e1e";
+  ctx.beginPath();
+  ctx.roundRect(3, 3, width - 6, height - 6, radius - 3);
+  ctx.fill();
+  return ctx.getImageData(0, 0, width, height);
 }
 
 /**
@@ -528,7 +525,14 @@ export function addShipImages(map: MapLibreMap) {
   if (heading && !map.hasImage("ship-heading"))
     map.addImage("ship-heading", heading, { pixelRatio: 2 });
   const alert = drawAlert();
-  if (alert && !map.hasImage("ship-alert")) map.addImage("ship-alert", alert, { pixelRatio: 2 });
+  // Seul le milieu s'étire : les bouts arrondis gardent leur forme quelle que soit la longueur du texte.
+  if (alert && !map.hasImage("ship-alert"))
+    map.addImage("ship-alert", alert, {
+      pixelRatio: 2,
+      stretchX: [[ALERT_PILL.radius, ALERT_PILL.width - ALERT_PILL.radius]],
+      stretchY: [[ALERT_PILL.radius - 2, ALERT_PILL.radius + 2]],
+      content: [12, 6, ALERT_PILL.width - 12, ALERT_PILL.height - 6],
+    });
   syncMotion();
   media.addEventListener("change", syncMotion);
   map.once("remove", () => {

@@ -1,6 +1,6 @@
 import { useEffect, useRef, type RefObject } from "react";
 import { Marker, type Map as MapLibreMap } from "maplibre-gl";
-import type { FleetShip } from "@/lib/ferry/fleet";
+import { shipAnchor, type FleetShip } from "@/lib/ferry/fleet";
 import { useMyTrip } from "@/lib/ferry/myTrip";
 import type { Selection } from "@/lib/ferry/types";
 import { vesselMapIcon } from "@/lib/ferry/vesselVisuals";
@@ -29,11 +29,9 @@ export function useMyTripMarker(
     const ship =
       fleet.find((item) => item.vesselId === vesselId && item.departureId === departureId) ??
       fleet.find((item) => item.vesselId === vesselId);
-    const point: [number, number] | undefined = ship?.live
-      ? [ship.live.position.longitude, ship.live.position.latitude]
-      : ship?.lngLat;
+    const point = ship ? shipAnchor(ship) : undefined;
     if (!ship || !point) return;
-    const shift: [number, number] = ship.live ? [0, 0] : [ship.dx, ship.dy];
+    const shift: [number, number] = [ship.dx, ship.dy];
     const slug = vesselMapIcon(ship.name);
     const button = document.createElement("button");
     button.type = "button";

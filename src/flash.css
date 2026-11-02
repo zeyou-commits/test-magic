@@ -10009,3 +10009,26 @@ img[data-logo="dark"] {
   color: var(--muted-foreground);
   font-size: 10.5px;
 }
+
+/* Saisie du salon : la ligne tient dans l'écran, bouton d'envoi toujours visible. */
+.bw-chat__write > * {
+  min-width: 0;
+}
+.bw-chat__write form {
+  max-width: 100%;
+}
+.bw-chat__write form input:not([type="checkbox"]) {
+  width: 0;
+}
+.bw-chat__official input {
+  flex: none;
+  width: 15px;
+  min-height: 0;
+  height: 15px;
+}
+@media (max-width: 480px) {
+  .bw-chat__official {
+    padding: 0 2px;
+    font-size: 10px;
+  }
+}

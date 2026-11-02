@@ -287,6 +287,13 @@ function routeFeatures(
     .filter((feature): feature is NonNullable<typeof feature> => feature !== null);
 }
 
+/** Le nom du port collé à son point, de chaque côté possible. */
+const PORT_LABEL_SIDES: Record<string, Partial<CSSStyleDeclaration>> = {
+  right: { left: "9px", right: "", top: "0", bottom: "", transform: "translateY(-50%)" },
+  left: { left: "", right: "9px", top: "0", bottom: "", transform: "translateY(-50%)" },
+  bottom: { left: "0", right: "", top: "9px", bottom: "", transform: "translateX(-50%)" },
+  top: { left: "0", right: "", top: "", bottom: "9px", transform: "translateX(-50%)" },
+};
 const anchorStyles: Record<string, Partial<CSSStyleDeclaration>> = {
   left: { right: "12px", top: "-9px" },
   right: { left: "12px", top: "-9px" },
@@ -1642,13 +1649,35 @@ export default function FerryMap({
         { padding: viewPadding(), maxZoom: 6.2, duration: cameraDuration(800) },
       );
     } else {
-      // On utilise un point central "Espagne - Algérie" (~ longitude 0, latitude 39)
-      map.easeTo({
-        center: [4, 39],
-        zoom: !isMobile ? 4.2 : 3.6, // Ajustez ce zoom selon ce que vous voulez voir
-        padding: viewPadding(), // Le padding décale magiquement le centre vers la droite !
-        duration: cameraDuration(600),
-      });
+      // Petit écran : on cadre les liaisons qui ont au moins une traversée programmée, pour ne pas
+      // sacrifier les lignes les plus fréquentées à une ligne lointaine sans départ.
+      const active = new Set(dateActiveRouteIds);
+      const activePorts = isMobile
+        ? routes
+            .filter((route) => active.has(route.id))
+            .flatMap((route) => [route.departure_port_id, route.arrival_port_id])
+            .map((id) => ports.find((port) => port.id === id))
+            .filter((port): port is Port => Boolean(port))
+        : [];
+      if (activePorts.length > 1) {
+        const lngs = activePorts.map((port) => port.longitude);
+        const lats = activePorts.map((port) => port.latitude);
+        map.fitBounds(
+          [
+            [Math.min(...lngs) - 0.4, Math.min(...lats) - 0.4],
+            [Math.max(...lngs) + 0.4, Math.max(...lats) + 0.4],
+          ],
+          { padding: viewPadding(), maxZoom: 6, duration: cameraDuration(600) },
+        );
+      } else {
+        // On utilise un point central "Espagne - Algérie" (~ longitude 0, latitude 39)
+        map.easeTo({
+          center: [4, 39],
+          zoom: !isMobile ? 4.2 : 3.6,
+          padding: viewPadding(), // Le padding décale magiquement le centre vers la droite !
+          duration: cameraDuration(600),
+        });
+      }
     }
   }, [
     isMobile,
@@ -1658,6 +1687,7 @@ export default function FerryMap({
     fitPortIds.join("|"),
     selection?.type,
     selection?.id,
+    dateActiveRouteIds.join("|"),
     ports.length,
     itineraryPreview?.key,
     portsMode,
@@ -1698,11 +1728,9 @@ export default function FerryMap({
         dot.type = "button";
         dot.className = "port-marker__dot";
         dot.setAttribute("aria-label", `Port de ${port.name}`);
-        // Le phare se dresse côté terre (nord des ports européens, sud des ports algériens) ;
-        // si le nom du port y est déjà, il se pose à côté du point, à l'opposé du nom.
-        const land = port.country_code === "DZ" ? "down" : "up";
-        const landSide = land === "up" ? "top" : "bottom";
-        el.dataset["land"] = (port.label_anchor ?? "left") === landSide ? "right" : land;
+        // Le phare se dresse côté terre : au nord des ports européens, au sud des ports algériens.
+        // Le nom du port, lui, se place à côté sans le couvrir.
+        el.dataset["land"] = port.country_code === "DZ" ? "down" : "up";
         dot.innerHTML = LIGHTHOUSE_SVG;
 
         const label = document.createElement("span");
@@ -1790,7 +1818,8 @@ export default function FerryMap({
       const meta = portMeta[port.id];
       const routeCount = meta?.routes ?? 0;
 
-      if (label) Object.assign(label.style, getPortLabelStyle(port));
+      // Position de départ ; la carte la recale ensuite du côté libre, près du point.
+      if (label && !label.dataset["side"]) Object.assign(label.style, getPortLabelStyle(port));
 
       element.dataset["active"] = String(activeIds.has(port.id));
       // L'infobulle n'est affichée que pour le port ouvert (pas pour les deux ports d'un trajet cherché).
@@ -2572,8 +2601,78 @@ export default function FerryMap({
       );
       for (const feature of data.features)
         Object.assign(feature.properties, groups.get(String(feature.properties["shipId"])));
-      // Le point de chaque port, et son nom tel qu'il est affiché à l'écran.
       const canvasRect = map.getCanvas().getBoundingClientRect();
+      // Nom de chaque port : collé à son point, du côté où il ne couvre ni navire, ni phare,
+      // ni un autre port. Le côté choisi par l'équipe passe en premier quand il est libre.
+      {
+        const zoomNow = map.getZoom();
+        const tokenSize = shipTokenRadius(zoomNow) * 2;
+        const hulls: Box[] = data.features.map((feature) => {
+          const point = map.project(feature.geometry.coordinates);
+          const photo = String(feature.properties["photo"] ?? "");
+          const w = photo ? vesselScreenWidth(zoomNow) : tokenSize;
+          const h = photo ? vesselScreenHeight(photo, zoomNow) : tokenSize;
+          return photo
+            ? { left: point.x - w / 2, right: point.x + w / 2, top: point.y - h, bottom: point.y }
+            : { left: point.x - w / 2, right: point.x + w / 2, top: point.y - h / 2, bottom: point.y + h / 2 };
+        });
+        const near = zoomNow >= 7;
+        const dots: Box[] = [];
+        const towers: Box[] = [];
+        for (const port of portById.values()) {
+          const point = map.project([port.longitude, port.latitude]);
+          dots.push({ left: point.x - 7, right: point.x + 7, top: point.y - 7, bottom: point.y + 7 });
+          if (near)
+            towers.push(
+              port.country_code === "DZ"
+                ? { left: point.x - 12, right: point.x + 12, top: point.y, bottom: point.y + 40 }
+                : { left: point.x - 12, right: point.x + 12, top: point.y - 40, bottom: point.y },
+            );
+        }
+        const area = (a: Box, b: Box) =>
+          Math.max(0, Math.min(a.right, b.right) - Math.max(a.left, b.left)) *
+          Math.max(0, Math.min(a.bottom, b.bottom) - Math.max(a.top, b.top));
+        const taken: Box[] = [];
+        for (const port of portById.values()) {
+          const label = portMarkersRef.current
+            .get(port.id)
+            ?.getElement()
+            .querySelector<HTMLElement>(".port-marker__label");
+          if (!label || !label.offsetWidth) continue;
+          const w = label.offsetWidth;
+          const h = label.offsetHeight;
+          const point = map.project([port.longitude, port.latitude]);
+          const gap = 9;
+          const boxes: Record<string, Box> = {
+            right: { left: point.x + gap, right: point.x + gap + w, top: point.y - h / 2, bottom: point.y + h / 2 },
+            left: { left: point.x - gap - w, right: point.x - gap, top: point.y - h / 2, bottom: point.y + h / 2 },
+            bottom: { left: point.x - w / 2, right: point.x + w / 2, top: point.y + gap, bottom: point.y + gap + h },
+            top: { left: point.x - w / 2, right: point.x + w / 2, top: point.y - gap - h, bottom: point.y - gap },
+          };
+          const order = [
+            ...new Set([port.label_anchor ?? "left", "right", "left", "bottom", "top"]),
+          ].filter((side) => side in boxes);
+          const cost = (box: Box) =>
+            [...hulls, ...towers, ...dots].reduce((sum, other) => sum + area(box, other), 0) +
+            taken.reduce((sum, other) => sum + area(box, other) * 2, 0);
+          let side = order[0]!;
+          let best = cost(boxes[side]!);
+          for (const candidate of order.slice(1)) {
+            if (best === 0) break;
+            const value = cost(boxes[candidate]!);
+            if (value < best) {
+              side = candidate;
+              best = value;
+            }
+          }
+          taken.push(boxes[side]!);
+          if (label.dataset["side"] !== side) {
+            label.dataset["side"] = side;
+            Object.assign(label.style, PORT_LABEL_SIDES[side]);
+          }
+        }
+      }
+      // Le point de chaque port, et son nom tel qu'il est affiché à l'écran.
       const portObstacles = (): Box[] => [
         ...[...portById.values()].map((port) => {
           const point = map.project([port.longitude, port.latitude]);

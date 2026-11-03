@@ -115,6 +115,8 @@ function Index() {
   const [voyageOn, setVoyageOn] = useState(() =>
     new URLSearchParams(initialSearch).has("voyage"),
   );
+  // Une fiche ouverte depuis « Mon voyage » : son retour ramène au voyage, pas à l'accueil.
+  const [voyageBack, setVoyageBack] = useState(false);
   // Ouverture depuis une notification : son message s'affiche en tête de la fiche demandée.
   const [noticeTarget] = useState(() => ({
     id: new URLSearchParams(initialSearch).get("notice"),
@@ -129,7 +131,9 @@ function Index() {
       setSelection(null);
       setSelectionHistory([]);
     } else {
-      // Ouvrir une fiche (port, navire, traversée) quitte « Mon voyage » : la carte reprend la main.
+      // Ouvrir une fiche (port, navire, traversée) quitte « Mon voyage » : la carte reprend la main,
+      // et le retour de la fiche y ramène.
+      if (voyageOn) setVoyageBack(true);
       setVoyageOn(false);
       if (typeof window !== "undefined" && window.innerWidth >= 768) setDesktopPanelOpen(true);
       if (selection && (selection.type !== newSelection.type || selection.id !== newSelection.id)) {
@@ -167,6 +171,13 @@ function Index() {
       setSelectionHistory((prev) => prev.slice(0, -1));
       setSelection(previous ?? null);
       setFocusShipId(null);
+    } else if (voyageBack) {
+      setSelection(null);
+      setSelectionHistory([]);
+      setFocusShipId(null);
+      setVoyageBack(false);
+      setVoyageOn(true);
+      setPanelLevel(1);
     } else {
       setSelection(null);
       setSelectionHistory([]);
@@ -181,7 +192,9 @@ function Index() {
         : selectionHistory[selectionHistory.length - 1]?.type === "port"
           ? "Port"
           : "Précédent"
-      : "Accueil";
+      : voyageBack
+        ? "Mon voyage"
+        : "Accueil";
   const [filters, setFiltersState] = useState<Filters>(() => filtersFromUrl(initialSearch));
   const [trafficPreview, setTrafficPreview] = useState<MapPreview | null>(null);
   const [lineVisibility, setLineVisibility] = useState<LineVisibility>("all");
@@ -1018,6 +1031,7 @@ function Index() {
   const collapsed = false as boolean;
 
   const resetToMap = () => {
+    setVoyageBack(false);
     document.querySelector(".bw-home")?.scrollIntoView({ behavior: "instant", block: "start" });
     handleSelect(null);
     setPanelLevel(1);
@@ -1313,24 +1327,28 @@ function Index() {
                     />
                     {panelLevel > 0 ? (
                       <div className="bw-voyage-aside__scroll">
-                        <LivePulse
-                          info={voyage.info}
-                          onOpen={() =>
-                            handleSelect({ type: "departure", id: voyage.trip.departure.id })
-                          }
-                        />
+                        {voyage.liveAlert ? (
+                          <LivePulse
+                            info={voyage.info}
+                            onOpen={() =>
+                              handleSelect({ type: "departure", id: voyage.trip.departure.id })
+                            }
+                          />
+                        ) : null}
                         {voyage.renderPanel(voyage.shown ?? voyage.current, false)}
                       </div>
                     ) : null}
                   </>
                 ) : (
                   <div className="bw-voyage-aside__scroll" key={voyage.shown ?? voyage.current}>
-                    <LivePulse
-                      info={voyage.info}
-                      onOpen={() =>
-                        handleSelect({ type: "departure", id: voyage.trip.departure.id })
-                      }
-                    />
+                    {voyage.liveAlert ? (
+                      <LivePulse
+                        info={voyage.info}
+                        onOpen={() =>
+                          handleSelect({ type: "departure", id: voyage.trip.departure.id })
+                        }
+                      />
+                    ) : null}
                     {voyage.renderPanel(
                       voyage.shown ?? voyage.current,
                       Boolean(voyage.pinned) && !voyage.hovering,
@@ -1437,15 +1455,22 @@ function Index() {
               panelOpen={desktopPanelOpen}
             />
             <QuickReport ports={ports} fleet={fleet} departures={departures} selection={selection}>
-              {voyage && isMobile ? (
+              {voyage ? (
+                // En mode voyage, le bouton des salons ouvre (ou réduit) le salon de la traversée.
                 <button
                   type="button"
-                  className="bw-journey-salon-fab"
-                  data-mobile
-                  onClick={() => setSalonDialog(true)}
-                  aria-label="Ouvrir le salon de la traversée"
+                  className="bw-journey-salon-fab bw-voyage-salon-fab"
+                  data-mobile={isMobile || undefined}
+                  aria-pressed={isMobile ? undefined : salonOpen}
+                  onClick={() => (isMobile ? setSalonDialog(true) : setSalonOpen((open) => !open))}
+                  aria-label={
+                    !isMobile && salonOpen
+                      ? "Réduire le salon de la traversée"
+                      : "Ouvrir le salon de la traversée"
+                  }
                 >
                   <MessagesSquare size={20} aria-hidden />
+                  {isMobile ? null : <span>Salon</span>}
                 </button>
               ) : (
                 <MessagesFab onSelect={(next) => handleSelectRef.current(next)} />
@@ -1605,15 +1630,6 @@ function Index() {
                         actions faites
                       </p>
                     ) : null}
-                    {salonOpen ? null : (
-                      <button
-                        type="button"
-                        className="bw-voyage-dock__salon"
-                        onClick={() => setSalonOpen(true)}
-                      >
-                        <MessagesSquare size={15} aria-hidden /> Salon
-                      </button>
-                    )}
                     <button
                       type="button"
                       className="bw-voyage-dock__exit"

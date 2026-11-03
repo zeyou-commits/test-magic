@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { RateStars } from "@/components/panel/RateStars";
 import { TripStatusPicker } from "@/components/panel/TripPresence";
 import { useLiveInfo } from "@/components/panel/LivePulse";
 import { useAuth } from "@/hooks/useAuth";
@@ -8,7 +9,9 @@ import type { FleetShip } from "@/lib/ferry/fleet";
 import type { ItineraryMapPreview } from "@/lib/ferry/itinerary";
 import { tripEnd } from "@/lib/ferry/myTrip";
 import { roomMoment } from "@/lib/ferry/portPassage";
-import { myTripStatusQuery } from "@/lib/ferry/presence";
+import { entityReviewsQuery } from "@/lib/ferry/entityReviews";
+import { myTripStatusQuery, presenceQuery } from "@/lib/ferry/presence";
+import { presetRating } from "@/lib/ferry/reviewCriteria";
 import {
   defaultProfile,
   preparationKey,
@@ -21,6 +24,7 @@ import {
 import {
   JOURNEY_STEPS,
   RELATIVE_STEPS,
+  STEP_STATUSES,
   currentStep,
   durationLabel,
   journeyTimeline,
@@ -71,6 +75,8 @@ export function useVoyage(
   const { data: companies = [] } = useQuery(companiesQuery);
   const departures = useQuery(upcomingDeparturesQuery()).data;
   const presentation = useQuery({ ...presentationQuery(departureId), enabled: Boolean(trip) }).data;
+  // Compteurs anonymes de « Où en êtes-vous ? » : combien de voyageurs à chaque étape.
+  const presence = useQuery({ ...presenceQuery, enabled: Boolean(trip) }).data;
   const status =
     useQuery({ ...myTripStatusQuery(departureId, user?.id), enabled: traveller && Boolean(user) })
       .data ?? null;
@@ -192,8 +198,27 @@ export function useVoyage(
         return audience === "relative" ? "fin du voyage" : "bien arrivé·e ?";
     }
   };
+  const presenceRow = presence?.find((row) => row.departure_id === departure.id);
+  const countOf = (step: JourneyStepId) => {
+    if (!presenceRow) return 0;
+    switch (step) {
+      case "road":
+        return presenceRow.en_route ?? 0;
+      case "port":
+        return presenceRow.at_port ?? 0;
+      case "sea":
+        return presenceRow.onboard ?? 0;
+      case "arrival":
+        return (presenceRow.landing ?? 0) + (presenceRow.controls ?? 0);
+      case "last":
+        return presenceRow.arrived ?? 0;
+      default:
+        return 0;
+    }
+  };
   const friezeSteps: FriezeStep[] = steps.map((step) => ({
     id: step,
+    count: countOf(step),
     label: stepLabel(step, direction, audience),
     sub: subOf(step),
     state: stepState(step, current, steps),
@@ -293,6 +318,34 @@ export function useVoyage(
             ))}
           </div>
         ) : null}
+      </>
+    );
+    // « J'y suis » : la déclaration se fait depuis l'étape, et la frise avance avec elle.
+    const statuses = traveller ? STEP_STATUSES[step] : undefined;
+    const top = statuses ? (
+      <TripStatusPicker
+        departureId={departure.id}
+        departureAt={departure.departure_at}
+        arrivalAt={departure.arrival_at}
+        fromPortId={from.id}
+        only={statuses}
+      />
+    ) : null;
+    // Noter sur le moment : le port en y arrivant, le navire et le port d'arrivée en débarquant.
+    const rate = (kind: "port" | "vessel", id: string, label: string) => (
+      <StepRate
+        key={`${kind}:${id}`}
+        kind={kind}
+        id={id}
+        label={label}
+        onRate={(score) => {
+          presetRating(kind, id, score);
+          onSelect({ type: kind, id });
+        }}
+      />
+    );
+    const after = (
+      <>
         {traveller && (step === "road" || step === "last") ? (
           <JourneyPlacesForm
             europePort={outbound ? from : to}
@@ -301,37 +354,33 @@ export function useVoyage(
             onChange={updatePlaces}
           />
         ) : null}
-        {traveller && step === current && ["road", "port", "sea", "arrival", "last"].includes(step) ? (
-          <TripStatusPicker
-            departureId={departure.id}
-            departureAt={departure.departure_at}
-            arrivalAt={departure.arrival_at}
-            fromPortId={from.id}
-          />
+        {traveller && step === "port" ? rate("port", from.id, `Noter le port de ${from.name}`) : null}
+        {traveller && step === "arrival" ? (
+          <>
+            {vessel ? rate("vessel", vessel.id, `Noter le ${vessel.name}`) : null}
+            {rate("port", to.id, `Noter le port de ${to.name}`)}
+          </>
+        ) : null}
+        {step === "home" && traveller ? (
+          <div className="bw-step-panel__more">
+            <button type="button" onClick={() => onSelect({ type: "departure", id: departure.id })}>
+              Ajouter mon retour
+            </button>
+          </div>
+        ) : step === "sea" ? (
+          <div className="bw-step-panel__more">
+            <button type="button" onClick={() => onSelect({ type: "departure", id: departure.id })}>
+              Toute la traversée en direct
+            </button>
+          </div>
         ) : null}
       </>
     );
-    const after =
-      step === "home" && traveller ? (
-        <div className="bw-step-panel__more">
-          {vessel ? (
-            <button type="button" onClick={() => onSelect({ type: "vessel", id: vessel.id })}>
-              Noter le {vessel.name}
-            </button>
-          ) : null}
-          <button type="button" onClick={() => onSelect({ type: "departure", id: departure.id })}>
-            Ajouter mon retour
-          </button>
-        </div>
-      ) : step === "sea" ? (
-        <div className="bw-step-panel__more">
-          <button type="button" onClick={() => onSelect({ type: "departure", id: departure.id })}>
-            Toute la traversée en direct
-          </button>
-        </div>
-      ) : null;
     return (
       <JourneyStepPanel
+        key={step}
+        top={top}
+        clampLead
         title={stepLabel(step, direction, audience)}
         state={stepState(step, current, steps)}
         index={steps.indexOf(step)}
@@ -388,6 +437,8 @@ export function useVoyage(
     mapProps,
     renderPanel,
     info,
+    /** Une info ou un signalement en cours : le bandeau « En direct » mérite sa place en tête. */
+    liveAlert: info.official + info.travellers > 0,
     summary: {
       heading: traveller ? (outbound ? "Mon voyage · aller" : "Mon voyage · retour") : "Le voyage d'un proche",
       title: `${from.name} → ${to.name}`,
@@ -412,3 +463,30 @@ export function useVoyage(
 }
 
 export type Voyage = NonNullable<ReturnType<typeof useVoyage>>;
+
+/** Une note en un geste depuis l'étape : l'étoile pré-remplit l'avis, la fiche s'ouvre dessus. */
+function StepRate({
+  kind,
+  id,
+  label,
+  onRate,
+}: {
+  kind: "port" | "vessel";
+  id: string;
+  label: string;
+  onRate: (score: number) => void;
+}) {
+  const feed = useQuery(entityReviewsQuery(kind, id)).data;
+  return (
+    <div className="bw-step-rate">
+      <span>{label}</span>
+      <RateStars
+        average={feed?.average}
+        count={feed?.count ?? 0}
+        subject={kind === "vessel" ? "ce navire" : "ce port"}
+        size={20}
+        onRate={onRate}
+      />
+    </div>
+  );
+}

@@ -7,9 +7,10 @@ import {
   FileText,
   Flag,
   Fuel,
-  House,
+  MapPinHouse,
   Route as RouteIcon,
   Ship,
+  Users,
   type LucideIcon,
 } from "lucide-react";
 import type { JourneyStepId, StepState } from "@/lib/ferry/journeySteps";
@@ -22,7 +23,8 @@ export const STEP_ICONS: Record<JourneyStepId, LucideIcon> = {
   sea: Ship,
   arrival: Flag,
   last: Fuel,
-  home: House,
+  // Le bled à l'aller, la destination au retour : une épingle plutôt qu'une maison.
+  home: MapPinHouse,
 };
 
 export type FriezeStep = {
@@ -32,6 +34,8 @@ export type FriezeStep = {
   state: StepState;
   /** Étape passée dont des actions restent à faire : un « ! » plutôt qu'une coche. */
   late?: boolean;
+  /** Voyageurs BledWay qui ont déclaré être à cette étape (« J'y suis »). */
+  count?: number;
 };
 
 /**
@@ -91,6 +95,15 @@ export function JourneyFrieze({
               {step.state === "current" ? <b className="bw-frieze__here">{hereLabel}</b> : null}
               <span className="bw-frieze__dot">
                 <Icon size={step.state === "current" ? 22 : 19} aria-hidden />
+                {step.count ? (
+                  <em
+                    className="bw-frieze__count"
+                    title={`${step.count} voyageur${step.count > 1 ? "s" : ""} BledWay à cette étape`}
+                  >
+                    <Users size={10} aria-hidden />
+                    {step.count}
+                  </em>
+                ) : null}
               </span>
               <strong>{step.label}</strong>
               <small>{step.sub}</small>

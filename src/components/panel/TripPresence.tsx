@@ -218,12 +218,15 @@ export function TripStatusPicker({
   departureAt,
   arrivalAt,
   fromPortId,
+  only,
 }: {
   departureId: string;
   departureAt: string;
   /** Heure d'arrivée prévue : c'est elle qui fait passer aux étapes de l'arrivée. */
   arrivalAt?: string | null | undefined;
   fromPortId?: string | undefined;
+  /** « Mon voyage » : seulement les statuts de l'étape affichée, en une ligne « J'y suis ». */
+  only?: TripStatus[] | undefined;
 }) {
   const { user } = useAuth();
   const client = useQueryClient();
@@ -288,9 +291,12 @@ export function TripStatusPicker({
   };
   const current = mine.data ?? null;
   const scheduledEnd = arrivalAt ? Date.parse(arrivalAt) : Date.parse(departureAt) + 24 * 3_600_000;
-  const shown = visibleSteps(current, scheduledEnd, Date.now()).map((id) =>
-    steps.find((step) => step.id === id)!,
-  );
+  const shown = only
+    ? only.flatMap((id) => steps.filter((step) => step.id === id))
+    : visibleSteps(current, scheduledEnd, Date.now()).map((id) =>
+        steps.find((step) => step.id === id)!,
+      );
+  if (only && !shown.length) return null;
   const choose = (status: TripStatus) => {
     if (!user) {
       window.sessionStorage.setItem(PENDING_STATUS, JSON.stringify({ departureId, status }));
@@ -300,6 +306,15 @@ export function TripStatusPicker({
     }
     update.mutate(current === status ? null : status);
   };
+  if (tooEarly && only)
+    return (
+      <p className="bw-trip-status-teaser" data-compact>
+        <span>
+          <strong>J'y suis</strong> : à partir de la veille du départ, pour faire avancer votre
+          frise.
+        </span>
+      </p>
+    );
   if (tooEarly)
     return (
       <p className="bw-trip-status-teaser">
@@ -317,15 +332,26 @@ export function TripStatusPicker({
   const queueOptions =
     catalog >= 3 ? optionsFor("queue", 3).filter((option) => !option.code.match(/_\d+$/)) : [];
   return (
-    <section className="bw-trip-status" aria-label="Où en êtes-vous ?">
-      <div className="bw-trip-status__head">
-        <h3>Où en êtes-vous ?</h3>
-        <small>
-          {tooEarly
-            ? "S’active la veille du départ."
-            : "Visible de vous seul. Les autres voient seulement des compteurs."}
-        </small>
-      </div>
+    <section
+      className="bw-trip-status"
+      data-compact={only ? "" : undefined}
+      aria-label="Où en êtes-vous ?"
+    >
+      {only ? (
+        <div className="bw-trip-status__head">
+          <h3>J'y suis</h3>
+          <small>Votre frise avance. Visible de vous seul, les autres voient un compteur.</small>
+        </div>
+      ) : (
+        <div className="bw-trip-status__head">
+          <h3>Où en êtes-vous ?</h3>
+          <small>
+            {tooEarly
+              ? "S’active la veille du départ."
+              : "Visible de vous seul. Les autres voient seulement des compteurs."}
+          </small>
+        </div>
+      )}
       <ol className="bw-trip-status__steps">
         {shown.map((step) => (
           <li key={step.id}>

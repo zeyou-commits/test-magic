@@ -12230,3 +12230,131 @@ img[data-logo="dark"] {
     animation: none;
   }
 }
+
+/* « Mon voyage » v2 : « J'y suis » relié à la frise, volet allégé, notes sur le moment, salon. */
+.bw-frieze__count {
+  position: absolute;
+  right: -12px;
+  bottom: -6px;
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  min-width: 22px;
+  padding: 1px 5px;
+  border: 2px solid #ffffff;
+  border-radius: 999px;
+  background: #0e7a43;
+  color: #ffffff;
+  font-size: 10px;
+  font-style: normal;
+  font-weight: 800;
+  line-height: 1.3;
+}
+.bw-trip-status[data-compact] {
+  gap: 6px;
+  padding: 10px 12px;
+}
+.bw-trip-status[data-compact] .bw-trip-status__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 2px 8px;
+}
+.bw-trip-status[data-compact] .bw-trip-status__head h3 {
+  font-size: 14px;
+}
+.bw-trip-status[data-compact] .bw-trip-status__head small {
+  font-size: 11.5px;
+}
+.bw-trip-status[data-compact] .bw-trip-status__steps {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.bw-trip-status[data-compact] .bw-trip-status__steps li {
+  flex: 1 1 140px;
+}
+.bw-trip-status[data-compact] .bw-trip-status__steps button {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 8px;
+  padding: 6px 30px 6px 8px;
+  border-color: #f3e3bd;
+  font-size: 13px;
+  text-align: left;
+}
+.bw-trip-status[data-compact] .bw-trip-status__steps button[aria-pressed="true"] {
+  border-color: #0e7a43;
+}
+.bw-trip-status[data-compact] .bw-trip-status__steps img {
+  width: 34px;
+  height: 34px;
+}
+.bw-trip-status[data-compact] .bw-trip-status__steps small {
+  position: static;
+  margin-left: auto;
+}
+.bw-trip-status[data-compact] .bw-trip-status__check {
+  top: 50%;
+  right: 8px;
+  transform: translateY(-50%);
+}
+.bw-trip-status-teaser[data-compact] {
+  font-size: 12.5px;
+}
+.bw-step-panel__lead > [data-clamped] {
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+.bw-step-panel__more-lead {
+  align-self: flex-start;
+  margin-top: -8px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: #0e7a43;
+  font: inherit;
+  font-size: 12.5px;
+  font-weight: 700;
+  text-decoration: underline;
+  cursor: pointer;
+}
+.bw-step-rate {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px 12px;
+  padding: 10px 12px;
+  border: 1px solid #f3e3bd;
+  border-radius: 14px;
+  background: #fffaf0;
+}
+.bw-step-rate > span {
+  font-size: 13.5px;
+  font-weight: 800;
+}
+/* Le salon de la traversée se range sous Signaler, comme le bouton des salons qu'il remplace. */
+@media (min-width: 768px) {
+  .bw-report .bw-voyage-salon-fab {
+    position: relative;
+    right: auto;
+    bottom: auto;
+    width: 53px;
+    height: 53px;
+    border-radius: 16px;
+  }
+  .bw-report .bw-voyage-salon-fab > span {
+    margin-top: -4px;
+    font-size: 10.5px;
+    line-height: 1;
+  }
+  .bw-report .bw-voyage-salon-fab[aria-pressed="true"] {
+    box-shadow:
+      0 0 0 3px #ffd98a,
+      0 4px 14px #16324a40;
+  }
+}

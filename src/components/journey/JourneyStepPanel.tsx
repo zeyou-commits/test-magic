@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import { Check, ExternalLink, MessagesSquare, X } from "lucide-react";
 import type { PrepItem } from "@/lib/ferry/preparation";
 import type { StepLink, StepState } from "@/lib/ferry/journeySteps";
@@ -24,6 +24,8 @@ export function JourneyStepPanel({
   before,
   after,
   onNavigate,
+  top,
+  clampLead = false,
 }: {
   title: string;
   state: StepState;
@@ -44,7 +46,13 @@ export function JourneyStepPanel({
   after?: ReactNode;
   /** Lien interne pris en charge sur place (fiche d'un port) : true évite le rechargement. */
   onNavigate?: (href: string) => boolean;
+  /** Juste sous le titre : « J'y suis » de « Mon voyage ». */
+  top?: ReactNode;
+  /** Texte replié sur 2 lignes, « Lire la suite » pour le déplier. */
+  clampLead?: boolean;
 }) {
+  const [leadOpen, setLeadOpen] = useState(false);
+  const longLead = clampLead && lead.length > 110;
   const badge =
     state === "current"
       ? "Maintenant"
@@ -70,7 +78,20 @@ export function JourneyStepPanel({
           </button>
         ) : null}
       </header>
-      <p className="bw-step-panel__lead">{lead}</p>
+      {top}
+      <p className="bw-step-panel__lead">
+        <span data-clamped={longLead && !leadOpen ? "" : undefined}>{lead}</span>
+      </p>
+      {longLead ? (
+        <button
+          type="button"
+          className="bw-step-panel__more-lead"
+          aria-expanded={leadOpen}
+          onClick={() => setLeadOpen((open) => !open)}
+        >
+          {leadOpen ? "Réduire" : "Lire la suite"}
+        </button>
+      ) : null}
       {before}
       {items.length ? (
         <ul className="bw-step-panel__items" aria-label="À faire">

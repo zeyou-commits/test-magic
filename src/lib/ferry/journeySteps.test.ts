@@ -40,8 +40,8 @@ describe("la route du bled en 8 étapes", () => {
 
   it("nomme les étapes selon le sens et le lecteur", () => {
     expect(stepLabel("last")).toBe("Route au bled");
-    expect(stepLabel("last", "return")).toBe("Route vers la maison");
-    expect(stepLabel("home", "return")).toBe("À la maison");
+    expect(stepLabel("last", "return")).toBe("Route vers la destination");
+    expect(stepLabel("home", "return")).toBe("À destination");
     expect(stepLabel("home", "outbound", "relative")).toBe("Bien arrivé·e");
   });
 

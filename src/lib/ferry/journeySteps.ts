@@ -9,7 +9,7 @@ import {
 } from "./preparation";
 
 /**
- * La route du bled en 8 étapes : de la maison jusqu'au bled (et l'inverse au retour).
+ * La route du bled en 8 étapes : du départ jusqu'au bled (et jusqu'à destination au retour).
  * Une seule définition pour « Mon voyage » (réel), la simulation de « Route » et la vue des proches.
  */
 export type JourneyStepId =
@@ -51,8 +51,9 @@ export function stepLabel(
     if (step === "home") return "Bien arrivé·e";
   }
   if (direction === "return") {
-    if (step === "last") return "Route vers la maison";
-    if (step === "home") return "À la maison";
+    // « Destination » plutôt que « maison » : chacun ne rentre pas chez soi.
+    if (step === "last") return "Route vers la destination";
+    if (step === "home") return "À destination";
   }
   return LABELS[step];
 }
@@ -159,6 +160,14 @@ const STATUS_STEP: Record<TravelStatus, JourneyStepId> = {
   controls: "arrival",
   // « Sorti du port » : la route commence.
   arrived: "last",
+};
+/** Les statuts que l'on peut déclarer depuis chaque étape (« J'y suis »). */
+export const STEP_STATUSES: Partial<Record<JourneyStepId, TravelStatus[]>> = {
+  road: ["en_route"],
+  port: ["port"],
+  sea: ["onboard"],
+  arrival: ["landing", "controls"],
+  last: ["arrived"],
 };
 
 /**
@@ -362,7 +371,7 @@ export function stepGuide({
         lead:
           direction === "outbound"
             ? `Après une nuit en mer, prévoyez des pauses.${vehicle ? ` Carburant et dinars avant de quitter ${to}.` : ""}${lastMin && destination ? ` ${to} → ${destination} : environ ${durationLabel(lastMin)} avec les pauses.` : ""}`
-            : `Route jusqu'à la maison : la fatigue de la traversée se fait sentir, arrêtez-vous régulièrement.${lastMin ? ` Environ ${durationLabel(lastMin)} avec les pauses.` : ""}`,
+            : `Route jusqu'à destination : la fatigue de la traversée se fait sentir, arrêtez-vous régulièrement.${lastMin ? ` Environ ${durationLabel(lastMin)} avec les pauses.` : ""}`,
         links: direction === "outbound" ? [{ href: "/mes-dinars", label: "Mes dinars" }] : [],
       };
     case "home":

@@ -13158,3 +13158,61 @@ img[data-logo="dark"] {
     touch-action: pan-y;
   }
 }
+
+/* Le petit bateau de « Ma traversée » : il navigue sur le trait de la traversée (frise, liste,
+   volet replié), à la position calculée comme sur la carte d'avancement. */
+.bw-frieze__bar[data-ferry] {
+  background: linear-gradient(
+    90deg,
+    #0e7a43 calc(var(--ferry, 0) * 100%),
+    #ddd8c9 calc(var(--ferry, 0) * 100%)
+  );
+}
+.bw-frieze__ferry {
+  position: absolute;
+  bottom: -2px;
+  left: calc(var(--ferry, 0) * 100%);
+  z-index: 2;
+  line-height: 0;
+  transform: translateX(-50%);
+  transition: left 1.2s ease;
+  pointer-events: none;
+}
+.bw-timeline li {
+  --ferry-top: 34px;
+}
+.bw-timeline__ferry {
+  position: absolute;
+  top: calc(var(--ferry-top) + var(--ferry, 0) * (100% - var(--ferry-top) - 4px));
+  left: -2px;
+  z-index: 2;
+  line-height: 0;
+  transform: translateY(-60%);
+  transition: top 1.2s ease;
+  pointer-events: none;
+}
+.bw-voyage-head__now .bw-voyage-head__track {
+  position: relative;
+  display: block;
+  grid-column: 2;
+  height: 4px;
+  margin: 12px 34px 2px 0;
+  border-radius: 999px;
+  background: linear-gradient(
+    90deg,
+    #0e7a43 calc(var(--ferry, 0) * 100%),
+    #ddd8c9 calc(var(--ferry, 0) * 100%)
+  );
+}
+.bw-voyage-head__track .bw-mini-ferry {
+  position: absolute;
+  bottom: -3px;
+  left: calc(var(--ferry, 0) * 100%);
+  transform: translateX(-50%);
+}
+@media (prefers-reduced-motion: reduce) {
+  .bw-frieze__ferry,
+  .bw-timeline__ferry {
+    transition: none;
+  }
+}

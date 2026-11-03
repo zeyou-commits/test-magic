@@ -188,6 +188,14 @@ export function useVoyage(
   const live = liveShips.find((ship) => ship.departure.id === departure.id) ?? null;
   const progress = crossingProgress(fullDeparture, from, to, live, now);
   const atSea = progress.ratio !== null && now >= departureMs && now < endMs;
+  // Le petit bateau de la frise : à quai avant le départ, en route pendant, arrivé ensuite.
+  const ferry =
+    departure.status === "cancelled"
+      ? null
+      : {
+          ratio: now < departureMs ? 0 : now >= endMs ? 1 : (progress.ratio ?? 0),
+          scene: progress.scene,
+        };
   // La carte d'avancement : de quelques heures avant le départ jusqu'au lendemain de l'arrivée.
   const tracking =
     departure.status !== "cancelled" && now >= departureMs - 6 * 3_600_000 && now <= endMs + 12 * 3_600_000;
@@ -251,6 +259,7 @@ export function useVoyage(
       stepState(step, current, steps) === "done" &&
       itemsOf(step).length > 0 &&
       !completed.includes(step),
+    ...(step === "sea" && ferry ? { ferry } : {}),
   }));
   const index = storyIndex ?? steps.indexOf(current);
   const shown: JourneyStepId | null = isMobile

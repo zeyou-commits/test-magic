@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { Check, ChevronDown, CircleAlert } from "lucide-react";
 import type { JourneyStepId } from "@/lib/ferry/journeySteps";
+import { MiniFerry } from "@/components/panel/MiniFerry";
 import { STEP_ICONS, type FriezeStep } from "./JourneyFrieze";
 
 /** « mer. 4 · 07:00 » : l'heure part à droite, comme un horaire, le reste reste sous le titre. */
@@ -51,7 +52,15 @@ export function JourneyTimeline({
             data-late={step.late || undefined}
             data-open={open || undefined}
             data-kind={step.id === "sea" ? "sea" : "land"}
+            style={
+              step.ferry ? ({ "--ferry": step.ferry.ratio } as React.CSSProperties) : undefined
+            }
           >
+            {step.ferry ? (
+              <span className="bw-timeline__ferry" aria-hidden>
+                <MiniFerry size={34} scene={step.ferry.scene} />
+              </span>
+            ) : null}
             <button
               type="button"
               className="bw-timeline__row"

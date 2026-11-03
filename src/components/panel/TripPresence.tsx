@@ -310,8 +310,7 @@ export function TripStatusPicker({
     return (
       <p className="bw-trip-status-teaser" data-compact>
         <span>
-          <strong>J'y suis</strong> : à partir de la veille du départ, pour faire avancer votre
-          frise.
+          <strong>J'y suis</strong> : dès la veille du départ.
         </span>
       </p>
     );
@@ -340,7 +339,7 @@ export function TripStatusPicker({
       {only ? (
         <div className="bw-trip-status__head">
           <h3>J'y suis</h3>
-          <small>Votre frise avance. Visible de vous seul, les autres voient un compteur.</small>
+          <small>Votre frise avance. Les autres ne voient qu’un compteur.</small>
         </div>
       ) : (
         <div className="bw-trip-status__head">

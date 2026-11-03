@@ -15,6 +15,7 @@ import {
 } from "@/lib/ferry/chatDemo";
 import { shipAnchor, type FleetShip } from "@/lib/ferry/fleet";
 import { useAuth } from "@/hooks/useAuth";
+import { useMyTrip } from "@/lib/ferry/myTrip";
 import {
   activeAlerts,
   alertLabel,
@@ -27,6 +28,7 @@ import { requestSignalFocus } from "@/components/panel/LivePulse";
 import type { Port, RouteLine, Selection } from "@/lib/ferry/types";
 import { vesselMapIcon } from "@/lib/ferry/vesselVisuals";
 import { dockSpread, shipShiftY, vesselScreenHeight } from "./shipIcons";
+import { MY_TRIP_TAG_SPACE } from "./useMyTripMarker";
 
 /** Une bulle visible 5 s, puis 2,5 s de calme avant la suivante. */
 const SHOW_MS = 5_000;
@@ -85,8 +87,10 @@ export function useChatBubbles(
     if ((position + 1) % REPORT_EVERY === 0 && next < reports.length) mixed.push(reports[next++]!);
   });
   mixed.push(...reports.slice(next));
-  const latest = useRef({ fleet, ports, routes, onSelect, messages: [] as Bubble[] });
-  latest.current = { fleet, ports, routes, onSelect, messages: mixed };
+  // Mon bateau porte une étiquette au-dessus de la coque : ses bulles sortent au-dessus d'elle.
+  const myDepartureId = useMyTrip().trip?.departure.id;
+  const latest = useRef({ fleet, ports, routes, onSelect, messages: [] as Bubble[], myDepartureId });
+  latest.current = { fleet, ports, routes, onSelect, messages: mixed, myDepartureId };
 
   useEffect(() => {
     const map = mapRef.current;
@@ -106,9 +110,13 @@ export function useChatBubbles(
       const slug = vesselMapIcon(ship.name);
       const x = ship.dx * (slug ? dockSpread(zoom) : 1);
       const y = shipShiftY(ship.dy, ship.ashore, slug, zoom);
+      const tag = ship.departureId && ship.departureId === latest.current.myDepartureId;
       return {
         at: shipAnchor(ship),
-        offset: [x, y - (slug ? vesselScreenHeight(slug, zoom) : 12) - 6],
+        offset: [
+          x,
+          y - (slug ? vesselScreenHeight(slug, zoom) : 12) - 6 - (tag ? MY_TRIP_TAG_SPACE : 0),
+        ],
       };
     };
     // D'où sort la bulle : le navire du salon, sinon le navire de la ligne, sinon son port.

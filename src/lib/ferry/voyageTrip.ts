@@ -9,6 +9,11 @@ import type { Port, RouteLine, Vessel } from "./types";
 /** Ouvre « Mon voyage » sur la carte d'accueil quand elle est déjà affichée. */
 export const OPEN_VOYAGE_EVENT = "bledway:open-voyage";
 export const openVoyage = () => window.dispatchEvent(new Event(OPEN_VOYAGE_EVENT));
+/** Le logo et « Carte », déjà sur l'accueil : la carte revient à son état de départ (hors « Ma traversée »). */
+export const GO_HOME_EVENT = "bledway:go-home";
+export const goHome = () => {
+  if (window.location.pathname === "/") window.dispatchEvent(new Event(GO_HOME_EVENT));
+};
 
 export type VoyageTrip = {
   audience: Exclude<JourneyAudience, "simulation">;

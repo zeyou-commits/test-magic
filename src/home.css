@@ -2735,6 +2735,14 @@ html {
   height: clamp(540px, calc(100svh - 96px), 900px);
   overflow-anchor: none;
 }
+/* Ordinateur : la carte tient sous l'en-tête, bandeau d'actualités compris. Sinon la page défile
+   et l'en-tête collant passe sur la loupe et les filtres. */
+@media (min-width: 768px) {
+  .bw-map-stage {
+    height: clamp(540px, calc(100svh - max(96px, var(--bw-header-height, 80px) + 16px)), 900px);
+    scroll-margin-top: var(--bw-header-height, 80px);
+  }
+}
 .bw-day-rail {
   scrollbar-width: none;
   -webkit-overflow-scrolling: touch;

@@ -7,6 +7,7 @@ import {
   ChevronLeft,
   ChevronRight,
   ArrowDown,
+  ArrowLeft,
   Compass,
   Globe2,
   MessagesSquare,
@@ -75,7 +76,7 @@ import { LivePulse } from "@/components/panel/LivePulse";
 import { JourneyFrieze } from "@/components/journey/JourneyFrieze";
 import { JourneyStoryNav } from "@/components/journey/JourneyStoryNav";
 import { useVoyage } from "@/components/journey/useVoyage";
-import { OPEN_VOYAGE_EVENT, useVoyageTrip } from "@/lib/ferry/voyageTrip";
+import { GO_HOME_EVENT, OPEN_VOYAGE_EVENT, useVoyageTrip } from "@/lib/ferry/voyageTrip";
 
 const FerryMap = lazy(() => import("@/components/map/FerryMap"));
 
@@ -1049,6 +1050,18 @@ function Index() {
   };
 
   closePanelRef.current = resetToMap;
+  // Quitter « Ma traversée » : retour à l'accueil de la carte (bouton du volet, logo, « Carte »).
+  const leaveVoyage = () => {
+    setVoyageOn(false);
+    resetToMap();
+  };
+  const leaveVoyageRef = useRef(leaveVoyage);
+  leaveVoyageRef.current = leaveVoyage;
+  useEffect(() => {
+    const onHome = () => leaveVoyageRef.current();
+    window.addEventListener(GO_HOME_EVENT, onHome);
+    return () => window.removeEventListener(GO_HOME_EVENT, onHome);
+  }, []);
 
   const openMobileDepartures = () => {
     if (panelMode === "departures" && !selection) {
@@ -1312,8 +1325,8 @@ function Index() {
                       <p>
                         <b>{voyage.summary.heading}</b> · {voyage.summary.title}
                       </p>
-                      <button type="button" onClick={() => setVoyageOn(false)}>
-                        <X size={14} aria-hidden /> Toute la carte
+                      <button type="button" onClick={leaveVoyage}>
+                        <ArrowLeft size={14} aria-hidden /> Accueil
                       </button>
                     </div>
                     <JourneyStoryNav
@@ -1340,6 +1353,13 @@ function Index() {
                     ) : null}
                   </>
                 ) : (
+                  <>
+                  <div className="bw-voyage-aside__bar">
+                    <button type="button" onClick={leaveVoyage}>
+                      <ArrowLeft size={15} aria-hidden /> Retour à l’accueil
+                    </button>
+                    <span>{voyage.traveller ? "Ma traversée" : "Traversée suivie"}</span>
+                  </div>
                   <div className="bw-voyage-aside__scroll" key={voyage.shown ?? voyage.current}>
                     {voyage.liveAlert ? (
                       <LivePulse
@@ -1355,6 +1375,7 @@ function Index() {
                       voyage.close,
                     )}
                   </div>
+                  </>
                 )}
               </div>
             ) : null}
@@ -1630,12 +1651,8 @@ function Index() {
                         actions faites
                       </p>
                     ) : null}
-                    <button
-                      type="button"
-                      className="bw-voyage-dock__exit"
-                      onClick={() => setVoyageOn(false)}
-                    >
-                      <X size={15} aria-hidden /> Toute la carte
+                    <button type="button" className="bw-voyage-dock__exit" onClick={leaveVoyage}>
+                      <ArrowLeft size={15} aria-hidden /> Accueil
                     </button>
                   </header>
                   <JourneyFrieze

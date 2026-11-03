@@ -1,4 +1,5 @@
 import { leadMinutesFor } from "./boarding";
+import { deName } from "./format";
 import {
   itemForCompany,
   itemsFor,
@@ -294,12 +295,12 @@ export function stepGuide({
     const leads: Partial<Record<JourneyStepId, string>> = {
       sea: `Suivez la traversée ${ship} en direct sur la carte. Arrivée prévue à ${to}${eta}, signalements et alertes compris.`,
       arrival: `Après l'arrivée ${ship}, le débarquement, les contrôles et la sortie du port prennent du temps : l'heure d'accostage n'est pas l'heure de sortie.`,
-      last: `Votre proche a quitté le port de ${to} : la route continue jusqu'à destination.`,
+      last: `Votre proche a quitté le port ${deName(to)} : la route continue jusqu'à destination.`,
       home: "Bien arrivé·e ! Le voyage est terminé.",
     };
     return {
       lead: leads[step] ?? "",
-      links: step === "arrival" ? [{ href: "#port", label: `Le port de ${to}` }] : [],
+      links: step === "arrival" ? [{ href: "#port", label: `Le port ${deName(to)}` }] : [],
     };
   }
   const simulation = audience === "simulation";
@@ -328,15 +329,21 @@ export function stepGuide({
         links: [{ href: "/mes-dinars", label: "Mes dinars" }],
       };
     case "road": {
-      const arrive = hasTime ? ` à ${time(callMs, timeZone)}` : "";
+      // Court : l'heure qui compte pour ce voyageur (véhicule ou à pied), puis la route.
+      const callAt = vehicle ? callMs : footMs;
+      const arrive = hasTime ? ` vers ${time(callAt, timeZone)}` : "";
+      const rule =
+        presentationMinutes != null
+          ? "consigne de la compagnie"
+          : `repère : ${vehicle ? "4 h avant en véhicule" : "3 h avant à pied"}`;
       const custom =
         roadMin && hasTime
-          ? ` Comptez environ ${durationLabel(roadMin)} de route avec les pauses : départ conseillé vers ${new Date(callMs - roadMin * 60_000).toLocaleString("fr-FR", { weekday: "short", hour: "2-digit", minute: "2-digit", timeZone })}.`
+          ? ` Environ ${durationLabel(roadMin)} de route, pauses comprises : partez vers ${new Date(callAt - roadMin * 60_000).toLocaleString("fr-FR", { weekday: "short", hour: "2-digit", minute: "2-digit", timeZone })}.`
           : roadMin
-            ? ` Comptez environ ${durationLabel(roadMin)} de route avec les pauses.`
-            : " Prévoyez la route avec des pauses toutes les deux heures.";
+            ? ` Environ ${durationLabel(roadMin)} de route, pauses comprises.`
+            : " Une pause toutes les 2 h.";
       return {
-        lead: `Pour être au port de ${from}${arrive} (${consigne}).${custom}`,
+        lead: `Au port ${deName(from)}${arrive} (${rule}).${custom}`,
         links:
           vehicle && direction === "outbound"
             ? [
@@ -353,8 +360,8 @@ export function stepGuide({
       return {
         lead: hasTime
           ? `Présentation à ${from} : ${time(callMs, timeZone)} en véhicule, ${time(footMs, timeZone)} à pied (${consigne}). L'heure inscrite sur votre billet fait foi.`
-          : `Au port de ${from} : retrait de la carte d'embarquement, contrôles, puis embarquement. L'heure inscrite sur votre billet fait foi.`,
-        links: [{ href: "#port", label: `Le port de ${from}` }],
+          : `Au port ${deName(from)} : retrait de la carte d'embarquement, contrôles, puis embarquement. L'heure inscrite sur votre billet fait foi.`,
+        links: [{ href: "#port", label: `Le port ${deName(from)}` }],
       };
     case "sea":
       return {
@@ -363,8 +370,8 @@ export function stepGuide({
       };
     case "arrival":
       return {
-        lead: `Débarquement, contrôles et sortie du port de ${to}. Gardez passeports${vehicle ? ", TPD et papiers du véhicule" : ""} à portée de main.`,
-        links: [{ href: "#port", label: `Le port de ${to}` }],
+        lead: `Débarquement, contrôles et sortie du port ${deName(to)}. Gardez passeports${vehicle ? ", TPD et papiers du véhicule" : ""} à portée de main.`,
+        links: [{ href: "#port", label: `Le port ${deName(to)}` }],
       };
     case "last":
       return {

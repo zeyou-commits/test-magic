@@ -1,5 +1,5 @@
 import { useAuth } from "@/hooks/useAuth";
-import { ArrowRight, Check, Navigation, Waves } from "lucide-react";
+import { ArrowRight, Navigation, Waves } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import {
   CROSSING_STEPS,
@@ -273,11 +273,7 @@ function CrossingSteps({
         {CROSSING_STEPS.map((step) => (
           <li key={step} data-mark={marks[step]} title={MARK_TITLE[marks[step]]}>
             <span className="bw-crossing-steps__dot" aria-hidden>
-              {marks[step] === "done" || marks[step] === "assumed" ? (
-                <Check size={11} strokeWidth={3} />
-              ) : marks[step] === "pending" ? (
-                "?"
-              ) : null}
+              {marks[step] === "pending" ? "?" : null}
             </span>
             <strong>{STEP_LABEL[step]}</strong>
             {sub[step] ? <small>{sub[step]}</small> : null}

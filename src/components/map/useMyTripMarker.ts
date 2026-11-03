@@ -2,6 +2,7 @@ import { useEffect, useRef, type RefObject } from "react";
 import { Marker, type Map as MapLibreMap } from "maplibre-gl";
 import { shipAnchor, type FleetShip } from "@/lib/ferry/fleet";
 import { useMyTrip } from "@/lib/ferry/myTrip";
+import { projectedPosition } from "@/lib/ferry/tracking";
 import type { Selection } from "@/lib/ferry/types";
 import { vesselMapIcon } from "@/lib/ferry/vesselVisuals";
 import {
@@ -12,10 +13,13 @@ import {
   vesselScreenWidth,
 } from "./shipIcons";
 
+/** Hauteur de l'étiquette « Mon bateau » et son écart à la coque : les bulles du salon passent au-dessus. */
+export const MY_TRIP_TAG_SPACE = 26;
+
 /**
- * Mon bateau sur la carte : un fanion vert « Mon bateau » planté à l'avant du navire, qui flotte
- * vers l'extérieur pour laisser le dessus à la communauté, et un halo doux qui pulse autour de la
- * coque. Un toucher ouvre « Ma traversée ».
+ * Mon bateau sur la carte : une étiquette « Mon bateau » centrée au-dessus de la coque (le nom et le
+ * fanion de la compagnie sont dessous), et un halo doux qui pulse, centré sur le navire.
+ * Un toucher ouvre « Ma traversée ».
  */
 export function useMyTripMarker(
   mapRef: RefObject<MapLibreMap | null>,
@@ -36,28 +40,29 @@ export function useMyTripMarker(
     const ship =
       fleet.find((item) => item.vesselId === vesselId && item.departureId === departureId) ??
       fleet.find((item) => item.vesselId === vesselId);
-    const point = ship ? shipAnchor(ship) : undefined;
-    if (!ship || !point) return;
+    const anchor = ship ? shipAnchor(ship) : undefined;
+    if (!ship || !anchor) return;
+    // En mer, le navire de la carte avance à l'estime entre deux signaux : le repère le suit.
+    const live = ship.live && !ship.portId ? ship.live.position : null;
+    const point = () => (live ? projectedPosition(live, Date.now()) : anchor);
     const shift: [number, number] = [ship.dx, ship.dy];
     const slug = vesselMapIcon(ship.name);
     const button = document.createElement("button");
     button.type = "button";
-    button.className = "bw-mytrip-flag";
+    button.className = "bw-mytrip-tag";
     button.setAttribute("aria-label", `Ma traversée : ${vesselName}`);
-    const flag = document.createElement("span");
-    flag.className = "bw-mytrip-flag__cloth";
-    flag.textContent = "Mon bateau";
-    const mast = document.createElement("span");
-    mast.className = "bw-mytrip-flag__mast";
-    button.append(flag, mast);
+    const dot = document.createElement("span");
+    dot.className = "bw-mytrip-tag__dot";
+    dot.setAttribute("aria-hidden", "true");
+    button.append(dot, "Mon bateau");
     button.addEventListener("mousemove", (event) => event.stopPropagation());
     button.addEventListener("click", (event) => {
       event.stopPropagation();
       callbacks.current.onSelect({ type: "departure", id: departureId });
       callbacks.current.onOpen?.();
     });
-    const marker = new Marker({ element: button, anchor: "bottom-right", offset: shift })
-      .setLngLat(point)
+    const marker = new Marker({ element: button, anchor: "bottom", offset: shift })
+      .setLngLat(point())
       .addTo(map);
     // Le halo se pose sous le navire, centré sur la coque ; il ne capte aucun clic.
     const glow = document.createElement("span");
@@ -68,31 +73,35 @@ export function useMyTripMarker(
     ring.className = "bw-mytrip-glow__ring";
     glow.append(ring);
     const halo = new Marker({ element: glow, anchor: "center", offset: shift })
-      .setLngLat(point)
+      .setLngLat(point())
       .addTo(map);
     const place = () => {
       const zoom = map.getZoom();
-      button.style.setProperty("--flag-scale", zoom < 5.5 ? "0.72" : zoom < 8 ? "0.86" : "1");
+      button.dataset["size"] = zoom < 5.5 ? "s" : "m";
       if (!slug) {
         const r = shipTokenRadius(zoom);
         glow.style.setProperty("--glow-size", `${Math.round(r * 3)}px`);
         halo.setOffset(shift);
-        marker.setOffset([shift[0] - r * 0.6, shift[1] - r * 0.6]);
+        marker.setOffset([shift[0], shift[1] - r - 4]);
         return;
       }
-      glow.style.setProperty("--glow-size", `${Math.round(vesselScreenWidth(zoom) * 1.5)}px`);
-      halo.setOffset([
-        shift[0] * dockSpread(zoom),
-        shipShiftY(shift[1], ship.ashore, slug, zoom),
-      ]);
-      marker.setOffset([
-        shift[0] * dockSpread(zoom) - vesselScreenWidth(zoom) * 0.38,
-        shipShiftY(shift[1], ship.ashore, slug, zoom) - vesselScreenHeight(slug, zoom) * 0.3,
-      ]);
+      // Le navire est posé par le bas de son image : son centre est une demi-hauteur plus haut.
+      const x = shift[0] * dockSpread(zoom);
+      const bottom = shipShiftY(shift[1], ship.ashore, slug, zoom);
+      const height = vesselScreenHeight(slug, zoom);
+      glow.style.setProperty("--glow-size", `${Math.round(vesselScreenWidth(zoom) * 1.25)}px`);
+      halo.setOffset([x, bottom - height / 2]);
+      marker.setOffset([x, bottom - height - 4]);
+    };
+    const follow = () => {
+      marker.setLngLat(point());
+      halo.setLngLat(point());
     };
     place();
     map.on("zoom", place);
+    const timer = live ? window.setInterval(follow, 5000) : 0;
     return () => {
+      window.clearInterval(timer);
       map.off("zoom", place);
       marker.remove();
       halo.remove();

@@ -6,16 +6,9 @@ import { useMyTrip } from "@/lib/ferry/myTrip";
 import { upcomingDeparturesQuery } from "@/lib/ferry/queries";
 import type { Selection } from "@/lib/ferry/types";
 import { enterRoom } from "@/lib/ferry/chat";
-import {
-  CHAT_INVITE_EVENT,
-  OPEN_ROOM_PICKER_EVENT,
-  chatDemoQuery,
-  recentChatQuery,
-} from "@/lib/ferry/chatDemo";
+import { CHAT_INVITE_EVENT, OPEN_ROOM_PICKER_EVENT } from "@/lib/ferry/chatDemo";
 import { chatFeedQuery } from "./LiveRoom";
 import { RoomPicker } from "./RoomPicker";
-import { AuthorAvatar } from "./StaffChat";
-import { CabasStack } from "./TripPresence";
 
 const DISMISS_KEY = "bledway:chat-preview-dismissed";
 /** L'invitation reste le temps d'une bulle de la carte. */
@@ -34,33 +27,7 @@ export function MessagesFab({ onSelect }: { onSelect: (selection: Selection) => 
     ...chatFeedQuery("crossing", trip?.departure.id ?? "", user?.id),
     refetchInterval: 60_000,
   }).data;
-  // Des visages plutôt qu'une icône : ceux de mon salon, sinon ceux qui écrivent en ce moment dans
-  // les salons, sinon les exemples de l'équipe (sans chiffre : on n'invente jamais une activité).
-  const recent = useQuery({ ...recentChatQuery, enabled: !trip }).data ?? [];
-  const demos = useQuery({ ...chatDemoQuery, enabled: !trip }).data ?? [];
-  const mine = room?.messages ?? [];
-  const count = trip ? mine.length : recent.length;
-  const faces: { key: string; node: React.ReactNode }[] = [];
-  const seen = new Set<string>();
-  const add = (key: string, node: React.ReactNode) => {
-    if (faces.length >= 3 || seen.has(key)) return;
-    seen.add(key);
-    faces.push({ key, node });
-  };
-  if (trip)
-    [...mine]
-      .reverse()
-      .filter((message) => !message.me)
-      .forEach((message) =>
-        add(message.author.handle ?? message.author.pseudo, <AuthorAvatar author={message.author} size={22} />),
-      );
-  else
-    [
-      ...recent.map((message) => ({ pseudo: message.author.pseudo, avatar: message.author.avatar })),
-      ...(recent.length ? [] : demos.filter((demo) => demo.active)),
-    ].forEach((person) =>
-      person.avatar ? add(person.pseudo, <img src={person.avatar} alt="" width={22} height={22} />) : null,
-    );
+  const count = room?.messages.length ?? 0;
   const [invite, setInvite] = useState(false);
   const [dismissed, setDismissed] = useState(() => {
     try {
@@ -100,15 +67,8 @@ export function MessagesFab({ onSelect }: { onSelect: (selection: Selection) => 
         className="bw-messages-fab"
         aria-label={count ? `Salons, ${count} messages` : "Salons"}
         onClick={openMine}
-        data-faces
       >
-        <span className="bw-messages-fab__faces" aria-hidden>
-          {faces.length ? (
-            faces.map((face) => <i key={face.key}>{face.node}</i>)
-          ) : (
-            <CabasStack count={3} seed="salons" size={22} />
-          )}
-        </span>
+        <MessagesSquare size={22} aria-hidden />
         <span>Salons</span>
         {count ? <b>{count > 99 ? "99+" : count}</b> : null}
       </button>

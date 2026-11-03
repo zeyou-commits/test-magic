@@ -4,6 +4,7 @@ import { Link } from "@tanstack/react-router";
 import { UserMenu } from "./UserMenu";
 import { HeaderInbox } from "@/components/panel/FlashCenter";
 import { DataUnavailableNotice } from "./DataUnavailableNotice";
+import { goHome } from "@/lib/ferry/voyageTrip";
 import { ChevronDown, Menu, ArrowUpRight, Route as RouteIcon, Wallet } from "lucide-react";
 import {
   DropdownMenu,
@@ -59,6 +60,7 @@ export function BrandLink({ compact = false }: { compact?: boolean }) {
       to="/"
       className="bw-brand-link flex shrink-0 flex-col items-start justify-center"
       aria-label="BledWay, retour à la carte"
+      onClick={goHome}
     >
       <img
         src="/bledway-brand.png"
@@ -99,7 +101,9 @@ export function SiteHeader() {
               to={item.to}
               activeOptions={{ exact: item.to === "/" }}
               onClick={() => {
-                if (item.to === "/") window.scrollTo({ top: 0, behavior: "instant" });
+                if (item.to !== "/") return;
+                window.scrollTo({ top: 0, behavior: "instant" });
+                goHome();
               }}
             >
               {item.label}

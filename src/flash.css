@@ -12419,15 +12419,6 @@ img[data-logo="dark"] {
   right: 8px;
   transform: translateY(-50%);
 }
-.bw-trip-status-teaser[data-compact] {
-  font-size: 12.5px;
-}
-/* Texte seul : il passe à la ligne au lieu de sortir du volet. */
-.bw-trip-status-teaser[data-compact] > span:first-child {
-  display: block;
-  flex-shrink: 1;
-  min-width: 0;
-}
 .bw-step-panel__lead > [data-clamped] {
   display: -webkit-box;
   overflow: hidden;

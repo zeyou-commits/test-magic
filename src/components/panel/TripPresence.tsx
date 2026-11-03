@@ -306,14 +306,8 @@ export function TripStatusPicker({
     }
     update.mutate(current === status ? null : status);
   };
-  if (tooEarly && only)
-    return (
-      <p className="bw-trip-status-teaser" data-compact>
-        <span>
-          <strong>J'y suis</strong> : dès la veille du départ.
-        </span>
-      </p>
-    );
+  // Dans une étape, « J'y suis » n'apparaît qu'à partir de la veille : avant, rien à afficher.
+  if (tooEarly && only) return null;
   if (tooEarly)
     return (
       <p className="bw-trip-status-teaser">

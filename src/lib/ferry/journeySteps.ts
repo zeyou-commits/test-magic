@@ -332,15 +332,13 @@ export function stepGuide({
       // Court : l'heure qui compte pour ce voyageur (véhicule ou à pied), puis la route.
       const callAt = vehicle ? callMs : footMs;
       const arrive = hasTime ? ` vers ${time(callAt, timeZone)}` : "";
-      const rule =
-        presentationMinutes != null
-          ? "consigne de la compagnie"
-          : `repère : ${vehicle ? "4 h avant en véhicule" : "3 h avant à pied"}`;
+      // Deux lignes au plus : l'heure au port, puis l'heure de départ de la maison.
+      const rule = presentationMinutes != null ? "consigne" : vehicle ? "4 h avant" : "3 h avant";
       const custom =
         roadMin && hasTime
-          ? ` Environ ${durationLabel(roadMin)} de route, pauses comprises : partez vers ${new Date(callAt - roadMin * 60_000).toLocaleString("fr-FR", { weekday: "short", hour: "2-digit", minute: "2-digit", timeZone })}.`
+          ? ` ${durationLabel(roadMin)} de route avec pauses : partir ${new Date(callAt - roadMin * 60_000).toLocaleString("fr-FR", { weekday: "short", hour: "2-digit", minute: "2-digit", timeZone })}.`
           : roadMin
-            ? ` Environ ${durationLabel(roadMin)} de route, pauses comprises.`
+            ? ` ${durationLabel(roadMin)} de route avec pauses.`
             : " Une pause toutes les 2 h.";
       return {
         lead: `Au port ${deName(from)}${arrive} (${rule}).${custom}`,

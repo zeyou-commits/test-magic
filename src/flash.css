@@ -10741,3 +10741,307 @@ img[data-logo="dark"] {
     animation: none;
   }
 }
+
+/* ── Page Compagnies : chaque compagnie comme la page Navires (chiffres, flotte, rythme) ── */
+.bw-cos-sector {
+  margin-bottom: 28px;
+}
+.bw-cos-list {
+  display: grid;
+  gap: 28px;
+  margin-bottom: 40px;
+}
+.bw-cos {
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: 24px;
+  background: var(--card);
+  box-shadow: 0 10px 30px #16324a0f;
+}
+.bw-cos__hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr);
+}
+/* Navire phare en entier, sur un dégradé de mer. */
+.bw-cos__photo {
+  position: relative;
+  display: flex;
+  min-height: 260px;
+  align-items: center;
+  justify-content: center;
+  padding: 18px 18px 34px;
+  background: linear-gradient(180deg, #f4f9fc 0%, #e3f0f7 62%, #cfe5f0 100%);
+  color: #7c97a8;
+}
+.bw-cos__photo img {
+  width: 100%;
+  height: 100%;
+  max-height: 240px;
+  object-fit: contain;
+  /* Les photos ont souvent un fond blanc opaque : « multiply » le fond dans le dégradé. */
+  mix-blend-mode: multiply;
+  transition: transform 0.5s;
+}
+.bw-cos:hover .bw-cos__photo img {
+  transform: translateY(-3px) scale(1.02);
+}
+.bw-cos__flagship {
+  position: absolute;
+  bottom: 10px;
+  left: 14px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: #ffffffd9;
+  color: #16324a;
+  font-size: 12px;
+  font-weight: 700;
+}
+.bw-cos__id {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 24px 26px;
+}
+.bw-cos__id h2 {
+  font-size: clamp(24px, 3vw, 32px);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.05;
+}
+.bw-cos__id p {
+  color: var(--muted-foreground);
+  font-size: 14px;
+  line-height: 1.45;
+}
+.bw-cos__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 14px;
+  margin-top: auto;
+}
+.bw-cos__open {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border-radius: 999px;
+  background: #16324a;
+  color: white;
+  font-size: 14px;
+  font-weight: 700;
+}
+.bw-cos__site {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: #0e7a43;
+  font-size: 13px;
+  font-weight: 600;
+}
+.bw-cos__tiles {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 1px;
+  background: #0e2a3a;
+  color: white;
+}
+.bw-cos__tiles > div {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  padding: 16px 16px 14px;
+  background: #0e2a3a;
+}
+.bw-cos__tiles svg {
+  color: #ffd98a;
+}
+.bw-cos__tiles dd {
+  font-size: 24px;
+  font-weight: 800;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+}
+.bw-cos__tiles dt {
+  color: #ffd98a;
+  font-size: 12px;
+  font-weight: 600;
+}
+.bw-cos__alert {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin: 16px 22px 0;
+  padding: 10px 14px;
+  border-radius: 14px;
+  background: #fdecea;
+  color: #8a1c12;
+  font-size: 13px;
+  font-weight: 700;
+}
+.bw-cos__alert span {
+  font-weight: 500;
+}
+.bw-cos__block {
+  padding: 20px 22px 0;
+}
+.bw-cos__block h3 {
+  margin-bottom: 12px;
+  font-size: 17px;
+  font-weight: 800;
+}
+.bw-cos__fleet {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+  gap: 12px;
+}
+.bw-cos__fleet li {
+  position: relative;
+}
+.bw-cos__fleet a {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  height: 100%;
+  padding: 10px 12px 12px;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: white;
+  transition:
+    transform 0.2s,
+    box-shadow 0.2s;
+}
+.bw-cos__fleet a:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 22px #16324a1f;
+}
+.bw-cos__vphoto {
+  display: flex;
+  height: 92px;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 6px;
+  color: #9aaab4;
+}
+.bw-cos__vphoto img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+.bw-cos__fleet strong {
+  color: #16324a;
+  font-size: 14px;
+}
+.bw-cos__fleet small {
+  color: var(--muted-foreground);
+  font-size: 12px;
+}
+.bw-cos__fleet .bw-vessel-alert-tag {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+}
+.bw-cos__lines {
+  display: grid;
+  gap: 4px;
+}
+.bw-cos__lines a {
+  display: grid;
+  grid-template-columns: minmax(0, 1.3fr) minmax(60px, 1fr) minmax(0, auto);
+  align-items: center;
+  gap: 14px;
+  padding: 9px 12px;
+  border-radius: 12px;
+  transition: background 0.2s;
+}
+.bw-cos__lines a:hover {
+  background: var(--secondary);
+}
+.bw-cos__line {
+  color: #16324a;
+  font-size: 14px;
+  font-weight: 700;
+}
+.bw-cos__line small,
+.bw-cos__freq small {
+  display: block;
+  color: var(--muted-foreground);
+  font-size: 12px;
+  font-weight: 500;
+}
+.bw-cos__rate {
+  height: 8px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: #e9efe9;
+}
+.bw-cos__rate i {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #0e7a43, #3fb37a);
+}
+.bw-cos__freq {
+  color: #0e7a43;
+  font-size: 13px;
+  font-weight: 700;
+  text-align: right;
+  white-space: nowrap;
+}
+.bw-cos__more {
+  margin: 6px 12px 0;
+  border: 0;
+  background: none;
+  color: #0e7a43;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.bw-cos__foot {
+  display: flex;
+  justify-content: flex-end;
+  padding: 14px 22px 18px;
+}
+@media (max-width: 900px) {
+  .bw-cos__hero {
+    grid-template-columns: 1fr;
+  }
+  .bw-cos__photo {
+    min-height: 200px;
+  }
+  .bw-cos__tiles {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+@media (max-width: 560px) {
+  .bw-cos__id {
+    padding: 18px;
+  }
+  .bw-cos__tiles dd {
+    font-size: 20px;
+  }
+  .bw-cos__block {
+    padding: 18px 14px 0;
+  }
+  .bw-cos__fleet {
+    grid-auto-columns: 72%;
+    grid-auto-flow: column;
+    grid-template-columns: none;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    padding-bottom: 6px;
+  }
+  .bw-cos__fleet li {
+    scroll-snap-align: start;
+  }
+  .bw-cos__lines a {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+  .bw-cos__rate {
+    grid-column: 1 / -1;
+    order: 3;
+  }
+}

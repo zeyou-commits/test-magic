@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { CrossingCard } from "@/components/panel/CrossingCard";
 import { RateStars } from "@/components/panel/RateStars";
 import { TripStatusPicker } from "@/components/panel/TripPresence";
 import { useLiveInfo } from "@/components/panel/LivePulse";
@@ -42,9 +43,11 @@ import {
   writePlaces,
   type JourneyPlaces,
 } from "@/lib/ferry/journeyTrips";
+import { crossingProgress } from "@/lib/ferry/crossingProgress";
 import { companiesQuery, upcomingDeparturesQuery } from "@/lib/ferry/queries";
+import { useLiveShips } from "@/lib/ferry/useLiveShips";
 import { portTimeZone } from "@/lib/ferry/time";
-import type { Selection } from "@/lib/ferry/types";
+import type { Departure, Selection } from "@/lib/ferry/types";
 import type { VoyageTrip } from "@/lib/ferry/voyageTrip";
 import type { FriezeStep } from "./JourneyFrieze";
 import { JourneyPlacesEntry } from "./JourneyPlacesForm";
@@ -74,6 +77,8 @@ export function useVoyage(
   const traveller = trip?.audience === "traveller";
   const { data: companies = [] } = useQuery(companiesQuery);
   const departures = useQuery(upcomingDeparturesQuery()).data;
+  // Le signal du navire, pour l'avancement de la traversée (actualisé chaque minute).
+  const liveShips = useLiveShips();
   const presentation = useQuery({ ...presentationQuery(departureId), enabled: Boolean(trip) }).data;
   // Compteurs anonymes de « Où en êtes-vous ? » : combien de voyageurs à chaque étape.
   const presence = useQuery({ ...presenceQuery, enabled: Boolean(trip) }).data;
@@ -175,6 +180,16 @@ export function useVoyage(
     return items.length > 0 && items.every((item) => preparation.done.includes(item.id));
   });
   const current = currentStep({ timeline, now, status: status as TravelStatus | null, steps, completed });
+  // L'avancement du navire, le même calcul que la fiche de la traversée : il part à l'heure prévue
+  // sans preuve contraire, et « Parti · en mer » s'affiche dès qu'il y en a une.
+  const fullDeparture = ((departures ?? []).find((item) => item.id === departure.id) ??
+    departure) as Departure;
+  const live = liveShips.find((ship) => ship.departure.id === departure.id) ?? null;
+  const progress = crossingProgress(fullDeparture, from, to, live, now);
+  const atSea = progress.ratio !== null && now >= departureMs && now < endMs;
+  // La carte d'avancement : de quelques heures avant le départ jusqu'au lendemain de l'arrivée.
+  const tracking =
+    departure.status !== "cancelled" && now >= departureMs - 6 * 3_600_000 && now <= endMs + 12 * 3_600_000;
   const subOf = (step: JourneyStepId) => {
     const items = itemsOf(step);
     const count = items.filter((item) => preparation.done.includes(item.id)).length;
@@ -189,7 +204,10 @@ export function useVoyage(
       case "port":
         return stepMoment(timeline.port.start, fromZone);
       case "sea":
-        return stepMoment(departureMs, fromZone);
+        // Pendant la traversée : où en est le navire, plutôt que l'heure de départ déjà passée.
+        return atSea && progress.ratio !== null
+          ? `${progress.trust === "live" || progress.trust === "observed" ? "" : "≈ "}${Math.round(progress.ratio * 100)} %`
+          : stepMoment(departureMs, fromZone);
       case "arrival":
         return stepMoment(endMs, toZone);
       case "last":
@@ -322,7 +340,7 @@ export function useVoyage(
     );
     // « J'y suis » : la déclaration se fait depuis l'étape, et la frise avance avec elle.
     const statuses = traveller ? STEP_STATUSES[step] : undefined;
-    const top = statuses ? (
+    const picker = statuses ? (
       <TripStatusPicker
         departureId={departure.id}
         departureAt={departure.departure_at}
@@ -331,6 +349,18 @@ export function useVoyage(
         only={statuses}
       />
     ) : null;
+    // En mer et à l'arrivée : l'avancement du navire en tête de l'étape, sans quitter le voyage.
+    const top =
+      tracking && (step === "sea" || step === "arrival") ? (
+        <>
+          <div className="bw-step-tracker">
+            <CrossingCard departure={fullDeparture} from={from} to={to} live={live} />
+          </div>
+          {picker}
+        </>
+      ) : (
+        picker
+      );
     // Noter sur le moment : le port en y arrivant, le navire et le port d'arrivée en débarquant.
     const rate = (kind: "port" | "vessel", id: string, label: string) => (
       <StepRate
@@ -377,7 +407,8 @@ export function useVoyage(
         state={stepState(step, current, steps)}
         index={steps.indexOf(step)}
         count={steps.length}
-        lead={guide.lead}
+        // La carte d'avancement dit déjà tout pendant la traversée : pas de texte en double.
+        lead={tracking && step === "sea" ? "" : guide.lead}
         links={links}
         items={itemsOf(step)}
         done={preparation.done}
@@ -436,6 +467,7 @@ export function useVoyage(
         algeriaPort={outbound ? to : from}
         places={places}
         onChange={updatePlaces}
+        invite={now < departureMs}
       />
     ) : null,
     info,

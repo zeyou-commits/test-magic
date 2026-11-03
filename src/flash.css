@@ -12716,8 +12716,10 @@ img[data-logo="dark"] {
   font-size: 10px;
   font-weight: 650;
   line-height: 1.15;
+  /* Césure française (« Embar-quement ») plutôt qu'une coupure au hasard. */
   hyphens: auto;
-  overflow-wrap: anywhere;
+  overflow-wrap: normal;
+  letter-spacing: -0.01em;
 }
 .bw-crossing-steps li[data-mark="current"] strong,
 .bw-crossing-steps li[data-mark="pending"] strong {
@@ -13087,4 +13089,16 @@ img[data-logo="dark"] {
   padding: 0;
   border: 0;
   background: none;
+}
+
+/* « Ma traversée », étapes « En mer » et « Arrivée » : l'avancement du navire en tête. */
+.bw-step-tracker .bw-crossing {
+  padding: 13px 14px;
+  border-radius: 16px;
+  box-shadow: 0 6px 18px -12px #16324a40;
+}
+@media (max-width: 767px) {
+  .bw-timeline__body .bw-step-tracker .bw-crossing {
+    padding: 12px;
+  }
 }

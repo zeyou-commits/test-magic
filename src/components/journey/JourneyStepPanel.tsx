@@ -79,9 +79,11 @@ export function JourneyStepPanel({
         ) : null}
       </header>
       {top}
-      <p className="bw-step-panel__lead">
-        <span data-clamped={longLead && !leadOpen ? "" : undefined}>{lead}</span>
-      </p>
+      {lead ? (
+        <p className="bw-step-panel__lead">
+          <span data-clamped={longLead && !leadOpen ? "" : undefined}>{lead}</span>
+        </p>
+      ) : null}
       {longLead ? (
         <button
           type="button"

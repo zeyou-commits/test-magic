@@ -188,16 +188,19 @@ export function JourneyPlacesEntry({
   algeriaPort,
   places,
   onChange,
+  invite = true,
 }: {
   departureId: string;
   europePort: Port;
   algeriaPort: Port;
   places: JourneyPlaces | null;
   onChange: (places: JourneyPlaces | null) => void;
+  /** L'invitation n'a de sens qu'avant le départ ; ensuite, le bouton seul reste. */
+  invite?: boolean;
 }) {
   const [open, setOpen] = useState(false);
   useEffect(() => {
-    if (places || invited(departureId)) return;
+    if (!invite || places || invited(departureId)) return;
     const timer = window.setTimeout(() => setOpen(true), 900);
     return () => window.clearTimeout(timer);
     // L'invitation ne dépend que de la traversée : un trajet rempli ensuite ne la relance pas.

@@ -167,8 +167,8 @@ export function crossingProgress(
 export const CROSSING_STEPS = ["boarding", "departure", "sea", "arrival", "landing"] as const;
 export type CrossingStep = (typeof CROSSING_STEPS)[number];
 /**
- * done : constaté (signal, heure relevée) ; assumed : sans doute passé, mais rien ne le prouve ;
- * current : en cours ; pending : l'heure est passée et rien ne le confirme encore ; todo : à venir.
+ * done : constaté (signal, heure relevée) ; assumed : passé d'après l'horaire, sans confirmation ;
+ * current : en cours ; pending : arrivée prévue passée, rien ne la confirme encore ; todo : à venir.
  */
 export type CrossingStepMark = "done" | "assumed" | "current" | "pending" | "todo";
 
@@ -196,10 +196,9 @@ export function crossingSteps({
   else if (scene === "departing") current = 1;
   else if (scene === "boarding" || scene === "closed") current = 0;
   else if (!pastDeparture) current = -1;
-  else if (!departed) {
-    current = 1;
-    mark = "pending";
-  } else if (arrivalDue) {
+  // Sans preuve, le navire part quand même à l'heure prévue : la traversée suit l'horaire, les
+  // étapes passées restent « d'après l'horaire » (assumed) tant que rien ne les confirme.
+  else if (arrivalDue) {
     current = 3;
     mark = "pending";
   } else current = 2;

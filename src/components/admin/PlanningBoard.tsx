@@ -454,6 +454,16 @@ export function PlanningBoard({
                 {open.schedule_id ? " · générée par un calendrier récurrent" : ""}
               </p>
             </section>
+
+            <RemoveDeparture
+              key={open.id}
+              departure={open}
+              onChanged={refresh}
+              onRemoved={() => {
+                setOpenId(null);
+                refresh();
+              }}
+            />
           </div>
         </AdminDrawer>
       ) : null}
@@ -467,5 +477,196 @@ function Legend({ className, children }: { className: string; children: ReactNod
       <span className={`size-3 rounded border ${className}`} aria-hidden />
       {children}
     </span>
+  );
+}
+
+type RemovalImpact = {
+  removed: boolean;
+  followers: number;
+  messages: number;
+  linked: Record<string, number>;
+  recurring: boolean;
+};
+const LINKED_LABEL: Record<string, string> = {
+  "public.bw_trip_status": "statut « Où en êtes-vous ? »",
+  "public.bw_trip_preparation": "préparation de voyage",
+  "public.bw_journeys": "voyage aller-retour (le lien sera vidé)",
+  "public.bw_reports": "signalement (gardé, sans lien vers la date)",
+  "public.bw_report_anomalies": "observation (gardée, sans lien vers la date)",
+  "public.bw_private_messages": "message privé lié",
+  "public.bw_watch_proposals": "proposition de la veille",
+};
+const plural = (n: number, word: string) => `${n} ${word}${n > 1 ? "s" : ""}`;
+
+const removeDeparture = async (id: string, confirm: boolean, reason?: string) => {
+  const { data, error } = await (
+    supabase.rpc as unknown as (
+      name: string,
+      args: Record<string, unknown>,
+    ) => Promise<{ data: unknown; error: { message: string } | null }>
+  )("bw_admin_remove_departure", {
+    p_id: id,
+    p_confirm: confirm,
+    ...(reason ? { p_reason: reason } : {}),
+  });
+  if (error)
+    throw new Error(
+      /function|does not exist|schema cache/i.test(error.message)
+        ? "Le retrait n'est pas encore installé : exécutez le script SQL « admin_retirer_depart » dans Supabase."
+        : error.message,
+    );
+  return data as RemovalImpact;
+};
+
+/**
+ * Retirer une date : l'annuler (elle reste visible « Annulée » et les voyageurs qui la suivent sont
+ * prévenus), ou la supprimer après avoir vu ce qu'elle emporte (erreur d'import, doublon…).
+ */
+function RemoveDeparture({
+  departure,
+  onChanged,
+  onRemoved,
+}: {
+  departure: PlanningDeparture;
+  onChanged: () => void;
+  onRemoved: () => void;
+}) {
+  const [impact, setImpact] = useState<RemovalImpact | null>(null);
+  const [reason, setReason] = useState("");
+  const cancelled = departure.status === "cancelled";
+  const status = useMutation({
+    mutationFn: async (next: "cancelled" | "scheduled") => {
+      const { error } = await supabase.from("departures").update({ status: next }).eq("id", departure.id);
+      if (error) throw new Error(error.message);
+      return next;
+    },
+    onSuccess: (next) => {
+      toast.success(
+        next === "cancelled"
+          ? "Traversée marquée annulée : les voyageurs qui la suivent sont prévenus."
+          : "Traversée rétablie.",
+      );
+      onChanged();
+    },
+    onError: (error: Error) => toast.error(error.message),
+  });
+  const measure = useMutation({
+    mutationFn: () => removeDeparture(departure.id, false),
+    onSuccess: setImpact,
+    onError: (error: Error) => toast.error(error.message),
+  });
+  const remove = useMutation({
+    mutationFn: () => removeDeparture(departure.id, true, reason.trim() || undefined),
+    onSuccess: (result) => {
+      toast.success(
+        result.recurring
+          ? "Date supprimée : le calendrier récurrent ne la recréera pas."
+          : "Date supprimée du planning.",
+      );
+      onRemoved();
+    },
+    onError: (error: Error) => toast.error(error.message),
+  });
+  const details = impact
+    ? [
+        impact.followers
+          ? `${plural(impact.followers, "voyageur")} ${impact.followers > 1 ? "suivent" : "suit"} cette traversée : elle disparaîtra de leur suivi, sans notification`
+          : null,
+        impact.messages ? `${plural(impact.messages, "message")} dans son salon (gardés, salon fermé)` : null,
+        ...Object.entries(impact.linked).map(
+          ([table, count]) => `${count} × ${LINKED_LABEL[table] ?? table.replace("public.", "")}`,
+        ),
+      ].filter(Boolean)
+    : [];
+  return (
+    <section className="grid gap-2 border-t border-border pt-4">
+      <h3 className="text-sm font-semibold">Retirer cette date</h3>
+      <div className="flex flex-wrap gap-2">
+        {cancelled ? (
+          <Button
+            size="sm"
+            variant="outline"
+            disabled={status.isPending}
+            onClick={() => status.mutate("scheduled")}
+          >
+            Rétablir (prévue)
+          </Button>
+        ) : (
+          <Button
+            size="sm"
+            variant="outline"
+            disabled={status.isPending}
+            onClick={() => status.mutate("cancelled")}
+          >
+            Marquer annulée
+          </Button>
+        )}
+        {impact ? null : (
+          <Button
+            size="sm"
+            variant="ghost"
+            className="text-red-700 hover:bg-red-50 hover:text-red-800"
+            disabled={measure.isPending}
+            onClick={() => measure.mutate()}
+          >
+            Supprimer la date…
+          </Button>
+        )}
+      </div>
+      <p className="text-xs text-muted-foreground">
+        « Marquer annulée » : la date reste visible, barrée, et ceux qui la suivent sont prévenus. À
+        préférer quand la compagnie l’a annulée. « Supprimer » : pour une date qui n’a jamais existé
+        (erreur d’import, doublon).
+      </p>
+      {impact ? (
+        <div className="grid gap-2 rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-900">
+          <p className="font-semibold">
+            {details.length ? "Ce que la suppression emporte :" : "Rien n’est rattaché à cette date."}
+          </p>
+          {details.length ? (
+            <ul className="list-disc pl-5 text-xs leading-relaxed">
+              {details.map((line) => (
+                <li key={line}>{line}</li>
+              ))}
+            </ul>
+          ) : null}
+          {impact.recurring ? (
+            <p className="text-xs">
+              Date issue d’un calendrier récurrent : elle sera exclue du calendrier, la génération
+              automatique ne la recréera pas.
+            </p>
+          ) : null}
+          {impact.followers && !cancelled ? (
+            <p className="text-xs font-semibold">
+              Des voyageurs la suivent : si la traversée a été annulée par la compagnie, préférez
+              « Marquer annulée ».
+            </p>
+          ) : null}
+          <label className="grid gap-1 text-xs font-semibold">
+            Motif (facultatif, gardé dans le calendrier)
+            <input
+              maxLength={300}
+              value={reason}
+              placeholder="Ex. erreur d’import, date inexistante chez la compagnie"
+              onChange={(event) => setReason(event.target.value)}
+              className="h-9 rounded-md border border-input bg-background px-2 text-sm font-normal text-foreground"
+            />
+          </label>
+          <div className="flex flex-wrap gap-2">
+            <Button
+              size="sm"
+              variant="destructive"
+              disabled={remove.isPending}
+              onClick={() => remove.mutate()}
+            >
+              Supprimer définitivement
+            </Button>
+            <Button size="sm" variant="ghost" onClick={() => setImpact(null)}>
+              Garder la date
+            </Button>
+          </div>
+        </div>
+      ) : null}
+    </section>
   );
 }

@@ -15,11 +15,11 @@ describe("les étapes d'une traversée", () => {
     expect(crossingSteps({ ...base, scene: "boarding" })?.boarding).toBe("current");
   });
 
-  it("ne dit jamais « parti » sans preuve : départ en attente de confirmation", () => {
+  it("sans preuve, part à l'heure prévue : départ « d'après l'horaire », traversée en cours", () => {
     const steps = crossingSteps({ ...base, scene: "sea", pastDeparture: true });
     expect(steps?.boarding).toBe("assumed");
-    expect(steps?.departure).toBe("pending");
-    expect(steps?.sea).toBe("todo");
+    expect(steps?.departure).toBe("assumed");
+    expect(steps?.sea).toBe("current");
   });
 
   it("passe en mer dès que le départ est prouvé (navire vu en mer)", () => {

@@ -89,9 +89,7 @@ export function CrossingCard({
               ? progress.signal.phase === "sea"
                 ? `Parti · ${atSeaLabel.toLowerCase()}`
                 : "Au port"
-              : departed
-                ? atSeaLabel
-                : "Départ en attente de confirmation";
+              : atSeaLabel;
   return (
     <section className="bw-crossing" aria-label="Avancement de la traversée">
       <div className="bw-crossing-top" data-alert={stopped || awaited || undefined}>
@@ -139,11 +137,7 @@ export function CrossingCard({
       ) : progress.ratio !== null ? (
         <div className="bw-crossing-progress">
           <div className="bw-crossing-progress-label">
-            <span>
-              {steps?.departure === "pending"
-                ? "Si le navire est parti à l’heure"
-                : progress.trustLabel}
-            </span>
+            <span>{progress.trustLabel}</span>
             <strong>
               {estimated ? "≈ " : ""}
               {Math.round(progress.ratio * 100)} %
@@ -209,7 +203,7 @@ const STEP_LABEL: Record<CrossingStep, string> = {
 };
 const MARK_TITLE = {
   done: "Constaté",
-  assumed: "Sans doute passé, d’après l’horaire",
+  assumed: "D’après l’horaire, pas encore confirmé",
   current: "En cours",
   pending: "Heure passée, pas encore confirmé",
   todo: "À venir",
@@ -254,8 +248,8 @@ function CrossingSteps({
         ? `parti à ${leave}`
         : seenAtSea
           ? "parti, vu en mer"
-          : marks.departure === "pending"
-            ? `prévu ${leave} · à confirmer`
+          : marks.departure === "assumed" && leave
+            ? `${leave} d’après l’horaire`
             : leave
               ? `prévu ${leave}`
               : null,

@@ -1052,6 +1052,38 @@ function Index() {
   };
 
   closePanelRef.current = resetToMap;
+  // Le trajet du voyage, comme partout sur le site : chaque port et le navire ouvrent leur fiche.
+  const voyageTitle = voyage ? (
+    <>
+      <button
+        type="button"
+        className="bw-inline-link"
+        onClick={() => handleSelect({ type: "port", id: voyage.trip.from.id })}
+      >
+        {voyage.trip.from.name}
+      </button>
+      {" → "}
+      <button
+        type="button"
+        className="bw-inline-link"
+        onClick={() => handleSelect({ type: "port", id: voyage.trip.to.id })}
+      >
+        {voyage.trip.to.name}
+      </button>
+      {voyage.trip.vessel ? (
+        <>
+          {" · "}
+          <button
+            type="button"
+            className="bw-inline-link"
+            onClick={() => handleSelect({ type: "vessel", id: voyage.trip.vessel!.id })}
+          >
+            {voyage.trip.vessel.name}
+          </button>
+        </>
+      ) : null}
+    </>
+  ) : null;
   // Quitter « Ma traversée » : retour à l'accueil de la carte (bouton du volet, logo, « Carte »).
   const leaveVoyage = () => {
     setVoyageOn(false);
@@ -1337,8 +1369,7 @@ function Index() {
                     </div>
                     <div className="bw-voyage-aside__title">
                       <p>
-                        <b>{voyage.summary.heading}</b> {voyage.summary.title}
-                        {voyage.summary.vesselName ? ` · ${voyage.summary.vesselName}` : ""}
+                        <b>{voyage.summary.heading}</b> {voyageTitle}
                         {voyage.summary.cancelled ? <em> · Annulée</em> : null}
                       </p>
                       <button type="button" onClick={leaveVoyage}>
@@ -1654,10 +1685,7 @@ function Index() {
                   <header className="bw-voyage-dock__head">
                     <div className="bw-voyage-dock__title">
                       <span>{voyage.summary.heading}</span>
-                      <strong>
-                        {voyage.summary.title}
-                        {voyage.summary.vesselName ? ` · ${voyage.summary.vesselName}` : ""}
-                      </strong>
+                      <strong>{voyageTitle}</strong>
                       {voyage.summary.cancelled ? <b>Annulée</b> : null}
                     </div>
                     {voyage.summary.countdown ? (

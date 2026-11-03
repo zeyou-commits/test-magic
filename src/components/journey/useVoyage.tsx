@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { ChevronRight } from "lucide-react";
 import { CrossingCard } from "@/components/panel/CrossingCard";
 import { RateStars } from "@/components/panel/RateStars";
 import { TripStatusPicker } from "@/components/panel/TripPresence";
@@ -190,6 +191,12 @@ export function useVoyage(
   // La carte d'avancement : de quelques heures avant le départ jusqu'au lendemain de l'arrivée.
   const tracking =
     departure.status !== "cancelled" && now >= departureMs - 6 * 3_600_000 && now <= endMs + 12 * 3_600_000;
+  const openShip = () =>
+    onSelect(
+      departure.vessel_id
+        ? { type: "vessel", id: departure.vessel_id }
+        : { type: "departure", id: departure.id },
+    );
   const subOf = (step: JourneyStepId) => {
     const items = itemsOf(step);
     const count = items.filter((item) => preparation.done.includes(item.id)).length;
@@ -353,8 +360,23 @@ export function useVoyage(
     const top =
       tracking && (step === "sea" || step === "arrival") ? (
         <>
-          <div className="bw-step-tracker">
+          {/* Comme partout sur le site : le navire en mouvement ouvre sa fiche (retour au voyage). */}
+          <div
+            className="bw-step-tracker"
+            role="button"
+            tabIndex={0}
+            aria-label={`Ouvrir la fiche ${vessel ? `du ${vessel.name}` : "de la traversée"}`}
+            onClick={openShip}
+            onKeyDown={(event) => {
+              if (event.key !== "Enter" && event.key !== " ") return;
+              event.preventDefault();
+              openShip();
+            }}
+          >
             <CrossingCard departure={fullDeparture} from={from} to={to} live={live} />
+            <span className="bw-step-tracker__more" aria-hidden>
+              Voir la fiche <ChevronRight size={14} />
+            </span>
           </div>
           {picker}
         </>
@@ -389,7 +411,7 @@ export function useVoyage(
               Ajouter mon retour
             </button>
           </div>
-        ) : step === "sea" ? (
+        ) : step === "sea" && !tracking ? (
           <div className="bw-step-panel__more">
             <button type="button" onClick={() => onSelect({ type: "departure", id: departure.id })}>
               Toute la traversée en direct

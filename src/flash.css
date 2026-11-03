@@ -13102,3 +13102,48 @@ img[data-logo="dark"] {
     padding: 12px;
   }
 }
+
+.bw-step-tracker {
+  position: relative;
+  border-radius: 16px;
+  cursor: pointer;
+  transition: transform 0.15s ease;
+}
+.bw-step-tracker:hover .bw-crossing {
+  border-color: #0e7a43;
+  box-shadow: 0 10px 24px -14px #0e7a4380;
+}
+.bw-step-tracker:active {
+  transform: scale(0.99);
+}
+.bw-step-tracker:focus-visible {
+  outline: 2px solid #0e7a43;
+  outline-offset: 2px;
+}
+.bw-step-tracker__more {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 2px;
+  margin-top: 6px;
+  color: #0e7a43;
+  font-size: 11.5px;
+  font-weight: 750;
+}
+/* Ports et navire dans le titre du voyage : des liens discrets, comme ailleurs sur le site. */
+.bw-inline-link {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-decoration: underline;
+  text-decoration-color: #16324a33;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+.bw-inline-link:hover {
+  color: #0e7a43;
+  text-decoration-color: currentColor;
+}

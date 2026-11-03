@@ -3,7 +3,16 @@ import { counterFilters, syncFilters, matchesTraffic } from "@/lib/ferry/filterS
 import { seoHead } from "@/lib/seo/site";
 import { DataUnavailableNotice } from "@/components/layout/DataUnavailableNotice";
 import type React from "react";
-import { ChevronLeft, ChevronRight, ArrowDown, Compass, Globe2 } from "lucide-react";
+import {
+  ChevronLeft,
+  ChevronRight,
+  ArrowDown,
+  Compass,
+  Globe2,
+  MessagesSquare,
+  Minus,
+  X,
+} from "lucide-react";
 import {
   lazy,
   Suspense,
@@ -58,6 +67,15 @@ import { SiteHeader, SiteFooter } from "@/components/layout/SiteLayout";
 import { MobileTabBar } from "@/components/layout/MobileTabBar";
 import { HomeContent } from "@/components/home/HomeContent";
 import type { ItineraryMapPreview } from "@/lib/ferry/itinerary";
+import { toast } from "sonner";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { EmbeddedRoom } from "@/components/panel/LiveRoom";
+import { LivePulse } from "@/components/panel/LivePulse";
+import { JourneyFrieze } from "@/components/journey/JourneyFrieze";
+import { JourneyStoryNav } from "@/components/journey/JourneyStoryNav";
+import { useVoyage } from "@/components/journey/useVoyage";
+import { OPEN_VOYAGE_EVENT, useVoyageTrip } from "@/lib/ferry/voyageTrip";
 
 const FerryMap = lazy(() => import("@/components/map/FerryMap"));
 
@@ -93,6 +111,10 @@ function Index() {
     selectionFromUrl(initialSearch),
   );
   const [selectionHistory, setSelectionHistory] = useState<Selection[]>([]);
+  // « Mon voyage » : un mode de la carte (adresse /?voyage=1), jamais actif par défaut.
+  const [voyageOn, setVoyageOn] = useState(() =>
+    new URLSearchParams(initialSearch).has("voyage"),
+  );
   // Ouverture depuis une notification : son message s'affiche en tête de la fiche demandée.
   const [noticeTarget] = useState(() => ({
     id: new URLSearchParams(initialSearch).get("notice"),
@@ -107,6 +129,8 @@ function Index() {
       setSelection(null);
       setSelectionHistory([]);
     } else {
+      // Ouvrir une fiche (port, navire, traversée) quitte « Mon voyage » : la carte reprend la main.
+      setVoyageOn(false);
       if (typeof window !== "undefined" && window.innerWidth >= 768) setDesktopPanelOpen(true);
       if (selection && (selection.type !== newSelection.type || selection.id !== newSelection.id)) {
         setSelectionHistory((prev) => [...prev, selection]);
@@ -270,6 +294,60 @@ function Index() {
 
   const { data: schedules = [] } = useQuery(schedulesQuery);
   const fleet = useFleet();
+
+  // « Mon voyage » : la frise, l'étape et le salon par-dessus la carte complète (flotte et ports).
+  const isMobile = useIsMobile();
+  const { trip: voyageTrip, ready: voyageReady } = useVoyageTrip();
+  const [salonOpen, setSalonOpen] = useState(
+    () => typeof window !== "undefined" && window.innerWidth >= 1280,
+  );
+  const [salonDialog, setSalonDialog] = useState(false);
+  const voyage = useVoyage(voyageOn ? voyageTrip : null, {
+    isMobile,
+    fleet,
+    onSelect: (next) => handleSelectRef.current(next),
+    onAsk: () => (window.innerWidth < 768 ? setSalonDialog(true) : setSalonOpen(true)),
+  });
+  const enterVoyage = () => {
+    resetToMap();
+    setVoyageOn(true);
+    setPanelLevel(1);
+  };
+  const enterVoyageRef = useRef(enterVoyage);
+  enterVoyageRef.current = enterVoyage;
+  useEffect(() => {
+    const open = () => enterVoyageRef.current();
+    window.addEventListener(OPEN_VOYAGE_EVENT, open);
+    return () => window.removeEventListener(OPEN_VOYAGE_EVENT, open);
+  }, []);
+  // Arrivée sur /?voyage=1 alors que l'accueil est déjà affiché (lien du menu, notification).
+  useEffect(() => {
+    if (new URLSearchParams(initialSearch).has("voyage")) enterVoyageRef.current();
+  }, [initialSearch]);
+  // Aucun voyage à montrer : on le dit, et la carte reste telle quelle.
+  const hasVoyageTrip = Boolean(voyageTrip);
+  useEffect(() => {
+    if (!voyageOn || !voyageReady || hasVoyageTrip) return;
+    setVoyageOn(false);
+    toast("Aucune traversée suivie pour l'instant", {
+      description:
+        "Suivez votre traversée, ou celle d'un proche : elle s'affichera ici, étape par étape.",
+      action: {
+        label: "Simuler mon trajet",
+        onClick: () => window.dispatchEvent(new Event("bledway:open-itinerary")),
+      },
+    });
+  }, [voyageOn, voyageReady, hasVoyageTrip]);
+  // Des tableaux stables pour la carte : elle ne recadre que si l'étape change vraiment.
+  const voyageFitKey = voyage?.mapProps.fitPortIds.join("|") ?? "";
+  const voyageFit = useMemo(() => (voyageFitKey ? voyageFitKey.split("|") : []), [voyageFitKey]);
+  const voyagePortsKey = voyage?.mapProps.highlightedPortIds.join("|") ?? "";
+  const voyagePorts = useMemo(
+    () => (voyagePortsKey ? voyagePortsKey.split("|") : []),
+    [voyagePortsKey],
+  );
+  const voyageRouteId = voyage?.trip.route.id ?? null;
+  const voyageRoutes = useMemo(() => (voyageRouteId ? [voyageRouteId] : []), [voyageRouteId]);
   const { data: fleetDepartures = [] } = useQuery(fleetDeparturesQuery);
   const { data: vessels = [] } = useQuery(vesselsQuery);
   const vesselCards = useMemo(() => {
@@ -414,12 +492,12 @@ function Index() {
   // L'URL reflète toujours la vue : un lien partagé rouvre exactement la même recherche.
   useEffect(() => {
     if (typeof window === "undefined") return;
-    const nextSearch = mapStateToSearch(filters, selection);
+    const nextSearch = mapStateToSearch(filters, selection, voyageOn ? { voyage: "1" } : {});
     const nextUrl = `${window.location.pathname}${nextSearch}${window.location.hash}`;
     if (`${window.location.pathname}${window.location.search}${window.location.hash}` !== nextUrl) {
       window.history.replaceState(window.history.state, "", nextUrl);
     }
-  }, [filters, selection]);
+  }, [filters, selection, voyageOn]);
 
   // Bouton retour du téléphone : chaque fiche ouverte a son entrée dans l'historique du navigateur.
   const handleBack = () => {
@@ -859,7 +937,9 @@ function Index() {
         : TAB_BAR_HEIGHT +
           (isPeekSelection
             ? peekHeight
-            : Math.round(viewportHeight * (panelMode === "itinerary" ? 0.5 : middleRatio)));
+            : Math.round(
+                viewportHeight * (panelMode === "itinerary" || voyage ? 0.5 : middleRatio),
+              ));
   const mobilePanelHeight = mobileBottomInset;
   // Sur mobile, choisir un navire, un port ou une traversée rouvre le tiroir s'il était replié.
   useEffect(() => {
@@ -1108,7 +1188,7 @@ function Index() {
             }
             className={`bw-map-panel absolute bottom-0 left-0 right-0 z-[60] flex flex-col overflow-hidden bg-transparent ${dragHeight !== null ? "transition-none" : "transition-[height,width,transform] duration-[420ms] ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none"} md:bottom-5 md:left-5 md:right-auto md:top-5 md:h-auto md:w-[var(--desktop-panel-width)] md:overflow-visible md:rounded-3xl md:z-40 ${
               desktopPanelOpen ? "md:translate-x-0" : "md:translate-x-[calc(-100%-1.25rem)]"
-            } ${panelLevel === 0 ? "h-32 rounded-t-3xl" : panelLevel === 1 ? (isPeekSelection ? "h-[var(--mobile-peek-height)] rounded-t-3xl" : panelMode === "itinerary" ? "h-[calc(var(--stage-height)*0.5)] rounded-t-3xl" : "h-[var(--middle-panel-height)] rounded-t-3xl") : "h-[calc(var(--stage-height)-3.5rem)] rounded-t-3xl"}`}
+            } ${panelLevel === 0 ? "h-32 rounded-t-3xl" : panelLevel === 1 ? (isPeekSelection ? "h-[var(--mobile-peek-height)] rounded-t-3xl" : panelMode === "itinerary" || voyage ? "h-[calc(var(--stage-height)*0.5)] rounded-t-3xl" : "h-[var(--middle-panel-height)] rounded-t-3xl") : "h-[calc(var(--stage-height)-3.5rem)] rounded-t-3xl"}`}
           >
             {collapsed ? (
               <CollapsedPanelSummary
@@ -1155,6 +1235,7 @@ function Index() {
 
             <div
               id="map-side-panel"
+              hidden={Boolean(voyage)}
               className={`${collapsed ? "hidden md:block" : "min-h-0 flex-1"} md:h-full ${desktopPanelOpen ? "" : "md:invisible md:pointer-events-none"}`}
             >
               <SidePanel
@@ -1165,7 +1246,7 @@ function Index() {
                     ? noticeTarget.id
                     : null
                 }
-                companionEnabled={desktopPanelOpen}
+                companionEnabled={desktopPanelOpen && !voyage}
                 onCompanionWidth={setCompanionWidth}
                 selection={selection}
                 onSelect={handleSelect}
@@ -1206,6 +1287,59 @@ function Index() {
                 }}
               />
             </div>
+            {voyage ? (
+              <div
+                className={`bw-voyage-aside ${desktopPanelOpen ? "" : "md:invisible md:pointer-events-none"}`}
+                data-level={panelLevel}
+              >
+                {isMobile ? (
+                  <>
+                    <div className="bw-voyage-aside__head" hidden={panelLevel === 0}>
+                      <p>
+                        <b>{voyage.summary.heading}</b> · {voyage.summary.title}
+                      </p>
+                      <button type="button" onClick={() => setVoyageOn(false)}>
+                        <X size={14} aria-hidden /> Toute la carte
+                      </button>
+                    </div>
+                    <JourneyStoryNav
+                      steps={voyage.friezeSteps}
+                      index={voyage.index}
+                      onChange={(next) => {
+                        voyage.setStoryIndex(next);
+                        setPanelLevel((level) => (level === 0 ? 1 : level));
+                      }}
+                      tone="light"
+                    />
+                    {panelLevel > 0 ? (
+                      <div className="bw-voyage-aside__scroll">
+                        <LivePulse
+                          info={voyage.info}
+                          onOpen={() =>
+                            handleSelect({ type: "departure", id: voyage.trip.departure.id })
+                          }
+                        />
+                        {voyage.renderPanel(voyage.shown ?? voyage.current, false)}
+                      </div>
+                    ) : null}
+                  </>
+                ) : (
+                  <div className="bw-voyage-aside__scroll" key={voyage.shown ?? voyage.current}>
+                    <LivePulse
+                      info={voyage.info}
+                      onOpen={() =>
+                        handleSelect({ type: "departure", id: voyage.trip.departure.id })
+                      }
+                    />
+                    {voyage.renderPanel(
+                      voyage.shown ?? voyage.current,
+                      Boolean(voyage.pinned) && !voyage.hovering,
+                      voyage.close,
+                    )}
+                  </div>
+                )}
+              </div>
+            ) : null}
             <div
               role="separator"
               aria-orientation="vertical"
@@ -1253,11 +1387,13 @@ function Index() {
             <MobileTabBar
               className="h-[calc(3.5rem+env(safe-area-inset-bottom))] pb-[env(safe-area-inset-bottom)]"
               activeTab={
-                panelLevel === 0
-                  ? "map"
-                  : panelMode === "itinerary"
-                    ? "itinerary"
-                    : (panelMode ?? "map")
+                voyage && panelLevel > 0
+                  ? "voyage"
+                  : panelLevel === 0
+                    ? "map"
+                    : panelMode === "itinerary"
+                      ? "itinerary"
+                      : (panelMode ?? "map")
               }
               onOpenMap={() => {
                 // Plus bas dans la page, le bouton ramène d'abord à la carte, volet replié.
@@ -1267,7 +1403,17 @@ function Index() {
                   window.setTimeout(() => window.scrollTo({ top: 0, behavior: "instant" }), 60);
                   return;
                 }
+                // Traversée suivie : « Trouver » a cédé sa place, la recherche passe par « Carte ».
+                if (voyageTrip) {
+                  setVoyageOn(false);
+                  openMobileSearch();
+                  return;
+                }
                 setPanelLevel((level) => (level === 0 ? 1 : 0));
+              }}
+              onOpenVoyage={() => {
+                if (voyage) setPanelLevel((level) => (level === 0 ? 1 : 0));
+                else enterVoyage();
               }}
               onMoreToggle={resetToMap}
               onOpenDepartures={openMobileDepartures}
@@ -1291,11 +1437,25 @@ function Index() {
               panelOpen={desktopPanelOpen}
             />
             <QuickReport ports={ports} fleet={fleet} departures={departures} selection={selection}>
-              <MessagesFab onSelect={(next) => handleSelectRef.current(next)} />
+              {voyage && isMobile ? (
+                <button
+                  type="button"
+                  className="bw-journey-salon-fab"
+                  data-mobile
+                  onClick={() => setSalonDialog(true)}
+                  aria-label="Ouvrir le salon de la traversée"
+                >
+                  <MessagesSquare size={20} aria-hidden />
+                </button>
+              ) : (
+                <MessagesFab onSelect={(next) => handleSelectRef.current(next)} />
+              )}
             </QuickReport>
             <RoomInvite onSelect={(next) => handleSelectRef.current(next)} />
             {/* Ma traversée pas encore sur la carte : chrono flottant. */}
-            <MyTripMapChip fleet={fleet} onOpen={(next) => handleSelectRef.current(next)} />
+            {voyage ? null : (
+              <MyTripMapChip fleet={fleet} onOpen={(next) => handleSelectRef.current(next)} />
+            )}
             <MapStats
               search={
                 <MapSearch
@@ -1391,16 +1551,100 @@ function Index() {
                 return companies.find((c) => c.id === dep?.company_id)?.name;
               }}
             />
-            <MapLegend panelOpen={desktopPanelOpen} showDateHint={false} />
+            {voyage && !isMobile ? null : (
+              <MapLegend panelOpen={desktopPanelOpen} showDateHint={false} />
+            )}
+            {voyage && !isMobile ? (
+              <div
+                className="bw-voyage-layer"
+                style={
+                  {
+                    "--voyage-left": `${desktopPanelOpen ? panelWidth + 40 : 60}px`,
+                  } as React.CSSProperties
+                }
+              >
+                {salonOpen ? (
+                  <aside className="bw-voyage-salon" aria-label={voyage.salon.title}>
+                    <button
+                      type="button"
+                      className="bw-journey-salon__min"
+                      onClick={() => setSalonOpen(false)}
+                      aria-label="Réduire le salon"
+                    >
+                      <Minus size={14} aria-hidden />
+                    </button>
+                    <EmbeddedRoom
+                      kind="crossing"
+                      room={voyage.salon.room}
+                      title={voyage.salon.title}
+                      moment={voyage.salon.moment}
+                      starterContext={voyage.salon.starterContext}
+                    />
+                  </aside>
+                ) : null}
+                <section className="bw-voyage-dock" aria-label="Mon voyage, étape par étape">
+                  <header className="bw-voyage-dock__head">
+                    <div className="bw-voyage-dock__title">
+                      <span>{voyage.summary.heading}</span>
+                      <strong>
+                        {voyage.summary.title}
+                        {voyage.summary.vesselName ? ` · ${voyage.summary.vesselName}` : ""}
+                      </strong>
+                      {voyage.summary.cancelled ? <b>Annulée</b> : null}
+                    </div>
+                    {voyage.summary.countdown ? (
+                      <p>
+                        <b>{voyage.summary.countdown}</b> avant le départ
+                      </p>
+                    ) : null}
+                    {voyage.traveller && voyage.summary.total ? (
+                      <p>
+                        <b>
+                          {voyage.summary.done}/{voyage.summary.total}
+                        </b>{" "}
+                        actions faites
+                      </p>
+                    ) : null}
+                    {salonOpen ? null : (
+                      <button
+                        type="button"
+                        className="bw-voyage-dock__salon"
+                        onClick={() => setSalonOpen(true)}
+                      >
+                        <MessagesSquare size={15} aria-hidden /> Salon
+                      </button>
+                    )}
+                    <button
+                      type="button"
+                      className="bw-voyage-dock__exit"
+                      onClick={() => setVoyageOn(false)}
+                    >
+                      <X size={15} aria-hidden /> Toute la carte
+                    </button>
+                  </header>
+                  <JourneyFrieze
+                    steps={voyage.friezeSteps}
+                    shownId={voyage.shown}
+                    pinnedId={voyage.pinned}
+                    onHover={voyage.setHover}
+                    onPin={(step) => {
+                      voyage.pin(step);
+                      setDesktopPanelOpen(true);
+                    }}
+                    hereLabel={voyage.traveller ? "Vous êtes ici" : "En ce moment"}
+                  />
+                </section>
+              </div>
+            ) : null}
             <ClientOnly fallback={<MapFallback />}>
               <Suspense fallback={<MapFallback />}>
                 <FerryMap
                   focusTarget={focusTarget}
-                  itineraryPreview={itineraryPreview}
+                  itineraryPreview={voyage ? voyage.mapProps.itineraryPreview : itineraryPreview}
                   portsPulseKey={activeShortcut === "ports" || portsActive ? portsPulseKey : 0}
                   portsMode={activeShortcut === "ports"}
                   companyFocusShips={companyFocusShips}
-                  focusShipId={focusShipId}
+                  focusShipId={voyage ? voyage.mapProps.focusShipId : focusShipId}
                   vesselCards={vesselCards}
                   ports={ports}
                   routes={routes}
@@ -1410,10 +1654,10 @@ function Index() {
                   hoverShipIds={hoverCompanyShipIds}
                   hoverPortId={trafficPreview?.portId ?? null}
                   dateActiveRouteIds={scheduledRouteIds.length ? scheduledRouteIds : ["__none__"]}
-                  focusRouteIds={focusRouteIds}
+                  focusRouteIds={voyage ? voyageRoutes : focusRouteIds}
                   selection={mapSelection}
-                  highlightedPortIds={highlightedPortIds}
-                  fitPortIds={fitPortIds}
+                  highlightedPortIds={voyage ? voyagePorts : highlightedPortIds}
+                  fitPortIds={voyage ? voyageFit : fitPortIds}
                   hoverRouteId={previewRouteId}
                   fleet={displayedFleet}
                   selectedVesselId={selection?.type === "vessel" ? selection.id : null}
@@ -1434,14 +1678,35 @@ function Index() {
                     } else if (panelMode !== "itinerary") resetToMap();
                   }}
                   mobileBottomInset={mobileBottomInset}
-                  desktopLeftInset={desktopPanelOpen ? panelWidth + 80 + companionWidth : 50}
+                  desktopLeftInset={
+                    desktopPanelOpen ? panelWidth + 80 + (voyage ? 0 : companionWidth) : 50
+                  }
+                  desktopRightInset={voyage && !isMobile && salonOpen ? 400 : 0}
+                  desktopBottomInset={voyage && !isMobile ? 150 : 0}
                 />
               </Suspense>
             </ClientOnly>
           </div>
-          <a className="bw-map-scroll" href="#preparer">
-            <Compass size={16} /> Et après la traversée ? <ArrowDown size={16} />
-          </a>
+          {voyage ? null : (
+            <a className="bw-map-scroll" href="#preparer">
+              <Compass size={16} /> Et après la traversée ? <ArrowDown size={16} />
+            </a>
+          )}
+          {voyage ? (
+            <Dialog open={salonDialog} onOpenChange={setSalonDialog}>
+              <DialogContent className="bw-chat-window">
+                {salonDialog ? (
+                  <EmbeddedRoom
+                    kind="crossing"
+                    room={voyage.salon.room}
+                    title={voyage.salon.title}
+                    moment={voyage.salon.moment}
+                    starterContext={voyage.salon.starterContext}
+                  />
+                ) : null}
+              </DialogContent>
+            </Dialog>
+          ) : null}
         </section>
         <HomeContent ports={ports} routes={routes} onExplore={exploreRoute} />
       </main>

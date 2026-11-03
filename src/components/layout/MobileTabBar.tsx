@@ -1,13 +1,14 @@
 import { Link } from "@tanstack/react-router";
 import { Route as RouteIcon, Clock, Map as MapIcon, Ship } from "lucide-react";
 import { MeTab } from "@/components/community/MeTab";
+import { useVoyageTrip } from "@/lib/ferry/voyageTrip";
 
 const itemClass =
   "flex h-full flex-1 flex-col items-center justify-center gap-1 text-[11px] font-medium text-muted-foreground transition-colors hover:text-foreground data-[active=true]:text-primary [&.active]:text-primary";
 
 interface MobileTabBarProps {
   className?: string;
-  activeTab?: "map" | "departures" | "search" | "ports" | "itinerary";
+  activeTab?: "map" | "departures" | "search" | "ports" | "itinerary" | "voyage";
   onOpenMap?: () => void;
   /** Conservé pour compatibilité : l'onglet « Plus » a été remplacé par « Moi ». */
   onMoreToggle?: () => void;
@@ -15,6 +16,8 @@ interface MobileTabBarProps {
   onOpenSearch?: () => void;
   onShowPorts?: () => void;
   onOpenItinerary?: () => void;
+  /** Une traversée suivie : le bouton central ouvre « Ma traversée » (mode voyage de la carte). */
+  onOpenVoyage?: () => void;
 }
 
 const rememberAction = (action: "departures" | "search" | "ports" | "itinerary") =>
@@ -28,7 +31,10 @@ export function MobileTabBar({
   onOpenSearch,
   onShowPorts,
   onOpenItinerary,
+  onOpenVoyage,
 }: MobileTabBarProps) {
+  // Traversée suivie : « Trouver » cède la place à « Ma traversée » ; la recherche passe par « Carte ».
+  const { trip } = useVoyageTrip();
   return (
     <nav
       aria-label="Navigation mobile"
@@ -67,7 +73,34 @@ export function MobileTabBar({
           <span>Départs</span>
         </Link>
       )}
-      {onOpenSearch ? (
+      {trip ? (
+        onOpenVoyage ? (
+          <button
+            type="button"
+            onClick={onOpenVoyage}
+            data-active={activeTab === "voyage"}
+            className={`${itemClass} text-primary`}
+            aria-label="Ma traversée, étape par étape"
+          >
+            <span className="bw-tab-voyage grid size-10 place-items-center rounded-full bg-primary text-primary-foreground shadow-md">
+              <Ship className="size-5" aria-hidden />
+            </span>
+            <span>Ma traversée</span>
+          </button>
+        ) : (
+          <Link
+            to="/"
+            search={{ voyage: 1 } as never}
+            className={`${itemClass} text-primary`}
+            aria-label="Ma traversée, étape par étape"
+          >
+            <span className="bw-tab-voyage grid size-10 place-items-center rounded-full bg-primary text-primary-foreground shadow-md">
+              <Ship className="size-5" aria-hidden />
+            </span>
+            <span>Ma traversée</span>
+          </Link>
+        )
+      ) : onOpenSearch ? (
         <button
           type="button"
           onClick={onOpenSearch}

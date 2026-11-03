@@ -7776,6 +7776,30 @@ label:has(> input.sr-only) {
   background: #0b5e33;
   border-radius: 1px;
 }
+/* Mon bateau : un halo vert doux, qui respire, sous la coque. */
+.bw-mytrip-glow {
+  display: block;
+  width: var(--glow-size, 48px);
+  height: var(--glow-size, 48px);
+  pointer-events: none;
+}
+.bw-mytrip-glow__ring {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  /* Un anneau : le centre reste transparent pour ne pas teinter le navire. */
+  background: radial-gradient(circle, rgba(14, 122, 67, 0) 46%, rgba(14, 122, 67, 0.22) 58%, rgba(14, 122, 67, 0) 71%);
+  box-shadow: 0 0 0 1.5px rgba(14, 122, 67, 0.4);
+  animation: bw-mytrip-glow 2.6s ease-in-out infinite;
+}
+@keyframes bw-mytrip-glow {
+  0%, 100% { transform: scale(0.82); opacity: 0.55; }
+  50% { transform: scale(1.08); opacity: 1; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .bw-mytrip-glow__ring { animation: none; opacity: 0.8; }
+}
 
 /* Le film du trajet porte à porte. */
 [data-film-quiet="true"] .maplibregl-marker:not(.bw-film-vehicle),
@@ -11976,4 +12000,233 @@ img[data-logo="dark"] {
 }
 .bw-mytrip-hero__journey:hover {
   background: #ffe3a6;
+}
+
+/* « Mon voyage », mode de la carte d'accueil : l'étape dans le volet, la frise en bas, le salon à droite. */
+.bw-voyage-aside {
+  display: flex;
+  min-height: 0;
+  flex: 1;
+  flex-direction: column;
+  gap: 8px;
+  padding: 6px 14px 0;
+  background: #ffffff;
+  color: #16324a;
+}
+.bw-voyage-aside__head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.bw-voyage-aside__head[hidden] {
+  display: none;
+}
+.bw-voyage-aside__head p {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  font-size: 12px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.bw-voyage-aside__head button,
+.bw-voyage-dock__exit,
+.bw-voyage-dock__salon {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: 5px;
+  min-height: 32px;
+  padding: 0 12px;
+  border: 1px solid #16324a26;
+  border-radius: 999px;
+  background: #ffffff;
+  color: #16324a;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.bw-voyage-aside__head button:hover,
+.bw-voyage-dock__exit:hover {
+  border-color: #16324a;
+}
+.bw-voyage-aside__scroll {
+  display: flex;
+  min-height: 0;
+  flex: 1;
+  flex-direction: column;
+  gap: 8px;
+  margin: 0 -14px;
+  padding: 0 4px 12px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+.bw-voyage-aside__scroll > * {
+  flex: none;
+}
+.bw-voyage-aside__scroll > .bw-pulse {
+  margin: 0 10px;
+}
+.bw-voyage-aside .bw-step-panel {
+  padding: 4px 12px 8px;
+}
+/* Volet replié : la story seule, sans les sous-titres, pour tenir dans la hauteur. */
+.bw-voyage-aside[data-level="0"] .bw-story__now small,
+.bw-voyage-aside[data-level="0"] .bw-story__side small {
+  display: none;
+}
+@media (min-width: 768px) {
+  .bw-voyage-aside {
+    height: 100%;
+    padding: 0;
+    overflow: hidden;
+    border: 1px solid #ffffffbd;
+    border-radius: 1.5rem;
+    box-shadow: 0 16px 48px #16324a16;
+  }
+  .bw-voyage-aside__scroll {
+    margin: 0;
+    padding: 0;
+    animation: bw-journey-in 0.28s ease;
+  }
+  .bw-voyage-aside .bw-step-panel {
+    padding: 18px 20px 20px;
+  }
+}
+
+/* Le salon et la frise partagent une colonne : le salon s'arrête toujours au-dessus de la frise. */
+.bw-voyage-layer {
+  position: absolute;
+  z-index: 25;
+  top: 20px;
+  right: 92px;
+  bottom: 20px;
+  left: var(--voyage-left, 60px);
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  justify-content: flex-end;
+  gap: 12px;
+  pointer-events: none;
+  transition: left 0.42s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.bw-voyage-layer > * {
+  pointer-events: auto;
+}
+/* La frise en bas de la carte, comme la barre d'une vidéo. */
+.bw-voyage-dock {
+  align-self: stretch;
+  flex: none;
+  padding: 8px 16px 4px;
+  border: 1px solid #ffffffbd;
+  border-radius: 22px;
+  background: #fffffff5;
+  box-shadow: 0 16px 40px #16324a26;
+  color: #16324a;
+}
+.bw-voyage-dock__head {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-width: 0;
+}
+.bw-voyage-dock__title {
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  align-items: baseline;
+  gap: 8px;
+}
+.bw-voyage-dock__title span {
+  flex: none;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: #16324a;
+  color: #ffd98a;
+  font-size: 10.5px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.bw-voyage-dock__title strong {
+  overflow: hidden;
+  font-size: 15px;
+  font-weight: 800;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.bw-voyage-dock__title b {
+  color: #b42318;
+  font-size: 12px;
+}
+.bw-voyage-dock__head > p {
+  flex: none;
+  color: #5d6b66;
+  font-size: 12px;
+  white-space: nowrap;
+}
+.bw-voyage-dock__head > p b {
+  color: #16324a;
+  font-size: 14px;
+  font-variant-numeric: tabular-nums;
+}
+.bw-voyage-dock__head .bw-live-pulse {
+  max-width: 260px;
+}
+.bw-voyage-dock__salon {
+  border-color: #0e7a43;
+  background: #0e7a43;
+  color: #ffffff;
+}
+.bw-voyage-dock .bw-frieze__bar {
+  top: 37px;
+}
+.bw-voyage-dock .bw-frieze button {
+  padding-top: 16px;
+}
+.bw-voyage-dock .bw-frieze__dot {
+  width: 38px;
+  height: 38px;
+}
+.bw-voyage-dock .bw-frieze li[data-state="current"] .bw-frieze__dot {
+  width: 44px;
+  height: 44px;
+  margin-top: -3px;
+}
+@media (max-width: 1180px) {
+  .bw-voyage-dock__head > p:nth-of-type(2) {
+    display: none;
+  }
+}
+@media (min-width: 768px) {
+  .bw-voyage-aside__scroll > .bw-pulse {
+    margin: 16px 20px 0;
+  }
+}
+
+/* Le salon de la traversée, à droite, à gauche des raccourcis de la carte. */
+.bw-voyage-salon {
+  position: relative;
+  display: flex;
+  min-height: 0;
+  flex: 1 1 auto;
+  width: 340px;
+  overflow: hidden;
+  border-radius: 22px;
+  background: #ffffff;
+  box-shadow: 0 14px 36px #16324a33;
+  animation: bw-voyage-salon-in 0.28s ease;
+}
+@keyframes bw-voyage-salon-in {
+  from {
+    opacity: 0;
+    transform: translateX(12px);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .bw-voyage-aside__scroll,
+  .bw-voyage-salon {
+    animation: none;
+  }
 }

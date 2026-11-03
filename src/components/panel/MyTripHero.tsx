@@ -20,6 +20,7 @@ import {
 } from "@/lib/ferry/preparation";
 import { useAuth } from "@/hooks/useAuth";
 import { tripClosingIn, tripEnd, useMyTrip, type MyTrip } from "@/lib/ferry/myTrip";
+import { openVoyage } from "@/lib/ferry/voyageTrip";
 import {
   dockedSinceQuery,
   mergeTripSteps,
@@ -367,8 +368,13 @@ export function MyTripHero({ onSelect }: { onSelect: (selection: Selection) => v
           ) : null}
         </div>
       )}
-      {/* La route du bled de ce voyage, étape par étape (page « Mon voyage »). */}
-      <Link to="/mon-voyage" className="bw-mytrip-hero__journey">
+      {/* La route du bled de ce voyage, étape par étape (mode « Mon voyage » de la carte). */}
+      <Link
+        to="/"
+        search={{ voyage: 1 } as never}
+        onClick={openVoyage}
+        className="bw-mytrip-hero__journey"
+      >
         Ma route du bled, étape par étape <ArrowRight size={14} aria-hidden />
       </Link>
       {closingIn !== null ? (

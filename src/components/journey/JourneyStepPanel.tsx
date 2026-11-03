@@ -23,6 +23,7 @@ export function JourneyStepPanel({
   askLabel = "Une question sur cette étape ?",
   before,
   after,
+  onNavigate,
 }: {
   title: string;
   state: StepState;
@@ -41,6 +42,8 @@ export function JourneyStepPanel({
   before?: ReactNode;
   /** Sous les actions : note de la traversée, infos du port… */
   after?: ReactNode;
+  /** Lien interne pris en charge sur place (fiche d'un port) : true évite le rechargement. */
+  onNavigate?: (href: string) => boolean;
 }) {
   const badge =
     state === "current"
@@ -112,6 +115,9 @@ export function JourneyStepPanel({
               key={link.href + link.label}
               href={link.href}
               className="bw-step-panel__link"
+              onClick={(event) => {
+                if (!link.external && onNavigate?.(link.href)) event.preventDefault();
+              }}
               {...(link.external ? { target: "_blank", rel: "noopener noreferrer" } : {})}
             >
               {link.label}

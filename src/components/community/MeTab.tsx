@@ -19,6 +19,7 @@ import {
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
 import { useMyTrip, tripEnd } from "@/lib/ferry/myTrip";
+import { openVoyage } from "@/lib/ferry/voyageTrip";
 import { myTripStatusQuery } from "@/lib/ferry/presence";
 import {
   communityKey,
@@ -177,7 +178,14 @@ function MeSheet({ open, onOpenChange }: { open: boolean; onOpenChange: (open: b
             <Link to="/compte" onClick={close}>
               <Heart size={16} aria-hidden /> Mes voyages <ChevronRight size={15} aria-hidden />
             </Link>
-            <Link to="/mon-voyage" onClick={close}>
+            <Link
+              to="/"
+              search={{ voyage: 1 } as never}
+              onClick={() => {
+                close();
+                openVoyage();
+              }}
+            >
               <RouteIcon size={16} aria-hidden /> Mon voyage <ChevronRight size={15} aria-hidden />
             </Link>
             <Link to="/mes-dinars" onClick={close}>

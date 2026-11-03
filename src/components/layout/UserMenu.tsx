@@ -1,5 +1,6 @@
 import { CabasImg } from "@/components/CabasImg";
 import { Link, useNavigate } from "@tanstack/react-router";
+import { openVoyage } from "@/lib/ferry/voyageTrip";
 import { useState } from "react";
 import { MoodBubble } from "@/components/community/MoodBubble";
 import { MoodPicker } from "@/components/community/MoodPicker";
@@ -134,7 +135,9 @@ export function UserMenu({
             <Link to="/compte">Mon espace voyageur</Link>
           </DropdownMenuItem>
           <DropdownMenuItem asChild>
-            <Link to="/mon-voyage"><RouteIcon size={16} aria-hidden /> Mon voyage</Link>
+            <Link to="/" search={{ voyage: 1 } as never} onClick={openVoyage}>
+              <RouteIcon size={16} aria-hidden /> Mon voyage
+            </Link>
           </DropdownMenuItem>
           <DropdownMenuItem asChild>
             <Link to="/mes-dinars"><Wallet size={16} aria-hidden /> Mes dinars</Link>

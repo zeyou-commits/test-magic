@@ -116,6 +116,8 @@ interface FerryMapProps {
   desktopRightInset?: number;
   /** Hauteur (px) masquée en haut sur mobile (bandeau de « Mon voyage ») ; 0 par défaut. */
   mobileTopInset?: number;
+  /** Hauteur (px) masquée en bas sur ordinateur (frise de « Mon voyage ») ; 0 par défaut. */
+  desktopBottomInset?: number;
   /** Navire à amener au centre de la zone visible (clé changeante = nouveau cadrage). */
   focusTarget?: { center: [number, number]; key: number } | null;
   itineraryPreview?: ItineraryMapPreview | null;
@@ -390,6 +392,7 @@ export default function FerryMap({
   desktopLeftInset = 420,
   desktopRightInset = 0,
   mobileTopInset = 0,
+  desktopBottomInset = 0,
   focusTarget = null,
   itineraryPreview = null,
   portsPulseKey = 0,
@@ -457,6 +460,7 @@ export default function FerryMap({
     desktopLeftInset,
     desktopRightInset,
     mobileTopInset,
+    desktopBottomInset,
   });
   insetsRef.current = {
     isMobile,
@@ -464,6 +468,7 @@ export default function FerryMap({
     desktopLeftInset,
     desktopRightInset,
     mobileTopInset,
+    desktopBottomInset,
   };
   const viewPadding = () => {
     const {
@@ -472,6 +477,7 @@ export default function FerryMap({
       desktopLeftInset: left,
       desktopRightInset: right,
       mobileTopInset: top,
+      desktopBottomInset: below,
     } = insetsRef.current;
     if (mobile) return { top: 88 + top, right: 16, bottom: bottom + 12, left: 16 };
     // Sur ordinateur, la zone utile commence après le volet. Sur une fenêtre étroite, on garde
@@ -480,7 +486,7 @@ export default function FerryMap({
     return {
       top: 120,
       right: 60 + right,
-      bottom: 60,
+      bottom: 60 + below,
       left: Math.min(left + 36, Math.round(width * 0.56)),
     };
   };

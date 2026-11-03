@@ -183,8 +183,14 @@ export function currentStep({
   let step = byTime;
   if (status && aroundTrip) {
     const declared = STATUS_STEP[status];
+    // Garde-fou : une étape annoncée plus de 4 h avant son heure n'est pas plausible (clic d'essai).
+    const plausible = now >= timeline[declared].start - 4 * HOUR;
     // Le voyageur sait mieux que l'horaire : en avance, ou en retard d'une étape (départ décalé).
-    if (steps.includes(declared) && steps.indexOf(declared) >= steps.indexOf(byTime) - 1)
+    if (
+      plausible &&
+      steps.includes(declared) &&
+      steps.indexOf(declared) >= steps.indexOf(byTime) - 1
+    )
       step = declared;
   }
   // Préparatifs bouclés en avance : l'étape suivante devient celle du moment.

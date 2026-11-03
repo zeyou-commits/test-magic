@@ -70,6 +70,10 @@ describe("la route du bled en 8 étapes", () => {
     // Débarquement en cours, puis « Sorti du port » : sur la route.
     expect(currentStep({ timeline, now: endMs + HOUR, status: "landing" })).toBe("arrival");
     expect(currentStep({ timeline, now: endMs + HOUR, status: "arrived" })).toBe("last");
+    // « À bord » coché près de 6 h avant le départ : pas plausible, l'horaire l'emporte.
+    expect(currentStep({ timeline, now: departureMs - 6 * HOUR, status: "onboard" })).toBe("road");
+    // Embarqué 2 h avant le départ : plausible.
+    expect(currentStep({ timeline, now: departureMs - 2 * HOUR, status: "onboard" })).toBe("sea");
     // Loin du voyage, le statut ne compte pas.
     expect(currentStep({ timeline, now: departureMs - 10 * 24 * HOUR, status: "port" })).toBe(
       "papers",

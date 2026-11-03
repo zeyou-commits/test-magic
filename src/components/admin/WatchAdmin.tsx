@@ -10,7 +10,9 @@ import { ChatStartersAdmin } from "./ChatStartersAdmin";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { formatAge } from "@/lib/ferry/tracking";
-import { vesselsQuery } from "@/lib/ferry/queries";
+import { portsQuery, routesQuery, vesselsQuery } from "@/lib/ferry/queries";
+import { flashClient, looksInternal, newsKey } from "@/lib/ferry/flash";
+import { DeparturePicker } from "./ContentAdmin";
 
 const db = supabase as unknown as SupabaseClient;
 
@@ -30,8 +32,14 @@ interface Proposal {
   created_at: string;
   vessel_id: string | null;
   company_id: string | null;
+  departure_id?: string | null;
+  /** Texte grand public proposé par la veille (script du 13/12/2026). */
+  public_summary?: string | null;
+  departure_ids?: string[] | null;
   bw_watch_items: {
     url: string;
+    title?: string | null;
+    excerpt?: string | null;
     published_at: string | null;
     bw_watch_sources: { name: string; url: string; tier: "official" | "media" } | null;
   } | null;
@@ -99,6 +107,8 @@ export function WatchAdmin() {
   const client = useQueryClient();
   const [tab, setTab] = useState<Status | "done">("pending");
   const [newKey, setNewKey] = useState<string | null>(null);
+  // Proposition dont l'actualité est en cours de rédaction (texte grand public relu).
+  const [composing, setComposing] = useState<string | null>(null);
   const { data: vessels = [] } = useQuery(vesselsQuery);
 
   const proposals = useQuery({
@@ -106,7 +116,7 @@ export function WatchAdmin() {
     queryFn: async () => {
       const { data, error } = await db
         .from("bw_watch_proposals")
-        .select("*,bw_watch_items(url,published_at,bw_watch_sources(name,url,tier))")
+        .select("*,bw_watch_items(url,title,excerpt,published_at,bw_watch_sources(name,url,tier))")
         .order("created_at", { ascending: false })
         .limit(150);
       if (error) throw error;
@@ -169,33 +179,6 @@ export function WatchAdmin() {
     },
     onSuccess: () => {
       toast.success("Correction annulée");
-      refresh();
-    },
-    onError: (error: Error) => toast.error(error.message),
-  });
-  // Une note d'article peut rejoindre le fil public : c'est l'équipe qui le décide, carte par carte.
-  const publish = useMutation({
-    mutationFn: async (proposal: Proposal) => {
-      const item = proposal.bw_watch_items;
-      const { error } = await db.from("bw_news").insert({
-        kind: "info",
-        origin: item?.bw_watch_sources?.tier === "official" ? "official" : "media",
-        title: proposal.title,
-        summary: proposal.summary,
-        source_name: item?.bw_watch_sources?.name ?? "",
-        source_url: item?.url ?? null,
-        vessel_id: proposal.vessel_id,
-        company_ids: proposal.company_id ? [proposal.company_id] : [],
-        published: true,
-      });
-      if (error) throw error;
-      if (proposal.status === "pending" || proposal.status === "standby") {
-        const decided = await db.rpc("bw_watch_decide", { p_id: proposal.id, p_decision: "approved" });
-        if (decided.error) throw decided.error;
-      }
-    },
-    onSuccess: () => {
-      toast.success("Publiée dans les actualités");
       refresh();
     },
     onError: (error: Error) => toast.error(error.message),
@@ -321,22 +304,35 @@ export function WatchAdmin() {
                     <ExternalLink size={13} aria-hidden />
                   </a>
                 ) : null}
-                {proposal.status === "pending" || proposal.status === "standby" ? (
+                {composing === proposal.id ? (
+                  <NewsComposer
+                    proposal={proposal}
+                    onCancel={() => setComposing(null)}
+                    onDone={() => {
+                      setComposing(null);
+                      refresh();
+                    }}
+                  />
+                ) : null}
+                {(proposal.status === "pending" || proposal.status === "standby") &&
+                composing !== proposal.id ? (
                   <div className="bw-watch__actions">
-                    <Button
-                      size="sm"
-                      disabled={decide.isPending}
-                      onClick={() => decide.mutate({ id: proposal.id, decision: "approved" })}
-                    >
-                      <Check size={15} aria-hidden /> Approuver
-                    </Button>
-                    {proposal.kind === "note" && !item?.bw_watch_sources?.url.includes("/interne/") ? (
+                    {proposal.kind === "flash" ? (
+                      // Une actualité n'est jamais publiée sans relecture du texte grand public.
+                      <Button size="sm" onClick={() => setComposing(proposal.id)}>
+                        <Newspaper size={15} aria-hidden /> Rédiger et publier
+                      </Button>
+                    ) : (
                       <Button
                         size="sm"
-                        variant="outline"
-                        disabled={publish.isPending}
-                        onClick={() => publish.mutate(proposal)}
+                        disabled={decide.isPending}
+                        onClick={() => decide.mutate({ id: proposal.id, decision: "approved" })}
                       >
+                        <Check size={15} aria-hidden /> Approuver
+                      </Button>
+                    )}
+                    {proposal.kind === "note" && !item?.bw_watch_sources?.url.includes("/interne/") ? (
+                      <Button size="sm" variant="outline" onClick={() => setComposing(proposal.id)}>
                         <Newspaper size={15} aria-hidden /> Publier en actualité
                       </Button>
                     ) : null}
@@ -359,7 +355,7 @@ export function WatchAdmin() {
                       </Button>
                     ) : null}
                   </div>
-                ) : (
+                ) : composing === proposal.id ? null : (
                   <p className="bw-watch__decided">
                     {proposal.status === "approved"
                       ? proposal.applied
@@ -436,5 +432,142 @@ export function WatchAdmin() {
         </section>
       ) : null}
     </div>
+  );
+}
+
+const MISSING_ACTUS_SQL =
+  "Exécutez d'abord le script supabase/migrations/20261213100000_actus_grand_public.sql dans Supabase.";
+
+/**
+ * L'actualité telle que le public la lira : titre et texte relus (jamais la note de travail de la
+ * veille), traversées concernées cliquables, et l'aperçu de l'article source ajouté à la publication.
+ */
+function NewsComposer({
+  proposal,
+  onCancel,
+  onDone,
+}: {
+  proposal: Proposal;
+  onCancel: () => void;
+  onDone: () => void;
+}) {
+  const client = useQueryClient();
+  const { data: routes = [] } = useQuery(routesQuery);
+  const { data: ports = [] } = useQuery(portsQuery);
+  const item = proposal.bw_watch_items;
+  const [title, setTitle] = useState(proposal.title);
+  const [summary, setSummary] = useState(
+    proposal.public_summary ?? (looksInternal(proposal.summary) ? "" : proposal.summary),
+  );
+  const [departures, setDepartures] = useState<string[]>(
+    proposal.departure_ids?.length
+      ? proposal.departure_ids
+      : proposal.departure_id
+        ? [proposal.departure_id]
+        : [],
+  );
+  const routeLabel = (routeId: string) => {
+    const route = routes.find((entry) => entry.id === routeId);
+    const name = (id?: string) => ports.find((port) => port.id === id)?.name ?? "?";
+    return route ? `${name(route.departure_port_id)} → ${name(route.arrival_port_id)}` : "Trajet";
+  };
+  const internal = looksInternal(`${title} ${summary}`);
+  const ready = title.trim().length >= 4 && summary.trim().length >= 20 && !internal;
+  const save = useMutation({
+    mutationFn: async () => {
+      const text = { title: title.trim(), summary: summary.trim(), departure_ids: departures };
+      if (proposal.kind === "flash") {
+        const { error } = await db.rpc("bw_watch_decide", {
+          p_id: proposal.id,
+          p_decision: "approved",
+          p_news: text,
+        });
+        if (error) throw new Error(/p_news|function/i.test(error.message) ? MISSING_ACTUS_SQL : error.message);
+        return;
+      }
+      // Note d'article : l'actualité est créée ici, puis la proposition est approuvée.
+      const row = {
+        kind: "info",
+        origin: item?.bw_watch_sources?.tier === "official" ? "official" : "media",
+        title: text.title,
+        summary: text.summary,
+        source_name: item?.bw_watch_sources?.name ?? "",
+        source_url: item?.url ?? null,
+        vessel_id: proposal.vessel_id,
+        company_ids: proposal.company_id ? [proposal.company_id] : [],
+        departure_ids: text.departure_ids,
+        published: true,
+      };
+      const preview = {
+        source_title: item?.title?.slice(0, 200) ?? null,
+        source_excerpt: item?.excerpt?.slice(0, 300) ?? null,
+        source_published_at: item?.published_at ?? null,
+      };
+      let inserted = await flashClient.from("bw_news").insert({ ...row, ...preview });
+      // Script pas encore exécuté : l'actualité part sans aperçu de la source.
+      if (inserted.error && /source_(title|excerpt|published_at)/.test(inserted.error.message))
+        inserted = await flashClient.from("bw_news").insert(row);
+      if (inserted.error) throw inserted.error;
+      if (proposal.status === "pending" || proposal.status === "standby") {
+        const decided = await db.rpc("bw_watch_decide", { p_id: proposal.id, p_decision: "approved" });
+        if (decided.error) throw decided.error;
+      }
+    },
+    onSuccess: () => {
+      toast.success("Publiée dans les actualités");
+      void client.invalidateQueries({ queryKey: newsKey });
+      onDone();
+    },
+    onError: (error: Error) => toast.error(error.message),
+  });
+  return (
+    <form
+      className="bw-watch__composer"
+      onSubmit={(event) => {
+        event.preventDefault();
+        if (ready) save.mutate();
+      }}
+    >
+      <p className="bw-watch__composer-note">
+        <strong>Texte lu par le public.</strong> Une ou deux phrases simples : ce qui se passe, qui est
+        concerné, ce qu’il faut faire. Ni « à vérifier », ni identifiant : la note de la veille reste
+        pour l’équipe.
+      </p>
+      <label>
+        Titre
+        <input maxLength={160} value={title} onChange={(e) => setTitle(e.target.value)} />
+      </label>
+      <label>
+        Texte de l’actualité ({summary.length}/400)
+        <textarea
+          maxLength={400}
+          rows={4}
+          value={summary}
+          placeholder="Ex. Algérie Ferries annonce le report d’une traversée vers Marseille. Les voyageurs concernés sont invités à vérifier leur départ auprès de la compagnie."
+          onChange={(e) => setSummary(e.target.value)}
+        />
+      </label>
+      {internal ? (
+        <p role="alert" className="bw-watch__composer-warn">
+          Ce texte contient encore une note de travail (« à vérifier », « à contrôler » ou un
+          identifiant) : réécrivez-le pour le public.
+        </p>
+      ) : null}
+      <DeparturePicker value={departures} onChange={setDepartures} routeLabel={routeLabel} />
+      {item?.title ? (
+        <p className="bw-watch__composer-source">
+          Aperçu ajouté sous l’actualité : « {item.title} » ({item.bw_watch_sources?.name ?? "source"}
+          ), avec le lien vers l’article.
+        </p>
+      ) : null}
+      <div className="bw-watch__actions">
+        <Button size="sm" type="submit" disabled={!ready || save.isPending}>
+          <Newspaper size={15} aria-hidden /> Publier
+        </Button>
+        <Button size="sm" variant="ghost" type="button" onClick={onCancel}>
+          Annuler
+        </Button>
+      </div>
+    </form>
   );
 }

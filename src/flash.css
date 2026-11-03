@@ -12358,3 +12358,296 @@ img[data-logo="dark"] {
       0 4px 14px #16324a40;
   }
 }
+
+/* Actualités grand public : traversées concernées, aperçu de l'article source, rédaction admin. */
+.bw-news-impact {
+  display: grid;
+  gap: 10px;
+  margin-top: 28px;
+  padding: 18px;
+  border: 1px solid #f3e3bd;
+  border-radius: 20px;
+  background: #fffaf0;
+}
+.bw-news-impact h2 {
+  font-size: 18px;
+  font-weight: 800;
+}
+.bw-news-impact > p,
+.bw-news-impact__note {
+  color: var(--muted-foreground);
+  font-size: 13.5px;
+}
+.bw-news-impact ul {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.bw-news-impact__item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: #ffffff;
+  color: inherit;
+  text-decoration: none;
+  transition:
+    border-color 0.15s ease,
+    transform 0.15s ease;
+}
+.bw-news-impact__item:hover {
+  border-color: #0e7a43;
+  transform: translateY(-1px);
+}
+.bw-news-impact__item > span {
+  display: grid;
+  min-width: 0;
+  flex: 1;
+  gap: 2px;
+}
+.bw-news-impact__item strong {
+  font-size: 15px;
+}
+.bw-news-impact__item small {
+  color: var(--muted-foreground);
+  font-size: 12.5px;
+}
+.bw-news-impact__item b {
+  flex: none;
+  padding: 3px 9px;
+  border-radius: 999px;
+  background: #e3f2e7;
+  color: #0e7a43;
+  font-size: 11.5px;
+}
+.bw-news-impact__item b[data-status="modified"] {
+  background: #fff4d6;
+  color: #8a5a00;
+}
+.bw-news-impact__item b[data-status="cancelled"] {
+  background: #fde8e6;
+  color: #b42318;
+}
+.bw-news-source {
+  display: grid;
+  gap: 8px;
+  margin-top: 24px;
+  padding: 16px 18px;
+  border-left: 4px solid #16324a;
+  border-radius: 6px 16px 16px 6px;
+  background: #f4f7f9;
+}
+.bw-news-source__meta {
+  color: var(--muted-foreground);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+.bw-news-source strong {
+  font-size: 16px;
+  line-height: 1.35;
+}
+.bw-news-source blockquote {
+  margin: 0;
+  color: #3d4f5c;
+  font-size: 14px;
+  font-style: italic;
+  line-height: 1.5;
+}
+.bw-news-source a {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  width: fit-content;
+  color: var(--primary);
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+.bw-watch__composer {
+  display: grid;
+  gap: 10px;
+  padding: 12px;
+  border: 1px dashed #0e7a43;
+  border-radius: 12px;
+  background: #f6fbf8;
+}
+.bw-watch__composer label {
+  display: grid;
+  gap: 4px;
+  font-weight: 700;
+}
+.bw-watch__composer input,
+.bw-watch__composer textarea {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: #ffffff;
+  font: inherit;
+  font-weight: 400;
+}
+.bw-watch__composer-note,
+.bw-watch__composer-source {
+  color: var(--muted-foreground);
+  font-size: 12.5px;
+}
+.bw-watch__composer-warn {
+  padding: 8px 10px;
+  border-radius: 10px;
+  background: #fff4d6;
+  color: #8a5a00;
+  font-size: 12.5px;
+  font-weight: 700;
+}
+
+/* Bouton des salons : des visages (les derniers à écrire, ou des cabas) plutôt qu'une icône. */
+.bw-messages-fab > span.bw-messages-fab__faces {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0;
+}
+.bw-messages-fab__faces > i {
+  display: block;
+  width: 22px;
+  height: 22px;
+  overflow: hidden;
+  border: 2px solid #ffffff;
+  border-radius: 50%;
+  background: #ffffff;
+}
+.bw-messages-fab__faces > i + i {
+  margin-left: -10px;
+}
+.bw-messages-fab__faces > i > *,
+.bw-messages-fab__faces > i img {
+  width: 100% !important;
+  height: 100% !important;
+  border-radius: 50%;
+  object-fit: cover;
+}
+.bw-messages-fab__faces .bw-cabas-stack img {
+  border: 2px solid #ffffff;
+  border-radius: 50%;
+  background: #ffffff;
+}
+@media (min-width: 768px) {
+  .bw-messages-fab[data-faces] {
+    gap: 3px;
+    align-content: center;
+  }
+}
+@media (max-width: 767px) {
+  .bw-messages-fab__faces > i:nth-child(n + 3),
+  .bw-messages-fab__faces .bw-cabas-stack img:nth-child(n + 3) {
+    display: none;
+  }
+}
+
+/* Fiche traversée : les étapes, du quai au quai, constatées ou à confirmer. */
+.bw-crossing-steps {
+  margin-top: 12px;
+}
+.bw-crossing-steps ol {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.bw-crossing-steps li {
+  position: relative;
+  display: grid;
+  justify-items: center;
+  gap: 3px;
+  min-width: 0;
+  text-align: center;
+}
+.bw-crossing-steps li + li::before {
+  content: "";
+  position: absolute;
+  top: 10px;
+  right: 50%;
+  width: 100%;
+  height: 3px;
+  border-radius: 999px;
+  background: #e3ded0;
+}
+.bw-crossing-steps li[data-mark="done"]::before,
+.bw-crossing-steps li[data-mark="current"]::before {
+  background: #0e7a43;
+}
+.bw-crossing-steps li[data-mark="assumed"]::before,
+.bw-crossing-steps li[data-mark="pending"]::before {
+  background: repeating-linear-gradient(90deg, #0e7a43 0 5px, transparent 5px 9px);
+}
+.bw-crossing-steps__dot {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  width: 22px;
+  height: 22px;
+  place-items: center;
+  border: 2px solid #cfc8b6;
+  border-radius: 50%;
+  background: #ffffff;
+  color: #ffffff;
+  font-size: 12px;
+  font-weight: 800;
+}
+.bw-crossing-steps li[data-mark="done"] .bw-crossing-steps__dot {
+  border-color: #0e7a43;
+  background: #0e7a43;
+}
+.bw-crossing-steps li[data-mark="assumed"] .bw-crossing-steps__dot {
+  border-color: #0e7a43;
+  border-style: dashed;
+  color: #0e7a43;
+}
+.bw-crossing-steps li[data-mark="current"] .bw-crossing-steps__dot {
+  border-color: #16324a;
+  background: #ffd98a;
+  box-shadow: 0 0 0 4px #ffd98a66;
+  animation: bw-journey-pulse 2.2s infinite;
+}
+.bw-crossing-steps li[data-mark="pending"] .bw-crossing-steps__dot {
+  border-color: #f2a900;
+  background: #fff4d6;
+  color: #8a5a00;
+}
+.bw-crossing-steps strong {
+  max-width: 100%;
+  font-size: 11px;
+  font-weight: 800;
+  line-height: 1.2;
+  hyphens: auto;
+  overflow-wrap: anywhere;
+}
+.bw-crossing-steps li[data-mark="todo"] strong {
+  color: var(--muted-foreground);
+}
+.bw-crossing-steps small {
+  color: var(--muted-foreground);
+  font-size: 10.5px;
+  line-height: 1.25;
+}
+.bw-crossing-steps li[data-mark="pending"] small {
+  color: #8a5a00;
+  font-weight: 700;
+}
+.bw-crossing-steps__note {
+  margin-top: 8px;
+  color: #8a5a00;
+  font-size: 11.5px;
+}
+@media (prefers-reduced-motion: reduce) {
+  .bw-crossing-steps li[data-mark="current"] .bw-crossing-steps__dot {
+    animation: none;
+  }
+}

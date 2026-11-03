@@ -40,12 +40,27 @@ export const newsSchema = z.object({
     .transform((value) => value ?? []),
   // Navire concerné (script du 12/11/2026) : ouvre directement sa fiche.
   vessel_id: z.string().nullish(),
+  // Aperçu de l'article source (script du 13/12/2026) : absent des actualités plus anciennes.
+  source_title: z.string().nullish(),
+  source_excerpt: z.string().nullish(),
+  source_published_at: z.string().nullish(),
   starts_at: z.string(),
   ends_at: z.string().nullable(),
   published: z.boolean(),
   created_at: z.string(),
 });
 export type NewsItem = z.infer<typeof newsSchema>;
+
+/**
+ * Note de travail de la veille publiée par erreur : « à vérifier », « départs à contrôler », ou
+ * identifiants entre parenthèses. Elle reste hors des pages publiques tant qu'elle n'est pas réécrite.
+ */
+export function looksInternal(text: string) {
+  return (
+    /à (?:vérifier|contrôler)\s*:|départs? à contrôler/iu.test(text) ||
+    /\((?=[0-9a-f]{8}\))(?=[^)]*[a-f])(?=[^)]*\d)[0-9a-f]{8}\)/i.test(text)
+  );
+}
 export const newsKey = ["bw-news"] as const;
 
 /** Flash info publié et en cours (la base filtre déjà les dates pour le public). */
@@ -68,7 +83,9 @@ export const newsQuery = queryOptions({
       .parse(data)
       .filter(
         (item) =>
-          Date.parse(item.starts_at) <= now && (!item.ends_at || Date.parse(item.ends_at) > now),
+          Date.parse(item.starts_at) <= now &&
+          (!item.ends_at || Date.parse(item.ends_at) > now) &&
+          !looksInternal(`${item.title} ${item.summary}`),
       );
   },
   staleTime: 60_000,

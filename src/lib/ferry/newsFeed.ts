@@ -2,7 +2,7 @@
 import { queryOptions } from "@tanstack/react-query";
 import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
-import { newsKey, newsSchema, type NewsItem } from "./flash";
+import { looksInternal, newsKey, newsSchema, type NewsItem } from "./flash";
 
 const db = supabase as unknown as import("@supabase/supabase-js").SupabaseClient;
 
@@ -10,7 +10,8 @@ const db = supabase as unknown as import("@supabase/supabase-js").SupabaseClient
 export function isPublicNews(item: Pick<NewsItem, "title" | "summary" | "source_url">) {
   return (
     Boolean(item.source_url?.startsWith("https://")) &&
-    !/\btest\b/i.test(`${item.title} ${item.summary}`)
+    !/\btest\b/i.test(`${item.title} ${item.summary}`) &&
+    !looksInternal(`${item.title} ${item.summary}`)
   );
 }
 
@@ -42,6 +43,29 @@ export async function newsFeedItems(): Promise<NewsItem[]> {
   if (error) throw new Error("Les actualités sont momentanément indisponibles.");
   return z.array(newsSchema).parse(data).filter(isPublicNews);
 }
+
+export type NewsDeparture = {
+  id: string;
+  departure_at: string;
+  status: string;
+  route_id: string;
+  vessel_id: string | null;
+};
+/** Les traversées citées par une actualité, passées comprises : chacune s'ouvre sur la carte. */
+export const newsDeparturesQuery = (ids: string[]) =>
+  queryOptions({
+    queryKey: [...newsKey, "departures", ids.join(",")],
+    enabled: ids.length > 0,
+    staleTime: 60_000,
+    queryFn: async (): Promise<NewsDeparture[]> => {
+      const { data, error } = await db
+        .from("departures")
+        .select("id,departure_at,status,route_id,vessel_id")
+        .in("id", ids);
+      if (error) return [];
+      return (data as NewsDeparture[]).sort((a, b) => a.departure_at.localeCompare(b.departure_at));
+    },
+  });
 
 export const newsFeedQuery = queryOptions({
   queryKey: [...newsKey, "feed"],

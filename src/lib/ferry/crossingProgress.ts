@@ -162,3 +162,58 @@ export function crossingProgress(
     hold,
   };
 }
+
+/** Les étapes d'une traversée, de l'embarquement au débarquement. */
+export const CROSSING_STEPS = ["boarding", "departure", "sea", "arrival", "landing"] as const;
+export type CrossingStep = (typeof CROSSING_STEPS)[number];
+/**
+ * done : constaté (signal, heure relevée) ; assumed : sans doute passé, mais rien ne le prouve ;
+ * current : en cours ; pending : l'heure est passée et rien ne le confirme encore ; todo : à venir.
+ */
+export type CrossingStepMark = "done" | "assumed" | "current" | "pending" | "todo";
+
+/** Où en est la traversée, en distinguant ce qui est constaté de ce que l'horaire laisse supposer. */
+export function crossingSteps({
+  scene,
+  departed,
+  arrived,
+  pastDeparture,
+  arrivalDue,
+}: {
+  scene: CrossingScene | null;
+  /** Départ prouvé : heure de départ relevée, ou navire vu en mer. */
+  departed: boolean;
+  /** Arrivée constatée. */
+  arrived: boolean;
+  pastDeparture: boolean;
+  arrivalDue: boolean;
+}): Record<CrossingStep, CrossingStepMark> | null {
+  if (scene === "stopped") return null;
+  let current: number;
+  let mark: CrossingStepMark = "current";
+  if (arrived) current = scene === "disembarking" ? 4 : 5;
+  else if (scene === "approaching" || scene === "anchored") current = 3;
+  else if (scene === "departing") current = 1;
+  else if (scene === "boarding" || scene === "closed") current = 0;
+  else if (!pastDeparture) current = -1;
+  else if (!departed) {
+    current = 1;
+    mark = "pending";
+  } else if (arrivalDue) {
+    current = 3;
+    mark = "pending";
+  } else current = 2;
+  const proven = departed || arrived;
+  return Object.fromEntries(
+    CROSSING_STEPS.map((step, index) => [
+      step,
+      index < current
+        ? proven || index >= 2
+          ? "done"
+          : "assumed"
+        : index === current
+          ? mark
+          : "todo",
+    ]),
+  ) as Record<CrossingStep, CrossingStepMark>;
+}

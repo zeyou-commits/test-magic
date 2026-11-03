@@ -220,7 +220,12 @@ function NewsPage() {
               <h3>{item.title}</h3>
               <p>{item.summary}</p>
               <span className="bw-news-tile__foot">
-                <span>{item.source_name}</span>
+                <span>
+                  {item.source_name}
+                  {item.departure_ids.length
+                    ? ` · ${item.departure_ids.length} traversée${item.departure_ids.length > 1 ? "s" : ""} concernée${item.departure_ids.length > 1 ? "s" : ""}`
+                    : ""}
+                </span>
                 <span className="bw-news-tile__more">
                   Lire <ArrowRight size={14} aria-hidden />
                 </span>

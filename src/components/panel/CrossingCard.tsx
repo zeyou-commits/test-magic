@@ -1,7 +1,15 @@
 import { useAuth } from "@/hooks/useAuth";
-import { ArrowRight, Navigation, Waves } from "lucide-react";
+import { ArrowRight, Check, Navigation, Waves } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
-import { crossingProgress, ferryLeft, sceneLabel } from "@/lib/ferry/crossingProgress";
+import {
+  CROSSING_STEPS,
+  crossingProgress,
+  crossingSteps,
+  ferryLeft,
+  sceneLabel,
+  type CrossingStep,
+} from "@/lib/ferry/crossingProgress";
+import { formatDateParts } from "@/lib/ferry/format";
 import { departureStopped, incidentForVessel, incidentsQuery } from "@/lib/ferry/incidents";
 import type { Departure, Port } from "@/lib/ferry/types";
 import { useVesselAlert } from "@/lib/ferry/vesselAlerts";
@@ -39,6 +47,23 @@ export function CrossingCard({
   const scene = awaited ? "stopped" : progress.scene;
   const label = sceneLabel(scene);
   const delay = progress.reportedPostponed ? null : delayLabel(progress.times);
+  // Parti ou pas ? Seule une preuve le dit : heure de départ relevée, ou navire vu en mer.
+  const seenAtSea = progress.signal?.phase === "sea";
+  const departed =
+    progress.times.departure.kind === "observed" ||
+    seenAtSea ||
+    progress.times.arrival.kind === "observed";
+  const pastDeparture = at >= Date.parse(progress.times.departure.iso ?? departure.departure_at);
+  const steps =
+    departure.status === "cancelled"
+      ? null
+      : crossingSteps({
+          scene,
+          departed,
+          arrived: progress.times.arrival.kind === "observed",
+          pastDeparture,
+          arrivalDue: progress.arrivalDue,
+        });
   const status =
     departure.status === "cancelled"
       ? "Traversée annulée"
@@ -62,9 +87,11 @@ export function CrossingCard({
             ? "Prochaine traversée"
             : progress.signal
               ? progress.signal.phase === "sea"
-                ? atSeaLabel
+                ? `Parti · ${atSeaLabel.toLowerCase()}`
                 : "Au port"
-              : atSeaLabel;
+              : departed
+                ? atSeaLabel
+                : "Départ en attente de confirmation";
   return (
     <section className="bw-crossing" aria-label="Avancement de la traversée">
       <div className="bw-crossing-top" data-alert={stopped || awaited || undefined}>
@@ -112,7 +139,11 @@ export function CrossingCard({
       ) : progress.ratio !== null ? (
         <div className="bw-crossing-progress">
           <div className="bw-crossing-progress-label">
-            <span>{progress.trustLabel}</span>
+            <span>
+              {steps?.departure === "pending"
+                ? "Si le navire est parti à l’heure"
+                : progress.trustLabel}
+            </span>
             <strong>
               {estimated ? "≈ " : ""}
               {Math.round(progress.ratio * 100)} %
@@ -134,6 +165,18 @@ export function CrossingCard({
           </div>
         </div>
       ) : null}
+      {steps ? (
+        <CrossingSteps
+          marks={steps}
+          departure={departure}
+          times={progress.times}
+          seenAtSea={seenAtSea}
+          ratio={progress.ratio}
+          estimated={estimated}
+          fromZone={portTimeZone(from)}
+          toZone={portTimeZone(to)}
+        />
+      ) : null}
       <TrackingTimes
         departure={departure}
         live={progress.signal}
@@ -154,5 +197,106 @@ export function CrossingCard({
         </div>
       ) : null}
     </section>
+  );
+}
+
+const STEP_LABEL: Record<CrossingStep, string> = {
+  boarding: "Embarquement",
+  departure: "Départ",
+  sea: "Traversée",
+  arrival: "Arrivée",
+  landing: "Débarquement",
+};
+const MARK_TITLE = {
+  done: "Constaté",
+  assumed: "Sans doute passé, d’après l’horaire",
+  current: "En cours",
+  pending: "Heure passée, pas encore confirmé",
+  todo: "À venir",
+} as const;
+
+/** Embarquement, départ, traversée, arrivée, débarquement : ce qui est fait, en cours ou à confirmer. */
+function CrossingSteps({
+  marks,
+  departure,
+  times,
+  seenAtSea,
+  ratio,
+  estimated,
+  fromZone,
+  toZone,
+}: {
+  marks: NonNullable<ReturnType<typeof crossingSteps>>;
+  departure: Departure;
+  times: ReturnType<typeof crossingProgress>["times"];
+  seenAtSea: boolean;
+  ratio: number | null;
+  estimated: boolean;
+  fromZone: string;
+  toZone: string;
+}) {
+  const time = (iso: string | null, zone: string) => (iso ? formatDateParts(iso, zone).time : null);
+  const leave = time(times.departure.iso, fromZone);
+  const land = time(times.arrival.iso, toZone);
+  const presentation =
+    departure.presentation_minutes && times.departure.scheduledIso
+      ? time(
+          new Date(
+            Date.parse(times.departure.scheduledIso) - departure.presentation_minutes * 60_000,
+          ).toISOString(),
+          fromZone,
+        )
+      : null;
+  const sub: Record<CrossingStep, string | null> = {
+    boarding: presentation ? `présentation ${presentation}` : null,
+    departure:
+      times.departure.kind === "observed"
+        ? `parti à ${leave}`
+        : seenAtSea
+          ? "parti, vu en mer"
+          : marks.departure === "pending"
+            ? `prévu ${leave} · à confirmer`
+            : leave
+              ? `prévu ${leave}`
+              : null,
+    sea:
+      marks.sea === "current" && ratio !== null
+        ? `${estimated ? "≈ " : ""}${Math.round(ratio * 100)} %`
+        : null,
+    arrival: land
+      ? times.arrival.kind === "observed"
+        ? `arrivé à ${land}`
+        : marks.arrival === "pending"
+          ? `prévue ${land} · à confirmer`
+          : `${times.arrival.kind === "estimated" ? "≈" : "prévue"} ${land}`
+      : null,
+    landing: null,
+  };
+  const pending = Object.values(marks).includes("pending");
+  return (
+    <div className="bw-crossing-steps">
+      <ol aria-label="Étapes de la traversée">
+        {CROSSING_STEPS.map((step) => (
+          <li key={step} data-mark={marks[step]} title={MARK_TITLE[marks[step]]}>
+            <span className="bw-crossing-steps__dot" aria-hidden>
+              {marks[step] === "done" || marks[step] === "assumed" ? (
+                <Check size={11} strokeWidth={3} />
+              ) : marks[step] === "pending" ? (
+                "?"
+              ) : null}
+            </span>
+            <strong>{STEP_LABEL[step]}</strong>
+            {sub[step] ? <small>{sub[step]}</small> : null}
+            <span className="sr-only"> · {MARK_TITLE[marks[step]]}</span>
+          </li>
+        ))}
+      </ol>
+      {pending ? (
+        <p className="bw-crossing-steps__note">
+          « À confirmer » : l’heure est passée, mais aucun signal du navire ni information
+          vérifiée ne le confirme encore.
+        </p>
+      ) : null}
+    </div>
   );
 }

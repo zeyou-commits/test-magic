@@ -1,11 +1,19 @@
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
-import { useSuspenseQuery } from "@tanstack/react-query";
-import { ExternalLink } from "lucide-react";
+import { useQuery, useSuspenseQuery } from "@tanstack/react-query";
+import { ArrowRight, ExternalLink } from "lucide-react";
 import { Breadcrumbs } from "@/components/editorial/Editorial";
 import { SiteLayout } from "@/components/layout/SiteLayout";
 import { newsKinds } from "@/lib/ferry/flash";
-import { newsDay, newsFeedQuery, newsIdFromSlug, newsPath } from "@/lib/ferry/newsFeed";
-import { vesselsQuery } from "@/lib/ferry/queries";
+import { formatDateParts } from "@/lib/ferry/format";
+import {
+  newsDay,
+  newsDeparturesQuery,
+  newsFeedQuery,
+  newsIdFromSlug,
+  newsPath,
+} from "@/lib/ferry/newsFeed";
+import { portsQuery, routesQuery, vesselsQuery } from "@/lib/ferry/queries";
+import { portTimeZone } from "@/lib/ferry/time";
 import { absoluteUrl, jsonLdString, seoHead } from "@/lib/seo/site";
 
 export const Route = createFileRoute("/actualites/$slug")({
@@ -70,18 +78,21 @@ function NewsArticlePage() {
           <time dateTime={item.starts_at}>{newsDay(item.starts_at)}</time>
         </p>
         <p className="mt-6 text-lg leading-relaxed">{item.summary}</p>
+        <NewsImpact ids={item.departure_ids} />
         {item.source_url ? (
-          <p className="mt-6">
-            <a
-              href={item.source_url}
-              target="_blank"
-              rel="noopener noreferrer nofollow"
-              className="inline-flex items-center gap-2 font-semibold text-primary underline underline-offset-4"
-            >
-              Lire la source{item.source_name ? ` : ${item.source_name}` : ""}
+          // Aperçu de l'article d'origine : son titre, quelques mots, et le lien pour le lire en entier.
+          <aside className="bw-news-source" aria-label="Article d’origine">
+            <span className="bw-news-source__meta">
+              Source · {item.source_name || new URL(item.source_url).hostname}
+              {item.source_published_at ? ` · ${newsDay(item.source_published_at)}` : ""}
+            </span>
+            {item.source_title ? <strong>{item.source_title}</strong> : null}
+            {item.source_excerpt ? <blockquote>« {item.source_excerpt} »</blockquote> : null}
+            <a href={item.source_url} target="_blank" rel="noopener noreferrer nofollow">
+              Lire l’article{item.source_name ? ` sur ${item.source_name}` : ""}
               <ExternalLink size={15} aria-hidden />
             </a>
-          </p>
+          </aside>
         ) : null}
         <div className="bw-news-empty mt-8 text-left">
           <h2 className="text-lg font-bold">Vous voyagez bientôt ?</h2>
@@ -109,5 +120,64 @@ function NewsArticlePage() {
         </div>
       </article>
     </SiteLayout>
+  );
+}
+
+const STATUS: Record<string, string> = {
+  scheduled: "Prévue",
+  modified: "Modifiée",
+  cancelled: "Annulée",
+};
+
+/** Les traversées concernées, chacune ouverte sur BledWay (suivi, horaires à jour, salon). */
+function NewsImpact({ ids }: { ids: string[] }) {
+  const departures = useQuery(newsDeparturesQuery(ids)).data ?? [];
+  const { data: routes = [] } = useQuery(routesQuery);
+  const { data: ports = [] } = useQuery(portsQuery);
+  const { data: vessels = [] } = useQuery(vesselsQuery);
+  if (!ids.length || !departures.length) return null;
+  return (
+    <section className="bw-news-impact" aria-label="Traversées concernées">
+      <h2>
+        {departures.length > 1
+          ? `${departures.length} traversées concernées`
+          : "La traversée concernée"}
+      </h2>
+      <p>Ouvrez la vôtre pour voir son suivi et ses horaires à jour sur BledWay.</p>
+      <ul>
+        {departures.map((departure) => {
+          const route = routes.find((entry) => entry.id === departure.route_id);
+          const from = ports.find((port) => port.id === route?.departure_port_id);
+          const to = ports.find((port) => port.id === route?.arrival_port_id);
+          const parts = formatDateParts(departure.departure_at, portTimeZone(from));
+          const vessel = vessels.find((entry) => entry.id === departure.vessel_id);
+          return (
+            <li key={departure.id}>
+              <Link
+                to="/"
+                search={{ select: "departure", id: departure.id } as never}
+                className="bw-news-impact__item"
+              >
+                <span>
+                  <strong>
+                    {from?.name ?? "?"} → {to?.name ?? "?"}
+                  </strong>
+                  <small>
+                    {parts.weekday} {parts.shortDate} · {parts.time}
+                    {from ? ` (heure de ${from.name})` : ""}
+                    {vessel ? ` · ${vessel.name}` : ""}
+                  </small>
+                </span>
+                <b data-status={departure.status}>{STATUS[departure.status] ?? "Prévue"}</b>
+                <ArrowRight size={16} aria-hidden />
+              </Link>
+            </li>
+          );
+        })}
+      </ul>
+      <small className="bw-news-impact__note">
+        Seule la compagnie confirme un départ : vérifiez aussi auprès d’elle.
+      </small>
+    </section>
   );
 }

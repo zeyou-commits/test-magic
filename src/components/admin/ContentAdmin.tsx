@@ -13,6 +13,7 @@ import { portTimeZone } from "@/lib/ferry/time";
 import {
   adminNewsQuery,
   flashClient,
+  looksInternal,
   newsKey,
   placeKinds,
   placesKey,
@@ -41,7 +42,7 @@ const selected = (select: HTMLSelectElement) =>
  * Traversées datées concernées : on choisit un trajet, puis un ou plusieurs départs à venir.
  * Exemple : « le départ du 23 novembre est reporté » concerne cette traversée, pas tout le trajet.
  */
-function DeparturePicker({
+export function DeparturePicker({
   value,
   onChange,
   routeLabel,
@@ -287,6 +288,12 @@ export function NewsAdmin() {
               value={draft.summary}
               onChange={(e) => setDraft({ ...draft, summary: e.target.value })}
             />
+            {looksInternal(`${draft.title} ${draft.summary}`) ? (
+              <small role="alert" className="text-amber-800">
+                Ce texte contient une note de travail (« à vérifier », identifiant…) : elle n’est pas
+                affichée au public tant qu’elle n’est pas réécrite.
+              </small>
+            ) : null}
           </label>
           <div className="grid gap-3 md:grid-cols-2">
             <label>

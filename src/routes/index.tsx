@@ -74,7 +74,7 @@ import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { EmbeddedRoom } from "@/components/panel/LiveRoom";
 import { LivePulse } from "@/components/panel/LivePulse";
 import { JourneyFrieze } from "@/components/journey/JourneyFrieze";
-import { JourneyStoryNav } from "@/components/journey/JourneyStoryNav";
+import { JourneyChain, JourneyTimeline } from "@/components/journey/JourneyTimeline";
 import { useVoyage } from "@/components/journey/useVoyage";
 import { GO_HOME_EVENT, OPEN_VOYAGE_EVENT, useVoyageTrip } from "@/lib/ferry/voyageTrip";
 
@@ -116,6 +116,8 @@ function Index() {
   const [voyageOn, setVoyageOn] = useState(() =>
     new URLSearchParams(initialSearch).has("voyage"),
   );
+  // Téléphone : toutes les étapes repliées dans la liste verticale de « Mon voyage ».
+  const [timelineClosed, setTimelineClosed] = useState(false);
   // Une fiche ouverte depuis « Mon voyage » : son retour ramène au voyage, pas à l'accueil.
   const [voyageBack, setVoyageBack] = useState(false);
   // Ouverture depuis une notification : son message s'affiche en tête de la fiche demandée.
@@ -1321,23 +1323,28 @@ function Index() {
               >
                 {isMobile ? (
                   <>
-                    <div className="bw-voyage-aside__head" hidden={panelLevel === 0}>
+                    {/* Comme un itinéraire Google : la chaîne des étapes, puis la liste verticale. */}
+                    <div className="bw-voyage-aside__head">
+                      <JourneyChain
+                        steps={voyage.friezeSteps}
+                        openId={timelineClosed ? null : voyage.shown}
+                        onOpen={(next) => {
+                          voyage.setStoryIndex(next);
+                          setTimelineClosed(false);
+                          setPanelLevel((level) => (level === 0 ? 1 : level));
+                        }}
+                      />
+                    </div>
+                    <div className="bw-voyage-aside__title">
                       <p>
-                        <b>{voyage.summary.heading}</b> · {voyage.summary.title}
+                        <b>{voyage.summary.heading}</b> {voyage.summary.title}
+                        {voyage.summary.vesselName ? ` · ${voyage.summary.vesselName}` : ""}
+                        {voyage.summary.cancelled ? <em> · Annulée</em> : null}
                       </p>
                       <button type="button" onClick={leaveVoyage}>
                         <ArrowLeft size={14} aria-hidden /> Accueil
                       </button>
                     </div>
-                    <JourneyStoryNav
-                      steps={voyage.friezeSteps}
-                      index={voyage.index}
-                      onChange={(next) => {
-                        voyage.setStoryIndex(next);
-                        setPanelLevel((level) => (level === 0 ? 1 : level));
-                      }}
-                      tone="light"
-                    />
                     {panelLevel > 0 ? (
                       <div className="bw-voyage-aside__scroll">
                         {voyage.liveAlert ? (
@@ -1348,7 +1355,20 @@ function Index() {
                             }
                           />
                         ) : null}
-                        {voyage.renderPanel(voyage.shown ?? voyage.current, false)}
+                        <JourneyTimeline
+                          steps={voyage.friezeSteps}
+                          openId={timelineClosed ? null : voyage.shown}
+                          hereLabel={voyage.traveller ? "Vous êtes ici" : "En ce moment"}
+                          onToggle={(next) => {
+                            if (!timelineClosed && voyage.friezeSteps[next]?.id === voyage.shown) {
+                              setTimelineClosed(true);
+                              return;
+                            }
+                            setTimelineClosed(false);
+                            voyage.setStoryIndex(next);
+                          }}
+                          renderOpen={(id) => voyage.renderPanel(id, false)}
+                        />
                       </div>
                     ) : null}
                   </>

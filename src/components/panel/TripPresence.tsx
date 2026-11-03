@@ -339,7 +339,6 @@ export function TripStatusPicker({
       {only ? (
         <div className="bw-trip-status__head">
           <h3>J'y suis</h3>
-          <small>Votre frise avance. Les autres ne voient qu’un compteur.</small>
         </div>
       ) : (
         <div className="bw-trip-status__head">
@@ -347,7 +346,7 @@ export function TripStatusPicker({
           <small>
             {tooEarly
               ? "S’active la veille du départ."
-              : "Visible de vous seul. Les autres voient seulement des compteurs."}
+              : "Votre nom n’est jamais affiché."}
           </small>
         </div>
       )}

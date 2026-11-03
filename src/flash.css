@@ -11045,3 +11045,935 @@ img[data-logo="dark"] {
     order: 3;
   }
 }
+
+/* ══ « Mon voyage » : la route du bled, frise en haut, carte dessous, volets par-dessus ══ */
+.bw-journey-page {
+  display: flex;
+  height: 100dvh;
+  flex-direction: column;
+  background: #f7f4ec;
+}
+.bw-journey {
+  position: relative;
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  flex-direction: column;
+}
+.bw-journey-shell {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px 20px 16px;
+}
+.bw-journey-hero {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  padding: 12px 20px;
+  border-radius: 20px;
+  background: linear-gradient(120deg, #0e2a3a, #16445e);
+  color: #ffffff;
+}
+.bw-journey-hero > div:first-child {
+  flex: 1;
+  min-width: 0;
+}
+.bw-journey-hero span {
+  color: #ffd98a;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+}
+.bw-journey-hero h1 {
+  margin: 2px 0;
+  overflow: hidden;
+  font-size: 21px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.bw-journey-hero p {
+  color: #d6e2ea;
+  font-size: 13px;
+}
+.bw-journey-hero__cancel {
+  color: #ffb4a8;
+}
+.bw-journey-hero .bw-live-pulse,
+.bw-journey-hero > button {
+  max-width: 320px;
+}
+.bw-journey-hero dl {
+  display: flex;
+  gap: 1px;
+  overflow: hidden;
+  border-radius: 14px;
+  background: #24465a;
+}
+.bw-journey-hero dl > div {
+  padding: 8px 14px;
+  background: #12344a;
+}
+.bw-journey-hero dd {
+  font-size: 18px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+.bw-journey-hero dt {
+  color: #ffd98a;
+  font-size: 11px;
+}
+.bw-journey-frieze {
+  padding: 10px 16px 8px;
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  background: #ffffff;
+}
+
+/* La frise : points reliés, l'étape du moment pulse, survol = aperçu. */
+.bw-frieze {
+  display: grid;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.bw-frieze li {
+  position: relative;
+  display: flex;
+  justify-content: center;
+}
+.bw-frieze__bar {
+  position: absolute;
+  top: 41px;
+  left: 50%;
+  width: 100%;
+  height: 3px;
+  border-radius: 999px;
+  background: #ddd8c9;
+}
+.bw-frieze__bar[data-state="done"] {
+  background: #0e7a43;
+}
+.bw-frieze__bar[data-state="current"] {
+  background: linear-gradient(90deg, #0e7a43 35%, #ddd8c9 35%);
+}
+.bw-frieze button {
+  position: relative;
+  display: flex;
+  width: 100%;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 20px 4px 4px;
+  border: 0;
+  background: none;
+  color: #16324a;
+  font: inherit;
+  text-align: center;
+  cursor: pointer;
+}
+.bw-frieze__here {
+  position: absolute;
+  top: 0;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: #ffd98a;
+  font-size: 10px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+.bw-frieze__dot {
+  position: relative;
+  display: grid;
+  width: 42px;
+  height: 42px;
+  place-items: center;
+  border: 2px solid #cfc8b6;
+  border-radius: 999px;
+  background: #ffffff;
+  color: #4b5a55;
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
+}
+.bw-frieze li[data-state="done"] .bw-frieze__dot {
+  border-color: #0e7a43;
+  background: #0e7a43;
+  color: #ffffff;
+}
+.bw-frieze li[data-late] .bw-frieze__dot {
+  border-color: #f2a900;
+  background: #fff4d6;
+  color: #8a5a00;
+}
+.bw-story__dot[data-state="late"] {
+  background: #fff4d6;
+  color: #8a5a00;
+}
+.bw-frieze li[data-state="current"] .bw-frieze__dot {
+  width: 50px;
+  height: 50px;
+  margin-top: -4px;
+  border-color: #16324a;
+  background: #16324a;
+  color: #ffd98a;
+  animation: bw-journey-pulse 2.2s infinite;
+}
+.bw-frieze li[data-shown] .bw-frieze__dot {
+  transform: scale(1.1);
+  box-shadow: 0 0 0 5px #ffd98a99;
+}
+.bw-frieze button:hover .bw-frieze__dot {
+  transform: scale(1.08);
+}
+.bw-frieze button:focus-visible {
+  outline: 2px solid #0e7a43;
+  outline-offset: 2px;
+  border-radius: 12px;
+}
+.bw-frieze strong {
+  font-size: 12.5px;
+  line-height: 1.2;
+}
+.bw-frieze li[data-shown] strong {
+  color: #0e7a43;
+}
+.bw-frieze small {
+  color: #5d6b66;
+  font-size: 11px;
+}
+@keyframes bw-journey-pulse {
+  0% {
+    box-shadow: 0 0 0 0 #ffd98aaa;
+  }
+  70% {
+    box-shadow: 0 0 0 12px #ffd98a00;
+  }
+  100% {
+    box-shadow: 0 0 0 0 #ffd98a00;
+  }
+}
+
+/* La carte occupe tout le reste ; volets, salon et boutons flottent dessus. */
+.bw-journey-map {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  border: 1px solid #d6e3ea;
+  border-radius: 22px;
+  background: var(--sea, #cfe5f0);
+}
+.bw-journey-map__wait {
+  position: absolute;
+  inset: 0;
+  background: var(--sea, #cfe5f0);
+}
+.bw-journey-panel {
+  position: absolute;
+  z-index: 20;
+  top: 14px;
+  left: 14px;
+  bottom: 14px;
+  width: 400px;
+  overflow-y: auto;
+  border-radius: 22px;
+  background: #fffffff2;
+  box-shadow: 0 14px 36px #16324a33;
+  animation: bw-journey-in 0.28s ease;
+}
+@keyframes bw-journey-in {
+  from {
+    opacity: 0;
+    transform: translateX(-12px);
+  }
+}
+.bw-journey-salon {
+  position: absolute;
+  z-index: 20;
+  top: 14px;
+  right: 14px;
+  bottom: 92px;
+  display: flex;
+  width: 360px;
+  overflow: hidden;
+  border-radius: 22px;
+  background: #ffffff;
+  box-shadow: 0 14px 36px #16324a33;
+}
+.bw-journey-salon .bw-chat-embedded {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+}
+.bw-journey-salon__min {
+  position: absolute;
+  z-index: 2;
+  top: 10px;
+  right: 10px;
+  display: grid;
+  width: 30px;
+  height: 30px;
+  place-items: center;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: #ffffff;
+  color: #4b5a55;
+  cursor: pointer;
+}
+/* Signaler en bas à droite ; le salon réduit se range juste au-dessus, comme sur la carte. */
+.bw-journey .bw-report {
+  top: auto;
+  right: 18px;
+  bottom: 18px;
+}
+.bw-journey-salon-fab {
+  position: absolute;
+  z-index: 21;
+  right: 18px;
+  bottom: 82px;
+  display: grid;
+  width: 53px;
+  height: 53px;
+  place-items: center;
+  align-content: center;
+  gap: 2px;
+  border: 2px solid #ffffff;
+  border-radius: 16px;
+  background: #0e7a43;
+  color: #ffffff;
+  box-shadow: 0 4px 14px #16324a40;
+  font: inherit;
+  font-size: 10.5px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.bw-journey-salon-fab[data-mobile] {
+  position: relative;
+  right: auto;
+  bottom: auto;
+  width: 54px;
+  height: 54px;
+  margin-bottom: 10px;
+  border-width: 3px;
+  border-radius: 999px;
+}
+.bw-journey-salon-fab[data-alone] {
+  position: absolute;
+  right: 14px;
+  bottom: calc(var(--journey-fab, 120px) + 4px);
+}
+.bw-chat-embedded {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+}
+
+/* Le volet d'une étape. */
+.bw-step-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 18px 20px 20px;
+  color: #16324a;
+}
+.bw-step-panel header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.bw-step-panel h2 {
+  flex: 1;
+  margin: 0;
+  font-size: 19px;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+}
+.bw-step-panel__badge {
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: #16324a;
+  color: #ffd98a;
+  font-size: 11px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+.bw-step-panel__badge[data-state="current"] {
+  background: #ffd98a;
+  color: #16324a;
+}
+.bw-step-panel__badge[data-state="done"] {
+  background: #e3f2e7;
+  color: #0e7a43;
+}
+.bw-step-panel__close {
+  display: grid;
+  width: 32px;
+  height: 32px;
+  place-items: center;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: #ffffff;
+  color: #4b5a55;
+  cursor: pointer;
+}
+.bw-step-panel__lead {
+  padding: 11px 13px;
+  border-radius: 14px;
+  background: #eef6f1;
+  font-size: 13.5px;
+  line-height: 1.45;
+}
+.bw-step-panel__items {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.bw-step-panel__items li {
+  display: grid;
+  gap: 2px;
+  padding: 6px 8px;
+  border-radius: 12px;
+  transition: background 0.2s ease;
+}
+.bw-step-panel__items li:hover {
+  background: #f6f3ea;
+}
+.bw-step-panel__items button {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: #16324a;
+  font: inherit;
+  font-size: 13.5px;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+}
+.bw-step-panel__items button:disabled {
+  cursor: default;
+}
+.bw-step-panel__box {
+  display: grid;
+  width: 20px;
+  height: 20px;
+  flex: none;
+  place-items: center;
+  margin-top: 1px;
+  border: 2px solid #c9c3b2;
+  border-radius: 6px;
+  color: #ffffff;
+  transition:
+    background 0.2s ease,
+    border-color 0.2s ease;
+}
+.bw-step-panel__items li[data-done] .bw-step-panel__box {
+  border-color: #0e7a43;
+  background: #0e7a43;
+}
+.bw-step-panel__items li[data-done] button > span:last-child {
+  color: #8a958f;
+  text-decoration: line-through;
+}
+.bw-step-panel__items small,
+.bw-step-panel__items a {
+  margin-left: 30px;
+  font-size: 12px;
+  line-height: 1.4;
+}
+.bw-step-panel__items small {
+  color: #5d6b66;
+}
+.bw-step-panel__items a {
+  color: #0e7a43;
+  font-weight: 700;
+}
+.bw-step-panel__done {
+  padding: 8px 12px;
+  border-radius: 12px;
+  background: #e3f2e7;
+  color: #0e7a43;
+  font-size: 13px;
+  font-weight: 700;
+}
+.bw-step-panel__actions,
+.bw-step-panel__more {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.bw-step-panel__link,
+.bw-step-panel__more a,
+.bw-step-panel__more button {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  min-height: 36px;
+  padding: 0 13px;
+  border: 1px solid #cfe3d6;
+  border-radius: 999px;
+  background: #ffffff;
+  color: #0e7a43;
+  font: inherit;
+  font-size: 12.5px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.bw-step-panel__ask {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 36px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: 999px;
+  background: #0e7a43;
+  color: #ffffff;
+  font: inherit;
+  font-size: 12.5px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.bw-journey-profile {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.bw-journey-profile button {
+  min-height: 32px;
+  padding: 0 11px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: #ffffff;
+  color: #16324a;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.bw-journey-profile button[aria-pressed="true"] {
+  border-color: #16324a;
+  background: #16324a;
+  color: #ffd98a;
+}
+
+/* Trajet sur mesure. */
+.bw-journey-places {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px;
+  border: 1px dashed #c9c3b2;
+  border-radius: 16px;
+  background: #fbfaf6;
+  font-size: 13px;
+}
+.bw-journey-places > div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.bw-journey-places label {
+  display: flex;
+  flex: 1 1 140px;
+  flex-direction: column;
+  gap: 3px;
+  color: #4b5a55;
+  font-size: 11.5px;
+  font-weight: 600;
+}
+.bw-journey-places input {
+  min-height: 38px;
+  padding: 0 10px;
+  border: 1px solid #d8d3c4;
+  border-radius: 10px;
+  background: #ffffff;
+  color: #16324a;
+  font: inherit;
+  font-size: 13.5px;
+}
+.bw-journey-places button {
+  min-height: 36px;
+  padding: 0 13px;
+  border: 0;
+  border-radius: 999px;
+  background: #16324a;
+  color: #ffffff;
+  font: inherit;
+  font-size: 12.5px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.bw-journey-places button[data-variant="ghost"] {
+  border: 1px solid var(--border);
+  background: #ffffff;
+  color: #16324a;
+}
+.bw-journey-places small {
+  color: #5d6b66;
+  font-size: 11.5px;
+}
+.bw-journey-places p[role="alert"] {
+  color: #b42318;
+  font-size: 12.5px;
+}
+.bw-journey-places[data-filled] {
+  flex-direction: row;
+  align-items: center;
+  border-style: solid;
+  background: #fff7e3;
+}
+.bw-journey-places[data-filled] p {
+  flex: 1;
+  line-height: 1.4;
+}
+.bw-journey-places[data-filled] button {
+  border: 1px solid var(--border);
+  background: #ffffff;
+  color: #16324a;
+}
+
+/* Sans traversée suivie. */
+.bw-journey-empty {
+  display: flex;
+  max-width: 560px;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  margin: 12vh auto 0;
+  padding: 0 20px;
+  color: #16324a;
+  text-align: center;
+}
+.bw-journey-empty h1 {
+  font-size: 26px;
+  font-weight: 800;
+}
+.bw-journey-empty p {
+  color: #4b5a55;
+  line-height: 1.5;
+}
+.bw-journey-empty > div {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px;
+}
+.bw-journey-empty a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 42px;
+  padding: 0 16px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: #ffffff;
+  color: #16324a;
+  font-weight: 700;
+}
+.bw-journey-empty a.bw-journey-empty__main {
+  border-color: #0e7a43;
+  background: #0e7a43;
+  color: #ffffff;
+}
+
+/* La navigation « story » : segments, précédente / en cours / suivante, glissement du doigt. */
+.bw-story {
+  touch-action: pan-y;
+  user-select: none;
+}
+.bw-story__segments {
+  display: flex;
+  gap: 4px;
+}
+.bw-story__segments span {
+  flex: 1;
+  height: 4px;
+  border-radius: 999px;
+  background: #ffffff40;
+  transition: background 0.3s ease;
+}
+.bw-story__segments span[data-state="past"] {
+  background: #ffffff;
+}
+.bw-story__segments span[data-state="now"] {
+  background: #ffd98a;
+}
+.bw-story__row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.5fr) minmax(0, 1fr);
+  align-items: center;
+  gap: 4px;
+  margin-top: 8px;
+}
+.bw-story__side {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 1px;
+  min-height: 44px;
+  padding: 4px 2px;
+  border: 0;
+  background: none;
+  color: #ffffffb3;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.bw-story__side[data-side="next"] {
+  align-items: flex-end;
+  text-align: right;
+}
+.bw-story__side span {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  font-size: 11px;
+  font-weight: 700;
+}
+.bw-story__side small {
+  font-size: 10px;
+}
+.bw-story__now {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  color: #ffffff;
+  text-align: center;
+  animation: bw-story-in 0.3s ease;
+}
+@keyframes bw-story-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+}
+.bw-story__now strong {
+  font-size: 15px;
+  line-height: 1.15;
+}
+.bw-story__now small {
+  color: #ffd98a;
+  font-size: 11px;
+  font-weight: 700;
+}
+.bw-story__dot {
+  display: grid;
+  width: 42px;
+  height: 42px;
+  place-items: center;
+  border-radius: 999px;
+  background: #ffffff;
+  color: #16324a;
+}
+.bw-story__dot[data-state="current"] {
+  background: #ffd98a;
+}
+.bw-story__dot[data-state="done"] {
+  background: #0e7a43;
+  color: #ffffff;
+}
+.bw-story[data-tone="light"] .bw-story__segments span {
+  background: #16324a26;
+}
+.bw-story[data-tone="light"] .bw-story__segments span[data-state="past"] {
+  background: #0e7a43;
+}
+.bw-story[data-tone="light"] .bw-story__segments span[data-state="now"] {
+  background: #f2a900;
+}
+.bw-story[data-tone="light"] .bw-story__side {
+  color: #5d6b66;
+}
+.bw-story[data-tone="light"] .bw-story__now {
+  color: #16324a;
+}
+.bw-story[data-tone="light"] .bw-story__now small {
+  color: #0e7a43;
+}
+
+/* Téléphone : carte en fond, story en haut, étape en bas, Signaler et salon flottants. */
+@media (max-width: 767px) {
+  .bw-journey-page {
+    height: calc(100dvh - 3.5rem - env(safe-area-inset-bottom));
+  }
+  .bw-journey-shell {
+    position: relative;
+    gap: 0;
+    padding: 0;
+  }
+  .bw-journey-top {
+    position: absolute;
+    z-index: 25;
+    top: 0;
+    left: 0;
+    right: 0;
+    padding: 10px 12px 18px;
+    background: linear-gradient(180deg, #0e2a3af2 0%, #0e2a3acc 72%, #0e2a3a00 100%);
+    color: #ffffff;
+  }
+  .bw-journey-top > p {
+    margin-bottom: 8px;
+    overflow: hidden;
+    color: #d6e2ea;
+    font-size: 11px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .bw-journey-top > p b {
+    color: #ffd98a;
+  }
+  .bw-journey-map {
+    border: 0;
+    border-radius: 0;
+  }
+  .bw-journey-sheet {
+    position: absolute;
+    z-index: 30;
+    left: 8px;
+    right: 8px;
+    bottom: 8px;
+    max-height: 56%;
+    overflow-y: auto;
+    border-radius: 22px;
+    background: #fffffff5;
+    box-shadow: 0 -6px 28px #16324a33;
+    animation: bw-story-in 0.3s ease;
+  }
+  .bw-journey-sheet .bw-step-panel {
+    padding: 12px 14px 16px;
+  }
+  .bw-journey-sheet > .bw-live-pulse,
+  .bw-journey-sheet > button:not(.bw-journey-sheet__map):not(.bw-journey-sheet__bar) {
+    margin: 0 14px;
+  }
+  .bw-journey-sheet__map {
+    position: sticky;
+    z-index: 2;
+    top: 0;
+    float: right;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    margin: 10px 12px 0 0;
+    padding: 6px 11px;
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    background: #ffffff;
+    color: #16324a;
+    font: inherit;
+    font-size: 11.5px;
+    font-weight: 700;
+  }
+  .bw-journey-sheet__bar {
+    display: flex;
+    width: 100%;
+    min-height: 54px;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 16px;
+    border: 0;
+    background: none;
+    color: #16324a;
+    font: inherit;
+  }
+  .bw-journey-sheet__bar span {
+    color: #0e7a43;
+    font-size: 12px;
+    font-weight: 700;
+  }
+  .bw-journey .bw-report {
+    position: absolute;
+    top: auto;
+    right: 14px;
+    bottom: calc(var(--journey-fab, 120px) - 48px);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .bw-frieze li[data-state="current"] .bw-frieze__dot,
+  .bw-journey-panel,
+  .bw-story__now,
+  .bw-journey-sheet {
+    animation: none;
+  }
+}
+
+/* Simulateur « Route » : la route du bled en 8 étapes, au rythme du film. */
+.bw-sim-journey {
+  display: grid;
+  gap: 8px;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: #ffffff;
+  color: #16324a;
+}
+.bw-sim-journey__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 4px 10px;
+}
+.bw-sim-journey__head strong {
+  font-size: 14px;
+}
+.bw-sim-journey__head span {
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: #fff4d6;
+  color: #7a5200;
+  font-size: 11px;
+  font-weight: 700;
+}
+.bw-sim-journey__lead {
+  padding: 9px 11px;
+  border-radius: 12px;
+  background: #eef6f1;
+  font-size: 12.5px;
+  line-height: 1.45;
+}
+.bw-sim-journey__follow {
+  display: inline-flex;
+  justify-content: center;
+  min-height: 38px;
+  align-items: center;
+  border-radius: 12px;
+  background: #0e2a3a;
+  color: #ffd98a;
+  font-size: 12.5px;
+  font-weight: 700;
+  text-align: center;
+}
+
+/* Encart Ma traversée : accès à « Mon voyage », la route du bled étape par étape. */
+.bw-mytrip-hero__journey {
+  display: flex;
+  grid-column: 1 / -1;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 34px;
+  border-radius: 10px;
+  background: #ffd98a;
+  color: #16324a;
+  font-size: 12px;
+  font-weight: 800;
+}
+.bw-mytrip-hero__journey:hover {
+  background: #ffe3a6;
+}

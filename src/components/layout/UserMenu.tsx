@@ -4,7 +4,7 @@ import { useState } from "react";
 import { MoodBubble } from "@/components/community/MoodBubble";
 import { MoodPicker } from "@/components/community/MoodPicker";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { UserRound, Wallet } from "lucide-react";
+import { Route as RouteIcon, UserRound, Wallet } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import {
@@ -132,6 +132,9 @@ export function UserMenu({
           ) : null}
           <DropdownMenuItem asChild>
             <Link to="/compte">Mon espace voyageur</Link>
+          </DropdownMenuItem>
+          <DropdownMenuItem asChild>
+            <Link to="/mon-voyage"><RouteIcon size={16} aria-hidden /> Mon voyage</Link>
           </DropdownMenuItem>
           <DropdownMenuItem asChild>
             <Link to="/mes-dinars"><Wallet size={16} aria-hidden /> Mes dinars</Link>

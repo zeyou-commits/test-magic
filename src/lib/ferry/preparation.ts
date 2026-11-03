@@ -166,6 +166,13 @@ export const prepItems: PrepItem[] = [
     direction: "return",
   },
   {
+    id: "car-service",
+    phase: "bags",
+    label: "Faire vérifier le véhicule avant la route",
+    tip: "Niveaux, freins, pneus et roue de secours : la route est longue des deux côtés de la mer.",
+    only: "vehicle",
+  },
+  {
     id: "luggage",
     phase: "bags",
     label: "Préparer un sac de traversée à garder avec moi",
@@ -235,6 +242,23 @@ export const prepItems: PrepItem[] = [
     direction: "outbound",
   },
   { id: "family", phase: "arrival", label: "Prévenir mes proches de mon arrivée" },
+  {
+    id: "fuel-dz",
+    phase: "arrival",
+    label: "Garder des dinars pour le carburant",
+    tip: "Faites le plein en quittant le port, avec des espèces : le paiement par carte n’est pas toujours possible.",
+    href: "/mes-dinars",
+    linkLabel: "Ouvrir Mes dinars",
+    only: "vehicle",
+    direction: "outbound",
+  },
+  {
+    id: "rest-stop",
+    phase: "arrival",
+    label: "Prévoir des pauses sur la route après la traversée",
+    tip: "Après une nuit en mer, la fatigue arrive vite : arrêtez-vous toutes les deux heures.",
+    only: "vehicle",
+  },
 ];
 
 /** Enregistrement : chaque compagnie a ses règles, et la carte n'est pas toujours délivrée à distance. */

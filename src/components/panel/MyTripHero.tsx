@@ -5,6 +5,7 @@ import { MiniFerry } from "./MiniFerry";
 import { useLiveShips } from "@/lib/ferry/useLiveShips";
 import { VesselAlertTag } from "@/components/panel/VesselAlert";
 import { useEffect, useState } from "react";
+import { Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { ArrowRight, Crosshair, Ship } from "lucide-react";
 import { SeaIcon, useSeaPeak } from "./SeaForecast";
@@ -366,6 +367,10 @@ export function MyTripHero({ onSelect }: { onSelect: (selection: Selection) => v
           ) : null}
         </div>
       )}
+      {/* La route du bled de ce voyage, étape par étape (page « Mon voyage »). */}
+      <Link to="/mon-voyage" className="bw-mytrip-hero__journey">
+        Ma route du bled, étape par étape <ArrowRight size={14} aria-hidden />
+      </Link>
       {closingIn !== null ? (
         <p className="bw-mytrip-hero__closing" role="status">
           Voyage terminé : cette fiche se ferme{" "}

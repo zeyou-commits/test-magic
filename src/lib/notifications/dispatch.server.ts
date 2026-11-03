@@ -687,6 +687,37 @@ export async function dispatchPush(
     }
   }
 
+  // Proches : un message quand la traversée suivie est arrivée (signalement validé ou arrivée
+  // constatée sur le web), dans les 12 h. Seuls les suivis au motif « proche » sont concernés.
+  const relatives = follows.filter(
+    (follow) => follow.target_kind === "departure" && follow.follow_purpose === "proche",
+  );
+  if (relatives.length) {
+    const ids = [...new Set(relatives.map((follow) => follow.target_id))];
+    for (let index = 0; index < ids.length; index += 200) {
+      const arrived = await db
+        .from("departures")
+        .select("id,route_id,vessel_id,reported_arrived_at,web_arrived_at")
+        .in("id", ids.slice(index, index + 200));
+      if (arrived.error) throw arrived.error;
+      for (const row of arrived.data ?? []) {
+        const at = row.reported_arrived_at ?? row.web_arrived_at;
+        if (!at || now - Date.parse(at) > 12 * HOUR || Date.parse(at) > now) continue;
+        const route = routeById.get(row.route_id);
+        const to = route ? portById.get(route.arrival_port_id) : undefined;
+        const vessel = row.vessel_id ? vesselById.get(row.vessel_id) : undefined;
+        for (const follow of relatives.filter((item) => item.target_id === row.id))
+          await deliver(follow.user_id, follow.id, {
+            key: `relative-arrived:${follow.id}:${row.id}`,
+            category: "reminders",
+            title: `${vessel?.name ?? "La traversée"} est arrivé${to ? ` à ${to.name}` : ""}`,
+            body: "Le débarquement, les contrôles et la sortie du port peuvent prendre du temps.",
+            url: "/mon-voyage",
+          });
+      }
+    }
+  }
+
   const campaigns =
     options.messageId || options.userId
       ? { data: [], error: null }

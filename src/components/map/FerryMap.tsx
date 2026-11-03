@@ -112,6 +112,10 @@ interface FerryMapProps {
   mobileBottomInset?: number;
   /** Largeur (px) masquée par le volet ordinateur. */
   desktopLeftInset?: number;
+  /** Largeur (px) masquée à droite sur ordinateur (salon ouvert de « Mon voyage ») ; 0 par défaut. */
+  desktopRightInset?: number;
+  /** Hauteur (px) masquée en haut sur mobile (bandeau de « Mon voyage ») ; 0 par défaut. */
+  mobileTopInset?: number;
   /** Navire à amener au centre de la zone visible (clé changeante = nouveau cadrage). */
   focusTarget?: { center: [number, number]; key: number } | null;
   itineraryPreview?: ItineraryMapPreview | null;
@@ -384,6 +388,8 @@ export default function FerryMap({
   onMapInteract,
   mobileBottomInset = 0,
   desktopLeftInset = 420,
+  desktopRightInset = 0,
+  mobileTopInset = 0,
   focusTarget = null,
   itineraryPreview = null,
   portsPulseKey = 0,
@@ -445,19 +451,38 @@ export default function FerryMap({
   const hasFocus = focusRouteIds.length > 0;
 
   // Zone utile de la carte : ce qui n'est caché ni par le volet, ni par le tiroir, ni par l'en-tête.
-  const insetsRef = useRef({ isMobile, mobileBottomInset, desktopLeftInset });
-  insetsRef.current = { isMobile, mobileBottomInset, desktopLeftInset };
+  const insetsRef = useRef({
+    isMobile,
+    mobileBottomInset,
+    desktopLeftInset,
+    desktopRightInset,
+    mobileTopInset,
+  });
+  insetsRef.current = {
+    isMobile,
+    mobileBottomInset,
+    desktopLeftInset,
+    desktopRightInset,
+    mobileTopInset,
+  };
   const viewPadding = () => {
     const {
       isMobile: mobile,
       mobileBottomInset: bottom,
       desktopLeftInset: left,
+      desktopRightInset: right,
+      mobileTopInset: top,
     } = insetsRef.current;
-    if (mobile) return { top: 88, right: 16, bottom: bottom + 12, left: 16 };
+    if (mobile) return { top: 88 + top, right: 16, bottom: bottom + 12, left: 16 };
     // Sur ordinateur, la zone utile commence après le volet. Sur une fenêtre étroite, on garde
     // au moins 45 % de la largeur pour la carte afin que le trajet reste lisible.
     const width = containerRef.current?.clientWidth ?? 1200;
-    return { top: 120, right: 60, bottom: 60, left: Math.min(left + 36, Math.round(width * 0.56)) };
+    return {
+      top: 120,
+      right: 60 + right,
+      bottom: 60,
+      left: Math.min(left + 36, Math.round(width * 0.56)),
+    };
   };
   useJourneyFilm(
     mapRef,

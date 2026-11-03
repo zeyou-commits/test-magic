@@ -918,3 +918,55 @@ export function LiveRoom({
     </section>
   );
 }
+
+/**
+ * Le même salon, ouvert directement dans la page (« Mon voyage ») plutôt que dans une fenêtre :
+ * mêmes messages, même charte, mêmes droits d'écriture que LiveRoom.
+ */
+export function EmbeddedRoom({
+  kind,
+  room,
+  title,
+  moment = "before",
+  starterContext,
+}: {
+  kind: RoomKind;
+  room: string;
+  title: string;
+  moment?: RoomMoment;
+  starterContext?: StarterContext;
+}) {
+  const { user } = useAuth();
+  const feed = useQuery(chatFeedQuery(kind, room, user?.id));
+  const card = useQuery(myTravellerQuery(user?.id)).data ?? null;
+  const people = useRoomChannel(kind, room, true, card);
+  // Module pas encore activé en base : rien à afficher.
+  if (feed.data === null) return null;
+  const canWrite =
+    feed.data?.access === "member" ||
+    feed.data?.access === "position" ||
+    feed.data?.access === "staff";
+  // LiveChat pose son titre comme celui d'une fenêtre : le contexte suffit, sans rien ouvrir.
+  return (
+    <div className="bw-chat-embedded">
+      <Dialog open>
+        <LiveChat
+          kind={kind}
+          room={room}
+          title={title}
+          moment={moment}
+          messages={feed.data?.messages ?? []}
+          canWrite={canWrite}
+          closed={kind === "crossing" && moment === "over"}
+          people={people}
+          myHandle={card?.handle}
+          myPseudo={card?.pseudo}
+          charter={feed.data?.charter}
+          muted={Boolean(feed.data?.muted)}
+          starterContext={starterContext}
+          staff={Boolean(feed.data?.staff)}
+        />
+      </Dialog>
+    </div>
+  );
+}

@@ -691,3 +691,70 @@ describe("Remerciements", () => {
     ).toHaveLength(1);
   });
 });
+
+describe("Proches d'un voyageur", () => {
+  it("préviennent une seule fois de l'arrivée validée, et seulement les proches", async () => {
+    mock.tables["bw_notification_campaigns"] = [];
+    mock.tables["vessels"] = [{ id: "ship", name: "Tassili II" }];
+    mock.tables["departures"] = [
+      {
+        id: "dep",
+        route_id: "route",
+        vessel_id: "ship",
+        departure_at: new Date(Date.now() - 20 * 3_600_000).toISOString(),
+        status: "scheduled",
+        is_demo: false,
+        reported_arrived_at: new Date(Date.now() - 30 * 60_000).toISOString(),
+      },
+    ];
+    mock.tables["bw_follows"] = [
+      {
+        id: "relative",
+        user_id: "user",
+        target_kind: "departure",
+        target_id: "dep",
+        active: true,
+        follow_purpose: "proche",
+        created_at: new Date(Date.now() - 48 * 3_600_000).toISOString(),
+      },
+      {
+        id: "curious",
+        user_id: "other",
+        target_kind: "departure",
+        target_id: "dep",
+        active: true,
+        follow_purpose: "curieux",
+        created_at: new Date(Date.now() - 48 * 3_600_000).toISOString(),
+      },
+    ];
+    await dispatchPush();
+    await dispatchPush();
+    const arrived = mock.tables["bw_notifications"]!.filter((n) =>
+      String(n["event_key"]).startsWith("relative-arrived:"),
+    );
+    expect(arrived).toHaveLength(1);
+    expect(arrived[0]).toMatchObject({
+      user_id: "user",
+      event_key: "relative-arrived:relative:dep",
+      title: "Tassili II est arrivé à Béjaïa",
+    });
+  });
+  it("ne disent rien tant que l'arrivée n'est pas établie", async () => {
+    mock.tables["bw_notification_campaigns"] = [];
+    mock.tables["bw_follows"] = [
+      {
+        id: "relative",
+        user_id: "user",
+        target_kind: "departure",
+        target_id: "dep",
+        active: true,
+        follow_purpose: "proche",
+        created_at: new Date(Date.now() - 48 * 3_600_000).toISOString(),
+      },
+    ];
+    await dispatchPush();
+    expect(
+      mock.tables["bw_notifications"]!.filter((n) => String(n["event_key"]).startsWith("relative-arrived:")),
+    ).toHaveLength(0);
+  });
+});

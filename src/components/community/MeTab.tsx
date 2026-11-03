@@ -9,6 +9,7 @@ import {
   Heart,
   LogOut,
   Plus,
+  Route as RouteIcon,
   Shield,
   Smile,
   UserRound,
@@ -175,6 +176,9 @@ function MeSheet({ open, onOpenChange }: { open: boolean; onOpenChange: (open: b
             </Link>
             <Link to="/compte" onClick={close}>
               <Heart size={16} aria-hidden /> Mes voyages <ChevronRight size={15} aria-hidden />
+            </Link>
+            <Link to="/mon-voyage" onClick={close}>
+              <RouteIcon size={16} aria-hidden /> Mon voyage <ChevronRight size={15} aria-hidden />
             </Link>
             <Link to="/mes-dinars" onClick={close}>
               <Wallet size={16} aria-hidden /> Mes dinars <ChevronRight size={15} aria-hidden />

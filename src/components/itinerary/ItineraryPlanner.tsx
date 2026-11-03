@@ -74,6 +74,7 @@ import {
 import { portTimeZone } from "@/lib/ferry/time";
 import { vesselMapIcon } from "@/lib/ferry/vesselVisuals";
 import { ItineraryAlertForm } from "./ItineraryAlertForm";
+import { SimulationJourney } from "@/components/journey/SimulationJourney";
 
 type RoadAccess = Awaited<ReturnType<typeof calculateRoadAccess>>;
 
@@ -1449,6 +1450,24 @@ export function ItineraryPlanner({
                 </div>
 
                 <div className="grid min-w-0 gap-3">
+                  {/* La route du bled en 8 étapes, synchronisée avec le film (simulation). */}
+                  {film ? (
+                    <SimulationJourney
+                      film={film}
+                      minute={minute}
+                      onSeek={(next) => {
+                        setPlaying(false);
+                        setPullBack(0);
+                        setRacing(false);
+                        setWide(0);
+                        setMinute(next);
+                      }}
+                      from={selected.sailing.from}
+                      to={selected.sailing.to}
+                      vehicle={vehicle !== "none"}
+                      followHref={`/horaires?from=${selected.sailing.from.id}&to=${selected.sailing.to.id}&month=${period}`}
+                    />
+                  ) : null}
                   {film && times && currentStep ? (
                     <div className="rounded-2xl border border-border bg-white p-3">
                       <div className="flex items-baseline justify-between gap-2">

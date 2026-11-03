@@ -31,6 +31,7 @@ import { Route as MaBezassRouteImport } from './routes/ma-bezass'
 import { Route as MentionsLegalesRouteImport } from './routes/mentions-legales'
 import { Route as MesDinarsRouteImport } from './routes/mes-dinars'
 import { Route as MethodeEditorialeRouteImport } from './routes/methode-editoriale'
+import { Route as MonVoyageRouteImport } from './routes/mon-voyage'
 import { Route as PortsRouteImport } from './routes/ports'
 import { Route as QuestionsFrequentesRouteImport } from './routes/questions-frequentes'
 import { Route as SimulateursRouteImport } from './routes/simulateurs'
@@ -170,6 +171,11 @@ const MesDinarsRoute = MesDinarsRouteImport.update({
 const MethodeEditorialeRoute = MethodeEditorialeRouteImport.update({
   id: '/methode-editoriale',
   path: '/methode-editoriale',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MonVoyageRoute = MonVoyageRouteImport.update({
+  id: '/mon-voyage',
+  path: '/mon-voyage',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PortsRoute = PortsRouteImport.update({
@@ -346,6 +352,7 @@ export interface FileRoutesByFullPath {
   '/mentions-legales': typeof MentionsLegalesRoute
   '/mes-dinars': typeof MesDinarsRoute
   '/methode-editoriale': typeof MethodeEditorialeRoute
+  '/mon-voyage': typeof MonVoyageRoute
   '/ports': typeof PortsRouteWithChildren
   '/questions-frequentes': typeof QuestionsFrequentesRoute
   '/simulateurs': typeof SimulateursRouteWithChildren
@@ -396,6 +403,7 @@ export interface FileRoutesByTo {
   '/mentions-legales': typeof MentionsLegalesRoute
   '/mes-dinars': typeof MesDinarsRoute
   '/methode-editoriale': typeof MethodeEditorialeRoute
+  '/mon-voyage': typeof MonVoyageRoute
   '/questions-frequentes': typeof QuestionsFrequentesRoute
   '/sitemap-maritime.xml': typeof SitemapMaritimeDotxmlRoute
   '/sitemap-pages.xml': typeof SitemapPagesDotxmlRoute
@@ -449,6 +457,7 @@ export interface FileRoutesById {
   '/mentions-legales': typeof MentionsLegalesRoute
   '/mes-dinars': typeof MesDinarsRoute
   '/methode-editoriale': typeof MethodeEditorialeRoute
+  '/mon-voyage': typeof MonVoyageRoute
   '/ports': typeof PortsRouteWithChildren
   '/questions-frequentes': typeof QuestionsFrequentesRoute
   '/simulateurs': typeof SimulateursRouteWithChildren
@@ -505,6 +514,7 @@ export interface FileRouteTypes {
     | '/mentions-legales'
     | '/mes-dinars'
     | '/methode-editoriale'
+    | '/mon-voyage'
     | '/ports'
     | '/questions-frequentes'
     | '/simulateurs'
@@ -555,6 +565,7 @@ export interface FileRouteTypes {
     | '/mentions-legales'
     | '/mes-dinars'
     | '/methode-editoriale'
+    | '/mon-voyage'
     | '/questions-frequentes'
     | '/sitemap-maritime.xml'
     | '/sitemap-pages.xml'
@@ -607,6 +618,7 @@ export interface FileRouteTypes {
     | '/mentions-legales'
     | '/mes-dinars'
     | '/methode-editoriale'
+    | '/mon-voyage'
     | '/ports'
     | '/questions-frequentes'
     | '/simulateurs'
@@ -662,6 +674,7 @@ export interface RootRouteChildren {
   MentionsLegalesRoute: typeof MentionsLegalesRoute
   MesDinarsRoute: typeof MesDinarsRoute
   MethodeEditorialeRoute: typeof MethodeEditorialeRoute
+  MonVoyageRoute: typeof MonVoyageRoute
   PortsRoute: typeof PortsRouteWithChildren
   QuestionsFrequentesRoute: typeof QuestionsFrequentesRoute
   SimulateursRoute: typeof SimulateursRouteWithChildren
@@ -836,6 +849,13 @@ declare module '@tanstack/react-router' {
       path: '/methode-editoriale'
       fullPath: '/methode-editoriale'
       preLoaderRoute: typeof MethodeEditorialeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/mon-voyage': {
+      id: '/mon-voyage'
+      path: '/mon-voyage'
+      fullPath: '/mon-voyage'
+      preLoaderRoute: typeof MonVoyageRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/ports': {
@@ -1152,6 +1172,7 @@ const rootRouteChildren: RootRouteChildren = {
   MentionsLegalesRoute: MentionsLegalesRoute,
   MesDinarsRoute: MesDinarsRoute,
   MethodeEditorialeRoute: MethodeEditorialeRoute,
+  MonVoyageRoute: MonVoyageRoute,
   PortsRoute: PortsRouteWithChildren,
   QuestionsFrequentesRoute: QuestionsFrequentesRoute,
   SimulateursRoute: SimulateursRouteWithChildren,

@@ -77,6 +77,8 @@ import {
   zonedTimeToUtc,
   zoneLabel,
 } from "@/lib/ferry/time";
+import { departureKeywords, smartMatch } from "@/lib/admin/smartSearch";
+import { ReviewAuthor, useReviewAuthors } from "@/components/admin/ReviewAuthor";
 
 // Libellés français des statuts et motifs (la base stocke des codes en anglais).
 const reviewStatusLabel: Record<string, string> = {
@@ -554,6 +556,10 @@ function ReviewsModeration({
       return data;
     },
   });
+  const portAuthors = useReviewAuthors(
+    "port_review",
+    reviews.map((review: { id: string }) => review.id),
+  );
 
   const update = useMutation({
     mutationFn: async ({ id, status }: { id: string; status: string }) => {
@@ -602,6 +608,7 @@ function ReviewsModeration({
                 <p className="mt-1 text-sm text-muted-foreground">
                   {review.comment ?? "(sans commentaire)"}
                 </p>
+                <ReviewAuthor info={portAuthors?.[review.id]} />
               </div>
               <div className="flex gap-2">
                 <Button
@@ -975,18 +982,27 @@ function DeparturesAdmin({
     if (companyFilter && departure.company_id !== companyFilter) return false;
     if (routeFilter && departure.route_id !== routeFilter) return false;
     const route = routes.find((item) => item.id === departure.route_id);
+    const zone = portTimeZone(ports.find((port) => port.id === route?.departure_port_id));
+    // Recherche libre : plusieurs mots, jour, heure et statut compris (« oran mardi », « à choisir »).
     if (
       search &&
-      !matches(
-        search,
+      !smartMatch(search, [
         route ? portName(route.departure_port_id) : "",
         route ? portName(route.arrival_port_id) : "",
         vessels.find((vessel) => vessel.id === departure.vessel_id)?.name,
         companies.find((company) => company.id === departure.company_id)?.name,
-      )
+        new Date(departure.departure_at).toLocaleString("fr-FR", {
+          weekday: "long",
+          day: "numeric",
+          month: "long",
+          hour: "2-digit",
+          minute: "2-digit",
+          timeZone: zone,
+        }),
+        ...departureKeywords({ status: departure.status, vesselId: departure.vessel_id }),
+      ])
     )
       return false;
-    const zone = portTimeZone(ports.find((port) => port.id === route?.departure_port_id));
     return !dateFilter || dateKeyInZone(departure.departure_at, zone) === dateFilter;
   });
 
@@ -1015,7 +1031,7 @@ function DeparturesAdmin({
           <input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Port, navire ou compagnie…"
+            placeholder="Port, navire, compagnie, jour, « à choisir »…"
             aria-label="Chercher un départ"
           />
         </label>

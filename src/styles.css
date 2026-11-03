@@ -1018,3 +1018,25 @@
   left: auto;
   right: calc(50% + 7px);
 }
+
+/* Calendrier : après le dernier départ publié, la saison n'est pas encore publiée (jours hachurés). */
+.batogo-day-unpublished button {
+  color: #8a8f87;
+  background-image: repeating-linear-gradient(
+    135deg,
+    transparent 0 4px,
+    rgba(138, 90, 0, 0.12) 4px 6px
+  );
+  border-radius: 10px;
+}
+.batogo-unpublished-swatch {
+  display: inline-block;
+  width: 12px;
+  height: 8px;
+  border-radius: 3px;
+  background-image: repeating-linear-gradient(
+    135deg,
+    transparent 0 2px,
+    rgba(138, 90, 0, 0.45) 2px 3px
+  );
+}

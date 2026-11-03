@@ -5,6 +5,7 @@ import { companiesQuery, portsQuery, vesselsQuery } from "@/lib/ferry/queries";
 import { reviewCriteria, reviewScore } from "@/lib/ferry/reviewCriteria";
 import { Button } from "@/components/ui/button";
 import { reviewNumber } from "@/lib/ferry/reviewCriteria";
+import { ReviewAuthor, useReviewAuthors } from "./ReviewAuthor";
 
 export function EntityReviewsModeration({ pendingOnly = false }: { pendingOnly?: boolean }) {
   const [status, setStatus] = useState("pending");
@@ -35,6 +36,11 @@ export function EntityReviewsModeration({ pendingOnly = false }: { pendingOnly?:
     },
     retry: false,
   });
+  // Qui a noté : profil de l’auteur pour chaque avis affiché (équipe seulement).
+  const authors = useReviewAuthors(
+    "entity_review",
+    (query.data?.rows ?? []).map((r) => r.id),
+  );
   const action = useMutation({
     mutationFn: async ({ id, status }: { id: string; status: string }) => {
       const { error } = await reviewsDb.rpc("bw_moderate_entity_review", {
@@ -88,6 +94,7 @@ export function EntityReviewsModeration({ pendingOnly = false }: { pendingOnly?:
           </p>
           <ul className="space-y-3">
             {query.data.rows.map((r) => {
+              const author = authors?.[r.id];
               const name =
                 (r.target_kind === "port"
                   ? ports
@@ -100,6 +107,7 @@ export function EntityReviewsModeration({ pendingOnly = false }: { pendingOnly?:
                   <strong>
                     {name} · {reviewNumber(reviewScore(r.target_kind, r.scores) ?? 0)}/5
                   </strong>
+                  <ReviewAuthor info={author} />
                   <p className="text-xs text-muted-foreground">
                     {r.target_kind === "port"
                       ? "Port"

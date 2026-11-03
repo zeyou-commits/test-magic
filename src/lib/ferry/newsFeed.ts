@@ -6,12 +6,19 @@ import { looksInternal, newsKey, newsSchema, type NewsItem } from "./flash";
 
 const db = supabase as unknown as import("@supabase/supabase-js").SupabaseClient;
 
-/** Une information sans source, ou un essai, reste hors du fil et de l'index des moteurs. */
-export function isPublicNews(item: Pick<NewsItem, "title" | "summary" | "source_url">) {
+/**
+ * Une information sans source, ou un essai, reste hors du fil et de l'index des moteurs.
+ * Une annonce de l'équipe BledWay (bêta, nouveauté…) n'a pas d'article source et peut parler de test.
+ */
+export function isPublicNews(
+  item: Pick<NewsItem, "title" | "summary" | "source_url"> & Partial<Pick<NewsItem, "origin">>,
+) {
+  const text = `${item.title} ${item.summary}`;
+  if (item.origin === "bledway") return !looksInternal(text);
   return (
     Boolean(item.source_url?.startsWith("https://")) &&
-    !/\btest\b/i.test(`${item.title} ${item.summary}`) &&
-    !looksInternal(`${item.title} ${item.summary}`)
+    !/\btest\b/i.test(text) &&
+    !looksInternal(text)
   );
 }
 

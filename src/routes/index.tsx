@@ -78,6 +78,7 @@ import { STEP_ICONS } from "@/components/journey/JourneyFrieze";
 import { JourneyTimeline } from "@/components/journey/JourneyTimeline";
 import { useVoyage } from "@/components/journey/useVoyage";
 import { GO_HOME_EVENT, OPEN_VOYAGE_EVENT, useVoyageTrip } from "@/lib/ferry/voyageTrip";
+import { readItineraryChoice } from "@/lib/ferry/travelProfile";
 
 const FerryMap = lazy(() => import("@/components/map/FerryMap"));
 
@@ -1129,11 +1130,32 @@ function Index() {
     setPanelLevel(2);
   };
 
+  // De la Route à « Trouver » : le mois et les ports déjà trouvés passent dans la recherche,
+  // sauf si une recherche précise est déjà en cours.
+  const applyItineraryChoice = () => {
+    const choice = readItineraryChoice();
+    if (!choice) return;
+    setFilters((current) =>
+      current.departurePortIds.length || current.arrivalPortIds.length
+        ? current
+        : {
+            ...current,
+            departurePortIds: [choice.departurePortId],
+            arrivalPortIds: [choice.arrivalPortId],
+            direction: "eu-dz",
+            date: current.date ?? `${choice.period}-01`,
+            flexDays: current.date ? current.flexDays : 15,
+            ...(current.date ? {} : { returnDate: null, roundTrip: false }),
+          },
+    );
+  };
+
   const openMobileSearch = () => {
     if (panelMode === "search" && !selection) {
       resetToMap();
       return;
     }
+    if (panelMode === "itinerary") applyItineraryChoice();
     resetToMap();
     setPortsActive(false);
     setActiveShortcut(null);
@@ -1339,6 +1361,7 @@ function Index() {
                 homeMode={homeMode}
                 onTrafficPreview={setTrafficPreview}
                 onOpenSearch={() => {
+                  if (panelMode === "itinerary") applyItineraryChoice();
                   setPanelMode("search");
                   setActiveShortcut(null);
                   setShortcutMenuOpen(false);
@@ -1351,7 +1374,7 @@ function Index() {
                 onItineraryResultsReady={() => {
                   if (window.innerWidth < 768) setPanelLevel(2);
                 }}
-                onBookPeriod={(period) => {
+                onBookPeriod={(period, choice) => {
                   setPanelMode("search");
                   setActiveShortcut(null);
                   setShortcutMenuOpen(false);
@@ -1363,6 +1386,13 @@ function Index() {
                     returnDate: null,
                     roundTrip: false,
                     flexDays: 15,
+                    ...(choice
+                      ? {
+                          departurePortIds: [choice.departurePortId],
+                          arrivalPortIds: [choice.arrivalPortId],
+                          direction: "eu-dz" as const,
+                        }
+                      : {}),
                   }));
                 }}
               />

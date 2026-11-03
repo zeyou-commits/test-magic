@@ -107,7 +107,8 @@ test("les classements coût, arrivée et conduite restent distincts", () => {
 
 test("avec des enfants, la recommandation évite un long trajet routier pour une faible économie", () => {
   const base = buildItineraryOptions([sailing("a", "2026-10-22T13:00:00Z", "2026-10-23T01:00:00Z")], roadIn, roadOut, startedAt, () => 200, 7, 2, 0.05)[0]!;
-  const cheapLongRoad = { ...base, totalEuro: 320, roadKm: 900, sailing: sailing("economique", "2026-10-22T13:00:00Z", "2026-10-23T01:00:00Z") };
+  // 750 km de route en plus, c'est environ 9 h de plus de porte à porte.
+  const cheapLongRoad = { ...base, totalEuro: 320, roadKm: 900, totalMinutes: base.totalMinutes + 540, sailing: sailing("economique", "2026-10-22T13:00:00Z", "2026-10-23T01:00:00Z") };
   const shortRoad = { ...base, totalEuro: 410, roadKm: 150, sailing: sailing("confort", "2026-10-22T13:00:00Z", "2026-10-23T01:00:00Z") };
   assert.equal(sortItineraries([cheapLongRoad, shortRoad], "cost")[0]?.sailing.departure.id, "economique");
   assert.equal(sortItineraries([cheapLongRoad, shortRoad], "recommended", 2)[0]?.sailing.departure.id, "confort");

@@ -135,25 +135,53 @@ export function daysWithSailings(
 }
 
 /** Pénalité de confort : une famille évite les départs très tôt ou très tard. */
-function comfortPenalty(hour: number, traveler: TravelerType) {
+export function comfortPenalty(hour: number, traveler: TravelerType) {
   if (traveler === "family") return hour < 7 || hour >= 22 ? 80 : 0;
   if (traveler === "couple") return hour < 6 ? 35 : 0;
   return hour < 5 ? 20 : 0;
 }
 
+/**
+ * « Recommandé », la même règle partout (recherche de traversées et itinéraire) : le plus rapide
+ * à un horaire confortable pour le profil, sauf si un autre coûte nettement moins cher.
+ * Seule la durée change de nature : la traversée ici, le porte à porte dans l'itinéraire.
+ */
+export const RECOMMENDED_RULE =
+  "Recommandé : le plus rapide à un horaire confortable pour votre profil, sauf si un autre coûte nettement moins cher.";
+
+export type RecommendedCandidate = { minutes: number; hour: number; euro: number };
+
+/** Un écart de prix « net » : 80 € (120 € avec des enfants) ou 18 % du plus cher. */
+export function priceGapMatters(a: number, b: number, traveler: TravelerType) {
+  return Math.abs(a - b) > Math.max(traveler === "family" ? 120 : 80, 0.18 * Math.max(a, b));
+}
+
+export function compareRecommended(
+  a: RecommendedCandidate,
+  b: RecommendedCandidate,
+  traveler: TravelerType,
+) {
+  if (priceGapMatters(a.euro, b.euro, traveler)) return a.euro - b.euro;
+  return (
+    a.minutes + comfortPenalty(a.hour, traveler) - (b.minutes + comfortPenalty(b.hour, traveler)) ||
+    a.euro - b.euro
+  );
+}
+
 /** Identifiant de la traversée à recommander parmi plusieurs le même jour. */
-export function recommendedId(list: Sailing[], traveler: TravelerType): string | null {
+export function recommendedId(
+  list: Sailing[],
+  traveler: TravelerType,
+  fare: (sailing: Sailing) => number = () => 0,
+): string | null {
   if (list.length < 2) return null;
-  let best = list[0]!;
-  let bestScore = Infinity;
-  list.forEach((sailing) => {
-    const score = (sailing.durationMin ?? 9999) + comfortPenalty(sailing.depHour, traveler);
-    if (score < bestScore) {
-      best = sailing;
-      bestScore = score;
-    }
+  const candidate = (sailing: Sailing): RecommendedCandidate => ({
+    minutes: sailing.durationMin ?? 9999,
+    hour: sailing.depHour,
+    euro: fare(sailing),
   });
-  return best.departure.id;
+  return [...list].sort((a, b) => compareRecommended(candidate(a), candidate(b), traveler))[0]!
+    .departure.id;
 }
 
 /** Trajets les plus fréquents (paires de ports), pour les raccourcis. */

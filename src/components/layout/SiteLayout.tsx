@@ -280,11 +280,26 @@ export function PageHero({
   overline,
   title,
   intro,
+  compact = false,
 }: {
   overline: string;
   title: string;
   intro: string;
+  /** Pages de flux (actualités) : l'en-tête laisse vite la place au contenu. */
+  compact?: boolean;
 }) {
+  if (compact)
+    return (
+      <div className="mx-auto max-w-3xl pb-5 pt-3 text-center md:pb-6 md:pt-4">
+        <div className="mb-2 text-xs font-bold uppercase tracking-widest text-primary">
+          {overline}
+        </div>
+        <h1 className="mb-2 font-display text-3xl font-extrabold tracking-tight md:text-4xl">
+          {title}
+        </h1>
+        <p className="mx-auto max-w-2xl text-sm text-muted-foreground md:text-base">{intro}</p>
+      </div>
+    );
   return (
     <div className="mx-auto max-w-3xl py-12 text-center md:py-20">
       <div className="mb-4 text-xs font-bold uppercase tracking-widest text-primary">

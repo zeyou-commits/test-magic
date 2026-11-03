@@ -1,6 +1,7 @@
 import type { Sailing } from "./trips";
 import type { Port, RouteLine } from "./types";
 import { portTimeZone } from "./time";
+import { compareRecommended, type TravelerType } from "./trips";
 
 export interface RoadLeg {
   portId: string;
@@ -137,13 +138,14 @@ export function sortItineraries(options: ItineraryOption[], priority: ItineraryP
     if (priority === "time") return a.totalMinutes - b.totalMinutes || a.arrivalAt - b.arrivalAt;
     if (priority === "driving") return a.roadKm - b.roadKm || a.arrivalAt - b.arrivalAt;
     if (priority === "recommended") {
-      // La distance routière d'abord ; le prix ne prime que si l'écart est important.
-      const priceGap = a.totalEuro - b.totalEuro;
-      const significant =
-        Math.abs(priceGap) >
-        Math.max(children > 0 ? 120 : 80, 0.18 * Math.max(a.totalEuro, b.totalEuro));
-      if (significant) return priceGap || a.arrivalAt - b.arrivalAt;
-      return a.roadKm - b.roadKm || priceGap || a.arrivalAt - b.arrivalAt;
+      // Même règle que la recherche de traversées, sur la durée porte à porte.
+      const traveler: TravelerType = children > 0 ? "family" : "couple";
+      const candidate = (option: ItineraryOption) => ({
+        minutes: option.totalMinutes,
+        hour: option.sailing.depHour,
+        euro: option.totalEuro,
+      });
+      return compareRecommended(candidate(a), candidate(b), traveler) || a.arrivalAt - b.arrivalAt;
     }
     return a.totalEuro - b.totalEuro || a.arrivalAt - b.arrivalAt;
   });

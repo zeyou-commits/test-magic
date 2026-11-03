@@ -136,6 +136,7 @@ function NewsPage() {
       />
       <Breadcrumbs items={[{ name: "Actualités", path: "/actualites" }]} />
       <PageHero
+        compact
         overline="Actualités"
         title="Ce qui bouge sur la route du bled"
         intro="Navires, ports, compagnies, perturbations : l'essentiel pour vos traversées entre l'Europe et l'Algérie, daté et avec sa source."

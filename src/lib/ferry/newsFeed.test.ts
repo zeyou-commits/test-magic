@@ -17,6 +17,17 @@ describe("fil d'actualités", () => {
     expect(isPublicNews({ ...base, summary: "Test notification" })).toBe(false);
   });
 
+  it("publie les annonces de l'équipe BledWay, même sans source et même en bêta test", () => {
+    const annonce = {
+      title: "BledWay est en bêta test",
+      summary: "Merci de nous signaler ce qui coince.",
+      source_url: null,
+      origin: "bledway" as const,
+    };
+    expect(isPublicNews(annonce)).toBe(true);
+    expect(isPublicNews({ ...annonce, summary: "À vérifier : départs à contrôler" })).toBe(false);
+  });
+
   it("donne une adresse lisible, dont l'identifiant se relit", () => {
     const path = newsPath({ id, title: "Agence Corsica Linea de Marseille fermée !" });
     expect(path).toBe(`/actualites/agence-corsica-linea-de-marseille-fermee-${id}`);

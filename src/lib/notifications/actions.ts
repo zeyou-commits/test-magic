@@ -1,6 +1,8 @@
 import { z } from "zod";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { supabase as typedSupabase } from "@/integrations/supabase/client";
+import { defaultProfile } from "@/lib/ferry/preparation";
+import { preparationFromTravelProfile } from "@/lib/ferry/travelProfile";
 
 // Tables communautaires pas encore présentes dans les types générés.
 const supabase = typedSupabase as unknown as SupabaseClient;
@@ -221,5 +223,23 @@ export async function saveTravelAction(userId: string, rawAction: TravelAction) 
       [selected, ...(action.returnDepartureId ? [action.returnDepartureId] : [])],
       action.journeyLeg,
     );
+    // Devenir voyageur sans tout redire : la préparation part du profil de la recherche
+    // (gardé sur le compte, donc retrouvé sur un autre appareil). Une préparation existante reste.
+    const prep = preparationFromTravelProfile();
+    if (prep) {
+      const profile = { ...defaultProfile, ...prep };
+      await supabase.from("bw_trip_preparation").upsert(
+        [selected, ...(action.returnDepartureId ? [action.returnDepartureId] : [])].map(
+          (departureId) => ({
+            user_id: userId,
+            departure_id: departureId,
+            profile,
+            done: [],
+            updated_at: new Date().toISOString(),
+          }),
+        ),
+        { onConflict: "user_id,departure_id", ignoreDuplicates: true },
+      );
+    }
   }
 }

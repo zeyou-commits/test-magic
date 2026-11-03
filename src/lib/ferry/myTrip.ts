@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import { queryOptions, useQuery } from "@tanstack/react-query";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { supabase as typedSupabase } from "@/integrations/supabase/client";
@@ -79,19 +80,47 @@ export const tripClosingIn = (departure: TripDeparture, now = Date.now()) => {
   return left > 0 && left <= 2 * 3_600_000 ? left : null;
 };
 
+/** Le voyage actif choisi par le voyageur parmi ses traversées (sinon, la plus proche). */
+const ACTIVE_TRIP_KEY = "bledway:active-trip:v1";
+export const ACTIVE_TRIP_EVENT = "bledway:active-trip";
+const readActiveTrip = () => {
+  if (typeof window === "undefined") return null;
+  try {
+    return window.localStorage.getItem(ACTIVE_TRIP_KEY);
+  } catch {
+    return null;
+  }
+};
+export function setActiveTrip(departureId: string) {
+  try {
+    window.localStorage.setItem(ACTIVE_TRIP_KEY, departureId);
+  } catch {
+    /* sans stockage, le choix vaut pour la page en cours */
+  }
+  window.dispatchEvent(new CustomEvent(ACTIVE_TRIP_EVENT, { detail: departureId }));
+}
+
 /**
- * Ma traversée du moment : la prochaine (ou celle en cours, jusqu'à 10 h après l'arrivée),
- * avec son trajet, ses ports et son bateau.
+ * Ma traversée du moment : celle choisie comme voyage actif, sinon la prochaine (ou celle en
+ * cours, jusqu'à 10 h après l'arrivée), avec son trajet, ses ports et son bateau.
  */
 export function useMyTrip() {
   const { user } = useAuth();
   const trips = useQuery(myTripsQuery(user?.id));
+  const [pinned, setPinned] = useState<string | null>(null);
+  useEffect(() => {
+    setPinned(readActiveTrip());
+    const onChange = (event: Event) => setPinned((event as CustomEvent<string>).detail);
+    window.addEventListener(ACTIVE_TRIP_EVENT, onChange);
+    return () => window.removeEventListener(ACTIVE_TRIP_EVENT, onChange);
+  }, []);
   const { data: routes = [] } = useQuery(routesQuery);
   const { data: ports = [] } = useQuery(portsQuery);
   const { data: vessels = [] } = useQuery(vesselsQuery);
   const now = Date.now();
   // Une traversée annulée reste affichée (avec « Annulée ») tant que sa date n'est pas passée.
-  const departure = (trips.data ?? []).find((item) => tripEnd(item) + TRIP_GRACE_MS > now);
+  const current = (trips.data ?? []).filter((item) => tripEnd(item) + TRIP_GRACE_MS > now);
+  const departure = current.find((item) => item.id === pinned) ?? current[0];
   if (!departure) return { trip: null, others: [] as TripDeparture[], ready: !trips.isPending };
   const route = routes.find((item) => item.id === departure.route_id);
   return {

@@ -214,7 +214,11 @@ export function TripCalendar({
   }, [open, field]);
 
   const lastAvailable = [...activeDays.keys()].sort().at(-1);
-  const endMonth = keyToDate(lastAvailable ?? addDaysKey(today, 365));
+  // On peut regarder une année devant soi, même au-delà des programmes publiés.
+  const horizon = addDaysKey(today, 365);
+  const endMonth = keyToDate(lastAvailable && lastAvailable > horizon ? lastAvailable : horizon);
+  /** Après le dernier départ publié : la saison n'est pas encore publiée, la date reste choisissable. */
+  const unpublished = (key: string) => (lastAvailable ? key > lastAvailable : activeDays.size === 0);
 
   // Mobile, dans le volet : les mois défilent les uns sous les autres (plus de flèches).
   const stacked = inline && isMobile;
@@ -321,7 +325,12 @@ export function TripCalendar({
   const hasRange = Boolean(date && returnDate && roundTrip);
   const stay = date && returnDate ? diffDays(date, returnDate) : null;
   const activeValue = field === "out" ? date : returnDate;
-  const unavailableActive = activeValue ? !activeDays.has(activeValue) : false;
+  const unavailableActive =
+    activeValue ? !activeDays.has(activeValue) && !unpublished(activeValue) : false;
+  // L'aller (ou le retour) choisi hors saison publiée : on le dit, même pendant le choix du retour.
+  const unpublishedPick = [date, roundTrip ? returnDate : null].find(
+    (key): key is string => Boolean(key && unpublished(key)),
+  );
   const suggestion =
     activeValue && unavailableActive ? nearest(activeDays, activeValue, 7, 7, today) : null;
 
@@ -538,10 +547,14 @@ export function TripCalendar({
             const key = dateToKey(day);
             if (key < today) return true;
             if (field === "ret" && date && key < date) return true;
-            return !activeDays.has(key);
+            return !activeDays.has(key) && !unpublished(key);
           }}
           modifiers={{
             avail: (day) => activeDays.has(dateToKey(day)),
+            unpublished: (day) => {
+              const key = dateToKey(day);
+              return key >= today && unpublished(key);
+            },
             zoneA: (day) => inZone("A", dateToKey(day)),
             zoneB: (day) => inZone("B", dateToKey(day)),
             zoneC: (day) => inZone("C", dateToKey(day)),
@@ -558,6 +571,7 @@ export function TripCalendar({
           }}
           modifiersClassNames={{
             avail: "batogo-day-avail",
+            unpublished: "batogo-day-unpublished",
             zoneA: "batogo-zone-a",
             zoneB: "batogo-zone-b",
             zoneC: "batogo-zone-c",
@@ -581,6 +595,12 @@ export function TripCalendar({
       {note ? (
         <p className="rounded-xl bg-primary/10 px-3 py-2 text-xs text-primary">{note}</p>
       ) : null}
+      {unpublishedPick ? (
+        <p className="rounded-xl bg-warning/15 px-3 py-2 text-xs text-warning-foreground">
+          Le {long(unpublishedPick)}, la saison n’est pas encore publiée par les compagnies : les
+          départs apparaîtront dès leur publication.
+        </p>
+      ) : null}
       {suggestion ? (
         <button
           type="button"
@@ -596,6 +616,12 @@ export function TripCalendar({
         <span className="inline-flex items-center gap-1">
           <span className="size-1.5 rounded-full bg-primary" aria-hidden /> départ possible
         </span>
+        {lastAvailable ? (
+          <span className="inline-flex items-center gap-1">
+            <span className="batogo-unpublished-swatch" aria-hidden /> saison pas encore publiée
+            (après le {long(lastAvailable)})
+          </span>
+        ) : null}
         {shownZones.map((z) => (
           <span key={z} className="inline-flex items-center gap-1">
             <span className={`h-1 w-3 rounded-full ${zoneTone[z]}-dot`} aria-hidden /> zone {z}

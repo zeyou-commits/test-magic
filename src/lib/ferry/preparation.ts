@@ -1,6 +1,7 @@
 import { queryOptions } from "@tanstack/react-query";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { supabase as typedSupabase } from "@/integrations/supabase/client";
+import { preparationFromTravelProfile } from "./travelProfile";
 
 // Table du script du 22/11/2026, absente des types générés.
 const db = typedSupabase as unknown as SupabaseClient;
@@ -358,7 +359,9 @@ export const preparationQuery = (departureId: string | undefined, userId: string
         .eq("user_id", userId!)
         .maybeSingle();
       // Cases déjà cochées sur cet appareil avec l'ancienne checklist : conservées.
-      if (error || !data) return { profile: defaultProfile, done: local };
+      // Pas encore de préparation : elle part du profil saisi dans la recherche (à pied, enfants…).
+      if (error || !data)
+        return { profile: { ...defaultProfile, ...preparationFromTravelProfile() }, done: local };
       return {
         profile: { ...defaultProfile, ...(data.profile as Partial<TripProfile>) },
         done: [...new Set([...(data.done as string[]), ...local])],

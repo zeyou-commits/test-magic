@@ -8,6 +8,7 @@ import { planningDeparturesQuery } from "@/lib/admin/planning";
 import { adminPortsQuery, adminRoutesQuery, vesselsQuery } from "@/lib/ferry/queries";
 import { formatDateTime } from "@/lib/ferry/format";
 import { portTimeZone } from "@/lib/ferry/time";
+import { departureKeywords, smartMatch } from "@/lib/admin/smartSearch";
 
 /** Départs visibles avant « Voir les autres ». */
 const VISIBLE = 5;
@@ -37,6 +38,7 @@ export function MobileIncidentPanel({
   const { data: vessels = [] } = useQuery(vesselsQuery);
   const [editing, setEditing] = useState<string | null>(null);
   const [showAll, setShowAll] = useState(false);
+  const [query, setQuery] = useState("");
   const now = Date.now();
   const soon = departures
     .filter((d) => {
@@ -63,7 +65,17 @@ export function MobileIncidentPanel({
     onError: (error: Error) => toast.error(error.message),
   });
   const portOf = (id?: string) => ports.find((port) => port.id === id);
-  const shown = showAll ? soon : soon.slice(0, max);
+  // Recherche libre (compagnie, navire, port, « à choisir »…), comme dans le planning.
+  const found = soon.filter((d) => {
+    const route = routes.find((item) => item.id === d.route_id);
+    return smartMatch(query, [
+      portOf(route?.departure_port_id)?.name,
+      portOf(route?.arrival_port_id)?.name,
+      vessels.find((vessel) => vessel.id === d.vessel_id)?.name,
+      ...departureKeywords({ status: d.status, vesselId: d.vessel_id }),
+    ]);
+  });
+  const shown = showAll || query ? found : found.slice(0, max);
   return (
     <section
       className="bw-admin-incident-mobile"
@@ -97,6 +109,16 @@ export function MobileIncidentPanel({
         Départs des {HOURS} prochaines heures
         {soon.length ? <span className="ml-1 font-normal text-muted-foreground">· {soon.length}</span> : null}
       </h2>
+      {soon.length > 3 ? (
+        <input
+          type="search"
+          value={query}
+          onChange={(event) => setQuery(event.target.value)}
+          placeholder="Rechercher : port, navire, « à choisir »…"
+          aria-label="Rechercher un départ"
+          className="mt-2 h-10 w-full rounded-xl border border-input bg-background px-3 text-sm"
+        />
+      ) : null}
       {soon.length ? (
         <ul className="bw-admin-soon">
           {shown.map((d) => {
@@ -148,7 +170,7 @@ export function MobileIncidentPanel({
       ) : (
         <p className="mt-1 text-sm text-muted-foreground">Aucun départ dans les {HOURS} heures.</p>
       )}
-      {soon.length > max ? (
+      {!query && soon.length > max ? (
         <Button
           variant="ghost"
           size="sm"

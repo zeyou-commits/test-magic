@@ -13167,3 +13167,61 @@ img[data-logo="dark"] {
 .bw-compact-crossing[data-compact] .bw-trust {
   display: none;
 }
+
+/* Fenêtre de suivi : l'état réel des notifications de cet appareil, sous la promesse. */
+.bw-travel-perks__device {
+  display: block;
+  margin-top: 4px;
+  padding: 5px 8px;
+  border-radius: 8px;
+  background: #eef6f1;
+  color: #0b5e33;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.35;
+}
+.bw-travel-perks__device[data-state="blocked"],
+.bw-travel-perks__device[data-state="none"],
+.bw-travel-perks__device[data-state="ios"] {
+  background: #fff4d6;
+  color: #8a5a00;
+}
+
+/* Plusieurs voyages déclarés : chacun peut devenir le voyage actif. */
+.bw-my-trip-row {
+  display: grid;
+  gap: 4px;
+}
+.bw-my-trip-activate {
+  justify-self: end;
+  padding: 2px 4px;
+  color: #0e7a43;
+  font-size: 12px;
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+/* Hors ligne : un bandeau discret dit que le voyage affiché est celui gardé sur l'appareil. */
+.bw-offline-banner {
+  position: fixed;
+  top: calc(env(safe-area-inset-top) + 8px);
+  left: 50%;
+  z-index: 120;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: max-content;
+  max-width: calc(100vw - 24px);
+  padding: 8px 14px;
+  border-radius: 999px;
+  background: #16324a;
+  color: #ffffff;
+  font-size: 12.5px;
+  line-height: 1.3;
+  box-shadow: 0 8px 24px -10px #16324a99;
+  transform: translateX(-50%);
+}
+.bw-offline-banner b {
+  color: #ffd98a;
+}

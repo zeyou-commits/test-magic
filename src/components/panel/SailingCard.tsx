@@ -27,6 +27,7 @@ import { SeaChip } from "./SeaForecast";
 import { ShareButtons } from "./ShareButtons";
 import { CompanyBadge } from "./CompanyBadge";
 import { estimateFerryFare, formatEuro, formatFareRange, useFareProfile } from "@/lib/ferry/pricing";
+import { RECOMMENDED_RULE } from "@/lib/ferry/trips";
 
 const dayFormatter = new Intl.DateTimeFormat("fr-FR", {
   weekday: "short",
@@ -109,7 +110,10 @@ export function SailingCard({
               arrivalAt={departure.arrival_at}
             />
             {recommended ? (
-              <span className="inline-flex items-center gap-1 rounded-full bg-success/15 px-2 py-0.5 font-semibold text-success">
+              <span
+                className="inline-flex items-center gap-1 rounded-full bg-success/15 px-2 py-0.5 font-semibold text-success"
+                title={RECOMMENDED_RULE}
+              >
                 <Sparkles className="size-3" aria-hidden /> Recommandé
               </span>
             ) : null}

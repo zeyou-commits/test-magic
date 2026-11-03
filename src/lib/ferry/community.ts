@@ -727,6 +727,57 @@ export async function reportTravel(input: {
   return { error: { message: "" }, onSite: false, pendingReview: false };
 }
 
+/** L'équipe signale depuis le bureau : pas de contrôle de position, publié et marqué validé. */
+export async function reportAsStaff(input: {
+  kind: CommunityKind;
+  target: string;
+  category: AlertCategory;
+  delay: number | null;
+  detail: string | null;
+  departureId?: string | null;
+}): Promise<{ error: { message: string } | null }> {
+  const result = await supabase.rpc("bw_report_staff", {
+    p_kind: input.kind,
+    p_target: input.target,
+    p_category: input.category,
+    p_delay: input.category === "delay" ? input.delay : null,
+    p_detail: input.detail,
+    p_departure: input.kind === "vessel" ? (input.departureId ?? null) : null,
+  });
+  if (result.error?.code === "PGRST202")
+    return { error: { message: "Signalement d’équipe indisponible : exécutez le script « signalement_equipe »." } };
+  return { error: result.error };
+}
+
+/**
+ * Localisation impossible : le signalement part à l'équipe pour vérification, sans publication
+ * ni notification automatique (script « signalement sans position »).
+ */
+export async function reportWithoutPosition(input: {
+  kind: CommunityKind;
+  target: string;
+  category: AlertCategory;
+  delay: number | null;
+  detail: string | null;
+  departureId?: string | null;
+}): Promise<{ error: { message: string } | null }> {
+  const result = await supabase.rpc("bw_report_without_position", {
+    p_kind: input.kind,
+    p_target: input.target,
+    p_category: input.category,
+    p_delay: input.category === "delay" ? input.delay : null,
+    p_detail: input.detail,
+    p_departure: input.kind === "vessel" ? (input.departureId ?? null) : null,
+  });
+  if (result.error?.code === "PGRST202")
+    return {
+      error: {
+        message: "Votre position n’a pas pu être obtenue. Activez la localisation, puis réessayez.",
+      },
+    };
+  return { error: result.error };
+}
+
 /** Confirmer, « Ce n'est plus le cas » ou clore, avec la position si elle est connue. */
 export async function alertAction(
   id: string,

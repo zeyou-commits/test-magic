@@ -133,8 +133,11 @@ export function crossingProgress(
     }
     if (arrivalDue) return "stale";
     if (Number.isFinite(start) && now < start) {
+      // L'embarquement s'ouvre à l'heure de présentation (consigne de la compagnie, sinon 4 h avant)
+      // et se ferme 1 h avant le départ.
       const hours = (start - now) / 3_600_000;
-      return hours > 3 ? "docked" : hours >= 1 ? "boarding" : "closed";
+      const opens = (departure.presentation_minutes ?? 240) / 60;
+      return hours > Math.max(opens, 1.5) ? "docked" : hours >= 1 ? "boarding" : "closed";
     }
     return ratio === null ? null : "sea";
   })();

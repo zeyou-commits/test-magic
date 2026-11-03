@@ -1,4 +1,5 @@
 import { useState, type ReactNode } from "react";
+import { departureKeywords, smartMatch } from "@/lib/admin/smartSearch";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { toast } from "sonner";
@@ -77,6 +78,7 @@ export function PlanningBoard({
   const [week, setWeek] = useState(() => mondayOf(initialDate ?? today));
   const [filter, setFilter] = useState<Filter>(initialFilter ?? "all");
   const [company, setCompany] = useState("all");
+  const [query, setQuery] = useState("");
   const [openId, setOpenId] = useState<string | null>(null);
   const [editing, setEditing] = useState(false);
 
@@ -113,9 +115,27 @@ export function PlanningBoard({
     const day = localDay(d);
     return day >= days[0]! && day <= days[6]!;
   });
+  // Recherche libre : compagnie, navire, ports, jour, heure, « annulée », « à choisir »…
+  const dayLabel = (d: PlanningDeparture) =>
+    new Date(`${localDay(d)}T12:00:00Z`).toLocaleDateString("fr-FR", {
+      weekday: "long",
+      day: "numeric",
+      month: "long",
+      timeZone: "UTC",
+    });
+  const matches = (d: PlanningDeparture) =>
+    smartMatch(query, [
+      companyName(d.company_id),
+      vesselName(d.vessel_id),
+      routeLabel(d.route_id),
+      dayLabel(d),
+      localTime(d),
+      ...departureKeywords({ status: d.status, vesselId: d.vessel_id }),
+    ]);
   const visible = inWeek.filter(
     (d) =>
       (company === "all" || d.company_id === company) &&
+      matches(d) &&
       (filter === "all" ||
         (filter === "unassigned" && !d.vessel_id && d.status !== "cancelled") ||
         (filter === "issues" && issueOf.has(d.id))),
@@ -230,6 +250,14 @@ export function PlanningBoard({
             {label}
           </button>
         ))}
+        <input
+          type="search"
+          value={query}
+          onChange={(event) => setQuery(event.target.value)}
+          placeholder="Rechercher : compagnie, navire, port, jour, « à choisir »…"
+          aria-label="Rechercher dans le planning"
+          className="h-9 min-w-[16rem] flex-1 rounded-md border border-input bg-background px-3 text-sm"
+        />
         <label className="ml-auto flex items-center gap-2 text-xs text-muted-foreground">
           Compagnie
           <select

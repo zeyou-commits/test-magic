@@ -520,6 +520,7 @@ export type CrossingSchedule = Pick<
       | "web_departed_at"
       | "web_arrived_at"
       | "web_eta_at"
+      | "presentation_minutes"
     >
   > & { status: string };
 

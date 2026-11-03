@@ -2,7 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { ArrowRight, CalendarClock, Flag, History, MapPin, Ship } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useTravelFollows } from "@/hooks/useTravelFollows";
-import { useMyTrip } from "@/lib/ferry/myTrip";
+import { useMyTrip, setActiveTrip } from "@/lib/ferry/myTrip";
 import { departureEventsQuery, relativeAge } from "@/lib/ferry/flash";
 import type { Selection } from "@/lib/ferry/types";
 import { requestQuickReport } from "@/components/map/QuickReport";
@@ -172,29 +172,40 @@ function MyTripsList({
     .sort((a, b) => Date.parse(a.at) - Date.parse(b.at))
     .slice(0, 2);
   if (!trips.length) return null;
+  // Plusieurs voyages déclarés : celui du dessus est le voyage actif, les autres se choisissent ici.
   return (
-    <section className="bw-my-trips" aria-label="Ma traversée">
+    <section className="bw-my-trips" aria-label="Mes autres voyages">
       {trips.map((trip) => {
         const days = dayCount(trip.at);
         return (
-          <button
-            type="button"
-            key={trip.id}
-            className="bw-my-trip-card"
-            onClick={() => onSelect({ type: "departure", id: trip.id })}
-          >
-            <span className="bw-my-trip-icon" aria-hidden>
-              <Ship size={18} />
-            </span>
-            <span className="min-w-0 flex-1">
-              <small>
-                <CalendarClock size={12} aria-hidden /> Traversée suivie ·{" "}
-                {days <= 0 ? "aujourd’hui" : days === 1 ? "demain" : `J-${days}`}
-              </small>
-              <strong>{trip.label}</strong>
-            </span>
-            <ArrowRight size={16} aria-hidden />
-          </button>
+          <div key={trip.id} className="bw-my-trip-row">
+            <button
+              type="button"
+              className="bw-my-trip-card"
+              onClick={() => onSelect({ type: "departure", id: trip.id })}
+            >
+              <span className="bw-my-trip-icon" aria-hidden>
+                <Ship size={18} />
+              </span>
+              <span className="min-w-0 flex-1">
+                <small>
+                  <CalendarClock size={12} aria-hidden /> Autre voyage ·{" "}
+                  {days <= 0 ? "aujourd’hui" : days === 1 ? "demain" : `J-${days}`}
+                </small>
+                <strong>{trip.label}</strong>
+              </span>
+              <ArrowRight size={16} aria-hidden />
+            </button>
+            {myTrip ? (
+              <button
+                type="button"
+                className="bw-my-trip-activate"
+                onClick={() => setActiveTrip(trip.id)}
+              >
+                En faire mon voyage actif
+              </button>
+            ) : null}
+          </div>
         );
       })}
     </section>

@@ -18,6 +18,7 @@ import { CompanionPanel } from "./CompanionPanel";
 import { useCompanionPanel } from "@/hooks/useCompanionPanel";
 
 import { NoticeFocus } from "./NoticeFocus";
+import type { ItineraryChoice } from "@/lib/ferry/travelProfile";
 
 interface SidePanelProps {
   selection: Selection | null;
@@ -37,7 +38,7 @@ interface SidePanelProps {
   onCloseItinerary?: () => void;
   onItineraryPreview?: (preview: ItineraryMapPreview | null) => void;
   onItineraryResultsReady?: () => void;
-  onBookPeriod?: (period: string) => void;
+  onBookPeriod?: (period: string, choice?: ItineraryChoice) => void;
   companionEnabled?: boolean;
   onCompanionWidth?: (width: number) => void;
   /** Notification à l'origine de l'ouverture de cette fiche. */

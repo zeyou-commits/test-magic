@@ -46,8 +46,7 @@ import {
   legSailings,
   recommendedId,
   type Sailing,
-  type TravelerType,
-} from "@/lib/ferry/trips";
+  type TravelerType, RECOMMENDED_RULE } from "@/lib/ferry/trips";
 import { diffDays } from "@/lib/ferry/schoolCalendar";
 import { TripCalendar, type CalendarField } from "./TripCalendar";
 import { dateKeyInZone } from "@/lib/ferry/time";
@@ -71,6 +70,7 @@ import {
   summarizeVehicle,
   type TripProfileValue,
 } from "./TripProfile";
+import { readTravelProfile, saveTravelProfile, TRAVEL_PROFILE_EVENT } from "@/lib/ferry/travelProfile";
 
 const ANY = "__any__";
 const PAGE = 4;
@@ -122,6 +122,30 @@ export function SearchPanel({
     [liveShips],
   );
   const [profile, setProfile] = useState<TripProfileValue>(defaultTripProfile);
+  // Le profil choisi dans la Route ou lors d'une recherche précédente revient tel quel.
+  // Un changement venu de ce chargement n'est jamais réenregistré par-dessus le profil gardé.
+  const loadingProfile = useRef(false);
+  useEffect(() => {
+    const load = () => {
+      const stored = readTravelProfile();
+      // Rien à recharger : aucun rendu ne suivra, donc rien à ignorer.
+      if (!stored || JSON.stringify(stored) === JSON.stringify(latest.current.profile)) return;
+      loadingProfile.current = true;
+      setProfile(stored);
+    };
+    load();
+    window.addEventListener(TRAVEL_PROFILE_EVENT, load);
+    return () => window.removeEventListener(TRAVEL_PROFILE_EVENT, load);
+  }, []);
+  useEffect(() => {
+    if (loadingProfile.current) {
+      loadingProfile.current = false;
+      return;
+    }
+    // Seul un profil réellement modifié est gardé : le défaut n'est jamais pris pour un choix.
+    if (!readTravelProfile() && JSON.stringify(profile) === JSON.stringify(defaultTripProfile)) return;
+    saveTravelProfile(profile);
+  }, [profile]);
   // Formulaire guidé ouvert tant qu'aucune recherche n'est lancée, capsule ensuite.
   const [editing, setEditing] = useState(false);
   const [step, setStep] = useState<1 | 2 | 3>(1);
@@ -389,8 +413,10 @@ export function SearchPanel({
   const outSorted = sortBy === "date" ? outList : [...outList].sort(bySailing(sortBy, profile));
   const outShown = filters.date || showAllOut ? outSorted : outSorted.slice(0, PAGE);
   const backShown = filters.returnDate || showAllBack ? backList : backList.slice(0, PAGE);
-  const outRecommended = filters.date ? recommendedId(outList, traveler) : null;
-  const backRecommended = filters.returnDate ? recommendedId(backList, traveler) : null;
+  // Même règle que l'itinéraire : durée, horaire confortable, et un prix nettement plus bas l'emporte.
+  const fareOf = (sailing: Sailing) => estimateFare(sailing, profile);
+  const outRecommended = filters.date ? recommendedId(outList, traveler, fareOf) : null;
+  const backRecommended = filters.returnDate ? recommendedId(backList, traveler, fareOf) : null;
 
   const roundTrips = useMemo(
     () =>
@@ -1049,6 +1075,9 @@ function ResultBlock({
         </div>
       ) : (
         <div className="space-y-2">
+          {recommended && list.some((sailing) => sailing.departure.id === recommended) ? (
+            <p className="text-[11px] text-muted-foreground">{RECOMMENDED_RULE}</p>
+          ) : null}
           {list.map((sailing, index) => (
             <SailingCard
               key={sailing.departure.id}

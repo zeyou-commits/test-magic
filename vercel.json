@@ -3,19 +3,52 @@
   "framework": "tanstack-start",
   "buildCommand": "npm run build:vercel",
   "outputDirectory": null,
-  "crons": [{ "path": "/api/push-dispatch", "schedule": "7 8 * * *" }],
+  "crons": [
+    {
+      "path": "/api/push-dispatch",
+      "schedule": "7 8 * * *"
+    }
+  ],
   "headers": [
     {
       "source": "/sw.js",
-      "headers": [{ "key": "Cache-Control", "value": "no-cache, max-age=0, must-revalidate" }]
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "no-cache, max-age=0, must-revalidate"
+        }
+      ]
     },
     {
       "source": "/manifest.webmanifest",
-      "headers": [{ "key": "Cache-Control", "value": "no-cache, max-age=0, must-revalidate" }]
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "no-cache, max-age=0, must-revalidate"
+        }
+      ]
     },
     {
       "source": "/build-version.json",
-      "headers": [{ "key": "Cache-Control", "value": "no-store" }]
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "no-store"
+        }
+      ]
+    }
+  ],
+  "redirects": [
+    {
+      "source": "/:path((?!api/).*)",
+      "has": [
+        {
+          "type": "host",
+          "value": "test-magic-three.vercel.app"
+        }
+      ],
+      "destination": "https://www.bledway.com/:path",
+      "permanent": true
     }
   ]
 }

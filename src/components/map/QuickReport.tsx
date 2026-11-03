@@ -14,6 +14,8 @@ import {
   optionsFor,
   portServices,
   reportTravel,
+  reportAsStaff,
+  reportWithoutPosition,
   requirePosition,
   logLocation,
   ON_SITE_PORT_KM,
@@ -178,7 +180,9 @@ export function QuickReport({
       window.clearInterval(timer);
     };
   }, [isMobile, ports]);
-  const { user, loading } = useAuth();
+  const { user, loading, roles } = useAuth();
+  // L'équipe signale aussi depuis le bureau : pas de position demandée, publié et validé.
+  const staff = roles.some((role) => ["admin", "editor", "moderator"].includes(role));
   const queryClient = useQueryClient();
   // Scripts SQL exécutés : 26/10 (situations récentes), 29/10 (formalités, « sur place »).
   const upgraded = useQuery(newsQuery).data != null;
@@ -210,6 +214,8 @@ export function QuickReport({
   const [finding, setFinding] = useState(false);
   const [sentOnSite, setSentOnSite] = useState(false);
   const [sentForReview, setSentForReview] = useState(false);
+  const [sentWithoutPosition, setSentWithoutPosition] = useState(false);
+  const [sentByStaff, setSentByStaff] = useState(false);
 
   const vessels = fleet.filter(
     (ship, index) =>
@@ -350,16 +356,36 @@ export function QuickReport({
     mutationFn: async (input: Draft) => {
       const category = input.category!;
       const where = situationOf(category).where;
+      if (staff) {
+        const published = await reportAsStaff({
+          kind: where,
+          target: (where === "port" ? input.portId : input.vesselId)!,
+          category,
+          delay: input.delay,
+          detail: input.detail,
+          departureId: input.departureId,
+        });
+        if (published.error) throw new Error(failure(published.error.message));
+        return { error: null, onSite: false, pendingReview: false, withoutPosition: false, byStaff: true };
+      }
       // Position demandée au moment d'envoyer : un signalement affirme ce qu'on voit sur place.
       let here = position;
       setFinding(true);
       if (!here) here = await requirePosition();
       setFinding(false);
       if (!here) {
+        // Sans position, le signalement n'est pas perdu : l'équipe le vérifie avant toute publication.
         logLocation("report", "report_no_position", { where, category, level });
-        throw new Error(
-          "Ce signalement doit être fait sur place : autorisez la localisation puis réessayez.",
-        );
+        const review = await reportWithoutPosition({
+          kind: where,
+          target: (where === "port" ? input.portId : input.vesselId)!,
+          category,
+          delay: input.delay,
+          detail: input.detail,
+          departureId: input.departureId,
+        });
+        if (review.error) throw new Error(failure(review.error.message));
+        return { error: null, onSite: false, pendingReview: true, withoutPosition: true, byStaff: false };
       }
       logLocation("report", "report_send", { where, category, hasPosition: Boolean(here) });
       const result = await reportTravel({
@@ -380,11 +406,13 @@ export function QuickReport({
         throw new Error(failure(result.error.message));
       }
       logLocation("report", "report_ok", { where, category, onSite: result.onSite });
-      return result;
+      return { ...result, withoutPosition: false, byStaff: false };
     },
     onSuccess: (result) => {
       setSentOnSite(result.onSite);
       setSentForReview(result.pendingReview);
+      setSentWithoutPosition(result.withoutPosition);
+      setSentByStaff(result.byStaff);
       setStep("done");
       void queryClient.invalidateQueries({ queryKey: communityKey });
     },
@@ -470,7 +498,11 @@ export function QuickReport({
           </span>
         ) : null}
         <p>
-          {sentForReview
+          {sentByStaff
+            ? "Publié par l’équipe et marqué validé, sans contrôle de position."
+            : sentWithoutPosition
+            ? "Votre position n’a pas pu être obtenue : votre signalement est transmis à l’équipe BledWay, qui le vérifie avant de le publier. Merci pour votre aide !"
+            : sentForReview
             ? "L’horaire ou la position connue ne correspond pas à votre observation. Votre signalement est transmis à l’équipe, sans publication automatique."
             : `${draft.category ? `Visible environ ${lifetimeLabel(draft.category)}. ` : ""}${
                 impact
@@ -586,7 +618,10 @@ export function QuickReport({
           {locating === "far" ? (
             <small>{farNote}</small>
           ) : locating === "denied" ? (
-            <small>Position indisponible : choisissez dans la liste.</small>
+            <small>
+              Position indisponible : choisissez le lieu dans la liste. Votre signalement sera
+              transmis à l’équipe BledWay, qui le vérifie avant de le publier.
+            </small>
           ) : null}
         </fieldset>
 
@@ -696,9 +731,11 @@ export function QuickReport({
                 : "Se connecter et envoyer"}
         </button>
         <p className="bw-report-note">
-          {situation.where === "port"
-            ? "Au port, il faut être sur place, à moins de 3 km, localisation activée. Votre position n’est pas enregistrée."
-            : "Il faut être près du bateau ou à son port, localisation activée. Votre position n’est pas enregistrée."}
+          {staff
+            ? "Équipe BledWay : pas de position demandée, le signalement est publié et marqué validé."
+            : situation.where === "port"
+            ? "Au port, il faut être sur place, à moins de 3 km, localisation activée. Sans position, le signalement est vérifié par l’équipe avant publication. Votre position n’est pas enregistrée."
+            : "Il faut être près du bateau ou à son port, localisation activée. Sans position, le signalement est vérifié par l’équipe avant publication. Votre position n’est pas enregistrée."}
         </p>
       </form>
     );

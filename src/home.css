@@ -2969,11 +2969,19 @@ html {
 .bw-mf-quay { fill: #cfc9bb; }
 .bw-mf-ramp { fill: none; stroke: #6f7d86; stroke-width: 1.500; stroke-linecap: round; }
 .bw-mf-anchor { fill: none; stroke: #16324a; stroke-width: 1.100; stroke-linecap: round; }
-.bw-mf-traveller { opacity: 0; animation: 4.800s linear infinite; }
+/* Propriétés séparées : la forme courte « animation: 4.8s linear infinite » perdait sa durée
+   une fois le CSS traité, et voitures et voyageurs restaient invisibles. */
+.bw-mf-traveller {
+  opacity: 0;
+  animation-duration: 4.8s;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+  animation-fill-mode: both;
+}
 .bw-mf-in { animation-name: bw-mf-in; }
 .bw-mf-out { animation-name: bw-mf-out; }
-.bw-mf-later { animation-delay: 1.600s; }
-.bw-mf-latest { animation-delay: 3.200s; }
+.bw-mf-later { animation-delay: 1.6s; }
+.bw-mf-latest { animation-delay: 3.2s; }
 @keyframes bw-mf-in {
   0% { transform: translate(-40px, 25px); opacity: 0; }
   8% { opacity: 1; }
@@ -2993,3 +3001,6 @@ html {
   .bw-mf-later { transform: translate(-28px, 25px); }
   .bw-mf-latest { transform: translate(-36px, 25px); }
 }
+
+/* Voitures et voyageurs un peu plus grands : on les voit monter et descendre, même sur téléphone. */
+.bw-mf-traveller > * { transform: scale(1.35); transform-origin: 50% 100%; transform-box: fill-box; }

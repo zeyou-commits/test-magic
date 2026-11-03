@@ -29,7 +29,7 @@ import {
   routesQuery,
   upcomingDeparturesQuery,
 } from "@/lib/ferry/queries";
-import { buildSailings } from "@/lib/ferry/trips";
+import { buildSailings, RECOMMENDED_RULE } from "@/lib/ferry/trips";
 import { calculateRoadAccess, searchItineraryAddress } from "@/lib/ferry/itinerary.functions";
 import {
   BOARDING_BUFFER_MIN,
@@ -74,6 +74,13 @@ import {
 import { portTimeZone } from "@/lib/ferry/time";
 import { vesselMapIcon } from "@/lib/ferry/vesselVisuals";
 import { ItineraryAlertForm } from "./ItineraryAlertForm";
+import {
+  readTravelProfile,
+  saveItineraryChoice,
+  saveTravelProfile,
+  TRAVEL_PROFILE_EVENT,
+  type ItineraryChoice,
+} from "@/lib/ferry/travelProfile";
 import { SimulationJourney } from "@/components/journey/SimulationJourney";
 
 type RoadAccess = Awaited<ReturnType<typeof calculateRoadAccess>>;
@@ -304,7 +311,7 @@ export function ItineraryPlanner({
   onClose: () => void;
   onPreview: (preview: ItineraryMapPreview | null) => void;
   onResultsReady?: () => void;
-  onBookPeriod?: (period: string) => void;
+  onBookPeriod?: (period: string, choice?: ItineraryChoice) => void;
 }) {
   const { data: ports = [], isPending: portsPending } = useQuery(portsQuery);
   const { data: routes = [], isPending: routesPending } = useQuery(routesQuery);
@@ -338,6 +345,47 @@ export function ItineraryPlanner({
   const [vehicle, setVehicle] = useState<VehicleKind>("sedan");
   const [adults, setAdults] = useState(2);
   const [children, setChildren] = useState(0);
+  // Le profil saisi dans « Trouver » (ou ici la dernière fois) : on ne le redemande pas.
+  // Un changement venu de ce chargement n'est jamais réenregistré par-dessus le profil gardé.
+  const profileSyncing = useRef(false);
+  const profileNow = useRef({ vehicle, adults, children });
+  profileNow.current = { vehicle, adults, children };
+  useEffect(() => {
+    const load = () => {
+      const stored = readTravelProfile();
+      if (!stored) return;
+      const now = profileNow.current;
+      // Rien à recharger : aucun rendu ne suivra, donc rien à ignorer.
+      if (
+        now.vehicle === stored.vehicle &&
+        now.adults === stored.passengers.adults &&
+        now.children === stored.passengers.children
+      )
+        return;
+      profileSyncing.current = true;
+      setVehicle(stored.vehicle);
+      setAdults(stored.passengers.adults);
+      setChildren(stored.passengers.children);
+    };
+    load();
+    window.addEventListener(TRAVEL_PROFILE_EVENT, load);
+    return () => window.removeEventListener(TRAVEL_PROFILE_EVENT, load);
+  }, []);
+  useEffect(() => {
+    if (profileSyncing.current) {
+      profileSyncing.current = false;
+      return;
+    }
+    const saved = readTravelProfile();
+    // Le profil par défaut n'est jamais pris pour un choix.
+    if (!saved && vehicle === "sedan" && adults === 2 && children === 0) return;
+    const stored = saved ?? defaultTripProfile;
+    saveTravelProfile({
+      ...stored,
+      vehicle,
+      passengers: { ...stored.passengers, adults, children },
+    });
+  }, [vehicle, adults, children]);
   const [consumption, setConsumption] = useState(7);
   const [fuelPrice, setFuelPrice] = useState(1.8);
   const [tollRate, setTollRate] = useState(0.06);
@@ -453,6 +501,20 @@ export function ItineraryPlanner({
     realOptions[0] ??
     sorted[0];
   const previewed = sorted.find((option) => option.sailing.departure.id === hoveredId) ?? selected;
+  // Ce que « Trouver » reprendra : le mois et les ports de la traversée choisie.
+  const choice: ItineraryChoice | undefined = selected
+    ? {
+        period,
+        departurePortId: selected.sailing.from.id,
+        arrivalPortId: selected.sailing.to.id,
+      }
+    : undefined;
+  const choiceKey = choice ? `${choice.period}:${choice.departurePortId}:${choice.arrivalPortId}` : "";
+  useEffect(() => {
+    saveItineraryChoice(choice ?? null);
+    // La clé suffit : elle change dès que le mois ou la traversée choisie change.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [choiceKey]);
   const alternativeKey = sorted
     .slice(0, 6)
     .map((option) => option.sailing.route.id)
@@ -1425,7 +1487,7 @@ export function ItineraryPlanner({
                       })}
                     </ol>
                     <p className="mt-1.5 text-[11px] leading-snug text-muted-foreground">
-                      Recommandé : le moins de route, sauf si un autre trajet coûte nettement moins cher.
+                      {RECOMMENDED_RULE}
                     </p>
                   </div>
 
@@ -1614,7 +1676,7 @@ export function ItineraryPlanner({
           {sorted.length > 0 && hasPublishedForPeriod && onBookPeriod && (
             <button
               type="button"
-              onClick={() => onBookPeriod(period)}
+              onClick={() => onBookPeriod(period, choice)}
               className="text-xs font-semibold text-primary underline underline-offset-2"
             >
               Voir tous les départs de {periodLabel}

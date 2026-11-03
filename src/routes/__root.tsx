@@ -14,6 +14,8 @@ import {
 import { track } from "@/lib/usage";
 import { useEffect, useMemo, type ReactNode } from "react";
 import { loadIllustrations } from "@/lib/illustrations/store";
+import { keepOffline, restoreOffline } from "@/lib/offline";
+import { OfflineBanner } from "@/components/layout/OfflineBanner";
 
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
@@ -193,6 +195,14 @@ function RootComponent() {
   useEffect(() => {
     loadIllustrations();
   }, []);
+  // Hors ligne : le voyage gardé sur l'appareil, et le service worker de secours pour les pages.
+  useEffect(() => {
+    restoreOffline(queryClient);
+    const stop = keepOffline(queryClient);
+    if (import.meta.env.PROD && "serviceWorker" in navigator)
+      void navigator.serviceWorker.register("/sw.js", { updateViaCache: "none" }).catch(() => {});
+    return stop;
+  }, [queryClient]);
 
   return (
     <QueryClientProvider client={queryClient}>
@@ -212,6 +222,7 @@ function RootComponent() {
               <MobileTabBar className="h-[calc(3.5rem+env(safe-area-inset-bottom))] pb-[env(safe-area-inset-bottom)]" />
             </div>
           )}
+          <OfflineBanner />
           <PwaInstall />
           <LocationHelp />
           <ProfileHost />

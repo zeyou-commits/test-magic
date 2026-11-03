@@ -288,7 +288,11 @@ export function MyTripHero({
               <div className="bw-mytrip-hero__voyage-head">
                 <small>
                   {waiting
-                    ? "À quai"
+                    ? progress.scene === "boarding"
+                      ? "Embarquement en cours"
+                      : progress.scene === "closed"
+                        ? "Embarquement terminé"
+                        : "À quai"
                     : progress.reportedQuay || progress.hold
                       ? "Encore à quai"
                       : estimated

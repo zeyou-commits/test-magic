@@ -22,7 +22,13 @@ import {
   type TravelAction,
 } from "@/lib/notifications/actions";
 import { clearPendingChat, flushPendingChat, pendingChat } from "@/lib/ferry/chat";
-import { pushCapability, registerPush, requestCatchUp } from "@/lib/notifications/push";
+import {
+  isIos,
+  isStandalone,
+  pushCapability,
+  registerPush,
+  requestCatchUp,
+} from "@/lib/notifications/push";
 import { AccountAccessForm } from "./AccountAccessForm";
 import { TripQuestion } from "./TripQuestion";
 import { PushStatusLine } from "@/components/panel/PushStatusLine";
@@ -191,7 +197,9 @@ export function TravelActionProvider({ children }: { children: ReactNode }) {
                 <li>
                   <BellRing size={17} aria-hidden />
                   <span>
-                    <b>Prévenu du moindre changement</b> : retard, report, annulation
+                    <b>Recevez les changements connus et vérifiés</b> concernant cette traversée :
+                    retard, report, annulation
+                    <DeviceAlertState />
                   </span>
                 </li>
                 <li>
@@ -332,5 +340,41 @@ export function TravelActionProvider({ children }: { children: ReactNode }) {
         </DialogContent>
       </Dialog>
     </ActionContext.Provider>
+  );
+}
+
+/**
+ * Ce que cet appareil recevra vraiment, dit avant de valider le suivi : pas de promesse d'alerte
+ * sur un téléphone qui ne peut pas la recevoir.
+ */
+function DeviceAlertState() {
+  const [state, setState] = useState<"on" | "ask" | "blocked" | "ios" | "none" | null>(null);
+  useEffect(() => {
+    const capability = pushCapability();
+    setState(
+      isIos() && !isStandalone()
+        ? "ios"
+        : capability === "enabled"
+          ? "on"
+          : capability === "prompt"
+            ? "ask"
+            : capability === "denied"
+              ? "blocked"
+              : "none",
+    );
+  }, []);
+  if (!state) return null;
+  const text = {
+    on: "Notifications activées sur cet appareil.",
+    ask: "Notifications pas encore activées sur cet appareil : elles vous seront proposées en validant.",
+    blocked:
+      "Notifications bloquées sur cet appareil : vous retrouverez les changements dans la cloche et votre espace.",
+    ios: "Sur iPhone, les notifications demandent d’ouvrir BledWay depuis l’écran d’accueil. En attendant, les changements arrivent dans la cloche.",
+    none: "Ce navigateur ne reçoit pas de notifications : les changements arrivent dans la cloche et votre espace.",
+  }[state];
+  return (
+    <small className="bw-travel-perks__device" data-state={state}>
+      {text}
+    </small>
   );
 }

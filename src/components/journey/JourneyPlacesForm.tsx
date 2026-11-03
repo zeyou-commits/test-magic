@@ -189,6 +189,7 @@ export function JourneyPlacesEntry({
   places,
   onChange,
   invite = true,
+  compact = false,
 }: {
   departureId: string;
   europePort: Port;
@@ -197,6 +198,8 @@ export function JourneyPlacesEntry({
   onChange: (places: JourneyPlaces | null) => void;
   /** L'invitation n'a de sens qu'avant le départ ; ensuite, le bouton seul reste. */
   invite?: boolean;
+  /** Téléphone : un bouton rond (point vert une fois rempli) plutôt qu'une pastille. */
+  compact?: boolean;
 }) {
   const [open, setOpen] = useState(false);
   useEffect(() => {
@@ -213,19 +216,36 @@ export function JourneyPlacesEntry({
   const city = (value: string) => value.split(",")[0];
   return (
     <>
-      <button
-        type="button"
-        className="bw-places-chip"
-        data-filled={places ? "" : undefined}
-        onClick={() => setOpen(true)}
-        title={places ? "Modifier mon trajet sur mesure" : "Personnaliser mon trajet"}
-      >
-        <MapPin size={14} aria-hidden />
-        <span>
-          {places ? `${city(places.home)} → ${city(places.bled)}` : "Personnaliser mon trajet"}
-        </span>
-        {places ? <Pencil size={12} aria-hidden /> : null}
-      </button>
+      {compact ? (
+        <button
+          type="button"
+          className="bw-round-button"
+          data-filled={places ? "" : undefined}
+          onClick={() => setOpen(true)}
+          aria-label={
+            places
+              ? `Mon trajet : ${city(places.home)} → ${city(places.bled)}, modifier`
+              : "Personnaliser mon trajet"
+          }
+          title={places ? `${city(places.home)} → ${city(places.bled)}` : "Personnaliser mon trajet"}
+        >
+          <MapPin size={16} aria-hidden />
+        </button>
+      ) : (
+        <button
+          type="button"
+          className="bw-places-chip"
+          data-filled={places ? "" : undefined}
+          onClick={() => setOpen(true)}
+          title={places ? "Modifier mon trajet sur mesure" : "Personnaliser mon trajet"}
+        >
+          <MapPin size={14} aria-hidden />
+          <span>
+            {places ? `${city(places.home)} → ${city(places.bled)}` : "Personnaliser mon trajet"}
+          </span>
+          {places ? <Pencil size={12} aria-hidden /> : null}
+        </button>
+      )}
       <Dialog open={open} onOpenChange={(next) => (next ? setOpen(true) : close())}>
         <DialogContent
           className="bw-places-dialog"

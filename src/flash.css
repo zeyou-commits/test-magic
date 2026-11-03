@@ -12752,105 +12752,6 @@ img[data-logo="dark"] {
   }
 }
 /* Téléphone, « Mon voyage » façon itinéraire : la chaîne d'icônes en haut, la liste verticale dessous. */
-.bw-chain {
-  display: flex;
-  min-width: 0;
-  flex: 1;
-  gap: 6px;
-  margin: 0 -14px;
-  padding: 2px 14px 4px;
-  overflow-x: auto;
-  list-style: none;
-  scroll-snap-type: x proximity;
-  scroll-padding: 0 14px;
-  scrollbar-width: none;
-}
-.bw-chain::-webkit-scrollbar {
-  display: none;
-}
-.bw-chain li {
-  flex: none;
-  scroll-snap-align: center;
-}
-.bw-chain button {
-  display: grid;
-  width: 124px;
-  height: 100%;
-  grid-template-columns: 20px minmax(0, 1fr);
-  grid-template-rows: auto auto;
-  column-gap: 6px;
-  align-items: center;
-  padding: 7px 9px;
-  border: 1px solid #16324a14;
-  border-radius: 12px;
-  background: #ffffff;
-  color: #16324a;
-  font: inherit;
-  text-align: left;
-  cursor: pointer;
-}
-.bw-chain__dot {
-  display: grid;
-  width: 20px;
-  height: 20px;
-  grid-row: span 2;
-  place-items: center;
-  border: 1.5px solid #d6d0bf;
-  border-radius: 50%;
-  color: #6b7a75;
-}
-.bw-chain strong {
-  display: -webkit-box;
-  overflow: hidden;
-  font-size: 12px;
-  font-weight: 700;
-  line-height: 1.2;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 2;
-}
-.bw-chain small {
-  overflow: hidden;
-  color: #6b7a75;
-  font-size: 11px;
-  font-variant-numeric: tabular-nums;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-.bw-chain button[data-state="done"] {
-  background: #f6f9f7;
-}
-.bw-chain button[data-state="done"] strong {
-  color: #5d6b66;
-  font-weight: 600;
-}
-.bw-chain button[data-state="done"] .bw-chain__dot {
-  border-color: #0e7a43;
-  background: #0e7a43;
-  color: #ffffff;
-}
-.bw-chain button[data-state="late"] .bw-chain__dot {
-  border-color: #f2a900;
-  background: #fff4d6;
-  color: #8a5a00;
-}
-.bw-chain button[data-state="current"] {
-  width: 136px;
-  border-color: #16324a;
-  background: #16324a;
-  color: #ffffff;
-}
-.bw-chain button[data-state="current"] small {
-  color: #ffd98a;
-}
-.bw-chain button[data-state="current"] .bw-chain__dot {
-  border-color: #ffd98a;
-  background: #ffd98a;
-  color: #16324a;
-}
-.bw-chain button[aria-pressed="true"]:not([data-state="current"]) {
-  border-color: #16324a;
-  box-shadow: inset 0 0 0 1px #16324a;
-}
 .bw-voyage-aside__title {
   display: flex;
   align-items: center;
@@ -13146,4 +13047,114 @@ img[data-logo="dark"] {
 .bw-inline-link:hover {
   color: #0e7a43;
   text-decoration-color: currentColor;
+}
+
+/* Téléphone, « Ma traversée » : un seul en-tête léger, le trajet et deux boutons ronds. */
+.bw-voyage-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+}
+.bw-voyage-head__title {
+  display: grid;
+  min-width: 0;
+  flex: 1;
+  gap: 1px;
+}
+.bw-voyage-head__title strong {
+  overflow: hidden;
+  font-size: 16px;
+  font-weight: 800;
+  line-height: 1.2;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.bw-voyage-head__title small {
+  overflow: hidden;
+  color: #6b7a75;
+  font-size: 12px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.bw-voyage-head__title em {
+  color: #b42318;
+  font-style: normal;
+  font-weight: 800;
+}
+.bw-voyage-head__now {
+  display: grid;
+  min-width: 0;
+  flex: 1;
+  grid-template-columns: 30px minmax(0, 1fr);
+  column-gap: 10px;
+  align-items: center;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: #16324a;
+  font: inherit;
+  text-align: left;
+}
+.bw-voyage-head__now > span {
+  display: grid;
+  width: 30px;
+  height: 30px;
+  grid-row: span 2;
+  place-items: center;
+  border-radius: 50%;
+  background: #16324a;
+  color: #ffd98a;
+}
+.bw-voyage-head__now strong {
+  overflow: hidden;
+  font-size: 15px;
+  font-weight: 800;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.bw-voyage-head__now small {
+  color: #6b7a75;
+  font-size: 12px;
+}
+.bw-round-button {
+  position: relative;
+  display: grid;
+  width: 38px;
+  height: 38px;
+  flex: none;
+  place-items: center;
+  padding: 0;
+  border: 1px solid #16324a1f;
+  border-radius: 50%;
+  background: #ffffff;
+  color: #16324a;
+  cursor: pointer;
+}
+.bw-round-button:hover {
+  border-color: #16324a;
+}
+.bw-round-button[data-filled]::after {
+  content: "";
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 8px;
+  height: 8px;
+  border: 1.5px solid #ffffff;
+  border-radius: 50%;
+  background: #12a05a;
+}
+
+/* Téléphone, « Ma traversée » : la page est figée, seul le volet défile (comme une application). */
+@media (max-width: 767px) {
+  html.bw-voyage-lock,
+  html.bw-voyage-lock body {
+    overflow: hidden;
+    overscroll-behavior: none;
+  }
+  html.bw-voyage-lock .bw-voyage-aside__scroll {
+    overscroll-behavior: contain;
+    touch-action: pan-y;
+  }
 }

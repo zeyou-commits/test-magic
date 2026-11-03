@@ -74,7 +74,8 @@ import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { EmbeddedRoom } from "@/components/panel/LiveRoom";
 import { LivePulse } from "@/components/panel/LivePulse";
 import { JourneyFrieze } from "@/components/journey/JourneyFrieze";
-import { JourneyChain, JourneyTimeline } from "@/components/journey/JourneyTimeline";
+import { STEP_ICONS } from "@/components/journey/JourneyFrieze";
+import { JourneyTimeline } from "@/components/journey/JourneyTimeline";
 import { useVoyage } from "@/components/journey/useVoyage";
 import { GO_HOME_EVENT, OPEN_VOYAGE_EVENT, useVoyageTrip } from "@/lib/ferry/voyageTrip";
 
@@ -102,6 +103,8 @@ export const Route = createFileRoute("/")({
 /** Hauteurs du tiroir mobile : replié, intermédiaire, plein écran (hors barre d'onglets). */
 const TAB_BAR_HEIGHT = 56;
 const COLLAPSED_HEIGHT = 128;
+/** « Ma traversée » replié : une seule ligne, l'étape en cours. */
+const VOYAGE_COLLAPSED_HEIGHT = 96;
 const MIDDLE_RATIO = 0.68;
 const DESKTOP_PANEL = 420;
 
@@ -947,7 +950,7 @@ function Index() {
   );
   const mobileBottomInset =
     panelLevel === 0
-      ? TAB_BAR_HEIGHT + COLLAPSED_HEIGHT
+      ? TAB_BAR_HEIGHT + (voyage ? VOYAGE_COLLAPSED_HEIGHT : COLLAPSED_HEIGHT)
       : panelLevel === 2
         ? viewportHeight - TAB_BAR_HEIGHT
         : TAB_BAR_HEIGHT +
@@ -1053,7 +1056,7 @@ function Index() {
 
   closePanelRef.current = resetToMap;
   // Le trajet du voyage, comme partout sur le site : chaque port et le navire ouvrent leur fiche.
-  const voyageTitle = voyage ? (
+  const voyageRoute = voyage ? (
     <>
       <button
         type="button"
@@ -1070,25 +1073,41 @@ function Index() {
       >
         {voyage.trip.to.name}
       </button>
-      {voyage.trip.vessel ? (
-        <>
-          {" · "}
-          <button
-            type="button"
-            className="bw-inline-link"
-            onClick={() => handleSelect({ type: "vessel", id: voyage.trip.vessel!.id })}
-          >
-            {voyage.trip.vessel.name}
-          </button>
-        </>
-      ) : null}
     </>
   ) : null;
+  const voyageVessel = voyage?.trip.vessel ? (
+    <button
+      type="button"
+      className="bw-inline-link"
+      onClick={() => handleSelect({ type: "vessel", id: voyage.trip.vessel!.id })}
+    >
+      {voyage.trip.vessel.name}
+    </button>
+  ) : null;
+  const voyageTitle = voyage ? (
+    <>
+      {voyageRoute}
+      {voyageVessel ? <>{" · "}{voyageVessel}</> : null}
+    </>
+  ) : null;
+  // Téléphone, volet replié : l'étape en cours sur une ligne, un toucher ouvre le volet.
+  const voyageNow = voyage?.friezeSteps.find((step) => step.state === "current");
+  const NowIcon = voyageNow ? STEP_ICONS[voyageNow.id] : null;
   // Quitter « Ma traversée » : retour à l'accueil de la carte (bouton du volet, logo, « Carte »).
   const leaveVoyage = () => {
     setVoyageOn(false);
     resetToMap();
   };
+  // Téléphone : en « Ma traversée », seul le volet défile. La page d'accueil sous la carte ne
+  // remonte plus par accident quand le geste déborde de la liste des étapes.
+  const voyageActive = Boolean(voyage);
+  useEffect(() => {
+    if (!voyageActive || !isMobile) return;
+    window.scrollTo({ top: 0, behavior: "instant" });
+    const root = document.documentElement;
+    root.classList.add("bw-voyage-lock");
+    return () => root.classList.remove("bw-voyage-lock");
+  }, [voyageActive, isMobile]);
   const leaveVoyageRef = useRef(leaveVoyage);
   leaveVoyageRef.current = leaveVoyage;
   useEffect(() => {
@@ -1249,7 +1268,7 @@ function Index() {
             }
             className={`bw-map-panel absolute bottom-0 left-0 right-0 z-[60] flex flex-col overflow-hidden bg-transparent ${dragHeight !== null ? "transition-none" : "transition-[height,width,transform] duration-[420ms] ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none"} md:bottom-5 md:left-5 md:right-auto md:top-5 md:h-auto md:w-[var(--desktop-panel-width)] md:overflow-visible md:rounded-3xl md:z-40 ${
               desktopPanelOpen ? "md:translate-x-0" : "md:translate-x-[calc(-100%-1.25rem)]"
-            } ${panelLevel === 0 ? "h-32 rounded-t-3xl" : panelLevel === 1 ? (isPeekSelection ? "h-[var(--mobile-peek-height)] rounded-t-3xl" : panelMode === "itinerary" || voyage ? "h-[calc(var(--stage-height)*0.5)] rounded-t-3xl" : "h-[var(--middle-panel-height)] rounded-t-3xl") : "h-[calc(var(--stage-height)-3.5rem)] rounded-t-3xl"}`}
+            } ${panelLevel === 0 ? (voyage ? "h-24 rounded-t-3xl" : "h-32 rounded-t-3xl") : panelLevel === 1 ? (isPeekSelection ? "h-[var(--mobile-peek-height)] rounded-t-3xl" : panelMode === "itinerary" || voyage ? "h-[calc(var(--stage-height)*0.5)] rounded-t-3xl" : "h-[var(--middle-panel-height)] rounded-t-3xl") : "h-[calc(var(--stage-height)-3.5rem)] rounded-t-3xl"}`}
           >
             {collapsed ? (
               <CollapsedPanelSummary
@@ -1355,32 +1374,43 @@ function Index() {
               >
                 {isMobile ? (
                   <>
-                    {/* Comme un itinéraire Google : la chaîne des étapes, puis la liste verticale. */}
-                    <div className="bw-voyage-aside__head">
-                      <JourneyChain
-                        steps={voyage.friezeSteps}
-                        openId={timelineClosed ? null : voyage.shown}
-                        onOpen={(next) => {
-                          voyage.setStoryIndex(next);
-                          setTimelineClosed(false);
-                          setPanelLevel((level) => (level === 0 ? 1 : level));
-                        }}
-                      />
-                    </div>
-                    <div className="bw-voyage-aside__title">
-                      <p>
-                        <b>{voyage.summary.heading}</b> {voyageTitle}
-                        {voyage.summary.cancelled ? <em> · Annulée</em> : null}
-                      </p>
-                      <button type="button" onClick={leaveVoyage}>
-                        <ArrowLeft size={14} aria-hidden /> Accueil
+                    {/* Un seul en-tête : le trajet, puis deux boutons ronds. La liste fait le reste. */}
+                    <div className="bw-voyage-head">
+                      {panelLevel === 0 && voyageNow && NowIcon ? (
+                        <button
+                          type="button"
+                          className="bw-voyage-head__now"
+                          onClick={() => setPanelLevel(1)}
+                        >
+                          <span aria-hidden>
+                            <NowIcon size={16} />
+                          </span>
+                          <strong>{voyageNow.label}</strong>
+                          <small>{voyageNow.sub}</small>
+                        </button>
+                      ) : (
+                        <div className="bw-voyage-head__title">
+                          <strong>{voyageRoute}</strong>
+                          <small>
+                            {voyage.summary.short}
+                            {voyageVessel ? <>{" · "}{voyageVessel}</> : null}
+                            {voyage.summary.cancelled ? <em> · Annulée</em> : null}
+                          </small>
+                        </div>
+                      )}
+                      {voyage.placesButton}
+                      <button
+                        type="button"
+                        className="bw-round-button"
+                        onClick={leaveVoyage}
+                        aria-label="Retour à l'accueil"
+                        title="Retour à l'accueil"
+                      >
+                        <ArrowLeft size={16} aria-hidden />
                       </button>
                     </div>
                     {panelLevel > 0 ? (
                       <div className="bw-voyage-aside__scroll">
-                        {voyage.placesEntry ? (
-                          <div className="bw-voyage-aside__places">{voyage.placesEntry}</div>
-                        ) : null}
                         {voyage.liveAlert ? (
                           <LivePulse
                             info={voyage.info}

@@ -1,4 +1,4 @@
-import { useEffect, useRef, type ReactNode } from "react";
+import type { ReactNode } from "react";
 import { Check, ChevronDown, CircleAlert } from "lucide-react";
 import type { JourneyStepId } from "@/lib/ferry/journeySteps";
 import { STEP_ICONS, type FriezeStep } from "./JourneyFrieze";
@@ -19,54 +19,6 @@ function scrollToTop(item: HTMLElement | null) {
     top: item.getBoundingClientRect().top - box.getBoundingClientRect().top,
     behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth",
   });
-}
-
-/**
- * Téléphone : en haut, les étapes en petites cartes qui défilent à l'horizontale (icône, nom,
- * heure). L'étape en cours est centrée à l'ouverture ; un toucher ouvre une étape.
- */
-export function JourneyChain({
-  steps,
-  openId,
-  onOpen,
-}: {
-  steps: FriezeStep[];
-  openId: JourneyStepId | null;
-  onOpen: (index: number) => void;
-}) {
-  const list = useRef<HTMLOListElement>(null);
-  const currentId = steps.find((step) => step.state === "current")?.id;
-  useEffect(() => {
-    const box = list.current;
-    const item = box?.querySelector<HTMLElement>('[aria-current="step"]');
-    if (!box || !item) return;
-    box.scrollLeft = item.offsetLeft - (box.clientWidth - item.offsetWidth) / 2;
-  }, [currentId]);
-  return (
-    <ol className="bw-chain" ref={list} aria-label="Étapes du voyage">
-      {steps.map((step, index) => {
-        const Icon = step.late ? CircleAlert : step.state === "done" ? Check : STEP_ICONS[step.id];
-        const { time, rest } = splitTime(step.sub);
-        return (
-          <li key={step.id}>
-            <button
-              type="button"
-              data-state={step.late ? "late" : step.state}
-              aria-current={step.state === "current" ? "step" : undefined}
-              aria-pressed={openId === step.id}
-              onClick={() => onOpen(index)}
-            >
-              <span className="bw-chain__dot" aria-hidden>
-                <Icon size={14} />
-              </span>
-              <strong>{step.label}</strong>
-              <small>{time ?? rest}</small>
-            </button>
-          </li>
-        );
-      })}
-    </ol>
-  );
 }
 
 /**

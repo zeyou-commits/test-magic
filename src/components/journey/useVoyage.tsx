@@ -492,11 +492,25 @@ export function useVoyage(
         invite={now < departureMs}
       />
     ) : null,
+    /** Téléphone : le même accès au trajet sur mesure, en bouton rond dans l'en-tête. */
+    placesButton: traveller ? (
+      <JourneyPlacesEntry
+        compact
+        departureId={departure.id}
+        europePort={outbound ? from : to}
+        algeriaPort={outbound ? to : from}
+        places={places}
+        onChange={updatePlaces}
+        invite={now < departureMs}
+      />
+    ) : null,
     info,
     /** Une info ou un signalement en cours : le bandeau « En direct » mérite sa place en tête. */
     liveAlert: info.official + info.travellers > 0,
     summary: {
       heading: traveller ? (outbound ? "Mon voyage · aller" : "Mon voyage · retour") : "Le voyage d'un proche",
+      /** Le sens en un mot, pour l'en-tête du téléphone. */
+      short: traveller ? (outbound ? "Aller" : "Retour") : "Voyage d'un proche",
       title: `${from.name} → ${to.name}`,
       vesselName: vessel?.name ?? null,
       countdown,

@@ -12992,45 +12992,7 @@ img[data-logo="dark"] {
   background: none;
 }
 
-/* « Ma traversée », étapes « En mer » et « Arrivée » : l'avancement du navire en tête. */
-.bw-step-tracker .bw-crossing {
-  padding: 13px 14px;
-  border-radius: 16px;
-  box-shadow: 0 6px 18px -12px #16324a40;
-}
-@media (max-width: 767px) {
-  .bw-timeline__body .bw-step-tracker .bw-crossing {
-    padding: 12px;
-  }
-}
 
-.bw-step-tracker {
-  position: relative;
-  border-radius: 16px;
-  cursor: pointer;
-  transition: transform 0.15s ease;
-}
-.bw-step-tracker:hover .bw-crossing {
-  border-color: #0e7a43;
-  box-shadow: 0 10px 24px -14px #0e7a4380;
-}
-.bw-step-tracker:active {
-  transform: scale(0.99);
-}
-.bw-step-tracker:focus-visible {
-  outline: 2px solid #0e7a43;
-  outline-offset: 2px;
-}
-.bw-step-tracker__more {
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  gap: 2px;
-  margin-top: 6px;
-  color: #0e7a43;
-  font-size: 11.5px;
-  font-weight: 750;
-}
 /* Ports et navire dans le titre du voyage : des liens discrets, comme ailleurs sur le site. */
 .bw-inline-link {
   padding: 0;
@@ -13159,60 +13121,32 @@ img[data-logo="dark"] {
   }
 }
 
-/* Le petit bateau de « Ma traversée » : il navigue sur le trait de la traversée (frise, liste,
-   volet replié), à la position calculée comme sur la carte d'avancement. */
-.bw-frieze__bar[data-ferry] {
-  background: linear-gradient(
-    90deg,
-    #0e7a43 calc(var(--ferry, 0) * 100%),
-    #ddd8c9 calc(var(--ferry, 0) * 100%)
-  );
+/* « Ma traversée » : la carte « En navigation » de mon bateau, en tête du volet. */
+.bw-voyage-traffic {
+  flex: none;
 }
-.bw-frieze__ferry {
-  position: absolute;
-  bottom: -2px;
-  left: calc(var(--ferry, 0) * 100%);
-  z-index: 2;
-  line-height: 0;
-  transform: translateX(-50%);
-  transition: left 1.2s ease;
-  pointer-events: none;
+.bw-voyage-traffic .bw-compact-crossing {
+  margin-bottom: 0;
 }
-.bw-timeline li {
-  --ferry-top: 34px;
-}
-.bw-timeline__ferry {
-  position: absolute;
-  top: calc(var(--ferry-top) + var(--ferry, 0) * (100% - var(--ferry-top) - 4px));
-  left: -2px;
-  z-index: 2;
-  line-height: 0;
-  transform: translateY(-60%);
-  transition: top 1.2s ease;
-  pointer-events: none;
-}
-.bw-voyage-head__now .bw-voyage-head__track {
-  position: relative;
-  display: block;
-  grid-column: 2;
-  height: 4px;
-  margin: 12px 34px 2px 0;
-  border-radius: 999px;
-  background: linear-gradient(
-    90deg,
-    #0e7a43 calc(var(--ferry, 0) * 100%),
-    #ddd8c9 calc(var(--ferry, 0) * 100%)
-  );
-}
-.bw-voyage-head__track .bw-mini-ferry {
-  position: absolute;
-  bottom: -3px;
-  left: calc(var(--ferry, 0) * 100%);
-  transform: translateX(-50%);
-}
-@media (prefers-reduced-motion: reduce) {
-  .bw-frieze__ferry,
-  .bw-timeline__ferry {
-    transition: none;
+@media (min-width: 768px) {
+  .bw-voyage-traffic {
+    padding: 12px 16px 4px;
   }
+}
+/* Téléphone : la même carte, resserrée. */
+.bw-compact-crossing[data-compact] {
+  padding: 8px 10px !important;
+  border-radius: 14px;
+}
+.bw-compact-crossing[data-compact] .bw-compact-track {
+  margin-top: 22px;
+  margin-bottom: 6px;
+}
+/* Le trajet et le navire sont déjà dans l'en-tête juste au-dessus : pas de doublon. */
+.bw-compact-crossing[data-compact] .bw-tc-company,
+.bw-compact-crossing[data-compact] .bw-tc-ports {
+  display: none;
+}
+.bw-compact-crossing[data-compact] .bw-trust {
+  display: none;
 }

@@ -13,9 +13,7 @@ import {
   Users,
   type LucideIcon,
 } from "lucide-react";
-import type { CrossingScene } from "@/lib/ferry/crossingProgress";
 import type { JourneyStepId, StepState } from "@/lib/ferry/journeySteps";
-import { MiniFerry } from "@/components/panel/MiniFerry";
 
 export const STEP_ICONS: Record<JourneyStepId, LucideIcon> = {
   papers: FileText,
@@ -38,8 +36,6 @@ export type FriezeStep = {
   late?: boolean;
   /** Voyageurs BledWay qui ont déclaré être à cette étape (« J'y suis »). */
   count?: number;
-  /** Étape « En mer » : le petit bateau, de 0 (à quai) à 1 (arrivé), et ce qu'il fait. */
-  ferry?: { ratio: number; scene: CrossingScene | null };
 };
 
 /**
@@ -84,24 +80,7 @@ export function JourneyFrieze({
             data-shown={shownId === step.id || undefined}
           >
             {index < steps.length - 1 ? (
-              <span
-                className="bw-frieze__bar"
-                data-state={step.state}
-                data-ferry={step.ferry ? "" : undefined}
-                style={
-                  step.ferry
-                    ? ({ "--ferry": step.ferry.ratio } as React.CSSProperties)
-                    : undefined
-                }
-                aria-hidden
-              >
-                {/* Le petit bateau navigue sur le trait de la traversée, vers l'étape suivante. */}
-                {step.ferry ? (
-                  <span className="bw-frieze__ferry">
-                    <MiniFerry size={34} scene={step.ferry.scene} />
-                  </span>
-                ) : null}
-              </span>
+              <span className="bw-frieze__bar" data-state={step.state} aria-hidden />
             ) : null}
             <button
               type="button"

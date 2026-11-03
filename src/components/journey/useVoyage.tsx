@@ -1,8 +1,7 @@
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { ChevronRight } from "lucide-react";
-import { CrossingCard } from "@/components/panel/CrossingCard";
+import { TrafficCard } from "@/components/panel/TrafficCard";
 import { RateStars } from "@/components/panel/RateStars";
 import { TripStatusPicker } from "@/components/panel/TripPresence";
 import { useLiveInfo } from "@/components/panel/LivePulse";
@@ -47,6 +46,7 @@ import {
 import { crossingProgress } from "@/lib/ferry/crossingProgress";
 import { companiesQuery, upcomingDeparturesQuery } from "@/lib/ferry/queries";
 import { useLiveShips } from "@/lib/ferry/useLiveShips";
+import { trackingTimes } from "@/lib/ferry/tracking";
 import { portTimeZone } from "@/lib/ferry/time";
 import type { Departure, Selection } from "@/lib/ferry/types";
 import type { VoyageTrip } from "@/lib/ferry/voyageTrip";
@@ -159,13 +159,13 @@ export function useVoyage(
   const fromZone = portTimeZone(from);
   const toZone = portTimeZone(to);
   const presentationMinutes = departure.presentation_minutes ?? presentation ?? null;
-  const companyName =
-    companies.find(
-      (company) =>
-        company.id ===
-        ((departures ?? []).find((item) => item.id === departure.id)?.company_id ??
-          vessel?.company_id),
-    )?.name ?? null;
+  const company = companies.find(
+    (item) =>
+      item.id ===
+      ((departures ?? []).find((row) => row.id === departure.id)?.company_id ??
+        vessel?.company_id),
+  );
+  const companyName = company?.name ?? null;
   const departureMs = Date.parse(departure.departure_at);
   const endMs = tripEnd(departure);
   const timeline = journeyTimeline({
@@ -188,23 +188,6 @@ export function useVoyage(
   const live = liveShips.find((ship) => ship.departure.id === departure.id) ?? null;
   const progress = crossingProgress(fullDeparture, from, to, live, now);
   const atSea = progress.ratio !== null && now >= departureMs && now < endMs;
-  // Le petit bateau de la frise : à quai avant le départ, en route pendant, arrivé ensuite.
-  const ferry =
-    departure.status === "cancelled"
-      ? null
-      : {
-          ratio: now < departureMs ? 0 : now >= endMs ? 1 : (progress.ratio ?? 0),
-          scene: progress.scene,
-        };
-  // La carte d'avancement : de quelques heures avant le départ jusqu'au lendemain de l'arrivée.
-  const tracking =
-    departure.status !== "cancelled" && now >= departureMs - 6 * 3_600_000 && now <= endMs + 12 * 3_600_000;
-  const openShip = () =>
-    onSelect(
-      departure.vessel_id
-        ? { type: "vessel", id: departure.vessel_id }
-        : { type: "departure", id: departure.id },
-    );
   const subOf = (step: JourneyStepId) => {
     const items = itemsOf(step);
     const count = items.filter((item) => preparation.done.includes(item.id)).length;
@@ -259,7 +242,6 @@ export function useVoyage(
       stepState(step, current, steps) === "done" &&
       itemsOf(step).length > 0 &&
       !completed.includes(step),
-    ...(step === "sea" && ferry ? { ferry } : {}),
   }));
   const index = storyIndex ?? steps.indexOf(current);
   const shown: JourneyStepId | null = isMobile
@@ -365,33 +347,7 @@ export function useVoyage(
         only={statuses}
       />
     ) : null;
-    // En mer et à l'arrivée : l'avancement du navire en tête de l'étape, sans quitter le voyage.
-    const top =
-      tracking && (step === "sea" || step === "arrival") ? (
-        <>
-          {/* Comme partout sur le site : le navire en mouvement ouvre sa fiche (retour au voyage). */}
-          <div
-            className="bw-step-tracker"
-            role="button"
-            tabIndex={0}
-            aria-label={`Ouvrir la fiche ${vessel ? `du ${vessel.name}` : "de la traversée"}`}
-            onClick={openShip}
-            onKeyDown={(event) => {
-              if (event.key !== "Enter" && event.key !== " ") return;
-              event.preventDefault();
-              openShip();
-            }}
-          >
-            <CrossingCard departure={fullDeparture} from={from} to={to} live={live} />
-            <span className="bw-step-tracker__more" aria-hidden>
-              Voir la fiche <ChevronRight size={14} />
-            </span>
-          </div>
-          {picker}
-        </>
-      ) : (
-        picker
-      );
+    const top = picker;
     // Noter sur le moment : le port en y arrivant, le navire et le port d'arrivée en débarquant.
     const rate = (kind: "port" | "vessel", id: string, label: string) => (
       <StepRate
@@ -420,7 +376,7 @@ export function useVoyage(
               Ajouter mon retour
             </button>
           </div>
-        ) : step === "sea" && !tracking ? (
+        ) : step === "sea" ? (
           <div className="bw-step-panel__more">
             <button type="button" onClick={() => onSelect({ type: "departure", id: departure.id })}>
               Toute la traversée en direct
@@ -439,7 +395,7 @@ export function useVoyage(
         index={steps.indexOf(step)}
         count={steps.length}
         // La carte d'avancement dit déjà tout pendant la traversée : pas de texte en double.
-        lead={tracking && step === "sea" ? "" : guide.lead}
+        lead={guide.lead}
         links={links}
         items={itemsOf(step)}
         done={preparation.done}
@@ -490,6 +446,25 @@ export function useVoyage(
     setStoryIndex,
     mapProps,
     renderPanel,
+    /**
+     * Le bateau qui avance : la carte « En navigation » de l'accueil, pour ma traversée, en tête du
+     * voyage (la version resserrée sur téléphone). Elle ouvre la fiche du navire.
+     */
+    trafficCard: departure.status === "cancelled" ? null : (
+      <TrafficCard
+        compact={isMobile}
+        crossing={{
+          departure: fullDeparture,
+          from,
+          to,
+          live,
+          times: trackingTimes(fullDeparture, live),
+          company,
+          vessel,
+        }}
+        onSelect={onSelect}
+      />
+    ),
     /** Le trajet sur mesure, en tête du voyage plutôt que dans une étape. */
     placesEntry: traveller ? (
       <JourneyPlacesEntry

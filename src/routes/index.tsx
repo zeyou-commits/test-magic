@@ -75,7 +75,6 @@ import { EmbeddedRoom } from "@/components/panel/LiveRoom";
 import { LivePulse } from "@/components/panel/LivePulse";
 import { JourneyFrieze } from "@/components/journey/JourneyFrieze";
 import { STEP_ICONS } from "@/components/journey/JourneyFrieze";
-import { MiniFerry } from "@/components/panel/MiniFerry";
 import { JourneyTimeline } from "@/components/journey/JourneyTimeline";
 import { useVoyage } from "@/components/journey/useVoyage";
 import { GO_HOME_EVENT, OPEN_VOYAGE_EVENT, useVoyageTrip } from "@/lib/ferry/voyageTrip";
@@ -1388,15 +1387,6 @@ function Index() {
                           </span>
                           <strong>{voyageNow.label}</strong>
                           <small>{voyageNow.sub}</small>
-                          {voyageNow.ferry && voyageNow.id === "sea" ? (
-                            <i
-                              className="bw-voyage-head__track"
-                              style={{ "--ferry": voyageNow.ferry.ratio } as React.CSSProperties}
-                              aria-hidden
-                            >
-                              <MiniFerry size={30} scene={voyageNow.ferry.scene} />
-                            </i>
-                          ) : null}
                         </button>
                       ) : (
                         <div className="bw-voyage-head__title">
@@ -1419,6 +1409,9 @@ function Index() {
                         <ArrowLeft size={16} aria-hidden />
                       </button>
                     </div>
+                    {panelLevel > 0 && voyage.trafficCard ? (
+                      <div className="bw-voyage-traffic">{voyage.trafficCard}</div>
+                    ) : null}
                     {panelLevel > 0 ? (
                       <div className="bw-voyage-aside__scroll">
                         {voyage.liveAlert ? (
@@ -1454,6 +1447,10 @@ function Index() {
                     </button>
                     {voyage.placesEntry ?? <span>Traversée suivie</span>}
                   </div>
+                  {/* Le bateau qui avance, toujours visible en tête du volet. */}
+                  {voyage.trafficCard ? (
+                    <div className="bw-voyage-traffic">{voyage.trafficCard}</div>
+                  ) : null}
                   <div className="bw-voyage-aside__scroll" key={voyage.shown ?? voyage.current}>
                     {voyage.liveAlert ? (
                       <LivePulse

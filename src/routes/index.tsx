@@ -1409,11 +1409,11 @@ function Index() {
                         <ArrowLeft size={16} aria-hidden />
                       </button>
                     </div>
-                    {panelLevel > 0 && voyage.trafficCard ? (
-                      <div className="bw-voyage-traffic">{voyage.trafficCard}</div>
-                    ) : null}
                     {panelLevel > 0 ? (
                       <div className="bw-voyage-aside__scroll">
+                        {voyage.tripCard ? (
+                          <div className="bw-voyage-traffic">{voyage.tripCard}</div>
+                        ) : null}
                         {voyage.liveAlert ? (
                           <LivePulse
                             info={voyage.info}
@@ -1425,7 +1425,7 @@ function Index() {
                         <JourneyTimeline
                           steps={voyage.friezeSteps}
                           openId={timelineClosed ? null : voyage.shown}
-                          hereLabel={voyage.traveller ? "Vous êtes ici" : "En ce moment"}
+                          hereLabel={voyage.hereLabel}
                           onToggle={(next) => {
                             if (!timelineClosed && voyage.friezeSteps[next]?.id === voyage.shown) {
                               setTimelineClosed(true);
@@ -1447,24 +1447,26 @@ function Index() {
                     </button>
                     {voyage.placesEntry ?? <span>Traversée suivie</span>}
                   </div>
-                  {/* Le bateau qui avance, toujours visible en tête du volet. */}
-                  {voyage.trafficCard ? (
-                    <div className="bw-voyage-traffic">{voyage.trafficCard}</div>
-                  ) : null}
-                  <div className="bw-voyage-aside__scroll" key={voyage.shown ?? voyage.current}>
-                    {voyage.liveAlert ? (
-                      <LivePulse
-                        info={voyage.info}
-                        onOpen={() =>
-                          handleSelect({ type: "departure", id: voyage.trip.departure.id })
-                        }
-                      />
+                  {/* Ma traversée défile avec l'étape : le bateau en tête, puis l'étape regardée. */}
+                  <div className="bw-voyage-aside__scroll">
+                    {voyage.tripCard ? (
+                      <div className="bw-voyage-traffic">{voyage.tripCard}</div>
                     ) : null}
-                    {voyage.renderPanel(
-                      voyage.shown ?? voyage.current,
-                      Boolean(voyage.pinned) && !voyage.hovering,
-                      voyage.close,
-                    )}
+                    <div className="bw-voyage-aside__step" key={voyage.shown ?? voyage.current}>
+                      {voyage.liveAlert ? (
+                        <LivePulse
+                          info={voyage.info}
+                          onOpen={() =>
+                            handleSelect({ type: "departure", id: voyage.trip.departure.id })
+                          }
+                        />
+                      ) : null}
+                      {voyage.renderPanel(
+                        voyage.shown ?? voyage.current,
+                        Boolean(voyage.pinned) && !voyage.hovering,
+                        voyage.close,
+                      )}
+                    </div>
                   </div>
                   </>
                 )}
@@ -1751,7 +1753,7 @@ function Index() {
                       voyage.pin(step);
                       setDesktopPanelOpen(true);
                     }}
-                    hereLabel={voyage.traveller ? "Vous êtes ici" : "En ce moment"}
+                    hereLabel={voyage.hereLabel}
                   />
                 </section>
               </div>

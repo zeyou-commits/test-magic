@@ -78,7 +78,17 @@ export function tripPhase(trip: MyTrip, now: number) {
  * Accueil : « Ma traversée » toujours en tête, avec le compte à rebours, l'état et l'action utile.
  * L'avatar est celui de mon profil ; sans profil, le cabas de mon étape.
  */
-export function MyTripHero({ onSelect }: { onSelect: (selection: Selection) => void }) {
+export function MyTripHero({
+  onSelect,
+  inVoyage = false,
+}: {
+  onSelect: (selection: Selection) => void;
+  /**
+   * Dans « Ma traversée » : la même fiche, sans ce qui y figure déjà (la route du bled, le salon,
+   * la préparation), et avec les dates de départ et d'arrivée.
+   */
+  inVoyage?: boolean;
+}) {
   const { user } = useAuth();
   const { trip } = useMyTrip();
   const ships = useLiveShips();
@@ -124,6 +134,11 @@ export function MyTripHero({ onSelect }: { onSelect: (selection: Selection) => v
   const arrivalZone = portTimeZone(trip.to);
   const departureIso = progress?.times.departure.iso ?? trip.departure.departure_at;
   const arrivalIso = progress?.times.arrival.iso ?? null;
+  // « jeu. 5 · 09:00 » : le jour et l'heure, au fuseau du port.
+  const moment = (iso: string, timeZone: string) => {
+    const parts = formatDateParts(iso, timeZone);
+    return `${parts.weekday} ${parts.shortDate.split(" ")[0]} · ${parts.time}`;
+  };
   const dayDelta =
     arrivalIso && trip.to
       ? Math.round(
@@ -162,6 +177,7 @@ export function MyTripHero({ onSelect }: { onSelect: (selection: Selection) => v
   return (
     <section
       className="bw-mytrip-hero"
+      data-in-voyage={inVoyage || undefined}
       data-phase={phase.phase}
       data-alert={held || undefined}
       aria-label="Ma traversée"
@@ -194,7 +210,13 @@ export function MyTripHero({ onSelect }: { onSelect: (selection: Selection) => v
               {trip.from?.name ?? "Départ"} → {trip.to?.name ?? "Arrivée"}
             </strong>
           )}
-          {underway ? null : (
+          {underway ? null : inVoyage ? (
+            <span className="bw-mytrip-hero__date">
+              {moment(departureIso, zone)}
+              {arrivalIso ? ` → ${moment(arrivalIso, arrivalZone)}` : ""}
+              {trip.departure.status === "modified" ? " · horaire modifié" : ""}
+            </span>
+          ) : (
             <span className="bw-mytrip-hero__date">
               {formatDateTime(departureIso, zone)}
               {trip.departure.status === "modified" ? " · horaire modifié" : ""}
@@ -295,8 +317,25 @@ export function MyTripHero({ onSelect }: { onSelect: (selection: Selection) => v
           ) : (
             <small>Départ à confirmer</small>
           )}
+          {inVoyage ? (
+            <div className="bw-mytrip-hero__voyage-dates">
+              <span>
+                Départ <b>{moment(departureIso, zone)}</b>
+              </span>
+              {arrivalIso ? (
+                <span>
+                  Arrivée <b>{moment(arrivalIso, arrivalZone)}</b>
+                </span>
+              ) : null}
+            </div>
+          ) : null}
           <div className="bw-mytrip-hero__voyage-times">
-            {arrivalIso ? (
+            {inVoyage ? (
+              // Les dates sont juste au-dessus : il ne reste que le retard.
+              <span className="bw-mytrip-hero__arrival">
+                {delay ? <small>Retard {delay}</small> : null}
+              </span>
+            ) : arrivalIso ? (
               <span className="bw-mytrip-hero__arrival">
                 <span>
                   Arrivée <b>{formatDateParts(arrivalIso, arrivalZone).time}</b>
@@ -327,6 +366,7 @@ export function MyTripHero({ onSelect }: { onSelect: (selection: Selection) => v
           </div>
         </div>
       ) : null}
+      {inVoyage ? null : (
       <div className="bw-mytrip-hero__actions">
         {prep && prepOpen && !underway ? (
           <button
@@ -351,7 +391,8 @@ export function MyTripHero({ onSelect }: { onSelect: (selection: Selection) => v
           />
         ) : null}
       </div>
-      {underway ? null : (
+      )}
+      {underway || inVoyage ? null : (
         <div className="bw-mytrip-hero__foot">
           {prep ? null : <span>{next}</span>}
           {trip.vessel && !held && (phase.phase === "today" || phase.phase === "sea") ? (
@@ -369,6 +410,7 @@ export function MyTripHero({ onSelect }: { onSelect: (selection: Selection) => v
         </div>
       )}
       {/* La route du bled de ce voyage, étape par étape (mode « Mon voyage » de la carte). */}
+      {inVoyage ? null : (
       <Link
         to="/"
         search={{ voyage: 1 } as never}
@@ -377,6 +419,7 @@ export function MyTripHero({ onSelect }: { onSelect: (selection: Selection) => v
       >
         Ma route du bled, étape par étape <ArrowRight size={14} aria-hidden />
       </Link>
+      )}
       {closingIn !== null ? (
         <p className="bw-mytrip-hero__closing" role="status">
           Voyage terminé : cette fiche se ferme{" "}

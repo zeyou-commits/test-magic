@@ -404,6 +404,8 @@ export default function FerryMap({
   const mapRef = useRef<MapLibreMap | null>(null);
   const itineraryCameraRef = useRef<string | null>(null);
   const readyRef = useRef(false);
+  // Filtres d'origine des calques de la flotte, rétablis après le trajet porte à porte.
+  const shipFilters = useRef(new Map<string, unknown>());
   const portMarkersRef = useRef<Map<string, Marker>>(new Map());
   // Les lignes affichées, pour poser leurs durées à l'écart des navires.
   const routeFeaturesRef = useRef<ReturnType<typeof routeFeatures>>([]);
@@ -1662,19 +1664,35 @@ export default function FerryMap({
       "fleet-count",
       "fleet-hover-halo",
     ];
+    // Pendant le trajet porte à porte, les autres navires s'effacent, mais le navire suivi reste.
+    const shipLayers = [
+      "fleet-ships",
+      ...VESSEL_IMAGE_STEPS.map(({ width }) => `fleet-photo-${width}`),
+      "fleet-labels",
+    ];
+    const keepShip = Boolean(itineraryPreview && focusShipId);
     for (const id of ordinaryLayers) {
       if (map.getLayer(id))
         map.setLayoutProperty(
           id,
           "visibility",
           itineraryPreview
-            ? "none"
+            ? keepShip && shipLayers.includes(id)
+              ? "visible"
+              : "none"
             : id === "ferry-routes-duration" && isMobile && !hasFocus
               ? "none"
               : "visible",
         );
     }
-  }, [itineraryPreview, isMobile, hasFocus, mapReady]);
+    for (const id of shipLayers) {
+      if (!map.getLayer(id)) continue;
+      if (!shipFilters.current.has(id)) shipFilters.current.set(id, map.getFilter(id) ?? null);
+      const base = shipFilters.current.get(id) ?? null;
+      const only = ["==", ["get", "shipId"], focusShipId ?? ""];
+      map.setFilter(id, (keepShip ? (base ? ["all", base, only] : only) : base) as never);
+    }
+  }, [itineraryPreview, isMobile, hasFocus, mapReady, focusShipId]);
 
   useEffect(() => {
     const map = mapRef.current;

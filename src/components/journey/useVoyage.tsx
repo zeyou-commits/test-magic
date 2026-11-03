@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { MyTripHero } from "@/components/panel/MyTripHero";
 import { TrafficCard } from "@/components/panel/TrafficCard";
 import { RateStars } from "@/components/panel/RateStars";
 import { TripStatusPicker } from "@/components/panel/TripPresence";
@@ -447,10 +448,23 @@ export function useVoyage(
     mapProps,
     renderPanel,
     /**
-     * Le bateau qui avance : la carte « En navigation » de l'accueil, pour ma traversée, en tête du
-     * voyage (la version resserrée sur téléphone). Elle ouvre la fiche du navire.
+     * Le repère de la frise. « Vous êtes ici » seulement quand le voyageur l'a dit (« J'y suis ») ;
+     * sinon l'étape vient de l'heure et des actions cochées : « Prochaine étape » avant le départ.
      */
-    trafficCard: departure.status === "cancelled" ? null : (
+    hereLabel: !traveller
+      ? "En ce moment"
+      : status
+        ? "Vous êtes ici"
+        : now < departureMs
+          ? "Prochaine étape"
+          : "En ce moment",
+    /**
+     * En tête du voyage, la fiche « Ma traversée » de l'accueil : compte à rebours, puis le bateau
+     * qui avance. Pour le voyage d'un proche, la carte « En navigation » de son navire.
+     */
+    tripCard: traveller ? (
+      <MyTripHero onSelect={onSelect} inVoyage />
+    ) : departure.status === "cancelled" ? null : (
       <TrafficCard
         compact={isMobile}
         crossing={{

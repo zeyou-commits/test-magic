@@ -92,7 +92,14 @@ export function JourneyFrieze({
               onFocus={() => onHover(step.id)}
               onClick={() => onPin(step.id)}
             >
-              {step.state === "current" ? <b className="bw-frieze__here">{hereLabel}</b> : null}
+              {step.state === "current" ? (
+                <b
+                  className="bw-frieze__here"
+                  title="Cliquez sur l'étape, puis « J'y suis » pour dire où vous en êtes (dès la veille du départ)."
+                >
+                  {hereLabel}
+                </b>
+              ) : null}
               <span className="bw-frieze__dot">
                 <Icon size={step.state === "current" ? 22 : 19} aria-hidden />
                 {step.count ? (

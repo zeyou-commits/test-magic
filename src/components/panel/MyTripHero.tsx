@@ -154,6 +154,16 @@ export function MyTripHero({
     !held &&
     !progress?.reportedPostponed &&
     (phase.phase === "sea" || Boolean(progress?.reportedQuay) || Boolean(progress?.hold));
+  // « Ma traversée » : le suivi du bateau dès avant le départ (à quai, au début de la barre).
+  const waiting =
+    inVoyage &&
+    !underway &&
+    Boolean(progress) &&
+    !inPassage &&
+    !held &&
+    (phase.phase === "before" || phase.phase === "today");
+  const tracking = underway || waiting;
+  const shownPercent = waiting ? 0 : percent;
   const image =
     steps.find((step) => step.id === status)?.image ??
     (phase.phase === "sea"
@@ -195,13 +205,13 @@ export function MyTripHero({
           )}
         </span>
         <span className="bw-mytrip-hero__text">
-          {underway ? null : (
+          {tracking ? null : (
             <small>
               Ma traversée{trip.vessel ? ` · ${trip.vessel.name}` : ""}{" "}
               <VesselAlertTag vesselId={trip.vessel?.id} />
             </small>
           )}
-          {underway ? (
+          {tracking ? (
             <strong className="bw-mytrip-hero__title">
               Ma traversée : {trip.from?.name ?? "Départ"} - {trip.to?.name ?? "Arrivée"}
             </strong>
@@ -210,7 +220,7 @@ export function MyTripHero({
               {trip.from?.name ?? "Départ"} → {trip.to?.name ?? "Arrivée"}
             </strong>
           )}
-          {underway ? null : inVoyage ? (
+          {tracking ? null : inVoyage ? (
             <span className="bw-mytrip-hero__date">
               {moment(departureIso, zone)}
               {arrivalIso ? ` → ${moment(arrivalIso, arrivalZone)}` : ""}
@@ -222,7 +232,7 @@ export function MyTripHero({
               {trip.departure.status === "modified" ? " · horaire modifié" : ""}
             </span>
           )}
-          {delay && !underway ? <b className="bw-delay-badge">Retardé · {delay}</b> : null}
+          {delay && !tracking ? <b className="bw-delay-badge">Retardé · {delay}</b> : null}
         </span>
         <ArrowRight size={18} aria-hidden />
       </button>
@@ -234,7 +244,7 @@ export function MyTripHero({
           status={status}
         />
       ) : null}
-      {underway || inPassage ? null : (
+      {tracking || inPassage ? null : (
         <div className="bw-mytrip-hero__status">
           <div className="bw-mytrip-hero__clock" aria-live="off">
             {held ? (
@@ -271,17 +281,19 @@ export function MyTripHero({
           ) : null}
         </div>
       )}
-      {underway && progress ? (
+      {tracking && progress ? (
         <div className="bw-mytrip-hero__voyage">
-          {percent !== null ? (
+          {shownPercent !== null ? (
             <>
               <div className="bw-mytrip-hero__voyage-head">
                 <small>
-                  {progress.reportedQuay || progress.hold
-                    ? "Encore à quai"
-                    : estimated
-                      ? "En mer · estimé"
-                      : "En mer"}
+                  {waiting
+                    ? "À quai"
+                    : progress.reportedQuay || progress.hold
+                      ? "Encore à quai"
+                      : estimated
+                        ? "En mer · estimé"
+                        : "En mer"}
                 </small>
                 {seaPeak != null ? (
                   <span
@@ -295,8 +307,11 @@ export function MyTripHero({
                   </span>
                 ) : null}
                 <strong>
-                  {estimated ? "≈ " : ""}
-                  {percent} %
+                  {waiting
+                    ? phase.phase === "today"
+                      ? `Départ dans ${phase.countdown}`
+                      : phase.text
+                    : `${estimated ? "≈ " : ""}${percent} %`}
                 </strong>
               </div>
               <div
@@ -304,12 +319,12 @@ export function MyTripHero({
                 data-estimated={estimated || undefined}
                 role="progressbar"
                 aria-label="Avancement de la traversée"
-                aria-valuenow={percent}
+                aria-valuenow={shownPercent}
                 aria-valuemin={0}
                 aria-valuemax={100}
               >
-                <span style={{ width: `${percent}%` }} />
-                <i style={{ left: ferryLeft(percent, 54, progress.scene, 4) }}>
+                <span style={{ width: `${shownPercent}%` }} />
+                <i style={{ left: ferryLeft(shownPercent, 54, progress.scene, 4) }}>
                   <MiniFerry size={54} scene={progress.scene} />
                 </i>
               </div>
@@ -330,12 +345,7 @@ export function MyTripHero({
             </div>
           ) : null}
           <div className="bw-mytrip-hero__voyage-times">
-            {inVoyage ? (
-              // Les dates sont juste au-dessus : il ne reste que le retard.
-              <span className="bw-mytrip-hero__arrival">
-                {delay ? <small>Retard {delay}</small> : null}
-              </span>
-            ) : arrivalIso ? (
+            {arrivalIso ? (
               <span className="bw-mytrip-hero__arrival">
                 <span>
                   Arrivée <b>{formatDateParts(arrivalIso, arrivalZone).time}</b>

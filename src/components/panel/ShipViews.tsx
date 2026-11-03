@@ -3,6 +3,8 @@ import { RoomPicker, useRoomCounts } from "./RoomPicker";
 import { VesselSeaBadge } from "./SeaForecast";
 import { PlaceReactions } from "./PlaceReactions";
 import { EntityReviews } from "./EntityReviews";
+import { RateStars } from "./RateStars";
+import { presetRating } from "@/lib/ferry/reviewCriteria";
 import { entityReviewsQuery } from "@/lib/ferry/entityReviews";
 import { useAuth } from "@/hooks/useAuth";
 import { revealLive, useLiveInfo } from "./LivePulse";
@@ -15,7 +17,6 @@ import {
   CarFront,
   ExternalLink,
   MapPin,
-  PenLine,
   Star,
   Users,
 } from "lucide-react";
@@ -38,7 +39,7 @@ import { formatDateTime } from "@/lib/ferry/format";
 import type { Selection } from "@/lib/ferry/types";
 import type { Departure } from "@/lib/ferry/types";
 import { supabase } from "@/integrations/supabase/client";
-import { DemoBadge, EmptyNote, Stars } from "./shared";
+import { DemoBadge, EmptyNote } from "./shared";
 import { CompanyBadge } from "./CompanyBadge";
 import { CrossingCard } from "./CrossingCard";
 import { TravelSignals, VesselReviews } from "./TravelCommunity";
@@ -98,6 +99,7 @@ export function VesselView({
   const communityAvailable = true;
   const guided = useQuery(entityReviewsQuery("vessel", vesselId));
   const [writeRating, setWriteRating] = useState(false);
+  const [ratingNonce, setRatingNonce] = useState(0);
   const [tab, setTab] = useState(contextDepartureId ? "onboard" : "tracking");
 
   useEffect(() => {
@@ -294,23 +296,19 @@ export function VesselView({
       ) : null}
       <VesselPresence vesselId={vesselId} departureId={departure?.id} />
       {communityAvailable ? (
-        <button type="button" className="pv-rating" onClick={() => setTab("reviews")}>
-          {guided.data?.count ? (
-            <>
-              <Stars value={guided.data.average ?? 0} />
-              <span>· {guided.data.count} avis</span>
-            </>
-          ) : (
-            <>
-              <span className="pv-stars-empty" aria-hidden>
-                {[1, 2, 3, 4, 5].map((n) => (
-                  <Star key={n} size={15} />
-                ))}
-              </span>
-              <span>Pas encore d’avis · soyez le premier à noter ce navire</span>
-            </>
-          )}
-        </button>
+        <div className="pv-rating">
+          <RateStars
+            average={guided.data?.average}
+            count={guided.data?.count ?? 0}
+            subject="ce navire"
+            onRate={(score) => {
+              presetRating("vessel", vesselId, score);
+              setRatingNonce((n) => n + 1);
+              rateVessel();
+            }}
+            onOpen={() => setTab("reviews")}
+          />
+        </div>
       ) : null}
       <VesselHub
         departures={roomCrossings}
@@ -326,11 +324,6 @@ export function VesselView({
         onSignal={liveInfo.official + liveInfo.travellers ? openLive : requestVesselSignal}
         onSelect={onSelect}
       />
-      {communityAvailable ? (
-        <button type="button" className="bw-note-link" onClick={rateVessel}>
-          <PenLine size={15} aria-hidden /> Noter ce navire
-        </button>
-      ) : null}
       {photo?.source === "commons" ? (
         <details className="bw-photo-credit">
           <summary>Crédit photo</summary>
@@ -469,6 +462,7 @@ export function VesselView({
             target={vesselId}
             openForm={writeRating}
             onFormClosed={() => setWriteRating(false)}
+            nonce={ratingNonce}
           />
           <VesselReviews key={`legacy-${vesselId}`} vesselId={vesselId} readOnly />
         </TabsContent>

@@ -2,10 +2,12 @@ import { PlaceReactions } from "@/components/panel/PlaceReactions";
 import { VesselAlertTag } from "@/components/panel/VesselAlert";
 import { absoluteUrl, breadcrumbSchema, seoHead } from "@/lib/seo/site";
 import { StructuredData } from "@/components/editorial/Editorial";
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { RateStars } from "@/components/panel/RateStars";
+import { presetRating } from "@/lib/ferry/reviewCriteria";
 import { useQuery, useSuspenseQuery } from "@tanstack/react-query";
 import { useState } from "react";
-import { ArrowRight, ExternalLink, MapPin, Route as RouteIcon, Ship, Star, Users } from "lucide-react";
+import { ArrowRight, ExternalLink, MapPin, Route as RouteIcon, Ship, Users } from "lucide-react";
 import { SiteLayout } from "@/components/layout/SiteLayout";
 import { CompanyBadge } from "@/components/panel/CompanyBadge";
 import { FollowButton } from "@/components/panel/FollowButton";
@@ -162,6 +164,9 @@ function CompanyCard({
   const photo = useQuery({ ...vesselPhotoQuery(big as Vessel), enabled: Boolean(big) }).data;
   const rating = useQuery(entityReviewsQuery("company", company.id)).data;
   const [failed, setFailed] = useState(false);
+  const navigate = useNavigate();
+  // Étoile cliquée : la fiche de la compagnie s'ouvre sur ses avis, formulaire pré-rempli.
+  const openCompany = () => navigate({ to: "/", search: { select: "company", id: company.id } as never });
   const [allLines, setAllLines] = useState(false);
   const visibleLines = allLines ? lines : lines.slice(0, 6);
   return (
@@ -184,16 +189,19 @@ function CompanyCard({
           <CompanyBadge name={company.name} logoUrl={company.logo_url} size={52} />
           <div>
             <h2>{company.name}</h2>
-            <span className="bw-co-card__rating">
-              {rating?.count && rating.average != null ? (
-                <>
-                  <Star size={14} aria-hidden /> {rating.average.toLocaleString("fr-FR", { maximumFractionDigits: 1 })}/5 ·{" "}
-                  {rating.count} avis
-                </>
-              ) : (
-                "Pas encore d'avis"
-              )}
-            </span>
+            <div className="bw-co-card__rating">
+              <RateStars
+                average={rating?.average}
+                count={rating?.count ?? 0}
+                subject={company.name}
+                size={16}
+                onRate={(score) => {
+                  presetRating("company", company.id, score);
+                  openCompany();
+                }}
+                onOpen={openCompany}
+              />
+            </div>
           </div>
         </div>
         <dl className="bw-co-card__stats">

@@ -3,7 +3,7 @@ import { PlaceReactions } from "./PlaceReactions";
 import { CompanyContacts } from "./CompanyContacts";
 import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { ExternalLink, Ship, Star, CalendarDays } from "lucide-react";
+import { ExternalLink, Ship, CalendarDays } from "lucide-react";
 import {
   companiesQuery,
   portsQuery,
@@ -18,10 +18,11 @@ import { DemoBadge, EmptyNote, safeExternalUrl } from "./shared";
 import { CompanyBadge } from "./CompanyBadge";
 import { VesselMiniCard } from "./VesselMiniCard";
 import { EntityReviews } from "./EntityReviews";
+import { RateStars } from "./RateStars";
 import { entityReviewsQuery } from "@/lib/ferry/entityReviews";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/hooks/useAuth";
-import { reviewNumber } from "@/lib/ferry/reviewCriteria";
+import { presetRating, ratingDraftKey } from "@/lib/ferry/reviewCriteria";
 export { VesselView, DepartureView } from "./ShipViews";
 
 export function CompanyView({
@@ -37,12 +38,14 @@ export function CompanyView({
   const { data: ports = [] } = useQuery(portsQuery);
   const departures = useQuery(upcomingDeparturesQuery());
   const rating = useQuery(entityReviewsQuery("company", companyId));
-  const [tab, setTab] = useState("programmes");
+  // La flotte s'affiche d'emblée : c'est ce qu'on vient voir sur une compagnie.
+  const [tab, setTab] = useState("flotte");
+  const [writeRating, setWriteRating] = useState(false);
+  const [ratingNonce, setRatingNonce] = useState(0);
   const [limit, setLimit] = useState(8);
   const { user } = useAuth();
   useEffect(() => {
-    if (user && window.sessionStorage.getItem(`bledway:rating:company:${companyId}`))
-      setTab("avis");
+    if (window.sessionStorage.getItem(ratingDraftKey("company", companyId))) setTab("avis");
   }, [user, companyId]);
   const company = companies.find((c) => c.id === companyId);
   if (!company) return <EmptyNote>Compagnie introuvable.</EmptyNote>;
@@ -71,14 +74,20 @@ export function CompanyView({
         <PlaceReactions kind="company" target={companyId} />
       </header>
       <FollowButton kind="company" targetId={companyId} label={company.name} demo={company.is_demo} />
-      <button className="pv-rating" type="button" onClick={() => setTab("avis")}>
-        <Star size={16} aria-hidden />
-        <span>
-          {rating.data?.average != null
-            ? `${reviewNumber(rating.data.average)}/5 · ${rating.data.count} avis`
-            : "Avis des voyageurs"}
-        </span>
-      </button>
+      <div className="pv-rating">
+        <RateStars
+          average={rating.data?.average}
+          count={rating.data?.count ?? 0}
+          subject="cette compagnie"
+          onRate={(score) => {
+            presetRating("company", companyId, score);
+            setRatingNonce((n) => n + 1);
+            setWriteRating(true);
+            setTab("avis");
+          }}
+          onOpen={() => setTab("avis")}
+        />
+      </div>
       <CompanyContacts company={company} />
       <dl className="bw-company-stats">
         <div>
@@ -102,8 +111,8 @@ export function CompanyView({
       ) : null}
       <Tabs value={tab} onValueChange={setTab}>
         <TabsList aria-label="Fiche de la compagnie">
-          <TabsTrigger value="programmes">Programmes</TabsTrigger>
           <TabsTrigger value="flotte">Flotte</TabsTrigger>
+          <TabsTrigger value="programmes">Programmes</TabsTrigger>
           <TabsTrigger value="avis">Avis</TabsTrigger>
         </TabsList>
         <TabsContent value="programmes">
@@ -190,7 +199,13 @@ export function CompanyView({
           )}
         </TabsContent>
         <TabsContent value="avis" forceMount hidden={tab !== "avis"}>
-          <EntityReviews kind="company" target={companyId} />
+          <EntityReviews
+            kind="company"
+            target={companyId}
+            openForm={writeRating}
+            onFormClosed={() => setWriteRating(false)}
+            nonce={ratingNonce}
+          />
         </TabsContent>
       </Tabs>
     </article>

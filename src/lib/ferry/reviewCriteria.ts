@@ -33,3 +33,19 @@ export function reviewScore(kind: ReviewKind, scores: ReviewScores): number | nu
 
 export const reviewNumber = (score: number) =>
   score.toLocaleString("fr-FR", { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+
+/** Brouillon de note relu par le formulaire (clé partagée avec EntityReviews). */
+export const ratingDraftKey = (kind: ReviewKind, target: string) => `bledway:rating:${kind}:${target}`;
+
+/**
+ * Un clic sur l'étoile n pré-remplit tous les critères à n : le formulaire s'ouvre prêt à envoyer,
+ * le voyageur ajuste ensuite chaque critère s'il le souhaite.
+ */
+export function presetRating(kind: ReviewKind, target: string, score: number) {
+  const scores = Object.fromEntries(reviewCriteria[kind].map((c) => [c.code, score]));
+  try {
+    window.sessionStorage.setItem(ratingDraftKey(kind, target), JSON.stringify(scores));
+  } catch {
+    /* stockage indisponible : le formulaire s'ouvre vide */
+  }
+}

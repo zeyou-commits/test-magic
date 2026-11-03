@@ -23,7 +23,13 @@ interface MapStatsProps {
   onSelectCompany: (companyId: string | null) => void;
   onSelectShip: (ship: FleetShip) => void;
   companyOf: (ship: FleetShip) => string | undefined;
-  infoOf: (ship: FleetShip) => { route: string; dock: string; destination: string; status: string; late?: boolean };
+  infoOf: (ship: FleetShip) => {
+    route: string;
+    dock: string;
+    destination: string;
+    status: string;
+    late?: boolean;
+  };
   lineVisibility: LineVisibility;
   onLineVisibility: (value: LineVisibility) => void;
   onPreview: (preview: MapPreview | null) => void;
@@ -119,11 +125,28 @@ export function MapStats({
     return () => observer.disconnect();
   }, [menuOpen, activeShortcut]);
   const { isAdmin } = useAuth();
+  // Ordinateur : un menu s'ouvre au simple survol de son raccourci ; seul le clic le fige
+  // (et active le raccourci). Quitter la colonne et le menu le referme après un court délai.
+  const [hoverId, setHoverId] = useState<MapStatsProps["activeShortcut"]>(null);
+  const hoverTimer = useRef<number | undefined>(undefined);
+  const hoverOpen = (id: NonNullable<MapStatsProps["activeShortcut"]>) => {
+    window.clearTimeout(hoverTimer.current);
+    setHoverId(id);
+  };
+  const hoverClose = () => {
+    window.clearTimeout(hoverTimer.current);
+    hoverTimer.current = window.setTimeout(() => {
+      setHoverId(null);
+      onPreview(null);
+    }, 220);
+  };
+  useEffect(() => () => window.clearTimeout(hoverTimer.current), []);
+  const pinned = menuOpen && activeShortcut ? activeShortcut : null;
+  const shown = pinned ?? hoverId;
   const alerts = useVesselAlerts();
   const item =
     "flex w-full flex-col items-center justify-center gap-0.5 rounded-xl px-1 py-1.5 text-[11px] font-bold leading-none tabular-nums text-foreground transition-colors hover:bg-secondary data-[active=true]:bg-primary data-[active=true]:text-primary-foreground md:min-w-11 md:text-xs [@media(max-width:767px)_and_(max-height:700px)]:flex-row [@media(max-width:767px)_and_(max-height:700px)]:gap-1 [@media(max-width:767px)_and_(max-height:700px)]:py-1";
-  const shipList =
-    activeShortcut === "sea" ? atSea : activeShortcut === "upcoming" ? upcomingShips : [];
+  const shipList = shown === "sea" ? atSea : shown === "upcoming" ? upcomingShips : [];
   // Icônes parlantes sans légende : navire qui tangue (en mer, avec point « en direct »),
   // navire à l'ancre (à quai), bâtiment (compagnies), phare (ports).
   const icon = "size-4 md:size-[18px]";
@@ -177,6 +200,9 @@ export function MapStats({
       ref={rootRef}
       data-map-rail
       className="pointer-events-auto absolute left-2 top-14 z-30 md:left-auto md:right-5 md:top-5"
+      onPointerLeave={(e) => {
+        if (e.pointerType === "mouse") hoverClose();
+      }}
     >
       {/* Raccourcis empilés à la verticale, icône au-dessus du nombre : colonne étroite.
           Mobile : à gauche, sous la légende, pour dégager l'est de la carte (ports italiens). */}
@@ -191,14 +217,20 @@ export function MapStats({
             aria-label={`${title} : ${count}`}
             aria-pressed={activeShortcut === id}
             aria-expanded={activeShortcut === id && menuOpen}
-            onClick={() => onToggle(id)}
+            onClick={() => {
+              setHoverId(null);
+              onToggle(id);
+            }}
+            onPointerEnter={(e) => {
+              if (e.pointerType === "mouse") hoverOpen(id);
+            }}
           >
             <span aria-hidden className="inline-flex">
               {icon}
             </span>
             {count}
             {/* Libellé court au survol (ordinateur), à gauche de la colonne. */}
-            {!(activeShortcut === id && menuOpen) ? (
+            {shown !== id ? (
               <span
                 aria-hidden
                 className="pointer-events-none absolute right-full top-1/2 mr-2 hidden -translate-y-1/2 whitespace-nowrap rounded-lg bg-foreground px-2 py-1 text-xs font-semibold text-background shadow-md md:group-hover:block"
@@ -209,17 +241,18 @@ export function MapStats({
           </button>
         ))}
       </div>
-      {menuOpen && activeShortcut && (
+      {shown && (
         <div
           ref={listRef}
           style={listMaxHeight ? { maxHeight: listMaxHeight } : undefined}
           className="absolute left-full top-0 ml-2 max-h-[min(60dvh,24rem)] md:left-auto md:right-full md:ml-0 md:mr-2 w-[min(18rem,calc(100vw-5.5rem))] touch-pan-y overflow-y-auto overscroll-contain rounded-2xl border border-border bg-background/95 p-1 shadow-lg backdrop-blur"
+          onPointerEnter={(e) => {
+            if (e.pointerType === "mouse") window.clearTimeout(hoverTimer.current);
+          }}
           onPointerLeave={() => onPreview(null)}
-          aria-label={
-            activeShortcut === "companies" ? "Filtrer les compagnies" : "Choisir un navire"
-          }
+          aria-label={shown === "companies" ? "Filtrer les compagnies" : "Choisir un navire"}
         >
-          {activeShortcut === "ports" ? (
+          {shown === "ports" ? (
             <div role="radiogroup" aria-label="Afficher les liaisons" className="p-2">
               <p className="px-1 pt-1 text-xs font-bold">Afficher les lignes</p>
               {(
@@ -239,6 +272,7 @@ export function MapStats({
                     aria-checked={selected}
                     onClick={() => {
                       onLineVisibility(value);
+                      setHoverId(null);
                       onDismiss();
                     }}
                     className={`flex min-h-12 w-full cursor-pointer items-center gap-2 rounded-xl px-2 py-2 text-left transition-colors hover:bg-secondary ${value === "published" ? "text-success" : "text-foreground"}`}
@@ -257,7 +291,7 @@ export function MapStats({
                 );
               })}
             </div>
-          ) : activeShortcut === "companies" ? (
+          ) : shown === "companies" ? (
             <>
               <button
                 type="button"
@@ -329,7 +363,9 @@ export function MapStats({
                 className="flex w-full items-center gap-2 rounded-xl px-2.5 py-1.5 text-left text-xs font-medium hover:bg-secondary"
               >
                 {alerts.has(ship.vesselId ?? "") ? (
-                  <b className="bw-alert-mark" aria-hidden>!</b>
+                  <b className="bw-alert-mark" aria-hidden>
+                    !
+                  </b>
                 ) : (
                   <Ship className="size-3.5 shrink-0 text-primary" />
                 )}
@@ -347,7 +383,7 @@ export function MapStats({
                     {shortCompanyName(companyOf(ship) ?? "Compagnie à confirmer")} ·{" "}
                     {infoOf(ship).route}
                   </span>
-                  {activeShortcut === "upcoming" && (
+                  {shown === "upcoming" && (
                     <>
                       <span className="mt-1 block truncate text-[10px]">
                         {infoOf(ship).dock} → {infoOf(ship).destination}

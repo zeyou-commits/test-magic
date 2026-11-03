@@ -2,10 +2,13 @@ import { TravellerAvatar } from "@/components/community/TravellerAvatar";
 import { useEffect, useId, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Star } from "lucide-react";
+import { RateStars } from "./RateStars";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import {
+  presetRating,
+  ratingDraftKey,
   reviewNumber,
   reviewCriteria,
   reviewScore,
@@ -24,39 +27,47 @@ export function EntityReviews({
   target,
   openForm = false,
   onFormClosed,
+  nonce = 0,
 }: {
   kind: ReviewKind;
   target: string;
   openForm?: boolean;
   onFormClosed?: (() => void) | undefined;
+  /** Change à chaque clic sur une étoile hors de ce bloc : le formulaire relit le brouillon. */
+  nonce?: number;
 }) {
   const { user } = useAuth();
   const feed = useQuery(entityReviewsQuery(kind, target));
   const mine = useQuery(ownEntityReviewsQuery(user?.id));
   const own = mine.data?.find((r) => r.target_kind === kind && r.target_id === target);
   const [write, setWrite] = useState(false);
-  const draftKey = `bledway:rating:${kind}:${target}`;
+  const [localNonce, setLocalNonce] = useState(0);
+  const draftKey = ratingDraftKey(kind, target);
   useEffect(() => {
     if (openForm) setWrite(true);
   }, [openForm]);
   useEffect(() => {
-    if (user && window.sessionStorage.getItem(draftKey)) setWrite(true);
+    // Une note commencée (étoile cliquée, ou avant connexion) rouvre le formulaire.
+    if (window.sessionStorage.getItem(draftKey)) setWrite(true);
   }, [user, draftKey]);
   return (
     <section className="bw-entity-reviews" aria-label="Avis des voyageurs">
       <div className="bw-entity-reviews__summary">
-        <Star size={22} aria-hidden />
-        <strong>{feed.data?.average != null ? `${reviewNumber(feed.data.average)}/5` : "—"}</strong>
-        <span>
-          {feed.isPending
-            ? "Lecture des avis…"
-            : feed.data?.count
-              ? `${feed.data.count} avis`
-              : "Pas encore de note"}
-        </span>
-        <Button size="sm" variant="outline" onClick={() => setWrite(!write)} aria-expanded={write}>
-          {own ? "Modifier ma note" : "Noter"}
-        </Button>
+        {feed.isPending ? (
+          <span>Lecture des avis…</span>
+        ) : (
+          <RateStars
+            average={feed.data?.average}
+            count={feed.data?.count ?? 0}
+            subject={kind === "vessel" ? "ce navire" : kind === "port" ? "ce port" : "cette compagnie"}
+            size={22}
+            onRate={(score) => {
+              presetRating(kind, target, score);
+              setLocalNonce((n) => n + 1);
+              setWrite(true);
+            }}
+          />
+        )}
       </div>
       {feed.isError ? (
         <p role="alert">
@@ -88,7 +99,7 @@ export function EntityReviews({
           </p>
         ) : (
           <RatingForm
-            key={`${kind}:${target}:${own?.updated_at}`}
+            key={`${kind}:${target}:${own?.updated_at}:${nonce}:${localNonce}`}
             kind={kind}
             target={target}
             initial={own?.scores}

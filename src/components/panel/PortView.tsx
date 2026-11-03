@@ -1,5 +1,7 @@
 import { PlaceReactions } from "./PlaceReactions";
 import { EntityReviews } from "./EntityReviews";
+import { RateStars } from "./RateStars";
+import { presetRating } from "@/lib/ferry/reviewCriteria";
 import { entityReviewsQuery } from "@/lib/ferry/entityReviews";
 import { useEffect, useMemo, useState } from "react";
 import { LikeButton, useContributions } from "@/components/community/Contributions";
@@ -13,7 +15,6 @@ import {
   ChevronRight,
   Clock3,
   Navigation,
-  PenLine,
   Star,
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
@@ -100,6 +101,7 @@ export function PortView({
   const [scheduleTab, setScheduleTab] = useState("departures");
   const [visibleCount, setVisibleCount] = useState(8);
   const [writeReview, setWriteReview] = useState(false);
+  const [ratingNonce, setRatingNonce] = useState(0);
 
   useEffect(() => {
     if (user && window.sessionStorage.getItem(`bledway:rating:port:${portId}`))
@@ -293,24 +295,24 @@ export function PortView({
       <div className="pv-react-row">
         <PlaceReactions kind="port" target={port.id} />
 
-        <button type="button" className="pv-rating" onClick={() => openReviews()}>
+        <div className="pv-rating">
           {reviewsResult.isPending ? (
             <span>Lecture des avis…</span>
-          ) : (guided.data?.average ?? averages.overall) != null ? (
-            <>
-              <StarRow value={guided.data?.average ?? averages.overall ?? 0} />
-              <strong>{scoreLabel(guided.data?.average ?? averages.overall ?? 0)}</strong>
-              <span>· {guided.data?.count ?? reviews.length} avis</span>
-            </>
           ) : (
-            <>
-              <StarRow value={0} />
-              <span>Pas encore d’avis</span>
-            </>
+            <RateStars
+              average={guided.data?.average ?? averages.overall}
+              count={guided.data?.count || reviews.length}
+              subject="ce port"
+              onRate={(score) => {
+                presetRating("port", portId, score);
+                setRatingNonce((n) => n + 1);
+                openReviews(true);
+              }}
+              onOpen={() => openReviews()}
+            />
           )}
           {port.is_demo ? <DemoBadge /> : null}
-          <ChevronRight size={15} aria-hidden />
-        </button>
+        </div>
       </div>
 
       <ActionHub
@@ -349,19 +351,13 @@ export function PortView({
         questionsFirst
       />
 
-      <div className="pv-actions pv-actions--two">
+      <div className="pv-actions">
         <a className="pv-action" href={directions} target="_blank" rel="noopener noreferrer">
           <span aria-hidden>
             <Navigation size={18} />
           </span>
           Y aller
         </a>
-        <button type="button" className="pv-action" onClick={() => openReviews(true)}>
-          <span aria-hidden>
-            <PenLine size={18} />
-          </span>
-          Noter
-        </button>
       </div>
 
       <PortPresence portId={portId} />
@@ -589,6 +585,7 @@ export function PortView({
             target={portId}
             openForm={writeReview}
             onFormClosed={() => setWriteReview(false)}
+            nonce={ratingNonce}
           />
           {reviews.length ? (
             <h3 className="mt-5 text-sm font-semibold">Anciens avis des voyageurs</h3>

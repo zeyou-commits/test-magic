@@ -206,8 +206,8 @@ function RootComponent() {
             </div>
           ) : null}
           <Outlet />
-          {/* La carte a sa propre barre, reliée à ses volets. */}
-          {pathname === "/" ? null : (
+          {/* La carte a sa propre barre, reliée à ses volets ; l'espace équipe a la sienne. */}
+          {pathname === "/" || /^\/admin(\/|$)/.test(pathname) ? null : (
             <div className="bw-global-tabs fixed bottom-0 left-0 right-0 z-[70] md:hidden">
               <MobileTabBar className="h-[calc(3.5rem+env(safe-area-inset-bottom))] pb-[env(safe-area-inset-bottom)]" />
             </div>

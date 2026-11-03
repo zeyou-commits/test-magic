@@ -25,6 +25,8 @@ import {
   Megaphone,
   TriangleAlert,
   Newspaper,
+  Menu,
+  X,
 } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import { UserMenu } from "@/components/layout/UserMenu";
@@ -230,6 +232,14 @@ const sections = [
   },
 ];
 
+/** Téléphone : les rubriques du quotidien en bas de l'écran, le reste dans « Menu ». */
+const MOBILE_TABS: { id: string; short: string }[] = [
+  { id: "overview", short: "Aujourd'hui" },
+  { id: "planning", short: "Traversées" },
+  { id: "watch", short: "Veille" },
+  { id: "community", short: "Modération" },
+];
+
 /** Fiche retrouvable depuis la recherche du menu (port, navire, compagnie…). */
 export type AdminSearchItem = { tab: string; id: string; label: string; hint: string };
 
@@ -251,6 +261,7 @@ export function AdminWorkspace({
   onOpenItem?: (tab: string, id: string) => void;
 }) {
   const [search, setSearch] = useState("");
+  const [menuOpen, setMenuOpen] = useState(false);
   const searchRef = useRef<HTMLInputElement>(null);
   // Ctrl+K (ou Cmd+K) : chercher une rubrique ou une fiche depuis n'importe quel écran.
   useEffect(() => {
@@ -281,6 +292,109 @@ export function AdminWorkspace({
     plain(`${section.label} ${section.description}`).includes(plain(search.trim())),
   );
   const pending = badges["notifications"] ?? 0;
+  const mobileTabs = MOBILE_TABS.filter((item) => canAccess(item.id));
+  // « Menu » porte ce qui attend ailleurs que dans les rubriques de la barre.
+  const menuBadge = available
+    .filter((section) => !mobileTabs.some((item) => item.id === section.id))
+    .reduce((sum, section) => sum + (badges[section.id] ?? 0), 0);
+  const pick = (id: string) => {
+    onNavigate(id);
+    setMenuOpen(false);
+    setSearch("");
+    window.scrollTo({ top: 0, behavior: "instant" });
+  };
+  const searchField = (
+    <label className="bw-admin-search">
+      <Search className="size-4" aria-hidden />
+      <input
+        ref={menuOpen ? undefined : searchRef}
+        value={search}
+        onChange={(event) => setSearch(event.target.value)}
+        onKeyDown={(event) => {
+          if (event.key === "Escape") setSearch("");
+          if (event.key === "Enter" && foundItems[0] && onOpenItem) {
+            onOpenItem(foundItems[0].tab, foundItems[0].id);
+            setSearch("");
+            setMenuOpen(false);
+          }
+        }}
+        placeholder="Rubrique, port, navire…"
+        aria-label="Chercher une rubrique ou une fiche (Ctrl+K)"
+      />
+      <kbd className="bw-admin-kbd" aria-hidden>
+        Ctrl K
+      </kbd>
+    </label>
+  );
+  const navigation = (
+    <nav aria-label="Administration">
+      {foundItems.length ? (
+        <div className="bw-admin-nav-group">
+          <h2>Fiches</h2>
+          {foundItems.map((item) => {
+            const Icon = sections.find((section) => section.id === item.tab)?.icon ?? Search;
+            return (
+              <button
+                key={`${item.tab}:${item.id}`}
+                type="button"
+                onClick={() => {
+                  onOpenItem?.(item.tab, item.id);
+                  setSearch("");
+                  setMenuOpen(false);
+                }}
+              >
+                <Icon className="size-4" aria-hidden />
+                <span>
+                  {item.label}
+                  <small className="block text-[11px] font-normal text-muted-foreground">
+                    {item.hint}
+                  </small>
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      ) : null}
+      {groups.map((group) => {
+        const items = filtered.filter((item) => item.group === group);
+        if (!items.length) return null;
+        const links = items.map(({ id, label, icon: Icon }) => (
+          <button
+            key={id}
+            type="button"
+            aria-current={tab === id ? "page" : undefined}
+            onClick={() => pick(id)}
+          >
+            <Icon className="size-4" aria-hidden />
+            <span>{label}</span>
+            {Boolean(badges[id]) && <span className="bw-admin-nav-badge">{badges[id]}</span>}
+          </button>
+        ));
+        if (!group) {
+          return (
+            <div className="bw-admin-nav-group bw-admin-nav-group--main" key="main">
+              {links}
+            </div>
+          );
+        }
+        // Groupe secondaire : replié, sauf s'il contient la rubrique ouverte ou une recherche.
+        const pendingInGroup = items.reduce((sum, item) => sum + (badges[item.id] ?? 0), 0);
+        const open = items.some((item) => item.id === tab) || search.trim().length > 0;
+        return (
+          <details className="bw-admin-nav-group" key={`${group}:${open}`} open={open}>
+            <summary>
+              <span>{group}</span>
+              {pendingInGroup > 0 && <span className="bw-admin-nav-badge">{pendingInGroup}</span>}
+            </summary>
+            {links}
+          </details>
+        );
+      })}
+      {!filtered.length && !foundItems.length && (
+        <p className="p-3 text-xs text-muted-foreground">Aucune rubrique ne correspond.</p>
+      )}
+    </nav>
+  );
   return (
     <div className="bw-admin-workspace">
       <a
@@ -294,92 +408,8 @@ export function AdminWorkspace({
           <img src="/bledway-brand.png" alt="BledWay" />
           <span>ESPACE ÉQUIPE</span>
         </Link>
-        <label className="bw-admin-search">
-          <Search className="size-4" aria-hidden />
-          <input
-            ref={searchRef}
-            value={search}
-            onChange={(event) => setSearch(event.target.value)}
-            onKeyDown={(event) => {
-              if (event.key === "Escape") setSearch("");
-              if (event.key === "Enter" && foundItems[0] && onOpenItem) {
-                onOpenItem(foundItems[0].tab, foundItems[0].id);
-                setSearch("");
-              }
-            }}
-            placeholder="Rubrique, port, navire…"
-            aria-label="Chercher une rubrique ou une fiche (Ctrl+K)"
-          />
-          <kbd className="bw-admin-kbd" aria-hidden>
-            Ctrl K
-          </kbd>
-        </label>
-        <nav aria-label="Administration">
-          {foundItems.length ? (
-            <div className="bw-admin-nav-group">
-              <h2>Fiches</h2>
-              {foundItems.map((item) => {
-                const Icon = sections.find((section) => section.id === item.tab)?.icon ?? Search;
-                return (
-                  <button
-                    key={`${item.tab}:${item.id}`}
-                    type="button"
-                    onClick={() => {
-                      onOpenItem?.(item.tab, item.id);
-                      setSearch("");
-                    }}
-                  >
-                    <Icon className="size-4" aria-hidden />
-                    <span>
-                      {item.label}
-                      <small className="block text-[11px] font-normal text-muted-foreground">
-                        {item.hint}
-                      </small>
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
-          ) : null}
-          {groups.map((group) => {
-            const items = filtered.filter((item) => item.group === group);
-            if (!items.length) return null;
-            const links = items.map(({ id, label, icon: Icon }) => (
-              <button
-                key={id}
-                type="button"
-                aria-current={tab === id ? "page" : undefined}
-                onClick={() => onNavigate(id)}
-              >
-                <Icon className="size-4" aria-hidden />
-                <span>{label}</span>
-                {Boolean(badges[id]) && <span className="bw-admin-nav-badge">{badges[id]}</span>}
-              </button>
-            ));
-            if (!group) {
-              return (
-                <div className="bw-admin-nav-group bw-admin-nav-group--main" key="main">
-                  {links}
-                </div>
-              );
-            }
-            // Groupe secondaire : replié, sauf s'il contient la rubrique ouverte ou une recherche.
-            const pendingInGroup = items.reduce((sum, item) => sum + (badges[item.id] ?? 0), 0);
-            const open = items.some((item) => item.id === tab) || search.trim().length > 0;
-            return (
-              <details className="bw-admin-nav-group" key={`${group}:${open}`} open={open}>
-                <summary>
-                  <span>{group}</span>
-                  {pendingInGroup > 0 && <span className="bw-admin-nav-badge">{pendingInGroup}</span>}
-                </summary>
-                {links}
-              </details>
-            );
-          })}
-          {!filtered.length && !foundItems.length && (
-            <p className="p-3 text-xs text-muted-foreground">Aucune rubrique ne correspond.</p>
-          )}
-        </nav>
+        {menuOpen ? null : searchField}
+        {menuOpen ? null : navigation}
         <div className="bw-admin-sidebar-foot">
           <Waves className="size-4 text-primary" />
           <p>
@@ -389,10 +419,11 @@ export function AdminWorkspace({
       </aside>
       <div className="bw-admin-main">
         <header className="bw-admin-topbar">
-          <span className="text-xs text-muted-foreground">
+          <span className="bw-admin-crumb text-xs text-muted-foreground">
             BledWay <span className="mx-2 text-border">/</span>
             <strong className="font-medium text-foreground">{current.group}</strong>
           </span>
+          <strong className="bw-admin-mobile-title">{current.label}</strong>
           <div className="flex items-center gap-3">
             {canAccess("notifications") && (
               <button
@@ -412,21 +443,6 @@ export function AdminWorkspace({
             <UserMenu compact iconOnly />
           </div>
         </header>
-        <div className="bw-admin-mobile-nav">
-          <label htmlFor="admin-section">Toutes les rubriques</label>
-          <select
-            id="admin-section"
-            value={tab}
-            onChange={(event) => onNavigate(event.target.value)}
-          >
-            {available.map((item) => (
-              <option key={item.id} value={item.id}>
-                {item.label}
-                {badges[item.id] ? ` (${badges[item.id]})` : ""}
-              </option>
-            ))}
-          </select>
-        </div>
         <main id="admin-content" className="bw-admin-content">
           <div className="bw-admin-page-heading">
             <div>
@@ -460,6 +476,55 @@ export function AdminWorkspace({
           {children}
         </main>
       </div>
+      <nav className="bw-admin-tabbar" aria-label="Rubriques principales">
+        {mobileTabs.map((item) => {
+          const Icon = sections.find((section) => section.id === item.id)?.icon ?? LayoutDashboard;
+          return (
+            <button
+              key={item.id}
+              type="button"
+              aria-current={tab === item.id && !menuOpen ? "page" : undefined}
+              onClick={() => pick(item.id)}
+            >
+              <Icon className="size-5" aria-hidden />
+              <span>{item.short}</span>
+              {badges[item.id] ? <b>{badges[item.id]}</b> : null}
+            </button>
+          );
+        })}
+        <button
+          type="button"
+          aria-expanded={menuOpen}
+          aria-current={
+            menuOpen || !mobileTabs.some((item) => item.id === tab) ? "page" : undefined
+          }
+          onClick={() => setMenuOpen((open) => !open)}
+        >
+          <Menu className="size-5" aria-hidden />
+          <span>Menu</span>
+          {menuBadge ? <b>{menuBadge}</b> : null}
+        </button>
+      </nav>
+      {menuOpen ? (
+        <div
+          className="bw-admin-menu"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Toutes les rubriques"
+        >
+          <header>
+            <strong>Toutes les rubriques</strong>
+            <button type="button" onClick={() => setMenuOpen(false)} aria-label="Fermer le menu">
+              <X className="size-5" aria-hidden />
+            </button>
+          </header>
+          {searchField}
+          {navigation}
+          <Link to="/" className="bw-admin-menu__site">
+            Voir le site <ArrowUpRight className="size-4" aria-hidden />
+          </Link>
+        </div>
+      ) : null}
     </div>
   );
 }

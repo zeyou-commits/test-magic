@@ -333,8 +333,10 @@ function AdminTabs() {
           <UsersAdmin />
         </TabsContent>
         <TabsContent value="overview">
+          {/* Téléphone : actions rapides, puis les points à régler, puis les départs à venir. */}
           {canUseAdminTab(roles, "planning") && (
             <MobileIncidentPanel
+              part="actions"
               onNavigate={navigateTo}
               renderEditor={(id, onDone) => <AlertDepartureEditor departureId={id} onDone={onDone} />}
             />
@@ -344,6 +346,13 @@ function AdminTabs() {
               onOpenPlanning={openPlanning}
               onOpenVessel={(id) => openItem("vessels", id)}
               onImport={() => navigateTo("import")}
+            />
+          )}
+          {canUseAdminTab(roles, "planning") && (
+            <MobileIncidentPanel
+              part="departures"
+              onNavigate={navigateTo}
+              renderEditor={(id, onDone) => <AlertDepartureEditor departureId={id} onDone={onDone} />}
             />
           )}
           {notificationOverview.error && (
@@ -408,7 +417,10 @@ function AdminTabs() {
           <CompaniesAdmin itemId={tab === "companies" ? item : undefined} />
         </TabsContent>
         <TabsContent value="planning">
+          {/* Téléphone : la liste complète des prochains départs ; le planning reste sur ordinateur. */}
           <MobileIncidentPanel
+            part="departures"
+            max={Infinity}
             onNavigate={navigateTo}
             renderEditor={(id, onDone) => <AlertDepartureEditor departureId={id} onDone={onDone} />}
           />

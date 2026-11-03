@@ -9,6 +9,8 @@ import { adminPortsQuery, adminRoutesQuery, vesselsQuery } from "@/lib/ferry/que
 import { formatDateTime } from "@/lib/ferry/format";
 import { portTimeZone } from "@/lib/ferry/time";
 
+/** Départs visibles avant « Voir les autres ». */
+const VISIBLE = 5;
 const HOURS = 72;
 
 /**
@@ -18,9 +20,15 @@ const HOURS = 72;
 export function MobileIncidentPanel({
   onNavigate,
   renderEditor,
+  part = "all",
+  max = VISIBLE,
 }: {
   onNavigate: (tab: string) => void;
   renderEditor: (departureId: string, onDone: () => void) => ReactNode;
+  /** Téléphone : les actions rapides en tête, les départs à venir après les points à régler. */
+  part?: "all" | "actions" | "departures";
+  /** Départs visibles avant « Voir les autres ». */
+  max?: number;
 }) {
   const client = useQueryClient();
   const { data: departures = [] } = useQuery(planningDeparturesQuery);
@@ -28,6 +36,7 @@ export function MobileIncidentPanel({
   const { data: ports = [] } = useQuery(adminPortsQuery);
   const { data: vessels = [] } = useQuery(vesselsQuery);
   const [editing, setEditing] = useState<string | null>(null);
+  const [showAll, setShowAll] = useState(false);
   const now = Date.now();
   const soon = departures
     .filter((d) => {
@@ -54,8 +63,14 @@ export function MobileIncidentPanel({
     onError: (error: Error) => toast.error(error.message),
   });
   const portOf = (id?: string) => ports.find((port) => port.id === id);
+  const shown = showAll ? soon : soon.slice(0, max);
   return (
-    <section className="bw-admin-incident-mobile" aria-label="Incident en cours">
+    <section
+      className="bw-admin-incident-mobile"
+      data-part={part}
+      aria-label={part === "departures" ? "Départs à venir" : "Actions rapides"}
+    >
+      {part === "departures" ? null : (
       <div className="grid grid-cols-3 gap-2">
         <Button className="h-auto min-h-16 flex-col gap-1 whitespace-normal p-2 text-xs" onClick={() => onNavigate("incidents")}>
           <TriangleAlert className="size-5" aria-hidden /> Navire immobilisé
@@ -75,32 +90,41 @@ export function MobileIncidentPanel({
           <CalendarDays className="size-5" aria-hidden /> Publier un Flash
         </Button>
       </div>
-      <h2 className="mt-4 text-sm font-semibold">Départs des {HOURS} prochaines heures</h2>
+      )}
+      {part === "actions" ? null : (
+      <>
+      <h2 className="mt-4 text-sm font-semibold">
+        Départs des {HOURS} prochaines heures
+        {soon.length ? <span className="ml-1 font-normal text-muted-foreground">· {soon.length}</span> : null}
+      </h2>
       {soon.length ? (
-        <ul className="mt-2 grid gap-2">
-          {soon.map((d) => {
+        <ul className="bw-admin-soon">
+          {shown.map((d) => {
             const route = routes.find((item) => item.id === d.route_id);
             const from = portOf(route?.departure_port_id);
             const cancelled = d.status === "cancelled";
+            const vessel = vessels.find((item) => item.id === d.vessel_id)?.name;
+            const open = editing === d.id;
             return (
-              <li key={d.id} className="rounded-xl border border-border bg-white p-3 text-sm">
-                <p className="font-semibold">
-                  {from?.name ?? "?"} → {portOf(route?.arrival_port_id)?.name ?? "?"}
-                </p>
-                <p className="text-xs text-muted-foreground">
-                  {formatDateTime(d.departure_at, portTimeZone(from))} ·{" "}
-                  {vessels.find((vessel) => vessel.id === d.vessel_id)?.name ?? "Navire à affecter"}
-                  {cancelled ? " · Annulé" : ""}
-                </p>
+              <li key={d.id} data-open={open || undefined} data-cancelled={cancelled || undefined}>
+                {/* Une ligne par départ ; le toucher la déplie avec ses actions. */}
+                <button
+                  type="button"
+                  className="bw-admin-soon__row"
+                  aria-expanded={open}
+                  onClick={() => setEditing(open ? null : d.id)}
+                >
+                  <time>{formatDateTime(d.departure_at, portTimeZone(from))}</time>
+                  <strong>
+                    {from?.name ?? "?"} → {portOf(route?.arrival_port_id)?.name ?? "?"}
+                  </strong>
+                  <small>
+                    {vessel ?? "Navire à affecter"}
+                    {cancelled ? " · Annulé" : ""}
+                  </small>
+                </button>
+                {open ? (
                 <div className="mt-2 flex gap-2">
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    className="min-h-10 flex-1"
-                    onClick={() => setEditing(editing === d.id ? null : d.id)}
-                  >
-                    {editing === d.id ? "Fermer" : "Modifier"}
-                  </Button>
                   <Button
                     size="sm"
                     variant={cancelled ? "outline" : "ghost"}
@@ -115,13 +139,26 @@ export function MobileIncidentPanel({
                     {cancelled ? "Rétablir" : "Annuler"}
                   </Button>
                 </div>
-                {editing === d.id ? renderEditor(d.id, () => setEditing(null)) : null}
+                ) : null}
+                {open ? renderEditor(d.id, () => setEditing(null)) : null}
               </li>
             );
           })}
         </ul>
       ) : (
         <p className="mt-1 text-sm text-muted-foreground">Aucun départ dans les {HOURS} heures.</p>
+      )}
+      {soon.length > max ? (
+        <Button
+          variant="ghost"
+          size="sm"
+          className="mt-1 w-full"
+          onClick={() => setShowAll((value) => !value)}
+        >
+          {showAll ? "Réduire" : `Voir les ${soon.length - max} autres départs`}
+        </Button>
+      ) : null}
+      </>
       )}
     </section>
   );

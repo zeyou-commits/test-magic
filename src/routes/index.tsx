@@ -1347,6 +1347,9 @@ function Index() {
                     </div>
                     {panelLevel > 0 ? (
                       <div className="bw-voyage-aside__scroll">
+                        {voyage.placesEntry ? (
+                          <div className="bw-voyage-aside__places">{voyage.placesEntry}</div>
+                        ) : null}
                         {voyage.liveAlert ? (
                           <LivePulse
                             info={voyage.info}
@@ -1378,7 +1381,7 @@ function Index() {
                     <button type="button" onClick={leaveVoyage}>
                       <ArrowLeft size={15} aria-hidden /> Retour à l’accueil
                     </button>
-                    <span>{voyage.traveller ? "Ma traversée" : "Traversée suivie"}</span>
+                    {voyage.placesEntry ?? <span>Traversée suivie</span>}
                   </div>
                   <div className="bw-voyage-aside__scroll" key={voyage.shown ?? voyage.current}>
                     {voyage.liveAlert ? (
@@ -1462,10 +1465,9 @@ function Index() {
                   window.setTimeout(() => window.scrollTo({ top: 0, behavior: "instant" }), 60);
                   return;
                 }
-                // Traversée suivie : « Trouver » a cédé sa place, la recherche passe par « Carte ».
-                if (voyageTrip) {
-                  setVoyageOn(false);
-                  openMobileSearch();
+                // Depuis « Ma traversée » : retour à la carte et au volet d'accueil, comme avant.
+                if (voyage) {
+                  leaveVoyage();
                   return;
                 }
                 setPanelLevel((level) => (level === 0 ? 1 : 0));

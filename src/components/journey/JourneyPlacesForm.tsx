@@ -1,5 +1,11 @@
-import { useState, type FormEvent } from "react";
-import { MapPin } from "lucide-react";
+import { useEffect, useState, type FormEvent } from "react";
+import { MapPin, Pencil } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { calculateRoadAccess, calculateRoadGeometry } from "@/lib/ferry/itinerary.functions";
 import { legWithPauses } from "@/lib/ferry/itinerary";
 import { durationLabel } from "@/lib/ferry/journeySteps";
@@ -15,15 +21,21 @@ export function JourneyPlacesForm({
   algeriaPort,
   places,
   onChange,
+  bare = false,
+  onSkip,
 }: {
   europePort: Port;
   algeriaPort: Port;
   places: JourneyPlaces | null;
   onChange: (places: JourneyPlaces | null) => void;
+  /** Dans la fenêtre : le formulaire seul, sans titre ni résumé. */
+  bare?: boolean;
+  /** « Plus tard » : l'invitation se range dans le bouton du voyage. */
+  onSkip?: () => void;
 }) {
   const [home, setHome] = useState(places?.home ?? "");
   const [bled, setBled] = useState(places?.bled ?? "");
-  const [open, setOpen] = useState(!places);
+  const [open, setOpen] = useState(bare || !places);
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -82,7 +94,7 @@ export function JourneyPlacesForm({
     }
   }
 
-  if (places && !open)
+  if (places && !open && !bare)
     return (
       <div className="bw-journey-places" data-filled>
         <MapPin size={15} aria-hidden />
@@ -99,7 +111,7 @@ export function JourneyPlacesForm({
 
   return (
     <form className="bw-journey-places" onSubmit={(event) => void submit(event)}>
-      <strong>Un trajet sur mesure ? (facultatif)</strong>
+      {bare ? null : <strong>Un trajet sur mesure ? (facultatif)</strong>}
       <div>
         <label>
           D'où partez-vous ?
@@ -125,6 +137,11 @@ export function JourneyPlacesForm({
         <button type="submit" disabled={pending}>
           {pending ? "Calcul…" : "Personnaliser mon parcours"}
         </button>
+        {onSkip && !places ? (
+          <button type="button" data-variant="ghost" onClick={onSkip}>
+            Plus tard
+          </button>
+        ) : null}
         {places ? (
           <button
             type="button"
@@ -139,9 +156,97 @@ export function JourneyPlacesForm({
           </button>
         ) : null}
       </div>
-      <small>
-        Utilisé seulement pour le calcul, gardé sur cet appareil, jamais visible des autres.
-      </small>
+      <small>Gardé sur cet appareil, jamais visible des autres.</small>
     </form>
+  );
+}
+
+const inviteKey = (departureId: string) => `bledway:places-invite:${departureId}`;
+const invited = (departureId: string) => {
+  try {
+    return window.localStorage.getItem(inviteKey(departureId)) !== null;
+  } catch {
+    return true;
+  }
+};
+const markInvited = (departureId: string) => {
+  try {
+    window.localStorage.setItem(inviteKey(departureId), "1");
+  } catch {
+    /* sans stockage, l'invitation reviendra : elle reste ignorable */
+  }
+};
+
+/**
+ * Le trajet sur mesure, transverse au voyage : une invitation à la première visite (une fois par
+ * traversée, ignorable), puis un bouton discret en tête de « Ma traversée » pour le faire ou le
+ * modifier à tout moment.
+ */
+export function JourneyPlacesEntry({
+  departureId,
+  europePort,
+  algeriaPort,
+  places,
+  onChange,
+}: {
+  departureId: string;
+  europePort: Port;
+  algeriaPort: Port;
+  places: JourneyPlaces | null;
+  onChange: (places: JourneyPlaces | null) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  useEffect(() => {
+    if (places || invited(departureId)) return;
+    const timer = window.setTimeout(() => setOpen(true), 900);
+    return () => window.clearTimeout(timer);
+    // L'invitation ne dépend que de la traversée : un trajet rempli ensuite ne la relance pas.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [departureId]);
+  const close = () => {
+    markInvited(departureId);
+    setOpen(false);
+  };
+  const city = (value: string) => value.split(",")[0];
+  return (
+    <>
+      <button
+        type="button"
+        className="bw-places-chip"
+        data-filled={places ? "" : undefined}
+        onClick={() => setOpen(true)}
+        title={places ? "Modifier mon trajet sur mesure" : "Personnaliser mon trajet"}
+      >
+        <MapPin size={14} aria-hidden />
+        <span>
+          {places ? `${city(places.home)} → ${city(places.bled)}` : "Personnaliser mon trajet"}
+        </span>
+        {places ? <Pencil size={12} aria-hidden /> : null}
+      </button>
+      <Dialog open={open} onOpenChange={(next) => (next ? setOpen(true) : close())}>
+        <DialogContent
+          className="bw-places-dialog"
+          // Une invitation : pas de clavier qui surgit avant que la personne ait choisi.
+          onOpenAutoFocus={(event) => event.preventDefault()}
+        >
+          <DialogTitle>Mon trajet, de porte à porte</DialogTitle>
+          <DialogDescription>
+            Mes villes de départ et d’arrivée : la route, l’heure de départ conseillée et la suite
+            après le port sont calculées pour moi.
+          </DialogDescription>
+          <JourneyPlacesForm
+            bare
+            europePort={europePort}
+            algeriaPort={algeriaPort}
+            places={places}
+            onChange={(next) => {
+              onChange(next);
+              close();
+            }}
+            onSkip={close}
+          />
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }

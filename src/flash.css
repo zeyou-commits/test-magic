@@ -12140,7 +12140,7 @@ img[data-logo="dark"] {
     padding: 12px 16px 10px;
     border-bottom: 1px solid #16324a14;
   }
-  .bw-voyage-aside__bar button {
+  .bw-voyage-aside__bar > button {
     display: inline-flex;
     align-items: center;
     gap: 6px;
@@ -12155,11 +12155,11 @@ img[data-logo="dark"] {
     font-weight: 750;
     cursor: pointer;
   }
-  .bw-voyage-aside__bar button:hover {
+  .bw-voyage-aside__bar > button:hover {
     border-color: #16324a;
     background: #f6f3ea;
   }
-  .bw-voyage-aside__bar span {
+  .bw-voyage-aside__bar > span {
     color: var(--muted-foreground);
     font-size: 11px;
     font-weight: 800;
@@ -12754,13 +12754,13 @@ img[data-logo="dark"] {
   display: flex;
   min-width: 0;
   flex: 1;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1px;
-  margin: 0;
-  padding: 2px 0;
+  gap: 6px;
+  margin: 0 -14px;
+  padding: 2px 14px 4px;
   overflow-x: auto;
   list-style: none;
+  scroll-snap-type: x proximity;
+  scroll-padding: 0 14px;
   scrollbar-width: none;
 }
 .bw-chain::-webkit-scrollbar {
@@ -12768,44 +12768,86 @@ img[data-logo="dark"] {
 }
 .bw-chain li {
   flex: none;
-}
-.bw-chain__sep {
-  flex: none;
-  color: #9aa6a2;
+  scroll-snap-align: center;
 }
 .bw-chain button {
-  display: inline-flex;
+  display: grid;
+  width: 124px;
+  height: 100%;
+  grid-template-columns: 20px minmax(0, 1fr);
+  grid-template-rows: auto auto;
+  column-gap: 6px;
   align-items: center;
-  gap: 5px;
-  height: 28px;
-  min-width: 26px;
-  justify-content: center;
-  padding: 0 4px;
-  border: 0;
-  border-radius: 8px;
-  background: #f1efe8;
-  color: #5d6b66;
+  padding: 7px 9px;
+  border: 1px solid #16324a14;
+  border-radius: 12px;
+  background: #ffffff;
+  color: #16324a;
   font: inherit;
-  font-size: 12px;
-  font-weight: 800;
+  text-align: left;
   cursor: pointer;
 }
-.bw-chain button[data-state="done"] {
-  background: #e3f1e9;
-  color: #0e7a43;
+.bw-chain__dot {
+  display: grid;
+  width: 20px;
+  height: 20px;
+  grid-row: span 2;
+  place-items: center;
+  border: 1.5px solid #d6d0bf;
+  border-radius: 50%;
+  color: #6b7a75;
 }
-.bw-chain button[data-state="late"] {
+.bw-chain strong {
+  display: -webkit-box;
+  overflow: hidden;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.2;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+.bw-chain small {
+  overflow: hidden;
+  color: #6b7a75;
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.bw-chain button[data-state="done"] {
+  background: #f6f9f7;
+}
+.bw-chain button[data-state="done"] strong {
+  color: #5d6b66;
+  font-weight: 600;
+}
+.bw-chain button[data-state="done"] .bw-chain__dot {
+  border-color: #0e7a43;
+  background: #0e7a43;
+  color: #ffffff;
+}
+.bw-chain button[data-state="late"] .bw-chain__dot {
+  border-color: #f2a900;
   background: #fff4d6;
   color: #8a5a00;
 }
 .bw-chain button[data-state="current"] {
-  min-width: 30px;
+  width: 136px;
+  border-color: #16324a;
   background: #16324a;
+  color: #ffffff;
+}
+.bw-chain button[data-state="current"] small {
   color: #ffd98a;
-  box-shadow: 0 0 0 3px #ffd98a80;
+}
+.bw-chain button[data-state="current"] .bw-chain__dot {
+  border-color: #ffd98a;
+  background: #ffd98a;
+  color: #16324a;
 }
 .bw-chain button[aria-pressed="true"]:not([data-state="current"]) {
-  box-shadow: inset 0 0 0 2px #16324a;
+  border-color: #16324a;
+  box-shadow: inset 0 0 0 1px #16324a;
 }
 .bw-voyage-aside__title {
   display: flex;
@@ -13002,4 +13044,47 @@ img[data-logo="dark"] {
   .bw-timeline__body {
     animation: none;
   }
+}
+
+/* Trajet sur mesure : un bouton discret en tête de « Ma traversée », la fenêtre pour le remplir. */
+.bw-places-chip {
+  display: inline-flex;
+  min-width: 0;
+  max-width: 100%;
+  align-items: center;
+  gap: 6px;
+  min-height: 32px;
+  padding: 0 12px;
+  border: 1px dashed #0e7a4380;
+  border-radius: 999px;
+  background: #f2f8f4;
+  color: #0b5e33;
+  font: inherit;
+  font-size: 12.5px;
+  font-weight: 750;
+  cursor: pointer;
+}
+.bw-places-chip span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.bw-places-chip[data-filled] {
+  border-style: solid;
+  border-color: #0e7a4333;
+}
+.bw-places-chip:hover {
+  border-color: #0e7a43;
+}
+.bw-voyage-aside__places {
+  display: flex;
+  margin: 2px 14px 0;
+}
+.bw-places-dialog {
+  max-width: 440px;
+}
+.bw-places-dialog .bw-journey-places {
+  padding: 0;
+  border: 0;
+  background: none;
 }

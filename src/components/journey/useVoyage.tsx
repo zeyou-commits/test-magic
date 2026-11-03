@@ -47,7 +47,7 @@ import { portTimeZone } from "@/lib/ferry/time";
 import type { Selection } from "@/lib/ferry/types";
 import type { VoyageTrip } from "@/lib/ferry/voyageTrip";
 import type { FriezeStep } from "./JourneyFrieze";
-import { JourneyPlacesForm } from "./JourneyPlacesForm";
+import { JourneyPlacesEntry } from "./JourneyPlacesForm";
 import { JourneyStepPanel } from "./JourneyStepPanel";
 
 /**
@@ -346,14 +346,6 @@ export function useVoyage(
     );
     const after = (
       <>
-        {traveller && (step === "road" || step === "last") ? (
-          <JourneyPlacesForm
-            europePort={outbound ? from : to}
-            algeriaPort={outbound ? to : from}
-            places={places}
-            onChange={updatePlaces}
-          />
-        ) : null}
         {traveller && step === "port" ? rate("port", from.id, `Noter le port de ${from.name}`) : null}
         {traveller && step === "arrival" ? (
           <>
@@ -436,6 +428,16 @@ export function useVoyage(
     setStoryIndex,
     mapProps,
     renderPanel,
+    /** Le trajet sur mesure, en tête du voyage plutôt que dans une étape. */
+    placesEntry: traveller ? (
+      <JourneyPlacesEntry
+        departureId={departure.id}
+        europePort={outbound ? from : to}
+        algeriaPort={outbound ? to : from}
+        places={places}
+        onChange={updatePlaces}
+      />
+    ) : null,
     info,
     /** Une info ou un signalement en cours : le bandeau « En direct » mérite sa place en tête. */
     liveAlert: info.official + info.travellers > 0,

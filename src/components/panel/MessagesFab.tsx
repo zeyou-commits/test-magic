@@ -26,17 +26,6 @@ export function MessagesFab({ onSelect }: { onSelect: (selection: Selection) => 
   const { user } = useAuth();
   const { trip } = useMyTrip();
   const [open, setOpen] = useState(false);
-  const upcoming = useQuery(upcomingDeparturesQuery()).data ?? [];
-  // Les salons en cours : traversées en mer, puis celles à venir.
-  const fleet = useQuery(fleetDeparturesQuery).data ?? [];
-  const now = Date.now();
-  const atSea = fleet.filter(
-    (departure) =>
-      departure.status !== "cancelled" &&
-      Date.parse(departure.departure_at) <= now &&
-      Date.parse(departure.arrival_at ?? departure.departure_at) > now,
-  );
-  const rooms = [...atSea, ...upcoming.filter((d) => !atSea.some((sea) => sea.id === d.id))];
   const room = useQuery({
     ...chatFeedQuery("crossing", trip?.departure.id ?? "", user?.id),
     refetchInterval: 60_000,
@@ -128,19 +117,64 @@ export function MessagesFab({ onSelect }: { onSelect: (selection: Selection) => 
           </button>
         </div>
       ) : null}
-      <RoomPicker
-        departures={rooms.slice(0, 80)}
-        currentId={trip?.departure.id}
-        title={trip ? "Les salons en cours" : undefined}
-        intro={
-          trip
-            ? "Votre salon, et les autres en lecture : vous pouvez y réagir avec « Pareil ici »."
-            : undefined
-        }
-        onSelect={onSelect}
-        open={open}
-        onOpenChange={setOpen}
-      />
+      <SalonsPicker onSelect={onSelect} open={open} onOpenChange={setOpen} />
     </div>
   );
+}
+
+/**
+ * La liste des salons en cours : traversées en mer, puis à venir. Ma traversée en tête de
+ * l'intention (« Votre salon, et les autres en lecture »).
+ */
+function SalonsPicker({
+  onSelect,
+  open,
+  onOpenChange,
+}: {
+  onSelect: (selection: Selection) => void;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+}) {
+  const { trip } = useMyTrip();
+  const upcoming = useQuery(upcomingDeparturesQuery()).data ?? [];
+  const fleet = useQuery(fleetDeparturesQuery).data ?? [];
+  const now = Date.now();
+  const atSea = fleet.filter(
+    (departure) =>
+      departure.status !== "cancelled" &&
+      Date.parse(departure.departure_at) <= now &&
+      Date.parse(departure.arrival_at ?? departure.departure_at) > now,
+  );
+  const rooms = [...atSea, ...upcoming.filter((d) => !atSea.some((sea) => sea.id === d.id))];
+  return (
+    <RoomPicker
+      departures={rooms.slice(0, 80)}
+      currentId={trip?.departure.id}
+      title={trip ? "Les salons en cours" : undefined}
+      intro={
+        trip
+          ? "Votre salon, et les autres en lecture : vous pouvez y réagir avec « Pareil ici »."
+          : undefined
+      }
+      onSelect={onSelect}
+      open={open}
+      onOpenChange={onOpenChange}
+    />
+  );
+}
+
+/**
+ * Mode voyage : le bouton des salons ouvre le salon de la traversée, et « Autres salons » ouvre
+ * cette liste (choisir une autre traversée quitte le mode voyage, avec retour possible).
+ */
+export function VoyageSalonsPicker({
+  onSelect,
+  open,
+  onOpenChange,
+}: {
+  onSelect: (selection: Selection) => void;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+}) {
+  return <SalonsPicker onSelect={onSelect} open={open} onOpenChange={onOpenChange} />;
 }

@@ -2,6 +2,7 @@ import { EntityReviewsModeration } from "@/components/admin/EntityReviewsModerat
 import { WalletMediaAdmin } from "@/components/admin/WalletMediaAdmin";
 import { IllustrationsAdmin } from "@/components/admin/IllustrationsAdmin";
 import { AvatarsAdmin } from "@/components/admin/AvatarsAdmin";
+import { PhotosModeration } from "@/components/admin/PhotosModeration";
 import { ScheduleRecurrenceFields } from "@/components/admin/ScheduleRecurrence";
 import { recurrenceLabel } from "@/lib/ferry/recurrence";
 import { DinarVoiceAdmin } from "@/components/admin/DinarVoiceAdmin";
@@ -381,6 +382,7 @@ function AdminTabs() {
           <UsageAdmin />
         </TabsContent>
         <TabsContent value="reviews">
+          <PhotosModeration />
           <EntityReviewsModeration pendingOnly={filter === "pending"} />
           <ReviewsModeration pendingOnly={filter === "pending"} onClearFilter={clearFilter} />
         </TabsContent>

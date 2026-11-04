@@ -5,6 +5,7 @@ import {
   AtSign,
   Bell,
   BellOff,
+  Camera,
   CircleHelp,
   CornerDownRight,
   Flag,
@@ -56,6 +57,15 @@ import { ChatText, useChatEmotes } from "./ChatText";
 import { OwnMessageActions } from "./OwnMessageActions";
 import { DmRequest, PrivateMessages } from "./PrivateMessages";
 import { AuthorAvatar, StaffBadge, StaffTools, type ChatAuthor } from "./StaffChat";
+import { PhotoPicker, PhotoStrip } from "@/components/photos/Photos";
+import { photosKey, photosQuery, sendChatPhoto, type PreparedPhoto } from "@/lib/photos/photos";
+
+/** Filtre automatique des photos de salon (modèle chargé seulement à ce moment-là). */
+async function checkPhoto(photo: PreparedPhoto) {
+  const { checkChatPhoto } = await import("@/lib/photos/nsfw");
+  const result = await checkChatPhoto(photo.url);
+  return result.ok ? null : result.reason;
+}
 
 const supabase = typedSupabase as unknown as SupabaseClient;
 export const MAX_MESSAGE = 200;
@@ -242,6 +252,10 @@ function LiveChat({
   const [replyTo, setReplyTo] = useState<Message | null>(null);
   const [showPeople, setShowPeople] = useState(false);
   const [showEmotes, setShowEmotes] = useState(false);
+  // Une photo par personne et par salon, filtrée sur l'appareil puis publiée avec le message.
+  const [showPhoto, setShowPhoto] = useState(false);
+  const [chatPhotos, setChatPhotos] = useState<PreparedPhoto[]>([]);
+  const [photoConsent, setPhotoConsent] = useState(false);
   const [dmView, setDmView] = useState<"inbox" | null>(() => (takeDmFocus() ? "inbox" : null));
   const [dmTo, setDmTo] = useState<TravellerCard | null>(null);
   const siteEmotes = useChatEmotes();
@@ -278,6 +292,12 @@ function LiveChat({
   const following = useRef(true);
   const lastId = useRef<string | null>(null);
   const lines = [...messages].reverse();
+  const messagePhotos = useQuery(
+    photosQuery(
+      "chat",
+      messages.map((message) => message.id),
+    ),
+  ).data;
   const refresh = () => void client.invalidateQueries({ queryKey: roomKey(kind, room) });
   const toBottom = () => {
     const list = listRef.current;
@@ -286,16 +306,25 @@ function LiveChat({
     setUnread(0);
   };
   const send = useMutation({
-    mutationFn: () =>
-      postToRoom(
+    mutationFn: async () => {
+      const photo = chatPhotos[0];
+      if (photo && !photoConsent) throw new Error("Cochez l’accord sous la photo, ou retirez-la.");
+      await postToRoom(
         kind,
         room,
-        withMentions(text, chosen.current),
+        text.trim() ? withMentions(text, chosen.current) : "📷",
         undefined,
         replyTo?.id,
         staff && official,
-      ),
+      );
+      if (photo && user) await sendChatPhoto(kind, room, user.id, photo);
+    },
     onSuccess: () => {
+      chatPhotos.forEach((photo) => URL.revokeObjectURL(photo.url));
+      setChatPhotos([]);
+      setPhotoConsent(false);
+      setShowPhoto(false);
+      void client.invalidateQueries({ queryKey: photosKey });
       setText("");
       setReplyTo(null);
       setShowEmotes(false);
@@ -348,7 +377,7 @@ function LiveChat({
   }, [newest]);
   // On écrit d'abord ; l'inscription n'arrive qu'à l'envoi, et le message est gardé.
   const submit = () => {
-    if (!text.trim()) return;
+    if (!text.trim() && !chatPhotos.length) return;
     if (canWrite) {
       gate.guard(() => send.mutate());
       return;
@@ -611,6 +640,7 @@ function LiveChat({
                 <span data-big={onlyEmotes(message.body) || undefined}>
                   <ChatText body={message.body} mentions={message.mentions} myHandle={myHandle} />
                 </span>
+                <PhotoStrip photos={messagePhotos?.get(message.id)} label="Photo du message" />
                 {metHere.has(message.author.handle) && !message.me ? (
                   <small className="bw-chat__met">déjà croisé</small>
                 ) : null}
@@ -809,6 +839,19 @@ function LiveChat({
               ))}
             </ul>
           ) : null}
+          {showPhoto && canWrite && user ? (
+            <div className="bw-chat__panel">
+              <PhotoPicker
+                max={1}
+                photos={chatPhotos}
+                onChange={setChatPhotos}
+                consent={photoConsent}
+                onConsent={setPhotoConsent}
+                check={checkPhoto}
+                note="Une photo par personne dans ce salon, vérifiée automatiquement puis publiée avec votre message."
+              />
+            </div>
+          ) : null}
           {/:[a-z0-9_]+:/.test(text) ? (
             <p className="bw-chat__draft">
               <ChatText body={text} size={22} />
@@ -829,6 +872,22 @@ function LiveChat({
             >
               <Smile size={20} aria-hidden />
             </button>
+            {canWrite && user ? (
+              <button
+                type="button"
+                className="bw-chat__emote-toggle"
+                aria-label="Joindre une photo"
+                aria-expanded={showPhoto}
+                data-filled={chatPhotos.length ? "" : undefined}
+                onClick={() => {
+                  if (!showPhoto)
+                    void import("@/lib/photos/nsfw").then((m) => m.warmChatPhotoCheck());
+                  setShowPhoto((value) => !value);
+                }}
+              >
+                <Camera size={19} aria-hidden />
+              </button>
+            ) : null}
             <input
               ref={inputRef}
               value={text}
@@ -848,7 +907,11 @@ function LiveChat({
                 BledWay
               </label>
             ) : null}
-            <button type="submit" disabled={!text.trim() || send.isPending} aria-label="Envoyer">
+            <button
+              type="submit"
+              disabled={(!text.trim() && !chatPhotos.length) || send.isPending}
+              aria-label="Envoyer"
+            >
               <Send size={17} aria-hidden />
             </button>
           </form>

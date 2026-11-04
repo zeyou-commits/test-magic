@@ -21,6 +21,12 @@ import {
   ownEntityReviewsQuery,
   reviewsDb,
 } from "@/lib/ferry/entityReviews";
+import { PhotoPicker, PhotoStrip } from "@/components/photos/Photos";
+import { photosKey, photosQuery, submitPhoto, type PreparedPhoto } from "@/lib/photos/photos";
+
+/** Photos d'avis : navires et ports seulement (pas les compagnies). */
+const photoKind = (kind: ReviewKind) =>
+  kind === "vessel" ? "vessel_review" : kind === "port" ? "port_review" : null;
 
 export function EntityReviews({
   kind,
@@ -43,6 +49,12 @@ export function EntityReviews({
   const [write, setWrite] = useState(false);
   const [localNonce, setLocalNonce] = useState(0);
   const draftKey = ratingDraftKey(kind, target);
+  const reviewPhotos = useQuery(
+    photosQuery(
+      photoKind(kind) ?? "port_review",
+      photoKind(kind) ? (feed.data?.reviews ?? []).map((r) => r.id) : [],
+    ),
+  ).data;
   useEffect(() => {
     if (openForm) setWrite(true);
   }, [openForm]);
@@ -59,7 +71,9 @@ export function EntityReviews({
           <RateStars
             average={feed.data?.average}
             count={feed.data?.count ?? 0}
-            subject={kind === "vessel" ? "ce navire" : kind === "port" ? "ce port" : "cette compagnie"}
+            subject={
+              kind === "vessel" ? "ce navire" : kind === "port" ? "ce port" : "cette compagnie"
+            }
             size={22}
             onRate={(score) => {
               presetRating(kind, target, score);
@@ -142,6 +156,7 @@ export function EntityReviews({
                 </strong>
                 <time dateTime={r.date}>{new Date(r.date).toLocaleDateString("fr-FR")}</time>
               </div>
+              <PhotoStrip photos={reviewPhotos?.get(r.id)} label="Photos de cet avis" />
               <details>
                 <summary>Voir ses critères</summary>
                 <dl>
@@ -196,9 +211,14 @@ function RatingForm({
     return initial ?? {};
   });
   const score = reviewScore(kind, scores);
+  const withPhotos = photoKind(kind);
+  const [photos, setPhotos] = useState<PreparedPhoto[]>([]);
+  const [consent, setConsent] = useState(false);
   const submit = useMutation({
     mutationFn: async () => {
-      const { error } = await reviewsDb.rpc("bw_submit_entity_review", {
+      if (photos.length && !consent)
+        throw new Error("Cochez l’accord sous les photos, ou retirez-les.");
+      const { data, error } = await reviewsDb.rpc("bw_submit_entity_review", {
         p_kind: kind,
         p_target: target,
         p_scores: scores,
@@ -209,12 +229,32 @@ function RatingForm({
             ? error.message
             : "Votre note n’a pas été enregistrée. Réessayez dans un instant.",
         );
+      // La note est enregistrée ; une photo refusée ne la remet pas en cause.
+      let sent = 0;
+      let failed: string | null = null;
+      if (withPhotos && user && typeof data === "string")
+        for (const photo of photos) {
+          try {
+            await submitPhoto(withPhotos, data, user.id, photo);
+            sent += 1;
+          } catch (cause) {
+            failed = cause instanceof Error ? cause.message : "Photo non envoyée.";
+          }
+        }
+      return { sent, failed };
     },
-    onSuccess: () => {
+    onSuccess: ({ sent, failed }) => {
       window.sessionStorage.removeItem(draftKey);
-      toast.success("Votre note a été envoyée pour vérification.");
+      toast.success(
+        sent
+          ? `Votre note et ${sent > 1 ? `vos ${sent} photos ont été envoyées` : "votre photo ont été envoyées"} pour vérification.`
+          : "Votre note a été envoyée pour vérification.",
+      );
+      if (failed) toast.error(failed);
+      photos.forEach((photo) => URL.revokeObjectURL(photo.url));
       onDone();
       void client.invalidateQueries({ queryKey: entityReviewsKey });
+      void client.invalidateQueries({ queryKey: photosKey });
       void client.invalidateQueries({ queryKey: ["admin", "counts"] });
     },
   });
@@ -268,6 +308,16 @@ function RatingForm({
           </div>
         </fieldset>
       ))}
+      {withPhotos && user ? (
+        <PhotoPicker
+          max={3}
+          photos={photos}
+          onChange={setPhotos}
+          consent={consent}
+          onConsent={setConsent}
+          note="Visibles après validation par l’équipe."
+        />
+      ) : null}
       {submit.isError ? <p role="alert">{submit.error.message}</p> : null}
       {!user ? (
         <a

@@ -39,6 +39,8 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import { OptionIcon, SituationBadge } from "@/components/panel/SituationIcon";
+import { PhotoPicker } from "@/components/photos/Photos";
+import { photosKey, submitPhoto, type PreparedPhoto } from "@/lib/photos/photos";
 
 // Suivis du compte (table bw_follows), absente des types générés.
 const supabase = typedSupabase as unknown as SupabaseClient;
@@ -216,6 +218,10 @@ export function QuickReport({
   const [sentForReview, setSentForReview] = useState(false);
   const [sentWithoutPosition, setSentWithoutPosition] = useState(false);
   const [sentByStaff, setSentByStaff] = useState(false);
+  // Port : une photo de ce qui a changé (accès, travaux…), publiée après validation par l'équipe.
+  const [photos, setPhotos] = useState<PreparedPhoto[]>([]);
+  const [photoConsent, setPhotoConsent] = useState(false);
+  const [photoResult, setPhotoResult] = useState<string | null>(null);
 
   const vessels = fleet.filter(
     (ship, index) =>
@@ -271,6 +277,9 @@ export function QuickReport({
     setStep("pick");
     setLocating("idle");
     setDraft({ ...emptyDraft, ...guess(target) });
+    setPhotos([]);
+    setPhotoConsent(false);
+    setPhotoResult(null);
     mutation.reset();
     setOpen(true);
   };
@@ -356,6 +365,8 @@ export function QuickReport({
     mutationFn: async (input: Draft) => {
       const category = input.category!;
       const where = situationOf(category).where;
+      if (photos.length && !photoConsent)
+        throw new Error("Cochez l’accord sous la photo, ou retirez-la.");
       if (staff) {
         const published = await reportAsStaff({
           kind: where,
@@ -366,7 +377,13 @@ export function QuickReport({
           departureId: input.departureId,
         });
         if (published.error) throw new Error(failure(published.error.message));
-        return { error: null, onSite: false, pendingReview: false, withoutPosition: false, byStaff: true };
+        return {
+          error: null,
+          onSite: false,
+          pendingReview: false,
+          withoutPosition: false,
+          byStaff: true,
+        };
       }
       // Position demandée au moment d'envoyer : un signalement affirme ce qu'on voit sur place.
       let here = position;
@@ -385,7 +402,13 @@ export function QuickReport({
           departureId: input.departureId,
         });
         if (review.error) throw new Error(failure(review.error.message));
-        return { error: null, onSite: false, pendingReview: true, withoutPosition: true, byStaff: false };
+        return {
+          error: null,
+          onSite: false,
+          pendingReview: true,
+          withoutPosition: true,
+          byStaff: false,
+        };
       }
       logLocation("report", "report_send", { where, category, hasPosition: Boolean(here) });
       const result = await reportTravel({
@@ -408,7 +431,19 @@ export function QuickReport({
       logLocation("report", "report_ok", { where, category, onSite: result.onSite });
       return { ...result, withoutPosition: false, byStaff: false };
     },
-    onSuccess: (result) => {
+    onSuccess: async (result, input) => {
+      // Le signalement est parti ; la photo suit (sans position, il n'est pas encore publié : pas de photo).
+      if (photos.length && user && input.portId && situationOf(input.category!).where === "port") {
+        if (result.withoutPosition)
+          setPhotoResult(
+            "La photo n’a pas été jointe : le signalement attend d’abord la vérification de l’équipe.",
+          );
+        else
+          await submitPhoto("report", input.portId, user.id, photos[0]!)
+            .then(() => setPhotoResult("Votre photo sera visible après validation par l’équipe."))
+            .catch((error: Error) => setPhotoResult(error.message));
+        void queryClient.invalidateQueries({ queryKey: photosKey });
+      }
       setSentOnSite(result.onSite);
       setSentForReview(result.pendingReview);
       setSentWithoutPosition(result.withoutPosition);
@@ -501,15 +536,16 @@ export function QuickReport({
           {sentByStaff
             ? "Publié par l’équipe et marqué validé, sans contrôle de position."
             : sentWithoutPosition
-            ? "Votre position n’a pas pu être obtenue : votre signalement est transmis à l’équipe BledWay, qui le vérifie avant de le publier. Merci pour votre aide !"
-            : sentForReview
-            ? "L’horaire ou la position connue ne correspond pas à votre observation. Votre signalement est transmis à l’équipe, sans publication automatique."
-            : `${draft.category ? `Visible environ ${lifetimeLabel(draft.category)}. ` : ""}${
-                impact
-                  ? "Il apparaîtra sur la carte dès qu’un autre voyageur le confirme."
-                  : "Les autres voyageurs peuvent le confirmer ou dire que ce n’est plus le cas."
-              }`}
+              ? "Votre position n’a pas pu être obtenue : votre signalement est transmis à l’équipe BledWay, qui le vérifie avant de le publier. Merci pour votre aide !"
+              : sentForReview
+                ? "L’horaire ou la position connue ne correspond pas à votre observation. Votre signalement est transmis à l’équipe, sans publication automatique."
+                : `${draft.category ? `Visible environ ${lifetimeLabel(draft.category)}. ` : ""}${
+                    impact
+                      ? "Il apparaîtra sur la carte dès qu’un autre voyageur le confirme."
+                      : "Les autres voyageurs peuvent le confirmer ou dire que ce n’est plus le cas."
+                  }`}
         </p>
+        {photoResult ? <p className="bw-report-photo-note">{photoResult}</p> : null}
         <button type="button" className="bw-report-send" onClick={() => setOpen(false)}>
           Fermer
         </button>
@@ -716,6 +752,16 @@ export function QuickReport({
             la carte quand un second voyageur le confirme.
           </p>
         ) : null}
+        {situation.where === "port" && user ? (
+          <PhotoPicker
+            max={1}
+            photos={photos}
+            onChange={setPhotos}
+            consent={photoConsent}
+            onConsent={setPhotoConsent}
+            note="Facultatif : utile si l’accès au port a changé. Visible après validation par l’équipe."
+          />
+        ) : null}
         {mutation.isError ? (
           <p role="alert" className="bw-community-error">
             {mutation.error.message}
@@ -734,8 +780,8 @@ export function QuickReport({
           {staff
             ? "Équipe BledWay : pas de position demandée, le signalement est publié et marqué validé."
             : situation.where === "port"
-            ? "Au port, il faut être sur place, à moins de 3 km, localisation activée. Sans position, le signalement est vérifié par l’équipe avant publication. Votre position n’est pas enregistrée."
-            : "Il faut être près du bateau ou à son port, localisation activée. Sans position, le signalement est vérifié par l’équipe avant publication. Votre position n’est pas enregistrée."}
+              ? "Au port, il faut être sur place, à moins de 3 km, localisation activée. Sans position, le signalement est vérifié par l’équipe avant publication. Votre position n’est pas enregistrée."
+              : "Il faut être près du bateau ou à son port, localisation activée. Sans position, le signalement est vérifié par l’équipe avant publication. Votre position n’est pas enregistrée."}
         </p>
       </form>
     );

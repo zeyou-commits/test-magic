@@ -120,8 +120,10 @@ function TermsPage() {
             body: (
               <>
                 <p>
-                  Les avis sont relus avant publication. Les salons sont modérés par l'équipe, aidée
-                  d'un outil automatique. BledWay peut refuser, masquer ou retirer un contenu
+                  Les avis et leurs photos sont relus avant publication. Les salons sont modérés par
+                  l'équipe, aidée d'un outil automatique ; une photo de salon est d'abord vérifiée
+                  automatiquement sur votre appareil, puis masquée si deux personnes la signalent,
+                  en attendant l'avis de l'équipe. BledWay peut refuser, masquer ou retirer un contenu
                   contraire à la charte ou à la loi, et suspendre l'écriture d'un compte,
                   temporairement ou durablement.
                 </p>

@@ -28,9 +28,11 @@ function LegalPage() {
             title: "Éditeur",
             body: (
               <p>
-                Nom ou raison sociale, adresse, numéro d'immatriculation le cas échéant, et
-                directeur de la publication : <strong>à compléter par l'éditeur</strong>. Contact :
-                la page <PageLink to="/contact">Contact</PageLink>.
+                BledWay est édité à titre non professionnel par un particulier. Comme le permet la
+                loi pour la confiance dans l'économie numérique (LCEN) du 21 juin 2004, il a choisi
+                de ne pas rendre publique son identité : ses coordonnées ont été communiquées à ses
+                hébergeurs. Pour le joindre, y compris pour une demande concernant vos données ou un
+                contenu illicite : la page <PageLink to="/contact">Contact</PageLink>.
               </p>
             ),
           },
@@ -45,6 +47,10 @@ function LegalPage() {
                 </li>
                 <li>
                   <strong>Base de données et comptes</strong> : Supabase Inc. (supabase.com).
+                </li>
+                <li>
+                  <strong>Nom de domaine</strong> : OVH SAS, 2 rue Kellermann, 59100 Roubaix, France
+                  (ovhcloud.com).
                 </li>
               </ul>
             ),

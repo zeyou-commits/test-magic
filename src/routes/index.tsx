@@ -50,9 +50,10 @@ import { Button } from "@/components/ui/button";
 import { MapStatusBar } from "@/components/map/MapStatusBar";
 import { MapLegend } from "@/components/map/MapLegend";
 import { QuickReport } from "@/components/map/QuickReport";
-import { MessagesFab } from "@/components/panel/MessagesFab";
+import { MessagesFab, VoyageSalonsPicker } from "@/components/panel/MessagesFab";
+import { OPEN_ROOM_PICKER_EVENT } from "@/lib/ferry/chatDemo";
 import { RoomInvite } from "@/components/panel/RoomInvite";
-import { handleOverlayBack } from "@/lib/ferry/backStack";
+import { afterOverlayClose, handleOverlayBack } from "@/lib/ferry/backStack";
 import { MyTripMapChip } from "@/components/panel/MyTripHero";
 import { MapSearch } from "@/components/map/MapSearch";
 import { MapStats, type MapShortcut } from "@/components/map/MapStats";
@@ -117,9 +118,7 @@ function Index() {
   );
   const [selectionHistory, setSelectionHistory] = useState<Selection[]>([]);
   // « Mon voyage » : un mode de la carte (adresse /?voyage=1), jamais actif par défaut.
-  const [voyageOn, setVoyageOn] = useState(() =>
-    new URLSearchParams(initialSearch).has("voyage"),
-  );
+  const [voyageOn, setVoyageOn] = useState(() => new URLSearchParams(initialSearch).has("voyage"));
   // Téléphone : toutes les étapes repliées dans la liste verticale de « Mon voyage ».
   const [timelineClosed, setTimelineClosed] = useState(false);
   // Une fiche ouverte depuis « Mon voyage » : son retour ramène au voyage, pas à l'accueil.
@@ -322,6 +321,21 @@ function Index() {
     () => typeof window !== "undefined" && window.innerWidth >= 1280,
   );
   const [salonDialog, setSalonDialog] = useState(false);
+  // « Autres salons » depuis le salon de la traversée : la fenêtre du salon se ferme d'abord
+  // (et son retour arrière avec), puis la liste s'ouvre.
+  const [voyagePicker, setVoyagePicker] = useState(false);
+  const voyageOnRef = useRef(voyageOn);
+  voyageOnRef.current = voyageOn;
+  useEffect(() => {
+    const pick = () => {
+      // Hors mode voyage, c'est le raccourci des salons (MessagesFab) qui ouvre la liste.
+      if (!voyageOnRef.current) return;
+      setSalonDialog(false);
+      window.setTimeout(() => afterOverlayClose(() => setVoyagePicker(true)), 60);
+    };
+    window.addEventListener(OPEN_ROOM_PICKER_EVENT, pick);
+    return () => window.removeEventListener(OPEN_ROOM_PICKER_EVENT, pick);
+  }, []);
   const voyage = useVoyage(voyageOn ? voyageTrip : null, {
     isMobile,
     fleet,
@@ -1088,7 +1102,12 @@ function Index() {
   const voyageTitle = voyage ? (
     <>
       {voyageRoute}
-      {voyageVessel ? <>{" · "}{voyageVessel}</> : null}
+      {voyageVessel ? (
+        <>
+          {" · "}
+          {voyageVessel}
+        </>
+      ) : null}
     </>
   ) : null;
   // Téléphone, volet replié : l'étape en cours sur une ligne, un toucher ouvre le volet.
@@ -1423,7 +1442,12 @@ function Index() {
                           <strong>{voyageRoute}</strong>
                           <small>
                             {voyage.summary.short}
-                            {voyageVessel ? <>{" · "}{voyageVessel}</> : null}
+                            {voyageVessel ? (
+                              <>
+                                {" · "}
+                                {voyageVessel}
+                              </>
+                            ) : null}
                             {voyage.summary.cancelled ? <em> · Annulée</em> : null}
                           </small>
                         </div>
@@ -1471,33 +1495,33 @@ function Index() {
                   </>
                 ) : (
                   <>
-                  <div className="bw-voyage-aside__bar">
-                    <button type="button" onClick={leaveVoyage}>
-                      <ArrowLeft size={15} aria-hidden /> Retour à l’accueil
-                    </button>
-                    {voyage.placesEntry ?? <span>Traversée suivie</span>}
-                  </div>
-                  {/* Ma traversée défile avec l'étape : le bateau en tête, puis l'étape regardée. */}
-                  <div className="bw-voyage-aside__scroll">
-                    {voyage.tripCard ? (
-                      <div className="bw-voyage-traffic">{voyage.tripCard}</div>
-                    ) : null}
-                    <div className="bw-voyage-aside__step" key={voyage.shown ?? voyage.current}>
-                      {voyage.liveAlert ? (
-                        <LivePulse
-                          info={voyage.info}
-                          onOpen={() =>
-                            handleSelect({ type: "departure", id: voyage.trip.departure.id })
-                          }
-                        />
-                      ) : null}
-                      {voyage.renderPanel(
-                        voyage.shown ?? voyage.current,
-                        Boolean(voyage.pinned) && !voyage.hovering,
-                        voyage.close,
-                      )}
+                    <div className="bw-voyage-aside__bar">
+                      <button type="button" onClick={leaveVoyage}>
+                        <ArrowLeft size={15} aria-hidden /> Retour à l’accueil
+                      </button>
+                      {voyage.placesEntry ?? <span>Traversée suivie</span>}
                     </div>
-                  </div>
+                    {/* Ma traversée défile avec l'étape : le bateau en tête, puis l'étape regardée. */}
+                    <div className="bw-voyage-aside__scroll">
+                      {voyage.tripCard ? (
+                        <div className="bw-voyage-traffic">{voyage.tripCard}</div>
+                      ) : null}
+                      <div className="bw-voyage-aside__step" key={voyage.shown ?? voyage.current}>
+                        {voyage.liveAlert ? (
+                          <LivePulse
+                            info={voyage.info}
+                            onOpen={() =>
+                              handleSelect({ type: "departure", id: voyage.trip.departure.id })
+                            }
+                          />
+                        ) : null}
+                        {voyage.renderPanel(
+                          voyage.shown ?? voyage.current,
+                          Boolean(voyage.pinned) && !voyage.hovering,
+                          voyage.close,
+                        )}
+                      </div>
+                    </div>
                   </>
                 )}
               </div>
@@ -1619,6 +1643,13 @@ function Index() {
                 <MessagesFab onSelect={(next) => handleSelectRef.current(next)} />
               )}
             </QuickReport>
+            {voyage ? (
+              <VoyageSalonsPicker
+                onSelect={(next) => handleSelectRef.current(next)}
+                open={voyagePicker}
+                onOpenChange={setVoyagePicker}
+              />
+            ) : null}
             <RoomInvite onSelect={(next) => handleSelectRef.current(next)} />
             {/* Ma traversée pas encore sur la carte : chrono flottant. */}
             {voyage ? null : (

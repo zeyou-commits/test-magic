@@ -45,6 +45,7 @@ import { Route as ActualitesSlugRouteImport } from './routes/actualites.$slug'
 import { Route as ApiAdminUsersRouteImport } from './routes/api.admin-users'
 import { Route as ApiAisRefreshRouteImport } from './routes/api.ais-refresh'
 import { Route as ApiFxTickerRouteImport } from './routes/api.fx-ticker'
+import { Route as ApiPhotosPurgeRouteImport } from './routes/api.photos-purge'
 import { Route as ApiPushAdminRouteImport } from './routes/api.push-admin'
 import { Route as ApiPushCatchupRouteImport } from './routes/api.push-catchup'
 import { Route as ApiPushDispatchRouteImport } from './routes/api.push-dispatch'
@@ -243,6 +244,11 @@ const ApiFxTickerRoute = ApiFxTickerRouteImport.update({
   path: '/api/fx-ticker',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPhotosPurgeRoute = ApiPhotosPurgeRouteImport.update({
+  id: '/api/photos-purge',
+  path: '/api/photos-purge',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPushAdminRoute = ApiPushAdminRouteImport.update({
   id: '/api/push-admin',
   path: '/api/push-admin',
@@ -365,6 +371,7 @@ export interface FileRoutesByFullPath {
   '/api/admin-users': typeof ApiAdminUsersRoute
   '/api/ais-refresh': typeof ApiAisRefreshRoute
   '/api/fx-ticker': typeof ApiFxTickerRoute
+  '/api/photos-purge': typeof ApiPhotosPurgeRoute
   '/api/push-admin': typeof ApiPushAdminRoute
   '/api/push-catchup': typeof ApiPushCatchupRoute
   '/api/push-dispatch': typeof ApiPushDispatchRoute
@@ -414,6 +421,7 @@ export interface FileRoutesByTo {
   '/api/admin-users': typeof ApiAdminUsersRoute
   '/api/ais-refresh': typeof ApiAisRefreshRoute
   '/api/fx-ticker': typeof ApiFxTickerRoute
+  '/api/photos-purge': typeof ApiPhotosPurgeRoute
   '/api/push-admin': typeof ApiPushAdminRoute
   '/api/push-catchup': typeof ApiPushCatchupRoute
   '/api/push-dispatch': typeof ApiPushDispatchRoute
@@ -470,6 +478,7 @@ export interface FileRoutesById {
   '/api/admin-users': typeof ApiAdminUsersRoute
   '/api/ais-refresh': typeof ApiAisRefreshRoute
   '/api/fx-ticker': typeof ApiFxTickerRoute
+  '/api/photos-purge': typeof ApiPhotosPurgeRoute
   '/api/push-admin': typeof ApiPushAdminRoute
   '/api/push-catchup': typeof ApiPushCatchupRoute
   '/api/push-dispatch': typeof ApiPushDispatchRoute
@@ -527,6 +536,7 @@ export interface FileRouteTypes {
     | '/api/admin-users'
     | '/api/ais-refresh'
     | '/api/fx-ticker'
+    | '/api/photos-purge'
     | '/api/push-admin'
     | '/api/push-catchup'
     | '/api/push-dispatch'
@@ -576,6 +586,7 @@ export interface FileRouteTypes {
     | '/api/admin-users'
     | '/api/ais-refresh'
     | '/api/fx-ticker'
+    | '/api/photos-purge'
     | '/api/push-admin'
     | '/api/push-catchup'
     | '/api/push-dispatch'
@@ -631,6 +642,7 @@ export interface FileRouteTypes {
     | '/api/admin-users'
     | '/api/ais-refresh'
     | '/api/fx-ticker'
+    | '/api/photos-purge'
     | '/api/push-admin'
     | '/api/push-catchup'
     | '/api/push-dispatch'
@@ -687,6 +699,7 @@ export interface RootRouteChildren {
   ApiAdminUsersRoute: typeof ApiAdminUsersRoute
   ApiAisRefreshRoute: typeof ApiAisRefreshRoute
   ApiFxTickerRoute: typeof ApiFxTickerRoute
+  ApiPhotosPurgeRoute: typeof ApiPhotosPurgeRoute
   ApiPushAdminRoute: typeof ApiPushAdminRoute
   ApiPushCatchupRoute: typeof ApiPushCatchupRoute
   ApiPushDispatchRoute: typeof ApiPushDispatchRoute
@@ -949,6 +962,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiFxTickerRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/photos-purge': {
+      id: '/api/photos-purge'
+      path: '/api/photos-purge'
+      fullPath: '/api/photos-purge'
+      preLoaderRoute: typeof ApiPhotosPurgeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/push-admin': {
       id: '/api/push-admin'
       path: '/api/push-admin'
@@ -1185,6 +1205,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiAdminUsersRoute: ApiAdminUsersRoute,
   ApiAisRefreshRoute: ApiAisRefreshRoute,
   ApiFxTickerRoute: ApiFxTickerRoute,
+  ApiPhotosPurgeRoute: ApiPhotosPurgeRoute,
   ApiPushAdminRoute: ApiPushAdminRoute,
   ApiPushCatchupRoute: ApiPushCatchupRoute,
   ApiPushDispatchRoute: ApiPushDispatchRoute,

@@ -39,6 +39,8 @@ import { formatAge } from "@/lib/ferry/tracking";
 import { newsQuery } from "@/lib/ferry/flash";
 import { requestQuickReport } from "@/components/map/QuickReport";
 import { SignalAvatars } from "./SignalAvatars";
+import { PhotoStrip } from "@/components/photos/Photos";
+import { photosQuery } from "@/lib/photos/photos";
 import { SituationBadge, SituationIcon } from "./SituationIcon";
 
 /** Picto d'une situation (nom conservé pour les écrans existants). */
@@ -97,6 +99,13 @@ export function TravelSignals({
       .filter((alert) => !departureId || alert.departure_id === departureId)
       .map((alert) => alert.id),
   );
+  // Photos validées des signalements d'un port (accès modifié, travaux…).
+  const reportPhotos = useQuery(
+    photosQuery(
+      "report",
+      kind === "port" ? (feed.data?.alerts ?? []).map((alert) => alert.id) : [],
+    ),
+  ).data;
   // Pastille touchée sur la carte : la fiche s'ouvre cadrée sur ce signalement.
   const alertIds = (feed.data?.alerts ?? [])
     .filter((alert) => !departureId || alert.departure_id === departureId)
@@ -245,6 +254,7 @@ export function TravelSignals({
                       {alert.denials ? ` · ${alert.denials} « plus le cas »` : ""}
                     </span>
                   </small>
+                  <PhotoStrip photos={reportPhotos?.get(alert.id)} label="Photo du signalement" />
                   {done === alert.id && !mutation.isPending ? (
                     <small className="bw-community-success" role="status">
                       <Check size={13} aria-hidden /> Merci, c’est pris en compte.

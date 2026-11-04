@@ -13270,3 +13270,108 @@ img[data-logo="dark"] {
 .bw-offline-banner b {
   color: #ffd98a;
 }
+
+/* Photos des voyageurs : choix (avis, signalement, salon), vignettes et agrandissement. */
+.bw-photo-picker {
+  display: grid;
+  gap: 8px;
+  margin: 10px 0;
+}
+.bw-photo-picker ul {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.bw-photo-picker li {
+  position: relative;
+}
+.bw-photo-picker li img {
+  width: 76px;
+  height: 76px;
+  border-radius: 12px;
+  object-fit: cover;
+  border: 1px solid #dfe8e3;
+}
+.bw-photo-picker li button {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: #123f2c;
+  color: #fff;
+}
+.bw-photo-picker__add {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  justify-self: start;
+  padding: 7px 12px;
+  border: 1px dashed #9cc3ae;
+  border-radius: 999px;
+  background: #f4f9f6;
+  color: #0e7a43;
+  font-size: 13px;
+  font-weight: 700;
+}
+.bw-photo-picker__consent {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  font-size: 12.5px;
+  color: #2c3d36;
+}
+.bw-photo-picker__consent input {
+  margin-top: 2px;
+}
+.bw-photo-picker small,
+.bw-report-photo-note {
+  color: #5b6b66;
+  font-size: 11.5px;
+}
+.bw-photo-picker p[role="alert"] {
+  color: #b42318;
+  font-size: 12.5px;
+}
+.bw-photo-strip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 6px;
+}
+.bw-photo-strip img {
+  width: 84px;
+  height: 64px;
+  border-radius: 10px;
+  object-fit: cover;
+  border: 1px solid #dfe8e3;
+}
+.bw-chat .bw-photo-strip img {
+  width: 160px;
+  height: 120px;
+}
+.bw-photo-viewer {
+  max-width: min(92vw, 900px);
+  padding: 10px;
+}
+.bw-photo-viewer img {
+  max-height: 78vh;
+  width: 100%;
+  border-radius: 12px;
+  object-fit: contain;
+}
+.bw-photo-viewer__report {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  justify-self: start;
+  color: #b42318;
+  font-size: 13px;
+  font-weight: 600;
+}
+.bw-chat__emote-toggle[data-filled] {
+  color: #0e7a43;
+}

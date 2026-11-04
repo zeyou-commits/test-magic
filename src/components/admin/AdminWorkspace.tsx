@@ -176,8 +176,8 @@ const sections = [
   },
   {
     id: "reviews",
-    label: "Avis des voyageurs",
-    description: "Relisez les contributions avant de les rendre publiques.",
+    label: "Avis et photos",
+    description: "Relisez les avis et les photos des voyageurs avant de les rendre publics.",
     group: "Voyageurs",
     icon: Star,
   },

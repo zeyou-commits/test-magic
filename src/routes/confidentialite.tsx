@@ -28,9 +28,10 @@ function PrivacyPage() {
             title: "Qui est responsable de vos données",
             body: (
               <p>
-                L'éditeur de BledWay, dont l'identité figure dans les{" "}
-                <PageLink to="/mentions-legales">mentions légales</PageLink>. Pour toute question
-                sur vos données : la page <PageLink to="/contact">Contact</PageLink>.
+                L'éditeur de BledWay, un particulier (voir les{" "}
+                <PageLink to="/mentions-legales">mentions légales</PageLink>). Pour toute question
+                sur vos données ou pour exercer vos droits : la page{" "}
+                <PageLink to="/contact">Contact</PageLink>.
               </p>
             ),
           },
@@ -77,6 +78,12 @@ function PrivacyPage() {
                 <li>
                   <strong>Contributions</strong> : avis, notes, signalements, messages des salons,
                   questions et réponses, réactions, avec leur date.
+                </li>
+                <li>
+                  <strong>Photos</strong> jointes à un avis (navire, port), à un signalement de port
+                  ou à un message de salon. Avant l'envoi, votre appareil les réduit et les
+                  réenregistre : la position GPS et les informations de l'appareil sont retirées.
+                  Vous confirmez qu'elles ne montrent ni visage reconnaissable ni plaque lisible.
                 </li>
               </ul>
             ),
@@ -143,14 +150,22 @@ function PrivacyPage() {
                   vous ou par la modération.
                 </li>
                 <li>
-                  <strong>Signalements</strong> : affichés quelques heures selon la situation, puis
-                  gardés pour mesurer la fiabilité des informations.
+                  <strong>Signalements</strong> (avec leurs confirmations et démentis) : affichés
+                  quelques heures selon la situation, puis gardés 12 mois pour comparer d'une saison
+                  à l'autre, et effacés automatiquement.
                 </li>
                 <li>
                   <strong>Journal technique de localisation</strong> : 14 jours.
                 </li>
                 <li>
                   <strong>Compte et profil</strong> : jusqu'à la suppression du compte.
+                </li>
+                <li>
+                  <strong>Photos</strong> : avis et signalements, publiées seulement après validation
+                  par l'équipe ; une photo refusée est effacée. Elles disparaissent avec l'avis, le
+                  signalement ou le message auquel elles sont jointes (30 jours pour les salons), et
+                  leurs fichiers sont effacés la nuit suivante. Vous pouvez demander leur retrait à
+                  tout moment.
                 </li>
               </ul>
             ),

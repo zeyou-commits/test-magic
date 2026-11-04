@@ -19,12 +19,20 @@ import {
 } from "lucide-react";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { TravellerAvatar } from "@/components/community/TravellerAvatar";
-import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { useAuth } from "@/hooks/useAuth";
 import { useTravelAction } from "@/hooks/useTravelAction";
 import { supabase as typedSupabase } from "@/integrations/supabase/client";
 import { myTravellerQuery, type TravellerCard } from "@/lib/community/travellers";
 import { afterOverlayClose, useBackClose } from "@/lib/ferry/backStack";
+import { useMyTrip } from "@/lib/ferry/myTrip";
+import { OPEN_MY_ROOM_EVENT, OPEN_ROOM_PICKER_EVENT } from "@/lib/ferry/chatDemo";
 import {
   CHAT_SENT_EVENT,
   ENTER_ROOM_EVENT,
@@ -256,6 +264,13 @@ function LiveChat({
   }, [user, inbox === null, client]);
   // Les passagers peuvent s'écrire : seulement sur une traversée, et en étant soi-même passager.
   const canDm = kind === "crossing" && canWrite && !closed && Boolean(user) && inbox !== null;
+  // Je suis une autre traversée : ce salon se lit, et l'on y réagit avec « Pareil ici », sans écrire.
+  const { trip: myTrip } = useMyTrip();
+  const reader =
+    kind === "crossing" && !canWrite && !staff && Boolean(myTrip) && myTrip?.departure.id !== room;
+  // Fermer ce salon, puis ouvrir la liste des salons (ou le mien).
+  const leaveFor = (event: string) =>
+    afterOverlayClose(() => window.dispatchEvent(new Event(event)));
   const inputRef = useRef<HTMLInputElement>(null);
   const online = people.length;
   const named = people.filter((person) => person.card);
@@ -290,7 +305,7 @@ function LiveChat({
   });
   const react = useMutation({
     mutationFn: async (id: string) => {
-      const here = kind === "port" ? await currentPosition() : null;
+      const here = kind === "port" && !reader ? await currentPosition() : null;
       const { data, error } = await supabase.rpc("bw_chat_react", {
         p_message: id,
         p_lat: here?.[1] ?? null,
@@ -456,9 +471,22 @@ function LiveChat({
             {muted ? <BellOff size={18} aria-hidden /> : <Bell size={18} aria-hidden />}
           </button>
         ) : null}
-        <span className="bw-chat__live">
-          <i aria-hidden /> En direct
-        </span>
+        <div className="bw-chat__headrow">
+          <span className="bw-chat__live">
+            <i aria-hidden /> En direct
+          </span>
+          {kind === "crossing" ? (
+            <DialogClose asChild>
+              <button
+                type="button"
+                className="bw-chat__others"
+                onClick={() => leaveFor(OPEN_ROOM_PICKER_EVENT)}
+              >
+                <MessagesSquare size={13} aria-hidden /> Autres salons
+              </button>
+            </DialogClose>
+          ) : null}
+        </div>
         <DialogTitle>{title}</DialogTitle>
         <DialogDescription asChild>
           <button
@@ -598,7 +626,7 @@ function LiveChat({
                     {time(message.created_at)}
                     {message.edited ? " · modifié" : ""}
                   </time>
-                  {closed ? null : (
+                  {closed || reader ? null : (
                     <button
                       type="button"
                       onClick={() => {
@@ -691,6 +719,15 @@ function LiveChat({
         <p className="bw-chat__closed">
           Ce salon est fermé à l'écriture. Vous pouvez encore le lire.
         </p>
+      ) : reader ? (
+        <div className="bw-chat__closed bw-chat__reader">
+          <p>Salon en lecture : vous suivez une autre traversée. Réagissez avec « Pareil ici ».</p>
+          <DialogClose asChild>
+            <button type="button" onClick={() => leaveFor(OPEN_MY_ROOM_EVENT)}>
+              Revenir à mon salon
+            </button>
+          </DialogClose>
+        </div>
       ) : (
         <div className="bw-chat__write">
           {replyTo ? (

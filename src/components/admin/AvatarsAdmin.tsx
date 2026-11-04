@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { Plus, Trash2 } from "lucide-react";
@@ -16,9 +16,10 @@ import {
 } from "@/lib/community/avatars";
 import { communityKey } from "@/lib/community/travellers";
 import type { IllustrationSlot } from "@/lib/illustrations/catalog";
-import { prepareIllustration, type PreparedIllustration } from "@/lib/illustrations/prepare";
+import type { PreparedIllustration } from "@/lib/illustrations/prepare";
 import { illustrationFileUrl, ILLUSTRATIONS_BUCKET } from "@/lib/illustrations/store";
 import { AdminDrawer, matches } from "./AdminDrawer";
+import { FramingControls, useFramedIllustration } from "./FramingControls";
 
 // Table et fonctions du script « avatars_admin », absentes des types générés.
 const supabase = typedSupabase as unknown as SupabaseClient;
@@ -194,28 +195,15 @@ function AvatarEditor({
   const [active, setActive] = useState(row?.active ?? true);
   const [file, setFile] = useState<File | null>(null);
   const [keepBackground, setKeepBackground] = useState(false);
-  const [prepared, setPrepared] = useState<PreparedIllustration | null>(null);
-  const [problem, setProblem] = useState<string | null>(null);
+  // Détourage une fois, puis cadrage (zoom, position) réglable.
+  const { prepared, problem, framing, setFraming, ready } = useFramedIllustration(
+    file,
+    AVATAR_FORMAT,
+    keepBackground,
+  );
   const [confirmDelete, setConfirmDelete] = useState(false);
   // Les images du site (/cabas/…) se remplacent dans « Illustrations », pas ici.
   const uploaded = !row || row.image.startsWith("https://");
-
-  useEffect(() => {
-    if (!file) return;
-    let stale = false;
-    setPrepared(null);
-    setProblem(null);
-    prepareIllustration(file, AVATAR_FORMAT, keepBackground)
-      .then((result) => {
-        if (!stale) setPrepared(result);
-      })
-      .catch((cause: Error) => {
-        if (!stale) setProblem(cause.message);
-      });
-    return () => {
-      stale = true;
-    };
-  }, [file, keepBackground]);
 
   const save = useMutation({
     mutationFn: async () => {
@@ -403,6 +391,7 @@ function AvatarEditor({
               />
               Garder le fond de l'image
             </label>
+            {file && ready ? <FramingControls framing={framing} onChange={setFraming} /> : null}
           </>
         ) : (
           <p className="text-xs text-muted-foreground">

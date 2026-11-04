@@ -584,6 +584,7 @@ export default function FerryMap({
 
     map.on("error", (e) => console.error("MAP ERROR", e.error?.message ?? e.error));
     map.on("load", () => {
+      const narrowScreen = window.matchMedia("(max-width: 640px)").matches;
       // Fond maritime calme : les ports et les traversées portent la hiérarchie.
       for (const layer of map.getStyle().layers) {
         if (layer.type === "background")
@@ -606,6 +607,8 @@ export default function FerryMap({
         if (layer.type === "symbol" && /label_country|water_name/.test(layer.id)) {
           map.setPaintProperty(layer.id, "text-color", "#627d8a");
           map.setPaintProperty(layer.id, "text-halo-color", "#f6f2ea");
+          // Téléphone : pays et mers en petit, pour laisser la place aux ports et aux navires.
+          if (narrowScreen) map.setLayoutProperty(layer.id, "text-size", /water/.test(layer.id) ? 10 : 11.5);
         }
       }
       // Les ports sont étiquetés par BledWay ; on masque les villes, régions et rivières du fond de carte.
@@ -662,7 +665,7 @@ export default function FerryMap({
         source: "bw-country-spain",
         layout: {
           "text-field": "Espagne",
-          "text-size": 15,
+          "text-size": narrowScreen ? 11.5 : 15,
           "text-letter-spacing": 0.05,
           ...(countryFont ? { "text-font": countryFont as string[] } : {}),
         },
@@ -2703,6 +2706,21 @@ export default function FerryMap({
           Math.max(0, Math.min(a.right, b.right) - Math.max(a.left, b.left)) *
           Math.max(0, Math.min(a.bottom, b.bottom) - Math.max(a.top, b.top));
         const taken: Box[] = [];
+        // Un nom posé sur la mer se lit mal (et laisse croire que le port est au large) : à
+        // encombrement égal, le côté terre l'emporte.
+        const waterLayers = map
+          .getStyle()
+          .layers.filter((layer) => layer.type === "fill" && /water/.test(layer.id))
+          .map((layer) => layer.id);
+        const wetShare = (box: Box) => {
+          if (!waterLayers.length) return 0;
+          const y = (box.top + box.bottom) / 2;
+          const xs = [box.left + 2, (box.left + box.right) / 2, box.right - 2];
+          const wet = xs.filter(
+            (x) => map.queryRenderedFeatures([x, y], { layers: waterLayers }).length > 0,
+          ).length;
+          return wet / xs.length;
+        };
         for (const port of portById.values()) {
           const label = portMarkersRef.current
             .get(port.id)
@@ -2733,6 +2751,7 @@ export default function FerryMap({
             const misleading = others.some((other) => Math.hypot(cx - other.x, cy - other.y) < own);
             return (
               (misleading ? 1e6 : 0) +
+              wetShare(box) * (box.right - box.left) * (box.bottom - box.top) * 0.6 +
               [...hulls, ...towers].reduce((sum, other) => sum + area(box, other), 0) +
               dots.reduce((sum, other) => sum + area(box, other) * 6, 0) +
               taken.reduce((sum, other) => sum + area(box, other) * 4, 0)

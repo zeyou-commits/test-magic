@@ -399,6 +399,21 @@
   font-size: 11.5px;
   font-weight: 600;
 }
+/* Téléphone : des noms plus fins, qui ne recouvrent ni la côte ni les autres ports. */
+@media (max-width: 640px) {
+  .port-marker__label {
+    font-size: 10.5px;
+    font-weight: 650;
+    text-shadow:
+      0 1px 2px var(--color-card),
+      1px 0 2px var(--color-card),
+      -1px 0 2px var(--color-card),
+      0 -1px 2px var(--color-card);
+  }
+  .port-marker[data-minor="true"] .port-marker__label {
+    font-size: 9.5px;
+  }
+}
 .port-marker[data-closed="true"] .port-marker__label {
   color: var(--color-muted-foreground);
   font-style: italic;

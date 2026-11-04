@@ -1,11 +1,6 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { MapPin, Pencil } from "lucide-react";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import { calculateRoadAccess, calculateRoadGeometry } from "@/lib/ferry/itinerary.functions";
 import { legWithPauses } from "@/lib/ferry/itinerary";
 import { durationLabel } from "@/lib/ferry/journeySteps";
@@ -23,6 +18,7 @@ export function JourneyPlacesForm({
   onChange,
   bare = false,
   onSkip,
+  returning = false,
 }: {
   europePort: Port;
   algeriaPort: Port;
@@ -30,6 +26,8 @@ export function JourneyPlacesForm({
   onChange: (places: JourneyPlaces | null) => void;
   /** Dans la fenêtre : le formulaire seul, sans titre ni résumé. */
   bare?: boolean;
+  /** Retour Algérie → Europe : on part du bled, on arrive en Europe (champs dans cet ordre). */
+  returning?: boolean;
   /** « Plus tard » : l'invitation se range dans le bouton du voyage. */
   onSkip?: () => void;
 }) {
@@ -42,7 +40,11 @@ export function JourneyPlacesForm({
   async function submit(event: FormEvent) {
     event.preventDefault();
     if (home.trim().length < 2 || bled.trim().length < 2) {
-      setError("Indiquez une ville de départ et une ville au bled.");
+      setError(
+        returning
+          ? "Indiquez votre ville de départ au bled et votre ville d'arrivée en Europe."
+          : "Indiquez une ville de départ et une ville au bled.",
+      );
       return;
     }
     setPending(true);
@@ -94,14 +96,46 @@ export function JourneyPlacesForm({
     }
   }
 
+  const homeField = (label: string) => (
+    <label>
+      {label}
+      <input
+        value={home}
+        onChange={(event) => setHome(event.target.value)}
+        placeholder="Ville, en Europe"
+        autoComplete="address-level2"
+      />
+    </label>
+  );
+  const bledField = (label: string) => (
+    <label>
+      {label}
+      <input
+        value={bled}
+        onChange={(event) => setBled(event.target.value)}
+        placeholder="Ville, en Algérie"
+        autoComplete="off"
+      />
+    </label>
+  );
+
   if (places && !open && !bare)
     return (
       <div className="bw-journey-places" data-filled>
         <MapPin size={15} aria-hidden />
         <p>
-          <strong>Trajet sur mesure</strong> {places.home.split(",")[0]} → {europePort.name} ≈{" "}
-          {durationLabel(places.europeMin)} · {algeriaPort.name} → {places.bled.split(",")[0]} ≈{" "}
-          {durationLabel(places.algeriaMin)}
+          <strong>Trajet sur mesure</strong>{" "}
+          {returning ? (
+            <>
+              {places.bled.split(",")[0]} → {algeriaPort.name} ≈ {durationLabel(places.algeriaMin)}{" "}
+              · {europePort.name} → {places.home.split(",")[0]} ≈ {durationLabel(places.europeMin)}
+            </>
+          ) : (
+            <>
+              {places.home.split(",")[0]} → {europePort.name} ≈ {durationLabel(places.europeMin)} ·{" "}
+              {algeriaPort.name} → {places.bled.split(",")[0]} ≈ {durationLabel(places.algeriaMin)}
+            </>
+          )}
         </p>
         <button type="button" onClick={() => setOpen(true)}>
           Modifier
@@ -112,25 +146,19 @@ export function JourneyPlacesForm({
   return (
     <form className="bw-journey-places" onSubmit={(event) => void submit(event)}>
       {bare ? null : <strong>Un trajet sur mesure ? (facultatif)</strong>}
+      {/* Aller : Europe puis bled. Retour : bled puis Europe. Les données restent les mêmes. */}
       <div>
-        <label>
-          D'où partez-vous ?
-          <input
-            value={home}
-            onChange={(event) => setHome(event.target.value)}
-            placeholder="Ville, en Europe"
-            autoComplete="address-level2"
-          />
-        </label>
-        <label>
-          Où allez-vous au bled ?
-          <input
-            value={bled}
-            onChange={(event) => setBled(event.target.value)}
-            placeholder="Ville, en Algérie"
-            autoComplete="off"
-          />
-        </label>
+        {returning ? (
+          <>
+            {bledField("D'où partez-vous au bled ?")}
+            {homeField("Où arrivez-vous en Europe ?")}
+          </>
+        ) : (
+          <>
+            {homeField("D'où partez-vous ?")}
+            {bledField("Où allez-vous au bled ?")}
+          </>
+        )}
       </div>
       {error ? <p role="alert">{error}</p> : null}
       <div>
@@ -190,6 +218,7 @@ export function JourneyPlacesEntry({
   onChange,
   invite = true,
   compact = false,
+  returning = false,
 }: {
   departureId: string;
   europePort: Port;
@@ -200,6 +229,8 @@ export function JourneyPlacesEntry({
   invite?: boolean;
   /** Téléphone : un bouton rond (point vert une fois rempli) plutôt qu'une pastille. */
   compact?: boolean;
+  /** Traversée retour (Algérie → Europe). */
+  returning?: boolean;
 }) {
   const [open, setOpen] = useState(false);
   useEffect(() => {
@@ -214,6 +245,12 @@ export function JourneyPlacesEntry({
     setOpen(false);
   };
   const city = (value: string) => value.split(",")[0];
+  // Dans le sens du voyage : au retour, du bled vers l'Europe.
+  const trip = places
+    ? returning
+      ? `${city(places.bled)} → ${city(places.home)}`
+      : `${city(places.home)} → ${city(places.bled)}`
+    : null;
   return (
     <>
       {compact ? (
@@ -222,12 +259,8 @@ export function JourneyPlacesEntry({
           className="bw-round-button"
           data-filled={places ? "" : undefined}
           onClick={() => setOpen(true)}
-          aria-label={
-            places
-              ? `Mon trajet : ${city(places.home)} → ${city(places.bled)}, modifier`
-              : "Personnaliser mon trajet"
-          }
-          title={places ? `${city(places.home)} → ${city(places.bled)}` : "Personnaliser mon trajet"}
+          aria-label={trip ? `Mon trajet : ${trip}, modifier` : "Personnaliser mon trajet"}
+          title={trip ?? "Personnaliser mon trajet"}
         >
           <MapPin size={16} aria-hidden />
         </button>
@@ -240,9 +273,7 @@ export function JourneyPlacesEntry({
           title={places ? "Modifier mon trajet sur mesure" : "Personnaliser mon trajet"}
         >
           <MapPin size={14} aria-hidden />
-          <span>
-            {places ? `${city(places.home)} → ${city(places.bled)}` : "Personnaliser mon trajet"}
-          </span>
+          <span>{trip ?? "Personnaliser mon trajet"}</span>
           {places ? <Pencil size={12} aria-hidden /> : null}
         </button>
       )}
@@ -259,6 +290,7 @@ export function JourneyPlacesEntry({
           </DialogDescription>
           <JourneyPlacesForm
             bare
+            returning={returning}
             europePort={europePort}
             algeriaPort={algeriaPort}
             places={places}

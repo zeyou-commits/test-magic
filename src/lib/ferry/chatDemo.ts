@@ -145,3 +145,5 @@ export const shortBody = (text: string, max = 70) => {
 /** Le bouton Salons propose de partager ; la carte demande l'ouverture du choix d'une traversée. */
 export const CHAT_INVITE_EVENT = "bledway:chat-invite";
 export const OPEN_ROOM_PICKER_EVENT = "bledway:open-room-picker";
+/** Revenir au salon de ma traversée (depuis un salon lu en visiteur). */
+export const OPEN_MY_ROOM_EVENT = "bledway:open-my-room";

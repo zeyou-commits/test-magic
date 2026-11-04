@@ -5,6 +5,17 @@ const WORK_SIDE = 1024;
 
 export type PreparedIllustration = { blob: Blob; url: string; alerts: string[] };
 
+/** Cadrage choisi dans l'admin : zoom (1 = cadrage automatique) et décalage, en part de l'image. */
+export type Framing = { zoom: number; x: number; y: number };
+export const DEFAULT_FRAMING: Framing = { zoom: 1, x: 0, y: 0 };
+
+/** Le dessin détouré et recadré au plus près, avant mise au format (calcul le plus long). */
+export type CutIllustration = {
+  crop: HTMLCanvasElement;
+  alerts: string[];
+  keepBackground: boolean;
+};
+
 function newCanvas(width: number, height: number) {
   const canvas = document.createElement("canvas");
   canvas.width = width;
@@ -32,7 +43,17 @@ export async function prepareIllustration(
   file: File,
   slot: IllustrationSlot,
   keepBackground: boolean,
+  framing: Framing = DEFAULT_FRAMING,
 ): Promise<PreparedIllustration> {
+  return frameIllustration(await cutIllustration(file, slot, keepBackground), slot, framing);
+}
+
+/** Étape 1 : lecture, détourage, recadrage au plus près. Faite une fois par fichier. */
+export async function cutIllustration(
+  file: File,
+  slot: IllustrationSlot,
+  keepBackground: boolean,
+): Promise<CutIllustration> {
   let bitmap: ImageBitmap;
   try {
     bitmap = await createImageBitmap(file);
@@ -67,12 +88,31 @@ export async function prepareIllustration(
     }
   }
 
-  const inner = Math.max(1, Math.round(slot.size * (1 - 2 * (keepBackground ? 0 : slot.margin))));
+  const crop = newCanvas(box.width, box.height);
+  crop.getContext("2d")!.drawImage(work, -box.left, -box.top);
+  return { crop, alerts, keepBackground };
+}
+
+/**
+ * Étape 2 : mise au format, avec le cadrage choisi. Rapide : refaite à chaque réglage du zoom.
+ * Au-delà de 1, le dessin grandit et ce qui dépasse du cadre est coupé.
+ */
+export async function frameIllustration(
+  cut: CutIllustration,
+  slot: IllustrationSlot,
+  framing: Framing = DEFAULT_FRAMING,
+): Promise<PreparedIllustration> {
+  const { crop, keepBackground } = cut;
+  const alerts = [...cut.alerts];
+  const box = { width: crop.width, height: crop.height };
+  const zoom = Math.min(3, Math.max(0.4, framing.zoom || 1));
+  const inner = Math.max(
+    1,
+    Math.round(slot.size * (1 - 2 * (keepBackground ? 0 : slot.margin)) * zoom),
+  );
   if (Math.max(box.width, box.height) < inner) {
     alerts.push("Image source petite : le rendu peut être flou.");
   }
-  const crop = newCanvas(box.width, box.height);
-  crop.getContext("2d")!.drawImage(work, -box.left, -box.top);
   const ratio = inner / Math.max(box.width, box.height);
   const subject = shrink(
     crop,
@@ -84,8 +124,8 @@ export async function prepareIllustration(
     .getContext("2d")!
     .drawImage(
       subject,
-      Math.floor((slot.size - subject.width) / 2),
-      Math.floor((slot.size - subject.height) / 2),
+      Math.floor((slot.size - subject.width) / 2 + framing.x * slot.size),
+      Math.floor((slot.size - subject.height) / 2 + framing.y * slot.size),
     );
   // Safari n'encode pas le WebP : il renvoie alors un PNG, accepté aussi.
   const blob = await new Promise<Blob | null>((resolve) =>

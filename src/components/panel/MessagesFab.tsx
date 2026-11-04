@@ -1,12 +1,16 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { MessagesSquare, X } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useMyTrip } from "@/lib/ferry/myTrip";
-import { upcomingDeparturesQuery } from "@/lib/ferry/queries";
+import { fleetDeparturesQuery, upcomingDeparturesQuery } from "@/lib/ferry/queries";
 import type { Selection } from "@/lib/ferry/types";
 import { enterRoom } from "@/lib/ferry/chat";
-import { CHAT_INVITE_EVENT, OPEN_ROOM_PICKER_EVENT } from "@/lib/ferry/chatDemo";
+import {
+  CHAT_INVITE_EVENT,
+  OPEN_MY_ROOM_EVENT,
+  OPEN_ROOM_PICKER_EVENT,
+} from "@/lib/ferry/chatDemo";
 import { chatFeedQuery } from "./LiveRoom";
 import { RoomPicker } from "./RoomPicker";
 
@@ -23,6 +27,16 @@ export function MessagesFab({ onSelect }: { onSelect: (selection: Selection) => 
   const { trip } = useMyTrip();
   const [open, setOpen] = useState(false);
   const upcoming = useQuery(upcomingDeparturesQuery()).data ?? [];
+  // Les salons en cours : traversées en mer, puis celles à venir.
+  const fleet = useQuery(fleetDeparturesQuery).data ?? [];
+  const now = Date.now();
+  const atSea = fleet.filter(
+    (departure) =>
+      departure.status !== "cancelled" &&
+      Date.parse(departure.departure_at) <= now &&
+      Date.parse(departure.arrival_at ?? departure.departure_at) > now,
+  );
+  const rooms = [...atSea, ...upcoming.filter((d) => !atSea.some((sea) => sea.id === d.id))];
   const room = useQuery({
     ...chatFeedQuery("crossing", trip?.departure.id ?? "", user?.id),
     refetchInterval: 60_000,
@@ -44,12 +58,15 @@ export function MessagesFab({ onSelect }: { onSelect: (selection: Selection) => 
       timer = window.setTimeout(() => setInvite(false), INVITE_MS);
     };
     const pick = () => setOpen(true);
+    const mine = () => openMineRef.current();
     window.addEventListener(CHAT_INVITE_EVENT, show);
     window.addEventListener(OPEN_ROOM_PICKER_EVENT, pick);
+    window.addEventListener(OPEN_MY_ROOM_EVENT, mine);
     return () => {
       window.clearTimeout(timer);
       window.removeEventListener(CHAT_INVITE_EVENT, show);
       window.removeEventListener(OPEN_ROOM_PICKER_EVENT, pick);
+      window.removeEventListener(OPEN_MY_ROOM_EVENT, mine);
     };
   }, []);
   const openMine = () => {
@@ -60,6 +77,8 @@ export function MessagesFab({ onSelect }: { onSelect: (selection: Selection) => 
     onSelect({ type: "departure", id: trip.departure.id });
     enterRoom("crossing", trip.departure.id);
   };
+  const openMineRef = useRef(openMine);
+  openMineRef.current = openMine;
   return (
     <div className="bw-messages">
       <button
@@ -110,7 +129,14 @@ export function MessagesFab({ onSelect }: { onSelect: (selection: Selection) => 
         </div>
       ) : null}
       <RoomPicker
-        departures={upcoming.slice(0, 60)}
+        departures={rooms.slice(0, 80)}
+        currentId={trip?.departure.id}
+        title={trip ? "Les salons en cours" : undefined}
+        intro={
+          trip
+            ? "Votre salon, et les autres en lecture : vous pouvez y réagir avec « Pareil ici »."
+            : undefined
+        }
         onSelect={onSelect}
         open={open}
         onOpenChange={setOpen}

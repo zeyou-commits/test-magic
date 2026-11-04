@@ -4,7 +4,12 @@ import { MeTab } from "@/components/community/MeTab";
 import { useVoyageTrip } from "@/lib/ferry/voyageTrip";
 
 const itemClass =
-  "flex h-full flex-1 flex-col items-center justify-center gap-1 text-[11px] font-medium text-muted-foreground transition-colors hover:text-foreground data-[active=true]:text-primary [&.active]:text-primary";
+  "flex h-full min-w-0 flex-1 flex-col items-center justify-center gap-1 whitespace-nowrap text-[11px] font-medium text-muted-foreground transition-colors hover:text-foreground data-[active=true]:text-primary [&.active]:text-primary";
+/** Le bouton central, plus large et en relief : son rond déborde au-dessus de la barre. */
+const centerClass =
+  "flex h-full min-w-0 flex-[1.35] flex-col items-center justify-end gap-0.5 whitespace-nowrap pb-1.5 text-[11.5px] font-semibold text-primary";
+const centerIcon =
+  "-mt-6 grid size-[52px] shrink-0 place-items-center rounded-full border-4 border-background bg-primary text-primary-foreground shadow-lg";
 
 interface MobileTabBarProps {
   className?: string;
@@ -16,7 +21,7 @@ interface MobileTabBarProps {
   onOpenSearch?: () => void;
   onShowPorts?: () => void;
   onOpenItinerary?: () => void;
-  /** Une traversée suivie : le bouton central ouvre « Ma traversée » (mode voyage de la carte). */
+  /** Une traversée suivie : le bouton central ouvre « Mon voyage » (mode voyage de la carte). */
   onOpenVoyage?: () => void;
 }
 
@@ -33,7 +38,7 @@ export function MobileTabBar({
   onOpenItinerary,
   onOpenVoyage,
 }: MobileTabBarProps) {
-  // Traversée suivie : « Trouver » cède la place à « Ma traversée » ; la recherche passe par « Carte ».
+  // Traversée suivie : « Trouver » cède la place à « Mon voyage » ; la recherche passe par « Carte ».
   const { trip } = useVoyageTrip();
   return (
     <nav
@@ -79,25 +84,25 @@ export function MobileTabBar({
             type="button"
             onClick={onOpenVoyage}
             data-active={activeTab === "voyage"}
-            className={`${itemClass} text-primary`}
-            aria-label="Ma traversée, étape par étape"
+            className={centerClass}
+            aria-label="Mon voyage, étape par étape"
           >
-            <span className="bw-tab-voyage grid size-10 place-items-center rounded-full bg-primary text-primary-foreground shadow-md">
-              <Ship className="size-5" aria-hidden />
+            <span className={`bw-tab-voyage ${centerIcon}`}>
+              <Ship className="size-6" aria-hidden />
             </span>
-            <span>Ma traversée</span>
+            <span>Mon voyage</span>
           </button>
         ) : (
           <Link
             to="/"
             search={{ voyage: 1 } as never}
-            className={`${itemClass} text-primary`}
-            aria-label="Ma traversée, étape par étape"
+            className={centerClass}
+            aria-label="Mon voyage, étape par étape"
           >
-            <span className="bw-tab-voyage grid size-10 place-items-center rounded-full bg-primary text-primary-foreground shadow-md">
-              <Ship className="size-5" aria-hidden />
+            <span className={`bw-tab-voyage ${centerIcon}`}>
+              <Ship className="size-6" aria-hidden />
             </span>
-            <span>Ma traversée</span>
+            <span>Mon voyage</span>
           </Link>
         )
       ) : onOpenSearch ? (
@@ -105,11 +110,11 @@ export function MobileTabBar({
           type="button"
           onClick={onOpenSearch}
           data-active={activeTab === "search"}
-          className={`${itemClass} text-primary`}
+          className={centerClass}
           aria-label="Trouver une traversée"
         >
-          <span className="grid size-10 place-items-center rounded-full bg-primary text-primary-foreground shadow-md">
-            <Ship className="size-5" aria-hidden />
+          <span className={centerIcon}>
+            <Ship className="size-6" aria-hidden />
           </span>
           <span>Trouver</span>
         </button>
@@ -117,11 +122,11 @@ export function MobileTabBar({
         <Link
           to="/"
           onClick={() => rememberAction("search")}
-          className={`${itemClass} text-primary`}
+          className={centerClass}
           aria-label="Trouver une traversée"
         >
-          <span className="grid size-10 place-items-center rounded-full bg-primary text-primary-foreground shadow-md">
-            <Ship className="size-5" aria-hidden />
+          <span className={centerIcon}>
+            <Ship className="size-6" aria-hidden />
           </span>
           <span>Trouver</span>
         </Link>

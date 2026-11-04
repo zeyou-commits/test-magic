@@ -1,6 +1,7 @@
 import { seoHead } from "@/lib/seo/site";
 import { createFileRoute } from "@tanstack/react-router";
 import { PageHero, SiteLayout } from "@/components/layout/SiteLayout";
+import { LEGAL_UPDATED, LegalSections, PageLink } from "@/components/layout/LegalPage";
 
 const title = "Conditions d'utilisation — BledWay";
 const description =
@@ -17,76 +18,175 @@ function TermsPage() {
       <PageHero
         overline="Informations légales"
         title="Conditions d'utilisation"
-        intro="Ces conditions encadrent l'usage de BledWay, service d'information indépendant sur les traversées entre l'Europe et l'Algérie."
+        intro="Les règles d'usage de BledWay, service d'information indépendant et gratuit sur les traversées entre l'Europe et l'Algérie."
       />
-      <div className="mx-auto mt-8 max-w-3xl space-y-6 text-sm leading-relaxed text-muted-foreground">
-        <section>
-          <h2 className="text-base font-semibold text-foreground">Le service</h2>
-          <p className="mt-1">
-            BledWay rassemble des horaires, des positions de navires et des informations partagées
-            par les voyageurs. Ces informations sont indicatives : seules les compagnies maritimes
-            et les autorités portuaires font foi. BledWay ne vend aucun billet et peut faire évoluer
-            ou interrompre tout ou partie du service.
-          </p>
-        </section>
-        <section>
-          <h2 className="text-base font-semibold text-foreground">Votre compte</h2>
-          <p className="mt-1">
-            Il faut avoir au moins 15 ans pour créer un compte et écrire dans les salons. Vous êtes
-            responsable de l'usage de votre compte et de la confidentialité de vos accès. Un seul
-            compte par personne.
-          </p>
-        </section>
-        <section>
-          <h2 className="text-base font-semibold text-foreground">Ce que vous publiez</h2>
-          <p className="mt-1">
-            Vous restez responsable de vos messages, questions, réponses et signalements. Vous vous
-            engagez à respecter la{" "}
-            <a className="text-primary underline" href="/charte">
-              charte de la communauté
-            </a>
-            , la loi et les droits des autres. Vous autorisez BledWay à afficher ces contenus sur le
-            service, le temps de leur conservation.
-          </p>
-        </section>
-        <section>
-          <h2 className="text-base font-semibold text-foreground">Modération</h2>
-          <p className="mt-1">
-            BledWay peut refuser, masquer ou retirer un contenu contraire à la charte ou à la loi,
-            et suspendre l'écriture d'un compte, temporairement ou durablement. Un contenu illicite
-            peut être signalé avec le bouton « Signaler » ou depuis la page{" "}
-            <a className="text-primary underline" href="/contact">
-              Contact
-            </a>
-            .
-          </p>
-        </section>
-        <section>
-          <h2 className="text-base font-semibold text-foreground">Responsabilité</h2>
-          <p className="mt-1">
-            BledWay ne garantit pas l'exactitude des informations publiées par des tiers ou des
-            voyageurs, ni la disponibilité permanente du service. Avant de partir, vérifiez toujours
-            votre traversée auprès de la compagnie.
-          </p>
-        </section>
-        <section>
-          <h2 className="text-base font-semibold text-foreground">Données personnelles</h2>
-          <p className="mt-1">
-            L'usage de vos données est décrit dans la{" "}
-            <a className="text-primary underline" href="/confidentialite">
-              politique de confidentialité
-            </a>
-            .
-          </p>
-        </section>
-        <section>
-          <h2 className="text-base font-semibold text-foreground">Évolution des conditions</h2>
-          <p className="mt-1">
-            Ces conditions et la charte peuvent évoluer. Quand la charte change, elle vous est
-            présentée à nouveau avant votre message suivant.
-          </p>
-        </section>
-      </div>
+      <LegalSections
+        updated={LEGAL_UPDATED}
+        sections={[
+          {
+            id: "service",
+            title: "Le service",
+            body: (
+              <>
+                <p>
+                  BledWay rassemble des horaires, des positions de navires, l'état de la mer et des
+                  informations partagées par les voyageurs : carte, départs et arrivées, salons,
+                  questions par ligne, avis, signalements, préparation du voyage.
+                </p>
+                <ul>
+                  <li>
+                    <strong>Gratuit</strong>, sans abonnement.
+                  </li>
+                  <li>
+                    <strong>BledWay ne vend aucun billet</strong> et n'agit pas pour le compte des
+                    compagnies. Les liens vers des sites de réservation mènent à des services tiers,
+                    avec leurs propres conditions.
+                  </li>
+                  <li>
+                    Le service peut évoluer, être suspendu pour maintenance ou interrompu en tout ou
+                    partie.
+                  </li>
+                </ul>
+              </>
+            ),
+          },
+          {
+            id: "fiabilite",
+            title: "Des informations indicatives",
+            body: (
+              <>
+                <p>
+                  Horaires, retards, positions, durées, prix et état de la mer sont donnés à titre
+                  indicatif. Ils peuvent être incomplets, en retard ou erronés : le signal des
+                  navires peut être interrompu, un horaire peut changer sans préavis.
+                </p>
+                <p>
+                  <strong>
+                    Seules les compagnies maritimes et les autorités portuaires font foi.
+                  </strong>{" "}
+                  Vérifiez toujours votre traversée auprès de la compagnie avant de partir.
+                </p>
+              </>
+            ),
+          },
+          {
+            id: "compte",
+            title: "Votre compte",
+            body: (
+              <ul>
+                <li>15 ans minimum pour créer un compte et écrire.</li>
+                <li>Un seul compte par personne, avec des informations exactes.</li>
+                <li>
+                  Vous êtes responsable de vos accès. Prévenez-nous en cas d'usage frauduleux.
+                </li>
+                <li>
+                  Le pseudo ne peut être changé qu'une fois. Il ne doit ni usurper une identité ni
+                  contenir votre nom complet.
+                </li>
+              </ul>
+            ),
+          },
+          {
+            id: "contenus",
+            title: "Ce que vous publiez",
+            body: (
+              <>
+                <p>
+                  Vous restez responsable de vos messages, questions, réponses, avis et
+                  signalements. Vous vous engagez à respecter la{" "}
+                  <PageLink to="/charte">charte de la communauté</PageLink>, la loi et les droits
+                  des autres. Sont notamment interdits :
+                </p>
+                <ul>
+                  <li>propos haineux, injurieux, discriminatoires ou menaçants ;</li>
+                  <li>fausses informations volontaires, notamment des signalements inventés ;</li>
+                  <li>publicité, démarchage, revente de billets, arnaques ;</li>
+                  <li>
+                    données personnelles d'autrui (numéro, adresse, plaque, visage reconnaissable)
+                    sans son accord.
+                  </li>
+                </ul>
+                <p>
+                  Vous autorisez BledWay à afficher, gratuitement, ces contenus sur le service le
+                  temps de leur conservation (voir la{" "}
+                  <PageLink to="/confidentialite">politique de confidentialité</PageLink>).
+                </p>
+              </>
+            ),
+          },
+          {
+            id: "moderation",
+            title: "Modération et signalement",
+            body: (
+              <>
+                <p>
+                  Les avis sont relus avant publication. Les salons sont modérés par l'équipe, aidée
+                  d'un outil automatique. BledWay peut refuser, masquer ou retirer un contenu
+                  contraire à la charte ou à la loi, et suspendre l'écriture d'un compte,
+                  temporairement ou durablement.
+                </p>
+                <p>
+                  Un contenu illicite se signale avec le bouton « Signaler » du message, ou depuis
+                  la page <PageLink to="/contact">Contact</PageLink> en indiquant le contenu, son
+                  emplacement et la raison. Les signalements sont traités dans les meilleurs délais.
+                </p>
+              </>
+            ),
+          },
+          {
+            id: "propriete",
+            title: "Propriété intellectuelle",
+            body: (
+              <p>
+                Le site, ses textes, illustrations, personnages et logo appartiennent à BledWay. Les
+                noms et logos des compagnies et des navires appartiennent à leurs détenteurs. Les
+                données cartographiques proviennent d'OpenStreetMap (licence ODbL). Toute
+                reproduction du site ou extraction de ses données à grande échelle est interdite
+                sans accord écrit.
+              </p>
+            ),
+          },
+          {
+            id: "responsabilite",
+            title: "Responsabilité",
+            body: (
+              <p>
+                BledWay ne peut être tenu responsable d'une décision prise sur la seule base des
+                informations du site (départ manqué, attente, frais), ni des contenus publiés par
+                les voyageurs ou des sites tiers vers lesquels il renvoie, ni d'une indisponibilité
+                temporaire du service.
+              </p>
+            ),
+          },
+          {
+            id: "donnees",
+            title: "Données personnelles",
+            body: (
+              <p>
+                Leur usage est décrit dans la{" "}
+                <PageLink to="/confidentialite">politique de confidentialité</PageLink>.
+              </p>
+            ),
+          },
+          {
+            id: "evolution",
+            title: "Évolution, droit applicable",
+            body: (
+              <>
+                <p>
+                  Ces conditions et la charte peuvent évoluer. Quand la charte change, elle vous est
+                  présentée à nouveau avant votre message suivant.
+                </p>
+                <p>
+                  Ces conditions sont régies par le droit français. En cas de litige, une solution
+                  amiable est recherchée en premier lieu, via la page{" "}
+                  <PageLink to="/contact">Contact</PageLink>.
+                </p>
+              </>
+            ),
+          },
+        ]}
+      />
     </SiteLayout>
   );
 }

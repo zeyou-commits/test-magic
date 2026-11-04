@@ -488,6 +488,7 @@ export function useVoyage(
         places={places}
         onChange={updatePlaces}
         invite={now < departureMs}
+        returning={!outbound}
       />
     ) : null,
     /** Téléphone : le même accès au trajet sur mesure, en bouton rond dans l'en-tête. */
@@ -500,6 +501,7 @@ export function useVoyage(
         places={places}
         onChange={updatePlaces}
         invite={now < departureMs}
+        returning={!outbound}
       />
     ) : null,
     info,

@@ -49,6 +49,8 @@ export function RoomPicker({
   open,
   onOpenChange,
   questionsFirst = false,
+  title,
+  intro,
 }: {
   departures: {
     id: string;
@@ -63,6 +65,9 @@ export function RoomPicker({
   onOpenChange: (open: boolean) => void;
   /** Ouvert depuis la tuile Questions : les lignes d'abord. */
   questionsFirst?: boolean;
+  /** Titre et phrase d'accueil propres (ex. « Les salons en cours » quand on suit une traversée). */
+  title?: string | undefined;
+  intro?: string | undefined;
 }) {
   const [text, setText] = useState("");
   const [companyId, setCompanyId] = useState<string | null>(null);
@@ -74,11 +79,7 @@ export function RoomPicker({
   const counts = useRoomCounts(open ? ids : []);
   // La compagnie et le navire de chaque départ : affichés, et retrouvés par la recherche.
   const rows = useMemo(() => {
-    const plain = (value: string) =>
-      value
-        .normalize("NFD")
-        .replace(/[̀-ͯ]/g, "")
-        .toLowerCase();
+    const plain = (value: string) => value.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
     const byId = new Map(departures.map((item) => [item.id, item]));
     return pickerRows(departures, routes, ports, (iso, port) =>
       formatDateTime(iso, portTimeZone(port)),
@@ -142,12 +143,13 @@ export function RoomPicker({
         <DialogContent className="bw-room-picker">
           <DialogHeader>
             <DialogTitle>
-              {questionsFirst ? "Choisir votre ligne" : "Choisir votre traversée"}
+              {title ?? (questionsFirst ? "Choisir votre ligne" : "Choisir votre traversée")}
             </DialogTitle>
             <p className="bw-room-picker__intro">
-              {questionsFirst
-                ? "Posez votre question aux voyageurs de la ligne."
-                : "Rejoignez le salon des voyageurs de votre bateau."}
+              {intro ??
+                (questionsFirst
+                  ? "Posez votre question aux voyageurs de la ligne."
+                  : "Rejoignez le salon des voyageurs de votre bateau.")}
             </p>
           </DialogHeader>
           <label className="bw-room-picker__search">
@@ -160,7 +162,11 @@ export function RoomPicker({
             />
           </label>
           {present.length > 1 ? (
-            <div className="bw-room-picker__companies" role="group" aria-label="Filtrer par compagnie">
+            <div
+              className="bw-room-picker__companies"
+              role="group"
+              aria-label="Filtrer par compagnie"
+            >
               <button type="button" aria-pressed={!companyId} onClick={() => setCompanyId(null)}>
                 Toutes
               </button>

@@ -1,6 +1,7 @@
 import { seoHead } from "@/lib/seo/site";
 import { createFileRoute } from "@tanstack/react-router";
 import { PageHero, SiteLayout } from "@/components/layout/SiteLayout";
+import { LEGAL_UPDATED, LegalSections, PageLink } from "@/components/layout/LegalPage";
 
 const title = "Mentions légales — BledWay";
 const description =
@@ -17,32 +18,92 @@ function LegalPage() {
       <PageHero
         overline="Informations légales"
         title="Mentions légales"
-        intro="BledWay est un service d'information indépendant sur les traversées maritimes entre l'Europe et l'Algérie."
+        intro="BledWay (www.bledway.com) est un service d'information indépendant sur les traversées maritimes entre l'Europe et l'Algérie."
       />
-      <div className="mx-auto mt-8 max-w-3xl space-y-6 text-sm leading-relaxed text-muted-foreground">
-        <section>
-          <h2 className="text-base font-semibold text-foreground">Éditeur</h2>
-          <p className="mt-1">
-            Les coordonnées de l'éditeur (raison sociale, adresse, responsable de publication)
-            doivent être complétées avant la mise en ligne publique du site.
-          </p>
-        </section>
-        <section>
-          <h2 className="text-base font-semibold text-foreground">Responsabilité</h2>
-          <p className="mt-1">
-            Les horaires, durées et disponibilités publiés sont donnés à titre indicatif. Seules les
-            compagnies maritimes et les autorités portuaires font foi. BledWay ne vend aucun billet
-            et ne garantit pas l'exactitude des informations transmises par des tiers.
-          </p>
-        </section>
-        <section>
-          <h2 className="text-base font-semibold text-foreground">Propriété intellectuelle</h2>
-          <p className="mt-1">
-            Les noms des compagnies et des navires appartiennent à leurs détenteurs respectifs. Le
-            fond cartographique est fourni par OpenFreeMap à partir des données OpenStreetMap.
-          </p>
-        </section>
-      </div>
+      <LegalSections
+        updated={LEGAL_UPDATED}
+        sections={[
+          {
+            id: "editeur",
+            title: "Éditeur",
+            body: (
+              <p>
+                Nom ou raison sociale, adresse, numéro d'immatriculation le cas échéant, et
+                directeur de la publication : <strong>à compléter par l'éditeur</strong>. Contact :
+                la page <PageLink to="/contact">Contact</PageLink>.
+              </p>
+            ),
+          },
+          {
+            id: "hebergement",
+            title: "Hébergement",
+            body: (
+              <ul>
+                <li>
+                  <strong>Site</strong> : Vercel Inc., 440 N Barranca Ave #4133, Covina, CA 91723,
+                  États-Unis (vercel.com).
+                </li>
+                <li>
+                  <strong>Base de données et comptes</strong> : Supabase Inc. (supabase.com).
+                </li>
+              </ul>
+            ),
+          },
+          {
+            id: "sources",
+            title: "Sources des informations",
+            body: (
+              <p>
+                Horaires issus des programmes publiés par les compagnies et vérifiés par l'équipe,
+                positions issues du signal AIS des navires, état de la mer fourni par Open-Meteo,
+                informations partagées par les voyageurs. La démarche est détaillée dans la{" "}
+                <PageLink to="/methode-editoriale">méthode éditoriale</PageLink>.
+              </p>
+            ),
+          },
+          {
+            id: "responsabilite",
+            title: "Responsabilité",
+            body: (
+              <p>
+                Les horaires, durées et disponibilités publiés sont donnés à titre indicatif. Seules
+                les compagnies maritimes et les autorités portuaires font foi. BledWay ne vend aucun
+                billet et ne garantit pas l'exactitude des informations transmises par des tiers.
+                Voir les <PageLink to="/conditions-utilisation">conditions d'utilisation</PageLink>.
+              </p>
+            ),
+          },
+          {
+            id: "propriete",
+            title: "Propriété intellectuelle et crédits",
+            body: (
+              <ul>
+                <li>
+                  Textes, illustrations, personnages et logo : BledWay, reproduction interdite sans
+                  accord.
+                </li>
+                <li>
+                  Noms et logos des compagnies et des navires : propriété de leurs détenteurs,
+                  utilisés pour les identifier.
+                </li>
+                <li>
+                  Fond de carte : OpenFreeMap, données © contributeurs OpenStreetMap (licence ODbL).
+                </li>
+                <li>Prévisions marines : Open-Meteo (licence CC BY 4.0).</li>
+              </ul>
+            ),
+          },
+          {
+            id: "donnees",
+            title: "Données personnelles",
+            body: (
+              <p>
+                Voir la <PageLink to="/confidentialite">politique de confidentialité</PageLink>.
+              </p>
+            ),
+          },
+        ]}
+      />
     </SiteLayout>
   );
 }

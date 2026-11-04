@@ -9444,6 +9444,36 @@ body:has([data-film="true"]) [data-map-rail] {
   font-size: 13px;
   text-align: center;
 }
+.bw-chat__headrow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.bw-chat__others {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 9px;
+  border: 1px solid #cfe0d7;
+  border-radius: 999px;
+  background: #f4f9f6;
+  color: #0e7a43;
+  font-size: 11.5px;
+  font-weight: 700;
+}
+.bw-chat__reader {
+  display: grid;
+  justify-items: center;
+  gap: 8px;
+}
+.bw-chat__reader button {
+  padding: 6px 14px;
+  border-radius: 999px;
+  background: #0e7a43;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 700;
+}
 .bw-chat__write {
   display: grid;
   gap: 7px;

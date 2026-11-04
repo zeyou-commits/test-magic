@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { RotateCcw, Trash2, Upload } from "lucide-react";
@@ -24,6 +24,7 @@ import {
   type IllustrationRow,
 } from "@/lib/illustrations/store";
 import { AdminDrawer, matches } from "./AdminDrawer";
+import { FramingControls, useFramedIllustration } from "./FramingControls";
 
 // Table et stockage absents des types générés.
 const supabase = typedSupabase as unknown as SupabaseClient;
@@ -442,25 +443,12 @@ function IllustrationEditor({
   const [label, setLabel] = useState(name);
   const [file, setFile] = useState<File | null>(null);
   const [keepBackground, setKeepBackground] = useState(false);
-  const [prepared, setPrepared] = useState<PreparedIllustration | null>(null);
-  const [problem, setProblem] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (!file) return;
-    let stale = false;
-    setPrepared(null);
-    setProblem(null);
-    prepareIllustration(file, slot, keepBackground)
-      .then((result) => {
-        if (!stale) setPrepared(result);
-      })
-      .catch((cause: Error) => {
-        if (!stale) setProblem(cause.message);
-      });
-    return () => {
-      stale = true;
-    };
-  }, [file, keepBackground, slot]);
+  // Détourage une fois, puis cadrage (zoom, position) réglable.
+  const { prepared, problem, framing, setFraming, ready } = useFramedIllustration(
+    file,
+    slot,
+    keepBackground,
+  );
 
   const save = useMutation({
     mutationFn: async () => {
@@ -575,6 +563,7 @@ function IllustrationEditor({
           />
           Garder le fond de l'image
         </label>
+        {file && ready ? <FramingControls framing={framing} onChange={setFraming} /> : null}
         {row?.storage_path ? (
           <div className="flex items-center gap-2 text-xs text-muted-foreground">
             Image d'origine :

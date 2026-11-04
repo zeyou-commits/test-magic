@@ -32,16 +32,8 @@ import {
   SILENT_HOURS,
 } from "@/lib/admin/aisHealth";
 import { assignConfigQuery, assignDb, scheduleVesselsQuery } from "@/lib/admin/assignQueries";
+import { usePlanningDecisions } from "@/lib/admin/planningDecisions";
 
-const IGNORED_KEY = "bw-admin-ignored-issues";
-
-function readIgnored(): string[] {
-  try {
-    return JSON.parse(localStorage.getItem(IGNORED_KEY) ?? "[]") as string[];
-  } catch {
-    return [];
-  }
-}
 
 const dayLabel = (value: string, options: Intl.DateTimeFormatOptions = {}) =>
   new Intl.DateTimeFormat("fr-FR", {
@@ -80,7 +72,8 @@ export function TodayInbox({
   const { data: companies = [] } = useQuery(companiesQuery);
   const { data: routes = [] } = useQuery(adminRoutesQuery);
   const { data: ports = [] } = useQuery(adminPortsQuery);
-  const [ignored, setIgnored] = useState<string[]>(readIgnored);
+  // Escales acceptées et points écartés : communs à toute l'équipe (et au planning).
+  const { ignored, ignore, reset: resetIgnored } = usePlanningDecisions();
 
   const now = Date.now();
   const departures = departuresQuery.data ?? [];
@@ -216,15 +209,6 @@ export function TodayInbox({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [config, departuresQuery.data, vessels, scheduleVessels]);
 
-  const ignore = (keys: string[]) => {
-    const next = [...new Set([...ignored, ...keys])];
-    setIgnored(next);
-    try {
-      localStorage.setItem(IGNORED_KEY, JSON.stringify(next));
-    } catch {
-      /* stockage indisponible : l'écart vaut pour cette visite */
-    }
-  };
 
   const accept = useMutation({
     mutationFn: () => assignVessels(suggestions),
@@ -748,14 +732,7 @@ export function TodayInbox({
         <button
           type="button"
           className="mt-2 text-xs text-muted-foreground underline underline-offset-2"
-          onClick={() => {
-            setIgnored([]);
-            try {
-              localStorage.removeItem(IGNORED_KEY);
-            } catch {
-              /* rien à faire */
-            }
-          }}
+          onClick={resetIgnored}
         >
           Réafficher les {ignored.length} point(s) écarté(s)
         </button>

@@ -23,8 +23,15 @@ export const personas = [
   { id: "maalem", name: "Mâalem" },
   { id: "lalla", name: "Lalla" },
 ] as const;
-export type PersonaId = (typeof personas)[number]["id"];
-export const personaImage = (id: string) => `/cabas/persos/${id}.webp`;
+/** Identifiant d'avatar : un personnage, une humeur ou un ajout de l'équipe (table bw_avatars). */
+export type PersonaId = string;
+
+// Images des avatars connus, remplies au chargement de la liste (voir avatars.ts).
+const avatarImages = new Map<string, string>();
+export function rememberAvatarImages(rows: { id: string; image: string }[]) {
+  for (const row of rows) avatarImages.set(row.id, row.image);
+}
+export const personaImage = (id: string) => avatarImages.get(id) ?? `/cabas/persos/${id}.webp`;
 
 export const avatarColors = {
   menthe: "#d9f2e6",

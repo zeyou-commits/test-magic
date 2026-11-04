@@ -1,6 +1,7 @@
 import { EntityReviewsModeration } from "@/components/admin/EntityReviewsModeration";
 import { WalletMediaAdmin } from "@/components/admin/WalletMediaAdmin";
 import { IllustrationsAdmin } from "@/components/admin/IllustrationsAdmin";
+import { AvatarsAdmin } from "@/components/admin/AvatarsAdmin";
 import { DinarVoiceAdmin } from "@/components/admin/DinarVoiceAdmin";
 import { commercialArrival } from "@/lib/admin/commercial";
 import { trackingTimes } from "@/lib/ferry/tracking";
@@ -409,6 +410,7 @@ function AdminTabs() {
           <PlacesAdmin />
         </TabsContent>
         <TabsContent value="illustrations">
+          <AvatarsAdmin />
           <IllustrationsAdmin />
         </TabsContent>
         <TabsContent value="walletMedia">
@@ -495,21 +497,30 @@ function AlertDepartureEditor({
         .single();
       if (error) throw new Error(error.message);
       const [{ data: route }, { data: vessels }] = await Promise.all([
-        supabase.from("routes").select("departure_port_id").eq("id", dep.route_id).single(),
+        supabase
+          .from("routes")
+          .select("departure_port_id,arrival_port_id")
+          .eq("id", dep.route_id)
+          .single(),
         supabase.from("vessels").select("id,name,company_id").order("name"),
       ]);
-      const { data: port } = route
-        ? await supabase.from("ports").select("*").eq("id", route.departure_port_id).single()
-        : { data: null };
-      return { dep, port, vessels: vessels ?? [] };
+      const [{ data: port }, { data: arrivalPort }] = route
+        ? await Promise.all([
+            supabase.from("ports").select("*").eq("id", route.departure_port_id).single(),
+            supabase.from("ports").select("*").eq("id", route.arrival_port_id).single(),
+          ])
+        : [{ data: null }, { data: null }];
+      return { dep, port, arrivalPort, vessels: vessels ?? [] };
     },
   });
   if (isLoading || !data) return <p className="mt-2 text-xs">Chargement…</p>;
   const tz = portTimeZone((data.port ?? undefined) as Port | undefined);
+  const arrivalTz = portTimeZone((data.arrivalPort ?? undefined) as Port | undefined);
   return (
     <DepartureEditor
       departure={data.dep}
       timeZone={tz}
+      arrivalTimeZone={arrivalTz}
       vessels={data.vessels.filter((v) => !v.company_id || v.company_id === data.dep.company_id)}
       onDone={onDone}
     />
@@ -750,6 +761,7 @@ function useWarnTravellers() {
 function DepartureEditor({
   departure,
   timeZone,
+  arrivalTimeZone = timeZone,
   vessels,
   onDone,
 }: {
@@ -762,6 +774,8 @@ function DepartureEditor({
     status: string;
   };
   timeZone: string;
+  /** Fuseau du port d'arrivée : l'heure d'arrivée se saisit en heure locale de ce port. */
+  arrivalTimeZone?: string;
   vessels: { id: string; name: string }[];
   onDone: () => void;
 }) {
@@ -773,6 +787,38 @@ function DepartureEditor({
   const [mins, setMins] = useState(String((departure.duration_minutes ?? 0) % 60));
   const [presentationHours, setPresentationHours] = useState(departure.presentation_minutes == null ? "" : String(departure.presentation_minutes / 60));
   const [vesselId, setVesselId] = useState(departure.vessel_id ?? "");
+  // Arrivée : date et heure locales du port d'arrivée, liées au départ et à la durée.
+  const arrivalOf = (d: string, t: string, h: string, m: string) => {
+    const minutes = Number(h) * 60 + Number(m);
+    if (!d || !t || !Number.isFinite(minutes)) return null;
+    const end = new Date(zonedTimeToUtc(d, t, timeZone).getTime() + minutes * 60_000);
+    return {
+      date: dateKeyInZone(end.toISOString(), arrivalTimeZone),
+      time: wallTimeInZone(end.toISOString(), arrivalTimeZone).slice(0, 5),
+    };
+  };
+  const firstArrival = arrivalOf(date, time, hours, mins);
+  const [arrivalDate, setArrivalDate] = useState(firstArrival?.date ?? "");
+  const [arrivalTime, setArrivalTime] = useState(firstArrival?.time ?? "");
+  // Départ ou durée modifiés : l'arrivée suit.
+  const syncArrival = (d: string, t: string, h: string, m: string) => {
+    const next = arrivalOf(d, t, h, m);
+    if (!next) return;
+    setArrivalDate(next.date);
+    setArrivalTime(next.time);
+  };
+  // Arrivée modifiée : la durée suit.
+  const syncDuration = (arrDate: string, arrTime: string) => {
+    if (!arrDate || !arrTime || !date || !time) return;
+    const minutes = Math.round(
+      (zonedTimeToUtc(arrDate, arrTime, arrivalTimeZone).getTime() -
+        zonedTimeToUtc(date, time, timeZone).getTime()) /
+        60_000,
+    );
+    if (minutes <= 0) return;
+    setHours(String(Math.floor(minutes / 60)));
+    setMins(String(minutes % 60));
+  };
   const save = useMutation({
     mutationFn: async () => {
       const start = zonedTimeToUtc(date, time, timeZone);
@@ -843,11 +889,25 @@ function DepartureEditor({
     <div className="mt-2 flex w-full flex-wrap items-end gap-2 rounded-md border border-border p-2">
       <label className="text-xs">
         Date
-        <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
+        <Input
+          type="date"
+          value={date}
+          onChange={(e) => {
+            setDate(e.target.value);
+            syncArrival(e.target.value, time, hours, mins);
+          }}
+        />
       </label>
       <label className="text-xs">
         Heure ({zoneLabel(timeZone)})
-        <Input type="time" value={time} onChange={(e) => setTime(e.target.value)} />
+        <Input
+          type="time"
+          value={time}
+          onChange={(e) => {
+            setTime(e.target.value);
+            syncArrival(date, e.target.value, hours, mins);
+          }}
+        />
       </label>
       <label className="text-xs">
         Durée h
@@ -856,7 +916,10 @@ function DepartureEditor({
           type="number"
           min={0}
           value={hours}
-          onChange={(e) => setHours(e.target.value)}
+          onChange={(e) => {
+            setHours(e.target.value);
+            syncArrival(date, time, e.target.value, mins);
+          }}
         />
       </label>
       <label className="text-xs">
@@ -867,7 +930,32 @@ function DepartureEditor({
           min={0}
           max={59}
           value={mins}
-          onChange={(e) => setMins(e.target.value)}
+          onChange={(e) => {
+            setMins(e.target.value);
+            syncArrival(date, time, hours, e.target.value);
+          }}
+        />
+      </label>
+      <label className="text-xs">
+        Arrivée, date
+        <Input
+          type="date"
+          value={arrivalDate}
+          onChange={(e) => {
+            setArrivalDate(e.target.value);
+            syncDuration(e.target.value, arrivalTime);
+          }}
+        />
+      </label>
+      <label className="text-xs">
+        Arrivée, heure ({zoneLabel(arrivalTimeZone)})
+        <Input
+          type="time"
+          value={arrivalTime}
+          onChange={(e) => {
+            setArrivalTime(e.target.value);
+            syncDuration(arrivalDate, e.target.value);
+          }}
         />
       </label>
       <label className="text-xs">

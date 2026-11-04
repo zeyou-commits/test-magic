@@ -2,6 +2,7 @@ import { useEffect, useRef, type RefObject } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Marker, type Map as MapLibreMap } from "maplibre-gl";
 import { personaImage } from "@/lib/community/travellers";
+import { avatarsQuery } from "@/lib/community/avatars";
 import { enterRoom } from "@/lib/ferry/chat";
 import {
   bubbleMessages,
@@ -79,6 +80,8 @@ export function useChatBubbles(
       report: alert,
     }));
   const setting = useQuery(chatDemoSettingQuery).data;
+  // Charge la liste des avatars : personaImage() y trouve l'image des humeurs et des ajouts.
+  useQuery(avatarsQuery);
   const messages: Bubble[] = bubbleMessages(real, demos, setting);
   const mixed: Bubble[] = [];
   let next = 0;

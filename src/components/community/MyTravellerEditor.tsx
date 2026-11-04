@@ -10,13 +10,12 @@ import {
   communityKey,
   myTravellerQuery,
   openTravellerProfile,
-  personaImage,
-  personas,
   pseudoError,
   saveTraveller,
   type AvatarColor,
   type PersonaId,
 } from "@/lib/community/travellers";
+import { useAvatarChoices } from "@/lib/community/avatars";
 import { MoodPicker } from "./MoodPicker";
 import { TravellerAvatar } from "./TravellerAvatar";
 
@@ -25,6 +24,7 @@ export function MyTravellerEditor() {
   const { user } = useAuth();
   const client = useQueryClient();
   const me = useQuery(myTravellerQuery(user?.id));
+  const choices = useAvatarChoices();
   const [pseudo, setPseudo] = useState("");
   const [avatar, setAvatar] = useState<PersonaId>("lina");
   const [color, setColor] = useState<AvatarColor>("menthe");
@@ -81,23 +81,33 @@ export function MyTravellerEditor() {
       </div>
 
       <fieldset>
-        <legend>Votre cabas</legend>
-        <div className="bw-persona-grid" role="radiogroup" aria-label="Votre cabas">
-          {personas.map((persona) => (
-            <button
-              key={persona.id}
-              type="button"
-              role="radio"
-              aria-checked={avatar === persona.id}
-              onClick={() => setAvatar(persona.id)}
-              style={{ background: avatarColors[color] }}
-            >
-              <CabasImg src={personaImage(persona.id)} alt="" width={56} height={56} loading="lazy" />
-              <PersonaName src={personaImage(persona.id)} name={persona.name} />
-              {avatar === persona.id ? <Check size={13} aria-hidden /> : null}
-            </button>
-          ))}
-        </div>
+        <legend>Votre avatar</legend>
+        {choices.groups.map((group) => (
+          <div key={group.kind} className="bw-persona-group">
+            {choices.groups.length > 1 ? <h4>{group.label}</h4> : null}
+            <div className="bw-persona-grid" role="radiogroup" aria-label={group.label}>
+              {group.rows.map((persona) => (
+                <button
+                  key={persona.id}
+                  type="button"
+                  role="radio"
+                  aria-checked={avatar === persona.id}
+                  onClick={() => setAvatar(persona.id)}
+                  style={{ background: avatarColors[color] }}
+                >
+                  <CabasImg src={persona.image} alt="" width={56} height={56} loading="lazy" />
+                  {/* Sans la table des avatars, le nom éventuellement changé dans « Illustrations ». */}
+                  {choices.managed ? (
+                    <span>{persona.label}</span>
+                  ) : (
+                    <PersonaName src={persona.image} name={persona.label} />
+                  )}
+                  {avatar === persona.id ? <Check size={13} aria-hidden /> : null}
+                </button>
+              ))}
+            </div>
+          </div>
+        ))}
       </fieldset>
 
       <fieldset>

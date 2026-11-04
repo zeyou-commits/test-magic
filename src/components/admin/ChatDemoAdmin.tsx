@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { supabase as typedSupabase } from "@/integrations/supabase/client";
 import { personas, type TravellerCard } from "@/lib/community/travellers";
+import { useAvatarChoices } from "@/lib/community/avatars";
 import {
   chatDemoKey,
   chatDemoQuery,
@@ -181,6 +182,7 @@ function DemoEditor({
   const label = places.find((item) => item.value === place)?.label ?? row?.label ?? "";
   const [body, setBody] = useState(row?.body ?? "");
   const [avatar, setAvatar] = useState<string>(row?.avatar ?? personas[0]!.id);
+  const choices = useAvatarChoices().groups.flatMap((group) => group.rows);
   const [active, setActive] = useState(row?.active ?? true);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const save = useMutation({
@@ -316,18 +318,18 @@ function DemoEditor({
         <div className="grid gap-1.5 text-sm font-medium">
           Avatar
           <div className="flex flex-wrap gap-2" role="radiogroup" aria-label="Avatar">
-            {personas.map((persona) => (
+            {choices.map((persona) => (
               <button
                 key={persona.id}
                 type="button"
                 role="radio"
                 aria-checked={avatar === persona.id}
-                title={persona.name}
+                title={persona.label}
                 onClick={() => setAvatar(persona.id)}
                 className={`rounded-full p-0.5 ${avatar === persona.id ? "ring-2 ring-primary" : ""}`}
               >
                 <TravellerAvatar
-                  card={card({ pseudo: persona.name, avatar: persona.id })}
+                  card={card({ pseudo: persona.label, avatar: persona.id })}
                   size={40}
                   mood={false}
                 />

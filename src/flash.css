@@ -4077,6 +4077,21 @@ button.bw-tavatar:focus-visible {
   font-weight: 700;
   color: #16324a;
 }
+.bw-persona-group + .bw-persona-group {
+  margin-top: 12px;
+}
+.bw-persona-group h4 {
+  margin: 0 0 6px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #4a6275;
+}
+.bw-persona-grid button > span {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
 .bw-persona-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(76px, 1fr));

@@ -1,10 +1,10 @@
 import { CabasImg } from "@/components/CabasImg";
 import { MessageCircle } from "lucide-react";
+import { useAvatarImage } from "@/lib/community/avatars";
 import {
   avatarColors,
   moodIcon,
   openTravellerProfile,
-  personaImage,
   type TravellerCard,
 } from "@/lib/community/travellers";
 
@@ -27,13 +27,14 @@ export function TravellerAvatar({
   moodLabel?: boolean;
   static?: boolean;
 }) {
+  const image = useAvatarImage(card.avatar);
   const body = (
     <>
       <span
         className="bw-tavatar__disc"
         style={{ background: avatarColors[card.color] ?? "#eef3ef" }}
       >
-        <CabasImg src={personaImage(card.avatar)} alt="" width={size} height={size} loading="lazy" />
+        <CabasImg src={image} alt="" width={size} height={size} loading="lazy" />
       </span>
       {mood && card.mood ? (
         <span

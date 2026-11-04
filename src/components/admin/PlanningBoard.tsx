@@ -24,6 +24,9 @@ import {
   type PlanningDeparture,
 } from "@/lib/admin/planning";
 import { visibleSuggestions } from "@/lib/admin/autoAssign";
+import { isOverlap } from "@/lib/admin/fixProposals";
+import { usePlanningDecisions } from "@/lib/admin/planningDecisions";
+import type { PlanningIssue } from "@/lib/admin/planning";
 import { assignConfigQuery, scheduleVesselsQuery } from "@/lib/admin/assignQueries";
 
 type Filter = "all" | "unassigned" | "issues";
@@ -98,11 +101,16 @@ export function PlanningBoard({
   const vesselName = (id: string | null) => vessels.find((v) => v.id === id)?.name ?? null;
   const companyName = (id: string) => companies.find((c) => c.id === id)?.name ?? "Compagnie";
 
-  const issues = findPlanningIssues(departures);
-  const issueOf = new Map<string, { kind: "duplicate" | "conflict"; other: PlanningDeparture }>();
+  // Les points déjà réglés par l'équipe (escale courte acceptée…) ne s'affichent plus en rouge.
+  const { ignored, ignore } = usePlanningDecisions();
+  const issues = findPlanningIssues(departures).filter((issue) => !ignored.includes(issue.key));
+  const issueOf = new Map<
+    string,
+    { kind: "duplicate" | "conflict"; other: PlanningDeparture; issue: PlanningIssue }
+  >();
   for (const issue of issues) {
-    issueOf.set(issue.first.id, { kind: issue.kind, other: issue.second });
-    issueOf.set(issue.second.id, { kind: issue.kind, other: issue.first });
+    issueOf.set(issue.first.id, { kind: issue.kind, other: issue.second, issue });
+    issueOf.set(issue.second.id, { kind: issue.kind, other: issue.first, issue });
   }
   const suggestionOf = new Map(
     (assignConfig
@@ -196,7 +204,11 @@ export function PlanningBoard({
   const chipClass = (d: PlanningDeparture) => {
     if (d.status === "cancelled")
       return "border-border bg-muted text-muted-foreground line-through";
-    if (issueOf.has(d.id)) return "border-red-300 bg-red-50 text-red-800";
+    const issue = issueOf.get(d.id);
+    // Escale courte (à confirmer) en orange ; chevauchement ou doublon en rouge.
+    if (issue && issue.kind === "conflict" && !isOverlap(issue.issue))
+      return "border-orange-300 bg-orange-50 text-orange-900";
+    if (issue) return "border-red-300 bg-red-50 text-red-800";
     if (!d.vessel_id) return "border-dashed border-amber-500 bg-amber-50 text-amber-900";
     return "border-blue-200 bg-blue-50 text-blue-900";
   };
@@ -358,14 +370,20 @@ export function PlanningBoard({
             {openIssue && (
               <div className="rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-900">
                 <p className="font-semibold">
-                  {openIssue.kind === "duplicate" ? "Doublon probable" : "Conflit de bateau"}
+                  {openIssue.kind === "duplicate"
+                    ? "Doublon probable"
+                    : isOverlap(openIssue.issue)
+                      ? "Conflit de bateau"
+                      : "Escale courte"}
                 </p>
                 <p className="mt-1 leading-relaxed">
                   {openIssue.kind === "duplicate"
                     ? `Même ligne, même jour : un autre départ à ${localTime(openIssue.other)}${
                         openIssue.other.source_name ? ` (${openIssue.other.source_name})` : ""
                       }. Celui-ci vient de : ${open.source_name ?? "source inconnue"}.`
-                    : `${vesselName(open.vessel_id)} fait aussi ${routeLabel(openIssue.other.route_id)} le ${longDay(localDay(openIssue.other))} à ${localTime(openIssue.other)} : les deux trajets se chevauchent.`}
+                    : isOverlap(openIssue.issue)
+                      ? `${vesselName(open.vessel_id)} fait aussi ${routeLabel(openIssue.other.route_id)} le ${longDay(localDay(openIssue.other))} à ${localTime(openIssue.other)} : les deux trajets se chevauchent.`
+                      : `${vesselName(open.vessel_id)} enchaîne avec ${routeLabel(openIssue.other.route_id)} le ${longDay(localDay(openIssue.other))} à ${localTime(openIssue.other)}, moins de 3 h après son arrivée. Si la compagnie le confirme, acceptez l'escale.`}
                 </p>
                 {(() => {
                   const route = routeOf(open.route_id);
@@ -378,6 +396,19 @@ export function PlanningBoard({
                   });
                   return <VerifyLinks directFerries={links.directFerries} search={links.search} />;
                 })()}
+                {openIssue.kind === "conflict" && !isOverlap(openIssue.issue) ? (
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    <Button
+                      size="sm"
+                      onClick={() => {
+                        ignore([openIssue.issue.key]);
+                        toast.success("Escale courte acceptée pour toute l’équipe.");
+                      }}
+                    >
+                      Accepter l’escale courte
+                    </Button>
+                  </div>
+                ) : null}
                 {openIssue.kind === "duplicate" && (
                   <div className="mt-3 flex flex-wrap gap-2">
                     <Button

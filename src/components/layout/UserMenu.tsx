@@ -17,7 +17,9 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useAuth } from "@/hooks/useAuth";
-import { avatarColors, moodIcon, myTravellerQuery, personaImage } from "@/lib/community/travellers";
+import { avatarColors, moodIcon, myTravellerQuery } from "@/lib/community/travellers";
+import { useAvatarImage } from "@/lib/community/avatars";
+import { useIllustrationUrl } from "@/lib/illustrations/store";
 
 function initials(name: string) {
   return name
@@ -39,6 +41,8 @@ export function UserMenu({
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const traveller = useQuery(myTravellerQuery(user?.id)).data;
+  // Mon avatar, dans sa version remplacée par l'équipe s'il y a lieu.
+  const avatarSrc = useIllustrationUrl(useAvatarImage(traveller?.avatar ?? "lina"));
   const [moodOpen, setMoodOpen] = useState(false);
 
   if (!user) {
@@ -93,7 +97,7 @@ export function UserMenu({
               {/* Mon cabas (profil voyageur) ; sans profil, les initiales. */}
               {traveller ? (
                 <AvatarImage
-                  src={personaImage(traveller.avatar)}
+                  src={avatarSrc}
                   alt={traveller.pseudo}
                   style={{ background: avatarColors[traveller.color] }}
                   className="object-contain p-0.5"
@@ -140,7 +144,9 @@ export function UserMenu({
             </Link>
           </DropdownMenuItem>
           <DropdownMenuItem asChild>
-            <Link to="/mes-dinars"><Wallet size={16} aria-hidden /> Mes dinars</Link>
+            <Link to="/mes-dinars">
+              <Wallet size={16} aria-hidden /> Mes dinars
+            </Link>
           </DropdownMenuItem>
           <DropdownMenuItem asChild>
             <Link to="/compte" hash="voyages">

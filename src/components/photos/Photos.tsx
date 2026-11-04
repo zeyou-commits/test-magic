@@ -1,9 +1,12 @@
-import { useRef, useState } from "react";
-import { Camera, Flag, LoaderCircle, X } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
+import { Camera, Flag, LoaderCircle, ScanFace, Trash2, X } from "lucide-react";
 import { toast } from "sonner";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import { useAuth } from "@/hooks/useAuth";
 import {
+  deletePhoto,
+  photosKey,
   photoUrl,
   preparePhoto,
   reportPhoto,
@@ -13,7 +16,7 @@ import {
 
 /** Les règles affichées au moment de joindre une photo. */
 export const PHOTO_CONSENT =
-  "Ma photo ne montre ni visage reconnaissable ni plaque lisible, et j’ai le droit de la publier.";
+  "J’ai vérifié l’aperçu : aucun visage ni plaque ne reste lisible, et j’ai le droit de publier cette photo.";
 
 /**
  * Joindre jusqu'à `max` photos : réduites et sans métadonnées (position GPS comprise) dès le choix.
@@ -41,6 +44,10 @@ export function PhotoPicker({
   const input = useRef<HTMLInputElement>(null);
   const [busy, setBusy] = useState(false);
   const [problem, setProblem] = useState<string | null>(null);
+  // Le détecteur de visages se charge dès que le formulaire propose une photo.
+  useEffect(() => {
+    void import("@/lib/photos/faces").then((module) => module.warmFaceDetector());
+  }, []);
   const add = async (files: FileList | null) => {
     if (!files?.length) return;
     setBusy(true);
@@ -71,6 +78,11 @@ export function PhotoPicker({
           {photos.map((photo, index) => (
             <li key={photo.url}>
               <img src={photo.url} alt={`Photo ${index + 1}`} />
+              {photo.faces ? (
+                <span className="bw-photo-picker__faces" title="Visages floutés automatiquement">
+                  <ScanFace size={12} aria-hidden /> {photo.faces}
+                </span>
+              ) : null}
               <button
                 type="button"
                 aria-label={`Retirer la photo ${index + 1}`}
@@ -98,7 +110,7 @@ export function PhotoPicker({
             <Camera size={15} aria-hidden />
           )}
           {busy
-            ? "Préparation…"
+            ? "Floutage des visages…"
             : max > 1
               ? `Ajouter une photo (${photos.length}/${max})`
               : "Ajouter une photo"}
@@ -123,7 +135,12 @@ export function PhotoPicker({
             />
             <span>{PHOTO_CONSENT}</span>
           </label>
-          <small>{note} Position GPS et infos de l’appareil retirées de la photo.</small>
+          <small>
+            {photos.some((photo) => photo.faces)
+              ? `${photos.reduce((sum, photo) => sum + photo.faces, 0)} visage(s) flouté(s) automatiquement. `
+              : "Visages floutés automatiquement s’il y en a. "}
+            {note} Position GPS et infos de l’appareil retirées de la photo.
+          </small>
         </>
       ) : null}
     </div>
@@ -138,9 +155,11 @@ export function PhotoStrip({
   photos: PublicPhoto[] | undefined;
   label: string;
 }) {
-  const { user } = useAuth();
+  const { user, roles } = useAuth();
+  const client = useQueryClient();
   const [open, setOpen] = useState<PublicPhoto | null>(null);
   const [reported, setReported] = useState(false);
+  const staff = roles.some((role) => role === "admin" || role === "moderator");
   if (!photos?.length) return null;
   return (
     <>
@@ -186,6 +205,24 @@ export function PhotoStrip({
               }
             >
               <Flag size={14} aria-hidden /> {reported ? "Signalée" : "Signaler cette photo"}
+            </button>
+          ) : null}
+          {open && (open.mine || staff) ? (
+            <button
+              type="button"
+              className="bw-photo-viewer__report"
+              onClick={() => {
+                if (!window.confirm("Retirer définitivement cette photo ?")) return;
+                void deletePhoto(open.id)
+                  .then(() => {
+                    setOpen(null);
+                    void client.invalidateQueries({ queryKey: photosKey });
+                    toast.success("Photo retirée.");
+                  })
+                  .catch((error: Error) => toast.error(error.message));
+              }}
+            >
+              <Trash2 size={14} aria-hidden /> {open.mine ? "Retirer ma photo" : "Retirer (équipe)"}
             </button>
           ) : null}
         </DialogContent>

@@ -9,14 +9,25 @@ export const PENDING_BUCKET = "bledway-photos-attente";
 export const PUBLIC_BUCKET = "bledway-photos";
 export type PhotoKind = "report" | "vessel_review" | "port_review" | "chat";
 
-/** Une photo prête à l'envoi : réduite, réencodée (sans aucune métadonnée, position GPS comprise). */
-export type PreparedPhoto = { blob: Blob; url: string; width: number; height: number };
+/**
+ * Une photo prête à l'envoi : réduite, visages floutés, réencodée (sans aucune métadonnée,
+ * position GPS comprise).
+ */
+export type PreparedPhoto = {
+  blob: Blob;
+  url: string;
+  width: number;
+  height: number;
+  faces: number;
+};
 export type PublicPhoto = {
   id: string;
   parent_id: string;
   path: string;
   width: number;
   height: number;
+  /** Ma photo : je peux la retirer (script « photos_visages »). */
+  mine?: boolean;
 };
 
 const MAX_SIDE = 1600;
@@ -44,13 +55,21 @@ export async function preparePhoto(file: File): Promise<PreparedPhoto> {
   context.imageSmoothingQuality = "high";
   context.drawImage(bitmap, 0, 0, width, height);
   bitmap.close();
+  // Visages floutés avant tout envoi. Sans vérification possible, la photo ne part pas.
+  let faces: number;
+  try {
+    const { blurFaces } = await import("./faces");
+    faces = await blurFaces(canvas);
+  } catch {
+    throw new Error("Vérification des visages impossible pour le moment. Réessayez.");
+  }
   const encode = (type: string, quality: number) =>
     new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, type, quality));
   // WebP d'abord ; un navigateur qui ne sait pas l'écrire renvoie du PNG : on passe alors en JPEG.
   let blob = await encode("image/webp", 0.82);
   if (!blob || blob.type !== "image/webp") blob = await encode("image/jpeg", 0.85);
   if (!blob) throw new Error("Conversion impossible sur ce navigateur.");
-  return { blob, url: URL.createObjectURL(blob), width, height };
+  return { blob, url: URL.createObjectURL(blob), width, height, faces };
 }
 
 const extension = (blob: Blob) => (blob.type === "image/jpeg" ? "jpg" : "webp");
@@ -136,6 +155,12 @@ export const photosQuery = (kind: PhotoKind, parents: string[]) =>
       return byParent;
     },
   });
+
+/** Retirer une photo : son auteur, ou l'équipe. Les fichiers sont effacés la nuit suivante. */
+export async function deletePhoto(id: string) {
+  const { data, error } = await db.rpc("bw_photo_delete", { p_id: id });
+  if (error || data === false) throw new Error("Photo non retirée. Réessayez.");
+}
 
 export async function reportPhoto(id: string) {
   const { error } = await db.rpc("bw_photo_report", { p_id: id });

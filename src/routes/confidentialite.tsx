@@ -82,8 +82,11 @@ function PrivacyPage() {
                 <li>
                   <strong>Photos</strong> jointes à un avis (navire, port), à un signalement de port
                   ou à un message de salon. Avant l'envoi, votre appareil les réduit et les
-                  réenregistre : la position GPS et les informations de l'appareil sont retirées.
-                  Vous confirmez qu'elles ne montrent ni visage reconnaissable ni plaque lisible.
+                  réenregistre : la position GPS et les informations de l'appareil sont retirées, et{" "}
+                  <strong>les visages sont floutés automatiquement</strong> (détection sur
+                  l'appareil, rien n'est envoyé ailleurs). Vous vérifiez l'aperçu et confirmez
+                  qu'aucun visage ni plaque ne reste lisible. Vous pouvez retirer vos photos à tout
+                  moment.
                 </li>
               </ul>
             ),
@@ -161,11 +164,11 @@ function PrivacyPage() {
                   <strong>Compte et profil</strong> : jusqu'à la suppression du compte.
                 </li>
                 <li>
-                  <strong>Photos</strong> : avis et signalements, publiées seulement après validation
-                  par l'équipe ; une photo refusée est effacée. Elles disparaissent avec l'avis, le
-                  signalement ou le message auquel elles sont jointes (30 jours pour les salons), et
-                  leurs fichiers sont effacés la nuit suivante. Vous pouvez demander leur retrait à
-                  tout moment.
+                  <strong>Photos</strong> : avis et signalements, publiées seulement après
+                  validation par l'équipe ; une photo refusée est effacée. Elles disparaissent avec
+                  l'avis, le signalement ou le message auquel elles sont jointes (30 jours pour les
+                  salons), et leurs fichiers sont effacés la nuit suivante. Vous pouvez demander
+                  leur retrait à tout moment.
                 </li>
               </ul>
             ),

@@ -98,6 +98,10 @@ export interface Schedule {
   weekdays: number[];
   valid_from: string;
   valid_to: string | null;
+  /** Toutes les N semaines (script « calendrier_recurrent » ; absent avant : chaque semaine). */
+  every_weeks?: number | null;
+  /** Navires en alternance, semaine de départ après semaine de départ. */
+  vessel_rotation?: string[] | null;
   status: EntityStatus;
   source_name: string | null;
   source_url: string | null;

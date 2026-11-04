@@ -2,6 +2,7 @@ import { dockedAt } from "./tracking";
 import type { Departure, Port, RouteLine, Schedule } from "./types";
 import type { FleetShip } from "./fleet";
 import { dateKeyInZone, portTimeZone, zonedTimeToUtc } from "./time";
+import { runsOn } from "./recurrence";
 
 export type LineVisibility = "published" | "all" | "none" | "ports";
 export type MapPreview = {
@@ -69,13 +70,15 @@ export function publishedRouteIds(
     const zone = portTimeZone(port);
     const today = dateKeyInZone(new Date(now).toISOString(), zone);
     const first = schedule.valid_from > today ? schedule.valid_from : today;
-    // Une semaine suffit pour trouver la prochaine occurrence d'un programme hebdomadaire.
-    for (let offset = 0; offset <= 7; offset++) {
+    // Une période (une semaine, ou toutes les N semaines) suffit pour trouver la prochaine occurrence.
+    const span = 7 * Math.max(1, schedule.every_weeks ?? 1);
+    for (let offset = 0; offset <= span; offset++) {
       const date = new Date(`${first}T12:00:00Z`);
       date.setUTCDate(date.getUTCDate() + offset);
       const key = date.toISOString().slice(0, 10);
       if (schedule.valid_to && key > schedule.valid_to) break;
-      if (!schedule.weekdays.includes(date.getUTCDay())) continue;
+      // Jours ISO (1 = lundi … 7 = dimanche), fréquence comprise.
+      if (!runsOn(schedule, key)) continue;
       const instant = zonedTimeToUtc(key, schedule.departure_time.slice(0, 5), zone);
       if (instant.getTime() >= now) {
         ids.add(schedule.route_id);

@@ -121,13 +121,19 @@ export async function runAutoAssign(
   return { count: done.length, logId: (log as { id: string } | null)?.id ?? null };
 }
 
-/** Bateau prévu par chaque calendrier récurrent. */
+/**
+ * Bateau prévu par chaque calendrier récurrent. Un calendrier à navires alternés n'en a pas un
+ * seul : ses départs reçoivent le bon navire à leur création, rien n'est proposé ici.
+ */
 export async function loadScheduleVessels(db: SupabaseClient) {
-  const { data } = await db.from("schedules").select("id, default_vessel_id");
+  const { data } = await db.from("schedules").select("*");
   return new Map(
-    ((data ?? []) as { id: string; default_vessel_id: string | null }[]).map((row) => [
-      row.id,
-      row.default_vessel_id,
-    ]),
+    (
+      (data ?? []) as {
+        id: string;
+        default_vessel_id: string | null;
+        vessel_rotation?: string[] | null;
+      }[]
+    ).map((row) => [row.id, row.vessel_rotation?.length ? null : row.default_vessel_id]),
   );
 }

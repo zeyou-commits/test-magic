@@ -2,6 +2,8 @@ import { EntityReviewsModeration } from "@/components/admin/EntityReviewsModerat
 import { WalletMediaAdmin } from "@/components/admin/WalletMediaAdmin";
 import { IllustrationsAdmin } from "@/components/admin/IllustrationsAdmin";
 import { AvatarsAdmin } from "@/components/admin/AvatarsAdmin";
+import { ScheduleRecurrenceFields } from "@/components/admin/ScheduleRecurrence";
+import { recurrenceLabel } from "@/lib/ferry/recurrence";
 import { DinarVoiceAdmin } from "@/components/admin/DinarVoiceAdmin";
 import { commercialArrival } from "@/lib/admin/commercial";
 import { trackingTimes } from "@/lib/ferry/tracking";
@@ -1302,6 +1304,9 @@ const emptyDraft = {
   arrival_time: "18:00",
   duration_minutes: 600,
   weekdays: [] as number[],
+  every_weeks: 1,
+  /** Vide : toujours le même navire ; sinon, un navire par semaine de départ, en alternance. */
+  vessel_rotation: [] as string[],
   valid_from: new Date().toISOString().slice(0, 10),
   valid_to: "",
   source_name: "",
@@ -1357,6 +1362,21 @@ function SchedulesAdmin({ companyId, routeId }: { companyId?: string; routeId?: 
   const [editingId, setEditingId] = useState<string | null>(null);
   const [formOpen, setFormOpen] = useState(false);
   const warnTravellers = useWarnTravellers();
+  // Fréquence et alternance demandent le script « calendrier_recurrent ».
+  const recurrenceReady =
+    useQuery({
+      queryKey: ["admin", "recurrence-ready"],
+      staleTime: Infinity,
+      retry: false,
+      queryFn: async () => {
+        const { error } = await (supabase.from("schedules") as unknown as {
+          select: (columns: string) => { limit: (n: number) => Promise<{ error: unknown }> };
+        })
+          .select("every_weeks,vessel_rotation")
+          .limit(1);
+        return !error;
+      },
+    }).data ?? false;
   const closeForm = () => {
     setFormOpen(false);
     setEditingId(null);
@@ -1380,6 +1400,8 @@ function SchedulesAdmin({ companyId, routeId }: { companyId?: string; routeId?: 
       if (!draft.route_id || !draft.company_id)
         throw new Error("Choisissez une ligne et une compagnie.");
       if (draft.weekdays.length === 0) throw new Error("Choisissez au moins un jour.");
+      if (draft.vessel_rotation.some((id) => !id))
+        throw new Error("Choisissez un navire pour chaque semaine de l'alternance.");
       const values = {
         route_id: draft.route_id,
         company_id: draft.company_id,
@@ -1387,6 +1409,13 @@ function SchedulesAdmin({ companyId, routeId }: { companyId?: string; routeId?: 
         departure_time: `${draft.departure_time}:00`,
         duration_minutes: Number(draft.duration_minutes),
         weekdays: draft.weekdays.slice().sort((a, b) => a - b),
+        // Envoyés seulement si le script est exécuté : sinon, le calendrier s'enregistre comme avant.
+        ...(recurrenceReady
+          ? {
+              every_weeks: draft.every_weeks,
+              vessel_rotation: draft.vessel_rotation.length ? draft.vessel_rotation : null,
+            }
+          : {}),
         valid_from: draft.valid_from,
         valid_to: draft.valid_to || null,
         source_name: draft.source_name || null,
@@ -1396,8 +1425,8 @@ function SchedulesAdmin({ companyId, routeId }: { companyId?: string; routeId?: 
         status: "active" as const,
       };
       const { error } = editingId
-        ? await supabase.from("schedules").update(values).eq("id", editingId)
-        : await supabase.from("schedules").insert(values);
+        ? await supabase.from("schedules").update(values as never).eq("id", editingId)
+        : await supabase.from("schedules").insert(values as never);
       if (error) throw new Error(error.message);
     },
     onSuccess: () => {
@@ -1450,6 +1479,43 @@ function SchedulesAdmin({ companyId, routeId }: { companyId?: string; routeId?: 
     },
     onError: (error: Error) => toast.error(error.message),
   });
+
+  // Après un changement d'alternance : les départs déjà créés reprennent le navire prévu.
+  const applyVessels = useMutation({
+    mutationFn: async (scheduleId: string) => {
+      const { data, error } = await (
+        supabase.rpc as unknown as (
+          name: string,
+          args: Record<string, unknown>,
+        ) => Promise<{ data: number | null; error: { message: string } | null }>
+      )("bw_schedule_apply_vessels", { _schedule: scheduleId });
+      if (error) throw new Error(error.message);
+      return data ?? 0;
+    },
+    onSuccess: (count) => {
+      invalidate();
+      toast.success(
+        count
+          ? `${count} départ(s) à venir ont reçu le navire prévu.`
+          : "Tous les départs à venir ont déjà le navire prévu.",
+      );
+    },
+    onError: (error: Error) => toast.error(error.message),
+  });
+  const vesselNameOf = (id: string) => vessels.find((v) => v.id === id)?.name ?? "navire supprimé";
+  const draftVessels = vessels
+    .filter((v) => !draft.company_id || !v.company_id || v.company_id === draft.company_id)
+    .map((vessel) => ({ id: vessel.id, name: vessel.name }));
+  // Les dates se règlent une par une sur la règle enregistrée, pas sur une règle en cours de saisie.
+  const savedSchedule = editingId ? allSchedules.find((s) => s.id === editingId) : undefined;
+  const sameRule =
+    savedSchedule &&
+    savedSchedule.weekdays.slice().sort().join() === draft.weekdays.slice().sort().join() &&
+    savedSchedule.valid_from === draft.valid_from &&
+    (savedSchedule.valid_to ?? "") === draft.valid_to &&
+    (savedSchedule.every_weeks ?? 1) === draft.every_weeks &&
+    (savedSchedule.vessel_rotation ?? []).join() === draft.vessel_rotation.join() &&
+    (savedSchedule.default_vessel_id ?? "") === draft.default_vessel_id;
 
   const draftRoute = routes.find((r) => r.id === draft.route_id);
   const fromZone = portTimeZone(ports.find((p) => p.id === draftRoute?.departure_port_id));
@@ -1508,17 +1574,15 @@ function SchedulesAdmin({ companyId, routeId }: { companyId?: string; routeId?: 
                   .map((company) => ({ value: company.id, label: company.name }))}
               />
             </Field>
-            <Field label="Navire (facultatif)">
-              <NativeSelect
-                value={draft.default_vessel_id}
-                onChange={(value) => setDraft((prev) => ({ ...prev, default_vessel_id: value }))}
-                options={vessels
-                  .filter(
-                    (v) => !draft.company_id || !v.company_id || v.company_id === draft.company_id,
-                  )
-                  .map((vessel) => ({ value: vessel.id, label: vessel.name }))}
-              />
-            </Field>
+            {draft.vessel_rotation.length ? null : (
+              <Field label="Navire (facultatif)">
+                <NativeSelect
+                  value={draft.default_vessel_id}
+                  onChange={(value) => setDraft((prev) => ({ ...prev, default_vessel_id: value }))}
+                  options={draftVessels.map((vessel) => ({ value: vessel.id, label: vessel.name }))}
+                />
+              </Field>
+            )}
             <Field label="Heure de départ">
               <Input
                 type="time"
@@ -1614,6 +1678,18 @@ function SchedulesAdmin({ companyId, routeId }: { companyId?: string; routeId?: 
               })}
             </div>
           </div>
+          <ScheduleRecurrenceFields
+            draft={draft}
+            onChange={(change) => setDraft((prev) => ({ ...prev, ...change }))}
+            vessels={draftVessels}
+            scheduleId={sameRule ? (editingId ?? null) : null}
+            ready={recurrenceReady}
+          />
+          {editingId && !sameRule ? (
+            <p className="mt-2 text-[11px] text-amber-800">
+              Enregistrez d’abord : les dates se règlent une par une sur le calendrier enregistré.
+            </p>
+          ) : null}
           <p className="mt-3 text-[11px] text-muted-foreground">
             L’arrivée affichée est un aperçu au début de validité. Les nouveaux départs seront
             calculés dans les fuseaux des ports à leur date. Les départs déjà publiés se modifient
@@ -1658,11 +1734,12 @@ function SchedulesAdmin({ companyId, routeId }: { companyId?: string; routeId?: 
                   d’arrivée au début de validité : {schedulePreview(schedule)}
                 </p>
                 <p className="text-xs text-muted-foreground">
-                  {schedule.weekdays
-                    .map((day) => weekdayLabels[day - 1] ?? "")
-                    .filter(Boolean)
-                    .join(", ")}{" "}
-                  · {formatDuration(schedule.duration_minutes)}
+                  {recurrenceLabel(schedule)} · {formatDuration(schedule.duration_minutes)}
+                  {schedule.vessel_rotation?.length
+                    ? ` · en alternance : ${schedule.vessel_rotation.map(vesselNameOf).join(", ")}`
+                    : schedule.default_vessel_id
+                      ? ` · ${vesselNameOf(schedule.default_vessel_id)}`
+                      : ""}
                 </p>
               </div>
               <div className="flex flex-wrap gap-2">
@@ -1683,6 +1760,8 @@ function SchedulesAdmin({ companyId, routeId }: { companyId?: string; routeId?: 
                       ),
                       duration_minutes: schedule.duration_minutes,
                       weekdays: schedule.weekdays,
+                      every_weeks: schedule.every_weeks ?? 1,
+                      vessel_rotation: schedule.vessel_rotation ?? [],
                       valid_from: schedule.valid_from,
                       valid_to: schedule.valid_to ?? "",
                       source_name: schedule.source_name ?? "",
@@ -1699,7 +1778,9 @@ function SchedulesAdmin({ companyId, routeId }: { companyId?: string; routeId?: 
                   onClick={() => {
                     if (
                       confirmAction(
-                        "Ajouter les départs manquants sur 60 jours, à partir du début de validité ou d’aujourd’hui ? Les départs existants, corrections et annulations sont conservés.",
+                        recurrenceReady
+                          ? "Ajouter les départs manquants jusqu’à la fin de validité (60 jours si elle n’est pas renseignée, 13 mois au plus) ? Les départs existants, corrections et annulations sont conservés."
+                          : "Ajouter les départs manquants sur 60 jours, à partir du début de validité ou d’aujourd’hui ? Les départs existants, corrections et annulations sont conservés.",
                       )
                     )
                       generate.mutate(schedule.id);
@@ -1707,6 +1788,23 @@ function SchedulesAdmin({ companyId, routeId }: { companyId?: string; routeId?: 
                 >
                   Ajouter les départs manquants
                 </Button>
+                {schedule.vessel_rotation?.length ? (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    disabled={applyVessels.isPending}
+                    onClick={() => {
+                      if (
+                        confirmAction(
+                          "Donner aux départs à venir déjà créés le navire prévu par l’alternance ? Les dates réglées une par une gardent leur navire.",
+                        )
+                      )
+                        applyVessels.mutate(schedule.id);
+                    }}
+                  >
+                    Appliquer l’alternance aux départs créés
+                  </Button>
+                ) : null}
                 <Button
                   size="sm"
                   variant="ghost"

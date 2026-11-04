@@ -220,7 +220,6 @@ export function QuickReport({
   const [sentByStaff, setSentByStaff] = useState(false);
   // Port : une photo de ce qui a changé (accès, travaux…), publiée après validation par l'équipe.
   const [photos, setPhotos] = useState<PreparedPhoto[]>([]);
-  const [photoConsent, setPhotoConsent] = useState(false);
   const [photoResult, setPhotoResult] = useState<string | null>(null);
 
   const vessels = fleet.filter(
@@ -278,7 +277,6 @@ export function QuickReport({
     setLocating("idle");
     setDraft({ ...emptyDraft, ...guess(target) });
     setPhotos([]);
-    setPhotoConsent(false);
     setPhotoResult(null);
     mutation.reset();
     setOpen(true);
@@ -365,8 +363,6 @@ export function QuickReport({
     mutationFn: async (input: Draft) => {
       const category = input.category!;
       const where = situationOf(category).where;
-      if (photos.length && !photoConsent)
-        throw new Error("Cochez l’accord sous la photo, ou retirez-la.");
       if (staff) {
         const published = await reportAsStaff({
           kind: where,
@@ -757,8 +753,6 @@ export function QuickReport({
             max={1}
             photos={photos}
             onChange={setPhotos}
-            consent={photoConsent}
-            onConsent={setPhotoConsent}
             note="Facultatif : utile si l’accès au port a changé. Visible après validation par l’équipe."
           />
         ) : null}
@@ -773,7 +767,9 @@ export function QuickReport({
             : mutation.isPending
               ? "Envoi…"
               : user
-                ? "Envoyer"
+                ? photos.length
+                  ? "Envoyer avec cette photo"
+                  : "Envoyer"
                 : "Se connecter et envoyer"}
         </button>
         <p className="bw-report-note">

@@ -156,10 +156,23 @@ export const photosQuery = (kind: PhotoKind, parents: string[]) =>
     },
   });
 
-/** Retirer une photo : son auteur, ou l'équipe. Les fichiers sont effacés la nuit suivante. */
-export async function deletePhoto(id: string) {
-  const { data, error } = await db.rpc("bw_photo_delete", { p_id: id });
+/**
+ * Efface tout de suite des fichiers publiés (photos de salon de l'auteur, ou toute photo pour
+ * l'équipe). Sinon, le ménage de nuit s'en charge : un échec ici ne bloque rien.
+ */
+export async function removePublicFiles(paths: string[]) {
+  if (!paths.length) return;
+  await db.storage
+    .from(PUBLIC_BUCKET)
+    .remove(paths)
+    .catch(() => undefined);
+}
+
+/** Retirer une photo : son auteur, ou l'équipe. Le fichier est effacé dans la foulée. */
+export async function deletePhoto(photo: { id: string; path: string }) {
+  const { data, error } = await db.rpc("bw_photo_delete", { p_id: photo.id });
   if (error || data === false) throw new Error("Photo non retirée. Réessayez.");
+  await removePublicFiles([photo.path]);
 }
 
 export async function reportPhoto(id: string) {

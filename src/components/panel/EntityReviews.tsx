@@ -213,11 +213,8 @@ function RatingForm({
   const score = reviewScore(kind, scores);
   const withPhotos = photoKind(kind);
   const [photos, setPhotos] = useState<PreparedPhoto[]>([]);
-  const [consent, setConsent] = useState(false);
   const submit = useMutation({
     mutationFn: async () => {
-      if (photos.length && !consent)
-        throw new Error("Cochez l’accord sous les photos, ou retirez-les.");
       const { data, error } = await reviewsDb.rpc("bw_submit_entity_review", {
         p_kind: kind,
         p_target: target,
@@ -313,8 +310,6 @@ function RatingForm({
           max={3}
           photos={photos}
           onChange={setPhotos}
-          consent={consent}
-          onConsent={setConsent}
           note="Visibles après validation par l’équipe."
         />
       ) : null}
@@ -332,7 +327,9 @@ function RatingForm({
           {submit.isPending
             ? "Envoi…"
             : score !== null
-              ? `Envoyer ma note · ${reviewNumber(score)}/5`
+              ? photos.length
+                ? `Envoyer ma note et ${photos.length > 1 ? "ces photos" : "cette photo"}`
+                : `Envoyer ma note · ${reviewNumber(score)}/5`
               : "Notez au moins 3 critères"}
         </Button>
       )}

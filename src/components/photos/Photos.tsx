@@ -14,28 +14,24 @@ import {
   type PublicPhoto,
 } from "@/lib/photos/photos";
 
-/** Les règles affichées au moment de joindre une photo. */
-export const PHOTO_CONSENT =
-  "J’ai vérifié l’aperçu : aucun visage ni plaque ne reste lisible, et j’ai le droit de publier cette photo.";
+/** Le rappel affiché sous l'aperçu : envoyer la photo vaut confirmation (règle aussi dans la charte). */
+export const PHOTO_REMINDER =
+  "Vérifiez l’aperçu : aucun visage ni plaque ne doit rester lisible. En l’envoyant, vous confirmez avoir le droit de la publier.";
 
 /**
- * Joindre jusqu'à `max` photos : réduites et sans métadonnées (position GPS comprise) dès le choix.
- * L'accord de l'auteur est demandé dès qu'une photo est jointe.
+ * Joindre jusqu'à `max` photos : réduites, visages floutés et sans métadonnées (position GPS
+ * comprise) dès le choix. L'aperçu flouté reste sous les yeux jusqu'à l'envoi.
  */
 export function PhotoPicker({
   max,
   photos,
   onChange,
-  consent,
-  onConsent,
   note,
   check,
 }: {
   max: number;
   photos: PreparedPhoto[];
   onChange: (photos: PreparedPhoto[]) => void;
-  consent: boolean;
-  onConsent: (value: boolean) => void;
   /** Ce qui se passe ensuite (« visible après validation », « publiée tout de suite »…). */
   note: string;
   /** Contrôle supplémentaire (filtre automatique des salons). */
@@ -97,6 +93,17 @@ export function PhotoPicker({
           ))}
         </ul>
       ) : null}
+      {photos.length ? (
+        <>
+          <p className="bw-photo-picker__consent">{PHOTO_REMINDER}</p>
+          <small>
+            {photos.some((photo) => photo.faces)
+              ? `${photos.reduce((sum, photo) => sum + photo.faces, 0)} visage(s) flouté(s) automatiquement. `
+              : "Visages floutés automatiquement s’il y en a. "}
+            {note} Position GPS et infos de l’appareil retirées de la photo.
+          </small>
+        </>
+      ) : null}
       {photos.length < max ? (
         <button
           type="button"
@@ -125,24 +132,6 @@ export function PhotoPicker({
         onChange={(event) => void add(event.target.files)}
       />
       {problem ? <p role="alert">{problem}</p> : null}
-      {photos.length ? (
-        <>
-          <label className="bw-photo-picker__consent">
-            <input
-              type="checkbox"
-              checked={consent}
-              onChange={(event) => onConsent(event.target.checked)}
-            />
-            <span>{PHOTO_CONSENT}</span>
-          </label>
-          <small>
-            {photos.some((photo) => photo.faces)
-              ? `${photos.reduce((sum, photo) => sum + photo.faces, 0)} visage(s) flouté(s) automatiquement. `
-              : "Visages floutés automatiquement s’il y en a. "}
-            {note} Position GPS et infos de l’appareil retirées de la photo.
-          </small>
-        </>
-      ) : null}
     </div>
   );
 }
@@ -213,7 +202,7 @@ export function PhotoStrip({
               className="bw-photo-viewer__report"
               onClick={() => {
                 if (!window.confirm("Retirer définitivement cette photo ?")) return;
-                void deletePhoto(open.id)
+                void deletePhoto(open)
                   .then(() => {
                     setOpen(null);
                     void client.invalidateQueries({ queryKey: photosKey });

@@ -13375,3 +13375,66 @@ img[data-logo="dark"] {
 .bw-chat__emote-toggle[data-filled] {
   color: #0e7a43;
 }
+/* Salon : la photo et son accord restent visibles au-dessus du champ, sans défilement interne. */
+.bw-chat__photo {
+  padding: 8px 10px 0;
+}
+.bw-chat__photo .bw-photo-picker {
+  margin: 0;
+}
+.bw-photo-picker__consent {
+  padding: 8px 10px;
+  border-radius: 10px;
+  background: #f4f9f6;
+  cursor: pointer;
+}
+.bw-photo-picker__consent input {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+  accent-color: #0e7a43;
+}
+.bw-photo-picker__faces {
+  position: absolute;
+  left: 4px;
+  bottom: 4px;
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 1px 5px;
+  border-radius: 999px;
+  background: #123f2ccc;
+  color: #fff;
+  font-size: 10.5px;
+  font-weight: 700;
+}
+/* La règle des champs du salon (.bw-chat__write input) écrasait la case : taille fixe ici. */
+.bw-chat__write .bw-photo-picker__consent input[type="checkbox"],
+.bw-photo-picker__consent input[type="checkbox"] {
+  flex: 0 0 20px;
+  width: 20px;
+  height: 20px;
+  min-width: 20px;
+  min-height: 20px;
+  margin: 1px 0 0;
+}
+.bw-photo-picker__consent {
+  margin: 0;
+  font-size: 12.5px;
+  color: #2c3d36;
+}
+.bw-chat__photo-send {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin: 8px 0 4px;
+  padding: 8px 14px;
+  border-radius: 999px;
+  background: #0e7a43;
+  color: #fff;
+  font-size: 13.5px;
+  font-weight: 700;
+}
+.bw-chat__photo-send:disabled {
+  opacity: 0.6;
+}

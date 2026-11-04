@@ -2,15 +2,19 @@ import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Check, Pencil, Trash2, X } from "lucide-react";
 import { deleteOwnMessage, editOwnMessage } from "@/lib/ferry/chat";
+import { photosKey, removePublicFiles } from "@/lib/photos/photos";
 
 /** Modifier ou supprimer son propre message, sa question ou sa réponse. */
 export function OwnMessageActions({
   id,
   body,
   deleteHint,
+  photoPaths = [],
 }: {
   id: string;
   body: string;
+  /** Photos jointes : leurs fichiers sont effacés tout de suite avec le message. */
+  photoPaths?: string[];
   /** Précision avant suppression, par exemple pour une question qui a des réponses. */
   deleteHint?: string | undefined;
 }) {
@@ -26,7 +30,17 @@ export function OwnMessageActions({
       refresh();
     },
   });
-  const remove = useMutation({ mutationFn: () => deleteOwnMessage(id), onSuccess: refresh });
+  const remove = useMutation({
+    mutationFn: async () => {
+      await deleteOwnMessage(id);
+      // Le message et sa photo sont effacés en base ; le fichier part aussitôt, sans attendre la nuit.
+      await removePublicFiles(photoPaths);
+    },
+    onSuccess: () => {
+      refresh();
+      void client.invalidateQueries({ queryKey: photosKey });
+    },
+  });
   const problem = edit.error ?? remove.error;
   return (
     <div className="bw-room__own">

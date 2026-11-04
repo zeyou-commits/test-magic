@@ -255,7 +255,6 @@ function LiveChat({
   // Une photo par personne et par salon, filtrée sur l'appareil puis publiée avec le message.
   const [showPhoto, setShowPhoto] = useState(false);
   const [chatPhotos, setChatPhotos] = useState<PreparedPhoto[]>([]);
-  const [photoConsent, setPhotoConsent] = useState(false);
   const [dmView, setDmView] = useState<"inbox" | null>(() => (takeDmFocus() ? "inbox" : null));
   const [dmTo, setDmTo] = useState<TravellerCard | null>(null);
   const siteEmotes = useChatEmotes();
@@ -308,7 +307,6 @@ function LiveChat({
   const send = useMutation({
     mutationFn: async () => {
       const photo = chatPhotos[0];
-      if (photo && !photoConsent) throw new Error("Cochez l’accord sous la photo, ou retirez-la.");
       await postToRoom(
         kind,
         room,
@@ -322,7 +320,6 @@ function LiveChat({
     onSuccess: () => {
       chatPhotos.forEach((photo) => URL.revokeObjectURL(photo.url));
       setChatPhotos([]);
-      setPhotoConsent(false);
       setShowPhoto(false);
       void client.invalidateQueries({ queryKey: photosKey });
       setText("");
@@ -701,7 +698,13 @@ function LiveChat({
                       <Flag size={13} aria-hidden /> Signaler
                     </button>
                   ) : null}
-                  {message.me ? <OwnMessageActions id={message.id} body={message.body} /> : null}
+                  {message.me ? (
+                    <OwnMessageActions
+                      id={message.id}
+                      body={message.body}
+                      photoPaths={(messagePhotos?.get(message.id) ?? []).map((photo) => photo.path)}
+                    />
+                  ) : null}
                   {staff && !message.me ? (
                     <StaffTools id={message.id} author={message.author} />
                   ) : null}
@@ -840,16 +843,25 @@ function LiveChat({
             </ul>
           ) : null}
           {showPhoto && canWrite && user ? (
-            <div className="bw-chat__panel">
+            <div className="bw-chat__photo">
               <PhotoPicker
                 max={1}
                 photos={chatPhotos}
                 onChange={setChatPhotos}
-                consent={photoConsent}
-                onConsent={setPhotoConsent}
                 check={checkPhoto}
                 note="Une photo par personne dans ce salon, vérifiée automatiquement puis publiée avec votre message."
               />
+              {chatPhotos.length ? (
+                <button
+                  type="button"
+                  className="bw-chat__photo-send"
+                  disabled={send.isPending}
+                  onClick={submit}
+                >
+                  <Send size={15} aria-hidden />
+                  {send.isPending ? "Envoi…" : "Envoyer avec cette photo"}
+                </button>
+              ) : null}
             </div>
           ) : null}
           {/:[a-z0-9_]+:/.test(text) ? (

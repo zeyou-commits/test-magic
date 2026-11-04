@@ -67,7 +67,7 @@ export function PhotosModeration() {
         publicPath = `valides/${item.kind}/${item.id}.${ext}`;
         const upload = await db.storage
           .from(PUBLIC_BUCKET)
-          .upload(publicPath, file.data, { contentType: file.data.type, upsert: true });
+          .upload(publicPath, file.data, { contentType: file.data.type, upsert: false });
         if (upload.error) throw new Error(upload.error.message);
       }
       const { error } = await db.rpc("bw_photo_decide", {

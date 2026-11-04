@@ -10,6 +10,7 @@ export const CHARTER_RULES = [
   "Je ne publie ni numéro, ni adresse, ni lien, ni publicité.",
   "Je partage ce que je vois vraiment ; seule la compagnie confirme un départ.",
   "Face à un message gênant, je le signale au lieu d'y répondre.",
+  "Mes photos ne montrent ni visage reconnaissable ni plaque lisible, et j'ai le droit de les publier.",
 ];
 
 /**

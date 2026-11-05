@@ -19,7 +19,16 @@ const db = supabase as unknown as SupabaseClient;
 type Status = "pending" | "standby" | "approved" | "rejected";
 interface Proposal {
   id: string;
-  kind: "flash" | "departure" | "vessel" | "note" | "incident" | "crossing";
+  kind:
+    | "flash"
+    | "departure"
+    | "vessel"
+    | "note"
+    | "incident"
+    | "crossing"
+    | "schedule_fix"
+    | "new_departure"
+    | "remove_departure";
   title: string;
   summary: string;
   confidence: "high" | "medium" | "low";
@@ -60,6 +69,9 @@ const KIND: Record<Proposal["kind"], string> = {
   note: "À lire, sans effet sur les horaires",
   incident: "Mettre à jour un incident",
   crossing: "Corriger l’heure affichée",
+  schedule_fix: "Corriger le planning (source officielle)",
+  new_departure: "Ajouter une traversée (source officielle)",
+  remove_departure: "Retirer une traversée (source officielle)",
 };
 const FIELD: Record<string, string> = {
   status: "Statut",
@@ -118,7 +130,7 @@ export function WatchAdmin() {
         .from("bw_watch_proposals")
         .select("*,bw_watch_items(url,title,excerpt,published_at,bw_watch_sources(name,url,tier))")
         .order("created_at", { ascending: false })
-        .limit(150);
+        .limit(500);
       if (error) throw error;
       return data as unknown as Proposal[];
     },
@@ -328,7 +340,12 @@ export function WatchAdmin() {
                         disabled={decide.isPending}
                         onClick={() => decide.mutate({ id: proposal.id, decision: "approved" })}
                       >
-                        <Check size={15} aria-hidden /> Approuver
+                        <Check size={15} aria-hidden />{" "}
+                        {proposal.kind === "new_departure"
+                          ? "Ajouter la traversée"
+                          : proposal.kind === "remove_departure"
+                            ? "Retirer la traversée"
+                            : "Approuver"}
                       </Button>
                     )}
                     {proposal.kind === "note" && !item?.bw_watch_sources?.url.includes("/interne/") ? (

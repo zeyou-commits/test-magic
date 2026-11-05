@@ -118,8 +118,10 @@ BEGIN
           AND coalesce(w.field, '') = coalesce(v_field, '')
           AND CASE
                 WHEN v_kind = 'new_departure' THEN
-                  (w.proposed_value::jsonb->>'route_id') = (v_new->>'route_id')
-                  AND (w.proposed_value::jsonb->>'departure_at')::timestamptz = (v_new->>'departure_at')::timestamptz
+                  CASE WHEN w.proposed_value LIKE '{%' THEN
+                    (w.proposed_value::jsonb->>'route_id') = (v_new->>'route_id')
+                    AND (w.proposed_value::jsonb->>'departure_at')::timestamptz = (v_new->>'departure_at')::timestamptz
+                  ELSE false END
                 WHEN v_kind = 'note' THEN w.title = left(entry->>'title', 160)
                 ELSE w.proposed_value IS NOT DISTINCT FROM v_value
               END

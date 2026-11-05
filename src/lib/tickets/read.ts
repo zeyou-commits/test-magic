@@ -145,6 +145,27 @@ async function ocr(canvases: HTMLCanvasElement[], progress: (p: ReadProgress) =>
 
 // --- PDF -----------------------------------------------------------------------------------
 
+/**
+ * Les pages d'un PDF dessinées en images : l'aperçu marche partout (Chrome Android n'affiche pas
+ * les PDF dans une page), et sans connexion. QR codes nets pour le contrôle à l'embarquement.
+ */
+export async function pdfPageImages(file: Blob, maxPages = 6): Promise<string[]> {
+  const [pdfjs, worker] = await engine().pdf();
+  pdfjs.GlobalWorkerOptions.workerSrc = worker.default;
+  const pdf = await pdfjs.getDocument({ data: new Uint8Array(await file.arrayBuffer()) }).promise;
+  const urls: string[] = [];
+  for (let n = 1; n <= Math.min(pdf.numPages, maxPages); n += 1) {
+    const page = await pdf.getPage(n);
+    const viewport = page.getViewport({ scale: 2 });
+    const canvas = document.createElement("canvas");
+    canvas.width = Math.round(viewport.width);
+    canvas.height = Math.round(viewport.height);
+    await page.render({ canvas, canvasContext: canvas.getContext("2d")!, viewport }).promise;
+    urls.push(canvas.toDataURL("image/png"));
+  }
+  return urls;
+}
+
 async function readPdf(file: Blob, progress: (p: ReadProgress) => void) {
   const [pdfjs, worker] = await engine().pdf();
   pdfjs.GlobalWorkerOptions.workerSrc = worker.default;

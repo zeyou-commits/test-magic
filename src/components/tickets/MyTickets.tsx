@@ -52,12 +52,16 @@ export function TicketViewer({
   const client = useQueryClient();
   const labels = useTicketLabels();
   const [url, setUrl] = useState<string | null>(null);
+  /** PDF : ses pages dessinées en images (aperçu qui marche aussi sur Android et sans connexion). */
+  const [pages, setPages] = useState<string[]>([]);
+  const [zoom, setZoom] = useState(false);
   const [type, setType] = useState<string>("");
   const [offline, setOffline] = useState(false);
   const [problem, setProblem] = useState<string | null>(null);
   const [confirming, setConfirming] = useState(false);
   useEffect(() => {
     setUrl(null);
+    setPages([]);
     setProblem(null);
     setConfirming(false);
     if (!ticket?.file_path) return;
@@ -66,7 +70,13 @@ export function TicketViewer({
       .then(({ file, offline: local }) => {
         objectUrl = URL.createObjectURL(file);
         setUrl(objectUrl);
-        setType(file.type || ticket.file_type || "");
+        const kind = file.type || ticket.file_type || "";
+        setType(kind);
+        if (kind === "application/pdf")
+          void import("@/lib/tickets/read")
+            .then((m) => m.pdfPageImages(file))
+            .then(setPages)
+            .catch(() => setProblem("Aperçu indisponible : utilisez « Télécharger »."));
         setOffline(local);
       })
       .catch((error: Error) => setProblem(error.message));
@@ -96,11 +106,25 @@ export function TicketViewer({
             {ticket.file_path ? (
               url ? (
                 type === "application/pdf" ? (
-                  <object data={url} type="application/pdf" aria-label="Billet PDF">
-                    <a href={url} target="_blank" rel="noreferrer">
-                      Ouvrir le billet PDF
-                    </a>
-                  </object>
+                  pages.length ? (
+                    <div className="bw-ticket-pages" data-zoom={zoom || undefined}>
+                      {pages.map((page, i) => (
+                        <button
+                          key={i}
+                          type="button"
+                          onClick={() => setZoom((value) => !value)}
+                          aria-label={zoom ? "Réduire le billet" : "Agrandir le billet (QR code)"}
+                        >
+                          <img src={page} alt={`Billet, page ${i + 1}`} />
+                        </button>
+                      ))}
+                    </div>
+                  ) : (
+                    <p role="status">
+                      <LoaderCircle className="animate-spin" size={16} aria-hidden /> Préparation de
+                      l’aperçu…
+                    </p>
+                  )
                 ) : (
                   <img src={url} alt="Billet original" />
                 )

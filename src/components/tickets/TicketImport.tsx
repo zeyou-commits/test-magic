@@ -374,7 +374,12 @@ export function TicketImport({
             <fieldset>
               <legend>Compagnie et navire</legend>
               <label>
-                Compagnie {origin("companyId")}
+                Compagnie{" "}
+                {draft.companyFromVessel && draft.companyId ? (
+                  <small className="bw-ticket-field__read">déduite du navire</small>
+                ) : (
+                  origin("companyId")
+                )}
                 <select
                   value={draft.companyId ?? ""}
                   onChange={(e) => setDraft((d) => ({ ...d, companyId: e.target.value || null }))}

@@ -121,3 +121,56 @@ describe("agence : bruit de l'OCR", () => {
     expect(t.agency).toBe("Voyages Méditerranée Lyon");
   });
 });
+
+// Structure d'un vrai bon Baleària (OCR d'un PDF scanné, deux colonnes aller/retour),
+// avec des données entièrement inventées.
+describe("bon Baleària (OCR, deux colonnes)", () => {
+  const cat: Catalog = {
+    companies: [{ id: "c-balearia", name: "Baleària" }],
+    vessels: [{ id: "v-rosalind", name: "Rosalind Franklin", company_id: "c-balearia" }],
+    ports: [
+      { id: "p-val", name: "Valence" },
+      { id: "p-mos", name: "Mostaganem" },
+      { id: "p-alg", name: "Alger" },
+    ],
+  };
+  const ocr = `Gestiôn reserva 29/8/2026 9:50
+a
+Tu Localizador
+QZ7KM21
+Estado de la Reserva: Firme
+Informacion de trayectos
+Viaje de ida: 19 octubre 2026 Viaje de vuelta: 31 octubre 2026
+Salida: VALENCIA 18:30 Salida: MOSTAGANEM 18:30
+Llegada: ARGEL 13:00 Llegada: VALENCIA 14:00
+Escalas: 0 Escalas: 0
+Buque: FERRY, ROSALIND FRANKLIN Buque: FERRY, ROSALIND FRANKLIN
+Presentacion en el puerto de salida a las: 13:30 Presentacion en el puerto de salida a las: 12:30
+Contacto principal
+Teléfono: 0000000000 Email: contact@exemple.test
+NOMBRE 1° APELLIDO 2° APELLIDO DOCUMENTO NACIONALIDAD SEXO
+Adulto AMINA EXEMPLE TEST 123456789 pz Mujer
+Niño YANIS EXEMPLE TEST 987654321 pz Hombre
+Datos de la agencia
+NOMBRE AGENCIA: SARL VOYAGES EXEMPLE Sello agencia y firma (Obligatorio)
+NUMERO EXPEDIENTE:000000`;
+  it("lit aller et retour par étiquettes, ignore la date d'impression", () => {
+    const t = parseTicket(ocr, ["QZ7KM21"], cat);
+    expect(t.legs).toEqual([
+      { fromPortId: "p-val", toPortId: "p-alg", date: "2026-10-19", time: "18:30" },
+      { fromPortId: "p-mos", toPortId: "p-val", date: "2026-10-31", time: "18:30" },
+    ]);
+  });
+  it("compagnie déduite du navire, passagers comptés sans numéro de document", () => {
+    const t = parseTicket(ocr, ["QZ7KM21"], cat);
+    expect(t.vesselId).toBe("v-rosalind");
+    expect(t.companyId).toBe("c-balearia");
+    expect(t.companyFromVessel).toBe(true);
+    expect(t.passengers).toEqual(["AMINA EXEMPLE TEST", "YANIS EXEMPLE TEST"]);
+    expect(t.adults).toBe(1);
+    expect(t.children).toBe(1);
+    expect(t.reference).toBe("QZ7KM21");
+    expect(t.agency).toBe("SARL VOYAGES EXEMPLE");
+    expect(t.vehicleKind).toBeNull();
+  });
+});

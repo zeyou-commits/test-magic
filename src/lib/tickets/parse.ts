@@ -33,6 +33,8 @@ export type TicketDraft = {
   agency: string | null;
   /** Contenu des QR codes et codes-barres, gardé tel quel. */
   codes: string[];
+  /** Compagnie absente du texte (logo), retrouvée grâce au navire. */
+  companyFromVessel?: boolean;
 };
 
 export const emptyLeg = (): TicketLeg => ({
@@ -238,7 +240,7 @@ export function dateHits(text: string): DateHit[] {
 
 /** Dates qui ne sont pas celles du voyage : achat, émission, naissance, validité de document. */
 const NOT_TRAVEL =
-  /(emis|emission|achat|achete|reserve le|reservation du|date de reservation|booking date|issued|fecha de emision|nato|ne le|nee le|naissance|birth|nacimiento|expir|validite|valid until|imprime)/;
+  /(emis|emission|achat|achete|reserve le|reservation du|date de reservation|booking date|issued|fecha de emision|gestion|reserva|fecha de compra|impres|printed|stampa|nato|ne le|nee le|naissance|birth|nacimiento|expir|validite|valid until|imprime)/;
 
 export function travelDates(text: string): DateHit[] {
   return dateHits(text).filter(
@@ -379,14 +381,23 @@ function count(text: string, re: RegExp) {
 export function findAgency(text: string, raw: string): string | null {
   const known = KNOWN_AGENCIES.find((agency) => findAll(text, agency).length);
   if (known) return known.replace(/\b\w/g, (c) => c.toUpperCase());
-  // Lu dans le texte d'origine, accents compris.
+  // Lu dans le texte d'origine, accents compris : d'abord le nom après son étiquette
+  // (« Nombre agencia : … », « Nom de l'agence : … »), sinon après « Agence », « émis par »…
   const m =
-    /(?:agence|agency|agencia|agenzia|[ée]mis par|issued by|vendu par|sold by|distribu[ée] par)\s*[:-]?\s*([^\n]{3,60})/i.exec(
+    /(?:nombre (?:de la )?agencia|nom de l.agence|agency name|nome (?:dell.)?agenzia)\s*:\s*([^\n]{3,60})/i.exec(
+      raw,
+    ) ??
+    /(?:agence|agency|agencia|agenzia|[ée]mis par|issued by|vendu par|sold by|distribu[ée] par)\s*:\s*([^\n]{3,60})/i.exec(
+      raw,
+    ) ??
+    /(?:agence|agency|agenzia|[ée]mis par|issued by|vendu par|sold by|distribu[ée] par)\s*-?\s*([^\n]{3,60})/i.exec(
       raw,
     );
   if (!m) return null;
   const value = m[1]!
-    .split(/\s{2,}|\||;|,|\btel\b|\bt[ée]l[ée]phone|\bt[ée]l\b|www\./i)[0]!
+    .split(
+      /\s{2,}|\||;|,|\(|\bsello\b|\bcachet\b|\bstamp\b|\btel\b|\bt[ée]l[ée]phone|\bt[ée]l\b|www\./i,
+    )[0]!
     .replace(/[\s\-–:.]+$/, "")
     .trim();
   // Bruit de l'OCR en fin de ligne (« Cl [=] » près d'un QR code) : retiré, avec la lettre isolée qui le précède.
@@ -400,6 +411,79 @@ export function findAgency(text: string, raw: string): string | null {
   return words.join(" ").length >= 3 ? words.join(" ").slice(0, 80) : null;
 }
 
+// --- Billets à étiquettes (Baleària, Algérie Ferries…) ---------------------------------------
+// Aller et retour sont souvent imprimés en deux colonnes que l'OCR lit sur la même ligne :
+// « Salida : VALENCIA 18:30   Salida : MOSTAGANEM 18:30 ». On lit donc les étiquettes dans
+// l'ordre : la 1re « Salida » est l'aller, la 2e le retour ; idem pour l'arrivée et les dates.
+const LABELS = {
+  from: /(?:^|[^a-z])(?:salida|depart|departure|from|partenza|origen|origine|port de depart)\s*:\s*/g,
+  to: /(?:^|[^a-z])(?:llegada|arrivee|arrival|to|arrivo|destino|destination|port d arrivee)\s*:\s*/g,
+  outDate: /(?:^|[^a-z])(?:viaje de ida|aller|outbound|andata|ida|date aller)\s*:\s*/g,
+  retDate: /(?:^|[^a-z])(?:viaje de vuelta|retour|return|ritorno|vuelta|date retour)\s*:\s*/g,
+};
+const labelEnds = (text: string, re: RegExp) =>
+  [...text.matchAll(re)].map((m) => m.index! + m[0].length);
+
+export function labelledLegs(text: string, ports: CatalogItem[]): TicketLeg[] {
+  const hits = portHits(text, ports);
+  const dates = dateHits(text);
+  const portAt = (pos: number) => hits.find((h) => h.index >= pos && h.index <= pos + 3) ?? null;
+  const legs: TicketLeg[] = [];
+  const leg = (i: number) => (legs[i] ??= emptyLeg());
+  labelEnds(text, LABELS.from)
+    .slice(0, 2)
+    .forEach((pos, i) => {
+      const port = portAt(pos);
+      if (!port) return;
+      leg(i).fromPortId = port.id;
+      // L'heure est juste après le port (« VALENCIA 18:30 »).
+      leg(i).time = timeAfter(text, port.index + port.length, 12);
+    });
+  labelEnds(text, LABELS.to)
+    .slice(0, 2)
+    .forEach((pos, i) => {
+      const port = portAt(pos);
+      if (port) leg(i).toPortId = port.id;
+    });
+  const dateAt = (pos: number) =>
+    dates.find((d) => d.index >= pos && d.index <= pos + 3)?.date ?? null;
+  const out = labelEnds(text, LABELS.outDate)[0];
+  const ret = labelEnds(text, LABELS.retDate)[0];
+  if (out !== undefined && dateAt(out)) leg(0).date = dateAt(out);
+  if (ret !== undefined && dateAt(ret)) leg(1).date = dateAt(ret);
+  // Un trajet sans aucun port lu n'est pas un trajet.
+  return legs.filter((l) => l && (l.fromPortId || l.toPortId));
+}
+
+/**
+ * Passagers en tableau : une ligne par personne, qui commence par son type (« Adulto ZAHRA … »).
+ * Le nom s'arrête au premier mot contenant un chiffre (numéro de document, jamais gardé).
+ */
+const ROW_TYPES: [RegExp, "adult" | "child"][] = [
+  [/^(adulto|adulte|adult|adulti|adulta)$/, "adult"],
+  [/^(nino|nina|enfant|child|bambino|bambina|bebe|infant|menor|jeune|joven)$/, "child"],
+];
+export function passengerRows(raw: string) {
+  const names: string[] = [];
+  let adults = 0;
+  let children = 0;
+  for (const line of raw.split(/\r?\n/)) {
+    const words = line.trim().split(/\s+/);
+    const type = ROW_TYPES.find(([re]) => re.test(plain(words[0] ?? "")))?.[1];
+    if (!type) continue;
+    const name: string[] = [];
+    for (const word of words.slice(1)) {
+      if (/\d/.test(word) || !/^[A-ZÀ-ÖØ-Ý][A-ZÀ-ÖØ-Ý'’-]*$/.test(word)) break;
+      name.push(word);
+    }
+    if (name.length < 2) continue;
+    names.push(name.join(" "));
+    if (type === "adult") adults += 1;
+    else children += 1;
+  }
+  return { names, adults, children };
+}
+
 /** Le billet lu : chaque information trouvée, rien d'inventé. */
 export function parseTicket(raw: string, codes: string[], catalog: Catalog): TicketDraft {
   const text = plain(raw);
@@ -408,6 +492,10 @@ export function parseTicket(raw: string, codes: string[], catalog: Catalog): Tic
     text,
     catalog.vessels.filter((v) => !company || !v.company_id || v.company_id === company.id),
   );
+  // Nom de la compagnie illisible (logo) : le navire, connu de BledWay, la donne.
+  const vesselCompany = vessel
+    ? (catalog.vessels.find((v) => v.id === vessel.id)?.company_id ?? null)
+    : null;
 
   // Trajets : les ports dans l'ordre du billet ; le retour est la paire inverse, plus loin.
   const hits = portHits(text, catalog.ports);
@@ -454,6 +542,17 @@ export function parseTicket(raw: string, codes: string[], catalog: Catalog): Tic
     }
   }
 
+  // Étiquettes « Salida / Llegada / Viaje de ida… » : plus sûres que l'ordre des ports.
+  const labelled = labelledLegs(text, catalog.ports);
+  const finalLegs = labelled.some((l) => l.fromPortId && l.toPortId)
+    ? labelled.map((l, i) => ({
+        ...l,
+        // Date sans étiquette : celle trouvée par la lecture générale, si elle existe.
+        date: l.date ?? legs[i]?.date ?? null,
+      }))
+    : legs;
+  const rows = passengerRows(raw);
+
   const reference =
     findReference(text, raw) ??
     codes.map((c) => c.trim()).find((c) => /^[A-Z0-9]{5,12}$/.test(c) && /\d/.test(c)) ??
@@ -464,16 +563,20 @@ export function parseTicket(raw: string, codes: string[], catalog: Catalog): Tic
     ...catalog.companies.map((c) => c.name),
     ...catalog.vessels.map((v) => v.name),
   ];
+  const adults = count(text, /\b(\d{1,2})\s*(?:x\s*)?(?:adultes?|adults?|adultos?|adulti)\b/);
+  const children = count(
+    text,
+    /\b(\d{1,2})\s*(?:x\s*)?(?:enfants?|children|child|ninos?|bambini|bebes?|infants?)\b/,
+  );
   return {
-    companyId: company?.id ?? null,
+    companyId: company?.id ?? vesselCompany,
+    companyFromVessel: !company && Boolean(vesselCompany),
     vesselId: vessel?.id ?? null,
-    legs: legs.length ? legs : [emptyLeg()],
-    passengers: findPassengers(raw, excluded),
-    adults: count(text, /\b(\d{1,2})\s*(?:x\s*)?(?:adultes?|adults?|adultos?|adulti)\b/),
-    children: count(
-      text,
-      /\b(\d{1,2})\s*(?:x\s*)?(?:enfants?|children|child|ninos?|bambini|bebes?|infants?)\b/,
-    ),
+    legs: finalLegs.length ? finalLegs : [emptyLeg()],
+    passengers: rows.names.length ? rows.names : findPassengers(raw, excluded),
+    // Compté dans le tableau des passagers si le billet ne l'écrit pas en toutes lettres.
+    adults: adults ?? (rows.names.length ? rows.adults : null),
+    children: children ?? (rows.names.length ? rows.children : null),
     reference,
     vehicleKind: vehicle.kind,
     vehiclePlate: vehicle.plate,

@@ -26,6 +26,7 @@ import {
   TriangleAlert,
   Newspaper,
   Menu,
+  Ticket,
   X,
 } from "lucide-react";
 import { Link } from "@tanstack/react-router";
@@ -173,6 +174,13 @@ const sections = [
     description: "Avis sur les navires et signalements en cours, à vérifier ou à clore.",
     group: "Voyageurs",
     icon: MessageSquare,
+  },
+  {
+    id: "tickets",
+    label: "Billets des voyageurs",
+    description: "Écarts d’horaire relevés sur les billets et agences émettrices, sans donnée personnelle.",
+    group: "Voyageurs",
+    icon: Ticket,
   },
   {
     id: "reviews",

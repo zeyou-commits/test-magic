@@ -14,9 +14,16 @@ import {
   type PublicPhoto,
 } from "@/lib/photos/photos";
 
-/** Le rappel affiché sous l'aperçu : envoyer la photo vaut confirmation (règle aussi dans la charte). */
-export const PHOTO_REMINDER =
-  "Vérifiez l’aperçu : aucun visage ni plaque ne doit rester lisible. En l’envoyant, vous confirmez avoir le droit de la publier.";
+/**
+ * Types acceptés par le sélecteur de fichier. Chrome sur Android 14 et plus n'ouvre que la galerie
+ * quand on n'accepte que des images ; un second type lui fait proposer le choix standard
+ * « Appareil photo / Fichiers ». Un fichier qui n'est pas une image est refusé à la préparation.
+ */
+export const PHOTO_ACCEPT = "image/*,text/plain";
+
+/** L'accord demandé sous l'aperçu flouté, à chaque photo (règle aussi dans la charte). */
+export const PHOTO_CONSENT =
+  "J’ai vérifié l’aperçu : aucun visage ni plaque ne reste lisible, et j’ai le droit de publier cette photo.";
 
 /**
  * Joindre jusqu'à `max` photos : réduites, visages floutés et sans métadonnées (position GPS
@@ -26,16 +33,28 @@ export function PhotoPicker({
   max,
   photos,
   onChange,
+  consent,
+  onConsent,
   note,
   check,
+  incoming,
+  onIncomingDone,
+  hideSources = false,
 }: {
   max: number;
   photos: PreparedPhoto[];
   onChange: (photos: PreparedPhoto[]) => void;
+  consent: boolean;
+  onConsent: (value: boolean) => void;
   /** Ce qui se passe ensuite (« visible après validation », « publiée tout de suite »…). */
   note: string;
   /** Contrôle supplémentaire (filtre automatique des salons). */
   check?: (photo: PreparedPhoto) => Promise<string | null>;
+  /** Fichiers choisis ailleurs (icônes du salon) : traités dès leur arrivée. */
+  incoming?: File[] | null;
+  onIncomingDone?: () => void;
+  /** Les boutons « Prendre une photo / Galerie » sont ailleurs (salon). */
+  hideSources?: boolean;
 }) {
   const input = useRef<HTMLInputElement>(null);
   const [busy, setBusy] = useState(false);
@@ -43,13 +62,16 @@ export function PhotoPicker({
   // Le détecteur de visages se charge dès que le formulaire propose une photo.
   useEffect(() => {
     void import("@/lib/photos/faces").then((module) => module.warmFaceDetector());
+    void import("@/lib/photos/plates").then((module) => module.warmPlateDetector());
   }, []);
-  const add = async (files: FileList | null) => {
+  const add = async (files: FileList | File[] | null) => {
     if (!files?.length) return;
     setBusy(true);
     setProblem(null);
-    const next = [...photos];
-    for (const file of [...files].slice(0, max - photos.length)) {
+    // Une seule photo permise : la nouvelle remplace l'ancienne.
+    const next = max === 1 ? [] : [...photos];
+    if (max === 1) photos.forEach((photo) => URL.revokeObjectURL(photo.url));
+    for (const file of [...files].slice(0, max - next.length)) {
       try {
         const photo = await preparePhoto(file);
         const refused = check ? await check(photo) : null;
@@ -67,6 +89,12 @@ export function PhotoPicker({
     setBusy(false);
     if (input.current) input.current.value = "";
   };
+  useEffect(() => {
+    if (!incoming?.length) return;
+    void add(incoming).finally(() => onIncomingDone?.());
+    // Seule l'arrivée de nouveaux fichiers déclenche le traitement.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [incoming]);
   return (
     <div className="bw-photo-picker">
       {photos.length ? (
@@ -74,9 +102,9 @@ export function PhotoPicker({
           {photos.map((photo, index) => (
             <li key={photo.url}>
               <img src={photo.url} alt={`Photo ${index + 1}`} />
-              {photo.faces ? (
-                <span className="bw-photo-picker__faces" title="Visages floutés automatiquement">
-                  <ScanFace size={12} aria-hidden /> {photo.faces}
+              {photo.faces + photo.plates ? (
+                <span className="bw-photo-picker__faces" title="Zones floutées automatiquement">
+                  <ScanFace size={12} aria-hidden /> {photo.faces + photo.plates}
                 </span>
               ) : null}
               <button
@@ -95,45 +123,61 @@ export function PhotoPicker({
       ) : null}
       {photos.length ? (
         <>
-          <p className="bw-photo-picker__consent">{PHOTO_REMINDER}</p>
+          <label className="bw-photo-picker__consent">
+            <input
+              type="checkbox"
+              checked={consent}
+              onChange={(event) => onConsent(event.target.checked)}
+            />
+            <span>{PHOTO_CONSENT}</span>
+          </label>
           <small>
-            {photos.some((photo) => photo.faces)
-              ? `${photos.reduce((sum, photo) => sum + photo.faces, 0)} visage(s) flouté(s) automatiquement. `
-              : "Visages floutés automatiquement s’il y en a. "}
+            {blurredLabel(photos)}
             {note} Position GPS et infos de l’appareil retirées de la photo.
           </small>
         </>
       ) : null}
-      {photos.length < max ? (
-        <button
-          type="button"
-          className="bw-photo-picker__add"
-          disabled={busy}
-          onClick={() => input.current?.click()}
-        >
-          {busy ? (
-            <LoaderCircle size={15} className="animate-spin" aria-hidden />
-          ) : (
-            <Camera size={15} aria-hidden />
-          )}
-          {busy
-            ? "Floutage des visages…"
+      {busy ? (
+        <p className="bw-photo-picker__busy" role="status">
+          <LoaderCircle size={15} className="animate-spin" aria-hidden /> Floutage des visages et
+          plaques…
+        </p>
+      ) : null}
+      {/* Un seul bouton : le téléphone propose lui-même « Appareil photo » ou « Galerie ». */}
+      {!hideSources && (photos.length < max || max === 1) && !busy ? (
+        <label className="bw-photo-picker__add">
+          <Camera size={15} aria-hidden />
+          {photos.length && max === 1
+            ? "Changer de photo"
             : max > 1
               ? `Ajouter une photo (${photos.length}/${max})`
               : "Ajouter une photo"}
-        </button>
+          <input
+            ref={input}
+            type="file"
+            accept={PHOTO_ACCEPT}
+            multiple={max - photos.length > 1}
+            hidden
+            onChange={(event) => void add(event.target.files)}
+          />
+        </label>
       ) : null}
-      <input
-        ref={input}
-        type="file"
-        accept="image/*"
-        multiple={max - photos.length > 1}
-        hidden
-        onChange={(event) => void add(event.target.files)}
-      />
       {problem ? <p role="alert">{problem}</p> : null}
     </div>
   );
+}
+
+/** « 2 visages et 1 plaque floutés automatiquement. » */
+function blurredLabel(photos: PreparedPhoto[]) {
+  const faces = photos.reduce((sum, photo) => sum + photo.faces, 0);
+  const plates = photos.reduce((sum, photo) => sum + photo.plates, 0);
+  const parts = [
+    faces ? `${faces} visage${faces > 1 ? "s" : ""}` : null,
+    plates ? `${plates} plaque${plates > 1 ? "s" : ""}` : null,
+  ].filter(Boolean);
+  return parts.length
+    ? `${parts.join(" et ")} flouté${faces + plates > 1 ? "s" : ""} automatiquement. `
+    : "Visages et plaques floutés automatiquement s’il y en a. ";
 }
 
 /** Vignettes des photos publiées ; un toucher les agrandit, avec « Signaler ». */

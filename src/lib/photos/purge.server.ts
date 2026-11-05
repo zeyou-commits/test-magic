@@ -4,6 +4,14 @@ import { supabaseAdmin } from "@/integrations/supabase/client.server";
 /** Efface les fichiers de la corbeille et les dépôts abandonnés, puis vide la corbeille. */
 export async function purgePhotos() {
   const db = supabaseAdmin as unknown as SupabaseClient;
+  // Billets échus (script « billets ») : leurs fichiers rejoignent la corbeille, vidée juste après.
+  const tickets = await db.rpc("bw_ticket_purge");
+  const orphans = await db.rpc("bw_ticket_orphans");
+  if (!orphans.error && orphans.data?.length) {
+    const paths = (orphans.data as { path: string }[]).map((row) => row.path);
+    for (let i = 0; i < paths.length; i += 100)
+      await db.storage.from("bledway-billets").remove(paths.slice(i, i + 100));
+  }
   const { data, error } = await db.rpc("bw_photo_purge_list");
   if (error) throw new Error(error.message);
   const byBucket = new Map<string, string[]>();
@@ -19,5 +27,5 @@ export async function purgePhotos() {
       removed += chunk.length;
     }
   }
-  return { removed };
+  return { removed, ticketsExpired: tickets.error ? null : tickets.data };
 }

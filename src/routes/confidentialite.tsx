@@ -83,10 +83,21 @@ function PrivacyPage() {
                   <strong>Photos</strong> jointes à un avis (navire, port), à un signalement de port
                   ou à un message de salon. Avant l'envoi, votre appareil les réduit et les
                   réenregistre : la position GPS et les informations de l'appareil sont retirées, et{" "}
-                  <strong>les visages sont floutés automatiquement</strong> (détection sur
-                  l'appareil, rien n'est envoyé ailleurs). Vous vérifiez l'aperçu et confirmez
-                  qu'aucun visage ni plaque ne reste lisible. Vous pouvez retirer vos photos à tout
-                  moment.
+                  <strong>
+                    les visages et les plaques d'immatriculation sont floutés automatiquement
+                  </strong>{" "}
+                  (détection sur l'appareil, rien n'est envoyé ailleurs). Vous vérifiez l'aperçu et
+                  confirmez qu'aucun visage ni plaque ne reste lisible. Vous pouvez retirer vos
+                  photos à tout moment.
+                </li>
+                <li>
+                  <strong>Billets de ferry</strong> que vous ajoutez : le document original (photo
+                  ou PDF, QR code compris) et les informations que vous avez vérifiées (traversées,
+                  passagers, référence, véhicule).{" "}
+                  <strong>La lecture se fait sur votre téléphone</strong>, sans envoi à un service
+                  extérieur. Le document est rangé dans un espace privé que vous seul pouvez ouvrir,
+                  et une copie reste sur votre téléphone pour le consulter sans connexion. BledWay
+                  ne vérifie pas la validité d'un billet : seule la compagnie fait foi.
                 </li>
               </ul>
             ),
@@ -125,7 +136,10 @@ function PrivacyPage() {
                 </li>
                 <li>
                   <strong>Améliorer la fiabilité des informations</strong> (mesure d'audience
-                  anonyme, journal technique) : intérêt légitime.
+                  anonyme, journal technique, écarts d'horaire relevés sur les billets) : intérêt
+                  légitime. Ce qui sert à BledWay est enregistré à part, sans aucune donnée
+                  personnelle : la traversée concernée, l'horaire ou le navire imprimé, l'agence
+                  émettrice. L'équipe vérifie toujours auprès de la compagnie avant de corriger.
                 </li>
                 <li>
                   <strong>Notifications</strong> sur votre téléphone ou ordinateur : votre
@@ -169,6 +183,12 @@ function PrivacyPage() {
                   l'avis, le signalement ou le message auquel elles sont jointes (30 jours pour les
                   salons), et leurs fichiers sont effacés la nuit suivante. Vous pouvez demander
                   leur retrait à tout moment.
+                </li>
+                <li>
+                  <strong>Billets</strong> : effacés automatiquement 7 jours après votre dernière
+                  traversée (30 jours après l'ajout si aucune date n'est connue), document compris,
+                  sur le serveur comme sur votre téléphone. Vous pouvez les supprimer avant, à tout
+                  moment.
                 </li>
               </ul>
             ),

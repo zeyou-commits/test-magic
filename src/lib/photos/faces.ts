@@ -1,3 +1,4 @@
+import { pixelate, type Box } from "./blur";
 /**
  * Visages floutés sur l'appareil, avant tout envoi : modèle open source BlazeFace (Apache 2.0),
  * hébergé par BledWay (public/models/blazeface), chargé seulement quand une photo est jointe.
@@ -34,8 +35,6 @@ const getDetector = () =>
 export function warmFaceDetector() {
   void getDetector().catch(() => undefined);
 }
-
-type Box = { x: number; y: number; w: number; h: number };
 
 /**
  * Le modèle voit l'image en 128 × 128 : un visage lointain y disparaît. On cherche donc dans
@@ -94,25 +93,7 @@ async function findFaces(source: HTMLCanvasElement, model: Detector): Promise<Bo
 export async function blurFaces(canvas: HTMLCanvasElement): Promise<number> {
   const model = await getDetector();
   const faces = await findFaces(canvas, model);
-  const context = canvas.getContext("2d")!;
-  const small = document.createElement("canvas");
-  for (const face of faces) {
-    const margin = 0.45;
-    const x = Math.max(0, Math.round(face.x - face.w * margin));
-    const y = Math.max(0, Math.round(face.y - face.h * margin));
-    const w = Math.min(canvas.width - x, Math.round(face.w * (1 + 2 * margin)));
-    const h = Math.min(canvas.height - y, Math.round(face.h * (1 + 2 * margin)));
-    if (w < 2 || h < 2) continue;
-    // 6 pavés dans la largeur : aucun trait du visage ne reste lisible.
-    small.width = 6;
-    small.height = Math.max(1, Math.round((6 * h) / w));
-    const tiny = small.getContext("2d")!;
-    tiny.imageSmoothingEnabled = true;
-    tiny.drawImage(canvas, x, y, w, h, 0, 0, small.width, small.height);
-    context.save();
-    context.imageSmoothingEnabled = false;
-    context.drawImage(small, 0, 0, small.width, small.height, x, y, w, h);
-    context.restore();
-  }
+  // 6 pavés dans la largeur, marge pour cheveux et menton : aucun trait du visage ne reste lisible.
+  for (const face of faces) pixelate(canvas, face, 0.45, 6);
   return faces.length;
 }

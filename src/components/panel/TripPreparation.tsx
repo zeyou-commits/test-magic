@@ -1,3 +1,4 @@
+import { TicketAction } from "@/components/tickets/MyTickets";
 import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ArrowRight, Check, ChevronDown, ClipboardCheck, PartyPopper } from "lucide-react";
@@ -27,7 +28,9 @@ function openRoute() {
   else window.location.assign("/");
 }
 
-function ItemLink({ item }: { item: PrepItem }) {
+function ItemLink({ item, departureId }: { item: PrepItem; departureId?: string }) {
+  // « Je vérifie mon billet » : ajouter le billet, ou le revoir.
+  if (item.id === "tickets" && departureId) return <TicketAction departureId={departureId} />;
   if (item.itinerary)
     return (
       <button type="button" onClick={openRoute}>
@@ -119,7 +122,7 @@ export function TripPreparation({
             <button type="button" onClick={() => toggle(nextItem)}>
               <Check size={14} aria-hidden /> C’est fait
             </button>
-            <ItemLink item={nextItem} />
+            <ItemLink item={nextItem} departureId={departureId} />
           </div>
         </div>
       ) : (
@@ -172,7 +175,7 @@ export function TripPreparation({
                     <em>{item.label}</em>
                   </label>
                   {item.tip ? <p className="bw-prep__tip">{item.tip}</p> : null}
-                  <ItemLink item={item} />
+                  <ItemLink item={item} departureId={departureId} />
                 </li>
               );
             })}

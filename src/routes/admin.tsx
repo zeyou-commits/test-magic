@@ -3,6 +3,7 @@ import { WalletMediaAdmin } from "@/components/admin/WalletMediaAdmin";
 import { IllustrationsAdmin } from "@/components/admin/IllustrationsAdmin";
 import { AvatarsAdmin } from "@/components/admin/AvatarsAdmin";
 import { PhotosModeration } from "@/components/admin/PhotosModeration";
+import { TicketInsightsAdmin } from "@/components/admin/TicketInsightsAdmin";
 import { ScheduleRecurrenceFields } from "@/components/admin/ScheduleRecurrence";
 import { recurrenceLabel } from "@/lib/ferry/recurrence";
 import { DinarVoiceAdmin } from "@/components/admin/DinarVoiceAdmin";
@@ -449,6 +450,9 @@ function AdminTabs() {
         </TabsContent>
         <TabsContent value="watch">
           <WatchAdmin />
+        </TabsContent>
+        <TabsContent value="tickets">
+          <TicketInsightsAdmin onOpenPlanning={(date) => openPlanning(date)} />
         </TabsContent>
         <TabsContent value="departures">
           <DeparturesAdmin

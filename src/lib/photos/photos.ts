@@ -19,6 +19,7 @@ export type PreparedPhoto = {
   width: number;
   height: number;
   faces: number;
+  plates: number;
 };
 export type PublicPhoto = {
   id: string;
@@ -55,13 +56,20 @@ export async function preparePhoto(file: File): Promise<PreparedPhoto> {
   context.imageSmoothingQuality = "high";
   context.drawImage(bitmap, 0, 0, width, height);
   bitmap.close();
-  // Visages floutés avant tout envoi. Sans vérification possible, la photo ne part pas.
+  // Visages et plaques floutés avant tout envoi. Sans vérification possible, la photo ne part pas.
   let faces: number;
+  let plates: number;
   try {
-    const { blurFaces } = await import("./faces");
+    const [{ blurFaces }, { blurPlates }] = await Promise.all([
+      import("./faces"),
+      import("./plates"),
+    ]);
     faces = await blurFaces(canvas);
+    plates = await blurPlates(canvas);
   } catch {
-    throw new Error("Vérification des visages impossible pour le moment. Réessayez.");
+    throw new Error(
+      "Vérification des visages et des plaques impossible pour le moment. Réessayez.",
+    );
   }
   const encode = (type: string, quality: number) =>
     new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, type, quality));
@@ -69,7 +77,7 @@ export async function preparePhoto(file: File): Promise<PreparedPhoto> {
   let blob = await encode("image/webp", 0.82);
   if (!blob || blob.type !== "image/webp") blob = await encode("image/jpeg", 0.85);
   if (!blob) throw new Error("Conversion impossible sur ce navigateur.");
-  return { blob, url: URL.createObjectURL(blob), width, height, faces };
+  return { blob, url: URL.createObjectURL(blob), width, height, faces, plates };
 }
 
 const extension = (blob: Blob) => (blob.type === "image/jpeg" ? "jpg" : "webp");

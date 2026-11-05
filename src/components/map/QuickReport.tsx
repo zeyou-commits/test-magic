@@ -220,6 +220,7 @@ export function QuickReport({
   const [sentByStaff, setSentByStaff] = useState(false);
   // Port : une photo de ce qui a changé (accès, travaux…), publiée après validation par l'équipe.
   const [photos, setPhotos] = useState<PreparedPhoto[]>([]);
+  const [photoConsent, setPhotoConsent] = useState(false);
   const [photoResult, setPhotoResult] = useState<string | null>(null);
 
   const vessels = fleet.filter(
@@ -277,6 +278,7 @@ export function QuickReport({
     setLocating("idle");
     setDraft({ ...emptyDraft, ...guess(target) });
     setPhotos([]);
+    setPhotoConsent(false);
     setPhotoResult(null);
     mutation.reset();
     setOpen(true);
@@ -753,6 +755,8 @@ export function QuickReport({
             max={1}
             photos={photos}
             onChange={setPhotos}
+            consent={photoConsent}
+            onConsent={setPhotoConsent}
             note="Facultatif : utile si l’accès au port a changé. Visible après validation par l’équipe."
           />
         ) : null}
@@ -761,7 +765,11 @@ export function QuickReport({
             {mutation.error.message}
           </p>
         ) : null}
-        <button type="submit" className="bw-report-send" disabled={!ready || mutation.isPending}>
+        <button
+          type="submit"
+          className="bw-report-send"
+          disabled={!ready || mutation.isPending || (photos.length > 0 && !photoConsent)}
+        >
           {finding
             ? "Recherche de votre position…"
             : mutation.isPending

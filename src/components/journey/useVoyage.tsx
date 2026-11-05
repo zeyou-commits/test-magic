@@ -54,6 +54,7 @@ import type { VoyageTrip } from "@/lib/ferry/voyageTrip";
 import type { FriezeStep } from "./JourneyFrieze";
 import { JourneyPlacesEntry } from "./JourneyPlacesForm";
 import { JourneyStepPanel } from "./JourneyStepPanel";
+import { TicketAction } from "@/components/tickets/MyTickets";
 
 /**
  * « Mon voyage », mode de la carte d'accueil : tout ce qu'il faut pour la frise, le volet d'étape,
@@ -401,6 +402,9 @@ export function useVoyage(
         items={itemsOf(step)}
         done={preparation.done}
         {...(traveller && user ? { onToggle: toggle } : {})}
+        itemAction={(id) =>
+          id === "tickets" && traveller && user ? <TicketAction departureId={departure.id} /> : null
+        }
         pinned={isPinned}
         {...(onClose ? { onClose } : {})}
         onAsk={onAsk}

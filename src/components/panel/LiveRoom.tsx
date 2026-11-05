@@ -57,7 +57,7 @@ import { ChatText, useChatEmotes } from "./ChatText";
 import { OwnMessageActions } from "./OwnMessageActions";
 import { DmRequest, PrivateMessages } from "./PrivateMessages";
 import { AuthorAvatar, StaffBadge, StaffTools, type ChatAuthor } from "./StaffChat";
-import { PhotoPicker, PhotoStrip } from "@/components/photos/Photos";
+import { PHOTO_ACCEPT, PhotoPicker, PhotoStrip } from "@/components/photos/Photos";
 import { photosKey, photosQuery, sendChatPhoto, type PreparedPhoto } from "@/lib/photos/photos";
 
 /** Filtre automatique des photos de salon (modèle chargé seulement à ce moment-là). */
@@ -255,6 +255,14 @@ function LiveChat({
   // Une photo par personne et par salon, filtrée sur l'appareil puis publiée avec le message.
   const [showPhoto, setShowPhoto] = useState(false);
   const [chatPhotos, setChatPhotos] = useState<PreparedPhoto[]>([]);
+  const [photoConsent, setPhotoConsent] = useState(false);
+  const [incoming, setIncoming] = useState<File[] | null>(null);
+  // Un toucher sur l'appareil photo ou la galerie : la photo arrive directement dans le salon.
+  const pickFiles = (files: FileList | null) => {
+    if (!files?.length) return;
+    setIncoming([...files]);
+    setShowPhoto(true);
+  };
   const [dmView, setDmView] = useState<"inbox" | null>(() => (takeDmFocus() ? "inbox" : null));
   const [dmTo, setDmTo] = useState<TravellerCard | null>(null);
   const siteEmotes = useChatEmotes();
@@ -320,6 +328,7 @@ function LiveChat({
     onSuccess: () => {
       chatPhotos.forEach((photo) => URL.revokeObjectURL(photo.url));
       setChatPhotos([]);
+      setPhotoConsent(false);
       setShowPhoto(false);
       void client.invalidateQueries({ queryKey: photosKey });
       setText("");
@@ -375,6 +384,7 @@ function LiveChat({
   // On écrit d'abord ; l'inscription n'arrive qu'à l'envoi, et le message est gardé.
   const submit = () => {
     if (!text.trim() && !chatPhotos.length) return;
+    if (chatPhotos.length && !photoConsent) return;
     if (canWrite) {
       gate.guard(() => send.mutate());
       return;
@@ -842,12 +852,17 @@ function LiveChat({
               ))}
             </ul>
           ) : null}
-          {showPhoto && canWrite && user ? (
+          {(showPhoto || chatPhotos.length) && canWrite && user ? (
             <div className="bw-chat__photo">
               <PhotoPicker
                 max={1}
                 photos={chatPhotos}
                 onChange={setChatPhotos}
+                incoming={incoming}
+                onIncomingDone={() => setIncoming(null)}
+                hideSources
+                consent={photoConsent}
+                onConsent={setPhotoConsent}
                 check={checkPhoto}
                 note="Une photo par personne dans ce salon, vérifiée automatiquement puis publiée avec votre message."
               />
@@ -855,7 +870,7 @@ function LiveChat({
                 <button
                   type="button"
                   className="bw-chat__photo-send"
-                  disabled={send.isPending}
+                  disabled={send.isPending || !photoConsent}
                   onClick={submit}
                 >
                   <Send size={15} aria-hidden />
@@ -885,20 +900,26 @@ function LiveChat({
               <Smile size={20} aria-hidden />
             </button>
             {canWrite && user ? (
-              <button
-                type="button"
+              <label
                 className="bw-chat__emote-toggle"
-                aria-label="Joindre une photo"
-                aria-expanded={showPhoto}
+                aria-label="Ajouter une photo"
+                title="Ajouter une photo"
                 data-filled={chatPhotos.length ? "" : undefined}
-                onClick={() => {
-                  if (!showPhoto)
-                    void import("@/lib/photos/nsfw").then((m) => m.warmChatPhotoCheck());
-                  setShowPhoto((value) => !value);
-                }}
+                onPointerDown={() =>
+                  void import("@/lib/photos/nsfw").then((m) => m.warmChatPhotoCheck())
+                }
               >
                 <Camera size={19} aria-hidden />
-              </button>
+                <input
+                  type="file"
+                  accept={PHOTO_ACCEPT}
+                  hidden
+                  onChange={(event) => {
+                    pickFiles(event.target.files);
+                    event.target.value = "";
+                  }}
+                />
+              </label>
             ) : null}
             <input
               ref={inputRef}
@@ -921,7 +942,11 @@ function LiveChat({
             ) : null}
             <button
               type="submit"
-              disabled={(!text.trim() && !chatPhotos.length) || send.isPending}
+              disabled={
+                (!text.trim() && !chatPhotos.length) ||
+                (chatPhotos.length > 0 && !photoConsent) ||
+                send.isPending
+              }
               aria-label="Envoyer"
             >
               <Send size={17} aria-hidden />

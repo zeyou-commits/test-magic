@@ -26,6 +26,7 @@ export function JourneyStepPanel({
   onNavigate,
   top,
   clampLead = false,
+  itemAction,
 }: {
   title: string;
   state: StepState;
@@ -50,6 +51,8 @@ export function JourneyStepPanel({
   top?: ReactNode;
   /** Texte replié sur 2 lignes, « Lire la suite » pour le déplier. */
   clampLead?: boolean;
+  /** Une action propre à une case (« Ajouter mon billet »…). */
+  itemAction?: (id: string) => ReactNode;
 }) {
   const [leadOpen, setLeadOpen] = useState(false);
   const longLead = clampLead && lead.length > 110;
@@ -114,6 +117,7 @@ export function JourneyStepPanel({
                   <span>{item.label}</span>
                 </button>
                 {item.tip && !checked ? <small>{item.tip}</small> : null}
+                {itemAction?.(item.id)}
                 {item.href && !checked ? (
                   <a
                     href={item.href}

@@ -277,11 +277,20 @@ BEGIN
   RETURN jsonb_build_object('status', p_decision, 'applied', did);
 END $function$;
 
--- Passage toutes les heures (minute 23) : Corsica Linea + capitaineries. Même secret que les autres tâches.
+-- Planning : une fois par jour (05:23 UTC). Capitaineries (arrivées constatées) : toutes les 3 heures.
+-- Même secret que les autres tâches planifiées.
 DO $do$ BEGIN PERFORM cron.unschedule('bledway-planning-check'); EXCEPTION WHEN others THEN NULL; END $do$;
-SELECT cron.schedule('bledway-planning-check', '23 * * * *', $job$
+DO $do$ BEGIN PERFORM cron.unschedule('bledway-ports-check'); EXCEPTION WHEN others THEN NULL; END $do$;
+SELECT cron.schedule('bledway-planning-check', '23 5 * * *', $job$
   SELECT net.http_get(
-    url := 'https://lwyjhgyuqyflaanrbgkq.supabase.co/functions/v1/schedule-check',
+    url := 'https://lwyjhgyuqyflaanrbgkq.supabase.co/functions/v1/schedule-check?scope=planning',
+    headers := jsonb_build_object('Authorization', 'Bearer ' || (SELECT decrypted_secret FROM vault.decrypted_secrets WHERE name = 'bledway_cron_secret')),
+    timeout_milliseconds := 60000
+  );
+$job$);
+SELECT cron.schedule('bledway-ports-check', '53 */3 * * *', $job$
+  SELECT net.http_get(
+    url := 'https://lwyjhgyuqyflaanrbgkq.supabase.co/functions/v1/schedule-check?scope=ports',
     headers := jsonb_build_object('Authorization', 'Bearer ' || (SELECT decrypted_secret FROM vault.decrypted_secrets WHERE name = 'bledway_cron_secret')),
     timeout_milliseconds := 60000
   );

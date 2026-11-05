@@ -178,21 +178,26 @@ Deno.serve(async (request) => {
     if (request.method === "GET") {
       const { data: allowed } = await db.rpc("bw_cron_secret_ok", { p_token: token });
       if (allowed !== true) return new Response("Unauthorized", { status: 401 });
+      // ?scope=planning : une fois par jour (un planning ne bouge pas tous les jours, la veille et
+      // l'AIS couvrent les imprévus). ?scope=ports : capitaineries, plusieurs fois par jour (jour J).
+      const scope = new URL(request.url).searchParams.get("scope") ?? "all";
       const ref = await reference(db);
-      const result: Record<string, unknown> = {};
-      try {
-        result["Corsica Linea"] = await checkCompany(
-          db,
-          ref,
-          "Corsica Linea",
-          { name: "Planning officiel Corsica Linea", url: CORSICA_URL },
-          parseCorsicaTimetable(await page(CORSICA_URL)),
-          true,
-        );
-      } catch (error) {
-        result["Corsica Linea"] = { error: (error as Error).message };
+      const result: Record<string, unknown> = { scope };
+      if (scope === "planning" || scope === "all") {
+        try {
+          result["Corsica Linea"] = await checkCompany(
+            db,
+            ref,
+            "Corsica Linea",
+            { name: "Planning officiel Corsica Linea", url: CORSICA_URL },
+            parseCorsicaTimetable(await page(CORSICA_URL)),
+            true,
+          );
+        } catch (error) {
+          result["Corsica Linea"] = { error: (error as Error).message };
+        }
       }
-      result.ports = await checkBerths(db, ref);
+      if (scope === "ports" || scope === "all") result.ports = await checkBerths(db, ref);
       return json(result);
     }
 

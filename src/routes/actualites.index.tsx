@@ -1,13 +1,14 @@
 import { useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useSuspenseQuery } from "@tanstack/react-query";
-import { ArrowRight, Newspaper } from "lucide-react";
+import { AlertTriangle, Anchor, ArrowRight, Newspaper } from "lucide-react";
+import { incidentHeadline, incidentsQuery } from "@/lib/ferry/incidents";
 import { Breadcrumbs } from "@/components/editorial/Editorial";
 import { PageHero, SiteLayout } from "@/components/layout/SiteLayout";
 import { CompanyBadge } from "@/components/panel/CompanyBadge";
 import { newsKinds, type NewsItem } from "@/lib/ferry/flash";
 import { newsCompanyIds, newsDay, newsFeedQuery, newsPath, newsSlug } from "@/lib/ferry/newsFeed";
-import { companiesQuery, vesselsQuery } from "@/lib/ferry/queries";
+import { companiesQuery, portsQuery, vesselsQuery } from "@/lib/ferry/queries";
 import type { Company, Vessel } from "@/lib/ferry/types";
 import { vesselPhotoQuery } from "@/lib/ferry/vesselPhoto";
 import { absoluteUrl, jsonLdString, seoHead } from "@/lib/seo/site";
@@ -92,6 +93,68 @@ function LeadPhoto({
   ) : null;
 }
 
+/**
+ * En tête de page : ce qui est grave et en cours (navires immobilisés, alertes non levées).
+ * Les salons concernés affichent la même info épinglée ; la page la réunit pour tout le monde.
+ */
+function SeriousNow({ items, vessels }: { items: NewsItem[]; vessels: Vessel[] }) {
+  const incidents = useQuery(incidentsQuery).data ?? [];
+  const ports = useQuery(portsQuery).data ?? [];
+  const now = Date.now();
+  const blocked = incidents.filter((incident) => incident.status === "confirmed" || incident.status === "verifying");
+  const alerts = items.filter(
+    (item) => item.kind === "alerte" && (!item.ends_at || Date.parse(item.ends_at) > now),
+  );
+  if (!blocked.length && !alerts.length) return null;
+  return (
+    <section className="bw-news-serious" aria-label="Navires immobilisés et annonces graves en cours">
+      {blocked.length ? (
+        <div>
+          <h2>
+            <Anchor size={18} aria-hidden /> Navires immobilisés
+          </h2>
+          <ul>
+            {blocked.map((incident) => {
+              const vessel = vessels.find((item) => item.id === incident.vessel_id);
+              const port = ports.find((item) => item.id === incident.location_port_id);
+              const text = incidentHeadline(incident, vessel?.name ?? "Navire", port?.name);
+              return (
+                <li key={incident.id} data-status={incident.status}>
+                  {vessel ? (
+                    <Link to="/bateaux/$slug" params={{ slug: vessel.slug }}>
+                      {text}
+                    </Link>
+                  ) : (
+                    <span>{text}</span>
+                  )}
+                  {incident.public_note ? <small>{incident.public_note}</small> : null}
+                </li>
+              );
+            })}
+          </ul>
+        </div>
+      ) : null}
+      {alerts.length ? (
+        <div>
+          <h2>
+            <AlertTriangle size={18} aria-hidden /> Annonces graves en cours
+          </h2>
+          <ul>
+            {alerts.map((item) => (
+              <li key={item.id}>
+                <Link to="/actualites/$slug" params={{ slug: newsSlug(item) }}>
+                  {item.title}
+                </Link>
+                <small>{item.summary}</small>
+              </li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
+    </section>
+  );
+}
+
 function NewsPage() {
   const { data: items } = useSuspenseQuery(newsFeedQuery);
   const { data: companies } = useSuspenseQuery(companiesQuery);
@@ -141,6 +204,7 @@ function NewsPage() {
         title="Ce qui bouge sur la route du bled"
         intro="Navires, ports, compagnies, perturbations : l'essentiel pour vos traversées entre l'Europe et l'Algérie, daté et avec sa source."
       />
+      <SeriousNow items={items} vessels={vessels} />
       {items.length ? (
         <div className="bw-news-filters" role="group" aria-label="Filtrer les actualités">
           {FILTERS.map((item) => (

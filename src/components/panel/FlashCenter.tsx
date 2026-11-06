@@ -39,6 +39,12 @@ type Notice = {
   event_key: string;
 };
 
+/** Notifications personnelles non lues (menu du compte, onglet Moi) : la cloche de l'en-tête est retirée. */
+export function useUnreadNoticeCount(userId: string | undefined) {
+  const notices = useNotices(userId);
+  return (notices.data ?? []).filter((notice) => !notice.read_at).length;
+}
+
 function useNotices(userId: string | undefined) {
   return useQuery({
     queryKey: ["my-notifications", userId],

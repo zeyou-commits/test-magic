@@ -1,3 +1,4 @@
+import { useUnreadNoticeCount } from "@/components/panel/FlashCenter";
 import { CabasImg } from "@/components/CabasImg";
 import { useState } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
@@ -98,6 +99,7 @@ export function MeTab({ className }: { className: string }) {
 
 function MeSheet({ open, onOpenChange }: { open: boolean; onOpenChange: (open: boolean) => void }) {
   const { user, roles, signOut } = useAuth();
+  const unread = useUnreadNoticeCount(user?.id);
   const navigate = useNavigate();
   const client = useQueryClient();
   const me = useQuery(myTravellerQuery(user?.id)).data;
@@ -202,6 +204,7 @@ function MeSheet({ open, onOpenChange }: { open: boolean; onOpenChange: (open: b
             </button>
             <Link to="/compte" hash="notifications" onClick={close}>
               <Bell size={16} aria-hidden /> Mes notifications{" "}
+              {unread ? <span className="bw-usermenu-count">{unread}</span> : null}
               <ChevronRight size={15} aria-hidden />
             </Link>
             {roles.length ? (

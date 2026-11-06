@@ -2,7 +2,6 @@ import { AlertTicker } from "./AlertTicker";
 import { useEffect, useRef, type ReactNode } from "react";
 import { Link } from "@tanstack/react-router";
 import { UserMenu } from "./UserMenu";
-import { HeaderInbox } from "@/components/panel/FlashCenter";
 import { DataUnavailableNotice } from "./DataUnavailableNotice";
 import { goHome } from "@/lib/ferry/voyageTrip";
 import { ChevronDown, Menu, ArrowUpRight, Route as RouteIcon, Wallet } from "lucide-react";
@@ -142,7 +141,6 @@ export function SiteHeader() {
           ))}
         </nav>
         <div className="bw-header-actions">
-          <HeaderInbox />
           {/* Sur mobile, le compte est l'onglet « Moi » de la barre du bas. */}
           <span className="hidden md:inline-flex">
             <UserMenu compact iconOnly />

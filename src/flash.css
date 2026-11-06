@@ -13922,3 +13922,154 @@ img[data-logo="dark"] {
 .bw-chat-words__list button[data-source="agent"] {
   border-style: dashed;
 }
+
+/* Salon : info BledWay épinglée (une ligne repliée, dépliable) */
+.bw-pinned {
+  margin: 0.4rem 0.6rem 0;
+  border-radius: 0.7rem;
+  border: 1px solid #d6dbe4;
+  background: #f4f6fa;
+  color: #1f2a44;
+  font-size: 0.8rem;
+  flex-shrink: 0;
+}
+.bw-pinned[data-tone="critical"] {
+  border-color: #f3b4b4;
+  background: #fdecec;
+  color: #8a1c1c;
+}
+.bw-pinned[data-tone="warning"] {
+  border-color: #f5d18f;
+  background: #fdf4e3;
+  color: #7a4a06;
+}
+.bw-pinned__bar {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  width: 100%;
+  min-height: 2.1rem;
+  padding: 0.3rem 0.6rem;
+  text-align: left;
+  color: inherit;
+}
+.bw-pinned__label {
+  font-weight: 700;
+  white-space: nowrap;
+}
+.bw-pinned__title {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.bw-pinned[data-open] .bw-pinned__title {
+  visibility: hidden;
+}
+.bw-pinned__count {
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 0.05rem 0.4rem;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.08);
+  white-space: nowrap;
+}
+.bw-pinned__list {
+  display: grid;
+  gap: 0.5rem;
+  padding: 0 0.7rem 0.6rem;
+  max-height: 40vh;
+  overflow-y: auto;
+}
+.bw-pinned__head {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin: 0;
+}
+.bw-pinned__head small {
+  margin-left: auto;
+  opacity: 0.75;
+  white-space: nowrap;
+}
+.bw-pinned__summary {
+  margin: 0.15rem 0 0.2rem;
+  line-height: 1.4;
+}
+.bw-pinned__list a {
+  font-weight: 600;
+  text-decoration: underline;
+  color: inherit;
+}
+
+/* Notifications personnelles : pastille sur l'avatar et compteur dans le menu (cloche retirée) */
+.bw-usermenu-badge {
+  position: absolute;
+  top: -0.2rem;
+  right: -0.25rem;
+  min-width: 1.1rem;
+  height: 1.1rem;
+  padding: 0 0.25rem;
+  border-radius: 999px;
+  background: #dc2626;
+  color: #fff;
+  font-size: 0.65rem;
+  font-weight: 700;
+  line-height: 1.1rem;
+  text-align: center;
+  border: 2px solid var(--card, #fff);
+}
+.bw-usermenu-count {
+  margin-left: auto;
+  min-width: 1.2rem;
+  padding: 0 0.35rem;
+  border-radius: 999px;
+  background: #dc2626;
+  color: #fff;
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-align: center;
+}
+
+/* Page Actualités : navires immobilisés et annonces graves en tête */
+.bw-news-serious {
+  display: grid;
+  gap: 0.8rem;
+  margin: 0.5rem 0 1.2rem;
+  padding: 0.9rem 1rem;
+  border: 1px solid #f3b4b4;
+  border-radius: 0.9rem;
+  background: #fdecec;
+  color: #8a1c1c;
+}
+.bw-news-serious h2 {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin: 0 0 0.3rem;
+  font-size: 1rem;
+  font-weight: 700;
+}
+.bw-news-serious ul {
+  display: grid;
+  gap: 0.4rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.bw-news-serious li {
+  display: grid;
+  gap: 0.1rem;
+}
+.bw-news-serious a {
+  font-weight: 600;
+  color: inherit;
+  text-decoration: underline;
+}
+.bw-news-serious small {
+  opacity: 0.85;
+}
+.bw-news-serious li[data-status="verifying"] {
+  color: #7a4a06;
+}

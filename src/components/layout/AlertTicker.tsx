@@ -142,7 +142,7 @@ export function AlertTicker() {
   if (!ready || (!showAlerts && !showRail)) return null;
   const open = (vesselId: string | null) => {
     if (!vesselId) {
-      window.dispatchEvent(new Event("bledway:open-inbox"));
+      window.location.assign("/actualites");
       return;
     }
     if (pathname === "/") {

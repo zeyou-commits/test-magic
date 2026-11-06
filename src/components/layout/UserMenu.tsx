@@ -17,6 +17,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useAuth } from "@/hooks/useAuth";
+import { useUnreadNoticeCount } from "@/components/panel/FlashCenter";
 import { avatarColors, moodIcon, myTravellerQuery } from "@/lib/community/travellers";
 import { useAvatarImage } from "@/lib/community/avatars";
 import { useIllustrationUrl } from "@/lib/illustrations/store";
@@ -38,6 +39,7 @@ export function UserMenu({
   iconOnly?: boolean;
 }) {
   const { user, profile, roles, signOut } = useAuth();
+  const unread = useUnreadNoticeCount(user?.id);
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const traveller = useQuery(myTravellerQuery(user?.id)).data;
@@ -107,6 +109,11 @@ export function UserMenu({
                 {initials(name) || "?"}
               </AvatarFallback>
             </Avatar>
+            {unread ? (
+              <span className="bw-usermenu-badge" aria-hidden>
+                {unread > 9 ? "9+" : unread}
+              </span>
+            ) : null}
           </button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-56">
@@ -156,6 +163,7 @@ export function UserMenu({
           <DropdownMenuItem asChild>
             <Link to="/compte" hash="notifications">
               Mes notifications
+              {unread ? <span className="bw-usermenu-count">{unread}</span> : null}
             </Link>
           </DropdownMenuItem>
           <DropdownMenuItem asChild>

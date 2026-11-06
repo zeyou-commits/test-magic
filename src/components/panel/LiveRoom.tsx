@@ -1,4 +1,5 @@
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { PinnedInfo } from "./PinnedInfo";
 import { queryOptions, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   ArrowDown,
@@ -266,6 +267,9 @@ function LiveChat({
   const chosen = useRef(new Map<string, string>());
   const gate = useCharterGate(charter);
   const [selected, setSelected] = useState<string | null>(null);
+  // Défilement ou saisie : l'info épinglée se replie pour laisser la place à la conversation.
+  const [pinActivity, setPinActivity] = useState(0);
+  const nudgePin = () => setPinActivity((value) => value + 1);
   // Signalement : confirmation avant l’envoi, puis le message disparaît pour la personne qui l’a signalé.
   const [confirmReport, setConfirmReport] = useState<string | null>(null);
   const [reported, setReported] = useState<Set<string>>(() => readReported());
@@ -608,8 +612,11 @@ function LiveChat({
           ) : null}
         </div>
       ) : null}
+      <PinnedInfo kind={kind} room={room} activity={pinActivity} />
       <ol
         ref={listRef}
+        onWheel={nudgePin}
+        onTouchMove={nudgePin}
         className="bw-chat__lines"
         aria-live="polite"
         onScroll={(event) => {
@@ -978,6 +985,7 @@ function LiveChat({
               value={text}
               maxLength={MAX_MESSAGE}
               onChange={(event) => setText(event.target.value)}
+              onFocus={nudgePin}
               placeholder={replyTo ? "Votre réponse" : "Envoyer un message"}
               aria-label="Votre message"
             />

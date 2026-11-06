@@ -120,6 +120,24 @@ const onlyEmotes = (text: string) =>
 type Present = { key: string; card: TravellerCard | null };
 export const roomKey = (kind: RoomKind, room: string) => ["bw-chat", kind, room] as const;
 
+// Messages signalés par cet appareil : masqués pour la personne qui les a signalés.
+const REPORTED_KEY = "bledway:chat-reported";
+function readReported(): Set<string> {
+  if (typeof window === "undefined") return new Set();
+  try {
+    return new Set(JSON.parse(window.localStorage.getItem(REPORTED_KEY) ?? "[]") as string[]);
+  } catch {
+    return new Set();
+  }
+}
+function saveReported(ids: Set<string>) {
+  try {
+    window.localStorage.setItem(REPORTED_KEY, JSON.stringify([...ids].slice(-300)));
+  } catch {
+    /* stockage plein ou interdit : le masquage dure le temps de la page */
+  }
+}
+
 const time = (iso: string) =>
   new Intl.DateTimeFormat("fr-FR", {
     timeZone: "Europe/Paris",
@@ -248,6 +266,10 @@ function LiveChat({
   const chosen = useRef(new Map<string, string>());
   const gate = useCharterGate(charter);
   const [selected, setSelected] = useState<string | null>(null);
+  // Signalement : confirmation avant l’envoi, puis le message disparaît pour la personne qui l’a signalé.
+  const [confirmReport, setConfirmReport] = useState<string | null>(null);
+  const [reported, setReported] = useState<Set<string>>(() => readReported());
+  const [reportDone, setReportDone] = useState(false);
   const [unread, setUnread] = useState(0);
   const [replyTo, setReplyTo] = useState<Message | null>(null);
   const [showPeople, setShowPeople] = useState(false);
@@ -298,7 +320,7 @@ function LiveChat({
   const listRef = useRef<HTMLOListElement>(null);
   const following = useRef(true);
   const lastId = useRef<string | null>(null);
-  const lines = [...messages].reverse();
+  const lines = [...messages].reverse().filter((message) => !reported.has(message.id));
   const messagePhotos = useQuery(
     photosQuery(
       "chat",
@@ -354,10 +376,23 @@ function LiveChat({
   });
   const report = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase.rpc("bw_chat_report", { p_message: id });
-      if (error) throw new Error("Signalement non envoyé.");
+      const { data, error } = await supabase.rpc("bw_chat_report", { p_message: id });
+      const result = data as { ok?: boolean; refused?: string } | null;
+      if (error || !result?.ok) throw new Error("Signalement non envoyé. Réessayez dans un instant.");
+      return id;
     },
-    onSuccess: refresh,
+    onSuccess: (id) => {
+      setReported((current) => {
+        const next = new Set(current).add(id);
+        saveReported(next);
+        return next;
+      });
+      setConfirmReport(null);
+      setSelected(null);
+      setReportDone(true);
+      window.setTimeout(() => setReportDone(false), 4000);
+      refresh();
+    },
   });
   // Parti après une inscription : le champ se vide.
   useEffect(() => {
@@ -700,13 +735,26 @@ function LiveChat({
                     </button>
                   ) : null}
                   {user && !message.me ? (
-                    <button
-                      type="button"
-                      disabled={report.isPending}
-                      onClick={() => report.mutate(message.id)}
-                    >
-                      <Flag size={13} aria-hidden /> Signaler
-                    </button>
+                    confirmReport === message.id ? (
+                      <span className="bw-chat__confirm" role="group" aria-label="Confirmer le signalement">
+                        Signaler ce message à l’équipe ?
+                        <button
+                          type="button"
+                          className="bw-chat__confirm-yes"
+                          disabled={report.isPending}
+                          onClick={() => report.mutate(message.id)}
+                        >
+                          {report.isPending ? "Envoi…" : "Oui, signaler"}
+                        </button>
+                        <button type="button" onClick={() => setConfirmReport(null)}>
+                          Annuler
+                        </button>
+                      </span>
+                    ) : (
+                      <button type="button" onClick={() => setConfirmReport(message.id)}>
+                        <Flag size={13} aria-hidden /> Signaler
+                      </button>
+                    )
                   ) : null}
                   {message.me ? (
                     <OwnMessageActions
@@ -756,6 +804,10 @@ function LiveChat({
       ) : problem ? (
         <p role="alert" className="bw-chat__error">
           {problem.message}
+        </p>
+      ) : reportDone ? (
+        <p role="status" className="bw-chat__reported">
+          Merci, le message est signalé : il est masqué pour vous et l’équipe va le relire.
         </p>
       ) : null}
       {closed ? (

@@ -26,10 +26,42 @@ type Item = {
   author: { pseudo: string };
 };
 
+type Word = { word: string; source: "equipe" | "import" | "agent" };
+const SOURCE: Record<Word["source"], string> = {
+  equipe: "ajouté par l’équipe",
+  import: "importé",
+  agent: "appris par la modération automatique",
+};
+
+/**
+ * Termes d’un fichier CSV/TXT ou d’une liste collée : un terme par ligne, ou la première colonne
+ * d’un CSV (séparateur virgule, point-virgule ou tabulation). Une ligne d’en-tête « mot », « terme »
+ * ou « word » est ignorée.
+ */
+export function parseWordList(text: string): string[] {
+  const out: string[] = [];
+  const lines = text.replace(String.fromCharCode(65279), "").split(String.fromCharCode(10));
+  for (const raw of lines) {
+    let cell = raw.trim();
+    if (!cell) continue;
+    if (cell.startsWith("\"")) {
+      const end = cell.indexOf("\"", 1);
+      cell = end > 0 ? cell.slice(1, end) : cell.slice(1);
+    } else {
+      cell = cell.split(/[;,\t]/)[0] ?? "";
+    }
+    cell = cell.trim().toLowerCase();
+    if (!cell || ["mot", "mots", "terme", "termes", "word", "words", "expression"].includes(cell)) continue;
+    out.push(cell);
+  }
+  return [...new Set(out)];
+}
+
 /** Salons : ce que la modération automatique a masqué ou ce qui a été signalé, et les mots refusés. */
 export function ChatModeration() {
   const client = useQueryClient();
   const [word, setWord] = useState("");
+  const [bulk, setBulk] = useState("");
   const items = useQuery({
     queryKey: ["admin", "chat", "moderation"],
     queryFn: async () => {
@@ -43,9 +75,9 @@ export function ChatModeration() {
   const words = useQuery({
     queryKey: ["admin", "chat", "words"],
     queryFn: async () => {
-      const { data, error } = await db.from("bw_chat_words").select("word").order("word");
+      const { data, error } = await db.from("bw_chat_words").select("word,source").order("word");
       if (error) return null;
-      return (data as { word: string }[]).map((row) => row.word);
+      return data as Word[];
     },
     retry: false,
   });
@@ -89,6 +121,22 @@ export function ChatModeration() {
     },
     onSuccess: () => {
       setWord("");
+      refresh();
+    },
+    onError: (error: Error) => toast.error(error.message),
+  });
+  const importWords = useMutation({
+    mutationFn: async (list: string[]) => {
+      if (!list.length) throw new Error("Aucun terme trouvé dans ce fichier.");
+      const { data, error } = await db.rpc("bw_chat_words_import", { p_words: list });
+      if (error) throw error;
+      return data as { added: number; received: number };
+    },
+    onSuccess: (result) => {
+      setBulk("");
+      toast.success(
+        `${result.added} terme${result.added > 1 ? "s" : ""} ajouté${result.added > 1 ? "s" : ""} sur ${result.received} (les doublons sont ignorés).`,
+      );
       refresh();
     },
     onError: (error: Error) => toast.error(error.message),
@@ -168,7 +216,12 @@ export function ChatModeration() {
           </ul>
         </>
       ) : null}
-      <h3>Mots refusés</h3>
+      <h3>Mots et expressions refusés ({words.data?.length ?? 0})</h3>
+      <p className="bw-chat-words__help">
+        Refusés à l’envoi, quelle que soit l’écriture : majuscules, accents, lettres répétées ou
+        séparées, chiffres à la place des lettres, écriture arabe. La modération automatique ajoute
+        elle-même les termes qu’elle repère dans les messages qu’elle masque.
+      </p>
       <form
         className="bw-chat-words"
         onSubmit={(event) => {
@@ -186,15 +239,47 @@ export function ChatModeration() {
           Ajouter
         </Button>
       </form>
+      <details className="bw-chat-words__import">
+        <summary>Importer une liste (CSV, TXT ou copier-coller)</summary>
+        <p>Un terme par ligne, ou la première colonne d’un tableur enregistré en CSV.</p>
+        <input
+          type="file"
+          accept=".csv,.txt,text/csv,text/plain"
+          aria-label="Choisir un fichier de termes"
+          disabled={importWords.isPending}
+          onChange={async (event) => {
+            const file = event.target.files?.[0];
+            event.target.value = "";
+            if (file) importWords.mutate(parseWordList(await file.text()));
+          }}
+        />
+        <textarea
+          value={bulk}
+          onChange={(event) => setBulk(event.target.value)}
+          rows={5}
+          placeholder={["va te faire voir", "fils de chien", "..."].join(String.fromCharCode(10))}
+          aria-label="Coller une liste de termes"
+        />
+        <Button
+          size="sm"
+          disabled={!bulk.trim() || importWords.isPending}
+          onClick={() => importWords.mutate(parseWordList(bulk))}
+        >
+          {importWords.isPending ? "Import…" : `Importer ${parseWordList(bulk).length || ""} terme(s)`}
+        </Button>
+      </details>
       <p className="bw-chat-words__list">
-        {(words.data ?? []).map((value) => (
+        {(words.data ?? []).map((item) => (
           <button
-            key={value}
+            key={item.word}
             type="button"
-            onClick={() => removeWord.mutate(value)}
-            aria-label={`Retirer ${value}`}
+            data-source={item.source}
+            title={`${SOURCE[item.source] ?? ""} · cliquer pour retirer`}
+            onClick={() => removeWord.mutate(item.word)}
+            aria-label={`Retirer ${item.word}`}
           >
-            {value} ×
+            {item.source === "agent" ? "🤖 " : ""}
+            {item.word} ×
           </button>
         ))}
       </p>

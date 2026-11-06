@@ -13860,3 +13860,65 @@ img[data-logo="dark"] {
 .bw-ticket-pages[data-zoom] img {
   width: 100%;
 }
+
+/* Salon : confirmation et retour du signalement */
+.bw-chat__confirm {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--foreground, #1f2937);
+}
+.bw-chat__confirm > button {
+  border-radius: 999px;
+  padding: 0.2rem 0.6rem;
+  border: 1px solid currentColor;
+  font-size: 0.75rem;
+}
+.bw-chat__confirm > .bw-chat__confirm-yes {
+  background: #b91c1c;
+  border-color: #b91c1c;
+  color: #fff;
+}
+.bw-chat__reported {
+  margin: 0.4rem 0.75rem;
+  padding: 0.45rem 0.7rem;
+  border-radius: 0.6rem;
+  background: #ecfdf5;
+  color: #065f46;
+  font-size: 0.8rem;
+}
+
+/* Admin : import des mots refusés */
+.bw-chat-words__help {
+  font-size: 0.8rem;
+  opacity: 0.8;
+}
+.bw-chat-words__import {
+  margin: 0.5rem 0;
+  display: grid;
+  gap: 0.4rem;
+}
+.bw-chat-words__import[open] {
+  padding: 0.6rem;
+  border: 1px solid var(--border, #e5e7eb);
+  border-radius: 0.6rem;
+}
+.bw-chat-words__import summary {
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 0.85rem;
+}
+.bw-chat-words__import textarea {
+  width: 100%;
+  font: inherit;
+  font-size: 0.85rem;
+  padding: 0.4rem;
+  border: 1px solid var(--border, #e5e7eb);
+  border-radius: 0.4rem;
+}
+.bw-chat-words__list button[data-source="agent"] {
+  border-style: dashed;
+}

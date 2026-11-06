@@ -1,8 +1,11 @@
 /**
- * Modération automatique des photos de salon, sur l'appareil : modèle open source NSFWJS (MIT),
- * chargé seulement quand quelqu'un joint une photo. Aucune image n'est envoyée à un service tiers.
- * Seuils prudents : une photo douteuse est refusée, la personne peut en choisir une autre.
+ * Modération automatique des photos, sur l'appareil : modèle open source NSFWJS (MIT), chargé
+ * seulement quand quelqu'un joint une photo. Aucune image n'est envoyée à un service tiers.
+ * Le serveur refait le même contrôle pour les salons (chatPhoto.server.ts) : ce filtre-ci sert à
+ * répondre tout de suite, il ne suffit pas à lui seul.
  */
+import { NSFW_REFUSAL, isDoubtful, isExplicit, nsfwScores, type NsfwScores } from "./nsfwVerdict";
+
 type Classifier = {
   classify: (image: HTMLImageElement) => Promise<{ className: string; probability: number }[]>;
 };
@@ -37,21 +40,32 @@ export function warmChatPhotoCheck() {
   void getModel().catch(() => undefined);
 }
 
+/** Les scores du modèle pour une image (lien blob, ou lien signé du stockage). */
+export async function scorePhoto(url: string): Promise<NsfwScores> {
+  const classifier = await getModel();
+  const image = new Image();
+  image.crossOrigin = "anonymous";
+  image.src = url;
+  await image.decode();
+  return nsfwScores(await classifier.classify(image));
+}
+
+/** Contrôle avant envoi, pour toutes les photos (salons, avis, signalements). */
 export async function checkChatPhoto(url: string): Promise<PhotoCheck> {
-  let classifier: Classifier;
+  let scores: NsfwScores;
   try {
-    classifier = await getModel();
+    scores = await scorePhoto(url);
   } catch {
     return { ok: false, reason: "Vérification de la photo impossible pour le moment. Réessayez." };
   }
-  const image = new Image();
-  image.src = url;
-  await image.decode();
-  const scores = Object.fromEntries(
-    (await classifier.classify(image)).map((item) => [item.className, item.probability]),
-  ) as Record<string, number>;
-  const explicit = (scores["Porn"] ?? 0) + (scores["Hentai"] ?? 0);
-  if (explicit >= 0.4 || (scores["Sexy"] ?? 0) >= 0.7)
-    return { ok: false, reason: "Cette photo ne peut pas être publiée dans les salons." };
-  return { ok: true };
+  return isExplicit(scores) ? { ok: false, reason: NSFW_REFUSAL } : { ok: true };
+}
+
+/** File de modération : la photo est-elle à flouter par défaut ? En cas de doute, oui. */
+export async function isDoubtfulPhoto(url: string) {
+  try {
+    return isDoubtful(await scorePhoto(url));
+  } catch {
+    return true;
+  }
 }

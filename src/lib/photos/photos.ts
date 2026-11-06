@@ -116,26 +116,49 @@ export async function submitPhoto(
   }
 }
 
-/** Salon : photo déjà filtrée sur l'appareil, publiée avec mon dernier message du salon. */
+/** Le serveur relit les photos de salon en JPEG : une photo WebP est réencodée avant l'envoi. */
+async function asJpeg(photo: PreparedPhoto) {
+  if (photo.blob.type === "image/jpeg") return photo.blob;
+  const bitmap = await createImageBitmap(photo.blob);
+  const canvas = document.createElement("canvas");
+  canvas.width = bitmap.width;
+  canvas.height = bitmap.height;
+  canvas.getContext("2d")!.drawImage(bitmap, 0, 0);
+  bitmap.close();
+  const blob = await new Promise<Blob | null>((resolve) =>
+    canvas.toBlob(resolve, "image/jpeg", 0.85),
+  );
+  if (!blob) throw new Error("Conversion impossible sur ce navigateur.");
+  return blob;
+}
+
+/**
+ * Salon : photo filtrée sur l'appareil, déposée en attente, puis contrôlée et publiée par le
+ * serveur avec mon dernier message du salon.
+ */
 export async function sendChatPhoto(
   roomKind: string,
   room: string,
   userId: string,
   photo: PreparedPhoto,
 ) {
-  const path = `salons/${userId}/${crypto.randomUUID()}.${extension(photo.blob)}`;
-  await upload(PUBLIC_BUCKET, path, photo.blob);
-  const { error } = await db.rpc("bw_photo_chat", {
-    p_kind: roomKind,
-    p_room: room,
-    p_path: path,
-    p_width: photo.width,
-    p_height: photo.height,
-  });
-  if (error) {
-    await db.storage.from(PUBLIC_BUCKET).remove([path]);
-    throw new Error(readable(error.message, "La photo n’a pas pu être publiée."));
+  const path = `${userId}/salon-${crypto.randomUUID()}.jpg`;
+  await upload(PENDING_BUCKET, path, await asJpeg(photo));
+  const { publishChatPhotoFn } = await import("./chatPhoto.functions");
+  let result: Awaited<ReturnType<typeof publishChatPhotoFn>>;
+  try {
+    result = await publishChatPhotoFn({
+      data: { pendingPath: path, roomKind, room, width: photo.width, height: photo.height },
+    });
+  } catch {
+    throw new Error("La photo n’a pas pu être publiée. Réessayez.");
   }
+  if (!result.ok)
+    throw new Error(
+      result.reason.startsWith("rpc:")
+        ? readable(result.reason.slice(4), "La photo n’a pas pu être publiée.")
+        : result.reason,
+    );
 }
 
 export const photoUrl = (path: string) =>

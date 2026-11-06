@@ -48,7 +48,7 @@ export function PhotoPicker({
   onConsent: (value: boolean) => void;
   /** Ce qui se passe ensuite (« visible après validation », « publiée tout de suite »…). */
   note: string;
-  /** Contrôle supplémentaire (filtre automatique des salons). */
+  /** Contrôle supplémentaire, après le filtre de contenu explicite commun à toutes les photos. */
   check?: (photo: PreparedPhoto) => Promise<string | null>;
   /** Fichiers choisis ailleurs (icônes du salon) : traités dès leur arrivée. */
   incoming?: File[] | null;
@@ -63,6 +63,7 @@ export function PhotoPicker({
   useEffect(() => {
     void import("@/lib/photos/faces").then((module) => module.warmFaceDetector());
     void import("@/lib/photos/plates").then((module) => module.warmPlateDetector());
+    void import("@/lib/photos/nsfw").then((module) => module.warmChatPhotoCheck());
   }, []);
   const add = async (files: FileList | File[] | null) => {
     if (!files?.length) return;
@@ -74,7 +75,9 @@ export function PhotoPicker({
     for (const file of [...files].slice(0, max - next.length)) {
       try {
         const photo = await preparePhoto(file);
-        const refused = check ? await check(photo) : null;
+        // Contenu explicite refusé partout, avant tout envoi (le serveur recontrôle les salons).
+        const verdict = await (await import("@/lib/photos/nsfw")).checkChatPhoto(photo.url);
+        const refused = verdict.ok ? (check ? await check(photo) : null) : verdict.reason;
         if (refused) {
           URL.revokeObjectURL(photo.url);
           setProblem(refused);

@@ -61,13 +61,6 @@ import { AuthorAvatar, StaffBadge, StaffTools, type ChatAuthor } from "./StaffCh
 import { PHOTO_ACCEPT, PhotoPicker, PhotoStrip } from "@/components/photos/Photos";
 import { photosKey, photosQuery, sendChatPhoto, type PreparedPhoto } from "@/lib/photos/photos";
 
-/** Filtre automatique des photos de salon (modèle chargé seulement à ce moment-là). */
-async function checkPhoto(photo: PreparedPhoto) {
-  const { checkChatPhoto } = await import("@/lib/photos/nsfw");
-  const result = await checkChatPhoto(photo.url);
-  return result.ok ? null : result.reason;
-}
-
 const supabase = typedSupabase as unknown as SupabaseClient;
 export const MAX_MESSAGE = 200;
 
@@ -922,7 +915,6 @@ function LiveChat({
                 hideSources
                 consent={photoConsent}
                 onConsent={setPhotoConsent}
-                check={checkPhoto}
                 note="Une photo par personne dans ce salon, vérifiée automatiquement puis publiée avec votre message."
               />
               {chatPhotos.length ? (

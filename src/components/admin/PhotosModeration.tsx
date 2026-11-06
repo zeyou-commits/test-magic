@@ -1,6 +1,7 @@
+import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { Check, Flag, X } from "lucide-react";
+import { Check, EyeOff, Flag, X } from "lucide-react";
 import { toast } from "sonner";
 import { supabase as typedSupabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -112,9 +113,7 @@ export function PhotosModeration() {
           {items.map((item) => (
             <li key={item.id} className="overflow-hidden rounded-xl border bg-white">
               {item.url ? (
-                <a href={item.url} target="_blank" rel="noreferrer">
-                  <img src={item.url} alt="" className="aspect-[4/3] w-full object-cover" />
-                </a>
+                <ModeratedImage url={item.url} />
               ) : (
                 <div className="grid aspect-[4/3] place-items-center bg-muted text-xs">
                   Image indisponible
@@ -154,5 +153,54 @@ export function PhotosModeration() {
         </ul>
       )}
     </section>
+  );
+}
+
+/**
+ * Floutée tant que le modèle n'a pas répondu, et par défaut si elle semble explicite : l'équipe ne
+ * tombe pas sur une image choquante sans l'avoir demandé.
+ */
+function ModeratedImage({ url }: { url: string }) {
+  const [doubtful, setDoubtful] = useState<boolean | null>(null);
+  const [revealed, setRevealed] = useState(false);
+  useEffect(() => {
+    let stale = false;
+    setDoubtful(null);
+    setRevealed(false);
+    void import("@/lib/photos/nsfw")
+      .then((m) => m.isDoubtfulPhoto(url))
+      .then((value) => !stale && setDoubtful(value));
+    return () => {
+      stale = true;
+    };
+  }, [url]);
+  const hidden = !revealed && doubtful !== false;
+  return (
+    <div className="relative overflow-hidden">
+      <a href={hidden ? undefined : url} target="_blank" rel="noreferrer">
+        <img
+          src={url}
+          alt=""
+          className={`aspect-[4/3] w-full object-cover ${hidden ? "scale-110 blur-2xl" : ""}`}
+        />
+      </a>
+      {hidden ? (
+        <button
+          type="button"
+          onClick={() => setRevealed(true)}
+          className="absolute inset-0 grid place-items-center gap-1 bg-black/30 p-3 text-center text-xs font-medium text-white"
+        >
+          {doubtful === null ? (
+            <span>Analyse de la photo…</span>
+          ) : (
+            <span className="grid justify-items-center gap-1">
+              <EyeOff className="size-5" aria-hidden />
+              Contenu sensible probable
+              <span className="underline">Afficher quand même</span>
+            </span>
+          )}
+        </button>
+      ) : null}
+    </div>
   );
 }

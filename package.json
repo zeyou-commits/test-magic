@@ -61,6 +61,7 @@
     "date-fns": "^4.1.0",
     "embla-carousel-react": "^8.6.0",
     "input-otp": "^1.4.2",
+    "jpeg-js": "0.4.4",
     "lucide-react": "^0.575.0",
     "maplibre-gl": "^6.9.0",
     "nsfwjs": "4.4.0",

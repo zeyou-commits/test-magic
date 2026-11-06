@@ -38,6 +38,7 @@ interface Proposal {
   status: Status;
   applied: boolean;
   decided_at: string | null;
+  decision_note?: string | null;
   created_at: string;
   vessel_id: string | null;
   company_id: string | null;
@@ -376,11 +377,14 @@ export function WatchAdmin() {
                   <p className="bw-watch__decided">
                     {proposal.status === "approved"
                       ? proposal.applied
-                        ? "Approuvée et appliquée"
+                        ? proposal.decision_note?.startsWith("Appliquée automatiquement")
+                          ? "Appliquée automatiquement (source officielle)"
+                          : "Approuvée et appliquée"
                         : "Approuvée, sans modification automatique"
                       : "Refusée"}
                     {proposal.decided_at ? ` · ${dateTime(proposal.decided_at)}` : ""}
-                    {proposal.kind === "crossing" && proposal.applied ? (
+                    {["crossing", "schedule_fix", "new_departure"].includes(proposal.kind) &&
+                    proposal.applied ? (
                       <Button
                         size="sm"
                         variant="ghost"

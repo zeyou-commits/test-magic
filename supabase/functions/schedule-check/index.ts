@@ -84,16 +84,19 @@ async function deposit(
   source: { name: string; url: string },
   companyId: string | null,
   proposals: (Proposal | Record<string, unknown>)[],
+  /** Source officielle complète : corrections, ajouts et arrivées constatées appliqués sans clic. */
+  auto = false,
 ) {
-  if (!proposals.length) return { inserted: 0, skipped: 0, known: 0 };
+  if (!proposals.length) return { inserted: 0, applied: 0, skipped: 0, known: 0 };
   const { data, error } = await db.rpc("bw_schedule_propose", {
     p_source_name: source.name,
     p_source_url: source.url,
     p_company: companyId,
     p_proposals: proposals,
+    p_auto: auto,
   });
   if (error) throw new Error(`Dépôt refusé : ${error.message}`);
-  return data as { inserted: number; skipped: number; known: number };
+  return data as { inserted: number; applied: number; skipped: number; known: number };
 }
 
 async function checkCompany(
@@ -117,7 +120,7 @@ async function checkCompany(
     now: new Date(),
     allowRemovals,
   });
-  return { found: proposals.length, ...(await deposit(db, source, company.id, proposals)) };
+  return { found: proposals.length, ...(await deposit(db, source, company.id, proposals, allowRemovals)) };
 }
 
 async function checkBerths(db: SupabaseClient, ref: Reference) {
@@ -157,7 +160,7 @@ async function checkBerths(db: SupabaseClient, ref: Reference) {
       }));
       results[port] = {
         berthed: berthed.length,
-        ...(await deposit(db, { name: `Capitainerie de ${port}`, url }, null, found)),
+        ...(await deposit(db, { name: `Capitainerie de ${port}`, url }, null, found, true)),
       };
     } catch (error) {
       results[port] = { error: (error as Error).message };

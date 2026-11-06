@@ -42,6 +42,7 @@ import { VesselBoardingNote, VesselIdentity } from "./VesselFacts";
 import { MakeMyTrip } from "./MakeMyTrip";
 import { HelpRequests } from "@/components/community/HelpRequests";
 import { FollowButton } from "./FollowButton";
+import { PersonalImpact } from "./PersonalImpact";
 import { TripPreparation } from "./TripPreparation";
 import { JourneyPlanner } from "./JourneyPlanner";
 import { MiniFerry } from "./MiniFerry";
@@ -385,7 +386,12 @@ export function TripRecap({
         </div>
       </section>
 
-      <DepartureAlternatives departure={departure} onSelect={onSelect} />
+      {/* Je suis cette traversée : vue personnelle (cause, conseil, 2 alternatives). Sinon, la liste générale. */}
+      {follow.data?.active ? (
+        <PersonalImpact departure={departure} onSelect={onSelect} />
+      ) : (
+        <DepartureAlternatives departure={departure} onSelect={onSelect} />
+      )}
       {!cancelled ? (
         <ActionHub
           tiles={[

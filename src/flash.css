@@ -14171,3 +14171,86 @@ img[data-logo="dark"] {
     overflow-y: auto;
   }
 }
+
+/* Ma traversée touchée : vue personnelle, courte, avec 2 alternatives. */
+.bw-impact {
+  display: grid;
+  gap: 0.45rem;
+  margin: 0.75rem 0;
+  padding: 0.8rem 0.9rem;
+  border-radius: 14px;
+  border: 1px solid #f5d18f;
+  background: #fdf4e3;
+  color: #6b4207;
+}
+.bw-impact[data-tone="critical"] {
+  border-color: #f3b4b4;
+  background: #fdecec;
+  color: #8a1c1c;
+}
+.bw-impact__title {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.4rem;
+  margin: 0;
+  font-weight: 800;
+  font-size: 0.95rem;
+  line-height: 1.3;
+}
+.bw-impact__advice {
+  margin: 0;
+  font-size: 0.85rem;
+  line-height: 1.4;
+}
+.bw-impact__call {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  justify-self: start;
+  padding: 0.3rem 0.7rem;
+  border-radius: 999px;
+  background: #ffffff;
+  border: 1px solid currentColor;
+  font-weight: 700;
+  font-size: 0.8rem;
+}
+.bw-impact__sub {
+  margin: 0.2rem 0 0;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.bw-impact ul {
+  display: grid;
+  gap: 0.35rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.bw-impact li button {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  width: 100%;
+  padding: 0.5rem 0.65rem;
+  border-radius: 10px;
+  background: #ffffff;
+  color: #1f2a37;
+  text-align: left;
+}
+.bw-impact li span {
+  display: grid;
+  min-width: 0;
+}
+.bw-impact li small {
+  color: #4f6b5e;
+  font-size: 0.75rem;
+}
+.bw-impact__more {
+  justify-self: start;
+  font-weight: 700;
+  font-size: 0.82rem;
+  text-decoration: underline;
+}

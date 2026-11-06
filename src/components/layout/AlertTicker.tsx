@@ -337,8 +337,8 @@ export function AlertTicker() {
       {showAlerts && !merged ? alertBlock() : null}
       {showRail ? (
         <div className="bw-news-rail" role="region" aria-label="Fil d'actualités">
-          <Link to="/actualites" className="bw-news-rail__chip">
-            <i aria-hidden /> Actus
+          <Link to="/actualites" className="bw-news-rail__chip" aria-label="Toutes les actualités">
+            <i aria-hidden />
           </Link>
           <div className="bw-news-rail__window">
             <div className="bw-news-rail__track" style={{ animationDuration: `${railSeconds}s` }}>

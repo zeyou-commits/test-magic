@@ -140,7 +140,11 @@ export function RoomPicker({
   return (
     <>
       <Dialog open={open} onOpenChange={(next) => (next ? onOpenChange(true) : close())}>
-        <DialogContent className="bw-room-picker">
+        <DialogContent
+          className="bw-room-picker"
+          // Le champ de recherche ne prend pas le focus : le clavier ne cache pas la liste.
+          onOpenAutoFocus={(event) => event.preventDefault()}
+        >
           <DialogHeader>
             <DialogTitle>
               {title ?? (questionsFirst ? "Choisir votre ligne" : "Choisir votre traversée")}

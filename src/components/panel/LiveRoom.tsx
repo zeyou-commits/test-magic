@@ -605,6 +605,12 @@ function LiveChat({
           ) : null}
         </div>
       ) : null}
+      {kind === "crossing" ? (
+        <p className="bw-chat__context">
+          Vous êtes dans le salon des voyageurs de cette traversée. Une autre date ? Touchez « Autres
+          salons ».
+        </p>
+      ) : null}
       <PinnedInfo kind={kind} room={room} activity={pinActivity} />
       <ol
         ref={listRef}

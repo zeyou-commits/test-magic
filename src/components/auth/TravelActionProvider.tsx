@@ -155,10 +155,6 @@ export function TravelActionProvider({ children }: { children: ReactNode }) {
         }}
       >
         <DialogContent className="bw-travel-dialog" onClick={(event) => event.stopPropagation()}>
-          <div className="bw-travel-dialog-visual">
-            <Ship className="size-8" aria-hidden />
-            <span>Votre voyage, à portée de main</span>
-          </div>
           <div className="bw-travel-dialog-body">
             <DialogTitle className="font-display text-2xl leading-tight">
               {saved
@@ -192,36 +188,6 @@ export function TravelActionProvider({ children }: { children: ReactNode }) {
                       ? "Tout est gratuit et regroupé dans votre espace voyageur."
                       : "C’est gratuit, et ça vous accompagne de la route jusqu’au bled."}
             </DialogDescription>
-            {!saved && !draft && action?.type === "follow" && action.kind !== "company" ? (
-              <ul className="bw-travel-perks">
-                <li>
-                  <BellRing size={17} aria-hidden />
-                  <span>
-                    <b>Recevez les changements connus et vérifiés</b> concernant cette traversée :
-                    retard, report, annulation
-                    <DeviceAlertState />
-                  </span>
-                </li>
-                <li>
-                  <Navigation size={17} aria-hidden />
-                  <span>
-                    <b>Votre bateau suivi</b>, du départ jusqu’à la sortie du port
-                  </span>
-                </li>
-                <li>
-                  <MessagesSquare size={17} aria-hidden />
-                  <span>
-                    <b>Le salon de votre traversée</b>, pour échanger avec les autres passagers
-                  </span>
-                </li>
-                <li>
-                  <ClipboardCheck size={17} aria-hidden />
-                  <span>
-                    <b>Vos préparatifs</b>, étape par étape, sans rien oublier
-                  </span>
-                </li>
-              </ul>
-            ) : null}
             {action?.type === "follow" && action.traveller === undefined && !saved ? (
               <TripQuestion
                 action={action}
@@ -332,10 +298,12 @@ export function TravelActionProvider({ children }: { children: ReactNode }) {
                 {pushMessage}
               </p>
             )}
-            <p className="mt-5 text-xs leading-relaxed text-muted-foreground">
-              Les préparatifs concernent uniquement vos traversées personnelles. Vous pouvez
-              modifier vos préférences de notification à tout moment.
-            </p>
+            {!saved && action?.type === "follow" && action.traveller !== undefined ? (
+              <p className="mt-3 text-xs leading-relaxed text-muted-foreground">
+                Changements de la traversée, bateau suivi en direct, salon des passagers
+                {action.traveller ? " et préparatifs pas à pas" : ""}. Modifiable à tout moment.
+              </p>
+            ) : null}
           </div>
         </DialogContent>
       </Dialog>

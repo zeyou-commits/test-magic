@@ -16,6 +16,7 @@ import { portsQuery } from "@/lib/ferry/queries";
 import { formatDate } from "@/lib/ferry/format";
 import { FollowCenter } from "@/components/panel/FollowCenter";
 import { NotificationSettings } from "@/components/account/NotificationSettings";
+import { NotificationInbox } from "@/components/account/NotificationInbox";
 import { MyTickets } from "@/components/tickets/MyTickets";
 import { Bell, Heart, MessageSquare, UserRound, LogOut, ArrowLeft } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -103,7 +104,7 @@ function AccountPage() {
           <TabsTrigger value="voyages"><Heart className="size-4"/>Mes voyages</TabsTrigger><TabsTrigger value="notifications"><Bell className="size-4"/>Notifications</TabsTrigger><TabsTrigger value="profil"><UserRound className="size-4"/>Mon profil</TabsTrigger><TabsTrigger value="contributions"><MessageSquare className="size-4"/>Contributions</TabsTrigger>
         </TabsList>
         <TabsContent value="voyages"><MyTickets /><FollowCenter userId={user.id}/></TabsContent>
-        <TabsContent value="notifications"><NotificationSettings userId={user.id}/></TabsContent>
+        <TabsContent value="notifications"><NotificationInbox userId={user.id}/><NotificationSettings userId={user.id}/></TabsContent>
         <TabsContent value="profil"><section className="bw-account-section"><h2 className="font-display text-xl font-semibold">Votre profil voyageur</h2><p className="mt-1 text-sm text-muted-foreground">Votre cabas, votre pseudo et votre humeur accompagnent vos contributions.</p><MyTravellerEditor /><div className="mt-5 border-t border-border pt-4"><p className="text-xs text-muted-foreground">Adresse de connexion (jamais visible des autres voyageurs)</p><p className="mt-1 break-all text-sm font-medium">{user.email}</p></div>{isAdmin && <Link to="/admin" className="mt-6 inline-flex text-xs font-semibold text-primary underline">Ouvrir l’espace équipe</Link>}</section></TabsContent>
         <TabsContent value="contributions"><section className="bw-account-section"><h2 className="font-display text-xl font-semibold">Mes contributions</h2><MyEntityReviews userId={user.id}/><MyReviews userId={user.id}/><MyReports userId={user.id}/></section></TabsContent>
       </Tabs>

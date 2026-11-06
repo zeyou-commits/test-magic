@@ -393,7 +393,8 @@ export function TripRecap({
               id: "salon",
               label: "Salon",
               count: roomFeed?.messages.length,
-              onClick: () => setPicker("salon"),
+              // Le salon de cette traversée, directement (les autres salons restent à un clic).
+              onClick: () => enterRoom("crossing", departure.id),
             },
             {
               id: "questions",

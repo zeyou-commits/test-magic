@@ -29,6 +29,14 @@ function TripSteps({ action, onAnswer }: { action: Follow; onAnswer: (next: Foll
   const [chosen, setChosen] = useState<string | null>(null);
   const [chosenReturn, setChosenReturn] = useState<string | null>(null);
   const [datePurpose, setDatePurpose] = useState<"voyageur" | "proche">("voyageur");
+  // Venu d'une traversée précise (?select=departure) : elle est proposée seule, les autres dates
+  // restent à un clic. Sinon : les 3 prochaines, puis « Voir plus ».
+  const [contextDeparture] = useState<string | null>(() => {
+    if (typeof window === "undefined") return null;
+    const params = new URLSearchParams(window.location.search);
+    return params.get("select") === "departure" ? params.get("id") : null;
+  });
+  const [showAll, setShowAll] = useState(false);
   const { data: routes = [] } = useQuery(routesQuery);
   const { data: ports = [] } = useQuery(portsQuery);
   const { trip: myTrip } = useMyTrip();
@@ -63,11 +71,21 @@ function TripSteps({ action, onAnswer }: { action: Follow; onAnswer: (next: Foll
   if (stage === "date") return <div className="bw-trip-question">
     <p className="bw-trip-question__title"><CalendarDays size={18} aria-hidden /> {datePurpose === "proche" ? "Quelle traversée suit votre proche ?" : "Quelle traversée est la vôtre ?"}</p>
     {departures.isPending ? <p>Recherche des prochains départs…</p> : departures.isError ? <p role="alert">Départs indisponibles pour le moment.</p> : departures.data?.length ? <div className="grid max-h-64 gap-2 overflow-y-auto" role="radiogroup" aria-label="Choisir ma traversée">
-      {departures.data.map((departure) => { const info = routeInfo(departure.route_id); return <label key={departure.id} className="bw-trip-question__date" data-on={chosen === departure.id || undefined}>
+      {(() => {
+        const all = departures.data;
+        const known = contextDeparture ? all.find((item) => item.id === contextDeparture) : undefined;
+        if (known && !chosen) queueMicrotask(() => setChosen(known.id));
+        return showAll ? all : known ? [known] : all.slice(0, 3);
+      })().map((departure) => { const info = routeInfo(departure.route_id); return <label key={departure.id} className="bw-trip-question__date" data-on={chosen === departure.id || undefined}>
         <input type="radio" name="trip-date" checked={chosen === departure.id} onChange={() => setChosen(departure.id)} />
         <span><strong>{formatDateTime(departure.departure_at, info.zone)}</strong><small>{info.label}</small></span>
       </label>; })}
     </div> : <p>Aucun départ publié pour ce bateau. Vous pouvez le suivre sans déclarer de voyage.</p>}
+    {!showAll && (departures.data?.length ?? 0) > (contextDeparture && departures.data?.some((item) => item.id === contextDeparture) ? 1 : 3) ? (
+      <button type="button" className="w-full py-1 text-sm font-semibold text-primary underline underline-offset-2" onClick={() => setShowAll(true)}>
+        {contextDeparture ? "Une autre date ?" : "Voir plus de dates"}
+      </button>
+    ) : null}
     <button type="button" className="bw-action-primary w-full" disabled={!chosen} onClick={() => {
       if (datePurpose === "proche" && chosen) {
         const picked = departures.data?.find((item) => item.id === chosen);

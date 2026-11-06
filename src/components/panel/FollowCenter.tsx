@@ -5,7 +5,6 @@ import { TripPreparation } from "./TripPreparation";
 import { tripDirection } from "@/lib/ferry/preparation";
 import { VesselAlertTag } from "./VesselAlert";
 import { useTravelAction } from "@/hooks/useTravelAction";
-import { NotificationInbox } from "@/components/account/NotificationInbox";
 import { useTravelFollows } from "@/hooks/useTravelFollows";
 import { useMyJourneys } from "@/lib/ferry/journey";
 
@@ -212,7 +211,6 @@ export function FollowCenter({ userId }: { userId: string }) {
           </div>
         )}
       </section>
-      <NotificationInbox userId={userId} />
     </>
   );
 }

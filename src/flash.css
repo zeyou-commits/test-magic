@@ -14073,3 +14073,63 @@ img[data-logo="dark"] {
 .bw-news-serious li[data-status="verifying"] {
   color: #7a4a06;
 }
+
+/* Passe UX du 07/11/2026 */
+/* Fiche traversée : partage et cœur tiennent dans la carte (le cœur était coupé). */
+.bw-recap__head > div:first-child {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.bw-recap__personal-actions {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 6px;
+}
+.bw-recap__personal-actions > * {
+  flex: none;
+}
+.bw-recap__personal-actions button {
+  width: 40px;
+  height: 40px;
+  min-width: 40px;
+}
+/* Bandeau Actus : une pastille à la place de l'étiquette, texte plus petit. */
+.bw-news-rail {
+  gap: 8px;
+  min-height: 30px;
+  padding-left: 8px;
+  font-size: 12px;
+}
+.bw-news-rail__chip {
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.16);
+}
+.bw-news-rail img {
+  max-height: 16px;
+  width: auto;
+}
+/* Choix du salon : le compteur de messages reste lisible, même sur la traversée en cours. */
+.bw-room-picker li button b,
+.bw-room-picker li button[aria-current="true"] b {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: #ffffff;
+  color: #0e6b3b;
+  border: 1px solid #b7dcc6;
+  font-size: 12px;
+  font-weight: 800;
+}
+/* Salon de traversée : une ligne d'information en entrant. */
+.bw-chat__context {
+  margin: 0.35rem 0.75rem 0;
+  font-size: 0.74rem;
+  line-height: 1.35;
+  color: #4f6b5e;
+}

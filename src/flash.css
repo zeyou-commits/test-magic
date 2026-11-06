@@ -14133,3 +14133,41 @@ img[data-logo="dark"] {
   line-height: 1.35;
   color: #4f6b5e;
 }
+
+/* Tablette (portrait et paysage, 600–1180 px) : fenêtres plus larges, listes sur deux colonnes,
+   plus de longues colonnes étroites au milieu de l'écran. */
+@media (min-width: 600px) and (max-width: 1180px) {
+  .bw-room-picker {
+    width: min(680px, calc(100vw - 48px));
+    max-width: none;
+    max-height: 78dvh;
+    padding: 24px 24px 18px;
+  }
+  .bw-room-picker__list section ul {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+  }
+  .bw-room-picker li button {
+    height: 100%;
+    border: 1px solid #e3ebe6;
+    border-radius: 12px;
+  }
+  .bw-chat-window {
+    max-width: min(640px, calc(100vw - 48px));
+    height: min(82dvh, 900px);
+  }
+  .bw-travel-dialog,
+  .bw-ticket-dialog,
+  .bw-trip-share-dialog,
+  .bw-profile-dialog,
+  .bw-room-invite,
+  .bw-charter,
+  .bw-location-help,
+  .bw-mood-dialog {
+    width: min(600px, calc(100vw - 48px));
+    max-width: none;
+    max-height: 82dvh;
+    overflow-y: auto;
+  }
+}

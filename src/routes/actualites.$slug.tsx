@@ -87,7 +87,10 @@ function NewsArticlePage() {
               {item.source_published_at ? ` · ${newsDay(item.source_published_at)}` : ""}
             </span>
             {item.source_title ? <strong>{item.source_title}</strong> : null}
-            {item.source_excerpt ? <blockquote>« {item.source_excerpt} »</blockquote> : null}
+            {/* Garde-fou : jamais de balise HTML brute à l'écran (la base nettoie déjà). */}
+            {item.source_excerpt && !/<[a-z/]/i.test(item.source_excerpt) ? (
+              <blockquote>« {item.source_excerpt} »</blockquote>
+            ) : null}
             <a href={item.source_url} target="_blank" rel="noopener noreferrer nofollow">
               Lire l’article{item.source_name ? ` sur ${item.source_name}` : ""}
               <ExternalLink size={15} aria-hidden />

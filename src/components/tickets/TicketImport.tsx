@@ -12,6 +12,15 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { useAuth } from "@/hooks/useAuth";
 import { companiesQuery, portsQuery, routesQuery, vesselsQuery } from "@/lib/ferry/queries";
 import { portTimeZone, wallTimeInZone } from "@/lib/ferry/time";
@@ -88,6 +97,8 @@ export function TicketImport({
   const [confirmed, setConfirmed] = useState(false);
   /** Billet d'une traversée déjà passée : enregistré seulement si l'utilisateur le confirme. */
   const [pastOk, setPastOk] = useState(false);
+  /** Prévenu dès la lecture : billet d'une traversée déjà passée. */
+  const [pastAlert, setPastAlert] = useState(false);
   const [saving, setSaving] = useState(false);
   const [problem, setProblem] = useState<string | null>(null);
   const input = useRef<HTMLInputElement>(null);
@@ -133,6 +144,11 @@ export function TicketImport({
       );
       setDraft(parsed);
       setRead(found);
+      // Billet d'une traversée passée : on le dit tout de suite, avant la relecture.
+      const times = parsed.legs
+        .filter((leg) => leg.date)
+        .map((leg) => ticketInstant(leg, zoneOf(leg.fromPortId))?.getTime() ?? 0);
+      if (times.length && Math.max(...times) + 86_400_000 < Date.now()) setPastAlert(true);
     } catch {
       // Lecture impossible : la saisie reste ouverte, le document est gardé.
       setProblem(
@@ -295,6 +311,29 @@ export function TicketImport({
   const portOptions = [...ports].sort((a, b) => a.name.localeCompare(b.name));
 
   return (
+    <>
+    <AlertDialog open={pastAlert} onOpenChange={setPastAlert}>
+      <AlertDialogContent>
+        <AlertDialogTitle>Ce billet est pour une traversée passée</AlertDialogTitle>
+        <AlertDialogDescription>
+          {pastDay ? `Date lue sur le billet : ${pastDay}. ` : ""}BledWay ne peut lui rattacher
+          aucune traversée : pas de suivi, pas d’alertes, pas de retour proposé. Si la date a été
+          mal lue, corrigez-la ; sinon, vous pouvez le ranger quand même dans vos billets.
+        </AlertDialogDescription>
+        <AlertDialogFooter>
+          <AlertDialogCancel
+            onClick={() => {
+              setPastAlert(false);
+              onOpenChange(false);
+            }}
+          >
+            Annuler
+          </AlertDialogCancel>
+          <AlertDialogCancel>Corriger la date</AlertDialogCancel>
+          <AlertDialogAction onClick={() => setPastOk(true)}>Ranger quand même</AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
     <Dialog
       open={open}
       onOpenChange={(value) => {
@@ -736,6 +775,7 @@ export function TicketImport({
         ) : null}
       </DialogContent>
     </Dialog>
+    </>
   );
 }
 

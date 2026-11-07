@@ -14759,3 +14759,35 @@ img[data-logo="dark"] {
   font-size: 12px;
   color: #ffffffd0;
 }
+
+/* Un billet par passager : regroupés par traversée, un tap par nom (07/11/2026). */
+.bw-ticket-people {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 0 12px 10px;
+}
+.bw-ticket-people button {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  min-height: 32px;
+  padding: 4px 10px;
+  border: 1px solid #0e6b3b40;
+  border-radius: 999px;
+  background: #0e6b3b0a;
+  color: #0e6b3b;
+  font-size: 12px;
+  font-weight: 600;
+}
+.bw-ticket-batch {
+  font-weight: 500;
+  color: #6b7a82;
+  font-size: 0.8em;
+}
+.bw-ticket-saved .bw-action-secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}

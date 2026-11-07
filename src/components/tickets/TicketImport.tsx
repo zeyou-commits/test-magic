@@ -103,7 +103,12 @@ export function TicketImport({
   const [problem, setProblem] = useState<string | null>(null);
   const input = useRef<HTMLInputElement>(null);
 
+  // Un billet par passager : plusieurs fichiers choisis d'un coup, lus et enregistrés à la suite.
+  const [queue, setQueue] = useState<File[]>([]);
+  const [batch, setBatch] = useState({ index: 0, total: 0 });
   const reset = () => {
+    setPastOk(false);
+    setPastAlert(false);
     setStep("choose");
     setFile(null);
     setDraft(emptyDraft());
@@ -114,7 +119,11 @@ export function TicketImport({
     setProblem(null);
   };
   useEffect(() => {
-    if (!open) reset();
+    if (!open) {
+      reset();
+      setQueue([]);
+      setBatch({ index: 0, total: 0 });
+    }
   }, [open]);
 
   const portName = (id: string | null) => ports.find((p) => p.id === id)?.name ?? null;
@@ -342,7 +351,15 @@ export function TicketImport({
       }}
     >
       <DialogContent className="bw-ticket-dialog">
-        <DialogTitle>{step === "saved" ? "Billet enregistré" : "Ajouter mon billet"}</DialogTitle>
+        <DialogTitle>
+          {step === "saved" ? "Billet enregistré" : "Ajouter mon billet"}
+          {batch.total > 1 ? (
+            <span className="bw-ticket-batch">
+              {" "}
+              · {batch.index} sur {batch.total}
+            </span>
+          ) : null}
+        </DialogTitle>
         <DialogDescription className="sr-only">
           Importer, lire et vérifier un billet de ferry
         </DialogDescription>
@@ -360,7 +377,7 @@ export function TicketImport({
               <FileUp size={20} aria-hidden />
               <span>
                 <strong>Importer une photo ou un PDF</strong>
-                <small>Billet électronique reçu par e-mail, capture d’écran…</small>
+                <small>Un billet par passager ? Choisissez-les tous d’un coup.</small>
               </span>
             </button>
             <button
@@ -380,11 +397,15 @@ export function TicketImport({
               ref={input}
               type="file"
               accept="image/*,application/pdf"
+              multiple
               hidden
               onChange={(event) => {
-                const picked = event.target.files?.[0];
+                const files = Array.from(event.target.files ?? []);
                 event.target.value = "";
-                if (picked) void start(picked);
+                if (!files.length) return;
+                setQueue(files.slice(1));
+                setBatch({ index: 1, total: files.length });
+                void start(files[0]!);
               }}
             />
             <p className="bw-ticket-note">
@@ -768,9 +789,37 @@ export function TicketImport({
               {file ? " et disponible sur ce téléphone, même sans connexion" : ""}. Retrouvez-le
               dans « Mon compte » et dans la préparation de votre voyage.
             </p>
-            <button type="button" className="bw-action-primary" onClick={() => { onOpenChange(false); onSaved?.(); }}>
-              Fermer
-            </button>
+            {queue.length ? (
+              <button
+                type="button"
+                className="bw-action-primary"
+                onClick={() => {
+                  const [next, ...rest] = queue;
+                  setQueue(rest);
+                  setBatch((b) => ({ ...b, index: b.index + 1 }));
+                  reset();
+                  if (next) void start(next);
+                }}
+              >
+                Billet suivant ({batch.index + 1} sur {batch.total})
+              </button>
+            ) : (
+              <>
+                <button
+                  type="button"
+                  className="bw-action-secondary"
+                  onClick={() => {
+                    setBatch({ index: 0, total: 0 });
+                    reset();
+                  }}
+                >
+                  <Plus size={16} aria-hidden /> Ajouter le billet d’un autre passager
+                </button>
+                <button type="button" className="bw-action-primary" onClick={() => { onOpenChange(false); onSaved?.(); }}>
+                  Terminer
+                </button>
+              </>
+            )}
           </div>
         ) : null}
       </DialogContent>

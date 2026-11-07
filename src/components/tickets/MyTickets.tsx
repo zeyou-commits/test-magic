@@ -25,6 +25,28 @@ const day = (date: string | null) =>
       })
     : "date à compléter";
 
+/** Les billets d'une même traversée (un billet par passager) regroupés en un seul voyage. */
+export function groupTickets(rows: TicketRow[]) {
+  const groups = new Map<string, TicketRow[]>();
+  for (const t of rows) {
+    const leg = t.details.legs[0];
+    const key =
+      t.outbound_departure_id ??
+      t.inbound_departure_id ??
+      (leg?.date && leg.fromPortId ? `${leg.fromPortId}:${leg.toPortId}:${leg.date}` : t.id);
+    groups.set(key, [...(groups.get(key) ?? []), t]);
+  }
+  return [...groups.values()];
+}
+
+/** Le nom affiché d'un billet : ses passagers, sinon « Billet n ». */
+const ticketName = (t: TicketRow, i: number) =>
+  t.details.passengers.length
+    ? t.details.passengers
+        .map((name) => name.toLowerCase().replace(/(^|[\s-])\p{L}/gu, (c) => c.toUpperCase()))
+        .join(", ")
+    : `Billet ${i + 1}`;
+
 function useTicketLabels() {
   const { data: ports = [] } = useQuery(portsQuery);
   const { data: companies = [] } = useQuery(companiesQuery);
@@ -248,17 +270,36 @@ export function MyTickets() {
       </header>
       {tickets.data?.length ? (
         <ul>
-          {tickets.data.map((t) => (
-            <li key={t.id}>
-              <button type="button" onClick={() => setOpen(t)}>
-                <strong>{labels.route(t)}</strong>
-                <small>
-                  {day(t.details.legs[0]?.date ?? null)}
-                  {labels.company(t) ? ` · ${labels.company(t)}` : ""}
-                </small>
-              </button>
-            </li>
-          ))}
+          {groupTickets(tickets.data).map((group) => {
+            const first = group[0]!;
+            const people = group.flatMap((t) => t.details.passengers);
+            return (
+              <li key={first.id} className="bw-ticket-group">
+                <button type="button" onClick={() => setOpen(first)}>
+                  <strong>{labels.route(first)}</strong>
+                  <small>
+                    {day(first.details.legs[0]?.date ?? null)}
+                    {labels.company(first) ? ` · ${labels.company(first)}` : ""}
+                    {group.length > 1
+                      ? ` · ${group.length} billets${people.length ? ` · ${people.length} passager${people.length > 1 ? "s" : ""}` : ""}`
+                      : people.length
+                        ? ` · ${people.join(", ")}`
+                        : ""}
+                  </small>
+                </button>
+                {group.length > 1 ? (
+                  // Au contrôle du port : un tap sur le nom ouvre le bon billet.
+                  <div className="bw-ticket-people">
+                    {group.map((t, i) => (
+                      <button key={t.id} type="button" onClick={() => setOpen(t)}>
+                        <Ticket size={13} aria-hidden /> {ticketName(t, i)}
+                      </button>
+                    ))}
+                  </div>
+                ) : null}
+              </li>
+            );
+          })}
         </ul>
       ) : (
         <p>Ajoutez votre billet : il est lu sur votre téléphone et prépare votre voyage.</p>
@@ -276,18 +317,27 @@ export function TicketAction({ departureId }: { departureId: string }) {
   const [adding, setAdding] = useState(false);
   const [open, setOpen] = useState<TicketRow | null>(null);
   if (!user || tickets.data === null) return null;
-  const mine = tickets.data?.find(
-    (t) => t.outbound_departure_id === departureId || t.inbound_departure_id === departureId,
-  );
+  const mine =
+    tickets.data?.filter(
+      (t) => t.outbound_departure_id === departureId || t.inbound_departure_id === departureId,
+    ) ?? [];
   return (
     <>
-      <button
-        type="button"
-        className="bw-ticket-link"
-        onClick={() => (mine ? setOpen(mine) : setAdding(true))}
-      >
-        <Ticket size={13} aria-hidden /> {mine ? "Voir mon billet" : "Ajouter mon billet"}
-      </button>
+      {mine.length > 1 ? (
+        mine.map((t, i) => (
+          <button key={t.id} type="button" className="bw-ticket-link" onClick={() => setOpen(t)}>
+            <Ticket size={13} aria-hidden /> {ticketName(t, i)}
+          </button>
+        ))
+      ) : (
+        <button
+          type="button"
+          className="bw-ticket-link"
+          onClick={() => (mine[0] ? setOpen(mine[0]) : setAdding(true))}
+        >
+          <Ticket size={13} aria-hidden /> {mine[0] ? "Voir mon billet" : "Ajouter mon billet"}
+        </button>
+      )}
       <TicketImport open={adding} onOpenChange={setAdding} />
       <TicketViewer ticket={open} onClose={() => setOpen(null)} />
     </>

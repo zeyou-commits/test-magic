@@ -196,6 +196,10 @@ export function TravelActionProvider({ children }: { children: ReactNode }) {
                   rememberTravelAction(next);
                   setAction(next);
                 }}
+                onDone={() => {
+                  setOpen(false);
+                  clearTravelAction();
+                }}
               />
             ) : null}
             {action && !(action.type === "follow" && action.traveller === undefined && !saved) && (

@@ -5,8 +5,19 @@ import { formatDateTime } from "@/lib/ferry/format";
 import { portTimeZone } from "@/lib/ferry/time";
 import { VesselAlertTag } from "./VesselAlert";
 
-export function ReturnDepartureSearch({ departureId, selectedId, onChoose, disabled = false }: {
+const WEEKS = [
+  { label: "Tous", days: 0 },
+  { label: "1 sem", days: 7 },
+  { label: "2 sem", days: 14 },
+  { label: "3 sem", days: 21 },
+  { label: "1 mois", days: 30 },
+];
+const dayKey = (iso: string, days: number) => new Date(Date.parse(iso) + days * 86_400_000).toISOString().slice(0, 10);
+
+export function ReturnDepartureSearch({ departureId, selectedId, onChoose, disabled = false, outboundAt }: {
   departureId: string;
+  /** Date de l'aller : affiche les pastilles « 1 sem, 2 sem… » (3 semaines par défaut). */
+  outboundAt?: string | undefined;
   selectedId?: string | null;
   onChoose: (id: string) => void;
   disabled?: boolean;
@@ -14,15 +25,20 @@ export function ReturnDepartureSearch({ departureId, selectedId, onChoose, disab
   const [search, setSearch] = useState("");
   const [debounced, setDebounced] = useState("");
   const [date, setDate] = useState("");
+  const [after, setAfter] = useState<number>(0);
   const [anyPort, setAnyPort] = useState(false);
   useEffect(() => {
     const timer = window.setTimeout(() => setDebounced(search), 250);
     return () => window.clearTimeout(timer);
   }, [search]);
-  const returns = useReturnDepartures(departureId, debounced, date, !anyPort);
-  const shown = anyPort ? returns.data : returns.data?.slice(0, 5);
+  const span = !date && outboundAt && after ? `>${dayKey(outboundAt, after)}` : date;
+  const returns = useReturnDepartures(departureId, debounced, span, !anyPort);
+  const shown = anyPort ? returns.data : returns.data?.slice(0, 6);
 
   return <div className="grid gap-2">
+    {outboundAt ? <div className="bw-return-weeks" role="group" aria-label="Durée du séjour">
+      {WEEKS.map((item) => <button key={item.days} type="button" aria-pressed={!date && after === item.days} onClick={() => { setDate(""); setAfter(item.days); }}>{item.label}</button>)}
+    </div> : null}
     {anyPort ? <label className="flex min-h-10 items-center gap-2 rounded-lg border bg-background px-3 text-sm">
       <Search size={16} className="shrink-0 text-primary" aria-hidden />
       <span className="sr-only">Rechercher un retour par port, compagnie ou navire</span>
@@ -30,7 +46,7 @@ export function ReturnDepartureSearch({ departureId, selectedId, onChoose, disab
     </label> : null}
     <label className="flex min-h-10 items-center gap-2 rounded-lg border bg-background px-3 text-sm">
       <CalendarDays size={16} className="shrink-0 text-primary" aria-hidden />
-      <span className="text-xs text-muted-foreground">Date du retour</span>
+      <span className="text-xs text-muted-foreground">{outboundAt ? "Autre date" : "Date du retour"}</span>
       <input type="date" value={date} onChange={(event) => setDate(event.target.value)} className="min-w-0 flex-1 bg-transparent py-2 text-right outline-none" />
     </label>
     <div className="grid max-h-56 gap-2 overflow-y-auto" aria-label="Suggestions de retours">
@@ -41,9 +57,9 @@ export function ReturnDepartureSearch({ departureId, selectedId, onChoose, disab
             <span className="block text-muted-foreground">{formatDateTime(item.departure_at, portTimeZone({ country_code: item.from_country_code }))}</span>
             <span className="block truncate text-muted-foreground">{[item.company_name, item.vessel_name].filter(Boolean).join(" · ") || "Compagnie à confirmer"} <VesselAlertTag vesselId={item.vessel_id} /></span>
           </span><Ship size={17} className="shrink-0 text-primary" aria-hidden />
-        </button>) : <p className="py-2 text-xs text-muted-foreground">Aucun retour publié avec ces critères. Essayez une autre date, un port ou une compagnie.</p>}
+        </button>) : <p className="py-2 text-xs text-muted-foreground">{!date && after ? "Les compagnies n’ont pas encore publié leurs horaires aussi loin. Choisissez « Je n’ai pas encore la date » : vous ajouterez votre retour plus tard, depuis Ma traversée." : "Aucun retour publié avec ces critères. Essayez une autre date, un port ou une compagnie."}</p>}
     </div>
-    {!anyPort && !date && (returns.data?.length ?? 0) > 5 ? <p className="text-[11px] text-muted-foreground">Choisissez une date pour voir les autres départs.</p> : null}
+    {!anyPort && !date && (returns.data?.length ?? 0) > 6 ? <p className="text-[11px] text-muted-foreground">Choisissez une date pour voir les autres départs.</p> : null}
     <button type="button" className="justify-self-start text-xs font-semibold text-primary underline underline-offset-2" onClick={() => { setAnyPort((value) => !value); setSearch(""); }}>{anyPort ? "Revenir par la même ligne" : "Revenir par un autre port"}</button>
     {anyPort && !search && !date && returns.data?.length === 40 ? <p className="text-[11px] text-muted-foreground">Affichage des 40 premiers départs. Saisissez une date ou un nom pour chercher plus loin.</p> : null}
   </div>;

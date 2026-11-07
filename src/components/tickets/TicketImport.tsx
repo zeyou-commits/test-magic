@@ -63,9 +63,12 @@ const LEG_LABEL = ["Aller", "Retour"];
 export function TicketImport({
   open,
   onOpenChange,
+  onSaved,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  /** Appelé une fois le billet enregistré (le parcours « suivre » se ferme alors). */
+  onSaved?: (() => void) | undefined;
 }) {
   const { user } = useAuth();
   const client = useQueryClient();
@@ -280,7 +283,13 @@ export function TicketImport({
   const portOptions = [...ports].sort((a, b) => a.name.localeCompare(b.name));
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog
+      open={open}
+      onOpenChange={(value) => {
+        onOpenChange(value);
+        if (!value && step === "saved") onSaved?.();
+      }}
+    >
       <DialogContent className="bw-ticket-dialog">
         <DialogTitle>{step === "saved" ? "Billet enregistré" : "Ajouter mon billet"}</DialogTitle>
         <DialogDescription className="sr-only">
@@ -694,7 +703,7 @@ export function TicketImport({
               {file ? " et disponible sur ce téléphone, même sans connexion" : ""}. Retrouvez-le
               dans « Mon compte » et dans la préparation de votre voyage.
             </p>
-            <button type="button" className="bw-action-primary" onClick={() => onOpenChange(false)}>
+            <button type="button" className="bw-action-primary" onClick={() => { onOpenChange(false); onSaved?.(); }}>
               Fermer
             </button>
           </div>

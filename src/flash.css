@@ -14254,3 +14254,36 @@ img[data-logo="dark"] {
   font-size: 0.82rem;
   text-decoration: underline;
 }
+
+/* Retour : pastilles de durée de séjour (07/11/2026). */
+.bw-return-weeks {
+  display: flex;
+  gap: 6px;
+}
+.bw-return-weeks button {
+  flex: 1;
+  min-height: 36px;
+  border: 1px solid var(--border, #dfe5e2);
+  border-radius: 999px;
+  background: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  color: #35505c;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+.bw-return-weeks button[aria-pressed="true"] {
+  border-color: #0e6b3b;
+  background: #0e6b3b;
+  color: #fff;
+}
+.bw-trip-question__choice[data-suggested] {
+  border-color: #0e6b3b;
+  background: #0e6b3b0d;
+}
+.bw-trip-question__choice em {
+  margin-left: 6px;
+  font-style: normal;
+  font-size: 11px;
+  font-weight: 700;
+  color: #0e6b3b;
+}

@@ -104,12 +104,13 @@ export function TrafficCard({
           {c.vessel && (
             <span className="pointer-events-auto flex items-center gap-1.5">
               <VesselAlertTag vesselId={c.vessel.id} />
+              {/* Le cœur d'une ligne de trafic suit CETTE traversée : pas de date à rechoisir. */}
               <FollowButton
-                kind="vessel"
-                targetId={c.vessel.id}
-                label={c.vessel.name}
+                kind="departure"
+                targetId={c.departure.id}
+                label={`${c.from.name} → ${c.to.name}`}
                 iconOnly
-                demo={c.vessel.is_demo}
+                demo={Boolean(c.departure.is_demo)}
               />
             </span>
           )}

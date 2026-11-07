@@ -120,7 +120,11 @@ export function useReturnDepartures(departureId: string | null, search = "", dat
         .gt("departure_at", new Date(Math.max(arrivalTime, Date.now())).toISOString())
         .neq("status", "cancelled")
         .eq("is_demo", false);
-      if (date) {
+      if (date.startsWith(">")) {
+        // « À partir de » : tous les retours depuis ce jour (pastilles 1 sem, 2 sem…).
+        const from = Date.parse(`${date.slice(1)}T00:00:00Z`);
+        if (Number.isFinite(from)) query = query.gte("departure_at", new Date(from).toISOString());
+      } else if (date) {
         const day = Date.parse(`${date}T00:00:00Z`);
         if (Number.isFinite(day)) query = query.gte("departure_at", new Date(day - 24 * 60 * 60_000).toISOString()).lt("departure_at", new Date(day + 2 * 24 * 60 * 60_000).toISOString());
       }
@@ -132,7 +136,7 @@ export function useReturnDepartures(departureId: string | null, search = "", dat
         ].filter(Boolean);
         query = query.or(clauses.join(","));
       }
-      const results = await query.order("departure_at").limit(date || term ? 150 : 40);
+      const results = await query.order("departure_at").limit((date && !date.startsWith(">")) || term ? 150 : 40);
       if (results.error) throw results.error;
       const routeById = new Map(opposite.map((route) => [route.id as string, route]));
       return (results.data ?? []).flatMap((item) => {

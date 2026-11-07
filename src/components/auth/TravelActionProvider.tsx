@@ -10,6 +10,7 @@ import {
   MessagesSquare,
   Navigation,
   Ship,
+  Ticket,
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
@@ -31,6 +32,7 @@ import {
 } from "@/lib/notifications/push";
 import { AccountAccessForm } from "./AccountAccessForm";
 import { TripQuestion } from "./TripQuestion";
+import { TicketImport } from "@/components/tickets/TicketImport";
 import { PushStatusLine } from "@/components/panel/PushStatusLine";
 import { TravelActionContext as ActionContext } from "@/hooks/useTravelAction";
 
@@ -125,11 +127,13 @@ export function TravelActionProvider({ children }: { children: ReactNode }) {
     setOpen(true);
   }, []);
 
-  async function activate() {
-    if (!user || !action) return;
+  const [ticketOpen, setTicketOpen] = useState(false);
+  async function activate(next?: TravelAction) {
+    const current = next ?? action;
+    if (!user || !current) return;
     // La demande native part pendant le geste utilisateur, avant l'écriture réseau.
     const push = registerPush(user.id).catch(() => "unavailable" as const);
-    await complete(action, user.id);
+    await complete(current, user.id);
     const result = await push;
     setPushMessage(
       result === "enabled"
@@ -165,9 +169,17 @@ export function TravelActionProvider({ children }: { children: ReactNode }) {
                   ? "Votre message est prêt"
                   : action?.type === "opening"
                     ? "Soyez prêt à réserver"
-                    : "Gardez le cap sur votre voyage"}
+                    : action?.type === "follow" && action.traveller === undefined
+                      ? "Suivre mon voyage"
+                      : "Gardez le cap sur votre voyage"}
             </DialogTitle>
-            <DialogDescription className="mt-2 text-sm leading-relaxed">
+            <DialogDescription
+              className={
+                action?.type === "follow" && action.traveller === undefined && !saved
+                  ? "sr-only"
+                  : "mt-2 text-sm leading-relaxed"
+              }
+            >
               {!saved && draft
                 ? user
                   ? "Confirmez que vous voyagez sur cette traversée : votre message part aussitôt."
@@ -195,6 +207,8 @@ export function TravelActionProvider({ children }: { children: ReactNode }) {
                   // La réponse est gardée si une connexion est demandée ensuite.
                   rememberTravelAction(next);
                   setAction(next);
+                  // Connecté : le bouton de l'écran enregistre directement, sans second clic.
+                  if (user) void activate(next);
                 }}
                 onDone={() => {
                   setOpen(false);
@@ -250,6 +264,16 @@ export function TravelActionProvider({ children }: { children: ReactNode }) {
                     )}
                     {/* État réel de ce téléphone : déjà actif, à activer, ou guide iPhone. */}
                     <PushStatusLine key={pushMessage} />
+                    {action?.type === "follow" && action.traveller ? (
+                      // Le billet, proposé une fois le voyage suivi : un bonus, jamais un passage obligé.
+                      <button type="button" className="bw-trip-one__after" onClick={() => setTicketOpen(true)}>
+                        <Ticket className="size-5" aria-hidden />
+                        <span>
+                          <strong>Ajoutez votre billet</strong>
+                          <small>On vérifie l’heure et le navire, et vous l’avez sous la main au port, même sans réseau.</small>
+                        </span>
+                      </button>
+                    ) : null}
                     <a href="/compte" className="bw-action-secondary w-full">
                       Mon espace voyageur
                     </a>
@@ -311,6 +335,15 @@ export function TravelActionProvider({ children }: { children: ReactNode }) {
           </div>
         </DialogContent>
       </Dialog>
+      {ticketOpen ? (
+        <TicketImport
+          open
+          onOpenChange={(value) => {
+            if (!value) setTicketOpen(false);
+          }}
+          onSaved={() => setOpen(false)}
+        />
+      ) : null}
     </ActionContext.Provider>
   );
 }

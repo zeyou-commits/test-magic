@@ -14616,3 +14616,146 @@ img[data-logo="dark"] {
 .bw-ticket-past strong {
   font-size: 14px;
 }
+
+/* « Suivre mon voyage » en un écran (07/11/2026). */
+.bw-trip-one {
+  display: grid;
+  gap: 14px;
+  margin-top: 14px;
+}
+.bw-trip-one__purpose {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 4px;
+  padding: 4px;
+  border-radius: 999px;
+  background: #eef2f0;
+}
+.bw-trip-one__purpose button {
+  min-height: 38px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #5b6b73;
+  transition: background 0.18s, color 0.18s, box-shadow 0.18s;
+}
+.bw-trip-one__purpose button[aria-checked="true"] {
+  background: #fff;
+  color: #0e6b3b;
+  box-shadow: 0 2px 8px #0d3b4f1a;
+}
+.bw-trip-one__ticket {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border: 1px dashed #0e6b3b59;
+  border-radius: 12px;
+  background: #0e6b3b08;
+  color: #0e6b3b;
+  font-size: 13px;
+  text-align: left;
+}
+.bw-trip-one__ticket span {
+  color: #4b5b63;
+}
+.bw-trip-one__ticket b {
+  color: #0e6b3b;
+}
+.bw-trip-one__block {
+  display: grid;
+  gap: 8px;
+}
+.bw-trip-one__head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+.bw-trip-one__head strong {
+  font-size: 15px;
+  color: #13303c;
+}
+.bw-trip-one__head small {
+  margin-left: 4px;
+  font-weight: 500;
+  color: #6b7a82;
+}
+.bw-trip-one__head button {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: 4px;
+  color: #0e6b3b;
+  font-size: 12px;
+  font-weight: 600;
+}
+.bw-trip-one__pills {
+  display: flex;
+  gap: 8px;
+  margin-inline: -2px;
+  padding: 2px 2px 6px;
+  overflow-x: auto;
+  scroll-snap-type: x proximity;
+  scrollbar-width: none;
+}
+.bw-trip-one__pills::-webkit-scrollbar {
+  display: none;
+}
+.bw-trip-one__pills button {
+  display: grid;
+  flex: none;
+  min-width: 78px;
+  padding: 8px 10px;
+  border: 1px solid #dfe5e2;
+  border-radius: 12px;
+  background: #fff;
+  color: #5b6b73;
+  font-size: 12px;
+  text-align: center;
+  scroll-snap-align: start;
+  transition: border-color 0.15s, background 0.15s, transform 0.15s;
+}
+.bw-trip-one__pills button b {
+  color: #13303c;
+  font-size: 13px;
+}
+.bw-trip-one__pills button i {
+  font-style: normal;
+  font-size: 10px;
+  color: #b5651d;
+}
+.bw-trip-one__pills button[aria-checked="true"] {
+  border: 2px solid #0e6b3b;
+  background: #0e6b3b0f;
+  color: #0e6b3b;
+}
+.bw-trip-one__pills button:active {
+  transform: scale(0.97);
+}
+.bw-trip-one__detail,
+.bw-trip-one__note {
+  font-size: 12px;
+  line-height: 1.45;
+  color: #6b7a82;
+}
+.bw-trip-one__after {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: #0e6b3b;
+  color: #fff;
+  text-align: left;
+}
+.bw-trip-one__after strong {
+  display: block;
+  font-size: 14px;
+}
+.bw-trip-one__after small {
+  display: block;
+  font-size: 12px;
+  color: #ffffffd0;
+}

@@ -33,6 +33,14 @@ function readDismissed(key = DISMISSED_KEY) {
  * Absent s'il n'y a rien. Fermé, il revient à la prochaine information.
  */
 export function AlertTicker() {
+  const onNewsPages = useRouterState({
+    select: (state) => state.location.pathname.startsWith("/actualites"),
+  });
+  // Sur les pages Actualités, le bandeau répéterait ce qui est déjà affiché juste dessous.
+  return onNewsPages ? null : <AlertTickerBar />;
+}
+
+function AlertTickerBar() {
   const { data: incidents = [] } = useQuery(incidentsQuery);
   const { data: news } = useQuery(newsQuery);
   const { data: vessels = [] } = useQuery(vesselsQuery);

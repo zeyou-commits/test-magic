@@ -229,6 +229,10 @@ export function MapStats({
               {icon}
             </span>
             {count}
+            {/* Téléphone : pas de survol, le libellé reste écrit sous le chiffre. */}
+            <span aria-hidden className="bw-mapstat-label md:hidden">
+              {label}
+            </span>
             {/* Libellé court au survol (ordinateur), à gauche de la colonne. */}
             {shown !== id ? (
               <span

@@ -14791,3 +14791,55 @@ img[data-logo="dark"] {
   justify-content: center;
   gap: 6px;
 }
+
+/* Fiche traversée : les blocs vides tiennent sur une ligne discrète (07/11/2026). */
+.bw-recap__panel .bw-flash-empty,
+.bw-recap__panel .bw-signals[data-compact] .bw-community-empty {
+  margin: 0;
+  padding: 4px 0 0;
+  border: 0;
+  background: none;
+  font-size: 12px;
+  line-height: 1.4;
+  color: #6b7a82;
+}
+
+/* Compteurs de la carte sur téléphone : le libellé sous le chiffre. */
+.bw-mapstat-label {
+  display: block;
+  margin-top: 1px;
+  font-size: 9px;
+  font-weight: 600;
+  line-height: 1.1;
+  letter-spacing: -0.01em;
+  color: #5b6b73;
+  white-space: nowrap;
+}
+
+/* Barre du bas : la pastille du profil (30 px) ne décale plus son libellé par rapport aux autres onglets (icônes de 20 px). */
+.bw-me-tab__ghost,
+.bw-me-tab__wrap {
+  margin-block: -5px;
+}
+
+/* Introductions de page : 2 lignes sur téléphone, « Lire la suite » pour le reste. */
+.bw-clamp__more {
+  display: none;
+}
+@media (max-width: 767px) {
+  .bw-clamp:not([data-open]) p {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  .bw-clamp__more {
+    display: inline;
+    margin-top: 2px;
+    color: #0e6b3b;
+    font-size: 14px;
+    font-weight: 600;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+}

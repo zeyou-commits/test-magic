@@ -1,3 +1,4 @@
+import { ClampedIntro } from "@/components/editorial/Editorial";
 import { VesselAlertTag } from "@/components/panel/VesselAlert";
 import { VesselPalmares, VesselPhotoBadge } from "@/components/panel/VesselFacts";
 import { FleetOverview } from "@/components/panel/FleetOverview";
@@ -84,11 +85,11 @@ function Boats() {
       <h1 className="mb-5 font-display text-4xl font-extrabold tracking-tight md:text-5xl">
         La flotte entre l'Europe et l'Algérie
       </h1>
-      <p className="mb-6 max-w-3xl text-lg leading-relaxed text-muted-foreground">
+      <ClampedIntro className="mb-6 max-w-3xl text-lg leading-relaxed text-muted-foreground">
         Les navires renseignés sur BledWay, classés par compagnie, avec leurs lignes et leurs
         caractéristiques connues. L'affectation d'un navire à un départ peut changer : elle se
         confirme auprès de la compagnie.
-      </p>
+      </ClampedIntro>
       <FleetOverview />
       <VesselPalmares />
       <div className="space-y-10">

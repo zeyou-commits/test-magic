@@ -1,3 +1,4 @@
+import { useState } from "react";
 import type { ReactNode } from "react";
 import {
   absoluteUrl,
@@ -47,6 +48,24 @@ export function Breadcrumbs({ items }: { items: { name: string; path: string }[]
     </>
   );
 }
+/**
+ * Introduction de page : en entier sur ordinateur ; sur téléphone, 2 lignes puis « Lire la suite »
+ * (le texte reste dans la page, lu par les moteurs de recherche).
+ */
+export function ClampedIntro({ children, className = "" }: { children: ReactNode; className?: string }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <div className={`bw-clamp ${className}`} data-open={open || undefined}>
+      <p>{children}</p>
+      {open ? null : (
+        <button type="button" className="bw-clamp__more" onClick={() => setOpen(true)}>
+          Lire la suite
+        </button>
+      )}
+    </div>
+  );
+}
+
 export function EditorialHero({
   label,
   title,
@@ -57,12 +76,14 @@ export function EditorialHero({
   intro: string;
 }) {
   return (
-    <header className="max-w-4xl py-10 md:py-14">
+    <header className="max-w-4xl py-6 md:py-14">
       <p className="text-xs font-bold uppercase tracking-widest text-primary">{label}</p>
       <h1 className="mt-3 font-display text-3xl font-bold leading-tight tracking-tight md:text-5xl">
         {title}
       </h1>
-      <p className="mt-5 max-w-3xl text-lg leading-relaxed text-muted-foreground">{intro}</p>
+      <ClampedIntro className="mt-4 max-w-3xl text-lg leading-relaxed text-muted-foreground md:mt-5">
+        {intro}
+      </ClampedIntro>
     </header>
   );
 }

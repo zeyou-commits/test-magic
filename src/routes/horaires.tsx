@@ -35,7 +35,7 @@ import type { Company } from "@/lib/ferry/types";
 import { useLiveShips } from "@/lib/ferry/useLiveShips";
 import { useVesselAlerts } from "@/lib/ferry/vesselAlerts";
 import { breadcrumbSchema, seoHead } from "@/lib/seo/site";
-import { StructuredData } from "@/components/editorial/Editorial";
+import { Breadcrumbs } from "@/components/editorial/Editorial";
 
 const BoardMap = lazy(() => import("@/components/board/BoardMap"));
 
@@ -316,7 +316,9 @@ function BoardPage() {
         tabIndex={-1}
         className="mx-auto w-full max-w-[1440px] px-4 pb-24 pt-5 sm:px-6 md:pb-16"
       >
-        <StructuredData value={breadcrumbSchema([{ name: "Horaires", path: "/horaires" }])} />
+        <div className="-mt-5 mb-3">
+          <Breadcrumbs items={[{ name: "Départs et arrivées", path: "/horaires" }]} />
+        </div>
         <DataUnavailableNotice className="mb-3" />
         <div className="flex flex-wrap items-end justify-between gap-2">
           <div>

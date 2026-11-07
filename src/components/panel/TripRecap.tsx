@@ -336,9 +336,11 @@ export function TripRecap({
             </span>
             <small className="bw-recap__duration">
               <Timer size={11} aria-hidden /> {formatDuration(duration)}
-              {progress.ratio !== null && progress.ratio > 0 && !arrived
-                ? ` · ${Math.round(progress.ratio * 100)} %`
-                : ""}
+              {arrivalDue && !arrived
+                ? " · arrivée estimée"
+                : progress.ratio !== null && progress.ratio > 0 && progress.ratio < 0.99 && !arrived
+                  ? ` · ${Math.round(progress.ratio * 100)} %`
+                  : ""}
             </small>
           </div>
           <button

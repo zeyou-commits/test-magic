@@ -6,7 +6,6 @@ import type { Filters, RouteLine, Selection } from "@/lib/ferry/types";
 import { ArrowLeft } from "lucide-react";
 
 import { ShareButtons } from "./ShareButtons";
-import { tripShareUrl } from "@/lib/ferry/tripShare";
 import { SearchPanel } from "./SearchPanel";
 import { ItineraryPlanner } from "@/components/itinerary/ItineraryPlanner";
 import type { MapPreview } from "@/lib/ferry/mapPresentation";
@@ -184,12 +183,8 @@ export function SidePanel({
                     iconOnly
                   />
                 ) : null}
-                <ShareButtons
-                  compact
-                  {...(selection.type === "departure"
-                    ? { getUrl: () => tripShareUrl(window.location.href, selection.id) }
-                    : {})}
-                />
+                {/* Une traversée a déjà son Partager dans sa carte : pas de doublon ici. */}
+                {selection.type === "departure" ? null : <ShareButtons compact />}
               </div>
             </div>
             <div className="batogo-panel-scroll flex-1 overflow-y-auto p-4 md:p-6">

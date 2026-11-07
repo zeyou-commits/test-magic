@@ -13,7 +13,7 @@ export const tripSteps: { id: TripStatus; label: string; short: string; image: s
   { id: "onboard", label: "À bord", short: "À bord", image: "/cabas/statut-a-bord.webp" },
   { id: "landing", label: "Débarquement", short: "Débarquement", image: "/cabas/humeurs/27_debarquement.webp" },
   { id: "controls", label: "Police et douane", short: "Contrôles", image: "/cabas/humeurs/14_controle.webp" },
-  { id: "arrived", label: "Sorti du port", short: "Sorti", image: "/cabas/statut-arrive.webp" },
+  { id: "arrived", label: "Sorti du port", short: "Débarqué", image: "/cabas/statut-arrive.webp" },
 ];
 export const presenceKey = ["bw-trip-presence"] as const;
 

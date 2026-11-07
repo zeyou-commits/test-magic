@@ -205,7 +205,7 @@ function AuthPage() {
           </div>
         </div>
         <div className="bw-auth-form w-full">
-          <div className="mb-5 flex items-center justify-between">
+          <div className="bw-auth-back mb-5 flex items-center justify-between">
             <Link
               to="/"
               className="inline-flex text-sm font-medium text-muted-foreground hover:text-foreground"
@@ -239,8 +239,8 @@ function AuthPage() {
               </button>
             </div>
           ) : null}
-          <h1 className="mb-2 font-display text-3xl font-bold tracking-tight">{titles[mode]}</h1>
-          <p className="mb-5 text-sm leading-relaxed text-muted-foreground">
+          <h1 className="bw-auth-title mb-2 font-display text-3xl font-bold tracking-tight">{titles[mode]}</h1>
+          <p className="bw-auth-lead mb-5 text-sm leading-relaxed text-muted-foreground">
             {mode === "forgot"
               ? "Indiquez votre e-mail : nous vous enverrons un lien pour choisir un nouveau mot de passe."
               : mode === "reset"
@@ -298,7 +298,7 @@ function AuthPage() {
               Pensez à vérifier vos courriers indésirables.
             </div>
           ) : (
-            <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+            <form onSubmit={handleSubmit} className="bw-auth-fields flex flex-col gap-4">
               {mode === "signup" ? (
                 <div className="flex flex-col gap-2">
                   <div className="flex items-center justify-between">
@@ -451,7 +451,8 @@ function AuthPage() {
               setMode(mode === "signin" ? "signup" : "signin");
               setResetSent(false);
             }}
-            className="mt-6 w-full text-sm font-medium text-muted-foreground hover:text-primary hover:underline"
+            className="bw-auth-switch mt-6 w-full text-sm font-medium text-muted-foreground hover:text-primary hover:underline"
+            data-tabs={mode === "signin" || mode === "signup" ? "" : undefined}
           >
             {mode === "signin"
               ? "Pas encore de compte ? Créer un compte"
@@ -459,7 +460,7 @@ function AuthPage() {
                 ? "Déjà inscrit ? Se connecter"
                 : "Retour à la connexion"}
           </button>
-          <p className="mt-7 text-center text-xs leading-relaxed text-muted-foreground">
+          <p className="bw-auth-note mt-7 text-center text-xs leading-relaxed text-muted-foreground">
             Vos avis aident les voyageurs. Nous ne publions jamais votre adresse e-mail.
           </p>
         </div>

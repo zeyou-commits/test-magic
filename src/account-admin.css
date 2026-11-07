@@ -1144,3 +1144,89 @@
   color: #b42318;
   text-decoration: line-through;
 }
+
+/* Connexion sur téléphone (07/11/2026) : tout tient au-dessus de la barre du bas, bouton compris. */
+.bw-auth-title,
+.bw-auth-fields {
+  animation: bw-auth-in 0.28s ease-out both;
+}
+@keyframes bw-auth-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+}
+@media (max-width: 767px) {
+  .bw-auth-page {
+    padding: 0 0 calc(92px + env(safe-area-inset-bottom));
+  }
+  .bw-auth-layout {
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+  }
+  .bw-auth-story {
+    height: 104px;
+    padding: 14px 18px;
+  }
+  .bw-auth-story > div:first-child img {
+    height: 26px;
+  }
+  .bw-auth-scene {
+    top: -70px;
+    right: -110px;
+    width: 260px;
+  }
+  .bw-auth-story-copy {
+    max-width: 200px;
+    margin-top: 8px;
+  }
+  .bw-auth-story-copy h2 {
+    font-size: 15px;
+  }
+  .bw-auth-form {
+    position: relative;
+    margin-top: -10px;
+    border-radius: 20px 20px 0 0;
+    background: var(--card, #fff);
+    padding: 14px 18px 8px;
+  }
+  .bw-auth-back {
+    margin-bottom: 8px;
+  }
+  .bw-auth-back a {
+    font-size: 13px;
+  }
+  .bw-auth-form [aria-label="Connexion ou inscription"] {
+    margin-bottom: 14px;
+  }
+  .bw-auth-form h1 {
+    margin-bottom: 12px;
+    font-size: 23px;
+  }
+  .bw-auth-lead {
+    display: none;
+  }
+  .bw-auth-form .my-5 {
+    margin-block: 12px;
+  }
+  .bw-auth-fields {
+    gap: 12px;
+  }
+  .bw-auth-fields input {
+    min-height: 46px;
+  }
+  /* Les onglets du haut font déjà le travail : le lien en double disparaît. */
+  .bw-auth-switch[data-tabs] {
+    display: none;
+  }
+  .bw-auth-note {
+    margin-top: 14px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .bw-auth-title,
+  .bw-auth-fields {
+    animation: none;
+  }
+}

@@ -22,7 +22,8 @@ import {
   travelActionLabel,
   type TravelAction,
 } from "@/lib/notifications/actions";
-import { clearPendingChat, flushPendingChat, pendingChat } from "@/lib/ferry/chat";
+import { clearPendingChat, enterRoom, flushPendingChat, pendingChat } from "@/lib/ferry/chat";
+import { toast } from "sonner";
 import {
   isIos,
   isStandalone,
@@ -61,8 +62,17 @@ export function TravelActionProvider({ children }: { children: ReactNode }) {
         await saveTravelAction(userId, intent);
         clearTravelAction();
         // Le message écrit avant l'inscription part maintenant ; le suivi reste acquis s'il est refusé.
+        const chat = pendingChat();
         try {
-          if (await flushPendingChat()) setChatNote("Votre message est publié.");
+          if (await flushPendingChat()) {
+            setChatNote("Votre message est publié.");
+            // Retour à l'intention de départ : on referme cette fenêtre et on rouvre le salon.
+            if (chat && (chat.kind === "crossing" || chat.kind === "port")) {
+              setOpen(false);
+              toast.success("Vous êtes connecté : votre message est publié.");
+              enterRoom(chat.kind, chat.room);
+            }
+          }
         } catch (cause) {
           setChatNote(cause instanceof Error ? cause.message : "Message non envoyé.");
         }

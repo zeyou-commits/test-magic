@@ -1,4 +1,5 @@
 import { useState, type FormEvent } from "react";
+import { authUrl } from "@/lib/authReturn";
 import { LoaderCircle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { checkPseudo, pseudoError, suggestPseudo } from "@/lib/community/travellers";
@@ -38,7 +39,8 @@ export function AccountAccessForm({
               password,
               options: {
                 data: { display_name: name.trim(), pseudo: name.trim() },
-                emailRedirectTo: `${window.location.origin}/auth?next=%2Fcompte`,
+                // Retour à la page d'origine (salon, traversée), pas à « Mon compte ».
+                emailRedirectTo: authUrl(),
               },
             });
       if (result.error) throw result.error;
@@ -63,7 +65,7 @@ export function AccountAccessForm({
     setError("");
     const { error: oauthError } = await supabase.auth.signInWithOAuth({
       provider: "google",
-      options: { redirectTo: `${window.location.origin}/auth?next=%2Fcompte` },
+      options: { redirectTo: authUrl() },
     });
     if (oauthError) {
       setError("Connexion Google indisponible. Utilisez votre adresse e-mail.");

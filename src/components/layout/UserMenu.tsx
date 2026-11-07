@@ -1,4 +1,5 @@
 import { CabasImg } from "@/components/CabasImg";
+import { useAuthNext } from "@/lib/authReturn";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { openVoyage } from "@/lib/ferry/voyageTrip";
 import { useState } from "react";
@@ -39,6 +40,7 @@ export function UserMenu({
   iconOnly?: boolean;
 }) {
   const { user, profile, roles, signOut } = useAuth();
+  const authNext = useAuthNext();
   const unread = useUnreadNoticeCount(user?.id);
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -57,7 +59,7 @@ export function UserMenu({
           className="size-9 rounded-full text-primary"
           title="Se connecter"
         >
-          <Link to="/auth" aria-label="Se connecter">
+          <Link to="/auth" search={{ next: authNext } as never} aria-label="Se connecter">
             <UserRound className="size-5" />
           </Link>
         </Button>
@@ -70,7 +72,7 @@ export function UserMenu({
         variant="ghost"
         className="bw-account-link font-semibold text-foreground hover:bg-secondary"
       >
-        <Link to="/auth">Se connecter</Link>
+        <Link to="/auth" search={{ next: authNext } as never}>Se connecter</Link>
       </Button>
     );
   }

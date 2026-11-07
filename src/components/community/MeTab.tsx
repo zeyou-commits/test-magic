@@ -1,4 +1,5 @@
 import { useUnreadNoticeCount } from "@/components/panel/FlashCenter";
+import { useAuthNext } from "@/lib/authReturn";
 import { CabasImg } from "@/components/CabasImg";
 import { useState } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
@@ -61,11 +62,16 @@ function useMoment() {
  */
 export function MeTab({ className }: { className: string }) {
   const { user } = useAuth();
+  const authNext = useAuthNext();
   const me = useQuery(myTravellerQuery(user?.id)).data;
   const [open, setOpen] = useState(false);
   if (!user || !me)
     return (
-      <Link to={user ? "/compte" : "/auth"} className={className}>
+      <Link
+        to={user ? "/compte" : "/auth"}
+        {...(user ? {} : { search: { next: authNext } as never })}
+        className={className}
+      >
         <span className="bw-me-tab__ghost" aria-hidden>
           <UserRound className="size-4" />
         </span>

@@ -188,10 +188,15 @@ const OVERVIEW_BOUNDS: [[number, number], [number, number]] = [
   [-3.5, 35],
   [10.5, 44],
 ];
+// Ordinateur : les lignes réelles, d'Almería et Ghazaouet à Marseille et Annaba (sans l'Italie).
 const DESKTOP_OVERVIEW_BOUNDS: [[number, number], [number, number]] = [
-  [-6.5, 34.5],
-  [6.5, 44.5],
+  [-3.4, 35],
+  [8.4, 43.6],
 ];
+
+/** Le cadre de la vue d'ensemble selon l'écran (même règle qu'à l'ouverture de la carte). */
+const overviewBounds = () =>
+  typeof window !== "undefined" && window.innerWidth >= 768 ? DESKTOP_OVERVIEW_BOUNDS : OVERVIEW_BOUNDS;
 
 function mapColor(token: string, fallback: string) {
   const cssColor = getComputedStyle(document.documentElement).getPropertyValue(token).trim();
@@ -499,9 +504,7 @@ export default function FerryMap({
     viewPadding,
     LIMIT_BOUNDS,
     () =>
-      mapRef.current?.easeTo({
-        center: [4, 39],
-        zoom: 4.2,
+      mapRef.current?.fitBounds(overviewBounds(), {
         pitch: 0,
         padding: viewPadding(),
         duration: cameraDuration(700),
@@ -1741,10 +1744,9 @@ export default function FerryMap({
         );
       } else {
         // On utilise un point central "Espagne - Algérie" (~ longitude 0, latitude 39)
-        map.easeTo({
-          center: [4, 39],
-          zoom: !isMobile ? 4.2 : 3.6,
-          padding: viewPadding(), // Le padding décale magiquement le centre vers la droite !
+        // Retour à la vue d'ensemble : le même cadre qu'à l'ouverture, quelle que soit la largeur.
+        map.fitBounds(overviewBounds(), {
+          padding: viewPadding(),
           duration: cameraDuration(600),
         });
       }
@@ -2407,9 +2409,7 @@ export default function FerryMap({
           : OVERVIEW_BOUNDS;
       map.fitBounds(bounds, { padding: viewPadding(), maxZoom: 5, duration: cameraDuration(800) });
     } else if (!isMobile) {
-      map.easeTo({
-        center: [4, 39],
-        zoom: 4.2,
+      map.fitBounds(DESKTOP_OVERVIEW_BOUNDS, {
         padding: viewPadding(),
         duration: cameraDuration(800),
       });

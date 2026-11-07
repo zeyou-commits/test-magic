@@ -86,6 +86,8 @@ export function TicketImport({
   const [chosen, setChosen] = useState<(string | null)[]>([null, null]);
   const [prepare, setPrepare] = useState(true);
   const [confirmed, setConfirmed] = useState(false);
+  /** Billet d'une traversée déjà passée : enregistré seulement si l'utilisateur le confirme. */
+  const [pastOk, setPastOk] = useState(false);
   const [saving, setSaving] = useState(false);
   const [problem, setProblem] = useState<string | null>(null);
   const input = useRef<HTMLInputElement>(null);
@@ -195,7 +197,7 @@ export function TicketImport({
     );
 
   const save = async () => {
-    if (!user || !confirmed) return;
+    if (!user || !confirmed || (pastTicket && !pastOk)) return;
     setSaving(true);
     setProblem(null);
     try {
@@ -276,6 +278,16 @@ export function TicketImport({
     }
     setSaving(false);
   };
+
+  // Toutes les dates lues sont passées (lendemain du départ inclus) : rien à suivre.
+  const datedLegs = draft.legs.filter((leg) => leg.date);
+  const lastDated = datedLegs.length
+    ? Math.max(...datedLegs.map((leg) => ticketInstant(leg, zoneOf(leg.fromPortId))?.getTime() ?? 0))
+    : null;
+  const pastTicket = lastDated !== null && lastDated + 86_400_000 < Date.now();
+  const pastDay = pastTicket && lastDated
+    ? new Intl.DateTimeFormat("fr-FR", { day: "numeric", month: "long", year: "numeric" }).format(new Date(lastDated))
+    : "";
 
   const companyVessels = vessels.filter(
     (v) => !draft.companyId || !v.company_id || v.company_id === draft.companyId,
@@ -663,6 +675,20 @@ export function TicketImport({
                 Préparer mon voyage avec ce billet (Ma traversée, aller et retour, véhicule)
               </span>
             </label>
+            {pastTicket ? (
+              <div className="bw-ticket-past" role="alert">
+                <strong>Ce billet est pour une traversée déjà passée{pastDay ? ` (${pastDay})` : ""}.</strong>
+                <p>
+                  BledWay ne peut lui rattacher aucune traversée : pas de suivi, pas d’alertes, pas de
+                  retour proposé. Il sera seulement rangé dans vos billets. Vérifiez la date lue
+                  ci-dessus : si elle est fausse, corrigez-la.
+                </p>
+                <label className="bw-ticket-check">
+                  <input type="checkbox" checked={pastOk} onChange={(e) => setPastOk(e.target.checked)} />
+                  <span>Je l’enregistre quand même, sans suivi.</span>
+                </label>
+              </div>
+            ) : null}
             <label className="bw-ticket-check" data-required>
               <input
                 type="checkbox"
@@ -682,7 +708,7 @@ export function TicketImport({
               <button
                 type="submit"
                 className="bw-action-primary"
-                disabled={!confirmed || saving || !user}
+                disabled={!confirmed || saving || !user || (pastTicket && !pastOk)}
               >
                 {saving ? (
                   <LoaderCircle className="animate-spin" size={16} aria-hidden />

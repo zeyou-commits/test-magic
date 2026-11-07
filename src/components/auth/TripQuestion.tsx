@@ -41,7 +41,8 @@ function TripSteps({ action, onAnswer, onDone }: { action: Follow; onAnswer: (ne
     const params = new URLSearchParams(window.location.search);
     return params.get("select") === "departure" ? params.get("id") : null;
   });
-  const [showAll, setShowAll] = useState(false);
+  // Toutes les dates affichées d'office : la traversée regardée est cochée, les autres juste dessous.
+  const showAll = true;
   const { data: routes = [] } = useQuery(routesQuery);
   const { data: ports = [] } = useQuery(portsQuery);
   const { data: companies = [] } = useQuery(companiesQuery);
@@ -123,9 +124,6 @@ function TripSteps({ action, onAnswer, onDone }: { action: Follow; onAnswer: (ne
             </label>;
           })}
         </div> : <p>Aucun départ publié pour ce bateau. Vous pouvez le suivre sans déclarer de voyage.</p>}
-      {all.length > 1 ? <button type="button" className="bw-trip-dates__more" onClick={() => setShowAll(!showAll)}>
-        {showAll ? "Masquer les autres dates" : `Une autre date ? ${all.length - 1} autre${all.length > 2 ? "s" : ""} départ${all.length > 2 ? "s" : ""}`}
-      </button> : null}
       <button type="button" className="bw-action-primary w-full" disabled={!chosen} onClick={() => {
         if (datePurpose === "proche" && chosen) {
           const picked = all.find((item) => item.id === chosen);

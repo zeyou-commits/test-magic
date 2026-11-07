@@ -8,6 +8,23 @@ import { supabase as typedSupabase } from "@/integrations/supabase/client";
 // Tables communautaires pas encore présentes dans les types générés.
 const supabase = typedSupabase as unknown as SupabaseClient;
 import { useTravelAction } from "@/hooks/useTravelAction";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+
+/** Ce que l'on perd en ne suivant plus : dit avant, pas après. */
+const UNFOLLOW_TEXT = {
+  departure:
+    "Vous ne recevrez plus les changements d’horaire, les annulations ni les nouvelles du navire pour cette traversée. Si c’est votre voyage, il disparaît de « Ma traversée » avec ses préparatifs.",
+  vessel: "Vous ne recevrez plus les alertes ni les nouvelles de ce navire.",
+  company: "Vous ne recevrez plus les actualités de cette compagnie.",
+} as const;
 
 export function FollowButton({
   kind,
@@ -49,7 +66,8 @@ export function FollowButton({
   });
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
-  async function toggle() {
+  const [asking, setAsking] = useState(false);
+  async function toggle(confirmed = false) {
     setMessage("");
     if (demo) {
       setMessage(
@@ -68,6 +86,12 @@ export function FollowButton({
       });
       return;
     }
+    // Retirer un suivi se confirme : un tap par erreur ne doit pas couper les alertes d'un voyage.
+    if (!confirmed) {
+      setAsking(true);
+      return;
+    }
+    setAsking(false);
     setBusy(true);
     try {
       const { error: issue } = await supabase
@@ -120,6 +144,23 @@ export function FollowButton({
                   ? "Suivre cette compagnie"
                 : "Suivre cette traversée"}
       </button>
+      <AlertDialog open={asking} onOpenChange={setAsking}>
+        <AlertDialogContent onClick={(event) => event.stopPropagation()}>
+          <AlertDialogTitle>
+            Ne plus suivre {label ?? (kind === "vessel" ? "ce bateau" : kind === "company" ? "cette compagnie" : "cette traversée")} ?
+          </AlertDialogTitle>
+          <AlertDialogDescription>{UNFOLLOW_TEXT[kind]}</AlertDialogDescription>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Garder le suivi</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={() => void toggle(true)}
+            >
+              Ne plus suivre
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
       {(message || error) && (
         <span
           role="status"

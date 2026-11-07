@@ -1,3 +1,12 @@
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { useState } from "react";
 import { ArrowUpRight, Bell, Heart, Ship, Trash2 } from "lucide-react";
 import { JourneyChecklist } from "./JourneyChecklist";
@@ -12,6 +21,8 @@ export function FollowCenter({ userId }: { userId: string }) {
   const [filter, setFilter] = useState("all");
   const request = useTravelAction();
   const { follows, watches, details, remove } = useTravelFollows(userId);
+  // Arrêter un suivi ou une alerte se confirme d'abord.
+  const [pending, setPending] = useState<{ kind: "follow" | "watch"; id: string; label: string } | null>(null);
   const journeys = useMyJourneys(userId);
   const activeDepartures = new Set((follows.data ?? []).filter((follow) => follow.target_kind === "departure" && follow.traveller).map((follow) => follow.target_id));
   const journeyRows = (journeys.data ?? []).filter((journey) => (journey.outbound_departure_id && activeDepartures.has(journey.outbound_departure_id)) || (journey.inbound_departure_id && activeDepartures.has(journey.inbound_departure_id)));
@@ -107,7 +118,7 @@ export function FollowCenter({ userId }: { userId: string }) {
                     <button
                       type="button"
                       aria-label={`Ne plus suivre ${detail?.label ?? "ce voyage"}`}
-                      onClick={() => void remove("follow", follow.id)}
+                      onClick={() => setPending({ kind: "follow", id: follow.id, label: detail?.label ?? "ce voyage" })}
                       className="grid size-9 shrink-0 place-items-center rounded-lg text-muted-foreground hover:bg-destructive/5 hover:text-destructive"
                     >
                       <Trash2 className="size-4" />
@@ -181,7 +192,7 @@ export function FollowCenter({ userId }: { userId: string }) {
                     <button
                       type="button"
                       aria-label="Arrêter cette alerte"
-                      onClick={() => void remove("watch", watch.id)}
+                      onClick={() => setPending({ kind: "watch", id: watch.id, label: "cette alerte d’ouverture" })}
                       className="grid size-9 place-items-center rounded-lg text-muted-foreground hover:bg-destructive/5"
                     >
                       <Trash2 className="size-4" />
@@ -211,6 +222,25 @@ export function FollowCenter({ userId }: { userId: string }) {
           </div>
         )}
       </section>
+      <AlertDialog open={Boolean(pending)} onOpenChange={(open) => { if (!open) setPending(null); }}>
+        <AlertDialogContent>
+          <AlertDialogTitle>{pending?.kind === "watch" ? "Arrêter cette alerte ?" : `Ne plus suivre ${pending?.label} ?`}</AlertDialogTitle>
+          <AlertDialogDescription>
+            {pending?.kind === "watch"
+              ? "Vous ne serez plus prévenu de l’ouverture des réservations pour ce trajet."
+              : "Vous ne recevrez plus les changements d’horaire, annulations ni nouvelles du navire. Si c’est votre voyage, il disparaît de « Ma traversée » avec ses préparatifs."}
+          </AlertDialogDescription>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Garder</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={() => { if (pending) void remove(pending.kind, pending.id); setPending(null); }}
+            >
+              {pending?.kind === "watch" ? "Arrêter l’alerte" : "Ne plus suivre"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 }

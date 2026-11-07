@@ -25,8 +25,8 @@ export function StaffBadge({ author }: { author: ChatAuthor }) {
     );
   if (author.role === "admin")
     return (
-      <span className="bw-staff-badge" data-kind="admin" title="Administrateur BledWay">
-        <Shield size={11} aria-hidden /> Admin
+      <span className="bw-staff-badge" data-kind="admin" title="Membre de l’équipe BledWay">
+        <Shield size={11} aria-hidden /> Équipe BledWay
       </span>
     );
   if (author.role === "moderator")

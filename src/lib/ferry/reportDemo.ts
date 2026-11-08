@@ -12,7 +12,7 @@ const DEMO_PREFIX = "demo-report-";
 const BUILT_IN: { port: string; category: string; detail: string; minutes: number; confirmations: number }[] = [
   { port: "Marseille", category: "queue", detail: "queue_moving", minutes: 12, confirmations: 3 },
   { port: "Alicante", category: "formalities", detail: "formalities_short", minutes: 8, confirmations: 2 },
-  { port: "Alger", category: "access", detail: "access_ok", minutes: 18, confirmations: 4 },
+  { port: "Barcelone", category: "access", detail: "access_ok", minutes: 18, confirmations: 4 },
 ];
 
 export const isDemoReport = (alert: Pick<TravelAlert, "id">) => alert.id.startsWith(DEMO_PREFIX);

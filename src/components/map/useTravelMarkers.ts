@@ -57,6 +57,8 @@ function el<K extends keyof HTMLElementTagNameMap>(tag: K, className: string, te
   if (text) node.textContent = text;
   return node;
 }
+/** Rive sud (Maghreb) : la terre est sous le port, la pastille s'y pose et pointe vers le haut. */
+const SOUTH_SHORE = new Set(["DZ", "MA", "TN", "LY", "EG"]);
 const voyageurs = (n: number) => `${n} voyageur${n > 1 ? "s" : ""}`;
 
 /**
@@ -140,6 +142,9 @@ export function useTravelMarkers(
       const button = el("button", "bw-signal-pin");
       button.type = "button";
       button.dataset["side"] = isPort ? "port" : "vessel";
+      // Toujours côté terre : au-dessus du port en Europe, en dessous au Maghreb.
+      const south = Boolean(port && SOUTH_SHORE.has(port.country_code));
+      if (south) button.dataset["shore"] = "south";
       button.dataset["tone"] = good ? "good" : "warn";
       if (onSite) button.dataset["onsite"] = "true";
       if (demo) button.dataset["demo"] = "true";
@@ -242,10 +247,15 @@ export function useTravelMarkers(
         );
         card.addEventListener("click", open);
         const lift = isPort ? -22 : 22;
+        // Rive sud : la pastille est sous le port, la bulle s'ouvre juste au-dessus du port.
         // Bulle ouverte : au-dessus de l'arc, quand le navire est debout.
         const shipSlug = ship ? vesselMapIcon(ship.name) : null;
         const zoomNow = map.getZoom();
-        const above = shipSlug ? vesselScreenHeight(shipSlug, zoomNow) + 50 * arcGap(zoomNow) : 46;
+        const above = shipSlug
+          ? vesselScreenHeight(shipSlug, zoomNow) + 50 * arcGap(zoomNow)
+          : south
+            ? 14
+            : 46;
         // Pas assez de place au-dessus : la carte glisse vers le bas le temps de lire la bulle.
         const room = map.project(point).y + shift[1] - above;
         const needed = 70 + 64 * alerts.length + 40;
@@ -266,8 +276,8 @@ export function useTravelMarkers(
       });
       const marker = new Marker({
         element: button,
-        anchor: isPort ? "bottom-right" : "bottom-left",
-        offset: [shift[0] + (isPort ? 4 : -4), shift[1] - 8],
+        anchor: south ? "top-right" : isPort ? "bottom-right" : "bottom-left",
+        offset: [shift[0] + (isPort ? 4 : -4), shift[1] + (south ? 8 : -8)],
       })
         .setLngLat(point)
         .addTo(map);

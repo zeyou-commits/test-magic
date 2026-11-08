@@ -72,6 +72,28 @@
 .bw-signal-pin[data-side="port"] .bw-signal-pin__body::after {
   right: 12px;
 }
+/* Rive sud (Maghreb) : la pastille sous le port, côté terre ; la pointe remonte vers le port. */
+.bw-signal-pin[data-shore="south"] {
+  padding: 8px 0 0;
+}
+.bw-signal-pin[data-shore="south"] .bw-signal-pin__body {
+  transform-origin: 100% 0;
+}
+.bw-signal-pin[data-shore="south"] .bw-signal-pin__body::after {
+  top: -6px;
+  bottom: auto;
+  border-right: 0;
+  border-bottom: 0;
+  border-left: 2.5px solid #ffffff;
+  border-top: 2.5px solid #ffffff;
+  border-radius: 3px 0 0 0;
+}
+.bw-signal-pin[data-shore="south"][data-demo="true"] .bw-signal-pin__body::after {
+  top: -4px;
+  bottom: auto;
+  border-left-width: 2px;
+  border-top-width: 2px;
+}
 .bw-signal-pin__icon {
   position: relative;
   z-index: 1;

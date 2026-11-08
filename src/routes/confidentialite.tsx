@@ -46,8 +46,10 @@ function PrivacyPage() {
                 </p>
                 <ul>
                   <li>
-                    <strong>Mesure d'audience</strong> : pages vues et étapes de recherche, comptées
-                    de façon anonyme, sans cookie, sans adresse IP, sans compte.
+                    <strong>Mesure d'audience</strong> : pages vues et étapes du parcours (recherche,
+                    suivi d'une traversée, ajout d'un billet), comptées de façon anonyme avec
+                    l'outil Umami, sans cookie, sans adresse IP conservée, sans lien avec votre
+                    compte.
                   </li>
                   <li>
                     <strong>Préférences gardées sur votre appareil</strong> (stockage local du

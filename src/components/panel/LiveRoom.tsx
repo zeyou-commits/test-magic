@@ -1,5 +1,6 @@
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { PinnedInfo } from "./PinnedInfo";
+import { track } from "@/lib/usage";
 import { queryOptions, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   ArrowDown,
@@ -345,6 +346,7 @@ function LiveChat({
       if (photo && user) await sendChatPhoto(kind, room, user.id, photo);
     },
     onSuccess: () => {
+      track("message-salon", kind);
       chatPhotos.forEach((photo) => URL.revokeObjectURL(photo.url));
       setChatPhotos([]);
       setPhotoConsent(false);

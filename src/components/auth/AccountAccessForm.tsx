@@ -1,4 +1,5 @@
 import { useState, type FormEvent } from "react";
+import { track } from "@/lib/usage";
 import { authUrl } from "@/lib/authReturn";
 import { LoaderCircle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -44,6 +45,7 @@ export function AccountAccessForm({
               },
             });
       if (result.error) throw result.error;
+      if (mode === "signup") track("inscription-envoyee");
       if (mode === "signup" && !result.data.session) {
         onAwaitingConfirmation();
         setMessage(
@@ -61,6 +63,7 @@ export function AccountAccessForm({
     }
   }
   async function google() {
+    track("connexion-google");
     setBusy(true);
     setError("");
     const { error: oauthError } = await supabase.auth.signInWithOAuth({

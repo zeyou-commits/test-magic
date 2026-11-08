@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { track } from "@/lib/usage";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Camera,
@@ -297,6 +298,7 @@ export function TicketImport({
       void client.invalidateQueries({ queryKey: ticketsKey });
       void client.invalidateQueries({ queryKey: myTripsKey });
       void client.invalidateQueries({ queryKey: preparationKey });
+      track("billet-ajoute");
       setStep("saved");
     } catch (cause) {
       setProblem(cause instanceof Error ? cause.message : "Enregistrement impossible. Réessayez.");

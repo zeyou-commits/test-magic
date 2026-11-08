@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
+import { track } from "@/lib/usage";
 import { useQueryClient } from "@tanstack/react-query";
 import {
   Bell,
@@ -60,6 +61,7 @@ export function TravelActionProvider({ children }: { children: ReactNode }) {
       setError("");
       try {
         await saveTravelAction(userId, intent);
+        track("suivi-enregistre", intent.type);
         clearTravelAction();
         // Le message écrit avant l'inscription part maintenant ; le suivi reste acquis s'il est refusé.
         const chat = pendingChat();
@@ -125,7 +127,11 @@ export function TravelActionProvider({ children }: { children: ReactNode }) {
     else if (pushCapability() === "enabled") void registerPush(userId, false).catch(() => {});
   }, [userId, complete]);
 
+  const signedIn = useRef(false);
+  signedIn.current = Boolean(userId);
   const request = useCallback((intent: TravelAction) => {
+    track("suivi-demande", intent.type);
+    if (!signedIn.current) track("connexion-demandee", intent.type);
     rememberTravelAction(intent);
     setAction(intent);
     setSaved(false);

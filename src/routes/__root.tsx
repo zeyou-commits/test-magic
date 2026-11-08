@@ -123,6 +123,13 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { property: "og:site_name", content: "BledWay" },
     ],
     scripts: [
+      // Mesure d'audience Umami : sans cookie ; seulement sur le vrai site (pas en local ni en aperçu).
+      {
+        src: "https://cloud.umami.is/script.js",
+        defer: true,
+        "data-website-id": "9a6674a0-5a87-48e4-a954-dad8060ab59c",
+        "data-domains": "www.bledway.com,bledway.com",
+      },
       {
         type: "application/ld+json",
         children: jsonLdString({

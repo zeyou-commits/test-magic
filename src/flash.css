@@ -11564,6 +11564,19 @@ img[data-logo="dark"] {
   transform: scale(1.1);
   box-shadow: 0 0 0 5px #ffd98a99;
 }
+/* L'étape choisie d'un clic : un anneau vert franc et son nom souligné, tant qu'elle reste figée. */
+.bw-frieze li[data-pinned] .bw-frieze__dot {
+  transform: scale(1.12);
+  box-shadow:
+    0 0 0 3px #ffffff,
+    0 0 0 6px #0e7a43;
+}
+.bw-frieze li[data-pinned] strong {
+  color: #0e7a43;
+  text-decoration: underline;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 3px;
+}
 .bw-frieze button:hover .bw-frieze__dot {
   transform: scale(1.08);
 }
@@ -11582,6 +11595,25 @@ img[data-logo="dark"] {
 .bw-frieze small {
   color: #5d6b66;
   font-size: 11px;
+}
+.bw-step-panel__back {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  align-self: flex-start;
+  margin: 0 0 8px;
+  padding: 5px 11px;
+  border: 1px solid #0e7a4340;
+  border-radius: 999px;
+  background: #eef7f1;
+  color: #0e7a43;
+  font: inherit;
+  font-size: 12.5px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.bw-step-panel__back:hover {
+  background: #dff0e5;
 }
 @keyframes bw-journey-pulse {
   0% {

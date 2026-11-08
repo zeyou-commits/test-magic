@@ -1517,7 +1517,7 @@ function Index() {
                         ) : null}
                         {voyage.renderPanel(
                           voyage.shown ?? voyage.current,
-                          Boolean(voyage.pinned) && !voyage.hovering,
+                          Boolean(voyage.pinned),
                           voyage.close,
                         )}
                       </div>

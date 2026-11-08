@@ -3,6 +3,7 @@ import {
   JOURNEY_STEPS,
   RELATIVE_STEPS,
   currentStep,
+  shownStep,
   journeyTimeline,
   stepGuide,
   stepItems,
@@ -131,5 +132,25 @@ describe("la route du bled en 8 étapes", () => {
     expect(road.lead).toContain("09:00");
     expect(road.lead).toContain("10 h 40");
     expect(road.links[0]?.href).toContain("stations-services.fr");
+  });
+});
+
+describe("le volet de « Mon voyage » reste sur l'étape choisie", () => {
+  it("un clic sur la frise l'emporte sur le survol et sur l'étape du moment", () => {
+    expect(shownStep({ pinned: "papers", hover: "sea", closed: false, current: "sea" })).toBe("papers");
+    expect(shownStep({ pinned: "papers", hover: null, closed: true, current: "road" })).toBe("papers");
+  });
+  it("l'étape du moment qui avance ne déplace pas une étape choisie", () => {
+    const pinned = "vehicle" as const;
+    const before = currentStep({ timeline, now: departureMs - 30 * 24 * HOUR });
+    const during = currentStep({ timeline, now: departureMs + HOUR });
+    expect(before).not.toBe(during);
+    for (const current of [before, during])
+      expect(shownStep({ pinned, hover: null, closed: false, current })).toBe(pinned);
+  });
+  it("sans choix : aperçu au survol, sinon l'étape du moment", () => {
+    expect(shownStep({ pinned: null, hover: "port", closed: false, current: "papers" })).toBe("port");
+    expect(shownStep({ pinned: null, hover: null, closed: false, current: "papers" })).toBe("papers");
+    expect(shownStep({ pinned: null, hover: null, closed: true, current: "papers" })).toBeNull();
   });
 });

@@ -172,6 +172,26 @@ export const STEP_STATUSES: Partial<Record<JourneyStepId, TravelStatus[]>> = {
 };
 
 /**
+ * L'étape affichée dans le volet de « Mon voyage » (ordinateur). Une étape choisie d'un clic sur la
+ * frise reste affichée tant qu'on n'en choisit pas une autre : ni le survol de la frise, ni l'étape
+ * du moment qui avance avec l'heure (ou les données rechargées) ne la remplacent. Sans choix, le
+ * survol donne un aperçu, puis l'étape du moment revient (sauf volet fermé).
+ */
+export function shownStep({
+  pinned,
+  hover,
+  closed,
+  current,
+}: {
+  pinned: JourneyStepId | null;
+  hover: JourneyStepId | null;
+  closed: boolean;
+  current: JourneyStepId;
+}): JourneyStepId | null {
+  return pinned ?? hover ?? (closed ? null : current);
+}
+
+/**
  * L'étape du moment. « Où en êtes-vous ? » l'emporte sur le calendrier autour du voyage ;
  * avant, une étape dont toutes les actions sont faites laisse place à la suivante.
  */

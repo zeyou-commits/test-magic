@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { Undo2 } from "lucide-react";
 import { MyTripHero } from "@/components/panel/MyTripHero";
 import { TrafficCard } from "@/components/panel/TrafficCard";
 import { RateStars } from "@/components/panel/RateStars";
@@ -28,6 +29,7 @@ import {
   RELATIVE_STEPS,
   STEP_STATUSES,
   currentStep,
+  shownStep,
   durationLabel,
   journeyTimeline,
   stepGuide,
@@ -248,7 +250,7 @@ export function useVoyage(
   const index = storyIndex ?? steps.indexOf(current);
   const shown: JourneyStepId | null = isMobile
     ? (steps[index] ?? current)
-    : (hover ?? pinned ?? (closed ? null : current));
+    : shownStep({ pinned, hover, closed, current });
 
   // La carte suit l'étape regardée ; mon bateau est mis en avant où qu'il soit.
   const focusStep = shown ?? current;
@@ -295,6 +297,12 @@ export function useVoyage(
   const updatePlaces = (next: JourneyPlaces | null) => {
     writePlaces(departure.id, next);
     setPlaces(next);
+  };
+
+  const backToCurrent = () => {
+    setPinned(null);
+    setHover(null);
+    setClosed(false);
   };
 
   const renderPanel = (step: JourneyStepId, isPinned: boolean, onClose?: () => void): ReactNode => {
@@ -349,7 +357,19 @@ export function useVoyage(
         only={statuses}
       />
     ) : null;
-    const top = picker;
+    // Une étape choisie sur la frise reste affichée : on revient à celle du moment d'un geste.
+    const back =
+      isPinned && step !== current ? (
+        <button type="button" className="bw-step-panel__back" onClick={backToCurrent}>
+          <Undo2 size={14} aria-hidden /> Revenir à l’étape en cours ({stepLabel(current, direction, audience)})
+        </button>
+      ) : null;
+    const top = (
+      <>
+        {back}
+        {picker}
+      </>
+    );
     // Noter sur le moment : le port en y arrivant, le navire et le port d'arrivée en débarquant.
     const rate = (kind: "port" | "vessel", id: string, label: string) => (
       <StepRate
@@ -439,11 +459,13 @@ export function useVoyage(
     pinned,
     hovering: hover !== null,
     setHover,
+    /** Un clic sur la frise fige le volet sur l'étape (un second clic la laisse affichée). */
     pin: (step: JourneyStepId) => {
       setClosed(false);
       setHover(null);
-      setPinned((value) => (value === step ? null : step));
+      setPinned(step);
     },
+    backToCurrent,
     close: () => {
       setPinned(null);
       setClosed(true);

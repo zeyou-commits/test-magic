@@ -40,7 +40,8 @@ export type FriezeStep = {
 
 /**
  * La frise d'ordinateur : repère fixe en haut de « Mon voyage » et du simulateur.
- * Survol = aperçu de l'étape ; clic = l'étape reste ouverte ; second clic = elle se libère.
+ * Survol = aperçu de l'étape (tant qu'aucune n'est choisie) ; clic = le volet se fige sur l'étape,
+ * jusqu'au choix d'une autre ou au retour à l'étape en cours.
  */
 export function JourneyFrieze({
   steps,
@@ -78,6 +79,7 @@ export function JourneyFrieze({
             data-state={step.state}
             data-late={step.late || undefined}
             data-shown={shownId === step.id || undefined}
+            data-pinned={pinnedId === step.id || undefined}
           >
             {index < steps.length - 1 ? (
               <span className="bw-frieze__bar" data-state={step.state} aria-hidden />
@@ -85,7 +87,7 @@ export function JourneyFrieze({
             <button
               type="button"
               aria-pressed={pinnedId === step.id}
-              aria-label={`${step.label} · ${step.sub}${step.state === "current" ? ` · ${hereLabel}` : ""}`}
+              aria-label={`${step.label} · ${step.sub}${step.state === "current" ? ` · ${hereLabel}` : ""}${pinnedId === step.id ? " · affichée" : ""}`}
               onPointerEnter={(event) => {
                 if (event.pointerType === "mouse") onHover(step.id);
               }}

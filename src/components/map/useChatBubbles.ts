@@ -1,4 +1,7 @@
-import { useEffect, useRef, type RefObject } from "react";
+import { createElement, useEffect, useRef, type RefObject } from "react";
+import { createRoot, type Root } from "react-dom/client";
+import { SituationIcon } from "@/components/panel/SituationIcon";
+import { formatAge } from "@/lib/ferry/tracking";
 import { useQuery } from "@tanstack/react-query";
 import { Marker, type Map as MapLibreMap } from "maplibre-gl";
 import { personaImage } from "@/lib/community/travellers";
@@ -45,7 +48,6 @@ type Bubble = RecentMessage & { report?: TravelAlert };
 /** Un signalement s'invite toutes les 2 bulles de messages. */
 const REPORT_EVERY = 2;
 
-const MEGAPHONE = `<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m3 11 18-5v12L3 14v-3z"/><path d="M11.6 16.8a3 3 0 1 1-5.8-1.6"/></svg>`;
 
 /**
  * La carte qui vit : une seule bulle à la fois sort du navire ou du port d'un salon, avec le prénom
@@ -152,13 +154,19 @@ export function useChatBubbles(
       return ship ? shipSpot(ship) : portSpot(route.departure_port_id);
     };
 
+    let iconRoot: Root | null = null;
     const hide = () => {
       const element = marker?.getElement();
       if (!element) return;
       element.dataset["leaving"] = "true";
       const old = marker;
+      const oldRoot = iconRoot;
       marker = null;
-      window.setTimeout(() => old?.remove(), 300);
+      iconRoot = null;
+      window.setTimeout(() => {
+        old?.remove();
+        oldRoot?.unmount();
+      }, 300);
     };
     const open = (message: Bubble) => {
       if (message.report) {
@@ -180,20 +188,34 @@ export function useChatBubbles(
       );
       enterRoom(message.kind, message.room);
     };
-    // Façon Waze : l'avatar d'abord, puis une seule ligne courte. Le détail est au toucher.
+    // Une petite carte : l'avatar (ou le picto du signalement), qui et où, puis le message sur
+    // deux lignes. Un signalement se reconnaît tout de suite : pastille colorée et mot « Signalement ».
     const build = (message: Bubble) => {
       const element = document.createElement("button");
       element.type = "button";
       element.className = "bw-map-bubble";
       const face = document.createElement("i");
-      const line = document.createElement("span");
+      face.className = "bw-map-bubble__face";
+      const text = document.createElement("span");
+      text.className = "bw-map-bubble__text";
+      const top = document.createElement("span");
+      top.className = "bw-map-bubble__top";
+      const msg = document.createElement("span");
+      msg.className = "bw-map-bubble__msg";
       if (message.report) {
         const { report } = message;
         element.dataset["report"] = "true";
         element.style.setProperty("--situation-color", situationOf(report.category).color);
-        face.innerHTML = MEGAPHONE;
-        line.textContent = `${shortBody(message.body, 26)}${report.confirmations ? ` · ✓${report.confirmations}` : ""}`;
-        element.title = "Signalement de voyageurs";
+        iconRoot = createRoot(face);
+        iconRoot.render(createElement(SituationIcon, { category: report.category, size: 17 }));
+        const kind = document.createElement("b");
+        kind.textContent = "Signalement";
+        const age = Math.max(0, (Date.now() - Date.parse(report.created_at)) / 60_000);
+        const meta = document.createElement("small");
+        meta.textContent = `${formatAge(age)}${report.confirmations ? ` · ✓ ${report.confirmations}` : ""}`;
+        top.append(kind, meta);
+        msg.textContent = shortBody(message.body, 80);
+        element.title = "Signalement de voyageurs : toucher pour le détail";
       } else {
         const avatar = document.createElement("img");
         avatar.alt = "";
@@ -203,17 +225,23 @@ export function useChatBubbles(
         face.append(avatar);
         const name = document.createElement("b");
         name.textContent = message.author.pseudo;
-        line.append(name, ` ${shortBody(message.body, 24) || "…"}`);
-        if (message.label) element.title = message.label;
+        top.append(name);
+        if (message.label) {
+          const where = document.createElement("small");
+          where.textContent = message.label;
+          top.append(where);
+        }
+        msg.textContent = shortBody(message.body, 90) || "…";
       }
-      element.append(face, line);
-      // Un exemple le dit, en tout petit et hors du texte coupé : la bulle reste légère.
+      // Un exemple le dit clairement, sans alourdir : une petite étiquette en tête.
       if (message.demo) {
         const note = document.createElement("em");
-        note.textContent = "ex.";
-        element.append(note);
-        element.title = "Message d'illustration au lancement";
+        note.textContent = "Exemple";
+        top.append(note);
+        element.title = "Message d'illustration au lancement : toucher pour ouvrir les salons";
       }
+      text.append(top, msg);
+      element.append(face, text);
       element.addEventListener("click", (event) => {
         event.stopPropagation();
         open(message);
@@ -270,6 +298,8 @@ export function useChatBubbles(
       map.off("movestart", pause);
       map.off("moveend", resume);
       marker?.remove();
+      const root = iconRoot;
+      if (root) window.setTimeout(() => root.unmount(), 0);
     };
   }, [mapRef, ready, paused]);
 }

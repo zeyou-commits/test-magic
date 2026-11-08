@@ -43,90 +43,116 @@
   position: relative;
   display: inline-flex;
   align-items: center;
-  gap: 4px;
-  height: 28px;
-  padding: 2px 8px 2px 2px;
-  border-radius: 999px;
-  background: #ffffff;
-  border: 1.5px solid var(--situation-color, #f2c14e);
-  box-shadow: 0 3px 10px #16324a33;
-  color: #16324a;
   transition:
     transform 0.15s ease,
-    box-shadow 0.15s ease,
     opacity 0.15s ease;
 }
+/* La pointe, de la couleur de la situation : elle désigne le port ou le navire. */
 .bw-signal-pin__body::after {
   content: "";
   position: absolute;
   bottom: -6px;
-  width: 10px;
-  height: 10px;
-  background: inherit;
-  border: inherit;
-  border-top: 0;
-  border-left: 0;
-  transform: rotate(45deg) skew(8deg, 8deg);
+  width: 12px;
+  height: 12px;
+  background: var(--situation-color, #e0a400);
+  border-right: 2.5px solid #ffffff;
+  border-bottom: 2.5px solid #ffffff;
+  border-radius: 0 0 3px 0;
+  transform: rotate(45deg);
 }
 .bw-signal-pin[data-side="vessel"] .bw-signal-pin__body {
   transform-origin: 0 100%;
 }
 .bw-signal-pin[data-side="vessel"] .bw-signal-pin__body::after {
-  left: 7px;
+  left: 12px;
 }
 .bw-signal-pin[data-side="port"] .bw-signal-pin__body {
   transform-origin: 100% 100%;
 }
 .bw-signal-pin[data-side="port"] .bw-signal-pin__body::after {
-  right: 7px;
+  right: 12px;
 }
 .bw-signal-pin__icon {
   position: relative;
+  z-index: 1;
   display: grid;
   place-items: center;
-  width: 22px;
-  height: 22px;
+  width: 36px;
+  height: 36px;
+  border: 2.5px solid #ffffff;
   border-radius: 50%;
   background: var(--situation-color, #e0a100);
   color: #ffffff;
+  box-shadow: 0 4px 12px #16324a40;
+  animation: bw-signal-pulse 2.4s ease-out infinite;
+}
+@keyframes bw-signal-pulse {
+  0% {
+    box-shadow:
+      0 4px 12px #16324a40,
+      0 0 0 0 color-mix(in srgb, var(--situation-color, #e0a100) 55%, transparent);
+  }
+  70%,
+  100% {
+    box-shadow:
+      0 4px 12px #16324a40,
+      0 0 0 12px color-mix(in srgb, var(--situation-color, #e0a100) 0%, transparent);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .bw-signal-pin__icon {
+    animation: none;
+  }
 }
 /* Au moins un voyageur sur place : petit repère vert sur le picto. */
 .bw-signal-pin[data-onsite="true"] .bw-signal-pin__icon::after {
   content: "";
   position: absolute;
-  right: -2px;
-  bottom: -2px;
-  width: 9px;
-  height: 9px;
+  left: -3px;
+  bottom: -3px;
+  width: 11px;
+  height: 11px;
   border: 2px solid #ffffff;
   border-radius: 50%;
   background: #16a34a;
 }
+/* Le nombre de voyageurs qui signalent : petit badge en haut à droite. */
 .bw-signal-pin__crowd {
+  position: absolute;
+  z-index: 2;
+  top: -7px;
+  right: -9px;
   display: inline-flex;
   align-items: center;
+  gap: 2px;
 }
-.bw-signal-pin__crowd > svg + svg {
-  margin-left: -6px;
+.bw-signal-pin__crowd:empty {
+  display: none;
+}
+.bw-signal-pin__crowd > svg {
+  display: none;
 }
 .bw-signal-pin__crowd > small {
-  margin-left: 3px;
-  font-size: 11px;
-  font-weight: 700;
+  display: grid;
+  place-items: center;
+  min-width: 19px;
+  height: 19px;
+  padding: 0 5px;
+  border: 2px solid #ffffff;
+  border-radius: 999px;
+  background: #16324a;
+  color: #ffffff;
+  font-size: 10.5px;
+  font-weight: 800;
   line-height: 1;
 }
 .bw-signal-pin__crowd > small.bw-signal-pin__more {
-  padding: 2px 4px;
-  border-radius: 999px;
-  background: #fff1ce;
-  color: #805712;
+  background: #ffc83d;
+  color: #4a3200;
 }
 .bw-signal-pin:hover .bw-signal-pin__body,
 .bw-signal-pin:focus-visible .bw-signal-pin__body {
   transform: scale(1.12);
-  box-shadow:
-    0 0 0 3px color-mix(in srgb, var(--situation-color, #ffc83d) 40%, transparent),
-    0 6px 16px #16324a40;
 }
 /* Une pastille survolée : les autres s'effacent un peu pour la lire sans chevauchement. */
 .bw-signal-pins--focus .bw-signal-pin:not(:hover) .bw-signal-pin__body {
@@ -10446,76 +10472,153 @@ img[data-logo="dark"] {
   color: #0e7a43;
 }
 
-/* Bulle d'un salon sur la carte, façon Waze : petite, l'avatar en avant, une ligne. */
+/* Bulle d'un salon sur la carte : une petite carte avec pointe. Avatar, qui et où, puis le message
+   sur deux lignes. Un signalement : pastille colorée, mot « Signalement », liseré de sa couleur. */
 .bw-map-bubble {
+  --bubble-accent: #0e7a43;
+  position: relative;
   display: flex;
-  align-items: center;
-  gap: 5px;
+  align-items: flex-start;
+  gap: 9px;
   width: max-content;
-  max-width: 190px;
-  height: 30px;
-  padding: 0 10px 0 2px;
-  border-radius: 999px;
+  max-width: 250px;
+  padding: 8px 12px 9px 8px;
+  border: 0;
+  border-radius: 16px;
   background: #ffffff;
+  text-align: left;
   box-shadow:
-    0 4px 12px #16324a2e,
-    0 0 0 1px #16324a12;
+    0 10px 28px #16324a2b,
+    0 2px 6px #16324a1a,
+    0 0 0 1px #16324a10;
   cursor: pointer;
-  transform-origin: bottom left;
-  animation: bw-map-bubble-in 0.4s cubic-bezier(0.22, 1.4, 0.36, 1);
+  transform-origin: 22px 100%;
+  animation: bw-map-bubble-in 0.45s cubic-bezier(0.22, 1.3, 0.36, 1);
   transition:
     opacity 0.3s ease,
-    transform 0.3s ease;
+    transform 0.3s ease,
+    box-shadow 0.2s ease;
+}
+/* La pointe, sous l'avatar : on voit d'où sort le message. */
+.bw-map-bubble::after {
+  content: "";
+  position: absolute;
+  left: 18px;
+  bottom: -6px;
+  width: 13px;
+  height: 13px;
+  background: #ffffff;
+  border-radius: 0 0 4px 0;
+  transform: rotate(45deg);
+  box-shadow: 3px 3px 5px #16324a14;
+}
+.bw-map-bubble:hover {
+  transform: translateY(-2px);
+  box-shadow:
+    0 14px 32px #16324a33,
+    0 2px 6px #16324a1a,
+    0 0 0 1px #16324a14;
 }
 .bw-map-bubble[data-leaving] {
   opacity: 0;
-  transform: translateY(-4px) scale(0.95);
+  transform: translateY(-6px) scale(0.94);
 }
-.bw-map-bubble > i {
+.bw-map-bubble__face {
+  position: relative;
+  z-index: 1;
   display: grid;
   flex: none;
   place-items: center;
-  width: 26px;
-  height: 26px;
+  width: 34px;
+  height: 34px;
   overflow: hidden;
   border: 2px solid #ffffff;
   border-radius: 50%;
   background: #eef7f1;
-  box-shadow: 0 0 0 1.5px #0e7a43;
+  box-shadow: 0 0 0 2px var(--bubble-accent);
 }
-.bw-map-bubble > i img {
+.bw-map-bubble__face img {
   width: 100%;
   height: 100%;
   object-fit: cover;
 }
-.bw-map-bubble > span {
-  overflow: hidden;
+.bw-map-bubble__text {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  gap: 2px;
   min-width: 0;
-  color: #16324a;
-  font-size: 11.5px;
-  font-weight: 500;
-  text-overflow: ellipsis;
+}
+.bw-map-bubble__top {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  min-width: 0;
   white-space: nowrap;
 }
-.bw-map-bubble > span b {
-  color: #0e6b3b;
-  font-weight: 800;
-}
-.bw-map-bubble > em {
+.bw-map-bubble__top b {
   flex: none;
-  color: #9aa49f;
+  color: var(--bubble-accent);
+  font-size: 12.5px;
+  font-weight: 800;
+  line-height: 1.2;
+}
+.bw-map-bubble__top small {
+  overflow: hidden;
+  min-width: 0;
+  color: #6b7a82;
+  font-size: 11px;
+  font-weight: 600;
+  text-overflow: ellipsis;
+}
+.bw-map-bubble__top em {
+  flex: none;
+  margin-left: auto;
+  padding: 1px 6px;
+  border-radius: 999px;
+  background: #f1f3f2;
+  color: #7c8783;
   font-size: 9.5px;
   font-style: normal;
+  font-weight: 700;
+  letter-spacing: 0.02em;
 }
-.bw-map-bubble[data-report] > i {
-  background: #ffc83d;
-  color: #4a3200;
-  box-shadow: 0 0 0 1.5px var(--situation-color, #e0a400);
+.bw-map-bubble__msg {
+  display: -webkit-box;
+  overflow: hidden;
+  color: #16324a;
+  font-size: 12.5px;
+  font-weight: 500;
+  line-height: 1.35;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+/* Signalement : reconnaissable au premier coup d'œil, façon Waze. */
+.bw-map-bubble[data-report] {
+  --bubble-accent: var(--situation-color, #e0a400);
+  box-shadow:
+    inset 3px 0 0 var(--bubble-accent),
+    0 10px 28px #16324a2b,
+    0 2px 6px #16324a1a,
+    0 0 0 1px #16324a10;
+}
+.bw-map-bubble[data-report] .bw-map-bubble__face {
+  background: var(--bubble-accent);
+  color: #ffffff;
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--bubble-accent) 35%, transparent);
+}
+.bw-map-bubble[data-report] .bw-map-bubble__top b {
+  font-size: 10.5px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.bw-map-bubble[data-report] .bw-map-bubble__msg {
+  font-weight: 700;
 }
 @keyframes bw-map-bubble-in {
   from {
     opacity: 0;
-    transform: translateY(8px) scale(0.85);
+    transform: translateY(10px) scale(0.85);
   }
 }
 @media (prefers-reduced-motion: reduce) {
@@ -10525,7 +10628,12 @@ img[data-logo="dark"] {
 }
 @media (max-width: 767px) {
   .bw-map-bubble {
-    max-width: 170px;
+    max-width: 215px;
+    padding: 7px 10px 8px 7px;
+  }
+  .bw-map-bubble__face {
+    width: 30px;
+    height: 30px;
   }
 }
 
@@ -14825,6 +14933,12 @@ img[data-logo="dark"] {
   letter-spacing: -0.01em;
   color: #5b6b73;
   white-space: nowrap;
+}
+/* Ordinateur : libellé au survol seulement, la colonne reste courte au-dessus de « Signaler ». */
+@media (min-width: 768px) {
+  .bw-mapstat-label {
+    display: none;
+  }
 }
 
 /* Barre du bas : la pastille du profil (30 px) ne décale plus son libellé par rapport aux autres onglets (icônes de 20 px). */

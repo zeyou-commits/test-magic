@@ -139,7 +139,7 @@ export function useTravelMarkers(
       // Le contenu est dans un bloc à part : MapLibre positionne le bouton par transform.
       const body = el("span", "bw-signal-pin__body");
       const badge = el("span", "bw-signal-pin__icon");
-      iconInto(badge, alert.category, 15, roots);
+      iconInto(badge, alert.category, 18, roots);
       body.append(badge);
       const crowd = el("span", "bw-signal-pin__crowd");
       for (let index = 0; index < Math.min(2, travelers); index += 1)

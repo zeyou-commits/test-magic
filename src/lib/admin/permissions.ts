@@ -17,6 +17,7 @@ const editorial = new Set([
   "signals",
   "places",
   "illustrations",
+  "library",
   "walletMedia",
   "health",
   "tickets",

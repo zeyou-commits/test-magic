@@ -239,6 +239,7 @@ function MeSheet({ open, onOpenChange }: { open: boolean; onOpenChange: (open: b
         onOpenChange={setAll}
         moment={moment}
         current={me.mood?.code ?? null}
+        currentImage={me.mood?.image ?? null}
       />
     </>
   );

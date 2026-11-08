@@ -15089,3 +15089,149 @@ img[data-logo="dark"] {
     text-underline-offset: 3px;
   }
 }
+/* Bibliothèque d'emojis et d'avatars (profil, humeur, salon) : catégories pour naviguer, recherche. */
+.bw-library {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+}
+.bw-library__search {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid #d7e3dc;
+  border-radius: 999px;
+  background: #fff;
+  padding: 0 10px;
+  color: #5b6b78;
+}
+.bw-library__search input {
+  flex: 1;
+  min-width: 0;
+  height: 36px;
+  border: 0;
+  background: transparent;
+  font-size: 14px;
+  color: #16324a;
+  outline: none;
+}
+.bw-library__search input::-webkit-search-cancel-button {
+  display: none;
+}
+.bw-library__search button {
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 999px;
+}
+.bw-library__tabs {
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  padding-bottom: 2px;
+}
+.bw-library__tabs::-webkit-scrollbar {
+  display: none;
+}
+.bw-library__tabs button {
+  flex: none;
+  border: 1px solid #d7e3dc;
+  border-radius: 999px;
+  background: #fff;
+  padding: 4px 10px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: #16324a;
+  white-space: nowrap;
+}
+.bw-library__tabs button small {
+  margin-left: 2px;
+  color: #6b7c88;
+  font-weight: 500;
+}
+.bw-library__tabs button[aria-selected="true"] {
+  border-color: var(--primary);
+  background: var(--primary);
+  color: #fff;
+}
+.bw-library__tabs button[aria-selected="true"] small {
+  color: #ffffffcc;
+}
+.bw-library__scroll {
+  max-height: min(46vh, 420px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+.bw-library__group {
+  margin: 8px 0 4px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #5b6b78;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+.bw-library__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(76px, 1fr));
+  gap: 6px;
+}
+.bw-library__grid button {
+  position: relative;
+  display: grid;
+  justify-items: center;
+  align-content: start;
+  gap: 2px;
+  min-width: 0;
+  border: 2px solid transparent;
+  border-radius: 14px;
+  padding: 6px 4px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #16324a;
+}
+.bw-library__grid button:hover {
+  background: #f1f8f4;
+}
+.bw-library__grid button[aria-checked="true"] {
+  border-color: var(--primary);
+  box-shadow: 0 4px 10px #0a5c3626;
+}
+.bw-library__grid button span {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.bw-library__grid button > svg {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  border-radius: 999px;
+  background: var(--primary);
+  color: #fff;
+}
+.bw-library__grid img {
+  object-fit: contain;
+}
+.bw-library__empty {
+  padding: 12px 4px;
+  font-size: 13px;
+  color: #5b6b78;
+}
+.bw-library[data-compact] .bw-library__grid {
+  grid-template-columns: repeat(auto-fill, minmax(46px, 1fr));
+  gap: 2px;
+}
+.bw-library[data-compact] .bw-library__grid button {
+  padding: 3px;
+  border-radius: 10px;
+}
+.bw-library[data-compact] .bw-library__scroll {
+  max-height: 200px;
+}
+.bw-mood-scroll .bw-library__scroll {
+  max-height: none;
+  overflow: visible;
+}

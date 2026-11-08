@@ -102,7 +102,13 @@ export type PublicProfile = TravellerCard & {
   badges: { code: string; label: string }[];
   me: boolean;
 };
-export type MoodRow = Mood & { moments: string[]; sort: number; active: boolean };
+export type MoodRow = Mood & {
+  moments: string[];
+  sort: number;
+  active: boolean;
+  /** Humeur « miroir » d'une image de la bibliothèque (script du 08/11/2026) : cachée des listes. */
+  library_item?: string | null;
+};
 export type ReactionCounts = Record<
   string,
   Partial<Record<ReactionCode, { n: number; mine: boolean }>>
@@ -136,7 +142,8 @@ export const moodsQuery = queryOptions({
       if (missing(error.code)) return null;
       throw new Error(error.message);
     }
-    return data as MoodRow[];
+    // Les humeurs créées depuis la bibliothèque n'ont pas de phrase : elles restent dans la bibliothèque.
+    return (data as MoodRow[]).filter((mood) => !mood.library_item);
   },
   staleTime: 10 * 60_000,
 });
@@ -205,6 +212,15 @@ export const saveTraveller = (input: {
     p_show_on_trip: input.showOnTrip,
   });
 export const setMood = (code: string | null) => rpc<MyTraveller>("bw_set_mood", { p_code: code });
+/** Humeur = n'importe quelle image de la bibliothèque (script « bibliotheque_categories »). */
+export async function setMoodItem(item: string) {
+  const { data, error } = await db.rpc("bw_set_mood_item", { p_item: item });
+  if (error) {
+    if (missing(error.code)) throw new Error("Cette image sera disponible comme humeur très bientôt.");
+    throw new Error(error.message);
+  }
+  return data as MyTraveller;
+}
 export const react = (kind: ContributionKind, id: string, code: ReactionCode) =>
   rpc<boolean>("bw_react", { p_kind: kind, p_target: id, p_code: code });
 

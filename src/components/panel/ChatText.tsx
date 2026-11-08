@@ -3,6 +3,7 @@ import { CabasImg } from "@/components/CabasImg";
 import { moodsQuery, type MoodRow } from "@/lib/community/travellers";
 import { chatParts, emoteBank, emoteDictionary } from "@/lib/ferry/chatEmotes";
 import { MENTION_PATTERN } from "@/lib/ferry/chat";
+import { avatarsQuery } from "@/lib/community/avatars";
 
 function useActiveMoods(): MoodRow[] {
   const moods = useQuery(moodsQuery).data;
@@ -27,7 +28,13 @@ export function ChatText({
   mentions?: Record<string, string> | undefined;
   myHandle?: string | undefined;
 }) {
-  const dictionary = emoteDictionary(useActiveMoods());
+  // Toute la bibliothèque (retirées comprises, pour les anciens messages), puis les humeurs et les
+  // codes historiques, qui l'emportent en cas de code identique.
+  const library = useQuery(avatarsQuery).data?.rows ?? [];
+  const dictionary = [
+    ...library.map((row) => ({ code: row.id, label: row.label, image: row.image })),
+    ...emoteDictionary(useActiveMoods()),
+  ];
   // Une mention inconnue (compte supprimé) reste discrète : « @voyageur ».
   const pieces = body.split(new RegExp(MENTION_PATTERN.source));
   if (pieces.length > 1)

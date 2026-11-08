@@ -22,6 +22,7 @@ import {
   Zap,
   Fuel,
   Images,
+  Smile,
   Megaphone,
   TriangleAlert,
   Newspaper,
@@ -145,6 +146,14 @@ const sections = [
     description: "Avatars, personnages, humeurs et icônes : remplacer une image ou la renommer.",
     group: "Voyageurs",
     icon: Images,
+  },
+  {
+    id: "library",
+    label: "Emojis et avatars",
+    description:
+      "La bibliothèque proposée aux voyageurs (avatar, humeur, salons) et ses catégories.",
+    group: "Voyageurs",
+    icon: Smile,
   },
   {
     id: "walletMedia",

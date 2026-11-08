@@ -15,6 +15,13 @@ import {
   type AvatarRow,
 } from "@/lib/community/avatars";
 import { communityKey } from "@/lib/community/travellers";
+import {
+  libraryCategoriesKey,
+  libraryCategoriesQuery,
+  UNSORTED,
+  UNSORTED_LABEL,
+  type LibraryCategory,
+} from "@/lib/community/library";
 import type { IllustrationSlot } from "@/lib/illustrations/catalog";
 import type { PreparedIllustration } from "@/lib/illustrations/prepare";
 import { illustrationFileUrl, ILLUSTRATIONS_BUCKET } from "@/lib/illustrations/store";
@@ -62,9 +69,9 @@ async function uploadAvatar(id: string, prepared: PreparedIllustration) {
 }
 
 /**
- * Admin → Illustrations → Avatars : la liste proposée aux voyageurs. Ajouter (image détourée),
- * renommer, retirer du choix ou supprimer. Les images du site se remplacent dans la liste
- * « Illustrations » juste en dessous.
+ * Admin → Emojis et avatars → Bibliothèque : toutes les images proposées aux voyageurs, comme
+ * avatar, comme humeur et dans les salons. Ajouter (image détourée), renommer, ranger dans des
+ * catégories, retirer du choix ou supprimer. Les images du site se remplacent dans « Illustrations ».
  */
 export function AvatarsAdmin() {
   const client = useQueryClient();
@@ -78,18 +85,41 @@ export function AvatarsAdmin() {
       return data as Record<string, number>;
     },
   });
-  const [kind, setKind] = useState<AvatarKind | "tous">("tous");
+  const categoriesData = useQuery(libraryCategoriesQuery);
+  const [kind, setKind] = useState<string>("tous");
   const [search, setSearch] = useState("");
   const [editing, setEditing] = useState<AvatarRow | "new" | null>(null);
 
   const rows = list.data?.rows ?? [];
+  const sorted = categoriesData.data?.managed ?? false;
+  const categories = categoriesData.data?.categories ?? [];
+  const links = categoriesData.data?.links ?? [];
+  const linked = new Set(links.map((link) => link.item_id));
+  // Filtres : catégories (script du 08/11/2026), sinon les anciens types.
+  const filters: { id: string; label: string; has: (row: AvatarRow) => boolean }[] = sorted
+    ? [
+        ...categories.map((category) => ({
+          id: category.id,
+          label: category.label,
+          has: (row: AvatarRow) =>
+            links.some((link) => link.category_id === category.id && link.item_id === row.id),
+        })),
+        { id: UNSORTED, label: UNSORTED_LABEL, has: (row: AvatarRow) => !linked.has(row.id) },
+      ]
+    : (Object.keys(avatarKinds) as AvatarKind[]).map((id) => ({
+        id,
+        label: avatarKinds[id],
+        has: (row: AvatarRow) => row.kind === id,
+      }));
+  const filter = filters.find((item) => item.id === kind);
   const refresh = () => {
     void client.invalidateQueries({ queryKey: avatarsKey });
+    void client.invalidateQueries({ queryKey: libraryCategoriesKey });
     void client.invalidateQueries({ queryKey: USAGE_KEY });
     void client.invalidateQueries({ queryKey: communityKey });
   };
   const visible = rows.filter(
-    (row) => (kind === "tous" || row.kind === kind) && matches(search, row.label, row.id),
+    (row) => (!filter || filter.has(row)) && matches(search, row.label, row.id),
   );
 
   if (list.data && !list.data.managed)
@@ -103,28 +133,32 @@ export function AvatarsAdmin() {
   return (
     <section className="mb-8">
       <div className="flex flex-wrap items-center gap-2">
-        <h3 className="mr-auto text-base font-semibold">Avatars proposés aux voyageurs</h3>
+        <h3 className="mr-auto text-base font-semibold">
+          Bibliothèque : avatars, humeurs et émoticônes des salons
+        </h3>
         <Input
           value={search}
           onChange={(event) => setSearch(event.target.value)}
-          placeholder="Chercher un avatar"
+          placeholder="Chercher une image"
           className="max-w-56"
         />
         <Button onClick={() => setEditing("new")}>
-          <Plus className="size-4" /> Ajouter un avatar
+          <Plus className="size-4" /> Ajouter une image
         </Button>
       </div>
-      <div className="mt-2 flex flex-wrap gap-1.5" role="group" aria-label="Type d'avatar">
-        {(["tous", ...Object.keys(avatarKinds)] as (AvatarKind | "tous")[]).map((id) => (
+      <p className="mt-1 text-xs text-muted-foreground">
+        Chaque image active se choisit partout : avatar du profil, humeur, salons.
+      </p>
+      <div className="mt-2 flex flex-wrap gap-1.5" role="group" aria-label="Catégorie">
+        {[{ id: "tous", label: "Toutes", has: () => true }, ...filters].map((item) => (
           <button
-            key={id}
+            key={item.id}
             type="button"
-            aria-pressed={kind === id}
-            onClick={() => setKind(id)}
-            className={`rounded-full border px-3 py-1 text-xs font-medium ${kind === id ? "border-emerald-700 bg-emerald-700 text-white" : "bg-white"}`}
+            aria-pressed={kind === item.id}
+            onClick={() => setKind(item.id)}
+            className={`rounded-full border px-3 py-1 text-xs font-medium ${kind === item.id ? "border-emerald-700 bg-emerald-700 text-white" : "bg-white"}`}
           >
-            {id === "tous" ? "Tous" : avatarKinds[id]} (
-            {id === "tous" ? rows.length : rows.filter((row) => row.kind === id).length})
+            {item.label} ({rows.filter(item.has).length})
           </button>
         ))}
       </div>
@@ -156,7 +190,7 @@ export function AvatarsAdmin() {
         })}
       </ul>
       {!visible.length && list.data ? (
-        <p className="mt-3 text-sm text-muted-foreground">Aucun avatar ne correspond.</p>
+        <p className="mt-3 text-sm text-muted-foreground">Aucune image ne correspond.</p>
       ) : null}
       {editing ? (
         <AvatarEditor
@@ -164,6 +198,14 @@ export function AvatarsAdmin() {
           row={editing === "new" ? null : editing}
           used={editing === "new" ? 0 : (usage.data?.[editing.id] ?? 0)}
           taken={new Set(rows.map((row) => row.id))}
+          categories={sorted ? categories : null}
+          initialCategories={
+            editing === "new"
+              ? sorted && kind !== "tous" && kind !== UNSORTED
+                ? [kind]
+                : []
+              : links.filter((link) => link.item_id === editing.id).map((link) => link.category_id)
+          }
           nextSort={
             Math.max(0, ...rows.filter((row) => row.kind !== "mood").map((row) => row.sort)) + 10
           }
@@ -179,6 +221,8 @@ function AvatarEditor({
   row,
   used,
   taken,
+  categories,
+  initialCategories,
   nextSort,
   onClose,
   onSaved,
@@ -186,6 +230,9 @@ function AvatarEditor({
   row: AvatarRow | null;
   used: number;
   taken: Set<string>;
+  /** Catégories de la bibliothèque (null sans le script du 08/11/2026). */
+  categories: LibraryCategory[] | null;
+  initialCategories: string[];
   nextSort: number;
   onClose: () => void;
   onSaved: () => void;
@@ -193,6 +240,7 @@ function AvatarEditor({
   const [label, setLabel] = useState(row?.label ?? "");
   const [kind, setKind] = useState<AvatarKind>(row?.kind ?? "other");
   const [active, setActive] = useState(row?.active ?? true);
+  const [chosen, setChosen] = useState<string[]>(initialCategories);
   const [file, setFile] = useState<File | null>(null);
   const [keepBackground, setKeepBackground] = useState(false);
   // Détourage une fois, puis cadrage (zoom, position) réglable.
@@ -205,6 +253,27 @@ function AvatarEditor({
   // Les images du site (/cabas/…) se remplacent dans « Illustrations », pas ici.
   const uploaded = !row || row.image.startsWith("https://");
 
+  // Catégories cochées : ajoute les nouvelles, retire les décochées (l'image reste dans la bibliothèque).
+  const saveCategories = async (id: string) => {
+    if (!categories) return;
+    const added = chosen.filter((category) => !initialCategories.includes(category));
+    const removed = initialCategories.filter((category) => !chosen.includes(category));
+    if (added.length) {
+      const { error } = await supabase.from("bw_library_category_items").upsert(
+        added.map((category_id) => ({ category_id, item_id: id, sort: row?.sort ?? nextSort })),
+        { onConflict: "category_id,item_id", ignoreDuplicates: true },
+      );
+      if (error) throw new Error(error.message);
+    }
+    if (removed.length) {
+      const { error } = await supabase
+        .from("bw_library_category_items")
+        .delete()
+        .eq("item_id", id)
+        .in("category_id", removed);
+      if (error) throw new Error(error.message);
+    }
+  };
   const save = useMutation({
     mutationFn: async () => {
       const text = label.trim().replace(/\s+/g, " ");
@@ -226,6 +295,7 @@ function AvatarEditor({
           await supabase.storage.from(ILLUSTRATIONS_BUCKET).remove([image.path]);
           throw new Error(error.message);
         }
+        await saveCategories(id);
         return;
       }
       const image = prepared && uploaded ? await uploadAvatar(row.id, prepared) : null;
@@ -246,10 +316,13 @@ function AvatarEditor({
       if (image && row.storage_path) {
         await supabase.storage.from(ILLUSTRATIONS_BUCKET).remove([row.storage_path]);
       }
+      await saveCategories(row.id);
     },
     onSuccess: () => {
       onSaved();
-      toast.success(row ? "Avatar enregistré." : "Avatar ajouté : il est proposé aux voyageurs.");
+      toast.success(
+        row ? "Image enregistrée." : "Image ajoutée : elle est proposée aux voyageurs.",
+      );
       onClose();
     },
     onError: (error: Error) => toast.error(error.message),
@@ -269,8 +342,8 @@ function AvatarEditor({
       onSaved();
       toast.success(
         moved
-          ? `Avatar supprimé. ${moved} voyageur${moved > 1 ? "s ont" : " a"} reçu le premier personnage.`
-          : "Avatar supprimé.",
+          ? `Image supprimée. ${moved} voyageur${moved > 1 ? "s ont" : " a"} reçu le premier personnage comme avatar.`
+          : "Image supprimée.",
       );
       onClose();
     },
@@ -282,11 +355,11 @@ function AvatarEditor({
     <AdminDrawer
       open
       onOpenChange={(next) => !next && onClose()}
-      title={row ? row.label : "Nouvel avatar"}
+      title={row ? row.label : "Nouvelle image"}
       description={
         row
-          ? `${avatarKinds[row.kind]} · ${used} voyageur${used > 1 ? "s l'utilisent" : " l'utilise"}`
-          : "Il sera proposé aux voyageurs dans « Mon profil ». Image détourée et centrée automatiquement."
+          ? `${used} voyageur${used > 1 ? "s l'utilisent" : " l'utilise"} comme avatar`
+          : "Elle sera proposée aux voyageurs : avatar, humeur et salons. Image détourée et centrée automatiquement."
       }
       footer={
         <>
@@ -325,10 +398,11 @@ function AvatarEditor({
             role="alert"
           >
             {used
-              ? `${used} voyageur${used > 1 ? "s utilisent" : " utilise"} cet avatar : ${used > 1 ? "ils recevront" : "il recevra"} le premier personnage de la liste.`
-              : "Personne n'utilise cet avatar."}{" "}
+              ? `${used} voyageur${used > 1 ? "s utilisent" : " utilise"} cette image comme avatar : ${used > 1 ? "ils recevront" : "il recevra"} le premier personnage de la liste.`
+              : "Personne ne l'utilise comme avatar."}{" "}
+            Une humeur faite avec cette image disparaît aussi.{" "}
             {row.image.startsWith("/cabas/")
-              ? "L'image reste dans le site. Pour le garder sans le proposer, décochez plutôt « Proposé aux voyageurs »."
+              ? "L'image reste dans le site. Pour la garder sans la proposer, décochez plutôt « Proposée aux voyageurs »."
               : "Son image sera effacée."}
           </p>
         ) : null}
@@ -359,7 +433,40 @@ function AvatarEditor({
           Nom
           <Input value={label} maxLength={40} onChange={(e) => setLabel(e.target.value)} />
         </label>
-        {row?.kind !== "mood" ? (
+        {categories ? (
+          <fieldset className="grid gap-1.5 text-sm">
+            <legend className="mb-1 font-medium">Catégories (pour ranger, sans restreindre)</legend>
+            <div className="flex flex-wrap gap-1.5">
+              {categories.map((category) => {
+                const on = chosen.includes(category.id);
+                return (
+                  <label
+                    key={category.id}
+                    className={`flex cursor-pointer items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-medium ${on ? "border-emerald-700 bg-emerald-50" : "bg-white"}`}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={on}
+                      onChange={() =>
+                        setChosen((current) =>
+                          on
+                            ? current.filter((id) => id !== category.id)
+                            : [...current, category.id],
+                        )
+                      }
+                    />
+                    {category.label}
+                  </label>
+                );
+              })}
+            </div>
+            {!chosen.length ? (
+              <small className="text-xs text-muted-foreground">
+                Sans catégorie : elle reste proposée, dans « Sans catégorie ».
+              </small>
+            ) : null}
+          </fieldset>
+        ) : row?.kind !== "mood" ? (
           <label className="grid gap-1.5 text-sm font-medium">
             Rangé dans
             <select
@@ -400,11 +507,11 @@ function AvatarEditor({
         )}
         <label className="flex items-center gap-2 text-sm">
           <input type="checkbox" checked={active} onChange={(e) => setActive(e.target.checked)} />
-          Proposé aux voyageurs
+          Proposée aux voyageurs
         </label>
         {!active && used ? (
           <p className="text-xs text-muted-foreground">
-            Ceux qui l'ont déjà le gardent ; il n'est simplement plus proposé.
+            Ceux qui l'ont déjà la gardent ; elle n'est simplement plus proposée.
           </p>
         ) : null}
       </div>

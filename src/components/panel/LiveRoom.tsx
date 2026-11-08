@@ -56,6 +56,8 @@ import { emoteToken, UNICODE_EMOTES } from "@/lib/ferry/chatEmotes";
 import { dmInboxQuery, dmKey, metQuery, takeDmFocus } from "@/lib/ferry/privateMessages";
 import { CabasImg } from "@/components/CabasImg";
 import { ChatText, useChatEmotes } from "./ChatText";
+import { LibraryPicker } from "@/components/community/LibraryPicker";
+import { useLibrary } from "@/lib/community/library";
 import { OwnMessageActions } from "./OwnMessageActions";
 import { DmRequest, PrivateMessages } from "./PrivateMessages";
 import { AuthorAvatar, StaffBadge, StaffTools, type ChatAuthor } from "./StaffChat";
@@ -286,6 +288,12 @@ function LiveChat({
   const [dmView, setDmView] = useState<"inbox" | null>(() => (takeDmFocus() ? "inbox" : null));
   const [dmTo, setDmTo] = useState<TravellerCard | null>(null);
   const siteEmotes = useChatEmotes();
+  const library = useLibrary();
+  // Une image de la bibliothèque s'écrit :code: dans le message.
+  const addEmote = (code: string) =>
+    setText((value) =>
+      `${value}${value && !value.endsWith(" ") ? " " : ""}${emoteToken(code)} `.slice(0, MAX_MESSAGE),
+    );
   const met = useQuery(metQuery(kind === "crossing" ? room : "", user?.id)).data;
   const metHere = new Set(met?.here ?? []);
   const inbox = useQuery(dmInboxQuery(user?.id)).data;
@@ -851,7 +859,16 @@ function LiveChat({
           ) : null}
           {showEmotes ? (
             <div className="bw-chat__panel">
-              {siteEmotes.length ? (
+              {library.managed ? (
+                // Toute la bibliothèque, par catégories, avec recherche.
+                <LibraryPicker
+                  onPick={(row) => addEmote(row.id)}
+                  ariaLabel="Émoticônes BledWay"
+                  labels={false}
+                  size={36}
+                  compact
+                />
+              ) : siteEmotes.length ? (
                 <p className="bw-chat__site-emotes">
                   {siteEmotes.map((emote) => (
                     <button
@@ -859,14 +876,7 @@ function LiveChat({
                       type="button"
                       aria-label={emote.label}
                       title={emote.label}
-                      onClick={() =>
-                        setText((value) =>
-                          `${value}${value && !value.endsWith(" ") ? " " : ""}${emoteToken(emote.code)} `.slice(
-                            0,
-                            MAX_MESSAGE,
-                          ),
-                        )
-                      }
+                      onClick={() => addEmote(emote.code)}
                     >
                       <CabasImg src={emote.image} alt="" width={40} height={40} loading="lazy" />
                     </button>

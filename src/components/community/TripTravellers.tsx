@@ -74,6 +74,7 @@ export function TripTravellers({
           onOpenChange={setPicking}
           moment={moment}
           current={me.mood?.code ?? null}
+          currentImage={me.mood?.image ?? null}
         />
       ) : null}
     </section>

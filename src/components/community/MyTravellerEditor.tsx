@@ -1,8 +1,6 @@
-import { useIllustrationName } from "@/lib/illustrations/store";
-import { CabasImg } from "@/components/CabasImg";
 import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Check, Eye, LoaderCircle, Smile } from "lucide-react";
+import { Eye, LoaderCircle, Smile } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
 import {
@@ -15,7 +13,7 @@ import {
   type AvatarColor,
   type PersonaId,
 } from "@/lib/community/travellers";
-import { useAvatarChoices } from "@/lib/community/avatars";
+import { LibraryPicker } from "./LibraryPicker";
 import { MoodPicker } from "./MoodPicker";
 import { TravellerAvatar } from "./TravellerAvatar";
 
@@ -24,7 +22,6 @@ export function MyTravellerEditor() {
   const { user } = useAuth();
   const client = useQueryClient();
   const me = useQuery(myTravellerQuery(user?.id));
-  const choices = useAvatarChoices();
   const [pseudo, setPseudo] = useState("");
   const [avatar, setAvatar] = useState<PersonaId>("lina");
   const [color, setColor] = useState<AvatarColor>("menthe");
@@ -82,32 +79,14 @@ export function MyTravellerEditor() {
 
       <fieldset>
         <legend>Votre avatar</legend>
-        {choices.groups.map((group) => (
-          <div key={group.kind} className="bw-persona-group">
-            {choices.groups.length > 1 ? <h4>{group.label}</h4> : null}
-            <div className="bw-persona-grid" role="radiogroup" aria-label={group.label}>
-              {group.rows.map((persona) => (
-                <button
-                  key={persona.id}
-                  type="button"
-                  role="radio"
-                  aria-checked={avatar === persona.id}
-                  onClick={() => setAvatar(persona.id)}
-                  style={{ background: avatarColors[color] }}
-                >
-                  <CabasImg src={persona.image} alt="" width={56} height={56} loading="lazy" />
-                  {/* Sans la table des avatars, le nom éventuellement changé dans « Illustrations ». */}
-                  {choices.managed ? (
-                    <span>{persona.label}</span>
-                  ) : (
-                    <PersonaName src={persona.image} name={persona.label} />
-                  )}
-                  {avatar === persona.id ? <Check size={13} aria-hidden /> : null}
-                </button>
-              ))}
-            </div>
-          </div>
-        ))}
+        {/* Toute la bibliothèque : personnages, humeurs, réactions, pictos, ajouts de l'équipe. */}
+        <LibraryPicker
+          selected={avatar}
+          onPick={(row) => setAvatar(row.id)}
+          ariaLabel="Votre avatar"
+          background={avatarColors[color]}
+          size={56}
+        />
       </fieldset>
 
       <fieldset>
@@ -180,11 +159,8 @@ export function MyTravellerEditor() {
         onOpenChange={setMoodOpen}
         moment={null}
         current={me.data.mood?.code ?? null}
+        currentImage={me.data.mood?.image ?? null}
       />
     </div>
   );
-}
-
-function PersonaName({ src, name }: { src: string; name: string }) {
-  return <span>{useIllustrationName(src, name)}</span>;
 }

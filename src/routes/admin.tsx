@@ -2,6 +2,7 @@ import { EntityReviewsModeration } from "@/components/admin/EntityReviewsModerat
 import { WalletMediaAdmin } from "@/components/admin/WalletMediaAdmin";
 import { IllustrationsAdmin } from "@/components/admin/IllustrationsAdmin";
 import { AvatarsAdmin } from "@/components/admin/AvatarsAdmin";
+import { LibraryCategoriesAdmin } from "@/components/admin/LibraryCategoriesAdmin";
 import { PhotosModeration } from "@/components/admin/PhotosModeration";
 import { TicketInsightsAdmin } from "@/components/admin/TicketInsightsAdmin";
 import { ScheduleRecurrenceFields } from "@/components/admin/ScheduleRecurrence";
@@ -415,8 +416,11 @@ function AdminTabs() {
           <PlacesAdmin />
         </TabsContent>
         <TabsContent value="illustrations">
-          <AvatarsAdmin />
           <IllustrationsAdmin />
+        </TabsContent>
+        <TabsContent value="library">
+          <LibraryCategoriesAdmin />
+          <AvatarsAdmin />
         </TabsContent>
         <TabsContent value="walletMedia">
           <WalletMediaAdmin />

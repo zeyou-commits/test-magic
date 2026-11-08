@@ -195,6 +195,7 @@ export function UserMenu({
           onOpenChange={setMoodOpen}
           moment={null}
           current={traveller.mood?.code ?? null}
+          currentImage={traveller.mood?.image ?? null}
         />
       ) : null}
     </span>

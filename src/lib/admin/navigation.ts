@@ -16,6 +16,7 @@ export const adminTabs = [
   "signals",
   "places",
   "illustrations",
+  "library",
   "walletMedia",
   "companies",
   "departures",

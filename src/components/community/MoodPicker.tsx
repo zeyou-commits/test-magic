@@ -3,22 +3,33 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Check, X } from "lucide-react";
 import { toast } from "sonner";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
-import { communityKey, moodsFor, moodsQuery, setMood } from "@/lib/community/travellers";
+import {
+  communityKey,
+  moodsFor,
+  moodsQuery,
+  setMood,
+  setMoodItem,
+} from "@/lib/community/travellers";
+import { useLibrary } from "@/lib/community/library";
+import { LibraryPicker } from "./LibraryPicker";
 
 /**
  * Choisir son humeur du moment (24 h). Les humeurs du moment du voyage sont proposées en premier :
- * « Reste calme » au port, « Mal de mer » à bord…
+ * « Reste calme » au port, « Mal de mer » à bord… puis toute la bibliothèque d'images, par catégories.
  */
 export function MoodPicker({
   open,
   onOpenChange,
   moment,
   current,
+  currentImage = null,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   moment: string | null;
   current: string | null;
+  /** Image de l'humeur actuelle : repère l'image choisie dans la bibliothèque. */
+  currentImage?: string | null;
 }) {
   const client = useQueryClient();
   const moods = useQuery(moodsQuery).data ?? [];
@@ -34,6 +45,21 @@ export function MoodPicker({
     },
     onError: (error: Error) => toast.error(error.message),
   });
+  const library = useLibrary();
+  const saveItem = useMutation({
+    mutationFn: (item: string) => setMoodItem(item),
+    onSuccess: () => {
+      void client.invalidateQueries({ queryKey: communityKey });
+      toast.success("Humeur partagée pour 24 h.");
+      onOpenChange(false);
+    },
+    onError: (error: Error) => toast.error(error.message),
+  });
+  // Humeur choisie depuis la bibliothèque (pas une humeur à phrase) : on la retrouve par son image.
+  const fromLibrary =
+    current && !moods.some((mood) => mood.code === current)
+      ? (library.rows.find((row) => row.image === currentImage)?.id ?? null)
+      : null;
   const grid = (items: typeof list) => (
     <div className="bw-mood-grid">
       {items.map((mood) => (
@@ -41,7 +67,7 @@ export function MoodPicker({
           key={mood.code}
           type="button"
           aria-pressed={current === mood.code}
-          disabled={save.isPending}
+          disabled={save.isPending || saveItem.isPending}
           onClick={() => save.mutate(mood.code)}
         >
           <CabasImg src={mood.image} alt="" width={44} height={44} loading="lazy" />
@@ -70,6 +96,18 @@ export function MoodPicker({
             </>
           ) : null}
           {grid(others)}
+          {library.managed ? (
+            <>
+              <p className="bw-mood-group">Ou n’importe quelle image de la bibliothèque</p>
+              <LibraryPicker
+                selected={fromLibrary}
+                onPick={(row) => saveItem.mutate(row.id)}
+                ariaLabel="Humeur depuis la bibliothèque"
+                disabled={saveItem.isPending || save.isPending}
+                size={44}
+              />
+            </>
+          ) : null}
         </div>
         {current ? (
           <button

@@ -13375,6 +13375,17 @@ img[data-logo="dark"] {
 .bw-chat__emote-toggle[data-filled] {
   color: #0e7a43;
 }
+/* Le bouton photo est un label (champ fichier) : même alignement que le bouton émoticônes. */
+.bw-chat__write form label.bw-chat__emote-toggle {
+  display: grid;
+  flex: none;
+  place-items: center;
+  margin-left: -6px;
+  cursor: pointer;
+}
+.bw-chat__write form .bw-chat__emote-toggle:hover {
+  color: #0e7a43;
+}
 /* Salon : la photo et son accord restent visibles au-dessus du champ, sans défilement interne. */
 .bw-chat__photo {
   padding: 8px 10px 0;

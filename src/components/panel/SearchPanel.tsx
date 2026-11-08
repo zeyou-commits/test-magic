@@ -159,7 +159,6 @@ export function SearchPanel({
     return () => mq.removeEventListener("change", sync);
   }, []);
   const firstStep = 1 as 1 | 2;
-  const lastStep = 3 as 2 | 3;
   void hidePickersOnMobile;
   // Sens du trajet : Europe → Algérie par défaut, inversé par le bouton ⇄.
   // Le sens vit dans les filtres (et l'URL) : « Tous les ports » le respecte.
@@ -461,15 +460,6 @@ export function SearchPanel({
   const datesLabel = filters.date
     ? `${shortDay(filters.date)}${filters.roundTrip ? ` → ${filters.returnDate ? shortDay(filters.returnDate) : "retour à définir"}` : ""}${filters.flexDays ? ` ±${filters.flexDays}j` : ""}`
     : "Dates flexibles";
-  // Bouton principal : il dit ce qu'il va faire, selon ce qui est déjà rempli.
-  const nextLabel =
-    step === 1
-      ? "Suivant : dates →"
-      : !filters.date
-        ? "Pas de date précise →"
-        : filters.roundTrip && !filters.returnDate
-          ? "Retour pas encore décidé →"
-          : "Suivant : voyageurs →";
 
   return (
     <FareProfileContext.Provider value={profile}>
@@ -791,7 +781,18 @@ export function SearchPanel({
                   ← Fermer
                 </button>
               )}
-              {step < lastStep ? (
+              {step === 2 ? (
+                // « Qui voyage » est facultatif : 2 adultes et une berline par défaut, à préciser si besoin.
+                <button
+                  type="button"
+                  onClick={() => setStep(3)}
+                  className="h-11 whitespace-nowrap rounded-xl border border-border px-2.5 text-sm font-semibold text-primary transition hover:bg-secondary"
+                  title="Facultatif : passagers et véhicule, pour un budget plus juste"
+                >
+                  Voyageurs
+                </button>
+              ) : null}
+              {step === 1 ? (
                 <button
                   type="button"
                   onClick={() => {
@@ -800,7 +801,7 @@ export function SearchPanel({
                   }}
                   className="flex h-11 whitespace-nowrap items-center justify-center gap-2 rounded-xl bg-primary px-3 text-sm font-bold text-primary-foreground shadow-md transition hover:opacity-90"
                 >
-                  {nextLabel}
+                  Suivant : dates →
                 </button>
               ) : (
                 <button

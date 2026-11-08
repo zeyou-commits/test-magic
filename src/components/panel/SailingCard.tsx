@@ -23,6 +23,7 @@ import { formatAge, formatDelay, TRUSTED_SIGNAL_MINUTES, type LiveShip } from "@
 import { wallTimeInZone, zoneLabel } from "@/lib/ferry/time";
 import { ReportButton } from "./ReportButton";
 import { FollowButton } from "./FollowButton";
+import { FLASH_SELECT_EVENT } from "./FlashCenter";
 import { SeaChip } from "./SeaForecast";
 import { ShareButtons } from "./ShareButtons";
 import { CompanyBadge } from "./CompanyBadge";
@@ -216,6 +217,16 @@ export function SailingCard({
             <span className="sr-only">sur {bookingSite(sailing)} (nouvel onglet)</span>
           </a>
         ) : null}
+        {/* Suivre sans déplier : le cœur, comme dans la liste du trafic. */}
+        <span className="shrink-0">
+          <FollowButton
+            kind="departure"
+            targetId={departure.id}
+            iconOnly
+            label={`${sailing.from.name} → ${sailing.to.name}`}
+            demo={Boolean(departure.is_demo)}
+          />
+        </span>
       </div>
 
       {/* Détail : s'ouvre en glissant, sans quitter la liste. */}
@@ -292,6 +303,21 @@ export function SailingDetail({
       ) : null}
 
       <div className="flex flex-wrap items-center gap-2 pt-0.5">
+        {/* La fiche complète : salon, voyageurs à bord, suivi en mer, préparatifs. */}
+        <a
+          href={`/?select=departure&id=${departure.id}`}
+          onClick={(event) => {
+            // Sur la carte : la fiche s'ouvre à la place de la liste, sans recharger la page.
+            if (window.location.pathname !== "/") return;
+            event.preventDefault();
+            window.dispatchEvent(
+              new CustomEvent(FLASH_SELECT_EVENT, { detail: { type: "departure", id: departure.id } }),
+            );
+          }}
+          className="inline-flex h-8 items-center gap-1 rounded-full bg-primary px-3 font-semibold text-primary-foreground hover:brightness-110"
+        >
+          Voir la traversée <ChevronRight className="size-3.5" aria-hidden />
+        </a>
         <button
           type="button"
           onClick={() => onOpenRoute(sailing.route.id)}

@@ -29,6 +29,8 @@ import {
   type TravelAlert,
 } from "@/lib/ferry/community";
 import { requestSignalFocus } from "@/components/panel/LivePulse";
+import { QUICK_REPORT_EVENT } from "./QuickReport";
+import { demoReports, isDemoReport } from "@/lib/ferry/reportDemo";
 import type { Port, RouteLine, Selection } from "@/lib/ferry/types";
 import { vesselMapIcon } from "@/lib/ferry/vesselVisuals";
 import { dockSpread, shipShiftY, vesselScreenHeight } from "./shipIcons";
@@ -67,12 +69,19 @@ export function useChatBubbles(
   const demos = useQuery(chatDemoQuery).data;
   const community = useQuery(communityQuery(undefined, undefined, false, user?.id)).data;
   // Les signalements publics en cours, les plus récents d'abord, mêlés aux messages.
-  const reports: Bubble[] = activeAlerts(community?.alerts ?? [])
-    .filter(isPublicAlert)
+  const setting = useQuery(chatDemoSettingQuery).data;
+  const publicAlerts = activeAlerts(community?.alerts ?? []).filter(isPublicAlert);
+  // Pas encore de vrais signalements : des exemples marqués « Exemple » (même réglage que les salons).
+  const withDemos = [
+    ...publicAlerts,
+    ...(community && setting ? demoReports(ports, publicAlerts.length, setting) : []),
+  ];
+  const reports: Bubble[] = withDemos
     .sort((a, b) => b.created_at.localeCompare(a.created_at))
     .slice(0, 4)
     .map((alert) => ({
       id: `report-${alert.id}`,
+      ...(isDemoReport(alert) ? { demo: true } : {}),
       kind: alert.target_kind === "port" ? "port" : "crossing",
       room: "",
       body: alertLabel(alert),
@@ -81,7 +90,6 @@ export function useChatBubbles(
       author: { pseudo: "Signalement" },
       report: alert,
     }));
-  const setting = useQuery(chatDemoSettingQuery).data;
   // Charge la liste des avatars : personaImage() y trouve l'image des humeurs et des ajouts.
   useQuery(avatarsQuery);
   const messages: Bubble[] = bubbleMessages(real, demos, setting);
@@ -169,6 +177,14 @@ export function useChatBubbles(
       }, 300);
     };
     const open = (message: Bubble) => {
+      if (message.report && isDemoReport(message.report)) {
+        window.dispatchEvent(
+          new CustomEvent(QUICK_REPORT_EVENT, {
+            detail: { type: "port", id: message.report.target_id },
+          }),
+        );
+        return;
+      }
       if (message.report) {
         latest.current.onSelect({
           type: message.report.target_kind === "port" ? "port" : "vessel",

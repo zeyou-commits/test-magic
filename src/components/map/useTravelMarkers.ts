@@ -23,6 +23,9 @@ import { formatAge } from "@/lib/ferry/tracking";
 import type { Port, Selection } from "@/lib/ferry/types";
 import { FLASH_PREVIEW_EVENT } from "@/components/panel/FlashFeed";
 import { SituationIcon } from "@/components/panel/SituationIcon";
+import { QUICK_REPORT_EVENT } from "./QuickReport";
+import { chatDemoSettingQuery } from "@/lib/ferry/chatDemo";
+import { demoReports, isDemoReport } from "@/lib/ferry/reportDemo";
 
 // Pictos et couleurs : les mêmes que dans la saisie et les fiches (catalogue unique).
 function iconInto(host: HTMLElement, category: TravelAlert["category"], size: number, roots: Root[]) {
@@ -75,6 +78,8 @@ export function useTravelMarkers(
   const feed = useQuery(communityQuery(undefined, undefined, false, user?.id));
   // Catalogue (libellés, couleurs, pictos) : les pastilles sont redessinées dès qu'il est chargé.
   const { ready: catalogReady } = useSignalCatalog();
+  // Exemples du lancement : même réglage que les exemples des salons (admin).
+  const demoSetting = useQuery(chatDemoSettingQuery).data;
   const callbacks = useRef({ onSelect, onOpen, onMarkerHover });
   callbacks.current = { onSelect, onOpen, onMarkerHover };
   // Bulle ouverte : conservée quand la flotte se met à jour (les pastilles sont recréées).
@@ -83,9 +88,13 @@ export function useTravelMarkers(
     const map = mapRef.current;
     if (!ready || !map || !feed.data) return;
     const groups = new Map<string, TravelAlert[]>();
-    for (const alert of activeAlerts(feed.data.alerts)) {
-      // Situation dite terminée par la majorité, ou impactante pas encore confirmée : pas sur la carte.
-      if (!isPublicAlert(alert)) continue;
+    // Situation dite terminée par la majorité, ou impactante pas encore confirmée : pas sur la carte.
+    const real = activeAlerts(feed.data.alerts).filter(isPublicAlert);
+    const shown = [
+      ...real,
+      ...(demoSetting ? demoReports(ports, real.length, demoSetting) : []),
+    ];
+    for (const alert of shown) {
       const key = `${alert.target_kind}:${alert.target_id}`;
       groups.set(key, [...(groups.get(key) ?? []), alert]);
     }
@@ -123,6 +132,8 @@ export function useTravelMarkers(
       const travelers = alerts.reduce((sum, item) => sum + 1 + item.confirmations, 0);
       const good = alerts.every((item) => item.category === "fluid");
       const onSite = alerts.reduce((sum, item) => sum + onSiteCount(item), 0);
+      // Un exemple ne se mélange jamais à un vrai signalement (pastilles séparées par port).
+      const demo = alerts.every(isDemoReport);
       // Les navires amarrés sont décalés en pixels à côté du port : la pastille suit le navire.
       const shift: [number, number] = ship ? [ship.dx, ship.dy] : [0, 0];
 
@@ -131,10 +142,11 @@ export function useTravelMarkers(
       button.dataset["side"] = isPort ? "port" : "vessel";
       button.dataset["tone"] = good ? "good" : "warn";
       if (onSite) button.dataset["onsite"] = "true";
+      if (demo) button.dataset["demo"] = "true";
       button.style.setProperty("--situation-color", situationOf(alert.category).color);
       button.setAttribute(
         "aria-label",
-        `${name} : ${alerts.map(alertLabel).join(", ")}. ${voyageurs(travelers)}${onSite ? `, dont ${onSite} sur place` : ""}. Afficher le détail`,
+        `${demo ? "Exemple de signalement. " : ""}${name} : ${alerts.map(alertLabel).join(", ")}. ${voyageurs(travelers)}${onSite ? `, dont ${onSite} sur place` : ""}. Afficher le détail`,
       );
       // Le contenu est dans un bloc à part : MapLibre positionne le bouton par transform.
       const body = el("span", "bw-signal-pin__body");
@@ -147,6 +159,7 @@ export function useTravelMarkers(
       if (travelers > 1) crowd.append(el("small", "", String(travelers)));
       if (alerts.length > 1) crowd.append(el("small", "bw-signal-pin__more", `+${alerts.length - 1}`));
       body.append(crowd);
+      if (demo) body.append(el("span", "bw-signal-pin__demo", "Exemple"));
       button.append(body);
 
       // Survol : la carte ne réagit plus au navire dessous (pas de fiche de survol parasite).
@@ -164,6 +177,13 @@ export function useTravelMarkers(
 
       const open = () => {
         bubble.remove();
+        // Exemple : on propose de faire un vrai signalement à ce port.
+        if (demo) {
+          window.dispatchEvent(
+            new CustomEvent(QUICK_REPORT_EVENT, { detail: { type: "port", id: alert.target_id } }),
+          );
+          return;
+        }
         // La fiche s'ouvrira cadrée sur le signalement le plus récent de cette pastille.
         requestSignalFocus(alerts[0]!.id);
         callbacks.current.onSelect({ type: alert.target_kind, id: alert.target_id });
@@ -176,7 +196,15 @@ export function useTravelMarkers(
         card.setAttribute("aria-label", `Ouvrir la fiche ${name}`);
         const head = el("span", "bw-signal-bubble__head");
         head.append(
-          el("small", "", isPort ? "Port · infos voyageurs" : "Navire · infos voyageurs"),
+          el(
+            "small",
+            "",
+            demo
+              ? "Exemple de signalement"
+              : isPort
+                ? "Port · infos voyageurs"
+                : "Navire · infos voyageurs",
+          ),
           el("strong", "", name),
         );
         card.append(head);
@@ -200,7 +228,17 @@ export function useTravelMarkers(
           list.append(row);
         }
         card.append(list);
-        card.append(el("span", "bw-signal-bubble__cta", "Ouvrir la fiche ›"));
+        if (demo)
+          card.append(
+            el(
+              "span",
+              "bw-signal-bubble__note",
+              "Illustration : les vrais signalements des voyageurs s’affichent ici, en direct.",
+            ),
+          );
+        card.append(
+          el("span", "bw-signal-bubble__cta", demo ? "Signaler une situation ici ›" : "Ouvrir la fiche ›"),
+        );
         card.addEventListener("click", open);
         const lift = isPort ? -22 : 22;
         // Bulle ouverte : au-dessus de l'arc, quand le navire est debout.
@@ -266,5 +304,5 @@ export function useTravelMarkers(
       unmountLater(bubbleRoots);
       markers.forEach((marker) => marker.remove());
     };
-  }, [mapRef, ready, ports, fleet, feed.data, catalogReady]);
+  }, [mapRef, ready, ports, fleet, feed.data, catalogReady, demoSetting]);
 }

@@ -317,8 +317,9 @@
   border-width: 1.5px;
 }
 /* Communauté sur la carte : discrète de loin, pour laisser voir les navires et les ports. */
-[data-low-zoom="true"] .bw-signal-pin__body { zoom: 0.55; }
-[data-mid-zoom="true"] .bw-signal-pin__body { zoom: 0.75; }
+/* Vue d'ensemble : les signalements restent lisibles (pastille de 36 px). */
+[data-low-zoom="true"] .bw-signal-pin__body { zoom: 0.7; }
+[data-mid-zoom="true"] .bw-signal-pin__body { zoom: 0.85; }
 [data-low-zoom="true"] .bw-signal-pin { padding-bottom: 4px; }
 /* La bulle elle-même est positionnée par la carte : seul son contenu est réduit. */
 [data-low-zoom="true"] .bw-presence-pin { padding: 1px 4px 1px 1px; }

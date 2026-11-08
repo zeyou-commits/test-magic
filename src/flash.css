@@ -240,6 +240,39 @@
   font-weight: 700;
   color: #0e7a43;
 }
+/* Exemple du lancement : dit clairement que ce n'est pas un vrai signalement. */
+.bw-signal-bubble__note {
+  display: block;
+  margin-top: 8px;
+  padding: 6px 8px;
+  border-radius: 8px;
+  background: #f4f5f4;
+  color: #5b6b66;
+  font-size: 11.5px;
+  line-height: 1.35;
+}
+.bw-signal-pin__demo {
+  position: absolute;
+  z-index: 2;
+  /* À gauche de la pastille : ni sur le nom du port, ni sur le badge du nombre. */
+  top: 50%;
+  right: calc(100% + 3px);
+  padding: 1px 6px;
+  border: 1.5px solid #ffffff;
+  border-radius: 999px;
+  background: #5b6b66;
+  color: #ffffff;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+  transform: translateY(-50%);
+  box-shadow: 0 1px 4px #16324a33;
+}
+/* Un exemple reste plus discret qu'un vrai signalement : pas de halo qui pulse. */
+.bw-signal-pin[data-demo="true"] .bw-signal-pin__icon {
+  animation: none;
+}
 
 /* ---------- Flash info : fil en lignes compactes ---------- */
 .bw-flash {

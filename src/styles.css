@@ -930,11 +930,12 @@
   transform-origin: left center;
   animation: bw-pennant-wave 2.4s ease-in-out infinite;
 }
+/* Hauteur fixe : un logo SVG sans taille propre (GNV, Armas) tomberait sinon à zéro. */
 .bw-pennant-flag img {
   display: block;
   width: auto;
   max-width: 84px;
-  height: auto;
+  height: 26px;
   max-height: 26px;
   object-fit: contain;
 }
@@ -986,6 +987,7 @@
 }
 .bw-pennant--label .bw-pennant-flag img {
   max-width: 78px;
+  height: 20px;
   max-height: 20px;
 }
 

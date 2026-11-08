@@ -156,10 +156,11 @@ export function useTravelMarkers(
       const crowd = el("span", "bw-signal-pin__crowd");
       for (let index = 0; index < Math.min(2, travelers); index += 1)
         crowd.append(face(FACE_COLORS[index % FACE_COLORS.length] ?? "#f6c99a"));
-      if (travelers > 1) crowd.append(el("small", "", String(travelers)));
-      if (alerts.length > 1) crowd.append(el("small", "bw-signal-pin__more", `+${alerts.length - 1}`));
+      // Exemple : la pastille seule, légère ; « Exemple » est dit dans la bulle au toucher.
+      if (!demo && travelers > 1) crowd.append(el("small", "", String(travelers)));
+      if (!demo && alerts.length > 1)
+        crowd.append(el("small", "bw-signal-pin__more", `+${alerts.length - 1}`));
       body.append(crowd);
-      if (demo) body.append(el("span", "bw-signal-pin__demo", "Exemple"));
       button.append(body);
 
       // Survol : la carte ne réagit plus au navire dessous (pas de fiche de survol parasite).

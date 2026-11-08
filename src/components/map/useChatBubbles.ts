@@ -167,7 +167,9 @@ export function useChatBubbles(
       }
       // Un navire à quai ailleurs prêterait à confusion : seulement s'il est en mer sur cette ligne.
       const ship = fleet.find((item) => item.routeId === route.id && item.state === "sea");
-      return ship ? shipSpot(ship) : portSpot(route.departure_port_id);
+      if (ship) return shipSpot(ship);
+      // Un exemple « à bord » (mer, restaurant…) ne sort jamais d'un port : sans navire en mer, il attend.
+      return message.demo ? null : portSpot(route.departure_port_id);
     };
 
     let iconRoot: Root | null = null;

@@ -58,7 +58,7 @@ export const ROAD_DEMOS: { pseudo: string; avatar: string; label: string; body: 
     pseudo: "Mehdi",
     avatar: "papa",
     label: "Sur l’A7 · vers Marseille",
-    body: "On est sur la route, on arrive !!! Bouchon à Valence mais ça roule 🚗",
+    body: "On est sur la route, on arrive !!! Un peu de bouchon vers Montélimar mais ça roule 🚗",
     at: [4.86, 44.6],
   },
   {
@@ -72,7 +72,7 @@ export const ROAD_DEMOS: { pseudo: string; avatar: string; label: string; body: 
     pseudo: "Amine",
     avatar: "jeune_degrade",
     label: "Sur l’A-7 · vers Alicante",
-    body: "Encore 2 h de route, les enfants demandent déjà la mer !",
+    body: "Plus qu’une heure jusqu’au port, les enfants demandent déjà la mer !",
     at: [-0.95, 38.92],
   },
   {
@@ -101,7 +101,7 @@ export const BUILT_IN_DEMOS: Omit<DemoMessage, "id" | "sort" | "active">[] = [
   {
     pseudo: "Nadia",
     avatar: "maman",
-    label: "Marseille → Alger",
+    label: "Port de Marseille",
     body: "On est déjà dans la file, ça avance doucement mais ça avance !",
   },
   {
@@ -125,7 +125,7 @@ export const BUILT_IN_DEMOS: Omit<DemoMessage, "id" | "sort" | "active">[] = [
   {
     pseudo: "Lina",
     avatar: "tata_houria",
-    label: "Barcelone → Oran",
+    label: "Port de Barcelone",
     body: "Contrôles rapides ce matin, 20 minutes à peine.",
   },
 ];

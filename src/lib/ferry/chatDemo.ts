@@ -47,7 +47,42 @@ export type RecentMessage = {
   /** Exemples : le port ou la ligne d'où sort la bulle. */
   portId?: string | null;
   routeId?: string | null;
+  /** Message « sur la route » : le point de la route d'où sort la bulle [lng, lat]. */
+  at?: [number, number];
+  road?: boolean;
 };
+
+/** Exemples « sur la route » : la bulle sort de l'autoroute, une petite voiture marque l'endroit. */
+export const ROAD_DEMOS: { pseudo: string; avatar: string; label: string; body: string; at: [number, number] }[] = [
+  {
+    pseudo: "Mehdi",
+    avatar: "papa",
+    label: "Sur l’A7 · vers Marseille",
+    body: "On est sur la route, on arrive !!! Bouchon à Valence mais ça roule 🚗",
+    at: [4.86, 44.6],
+  },
+  {
+    pseudo: "Sofia",
+    avatar: "fille_bled",
+    label: "Le Perthus · vers Barcelone",
+    body: "Frontière passée, pause café et on file au port 😄",
+    at: [2.86, 42.46],
+  },
+  {
+    pseudo: "Amine",
+    avatar: "jeune_degrade",
+    label: "Sur l’A-7 · vers Alicante",
+    body: "Encore 2 h de route, les enfants demandent déjà la mer !",
+    at: [-0.95, 38.92],
+  },
+  {
+    pseudo: "Houria",
+    avatar: "tata_houria",
+    label: "Après Oran · vers le bled",
+    body: "Bien débarqués, la famille nous attend, on arrive 🥰",
+    at: [0.15, 35.4],
+  },
+];
 
 /** Les derniers messages publics des salons (2 h). */
 export const recentChatQuery = queryOptions({
@@ -110,6 +145,13 @@ export const chatDemoSettingQuery = queryOptions({
   retry: false,
 });
 
+/** Ordre d'affichage : les vrais d'abord, puis les exemples en alternant port, bateau et route. */
+function order(message: RecentMessage) {
+  if (!message.demo) return -1;
+  const [, kind, n] = message.id.split("-");
+  return kind === "road" ? Number(n) * 3 + 2 : Number(kind) * 1.5;
+}
+
 /** Les vrais messages passent toujours devant ; les exemples complètent selon le réglage. */
 export function bubbleMessages(
   real: RecentMessage[],
@@ -133,7 +175,20 @@ export function bubbleMessages(
       portId: demo.port_id ?? null,
       routeId: demo.route_id ?? null,
     })),
-  ];
+    // Un message de la route après chaque groupe de deux exemples.
+    ...ROAD_DEMOS.map((demo, index): RecentMessage => ({
+      id: `demo-road-${index}`,
+      demo: true,
+      road: true,
+      kind: "crossing",
+      room: "",
+      body: demo.body,
+      created_at: "",
+      label: demo.label,
+      author: { pseudo: demo.pseudo, avatar: demo.avatar },
+      at: demo.at,
+    })),
+  ].sort((a, b) => order(a) - order(b));
 }
 
 /** Le début du message, sans couper un émoji en deux. */

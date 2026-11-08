@@ -44,7 +44,12 @@ const RESUME_MS = 4_000;
 /** Toutes les 3 bulles, le bouton Salons invite à partager. */
 const INVITE_EVERY = 3;
 
-type Spot = { at: [number, number]; offset: [number, number] };
+/** at : le lieu ; offset : où pointe la bulle ; source : où naît l'onde (le navire, le port). */
+type Spot = { at: [number, number]; offset: [number, number]; source: [number, number] };
+/** La pointe de la bulle : à 24 px du bord gauche, 9 px sous la bulle (voir .bw-map-bubble::after). */
+const TIP_X = 24;
+const TIP_Y = 9;
+const CAR = `<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 17h-1a1 1 0 0 1-1-1v-4l2.4-5.2A2 2 0 0 1 7.2 5.6h9.6a2 2 0 0 1 1.8 1.2L21 12v4a1 1 0 0 1-1 1h-1"/><path d="M3 12h18"/><circle cx="7.5" cy="17" r="2"/><circle cx="16.5" cy="17" r="2"/></svg>`;
 /** Une bulle : un message de salon, ou un signalement de voyageurs. */
 type Bubble = RecentMessage & { report?: TravelAlert };
 /** Un signalement s'invite toutes les 2 bulles de messages. */
@@ -116,7 +121,9 @@ export function useChatBubbles(
 
     const portSpot = (portId: string | null | undefined): Spot | null => {
       const port = latest.current.ports.find((item) => item.id === portId);
-      return port ? { at: [port.longitude, port.latitude], offset: [0, -14] } : null;
+      return port
+        ? { at: [port.longitude, port.latitude], offset: [0, -12], source: [0, 0] }
+        : null;
     };
     const shipSpot = (ship: FleetShip): Spot => {
       const zoom = map.getZoom();
@@ -124,17 +131,18 @@ export function useChatBubbles(
       const x = ship.dx * (slug ? dockSpread(zoom) : 1);
       const y = shipShiftY(ship.dy, ship.ashore, slug, zoom);
       const tag = ship.departureId && ship.departureId === latest.current.myDepartureId;
+      const height = slug ? vesselScreenHeight(slug, zoom) : 12;
       return {
         at: shipAnchor(ship),
-        offset: [
-          x,
-          y - (slug ? vesselScreenHeight(slug, zoom) : 12) - 6 - (tag ? MY_TRIP_TAG_SPACE : 0),
-        ],
+        offset: [x, y - height - 4 - (tag ? MY_TRIP_TAG_SPACE : 0)],
+        // L'onde naît au milieu de la coque.
+        source: [x, y - height / 2],
       };
     };
     // D'où sort la bulle : le navire du salon, sinon le navire de la ligne, sinon son port.
     const spotOf = (message: Bubble): Spot | null => {
       const { fleet, routes } = latest.current;
+      if (message.at) return { at: message.at, offset: [0, -16], source: [0, 0] };
       if (message.report) {
         if (message.report.target_kind === "port") return portSpot(message.report.target_id);
         const ship = fleet.find((item) => item.vesselId === message.report!.target_id);
@@ -163,8 +171,16 @@ export function useChatBubbles(
     };
 
     let iconRoot: Root | null = null;
+    let source: Marker | null = null;
     const hide = () => {
-      const element = marker?.getElement();
+      const origin = source;
+      source = null;
+      if (origin) {
+        origin.getElement().querySelector<HTMLElement>(".bw-map-bubble-source")!.dataset["leaving"] = "true";
+        window.setTimeout(() => origin.remove(), 300);
+      }
+      // MapLibre place le marqueur par transform : les effets vivent sur l'élément intérieur.
+      const element = marker?.getElement().querySelector<HTMLElement>(".bw-map-bubble");
       if (!element) return;
       element.dataset["leaving"] = "true";
       const old = marker;
@@ -279,7 +295,29 @@ export function useChatBubbles(
         index++;
         const spot = spotOf(message);
         if (!spot || !bounds.contains(spot.at)) continue;
-        marker = new Marker({ element: build(message), anchor: "bottom", offset: spot.offset })
+        // D'abord une onde sur le navire, le port ou la route ; la bulle en sort juste après,
+        // sa pointe posée sur l'endroit d'où vient le message.
+        const origin = document.createElement("span");
+        origin.className = "bw-map-bubble-source";
+        if (message.road) {
+          origin.dataset["road"] = "true";
+          origin.innerHTML = CAR;
+        }
+        if (message.report)
+          origin.style.setProperty("--source-color", situationOf(message.report.category).color);
+        const originBox = document.createElement("div");
+        originBox.append(origin);
+        source = new Marker({ element: originBox, anchor: "center", offset: spot.source })
+          .setLngLat(spot.at)
+          .addTo(map);
+        source.getElement().style.zIndex = "99999";
+        const box = document.createElement("div");
+        box.append(build(message));
+        marker = new Marker({
+          element: box,
+          anchor: "bottom-left",
+          offset: [spot.offset[0] - TIP_X, spot.offset[1] - TIP_Y],
+        })
           .setLngLat(spot.at)
           .addTo(map);
         // Au-dessus des noms de ports et des pastilles, même mis en avant au survol.
@@ -314,6 +352,7 @@ export function useChatBubbles(
       map.off("movestart", pause);
       map.off("moveend", resume);
       marker?.remove();
+      source?.remove();
       const root = iconRoot;
       if (root) window.setTimeout(() => root.unmount(), 0);
     };

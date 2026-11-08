@@ -1,0 +1,12 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.bledway.app",
+      "sha256_cert_fingerprints": [
+        "55:6B:BE:8B:D8:90:20:80:0D:32:D3:9E:5C:1E:95:5E:5C:91:B9:3E:86:91:9D:F2:73:97:26:61:E6:0D:3C:B4"
+      ]
+    }
+  }
+]

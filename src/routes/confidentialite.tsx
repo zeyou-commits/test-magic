@@ -290,14 +290,47 @@ function PrivacyPage() {
                     traversées suivies, avis non encore publiés.
                   </li>
                   <li>
-                    <strong>Pour tout le reste</strong>, dont la suppression complète du compte : la
-                    page <PageLink to="/contact">Contact</PageLink>. Réponse sous un mois au plus.
+                    <strong>Pour tout le reste</strong>, la page <PageLink to="/contact">Contact</PageLink>. Réponse
+                    sous un mois au plus. Pour supprimer votre compte, voir ci-dessous.
                   </li>
                 </ul>
                 <p>
                   Si vous estimez que vos droits ne sont pas respectés, vous pouvez saisir la CNIL
                   (cnil.fr).
                 </p>
+              </>
+            ),
+          },
+          {
+            id: "suppression-compte",
+            title: "Supprimer votre compte",
+            body: (
+              <>
+                <p>
+                  Sur le site comme dans l'application Android, vous pouvez demander la
+                  suppression complète de votre compte à tout moment, sans justification.
+                </p>
+                <ul>
+                  <li>
+                    Depuis « Mon profil », touchez <strong>Supprimer mon compte</strong> ; ou
+                    écrivez à{" "}
+                    <a href="mailto:contact@bledway.com?subject=Suppression%20de%20mon%20compte%20BledWay">
+                      contact@bledway.com
+                    </a>{" "}
+                    depuis l'adresse de votre compte, avec pour objet « Suppression de mon compte
+                    BledWay ».
+                  </li>
+                  <li>
+                    Le compte et les données qui y sont rattachées (profil, pseudo et avatar,
+                    billets et leurs documents, traversées suivies, abonnements aux
+                    notifications, photos, avis, signalements et messages) sont effacés sous un
+                    mois au plus.
+                  </li>
+                  <li>
+                    Seules les données qu'une obligation légale impose de garder le sont, pour la
+                    durée prévue par la loi.
+                  </li>
+                </ul>
               </>
             ),
           },

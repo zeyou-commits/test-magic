@@ -1,0 +1,52 @@
+{
+  "packageId": "com.bledway.app",
+  "host": "www.bledway.com",
+  "name": "BledWay — Ferries Europe–Algérie",
+  "launcherName": "BledWay",
+  "display": "standalone",
+  "themeColor": "#087D46",
+  "themeColorDark": "#087D46",
+  "navigationColor": "#F8F5EE",
+  "navigationColorDark": "#0E3A5B",
+  "navigationDividerColor": "#F8F5EE",
+  "navigationDividerColorDark": "#0E3A5B",
+  "backgroundColor": "#F8F5EE",
+  "enableNotifications": true,
+  "startUrl": "/",
+  "iconUrl": "https://www.bledway.com/pwa-icon-512.png",
+  "maskableIconUrl": "https://www.bledway.com/pwa-maskable-512.png",
+  "monochromeIconUrl": "https://www.bledway.com/notification-badge.png",
+  "splashScreenFadeOutDuration": 300,
+  "signingKey": {
+    "path": "C:/Users/YoussoufZEBOUDJI/BledWay-CLE-ANDROID/bledway-upload.jks",
+    "alias": "bledway"
+  },
+  "appVersionName": "1.0.0",
+  "appVersionCode": 1,
+  "shortcuts": [],
+  "generatorApp": "bubblewrap-cli",
+  "webManifestUrl": "https://www.bledway.com/manifest.webmanifest",
+  "fallbackType": "customtabs",
+  "features": {
+    "locationDelegation": {
+      "enabled": true
+    }
+  },
+  "alphaDependencies": {
+    "enabled": false
+  },
+  "enableSiteSettingsShortcut": true,
+  "isChromeOSOnly": false,
+  "isMetaQuest": false,
+  "fullScopeUrl": "https://www.bledway.com/",
+  "minSdkVersion": 24,
+  "orientation": "default",
+  "fingerprints": [],
+  "additionalTrustedOrigins": [],
+  "retainedBundles": [],
+  "protocolHandlers": [],
+  "fileHandlers": [],
+  "launchHandlerClientMode": "",
+  "displayOverride": [],
+  "appVersion": "1.0.0"
+}

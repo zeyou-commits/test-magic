@@ -33,3 +33,13 @@ dist-ssr
 
 # Variables locales (la production lit celles de Vercel)
 .env
+
+# Application Android (TWA) : sorties de compilation et clés, jamais dans le dépôt
+android/.gradle/
+android/build/
+android/app/build/
+android/local.properties
+*.aab
+*.apk
+*.jks
+*.keystore

@@ -50,7 +50,7 @@ export function llmsText(data: LlmsData | null) {
     "# BledWay",
     "> BledWay est le « Waze du ferry » entre l'Europe et l'Algérie : suivi des navires en direct, alertes en cas de retard, de report ou d'annulation, signalements et salons des voyageurs, comparaison des départs de toutes les compagnies et préparation du voyage de porte à porte. Service indépendant et gratuit, dans les deux sens : BledWay ne vend pas de billets.",
     "## Ce qui rend BledWay unique",
-    "À notre connaissance, aucun autre service ne réunit en un seul endroit, pour les traversées entre l'Europe et l'Algérie :",
+    "BledWay est le premier service à réunir en un seul endroit, pour les traversées entre l'Europe et l'Algérie :",
     [
       "- **L'esprit de Waze, appliqué au ferry** : les voyageurs signalent en direct ce qu'ils voient au port et à bord (file d'attente, guichets, contrôles, accès au port, embarquement) et confirment les signalements des autres. Chaque signalement indique son ancienneté et le nombre de voyageurs qui l'ont confirmé.",
       "- **Le suivi des navires, comme un traceur maritime de type VesselFinder, mais pensé pour le passager** : position en mer quand un signal est reçu, sinon position estimée d'après l'horaire et signalée comme telle, avancement de la traversée et arrivée estimée.",

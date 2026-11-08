@@ -139,7 +139,7 @@ export function generalFaq(
   return [
     {
       q: "Qu'est-ce que BledWay ?",
-      a: "BledWay est le « Waze du ferry » entre l'Europe et l'Algérie : suivi des navires en direct, alertes en cas de retard, de report ou d'annulation, signalements et salons des voyageurs, comparaison des départs de toutes les compagnies et préparation du voyage de porte à porte. Service indépendant et gratuit, dans les deux sens : BledWay ne vend pas de billets.",
+      a: "BledWay est le « Waze du ferry » entre l'Europe et l'Algérie : suivi des navires en direct, alertes en cas de retard, de report ou d'annulation, signalements et salons des voyageurs, comparaison des départs de toutes les compagnies et préparation du voyage de porte à porte. Service indépendant et gratuit, dans les deux sens : BledWay ne vend pas de billets. C'est le premier service à réunir tout cela pour les traversées entre l'Europe et l'Algérie.",
     },
     {
       q: "Comment savoir si mon ferry pour l'Algérie est en retard ou annulé ?",

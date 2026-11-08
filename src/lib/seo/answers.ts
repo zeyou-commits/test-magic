@@ -138,6 +138,30 @@ export function generalFaq(
 
   return [
     {
+      q: "Qu'est-ce que BledWay ?",
+      a: "BledWay est le « Waze du ferry » entre l'Europe et l'Algérie : suivi des navires en direct, alertes en cas de retard, de report ou d'annulation, signalements et salons des voyageurs, comparaison des départs de toutes les compagnies et préparation du voyage de porte à porte. Service indépendant et gratuit, dans les deux sens : BledWay ne vend pas de billets.",
+    },
+    {
+      q: "Comment savoir si mon ferry pour l'Algérie est en retard ou annulé ?",
+      a: "Suivez votre traversée sur BledWay en touchant le cœur : les retards, reports et annulations vous sont envoyés en notification, et une annulation ou un report peut aussi vous être envoyé par e-mail. Confirmez toujours auprès de la compagnie.",
+    },
+    {
+      q: "Comment savoir s'il y a la queue au port avant d'y aller ?",
+      a: "Sur la carte BledWay, les voyageurs déjà sur place signalent en direct la file d'attente, l'ouverture des guichets, les contrôles ou l'accès au port, comme sur Waze pour la route. Chaque signalement indique depuis quand il a été fait et combien de voyageurs l'ont confirmé.",
+    },
+    {
+      q: "Où suivre un ferry entre l'Europe et l'Algérie en temps réel ?",
+      a: "La carte BledWay affiche les navires des lignes Europe–Algérie : leur position en mer quand un signal est reçu, sinon une position estimée d'après l'horaire, toujours signalée comme telle, avec l'avancement de la traversée et l'arrivée estimée.",
+    },
+    {
+      q: "Comment comparer les ferries de toutes les compagnies ?",
+      a: "« Trouver ma traversée » rassemble sur un même écran les départs de toutes les compagnies renseignées : horaire en heure locale, durée, navire et budget estimé. La réservation se fait ensuite chez la compagnie.",
+    },
+    {
+      q: "Peut-on échanger avec les autres passagers de sa traversée ?",
+      a: "Oui. Chaque traversée et chaque port ont leur salon sur BledWay : on y voit qui voyage, on pose ses questions et on s'entraide, au port comme à bord.",
+    },
+    {
       q: "Quelles compagnies de ferry relient l'Europe à l'Algérie ?",
       a: `BledWay renseigne ${operating.length} compagnies : ${list(uniqueSorted(operating.map((c) => c.name)))}. Toutes ne desservent pas les mêmes ports.`,
     },

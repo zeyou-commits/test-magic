@@ -95,8 +95,8 @@ export const Route = createFileRoute("/")({
   },
   head: () =>
     seoHead(
-      "BledWay — Ferries Europe–Algérie, carte et départs",
-      "Explorez les lignes, ports et départs connus entre l’Europe et l’Algérie. Préparez aussi votre voiture, votre traversée et votre budget avec nos guides.",
+      "BledWay — le Waze du ferry Europe–Algérie, en direct",
+      "Suivez votre ferry Europe–Algérie en direct : navires, retards, annulations, signalements des voyageurs au port, salons. Comparez toutes les compagnies.",
       "/",
     ),
   component: Index,

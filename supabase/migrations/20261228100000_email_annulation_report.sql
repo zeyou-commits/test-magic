@@ -2,8 +2,12 @@
 -- Sur iPhone, une notification n'arrive que si BledWay est installé sur l'écran d'accueil : pour une
 -- annulation (modèle « cancel ») ou un nouvel horaire (« reschedule »), chaque compte prévenu reçoit
 -- aussi un e-mail. Les retards ne sont PAS envoyés par e-mail (décision du 08/11/2026).
+-- Déclenchement MANUEL (décision du 08/11/2026) : seulement si l'équipe coche « Prévenir aussi par
+-- e-mail » dans l'admin (colonne bw_admin_messages.email).
 -- Circuit : la notification créée dans le compte remplit une file ; la fonction alert-email
 -- (Resend, contact@bledway.com) la vide par lots, appelée par pg_net avec le secret des tâches.
+
+ALTER TABLE public.bw_admin_messages ADD COLUMN IF NOT EXISTS email boolean NOT NULL DEFAULT false;
 
 CREATE TABLE IF NOT EXISTS public.bw_alert_emails (
   notification_id uuid PRIMARY KEY REFERENCES public.bw_notifications(id) ON DELETE CASCADE,
@@ -93,7 +97,7 @@ BEGIN
     JOIN public.bw_admin_messages m
       ON n.event_key LIKE 'admin-msg:%'
      AND m.id::text = split_part(n.event_key, ':', 3)
-   WHERE m.template IN ('cancel', 'reschedule')
+   WHERE m.template IN ('cancel', 'reschedule') AND m.email
   ON CONFLICT (notification_id) DO NOTHING;
   GET DIAGNOSTICS added = ROW_COUNT;
   IF added > 0 THEN

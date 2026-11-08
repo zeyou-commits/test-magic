@@ -35,6 +35,8 @@ const actionSchema = z.discriminatedUnion("action", [
     sendAt: z.string().datetime().nullable(),
     flash: z.boolean(),
     catchUp: z.boolean().default(true),
+    // E-mail en plus du push, coché à la main (annulation et nouvel horaire seulement).
+    email: z.boolean().default(false),
     confirmCount: z.number().int().optional(),
     replaces: z.string().uuid().optional(),
   }),
@@ -344,6 +346,9 @@ export const Route = createFileRoute("/api/push-admin")({
               status: "scheduled",
               news_id: newsId,
               created_by: auth.user.id,
+              email:
+                action.email &&
+                (action.template === "cancel" || action.template === "reschedule"),
             };
             const insert = (values: Record<string, unknown>) =>
               db.from("bw_admin_messages").insert(values).select("id").single();

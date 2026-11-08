@@ -26,6 +26,7 @@ import {
   TriangleAlert,
   Users,
   UserPlus,
+  Mail,
   X,
   type LucideIcon,
 } from "lucide-react";
@@ -166,6 +167,8 @@ export function MessageCenter() {
   const [body, setBody] = useState("");
   const [touched, setTouched] = useState(false);
   const [flash, setFlash] = useState(false);
+  // E-mail en plus du push : décision manuelle de l'équipe, annulation et nouvel horaire seulement.
+  const [email, setEmail] = useState(false);
   const [catchUp, setCatchUp] = useState(true);
   const [flashTouched, setFlashTouched] = useState(false);
   const [when, setWhen] = useState<"now" | "later">("now");
@@ -288,6 +291,7 @@ export function MessageCenter() {
     setFlash(false);
     setFlashTouched(false);
     setCatchUp(true);
+    setEmail(false);
     setWhen("now");
     setLater(tomorrowAt("08:00"));
     setReplaces(null);
@@ -360,6 +364,7 @@ export function MessageCenter() {
               ? "Choisissez une heure dans au moins 2 minutes."
               : "";
 
+  const emailable = (template === "cancel" || template === "reschedule") && kind !== "all";
   const create = useMutation({
     mutationFn: () =>
       messageAction<{
@@ -380,6 +385,7 @@ export function MessageCenter() {
         sendAt: sendAt ? sendAt.toISOString() : null,
         flash,
         catchUp: catchUp && kind !== "all",
+        email: emailable && email,
         ...(kind === "all" ? { confirmCount: Number(typed) } : {}),
         ...(replaces ? { replaces } : {}),
       }),
@@ -866,6 +872,23 @@ export function MessageCenter() {
                   dans le diagnostic plus bas.
                 </p>
               ) : null}
+              {audience && emailable ? (
+                <label className="bw-msg__check bw-msg__catchup">
+                  <input
+                    type="checkbox"
+                    checked={email}
+                    onChange={(e) => setEmail(e.target.checked)}
+                  />
+                  <Mail size={16} aria-hidden />
+                  <span>
+                    Prévenir aussi par e-mail
+                    <small>
+                      Chaque compte prévenu reçoit aussi un e-mail (utile sur iPhone sans
+                      l’application installée). Offre gratuite Resend : 100 e-mails par jour.
+                    </small>
+                  </span>
+                </label>
+              ) : null}
               {audience && kind !== "all" ? (
                 <label className="bw-msg__check bw-msg__catchup">
                   <input
@@ -964,6 +987,12 @@ export function MessageCenter() {
                 <div>
                   <dt>Flash info</dt>
                   <dd>Publié aussi, pendant 24 h</dd>
+                </div>
+              ) : null}
+              {emailable && email ? (
+                <div>
+                  <dt>E-mail</dt>
+                  <dd>Envoyé aussi à chaque compte prévenu</dd>
                 </div>
               ) : null}
               {catchUp && catchUpEnd && kind !== "all" ? (

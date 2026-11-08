@@ -95,8 +95,8 @@ export const Route = createFileRoute("/")({
   },
   head: () =>
     seoHead(
-      "BledWay — le Waze du ferry Europe–Algérie, en direct",
-      "Suivez votre ferry Europe–Algérie en direct : navires, retards, annulations, signalements des voyageurs au port, salons. Comparez toutes les compagnies.",
+      "BledWay — le Waze du ferry Europe–Maghreb, en direct",
+      "Le Waze du ferry Europe–Maghreb, dès aujourd'hui vers l'Algérie : navires en direct, retards, annulations, signalements au port, toutes les compagnies.",
       "/",
     ),
   component: Index,
@@ -1270,7 +1270,7 @@ function Index() {
       <SiteHeader />
       <main id="contenu" tabIndex={-1}>
         <h1 className="sr-only">
-          Ferries Europe ↔ Algérie : carte des traversées, lignes et départs
+          Ferries Europe ↔ Maghreb : carte des traversées, lignes et départs
         </h1>
         <section
           id="carte"

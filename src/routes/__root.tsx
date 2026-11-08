@@ -112,11 +112,11 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { name: "apple-mobile-web-app-capable", content: "yes" },
       { name: "mobile-web-app-capable", content: "yes" },
       { name: "apple-mobile-web-app-status-bar-style", content: "default" },
-      { title: "BledWay — le Waze du ferry Europe ↔ Algérie" },
+      { title: "BledWay — le Waze du ferry Europe ↔ Maghreb" },
       {
         name: "description",
         content:
-          "Le Waze du ferry Europe–Algérie : navires en direct, alertes de retard ou d'annulation, signalements des voyageurs, départs de toutes les compagnies.",
+          "Le Waze du ferry Europe–Maghreb, dès aujourd'hui vers l'Algérie : navires en direct, alertes de retard ou d'annulation, signalements des voyageurs.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
@@ -151,13 +151,13 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
               logo: absoluteUrl("/pwa-icon-512.png"),
               email: seoConfig.contactEmail,
               description:
-                "BledWay est le « Waze du ferry » entre l'Europe et l'Algérie : suivi des navires en direct, alertes en cas de retard, de report ou d'annulation, signalements et salons des voyageurs, comparaison des départs de toutes les compagnies et préparation du voyage de porte à porte. Service indépendant et gratuit, dans les deux sens : BledWay ne vend pas de billets.",
+                "BledWay est le « Waze du ferry » entre l'Europe et le Maghreb, en commençant par l'Algérie (la Tunisie et le Maroc arrivent ensuite) : suivi des navires en direct, alertes en cas de retard, de report ou d'annulation, signalements et salons des voyageurs, comparaison des départs de toutes les compagnies et préparation du voyage de porte à porte. Service indépendant et gratuit, dans les deux sens : BledWay ne vend pas de billets.",
             },
             {
               "@type": "WebApplication",
               "@id": absoluteUrl("/#app"),
               name: "BledWay",
-              alternateName: "Le Waze du ferry Europe–Algérie",
+              alternateName: "Le Waze du ferry Europe–Maghreb",
               url: absoluteUrl("/"),
               inLanguage: "fr",
               applicationCategory: "TravelApplication",
@@ -166,7 +166,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
               offers: { "@type": "Offer", price: "0", priceCurrency: "EUR" },
               publisher: { "@id": absoluteUrl("/#organisation") },
               description:
-                "BledWay est le « Waze du ferry » entre l'Europe et l'Algérie : suivi des navires en direct, alertes en cas de retard, de report ou d'annulation, signalements et salons des voyageurs, comparaison des départs de toutes les compagnies et préparation du voyage de porte à porte. Service indépendant et gratuit, dans les deux sens : BledWay ne vend pas de billets.",
+                "BledWay est le « Waze du ferry » entre l'Europe et le Maghreb, en commençant par l'Algérie (la Tunisie et le Maroc arrivent ensuite) : suivi des navires en direct, alertes en cas de retard, de report ou d'annulation, signalements et salons des voyageurs, comparaison des départs de toutes les compagnies et préparation du voyage de porte à porte. Service indépendant et gratuit, dans les deux sens : BledWay ne vend pas de billets.",
               featureList: [
                 "Signalements des voyageurs en direct au port et à bord, façon Waze",
                 "Suivi des navires en mer et arrivée estimée",

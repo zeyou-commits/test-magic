@@ -2,7 +2,7 @@
   "id": "/",
   "name": "BledWay — La mer nous rapproche",
   "short_name": "BledWay",
-  "description": "Traversées en ferry entre l’Europe et l’Algérie, ports, bateaux et conseils des voyageurs.",
+  "description": "Le Waze du ferry entre l’Europe et le Maghreb : navires en direct, alertes, signalements et salons des voyageurs.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",

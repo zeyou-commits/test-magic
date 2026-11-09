@@ -1,5 +1,16 @@
 import type { Map as MapLibreMap } from "maplibre-gl";
 
+/** Travail différé : quand le téléphone est libre (repli : petit délai), pour ne pas figer l'ouverture. */
+function whenIdle(task: () => void) {
+  const idle = (
+    window as Window & {
+      requestIdleCallback?: (cb: () => void, opts?: { timeout: number }) => number;
+    }
+  ).requestIdleCallback;
+  if (idle) idle(task, { timeout: 1500 });
+  else setTimeout(task, 50);
+}
+
 /** Jeton du bateau : 128 × 128 px dessinés en 2x, soit 64 px à l'échelle 1. */
 const SIZE = 128;
 const CENTER = SIZE / 2;
@@ -416,6 +427,20 @@ export function addVesselImages(map: MapLibreMap, slugs: string[]) {
     return ctx.getImageData(0, 0, fullWidth, fullHeight);
   };
 
+  const addStill = (slug: string, width: number) => {
+    const id = vesselImageId(slug, width);
+    if (map.hasImage(id)) return;
+    const still = frame(slug, width, null);
+    if (still) map.addImage(id, still);
+  };
+  // Une image pas encore préparée est dessinée à la demande, avant l'affichage.
+  const onMissing = (event: { id: string }) => {
+    const match = /^vessel-(.+)-(\d+)$/.exec(event.id);
+    if (!match || !sources.has(match[1]!)) return;
+    addStill(match[1]!, Number(match[2]));
+  };
+  map.on("styleimagemissing", onMissing);
+
   const widthNow = () =>
     VESSEL_IMAGE_STEPS.find(({ minzoom, maxzoom }) => map.getZoom() >= minzoom && map.getZoom() < maxzoom)?.width ??
     VESSEL_IMAGE_STEPS.at(-1)!.width;
@@ -467,11 +492,11 @@ export function addVesselImages(map: MapLibreMap, slugs: string[]) {
           }
       heightRatios.set(slug, image.height / image.width);
       sources.set(slug, { image, bowY: edge(0, w, 1), sternY: edge(w - 1, -1, -1), funnelX, funnelY });
-      for (const { width } of VESSEL_IMAGE_STEPS) {
-        const still = frame(slug, width, null);
-        const id = vesselImageId(slug, width);
-        if (still && !map.hasImage(id)) map.addImage(id, still);
-      }
+      // La plus petite largeur tout de suite (vue d'ensemble) ; les grandes, utiles seulement de
+      // près, quand le téléphone est libre — ou aussitôt réclamées par la carte (voir plus bas).
+      const [first, ...later] = VESSEL_IMAGE_STEPS;
+      addStill(slug, first!.width);
+      for (const { width } of later) whenIdle(() => addStill(slug, width));
     };
     image.src = `/vessel-visuals/map/${slug}.webp`;
   }
@@ -480,6 +505,7 @@ export function addVesselImages(map: MapLibreMap, slugs: string[]) {
   map.once("remove", () => {
     if (timer) clearInterval(timer);
     media.removeEventListener("change", sync);
+    map.off("styleimagemissing", onMissing);
   });
 
   return {
@@ -507,15 +533,16 @@ export function pitchForZoom(zoom: number) {
 
 export function addShipImages(map: MapLibreMap) {
   const media = window.matchMedia("(prefers-reduced-motion: reduce)");
-  const animated: { id: string; frames: ImageData[] }[] = [];
+  const animated: { id: string; frames: ImageData[]; ready: boolean }[] = [];
   let frame = 0;
   let timer: ReturnType<typeof setInterval> | undefined;
 
   const paint = () => {
     if (document.hidden) return;
     frame++;
-    animated.forEach(({ id, frames }) => {
-      if (!map.hasImage(id) || !frames.length) return;
+    animated.forEach(({ id, frames, ready }) => {
+      // Tant que toutes les images ne sont pas prêtes, le jeton reste sur la première.
+      if (!ready || !map.hasImage(id) || !frames.length) return;
       map.updateImage(id, frames[media.matches ? 0 : frame % frames.length]!);
     });
     map.triggerRepaint();
@@ -528,14 +555,25 @@ export function addShipImages(map: MapLibreMap) {
 
   for (const level of ["sea", "slow", "dock"] as const)
     for (const west of [false, true]) {
-      const frames: ImageData[] = [];
-      for (let i = 0; i < 16; i++) {
+      // Première image tout de suite ; les 15 suivantes de l'animation, quand le téléphone est libre.
+      const first = drawToken(level, west, 0);
+      const id = `ship-${level}-${west ? "w" : "e"}`;
+      if (first && !map.hasImage(id)) map.addImage(id, first, { pixelRatio: 2 });
+      const entry = { id, frames: first ? [first] : [], ready: false };
+      animated.push(entry);
+      // Une image par temps libre : jamais de longue tâche qui retarderait un toucher.
+      const frames: ImageData[] = first ? [first] : [];
+      const next = (i: number) => {
+        if (i >= 16) {
+          entry.frames = frames;
+          entry.ready = true;
+          return;
+        }
         const image = drawToken(level, west, i / 16);
         if (image) frames.push(image);
-      }
-      const id = `ship-${level}-${west ? "w" : "e"}`;
-      if (frames[0] && !map.hasImage(id)) map.addImage(id, frames[0], { pixelRatio: 2 });
-      animated.push({ id, frames });
+        whenIdle(() => next(i + 1));
+      };
+      whenIdle(() => next(1));
     }
   const heading = drawHeading();
   if (heading && !map.hasImage("ship-heading"))

@@ -181,7 +181,7 @@ function AuthPage() {
         <div className="bw-auth-story relative flex flex-col overflow-hidden bg-[#e5efed]">
           <div className="relative z-10">
             <img
-              src="/bledway-brand.png"
+              src="/bledway-brand-entete.webp"
               alt="BledWay"
               className="h-10 w-auto object-contain object-left"
             />

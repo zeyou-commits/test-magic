@@ -62,7 +62,7 @@ export function BrandLink({ compact = false }: { compact?: boolean }) {
       onClick={goHome}
     >
       <img
-        src="/bledway-brand.png"
+        src="/bledway-brand-entete.webp"
         alt="BledWay"
         className={compact ? "bw-brand bw-brand-compact" : "bw-brand"}
       />

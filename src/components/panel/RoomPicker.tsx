@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { afterOverlayClose, useBackClose } from "@/lib/ferry/backStack";
 import { enterRoom } from "@/lib/ferry/chat";
 import { revealBlock } from "./ActionHub";
@@ -78,7 +78,10 @@ export function RoomPicker({
   const ids = departures.map((item) => item.id);
   const counts = useRoomCounts(open ? ids : []);
   // La compagnie et le navire de chaque départ : affichés, et retrouvés par la recherche.
-  const rows = useMemo(() => {
+  // Fenêtre fermée, rien n'est affiché : la liste n'est préparée qu'à l'ouverture. Pendant
+  // l'animation de fermeture, la dernière liste reste en place.
+  const built = useMemo(() => {
+    if (!open) return null;
     const plain = (value: string) => value.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
     const byId = new Map(departures.map((item) => [item.id, item]));
     return pickerRows(departures, routes, ports, (iso, port) =>
@@ -94,7 +97,10 @@ export function RoomPicker({
         search: `${row.search} ${plain(`${company?.name ?? ""} ${vessel?.name ?? ""}`)}`,
       };
     });
-  }, [departures, routes, ports, companies, vessels]);
+  }, [open, departures, routes, ports, companies, vessels]);
+  const lastRows = useRef(built ?? []);
+  if (built) lastRows.current = built;
+  const rows = built ?? lastRows.current;
   // Les compagnies présentes dans la liste, pour filtrer d'un toucher.
   const present = companies.filter((company) => rows.some((row) => row.company?.id === company.id));
   const shown = searchRows(rows, text).filter((row) => !companyId || row.company?.id === companyId);

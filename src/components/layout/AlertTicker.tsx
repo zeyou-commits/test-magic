@@ -14,6 +14,19 @@ import { supabase } from "@/integrations/supabase/client";
 
 const DISMISSED_KEY = "bledway:alert-ticker-dismissed";
 const RAIL_DISMISSED_KEY = "bledway:news-rail-dismissed";
+/**
+ * Hauteur du bandeau à la visite précédente : un petit script dans <head> la réserve dès le premier
+ * affichage (variable --bw-ticker-reserve), pour que le bandeau n'arrive pas en poussant la page.
+ */
+export const TICKER_RESERVE_KEY = "bledway:ticker-reserve";
+
+function saveReserve(height: number) {
+  try {
+    window.localStorage.setItem(TICKER_RESERVE_KEY, String(Math.round(height)));
+  } catch {
+    /* sans stockage, le bandeau arrive simplement sans place réservée */
+  }
+}
 /** Le bandeau montre les actualités récentes ; les plus anciennes restent sur la page Actualités. */
 const RAIL_MS = 7 * 24 * 3_600_000;
 
@@ -41,8 +54,10 @@ export function AlertTicker() {
 }
 
 function AlertTickerBar() {
-  const { data: incidents = [] } = useQuery(incidentsQuery);
-  const { data: news } = useQuery(newsQuery);
+  const incidentsResult = useQuery(incidentsQuery);
+  const incidents = incidentsResult.data ?? [];
+  const newsResult = useQuery(newsQuery);
+  const news = newsResult.data;
   const { data: vessels = [] } = useQuery(vesselsQuery);
   const { data: ports = [] } = useQuery(portsQuery);
   const { data: companies = [] } = useQuery(companiesQuery);
@@ -61,9 +76,10 @@ function AlertTickerBar() {
       root.style.removeProperty("--bw-ticker-h");
       return;
     }
-    observer.current = new ResizeObserver(() =>
-      root.style.setProperty("--bw-ticker-h", `${node.offsetHeight}px`),
-    );
+    observer.current = new ResizeObserver(() => {
+      root.style.setProperty("--bw-ticker-h", `${node.offsetHeight}px`);
+      saveReserve(node.offsetHeight);
+    });
     observer.current.observe(node);
   }, []);
   const request = useTravelAction();
@@ -147,7 +163,17 @@ function AlertTickerBar() {
   const railVersion = rail.map((item) => item.id).join("|");
   const showAlerts = alerts.length > 0 && dismissed !== version;
   const showRail = rail.length > 0 && railDismissed !== railVersion;
-  if (!ready || (!showAlerts && !showRail)) return null;
+  // Données reçues (ou en erreur) et préférences lues : on sait si le bandeau s'affiche.
+  const settled =
+    ready && newsResult.status !== "pending" && incidentsResult.status !== "pending";
+  const hidden = settled && !showAlerts && !showRail;
+  useEffect(() => {
+    if (hidden) saveReserve(0);
+  }, [hidden]);
+  // En attendant, la place du bandeau (connue de la visite précédente) reste réservée.
+  // Mesurée comme le bandeau : ce qui se cale dessous (tiroir de la carte) est déjà à sa place.
+  if (!settled) return <div ref={measure} className="bw-top-rail-slot" aria-hidden />;
+  if (hidden) return null;
   const open = (vesselId: string | null) => {
     if (!vesselId) {
       window.location.assign("/actualites");

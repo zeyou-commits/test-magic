@@ -70,18 +70,27 @@ export function dateKeyInZone(value: string | Date, timeZone: string): string {
   return formatter.format(typeof value === "string" ? new Date(value) : value);
 }
 
+// Créer un Intl.DateTimeFormat est coûteux (plusieurs dixièmes de ms) : un seul par fuseau.
+const offsetFormatters = new Map<string, Intl.DateTimeFormat>();
+const wallFormatters = new Map<string, Intl.DateTimeFormat>();
+
 /** Décalage (en minutes) d'un fuseau par rapport à UTC à un instant donné. */
 function zoneOffsetMinutes(instant: Date, timeZone: string): number {
-  const parts = new Intl.DateTimeFormat("en-US", {
-    timeZone,
-    hourCycle: "h23",
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-    second: "2-digit",
-  }).formatToParts(instant);
+  let formatter = offsetFormatters.get(timeZone);
+  if (!formatter) {
+    formatter = new Intl.DateTimeFormat("en-US", {
+      timeZone,
+      hourCycle: "h23",
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+    });
+    offsetFormatters.set(timeZone, formatter);
+  }
+  const parts = formatter.formatToParts(instant);
   const get = (type: string) => Number(parts.find((part) => part.type === type)?.value ?? 0);
   const asUtc = Date.UTC(
     get("year"),
@@ -110,9 +119,12 @@ export function zonedTimeToUtc(date: string, time: string, timeZone: string): Da
 
 /** Heure « murale » (HH:MM) d'un instant dans un fuseau. */
 export function wallTimeInZone(value: string | Date, timeZone: string): string {
-  return new Intl.DateTimeFormat("fr-FR", { timeZone, hour: "2-digit", minute: "2-digit" }).format(
-    typeof value === "string" ? new Date(value) : value,
-  );
+  let formatter = wallFormatters.get(timeZone);
+  if (!formatter) {
+    formatter = new Intl.DateTimeFormat("fr-FR", { timeZone, hour: "2-digit", minute: "2-digit" });
+    wallFormatters.set(timeZone, formatter);
+  }
+  return formatter.format(typeof value === "string" ? new Date(value) : value);
 }
 
 const CITY_BY_ZONE: Record<string, string> = {

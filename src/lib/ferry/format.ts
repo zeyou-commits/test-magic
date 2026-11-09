@@ -20,16 +20,38 @@ export function formatDuration(minutes: number | null | undefined): string {
 // Sans fuseau, elles utilisent celui du navigateur : à réserver aux dates qui ne
 // sont pas des horaires de traversée (date d'un avis, d'un signalement…).
 
+// Créer un Intl.DateTimeFormat coûte cher et ces fonctions sont appelées des milliers de fois
+// (listes de départs, cartes) : un formateur par réglage et par fuseau, réutilisé.
+// Sans fuseau explicite, la clé inclut le décalage actuel de l'appareil, pour suivre un
+// changement de fuseau (voyageur arrivé de l'autre côté de la mer).
+const formatters = new Map<string, Intl.DateTimeFormat>();
+function formatter(
+  options: Omit<Intl.DateTimeFormatOptions, "timeZone">,
+  timeZone: string | undefined,
+): Intl.DateTimeFormat {
+  const zoneKey = timeZone ?? `local${new Date().getTimezoneOffset()}`;
+  const key = `${zoneKey}|${JSON.stringify(options)}`;
+  let cached = formatters.get(key);
+  if (!cached) {
+    cached = new Intl.DateTimeFormat("fr-FR", { ...options, timeZone });
+    formatters.set(key, cached);
+  }
+  return cached;
+}
+
+const DATE = { day: "numeric", month: "long" } as const;
+const TIME = { hour: "2-digit", minute: "2-digit" } as const;
+const SHORT_DAY = { weekday: "short", day: "numeric", month: "short" } as const;
+const WEEKDAY = { weekday: "short" } as const;
+const DAY_MONTH = { day: "2-digit", month: "2-digit" } as const;
+const SHORT_DATE = { day: "numeric", month: "short" } as const;
+
 export function formatDate(iso: string, timeZone?: string): string {
-  return new Intl.DateTimeFormat("fr-FR", { day: "numeric", month: "long", timeZone }).format(
-    new Date(iso),
-  );
+  return formatter(DATE, timeZone).format(new Date(iso));
 }
 
 export function formatTime(iso: string, timeZone?: string): string {
-  return new Intl.DateTimeFormat("fr-FR", { hour: "2-digit", minute: "2-digit", timeZone }).format(
-    new Date(iso),
-  );
+  return formatter(TIME, timeZone).format(new Date(iso));
 }
 
 export function formatDateTime(iso: string, timeZone?: string): string {
@@ -38,34 +60,17 @@ export function formatDateTime(iso: string, timeZone?: string): string {
 
 /** « mar. 14 oct. » */
 export function formatShortDay(iso: string, timeZone?: string): string {
-  return new Intl.DateTimeFormat("fr-FR", {
-    weekday: "short",
-    day: "numeric",
-    month: "short",
-    timeZone,
-  }).format(new Date(iso));
+  return formatter(SHORT_DAY, timeZone).format(new Date(iso));
 }
 
 /** Date courte et heure séparées, pour les listes compactes. */
 export function formatDateParts(iso: string, timeZone?: string) {
   const date = new Date(iso);
   return {
-    weekday: new Intl.DateTimeFormat("fr-FR", { weekday: "short", timeZone })
-      .format(date)
-      .replace(".", ""),
-    dayMonth: new Intl.DateTimeFormat("fr-FR", {
-      day: "2-digit",
-      month: "2-digit",
-      timeZone,
-    }).format(date),
-    shortDate: new Intl.DateTimeFormat("fr-FR", {
-      day: "numeric",
-      month: "short",
-      timeZone,
-    }).format(date),
-    time: new Intl.DateTimeFormat("fr-FR", { hour: "2-digit", minute: "2-digit", timeZone }).format(
-      date,
-    ),
+    weekday: formatter(WEEKDAY, timeZone).format(date).replace(".", ""),
+    dayMonth: formatter(DAY_MONTH, timeZone).format(date),
+    shortDate: formatter(SHORT_DATE, timeZone).format(date),
+    time: formatter(TIME, timeZone).format(date),
   };
 }
 

@@ -123,6 +123,11 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { property: "og:site_name", content: "BledWay" },
     ],
     scripts: [
+      // Avant le premier affichage : réserve la place du bandeau d'actualités (hauteur de la visite
+      // précédente), pour qu'il n'arrive pas en poussant la page. Voir AlertTicker.
+      {
+        children: `try{var v=localStorage.getItem("bledway:ticker-reserve"),h=+v;if(v!==null&&h>=0&&h<240)document.documentElement.style.setProperty("--bw-ticker-reserve",h+"px")}catch(e){}`,
+      },
       // Mesure d'audience Umami : sans cookie ; seulement sur le vrai site (pas en local ni en aperçu).
       {
         src: "https://cloud.umami.is/script.js",

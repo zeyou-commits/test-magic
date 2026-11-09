@@ -97,7 +97,7 @@ function AccountPage() {
 
   return (
     <div className="bw-account-page">
-      <header className="bw-account-header"><Link to="/" className="inline-flex items-center gap-2 text-xs font-semibold text-primary"><ArrowLeft className="size-4"/>Retour à la carte</Link><img src="/bledway-brand.png" alt="BledWay" className="h-9 w-auto"/><button type="button" onClick={() => void signOut()} aria-label="Se déconnecter" className="grid size-10 place-items-center rounded-full border border-border text-muted-foreground"><LogOut className="size-4"/></button></header>
+      <header className="bw-account-header"><Link to="/" className="inline-flex items-center gap-2 text-xs font-semibold text-primary"><ArrowLeft className="size-4"/>Retour à la carte</Link><img src="/bledway-brand-entete.webp" alt="BledWay" className="h-9 w-auto"/><button type="button" onClick={() => void signOut()} aria-label="Se déconnecter" className="grid size-10 place-items-center rounded-full border border-border text-muted-foreground"><LogOut className="size-4"/></button></header>
       <div className="bw-account-welcome"><MyCabas fallback={(profile?.display_name || user.email || "V").slice(0, 1).toUpperCase()} /><div className="min-w-0"><span className="bw-account-kicker">Mon espace voyageur</span><h1>Bonjour{profile?.display_name ? ` ${profile.display_name.split(" ")[0]}` : ""}.</h1><p>Les retrouvailles se préparent ici.</p></div></div>
       <Tabs value={section} onValueChange={(value) => { setSection(value); window.history.replaceState(null, "", `/compte${value === "voyages" ? "" : `#${value}`}`); }}>
         <TabsList className="bw-account-tabs" aria-label="Mon espace voyageur">

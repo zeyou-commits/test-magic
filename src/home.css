@@ -2739,7 +2739,12 @@ html {
    et l'en-tête collant passe sur la loupe et les filtres. */
 @media (min-width: 768px) {
   .bw-map-stage {
-    height: clamp(540px, calc(100svh - max(96px, var(--bw-header-height, 80px) + 16px)), 900px);
+    /* Avant la mesure : en-tête (72 px) + place réservée au bandeau d'actualités. */
+    height: clamp(
+      540px,
+      calc(100svh - max(96px, var(--bw-header-height, (72px + var(--bw-ticker-reserve, 42px))) + 16px)),
+      900px
+    );
     scroll-margin-top: var(--bw-header-height, 80px);
   }
 }
@@ -2797,7 +2802,8 @@ html {
     z-index: 1;
   }
   .bw-map-stage[data-panel-open="true"] {
-    height: calc(100dvh - var(--bw-header-height, 64px));
+    /* Avant la mesure : en-tête (64 px) + place réservée au bandeau d'actualités. */
+    height: calc(100dvh - var(--bw-header-height, (64px + var(--bw-ticker-reserve, 42px))));
     min-height: 320px;
   }
   .bw-map-stage[data-panel-open="true"] .bw-map-panel {

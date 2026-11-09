@@ -435,6 +435,8 @@ export default function FerryMap({
   const vesselAlertsRef = useRef(vesselAlertsNow);
   vesselAlertsRef.current = vesselAlertsNow;
   const lastFleetFrame = useRef<{ source: GeoJSONSource; data: FleetFrame } | null>(null);
+  /** Dernière situation où les noms de ports ont été placés : inutile de recommencer à l'identique. */
+  const portLabelKey = useRef("");
   fleetRef.current = fleet;
   const vesselImagesRef = useRef<ReturnType<typeof addVesselImages> | null>(null);
 
@@ -2721,7 +2723,37 @@ export default function FerryMap({
           ).length;
           return wet / xs.length;
         };
-        for (const port of portById.values()) {
+        // Ce placement interroge le rendu de la carte des centaines de fois : il n'est refait que si
+        // la vue, les coques (au pixel près), les ports ou leurs noms ont changé.
+        const portLabels = [...portById.values()].map((port) =>
+          portMarkersRef.current
+            .get(port.id)
+            ?.getElement()
+            .querySelector<HTMLElement>(".port-marker__label"),
+        );
+        const round = (box: Box) =>
+          `${Math.round(box.left)},${Math.round(box.top)},${Math.round(box.right)},${Math.round(box.bottom)}`;
+        const placementKey = [
+          // Les tuiles qui finissent de charger révèlent la mer : le côté terre peut changer.
+          map.areTilesLoaded(),
+          map.getZoom(),
+          map.getBearing(),
+          map.getPitch(),
+          ...map.getCenter().toArray(),
+          canvasRect.width,
+          canvasRect.height,
+          [...portById.values()].map((port) => `${port.id}:${port.label_anchor ?? ""}`).join(";"),
+          portLabels
+            .map((label) =>
+              label ? `${label.offsetWidth}x${label.offsetHeight}:${label.dataset["side"] ?? ""}` : "-",
+            )
+            .join(";"),
+          hulls.map(round).join(";"),
+          towers.map(round).join(";"),
+        ].join("|");
+        const unchanged = placementKey === portLabelKey.current;
+        portLabelKey.current = placementKey;
+        for (const port of unchanged ? [] : portById.values()) {
           const label = portMarkersRef.current
             .get(port.id)
             ?.getElement()

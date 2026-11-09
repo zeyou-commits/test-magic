@@ -422,7 +422,7 @@ export function AdminWorkspace({
       </a>
       <aside className="bw-admin-sidebar">
         <Link to="/" className="bw-admin-brand">
-          <img src="/bledway-brand.png" alt="BledWay" />
+          <img src="/bledway-brand-entete.webp" alt="BledWay" />
           <span>ESPACE ÉQUIPE</span>
         </Link>
         {menuOpen ? null : searchField}

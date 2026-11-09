@@ -206,7 +206,16 @@ function Index() {
   const [lineVisibility, setLineVisibility] = useState<LineVisibility>("all");
   const [highlightRouteId, setHighlightRouteId] = useState<string | null>(null);
   const [focusedRouteId, setFocusedRouteId] = useState<string | null>(null);
-  const [panelLevel, setPanelLevel] = useState<0 | 1 | 2>(1);
+  // Arrivée simple sur la carte : le volet mobile s'ouvre replié (la recherche seule est visible).
+  // Un lien vers une fiche, des filtres ou « Mon voyage » garde son ouverture habituelle.
+  const [panelLevel, setPanelLevel] = useState<0 | 1 | 2>(() => {
+    const params = new URLSearchParams(initialSearch);
+    const plainArrival =
+      !params.has("voyage") &&
+      !selectionFromUrl(initialSearch) &&
+      !hasActiveFilters(filtersFromUrl(initialSearch));
+    return plainArrival ? 0 : 1;
+  });
   const [peekSelectionKey, setPeekSelectionKey] = useState<string | null>(null);
   const [panelMode, setPanelMode] = useState<"departures" | "search" | "itinerary" | null>(() =>
     hasActiveFilters(filtersFromUrl(initialSearch)) ? "departures" : null,
@@ -1004,7 +1013,11 @@ function Index() {
   }, []);
   // Un filtre de la carte actif replie le volet ; il se remet quand plus aucun ne l'est.
   const mapFilterActive = activeShortcut !== null;
+  // Seul un vrai changement de filtre déplace le volet (pas le premier affichage).
+  const previousFilterActive = useRef(mapFilterActive);
   useEffect(() => {
+    if (previousFilterActive.current === mapFilterActive) return;
+    previousFilterActive.current = mapFilterActive;
     if (window.innerWidth >= 768) return;
     if (mapFilterActive) setPanelLevel(0);
     else setPanelLevel((level) => (level === 0 ? 1 : level));

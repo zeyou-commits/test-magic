@@ -1,5 +1,6 @@
 // Veille : la seule porte de Claude. Lire les articles à analyser, déposer des propositions, rien d'autre.
 import { createClient, type SupabaseClient } from "npm:@supabase/supabase-js@2";
+import { readArticle } from "./article.ts";
 
 declare const Deno: {
   env: { get(name: string): string | undefined };
@@ -33,7 +34,7 @@ Deno.serve(async (request) => {
   if (request.method === "GET") {
     const { data: items, error } = await db
       .from("bw_watch_items")
-      .select("id,url,title,excerpt,published_at,bw_watch_sources(name,tier)")
+      .select("id,url,title,excerpt,published_at,body,article_url,bw_watch_sources(name,tier)")
       .is("analyzed_at", null)
       .order("found_at")
       .limit(15);
@@ -42,6 +43,21 @@ Deno.serve(async (request) => {
       await stamp(db, { pending: 0 });
       return json({ items: [] });
     }
+    // Le texte de chaque article (une seule lecture, gardée en base) : c'est là que sont les horaires,
+    // le navire et les heures d'enregistrement, que le titre seul ne donne pas.
+    await Promise.all(
+      items
+        .filter((item: { body: string | null }) => !item.body)
+        .map(async (item: { id: string; url: string; body: string | null; article_url: string | null }) => {
+          const article = await readArticle(item.url);
+          item.body = article?.text ?? "";
+          item.article_url = article?.url ?? null;
+          await db
+            .from("bw_watch_items")
+            .update({ body: item.body, article_url: item.article_url })
+            .eq("id", item.id);
+        }),
+    );
     const now = Date.now();
     const [departures, vessels, companies, routes, ports, incidents] = await Promise.all([
       db
@@ -74,6 +90,16 @@ Deno.serve(async (request) => {
       departures: (departures.data ?? []).map((d: Record<string, unknown>) => ({
         ...d,
         route: routeName.get(d.route_id as string) ?? null,
+        // L'heure du port de départ (Algérie : UTC+1 ; Europe : heure de Paris), pour reprendre l'heure habituelle.
+        departure_local: new Intl.DateTimeFormat("fr-FR", {
+          timeZone: String(routeName.get(d.route_id as string) ?? "").match(
+            /^(Alger|Oran|Béjaïa|Bejaia|Annaba|Skikda|Mostaganem|Ghazaouet|Djen Djen|Jijel)/i,
+          )
+            ? "Africa/Algiers"
+            : "Europe/Paris",
+          dateStyle: "full",
+          timeStyle: "short",
+        }).format(new Date(d.departure_at as string)),
         route_id: undefined,
       })),
     });

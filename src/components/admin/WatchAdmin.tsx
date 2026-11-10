@@ -310,6 +310,11 @@ export function WatchAdmin() {
                     </dd>
                   </dl>
                 ) : null}
+                {(proposal.kind === "departure" || proposal.kind === "schedule_fix") &&
+                (proposal.field === "departure_at" || proposal.field === "arrival_at") &&
+                proposal.proposed_value ? (
+                  <TimeFix proposal={proposal} onDone={refresh} />
+                ) : null}
                 {item ? (
                   <a href={item.url} target="_blank" rel="noopener noreferrer nofollow">
                     {item.bw_watch_sources?.name ?? "Source"}
@@ -463,6 +468,68 @@ const MISSING_ACTUS_SQL =
  * L'actualité telle que le public la lira : titre et texte relus (jamais la note de travail de la
  * veille), traversées concernées cliquables, et l'aperçu de l'article source ajouté à la publication.
  */
+/** Heure de Paris (celle de l'équipe), au format d'un champ date et heure. */
+function toLocalInput(iso: string) {
+  const parts = Object.fromEntries(
+    new Intl.DateTimeFormat("fr-FR", {
+      timeZone: "Europe/Paris",
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+      hourCycle: "h23",
+    })
+      .formatToParts(new Date(iso))
+      .map((part) => [part.type, part.value]),
+  );
+  return `${parts["year"]}-${parts["month"]}-${parts["day"]}T${parts["hour"]}:${parts["minute"]}`;
+}
+
+/** Corriger la date ou l'heure proposée (souvent « heure à confirmer ») avant de valider. */
+function TimeFix({ proposal, onDone }: { proposal: Proposal; onDone: () => void }) {
+  const [value, setValue] = useState(() => toLocalInput(proposal.proposed_value!));
+  const changed = value !== toLocalInput(proposal.proposed_value!);
+  const save = useMutation({
+    mutationFn: async () => {
+      // L'heure saisie est celle de Paris (même heure qu'Alger en hiver) : on retrouve son instant.
+      const guess = new Date(`${value}:00Z`);
+      const paris = new Date(toLocalInput(guess.toISOString()) + ":00Z");
+      const instant = new Date(guess.getTime() - (paris.getTime() - guess.getTime()));
+      const { error } = await db.rpc("bw_watch_adjust", {
+        p_id: proposal.id,
+        p_value: instant.toISOString(),
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("Heure corrigée : vérifiez puis approuvez");
+      onDone();
+    },
+    onError: (error: Error) => toast.error(error.message),
+  });
+  return (
+    <label className="bw-watch__timefix mt-2 flex flex-wrap items-center gap-2 text-xs font-semibold">
+      Corriger la date et l'heure (heure de Paris)
+      <input
+        type="datetime-local"
+        value={value}
+        onChange={(event) => setValue(event.target.value)}
+        className="rounded-lg border border-border bg-white px-2 py-1 text-xs"
+      />
+      <Button
+        type="button"
+        size="sm"
+        variant="outline"
+        disabled={!changed || save.isPending}
+        onClick={() => save.mutate()}
+      >
+        Enregistrer
+      </Button>
+    </label>
+  );
+}
+
 function NewsComposer({
   proposal,
   onCancel,

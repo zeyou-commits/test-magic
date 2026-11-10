@@ -15,6 +15,9 @@ export const Route = createFileRoute("/guide/$slug")({
           loaderData.description,
           `/guide/${loaderData.slug}`,
           true,
+          loaderData.illustration
+            ? { path: loaderData.illustration.share, width: 1200, height: 630, alt: loaderData.illustration.alt }
+            : undefined,
         )
       : {
           meta: [{ title: "Dossier introuvable | BledWay" }, { name: "robots", content: "noindex" }],

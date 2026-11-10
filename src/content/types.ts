@@ -17,6 +17,21 @@ export interface Article {
   sources: string[];
   related: string[];
   tool?: string;
+  /** Illustration du carnet de route : affichée sous le titre, reprise pour le partage et les données structurées. */
+  illustration?: Illustration;
+  /** Date de mise à jour propre au dossier (AAAA-MM-JJ), sinon la date éditoriale commune. */
+  updated?: string;
+}
+export interface Illustration {
+  /** Image affichée (WebP) dans /public. */
+  src: string;
+  /** Version JPEG 1200×630 pour les aperçus de partage. */
+  share: string;
+  width: number;
+  height: number;
+  alt: string;
+  /** Une phrase de récit, la famille du carnet de route. */
+  caption: string;
 }
 export interface Source {
   name: string;

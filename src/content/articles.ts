@@ -744,4 +744,96 @@ export const articles: Article[] = [
     ],
     tool: "partage-frais",
   },
+  {
+    slug: "duree-traversee-marseille-alger",
+    topic: "voyage",
+    title: "Ferry Marseille → Alger : combien de temps dure la traversée ?",
+    description:
+      "De 20 à 23 heures selon le navire. Durées annoncées par compagnie, traversées réellement suivies, heure d'arrivée et temps à prévoir au port.",
+    answer:
+      "Comptez 21 à 23 heures de mer entre Marseille et Alger : 21 h sur le Tariq Ibn Ziyad (Algérie Ferries), 22 h sur Le Cracovia (Nouris Elbahr Ferries), 22 à 23 h sur le Jean Nicoli et 23 h sur le Danielle Casanova (Corsica Linea). Ajoutez le passage au port avant et après : du portail de Marseille à la sortie du port d'Alger, prévoyez plutôt une trentaine d'heures.",
+    updated: "2026-11-10",
+    illustration: {
+      src: "/illustrations/carnet/cote-algerienne-en-vue-ferry.webp",
+      share: "/illustrations/carnet/cote-algerienne-en-vue-ferry-partage.jpg",
+      width: 1200,
+      height: 800,
+      alt: "Illustration : une famille au bastingage d'un ferry montre du doigt la côte algérienne qui apparaît à l'horizon.",
+      caption: "Le matin du deuxième jour, la côte apparaît depuis le pont : après une nuit à bord, Alger n'est plus très loin.",
+    },
+    sections: [
+      {
+        id: "duree-navire",
+        title: "La durée annoncée, navire par navire",
+        paragraphs: [
+          "BledWay a relevé 81 départs Marseille → Alger programmés entre juin 2026 et juin 2027. La durée annoncée dépend surtout du navire, un peu de l'horaire. Elle se lit sur le billet : départ en heure de Paris, arrivée en heure d'Alger.",
+        ],
+        table: {
+          headers: ["Compagnie", "Navire", "Durée annoncée", "Départs relevés"],
+          rows: [
+            ["Algérie Ferries", "Tariq Ibn Ziyad", "21 h (parfois 23 h)", "18"],
+            ["Nouris Elbahr Ferries", "Le Cracovia", "22 h", "41"],
+            ["Corsica Linea", "Jean Nicoli", "22 à 23 h", "13"],
+            ["Corsica Linea", "Danielle Casanova", "23 h", "7"],
+            ["Corsica Linea", "Méditerranée", "20 h", "1"],
+          ],
+        },
+      },
+      {
+        id: "traversees-suivies",
+        title: "Ce que montrent les traversées suivies",
+        paragraphs: [
+          "Une durée annoncée n'est pas une promesse. Début novembre 2026, BledWay a suivi deux traversées de bout en bout : Le Cracovia, parti presque à l'heure le 6 novembre, a mis 23 h 16 au lieu des 22 h annoncées ; le Tariq Ibn Ziyad, parti 1 h 37 après l'horaire le 7 novembre, a navigué 22 h 13 pour 21 h annoncées.",
+          "Deux traversées ne font pas une statistique. Elles rappellent seulement qu'il est prudent de garder une à deux heures de marge à l'arrivée, surtout si quelqu'un vient vous chercher au port. Sur BledWay, la fiche de votre traversée affiche l'avancement du navire et l'arrivée estimée, mise à jour pendant la traversée.",
+        ],
+      },
+      {
+        id: "fuseaux",
+        title: "L'heure d'arrivée : attention au décalage horaire en été",
+        paragraphs: [
+          "L'Algérie reste à l'heure UTC+1 toute l'année, la France passe à UTC+2 en été. En hiver, les deux pays ont la même heure ; en été, Alger a une heure de moins que Paris. Un départ à 12 h de Marseille avec 21 h de traversée arrive donc vers 9 h à Alger en hiver, et vers 8 h (heure d'Alger) en été.",
+          "Pour vos proches qui vous attendent, partagez l'heure d'arrivée en heure d'Alger : c'est celle qu'affichent le billet et la fiche BledWay de la traversée.",
+        ],
+      },
+      {
+        id: "temps-total",
+        title: "Le temps total, du port de Marseille à la sortie du port d'Alger",
+        paragraphs: [
+          "La traversée n'est qu'une partie de la journée. Les repères utilisés par le planificateur BledWay comptent environ 4 heures au port avant le départ, et jusqu'à 4 heures pour débarquer avec la voiture et passer les formalités à l'arrivée en période chargée. L'heure limite d'enregistrement exacte figure sur votre document de voyage.",
+        ],
+        bullets: [
+          "Avant le départ : arrivée au port, contrôles, enregistrement et attente de l'embarquement des véhicules.",
+          "À bord : une nuit complète, en cabine ou en fauteuil selon votre réservation.",
+          "À l'arrivée : débarquement des voitures, police des frontières et douane, puis sortie du port.",
+        ],
+      },
+      {
+        id: "retour",
+        title: "Et dans l'autre sens, Alger → Marseille ?",
+        paragraphs: [
+          "Sur le programme relevé, le retour annonce souvent 22 à 24 heures (22 h pour Le Cracovia, 23 à 24 h pour le Tariq Ibn Ziyad), mais certains départs Corsica Linea annoncent nettement plus. Vérifiez toujours l'heure d'arrivée inscrite sur votre billet avant de prévoir la route vers la maison.",
+        ],
+      },
+    ],
+    sources: ["marseille", "nicoli", "casanova", "mediterranee"],
+    related: ["cabine-ou-fauteuil-ferry", "embarquement-marseille-algerie", "arrivee-algerie-port-formalites"],
+    faq: [
+      {
+        q: "Quel est le ferry le plus rapide entre Marseille et Alger ?",
+        a: "Sur le programme relevé par BledWay, le Tariq Ibn Ziyad d'Algérie Ferries annonce le plus souvent 21 h, et un départ du Méditerranée (Corsica Linea) 20 h. Les autres navires annoncent 22 à 23 h. L'écart réel dépend aussi du départ à l'heure et des conditions de mer.",
+      },
+      {
+        q: "Passe-t-on une nuit à bord ?",
+        a: "Oui. Avec 20 à 23 heures de mer, chaque traversée Marseille → Alger comprend une nuit à bord : il faut choisir entre une cabine et un fauteuil au moment de réserver.",
+      },
+      {
+        q: "À quelle heure arrive-t-on à Alger ?",
+        a: "Ajoutez la durée annoncée à l'heure de départ, puis retirez une heure en été pour passer en heure d'Alger. L'heure d'arrivée indiquée sur le billet est déjà en heure locale ; c'est une estimation, que la compagnie peut faire évoluer.",
+      },
+      {
+        q: "Les ferries Marseille → Alger sont-ils souvent en retard ?",
+        a: "BledWay ne publie pas encore de taux de retard sur cette ligne : le nombre de traversées suivies est trop faible. Les premières montrent des écarts d'une à deux heures. Suivez votre traversée sur BledWay pour connaître l'arrivée estimée.",
+      },
+    ],
+  },
 ];

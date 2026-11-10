@@ -30,11 +30,20 @@ export function fitDescription(text: string) {
   return `${cut.slice(0, cut.lastIndexOf(" ")).replace(/[\s,;:.]+$/, "")}…`;
 }
 
-export function seoHead(rawTitle: string, rawDescription: string, path: string, article = false) {
+/** Image de partage propre à une page (sinon le logo BledWay). */
+export type ShareImage = { path: string; width: number; height: number; alt: string };
+
+export function seoHead(
+  rawTitle: string,
+  rawDescription: string,
+  path: string,
+  article = false,
+  share?: ShareImage,
+) {
   const url = absoluteUrl(path);
   const title = fitTitle(rawTitle);
   const description = fitDescription(rawDescription);
-  const image = absoluteUrl(SHARE_IMAGE.path);
+  const image = absoluteUrl(share?.path ?? SHARE_IMAGE.path);
   return {
     meta: [
       { title },
@@ -42,9 +51,9 @@ export function seoHead(rawTitle: string, rawDescription: string, path: string, 
       { property: "og:title", content: title },
       { property: "og:description", content: description },
       { property: "og:image", content: image },
-      { property: "og:image:width", content: SHARE_IMAGE.width },
-      { property: "og:image:height", content: SHARE_IMAGE.height },
-      { property: "og:image:alt", content: "BledWay, le Waze du ferry Europe–Maghreb" },
+      { property: "og:image:width", content: share ? String(share.width) : SHARE_IMAGE.width },
+      { property: "og:image:height", content: share ? String(share.height) : SHARE_IMAGE.height },
+      { property: "og:image:alt", content: share?.alt ?? "BledWay, le Waze du ferry Europe–Maghreb" },
       { property: "og:url", content: url },
       { property: "og:type", content: article ? "article" : "website" },
       { property: "og:locale", content: "fr_FR" },

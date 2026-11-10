@@ -28,8 +28,16 @@ export function ArticlePage({ article }: { article: Article }) {
           description: article.description,
           mainEntityOfPage: absoluteUrl(`/guide/${article.slug}`),
           inLanguage: "fr",
-          dateModified: EDITORIAL_DATE,
-          image: absoluteUrl("/bledway-brand.png"),
+          dateModified: article.updated ?? EDITORIAL_DATE,
+          image: article.illustration
+            ? {
+                "@type": "ImageObject",
+                url: absoluteUrl(article.illustration.src),
+                width: article.illustration.width,
+                height: article.illustration.height,
+                caption: article.illustration.alt,
+              }
+            : absoluteUrl("/bledway-brand.png"),
           author: { "@type": "Organization", name: "BledWay", url: absoluteUrl("/a-propos") },
           publisher: { "@id": absoluteUrl("/#organisation") },
           citation: article.sources.map((id) => sources[id]?.url).filter(Boolean),
@@ -43,9 +51,27 @@ export function ArticlePage({ article }: { article: Article }) {
       />
       <article>
         <EditorialHero label="Dossier pratique" title={article.title} intro={article.description} />
+        {article.illustration ? (
+          <figure className="mb-6">
+            <img
+              src={article.illustration.src}
+              alt={article.illustration.alt}
+              width={article.illustration.width}
+              height={article.illustration.height}
+              fetchPriority="high"
+              decoding="async"
+              className="h-auto w-full"
+            />
+            <figcaption className="mt-2 text-center text-sm italic text-muted-foreground">
+              {article.illustration.caption}
+            </figcaption>
+          </figure>
+        ) : null}
         <p className="mb-6 text-sm text-muted-foreground">
           BledWay · Dossier documentaire ·{" "}
-          <time dateTime={EDITORIAL_DATE}>Mis à jour le {displayDate(EDITORIAL_DATE)}</time>
+          <time dateTime={article.updated ?? EDITORIAL_DATE}>
+            Mis à jour le {displayDate(article.updated ?? EDITORIAL_DATE)}
+          </time>
         </p>
         <ReadingLayout sections={article.sections}>
           <AnswerBox>{article.answer}</AnswerBox>

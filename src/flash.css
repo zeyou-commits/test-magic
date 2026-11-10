@@ -10553,8 +10553,9 @@ img[data-logo="dark"] {
     0 2px 6px #16324a1a,
     0 0 0 1px #16324a10;
   cursor: pointer;
-  /* Elle naît de sa pointe, juste après l'onde sur le navire, le port ou la route. */
-  transform-origin: 24px calc(100% + 9px);
+  /* Elle naît de sa pointe, juste après l'onde sur le navire, le port ou la route.
+     --bubble-tip : position de la pointe, décalée quand la bulle est recalée dans l'écran. */
+  transform-origin: var(--bubble-tip, 24px) calc(100% + 9px);
   animation: bw-map-bubble-in 0.5s cubic-bezier(0.22, 1.3, 0.36, 1) 0.22s both;
   transition:
     opacity 0.3s ease,
@@ -10565,7 +10566,7 @@ img[data-logo="dark"] {
 .bw-map-bubble::after {
   content: "";
   position: absolute;
-  left: 18px;
+  left: calc(var(--bubble-tip, 24px) - 6px);
   bottom: -6px;
   width: 13px;
   height: 13px;
@@ -10573,6 +10574,16 @@ img[data-logo="dark"] {
   border-radius: 0 0 4px 0;
   transform: rotate(45deg);
   box-shadow: 3px 3px 5px #16324a14;
+}
+/* Pas de place au-dessus du navire ou du port : la bulle s'ouvre en dessous, pointe en haut. */
+.bw-map-bubble[data-below] {
+  transform-origin: var(--bubble-tip, 24px) -9px;
+}
+.bw-map-bubble[data-below]::after {
+  top: -6px;
+  bottom: auto;
+  border-radius: 4px 0 0 0;
+  box-shadow: -2px -2px 4px #16324a10;
 }
 .bw-map-bubble:hover {
   transform: translateY(-2px);

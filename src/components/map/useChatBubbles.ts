@@ -49,6 +49,8 @@ type Spot = { at: [number, number]; offset: [number, number]; source: [number, n
 /** La pointe de la bulle : à 24 px du bord gauche, 9 px sous la bulle (voir .bw-map-bubble::after). */
 const TIP_X = 24;
 const TIP_Y = 9;
+/** Marge gardée entre une bulle et le bord de la carte. */
+const EDGE = 8;
 const CAR = `<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 17h-1a1 1 0 0 1-1-1v-4l2.4-5.2A2 2 0 0 1 7.2 5.6h9.6a2 2 0 0 1 1.8 1.2L21 12v4a1 1 0 0 1-1 1h-1"/><path d="M3 12h18"/><circle cx="7.5" cy="17" r="2"/><circle cx="16.5" cy="17" r="2"/></svg>`;
 /** Une bulle : un message de salon, ou un signalement de voyageurs. */
 type Bubble = RecentMessage & { report?: TravelAlert };
@@ -282,6 +284,33 @@ export function useChatBubbles(
       });
       return element;
     };
+    // Une bulle près du bord sortirait de l'écran : on la décale vers l'intérieur (sa pointe,
+    // elle, reste sur le navire ou le port), et sans place au-dessus, elle s'ouvre en dessous.
+    const keepInside = (bubbleMarker: Marker, spot: Spot) => {
+      const box = bubbleMarker.getElement();
+      const bubble = box.firstElementChild as HTMLElement | null;
+      if (!bubble) return;
+      const area = map.getContainer().getBoundingClientRect();
+      // Taille et place réelles (la bulle grandit depuis sa pointe : on mesure la boîte, pas l'animation).
+      let rect = box.getBoundingClientRect();
+      let below = false;
+      if (rect.top < area.top + EDGE) {
+        below = true;
+        bubble.dataset["below"] = "true";
+        // Ancrée par le bas : on descend le bas de la bulle d'une hauteur, plus la place de la pointe.
+        bubbleMarker.setOffset([spot.offset[0] - TIP_X, spot.source[1] + 16 + rect.height]);
+        rect = box.getBoundingClientRect();
+      }
+      let shift = 0;
+      if (rect.right > area.right - EDGE) shift = area.right - EDGE - rect.right;
+      if (rect.left + shift < area.left + EDGE) shift = area.left + EDGE - rect.left;
+      // La pointe ne quitte pas les coins arrondis de la bulle.
+      shift = Math.max(shift, -(rect.width - 2 * TIP_X));
+      if (!shift && !below) return;
+      const offset = bubbleMarker.getOffset();
+      bubbleMarker.setOffset([offset.x + shift, offset.y]);
+      bubble.style.setProperty("--bubble-tip", `${TIP_X - shift}px`);
+    };
     const next = () => {
       window.clearTimeout(timer);
       if (busy) return;
@@ -324,6 +353,7 @@ export function useChatBubbles(
           .addTo(map);
         // Au-dessus des noms de ports et des pastilles, même mis en avant au survol.
         marker.getElement().style.zIndex = "100000";
+        keepInside(marker, spot);
         shown++;
         if (!message.report && shown % INVITE_EVERY === 0)
           window.dispatchEvent(new Event(CHAT_INVITE_EVENT));

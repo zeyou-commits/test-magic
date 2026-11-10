@@ -9,9 +9,9 @@ import { isPublicNews, newsSlug } from "@/lib/ferry/newsFeed";
 /**
  * Info BledWay épinglée en haut d'un salon (remplace la cloche de l'en-tête).
  * Une actualité rattachée à la traversée, à son navire, à ses ports ou à sa compagnie (traversée
- * dans les 30 jours) reste visible tant qu'elle est en cours. Elle s'ouvre en entier à la première
- * visite après une nouveauté, puis se replie sur une ligne dès qu'on fait défiler ou qu'on écrit :
- * la place reste à la conversation. Un tap la déplie.
+ * dans les 30 jours) reste visible tant qu'elle est en cours. Elle est toujours repliée sur une
+ * ligne (la place reste à la conversation) ; elle clignote tant qu'une nouveauté n'a pas été
+ * ouverte. Un tap la déplie ; elle se replie dès qu'on fait défiler ou qu'on écrit.
  */
 
 type RoomKind = "crossing" | "port";
@@ -109,9 +109,10 @@ export function PinnedInfo({
   const items = usePinnedNews(kind, room);
   const version = items.map((item) => `${item.id}:${item.kind}:${item.ends_at ?? ""}`).join("|");
   const [open, setOpen] = useState(false);
-  // Nouveauté depuis la dernière visite : ouverte en entier une fois.
+  // Nouveauté pas encore ouverte : la ligne clignote, sans se déplier toute seule.
+  const [unseen, setUnseen] = useState(false);
   useEffect(() => {
-    if (version && readSeen()[room] !== version) setOpen(true);
+    setUnseen(Boolean(version) && readSeen()[room] !== version);
   }, [room, version]);
   useEffect(() => {
     if (!activity) return;
@@ -125,14 +126,24 @@ export function PinnedInfo({
   const tone = top.kind === "alerte" ? "critical" : top.kind === "perturbation" ? "warning" : "info";
   const Icon = top.kind === "info" ? Info : AlertTriangle;
   const toggle = () => {
-    if (open) markSeen(room, version);
+    if (!open) {
+      markSeen(room, version);
+      setUnseen(false);
+    }
     setOpen(!open);
   };
   return (
-    <section className="bw-pinned" data-tone={tone} data-open={open || undefined} aria-label="Info BledWay épinglée">
+    <section
+      className="bw-pinned"
+      data-tone={tone}
+      data-open={open || undefined}
+      data-new={(unseen && !open) || undefined}
+      aria-label="Info BledWay épinglée"
+    >
       <button type="button" className="bw-pinned__bar" onClick={toggle} aria-expanded={open}>
         <Pin size={14} aria-hidden />
         <span className="bw-pinned__label">Info BledWay</span>
+        {unseen && !open ? <span className="sr-only">(nouveau)</span> : null}
         <span className="bw-pinned__title">{top.title}</span>
         {items.length > 1 ? <span className="bw-pinned__count">{items.length} infos</span> : null}
         {open ? <ChevronUp size={16} aria-hidden /> : <ChevronDown size={16} aria-hidden />}

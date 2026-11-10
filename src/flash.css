@@ -14388,6 +14388,37 @@ img[data-logo="dark"] {
 .bw-pinned[data-open] .bw-pinned__title {
   visibility: hidden;
 }
+/* Info pas encore ouverte : la ligne repliée clignote doucement pour attirer l'œil. */
+.bw-pinned[data-new] {
+  animation: bw-pinned-blink 1.6s ease-in-out infinite;
+}
+.bw-pinned[data-new] .bw-pinned__label::after {
+  content: "";
+  display: inline-block;
+  width: 0.45rem;
+  height: 0.45rem;
+  margin-left: 0.35rem;
+  border-radius: 999px;
+  background: #e5484d;
+  vertical-align: middle;
+}
+@keyframes bw-pinned-blink {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(229, 72, 77, 0);
+    filter: none;
+  }
+  50% {
+    box-shadow: 0 0 0 3px rgba(229, 72, 77, 0.35);
+    filter: brightness(1.04) saturate(1.25);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .bw-pinned[data-new] {
+    animation: none;
+    box-shadow: 0 0 0 2px rgba(229, 72, 77, 0.4);
+  }
+}
 .bw-pinned__count {
   font-size: 0.7rem;
   font-weight: 700;

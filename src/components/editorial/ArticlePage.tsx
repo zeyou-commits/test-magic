@@ -15,7 +15,8 @@ import {
   StructuredData,
   textLink,
 } from "./Editorial";
-import { DossierHero, DurationBars, LinePerspective } from "./DossierVisuals";
+import { DossierHero, DurationBars } from "./DossierVisuals";
+import { LineBooking, LineMapCard, LineVessels } from "./LineBlocks";
 
 export function ArticlePage({ article }: { article: Article }) {
   const related = articles.filter((a) => article.related.includes(a.slug));
@@ -64,7 +65,7 @@ export function ArticlePage({ article }: { article: Article }) {
         )}
         <ReadingLayout sections={article.sections}>
           <AnswerBox>{article.answer}</AnswerBox>
-          {article.line ? <LinePerspective line={article.line} /> : null}
+          {article.line ? <LineMapCard line={article.line} /> : null}
           {article.sections.map((section) =>
             section.bars ? (
               <section key={section.id} id={section.id} className="mt-10 scroll-mt-20">
@@ -75,6 +76,7 @@ export function ArticlePage({ article }: { article: Article }) {
                   </p>
                 ))}
                 <DurationBars bars={section.bars} title={section.title} />
+                {article.line ? <LineVessels line={article.line} /> : null}
               </section>
             ) : (
               <ContentSection key={section.id} section={section} />
@@ -88,6 +90,7 @@ export function ArticlePage({ article }: { article: Article }) {
               </a>
             </div>
           ) : null}
+          {article.line ? <LineBooking line={article.line} /> : null}
           <FaqSection faq={article.faq} path={`/guide/${article.slug}`} />
           <SourceList ids={article.sources} />
         </ReadingLayout>

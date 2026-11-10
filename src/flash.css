@@ -15502,3 +15502,82 @@ img[data-logo="dark"] {
   background: #ffffff !important;
   box-shadow: 0 0 0 4px rgba(14, 122, 67, 0.1) !important;
 }
+/* Salon, en-tête compact (11/2026) : titre, puis « En direct · en ligne · Autres salons » ;
+   l'enveloppe et la cloche à côté du ✕. La conversation garde toute la hauteur. */
+.bw-chat__head {
+  position: relative;
+  display: grid;
+  gap: 4px;
+  padding: 8px 14px 8px;
+}
+.bw-chat__head h2 {
+  padding-right: 44px;
+  font-size: 15.5px;
+  line-height: 1.3;
+}
+.bw-chat__head[data-tools="1"] h2 {
+  padding-right: 80px;
+}
+.bw-chat__head[data-tools="2"] h2 {
+  padding-right: 116px;
+}
+.bw-chat__tools {
+  position: absolute;
+  top: 2px;
+  right: 42px;
+  display: flex;
+  align-items: center;
+}
+.bw-chat__tools:empty {
+  display: none;
+}
+.bw-chat__tools .bw-chat__mail,
+.bw-chat__tools .bw-chat__mute {
+  position: relative;
+  top: auto;
+  right: auto;
+  width: 34px;
+  height: 30px;
+}
+.bw-chat__head .bw-chat__headrow {
+  flex-wrap: wrap;
+  gap: 4px 10px;
+  min-width: 0;
+}
+.bw-chat__head .bw-chat__online {
+  min-height: 22px;
+}
+.bw-chat__welcome {
+  gap: 7px;
+  margin-bottom: 4px;
+  padding: 6px 9px;
+  font-size: 12.5px;
+  line-height: 1.4;
+}
+.bw-chat__welcome b.bw-chat__welcome-who {
+  color: #0f6b4f;
+}
+.bw-chat__rules summary {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  margin-top: 2px;
+  color: #0f6b4f;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  list-style: none;
+}
+.bw-chat__rules summary::-webkit-details-marker {
+  display: none;
+}
+.bw-chat__rules summary::after {
+  content: "▾";
+  font-size: 10px;
+}
+.bw-chat__rules[open] summary::after {
+  content: "▴";
+}
+.bw-chat__rules p {
+  margin-top: 2px;
+}

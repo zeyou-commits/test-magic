@@ -36,6 +36,8 @@ import {
   VESSEL_SCREEN_WIDTH,
   vesselScreenWidth,
   vesselImageId,
+  vesselImagePending,
+  preloadVesselImages,
   wakeLevel,
 } from "./shipIcons";
 import { MAP_VESSELS, vesselMapIcon } from "@/lib/ferry/vesselVisuals";
@@ -136,6 +138,9 @@ interface FerryMapProps {
       >
     | undefined;
 }
+
+// Les rendus des navires partent dès l'arrivée de ce code, en même temps que le fond de carte.
+preloadVesselImages(MAP_VESSELS);
 
 // Limite de dézoom : on ne peut pas s'éloigner plus que « toute la Méditerranée occidentale visible »
 // (plancher relevé selon la largeur d'écran pour empêcher une vue planisphère).
@@ -922,7 +927,7 @@ export default function FerryMap({
           "icon-opacity-transition": { duration: 200 },
         },
       });
-      vesselImagesRef.current = addVesselImages(map, MAP_VESSELS);
+      vesselImagesRef.current = addVesselImages(map, MAP_VESSELS, () => redrawFleetRef.current?.());
       for (const { width, minzoom, maxzoom } of VESSEL_IMAGE_STEPS)
         map.addLayer({
           id: `fleet-photo-${width}`,
@@ -2656,9 +2661,11 @@ export default function FerryMap({
             allure = dockName ? `⚓ À quai · ${dockName}` : "⚓ À quai";
           }
           const shipAlert = ship.vesselId ? vesselAlertsRef.current.get(ship.vesselId) : undefined;
-          // Le jeton reste affiché tant que l'image n'est pas chargée.
+          // Navire à rendu : rien tant que son image arrive (jamais l'ancien jeton rond en attendant) ;
+          // le jeton ne sert qu'aux navires sans rendu, ou si le rendu ne se charge pas.
           const slug = vesselMapIcon(ship.name);
           const photoSlug = slug && map.hasImage(vesselImageId(slug, VESSEL_IMAGE_STEPS[0]!.width)) ? slug : null;
+          const waiting = Boolean(slug && !photoSlug && vesselImagePending(slug));
           if (photoSlug && wakeLevel(ship.state, live ? speed : null) !== "dock") sailing.add(photoSlug);
           return {
             type: "Feature" as const,
@@ -2690,8 +2697,8 @@ export default function FerryMap({
               vesselId: ship.vesselId ?? "",
               // Navire à image : le jeton invisible reste la zone de clic au doigt.
               photo: photoSlug ?? "",
-              photoOpacity: dimmed ? 0.35 : 1,
-              opacity: photoSlug ? 0 : dimmed ? 0.35 : 1,
+              photoOpacity: waiting ? 0 : dimmed ? 0.35 : 1,
+              opacity: photoSlug || waiting ? 0 : dimmed ? 0.35 : 1,
               haloColor: selected ? "#0e7a43" : "#1e5b7a",
               haloOpacity: selected && !photoSlug ? 0.18 : 0,
             },

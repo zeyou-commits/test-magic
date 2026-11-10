@@ -520,44 +520,59 @@ function LiveChat({
   return (
     <div className="bw-chat">
       {gate.dialog}
-      <header className="bw-chat__head">
-        {user && inbox !== null ? (
-          <button
-            type="button"
-            className="bw-chat__mail"
-            aria-label={dmUnread ? `Messages privés, ${dmUnread} non lus` : "Messages privés"}
-            onClick={() => setDmView("inbox")}
-          >
-            <Mail size={19} aria-hidden />
-            {dmUnread ? <b>{dmUnread}</b> : null}
-          </button>
-        ) : null}
-        {user ? (
-          <button
-            type="button"
-            className="bw-chat__mute"
-            aria-pressed={muted}
-            disabled={mute.isPending}
-            title={
-              muted ? "Réactiver les notifications de ce salon" : "Mettre ce salon en sourdine"
-            }
-            aria-label={
-              muted ? "Réactiver les notifications de ce salon" : "Mettre ce salon en sourdine"
-            }
-            onClick={() => mute.mutate()}
-          >
-            {muted ? <BellOff size={18} aria-hidden /> : <Bell size={18} aria-hidden />}
-          </button>
-        ) : null}
+      {/* En-tête compact : deux lignes, la hauteur va à la conversation. */}
+      <header className="bw-chat__head" data-tools={user ? (inbox !== null ? 2 : 1) : 0}>
+        <div className="bw-chat__tools">
+          {user && inbox !== null ? (
+            <button
+              type="button"
+              className="bw-chat__mail"
+              aria-label={dmUnread ? `Messages privés, ${dmUnread} non lus` : "Messages privés"}
+              onClick={() => setDmView("inbox")}
+            >
+              <Mail size={18} aria-hidden />
+              {dmUnread ? <b>{dmUnread}</b> : null}
+            </button>
+          ) : null}
+          {user ? (
+            <button
+              type="button"
+              className="bw-chat__mute"
+              aria-pressed={muted}
+              disabled={mute.isPending}
+              title={
+                muted ? "Réactiver les notifications de ce salon" : "Mettre ce salon en sourdine"
+              }
+              aria-label={
+                muted ? "Réactiver les notifications de ce salon" : "Mettre ce salon en sourdine"
+              }
+              onClick={() => mute.mutate()}
+            >
+              {muted ? <BellOff size={18} aria-hidden /> : <Bell size={18} aria-hidden />}
+            </button>
+          ) : null}
+        </div>
+        <DialogTitle>{title}</DialogTitle>
         <div className="bw-chat__headrow">
           <span className="bw-chat__live">
             <i aria-hidden /> En direct
           </span>
+          <DialogDescription asChild>
+            <button
+              type="button"
+              className="bw-chat__online"
+              aria-expanded={showPeople}
+              onClick={() => setShowPeople((value) => !value)}
+            >
+              <Users size={13} aria-hidden /> {online ? `${online} en ligne` : "Vous êtes ici"}
+            </button>
+          </DialogDescription>
           {kind === "crossing" ? (
             <DialogClose asChild>
               <button
                 type="button"
                 className="bw-chat__others"
+                title="Une autre date ? Choisir un autre salon"
                 onClick={() => leaveFor(OPEN_ROOM_PICKER_EVENT)}
               >
                 <MessagesSquare size={13} aria-hidden /> Autres salons
@@ -565,17 +580,6 @@ function LiveChat({
             </DialogClose>
           ) : null}
         </div>
-        <DialogTitle>{title}</DialogTitle>
-        <DialogDescription asChild>
-          <button
-            type="button"
-            className="bw-chat__online"
-            aria-expanded={showPeople}
-            onClick={() => setShowPeople((value) => !value)}
-          >
-            <Users size={13} aria-hidden /> {online ? `${online} en ligne` : "Vous êtes ici"}
-          </button>
-        </DialogDescription>
       </header>
       {showPeople ? (
         <div className="bw-chat__people">
@@ -615,12 +619,6 @@ function LiveChat({
           ) : null}
         </div>
       ) : null}
-      {kind === "crossing" ? (
-        <p className="bw-chat__context">
-          Vous êtes dans le salon des voyageurs de cette traversée. Une autre date ? Touchez « Autres
-          salons ».
-        </p>
-      ) : null}
       <PinnedInfo kind={kind} room={room} activity={pinActivity} />
       <ol
         ref={listRef}
@@ -637,24 +635,25 @@ function LiveChat({
       >
         {/* Le mot d'accueil de BledWay : affiché à chacun, jamais enregistré dans le fil. */}
         <li className="bw-chat__welcome">
-          <AuthorAvatar author={BLEDWAY} size={26} />
+          <AuthorAvatar author={BLEDWAY} size={22} />
           <div>
-            <p className="bw-chat__welcome-who">
-              <b>BledWay</b>
-              <StaffBadge author={BLEDWAY} />
-            </p>
             <p>
-              Salam{myPseudo ? ` ${myPseudo}` : ""} et bienvenue ! Ici on s'entraide entre voyageurs
-              :{" "}
+              <b className="bw-chat__welcome-who">BledWay</b> <StaffBadge author={BLEDWAY} />{" "}
+              Salam{myPseudo ? ` ${myPseudo}` : ""}, bienvenue ! On s'entraide entre voyageurs :{" "}
               {kind === "port"
-                ? "la file, le parking, l'ambiance sur le port"
-                : "la file au port, l'ambiance à bord, l'état de la mer"}
-              . Restez courtois, ne partagez ni numéro ni lien, et signalez plutôt que de répondre à
-              un message gênant.{" "}
-              <a href="/charte" target="_blank" rel="noreferrer">
-                Lire la charte
-              </a>
+                ? "la file, le parking, l'ambiance sur le port."
+                : "la file au port, l'ambiance à bord, l'état de la mer."}
             </p>
+            <details className="bw-chat__rules">
+              <summary>Les règles du salon</summary>
+              <p>
+                Restez courtois, ne partagez ni numéro ni lien, et signalez plutôt que de répondre
+                à un message gênant.{" "}
+                <a href="/charte" target="_blank" rel="noreferrer">
+                  Lire la charte
+                </a>
+              </p>
+            </details>
           </div>
         </li>
         {lines.length ? null : (

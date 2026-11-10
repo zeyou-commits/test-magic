@@ -327,10 +327,31 @@ export const arcGap = (zoom: number) => Math.min(1, Math.max(0.2, vesselScreenWi
 export const vesselImageId = (slug: string, width: number) => `vessel-${slug}-${width}`;
 
 /**
+ * Rendus des navires, téléchargés une seule fois et dès l'arrivée du code de la carte, sans attendre
+ * son fond : le navire est prêt quand la carte s'affiche. Un rendu illisible rend la main au jeton rond.
+ */
+const vesselSources = new Map<string, { image: HTMLImageElement; state: "pending" | "ready" | "failed" }>();
+export function preloadVesselImages(slugs: string[]) {
+  if (typeof window === "undefined") return;
+  for (const slug of slugs) {
+    if (vesselSources.has(slug)) continue;
+    const image = new Image();
+    image.decoding = "async";
+    const entry = { image, state: "pending" as "pending" | "ready" | "failed" };
+    vesselSources.set(slug, entry);
+    image.addEventListener("load", () => (entry.state = "ready"), { once: true });
+    image.addEventListener("error", () => (entry.state = "failed"), { once: true });
+    image.src = `/vessel-visuals/map/${slug}.webp`;
+  }
+}
+/** Le rendu de ce navire arrive encore : ni jeton ni nom, pour ne pas montrer un ancien picto. */
+export const vesselImagePending = (slug: string) => vesselSources.get(slug)?.state === "pending";
+
+/**
  * Prépare les navires, et anime ceux qui font route : tangage, écume à la proue, sillage derrière la poupe.
  * Seule la largeur affichée au zoom courant est redessinée, et rien pour un navire à quai.
  */
-export function addVesselImages(map: MapLibreMap, slugs: string[]) {
+export function addVesselImages(map: MapLibreMap, slugs: string[], onSettled?: () => void) {
   const media = window.matchMedia("(prefers-reduced-motion: reduce)");
   const sources = new Map<string, { image: HTMLImageElement; bowY: number; sternY: number; funnelX: number; funnelY: number }>();
   const canvases = new Map<string, CanvasRenderingContext2D>();
@@ -465,9 +486,12 @@ export function addVesselImages(map: MapLibreMap, slugs: string[]) {
     }, 60);
   };
 
+  preloadVesselImages(slugs);
   for (const slug of slugs) {
-    const image = new Image();
-    image.onload = () => {
+    const entry = vesselSources.get(slug);
+    if (!entry) continue;
+    const { image } = entry;
+    const onload = () => {
       // La proue et la poupe du socle : le point opaque le plus à gauche et le plus à droite.
       const probe = contextFor(120, Math.round((image.height * 120) / image.width));
       if (!probe) return;
@@ -497,8 +521,15 @@ export function addVesselImages(map: MapLibreMap, slugs: string[]) {
       const [first, ...later] = VESSEL_IMAGE_STEPS;
       addStill(slug, first!.width);
       for (const { width } of later) whenIdle(() => addStill(slug, width));
+      // Le navire se montre aussitôt, sans attendre le prochain rafraîchissement de la flotte.
+      onSettled?.();
     };
-    image.src = `/vessel-visuals/map/${slug}.webp`;
+    if (entry.state === "ready") onload();
+    else if (entry.state === "failed") onSettled?.();
+    else {
+      image.addEventListener("load", onload, { once: true });
+      image.addEventListener("error", () => onSettled?.(), { once: true });
+    }
   }
 
   media.addEventListener("change", sync);

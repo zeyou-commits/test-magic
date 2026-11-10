@@ -522,7 +522,7 @@ function LiveChat({
       {gate.dialog}
       {/* En-tête compact : deux lignes, la hauteur va à la conversation. */}
       <header className="bw-chat__head" data-tools={user ? (inbox !== null ? 2 : 1) : 0}>
-        <div className="bw-chat__tools">
+        <div className="bw-chat__headtools">
           {user && inbox !== null ? (
             <button
               type="button"

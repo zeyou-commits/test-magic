@@ -15521,18 +15521,18 @@ img[data-logo="dark"] {
 .bw-chat__head[data-tools="2"] h2 {
   padding-right: 116px;
 }
-.bw-chat__tools {
+.bw-chat__headtools {
   position: absolute;
   top: 2px;
   right: 42px;
   display: flex;
   align-items: center;
 }
-.bw-chat__tools:empty {
+.bw-chat__headtools:empty {
   display: none;
 }
-.bw-chat__tools .bw-chat__mail,
-.bw-chat__tools .bw-chat__mute {
+.bw-chat__headtools .bw-chat__mail,
+.bw-chat__headtools .bw-chat__mute {
   position: relative;
   top: auto;
   right: auto;

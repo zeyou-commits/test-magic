@@ -1607,6 +1607,13 @@ function Index() {
                   leaveVoyage();
                   return;
                 }
+                // Depuis Route, Départs, la recherche ou une fiche : retour à l'accueil de la carte,
+                // volet replié comme à l'arrivée (le bouton ne pilote pas le volet de l'autre écran).
+                if (panelMode !== null || selection) {
+                  resetToMap();
+                  setPanelLevel(0);
+                  return;
+                }
                 setPanelLevel((level) => (level === 0 ? 1 : 0));
               }}
               onOpenVoyage={() => {

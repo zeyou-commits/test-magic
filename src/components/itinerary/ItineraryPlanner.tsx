@@ -5,6 +5,7 @@ import {
   Anchor,
   ArrowRight,
   Car,
+  ChevronDown,
   CarFront,
   Fuel,
   Info,
@@ -17,6 +18,7 @@ import {
   Ship,
   Sparkles,
   Wallet,
+  X,
   SlidersHorizontal as SlidersHorizontalIcon,
   Star as StarIcon,
 } from "lucide-react";
@@ -179,6 +181,41 @@ function PassengerControl({
   );
 }
 
+/** Une étape repliée : la question à gauche, le choix actuel à droite (comme « Trouver ma traversée »). */
+function RefineStep({
+  open,
+  onToggle,
+  summary,
+  children,
+}: {
+  open: boolean;
+  onToggle: () => void;
+  summary: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onToggle}
+      aria-expanded={open}
+      className={`flex w-full items-center justify-between gap-3 rounded-xl border bg-card px-3.5 py-2.5 text-left shadow-sm transition hover:border-primary ${open ? "border-primary" : "border-border"}`}
+    >
+      <span className={`text-xs font-semibold ${open ? "text-foreground" : "text-muted-foreground"}`}>
+        {children}
+      </span>
+      <span className="flex min-w-0 items-center gap-1.5">
+        <span className="min-w-0 truncate text-xs font-bold text-foreground first-letter:uppercase">
+          {summary}
+        </span>
+        <ChevronDown
+          className={`size-3.5 shrink-0 text-muted-foreground transition-transform ${open ? "rotate-180" : ""}`}
+          aria-hidden
+        />
+      </span>
+    </button>
+  );
+}
+
 function AddressField({
   label,
   placeholder,
@@ -189,6 +226,8 @@ function AddressField({
   countryCode,
   onLocate,
   locating,
+  onPick,
+  picking,
 }: {
   label: string;
   placeholder: string;
@@ -199,6 +238,9 @@ function AddressField({
   countryCode?: "DZ";
   onLocate?: () => void;
   locating?: boolean;
+  /** Placer le point en touchant la carte. */
+  onPick?: () => void;
+  picking?: boolean;
 }) {
   const [suggestions, setSuggestions] = useState<{ label: string; point: [number, number] }[]>([]);
   const [open, setOpen] = useState(false);
@@ -229,14 +271,19 @@ function AddressField({
   }, [value, point, countryCode]);
   return (
     <div className="relative text-sm font-semibold">
-      <label className="block" htmlFor={`itinerary-${countryCode ?? "origin"}`}>
-        {label}
-      </label>
-      <div className="mt-1 flex items-center gap-2 rounded-xl border border-border bg-white px-3 focus-within:ring-2 focus-within:ring-primary/30">
-        <MapPin className="size-4 shrink-0 text-primary" aria-hidden />
-        <input
-          id={`itinerary-${countryCode ?? "origin"}`}
-          className="min-h-11 w-full min-w-0 outline-none"
+      <div
+        className={`batogo-control flex h-14 w-full min-w-0 items-center gap-1 pl-3 pr-1.5 focus-within:!border-primary focus-within:ring-2 focus-within:ring-primary/25 ${picking ? "!border-primary ring-2 ring-primary/25" : ""}`}
+      >
+        <span className="min-w-0 flex-1">
+          <label
+            className="block text-[11px] font-semibold uppercase tracking-wide text-muted-foreground"
+            htmlFor={`itinerary-${countryCode ?? "origin"}`}
+          >
+            {label}
+          </label>
+          <input
+            id={`itinerary-${countryCode ?? "origin"}`}
+            className="block h-6 w-full min-w-0 bg-transparent text-sm font-semibold text-foreground outline-none placeholder:font-medium placeholder:text-muted-foreground/80"
           autoComplete="off"
           role="combobox"
           aria-autocomplete="list"
@@ -253,6 +300,7 @@ function AddressField({
           required
           minLength={2}
         />
+        </span>
         {onLocate && (
           <button
             type="button"
@@ -260,9 +308,21 @@ function AddressField({
             disabled={locating}
             aria-label={locating ? "Localisation en cours" : "Utiliser ma position"}
             title="Utiliser ma position"
-            className="grid size-8 shrink-0 place-items-center rounded-lg text-primary hover:bg-primary/10 disabled:opacity-50"
+            className="grid size-9 shrink-0 place-items-center rounded-full text-primary hover:bg-primary/10 disabled:opacity-50"
           >
             <LocateFixed className="size-4" aria-hidden />
+          </button>
+        )}
+        {onPick && (
+          <button
+            type="button"
+            onClick={onPick}
+            aria-pressed={picking}
+            aria-label={picking ? "Annuler : ne pas placer sur la carte" : `${label} : placer sur la carte`}
+            title={picking ? "Annuler" : "Placer sur la carte"}
+            className={`grid size-9 shrink-0 place-items-center rounded-full transition ${picking ? "bg-primary text-primary-foreground" : "text-primary hover:bg-primary/10"}`}
+          >
+            {picking ? <X className="size-4" aria-hidden /> : <MapPin className="size-4" aria-hidden />}
           </button>
         )}
       </div>
@@ -391,6 +451,8 @@ export function ItineraryPlanner({
   const [tollRate, setTollRate] = useState(0.06);
   const priority: ItineraryPriority = "recommended";
   const [filtersOpen, setFiltersOpen] = useState(true);
+  // Étapes ② et ③ du formulaire : repliées par défaut, comme dans « Trouver ma traversée ».
+  const [refine, setRefine] = useState<"when" | "who" | null>(null);
   const [hoveredId, setHoveredId] = useState<string | null>(null);
   const [roadAccess, setRoadAccess] = useState<RoadAccess | null>(null);
   const [searchStartedAt, setSearchStartedAt] = useState<number | null>(null);
@@ -1002,17 +1064,7 @@ export function ItineraryPlanner({
   );
   const vehicleLabel =
     vehicle === "sedan" ? "Berline" : (VEHICLES.find((item) => item.id === vehicle)?.label ?? "");
-  const tripSummary = `${periodLabel} · ${vehicleLabel} · ${adults} adulte${adults > 1 ? "s" : ""}${children > 0 ? ` · ${children} enfant${children > 1 ? "s" : ""}` : ""}`;
-  const pickButton = (target: PickTarget) => (
-    <button
-      type="button"
-      onClick={() => setPicking(picking === target ? null : target)}
-      className="mt-1 inline-flex min-h-8 items-center gap-1 text-xs font-semibold text-primary underline underline-offset-2"
-    >
-      <MapPin className="size-3.5" aria-hidden />
-      {picking === target ? "Annuler" : "Placer sur la carte"}
-    </button>
-  );
+  const whoSummary = `${adults} adulte${adults > 1 ? "s" : ""}${children > 0 ? ` · ${children} enfant${children > 1 ? "s" : ""}` : ""} · ${vehicleLabel}`;
   const estimatedTrip = Boolean(selected?.sailing.isSimulation);
   const stage = film ? stageAt(film, minute) : "road";
   const times = film ? filmTimes(film) : null;
@@ -1156,78 +1208,71 @@ export function ItineraryPlanner({
         </div>
       ) : null}
       <div hidden={cinema}>
-      <div className="sticky top-0 z-10 flex items-center justify-between gap-3 border-b border-border bg-[#e9f3ef] px-4 py-1.5">
-        <h2 className="font-display text-base font-bold uppercase tracking-tight text-foreground sm:text-lg">
-          Le trajet porte à porte
-        </h2>
+      <div className="sticky top-0 z-10 flex items-center justify-between gap-2 border-b border-border bg-card px-4 py-3 md:bg-white md:px-5">
+        <h2 className="text-sm font-bold text-foreground">Trajet porte à porte</h2>
         <button
           type="button"
           onClick={onClose}
-          className="shrink-0 rounded-full border border-border bg-white px-3 py-1.5 text-xs font-semibold text-primary"
+          aria-label="Fermer le trajet porte à porte"
+          className="grid size-9 shrink-0 place-items-center rounded-full border border-border bg-card text-foreground hover:bg-secondary"
         >
-          Fermer
+          <X className="size-4" aria-hidden />
         </button>
       </div>
       <form
         onSubmit={(event) => void submit(event)}
         hidden={!filtersOpen}
-        className="space-y-3 p-4"
+        className="space-y-3 bg-card px-4 pt-4 md:bg-white md:px-5"
       >
-        <p className="font-display text-xl font-bold leading-tight">Votre voyage commence où ?</p>
-        <div className="grid gap-2">
-          <div>
-            <AddressField
-              label="Je pars de"
-              placeholder="Adresse, ville ou ma position"
-              value={origin}
-              onChange={setOrigin}
-              point={originPoint}
-              onPointChange={setOriginPoint}
-              onLocate={locateOrigin}
-              locating={locating}
-            />
-            {pickButton("origin")}
-          </div>
+        <h3 className="font-display text-base font-bold tracking-tight">
+          ① De chez vous jusqu'au bled
+        </h3>
+        <div className="grid gap-3">
+          <AddressField
+            label="Départ"
+            placeholder="Adresse, ville ou ma position"
+            value={origin}
+            onChange={setOrigin}
+            point={originPoint}
+            onPointChange={setOriginPoint}
+            onLocate={locateOrigin}
+            locating={locating}
+            onPick={() => setPicking(picking === "origin" ? null : "origin")}
+            picking={picking === "origin"}
+          />
           {locationError && (
-            <p role="status" className="text-xs text-destructive">
+            <p role="status" className="-mt-1 text-xs text-destructive">
               {locationError}
             </p>
           )}
-          <div>
-            <AddressField
-              label="Je vais au bled, à"
-              placeholder="Adresse, quartier ou ville en Algérie"
-              value={destination}
-              onChange={setDestination}
-              point={destinationPoint}
-              onPointChange={setDestinationPoint}
-              countryCode="DZ"
-            />
-            {pickButton("destination")}
-          </div>
+          <AddressField
+            label="Arrivée au bled"
+            placeholder="Adresse, quartier ou ville en Algérie"
+            value={destination}
+            onChange={setDestination}
+            point={destinationPoint}
+            onPointChange={setDestinationPoint}
+            countryCode="DZ"
+            onPick={() => setPicking(picking === "destination" ? null : "destination")}
+            picking={picking === "destination"}
+          />
+          {picking ? (
+            <p role="status" className="-mt-1 text-xs font-semibold text-primary">
+              Touchez la carte pour placer votre {picking === "origin" ? "départ" : "arrivée"}.
+            </p>
+          ) : null}
         </div>
-        <button
-          type="submit"
-          disabled={loading || portsPending || routesPending || departuresPending}
-          className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-primary px-6 font-bold text-white transition hover:brightness-110 disabled:opacity-60"
+        <RefineStep
+          open={refine === "when"}
+          onToggle={() => setRefine(refine === "when" ? null : "when")}
+          summary={periodLabel}
         >
-          {loading ? "Préparation de votre voyage…" : "Voir mon voyage"}
-          <ArrowRight className="size-4" aria-hidden />
-        </button>
-        {error && (
-          <p role="alert" className="rounded-xl bg-red-50 px-4 py-3 text-sm text-red-800">
-            {error}
-          </p>
-        )}
-        <details className="rounded-xl border border-border bg-white px-3 py-2 text-sm">
-          <summary className="flex min-h-9 cursor-pointer items-center gap-2 font-semibold">
-            <SlidersHorizontal className="size-4 shrink-0 text-primary" aria-hidden />
-            <span className="min-w-0 flex-1 truncate first-letter:uppercase">{tripSummary}</span>
-            <span className="shrink-0 text-xs text-primary">Affiner</span>
-          </summary>
-          <div className="mt-3 grid gap-3">
+          ② Quand partez-vous ?
+        </RefineStep>
+        {refine === "when" ? (
+          <div className="rounded-2xl border border-border bg-card p-3 text-sm shadow-sm">
             <fieldset className="min-w-0">
-              <legend className="text-sm font-semibold">
+              <legend className="text-[11px] font-bold uppercase tracking-wider text-primary">
                 Période de départ{" "}
                 <span className="font-normal text-muted-foreground">
                   · {months[0]?.key.slice(0, 4)}–{months[11]?.key.slice(0, 4)}
@@ -1269,8 +1314,32 @@ export function ItineraryPlanner({
                 </a>
               </div>
             </fieldset>
-            <fieldset className="min-w-0">
-              <legend className="text-sm font-semibold">Votre voiture</legend>
+          </div>
+        ) : null}
+        <RefineStep
+          open={refine === "who"}
+          onToggle={() => setRefine(refine === "who" ? null : "who")}
+          summary={whoSummary}
+        >
+          ③ Qui voyage, avec quel véhicule ?
+        </RefineStep>
+        {refine === "who" ? (
+          <div className="grid gap-3 text-sm">
+            <fieldset className="min-w-0 rounded-2xl border border-border bg-card p-3 shadow-sm">
+              <legend className="sr-only">Voyageurs</legend>
+              <p className="mb-2 text-[11px] font-bold uppercase tracking-wider text-primary">
+                Voyageurs
+              </p>
+              <div className="grid min-w-0 grid-cols-1 gap-1.5 min-[360px]:grid-cols-2">
+                <PassengerControl label="Adultes" value={adults} min={1} onChange={setAdults} />
+                <PassengerControl label="Enfants" value={children} min={0} onChange={setChildren} />
+              </div>
+            </fieldset>
+            <fieldset className="min-w-0 rounded-2xl border border-border bg-card p-3 shadow-sm">
+              <legend className="sr-only">Votre voiture</legend>
+              <p className="mb-2 text-[11px] font-bold uppercase tracking-wider text-primary">
+                Véhicule
+              </p>
               <div
                 role="group"
                 aria-label="Choisir votre véhicule"
@@ -1290,15 +1359,7 @@ export function ItineraryPlanner({
                   </button>
                 ))}
               </div>
-            </fieldset>
-            <fieldset className="min-w-0">
-              <legend className="mb-1 text-sm font-semibold">Voyageurs</legend>
-              <div className="grid min-w-0 grid-cols-1 gap-1.5 min-[360px]:grid-cols-2">
-                <PassengerControl label="Adultes" value={adults} min={1} onChange={setAdults} />
-                <PassengerControl label="Enfants" value={children} min={0} onChange={setChildren} />
-              </div>
-            </fieldset>
-            <div className="grid gap-3 border-t border-border pt-3 sm:grid-cols-3">
+              <div className="mt-3 grid gap-3 border-t border-border pt-3 sm:grid-cols-3">
               <label>
                 Consommation · L/100 km
                 <input
@@ -1335,12 +1396,35 @@ export function ItineraryPlanner({
                   onChange={(event) => setTollRate(Number(event.target.value))}
                 />
               </label>
-            </div>
+              </div>
+            </fieldset>
           </div>
-        </details>
+        ) : null}
         <p className="text-[11px] leading-snug text-muted-foreground">
           La carte montre un exemple de voyage. Vos adresses servent seulement à calculer votre trajet.
         </p>
+        {error && (
+          <p role="alert" className="rounded-xl bg-red-50 px-4 py-3 text-sm text-red-800">
+            {error}
+          </p>
+        )}
+        <div className="sticky bottom-0 z-10 -mx-4 flex items-center justify-end gap-1 border-t bg-card/95 px-4 py-2.5 backdrop-blur md:-mx-5 md:px-5">
+          <button
+            type="button"
+            onClick={onClose}
+            className="h-11 whitespace-nowrap rounded-xl px-2 text-sm font-semibold text-muted-foreground transition hover:bg-secondary hover:text-foreground"
+          >
+            ← Fermer
+          </button>
+          <button
+            type="submit"
+            disabled={loading || portsPending || routesPending || departuresPending}
+            className="flex h-11 items-center justify-center gap-2 whitespace-nowrap rounded-xl bg-primary px-3 text-sm font-bold text-primary-foreground shadow-md transition hover:opacity-90 disabled:opacity-60"
+          >
+            {loading ? "Préparation…" : "Voir mon voyage"}
+            <ArrowRight className="size-4" aria-hidden />
+          </button>
+        </div>
       </form>
       {roadAccess && !filtersOpen && (
         <div className="grid gap-3 p-3 sm:p-4">

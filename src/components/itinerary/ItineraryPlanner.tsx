@@ -1,5 +1,6 @@
 import { isTowardsSouth } from "@/lib/ferry/markets";
 import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
+import { createPortal } from "react-dom";
 import { useQuery } from "@tanstack/react-query";
 import {
   Anchor,
@@ -26,6 +27,7 @@ const SlidersHorizontal = SlidersHorizontalIcon;
 const Star = StarIcon;
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { CompanyBadge } from "@/components/panel/CompanyBadge";
+import { ITINERARY_CHOOSE_EVENT } from "@/lib/ferry/itinerary";
 import {
   companiesQuery,
   portsQuery,
@@ -472,6 +474,17 @@ export function ItineraryPlanner({
   const [openDetail, setOpenDetail] = useState<string | null>(null);
   const [showOthers, setShowOthers] = useState(false);
   const [hoveredId, setHoveredId] = useState<string | null>(null);
+  // Un trajet touché sur la carte (bulle ou tracé gris) devient le trajet choisi.
+  useEffect(() => {
+    const choose = (event: Event) => {
+      const id = (event as CustomEvent<string>).detail;
+      if (!id) return;
+      setHoveredId(null);
+      setSelectedId(id);
+    };
+    window.addEventListener(ITINERARY_CHOOSE_EVENT, choose);
+    return () => window.removeEventListener(ITINERARY_CHOOSE_EVENT, choose);
+  }, []);
   const [roadAccess, setRoadAccess] = useState<RoadAccess | null>(null);
   const [searchStartedAt, setSearchStartedAt] = useState<number | null>(null);
   const [loading, setLoading] = useState(false);
@@ -616,7 +629,23 @@ export function ItineraryPlanner({
       previewed.sailing.to.latitude,
     ];
     const alternatives: [number, number][][] = [];
+    const alternativeIds: string[] = [];
     const seen = new Set([`${previewed.sailing.from.id}|${previewed.sailing.to.id}`]);
+    // Une bulle par trajet, posée au milieu de sa traversée : médaille, durée et prix.
+    const rankPool = realOptions.length ? realOptions : sorted;
+    const bubble = (option: (typeof sorted)[number], chosen: boolean) => {
+      const arc = routeArc(option.sailing.from, option.sailing.to);
+      const rank = rankPool.indexOf(option);
+      return {
+        id: option.sailing.departure.id,
+        point: arc[Math.floor(arc.length / 2)] ?? arc[0]!,
+        medal: ["🥇", "🥈", "🥉"][rank] ?? "🚢",
+        title: `${option.sailing.from.name} → ${option.sailing.to.name}`,
+        detail: `${formatDuration(option.totalMinutes)} · ${numberFormat.format(option.totalEuro)} €`,
+        selected: chosen,
+      };
+    };
+    const choices = [bubble(previewed, true)];
     for (const option of sorted.slice(0, 6)) {
       const pair = `${option.sailing.from.id}|${option.sailing.to.id}`;
       if (seen.has(pair)) continue;
@@ -628,6 +657,9 @@ export function ItineraryPlanner({
         routeArc(option.sailing.from, option.sailing.to),
         [to, roadAccess.destinationPoint],
       );
+      const id = option.sailing.departure.id;
+      alternativeIds.push(id, id, id);
+      choices.push(bubble(option, false));
     }
     let cancelled = false;
     const show = (
@@ -650,6 +682,8 @@ export function ItineraryPlanner({
         ferry: routeArc(previewed.sailing.from, previewed.sailing.to),
         roadFromPort,
         alternatives,
+        alternativeIds,
+        choices,
       });
     };
     show(
@@ -1168,6 +1202,60 @@ export function ItineraryPlanner({
   const raceLeader = race
     .filter((entry) => raceMinute >= entry.arriveMin)
     .at(0);
+  // Le récap posé sur la carte, en haut à gauche : l'essentiel du trajet choisi, sans ouvrir le volet.
+  const [mapLayer, setMapLayer] = useState<HTMLElement | null>(null);
+  useEffect(() => {
+    setMapLayer(document.querySelector<HTMLElement>(".bw-map-canvas"));
+  }, []);
+  const recapPool = realOptions.length ? realOptions : sorted;
+  const recapRank = selected ? recapPool.indexOf(selected) : -1;
+  const mapRecap =
+    mapLayer && active && roadAccess && !filtersOpen && selected && !cinema
+      ? createPortal(
+          <div
+            className="pointer-events-auto absolute left-14 right-3 top-3 z-30 max-w-[20rem] rounded-2xl border border-border bg-white/95 p-2.5 shadow-lg backdrop-blur md:hidden"
+            role="status"
+            aria-label="Trajet choisi"
+          >
+            <div className="flex items-start justify-between gap-2">
+              <div className="min-w-0">
+                <p className="text-[10px] font-extrabold uppercase tracking-wide text-primary">
+                  {recapRank === 0 ? "🥇 Notre conseil" : recapRank > 0 && recapRank < 3 ? `${["🥇", "🥈", "🥉"][recapRank]} Trajet choisi` : "Trajet choisi"}
+                </p>
+                <p className="truncate text-sm font-bold leading-tight">
+                  {selected.sailing.from.name} → {selected.sailing.to.name}
+                </p>
+              </div>
+              <p className="shrink-0 text-right">
+                <strong className="block text-sm tabular-nums">≈ {numberFormat.format(selected.totalEuro)} €</strong>
+                <span className="block text-[10px] text-muted-foreground">{formatDuration(selected.totalMinutes)}</span>
+              </p>
+            </div>
+            {selected.sailing.company ? (
+              <p className="mt-1 flex items-center gap-1.5 text-[11px] text-muted-foreground">
+                <CompanyBadge
+                  name={selected.sailing.company.name}
+                  logoUrl={selected.sailing.company.logo_url}
+                  size={16}
+                />
+                <span className="truncate">{selected.sailing.company.name}</span>
+              </p>
+            ) : null}
+            <p className="mt-1 text-[11px] font-semibold leading-snug">
+              🏠{" "}
+              {selected.sailing.isSimulation
+                ? `Date à confirmer en ${periodLabel}`
+                : formatDayTime(selected.leaveHomeAt, portTimeZone(selected.sailing.from))}{" "}
+              → 🏁{" "}
+              {selected.sailing.isSimulation
+                ? `≈ ${formatDuration(selected.totalMinutes)}`
+                : formatDayTime(selected.arrivalAt, portTimeZone(selected.sailing.to))}
+            </p>
+            <p className="mt-0.5 text-[10px] text-muted-foreground">Touchez une bulle pour changer de trajet.</p>
+          </div>,
+          mapLayer,
+        )
+      : null;
   const closeCinema = () => {
     setPlaying(false);
     setCinema(false);
@@ -1175,6 +1263,7 @@ export function ItineraryPlanner({
 
   return (
     <section id="itineraire" className="@container min-h-full min-w-0 w-full bg-[#fffdf8]">
+      {mapRecap}
       {cinema && film && times && currentStep ? (
         <div className="grid gap-1.5 px-3 py-2">
           <div className="flex items-center gap-2">

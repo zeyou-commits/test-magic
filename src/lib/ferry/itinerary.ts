@@ -22,7 +22,23 @@ export interface ItineraryMapPreview {
   ferry: [number, number][];
   roadFromPort: [number, number][];
   alternatives: [number, number][][];
+  /** Trajet de chaque tracé d'« alternatives » (même ordre) : un toucher le choisit. */
+  alternativeIds?: string[];
+  /** Les bulles posées sur la carte, une par trajet, à la façon des itinéraires de Google Maps. */
+  choices?: ItineraryMapChoice[];
 }
+
+export interface ItineraryMapChoice {
+  id: string;
+  point: [number, number];
+  medal: string;
+  title: string;
+  detail: string;
+  selected: boolean;
+}
+
+/** La carte demande au volet de choisir ce trajet. */
+export const ITINERARY_CHOOSE_EVENT = "bledway:itinerary-choose";
 
 export interface ItineraryOption {
   sailing: Sailing;

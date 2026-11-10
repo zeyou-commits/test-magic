@@ -43,7 +43,7 @@ import { fleetGroups } from "./fleetVisibility";
 import { physicalStatus, projectedPosition } from "@/lib/ferry/tracking";
 import { portTimeZone, wallTimeInZone } from "@/lib/ferry/time";
 import { useIsMobile } from "@/hooks/use-mobile";
-import type { ItineraryMapPreview } from "@/lib/ferry/itinerary";
+import { ITINERARY_CHOOSE_EVENT, type ItineraryMapPreview } from "@/lib/ferry/itinerary";
 
 type FleetFrame = {
   type: "FeatureCollection";
@@ -408,6 +408,8 @@ export default function FerryMap({
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<MapLibreMap | null>(null);
   const itineraryCameraRef = useRef<string | null>(null);
+  // Les bulles des trajets possibles, posées sur la traversée de chacun.
+  const choiceMarkersRef = useRef<Marker[]>([]);
   const readyRef = useRef(false);
   // Filtres d'origine des calques de la flotte, rétablis après le trajet porte à porte.
   const shipFilters = useRef(new Map<string, unknown>());
@@ -1460,6 +1462,18 @@ export default function FerryMap({
         },
         before,
       );
+      // Un tracé gris se choisit d'un toucher, comme une autre route dans Google Maps.
+      map.on("click", "itinerary-alternatives", (event: MapLayerMouseEvent) => {
+        const id = event.features?.[0]?.properties?.["choice"];
+        if (typeof id === "string" && id)
+          window.dispatchEvent(new CustomEvent(ITINERARY_CHOOSE_EVENT, { detail: id }));
+      });
+      map.on("mouseenter", "itinerary-alternatives", () => {
+        map.getCanvas().style.cursor = "pointer";
+      });
+      map.on("mouseleave", "itinerary-alternatives", () => {
+        map.getCanvas().style.cursor = "";
+      });
       map.addLayer(
         {
           id: "itinerary-road-casing",
@@ -1548,6 +1562,32 @@ export default function FerryMap({
       });
     }
     const source = map.getSource("itinerary-preview") as GeoJSONSource;
+    choiceMarkersRef.current.forEach((marker) => marker.remove());
+    choiceMarkersRef.current = [];
+    if (itineraryPreview?.choices?.length) {
+      for (const choice of itineraryPreview.choices) {
+        const element = document.createElement("button");
+        element.type = "button";
+        element.setAttribute(
+          "aria-label",
+          `${choice.selected ? "Trajet choisi" : "Choisir ce trajet"} : ${choice.title}, ${choice.detail}`,
+        );
+        // Pendant le film, les bulles s'effacent (la carte appartient au voyage).
+        element.className = `in-data-[film=true]:hidden flex items-center gap-1 whitespace-nowrap rounded-full border px-2.5 py-1 text-[11.5px] font-bold leading-tight shadow-md transition ${
+          choice.selected
+            ? "border-[#0e7a43] bg-[#0e7a43] text-white"
+            : "border-[#d5dcdf] bg-white text-[#16324a] hover:border-[#0e7a43]"
+        }`;
+        element.innerHTML = `<span aria-hidden="true">${choice.medal}</span><span>${choice.detail}</span>`;
+        element.addEventListener("click", (event) => {
+          event.stopPropagation();
+          window.dispatchEvent(new CustomEvent(ITINERARY_CHOOSE_EVENT, { detail: choice.id }));
+        });
+        const marker = new Marker({ element, anchor: "center" }).setLngLat(choice.point).addTo(map);
+        marker.getElement().style.zIndex = choice.selected ? "6" : "5";
+        choiceMarkersRef.current.push(marker);
+      }
+    }
     if (!itineraryPreview) {
       source.setData({ type: "FeatureCollection", features: [] });
       itineraryCameraRef.current = null;
@@ -1565,9 +1605,9 @@ export default function FerryMap({
     source.setData({
       type: "FeatureCollection",
       features: [
-        ...preview.alternatives.map((coordinates) => ({
+        ...preview.alternatives.map((coordinates, index) => ({
           type: "Feature" as const,
-          properties: { kind: "alternative" },
+          properties: { kind: "alternative", choice: preview.alternativeIds?.[index] ?? "" },
           geometry: { type: "LineString" as const, coordinates },
         })),
         {

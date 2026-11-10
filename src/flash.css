@@ -15398,3 +15398,21 @@ img[data-logo="dark"] {
   max-height: none;
   overflow: visible;
 }
+
+/* Trajet porte à porte : champ d'adresse actif, rendu doux (pas de contour épais autour du texte). */
+.bw-address-input:focus,
+.bw-address-input:focus-visible {
+  outline: none;
+}
+.bw-address-field {
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease,
+    background-color 0.2s ease;
+}
+.bw-address-field:focus-within,
+.bw-address-field[data-picking="true"] {
+  border-color: #0e7a43 !important;
+  background: #ffffff !important;
+  box-shadow: 0 0 0 4px rgba(14, 122, 67, 0.1) !important;
+}

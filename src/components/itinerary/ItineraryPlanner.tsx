@@ -228,6 +228,7 @@ function AddressField({
   locating,
   onPick,
   picking,
+  enterKeyHint,
 }: {
   label: string;
   placeholder: string;
@@ -241,6 +242,7 @@ function AddressField({
   /** Placer le point en touchant la carte. */
   onPick?: () => void;
   picking?: boolean;
+  enterKeyHint?: "next" | "go";
 }) {
   const [suggestions, setSuggestions] = useState<{ label: string; point: [number, number] }[]>([]);
   const [open, setOpen] = useState(false);
@@ -272,7 +274,8 @@ function AddressField({
   return (
     <div className="relative text-sm font-semibold">
       <div
-        className={`batogo-control flex h-14 w-full min-w-0 items-center gap-1 pl-3 pr-1.5 focus-within:!border-primary focus-within:ring-2 focus-within:ring-primary/25 ${picking ? "!border-primary ring-2 ring-primary/25" : ""}`}
+        className="bw-address-field batogo-control flex h-14 w-full min-w-0 items-center gap-1 pl-3 pr-1.5"
+        data-picking={picking ? "true" : undefined}
       >
         <span className="min-w-0 flex-1">
           <label
@@ -283,7 +286,8 @@ function AddressField({
           </label>
           <input
             id={`itinerary-${countryCode ?? "origin"}`}
-            className="block h-6 w-full min-w-0 bg-transparent text-sm font-semibold text-foreground outline-none placeholder:font-medium placeholder:text-muted-foreground/80"
+            className="bw-address-input block h-6 w-full min-w-0 bg-transparent text-sm font-semibold text-foreground outline-none placeholder:font-medium placeholder:text-muted-foreground/80"
+            enterKeyHint={enterKeyHint}
           autoComplete="off"
           role="combobox"
           aria-autocomplete="list"
@@ -295,7 +299,19 @@ function AddressField({
             onPointChange(null);
             setOpen(true);
           }}
-          onFocus={() => setOpen(true)}
+          onFocus={() => {
+            setOpen(true);
+            // Comme le volet de la carte : sur téléphone, il se déplie pour laisser la place de saisir,
+            // et la page ne glisse pas (sinon le volet se décolle du bas de l'écran).
+            if (window.matchMedia("(max-width: 767px)").matches) {
+              window.dispatchEvent(new Event("batogo:panel-full"));
+              const back = () => {
+                if (window.scrollY > 0) window.scrollTo({ top: 0, behavior: "instant" });
+              };
+              requestAnimationFrame(back);
+              window.setTimeout(back, 350);
+            }
+          }}
           onBlur={() => window.setTimeout(() => setOpen(false), 150)}
           required
           minLength={2}
@@ -453,6 +469,9 @@ export function ItineraryPlanner({
   const [filtersOpen, setFiltersOpen] = useState(true);
   // Étapes ② et ③ du formulaire : repliées par défaut, comme dans « Trouver ma traversée ».
   const [refine, setRefine] = useState<"when" | "who" | null>(null);
+  const formRef = useRef<HTMLFormElement>(null);
+  // Les deux adresses choisies : le voyage se calcule seul, puis de nouveau à chaque réglage changé.
+  const lastAutoKey = useRef("");
   const [hoveredId, setHoveredId] = useState<string | null>(null);
   const [roadAccess, setRoadAccess] = useState<RoadAccess | null>(null);
   const [searchStartedAt, setSearchStartedAt] = useState<number | null>(null);
@@ -975,8 +994,33 @@ export function ItineraryPlanner({
     return () => window.removeEventListener(JOURNEY_PICKED_EVENT, onPicked);
   }, []);
 
+  // Calcul automatique : dès que les deux adresses sont choisies (liste, position ou carte), puis à
+  // chaque changement d'adresse ou de période. Revenir sur le formulaire sans rien changer ne relance rien.
+  useEffect(() => {
+    if (!filtersOpen || !originPoint || !destinationPoint || loading) return;
+    if (portsPending || routesPending || departuresPending) return;
+    const key = `${originPoint.join(",")}|${destinationPoint.join(",")}|${period}`;
+    if (key === lastAutoKey.current) return;
+    const timer = window.setTimeout(() => {
+      lastAutoKey.current = key;
+      formRef.current?.requestSubmit();
+    }, 350);
+    return () => window.clearTimeout(timer);
+  }, [
+    filtersOpen,
+    originPoint,
+    destinationPoint,
+    period,
+    loading,
+    portsPending,
+    routesPending,
+    departuresPending,
+  ]);
+
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    // Déjà en cours (calcul automatique puis touche Entrée) : un seul calcul.
+    if (loading) return;
     setError(null);
     setRoadAccess(null);
     setRacing(false);
@@ -1209,7 +1253,9 @@ export function ItineraryPlanner({
       ) : null}
       <div hidden={cinema}>
       <div className="sticky top-0 z-10 flex items-center justify-between gap-2 border-b border-border bg-card px-4 py-3 md:bg-white md:px-5">
-        <h2 className="text-sm font-bold text-foreground">Trajet porte à porte</h2>
+        <h2 className="min-w-0 truncate font-display text-base font-bold tracking-tight text-foreground">
+          <span className="sr-only">Trajet porte à porte : </span>De chez vous jusqu'au bled
+        </h2>
         <button
           type="button"
           onClick={onClose}
@@ -1220,13 +1266,11 @@ export function ItineraryPlanner({
         </button>
       </div>
       <form
+        ref={formRef}
         onSubmit={(event) => void submit(event)}
         hidden={!filtersOpen}
         className="space-y-3 bg-card px-4 pt-4 md:bg-white md:px-5"
       >
-        <h3 className="font-display text-base font-bold tracking-tight">
-          ① De chez vous jusqu'au bled
-        </h3>
         <div className="grid gap-3">
           <AddressField
             label="Départ"
@@ -1239,6 +1283,7 @@ export function ItineraryPlanner({
             locating={locating}
             onPick={() => setPicking(picking === "origin" ? null : "origin")}
             picking={picking === "origin"}
+            enterKeyHint="next"
           />
           {locationError && (
             <p role="status" className="-mt-1 text-xs text-destructive">
@@ -1255,11 +1300,29 @@ export function ItineraryPlanner({
             countryCode="DZ"
             onPick={() => setPicking(picking === "destination" ? null : "destination")}
             picking={picking === "destination"}
+            enterKeyHint="go"
           />
           {picking ? (
             <p role="status" className="-mt-1 text-xs font-semibold text-primary">
               Touchez la carte pour placer votre {picking === "origin" ? "départ" : "arrivée"}.
             </p>
+          ) : loading ? (
+            <p role="status" className="-mt-1 text-xs font-semibold text-primary">
+              Préparation de votre voyage…
+            </p>
+          ) : !originPoint || !destinationPoint ? (
+            <p className="-mt-1 text-xs text-muted-foreground">
+              Choisissez vos deux adresses dans la liste : votre voyage s'affiche aussitôt.
+            </p>
+          ) : null}
+          {roadAccess ? (
+            <button
+              type="button"
+              onClick={() => setFiltersOpen(false)}
+              className="-mt-1 justify-self-start text-xs font-semibold text-primary underline underline-offset-2"
+            >
+              ← Revenir à mon voyage
+            </button>
           ) : null}
         </div>
         <RefineStep
@@ -1408,23 +1471,9 @@ export function ItineraryPlanner({
             {error}
           </p>
         )}
-        <div className="sticky bottom-0 z-10 -mx-4 flex items-center justify-end gap-1 border-t bg-card/95 px-4 py-2.5 backdrop-blur md:-mx-5 md:px-5">
-          <button
-            type="button"
-            onClick={onClose}
-            className="h-11 whitespace-nowrap rounded-xl px-2 text-sm font-semibold text-muted-foreground transition hover:bg-secondary hover:text-foreground"
-          >
-            ← Fermer
-          </button>
-          <button
-            type="submit"
-            disabled={loading || portsPending || routesPending || departuresPending}
-            className="flex h-11 items-center justify-center gap-2 whitespace-nowrap rounded-xl bg-primary px-3 text-sm font-bold text-primary-foreground shadow-md transition hover:opacity-90 disabled:opacity-60"
-          >
-            {loading ? "Préparation…" : "Voir mon voyage"}
-            <ArrowRight className="size-4" aria-hidden />
-          </button>
-        </div>
+        {/* Le calcul part tout seul : pas de bouton. « Entrée » (ou « OK » du clavier) le lance aussi. */}
+        <button type="submit" hidden aria-hidden tabIndex={-1} />
+        <div className="h-3" />
       </form>
       {roadAccess && !filtersOpen && (
         <div className="grid gap-3 p-3 sm:p-4">

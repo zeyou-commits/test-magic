@@ -25,13 +25,14 @@ import {
 const SlidersHorizontal = SlidersHorizontalIcon;
 const Star = StarIcon;
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { CompanyBadge } from "@/components/panel/CompanyBadge";
 import {
   companiesQuery,
   portsQuery,
   routesQuery,
   upcomingDeparturesQuery,
 } from "@/lib/ferry/queries";
-import { buildSailings, RECOMMENDED_RULE } from "@/lib/ferry/trips";
+import { buildSailings } from "@/lib/ferry/trips";
 import { calculateRoadAccess, searchItineraryAddress } from "@/lib/ferry/itinerary.functions";
 import {
   BOARDING_BUFFER_MIN,
@@ -131,11 +132,6 @@ function pauseNote(driveMin: number) {
   const pauses = drivingPauses(driveMin);
   if (!pauses) return "";
   return ` · ${pauses} pause${pauses > 1 ? "s" : ""} de ${PAUSE_MIN} min comprise${pauses > 1 ? "s" : ""}`;
-}
-
-function pauseSummary(pauses: number) {
-  const plural = pauses > 1 ? "s" : "";
-  return `${pauses} pause${plural} de ${PAUSE_MIN} min comprise${plural} (repère : une toutes les ${PAUSE_EVERY_MIN / 60} h), sans aire précise.`;
 }
 
 function formatDuration(minutes: number) {
@@ -472,6 +468,9 @@ export function ItineraryPlanner({
   const formRef = useRef<HTMLFormElement>(null);
   // Les deux adresses choisies : le voyage se calcule seul, puis de nouveau à chaque réglage changé.
   const lastAutoKey = useRef("");
+  // Résultats : la carte dépliée (« Voir le détail ») et la liste des autres trajets.
+  const [openDetail, setOpenDetail] = useState<string | null>(null);
+  const [showOthers, setShowOthers] = useState(false);
   const [hoveredId, setHoveredId] = useState<string | null>(null);
   const [roadAccess, setRoadAccess] = useState<RoadAccess | null>(null);
   const [searchStartedAt, setSearchStartedAt] = useState<number | null>(null);
@@ -780,7 +779,6 @@ export function ItineraryPlanner({
   const raceEnd = race.at(-1)?.arriveMin ?? 0;
   const raceWinner = race[0];
   const raceTied = race.filter((entry) => entry.gapMin < TIE_MIN);
-  const raceEntry = (id: string) => race.find((entry) => entry.id === id);
   const startRace = () => {
     setPlaying(false);
     setPullBack(0);
@@ -1170,11 +1168,6 @@ export function ItineraryPlanner({
   const raceLeader = race
     .filter((entry) => raceMinute >= entry.arriveMin)
     .at(0);
-  const raceTitle = !raceDone && !raceLeader
-    ? "La course est lancée"
-    : raceTied.length > 1
-      ? `${raceTied[0]!.label} et ${raceTied[1]!.label} à égalité`
-      : `${raceWinner?.label} arrive le premier`;
   const closeCinema = () => {
     setPlaying(false);
     setCinema(false);
@@ -1310,9 +1303,30 @@ export function ItineraryPlanner({
             <p role="status" className="-mt-1 text-xs font-semibold text-primary">
               Préparation de votre voyage…
             </p>
-          ) : !originPoint || !destinationPoint ? (
-            <p className="-mt-1 text-xs text-muted-foreground">
-              Choisissez vos deux adresses dans la liste : votre voyage s'affiche aussitôt.
+          ) : null}
+          <button
+            type="submit"
+            disabled={
+              loading ||
+              origin.trim().length < 2 ||
+              destination.trim().length < 2 ||
+              portsPending ||
+              routesPending ||
+              departuresPending
+            }
+            className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-primary px-4 text-[15px] font-bold text-primary-foreground shadow-md transition hover:opacity-90 disabled:bg-primary/35 disabled:shadow-none"
+          >
+            {loading ? (
+              "Simulation de votre voyage…"
+            ) : (
+              <>
+                <Play className="size-4" aria-hidden /> Simuler mon voyage
+              </>
+            )}
+          </button>
+          {!loading && (!origin.trim() || !destination.trim()) ? (
+            <p className="-mt-1 text-center text-[11px] text-muted-foreground">
+              Indiquez d'où vous partez et où vous allez au bled.
             </p>
           ) : null}
           {roadAccess ? (
@@ -1471,8 +1485,6 @@ export function ItineraryPlanner({
             {error}
           </p>
         )}
-        {/* Le calcul part tout seul : pas de bouton. « Entrée » (ou « OK » du clavier) le lance aussi. */}
-        <button type="submit" hidden aria-hidden tabIndex={-1} />
         <div className="h-3" />
       </form>
       {roadAccess && !filtersOpen && (
@@ -1495,288 +1507,401 @@ export function ItineraryPlanner({
             </p>
           ) : (
             <>
-              <div className="grid items-start gap-3 @min-[600px]:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)]">
-                <div className="grid min-w-0 gap-3">
-                  <div>
-                    <p className="font-display text-2xl font-bold leading-tight">
-                      {estimatedTrip
-                        ? `Comptez ${formatDuration(selected.totalMinutes)} de porte à porte`
-                        : `Partez ${moment(0)}`}
-                    </p>
-                    <p className="mt-1 text-sm text-muted-foreground">
-                      {estimatedTrip
-                        ? `Date à confirmer en ${periodLabel}`
-                        : `Arrivée ${moment(times?.total ?? 0)}`}{" "}
-                      · ≈ {numberFormat.format(selected.totalEuro)} €
-                    </p>
-                    <p className="mt-0.5 text-xs text-muted-foreground">
-                      {selected.sailing.from.name} → {selected.sailing.to.name}
-                      {selected.sailing.company ? ` · ${selected.sailing.company.name}` : ""} · aller simple
-                      {film && (film.roadPauses ?? 0) + (film.lastPauses ?? 0) > 0 ? " · pauses comprises" : ""}
-                    </p>
-                    {vesselAlerts.has(selected.sailing.vessel?.id ?? "") ? (
-                      <p role="alert" className="mt-1 text-xs font-semibold text-warning-foreground">
-                        Départ à confirmer auprès de la compagnie
-                      </p>
-                    ) : null}
-                  </div>
-                  <button
-                    type="button"
-                    onClick={launchFilm}
-                    className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-secondary font-bold @min-[600px]:hidden"
-                  >
-                    <Play className="size-4" aria-hidden /> Voir mon voyage sur la carte
-                  </button>
-
-                  <div className="rounded-2xl border border-border bg-white p-3">
-                    <div className="flex items-center justify-between gap-2">
-                      <strong className="min-w-0 text-sm">
-                        {racing ? raceTitle : dated ? "Quel trajet arrive le premier ?" : "Quel trajet est le plus court ?"}
-                      </strong>
-                      {compared.length > 1 ? (
-                        <button
-                          type="button"
-                          onClick={racing ? () => setRacing(false) : startRace}
-                          className="inline-flex min-h-9 shrink-0 items-center gap-1 rounded-lg bg-primary px-3 text-xs font-bold text-white"
-                        >
-                          {racing ? (
-                            "Arrêter"
-                          ) : (
-                            <>
-                              <Play className="size-3.5" aria-hidden /> Lancer la course
-                            </>
-                          )}
-                        </button>
-                      ) : null}
-                    </div>
-                    <p className="mt-0.5 text-[11px] leading-snug text-muted-foreground">
-                      {dated
-                        ? "Vous êtes prêt à la même heure : chacun part quand il le faut pour son bateau. Moins d'une heure d'écart, c'est une égalité vu nos marges."
-                        : "Aucune date publiée : on ne compare que les durées."}
-                    </p>
-                    <ol className="mt-2 grid gap-1">
-                      {compared.map(({ option, tags, gapMin, euroDelta }) => {
-                        const id = option.sailing.departure.id;
-                        const on = id === selected.sailing.departure.id;
-                        const entry = raceEntry(id);
-                        const arrived = racing && entry ? raceMinute >= entry.arriveMin : false;
-                        const share =
-                          racing && entry
-                            ? Math.max(0, Math.min(100, ((raceMinute - (entry.startMin ?? 0)) / entry.totalMin) * 100))
-                            : 0;
-                        const waiting = racing && entry ? raceMinute < (entry.startMin ?? 0) : false;
-                        return (
-                          <li key={id}>
-                            <button
-                              type="button"
-                              aria-pressed={on}
-                              onMouseEnter={() => setHoveredId(id)}
-                              onMouseLeave={() => setHoveredId(null)}
-                              onClick={() => setSelectedId(id)}
-                              className={`grid w-full gap-0.5 rounded-xl border p-2 text-left ${on ? "border-primary bg-primary/10" : "border-border bg-white"}`}
-                            >
-                              {tags.length ? (
-                                <span className="flex flex-wrap gap-x-2 text-[11px] font-bold text-primary">
-                                  {tags.map((tag) => (
-                                    <span key={tag}>{tag}</span>
-                                  ))}
-                                </span>
-                              ) : null}
-                              <span className="flex items-baseline justify-between gap-2">
-                                <strong className="min-w-0 truncate text-sm">
-                                  {option.sailing.from.name} → {option.sailing.to.name}
-                                </strong>
-                                <span className="shrink-0 text-xs font-bold tabular-nums">
-                                  {racing && !arrived
-                                    ? waiting
-                                      ? "À la maison"
-                                      : `${Math.round(share)} %`
-                                    : gapMin === 0
-                                      ? dated
-                                        ? "1er"
-                                        : formatDuration(option.totalMinutes)
-                                      : gapLabel(gapMin)}
-                                </span>
-                              </span>
-                              <span className="text-[11px] leading-snug text-muted-foreground">
-                                {dated
-                                  ? `Départ ${formatDayTime(option.leaveHomeAt, portTimeZone(option.sailing.from))} · arrivée ${formatDayTime(option.arrivalAt, portTimeZone(option.sailing.to))}`
-                                  : `≈ ${formatDuration(option.totalMinutes)} de porte à porte`}
-                              </span>
-                              <span className="text-[11px] leading-snug text-muted-foreground">
-                                ≈ {numberFormat.format(option.totalEuro)} €
-                                {euroDelta ? ` (${euroDelta > 0 ? "+" : "−"}${Math.abs(euroDelta)} €)` : ""} ·{" "}
-                                {Math.round(option.roadKm)} km de route
-                                {option.sailing.isSimulation ? " · estimé" : ""}
-                              </span>
-                              {racing ? (
-                                <span className="mt-0.5 block h-1 overflow-hidden rounded-full bg-secondary" aria-hidden>
-                                  <span className="block h-full bg-primary" style={{ width: `${share}%` }} />
-                                </span>
-                              ) : null}
-                            </button>
-                          </li>
-                        );
-                      })}
-                    </ol>
-                    <p className="mt-1.5 text-[11px] leading-snug text-muted-foreground">
-                      {RECOMMENDED_RULE}
-                    </p>
-                  </div>
-
-                  <div className="grid gap-1.5">
-                    {selected.sailing.isSimulation ? null : (
-                      <a
-                        href={bookingUrl(selected.sailing, profile)}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-primary px-4 text-center font-bold text-white"
-                      >
-                        Réserver sur {bookingSite(selected.sailing)} <ArrowRight className="size-4" aria-hidden />
-                      </a>
-                    )}
-                    <a
-                      href={`/horaires?from=${selected.sailing.from.id}&to=${selected.sailing.to.id}&month=${period}`}
-                      className="inline-flex min-h-10 w-full items-center justify-center rounded-xl border border-border bg-white text-sm font-semibold text-primary"
+              {(() => {
+                // Le classement : notre conseil d'abord (même règle que « Trouver ma traversée »).
+                const pool = realOptions.length ? realOptions : sorted;
+                const podium = pool.slice(0, 3);
+                const others = pool.slice(3);
+                const best = (value: (option: (typeof pool)[number]) => number) =>
+                  [...pool].sort((a, b) => value(a) - value(b))[0];
+                const earliest = best((option) => (dated ? option.arrivalAt : option.totalMinutes));
+                const cheapest = best((option) => option.totalEuro);
+                const leastDriving = best((option) => option.roadKm);
+                const shortest = best((option) => option.totalMinutes);
+                // Les compagnies qui desservent chaque ligne (tous les départs connus), pour choisir en confiance.
+                const companiesByLine = new Map<string, NonNullable<(typeof sailings)[number]["company"]>[]>();
+                for (const sailing of sailings) {
+                  if (!sailing.company) continue;
+                  const key = `${sailing.from.id}|${sailing.to.id}`;
+                  const list = companiesByLine.get(key) ?? [];
+                  if (!list.some((company) => company.id === sailing.company!.id)) list.push(sailing.company);
+                  companiesByLine.set(key, list);
+                }
+                const lineCompanies = (option: (typeof pool)[number]) => {
+                  const list = [...(companiesByLine.get(`${option.sailing.from.id}|${option.sailing.to.id}`) ?? [])];
+                  const own = option.sailing.company;
+                  if (own && !list.some((company) => company.id === own.id)) list.unshift(own);
+                  // La compagnie de ce départ d'abord.
+                  return list.sort((a, b) => Number(b.id === own?.id) - Number(a.id === own?.id));
+                };
+                const leader = podium[0]!;
+                const zoneFrom = (option: (typeof pool)[number]) => portTimeZone(option.sailing.from);
+                const zoneTo = (option: (typeof pool)[number]) => portTimeZone(option.sailing.to);
+                const when = (option: (typeof pool)[number], at: number, arrival = false) =>
+                  option.sailing.isSimulation
+                    ? at === option.leaveHomeAt
+                      ? `Date à confirmer en ${periodLabel}`
+                      : `≈ ${formatDuration(Math.round((at - option.leaveHomeAt) / 60_000))} après le départ`
+                    : formatDayTime(at, arrival ? zoneTo(option) : zoneFrom(option));
+                const badgesOf = (option: (typeof pool)[number]) => {
+                  const list: { icon: string; text: string }[] = [];
+                  if (pool.length > 1 && option === shortest)
+                    list.push({ icon: "⌛", text: "Le voyage le plus court" });
+                  if (pool.length > 1 && dated && option === earliest && option !== shortest)
+                    list.push({ icon: "⏱", text: "Au bled le plus tôt" });
+                  if (pool.length > 1 && option === cheapest) list.push({ icon: "💶", text: "Le moins cher" });
+                  if (pool.length > 1 && option === leastDriving)
+                    list.push({ icon: "🚗", text: "Le moins de volant" });
+                  return list;
+                };
+                const versusLeader = (option: (typeof pool)[number]) => {
+                  if (option === leader) return "";
+                  const parts: string[] = [];
+                  // On compare la durée du voyage (pas l'arrivée : chacun part à une date différente).
+                  const longer = option.totalMinutes - leader.totalMinutes;
+                  if (Math.abs(longer) >= TIE_MIN)
+                    parts.push(
+                      `voyage ${gapLabel(Math.abs(longer)).replace("+", "")} ${longer > 0 ? "plus long" : "plus court"}`,
+                    );
+                  const euro = Math.round(option.totalEuro - leader.totalEuro);
+                  if (Math.abs(euro) >= 10) parts.push(euro > 0 ? `${euro} € de plus` : `${-euro} € de moins`);
+                  const km = Math.round(option.roadKm - leader.roadKm);
+                  if (Math.abs(km) >= 50) parts.push(km > 0 ? `${km} km de route en plus` : `${-km} km de route en moins`);
+                  return parts.length ? `Par rapport à notre conseil : ${parts.join(", ")}.` : "Presque identique à notre conseil.";
+                };
+                const stepsOf = (option: (typeof pool)[number]) => {
+                  const port = option.leaveHomeAt + legWithPauses(option.originRoad.durationMin) * 60_000;
+                  const sail = Date.parse(option.sailing.departure.departure_at);
+                  const land = option.sailing.departure.arrival_at
+                    ? Date.parse(option.sailing.departure.arrival_at)
+                    : sail + (option.sailing.durationMin ?? 0) * 60_000;
+                  const out = land + DISEMBARK_BUFFER_MIN * 60_000;
+                  return [
+                    {
+                      icon: "🏠",
+                      at: when(option, option.leaveHomeAt),
+                      title: "Départ de chez vous",
+                      text: `${Math.round(option.originRoad.distanceKm)} km, ${formatDuration(option.originRoad.durationMin)} jusqu'à ${option.sailing.from.name}${pauseNote(option.originRoad.durationMin)}`,
+                    },
+                    {
+                      icon: "⚓",
+                      at: when(option, port),
+                      title: `Au port de ${option.sailing.from.name}`,
+                      text: `${BOARDING_BUFFER_MIN / 60} h de marge avant le départ : l'heure de convocation de votre billet fait foi`,
+                    },
+                    {
+                      icon: "🚢",
+                      at: when(option, sail),
+                      title: `Traversée${option.sailing.company ? ` avec ${option.sailing.company.name}` : ""}`,
+                      text: `${formatDuration(option.sailing.durationMin ?? 0)} de mer jusqu'à ${option.sailing.to.name}${option.sailing.isSimulation ? " (durée estimée)" : ""}`,
+                    },
+                    {
+                      icon: "🛃",
+                      at: when(option, land, true),
+                      title: `Arrivée à ${option.sailing.to.name}`,
+                      text: `Débarquement, contrôles et sortie du port : ${DISEMBARK_BUFFER_MIN / 60} h de marge`,
+                    },
+                    {
+                      icon: "🛣️",
+                      at: when(option, out, true),
+                      title: "La dernière route",
+                      text: `${Math.round(option.destinationRoad.distanceKm)} km, ${formatDuration(option.destinationRoad.durationMin)}${pauseNote(option.destinationRoad.durationMin)}`,
+                    },
+                    {
+                      icon: "🏁",
+                      at: when(option, option.arrivalAt, true),
+                      title: "Bien arrivé au bled",
+                      text: roadAccess.destination,
+                    },
+                  ];
+                };
+                // Pourquoi c'est notre conseil, dit avec ses vrais atouts.
+                const leaderReason =
+                  pool.length < 2
+                    ? `${formatDuration(leader.totalMinutes)} de porte à porte.`
+                    : leader === shortest && leader === cheapest
+                      ? `Le plus court et le moins cher : ${formatDuration(leader.totalMinutes)} de porte à porte.`
+                      : leader === shortest
+                        ? `Le voyage le plus court (${formatDuration(leader.totalMinutes)} de porte à porte), à un horaire confortable.`
+                        : leader === cheapest
+                          ? `Le moins cher, pour ${formatDuration(leader.totalMinutes)} de porte à porte.`
+                          : `Le meilleur équilibre entre durée (${formatDuration(leader.totalMinutes)}), horaire et prix.`;
+                const card = (option: (typeof pool)[number], rank: number) => {
+                  const id = option.sailing.departure.id;
+                  const on = id === selected.sailing.departure.id;
+                  const open = openDetail === id;
+                  const medal = ["🥇", "🥈", "🥉"][rank] ?? `${rank + 1}`;
+                  const badges = badgesOf(option);
+                  return (
+                    <li
+                      key={id}
+                      className={`rounded-2xl border bg-white shadow-sm transition ${on ? "border-primary ring-2 ring-primary/15" : "border-border"}`}
                     >
-                      {selected.sailing.isSimulation ? "Voir les horaires publiés" : "Voir les autres traversées"}
-                    </a>
-                  </div>
-                </div>
-
-                <div className="grid min-w-0 gap-3">
-                  {/* La route du bled en 8 étapes, synchronisée avec le film (simulation). */}
-                  {film ? (
-                    <SimulationJourney
-                      film={film}
-                      minute={minute}
-                      onSeek={(next) => {
-                        setPlaying(false);
-                        setPullBack(0);
-                        setRacing(false);
-                        setWide(0);
-                        setMinute(next);
-                      }}
-                      from={selected.sailing.from}
-                      to={selected.sailing.to}
-                      vehicle={vehicle !== "none"}
-                      followHref={`/horaires?from=${selected.sailing.from.id}&to=${selected.sailing.to.id}&month=${period}`}
-                    />
-                  ) : null}
-                  {film && times && currentStep ? (
-                    <div className="rounded-2xl border border-border bg-white p-3">
-                      <div className="flex items-baseline justify-between gap-2">
-                        <strong className="min-w-0 text-sm leading-snug">
-                          {pausingNow ? `Pause conseillée · ${PAUSE_MIN} min` : currentStep.title}
-                        </strong>
-                        <span className="shrink-0 text-xs font-bold tabular-nums text-primary">
-                          {moment(Math.round(minute))}
-                        </span>
-                      </div>
-                      <p className="mt-0.5 min-h-8 text-xs leading-snug text-muted-foreground">
-                        {currentStep.text}
-                      </p>
-                      <div className="mt-2 flex h-2 gap-0.5 overflow-hidden rounded-full" aria-hidden>
-                        {[
-                          [film.roadMin, "#0e7a43"],
-                          [film.boardMin, "#b9a57a"],
-                          [film.ferryMin, "#1769a8"],
-                          [film.disembarkMin, "#b9a57a"],
-                          [film.lastMin, "#0e7a43"],
-                        ].map(([flex, color], index) => (
-                          <span key={index} style={{ flex: `${flex} 1 0`, background: String(color) }} />
-                        ))}
-                      </div>
-                      <ul className="mt-1.5 flex flex-wrap gap-x-2.5 gap-y-0.5 text-[11px] leading-snug text-muted-foreground">
-                        {[
-                          ["Route", film.roadMin, 0],
-                          ["Port", film.boardMin, times.port],
-                          ["Mer", film.ferryMin, times.sea],
-                          ["Sortie", film.disembarkMin, times.disembark],
-                          ["Route", film.lastMin, times.last],
-                        ].map(([label, length, start], index) => {
-                          const current = minute >= Number(start) && minute < Number(start) + Number(length);
-                          return (
-                            <li key={index} className={current ? "font-bold text-foreground" : undefined}>
-                              {label} <span className="tabular-nums">{formatDuration(Number(length))}</span>
-                            </li>
-                          );
-                        })}
-                      </ul>
-                      {(film.roadPauses ?? 0) + (film.lastPauses ?? 0) > 0 ? (
-                        <p className="mt-0.5 text-[11px] leading-snug text-[#8a4b00]">
-                          {pauseSummary((film.roadPauses ?? 0) + (film.lastPauses ?? 0))}
-                        </p>
-                      ) : null}
-                      <input
-                        type="range"
-                        aria-label="Parcourir le voyage dans le temps"
-                        min={0}
-                        max={times.total}
-                        step={1}
-                        value={minute}
-                        onChange={(event) => {
-                          setPlaying(false);
-                          setPullBack(0);
-                          setRacing(false);
-                          setWide(0);
-                          setMinute(Number(event.target.value));
-                        }}
-                        className="h-7 w-full accent-[#0e7a43]"
-                      />
                       <button
                         type="button"
-                        onClick={playing ? () => setPlaying(false) : launchFilm}
-                        className="inline-flex min-h-10 w-full items-center justify-center gap-2 rounded-xl bg-secondary text-sm font-bold"
+                        aria-pressed={on}
+                        onMouseEnter={() => setHoveredId(id)}
+                        onMouseLeave={() => setHoveredId(null)}
+                        onClick={() => setSelectedId(id)}
+                        className="grid w-full gap-1.5 p-3 text-left"
                       >
-                        {playing ? <Pause className="size-4" aria-hidden /> : <Play className="size-4" aria-hidden />}
-                        {playing ? "Pause" : minute >= times.total ? "Revoir mon voyage" : "Lancer mon voyage"}
-                      </button>
-                    </div>
-                  ) : null}
-
-                  <div className="rounded-2xl border border-border bg-white p-3">
-                    <strong className="text-sm">Votre voyage, étape par étape</strong>
-                    <ol className="mt-2 grid gap-1">
-                      {steps.map((step) => (
-                        <li key={step.id}>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setPlaying(false);
-                              setPullBack(0);
-                              setRacing(false);
-                              setWide(0);
-                              setMinute(step.at);
-                            }}
-                            className={`grid w-full grid-cols-[84px_minmax(0,1fr)] gap-2 rounded-lg p-2 text-left ${stage === step.id ? "bg-primary/10" : ""}`}
-                          >
-                            <span className="text-[11px] font-bold leading-snug tabular-nums text-primary">
-                              {moment(step.at)}
+                        <span className="flex items-center justify-between gap-2">
+                          <span className="flex min-w-0 items-center gap-2">
+                            <span className="text-xl leading-none" aria-hidden>
+                              {medal}
                             </span>
                             <span className="min-w-0">
-                              <strong className="block text-xs">{step.title}</strong>
-                              <span className="block text-[11px] leading-snug text-muted-foreground">
-                                {step.text}
-                              </span>
-                              {step.source ? (
-                                <span className="mt-0.5 block text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
-                                  {step.source}
+                              {rank === 0 ? (
+                                <span className="block text-[11px] font-extrabold uppercase tracking-wide text-primary">
+                                  Notre conseil
                                 </span>
                               ) : null}
+                              <strong className="block truncate text-[15px] leading-tight">
+                                {option.sailing.from.name} → {option.sailing.to.name}
+                              </strong>
                             </span>
-                          </button>
-                        </li>
-                      ))}
-                    </ol>
-                    <p className="mt-2 border-t border-border pt-2 text-xs text-muted-foreground">
-                      Route ≈ {numberFormat.format(selected.roadEuro)} € · Ferry et voiture ≈{" "}
-                      {numberFormat.format(selected.ferryEuro)} €, fourchette{" "}
-                      {formatFareRange(estimateFerryFare(selected.sailing, profile))}
-                    </p>
+                          </span>
+                          <span className="shrink-0 text-right">
+                            <strong className="block text-[15px] tabular-nums">
+                              ≈ {numberFormat.format(option.totalEuro)} €
+                            </strong>
+                            <span className="block text-[10px] text-muted-foreground">route + ferry</span>
+                          </span>
+                        </span>
+                        {lineCompanies(option).length ? (
+                          <span className="grid gap-1">
+                            <span className="text-[10px] font-bold uppercase tracking-wide text-muted-foreground">
+                              {lineCompanies(option).length > 1 ? "Compagnies sur cette ligne" : "Compagnie"}
+                            </span>
+                            <span className="flex flex-wrap gap-1.5">
+                              {lineCompanies(option)
+                                .slice(0, 4)
+                                .map((company) => {
+                                  const own = company.id === option.sailing.company?.id;
+                                  return (
+                                    <span
+                                      key={company.id}
+                                      className={`inline-flex min-h-8 items-center gap-1.5 rounded-full border px-2 py-0.5 text-[11px] font-semibold ${own ? "border-primary/40 bg-primary/5 text-foreground" : "border-border bg-white text-muted-foreground"}`}
+                                    >
+                                      <CompanyBadge name={company.name} logoUrl={company.logo_url} size={22} />
+                                      <span className="max-w-[9.5rem] truncate">{company.name}</span>
+                                      {own && option.sailing.vessel ? (
+                                        <span className="font-normal text-muted-foreground">
+                                          · {option.sailing.vessel.name}
+                                        </span>
+                                      ) : null}
+                                    </span>
+                                  );
+                                })}
+                            </span>
+                          </span>
+                        ) : null}
+                        <span className="grid grid-cols-2 gap-1.5">
+                          <span className="rounded-xl bg-secondary/70 px-2.5 py-1.5">
+                            <span className="block text-[10px] font-bold uppercase tracking-wide text-muted-foreground">
+                              🏠 Vous partez
+                            </span>
+                            <span className="block text-xs font-bold leading-snug">
+                              {when(option, option.leaveHomeAt)}
+                            </span>
+                          </span>
+                          <span className="rounded-xl bg-secondary/70 px-2.5 py-1.5">
+                            <span className="block text-[10px] font-bold uppercase tracking-wide text-muted-foreground">
+                              🏁 Au bled
+                            </span>
+                            <span className="block text-xs font-bold leading-snug">
+                              {when(option, option.arrivalAt, true)}
+                            </span>
+                          </span>
+                        </span>
+                        {badges.length ? (
+                          <span className="flex flex-wrap gap-1">
+                            {badges.map((badge) => (
+                              <span
+                                key={badge.text}
+                                className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-[11px] font-semibold text-primary"
+                              >
+                                <span aria-hidden>{badge.icon}</span>
+                                {badge.text}
+                              </span>
+                            ))}
+                          </span>
+                        ) : null}
+                        <span className="text-[11px] leading-snug text-muted-foreground">
+                          {rank === 0 ? leaderReason : versusLeader(option)}{" "}
+                          {Math.round(option.roadKm)} km de route au total.
+                        </span>
+                        {vesselAlerts.has(option.sailing.vessel?.id ?? "") ? (
+                          <span role="alert" className="text-xs font-semibold text-warning-foreground">
+                            Départ à confirmer auprès de la compagnie
+                          </span>
+                        ) : null}
+                      </button>
+                      <button
+                        type="button"
+                        aria-expanded={open}
+                        onClick={() => {
+                          setSelectedId(id);
+                          setOpenDetail(open ? null : id);
+                        }}
+                        className="flex w-full items-center justify-center gap-1 border-t border-border py-2 text-xs font-bold text-primary"
+                      >
+                        {open ? "Masquer le détail" : "Voir le détail du voyage"}
+                        <ChevronDown className={`size-3.5 transition-transform ${open ? "rotate-180" : ""}`} aria-hidden />
+                      </button>
+                      {open ? (
+                        <div className="grid gap-2 border-t border-border px-3 pb-3 pt-2">
+                          <ol className="relative grid gap-2 before:absolute before:bottom-3 before:left-[13px] before:top-3 before:w-px before:bg-border">
+                            {stepsOf(option).map((step) => (
+                              <li key={step.title} className="relative grid grid-cols-[28px_minmax(0,1fr)] gap-2">
+                                <span
+                                  className="z-[1] grid size-7 place-items-center rounded-full border border-border bg-white text-sm"
+                                  aria-hidden
+                                >
+                                  {step.icon}
+                                </span>
+                                <span className="min-w-0">
+                                  <span className="flex flex-wrap items-baseline justify-between gap-x-2">
+                                    <strong className="text-xs">{step.title}</strong>
+                                    <span className="text-[11px] font-bold tabular-nums text-primary">{step.at}</span>
+                                  </span>
+                                  <span className="block text-[11px] leading-snug text-muted-foreground">
+                                    {step.text}
+                                  </span>
+                                </span>
+                              </li>
+                            ))}
+                          </ol>
+                          <p className="rounded-xl bg-secondary/60 px-3 py-2 text-[11px] text-muted-foreground">
+                            Route ≈ {numberFormat.format(option.roadEuro)} € (carburant et péages) · Ferry et
+                            voiture ≈ {numberFormat.format(option.ferryEuro)} €, fourchette{" "}
+                            {formatFareRange(estimateFerryFare(option.sailing, profile))}
+                          </p>
+                          <div className="grid gap-1.5">
+                            {option.sailing.isSimulation ? null : (
+                              <a
+                                href={bookingUrl(option.sailing, profile)}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="inline-flex min-h-10 w-full items-center justify-center gap-2 rounded-xl border border-primary bg-white px-4 text-sm font-bold text-primary"
+                              >
+                                Réserver sur {bookingSite(option.sailing)} <ArrowRight className="size-4" aria-hidden />
+                              </a>
+                            )}
+                            <a
+                              href={`/horaires?from=${option.sailing.from.id}&to=${option.sailing.to.id}&month=${period}`}
+                              className="text-center text-xs font-semibold text-primary underline underline-offset-2"
+                            >
+                              {option.sailing.isSimulation ? "Voir les horaires publiés" : "Voir les autres dates de cette ligne"}
+                            </a>
+                          </div>
+                        </div>
+                      ) : null}
+                    </li>
+                  );
+                };
+                return (
+                  <div className="grid gap-2.5">
+                    <div>
+                      <h3 className="font-display text-lg font-bold leading-tight">
+                        {podium.length > 1 ? `Vos ${podium.length} meilleurs trajets` : "Votre trajet"}
+                      </h3>
+                      <p className="text-[11px] leading-snug text-muted-foreground">
+                        {dated
+                          ? `Pour ${periodLabel}, en partant au plus tôt. Touchez un trajet pour le voir sur la carte.`
+                          : `Aucune date publiée pour ${periodLabel} : durées et prix estimés.`}
+                      </p>
+                    </div>
+                    <ol className="grid gap-2">{podium.map((option, rank) => card(option, rank))}</ol>
+                    <button
+                      type="button"
+                      onClick={launchFilm}
+                      className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-primary px-4 font-bold text-primary-foreground shadow-md transition hover:opacity-90"
+                    >
+                      <Play className="size-4" aria-hidden /> Voir ce voyage sur la carte
+                    </button>
+                    {others.length ? (
+                      <button
+                        type="button"
+                        aria-expanded={showOthers}
+                        onClick={() => setShowOthers((value) => !value)}
+                        className="inline-flex min-h-11 w-full items-center justify-center gap-1.5 rounded-xl border border-border bg-white text-sm font-bold text-foreground"
+                      >
+                        {showOthers ? "Masquer les autres trajets" : `Autres trajets (${others.length})`}
+                        <ChevronDown className={`size-4 transition-transform ${showOthers ? "rotate-180" : ""}`} aria-hidden />
+                      </button>
+                    ) : null}
+                    {showOthers && others.length ? (
+                      <ol className="grid gap-2">{others.map((option, index) => card(option, index + 3))}</ol>
+                    ) : null}
+                    {compared.length > 1 ? (
+                      <button
+                        type="button"
+                        onClick={racing ? () => setRacing(false) : startRace}
+                        className="justify-self-center text-xs font-semibold text-primary underline underline-offset-2"
+                      >
+                        {racing ? "Arrêter la comparaison" : "Comparer ces trajets en film sur la carte"}
+                      </button>
+                    ) : null}
                   </div>
+                );
+              })()}
+
+              {/* Le film du voyage choisi : lecture et curseur, une fois lancé. */}
+              {film && times && currentStep && (playing || minute > 0) ? (
+                <div className="rounded-2xl border border-border bg-white p-3">
+                  <div className="flex items-baseline justify-between gap-2">
+                    <strong className="min-w-0 text-sm leading-snug">
+                      {pausingNow ? `Pause conseillée · ${PAUSE_MIN} min` : currentStep.title}
+                    </strong>
+                    <span className="shrink-0 text-xs font-bold tabular-nums text-primary">
+                      {moment(Math.round(minute))}
+                    </span>
+                  </div>
+                  <input
+                    type="range"
+                    aria-label="Parcourir le voyage dans le temps"
+                    min={0}
+                    max={times.total}
+                    step={1}
+                    value={minute}
+                    onChange={(event) => {
+                      setPlaying(false);
+                      setPullBack(0);
+                      setRacing(false);
+                      setWide(0);
+                      setMinute(Number(event.target.value));
+                    }}
+                    className="h-7 w-full accent-[#0e7a43]"
+                  />
+                  <button
+                    type="button"
+                    onClick={playing ? () => setPlaying(false) : launchFilm}
+                    className="inline-flex min-h-10 w-full items-center justify-center gap-2 rounded-xl bg-secondary text-sm font-bold"
+                  >
+                    {playing ? <Pause className="size-4" aria-hidden /> : <Play className="size-4" aria-hidden />}
+                    {playing ? "Pause" : minute >= times.total ? "Revoir mon voyage" : "Reprendre"}
+                  </button>
                 </div>
-              </div>
+              ) : null}
+
+              {film ? (
+                <SimulationJourney
+                  film={film}
+                  minute={minute}
+                  onSeek={(next) => {
+                    setPlaying(false);
+                    setPullBack(0);
+                    setRacing(false);
+                    setWide(0);
+                    setMinute(next);
+                  }}
+                  from={selected.sailing.from}
+                  to={selected.sailing.to}
+                  vehicle={vehicle !== "none"}
+                  followHref={`/horaires?from=${selected.sailing.from.id}&to=${selected.sailing.to.id}&month=${period}`}
+                />
+              ) : null}
 
               {estimatedChoices.length > 0 ? (
                 <div className="rounded-xl bg-secondary p-3">

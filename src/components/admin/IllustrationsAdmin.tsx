@@ -4,7 +4,9 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { RotateCcw, Trash2, Upload } from "lucide-react";
 import { toast } from "sonner";
 import { supabase as typedSupabase } from "@/integrations/supabase/client";
+import { Link } from "@tanstack/react-router";
 import { useAuth } from "@/hooks/useAuth";
+import { adminSearch } from "@/lib/admin/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { communityKey, moodsQuery } from "@/lib/community/travellers";
@@ -208,6 +210,19 @@ export function IllustrationsAdmin() {
 
   return (
     <div className="bw-admin-surface p-4">
+      <p className="mb-3 rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-sm">
+        Ici, on remplace les images du site. Pour <strong>ajouter</strong> un emoji ou un avatar,
+        créer, renommer ou <strong>ordonner les thématiques</strong>, ou changer une image de
+        thématique :{" "}
+        <Link
+          to="/admin"
+          search={adminSearch({ tab: "library" })}
+          className="font-semibold text-emerald-800 underline"
+        >
+          Emojis et avatars
+        </Link>
+        .
+      </p>
       <p className="text-sm font-semibold">
         {replaced} remplacée{replaced > 1 ? "s" : ""} sur {illustrationSlots.length}
       </p>

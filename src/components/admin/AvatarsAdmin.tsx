@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { Plus, Trash2 } from "lucide-react";
+import { ArrowLeft, ArrowRight, GripVertical, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase as typedSupabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -18,6 +18,8 @@ import { communityKey } from "@/lib/community/travellers";
 import {
   libraryCategoriesKey,
   libraryCategoriesQuery,
+  moveInList,
+  renumber,
   UNSORTED,
   UNSORTED_LABEL,
   type LibraryCategory,
@@ -118,9 +120,94 @@ export function AvatarsAdmin() {
     void client.invalidateQueries({ queryKey: USAGE_KEY });
     void client.invalidateQueries({ queryKey: communityKey });
   };
-  const visible = rows.filter(
+  // Une thématique choisie : ses images dans l'ordre vu par les voyageurs, réordonnables.
+  const current = sorted ? categories.find((category) => category.id === kind) : undefined;
+  const sortOf = new Map(
+    links
+      .filter((link) => link.category_id === current?.id)
+      .map((link) => [link.item_id, link.sort]),
+  );
+  const ordered = current
+    ? rows
+        .filter((row) => sortOf.has(row.id))
+        .sort((a, b) => sortOf.get(a.id)! - sortOf.get(b.id)! || a.sort - b.sort)
+    : rows;
+  const visible = ordered.filter(
     (row) => (!filter || filter.has(row)) && matches(search, row.label, row.id),
   );
+  // Réordonner seulement la liste complète (pas le résultat d'une recherche).
+  const canOrder = Boolean(current) && !search.trim();
+  const [dragged, setDragged] = useState<number | null>(null);
+  const [over, setOver] = useState<number | null>(null);
+
+  const reorder = useMutation({
+    mutationFn: async ({ from, to }: { from: number; to: number }) => {
+      if (!current) return;
+      const items = ordered.map((row) => ({ id: row.id, sort: sortOf.get(row.id)! }));
+      const changes = renumber(moveInList(items, from, to));
+      // Affichage immédiat, puis enregistrement.
+      client.setQueryData(libraryCategoriesKey, (data: typeof categoriesData.data) =>
+        data
+          ? {
+              ...data,
+              links: data.links.map((link) => {
+                const change =
+                  link.category_id === current.id
+                    ? changes.find(({ item }) => item.id === link.item_id)
+                    : undefined;
+                return change ? { ...link, sort: change.sort } : link;
+              }),
+            }
+          : data,
+      );
+      for (const { item, sort } of changes) {
+        const { error } = await supabase
+          .from("bw_library_category_items")
+          .update({ sort })
+          .eq("category_id", current.id)
+          .eq("item_id", item.id);
+        if (error) throw new Error(error.message);
+      }
+    },
+    onSettled: () => void client.invalidateQueries({ queryKey: libraryCategoriesKey }),
+    onError: (error: Error) => toast.error(error.message),
+  });
+  const drop = (to: number) => {
+    if (dragged !== null && dragged !== to) reorder.mutate({ from: dragged, to });
+    setDragged(null);
+    setOver(null);
+  };
+
+  // Changer de thématique : l'image va à la fin de la nouvelle et quitte celle affichée.
+  const transfer = useMutation({
+    mutationFn: async ({ row, to }: { row: AvatarRow; to: LibraryCategory }) => {
+      const last = Math.max(
+        0,
+        ...links.filter((link) => link.category_id === to.id).map((link) => link.sort),
+      );
+      const { error } = await supabase
+        .from("bw_library_category_items")
+        .upsert(
+          { category_id: to.id, item_id: row.id, sort: last + 10 },
+          { onConflict: "category_id,item_id", ignoreDuplicates: true },
+        );
+      if (error) throw new Error(error.message);
+      if (current) {
+        const removed = await supabase
+          .from("bw_library_category_items")
+          .delete()
+          .eq("category_id", current.id)
+          .eq("item_id", row.id);
+        if (removed.error) throw new Error(removed.error.message);
+      }
+      return { row, to };
+    },
+    onSuccess: ({ row, to }) => {
+      refresh();
+      toast.success(`« ${row.label} » est maintenant dans « ${to.label} ».`);
+    },
+    onError: (error: Error) => toast.error(error.message),
+  });
 
   if (list.data && !list.data.managed)
     return (
@@ -147,7 +234,10 @@ export function AvatarsAdmin() {
         </Button>
       </div>
       <p className="mt-1 text-xs text-muted-foreground">
-        Chaque image active se choisit partout : avatar du profil, humeur, salons.
+        Chaque image active se choisit partout : avatar du profil, humeur, salons.{" "}
+        {current
+          ? "Glissez les images (ou utilisez les flèches) pour régler l'ordre vu par les voyageurs dans cette thématique."
+          : "Choisissez une thématique ci-dessous pour régler l'ordre de ses images."}
       </p>
       <div className="mt-2 flex flex-wrap gap-1.5" role="group" aria-label="Catégorie">
         {[{ id: "tous", label: "Toutes", has: () => true }, ...filters].map((item) => (
@@ -163,10 +253,34 @@ export function AvatarsAdmin() {
         ))}
       </div>
       <ul className="mt-3 grid grid-cols-[repeat(auto-fill,minmax(110px,1fr))] gap-2">
-        {visible.map((row) => {
+        {visible.map((row, index) => {
           const used = usage.data?.[row.id] ?? 0;
           return (
-            <li key={row.id}>
+            <li
+              key={row.id}
+              data-item={row.id}
+              draggable={canOrder && !reorder.isPending}
+              onDragStart={(event) => {
+                if (!canOrder) return;
+                event.dataTransfer.effectAllowed = "move";
+                event.dataTransfer.setData("text/plain", row.id);
+                setDragged(index);
+              }}
+              onDragOver={(event) => {
+                if (dragged === null) return;
+                event.preventDefault();
+                setOver(index);
+              }}
+              onDragEnd={() => {
+                setDragged(null);
+                setOver(null);
+              }}
+              onDrop={(event) => {
+                event.preventDefault();
+                drop(index);
+              }}
+              className={`rounded-xl ${dragged === index ? "opacity-50" : ""} ${over === index && dragged !== index ? "outline outline-2 outline-emerald-600" : ""}`}
+            >
               <button
                 type="button"
                 onClick={() => setEditing(row)}
@@ -185,6 +299,60 @@ export function AvatarsAdmin() {
                   {row.active ? `${used} voyageur${used > 1 ? "s" : ""}` : "Retiré du choix"}
                 </small>
               </button>
+              {sorted && categories.length ? (
+                <div className="mt-1 flex items-center gap-0.5">
+                  {canOrder ? (
+                    <>
+                      <span title="Glisser pour changer l'ordre" className="cursor-grab">
+                        <GripVertical className="size-3.5 text-muted-foreground" aria-hidden />
+                      </span>
+                      <button
+                        type="button"
+                        aria-label={`Avancer ${row.label}`}
+                        disabled={index === 0 || reorder.isPending}
+                        onClick={() => reorder.mutate({ from: index, to: index - 1 })}
+                        className="rounded p-0.5 text-muted-foreground hover:bg-muted disabled:opacity-30"
+                      >
+                        <ArrowLeft className="size-3.5" />
+                      </button>
+                      <button
+                        type="button"
+                        aria-label={`Reculer ${row.label}`}
+                        disabled={index === visible.length - 1 || reorder.isPending}
+                        onClick={() => reorder.mutate({ from: index, to: index + 1 })}
+                        className="rounded p-0.5 text-muted-foreground hover:bg-muted disabled:opacity-30"
+                      >
+                        <ArrowRight className="size-3.5" />
+                      </button>
+                    </>
+                  ) : null}
+                  <select
+                    value=""
+                    aria-label={`Déplacer ${row.label} vers une thématique`}
+                    disabled={transfer.isPending}
+                    onChange={(event) => {
+                      const to = categories.find((category) => category.id === event.target.value);
+                      if (to) transfer.mutate({ row, to });
+                    }}
+                    className="h-6 min-w-0 flex-1 rounded border bg-white px-1 text-[11px]"
+                  >
+                    <option value="">{current ? "Déplacer…" : "Ranger dans…"}</option>
+                    {categories
+                      .filter(
+                        (category) =>
+                          category.id !== current?.id &&
+                          !links.some(
+                            (link) => link.category_id === category.id && link.item_id === row.id,
+                          ),
+                      )
+                      .map((category) => (
+                        <option key={category.id} value={category.id}>
+                          {category.label}
+                        </option>
+                      ))}
+                  </select>
+                </div>
+              ) : null}
             </li>
           );
         })}
@@ -256,11 +424,14 @@ function AvatarEditor({
   // Catégories cochées : ajoute les nouvelles, retire les décochées (l'image reste dans la bibliothèque).
   const saveCategories = async (id: string) => {
     if (!categories) return;
-    const added = chosen.filter((category) => !initialCategories.includes(category));
-    const removed = initialCategories.filter((category) => !chosen.includes(category));
+    // Nouvelle image : la thématique pré-cochée n'est pas encore enregistrée.
+    const before = row ? initialCategories : [];
+    const added = chosen.filter((category) => !before.includes(category));
+    const removed = before.filter((category) => !chosen.includes(category));
     if (added.length) {
       const { error } = await supabase.from("bw_library_category_items").upsert(
-        added.map((category_id) => ({ category_id, item_id: id, sort: row?.sort ?? nextSort })),
+        // À la fin de la thématique (l'équipe peut ensuite la déplacer).
+        added.map((category_id) => ({ category_id, item_id: id, sort: nextSort })),
         { onConflict: "category_id,item_id", ignoreDuplicates: true },
       );
       if (error) throw new Error(error.message);

@@ -151,7 +151,7 @@ const sections = [
     id: "library",
     label: "Emojis et avatars",
     description:
-      "La bibliothèque proposée aux voyageurs (avatar, humeur, salons) et ses catégories.",
+      "Ajouter des emojis et avatars, créer et ordonner les thématiques, ranger chaque image.",
     group: "Voyageurs",
     icon: Smile,
   },

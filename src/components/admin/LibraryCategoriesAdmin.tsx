@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { ArrowDown, ArrowUp, FolderPlus, Pencil, Trash2 } from "lucide-react";
+import { ArrowDown, ArrowUp, FolderPlus, GripVertical, Pencil, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase as typedSupabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -11,7 +11,9 @@ import { avatarsQuery } from "@/lib/community/avatars";
 import {
   libraryCategoriesKey,
   libraryCategoriesQuery,
+  moveInList,
   normalizeSearch,
+  renumber,
   type LibraryCategory,
 } from "@/lib/community/library";
 import { AdminDrawer } from "./AdminDrawer";
@@ -59,27 +61,40 @@ export function LibraryCategoriesAdmin() {
     onError: (error: Error) => toast.error(error.message),
   });
 
-  // Monter / descendre : on échange l'ordre avec la voisine.
+  // Ordre des thématiques (flèches ou glisser-déposer) : c'est l'ordre des onglets des voyageurs.
+  const [dragged, setDragged] = useState<number | null>(null);
+  const [over, setOver] = useState<number | null>(null);
   const move = useMutation({
-    mutationFn: async ({ index, delta }: { index: number; delta: number }) => {
-      const a = categories[index];
-      const b = categories[index + delta];
-      if (!a || !b) return;
-      const sortA = a.sort === b.sort ? b.sort + delta : b.sort;
-      for (const [id, sort] of [
-        [a.id, sortA],
-        [b.id, a.sort],
-      ] as const) {
+    mutationFn: async ({ from, to }: { from: number; to: number }) => {
+      const changes = renumber(moveInList(categories, from, to));
+      // Affichage immédiat, puis enregistrement.
+      client.setQueryData(libraryCategoriesKey, (data: typeof categoriesData.data) =>
+        data
+          ? {
+              ...data,
+              categories: moveInList(data.categories, from, to).map((category, index) => ({
+                ...category,
+                sort: (index + 1) * 10,
+              })),
+            }
+          : data,
+      );
+      for (const { item, sort } of changes) {
         const { error } = await supabase
           .from("bw_library_categories")
           .update({ sort, updated_at: new Date().toISOString() })
-          .eq("id", id);
+          .eq("id", item.id);
         if (error) throw new Error(error.message);
       }
     },
-    onSuccess: refresh,
+    onSettled: refresh,
     onError: (error: Error) => toast.error(error.message),
   });
+  const drop = (to: number) => {
+    if (dragged !== null && dragged !== to) move.mutate({ from: dragged, to });
+    setDragged(null);
+    setOver(null);
+  };
 
   if (categoriesData.data && !categoriesData.data.managed)
     return (
@@ -116,17 +131,47 @@ export function LibraryCategoriesAdmin() {
       <p className="mt-1 text-xs text-muted-foreground">
         Les catégories servent seulement à ranger : chaque voyageur peut choisir n’importe quelle
         image comme avatar, comme humeur ou dans un salon. Une image peut être dans plusieurs
-        catégories.
+        catégories. L’ordre ci-dessous (glisser-déposer ou flèches) est celui des onglets proposés
+        aux voyageurs : profil, humeur, salons.
       </p>
       <ul className="mt-3 divide-y rounded-xl border bg-white">
         {categories.map((category, index) => (
-          <li key={category.id} className="flex flex-wrap items-center gap-2 px-3 py-2">
+          <li
+            key={category.id}
+            draggable={!move.isPending}
+            onDragStart={(event) => {
+              event.dataTransfer.effectAllowed = "move";
+              event.dataTransfer.setData("text/plain", category.id);
+              setDragged(index);
+            }}
+            onDragOver={(event) => {
+              if (dragged === null) return;
+              event.preventDefault();
+              setOver(index);
+            }}
+            onDragEnd={() => {
+              setDragged(null);
+              setOver(null);
+            }}
+            onDrop={(event) => {
+              event.preventDefault();
+              drop(index);
+            }}
+            data-category={category.label}
+            className={`flex flex-wrap items-center gap-2 px-3 py-2 ${dragged === index ? "opacity-50" : ""} ${over === index && dragged !== index ? "bg-emerald-50 outline outline-2 outline-emerald-600" : ""}`}
+          >
+            <span title="Glisser pour changer l'ordre" className="cursor-grab">
+              <GripVertical className="size-4 text-muted-foreground" aria-hidden />
+            </span>
+            <span className="w-5 text-right text-xs tabular-nums text-muted-foreground">
+              {index + 1}.
+            </span>
             <div className="flex flex-col">
               <button
                 type="button"
                 aria-label={`Monter ${category.label}`}
                 disabled={index === 0 || move.isPending}
-                onClick={() => move.mutate({ index, delta: -1 })}
+                onClick={() => move.mutate({ from: index, to: index - 1 })}
                 className="text-muted-foreground disabled:opacity-30"
               >
                 <ArrowUp className="size-3.5" />
@@ -135,7 +180,7 @@ export function LibraryCategoriesAdmin() {
                 type="button"
                 aria-label={`Descendre ${category.label}`}
                 disabled={index === categories.length - 1 || move.isPending}
-                onClick={() => move.mutate({ index, delta: 1 })}
+                onClick={() => move.mutate({ from: index, to: index + 1 })}
                 className="text-muted-foreground disabled:opacity-30"
               >
                 <ArrowDown className="size-3.5" />
@@ -238,12 +283,21 @@ function CategoryEditor({
       const removed = [...initial].filter((id) => !chosen.has(id));
       if (added.length) {
         const sortOf = new Map(rows.map((row) => [row.id, row.sort]));
+        const last = Math.max(
+          0,
+          ...(categoriesData.data?.links ?? [])
+            .filter((link) => link.category_id === category.id)
+            .map((link) => link.sort),
+        );
         const { error } = await supabase.from("bw_library_category_items").upsert(
-          added.map((item_id) => ({
-            category_id: category.id,
-            item_id,
-            sort: sortOf.get(item_id) ?? 100,
-          })),
+          // Ajoutées à la fin de la thématique, dans l'ordre de la bibliothèque.
+          added
+            .sort((a, b) => (sortOf.get(a) ?? 0) - (sortOf.get(b) ?? 0))
+            .map((item_id, index) => ({
+              category_id: category.id,
+              item_id,
+              sort: last + (index + 1) * 10,
+            })),
           { onConflict: "category_id,item_id", ignoreDuplicates: true },
         );
         if (error) throw new Error(error.message);

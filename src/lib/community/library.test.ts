@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { AvatarRow } from "./avatars";
-import { groupLibrary, normalizeSearch, UNSORTED } from "./library";
+import { groupLibrary, moveInList, normalizeSearch, renumber, UNSORTED } from "./library";
 
 const row = (id: string, sort: number, kind: AvatarRow["kind"] = "other"): AvatarRow => ({
   id,
@@ -59,5 +59,22 @@ describe("normalizeSearch", () => {
   it("ignore accents et majuscules", () => {
     expect(normalizeSearch("  Réactions ")).toBe("reactions");
     expect(normalizeSearch("Mâalem")).toBe("maalem");
+  });
+});
+
+describe("ordre de la bibliothèque", () => {
+  it("déplace un élément vers une autre place", () => {
+    expect(moveInList(["a", "b", "c", "d"], 3, 0)).toEqual(["d", "a", "b", "c"]);
+    expect(moveInList(["a", "b", "c"], 0, 2)).toEqual(["b", "c", "a"]);
+    expect(moveInList(["a", "b"], 0, 5)).toEqual(["a", "b"]);
+  });
+
+  it("renumérote 10, 20, 30 en ne gardant que les changements, même avec des rangs égaux", () => {
+    const list = [
+      { id: "a", sort: 10 },
+      { id: "b", sort: 10 },
+      { id: "c", sort: 30 },
+    ];
+    expect(renumber(list).map(({ item, sort }) => [item.id, sort])).toEqual([["b", 20]]);
   });
 });

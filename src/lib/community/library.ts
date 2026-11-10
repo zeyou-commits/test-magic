@@ -65,6 +65,27 @@ export function groupLibrary(
   return groups;
 }
 
+/** Déplace l'élément `from` à la place `to` (glisser-déposer, flèches) ; renvoie une copie. */
+export function moveInList<T>(list: readonly T[], from: number, to: number): T[] {
+  const next = [...list];
+  if (from < 0 || from >= next.length || to < 0 || to >= next.length || from === to) return next;
+  const [moved] = next.splice(from, 1);
+  next.splice(to, 0, moved as T);
+  return next;
+}
+
+/**
+ * Nouvel ordre → valeurs `sort` 10, 20, 30… ; ne renvoie que celles qui changent (moins
+ * d'écritures, et deux éléments ne gardent jamais le même rang).
+ */
+export function renumber<T extends { sort: number }>(
+  ordered: readonly T[],
+): { item: T; sort: number }[] {
+  return ordered
+    .map((item, index) => ({ item, sort: (index + 1) * 10 }))
+    .filter(({ item, sort }) => item.sort !== sort);
+}
+
 /** Sans le script des catégories : l'ancien rangement par type, sans aucune restriction non plus. */
 function groupByKind(rows: AvatarRow[]): LibraryGroup[] {
   return (Object.keys(avatarKinds) as AvatarKind[]).map((kind) => ({

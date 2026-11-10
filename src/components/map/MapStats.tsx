@@ -145,7 +145,7 @@ export function MapStats({
   const shown = pinned ?? hoverId;
   const alerts = useVesselAlerts();
   const item =
-    "flex w-full flex-col items-center justify-center gap-0.5 rounded-xl px-1 py-1.5 text-[11px] font-bold leading-none tabular-nums text-foreground transition-colors hover:bg-secondary data-[active=true]:bg-primary data-[active=true]:text-primary-foreground md:min-w-11 md:text-xs [@media(max-width:767px)_and_(max-height:700px)]:flex-row [@media(max-width:767px)_and_(max-height:700px)]:gap-1 [@media(max-width:767px)_and_(max-height:700px)]:py-1";
+    "flex w-full min-w-10 flex-col items-center justify-center gap-0.5 rounded-xl px-1 py-1.5 text-[11px] font-bold leading-none tabular-nums text-foreground transition-colors hover:bg-secondary data-[active=true]:bg-primary data-[active=true]:text-primary-foreground md:min-w-11 md:text-xs [@media(max-width:767px)_and_(max-height:700px)]:flex-row [@media(max-width:767px)_and_(max-height:700px)]:gap-1 [@media(max-width:767px)_and_(max-height:700px)]:py-1";
   const shipList = shown === "sea" ? atSea : shown === "upcoming" ? upcomingShips : [];
   // Icônes parlantes sans légende : navire qui tangue (en mer, avec point « en direct »),
   // navire à l'ancre (à quai), bâtiment (compagnies), phare (ports).
@@ -204,7 +204,8 @@ export function MapStats({
         if (e.pointerType === "mouse") hoverClose();
       }}
     >
-      {/* Raccourcis empilés à la verticale, icône au-dessus du nombre : colonne étroite.
+      {/* Raccourcis empilés à la verticale, icône au-dessus du nombre : colonne étroite, sans
+          libellé (le nom complet reste lu par les lecteurs d'écran et affiché au survol).
           Mobile : à gauche, sous la légende, pour dégager l'est de la carte (ports italiens). */}
       <div className="flex w-max flex-col items-stretch md:ml-auto gap-0.5 rounded-2xl border border-border bg-background/95 p-1 shadow-md backdrop-blur md:shadow-lg">
         {search ? <div className="border-b border-border pb-0.5">{search}</div> : null}
@@ -229,10 +230,6 @@ export function MapStats({
               {icon}
             </span>
             {count}
-            {/* Téléphone : pas de survol, le libellé reste écrit sous le chiffre. */}
-            <span aria-hidden className="bw-mapstat-label md:hidden">
-              {label}
-            </span>
             {/* Libellé court au survol (ordinateur), à gauche de la colonne. */}
             {shown !== id ? (
               <span

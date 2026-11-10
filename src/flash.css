@@ -15082,24 +15082,6 @@ img[data-logo="dark"] {
   color: #6b7a82;
 }
 
-/* Compteurs de la carte sur téléphone : le libellé sous le chiffre. */
-.bw-mapstat-label {
-  display: block;
-  margin-top: 1px;
-  font-size: 9px;
-  font-weight: 600;
-  line-height: 1.1;
-  letter-spacing: -0.01em;
-  color: #5b6b73;
-  white-space: nowrap;
-}
-/* Ordinateur : libellé au survol seulement, la colonne reste courte au-dessus de « Signaler ». */
-@media (min-width: 768px) {
-  .bw-mapstat-label {
-    display: none;
-  }
-}
-
 /* Barre du bas : la pastille du profil (30 px) ne décale plus son libellé par rapport aux autres onglets (icônes de 20 px). */
 .bw-me-tab__ghost,
 .bw-me-tab__wrap {

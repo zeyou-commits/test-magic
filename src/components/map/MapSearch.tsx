@@ -138,10 +138,11 @@ export function MapSearch({
           onOpen();
           setOpen(true);
         }}
-        className="flex w-full flex-col items-center justify-center gap-0.5 rounded-xl px-1 py-1.5 text-[9px] font-bold leading-none text-primary transition-colors hover:bg-secondary md:min-w-11 md:text-[10px] [@media(max-width:767px)_and_(max-height:700px)]:py-1"
+        className="flex w-full min-w-10 [@media(max-width:767px)_and_(min-height:701px)]:min-h-10 flex-col items-center justify-center gap-0.5 rounded-xl px-1 py-1.5 text-[9px] font-bold leading-none text-primary transition-colors hover:bg-secondary md:min-w-11 md:text-[10px] [@media(max-width:767px)_and_(max-height:700px)]:py-1"
       >
         <Search className="size-4 md:size-[18px]" aria-hidden />
-        <span className="[@media(max-width:767px)_and_(max-height:700px)]:hidden">Loupe</span>
+        {/* Téléphone : la loupe seule, pour une colonne étroite. */}
+        <span className="max-md:hidden">Loupe</span>
       </button>
       <Dialog open={open} onOpenChange={(next) => (next ? setOpen(true) : close())}>
         <DialogContent className="top-0 flex h-dvh max-w-none translate-y-0 flex-col gap-3 rounded-none sm:top-[12%] sm:h-auto sm:max-h-[76dvh] sm:max-w-lg sm:rounded-2xl">

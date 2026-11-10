@@ -46,6 +46,7 @@ import { physicalStatus, projectedPosition } from "@/lib/ferry/tracking";
 import { portTimeZone, wallTimeInZone } from "@/lib/ferry/time";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { ITINERARY_CHOOSE_EVENT, type ItineraryMapPreview } from "@/lib/ferry/itinerary";
+import { JOURNEY_REFRAME_EVENT } from "@/lib/ferry/journeyFilm";
 
 type FleetFrame = {
   type: "FeatureCollection";
@@ -415,6 +416,8 @@ export default function FerryMap({
   const itineraryCameraRef = useRef<string | null>(null);
   // Les bulles des trajets possibles, posées sur la traversée de chacun.
   const choiceMarkersRef = useRef<Marker[]>([]);
+  // Replace les bulles quand la carte bouge (leurs places libres dépendent du cadrage).
+  const placeChoicesRef = useRef<(() => void) | null>(null);
   const readyRef = useRef(false);
   // Filtres d'origine des calques de la flotte, rétablis après le trajet porte à porte.
   const shipFilters = useRef(new Map<string, unknown>());
@@ -1569,29 +1572,123 @@ export default function FerryMap({
     const source = map.getSource("itinerary-preview") as GeoJSONSource;
     choiceMarkersRef.current.forEach((marker) => marker.remove());
     choiceMarkersRef.current = [];
+    if (placeChoicesRef.current) map.off("moveend", placeChoicesRef.current);
+    placeChoicesRef.current = null;
     if (itineraryPreview?.choices?.length) {
-      for (const choice of itineraryPreview.choices) {
+      // Une bulle par trajet, posée sur SA traversée : « 🥈 Alicante → Oran » puis « 34 h 25 · 808 € »,
+      // pointe vers le tracé. Le trajet choisi d'abord, puis le podium, puis les autres.
+      const ordered = [...itineraryPreview.choices].sort(
+        (a, b) => (a.priority ?? 99) - (b.priority ?? 99),
+      );
+      const bubbles = ordered.map((choice) => {
         const element = document.createElement("button");
         element.type = "button";
         element.setAttribute(
           "aria-label",
           `${choice.selected ? "Trajet choisi" : "Choisir ce trajet"} : ${choice.title}, ${choice.detail}`,
         );
-        // Pendant le film, les bulles s'effacent (la carte appartient au voyage).
-        element.className = `in-data-[film=true]:hidden flex items-center gap-1 whitespace-nowrap rounded-full border px-2.5 py-1 text-[11.5px] font-bold leading-tight shadow-md transition ${
-          choice.selected
-            ? "border-[#0e7a43] bg-[#0e7a43] text-white"
-            : "border-[#d5dcdf] bg-white text-[#16324a] hover:border-[#0e7a43]"
-        }`;
-        element.innerHTML = `<span aria-hidden="true">${choice.medal}</span><span>${choice.detail}</span>`;
+        element.className = "bw-route-choice in-data-[film=true]:hidden";
+        element.dataset["selected"] = choice.selected ? "true" : "";
+        const route = document.createElement("strong");
+        route.textContent = `${choice.medal ? `${choice.medal} ` : ""}${choice.title}`;
+        const detail = document.createElement("span");
+        detail.textContent = choice.detail;
+        // Version courte : la médaille passe devant la durée et le prix.
+        if (choice.medal) detail.dataset["medal"] = `${choice.medal} `;
+        element.append(route, detail);
         element.addEventListener("click", (event) => {
           event.stopPropagation();
           window.dispatchEvent(new CustomEvent(ITINERARY_CHOOSE_EVENT, { detail: choice.id }));
         });
-        const marker = new Marker({ element, anchor: "center" }).setLngLat(choice.point).addTo(map);
-        marker.getElement().style.zIndex = choice.selected ? "6" : "5";
+        const marker = new Marker({ element, anchor: "bottom" }).setLngLat(choice.point).addTo(map);
+        marker.getElement().style.zIndex = choice.selected ? "7" : String(6 - Math.min(3, choice.priority ?? 3));
         choiceMarkersRef.current.push(marker);
-      }
+        return { choice, element, marker };
+      });
+      const place = () => {
+        type Box = { left: number; right: number; top: number; bottom: number };
+        const taken: Box[] = [];
+        const overlap = (a: Box, b: Box) =>
+          a.left < b.right + 4 && b.left < a.right + 4 && a.top < b.bottom + 4 && b.top < a.bottom + 4;
+        const width = map.getContainer().clientWidth;
+        const height = map.getContainer().clientHeight;
+        const fractions = [0.5, 0.42, 0.58, 0.34, 0.66, 0.26, 0.74, 0.18, 0.82, 0.12, 0.88];
+        // Où poser une bulle : sur sa traversée, au-dessus ou au-dessous, centrée ou décalée.
+        const tryPlace = (choice: (typeof bubbles)[number]["choice"], element: HTMLElement) => {
+          const w = element.offsetWidth || 150;
+          const h = (element.offsetHeight || 40) + 8;
+          const path = choice.path?.length ? choice.path : [choice.point];
+          let best: { at: [number, number]; box: Box; hits: number; dx: number; below: boolean } | null = null;
+          for (const fraction of fractions) {
+            const at = path[Math.min(path.length - 1, Math.round(fraction * (path.length - 1)))]!;
+            const p = map.project(at);
+            for (const below of [false, true])
+              for (const dx of [0, -w * 0.36, w * 0.36]) {
+                const top = below ? p.y + 8 : p.y - h;
+                const box = { left: p.x + dx - w / 2, right: p.x + dx + w / 2, top, bottom: top + h };
+                const outside = box.left < 0 || box.right > width || box.top < 0 || box.bottom > height;
+                const hits = taken.filter((other) => overlap(box, other)).length + (outside ? 0.5 : 0);
+                if (!best || hits < best.hits) best = { at, box, hits, dx, below };
+                if (hits === 0) return best;
+              }
+          }
+          return best;
+        };
+        // Si le podium manque déjà de place, les autres trajets restent des points (jamais à ses dépens).
+        let crowded = false;
+        for (const { choice, element, marker } of bubbles) {
+          const podium = (choice.priority ?? 99) <= 3;
+          element.dataset["mode"] = "bubble";
+          let best = crowded && !podium ? null : tryPlace(choice, element);
+          if (!best && !podium) {
+            const path = choice.path?.length ? choice.path : [choice.point];
+            element.dataset["mode"] = "dot";
+            element.style.removeProperty("--tail-x");
+            delete element.dataset["below"];
+            marker.setOffset([0, 0]);
+            marker.setLngLat(path[Math.round((path.length - 1) / 2)]!);
+            continue;
+          }
+          if (best && best.hits >= 1 && podium && !choice.selected) {
+            // Plus de place : la version courte (médaille, durée, prix), puis on réessaie.
+            element.dataset["mode"] = "compact";
+            crowded = true;
+            best = tryPlace(choice, element);
+          }
+          if (!best) continue;
+          if (best.hits >= 1 && podium && !choice.selected) {
+            // Toujours pas de place : une pastille ronde avec la médaille, sur sa traversée.
+            const path = choice.path?.length ? choice.path : [choice.point];
+            element.dataset["mode"] = "medal";
+            element.style.removeProperty("--tail-x");
+            delete element.dataset["below"];
+            marker.setOffset([0, 0]);
+            marker.setLngLat(path[Math.round((path.length - 1) / 2)]!);
+            continue;
+          }
+          if (best.hits >= 1 && !podium) {
+            // Pas de place sans chevaucher : un petit point sur la traversée, qu'on touche pour la choisir.
+            const path = choice.path?.length ? choice.path : [choice.point];
+            element.dataset["mode"] = "dot";
+            element.style.removeProperty("--tail-x");
+            delete element.dataset["below"];
+            marker.setOffset([0, 0]);
+            marker.setLngLat(path[Math.round((path.length - 1) / 2)]!);
+            continue;
+          }
+          const w = element.offsetWidth || 150;
+          const h = (element.offsetHeight || 40) + 8;
+          element.dataset["below"] = best.below ? "true" : "";
+          // La pointe reste sur le tracé même quand la bulle est décalée sur le côté.
+          element.style.setProperty("--tail-x", `${Math.round(w / 2 - best.dx)}px`);
+          marker.setOffset([best.dx, best.below ? h + 8 : 0]);
+          marker.setLngLat(best.at);
+          taken.push(best.box);
+        }
+      };
+      requestAnimationFrame(place);
+      placeChoicesRef.current = place;
+      map.on("moveend", place);
     }
     if (!itineraryPreview) {
       source.setData({ type: "FeatureCollection", features: [] });
@@ -1606,6 +1703,8 @@ export default function FerryMap({
     // Pendant le film, la caméra lui appartient : ce cadrage ne doit pas la reprendre.
     const filmPlaying = Boolean(containerRef.current?.dataset["film"]);
     if (!filmPlaying) map.setPadding({ top: 0, right: 0, bottom: 0, left: 0 });
+    // Film affiché (vue d'ensemble du trajet) : il recadre lui-même sur la place visible.
+    else window.dispatchEvent(new Event(JOURNEY_REFRAME_EVENT));
     const preview = itineraryPreview;
     source.setData({
       type: "FeatureCollection",

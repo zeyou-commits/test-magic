@@ -1202,6 +1202,12 @@ function Index() {
     if (window.innerWidth >= 768)
       document.getElementById("carte")?.scrollIntoView({ behavior: "instant" });
     if (panelMode === "itinerary" && !selection) {
+      // Téléphone : déjà sur Route, le bouton plie ou déplie le volet de Route (comme « Carte »
+      // pour le sien) au lieu de ramener à la carte.
+      if (window.innerWidth < 768) {
+        setPanelLevel((level) => (level === 0 ? 1 : 0));
+        return;
+      }
       resetToMap();
       return;
     }

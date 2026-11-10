@@ -31,6 +31,10 @@ export interface ItineraryMapPreview {
 export interface ItineraryMapChoice {
   id: string;
   point: [number, number];
+  /** La traversée de ce trajet : la bulle se pose à un endroit libre de ce tracé. */
+  path?: [number, number][];
+  /** 0 pour le trajet choisi, puis le rang (podium d'abord) : ordre de placement des bulles. */
+  priority?: number;
   medal: string;
   title: string;
   detail: string;

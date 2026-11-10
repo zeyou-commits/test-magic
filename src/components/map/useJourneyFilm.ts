@@ -9,6 +9,7 @@ import {
   formatMinutes,
   PAUSE_MIN,
   JOURNEY_FILM_EVENT,
+  JOURNEY_REFRAME_EVENT,
   JOURNEY_PICK_EVENT,
   JOURNEY_PICKED_EVENT,
   pausingAt,
@@ -512,10 +513,15 @@ export function useJourneyFilm(
 
       const padding = viewPadding();
       const fingerprint = `${film.key}|${padding.left},${padding.right},${padding.top},${padding.bottom}`;
-      if (overviewKey !== fingerprint) {
+      // Carte visible trop petite (volet déplié en grand) : on garde le cadrage d'avant plutôt
+      // qu'un zoom faux ; il se refait dès que le volet se replie (voir JOURNEY_REFRAME_EVENT).
+      const roomy =
+        container.clientHeight - padding.top - padding.bottom > 140 &&
+        container.clientWidth - padding.left - padding.right > 140;
+      if (overviewKey !== fingerprint && (roomy || !overview)) {
         overviewKey = fingerprint;
-        const camera = frameAll([...film.road, ...film.sea, ...film.last], 0.4, padding);
-        overview = camera ? { center: camera.center, zoom: camera.zoom - 0.2 } : null;
+        const camera = roomy ? frameAll([...film.road, ...film.sea, ...film.last], 0.4, padding) : null;
+        overview = camera ? { center: camera.center, zoom: camera.zoom - 0.2 } : overview;
       }
       const blend = wide * wide * (3 - 2 * wide);
       hideOverlay(!frame.demo && wide < 0.98);
@@ -604,6 +610,22 @@ export function useJourneyFilm(
       caption.style.left = `${(padding.left + container.clientWidth - padding.right) / 2}px`;
     };
 
+    // Le volet a changé de hauteur : on redessine la dernière image, le cadrage d'ensemble suit.
+    let lastFrame: JourneyFilmFrame | null = null;
+    let reframeLoop = 0;
+    const onReframe = () => {
+      if (!lastFrame || lastFrame.racers) return;
+      // La caméra est amortie : quelques images pour qu'elle rejoigne la nouvelle vue d'ensemble.
+      cancelAnimationFrame(reframeLoop);
+      const until = performance.now() + 800;
+      const step = (now: number) => {
+        if (!lastFrame) return;
+        draw(lastFrame);
+        if (now < until) reframeLoop = requestAnimationFrame(step);
+      };
+      reframeLoop = requestAnimationFrame(step);
+    };
+    window.addEventListener(JOURNEY_REFRAME_EVENT, onReframe);
     const onFrame = (event: Event) => {
       const frame = (event as CustomEvent<JourneyFilmFrame | null>).detail;
       if (frame?.racers) {
@@ -619,6 +641,7 @@ export function useJourneyFilm(
           clearRacers();
           raceKey = "";
         }
+        lastFrame = frame;
         draw(frame);
         return;
       }
@@ -697,6 +720,8 @@ export function useJourneyFilm(
     window.addEventListener(JOURNEY_PICK_EVENT, onPick);
     return () => {
       window.removeEventListener(JOURNEY_FILM_EVENT, onFrame);
+      window.removeEventListener(JOURNEY_REFRAME_EVENT, onReframe);
+      cancelAnimationFrame(reframeLoop);
       window.removeEventListener(JOURNEY_PICK_EVENT, onPick);
       marker.remove();
       clearRacers();

@@ -337,6 +337,8 @@ export function raceRanking<T extends RaceEntry>(entries: T[]) {
 
 /** Le dialogue entre le volet et la carte. */
 export const JOURNEY_FILM_EVENT = "bledway:journey-film";
+/** La carte a changé de place visible (volet replié ou déplié) : le film recadre son ensemble. */
+export const JOURNEY_REFRAME_EVENT = "bledway:journey-reframe";
 export const JOURNEY_PICK_EVENT = "bledway:journey-pick";
 export const JOURNEY_PICKED_EVENT = "bledway:journey-picked";
 export const JOURNEY_LAYOUT_EVENT = "bledway:journey-layout";

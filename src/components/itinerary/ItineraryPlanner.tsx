@@ -639,7 +639,9 @@ export function ItineraryPlanner({
       return {
         id: option.sailing.departure.id,
         point: arc[Math.floor(arc.length / 2)] ?? arc[0]!,
-        medal: ["🥇", "🥈", "🥉"][rank] ?? "🚢",
+        path: arc,
+        priority: chosen ? 0 : rank >= 0 ? rank + 1 : 99,
+        medal: ["🥇", "🥈", "🥉"][rank] ?? "",
         title: `${option.sailing.from.name} → ${option.sailing.to.name}`,
         detail: `${formatDuration(option.totalMinutes)} · ${numberFormat.format(option.totalEuro)} €`,
         selected: chosen,
@@ -1349,14 +1351,7 @@ export function ItineraryPlanner({
             <Play className="size-3.5" aria-hidden /> Voir sur la carte
           </button>
         ) : null}
-        <button
-          type="button"
-          onClick={onClose}
-          aria-label="Fermer le trajet porte à porte"
-          className="grid size-9 shrink-0 place-items-center rounded-full border border-border bg-card text-foreground hover:bg-secondary"
-        >
-          <X className="size-4" aria-hidden />
-        </button>
+        {/* Pas de ✕ : on replie le volet par sa poignée ; quitter Route passe par la barre du bas. */}
       </div>
       <form
         ref={formRef}

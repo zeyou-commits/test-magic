@@ -5,6 +5,15 @@ export interface Section {
   paragraphs: string[];
   bullets?: string[];
   table?: { headers: string[]; rows: string[][] };
+  /** Comparaison visuelle (barres horizontales), lisible aussi sans le graphique. */
+  bars?: { unit: string; note?: string; rows: { label: string; sub: string; value: number; display: string }[] };
+}
+/** La ligne dont parle un dossier : tracé en perspective et chiffres clés. */
+export interface LineGlance {
+  slug: string;
+  from: string;
+  to: string;
+  facts: { value: string; label: string }[];
 }
 export interface Article {
   slug: string;
@@ -19,6 +28,10 @@ export interface Article {
   tool?: string;
   /** Illustration du carnet de route : affichée sous le titre, reprise pour le partage et les données structurées. */
   illustration?: Illustration;
+  /** Ligne maritime concernée : affichée en tête de dossier. */
+  line?: LineGlance;
+  /** Chiffres clés affichés dans l'en-tête. */
+  keyFacts?: { value: string; label: string }[];
   /** Date de mise à jour propre au dossier (AAAA-MM-JJ), sinon la date éditoriale commune. */
   updated?: string;
 }

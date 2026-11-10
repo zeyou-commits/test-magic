@@ -15,6 +15,7 @@ import {
   StructuredData,
   textLink,
 } from "./Editorial";
+import { DossierHero, DurationBars, LinePerspective } from "./DossierVisuals";
 
 export function ArticlePage({ article }: { article: Article }) {
   const related = articles.filter((a) => article.related.includes(a.slug));
@@ -50,34 +51,35 @@ export function ArticlePage({ article }: { article: Article }) {
         ]}
       />
       <article>
-        <EditorialHero label="Dossier pratique" title={article.title} intro={article.description} />
         {article.illustration ? (
-          <figure className="mb-6">
-            <img
-              src={article.illustration.src}
-              alt={article.illustration.alt}
-              width={article.illustration.width}
-              height={article.illustration.height}
-              fetchPriority="high"
-              decoding="async"
-              className="h-auto w-full"
-            />
-            <figcaption className="mt-2 text-center text-sm italic text-muted-foreground">
-              {article.illustration.caption}
-            </figcaption>
-          </figure>
-        ) : null}
-        <p className="mb-6 text-sm text-muted-foreground">
-          BledWay · Dossier documentaire ·{" "}
-          <time dateTime={article.updated ?? EDITORIAL_DATE}>
-            Mis à jour le {displayDate(article.updated ?? EDITORIAL_DATE)}
-          </time>
-        </p>
+          <DossierHero article={article} updated={displayDate(article.updated ?? EDITORIAL_DATE)} />
+        ) : (
+          <>
+            <EditorialHero label="Dossier pratique" title={article.title} intro={article.description} />
+            <p className="mb-6 text-sm text-muted-foreground">
+              BledWay · Dossier documentaire ·{" "}
+              <time dateTime={EDITORIAL_DATE}>Mis à jour le {displayDate(EDITORIAL_DATE)}</time>
+            </p>
+          </>
+        )}
         <ReadingLayout sections={article.sections}>
           <AnswerBox>{article.answer}</AnswerBox>
-          {article.sections.map((section) => (
-            <ContentSection key={section.id} section={section} />
-          ))}
+          {article.line ? <LinePerspective line={article.line} /> : null}
+          {article.sections.map((section) =>
+            section.bars ? (
+              <section key={section.id} id={section.id} className="mt-10 scroll-mt-20">
+                <h2 className="font-display text-2xl font-bold tracking-tight">{section.title}</h2>
+                {section.paragraphs.map((p, i) => (
+                  <p key={i} className="mt-4 leading-7 text-muted-foreground">
+                    {p}
+                  </p>
+                ))}
+                <DurationBars bars={section.bars} title={section.title} />
+              </section>
+            ) : (
+              <ContentSection key={section.id} section={section} />
+            ),
+          )}
           {article.tool ? (
             <div className="mt-8 rounded-xl bg-secondary p-5">
               <p className="mb-3 font-semibold">Passer du dossier à votre situation</p>

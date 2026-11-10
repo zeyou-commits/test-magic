@@ -753,6 +753,22 @@ export const articles: Article[] = [
     answer:
       "Comptez 21 à 23 heures de mer entre Marseille et Alger : 21 h sur le Tariq Ibn Ziyad (Algérie Ferries), 22 h sur Le Cracovia (Nouris Elbahr Ferries), 22 à 23 h sur le Jean Nicoli et 23 h sur le Danielle Casanova (Corsica Linea). Ajoutez le passage au port avant et après : du portail de Marseille à la sortie du port d'Alger, prévoyez plutôt une trentaine d'heures.",
     updated: "2026-11-10",
+    keyFacts: [
+      { value: "21–23 h", label: "de mer selon le navire" },
+      { value: "1 nuit", label: "à bord" },
+      { value: "≈ 30 h", label: "de port à port" },
+    ],
+    line: {
+      slug: "marseille-alger",
+      from: "Marseille",
+      to: "Alger",
+      facts: [
+        { value: "3 compagnies", label: "sur la ligne" },
+        { value: "81 départs", label: "relevés sur un an" },
+        { value: "21 à 23 h", label: "durée annoncée" },
+        { value: "Arrivée en heure d'Alger", label: "UTC+1 toute l'année" },
+      ],
+    },
     illustration: {
       src: "/illustrations/carnet/cote-algerienne-en-vue-ferry.webp",
       share: "/illustrations/carnet/cote-algerienne-en-vue-ferry-partage.jpg",
@@ -768,14 +784,15 @@ export const articles: Article[] = [
         paragraphs: [
           "BledWay a relevé 81 départs Marseille → Alger programmés entre juin 2026 et juin 2027. La durée annoncée dépend surtout du navire, un peu de l'horaire. Elle se lit sur le billet : départ en heure de Paris, arrivée en heure d'Alger.",
         ],
-        table: {
-          headers: ["Compagnie", "Navire", "Durée annoncée", "Départs relevés"],
+        bars: {
+          unit: "h",
+          note: "Durées annoncées par les compagnies sur les départs relevés par BledWay (juin 2026 à juin 2027). Entre parenthèses : nombre de départs relevés.",
           rows: [
-            ["Algérie Ferries", "Tariq Ibn Ziyad", "21 h (parfois 23 h)", "18"],
-            ["Nouris Elbahr Ferries", "Le Cracovia", "22 h", "41"],
-            ["Corsica Linea", "Jean Nicoli", "22 à 23 h", "13"],
-            ["Corsica Linea", "Danielle Casanova", "23 h", "7"],
-            ["Corsica Linea", "Méditerranée", "20 h", "1"],
+            { label: "Méditerranée", sub: "Corsica Linea (1)", value: 20, display: "20 h" },
+            { label: "Tariq Ibn Ziyad", sub: "Algérie Ferries (18)", value: 21, display: "21 h" },
+            { label: "Le Cracovia", sub: "Nouris Elbahr Ferries (41)", value: 22, display: "22 h" },
+            { label: "Jean Nicoli", sub: "Corsica Linea (13)", value: 22.5, display: "22 à 23 h" },
+            { label: "Danielle Casanova", sub: "Corsica Linea (7)", value: 23, display: "23 h" },
           ],
         },
       },

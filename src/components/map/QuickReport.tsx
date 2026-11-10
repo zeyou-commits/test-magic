@@ -26,6 +26,14 @@ import {
   type Level,
 } from "@/lib/ferry/community";
 import { newsQuery } from "@/lib/ferry/flash";
+import { formatShortDay, formatTime } from "@/lib/ferry/format";
+import { routesQuery, vesselsQuery } from "@/lib/ferry/queries";
+import {
+  crossingsFromPort,
+  crossingWindow,
+  needsCrossing,
+  REPORT_WINDOW_DAYS,
+} from "@/lib/ferry/reportCrossings";
 import type { FleetShip } from "@/lib/ferry/fleet";
 import { distanceKm, farFromPortsNote } from "@/lib/ferry/locationHelp";
 import { haversineKm } from "@/lib/ferry/tracking";
@@ -93,7 +101,9 @@ const emptyDraft: Draft = {
 
 const failure = (message?: string) =>
   message &&
-  /Patientez|Maximum|déjà signalé|introuvable|sur place|Vos signalements concernent/.test(message)
+  /Patientez|Maximum|déjà signalé|introuvable|sur place|Vos signalements concernent|traversée/.test(
+    message,
+  )
     ? message
     : "L’envoi n’a pas abouti. Réessayez dans quelques instants.";
 
@@ -222,6 +232,8 @@ export function QuickReport({
   const [photos, setPhotos] = useState<PreparedPhoto[]>([]);
   const [photoConsent, setPhotoConsent] = useState(false);
   const [photoResult, setPhotoResult] = useState<string | null>(null);
+  // Équipe : « Voir au-delà de 7 jours » dans la liste des traversées.
+  const [beyond, setBeyond] = useState(false);
 
   const vessels = fleet.filter(
     (ship, index) =>
@@ -280,6 +292,7 @@ export function QuickReport({
     setPhotos([]);
     setPhotoConsent(false);
     setPhotoResult(null);
+    setBeyond(false);
     mutation.reset();
     setOpen(true);
   };
@@ -329,7 +342,45 @@ export function QuickReport({
   );
   const impact = Boolean(chosen?.onSite);
   const target = situation?.where === "port" ? draft.portId : draft.vesselId;
-  const selectedDeparture = departures.find((item) => item.id === draft.departureId);
+  // Retard, embarquement : on choisit la traversée parmi celles programmées au départ du port,
+  // sur les 7 prochains jours (l'équipe peut voir plus loin). Le serveur contrôle la même règle.
+  const crossingMode = situation?.where === "vessel" && needsCrossing(draft.category);
+  const wide = staff && beyond;
+  const { data: routes = [] } = useQuery(routesQuery);
+  const { data: allVessels = [] } = useQuery(vesselsQuery);
+  const portRouteIds = routes
+    .filter((route) => route.departure_port_id === draft.portId)
+    .map((route) => route.id);
+  const crossingsResult = useQuery({
+    queryKey: ["report-crossings", draft.portId, wide],
+    enabled: open && crossingMode && portRouteIds.length > 0,
+    staleTime: 60_000,
+    queryFn: async () => {
+      const { since, until } = crossingWindow(Date.now(), wide);
+      const { data, error } = await supabase
+        .from("departures")
+        .select("*")
+        .in("route_id", portRouteIds)
+        .gte("departure_at", since)
+        .lt("departure_at", until)
+        .order("departure_at")
+        .limit(500);
+      if (error) throw error;
+      return data as Departure[];
+    },
+  });
+  const crossings = crossingMode
+    ? crossingsFromPort(crossingsResult.data ?? [], routes, draft.portId, Date.now(), wide)
+    : [];
+  const crossingChosen = crossings.find((item) => item.id === draft.departureId);
+  // Traversée connue (fiche, traversée suivie) mais port pas encore choisi : son port de départ.
+  const knownDeparture = departures.find((item) => item.id === draft.departureId);
+  const knownPort = routes.find((route) => route.id === knownDeparture?.route_id)?.departure_port_id;
+  useEffect(() => {
+    if (crossingMode && !draft.portId && knownPort)
+      setDraft((current) => (current.portId ? current : { ...current, portId: knownPort }));
+  }, [crossingMode, draft.portId, knownPort]);
+  const selectedDeparture = crossingChosen ?? knownDeparture;
   const selectedShip = fleet.find(
     (ship) => ship.departureId === draft.departureId && ship.vesselId === draft.vesselId,
   );
@@ -358,6 +409,7 @@ export function QuickReport({
   const ready = Boolean(
     situation &&
     target &&
+    (!crossingMode || crossingChosen?.vessel_id === draft.vesselId) &&
     (!situation.required || chosen || (draft.category === "service" && draft.detail)),
   );
 
@@ -588,15 +640,29 @@ export function QuickReport({
         </div>
 
         <fieldset className="bw-report-field" disabled={mutation.isPending}>
-          <legend>{situation.where === "port" ? "Où êtes-vous ?" : "Quel navire ?"}</legend>
-          {situation.where === "port" ? (
+          <legend>
+            {situation.where === "port"
+              ? "Où êtes-vous ?"
+              : crossingMode
+                ? "Quelle traversée ?"
+                : "Quel navire ?"}
+          </legend>
+          {situation.where === "port" || crossingMode ? (
             <div className="bw-report-where-row">
               <select
                 value={draft.portId ?? ""}
-                onChange={(e) => setDraft({ ...draft, portId: e.target.value || null })}
-                aria-label="Port"
+                onChange={(e) =>
+                  setDraft({
+                    ...draft,
+                    portId: e.target.value || null,
+                    ...(crossingMode ? { departureId: null, vesselId: null } : {}),
+                  })
+                }
+                aria-label={crossingMode ? "Port de départ" : "Port"}
               >
-                <option value="">Choisir le port…</option>
+                <option value="">
+                  {crossingMode ? "Choisir le port de départ…" : "Choisir le port…"}
+                </option>
                 {[...ports]
                   .sort((a, b) => a.name.localeCompare(b.name, "fr"))
                   .map((port) => (
@@ -649,6 +715,67 @@ export function QuickReport({
               </optgroup>
             </select>
           )}
+          {crossingMode && draft.portId ? (
+            <div className="bw-report-crossings">
+              {crossingsResult.isLoading ? (
+                <small>Recherche des traversées…</small>
+              ) : crossings.length ? (
+                <div role="radiogroup" aria-label="Traversées au départ de ce port">
+                  {crossings.map((crossing) => {
+                    const route = routes.find((item) => item.id === crossing.route_id);
+                    const vessel = allVessels.find((item) => item.id === crossing.vessel_id);
+                    const selected = crossing.id === draft.departureId;
+                    return (
+                      <button
+                        key={crossing.id}
+                        type="button"
+                        role="radio"
+                        aria-checked={selected}
+                        disabled={!crossing.vessel_id}
+                        onClick={() =>
+                          setDraft({
+                            ...draft,
+                            departureId: crossing.id,
+                            vesselId: crossing.vessel_id,
+                          })
+                        }
+                      >
+                        <strong>
+                          {formatShortDay(crossing.departure_at)} ·{" "}
+                          {formatTime(crossing.departure_at)}
+                        </strong>
+                        <span>
+                          → {portName(route?.arrival_port_id ?? null) ?? "Destination"} ·{" "}
+                          {vessel?.name ?? "navire pas encore annoncé"}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+              ) : (
+                <small>
+                  {wide
+                    ? "Aucune traversée programmée au départ de ce port."
+                    : `Aucune traversée programmée au départ de ce port dans les ${REPORT_WINDOW_DAYS} prochains jours.`}
+                </small>
+              )}
+              {staff ? (
+                <button
+                  type="button"
+                  className="bw-report-crossings__more"
+                  aria-pressed={beyond}
+                  onClick={() => {
+                    setBeyond((value) => !value);
+                    setDraft({ ...draft, departureId: null, vesselId: null });
+                  }}
+                >
+                  {beyond
+                    ? `Revenir aux ${REPORT_WINDOW_DAYS} prochains jours`
+                    : `Voir au-delà de ${REPORT_WINDOW_DAYS} jours (équipe)`}
+                </button>
+              ) : null}
+            </div>
+          ) : null}
           {locating === "far" ? (
             <small>{farNote}</small>
           ) : locating === "denied" ? (

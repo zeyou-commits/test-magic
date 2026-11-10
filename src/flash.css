@@ -1169,6 +1169,59 @@ body:has(.bw-flash-sheet[data-state="open"]) .bw-header {
   font-weight: 600;
   color: #0e7a43;
 }
+/* Retard, embarquement : la traversée concernée, au départ du port choisi. */
+.bw-report-crossings {
+  display: grid;
+  gap: 8px;
+  margin-top: 10px;
+}
+.bw-report-crossings [role="radiogroup"] {
+  display: grid;
+  gap: 6px;
+  max-height: 232px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+.bw-report-crossings [role="radio"] {
+  display: grid;
+  gap: 2px;
+  width: 100%;
+  padding: 9px 12px;
+  border: 1px solid #dcdad0;
+  border-radius: 12px;
+  background: #ffffff;
+  text-align: left;
+  font-size: 13px;
+  color: #12303f;
+}
+.bw-report-crossings [role="radio"] strong {
+  font-weight: 700;
+}
+.bw-report-crossings [role="radio"] span {
+  color: #5b6770;
+}
+.bw-report-crossings [role="radio"][aria-checked="true"] {
+  border-color: #0e7a43;
+  background: #e8f5ee;
+  box-shadow: inset 0 0 0 1px #0e7a43;
+}
+.bw-report-crossings [role="radio"]:disabled {
+  opacity: 0.55;
+}
+.bw-report-crossings__more {
+  justify-self: start;
+  padding: 6px 10px;
+  border: 1px dashed #0e7a43;
+  border-radius: 999px;
+  background: transparent;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: #0e7a43;
+}
+.bw-report-crossings__more[aria-pressed="true"] {
+  border-style: solid;
+  background: #e8f5ee;
+}
 .bw-report-options {
   display: flex;
   flex-wrap: wrap;
@@ -8214,14 +8267,16 @@ label:has(> input.sr-only) {
 }
 
 /* Pendant le film, la carte appartient au voyage : les raccourcis s'effacent,
-   les boutons Salons et Signaler aussi, et reviennent ensuite. */
-body:has([data-film="true"]) [data-map-rail] {
+   les boutons Salons et Signaler aussi, et reviennent ensuite.
+   Seule la carte elle-même compte : la légende du film, cachée, ne doit jamais
+   faire disparaître ces boutons. */
+body:has(.bw-map-canvas [data-film="true"]:not(.bw-film-caption)) [data-map-rail] {
   display: none;
 }
 .bw-report {
   transition: opacity 0.4s ease;
 }
-body:has([data-film="true"]) .bw-report {
+body:has(.bw-map-canvas [data-film="true"]:not(.bw-film-caption)) .bw-report {
   opacity: 0;
   pointer-events: none;
 }

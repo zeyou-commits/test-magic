@@ -1,4 +1,4 @@
-import { JOURNEY_LAYOUT_EVENT, type JourneyLayout } from "@/lib/ferry/journeyFilm";
+import { JOURNEY_LAYOUT_EVENT, publishFilmFrame, type JourneyLayout } from "@/lib/ferry/journeyFilm";
 import { counterFilters, syncFilters, matchesTraffic } from "@/lib/ferry/filterSync";
 import { seoHead } from "@/lib/seo/site";
 import { DataUnavailableNotice } from "@/components/layout/DataUnavailableNotice";
@@ -1080,6 +1080,8 @@ function Index() {
     setActiveShortcut(null);
     setShortcutMenuOpen(false);
     window.dispatchEvent(new Event("batogo:close-filters"));
+    // Le film de la Route ne survit jamais au retour à la carte (il masque Signaler et les raccourcis).
+    publishFilmFrame(null);
   };
 
   closePanelRef.current = resetToMap;
@@ -1595,26 +1597,25 @@ function Index() {
                       : (panelMode ?? "map")
               }
               onOpenMap={() => {
-                // Plus bas dans la page, le bouton ramène d'abord à la carte, volet replié.
-                if (window.scrollY > 40) {
+                // Toujours le même résultat : la carte d'accueil, ses raccourcis, Signaler et Salon.
+                // Le bouton ne laisse jamais un film, « Ma traversée », une fiche ou un écran
+                // (Route, Départs, recherche) par-dessus la carte.
+                const scrolled = window.scrollY > 40;
+                const elsewhere = Boolean(voyage) || panelMode !== null || Boolean(selection);
+                if (elsewhere) {
+                  if (voyage) leaveVoyage();
+                  else resetToMap();
+                  setPanelLevel(voyage ? 1 : 0);
+                } else if (scrolled) {
+                  // Plus bas dans la page, le bouton ramène d'abord à la carte, volet replié.
                   setPanelLevel(0);
-                  // Après le repli du volet, qui décale encore la page.
+                } else {
+                  publishFilmFrame(null);
+                  setPanelLevel((level) => (level === 0 ? 1 : 0));
+                }
+                // Après le repli du volet, qui décale encore la page.
+                if (scrolled)
                   window.setTimeout(() => window.scrollTo({ top: 0, behavior: "instant" }), 60);
-                  return;
-                }
-                // Depuis « Ma traversée » : retour à la carte et au volet d'accueil, comme avant.
-                if (voyage) {
-                  leaveVoyage();
-                  return;
-                }
-                // Depuis Route, Départs, la recherche ou une fiche : retour à l'accueil de la carte,
-                // volet replié comme à l'arrivée (le bouton ne pilote pas le volet de l'autre écran).
-                if (panelMode !== null || selection) {
-                  resetToMap();
-                  setPanelLevel(0);
-                  return;
-                }
-                setPanelLevel((level) => (level === 0 ? 1 : 0));
               }}
               onOpenVoyage={() => {
                 if (voyage) setPanelLevel((level) => (level === 0 ? 1 : 0));

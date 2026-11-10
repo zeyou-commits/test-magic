@@ -340,6 +340,8 @@ export function useJourneyFilm(
       shown = false;
       marker.remove();
       caption.hidden = true;
+      // La légende cachée ne garde aucune trace du film (les boutons de la carte en dépendent).
+      caption.dataset["film"] = "";
       delete container.dataset["film"];
       clearRacers();
       clearCard();
@@ -632,6 +634,7 @@ export function useJourneyFilm(
         publish([]);
       }
       hideFrame();
+      caption.dataset["film"] = "";
       overviewKey = "";
       if (wasDemo) {
         wasDemo = false;
@@ -700,6 +703,9 @@ export function useJourneyFilm(
       clearCard();
       caption.remove();
       map.off("click", pick);
+      // La carte redevient normale : un film interrompu ne laisse pas les boutons masqués.
+      delete container.dataset["film"];
+      delete container.dataset["picking"];
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [mapRef, containerRef, ready]);

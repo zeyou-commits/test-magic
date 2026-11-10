@@ -4,17 +4,96 @@ import {
   boardingBlend,
   filmChips,
   filmFrame,
+  filmTimes,
   filmZoom,
+  formatMinutes,
+  PAUSE_MIN,
   JOURNEY_FILM_EVENT,
   JOURNEY_PICK_EVENT,
   JOURNEY_PICKED_EVENT,
   pausingAt,
+  type JourneyFilm,
   type JourneyFilmFrame,
   type LngLat,
   type PickTarget,
 } from "@/lib/ferry/journeyFilm";
 
 const SOURCE = "journey-film";
+/** Le tracé parcouru, à part : son dégradé (line-progress) demande les mesures de ligne. */
+const TRAIL = "journey-film-trail";
+/** Le voile posé sur le fond de carte pendant le film : le trajet ressort, le reste s'adoucit. */
+const VEIL = "journey-veil";
+const VEIL_OPACITY = 0.42;
+/** Une carte du carnet reste quelques secondes, puis s'efface jusqu'à l'étape suivante. */
+const CARD_MS = 4_200;
+
+type CardContent = { image: string; kicker: string; title: string; detail: string };
+const near = (a: LngLat | undefined, b: LngLat) =>
+  !!a && Math.abs(a[0] - b[0]) < 0.08 && Math.abs(a[1] - b[1]) < 0.08;
+/** Le nom d'un lieu du trajet, quand le film le connaît (l'exemple le connaît, un vrai trajet pas toujours). */
+const placeAt = (film: JourneyFilm, point: LngLat | undefined) =>
+  film.pins.find((pin) => near(point, pin.point))?.label;
+
+/** Le carnet de voyage : une petite carte illustrée par étape, avec nos cabas. */
+function cardFor(film: JourneyFilm, id: string, label: string): CardContent {
+  const art = (name: string) => `/cabas/humeurs/${name}.webp`;
+  if (id === "done") {
+    const town = placeAt(film, film.last.at(-1) ?? film.sea.at(-1));
+    return {
+      image: art("33_bien_arrive"),
+      kicker: town ? `Arrivée à ${town}` : "Arrivée",
+      title: "Bien arrivé au bled !",
+      detail: `${formatMinutes(filmTimes(film).total)} de porte à porte`,
+    };
+  }
+  if (id.includes("pause"))
+    return {
+      image: art("22_msemen"),
+      kicker: "Pause",
+      title: "On souffle un peu",
+      detail: `${PAUSE_MIN} min de pause conseillée`,
+    };
+  if (id === "road") {
+    const town = placeAt(film, film.road[0]);
+    return {
+      image: art("05_yallah"),
+      kicker: town ? `Départ de ${town}` : "Le départ",
+      title: "Yallah, on prend la route !",
+      detail: `${label} jusqu'au port`,
+    };
+  }
+  if (id === "port") {
+    const town = placeAt(film, film.road.at(-1));
+    return {
+      image: art("11_file_attente"),
+      kicker: town ? `Port de ${town}` : "Au port",
+      title: "Attente et formalités",
+      detail: `${formatMinutes(film.boardMin)} avant d'embarquer`,
+    };
+  }
+  if (id === "sea")
+    return {
+      image: art("17_embarquement"),
+      kicker: "La traversée",
+      title: "On embarque !",
+      detail: `${formatMinutes(film.ferryMin)} de mer`,
+    };
+  if (id === "disembark") {
+    const town = placeAt(film, film.sea.at(-1));
+    return {
+      image: art("29_douane_ok"),
+      kicker: town ? `Arrivée à ${town}` : "L'arrivée",
+      title: "Terre en vue !",
+      detail: `${formatMinutes(film.disembarkMin)} pour sortir du port`,
+    };
+  }
+  return {
+    image: art("10_route_longue"),
+    kicker: "Dernière route",
+    title: "Direction le bled",
+    detail: label,
+  };
+}
 /** Ce qui s'efface pendant la démonstration : elle ne doit pas se mêler aux vrais navires. */
 const QUIET_LAYERS = [
   "ferry-routes-glow",
@@ -74,44 +153,98 @@ export function useJourneyFilm(
     if (!ready || !map || !container) return;
     const ensureLayers = () => {
       if (map.getSource(SOURCE)) return;
+      // Le voile, sous tout le film : le fond de carte s'adoucit et le trajet ressort.
+      map.addSource(VEIL, {
+        type: "geojson",
+        data: {
+          type: "Polygon",
+          coordinates: [
+            [
+              [-180, -85],
+              [180, -85],
+              [180, 85],
+              [-180, 85],
+              [-180, -85],
+            ],
+          ],
+        },
+      });
+      map.addLayer({
+        id: VEIL,
+        type: "fill",
+        source: VEIL,
+        paint: {
+          "fill-color": "#f7f3ea",
+          "fill-opacity": 0,
+          "fill-opacity-transition": { duration: 700, delay: 0 },
+        },
+      });
       map.addSource(SOURCE, { type: "geojson", data: { type: "FeatureCollection", features: [] } });
-      const lineLayer = (id: string, kind: string, paint: Record<string, unknown>) =>
+      map.addSource(TRAIL, {
+        type: "geojson",
+        lineMetrics: true,
+        data: { type: "FeatureCollection", features: [] },
+      });
+      const lineLayer = (
+        id: string,
+        kind: string,
+        paint: Record<string, unknown>,
+        source: string = SOURCE,
+      ) =>
         map.addLayer({
           id,
           type: "line",
-          source: SOURCE,
+          source,
           filter: ["==", ["get", "kind"], kind],
           layout: { "line-cap": "round", "line-join": "round" },
           paint: paint as never,
         });
+      // Ce qui reste à parcourir : un pointillé léger, qui annonce le chemin sans le dessiner.
       lineLayer("journey-plan-road", "plan-road", {
         "line-color": "#0e7a43",
-        "line-width": 3,
-        "line-opacity": 0.35,
+        "line-width": 3.2,
+        "line-opacity": 0.5,
+        "line-dasharray": [0, 2],
       });
       lineLayer("journey-plan-sea", "plan-sea", {
         "line-color": "#1769a8",
-        "line-width": 3,
-        "line-opacity": 0.45,
-        "line-dasharray": [1.5, 2],
-      });
-      // Une lueur sous le tracé : il se détache du fond de carte comme un trait de lumière.
-      lineLayer("journey-glow-road", "done-road", {
-        "line-color": "#22b573",
-        "line-width": 16,
-        "line-blur": 10,
+        "line-width": 3.2,
         "line-opacity": 0.5,
+        "line-dasharray": [0, 2],
       });
-      lineLayer("journey-glow-sea", "done-sea", {
-        "line-color": "#3aa0e8",
-        "line-width": 16,
-        "line-blur": 10,
-        "line-opacity": 0.5,
-      });
-      lineLayer("journey-done-road-casing", "done-road", { "line-color": "#ffffff", "line-width": 7 });
-      lineLayer("journey-done-sea-casing", "done-sea", { "line-color": "#ffffff", "line-width": 7 });
-      lineLayer("journey-done-road", "done-road", { "line-color": "#0e7a43", "line-width": 4 });
-      lineLayer("journey-done-sea", "done-sea", { "line-color": "#1769a8", "line-width": 4 });
+      // Le chemin parcouru : une lueur, un liseré blanc, puis un trait qui s'illumine vers le véhicule.
+      lineLayer(
+        "journey-glow-road",
+        "done-road",
+        { "line-color": "#22b573", "line-width": 18, "line-blur": 12, "line-opacity": 0.42 },
+        TRAIL,
+      );
+      lineLayer(
+        "journey-glow-sea",
+        "done-sea",
+        { "line-color": "#3aa0e8", "line-width": 18, "line-blur": 12, "line-opacity": 0.42 },
+        TRAIL,
+      );
+      lineLayer("journey-done-road-casing", "done-road", { "line-color": "#ffffff", "line-width": 8 }, TRAIL);
+      lineLayer("journey-done-sea-casing", "done-sea", { "line-color": "#ffffff", "line-width": 8 }, TRAIL);
+      lineLayer(
+        "journey-done-road",
+        "done-road",
+        {
+          "line-width": 4.5,
+          "line-gradient": ["interpolate", ["linear"], ["line-progress"], 0, "#0b6b3a", 0.75, "#12a35e", 1, "#6ff0ad"],
+        },
+        TRAIL,
+      );
+      lineLayer(
+        "journey-done-sea",
+        "done-sea",
+        {
+          "line-width": 4.5,
+          "line-gradient": ["interpolate", ["linear"], ["line-progress"], 0, "#14598f", 0.75, "#1f86d1", 1, "#8fd3ff"],
+        },
+        TRAIL,
+      );
       map.addLayer({
         id: "journey-pins",
         type: "circle",
@@ -147,6 +280,27 @@ export function useJourneyFilm(
           map.setLayoutProperty(id, "visibility", hide || previewRef.current ? "none" : "visible");
     };
 
+    // Le tracé parcouru va dans sa propre source (dégradé), le reste dans la source du film.
+    type FilmFeature = { properties: { kind?: string; label?: string } };
+    const publish = (features: FilmFeature[]) => {
+      const done = features.filter((feature) => feature.properties.kind?.startsWith("done"));
+      const rest = features.filter((feature) => !feature.properties.kind?.startsWith("done"));
+      (map.getSource(SOURCE) as GeoJSONSource | undefined)?.setData({
+        type: "FeatureCollection",
+        features: rest,
+      } as never);
+      (map.getSource(TRAIL) as GeoJSONSource | undefined)?.setData({
+        type: "FeatureCollection",
+        features: done,
+      } as never);
+    };
+    let veiled = false;
+    const veil = (on: boolean) => {
+      if (veiled === on || !map.getLayer(VEIL)) return;
+      veiled = on;
+      map.setPaintProperty(VEIL, "fill-opacity", on ? VEIL_OPACITY : 0);
+    };
+
     let overlayHidden = false;
     const hideOverlay = (hide: boolean) => {
       if (overlayHidden === hide) return;
@@ -159,8 +313,15 @@ export function useJourneyFilm(
     vehicle.className = "bw-film-vehicle";
     vehicle.setAttribute("aria-hidden", "true");
     vehicle.innerHTML =
+      '<span class="bw-film-shadow"></span>' +
       '<img class="bw-film-car" src="/cabas/persos/voiture_504.webp" alt="">' +
-      '<span class="bw-film-ship"><i></i><i></i><i></i><img alt=""></span>';
+      '<span class="bw-film-ship"><i></i><i></i><i></i><img alt=""></span>' +
+      '<div class="bw-film-card"><img alt=""><span><small></small><b></b><em></em></span><i>Exemple</i></div>';
+    const card = vehicle.querySelector<HTMLElement>(".bw-film-card")!;
+    const cardImage = card.querySelector("img")!;
+    const cardKicker = card.querySelector("small")!;
+    const cardTitle = card.querySelector("b")!;
+    const cardDetail = card.querySelector("em")!;
     const car = vehicle.querySelector<HTMLElement>(".bw-film-car")!;
     const ship = vehicle.querySelector<HTMLElement>(".bw-film-ship")!;
     const shipImage = ship.querySelector("img")!;
@@ -181,66 +342,66 @@ export function useJourneyFilm(
       caption.hidden = true;
       delete container.dataset["film"];
       clearRacers();
-      clearChips();
+      clearCard();
+      veil(false);
       smoothCamera = null;
       raceKey = "";
-      (map.getSource(SOURCE) as GeoJSONSource | undefined)?.setData({
-        type: "FeatureCollection",
-        features: [],
-      });
+      publish([]);
     };
 
-    // Les durées de chaque portion et les pauses, posées sur le trajet.
-    let chipsKey = "";
-    let chips: { at: number; kind: string; label: string; point: [number, number]; element: HTMLElement; marker: Marker }[] = [];
-    const clearChips = () => {
-      chips.forEach(({ marker }) => marker.remove());
-      chips = [];
-      chipsKey = "";
+    // Le carnet de voyage : à chaque étape atteinte, une carte illustrée surgit au-dessus du véhicule.
+    let milestonesKey = "";
+    let milestones: { id: string; at: number; label: string }[] = [];
+    let cardId = "";
+    let cardTimer: number | undefined;
+    const clearCard = () => {
+      window.clearTimeout(cardTimer);
+      cardId = "";
+      card.dataset["show"] = "";
     };
-    const syncChips = (frame: JourneyFilmFrame) => {
-      // Le tracé routier arrive après le premier dessin : les étiquettes suivent la vraie route.
-      const key = `${frame.film.key}|${frame.film.road.length}|${frame.film.last.length}`;
-      if (chipsKey !== key) {
-        clearChips();
-        chipsKey = key;
-        chips = filmChips(frame.film).map((chip) => {
-          const element = document.createElement("div");
-          element.className = "bw-film-chip";
-          element.dataset["kind"] = chip.kind;
-          element.textContent = chip.label;
-          element.setAttribute("aria-hidden", "true");
-          return {
-            at: chip.at,
-            kind: chip.kind,
-            label: chip.label,
-            point: chip.point,
-            element,
-            // Au port, l'étiquette passe sous le nom de la ville au lieu de le recouvrir.
-            marker: new Marker({ element, anchor: "center", offset: [0, chip.kind === "port" ? 24 : 0] })
-              .setLngLat(chip.point)
-              .addTo(map),
-          };
-        });
+    const syncCard = (frame: JourneyFilmFrame, stage: string, blend: number) => {
+      const { film, minute } = frame;
+      const key = `${film.key}|${film.road.length}|${film.last.length}`;
+      if (milestonesKey !== key) {
+        milestonesKey = key;
+        milestones = filmChips(film)
+          .map((chip) => ({ id: chip.id, at: chip.at, label: chip.label }))
+          .sort((a, b) => a.at - b.at);
+        clearCard();
       }
-      for (const chip of chips) chip.element.dataset["reached"] = frame.minute >= chip.at ? "true" : "";
-      // Deux étiquettes ne se recouvrent jamais : la portion en cours passe d'abord, puis les plus proches d'elle.
-      const placed: { x: number; y: number; width: number }[] = [];
-      const order = [...chips].sort(
-        (a, b) => Math.abs(a.at - frame.minute) - Math.abs(b.at - frame.minute),
-      );
-      for (const chip of order) {
-        const at = map.project(chip.point);
-        const box = { x: at.x, y: at.y + (chip.kind === "port" ? 24 : 0), width: chip.label.length * 6.4 + 18 };
-        const free = !placed.some(
-          (other) => Math.abs(other.x - box.x) < (other.width + box.width) / 2 && Math.abs(other.y - box.y) < 25,
-        );
-        chip.element.style.visibility = free ? "visible" : "hidden";
-        if (free) placed.push(box);
+      // Vue d'ensemble : pas de carte, le trajet entier parle de lui-même.
+      if (blend > 0.5) {
+        if (card.dataset["show"]) clearCard();
+        return;
       }
+      const current =
+        stage === "done"
+          ? { id: "done", at: Infinity, label: "" }
+          : [...milestones].reverse().find((milestone) => minute >= milestone.at);
+      if (!current || current.id === cardId) return;
+      cardId = current.id;
+      const content = cardFor(film, current.id, current.label);
+      if (cardImage.getAttribute("src") !== content.image) cardImage.setAttribute("src", content.image);
+      cardKicker.textContent = content.kicker;
+      cardTitle.textContent = content.title;
+      cardDetail.textContent = content.detail;
+      card.dataset["demo"] = frame.demo ? "true" : "";
+      // L'apparition rejoue à chaque étape.
+      card.dataset["show"] = "";
+      void card.offsetWidth;
+      card.dataset["show"] = "true";
+      window.clearTimeout(cardTimer);
+      if (current.id !== "done")
+        cardTimer = window.setTimeout(() => {
+          card.dataset["show"] = "";
+        }, CARD_MS);
     };
+
     // Caméra amortie : elle rejoint sa cible au lieu de sauter d'une étape à l'autre.
     let smoothCamera: { center: [number, number]; zoom: number; pitch: number } | null = null;
+    let cameraTime = 0;
+    // Inclinaison de la 504 dans le sens de la route, amortie elle aussi.
+    let tilt = 0;
 
     // Le cadrage d'un ensemble de points. Le centre est celui des points : c'est jumpTo qui applique
     // le décalage du volet. Reprendre le centre de cameraForBounds le compterait deux fois.
@@ -277,9 +438,9 @@ export function useJourneyFilm(
       container.dataset["film"] = "true";
       const racers = frame.racers ?? [];
       const states = racers.map((racer) => ({ racer, state: filmFrame(racer.film, frame.minute - racer.startMin) }));
-      (map.getSource(SOURCE) as GeoJSONSource).setData({
-        type: "FeatureCollection",
-        features: states.flatMap(({ racer, state }) => [
+      veil(true);
+      publish(
+        states.flatMap(({ racer, state }) => [
           line("plan-road", racer.film.road),
           line("plan-sea", racer.film.sea),
           line("plan-road", racer.film.last),
@@ -287,7 +448,7 @@ export function useJourneyFilm(
           ...(state.seaDone.length > 1 ? [line("done-sea", state.seaDone)] : []),
           ...(state.lastDone.length > 1 ? [line("done-road", state.lastDone)] : []),
         ]),
-      });
+      );
       const padding = viewPadding();
       // Recadré aussi quand le volet change de hauteur.
       const key = `${racers.map((racer) => racer.film.key).join("|")}|${padding.bottom},${padding.left}`;
@@ -332,9 +493,8 @@ export function useJourneyFilm(
         quiet(frame.demo);
         wasDemo = frame.demo;
       }
-      (map.getSource(SOURCE) as GeoJSONSource).setData({
-        type: "FeatureCollection",
-        features: [
+      veil(true);
+      publish([
           line("plan-road", film.road),
           line("plan-sea", film.sea),
           line("plan-road", film.last),
@@ -346,8 +506,7 @@ export function useJourneyFilm(
             properties: { label: pin.label },
             geometry: { type: "Point" as const, coordinates: pin.point },
           })),
-        ],
-      });
+      ]);
 
       const padding = viewPadding();
       const fingerprint = `${film.key}|${padding.left},${padding.right},${padding.top},${padding.bottom}`;
@@ -370,7 +529,11 @@ export function useJourneyFilm(
         pitch: (state.stage === "sea" ? 40 : 52) - 30 * blend,
       };
       const still = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-      const ease = still || !smoothCamera ? 1 : 0.14;
+      // Amortissement réglé sur le temps, pas sur le nombre d'images : même douceur à 30 ou 60 images/s.
+      const now = performance.now();
+      const elapsed = cameraTime ? Math.min(120, now - cameraTime) : 16;
+      cameraTime = now;
+      const ease = still || !smoothCamera ? 1 : 1 - Math.exp(-elapsed / 260);
       smoothCamera = smoothCamera
         ? {
             center: [
@@ -382,7 +545,7 @@ export function useJourneyFilm(
           }
         : target;
       map.jumpTo({ ...smoothCamera, bearing: 0, padding });
-      syncChips(frame);
+      syncCard(frame, state.stage, blend);
 
       // La voiture embarque et ressort : les deux images se relaient au port, sans coupure.
       const aboard = boardingBlend(film, minute);
@@ -398,12 +561,42 @@ export function useJourneyFilm(
       const scale = 0.62 + 0.38 * (1 - blend);
       vehicle.style.setProperty("--film-scale", scale.toFixed(3));
       const heading = state.roadDone.length > 1 ? state.roadDone.at(-1)![0] - state.roadDone.at(-2)![0] : 0;
-      vehicle.dataset["east"] = state.stage === "road" && heading > 0.002 ? "true" : "";
+      const east = state.stage === "road" && heading > 0.002;
+      vehicle.dataset["east"] = east ? "true" : "";
+      // Le nez de la 504 suit la pente de la route à l'écran (léger : ±10°).
+      const leg = state.stage === "last" ? state.lastDone : state.stage === "road" ? state.roadDone : [];
+      let targetTilt = 0;
+      if (leg.length > 1 && !vehicle.dataset["stopped"]) {
+        const a = map.project(leg.at(-2)!);
+        const b = map.project(leg.at(-1)!);
+        const dx = Math.abs(b.x - a.x);
+        const dy = b.y - a.y;
+        if (dx + Math.abs(dy) > 0.5) {
+          const angle = (Math.atan2(dy, Math.max(dx, 0.001)) * 180) / Math.PI;
+          targetTilt = Math.max(-10, Math.min(10, (east ? 1 : -1) * angle * 0.35));
+        }
+      }
+      tilt += (targetTilt - tilt) * (still ? 1 : 0.12);
+      car.style.rotate = `${tilt.toFixed(2)}deg`;
       marker.setLngLat(state.point);
       if (!shown) {
         shown = true;
         marker.addTo(map);
       }
+      // La carte du carnet reste entière à l'écran ; sa pointe, elle, reste sur le véhicule.
+      if (card.dataset["show"]) {
+        const x = map.project(state.point).x;
+        const half = card.offsetWidth / 2;
+        const margin = 8;
+        const room = container.clientWidth;
+        let shift = 0;
+        if (x - half < margin) shift = margin - (x - half);
+        else if (x + half > room - margin) shift = room - margin - (x + half);
+        shift = Math.max(-(half - 22), Math.min(half - 22, shift));
+        card.style.setProperty("--card-shift", `${Math.round(shift)}px`);
+      }
+      // Le titre n'est plus affiché pendant le film (le carnet le remplace) ; il reste lu à voix haute.
+      caption.dataset["film"] = "true";
       caption.hidden = !frame.caption;
       caption.textContent = frame.caption;
       caption.style.left = `${(padding.left + container.clientWidth - padding.right) / 2}px`;
@@ -412,7 +605,7 @@ export function useJourneyFilm(
     const onFrame = (event: Event) => {
       const frame = (event as CustomEvent<JourneyFilmFrame | null>).detail;
       if (frame?.racers) {
-        clearChips();
+        clearCard();
         smoothCamera = null;
         if (shown) marker.remove();
         shown = false;
@@ -429,15 +622,14 @@ export function useJourneyFilm(
       }
       hideOverlay(false);
       clearRacers();
-      clearChips();
+      clearCard();
+      veil(false);
       smoothCamera = null;
+      cameraTime = 0;
       raceKey = "";
       if (!shown) {
         delete container.dataset["film"];
-        (map.getSource(SOURCE) as GeoJSONSource | undefined)?.setData({
-          type: "FeatureCollection",
-          features: [],
-        });
+        publish([]);
       }
       hideFrame();
       overviewKey = "";
@@ -489,6 +681,7 @@ export function useJourneyFilm(
         pitch: 0,
         duration: 700,
       });
+      caption.dataset["film"] = "";
       caption.textContent =
         target === "destination"
           ? "Touchez votre destination sur la carte"
@@ -504,7 +697,7 @@ export function useJourneyFilm(
       window.removeEventListener(JOURNEY_PICK_EVENT, onPick);
       marker.remove();
       clearRacers();
-      clearChips();
+      clearCard();
       caption.remove();
       map.off("click", pick);
     };

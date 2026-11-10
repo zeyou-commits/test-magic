@@ -240,7 +240,7 @@ export const DEMO_CAPTIONS: Record<FilmStage, string> = {
   done: "Vous êtes arrivé",
 };
 
-const formatMinutes = (minutes: number) => {
+export const formatMinutes = (minutes: number) => {
   const hours = Math.floor(minutes / 60);
   const rest = Math.round(minutes % 60);
   if (!hours) return `${rest} min`;

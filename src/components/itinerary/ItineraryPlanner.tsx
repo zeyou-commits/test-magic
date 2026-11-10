@@ -1249,6 +1249,17 @@ export function ItineraryPlanner({
         <h2 className="min-w-0 truncate font-display text-base font-bold tracking-tight text-foreground">
           <span className="sr-only">Trajet porte à porte : </span>De chez vous jusqu'au bled
         </h2>
+        {/* Simulation faite : le voyage se lance d'ici, même volet replié (sans repasser par le bas). */}
+        {roadAccess && !filtersOpen && selected ? (
+          <button
+            type="button"
+            onClick={launchFilm}
+            aria-label="Voir mon voyage sur la carte"
+            className="ml-auto inline-flex h-9 shrink-0 items-center gap-1.5 rounded-full bg-primary px-3.5 text-xs font-bold text-primary-foreground shadow-md transition hover:opacity-90"
+          >
+            <Play className="size-3.5" aria-hidden /> Voir sur la carte
+          </button>
+        ) : null}
         <button
           type="button"
           onClick={onClose}

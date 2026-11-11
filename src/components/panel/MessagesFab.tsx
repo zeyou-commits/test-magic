@@ -26,6 +26,8 @@ export function MessagesFab({ onSelect }: { onSelect: (selection: Selection) => 
   const { user } = useAuth();
   const { trip } = useMyTrip();
   const [open, setOpen] = useState(false);
+  // Nouveau visiteur (aucune traversée suivie) : d'abord le choix « question ou salon ».
+  const [start, setStart] = useState<"choose" | "salons">("salons");
   const room = useQuery({
     ...chatFeedQuery("crossing", trip?.departure.id ?? "", user?.id),
     refetchInterval: 60_000,
@@ -46,8 +48,11 @@ export function MessagesFab({ onSelect }: { onSelect: (selection: Selection) => 
       window.clearTimeout(timer);
       timer = window.setTimeout(() => setInvite(false), INVITE_MS);
     };
-    const pick = () => setOpen(true);
-    const mine = () => openMineRef.current();
+    const pick = () => {
+      setStart("salons");
+      setOpen(true);
+    };
+    const mine = () => openMineRef.current("salons");
     window.addEventListener(CHAT_INVITE_EVENT, show);
     window.addEventListener(OPEN_ROOM_PICKER_EVENT, pick);
     window.addEventListener(OPEN_MY_ROOM_EVENT, mine);
@@ -58,8 +63,9 @@ export function MessagesFab({ onSelect }: { onSelect: (selection: Selection) => 
       window.removeEventListener(OPEN_MY_ROOM_EVENT, mine);
     };
   }, []);
-  const openMine = () => {
+  const openMine = (mode: "choose" | "salons" = "choose") => {
     if (!trip) {
+      setStart(mode);
       setOpen(true);
       return;
     }
@@ -74,7 +80,7 @@ export function MessagesFab({ onSelect }: { onSelect: (selection: Selection) => 
         type="button"
         className="bw-messages-fab"
         aria-label={count ? `Salons, ${count} messages` : "Salons"}
-        onClick={openMine}
+        onClick={() => openMine()}
       >
         <MessagesSquare size={22} aria-hidden />
         <span>Salons</span>
@@ -86,7 +92,8 @@ export function MessagesFab({ onSelect }: { onSelect: (selection: Selection) => 
             type="button"
             className="bw-messages-preview__bubble"
             data-invite
-            onClick={openMine}
+            // L'invitation parle du salon : on y va directement.
+            onClick={() => openMine("salons")}
           >
             <span className="bw-messages-preview__invite-icon" aria-hidden>
               <MessagesSquare size={15} />
@@ -117,7 +124,7 @@ export function MessagesFab({ onSelect }: { onSelect: (selection: Selection) => 
           </button>
         </div>
       ) : null}
-      <SalonsPicker onSelect={onSelect} open={open} onOpenChange={setOpen} />
+      <SalonsPicker onSelect={onSelect} open={open} onOpenChange={setOpen} start={start} />
     </div>
   );
 }
@@ -130,10 +137,12 @@ function SalonsPicker({
   onSelect,
   open,
   onOpenChange,
+  start,
 }: {
   onSelect: (selection: Selection) => void;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  start?: "choose" | "salons" | undefined;
 }) {
   const { trip } = useMyTrip();
   const upcoming = useQuery(upcomingDeparturesQuery()).data ?? [];
@@ -159,6 +168,7 @@ function SalonsPicker({
       onSelect={onSelect}
       open={open}
       onOpenChange={onOpenChange}
+      start={start}
     />
   );
 }

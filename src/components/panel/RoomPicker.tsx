@@ -3,7 +3,7 @@ import { QuestionHelp } from "@/components/questions/QuestionHelp";
 import { afterOverlayClose, useBackClose } from "@/lib/ferry/backStack";
 import { enterRoom } from "@/lib/ferry/chat";
 import { useQuery } from "@tanstack/react-query";
-import { CircleHelp, MessagesSquare, Search } from "lucide-react";
+import { ArrowRight, ChevronLeft, CircleHelp, MessagesSquare, Search } from "lucide-react";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { supabase as typedSupabase } from "@/integrations/supabase/client";
@@ -47,6 +47,7 @@ export function RoomPicker({
   open,
   onOpenChange,
   questionsFirst = false,
+  start,
   title,
   intro,
 }: {
@@ -63,16 +64,27 @@ export function RoomPicker({
   onOpenChange: (open: boolean) => void;
   /** Ouvert depuis la tuile Questions : les lignes d'abord. */
   questionsFirst?: boolean;
+  /** Par où ouvrir : « choose » propose d'abord question ou salon (nouveaux visiteurs). */
+  start?: "salons" | "questions" | "choose" | undefined;
   /** Titre et phrase d'accueil propres (ex. « Les salons en cours » quand on suit une traversée). */
   title?: string | undefined;
   intro?: string | undefined;
 }) {
   const [text, setText] = useState("");
   // Deux faces : les salons, ou « Une question ? » (réponses de BledWay puis bons contacts).
-  const [mode, setMode] = useState<"salons" | "questions">(questionsFirst ? "questions" : "salons");
+  // Trois faces : le choix (nouveaux visiteurs), les salons, ou « Une question ? ».
+  const first = start ?? (questionsFirst ? "questions" : "salons");
+  const [mode, setMode] = useState<"choose" | "salons" | "questions">(first);
   useEffect(() => {
-    if (open) setMode(questionsFirst ? "questions" : "salons");
-  }, [open, questionsFirst]);
+    if (open) setMode(first);
+  }, [open, first]);
+  // Venu du choix : on peut y revenir.
+  const back =
+    first === "choose" ? (
+      <button type="button" className="bw-room-picker__back" onClick={() => setMode("choose")}>
+        <ChevronLeft size={16} aria-hidden /> Retour
+      </button>
+    ) : null;
   const [companyId, setCompanyId] = useState<string | null>(null);
   const { data: routes = [] } = useQuery(routesQuery);
   const { data: ports = [] } = useQuery(portsQuery);
@@ -150,13 +162,67 @@ export function RoomPicker({
     <>
       <Dialog open={open} onOpenChange={(next) => (next ? onOpenChange(true) : close())}>
         <DialogContent
-          className={`bw-room-picker${mode === "questions" ? " bw-room-picker--questions max-w-none" : ""}`}
+          className={`bw-room-picker${
+            mode === "questions"
+              ? " bw-room-picker--questions max-w-none"
+              : mode === "choose"
+                ? " bw-room-picker--choose max-w-none"
+                : ""
+          }`}
           // Le champ de recherche ne prend pas le focus : le clavier ne cache pas la liste.
           onOpenAutoFocus={(event) => event.preventDefault()}
         >
-          {mode === "questions" ? (
+          {mode === "choose" ? (
             <>
               <DialogHeader>
+                <DialogTitle>Bienvenue à bord</DialogTitle>
+                <p className="bw-room-picker__intro">
+                  Une question avant de partir, ou envie d'échanger avec ceux qui voyagent ?
+                </p>
+              </DialogHeader>
+              <div className="bw-room-picker__choices">
+                <button
+                  type="button"
+                  className="bw-room-picker__choice"
+                  data-kind="question"
+                  onClick={() => setMode("questions")}
+                >
+                  <span className="bw-room-picker__choice-icon" aria-hidden>
+                    <CircleHelp size={22} />
+                  </span>
+                  <strong>Poser une question</strong>
+                  <small>
+                    Papiers, TPD, horaires, prix : la réponse de BledWay tout de suite, sinon les
+                    bons contacts.
+                  </small>
+                  <span className="bw-room-picker__choice-go">
+                    Chercher une réponse <ArrowRight size={15} aria-hidden />
+                  </span>
+                </button>
+                <button
+                  type="button"
+                  className="bw-room-picker__choice"
+                  data-kind="salon"
+                  onClick={() => setMode("salons")}
+                >
+                  <span className="bw-room-picker__choice-icon" aria-hidden>
+                    <MessagesSquare size={22} />
+                  </span>
+                  <strong>Rejoindre un salon</strong>
+                  <small>
+                    Les voyageurs d'une traversée, en direct : attente au port, ambiance à bord,
+                    arrivée.
+                  </small>
+                  <span className="bw-room-picker__choice-go">
+                    Choisir ma traversée <ArrowRight size={15} aria-hidden />
+                  </span>
+                </button>
+              </div>
+            </>
+          ) : mode === "questions" ? (
+            <>
+              <DialogHeader>
+                {back}
                 <DialogTitle>Une question ?</DialogTitle>
                 <p className="bw-room-picker__intro">
                   Les réponses de BledWay d'abord, puis les bons contacts si besoin.
@@ -174,6 +240,7 @@ export function RoomPicker({
           ) : (
             <>
           <DialogHeader>
+            {back}
             <DialogTitle>{title ?? "Choisir votre traversée"}</DialogTitle>
             <p className="bw-room-picker__intro">
               {intro ?? "Rejoignez le salon des voyageurs de votre bateau."}

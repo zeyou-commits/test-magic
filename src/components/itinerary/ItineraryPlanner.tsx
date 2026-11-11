@@ -79,6 +79,7 @@ import {
 } from "@/lib/ferry/journeyFilm";
 import { portTimeZone } from "@/lib/ferry/time";
 import { vesselMapIcon } from "@/lib/ferry/vesselVisuals";
+import { RoutePreview, scrollInPanel } from "./RoutePreview";
 import { ItineraryAlertForm } from "./ItineraryAlertForm";
 import {
   readTravelProfile,
@@ -1583,6 +1584,16 @@ export function ItineraryPlanner({
         )}
         <div className="h-3" />
       </form>
+      {/* Avant toute simulation : ce que la route du bled apporte, étape par étape. */}
+      {!roadAccess && filtersOpen && !loading ? (
+        <RoutePreview
+          onStart={() => {
+            const field = formRef.current?.querySelector("input");
+            scrollInPanel(field, 96);
+            field?.focus({ preventScroll: true });
+          }}
+        />
+      ) : null}
       {roadAccess && !filtersOpen && (
         <div className="grid gap-3 p-3 sm:p-4">
           <div className="flex items-center gap-2">

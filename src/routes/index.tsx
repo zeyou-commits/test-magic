@@ -1252,6 +1252,8 @@ function Index() {
       else if (action === "search") openMobileSearch();
       else if (action === "ports") showMobilePorts();
       else if (action === "itinerary") openItinerary();
+      // « Demander aux voyageurs » depuis « Une question ? » d'une autre page.
+      else if (action === "salons") window.dispatchEvent(new Event(OPEN_ROOM_PICKER_EVENT));
     }, 120);
     return () => window.clearTimeout(timer);
     // Navigation entrante : l'action enregistrée n'est lue qu'une fois au montage.

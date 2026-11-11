@@ -2,6 +2,7 @@ import { AlertTicker } from "./AlertTicker";
 import { useEffect, useRef, type ReactNode } from "react";
 import { Link } from "@tanstack/react-router";
 import { UserMenu } from "./UserMenu";
+import { QuestionButton } from "./QuestionButton";
 import { DataUnavailableNotice } from "./DataUnavailableNotice";
 import { goHome } from "@/lib/ferry/voyageTrip";
 import {
@@ -13,10 +14,10 @@ import {
   Car,
   ChevronDown,
   CircleHelp,
+  House,
   Clock,
   Info,
   Mail,
-  Map as MapIcon,
   MapPin,
   Menu,
   Newspaper,
@@ -172,13 +173,22 @@ export function SiteHeader() {
               key={item.to}
               to={item.to}
               activeOptions={{ exact: item.to === "/" }}
+              className="inline-flex items-center gap-1.5"
               onClick={() => {
                 if (item.to !== "/") return;
                 window.scrollTo({ top: 0, behavior: "instant" });
                 goHome();
               }}
             >
-              {item.to === "/" ? "Carte" : "Départs"}
+              {item.to === "/" ? (
+                <>
+                  <House size={16} aria-hidden /> Carte
+                </>
+              ) : (
+                <>
+                  <Clock size={16} aria-hidden /> Départs
+                </>
+              )}
             </Link>
           ))}
           <Link
@@ -213,6 +223,7 @@ export function SiteHeader() {
         </nav>
         <div className="bw-header-actions">
           {/* Sur mobile, le compte est l'onglet « Moi » de la barre du bas. */}
+          <QuestionButton />
           <span className="hidden md:inline-flex">
             <UserMenu compact iconOnly />
           </span>
@@ -229,7 +240,7 @@ export function SiteHeader() {
               <div className="bw-menu-sheet__main">
                 <SheetClose asChild>
                   <Link to="/" activeOptions={{ exact: true }} onClick={goHome} className="bw-menu-link">
-                    <MapIcon size={16} aria-hidden /> Carte
+                    <House size={16} aria-hidden /> Carte
                   </Link>
                 </SheetClose>
                 <SheetClose asChild>

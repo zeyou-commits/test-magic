@@ -1,0 +1,180 @@
+/* « Route », avant toute simulation : ce que la route du bled apporte, étape par étape. */
+.bw-route-preview {
+  display: grid;
+  gap: 14px;
+  margin: 4px 16px 20px;
+  padding: 18px 16px 16px;
+  border: 1px solid #dfe7e2;
+  border-radius: 20px;
+  background: linear-gradient(180deg, #f3faf6 0%, #ffffff 140px);
+}
+.bw-route-preview__head {
+  display: grid;
+  gap: 4px;
+}
+.bw-route-preview__eyebrow {
+  margin: 0;
+  color: #0e7a43;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.bw-route-preview__head h3 {
+  margin: 0;
+  color: #16324a;
+  font-family: var(--font-display, inherit);
+  font-size: 18px;
+  font-weight: 800;
+  line-height: 1.2;
+}
+.bw-route-preview__head p:last-child {
+  margin: 2px 0 0;
+  color: #5b6b66;
+  font-size: 13px;
+  line-height: 1.45;
+}
+.bw-route-preview__head strong {
+  color: #16324a;
+}
+.bw-route-preview__steps {
+  display: grid;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.bw-route-preview__steps li {
+  position: relative;
+  display: grid;
+  grid-template-columns: 32px minmax(0, 1fr);
+  gap: 10px;
+  padding-bottom: 12px;
+}
+/* Le fil de la route, d'une étape à l'autre. */
+.bw-route-preview__steps li:not(:last-child)::before {
+  content: "";
+  position: absolute;
+  top: 32px;
+  bottom: 0;
+  left: 15px;
+  width: 2px;
+  border-radius: 2px;
+  background: repeating-linear-gradient(180deg, #b9d9c7 0 5px, transparent 5px 9px);
+}
+.bw-route-preview__dot {
+  display: grid;
+  width: 32px;
+  height: 32px;
+  place-items: center;
+  border: 1px solid #cfe3d8;
+  border-radius: 999px;
+  background: #ffffff;
+  color: #0e7a43;
+}
+.bw-route-preview__label {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 8px;
+  margin: 5px 0 0;
+  color: #16324a;
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1.25;
+}
+.bw-route-preview__label small {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: #edf6ef;
+  color: #0e7a43;
+  font-size: 11px;
+  font-weight: 700;
+}
+.bw-route-preview__text {
+  margin: 2px 0 0;
+  color: #5b6b66;
+  font-size: 12.5px;
+  line-height: 1.45;
+}
+.bw-route-preview__foot {
+  display: grid;
+  gap: 10px;
+  padding-top: 12px;
+  border-top: 1px solid #e6ece8;
+}
+.bw-route-preview__foot p {
+  margin: 0;
+  color: #5b6b66;
+  font-size: 12.5px;
+  line-height: 1.45;
+}
+.bw-route-preview__foot button {
+  display: inline-flex;
+  min-height: 44px;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 0 16px;
+  border: 1px solid #0e7a43;
+  border-radius: 12px;
+  background: #ffffff;
+  color: #0e7a43;
+  font-size: 14px;
+  font-weight: 700;
+}
+.bw-route-preview__foot button:hover {
+  background: #edf6ef;
+}
+@media (min-width: 768px) {
+  .bw-route-preview {
+    margin-inline: 20px;
+  }
+}
+
+/* Volet d'accueil, nouveau visiteur : l'entrée vers cet aperçu, sous « Trouver ma traversée ». */
+.bw-route-teaser {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  gap: 10px;
+  margin-top: 8px;
+  padding: 9px 10px;
+  border: 1px dashed #b9d9c7;
+  border-radius: 14px;
+  background: #f7fbf8;
+  color: #0e7a43;
+  text-align: left;
+  transition:
+    background 0.15s ease,
+    border-color 0.15s ease;
+}
+.bw-route-teaser:hover {
+  border-color: #0e7a43;
+  background: #edf6ef;
+}
+.bw-route-teaser__icon {
+  display: grid;
+  width: 30px;
+  height: 30px;
+  flex-shrink: 0;
+  place-items: center;
+  border-radius: 10px;
+  background: #ffffff;
+  color: #0e7a43;
+}
+.bw-route-teaser strong {
+  display: block;
+  color: #16324a;
+  font-size: 13px;
+}
+.bw-route-teaser small {
+  display: block;
+  overflow: hidden;
+  color: #5b6b66;
+  font-size: 11.5px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

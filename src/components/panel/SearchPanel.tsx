@@ -1,6 +1,8 @@
 import { vesselCompanyIds } from "@/lib/ferry/filterSync";
 import { track } from "@/lib/usage";
 import { HomeTraffic } from "./HomeTraffic";
+import { useMyTrip } from "@/lib/ferry/myTrip";
+import { ROUTE_PREVIEW_EVENT } from "@/components/itinerary/RoutePreview";
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { useQuery } from "@tanstack/react-query";
 import {
@@ -8,6 +10,8 @@ import {
   Backpack,
   CalendarDays,
   ChevronDown,
+  ChevronRight,
+  ListChecks,
   RotateCcw,
   Search,
   Route,
@@ -109,6 +113,7 @@ export function SearchPanel({
   onFocusRoute,
   onOpenItinerary,
 }: SearchPanelProps) {
+  const { trip } = useMyTrip();
   const { data: ports = [] } = useQuery(portsQuery);
   const { data: routes = [] } = useQuery(routesQuery);
   const { data: companies = [] } = useQuery(companiesQuery);
@@ -503,6 +508,30 @@ export function SearchPanel({
               </span>
               <span className="sr-only">Modifier la recherche</span>
             </button>
+            {/* Nouveau visiteur : la valeur de la route du bled, avant de rien demander. */}
+            {onOpenItinerary && !trip ? (
+              <button
+                type="button"
+                onClick={() => {
+                  onOpenItinerary();
+                  // Le volet Route s'ouvre, puis on descend jusqu'à l'aperçu des étapes.
+                  window.setTimeout(
+                    () => window.dispatchEvent(new Event(ROUTE_PREVIEW_EVENT)),
+                    450,
+                  );
+                }}
+                className="bw-route-teaser"
+              >
+                <span className="bw-route-teaser__icon" aria-hidden>
+                  <ListChecks className="size-4" />
+                </span>
+                <span className="min-w-0 flex-1 leading-tight">
+                  <strong>Ma route du bled, étape par étape</strong>
+                  <small>Papiers, port, traversée, arrivée : voyez ce qui vous attend.</small>
+                </span>
+                <ChevronRight className="size-4 shrink-0" aria-hidden />
+              </button>
+            ) : null}
           </section>
         ) : null}
         {!editing && (filters.companyId || filters.vesselId) ? (

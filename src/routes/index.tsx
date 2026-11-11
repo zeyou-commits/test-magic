@@ -351,10 +351,12 @@ function Index() {
     onSelect: (next) => handleSelectRef.current(next),
     onAsk: () => (window.innerWidth < 768 ? setSalonDialog(true) : setSalonOpen(true)),
   });
+  // « Mon voyage, étape par étape » (barre du bas, lien de « Ma traversée ») : sur téléphone,
+  // la page s'ouvre volet déplié en grand (niveau 3), l'étape lisible sans avoir à le tirer.
   const enterVoyage = () => {
     resetToMap();
     setVoyageOn(true);
-    setPanelLevel(1);
+    setPanelLevel(2);
   };
   const enterVoyageRef = useRef(enterVoyage);
   enterVoyageRef.current = enterVoyage;
@@ -1624,7 +1626,7 @@ function Index() {
                   window.setTimeout(() => window.scrollTo({ top: 0, behavior: "instant" }), 60);
               }}
               onOpenVoyage={() => {
-                if (voyage) setPanelLevel((level) => (level === 0 ? 1 : 0));
+                if (voyage) setPanelLevel((level) => (level === 0 ? 2 : 0));
                 else enterVoyage();
               }}
               onMoreToggle={resetToMap}

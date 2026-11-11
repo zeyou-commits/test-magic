@@ -1,7 +1,7 @@
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { QuestionHelp } from "@/components/questions/QuestionHelp";
 import { afterOverlayClose, useBackClose } from "@/lib/ferry/backStack";
 import { enterRoom } from "@/lib/ferry/chat";
-import { revealBlock } from "./ActionHub";
 import { useQuery } from "@tanstack/react-query";
 import { CircleHelp, MessagesSquare, Search } from "lucide-react";
 import type { SupabaseClient } from "@supabase/supabase-js";
@@ -16,8 +16,6 @@ import { portTimeZone } from "@/lib/ferry/time";
 import type { Selection } from "@/lib/ferry/types";
 
 const supabase = typedSupabase as unknown as SupabaseClient;
-
-const scrollTo = (selector: string) => revealBlock(selector, 700);
 
 /** Le nombre de messages de plusieurs traversées, en une seule demande. */
 export function useRoomCounts(ids: string[]) {
@@ -70,6 +68,11 @@ export function RoomPicker({
   intro?: string | undefined;
 }) {
   const [text, setText] = useState("");
+  // Deux faces : les salons, ou « Une question ? » (réponses de BledWay puis bons contacts).
+  const [mode, setMode] = useState<"salons" | "questions">(questionsFirst ? "questions" : "salons");
+  useEffect(() => {
+    if (open) setMode(questionsFirst ? "questions" : "salons");
+  }, [open, questionsFirst]);
   const [companyId, setCompanyId] = useState<string | null>(null);
   const { data: routes = [] } = useQuery(routesQuery);
   const { data: ports = [] } = useQuery(portsQuery);
@@ -151,15 +154,29 @@ export function RoomPicker({
           // Le champ de recherche ne prend pas le focus : le clavier ne cache pas la liste.
           onOpenAutoFocus={(event) => event.preventDefault()}
         >
+          {mode === "questions" ? (
+            <>
+              <DialogHeader>
+                <DialogTitle>Une question ?</DialogTitle>
+                <p className="bw-room-picker__intro">
+                  Les réponses de BledWay d'abord, puis les bons contacts si besoin.
+                </p>
+              </DialogHeader>
+              <div className="bw-room-picker__help">
+                <QuestionHelp
+                  bare
+                  routeId={lines.length === 1 ? lines[0]![0] : undefined}
+                  onAskTravellers={() => setMode("salons")}
+                  travellersHint="Choisissez votre traversée : ses voyageurs répondent dans le salon."
+                />
+              </div>
+            </>
+          ) : (
+            <>
           <DialogHeader>
-            <DialogTitle>
-              {title ?? (questionsFirst ? "Choisir votre ligne" : "Choisir votre traversée")}
-            </DialogTitle>
+            <DialogTitle>{title ?? "Choisir votre traversée"}</DialogTitle>
             <p className="bw-room-picker__intro">
-              {intro ??
-                (questionsFirst
-                  ? "Posez votre question aux voyageurs de la ligne."
-                  : "Rejoignez le salon des voyageurs de votre bateau.")}
+              {intro ?? "Rejoignez le salon des voyageurs de votre bateau."}
             </p>
           </DialogHeader>
           <label className="bw-room-picker__search">
@@ -245,28 +262,19 @@ export function RoomPicker({
           ) : (
             <p className="bw-room__empty">Aucune traversée ne correspond.</p>
           )}
-          <details className="bw-room-picker__global" open={questionsFirst || lines.length === 1}>
-            <summary>
-              <CircleHelp size={15} aria-hidden /> Une question générale ?
-            </summary>
-            <div>
-              {lines.map(([routeId, line]) => (
-                <button
-                  key={routeId}
-                  type="button"
-                  onClick={() => {
-                    close();
-                    afterOverlayClose(() => {
-                      onSelect({ type: "route", id: routeId });
-                      scrollTo(".bw-room--questions");
-                    });
-                  }}
-                >
-                  Questions sur {line}
-                </button>
-              ))}
-            </div>
-          </details>
+          <button
+            type="button"
+            className="bw-room-picker__ask"
+            onClick={() => setMode("questions")}
+          >
+            <CircleHelp size={16} aria-hidden />
+            <span>
+              <strong>Une question ?</strong>
+              <small>Papiers, horaires, prix… trouvez la réponse tout de suite.</small>
+            </span>
+          </button>
+            </>
+          )}
         </DialogContent>
       </Dialog>
     </>

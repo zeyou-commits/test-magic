@@ -50,7 +50,7 @@ import { TripChanges } from "./MyTrip";
 import { PushStatusLine } from "./PushStatusLine";
 import { ReportButton } from "./ReportButton";
 import { TravelSignals } from "./TravelCommunity";
-import { LineQuestions } from "./LineQuestions";
+import { QuestionHelp } from "@/components/questions/QuestionHelp";
 import { ActionHub, revealBlock } from "./ActionHub";
 import { chatFeedQuery, LiveRoom } from "./LiveRoom";
 import { useTravelAction } from "@/hooks/useTravelAction";
@@ -494,10 +494,12 @@ export function TripRecap({
         />
       ) : null}
 
-      <LineQuestions
+      <QuestionHelp
         routeId={departure.route_id}
-        title={`Questions sur ${from.name} → ${to.name}`}
-        starterContext={{ depart: from.name, arrivee: to.name, compagnie: company?.name }}
+        companyId={company?.id}
+        onAskTravellers={() => enterRoom("crossing", departure.id)}
+        travellersLabel="Demander aux voyageurs du bateau"
+        travellersHint="Le salon de cette traversée : ceux qui la font vous répondent."
       />
 
       {/* 3 bis. Les voyageurs de la traversée, leur cabas et leur humeur */}

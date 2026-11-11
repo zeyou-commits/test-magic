@@ -796,8 +796,8 @@ function LiveChat({
       {notHere && onAskLine && portLines.length ? (
         <div role="alert" className="bw-chat__elsewhere">
           <p>
-            <b>Vous n'êtes pas sur le port.</b> Ce salon est réservé à ceux qui y sont. Posez plutôt
-            votre question aux voyageurs d'une ligne : ils vous répondront.
+            <b>Vous n'êtes pas sur le port.</b> Ce salon est réservé à ceux qui y sont. Cherchez
+            plutôt la réponse sur votre ligne : votre question vous y attend.
           </p>
           <div>
             {portLines.map((item) => (

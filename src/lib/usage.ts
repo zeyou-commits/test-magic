@@ -19,7 +19,10 @@ export type FunnelEvent =
   | "connexion-google"
   | "suivi-enregistre"
   | "billet-ajoute"
-  | "message-salon";
+  | "message-salon"
+  // « Une question ? » : recherche restée sans réponse (pour enrichir la FAQ), et sortie choisie.
+  | "question-sans-reponse"
+  | "question-sortie";
 
 export type UsageEvent = (typeof STORED)[number] | FunnelEvent;
 

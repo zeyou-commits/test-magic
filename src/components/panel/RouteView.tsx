@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { LineAlertNotice, VesselAlertTag } from "@/components/panel/VesselAlert";
 import { LineCalendar } from "./LineCalendar";
 import { useQuery } from "@tanstack/react-query";
@@ -14,7 +15,8 @@ import { portTimeZone, zoneLabel } from "@/lib/ferry/time";
 import type { RouteLine, Selection } from "@/lib/ferry/types";
 import { Button } from "@/components/ui/button";
 import { BookingLink, DemoBadge, EmptyNote, PanelHeader, Section } from "./shared";
-import { LineQuestions } from "./LineQuestions";
+import { QuestionHelp } from "@/components/questions/QuestionHelp";
+import { RoomPicker } from "./RoomPicker";
 import { ReportButton } from "./ReportButton";
 
 export function RouteView({
@@ -31,6 +33,7 @@ export function RouteView({
   const { data: companies = [] } = useQuery(companiesQuery);
   const { data: vessels = [] } = useQuery(vesselsQuery);
   const { data: departures = [] } = useQuery(upcomingDeparturesQuery());
+  const [salons, setSalons] = useState(false);
 
   const route = routes.find((item) => item.id === routeId);
   if (!route) return <EmptyNote>Ligne introuvable.</EmptyNote>;
@@ -133,10 +136,16 @@ export function RouteView({
       </Section>
 
       <div className="px-4 md:px-6">
-        <LineQuestions
+        <QuestionHelp
           routeId={route.id}
-          title={`Questions sur ${from?.name ?? "—"} → ${to?.name ?? "—"}`}
-          starterContext={{ depart: from?.name, arrivee: to?.name }}
+          {...(lineDepartures.length ? { onAskTravellers: () => setSalons(true) } : {})}
+          travellersHint="Choisissez une traversée de la ligne : ses voyageurs répondent dans le salon."
+        />
+        <RoomPicker
+          departures={lineDepartures}
+          onSelect={onSelect}
+          open={salons}
+          onOpenChange={setSalons}
         />
       </div>
 

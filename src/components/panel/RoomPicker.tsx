@@ -150,7 +150,7 @@ export function RoomPicker({
     <>
       <Dialog open={open} onOpenChange={(next) => (next ? onOpenChange(true) : close())}>
         <DialogContent
-          className="bw-room-picker"
+          className={`bw-room-picker${mode === "questions" ? " bw-room-picker--questions max-w-none" : ""}`}
           // Le champ de recherche ne prend pas le focus : le clavier ne cache pas la liste.
           onOpenAutoFocus={(event) => event.preventDefault()}
         >

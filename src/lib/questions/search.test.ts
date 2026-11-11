@@ -36,6 +36,13 @@ describe("« Une question ? » trouve la réponse dans ce que BledWay sait déj�
     expect(first("especes 10000 euros")?.q.toLowerCase()).toMatch(/esp[eè]ces/);
   });
 
+  it("ne se laisse pas guider par les mots présents partout (« Algérie »)", () => {
+    const top = searchHelp(corpus, "Combien d'espèces je peux emporter en Algérie ?").slice(0, 3);
+    expect(top.length).toBeGreaterThan(0);
+    expect(top.every((hit) => !/importer une voiture/i.test(hit.q))).toBe(true);
+    expect(top.map((hit) => hit.q.toLowerCase()).join(" ")).toMatch(/esp[eè]ces|ressortir|devises/);
+  });
+
   it("met la ligne regardée en avant", () => {
     expect(first("combien de temps dure le ferry")?.source).toBe("ligne");
   });

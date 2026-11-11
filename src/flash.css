@@ -8873,14 +8873,14 @@ body:has(.bw-map-canvas [data-film="true"]:not(.bw-film-caption)) .bw-report {
   font-size: 16px;
   outline: none;
 }
-.bw-room-picker ul {
+.bw-room-picker__list ul {
   min-height: 0;
   margin: 0;
   padding: 0;
   overflow-y: auto;
   list-style: none;
 }
-.bw-room-picker li button {
+.bw-room-picker__list li button {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -8891,20 +8891,20 @@ body:has(.bw-map-canvas [data-film="true"]:not(.bw-film-caption)) .bw-report {
   border-bottom: 1px solid #eef3f0;
   text-align: left;
 }
-.bw-room-picker li button[aria-current="true"] {
+.bw-room-picker__list li button[aria-current="true"] {
   border-radius: 10px;
   background: #f1f8f4;
 }
-.bw-room-picker li span {
+.bw-room-picker__list li span {
   display: grid;
   min-width: 0;
   font-size: 14px;
 }
-.bw-room-picker li small {
+.bw-room-picker__list li small {
   color: #5b6b66;
   font-size: 12px;
 }
-.bw-room-picker li b {
+.bw-room-picker__list li b {
   flex: none;
   color: #0e6b3b;
   font-size: 12px;
@@ -14654,8 +14654,8 @@ img[data-logo="dark"] {
   width: auto;
 }
 /* Choix du salon : le compteur de messages reste lisible, même sur la traversée en cours. */
-.bw-room-picker li button b,
-.bw-room-picker li button[aria-current="true"] b {
+.bw-room-picker__list li button b,
+.bw-room-picker__list li button[aria-current="true"] b {
   display: inline-flex;
   align-items: center;
   gap: 3px;
@@ -14689,7 +14689,7 @@ img[data-logo="dark"] {
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 8px;
   }
-  .bw-room-picker li button {
+  .bw-room-picker__list li button {
     height: 100%;
     border: 1px solid #e3ebe6;
     border-radius: 12px;

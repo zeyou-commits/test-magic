@@ -122,6 +122,7 @@ const SYNONYMS: string[][] = [
   ["tpd", "temporaire", "admission"],
   ["importer", "importation", "dedouaner", "dedouanement"],
   ["billet", "billets", "reservation", "reserver", "reservations"],
+  ["emporter", "emmener", "amener", "apporter", "transporter", "ressortir", "sortir", "sortie"],
 ];
 const SYNONYM_OF = new Map<string, string[]>();
 for (const group of SYNONYMS)
@@ -169,7 +170,8 @@ function matchIn(term: string, words: string[]) {
     if (term.length >= 4 && word.startsWith(term)) best = Math.max(best, 2);
     else if (forms.includes(word) || forms.some((form) => stem(form) === stem(word)))
       best = Math.max(best, 1);
-    else if (term.length >= 5 && word.length >= 5 && near(stem(term), stem(word)))
+    // Une faute de frappe, jamais sur la première lettre (« emporter » n'est pas « importer »).
+    else if (term.length >= 5 && word.length >= 5 && term[0] === word[0] && near(stem(term), stem(word)))
       best = Math.max(best, 0.75);
   }
   return best;
@@ -179,25 +181,37 @@ export type HelpHit = HelpAnswer & { score: number };
 
 /** Les réponses les plus proches de la question, les mieux couvertes d'abord. */
 export function searchHelp(corpus: HelpAnswer[], query: string, limit = 20): HelpHit[] {
-  const terms = queryTerms(query);
+  const terms = [...new Set(queryTerms(query))];
   if (!terms.length) return [];
+  const docs = corpus.map((answer) => ({
+    answer,
+    inQuestion: plain(answer.q).split(" "),
+    inAnswer: plain(`${answer.a} ${answer.from ?? ""}`).split(" "),
+  }));
+  const found = docs.map((doc) =>
+    terms.map((term) => [matchIn(term, doc.inQuestion), matchIn(term, doc.inAnswer)] as const),
+  );
+  // Un mot présent partout (« Algérie », « ferry ») pèse peu ; un mot rare (« espèces ») pèse lourd.
+  const weights = terms.map((_, index) => {
+    const df = found.filter((row) => row[index]![0] || row[index]![1]).length;
+    return Math.log((docs.length + 1) / (df + 1)) + 0.1;
+  });
+  const total = weights.reduce((sum, weight) => sum + weight, 0);
   const hits: HelpHit[] = [];
-  for (const answer of corpus) {
-    const inQuestion = plain(answer.q).split(" ");
-    const inAnswer = plain(`${answer.a} ${answer.from ?? ""}`).split(" ");
+  docs.forEach((doc, index) => {
     let score = 0;
     let covered = 0;
-    for (const term of terms) {
-      const q = matchIn(term, inQuestion);
-      const a = matchIn(term, inAnswer);
-      if (q || a) covered++;
-      score += q * 3 + a;
-    }
-    // Il faut retrouver la majorité des mots cherchés (un seul suffit pour une question d'un mot).
-    if (!covered || covered < Math.ceil(terms.length / 2)) continue;
-    const boost = answer.source === "ligne" ? 1.2 : answer.source === "faq" ? 1.1 : 1;
-    hits.push({ ...answer, score: score * (covered / terms.length) * boost });
-  }
+    found[index]!.forEach(([q, a], termIndex) => {
+      const weight = weights[termIndex]!;
+      if (q || a) covered += weight;
+      score += (q * 3 + a) * weight;
+    });
+    // Il faut retrouver l'essentiel de la question, pas seulement ses mots les plus courants.
+    if (!covered || covered < total * 0.45) return;
+    const boost =
+      doc.answer.source === "ligne" ? 1.2 : doc.answer.source === "faq" ? 1.1 : 1;
+    hits.push({ ...doc.answer, score: score * (covered / total) * boost });
+  });
   return hits.sort((a, b) => b.score - a.score).slice(0, limit);
 }
 

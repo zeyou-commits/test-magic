@@ -145,6 +145,7 @@ export function BrandLink({ compact = false }: { compact?: boolean }) {
         alt="BledWay"
         className={compact ? "bw-brand bw-brand-compact" : "bw-brand"}
       />
+      <span className="bw-beta">Bêta</span>
     </Link>
   );
 }

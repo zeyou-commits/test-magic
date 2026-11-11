@@ -4,13 +4,45 @@ import { Link } from "@tanstack/react-router";
 import { UserMenu } from "./UserMenu";
 import { DataUnavailableNotice } from "./DataUnavailableNotice";
 import { goHome } from "@/lib/ferry/voyageTrip";
-import { ChevronDown, Menu, ArrowUpRight, Route as RouteIcon, Wallet } from "lucide-react";
+import {
+  Anchor,
+  ArrowUpRight,
+  BookOpen,
+  Building2,
+  Calculator,
+  Car,
+  ChevronDown,
+  CircleHelp,
+  Clock,
+  Info,
+  Mail,
+  Map as MapIcon,
+  MapPin,
+  Menu,
+  Newspaper,
+  Route as RouteIcon,
+  ScrollText,
+  Ship,
+  TrendingUp,
+  Users,
+  Wallet,
+  Waypoints,
+  type LucideIcon,
+} from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  Sheet,
+  SheetClose,
+  SheetContent,
+  SheetDescription,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
 
 export const navLinks = [
   { to: "/", label: "Carte" },
@@ -25,6 +57,52 @@ export const navLinks = [
   { to: "/barometre-prix", label: "Baromètre des prix" },
   { to: "/mes-dinars", label: "Mes dinars" },
 ] as const;
+
+/**
+ * Le même rangement partout : volet « Explorer » sur téléphone, grand menu « Explorer » sur
+ * ordinateur. Rien n'y répète la navigation principale (Carte, Départs, Route, compte).
+ */
+export const menuGroups: {
+  title: string;
+  items: { to: string; label: string; icon: LucideIcon }[];
+}[] = [
+  {
+    title: "Voyager",
+    items: [
+      { to: "/actualites", label: "Actualités", icon: Newspaper },
+      { to: "/lignes", label: "Lignes", icon: Waypoints },
+      { to: "/ports", label: "Ports", icon: Anchor },
+      { to: "/compagnies", label: "Compagnies", icon: Building2 },
+      { to: "/bateaux", label: "Navires", icon: Ship },
+    ],
+  },
+  {
+    title: "Préparer",
+    items: [
+      { to: "/guide", label: "Guide", icon: BookOpen },
+      { to: "/questions-frequentes", label: "Questions fréquentes", icon: CircleHelp },
+      { to: "/voyage-algerie", label: "Voyage en Algérie", icon: MapPin },
+      { to: "/vehicules-moins-3-ans", label: "Véhicules de moins de 3 ans", icon: Car },
+      { to: "/covoiturage", label: "Covoiturage", icon: Users },
+    ],
+  },
+  {
+    title: "Outils",
+    items: [
+      { to: "/simulateurs", label: "Simulateurs", icon: Calculator },
+      { to: "/barometre-prix", label: "Baromètre des prix", icon: TrendingUp },
+      { to: "/mes-dinars", label: "Mes dinars", icon: Wallet },
+    ],
+  },
+  {
+    title: "BledWay",
+    items: [
+      { to: "/a-propos", label: "À propos", icon: Info },
+      { to: "/contact", label: "Contact", icon: Mail },
+      { to: "/methode-editoriale", label: "Méthode éditoriale", icon: ScrollText },
+    ],
+  },
+];
 
 const footerLinks = [
   { to: "/actualites", label: "Actualités" },
@@ -71,12 +149,7 @@ export function BrandLink({ compact = false }: { compact?: boolean }) {
 }
 
 export function SiteHeader() {
-  const primary = navLinks.filter((item) =>
-    ["/", "/horaires", "/guide", "/simulateurs"].includes(item.to),
-  );
-  const explore = navLinks.filter((item) =>
-    ["/actualites", "/ports", "/lignes", "/compagnies", "/bateaux"].includes(item.to),
-  );
+  const primary = navLinks.filter((item) => ["/", "/horaires"].includes(item.to));
   // Hauteur réelle du bandeau (bandeau d'alertes compris), pour caler ce qui reste collé dessous.
   const headerRef = useRef<HTMLElement>(null);
   useEffect(() => {
@@ -94,7 +167,7 @@ export function SiteHeader() {
       <div className="bw-header-inner">
         <BrandLink />
         <nav aria-label="Navigation principale" className="bw-desktop-nav">
-          {primary.slice(0, 2).map((item) => (
+          {primary.map((item) => (
             <Link
               key={item.to}
               to={item.to}
@@ -105,7 +178,7 @@ export function SiteHeader() {
                 goHome();
               }}
             >
-              {item.label}
+              {item.to === "/" ? "Carte" : "Départs"}
             </Link>
           ))}
           <Link
@@ -121,51 +194,77 @@ export function SiteHeader() {
             <DropdownMenuTrigger className="bw-explore-trigger">
               Explorer <ChevronDown size={15} />
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="start" className="min-w-48">
-              {explore.map((item) => (
-                <DropdownMenuItem asChild key={item.to}>
-                  <Link to={item.to}>{item.label}</Link>
-                </DropdownMenuItem>
+            <DropdownMenuContent align="start" className="bw-mega-menu">
+              {menuGroups.map((group) => (
+                <div key={group.title} className="bw-mega-menu__group" role="group" aria-label={group.title}>
+                  <p className="bw-menu-group-title">{group.title}</p>
+                  {group.items.map((item) => (
+                    <DropdownMenuItem asChild key={item.to}>
+                      <Link to={item.to} className="bw-menu-link">
+                        <item.icon size={16} aria-hidden />
+                        {item.label}
+                      </Link>
+                    </DropdownMenuItem>
+                  ))}
+                </div>
               ))}
-              <DropdownMenuItem asChild>
-                <Link to="/mes-dinars">
-                  <Wallet size={16} aria-hidden /> Outils de voyage · Mes dinars
-                </Link>
-              </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
-          {primary.slice(2).map((item) => (
-            <Link key={item.to} to={item.to}>
-              {item.label}
-            </Link>
-          ))}
         </nav>
         <div className="bw-header-actions">
           {/* Sur mobile, le compte est l'onglet « Moi » de la barre du bas. */}
           <span className="hidden md:inline-flex">
             <UserMenu compact iconOnly />
           </span>
-          <DropdownMenu>
-            <DropdownMenuTrigger
-              className="bw-mobile-menu bw-icon-button"
-              aria-label="Ouvrir le menu"
-            >
+          <Sheet>
+            <SheetTrigger className="bw-mobile-menu bw-icon-button" aria-label="Ouvrir le menu">
               <Menu size={22} />
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="min-w-52">
-              <DropdownMenuItem asChild>
-                <Link to="/" onClick={openItineraryFromHeader}>
-                  <RouteIcon size={16} aria-hidden />
-                  Route jusqu'au port
-                </Link>
-              </DropdownMenuItem>
-              {navLinks.map((item) => (
-                <DropdownMenuItem asChild key={item.to}>
-                  <Link to={item.to}>{item.label}</Link>
-                </DropdownMenuItem>
-              ))}
-            </DropdownMenuContent>
-          </DropdownMenu>
+            </SheetTrigger>
+            <SheetContent side="bottom" className="bw-menu-sheet">
+              <SheetTitle className="bw-menu-sheet__title">Explorer BledWay</SheetTitle>
+              <SheetDescription className="sr-only">
+                Toutes les rubriques, rangées par famille.
+              </SheetDescription>
+              {/* Tablette : pas de barre du bas, la navigation principale reste ici. */}
+              <div className="bw-menu-sheet__main">
+                <SheetClose asChild>
+                  <Link to="/" activeOptions={{ exact: true }} onClick={goHome} className="bw-menu-link">
+                    <MapIcon size={16} aria-hidden /> Carte
+                  </Link>
+                </SheetClose>
+                <SheetClose asChild>
+                  <Link to="/horaires" className="bw-menu-link">
+                    <Clock size={16} aria-hidden /> Départs
+                  </Link>
+                </SheetClose>
+                <SheetClose asChild>
+                  <Link
+                    to="/"
+                    onClick={openItineraryFromHeader}
+                    activeProps={{ className: "" }}
+                    className="bw-menu-link"
+                  >
+                    <RouteIcon size={16} aria-hidden /> Route
+                  </Link>
+                </SheetClose>
+              </div>
+              <div className="bw-menu-sheet__groups">
+                {menuGroups.map((group) => (
+                  <section key={group.title} aria-label={group.title}>
+                    <p className="bw-menu-group-title">{group.title}</p>
+                    {group.items.map((item) => (
+                      <SheetClose asChild key={item.to}>
+                        <Link to={item.to} className="bw-menu-link">
+                          <item.icon size={17} aria-hidden />
+                          {item.label}
+                        </Link>
+                      </SheetClose>
+                    ))}
+                  </section>
+                ))}
+              </div>
+            </SheetContent>
+          </Sheet>
         </div>
       </div>
       <AlertTicker />

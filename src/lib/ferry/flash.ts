@@ -44,6 +44,18 @@ export const newsSchema = z.object({
   source_title: z.string().nullish(),
   source_excerpt: z.string().nullish(),
   source_published_at: z.string().nullish(),
+  // Autres articles sur le même sujet (script du 31/12/2026) : une seule actu, plusieurs sources.
+  extra_sources: z
+    .array(
+      z.object({
+        name: z.string().nullish(),
+        url: z.string(),
+        title: z.string().nullish(),
+        published_at: z.string().nullish(),
+      }),
+    )
+    .nullish()
+    .transform((value) => (value ?? []).filter((source) => source.url.startsWith("https://"))),
   starts_at: z.string(),
   ends_at: z.string().nullable(),
   published: z.boolean(),

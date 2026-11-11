@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { ArrowRightLeft, ChevronDown, Delete, Fuel, Plus, Receipt, Trash2, Volume2, Wallet } from "lucide-react";
+import { ArrowRightLeft, ChevronDown, Delete, Fuel, Plus, Receipt, Store, Trash2, Volume2, Wallet } from "lucide-react";
+import { PocketCount, RateCompare, SoukMode, StayPlanner } from "@/components/wallet/DinarTools";
 import { SiteFooter, SiteHeader } from "@/components/layout/SiteLayout";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase as typedSupabase } from "@/integrations/supabase/client";
@@ -58,7 +59,10 @@ function WalletPage() {
   const [category, setCategory] = useState<string>(EXPENSE_CATEGORIES[0]);
   const [cash, setCash] = useState("");
   const [heard, setHeard] = useState("");
-  const [tab, setTab] = useState<"convert" | "budget">("convert");
+  const [tab, setTab] = useState<"convert" | "plan" | "budget">("convert");
+  const [souk, setSouk] = useState(false);
+  // Arrivée depuis le simulateur de route : on ouvre directement « Préparer ».
+  useEffect(() => { if (new URLSearchParams(window.location.search).get("plan") === "1") setTab("plan"); }, []);
   const [entry, setEntry] = useState<"dinars" | "foreign" | "heard">("dinars");
   const voices = useQuery(dinarVoicesQuery).data;
 
@@ -182,6 +186,7 @@ function WalletPage() {
 
         <div className="bw-dz-tabs" role="tablist" aria-label="Mes dinars">
           <button type="button" role="tab" aria-selected={tab === "convert"} onClick={() => setTab("convert")}>Convertir</button>
+          <button type="button" role="tab" aria-selected={tab === "plan"} onClick={() => setTab("plan")}>Préparer</button>
           <button type="button" role="tab" aria-selected={tab === "budget"} onClick={() => setTab("budget")}>Mon budget{started ? <small>{money(left, "DZD")}</small> : null}</button>
         </div>
 
@@ -233,7 +238,9 @@ function WalletPage() {
               </select>
             </label>
           </div>
+          <button type="button" className="bw-dz-souk-open" onClick={() => setSouk(true)}><Store size={17} aria-hidden /> Mode au souk : gros chiffres et dictée</button>
         </section>
+        <RateCompare rate={published} currency={currency} />
         <details className="bw-dz-lexicon">
           <summary>Parler dinar : melyoun, cent mille… <ChevronDown size={16} aria-hidden /></summary>
           <p>Au bled, on compte souvent en centimes : « melyoun » veut dire 10 000 DA, pas un million.</p>
@@ -250,6 +257,8 @@ function WalletPage() {
           <small>Les habitudes changent selon les régions et les personnes. En cas de doute, faites préciser « en dinars ».</small>
         </details>
         </> : null}
+
+        {tab === "plan" ? <StayPlanner rate={published} currency={currency} /> : null}
 
         {tab === "budget" ? <>
         <section className="bw-dz-budget" aria-labelledby="dz-budget-title">
@@ -289,6 +298,7 @@ function WalletPage() {
             </li>)}
           </ul> : null}
         </section>
+        <PocketCount left={left} started={started} />
         </> : null}
 
         <details className="bw-dz-details">
@@ -301,6 +311,7 @@ function WalletPage() {
         <p className="bw-wallet-credit">Visuels par défaut : <a href="https://www.bank-of-algeria.dz/pieces-et-billets-algeriens/" target="_blank" rel="noopener noreferrer">Banque d’Algérie ↗</a>{mediaCredits.length ? <> · Images ajoutées : {mediaCredits.map((row, index) => <span key={`${row.credit_label}${index}`}>{index ? ", " : ""}{row.credit_label}</span>)}</> : null}</p>
       </div>
     </main>
+    {souk ? <SoukMode rate={rate} currency={currency} basis={basis} onClose={() => setSouk(false)} /> : null}
     <SiteFooter />
   </>;
 }

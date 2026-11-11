@@ -135,6 +135,20 @@ function NewsArticlePage() {
                 Lire l’article{item.source_name ? ` sur ${item.source_name}` : ""}
                 <ExternalLink size={15} aria-hidden />
               </a>
+              {item.extra_sources.length ? (
+                // Le même sujet relayé ailleurs : une seule actu, toutes ses sources.
+                <p className="bw-news-source__more">
+                  Aussi relayé par{" "}
+                  {item.extra_sources.map((source, index) => (
+                    <span key={source.url}>
+                      {index ? ", " : ""}
+                      <a href={source.url} target="_blank" rel="noopener noreferrer nofollow">
+                        {source.name || new URL(source.url).hostname}
+                      </a>
+                    </span>
+                  ))}
+                </p>
+              ) : null}
             </aside>
           ) : null}
           <div className="bw-article__share">

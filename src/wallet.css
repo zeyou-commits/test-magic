@@ -217,3 +217,72 @@
 .bw-dz-budget{margin-top:0}
 .bw-dz-coin{color:#ffd98a;font-size:14px;font-weight:800}
 .bw-dz-convert .bw-dz-notes>button[data-kind=coin]{min-height:40px}
+
+/* 11/11/2026 : préparer, comparer, mode au souk, billets en poche */
+.bw-dz-tabs{grid-template-columns:repeat(3,1fr)}
+.bw-dz-souk-open{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;min-height:44px;margin-top:12px;border:1px dashed #c8925b;border-radius:13px;color:#ffe2b8;font-size:14px;font-weight:800}
+.bw-dz-compare{margin-top:12px;padding:14px 16px;border:1px solid #d9e6e4;border-radius:20px;background:#fff}
+.bw-dz-compare h2{display:flex;align-items:center;gap:7px;margin:0 0 10px;font-size:16px;font-weight:800}
+.bw-dz-compare>div{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.bw-dz-compare p{display:grid;gap:1px;margin:0;padding:10px 12px;border-radius:14px;background:#f2f6f4}
+.bw-dz-compare p[data-best]{background:#e2f3e9}
+.bw-dz-compare small{color:#55666f;font-size:12px;font-weight:700}
+.bw-dz-compare b{font-size:20px;letter-spacing:-.02em}
+.bw-dz-compare span{color:#66747b;font-size:11px}
+.bw-dz-compare strong{display:block;margin-top:10px;color:#00663f;font-size:14px}
+.bw-dz-compare em{display:block;margin-top:6px;color:#66747b;font-size:11px;font-style:normal;line-height:1.45}
+.bw-dz-plan,.bw-dz-pocket{margin-top:0;padding:18px;border:1px solid #d9e6e4;border-radius:24px;background:#fff;box-shadow:0 8px 20px #064c3d12}
+.bw-dz-pocket{margin-top:16px}
+.bw-dz-plan h2,.bw-dz-pocket h2{display:flex;align-items:center;gap:8px;margin:0;font-size:19px;font-weight:800}
+.bw-dz-plan__intro{margin:4px 0 12px;color:#66747b;font-size:13px}
+.bw-dz-plan__grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:10px}
+.bw-dz-plan label,.bw-dz-pocket__days{display:grid;gap:4px;color:#3d4f5c;font-size:12px;font-weight:700}
+.bw-dz-plan input[type=number],.bw-dz-pocket__days input{width:100%;min-height:44px;padding:8px 10px;border:1px solid #b5cdd3;border-radius:11px;background:#fff;color:#102c43;font-size:16px;font-weight:700}
+.bw-dz-plan label.bw-dz-plan__toggle{display:flex;align-items:center;gap:7px;align-self:end;min-height:44px;padding:0 10px;border:1px solid #b5cdd3;border-radius:11px;font-size:13px}
+.bw-dz-plan__toggle input{width:18px;height:18px;accent-color:#0e7a43}
+.bw-dz-plan__styles{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:10px;padding:4px;border-radius:13px;background:#eef3ef}
+.bw-dz-plan__styles button{min-height:40px;border-radius:10px;color:#55666f;font-size:13px;font-weight:800}
+.bw-dz-plan__styles button[aria-pressed=true]{background:#fff;color:#0e7a43;box-shadow:0 2px 6px #16324a1f}
+.bw-dz-plan__result{display:grid;gap:2px;margin:6px 0 10px;padding:14px 16px;border-radius:18px;background:linear-gradient(125deg,#003a37,#006e5d 68%,#00875e);color:#fff}
+.bw-dz-plan__result small{color:#bfe7d2;font-size:12px;font-weight:700}
+.bw-dz-plan__result strong{font-size:clamp(30px,8vw,40px);letter-spacing:-.04em;line-height:1.1}
+.bw-dz-plan__result span{color:#dff3e8;font-size:13px}
+.bw-dz-plan__result b{color:#fff;font-size:15px}
+.bw-dz-plan__lines{display:grid;gap:0;margin:0;padding:0;list-style:none}
+.bw-dz-plan__lines li{display:flex;justify-content:space-between;padding:8px 2px;border-top:1px solid #e4e9e9;font-size:14px}
+.bw-dz-plan__more{margin-top:8px;color:#55666f;font-size:12px}
+.bw-dz-plan__more summary{cursor:pointer;color:#0e7a43;font-weight:800}
+.bw-dz-plan__more p{margin:8px 0 0;line-height:1.5}
+.bw-dz-pocket ul{display:grid;gap:6px;margin:12px 0;padding:0;list-style:none}
+.bw-dz-pocket li{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:6px 4px 6px 12px;border-radius:13px;background:#f6f3ea;font-weight:800}
+.bw-dz-pocket__qty{display:flex;align-items:center;overflow:hidden;border:1px solid #c9b79f;border-radius:99px;background:#fff}
+.bw-dz-pocket__qty button{display:grid;place-items:center;width:44px;height:40px;background:#0e7a43;color:#fff}
+.bw-dz-pocket__qty button:first-child{background:#333433}
+.bw-dz-pocket__qty button:disabled{opacity:.35}
+.bw-dz-pocket__qty output{min-width:38px;text-align:center}
+.bw-dz-pocket__total{display:flex;align-items:baseline;justify-content:space-between;margin:0 0 6px}
+.bw-dz-pocket__total small{color:#55666f;font-size:13px;font-weight:700}
+.bw-dz-pocket__total strong{font-size:28px;letter-spacing:-.03em}
+.bw-dz-pocket__gap{margin:0 0 10px;padding:8px 12px;border-radius:12px;background:#e2f3e9;color:#0b5b37;font-size:13px}
+.bw-dz-pocket__gap[data-negative]{background:#fff4e0;color:#7a4b00}
+.bw-dz-pocket__perday{margin:10px 0 0;font-size:15px}
+.bw-dz-pocket__perday b{color:#0e7a43}
+.bw-dz-pocket__reset{margin-top:10px;color:#66747b;font-size:12px;text-decoration:underline}
+.bw-souk{position:fixed;inset:0;z-index:110;display:flex;flex-direction:column;gap:16px;padding:calc(18px + env(safe-area-inset-top)) 18px calc(18px + env(safe-area-inset-bottom));overflow-y:auto;background:linear-gradient(160deg,#1d1512,#3e291e 60%,#211612);color:#fff}
+.bw-souk__close{align-self:flex-end;display:grid;place-items:center;width:48px;height:48px;border-radius:50%;background:#ffffff1f}
+.bw-souk__hint{display:flex;align-items:center;gap:8px;margin:0;color:#ffe2b8;font-size:15px;font-weight:700}
+.bw-souk__big{display:grid;align-content:center;justify-items:center;gap:6px;min-height:42vh;text-align:center}
+.bw-souk__big strong{font-size:clamp(56px,17vw,120px);font-weight:900;letter-spacing:-.05em;line-height:1}
+.bw-souk__big span{color:#bfe7d2;font-size:clamp(28px,8vw,52px);font-weight:800}
+.bw-souk__big em{color:#ffe2b8;font-size:18px;font-style:normal}
+.bw-souk__empty{color:#e9d8c1!important;font-size:22px!important}
+.bw-souk__entry{display:flex;gap:10px}
+.bw-souk__entry input{flex:1;min-width:0;min-height:58px;padding:0 16px;border:2px solid #c8925b;border-radius:16px;background:#fff;color:#102c43;font-size:20px;font-weight:800}
+.bw-souk__entry button{display:grid;place-items:center;width:58px;height:58px;border-radius:50%;background:#0e7a43}
+.bw-souk__entry button[aria-pressed=true]{background:#e04d2c;animation:bw-souk-pulse 1s infinite}
+@keyframes bw-souk-pulse{50%{box-shadow:0 0 0 10px #e04d2c33}}
+.bw-souk__chips{display:flex;flex-wrap:wrap;gap:8px}
+.bw-souk__chips button{min-height:40px;padding:0 14px;border:1px solid #c8925b;border-radius:99px;color:#ffe2b8;font-size:14px;font-weight:700}
+.bw-souk__basis{color:#dfc9b3;font-size:12px;line-height:1.5}
+@media(max-width:380px){.bw-dz-plan__grid{grid-template-columns:1fr 1fr}.bw-dz-compare b{font-size:17px}}
+@media(prefers-reduced-motion:reduce){.bw-souk__entry button[aria-pressed=true]{animation:none}}

@@ -22,6 +22,7 @@ import {
   X,
   SlidersHorizontal as SlidersHorizontalIcon,
   Star as StarIcon,
+  Wallet as WalletIcon,
 } from "lucide-react";
 const SlidersHorizontal = SlidersHorizontalIcon;
 const Star = StarIcon;
@@ -1872,6 +1873,15 @@ export function ItineraryPlanner({
                             voiture ≈ {numberFormat.format(option.ferryEuro)} €, fourchette{" "}
                             {formatFareRange(estimateFerryFare(option.sailing, profile))}
                           </p>
+                          {option.sailing.to.country_code?.toUpperCase() === "DZ" ? (
+                            // Arrivée en Algérie : le budget sur place, route jusqu'à la maison comprise.
+                            <a
+                              href={`/mes-dinars?plan=1&km=${Math.round(option.destinationRoad.distanceKm)}&adults=${adults}&children=${children}`}
+                              className="inline-flex min-h-10 w-full items-center justify-center gap-2 rounded-xl bg-secondary px-4 text-sm font-bold text-primary"
+                            >
+                              <WalletIcon className="size-4" aria-hidden /> Prévoir mes dinars au bled
+                            </a>
+                          ) : null}
                           <div className="grid gap-1.5">
                             {option.sailing.isSimulation ? null : (
                               <a

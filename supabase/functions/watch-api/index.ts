@@ -59,7 +59,7 @@ Deno.serve(async (request) => {
         }),
     );
     const now = Date.now();
-    const [departures, vessels, companies, routes, ports, incidents] = await Promise.all([
+    const [departures, vessels, companies, routes, ports, incidents, recentNews, pendingNews] = await Promise.all([
       db
         .from("departures")
         .select("id,route_id,company_id,vessel_id,departure_at,arrival_at,status")
@@ -71,6 +71,21 @@ Deno.serve(async (request) => {
       db.from("routes").select("id,departure_port_id,arrival_port_id"),
       db.from("ports").select("id,name"),
       db.from("bw_vessel_incidents").select("vessel_id,status,public_note,source_url,verified_at").eq("status", "confirmed"),
+      // Ce qui est déjà publié ou déjà proposé : un même sujet ne devient jamais une deuxième actu.
+      db
+        .from("bw_news")
+        .select("id,kind,title,summary,departure_ids,vessel_id,company_ids,created_at")
+        .eq("published", true)
+        .gte("created_at", new Date(now - 7 * 86_400_000).toISOString())
+        .order("created_at", { ascending: false })
+        .limit(40),
+      db
+        .from("bw_watch_proposals")
+        .select("id,kind,title,departure_ids,vessel_id,created_at")
+        .in("kind", ["flash", "note"])
+        .in("status", ["pending", "standby"])
+        .order("created_at", { ascending: false })
+        .limit(30),
     ]);
     const portName = new Map((ports.data ?? []).map((p: { id: string; name: string }) => [p.id, p.name]));
     const routeName = new Map(
@@ -87,6 +102,8 @@ Deno.serve(async (request) => {
       vessels: vessels.data ?? [],
       companies: companies.data ?? [],
       incidents: incidents.data ?? [],
+      recent_news: recentNews.data ?? [],
+      pending_news: pendingNews.data ?? [],
       departures: (departures.data ?? []).map((d: Record<string, unknown>) => ({
         ...d,
         route: routeName.get(d.route_id as string) ?? null,

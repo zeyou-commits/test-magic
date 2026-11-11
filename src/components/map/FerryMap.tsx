@@ -1376,7 +1376,19 @@ export default function FerryMap({
           ],
           { layers: fleetLayers },
         );
-        const event = { features, point: { x: point[0], y: point[1] } };
+        // Zoomé à fond, l'image du navire est grande : un toucher sur sa coque, loin de son point
+        // d'ancrage, doit quand même ouvrir ce navire et non le port qu'elle recouvre.
+        const exact = 3;
+        const hull = map
+          .queryRenderedFeatures(
+            [
+              [point[0] - exact, point[1] - exact],
+              [point[0] + exact, point[1] + exact],
+            ],
+            { layers: fleetLayers },
+          )
+          .filter((f) => f.layer.id.startsWith("fleet-photo-") || f.layer.id === "fleet-ships");
+        const event = { features: hull.length ? hull : features, point: { x: point[0], y: point[1] } };
         const feature = closestShip(event);
         if (!feature || feature.geometry.type !== "Point") return false;
         const center = map.project(feature.geometry.coordinates as [number, number]);
@@ -1384,7 +1396,7 @@ export default function FerryMap({
         const shipDistance = Math.hypot(center.x - point[0], center.y - point[1]);
         // Le navire à quai a la priorité ; seul un toucher pile sur le point du port ouvre le port.
         const onPortDot = portDistance < 5 && shipDistance > portDistance + 6;
-        if (!badge && (shipDistance > 30 || onPortDot)) return false;
+        if (!badge && !hull.length && (shipDistance > 30 || onPortDot)) return false;
         setTipPortId(null);
         pickFleet(event);
         return true;

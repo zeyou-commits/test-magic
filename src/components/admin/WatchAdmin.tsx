@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Check, Clock, ExternalLink, KeyRound, Newspaper, Pause, RefreshCw, Undo2, X } from "lucide-react";
+import { Check, Clock, ExternalLink, KeyRound, Link2, Newspaper, Pause, RefreshCw, Undo2, X } from "lucide-react";
 import { toast } from "sonner";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { Button } from "@/components/ui/button";
@@ -46,6 +46,8 @@ interface Proposal {
   /** Texte grand public proposé par la veille (script du 13/12/2026). */
   public_summary?: string | null;
   departure_ids?: string[] | null;
+  /** Actu déjà publiée sur le même sujet (script du 31/12/2026). */
+  duplicate_of?: string | null;
   bw_watch_items: {
     url: string;
     title?: string | null;
@@ -137,6 +139,23 @@ export function WatchAdmin() {
     },
     refetchInterval: 60_000,
   });
+  // Titres des actus déjà publiées que certaines propositions semblent répéter.
+  const twinIds = [
+    ...new Set(
+      (proposals.data ?? [])
+        .filter((p) => p.duplicate_of && (p.status === "pending" || p.status === "standby"))
+        .map((p) => p.duplicate_of as string),
+    ),
+  ].sort();
+  const twins = useQuery({
+    queryKey: ["admin", "watch", "twins", twinIds],
+    enabled: twinIds.length > 0,
+    queryFn: async () => {
+      const { data, error } = await db.from("bw_news").select("id,title,published").in("id", twinIds);
+      if (error) throw error;
+      return new Map((data as { id: string; title: string; published: boolean }[]).map((n) => [n.id, n]));
+    },
+  });
   const state = useQuery({
     queryKey: ["admin", "watch", "state"],
     queryFn: async () => {
@@ -181,6 +200,18 @@ export function WatchAdmin() {
             ? "Proposition mise en attente"
             : "Proposition refusée",
       );
+      refresh();
+    },
+    onError: (error: Error) => toast.error(error.message),
+  });
+  const attach = useMutation({
+    mutationFn: async (input: { id: string; news: string }) => {
+      const { error } = await db.rpc("bw_watch_attach", { p_id: input.id, p_news: input.news });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("Source ajoutée à l’actualité existante : rien de nouveau n’est publié.");
+      void client.invalidateQueries({ queryKey: newsKey });
       refresh();
     },
     onError: (error: Error) => toast.error(error.message),
@@ -321,6 +352,28 @@ export function WatchAdmin() {
                     {item.published_at ? ` · publié le ${dateTime(item.published_at)}` : ""}
                     <ExternalLink size={13} aria-hidden />
                   </a>
+                ) : null}
+                {proposal.duplicate_of &&
+                (proposal.status === "pending" || proposal.status === "standby") &&
+                composing !== proposal.id ? (
+                  <div className="bw-watch__twin" role="note">
+                    <p>
+                      <strong>Doublon probable.</strong> Une actualité publiée raconte sans doute
+                      déjà la même chose : «{" "}
+                      {twins.data?.get(proposal.duplicate_of)?.title ?? "actualité récente"} ».
+                    </p>
+                    <div className="bw-watch__actions">
+                      <Button
+                        size="sm"
+                        disabled={attach.isPending}
+                        onClick={() =>
+                          attach.mutate({ id: proposal.id, news: proposal.duplicate_of as string })
+                        }
+                      >
+                        <Link2 size={15} aria-hidden /> Ajouter comme source à cette actu
+                      </Button>
+                    </div>
+                  </div>
                 ) : null}
                 {composing === proposal.id ? (
                   <NewsComposer

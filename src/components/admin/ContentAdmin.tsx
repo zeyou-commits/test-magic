@@ -206,6 +206,25 @@ export function NewsAdmin() {
     },
     onError: (error: Error) => toast.error(error.message),
   });
+  // Doublon : l'actu choisie disparaît du site et donne sa source à celle qu'on garde.
+  const [merging, setMerging] = useState<{ drop: string; keep: string } | null>(null);
+  const merge = useMutation({
+    mutationFn: async (value: { drop: string; keep: string }) => {
+      const result = await flashClient.rpc("bw_news_merge", { p_keep: value.keep, p_drop: value.drop });
+      if (result.error)
+        throw new Error(
+          /bw_news_merge|function/i.test(result.error.message)
+            ? "Exécutez d’abord le script supabase/migrations/20261231110000_actus_sans_doublon.sql dans Supabase."
+            : result.error.message,
+        );
+    },
+    onSuccess: () => {
+      toast.success("Actualités fusionnées : le doublon est retiré du site.");
+      setMerging(null);
+      void queryClient.invalidateQueries({ queryKey: newsKey });
+    },
+    onError: (error: Error) => toast.error(error.message),
+  });
   const remove = useMutation({
     mutationFn: async (id: string) => {
       const result = await flashClient.from("bw_news").delete().eq("id", id);
@@ -429,8 +448,49 @@ export function NewsAdmin() {
                     {live ? "en ligne" : item.published ? "programmée ou expirée" : "brouillon"}
                   </p>
                   <strong className="text-sm">{item.title}</strong>
+                  {merging?.drop === item.id ? (
+                    <div className="bw-merge-pick">
+                      <label>
+                        Doublon de{" "}
+                        <select
+                          value={merging.keep}
+                          onChange={(e) => setMerging({ ...merging, keep: e.target.value })}
+                        >
+                          <option value="">— l’actu à garder —</option>
+                          {(news.data ?? [])
+                            .filter((other) => other.id !== item.id && other.published)
+                            .slice(0, 40)
+                            .map((other) => (
+                              <option key={other.id} value={other.id}>
+                                {other.title.slice(0, 90)}
+                              </option>
+                            ))}
+                        </select>
+                      </label>
+                      <Button
+                        size="sm"
+                        disabled={!merging.keep || merge.isPending}
+                        onClick={() => merge.mutate(merging)}
+                      >
+                        Fusionner
+                      </Button>
+                      <Button size="sm" variant="ghost" onClick={() => setMerging(null)}>
+                        Annuler
+                      </Button>
+                    </div>
+                  ) : null}
                 </div>
                 <div className="flex gap-2">
+                  {item.published && merging?.drop !== item.id ? (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      title="Cette actu répète une autre actu : on garde l’autre et on y ajoute cette source"
+                      onClick={() => setMerging({ drop: item.id, keep: "" })}
+                    >
+                      Doublon…
+                    </Button>
+                  ) : null}
                   <Button
                     size="sm"
                     variant="outline"

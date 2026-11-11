@@ -110,6 +110,102 @@ html {
 .bw-mobile-menu {
   display: none !important;
 }
+/* Rubriques rangées par famille : même ordre dans le grand menu (ordinateur) et le volet (téléphone). */
+.bw-menu-group-title {
+  margin: 0 0 4px;
+  padding: 0 10px;
+  color: #6b7b88;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.bw-menu-link {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 40px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  color: #1f3343;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.bw-menu-link svg {
+  flex: none;
+  color: #0e7a43;
+}
+.bw-menu-link:hover,
+.bw-menu-link:focus-visible,
+.bw-menu-link.active {
+  background: #edf6ef;
+  outline: none;
+}
+.bw-mega-menu {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(170px, auto));
+  gap: 6px 14px;
+  padding: 14px !important;
+  border-radius: 18px !important;
+}
+.bw-mega-menu__group {
+  display: grid;
+  align-content: start;
+  gap: 1px;
+}
+.bw-menu-sheet {
+  /* Au-dessus de la barre du bas (z 70) et de la proposition d'installation (z 90). */
+  z-index: 100 !important;
+  max-height: 86dvh;
+  overflow-y: auto;
+  padding: 18px 16px calc(18px + env(safe-area-inset-bottom)) !important;
+  border-radius: 22px 22px 0 0;
+}
+.bw-menu-sheet::before {
+  content: "";
+  display: block;
+  width: 40px;
+  height: 4px;
+  margin: -6px auto 10px;
+  border-radius: 99px;
+  background: #d5dbe0;
+}
+.bw-menu-sheet__title {
+  margin-bottom: 6px;
+  font-size: 18px;
+  font-weight: 800;
+}
+.bw-menu-sheet__main {
+  display: none;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+  margin-bottom: 12px;
+}
+.bw-menu-sheet__groups {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px 10px;
+}
+.bw-menu-sheet__groups section {
+  display: grid;
+  align-content: start;
+  gap: 1px;
+}
+.bw-menu-sheet .bw-menu-link {
+  min-height: 44px;
+  padding-inline: 8px;
+  font-size: 14px;
+  line-height: 1.2;
+}
+@media (min-width: 768px) {
+  .bw-menu-sheet__main {
+    display: grid;
+  }
+  .bw-menu-sheet__groups {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
 .bw-skip-link {
   position: fixed;
   z-index: 100;
@@ -1110,6 +1206,12 @@ html {
 .bw-vessel-tooltip {
   pointer-events: none;
   z-index: 35;
+}
+/* MapLibre rend le contenu des bulles cliquable : zoomé à fond, la fiche de survol recouvrait
+   la coque et avalait le clic. Elle reste un simple aperçu, le clic passe au navire. */
+.bw-vessel-tooltip .maplibregl-popup-content,
+.bw-vessel-tooltip .maplibregl-popup-content * {
+  pointer-events: none !important;
 }
 .bw-fleet-picker {
   z-index: 35;

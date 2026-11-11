@@ -86,7 +86,7 @@ export function buildCorpus({
 export const plain = (value: string) =>
   value
     // « 10 000 € » et « 10000 » : le même nombre.
-    .replace(/(\d)[\s  .](?=\d{3}\b)/g, "$1")
+    .replace(/(\d)[\s\u00a0\u202f.](?=\d{3}\b)/g, "$1")
     .normalize("NFD")
     .replace(/[̀-ͯ]/g, "")
     .toLowerCase()
@@ -100,7 +100,8 @@ const STOP = new Set(
     "a au aux avec ce ces cette dans de des du elle en est et il je la le les leur ma mais me mes mon " +
     "ne nous on ou par pas pour qu que quel quelle quelles quels qui sa se ses son sont sur ta te tes " +
     "ton tu un une vos votre vous y ai as avez peut peux faut il-y comment combien est-ce quoi " +
-    "dois doit faire fait bien tres plus moins si c d j l m n s t"
+    "dois doit faire fait bien tres plus moins si c d j l m n s t moi toi lui eux chez ca cela " +
+    "veux voudrais"
   ).split(" "),
 );
 
@@ -122,7 +123,7 @@ const SYNONYMS: string[][] = [
   ["tpd", "temporaire", "admission"],
   ["importer", "importation", "dedouaner", "dedouanement"],
   ["billet", "billets", "reservation", "reserver", "reservations"],
-  ["emporter", "emmener", "amener", "apporter", "transporter", "ressortir", "sortir", "sortie"],
+  ["emporter", "emmener", "amener", "ramener", "apporter", "rapporter", "transporter", "ressortir", "sortir", "sortie"],
 ];
 const SYNONYM_OF = new Map<string, string[]>();
 for (const group of SYNONYMS)

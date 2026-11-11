@@ -43,6 +43,11 @@ describe("« Une question ? » trouve la réponse dans ce que BledWay sait déj�
     expect(top.map((hit) => hit.q.toLowerCase()).join(" ")).toMatch(/esp[eè]ces|ressortir|devises/);
   });
 
+  it("comprend une question dite avec ses mots (« argent », « ramener avec moi »)", () => {
+    const top = searchHelp(corpus, "combien d'argent je peux ramener avec moi").slice(0, 3);
+    expect(top.map((hit) => hit.q.toLowerCase()).join(" ")).toMatch(/esp[eè]ces|ressortir|devises/);
+  });
+
   it("met la ligne regardée en avant", () => {
     expect(first("combien de temps dure le ferry")?.source).toBe("ligne");
   });

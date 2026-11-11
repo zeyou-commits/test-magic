@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import {
@@ -170,7 +170,10 @@ export function QuestionHelp({
   );
 
   const searching = query.trim().length > 1;
-  const hits = useMemo(() => (searching ? searchHelp(corpus, query) : []), [corpus, query, searching]);
+  const hits = useMemo(
+    () => (searching ? searchHelp(corpus, query) : []),
+    [corpus, query, searching],
+  );
   // Sans recherche : les questions de la ligne, puis les plus utiles en général.
   const featured = useMemo(() => {
     const line = corpus.filter((item) => item.source === "ligne").slice(0, 2);
@@ -181,6 +184,8 @@ export function QuestionHelp({
     return [...line, ...general].slice(0, 5);
   }, [corpus]);
   const none = searching && hits.length === 0;
+  // Sans réponse : la question reprise et les sorties, dans l'ordre, à la place de la colonne.
+  const noAnswer = none && query.trim().length >= 3;
 
   // Une recherche sans réponse est notée (anonymement) : elle dit quelle question ajouter.
   useEffect(() => {
@@ -203,12 +208,58 @@ export function QuestionHelp({
       }
     : undefined;
 
+  // Dans l'ordre : les voyageurs, la compagnie, BledWay, puis l'assistant IA.
+  const exits = (ai: ReactNode) => (
+    <div className="bw-help__exits">
+      {askTravellers ? (
+        <button type="button" className="bw-help__exit" onClick={askTravellers}>
+          <span aria-hidden>
+            <Users size={18} />
+          </span>
+          <strong>{travellersLabel}</strong>
+          <small>{travellersHint}</small>
+        </button>
+      ) : null}
+      <CompanyExit operators={operators} />
+      <Link
+        to="/contact"
+        className="bw-help__exit"
+        onClick={() => track("question-sortie", "bledway")}
+      >
+        <span aria-hidden>
+          <Mail size={18} />
+        </span>
+        <strong>Écrire à BledWay</strong>
+        <small>Un souci sur le site, une info à corriger.</small>
+      </Link>
+      {ai}
+    </div>
+  );
+  const aiTile = (
+    <button
+      type="button"
+      className="bw-help__exit bw-help__exit--ai"
+      onClick={() => setAiOpen(true)}
+    >
+      <span aria-hidden>
+        <Sparkles size={18} />
+      </span>
+      <strong>Mon assistant IA</strong>
+      <small>Écrivez votre question, on vous oriente.</small>
+      <span className="bw-help__logos" aria-hidden>
+        {ASSISTANTS.map((assistant) => (
+          <img key={assistant.id} src={assistant.logo} alt="" width={18} height={18} />
+        ))}
+      </span>
+    </button>
+  );
+
   return (
     <section
       className={`bw-help bw-room--questions${bare ? " bw-help--bare" : ""}`}
       aria-label="Une question ?"
     >
-      <div className="bw-help__layout">
+      <div className="bw-help__layout" data-none={noAnswer || undefined}>
         <div className="bw-help__main">
           <header className="bw-help__head">
             <span className="bw-help__icon" aria-hidden>
@@ -263,54 +314,41 @@ export function QuestionHelp({
             {searching
               ? hits.length
                 ? `${hits.length} réponse${hits.length > 1 ? "s" : ""}`
-                : `Aucune réponse toute prête pour « ${query.trim()} »`
+                : "Pas de réponse toute prête sur BledWay"
               : "Les plus demandées"}
           </p>
-          <AnswerList key={query} items={searching ? hits : featured} query={searching ? query : ""} />
+          <AnswerList
+            key={query}
+            items={searching ? hits : featured}
+            query={searching ? query : ""}
+          />
+          {noAnswer ? (
+            <div className="bw-help__noanswer">
+              <p className="bw-help__noanswer-lead">Votre question</p>
+              <p className="bw-help__noanswer-q">« {query.trim()} »</p>
+              <p className="bw-help__noanswer-lead">Posez-la au bon endroit</p>
+              {exits(
+                <div className="bw-help__exit bw-help__exit--ai" data-static data-open>
+                  <span aria-hidden>
+                    <Sparkles size={18} />
+                  </span>
+                  <strong>Mon assistant IA</strong>
+                  <small>Choisissez-le : la question part avec votre trajet.</small>
+                  <div className="bw-help__ai-pick">
+                    <AssistantPicker question={query.trim()} line={lineLabel} />
+                  </div>
+                </div>,
+              )}
+            </div>
+          ) : null}
         </div>
 
-        <aside className="bw-help__elsewhere" data-strong={none || undefined}>
-          <h4>{none ? "Demandez ailleurs, au bon endroit" : "Pas trouvé votre réponse ?"}</h4>
-          <div className="bw-help__exits">
-            {askTravellers ? (
-              <button type="button" className="bw-help__exit" onClick={askTravellers}>
-                <span aria-hidden>
-                  <Users size={18} />
-                </span>
-                <strong>{travellersLabel}</strong>
-                <small>{travellersHint}</small>
-              </button>
-            ) : null}
-            <CompanyExit operators={operators} />
-            <Link
-              to="/contact"
-              className="bw-help__exit"
-              onClick={() => track("question-sortie", "bledway")}
-            >
-              <span aria-hidden>
-                <Mail size={18} />
-              </span>
-              <strong>Écrire à BledWay</strong>
-              <small>Un souci sur le site, une info à corriger.</small>
-            </Link>
-            <button
-              type="button"
-              className="bw-help__exit bw-help__exit--ai"
-              onClick={() => setAiOpen(true)}
-            >
-              <span aria-hidden>
-                <Sparkles size={18} />
-              </span>
-              <strong>Mon assistant IA</strong>
-              <small>Écrivez votre question, on vous oriente.</small>
-              <span className="bw-help__logos" aria-hidden>
-                {ASSISTANTS.map((assistant) => (
-                  <img key={assistant.id} src={assistant.logo} alt="" width={18} height={18} />
-                ))}
-              </span>
-            </button>
-          </div>
-        </aside>
+        {noAnswer ? null : (
+          <aside className="bw-help__elsewhere" data-strong={none || undefined}>
+            <h4>{none ? "Demandez ailleurs, au bon endroit" : "Pas trouvé votre réponse ?"}</h4>
+            {exits(aiTile)}
+          </aside>
+        )}
       </div>
 
       <AssistantDialog
@@ -482,43 +520,18 @@ function AssistantDialog({
 }) {
   const [text, setText] = useState("");
   const [asked, setAsked] = useState<string | null>(null);
-  const [preferred, setPreferred] = useState<string | null>(null);
-  const [copied, setCopied] = useState<string | null>(null);
   const area = useRef<HTMLTextAreaElement>(null);
   // À chaque ouverture : la recherche en cours reprise, et l'écriture d'abord.
   useEffect(() => {
     if (!open) return;
     setText(initial.trim());
     setAsked(null);
-    setCopied(null);
-    setPreferred(readPreferred());
   }, [open, initial]);
   const hits = useMemo(() => (asked ? searchHelp(corpus, asked, 3) : []), [asked, corpus]);
-  const ordered = [...ASSISTANTS].sort(
-    (a, b) => Number(b.id === preferred) - Number(a.id === preferred),
-  );
   const submit = () => {
     const value = text.trim();
     if (value.length < 3) return;
     setAsked(value);
-    setCopied(null);
-  };
-  const ask = (assistant: Assistant) => {
-    if (!asked) return;
-    const prompt = assistantPrompt(asked, line);
-    try {
-      window.localStorage.setItem(PREFERRED_KEY, assistant.id);
-    } catch {
-      /* préférence facultative */
-    }
-    setPreferred(assistant.id);
-    // Copiée aussi : si l'assistant ne la reprend pas, il suffit de la coller.
-    void navigator.clipboard?.writeText(prompt).then(
-      () => setCopied(assistant.name),
-      () => undefined,
-    );
-    track("question-sortie", `ia:${assistant.id}`);
-    window.open(assistant.url(encodeURIComponent(prompt)), "_blank", "noopener,noreferrer");
   };
   const edit = () => {
     setAsked(null);
@@ -575,33 +588,7 @@ function AssistantDialog({
                 <Sparkles size={16} aria-hidden />
                 {hits.length ? "Toujours une question ? Votre assistant IA" : "Votre assistant IA"}
               </h4>
-              <div className="bw-ai__grid">
-                {ordered.map((assistant) => (
-                  <button
-                    key={assistant.id}
-                    type="button"
-                    className="bw-ai__assistant"
-                    data-preferred={assistant.id === preferred || undefined}
-                    onClick={() => ask(assistant)}
-                  >
-                    <img src={assistant.logo} alt="" width={28} height={28} />
-                    <strong>{assistant.name}</strong>
-                    {assistant.id === preferred ? <small>Votre assistant</small> : null}
-                    <ExternalLink size={13} aria-hidden />
-                  </button>
-                ))}
-              </div>
-              {copied ? (
-                <p className="bw-ai__copied" role="status">
-                  <Copy size={13} aria-hidden /> Question copiée avec votre trajet : si {copied}{" "}
-                  ne l'affiche pas, collez-la.
-                </p>
-              ) : null}
-              <p className="bw-ai__warning">
-                Réponse non vérifiée par BledWay. Pour la douane, les papiers ou un billet,
-                confirmez auprès de la source officielle ou de la compagnie. Votre question part
-                chez l'assistant choisi.
-              </p>
+              <AssistantPicker question={asked} line={line} />
             </section>
 
             <section className="bw-ai__section">
@@ -666,6 +653,65 @@ function AssistantDialog({
         )}
       </DialogContent>
     </Dialog>
+  );
+}
+
+/**
+ * Les assistants IA, le préféré d'abord : un toucher ouvre l'assistant avec la question (et le
+ * trajet), copiée aussi pour la coller si l'assistant ne la reprend pas.
+ */
+function AssistantPicker({ question, line }: { question: string; line: string | null }) {
+  const [preferred, setPreferred] = useState<string | null>(null);
+  const [copied, setCopied] = useState<string | null>(null);
+  useEffect(() => setPreferred(readPreferred()), []);
+  useEffect(() => setCopied(null), [question]);
+  const ordered = [...ASSISTANTS].sort(
+    (a, b) => Number(b.id === preferred) - Number(a.id === preferred),
+  );
+  const ask = (assistant: Assistant) => {
+    const prompt = assistantPrompt(question, line);
+    try {
+      window.localStorage.setItem(PREFERRED_KEY, assistant.id);
+    } catch {
+      /* préférence facultative */
+    }
+    setPreferred(assistant.id);
+    void navigator.clipboard?.writeText(prompt).then(
+      () => setCopied(assistant.name),
+      () => undefined,
+    );
+    track("question-sortie", `ia:${assistant.id}`);
+    window.open(assistant.url(encodeURIComponent(prompt)), "_blank", "noopener,noreferrer");
+  };
+  return (
+    <>
+      <div className="bw-ai__grid">
+        {ordered.map((assistant) => (
+          <button
+            key={assistant.id}
+            type="button"
+            className="bw-ai__assistant"
+            data-preferred={assistant.id === preferred || undefined}
+            onClick={() => ask(assistant)}
+          >
+            <img src={assistant.logo} alt="" width={28} height={28} />
+            <strong>{assistant.name}</strong>
+            {assistant.id === preferred ? <small>Votre assistant</small> : null}
+            <ExternalLink size={13} aria-hidden />
+          </button>
+        ))}
+      </div>
+      {copied ? (
+        <p className="bw-ai__copied" role="status">
+          <Copy size={13} aria-hidden /> Question copiée avec votre trajet : si {copied} ne
+          l'affiche pas, collez-la.
+        </p>
+      ) : null}
+      <p className="bw-ai__warning">
+        Réponse non vérifiée par BledWay. Pour la douane, les papiers ou un billet, confirmez auprès
+        de la source officielle ou de la compagnie. Votre question part chez l'assistant choisi.
+      </p>
+    </>
   );
 }
 

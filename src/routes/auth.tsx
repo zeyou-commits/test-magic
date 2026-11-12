@@ -93,6 +93,54 @@ function AuthPage() {
   const [googleLoading, setGoogleLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [resetSent, setResetSent] = useState(false);
+  // Lien d'e-mail périmé ou déjà utilisé : Supabase renvoie ici avec #error_code=… sans rien afficher.
+  const [linkIssue, setLinkIssue] = useState<null | "expired" | "invalid">(null);
+  // Connexion refusée parce que l'adresse n'est pas confirmée : on propose de renvoyer le lien.
+  const [unconfirmed, setUnconfirmed] = useState(false);
+  const [resendWait, setResendWait] = useState(0);
+  const [resending, setResending] = useState(false);
+  const [resent, setResent] = useState(false);
+
+  useEffect(() => {
+    const params = new URLSearchParams(
+      `${window.location.search.slice(1)}&${window.location.hash.replace(/^#/, "")}`,
+    );
+    const code = params.get("error_code");
+    if (!code && !params.get("error")) return;
+    const recovery = new URLSearchParams(window.location.search).get("mode") === "reset";
+    setLinkIssue(code === "otp_expired" ? "expired" : "invalid");
+    setMode(recovery ? "forgot" : "signin");
+    window.history.replaceState(null, "", `${window.location.pathname}?next=${encodeURIComponent(next)}`);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
+    if (resendWait <= 0) return;
+    const t = window.setTimeout(() => setResendWait((s) => s - 1), 1000);
+    return () => window.clearTimeout(t);
+  }, [resendWait]);
+
+  async function resendConfirmation() {
+    if (!email) {
+      toast.error("Indiquez l'adresse e-mail utilisée à l'inscription.");
+      return;
+    }
+    setResending(true);
+    try {
+      const { error } = await supabase.auth.resend({
+        type: "signup",
+        email,
+        options: { emailRedirectTo: `${window.location.origin}/auth?next=${encodeURIComponent(next)}` },
+      });
+      if (error) throw error;
+      setResent(true);
+      setResendWait(60);
+    } catch (error) {
+      toast.error(authErrorMessage(error));
+    } finally {
+      setResending(false);
+    }
+  }
 
   // Le lien reçu par e-mail ouvre une session de récupération : on affiche alors le formulaire de nouveau mot de passe.
   useEffect(() => {
@@ -137,7 +185,14 @@ function AuthPage() {
         setSignupSent(true);
       } else if (mode === "signin") {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
-        if (error) throw error;
+        if (error) {
+          if (error.message.toLowerCase().includes("email not confirmed")) {
+            setUnconfirmed(true);
+            setResent(false);
+            return;
+          }
+          throw error;
+        }
       } else if (mode === "forgot") {
         const { error } = await supabase.auth.resetPasswordForEmail(email, {
           redirectTo: `${window.location.origin}/auth?mode=reset`,
@@ -250,6 +305,72 @@ function AuthPage() {
                   : tr("ui.pageAuth.heureuxDeVousRevoirReprenez")}
           </p>
 
+          {((linkIssue && mode !== "signup") || (unconfirmed && mode === "signin")) &&
+          !resetSent &&
+          mode !== "reset" ? (
+            <div
+              role="alert"
+              className="mb-5 rounded-2xl border border-amber-300 bg-amber-50 p-4 text-sm leading-relaxed text-amber-950"
+            >
+              <strong className="block text-base">
+                {mode === "forgot" && linkIssue
+                  ? "Ce lien de réinitialisation n'est plus valable"
+                  : linkIssue === "expired"
+                    ? "Ce lien de confirmation a expiré"
+                    : linkIssue
+                      ? "Ce lien n'est plus valable"
+                      : "Votre adresse e-mail n'est pas encore confirmée"}
+              </strong>
+              {mode === "forgot" && linkIssue ? (
+                <p className="mt-1">
+                  Pour votre sécurité, ces liens ne servent qu'une fois et pendant une heure.
+                  Indiquez votre e-mail ci-dessous pour en recevoir un nouveau.
+                </p>
+              ) : resent ? (
+                <p className="mt-1">
+                  C'est envoyé : un nouveau lien vient de partir vers <strong>{email}</strong>.
+                  Ouvrez-le dans l'heure, puis connectez-vous. Pensez à regarder dans les spams.
+                </p>
+              ) : (
+                <p className="mt-1">
+                  {linkIssue
+                    ? "Les liens de confirmation ne sont valables qu'une heure. Si vous avez déjà confirmé, connectez-vous simplement ; sinon, recevez un nouveau lien."
+                    : "Cliquez sur le lien reçu par e-mail pour activer votre compte. Vous ne le trouvez plus, ou il a expiré ?"}
+                </p>
+              )}
+              {!(mode === "forgot" && linkIssue) ? (
+                <div className="mt-3 flex flex-col gap-2">
+                  {linkIssue && !unconfirmed ? (
+                    <Input
+                      type="email"
+                      inputMode="email"
+                      autoComplete="email"
+                      placeholder="Votre e-mail"
+                      aria-label="Votre e-mail"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      className="batogo-control bg-white"
+                    />
+                  ) : null}
+                  <Button
+                    type="button"
+                    onClick={resendConfirmation}
+                    disabled={resending || resendWait > 0}
+                    className="h-11 w-full rounded-xl text-sm font-semibold"
+                  >
+                    {resending
+                      ? "Envoi…"
+                      : resendWait > 0
+                        ? `Nouvel envoi possible dans ${resendWait} s`
+                        : resent
+                          ? "Renvoyer encore"
+                          : "Recevoir un nouveau lien"}
+                  </Button>
+                </div>
+              ) : null}
+            </div>
+          ) : null}
+
           {/* Google d'abord : la plupart des voyageurs s'en servent et le ratait tout en bas. */}
           {(mode === "signin" || mode === "signup") && !signupSent ? (
             <>
@@ -280,6 +401,22 @@ function AuthPage() {
             >
               <strong className="block text-base text-primary">{tr("ui.pageAuth.encoreUneEtape")}</strong>
               {tr("ui.pageAuth.consultezLEMailEnvoye")}<strong>{email}</strong>{tr("ui.pageAuth.etConfirmezVotreAdresseSi")}
+              <span className="mt-2 block text-muted-foreground">
+                Le lien est valable une heure.{" "}
+                {resent ? "Un nouveau lien vient d'être envoyé." : "Rien reçu ?"}
+              </span>
+              <button
+                type="button"
+                onClick={resendConfirmation}
+                disabled={resending || resendWait > 0}
+                className="mt-2 block font-semibold text-primary underline underline-offset-2 disabled:no-underline disabled:opacity-60"
+              >
+                {resending
+                  ? "Envoi…"
+                  : resendWait > 0
+                    ? `Nouvel envoi possible dans ${resendWait} s`
+                    : "Renvoyer l'e-mail"}
+              </button>
               <button
                 type="button"
                 onClick={() => {

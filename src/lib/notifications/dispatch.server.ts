@@ -33,6 +33,12 @@ type Notice = {
 const HOUR = 3_600_000;
 /** Rattrapage : une information publiée avant le suivi, encore d'actualité, est envoyée avec sa date. */
 const CATCH_UP_WINDOW = 7 * 24 * HOUR;
+/** Veille : délai laissé à la validation automatique avant de demander une validation à la main. */
+const WATCH_GRACE = 75 * 60_000;
+/** Une alerte d'équipe (veille, signalement) qui n'a pas pu partir à temps reste dans le compte, sans push. */
+const STAFF_PUSH_FRESHNESS = 2 * HOUR;
+/** Pushs d'un même passage vers un même appareil : au-delà, la suite part au passage suivant. */
+const PUSHES_PER_DEVICE = 3;
 const stamp = (iso: string) =>
   new Intl.DateTimeFormat("fr-FR", {
     day: "numeric",
@@ -165,20 +171,53 @@ async function notifyFeedback(deliver: Deliver, now: number) {
     }
   }
 
-  // Veille : Claude propose, l'équipe décide. Rien n'est appliqué sans sa validation.
-  const proposals = await read<{ id: string; title: string }>(
-    db
-      .from("bw_watch_proposals")
-      .select("id,title")
-      .eq("status", "pending")
-      .gte("created_at", since),
-  );
-  if (proposals.length) {
+  // Veille : la plupart des propositions sont validées sans clic. Elles sont résumées une fois par
+  // heure (« validée en auto ») ; « à valider » ne part que pour ce qui attend encore après le
+  // délai laissé à la validation automatique. Fini la rafale d'alertes qui n'appellent aucune action.
+  const hourEnd = Math.floor(now / HOUR) * HOUR;
+  const hourStart = hourEnd - HOUR;
+  const [autoValidated, waiting] = await Promise.all([
+    read<{ id: string; title: string }>(
+      db
+        .from("bw_watch_proposals")
+        .select("id,title")
+        .eq("status", "approved")
+        .gte("decided_at", new Date(hourStart).toISOString())
+        .lt("decided_at", new Date(hourEnd).toISOString())
+        .order("decided_at"),
+    ),
+    read<{ id: string; title: string }>(
+      db
+        .from("bw_watch_proposals")
+        .select("id,title")
+        .eq("status", "pending")
+        .gte("created_at", since)
+        .lte("created_at", new Date(now - WATCH_GRACE).toISOString()),
+    ),
+  ]);
+  if (autoValidated.length || waiting.length) {
     const staff = await read<{ user_id: string }>(
       db.from("user_roles").select("user_id").in("role", ["admin", "editor"]),
     );
-    for (const proposal of proposals) {
-      for (const userId of new Set(staff.map((row) => row.user_id))) {
+    const staffIds = new Set(staff.map((row) => row.user_id));
+    if (autoValidated.length) {
+      const count = autoValidated.length;
+      const titles = autoValidated.slice(0, 3).map((proposal) => proposal.title);
+      const more = count > 3 ? ` · et ${count - 3} autre${count > 4 ? "s" : ""}` : "";
+      for (const userId of staffIds)
+        await deliver(userId, null, {
+          key: `staff-watch-auto:${new Date(hourStart).toISOString().slice(0, 13)}`,
+          category: "reminders",
+          title:
+            count === 1
+              ? "Veille : une proposition validée en auto"
+              : `Veille : ${count} propositions validées en auto`,
+          body: titles.join(" · ") + more,
+          url: "/admin?tab=watch",
+        });
+    }
+    for (const proposal of waiting)
+      for (const userId of staffIds)
         await deliver(userId, null, {
           key: `staff-watch:${proposal.id}`,
           category: "reminders",
@@ -186,8 +225,6 @@ async function notifyFeedback(deliver: Deliver, now: number) {
           body: proposal.title,
           url: "/admin?tab=watch",
         });
-      }
-    }
   }
 
   // Actualités : ceux qui suivent le navire, sa compagnie ou une traversée concernée sont prévenus.
@@ -989,12 +1026,19 @@ export async function dispatchPush(
       ...rest.data.filter((row) => !seen.has(`${row.notification_id}:${row.subscription_id}`)),
     );
   }
+  // Au fil de l'eau, jamais en rafale : quelques pushs par appareil et par passage (toutes les 10 min).
+  const sentToDevice = new Map<string, number>();
   if (pushConfigured)
     for (const row of queuedRows) {
+      if (
+        !focusIds.has(row.notification_id) &&
+        (sentToDevice.get(row.subscription_id) ?? 0) >= PUSHES_PER_DEVICE
+      )
+        continue;
       const [notice, subscription] = await Promise.all([
         db
           .from("bw_notifications")
-          .select("id,user_id,follow_id,title,body,url,event_key")
+          .select("id,user_id,follow_id,title,body,url,event_key,created_at")
           .eq("id", row.notification_id)
           .single(),
         db
@@ -1022,7 +1066,10 @@ export async function dispatchPush(
         prefs?.push_enabled === false ||
         !notificationAllowed(prefs, category) ||
         (notice.data.follow_id && !follow?.data?.active) ||
-        notice.data.user_id !== subscription.data.user_id
+        notice.data.user_id !== subscription.data.user_id ||
+        // Un téléphone activé après coup ne reçoit pas d'un bloc les alertes d'équipe de la veille.
+        (notice.data.event_key.startsWith("staff-") &&
+          now - Date.parse(notice.data.created_at) > STAFF_PUSH_FRESHNESS)
       ) {
         const removed = await db
           .from("bw_push_deliveries")
@@ -1063,6 +1110,7 @@ export async function dispatchPush(
           { TTL: 24 * 3600, timeout: 15_000 },
         );
         pushed++;
+        sentToDevice.set(row.subscription_id, (sentToDevice.get(row.subscription_id) ?? 0) + 1);
         const delivered = await db
           .from("bw_push_deliveries")
           .update({ sent_at: new Date().toISOString(), last_error: null, leased_until: null })

@@ -1,8 +1,11 @@
 // Qui prévenir d'une actualité : ceux qui suivent le navire, sa compagnie, ou une traversée concernée.
+// Une « info » qui ne touche aucun départ précis (flotte, ligne en projet…) s'affiche sur les pages
+// compagnie et navire sans notifier personne.
 export type AudienceFollow = { user_id: string; target_kind: string; target_id: string };
 export type AudienceVessel = { id: string; company_id: string | null };
 export type AudienceDeparture = { id: string; vessel_id: string | null; company_id: string | null };
 export type AudienceNews = {
+  kind?: string | null;
   vessel_id?: string | null;
   company_ids: string[];
   departure_ids: string[];
@@ -14,6 +17,7 @@ export function newsAudience(
   vessels: AudienceVessel[],
   departures: AudienceDeparture[],
 ) {
+  if (news.kind === "info" && news.departure_ids.length === 0) return [];
   const companies = new Set(news.company_ids);
   const concernsVessel = (id: string | null) =>
     Boolean(id) &&

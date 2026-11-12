@@ -241,10 +241,12 @@ async function notifyFeedback(deliver: Deliver, now: number) {
         });
   }
 
-  // Actualités : ceux qui suivent le navire, sa compagnie ou une traversée concernée sont prévenus.
+  // Actualités : ceux qui suivent le navire, sa compagnie ou une traversée concernée sont prévenus
+  // (sauf une « info » sans départ précis, voir newsAudience).
   const news = (
     await read<{
       id: string;
+      kind: string;
       title: string;
       summary: string;
       source_url: string | null;
@@ -254,7 +256,7 @@ async function notifyFeedback(deliver: Deliver, now: number) {
     }>(
       db
         .from("bw_news")
-        .select("id,title,summary,source_url,vessel_id,company_ids,departure_ids")
+        .select("id,kind,title,summary,source_url,vessel_id,company_ids,departure_ids")
         .eq("published", true)
         .gte("created_at", since),
     )

@@ -33,6 +33,23 @@ describe("qui prévenir d'une actualité", () => {
     expect(audience({ departure_ids: ["d-algerie"] })).toEqual(["autre-voyage"]);
   });
 
+  it("une info de fond rattachée à une compagnie ou un navire ne prévient personne", () => {
+    expect(audience({ kind: "info", company_ids: ["corsica"] })).toEqual([]);
+    expect(audience({ kind: "info", vessel_id: "tariq" })).toEqual([]);
+  });
+
+  it("une info liée à une traversée précise prévient encore ses voyageurs", () => {
+    expect(audience({ kind: "info", departure_ids: ["d-algerie"] })).toEqual(["autre-voyage"]);
+  });
+
+  it("une alerte de compagnie prévient toujours", () => {
+    expect(audience({ kind: "alerte", company_ids: ["corsica"] })).toEqual([
+      "bateau",
+      "compagnie",
+      "voyage",
+    ]);
+  });
+
   it("une actualité générale ne prévient personne", () => {
     expect(audience({})).toEqual([]);
   });

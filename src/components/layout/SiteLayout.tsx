@@ -138,7 +138,7 @@ export function BrandLink({ compact = false }: { compact?: boolean }) {
   return (
     <Link
       to="/"
-      className="bw-brand-link flex shrink-0 flex-col items-start justify-center"
+      className="bw-brand-link flex shrink-0 items-start"
       aria-label={t("menu.homeLabel")}
       onClick={goHome}
     >

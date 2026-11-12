@@ -2829,11 +2829,12 @@ html {
   width: auto;
   height: 38px;
 }
-/* Lancement : la version bêta s'affiche à côté du logo. */
+/* Lancement : la version bêta s'affiche à côté du logo, DANS la largeur du lien : posée en
+   absolu à droite du logo, elle dépassait de l'écran dans le pied de page et élargissait toute
+   la page sur téléphone (boutons et barre du bas coupés). */
 .bw-beta {
-  position: absolute;
-  top: 1px;
-  left: 100%;
+  flex: none;
+  margin-top: 1px;
   margin-left: 3px;
   padding: 2px 6px 1px;
   border-radius: 999px;
@@ -2917,7 +2918,7 @@ html {
     height: 34px;
   }
   .bw-beta {
-    top: 0;
+    margin-top: 0;
     padding: 1px 5px 0;
     font-size: 8px;
   }

@@ -76,9 +76,15 @@
     font-family: var(--font-sans);
     scroll-behavior: smooth;
     text-rendering: optimizeLegibility;
+    /* Garde-fou : un élément trop large ne doit jamais élargir la page. Sur téléphone, le
+       navigateur dézoomerait tout l'écran et les boutons fixés (barre du bas, Signaler,
+       Salons) sortiraient de l'écran. « clip » ne crée pas de zone de défilement : le collé
+       (sticky) et le défilement de la page restent intacts. */
+    overflow-x: clip;
   }
   body {
     margin: 0;
+    overflow-x: clip;
     background: var(--color-background);
     color: var(--color-foreground);
     font-family: var(--font-sans);

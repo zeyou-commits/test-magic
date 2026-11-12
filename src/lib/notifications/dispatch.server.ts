@@ -149,12 +149,29 @@ async function notifyFeedback(deliver: Deliver, now: number) {
       .eq("status", "new")
       .gte("created_at", since),
   );
-  if (reports.length) {
-    const staff = await read<{ user_id: string }>(
-      db.from("user_roles").select("user_id").in("role", ["admin", "editor"]),
+  // Alertes d'équipe : seulement les comptes désignés dans bw_admin_settings (clé « staff_alerts »,
+  // { user_ids: [...] }, parmi les admins et éditeurs), sinon toute l'équipe. Évite qu'une même
+  // alerte arrive plusieurs fois à la même personne sur plusieurs comptes.
+  const staffRecipients = async () => {
+    const [staff, setting] = await Promise.all([
+      read<{ user_id: string }>(
+        db.from("user_roles").select("user_id").in("role", ["admin", "editor"]),
+      ),
+      read<{ value: { user_ids?: unknown } | null }>(
+        db.from("bw_admin_settings").select("value").eq("key", "staff_alerts").limit(1),
+      ),
+    ]);
+    const all = new Set(staff.map((row) => row.user_id));
+    const wanted = setting[0]?.value?.user_ids;
+    const chosen = (Array.isArray(wanted) ? wanted : []).filter(
+      (id): id is string => typeof id === "string" && all.has(id),
     );
+    return chosen.length ? new Set(chosen) : all;
+  };
+  if (reports.length) {
+    const recipients = await staffRecipients();
     for (const report of reports) {
-      for (const userId of new Set(staff.map((row) => row.user_id))) {
+      for (const userId of recipients) {
         await deliver(userId, null, {
           key: `staff-report:${report.id}`,
           category: "reminders",
@@ -196,10 +213,7 @@ async function notifyFeedback(deliver: Deliver, now: number) {
     ),
   ]);
   if (autoValidated.length || waiting.length) {
-    const staff = await read<{ user_id: string }>(
-      db.from("user_roles").select("user_id").in("role", ["admin", "editor"]),
-    );
-    const staffIds = new Set(staff.map((row) => row.user_id));
+    const staffIds = await staffRecipients();
     if (autoValidated.length) {
       const count = autoValidated.length;
       const titles = autoValidated.slice(0, 3).map((proposal) => proposal.title);

@@ -6,6 +6,7 @@ import { BrandMark } from "@/components/layout/BrandMark";
 import { Input } from "@/components/ui/input";
 import type { Filters, Port, RouteLine } from "@/lib/ferry/types";
 import { Button } from "@/components/ui/button";
+import { useT } from "@/lib/i18n";
 import {
   algerianRegion,
   countryShortcutLabel,
@@ -28,6 +29,7 @@ export function MobileMapControls({
   filters,
   onFiltersChange,
 }: MobileMapControlsProps) {
+  const t = useT();
   const [picker, setPicker] = useState<"departure" | "arrival" | null>(null);
   const [query, setQuery] = useState("");
   const [draft, setDraft] = useState<string[]>([]);
@@ -96,12 +98,17 @@ export function MobileMapControls({
       if (c.code === "DZ") {
         (["Ouest", "Centre", "Est"] as const).forEach((region) => {
           const ids = c.ports.filter((p) => algerianRegion(p) === region).map((p) => p.id);
-          if (ids.length) out.push({ key: `DZ-${region}`, label: `Algérie ${region}`, ids });
+          if (ids.length)
+            out.push({
+              key: `DZ-${region}`,
+              label: t("map.picker.algeriaRegion", { region }),
+              ids,
+            });
         });
       }
     });
     return out;
-  }, [candidates]);
+  }, [candidates, t]);
 
   const openPicker = (next: "departure" | "arrival") => {
     setQuery("");
@@ -140,7 +147,7 @@ export function MobileMapControls({
       className={`pointer-events-auto absolute inset-x-0 top-0 w-full p-2 md:hidden ${picker ? "z-[90]" : "z-40"}`}
     >
       <div className="grid h-14 grid-cols-[2rem_minmax(0,1fr)_2rem_minmax(0,1fr)_2rem] items-center gap-1 rounded-xl border bg-background/95 px-2 shadow-md backdrop-blur-md">
-        <Link to="/" aria-label="Accueil BledWay" className="grid size-8 place-items-center">
+        <Link to="/" aria-label={t("map.picker.home")} className="grid size-8 place-items-center">
           <BrandMark className="size-8" />
         </Link>
         <Button
@@ -151,10 +158,10 @@ export function MobileMapControls({
         >
           <span className="min-w-0">
             <span className="block text-[11px] font-semibold uppercase text-muted-foreground">
-              Départ
+              {t("map.picker.departure")}
             </span>
             <span className="block truncate text-sm font-semibold">
-              {summarizePorts(filters.departurePortIds, activePorts, "Tous les ports")}
+              {summarizePorts(filters.departurePortIds, activePorts, t("map.picker.allPorts"))}
             </span>
           </span>
         </Button>
@@ -162,8 +169,8 @@ export function MobileMapControls({
           type="button"
           variant="ghost"
           size="icon"
-          aria-label="Inverser départ et arrivée"
-          title="Inverser le sens"
+          aria-label={t("map.picker.swap")}
+          title={t("map.picker.swapTitle")}
           disabled={!canSwap}
           onClick={() => onFiltersChange(swapDirection(filters))}
           className="size-8 rounded-full text-primary disabled:opacity-30"
@@ -178,10 +185,10 @@ export function MobileMapControls({
         >
           <span className="min-w-0">
             <span className="block text-[11px] font-semibold uppercase text-muted-foreground">
-              Arrivée
+              {t("map.picker.arrival")}
             </span>
             <span className="block truncate text-sm font-semibold">
-              {summarizePorts(filters.arrivalPortIds, activePorts, "Tous les ports")}
+              {summarizePorts(filters.arrivalPortIds, activePorts, t("map.picker.allPorts"))}
             </span>
           </span>
         </Button>
@@ -193,29 +200,29 @@ export function MobileMapControls({
           className="fixed inset-0 z-[90] flex flex-col bg-background md:hidden"
           role="dialog"
           aria-modal="true"
-          aria-label={`Choisir les ports de ${picker === "departure" ? "départ" : "destination"}`}
+          aria-label={
+            picker === "departure" ? t("map.picker.chooseDeparture") : t("map.picker.chooseArrival")
+          }
         >
           <header className="flex shrink-0 items-center gap-2 border-b px-2 pb-3 pt-[calc(.75rem+env(safe-area-inset-top))]">
             <Button
               type="button"
               variant="ghost"
               size="icon"
-              aria-label="Fermer la recherche"
+              aria-label={t("map.picker.close")}
               onClick={() => setPicker(null)}
             >
               <ArrowLeft className="size-5" />
             </Button>
             <div className="min-w-0 flex-1">
               <p className="font-display text-lg font-bold">
-                {picker === "departure" ? "D’où partez-vous ?" : "Où allez-vous ?"}
+                {picker === "departure" ? t("map.picker.fromQuestion") : t("map.picker.toQuestion")}
               </p>
-              <p className="text-xs text-muted-foreground">
-                Un pays, une façade, un ou plusieurs ports
-              </p>
+              <p className="text-xs text-muted-foreground">{t("map.picker.hint")}</p>
             </div>
             {draft.length ? (
               <Button type="button" variant="ghost" size="sm" onClick={() => setDraft([])}>
-                Effacer
+                {t("map.picker.clear")}
               </Button>
             ) : null}
           </header>
@@ -226,7 +233,7 @@ export function MobileMapControls({
               <Input
                 value={query}
                 onChange={(event) => setQuery(event.target.value)}
-                placeholder="Ville, port ou pays"
+                placeholder={t("map.picker.placeholder")}
                 className="batogo-control h-12 pl-10 pr-10 text-base"
               />
               {query ? (
@@ -234,7 +241,7 @@ export function MobileMapControls({
                   type="button"
                   variant="ghost"
                   size="icon"
-                  aria-label="Effacer la recherche"
+                  aria-label={t("map.picker.clearSearch")}
                   onClick={() => setQuery("")}
                   className="absolute right-1 top-1/2 -translate-y-1/2"
                 >
@@ -268,7 +275,7 @@ export function MobileMapControls({
             {frequentTrips.length ? (
               <div>
                 <p className="mb-1.5 text-xs font-semibold text-muted-foreground">
-                  Trajets fréquents
+                  {t("map.picker.frequent")}
                 </p>
                 <div className="flex gap-2 overflow-x-auto pb-1">
                   {frequentTrips.map(({ from, to }) => (
@@ -301,7 +308,7 @@ export function MobileMapControls({
                     const region = algerianRegion(port);
                     const detail = [
                       port.city && port.city !== port.name ? port.city : null,
-                      region ? `Façade ${region}` : null,
+                      region ? t("map.picker.coast", { region }) : null,
                     ]
                       .filter(Boolean)
                       .join(" · ");
@@ -335,7 +342,7 @@ export function MobileMapControls({
             ))}
             {!groups.length ? (
               <p className="py-10 text-center text-sm text-muted-foreground">
-                Aucun port ne correspond à votre recherche.
+                {t("map.picker.noPort")}
               </p>
             ) : null}
           </div>
@@ -347,8 +354,8 @@ export function MobileMapControls({
               className="h-12 w-full rounded-xl text-sm font-bold"
             >
               {draft.length
-                ? `Voir les traversées · ${summarizePorts(draft, activePorts)}`
-                : "Voir tous les ports"}
+                ? t("map.picker.seeCrossings", { ports: summarizePorts(draft, activePorts) })
+                : t("map.picker.seeAllPorts")}
             </Button>
           </div>
         </div>

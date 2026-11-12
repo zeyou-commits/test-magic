@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Info, X } from "lucide-react";
+import { useT } from "@/lib/i18n";
 
 /** Légende de la carte : explique les codes visuels des lignes et des ports. */
 export function MapLegend({
@@ -9,6 +10,7 @@ export function MapLegend({
   panelOpen: boolean;
   showDateHint: boolean;
 }) {
+  const t = useT();
   const [open, setOpen] = useState(false);
 
   return (
@@ -18,10 +20,10 @@ export function MapLegend({
       {open ? (
         <div className="mt-10 w-56 md:mt-0 max-w-[calc(100vw-1.5rem)] rounded-2xl border border-border bg-background/95 p-3 text-xs shadow-[var(--shadow-panel)] backdrop-blur md:mt-0 md:w-64 md:p-4 md:text-sm">
           <div className="mb-2 flex items-center justify-between md:mb-3">
-            <p className="font-display text-sm font-semibold">Légende</p>
+            <p className="font-display text-sm font-semibold">{t("map.legend.title")}</p>
             <button
               type="button"
-              aria-label="Fermer la légende"
+              aria-label={t("map.legend.close")}
               onClick={() => setOpen(false)}
               className="grid size-7 place-items-center rounded-full text-muted-foreground hover:bg-secondary hover:text-foreground"
             >
@@ -31,47 +33,52 @@ export function MapLegend({
           <ul className="space-y-1.5 text-[11px] md:space-y-2.5 md:text-[13px]">
             <li className="flex items-center gap-2 md:gap-3">
               <span className="h-[3px] w-6 shrink-0 rounded-full bg-primary md:w-8" aria-hidden />
-              Ligne avec un programme publié
+              {t("map.legend.published")}
             </li>
             <li className="flex items-center gap-2 md:gap-3">
               <span className="h-[4px] w-6 shrink-0 rounded-full bg-primary md:w-8" aria-hidden />
-              Ligne ou port sélectionné
+              {t("map.legend.selected")}
             </li>
             <li className="flex items-center gap-2 md:gap-3">
               <span
                 className="w-6 shrink-0 border-t-2 border-dashed border-muted-foreground/60 md:w-8"
                 aria-hidden
               />
-              {showDateHint ? "Pas de départ à la date choisie" : "Sans programme publié à venir"}
+              {showDateHint ? t("map.legend.noDepartureOnDate") : t("map.legend.noUpcoming")}
             </li>
             <li className="flex items-center gap-2 md:gap-3">
               <span className="grid w-6 shrink-0 place-items-center md:w-8" aria-hidden>
                 <span className="size-2.5 rounded-full border-2 border-card bg-primary shadow" />
               </span>
-              Port ouvert
+              {t("map.legend.portOpen")}
             </li>
             <li className="flex items-center gap-2 md:gap-3">
               <span className="grid w-6 shrink-0 place-items-center md:w-8" aria-hidden>
                 <span className="size-2.5 rounded-full border-2 border-muted-foreground bg-card" />
               </span>
-              Port temporairement fermé
+              {t("map.legend.portClosed")}
             </li>
             <li className="flex items-center gap-2 md:gap-3">
               <span
                 className="w-6 shrink-0 text-center text-[10px] font-semibold text-foreground md:w-8 md:text-[11px]"
                 aria-hidden
               >
-                20 h
+                {t("map.legend.durationSample")}
               </span>
-              Durée typique de traversée
+              {t("map.legend.duration")}
             </li>
           </ul>
           <p className="mt-2 text-[10px] leading-relaxed text-muted-foreground md:mt-3 md:text-xs">
-            Tracés et positions indicatifs. Horaires en heure locale.
+            {t("map.legend.disclaimer")}
           </p>
           <p className="mt-2 border-t border-border pt-2 text-[10px] text-muted-foreground md:text-[11px]">
-            Carte ©{" "}
-            <a href="https://openfreemap.org" target="_blank" rel="noreferrer" className="underline">
+            {t("map.legend.mapCredit")}{" "}
+            <a
+              href="https://openfreemap.org"
+              target="_blank"
+              rel="noreferrer"
+              className="underline"
+            >
               OpenFreeMap
             </a>{" "}
             ©{" "}
@@ -89,8 +96,8 @@ export function MapLegend({
         <button
           type="button"
           onClick={() => setOpen(true)}
-          aria-label="Afficher la légende"
-          title="Légende"
+          aria-label={t("map.legend.open")}
+          title={t("map.legend.title")}
           aria-expanded={false}
           className="inline-flex size-8 items-center justify-center rounded-full border border-border bg-background/95 shadow md:size-10 md:rounded-xl"
         >

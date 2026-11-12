@@ -1,6 +1,7 @@
 import { RotateCcw, X } from "lucide-react";
 import type { FilterChip } from "@/lib/ferry/filtering";
 import type { Filters } from "@/lib/ferry/types";
+import { useT } from "@/lib/i18n";
 
 interface MapStatusBarProps {
   chips: FilterChip[];
@@ -28,6 +29,7 @@ export function MapStatusBar({
   onRetry,
   panelOpen,
 }: MapStatusBarProps) {
+  const t = useT();
   if (!chips.length && !loading && !hasError) return null;
 
   return (
@@ -38,22 +40,22 @@ export function MapStatusBar({
     >
       {hasError ? (
         <div className="pointer-events-auto inline-flex min-h-9 items-center gap-2 rounded-full border border-destructive/20 bg-background px-3 py-1 text-sm font-medium text-destructive shadow-sm">
-          <span>Chargement impossible</span>
+          <span>{t("map.status.loadError")}</span>
           <button type="button" onClick={onRetry} className="underline hover:text-destructive/80">
-            Réessayer
+            {t("map.status.retry")}
           </button>
         </div>
       ) : null}
       {loading ? (
         <div className="pointer-events-auto inline-flex min-h-9 items-center rounded-full border border-border bg-background/95 px-3 py-1 text-sm font-medium text-muted-foreground shadow-sm backdrop-blur">
-          Chargement des traversées…
+          {t("map.status.loading")}
         </div>
       ) : null}
       {chips.map((chip) => (
         <button
           key={chip.key}
           type="button"
-          aria-label={`Retirer le filtre ${chip.label}`}
+          aria-label={t("map.status.removeFilter", { label: chip.label })}
           onClick={() => onFiltersChange(chip.remove(filters))}
           className="pointer-events-auto hidden min-h-9 items-center gap-1.5 rounded-full border border-border bg-background/95 py-1 pl-3 pr-2 text-sm font-semibold text-foreground shadow-sm backdrop-blur hover:bg-secondary md:inline-flex"
         >
@@ -68,7 +70,7 @@ export function MapStatusBar({
           className="pointer-events-auto hidden min-h-9 items-center gap-1.5 rounded-full bg-secondary px-3 py-1 text-sm font-semibold text-muted-foreground shadow-sm hover:text-foreground md:inline-flex"
         >
           <RotateCcw className="size-3.5" />
-          Tout effacer
+          {t("map.status.clearAll")}
         </button>
       ) : null}
     </div>

@@ -23,17 +23,18 @@ import { searchCatalog, type CatalogResult } from "@/lib/ferry/catalogSearch";
 import type { FleetShip } from "@/lib/ferry/fleet";
 import { useMyTrip } from "@/lib/ferry/myTrip";
 import type { RouteLine, Selection } from "@/lib/ferry/types";
+import { useT, type MessageKey } from "@/lib/i18n";
 
 // Table communautaire pas encore présente dans les types générés.
 const db = typedSupabase as unknown as SupabaseClient;
 
 const icons = { vessel: Ship, company: Building2, port: MapPin, route: RouteIcon } as const;
-const groupLabel = {
-  vessel: "Navires",
-  company: "Compagnies",
-  port: "Ports",
-  route: "Liaisons · voir les traversées",
-} as const;
+const groupLabel: Record<keyof typeof icons, MessageKey> = {
+  vessel: "map.search.groupVessels",
+  company: "map.search.groupCompanies",
+  port: "map.search.groupPorts",
+  route: "map.search.groupRoutes",
+};
 
 function ResultRow({
   icon: Icon,
@@ -81,6 +82,7 @@ export function MapSearch({
   onSelect: (selection: Selection) => void;
   onRoute: (route: RouteLine) => void;
 }) {
+  const t = useT();
   const [open, setOpen] = useState(false);
   const [term, setTerm] = useState("");
   const { user } = useAuth();
@@ -132,8 +134,8 @@ export function MapSearch({
     <>
       <button
         type="button"
-        aria-label="Rechercher un navire, un port ou une compagnie"
-        title="Rechercher un navire, un port ou une compagnie"
+        aria-label={t("map.search.button")}
+        title={t("map.search.button")}
         onClick={() => {
           onOpen();
           setOpen(true);
@@ -142,15 +144,13 @@ export function MapSearch({
       >
         <Search className="size-4 md:size-[18px]" aria-hidden />
         {/* Téléphone : la loupe seule, pour une colonne étroite. */}
-        <span className="max-md:hidden">Loupe</span>
+        <span className="max-md:hidden">{t("map.search.short")}</span>
       </button>
       <Dialog open={open} onOpenChange={(next) => (next ? setOpen(true) : close())}>
         <DialogContent className="top-0 flex h-dvh max-w-none translate-y-0 flex-col gap-3 rounded-none sm:top-[12%] sm:h-auto sm:max-h-[76dvh] sm:max-w-lg sm:rounded-2xl">
           <DialogHeader className="text-left">
-            <DialogTitle>Rechercher</DialogTitle>
-            <DialogDescription>
-              Un navire, une compagnie ou un port, même sans traversée en ce moment.
-            </DialogDescription>
+            <DialogTitle>{t("map.search.title")}</DialogTitle>
+            <DialogDescription>{t("map.search.description")}</DialogDescription>
           </DialogHeader>
           <label className="flex min-h-11 items-center gap-2 rounded-xl border border-input px-3">
             <Search className="size-4 text-muted-foreground" aria-hidden />
@@ -159,8 +159,8 @@ export function MapSearch({
               type="search"
               value={term}
               onChange={(event) => setTerm(event.target.value)}
-              placeholder="Ex. Tassili, GNV, Oran"
-              aria-label="Nom d'un navire, d'une compagnie ou d'un port"
+              placeholder={t("map.search.placeholder")}
+              aria-label={t("map.search.inputLabel")}
               className="min-w-0 flex-1 bg-transparent text-base outline-none"
             />
           </label>
@@ -170,12 +170,12 @@ export function MapSearch({
                 {myTrip ? (
                   <div className="mb-2">
                     <p className="px-2 pb-1 text-[11px] font-bold uppercase tracking-wide text-muted-foreground">
-                      Ma traversée
+                      {t("map.search.myCrossing")}
                     </p>
                     <ResultRow
                       icon={Ship}
-                      label={`${myTrip.from?.name ?? "Départ"} → ${myTrip.to?.name ?? "Arrivée"}`}
-                      hint={myTrip.vessel?.name ?? "Voir ma traversée"}
+                      label={`${myTrip.from?.name ?? t("map.search.departure")} → ${myTrip.to?.name ?? t("map.search.arrival")}`}
+                      hint={myTrip.vessel?.name ?? t("map.search.seeMyCrossing")}
                       vesselId={myTrip.vessel?.id}
                       onClick={() => select({ type: "departure", id: myTrip.departure.id })}
                     />
@@ -184,14 +184,14 @@ export function MapSearch({
                 {followed.length ? (
                   <div className="mb-2">
                     <p className="px-2 pb-1 text-[11px] font-bold uppercase tracking-wide text-muted-foreground">
-                      Mes navires suivis
+                      {t("map.search.followed")}
                     </p>
                     {followed.map((vessel) => (
                       <ResultRow
                         key={vessel.id}
                         icon={Heart}
                         label={vessel.name}
-                        hint="Voir sa fiche"
+                        hint={t("map.search.seeSheet")}
                         vesselId={vessel.id}
                         onClick={() => select({ type: "vessel", id: vessel.id })}
                       />
@@ -201,14 +201,14 @@ export function MapSearch({
                 {sailing.length ? (
                   <div className="mb-2">
                     <p className="px-2 pb-1 text-[11px] font-bold uppercase tracking-wide text-muted-foreground">
-                      En mer maintenant
+                      {t("map.search.atSeaNow")}
                     </p>
                     {sailing.map((ship) => (
                       <ResultRow
                         key={ship.id}
                         icon={Ship}
                         label={ship.name}
-                        hint="Voir sa fiche"
+                        hint={t("map.search.seeSheet")}
                         vesselId={ship.vesselId}
                         onClick={() => select({ type: "vessel", id: ship.vesselId! })}
                       />
@@ -218,7 +218,7 @@ export function MapSearch({
               </>
             ) : !results.length ? (
               <p className="p-3 text-sm text-muted-foreground">
-                Rien ne correspond à « {term.trim()} ».
+                {t("map.search.noMatch", { term: term.trim() })}
               </p>
             ) : null}
             {(["vessel", "company", "port", "route"] as const).map((kind) => {
@@ -227,7 +227,7 @@ export function MapSearch({
               return (
                 <div key={kind} className="mb-2">
                   <p className="px-2 pb-1 text-[11px] font-bold uppercase tracking-wide text-muted-foreground">
-                    {groupLabel[kind]}
+                    {t(groupLabel[kind])}
                   </p>
                   {group.map((result) => (
                     <ResultRow

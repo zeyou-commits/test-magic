@@ -8,6 +8,7 @@ import {
   type LineVisibility,
   type MapPreview,
 } from "@/lib/ferry/mapPresentation";
+import { useT } from "@/lib/i18n";
 
 export type MapShortcut = "sea" | "upcoming" | "companies" | "ports" | null;
 
@@ -78,6 +79,7 @@ export function MapStats({
   onDismiss,
   search,
 }: MapStatsProps) {
+  const t = useT();
   const rootRef = useRef<HTMLDivElement>(null);
   const dismissRef = useRef(onDismiss);
   dismissRef.current = onDismiss;
@@ -153,8 +155,8 @@ export function MapStats({
   const shortcuts = [
     {
       id: "sea" as const,
-      label: "En mer",
-      title: "Navires en mer",
+      label: t("map.stats.atSea"),
+      title: t("map.stats.atSeaTitle"),
       count: atSea.length,
       icon: (
         <span className="relative inline-flex">
@@ -168,8 +170,8 @@ export function MapStats({
     },
     {
       id: "upcoming" as const,
-      label: "À quai",
-      title: "Navires à quai",
+      label: t("map.stats.docked"),
+      title: t("map.stats.dockedTitle"),
       count: upcomingShips.length,
       icon: (
         <span className="relative inline-flex">
@@ -182,15 +184,15 @@ export function MapStats({
     },
     {
       id: "companies" as const,
-      label: "Compagnies",
-      title: "Compagnies des navires",
+      label: t("map.stats.companies"),
+      title: t("map.stats.companiesTitle"),
       count: companies.length,
       icon: <Building2 className={icon} />,
     },
     {
       id: "ports" as const,
-      label: "Ports",
-      title: "Ports et liaisons",
+      label: t("map.stats.ports"),
+      title: t("map.stats.portsTitle"),
       count: portsCount,
       icon: <LighthouseIcon className={icon} />,
     },
@@ -215,7 +217,7 @@ export function MapStats({
             type="button"
             className={`${item} group relative`}
             data-active={activeShortcut === id}
-            aria-label={`${title} : ${count}`}
+            aria-label={t("map.stats.countLabel", { title, count })}
             aria-pressed={activeShortcut === id}
             aria-expanded={activeShortcut === id && menuOpen}
             onClick={() => {
@@ -251,17 +253,19 @@ export function MapStats({
             if (e.pointerType === "mouse") window.clearTimeout(hoverTimer.current);
           }}
           onPointerLeave={() => onPreview(null)}
-          aria-label={shown === "companies" ? "Filtrer les compagnies" : "Choisir un navire"}
+          aria-label={
+            shown === "companies" ? t("map.stats.filterCompanies") : t("map.stats.chooseVessel")
+          }
         >
           {shown === "ports" ? (
-            <div role="radiogroup" aria-label="Afficher les liaisons" className="p-2">
-              <p className="px-1 pt-1 text-xs font-bold">Afficher les lignes</p>
+            <div role="radiogroup" aria-label={t("map.stats.showRoutes")} className="p-2">
+              <p className="px-1 pt-1 text-xs font-bold">{t("map.stats.showLines")}</p>
               {(
                 [
-                  ["published", "Avec programme publié", "Tous les programmes futurs"],
-                  ["all", "Toutes les liaisons", "Y compris sans programme à venir"],
-                  ["none", "Aucune liaison", "Garder les ports et les bateaux"],
-                  ["ports", "Ports uniquement", "Masquer les liaisons et les bateaux"],
+                  ["published", t("map.stats.linesPublished"), t("map.stats.linesPublishedHint")],
+                  ["all", t("map.stats.linesAll"), t("map.stats.linesAllHint")],
+                  ["none", t("map.stats.linesNone"), t("map.stats.linesNoneHint")],
+                  ["ports", t("map.stats.linesPorts"), t("map.stats.linesPortsHint")],
                 ] as const
               ).map(([value, label, description]) => {
                 const selected = lineVisibility === value;
@@ -302,7 +306,7 @@ export function MapStats({
                 onPointerEnter={() => onPreview(null)}
                 onFocus={() => onPreview(null)}
               >
-                Toutes les compagnies
+                {t("map.stats.allCompanies")}
               </button>
               {companies.map((company) => (
                 <button
@@ -335,12 +339,12 @@ export function MapStats({
               ))}
               {companies.length === 0 && (
                 <p className="px-3 py-2 text-xs text-muted-foreground">
-                  Aucune compagnie pour le moment
+                  {t("map.stats.noCompany")}
                 </p>
               )}
             </>
           ) : shipList.length === 0 ? (
-            <p className="px-3 py-2 text-xs text-muted-foreground">Aucun navire pour le moment</p>
+            <p className="px-3 py-2 text-xs text-muted-foreground">{t("map.stats.noVessel")}</p>
           ) : (
             shipList.map((ship) => (
               <button
@@ -374,14 +378,14 @@ export function MapStats({
                   <span className="block truncate">{ship.name}</span>
                   {alerts.has(ship.vesselId ?? "") ? (
                     <span className="block truncate text-[10px] font-bold text-red-700">
-                      {alerts.get(ship.vesselId ?? "")?.label} · départ à confirmer
+                      {alerts.get(ship.vesselId ?? "")?.label} · {t("map.stats.departToConfirm")}
                     </span>
                   ) : null}
                   <span
                     className="block truncate text-[10px] font-normal text-muted-foreground"
                     title={companyOf(ship)}
                   >
-                    {shortCompanyName(companyOf(ship) ?? "Compagnie à confirmer")} ·{" "}
+                    {shortCompanyName(companyOf(ship) ?? t("map.stats.companyToConfirm"))} ·{" "}
                     {infoOf(ship).route}
                   </span>
                   {shown === "upcoming" && (

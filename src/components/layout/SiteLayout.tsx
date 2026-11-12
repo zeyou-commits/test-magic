@@ -5,6 +5,7 @@ import { UserMenu } from "./UserMenu";
 import { QuestionButton } from "./QuestionButton";
 import { DataUnavailableNotice } from "./DataUnavailableNotice";
 import { goHome } from "@/lib/ferry/voyageTrip";
+import { LanguageSwitcher, useT, type MessageKey } from "@/lib/i18n";
 import {
   Anchor,
   ArrowUpRight,
@@ -46,17 +47,17 @@ import {
 } from "@/components/ui/sheet";
 
 export const navLinks = [
-  { to: "/", label: "Carte" },
-  { to: "/horaires", label: "Départs & arrivées" },
-  { to: "/actualites", label: "Actualités" },
-  { to: "/ports", label: "Ports" },
-  { to: "/lignes", label: "Lignes" },
-  { to: "/compagnies", label: "Compagnies" },
-  { to: "/guide", label: "Guide" },
-  { to: "/bateaux", label: "Navires" },
-  { to: "/simulateurs", label: "Simulateurs" },
-  { to: "/barometre-prix", label: "Baromètre des prix" },
-  { to: "/mes-dinars", label: "Mes dinars" },
+  { to: "/", labelKey: "nav.map" },
+  { to: "/horaires", labelKey: "nav.departuresArrivals" },
+  { to: "/actualites", labelKey: "nav.news" },
+  { to: "/ports", labelKey: "nav.ports" },
+  { to: "/lignes", labelKey: "nav.lines" },
+  { to: "/compagnies", labelKey: "nav.companies" },
+  { to: "/guide", labelKey: "nav.guide" },
+  { to: "/bateaux", labelKey: "nav.vessels" },
+  { to: "/simulateurs", labelKey: "nav.simulators" },
+  { to: "/barometre-prix", labelKey: "nav.priceBarometer" },
+  { to: "/mes-dinars", labelKey: "nav.myDinars" },
 ] as const;
 
 /**
@@ -64,66 +65,66 @@ export const navLinks = [
  * ordinateur. Rien n'y répète la navigation principale (Carte, Départs, Route, compte).
  */
 export const menuGroups: {
-  title: string;
-  items: { to: string; label: string; icon: LucideIcon }[];
+  titleKey: MessageKey;
+  items: { to: string; labelKey: MessageKey; icon: LucideIcon }[];
 }[] = [
   {
-    title: "Voyager",
+    titleKey: "menu.groupTravel",
     items: [
-      { to: "/actualites", label: "Actualités", icon: Newspaper },
-      { to: "/lignes", label: "Lignes", icon: Waypoints },
-      { to: "/ports", label: "Ports", icon: Anchor },
-      { to: "/compagnies", label: "Compagnies", icon: Building2 },
-      { to: "/bateaux", label: "Navires", icon: Ship },
+      { to: "/actualites", labelKey: "nav.news", icon: Newspaper },
+      { to: "/lignes", labelKey: "nav.lines", icon: Waypoints },
+      { to: "/ports", labelKey: "nav.ports", icon: Anchor },
+      { to: "/compagnies", labelKey: "nav.companies", icon: Building2 },
+      { to: "/bateaux", labelKey: "nav.vessels", icon: Ship },
     ],
   },
   {
-    title: "Préparer",
+    titleKey: "menu.groupPrepare",
     items: [
-      { to: "/guide", label: "Guide", icon: BookOpen },
-      { to: "/questions-frequentes", label: "Questions fréquentes", icon: CircleHelp },
-      { to: "/voyage-algerie", label: "Voyage en Algérie", icon: MapPin },
-      { to: "/vehicules-moins-3-ans", label: "Véhicules de moins de 3 ans", icon: Car },
-      { to: "/covoiturage", label: "Covoiturage", icon: Users },
+      { to: "/guide", labelKey: "nav.guide", icon: BookOpen },
+      { to: "/questions-frequentes", labelKey: "nav.faq", icon: CircleHelp },
+      { to: "/voyage-algerie", labelKey: "nav.travelAlgeria", icon: MapPin },
+      { to: "/vehicules-moins-3-ans", labelKey: "nav.vehiclesUnder3", icon: Car },
+      { to: "/covoiturage", labelKey: "nav.carpool", icon: Users },
     ],
   },
   {
-    title: "Outils",
+    titleKey: "menu.groupTools",
     items: [
-      { to: "/simulateurs", label: "Simulateurs", icon: Calculator },
-      { to: "/barometre-prix", label: "Baromètre des prix", icon: TrendingUp },
-      { to: "/mes-dinars", label: "Mes dinars", icon: Wallet },
+      { to: "/simulateurs", labelKey: "nav.simulators", icon: Calculator },
+      { to: "/barometre-prix", labelKey: "nav.priceBarometer", icon: TrendingUp },
+      { to: "/mes-dinars", labelKey: "nav.myDinars", icon: Wallet },
     ],
   },
   {
-    title: "BledWay",
+    titleKey: "menu.groupBledway",
     items: [
-      { to: "/a-propos", label: "À propos", icon: Info },
-      { to: "/contact", label: "Contact", icon: Mail },
-      { to: "/methode-editoriale", label: "Méthode éditoriale", icon: ScrollText },
+      { to: "/a-propos", labelKey: "nav.about", icon: Info },
+      { to: "/contact", labelKey: "nav.contact", icon: Mail },
+      { to: "/methode-editoriale", labelKey: "nav.editorialMethod", icon: ScrollText },
     ],
   },
 ];
 
 const footerLinks = [
-  { to: "/actualites", label: "Actualités" },
-  { to: "/guide", label: "Tous les dossiers" },
-  { to: "/questions-frequentes", label: "Questions fréquentes" },
-  { to: "/vehicules-moins-3-ans", label: "Véhicules de moins de 3 ans" },
-  { to: "/voyage-algerie", label: "Voyage en Algérie" },
-  { to: "/covoiturage", label: "Covoiturage" },
-  { to: "/bateaux", label: "Navires" },
-  { to: "/simulateurs", label: "Simulateurs" },
-  { to: "/barometre-prix", label: "Baromètre des prix" },
-  { to: "/mes-dinars", label: "Mes dinars" },
-  { to: "/methode-editoriale", label: "Méthode éditoriale" },
-  { to: "/compagnies", label: "Compagnies" },
-  { to: "/a-propos", label: "À propos" },
-  { to: "/contact", label: "Contact" },
-  { to: "/mentions-legales", label: "Mentions légales" },
-  { to: "/confidentialite", label: "Confidentialité" },
-  { to: "/charte", label: "Charte de la communauté" },
-  { to: "/conditions-utilisation", label: "Conditions d'utilisation" },
+  { to: "/actualites", labelKey: "nav.news" },
+  { to: "/guide", labelKey: "nav.allGuides" },
+  { to: "/questions-frequentes", labelKey: "nav.faq" },
+  { to: "/vehicules-moins-3-ans", labelKey: "nav.vehiclesUnder3" },
+  { to: "/voyage-algerie", labelKey: "nav.travelAlgeria" },
+  { to: "/covoiturage", labelKey: "nav.carpool" },
+  { to: "/bateaux", labelKey: "nav.vessels" },
+  { to: "/simulateurs", labelKey: "nav.simulators" },
+  { to: "/barometre-prix", labelKey: "nav.priceBarometer" },
+  { to: "/mes-dinars", labelKey: "nav.myDinars" },
+  { to: "/methode-editoriale", labelKey: "nav.editorialMethod" },
+  { to: "/compagnies", labelKey: "nav.companies" },
+  { to: "/a-propos", labelKey: "nav.about" },
+  { to: "/contact", labelKey: "nav.contact" },
+  { to: "/mentions-legales", labelKey: "nav.legalNotice" },
+  { to: "/confidentialite", labelKey: "nav.privacy" },
+  { to: "/charte", labelKey: "nav.communityCharter" },
+  { to: "/conditions-utilisation", labelKey: "nav.terms" },
 ] as const;
 
 function openItineraryFromHeader() {
@@ -133,11 +134,12 @@ function openItineraryFromHeader() {
 
 /** Identité compacte commune à toutes les pages. */
 export function BrandLink({ compact = false }: { compact?: boolean }) {
+  const t = useT();
   return (
     <Link
       to="/"
       className="bw-brand-link flex shrink-0 flex-col items-start justify-center"
-      aria-label="BledWay, retour à la carte"
+      aria-label={t("menu.homeLabel")}
       onClick={goHome}
     >
       <img
@@ -145,12 +147,13 @@ export function BrandLink({ compact = false }: { compact?: boolean }) {
         alt="BledWay"
         className={compact ? "bw-brand bw-brand-compact" : "bw-brand"}
       />
-      <span className="bw-beta">Bêta</span>
+      <span className="bw-beta">{t("menu.beta")}</span>
     </Link>
   );
 }
 
 export function SiteHeader() {
+  const t = useT();
   const primary = navLinks.filter((item) => ["/", "/horaires"].includes(item.to));
   // Hauteur réelle du bandeau (bandeau d'alertes compris), pour caler ce qui reste collé dessous.
   const headerRef = useRef<HTMLElement>(null);
@@ -168,7 +171,7 @@ export function SiteHeader() {
     <header className="bw-header" ref={headerRef}>
       <div className="bw-header-inner">
         <BrandLink />
-        <nav aria-label="Navigation principale" className="bw-desktop-nav">
+        <nav aria-label={t("menu.mainNav")} className="bw-desktop-nav">
           {primary.map((item) => (
             <Link
               key={item.to}
@@ -183,11 +186,11 @@ export function SiteHeader() {
             >
               {item.to === "/" ? (
                 <>
-                  <House size={16} aria-hidden /> Carte
+                  <House size={16} aria-hidden /> {t("nav.map")}
                 </>
               ) : (
                 <>
-                  <Clock size={16} aria-hidden /> Départs
+                  <Clock size={16} aria-hidden /> {t("nav.departures")}
                 </>
               )}
             </Link>
@@ -199,21 +202,26 @@ export function SiteHeader() {
             className="inline-flex items-center gap-1.5"
           >
             <RouteIcon size={16} aria-hidden />
-            Route
+            {t("nav.route")}
           </Link>
           <DropdownMenu>
             <DropdownMenuTrigger className="bw-explore-trigger">
-              Explorer <ChevronDown size={15} />
+              {t("nav.explore")} <ChevronDown size={15} />
             </DropdownMenuTrigger>
             <DropdownMenuContent align="start" className="bw-mega-menu">
               {menuGroups.map((group) => (
-                <div key={group.title} className="bw-mega-menu__group" role="group" aria-label={group.title}>
-                  <p className="bw-menu-group-title">{group.title}</p>
+                <div
+                  key={group.titleKey}
+                  className="bw-mega-menu__group"
+                  role="group"
+                  aria-label={t(group.titleKey)}
+                >
+                  <p className="bw-menu-group-title">{t(group.titleKey)}</p>
                   {group.items.map((item) => (
                     <DropdownMenuItem asChild key={item.to}>
                       <Link to={item.to} className="bw-menu-link">
                         <item.icon size={16} aria-hidden />
-                        {item.label}
+                        {t(item.labelKey)}
                       </Link>
                     </DropdownMenuItem>
                   ))}
@@ -229,24 +237,27 @@ export function SiteHeader() {
             <UserMenu compact iconOnly />
           </span>
           <Sheet>
-            <SheetTrigger className="bw-mobile-menu bw-icon-button" aria-label="Ouvrir le menu">
+            <SheetTrigger className="bw-mobile-menu bw-icon-button" aria-label={t("menu.open")}>
               <Menu size={22} />
             </SheetTrigger>
             <SheetContent side="bottom" className="bw-menu-sheet">
-              <SheetTitle className="bw-menu-sheet__title">Explorer BledWay</SheetTitle>
-              <SheetDescription className="sr-only">
-                Toutes les rubriques, rangées par famille.
-              </SheetDescription>
+              <SheetTitle className="bw-menu-sheet__title">{t("menu.sheetTitle")}</SheetTitle>
+              <SheetDescription className="sr-only">{t("menu.sheetDescription")}</SheetDescription>
               {/* Tablette : pas de barre du bas, la navigation principale reste ici. */}
               <div className="bw-menu-sheet__main">
                 <SheetClose asChild>
-                  <Link to="/" activeOptions={{ exact: true }} onClick={goHome} className="bw-menu-link">
-                    <House size={16} aria-hidden /> Carte
+                  <Link
+                    to="/"
+                    activeOptions={{ exact: true }}
+                    onClick={goHome}
+                    className="bw-menu-link"
+                  >
+                    <House size={16} aria-hidden /> {t("nav.map")}
                   </Link>
                 </SheetClose>
                 <SheetClose asChild>
                   <Link to="/horaires" className="bw-menu-link">
-                    <Clock size={16} aria-hidden /> Départs
+                    <Clock size={16} aria-hidden /> {t("nav.departures")}
                   </Link>
                 </SheetClose>
                 <SheetClose asChild>
@@ -256,25 +267,26 @@ export function SiteHeader() {
                     activeProps={{ className: "" }}
                     className="bw-menu-link"
                   >
-                    <RouteIcon size={16} aria-hidden /> Route
+                    <RouteIcon size={16} aria-hidden /> {t("nav.route")}
                   </Link>
                 </SheetClose>
               </div>
               <div className="bw-menu-sheet__groups">
                 {menuGroups.map((group) => (
-                  <section key={group.title} aria-label={group.title}>
-                    <p className="bw-menu-group-title">{group.title}</p>
+                  <section key={group.titleKey} aria-label={t(group.titleKey)}>
+                    <p className="bw-menu-group-title">{t(group.titleKey)}</p>
                     {group.items.map((item) => (
                       <SheetClose asChild key={item.to}>
                         <Link to={item.to} className="bw-menu-link">
                           <item.icon size={17} aria-hidden />
-                          {item.label}
+                          {t(item.labelKey)}
                         </Link>
                       </SheetClose>
                     ))}
                   </section>
                 ))}
               </div>
+              <LanguageSwitcher className="mt-4" />
             </SheetContent>
           </Sheet>
         </div>
@@ -285,32 +297,33 @@ export function SiteHeader() {
 }
 
 export function SiteFooter() {
+  const t = useT();
   return (
     <footer className="bw-footer">
       <div className="bw-container bw-footer-grid">
         <div>
           <BrandLink />
           <p>
-            La mer entre nous.
+            {t("footer.taglineSea")}
             <br />
-            Le voyage qui nous rapproche.
+            {t("footer.taglineTrip")}
           </p>
-          <span>Ferries Europe ↔ Algérie</span>
+          <span>{t("footer.scope")}</span>
         </div>
         <div>
-          <h2>Explorer</h2>
+          <h2>{t("footer.explore")}</h2>
           {navLinks
             .filter((item) =>
               ["/", "/horaires", "/ports", "/lignes", "/bateaux", "/compagnies"].includes(item.to),
             )
             .map((item) => (
               <Link key={item.to} to={item.to}>
-                {item.label}
+                {t(item.labelKey)}
               </Link>
             ))}
         </div>
         <div>
-          <h2>Préparer le voyage</h2>
+          <h2>{t("footer.prepare")}</h2>
           {footerLinks
             .filter((item) =>
               [
@@ -325,34 +338,32 @@ export function SiteFooter() {
             )
             .map((item) => (
               <Link key={item.to} to={item.to}>
-                {item.label}
+                {t(item.labelKey)}
               </Link>
             ))}
         </div>
         <div>
-          <h2>À vos côtés</h2>
+          <h2>{t("footer.withYou")}</h2>
           {footerLinks
             .filter((item) => ["/a-propos", "/contact", "/methode-editoriale"].includes(item.to))
             .map((item) => (
               <Link key={item.to} to={item.to}>
-                {item.label}
+                {t(item.labelKey)}
               </Link>
             ))}
           <Link to="/contact" className="bw-text-link">
-            Une question ? <ArrowUpRight size={16} />
+            {t("footer.question")} <ArrowUpRight size={16} />
           </Link>
         </div>
       </div>
       <div className="bw-container bw-footer-bottom">
-        <p>
-          © {new Date().getFullYear()} BledWay · Informations indépendantes. Horaires et offres à
-          confirmer auprès des compagnies.
-        </p>
+        <p>{t("footer.disclaimer", { year: new Date().getFullYear() })}</p>
         <div>
-          <Link to="/mentions-legales">Mentions légales</Link>
-          <Link to="/confidentialite">Confidentialité</Link>
-          <Link to="/conditions-utilisation">Conditions d'utilisation</Link>
-          <Link to="/charte">Charte</Link>
+          <Link to="/mentions-legales">{t("nav.legalNotice")}</Link>
+          <Link to="/confidentialite">{t("nav.privacy")}</Link>
+          <Link to="/conditions-utilisation">{t("nav.terms")}</Link>
+          <Link to="/charte">{t("nav.charter")}</Link>
+          <LanguageSwitcher />
         </div>
       </div>
     </footer>
@@ -360,13 +371,14 @@ export function SiteFooter() {
 }
 
 export function SiteLayout({ children }: { children: ReactNode }) {
+  const t = useT();
   return (
     <div className="flex min-h-dvh flex-col bg-background">
       <a
         href="#contenu"
         className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[100] focus:rounded-lg focus:bg-background focus:p-3 focus:text-primary"
       >
-        Aller au contenu
+        {t("menu.skipToContent")}
       </a>
       <SiteHeader />
 

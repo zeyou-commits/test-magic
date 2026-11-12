@@ -1,4 +1,5 @@
 import { absoluteUrl, jsonLdString } from "@/lib/seo/site";
+import { I18nProvider } from "@/lib/i18n";
 import seoConfig from "../../seo.config.json";
 import { ProfileHost } from "@/components/community/ProfileHost";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -243,29 +244,31 @@ function RootComponent() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <AuthProvider>
-        <TravelActionProvider>
-          {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
-          {/* Pages à l'en-tête propre : le bandeau général reste présent sur PC. */}
-          {/^\/(admin|compte|auth)(\/|$)/.test(pathname) ? (
-            <div className="bw-global-header hidden md:block">
-              <SiteHeader />
-            </div>
-          ) : null}
-          <Outlet />
-          {/* La carte a sa propre barre, reliée à ses volets ; l'espace équipe a la sienne. */}
-          {pathname === "/" || /^\/admin(\/|$)/.test(pathname) ? null : (
-            <div className="bw-global-tabs fixed bottom-0 left-0 right-0 z-[70] md:hidden">
-              <MobileTabBar className="h-[calc(3.5rem+env(safe-area-inset-bottom))] pb-[env(safe-area-inset-bottom)]" />
-            </div>
-          )}
-          <OfflineBanner />
-          <PwaInstall />
-          <LocationHelp />
-          <ProfileHost />
-          <Toaster />
-        </TravelActionProvider>
-      </AuthProvider>
+      <I18nProvider>
+        <AuthProvider>
+          <TravelActionProvider>
+            {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
+            {/* Pages à l'en-tête propre : le bandeau général reste présent sur PC. */}
+            {/^\/(admin|compte|auth)(\/|$)/.test(pathname) ? (
+              <div className="bw-global-header hidden md:block">
+                <SiteHeader />
+              </div>
+            ) : null}
+            <Outlet />
+            {/* La carte a sa propre barre, reliée à ses volets ; l'espace équipe a la sienne. */}
+            {pathname === "/" || /^\/admin(\/|$)/.test(pathname) ? null : (
+              <div className="bw-global-tabs fixed bottom-0 left-0 right-0 z-[70] md:hidden">
+                <MobileTabBar className="h-[calc(3.5rem+env(safe-area-inset-bottom))] pb-[env(safe-area-inset-bottom)]" />
+              </div>
+            )}
+            <OfflineBanner />
+            <PwaInstall />
+            <LocationHelp />
+            <ProfileHost />
+            <Toaster />
+          </TravelActionProvider>
+        </AuthProvider>
+      </I18nProvider>
     </QueryClientProvider>
   );
 }

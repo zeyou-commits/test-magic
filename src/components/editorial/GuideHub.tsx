@@ -2,6 +2,7 @@ import { SiteLayout } from "@/components/layout/SiteLayout";
 import { articles } from "@/content/articles";
 import type { Topic } from "@/content/types";
 import { Breadcrumbs, CollectionSchema, EditorialHero, primaryLink, textLink } from "./Editorial";
+import { tr } from "@/lib/i18n";
 
 const topics: { id: Topic; name: string; path: string; intro: string }[] = [
   {
@@ -38,26 +39,26 @@ export function GuideHub({ topic }: { topic?: Topic }) {
         items={selected.map((a) => ({ name: a.title, path: `/guide/${a.slug}` }))}
       />
       <EditorialHero
-        label="La bibliothèque BledWay"
+        label={tr("ui.guideHub.laBibliothequeBledway")}
         title={title}
         intro={
           current?.intro ??
-          "Du projet automobile au dernier kilomètre avant le port : des dossiers sourcés, des repères concrets et des outils pour préparer votre départ."
+          tr("ui.guideHub.duProjetAutomobileAuDernier")
         }
       />
       <div className="mb-10 flex flex-wrap gap-3">
         <a href="/simulateurs" className={primaryLink}>
-          Mes simulateurs
+          {tr("ui.guideHub.mesSimulateurs")}
         </a>
         <a
           href="/bateaux"
           className="inline-flex min-h-11 items-center rounded-xl border px-5 text-sm font-semibold hover:bg-secondary"
         >
-          Les dossiers navires
+          {tr("ui.guideHub.lesDossiersNavires")}
         </a>
       </div>
       {!topic ? (
-        <nav aria-label="Thèmes du guide" className="mb-10 grid gap-4 md:grid-cols-3">
+        <nav aria-label={tr("ui.guideHub.themesDuGuide")} className="mb-10 grid gap-4 md:grid-cols-3">
           {topics.map((t) => (
             <a
               key={t.id}
@@ -67,7 +68,7 @@ export function GuideHub({ topic }: { topic?: Topic }) {
               <h2 className="font-display text-lg font-bold">{t.name}</h2>
               <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{t.intro}</p>
               <span className="mt-4 inline-block text-sm font-semibold text-primary">
-                Explorer ce thème →
+                {tr("ui.guideHub.explorerCeTheme")}
               </span>
             </a>
           ))}
@@ -75,7 +76,7 @@ export function GuideHub({ topic }: { topic?: Topic }) {
       ) : null}
       <section>
         <h2 className="font-display text-2xl font-bold">
-          {topic ? "Les dossiers pour avancer" : "Tous les dossiers pratiques"}
+          {topic ? tr("ui.guideHub.lesDossiersPourAvancer") : tr("ui.guideHub.tousLesDossiersPratiques")}
         </h2>
         <div className="mt-5 divide-y border-y">
           {selected.map((a, i) => (
@@ -96,16 +97,16 @@ export function GuideHub({ topic }: { topic?: Topic }) {
                 </p>
               </div>
               <span className="self-center text-sm font-semibold text-primary">
-                Lire le dossier →
+                {tr("ui.guideHub.lireLeDossier")}
               </span>
             </a>
           ))}
         </div>
       </section>
       <p className="mt-8 text-sm text-muted-foreground">
-        Des informations pour préparer vos décisions, avec leurs sources et leurs limites.{" "}
+        {tr("ui.guideHub.desInformationsPourPreparerVos")}{" "}
         <a href="/methode-editoriale" className={textLink}>
-          Comprendre notre méthode
+          {tr("ui.guideHub.comprendreNotreMethode")}
         </a>
         .
       </p>

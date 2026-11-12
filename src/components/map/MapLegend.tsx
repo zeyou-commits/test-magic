@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Info, X } from "lucide-react";
 import { useT } from "@/lib/i18n";
+import { tr } from "@/lib/i18n";
 
 /** Légende de la carte : explique les codes visuels des lignes et des ports. */
 export function MapLegend({
@@ -79,7 +80,7 @@ export function MapLegend({
               rel="noreferrer"
               className="underline"
             >
-              OpenFreeMap
+              {tr("ui.mapLegend.openfreemap")}
             </a>{" "}
             ©{" "}
             <a
@@ -88,7 +89,7 @@ export function MapLegend({
               rel="noreferrer"
               className="underline"
             >
-              OpenStreetMap
+              {tr("ui.mapLegend.openstreetmap")}
             </a>
           </p>
         </div>

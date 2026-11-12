@@ -13,6 +13,7 @@ import {
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import { OPEN_PROFILE_EVENT, publicProfileQuery } from "@/lib/community/travellers";
 import { TravellerAvatar } from "./TravellerAvatar";
+import { tr } from "@/lib/i18n";
 
 /**
  * Profil public d'un voyageur, ouvert depuis un avatar n'importe où sur le site.
@@ -33,13 +34,13 @@ export function ProfileHost() {
       <DialogContent className="bw-profile-dialog">
         {profile.isPending ? (
           <p className="bw-profile__loading" role="status">
-            <LoaderCircle className="size-5 animate-spin" aria-hidden /> Chargement du profil…
+            <LoaderCircle className="size-5 animate-spin" aria-hidden />{tr("ui.profileHost.chargementDuProfil")}
           </p>
         ) : !data ? (
           <>
-            <DialogTitle>Profil indisponible</DialogTitle>
+            <DialogTitle>{tr("ui.profileHost.profilIndisponible")}</DialogTitle>
             <DialogDescription>
-              Ce profil n’existe plus ou n’est pas encore activé.
+              {tr("ui.profileHost.ceProfilNExistePlus")}
             </DialogDescription>
           </>
         ) : (
@@ -48,32 +49,32 @@ export function ProfileHost() {
               <TravellerAvatar card={data} size={84} moodLabel static />
               <DialogTitle className="bw-profile__name">{data.pseudo}</DialogTitle>
               <DialogDescription>
-                Voyageur·se BledWay{data.since ? ` depuis ${data.since}` : ""}
-                {data.me ? " · c’est vous" : ""}
+                {tr("ui.profileHost.voyageurSeBledway")}{data.since ? ` depuis ${data.since}` : ""}
+                {data.me ? tr("ui.profileHost.cEstVous") : ""}
               </DialogDescription>
             </div>
             <dl className="bw-profile__stats">
               <div>
                 <dt>
-                  <Megaphone size={14} aria-hidden /> Contributions
+                  <Megaphone size={14} aria-hidden />{tr("ui.profileHost.contributions")}
                 </dt>
                 <dd>{data.contributions}</dd>
               </div>
               <div>
                 <dt>
-                  <CheckCheck size={14} aria-hidden /> Confirmées
+                  <CheckCheck size={14} aria-hidden />{tr("ui.profileHost.confirmees")}
                 </dt>
                 <dd>{data.confirmed}</dd>
               </div>
               <div>
                 <dt>
-                  <Heart size={14} aria-hidden /> Mercis
+                  <Heart size={14} aria-hidden />{tr("ui.profileHost.mercis")}
                 </dt>
                 <dd>{data.thanks ?? 0}</dd>
               </div>
               <div>
                 <dt>
-                  <Waves size={14} aria-hidden /> Traversées
+                  <Waves size={14} aria-hidden />{tr("ui.profileHost.traversees")}
                 </dt>
                 <dd>{data.trips}</dd>
               </div>
@@ -82,20 +83,20 @@ export function ProfileHost() {
               <ul className="bw-profile__favs">
                 {data.favorite_vessel ? (
                   <li>
-                    <Ship size={15} aria-hidden /> Navire préféré{" "}
+                    <Ship size={15} aria-hidden />{tr("ui.profileHost.navirePrefere")}{" "}
                     <strong>{data.favorite_vessel}</strong>
                   </li>
                 ) : null}
                 {data.favorite_port ? (
                   <li>
-                    <Anchor size={15} aria-hidden /> Port préféré{" "}
+                    <Anchor size={15} aria-hidden />{tr("ui.profileHost.portPrefere")}{" "}
                     <strong>{data.favorite_port}</strong>
                   </li>
                 ) : null}
               </ul>
             ) : null}
             {data.badges.length ? (
-              <div className="bw-profile__badges" aria-label="Badges">
+              <div className="bw-profile__badges" aria-label={tr("ui.profileHost.badges")}>
                 {data.badges.map((badge) => (
                   <span key={badge.code}>
                     <Award size={13} aria-hidden /> {badge.label}
@@ -104,14 +105,12 @@ export function ProfileHost() {
               </div>
             ) : (
               <p className="bw-profile__empty">
-                Les badges arrivent avec les premières contributions : signaler, confirmer, donner
-                son avis.
+                {tr("ui.profileHost.lesBadgesArriventAvecLes")}
               </p>
             )}
             {data.confirmations ? (
               <p className="bw-profile__note">
-                A confirmé {data.confirmations} info{data.confirmations > 1 ? "s" : ""} d’autres
-                voyageurs.
+                {tr("ui.profileHost.aConfirme")}{data.confirmations}{tr("ui.profileHost.info")}{data.confirmations > 1 ? "s" : ""}{tr("ui.profileHost.dAutresVoyageurs")}
               </p>
             ) : null}
           </div>

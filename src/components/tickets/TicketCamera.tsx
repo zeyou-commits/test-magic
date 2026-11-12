@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Camera, LoaderCircle, X } from "lucide-react";
+import { tr } from "@/lib/i18n";
 
 type Quality = { light: "dark" | "bright" | "ok"; sharp: boolean };
 
@@ -123,7 +124,7 @@ export function TicketCamera({
         <p role="alert">{problem}</p>
       ) : (
         <div className="bw-ticket-camera__view">
-          <video ref={video} playsInline muted aria-label="Aperçu de la caméra" />
+          <video ref={video} playsInline muted aria-label={tr("ui.ticketCamera.apercuDeLaCamera")} />
           <div className="bw-ticket-camera__frame" data-good={good || undefined} aria-hidden />
           <p className="bw-ticket-camera__hint" data-good={good || undefined} role="status">
             {hint}
@@ -131,7 +132,7 @@ export function TicketCamera({
         </div>
       )}
       <div className="bw-ticket-camera__actions">
-        <button type="button" onClick={onCancel} aria-label="Fermer la caméra">
+        <button type="button" onClick={onCancel} aria-label={tr("ui.ticketCamera.fermerLaCamera")}>
           <X size={18} aria-hidden />
         </button>
         {problem ? null : (
@@ -141,7 +142,7 @@ export function TicketCamera({
             data-good={good || undefined}
             disabled={busy}
             onClick={shoot}
-            aria-label="Prendre la photo du billet"
+            aria-label={tr("ui.ticketCamera.prendreLaPhotoDuBillet")}
           >
             {busy ? (
               <LoaderCircle className="animate-spin" size={22} />

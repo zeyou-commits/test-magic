@@ -12,6 +12,7 @@ import { companiesQuery, portsQuery, vesselsQuery } from "@/lib/ferry/queries";
 import type { Company, Vessel } from "@/lib/ferry/types";
 import { vesselPhotoQuery } from "@/lib/ferry/vesselPhoto";
 import { absoluteUrl, jsonLdString, seoHead } from "@/lib/seo/site";
+import { tr } from "@/lib/i18n";
 
 const title = "Actualités des ferries Europe ↔ Algérie | BledWay";
 const description =
@@ -107,11 +108,11 @@ function SeriousNow({ items, vessels }: { items: NewsItem[]; vessels: Vessel[] }
   );
   if (!blocked.length && !alerts.length) return null;
   return (
-    <section className="bw-news-serious" aria-label="Navires immobilisés et annonces graves en cours">
+    <section className="bw-news-serious" aria-label={tr("ui.pageActualitesIndex.naviresImmobilisesEtAnnoncesGraves")}>
       {blocked.length ? (
         <div>
           <h2>
-            <Anchor size={18} aria-hidden /> Navires immobilisés
+            <Anchor size={18} aria-hidden />{tr("ui.pageActualitesIndex.naviresImmobilises")}
           </h2>
           <ul>
             {blocked.map((incident) => {
@@ -137,7 +138,7 @@ function SeriousNow({ items, vessels }: { items: NewsItem[]; vessels: Vessel[] }
       {alerts.length ? (
         <div>
           <h2>
-            <AlertTriangle size={18} aria-hidden /> Annonces graves en cours
+            <AlertTriangle size={18} aria-hidden />{tr("ui.pageActualitesIndex.annoncesGravesEnCours")}
           </h2>
           <ul>
             {alerts.map((item) => (
@@ -200,13 +201,13 @@ function NewsPage() {
       <Breadcrumbs items={[{ name: "Actualités", path: "/actualites" }]} />
       <PageHero
         compact
-        overline="Actualités"
-        title="Ce qui bouge sur la route du bled"
-        intro="Navires, ports, compagnies, perturbations : l'essentiel pour vos traversées entre l'Europe et l'Algérie, daté et avec sa source."
+        overline={tr("ui.pageActualitesIndex.actualites")}
+        title={tr("ui.pageActualitesIndex.ceQuiBougeSurLa")}
+        intro={tr("ui.pageActualitesIndex.naviresPortsCompagniesPerturbationsL")}
       />
       <SeriousNow items={items} vessels={vessels} />
       {items.length ? (
-        <div className="bw-news-filters" role="group" aria-label="Filtrer les actualités">
+        <div className="bw-news-filters" role="group" aria-label={tr("ui.pageActualitesIndex.filtrerLesActualites")}>
           {FILTERS.map((item) => (
             <button
               key={item.id}
@@ -220,7 +221,7 @@ function NewsPage() {
         </div>
       ) : null}
       {present.length ? (
-        <div className="bw-news-companies" role="group" aria-label="Filtrer par compagnie">
+        <div className="bw-news-companies" role="group" aria-label={tr("ui.pageActualitesIndex.filtrerParCompagnie")}>
           {present.map((company) => (
             <button
               key={company.id}
@@ -255,12 +256,12 @@ function NewsPage() {
       ) : (
         <div className="bw-news-empty">
           <h2 className="text-lg font-bold">
-            {items.length ? "Rien dans cette sélection" : "Les premières actualités arrivent"}
+            {items.length ? tr("ui.pageActualitesIndex.rienDansCetteSelection") : tr("ui.pageActualitesIndex.lesPremieresActualitesArrivent")}
           </h2>
           <p className="mt-2 text-muted-foreground">
-            En attendant, consultez les{" "}
+            {tr("ui.pageActualitesIndex.enAttendantConsultezLes")}{" "}
             <Link to="/horaires" className="font-semibold text-primary underline">
-              départs et arrivées
+              {tr("ui.pageActualitesIndex.departsEtArrivees")}
             </Link>
             .
           </p>
@@ -292,7 +293,7 @@ function NewsPage() {
                     : ""}
                 </span>
                 <span className="bw-news-tile__more">
-                  Lire <ArrowRight size={14} aria-hidden />
+                  {tr("ui.pageActualitesIndex.lire")}<ArrowRight size={14} aria-hidden />
                 </span>
               </span>
             </Link>

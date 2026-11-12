@@ -4,6 +4,7 @@ import { useSuspenseQuery } from "@tanstack/react-query";
 import { Breadcrumbs } from "@/components/editorial/Editorial";
 import { Card, PageHero, SiteLayout } from "@/components/layout/SiteLayout";
 import { portsQuery, routesQuery } from "@/lib/ferry/queries";
+import { tr } from "@/lib/i18n";
 
 const title = "Ports de ferry Europe ↔ Algérie — BledWay";
 const description =
@@ -32,9 +33,9 @@ function PortsPage() {
     <SiteLayout>
       <Breadcrumbs items={[{ name: "Ports", path: "/ports" }]} />
       <PageHero
-        overline="Ports"
-        title="Les ports des traversées entre l'Europe et l'Algérie"
-        intro="Chaque port est décrit avec ses lignes, ses durées de traversée et les services utiles avant l'embarquement."
+        overline={tr("ui.pagePortsIndex.ports")}
+        title={tr("ui.pagePortsIndex.lesPortsDesTraverseesEntre")}
+        intro={tr("ui.pagePortsIndex.chaquePortEstDecritAvec")}
       />
       <div className="mt-10 space-y-10">
         {groups.map((country) => (
@@ -55,14 +56,14 @@ function PortsPage() {
                         <p className="mt-1 text-sm text-muted-foreground">
                           {port.city ? `${port.city} · ` : ""}
                           {count === 0
-                            ? "Aucune ligne"
+                            ? tr("ui.pagePortsIndex.aucuneLigne")
                             : count === 1
-                              ? "1 ligne"
+                              ? tr("ui.pagePortsIndex.t1Ligne")
                               : `${count} lignes`}
                         </p>
                         {port.status === "inactive" ? (
                           <p className="mt-2 text-xs font-semibold text-destructive">
-                            Temporairement fermé
+                            {tr("ui.pagePortsIndex.temporairementFerme")}
                           </p>
                         ) : null}
                       </Link>

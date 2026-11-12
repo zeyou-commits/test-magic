@@ -12,6 +12,7 @@ import { portTimeZone } from "@/lib/ferry/time";
 import type { Port } from "@/lib/ferry/types";
 import { JourneyStoryNav } from "./JourneyStoryNav";
 import type { FriezeStep } from "./JourneyFrieze";
+import { tr } from "@/lib/i18n";
 
 /** Les étapes du film du simulateur, dans l'ordre de la frise. */
 const FILM_STEPS: Partial<
@@ -91,10 +92,10 @@ export function SimulationJourney({
     lastMin: film.lastMin,
   });
   return (
-    <section className="bw-sim-journey" aria-label="Votre route du bled, en simulation">
+    <section className="bw-sim-journey" aria-label={tr("ui.simulationJourney.votreRouteDuBledEn")}>
       <div className="bw-sim-journey__head">
-        <strong>Votre route du bled</strong>
-        <span>Simulation · rien n'est enregistré</span>
+        <strong>{tr("ui.simulationJourney.votreRouteDuBled")}</strong>
+        <span>{tr("ui.simulationJourney.simulationRienNEstEnregistre")}</span>
       </div>
       <JourneyStoryNav
         steps={steps}
@@ -111,7 +112,7 @@ export function SimulationJourney({
       />
       <p className="bw-sim-journey__lead">{guide.lead}</p>
       <a className="bw-sim-journey__follow" href={followHref}>
-        C'est votre voyage ? Choisir ma traversée sur cette ligne
+        {tr("ui.simulationJourney.cEstVotreVoyageChoisir")}
       </a>
     </section>
   );

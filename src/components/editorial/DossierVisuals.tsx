@@ -1,4 +1,5 @@
 import type { Article, Section } from "@/content/types";
+import { tr } from "@/lib/i18n";
 
 /** En-tête compact : titre et chiffres clés à gauche, illustration contenue à droite. */
 export function DossierHero({ article, updated }: { article: Article; updated: string }) {
@@ -6,7 +7,7 @@ export function DossierHero({ article, updated }: { article: Article; updated: s
   return (
     <header className="grid items-center gap-6 py-6 md:grid-cols-[minmax(0,1.15fr)_minmax(0,0.85fr)] md:gap-10 md:py-10">
       <div className="min-w-0">
-        <p className="text-xs font-bold uppercase tracking-widest text-primary">Carnet de route</p>
+        <p className="text-xs font-bold uppercase tracking-widest text-primary">{tr("ui.dossierVisuals.carnetDeRoute")}</p>
         <h1 className="mt-3 font-display text-3xl font-bold leading-tight tracking-tight md:text-[2.6rem]">
           {article.title}
         </h1>
@@ -22,7 +23,7 @@ export function DossierHero({ article, updated }: { article: Article; updated: s
             ))}
           </dl>
         ) : null}
-        <p className="mt-5 text-sm text-muted-foreground">BledWay · Mis à jour le {updated}</p>
+        <p className="mt-5 text-sm text-muted-foreground">{tr("ui.dossierVisuals.bledwayMisAJourLe")}{updated}</p>
       </div>
       {ill ? (
         <figure className="mx-auto w-full max-w-md md:max-w-none">

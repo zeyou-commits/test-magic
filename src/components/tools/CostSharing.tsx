@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { euros, parseAmount, parseOccupants, splitRoadCosts } from "@/lib/tools/calculations";
 import { CalculatorForm, InvalidResult, NumberField, ResultPanel } from "./Fields";
+import { tr } from "@/lib/i18n";
 const empty = { km: "", consumption: "", fuelPrice: "", tolls: "", parking: "", occupants: "" };
 const labels = {
   km: "Kilomètres totaux à partager",
@@ -60,35 +61,31 @@ export function CostSharing() {
           ))}
         </div>
         <p className="text-sm leading-relaxed text-muted-foreground">
-          Le calcul répartit les postes saisis à parts égales entre tous les occupants, conducteur
-          compris. Billet de ferry, usure du véhicule et frais de plateforme exclus. Il ne réserve
-          aucun trajet.
+          {tr("ui.costSharing.leCalculRepartitLesPostes")}
         </p>
       </CalculatorForm>
       {submitted ? (
         result ? (
           <ResultPanel>
             <h2 className="font-display text-xl font-bold">
-              {euros(result.perPerson)} par occupant
+              {euros(result.perPerson)}{tr("ui.costSharing.parOccupant")}
             </h2>
             <dl className="mt-4 space-y-2">
               <div className="flex justify-between gap-3">
-                <dt>Carburant calculé</dt>
+                <dt>{tr("ui.costSharing.carburantCalcule")}</dt>
                 <dd>{euros(result.fuel)}</dd>
               </div>
               <div className="flex justify-between gap-3">
-                <dt>Péages + parking saisis</dt>
+                <dt>{tr("ui.costSharing.peagesParkingSaisis")}</dt>
                 <dd>{euros((tolls ?? 0) + (parking ?? 0))}</dd>
               </div>
               <div className="flex justify-between gap-3 font-semibold">
-                <dt>Total à partager</dt>
+                <dt>{tr("ui.costSharing.totalAPartager")}</dt>
                 <dd>{euros(result.total)}</dd>
               </div>
             </dl>
             <p className="mt-4 text-sm">
-              Part égale pour {values.occupants} occupants, conducteur inclus. Les arrondis au
-              centime peuvent laisser un petit écart à répartir. Mettez-vous d'accord sur les
-              dépenses avant de partir.
+              {tr("ui.costSharing.partEgalePour")}{values.occupants}{tr("ui.costSharing.occupantsConducteurInclusLesArrondis")}
             </p>
           </ResultPanel>
         ) : (

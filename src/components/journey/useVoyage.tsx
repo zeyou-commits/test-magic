@@ -57,6 +57,7 @@ import type { FriezeStep } from "./JourneyFrieze";
 import { JourneyPlacesEntry } from "./JourneyPlacesForm";
 import { JourneyStepPanel } from "./JourneyStepPanel";
 import { TicketAction } from "@/components/tickets/MyTickets";
+import { tr } from "@/lib/i18n";
 
 /**
  * « Mon voyage », mode de la carte d'accueil : tout ce qu'il faut pour la frise, le volet d'étape,
@@ -331,7 +332,7 @@ export function useVoyage(
     const before = (
       <>
         {traveller && step === "papers" ? (
-          <div className="bw-journey-profile" role="group" aria-label="Mon voyage">
+          <div className="bw-journey-profile" role="group" aria-label={tr("ui.useVoyage.monVoyage")}>
             {profileLabels.map(({ key, label }) => (
               <button
                 key={key}
@@ -361,7 +362,7 @@ export function useVoyage(
     const back =
       isPinned && step !== current ? (
         <button type="button" className="bw-step-panel__back" onClick={backToCurrent}>
-          <Undo2 size={14} aria-hidden /> Revenir à l’étape en cours ({stepLabel(current, direction, audience)})
+          <Undo2 size={14} aria-hidden />{tr("ui.useVoyage.revenirALEtapeEn")}{stepLabel(current, direction, audience)})
         </button>
       ) : null;
     const top = (
@@ -395,13 +396,13 @@ export function useVoyage(
         {step === "home" && traveller ? (
           <div className="bw-step-panel__more">
             <button type="button" onClick={() => onSelect({ type: "departure", id: departure.id })}>
-              Ajouter mon retour
+              {tr("ui.useVoyage.ajouterMonRetour")}
             </button>
           </div>
         ) : step === "sea" ? (
           <div className="bw-step-panel__more">
             <button type="button" onClick={() => onSelect({ type: "departure", id: departure.id })}>
-              Toute la traversée en direct
+              {tr("ui.useVoyage.touteLaTraverseeEnDirect")}
             </button>
           </div>
         ) : null}

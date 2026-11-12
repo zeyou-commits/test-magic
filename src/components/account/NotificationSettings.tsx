@@ -11,6 +11,7 @@ import {
   type NotificationPreferences,
 } from "@/lib/notifications/policy";
 import { PushStatusLine } from "@/components/panel/PushStatusLine";
+import { tr } from "@/lib/i18n";
 
 const options = [
   {
@@ -68,17 +69,17 @@ export function NotificationSettings({ userId }: { userId: string }) {
           <Bell className="size-5" />
         </span>
         <div>
-          <h2 id="notification-settings-title">À votre rythme</h2>
-          <p>Choisissez les informations qui vous accompagnent.</p>
+          <h2 id="notification-settings-title">{tr("ui.notificationSettings.aVotreRythme")}</h2>
+          <p>{tr("ui.notificationSettings.choisissezLesInformationsQuiVous")}</p>
         </div>
       </div>
       {query.isPending ? (
         <div className="h-48 animate-pulse rounded-xl bg-secondary" />
       ) : query.error ? (
         <p role="alert" className="rounded-xl bg-destructive/5 p-4 text-sm text-destructive">
-          Préférences indisponibles.
+          {tr("ui.notificationSettings.preferencesIndisponibles")}
           <button type="button" className="ml-2 underline" onClick={() => void query.refetch()}>
-            Réessayer
+            {tr("ui.notificationSettings.reessayer")}
           </button>
         </p>
       ) : (
@@ -104,12 +105,12 @@ export function NotificationSettings({ userId }: { userId: string }) {
       )}
       {update.isError && (
         <p role="alert" className="my-2 text-xs text-destructive">
-          La préférence n’a pas pu être enregistrée.
+          {tr("ui.notificationSettings.laPreferenceNAPas")}
         </p>
       )}
       <div className="mt-5">
         <h3 className="mb-2 flex items-center gap-2 text-sm font-semibold">
-          <Smartphone className="size-4 text-primary" aria-hidden /> Ce téléphone
+          <Smartphone className="size-4 text-primary" aria-hidden />{tr("ui.notificationSettings.ceTelephone")}
         </h3>
         <PushStatusLine withDisable />
       </div>

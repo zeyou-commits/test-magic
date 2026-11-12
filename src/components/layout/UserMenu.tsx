@@ -22,6 +22,7 @@ import { useUnreadNoticeCount } from "@/components/panel/FlashCenter";
 import { avatarColors, moodIcon, myTravellerQuery } from "@/lib/community/travellers";
 import { useAvatarImage } from "@/lib/community/avatars";
 import { useIllustrationUrl } from "@/lib/illustrations/store";
+import { tr } from "@/lib/i18n";
 
 function initials(name: string) {
   return name
@@ -57,9 +58,9 @@ export function UserMenu({
           variant="ghost"
           size="icon"
           className="size-9 rounded-full text-primary"
-          title="Se connecter"
+          title={tr("ui.userMenu.seConnecter")}
         >
-          <Link to="/auth" search={{ next: authNext } as never} aria-label="Se connecter">
+          <Link to="/auth" search={{ next: authNext } as never} aria-label={tr("ui.userMenu.seConnecter")}>
             <UserRound className="size-5" />
           </Link>
         </Button>
@@ -72,7 +73,7 @@ export function UserMenu({
         variant="ghost"
         className="bw-account-link font-semibold text-foreground hover:bg-secondary"
       >
-        <Link to="/auth" search={{ next: authNext } as never}>Se connecter</Link>
+        <Link to="/auth" search={{ next: authNext } as never}>{tr("ui.userMenu.seConnecter")}</Link>
       </Button>
     );
   }
@@ -93,7 +94,7 @@ export function UserMenu({
           <button
             type="button"
             aria-label={
-              traveller?.mood ? `Mon compte · humeur : ${traveller.mood.label}` : "Mon compte"
+              traveller?.mood ? `Mon compte · humeur : ${traveller.mood.label}` : tr("ui.userMenu.monCompte")
             }
             className="bw-usermenu-trigger relative flex items-center gap-2 rounded-full ring-offset-2 ring-offset-card outline-none focus-visible:ring-2 focus-visible:ring-ring"
           >
@@ -137,54 +138,54 @@ export function UserMenu({
                     height={18}
                     className="rounded-full"
                   />
-                  Mon humeur : {traveller.mood.label}
+                  {tr("ui.userMenu.monHumeur")}{traveller.mood.label}
                 </>
               ) : (
-                "Mon humeur : en choisir une"
+                tr("ui.userMenu.monHumeurEnChoisirUne")
               )}
             </DropdownMenuItem>
           ) : null}
           <DropdownMenuItem asChild>
-            <Link to="/compte">Mon espace voyageur</Link>
+            <Link to="/compte">{tr("ui.userMenu.monEspaceVoyageur")}</Link>
           </DropdownMenuItem>
           <DropdownMenuItem asChild>
             <Link to="/" search={{ voyage: 1 } as never} onClick={openVoyage}>
-              <RouteIcon size={16} aria-hidden /> Mon voyage
+              <RouteIcon size={16} aria-hidden />{tr("ui.userMenu.monVoyage")}
             </Link>
           </DropdownMenuItem>
           <DropdownMenuItem asChild>
             <Link to="/mes-dinars">
-              <Wallet size={16} aria-hidden /> Mes dinars
+              <Wallet size={16} aria-hidden />{tr("ui.userMenu.mesDinars")}
             </Link>
           </DropdownMenuItem>
           <DropdownMenuItem asChild>
             <Link to="/compte" hash="voyages">
-              Mes navires et traversées suivis
+              {tr("ui.userMenu.mesNaviresEtTraverseesSuivis")}
             </Link>
           </DropdownMenuItem>
           <DropdownMenuItem asChild>
             <Link to="/compte" hash="notifications">
-              Mes notifications
+              {tr("ui.userMenu.mesNotifications")}
               {unread ? <span className="bw-usermenu-count">{unread}</span> : null}
             </Link>
           </DropdownMenuItem>
           <DropdownMenuItem asChild>
             <Link to="/compte" hash="profil">
-              Mon profil
+              {tr("ui.userMenu.monProfil")}
             </Link>
           </DropdownMenuItem>
           <DropdownMenuItem asChild>
             <Link to="/compte" hash="contributions">
-              Mes contributions
+              {tr("ui.userMenu.mesContributions")}
             </Link>
           </DropdownMenuItem>
           {roles.length ? (
             <DropdownMenuItem asChild>
-              <Link to="/admin">Back-office</Link>
+              <Link to="/admin">{tr("ui.userMenu.backOffice")}</Link>
             </DropdownMenuItem>
           ) : null}
           <DropdownMenuSeparator />
-          <DropdownMenuItem onSelect={() => void handleSignOut()}>Se déconnecter</DropdownMenuItem>
+          <DropdownMenuItem onSelect={() => void handleSignOut()}>{tr("ui.userMenu.seDeconnecter")}</DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
       {/* Bulle d'humeur sous l'avatar, réduite en badge après quelques secondes. */}

@@ -9,6 +9,7 @@ import {
   type MapPreview,
 } from "@/lib/ferry/mapPresentation";
 import { useT } from "@/lib/i18n";
+import { tr } from "@/lib/i18n";
 
 export type MapShortcut = "sea" | "upcoming" | "companies" | "ports" | null;
 
@@ -404,7 +405,7 @@ export function MapStats({
                   )}
                 </span>
                 {isAdmin && ship.source === "live" && (
-                  <span className="text-[10px] font-semibold text-primary">AIS</span>
+                  <span className="text-[10px] font-semibold text-primary">{tr("ui.mapStats.ais")}</span>
                 )}
               </button>
             ))

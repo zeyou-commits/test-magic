@@ -33,6 +33,7 @@ import {
 import { generalFaq, lineFaq } from "@/lib/seo/answers";
 import { track } from "@/lib/usage";
 import { safeExternalUrl } from "@/components/panel/shared";
+import { tr } from "@/lib/i18n";
 
 /** Les sujets qu'on cherche le plus : un toucher remplit la recherche. */
 const TOPICS = [
@@ -229,8 +230,8 @@ export function QuestionHelp({
         <span aria-hidden>
           <Mail size={18} />
         </span>
-        <strong>Écrire à BledWay</strong>
-        <small>Un souci sur le site, une info à corriger.</small>
+        <strong>{tr("ui.questionHelp.ecrireABledway")}</strong>
+        <small>{tr("ui.questionHelp.unSouciSurLeSite")}</small>
       </Link>
       {ai}
     </div>
@@ -244,8 +245,8 @@ export function QuestionHelp({
       <span aria-hidden>
         <Sparkles size={18} />
       </span>
-      <strong>Mon assistant IA</strong>
-      <small>Écrivez votre question, on vous oriente.</small>
+      <strong>{tr("ui.questionHelp.monAssistantIa")}</strong>
+      <small>{tr("ui.questionHelp.ecrivezVotreQuestionOnVous")}</small>
       <span className="bw-help__logos" aria-hidden>
         {ASSISTANTS.map((assistant) => (
           <img key={assistant.id} src={assistant.logo} alt="" width={18} height={18} />
@@ -257,7 +258,7 @@ export function QuestionHelp({
   return (
     <section
       className={`bw-help bw-room--questions${bare ? " bw-help--bare" : ""}`}
-      aria-label="Une question ?"
+      aria-label={tr("ui.questionHelp.uneQuestion")}
     >
       <div className="bw-help__layout" data-none={noAnswer || undefined}>
         <div className="bw-help__main">
@@ -266,11 +267,11 @@ export function QuestionHelp({
               <CircleHelp size={20} />
             </span>
             <div>
-              <h3>Une question ?</h3>
+              <h3>{tr("ui.questionHelp.uneQuestion")}</h3>
               <p>
                 {lineLabel
                   ? `Les réponses de BledWay pour ${lineLabel}, puis les bons contacts.`
-                  : "Les réponses de BledWay, puis les bons contacts si besoin."}
+                  : tr("ui.questionHelp.lesReponsesDeBledwayPuis")}
               </p>
             </div>
           </header>
@@ -290,18 +291,18 @@ export function QuestionHelp({
               enterKeyHint="search"
               value={query}
               onChange={(event) => setQuery(event.target.value)}
-              placeholder="TPD, chien, espèces, cabine…"
-              aria-label="Rechercher une réponse"
+              placeholder={tr("ui.questionHelp.tpdChienEspecesCabine")}
+              aria-label={tr("ui.questionHelp.rechercherUneReponse")}
             />
             {query ? (
-              <button type="button" onClick={() => choose("")} aria-label="Effacer la recherche">
+              <button type="button" onClick={() => choose("")} aria-label={tr("ui.questionHelp.effacerLaRecherche")}>
                 <X size={16} aria-hidden />
               </button>
             ) : null}
           </form>
 
           {searching ? null : (
-            <div className="bw-help__topics" role="group" aria-label="Sujets fréquents">
+            <div className="bw-help__topics" role="group" aria-label={tr("ui.questionHelp.sujetsFrequents")}>
               {TOPICS.map((topic) => (
                 <button key={topic} type="button" onClick={() => choose(topic)}>
                   {topic}
@@ -314,8 +315,8 @@ export function QuestionHelp({
             {searching
               ? hits.length
                 ? `${hits.length} réponse${hits.length > 1 ? "s" : ""}`
-                : "Pas de réponse toute prête sur BledWay"
-              : "Les plus demandées"}
+                : tr("ui.questionHelp.pasDeReponseToutePrete")
+              : tr("ui.questionHelp.lesPlusDemandees")}
           </p>
           <AnswerList
             key={query}
@@ -324,16 +325,16 @@ export function QuestionHelp({
           />
           {noAnswer ? (
             <div className="bw-help__noanswer">
-              <p className="bw-help__noanswer-lead">Votre question</p>
+              <p className="bw-help__noanswer-lead">{tr("ui.questionHelp.votreQuestion")}</p>
               <p className="bw-help__noanswer-q">« {query.trim()} »</p>
-              <p className="bw-help__noanswer-lead">Posez-la au bon endroit</p>
+              <p className="bw-help__noanswer-lead">{tr("ui.questionHelp.posezLaAuBonEndroit")}</p>
               {exits(
                 <div className="bw-help__exit bw-help__exit--ai" data-static data-open>
                   <span aria-hidden>
                     <Sparkles size={18} />
                   </span>
-                  <strong>Mon assistant IA</strong>
-                  <small>Choisissez-le : la question part avec votre trajet.</small>
+                  <strong>{tr("ui.questionHelp.monAssistantIa")}</strong>
+                  <small>{tr("ui.questionHelp.choisissezLeLaQuestionPart")}</small>
                   <div className="bw-help__ai-pick">
                     <AssistantPicker question={query.trim()} line={lineLabel} />
                   </div>
@@ -345,7 +346,7 @@ export function QuestionHelp({
 
         {noAnswer ? null : (
           <aside className="bw-help__elsewhere" data-strong={none || undefined}>
-            <h4>{none ? "Demandez ailleurs, au bon endroit" : "Pas trouvé votre réponse ?"}</h4>
+            <h4>{none ? tr("ui.questionHelp.demandezAilleursAuBonEndroit") : tr("ui.questionHelp.pasTrouveVotreReponse")}</h4>
             {exits(aiTile)}
           </aside>
         )}
@@ -414,10 +415,10 @@ function AnswerList({
                   <p>
                     <Marked text={item.a} query={query} />
                   </p>
-                  {item.from ? <small>Extrait de « {item.from} »</small> : null}
+                  {item.from ? <small>{tr("ui.questionHelp.extraitDe")}{item.from} »</small> : null}
                   {item.href ? (
                     <a href={item.href} className="bw-help__more-link">
-                      {item.hrefLabel ?? "En savoir plus"} <ArrowRight size={14} aria-hidden />
+                      {item.hrefLabel ?? tr("ui.questionHelp.enSavoirPlus")} <ArrowRight size={14} aria-hidden />
                     </a>
                   ) : null}
                 </div>
@@ -430,7 +431,7 @@ function AnswerList({
       </ul>
       {items.length > limit && !more ? (
         <button type="button" className="bw-help__show-more" onClick={() => setMore(true)}>
-          Voir {items.length - limit} autre{items.length - limit > 1 ? "s" : ""} réponse
+          {tr("ui.questionHelp.voir")}{items.length - limit}{tr("ui.questionHelp.autre")}{items.length - limit > 1 ? "s" : ""}{tr("ui.questionHelp.reponse")}
           {items.length - limit > 1 ? "s" : ""}
         </button>
       ) : null}
@@ -450,8 +451,8 @@ function CompanyExit({ operators, compact = false }: { operators: Company[]; com
         <span aria-hidden>
           <Building2 size={compact ? 15 : 18} />
         </span>
-        <strong>{compact ? "Une compagnie" : "Une compagnie"}</strong>
-        {compact ? null : <small>Billet, modification, bagages : leurs contacts.</small>}
+        <strong>{compact ? tr("ui.questionHelp.uneCompagnie") : tr("ui.questionHelp.uneCompagnie")}</strong>
+        {compact ? null : <small>{tr("ui.questionHelp.billetModificationBagagesLeursContacts")}</small>}
       </Link>
     );
   const links = operators.map((company) => {
@@ -481,7 +482,7 @@ function CompanyExit({ operators, compact = false }: { operators: Company[]; com
         <span aria-hidden>
           <Building2 size={15} />
         </span>
-        <strong>La compagnie :</strong>
+        <strong>{tr("ui.questionHelp.laCompagnie")}</strong>
         <span className="bw-help__companies">{links}</span>
       </span>
     );
@@ -490,8 +491,8 @@ function CompanyExit({ operators, compact = false }: { operators: Company[]; com
       <span aria-hidden>
         <Building2 size={18} />
       </span>
-      <strong>La compagnie</strong>
-      <small>Billet, modification, bagages, remboursement.</small>
+      <strong>{tr("ui.questionHelp.laCompagnie2")}</strong>
+      <small>{tr("ui.questionHelp.billetModificationBagagesRemboursement")}</small>
       <span className="bw-help__companies">{links}</span>
     </div>
   );
@@ -549,12 +550,12 @@ function AssistantDialog({
       >
         <DialogHeader>
           <DialogTitle className="bw-ai__title">
-            <Sparkles size={18} aria-hidden /> Demander à mon assistant IA
+            <Sparkles size={18} aria-hidden />{tr("ui.questionHelp.demanderAMonAssistantIa")}
           </DialogTitle>
           <p className="bw-ai__intro">
             {asked
-              ? "Voici d'abord ce que BledWay sait déjà. Pas suffisant ? Choisissez votre assistant."
-              : "Écrivez votre question. BledWay vérifie d'abord s'il a la réponse, puis vous choisissez votre assistant."}
+              ? tr("ui.questionHelp.voiciDAbordCeQue")
+              : tr("ui.questionHelp.ecrivezVotreQuestionBledwayVerifie")}
           </p>
         </DialogHeader>
 
@@ -562,23 +563,23 @@ function AssistantDialog({
           <div className="bw-ai__body">
             <div className="bw-ai__asked">
               <p>
-                <small>Votre question</small>
+                <small>{tr("ui.questionHelp.votreQuestion")}</small>
                 {asked}
               </p>
               <button type="button" onClick={edit}>
-                <Pencil size={14} aria-hidden /> Modifier
+                <Pencil size={14} aria-hidden />{tr("ui.questionHelp.modifier")}
               </button>
             </div>
 
             <section className="bw-ai__section">
               <h4>
-                <CircleHelp size={16} aria-hidden /> Ce que BledWay sait déjà
+                <CircleHelp size={16} aria-hidden />{tr("ui.questionHelp.ceQueBledwaySaitDeja")}
               </h4>
               {hits.length ? (
                 <AnswerList items={hits} query={asked} limit={3} />
               ) : (
                 <p className="bw-ai__none">
-                  Pas de réponse toute prête sur BledWay pour cette question.
+                  {tr("ui.questionHelp.pasDeReponseToutePrete2")}
                 </p>
               )}
             </section>
@@ -586,20 +587,20 @@ function AssistantDialog({
             <section className="bw-ai__section">
               <h4>
                 <Sparkles size={16} aria-hidden />
-                {hits.length ? "Toujours une question ? Votre assistant IA" : "Votre assistant IA"}
+                {hits.length ? tr("ui.questionHelp.toujoursUneQuestionVotreAssistant") : tr("ui.questionHelp.votreAssistantIa")}
               </h4>
               <AssistantPicker question={asked} line={line} />
             </section>
 
             <section className="bw-ai__section">
-              <h4>Ou bien</h4>
+              <h4>{tr("ui.questionHelp.ouBien")}</h4>
               <div className="bw-ai__others">
                 {onAskTravellers ? (
                   <button type="button" className="bw-ai__other" onClick={onAskTravellers}>
                     <span aria-hidden>
                       <Users size={15} />
                     </span>
-                    <strong>Demander aux voyageurs</strong>
+                    <strong>{tr("ui.questionHelp.demanderAuxVoyageurs")}</strong>
                   </button>
                 ) : null}
                 <CompanyExit operators={operators} compact />
@@ -611,7 +612,7 @@ function AssistantDialog({
                   <span aria-hidden>
                     <Mail size={15} />
                   </span>
-                  <strong>Écrire à BledWay</strong>
+                  <strong>{tr("ui.questionHelp.ecrireABledway")}</strong>
                 </Link>
               </div>
             </section>
@@ -636,8 +637,8 @@ function AssistantDialog({
                   submit();
                 }
               }}
-              placeholder="Ex. : Peut-on embarquer une trottinette électrique sur le ferry ?"
-              aria-label="Votre question"
+              placeholder={tr("ui.questionHelp.exPeutOnEmbarquerUne")}
+              aria-label={tr("ui.questionHelp.votreQuestion")}
             />
             <div className="bw-ai__form-foot">
               <span className="bw-help__logos" aria-hidden>
@@ -646,7 +647,7 @@ function AssistantDialog({
                 ))}
               </span>
               <button type="submit" disabled={text.trim().length < 3}>
-                Valider ma question <ArrowRight size={16} aria-hidden />
+                {tr("ui.questionHelp.validerMaQuestion")}<ArrowRight size={16} aria-hidden />
               </button>
             </div>
           </form>
@@ -696,20 +697,18 @@ function AssistantPicker({ question, line }: { question: string; line: string | 
           >
             <img src={assistant.logo} alt="" width={28} height={28} />
             <strong>{assistant.name}</strong>
-            {assistant.id === preferred ? <small>Votre assistant</small> : null}
+            {assistant.id === preferred ? <small>{tr("ui.questionHelp.votreAssistant")}</small> : null}
             <ExternalLink size={13} aria-hidden />
           </button>
         ))}
       </div>
       {copied ? (
         <p className="bw-ai__copied" role="status">
-          <Copy size={13} aria-hidden /> Question copiée avec votre trajet : si {copied} ne
-          l'affiche pas, collez-la.
+          <Copy size={13} aria-hidden />{tr("ui.questionHelp.questionCopieeAvecVotreTrajet")}{copied}{tr("ui.questionHelp.neLAffichePasCollez")}
         </p>
       ) : null}
       <p className="bw-ai__warning">
-        Réponse non vérifiée par BledWay. Pour la douane, les papiers ou un billet, confirmez auprès
-        de la source officielle ou de la compagnie. Votre question part chez l'assistant choisi.
+        {tr("ui.questionHelp.reponseNonVerifieeParBledway")}
       </p>
     </>
   );

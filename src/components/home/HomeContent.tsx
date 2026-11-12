@@ -13,6 +13,7 @@ import {
 import type { Port, RouteLine } from "@/lib/ferry/types";
 import { JourneyArtwork } from "./JourneyArtwork";
 import { FaqSchema } from "@/components/editorial/Editorial";
+import { tr } from "@/lib/i18n";
 
 const questions = [
   [
@@ -87,48 +88,47 @@ export function HomeContent({
         data-reveal
       >
         <div className="bw-intro-copy">
-          <p className="bw-eyebrow">D’une rive à l’autre</p>
+          <p className="bw-eyebrow">{tr("ui.homeContent.dUneRiveAL")}</p>
           <h2 id="journey-title">
-            Le voyage commence
+            {tr("ui.homeContent.leVoyageCommence")}
             <br />
-            bien avant <em>le départ.</em>
+            {tr("ui.homeContent.bienAvant")}<em>{tr("ui.homeContent.leDepart")}</em>
           </h2>
           <p>
-            La voiture chargée, les retrouvailles en tête, la mer devant soi. BledWay rassemble les
-            repères utiles pour préparer votre traversée, depuis l’Europe comme depuis l’Algérie.
+            {tr("ui.homeContent.laVoitureChargeeLesRetrouvailles")}
           </p>
           <div className="bw-inline-note">
             <ShieldCheck size={20} />
-            <span>Un guide indépendant. Des informations expliquées.</span>
+            <span>{tr("ui.homeContent.unGuideIndependantDesInformations")}</span>
           </div>
         </div>
         <figure className="bw-intro-art">
           <img
             src="/images/bledway-horizon-algerien.webp"
-            alt="Illustration de dunes, d’un dromadaire et de la mer à l’horizon"
+            alt={tr("ui.homeContent.illustrationDeDunesDUn")}
             loading="lazy"
             decoding="async"
             width={1536}
             height={1024}
           />
-          <figcaption>La traversée n’est que le début du voyage.</figcaption>
+          <figcaption>{tr("ui.homeContent.laTraverseeNEstQue")}</figcaption>
         </figure>
       </section>
       <section className="bw-container bw-route-section" aria-labelledby="routes-title" data-reveal>
         <div className="bw-section-heading">
           <div>
-            <p className="bw-eyebrow">Un trait d’union sur la Méditerranée</p>
-            <h2 id="routes-title">À chaque voyage, sa traversée.</h2>
+            <p className="bw-eyebrow">{tr("ui.homeContent.unTraitDUnionSur")}</p>
+            <h2 id="routes-title">{tr("ui.homeContent.aChaqueVoyageSaTraversee")}</h2>
           </div>
           <Link to="/lignes" className="bw-text-link">
-            Toutes les lignes <ArrowUpRight size={18} />
+            {tr("ui.homeContent.toutesLesLignes")}<ArrowUpRight size={18} />
           </Link>
         </div>
         <div className="bw-route-layout">
           <div className="bw-coast-art">
             <JourneyArtwork />
             <span className="bw-art-caption">
-              <MapPin size={16} /> L’autre rive vous attend.
+              <MapPin size={16} />{tr("ui.homeContent.lAutreRiveVousAttend")}
             </span>
           </div>
           <div className="bw-route-list">
@@ -147,7 +147,7 @@ export function HomeContent({
                     params={{ slug: route.slug }}
                     className="bw-route-detail"
                   >
-                    Découvrir la ligne
+                    {tr("ui.homeContent.decouvrirLaLigne")}
                   </Link>
                 </div>
                 <button
@@ -163,15 +163,15 @@ export function HomeContent({
             {!featured.length && (
               <div className="bw-route-empty">
                 <Compass size={30} />
-                <h3>Deux rives, de nombreuses possibilités.</h3>
-                <p>Explorez les ports et les lignes pour trouver votre point de départ.</p>
+                <h3>{tr("ui.homeContent.deuxRivesDeNombreusesPossibilites")}</h3>
+                <p>{tr("ui.homeContent.explorezLesPortsEtLes")}</p>
                 <Link to="/lignes" className="bw-text-link">
-                  Explorer les lignes <ArrowRight size={18} />
+                  {tr("ui.homeContent.explorerLesLignes")}<ArrowRight size={18} />
                 </Link>
               </div>
             )}
             <p className="bw-route-note">
-              Les départs et les compagnies varient selon la ligne et la saison.
+              {tr("ui.homeContent.lesDepartsEtLesCompagnies")}
             </p>
           </div>
         </div>
@@ -179,35 +179,34 @@ export function HomeContent({
       <section className="bw-vessel-section" aria-labelledby="vessels-title" data-reveal>
         <div className="bw-container bw-vessel-grid">
           <div className="bw-vessel-copy">
-            <p className="bw-eyebrow">Rencontrez votre navire</p>
+            <p className="bw-eyebrow">{tr("ui.homeContent.rencontrezVotreNavire")}</p>
             <h2 id="vessels-title">
-              Il fait déjà
+              {tr("ui.homeContent.ilFaitDeja")}
               <br />
-              partie du voyage.
+              {tr("ui.homeContent.partieDuVoyage")}
             </h2>
             <p>
-              Un nom sur le billet, une silhouette à l’horizon. Découvrez les navires, leurs
-              services et les informations de position disponibles.
+              {tr("ui.homeContent.unNomSurLeBillet")}
             </p>
             <Link to="/bateaux" className="bw-primary-link">
-              Découvrir les navires{" "}
+              {tr("ui.homeContent.decouvrirLesNavires")}{" "}
               <span>
                 <ArrowUpRight size={19} />
               </span>
             </Link>
             <span className="bw-data-note">
-              <Ship size={16} /> Source et fraîcheur précisées dans les fiches.
+              <Ship size={16} />{tr("ui.homeContent.sourceEtFraicheurPreciseesDans")}
             </span>
           </div>
           <div className="bw-vessel-art">
             <JourneyArtwork variant="ferry" />
             <span className="bw-art-stamp">
-              CAP SUR
+              {tr("ui.homeContent.capSur")}
               <br />
-              <strong>LE BLED</strong>
-              <span>ET LE RETOUR.</span>
+              <strong>{tr("ui.homeContent.leBled")}</strong>
+              <span>{tr("ui.homeContent.etLeRetour")}</span>
             </span>
-            <span className="bw-illustration-label">Illustration BledWay · navire générique</span>
+            <span className="bw-illustration-label">{tr("ui.homeContent.illustrationBledwayNavireGenerique")}</span>
           </div>
         </div>
       </section>
@@ -218,26 +217,26 @@ export function HomeContent({
       >
         <div className="bw-section-heading">
           <div>
-            <p className="bw-eyebrow">Moins de questions, plus de sérénité</p>
-            <h2 id="guides-title">On prépare les bagages ?</h2>
+            <p className="bw-eyebrow">{tr("ui.homeContent.moinsDeQuestionsPlusDe")}</p>
+            <h2 id="guides-title">{tr("ui.homeContent.onPrepareLesBagages")}</h2>
           </div>
           <Link to="/guide" className="bw-text-link">
-            Tous les guides <ArrowUpRight size={18} />
+            {tr("ui.homeContent.tousLesGuides")}<ArrowUpRight size={18} />
           </Link>
         </div>
         <div className="bw-guide-grid">
           <Link to="/voyage-algerie" className="bw-guide-feature">
             <JourneyArtwork variant="luggage" />
             <div>
-              <span className="bw-eyebrow">Le carnet de voyage</span>
+              <span className="bw-eyebrow">{tr("ui.homeContent.leCarnetDeVoyage")}</span>
               <h3>
-                Les bons repères.
+                {tr("ui.homeContent.lesBonsReperes")}
                 <br />
-                Avant de prendre la mer.
+                {tr("ui.homeContent.avantDePrendreLaMer")}
               </h3>
-              <p>Billet, embarquement, cabine : préparez votre traversée étape par étape.</p>
+              <p>{tr("ui.homeContent.billetEmbarquementCabinePreparezVotre")}</p>
               <span className="bw-text-link">
-                Préparer mon départ <ArrowUpRight size={18} />
+                {tr("ui.homeContent.preparerMonDepart")}<ArrowUpRight size={18} />
               </span>
             </div>
           </Link>
@@ -246,21 +245,21 @@ export function HomeContent({
               <span className="bw-guide-icon">
                 <Compass size={26} strokeWidth={1.6} />
               </span>
-              <span className="bw-eyebrow">La voiture aussi fait le voyage</span>
-              <h3>Un projet d’importation ?</h3>
+              <span className="bw-eyebrow">{tr("ui.homeContent.laVoitureAussiFaitLe")}</span>
+              <h3>{tr("ui.homeContent.unProjetDImportation")}</h3>
               <p>
-                Âge du véhicule, documents et budget : les points à vérifier avant de vous lancer.
+                {tr("ui.homeContent.ageDuVehiculeDocumentsEt")}
               </p>
               <span className="bw-text-link">
-                Comprendre les démarches <ArrowUpRight size={18} />
+                {tr("ui.homeContent.comprendreLesDemarches")}<ArrowUpRight size={18} />
               </span>
             </Link>
             <Link to="/simulateurs" className="bw-guide-small bw-guide-tools">
-              <span className="bw-eyebrow">Vos chiffres, votre voyage</span>
-              <h3>Un budget plus clair.</h3>
-              <p>Comparez vos options avec des calculs dont les hypothèses restent visibles.</p>
+              <span className="bw-eyebrow">{tr("ui.homeContent.vosChiffresVotreVoyage")}</span>
+              <h3>{tr("ui.homeContent.unBudgetPlusClair")}</h3>
+              <p>{tr("ui.homeContent.comparezVosOptionsAvecDes")}</p>
               <span className="bw-text-link">
-                Ouvrir les simulateurs <ArrowUpRight size={18} />
+                {tr("ui.homeContent.ouvrirLesSimulateurs")}<ArrowUpRight size={18} />
               </span>
             </Link>
           </div>
@@ -269,16 +268,16 @@ export function HomeContent({
       <section className="bw-container bw-faq" aria-labelledby="faq-title" data-reveal>
         <FaqSchema faq={questions.map(([q, a]) => ({ q: q!, a: a! }))} path="/" />
         <div>
-          <p className="bw-eyebrow">Avant de larguer les amarres</p>
-          <h2 id="faq-title">On vous répond.</h2>
+          <p className="bw-eyebrow">{tr("ui.homeContent.avantDeLarguerLesAmarres")}</p>
+          <h2 id="faq-title">{tr("ui.homeContent.onVousRepond")}</h2>
           <p>
-            Encore une question ?<br />
+            {tr("ui.homeContent.encoreUneQuestion")}<br />
             <Link to="/contact" className="bw-text-link">
-              Écrivez-nous <ArrowUpRight size={17} />
+              {tr("ui.homeContent.ecrivezNous")}<ArrowUpRight size={17} />
             </Link>
             <br />
             <Link to="/questions-frequentes" className="bw-text-link">
-              Toutes les réponses <ArrowUpRight size={17} />
+              {tr("ui.homeContent.toutesLesReponses")}<ArrowUpRight size={17} />
             </Link>
           </p>
         </div>
@@ -296,9 +295,9 @@ export function HomeContent({
       </section>
       <div className="bw-container bw-final-invitation" data-reveal>
         <BookOpen size={24} strokeWidth={1.6} />
-        <p>Le prochain chapitre commence sur l’autre rive.</p>
+        <p>{tr("ui.homeContent.leProchainChapitreCommenceSur")}</p>
         <a href="#carte" className="bw-text-link">
-          Retour à la carte <ArrowUpRight size={18} />
+          {tr("ui.homeContent.retourALaCarte")}<ArrowUpRight size={18} />
         </a>
       </div>
     </div>

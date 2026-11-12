@@ -41,6 +41,7 @@ import {
 } from "@/lib/ferry/companyOverview";
 import { useVesselAlerts } from "@/lib/ferry/vesselAlerts";
 import { formatDuration } from "@/lib/ferry/format";
+import { tr } from "@/lib/i18n";
 
 const title = "Compagnies de ferry Europe ↔ Algérie — BledWay";
 const description =
@@ -145,23 +146,23 @@ function CompagniesPage() {
       />
       <header className="bw-co-head">
         <div>
-          <h1>Les compagnies de ferry vers l'Algérie</h1>
-          <p>Qui part d'où, avec quels navires, à quel rythme, et ce qu'en disent les voyageurs.</p>
+          <h1>{tr("ui.pageCompagnies.lesCompagniesDeFerryVers")}</h1>
+          <p>{tr("ui.pageCompagnies.quiPartDOuAvec")}</p>
         </div>
         <label>
           <MapPin size={16} aria-hidden />
-          <span className="sr-only">Je pars de</span>
+          <span className="sr-only">{tr("ui.pageCompagnies.jeParsDe")}</span>
           <select value={from} onChange={(event) => setFrom(event.target.value)}>
-            <option value="">Je pars de : tous les ports</option>
+            <option value="">{tr("ui.pageCompagnies.jeParsDeTousLes")}</option>
             {departurePorts.map((port) => (
               <option key={port.id} value={port.id}>
-                Je pars de {port.name}
+                {tr("ui.pageCompagnies.jeParsDe2")}{port.name}
               </option>
             ))}
           </select>
         </label>
       </header>
-      <section className="bw-fleet bw-cos-sector" aria-label="Les compagnies en chiffres">
+      <section className="bw-fleet bw-cos-sector" aria-label={tr("ui.pageCompagnies.lesCompagniesEnChiffres")}>
         <dl className="bw-fleet__tiles">
           {sector.map((tile) => (
             <div key={tile.label}>
@@ -185,19 +186,19 @@ function CompagniesPage() {
         ))}
       </div>
       {shown.length > 1 ? (
-        <section className="bw-co-compare" aria-label="Comparer les compagnies">
-          <h2>En un coup d'œil</h2>
+        <section className="bw-co-compare" aria-label={tr("ui.pageCompagnies.comparerLesCompagnies")}>
+          <h2>{tr("ui.pageCompagnies.enUnCoupDIl")}</h2>
           <div>
             <table>
               <thead>
                 <tr>
-                  <th scope="col">Compagnie</th>
-                  <th scope="col">Lignes</th>
-                  <th scope="col">Départs / semaine</th>
-                  <th scope="col">Navires</th>
-                  <th scope="col">Âge moyen</th>
-                  <th scope="col">Navire phare</th>
-                  <th scope="col">Passagers</th>
+                  <th scope="col">{tr("ui.pageCompagnies.compagnie")}</th>
+                  <th scope="col">{tr("ui.pageCompagnies.lignes")}</th>
+                  <th scope="col">{tr("ui.pageCompagnies.departsSemaine")}</th>
+                  <th scope="col">{tr("ui.pageCompagnies.navires")}</th>
+                  <th scope="col">{tr("ui.pageCompagnies.ageMoyen")}</th>
+                  <th scope="col">{tr("ui.pageCompagnies.navirePhare")}</th>
+                  <th scope="col">{tr("ui.pageCompagnies.passagers")}</th>
                 </tr>
               </thead>
               <tbody>
@@ -219,8 +220,7 @@ function CompagniesPage() {
             </table>
           </div>
           <p>
-            Capacités générales, pas des places disponibles. Départs par semaine : moyenne des
-            programmes publiés sur les {ROTATION_WEEKS} prochaines semaines.
+            {tr("ui.pageCompagnies.capacitesGeneralesPasDesPlaces")}{ROTATION_WEEKS}{tr("ui.pageCompagnies.prochainesSemaines")}
           </p>
         </section>
       ) : null}
@@ -294,7 +294,7 @@ function CompanySection({
             <Ship size={56} aria-hidden />
           )}
           {flagship ? (
-            <span className="bw-cos__flagship">Navire phare · {flagship.name}</span>
+            <span className="bw-cos__flagship">{tr("ui.pageCompagnies.navirePhare2")}{flagship.name}</span>
           ) : null}
         </div>
         <div className="bw-cos__id">
@@ -324,7 +324,7 @@ function CompanySection({
               search={{ select: "company", id: company.id } as never}
               className="bw-cos__open"
             >
-              La fiche <ArrowRight size={15} aria-hidden />
+              {tr("ui.pageCompagnies.laFiche")}<ArrowRight size={15} aria-hidden />
             </Link>
             {company.website_url ? (
               <a
@@ -333,7 +333,7 @@ function CompanySection({
                 rel="noreferrer"
                 className="bw-cos__site"
               >
-                Site officiel <ExternalLink size={13} aria-hidden />
+                {tr("ui.pageCompagnies.siteOfficiel")}<ExternalLink size={13} aria-hidden />
               </a>
             ) : null}
           </div>
@@ -352,12 +352,12 @@ function CompanySection({
         <p className="bw-cos__alert" role="status">
           <CircleAlert size={16} aria-hidden />
           {inAlert.map((vessel) => `${vessel.name} : ${alerts.get(vessel.id)?.label}`).join(" · ")}
-          <span> · départs à vérifier auprès de la compagnie</span>
+          <span>{tr("ui.pageCompagnies.departsAVerifierAupresDe")}</span>
         </p>
       ) : null}
       {fleet.length ? (
         <div className="bw-cos__block">
-          <h3>La flotte</h3>
+          <h3>{tr("ui.pageCompagnies.laFlotte")}</h3>
           <ul className="bw-cos__fleet">
             {[...fleet]
               .sort((a, b) => (b.passenger_capacity ?? 0) - (a.passenger_capacity ?? 0))
@@ -380,7 +380,7 @@ function CompanySection({
                     <small>
                       {vessel.build_year
                         ? `${vessel.build_year} · ${thisYear - vessel.build_year} ans`
-                        : "Année à compléter"}
+                        : tr("ui.pageCompagnies.anneeACompleter")}
                     </small>
                     <small>
                       {[
@@ -390,7 +390,7 @@ function CompanySection({
                         vessel.car_capacity ? `${number(vessel.car_capacity)} véh.` : null,
                       ]
                         .filter(Boolean)
-                        .join(" · ") || "Capacités à compléter"}
+                        .join(" · ") || tr("ui.pageCompagnies.capacitesACompleter")}
                     </small>
                   </Link>
                   <VesselAlertTag vesselId={vessel.id} />
@@ -401,7 +401,7 @@ function CompanySection({
       ) : null}
       {lines.length ? (
         <div className="bw-cos__block">
-          <h3>Les lignes et leur rythme</h3>
+          <h3>{tr("ui.pageCompagnies.lesLignesEtLeurRythme")}</h3>
           <ul className="bw-cos__lines">
             {visibleLines.map(({ route, perWeek, next }) => (
               <li key={route.id}>
@@ -418,8 +418,8 @@ function CompanySection({
                       ? "…"
                       : perWeek
                         ? `${decimal(perWeek)} / sem.`
-                        : "Pas de programme publié"}
-                    {next ? <small>prochain {shortDate(next)}</small> : null}
+                        : tr("ui.pageCompagnies.pasDeProgrammePublie")}
+                    {next ? <small>{tr("ui.pageCompagnies.prochain")}{shortDate(next)}</small> : null}
                   </span>
                 </Link>
               </li>
@@ -427,7 +427,7 @@ function CompanySection({
           </ul>
           {lines.length > 6 ? (
             <button type="button" className="bw-cos__more" onClick={() => setAllLines((v) => !v)}>
-              {allLines ? "Moins de lignes" : `+ ${lines.length - 6} lignes`}
+              {allLines ? tr("ui.pageCompagnies.moinsDeLignes") : `+ ${lines.length - 6} lignes`}
             </button>
           ) : null}
         </div>

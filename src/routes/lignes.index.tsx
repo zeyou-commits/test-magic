@@ -5,6 +5,7 @@ import { Breadcrumbs } from "@/components/editorial/Editorial";
 import { Card, PageHero, SiteLayout } from "@/components/layout/SiteLayout";
 import { companiesQuery, portsQuery, routesQuery } from "@/lib/ferry/queries";
 import { formatDuration } from "@/lib/ferry/format";
+import { tr } from "@/lib/i18n";
 
 const title = "Lignes de ferry Europe ↔ Algérie : durées et compagnies — BledWay";
 const description =
@@ -38,9 +39,9 @@ function LignesPage() {
     <SiteLayout>
       <Breadcrumbs items={[{ name: "Lignes", path: "/lignes" }]} />
       <PageHero
-        overline="Lignes"
-        title="Toutes les lignes de ferry Europe ↔ Algérie"
-        intro="Comparez les lignes, leur durée typique et les compagnies qui les assurent, puis ouvrez la fiche d'une ligne pour ses jours de départ."
+        overline={tr("ui.pageLignesIndex.lignes")}
+        title={tr("ui.pageLignesIndex.toutesLesLignesDeFerry")}
+        intro={tr("ui.pageLignesIndex.comparezLesLignesLeurDuree")}
       />
       {groups.map((group) => (
       <section key={group.title} className="mt-10">
@@ -53,14 +54,14 @@ function LignesPage() {
                 {portName(route.departure_port_id)} → {portName(route.arrival_port_id)}
               </h3>
               <p className="mt-1 text-sm text-muted-foreground">
-                Durée typique : {formatDuration(route.typical_duration_minutes)}
+                {tr("ui.pageLignesIndex.dureeTypique")}{formatDuration(route.typical_duration_minutes)}
                 {route.distance_km ? ` · ${route.distance_km} km` : ""}
               </p>
               <p className="mt-2 text-xs text-muted-foreground">
                 {companies
                   .filter((company) => route.company_ids.includes(company.id))
                   .map((company) => company.name)
-                  .join(", ") || "Compagnie à confirmer"}
+                  .join(", ") || tr("ui.pageLignesIndex.compagnieAConfirmer")}
               </p>
             </Link>
           </Card>

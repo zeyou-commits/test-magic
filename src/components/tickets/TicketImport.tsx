@@ -46,6 +46,7 @@ import {
   type TicketDetails,
 } from "@/lib/tickets/tickets";
 import { TicketCamera } from "./TicketCamera";
+import { tr } from "@/lib/i18n";
 
 type Step = "choose" | "camera" | "reading" | "review" | "saved";
 
@@ -217,9 +218,9 @@ export function TicketImport({
     }));
   const origin = (key: string) =>
     read.has(key) ? (
-      <small className="bw-ticket-field__read">lu sur le billet</small>
+      <small className="bw-ticket-field__read">{tr("ui.ticketImport.luSurLeBillet")}</small>
     ) : (
-      <small className="bw-ticket-field__todo">à compléter</small>
+      <small className="bw-ticket-field__todo">{tr("ui.ticketImport.aCompleter")}</small>
     );
 
   const save = async () => {
@@ -325,11 +326,9 @@ export function TicketImport({
     <>
     <AlertDialog open={pastAlert} onOpenChange={setPastAlert}>
       <AlertDialogContent>
-        <AlertDialogTitle>Ce billet est pour une traversée passée</AlertDialogTitle>
+        <AlertDialogTitle>{tr("ui.ticketImport.ceBilletEstPourUne")}</AlertDialogTitle>
         <AlertDialogDescription>
-          {pastDay ? `Date lue sur le billet : ${pastDay}. ` : ""}BledWay ne peut lui rattacher
-          aucune traversée : pas de suivi, pas d’alertes, pas de retour proposé. Si la date a été
-          mal lue, corrigez-la ; sinon, vous pouvez le ranger quand même dans vos billets.
+          {pastDay ? `Date lue sur le billet : ${pastDay}. ` : ""}{tr("ui.ticketImport.bledwayNePeutLuiRattacher")}
         </AlertDialogDescription>
         <AlertDialogFooter>
           <AlertDialogCancel
@@ -338,10 +337,10 @@ export function TicketImport({
               onOpenChange(false);
             }}
           >
-            Annuler
+            {tr("ui.ticketImport.annuler")}
           </AlertDialogCancel>
-          <AlertDialogCancel>Corriger la date</AlertDialogCancel>
-          <AlertDialogAction onClick={() => setPastOk(true)}>Ranger quand même</AlertDialogAction>
+          <AlertDialogCancel>{tr("ui.ticketImport.corrigerLaDate")}</AlertDialogCancel>
+          <AlertDialogAction onClick={() => setPastOk(true)}>{tr("ui.ticketImport.rangerQuandMeme")}</AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>
@@ -354,16 +353,16 @@ export function TicketImport({
     >
       <DialogContent className="bw-ticket-dialog">
         <DialogTitle>
-          {step === "saved" ? "Billet enregistré" : "Ajouter mon billet"}
+          {step === "saved" ? tr("ui.ticketImport.billetEnregistre") : tr("ui.ticketImport.ajouterMonBillet")}
           {batch.total > 1 ? (
             <span className="bw-ticket-batch">
               {" "}
-              · {batch.index} sur {batch.total}
+              · {batch.index}{tr("ui.ticketImport.sur")}{batch.total}
             </span>
           ) : null}
         </DialogTitle>
         <DialogDescription className="sr-only">
-          Importer, lire et vérifier un billet de ferry
+          {tr("ui.ticketImport.importerLireEtVerifierUn")}
         </DialogDescription>
 
         {step === "choose" ? (
@@ -371,15 +370,15 @@ export function TicketImport({
             <button type="button" onClick={() => setStep("camera")}>
               <Camera size={20} aria-hidden />
               <span>
-                <strong>Photographier le billet</strong>
-                <small>Avec une aide au cadrage et à la netteté</small>
+                <strong>{tr("ui.ticketImport.photographierLeBillet")}</strong>
+                <small>{tr("ui.ticketImport.avecUneAideAuCadrage")}</small>
               </span>
             </button>
             <button type="button" onClick={() => input.current?.click()}>
               <FileUp size={20} aria-hidden />
               <span>
-                <strong>Importer une photo ou un PDF</strong>
-                <small>Un billet par passager ? Choisissez-les tous d’un coup.</small>
+                <strong>{tr("ui.ticketImport.importerUnePhotoOuUn")}</strong>
+                <small>{tr("ui.ticketImport.unBilletParPassagerChoisissez")}</small>
               </span>
             </button>
             <button
@@ -391,8 +390,8 @@ export function TicketImport({
             >
               <PencilLine size={20} aria-hidden />
               <span>
-                <strong>Saisir à la main</strong>
-                <small>Sans document</small>
+                <strong>{tr("ui.ticketImport.saisirALaMain")}</strong>
+                <small>{tr("ui.ticketImport.sansDocument")}</small>
               </span>
             </button>
             <input
@@ -411,8 +410,7 @@ export function TicketImport({
               }}
             />
             <p className="bw-ticket-note">
-              Lu sur votre téléphone : rien n’est envoyé à un service extérieur. Le document est
-              gardé dans votre espace privé, puis effacé 7 jours après votre dernière traversée.
+              {tr("ui.ticketImport.luSurVotreTelephoneRien")}
             </p>
           </div>
         ) : null}
@@ -424,11 +422,11 @@ export function TicketImport({
         {step === "reading" ? (
           <div className="bw-ticket-reading" role="status">
             <LoaderCircle className="animate-spin" size={28} aria-hidden />
-            <strong>{progress.step || "Lecture du billet…"}</strong>
+            <strong>{progress.step || tr("ui.ticketImport.lectureDuBillet")}</strong>
             <span className="bw-ticket-reading__bar">
               <i style={{ width: `${Math.round(progress.ratio * 100)}%` }} />
             </span>
-            <small>La première fois, la lecture se prépare (quelques secondes).</small>
+            <small>{tr("ui.ticketImport.laPremiereFoisLaLecture")}</small>
           </div>
         ) : null}
 
@@ -443,23 +441,21 @@ export function TicketImport({
             {problem ? <p role="alert">{problem}</p> : null}
             {file ? (
               <p className="bw-ticket-note">
-                Vérifiez et complétez chaque information : seules celles marquées « lu sur le billet
-                » ont été trouvées. Rien n’a été deviné.
+                {tr("ui.ticketImport.verifiezEtCompletezChaqueInformation")}
                 {draft.codes.length ? (
                   <span className="bw-ticket-codes">
-                    <QrCode size={14} aria-hidden /> {draft.codes.length} code(s) lu(s), gardé(s)
-                    sur le billet original.
+                    <QrCode size={14} aria-hidden /> {draft.codes.length}{tr("ui.ticketImport.codeSLuSGarde")}
                   </span>
                 ) : null}
               </p>
             ) : null}
 
             <fieldset>
-              <legend>Compagnie et navire</legend>
+              <legend>{tr("ui.ticketImport.compagnieEtNavire")}</legend>
               <label>
-                Compagnie{" "}
+                {tr("ui.ticketImport.compagnie")}{" "}
                 {draft.companyFromVessel && draft.companyId ? (
-                  <small className="bw-ticket-field__read">déduite du navire</small>
+                  <small className="bw-ticket-field__read">{tr("ui.ticketImport.deduiteDuNavire")}</small>
                 ) : (
                   origin("companyId")
                 )}
@@ -476,12 +472,12 @@ export function TicketImport({
                 </select>
               </label>
               <label>
-                Navire {origin("vesselId")}
+                {tr("ui.ticketImport.navire")}{origin("vesselId")}
                 <select
                   value={draft.vesselId ?? ""}
                   onChange={(e) => setDraft((d) => ({ ...d, vesselId: e.target.value || null }))}
                 >
-                  <option value="">— Non indiqué</option>
+                  <option value="">{tr("ui.ticketImport.nonIndique")}</option>
                   {companyVessels.map((v) => (
                     <option key={v.id} value={v.id}>
                       {v.name}
@@ -506,13 +502,13 @@ export function TicketImport({
                         className="bw-ticket-remove"
                         onClick={() => setDraft((d) => ({ ...d, legs: d.legs.slice(0, 1) }))}
                       >
-                        <Trash2 size={13} aria-hidden /> Pas de retour
+                        <Trash2 size={13} aria-hidden />{tr("ui.ticketImport.pasDeRetour")}
                       </button>
                     ) : null}
                   </legend>
                   <div className="bw-ticket-grid">
                     <label>
-                      Départ {origin(`legs.${i}.fromPortId`)}
+                      {tr("ui.ticketImport.depart")}{origin(`legs.${i}.fromPortId`)}
                       <select
                         value={leg.fromPortId ?? ""}
                         onChange={(e) => setLeg(i, { fromPortId: e.target.value || null })}
@@ -526,7 +522,7 @@ export function TicketImport({
                       </select>
                     </label>
                     <label>
-                      Arrivée {origin(`legs.${i}.toPortId`)}
+                      {tr("ui.ticketImport.arrivee")}{origin(`legs.${i}.toPortId`)}
                       <select
                         value={leg.toPortId ?? ""}
                         onChange={(e) => setLeg(i, { toPortId: e.target.value || null })}
@@ -540,7 +536,7 @@ export function TicketImport({
                       </select>
                     </label>
                     <label>
-                      Date {origin(`legs.${i}.date`)}
+                      {tr("ui.ticketImport.date")}{origin(`legs.${i}.date`)}
                       <input
                         type="date"
                         value={leg.date ?? ""}
@@ -548,7 +544,7 @@ export function TicketImport({
                       />
                     </label>
                     <label>
-                      Heure de départ {origin(`legs.${i}.time`)}
+                      {tr("ui.ticketImport.heureDeDepart")}{origin(`legs.${i}.time`)}
                       <input
                         type="time"
                         value={leg.time ?? ""}
@@ -558,14 +554,14 @@ export function TicketImport({
                   </div>
                   {leg.fromPortId && leg.toPortId && leg.date ? (
                     <label>
-                      Traversée sur BledWay
+                      {tr("ui.ticketImport.traverseeSurBledway")}
                       <select
                         value={chosen[i] ?? ""}
                         onChange={(e) =>
                           setChosen((c) => c.map((v, n) => (n === i ? e.target.value || null : v)))
                         }
                       >
-                        <option value="">Aucune de ces traversées</option>
+                        <option value="">{tr("ui.ticketImport.aucuneDeCesTraversees")}</option>
                         {list.map((d) => (
                           <option key={d.id} value={d.id}>
                             {new Date(d.departure_at).toLocaleDateString("fr-FR", {
@@ -576,12 +572,12 @@ export function TicketImport({
                             })}{" "}
                             · {wallTimeInZone(d.departure_at, zone).slice(0, 5)}
                             {vesselName(d.vessel_id) ? ` · ${vesselName(d.vessel_id)}` : ""}
-                            {d.status === "cancelled" ? " · annulée" : ""}
+                            {d.status === "cancelled" ? tr("ui.ticketImport.annulee") : ""}
                           </option>
                         ))}
                       </select>
                       {!list.length ? (
-                        <small>Aucune traversée de cette ligne ce jour-là sur BledWay.</small>
+                        <small>{tr("ui.ticketImport.aucuneTraverseeDeCetteLigne")}</small>
                       ) : null}
                     </label>
                   ) : null}
@@ -611,12 +607,12 @@ export function TicketImport({
                   }))
                 }
               >
-                <Plus size={14} aria-hidden /> Ajouter le retour
+                <Plus size={14} aria-hidden />{tr("ui.ticketImport.ajouterLeRetour")}
               </button>
             ) : null}
 
             <fieldset>
-              <legend>Passagers {origin("passengers")}</legend>
+              <legend>{tr("ui.ticketImport.passagers")}{origin("passengers")}</legend>
               {draft.passengers.map((name, i) => (
                 <div key={i} className="bw-ticket-row">
                   <input
@@ -648,11 +644,11 @@ export function TicketImport({
                 className="bw-ticket-add"
                 onClick={() => setDraft((d) => ({ ...d, passengers: [...d.passengers, ""] }))}
               >
-                <Plus size={14} aria-hidden /> Ajouter un passager
+                <Plus size={14} aria-hidden />{tr("ui.ticketImport.ajouterUnPassager")}
               </button>
               <div className="bw-ticket-grid">
                 <label>
-                  Adultes {origin("adults")}
+                  {tr("ui.ticketImport.adultes")}{origin("adults")}
                   <input
                     type="number"
                     min={0}
@@ -667,7 +663,7 @@ export function TicketImport({
                   />
                 </label>
                 <label>
-                  Enfants {origin("children")}
+                  {tr("ui.ticketImport.enfants")}{origin("children")}
                   <input
                     type="number"
                     min={0}
@@ -685,10 +681,10 @@ export function TicketImport({
             </fieldset>
 
             <fieldset>
-              <legend>Réservation et véhicule</legend>
+              <legend>{tr("ui.ticketImport.reservationEtVehicule")}</legend>
               <div className="bw-ticket-grid">
                 <label>
-                  Référence {origin("reference")}
+                  {tr("ui.ticketImport.reference")}{origin("reference")}
                   <input
                     value={draft.reference ?? ""}
                     maxLength={30}
@@ -696,10 +692,10 @@ export function TicketImport({
                   />
                 </label>
                 <label>
-                  Véhicule {origin("vehicleKind")}
+                  {tr("ui.ticketImport.vehicule")}{origin("vehicleKind")}
                   <input
                     value={draft.vehicleKind ?? ""}
-                    placeholder="À pied"
+                    placeholder={tr("ui.ticketImport.aPied")}
                     maxLength={40}
                     onChange={(e) =>
                       setDraft((d) => ({ ...d, vehicleKind: e.target.value || null }))
@@ -707,7 +703,7 @@ export function TicketImport({
                   />
                 </label>
                 <label>
-                  Immatriculation {origin("vehiclePlate")}
+                  {tr("ui.ticketImport.immatriculation")}{origin("vehiclePlate")}
                   <input
                     value={draft.vehiclePlate ?? ""}
                     maxLength={20}
@@ -717,7 +713,7 @@ export function TicketImport({
                   />
                 </label>
                 <label>
-                  Agence émettrice {origin("agency")}
+                  {tr("ui.ticketImport.agenceEmettrice")}{origin("agency")}
                   <input
                     value={draft.agency ?? ""}
                     maxLength={120}
@@ -734,20 +730,18 @@ export function TicketImport({
                 onChange={(e) => setPrepare(e.target.checked)}
               />
               <span>
-                Préparer mon voyage avec ce billet (Ma traversée, aller et retour, véhicule)
+                {tr("ui.ticketImport.preparerMonVoyageAvecCe")}
               </span>
             </label>
             {pastTicket ? (
               <div className="bw-ticket-past" role="alert">
-                <strong>Ce billet est pour une traversée déjà passée{pastDay ? ` (${pastDay})` : ""}.</strong>
+                <strong>{tr("ui.ticketImport.ceBilletEstPourUne2")}{pastDay ? ` (${pastDay})` : ""}.</strong>
                 <p>
-                  BledWay ne peut lui rattacher aucune traversée : pas de suivi, pas d’alertes, pas de
-                  retour proposé. Il sera seulement rangé dans vos billets. Vérifiez la date lue
-                  ci-dessus : si elle est fausse, corrigez-la.
+                  {tr("ui.ticketImport.bledwayNePeutLuiRattacher2")}
                 </p>
                 <label className="bw-ticket-check">
                   <input type="checkbox" checked={pastOk} onChange={(e) => setPastOk(e.target.checked)} />
-                  <span>Je l’enregistre quand même, sans suivi.</span>
+                  <span>{tr("ui.ticketImport.jeLEnregistreQuandMeme")}</span>
                 </label>
               </div>
             ) : null}
@@ -757,15 +751,14 @@ export function TicketImport({
                 checked={confirmed}
                 onChange={(e) => setConfirmed(e.target.checked)}
               />
-              <span>J’ai vérifié ces informations.</span>
+              <span>{tr("ui.ticketImport.jAiVerifieCesInformations")}</span>
             </label>
             <p className="bw-ticket-note">
-              BledWay ne vérifie pas la validité du billet : seule la compagnie fait foi, pour le
-              billet comme pour les horaires.
+              {tr("ui.ticketImport.bledwayNeVerifiePasLa")}
             </p>
             <div className="bw-ticket-actions">
               <button type="button" onClick={reset} disabled={saving}>
-                Recommencer
+                {tr("ui.ticketImport.recommencer")}
               </button>
               <button
                 type="submit"
@@ -777,7 +770,7 @@ export function TicketImport({
                 ) : (
                   <Check size={16} aria-hidden />
                 )}
-                {user ? "Enregistrer mon billet" : "Connectez-vous pour enregistrer"}
+                {user ? tr("ui.ticketImport.enregistrerMonBillet") : tr("ui.ticketImport.connectezVousPourEnregistrer")}
               </button>
             </div>
           </form>
@@ -787,9 +780,8 @@ export function TicketImport({
           <div className="bw-ticket-saved" role="status">
             <Check size={30} aria-hidden />
             <p>
-              Votre billet est enregistré
-              {file ? " et disponible sur ce téléphone, même sans connexion" : ""}. Retrouvez-le
-              dans « Mon compte » et dans la préparation de votre voyage.
+              {tr("ui.ticketImport.votreBilletEstEnregistre")}
+              {file ? tr("ui.ticketImport.etDisponibleSurCeTelephone") : ""}{tr("ui.ticketImport.retrouvezLeDansMonCompte")}
             </p>
             {queue.length ? (
               <button
@@ -803,7 +795,7 @@ export function TicketImport({
                   if (next) void start(next);
                 }}
               >
-                Billet suivant ({batch.index + 1} sur {batch.total})
+                {tr("ui.ticketImport.billetSuivant")}{batch.index + 1}{tr("ui.ticketImport.sur")}{batch.total})
               </button>
             ) : (
               <>
@@ -815,10 +807,10 @@ export function TicketImport({
                     reset();
                   }}
                 >
-                  <Plus size={16} aria-hidden /> Ajouter le billet d’un autre passager
+                  <Plus size={16} aria-hidden />{tr("ui.ticketImport.ajouterLeBilletDUn")}
                 </button>
                 <button type="button" className="bw-action-primary" onClick={() => { onOpenChange(false); onSaved?.(); }}>
-                  Terminer
+                  {tr("ui.ticketImport.terminer")}
                 </button>
               </>
             )}

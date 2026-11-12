@@ -12,6 +12,7 @@ import {
 } from "@/lib/community/travellers";
 import { useLibrary } from "@/lib/community/library";
 import { LibraryPicker } from "./LibraryPicker";
+import { tr } from "@/lib/i18n";
 
 /**
  * Choisir son humeur du moment (24 h). Les humeurs du moment du voyage sont proposées en premier :
@@ -83,22 +84,22 @@ export function MoodPicker({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="bw-mood-dialog">
-        <DialogTitle>Votre humeur du moment</DialogTitle>
+        <DialogTitle>{tr("ui.moodPicker.votreHumeurDuMoment")}</DialogTitle>
         <DialogDescription>
-          Une petite bulle sur votre cabas, visible des autres voyageurs pendant 24 h.
+          {tr("ui.moodPicker.unePetiteBulleSurVotre")}
         </DialogDescription>
         <div className="bw-mood-scroll">
           {suggested.length ? (
             <>
-              <p className="bw-mood-group">Pour ce moment du voyage</p>
+              <p className="bw-mood-group">{tr("ui.moodPicker.pourCeMomentDuVoyage")}</p>
               {grid(suggested)}
-              <p className="bw-mood-group">Toutes les humeurs</p>
+              <p className="bw-mood-group">{tr("ui.moodPicker.toutesLesHumeurs")}</p>
             </>
           ) : null}
           {grid(others)}
           {library.managed ? (
             <>
-              <p className="bw-mood-group">Ou n’importe quelle image de la bibliothèque</p>
+              <p className="bw-mood-group">{tr("ui.moodPicker.ouNImporteQuelleImage")}</p>
               <LibraryPicker
                 selected={fromLibrary}
                 onPick={(row) => saveItem.mutate(row.id)}
@@ -116,7 +117,7 @@ export function MoodPicker({
             disabled={save.isPending}
             onClick={() => save.mutate(null)}
           >
-            <X size={14} aria-hidden /> Retirer mon humeur
+            <X size={14} aria-hidden />{tr("ui.moodPicker.retirerMonHumeur")}
           </button>
         ) : null}
       </DialogContent>

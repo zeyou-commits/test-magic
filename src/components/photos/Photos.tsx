@@ -13,6 +13,7 @@ import {
   type PreparedPhoto,
   type PublicPhoto,
 } from "@/lib/photos/photos";
+import { tr } from "@/lib/i18n";
 
 /**
  * Types acceptés par le sélecteur de fichier. Chrome sur Android 14 et plus n'ouvre que la galerie
@@ -106,7 +107,7 @@ export function PhotoPicker({
             <li key={photo.url}>
               <img src={photo.url} alt={`Photo ${index + 1}`} />
               {photo.faces + photo.plates ? (
-                <span className="bw-photo-picker__faces" title="Zones floutées automatiquement">
+                <span className="bw-photo-picker__faces" title={tr("ui.photos.zonesFlouteesAutomatiquement")}>
                   <ScanFace size={12} aria-hidden /> {photo.faces + photo.plates}
                 </span>
               ) : null}
@@ -136,14 +137,13 @@ export function PhotoPicker({
           </label>
           <small>
             {blurredLabel(photos)}
-            {note} Position GPS et infos de l’appareil retirées de la photo.
+            {note}{tr("ui.photos.positionGpsEtInfosDe")}
           </small>
         </>
       ) : null}
       {busy ? (
         <p className="bw-photo-picker__busy" role="status">
-          <LoaderCircle size={15} className="animate-spin" aria-hidden /> Floutage des visages et
-          plaques…
+          <LoaderCircle size={15} className="animate-spin" aria-hidden />{tr("ui.photos.floutageDesVisagesEtPlaques")}
         </p>
       ) : null}
       {/* Un seul bouton : le téléphone propose lui-même « Appareil photo » ou « Galerie ». */}
@@ -151,10 +151,10 @@ export function PhotoPicker({
         <label className="bw-photo-picker__add">
           <Camera size={15} aria-hidden />
           {photos.length && max === 1
-            ? "Changer de photo"
+            ? tr("ui.photos.changerDePhoto")
             : max > 1
               ? `Ajouter une photo (${photos.length}/${max})`
-              : "Ajouter une photo"}
+              : tr("ui.photos.ajouterUnePhoto")}
           <input
             ref={input}
             type="file"
@@ -224,7 +224,7 @@ export function PhotoStrip({
       <Dialog open={Boolean(open)} onOpenChange={(next) => !next && setOpen(null)}>
         <DialogContent className="bw-photo-viewer">
           <DialogTitle className="sr-only">{label}</DialogTitle>
-          <DialogDescription className="sr-only">Photo partagée par un voyageur</DialogDescription>
+          <DialogDescription className="sr-only">{tr("ui.photos.photoPartageeParUnVoyageur")}</DialogDescription>
           {open ? <img src={photoUrl(open.path)} alt="" /> : null}
           {user && open ? (
             <button
@@ -240,7 +240,7 @@ export function PhotoStrip({
                   .catch((error: Error) => toast.error(error.message))
               }
             >
-              <Flag size={14} aria-hidden /> {reported ? "Signalée" : "Signaler cette photo"}
+              <Flag size={14} aria-hidden /> {reported ? tr("ui.photos.signalee") : tr("ui.photos.signalerCettePhoto")}
             </button>
           ) : null}
           {open && (open.mine || staff) ? (
@@ -258,7 +258,7 @@ export function PhotoStrip({
                   .catch((error: Error) => toast.error(error.message));
               }}
             >
-              <Trash2 size={14} aria-hidden /> {open.mine ? "Retirer ma photo" : "Retirer (équipe)"}
+              <Trash2 size={14} aria-hidden /> {open.mine ? tr("ui.photos.retirerMaPhoto") : tr("ui.photos.retirerEquipe")}
             </button>
           ) : null}
         </DialogContent>

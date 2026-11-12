@@ -20,6 +20,7 @@ import { NotificationInbox } from "@/components/account/NotificationInbox";
 import { MyTickets } from "@/components/tickets/MyTickets";
 import { Bell, Heart, MessageSquare, UserRound, LogOut, ArrowLeft } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { tr } from "@/lib/i18n";
 
 export const Route = createFileRoute("/compte")({
   head: () => ({
@@ -81,15 +82,15 @@ function AccountPage() {
   }, []);
 
   if (loading) {
-    return <Centered>Chargement…</Centered>;
+    return <Centered>{tr("ui.pageCompte.chargement")}</Centered>;
   }
 
   if (!user) {
     return (
       <Centered>
-        <p>Connectez-vous pour accéder à votre compte.</p>
+        <p>{tr("ui.pageCompte.connectezVousPourAccederA")}</p>
         <Button asChild className="mt-3">
-          <a href="/auth?next=%2Fcompte">Se connecter</a>
+          <a href="/auth?next=%2Fcompte">{tr("ui.pageCompte.seConnecter")}</a>
         </Button>
       </Centered>
     );
@@ -97,16 +98,16 @@ function AccountPage() {
 
   return (
     <div className="bw-account-page">
-      <header className="bw-account-header"><Link to="/" className="inline-flex items-center gap-2 text-xs font-semibold text-primary"><ArrowLeft className="size-4"/>Retour à la carte</Link><img src="/bledway-brand-entete.webp" alt="BledWay" className="h-9 w-auto"/><button type="button" onClick={() => void signOut()} aria-label="Se déconnecter" className="grid size-10 place-items-center rounded-full border border-border text-muted-foreground"><LogOut className="size-4"/></button></header>
-      <div className="bw-account-welcome"><MyCabas fallback={(profile?.display_name || user.email || "V").slice(0, 1).toUpperCase()} /><div className="min-w-0"><span className="bw-account-kicker">Mon espace voyageur</span><h1>Bonjour{profile?.display_name ? ` ${profile.display_name.split(" ")[0]}` : ""}.</h1><p>Les retrouvailles se préparent ici.</p></div></div>
+      <header className="bw-account-header"><Link to="/" className="inline-flex items-center gap-2 text-xs font-semibold text-primary"><ArrowLeft className="size-4"/>{tr("ui.pageCompte.retourALaCarte")}</Link><img src="/bledway-brand-entete.webp" alt={tr("ui.pageCompte.bledway")} className="h-9 w-auto"/><button type="button" onClick={() => void signOut()} aria-label={tr("ui.pageCompte.seDeconnecter")} className="grid size-10 place-items-center rounded-full border border-border text-muted-foreground"><LogOut className="size-4"/></button></header>
+      <div className="bw-account-welcome"><MyCabas fallback={(profile?.display_name || user.email || "V").slice(0, 1).toUpperCase()} /><div className="min-w-0"><span className="bw-account-kicker">{tr("ui.pageCompte.monEspaceVoyageur")}</span><h1>{tr("ui.pageCompte.bonjour")}{profile?.display_name ? ` ${profile.display_name.split(" ")[0]}` : ""}.</h1><p>{tr("ui.pageCompte.lesRetrouvaillesSePreparentIci")}</p></div></div>
       <Tabs value={section} onValueChange={(value) => { setSection(value); window.history.replaceState(null, "", `/compte${value === "voyages" ? "" : `#${value}`}`); }}>
-        <TabsList className="bw-account-tabs" aria-label="Mon espace voyageur">
-          <TabsTrigger value="voyages"><Heart className="size-4"/>Mes voyages</TabsTrigger><TabsTrigger value="notifications"><Bell className="size-4"/>Notifications</TabsTrigger><TabsTrigger value="profil"><UserRound className="size-4"/>Mon profil</TabsTrigger><TabsTrigger value="contributions"><MessageSquare className="size-4"/>Contributions</TabsTrigger>
+        <TabsList className="bw-account-tabs" aria-label={tr("ui.pageCompte.monEspaceVoyageur")}>
+          <TabsTrigger value="voyages"><Heart className="size-4"/>{tr("ui.pageCompte.mesVoyages")}</TabsTrigger><TabsTrigger value="notifications"><Bell className="size-4"/>{tr("ui.pageCompte.notifications")}</TabsTrigger><TabsTrigger value="profil"><UserRound className="size-4"/>{tr("ui.pageCompte.monProfil")}</TabsTrigger><TabsTrigger value="contributions"><MessageSquare className="size-4"/>{tr("ui.pageCompte.contributions")}</TabsTrigger>
         </TabsList>
         <TabsContent value="voyages"><MyTickets /><FollowCenter userId={user.id}/></TabsContent>
         <TabsContent value="notifications"><NotificationInbox userId={user.id}/><NotificationSettings userId={user.id}/></TabsContent>
-        <TabsContent value="profil"><section className="bw-account-section"><h2 className="font-display text-xl font-semibold">Votre profil voyageur</h2><p className="mt-1 text-sm text-muted-foreground">Votre cabas, votre pseudo et votre humeur accompagnent vos contributions.</p><MyTravellerEditor /><div className="mt-5 border-t border-border pt-4"><p className="text-xs text-muted-foreground">Adresse de connexion (jamais visible des autres voyageurs)</p><p className="mt-1 break-all text-sm font-medium">{user.email}</p><a href={`mailto:contact@bledway.com?subject=${encodeURIComponent("Suppression de mon compte BledWay")}&body=${encodeURIComponent(`Bonjour,\n\nJe demande la suppression complète de mon compte BledWay (${user.email}) et des données qui y sont rattachées.\n\nMerci.`)}`} className="mt-4 inline-flex text-xs font-semibold text-destructive underline">Supprimer mon compte</a><p className="mt-1 text-xs text-muted-foreground">Ouvre un e-mail prérempli ; votre compte et ses données sont effacés sous un mois au plus. <Link to="/confidentialite" hash="suppression-compte" className="underline">En savoir plus</Link></p></div>{isAdmin && <Link to="/admin" className="mt-6 inline-flex text-xs font-semibold text-primary underline">Ouvrir l’espace équipe</Link>}</section></TabsContent>
-        <TabsContent value="contributions"><section className="bw-account-section"><h2 className="font-display text-xl font-semibold">Mes contributions</h2><MyEntityReviews userId={user.id}/><MyReviews userId={user.id}/><MyReports userId={user.id}/></section></TabsContent>
+        <TabsContent value="profil"><section className="bw-account-section"><h2 className="font-display text-xl font-semibold">{tr("ui.pageCompte.votreProfilVoyageur")}</h2><p className="mt-1 text-sm text-muted-foreground">{tr("ui.pageCompte.votreCabasVotrePseudoEt")}</p><MyTravellerEditor /><div className="mt-5 border-t border-border pt-4"><p className="text-xs text-muted-foreground">{tr("ui.pageCompte.adresseDeConnexionJamaisVisible")}</p><p className="mt-1 break-all text-sm font-medium">{user.email}</p><a href={`mailto:contact@bledway.com?subject=${encodeURIComponent("Suppression de mon compte BledWay")}&body=${encodeURIComponent(`Bonjour,\n\nJe demande la suppression complète de mon compte BledWay (${user.email}) et des données qui y sont rattachées.\n\nMerci.`)}`} className="mt-4 inline-flex text-xs font-semibold text-destructive underline">{tr("ui.pageCompte.supprimerMonCompte")}</a><p className="mt-1 text-xs text-muted-foreground">{tr("ui.pageCompte.ouvreUnEMailPrerempli")}<Link to="/confidentialite" hash="suppression-compte" className="underline">{tr("ui.pageCompte.enSavoirPlus")}</Link></p></div>{isAdmin && <Link to="/admin" className="mt-6 inline-flex text-xs font-semibold text-primary underline">{tr("ui.pageCompte.ouvrirLEspaceEquipe")}</Link>}</section></TabsContent>
+        <TabsContent value="contributions"><section className="bw-account-section"><h2 className="font-display text-xl font-semibold">{tr("ui.pageCompte.mesContributions")}</h2><MyEntityReviews userId={user.id}/><MyReviews userId={user.id}/><MyReports userId={user.id}/></section></TabsContent>
       </Tabs>
     </div>
   );
@@ -170,12 +171,12 @@ function MyReviews({ userId }: { userId: string }) {
 
   return (
     <Card>
-      <h3 className="text-sm font-semibold">Mes avis</h3>
+      <h3 className="text-sm font-semibold">{tr("ui.pageCompte.mesAvis")}</h3>
       {isLoading ? (
-        <p className="mt-2 text-sm text-muted-foreground">Chargement…</p>
+        <p className="mt-2 text-sm text-muted-foreground">{tr("ui.pageCompte.chargement")}</p>
       ) : reviews.length === 0 ? (
         <p className="mt-2 text-sm text-muted-foreground">
-          Vous n'avez pas encore laissé d'avis sur un port.
+          {tr("ui.pageCompte.vousNAvezPasEncore")}
         </p>
       ) : (
         <ul className="mt-2 divide-y divide-border">
@@ -189,14 +190,14 @@ function MyReviews({ userId }: { userId: string }) {
                   </span>
                 </p>
                 <p className="mt-1 text-sm text-muted-foreground">
-                  {review.comment ?? "(sans commentaire)"}
+                  {review.comment ?? tr("ui.pageCompte.sansCommentaire")}
                 </p>
                 <p className="mt-1 text-xs text-muted-foreground">
                   {formatDate(review.created_at)}
                 </p>
               </div>
               <Button size="sm" variant="ghost" onClick={() => remove.mutate(review.id)}>
-                Supprimer
+                {tr("ui.pageCompte.supprimer")}
               </Button>
             </li>
           ))}
@@ -222,11 +223,11 @@ function MyReports({ userId }: { userId: string }) {
 
   return (
     <Card>
-      <h3 className="text-sm font-semibold">Mes signalements</h3>
+      <h3 className="text-sm font-semibold">{tr("ui.pageCompte.mesSignalements")}</h3>
       {isLoading ? (
-        <p className="mt-2 text-sm text-muted-foreground">Chargement…</p>
+        <p className="mt-2 text-sm text-muted-foreground">{tr("ui.pageCompte.chargement")}</p>
       ) : reports.length === 0 ? (
-        <p className="mt-2 text-sm text-muted-foreground">Aucun signalement envoyé.</p>
+        <p className="mt-2 text-sm text-muted-foreground">{tr("ui.pageCompte.aucunSignalementEnvoye")}</p>
       ) : (
         <ul className="mt-2 divide-y divide-border">
           {reports.map((report) => (

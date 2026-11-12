@@ -41,6 +41,7 @@ import {
 import { MoodBubble } from "./MoodBubble";
 import { MoodPicker } from "./MoodPicker";
 import { TravellerAvatar } from "./TravellerAvatar";
+import { tr } from "@/lib/i18n";
 
 /** Le moment du voyage, pour proposer les bonnes humeurs : étape choisie, sinon d'après l'heure. */
 function useMoment() {
@@ -75,7 +76,7 @@ export function MeTab({ className }: { className: string }) {
         <span className="bw-me-tab__ghost" aria-hidden>
           <UserRound className="size-4" />
         </span>
-        <span>{user ? "Mon espace" : "Connexion"}</span>
+        <span>{user ? tr("ui.meTab.monEspace") : tr("ui.meTab.connexion")}</span>
       </Link>
     );
   return (
@@ -94,7 +95,7 @@ export function MeTab({ className }: { className: string }) {
           </span>
         )}
         <TravellerAvatar card={me} size={30} mood={false} static />
-        <span>Moi</span>
+        <span>{tr("ui.meTab.moi")}</span>
       </button>
       <MoodBubble mood={me.mood} placement="above" />
       </span>
@@ -141,7 +142,7 @@ function MeSheet({ open, onOpenChange }: { open: boolean; onOpenChange: (open: b
             <div>
               <SheetTitle>{me.pseudo}</SheetTitle>
               <SheetDescription>
-                {me.mood ? "Votre humeur est visible pendant 24 h." : "Quelle est votre humeur ?"}
+                {me.mood ? tr("ui.meTab.votreHumeurEstVisiblePendant") : tr("ui.meTab.quelleEstVotreHumeur")}
               </SheetDescription>
             </div>
           </SheetHeader>
@@ -170,21 +171,21 @@ function MeSheet({ open, onOpenChange }: { open: boolean; onOpenChange: (open: b
                 setAll(true);
               }}
             >
-              <Smile size={15} aria-hidden /> Toutes les humeurs
+              <Smile size={15} aria-hidden />{tr("ui.meTab.toutesLesHumeurs")}
             </button>
             {me.mood ? (
               <button type="button" disabled={save.isPending} onClick={() => save.mutate(null)}>
-                <X size={15} aria-hidden /> Retirer
+                <X size={15} aria-hidden />{tr("ui.meTab.retirer")}
               </button>
             ) : null}
           </div>
-          <nav className="bw-me-sheet__links" aria-label="Mon espace">
+          <nav className="bw-me-sheet__links" aria-label={tr("ui.meTab.monEspace")}>
             <Link to="/compte" hash="profil" onClick={close}>
-              <UserRound size={16} aria-hidden /> Mon profil voyageur{" "}
+              <UserRound size={16} aria-hidden />{tr("ui.meTab.monProfilVoyageur")}{" "}
               <ChevronRight size={15} aria-hidden />
             </Link>
             <Link to="/compte" onClick={close}>
-              <Heart size={16} aria-hidden /> Mes voyages <ChevronRight size={15} aria-hidden />
+              <Heart size={16} aria-hidden />{tr("ui.meTab.mesVoyages")}<ChevronRight size={15} aria-hidden />
             </Link>
             <Link
               to="/"
@@ -194,10 +195,10 @@ function MeSheet({ open, onOpenChange }: { open: boolean; onOpenChange: (open: b
                 openVoyage();
               }}
             >
-              <RouteIcon size={16} aria-hidden /> Mon voyage <ChevronRight size={15} aria-hidden />
+              <RouteIcon size={16} aria-hidden />{tr("ui.meTab.monVoyage")}<ChevronRight size={15} aria-hidden />
             </Link>
             <Link to="/mes-dinars" onClick={close}>
-              <Wallet size={16} aria-hidden /> Mes dinars <ChevronRight size={15} aria-hidden />
+              <Wallet size={16} aria-hidden />{tr("ui.meTab.mesDinars")}<ChevronRight size={15} aria-hidden />
             </Link>
             <button
               type="button"
@@ -206,16 +207,16 @@ function MeSheet({ open, onOpenChange }: { open: boolean; onOpenChange: (open: b
                 openTravellerProfile(me.handle);
               }}
             >
-              <Eye size={16} aria-hidden /> Mon profil public <ChevronRight size={15} aria-hidden />
+              <Eye size={16} aria-hidden />{tr("ui.meTab.monProfilPublic")}<ChevronRight size={15} aria-hidden />
             </button>
             <Link to="/compte" hash="notifications" onClick={close}>
-              <Bell size={16} aria-hidden /> Mes notifications{" "}
+              <Bell size={16} aria-hidden />{tr("ui.meTab.mesNotifications")}{" "}
               {unread ? <span className="bw-usermenu-count">{unread}</span> : null}
               <ChevronRight size={15} aria-hidden />
             </Link>
             {roles.length ? (
               <Link to="/admin" onClick={close}>
-                <Shield size={16} aria-hidden /> Back-office <ChevronRight size={15} aria-hidden />
+                <Shield size={16} aria-hidden />{tr("ui.meTab.backOffice")}<ChevronRight size={15} aria-hidden />
               </Link>
             ) : null}
             {/* Le menu du compte n'est plus dans l'en-tête sur mobile : la déconnexion est ici. */}
@@ -229,7 +230,7 @@ function MeSheet({ open, onOpenChange }: { open: boolean; onOpenChange: (open: b
                 void navigate({ to: "/auth", replace: true });
               }}
             >
-              <LogOut size={16} aria-hidden /> Se déconnecter
+              <LogOut size={16} aria-hidden />{tr("ui.meTab.seDeconnecter")}
             </button>
           </nav>
         </SheetContent>

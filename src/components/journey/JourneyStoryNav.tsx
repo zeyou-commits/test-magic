@@ -1,6 +1,7 @@
 import { useRef } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { STEP_ICONS, type FriezeStep } from "./JourneyFrieze";
+import { tr } from "@/lib/i18n";
 
 /**
  * Navigation « story » (téléphone, et colonne étroite du simulateur) : les segments de progression,
@@ -53,7 +54,7 @@ export function JourneyStoryNav({
           className="bw-story__side"
           onClick={() => go(index - 1)}
           disabled={!prev}
-          aria-label={prev ? `Étape précédente : ${prev.label}` : "Première étape"}
+          aria-label={prev ? `Étape précédente : ${prev.label}` : tr("ui.journeyStoryNav.premiereEtape")}
         >
           {prev ? (
             <>
@@ -79,7 +80,7 @@ export function JourneyStoryNav({
           data-side="next"
           onClick={() => go(index + 1)}
           disabled={!next}
-          aria-label={next ? `Étape suivante : ${next.label}` : "Dernière étape"}
+          aria-label={next ? `Étape suivante : ${next.label}` : tr("ui.journeyStoryNav.derniereEtape")}
         >
           {next ? (
             <>

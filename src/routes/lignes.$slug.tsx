@@ -16,6 +16,7 @@ import {
 import { deName, formatDateTime, formatDuration } from "@/lib/ferry/format";
 import { portTimeZone, zoneLabel } from "@/lib/ferry/time";
 import { BookingLink } from "@/components/panel/shared";
+import { tr } from "@/lib/i18n";
 
 export const Route = createFileRoute("/lignes/$slug")({
   loader: async ({ context, params }) => {
@@ -97,7 +98,7 @@ function LignePage() {
         dangerouslySetInnerHTML={{ __html: jsonLdString(jsonLd) }}
       />
       <PageHero
-        overline="Ligne maritime"
+        overline={tr("ui.pageLignesSlug.ligneMaritime")}
         title={`Ferry ${from?.name ?? "—"} → ${to?.name ?? "—"}`}
         intro={`Durée typique : ${formatDuration(route.typical_duration_minutes)}${
           route.distance_km ? ` · ${route.distance_km} km` : ""
@@ -121,7 +122,7 @@ function LignePage() {
           search={{ select: "route", id: route.id } as never}
           className="inline-flex h-11 items-center justify-center rounded-xl bg-primary px-5 text-sm font-semibold text-primary-foreground hover:bg-primary/90"
         >
-          Voir sur la carte
+          {tr("ui.pageLignesSlug.voirSurLaCarte")}
         </Link>
         {reverse ? (
           <Link
@@ -129,7 +130,7 @@ function LignePage() {
             params={{ slug: reverse.slug }}
             className="inline-flex h-11 items-center justify-center rounded-xl border border-border bg-card px-5 text-sm font-semibold hover:bg-secondary"
           >
-            Sens inverse : {to?.name} → {from?.name}
+            {tr("ui.pageLignesSlug.sensInverse")}{to?.name} → {from?.name}
           </Link>
         ) : null}
       </div>
@@ -143,7 +144,7 @@ function LignePage() {
               params={{ slug: port.slug }}
               className="rounded-full bg-secondary px-3 py-1 text-sm hover:bg-secondary/70"
             >
-              Port {deName(port.name)}
+              {tr("ui.pageLignesSlug.port")}{deName(port.name)}
             </Link>
           ) : null,
         )}
@@ -151,9 +152,9 @@ function LignePage() {
 
       {operators.length ? (
         <section className="mt-10">
-          <h2 className="text-xl font-semibold">Réserver cette traversée</h2>
+          <h2 className="text-xl font-semibold">{tr("ui.pageLignesSlug.reserverCetteTraversee")}</h2>
           <p className="mt-1 text-sm text-muted-foreground">
-            La réservation se fait directement auprès de la compagnie.
+            {tr("ui.pageLignesSlug.laReservationSeFaitDirectement")}
           </p>
           <div className="mt-4 empty:hidden">
             <LineAlertNotice departures={lineDepartures} vessels={vessels} />
@@ -170,7 +171,7 @@ function LignePage() {
       ) : null}
 
       <section className="mt-10">
-        <h2 className="text-xl font-semibold">Jours et heures de départ</h2>
+        <h2 className="text-xl font-semibold">{tr("ui.pageLignesSlug.joursEtHeuresDeDepart")}</h2>
         <div className="mt-4">
           <LineCalendar departures={lineDepartures} companies={companies} timeZone={timeZone} />
         </div>
@@ -178,7 +179,7 @@ function LignePage() {
 
       <section className="mt-10">
         <h2 className="text-xl font-semibold">
-          Prochains départs connus{" "}
+          {tr("ui.pageLignesSlug.prochainsDepartsConnus")}{" "}
           <span className="text-base font-normal text-muted-foreground">
             · {zoneLabel(timeZone)}
           </span>
@@ -200,7 +201,7 @@ function LignePage() {
                   {departure.duration_minutes
                     ? ` · ${formatDuration(departure.duration_minutes)}`
                     : ""}
-                  {departure.status === "cancelled" ? " · Annulé" : ""}
+                  {departure.status === "cancelled" ? tr("ui.pageLignesSlug.annule") : ""}
                   {vessel ? ` · ${vessel.name} ` : ""}
                   <VesselAlertTag vesselId={vessel?.id} />
                 </span>
@@ -209,7 +210,7 @@ function LignePage() {
           })}
           {nextDepartures.length === 0 ? (
             <li className="px-4 py-3 text-sm text-muted-foreground">
-              Aucun départ connu à venir sur cette ligne.
+              {tr("ui.pageLignesSlug.aucunDepartConnuAVenir")}
             </li>
           ) : null}
         </ul>
@@ -228,25 +229,25 @@ function LignePage() {
       />
       <p className="mt-10 text-sm">
         <a href="/barometre-prix" className="font-semibold text-primary underline underline-offset-4">
-          Repères de prix par ligne
+          {tr("ui.pageLignesSlug.reperesDePrixParLigne")}
         </a>{" "}
         ·{" "}
         <a href="/questions-frequentes" className="font-semibold text-primary underline underline-offset-4">
-          Questions fréquentes
+          {tr("ui.pageLignesSlug.questionsFrequentes")}
         </a>{" "}
         ·{" "}
         <a
           href="/voyage-algerie"
           className="font-semibold text-primary underline underline-offset-4"
         >
-          Préparer la traversée
+          {tr("ui.pageLignesSlug.preparerLaTraversee")}
         </a>{" "}
         ·{" "}
         <a
           href="/simulateurs/budget-voyage"
           className="font-semibold text-primary underline underline-offset-4"
         >
-          Comparer le budget du voyage
+          {tr("ui.pageLignesSlug.comparerLeBudgetDuVoyage")}
         </a>
       </p>
     </SiteLayout>

@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { euros, importBudget, parseAmount } from "@/lib/tools/calculations";
 import { CalculatorForm, InvalidResult, NumberField, ResultPanel } from "./Fields";
+import { tr } from "@/lib/i18n";
 const initial = { purchase: "", transport: "", fees: "", tax: "", rate: "", reserve: "" };
 export function ImportBudget() {
   const [values, setValues] = useState(initial);
@@ -40,29 +41,29 @@ export function ImportBudget() {
         }}
       >
         <fieldset>
-          <legend className="mb-4 font-semibold">Les dépenses connues en euros</legend>
+          <legend className="mb-4 font-semibold">{tr("ui.importBudget.lesDepensesConnuesEnEuros")}</legend>
           <div className="grid gap-5 sm:grid-cols-2">
             <NumberField
               id="purchase"
-              label="Achat du véhicule (€)"
+              label={tr("ui.importBudget.achatDuVehicule")}
               value={values.purchase}
               onChange={(v) => update("purchase", v)}
             />
             <NumberField
               id="transport"
-              label="Acheminement + traversée ou fret (€)"
+              label={tr("ui.importBudget.acheminementTraverseeOuFret")}
               value={values.transport}
               onChange={(v) => update("transport", v)}
             />
             <NumberField
               id="fees"
-              label="Autres frais et formalités (€)"
+              label={tr("ui.importBudget.autresFraisEtFormalites")}
               value={values.fees}
               onChange={(v) => update("fees", v)}
             />
             <NumberField
               id="reserve"
-              label="Réserve choisie pour imprévus (%)"
+              label={tr("ui.importBudget.reserveChoisiePourImprevus")}
               max={100}
               value={values.reserve}
               onChange={(v) => update("reserve", v)}
@@ -70,18 +71,18 @@ export function ImportBudget() {
           </div>
         </fieldset>
         <fieldset>
-          <legend className="mb-4 font-semibold">La fiscalité que vous avez fait confirmer</legend>
+          <legend className="mb-4 font-semibold">{tr("ui.importBudget.laFiscaliteQueVousAvez")}</legend>
           <div className="grid gap-5 sm:grid-cols-2">
             <NumberField
               id="tax"
-              label="Montant des droits et taxes (DZD)"
+              label={tr("ui.importBudget.montantDesDroitsEtTaxes")}
               optional
               value={values.tax}
               onChange={(v) => update("tax", v)}
             />
             <NumberField
               id="rate"
-              label="Conversion choisie : 1 € = … DZD"
+              label={tr("ui.importBudget.conversionChoisie1Dzd")}
               min={0.000001}
               optional
               value={values.rate}
@@ -89,8 +90,7 @@ export function ImportBudget() {
             />
           </div>
           <p className="mt-3 text-sm text-muted-foreground">
-            Aucun barème ni taux de change automatique. Sans montant fiscal et conversion, le budget
-            reste incomplet. Un montant nul doit être justifié auprès du service compétent.
+            {tr("ui.importBudget.aucunBaremeNiTauxDe")}
           </p>
         </fieldset>
       </CalculatorForm>
@@ -99,28 +99,28 @@ export function ImportBudget() {
           <ResultPanel>
             <h2 className="font-display text-xl font-bold">
               {result.total === null
-                ? "Budget incomplet : fiscalité à renseigner"
-                : "Budget selon vos hypothèses"}
+                ? tr("ui.importBudget.budgetIncompletFiscaliteARenseigner")
+                : tr("ui.importBudget.budgetSelonVosHypotheses")}
             </h2>
             <dl className="mt-4 space-y-2">
               <div className="flex flex-wrap justify-between gap-2">
-                <dt>Achat + transport + frais saisis</dt>
+                <dt>{tr("ui.importBudget.achatTransportFraisSaisis")}</dt>
                 <dd className="font-semibold">{euros(result.knownSubtotal)}</dd>
               </div>
               <div className="flex flex-wrap justify-between gap-2">
-                <dt>Droits et taxes convertis</dt>
+                <dt>{tr("ui.importBudget.droitsEtTaxesConvertis")}</dt>
                 <dd className="font-semibold">
-                  {result.taxEur === null ? "Non calculés" : euros(result.taxEur)}
+                  {result.taxEur === null ? tr("ui.importBudget.nonCalcules") : euros(result.taxEur)}
                 </dd>
               </div>
               {result.total !== null ? (
                 <>
                   <div className="flex flex-wrap justify-between gap-2">
-                    <dt>Réserve de {values.reserve} % sur le total avant réserve</dt>
+                    <dt>{tr("ui.importBudget.reserveDe")}{values.reserve}{tr("ui.importBudget.surLeTotalAvantReserve")}</dt>
                     <dd>{euros(result.reserve)}</dd>
                   </div>
                   <div className="flex flex-wrap justify-between gap-2 border-t pt-3 text-lg font-bold">
-                    <dt>Total prévisionnel</dt>
+                    <dt>{tr("ui.importBudget.totalPrevisionnel")}</dt>
                     <dd>{euros(result.total)}</dd>
                   </div>
                 </>
@@ -128,7 +128,7 @@ export function ImportBudget() {
             </dl>
             <p className="mt-4 text-sm">
               {result.total === null
-                ? "Ce sous-total exclut les taxes et la réserve finale. Il ne représente pas le prix rendu en Algérie."
+                ? tr("ui.importBudget.ceSousTotalExclutLes")
                 : `Conversion saisie : 1 € = ${values.rate} DZD. Les frais non saisis restent exclus. Il s'agit d'un budget personnel, pas d'une liquidation douanière.`}
             </p>
           </ResultPanel>

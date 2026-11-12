@@ -16,6 +16,7 @@ import {
   isInAppBrowser,
   unavailableSteps,
 } from "@/lib/ferry/locationHelp";
+import { tr } from "@/lib/i18n";
 
 type BrowserLocationElement = HTMLElement & {
   position: GeolocationPosition | null;
@@ -127,37 +128,37 @@ export function LocationHelp() {
   const steps = deniedSteps(agent, installed);
   const retryButton = (
     <button type="button" className="bw-report-send" disabled={busy} onClick={() => void retry()}>
-      {busy ? "Recherche…" : problem === "denied" ? "J’ai changé le réglage : réessayer" : "Réessayer"}
+      {busy ? tr("ui.locationHelp.recherche") : problem === "denied" ? tr("ui.locationHelp.jAiChangeLeReglage") : tr("ui.locationHelp.reessayer")}
     </button>
   );
   return (
     <Dialog open onOpenChange={(open) => !open && setProblem(null)}>
       <DialogContent className="bw-location-help">
         <DialogTitle className="flex items-center gap-2">
-          <LocateFixed className="size-5 text-primary" aria-hidden /> Activez votre position
+          <LocateFixed className="size-5 text-primary" aria-hidden />{tr("ui.locationHelp.activezVotrePosition")}
         </DialogTitle>
         <DialogDescription>
           {inApp
-            ? "Vous êtes dans le navigateur intégré d’une application (Facebook, WhatsApp…), qui ne donne pas la position. Ouvrez BledWay dans Chrome ou Safari."
+            ? tr("ui.locationHelp.vousEtesDansLeNavigateur")
             : problem === "silent"
-              ? "Ce navigateur ne répond pas à la demande de position. Ouvrez BledWay dans Chrome ou Safari, puis réessayez."
+              ? tr("ui.locationHelp.ceNavigateurNeRepondPas")
               : browserButton
-                ? "Le partage de position est bloqué pour BledWay. Touchez ce bouton puis choisissez d’autoriser : c’est tout."
+                ? tr("ui.locationHelp.lePartageDePositionEst")
                 : problem === "denied"
-                  ? "Le partage de position est bloqué pour BledWay sur cet appareil. Pour votre sécurité, le site ne peut pas ouvrir ce réglage à votre place : il faut le rétablir une fois."
+                  ? tr("ui.locationHelp.lePartageDePositionEst2")
                   : problem === "unsupported"
-                    ? "Cet appareil ou ce navigateur ne donne pas de position. Essayez depuis votre téléphone, dans Chrome ou Safari."
-                    : "Votre position n’a pas pu être trouvée : la localisation du téléphone est peut-être coupée."}
+                    ? tr("ui.locationHelp.cetAppareilOuCeNavigateur")
+                    : tr("ui.locationHelp.votrePositionNAPas")}
         </DialogDescription>
         {elsewhere ? (
           <div className="bw-location-help__open">
             {isAndroid(agent) ? (
               <a className="bw-report-send" href={chromeIntentUrl(window.location.href)}>
-                <ExternalLink size={17} aria-hidden /> Ouvrir dans Chrome
+                <ExternalLink size={17} aria-hidden />{tr("ui.locationHelp.ouvrirDansChrome")}
               </a>
             ) : null}
             <button type="button" onClick={() => void copyLink()}>
-              <Copy size={16} aria-hidden /> Copier le lien de la page
+              <Copy size={16} aria-hidden />{tr("ui.locationHelp.copierLeLienDeLa")}
             </button>
           </div>
         ) : null}
@@ -167,7 +168,7 @@ export function LocationHelp() {
               <BrowserLocationButton onLocated={located} onFailed={failed} />
             </div>
             <details className="bw-location-help__more">
-              <summary>Le bouton ne marche pas ?</summary>
+              <summary>{tr("ui.locationHelp.leBoutonNeMarchePas")}</summary>
               <ol className="list-decimal space-y-2 pl-5 text-sm">
                 {steps.map((step) => (
                   <li key={step}>{step}</li>
@@ -192,13 +193,12 @@ export function LocationHelp() {
         {failedAgain ? (
           <p role="alert" className="text-sm font-semibold text-destructive">
             {problem === "denied"
-              ? "La position est toujours bloquée sur cet appareil."
-              : "Toujours pas de position sur cet appareil."}
+              ? tr("ui.locationHelp.laPositionEstToujoursBloquee")
+              : tr("ui.locationHelp.toujoursPasDePositionSur")}
           </p>
         ) : null}
         <p className="text-xs text-muted-foreground">
-          Votre position sert uniquement à vérifier que vous êtes sur place. Elle n’est pas
-          enregistrée.
+          {tr("ui.locationHelp.votrePositionSertUniquementA")}
         </p>
         {problem === "unsupported" || browserButton ? null : retryButton}
       </DialogContent>

@@ -4,6 +4,7 @@ import { toast } from "sonner";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { supabase as typedSupabase } from "@/integrations/supabase/client";
 import { noticeHref } from "@/lib/notifications/noticeStyle";
+import { tr } from "@/lib/i18n";
 
 // Tables communautaires pas encore présentes dans les types générés.
 const supabase = typedSupabase as unknown as SupabaseClient;
@@ -43,23 +44,22 @@ export function NotificationInbox({ userId }: { userId: string }) {
           <Bell className="size-5" />
         </span>
         <div>
-          <h2 id="my-inbox-title">Le fil de mon voyage</h2>
-          <p>Les informations utiles, conservées dans votre compte.</p>
+          <h2 id="my-inbox-title">{tr("ui.notificationInbox.leFilDeMonVoyage")}</h2>
+          <p>{tr("ui.notificationInbox.lesInformationsUtilesConserveesDans")}</p>
         </div>
       </div>
       {notices.isPending ? (
         <div className="h-28 animate-pulse rounded-xl bg-secondary" />
       ) : notices.error ? (
         <p role="alert" className="text-sm text-destructive">
-          Les notifications sont indisponibles.
+          {tr("ui.notificationInbox.lesNotificationsSontIndisponibles")}
           <button type="button" className="ml-2 underline" onClick={() => void notices.refetch()}>
-            Réessayer
+            {tr("ui.notificationInbox.reessayer")}
           </button>
         </p>
       ) : !notices.data.length ? (
         <p className="py-5 text-sm text-muted-foreground">
-          Rien de nouveau pour le moment. Les prochaines informations sur vos suivis apparaîtront
-          ici.
+          {tr("ui.notificationInbox.rienDeNouveauPourLe")}
         </p>
       ) : (
         <div className="divide-y divide-border">
@@ -80,7 +80,7 @@ export function NotificationInbox({ userId }: { userId: string }) {
                   href={noticeHref(notice.url, notice.id)}
                   className="text-xs font-semibold text-primary underline"
                 >
-                  Voir les détails
+                  {tr("ui.notificationInbox.voirLesDetails")}
                 </a>
                 {!notice.read_at && (
                   <button
@@ -89,7 +89,7 @@ export function NotificationInbox({ userId }: { userId: string }) {
                     className="inline-flex items-center gap-1 text-xs font-semibold text-primary"
                   >
                     <Check className="size-3.5" />
-                    Marquer comme lu
+                    {tr("ui.notificationInbox.marquerCommeLu")}
                   </button>
                 )}
               </div>

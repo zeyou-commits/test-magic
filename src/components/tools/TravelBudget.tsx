@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { euros, journeyBudget, parseAmount, parseOccupants } from "@/lib/tools/calculations";
 import { CalculatorForm, InvalidResult, NumberField, ResultPanel } from "./Fields";
+import { tr } from "@/lib/i18n";
 const emptyScenario = {
   ticket: "",
   km: "",
@@ -109,14 +110,12 @@ export function TravelBudget() {
         }}
       >
         <p className="text-sm leading-relaxed text-muted-foreground">
-          Même groupe et même périmètre pour A et B. Si vous comparez un aller-retour, saisissez
-          déjà les kilomètres, les billets et les frais des deux sens. Tous les montants couvrent le
-          groupe entier. Saisissez 0 pour un poste sans dépense.
+          {tr("ui.travelBudget.memeGroupeEtMemePerimetre")}
         </p>
         <div className="max-w-sm">
           <NumberField
             id="travel-people"
-            label="Personnes dans le groupe"
+            label={tr("ui.travelBudget.personnesDansLeGroupe")}
             min={1}
             max={99}
             step="1"
@@ -127,13 +126,13 @@ export function TravelBudget() {
         <div className="grid items-start gap-5 md:grid-cols-2">
           <ScenarioFields
             id="a"
-            title="Scénario A"
+            title={tr("ui.travelBudget.scenarioA")}
             values={a}
             update={(key, value) => setA((v) => ({ ...v, [key]: value }))}
           />
           <ScenarioFields
             id="b"
-            title="Scénario B"
+            title={tr("ui.travelBudget.scenarioB")}
             values={b}
             update={(key, value) => setB((v) => ({ ...v, [key]: value }))}
           />
@@ -142,13 +141,13 @@ export function TravelBudget() {
       {submitted ? (
         resultA && resultB && count ? (
           <ResultPanel>
-            <h2 className="font-display text-xl font-bold">Comparaison avec vos montants</h2>
+            <h2 className="font-display text-xl font-bold">{tr("ui.travelBudget.comparaisonAvecVosMontants")}</h2>
             <div className="mt-4 overflow-x-auto">
               <table className="w-full text-left text-sm">
                 <thead>
                   <tr>
                     <th scope="col" className="py-2">
-                      Poste
+                      {tr("ui.travelBudget.poste")}
                     </th>
                     <th scope="col" className="py-2">
                       A
@@ -161,21 +160,21 @@ export function TravelBudget() {
                 <tbody>
                   <tr>
                     <th scope="row" className="py-2 font-medium">
-                      Carburant calculé
+                      {tr("ui.travelBudget.carburantCalcule")}
                     </th>
                     <td>{euros(resultA.fuel)}</td>
                     <td>{euros(resultB.fuel)}</td>
                   </tr>
                   <tr>
                     <th scope="row" className="py-2 font-medium">
-                      Budget du groupe
+                      {tr("ui.travelBudget.budgetDuGroupe")}
                     </th>
                     <td className="font-bold">{euros(resultA.total)}</td>
                     <td className="font-bold">{euros(resultB.total)}</td>
                   </tr>
                   <tr>
                     <th scope="row" className="py-2 font-medium">
-                      Moyenne par personne
+                      {tr("ui.travelBudget.moyenneParPersonne")}
                     </th>
                     <td>{euros(resultA.total / count)}</td>
                     <td>{euros(resultB.total / count)}</td>
@@ -185,12 +184,11 @@ export function TravelBudget() {
             </div>
             <p className="mt-4 font-semibold">
               {resultA.total === resultB.total
-                ? "Les deux scénarios ont le même total."
+                ? tr("ui.travelBudget.lesDeuxScenariosOntLe")
                 : `Le scénario ${resultA.total < resultB.total ? "A" : "B"} coûte ${euros(Math.abs(resultA.total - resultB.total))} de moins pour le groupe.`}
             </p>
             <p className="mt-3 text-sm">
-              Carburant = kilomètres × consommation / 100 × prix au litre. Ce calcul ne donne ni
-              disponibilités de billets, ni tarif garanti, ni itinéraire routier automatique.
+              {tr("ui.travelBudget.carburantKilometresConsommation100Prix")}
             </p>
           </ResultPanel>
         ) : (

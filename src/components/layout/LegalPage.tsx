@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { Link } from "@tanstack/react-router";
+import { tr } from "@/lib/i18n";
 
 /**
  * Mise en page commune des pages d'information (confidentialité, conditions, mentions) :
@@ -15,9 +16,9 @@ export function LegalSections({
 }) {
   return (
     <div className="mx-auto mt-8 max-w-3xl text-sm leading-relaxed text-muted-foreground">
-      <p className="text-xs">Dernière mise à jour : {updated}</p>
-      <nav aria-label="Sommaire" className="mt-4 rounded-xl border bg-card p-4">
-        <p className="text-xs font-semibold uppercase tracking-wide text-foreground">Sommaire</p>
+      <p className="text-xs">{tr("ui.legalPage.derniereMiseAJour")}{updated}</p>
+      <nav aria-label={tr("ui.legalPage.sommaire")} className="mt-4 rounded-xl border bg-card p-4">
+        <p className="text-xs font-semibold uppercase tracking-wide text-foreground">{tr("ui.legalPage.sommaire")}</p>
         <ol className="mt-2 grid gap-1 sm:grid-cols-2">
           {sections.map((section, index) => (
             <li key={section.id}>

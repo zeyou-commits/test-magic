@@ -5,6 +5,7 @@ import { LoaderCircle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { checkPseudo, pseudoError, suggestPseudo } from "@/lib/community/travellers";
 import { GoogleMark } from "./GoogleMark";
+import { tr } from "@/lib/i18n";
 
 export function AccountAccessForm({
   onAwaitingConfirmation,
@@ -80,7 +81,7 @@ export function AccountAccessForm({
       <div
         className="mb-4 grid grid-cols-2 rounded-xl bg-secondary p-1"
         role="group"
-        aria-label="Accès à votre compte"
+        aria-label={tr("ui.accountAccessForm.accesAVotreCompte")}
       >
         {(["signup", "signin"] as const).map((item) => (
           <button
@@ -94,7 +95,7 @@ export function AccountAccessForm({
             }}
             className={`min-h-10 rounded-lg text-sm font-semibold ${mode === item ? "bg-white text-primary shadow-sm" : "text-muted-foreground"}`}
           >
-            {item === "signup" ? "Créer un compte" : "Se connecter"}
+            {item === "signup" ? tr("ui.accountAccessForm.creerUnCompte") : tr("ui.accountAccessForm.seConnecter")}
           </button>
         ))}
       </div>
@@ -105,17 +106,17 @@ export function AccountAccessForm({
         className="bw-action-secondary w-full"
       >
         <GoogleMark />
-        Continuer avec Google
+        {tr("ui.accountAccessForm.continuerAvecGoogle")}
       </button>
       <div className="my-4 flex items-center gap-3 text-xs text-muted-foreground">
         <span className="h-px flex-1 bg-border" />
-        ou avec votre e-mail
+        {tr("ui.accountAccessForm.ouAvecVotreEMail")}
         <span className="h-px flex-1 bg-border" />
       </div>
       <form onSubmit={(event) => void submit(event)} className="space-y-3">
         {mode === "signup" && (
           <label className="grid gap-1 text-sm font-medium">
-            Votre pseudo
+            {tr("ui.accountAccessForm.votrePseudo")}
             <input
               className="bw-account-input"
               autoComplete="nickname"
@@ -125,12 +126,12 @@ export function AccountAccessForm({
               onChange={(event) => setName(event.target.value)}
             />
             <small className="font-normal text-muted-foreground">
-              Visible par les autres voyageurs. Vous pourrez le changer une seule fois.
+              {tr("ui.accountAccessForm.visibleParLesAutresVoyageurs")}
             </small>
           </label>
         )}
         <label className="grid gap-1 text-sm font-medium">
-          E-mail
+          {tr("ui.accountAccessForm.eMail")}
           <input
             type="email"
             className="bw-account-input"
@@ -142,7 +143,7 @@ export function AccountAccessForm({
           />
         </label>
         <label className="grid gap-1 text-sm font-medium">
-          Mot de passe
+          {tr("ui.accountAccessForm.motDePasse")}
           <input
             type="password"
             className="bw-account-input"
@@ -155,14 +156,14 @@ export function AccountAccessForm({
         </label>
         <button type="submit" disabled={busy} className="bw-action-primary w-full">
           {busy && <LoaderCircle className="size-4 animate-spin" />}
-          {mode === "signup" ? signupLabel : "Me connecter et retrouver mon suivi"}
+          {mode === "signup" ? signupLabel : tr("ui.accountAccessForm.meConnecterEtRetrouverMon")}
         </button>
         {mode === "signin" && (
           <a
             href="/auth?next=%2Fcompte"
             className="inline-flex py-1 text-xs text-primary underline"
           >
-            Mot de passe oublié ?
+            {tr("ui.accountAccessForm.motDePasseOublie")}
           </a>
         )}
         {message && (
@@ -177,9 +178,9 @@ export function AccountAccessForm({
         )}
       </form>
       <p className="mt-3 text-[11px] text-muted-foreground">
-        En créant un compte, vous acceptez notre{" "}
+        {tr("ui.accountAccessForm.enCreantUnCompteVous")}{" "}
         <a href="/confidentialite" className="underline">
-          politique de confidentialité
+          {tr("ui.accountAccessForm.politiqueDeConfidentialite")}
         </a>
         .
       </p>

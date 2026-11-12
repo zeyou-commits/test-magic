@@ -8,6 +8,7 @@ import {
 } from "@/components/editorial/Editorial";
 import { EDITORIAL_DATE, seoHead } from "@/lib/seo/site";
 import type { Section } from "@/content/types";
+import { tr } from "@/lib/i18n";
 export const Route = createFileRoute("/methode-editoriale")({
   head: () =>
     seoHead(
@@ -56,20 +57,20 @@ function Method() {
     <SiteLayout>
       <Breadcrumbs items={[{ name: "Méthode éditoriale", path: "/methode-editoriale" }]} />
       <EditorialHero
-        label="La confiance se documente"
-        title="Ce que nos informations permettent de décider"
-        intro="Préparer un voyage exige des repères utiles et des limites explicites. Voici comment lire les dossiers, les sources et les résultats des nouveaux outils BledWay."
+        label={tr("ui.pageMethodeEditoriale.laConfianceSeDocumente")}
+        title={tr("ui.pageMethodeEditoriale.ceQueNosInformationsPermettent")}
+        intro={tr("ui.pageMethodeEditoriale.preparerUnVoyageExigeDes")}
       />
       <div className="max-w-3xl">
         <time dateTime={EDITORIAL_DATE} className="text-sm text-muted-foreground">
-          Version éditoriale du 17 octobre 2026
+          {tr("ui.pageMethodeEditoriale.versionEditorialeDu17Octobre")}
         </time>
         {sections.map((s) => (
           <ContentSection key={s.id} section={s} />
         ))}
         <p className="mt-8">
           <a href="/contact" className={textLink}>
-            Contact et signalements
+            {tr("ui.pageMethodeEditoriale.contactEtSignalements")}
           </a>
         </p>
       </div>

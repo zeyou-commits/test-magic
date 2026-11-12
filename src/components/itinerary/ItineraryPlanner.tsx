@@ -89,6 +89,7 @@ import {
   type ItineraryChoice,
 } from "@/lib/ferry/travelProfile";
 import { SimulationJourney } from "@/components/journey/SimulationJourney";
+import { tr } from "@/lib/i18n";
 
 type RoadAccess = Awaited<ReturnType<typeof calculateRoadAccess>>;
 
@@ -322,8 +323,8 @@ function AddressField({
             type="button"
             onClick={onLocate}
             disabled={locating}
-            aria-label={locating ? "Localisation en cours" : "Utiliser ma position"}
-            title="Utiliser ma position"
+            aria-label={locating ? tr("ui.itineraryPlanner.localisationEnCours") : tr("ui.itineraryPlanner.utiliserMaPosition")}
+            title={tr("ui.itineraryPlanner.utiliserMaPosition")}
             className="grid size-9 shrink-0 place-items-center rounded-full text-primary hover:bg-primary/10 disabled:opacity-50"
           >
             <LocateFixed className="size-4" aria-hidden />
@@ -334,8 +335,8 @@ function AddressField({
             type="button"
             onClick={onPick}
             aria-pressed={picking}
-            aria-label={picking ? "Annuler : ne pas placer sur la carte" : `${label} : placer sur la carte`}
-            title={picking ? "Annuler" : "Placer sur la carte"}
+            aria-label={picking ? tr("ui.itineraryPlanner.annulerNePasPlacerSur") : `${label} : placer sur la carte`}
+            title={picking ? tr("ui.itineraryPlanner.annuler") : tr("ui.itineraryPlanner.placerSurLaCarte")}
             className={`grid size-9 shrink-0 place-items-center rounded-full transition ${picking ? "bg-primary text-primary-foreground" : "text-primary hover:bg-primary/10"}`}
           >
             {picking ? <X className="size-4" aria-hidden /> : <MapPin className="size-4" aria-hidden />}
@@ -344,7 +345,7 @@ function AddressField({
       </div>
       {pending && (
         <span className="mt-1 block text-xs font-normal text-muted-foreground">
-          Recherche d’adresses…
+          {tr("ui.itineraryPlanner.rechercheDAdresses")}
         </span>
       )}
       {open && suggestions.length > 0 && (
@@ -1219,12 +1220,12 @@ export function ItineraryPlanner({
           <div
             className="pointer-events-auto absolute left-14 right-3 top-3 z-30 max-w-[20rem] rounded-2xl border border-border bg-white/95 p-2.5 shadow-lg backdrop-blur md:hidden"
             role="status"
-            aria-label="Trajet choisi"
+            aria-label={tr("ui.itineraryPlanner.trajetChoisi")}
           >
             <div className="flex items-start justify-between gap-2">
               <div className="min-w-0">
                 <p className="text-[10px] font-extrabold uppercase tracking-wide text-primary">
-                  {recapRank === 0 ? "🥇 Notre conseil" : recapRank > 0 && recapRank < 3 ? `${["🥇", "🥈", "🥉"][recapRank]} Trajet choisi` : "Trajet choisi"}
+                  {recapRank === 0 ? tr("ui.itineraryPlanner.notreConseil") : recapRank > 0 && recapRank < 3 ? `${["🥇", "🥈", "🥉"][recapRank]} Trajet choisi` : tr("ui.itineraryPlanner.trajetChoisi")}
                 </p>
                 <p className="truncate text-sm font-bold leading-tight">
                   {selected.sailing.from.name} → {selected.sailing.to.name}
@@ -1255,7 +1256,7 @@ export function ItineraryPlanner({
                 ? `≈ ${formatDuration(selected.totalMinutes)}`
                 : formatDayTime(selected.arrivalAt, portTimeZone(selected.sailing.to))}
             </p>
-            <p className="mt-0.5 text-[10px] text-muted-foreground">Touchez une bulle pour changer de trajet.</p>
+            <p className="mt-0.5 text-[10px] text-muted-foreground">{tr("ui.itineraryPlanner.touchezUneBullePourChanger")}</p>
           </div>,
           mapLayer,
         )
@@ -1276,9 +1277,9 @@ export function ItineraryPlanner({
                 {racing
                   ? raceLeader
                     ? raceDone && raceTied.length > 1
-                      ? "Égalité en tête"
+                      ? tr("ui.itineraryPlanner.egaliteEnTete")
                       : `1er : ${raceLeader.label}`
-                    : "La course est lancée"
+                    : tr("ui.itineraryPlanner.laCourseEstLancee")
                   : pausingNow
                     ? `Pause conseillée · ${PAUSE_MIN} min`
                     : currentStep.title}
@@ -1287,7 +1288,7 @@ export function ItineraryPlanner({
                 {racing
                   ? raceDone && raceWinner
                     ? raceTied.length > 1
-                      ? "Écart de moins d'une heure"
+                      ? tr("ui.itineraryPlanner.ecartDeMoinsDUne")
                       : gapLabel(race[1]?.gapMin ?? 0) + " pour le suivant"
                     : `${race.filter((entry) => raceMinute >= entry.arriveMin).length} sur ${race.length} arrivés`
                   : moment(Math.round(minute))}
@@ -1296,7 +1297,7 @@ export function ItineraryPlanner({
             {racing ? null : (
               <button
                 type="button"
-                aria-label={playing ? "Mettre en pause" : minute >= times.total ? "Revoir mon voyage" : "Reprendre"}
+                aria-label={playing ? tr("ui.itineraryPlanner.mettreEnPause") : minute >= times.total ? tr("ui.itineraryPlanner.revoirMonVoyage") : tr("ui.itineraryPlanner.reprendre")}
                 onClick={() => setPlaying((value) => !value)}
                 className="inline-flex size-11 shrink-0 items-center justify-center rounded-full bg-secondary"
               >
@@ -1308,7 +1309,7 @@ export function ItineraryPlanner({
               onClick={closeCinema}
               className="inline-flex min-h-11 shrink-0 items-center rounded-xl bg-primary px-3 text-xs font-bold text-white"
             >
-              Voir le détail
+              {tr("ui.itineraryPlanner.voirLeDetail")}
             </button>
           </div>
           {racing ? (
@@ -1321,7 +1322,7 @@ export function ItineraryPlanner({
           ) : (
             <input
               type="range"
-              aria-label="Parcourir le voyage dans le temps"
+              aria-label={tr("ui.itineraryPlanner.parcourirLeVoyageDansLe")}
               min={0}
               max={times.total}
               step={1}
@@ -1340,17 +1341,17 @@ export function ItineraryPlanner({
       <div hidden={cinema}>
       <div className="sticky top-0 z-10 flex items-center justify-between gap-2 border-b border-border bg-card px-4 py-3 md:bg-white md:px-5">
         <h2 className="min-w-0 truncate font-display text-base font-bold tracking-tight text-foreground">
-          <span className="sr-only">Trajet porte à porte : </span>De chez vous jusqu'au bled
+          <span className="sr-only">{tr("ui.itineraryPlanner.trajetPorteAPorte")}</span>{tr("ui.itineraryPlanner.deChezVousJusquAu")}
         </h2>
         {/* Simulation faite : le voyage se lance d'ici, même volet replié (sans repasser par le bas). */}
         {roadAccess && !filtersOpen && selected ? (
           <button
             type="button"
             onClick={launchFilm}
-            aria-label="Voir mon voyage sur la carte"
+            aria-label={tr("ui.itineraryPlanner.voirMonVoyageSurLa")}
             className="ml-auto inline-flex h-9 shrink-0 items-center gap-1.5 rounded-full bg-primary px-3.5 text-xs font-bold text-primary-foreground shadow-md transition hover:opacity-90"
           >
-            <Play className="size-3.5" aria-hidden /> Voir sur la carte
+            <Play className="size-3.5" aria-hidden />{tr("ui.itineraryPlanner.voirSurLaCarte")}
           </button>
         ) : null}
         {/* Pas de ✕ : on replie le volet par sa poignée ; quitter Route passe par la barre du bas. */}
@@ -1363,8 +1364,8 @@ export function ItineraryPlanner({
       >
         <div className="grid gap-3">
           <AddressField
-            label="Départ"
-            placeholder="Adresse, ville ou ma position"
+            label={tr("ui.itineraryPlanner.depart")}
+            placeholder={tr("ui.itineraryPlanner.adresseVilleOuMaPosition")}
             value={origin}
             onChange={setOrigin}
             point={originPoint}
@@ -1381,8 +1382,8 @@ export function ItineraryPlanner({
             </p>
           )}
           <AddressField
-            label="Arrivée au bled"
-            placeholder="Adresse, quartier ou ville en Algérie"
+            label={tr("ui.itineraryPlanner.arriveeAuBled")}
+            placeholder={tr("ui.itineraryPlanner.adresseQuartierOuVilleEn")}
             value={destination}
             onChange={setDestination}
             point={destinationPoint}
@@ -1394,11 +1395,11 @@ export function ItineraryPlanner({
           />
           {picking ? (
             <p role="status" className="-mt-1 text-xs font-semibold text-primary">
-              Touchez la carte pour placer votre {picking === "origin" ? "départ" : "arrivée"}.
+              {tr("ui.itineraryPlanner.touchezLaCartePourPlacer")}{picking === "origin" ? tr("ui.itineraryPlanner.depart2") : tr("ui.itineraryPlanner.arrivee")}.
             </p>
           ) : loading ? (
             <p role="status" className="-mt-1 text-xs font-semibold text-primary">
-              Préparation de votre voyage…
+              {tr("ui.itineraryPlanner.preparationDeVotreVoyage")}
             </p>
           ) : null}
           <button
@@ -1414,16 +1415,16 @@ export function ItineraryPlanner({
             className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-primary px-4 text-[15px] font-bold text-primary-foreground shadow-md transition hover:opacity-90 disabled:bg-primary/35 disabled:shadow-none"
           >
             {loading ? (
-              "Simulation de votre voyage…"
+              tr("ui.itineraryPlanner.simulationDeVotreVoyage")
             ) : (
               <>
-                <Play className="size-4" aria-hidden /> Simuler mon voyage
+                <Play className="size-4" aria-hidden />{tr("ui.itineraryPlanner.simulerMonVoyage")}
               </>
             )}
           </button>
           {!loading && (!origin.trim() || !destination.trim()) ? (
             <p className="-mt-1 text-center text-[11px] text-muted-foreground">
-              Indiquez d'où vous partez et où vous allez au bled.
+              {tr("ui.itineraryPlanner.indiquezDOuVousPartez")}
             </p>
           ) : null}
           {roadAccess ? (
@@ -1432,7 +1433,7 @@ export function ItineraryPlanner({
               onClick={() => setFiltersOpen(false)}
               className="-mt-1 justify-self-start text-xs font-semibold text-primary underline underline-offset-2"
             >
-              ← Revenir à mon voyage
+              {tr("ui.itineraryPlanner.revenirAMonVoyage")}
             </button>
           ) : null}
         </div>
@@ -1441,20 +1442,20 @@ export function ItineraryPlanner({
           onToggle={() => setRefine(refine === "when" ? null : "when")}
           summary={periodLabel}
         >
-          ② Quand partez-vous ?
+          {tr("ui.itineraryPlanner.quandPartezVous")}
         </RefineStep>
         {refine === "when" ? (
           <div className="rounded-2xl border border-border bg-card p-3 text-sm shadow-sm">
             <fieldset className="min-w-0">
               <legend className="text-[11px] font-bold uppercase tracking-wider text-primary">
-                Période de départ{" "}
+                {tr("ui.itineraryPlanner.periodeDeDepart")}{" "}
                 <span className="font-normal text-muted-foreground">
                   · {months[0]?.key.slice(0, 4)}–{months[11]?.key.slice(0, 4)}
                 </span>
               </legend>
               <div
                 className="mt-2 grid grid-cols-6 gap-1"
-                aria-label="Saisons des douze prochains mois"
+                aria-label={tr("ui.itineraryPlanner.saisonsDesDouzeProchainsMois")}
               >
                 {months.map((month) => (
                   <button
@@ -1484,7 +1485,7 @@ export function ItineraryPlanner({
                   href="/barometre-prix"
                   className="font-semibold text-primary underline underline-offset-2"
                 >
-                  Baromètre
+                  {tr("ui.itineraryPlanner.barometre")}
                 </a>
               </div>
             </fieldset>
@@ -1495,28 +1496,28 @@ export function ItineraryPlanner({
           onToggle={() => setRefine(refine === "who" ? null : "who")}
           summary={whoSummary}
         >
-          ③ Qui voyage, avec quel véhicule ?
+          {tr("ui.itineraryPlanner.quiVoyageAvecQuelVehicule")}
         </RefineStep>
         {refine === "who" ? (
           <div className="grid gap-3 text-sm">
             <fieldset className="min-w-0 rounded-2xl border border-border bg-card p-3 shadow-sm">
-              <legend className="sr-only">Voyageurs</legend>
+              <legend className="sr-only">{tr("ui.itineraryPlanner.voyageurs")}</legend>
               <p className="mb-2 text-[11px] font-bold uppercase tracking-wider text-primary">
-                Voyageurs
+                {tr("ui.itineraryPlanner.voyageurs")}
               </p>
               <div className="grid min-w-0 grid-cols-1 gap-1.5 min-[360px]:grid-cols-2">
-                <PassengerControl label="Adultes" value={adults} min={1} onChange={setAdults} />
-                <PassengerControl label="Enfants" value={children} min={0} onChange={setChildren} />
+                <PassengerControl label={tr("ui.itineraryPlanner.adultes")} value={adults} min={1} onChange={setAdults} />
+                <PassengerControl label={tr("ui.itineraryPlanner.enfants")} value={children} min={0} onChange={setChildren} />
               </div>
             </fieldset>
             <fieldset className="min-w-0 rounded-2xl border border-border bg-card p-3 shadow-sm">
-              <legend className="sr-only">Votre voiture</legend>
+              <legend className="sr-only">{tr("ui.itineraryPlanner.votreVoiture")}</legend>
               <p className="mb-2 text-[11px] font-bold uppercase tracking-wider text-primary">
-                Véhicule
+                {tr("ui.itineraryPlanner.vehicule")}
               </p>
               <div
                 role="group"
-                aria-label="Choisir votre véhicule"
+                aria-label={tr("ui.itineraryPlanner.choisirVotreVehicule")}
                 className="mt-2 grid min-w-0 grid-cols-3 gap-1.5"
               >
                 {VEHICLES.filter((item) => item.id !== "none").map(({ id, Icon, label, hint }) => (
@@ -1535,7 +1536,7 @@ export function ItineraryPlanner({
               </div>
               <div className="mt-3 grid gap-3 border-t border-border pt-3 sm:grid-cols-3">
               <label>
-                Consommation · L/100 km
+                {tr("ui.itineraryPlanner.consommationL100Km")}
                 <input
                   type="number"
                   min={1}
@@ -1547,7 +1548,7 @@ export function ItineraryPlanner({
                 />
               </label>
               <label>
-                Carburant · €/L
+                {tr("ui.itineraryPlanner.carburantL")}
                 <input
                   type="number"
                   min={0.5}
@@ -1559,7 +1560,7 @@ export function ItineraryPlanner({
                 />
               </label>
               <label>
-                Provision péages · €/km
+                {tr("ui.itineraryPlanner.provisionPeagesKm")}
                 <input
                   type="number"
                   min={0}
@@ -1575,7 +1576,7 @@ export function ItineraryPlanner({
           </div>
         ) : null}
         <p className="text-[11px] leading-snug text-muted-foreground">
-          La carte montre un exemple de voyage. Vos adresses servent seulement à calculer votre trajet.
+          {tr("ui.itineraryPlanner.laCarteMontreUnExemple")}
         </p>
         {error && (
           <p role="alert" className="rounded-xl bg-red-50 px-4 py-3 text-sm text-red-800">
@@ -1605,12 +1606,12 @@ export function ItineraryPlanner({
               onClick={() => setFiltersOpen(true)}
               className="inline-flex min-h-8 shrink-0 items-center gap-1 rounded-lg border border-border px-2 text-xs font-semibold text-primary"
             >
-              <SlidersHorizontal className="size-3.5" aria-hidden /> Modifier
+              <SlidersHorizontal className="size-3.5" aria-hidden />{tr("ui.itineraryPlanner.modifier")}
             </button>
           </div>
           {!selected ? (
             <p className="rounded-xl bg-secondary p-3 text-sm">
-              Aucune ligne connue pour comparer ces ports.
+              {tr("ui.itineraryPlanner.aucuneLigneConnuePourComparer")}
             </p>
           ) : (
             <>
@@ -1760,7 +1761,7 @@ export function ItineraryPlanner({
                             <span className="min-w-0">
                               {rank === 0 ? (
                                 <span className="block text-[11px] font-extrabold uppercase tracking-wide text-primary">
-                                  Notre conseil
+                                  {tr("ui.itineraryPlanner.notreConseil2")}
                                 </span>
                               ) : null}
                               <strong className="block truncate text-[15px] leading-tight">
@@ -1772,13 +1773,13 @@ export function ItineraryPlanner({
                             <strong className="block text-[15px] tabular-nums">
                               ≈ {numberFormat.format(option.totalEuro)} €
                             </strong>
-                            <span className="block text-[10px] text-muted-foreground">route + ferry</span>
+                            <span className="block text-[10px] text-muted-foreground">{tr("ui.itineraryPlanner.routeFerry")}</span>
                           </span>
                         </span>
                         {lineCompanies(option).length ? (
                           <span className="grid gap-1">
                             <span className="text-[10px] font-bold uppercase tracking-wide text-muted-foreground">
-                              {lineCompanies(option).length > 1 ? "Compagnies sur cette ligne" : "Compagnie"}
+                              {lineCompanies(option).length > 1 ? tr("ui.itineraryPlanner.compagniesSurCetteLigne") : tr("ui.itineraryPlanner.compagnie")}
                             </span>
                             <span className="flex flex-wrap gap-1.5">
                               {lineCompanies(option)
@@ -1806,7 +1807,7 @@ export function ItineraryPlanner({
                         <span className="grid grid-cols-2 gap-1.5">
                           <span className="rounded-xl bg-secondary/70 px-2.5 py-1.5">
                             <span className="block text-[10px] font-bold uppercase tracking-wide text-muted-foreground">
-                              🏠 Vous partez
+                              {tr("ui.itineraryPlanner.vousPartez")}
                             </span>
                             <span className="block text-xs font-bold leading-snug">
                               {when(option, option.leaveHomeAt)}
@@ -1814,7 +1815,7 @@ export function ItineraryPlanner({
                           </span>
                           <span className="rounded-xl bg-secondary/70 px-2.5 py-1.5">
                             <span className="block text-[10px] font-bold uppercase tracking-wide text-muted-foreground">
-                              🏁 Au bled
+                              {tr("ui.itineraryPlanner.auBled")}
                             </span>
                             <span className="block text-xs font-bold leading-snug">
                               {when(option, option.arrivalAt, true)}
@@ -1836,11 +1837,11 @@ export function ItineraryPlanner({
                         ) : null}
                         <span className="text-[11px] leading-snug text-muted-foreground">
                           {rank === 0 ? leaderReason : versusLeader(option)}{" "}
-                          {Math.round(option.roadKm)} km de route au total.
+                          {Math.round(option.roadKm)}{tr("ui.itineraryPlanner.kmDeRouteAuTotal")}
                         </span>
                         {vesselAlerts.has(option.sailing.vessel?.id ?? "") ? (
                           <span role="alert" className="text-xs font-semibold text-warning-foreground">
-                            Départ à confirmer auprès de la compagnie
+                            {tr("ui.itineraryPlanner.departAConfirmerAupresDe")}
                           </span>
                         ) : null}
                       </button>
@@ -1853,7 +1854,7 @@ export function ItineraryPlanner({
                         }}
                         className="flex w-full items-center justify-center gap-1 border-t border-border py-2 text-xs font-bold text-primary"
                       >
-                        {open ? "Masquer le détail" : "Voir le détail du voyage"}
+                        {open ? tr("ui.itineraryPlanner.masquerLeDetail") : tr("ui.itineraryPlanner.voirLeDetailDuVoyage")}
                         <ChevronDown className={`size-3.5 transition-transform ${open ? "rotate-180" : ""}`} aria-hidden />
                       </button>
                       {open ? (
@@ -1880,8 +1881,7 @@ export function ItineraryPlanner({
                             ))}
                           </ol>
                           <p className="rounded-xl bg-secondary/60 px-3 py-2 text-[11px] text-muted-foreground">
-                            Route ≈ {numberFormat.format(option.roadEuro)} € (carburant et péages) · Ferry et
-                            voiture ≈ {numberFormat.format(option.ferryEuro)} €, fourchette{" "}
+                            {tr("ui.itineraryPlanner.route")}{numberFormat.format(option.roadEuro)}{tr("ui.itineraryPlanner.carburantEtPeagesFerryEt")}{numberFormat.format(option.ferryEuro)}{tr("ui.itineraryPlanner.fourchette")}{" "}
                             {formatFareRange(estimateFerryFare(option.sailing, profile))}
                           </p>
                           {option.sailing.to.country_code?.toUpperCase() === "DZ" ? (
@@ -1890,7 +1890,7 @@ export function ItineraryPlanner({
                               href={`/mes-dinars?plan=1&km=${Math.round(option.destinationRoad.distanceKm)}&adults=${adults}&children=${children}`}
                               className="inline-flex min-h-10 w-full items-center justify-center gap-2 rounded-xl bg-secondary px-4 text-sm font-bold text-primary"
                             >
-                              <WalletIcon className="size-4" aria-hidden /> Prévoir mes dinars au bled
+                              <WalletIcon className="size-4" aria-hidden />{tr("ui.itineraryPlanner.prevoirMesDinarsAuBled")}
                             </a>
                           ) : null}
                           <div className="grid gap-1.5">
@@ -1901,14 +1901,14 @@ export function ItineraryPlanner({
                                 rel="noreferrer"
                                 className="inline-flex min-h-10 w-full items-center justify-center gap-2 rounded-xl border border-primary bg-white px-4 text-sm font-bold text-primary"
                               >
-                                Réserver sur {bookingSite(option.sailing)} <ArrowRight className="size-4" aria-hidden />
+                                {tr("ui.itineraryPlanner.reserverSur")}{bookingSite(option.sailing)} <ArrowRight className="size-4" aria-hidden />
                               </a>
                             )}
                             <a
                               href={`/horaires?from=${option.sailing.from.id}&to=${option.sailing.to.id}&month=${period}`}
                               className="text-center text-xs font-semibold text-primary underline underline-offset-2"
                             >
-                              {option.sailing.isSimulation ? "Voir les horaires publiés" : "Voir les autres dates de cette ligne"}
+                              {option.sailing.isSimulation ? tr("ui.itineraryPlanner.voirLesHorairesPublies") : tr("ui.itineraryPlanner.voirLesAutresDatesDe")}
                             </a>
                           </div>
                         </div>
@@ -1920,7 +1920,7 @@ export function ItineraryPlanner({
                   <div className="grid gap-2.5">
                     <div>
                       <h3 className="font-display text-lg font-bold leading-tight">
-                        {podium.length > 1 ? `Vos ${podium.length} meilleurs trajets` : "Votre trajet"}
+                        {podium.length > 1 ? `Vos ${podium.length} meilleurs trajets` : tr("ui.itineraryPlanner.votreTrajet")}
                       </h3>
                       <p className="text-[11px] leading-snug text-muted-foreground">
                         {dated
@@ -1934,7 +1934,7 @@ export function ItineraryPlanner({
                       onClick={launchFilm}
                       className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-primary px-4 font-bold text-primary-foreground shadow-md transition hover:opacity-90"
                     >
-                      <Play className="size-4" aria-hidden /> Voir ce voyage sur la carte
+                      <Play className="size-4" aria-hidden />{tr("ui.itineraryPlanner.voirCeVoyageSurLa")}
                     </button>
                     {others.length ? (
                       <button
@@ -1943,7 +1943,7 @@ export function ItineraryPlanner({
                         onClick={() => setShowOthers((value) => !value)}
                         className="inline-flex min-h-11 w-full items-center justify-center gap-1.5 rounded-xl border border-border bg-white text-sm font-bold text-foreground"
                       >
-                        {showOthers ? "Masquer les autres trajets" : `Autres trajets (${others.length})`}
+                        {showOthers ? tr("ui.itineraryPlanner.masquerLesAutresTrajets") : `Autres trajets (${others.length})`}
                         <ChevronDown className={`size-4 transition-transform ${showOthers ? "rotate-180" : ""}`} aria-hidden />
                       </button>
                     ) : null}
@@ -1956,7 +1956,7 @@ export function ItineraryPlanner({
                         onClick={racing ? () => setRacing(false) : startRace}
                         className="justify-self-center text-xs font-semibold text-primary underline underline-offset-2"
                       >
-                        {racing ? "Arrêter la comparaison" : "Comparer ces trajets en film sur la carte"}
+                        {racing ? tr("ui.itineraryPlanner.arreterLaComparaison") : tr("ui.itineraryPlanner.comparerCesTrajetsEnFilm")}
                       </button>
                     ) : null}
                   </div>
@@ -1976,7 +1976,7 @@ export function ItineraryPlanner({
                   </div>
                   <input
                     type="range"
-                    aria-label="Parcourir le voyage dans le temps"
+                    aria-label={tr("ui.itineraryPlanner.parcourirLeVoyageDansLe")}
                     min={0}
                     max={times.total}
                     step={1}
@@ -1996,7 +1996,7 @@ export function ItineraryPlanner({
                     className="inline-flex min-h-10 w-full items-center justify-center gap-2 rounded-xl bg-secondary text-sm font-bold"
                   >
                     {playing ? <Pause className="size-4" aria-hidden /> : <Play className="size-4" aria-hidden />}
-                    {playing ? "Pause" : minute >= times.total ? "Revoir mon voyage" : "Reprendre"}
+                    {playing ? tr("ui.itineraryPlanner.pause") : minute >= times.total ? tr("ui.itineraryPlanner.revoirMonVoyage") : tr("ui.itineraryPlanner.reprendre")}
                   </button>
                 </div>
               ) : null}
@@ -2021,9 +2021,9 @@ export function ItineraryPlanner({
 
               {estimatedChoices.length > 0 ? (
                 <div className="rounded-xl bg-secondary p-3">
-                  <p className="text-xs font-bold">Pas encore de date publiée</p>
+                  <p className="text-xs font-bold">{tr("ui.itineraryPlanner.pasEncoreDeDatePubliee")}</p>
                   <p className="mt-0.5 text-[11px] text-muted-foreground">
-                    Lignes et prix estimés, sans départ confirmé en {periodLabel}.
+                    {tr("ui.itineraryPlanner.lignesEtPrixEstimesSans")}{periodLabel}.
                   </p>
                   <div className="mt-2 grid gap-1">
                     {estimatedChoices.map((option) => (
@@ -2053,13 +2053,13 @@ export function ItineraryPlanner({
               onClick={() => onBookPeriod(period, choice)}
               className="text-xs font-semibold text-primary underline underline-offset-2"
             >
-              Voir tous les départs de {periodLabel}
+              {tr("ui.itineraryPlanner.voirTousLesDepartsDe")}{periodLabel}
             </button>
           )}
           {sorted.length > 0 && !hasPublishedForPeriod && (
             <div className="rounded-xl border border-red-200 bg-red-50/60 p-3 text-xs">
               <p className="font-semibold text-red-800">
-                Aucun calendrier commercial n’est encore publié pour cette période.
+                {tr("ui.itineraryPlanner.aucunCalendrierCommercialNEst")}
               </p>
               <ItineraryAlertForm
                 routeId={(selected ?? sorted[0]!).sailing.route.id}
@@ -2081,16 +2081,14 @@ export function ItineraryPlanner({
           )}
           <details className="text-[11px] text-muted-foreground">
             <summary className="cursor-pointer">
-              Comment sont estimés les trajets et les prix ?
+              {tr("ui.itineraryPlanner.commentSontEstimesLesTrajets")}
             </summary>
             <p className="mt-1">
-              Route :{" "}
-              {roadAccess.roadMode === "osrm" ? "OSRM / OpenStreetMap" : "distance approximative"}.
-              Ferry et voiture : estimation saisonnière, à confirmer auprès de la compagnie. Les{" "}
-              {BOARDING_BUFFER_MIN / 60} h avant l’embarquement et {DISEMBARK_BUFFER_MIN / 60} h après
-              l’arrivée sont des marges indicatives ; retards et frontières ne sont pas prévus.{" "}
+              {tr("ui.itineraryPlanner.route2")}{" "}
+              {roadAccess.roadMode === "osrm" ? tr("ui.itineraryPlanner.osrmOpenstreetmap") : tr("ui.itineraryPlanner.distanceApproximative")}{tr("ui.itineraryPlanner.ferryEtVoitureEstimationSaisonniere")}{" "}
+              {BOARDING_BUFFER_MIN / 60}{tr("ui.itineraryPlanner.hAvantLEmbarquementEt")}{DISEMBARK_BUFFER_MIN / 60}{tr("ui.itineraryPlanner.hApresLArriveeSont")}{" "}
               <a href="/barometre-prix" className="font-semibold text-primary underline">
-                Baromètre des prix
+                {tr("ui.itineraryPlanner.barometreDesPrix")}
               </a>
             </p>
           </details>

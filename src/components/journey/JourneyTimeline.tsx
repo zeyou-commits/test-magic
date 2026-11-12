@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import { Check, ChevronDown, CircleAlert } from "lucide-react";
 import type { JourneyStepId } from "@/lib/ferry/journeySteps";
 import { STEP_ICONS, type FriezeStep } from "./JourneyFrieze";
+import { tr } from "@/lib/i18n";
 
 /** « mer. 4 · 07:00 » : l'heure part à droite, comme un horaire, le reste reste sous le titre. */
 function splitTime(sub: string) {
@@ -74,7 +75,7 @@ export function JourneyTimeline({
                 {rest ? <small>{rest}</small> : null}
                 {step.count ? (
                   <small className="bw-timeline__count">
-                    {step.count} voyageur{step.count > 1 ? "s" : ""} BledWay ici
+                    {step.count}{tr("ui.journeyTimeline.voyageur")}{step.count > 1 ? "s" : ""}{tr("ui.journeyTimeline.bledwayIci")}
                   </small>
                 ) : null}
               </span>

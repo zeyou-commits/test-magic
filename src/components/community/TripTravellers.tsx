@@ -5,6 +5,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { tripTravellersQuery } from "@/lib/community/travellers";
 import { MoodPicker } from "./MoodPicker";
 import { TravellerAvatar } from "./TravellerAvatar";
+import { tr } from "@/lib/i18n";
 
 const SHOWN = 7;
 
@@ -37,14 +38,14 @@ export function TripTravellers({
   const shown = data.travellers.slice(0, SHOWN);
   const more = data.total - shown.length;
   return (
-    <section className="bw-trip-people" aria-label="Voyageurs de cette traversée">
+    <section className="bw-trip-people" aria-label={tr("ui.tripTravellers.voyageursDeCetteTraversee")}>
       <div className="bw-trip-people__head">
         <strong>
-          {data.total} voyageur{data.total > 1 ? "s" : ""} sur cette traversée
+          {data.total}{tr("ui.tripTravellers.voyageur")}{data.total > 1 ? "s" : ""}{tr("ui.tripTravellers.surCetteTraversee")}
         </strong>
         {me ? (
           <button type="button" onClick={() => setPicking(true)}>
-            <Smile size={14} aria-hidden /> {me.mood ? "Mon humeur" : "Partager mon humeur"}
+            <Smile size={14} aria-hidden /> {me.mood ? tr("ui.tripTravellers.monHumeur") : tr("ui.tripTravellers.partagerMonHumeur")}
           </button>
         ) : null}
       </div>
@@ -56,13 +57,13 @@ export function TripTravellers({
             data-me={traveller.me || undefined}
           >
             <TravellerAvatar card={traveller} size={40} />
-            <small>{traveller.me ? "Vous" : traveller.pseudo}</small>
+            <small>{traveller.me ? tr("ui.tripTravellers.vous") : traveller.pseudo}</small>
           </span>
         ))}
         {more > 0 ? (
           <span
             className="bw-trip-people__more"
-            title="Voyageurs qui préfèrent rester discrets"
+            title={tr("ui.tripTravellers.voyageursQuiPreferentResterDiscrets")}
           >
             +{more}
           </span>

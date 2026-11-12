@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { tr } from "@/lib/i18n";
 
 /** Ordinateur : souris et grand écran. Une tablette ou un téléphone installe directement. */
 export function isDesktopBrowser() {
@@ -20,12 +21,12 @@ export function PhoneInstallCard({ text }: { text?: string }) {
   if (!visible) return null;
   return (
     <div className="bw-phone-install">
-      <img src="/install-qr.svg" alt="QR code pour installer BledWay" width={92} height={92} />
+      <img src="/install-qr.svg" alt={tr("ui.phoneInstallCard.qrCodePourInstallerBledway")} width={92} height={92} />
       <span>
-        <strong>Emportez BledWay sur votre téléphone</strong>
+        <strong>{tr("ui.phoneInstallCard.emportezBledwaySurVotreTelephone")}</strong>
         <small>
           {text ??
-            "Scannez avec l’appareil photo pour installer l’application et recevoir les alertes, même au port."}
+            tr("ui.phoneInstallCard.scannezAvecLAppareilPhoto")}
         </small>
       </span>
     </div>

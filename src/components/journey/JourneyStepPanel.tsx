@@ -2,6 +2,7 @@ import { useState, type ReactNode } from "react";
 import { Check, ExternalLink, MessagesSquare, X } from "lucide-react";
 import type { PrepItem } from "@/lib/ferry/preparation";
 import type { StepLink, StepState } from "@/lib/ferry/journeySteps";
+import { tr } from "@/lib/i18n";
 
 /**
  * Le volet d'une étape : ce qu'il faut savoir, les actions à cocher (le parcours de préparation
@@ -75,7 +76,7 @@ export function JourneyStepPanel({
             type="button"
             className="bw-step-panel__close"
             onClick={onClose}
-            aria-label="Fermer le volet"
+            aria-label={tr("ui.journeyStepPanel.fermerLeVolet")}
           >
             <X size={15} aria-hidden />
           </button>
@@ -94,12 +95,12 @@ export function JourneyStepPanel({
           aria-expanded={leadOpen}
           onClick={() => setLeadOpen((open) => !open)}
         >
-          {leadOpen ? "Réduire" : "Lire la suite"}
+          {leadOpen ? tr("ui.journeyStepPanel.reduire") : tr("ui.journeyStepPanel.lireLaSuite")}
         </button>
       ) : null}
       {before}
       {items.length ? (
-        <ul className="bw-step-panel__items" aria-label="À faire">
+        <ul className="bw-step-panel__items" aria-label={tr("ui.journeyStepPanel.aFaire")}>
           {items.map((item) => {
             const checked = done.includes(item.id);
             return (
@@ -125,7 +126,7 @@ export function JourneyStepPanel({
                       ? { target: "_blank", rel: "noopener noreferrer" }
                       : {})}
                   >
-                    {item.linkLabel ?? "En savoir plus"}
+                    {item.linkLabel ?? tr("ui.journeyStepPanel.enSavoirPlus")}
                   </a>
                 ) : null}
               </li>
@@ -133,7 +134,7 @@ export function JourneyStepPanel({
           })}
         </ul>
       ) : null}
-      {finished ? <p className="bw-step-panel__done">Tout est prêt pour cette étape.</p> : null}
+      {finished ? <p className="bw-step-panel__done">{tr("ui.journeyStepPanel.toutEstPretPourCette")}</p> : null}
       {after}
       {links.length || onAsk ? (
         <div className="bw-step-panel__actions">

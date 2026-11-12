@@ -37,6 +37,7 @@ import { TripQuestion } from "./TripQuestion";
 import { TicketImport } from "@/components/tickets/TicketImport";
 import { PushStatusLine } from "@/components/panel/PushStatusLine";
 import { TravelActionContext as ActionContext } from "@/hooks/useTravelAction";
+import { tr } from "@/lib/i18n";
 
 export function TravelActionProvider({ children }: { children: ReactNode }) {
   const { user } = useAuth();
@@ -179,15 +180,15 @@ export function TravelActionProvider({ children }: { children: ReactNode }) {
             <DialogTitle className="font-display text-2xl leading-tight">
               {saved
                 ? action?.type === "chat"
-                  ? "C’est envoyé !"
-                  : "C’est enregistré !"
+                  ? tr("ui.travelActionProvider.cEstEnvoye")
+                  : tr("ui.travelActionProvider.cEstEnregistre")
                 : draft
-                  ? "Votre message est prêt"
+                  ? tr("ui.travelActionProvider.votreMessageEstPret")
                   : action?.type === "opening"
-                    ? "Soyez prêt à réserver"
+                    ? tr("ui.travelActionProvider.soyezPretAReserver")
                     : action?.type === "follow" && action.traveller === undefined
-                      ? "Suivre mon voyage"
-                      : "Gardez le cap sur votre voyage"}
+                      ? tr("ui.travelActionProvider.suivreMonVoyage")
+                      : tr("ui.travelActionProvider.gardezLeCapSurVotre")}
             </DialogTitle>
             <DialogDescription
               className={
@@ -198,23 +199,23 @@ export function TravelActionProvider({ children }: { children: ReactNode }) {
             >
               {!saved && draft
                 ? user
-                  ? "Confirmez que vous voyagez sur cette traversée : votre message part aussitôt."
-                  : "Créez votre compte en quelques secondes : il part dès votre inscription, sans rien réécrire."
+                  ? tr("ui.travelActionProvider.confirmezQueVousVoyagezSur")
+                  : tr("ui.travelActionProvider.creezVotreCompteEnQuelques")
                 : saved && action?.type === "chat"
-                  ? "Vous serez prévenu dans la cloche si quelqu’un vous répond."
+                  ? tr("ui.travelActionProvider.vousSerezPrevenuDansLa")
                   : saved
                     ? action?.type === "follow" && action.traveller
                       ? action.returnDepartureId
-                        ? "Votre aller et votre retour sont suivis. Retrouvez les deux traversées dans votre espace voyageur."
-                        : "Votre traversée est suivie. Vous pourrez ajouter votre retour depuis sa fiche."
+                        ? tr("ui.travelActionProvider.votreAllerEtVotreRetour")
+                        : tr("ui.travelActionProvider.votreTraverseeEstSuivieVous")
                       : action?.type === "follow" && action.purpose === "curieux"
                         ? action.kind === "company"
-                          ? "La compagnie est ajoutée à vos suivis : ses actualités vous seront signalées."
-                          : "Le navire est ajouté à vos suivis, sans créer de voyage personnel."
-                        : "Retrouvez ce voyage et ses actualités dans votre espace personnel."
+                          ? tr("ui.travelActionProvider.laCompagnieEstAjouteeA")
+                          : tr("ui.travelActionProvider.leNavireEstAjouteA")
+                        : tr("ui.travelActionProvider.retrouvezCeVoyageEtSes")
                     : user
-                      ? "Tout est gratuit et regroupé dans votre espace voyageur."
-                      : "C’est gratuit, et ça vous accompagne de la route jusqu’au bled."}
+                      ? tr("ui.travelActionProvider.toutEstGratuitEtRegroupe")
+                      : tr("ui.travelActionProvider.cEstGratuitEtCa")}
             </DialogDescription>
             {action?.type === "follow" && action.traveller === undefined && !saved ? (
               <TripQuestion
@@ -274,8 +275,8 @@ export function TravelActionProvider({ children }: { children: ReactNode }) {
                       <p className="flex items-center gap-2 text-sm font-semibold text-primary">
                         <Check className="size-4" />{" "}
                         {action?.type === "opening"
-                          ? "Alerte d’ouverture activée"
-                          : "Ajouté à vos suivis"}
+                          ? tr("ui.travelActionProvider.alerteDOuvertureActivee")
+                          : tr("ui.travelActionProvider.ajouteAVosSuivis")}
                       </p>
                     )}
                     {/* État réel de ce téléphone : déjà actif, à activer, ou guide iPhone. */}
@@ -285,20 +286,20 @@ export function TravelActionProvider({ children }: { children: ReactNode }) {
                       <button type="button" className="bw-trip-one__after" onClick={() => setTicketOpen(true)}>
                         <Ticket className="size-5" aria-hidden />
                         <span>
-                          <strong>Ajoutez votre billet</strong>
-                          <small>On vérifie l’heure et le navire, et vous l’avez sous la main au port, même sans réseau.</small>
+                          <strong>{tr("ui.travelActionProvider.ajoutezVotreBillet")}</strong>
+                          <small>{tr("ui.travelActionProvider.onVerifieLHeureEt")}</small>
                         </span>
                       </button>
                     ) : null}
                     <a href="/compte" className="bw-action-secondary w-full">
-                      Mon espace voyageur
+                      {tr("ui.travelActionProvider.monEspaceVoyageur")}
                     </a>
                     <button
                       type="button"
                       className="w-full py-2 text-sm text-muted-foreground"
                       onClick={() => setOpen(false)}
                     >
-                      Continuer à explorer
+                      {tr("ui.travelActionProvider.continuerAExplorer")}
                     </button>
                   </div>
                 ) : (
@@ -314,12 +315,12 @@ export function TravelActionProvider({ children }: { children: ReactNode }) {
                       <Bell className="size-4" />
                     )}
                     {saving
-                      ? "Enregistrement…"
+                      ? tr("ui.travelActionProvider.enregistrement")
                       : draft
-                        ? "Je voyage, envoyer mon message"
+                        ? tr("ui.travelActionProvider.jeVoyageEnvoyerMonMessage")
                         : action?.type === "opening"
-                          ? "Activer mon alerte"
-                          : "Suivre et recevoir les informations"}
+                          ? tr("ui.travelActionProvider.activerMonAlerte")
+                          : tr("ui.travelActionProvider.suivreEtRecevoirLesInformations")}
                   </button>
                 )}
               </>
@@ -333,7 +334,7 @@ export function TravelActionProvider({ children }: { children: ReactNode }) {
                     if (action && user) void complete(action, user.id);
                   }}
                 >
-                  Réessayer
+                  {tr("ui.travelActionProvider.reessayer")}
                 </button>
               </p>
             )}
@@ -344,8 +345,8 @@ export function TravelActionProvider({ children }: { children: ReactNode }) {
             )}
             {!saved && action?.type === "follow" && action.traveller !== undefined ? (
               <p className="mt-3 text-xs leading-relaxed text-muted-foreground">
-                Changements de la traversée, bateau suivi en direct, salon des passagers
-                {action.traveller ? " et préparatifs pas à pas" : ""}. Modifiable à tout moment.
+                {tr("ui.travelActionProvider.changementsDeLaTraverseeBateau")}
+                {action.traveller ? tr("ui.travelActionProvider.etPreparatifsPasAPas") : ""}{tr("ui.travelActionProvider.modifiableAToutMoment")}
               </p>
             ) : null}
           </div>

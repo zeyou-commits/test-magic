@@ -13,6 +13,7 @@ import {
 } from "@/components/editorial/Editorial";
 import { vesselDossiers } from "@/content/vessels";
 import { absoluteUrl, seoHead } from "@/lib/seo/site";
+import { tr } from "@/lib/i18n";
 export const Route = createFileRoute("/bateaux/$slug")({
   loader: ({ params }) => {
     const v = vesselDossiers.find((v) => v.slug === params.slug);
@@ -55,11 +56,10 @@ function Boat() {
       <VesselDossierFollow slug={v.slug} />
       <ReadingLayout sections={v.sections}>
         <AnswerBox>
-          Les caractéristiques décrivent un navire. Pour connaître le navire affecté, les places
-          disponibles et les prestations incluses, vérifiez votre départ auprès de la compagnie.
+          {tr("ui.pageBateauxSlug.lesCaracteristiquesDecriventUnNavire")}
         </AnswerBox>
         <section className="mt-8">
-          <h2 className="font-display text-2xl font-bold">Les repères du dossier</h2>
+          <h2 className="font-display text-2xl font-bold">{tr("ui.pageBateauxSlug.lesReperesDuDossier")}</h2>
           <dl className="mt-4 grid gap-px overflow-hidden rounded-xl border bg-border sm:grid-cols-2">
             {v.specs.map((s) => (
               <div key={s.label} className="bg-card p-4">
@@ -77,11 +77,11 @@ function Boat() {
       </ReadingLayout>
       <p className="mt-10 text-sm">
         <a href="/guide/cabine-ou-fauteuil-ferry" className={textLink}>
-          Cabine ou fauteuil : faire le bon choix
+          {tr("ui.pageBateauxSlug.cabineOuFauteuilFaireLe")}
         </a>{" "}
         ·{" "}
         <a href="/guide/voyage-algerie-voiture-checklist" className={textLink}>
-          Préparer la voiture et le sac de traversée
+          {tr("ui.pageBateauxSlug.preparerLaVoitureEtLe")}
         </a>
       </p>
     </SiteLayout>

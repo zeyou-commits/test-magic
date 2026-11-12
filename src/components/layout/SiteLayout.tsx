@@ -45,6 +45,7 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
+import { tr } from "@/lib/i18n";
 
 export const navLinks = [
   { to: "/", labelKey: "nav.map" },
@@ -144,7 +145,7 @@ export function BrandLink({ compact = false }: { compact?: boolean }) {
     >
       <img
         src="/bledway-brand-entete.webp"
-        alt="BledWay"
+        alt={tr("ui.siteLayout.bledway")}
         className={compact ? "bw-brand bw-brand-compact" : "bw-brand"}
       />
       <span className="bw-beta">{t("menu.beta")}</span>

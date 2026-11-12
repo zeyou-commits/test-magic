@@ -13,6 +13,7 @@ import {
   type StayPlan,
 } from "@/lib/wallet/plan";
 import type { Currency, Rate } from "@/lib/wallet/wallet";
+import { tr } from "@/lib/i18n";
 
 const PLAN_KEY = "bledway:dinars-plan:v1";
 const POCKET_KEY = "bledway:dinars-poche:v1";
@@ -46,24 +47,24 @@ export function RateCompare({ rate, currency }: { rate: Rate | undefined; curren
   return (
     <section className="bw-dz-compare" aria-label={`Ce que rapportent 100 ${currency}`}>
       <h2>
-        <Scale size={16} aria-hidden /> Pour 100 {currency}
+        <Scale size={16} aria-hidden />{tr("ui.dinarTools.pour100")}{currency}
       </h2>
       <div>
         <p>
-          <small>Taux officiel</small>
+          <small>{tr("ui.dinarTools.tauxOfficiel")}</small>
           <b>{da(official)}</b>
-          <span>relevé du {day(rate.officialDate)}</span>
+          <span>{tr("ui.dinarTools.releveDu")}{day(rate.officialDate)}</span>
         </p>
         <p data-best>
-          <small>Marché parallèle</small>
+          <small>{tr("ui.dinarTools.marcheParallele")}</small>
           <b>{da(parallel)}</b>
-          <span>repère du {day(rate.parallelDate)}</span>
+          <span>{tr("ui.dinarTools.repereDu")}{day(rate.parallelDate)}</span>
         </p>
       </div>
       <strong>
-        Écart : + {da(parallel - official)} (× {(parallel / official).toLocaleString("fr-FR", { maximumFractionDigits: 2 })})
+        {tr("ui.dinarTools.ecart")}{da(parallel - official)} (× {(parallel / official).toLocaleString("fr-FR", { maximumFractionDigits: 2 })})
       </strong>
-      <em>Repère indicatif : BledWay n’encourage aucune opération de change. Renseignez-vous sur les règles en vigueur.</em>
+      <em>{tr("ui.dinarTools.repereIndicatifBledwayNEncourage")}</em>
     </section>
   );
 }
@@ -110,15 +111,15 @@ export function StayPlanner({ rate, currency }: { rate: Rate | undefined; curren
   return (
     <section className="bw-dz-plan" aria-labelledby="dz-plan-title">
       <h2 id="dz-plan-title">
-        <Calculator size={18} aria-hidden /> Combien je change ?
+        <Calculator size={18} aria-hidden />{tr("ui.dinarTools.combienJeChange")}
       </h2>
-      <p className="bw-dz-plan__intro">Votre séjour en quelques réglages : on estime les dinars nécessaires sur place.</p>
+      <p className="bw-dz-plan__intro">{tr("ui.dinarTools.votreSejourEnQuelquesReglages")}</p>
       <div className="bw-dz-plan__grid">
         {number("days", "Jours sur place")}
         {number("adults", "Adultes")}
         {number("children", "Enfants")}
       </div>
-      <div className="bw-dz-plan__styles" role="group" aria-label="Train de vie">
+      <div className="bw-dz-plan__styles" role="group" aria-label={tr("ui.dinarTools.trainDeVie")}>
         {PLAN_STYLES.map((style) => (
           <button key={style.id} type="button" aria-pressed={plan.style === style.id} onClick={() => set({ style: style.id })}>
             {style.label}
@@ -128,22 +129,22 @@ export function StayPlanner({ rate, currency }: { rate: Rate | undefined; curren
       <div className="bw-dz-plan__grid">
         <label className="bw-dz-plan__toggle">
           <input type="checkbox" checked={plan.car} onChange={(event) => set({ car: event.target.checked })} />
-          <Car size={15} aria-hidden /> En voiture
+          <Car size={15} aria-hidden />{tr("ui.dinarTools.enVoiture")}
         </label>
         {plan.car ? number("km", "Km port → maison", 10) : null}
         {number("gifts", "Cadeaux (DA)", 1000)}
       </div>
       <div className="bw-dz-plan__result" aria-live="polite">
-        <small>Il vous faut environ</small>
+        <small>{tr("ui.dinarTools.ilVousFautEnviron")}</small>
         <strong>{da(total)}</strong>
         {rate?.parallel ? (
           <span>
-            soit <b>{cur(roundUpTo(total / rate.parallel), currency)}</b> à changer au taux parallèle
-            {rate.official ? <> ({cur(roundUpTo(total / rate.official), currency)} au taux officiel)</> : null}
+            {tr("ui.dinarTools.soit")}<b>{cur(roundUpTo(total / rate.parallel), currency)}</b>{tr("ui.dinarTools.aChangerAuTauxParallele")}
+            {rate.official ? <> ({cur(roundUpTo(total / rate.official), currency)}{tr("ui.dinarTools.auTauxOfficiel")}</> : null}
           </span>
         ) : rate?.official ? (
           <span>
-            soit <b>{cur(roundUpTo(total / rate.official), currency)}</b> au taux officiel
+            {tr("ui.dinarTools.soit")}<b>{cur(roundUpTo(total / rate.official), currency)}</b>{tr("ui.dinarTools.auTauxOfficiel2")}
           </span>
         ) : null}
       </div>
@@ -156,12 +157,10 @@ export function StayPlanner({ rate, currency }: { rate: Rate | undefined; curren
         ))}
       </ul>
       <details className="bw-dz-plan__more">
-        <summary>Ajuster les repères</summary>
+        <summary>{tr("ui.dinarTools.ajusterLesReperes")}</summary>
         <div className="bw-dz-plan__grid">{number("fuelPrice", "Essence (DA le litre)")}</div>
         <p>
-          Repères BledWay par adulte et par jour : courses 1 200 DA, resto et cafés 1 000 DA, sorties 600 DA (un
-          enfant compte pour moitié), × 0,7 en économe, × 1,5 en large. Essence : 7,5 l / 100 km, route du port à
-          l’aller et au retour, plus 25 km par jour. Ce sont des ordres de grandeur, pas des prix relevés.
+          {tr("ui.dinarTools.reperesBledwayParAdulteEt")}
         </p>
       </details>
     </section>
@@ -243,12 +242,12 @@ export function SoukMode({
     engine.start();
   };
   return (
-    <div className="bw-souk" role="dialog" aria-modal="true" aria-label="Mode au souk">
-      <button type="button" className="bw-souk__close" aria-label="Fermer le mode au souk" onClick={onClose}>
+    <div className="bw-souk" role="dialog" aria-modal="true" aria-label={tr("ui.dinarTools.modeAuSouk")}>
+      <button type="button" className="bw-souk__close" aria-label={tr("ui.dinarTools.fermerLeModeAuSouk")} onClick={onClose}>
         <X size={26} aria-hidden />
       </button>
       <p className="bw-souk__hint">
-        <Store size={16} aria-hidden /> On vous annonce un prix ? Dictez-le ou tapez-le.
+        <Store size={16} aria-hidden />{tr("ui.dinarTools.onVousAnnonceUnPrix")}
       </p>
       <div className="bw-souk__big" aria-live="polite">
         {dinars ? (
@@ -258,31 +257,31 @@ export function SoukMode({
             {saidAs(dinars) ? <em>« {saidAs(dinars)} »</em> : null}
           </>
         ) : (
-          <span className="bw-souk__empty">{text ? "Pas compris : essayez « 3 melyoun »" : "—"}</span>
+          <span className="bw-souk__empty">{text ? tr("ui.dinarTools.pasComprisEssayez3Melyoun") : "—"}</span>
         )}
       </div>
       <div className="bw-souk__entry">
         <input
           value={text}
           onChange={(event) => setText(event.target.value)}
-          placeholder="khamsa alaf, 3 melyoun, 2500…"
-          aria-label="Le prix entendu"
+          placeholder={tr("ui.dinarTools.khamsaAlaf3Melyoun2500")}
+          aria-label={tr("ui.dinarTools.lePrixEntendu")}
           autoComplete="off"
         />
         {Speech ? (
-          <button type="button" aria-pressed={listening} aria-label={listening ? "Arrêter l’écoute" : "Dicter le prix"} onClick={listen}>
+          <button type="button" aria-pressed={listening} aria-label={listening ? tr("ui.dinarTools.arreterLEcoute") : tr("ui.dinarTools.dicterLePrix")} onClick={listen}>
             <Mic size={24} aria-hidden />
           </button>
         ) : null}
       </div>
-      <div className="bw-souk__chips" role="group" aria-label="Prix courants">
+      <div className="bw-souk__chips" role="group" aria-label={tr("ui.dinarTools.prixCourants")}>
         {SPOKEN_EXAMPLES.slice(1).map((item) => (
           <button key={item.said} type="button" onClick={() => setText(item.said)}>
             {item.said}
           </button>
         ))}
       </div>
-      <small className="bw-souk__basis">Conversion {basis}. La dictée comprend mieux les chiffres que la darija : en cas de doute, tapez.</small>
+      <small className="bw-souk__basis">{tr("ui.dinarTools.conversion")}{basis}{tr("ui.dinarTools.laDicteeComprendMieuxLes")}</small>
     </div>
   );
 }
@@ -308,11 +307,11 @@ export function PocketCount({ left, started }: { left: number; started: boolean 
   const gap = started ? total - left : null;
   return (
     <section className="bw-dz-pocket" aria-labelledby="dz-pocket-title">
-      <h2 id="dz-pocket-title">Compter mes billets</h2>
+      <h2 id="dz-pocket-title">{tr("ui.dinarTools.compterMesBillets")}</h2>
       <ul>
         {POCKET_VALUES.map((value) => (
           <li key={value}>
-            <span>{value.toLocaleString("fr-FR")} DA</span>
+            <span>{value.toLocaleString("fr-FR")}{tr("ui.dinarTools.da")}</span>
             <div className="bw-dz-pocket__qty">
               <button type="button" aria-label={`Retirer un billet de ${value} DA`} disabled={!counts[value]} onClick={() => step(value, -1)}>
                 <Minus size={16} aria-hidden />
@@ -326,30 +325,30 @@ export function PocketCount({ left, started }: { left: number; started: boolean 
         ))}
       </ul>
       <p className="bw-dz-pocket__total">
-        <small>En poche</small>
+        <small>{tr("ui.dinarTools.enPoche")}</small>
         <strong>{da(total)}</strong>
       </p>
       {gap !== null && total > 0 ? (
         <p className="bw-dz-pocket__gap" data-negative={gap < 0 || undefined}>
           {gap === 0
-            ? "Le compte est bon : c’est exactement ce que dit votre budget."
+            ? tr("ui.dinarTools.leCompteEstBonC")
             : gap > 0
               ? `${da(gap)} de plus que votre budget : un change ou des dinars pas encore notés ?`
               : `${da(-gap)} de moins que votre budget : une dépense pas encore notée ?`}
         </p>
       ) : null}
       <label className="bw-dz-pocket__days">
-        Jours avant le retour
+        {tr("ui.dinarTools.joursAvantLeRetour")}
         <input inputMode="numeric" type="number" min={1} value={daysLeft} onChange={(event) => setDaysLeft(event.target.value)} placeholder="7" />
       </label>
       {perDay !== null && total > 0 ? (
         <p className="bw-dz-pocket__perday">
-          Pour tenir jusqu’au retour : <b>{da(perDay)} par jour</b>
+          {tr("ui.dinarTools.pourTenirJusquAuRetour")}<b>{da(perDay)}{tr("ui.dinarTools.parJour")}</b>
         </p>
       ) : null}
       {total > 0 ? (
         <button type="button" className="bw-dz-pocket__reset" onClick={() => setCounts({})}>
-          Remettre à zéro
+          {tr("ui.dinarTools.remettreAZero")}
         </button>
       ) : null}
     </section>

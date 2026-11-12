@@ -12,6 +12,7 @@ import { TravelBudget } from "@/components/tools/TravelBudget";
 import { CostSharing } from "@/components/tools/CostSharing";
 import { toolsCatalog } from "@/content/tools";
 import { absoluteUrl, seoHead } from "@/lib/seo/site";
+import { tr } from "@/lib/i18n";
 export const Route = createFileRoute("/simulateurs/$slug")({
   loader: ({ params }) => {
     const t = toolsCatalog.find((t) => t.slug === params.slug);
@@ -45,7 +46,7 @@ function Tool() {
         ]}
       />
       <EditorialHero
-        label="Calcul transparent · sans compte"
+        label={tr("ui.pageSimulateursSlug.calculTransparentSansCompte")}
         title={t.title}
         intro={t.description}
       />
@@ -61,14 +62,12 @@ function Tool() {
         )}
       </div>
       <section className="mt-8 max-w-3xl">
-        <h2 className="font-display text-xl font-bold">Comprendre avant de décider</h2>
+        <h2 className="font-display text-xl font-bold">{tr("ui.pageSimulateursSlug.comprendreAvantDeDecider")}</h2>
         <p className="mt-3 leading-7 text-muted-foreground">
-          Les champs ne sont pas des prix de marché ou des taux officiels. Le résultat dépend
-          uniquement de vos entrées. Consultez le dossier associé pour les sources, les hypothèses
-          et les vérifications à faire.
+          {tr("ui.pageSimulateursSlug.lesChampsNeSontPas")}
         </p>
         <a href={`/guide/${t.guide}`} className={`${textLink} mt-4 inline-block`}>
-          Lire le dossier et les sources de cet outil →
+          {tr("ui.pageSimulateursSlug.lireLeDossierEtLes")}
         </a>
       </section>
     </SiteLayout>

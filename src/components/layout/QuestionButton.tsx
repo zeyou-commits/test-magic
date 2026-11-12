@@ -5,6 +5,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { QuestionHelp } from "@/components/questions/QuestionHelp";
 import { afterOverlayClose } from "@/lib/ferry/backStack";
 import { OPEN_ROOM_PICKER_EVENT } from "@/lib/ferry/chatDemo";
+import { tr } from "@/lib/i18n";
 
 /** « Demander aux voyageurs » depuis une autre page : la carte ouvre la liste des salons en arrivant. */
 export const HOME_ACTION_KEY = "bledway:open-home-action";
@@ -34,8 +35,8 @@ export function QuestionButton() {
       <button
         type="button"
         className="bw-question-button"
-        aria-label="Une question ?"
-        title="Une question ?"
+        aria-label={tr("ui.questionButton.uneQuestion")}
+        title={tr("ui.questionButton.uneQuestion")}
         onClick={() => setOpen(true)}
       >
         <CircleHelp size={21} aria-hidden />
@@ -43,9 +44,9 @@ export function QuestionButton() {
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="bw-room-picker bw-room-picker--questions max-w-none">
           <DialogHeader>
-            <DialogTitle>Une question ?</DialogTitle>
+            <DialogTitle>{tr("ui.questionButton.uneQuestion")}</DialogTitle>
             <p className="bw-room-picker__intro">
-              Les réponses de BledWay d'abord, puis les bons contacts si besoin.
+              {tr("ui.questionButton.lesReponsesDeBledwayD")}
             </p>
           </DialogHeader>
           <div className="bw-room-picker__help">

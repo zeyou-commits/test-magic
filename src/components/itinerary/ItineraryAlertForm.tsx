@@ -8,6 +8,7 @@ const supabase = typedSupabase as unknown as SupabaseClient;
 import type { VehicleKind } from "@/components/panel/TripProfile";
 import { useAuth } from "@/hooks/useAuth";
 import { useTravelAction } from "@/hooks/useTravelAction";
+import { tr } from "@/lib/i18n";
 
 export function ItineraryAlertForm({
   routeId,
@@ -54,7 +55,7 @@ export function ItineraryAlertForm({
           href="/compte#notifications"
           className="inline-flex min-h-9 items-center gap-2 text-xs font-semibold text-primary"
         >
-          <Check className="size-4" /> Alerte activée · Gérer mon suivi
+          <Check className="size-4" />{tr("ui.itineraryAlertForm.alerteActiveeGererMonSuivi")}
         </a>
       ) : (
         <button
@@ -76,7 +77,7 @@ export function ItineraryAlertForm({
           className="inline-flex min-h-10 w-full items-center justify-center gap-2 rounded-lg bg-red-50 px-2 text-xs font-bold text-red-700 hover:bg-red-100"
         >
           <BellRing className="size-4" aria-hidden />
-          M’avertir à l’ouverture des traversées
+          {tr("ui.itineraryAlertForm.mAvertirALOuverture")}
         </button>
       )}
     </div>

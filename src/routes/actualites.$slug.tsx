@@ -21,6 +21,7 @@ import {
 import { companiesQuery, portsQuery, routesQuery, vesselsQuery } from "@/lib/ferry/queries";
 import { portTimeZone } from "@/lib/ferry/time";
 import { absoluteUrl, jsonLdString, seoHead } from "@/lib/seo/site";
+import { tr } from "@/lib/i18n";
 
 export const Route = createFileRoute("/actualites/$slug")({
   loader: async ({ context, params }) => {
@@ -109,7 +110,7 @@ function NewsArticlePage() {
               </span>
             ) : null}
             <time dateTime={item.starts_at}>{newsDay(item.starts_at)}</time>
-            <span>{minutes} min de lecture</span>
+            <span>{minutes}{tr("ui.pageActualitesSlug.minDeLecture")}</span>
           </p>
         </div>
         <HeroVisual vessel={vessel} company={ownCompanies[0]} />
@@ -121,9 +122,9 @@ function NewsArticlePage() {
           <NewsImpact ids={item.departure_ids} />
           {item.source_url ? (
             // Aperçu de l'article d'origine : son titre, quelques mots, et le lien pour le lire en entier.
-            <aside className="bw-news-source" aria-label="Article d’origine">
+            <aside className="bw-news-source" aria-label={tr("ui.pageActualitesSlug.articleDOrigine")}>
               <span className="bw-news-source__meta">
-                Source · {item.source_name || new URL(item.source_url).hostname}
+                {tr("ui.pageActualitesSlug.source")}{item.source_name || new URL(item.source_url).hostname}
                 {item.source_published_at ? ` · ${newsDay(item.source_published_at)}` : ""}
               </span>
               {item.source_title ? <strong>{item.source_title}</strong> : null}
@@ -132,13 +133,13 @@ function NewsArticlePage() {
                 <blockquote>« {item.source_excerpt} »</blockquote>
               ) : null}
               <a href={item.source_url} target="_blank" rel="noopener noreferrer nofollow">
-                Lire l’article{item.source_name ? ` sur ${item.source_name}` : ""}
+                {tr("ui.pageActualitesSlug.lireLArticle")}{item.source_name ? ` sur ${item.source_name}` : ""}
                 <ExternalLink size={15} aria-hidden />
               </a>
               {item.extra_sources.length ? (
                 // Le même sujet relayé ailleurs : une seule actu, toutes ses sources.
                 <p className="bw-news-source__more">
-                  Aussi relayé par{" "}
+                  {tr("ui.pageActualitesSlug.aussiRelayePar")}{" "}
                   {item.extra_sources.map((source, index) => (
                     <span key={source.url}>
                       {index ? ", " : ""}
@@ -152,19 +153,19 @@ function NewsArticlePage() {
             </aside>
           ) : null}
           <div className="bw-article__share">
-            <span>Utile pour un proche qui voyage ?</span>
+            <span>{tr("ui.pageActualitesSlug.utilePourUnProcheQui")}</span>
             <ShareButtons title={item.title} text={item.summary} getUrl={() => absoluteUrl(path)} />
           </div>
           <div className="bw-article__cta">
             <Ship size={22} aria-hidden />
             <div>
-              <h2>Vous voyagez bientôt ?</h2>
-              <p>Seule la compagnie confirme un départ. Suivez votre traversée sur BledWay : changements, navire en direct et salon des passagers.</p>
+              <h2>{tr("ui.pageActualitesSlug.vousVoyagezBientot")}</h2>
+              <p>{tr("ui.pageActualitesSlug.seuleLaCompagnieConfirmeUn")}</p>
               <p className="bw-article__cta-links">
-                <Link to="/horaires">Départs et arrivées</Link>
+                <Link to="/horaires">{tr("ui.pageActualitesSlug.departsEtArrivees")}</Link>
                 {vessel?.slug ? (
                   <Link to="/bateaux/$slug" params={{ slug: vessel.slug }}>
-                    Le navire {vessel.name}
+                    {tr("ui.pageActualitesSlug.leNavire")}{vessel.name}
                   </Link>
                 ) : null}
               </p>
@@ -173,8 +174,8 @@ function NewsArticlePage() {
         </article>
 
         {latest.length ? (
-          <aside className="bw-article__side" aria-label="Dernières actualités">
-            <h2>Dernières actualités</h2>
+          <aside className="bw-article__side" aria-label={tr("ui.pageActualitesSlug.dernieresActualites")}>
+            <h2>{tr("ui.pageActualitesSlug.dernieresActualites")}</h2>
             <ol>
               {latest.map((entry) => (
                 <li key={entry.id}>
@@ -189,15 +190,15 @@ function NewsArticlePage() {
               ))}
             </ol>
             <Link to="/actualites" className="bw-article__all">
-              Toutes les actualités <ArrowRight size={14} aria-hidden />
+              {tr("ui.pageActualitesSlug.toutesLesActualites")}<ArrowRight size={14} aria-hidden />
             </Link>
           </aside>
         ) : null}
       </div>
 
       {related.length ? (
-        <section className="bw-article__related" aria-label="À lire aussi">
-          <h2>À lire aussi</h2>
+        <section className="bw-article__related" aria-label={tr("ui.pageActualitesSlug.aLireAussi")}>
+          <h2>{tr("ui.pageActualitesSlug.aLireAussi")}</h2>
           <div className="bw-news-grid">
             {related.map((entry) => (
               <Link key={entry.id} to="/actualites/$slug" params={{ slug: newsSlug(entry) }} className="bw-news-tile">
@@ -212,7 +213,7 @@ function NewsArticlePage() {
                 <span className="bw-news-tile__foot">
                   <span>{entry.source_name}</span>
                   <span className="bw-news-tile__more">
-                    Lire <ArrowRight size={14} aria-hidden />
+                    {tr("ui.pageActualitesSlug.lire")}<ArrowRight size={14} aria-hidden />
                   </span>
                 </span>
               </Link>
@@ -256,13 +257,13 @@ function NewsImpact({ ids }: { ids: string[] }) {
   const { data: vessels = [] } = useQuery(vesselsQuery);
   if (!ids.length || !departures.length) return null;
   return (
-    <section className="bw-news-impact" aria-label="Traversées concernées">
+    <section className="bw-news-impact" aria-label={tr("ui.pageActualitesSlug.traverseesConcernees")}>
       <h2>
         {departures.length > 1
           ? `${departures.length} traversées concernées`
-          : "La traversée concernée"}
+          : tr("ui.pageActualitesSlug.laTraverseeConcernee")}
       </h2>
-      <p>Ouvrez la vôtre pour voir son suivi et ses horaires à jour sur BledWay.</p>
+      <p>{tr("ui.pageActualitesSlug.ouvrezLaVotrePourVoir")}</p>
       <ul>
         {departures.map((departure) => {
           const route = routes.find((entry) => entry.id === departure.route_id);
@@ -287,7 +288,7 @@ function NewsImpact({ ids }: { ids: string[] }) {
                     {vessel ? ` · ${vessel.name}` : ""}
                   </small>
                 </span>
-                <b data-status={departure.status}>{STATUS[departure.status] ?? "Prévue"}</b>
+                <b data-status={departure.status}>{STATUS[departure.status] ?? tr("ui.pageActualitesSlug.prevue")}</b>
                 <ArrowRight size={16} aria-hidden />
               </Link>
             </li>
@@ -295,7 +296,7 @@ function NewsImpact({ ids }: { ids: string[] }) {
         })}
       </ul>
       <small className="bw-news-impact__note">
-        Seule la compagnie confirme un départ : vérifiez aussi auprès d’elle.
+        {tr("ui.pageActualitesSlug.seuleLaCompagnieConfirmeUn2")}
       </small>
     </section>
   );

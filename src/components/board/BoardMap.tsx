@@ -10,6 +10,7 @@ import workerUrl from "maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url";
 import "maplibre-gl/dist/maplibre-gl.css";
 import { routeArc } from "@/lib/ferry/geo";
 import type { Port, RouteLine } from "@/lib/ferry/types";
+import { tr } from "@/lib/i18n";
 
 setWorkerUrl(workerUrl);
 const MAP_STYLE = "https://tiles.openfreemap.org/styles/liberty";
@@ -158,6 +159,6 @@ export default function BoardMap({
   }, [signature, routes, ports]);
 
   return (
-    <div ref={box} className="h-full w-full" aria-label="Carte des lignes affichées" role="img" />
+    <div ref={box} className="h-full w-full" aria-label={tr("ui.boardMap.carteDesLignesAffichees")} role="img" />
   );
 }

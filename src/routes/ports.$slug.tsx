@@ -12,6 +12,7 @@ import {
   isFacilityFilled,
   ratingOnlyFacilities,
 } from "@/lib/ferry/format";
+import { tr } from "@/lib/i18n";
 
 export const Route = createFileRoute("/ports/$slug")({
   loader: async ({ context, params }) => {
@@ -96,18 +97,18 @@ function PortPage() {
           search={{ select: "port", id: port.id } as never}
           className="inline-flex h-11 items-center rounded-xl bg-primary px-5 text-sm font-semibold text-primary-foreground hover:bg-primary/90"
         >
-          Voir les prochains départs sur la carte
+          {tr("ui.pagePortsSlug.voirLesProchainsDepartsSur")}
         </Link>
       </div>
       {port.status === "inactive" ? (
         <p className="mt-4 rounded-xl border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm font-semibold text-destructive">
-          Ce port est temporairement fermé : les traversées ne sont pas assurées actuellement.
+          {tr("ui.pagePortsSlug.cePortEstTemporairementFerme")}
         </p>
       ) : null}
 
       <section className="mt-10">
         <h2 className="text-xl font-semibold">
-          Lignes au départ ou à l'arrivée ({portRoutes.length})
+          {tr("ui.pagePortsSlug.lignesAuDepartOuA")}{portRoutes.length})
         </h2>
         <div className="mt-4 grid gap-4 sm:grid-cols-2">
           {portRoutes.map((route) => (
@@ -117,20 +118,20 @@ function PortPage() {
                   {portName(route.departure_port_id)} → {portName(route.arrival_port_id)}
                 </h3>
                 <p className="mt-1 text-sm text-muted-foreground">
-                  Durée typique : {formatDuration(route.typical_duration_minutes)}
+                  {tr("ui.pagePortsSlug.dureeTypique")}{formatDuration(route.typical_duration_minutes)}
                 </p>
               </Link>
             </Card>
           ))}
           {portRoutes.length === 0 ? (
-            <p className="text-sm text-muted-foreground">Aucune ligne enregistrée pour ce port.</p>
+            <p className="text-sm text-muted-foreground">{tr("ui.pagePortsSlug.aucuneLigneEnregistreePourCe")}</p>
           ) : null}
         </div>
       </section>
 
       {facilities.length > 0 ? (
         <section className="mt-10">
-          <h2 className="text-xl font-semibold">Services du port</h2>
+          <h2 className="text-xl font-semibold">{tr("ui.pagePortsSlug.servicesDuPort")}</h2>
           <dl className="mt-4 grid gap-3 sm:grid-cols-2">
             {facilities.map(([key, value]) => (
               <div key={key} className="rounded-xl bg-secondary/60 px-4 py-3">
@@ -144,7 +145,7 @@ function PortPage() {
 
       {operators.length > 0 ? (
         <section className="mt-10">
-          <h2 className="text-xl font-semibold">Compagnies présentes</h2>
+          <h2 className="text-xl font-semibold">{tr("ui.pagePortsSlug.compagniesPresentes")}</h2>
           <ul className="mt-4 flex flex-wrap gap-2">
             {operators.map((company) => (
               <li key={company.id} className="rounded-full border border-border px-3 py-1 text-sm">
@@ -156,7 +157,7 @@ function PortPage() {
       ) : null}
 
       <section className="mt-10">
-        <h2 className="text-xl font-semibold">Ports reliés</h2>
+        <h2 className="text-xl font-semibold">{tr("ui.pagePortsSlug.portsRelies")}</h2>
         <ul className="mt-4 flex flex-wrap gap-2">
           {[
             ...new Set(
@@ -201,21 +202,21 @@ function PortPage() {
       />
       <p className="mt-10 text-sm">
         <a href="/questions-frequentes" className="font-semibold text-primary underline underline-offset-4">
-          Questions fréquentes
+          {tr("ui.pagePortsSlug.questionsFrequentes")}
         </a>{" "}
         ·{" "}
         <a
           href="/voyage-algerie"
           className="font-semibold text-primary underline underline-offset-4"
         >
-          Préparer la traversée
+          {tr("ui.pagePortsSlug.preparerLaTraversee")}
         </a>{" "}
         ·{" "}
         <a
           href="/simulateurs/budget-voyage"
           className="font-semibold text-primary underline underline-offset-4"
         >
-          Comparer le budget du voyage
+          {tr("ui.pagePortsSlug.comparerLeBudgetDuVoyage")}
         </a>
       </p>
     </SiteLayout>

@@ -4,6 +4,7 @@ import { companiesQuery, portsQuery, vesselsQuery } from "@/lib/ferry/queries";
 import { Button } from "@/components/ui/button";
 import { reviewScore } from "@/lib/ferry/reviewCriteria";
 import { reviewNumber } from "@/lib/ferry/reviewCriteria";
+import { tr } from "@/lib/i18n";
 export function MyEntityReviews({ userId }: { userId: string }) {
   const query = useQuery(ownEntityReviewsQuery(userId));
   const client = useQueryClient();
@@ -23,14 +24,14 @@ export function MyEntityReviews({ userId }: { userId: string }) {
   });
   return (
     <section className="my-5">
-      <h3 className="font-semibold">Mes évaluations par critères</h3>
+      <h3 className="font-semibold">{tr("ui.myEntityReviews.mesEvaluationsParCriteres")}</h3>
       {query.isPending ? (
-        <p role="status">Chargement…</p>
+        <p role="status">{tr("ui.myEntityReviews.chargement")}</p>
       ) : query.isError ? (
         <p role="alert">{query.error.message}</p>
       ) : !query.data.length ? (
         <p className="mt-2 text-sm text-muted-foreground">
-          Vos notes sur les ports, les navires et les compagnies apparaîtront ici.
+          {tr("ui.myEntityReviews.vosNotesSurLesPorts")}
         </p>
       ) : (
         <ul className="divide-y">
@@ -54,15 +55,15 @@ export function MyEntityReviews({ userId }: { userId: string }) {
                   <p className="text-sm">
                     {reviewNumber(reviewScore(r.target_kind, r.scores) ?? 0)}/5 ·{" "}
                     {r.status === "pending"
-                      ? "En attente de vérification"
+                      ? tr("ui.myEntityReviews.enAttenteDeVerification")
                       : r.status === "published"
-                        ? "Publiée"
-                        : "Masquée"}
+                        ? tr("ui.myEntityReviews.publiee")
+                        : tr("ui.myEntityReviews.masquee")}
                   </p>
                   <small className="text-muted-foreground">
                     {new Date(r.updated_at).toLocaleDateString("fr-FR")}
                     {r.status === "pending" && r.published_scores
-                      ? " · Ancienne note toujours publiée"
+                      ? tr("ui.myEntityReviews.ancienneNoteToujoursPubliee")
                       : ""}
                   </small>
                 </div>
@@ -75,7 +76,7 @@ export function MyEntityReviews({ userId }: { userId: string }) {
                       remove.mutate(r.id);
                   }}
                 >
-                  Supprimer
+                  {tr("ui.myEntityReviews.supprimer")}
                 </Button>
               </li>
             );

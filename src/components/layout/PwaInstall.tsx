@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Download, X } from "lucide-react";
 import { isDesktopBrowser } from "./PhoneInstallCard";
+import { tr } from "@/lib/i18n";
 
 interface InstallPromptEvent extends Event {
   prompt: () => Promise<void>;
@@ -97,18 +98,18 @@ export function PwaInstall() {
   return (
     <aside
       className="fixed bottom-20 left-4 right-4 z-[90] mx-auto max-w-sm rounded-2xl border border-primary/15 bg-card p-4 shadow-2xl md:bottom-5 md:left-auto md:right-5"
-      aria-label="Installer BledWay"
+      aria-label={tr("ui.pwaInstall.installerBledway")}
     >
       <div className="flex items-start gap-3">
             <img src="/pwa-icon-192.png" alt="" className="size-11 rounded-xl" />
             <div className="min-w-0 flex-1">
-              <strong className="block text-sm text-foreground">BledWay à portée de main</strong>
+              <strong className="block text-sm text-foreground">{tr("ui.pwaInstall.bledwayAPorteeDeMain")}</strong>
               <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
                 {showIos && !prompt
-                  ? "Sur iPhone, touchez Partager puis « Sur l’écran d’accueil »."
+                  ? tr("ui.pwaInstall.surIphoneTouchezPartagerPuis")
                   : prompt
-                    ? "Retrouvez la carte et vos traversées depuis votre écran d’accueil."
-                    : "Ouvrez le menu de votre navigateur (⋮), puis « Installer l’application » ou « Ajouter à l’écran d’accueil »."}
+                    ? tr("ui.pwaInstall.retrouvezLaCarteEtVos")
+                    : tr("ui.pwaInstall.ouvrezLeMenuDeVotre")}
               </p>
             </div>
         <button
@@ -117,7 +118,7 @@ export function PwaInstall() {
             window.localStorage.setItem(dismissedKey, String(Date.now()));
             setDismissed(true);
           }}
-          aria-label="Masquer la proposition d’installation"
+          aria-label={tr("ui.pwaInstall.masquerLaPropositionDInstallation")}
           className="grid size-8 shrink-0 place-items-center rounded-full hover:bg-secondary"
         >
           <X size={16} aria-hidden />
@@ -134,7 +135,7 @@ export function PwaInstall() {
           }}
           className="mt-3 flex h-10 w-full items-center justify-center gap-2 rounded-xl bg-primary text-sm font-semibold text-primary-foreground"
         >
-          <Download size={16} aria-hidden /> Installer BledWay
+          <Download size={16} aria-hidden />{tr("ui.pwaInstall.installerBledway2")}
         </button>
       ) : null}
     </aside>

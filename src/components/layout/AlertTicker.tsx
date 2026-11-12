@@ -11,6 +11,7 @@ import { useMyTrip } from "@/lib/ferry/myTrip";
 import { useTravelAction } from "@/hooks/useTravelAction";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
+import { tr } from "@/lib/i18n";
 
 const DISMISSED_KEY = "bledway:alert-ticker-dismissed";
 const RAIL_DISMISSED_KEY = "bledway:news-rail-dismissed";
@@ -223,7 +224,7 @@ function AlertTickerBar() {
     <button
       type="button"
       className="bw-alert-ticker__close"
-      aria-label="Masquer les alertes"
+      aria-label={tr("ui.alertTicker.masquerLesAlertes")}
       onClick={dismissAlerts}
     >
       <X size={15} aria-hidden />
@@ -255,11 +256,11 @@ function AlertTickerBar() {
             {vesselId ? (
               <>
                 <button type="button" onClick={() => open(vesselId)}>
-                  Voir les traversées
+                  {tr("ui.alertTicker.voirLesTraversees")}
                 </button>
                 {mine ? (
                   <button type="button" onClick={() => openDeparture(mine.departure.id)}>
-                    Voir ma traversée
+                    {tr("ui.alertTicker.voirMaTraversee")}
                   </button>
                 ) : (
                   <button
@@ -274,13 +275,13 @@ function AlertTickerBar() {
                       })
                     }
                   >
-                    Je voyage sur ce navire
+                    {tr("ui.alertTicker.jeVoyageSurCeNavire")}
                   </button>
                 )}
               </>
             ) : (
               <button type="button" onClick={() => open(null)}>
-                Voir le détail
+                {tr("ui.alertTicker.voirLeDetail")}
               </button>
             )}
             <button
@@ -288,7 +289,7 @@ function AlertTickerBar() {
               className="inline-flex items-center gap-1"
               onClick={() => void share(alert.text, vesselId)}
             >
-              <Share2 size={13} aria-hidden /> {copied ? "Lien copié" : "Partager"}
+              <Share2 size={13} aria-hidden /> {copied ? tr("ui.alertTicker.lienCopie") : tr("ui.alertTicker.partager")}
             </button>
           </div>
           {close}
@@ -370,8 +371,8 @@ function AlertTickerBar() {
     <div ref={measure} className="bw-top-rail">
       {showAlerts && !merged ? alertBlock() : null}
       {showRail ? (
-        <div className="bw-news-rail" role="region" aria-label="Fil d'actualités">
-          <Link to="/actualites" className="bw-news-rail__chip" aria-label="Toutes les actualités">
+        <div className="bw-news-rail" role="region" aria-label={tr("ui.alertTicker.filDActualites")}>
+          <Link to="/actualites" className="bw-news-rail__chip" aria-label={tr("ui.alertTicker.toutesLesActualites")}>
             <i aria-hidden />
           </Link>
           <div className="bw-news-rail__window">
@@ -383,7 +384,7 @@ function AlertTickerBar() {
           <button
             type="button"
             className="bw-news-rail__close"
-            aria-label="Masquer le fil d'actualités"
+            aria-label={tr("ui.alertTicker.masquerLeFilDActualites")}
             onClick={() => {
               if (merged) dismissAlerts();
               setRailDismissed(railVersion);

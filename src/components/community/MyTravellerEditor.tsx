@@ -16,6 +16,7 @@ import {
 import { LibraryPicker } from "./LibraryPicker";
 import { MoodPicker } from "./MoodPicker";
 import { TravellerAvatar } from "./TravellerAvatar";
+import { tr } from "@/lib/i18n";
 
 /** Mon profil voyageur : cabas, couleur, pseudo, humeur et visibilité sur mes traversées. */
 export function MyTravellerEditor() {
@@ -48,13 +49,13 @@ export function MyTravellerEditor() {
   if (me.isPending)
     return (
       <p className="bw-traveller-editor__loading" role="status">
-        <LoaderCircle className="size-4 animate-spin" aria-hidden /> Chargement…
+        <LoaderCircle className="size-4 animate-spin" aria-hidden />{tr("ui.myTravellerEditor.chargement")}
       </p>
     );
   if (!me.data)
     return (
       <p className="text-sm text-muted-foreground">
-        Le profil voyageur arrive bientôt : il sera disponible dès la prochaine mise à jour.
+        {tr("ui.myTravellerEditor.leProfilVoyageurArriveBientot")}
       </p>
     );
   const preview = { ...me.data, pseudo: pseudo || me.data.pseudo, avatar, color };
@@ -64,21 +65,21 @@ export function MyTravellerEditor() {
         <TravellerAvatar card={preview} size={76} moodLabel static />
         <div>
           <strong>{preview.pseudo}</strong>
-          <p>C’est ainsi que les autres voyageurs vous voient : ni nom, ni e-mail, ni dates.</p>
+          <p>{tr("ui.myTravellerEditor.cEstAinsiQueLes")}</p>
           <div className="bw-traveller-editor__links">
             <button type="button" onClick={() => setMoodOpen(true)}>
               <Smile size={14} aria-hidden />{" "}
-              {me.data.mood ? "Changer d’humeur" : "Choisir une humeur"}
+              {me.data.mood ? tr("ui.myTravellerEditor.changerDHumeur") : tr("ui.myTravellerEditor.choisirUneHumeur")}
             </button>
             <button type="button" onClick={() => openTravellerProfile(me.data!.handle)}>
-              <Eye size={14} aria-hidden /> Voir mon profil public
+              <Eye size={14} aria-hidden />{tr("ui.myTravellerEditor.voirMonProfilPublic")}
             </button>
           </div>
         </div>
       </div>
 
       <fieldset>
-        <legend>Votre avatar</legend>
+        <legend>{tr("ui.myTravellerEditor.votreAvatar")}</legend>
         {/* Toute la bibliothèque : personnages, humeurs, réactions, pictos, ajouts de l'équipe. */}
         <LibraryPicker
           selected={avatar}
@@ -90,8 +91,8 @@ export function MyTravellerEditor() {
       </fieldset>
 
       <fieldset>
-        <legend>Sa couleur</legend>
-        <div className="bw-color-row" role="radiogroup" aria-label="Couleur du fond">
+        <legend>{tr("ui.myTravellerEditor.saCouleur")}</legend>
+        <div className="bw-color-row" role="radiogroup" aria-label={tr("ui.myTravellerEditor.couleurDuFond")}>
           {(Object.keys(avatarColors) as AvatarColor[]).map((key) => (
             <button
               key={key}
@@ -107,7 +108,7 @@ export function MyTravellerEditor() {
       </fieldset>
 
       <label className="bw-traveller-editor__field">
-        Pseudo
+        {tr("ui.myTravellerEditor.pseudo")}
         <input
           value={pseudo}
           maxLength={24}
@@ -118,8 +119,8 @@ export function MyTravellerEditor() {
         <small data-error={Boolean(error) || undefined}>
           {error ??
             (locked
-              ? "Vous avez déjà utilisé votre unique changement de pseudo."
-              : "Attention : vous ne pouvez le changer qu'une seule fois. Évitez votre nom complet.")}
+              ? tr("ui.myTravellerEditor.vousAvezDejaUtiliseVotre")
+              : tr("ui.myTravellerEditor.attentionVousNePouvezLe"))}
         </small>
       </label>
 
@@ -130,8 +131,8 @@ export function MyTravellerEditor() {
           onChange={(event) => setVisible(event.target.checked)}
         />
         <span>
-          <strong>Apparaître parmi les voyageurs de ma traversée</strong>
-          <small>Avec votre cabas, votre pseudo et votre humeur, sans aucune date.</small>
+          <strong>{tr("ui.myTravellerEditor.apparaitreParmiLesVoyageursDe")}</strong>
+          <small>{tr("ui.myTravellerEditor.avecVotreCabasVotrePseudo")}</small>
         </span>
       </label>
 
@@ -151,7 +152,7 @@ export function MyTravellerEditor() {
           }}
         >
           {save.isPending ? <LoaderCircle className="size-4 animate-spin" aria-hidden /> : null}
-          Enregistrer
+          {tr("ui.myTravellerEditor.enregistrer")}
         </button>
       </div>
       <MoodPicker

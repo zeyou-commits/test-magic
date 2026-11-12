@@ -9,6 +9,7 @@ import { companiesQuery, portsQuery, routesQuery, vesselsQuery } from "@/lib/fer
 import { portTimeZone } from "@/lib/ferry/time";
 import { useVesselAlert } from "@/lib/ferry/vesselAlerts";
 import type { TravelAction } from "@/lib/notifications/actions";
+import { tr } from "@/lib/i18n";
 
 type Follow = Extract<TravelAction, { type: "follow" }>;
 type Purpose = "voyageur" | "proche" | "curieux";
@@ -187,12 +188,12 @@ export function TripQuestion({
         <p role="alert" className="bw-trip-question__alert">
           <CircleAlert size={16} aria-hidden />
           <span>
-            <strong>{alert.label}.</strong> Vérifiez auprès de la compagnie avant de partir.
+            <strong>{alert.label}.</strong>{tr("ui.tripQuestion.verifiezAupresDeLaCompagnie")}
           </span>
         </p>
       ) : null}
 
-      <div className="bw-trip-one__purpose" role="radiogroup" aria-label="Pourquoi suivre">
+      <div className="bw-trip-one__purpose" role="radiogroup" aria-label={tr("ui.tripQuestion.pourquoiSuivre")}>
         {(
           [
             ["voyageur", "Je voyage"],
@@ -216,7 +217,7 @@ export function TripQuestion({
         <button type="button" className="bw-trip-one__ticket" onClick={() => setTicket(true)}>
           <Ticket size={18} aria-hidden />
           <span>
-            Vous avez votre billet ? <b>Scanner, tout se remplit</b>
+            {tr("ui.tripQuestion.vousAvezVotreBillet")}<b>{tr("ui.tripQuestion.scannerToutSeRemplit")}</b>
           </span>
         </button>
       ) : null}
@@ -224,29 +225,29 @@ export function TripQuestion({
       {purpose === "curieux" ? (
         <p className="bw-trip-one__note">
           {action.kind === "vessel"
-            ? "Le navire et ses prochaines traversées, sans voyage personnel."
-            : "Les informations de cette traversée, sans voyage personnel."}
+            ? tr("ui.tripQuestion.leNavireEtSesProchaines")
+            : tr("ui.tripQuestion.lesInformationsDeCetteTraversee")}
         </p>
       ) : (
-        <section className="bw-trip-one__block" aria-label="Traversée">
+        <section className="bw-trip-one__block" aria-label={tr("ui.tripQuestion.traversee")}>
           <div className="bw-trip-one__head">
             <strong>
-              {purpose === "proche" ? "Sa traversée" : leg === "outbound" ? "Aller" : "Retour"}
+              {purpose === "proche" ? tr("ui.tripQuestion.saTraversee") : leg === "outbound" ? tr("ui.tripQuestion.aller") : tr("ui.tripQuestion.retour")}
               {label ? ` · ${label}` : ""}
             </strong>
             {purpose === "voyageur" && picked ? (
               <button type="button" onClick={() => setSwapped(!swapped)}>
-                <ArrowLeftRight size={13} aria-hidden /> c’est mon{" "}
+                <ArrowLeftRight size={13} aria-hidden />{tr("ui.tripQuestion.cEstMon")}{" "}
                 {leg === "outbound" ? "retour" : "aller"}
               </button>
             ) : null}
           </div>
           {dates.isPending || (action.kind === "departure" && own.isPending) ? (
-            <p className="bw-trip-one__note">Recherche des départs…</p>
+            <p className="bw-trip-one__note">{tr("ui.tripQuestion.rechercheDesDeparts")}</p>
           ) : !all.length ? (
-            <p className="bw-trip-one__note">Aucun départ publié pour le moment.</p>
+            <p className="bw-trip-one__note">{tr("ui.tripQuestion.aucunDepartPubliePourLe")}</p>
           ) : (
-            <div className="bw-trip-one__pills" role="radiogroup" aria-label="Date de la traversée">
+            <div className="bw-trip-one__pills" role="radiogroup" aria-label={tr("ui.tripQuestion.dateDeLaTraversee")}>
               {all.map((item) => {
                 const p = pill(
                   item.departure_at,
@@ -262,7 +263,7 @@ export function TripQuestion({
                   >
                     <b>{p.day}</b>
                     {p.time}
-                    {item.reliability === "to_verify" ? <i>estimé</i> : null}
+                    {item.reliability === "to_verify" ? <i>{tr("ui.tripQuestion.estime")}</i> : null}
                   </button>
                 );
               })}
@@ -270,7 +271,7 @@ export function TripQuestion({
           )}
           {picked ? (
             <p className="bw-trip-one__detail">
-              {[company, vessel].filter(Boolean).join(" · ") || "Compagnie à confirmer"}
+              {[company, vessel].filter(Boolean).join(" · ") || tr("ui.tripQuestion.compagnieAConfirmer")}
               {arrival ? ` · arrivée ${arrival.day} à ${arrival.time}` : ""}
             </p>
           ) : null}
@@ -278,21 +279,21 @@ export function TripQuestion({
       )}
 
       {purpose === "voyageur" && leg === "outbound" && picked ? (
-        <section className="bw-trip-one__block" aria-label="Retour">
+        <section className="bw-trip-one__block" aria-label={tr("ui.tripQuestion.retour")}>
           <div className="bw-trip-one__head">
             <strong>
-              Retour <small>facultatif</small>
+              {tr("ui.tripQuestion.retour2")}<small>{tr("ui.tripQuestion.facultatif")}</small>
             </strong>
           </div>
-          <div className="bw-trip-one__pills" role="radiogroup" aria-label="Date du retour">
+          <div className="bw-trip-one__pills" role="radiogroup" aria-label={tr("ui.tripQuestion.dateDuRetour")}>
             <button
               type="button"
               role="radio"
               aria-checked={!chosenReturn}
               onClick={() => setChosenReturn(null)}
             >
-              <b>Plus tard</b>
-              sans date
+              <b>{tr("ui.tripQuestion.plusTard")}</b>
+              {tr("ui.tripQuestion.sansDate")}
             </button>
             {(returns.data ?? []).slice(0, 20).map((item) => {
               const p = pill(item.departure_at, portTimeZone({ country_code: item.from_country_code }));
@@ -314,10 +315,10 @@ export function TripQuestion({
             {chosenReturnRow
               ? `${chosenReturnRow.from_name} → ${chosenReturnRow.to_name} · ${[chosenReturnRow.company_name, chosenReturnRow.vessel_name].filter(Boolean).join(" · ")}`
               : returns.isPending
-                ? "Recherche des retours…"
+                ? tr("ui.tripQuestion.rechercheDesRetours")
                 : !returns.data?.length
-                  ? "Pas encore de retour publié : vous l’ajouterez plus tard."
-                  : "Vous pourrez aussi l’ajouter plus tard, depuis Ma traversée."}
+                  ? tr("ui.tripQuestion.pasEncoreDeRetourPublie")
+                  : tr("ui.tripQuestion.vousPourrezAussiLAjouter")}
           </p>
         </section>
       ) : null}
@@ -330,15 +331,15 @@ export function TripQuestion({
       >
         {purpose === "curieux"
           ? action.kind === "vessel"
-            ? "Suivre ce navire"
-            : "Suivre cette traversée"
+            ? tr("ui.tripQuestion.suivreCeNavire")
+            : tr("ui.tripQuestion.suivreCetteTraversee")
           : purpose === "proche"
-            ? "Suivre sa traversée"
+            ? tr("ui.tripQuestion.suivreSaTraversee")
             : leg === "inbound"
-              ? "Suivre mon retour"
+              ? tr("ui.tripQuestion.suivreMonRetour")
               : chosenReturn
-                ? "Suivre l’aller et le retour"
-                : "Suivre mon aller"}
+                ? tr("ui.tripQuestion.suivreLAllerEtLe")
+                : tr("ui.tripQuestion.suivreMonAller")}
       </button>
     </div>
   );

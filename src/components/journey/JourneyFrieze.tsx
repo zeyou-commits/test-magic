@@ -14,6 +14,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import type { JourneyStepId, StepState } from "@/lib/ferry/journeySteps";
+import { tr } from "@/lib/i18n";
 
 export const STEP_ICONS: Record<JourneyStepId, LucideIcon> = {
   papers: FileText,
@@ -97,7 +98,7 @@ export function JourneyFrieze({
               {step.state === "current" ? (
                 <b
                   className="bw-frieze__here"
-                  title="Cliquez sur l'étape, puis « J'y suis » pour dire où vous en êtes (dès la veille du départ)."
+                  title={tr("ui.journeyFrieze.cliquezSurLEtapePuis")}
                 >
                   {hereLabel}
                 </b>

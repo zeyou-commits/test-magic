@@ -10,6 +10,7 @@ import {
 } from "@/components/editorial/Editorial";
 import { carpoolPlaces } from "@/content/carpool";
 import { seoHead } from "@/lib/seo/site";
+import { tr } from "@/lib/i18n";
 export const Route = createFileRoute("/covoiturage/$slug")({
   loader: ({ params }) => {
     const p = carpoolPlaces.find((p) => p.slug === params.slug);
@@ -44,40 +45,35 @@ function Place() {
       <div className="max-w-3xl">
         <AnswerBox>{p.access}</AnswerBox>
         <section className="mt-8">
-          <h2 className="font-display text-2xl font-bold">Fixer un rendez-vous qui fonctionne</h2>
+          <h2 className="font-display text-2xl font-bold">{tr("ui.pageCovoiturageSlug.fixerUnRendezVousQui")}</h2>
           <p className="mt-4 leading-7 text-muted-foreground">{p.rendezvous}</p>
           <ul className="mt-4 list-disc space-y-3 pl-5 leading-7 text-muted-foreground">
             <li>
-              Vérifiez la localisation avec le conducteur et tous les passagers, puis confirmez le
-              point exact sur le parking.
+              {tr("ui.pageCovoiturageSlug.verifiezLaLocalisationAvecLe")}
             </li>
-            <li>Précisez le nombre de personnes et de bagages avant de vous engager.</li>
+            <li>{tr("ui.pageCovoiturageSlug.precisezLeNombreDePersonnes")}</li>
             <li>
-              Ajoutez le trajet jusqu'au terminal et la présentation demandée par la compagnie après
-              le regroupement.
+              {tr("ui.pageCovoiturageSlug.ajoutezLeTrajetJusquAu")}
             </li>
             <li>
-              Prévoyez une solution si le rendez-vous est manqué ou si un accès est temporairement
-              fermé.
+              {tr("ui.pageCovoiturageSlug.prevoyezUneSolutionSiLe")}
             </li>
           </ul>
         </section>
         <section className="mt-8">
           <h2 className="font-display text-2xl font-bold">
-            Stationnement et services : ce qui reste à vérifier
+            {tr("ui.pageCovoiturageSlug.stationnementEtServicesCeQui")}
           </h2>
           <p className="mt-4 leading-7 text-muted-foreground">
-            Cette fiche ne promet ni place libre, ni gardiennage, ni durée de stationnement.
-            Demandez au gestionnaire les règles actuelles. Pour un séjour de plusieurs semaines en
-            Algérie, vérifiez une solution de stationnement explicitement adaptée à cette durée.
+            {tr("ui.pageCovoiturageSlug.cetteFicheNePrometNi")}
           </p>
         </section>
         <a href="/simulateurs/partage-frais" className={`${primaryLink} mt-6`}>
-          Calculer un partage des frais
+          {tr("ui.pageCovoiturageSlug.calculerUnPartageDesFrais")}
         </a>
         <p className="mt-4">
           <a href="/guide/covoiturage-avant-ferry" className={textLink}>
-            Lire le guide avant de confirmer le trajet
+            {tr("ui.pageCovoiturageSlug.lireLeGuideAvantDe")}
           </a>
         </p>
         <SourceList ids={[p.source, "national"]} />

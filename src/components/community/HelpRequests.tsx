@@ -10,6 +10,7 @@ import { offSitePortMessage } from "@/lib/ferry/locationHelp";
 import { useNotificationReply } from "@/lib/notifications/reply";
 import { portsQuery } from "@/lib/ferry/queries";
 import { Button } from "@/components/ui/button";
+import { tr } from "@/lib/i18n";
 
 // Fonctions du script « contacts_incidents_entraide », pas encore dans les types générés.
 const db = typedSupabase as unknown as SupabaseClient;
@@ -77,21 +78,21 @@ export function PortHelpRequests({
     return (
       <section
         className="rounded-xl border border-border bg-card p-3"
-        aria-label="Entraide entre voyageurs"
+        aria-label={tr("ui.helpRequests.entraideEntreVoyageurs")}
       >
         <div className="flex items-center gap-2">
           <HeartHandshake className="size-4 text-primary" aria-hidden />
-          <h3 className="text-sm font-semibold">Entraide entre voyageurs</h3>
+          <h3 className="text-sm font-semibold">{tr("ui.helpRequests.entraideEntreVoyageurs")}</h3>
         </div>
         <p className="mt-1 text-xs text-muted-foreground">
-          Aucun départ aujourd'hui depuis ce port. L'entraide s'ouvre le jour d'une traversée.
+          {tr("ui.helpRequests.aucunDepartAujourdHuiDepuis")}
         </p>
       </section>
     );
   return (
     <div className="grid gap-2">
       <label className="grid gap-1 text-xs font-semibold">
-        Votre traversée d'aujourd'hui
+        {tr("ui.helpRequests.votreTraverseeDAujourdHui")}
         <select
           value={current}
           onChange={(event) => setPicked(event.target.value)}
@@ -222,14 +223,14 @@ export function HelpRequests({ scopeId }: { kind: "departure"; scopeId: string }
   return (
     <section
       className="rounded-xl border border-border bg-card p-3"
-      aria-label="Entraide entre voyageurs"
+      aria-label={tr("ui.helpRequests.entraideEntreVoyageurs")}
     >
       <div className="flex items-center gap-2">
         <HeartHandshake className="size-4 text-primary" aria-hidden />
-        <h3 className="flex-1 text-sm font-semibold">Entraide entre voyageurs</h3>
+        <h3 className="flex-1 text-sm font-semibold">{tr("ui.helpRequests.entraideEntreVoyageurs")}</h3>
         {user && !formOpen ? (
           <Button size="sm" variant="outline" onClick={() => setFormOpen(true)}>
-            Demander de l'aide
+            {tr("ui.helpRequests.demanderDeLAide")}
           </Button>
         ) : null}
       </div>
@@ -243,15 +244,15 @@ export function HelpRequests({ scopeId }: { kind: "departure"; scopeId: string }
               className={`rounded-lg border p-2 text-xs ${request.need === "medical" ? "border-red-300 bg-red-50" : "border-border"}`}
             >
               <p className="font-semibold">
-                {NEEDS[request.need]} · {request.mine ? "votre demande" : request.pseudo}
+                {NEEDS[request.need]} · {request.mine ? tr("ui.helpRequests.votreDemande") : request.pseudo}
               </p>
-              <p className="mt-0.5">Rendez-vous : {POINTS[request.meeting_point]}</p>
+              <p className="mt-0.5">{tr("ui.helpRequests.rendezVous")}{POINTS[request.meeting_point]}</p>
               {request.need === "medical" ? <MedicalAdvice /> : null}
               <div className="mt-1.5 flex flex-wrap items-center gap-2">
                 <span className="flex-1 text-muted-foreground">
                   {request.responders
                     ? `${request.responders} personne(s) en route`
-                    : "Personne n'a encore répondu"}
+                    : tr("ui.helpRequests.personneNAEncoreRepondu")}
                 </span>
                 {request.mine ? (
                   <Button
@@ -261,7 +262,7 @@ export function HelpRequests({ scopeId }: { kind: "departure"; scopeId: string }
                       call.mutate({ name: "bw_help_close", args: { p_request: request.id } })
                     }
                   >
-                    C'est réglé
+                    {tr("ui.helpRequests.cEstRegle")}
                   </Button>
                 ) : user && !request.responded ? (
                   <Button
@@ -269,10 +270,10 @@ export function HelpRequests({ scopeId }: { kind: "departure"; scopeId: string }
                     disabled={respond.isPending}
                     onClick={() => respond.mutate(request.id)}
                   >
-                    {respond.isPending ? "Vérification…" : "J'y vais"}
+                    {respond.isPending ? tr("ui.helpRequests.verification") : tr("ui.helpRequests.jYVais")}
                   </Button>
                 ) : request.responded ? (
-                  <span className="font-semibold text-primary">Vous avez répondu</span>
+                  <span className="font-semibold text-primary">{tr("ui.helpRequests.vousAvezRepondu")}</span>
                 ) : null}
               </div>
             </li>
@@ -280,16 +281,16 @@ export function HelpRequests({ scopeId }: { kind: "departure"; scopeId: string }
         </ul>
       ) : !formOpen ? (
         <p className="mt-1 text-xs text-muted-foreground">
-          Couches, eau, chargeur, bagages : demandez aux voyageurs autour de vous.
+          {tr("ui.helpRequests.couchesEauChargeurBagagesDemandez")}
           {user
-            ? " Pour demander ou proposer de l'aide, il faut être au port de départ."
-            : " Connectez-vous pour demander ou proposer de l'aide."}
+            ? tr("ui.helpRequests.pourDemanderOuProposerDe")
+            : tr("ui.helpRequests.connectezVousPourDemanderOu")}
         </p>
       ) : null}
 
       {formOpen ? (
         <div className="mt-2 grid gap-2 border-t border-border pt-2">
-          <p className="text-xs font-semibold">De quoi avez-vous besoin ?</p>
+          <p className="text-xs font-semibold">{tr("ui.helpRequests.deQuoiAvezVousBesoin")}</p>
           <div className="flex flex-wrap gap-1.5">
             {(Object.keys(NEEDS) as Need[]).map((item) => (
               <button
@@ -312,7 +313,7 @@ export function HelpRequests({ scopeId }: { kind: "departure"; scopeId: string }
           </div>
           {need === "medical" ? <MedicalAdvice /> : null}
           <label className="grid gap-1 text-xs font-semibold">
-            Point de rendez-vous
+            {tr("ui.helpRequests.pointDeRendezVous")}
             <select
               value={point}
               onChange={(event) => setPoint(event.target.value as Point)}
@@ -326,20 +327,18 @@ export function HelpRequests({ scopeId }: { kind: "departure"; scopeId: string }
             </select>
           </label>
           <p className="text-[11px] text-muted-foreground">
-            Votre position vérifie seulement que vous êtes au port de départ : elle n'est ni
-            affichée ni enregistrée. Seuls votre pseudo, le besoin et ce point sont visibles, pendant
-            6 h au plus. Ne partagez pas de médicaments entre voyageurs.
+            {tr("ui.helpRequests.votrePositionVerifieSeulementQue")}
           </p>
           <div className="flex justify-end gap-2">
             <Button size="sm" variant="ghost" onClick={() => setFormOpen(false)}>
-              Annuler
+              {tr("ui.helpRequests.annuler")}
             </Button>
             <Button
               size="sm"
               disabled={!need || ask.isPending}
               onClick={() => ask.mutate()}
             >
-              {ask.isPending ? "Vérification de la position…" : "Partager ma position et envoyer"}
+              {ask.isPending ? tr("ui.helpRequests.verificationDeLaPosition") : tr("ui.helpRequests.partagerMaPositionEtEnvoyer")}
             </Button>
           </div>
         </div>
@@ -351,8 +350,7 @@ export function HelpRequests({ scopeId }: { kind: "departure"; scopeId: string }
 function MedicalAdvice() {
   return (
     <p className="mt-1 rounded-md bg-red-100 p-2 text-[11px] font-medium leading-relaxed text-red-900">
-      Urgence : prévenez d'abord l'équipage à bord, le personnel du port à terre, ou appelez le 112
-      (Europe), le 14 (Algérie). BledWay ne remplace pas les secours.
+      {tr("ui.helpRequests.urgencePrevenezDAbordL")}
     </p>
   );
 }

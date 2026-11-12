@@ -9,6 +9,7 @@ import {
 } from "@/components/editorial/Editorial";
 import { carpoolPlaces } from "@/content/carpool";
 import { seoHead } from "@/lib/seo/site";
+import { tr } from "@/lib/i18n";
 export const Route = createFileRoute("/covoiturage/")({
   head: () =>
     seoHead(
@@ -28,14 +29,12 @@ function Carpool() {
         items={carpoolPlaces.map((p) => ({ name: p.name, path: `/covoiturage/${p.slug}` }))}
       />
       <EditorialHero
-        label="La route du port"
-        title="Aires de covoiturage sur la route des ports"
-        intro="Une sélection de points documentés sur des axes vers les ports. Choisissez selon votre trajet, les bagages et l'accès au terminal, puis convenez des frais avant de partir."
+        label={tr("ui.pageCovoiturageIndex.laRouteDuPort")}
+        title={tr("ui.pageCovoiturageIndex.airesDeCovoiturageSurLa")}
+        intro={tr("ui.pageCovoiturageIndex.uneSelectionDePointsDocumentes")}
       />
       <p className="mb-8 rounded-xl border bg-secondary/40 p-5 text-sm leading-7">
-        Ces lieux ne constituent pas un classement des aires les plus fréquentées. Vérifiez les
-        conditions actuelles, l'accès dans votre sens de circulation et la durée de stationnement
-        autorisée auprès du gestionnaire.
+        {tr("ui.pageCovoiturageIndex.cesLieuxNeConstituentPas")}
       </p>
       <div className="divide-y border-y">
         {carpoolPlaces.map((p) => (
@@ -50,7 +49,7 @@ function Carpool() {
               <p className="mt-1 text-sm text-muted-foreground">{p.area}</p>
               <p className="mt-3 text-sm leading-7 text-muted-foreground">{p.relevance}</p>
               <span className="mt-3 inline-block text-sm font-semibold text-primary">
-                Préparer le rendez-vous →
+                {tr("ui.pageCovoiturageIndex.preparerLeRendezVous")}
               </span>
             </div>
           </a>
@@ -58,10 +57,10 @@ function Carpool() {
       </div>
       <div className="mt-8 flex flex-wrap items-center gap-5">
         <a href="/simulateurs/partage-frais" className={primaryLink}>
-          Partager les frais de route
+          {tr("ui.pageCovoiturageIndex.partagerLesFraisDeRoute")}
         </a>
         <a href="/guide/covoiturage-avant-ferry" className={textLink}>
-          La checklist du covoiturage avant ferry
+          {tr("ui.pageCovoiturageIndex.laChecklistDuCovoiturageAvant")}
         </a>
       </div>
     </SiteLayout>

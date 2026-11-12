@@ -17,6 +17,7 @@ import {
 } from "./Editorial";
 import { DossierHero, DurationBars } from "./DossierVisuals";
 import { LineBooking, LineMapCard, LineVessels } from "./LineBlocks";
+import { tr } from "@/lib/i18n";
 
 export function ArticlePage({ article }: { article: Article }) {
   const related = articles.filter((a) => article.related.includes(a.slug));
@@ -56,10 +57,10 @@ export function ArticlePage({ article }: { article: Article }) {
           <DossierHero article={article} updated={displayDate(article.updated ?? EDITORIAL_DATE)} />
         ) : (
           <>
-            <EditorialHero label="Dossier pratique" title={article.title} intro={article.description} />
+            <EditorialHero label={tr("ui.articlePage.dossierPratique")} title={article.title} intro={article.description} />
             <p className="mb-6 text-sm text-muted-foreground">
-              BledWay · Dossier documentaire ·{" "}
-              <time dateTime={EDITORIAL_DATE}>Mis à jour le {displayDate(EDITORIAL_DATE)}</time>
+              {tr("ui.articlePage.bledwayDossierDocumentaire")}{" "}
+              <time dateTime={EDITORIAL_DATE}>{tr("ui.articlePage.misAJourLe")}{displayDate(EDITORIAL_DATE)}</time>
             </p>
           </>
         )}
@@ -84,9 +85,9 @@ export function ArticlePage({ article }: { article: Article }) {
           )}
           {article.tool ? (
             <div className="mt-8 rounded-xl bg-secondary p-5">
-              <p className="mb-3 font-semibold">Passer du dossier à votre situation</p>
+              <p className="mb-3 font-semibold">{tr("ui.articlePage.passerDuDossierAVotre")}</p>
               <a href={`/simulateurs/${article.tool}`} className={primaryLink}>
-                Ouvrir le simulateur associé
+                {tr("ui.articlePage.ouvrirLeSimulateurAssocie")}
               </a>
             </div>
           ) : null}
@@ -96,7 +97,7 @@ export function ArticlePage({ article }: { article: Article }) {
         </ReadingLayout>
       </article>
       <section className="mt-12 border-t pt-6">
-        <h2 className="font-display text-xl font-bold">Pour la suite de votre préparation</h2>
+        <h2 className="font-display text-xl font-bold">{tr("ui.articlePage.pourLaSuiteDeVotre")}</h2>
         <ul className="mt-4 space-y-3">
           {related.map((a) => (
             <li key={a.slug}>

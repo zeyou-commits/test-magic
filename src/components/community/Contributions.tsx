@@ -12,6 +12,7 @@ import {
   type TravellerCard,
 } from "@/lib/community/travellers";
 import { TravellerAvatar } from "./TravellerAvatar";
+import { tr } from "@/lib/i18n";
 
 /** Auteurs et réactions d'une liste de contributions, chargés en une fois pour toute la liste. */
 export function useContributions(kind: ContributionKind, ids: string[]) {
@@ -70,7 +71,7 @@ export function LikeButton({
       aria-pressed={Boolean(value?.mine)}
       disabled={toggle.isPending || own}
       aria-label={`${value?.mine ? "Retirer mon merci" : "Merci pour l’info"}${n ? ` (${n})` : ""}`}
-      title={own ? "Mercis reçus" : "Merci pour l’info"}
+      title={own ? tr("ui.contributions.mercisRecus") : tr("ui.contributions.merciPourLInfo")}
       onClick={() => {
         if (!user) {
           toast.info("Connectez-vous pour remercier.");

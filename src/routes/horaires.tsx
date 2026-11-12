@@ -36,6 +36,7 @@ import { useLiveShips } from "@/lib/ferry/useLiveShips";
 import { useVesselAlerts } from "@/lib/ferry/vesselAlerts";
 import { breadcrumbSchema, seoHead } from "@/lib/seo/site";
 import { Breadcrumbs } from "@/components/editorial/Editorial";
+import { tr } from "@/lib/i18n";
 
 const BoardMap = lazy(() => import("@/components/board/BoardMap"));
 
@@ -323,12 +324,10 @@ function BoardPage() {
         <div className="flex flex-wrap items-end justify-between gap-2">
           <div>
             <h1 className="font-display text-2xl font-bold tracking-tight sm:text-3xl">
-              Départs et arrivées des ferries Europe ↔ Algérie
+              {tr("ui.pageHoraires.departsEtArriveesDesFerries")}
             </h1>
             <p className="mt-1 text-sm text-muted-foreground">
-              Vers et depuis l'Algérie, en heure locale du port. « Prévu » reste un horaire publié,
-              « constaté » vient du signal du navire. Confirmez toujours votre départ auprès de la
-              compagnie.
+              {tr("ui.pageHoraires.versEtDepuisLAlgerie")}
             </p>
           </div>
         </div>
@@ -336,19 +335,19 @@ function BoardPage() {
         <div className="mt-4 flex flex-wrap items-center gap-2">
           <label className="flex min-h-11 min-w-[240px] flex-1 items-center gap-2 rounded-xl border border-border bg-card px-3">
             <Search size={16} className="shrink-0 text-primary" aria-hidden />
-            <span className="sr-only">Rechercher un port, un navire ou une compagnie</span>
+            <span className="sr-only">{tr("ui.pageHoraires.rechercherUnPortUnNavire")}</span>
             <input
               type="search"
               value={term}
               onChange={(event) => setTerm(event.target.value)}
-              placeholder="Port, navire ou compagnie"
+              placeholder={tr("ui.pageHoraires.portNavireOuCompagnie")}
               className="min-w-0 flex-1 bg-transparent text-sm outline-none"
             />
           </label>
           <div
             className="flex rounded-xl bg-secondary p-1"
             role="group"
-            aria-label="Départs ou arrivées"
+            aria-label={tr("ui.pageHoraires.departsOuArrivees")}
           >
             {(
               [
@@ -388,7 +387,7 @@ function BoardPage() {
           <label
             className={`flex min-h-11 shrink-0 items-center gap-2 rounded-xl border px-3 text-[13px] font-semibold ${search.period && DAY.test(search.period) ? "border-primary" : "border-border"} bg-card`}
           >
-            Date
+            {tr("ui.pageHoraires.date")}
             <input
               type="date"
               value={search.period && DAY.test(search.period) ? search.period : ""}
@@ -416,7 +415,7 @@ function BoardPage() {
               onClick={clear}
               className="inline-flex min-h-11 shrink-0 items-center gap-1 px-2 text-[13px] font-semibold text-primary"
             >
-              <X size={14} aria-hidden /> Tout effacer
+              <X size={14} aria-hidden />{tr("ui.pageHoraires.toutEffacer")}
             </button>
           ) : null}
         </div>
@@ -424,7 +423,7 @@ function BoardPage() {
         <div
           className="mt-2 flex gap-2 overflow-x-auto pb-1 sm:flex-wrap"
           role="group"
-          aria-label="Filtrer par compagnie"
+          aria-label={tr("ui.pageHoraires.filtrerParCompagnie")}
         >
           {chips.map(({ company: item, count }) => {
             const on = search.company === item.id;
@@ -458,10 +457,10 @@ function BoardPage() {
                 <div>
                   <h2 className="text-lg font-bold">{company.name}</h2>
                   <p className="text-xs text-muted-foreground">
-                    {ownRoutes.length} ligne{ownRoutes.length > 1 ? "s" : ""} · {ownFleet.length}{" "}
-                    navire{ownFleet.length > 1 ? "s" : ""} · {own.length}{" "}
-                    {arrivals ? "arrivée" : "départ"}
-                    {own.length > 1 ? "s" : ""} à venir
+                    {ownRoutes.length}{tr("ui.pageHoraires.ligne")}{ownRoutes.length > 1 ? "s" : ""} · {ownFleet.length}{" "}
+                    {tr("ui.pageHoraires.navire")}{ownFleet.length > 1 ? "s" : ""} · {own.length}{" "}
+                    {arrivals ? tr("ui.pageHoraires.arrivee") : tr("ui.pageHoraires.depart")}
+                    {own.length > 1 ? "s" : ""}{tr("ui.pageHoraires.aVenir")}
                   </p>
                 </div>
               </div>
@@ -473,7 +472,7 @@ function BoardPage() {
                     rel="noopener noreferrer"
                     className="underline underline-offset-2"
                   >
-                    Site de la compagnie
+                    {tr("ui.pageHoraires.siteDeLaCompagnie")}
                   </a>
                 ) : null}
                 <Link
@@ -481,12 +480,12 @@ function BoardPage() {
                   search={{ select: "company", id: company.id } as never}
                   className="underline underline-offset-2"
                 >
-                  Sa fiche et ses contacts
+                  {tr("ui.pageHoraires.saFicheEtSesContacts")}
                 </Link>
               </div>
             </div>
             <div className="min-w-[260px] flex-[2]">
-              <h3 className="mb-2 text-[13px] font-bold">Ses lignes</h3>
+              <h3 className="mb-2 text-[13px] font-bold">{tr("ui.pageHoraires.sesLignes")}</h3>
               <div className="flex flex-wrap gap-1.5">
                 {ownRoutes.map((sailing) => (
                   <Chip
@@ -505,7 +504,7 @@ function BoardPage() {
               </div>
             </div>
             <div className="min-w-[220px] flex-[2]">
-              <h3 className="mb-2 text-[13px] font-bold">Sa flotte</h3>
+              <h3 className="mb-2 text-[13px] font-bold">{tr("ui.pageHoraires.saFlotte")}</h3>
               <div className="flex flex-wrap gap-1.5">
                 {ownFleet.length ? (
                   ownFleet.map((vessel) => (
@@ -525,7 +524,7 @@ function BoardPage() {
                   ))
                 ) : (
                   <p className="text-xs text-muted-foreground">
-                    Navires à confirmer sur ces traversées.
+                    {tr("ui.pageHoraires.naviresAConfirmerSurCes")}
                   </p>
                 )}
               </div>
@@ -540,7 +539,7 @@ function BoardPage() {
             aria-expanded={showMap}
             className="mt-3 inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl bg-[#16324a] text-sm font-semibold text-white"
           >
-            <MapIcon size={16} aria-hidden /> {showMap ? "Masquer la carte" : "Voir sur la carte"}
+            <MapIcon size={16} aria-hidden /> {showMap ? tr("ui.pageHoraires.masquerLaCarte") : tr("ui.pageHoraires.voirSurLaCarte")}
           </button>
         ) : null}
         {isMobile && showMap ? (
@@ -550,19 +549,18 @@ function BoardPage() {
         <div className="mt-3 grid items-start gap-4 lg:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)]">
           <section
             className="overflow-hidden rounded-2xl border border-border bg-card"
-            aria-label={arrivals ? "Arrivées" : "Départs"}
+            aria-label={arrivals ? tr("ui.pageHoraires.arrivees") : tr("ui.pageHoraires.departs")}
           >
             <p
               className="border-b border-border px-4 py-2.5 text-xs text-muted-foreground"
               aria-live="polite"
             >
-              {rows.length} {arrivals ? "arrivée" : "départ"}
-              {rows.length > 1 ? "s" : ""} · prix indicatifs pour 2 adultes et une berline
+              {rows.length} {arrivals ? tr("ui.pageHoraires.arrivee") : tr("ui.pageHoraires.depart")}
+              {rows.length > 1 ? "s" : ""}{tr("ui.pageHoraires.prixIndicatifsPour2Adultes")}
             </p>
             {rows.length === 0 ? (
               <p className="px-4 py-8 text-center text-sm text-muted-foreground">
-                Aucune traversée publiée pour ces filtres. Essayez une autre date ou une autre
-                compagnie.
+                {tr("ui.pageHoraires.aucuneTraverseePublieePourCes")}
               </p>
             ) : null}
             <ul>
@@ -632,7 +630,7 @@ function BoardPage() {
                 onClick={() => setVisible((count) => count + PAGE_SIZE)}
                 className="min-h-11 w-full border-t border-border text-sm font-semibold text-primary"
               >
-                Afficher plus ({rows.length - visible} restants)
+                {tr("ui.pageHoraires.afficherPlus")}{rows.length - visible}{tr("ui.pageHoraires.restants")}
               </button>
             ) : null}
           </section>
@@ -644,7 +642,7 @@ function BoardPage() {
               </div>
               {detail ?? (
                 <p className="rounded-2xl border border-dashed border-border p-4 text-sm text-muted-foreground">
-                  Choisissez une traversée pour voir son trajet, son statut et son prix indicatif.
+                  {tr("ui.pageHoraires.choisissezUneTraverseePourVoir")}
                 </p>
               )}
             </aside>
@@ -682,7 +680,7 @@ function TripDetail({ row, arrivals, now }: { row: Row; arrivals: boolean; now: 
     <section
       key={departure.id}
       className="bw-board-rise rounded-2xl border border-border bg-card p-4"
-      aria-label="Détail de la traversée"
+      aria-label={tr("ui.pageHoraires.detailDeLaTraversee")}
     >
       <div className="flex items-start justify-between gap-2">
         <span className={`rounded-full px-2.5 py-1 text-xs font-bold ${toneClass[status.tone]}`}>
@@ -707,7 +705,7 @@ function TripDetail({ row, arrivals, now }: { row: Row; arrivals: boolean; now: 
         {from.name} → {to.name}
       </h2>
       <p className="text-[13px] text-muted-foreground">
-        {arrivals ? "Arrivée" : "Départ"} {capitalizeFirst(formatShortDay(row.at, row.zone))} à{" "}
+        {arrivals ? tr("ui.pageHoraires.arrivee2") : tr("ui.pageHoraires.depart2")} {capitalizeFirst(formatShortDay(row.at, row.zone))} à{" "}
         {formatTime(row.at, row.zone)} ({zoneLabel(arrivals ? toZone : fromZone)})
       </p>
       <p className="mt-1 flex flex-wrap items-center gap-1.5 text-[13px]">
@@ -721,7 +719,7 @@ function TripDetail({ row, arrivals, now }: { row: Row; arrivals: boolean; now: 
             {vessel.name}
           </Link>
         ) : (
-          "Navire à confirmer"
+          tr("ui.pageHoraires.navireAConfirmer")
         )}
         <VesselAlertTag vesselId={vessel?.id} />
         {company ? <span className="text-muted-foreground">· {company.name}</span> : null}
@@ -731,16 +729,16 @@ function TripDetail({ row, arrivals, now }: { row: Row; arrivals: boolean; now: 
       {fare ? (
         <div className="mt-3 flex flex-wrap items-center justify-between gap-2 rounded-xl bg-secondary/60 p-3">
           <span>
-            <strong className="block text-sm">Prix indicatif : {formatFareRange(fare)}</strong>
+            <strong className="block text-sm">{tr("ui.pageHoraires.prixIndicatif")}{formatFareRange(fare)}</strong>
             <small className="text-[11px] text-muted-foreground">
-              2 adultes et une berline, aller simple. Repère, pas un devis.
+              {tr("ui.pageHoraires.t2AdultesEtUneBerline")}
             </small>
           </span>
           <a
             href={priceSearchHref(from, to, dateKeyInZone(departure.departure_at, fromZone))}
             className="inline-flex min-h-10 items-center gap-1 rounded-lg bg-primary px-3 text-[13px] font-bold text-primary-foreground"
           >
-            Comparer les prix <ArrowRight size={14} aria-hidden />
+            {tr("ui.pageHoraires.comparerLesPrix")}<ArrowRight size={14} aria-hidden />
           </a>
         </div>
       ) : null}
@@ -761,14 +759,14 @@ function TripDetail({ row, arrivals, now }: { row: Row; arrivals: boolean; now: 
           search={{ select: "departure", id: departure.id } as never}
           className="inline-flex min-h-10 items-center rounded-lg border border-border px-3"
         >
-          Voir la fiche complète
+          {tr("ui.pageHoraires.voirLaFicheComplete")}
         </Link>
         <button
           type="button"
           onClick={() => void share()}
           className="inline-flex min-h-10 items-center gap-1.5 rounded-lg border border-border px-3"
         >
-          <Share2 size={14} aria-hidden /> {copied ? "Lien copié" : "Partager aux proches"}
+          <Share2 size={14} aria-hidden /> {copied ? tr("ui.pageHoraires.lienCopie") : tr("ui.pageHoraires.partagerAuxProches")}
         </button>
       </div>
     </section>

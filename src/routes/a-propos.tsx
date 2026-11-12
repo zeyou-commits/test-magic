@@ -1,6 +1,7 @@
 import { seoHead } from "@/lib/seo/site";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Card, PageHero, SiteLayout } from "@/components/layout/SiteLayout";
+import { tr } from "@/lib/i18n";
 
 const title = "À propos de BledWay, la carte des ferries Europe ↔ Algérie";
 const description =
@@ -49,9 +50,9 @@ function AboutPage() {
   return (
     <SiteLayout>
       <PageHero
-        overline="À propos"
-        title="BledWay, la route du bled rendue lisible"
-        intro="Une carte unique pour comprendre en quelques secondes comment traverser entre l'Europe et l'Algérie, et savoir où en est votre bateau."
+        overline={tr("ui.pageAPropos.aPropos")}
+        title={tr("ui.pageAPropos.bledwayLaRouteDuBled")}
+        intro={tr("ui.pageAPropos.uneCarteUniquePourComprendre")}
       />
       <div className="mt-10 grid gap-4 sm:grid-cols-3">
         {PILLARS.map((pillar) => (
@@ -63,7 +64,7 @@ function AboutPage() {
       </div>
 
       <section className="mt-12">
-        <h2 className="font-display text-xl font-semibold">Ce que vous y trouvez</h2>
+        <h2 className="font-display text-xl font-semibold">{tr("ui.pageAPropos.ceQueVousYTrouvez")}</h2>
         <ol className="mt-4 grid gap-3 sm:grid-cols-2">
           {STEPS.map((step, index) => (
             <li key={step.title} className="flex gap-3 rounded-xl border bg-card p-4">
@@ -82,58 +83,52 @@ function AboutPage() {
       <section className="mt-12 grid gap-6 text-sm leading-relaxed text-muted-foreground sm:grid-cols-2">
         <div>
           <h2 className="font-display text-base font-semibold text-foreground">
-            D'où viennent les informations
+            {tr("ui.pageAPropos.dOuViennentLesInformations")}
           </h2>
           <p className="mt-2">
-            Les programmes publiés par les compagnies, relus par l'équipe ; le signal AIS que chaque
-            navire émet ; les prévisions marines d'Open-Meteo ; et ce que les voyageurs constatent
-            sur place. Le détail est dans la{" "}
+            {tr("ui.pageAPropos.lesProgrammesPubliesParLes")}{" "}
             <Link to="/methode-editoriale" className="font-medium text-primary underline">
-              méthode éditoriale
+              {tr("ui.pageAPropos.methodeEditoriale")}
             </Link>
             .
           </p>
         </div>
         <div>
           <h2 className="font-display text-base font-semibold text-foreground">
-            Indépendant et gratuit
+            {tr("ui.pageAPropos.independantEtGratuit")}
           </h2>
           <p className="mt-2">
-            BledWay n'appartient à aucune compagnie et ne classe pas les traversées selon qui paie.
-            Le site est gratuit, sans publicité ciblée, et vos données ne sont jamais revendues
-            (voir la{" "}
+            {tr("ui.pageAPropos.bledwayNAppartientAAucune")}{" "}
             <Link to="/confidentialite" className="font-medium text-primary underline">
-              confidentialité
+              {tr("ui.pageAPropos.confidentialite")}
             </Link>
             ).
           </p>
         </div>
         <div>
-          <h2 className="font-display text-base font-semibold text-foreground">Une communauté</h2>
+          <h2 className="font-display text-base font-semibold text-foreground">{tr("ui.pageAPropos.uneCommunaute")}</h2>
           <p className="mt-2">
-            Les salons, les questions par ligne et les avis vivent grâce aux voyageurs, dans le
-            respect de la{" "}
+            {tr("ui.pageAPropos.lesSalonsLesQuestionsPar")}{" "}
             <Link to="/charte" className="font-medium text-primary underline">
-              charte
+              {tr("ui.pageAPropos.charte")}
             </Link>
-            . Pseudo et avatar suffisent : personne ne voit votre nom ni vos dates.
+            {tr("ui.pageAPropos.pseudoEtAvatarSuffisentPersonne")}
           </p>
         </div>
         <div>
           <h2 className="font-display text-base font-semibold text-foreground">
-            Toujours vérifier
+            {tr("ui.pageAPropos.toujoursVerifier")}
           </h2>
           <p className="mt-2">
-            BledWay aide à comprendre et à anticiper. Pour l'heure de présentation, les papiers ou
-            une annulation, la compagnie reste la référence.
+            {tr("ui.pageAPropos.bledwayAideAComprendreEt")}
           </p>
         </div>
       </section>
 
       <p className="mt-10 text-sm text-muted-foreground">
-        Une information erronée, une idée, un partenariat ?{" "}
+        {tr("ui.pageAPropos.uneInformationErroneeUneIdee")}{" "}
         <Link to="/contact" className="font-semibold text-primary underline underline-offset-4">
-          Écrivez-nous
+          {tr("ui.pageAPropos.ecrivezNous")}
         </Link>
         .
       </p>

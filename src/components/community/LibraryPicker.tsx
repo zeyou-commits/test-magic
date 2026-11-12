@@ -3,6 +3,7 @@ import { Check, Search, X } from "lucide-react";
 import { CabasImg } from "@/components/CabasImg";
 import type { AvatarRow } from "@/lib/community/avatars";
 import { normalizeSearch, useLibrary, type LibraryGroup } from "@/lib/community/library";
+import { tr } from "@/lib/i18n";
 
 const ALL = "__tout";
 
@@ -69,16 +70,16 @@ export function LibraryPicker({
           value={search}
           onChange={(event) => setSearch(event.target.value)}
           placeholder={`Chercher parmi ${total} images`}
-          aria-label="Chercher une image"
+          aria-label={tr("ui.libraryPicker.chercherUneImage")}
         />
         {search ? (
-          <button type="button" aria-label="Effacer la recherche" onClick={() => setSearch("")}>
+          <button type="button" aria-label={tr("ui.libraryPicker.effacerLaRecherche")} onClick={() => setSearch("")}>
             <X size={14} aria-hidden />
           </button>
         ) : null}
       </div>
       {query ? null : (
-        <div className="bw-library__tabs" role="tablist" aria-label="Catégories">
+        <div className="bw-library__tabs" role="tablist" aria-label={tr("ui.libraryPicker.categories")}>
           {[{ id: ALL, label: "Tout", rows: library.rows }, ...library.groups].map((group) => (
             <button
               key={group.id}
@@ -93,7 +94,7 @@ export function LibraryPicker({
         </div>
       )}
       <div className="bw-library__scroll">
-        {library.pending && !total ? <p className="bw-library__empty">Chargement…</p> : null}
+        {library.pending && !total ? <p className="bw-library__empty">{tr("ui.libraryPicker.chargement")}</p> : null}
         {sections.map((section) => (
           <section key={section.id}>
             {current === ALL && section.label && sections.length > 1 ? (
@@ -121,7 +122,7 @@ export function LibraryPicker({
           </section>
         ))}
         {query && !sections[0]?.rows.length ? (
-          <p className="bw-library__empty">Aucune image ne correspond à « {search.trim()} ».</p>
+          <p className="bw-library__empty">{tr("ui.libraryPicker.aucuneImageNeCorrespondA")}{search.trim()} ».</p>
         ) : null}
       </div>
     </div>

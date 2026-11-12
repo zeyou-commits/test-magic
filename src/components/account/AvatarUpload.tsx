@@ -1,6 +1,7 @@
 import { useRef, useState } from "react";
 import { Camera } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { tr } from "@/lib/i18n";
 
 export function AvatarUpload({
   userId,
@@ -42,11 +43,11 @@ export function AvatarUpload({
         className="bw-action-secondary"
       >
         <Camera className="size-4" />
-        {busy ? "Import en cours…" : "Choisir une photo"}
+        {busy ? tr("ui.avatarUpload.importEnCours") : tr("ui.avatarUpload.choisirUnePhoto")}
       </button>
       <input
         ref={inputRef}
-        aria-label="Choisir une photo de profil"
+        aria-label={tr("ui.avatarUpload.choisirUnePhotoDeProfil")}
         type="file"
         className="sr-only"
         accept="image/jpeg,image/png,image/webp"
@@ -57,7 +58,7 @@ export function AvatarUpload({
         }}
       />
       <p className="mt-2 text-[11px] text-muted-foreground">
-        Photo publique · JPG, PNG ou WebP · 2 Mo max. Enregistrez ensuite votre profil.
+        {tr("ui.avatarUpload.photoPubliqueJpgPngOu")}
       </p>
       {error && (
         <p role="alert" className="mt-2 text-xs text-destructive">

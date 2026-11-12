@@ -16,6 +16,7 @@ import { CompanyBadge } from "@/components/panel/CompanyBadge";
 import { LineAlertNotice, VesselAlertTag } from "@/components/panel/VesselAlert";
 import { VesselCard } from "@/components/panel/VesselCard";
 import { primaryLink } from "./Editorial";
+import { tr } from "@/lib/i18n";
 
 const BoardMap = lazy(() => import("@/components/board/BoardMap"));
 
@@ -67,12 +68,12 @@ export function LineMapCard({ line }: { line: LineGlance }) {
           </Suspense>
         </ClientOnly>
         <span className="pointer-events-none absolute left-3 top-3 rounded-full bg-white/90 px-3 py-1 text-xs font-bold text-[#0f2a3d] shadow">
-          1 nuit en mer
+          {tr("ui.lineBlocks.t1NuitEnMer")}
         </span>
       </div>
       <div className="flex flex-col gap-5 p-5 md:p-7">
         <div className="min-w-0">
-          <p className="text-xs font-bold uppercase tracking-widest text-primary">La ligne en un coup d'œil</p>
+          <p className="text-xs font-bold uppercase tracking-widest text-primary">{tr("ui.lineBlocks.laLigneEnUnCoup")}</p>
           <p className="mt-2 font-display text-2xl font-bold">
             {line.from} → {line.to}
           </p>
@@ -92,14 +93,14 @@ export function LineMapCard({ line }: { line: LineGlance }) {
               search={{ select: "route", id: route.id } as never}
               className={`${primaryLink} sm:flex-1`}
             >
-              Suivre la ligne en direct sur la carte
+              {tr("ui.lineBlocks.suivreLaLigneEnDirect")}
             </Link>
           ) : null}
           <a
             href={`/lignes/${line.slug}`}
             className="rounded-lg border px-4 py-2.5 text-center text-sm font-semibold text-primary hover:bg-secondary sm:flex-1"
           >
-            Voir la ligne et tous les départs
+            {tr("ui.lineBlocks.voirLaLigneEtTous")}
           </a>
         </div>
       </div>
@@ -120,11 +121,10 @@ export function LineVessels({ line }: { line: LineGlance }) {
   return (
     <section className="mt-10" aria-labelledby="navires-ligne">
       <h2 id="navires-ligne" className="font-display text-2xl font-bold tracking-tight">
-        Les navires de la ligne
+        {tr("ui.lineBlocks.lesNaviresDeLaLigne")}
       </h2>
       <p className="mt-2 text-muted-foreground">
-        Les bateaux programmés sur {line.from} → {line.to}, du plus fréquent au plus rare. L'affectation d'un
-        navire peut changer : elle se confirme auprès de la compagnie.
+        {tr("ui.lineBlocks.lesBateauxProgrammesSur")}{line.from} → {line.to}{tr("ui.lineBlocks.duPlusFrequentAuPlus")}
       </p>
       <div className="mt-5 grid gap-5 sm:grid-cols-2">
         {list.map((v) => (
@@ -146,9 +146,9 @@ export function LineBooking({ line }: { line: LineGlance }) {
       {operators.length ? (
         <section className="mt-10" aria-labelledby="reserver-ligne">
           <h2 id="reserver-ligne" className="font-display text-2xl font-bold tracking-tight">
-            Réserver cette traversée
+            {tr("ui.lineBlocks.reserverCetteTraversee")}
           </h2>
-          <p className="mt-2 text-muted-foreground">La réservation se fait directement auprès de la compagnie.</p>
+          <p className="mt-2 text-muted-foreground">{tr("ui.lineBlocks.laReservationSeFaitDirectement")}</p>
           <div className="mt-4 empty:hidden">
             <LineAlertNotice departures={lineDepartures} vessels={vessels} />
           </div>
@@ -168,7 +168,7 @@ export function LineBooking({ line }: { line: LineGlance }) {
       {next.length ? (
         <section className="mt-10" aria-labelledby="prochains-departs">
           <h2 id="prochains-departs" className="font-display text-2xl font-bold tracking-tight">
-            Prochains départs{" "}
+            {tr("ui.lineBlocks.prochainsDeparts")}{" "}
             <span className="text-base font-normal text-muted-foreground">· {zoneLabel(timeZone)}</span>
           </h2>
           <ul className="mt-4 divide-y divide-border rounded-2xl border bg-card">
@@ -181,7 +181,7 @@ export function LineBooking({ line }: { line: LineGlance }) {
                   <span className="text-muted-foreground">
                     {company?.name ?? "—"}
                     {d.duration_minutes ? ` · ${formatDuration(d.duration_minutes)}` : ""}
-                    {d.status === "cancelled" ? " · Annulé" : ""}
+                    {d.status === "cancelled" ? tr("ui.lineBlocks.annule") : ""}
                     {vessel ? ` · ${vessel.name} ` : ""}
                     <VesselAlertTag vesselId={vessel?.id} />
                   </span>
@@ -193,7 +193,7 @@ export function LineBooking({ line }: { line: LineGlance }) {
             href={`/lignes/${line.slug}`}
             className="mt-3 inline-block text-sm font-semibold text-primary underline underline-offset-4"
           >
-            Tous les départs et le calendrier de la ligne
+            {tr("ui.lineBlocks.tousLesDepartsEtLe")}
           </a>
         </section>
       ) : null}

@@ -2,6 +2,7 @@ import { seoHead } from "@/lib/seo/site";
 import { createFileRoute } from "@tanstack/react-router";
 import { PageHero, SiteLayout } from "@/components/layout/SiteLayout";
 import { LEGAL_UPDATED, LegalSections, PageLink } from "@/components/layout/LegalPage";
+import { tr } from "@/lib/i18n";
 
 const title = "Politique de confidentialité — BledWay";
 const description =
@@ -16,9 +17,9 @@ function PrivacyPage() {
   return (
     <SiteLayout>
       <PageHero
-        overline="Confidentialité"
-        title="Vos données sur BledWay"
-        intro="Le minimum nécessaire, gardé le moins longtemps possible, jamais revendu. Voici le détail, conformément au RGPD."
+        overline={tr("ui.pageConfidentialite.confidentialite")}
+        title={tr("ui.pageConfidentialite.vosDonneesSurBledway")}
+        intro={tr("ui.pageConfidentialite.leMinimumNecessaireGardeLe")}
       />
       <LegalSections
         updated={LEGAL_UPDATED}
@@ -28,10 +29,9 @@ function PrivacyPage() {
             title: "Qui est responsable de vos données",
             body: (
               <p>
-                L'éditeur de BledWay, un particulier (voir les{" "}
-                <PageLink to="/mentions-legales">mentions légales</PageLink>). Pour toute question
-                sur vos données ou pour exercer vos droits : la page{" "}
-                <PageLink to="/contact">Contact</PageLink>.
+                {tr("ui.pageConfidentialite.lEditeurDeBledwayUn")}{" "}
+                <PageLink to="/mentions-legales">{tr("ui.pageConfidentialite.mentionsLegales")}</PageLink>{tr("ui.pageConfidentialite.pourTouteQuestionSurVos")}{" "}
+                <PageLink to="/contact">{tr("ui.pageConfidentialite.contact")}</PageLink>.
               </p>
             ),
           },
@@ -41,21 +41,14 @@ function PrivacyPage() {
             body: (
               <>
                 <p>
-                  Vous pouvez consulter la carte, les départs, les lignes, les ports et lire les
-                  salons sans créer de compte.
+                  {tr("ui.pageConfidentialite.vousPouvezConsulterLaCarte")}
                 </p>
                 <ul>
                   <li>
-                    <strong>Mesure d'audience</strong> : pages vues et étapes du parcours (recherche,
-                    suivi d'une traversée, ajout d'un billet), comptées de façon anonyme avec
-                    l'outil Umami, sans cookie, sans adresse IP conservée, sans lien avec votre
-                    compte.
+                    <strong>{tr("ui.pageConfidentialite.mesureDAudience")}</strong>{tr("ui.pageConfidentialite.pagesVuesEtEtapesDu")}
                   </li>
                   <li>
-                    <strong>Préférences gardées sur votre appareil</strong> (stockage local du
-                    navigateur) : traversée suivie, trajet de porte à porte, filtres, bandeaux
-                    fermés. Le trajet de porte à porte ne nous est pas envoyé une fois calculé. Vous
-                    effacez ces préférences en vidant les données du site dans votre navigateur.
+                    <strong>{tr("ui.pageConfidentialite.preferencesGardeesSurVotreAppareil")}</strong>{tr("ui.pageConfidentialite.stockageLocalDuNavigateurTraversee")}
                   </li>
                 </ul>
               </>
@@ -67,39 +60,27 @@ function PrivacyPage() {
             body: (
               <ul>
                 <li>
-                  <strong>Compte</strong> : adresse e-mail et mot de passe (jamais stocké en clair),
-                  ou connexion Google (adresse e-mail, nom, photo).
+                  <strong>{tr("ui.pageConfidentialite.compte")}</strong>{tr("ui.pageConfidentialite.adresseEMailEtMot")}
                 </li>
                 <li>
-                  <strong>Profil voyageur</strong> : pseudo, avatar, couleur, humeur. C'est tout ce
-                  que voient les autres : ni nom, ni e-mail, ni dates de voyage.
+                  <strong>{tr("ui.pageConfidentialite.profilVoyageur")}</strong>{tr("ui.pageConfidentialite.pseudoAvatarCouleurHumeurC")}
                 </li>
                 <li>
-                  <strong>Traversées suivies</strong> et réglages de notifications.
+                  <strong>{tr("ui.pageConfidentialite.traverseesSuivies")}</strong>{tr("ui.pageConfidentialite.etReglagesDeNotifications")}
                 </li>
                 <li>
-                  <strong>Contributions</strong> : avis, notes, signalements, messages des salons,
-                  questions et réponses, réactions, avec leur date.
+                  <strong>{tr("ui.pageConfidentialite.contributions")}</strong>{tr("ui.pageConfidentialite.avisNotesSignalementsMessagesDes")}
                 </li>
                 <li>
-                  <strong>Photos</strong> jointes à un avis (navire, port), à un signalement de port
-                  ou à un message de salon. Avant l'envoi, votre appareil les réduit et les
-                  réenregistre : la position GPS et les informations de l'appareil sont retirées, et{" "}
+                  <strong>{tr("ui.pageConfidentialite.photos")}</strong>{tr("ui.pageConfidentialite.jointesAUnAvisNavire")}{" "}
                   <strong>
-                    les visages et les plaques d'immatriculation sont floutés automatiquement
+                    {tr("ui.pageConfidentialite.lesVisagesEtLesPlaques")}
                   </strong>{" "}
-                  (détection sur l'appareil, rien n'est envoyé ailleurs). Vous vérifiez l'aperçu et
-                  confirmez qu'aucun visage ni plaque ne reste lisible. Vous pouvez retirer vos
-                  photos à tout moment.
+                  {tr("ui.pageConfidentialite.detectionSurLAppareilRien")}
                 </li>
                 <li>
-                  <strong>Billets de ferry</strong> que vous ajoutez : le document original (photo
-                  ou PDF, QR code compris) et les informations que vous avez vérifiées (traversées,
-                  passagers, référence, véhicule).{" "}
-                  <strong>La lecture se fait sur votre téléphone</strong>, sans envoi à un service
-                  extérieur. Le document est rangé dans un espace privé que vous seul pouvez ouvrir,
-                  et une copie reste sur votre téléphone pour le consulter sans connexion. BledWay
-                  ne vérifie pas la validité d'un billet : seule la compagnie fait foi.
+                  <strong>{tr("ui.pageConfidentialite.billetsDeFerry")}</strong>{tr("ui.pageConfidentialite.queVousAjoutezLeDocument")}{" "}
+                  <strong>{tr("ui.pageConfidentialite.laLectureSeFaitSur")}</strong>{tr("ui.pageConfidentialite.sansEnvoiAUnService")}
                 </li>
               </ul>
             ),
@@ -110,15 +91,11 @@ function PrivacyPage() {
             body: (
               <>
                 <p>
-                  Signaler une situation, confirmer un signalement ou écrire dans le salon d'un port
-                  demande votre position, pour vérifier que vous êtes sur place.{" "}
-                  <strong>Elle sert à ce seul contrôle et n'est pas enregistrée.</strong> Vous
-                  pouvez refuser : le signalement est alors transmis à l'équipe pour vérification.
+                  {tr("ui.pageConfidentialite.signalerUneSituationConfirmerUn")}{" "}
+                  <strong>{tr("ui.pageConfidentialite.elleSertACeSeul")}</strong>{tr("ui.pageConfidentialite.vousPouvezRefuserLeSignalement")}
                 </p>
                 <p>
-                  Pour corriger les pannes de localisation, un journal technique est gardé 14 jours
-                  : résultat de la demande, type d'appareil et de navigateur, compte s'il est
-                  connecté. Il ne contient jamais vos coordonnées.
+                  {tr("ui.pageConfidentialite.pourCorrigerLesPannesDe")}
                 </p>
               </>
             ),
@@ -129,23 +106,16 @@ function PrivacyPage() {
             body: (
               <ul>
                 <li>
-                  <strong>Faire fonctionner le service</strong> (compte, traversées suivies, salons)
-                  : exécution des conditions d'utilisation.
+                  <strong>{tr("ui.pageConfidentialite.faireFonctionnerLeService")}</strong>{tr("ui.pageConfidentialite.compteTraverseesSuiviesSalonsExecution")}
                 </li>
                 <li>
-                  <strong>Modérer et protéger la communauté</strong> (charte, signalements, lutte
-                  contre les abus) : intérêt légitime et obligations légales.
+                  <strong>{tr("ui.pageConfidentialite.modererEtProtegerLaCommunaute")}</strong>{tr("ui.pageConfidentialite.charteSignalementsLutteContreLes")}
                 </li>
                 <li>
-                  <strong>Améliorer la fiabilité des informations</strong> (mesure d'audience
-                  anonyme, journal technique, écarts d'horaire relevés sur les billets) : intérêt
-                  légitime. Ce qui sert à BledWay est enregistré à part, sans aucune donnée
-                  personnelle : la traversée concernée, l'horaire ou le navire imprimé, l'agence
-                  émettrice. L'équipe vérifie toujours auprès de la compagnie avant de corriger.
+                  <strong>{tr("ui.pageConfidentialite.ameliorerLaFiabiliteDesInformations")}</strong>{tr("ui.pageConfidentialite.mesureDAudienceAnonymeJournal")}
                 </li>
                 <li>
-                  <strong>Notifications</strong> sur votre téléphone ou ordinateur : votre
-                  consentement, retirable à tout moment.
+                  <strong>{tr("ui.pageConfidentialite.notifications")}</strong>{tr("ui.pageConfidentialite.surVotreTelephoneOuOrdinateur")}
                 </li>
               </ul>
             ),
@@ -156,41 +126,28 @@ function PrivacyPage() {
             body: (
               <ul>
                 <li>
-                  <strong>Messages des salons de traversée</strong> : effacés 30 jours après la
-                  traversée. <strong>Salons de port et questions de ligne</strong> : 30 jours après
-                  l'envoi.
+                  <strong>{tr("ui.pageConfidentialite.messagesDesSalonsDeTraversee")}</strong>{tr("ui.pageConfidentialite.effaces30JoursApresLa")}<strong>{tr("ui.pageConfidentialite.salonsDePortEtQuestions")}</strong>{tr("ui.pageConfidentialite.t30JoursApresLEnvoi")}
                 </li>
                 <li>
-                  <strong>Messages privés</strong> : effacés 7 jours après la traversée, ou 30 jours
-                  en cas de signalement.
+                  <strong>{tr("ui.pageConfidentialite.messagesPrives")}</strong>{tr("ui.pageConfidentialite.effaces7JoursApresLa")}
                 </li>
                 <li>
-                  <strong>Avis</strong> : tant qu'ils sont publiés, ou jusqu'à leur suppression par
-                  vous ou par la modération.
+                  <strong>{tr("ui.pageConfidentialite.avis")}</strong>{tr("ui.pageConfidentialite.tantQuIlsSontPublies")}
                 </li>
                 <li>
-                  <strong>Signalements</strong> (avec leurs confirmations et démentis) : affichés
-                  quelques heures selon la situation, puis gardés 12 mois pour comparer d'une saison
-                  à l'autre, et effacés automatiquement.
+                  <strong>{tr("ui.pageConfidentialite.signalements")}</strong>{tr("ui.pageConfidentialite.avecLeursConfirmationsEtDementis")}
                 </li>
                 <li>
-                  <strong>Journal technique de localisation</strong> : 14 jours.
+                  <strong>{tr("ui.pageConfidentialite.journalTechniqueDeLocalisation")}</strong>{tr("ui.pageConfidentialite.t14Jours")}
                 </li>
                 <li>
-                  <strong>Compte et profil</strong> : jusqu'à la suppression du compte.
+                  <strong>{tr("ui.pageConfidentialite.compteEtProfil")}</strong>{tr("ui.pageConfidentialite.jusquALaSuppressionDu")}
                 </li>
                 <li>
-                  <strong>Photos</strong> : avis et signalements, publiées seulement après
-                  validation par l'équipe ; une photo refusée est effacée. Elles disparaissent avec
-                  l'avis, le signalement ou le message auquel elles sont jointes (30 jours pour les
-                  salons), et leurs fichiers sont effacés la nuit suivante. Vous pouvez demander
-                  leur retrait à tout moment.
+                  <strong>{tr("ui.pageConfidentialite.photos")}</strong>{tr("ui.pageConfidentialite.avisEtSignalementsPublieesSeulement")}
                 </li>
                 <li>
-                  <strong>Billets</strong> : effacés automatiquement 7 jours après votre dernière
-                  traversée (30 jours après l'ajout si aucune date n'est connue), document compris,
-                  sur le serveur comme sur votre téléphone. Vous pouvez les supprimer avant, à tout
-                  moment.
+                  <strong>{tr("ui.pageConfidentialite.billets")}</strong>{tr("ui.pageConfidentialite.effacesAutomatiquement7JoursApres")}
                 </li>
               </ul>
             ),
@@ -201,44 +158,33 @@ function PrivacyPage() {
             body: (
               <>
                 <p>
-                  Seule l'équipe BledWay (administration et modération) y accède, dans la limite de
-                  son rôle. <strong>Aucune revente, aucune publicité ciblée.</strong> Nous faisons
-                  appel à des prestataires techniques :
+                  {tr("ui.pageConfidentialite.seuleLEquipeBledwayAdministration")}<strong>{tr("ui.pageConfidentialite.aucuneReventeAucunePubliciteCiblee")}</strong>{tr("ui.pageConfidentialite.nousFaisonsAppelADes")}
                 </p>
                 <ul>
                   <li>
-                    <strong>Vercel</strong> : hébergement du site.
+                    <strong>{tr("ui.pageConfidentialite.vercel")}</strong>{tr("ui.pageConfidentialite.hebergementDuSite")}
                   </li>
                   <li>
-                    <strong>Supabase</strong> : base de données, comptes et e-mails de connexion.
+                    <strong>{tr("ui.pageConfidentialite.supabase")}</strong>{tr("ui.pageConfidentialite.baseDeDonneesComptesEt")}
                   </li>
                   <li>
-                    <strong>Google</strong> : connexion avec Google si vous la choisissez, et
-                    polices de caractères chargées par votre navigateur.
+                    <strong>{tr("ui.pageConfidentialite.google")}</strong>{tr("ui.pageConfidentialite.connexionAvecGoogleSiVous")}
                   </li>
                   <li>
-                    <strong>Services de notification</strong> de votre navigateur (Google, Apple,
-                    Mozilla…) : acheminement des notifications que vous avez acceptées.
+                    <strong>{tr("ui.pageConfidentialite.servicesDeNotification")}</strong>{tr("ui.pageConfidentialite.deVotreNavigateurGoogleApple")}
                   </li>
                   <li>
-                    <strong>Open-Meteo</strong> : état de la mer. Votre navigateur l'interroge avec
-                    les coordonnées du trajet : il reçoit votre adresse IP, jamais votre position ni
-                    votre compte.
+                    <strong>{tr("ui.pageConfidentialite.openMeteo")}</strong>{tr("ui.pageConfidentialite.etatDeLaMerVotre")}
                   </li>
                   <li>
-                    <strong>OpenFreeMap</strong> : fond de carte, chargé par votre navigateur.
+                    <strong>{tr("ui.pageConfidentialite.openfreemap")}</strong>{tr("ui.pageConfidentialite.fondDeCarteChargePar")}
                   </li>
                   <li>
-                    <strong>Photon et OSRM</strong> : calcul du trajet de porte à porte. Nos
-                    serveurs leur transmettent les villes saisies, sans votre adresse IP ni votre
-                    compte.
+                    <strong>{tr("ui.pageConfidentialite.photonEtOsrm")}</strong>{tr("ui.pageConfidentialite.calculDuTrajetDePorte")}
                   </li>
                 </ul>
                 <p>
-                  Certains de ces prestataires sont établis hors de l'Union européenne, notamment
-                  aux États-Unis. Ces transferts s'appuient sur les garanties prévues par le RGPD
-                  (clauses contractuelles types de la Commission européenne ou cadre de protection
-                  des données UE–États-Unis, selon le prestataire).
+                  {tr("ui.pageConfidentialite.certainsDeCesPrestatairesSont")}
                 </p>
               </>
             ),
@@ -249,15 +195,11 @@ function PrivacyPage() {
             body: (
               <>
                 <p>
-                  Les messages des salons sont lisibles par les visiteurs du site, sous votre
-                  pseudo. Ils sont soumis à la{" "}
-                  <PageLink to="/charte">charte de la communauté</PageLink> et peuvent être relus
-                  par l'équipe et par un outil de modération automatique.
+                  {tr("ui.pageConfidentialite.lesMessagesDesSalonsSont")}{" "}
+                  <PageLink to="/charte">{tr("ui.pageConfidentialite.charteDeLaCommunaute")}</PageLink>{tr("ui.pageConfidentialite.etPeuventEtreRelusPar")}
                 </p>
                 <p>
-                  Les messages privés entre voyageurs ne sont relus ni par l'équipe ni par l'outil
-                  de modération. Ils ne sont lus que si l'un des deux participants signale la
-                  conversation.
+                  {tr("ui.pageConfidentialite.lesMessagesPrivesEntreVoyageurs")}
                 </p>
               </>
             ),
@@ -267,9 +209,7 @@ function PrivacyPage() {
             title: "Sécurité",
             body: (
               <p>
-                Connexions chiffrées (HTTPS), mots de passe jamais stockés en clair, accès aux
-                données limité par des règles de sécurité au niveau de la base. Votre identifiant de
-                compte n'est jamais rendu public.
+                {tr("ui.pageConfidentialite.connexionsChiffreesHttpsMotsDe")}
               </p>
             ),
           },
@@ -279,24 +219,18 @@ function PrivacyPage() {
             body: (
               <>
                 <p>
-                  Vous pouvez à tout moment accéder à vos données, les rectifier, les effacer, en
-                  limiter l'usage, vous opposer à un traitement fondé sur l'intérêt légitime,
-                  récupérer vos données (portabilité) et retirer votre consentement aux
-                  notifications.
+                  {tr("ui.pageConfidentialite.vousPouvezAToutMoment")}
                 </p>
                 <ul>
                   <li>
-                    <strong>Depuis « Mon profil »</strong> : pseudo, avatar, notifications,
-                    traversées suivies, avis non encore publiés.
+                    <strong>{tr("ui.pageConfidentialite.depuisMonProfil")}</strong>{tr("ui.pageConfidentialite.pseudoAvatarNotificationsTraverseesSuivies")}
                   </li>
                   <li>
-                    <strong>Pour tout le reste</strong>, la page <PageLink to="/contact">Contact</PageLink>. Réponse
-                    sous un mois au plus. Pour supprimer votre compte, voir ci-dessous.
+                    <strong>{tr("ui.pageConfidentialite.pourToutLeReste")}</strong>{tr("ui.pageConfidentialite.laPage")}<PageLink to="/contact">{tr("ui.pageConfidentialite.contact")}</PageLink>{tr("ui.pageConfidentialite.reponseSousUnMoisAu")}
                   </li>
                 </ul>
                 <p>
-                  Si vous estimez que vos droits ne sont pas respectés, vous pouvez saisir la CNIL
-                  (cnil.fr).
+                  {tr("ui.pageConfidentialite.siVousEstimezQueVos")}
                 </p>
               </>
             ),
@@ -307,28 +241,21 @@ function PrivacyPage() {
             body: (
               <>
                 <p>
-                  Sur le site comme dans l'application Android, vous pouvez demander la
-                  suppression complète de votre compte à tout moment, sans justification.
+                  {tr("ui.pageConfidentialite.surLeSiteCommeDans")}
                 </p>
                 <ul>
                   <li>
-                    Depuis « Mon profil », touchez <strong>Supprimer mon compte</strong> ; ou
-                    écrivez à{" "}
+                    {tr("ui.pageConfidentialite.depuisMonProfilTouchez")}<strong>{tr("ui.pageConfidentialite.supprimerMonCompte")}</strong>{tr("ui.pageConfidentialite.ouEcrivezA")}{" "}
                     <a href="mailto:contact@bledway.com?subject=Suppression%20de%20mon%20compte%20BledWay">
-                      contact@bledway.com
+                      {tr("ui.pageConfidentialite.contactBledwayCom")}
                     </a>{" "}
-                    depuis l'adresse de votre compte, avec pour objet « Suppression de mon compte
-                    BledWay ».
+                    {tr("ui.pageConfidentialite.depuisLAdresseDeVotre")}
                   </li>
                   <li>
-                    Le compte et les données qui y sont rattachées (profil, pseudo et avatar,
-                    billets et leurs documents, traversées suivies, abonnements aux
-                    notifications, photos, avis, signalements et messages) sont effacés sous un
-                    mois au plus.
+                    {tr("ui.pageConfidentialite.leCompteEtLesDonnees")}
                   </li>
                   <li>
-                    Seules les données qu'une obligation légale impose de garder le sont, pour la
-                    durée prévue par la loi.
+                    {tr("ui.pageConfidentialite.seulesLesDonneesQuUne")}
                   </li>
                 </ul>
               </>
@@ -339,8 +266,7 @@ function PrivacyPage() {
             title: "Mineurs",
             body: (
               <p>
-                Il faut avoir au moins 15 ans pour créer un compte et écrire dans les salons. En
-                dessous, la consultation reste possible sans compte.
+                {tr("ui.pageConfidentialite.ilFautAvoirAuMoins")}
               </p>
             ),
           },
@@ -349,8 +275,7 @@ function PrivacyPage() {
             title: "Évolution de cette politique",
             body: (
               <p>
-                Cette page évolue avec le service ; la date de mise à jour figure en tête. Un
-                changement important est annoncé sur le site.
+                {tr("ui.pageConfidentialite.cettePageEvolueAvecLe")}
               </p>
             ),
           },

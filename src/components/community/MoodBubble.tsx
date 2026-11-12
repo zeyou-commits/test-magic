@@ -2,6 +2,7 @@ import { CabasImg } from "@/components/CabasImg";
 import { useEffect, useSyncExternalStore } from "react";
 import { MessageCircle, X } from "lucide-react";
 import { moodIcon, type Mood } from "@/lib/community/travellers";
+import { tr } from "@/lib/i18n";
 
 /**
  * Bulle de BD de mon humeur, accrochée à mon avatar (en-tête sur ordinateur, onglet « Moi » sur
@@ -78,7 +79,7 @@ export function MoodBubble({ mood, placement }: { mood: Mood | null; placement: 
           <button
             type="button"
             className="bw-mood-bubble__close"
-            aria-label="Réduire la bulle d'humeur"
+            aria-label={tr("ui.moodBubble.reduireLaBulleDHumeur")}
             onClick={(event) => {
               event.stopPropagation();
               setOpen(false);

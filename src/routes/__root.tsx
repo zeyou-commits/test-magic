@@ -27,22 +27,23 @@ import { LocationHelp } from "@/components/layout/LocationHelp";
 import { MobileTabBar } from "@/components/layout/MobileTabBar";
 import { SiteHeader } from "@/components/layout/SiteLayout";
 import { TravelActionProvider } from "@/components/auth/TravelActionProvider";
+import { tr } from "@/lib/i18n";
 
 function NotFoundComponent() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
       <div className="max-w-md text-center">
         <h1 className="text-7xl font-bold text-foreground">404</h1>
-        <h2 className="mt-4 text-xl font-semibold text-foreground">Page introuvable</h2>
+        <h2 className="mt-4 text-xl font-semibold text-foreground">{tr("ui.pageRoot.pageIntrouvable")}</h2>
         <p className="mt-2 text-sm text-muted-foreground">
-          La page demandée n’existe pas ou a été déplacée.
+          {tr("ui.pageRoot.laPageDemandeeNExiste")}
         </p>
         <div className="mt-6">
           <Link
             to="/"
             className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
           >
-            Retour à la carte
+            {tr("ui.pageRoot.retourALaCarte")}
           </Link>
         </div>
       </div>
@@ -78,25 +79,25 @@ function ErrorComponent({ error }: ErrorComponentProps) {
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
       <div className="max-w-md text-center">
         <h1 className="text-xl font-semibold tracking-tight text-foreground">
-          Cette page n’a pas pu être chargée
+          {tr("ui.pageRoot.cettePageNAPas")}
         </h1>
         <p className="mt-2 text-sm text-muted-foreground">
           {assetLoadError
-            ? "Une mise à jour a interrompu le chargement. Actualisez la page pour récupérer la dernière version."
-            : "Un problème est survenu. Vous pouvez réessayer ou revenir à la carte."}
+            ? tr("ui.pageRoot.uneMiseAJourA")
+            : tr("ui.pageRoot.unProblemeEstSurvenuVous")}
         </p>
         <div className="mt-6 flex flex-wrap justify-center gap-2">
           <button
             onClick={() => window.location.reload()}
             className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
           >
-            Réessayer
+            {tr("ui.pageRoot.reessayer")}
           </button>
           <a
             href="/"
             className="inline-flex items-center justify-center rounded-md border border-input bg-background px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-accent"
           >
-            Retour à la carte
+            {tr("ui.pageRoot.retourALaCarte")}
           </a>
         </div>
       </div>

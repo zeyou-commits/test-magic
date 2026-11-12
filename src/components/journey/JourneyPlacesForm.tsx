@@ -6,6 +6,7 @@ import { legWithPauses } from "@/lib/ferry/itinerary";
 import { durationLabel } from "@/lib/ferry/journeySteps";
 import { thinLine, type JourneyPlaces } from "@/lib/ferry/journeyTrips";
 import type { Port } from "@/lib/ferry/types";
+import { tr } from "@/lib/i18n";
 
 /**
  * « D'où partez-vous ? Où allez-vous au bled ? » : facultatif. Les villes servent seulement au
@@ -102,7 +103,7 @@ export function JourneyPlacesForm({
       <input
         value={home}
         onChange={(event) => setHome(event.target.value)}
-        placeholder="Ville, en Europe"
+        placeholder={tr("ui.journeyPlacesForm.villeEnEurope")}
         autoComplete="address-level2"
       />
     </label>
@@ -113,7 +114,7 @@ export function JourneyPlacesForm({
       <input
         value={bled}
         onChange={(event) => setBled(event.target.value)}
-        placeholder="Ville, en Algérie"
+        placeholder={tr("ui.journeyPlacesForm.villeEnAlgerie")}
         autoComplete="off"
       />
     </label>
@@ -124,7 +125,7 @@ export function JourneyPlacesForm({
       <div className="bw-journey-places" data-filled>
         <MapPin size={15} aria-hidden />
         <p>
-          <strong>Trajet sur mesure</strong>{" "}
+          <strong>{tr("ui.journeyPlacesForm.trajetSurMesure")}</strong>{" "}
           {returning ? (
             <>
               {places.bled.split(",")[0]} → {algeriaPort.name} ≈ {durationLabel(places.algeriaMin)}{" "}
@@ -138,14 +139,14 @@ export function JourneyPlacesForm({
           )}
         </p>
         <button type="button" onClick={() => setOpen(true)}>
-          Modifier
+          {tr("ui.journeyPlacesForm.modifier")}
         </button>
       </div>
     );
 
   return (
     <form className="bw-journey-places" onSubmit={(event) => void submit(event)}>
-      {bare ? null : <strong>Un trajet sur mesure ? (facultatif)</strong>}
+      {bare ? null : <strong>{tr("ui.journeyPlacesForm.unTrajetSurMesureFacultatif")}</strong>}
       {/* Aller : Europe puis bled. Retour : bled puis Europe. Les données restent les mêmes. */}
       <div>
         {returning ? (
@@ -163,11 +164,11 @@ export function JourneyPlacesForm({
       {error ? <p role="alert">{error}</p> : null}
       <div>
         <button type="submit" disabled={pending}>
-          {pending ? "Calcul…" : "Personnaliser mon parcours"}
+          {pending ? tr("ui.journeyPlacesForm.calcul") : tr("ui.journeyPlacesForm.personnaliserMonParcours")}
         </button>
         {onSkip && !places ? (
           <button type="button" data-variant="ghost" onClick={onSkip}>
-            Plus tard
+            {tr("ui.journeyPlacesForm.plusTard")}
           </button>
         ) : null}
         {places ? (
@@ -180,11 +181,11 @@ export function JourneyPlacesForm({
               setBled("");
             }}
           >
-            Revenir au parcours général
+            {tr("ui.journeyPlacesForm.revenirAuParcoursGeneral")}
           </button>
         ) : null}
       </div>
-      <small>Gardé sur cet appareil, jamais visible des autres.</small>
+      <small>{tr("ui.journeyPlacesForm.gardeSurCetAppareilJamais")}</small>
     </form>
   );
 }
@@ -259,8 +260,8 @@ export function JourneyPlacesEntry({
           className="bw-round-button"
           data-filled={places ? "" : undefined}
           onClick={() => setOpen(true)}
-          aria-label={trip ? `Mon trajet : ${trip}, modifier` : "Personnaliser mon trajet"}
-          title={trip ?? "Personnaliser mon trajet"}
+          aria-label={trip ? `Mon trajet : ${trip}, modifier` : tr("ui.journeyPlacesForm.personnaliserMonTrajet")}
+          title={trip ?? tr("ui.journeyPlacesForm.personnaliserMonTrajet")}
         >
           <MapPin size={16} aria-hidden />
         </button>
@@ -270,10 +271,10 @@ export function JourneyPlacesEntry({
           className="bw-places-chip"
           data-filled={places ? "" : undefined}
           onClick={() => setOpen(true)}
-          title={places ? "Modifier mon trajet sur mesure" : "Personnaliser mon trajet"}
+          title={places ? tr("ui.journeyPlacesForm.modifierMonTrajetSurMesure") : tr("ui.journeyPlacesForm.personnaliserMonTrajet")}
         >
           <MapPin size={14} aria-hidden />
-          <span>{trip ?? "Personnaliser mon trajet"}</span>
+          <span>{trip ?? tr("ui.journeyPlacesForm.personnaliserMonTrajet")}</span>
           {places ? <Pencil size={12} aria-hidden /> : null}
         </button>
       )}
@@ -283,10 +284,9 @@ export function JourneyPlacesEntry({
           // Une invitation : pas de clavier qui surgit avant que la personne ait choisi.
           onOpenAutoFocus={(event) => event.preventDefault()}
         >
-          <DialogTitle>Mon trajet, de porte à porte</DialogTitle>
+          <DialogTitle>{tr("ui.journeyPlacesForm.monTrajetDePorteA")}</DialogTitle>
           <DialogDescription>
-            Mes villes de départ et d’arrivée : la route, l’heure de départ conseillée et la suite
-            après le port sont calculées pour moi.
+            {tr("ui.journeyPlacesForm.mesVillesDeDepartEt")}
           </DialogDescription>
           <JourneyPlacesForm
             bare

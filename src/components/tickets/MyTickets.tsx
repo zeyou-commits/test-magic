@@ -14,6 +14,7 @@ import {
   type TicketRow,
 } from "@/lib/tickets/tickets";
 import { TicketImport } from "./TicketImport";
+import { tr } from "@/lib/i18n";
 
 const day = (date: string | null) =>
   date
@@ -119,9 +120,9 @@ export function TicketViewer({
   return (
     <Dialog open={Boolean(ticket)} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="bw-ticket-dialog">
-        <DialogTitle>{ticket ? labels.route(ticket) : "Billet"}</DialogTitle>
+        <DialogTitle>{ticket ? labels.route(ticket) : tr("ui.myTickets.billet")}</DialogTitle>
         <DialogDescription className="sr-only">
-          Billet original et informations confirmées
+          {tr("ui.myTickets.billetOriginalEtInformationsConfirmees")}
         </DialogDescription>
         {ticket && d ? (
           <div className="bw-ticket-view">
@@ -135,7 +136,7 @@ export function TicketViewer({
                           key={i}
                           type="button"
                           onClick={() => setZoom((value) => !value)}
-                          aria-label={zoom ? "Réduire le billet" : "Agrandir le billet (QR code)"}
+                          aria-label={zoom ? tr("ui.myTickets.reduireLeBillet") : tr("ui.myTickets.agrandirLeBilletQrCode")}
                         >
                           <img src={page} alt={`Billet, page ${i + 1}`} />
                         </button>
@@ -143,32 +144,30 @@ export function TicketViewer({
                     </div>
                   ) : (
                     <p role="status">
-                      <LoaderCircle className="animate-spin" size={16} aria-hidden /> Préparation de
-                      l’aperçu…
+                      <LoaderCircle className="animate-spin" size={16} aria-hidden />{tr("ui.myTickets.preparationDeLApercu")}
                     </p>
                   )
                 ) : (
-                  <img src={url} alt="Billet original" />
+                  <img src={url} alt={tr("ui.myTickets.billetOriginal")} />
                 )
               ) : problem ? (
                 <p role="alert">{problem}</p>
               ) : (
                 <p role="status">
-                  <LoaderCircle className="animate-spin" size={16} aria-hidden /> Ouverture du
-                  billet…
+                  <LoaderCircle className="animate-spin" size={16} aria-hidden />{tr("ui.myTickets.ouvertureDuBillet")}
                 </p>
               )
             ) : (
-              <p className="bw-ticket-note">Billet saisi à la main : pas de document joint.</p>
+              <p className="bw-ticket-note">{tr("ui.myTickets.billetSaisiALaMain")}</p>
             )}
             {url ? (
               <div className="bw-ticket-actions">
                 <a className="bw-action-primary" href={url} download={ticket.file_name ?? "billet"}>
-                  <Download size={16} aria-hidden /> Télécharger
+                  <Download size={16} aria-hidden />{tr("ui.myTickets.telecharger")}
                 </a>
                 {offline ? (
                   <span className="bw-ticket-offline">
-                    <WifiOff size={14} aria-hidden /> Disponible sans connexion sur ce téléphone
+                    <WifiOff size={14} aria-hidden />{tr("ui.myTickets.disponibleSansConnexionSurCe")}
                   </span>
                 ) : null}
               </div>
@@ -176,7 +175,7 @@ export function TicketViewer({
             <dl className="bw-ticket-summary">
               {labels.company(ticket) ? (
                 <>
-                  <dt>Compagnie</dt>
+                  <dt>{tr("ui.myTickets.compagnie")}</dt>
                   <dd>
                     {labels.company(ticket)}
                     {d.vesselName ? ` · ${d.vesselName}` : ""}
@@ -185,7 +184,7 @@ export function TicketViewer({
               ) : null}
               {d.legs.map((leg, i) => (
                 <div key={i}>
-                  <dt>{i ? "Retour" : "Aller"}</dt>
+                  <dt>{i ? tr("ui.myTickets.retour") : tr("ui.myTickets.aller")}</dt>
                   <dd>
                     {labels.port(leg.fromPortId)} → {labels.port(leg.toPortId)} · {day(leg.date)}
                     {leg.time ? ` · ${leg.time}` : ""}
@@ -194,19 +193,19 @@ export function TicketViewer({
               ))}
               {d.reference ? (
                 <>
-                  <dt>Référence</dt>
+                  <dt>{tr("ui.myTickets.reference")}</dt>
                   <dd>{d.reference}</dd>
                 </>
               ) : null}
               {d.passengers.length ? (
                 <>
-                  <dt>Passagers</dt>
+                  <dt>{tr("ui.myTickets.passagers")}</dt>
                   <dd>{d.passengers.join(", ")}</dd>
                 </>
               ) : null}
               {d.vehicleKind ? (
                 <>
-                  <dt>Véhicule</dt>
+                  <dt>{tr("ui.myTickets.vehicule")}</dt>
                   <dd>
                     {d.vehicleKind}
                     {d.vehiclePlate ? ` · ${d.vehiclePlate}` : ""}
@@ -215,12 +214,12 @@ export function TicketViewer({
               ) : null}
             </dl>
             <p className="bw-ticket-note">
-              Effacé automatiquement le{" "}
+              {tr("ui.myTickets.effaceAutomatiquementLe")}{" "}
               {new Date(ticket.delete_after).toLocaleDateString("fr-FR", {
                 day: "numeric",
                 month: "long",
               })}
-              . BledWay ne vérifie pas la validité du billet : seule la compagnie fait foi.
+              {tr("ui.myTickets.bledwayNeVerifiePasLa")}
             </p>
             {confirming ? (
               <button
@@ -229,7 +228,7 @@ export function TicketViewer({
                 disabled={remove.isPending}
                 onClick={() => remove.mutate()}
               >
-                <Trash2 size={14} aria-hidden /> Confirmer la suppression
+                <Trash2 size={14} aria-hidden />{tr("ui.myTickets.confirmerLaSuppression")}
               </button>
             ) : (
               <button
@@ -237,7 +236,7 @@ export function TicketViewer({
                 className="bw-ticket-delete"
                 onClick={() => setConfirming(true)}
               >
-                <Trash2 size={14} aria-hidden /> Supprimer ce billet maintenant
+                <Trash2 size={14} aria-hidden />{tr("ui.myTickets.supprimerCeBilletMaintenant")}
               </button>
             )}
           </div>
@@ -259,13 +258,13 @@ export function MyTickets() {
   }, [tickets.data]);
   if (!user || tickets.data === null) return null;
   return (
-    <section className="bw-my-tickets" aria-label="Mes billets">
+    <section className="bw-my-tickets" aria-label={tr("ui.myTickets.mesBillets")}>
       <header>
         <h2>
-          <Ticket size={18} aria-hidden /> Mes billets
+          <Ticket size={18} aria-hidden />{tr("ui.myTickets.mesBillets2")}
         </h2>
         <button type="button" onClick={() => setAdding(true)}>
-          <Plus size={15} aria-hidden /> Ajouter un billet
+          <Plus size={15} aria-hidden />{tr("ui.myTickets.ajouterUnBillet")}
         </button>
       </header>
       {tickets.data?.length ? (
@@ -302,7 +301,7 @@ export function MyTickets() {
           })}
         </ul>
       ) : (
-        <p>Ajoutez votre billet : il est lu sur votre téléphone et prépare votre voyage.</p>
+        <p>{tr("ui.myTickets.ajoutezVotreBilletIlEst")}</p>
       )}
       <TicketImport open={adding} onOpenChange={setAdding} />
       <TicketViewer ticket={open} onClose={() => setOpen(null)} />
@@ -335,7 +334,7 @@ export function TicketAction({ departureId }: { departureId: string }) {
           className="bw-ticket-link"
           onClick={() => (mine[0] ? setOpen(mine[0]) : setAdding(true))}
         >
-          <Ticket size={13} aria-hidden /> {mine[0] ? "Voir mon billet" : "Ajouter mon billet"}
+          <Ticket size={13} aria-hidden /> {mine[0] ? tr("ui.myTickets.voirMonBillet") : tr("ui.myTickets.ajouterMonBillet")}
         </button>
       )}
       <TicketImport open={adding} onOpenChange={setAdding} />

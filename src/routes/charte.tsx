@@ -2,6 +2,7 @@ import { seoHead } from "@/lib/seo/site";
 import { createFileRoute } from "@tanstack/react-router";
 import { PageHero, SiteLayout } from "@/components/layout/SiteLayout";
 import { CHARTER_RULES } from "@/components/panel/CharterGate";
+import { tr } from "@/lib/i18n";
 
 const title = "Charte de la communauté — BledWay";
 const description =
@@ -16,13 +17,13 @@ function CharterPage() {
   return (
     <SiteLayout>
       <PageHero
-        overline="Communauté"
-        title="Charte de la communauté"
-        intro="Les salons BledWay servent à s'entraider pendant le voyage : au port, à bord et à l'arrivée. Cette charte s'applique aux salons, aux questions sur les lignes et aux messages privés."
+        overline={tr("ui.pageCharte.communaute")}
+        title={tr("ui.pageCharte.charteDeLaCommunaute")}
+        intro={tr("ui.pageCharte.lesSalonsBledwayServentA")}
       />
       <div className="mx-auto mt-8 max-w-3xl space-y-6 text-sm leading-relaxed text-muted-foreground">
         <section>
-          <h2 className="text-base font-semibold text-foreground">L'essentiel</h2>
+          <h2 className="text-base font-semibold text-foreground">{tr("ui.pageCharte.lEssentiel")}</h2>
           <ul className="mt-2 list-disc space-y-1 pl-5">
             {CHARTER_RULES.map((rule) => (
               <li key={rule}>{rule}</li>
@@ -30,59 +31,50 @@ function CharterPage() {
           </ul>
         </section>
         <section>
-          <h2 className="text-base font-semibold text-foreground">Ce qui est interdit</h2>
+          <h2 className="text-base font-semibold text-foreground">{tr("ui.pageCharte.ceQuiEstInterdit")}</h2>
           <ul className="mt-2 list-disc space-y-1 pl-5">
             <li>
-              Les insultes, le harcèlement, les menaces et les propos racistes, sexistes ou haineux.
+              {tr("ui.pageCharte.lesInsultesLeHarcelementLes")}
             </li>
             <li>
-              Les numéros de téléphone, adresses e-mail, liens et coordonnées, les vôtres comme ceux
-              des autres.
+              {tr("ui.pageCharte.lesNumerosDeTelephoneAdresses")}
             </li>
-            <li>La publicité, la revente de billets, les arnaques et les demandes d'argent.</li>
-            <li>Les fausses informations volontaires sur un départ, un retard ou un navire.</li>
-            <li>Les messages répétés à l'identique ou en rafale.</li>
-            <li>Tout contenu illégal ou contraire aux droits d'autrui.</li>
+            <li>{tr("ui.pageCharte.laPubliciteLaReventeDe")}</li>
+            <li>{tr("ui.pageCharte.lesFaussesInformationsVolontairesSur")}</li>
+            <li>{tr("ui.pageCharte.lesMessagesRepetesAL")}</li>
+            <li>{tr("ui.pageCharte.toutContenuIllegalOuContraire")}</li>
           </ul>
         </section>
         <section>
           <h2 className="text-base font-semibold text-foreground">
-            Les informations des voyageurs
+            {tr("ui.pageCharte.lesInformationsDesVoyageurs")}
           </h2>
           <p className="mt-1">
-            Ce que partagent les voyageurs est un témoignage, utile mais non vérifié. Seule la
-            compagnie maritime confirme un départ, un horaire ou une annulation. BledWay ne vend
-            aucun billet.
+            {tr("ui.pageCharte.ceQuePartagentLesVoyageurs")}
           </p>
         </section>
         <section>
-          <h2 className="text-base font-semibold text-foreground">Les messages officiels</h2>
+          <h2 className="text-base font-semibold text-foreground">{tr("ui.pageCharte.lesMessagesOfficiels")}</h2>
           <p className="mt-1">
-            Les membres de l'équipe portent un badge « Admin » ou « Modérateur ». Un message marqué
-            « Officiel » est publié au nom de BledWay. Personne d'autre ne peut utiliser ces badges.
+            {tr("ui.pageCharte.lesMembresDeLEquipe")}
           </p>
         </section>
         <section>
-          <h2 className="text-base font-semibold text-foreground">La modération</h2>
+          <h2 className="text-base font-semibold text-foreground">{tr("ui.pageCharte.laModeration")}</h2>
           <p className="mt-1">
-            Les messages contenant un lien, une coordonnée ou un mot refusé ne partent pas. Chacun
-            peut signaler un message. L'équipe peut masquer un message, empêcher un compte d'écrire
-            pendant 24 heures ou l'exclure des salons pendant 7 jours. Plusieurs messages refusés à
-            la suite bloquent aussi l'écriture pendant 24 heures.
+            {tr("ui.pageCharte.lesMessagesContenantUnLien")}
           </p>
         </section>
         <section>
-          <h2 className="text-base font-semibold text-foreground">Vos notifications</h2>
+          <h2 className="text-base font-semibold text-foreground">{tr("ui.pageCharte.vosNotifications")}</h2>
           <p className="mt-1">
-            Vous êtes prévenu quand quelqu'un vous mentionne ou répond à votre message. Chaque salon
-            peut être mis en sourdine avec la cloche, et toutes les notifications de la communauté
-            se coupent depuis votre compte.
+            {tr("ui.pageCharte.vousEtesPrevenuQuandQuelqu")}
           </p>
         </section>
         <p>
-          En écrivant dans un salon, vous acceptez cette charte et les{" "}
+          {tr("ui.pageCharte.enEcrivantDansUnSalon")}{" "}
           <a className="text-primary underline" href="/conditions-utilisation">
-            conditions d'utilisation
+            {tr("ui.pageCharte.conditionsDUtilisation")}
           </a>
           .
         </p>

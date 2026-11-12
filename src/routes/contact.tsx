@@ -2,6 +2,7 @@ import seoConfig from "../../seo.config.json";
 import { seoHead } from "@/lib/seo/site";
 import { createFileRoute } from "@tanstack/react-router";
 import { Card, PageHero, SiteLayout } from "@/components/layout/SiteLayout";
+import { tr } from "@/lib/i18n";
 
 const title = "Contact et signalement d'erreur — BledWay";
 const description =
@@ -16,20 +17,19 @@ function ContactPage() {
   return (
     <SiteLayout>
       <PageHero
-        overline="Contact"
-        title="Nous signaler une information"
-        intro="La façon la plus rapide de nous aider : ouvrir la fiche concernée sur la carte et utiliser le bouton « Signaler une erreur »."
+        overline={tr("ui.pageContact.contact")}
+        title={tr("ui.pageContact.nousSignalerUneInformation")}
+        intro={tr("ui.pageContact.laFaconLaPlusRapide")}
       />
       <div className="mt-10 grid gap-4 sm:grid-cols-2">
         <Card>
-          <h2 className="font-display font-semibold">Signaler depuis la carte</h2>
+          <h2 className="font-display font-semibold">{tr("ui.pageContact.signalerDepuisLaCarte")}</h2>
           <p className="mt-2 text-sm text-muted-foreground">
-            Sur la fiche d'un port, d'une ligne ou d'un départ, le bouton de signalement transmet
-            directement le contexte à notre équipe de modération.
+            {tr("ui.pageContact.surLaFicheDUn")}
           </p>
         </Card>
         <Card>
-          <h2 className="font-display font-semibold">Nous écrire</h2>
+          <h2 className="font-display font-semibold">{tr("ui.pageContact.nousEcrire")}</h2>
           {seoConfig.contactEmail ? (
             <a
               href={`mailto:${seoConfig.contactEmail}?subject=${encodeURIComponent("Correction documentaire BledWay")}`}
@@ -39,13 +39,11 @@ function ContactPage() {
             </a>
           ) : (
             <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-              Le canal de contact pour les dossiers documentaires sera indiqué ici dès son
-              ouverture. Les signalements depuis une fiche de la carte restent disponibles.
+              {tr("ui.pageContact.leCanalDeContactPour")}
             </p>
           )}
           <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
-            Pour préparer une correction, relevez l'URL de la page, le passage concerné et une
-            source datée. Ne transmettez pas de papiers d'identité ni de documents de véhicule.
+            {tr("ui.pageContact.pourPreparerUneCorrectionRelevez")}
           </p>
         </Card>
       </div>

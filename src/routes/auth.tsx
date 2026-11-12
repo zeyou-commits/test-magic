@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { GoogleMark } from "@/components/auth/GoogleMark";
 import { CrossingScene } from "@/components/auth/CrossingScene";
+import { tr } from "@/lib/i18n";
 
 export const Route = createFileRoute("/auth")({
   head: () => ({
@@ -182,25 +183,24 @@ function AuthPage() {
           <div className="relative z-10">
             <img
               src="/bledway-brand-entete.webp"
-              alt="BledWay"
+              alt={tr("ui.pageAuth.bledway")}
               className="h-10 w-auto object-contain object-left"
             />
           </div>
           <CrossingScene className="bw-auth-scene" />
           <div className="bw-auth-story-copy relative z-10 border border-white/70 bg-background/95">
             <span className="text-xs font-bold uppercase tracking-[.18em] text-primary">
-              La mer nous rapproche
+              {tr("ui.pageAuth.laMerNousRapproche")}
             </span>
             <h2 className="mt-2 font-display text-2xl font-bold leading-tight">
-              Préparons la traversée ensemble.
+              {tr("ui.pageAuth.preparonsLaTraverseeEnsemble")}
             </h2>
             <p className="bw-auth-story-description mt-3 text-sm leading-relaxed text-muted-foreground">
-              Retrouvez votre voyage et partagez vos conseils avec celles et ceux qui prennent le
-              large.
+              {tr("ui.pageAuth.retrouvezVotreVoyageEtPartagez")}
             </p>
             <div className="bw-auth-story-benefits mt-4 flex flex-wrap items-center gap-2 text-xs font-semibold text-primary">
-              <Star size={17} /> Avis de voyageurs <span className="mx-2 text-border">·</span>{" "}
-              <ShieldCheck size={17} /> Compte sécurisé
+              <Star size={17} />{tr("ui.pageAuth.avisDeVoyageurs")}<span className="mx-2 text-border">·</span>{" "}
+              <ShieldCheck size={17} />{tr("ui.pageAuth.compteSecurise")}
             </div>
           </div>
         </div>
@@ -210,13 +210,13 @@ function AuthPage() {
               to="/"
               className="inline-flex text-sm font-medium text-muted-foreground hover:text-foreground"
             >
-              &larr; Retour à la carte
+              {tr("ui.pageAuth.backToMap")}
             </Link>
           </div>
           {mode === "signin" || mode === "signup" ? (
             <div
               className="mb-5 grid grid-cols-2 rounded-xl bg-secondary p-1"
-              aria-label="Connexion ou inscription"
+              aria-label={tr("ui.pageAuth.connexionOuInscription")}
             >
               <button
                 type="button"
@@ -227,7 +227,7 @@ function AuthPage() {
                 }}
                 className={`rounded-lg py-2.5 text-sm font-semibold transition ${mode === "signin" ? "bg-card text-primary shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
               >
-                Connexion
+                {tr("ui.pageAuth.connexion")}
               </button>
               <button
                 type="button"
@@ -235,19 +235,19 @@ function AuthPage() {
                 onClick={() => setMode("signup")}
                 className={`rounded-lg py-2.5 text-sm font-semibold transition ${mode === "signup" ? "bg-card text-primary shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
               >
-                Créer un compte
+                {tr("ui.pageAuth.creerUnCompte")}
               </button>
             </div>
           ) : null}
           <h1 className="bw-auth-title mb-2 font-display text-3xl font-bold tracking-tight">{titles[mode]}</h1>
           <p className="bw-auth-lead mb-5 text-sm leading-relaxed text-muted-foreground">
             {mode === "forgot"
-              ? "Indiquez votre e-mail : nous vous enverrons un lien pour choisir un nouveau mot de passe."
+              ? tr("ui.pageAuth.indiquezVotreEMailNous")
               : mode === "reset"
-                ? "Choisissez votre nouveau mot de passe (6 caractères minimum)."
+                ? tr("ui.pageAuth.choisissezVotreNouveauMotDe")
                 : mode === "signup"
-                  ? "Un profil en quelques instants pour partager votre expérience de voyage."
-                  : "Heureux de vous revoir. Reprenez là où vous en étiez."}
+                  ? tr("ui.pageAuth.unProfilEnQuelquesInstants")
+                  : tr("ui.pageAuth.heureuxDeVousRevoirReprenez")}
           </p>
 
           {/* Google d'abord : la plupart des voyageurs s'en servent et le ratait tout en bas. */}
@@ -260,14 +260,14 @@ function AuthPage() {
                 disabled={googleLoading}
               >
                 <GoogleMark />
-                {googleLoading ? "Redirection vers Google…" : "Continuer avec Google"}
+                {googleLoading ? tr("ui.pageAuth.redirectionVersGoogle") : tr("ui.pageAuth.continuerAvecGoogle")}
               </Button>
               <div className="relative my-5">
                 <div className="absolute inset-0 flex items-center">
                   <div className="w-full border-t"></div>
                 </div>
                 <div className="relative flex justify-center text-xs">
-                  <span className="bg-card px-2 text-muted-foreground">ou avec votre e-mail</span>
+                  <span className="bg-card px-2 text-muted-foreground">{tr("ui.pageAuth.ouAvecVotreEMail")}</span>
                 </div>
               </div>
             </>
@@ -278,9 +278,8 @@ function AuthPage() {
               role="status"
               className="rounded-2xl border border-primary/20 bg-primary/5 p-5 text-sm leading-relaxed"
             >
-              <strong className="block text-base text-primary">Encore une étape !</strong>
-              Consultez l’e-mail envoyé à <strong>{email}</strong> et confirmez votre adresse si
-              demandé. Vous pourrez ensuite revenir à votre bateau.
+              <strong className="block text-base text-primary">{tr("ui.pageAuth.encoreUneEtape")}</strong>
+              {tr("ui.pageAuth.consultezLEMailEnvoye")}<strong>{email}</strong>{tr("ui.pageAuth.etConfirmezVotreAdresseSi")}
               <button
                 type="button"
                 onClick={() => {
@@ -289,26 +288,25 @@ function AuthPage() {
                 }}
                 className="mt-4 block font-semibold text-primary underline underline-offset-2"
               >
-                J’ai confirmé mon adresse · Me connecter
+                {tr("ui.pageAuth.jAiConfirmeMonAdresse")}
               </button>
             </div>
           ) : mode === "forgot" && resetSent ? (
             <div className="rounded-xl bg-secondary p-4 text-sm">
-              Si un compte existe pour <strong>{email}</strong>, un e-mail vient d’être envoyé.
-              Pensez à vérifier vos courriers indésirables.
+              {tr("ui.pageAuth.siUnCompteExistePour")}<strong>{email}</strong>{tr("ui.pageAuth.unEMailVientD")}
             </div>
           ) : (
             <form onSubmit={handleSubmit} className="bw-auth-fields flex flex-col gap-4">
               {mode === "signup" ? (
                 <div className="flex flex-col gap-2">
                   <div className="flex items-center justify-between">
-                    <Label htmlFor="displayName">Votre pseudo</Label>
+                    <Label htmlFor="displayName">{tr("ui.pageAuth.votrePseudo")}</Label>
                     <button
                       type="button"
                       onClick={() => setDisplayName(suggestPseudo())}
                       className="text-xs font-medium text-primary hover:underline"
                     >
-                      En proposer un autre
+                      {tr("ui.pageAuth.enProposerUnAutre")}
                     </button>
                   </div>
                   <Input
@@ -321,13 +319,13 @@ function AuthPage() {
                     className="batogo-control"
                   />
                   <span className="text-xs text-muted-foreground">
-                    Visible par les autres voyageurs. Vous pourrez le changer une seule fois.
+                    {tr("ui.pageAuth.visibleParLesAutresVoyageurs")}
                   </span>
                 </div>
               ) : null}
               {showEmail ? (
                 <div className="flex flex-col gap-2">
-                  <Label htmlFor="email">E-mail</Label>
+                  <Label htmlFor="email">{tr("ui.pageAuth.eMail")}</Label>
                   <Input
                     id="email"
                     type="email"
@@ -344,7 +342,7 @@ function AuthPage() {
                 <div className="flex flex-col gap-2">
                   <div className="flex items-center justify-between">
                     <Label htmlFor="password">
-                      {mode === "reset" ? "Nouveau mot de passe" : "Mot de passe"}
+                      {mode === "reset" ? tr("ui.pageAuth.nouveauMotDePasse") : tr("ui.pageAuth.motDePasse")}
                     </Label>
                     {mode === "signin" ? (
                       <button
@@ -355,7 +353,7 @@ function AuthPage() {
                         }}
                         className="text-xs font-medium text-primary hover:underline"
                       >
-                        Mot de passe oublié ?
+                        {tr("ui.pageAuth.motDePasseOublie")}
                       </button>
                     ) : null}
                   </div>
@@ -373,7 +371,7 @@ function AuthPage() {
                     <button
                       type="button"
                       aria-label={
-                        showPassword ? "Masquer le mot de passe" : "Afficher le mot de passe"
+                        showPassword ? tr("ui.pageAuth.masquerLeMotDePasse") : tr("ui.pageAuth.afficherLeMotDePasse")
                       }
                       aria-pressed={showPassword}
                       onClick={() => setShowPassword((v) => !v)}
@@ -384,14 +382,14 @@ function AuthPage() {
                   </div>
                   {mode === "signup" || mode === "reset" ? (
                     <span className="text-xs text-muted-foreground">
-                      6 caractères minimum. Un mot de passe unique protège mieux votre compte.
+                      {tr("ui.pageAuth.t6CaracteresMinimumUnMot")}
                     </span>
                   ) : null}
                 </div>
               ) : null}
               {mode === "signup" ? (
                 <div className="flex flex-col gap-2">
-                  <Label htmlFor="confirmPassword">Confirmer le mot de passe</Label>
+                  <Label htmlFor="confirmPassword">{tr("ui.pageAuth.confirmerLeMotDePasse")}</Label>
                   <Input
                     id="confirmPassword"
                     type={showPassword ? "text" : "password"}
@@ -404,20 +402,19 @@ function AuthPage() {
                   />
                   {confirmPassword && confirmPassword !== password ? (
                     <span className="text-xs text-destructive">
-                      Les mots de passe ne correspondent pas.
+                      {tr("ui.pageAuth.lesMotsDePasseNe")}
                     </span>
                   ) : null}
                 </div>
               ) : null}
               {mode === "signup" ? (
                 <p className="text-xs text-muted-foreground">
-                  En créant un compte, vous acceptez que vos avis soient publiés après relecture.
-                  Voir la{" "}
+                  {tr("ui.pageAuth.enCreantUnCompteVous")}{" "}
                   <Link
                     to="/confidentialite"
                     className="font-medium text-primary underline underline-offset-2"
                   >
-                    politique de confidentialité
+                    {tr("ui.pageAuth.politiqueDeConfidentialite")}
                   </Link>
                   .
                 </p>
@@ -431,14 +428,14 @@ function AuthPage() {
                 }
               >
                 {loading
-                  ? "Patientez…"
+                  ? tr("ui.pageAuth.patientez")
                   : mode === "signin"
-                    ? "Se connecter"
+                    ? tr("ui.pageAuth.seConnecter")
                     : mode === "signup"
-                      ? "Créer mon compte"
+                      ? tr("ui.pageAuth.creerMonCompte")
                       : mode === "forgot"
-                        ? "Recevoir le lien"
-                        : "Enregistrer le mot de passe"}
+                        ? tr("ui.pageAuth.recevoirLeLien")
+                        : tr("ui.pageAuth.enregistrerLeMotDePasse")}
                 {!loading ? <ArrowRight size={16} aria-hidden /> : null}
               </Button>
             </form>
@@ -455,13 +452,13 @@ function AuthPage() {
             data-tabs={mode === "signin" || mode === "signup" ? "" : undefined}
           >
             {mode === "signin"
-              ? "Pas encore de compte ? Créer un compte"
+              ? tr("ui.pageAuth.pasEncoreDeCompteCreer")
               : mode === "signup"
-                ? "Déjà inscrit ? Se connecter"
-                : "Retour à la connexion"}
+                ? tr("ui.pageAuth.dejaInscritSeConnecter")
+                : tr("ui.pageAuth.retourALaConnexion")}
           </button>
           <p className="bw-auth-note mt-7 text-center text-xs leading-relaxed text-muted-foreground">
-            Vos avis aident les voyageurs. Nous ne publions jamais votre adresse e-mail.
+            {tr("ui.pageAuth.vosAvisAidentLesVoyageurs")}
           </p>
         </div>
       </div>

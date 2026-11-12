@@ -9,6 +9,7 @@ import {
 } from "@/lib/seo/site";
 import { sources } from "@/content/sources";
 import type { Section } from "@/content/types";
+import { tr } from "@/lib/i18n";
 
 export const primaryLink =
   "inline-flex min-h-11 items-center justify-center rounded-xl bg-primary px-5 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-primary";
@@ -24,11 +25,11 @@ export function Breadcrumbs({ items }: { items: { name: string; path: string }[]
   return (
     <>
       <StructuredData value={breadcrumbSchema(items)} />
-      <nav aria-label="Fil d'Ariane" className="mt-6 text-sm text-muted-foreground">
+      <nav aria-label={tr("ui.editorial.filDAriane")} className="mt-6 text-sm text-muted-foreground">
         <ol className="flex flex-wrap gap-x-2 gap-y-1">
           <li>
             <a href="/" className="hover:text-primary">
-              Accueil
+              {tr("ui.editorial.accueil")}
             </a>
           </li>
           {items.map((item, i) => (
@@ -59,7 +60,7 @@ export function ClampedIntro({ children, className = "" }: { children: ReactNode
       <p>{children}</p>
       {open ? null : (
         <button type="button" className="bw-clamp__more" onClick={() => setOpen(true)}>
-          Lire la suite
+          {tr("ui.editorial.lireLaSuite")}
         </button>
       )}
     </div>
@@ -91,7 +92,7 @@ export function AnswerBox({ children }: { children: ReactNode }) {
   return (
     <div className="rounded-xl border border-primary/25 bg-primary/5 p-5 md:p-6">
       <p className="mb-2 text-xs font-bold uppercase tracking-widest text-primary">
-        Le repère utile
+        {tr("ui.editorial.leRepereUtile")}
       </p>
       <p className="leading-relaxed">{children}</p>
     </div>
@@ -145,11 +146,10 @@ export function FaqSchema({ faq, path }: { faq: { q: string; a: string }[]; path
 export function SourceList({ ids }: { ids: string[] }) {
   return (
     <section id="sources" className="mt-10 scroll-mt-20 border-t pt-6">
-      <h2 className="font-display text-xl font-bold">Sources et vérification</h2>
+      <h2 className="font-display text-xl font-bold">{tr("ui.editorial.sourcesEtVerification")}</h2>
       <p className="mt-2 text-sm text-muted-foreground">
-        Sélection documentaire mise à jour le{" "}
-        <time dateTime={EDITORIAL_DATE}>{displayDate(EDITORIAL_DATE)}</time>. Les règles, accès et
-        services peuvent évoluer.
+        {tr("ui.editorial.selectionDocumentaireMiseAJour")}{" "}
+        <time dateTime={EDITORIAL_DATE}>{displayDate(EDITORIAL_DATE)}</time>{tr("ui.editorial.lesReglesAccesEtServices")}
       </p>
       <ul className="mt-4 space-y-4">
         {ids.map((id) => {
@@ -163,7 +163,7 @@ export function SourceList({ ids }: { ids: string[] }) {
                 target="_blank"
               >
                 {source.name}
-                <span className="sr-only"> (nouvel onglet)</span>
+                <span className="sr-only">{tr("ui.editorial.nouvelOnglet")}</span>
               </a>
               <p className="mt-1 text-sm leading-relaxed text-muted-foreground">{source.note}</p>
             </li>
@@ -172,11 +172,11 @@ export function SourceList({ ids }: { ids: string[] }) {
       </ul>
       <p className="mt-5 text-sm">
         <a href="/methode-editoriale" className={textLink}>
-          Notre méthode et les limites des informations
+          {tr("ui.editorial.notreMethodeEtLesLimites")}
         </a>{" "}
         ·{" "}
         <a href="/contact" className={textLink}>
-          Contact et signalements
+          {tr("ui.editorial.contactEtSignalements")}
         </a>
       </p>
     </section>
@@ -252,8 +252,8 @@ export function ReadingLayout({
     <div className="grid items-start gap-8 lg:grid-cols-[minmax(0,1fr)_15rem] lg:gap-12">
       <div className="min-w-0">{children}</div>
       <aside className="order-first rounded-xl border bg-card p-5 lg:sticky lg:top-20 lg:order-last">
-        <nav aria-label="Sommaire du dossier">
-          <p className="font-semibold">Dans ce dossier</p>
+        <nav aria-label={tr("ui.editorial.sommaireDuDossier")}>
+          <p className="font-semibold">{tr("ui.editorial.dansCeDossier")}</p>
           <ul className="mt-3 space-y-3 text-sm">
             {sections.map((s) => (
               <li key={s.id}>
@@ -267,19 +267,19 @@ export function ReadingLayout({
             ))}
             <li>
               <a href="#sources" className="text-primary">
-                Sources et vérification
+                {tr("ui.editorial.sourcesEtVerification")}
               </a>
             </li>
           </ul>
         </nav>
         <a href="/horaires" className={`${primaryLink} mt-6 w-full`}>
-          Voir les départs
+          {tr("ui.editorial.voirLesDeparts")}
         </a>
         <a
           href="/simulateurs"
           className="mt-3 block text-center text-sm font-semibold text-primary"
         >
-          Calculer mon budget
+          {tr("ui.editorial.calculerMonBudget")}
         </a>
       </aside>
     </div>

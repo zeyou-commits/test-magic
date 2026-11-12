@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { primaryLink } from "@/components/editorial/Editorial";
+import { tr } from "@/lib/i18n";
 export const inputClass =
   "mt-2 min-h-11 w-full rounded-lg border border-input bg-background px-3 py-2 text-base focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary";
 export function NumberField({
@@ -24,7 +25,7 @@ export function NumberField({
   return (
     <label htmlFor={id} className="block text-sm font-medium">
       {label}
-      {optional ? <span className="font-normal text-muted-foreground"> · facultatif</span> : null}
+      {optional ? <span className="font-normal text-muted-foreground">{tr("ui.fields.facultatif")}</span> : null}
       <input
         id={id}
         name={id}
@@ -64,19 +65,18 @@ export function CalculatorForm({
       {children}
       <div className="flex flex-wrap items-center gap-4">
         <button className={primaryLink} type="submit">
-          Calculer avec mes données
+          {tr("ui.fields.calculerAvecMesDonnees")}
         </button>
         <button
           type="button"
           onClick={example}
           className="min-h-11 text-sm font-semibold text-primary underline underline-offset-4"
         >
-          Remplir un exemple fictif
+          {tr("ui.fields.remplirUnExempleFictif")}
         </button>
       </div>
       <p className="text-xs leading-relaxed text-muted-foreground">
-        Calcul dans votre navigateur. Aucun envoi des champs par cet outil. L'exemple sert
-        uniquement à montrer le fonctionnement.
+        {tr("ui.fields.calculDansVotreNavigateurAucun")}
       </p>
     </form>
   );
@@ -97,8 +97,7 @@ export function InvalidResult() {
   return (
     <ResultPanel>
       <p>
-        Vérifiez les champs : les montants doivent être positifs ou nuls et le nombre de personnes
-        doit être un entier compris entre 1 et 99.
+        {tr("ui.fields.verifiezLesChampsLesMontants")}
       </p>
     </ResultPanel>
   );

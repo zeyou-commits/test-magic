@@ -12,6 +12,7 @@ import { companiesQuery, portsQuery, routesQuery } from "@/lib/ferry/queries";
 import { formatDuration } from "@/lib/ferry/format";
 import { CONFIRM_NOTE, generalFaq } from "@/lib/seo/answers";
 import { seoHead } from "@/lib/seo/site";
+import { tr } from "@/lib/i18n";
 
 export const Route = createFileRoute("/questions-frequentes")({
   loader: async ({ context }) => {
@@ -51,23 +52,23 @@ function FaqPage() {
       <Breadcrumbs items={[{ name: "Questions fréquentes", path: "/questions-frequentes" }]} />
       <EditorialHero
         label="L'essentiel"
-        title="Ferry Europe–Algérie : les réponses aux questions des voyageurs"
-        intro="Compagnies, ports, durées, budget et préparation : des réponses courtes, tirées des données et des dossiers publiés sur BledWay."
+        title={tr("ui.pageQuestionsFrequentes.ferryEuropeAlgerieLesReponses")}
+        intro={tr("ui.pageQuestionsFrequentes.compagniesPortsDureesBudgetEt")}
       />
       <AnswerBox>
-        Les durées et les prix sont des estimations, et la marge de 4 h au port est un repère.{" "}
+        {tr("ui.pageQuestionsFrequentes.lesDureesEtLesPrix")}{" "}
         {CONFIRM_NOTE}
       </AnswerBox>
       <FaqSection faq={generalFaq(ports, routes, companies)} path="/questions-frequentes" />
       <section className="mt-10">
-        <h2 className="font-display text-2xl font-bold">Toutes les lignes et leur durée typique</h2>
+        <h2 className="font-display text-2xl font-bold">{tr("ui.pageQuestionsFrequentes.toutesLesLignesEtLeur")}</h2>
         <div className="mt-4 overflow-x-auto rounded-xl border">
           <table className="w-full min-w-[560px] text-left text-sm">
             <thead className="bg-secondary/70">
               <tr>
-                <th className="px-4 py-3">Ligne</th>
-                <th className="px-4 py-3">Durée typique (estimation)</th>
-                <th className="px-4 py-3">Compagnies renseignées</th>
+                <th className="px-4 py-3">{tr("ui.pageQuestionsFrequentes.ligne")}</th>
+                <th className="px-4 py-3">{tr("ui.pageQuestionsFrequentes.dureeTypiqueEstimation")}</th>
+                <th className="px-4 py-3">{tr("ui.pageQuestionsFrequentes.compagniesRenseignees")}</th>
               </tr>
             </thead>
             <tbody>
@@ -88,15 +89,15 @@ function FaqPage() {
       </section>
       <p className="mt-10 text-sm">
         <Link to="/barometre-prix" className={textLink}>
-          Baromètre des prix
+          {tr("ui.pageQuestionsFrequentes.barometreDesPrix")}
         </Link>{" "}
         ·{" "}
         <Link to="/guide" className={textLink}>
-          Tous les dossiers
+          {tr("ui.pageQuestionsFrequentes.tousLesDossiers")}
         </Link>{" "}
         ·{" "}
         <Link to="/methode-editoriale" className={textLink}>
-          Méthode et sources
+          {tr("ui.pageQuestionsFrequentes.methodeEtSources")}
         </Link>
       </p>
     </SiteLayout>

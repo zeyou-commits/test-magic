@@ -3,6 +3,7 @@ import { ArrowUp, ListChecks } from "lucide-react";
 import { STEP_ICONS } from "@/components/journey/JourneyFrieze";
 import { JOURNEY_STEPS, stepItems, stepLabel, type JourneyStepId } from "@/lib/ferry/journeySteps";
 import { defaultProfile } from "@/lib/ferry/preparation";
+import { tr } from "@/lib/i18n";
 
 /** Venu du lien « Ma route du bled » de l'accueil : l'aperçu se montre directement. */
 export const ROUTE_PREVIEW_EVENT = "bledway:route-preview";
@@ -59,11 +60,11 @@ export function RoutePreview({ onStart }: { onStart: () => void }) {
   return (
     <section ref={box} className="bw-route-preview" aria-labelledby="bw-route-preview-title">
       <header className="bw-route-preview__head">
-        <p className="bw-route-preview__eyebrow">Ce que vous obtenez</p>
-        <h3 id="bw-route-preview-title">Ma route du bled, étape par étape</h3>
+        <p className="bw-route-preview__eyebrow">{tr("ui.routePreview.ceQueVousObtenez")}</p>
+        <h3 id="bw-route-preview-title">{tr("ui.routePreview.maRouteDuBledEtape")}</h3>
         <p>
-          De chez vous jusqu'au bled, BledWay vous guide au bon moment, avec{" "}
-          <strong>{total} points à cocher</strong> pour un voyage en voiture.
+          {tr("ui.routePreview.deChezVousJusquAu")}{" "}
+          <strong>{total}{tr("ui.routePreview.pointsACocher")}</strong>{tr("ui.routePreview.pourUnVoyageEnVoiture")}
         </p>
       </header>
       <ol className="bw-route-preview__steps">
@@ -76,11 +77,11 @@ export function RoutePreview({ onStart }: { onStart: () => void }) {
               </span>
               <div>
                 <p className="bw-route-preview__label">
-                  <span className="sr-only">Étape {index + 1} : </span>
+                  <span className="sr-only">{tr("ui.routePreview.etape")}{index + 1} : </span>
                   {step.label}
                   {step.checks ? (
                     <small>
-                      <ListChecks size={12} aria-hidden /> {step.checks} à cocher
+                      <ListChecks size={12} aria-hidden /> {step.checks}{tr("ui.routePreview.aCocher")}
                     </small>
                   ) : null}
                 </p>
@@ -92,11 +93,10 @@ export function RoutePreview({ onStart }: { onStart: () => void }) {
       </ol>
       <footer className="bw-route-preview__foot">
         <p>
-          Simulez votre voyage ici. Votre liste à cocher et le suivi en direct s'activent quand vous
-          suivez votre traversée.
+          {tr("ui.routePreview.simulezVotreVoyageIciVotre")}
         </p>
         <button type="button" onClick={onStart}>
-          <ArrowUp size={16} aria-hidden /> Commencer : d'où partez-vous ?
+          <ArrowUp size={16} aria-hidden />{tr("ui.routePreview.commencerDOuPartezVous")}
         </button>
       </footer>
     </section>

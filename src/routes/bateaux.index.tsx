@@ -19,6 +19,7 @@ import {
 } from "@/lib/ferry/queries";
 import { VesselCard, routeLabel } from "@/components/panel/VesselCard";
 import type { Port, RouteLine } from "@/lib/ferry/types";
+import { tr } from "@/lib/i18n";
 
 export const Route = createFileRoute("/bateaux/")({
   loader: async ({ context }) => {
@@ -68,12 +69,10 @@ function Boats() {
         items={vesselDossiers.map((v) => ({ name: v.name, path: `/bateaux/${v.slug}` }))}
       />
       <h1 className="mb-5 font-display text-4xl font-extrabold tracking-tight md:text-5xl">
-        La flotte entre l'Europe et l'Algérie
+        {tr("ui.pageBateauxIndex.laFlotteEntreLEurope")}
       </h1>
       <ClampedIntro className="mb-6 max-w-3xl text-lg leading-relaxed text-muted-foreground">
-        Les navires renseignés sur BledWay, classés par compagnie, avec leurs lignes et leurs
-        caractéristiques connues. L'affectation d'un navire à un départ peut changer : elle se
-        confirme auprès de la compagnie.
+        {tr("ui.pageBateauxIndex.lesNaviresRenseignesSurBledway")}
       </ClampedIntro>
       <FleetOverview />
       <VesselPalmares />
@@ -87,7 +86,7 @@ function Boats() {
                 <div className="min-w-0 flex-1">
                   <h2 className="font-display text-2xl font-bold">{company.name}</h2>
                   <p className="text-sm text-muted-foreground">
-                    {list.length} navire{list.length > 1 ? "s" : ""} · {companyRoutes.length} ligne
+                    {list.length}{tr("ui.pageBateauxIndex.navire")}{list.length > 1 ? "s" : ""} · {companyRoutes.length}{tr("ui.pageBateauxIndex.ligne")}
                     {companyRoutes.length > 1 ? "s" : ""}
                   </p>
                 </div>

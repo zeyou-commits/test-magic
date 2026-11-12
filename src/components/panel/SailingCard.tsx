@@ -198,7 +198,8 @@ export function SailingCard({
           href={`/simulateurs/budget-voyage?ticket=${Math.round(fare.amount)}`}
           title="Budget porte-à-porte : route, péages et bateau"
           aria-label="Calculer le budget porte-à-porte avec ce billet"
-          className="ml-auto inline-flex h-8 shrink-0 items-center gap-1 rounded-full border border-border bg-card px-2.5 text-xs font-semibold text-primary hover:bg-secondary"
+          // Sur téléphone, la ligne n'a pas la place : logo, prix et favori suffisent.
+          className="ml-auto hidden h-8 shrink-0 items-center gap-1 rounded-full border border-border bg-card px-2.5 text-xs font-semibold text-primary hover:bg-secondary md:inline-flex"
         >
           <Calculator className="size-3.5" aria-hidden /> Budget
         </a>
@@ -209,7 +210,7 @@ export function SailingCard({
             target="_blank"
             rel="noopener noreferrer"
             onClick={() => track("booking_click", sailing.company?.name)}
-            className="inline-flex h-8 shrink-0 items-center gap-1 rounded-full bg-cta px-3 text-xs font-semibold text-cta-foreground shadow-sm transition hover:brightness-110 active:scale-95"
+            className="ml-auto inline-flex h-8 shrink-0 items-center gap-1 rounded-full bg-cta px-3 md:ml-0 text-xs font-semibold text-cta-foreground shadow-sm transition hover:brightness-110 active:scale-95"
             title={`Voir l’offre sur ${bookingSite(sailing)} · budget estimé ${formatEuro(fare.amount)} (${formatFareRange(fare)})`}
           >
             <span className="tabular-nums">≈ {formatEuro(fare.amount)}</span>

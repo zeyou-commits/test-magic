@@ -4,6 +4,7 @@ import { CircleHelp, Megaphone, MessagesSquare } from "lucide-react";
 import { CabasImg } from "@/components/CabasImg";
 import { mergeTripSteps, tripStepsQuery, type TripStatus } from "@/lib/ferry/presence";
 import { scrollWithin } from "./LivePulse";
+import { tr } from "@/lib/i18n";
 
 /** Fait défiler la fiche jusqu'à un bloc, une fois le panneau ouvert sur téléphone. */
 export function revealBlock(selector: string, delay = 350) {
@@ -43,7 +44,7 @@ function WhereIcon({ status }: { status?: TripStatus | null | undefined }) {
       <span className="bw-hub__icon" data-where>
         <CabasImg key={step.id} src={step.image} alt="" width={40} height={40} />
       </span>
-      <strong>Vous êtes où ?</strong>
+      <strong>{tr("ui.actionHub.vousEtesOu")}</strong>
       <small key={`${step.id}-label`}>{step.short}</small>
     </>
   );
@@ -52,7 +53,7 @@ function WhereIcon({ status }: { status?: TripStatus | null | undefined }) {
 /** Les mêmes icônes partout : salon, questions, vous êtes où, signaler. */
 export function ActionHub({ tiles, children }: { tiles: HubTile[]; children?: ReactNode }) {
   return (
-    <nav className="bw-hub" data-tiles={tiles.length} aria-label="Échanger avec les voyageurs">
+    <nav className="bw-hub" data-tiles={tiles.length} aria-label={tr("ui.actionHub.echangerAvecLesVoyageurs")}>
       {tiles.map((tile) => {
         if (tile.id === "where")
           return (

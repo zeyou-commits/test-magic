@@ -1,4 +1,5 @@
 import {
+  Fragment,
   createContext,
   useCallback,
   useContext,
@@ -15,7 +16,7 @@ import {
   pickLocale,
   type Locale,
 } from "./config";
-import { translate, type TranslateVars } from "./translate";
+import { setCurrentLocale, translate, type TranslateVars } from "./translate";
 import type { MessageKey } from "./messages/fr";
 
 interface I18nValue {
@@ -66,7 +67,14 @@ export function I18nProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const value = useMemo(() => ({ locale, setLocale }), [locale, setLocale]);
-  return <I18nContext.Provider value={value}>{children}</I18nContext.Provider>;
+  // tr() lit cette langue : réglée avant que les enfants se dessinent, et la clé force à tout
+  // redessiner quand la langue change (événement rare : un choix du visiteur).
+  setCurrentLocale(locale);
+  return (
+    <I18nContext.Provider value={value}>
+      <Fragment key={locale}>{children}</Fragment>
+    </I18nContext.Provider>
+  );
 }
 
 export function useLocale() {

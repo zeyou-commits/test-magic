@@ -8,6 +8,7 @@ import {
   registerPush,
   type DevicePushState,
 } from "@/lib/notifications/push";
+import { tr } from "@/lib/i18n";
 
 /**
  * « Alertes sur ce téléphone » : l'état réel de cet appareil pour le compte connecté,
@@ -59,58 +60,54 @@ export function PushStatusLine({ withDisable = false }: { withDisable?: boolean 
       {state === "on" ? (
         <>
           <p>
-            <Check size={15} aria-hidden /> Alertes activées sur {device}
+            <Check size={15} aria-hidden />{tr("ui.pushStatusLine.alertesActiveesSur")}{device}
           </p>
           {withDisable ? (
             <button type="button" className="bw-push-line__quiet" disabled={busy} onClick={() => void disable()}>
-              {busy ? <LoaderCircle size={14} className="animate-spin" aria-hidden /> : null} Désactiver
+              {busy ? <LoaderCircle size={14} className="animate-spin" aria-hidden /> : null}{tr("ui.pushStatusLine.desactiver")}
             </button>
           ) : null}
         </>
       ) : state === "off" ? (
         <>
           <p>
-            <Bell size={15} aria-hidden /> Recevez les alertes de vos traversées sur {device}, même
-            BledWay fermé.
+            <Bell size={15} aria-hidden />{tr("ui.pushStatusLine.recevezLesAlertesDeVos")}{device}{tr("ui.pushStatusLine.memeBledwayFerme")}
           </p>
           <button type="button" disabled={busy} onClick={() => void activate()}>
             {busy ? <LoaderCircle size={14} className="animate-spin" aria-hidden /> : null}
-            {busy ? " Activation…" : "Activer"}
+            {busy ? " Activation…" : tr("ui.pushStatusLine.activer")}
           </button>
         </>
       ) : state === "denied" ? (
         <p>
-          <BellOff size={15} aria-hidden /> Alertes bloquées par le navigateur : autorisez les
-          notifications pour BledWay dans ses réglages, puis revenez ici.
+          <BellOff size={15} aria-hidden />{tr("ui.pushStatusLine.alertesBloqueesParLeNavigateur")}
         </p>
       ) : state === "ios-install" ? (
         <>
           <p>
-            <Bell size={15} aria-hidden /> Sur iPhone, les alertes demandent d’ajouter BledWay à l’écran
-            d’accueil.
+            <Bell size={15} aria-hidden />{tr("ui.pushStatusLine.surIphoneLesAlertesDemandent")}
           </p>
           <button type="button" onClick={() => setGuide(!guide)} aria-expanded={guide}>
-            Comment faire
+            {tr("ui.pushStatusLine.commentFaire")}
           </button>
           {guide ? (
             <ol className="bw-push-line__guide">
               <li>
-                <Share size={15} aria-hidden /> Dans Safari, touchez le bouton <strong>Partager</strong>.
+                <Share size={15} aria-hidden />{tr("ui.pushStatusLine.dansSafariTouchezLeBouton")}<strong>{tr("ui.pushStatusLine.partager")}</strong>.
               </li>
               <li>
-                <SquarePlus size={15} aria-hidden /> Choisissez <strong>Sur l’écran d’accueil</strong>.
+                <SquarePlus size={15} aria-hidden />{tr("ui.pushStatusLine.choisissez")}<strong>{tr("ui.pushStatusLine.surLEcranDAccueil")}</strong>.
               </li>
               <li>
-                <Bell size={15} aria-hidden /> Ouvrez BledWay depuis la nouvelle icône, puis touchez{" "}
-                <strong>Activer</strong> ici.
+                <Bell size={15} aria-hidden />{tr("ui.pushStatusLine.ouvrezBledwayDepuisLaNouvelle")}{" "}
+                <strong>{tr("ui.pushStatusLine.activer")}</strong>{tr("ui.pushStatusLine.ici")}
               </li>
             </ol>
           ) : null}
         </>
       ) : (
         <p>
-          <BellOff size={15} aria-hidden /> Ce navigateur ne reçoit pas les alertes. Elles restent dans
-          la cloche, en haut à droite.
+          <BellOff size={15} aria-hidden />{tr("ui.pushStatusLine.ceNavigateurNeRecoitPas")}
         </p>
       )}
       {note ? <p className="bw-push-line__note">{note}</p> : null}

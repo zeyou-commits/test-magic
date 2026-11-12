@@ -13,6 +13,7 @@ import {
 import { portTimeZone } from "@/lib/ferry/time";
 import type { Departure, Selection } from "@/lib/ferry/types";
 import { useVesselAlerts } from "@/lib/ferry/vesselAlerts";
+import { tr } from "@/lib/i18n";
 
 /**
  * Un départ annulé, sur un navire en alerte ou touché par une perturbation : les autres départs
@@ -68,40 +69,40 @@ export function DepartureAlternatives({
             </strong>
             <small>
               {portName(route?.departure_port_id)} → {portName(route?.arrival_port_id)} ·{" "}
-              {companies.find((company) => company.id === item.company_id)?.name ?? "Compagnie"}
+              {companies.find((company) => company.id === item.company_id)?.name ?? tr("ui.departureAlternatives.compagnie")}
               {item.vessel_id
                 ? ` · ${vessels.find((vessel) => vessel.id === item.vessel_id)?.name ?? ""}`
                 : ""}
             </small>
           </span>
-          <em>{gap === 0 ? "Même jour" : `${gap > 0 ? "+" : ""}${gap} j`}</em>
+          <em>{gap === 0 ? tr("ui.departureAlternatives.memeJour") : `${gap > 0 ? "+" : ""}${gap} j`}</em>
           <ChevronRight size={15} aria-hidden />
         </button>
       </li>
     );
   };
   return (
-    <section className="bw-alternatives" aria-label="Autres départs possibles">
+    <section className="bw-alternatives" aria-label={tr("ui.departureAlternatives.autresDepartsPossibles")}>
       <h3>
-        <Shuffle size={15} aria-hidden /> Autres départs autour du{" "}
+        <Shuffle size={15} aria-hidden />{tr("ui.departureAlternatives.autresDepartsAutourDu")}{" "}
         {formatDate(departure.departure_at, portTimeZone(from))}
       </h3>
       {sameLine.length ? (
         <>
-          <h4>Sur la même ligne</h4>
+          <h4>{tr("ui.departureAlternatives.surLaMemeLigne")}</h4>
           <ul>{sameLine.map(row)}</ul>
         </>
       ) : null}
       {nearby.length ? (
         <>
-          <h4>Depuis ou vers les mêmes ports</h4>
+          <h4>{tr("ui.departureAlternatives.depuisOuVersLesMemes")}</h4>
           <ul>{nearby.map(row)}</ul>
         </>
       ) : null}
       {sameLine.length + nearby.length ? (
-        <p>Selon les horaires publiés. Les places se vérifient auprès de la compagnie.</p>
+        <p>{tr("ui.departureAlternatives.selonLesHorairesPubliesLes")}</p>
       ) : (
-        <p>Aucun autre départ publié dans les 7 jours autour de cette date.</p>
+        <p>{tr("ui.departureAlternatives.aucunAutreDepartPublieDans")}</p>
       )}
     </section>
   );

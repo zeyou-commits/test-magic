@@ -13,6 +13,7 @@ import {
   summarizePorts,
 } from "@/lib/ferry/filtering";
 import type { Port, RouteLine } from "@/lib/ferry/types";
+import { tr } from "@/lib/i18n";
 
 interface PortMultiPickerProps {
   /** « departure » : ports de départ ; « arrival » : ports d'arrivée. */
@@ -142,14 +143,14 @@ export function PortMultiPicker({
         <Input
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          placeholder={inline ? "Rechercher un port…" : "Ville, port ou pays"}
+          placeholder={inline ? tr("ui.portFilters.rechercherUnPort") : tr("ui.portFilters.villePortOuPays")}
           aria-label={`Rechercher un port ${direction === "departure" ? "de départ" : "d'arrivée"}`}
           className="batogo-control h-8 w-full rounded-xl pl-9 pr-9 text-xs"
         />
         {search ? (
           <button
             type="button"
-            aria-label="Effacer la recherche"
+            aria-label={tr("ui.portFilters.effacerLaRecherche")}
             onClick={() => setSearch("")}
             className="absolute right-1.5 top-1/2 grid size-7 -translate-y-1/2 place-items-center rounded-full text-muted-foreground hover:bg-secondary"
           >
@@ -165,15 +166,15 @@ export function PortMultiPicker({
         className={`mb-2 flex min-h-9 w-full shrink-0 items-center gap-2 rounded-lg px-2.5 text-left text-xs font-semibold ${allMode ? "bg-primary/10 text-primary" : "hover:bg-secondary"}`}
       >
         <span className="w-4 shrink-0">{allMode ? <Check className="size-4" /> : null}</span>
-        {inline ? "Tous" : "🌍 Tous les ports"}
+        {inline ? tr("ui.portFilters.tous") : tr("ui.portFilters.tousLesPorts")}
         <span
           className={`ml-auto text-xs font-normal text-muted-foreground ${inline ? "hidden" : ""}`}
         >
-          {allMode ? "Tout désélectionner" : "Tout cocher"}
+          {allMode ? tr("ui.portFilters.toutDeselectionner") : tr("ui.portFilters.toutCocher")}
         </span>
       </button>
       {groups.length === 0 ? (
-        <p className="p-4 text-center text-sm text-muted-foreground">Aucun port trouvé.</p>
+        <p className="p-4 text-center text-sm text-muted-foreground">{tr("ui.portFilters.aucunPortTrouve")}</p>
       ) : (
         <div
           className={`flex min-w-0 flex-col gap-2.5 pr-0.5 ${inline ? "" : "min-h-0 overflow-y-auto"}`}
@@ -255,7 +256,7 @@ export function PortMultiPicker({
                           <span className="truncate">{port.name}</span>
                           {port.facilities?.["dedouanement_vehicule"] === "oui" ? (
                             <Car
-                              aria-label="Dédouanement véhicules de moins de 3 ans"
+                              aria-label={tr("ui.portFilters.dedouanementVehiculesDeMoinsDe")}
                               className="size-3 shrink-0 text-primary"
                             />
                           ) : null}
@@ -281,14 +282,14 @@ export function PortMultiPicker({
             disabled={!value.length && !cleared}
             className="text-sm font-medium text-muted-foreground hover:text-foreground disabled:opacity-40"
           >
-            Réinitialiser
+            {tr("ui.portFilters.reinitialiser")}
           </button>
           <button
             type="button"
             onClick={() => setOpen(false)}
             className="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90"
           >
-            Valider{value.length ? ` (${value.length})` : ""}
+            {tr("ui.portFilters.valider")}{value.length ? ` (${value.length})` : ""}
           </button>
         </div>
       )}
@@ -339,10 +340,10 @@ export function PortMultiPicker({
           >
             <div className="mb-3 flex shrink-0 items-center justify-between">
               <SheetPrimitive.Title className="text-base font-bold">
-                Port {direction === "departure" ? "de départ" : "d'arrivée"}
+                {tr("ui.portFilters.port")}{direction === "departure" ? tr("ui.portFilters.deDepart") : tr("ui.portFilters.dArrivee")}
               </SheetPrimitive.Title>
               <SheetPrimitive.Close
-                aria-label="Fermer"
+                aria-label={tr("ui.portFilters.fermer")}
                 className="grid size-9 place-items-center rounded-full hover:bg-muted"
               >
                 <X className="size-4" />

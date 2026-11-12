@@ -9,6 +9,7 @@ import type { Company, Departure, Port, Selection, Vessel } from "@/lib/ferry/ty
 import type { MapPreview } from "@/lib/ferry/mapPresentation";
 import { CompanyBadge } from "./CompanyBadge";
 import { FollowButton } from "./FollowButton";
+import { tr } from "@/lib/i18n";
 
 export type TrafficCrossing = {
   departure: Departure;
@@ -95,10 +96,10 @@ export function TrafficCard({
           />
           <div className="min-w-0 flex-1">
             <strong className="block truncate text-xs">
-              {c.company?.name ?? "Compagnie à confirmer"}
+              {c.company?.name ?? tr("ui.trafficCard.compagnieAConfirmer")}
             </strong>
             <span className="block truncate text-[10px] text-muted-foreground">
-              {c.vessel?.name ?? "Bateau à confirmer"}
+              {c.vessel?.name ?? tr("ui.trafficCard.bateauAConfirmer")}
             </span>
           </div>
           {c.vessel && (
@@ -144,7 +145,7 @@ export function TrafficCard({
           />
           {delayLabel(progress.times) ? (
             <b className="bw-delay-badge bw-delay-badge--compact">
-              Retardé · {delayLabel(progress.times)}
+              {tr("ui.trafficCard.retarde")}{delayLabel(progress.times)}
             </b>
           ) : null}
         </div>
@@ -152,7 +153,7 @@ export function TrafficCard({
           className="bw-compact-track"
           data-estimated={estimated || undefined}
           role="progressbar"
-          aria-label="Avancement de la traversée"
+          aria-label={tr("ui.trafficCard.avancementDeLaTraversee")}
           aria-valuemin={0}
           aria-valuemax={100}
           {...(percent === null ? {} : { "aria-valuenow": percent })}
@@ -163,7 +164,7 @@ export function TrafficCard({
             <b>
               {percent === null
                 ? waiting
-                  ? "À quai"
+                  ? tr("ui.trafficCard.aQuai")
                   : "—"
                 : `${estimated ? "≈ " : ""}${percent} %`}
             </b>
@@ -171,13 +172,13 @@ export function TrafficCard({
         </div>
         <div className="flex justify-between text-[11px] tabular-nums">
           <span>
-            Départ <b>{time(c.times.departure.iso, c.from)}</b>
+            {tr("ui.trafficCard.depart")}<b>{time(c.times.departure.iso, c.from)}</b>
             {replacedTime(c.times.departure) ? (
               <s className="bw-old-time">{time(replacedTime(c.times.departure), c.from)}</s>
             ) : null}
           </span>
           <span className="text-right">
-            Arrivée <b>{time(c.times.arrival.iso, c.to)}</b>
+            {tr("ui.trafficCard.arrivee")}<b>{time(c.times.arrival.iso, c.to)}</b>
             {dayDelta > 0 && <sup className="ml-0.5 text-primary">+{dayDelta} j</sup>}
             {replacedTime(c.times.arrival) ? (
               <s className="bw-old-time">{time(replacedTime(c.times.arrival), c.to)}</s>

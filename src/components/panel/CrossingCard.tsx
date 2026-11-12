@@ -19,6 +19,7 @@ import { TrackingTimes } from "./TrackingTimes";
 
 import { MiniFerry } from "./MiniFerry";
 import { SeaChip } from "./SeaForecast";
+import { tr } from "@/lib/i18n";
 
 export function CrossingCard({
   departure,
@@ -91,13 +92,13 @@ export function CrossingCard({
                 : "Au port"
               : atSeaLabel;
   return (
-    <section className="bw-crossing" aria-label="Avancement de la traversée">
+    <section className="bw-crossing" aria-label={tr("ui.crossingCard.avancementDeLaTraversee")}>
       <div className="bw-crossing-top" data-alert={stopped || awaited || undefined}>
         <span>
           {stopped || awaited ? <b className="bw-alert-mark" aria-hidden>!</b> : <Waves size={16} aria-hidden />}
           {status}
         </span>
-        {delay ? <b className="bw-delay-badge">Retardé · {delay}</b> : null}
+        {delay ? <b className="bw-delay-badge">{tr("ui.crossingCard.retarde")}{delay}</b> : null}
         {departure.status === "cancelled" ? null : (
           <SeaChip
             departureId={departure.id}
@@ -124,8 +125,8 @@ export function CrossingCard({
           <div className="bw-crossing-progress-label">
             <span>
               {progress.reportedPostponed
-                ? "Signalé sur place et validé par BledWay, à confirmer auprès de la compagnie"
-                : (alert?.label ?? "Navire immobilisé")}
+                ? tr("ui.crossingCard.signaleSurPlaceEtValide")
+                : (alert?.label ?? tr("ui.crossingCard.navireImmobilise"))}
             </span>
           </div>
           <div className="bw-crossing-track">
@@ -183,10 +184,10 @@ export function CrossingCard({
         <div className="bw-crossing-metrics">
           <Navigation size={13} aria-hidden />
           {progress.signal.remainingKm !== null && progress.times.arrival.kind !== "observed" ? (
-            <span>≈ {Math.round(progress.signal.remainingKm)} km à parcourir</span>
+            <span>≈ {Math.round(progress.signal.remainingKm)}{tr("ui.crossingCard.kmAParcourir")}</span>
           ) : null}
           {progress.signal.position.speedKnots !== null ? (
-            <span>{progress.signal.position.speedKnots.toFixed(1)} nœuds</span>
+            <span>{progress.signal.position.speedKnots.toFixed(1)}{tr("ui.crossingCard.nUds")}</span>
           ) : null}
         </div>
       ) : null}
@@ -269,7 +270,7 @@ function CrossingSteps({
   const pending = Object.values(marks).includes("pending");
   return (
     <div className="bw-crossing-steps">
-      <ol aria-label="Étapes de la traversée">
+      <ol aria-label={tr("ui.crossingCard.etapesDeLaTraversee")}>
         {CROSSING_STEPS.map((step) => (
           <li key={step} data-mark={marks[step]} title={MARK_TITLE[marks[step]]}>
             <span className="bw-crossing-steps__dot" aria-hidden>
@@ -283,8 +284,7 @@ function CrossingSteps({
       </ol>
       {pending ? (
         <p className="bw-crossing-steps__note">
-          « À confirmer » : l’heure est passée, mais aucun signal du navire ni information
-          vérifiée ne le confirme encore.
+          {tr("ui.crossingCard.aConfirmerLHeureEst")}
         </p>
       ) : null}
     </div>

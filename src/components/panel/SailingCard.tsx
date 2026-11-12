@@ -29,6 +29,7 @@ import { ShareButtons } from "./ShareButtons";
 import { CompanyBadge } from "./CompanyBadge";
 import { estimateFerryFare, formatEuro, formatFareRange, useFareProfile } from "@/lib/ferry/pricing";
 import { RECOMMENDED_RULE } from "@/lib/ferry/trips";
+import { tr } from "@/lib/i18n";
 
 const dayFormatter = new Intl.DateTimeFormat("fr-FR", {
   weekday: "short",
@@ -115,15 +116,15 @@ export function SailingCard({
                 className="inline-flex items-center gap-1 rounded-full bg-success/15 px-2 py-0.5 font-semibold text-success"
                 title={RECOMMENDED_RULE}
               >
-                <Sparkles className="size-3" aria-hidden /> Recommandé
+                <Sparkles className="size-3" aria-hidden />{tr("ui.sailingCard.recommande")}
               </span>
             ) : null}
             {overnight ? (
               <span
                 className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 font-semibold text-primary"
-                title="Départ en soirée ou de nuit"
+                title={tr("ui.sailingCard.departEnSoireeOuDe")}
               >
-                <Moon className="size-3" aria-hidden /> Nuit
+                <Moon className="size-3" aria-hidden />{tr("ui.sailingCard.nuit")}
               </span>
             ) : null}
             <ChevronDown
@@ -177,7 +178,7 @@ export function SailingCard({
         <div className="flex min-w-0 items-center gap-2">
           <CompanyBadge name={sailing.company?.name} logoUrl={sailing.company?.logo_url} />
           <div className="min-w-0 truncate text-xs font-semibold">
-            {sailing.company?.name ?? "Compagnie"}
+            {sailing.company?.name ?? tr("ui.sailingCard.compagnie")}
             {sailing.vessel?.name ? (
               <span className="font-normal text-muted-foreground"> · {sailing.vessel.name}</span>
             ) : null}
@@ -191,17 +192,17 @@ export function SailingCard({
         </div>
         {alert ? (
           <span className="ml-auto shrink-0 text-right text-[11px] font-semibold text-destructive">
-            Départ à confirmer auprès de la compagnie
+            {tr("ui.sailingCard.departAConfirmerAupresDe")}
           </span>
         ) : (
         <a
           href={`/simulateurs/budget-voyage?ticket=${Math.round(fare.amount)}`}
-          title="Budget porte-à-porte : route, péages et bateau"
-          aria-label="Calculer le budget porte-à-porte avec ce billet"
+          title={tr("ui.sailingCard.budgetPorteAPorteRoute")}
+          aria-label={tr("ui.sailingCard.calculerLeBudgetPorteA")}
           // Sur téléphone, la ligne n'a pas la place : logo, prix et favori suffisent.
           className="ml-auto hidden h-8 shrink-0 items-center gap-1 rounded-full border border-border bg-card px-2.5 text-xs font-semibold text-primary hover:bg-secondary md:inline-flex"
         >
-          <Calculator className="size-3.5" aria-hidden /> Budget
+          <Calculator className="size-3.5" aria-hidden />{tr("ui.sailingCard.budget")}
         </a>
         )}
         {href && !alert ? (
@@ -215,7 +216,7 @@ export function SailingCard({
           >
             <span className="tabular-nums">≈ {formatEuro(fare.amount)}</span>
             <ArrowUpRight className="size-3.5" aria-hidden />
-            <span className="sr-only">sur {bookingSite(sailing)} (nouvel onglet)</span>
+            <span className="sr-only">{tr("ui.sailingCard.sur")}{bookingSite(sailing)}{tr("ui.sailingCard.nouvelOnglet")}</span>
           </a>
         ) : null}
         {/* Suivre sans déplier : le cœur, comme dans la liste du trafic. */}
@@ -234,7 +235,7 @@ export function SailingCard({
       <div
         id={panelId}
         role="region"
-        aria-label="Détail de la traversée"
+        aria-label={tr("ui.sailingCard.detailDeLaTraversee")}
         className={`grid transition-[grid-template-rows] duration-300 ease-out ${expanded ? "grid-rows-[1fr]" : "grid-rows-[0fr]"}`}
       >
         <div className="overflow-hidden">
@@ -270,9 +271,9 @@ export function SailingDetail({
   return (
     <div className="space-y-2.5 border-t bg-card px-3.5 py-3 text-xs">
       <dl className={`grid gap-2 ${sailing.route.distance_km ? "grid-cols-3" : "grid-cols-2"}`}>
-        <Fact label="Durée" value={formatDuration(sailing.durationMin)} />
+        <Fact label={tr("ui.sailingCard.duree")} value={formatDuration(sailing.durationMin)} />
         <Fact
-          label="Arrivée"
+          label={tr("ui.sailingCard.arrivee")}
           value={
             departure.arrival_at
               ? `${formatShortDay(departure.arrival_at, sailing.toZone)} · ${sailing.arrTime ?? ""}`
@@ -281,7 +282,7 @@ export function SailingDetail({
           hint={zoneLabel(sailing.toZone)}
         />
         {sailing.route.distance_km ? (
-          <Fact label="Distance" value={`${sailing.route.distance_km} km`} />
+          <Fact label={tr("ui.sailingCard.distance")} value={`${sailing.route.distance_km} km`} />
         ) : null}
       </dl>
 
@@ -294,7 +295,7 @@ export function SailingDetail({
           >
             <Ship className="size-3.5" aria-hidden /> {sailing.vessel.name}
             <VesselAlertTag vesselId={sailing.vessel.id} />
-            <span className="font-normal text-muted-foreground">(fiche + photo)</span>
+            <span className="font-normal text-muted-foreground">{tr("ui.sailingCard.fichePhoto")}</span>
           </button>
         ) : null}
       </div>
@@ -317,14 +318,14 @@ export function SailingDetail({
           }}
           className="inline-flex h-8 items-center gap-1 rounded-full bg-primary px-3 font-semibold text-primary-foreground hover:brightness-110"
         >
-          Voir la traversée <ChevronRight className="size-3.5" aria-hidden />
+          {tr("ui.sailingCard.voirLaTraversee")}<ChevronRight className="size-3.5" aria-hidden />
         </a>
         <button
           type="button"
           onClick={() => onOpenRoute(sailing.route.id)}
           className="inline-flex h-8 items-center gap-1 rounded-full border border-border px-3 font-semibold hover:bg-secondary"
         >
-          Fiche de la ligne <ChevronRight className="size-3.5" aria-hidden />
+          {tr("ui.sailingCard.ficheDeLaLigne")}<ChevronRight className="size-3.5" aria-hidden />
         </button>
         <ReportButton targetType="departure" targetId={departure.id} />
         <FollowButton kind="departure" targetId={departure.id} compact label={`${sailing.from.name} → ${sailing.to.name}`} demo={Boolean(departure.is_demo)} />
@@ -339,7 +340,7 @@ export function SailingDetail({
             rel="noopener noreferrer"
             className="ml-auto inline-flex h-8 items-center gap-1 rounded-full bg-cta px-3 font-semibold text-cta-foreground shadow-sm transition hover:brightness-110 active:scale-95"
           >
-            Voir l’offre <ArrowUpRight className="size-3.5" aria-hidden />
+            {tr("ui.sailingCard.voirLOffre")}<ArrowUpRight className="size-3.5" aria-hidden />
           </a>
         ) : null}
       </div>
@@ -410,14 +411,14 @@ export function DayStrip({
     "grid size-7 shrink-0 place-items-center rounded-full border bg-card text-muted-foreground transition hover:bg-secondary disabled:pointer-events-none disabled:opacity-30";
 
   return (
-    <div className="flex w-full min-w-0 items-center gap-1" aria-label="Jours avec départ">
+    <div className="flex w-full min-w-0 items-center gap-1" aria-label={tr("ui.sailingCard.joursAvecDepart")}>
       <button
         type="button"
         className={arrow}
         disabled={!canScroll.left}
         onClick={() => { const rail = railRef.current; rail?.scrollBy({ left: -rail.clientWidth * 0.8, behavior: "smooth" }); }}
-        aria-label="Dates précédentes"
-        title="Dates précédentes"
+        aria-label={tr("ui.sailingCard.datesPrecedentes")}
+        title={tr("ui.sailingCard.datesPrecedentes")}
       >
         <ChevronLeft className="size-4" aria-hidden />
       </button>
@@ -425,7 +426,7 @@ export function DayStrip({
         ref={railRef}
         className="bw-day-rail flex min-w-0 flex-1 gap-1 overflow-x-auto overscroll-x-contain scroll-smooth"
         role="listbox"
-        aria-label="Choisir un jour de départ"
+        aria-label={tr("ui.sailingCard.choisirUnJourDeDepart")}
         onPointerDown={(event) => {
           if (event.pointerType !== "mouse" || event.button !== 0) return;
           dragRef.current = { x: event.clientX, left: event.currentTarget.scrollLeft, moved: false };
@@ -486,8 +487,8 @@ export function DayStrip({
         className={arrow}
         disabled={!canScroll.right}
         onClick={() => { const rail = railRef.current; rail?.scrollBy({ left: rail.clientWidth * 0.8, behavior: "smooth" }); }}
-        aria-label="Dates suivantes"
-        title="Dates suivantes"
+        aria-label={tr("ui.sailingCard.datesSuivantes")}
+        title={tr("ui.sailingCard.datesSuivantes")}
       >
         <ChevronRight className="size-4" aria-hidden />
       </button>
@@ -514,14 +515,14 @@ export function LiveStrip({ live, arrivalZone }: { live: LiveShip; arrivalZone: 
           />
         </span>
         <span className="truncate">
-          {atSea ? (fresh ? "En mer" : "En mer · estimé") : "Au port"}
+          {atSea ? (fresh ? tr("ui.sailingCard.enMer") : tr("ui.sailingCard.enMerEstime")) : tr("ui.sailingCard.auPort")}
           {fresh && live.position.speedKnots ? ` · ${Math.round(live.position.speedKnots)} nœuds` : ""}
         </span>
       </span>
       <span className="shrink-0 text-right text-muted-foreground">
         {atSea && live.etaIso ? (
           <>
-            Arrivée vers{" "}
+            {tr("ui.sailingCard.arriveeVers")}{" "}
             <strong className="text-foreground">{wallTimeInZone(live.etaIso, arrivalZone)}</strong>
             {live.delayMinutes !== null && delay.tone === "late" ? (
               <span className="ml-1 font-semibold text-destructive">

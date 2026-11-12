@@ -9,6 +9,7 @@ import { requestQuickReport } from "@/components/map/QuickReport";
 import { FlashFeed } from "./FlashFeed";
 import { TripStatusPicker } from "./TripPresence";
 import { PushStatusLine } from "./PushStatusLine";
+import { tr } from "@/lib/i18n";
 
 /** Historique des changements d'un départ (horaire, navire, annulation), alimenté par la base. */
 export function TripChanges({ departureId }: { departureId: string }) {
@@ -17,17 +18,17 @@ export function TripChanges({ departureId }: { departureId: string }) {
   if (events.isError)
     return (
       <p className="bw-community-error" role="status">
-        L’historique de la traversée est momentanément indisponible.{" "}
+        {tr("ui.myTrip.lHistoriqueDeLaTraversee")}{" "}
         <button type="button" onClick={() => void events.refetch()}>
-          Réessayer
+          {tr("ui.myTrip.reessayer")}
         </button>
       </p>
     );
   const list = events.data ?? [];
   return (
-    <section className="bw-trip-changes" aria-label="Changements de la traversée">
+    <section className="bw-trip-changes" aria-label={tr("ui.myTrip.changementsDeLaTraversee")}>
       <h3 className="bw-flash-title">
-        <History size={15} aria-hidden /> Changements
+        <History size={15} aria-hidden />{tr("ui.myTrip.changements")}
       </h3>
       {list.length ? (
         <ol>
@@ -43,7 +44,7 @@ export function TripChanges({ departureId }: { departureId: string }) {
         </ol>
       ) : (
         <p className="bw-flash-empty">
-          Aucun changement signalé depuis la publication de ce départ.
+          {tr("ui.myTrip.aucunChangementSignaleDepuisLa")}
         </p>
       )}
     </section>
@@ -84,7 +85,7 @@ export function MyTripPanel({
       <PushStatusLine />
       <TripChanges departureId={departureId} />
       <FlashFeed
-        title="Infos sur votre traversée"
+        title={tr("ui.myTrip.infosSurVotreTraversee")}
         context={{
           departureIds: [departureId],
           routeIds: [routeId],
@@ -113,8 +114,8 @@ export function MyTripPanel({
       >
         <Flag size={18} aria-hidden />
         <span>
-          <small>Au port ou à bord ?</small>
-          <strong>Signaler une situation (file, retard, embarquement…)</strong>
+          <small>{tr("ui.myTrip.auPortOuABord")}</small>
+          <strong>{tr("ui.myTrip.signalerUneSituationFileRetard")}</strong>
         </span>
         <ArrowRight size={16} aria-hidden />
       </button>
@@ -126,8 +127,8 @@ export function MyTripPanel({
         >
           <MapPin size={18} aria-hidden />
           <span>
-            <small>Rejoindre le port</small>
-            <strong>Accès, services et lieux pratiques{fromName ? ` · ${fromName}` : ""}</strong>
+            <small>{tr("ui.myTrip.rejoindreLePort")}</small>
+            <strong>{tr("ui.myTrip.accesServicesEtLieuxPratiques")}{fromName ? ` · ${fromName}` : ""}</strong>
           </span>
           <ArrowRight size={16} aria-hidden />
         </button>
@@ -174,7 +175,7 @@ function MyTripsList({
   if (!trips.length) return null;
   // Plusieurs voyages déclarés : celui du dessus est le voyage actif, les autres se choisissent ici.
   return (
-    <section className="bw-my-trips" aria-label="Mes autres voyages">
+    <section className="bw-my-trips" aria-label={tr("ui.myTrip.mesAutresVoyages")}>
       {trips.map((trip) => {
         const days = dayCount(trip.at);
         return (
@@ -189,7 +190,7 @@ function MyTripsList({
               </span>
               <span className="min-w-0 flex-1">
                 <small>
-                  <CalendarClock size={12} aria-hidden /> Autre voyage ·{" "}
+                  <CalendarClock size={12} aria-hidden />{tr("ui.myTrip.autreVoyage")}{" "}
                   {days <= 0 ? "aujourd’hui" : days === 1 ? "demain" : `J-${days}`}
                 </small>
                 <strong>{trip.label}</strong>
@@ -202,7 +203,7 @@ function MyTripsList({
                 className="bw-my-trip-activate"
                 onClick={() => setActiveTrip(trip.id)}
               >
-                En faire mon voyage actif
+                {tr("ui.myTrip.enFaireMonVoyageActif")}
               </button>
             ) : null}
           </div>

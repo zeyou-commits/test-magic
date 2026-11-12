@@ -13,6 +13,7 @@ import {
 } from "@/lib/ferry/chatDemo";
 import { chatFeedQuery } from "./LiveRoom";
 import { RoomPicker } from "./RoomPicker";
+import { tr } from "@/lib/i18n";
 
 const DISMISS_KEY = "bledway:chat-preview-dismissed";
 /** L'invitation reste le temps d'une bulle de la carte. */
@@ -79,11 +80,11 @@ export function MessagesFab({ onSelect }: { onSelect: (selection: Selection) => 
       <button
         type="button"
         className="bw-messages-fab"
-        aria-label={count ? `Salons, ${count} messages` : "Salons"}
+        aria-label={count ? `Salons, ${count} messages` : tr("ui.messagesFab.salons")}
         onClick={() => openMine()}
       >
         <MessagesSquare size={22} aria-hidden />
-        <span>Salons</span>
+        <span>{tr("ui.messagesFab.salons")}</span>
         {count ? <b>{count > 99 ? "99+" : count}</b> : null}
       </button>
       {invite && !dismissed ? (
@@ -99,18 +100,18 @@ export function MessagesFab({ onSelect }: { onSelect: (selection: Selection) => 
               <MessagesSquare size={15} />
             </span>
             <span>
-              <small>À vous</small>
+              <small>{tr("ui.messagesFab.aVous")}</small>
               <strong>
                 {trip
-                  ? "Et vous, ça se passe comment ? Racontez-le dans votre salon"
-                  : "Vous voyagez bientôt ? Rejoignez le salon de votre traversée"}
+                  ? tr("ui.messagesFab.etVousCaSePasse")
+                  : tr("ui.messagesFab.vousVoyagezBientotRejoignezLe")}
               </strong>
             </span>
           </button>
           <button
             type="button"
             className="bw-messages-preview__close"
-            aria-label="Ne plus proposer"
+            aria-label={tr("ui.messagesFab.nePlusProposer")}
             onClick={() => {
               setDismissed(true);
               try {
@@ -159,10 +160,10 @@ function SalonsPicker({
     <RoomPicker
       departures={rooms.slice(0, 80)}
       currentId={trip?.departure.id}
-      title={trip ? "Les salons en cours" : undefined}
+      title={trip ? tr("ui.messagesFab.lesSalonsEnCours") : undefined}
       intro={
         trip
-          ? "Votre salon, et les autres en lecture : vous pouvez y réagir avec « Pareil ici »."
+          ? tr("ui.messagesFab.votreSalonEtLesAutres")
           : undefined
       }
       onSelect={onSelect}

@@ -24,6 +24,7 @@ import { MyTripsShortcut } from "./MyTrip";
 import { MyTripHero } from "./MyTripHero";
 import { useMyTrip } from "@/lib/ferry/myTrip";
 import type { MapPreview } from "@/lib/ferry/mapPresentation";
+import { tr } from "@/lib/i18n";
 
 export function HomeTraffic({
   onSelect,
@@ -104,9 +105,9 @@ export function HomeTraffic({
       <MyTripHero onSelect={onSelect} />
       <MyTripsShortcut onSelect={onSelect} />
       {mineSailing && !sailing.length ? null : (
-      <section aria-label="Traversées en navigation">
+      <section aria-label={tr("ui.homeTraffic.traverseesEnNavigation")}>
         <h2 className="mb-2 flex items-center gap-2 text-sm font-bold">
-          <Ship size={16} aria-hidden /> {mineSailing ? "Autres navires en route" : "En navigation"}{" "}
+          <Ship size={16} aria-hidden /> {mineSailing ? tr("ui.homeTraffic.autresNaviresEnRoute") : tr("ui.homeTraffic.enNavigation")}{" "}
           <span className="text-xs font-normal text-muted-foreground">{sailing.length || ""}</span>
         </h2>
         {sailing.length ? (
@@ -121,15 +122,15 @@ export function HomeTraffic({
         ) : (
           <p className="text-xs text-muted-foreground">
             {isPending
-              ? "Chargement des traversées…"
-              : "Aucune traversée en navigation connue actuellement."}
+              ? tr("ui.homeTraffic.chargementDesTraversees")
+              : tr("ui.homeTraffic.aucuneTraverseeEnNavigationConnue")}
           </p>
         )}
       </section>
       )}
-      <section className="mt-4" aria-label="Prochains départs et arrivées">
+      <section className="mt-4" aria-label={tr("ui.homeTraffic.prochainsDepartsEtArrivees")}>
         <h2 className="mb-2 text-sm font-bold">Départs & arrivées</h2>
-        <div className="mb-2 flex rounded-xl bg-secondary p-1" aria-label="Filtrer les mouvements">
+        <div className="mb-2 flex rounded-xl bg-secondary p-1" aria-label={tr("ui.homeTraffic.filtrerLesMouvements")}>
           {(
             [
               ["all", "Tous"],
@@ -235,8 +236,8 @@ export function HomeTraffic({
         {!events.length && (
           <p className="py-2 text-xs text-muted-foreground">
             {error
-              ? "Les horaires sont momentanément indisponibles."
-              : "Aucun mouvement publié à venir."}
+              ? tr("ui.homeTraffic.lesHorairesSontMomentanementIndisponibles")
+              : tr("ui.homeTraffic.aucunMouvementPublieAVenir")}
           </p>
         )}
         {events.length > 6 && (
@@ -244,7 +245,7 @@ export function HomeTraffic({
             href="/horaires"
             className="mt-2 flex min-h-10 w-full items-center justify-center text-xs font-semibold text-primary"
           >
-            Voir tous les départs et arrivées
+            {tr("ui.homeTraffic.voirTousLesDepartsEt")}
           </a>
         )}
       </section>

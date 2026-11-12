@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Ship } from "lucide-react";
 import type { Vessel } from "@/lib/ferry/types";
 import { safeExternalUrl } from "./shared";
+import { tr } from "@/lib/i18n";
 
 const number = (value: number | null | undefined) => value?.toLocaleString("fr-FR");
 
@@ -36,7 +37,7 @@ export function VesselSpecs({ vessel }: { vessel: Vessel }) {
       </dl>
       {vessel.specs_source_name ? (
         <p className="mt-1 text-[11px] text-muted-foreground">
-          Source :{" "}
+          {tr("ui.vesselBits.source")}{" "}
           {source ? (
             <a href={source} target="_blank" rel="noopener noreferrer" className="underline">
               {vessel.specs_source_name}

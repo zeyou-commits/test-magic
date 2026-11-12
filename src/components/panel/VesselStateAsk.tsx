@@ -4,6 +4,7 @@ import { Anchor, Ship } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { activeAlerts, communityKey, communityQuery, reportFromHere } from "@/lib/ferry/community";
 import { portsQuery } from "@/lib/ferry/queries";
+import { tr } from "@/lib/i18n";
 
 /**
  * Navire en retard, sans départ constaté : les voyageurs sur place complètent le signal. Leurs
@@ -54,7 +55,7 @@ export function VesselStateAsk({
   ];
   return (
     <div className="bw-state-ask">
-      <p>Vous êtes sur place : le {vesselName} est-il parti ?</p>
+      <p>{tr("ui.vesselStateAsk.vousEtesSurPlaceLe")}{vesselName}{tr("ui.vesselStateAsk.estIlParti")}</p>
       {user ? (
         <div className="bw-state-ask__choices">
           {options.map(({ detail, label, icon: Icon }) => (
@@ -74,7 +75,7 @@ export function VesselStateAsk({
           {answers.length
             ? `Voyageurs : ${count("state_quay")} encore à quai, ${count("state_departed")} parti. `
             : ""}
-          <a href="/auth">Connectez-vous pour répondre</a>
+          <a href="/auth">{tr("ui.vesselStateAsk.connectezVousPourRepondre")}</a>
         </p>
       )}
       {message ? (

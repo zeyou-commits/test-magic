@@ -5,6 +5,7 @@ import { MapPin } from "lucide-react";
 import { vesselsQuery } from "@/lib/ferry/queries";
 import { TravelSignals, VesselReviews } from "./TravelCommunity";
 import { FollowButton } from "./FollowButton";
+import { tr } from "@/lib/i18n";
 
 export function VesselDossierFollow({ slug }: { slug: string }) {
   const { data: vessels = [] } = useQuery(vesselsQuery);
@@ -24,16 +25,16 @@ export function VesselDossierCommunity({ slug }: { slug: string }) {
   });
   if (!vessel) return null;
   return (
-    <section className="bw-dossier-community" aria-label="La communauté de ce bateau">
+    <section className="bw-dossier-community" aria-label={tr("ui.vesselDossierCommunity.laCommunauteDeCeBateau")}>
       <div className="bw-section-heading">
         <div>
-          <span className="bw-eyebrow">Le voyage se partage</span>
-          <h2>À bord avec la communauté</h2>
+          <span className="bw-eyebrow">{tr("ui.vesselDossierCommunity.leVoyageSePartage")}</span>
+          <h2>{tr("ui.vesselDossierCommunity.aBordAvecLaCommunaute")}</h2>
         </div>
       </div>
       <a className="bw-map-button" href={`/?select=vessel&id=${encodeURIComponent(vessel.id)}`}>
         <MapPin size={16} aria-hidden />
-        Voir ses traversées sur la carte
+        {tr("ui.vesselDossierCommunity.voirSesTraverseesSurLa")}
       </a>
       {community.data && <><TravelSignals kind="vessel" target={vessel.id} /><VesselReviews vesselId={vessel.id} /></>}
     </section>

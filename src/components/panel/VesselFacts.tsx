@@ -8,6 +8,7 @@ import { computeVesselFacts, MIN_REVIEWS } from "@/lib/ferry/vesselFacts";
 import { useVesselAlert } from "@/lib/ferry/vesselAlerts";
 import { ShareButtons } from "./ShareButtons";
 import { VesselAlertTag } from "./VesselAlert";
+import { tr } from "@/lib/i18n";
 
 function useVesselFacts() {
   const { data: vessels = [] } = useQuery(vesselsQuery);
@@ -53,9 +54,9 @@ export function VesselIdentity({ vesselId }: { vesselId: string }) {
   const facts = useVesselFacts().byVessel.get(vesselId);
   if (!facts?.length) return null;
   return (
-    <section className="bw-vessel-identity" aria-label="Ses titres dans la flotte">
+    <section className="bw-vessel-identity" aria-label={tr("ui.vesselFacts.sesTitresDansLaFlotte")}>
       <h4>
-        <Award size={15} aria-hidden /> Ses titres dans la flotte
+        <Award size={15} aria-hidden />{tr("ui.vesselFacts.sesTitresDansLaFlotte2")}
       </h4>
       <ul>
         {facts.slice(0, 4).map((fact) => (
@@ -91,16 +92,15 @@ export function VesselPalmares() {
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h2 id="palmares" className="font-display text-2xl font-bold">
-            Le palmarès de la flotte
+            {tr("ui.vesselFacts.lePalmaresDeLaFlotte")}
           </h2>
           <p className="text-sm text-muted-foreground">
-            Pour le plaisir, entre les navires qui ont un départ à venir. Ces chiffres ne disent
-            rien de la sécurité ni du confort.
+            {tr("ui.vesselFacts.pourLePlaisirEntreLes")}
           </p>
         </div>
         <ShareButtons
-          title="Le palmarès des ferries Europe ↔ Algérie"
-          text="⛴️ Le plus long, le doyen, le plus imposant : le palmarès des ferries Europe ↔ Algérie. Via BledWay"
+          title={tr("ui.vesselFacts.lePalmaresDesFerriesEurope")}
+          text={tr("ui.vesselFacts.lePlusLongLeDoyen")}
         />
       </div>
       <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
@@ -129,10 +129,9 @@ export function VesselPalmares() {
         ))}
         {podiums.some((podium) => podium.key === "rated") ? null : (
           <div className="rounded-2xl border border-dashed p-3 text-sm">
-            <h3 className="font-bold">Le mieux noté</h3>
+            <h3 className="font-bold">{tr("ui.vesselFacts.leMieuxNote")}</h3>
             <p className="mt-2 text-muted-foreground">
-              Aucun navire n'a encore {MIN_REVIEWS} avis. Vous avez voyagé ? Donnez le vôtre depuis
-              sa fiche.
+              {tr("ui.vesselFacts.aucunNavireNAEncore")}{MIN_REVIEWS}{tr("ui.vesselFacts.avisVousAvezVoyageDonnez")}
             </p>
           </div>
         )}

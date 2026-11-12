@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Check, Link2, MessageCircle, Share2 } from "lucide-react";
 import { toast } from "sonner";
+import { tr } from "@/lib/i18n";
 
 const SHARE_TITLE = "BledWay — traversées en ferry";
 const PUBLIC_ORIGIN = "https://www.bledway.com";
@@ -122,26 +123,26 @@ export function ShareButtons({
         type="button"
         onClick={copy}
         className={base}
-        title="Copier le lien"
-        aria-label="Copier le lien"
+        title={tr("ui.shareButtons.copierLeLien")}
+        aria-label={tr("ui.shareButtons.copierLeLien")}
       >
         {copied ? (
           <Check className="size-3.5 text-success" aria-hidden />
         ) : (
           <Link2 className="size-3.5" aria-hidden />
         )}
-        {compact ? null : copied ? "Copié" : "Copier le lien"}
+        {compact ? null : copied ? tr("ui.shareButtons.copie") : tr("ui.shareButtons.copierLeLien")}
       </button>
       {canShare ? (
         <button
           type="button"
           onClick={share}
           className={base}
-          title="Partager"
-          aria-label="Partager"
+          title={tr("ui.shareButtons.partager")}
+          aria-label={tr("ui.shareButtons.partager")}
         >
           <Share2 className="size-3.5" aria-hidden />
-          {compact ? null : "Partager"}
+          {compact ? null : tr("ui.shareButtons.partager")}
         </button>
       ) : null}
       <a
@@ -155,11 +156,11 @@ export function ShareButtons({
           );
         }}
         className={base}
-        title="Envoyer sur WhatsApp"
-        aria-label="Envoyer sur WhatsApp"
+        title={tr("ui.shareButtons.envoyerSurWhatsapp")}
+        aria-label={tr("ui.shareButtons.envoyerSurWhatsapp")}
       >
         <MessageCircle className="size-3.5" aria-hidden />
-        {compact ? null : "WhatsApp"}
+        {compact ? null : tr("ui.shareButtons.whatsapp")}
       </a>
     </div>
   );

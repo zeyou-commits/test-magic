@@ -63,6 +63,7 @@ import { DmRequest, PrivateMessages } from "./PrivateMessages";
 import { AuthorAvatar, StaffBadge, StaffTools, type ChatAuthor } from "./StaffChat";
 import { PHOTO_ACCEPT, PhotoPicker, PhotoStrip } from "@/components/photos/Photos";
 import { photosKey, photosQuery, sendChatPhoto, type PreparedPhoto } from "@/lib/photos/photos";
+import { tr } from "@/lib/i18n";
 
 const supabase = typedSupabase as unknown as SupabaseClient;
 export const MAX_MESSAGE = 200;
@@ -212,7 +213,7 @@ export function RoomButton({ departureId, onOpen }: { departureId: string; onOpe
         enterRoom("crossing", departureId);
       }}
     >
-      <MessagesSquare size={15} aria-hidden /> Salon
+      <MessagesSquare size={15} aria-hidden />{tr("ui.liveRoom.salon")}
       {count ? ` · ${count === 80 ? "80+" : count} message${count > 1 ? "s" : ""}` : ""}
     </button>
   );
@@ -527,7 +528,7 @@ function LiveChat({
             <button
               type="button"
               className="bw-chat__mail"
-              aria-label={dmUnread ? `Messages privés, ${dmUnread} non lus` : "Messages privés"}
+              aria-label={dmUnread ? `Messages privés, ${dmUnread} non lus` : tr("ui.liveRoom.messagesPrives")}
               onClick={() => setDmView("inbox")}
             >
               <Mail size={18} aria-hidden />
@@ -541,10 +542,10 @@ function LiveChat({
               aria-pressed={muted}
               disabled={mute.isPending}
               title={
-                muted ? "Réactiver les notifications de ce salon" : "Mettre ce salon en sourdine"
+                muted ? tr("ui.liveRoom.reactiverLesNotificationsDeCe") : tr("ui.liveRoom.mettreCeSalonEnSourdine")
               }
               aria-label={
-                muted ? "Réactiver les notifications de ce salon" : "Mettre ce salon en sourdine"
+                muted ? tr("ui.liveRoom.reactiverLesNotificationsDeCe") : tr("ui.liveRoom.mettreCeSalonEnSourdine")
               }
               onClick={() => mute.mutate()}
             >
@@ -555,7 +556,7 @@ function LiveChat({
         <DialogTitle>{title}</DialogTitle>
         <div className="bw-chat__headrow">
           <span className="bw-chat__live">
-            <i aria-hidden /> En direct
+            <i aria-hidden />{tr("ui.liveRoom.enDirect")}
           </span>
           <DialogDescription asChild>
             <button
@@ -564,7 +565,7 @@ function LiveChat({
               aria-expanded={showPeople}
               onClick={() => setShowPeople((value) => !value)}
             >
-              <Users size={13} aria-hidden /> {online ? `${online} en ligne` : "Vous êtes ici"}
+              <Users size={13} aria-hidden /> {online ? `${online} en ligne` : tr("ui.liveRoom.vousEtesIci")}
             </button>
           </DialogDescription>
           {kind === "crossing" ? (
@@ -572,10 +573,10 @@ function LiveChat({
               <button
                 type="button"
                 className="bw-chat__others"
-                title="Une autre date ? Choisir un autre salon"
+                title={tr("ui.liveRoom.uneAutreDateChoisirUn")}
                 onClick={() => leaveFor(OPEN_ROOM_PICKER_EVENT)}
               >
-                <MessagesSquare size={13} aria-hidden /> Autres salons
+                <MessagesSquare size={13} aria-hidden />{tr("ui.liveRoom.autresSalons")}
               </button>
             </DialogClose>
           ) : null}
@@ -590,7 +591,7 @@ function LiveChat({
                   <TravellerAvatar card={person.card!} size={30} mood={false} />
                   <span>{person.card!.pseudo}</span>
                   {metHere.has(person.card!.handle) ? (
-                    <small className="bw-chat__met">déjà croisé</small>
+                    <small className="bw-chat__met">{tr("ui.liveRoom.dejaCroise")}</small>
                   ) : null}
                   {canDm && person.card!.handle !== myHandle ? (
                     <button
@@ -608,13 +609,13 @@ function LiveChat({
           ) : null}
           {met?.total ? (
             <p>
-              Vous avez déjà croisé {met.total} voyageur{met.total > 1 ? "s" : ""} sur BledWay
+              {tr("ui.liveRoom.vousAvezDejaCroise")}{met.total}{tr("ui.liveRoom.voyageur")}{met.total > 1 ? "s" : ""}{tr("ui.liveRoom.surBledway")}
               {metHere.size ? `, dont ${metHere.size} sur cette traversée` : ""}.
             </p>
           ) : null}
           {online > named.length ? (
             <p>
-              {online - named.length} visiteur{online - named.length > 1 ? "s" : ""} sans compte
+              {online - named.length}{tr("ui.liveRoom.visiteur")}{online - named.length > 1 ? "s" : ""}{tr("ui.liveRoom.sansCompte")}
             </p>
           ) : null}
         </div>
@@ -638,26 +639,25 @@ function LiveChat({
           <AuthorAvatar author={BLEDWAY} size={22} />
           <div>
             <p>
-              <b className="bw-chat__welcome-who">BledWay</b> <StaffBadge author={BLEDWAY} />{" "}
-              Salam{myPseudo ? ` ${myPseudo}` : ""}, bienvenue ! On s'entraide entre voyageurs :{" "}
+              <b className="bw-chat__welcome-who">{tr("ui.liveRoom.bledway")}</b> <StaffBadge author={BLEDWAY} />{" "}
+              {tr("ui.liveRoom.salam")}{myPseudo ? ` ${myPseudo}` : ""}{tr("ui.liveRoom.bienvenueOnSEntraideEntre")}{" "}
               {kind === "port"
-                ? "la file, le parking, l'ambiance sur le port."
-                : "la file au port, l'ambiance à bord, l'état de la mer."}
+                ? tr("ui.liveRoom.laFileLeParkingL")
+                : tr("ui.liveRoom.laFileAuPortL")}
             </p>
             <details className="bw-chat__rules">
-              <summary>Les règles du salon</summary>
+              <summary>{tr("ui.liveRoom.lesReglesDuSalon")}</summary>
               <p>
-                Restez courtois, ne partagez ni numéro ni lien, et signalez plutôt que de répondre
-                à un message gênant.{" "}
+                {tr("ui.liveRoom.restezCourtoisNePartagezNi")}{" "}
                 <a href="/charte" target="_blank" rel="noreferrer">
-                  Lire la charte
+                  {tr("ui.liveRoom.lireLaCharte")}
                 </a>
               </p>
             </details>
           </div>
         </li>
         {lines.length ? null : (
-          <li className="bw-chat__hello">Soyez le premier ou la première à écrire ici.</li>
+          <li className="bw-chat__hello">{tr("ui.liveRoom.soyezLePremierOuLa")}</li>
         )}
         {lines.map((message) => (
           <li
@@ -674,7 +674,7 @@ function LiveChat({
               {message.reply_to ? (
                 <p className="bw-chat__quote">
                   <CornerDownRight size={12} aria-hidden />
-                  <b>{message.reply_to.me ? "Vous" : message.reply_to.pseudo}</b>
+                  <b>{message.reply_to.me ? tr("ui.liveRoom.vous") : message.reply_to.pseudo}</b>
                   <span>
                     <ChatText body={message.reply_to.body} size={14} />
                   </span>
@@ -686,7 +686,7 @@ function LiveChat({
                 aria-expanded={selected === message.id}
                 onClick={() => setSelected(selected === message.id ? null : message.id)}
               >
-                <b>{message.me && !message.author.official ? "Vous" : message.author.pseudo}</b>
+                <b>{message.me && !message.author.official ? tr("ui.liveRoom.vous") : message.author.pseudo}</b>
                 <StaffBadge author={message.author} />
                 {/* Le badge de l'équipe dit déjà d'où vient le message. */}
                 {message.place === "staff" && !message.crossing ? null : (
@@ -697,9 +697,9 @@ function LiveChat({
                 <span data-big={onlyEmotes(message.body) || undefined}>
                   <ChatText body={message.body} mentions={message.mentions} myHandle={myHandle} />
                 </span>
-                <PhotoStrip photos={messagePhotos?.get(message.id)} label="Photo du message" />
+                <PhotoStrip photos={messagePhotos?.get(message.id)} label={tr("ui.liveRoom.photoDuMessage")} />
                 {metHere.has(message.author.handle) && !message.me ? (
-                  <small className="bw-chat__met">déjà croisé</small>
+                  <small className="bw-chat__met">{tr("ui.liveRoom.dejaCroise")}</small>
                 ) : null}
                 {message.same ? (
                   <em>
@@ -711,7 +711,7 @@ function LiveChat({
                 <div className="bw-chat__tools">
                   <time dateTime={message.created_at}>
                     {time(message.created_at)}
-                    {message.edited ? " · modifié" : ""}
+                    {message.edited ? tr("ui.liveRoom.modifie") : ""}
                   </time>
                   {closed || reader ? null : (
                     <button
@@ -722,7 +722,7 @@ function LiveChat({
                         inputRef.current?.focus();
                       }}
                     >
-                      <Reply size={13} aria-hidden /> Répondre
+                      <Reply size={13} aria-hidden />{tr("ui.liveRoom.repondre")}
                     </button>
                   )}
                   <button
@@ -731,7 +731,7 @@ function LiveChat({
                     disabled={react.isPending}
                     onClick={() => react.mutate(message.id)}
                   >
-                    <ThumbsUp size={13} aria-hidden /> Pareil ici
+                    <ThumbsUp size={13} aria-hidden />{tr("ui.liveRoom.pareilIci")}
                   </button>
                   {canWrite && !closed && !message.me && !message.author.official ? (
                     <button
@@ -741,33 +741,33 @@ function LiveChat({
                         setSelected(null);
                       }}
                     >
-                      <AtSign size={13} aria-hidden /> Mentionner
+                      <AtSign size={13} aria-hidden />{tr("ui.liveRoom.mentionner")}
                     </button>
                   ) : null}
                   {canDm && !message.me && !message.author.official ? (
                     <button type="button" onClick={() => setDmTo(message.author)}>
-                      <Mail size={13} aria-hidden /> Message privé
+                      <Mail size={13} aria-hidden />{tr("ui.liveRoom.messagePrive")}
                     </button>
                   ) : null}
                   {user && !message.me ? (
                     confirmReport === message.id ? (
-                      <span className="bw-chat__confirm" role="group" aria-label="Confirmer le signalement">
-                        Signaler ce message à l’équipe ?
+                      <span className="bw-chat__confirm" role="group" aria-label={tr("ui.liveRoom.confirmerLeSignalement")}>
+                        {tr("ui.liveRoom.signalerCeMessageAL")}
                         <button
                           type="button"
                           className="bw-chat__confirm-yes"
                           disabled={report.isPending}
                           onClick={() => report.mutate(message.id)}
                         >
-                          {report.isPending ? "Envoi…" : "Oui, signaler"}
+                          {report.isPending ? tr("ui.liveRoom.envoi") : tr("ui.liveRoom.ouiSignaler")}
                         </button>
                         <button type="button" onClick={() => setConfirmReport(null)}>
-                          Annuler
+                          {tr("ui.liveRoom.annuler")}
                         </button>
                       </span>
                     ) : (
                       <button type="button" onClick={() => setConfirmReport(message.id)}>
-                        <Flag size={13} aria-hidden /> Signaler
+                        <Flag size={13} aria-hidden />{tr("ui.liveRoom.signaler")}
                       </button>
                     )
                   ) : null}
@@ -789,15 +789,14 @@ function LiveChat({
       </ol>
       {unread ? (
         <button type="button" className="bw-chat__unread" onClick={toBottom}>
-          <ArrowDown size={14} aria-hidden /> {unread} nouveau{unread > 1 ? "x" : ""} message
+          <ArrowDown size={14} aria-hidden /> {unread}{tr("ui.liveRoom.nouveau")}{unread > 1 ? "x" : ""}{tr("ui.liveRoom.message")}
           {unread > 1 ? "s" : ""}
         </button>
       ) : null}
       {notHere && onAskLine && portLines.length ? (
         <div role="alert" className="bw-chat__elsewhere">
           <p>
-            <b>Vous n'êtes pas sur le port.</b> Ce salon est réservé à ceux qui y sont. Cherchez
-            plutôt la réponse sur votre ligne : votre question vous y attend.
+            <b>{tr("ui.liveRoom.vousNEtesPasSur")}</b>{tr("ui.liveRoom.ceSalonEstReserveA")}
           </p>
           <div>
             {portLines.map((item) => (
@@ -822,19 +821,19 @@ function LiveChat({
         </p>
       ) : reportDone ? (
         <p role="status" className="bw-chat__reported">
-          Merci, le message est signalé : il est masqué pour vous et l’équipe va le relire.
+          {tr("ui.liveRoom.merciLeMessageEstSignale")}
         </p>
       ) : null}
       {closed ? (
         <p className="bw-chat__closed">
-          Ce salon est fermé à l'écriture. Vous pouvez encore le lire.
+          {tr("ui.liveRoom.ceSalonEstFermeA")}
         </p>
       ) : reader ? (
         <div className="bw-chat__closed bw-chat__reader">
-          <p>Salon en lecture : vous suivez une autre traversée. Réagissez avec « Pareil ici ».</p>
+          <p>{tr("ui.liveRoom.salonEnLectureVousSuivez")}</p>
           <DialogClose asChild>
             <button type="button" onClick={() => leaveFor(OPEN_MY_ROOM_EVENT)}>
-              Revenir à mon salon
+              {tr("ui.liveRoom.revenirAMonSalon")}
             </button>
           </DialogClose>
         </div>
@@ -844,12 +843,12 @@ function LiveChat({
             <p className="bw-chat__replying">
               <Reply size={13} aria-hidden />
               <span>
-                Répondre à <b>{replyTo.me ? "vous-même" : replyTo.author.pseudo}</b> :{" "}
+                {tr("ui.liveRoom.repondreA")}<b>{replyTo.me ? tr("ui.liveRoom.vousMeme") : replyTo.author.pseudo}</b> :{" "}
                 {replyTo.body}
               </span>
               <button
                 type="button"
-                aria-label="Annuler la réponse"
+                aria-label={tr("ui.liveRoom.annulerLaReponse")}
                 onClick={() => setReplyTo(null)}
               >
                 <X size={15} aria-hidden />
@@ -910,7 +909,7 @@ function LiveChat({
             </p>
           )}
           {suggestions.length ? (
-            <ul className="bw-chat__mentions" aria-label="Mentionner un voyageur">
+            <ul className="bw-chat__mentions" aria-label={tr("ui.liveRoom.mentionnerUnVoyageur")}>
               {suggestions.map((card) => (
                 <li key={card.handle}>
                   <button type="button" onClick={() => mention(card, true)}>
@@ -942,7 +941,7 @@ function LiveChat({
                   onClick={submit}
                 >
                   <Send size={15} aria-hidden />
-                  {send.isPending ? "Envoi…" : "Envoyer avec cette photo"}
+                  {send.isPending ? tr("ui.liveRoom.envoi") : tr("ui.liveRoom.envoyerAvecCettePhoto")}
                 </button>
               ) : null}
             </div>
@@ -961,7 +960,7 @@ function LiveChat({
             <button
               type="button"
               className="bw-chat__emote-toggle"
-              aria-label="Émoticônes"
+              aria-label={tr("ui.liveRoom.emoticones")}
               aria-expanded={showEmotes}
               onClick={() => setShowEmotes((value) => !value)}
             >
@@ -970,8 +969,8 @@ function LiveChat({
             {canWrite && user ? (
               <label
                 className="bw-chat__emote-toggle"
-                aria-label="Ajouter une photo"
-                title="Ajouter une photo"
+                aria-label={tr("ui.liveRoom.ajouterUnePhoto")}
+                title={tr("ui.liveRoom.ajouterUnePhoto")}
                 data-filled={chatPhotos.length ? "" : undefined}
                 onPointerDown={() =>
                   void import("@/lib/photos/nsfw").then((m) => m.warmChatPhotoCheck())
@@ -995,18 +994,18 @@ function LiveChat({
               maxLength={MAX_MESSAGE}
               onChange={(event) => setText(event.target.value)}
               onFocus={nudgePin}
-              placeholder={replyTo ? "Votre réponse" : "Envoyer un message"}
-              aria-label="Votre message"
+              placeholder={replyTo ? tr("ui.liveRoom.votreReponse") : tr("ui.liveRoom.envoyerUnMessage")}
+              aria-label={tr("ui.liveRoom.votreMessage")}
             />
             {text.length > MAX_MESSAGE - 40 ? <small>{MAX_MESSAGE - text.length}</small> : null}
             {staff ? (
-              <label className="bw-chat__official" title="Le message s'affiche au nom de BledWay">
+              <label className="bw-chat__official" title={tr("ui.liveRoom.leMessageSAfficheAu")}>
                 <input
                   type="checkbox"
                   checked={official}
                   onChange={(event) => setOfficial(event.target.checked)}
                 />
-                BledWay
+                {tr("ui.liveRoom.bledway")}
               </label>
             ) : null}
             <button
@@ -1016,7 +1015,7 @@ function LiveChat({
                 (chatPhotos.length > 0 && !photoConsent) ||
                 send.isPending
               }
-              aria-label="Envoyer"
+              aria-label={tr("ui.liveRoom.envoyer")}
             >
               <Send size={17} aria-hidden />
             </button>
@@ -1075,14 +1074,14 @@ export function LiveRoom({
         <MessagesSquare size={17} aria-hidden />
         <h3>{title}</h3>
         <small className="bw-chat__live">
-          <i aria-hidden /> {online ? `${online} en ligne` : "En direct"}
+          <i aria-hidden /> {online ? `${online} en ligne` : tr("ui.liveRoom.enDirect2")}
         </small>
       </header>
       {preview.length ? (
         <ol className="bw-room__preview">
           {preview.map((message) => (
             <li key={message.id}>
-              <b>{message.me && !message.author.official ? "Vous" : message.author.pseudo}</b>{" "}
+              <b>{message.me && !message.author.official ? tr("ui.liveRoom.vous") : message.author.pseudo}</b>{" "}
               <StaffBadge author={message.author} />{" "}
               <ChatText body={message.body} size={18} mentions={message.mentions} />
             </li>
@@ -1091,7 +1090,7 @@ export function LiveRoom({
       ) : null}
       <button type="button" className="bw-room__enter" onClick={() => setOpen(true)}>
         <MessagesSquare size={18} aria-hidden />
-        Rejoindre le salon
+        {tr("ui.liveRoom.rejoindreLeSalon")}
       </button>
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="bw-chat-window">

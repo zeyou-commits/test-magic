@@ -61,6 +61,7 @@ import { LeaveTrip } from "./LeaveTrip";
 import { RoomPicker } from "./RoomPicker";
 import { PortPresence, TripStatusPicker, VesselPresence } from "./TripPresence";
 import { VesselSpecs } from "./VesselBits";
+import { tr } from "@/lib/i18n";
 
 const HOUR = 3_600_000;
 const time = (iso: string, timeZone: string) =>
@@ -337,7 +338,7 @@ export function TripRecap({
             <small className="bw-recap__duration">
               <Timer size={11} aria-hidden /> {formatDuration(duration)}
               {arrivalDue && !arrived
-                ? " · arrivée estimée"
+                ? tr("ui.tripRecap.arriveeEstimee")
                 : progress.ratio !== null && progress.ratio > 0 && progress.ratio < 0.99 && !arrived
                   ? ` · ${Math.round(progress.ratio * 100)} %`
                   : ""}
@@ -348,7 +349,7 @@ export function TripRecap({
             className="bw-recap__end bw-recap__end--to"
             onClick={() => onSelect({ type: "port", id: to.id })}
           >
-            {times.arrival.notBefore ? <small>pas avant</small> : null}
+            {times.arrival.notBefore ? <small>{tr("ui.tripRecap.pasAvant")}</small> : null}
             <strong>
               {arriveIso ? time(arriveIso, toZone) : "—"}
               {nextDay ? <sup>+1</sup> : null}
@@ -359,7 +360,7 @@ export function TripRecap({
         </div>
         {shift !== null && Math.abs(shift) >= 5 && times.departure.scheduledIso ? (
           <p className="bw-recap__shift">
-            Prévu à {time(times.departure.scheduledIso, fromZone)} ·{" "}
+            {tr("ui.tripRecap.prevuA")}{time(times.departure.scheduledIso, fromZone)} ·{" "}
             {shift > 0
               ? `${times.arrival.notBefore ? "retard d'au moins" : "retard estimé"} ${formatDuration(shift)}`
               : `avance ${formatDuration(-shift)}`}
@@ -378,7 +379,7 @@ export function TripRecap({
               }
             />
           ) : (
-            <span className="bw-recap__chip-muted">Navire à confirmer</span>
+            <span className="bw-recap__chip-muted">{tr("ui.tripRecap.navireAConfirmer")}</span>
           )}
           {!vessel && company ? (
             <button type="button" onClick={() => onSelect({ type: "company", id: company.id })}>
@@ -510,7 +511,7 @@ export function TripRecap({
       />
 
       {/* 4. Le détail */}
-      <div className="bw-recap__tabs" role="tablist" aria-label="Détail de la traversée">
+      <div className="bw-recap__tabs" role="tablist" aria-label={tr("ui.tripRecap.detailDeLaTraversee")}>
         {(
           [
             ["prepare", "Préparer", ClipboardCheck],
@@ -549,23 +550,23 @@ export function TripRecap({
           {upcoming && car && walk ? (
             <div className="bw-recap__arrive">
               <p>
-                Être à {from.name}{" "}
+                {tr("ui.tripRecap.etreA")}{from.name}{" "}
                 <small>
                   ({day(car.callTime.toISOString(), fromZone)}, {zoneLabel(fromZone)})
                 </small>
               </p>
               <div>
                 <span>
-                  <CarFront size={16} aria-hidden /> Véhicule <strong>{car.callLabel}</strong>
+                  <CarFront size={16} aria-hidden />{tr("ui.tripRecap.vehicule")}<strong>{car.callLabel}</strong>
                 </span>
                 <span>
-                  <Footprints size={16} aria-hidden /> À pied <strong>{walk.callLabel}</strong>
+                  <Footprints size={16} aria-hidden />{tr("ui.tripRecap.aPied")}<strong>{walk.callLabel}</strong>
                 </span>
               </div>
               <small>
                 {departure.presentation_minutes != null
-                  ? "Consigne renseignée pour cette traversée. L’heure de convocation de votre billet reste la référence."
-                  : "Repère : 4 h avant en véhicule, 3 h à pied. L’heure de convocation de votre billet reste la référence."}
+                  ? tr("ui.tripRecap.consigneRenseigneePourCetteTraversee")
+                  : tr("ui.tripRecap.repere4HAvantEn")}
               </small>
             </div>
           ) : null}
@@ -579,7 +580,7 @@ export function TripRecap({
               >
                 <MapPin size={15} aria-hidden />
                 <span>
-                  <small>{index === 0 ? "Port de départ" : "Port d’arrivée"}</small>
+                  <small>{index === 0 ? tr("ui.tripRecap.portDeDepart") : tr("ui.tripRecap.portDArrivee")}</small>
                   <strong>{port.name}</strong>
                 </span>
                 <ArrowRight size={14} aria-hidden />
@@ -588,7 +589,7 @@ export function TripRecap({
           </div>
           {departure.notes ? (
             <p className="bw-recap__note">
-              <strong>À savoir :</strong> {departure.notes}
+              <strong>{tr("ui.tripRecap.aSavoir")}</strong> {departure.notes}
             </p>
           ) : null}
           {!cancelled ? (
@@ -601,7 +602,7 @@ export function TripRecap({
         <div className="bw-recap__panel" role="tabpanel" id={liveId} data-live-anchor>
           <TripChanges departureId={departure.id} />
           <FlashFeed
-            title="Infos BledWay sur votre traversée"
+            title={tr("ui.tripRecap.infosBledwaySurVotreTraversee")}
             context={{
               departureIds: [departure.id],
               routeIds: [departure.route_id],
@@ -635,8 +636,7 @@ export function TripRecap({
           <PortPresence portId={from.id} />
           {upcoming || atSea ? (
             <button type="button" className="bw-recap__share" onClick={report}>
-              <Megaphone size={15} aria-hidden /> Partager ce que je vois (file, retard,
-              embarquement…)
+              <Megaphone size={15} aria-hidden />{tr("ui.tripRecap.partagerCeQueJeVois")}
             </button>
           ) : null}
         </div>
@@ -652,8 +652,7 @@ export function TripRecap({
             </>
           ) : (
             <p className="bw-recap__empty">
-              <Ship size={16} aria-hidden /> Le navire n’est pas encore affecté par la compagnie. Il
-              apparaîtra ici dès qu’il sera connu.
+              <Ship size={16} aria-hidden />{tr("ui.tripRecap.leNavireNEstPas")}
             </p>
           )}
         </div>
@@ -662,7 +661,7 @@ export function TripRecap({
       <footer className="bw-recap__foot">
         {departure.source_name && !isInternalSource(departure.source_name) ? (
           <details>
-            <summary>Source des horaires</summary>
+            <summary>{tr("ui.tripRecap.sourceDesHoraires")}</summary>
             <SourceNote sourceName={departure.source_name} sourceUrl={departure.source_url} />
           </details>
         ) : null}

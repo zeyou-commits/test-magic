@@ -4,6 +4,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase as typedSupabase } from "@/integrations/supabase/client";
 import { setTripStatus } from "@/lib/ferry/presence";
+import { tr } from "@/lib/i18n";
 
 const db = typedSupabase as unknown as SupabaseClient;
 
@@ -59,17 +60,17 @@ export function LeaveTrip({ departureId }: { departureId: string }) {
     <p className="bw-leave-trip">
       {confirming ? (
         <>
-          <span>Ne plus suivre cette traversée ? Vous n’en recevrez plus les rappels.</span>
+          <span>{tr("ui.leaveTrip.nePlusSuivreCetteTraversee")}</span>
           <button type="button" disabled={busy} onClick={() => void leave()}>
-            Oui, arrêter
+            {tr("ui.leaveTrip.ouiArreter")}
           </button>
           <button type="button" onClick={() => setConfirming(false)}>
-            Non
+            {tr("ui.leaveTrip.non")}
           </button>
         </>
       ) : (
         <button type="button" onClick={() => setConfirming(true)}>
-          Ne plus suivre cette traversée
+          {tr("ui.leaveTrip.nePlusSuivreCetteTraversee2")}
         </button>
       )}
       {error ? <span role="alert">{error}</span> : null}

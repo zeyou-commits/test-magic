@@ -52,6 +52,7 @@ import { ReportButton } from "./ReportButton";
 import { ShipPhoto, VesselSpecs } from "./VesselBits";
 import { VesselIdentity, VesselPhotoBadge } from "./VesselFacts";
 import { TripStatusPicker, VesselPresence } from "./TripPresence";
+import { tr } from "@/lib/i18n";
 
 function useShipData(exactDepartureId?: string) {
   const exact = useQuery({
@@ -154,7 +155,7 @@ export function VesselView({
     ...vesselPhotoQuery(vessel ?? { id: "", name: "", photo_url: null }),
     enabled: Boolean(vessel),
   }).data;
-  if (!vessel) return <EmptyNote>Navire introuvable.</EmptyNote>;
+  if (!vessel) return <EmptyNote>{tr("ui.shipViews.navireIntrouvable")}</EmptyNote>;
   const company = data.companies.find((c) => c.id === vessel.company_id);
   const live = data.live.find(
     (s) =>
@@ -226,10 +227,10 @@ export function VesselView({
           <MakeMyTrip kind="vessel" targetId={vessel.id} label={vessel.name} onSelect={onSelect} />
         ) : null}
         <div className="bw-ship-hero-photo bw-ship-hero-photo--compact">
-          <dl className="bw-ship-hero-stats" aria-label="Le navire en chiffres">
+          <dl className="bw-ship-hero-stats" aria-label={tr("ui.shipViews.leNavireEnChiffres")}>
             <div>
               <CalendarDays size={12} aria-hidden />
-              <dt>Âge</dt>
+              <dt>{tr("ui.shipViews.age")}</dt>
               <dd>
                 {vessel.build_year && vessel.build_year <= new Date().getFullYear()
                   ? `${new Date().getFullYear() - vessel.build_year} ans`
@@ -238,12 +239,12 @@ export function VesselView({
             </div>
             <div>
               <Users size={12} aria-hidden />
-              <dt>Passagers</dt>
+              <dt>{tr("ui.shipViews.passagers")}</dt>
               <dd>{vessel.passenger_capacity?.toLocaleString("fr-FR") ?? "—"}</dd>
             </div>
             <div>
               <CarFront size={12} aria-hidden />
-              <dt>Véhicules</dt>
+              <dt>{tr("ui.shipViews.vehicules")}</dt>
               <dd>{vessel.car_capacity?.toLocaleString("fr-FR") ?? "—"}</dd>
             </div>
           </dl>
@@ -274,11 +275,11 @@ export function VesselView({
       ) : null}
       {isAdmin && (vessel.imo || vessel.mmsi) ? (
         <aside className="mb-3 rounded-xl border border-primary/20 bg-primary/5 p-3 text-xs">
-          <p className="mb-1 font-semibold">Contrôle admin du suivi</p>
+          <p className="mb-1 font-semibold">{tr("ui.shipViews.controleAdminDuSuivi")}</p>
           <p className="mb-2 text-muted-foreground">
             {live
               ? `Signal AIS associé · âge ${Math.round(live.ageMinutes)} min`
-              : "Aucun signal AIS associé : position estimée selon les horaires."}
+              : tr("ui.shipViews.aucunSignalAisAssociePosition")}
           </p>
           <a
             className="bw-detail-link"
@@ -290,7 +291,7 @@ export function VesselView({
             target="_blank"
             rel="noopener noreferrer"
           >
-            Voir sur VesselFinder <ExternalLink size={14} aria-hidden />
+            {tr("ui.shipViews.voirSurVesselfinder")}<ExternalLink size={14} aria-hidden />
           </a>
         </aside>
       ) : null}
@@ -326,27 +327,27 @@ export function VesselView({
       />
       {photo?.source === "commons" ? (
         <details className="bw-photo-credit">
-          <summary>Crédit photo</summary>
+          <summary>{tr("ui.shipViews.creditPhoto")}</summary>
           {photo.credit} · {photo.license}
           {photo.pageUrl ? (
             <>
               {" "}
               ·{" "}
               <a href={photo.pageUrl} target="_blank" rel="noopener noreferrer">
-                Wikimedia Commons
+                {tr("ui.shipViews.wikimediaCommons")}
               </a>
             </>
           ) : null}
         </details>
       ) : null}
       <Tabs value={activeTab} onValueChange={setTab} className="bw-ship-tabs">
-        <TabsList aria-label="Fiche du navire">
-          <TabsTrigger value="tracking">Suivi</TabsTrigger>
-          <TabsTrigger value="onboard">À bord</TabsTrigger>
+        <TabsList aria-label={tr("ui.shipViews.ficheDuNavire")}>
+          <TabsTrigger value="tracking">{tr("ui.shipViews.suivi")}</TabsTrigger>
+          <TabsTrigger value="onboard">{tr("ui.shipViews.aBord")}</TabsTrigger>
           {communityAvailable ? (
             <TabsTrigger value="reviews">
               <Star size={14} aria-hidden />
-              Avis
+              {tr("ui.shipViews.avis")}
             </TabsTrigger>
           ) : null}
         </TabsList>
@@ -366,14 +367,14 @@ export function VesselView({
                 onClick={() => onSelect({ type: "departure", id: departure.id })}
               >
                 {Date.parse(departure.departure_at) <= Date.now()
-                  ? "Voir cette traversée"
-                  : "Préparer cette traversée"}
+                  ? tr("ui.shipViews.voirCetteTraversee")
+                  : tr("ui.shipViews.preparerCetteTraversee")}
                 <ArrowRight size={16} aria-hidden />
               </button>
             </>
           ) : (
             <p className="bw-community-empty">
-              Les prochaines traversées seront affichées ici dès leur publication.
+              {tr("ui.shipViews.lesProchainesTraverseesSerontAffichees")}
             </p>
           )}
           {ship ? (
@@ -387,12 +388,12 @@ export function VesselView({
               }
             >
               <MapPin size={16} aria-hidden />
-              Voir sur la carte
+              {tr("ui.shipViews.voirSurLaCarte")}
             </button>
           ) : null}
           <div id={liveId} data-live-anchor>
             <FlashFeed
-              title="Infos sur ce navire"
+              title={tr("ui.shipViews.infosSurCeNavire")}
               context={{
                 vesselId,
                 attachedOnly: true,
@@ -408,7 +409,7 @@ export function VesselView({
           {next.length ? (
             <section className="bw-next-crossings">
               <div className="bw-section-heading">
-                <h3>Prochaines traversées</h3>
+                <h3>{tr("ui.shipViews.prochainesTraversees")}</h3>
                 <small>{next.length}</small>
               </div>
               <ul>
@@ -439,17 +440,17 @@ export function VesselView({
         </TabsContent>
         <TabsContent value="onboard" forceMount hidden={activeTab !== "onboard"}>
           <section className="bw-onboard">
-            <h3>Faites connaissance avec {vessel.name}</h3>
+            <h3>{tr("ui.shipViews.faitesConnaissanceAvec")}{vessel.name}</h3>
             {vessel.description ? <p>{vessel.description}</p> : null}
             <VesselIdentity vesselId={vessel.id} />
             <VesselSpecs vessel={vessel} />
             {communityAvailable ? (
               <div className="bw-community-invite">
                 <Users size={25} aria-hidden />
-                <h3>Vous connaissez ce navire ?</h3>
-                <p>Votre expérience aide les familles à préparer leur voyage.</p>
+                <h3>{tr("ui.shipViews.vousConnaissezCeNavire")}</h3>
+                <p>{tr("ui.shipViews.votreExperienceAideLesFamilles")}</p>
                 <Button variant="outline" onClick={() => setTab("reviews")}>
-                  Partager mon avis
+                  {tr("ui.shipViews.partagerMonAvis")}
                 </Button>
               </div>
             ) : null}
@@ -471,7 +472,7 @@ export function VesselView({
         <ReportButton
           targetType="vessel"
           targetId={vesselId}
-          label="Ce navire semble immobilisé ?"
+          label={tr("ui.shipViews.ceNavireSembleImmobilise")}
           initialReason="vessel_immobilized"
           variant="link"
         />
@@ -489,18 +490,18 @@ export function DepartureView({
 }) {
   const data = useShipData(departureId);
   const departure = data.departures.find((d) => d.id === departureId);
-  if (!departure && data.exact.isPending) return <EmptyNote>Chargement du suivi…</EmptyNote>;
+  if (!departure && data.exact.isPending) return <EmptyNote>{tr("ui.shipViews.chargementDuSuivi")}</EmptyNote>;
   if (!departure && data.exact.isError)
     return (
       <EmptyNote>
-        Le suivi est momentanément indisponible. Réessayez dans quelques instants.
+        {tr("ui.shipViews.leSuiviEstMomentanementIndisponible")}
       </EmptyNote>
     );
-  if (!departure) return <EmptyNote>Traversée introuvable.</EmptyNote>;
+  if (!departure) return <EmptyNote>{tr("ui.shipViews.traverseeIntrouvable")}</EmptyNote>;
   const route = data.routes.find((r) => r.id === departure.route_id);
   const from = data.ports.find((p) => p.id === route?.departure_port_id);
   const to = data.ports.find((p) => p.id === route?.arrival_port_id);
-  if (!from || !to) return <EmptyNote>Traversée introuvable.</EmptyNote>;
+  if (!from || !to) return <EmptyNote>{tr("ui.shipViews.traverseeIntrouvable")}</EmptyNote>;
   return (
     <TripRecap
       departure={departure}

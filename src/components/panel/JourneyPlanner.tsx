@@ -8,6 +8,7 @@ import { useJourneyForDeparture } from "@/lib/ferry/journey";
 import { keepOnlyTrip } from "@/lib/notifications/actions";
 import { ReturnDepartureSearch } from "./ReturnDepartureSearch";
 import type { Selection } from "@/lib/ferry/types";
+import { tr } from "@/lib/i18n";
 
 const db = typedSupabase as unknown as SupabaseClient;
 
@@ -95,17 +96,17 @@ export function JourneyPlanner({
   if (journey.isError)
     return (
       <p role="status" className="rounded-xl border p-3 text-xs">
-        Le lien avec votre voyage est temporairement indisponible.
+        {tr("ui.journeyPlanner.leLienAvecVotreVoyage")}
       </p>
     );
   if (!journey.data)
     return (
       <section
         className="rounded-xl border border-primary/20 bg-primary/5 p-3"
-        aria-label="Classer ma traversée"
+        aria-label={tr("ui.journeyPlanner.classerMaTraversee")}
       >
         <strong className="text-sm">
-          Cette traversée fait-elle partie de votre aller ou de votre retour ?
+          {tr("ui.journeyPlanner.cetteTraverseeFaitEllePartie")}
         </strong>
         <div className="mt-2 flex flex-wrap gap-2">
           <button
@@ -114,7 +115,7 @@ export function JourneyPlanner({
             onClick={() => void classify("outbound")}
             className="rounded-lg border bg-background px-3 py-2 text-xs font-semibold text-primary"
           >
-            Mon aller
+            {tr("ui.journeyPlanner.monAller")}
           </button>
           <button
             type="button"
@@ -122,7 +123,7 @@ export function JourneyPlanner({
             onClick={() => void classify("inbound")}
             className="rounded-lg border bg-background px-3 py-2 text-xs font-semibold text-primary"
           >
-            Mon retour
+            {tr("ui.journeyPlanner.monRetour")}
           </button>
         </div>
         {error ? (
@@ -133,9 +134,9 @@ export function JourneyPlanner({
       </section>
     );
   return (
-    <section className="bw-journey-line" aria-label="Mon voyage aller-retour">
+    <section className="bw-journey-line" aria-label={tr("ui.journeyPlanner.monVoyageAllerRetour")}>
       <p>
-        <CalendarDays size={14} className="text-primary" aria-hidden /> Votre{" "}
+        <CalendarDays size={14} className="text-primary" aria-hidden />{tr("ui.journeyPlanner.votre")}{" "}
         {currentIsReturn ? "retour" : "aller"}
         {otherId ? (
           <button
@@ -143,7 +144,7 @@ export function JourneyPlanner({
             onClick={() => onSelect({ type: "departure", id: otherId })}
             className="font-semibold text-primary underline underline-offset-2"
           >
-            {currentIsReturn ? "Voir mon aller" : "Voir mon retour"}
+            {currentIsReturn ? tr("ui.journeyPlanner.voirMonAller") : tr("ui.journeyPlanner.voirMonRetour")}
             <ArrowRight size={12} className="ml-1 inline" aria-hidden />
           </button>
         ) : currentIsReturn ? null : (
@@ -153,7 +154,7 @@ export function JourneyPlanner({
             aria-expanded={open}
             className="font-semibold text-primary underline underline-offset-2"
           >
-            {open ? "Masquer les retours" : "Ajouter mon retour"}
+            {open ? tr("ui.journeyPlanner.masquerLesRetours") : tr("ui.journeyPlanner.ajouterMonRetour")}
           </button>
         )}
       </p>

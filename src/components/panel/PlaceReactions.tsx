@@ -4,6 +4,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { toast } from "sonner";
 import { supabase as typedSupabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { tr } from "@/lib/i18n";
 
 // Fonctions du script du 22/11/2026, absentes des types générés.
 const db = typedSupabase as unknown as SupabaseClient;
@@ -93,7 +94,7 @@ export function PlaceReactions({ kind, target }: { kind: PlaceKind; target: stri
       }}
     >
       {tray ? (
-        <div className="bw-react__tray" role="group" aria-label="Choisir une réaction">
+        <div className="bw-react__tray" role="group" aria-label={tr("ui.placeReactions.choisirUneReaction")}>
           {placeReactions.map((item) => (
             <button
               key={item.code}

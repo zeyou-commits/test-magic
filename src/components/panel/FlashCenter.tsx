@@ -20,6 +20,7 @@ import { noticeHref, noticeKind, noticeRank } from "@/lib/notifications/noticeSt
 import { isDesktopBrowser, isInstalledApp, PhoneInstallCard } from "@/components/layout/PhoneInstallCard";
 import { FlashFeed, isCriticalCard, useFlashCards } from "./FlashFeed";
 import { noticeLook } from "./NoticeFocus";
+import { tr } from "@/lib/i18n";
 
 // Notifications personnelles (table bw_notifications), absentes des types générés.
 const supabase = typedSupabase as unknown as SupabaseClient;
@@ -93,7 +94,7 @@ function NoticeList({ userId, notices }: { userId: string; notices: Notice[] }) 
   if (!notices.length)
     return (
       <p className="bw-flash-empty">
-        Rien de nouveau. Les informations sur vos traversées suivies arriveront ici.
+        {tr("ui.flashCenter.rienDeNouveauLesInformations")}
       </p>
     );
   // Une alerte non lue passe devant le reste ; sinon, du plus récent au plus ancien.
@@ -124,7 +125,7 @@ function NoticeList({ userId, notices }: { userId: string; notices: Notice[] }) 
                   {relativeAge(notice.created_at)}
                 </small>
               </span>
-              {!notice.read_at ? <span className="bw-flash-new" aria-label="Non lue" /> : null}
+              {!notice.read_at ? <span className="bw-flash-new" aria-label={tr("ui.flashCenter.nonLue")} /> : null}
             </a>
             <div className="bw-flash-row__body">
               <p>{notice.body}</p>
@@ -133,10 +134,10 @@ function NoticeList({ userId, notices }: { userId: string; notices: Notice[] }) 
                 <span className="bw-flash-actions">
                   {!notice.read_at ? (
                     <button type="button" onClick={() => void markRead(notice.id)}>
-                      <Check size={14} aria-hidden /> Marquer comme lue
+                      <Check size={14} aria-hidden />{tr("ui.flashCenter.marquerCommeLue")}
                     </button>
                   ) : null}
-                  <a href={noticeHref(notice.url, notice.id)}>Voir le détail</a>
+                  <a href={noticeHref(notice.url, notice.id)}>{tr("ui.flashCenter.voirLeDetail")}</a>
                 </span>
               </div>
             </div>
@@ -202,14 +203,14 @@ export function HeaderInbox() {
   const body: ReactNode = (
     <div className="bw-inbox">
       {user ? (
-        <div className="bw-inbox-tabs" role="tablist" aria-label="Flash info ou notifications">
+        <div className="bw-inbox-tabs" role="tablist" aria-label={tr("ui.flashCenter.flashInfoOuNotifications")}>
           <button
             type="button"
             role="tab"
             aria-selected={tab === "flash"}
             onClick={() => setTab("flash")}
           >
-            <Zap size={14} aria-hidden /> Flash info
+            <Zap size={14} aria-hidden />{tr("ui.flashCenter.flashInfo")}
             {unseen.length ? <span className="bw-flash-count">{unseen.length}</span> : null}
           </button>
           <button
@@ -221,7 +222,7 @@ export function HeaderInbox() {
               markFlashSeen(cards.map((card) => card.key));
             }}
           >
-            <Bell size={14} aria-hidden /> Mes notifications
+            <Bell size={14} aria-hidden />{tr("ui.flashCenter.mesNotifications")}
             {unread ? <span className="bw-flash-count">{unread}</span> : null}
           </button>
         </div>
@@ -239,20 +240,20 @@ export function HeaderInbox() {
         ) : notices.isPending ? (
           <div className="h-24 animate-pulse rounded-xl bg-secondary" />
         ) : notices.isError ? (
-          <p className="bw-flash-empty">Les notifications sont momentanément indisponibles.</p>
+          <p className="bw-flash-empty">{tr("ui.flashCenter.lesNotificationsSontMomentanementIndisponibles")}</p>
         ) : (
           <NoticeList userId={user.id} notices={notices.data ?? []} />
         )}
       </div>
       {open && isDesktopBrowser() && !isInstalledApp() ? (
         <details className="bw-inbox-phone">
-          <summary>Recevoir ces alertes sur mon téléphone</summary>
-          <PhoneInstallCard text="Scannez avec l’appareil photo pour installer BledWay." />
+          <summary>{tr("ui.flashCenter.recevoirCesAlertesSurMon")}</summary>
+          <PhoneInstallCard text={tr("ui.flashCenter.scannezAvecLAppareilPhoto")} />
         </details>
       ) : null}
       {user && tab === "notices" ? (
         <Link to="/compte" className="bw-inbox-more" onClick={() => setOpen(false)}>
-          Mes voyages suivis et préférences
+          {tr("ui.flashCenter.mesVoyagesSuivisEtPreferences")}
         </Link>
       ) : null}
     </div>
@@ -288,10 +289,10 @@ export function HeaderInbox() {
           <SheetContent side="right" className="bw-flash-sheet w-full overflow-y-auto sm:max-w-md">
             <SheetHeader>
               <SheetTitle className="flex items-center gap-2">
-                <Bell size={18} aria-hidden /> Infos et notifications
+                <Bell size={18} aria-hidden />{tr("ui.flashCenter.infosEtNotifications")}
               </SheetTitle>
               <SheetDescription>
-                Perturbations et actualités Europe ↔ Algérie, et ce que signalent les voyageurs.
+                {tr("ui.flashCenter.perturbationsEtActualitesEuropeAlgerie")}
               </SheetDescription>
             </SheetHeader>
             <div className="px-4 pb-6">{body}</div>
@@ -304,7 +305,7 @@ export function HeaderInbox() {
       <PopoverTrigger asChild>{trigger}</PopoverTrigger>
       <PopoverContent align="end" sideOffset={10} className="bw-inbox-popover">
         <p className="bw-inbox-heading">
-          <Bell size={16} aria-hidden /> Infos et notifications
+          <Bell size={16} aria-hidden />{tr("ui.flashCenter.infosEtNotifications")}
         </p>
         {body}
       </PopoverContent>

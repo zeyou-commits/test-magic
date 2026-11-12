@@ -3,6 +3,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Check, Pencil, Trash2, X } from "lucide-react";
 import { deleteOwnMessage, editOwnMessage } from "@/lib/ferry/chat";
 import { photosKey, removePublicFiles } from "@/lib/photos/photos";
+import { tr } from "@/lib/i18n";
 
 /** Modifier ou supprimer son propre message, sa question ou sa réponse. */
 export function OwnMessageActions({
@@ -56,15 +57,15 @@ export function OwnMessageActions({
             value={text}
             maxLength={200}
             onChange={(event) => setText(event.target.value)}
-            aria-label="Modifier votre message"
+            aria-label={tr("ui.ownMessageActions.modifierVotreMessage")}
           />
-          <button type="submit" disabled={!text.trim() || edit.isPending} aria-label="Enregistrer">
+          <button type="submit" disabled={!text.trim() || edit.isPending} aria-label={tr("ui.ownMessageActions.enregistrer")}>
             <Check size={16} aria-hidden />
           </button>
           <button
             type="button"
             className="bw-room__own-cancel"
-            aria-label="Annuler"
+            aria-label={tr("ui.ownMessageActions.annuler")}
             onClick={() => {
               setText(body);
               setEditing(false);
@@ -75,21 +76,21 @@ export function OwnMessageActions({
         </form>
       ) : confirming ? (
         <p>
-          <span>{deleteHint ?? "Supprimer ce message ?"}</span>
+          <span>{deleteHint ?? tr("ui.ownMessageActions.supprimerCeMessage")}</span>
           <button type="button" disabled={remove.isPending} onClick={() => remove.mutate()}>
-            Oui, supprimer
+            {tr("ui.ownMessageActions.ouiSupprimer")}
           </button>
           <button type="button" onClick={() => setConfirming(false)}>
-            Non
+            {tr("ui.ownMessageActions.non")}
           </button>
         </p>
       ) : (
         <p>
           <button type="button" onClick={() => setEditing(true)}>
-            <Pencil size={12} aria-hidden /> Modifier
+            <Pencil size={12} aria-hidden />{tr("ui.ownMessageActions.modifier")}
           </button>
           <button type="button" onClick={() => setConfirming(true)}>
-            <Trash2 size={12} aria-hidden /> Supprimer
+            <Trash2 size={12} aria-hidden />{tr("ui.ownMessageActions.supprimer")}
           </button>
         </p>
       )}

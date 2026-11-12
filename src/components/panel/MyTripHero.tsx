@@ -35,6 +35,7 @@ import type { Selection } from "@/lib/ferry/types";
 import { formatDateParts, formatDateTime } from "@/lib/ferry/format";
 import { dateKeyInZone, portTimeZone } from "@/lib/ferry/time";
 import { useVesselAlert } from "@/lib/ferry/vesselAlerts";
+import { tr } from "@/lib/i18n";
 
 /** Heure courante, rafraîchie chaque seconde le jour J, chaque minute sinon. */
 export function useNow(fast: boolean) {
@@ -190,7 +191,7 @@ export function MyTripHero({
       data-in-voyage={inVoyage || undefined}
       data-phase={phase.phase}
       data-alert={held || undefined}
-      aria-label="Ma traversée"
+      aria-label={tr("ui.myTripHero.maTraversee")}
     >
       <button
         type="button"
@@ -207,32 +208,32 @@ export function MyTripHero({
         <span className="bw-mytrip-hero__text">
           {tracking ? null : (
             <small>
-              Ma traversée{trip.vessel ? ` · ${trip.vessel.name}` : ""}{" "}
+              {tr("ui.myTripHero.maTraversee")}{trip.vessel ? ` · ${trip.vessel.name}` : ""}{" "}
               <VesselAlertTag vesselId={trip.vessel?.id} />
             </small>
           )}
           {tracking ? (
             <strong className="bw-mytrip-hero__title">
-              Ma traversée : {trip.from?.name ?? "Départ"} - {trip.to?.name ?? "Arrivée"}
+              {tr("ui.myTripHero.maTraversee2")}{trip.from?.name ?? tr("ui.myTripHero.depart")} - {trip.to?.name ?? tr("ui.myTripHero.arrivee")}
             </strong>
           ) : (
             <strong>
-              {trip.from?.name ?? "Départ"} → {trip.to?.name ?? "Arrivée"}
+              {trip.from?.name ?? tr("ui.myTripHero.depart")} → {trip.to?.name ?? tr("ui.myTripHero.arrivee")}
             </strong>
           )}
           {tracking ? null : inVoyage ? (
             <span className="bw-mytrip-hero__date">
               {moment(departureIso, zone)}
               {arrivalIso ? ` → ${moment(arrivalIso, arrivalZone)}` : ""}
-              {trip.departure.status === "modified" ? " · horaire modifié" : ""}
+              {trip.departure.status === "modified" ? tr("ui.myTripHero.horaireModifie") : ""}
             </span>
           ) : (
             <span className="bw-mytrip-hero__date">
               {formatDateTime(departureIso, zone)}
-              {trip.departure.status === "modified" ? " · horaire modifié" : ""}
+              {trip.departure.status === "modified" ? tr("ui.myTripHero.horaireModifie") : ""}
             </span>
           )}
-          {delay && !tracking ? <b className="bw-delay-badge">Retardé · {delay}</b> : null}
+          {delay && !tracking ? <b className="bw-delay-badge">{tr("ui.myTripHero.retarde")}{delay}</b> : null}
         </span>
         <ArrowRight size={18} aria-hidden />
       </button>
@@ -248,21 +249,21 @@ export function MyTripHero({
         <div className="bw-mytrip-hero__status">
           <div className="bw-mytrip-hero__clock" aria-live="off">
             {held ? (
-              <strong>{alert?.label} · départ à confirmer</strong>
+              <strong>{alert?.label}{tr("ui.myTripHero.departAConfirmer")}</strong>
             ) : progress?.reportedPostponed ? (
-              <strong>Report ou annulation signalé</strong>
+              <strong>{tr("ui.myTripHero.reportOuAnnulationSignale")}</strong>
             ) : progress?.reportedQuay ? (
-              <strong>Encore à quai</strong>
+              <strong>{tr("ui.myTripHero.encoreAQuai")}</strong>
             ) : phase.phase === "today" ? (
               <>
                 <span>{phase.text}</span>
                 <strong className="tabular-nums">{phase.countdown}</strong>
               </>
             ) : progress?.hold ? (
-              <strong>{progress.hold.fresh ? "Encore à quai" : "Départ à confirmer"}</strong>
+              <strong>{progress.hold.fresh ? tr("ui.myTripHero.encoreAQuai") : tr("ui.myTripHero.departAConfirmer2")}</strong>
             ) : phase.phase === "arrived" && !arrivedForSure ? (
               <>
-                <strong>Arrivée à confirmer</strong>
+                <strong>{tr("ui.myTripHero.arriveeAConfirmer")}</strong>
                 {progress ? <small className="bw-trust">{progress.trustLabel}</small> : null}
               </>
             ) : (
@@ -289,15 +290,15 @@ export function MyTripHero({
                 <small>
                   {waiting
                     ? progress.scene === "boarding"
-                      ? "Embarquement en cours"
+                      ? tr("ui.myTripHero.embarquementEnCours")
                       : progress.scene === "closed"
-                        ? "Embarquement terminé"
-                        : "À quai"
+                        ? tr("ui.myTripHero.embarquementTermine")
+                        : tr("ui.myTripHero.aQuai")
                     : progress.reportedQuay || progress.hold
-                      ? "Encore à quai"
+                      ? tr("ui.myTripHero.encoreAQuai")
                       : estimated
-                        ? "En mer · estimé"
-                        : "En mer"}
+                        ? tr("ui.myTripHero.enMerEstime")
+                        : tr("ui.myTripHero.enMer")}
                 </small>
                 {seaPeak != null ? (
                   <span
@@ -322,7 +323,7 @@ export function MyTripHero({
                 className="bw-crossing-track"
                 data-estimated={estimated || undefined}
                 role="progressbar"
-                aria-label="Avancement de la traversée"
+                aria-label={tr("ui.myTripHero.avancementDeLaTraversee")}
                 aria-valuenow={shownPercent}
                 aria-valuemin={0}
                 aria-valuemax={100}
@@ -334,16 +335,16 @@ export function MyTripHero({
               </div>
             </>
           ) : (
-            <small>Départ à confirmer</small>
+            <small>{tr("ui.myTripHero.departAConfirmer2")}</small>
           )}
           {inVoyage ? (
             <div className="bw-mytrip-hero__voyage-dates">
               <span>
-                Départ <b>{moment(departureIso, zone)}</b>
+                {tr("ui.myTripHero.depart2")}<b>{moment(departureIso, zone)}</b>
               </span>
               {arrivalIso ? (
                 <span>
-                  Arrivée <b>{moment(arrivalIso, arrivalZone)}</b>
+                  {tr("ui.myTripHero.arrivee2")}<b>{moment(arrivalIso, arrivalZone)}</b>
                 </span>
               ) : null}
             </div>
@@ -352,10 +353,10 @@ export function MyTripHero({
             {arrivalIso ? (
               <span className="bw-mytrip-hero__arrival">
                 <span>
-                  Arrivée <b>{formatDateParts(arrivalIso, arrivalZone).time}</b>
+                  {tr("ui.myTripHero.arrivee2")}<b>{formatDateParts(arrivalIso, arrivalZone).time}</b>
                   {dayDelta > 0 ? <sup>+{dayDelta} j</sup> : null}
                 </span>
-                {delay ? <small>Retard {delay}</small> : null}
+                {delay ? <small>{tr("ui.myTripHero.retard")}{delay}</small> : null}
                 {replacedTime(progress.times.arrival) ? (
                   <s className="bw-old-time">
                     {formatDateParts(replacedTime(progress.times.arrival)!, arrivalZone).time}
@@ -394,7 +395,7 @@ export function MyTripHero({
             <b>
               {prep.done}/{prep.total}
             </b>
-            <span>{prep.next ? prep.next.label : "Prêt"}</span>
+            <span>{prep.next ? prep.next.label : tr("ui.myTripHero.pret")}</span>
             <ArrowRight size={14} aria-hidden />
           </button>
         ) : null}
@@ -418,7 +419,7 @@ export function MyTripHero({
                 )
               }
             >
-              <Crosshair size={14} aria-hidden /> Voir mon navire
+              <Crosshair size={14} aria-hidden />{tr("ui.myTripHero.voirMonNavire")}
             </button>
           ) : null}
         </div>
@@ -431,14 +432,14 @@ export function MyTripHero({
         onClick={openVoyage}
         className="bw-mytrip-hero__journey"
       >
-        Ma route du bled, étape par étape <ArrowRight size={14} aria-hidden />
+        {tr("ui.myTripHero.maRouteDuBledEtape")}<ArrowRight size={14} aria-hidden />
       </Link>
       )}
       {closingIn !== null ? (
         <p className="bw-mytrip-hero__closing" role="status">
-          Voyage terminé : cette fiche se ferme{" "}
+          {tr("ui.myTripHero.voyageTermineCetteFicheSe")}{" "}
           {closingIn < 60_000
-            ? "dans moins d’une minute"
+            ? tr("ui.myTripHero.dansMoinsDUneMinute")
             : `dans ${formatDocked(Math.ceil(closingIn / 60_000))}`}
           .
         </p>
@@ -476,10 +477,10 @@ export function MyTripMapChip({
         <Ship size={16} />
       </span>
       <span>
-        <small>Ma traversée{trip.vessel ? ` · ${trip.vessel.name}` : ""}</small>
+        <small>{tr("ui.myTripHero.maTraversee")}{trip.vessel ? ` · ${trip.vessel.name}` : ""}</small>
         <strong className="tabular-nums">
           {alert && phase.phase !== "cancelled"
-            ? "Départ à confirmer"
+            ? tr("ui.myTripHero.departAConfirmer2")
             : phase.phase === "today"
               ? `Départ dans ${phase.countdown}`
               : phase.text}

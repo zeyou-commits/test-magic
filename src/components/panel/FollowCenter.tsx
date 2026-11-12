@@ -16,6 +16,7 @@ import { VesselAlertTag } from "./VesselAlert";
 import { useTravelAction } from "@/hooks/useTravelAction";
 import { useTravelFollows } from "@/hooks/useTravelFollows";
 import { useMyJourneys } from "@/lib/ferry/journey";
+import { tr } from "@/lib/i18n";
 
 export function FollowCenter({ userId }: { userId: string }) {
   const [filter, setFilter] = useState("all");
@@ -46,11 +47,11 @@ export function FollowCenter({ userId }: { userId: string }) {
             <Heart className="size-5" />
           </span>
           <div>
-            <h2 id="my-travel-title">Mes voyages suivis</h2>
-            <p>Vos navires, compagnies, traversées et alertes d’ouverture.</p>
+            <h2 id="my-travel-title">{tr("ui.followCenter.mesVoyagesSuivis")}</h2>
+            <p>{tr("ui.followCenter.vosNaviresCompagniesTraverseesEt")}</p>
           </div>
         </div>
-        <div className="bw-account-filter" role="group" aria-label="Filtrer mes suivis">
+        <div className="bw-account-filter" role="group" aria-label={tr("ui.followCenter.filtrerMesSuivis")}>
           {[
             { id: "all", label: "Tout" },
             { id: "vessel", label: "Bateaux" },
@@ -72,7 +73,7 @@ export function FollowCenter({ userId }: { userId: string }) {
           <div className="mt-4 h-40 animate-pulse rounded-xl bg-secondary" />
         ) : failed ? (
           <p role="alert" className="my-4 text-sm text-destructive">
-            Chargement des suivis impossible.
+            {tr("ui.followCenter.chargementDesSuivisImpossible")}
             <button
               type="button"
               className="ml-2 underline"
@@ -81,30 +82,29 @@ export function FollowCenter({ userId }: { userId: string }) {
                 void watches.refetch();
               }}
             >
-              Réessayer
+              {tr("ui.followCenter.reessayer")}
             </button>
           </p>
         ) : empty ? (
           <div className="bw-account-empty">
             <Ship className="size-8 text-primary" />
-            <h3>Votre prochain voyage commence ici</h3>
+            <h3>{tr("ui.followCenter.votreProchainVoyageCommenceIci")}</h3>
             <p>
-              Sur une fiche navire ou traversée, touchez le cœur « Suivre ». Nous regrouperons ici
-              les informations utiles.
+              {tr("ui.followCenter.surUneFicheNavireOu")}
             </p>
             <a href="/" className="bw-action-primary">
-              Explorer la carte <ArrowUpRight className="size-4" />
+              {tr("ui.followCenter.explorerLaCarte")}<ArrowUpRight className="size-4" />
             </a>
           </div>
         ) : (
           <div className="mt-4 grid gap-3 md:grid-cols-2">
             {(filter === "all" || filter === "departure") && journeyRows.map((journey) => <article key={journey.id} className="bw-follow-card md:col-span-2">
-              <span className="bw-account-kicker">Mon voyage</span>
-              <h3 className="mt-1 font-semibold">{journey.outbound_departure_id && activeDepartures.has(journey.outbound_departure_id) && journey.inbound_departure_id && activeDepartures.has(journey.inbound_departure_id) ? "Aller et retour" : journey.inbound_departure_id && activeDepartures.has(journey.inbound_departure_id) ? "Mon retour" : "Mon aller"}</h3>
+              <span className="bw-account-kicker">{tr("ui.followCenter.monVoyage")}</span>
+              <h3 className="mt-1 font-semibold">{journey.outbound_departure_id && activeDepartures.has(journey.outbound_departure_id) && journey.inbound_departure_id && activeDepartures.has(journey.inbound_departure_id) ? tr("ui.followCenter.allerEtRetour") : journey.inbound_departure_id && activeDepartures.has(journey.inbound_departure_id) ? tr("ui.followCenter.monRetour") : tr("ui.followCenter.monAller")}</h3>
               <div className="mt-3 grid gap-2 sm:grid-cols-2">
                 {([ ["Aller", journey.outbound_departure_id], ["Retour", journey.inbound_departure_id] ] as const).map(([leg, id]) => id && activeDepartures.has(id) ? <a key={leg} href={`/?select=departure&id=${id}`} className="flex min-h-12 items-center justify-between rounded-lg border bg-background px-3 py-2 text-sm font-semibold text-primary">
-                  <span><small className="block text-[11px] font-normal text-muted-foreground">{leg}</small>{details.data?.[id]?.label ?? "Traversée suivie"} <VesselAlertTag vesselId={details.data?.[id]?.vesselId} /></span><ArrowUpRight size={15} aria-hidden />
-                </a> : <div key={leg} className="rounded-lg border border-dashed px-3 py-2 text-sm text-muted-foreground"><small className="block text-[11px]">{leg}</small>{leg === "Retour" && journey.outbound_departure_id ? "À ajouter depuis l’aller" : "Non suivi"}</div>)}
+                  <span><small className="block text-[11px] font-normal text-muted-foreground">{leg}</small>{details.data?.[id]?.label ?? tr("ui.followCenter.traverseeSuivie")} <VesselAlertTag vesselId={details.data?.[id]?.vesselId} /></span><ArrowUpRight size={15} aria-hidden />
+                </a> : <div key={leg} className="rounded-lg border border-dashed px-3 py-2 text-sm text-muted-foreground"><small className="block text-[11px]">{leg}</small>{leg === "Retour" && journey.outbound_departure_id ? tr("ui.followCenter.aAjouterDepuisLAller") : tr("ui.followCenter.nonSuivi")}</div>)}
               </div>
             </article>)}
             {list.map((follow) => {
@@ -113,7 +113,7 @@ export function FollowCenter({ userId }: { userId: string }) {
                 <article key={follow.id} className="bw-follow-card">
                   <div className="flex items-start justify-between gap-2">
                     <span className="bw-account-kicker">
-                      {follow.traveller && follow.target_kind === "departure" ? "Ma traversée" : follow.follow_purpose === "proche" ? "Suivi pour un proche" : follow.target_kind === "vessel" ? "Bateau suivi" : follow.target_kind === "company" ? "Compagnie suivie" : "Traversée suivie"}
+                      {follow.traveller && follow.target_kind === "departure" ? tr("ui.followCenter.maTraversee") : follow.follow_purpose === "proche" ? tr("ui.followCenter.suiviPourUnProche") : follow.target_kind === "vessel" ? tr("ui.followCenter.bateauSuivi") : follow.target_kind === "company" ? tr("ui.followCenter.compagnieSuivie") : tr("ui.followCenter.traverseeSuivie")}
                     </span>
                     <button
                       type="button"
@@ -125,7 +125,7 @@ export function FollowCenter({ userId }: { userId: string }) {
                     </button>
                   </div>
                   <h3 className="font-semibold">
-                    {detail?.label ?? (details.error ? "Détail indisponible" : "Chargement…")}
+                    {detail?.label ?? (details.error ? tr("ui.followCenter.detailIndisponible") : tr("ui.followCenter.chargement"))}
                     {" "}
                     <VesselAlertTag
                       vesselId={follow.target_kind === "vessel" ? follow.target_id : detail?.vesselId}
@@ -144,7 +144,7 @@ export function FollowCenter({ userId }: { userId: string }) {
                     href={`/?select=${follow.target_kind}&id=${follow.target_id}`}
                     className="mt-3 inline-flex min-h-9 items-center gap-1 text-xs font-semibold text-primary"
                   >
-                    Voir sur la carte
+                    {tr("ui.followCenter.voirSurLaCarte")}
                     <ArrowUpRight className="size-3.5" />
                   </a>
                   {follow.follow_purpose === "curieux" && !follow.traveller && follow.target_kind !== "company" ? (
@@ -161,13 +161,13 @@ export function FollowCenter({ userId }: { userId: string }) {
                         })
                       }
                     >
-                      <Ship className="size-3.5" /> En faire ma traversée
+                      <Ship className="size-3.5" />{tr("ui.followCenter.enFaireMaTraversee")}
                     </button>
                   ) : null}
                   {follow.traveller && detail?.departureId && detail.port && detail.departureAt && (
                     <details className="mt-2 border-t border-border pt-3">
                       <summary className="cursor-pointer text-xs font-semibold text-primary">
-                        Ma préparation et l’heure au port
+                        {tr("ui.followCenter.maPreparationEtLHeure")}
                       </summary>
                       <JourneyChecklist
                         departureAt={detail.departureAt}
@@ -188,10 +188,10 @@ export function FollowCenter({ userId }: { userId: string }) {
               (watches.data ?? []).map((watch) => (
                 <article key={watch.id} className="bw-follow-card">
                   <div className="flex items-center justify-between gap-2">
-                    <span className="bw-account-kicker">Alerte d’ouverture</span>
+                    <span className="bw-account-kicker">{tr("ui.followCenter.alerteDOuverture")}</span>
                     <button
                       type="button"
-                      aria-label="Arrêter cette alerte"
+                      aria-label={tr("ui.followCenter.arreterCetteAlerte")}
                       onClick={() => setPending({ kind: "watch", id: watch.id, label: "cette alerte d’ouverture" })}
                       className="grid size-9 place-items-center rounded-lg text-muted-foreground hover:bg-destructive/5"
                     >
@@ -208,7 +208,7 @@ export function FollowCenter({ userId }: { userId: string }) {
                   </p>
                   <span className="mt-3 inline-flex items-center gap-1 rounded-full bg-primary/5 px-2 py-1 text-[11px] font-semibold text-primary">
                     <Bell className="size-3" />
-                    En veille pour cette période
+                    {tr("ui.followCenter.enVeillePourCettePeriode")}
                   </span>
                 </article>
               ))}
@@ -216,7 +216,7 @@ export function FollowCenter({ userId }: { userId: string }) {
               filter !== "all" &&
               !(filter === "opening" && watches.data?.length) && (
                 <p className="p-3 text-sm text-muted-foreground">
-                  Aucun suivi dans cette catégorie.
+                  {tr("ui.followCenter.aucunSuiviDansCetteCategorie")}
                 </p>
               )}
           </div>
@@ -224,19 +224,19 @@ export function FollowCenter({ userId }: { userId: string }) {
       </section>
       <AlertDialog open={Boolean(pending)} onOpenChange={(open) => { if (!open) setPending(null); }}>
         <AlertDialogContent>
-          <AlertDialogTitle>{pending?.kind === "watch" ? "Arrêter cette alerte ?" : `Ne plus suivre ${pending?.label} ?`}</AlertDialogTitle>
+          <AlertDialogTitle>{pending?.kind === "watch" ? tr("ui.followCenter.arreterCetteAlerte2") : `Ne plus suivre ${pending?.label} ?`}</AlertDialogTitle>
           <AlertDialogDescription>
             {pending?.kind === "watch"
-              ? "Vous ne serez plus prévenu de l’ouverture des réservations pour ce trajet."
-              : "Vous ne recevrez plus les changements d’horaire, annulations ni nouvelles du navire. Si c’est votre voyage, il disparaît de « Ma traversée » avec ses préparatifs."}
+              ? tr("ui.followCenter.vousNeSerezPlusPrevenu")
+              : tr("ui.followCenter.vousNeRecevrezPlusLes")}
           </AlertDialogDescription>
           <AlertDialogFooter>
-            <AlertDialogCancel>Garder</AlertDialogCancel>
+            <AlertDialogCancel>{tr("ui.followCenter.garder")}</AlertDialogCancel>
             <AlertDialogAction
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
               onClick={() => { if (pending) void remove(pending.kind, pending.id); setPending(null); }}
             >
-              {pending?.kind === "watch" ? "Arrêter l’alerte" : "Ne plus suivre"}
+              {pending?.kind === "watch" ? tr("ui.followCenter.arreterLAlerte") : tr("ui.followCenter.nePlusSuivre")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

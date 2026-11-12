@@ -18,6 +18,7 @@ import { useCompanionPanel } from "@/hooks/useCompanionPanel";
 
 import { NoticeFocus } from "./NoticeFocus";
 import type { ItineraryChoice } from "@/lib/ferry/travelProfile";
+import { tr } from "@/lib/i18n";
 
 interface SidePanelProps {
   selection: Selection | null;
@@ -148,7 +149,7 @@ export function SidePanel({
           <div
             ref={detailRef}
             tabIndex={-1}
-            aria-label="Détails de la sélection"
+            aria-label={tr("ui.sidePanel.detailsDeLaSelection")}
             onKeyDown={(event) => {
               if (event.key === "Escape") {
                 event.stopPropagation();
@@ -170,7 +171,7 @@ export function SidePanel({
                 }}
                 className="flex h-7 items-center gap-1 rounded-full px-2.5 text-xs font-semibold text-primary transition-colors hover:bg-secondary"
               >
-                <ArrowLeft className="size-3.5" /> {backLabel ?? "Accueil"}
+                <ArrowLeft className="size-3.5" /> {backLabel ?? tr("ui.sidePanel.accueil")}
               </button>
               <div className="flex items-center gap-1.5">
                 {followedVessel ? (

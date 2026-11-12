@@ -9,6 +9,7 @@ import {
 } from "@/components/ui/dialog";
 import { tripShareText, tripShareUrl } from "@/lib/ferry/tripShare";
 import { ShareButtons } from "./ShareButtons";
+import { tr } from "@/lib/i18n";
 
 export function TripShare({
   departureId,
@@ -29,29 +30,27 @@ export function TripShare({
         <button
           type="button"
           className="bw-trip-share-trigger"
-          aria-label="Partager cette traversée et son suivi"
-          title="Partager le suivi"
+          aria-label={tr("ui.tripShare.partagerCetteTraverseeEtSon")}
+          title={tr("ui.tripShare.partagerLeSuivi")}
         >
           <Share2 size={17} aria-hidden />
         </button>
       </DialogTrigger>
       <DialogContent className="bw-trip-share-dialog">
         <DialogHeader>
-          <DialogTitle>Partager le suivi de la traversée</DialogTitle>
+          <DialogTitle>{tr("ui.tripShare.partagerLeSuiviDeLa")}</DialogTitle>
           <DialogDescription>
-            Votre proche pourra consulter l’avancement et les informations publiques sans se
-            connecter.
+            {tr("ui.tripShare.votreProchePourraConsulterL")}
           </DialogDescription>
         </DialogHeader>
         <p className="font-semibold">
           {from} → {to}
         </p>
         <p className="text-sm text-muted-foreground">
-          Le lien ouvre toujours cette traversée. Il ne contient ni votre profil, ni vos préparatifs
-          personnels.
+          {tr("ui.tripShare.leLienOuvreToujoursCette")}
         </p>
         <ShareButtons
-          label="Envoyer le suivi à un proche"
+          label={tr("ui.tripShare.envoyerLeSuiviAUn")}
           title={`${from} → ${to} · suivi BledWay`}
           text={tripShareText(from, to, departureAt, timeZone)}
           getUrl={() => tripShareUrl(window.location.href, departureId)}

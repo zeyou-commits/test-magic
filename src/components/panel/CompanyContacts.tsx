@@ -2,6 +2,7 @@ import { ExternalLink, Mail, Phone } from "lucide-react";
 import type { Company } from "@/lib/ferry/types";
 import { safeExternalUrl } from "./shared";
 import { ReportButton } from "./ReportButton";
+import { tr } from "@/lib/i18n";
 
 /** Coordonnées utiles d'une compagnie, avec leur vérification et un signalement si elles ont changé. */
 export function CompanyContacts({ company }: { company: Company }) {
@@ -14,7 +15,7 @@ export function CompanyContacts({ company }: { company: Company }) {
   const hasAny = links.some(([, href]) => href) || company.phone || company.contact_email || site;
   return (
     <section className="rounded-xl border border-border bg-card p-3 text-sm">
-      <h3 className="text-sm font-semibold">Contacter {company.name}</h3>
+      <h3 className="text-sm font-semibold">{tr("ui.companyContacts.contacter")}{company.name}</h3>
       {hasAny ? (
         <ul className="mt-2 grid gap-1.5">
           {company.phone ? (
@@ -59,22 +60,22 @@ export function CompanyContacts({ company }: { company: Company }) {
                 target="_blank"
                 rel="noopener noreferrer"
               >
-                <ExternalLink size={14} aria-hidden /> Site de la compagnie
+                <ExternalLink size={14} aria-hidden />{tr("ui.companyContacts.siteDeLaCompagnie")}
               </a>
             </li>
           ) : null}
         </ul>
       ) : (
-        <p className="mt-1 text-xs text-muted-foreground">Coordonnées non renseignées.</p>
+        <p className="mt-1 text-xs text-muted-foreground">{tr("ui.companyContacts.coordonneesNonRenseignees")}</p>
       )}
       <p className="mt-2 text-[11px] text-muted-foreground">
-        Le site de la compagnie fait foi.
+        {tr("ui.companyContacts.leSiteDeLaCompagnie")}
       </p>
       <div className="mt-1">
         <ReportButton
           targetType="company"
           targetId={company.id}
-          label="Ces informations ont changé ?"
+          label={tr("ui.companyContacts.cesInformationsOntChange")}
           initialReason="outdated_info"
           variant="link"
         />

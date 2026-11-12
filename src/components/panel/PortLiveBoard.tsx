@@ -19,6 +19,7 @@ import { portTimeZone } from "@/lib/ferry/time";
 import { enterRoom } from "@/lib/ferry/chat";
 import { SeaPhotoBadge, useSeaPeak } from "./SeaForecast";
 import { VesselMiniCard } from "./VesselMiniCard";
+import { tr } from "@/lib/i18n";
 
 // L'état le plus parlant d'abord : ce qui se passe maintenant prime sur « à quai ».
 const STATE_ORDER = ["boarding", "disembarking", "delay", "state"];
@@ -80,19 +81,19 @@ function PortLiveShip({
         onClick={() => info.departureId && onSelect({ type: "departure", id: info.departureId })}
       >
         <span className="bw-port-live__main">
-          {signal ? <em data-tone="signal">{alertLabel(signal)}</em> : <em>État non signalé</em>}
+          {signal ? <em data-tone="signal">{alertLabel(signal)}</em> : <em>{tr("ui.portLiveBoard.etatNonSignale")}</em>}
           <small>
-            Vers {info.destination} · {info.status}
+            {tr("ui.portLiveBoard.vers")}{info.destination} · {info.status}
           </small>
           <small className="bw-port-live__meta">
             <span>
               <Radio size={11} aria-hidden />
-              {ship.source === "live" ? "Position réelle" : "D’après l’horaire"}
+              {ship.source === "live" ? tr("ui.portLiveBoard.positionReelle") : tr("ui.portLiveBoard.dApresLHoraire")}
             </span>
             {travellers ? (
               <span>
                 <Users size={11} aria-hidden />
-                {travellers} voyageur{travellers > 1 ? "s" : ""}
+                {travellers}{tr("ui.portLiveBoard.voyageur")}{travellers > 1 ? "s" : ""}
               </span>
             ) : null}
           </small>
@@ -121,7 +122,7 @@ function RoomLink({
         enterRoom("crossing", departureId);
       }}
     >
-      <MessagesSquare size={15} aria-hidden /> Salon
+      <MessagesSquare size={15} aria-hidden />{tr("ui.portLiveBoard.salon")}
     </button>
   );
 }
@@ -241,9 +242,9 @@ export function PortLiveBoard({
   const boarding = rows.filter((row) => row.signal?.category === "boarding").length;
   const travellers = rows.reduce((sum, row) => sum + row.travellers, 0);
   return (
-    <section className="bw-port-live" aria-label="Bateaux au port en ce moment">
+    <section className="bw-port-live" aria-label={tr("ui.portLiveBoard.bateauxAuPortEnCe")}>
       <h3>
-        <Anchor size={15} aria-hidden /> {ships.length ? "Bateaux au port" : "Prochains bateaux"}
+        <Anchor size={15} aria-hidden /> {ships.length ? tr("ui.portLiveBoard.bateauxAuPort") : tr("ui.portLiveBoard.prochainsBateaux")}
       </h3>
       {ships.length ? (
         <p className="bw-port-live__summary">
@@ -257,7 +258,7 @@ export function PortLiveBoard({
             .join(" · ")}
         </p>
       ) : nextShips.length ? null : (
-        <p className="bw-port-live__summary">Aucun bateau à quai ni attendu dans les 48 h.</p>
+        <p className="bw-port-live__summary">{tr("ui.portLiveBoard.aucunBateauAQuaiNi")}</p>
       )}
       <ul>
         {rows.map((row) => (

@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { peakWaves, SEA_FORECAST_DAYS, seaForecastQuery, seaHeight, seaLevel } from "@/lib/ferry/seaState";
+import { tr } from "@/lib/i18n";
 
 type Point = { latitude: number; longitude: number };
 const ORIGIN: Point = { latitude: 0, longitude: 0 };
@@ -136,19 +137,19 @@ export function SeaForecast({
   const level = seaLevel(peak);
   const lively = isLivelySea(peak);
   return (
-    <section className="bw-sea" data-level={level.id} aria-label="Prévisions de mer">
+    <section className="bw-sea" data-level={level.id} aria-label={tr("ui.seaForecast.previsionsDeMer")}>
       <SeaIcon peak={peak} size={26} />
       <div>
         <strong>
-          {level.label} <span>· vagues jusqu’à {peak.toLocaleString("fr-FR", { maximumFractionDigits: 1 })} m</span>
+          {level.label} <span>{tr("ui.seaForecast.vaguesJusquA")}{peak.toLocaleString("fr-FR", { maximumFractionDigits: 1 })} m</span>
         </strong>
-        {lively ? <p>Si vous êtes sensible au mal de mer, prévoyez de quoi vous soulager.</p> : null}
+        {lively ? <p>{tr("ui.seaForecast.siVousEtesSensibleAu")}</p> : null}
         <small>
-          Prévisions indicatives sur le trajet,{" "}
+          {tr("ui.seaForecast.previsionsIndicativesSurLeTrajet")}{" "}
           <a href="https://open-meteo.com/" target="_blank" rel="noreferrer">
-            Open-Meteo
+            {tr("ui.seaForecast.openMeteo")}
           </a>
-          . Seule la compagnie confirme le départ.
+          {tr("ui.seaForecast.seuleLaCompagnieConfirmeLe")}
         </small>
       </div>
     </section>

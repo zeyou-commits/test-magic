@@ -7,6 +7,7 @@ import { CompanyView, DepartureView, VesselView } from "./EntityViews";
 import { PortView } from "./PortView";
 import { RouteView } from "./RouteView";
 import { ShareButtons } from "./ShareButtons";
+import { tr } from "@/lib/i18n";
 
 const primaryLabel: Record<Selection["type"], string> = {
   departure: "La traversée reste ouverte",
@@ -40,7 +41,7 @@ export function CompanionPanel({
   return createPortal(
     <aside
       className="bw-companion"
-      aria-label="Fiche associée"
+      aria-label={tr("ui.companionPanel.ficheAssociee")}
       onKeyDown={(e) => {
         if (e.key === "Escape") {
           e.preventDefault();
@@ -50,7 +51,7 @@ export function CompanionPanel({
       }}
     >
       <header>
-        <span>{primary ? primaryLabel[primary.type] : "Vos résultats restent ouverts"}</span>
+        <span>{primary ? primaryLabel[primary.type] : tr("ui.companionPanel.vosResultatsRestentOuverts")}</span>
         <ShareButtons
           compact
           getUrl={() =>
@@ -63,7 +64,7 @@ export function CompanionPanel({
         <button
           ref={closeRef}
           type="button"
-          aria-label="Fermer la fiche associée"
+          aria-label={tr("ui.companionPanel.fermerLaFicheAssociee")}
           onClick={onClose}
         >
           <X size={18} aria-hidden />

@@ -19,6 +19,7 @@ import {
   type PlaceKind,
   type PortPlace,
 } from "@/lib/ferry/flash";
+import { tr } from "@/lib/i18n";
 
 const icons: Record<PlaceKind, LucideIcon> = {
   fuel: Fuel,
@@ -58,8 +59,8 @@ function PlaceRow({ place, portName }: { place: PortPlace; portName: string }) {
         target="_blank"
         rel="noopener noreferrer"
       >
-        <Navigation size={14} aria-hidden /> Y aller
-        <span className="sr-only"> (itinéraire dans un nouvel onglet)</span>
+        <Navigation size={14} aria-hidden />{tr("ui.portPlaces.yAller")}
+        <span className="sr-only">{tr("ui.portPlaces.itineraireDansUnNouvelOnglet")}</span>
       </a>
     </li>
   );
@@ -72,9 +73,9 @@ export function PortPlaces({ portId, portName }: { portId: string; portName: str
   if (places.isError)
     return (
       <p className="bw-community-error" role="status">
-        Les lieux pratiques sont momentanément indisponibles.{" "}
+        {tr("ui.portPlaces.lesLieuxPratiquesSontMomentanement")}{" "}
         <button type="button" onClick={() => void places.refetch()}>
-          Réessayer
+          {tr("ui.portPlaces.reessayer")}
         </button>
       </p>
     );
@@ -99,8 +100,8 @@ export function PortPlaces({ portId, portName }: { portId: string; portName: str
     <section className="bw-places" aria-labelledby={`places-${portId}`}>
       <div className="port-section-heading">
         <div>
-          <h3 id={`places-${portId}`}>Lieux pratiques</h3>
-          <p>Repérés par l’équipe BledWay autour du port.</p>
+          <h3 id={`places-${portId}`}>{tr("ui.portPlaces.lieuxPratiques")}</h3>
+          <p>{tr("ui.portPlaces.reperesParLEquipeBledway")}</p>
         </div>
       </div>
       {groups.length ? (
@@ -119,11 +120,11 @@ export function PortPlaces({ portId, portName }: { portId: string; portName: str
         ))
       ) : (
         <p className="text-xs text-muted-foreground">
-          Les lieux pratiques de ce port arrivent bientôt.
+          {tr("ui.portPlaces.lesLieuxPratiquesDeCe")}
         </p>
       )}
       <p className="bw-community-caption">
-        Horaires indicatifs : vérifiez sur place. L’itinéraire s’ouvre dans Google Maps.
+        {tr("ui.portPlaces.horairesIndicatifsVerifiezSurPlace")}
       </p>
     </section>
   );

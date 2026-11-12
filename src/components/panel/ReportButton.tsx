@@ -23,6 +23,7 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Link } from "@tanstack/react-router";
+import { tr } from "@/lib/i18n";
 
 const reasons = [
   { value: "wrong_schedule", label: "Horaire inexact" },
@@ -93,25 +94,24 @@ export function ReportButton({
       </DialogTrigger>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Signaler une erreur</DialogTitle>
+          <DialogTitle>{tr("ui.reportButton.signalerUneErreur")}</DialogTitle>
           <DialogDescription>
-            Décrivez ce qui ne correspond pas à la réalité, nous vérifierons.
+            {tr("ui.reportButton.decrivezCeQuiNeCorrespond")}
           </DialogDescription>
         </DialogHeader>
         {!user ? (
           <div className="grid gap-3 rounded-xl bg-secondary p-4 text-sm">
             <p>
-              Pour éviter les abus, il faut être connecté pour envoyer un signalement. C’est gratuit
-              et rapide.
+              {tr("ui.reportButton.pourEviterLesAbusIl")}
             </p>
             <Button asChild>
-              <Link to="/auth">Se connecter ou créer un compte</Link>
+              <Link to="/auth">{tr("ui.reportButton.seConnecterOuCreerUn")}</Link>
             </Button>
           </div>
         ) : (
           <div className="grid gap-3">
             <Select value={reason} onValueChange={setReason}>
-              <SelectTrigger aria-label="Motif du signalement">
+              <SelectTrigger aria-label={tr("ui.reportButton.motifDuSignalement")}>
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -125,16 +125,16 @@ export function ReportButton({
             <Textarea
               value={details}
               onChange={(event) => setDetails(event.target.value)}
-              placeholder="Détails (facultatif)"
+              placeholder={tr("ui.reportButton.detailsFacultatif")}
               rows={4}
-              aria-label="Détails du signalement"
+              aria-label={tr("ui.reportButton.detailsDuSignalement")}
             />
           </div>
         )}
         {user ? (
           <DialogFooter>
             <Button onClick={() => submit.mutate()} disabled={submit.isPending}>
-              {submit.isPending ? "Envoi…" : "Envoyer"}
+              {submit.isPending ? tr("ui.reportButton.envoi") : tr("ui.reportButton.envoyer")}
             </Button>
           </DialogFooter>
         ) : null}

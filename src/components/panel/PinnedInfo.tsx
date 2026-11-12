@@ -5,6 +5,7 @@ import { AlertTriangle, ChevronDown, ChevronUp, Info, Pin } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { looksInternal, newsForContext, newsQuery, type NewsItem } from "@/lib/ferry/flash";
 import { isPublicNews, newsSlug } from "@/lib/ferry/newsFeed";
+import { tr } from "@/lib/i18n";
 
 /**
  * Info BledWay épinglée en haut d'un salon (remplace la cloche de l'en-tête).
@@ -138,14 +139,14 @@ export function PinnedInfo({
       data-tone={tone}
       data-open={open || undefined}
       data-new={(unseen && !open) || undefined}
-      aria-label="Info BledWay épinglée"
+      aria-label={tr("ui.pinnedInfo.infoBledwayEpinglee")}
     >
       <button type="button" className="bw-pinned__bar" onClick={toggle} aria-expanded={open}>
         <Pin size={14} aria-hidden />
-        <span className="bw-pinned__label">Info BledWay</span>
-        {unseen && !open ? <span className="sr-only">(nouveau)</span> : null}
+        <span className="bw-pinned__label">{tr("ui.pinnedInfo.infoBledway")}</span>
+        {unseen && !open ? <span className="sr-only">{tr("ui.pinnedInfo.nouveau")}</span> : null}
         <span className="bw-pinned__title">{top.title}</span>
-        {items.length > 1 ? <span className="bw-pinned__count">{items.length} infos</span> : null}
+        {items.length > 1 ? <span className="bw-pinned__count">{items.length}{tr("ui.pinnedInfo.infos")}</span> : null}
         {open ? <ChevronUp size={16} aria-hidden /> : <ChevronDown size={16} aria-hidden />}
       </button>
       {open ? (
@@ -158,7 +159,7 @@ export function PinnedInfo({
               </p>
               <p className="bw-pinned__summary">{item.summary}</p>
               <Link to="/actualites/$slug" params={{ slug: newsSlug(item) }}>
-                Lire l’actu
+                {tr("ui.pinnedInfo.lireLActu")}
               </Link>
             </li>
           ))}

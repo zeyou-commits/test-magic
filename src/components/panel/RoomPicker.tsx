@@ -14,6 +14,7 @@ import { companiesQuery, portsQuery, routesQuery, vesselsQuery } from "@/lib/fer
 import { CompanyBadge } from "./CompanyBadge";
 import { portTimeZone } from "@/lib/ferry/time";
 import type { Selection } from "@/lib/ferry/types";
+import { tr } from "@/lib/i18n";
 
 const supabase = typedSupabase as unknown as SupabaseClient;
 
@@ -82,7 +83,7 @@ export function RoomPicker({
   const back =
     first === "choose" ? (
       <button type="button" className="bw-room-picker__back" onClick={() => setMode("choose")}>
-        <ChevronLeft size={16} aria-hidden /> Retour
+        <ChevronLeft size={16} aria-hidden />{tr("ui.roomPicker.retour")}
       </button>
     ) : null;
   const [companyId, setCompanyId] = useState<string | null>(null);
@@ -175,9 +176,9 @@ export function RoomPicker({
           {mode === "choose" ? (
             <>
               <DialogHeader>
-                <DialogTitle>Bienvenue à bord</DialogTitle>
+                <DialogTitle>{tr("ui.roomPicker.bienvenueABord")}</DialogTitle>
                 <p className="bw-room-picker__intro">
-                  Une question avant de partir, ou envie d'échanger avec ceux qui voyagent ?
+                  {tr("ui.roomPicker.uneQuestionAvantDePartir")}
                 </p>
               </DialogHeader>
               <div className="bw-room-picker__choices">
@@ -190,13 +191,12 @@ export function RoomPicker({
                   <span className="bw-room-picker__choice-icon" aria-hidden>
                     <CircleHelp size={22} />
                   </span>
-                  <strong>Poser une question</strong>
+                  <strong>{tr("ui.roomPicker.poserUneQuestion")}</strong>
                   <small>
-                    Papiers, TPD, horaires, prix : la réponse de BledWay tout de suite, sinon les
-                    bons contacts.
+                    {tr("ui.roomPicker.papiersTpdHorairesPrixLa")}
                   </small>
                   <span className="bw-room-picker__choice-go">
-                    Chercher une réponse <ArrowRight size={15} aria-hidden />
+                    {tr("ui.roomPicker.chercherUneReponse")}<ArrowRight size={15} aria-hidden />
                   </span>
                 </button>
                 <button
@@ -208,13 +208,12 @@ export function RoomPicker({
                   <span className="bw-room-picker__choice-icon" aria-hidden>
                     <MessagesSquare size={22} />
                   </span>
-                  <strong>Rejoindre un salon</strong>
+                  <strong>{tr("ui.roomPicker.rejoindreUnSalon")}</strong>
                   <small>
-                    Les voyageurs d'une traversée, en direct : attente au port, ambiance à bord,
-                    arrivée.
+                    {tr("ui.roomPicker.lesVoyageursDUneTraversee")}
                   </small>
                   <span className="bw-room-picker__choice-go">
-                    Choisir ma traversée <ArrowRight size={15} aria-hidden />
+                    {tr("ui.roomPicker.choisirMaTraversee")}<ArrowRight size={15} aria-hidden />
                   </span>
                 </button>
               </div>
@@ -223,9 +222,9 @@ export function RoomPicker({
             <>
               <DialogHeader>
                 {back}
-                <DialogTitle>Une question ?</DialogTitle>
+                <DialogTitle>{tr("ui.roomPicker.uneQuestion")}</DialogTitle>
                 <p className="bw-room-picker__intro">
-                  Les réponses de BledWay d'abord, puis les bons contacts si besoin.
+                  {tr("ui.roomPicker.lesReponsesDeBledwayD")}
                 </p>
               </DialogHeader>
               <div className="bw-room-picker__help">
@@ -241,9 +240,9 @@ export function RoomPicker({
             <>
           <DialogHeader>
             {back}
-            <DialogTitle>{title ?? "Choisir votre traversée"}</DialogTitle>
+            <DialogTitle>{title ?? tr("ui.roomPicker.choisirVotreTraversee")}</DialogTitle>
             <p className="bw-room-picker__intro">
-              {intro ?? "Rejoignez le salon des voyageurs de votre bateau."}
+              {intro ?? tr("ui.roomPicker.rejoignezLeSalonDesVoyageurs")}
             </p>
           </DialogHeader>
           <label className="bw-room-picker__search">
@@ -251,18 +250,18 @@ export function RoomPicker({
             <input
               value={text}
               onChange={(event) => setText(event.target.value)}
-              placeholder="Port, date, compagnie ou navire"
-              aria-label="Rechercher une traversée"
+              placeholder={tr("ui.roomPicker.portDateCompagnieOuNavire")}
+              aria-label={tr("ui.roomPicker.rechercherUneTraversee")}
             />
           </label>
           {present.length > 1 ? (
             <div
               className="bw-room-picker__companies"
               role="group"
-              aria-label="Filtrer par compagnie"
+              aria-label={tr("ui.roomPicker.filtrerParCompagnie")}
             >
               <button type="button" aria-pressed={!companyId} onClick={() => setCompanyId(null)}>
-                Toutes
+                {tr("ui.roomPicker.toutes")}
               </button>
               {present.map((company) => (
                 <button
@@ -310,7 +309,7 @@ export function RoomPicker({
                                   />
                                 ) : null}
                                 {[row.company?.name, row.vessel].filter(Boolean).join(" · ") ||
-                                  "Compagnie à confirmer"}
+                                  tr("ui.roomPicker.compagnieAConfirmer")}
                               </small>
                             </span>
                             {count ? (
@@ -327,7 +326,7 @@ export function RoomPicker({
               ))}
             </div>
           ) : (
-            <p className="bw-room__empty">Aucune traversée ne correspond.</p>
+            <p className="bw-room__empty">{tr("ui.roomPicker.aucuneTraverseeNeCorrespond")}</p>
           )}
           <button
             type="button"
@@ -336,8 +335,8 @@ export function RoomPicker({
           >
             <CircleHelp size={16} aria-hidden />
             <span>
-              <strong>Une question ?</strong>
-              <small>Papiers, horaires, prix… trouvez la réponse tout de suite.</small>
+              <strong>{tr("ui.roomPicker.uneQuestion")}</strong>
+              <small>{tr("ui.roomPicker.papiersHorairesPrixTrouvezLa")}</small>
             </span>
           </button>
             </>

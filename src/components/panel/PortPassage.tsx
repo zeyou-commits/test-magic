@@ -14,6 +14,7 @@ import {
 import { formatDocked, passageQuestion } from "@/lib/ferry/portPassage";
 import { postToRoom } from "@/lib/ferry/chat";
 import { roomKey } from "./LiveRoom";
+import { tr } from "@/lib/i18n";
 
 const voyageurs = (n: number) => `${n} voyageur${n > 1 ? "s" : ""} BledWay`;
 const STEPS: TripStatus[] = ["landing", "controls", "arrived"];
@@ -69,7 +70,7 @@ export function PortPassage({
         )}
       </p>
       {user ? (
-        <div className="bw-passage__steps" role="group" aria-label="Où en êtes-vous ?">
+        <div className="bw-passage__steps" role="group" aria-label={tr("ui.portPassage.ouEnEtesVous")}>
           {STEPS.map((id) => {
             const item = steps.find((entry) => entry.id === id)!;
             return (
@@ -90,7 +91,7 @@ export function PortPassage({
       {user && status !== "arrived" ? (
         answered ? (
           <p className="bw-passage__thanks" role="status">
-            <Check size={14} aria-hidden /> Merci, c'est partagé dans le salon.
+            <Check size={14} aria-hidden />{tr("ui.portPassage.merciCEstPartageDans")}
           </p>
         ) : (
           <div className="bw-passage__ask">

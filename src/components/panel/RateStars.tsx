@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Star } from "lucide-react";
 import { reviewNumber } from "@/lib/ferry/reviewCriteria";
+import { tr } from "@/lib/i18n";
 
 const WORDS = ["", "Décevant", "Bof", "Correct", "Bien", "Excellent"];
 
@@ -63,21 +64,21 @@ export function RateStars({
       <span className="bw-rate__text" aria-live="polite">
         {hover ? (
           <>
-            <strong>{WORDS[hover]}</strong> · cliquez pour noter
+            <strong>{WORDS[hover]}</strong>{tr("ui.rateStars.cliquezPourNoter")}
           </>
         ) : count && average != null ? (
           <>
             <strong>{reviewNumber(average)}</strong>{" "}
             {onOpen ? (
               <button type="button" className="bw-rate__count" onClick={onOpen}>
-                · {count} avis
+                · {count}{tr("ui.rateStars.avis")}
               </button>
             ) : (
-              <span> · {count} avis</span>
+              <span> · {count}{tr("ui.rateStars.avis")}</span>
             )}
           </>
         ) : (
-          <span>Soyez le premier à noter</span>
+          <span>{tr("ui.rateStars.soyezLePremierANoter")}</span>
         )}
       </span>
     </div>

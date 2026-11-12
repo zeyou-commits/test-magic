@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { BellRing, CalendarClock, Check } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { tr } from "@/lib/i18n";
 
 /** Message « pas encore programmé » + inscription à l'alerte d'ouverture des ventes. */
 export function SalesAlertForm({
@@ -41,15 +42,15 @@ export function SalesAlertForm({
       <p className="flex items-start gap-2 text-sm font-bold text-foreground">
         <CalendarClock className="mt-0.5 size-5 shrink-0 text-warning-foreground" aria-hidden />
         <span>
-          Les ventes pour {periodLabel} ne sont pas encore ouvertes.
+          {tr("ui.salesAlertForm.lesVentesPour")}{periodLabel}{tr("ui.salesAlertForm.neSontPasEncoreOuvertes")}
           <span className="mt-0.5 block text-xs font-normal text-muted-foreground">
-            Soyez prévenu dès l’ouverture des billets par les compagnies.
+            {tr("ui.salesAlertForm.soyezPrevenuDesLOuverture")}
           </span>
         </span>
       </p>
       {state === "done" ? (
         <p className="flex items-center gap-1.5 font-semibold text-success">
-          <Check className="size-4" aria-hidden /> Demande transmise à l’équipe pour cette période.
+          <Check className="size-4" aria-hidden />{tr("ui.salesAlertForm.demandeTransmiseALEquipe")}
         </p>
       ) : (
         <form onSubmit={submit} className="space-y-2">
@@ -61,8 +62,8 @@ export function SalesAlertForm({
               autoComplete="email"
               value={email}
               onChange={(event) => setEmail(event.target.value)}
-              placeholder="Votre e-mail"
-              aria-label="Votre adresse e-mail"
+              placeholder={tr("ui.salesAlertForm.votreEMail")}
+              aria-label={tr("ui.salesAlertForm.votreAdresseEMail")}
               className="h-10 min-w-0 flex-1 rounded-xl border bg-background px-3 text-sm"
             />
             <button
@@ -70,7 +71,7 @@ export function SalesAlertForm({
               disabled={!consent || state === "sending"}
               className="inline-flex h-10 shrink-0 items-center gap-1.5 rounded-xl bg-primary px-3 text-xs font-semibold text-primary-foreground disabled:opacity-50"
             >
-              <BellRing className="size-4" aria-hidden /> Me prévenir
+              <BellRing className="size-4" aria-hidden />{tr("ui.salesAlertForm.mePrevenir")}
             </button>
           </div>
           <label className="flex items-start gap-2 text-[11px] leading-snug text-muted-foreground">
@@ -80,10 +81,10 @@ export function SalesAlertForm({
               onChange={(event) => setConsent(event.target.checked)}
               className="mt-0.5 size-4"
             />
-            J’accepte que BledWay utilise mon e-mail uniquement pour cette demande d’alerte.
+            {tr("ui.salesAlertForm.jAccepteQueBledwayUtilise")}
           </label>
           {state === "error" ? (
-            <p className="text-destructive">L’inscription a échoué. Réessayez dans un instant.</p>
+            <p className="text-destructive">{tr("ui.salesAlertForm.lInscriptionAEchoueReessayez")}</p>
           ) : null}
         </form>
       )}

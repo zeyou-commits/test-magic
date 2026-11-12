@@ -1,6 +1,9 @@
 // Dictionnaire de référence : chaque texte de l'interface, rangé par zone de l'écran.
 // Les autres langues reprennent les mêmes clés ; un texte absent retombe sur le français.
+import { ui } from "./fr.ui";
+
 export const fr = {
+  ui,
   nav: {
     map: "Carte",
     departuresArrivals: "Départs & arrivées",

@@ -3,6 +3,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { ShieldCheck } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import { acceptCharter, CHARTER_VERSION } from "@/lib/ferry/chat";
+import { tr } from "@/lib/i18n";
 
 /** Les règles affichées avant le premier message : celles de la charte, en bref. */
 export const CHARTER_RULES = [
@@ -52,10 +53,9 @@ export function useCharterGate(accepted: boolean | undefined) {
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogContent className="bw-charter">
         <ShieldCheck size={30} className="bw-charter__icon" aria-hidden />
-        <DialogTitle>Avant votre premier message</DialogTitle>
+        <DialogTitle>{tr("ui.charterGate.avantVotrePremierMessage")}</DialogTitle>
         <DialogDescription>
-          Les salons BledWay sont faits pour s'entraider entre voyageurs. Quelques règles, pour que
-          ça le reste :
+          {tr("ui.charterGate.lesSalonsBledwaySontFaits")}
         </DialogDescription>
         <ul>
           {CHARTER_RULES.map((rule) => (
@@ -63,8 +63,7 @@ export function useCharterGate(accepted: boolean | undefined) {
           ))}
         </ul>
         <p className="bw-charter__note">
-          L'équipe BledWay peut masquer un message et suspendre un compte qui ne respecte pas ces
-          règles.
+          {tr("ui.charterGate.lEquipeBledwayPeutMasquer")}
         </p>
         <label className="bw-charter__check">
           <input
@@ -73,13 +72,13 @@ export function useCharterGate(accepted: boolean | undefined) {
             onChange={(event) => setChecked(event.target.checked)}
           />
           <span>
-            J'ai lu et j'accepte la{" "}
+            {tr("ui.charterGate.jAiLuEtJ")}{" "}
             <a href="/charte" target="_blank" rel="noreferrer">
-              charte de la communauté
+              {tr("ui.charterGate.charteDeLaCommunaute")}
             </a>{" "}
-            et les{" "}
+            {tr("ui.charterGate.etLes")}{" "}
             <a href="/conditions-utilisation" target="_blank" rel="noreferrer">
-              conditions d'utilisation
+              {tr("ui.charterGate.conditionsDUtilisation")}
             </a>
             .
           </span>
@@ -95,7 +94,7 @@ export function useCharterGate(accepted: boolean | undefined) {
           disabled={!checked || busy}
           onClick={() => void accept()}
         >
-          J'accepte et j'envoie
+          {tr("ui.charterGate.jAccepteEtJEnvoie")}
         </button>
       </DialogContent>
     </Dialog>

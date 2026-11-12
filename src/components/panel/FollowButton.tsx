@@ -17,6 +17,7 @@ import {
   AlertDialogFooter,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { tr } from "@/lib/i18n";
 
 /** Ce que l'on perd en ne suivant plus : dit avant, pas après. */
 const UNFOLLOW_TEXT = {
@@ -124,7 +125,7 @@ export function FollowButton({
             ? `${follow?.active ? "Ne plus suivre" : "Suivre"} ${label ?? (kind === "vessel" ? "ce bateau" : kind === "company" ? "cette compagnie" : "cette traversée")}`
             : undefined
         }
-        title={iconOnly ? (follow?.active ? "Suivi activé" : kind === "company" ? "Suivre cette compagnie" : kind === "departure" ? "Suivre cette traversée" : "Suivre ce bateau") : undefined}
+        title={iconOnly ? (follow?.active ? tr("ui.followButton.suiviActive") : kind === "company" ? tr("ui.followButton.suivreCetteCompagnie") : kind === "departure" ? tr("ui.followButton.suivreCetteTraversee") : tr("ui.followButton.suivreCeBateau")) : undefined}
         className={`inline-flex ${iconOnly ? "size-8 rounded-full !min-h-8 !gap-0 !px-0" : compact ? "h-7 !gap-1 !rounded-lg !px-2 !text-[11px]" : "min-h-10"} items-center justify-center gap-2 rounded-xl border px-3 text-xs font-semibold transition-colors disabled:opacity-50 ${follow?.active ? "border-primary/30 bg-primary/10 text-primary" : "border-primary/25 bg-primary/5 text-primary hover:bg-primary/10"}`}
       >
         {busy ? (
@@ -135,28 +136,28 @@ export function FollowButton({
         {iconOnly
           ? null
           : follow?.active
-            ? "Suivi activé"
+            ? tr("ui.followButton.suiviActive")
             : compact
-              ? "Suivre"
+              ? tr("ui.followButton.suivre")
               : kind === "vessel"
-                ? "Suivre ce bateau"
+                ? tr("ui.followButton.suivreCeBateau")
                 : kind === "company"
-                  ? "Suivre cette compagnie"
-                : "Suivre cette traversée"}
+                  ? tr("ui.followButton.suivreCetteCompagnie")
+                : tr("ui.followButton.suivreCetteTraversee")}
       </button>
       <AlertDialog open={asking} onOpenChange={setAsking}>
         <AlertDialogContent onClick={(event) => event.stopPropagation()}>
           <AlertDialogTitle>
-            Ne plus suivre {label ?? (kind === "vessel" ? "ce bateau" : kind === "company" ? "cette compagnie" : "cette traversée")} ?
+            {tr("ui.followButton.nePlusSuivre")}{label ?? (kind === "vessel" ? tr("ui.followButton.ceBateau") : kind === "company" ? tr("ui.followButton.cetteCompagnie") : tr("ui.followButton.cetteTraversee"))} ?
           </AlertDialogTitle>
           <AlertDialogDescription>{UNFOLLOW_TEXT[kind]}</AlertDialogDescription>
           <AlertDialogFooter>
-            <AlertDialogCancel>Garder le suivi</AlertDialogCancel>
+            <AlertDialogCancel>{tr("ui.followButton.garderLeSuivi")}</AlertDialogCancel>
             <AlertDialogAction
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
               onClick={() => void toggle(true)}
             >
-              Ne plus suivre
+              {tr("ui.followButton.nePlusSuivre2")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -170,7 +171,7 @@ export function FollowButton({
               : "max-w-sm text-[11px] leading-snug text-muted-foreground"
           }
         >
-          {message || "Vos suivis sont momentanément indisponibles."}
+          {message || tr("ui.followButton.vosSuivisSontMomentanementIndisponibles")}
         </span>
       )}
     </span>

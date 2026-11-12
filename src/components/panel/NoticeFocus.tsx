@@ -6,6 +6,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { supabase as typedSupabase } from "@/integrations/supabase/client";
 import { relativeAge } from "@/lib/ferry/flash";
 import { noticeKind, type NoticeKind } from "@/lib/notifications/noticeStyle";
+import { tr } from "@/lib/i18n";
 
 const supabase = typedSupabase as unknown as SupabaseClient;
 
@@ -68,7 +69,7 @@ export function NoticeFocus({ noticeId }: { noticeId: string }) {
             {relativeAge(notice.created_at)}
           </small>
         </span>
-        <button type="button" aria-label="Masquer ce message" onClick={() => setClosed(true)}>
+        <button type="button" aria-label={tr("ui.noticeFocus.masquerCeMessage")} onClick={() => setClosed(true)}>
           <X size={16} aria-hidden />
         </button>
       </div>

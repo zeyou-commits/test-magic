@@ -23,6 +23,7 @@ import { entityReviewsQuery } from "@/lib/ferry/entityReviews";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/hooks/useAuth";
 import { presetRating, ratingDraftKey } from "@/lib/ferry/reviewCriteria";
+import { tr } from "@/lib/i18n";
 export { VesselView, DepartureView } from "./ShipViews";
 
 export function CompanyView({
@@ -48,7 +49,7 @@ export function CompanyView({
     if (window.sessionStorage.getItem(ratingDraftKey("company", companyId))) setTab("avis");
   }, [user, companyId]);
   const company = companies.find((c) => c.id === companyId);
-  if (!company) return <EmptyNote>Compagnie introuvable.</EmptyNote>;
+  if (!company) return <EmptyNote>{tr("ui.entityViews.compagnieIntrouvable")}</EmptyNote>;
   const fleet = vessels.filter((v) => v.company_id === companyId);
   const programmes = (departures.data ?? [])
     .filter(
@@ -67,7 +68,7 @@ export function CompanyView({
       <header className="bw-company-hero">
         <CompanyBadge key={companyId} name={company.name} logoUrl={company.logo_url} size={56} />
         <div>
-          <p>COMPAGNIE</p>
+          <p>{tr("ui.entityViews.compagnie")}</p>
           <h2>{company.name}</h2>
           {company.is_demo ? <DemoBadge /> : null}
         </div>
@@ -92,13 +93,13 @@ export function CompanyView({
       <dl className="bw-company-stats">
         <div>
           <dt>
-            <Ship size={15} aria-hidden /> Navires
+            <Ship size={15} aria-hidden />{tr("ui.entityViews.navires")}
           </dt>
           <dd>{fleet.length}</dd>
         </div>
         <div>
           <dt>
-            <CalendarDays size={15} aria-hidden /> Départs à venir
+            <CalendarDays size={15} aria-hidden />{tr("ui.entityViews.departsAVenir")}
           </dt>
           <dd>{departures.isError ? "—" : programmes.length}</dd>
         </div>
@@ -106,24 +107,24 @@ export function CompanyView({
       {company.description ? <p className="bw-company-description">{company.description}</p> : null}
       {site ? (
         <a className="bw-company-site" href={site} target="_blank" rel="noopener noreferrer">
-          Site officiel <ExternalLink size={15} aria-hidden />
+          {tr("ui.entityViews.siteOfficiel")}<ExternalLink size={15} aria-hidden />
         </a>
       ) : null}
       <Tabs value={tab} onValueChange={setTab}>
-        <TabsList aria-label="Fiche de la compagnie">
-          <TabsTrigger value="flotte">Flotte</TabsTrigger>
-          <TabsTrigger value="programmes">Programmes</TabsTrigger>
-          <TabsTrigger value="avis">Avis</TabsTrigger>
+        <TabsList aria-label={tr("ui.entityViews.ficheDeLaCompagnie")}>
+          <TabsTrigger value="flotte">{tr("ui.entityViews.flotte")}</TabsTrigger>
+          <TabsTrigger value="programmes">{tr("ui.entityViews.programmes")}</TabsTrigger>
+          <TabsTrigger value="avis">{tr("ui.entityViews.avis")}</TabsTrigger>
         </TabsList>
         <TabsContent value="programmes">
-          <h3>Prochains départs</h3>
+          <h3>{tr("ui.entityViews.prochainsDeparts")}</h3>
           {departures.isPending ? (
-            <p role="status">Chargement des programmes…</p>
+            <p role="status">{tr("ui.entityViews.chargementDesProgrammes")}</p>
           ) : departures.isError ? (
             <p role="alert">
-              Les programmes sont indisponibles.{" "}
+              {tr("ui.entityViews.lesProgrammesSontIndisponibles")}{" "}
               <button type="button" onClick={() => void departures.refetch()}>
-                Réessayer
+                {tr("ui.entityViews.reessayer")}
               </button>
             </p>
           ) : programmes.length ? (
@@ -141,11 +142,11 @@ export function CompanyView({
                         <strong>
                           {r
                             ? `${portName(r.departure_port_id)} → ${portName(r.arrival_port_id)}`
-                            : "Liaison à confirmer"}
+                            : tr("ui.entityViews.liaisonAConfirmer")}
                         </strong>
                         <span>{formatDateTime(d.departure_at, portTimeZone(from))}</span>
                         <small>
-                          {vessels.find((v) => v.id === d.vessel_id)?.name ?? "Navire à confirmer"}
+                          {vessels.find((v) => v.id === d.vessel_id)?.name ?? tr("ui.entityViews.navireAConfirmer")}
                         </small>
                       </button>
                     </li>
@@ -158,15 +159,15 @@ export function CompanyView({
                   className="bw-company-more"
                   onClick={() => setLimit((n) => n + 8)}
                 >
-                  Voir plus de départs
+                  {tr("ui.entityViews.voirPlusDeDeparts")}
                 </button>
               ) : null}
             </>
           ) : (
-            <EmptyNote>Aucun départ publié à venir.</EmptyNote>
+            <EmptyNote>{tr("ui.entityViews.aucunDepartPublieAVenir")}</EmptyNote>
           )}
           <details className="bw-rating-detail">
-            <summary>Lignes référencées · {lines.length}</summary>
+            <summary>{tr("ui.entityViews.lignesReferencees")}{lines.length}</summary>
             <ul className="bw-company-programmes">
               {lines.map((r) => (
                 <li key={r.id}>
@@ -177,7 +178,7 @@ export function CompanyView({
                     <small>
                       {scheduled.has(r.id)
                         ? `${formatDuration(r.typical_duration_minutes)} · programme publié`
-                        : "Sans départ publié à venir"}
+                        : tr("ui.entityViews.sansDepartPublieAVenir")}
                     </small>
                   </button>
                 </li>
@@ -195,7 +196,7 @@ export function CompanyView({
               />
             ))
           ) : (
-            <EmptyNote>Aucun navire renseigné.</EmptyNote>
+            <EmptyNote>{tr("ui.entityViews.aucunNavireRenseigne")}</EmptyNote>
           )}
         </TabsContent>
         <TabsContent value="avis" forceMount hidden={tab !== "avis"}>

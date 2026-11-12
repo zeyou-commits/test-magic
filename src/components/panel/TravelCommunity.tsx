@@ -42,6 +42,7 @@ import { SignalAvatars } from "./SignalAvatars";
 import { PhotoStrip } from "@/components/photos/Photos";
 import { photosQuery } from "@/lib/photos/photos";
 import { SituationBadge, SituationIcon } from "./SituationIcon";
+import { tr } from "@/lib/i18n";
 
 /** Picto d'une situation (nom conservé pour les écrans existants). */
 export function AlertIcon({ category, size = 17 }: { category: AlertCategory; size?: number }) {
@@ -178,9 +179,9 @@ export function TravelSignals({
   if (!feed.data)
     return feed.isError ? (
       <p className="bw-community-error" role="status">
-        Les informations voyageurs sont momentanément indisponibles.{" "}
+        {tr("ui.travelCommunity.lesInformationsVoyageursSontMomentanement")}{" "}
         <button type="button" onClick={() => void feed.refetch()}>
-          Réessayer
+          {tr("ui.travelCommunity.reessayer")}
         </button>
       </p>
     ) : null;
@@ -192,21 +193,21 @@ export function TravelSignals({
       id={`signal-${kind}:${target}`}
       className="bw-signals"
       data-compact={compact || undefined}
-      aria-label="Informations des voyageurs"
+      aria-label={tr("ui.travelCommunity.informationsDesVoyageurs")}
     >
       <div className="bw-section-heading">
         <div>
           {compact ? null : (
             <span className="bw-eyebrow">
               <Users size={13} aria-hidden />
-              Entre voyageurs
+              {tr("ui.travelCommunity.entreVoyageurs")}
             </span>
           )}
-          <h3>{title ?? (compact ? "Signalé par les voyageurs" : "Sur place, en ce moment")}</h3>
+          <h3>{title ?? (compact ? tr("ui.travelCommunity.signaleParLesVoyageurs") : tr("ui.travelCommunity.surPlaceEnCeMoment"))}</h3>
         </div>
         <Button variant="outline" size="sm" onClick={signal}>
           <Flag size={15} aria-hidden />
-          Signaler
+          {tr("ui.travelCommunity.signaler")}
         </Button>
       </div>
       {alerts.length ? (
@@ -225,16 +226,16 @@ export function TravelSignals({
                       {onSite ? (
                         <span className="bw-onsite-chip">
                           <MapPin size={12} aria-hidden />
-                          {onSite === travelers ? "Sur place" : `${onSite} sur place`}
+                          {onSite === travelers ? tr("ui.travelCommunity.surPlace") : `${onSite} sur place`}
                         </span>
                       ) : null}
                       {alert.validated ? (
                         <span className="bw-onsite-chip">
-                          <Check size={12} aria-hidden /> Validé par l’équipe BledWay
+                          <Check size={12} aria-hidden />{tr("ui.travelCommunity.valideParLEquipeBledway")}
                         </span>
                       ) : null}
                       {pending ? (
-                        <span className="bw-pending-chip">À confirmer par un autre voyageur</span>
+                        <span className="bw-pending-chip">{tr("ui.travelCommunity.aConfirmerParUnAutre")}</span>
                       ) : null}
                     </span>
                   ) : null}
@@ -254,10 +255,10 @@ export function TravelSignals({
                       {alert.denials ? ` · ${alert.denials} « plus le cas »` : ""}
                     </span>
                   </small>
-                  <PhotoStrip photos={reportPhotos?.get(alert.id)} label="Photo du signalement" />
+                  <PhotoStrip photos={reportPhotos?.get(alert.id)} label={tr("ui.travelCommunity.photoDuSignalement")} />
                   {done === alert.id && !mutation.isPending ? (
                     <small className="bw-community-success" role="status">
-                      <Check size={13} aria-hidden /> Merci, c’est pris en compte.
+                      <Check size={13} aria-hidden />{tr("ui.travelCommunity.merciCEstPrisEn")}
                     </small>
                   ) : null}
                 </div>
@@ -276,7 +277,7 @@ export function TravelSignals({
                       onClick={() => mutation.mutate({ type: "validate", id: alert.id })}
                     >
                       <Check size={14} aria-hidden />
-                      Valider
+                      {tr("ui.travelCommunity.valider")}
                     </button>
                   ) : null}
                   {alert.own ? (
@@ -287,7 +288,7 @@ export function TravelSignals({
                       onClick={() => mutation.mutate({ type: "resolve", id: alert.id })}
                     >
                       <Check size={14} aria-hidden />
-                      Terminé
+                      {tr("ui.travelCommunity.termine")}
                     </button>
                   ) : user ? (
                     <>
@@ -298,7 +299,7 @@ export function TravelSignals({
                         onClick={() => mutation.mutate({ type: "confirm", id: alert.id })}
                       >
                         <ThumbsUp size={14} aria-hidden />
-                        {alert.confirmed ? "Confirmé" : "Je confirme"}
+                        {alert.confirmed ? tr("ui.travelCommunity.confirme") : tr("ui.travelCommunity.jeConfirme")}
                       </button>
                       {upgraded ? (
                         <button
@@ -307,7 +308,7 @@ export function TravelSignals({
                           disabled={mutation.isPending || alert.denied}
                           onClick={() => mutation.mutate({ type: "deny", id: alert.id })}
                         >
-                          {alert.denied ? "Noté" : "Plus le cas"}
+                          {alert.denied ? tr("ui.travelCommunity.note") : tr("ui.travelCommunity.plusLeCas")}
                         </button>
                       ) : null}
                     </>
@@ -320,14 +321,13 @@ export function TravelSignals({
       ) : (
         <p className="bw-community-empty">
           {compact
-            ? "Rien de signalé en ce moment. Sur place ? Touchez « Signaler »."
-            : "Sur place ? Un petit signalement peut aider tout le monde."}
+            ? tr("ui.travelCommunity.rienDeSignaleEnCe")
+            : tr("ui.travelCommunity.surPlaceUnPetitSignalement")}
         </p>
       )}
       {alerts.length && !compact ? (
         <p className="bw-community-caption">
-          Informations voyageurs, effacées seules après 1 à 24 h selon la situation. « Sur place » :
-          envoyé près du port ou du bateau. Consultez aussi les annonces de la compagnie.
+          {tr("ui.travelCommunity.informationsVoyageursEffaceesSeulesApres")}
         </p>
       ) : null}
       {mutation.isError ? (
@@ -372,9 +372,9 @@ export function VesselReviews({
   if (feed.data === null) return null;
   if (!feed.data)
     return feed.isPending ? (
-      <p role="status">Chargement des avis…</p>
+      <p role="status">{tr("ui.travelCommunity.chargementDesAvis")}</p>
     ) : (
-      <p className="bw-community-empty">Les avis sont momentanément indisponibles.</p>
+      <p className="bw-community-empty">{tr("ui.travelCommunity.lesAvisSontMomentanementIndisponibles")}</p>
     );
   const published = feed.data.reviews.filter((r) => r.status === "published");
   const own = feed.data.reviews.find((r) => r.own);
@@ -382,9 +382,9 @@ export function VesselReviews({
   const count = feed.data.rating_count;
   if (readOnly && !published.length) return null;
   return (
-    <section className="bw-vessel-reviews" aria-label="Avis sur ce navire">
+    <section className="bw-vessel-reviews" aria-label={tr("ui.travelCommunity.avisSurCeNavire")}>
       {readOnly ? (
-        <h3>Anciens avis des voyageurs</h3>
+        <h3>{tr("ui.travelCommunity.anciensAvisDesVoyageurs")}</h3>
       ) : (
         <>
           <div className="bw-review-summary">
@@ -395,21 +395,21 @@ export function VesselReviews({
                     maximumFractionDigits: 1,
                     minimumFractionDigits: 1,
                   })
-                : "À vous"}
+                : tr("ui.travelCommunity.aVous")}
               {average !== null ? <small>/ 5</small> : null}
             </span>
             <div>
-              <h3>{count ? `${count} avis` : "Le premier avis peut être le vôtre."}</h3>
-              <p>Confort, accueil, propreté : racontez votre traversée.</p>
+              <h3>{count ? `${count} avis` : tr("ui.travelCommunity.lePremierAvisPeutEtre")}</h3>
+              <p>{tr("ui.travelCommunity.confortAccueilPropreteRacontezVotre")}</p>
             </div>
           </div>
           {own?.status === "pending" ? (
             <p role="status" className="bw-community-success">
-              Votre avis est en cours de vérification.
+              {tr("ui.travelCommunity.votreAvisEstEnCours")}
             </p>
           ) : own?.status === "hidden" ? (
             <p className="bw-community-caption">
-              Votre avis n’a pas été publié. Vous pouvez le modifier.
+              {tr("ui.travelCommunity.votreAvisNAPas")}
             </p>
           ) : null}
           <Button
@@ -426,7 +426,7 @@ export function VesselReviews({
             aria-expanded={user ? write : undefined}
           >
             <MessageCircle size={16} aria-hidden />
-            {own ? "Modifier mon avis" : "Noter ce bateau"}
+            {own ? tr("ui.travelCommunity.modifierMonAvis") : tr("ui.travelCommunity.noterCeBateau")}
           </Button>
           {write && user ? (
             <VesselReviewForm
@@ -440,7 +440,7 @@ export function VesselReviews({
       )}
       {count > published.length ? (
         <p className="bw-community-caption">
-          Les {published.length} avis les plus récents sont affichés.
+          {tr("ui.travelCommunity.les")}{published.length}{tr("ui.travelCommunity.avisLesPlusRecentsSont")}
         </p>
       ) : null}
       <ul className="bw-review-list">
@@ -456,8 +456,8 @@ export function VesselReviews({
               )}
               <strong>
                 {review.own
-                  ? "Vous"
-                  : (reviewAuthors.authors?.[review.id]?.pseudo ?? "Voyageur BledWay")}
+                  ? tr("ui.travelCommunity.vous")
+                  : (reviewAuthors.authors?.[review.id]?.pseudo ?? tr("ui.travelCommunity.voyageurBledway"))}
               </strong>
               <time dateTime={review.created_at}>
                 {new Date(review.created_at).toLocaleDateString("fr-FR")}
@@ -517,14 +517,14 @@ function VesselReviewForm({
   return (
     <form
       className="port-review-form bw-vessel-review-form"
-      aria-label="Noter ce navire"
+      aria-label={tr("ui.travelCommunity.noterCeNavire")}
       onSubmit={(e) => {
         e.preventDefault();
         if (score) mutation.mutate();
       }}
     >
       <fieldset className="port-rating-field" disabled={mutation.isPending}>
-        <legend>Votre expérience à bord</legend>
+        <legend>{tr("ui.travelCommunity.votreExperienceABord")}</legend>
         <div className="port-rating-stars">
           {[1, 2, 3, 4, 5].map((n) => (
             <label key={n}>
@@ -542,7 +542,7 @@ function VesselReviewForm({
         </div>
       </fieldset>
       <label className="port-comment-label" htmlFor={`review-${vesselId}`}>
-        Un conseil pour les prochains voyageurs ? <span>Facultatif · 2 000 caractères maximum</span>
+        {tr("ui.travelCommunity.unConseilPourLesProchains")}<span>{tr("ui.travelCommunity.facultatif2000CaracteresMaximum")}</span>
       </label>
       <Textarea
         id={`review-${vesselId}`}
@@ -553,10 +553,10 @@ function VesselReviewForm({
         onChange={(e) => setComment(e.target.value)}
       />
       <p className="bw-community-caption">
-        Un avis par personne et par bateau. Les avis sont relus avant publication.
+        {tr("ui.travelCommunity.unAvisParPersonneEt")}
       </p>
       <Button type="submit" disabled={!score || mutation.isPending}>
-        {mutation.isPending ? "Envoi…" : "Envoyer mon avis"}
+        {mutation.isPending ? tr("ui.travelCommunity.envoi") : tr("ui.travelCommunity.envoyerMonAvis")}
       </Button>
       {mutation.isError ? (
         <p role="alert" className="bw-community-error">

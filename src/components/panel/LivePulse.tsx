@@ -3,6 +3,7 @@ import { ChevronRight, Megaphone } from "lucide-react";
 import { alertLabel, isImpact } from "@/lib/ferry/community";
 import { departureEventsQuery } from "@/lib/ferry/flash";
 import { useFlashCards } from "./FlashFeed";
+import { tr } from "@/lib/i18n";
 
 const HOUR = 3_600_000;
 const FOCUS_KEY = "bledway:focus-signal";
@@ -127,7 +128,7 @@ export function LivePulse({
         type="button"
         className="bw-pulse__main"
         onClick={onOpen}
-        aria-label={total ? `Voir ${parts.join(" et ")}` : "Voir les infos en direct"}
+        aria-label={total ? `Voir ${parts.join(" et ")}` : tr("ui.livePulse.voirLesInfosEnDirect")}
       >
         <span className="bw-pulse__icon" aria-hidden>
           <Megaphone size={17} />
@@ -137,18 +138,18 @@ export function LivePulse({
           </span>
         </span>
         <span className="min-w-0 flex-1">
-          <strong>{total ? parts.join(" · ") : "Rien à signaler pour le moment"}</strong>
+          <strong>{total ? parts.join(" · ") : tr("ui.livePulse.rienASignalerPourLe")}</strong>
           <small>
             {total
               ? info.headlines.map((item) => item.label).join(" · ")
-              : "Infos BledWay et voyageurs sur place"}
+              : tr("ui.livePulse.infosBledwayEtVoyageursSur")}
           </small>
         </span>
         {total ? <ChevronRight size={16} aria-hidden /> : null}
       </button>
       {onReport ? (
         <button type="button" className="bw-pulse__add" onClick={onReport}>
-          <Megaphone size={15} aria-hidden /> Signaler
+          <Megaphone size={15} aria-hidden />{tr("ui.livePulse.signaler")}
         </button>
       ) : null}
     </div>

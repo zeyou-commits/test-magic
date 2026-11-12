@@ -6,6 +6,7 @@ import { formatDateParts } from "@/lib/ferry/format";
 import { portTimeZone } from "@/lib/ferry/time";
 import { portsQuery, routesQuery, vesselsQuery } from "@/lib/ferry/queries";
 import { vesselPositionsQuery } from "@/lib/ferry/useLiveShips";
+import { tr } from "@/lib/i18n";
 
 /**
  * « Le navire est encore à Marseille » : le dernier signal AIS (moins de 6 h) le place à quai
@@ -47,17 +48,16 @@ export function VesselElsewhereNotice({ departure }: { departure: Departure }) {
           {hold.fresh ? (
             <>
               <strong>
-                Encore à quai à {formatDateParts(hold.reportedAt, portTimeZone(from)).time}
+                {tr("ui.vesselElsewhereNotice.encoreAQuaiA")}{formatDateParts(hold.reportedAt, portTimeZone(from)).time}
               </strong>{" "}
-              selon le signal du navire. Départ en retard : vérifiez auprès de la compagnie.
+              {tr("ui.vesselElsewhereNotice.selonLeSignalDuNavire")}
             </>
           ) : (
             <>
               <strong>
-                Dernier signal à quai {formatAge((now - Date.parse(hold.reportedAt)) / 60_000)}
+                {tr("ui.vesselElsewhereNotice.dernierSignalAQuai")}{formatAge((now - Date.parse(hold.reportedAt)) / 60_000)}
               </strong>
-              , après l'heure prévue. Aucun départ constaté depuis : vérifiez auprès de la
-              compagnie.
+              {tr("ui.vesselElsewhereNotice.apresLHeurePrevueAucun")}
             </>
           )}
         </p>
@@ -73,12 +73,12 @@ export function VesselElsewhereNotice({ departure }: { departure: Departure }) {
       className="mt-3 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs leading-relaxed text-amber-900"
     >
       <strong>
-        {vessel.name} est encore à {port}
+        {vessel.name}{tr("ui.vesselElsewhereNotice.estEncoreA")}{port}
       </strong>{" "}
-      (signal {formatAge((now - Date.parse(elsewhere.reportedAt)) / 60_000)}).{" "}
+      {tr("ui.vesselElsewhereNotice.signal")}{formatAge((now - Date.parse(elsewhere.reportedAt)) / 60_000)}).{" "}
       {started
-        ? "Départ probablement retardé ou navire remplacé : renseignez-vous auprès de la compagnie."
-        : "Si le navire ne change pas, ce départ risque d'être retardé."}
+        ? tr("ui.vesselElsewhereNotice.departProbablementRetardeOuNavire")
+        : tr("ui.vesselElsewhereNotice.siLeNavireNeChange")}
     </p>
   );
 }

@@ -7,6 +7,7 @@ import { VesselPhotoBadge } from "@/components/panel/VesselFacts";
 import { vesselDossiers } from "@/content/vessels";
 import { vesselPhotoQuery } from "@/lib/ferry/vesselPhoto";
 import type { Port, RouteLine, Vessel } from "@/lib/ferry/types";
+import { tr } from "@/lib/i18n";
 
 export function routeLabel(route: RouteLine, ports: Port[]) {
   const from = ports.find((p) => p.id === route.departure_port_id)?.name ?? "?";
@@ -75,11 +76,11 @@ export function VesselCard({ vessel, routes, ports }: { vessel: Vessel; routes: 
         ) : null}
         <div className="mt-auto flex flex-wrap gap-3 pt-4 text-sm font-semibold">
           <Link to="/" search={{ select: "vessel", id: vessel.id } as never} className="inline-flex items-center gap-1 text-primary">
-            Voir sur la carte <ArrowRight size={14} />
+            {tr("ui.vesselCard.voirSurLaCarte")}<ArrowRight size={14} />
           </Link>
           {dossier ? (
             <Link to="/bateaux/$slug" params={{ slug: dossier.slug }} className="text-muted-foreground hover:text-primary">
-              Dossier complet
+              {tr("ui.vesselCard.dossierComplet")}
             </Link>
           ) : null}
         </div>

@@ -18,6 +18,7 @@ import { BookingLink, DemoBadge, EmptyNote, PanelHeader, Section } from "./share
 import { QuestionHelp } from "@/components/questions/QuestionHelp";
 import { RoomPicker } from "./RoomPicker";
 import { ReportButton } from "./ReportButton";
+import { tr } from "@/lib/i18n";
 
 export function RouteView({
   routeId,
@@ -36,7 +37,7 @@ export function RouteView({
   const [salons, setSalons] = useState(false);
 
   const route = routes.find((item) => item.id === routeId);
-  if (!route) return <EmptyNote>Ligne introuvable.</EmptyNote>;
+  if (!route) return <EmptyNote>{tr("ui.routeView.ligneIntrouvable")}</EmptyNote>;
 
   const from = ports.find((port) => port.id === route.departure_port_id);
   const to = ports.find((port) => port.id === route.arrival_port_id);
@@ -58,12 +59,12 @@ export function RouteView({
   return (
     <div className="flex flex-col gap-6 pb-12">
       <PanelHeader
-        overline="Ligne"
+        overline={tr("ui.routeView.ligne")}
         title={`${from?.name ?? "—"} → ${to?.name ?? "—"}`}
         subtitle={
           <span className="flex flex-wrap items-center gap-2">
             <span>
-              Durée typique : {formatDuration(route.typical_duration_minutes)}
+              {tr("ui.routeView.dureeTypique")}{formatDuration(route.typical_duration_minutes)}
               {route.distance_km ? ` · ${route.distance_km} km` : ""}
             </span>
             {route.is_demo ? <DemoBadge /> : null}
@@ -80,7 +81,7 @@ export function RouteView({
             className="h-11 w-full rounded-xl text-sm font-semibold"
           >
             <CalendarDays className="size-4" />
-            Planifier ce trajet
+            {tr("ui.routeView.planifierCeTrajet")}
           </Button>
         ) : null}
         {reverse ? (
@@ -91,18 +92,18 @@ export function RouteView({
             className="h-11 w-full rounded-xl text-sm font-semibold"
           >
             <ArrowLeftRight className="size-4" />
-            Voir le sens inverse : {to?.name} → {from?.name}
+            {tr("ui.routeView.voirLeSensInverse")}{to?.name} → {from?.name}
           </Button>
         ) : (
           <p className="text-xs text-muted-foreground">
-            Aucune ligne connue dans le sens inverse ({to?.name} → {from?.name}).
+            {tr("ui.routeView.aucuneLigneConnueDansLe")}{to?.name} → {from?.name}).
           </p>
         )}
       </div>
 
       <Section title={`Prochains départs · ${zoneLabel(timeZone)}`}>
         {routeDepartures.length === 0 ? (
-          <EmptyNote>Aucun départ programmé pour le moment sur cette ligne.</EmptyNote>
+          <EmptyNote>{tr("ui.routeView.aucunDepartProgrammePourLe")}</EmptyNote>
         ) : (
           <div className="flex flex-col gap-1">
             {routeDepartures.map((departure) => {
@@ -123,7 +124,7 @@ export function RouteView({
                       {departure.duration_minutes
                         ? ` · ${formatDuration(departure.duration_minutes)}`
                         : ""}
-                      {departure.status === "cancelled" ? " · Annulé" : ""}{" "}
+                      {departure.status === "cancelled" ? tr("ui.routeView.annule") : ""}{" "}
                       <VesselAlertTag vesselId={departure.vessel_id} />
                     </span>
                   </div>
@@ -149,9 +150,9 @@ export function RouteView({
         />
       </div>
 
-      <Section title="Compagnies et réservation">
+      <Section title={tr("ui.routeView.compagniesEtReservation")}>
         {operators.length === 0 ? (
-          <EmptyNote>Aucune compagnie renseignée.</EmptyNote>
+          <EmptyNote>{tr("ui.routeView.aucuneCompagnieRenseignee")}</EmptyNote>
         ) : (
           <div className="flex flex-col gap-3">
             <LineAlertNotice departures={lineDepartures} vessels={vessels} />
@@ -172,11 +173,11 @@ export function RouteView({
         )}
       </Section>
 
-      <Section title="Jours et heures de départ">
+      <Section title={tr("ui.routeView.joursEtHeuresDeDepart")}>
         <LineCalendar departures={lineDepartures} companies={companies} timeZone={timeZone} />
       </Section>
 
-      <Section title="Ports reliés">
+      <Section title={tr("ui.routeView.portsRelies")}>
         <div className="flex flex-col gap-2">
           {[from, to].map((port, index) =>
             port ? (
@@ -188,7 +189,7 @@ export function RouteView({
               >
                 <div>
                   <span className="font-medium text-foreground">
-                    {index === 0 ? "Départ" : "Arrivée"} · {port.name}
+                    {index === 0 ? tr("ui.routeView.depart") : tr("ui.routeView.arrivee")} · {port.name}
                   </span>
                   <span className="block text-sm text-muted-foreground">{port.country_name}</span>
                 </div>
@@ -200,7 +201,7 @@ export function RouteView({
       </Section>
 
       {route.notes ? (
-        <Section title="Informations complémentaires">
+        <Section title={tr("ui.routeView.informationsComplementaires")}>
           <div className="text-sm text-muted-foreground">{route.notes}</div>
         </Section>
       ) : null}

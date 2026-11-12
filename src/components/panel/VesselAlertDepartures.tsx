@@ -7,6 +7,7 @@ import { portsQuery, routesQuery, upcomingDeparturesQuery } from "@/lib/ferry/qu
 import { portTimeZone } from "@/lib/ferry/time";
 import type { Selection } from "@/lib/ferry/types";
 import { useVesselAlert } from "@/lib/ferry/vesselAlerts";
+import { tr } from "@/lib/i18n";
 
 const impactLabel = { confirmed: "Touchée", possible: "Peut être touchée", none: "À vérifier" };
 
@@ -35,8 +36,8 @@ export function VesselAlertDepartures({
     .slice(0, 5);
   if (!list.length) return null;
   return (
-    <section className="bw-vessel-alert-trips" aria-label="Traversées à vérifier">
-      <h3>Traversées à vérifier</h3>
+    <section className="bw-vessel-alert-trips" aria-label={tr("ui.vesselAlertDepartures.traverseesAVerifier")}>
+      <h3>{tr("ui.vesselAlertDepartures.traverseesAVerifier")}</h3>
       <ul>
         {list.map((d) => {
           const route = routes.find((r) => r.id === d.route_id);
@@ -47,7 +48,7 @@ export function VesselAlertDepartures({
               <button type="button" onClick={() => onSelect({ type: "departure", id: d.id })}>
                 <span>
                   <strong>
-                    {from?.name ?? "Départ"} → {to?.name ?? "Arrivée"}
+                    {from?.name ?? tr("ui.vesselAlertDepartures.depart")} → {to?.name ?? tr("ui.vesselAlertDepartures.arrivee")}
                   </strong>
                   <small>{formatDateTime(d.departure_at, portTimeZone(from))}</small>
                 </span>

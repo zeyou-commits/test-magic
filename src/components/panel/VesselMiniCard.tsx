@@ -5,6 +5,7 @@ import type { Company, Vessel } from "@/lib/ferry/types";
 import { CompanyBadge } from "./CompanyBadge";
 import { ShipPhoto } from "./VesselBits";
 import { VesselAlertTag } from "./VesselAlert";
+import { tr } from "@/lib/i18n";
 
 export function VesselMiniCard({
   vessel,
@@ -32,7 +33,7 @@ export function VesselMiniCard({
         <span className="bw-vessel-mini__identity">
           <strong>{vessel.name}</strong>
           <VesselAlertTag vesselId={vessel.id} />
-          {!company ? <small>Fiche du navire</small> : null}
+          {!company ? <small>{tr("ui.vesselMiniCard.ficheDuNavire")}</small> : null}
         </span>
         <ChevronRight size={17} aria-hidden />
       </button>

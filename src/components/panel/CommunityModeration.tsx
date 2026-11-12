@@ -10,6 +10,7 @@ import { vesselsQuery, portsQuery } from "@/lib/ferry/queries";
 import { Button } from "@/components/ui/button";
 import { alertLabel, useSignalCatalog } from "@/lib/ferry/community";
 import { ReviewAuthor, useReviewAuthors } from "@/components/admin/ReviewAuthor";
+import { tr } from "@/lib/i18n";
 
 export function CommunityModeration() {
   const { user } = useAuth();
@@ -72,73 +73,72 @@ export function CommunityModeration() {
       void client.invalidateQueries({ queryKey: ["my-trips"] });
     },
   });
-  if (feed.isPending) return <p role="status">Chargement de la communauté…</p>;
+  if (feed.isPending) return <p role="status">{tr("ui.communityModeration.chargementDeLaCommunaute")}</p>;
   if (feed.isError)
     return (
       <p role="alert">
-        La communauté est indisponible.{" "}
+        {tr("ui.communityModeration.laCommunauteEstIndisponible")}{" "}
         <button type="button" onClick={() => void feed.refetch()}>
-          Réessayer
+          {tr("ui.communityModeration.reessayer")}
         </button>
       </p>
     );
   if (!feed.data)
     return (
       <p className="p-4 text-sm">
-        Activez la migration 20261021120000_vessel_community.sql pour gérer les avis navires et les
-        informations voyageurs.
+        {tr("ui.communityModeration.activezLaMigration20261021120000Vessel")}
       </p>
     );
   return (
     <div className="space-y-6 py-4">
       <section>
-        <h2 className="mb-2 text-lg font-semibold">Observations à vérifier · {anomalies.data?.length ?? 0}</h2>
-        <p className="mb-4 text-sm text-muted-foreground">Ces observations contredisent l’horaire ou la position connue, ou ont été envoyées sans position. Elles ne sont ni publiées ni envoyées par notification.</p>
-        {anomalies.isError ? <p role="alert">File indisponible : appliquez la migration des signalements par traversée.</p> : null}
-        {anomalies.isPending ? <p>Chargement…</p> : null}
-        {anomalies.data?.length === 0 ? <p>Aucune observation à vérifier.</p> : null}
+        <h2 className="mb-2 text-lg font-semibold">{tr("ui.communityModeration.observationsAVerifier")}{anomalies.data?.length ?? 0}</h2>
+        <p className="mb-4 text-sm text-muted-foreground">{tr("ui.communityModeration.cesObservationsContredisentLHoraire")}</p>
+        {anomalies.isError ? <p role="alert">{tr("ui.communityModeration.fileIndisponibleAppliquezLaMigration")}</p> : null}
+        {anomalies.isPending ? <p>{tr("ui.communityModeration.chargement")}</p> : null}
+        {anomalies.data?.length === 0 ? <p>{tr("ui.communityModeration.aucuneObservationAVerifier")}</p> : null}
         <ul className="space-y-3">
           {anomalies.data?.map((item) => (
             <li key={item.id} className="rounded-xl border bg-card p-4">
               <strong>
                 {item.port_id
                   ? `Port de ${ports.find((p) => p.id === item.port_id)?.name ?? "?"}`
-                  : (vessels.find((v) => v.id === item.vessel_id)?.name ?? "Bateau")}{" "}
+                  : (vessels.find((v) => v.id === item.vessel_id)?.name ?? tr("ui.communityModeration.bateau"))}{" "}
                 · {item.category}
               </strong>
               <p className="text-sm">{item.detail ? `${item.detail} · ` : ""}{item.reason}</p>
               <p className="text-xs text-muted-foreground">{new Date(item.created_at).toLocaleString("fr-FR")}</p>
               <div className="mt-3 flex flex-wrap gap-2">
-                {item.departure_id ? <a className="text-sm underline" href={`/?select=departure&id=${item.departure_id}`}>Voir la traversée</a> : null}
-                <Button size="sm" disabled={publish.isPending || (!item.departure_id && !item.port_id)} onClick={() => publish.mutate(item.id)}>Valider et publier</Button>
-                <Button size="sm" variant="outline" disabled={triage.isPending} onClick={() => triage.mutate({ id: item.id, status: "handled" })}>Traité</Button>
-                <Button size="sm" variant="outline" disabled={triage.isPending} onClick={() => triage.mutate({ id: item.id, status: "dismissed" })}>Écarter</Button>
+                {item.departure_id ? <a className="text-sm underline" href={`/?select=departure&id=${item.departure_id}`}>{tr("ui.communityModeration.voirLaTraversee")}</a> : null}
+                <Button size="sm" disabled={publish.isPending || (!item.departure_id && !item.port_id)} onClick={() => publish.mutate(item.id)}>{tr("ui.communityModeration.validerEtPublier")}</Button>
+                <Button size="sm" variant="outline" disabled={triage.isPending} onClick={() => triage.mutate({ id: item.id, status: "handled" })}>{tr("ui.communityModeration.traite")}</Button>
+                <Button size="sm" variant="outline" disabled={triage.isPending} onClick={() => triage.mutate({ id: item.id, status: "dismissed" })}>{tr("ui.communityModeration.ecarter")}</Button>
               </div>
             </li>
           ))}
         </ul>
-        {triage.isError ? <p role="alert">La mise à jour a échoué.</p> : null}
+        {triage.isError ? <p role="alert">{tr("ui.communityModeration.laMiseAJourA")}</p> : null}
         {publish.isError ? <p role="alert">{publish.error.message}</p> : null}
       </section>
       <section>
-        <h2 className="text-lg font-semibold">Avis navires · modération</h2>
+        <h2 className="text-lg font-semibold">{tr("ui.communityModeration.avisNaviresModeration")}</h2>
         <p className="mb-4 text-sm text-muted-foreground">
-          Les contributions restent privées jusqu’à leur publication.
+          {tr("ui.communityModeration.lesContributionsRestentPriveesJusqu")}
         </p>
-        {!feed.data.reviews.length ? <p>Aucun avis reçu.</p> : null}
+        {!feed.data.reviews.length ? <p>{tr("ui.communityModeration.aucunAvisRecu")}</p> : null}
         <ul className="space-y-3">
           {feed.data.reviews.map((r) => (
             <li key={r.id} className="rounded-xl border bg-card p-4">
               <div className="flex flex-wrap justify-between gap-2">
                 <strong>
-                  {vessels.find((v) => v.id === r.vessel_id)?.name ?? "Navire"} · {r.score}/5
+                  {vessels.find((v) => v.id === r.vessel_id)?.name ?? tr("ui.communityModeration.navire")} · {r.score}/5
                 </strong>
                 <span className="text-sm">
                   {r.status === "pending"
-                    ? "À relire"
+                    ? tr("ui.communityModeration.aRelire")
                     : r.status === "published"
-                      ? "Publié"
-                      : "Masqué"}
+                      ? tr("ui.communityModeration.publie")
+                      : tr("ui.communityModeration.masque")}
                 </span>
               </div>
               <ReviewAuthor info={vesselAuthors?.[r.id]} />
@@ -149,7 +149,7 @@ export function CommunityModeration() {
                   disabled={action.isPending || r.status === "published"}
                   onClick={() => action.mutate({ type: "review", id: r.id, status: "published" })}
                 >
-                  Publier
+                  {tr("ui.communityModeration.publier")}
                 </Button>
                 <Button
                   size="sm"
@@ -157,7 +157,7 @@ export function CommunityModeration() {
                   disabled={action.isPending || r.status === "hidden"}
                   onClick={() => action.mutate({ type: "review", id: r.id, status: "hidden" })}
                 >
-                  Masquer
+                  {tr("ui.communityModeration.masquer")}
                 </Button>
               </div>
             </li>
@@ -165,8 +165,8 @@ export function CommunityModeration() {
         </ul>
       </section>
       <section>
-        <h2 className="mb-3 text-lg font-semibold">Informations voyageurs actives</h2>
-        {!feed.data.alerts.length ? <p>Aucun signalement actif.</p> : null}
+        <h2 className="mb-3 text-lg font-semibold">{tr("ui.communityModeration.informationsVoyageursActives")}</h2>
+        {!feed.data.alerts.length ? <p>{tr("ui.communityModeration.aucunSignalementActif")}</p> : null}
         <ul className="space-y-3">
           {feed.data.alerts.map((a) => (
             <li
@@ -178,8 +178,8 @@ export function CommunityModeration() {
                   {[...vessels, ...ports].find((e) => e.id === a.target_id)?.name ?? a.target_kind}
                 </strong>
                 <p className="text-sm">
-                  {alertLabel(a)} · {1 + a.confirmations} voyageur(s)
-                  {a.validated ? " · validé par l’équipe" : ""}
+                  {alertLabel(a)} · {1 + a.confirmations}{tr("ui.communityModeration.voyageurS")}
+                  {a.validated ? tr("ui.communityModeration.valideParLEquipe") : ""}
                 </p>
               </div>
               <div className="flex gap-2">
@@ -189,7 +189,7 @@ export function CommunityModeration() {
                     disabled={action.isPending}
                     onClick={() => action.mutate({ type: "alert", id: a.id, verdict: "validate" })}
                   >
-                    Valider
+                    {tr("ui.communityModeration.valider")}
                   </Button>
                 )}
                 <Button
@@ -198,7 +198,7 @@ export function CommunityModeration() {
                   disabled={action.isPending}
                   onClick={() => action.mutate({ type: "alert", id: a.id, verdict: "resolve" })}
                 >
-                  Retirer
+                  {tr("ui.communityModeration.retirer")}
                 </Button>
               </div>
             </li>

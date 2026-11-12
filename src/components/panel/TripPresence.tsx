@@ -36,6 +36,7 @@ import {
 import { requestQuickReport } from "@/components/map/QuickReport";
 import { OptionIcon } from "./SituationIcon";
 import { visibleSteps } from "@/lib/ferry/portPassage";
+import { tr } from "@/lib/i18n";
 
 const PENDING_STATUS = "bledway:pending-trip-status";
 
@@ -92,27 +93,27 @@ export function PortPresence({ portId }: { portId: string }) {
     >
       <CabasStack count={atPort || landing || enRoute || arrived} seed={portId} />
       <span>
-        {atPort ? <strong>{voyageurs(atPort)} au port</strong> : null}
+        {atPort ? <strong>{voyageurs(atPort)}{tr("ui.tripPresence.auPort")}</strong> : null}
         {enRoute ? (
           <span>
             {atPort ? " · " : ""}
-            {enRoute} en route
+            {enRoute}{tr("ui.tripPresence.enRoute")}
           </span>
         ) : null}
         {arrived ? (
           <span>
             {atPort || enRoute ? " · " : ""}
-            {arrived} arrivé{arrived > 1 ? "s" : ""} ici
+            {arrived}{tr("ui.tripPresence.arrive")}{arrived > 1 ? "s" : ""}{tr("ui.tripPresence.ici")}
           </span>
         ) : null}
         {landing ? (
           <span>
             {atPort || enRoute || arrived ? " · " : ""}
-            {landing} au débarquement
+            {landing}{tr("ui.tripPresence.auDebarquement")}
           </span>
         ) : null}
       </span>
-      <small className="bw-presence__join">Discuter</small>
+      <small className="bw-presence__join">{tr("ui.tripPresence.discuter")}</small>
     </button>
   );
 }
@@ -156,31 +157,31 @@ export function VesselPresence({
         onClick={() => setOpen((value) => !value)}
       >
         <CabasStack count={onboard} seed={vesselId} />
-        <strong>{voyageurs(onboard)} à bord</strong>
+        <strong>{voyageurs(onboard)}{tr("ui.tripPresence.aBord")}</strong>
         <ChevronDown size={16} aria-hidden />
       </button>
       {open ? (
-        <ul className="bw-presence-list" aria-label="Voyageurs à bord">
+        <ul className="bw-presence-list" aria-label={tr("ui.tripPresence.voyageursABord")}>
           {list.isPending ? (
             <li>
-              <p role="status">Chargement…</p>
+              <p role="status">{tr("ui.tripPresence.chargement")}</p>
             </li>
           ) : list.isError ? (
             <li>
-              <p role="alert">La liste est momentanément indisponible.</p>
+              <p role="alert">{tr("ui.tripPresence.laListeEstMomentanementIndisponible")}</p>
             </li>
           ) : (
             <>
               {shown.map((traveller) => (
                 <li key={traveller.handle}>
                   <TravellerAvatar card={traveller} size={36} />
-                  {traveller.me ? "Vous" : traveller.pseudo}
+                  {traveller.me ? tr("ui.tripPresence.vous") : traveller.pseudo}
                 </li>
               ))}
               {hidden ? (
                 <li>
                   <p>
-                    {hidden} voyageur{hidden > 1 ? "s préfèrent" : " préfère"} rester discret
+                    {hidden}{tr("ui.tripPresence.voyageur")}{hidden > 1 ? tr("ui.tripPresence.sPreferent") : tr("ui.tripPresence.prefere")}{tr("ui.tripPresence.resterDiscret")}
                     {hidden > 1 ? "s" : ""}.
                   </p>
                 </li>
@@ -198,7 +199,7 @@ export function VesselPresence({
                     enterRoom("crossing", departureId);
                   }}
                 >
-                  <MessagesSquare size={17} aria-hidden /> Leur parler dans le salon
+                  <MessagesSquare size={17} aria-hidden />{tr("ui.tripPresence.leurParlerDansLeSalon")}
                 </button>
               </li>
             </>
@@ -317,8 +318,7 @@ export function TripStatusPicker({
           ))}
         </span>
         <span>
-          <strong>Où en êtes-vous ?</strong> En route, au port, à bord : à partir de la veille du
-          départ.
+          <strong>{tr("ui.tripPresence.ouEnEtesVous")}</strong>{tr("ui.tripPresence.enRouteAuPortA")}
         </span>
       </p>
     );
@@ -328,19 +328,19 @@ export function TripStatusPicker({
     <section
       className="bw-trip-status"
       data-compact={only ? "" : undefined}
-      aria-label="Où en êtes-vous ?"
+      aria-label={tr("ui.tripPresence.ouEnEtesVous")}
     >
       {only ? (
         <div className="bw-trip-status__head">
-          <h3>J'y suis</h3>
+          <h3>{tr("ui.tripPresence.jYSuis")}</h3>
         </div>
       ) : (
         <div className="bw-trip-status__head">
-          <h3>Où en êtes-vous ?</h3>
+          <h3>{tr("ui.tripPresence.ouEnEtesVous")}</h3>
           <small>
             {tooEarly
-              ? "S’active la veille du départ."
-              : "Votre nom n’est jamais affiché."}
+              ? tr("ui.tripPresence.sActiveLaVeilleDu")
+              : tr("ui.tripPresence.votreNomNEstJamais")}
           </small>
         </div>
       )}
@@ -379,8 +379,7 @@ export function TripStatusPicker({
       {asked === "queue" ? (
         <div className="bw-trip-status__ask">
           <p>
-            <strong>Vous êtes au port : la file avance ?</strong> Un toucher suffit, ça aide ceux
-            qui arrivent.
+            <strong>{tr("ui.tripPresence.vousEtesAuPortLa")}</strong>{tr("ui.tripPresence.unToucherSuffitCaAide")}
           </p>
           {queueOptions.length ? (
             <div className="bw-report-options">
@@ -395,7 +394,7 @@ export function TripStatusPicker({
                 </button>
               ))}
               <button type="button" onClick={() => setAsked(null)}>
-                Plus tard
+                {tr("ui.tripPresence.plusTard")}
               </button>
             </div>
           ) : (
@@ -404,7 +403,7 @@ export function TripStatusPicker({
               className="bw-report-send"
               onClick={() => requestQuickReport({ type: "port", id: fromPortId! })}
             >
-              Signaler ce que je vois
+              {tr("ui.tripPresence.signalerCeQueJeVois")}
             </button>
           )}
           {queue.isError ? (
@@ -415,8 +414,7 @@ export function TripStatusPicker({
         </div>
       ) : asked === "thanks" ? (
         <p className="bw-community-success" role="status">
-          <Check size={15} aria-hidden /> Merci ! « {situationOf("queue").label} » est partagé avec
-          les voyageurs.
+          <Check size={15} aria-hidden />{tr("ui.tripPresence.merci")}{situationOf("queue").label}{tr("ui.tripPresence.estPartageAvecLesVoyageurs")}
         </p>
       ) : null}
     </section>
@@ -441,8 +439,8 @@ function QuickMoods({ moment, onDone }: { moment: string; onDone: () => void }) 
     .slice(0, 3);
   if (!me || !choices.length) return null;
   return (
-    <div className="bw-quick-moods" role="group" aria-label="Votre humeur">
-      <span>Et votre humeur ?</span>
+    <div className="bw-quick-moods" role="group" aria-label={tr("ui.tripPresence.votreHumeur")}>
+      <span>{tr("ui.tripPresence.etVotreHumeur")}</span>
       {choices.map((mood) => (
         <button
           key={mood.code}
@@ -459,7 +457,7 @@ function QuickMoods({ moment, onDone }: { moment: string; onDone: () => void }) 
         type="button"
         className="bw-quick-moods__skip"
         onClick={onDone}
-        aria-label="Plus tard"
+        aria-label={tr("ui.tripPresence.plusTard")}
       >
         ×
       </button>

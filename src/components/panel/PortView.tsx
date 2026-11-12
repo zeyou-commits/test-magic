@@ -56,6 +56,7 @@ import { FacilityIcons } from "./FacilityIcons";
 import { TravelSignals } from "./TravelCommunity";
 import { PortHelpRequests } from "@/components/community/HelpRequests";
 import { globalCriterionQuery } from "./PortReviewForm";
+import { tr } from "@/lib/i18n";
 
 const scoreLabel = (value: number) =>
   value.toLocaleString("fr-FR", { minimumFractionDigits: 1, maximumFractionDigits: 1 });
@@ -65,7 +66,7 @@ function StarRow({ value, size = 15 }: { value: number; size?: number }) {
   return (
     <span
       className="pv-stars"
-      aria-label={value ? `${scoreLabel(value)} sur 5` : "Pas encore noté"}
+      aria-label={value ? `${scoreLabel(value)} sur 5` : tr("ui.portView.pasEncoreNote")}
     >
       {[1, 2, 3, 4, 5].map((n) => (
         <Star
@@ -203,7 +204,7 @@ export function PortView({
     return () => window.removeEventListener("batogo:show-signal", onRequest);
   }, [portId]);
 
-  if (!port) return <EmptyNote>Port introuvable.</EmptyNote>;
+  if (!port) return <EmptyNote>{tr("ui.portView.portIntrouvable")}</EmptyNote>;
   const photo = photoQuery.data;
   const timeZone = portTimeZone(port);
   const portName = (id: string) => ports.find((item) => item.id === id)?.name ?? "—";
@@ -267,26 +268,26 @@ export function PortView({
           <p className="pv-hero__meta">
             {scheduledRoutes.size
               ? `${scheduledRoutes.size} ligne${scheduledRoutes.size > 1 ? "s" : ""} · ${traffic.departures.length} départ${traffic.departures.length > 1 ? "s" : ""} à venir`
-              : "Aucune traversée programmée pour le moment"}
-            {port.status === "inactive" ? " · Temporairement fermé" : ""}
+              : tr("ui.portView.aucuneTraverseeProgrammeePourLe")}
+            {port.status === "inactive" ? tr("ui.portView.temporairementFerme") : ""}
           </p>
         </div>
         {photo?.source === "commons" ? (
           <details className="pv-hero__credit">
-            <summary aria-label="Crédit photo">
+            <summary aria-label={tr("ui.portView.creditPhoto")}>
               <Camera size={12} aria-hidden />
             </summary>
             <p>
-              Photo{photo.credit ? ` : ${photo.credit}` : ""}
+              {tr("ui.portView.photo")}{photo.credit ? ` : ${photo.credit}` : ""}
               {photo.license ? ` · ${photo.license}` : ""} ·{" "}
               {photo.pageUrl ? (
                 <a href={photo.pageUrl} target="_blank" rel="noopener noreferrer">
-                  Wikimedia Commons
+                  {tr("ui.portView.wikimediaCommons")}
                 </a>
               ) : (
-                "Wikimedia Commons"
+                tr("ui.portView.wikimediaCommons")
               )}
-              . Photo indicative.
+              {tr("ui.portView.photoIndicative")}
             </p>
           </details>
         ) : null}
@@ -297,7 +298,7 @@ export function PortView({
 
         <div className="pv-rating">
           {reviewsResult.isPending ? (
-            <span>Lecture des avis…</span>
+            <span>{tr("ui.portView.lectureDesAvis")}</span>
           ) : (
             <RateStars
               average={guided.data?.average ?? averages.overall}
@@ -356,7 +357,7 @@ export function PortView({
           <span aria-hidden>
             <Navigation size={18} />
           </span>
-          Y aller
+          {tr("ui.portView.yAller")}
         </a>
       </div>
 
@@ -385,29 +386,29 @@ export function PortView({
 
       <Tabs value={activeTab} onValueChange={setChosenTab} className="port-profile-tabs">
         <TabsList aria-label={`Explorer le port de ${port.name}`} className="port-profile-nav">
-          <TabsTrigger value="live">Horaires</TabsTrigger>
-          <TabsTrigger value="practical">Préparer</TabsTrigger>
+          <TabsTrigger value="live">{tr("ui.portView.horaires")}</TabsTrigger>
+          <TabsTrigger value="practical">{tr("ui.portView.preparer")}</TabsTrigger>
           <TabsTrigger value="community">
-            Avis{" "}
+            {tr("ui.portView.avis")}{" "}
             <span>{reviewsResult.isPending || reviewsResult.isError ? "—" : reviews.length}</span>
           </TabsTrigger>
         </TabsList>
 
         <TabsContent value="live" className="port-tab-content">
-          <section className="pv-section" aria-label="Départs et arrivées">
+          <section className="pv-section" aria-label={tr("ui.portView.departsEtArrivees")}>
             <div className="pv-section__head">
-              <h3>Départs et arrivées</h3>
+              <h3>{tr("ui.portView.departsEtArrivees")}</h3>
               <small>{zoneLabel(timeZone)}</small>
             </div>
             {departuresResult.isPending ? (
               <p role="status" className="pv-empty">
-                Chargement des horaires…
+                {tr("ui.portView.chargementDesHoraires")}
               </p>
             ) : departuresResult.isError ? (
               <div role="alert" className="port-soft-note">
-                <p>Les horaires n’ont pas pu être chargés.</p>
+                <p>{tr("ui.portView.lesHorairesNOntPas")}</p>
                 <Button variant="outline" onClick={() => void departuresResult.refetch()}>
-                  Réessayer
+                  {tr("ui.portView.reessayer")}
                 </Button>
               </div>
             ) : (
@@ -418,13 +419,13 @@ export function PortView({
                   setVisibleCount(8);
                 }}
               >
-                <TabsList aria-label="Départs ou arrivées" className="port-traffic-tabs">
+                <TabsList aria-label={tr("ui.portView.departsOuArrivees")} className="port-traffic-tabs">
                   <TabsTrigger value="departures">
-                    <ArrowUpRight size={15} aria-hidden /> Départs{" "}
+                    <ArrowUpRight size={15} aria-hidden />{tr("ui.portView.departs")}{" "}
                     <span>{traffic.departures.length}</span>
                   </TabsTrigger>
                   <TabsTrigger value="arrivals">
-                    <ArrowDownLeft size={15} aria-hidden /> Arrivées{" "}
+                    <ArrowDownLeft size={15} aria-hidden />{tr("ui.portView.arrivees")}{" "}
                     <span>{traffic.arrivals.length}</span>
                   </TabsTrigger>
                 </TabsList>
@@ -442,7 +443,7 @@ export function PortView({
                               <div>
                                 <time dateTime={time}>{formatDateTime(time, timeZone)}</time>
                                 <strong>
-                                  {scheduleTab === "departures" ? "Vers" : "Depuis"} {place}
+                                  {scheduleTab === "departures" ? tr("ui.portView.vers") : tr("ui.portView.depuis")} {place}
                                 </strong>
                                 {company ? (
                                   <span className="port-movement-company">
@@ -468,15 +469,15 @@ export function PortView({
                       className="mt-2 w-full"
                       onClick={() => setVisibleCount((count) => count + 8)}
                     >
-                      Voir les {Math.min(8, movements.length - visibleCount)} suivants (
-                      {movements.length - visibleCount} restants)
+                      {tr("ui.portView.voirLes")}{Math.min(8, movements.length - visibleCount)}{tr("ui.portView.suivants")}
+                      {movements.length - visibleCount}{tr("ui.portView.restants")}
                     </Button>
                   ) : null}
                   {movements.length ? null : (
                     <p className="pv-empty">
                       {scheduleTab === "departures"
-                        ? "Aucun départ connu à venir depuis ce port."
-                        : "Aucune arrivée connue à venir dans ce port."}
+                        ? tr("ui.portView.aucunDepartConnuAVenir")
+                        : tr("ui.portView.aucuneArriveeConnueAVenir")}
                     </p>
                   )}
                 </TabsContent>
@@ -521,19 +522,19 @@ export function PortView({
         <TabsContent value="practical" className="port-tab-content">
           <section className="pv-section" aria-labelledby={`services-${portId}`}>
             <div className="pv-section__head">
-              <h3 id={`services-${portId}`}>Services sur place</h3>
+              <h3 id={`services-${portId}`}>{tr("ui.portView.servicesSurPlace")}</h3>
             </div>
             {facilities.length ? (
               <FacilityIcons items={facilities} />
             ) : (
-              <p className="pv-empty">Services non renseignés pour ce port.</p>
+              <p className="pv-empty">{tr("ui.portView.servicesNonRenseignesPourCe")}</p>
             )}
           </section>
           <PortPlaces portId={portId} portName={port.name} />
           {port.notes ? (
             <details className="port-practical-details" open>
               <summary>
-                À savoir avant votre passage <ChevronRight size={16} aria-hidden />
+                {tr("ui.portView.aSavoirAvantVotrePassage")}<ChevronRight size={16} aria-hidden />
               </summary>
               <p>{port.notes}</p>
               <SourceNote sourceName={port.info_source} sourceUrl={port.info_source_url} />
@@ -541,7 +542,7 @@ export function PortView({
           ) : null}
           <details className="port-practical-details">
             <summary>
-              Lignes de ce port <span>{portRoutes.length}</span>
+              {tr("ui.portView.lignesDeCePort")}<span>{portRoutes.length}</span>
               <ChevronRight size={16} aria-hidden />
             </summary>
             {portRoutes.length ? (
@@ -555,7 +556,7 @@ export function PortView({
                       <small>
                         {scheduledRoutes.has(route.id)
                           ? formatDuration(route.typical_duration_minutes)
-                          : "pas de traversée programmée"}
+                          : tr("ui.portView.pasDeTraverseeProgrammee")}
                       </small>
                       <ChevronRight size={14} aria-hidden />
                     </button>
@@ -563,12 +564,12 @@ export function PortView({
                 ))}
               </ul>
             ) : (
-              <EmptyNote>Aucune ligne enregistrée.</EmptyNote>
+              <EmptyNote>{tr("ui.portView.aucuneLigneEnregistree")}</EmptyNote>
             )}
           </details>
           <div className="pv-footnote">
             <span>
-              <Clock3 size={14} aria-hidden /> Horaires affichés à l’{zoneLabel(timeZone)}.
+              <Clock3 size={14} aria-hidden />{tr("ui.portView.horairesAffichesAL")}{zoneLabel(timeZone)}.
             </span>
             <ReportButton targetType="port" targetId={portId} />
           </div>
@@ -588,7 +589,7 @@ export function PortView({
             nonce={ratingNonce}
           />
           {reviews.length ? (
-            <h3 className="mt-5 text-sm font-semibold">Anciens avis des voyageurs</h3>
+            <h3 className="mt-5 text-sm font-semibold">{tr("ui.portView.anciensAvisDesVoyageurs")}</h3>
           ) : null}
           {!reviewsResult.isPending && !reviewsResult.isError && reviews.length ? (
             <ul className="pv-reviews">
@@ -632,7 +633,7 @@ export function PortView({
                       <ReportButton
                         targetType="review"
                         targetId={review.id}
-                        label="Signaler cet avis"
+                        label={tr("ui.portView.signalerCetAvis")}
                       />
                     </div>
                   </li>

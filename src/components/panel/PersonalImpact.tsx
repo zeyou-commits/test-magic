@@ -14,6 +14,7 @@ import { portTimeZone } from "@/lib/ferry/time";
 import type { Departure, Selection } from "@/lib/ferry/types";
 import { useVesselAlerts } from "@/lib/ferry/vesselAlerts";
 import { DepartureAlternatives } from "./DepartureAlternatives";
+import { tr } from "@/lib/i18n";
 
 /**
  * Vue personnelle quand MA traversée est touchée (je la suis) : ce qui se passe, ce que je peux
@@ -79,19 +80,19 @@ export function PersonalImpact({
   const portName = (id?: string) => ports.find((port) => port.id === id)?.name ?? "?";
 
   return (
-    <section className="bw-impact" data-tone={reason.tone} aria-label="Ma traversée est touchée">
+    <section className="bw-impact" data-tone={reason.tone} aria-label={tr("ui.personalImpact.maTraverseeEstTouchee")}>
       <p className="bw-impact__title">
         <AlertTriangle size={17} aria-hidden /> {reason.title}
       </p>
       <p className="bw-impact__advice">{advice}</p>
       {company?.phone ? (
         <a className="bw-impact__call" href={`tel:${company.phone.replace(/\s+/g, "")}`}>
-          <Phone size={14} aria-hidden /> Appeler {company.name}
+          <Phone size={14} aria-hidden />{tr("ui.personalImpact.appeler")}{company.name}
         </a>
       ) : null}
       {picks.length ? (
         <>
-          <p className="bw-impact__sub">Autres départs proches</p>
+          <p className="bw-impact__sub">{tr("ui.personalImpact.autresDepartsProches")}</p>
           <ul>
             {picks.map((item) => {
               const route = routes.find((r) => r.id === item.route_id);
@@ -105,8 +106,8 @@ export function PersonalImpact({
                       </strong>
                       <small>
                         {portName(route?.departure_port_id)} → {portName(route?.arrival_port_id)} ·{" "}
-                        {companies.find((c) => c.id === item.company_id)?.name ?? "Compagnie"}
-                        {item.reliability === "to_verify" ? " · horaire estimé" : ""}
+                        {companies.find((c) => c.id === item.company_id)?.name ?? tr("ui.personalImpact.compagnie")}
+                        {item.reliability === "to_verify" ? tr("ui.personalImpact.horaireEstime") : ""}
                       </small>
                     </span>
                     <ChevronRight size={15} aria-hidden />
@@ -116,11 +117,11 @@ export function PersonalImpact({
             })}
           </ul>
           <button type="button" className="bw-impact__more" onClick={() => setMore(!more)}>
-            {more ? "Masquer les autres dates" : "Voir plus de dates"}
+            {more ? tr("ui.personalImpact.masquerLesAutresDates") : tr("ui.personalImpact.voirPlusDeDates")}
           </button>
         </>
       ) : (
-        <p className="bw-impact__sub">Aucun autre départ connu dans les 7 jours autour.</p>
+        <p className="bw-impact__sub">{tr("ui.personalImpact.aucunAutreDepartConnuDans")}</p>
       )}
       {more ? <DepartureAlternatives departure={departure} onSelect={onSelect} always /> : null}
     </section>

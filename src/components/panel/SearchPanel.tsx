@@ -75,6 +75,7 @@ import {
   type TripProfileValue,
 } from "./TripProfile";
 import { readTravelProfile, saveTravelProfile, TRAVEL_PROFILE_EVENT } from "@/lib/ferry/travelProfile";
+import { tr } from "@/lib/i18n";
 
 const ANY = "__any__";
 const PAGE = 4;
@@ -473,13 +474,13 @@ export function SearchPanel({
           <div className="bw-search-welcome">
             <div className="flex items-center justify-between gap-2">
               <h2>
-                On prend <strong className="bw-brand-red">la route du bled</strong> ?
+                {tr("ui.searchPanel.onPrend")}<strong className="bw-brand-red">{tr("ui.searchPanel.laRouteDuBled")}</strong> ?
               </h2>
               <button
                 type="button"
                 onClick={onOpenItinerary}
-                aria-label="Préparer ma route jusqu'au port"
-                title="Route jusqu'au port"
+                aria-label={tr("ui.searchPanel.preparerMaRouteJusquAu")}
+                title={tr("ui.searchPanel.routeJusquAuPort")}
                 className="grid size-9 shrink-0 place-items-center rounded-xl border border-primary/20 bg-white text-primary hover:bg-primary/5"
               >
                 <Route className="size-4" aria-hidden />
@@ -496,7 +497,7 @@ export function SearchPanel({
                 <span className="block truncate text-sm font-bold">
                   {active
                     ? `${portsLabel(filters.departurePortIds)} ${filters.roundTrip ? "⇄" : "→"} ${portsLabel(filters.arrivalPortIds)}`
-                    : "Trouver ma traversée"}
+                    : tr("ui.searchPanel.trouverMaTraversee")}
                 </span>
                 <span className="block truncate text-[11px] text-muted-foreground">
                   {datesLabel} · {summarizePassengers(profile.passengers)}
@@ -506,7 +507,7 @@ export function SearchPanel({
               <span className="bw-search-icon" aria-hidden>
                 <SlidersHorizontal className="size-4" />
               </span>
-              <span className="sr-only">Modifier la recherche</span>
+              <span className="sr-only">{tr("ui.searchPanel.modifierLaRecherche")}</span>
             </button>
             {/* Nouveau visiteur : la valeur de la route du bled, avant de rien demander. */}
             {onOpenItinerary && !trip ? (
@@ -526,8 +527,8 @@ export function SearchPanel({
                   <ListChecks className="size-4" />
                 </span>
                 <span className="min-w-0 flex-1 leading-tight">
-                  <strong>Ma route du bled, étape par étape</strong>
-                  <small>Papiers, port, traversée, arrivée : voyez ce qui vous attend.</small>
+                  <strong>{tr("ui.searchPanel.maRouteDuBledEtape")}</strong>
+                  <small>{tr("ui.searchPanel.papiersPortTraverseeArriveeVoyez")}</small>
                 </span>
                 <ChevronRight className="size-4 shrink-0" aria-hidden />
               </button>
@@ -535,25 +536,25 @@ export function SearchPanel({
           </section>
         ) : null}
         {!editing && (filters.companyId || filters.vesselId) ? (
-          <div className="flex flex-wrap gap-1 border-b px-4 py-2" aria-label="Filtres actifs">
+          <div className="flex flex-wrap gap-1 border-b px-4 py-2" aria-label={tr("ui.searchPanel.filtresActifs")}>
             {filters.companyId && (
               <button
                 type="button"
                 className="rounded-full border bg-secondary px-2 py-1 text-[11px] font-semibold"
-                aria-label="Retirer le filtre compagnie"
+                aria-label={tr("ui.searchPanel.retirerLeFiltreCompagnie")}
                 onClick={() => set({ companyId: null, vesselId: null })}
               >
-                {companies.find((c) => c.id === filters.companyId)?.name ?? "Compagnie"} ×
+                {companies.find((c) => c.id === filters.companyId)?.name ?? tr("ui.searchPanel.compagnie")} ×
               </button>
             )}
             {filters.vesselId && (
               <button
                 type="button"
                 className="rounded-full border bg-secondary px-2 py-1 text-[11px] font-semibold"
-                aria-label="Retirer le filtre navire"
+                aria-label={tr("ui.searchPanel.retirerLeFiltreNavire")}
                 onClick={() => set({ vesselId: null })}
               >
-                {vessels.find((v) => v.id === filters.vesselId)?.name ?? "Navire"} ×
+                {vessels.find((v) => v.id === filters.vesselId)?.name ?? tr("ui.searchPanel.navire")} ×
               </button>
             )}
           </div>
@@ -563,7 +564,7 @@ export function SearchPanel({
           className={`scroll-mt-0 space-y-3 border-b bg-card px-4 pb-4 pt-4 md:bg-white md:px-5 ${editing ? "" : "hidden"}`}
         >
           <div className="flex items-center justify-between gap-2">
-            <span className="text-sm font-bold text-foreground">Trouver ma traversée</span>
+            <span className="text-sm font-bold text-foreground">{tr("ui.searchPanel.trouverMaTraversee")}</span>
             <div className="flex items-center gap-1.5">
               {active ? (
                 <button
@@ -574,13 +575,13 @@ export function SearchPanel({
                   className="inline-flex h-9 items-center gap-1.5 rounded-full border border-border bg-card px-3 text-xs font-semibold text-muted-foreground hover:bg-secondary hover:text-foreground"
                 >
                   <RotateCcw className="size-3.5" aria-hidden />
-                  Réinitialiser
+                  {tr("ui.searchPanel.reinitialiser")}
                 </button>
               ) : null}
               <button
                 type="button"
                 onClick={closeSearch}
-                aria-label="Fermer la recherche"
+                aria-label={tr("ui.searchPanel.fermerLaRecherche")}
                 className="grid size-9 shrink-0 place-items-center rounded-full border border-border bg-card text-foreground hover:bg-secondary"
               >
                 <X className="size-4" aria-hidden />
@@ -591,7 +592,7 @@ export function SearchPanel({
             <div
               className="batogo-tabbar inline-grid grid-cols-2 gap-0.5 !rounded-full !p-0.5"
               role="radiogroup"
-              aria-label="Type de voyage"
+              aria-label={tr("ui.searchPanel.typeDeVoyage")}
             >
               {[true, false].map((round) => (
                 <button
@@ -605,20 +606,20 @@ export function SearchPanel({
                   }
                   className="batogo-tab !min-h-7 !rounded-full px-3 !text-xs"
                 >
-                  {round ? "⇄ Aller-retour" : "→ Aller simple"}
+                  {round ? tr("ui.searchPanel.allerRetour") : tr("ui.searchPanel.allerSimple")}
                 </button>
               ))}
             </div>
             <button
               type="button"
-              title="Inverser le sens"
+              title={tr("ui.searchPanel.inverserLeSens")}
               aria-label={`Inverser le sens : actuellement ${reversed ? "Algérie → Europe" : "Europe → Algérie"}`}
               onClick={() => onFiltersChange(swapDirection(filters))}
               className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-border bg-card px-2.5 py-1.5 text-xs font-semibold text-primary shadow-sm transition hover:bg-primary hover:text-primary-foreground"
             >
               <ArrowLeftRight className="size-3.5" />
               <span className="max-md:hidden">
-                {reversed ? "Algérie → Europe" : "Europe → Algérie"}
+                {reversed ? tr("ui.searchPanel.algerieEurope") : tr("ui.searchPanel.europeAlgerie")}
               </span>
             </button>
           </div>
@@ -627,13 +628,13 @@ export function SearchPanel({
             onOpen={() => setStep(1)}
             summary={`${portsLabel(filters.departurePortIds)} ${filters.roundTrip ? "⇄" : "→"} ${portsLabel(filters.arrivalPortIds)}`}
           >
-            ① Où partez-vous ?
+            {tr("ui.searchPanel.ouPartezVous")}
           </StepLabel>
           <div className={step === 1 ? "grid grid-cols-1 gap-3" : "hidden"}>
             <div className="min-w-0">
               <PortMultiPicker
                 onOpenPort={(id) => onSelect({ type: "port", id })}
-                title="Départ"
+                title={tr("ui.searchPanel.depart")}
                 direction="departure"
                 ports={ports}
                 routes={routes}
@@ -647,7 +648,7 @@ export function SearchPanel({
             <div className="min-w-0">
               <PortMultiPicker
                 onOpenPort={(id) => onSelect({ type: "port", id })}
-                title="Arrivée"
+                title={tr("ui.searchPanel.arrivee")}
                 direction="arrival"
                 ports={ports}
                 routes={routes}
@@ -662,7 +663,7 @@ export function SearchPanel({
 
           <div id="search-step-2" className="scroll-mt-1" />
           <StepLabel open={step === 2} onOpen={() => setStep(2)} summary={datesLabel}>
-            ② Quand partez-vous ?
+            {tr("ui.searchPanel.quandPartezVous")}
           </StepLabel>
           <div className={step === 2 ? "-mt-1" : "hidden"}>
             <TripCalendar
@@ -690,10 +691,10 @@ export function SearchPanel({
                                   className={`flex min-h-12 flex-col items-start justify-center rounded-xl border px-3 py-1.5 text-left transition disabled:opacity-50 ${on ? "border-primary bg-primary/5 ring-2 ring-primary/30" : "border-border bg-card hover:border-primary/60"}`}
                                 >
                                   <span className="text-[11px] font-bold uppercase tracking-wider text-primary">
-                                    {leg === "out" ? "Aller" : "Retour"}
+                                    {leg === "out" ? tr("ui.searchPanel.aller") : tr("ui.searchPanel.retour")}
                                   </span>
                                   <span className="text-sm font-semibold">
-                                    {value ? shortDay(value) : "Choisir une date"}
+                                    {value ? shortDay(value) : tr("ui.searchPanel.choisirUneDate")}
                                   </span>
                                 </button>
                               );
@@ -701,8 +702,7 @@ export function SearchPanel({
                           )}
                         </div>
                         <p className="text-[11px] text-muted-foreground">
-                          Le calendrier s’ouvre à droite, sur la carte : jours de départ, vacances
-                          scolaires et souplesse.
+                          {tr("ui.searchPanel.leCalendrierSOuvreA")}
                         </p>
                       </div>
                     ),
@@ -736,7 +736,7 @@ export function SearchPanel({
             onOpen={() => setStep(3)}
             summary={`${summarizePassengers(profile.passengers)}${profile.vehicle !== "none" ? ` · ${summarizeVehicle(profile)}` : " · Sans véhicule"}`}
           >
-            ③ Qui voyage, avec quel véhicule ?
+            {tr("ui.searchPanel.quiVoyageAvecQuelVehicule")}
           </StepLabel>
           <div className={step === 3 ? "-mt-1 space-y-3" : "hidden"}>
             <div className="rounded-2xl border border-border bg-card p-3 shadow-sm">
@@ -744,7 +744,7 @@ export function SearchPanel({
             </div>
             <div className="rounded-2xl border border-border bg-card p-3 shadow-sm">
               <p className="mb-2 text-[11px] font-bold uppercase tracking-wider text-primary">
-                Véhicule
+                {tr("ui.searchPanel.vehicule")}
               </p>
               <VehicleChips value={profile} onChange={setProfile} />
             </div>
@@ -755,11 +755,11 @@ export function SearchPanel({
             className="rounded-2xl border border-border bg-card p-3 text-xs shadow-sm transition-shadow data-[flash=true]:ring-2 data-[flash=true]:ring-primary/50"
           >
             <p className="mb-2 text-[11px] font-bold uppercase tracking-wider text-primary">
-              Compagnie et navire
+              {tr("ui.searchPanel.compagnieEtNavire")}
             </p>
             <div className="grid grid-cols-2 gap-1.5">
               <FilterSelect
-                label="Compagnie"
+                label={tr("ui.searchPanel.compagnie")}
                 open={companyMenuOpen}
                 onOpenChange={setCompanyMenuOpen}
                 value={filters.companyId}
@@ -773,7 +773,7 @@ export function SearchPanel({
                 }))}
               />
               <FilterSelect
-                label="Navire"
+                label={tr("ui.searchPanel.navire")}
                 value={filters.vesselId}
                 onChange={(value) => set({ vesselId: value })}
                 options={vessels
@@ -799,7 +799,7 @@ export function SearchPanel({
                   }}
                   className="h-11 whitespace-nowrap rounded-xl px-2 text-sm font-semibold text-muted-foreground transition hover:bg-secondary hover:text-foreground"
                 >
-                  ← Retour
+                  {tr("ui.searchPanel.retour2")}
                 </button>
               ) : (
                 <button
@@ -807,7 +807,7 @@ export function SearchPanel({
                   onClick={closeSearch}
                   className="h-11 whitespace-nowrap rounded-xl px-2 text-sm font-semibold text-muted-foreground transition hover:bg-secondary hover:text-foreground"
                 >
-                  ← Fermer
+                  {tr("ui.searchPanel.fermer")}
                 </button>
               )}
               {step === 2 ? (
@@ -816,9 +816,9 @@ export function SearchPanel({
                   type="button"
                   onClick={() => setStep(3)}
                   className="h-11 whitespace-nowrap rounded-xl border border-border px-2.5 text-sm font-semibold text-primary transition hover:bg-secondary"
-                  title="Facultatif : passagers et véhicule, pour un budget plus juste"
+                  title={tr("ui.searchPanel.facultatifPassagersEtVehiculePour")}
                 >
-                  Voyageurs
+                  {tr("ui.searchPanel.voyageurs")}
                 </button>
               ) : null}
               {step === 1 ? (
@@ -830,7 +830,7 @@ export function SearchPanel({
                   }}
                   className="flex h-11 whitespace-nowrap items-center justify-center gap-2 rounded-xl bg-primary px-3 text-sm font-bold text-primary-foreground shadow-md transition hover:opacity-90"
                 >
-                  Suivant : dates →
+                  {tr("ui.searchPanel.suivantDates")}
                 </button>
               ) : (
                 <button
@@ -843,10 +843,10 @@ export function SearchPanel({
                 >
                   <Ship className="size-4" aria-hidden />
                   <span className="md:hidden">
-                    Voir{active && resultCount ? ` (${resultCount})` : ""}
+                    {tr("ui.searchPanel.voir")}{active && resultCount ? ` (${resultCount})` : ""}
                   </span>
                   <span className="max-md:hidden">
-                    Trouver ma traversée{active && resultCount ? ` (${resultCount})` : ""}
+                    {tr("ui.searchPanel.trouverMaTraversee")}{active && resultCount ? ` (${resultCount})` : ""}
                   </span>
                 </button>
               )}
@@ -871,7 +871,7 @@ export function SearchPanel({
             href="/barometre-prix"
             className="inline-block text-xs font-semibold text-primary underline underline-offset-2"
           >
-            Comprendre les prix estimés et quand partir
+            {tr("ui.searchPanel.comprendreLesPrixEstimesEt")}
           </a>
           {isLoading ? (
             <div className="space-y-2" aria-busy="true">
@@ -882,15 +882,15 @@ export function SearchPanel({
           ) : (
             <>
               <label className="flex items-center justify-end gap-2 text-xs font-semibold text-muted-foreground">
-                Trier par
+                {tr("ui.searchPanel.trierPar")}
                 <select
                   value={sortBy}
                   onChange={(event) => setSortBy(event.target.value as SortBy)}
                   className="h-9 rounded-lg border border-input bg-background px-2 text-xs text-foreground"
                 >
-                  <option value="date">Date</option>
-                  <option value="price">Prix estimé</option>
-                  <option value="duration">Durée</option>
+                  <option value="date">{tr("ui.searchPanel.date")}</option>
+                  <option value="price">{tr("ui.searchPanel.prixEstime")}</option>
+                  <option value="duration">{tr("ui.searchPanel.duree")}</option>
                 </select>
               </label>
               {showTrips ? (
@@ -926,13 +926,13 @@ export function SearchPanel({
                     hasPair
                       ? `Aller · ${fromName(filters.departurePortIds)} → ${fromName(filters.arrivalPortIds)}`
                       : filters.departurePortIds.length || filters.arrivalPortIds.length
-                        ? "Traversées"
-                        : "Prochains départs"
+                        ? tr("ui.searchPanel.traversees")
+                        : tr("ui.searchPanel.prochainsDeparts")
                   }
                   subtitle={
                     filters.roundTrip
-                      ? "Allers · ajoutez une date de retour pour comparer les allers-retours"
-                      : "Aller simple · heures locales"
+                      ? tr("ui.searchPanel.allersAjoutezUneDateDe")
+                      : tr("ui.searchPanel.allerSimpleHeuresLocales")
                   }
                   days={outDays}
                   date={filters.date}
@@ -1044,7 +1044,7 @@ function ResultBlock({
         <h2 className="font-display text-base font-bold leading-tight">{title}</h2>
         <div className="flex shrink-0 items-center gap-2">
           <span className="text-[11px] text-muted-foreground">{subtitle}</span>
-          <ShareButtons compact label="Partager cette recherche" />
+          <ShareButtons compact label={tr("ui.searchPanel.partagerCetteRecherche")} />
         </div>
       </div>
       <DayStrip days={days} value={date} onChange={onDate} allLabel="Tous" />
@@ -1056,7 +1056,7 @@ function ResultBlock({
               <ReportButton
                 targetType={reportTarget.type}
                 targetId={reportTarget.id}
-                label="Signaler un horaire manquant"
+                label={tr("ui.searchPanel.signalerUnHoraireManquant")}
                 initialDetails={reportContext}
                 initialReason="missing_info"
               />
@@ -1066,7 +1066,7 @@ function ResultBlock({
                 onClick={onReportMissing}
                 className="rounded-full border bg-card px-3 py-1.5 text-xs font-semibold text-primary hover:bg-secondary"
               >
-                Choisir des ports pour signaler
+                {tr("ui.searchPanel.choisirDesPortsPourSignaler")}
               </button>
             )}
           </div>
@@ -1099,7 +1099,7 @@ function ResultBlock({
               onClick={onReset}
               className="mx-auto mt-3 flex items-center gap-1.5 rounded-full border bg-card px-3 py-1.5 text-xs font-semibold text-foreground hover:bg-secondary"
             >
-              <X className="size-3.5" /> Élargir la recherche
+              <X className="size-3.5" />{tr("ui.searchPanel.elargirLaRecherche")}
             </button>
           ) : null}
         </div>
@@ -1129,7 +1129,7 @@ function ResultBlock({
               onClick={onMore}
               className="w-full rounded-2xl border border-dashed py-3 text-sm font-semibold text-primary transition hover:bg-primary/5"
             >
-              Voir les {total - list.length} autres départs
+              {tr("ui.searchPanel.voirLes")}{total - list.length}{tr("ui.searchPanel.autresDeparts")}
             </button>
           ) : null}
         </div>
@@ -1180,7 +1180,7 @@ function DateButton({
             ? returnValue !== undefined
               ? `${fmtShort(value)} → ${returnValue ? fmtShort(returnValue) : "retour"}`
               : fmtShort(value, true)
-            : "Choisir"}
+            : tr("ui.searchPanel.choisir")}
         </span>
       </span>
     </button>
@@ -1213,7 +1213,7 @@ function FilterSelect({
       </SelectTrigger>
       <SelectContent>
         <SelectItem value={ANY} textValue={label}>
-          {label} : toutes
+          {label}{tr("ui.searchPanel.toutes")}
         </SelectItem>
         {options.map((option) => (
           <SelectItem key={option.value} value={option.value} textValue={option.label}>
@@ -1279,21 +1279,21 @@ function RoundTripSection({
       <div className="space-y-2.5">
         <div className="flex items-baseline justify-between gap-2">
           <h2 className="font-display text-base font-bold leading-tight">
-            Aller-retour par le même port
+            {tr("ui.searchPanel.allerRetourParLeMeme")}
           </h2>
-          <span className="text-[11px] text-muted-foreground">Heures locales des ports</span>
+          <span className="text-[11px] text-muted-foreground">{tr("ui.searchPanel.heuresLocalesDesPorts")}</span>
         </div>
         {samePort.length ? (
           list(sorted(samePort))
         ) : (
           <div className="rounded-2xl border border-dashed p-5 text-center text-sm text-muted-foreground">
-            Aucun aller-retour connu par le même port à ces dates.
+            {tr("ui.searchPanel.aucunAllerRetourConnuPar")}
             {reportTarget && (
               <div className="mt-3">
                 <ReportButton
                   targetType={reportTarget.type}
                   targetId={reportTarget.id}
-                  label="Signaler un horaire manquant"
+                  label={tr("ui.searchPanel.signalerUnHoraireManquant")}
                   initialDetails={reportContext}
                   initialReason="missing_info"
                 />
@@ -1305,7 +1305,7 @@ function RoundTripSection({
       {otherPorts.length ? (
         <details className="rounded-2xl border border-dashed p-3">
           <summary className="cursor-pointer font-display text-sm font-bold">
-            Retour par un autre port ({otherPorts.length})
+            {tr("ui.searchPanel.retourParUnAutrePort")}{otherPorts.length})
           </summary>
           <div className="mt-2.5">{list(sorted(otherPorts))}</div>
         </details>

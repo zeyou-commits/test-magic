@@ -20,6 +20,7 @@ import { SalesAlertForm } from "./SalesAlertForm";
 import { useQuery } from "@tanstack/react-query";
 import { companiesQuery, upcomingDeparturesQuery } from "@/lib/ferry/queries";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { tr } from "@/lib/i18n";
 
 const ZONE_STORAGE_KEY = "batogo:school-zone";
 
@@ -381,7 +382,7 @@ export function TripCalendar({
     <div className="flex flex-col gap-3 border-b border-border/60 px-5 pb-2.5 pr-14 pt-3 md:flex-row md:pr-5 md:pb-3 md:pt-4 md:items-end md:justify-between">
       <div className="min-w-0">
         <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-primary">
-          {field === "out" ? "Date d'aller" : "Date de retour"}
+          {field === "out" ? tr("ui.tripCalendar.dateDAller") : tr("ui.tripCalendar.dateDeRetour")}
           {pairLabel ? (
             <span className="font-medium normal-case tracking-normal text-muted-foreground">
               {" "}
@@ -390,7 +391,7 @@ export function TripCalendar({
           ) : null}
         </p>
         <p className="mt-1 truncate text-lg font-semibold tracking-tight">
-          {date ? long(date) : "Quand partez-vous ?"}
+          {date ? long(date) : tr("ui.tripCalendar.quandPartezVous")}
           {roundTrip ? (
             <span className="text-muted-foreground">
               {" "}
@@ -402,7 +403,7 @@ export function TripCalendar({
       <div
         className="flex shrink-0 items-center gap-1"
         role="group"
-        aria-label="Zones de vacances scolaires"
+        aria-label={tr("ui.tripCalendar.zonesDeVacancesScolaires")}
       >
         <Backpack className="mr-1 size-3.5 text-muted-foreground" aria-hidden />
         {(["A", "B", "C"] as SchoolZone[]).map((item) => {
@@ -429,11 +430,11 @@ export function TripCalendar({
   const bodyBlock = (
     <>
       <div className="flex flex-col items-stretch gap-2 md:flex-row md:items-center">
-        <span className="shrink-0 text-[11px] font-semibold text-muted-foreground">Souplesse</span>
+        <span className="shrink-0 text-[11px] font-semibold text-muted-foreground">{tr("ui.tripCalendar.souplesse")}</span>
         <div
           className="flex flex-1 rounded-full bg-muted/60 p-0.5 md:flex-none"
           role="radiogroup"
-          aria-label="Souplesse sur la date d'aller"
+          aria-label={tr("ui.tripCalendar.souplesseSurLaDateD")}
         >
           {[0, 1, 2, 3].map((value) => (
             <button
@@ -444,7 +445,7 @@ export function TripCalendar({
               onClick={() => onChange({ flexDays: value })}
               className={`h-8 min-w-0 flex-1 whitespace-nowrap rounded-full px-2 text-[11px] font-semibold transition ${flexDays === value ? "bg-primary text-primary-foreground shadow" : "text-muted-foreground hover:text-foreground"}`}
             >
-              {value === 0 ? "Exacte" : `± ${value} j`}
+              {value === 0 ? tr("ui.tripCalendar.exacte") : `± ${value} j`}
             </button>
           ))}
         </div>
@@ -456,7 +457,7 @@ export function TripCalendar({
             {zones.map((z, i) => (
               <span key={z}>
                 {i > 0 ? " · " : ""}
-                <strong className="font-semibold text-foreground">Zone {z}</strong>{" "}
+                <strong className="font-semibold text-foreground">{tr("ui.tripCalendar.zone")}{z}</strong>{" "}
                 {SCHOOL_ZONES[z].cities}
               </span>
             ))}
@@ -465,7 +466,7 @@ export function TripCalendar({
             <div
               className="-mx-5 flex gap-1.5 overflow-x-auto px-5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
               role="group"
-              aria-label="Partir pendant les vacances"
+              aria-label={tr("ui.tripCalendar.partirPendantLesVacances")}
             >
               {dedupedPeriods.map((period) => (
                 <button
@@ -490,7 +491,7 @@ export function TripCalendar({
                     <strong>{focusedPeriod.name} : </strong>
                     {coverage.state === "open"
                       ? `${coverage.dayCount} jour(s) de départ publiés, à partir du ${short(coverage.firstDay!).replace(/\.$/, "")}.`
-                      : "les dates ne sont pas encore ouvertes pour cette période."}
+                      : tr("ui.tripCalendar.lesDatesNeSontPas")}
                     {coverage.pending.length
                       ? ` ${coverage.pending.join(", ")} ${coverage.pending.length > 1 ? "n'ont" : "n'a"} pas encore publié ces dates : c'est normal, les programmes sortent au fil de la saison.`
                       : ""}
@@ -501,7 +502,7 @@ export function TripCalendar({
         </div>
       ) : (
         <p className="text-[10px] text-muted-foreground max-md:hidden">
-          Touchez A, B ou C pour partir pendant les vacances en un geste.
+          {tr("ui.tripCalendar.touchezABOuC")}
         </p>
       )}
 
@@ -597,8 +598,7 @@ export function TripCalendar({
       ) : null}
       {unpublishedPick ? (
         <p className="rounded-xl bg-warning/15 px-3 py-2 text-xs text-warning-foreground">
-          Le {long(unpublishedPick)}, la saison n’est pas encore publiée par les compagnies : les
-          départs apparaîtront dès leur publication.
+          {tr("ui.tripCalendar.le")}{long(unpublishedPick)}{tr("ui.tripCalendar.laSaisonNEstPas")}
         </p>
       ) : null}
       {suggestion ? (
@@ -607,34 +607,33 @@ export function TripCalendar({
           onClick={() => pick(suggestion)}
           className="w-full rounded-xl bg-warning/15 px-3 py-2 text-left text-xs text-warning-foreground"
         >
-          Pas de départ le {long(activeValue!)}. Le plus proche :{" "}
-          <strong>{long(suggestion)}</strong> (cliquez pour le choisir).
+          {tr("ui.tripCalendar.pasDeDepartLe")}{long(activeValue!)}{tr("ui.tripCalendar.lePlusProche")}{" "}
+          <strong>{long(suggestion)}</strong>{tr("ui.tripCalendar.cliquezPourLeChoisir")}
         </button>
       ) : null}
 
       <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-muted-foreground">
         <span className="inline-flex items-center gap-1">
-          <span className="size-1.5 rounded-full bg-primary" aria-hidden /> départ possible
+          <span className="size-1.5 rounded-full bg-primary" aria-hidden />{tr("ui.tripCalendar.departPossible")}
         </span>
         {lastAvailable ? (
           <span className="inline-flex items-center gap-1">
-            <span className="batogo-unpublished-swatch" aria-hidden /> saison pas encore publiée
-            (après le {long(lastAvailable)})
+            <span className="batogo-unpublished-swatch" aria-hidden />{tr("ui.tripCalendar.saisonPasEncorePublieeApres")}{long(lastAvailable)})
           </span>
         ) : null}
         {shownZones.map((z) => (
           <span key={z} className="inline-flex items-center gap-1">
-            <span className={`h-1 w-3 rounded-full ${zoneTone[z]}-dot`} aria-hidden /> zone {z}
+            <span className={`h-1 w-3 rounded-full ${zoneTone[z]}-dot`} aria-hidden />{tr("ui.tripCalendar.zone2")}{z}
           </span>
         ))}
         {stay !== null && stay >= 0 ? (
           <span className="inline-flex items-center gap-1 font-semibold text-foreground">
             <CalendarDays className="size-3.5 text-primary" aria-hidden />
-            {stay} jour{stay > 1 ? "s" : ""} sur place
+            {stay}{tr("ui.tripCalendar.jour")}{stay > 1 ? "s" : ""}{tr("ui.tripCalendar.surPlace")}
           </span>
         ) : null}
         {!pairLabel ? (
-          <span>Choisissez un trajet pour ne voir que ses jours de départ.</span>
+          <span>{tr("ui.tripCalendar.choisissezUnTrajetPourNe")}</span>
         ) : null}
       </div>
     </>
@@ -651,14 +650,14 @@ export function TripCalendar({
           }}
           className="text-xs font-semibold text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
         >
-          Réinitialiser
+          {tr("ui.tripCalendar.reinitialiser")}
         </button>
         <button
           type="button"
           onClick={() => onOpenChange(false)}
           className="h-10 rounded-full bg-primary px-6 text-sm font-semibold text-primary-foreground shadow-lg shadow-primary/25 transition hover:bg-primary/90"
         >
-          Appliquer
+          {tr("ui.tripCalendar.appliquer")}
         </button>
       </div>
     </div>
@@ -668,7 +667,7 @@ export function TripCalendar({
     <div
       className={`grid gap-1.5 ${roundTrip ? "grid-cols-2" : "grid-cols-1"}`}
       role="tablist"
-      aria-label="Date à choisir"
+      aria-label={tr("ui.tripCalendar.dateAChoisir")}
     >
       {(roundTrip ? (["out", "ret"] as CalendarField[]) : (["out"] as CalendarField[])).map((f) => {
         const on = field === f;
@@ -683,7 +682,7 @@ export function TripCalendar({
             onClick={() => onFieldChange(f)}
             className={`flex h-8 min-w-0 items-center gap-1.5 rounded-full border px-3 text-left text-xs transition disabled:opacity-50 ${on ? "border-primary bg-primary/10 text-primary" : "border-border bg-card text-muted-foreground hover:border-primary/50"}`}
           >
-            <span className="shrink-0 font-bold">{f === "out" ? "Aller" : "Retour"}</span>
+            <span className="shrink-0 font-bold">{f === "out" ? tr("ui.tripCalendar.aller") : tr("ui.tripCalendar.retour")}</span>
             <span className={`min-w-0 truncate font-semibold ${value ? "text-foreground" : ""}`}>
               {value ? short(value) : "—"}
             </span>
@@ -700,10 +699,10 @@ export function TripCalendar({
         <div
           className="flex items-center justify-end gap-1"
           role="group"
-          aria-label="Zones de vacances scolaires"
+          aria-label={tr("ui.tripCalendar.zonesDeVacancesScolaires")}
         >
           <span className="mr-auto text-[11px] font-semibold text-muted-foreground">
-            {field === "out" ? "Touchez votre jour de départ" : "Touchez votre jour de retour"}
+            {field === "out" ? tr("ui.tripCalendar.touchezVotreJourDeDepart") : tr("ui.tripCalendar.touchezVotreJourDeRetour")}
           </span>
           <Backpack className="mr-1 size-3.5 text-muted-foreground" aria-hidden />
           {(["A", "B", "C"] as SchoolZone[]).map((item) => {
@@ -743,10 +742,10 @@ export function TripCalendar({
               className="batogo-cal-pop fixed inset-x-0 bottom-0 z-[95] flex h-[92dvh] flex-col rounded-t-3xl border-t border-border/60 bg-background shadow-2xl data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:slide-out-to-bottom data-[state=open]:slide-in-from-bottom"
               onOpenAutoFocus={(event) => event.preventDefault()}
             >
-              <SheetPrimitive.Title className="sr-only">Choisir les dates</SheetPrimitive.Title>
+              <SheetPrimitive.Title className="sr-only">{tr("ui.tripCalendar.choisirLesDates")}</SheetPrimitive.Title>
               <SheetPrimitive.Close
                 className="absolute right-3 top-3 grid size-9 place-items-center rounded-full text-muted-foreground hover:bg-muted"
-                aria-label="Fermer"
+                aria-label={tr("ui.tripCalendar.fermer")}
               >
                 <X className="size-4" />
               </SheetPrimitive.Close>

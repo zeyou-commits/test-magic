@@ -1,6 +1,7 @@
 import { CircleAlert, ExternalLink, Megaphone } from "lucide-react";
 import { useVesselAlert, useVesselAlerts } from "@/lib/ferry/vesselAlerts";
 import { safeExternalUrl } from "./shared";
+import { tr } from "@/lib/i18n";
 
 /** Étiquette à côté du nom d'un navire, partout où il est mentionné. */
 export function VesselAlertTag({ vesselId }: { vesselId: string | null | undefined }) {
@@ -42,9 +43,8 @@ export function LineAlertNotice({
         {touched.map((id) => alerts.get(id)?.short.toLowerCase()).join(", ")}
       </p>
       <p>
-        {count} prochain{count > 1 ? "s" : ""} départ{count > 1 ? "s" : ""} de cette ligne{" "}
-        {count > 1 ? "sont concernés" : "est concerné"}. Vérifiez auprès de la compagnie avant de
-        réserver.
+        {count}{tr("ui.vesselAlert.prochain")}{count > 1 ? "s" : ""}{tr("ui.vesselAlert.depart")}{count > 1 ? "s" : ""}{tr("ui.vesselAlert.deCetteLigne")}{" "}
+        {count > 1 ? tr("ui.vesselAlert.sontConcernes") : tr("ui.vesselAlert.estConcerne")}{tr("ui.vesselAlert.verifiezAupresDeLaCompagnie")}
       </p>
     </div>
   );
@@ -99,14 +99,14 @@ export function VesselAlertBanner({
       {alert.note ? <p>{alert.note}</p> : null}
       <p className="bw-vessel-alert-banner__meta">
         {onDeparture
-          ? "Départ à confirmer auprès de la compagnie"
-          : "Vérifiez votre traversée auprès de la compagnie"}
+          ? tr("ui.vesselAlert.departAConfirmerAupresDe")
+          : tr("ui.vesselAlert.verifiezVotreTraverseeAupresDe")}
         {alert.source ? ` · Source : ${alert.source}` : ""}
         {href ? (
           <>
             {" · "}
             <a href={href} target="_blank" rel="noopener noreferrer">
-              Voir la source <ExternalLink size={11} aria-hidden />
+              {tr("ui.vesselAlert.voirLaSource")}<ExternalLink size={11} aria-hidden />
             </a>
           </>
         ) : null}

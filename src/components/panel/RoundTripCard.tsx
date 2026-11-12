@@ -13,6 +13,7 @@ import { bookingSite, bookingUrl } from "@/lib/ferry/booking";
 import { estimateFare, formatEuro, useFareProfile } from "@/lib/ferry/pricing";
 import { vesselPositionsQuery } from "@/lib/ferry/useLiveShips";
 import { wallTimeInZone } from "@/lib/ferry/time";
+import { tr } from "@/lib/i18n";
 
 const dayFormatter = new Intl.DateTimeFormat("fr-FR", {
   weekday: "short",
@@ -95,7 +96,7 @@ function Leg({
           </span>
           {overnight ? (
             <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 font-semibold text-primary">
-              <Moon className="size-3" aria-hidden /> Nuit
+              <Moon className="size-3" aria-hidden />{tr("ui.roundTripCard.nuit")}
             </span>
           ) : null}
         </div>
@@ -107,7 +108,7 @@ function Leg({
                 <>
                   <span className="text-muted-foreground line-through">{sailing.depTime}</span>
                   <span className="ml-1.5 text-sm font-bold text-success">
-                    {wallTimeInZone(atdAt, sailing.fromZone)} réel
+                    {wallTimeInZone(atdAt, sailing.fromZone)}{tr("ui.roundTripCard.reel")}
                   </span>
                 </>
               ) : (
@@ -154,19 +155,19 @@ function Leg({
           />
           <span className="min-w-0 flex-1 truncate">
             <span className="font-semibold text-foreground">
-              {sailing.company?.name ?? "Compagnie"}
+              {sailing.company?.name ?? tr("ui.roundTripCard.compagnie")}
             </span>
             {sailing.vessel ? ` · ${sailing.vessel.name}` : ""}{" "}
             <VesselAlertTag vesselId={sailing.vessel?.id} />
           </span>
           <span
             className="shrink-0 text-xs font-bold tabular-nums text-success"
-            title="Tarif moyen indicatif"
+            title={tr("ui.roundTripCard.tarifMoyenIndicatif")}
           >
-            {alert ? "À confirmer" : formatEuro(fare)}
+            {alert ? tr("ui.roundTripCard.aConfirmer") : formatEuro(fare)}
           </span>
           <span className="inline-flex shrink-0 items-center gap-0.5 text-[11px] font-semibold text-primary">
-            {expanded ? "Masquer" : "Détails"}
+            {expanded ? tr("ui.roundTripCard.masquer") : tr("ui.roundTripCard.details")}
             <ChevronDown
               className={`size-4 transition-transform duration-300 ${expanded ? "rotate-180" : ""}`}
               aria-hidden
@@ -252,11 +253,11 @@ export function RoundTripCard({
           {trip.mirror ? "" : ` · retour depuis ${trip.back.from.name}`}
         </span>
         <span className="shrink-0 text-[11px] font-semibold text-muted-foreground">
-          {trip.stayDays > 0 ? `${trip.stayDays} j sur place` : "Aller-retour"}
+          {trip.stayDays > 0 ? `${trip.stayDays} j sur place` : tr("ui.roundTripCard.allerRetour")}
         </span>
       </header>
       <Leg
-        label="Aller"
+        label={tr("ui.roundTripCard.aller")}
         tone="out"
         sailing={trip.out}
         atdAt={actualDeparture(trip.out)}
@@ -272,7 +273,7 @@ export function RoundTripCard({
         </span>
       </div>
       <Leg
-        label="Retour"
+        label={tr("ui.roundTripCard.retour")}
         tone="back"
         sailing={trip.back}
         atdAt={actualDeparture(trip.back)}
@@ -284,11 +285,11 @@ export function RoundTripCard({
       />
       <footer className="flex items-center justify-between gap-2 border-t border-border/70 bg-muted/40 px-3.5 py-2">
         <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-          Estimation A/R
+          {tr("ui.roundTripCard.estimationAR")}
         </span>
         {outAlert || backAlert ? (
           <span className="ml-auto text-right text-[11px] font-semibold text-destructive">
-            Départ à confirmer auprès de la compagnie
+            {tr("ui.roundTripCard.departAConfirmerAupresDe")}
           </span>
         ) : (
         <a
@@ -296,11 +297,11 @@ export function RoundTripCard({
           target="_blank"
           rel="noopener noreferrer"
           onClick={() => track("booking_click", bookSite)}
-          title="Tarif moyen indicatif aller + retour"
+          title={tr("ui.roundTripCard.tarifMoyenIndicatifAllerRetour")}
           className="ml-auto inline-flex h-8 shrink-0 items-center gap-1 rounded-full bg-cta px-3 text-xs font-semibold tabular-nums text-cta-foreground shadow-sm transition hover:brightness-110 active:scale-95"
         >
           ≈ {formatEuro(total)} <ArrowUpRight className="size-3.5" aria-hidden />
-          <span className="sr-only">sur {bookSite} (nouvel onglet)</span>
+          <span className="sr-only">{tr("ui.roundTripCard.sur")}{bookSite}{tr("ui.roundTripCard.nouvelOnglet")}</span>
         </a>
         )}
       </footer>

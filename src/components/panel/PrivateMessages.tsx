@@ -19,6 +19,7 @@ import {
   sendDm,
   type DmThread,
 } from "@/lib/ferry/privateMessages";
+import { tr } from "@/lib/i18n";
 
 const MAX = 200;
 const INTROS = ["Bonjour, je peux vous poser une question ?", "Il vous reste de la place ?"];
@@ -49,7 +50,7 @@ export function DmRequest({
   return (
     <div className="bw-dm">
       <header className="bw-dm__head">
-        <button type="button" aria-label="Annuler" onClick={onCancel}>
+        <button type="button" aria-label={tr("ui.privateMessages.annuler")} onClick={onCancel}>
           <ArrowLeft size={18} aria-hidden />
         </button>
         <TravellerAvatar card={card} size={30} mood={false} static />
@@ -57,13 +58,12 @@ export function DmRequest({
       </header>
       <div className="bw-dm__body">
         {met?.here.includes(card.handle) ? (
-          <p className="bw-dm__met">Vous avez déjà voyagé sur le même bateau.</p>
+          <p className="bw-dm__met">{tr("ui.privateMessages.vousAvezDejaVoyageSur")}</p>
         ) : null}
         <p className="bw-dm__rules">
           <Lock size={14} aria-hidden />
           <span>
-            {card.pseudo} doit d'abord accepter. Ensuite, vous aurez chacun 3 messages sur cette
-            traversée. Pas de lien, d'e-mail ni de numéro de téléphone.
+            {card.pseudo}{tr("ui.privateMessages.doitDAbordAccepterEnsuite")}
           </span>
         </p>
         {text ? null : (
@@ -93,13 +93,13 @@ export function DmRequest({
           value={text}
           maxLength={MAX}
           onChange={(event) => setText(event.target.value)}
-          placeholder="Votre présentation"
-          aria-label="Votre présentation"
+          placeholder={tr("ui.privateMessages.votrePresentation")}
+          aria-label={tr("ui.privateMessages.votrePresentation")}
         />
         <button
           type="submit"
           disabled={!text.trim() || send.isPending}
-          aria-label="Envoyer la demande"
+          aria-label={tr("ui.privateMessages.envoyerLaDemande")}
         >
           <Send size={17} aria-hidden />
         </button>
@@ -146,7 +146,7 @@ function Conversation({ thread, onBack }: { thread: DmThread; onBack: () => void
   return (
     <div className="bw-dm">
       <header className="bw-dm__head">
-        <button type="button" aria-label="Retour aux messages" onClick={onBack}>
+        <button type="button" aria-label={tr("ui.privateMessages.retourAuxMessages")} onClick={onBack}>
           <ArrowLeft size={18} aria-hidden />
         </button>
         <TravellerAvatar card={thread.other} size={30} mood={false} />
@@ -182,35 +182,34 @@ function Conversation({ thread, onBack }: { thread: DmThread; onBack: () => void
               : `Signaler cette conversation ? ${thread.other.pseudo} sera bloqué et l'équipe pourra la lire.`}
           </span>
           <button type="button" disabled={stop.isPending} onClick={() => stop.mutate(confirm)}>
-            Oui
+            {tr("ui.privateMessages.oui")}
           </button>
           <button type="button" onClick={() => setConfirm(null)}>
-            Non
+            {tr("ui.privateMessages.non")}
           </button>
         </p>
       ) : null}
       {state === "to-answer" ? (
         <div className="bw-dm__answer">
           <p>
-            {thread.other.pseudo} souhaite vous écrire. Si vous acceptez, vous aurez chacun 3
-            messages.
+            {thread.other.pseudo}{tr("ui.privateMessages.souhaiteVousEcrireSiVous")}
           </p>
           <span>
             <button type="button" disabled={answer.isPending} onClick={() => answer.mutate(true)}>
-              <Check size={16} aria-hidden /> Accepter
+              <Check size={16} aria-hidden />{tr("ui.privateMessages.accepter")}
             </button>
             <button type="button" disabled={answer.isPending} onClick={() => answer.mutate(false)}>
-              <X size={16} aria-hidden /> Refuser
+              <X size={16} aria-hidden />{tr("ui.privateMessages.refuser")}
             </button>
           </span>
         </div>
       ) : state === "waiting" ? (
-        <p className="bw-dm__note">En attente de la réponse de {thread.other.pseudo}.</p>
+        <p className="bw-dm__note">{tr("ui.privateMessages.enAttenteDeLaReponse")}{thread.other.pseudo}.</p>
       ) : state === "closed" ? (
-        <p className="bw-dm__note">Cette conversation est fermée.</p>
+        <p className="bw-dm__note">{tr("ui.privateMessages.cetteConversationEstFermee")}</p>
       ) : state === "used-up" ? (
         <p className="bw-dm__note">
-          {leftLabel(0)}. {thread.other.pseudo} peut encore en envoyer {thread.other_left}.
+          {leftLabel(0)}. {thread.other.pseudo}{tr("ui.privateMessages.peutEncoreEnEnvoyer")}{thread.other_left}.
         </p>
       ) : (
         <>
@@ -226,10 +225,10 @@ function Conversation({ thread, onBack }: { thread: DmThread; onBack: () => void
               value={text}
               maxLength={MAX}
               onChange={(event) => setText(event.target.value)}
-              placeholder="Votre message"
-              aria-label="Votre message"
+              placeholder={tr("ui.privateMessages.votreMessage")}
+              aria-label={tr("ui.privateMessages.votreMessage")}
             />
-            <button type="submit" disabled={!text.trim() || send.isPending} aria-label="Envoyer">
+            <button type="submit" disabled={!text.trim() || send.isPending} aria-label={tr("ui.privateMessages.envoyer")}>
               <Send size={17} aria-hidden />
             </button>
           </form>
@@ -238,10 +237,10 @@ function Conversation({ thread, onBack }: { thread: DmThread; onBack: () => void
       {state === "closed" || confirm ? null : (
         <p className="bw-dm__safety">
           <button type="button" onClick={() => setConfirm("block")}>
-            <Ban size={13} aria-hidden /> Bloquer
+            <Ban size={13} aria-hidden />{tr("ui.privateMessages.bloquer")}
           </button>
           <button type="button" onClick={() => setConfirm("report")}>
-            <Flag size={13} aria-hidden /> Signaler
+            <Flag size={13} aria-hidden />{tr("ui.privateMessages.signaler")}
           </button>
         </p>
       )}
@@ -266,10 +265,10 @@ export function PrivateMessages({
   return (
     <div className="bw-dm">
       <header className="bw-dm__head">
-        <button type="button" aria-label="Retour au salon" onClick={onBack}>
+        <button type="button" aria-label={tr("ui.privateMessages.retourAuSalon")} onClick={onBack}>
           <ArrowLeft size={18} aria-hidden />
         </button>
-        <strong>Messages privés</strong>
+        <strong>{tr("ui.privateMessages.messagesPrives")}</strong>
       </header>
       <div className="bw-dm__body">
         {threads.length ? (
@@ -282,9 +281,9 @@ export function PrivateMessages({
                     <strong>{thread.other.pseudo}</strong>
                     <small>
                       {dmState(thread) === "to-answer" ? (
-                        "Souhaite vous écrire"
+                        tr("ui.privateMessages.souhaiteVousEcrire")
                       ) : dmState(thread) === "waiting" ? (
-                        "En attente de réponse"
+                        tr("ui.privateMessages.enAttenteDeReponse")
                       ) : (
                         <ChatText body={thread.messages.at(-1)?.body ?? thread.intro} size={16} />
                       )}
@@ -298,15 +297,13 @@ export function PrivateMessages({
           </ul>
         ) : (
           <p className="bw-dm__note">
-            Aucun message privé. Dans le salon, touchez le message d'un passager puis « Message
-            privé ».
+            {tr("ui.privateMessages.aucunMessagePriveDansLe")}
           </p>
         )}
         <p className="bw-dm__rules">
           <Lock size={14} aria-hidden />
           <span>
-            Vos messages privés ne sont lus par l'équipe que si l'un de vous les signale. Ils
-            disparaissent 7 jours après la traversée.
+            {tr("ui.privateMessages.vosMessagesPrivesNeSont")}
           </span>
         </p>
       </div>

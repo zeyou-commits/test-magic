@@ -12,6 +12,7 @@ import { useLiveShips } from "@/lib/ferry/useLiveShips";
 import type { Selection } from "@/lib/ferry/types";
 import { enterRoom } from "@/lib/ferry/chat";
 import { chatFeedQuery } from "./LiveRoom";
+import { tr } from "@/lib/i18n";
 
 const DEFAULT_LEAD_MINUTES = 240;
 const CHECK_MS = 30_000;
@@ -122,10 +123,10 @@ export function RoomInvite({ onSelect }: { onSelect: (selection: Selection) => v
             enterRoom("crossing", departureId);
           }}
         >
-          Aller au salon
+          {tr("ui.roomInvite.allerAuSalon")}
         </button>
         <button type="button" className="bw-room-invite__later" onClick={() => setOpen(null)}>
-          Plus tard
+          {tr("ui.roomInvite.plusTard")}
         </button>
       </DialogContent>
     </Dialog>

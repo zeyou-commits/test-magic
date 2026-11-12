@@ -17,6 +17,7 @@ import type { Vessel } from "@/lib/ferry/types";
 import { vesselPhotoQuery } from "@/lib/ferry/vesselPhoto";
 import { fleetOverview } from "@/lib/ferry/vesselFacts";
 import { VesselAlertTag } from "./VesselAlert";
+import { tr } from "@/lib/i18n";
 
 const year = new Date().getFullYear();
 const number = (value: number) => value.toLocaleString("fr-FR");
@@ -78,7 +79,7 @@ export function FleetOverview() {
     { icon: Route, value: number(overview.crossings), label: "traversées à venir" },
   ];
   return (
-    <section className="bw-fleet" aria-label="La flotte en chiffres">
+    <section className="bw-fleet" aria-label={tr("ui.fleetOverview.laFlotteEnChiffres")}>
       <dl className="bw-fleet__tiles">
         {tiles.map((tile) => (
           <div key={tile.label}>
@@ -90,8 +91,8 @@ export function FleetOverview() {
       </dl>
       <div className="bw-fleet__ranking">
         <div className="bw-fleet__head">
-          <h2>Le classement</h2>
-          <div role="group" aria-label="Classer par">
+          <h2>{tr("ui.fleetOverview.leClassement")}</h2>
+          <div role="group" aria-label={tr("ui.fleetOverview.classerPar")}>
             {rankings.map((item) => (
               <button
                 key={item.id}
@@ -161,7 +162,7 @@ export function FleetOverview() {
             );
           })}
         </ol>
-        <p>Capacités générales, pas des places disponibles. Sources indiquées sur chaque fiche.</p>
+        <p>{tr("ui.fleetOverview.capacitesGeneralesPasDesPlaces")}</p>
       </div>
     </section>
   );

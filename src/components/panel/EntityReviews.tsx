@@ -23,6 +23,7 @@ import {
 } from "@/lib/ferry/entityReviews";
 import { PhotoPicker, PhotoStrip } from "@/components/photos/Photos";
 import { photosKey, photosQuery, submitPhoto, type PreparedPhoto } from "@/lib/photos/photos";
+import { tr } from "@/lib/i18n";
 
 /** Photos d'avis : navires et ports seulement (pas les compagnies). */
 const photoKind = (kind: ReviewKind) =>
@@ -63,10 +64,10 @@ export function EntityReviews({
     if (window.sessionStorage.getItem(draftKey)) setWrite(true);
   }, [user, draftKey]);
   return (
-    <section className="bw-entity-reviews" aria-label="Avis des voyageurs">
+    <section className="bw-entity-reviews" aria-label={tr("ui.entityReviews.avisDesVoyageurs")}>
       <div className="bw-entity-reviews__summary">
         {feed.isPending ? (
-          <span>Lecture des avis…</span>
+          <span>{tr("ui.entityReviews.lectureDesAvis")}</span>
         ) : (
           <RateStars
             average={feed.data?.average}
@@ -85,30 +86,30 @@ export function EntityReviews({
       </div>
       {feed.isError ? (
         <p role="alert">
-          Les notes sont indisponibles.{" "}
+          {tr("ui.entityReviews.lesNotesSontIndisponibles")}{" "}
           <button type="button" className="underline" onClick={() => void feed.refetch()}>
-            Réessayer
+            {tr("ui.entityReviews.reessayer")}
           </button>
         </p>
       ) : null}
       {own?.status === "pending" ? (
         <p className="bw-rating-notice" role="status">
-          Votre évaluation attend sa vérification.
-          {own.published_scores ? " Votre précédente note reste publiée." : ""}
+          {tr("ui.entityReviews.votreEvaluationAttendSaVerification")}
+          {own.published_scores ? tr("ui.entityReviews.votrePrecedenteNoteRestePubliee") : ""}
         </p>
       ) : own?.status === "hidden" ? (
         <p className="bw-rating-notice">
-          Votre évaluation n’est pas publiée. Vous pouvez la modifier.
+          {tr("ui.entityReviews.votreEvaluationNEstPas")}
         </p>
       ) : null}
       {write ? (
         user && mine.isPending ? (
-          <p role="status">Chargement de votre évaluation…</p>
+          <p role="status">{tr("ui.entityReviews.chargementDeVotreEvaluation")}</p>
         ) : user && mine.isError ? (
           <p role="alert">
-            Votre note n’a pas pu être chargée.{" "}
+            {tr("ui.entityReviews.votreNoteNAPas")}{" "}
             <button type="button" onClick={() => void mine.refetch()}>
-              Réessayer
+              {tr("ui.entityReviews.reessayer")}
             </button>
           </p>
         ) : (
@@ -127,7 +128,7 @@ export function EntityReviews({
       ) : null}
       {feed.data?.criteria && Object.keys(feed.data.criteria).length ? (
         <details className="bw-rating-detail">
-          <summary>Les 5 critères</summary>
+          <summary>{tr("ui.entityReviews.les5Criteres")}</summary>
           <dl>
             {reviewCriteria[kind].map((c) => {
               const score = feed.data.criteria[c.code];
@@ -137,7 +138,7 @@ export function EntityReviews({
                   <dd>
                     {score
                       ? `${reviewNumber(score.average)}/5 · ${score.count} avis`
-                      : "Pas encore noté"}
+                      : tr("ui.entityReviews.pasEncoreNote")}
                   </dd>
                 </div>
               );
@@ -152,18 +153,18 @@ export function EntityReviews({
               <div>
                 {r.author ? <TravellerAvatar card={r.author} size={28} /> : null}
                 <strong>
-                  {r.author?.pseudo ?? "Voyageur BledWay"} · {reviewNumber(r.score)}/5
+                  {r.author?.pseudo ?? tr("ui.entityReviews.voyageurBledway")} · {reviewNumber(r.score)}/5
                 </strong>
                 <time dateTime={r.date}>{new Date(r.date).toLocaleDateString("fr-FR")}</time>
               </div>
-              <PhotoStrip photos={reviewPhotos?.get(r.id)} label="Photos de cet avis" />
+              <PhotoStrip photos={reviewPhotos?.get(r.id)} label={tr("ui.entityReviews.photosDeCetAvis")} />
               <details>
-                <summary>Voir ses critères</summary>
+                <summary>{tr("ui.entityReviews.voirSesCriteres")}</summary>
                 <dl>
                   {reviewCriteria[kind].map((c) => (
                     <div key={c.code}>
                       <dt>{c.label}</dt>
-                      <dd>{r.scores[c.code] ? `${r.scores[c.code]}/5` : "Non utilisé"}</dd>
+                      <dd>{r.scores[c.code] ? `${r.scores[c.code]}/5` : tr("ui.entityReviews.nonUtilise")}</dd>
                     </div>
                   ))}
                 </dl>
@@ -174,8 +175,7 @@ export function EntityReviews({
       ) : null}
       {feed.data && feed.data.count > feed.data.reviews.length ? (
         <p className="bw-rating-notice">
-          Les 30 dernières évaluations détaillées sont affichées. La moyenne inclut aussi les
-          anciennes notes globales.
+          {tr("ui.entityReviews.les30DernieresEvaluationsDetaillees")}
         </p>
       ) : null}
     </section>
@@ -270,7 +270,7 @@ function RatingForm({
       }}
     >
       <p>
-        Notez ce que vous avez vécu : au moins 3 critères. Choisissez « Non utilisé » pour le reste.
+        {tr("ui.entityReviews.notezCeQueVousAvez")}
       </p>
       {reviewCriteria[kind].map((c) => (
         <fieldset key={c.code} disabled={submit.isPending}>
@@ -290,7 +290,7 @@ function RatingForm({
                   aria-hidden
                   fill={n <= (scores[c.code] ?? 0) ? "currentColor" : "none"}
                 />
-                <span className="sr-only">{n} sur 5</span>
+                <span className="sr-only">{n}{tr("ui.entityReviews.sur5")}</span>
               </label>
             ))}
             <label className="bw-rating-na">
@@ -301,7 +301,7 @@ function RatingForm({
                 checked={scores[c.code] === null}
                 onChange={() => change(c.code, null)}
               />
-              <span>Non utilisé</span>
+              <span>{tr("ui.entityReviews.nonUtilise")}</span>
             </label>
           </div>
         </fieldset>
@@ -323,7 +323,7 @@ function RatingForm({
           href={`/auth?next=${encodeURIComponent(typeof window !== "undefined" ? window.location.pathname + window.location.search : "/")}`}
           onClick={() => window.sessionStorage.setItem(draftKey, JSON.stringify(scores))}
         >
-          Me connecter pour envoyer ma note
+          {tr("ui.entityReviews.meConnecterPourEnvoyerMa")}
         </a>
       ) : (
         <Button
@@ -331,16 +331,16 @@ function RatingForm({
           disabled={score === null || submit.isPending || (photos.length > 0 && !consent)}
         >
           {submit.isPending
-            ? "Envoi…"
+            ? tr("ui.entityReviews.envoi")
             : score !== null
               ? photos.length
                 ? `Envoyer ma note et ${photos.length > 1 ? "ces photos" : "cette photo"}`
                 : `Envoyer ma note · ${reviewNumber(score)}/5`
-              : "Notez au moins 3 critères"}
+              : tr("ui.entityReviews.notezAuMoins3Criteres")}
         </Button>
       )}
       <Button type="button" variant="ghost" onClick={onDone}>
-        Annuler
+        {tr("ui.entityReviews.annuler")}
       </Button>
     </form>
   );

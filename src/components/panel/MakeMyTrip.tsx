@@ -6,6 +6,7 @@ import { useTravelAction } from "@/hooks/useTravelAction";
 import { supabase as typedSupabase } from "@/integrations/supabase/client";
 import { useMyTrip } from "@/lib/ferry/myTrip";
 import type { Selection } from "@/lib/ferry/types";
+import { tr } from "@/lib/i18n";
 
 const supabase = typedSupabase as unknown as SupabaseClient;
 
@@ -55,7 +56,7 @@ export function MakeMyTrip({
         className="bw-make-trip"
         onClick={() => onSelect({ type: "departure", id: trip.departure.id })}
       >
-        <Ship size={14} aria-hidden /> Le navire de votre traversée · <b>Voir ma traversée</b>
+        <Ship size={14} aria-hidden />{tr("ui.makeMyTrip.leNavireDeVotreTraversee")}<b>{tr("ui.makeMyTrip.voirMaTraversee")}</b>
         <ArrowRight size={13} aria-hidden />
       </button>
     ) : null;
@@ -69,8 +70,8 @@ export function MakeMyTrip({
       className="bw-make-trip"
       onClick={() => request({ type: "follow", kind, targetId, label, upgrade: true })}
     >
-      <Ship size={14} aria-hidden /> C’est votre traversée ?{" "}
-      <b>{kind === "vessel" ? "Voir ses traversées" : "En faire ma traversée"}</b>
+      <Ship size={14} aria-hidden />{tr("ui.makeMyTrip.cEstVotreTraversee")}{" "}
+      <b>{kind === "vessel" ? tr("ui.makeMyTrip.voirSesTraversees") : tr("ui.makeMyTrip.enFaireMaTraversee")}</b>
       <ArrowRight size={13} aria-hidden />
     </button>
   );

@@ -6,6 +6,7 @@ import { TravellerAvatar } from "@/components/community/TravellerAvatar";
 import { supabase as typedSupabase } from "@/integrations/supabase/client";
 import type { TravellerCard } from "@/lib/community/travellers";
 import { chatRefusal } from "@/lib/ferry/portPassage";
+import { tr } from "@/lib/i18n";
 
 const supabase = typedSupabase as unknown as SupabaseClient;
 
@@ -19,20 +20,20 @@ export type ChatAuthor = TravellerCard & {
 export function StaffBadge({ author }: { author: ChatAuthor }) {
   if (author.official)
     return (
-      <span className="bw-staff-badge" data-kind="official" title="Message officiel de BledWay">
-        <BadgeCheck size={12} aria-hidden /> Officiel
+      <span className="bw-staff-badge" data-kind="official" title={tr("ui.staffChat.messageOfficielDeBledway")}>
+        <BadgeCheck size={12} aria-hidden />{tr("ui.staffChat.officiel")}
       </span>
     );
   if (author.role === "admin")
     return (
-      <span className="bw-staff-badge" data-kind="admin" title="Membre de l’équipe BledWay">
-        <Shield size={11} aria-hidden /> Équipe BledWay
+      <span className="bw-staff-badge" data-kind="admin" title={tr("ui.staffChat.membreDeLEquipeBledway")}>
+        <Shield size={11} aria-hidden />{tr("ui.staffChat.equipeBledway")}
       </span>
     );
   if (author.role === "moderator")
     return (
-      <span className="bw-staff-badge" data-kind="moderator" title="Modérateur BledWay">
-        <Shield size={11} aria-hidden /> Modérateur
+      <span className="bw-staff-badge" data-kind="moderator" title={tr("ui.staffChat.moderateurBledway")}>
+        <Shield size={11} aria-hidden />{tr("ui.staffChat.moderateur")}
       </span>
     );
   return null;
@@ -87,7 +88,7 @@ export function StaffTools({ id, author }: { id: string; author: ChatAuthor }) {
   return (
     <div className="bw-staff-tools">
       <button type="button" disabled={busy} onClick={() => hide.mutate()}>
-        <EyeOff size={13} aria-hidden /> Masquer
+        <EyeOff size={13} aria-hidden />{tr("ui.staffChat.masquer")}
       </button>
       {sanctionable ? (
         confirm ? (
@@ -96,19 +97,19 @@ export function StaffTools({ id, author }: { id: string; author: ChatAuthor }) {
               ? `${author.pseudo} ne pourra plus écrire pendant 24 h.`
               : `${author.pseudo} est exclu 7 jours et ses messages des dernières 24 h ici sont retirés.`}
             <button type="button" disabled={busy} onClick={() => sanction.mutate(confirm)}>
-              Confirmer
+              {tr("ui.staffChat.confirmer")}
             </button>
             <button type="button" onClick={() => setConfirm(null)}>
-              Annuler
+              {tr("ui.staffChat.annuler")}
             </button>
           </span>
         ) : (
           <>
             <button type="button" disabled={busy} onClick={() => setConfirm(1)}>
-              <VolumeX size={13} aria-hidden /> Muet 24 h
+              <VolumeX size={13} aria-hidden />{tr("ui.staffChat.muet24H")}
             </button>
             <button type="button" disabled={busy} onClick={() => setConfirm(7)}>
-              <UserX size={13} aria-hidden /> Exclure 7 j
+              <UserX size={13} aria-hidden />{tr("ui.staffChat.exclure7J")}
             </button>
           </>
         )

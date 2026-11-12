@@ -49,6 +49,7 @@ import { portTimeZone } from "@/lib/ferry/time";
 import type { Selection } from "@/lib/ferry/types";
 import { AlertIcon } from "./TravelCommunity";
 import { SignalAvatars } from "./SignalAvatars";
+import { tr } from "@/lib/i18n";
 
 /** Survol d'une info : la page carte met en évidence le trajet ou le port concerné. */
 export const FLASH_PREVIEW_EVENT = "bledway:flash-preview";
@@ -322,7 +323,7 @@ export function FlashFeed({
                     {place ? ` · ${place}` : ""} · {relativeAge(card.at)}
                   </small>
                 </span>
-                {isNew ? <span className="bw-flash-new" aria-label="Nouveau" /> : null}
+                {isNew ? <span className="bw-flash-new" aria-label={tr("ui.flashFeed.nouveau")} /> : null}
                 <ChevronDown size={16} aria-hidden className="bw-flash-row__chevron" />
               </button>
               {isOpen ? (
@@ -340,7 +341,7 @@ export function FlashFeed({
       </ul>
       {focused && others > 0 ? (
         <button type="button" className="bw-flash-more" onClick={() => setShowAll(true)}>
-          Voir les {others} autre{others > 1 ? "s" : ""} info{others > 1 ? "s" : ""}
+          {tr("ui.flashFeed.voirLes")}{others}{tr("ui.flashFeed.autre")}{others > 1 ? "s" : ""}{tr("ui.flashFeed.info")}{others > 1 ? "s" : ""}
         </button>
       ) : null}
     </section>
@@ -367,7 +368,7 @@ function FlashDetail({
         <div className="bw-flash-footer">
           <span className="bw-flash-crowd">
             <SignalAvatars count={1 + alert.confirmations} seed={alert.id} />
-            {1 + alert.confirmations} voyageur{alert.confirmations ? "s" : ""}
+            {1 + alert.confirmations}{tr("ui.flashFeed.voyageur")}{alert.confirmations ? "s" : ""}
           </span>
           {onSelect ? (
             <span className="bw-flash-actions">
@@ -377,7 +378,7 @@ function FlashDetail({
                   onSelect({ type: alert.target_kind, id: alert.target_id } as Selection)
                 }
               >
-                Confirmer sur place <ArrowRight size={14} aria-hidden />
+                {tr("ui.flashFeed.confirmerSurPlace")}<ArrowRight size={14} aria-hidden />
               </button>
             </span>
           ) : null}
@@ -400,19 +401,19 @@ function FlashDetail({
       {item.summary ? <p>{item.summary}</p> : null}
       {chip ? <span className="bw-flash-chip">{chip}</span> : null}
       {routeId && !hasSailings ? (
-        <p className="bw-flash-note">Aucune traversée programmée pour le moment.</p>
+        <p className="bw-flash-note">{tr("ui.flashFeed.aucuneTraverseeProgrammeePourLe")}</p>
       ) : null}
       <div className="bw-flash-footer">
         {item.origin === "media" ? (
-          <small>Information relayée · vérifiez auprès de la compagnie</small>
+          <small>{tr("ui.flashFeed.informationRelayeeVerifiezAupresDe")}</small>
         ) : (
           <span />
         )}
         <span className="bw-flash-actions">
           {href ? (
             <a href={href} target="_blank" rel="noopener noreferrer">
-              Lire à la source <ArrowUpRight size={14} aria-hidden />
-              <span className="sr-only"> (nouvel onglet)</span>
+              {tr("ui.flashFeed.lireALaSource")}<ArrowUpRight size={14} aria-hidden />
+              <span className="sr-only">{tr("ui.flashFeed.nouvelOnglet")}</span>
             </a>
           ) : null}
           {item.kind !== "info" ? (
@@ -424,19 +425,19 @@ function FlashDetail({
           ) : null}
           {item.kind !== "info" && item.vessel_id ? null : onSelect && item.vessel_id ? (
             <button type="button" onClick={() => onSelect({ type: "vessel", id: item.vessel_id! })}>
-              Voir le navire <ArrowRight size={14} aria-hidden />
+              {tr("ui.flashFeed.voirLeNavire")}<ArrowRight size={14} aria-hidden />
             </button>
           ) : onSelect && departureId && departure ? (
             <button type="button" onClick={() => onSelect({ type: "departure", id: departureId })}>
-              Voir la traversée <ArrowRight size={14} aria-hidden />
+              {tr("ui.flashFeed.voirLaTraversee")}<ArrowRight size={14} aria-hidden />
             </button>
           ) : onSelect && routeId && hasSailings ? (
             <button type="button" onClick={() => onSelect({ type: "route", id: routeId })}>
-              Voir les départs <ArrowRight size={14} aria-hidden />
+              {tr("ui.flashFeed.voirLesDeparts")}<ArrowRight size={14} aria-hidden />
             </button>
           ) : onSelect && portId && portId !== currentPortId ? (
             <button type="button" onClick={() => onSelect({ type: "port", id: portId })}>
-              Voir le port <ArrowRight size={14} aria-hidden />
+              {tr("ui.flashFeed.voirLePort")}<ArrowRight size={14} aria-hidden />
             </button>
           ) : null}
         </span>
@@ -465,12 +466,12 @@ function AlertActions({
     <>
       {vesselId && onSelect ? (
         <button type="button" onClick={() => onSelect({ type: "vessel", id: vesselId })}>
-          Voir les traversées <ArrowRight size={14} aria-hidden />
+          {tr("ui.flashFeed.voirLesTraversees")}<ArrowRight size={14} aria-hidden />
         </button>
       ) : null}
       {vesselId && mine && onSelect ? (
         <button type="button" onClick={() => onSelect({ type: "departure", id: mine.departure.id })}>
-          Voir ma traversée
+          {tr("ui.flashFeed.voirMaTraversee")}
         </button>
       ) : vesselId ? (
         <button
@@ -485,7 +486,7 @@ function AlertActions({
             })
           }
         >
-          Je voyage sur ce navire
+          {tr("ui.flashFeed.jeVoyageSurCeNavire")}
         </button>
       ) : null}
       <button
@@ -497,10 +498,10 @@ function AlertActions({
           })
         }
       >
-        <Share2 size={13} aria-hidden /> {copied ? "Lien copié" : "Partager"}
+        <Share2 size={13} aria-hidden /> {copied ? tr("ui.flashFeed.lienCopie") : tr("ui.flashFeed.partager")}
       </button>
       <button type="button" onClick={() => setFlashIgnored([card.key], !ignored)}>
-        <BellOff size={13} aria-hidden /> {ignored ? "Ne plus ignorer" : "Ignorer"}
+        <BellOff size={13} aria-hidden /> {ignored ? tr("ui.flashFeed.nePlusIgnorer") : tr("ui.flashFeed.ignorer")}
       </button>
     </>
   );

@@ -49,6 +49,7 @@ import {
 import { OptionIcon, SituationBadge } from "@/components/panel/SituationIcon";
 import { PhotoPicker } from "@/components/photos/Photos";
 import { photosKey, submitPhoto, type PreparedPhoto } from "@/lib/photos/photos";
+import { tr } from "@/lib/i18n";
 
 // Suivis du compte (table bw_follows), absente des types générés.
 const supabase = typedSupabase as unknown as SupabaseClient;
@@ -576,19 +577,19 @@ export function QuickReport({
         <span aria-hidden>
           <Check size={30} />
         </span>
-        <strong>{sentForReview ? "Merci, l’équipe va vérifier" : "Merci, c’est partagé !"}</strong>
+        <strong>{sentForReview ? tr("ui.quickReport.merciLEquipeVaVerifier") : tr("ui.quickReport.merciCEstPartage")}</strong>
         {sentOnSite ? (
           <span className="bw-onsite-chip">
-            <MapPin size={13} aria-hidden /> Sur place
+            <MapPin size={13} aria-hidden />{tr("ui.quickReport.surPlace")}
           </span>
         ) : null}
         <p>
           {sentByStaff
-            ? "Publié par l’équipe et marqué validé, sans contrôle de position."
+            ? tr("ui.quickReport.publieParLEquipeEt")
             : sentWithoutPosition
-              ? "Votre position n’a pas pu être obtenue : votre signalement est transmis à l’équipe BledWay, qui le vérifie avant de le publier. Merci pour votre aide !"
+              ? tr("ui.quickReport.votrePositionNAPas")
               : sentForReview
-                ? "L’horaire ou la position connue ne correspond pas à votre observation. Votre signalement est transmis à l’équipe, sans publication automatique."
+                ? tr("ui.quickReport.lHoraireOuLaPosition")
                 : `${draft.category ? `Visible environ ${lifetimeLabel(draft.category)}. ` : ""}${
                     impact
                       ? "Il apparaîtra sur la carte dès qu’un autre voyageur le confirme."
@@ -597,7 +598,7 @@ export function QuickReport({
         </p>
         {photoResult ? <p className="bw-report-photo-note">{photoResult}</p> : null}
         <button type="button" className="bw-report-send" onClick={() => setOpen(false)}>
-          Fermer
+          {tr("ui.quickReport.fermer")}
         </button>
       </div>
     );
@@ -613,7 +614,7 @@ export function QuickReport({
         ) : null}
         {groups}
         <p className="bw-report-note">
-          Votre nom n’est jamais affiché. {user ? "" : "Une connexion sera demandée pour envoyer."}
+          {tr("ui.quickReport.votreNomNEstJamais")}{user ? "" : tr("ui.quickReport.uneConnexionSeraDemandeePour")}
         </p>
       </div>
     );
@@ -630,7 +631,7 @@ export function QuickReport({
           <button
             type="button"
             className="bw-report-back"
-            aria-label="Changer de situation"
+            aria-label={tr("ui.quickReport.changerDeSituation")}
             onClick={() => setStep("pick")}
           >
             <ArrowLeft size={18} aria-hidden />
@@ -642,10 +643,10 @@ export function QuickReport({
         <fieldset className="bw-report-field" disabled={mutation.isPending}>
           <legend>
             {situation.where === "port"
-              ? "Où êtes-vous ?"
+              ? tr("ui.quickReport.ouEtesVous")
               : crossingMode
-                ? "Quelle traversée ?"
-                : "Quel navire ?"}
+                ? tr("ui.quickReport.quelleTraversee")
+                : tr("ui.quickReport.quelNavire")}
           </legend>
           {situation.where === "port" || crossingMode ? (
             <div className="bw-report-where-row">
@@ -658,10 +659,10 @@ export function QuickReport({
                     ...(crossingMode ? { departureId: null, vesselId: null } : {}),
                   })
                 }
-                aria-label={crossingMode ? "Port de départ" : "Port"}
+                aria-label={crossingMode ? tr("ui.quickReport.portDeDepart") : tr("ui.quickReport.port")}
               >
                 <option value="">
-                  {crossingMode ? "Choisir le port de départ…" : "Choisir le port…"}
+                  {crossingMode ? tr("ui.quickReport.choisirLePortDeDepart") : tr("ui.quickReport.choisirLePort")}
                 </option>
                 {[...ports]
                   .sort((a, b) => a.name.localeCompare(b.name, "fr"))
@@ -673,7 +674,7 @@ export function QuickReport({
               </select>
               <button type="button" onClick={() => void locate()} disabled={locating === "busy"}>
                 <LocateFixed size={16} aria-hidden />
-                {locating === "busy" ? "Recherche…" : "Me localiser"}
+                {locating === "busy" ? tr("ui.quickReport.recherche") : tr("ui.quickReport.meLocaliser")}
               </button>
             </div>
           ) : (
@@ -687,9 +688,9 @@ export function QuickReport({
                   departureId: ship?.departureId ?? null,
                 });
               }}
-              aria-label="Bateau"
+              aria-label={tr("ui.quickReport.bateau")}
             >
-              <option value="">Choisir le navire…</option>
+              <option value="">{tr("ui.quickReport.choisirLeNavire")}</option>
               {draft.portId ? (
                 <optgroup label={`À quai à ${portName(draft.portId) ?? "ce port"}`}>
                   {vessels
@@ -701,14 +702,14 @@ export function QuickReport({
                     ))}
                 </optgroup>
               ) : null}
-              <optgroup label="Tous les bateaux">
+              <optgroup label={tr("ui.quickReport.tousLesBateaux")}>
                 {[...vessels]
                   .sort((a, b) => a.name.localeCompare(b.name, "fr"))
                   .map((s) => (
                     <option key={s.vesselId} value={s.vesselId!}>
                       {s.name} ·{" "}
                       {s.state === "sea"
-                        ? "en mer"
+                        ? tr("ui.quickReport.enMer")
                         : `à quai${s.portId ? ` à ${portName(s.portId) ?? ""}` : ""}`}
                     </option>
                   ))}
@@ -718,9 +719,9 @@ export function QuickReport({
           {crossingMode && draft.portId ? (
             <div className="bw-report-crossings">
               {crossingsResult.isLoading ? (
-                <small>Recherche des traversées…</small>
+                <small>{tr("ui.quickReport.rechercheDesTraversees")}</small>
               ) : crossings.length ? (
-                <div role="radiogroup" aria-label="Traversées au départ de ce port">
+                <div role="radiogroup" aria-label={tr("ui.quickReport.traverseesAuDepartDeCe")}>
                   {crossings.map((crossing) => {
                     const route = routes.find((item) => item.id === crossing.route_id);
                     const vessel = allVessels.find((item) => item.id === crossing.vessel_id);
@@ -745,8 +746,8 @@ export function QuickReport({
                           {formatTime(crossing.departure_at)}
                         </strong>
                         <span>
-                          → {portName(route?.arrival_port_id ?? null) ?? "Destination"} ·{" "}
-                          {vessel?.name ?? "navire pas encore annoncé"}
+                          → {portName(route?.arrival_port_id ?? null) ?? tr("ui.quickReport.destination")} ·{" "}
+                          {vessel?.name ?? tr("ui.quickReport.navirePasEncoreAnnonce")}
                         </span>
                       </button>
                     );
@@ -755,7 +756,7 @@ export function QuickReport({
               ) : (
                 <small>
                   {wide
-                    ? "Aucune traversée programmée au départ de ce port."
+                    ? tr("ui.quickReport.aucuneTraverseeProgrammeeAuDepart")
                     : `Aucune traversée programmée au départ de ce port dans les ${REPORT_WINDOW_DAYS} prochains jours.`}
                 </small>
               )}
@@ -780,23 +781,21 @@ export function QuickReport({
             <small>{farNote}</small>
           ) : locating === "denied" ? (
             <small>
-              Position indisponible : choisissez le lieu dans la liste. Votre signalement sera
-              transmis à l’équipe BledWay, qui le vérifie avant de le publier.
+              {tr("ui.quickReport.positionIndisponibleChoisissezLeLieu")}
             </small>
           ) : null}
         </fieldset>
 
         {situation.where === "vessel" && draft.vesselId && !phaseAllowed(draft.category) ? (
           <p role="status" className="bw-report-note">
-            Cette observation ne correspond pas à la phase affichée. Vous pouvez l’envoyer pour
-            vérification par l’équipe.
+            {tr("ui.quickReport.cetteObservationNeCorrespondPas")}
           </p>
         ) : null}
 
         {options.length ? (
           <fieldset className="bw-report-field" disabled={mutation.isPending}>
             <legend>
-              {situation.question} {situation.required ? null : <span>facultatif</span>}
+              {situation.question} {situation.required ? null : <span>{tr("ui.quickReport.facultatif")}</span>}
             </legend>
             <div className="bw-report-options">
               {options.map((option) => {
@@ -844,7 +843,7 @@ export function QuickReport({
             </fieldset>
             {draft.service ? (
               <fieldset className="bw-report-field" disabled={mutation.isPending}>
-                <legend>En ce moment</legend>
+                <legend>{tr("ui.quickReport.enCeMoment")}</legend>
                 <div className="bw-report-options">
                   {(["open", "closed"] as const).map((state) => {
                     const item = services.find((service) => service.code === draft.service);
@@ -873,8 +872,7 @@ export function QuickReport({
         {impact ? (
           <p className="bw-report-impact" role="note">
             <MapPin size={15} aria-hidden />
-            Signalement important : il faut être sur place, localisation activée. Il s’affiche sur
-            la carte quand un second voyageur le confirme.
+            {tr("ui.quickReport.signalementImportantIlFautEtre")}
           </p>
         ) : null}
         {situation.where === "port" && user ? (
@@ -898,29 +896,29 @@ export function QuickReport({
           disabled={!ready || mutation.isPending || (photos.length > 0 && !photoConsent)}
         >
           {finding
-            ? "Recherche de votre position…"
+            ? tr("ui.quickReport.rechercheDeVotrePosition")
             : mutation.isPending
-              ? "Envoi…"
+              ? tr("ui.quickReport.envoi")
               : user
                 ? photos.length
-                  ? "Envoyer avec cette photo"
-                  : "Envoyer"
-                : "Se connecter et envoyer"}
+                  ? tr("ui.quickReport.envoyerAvecCettePhoto")
+                  : tr("ui.quickReport.envoyer")
+                : tr("ui.quickReport.seConnecterEtEnvoyer")}
         </button>
         <p className="bw-report-note">
           {staff
-            ? "Équipe BledWay : pas de position demandée, le signalement est publié et marqué validé."
+            ? tr("ui.quickReport.equipeBledwayPasDePosition")
             : situation.where === "port"
-              ? "Au port, il faut être sur place, à moins de 3 km, localisation activée. Sans position, le signalement est vérifié par l’équipe avant publication. Votre position n’est pas enregistrée."
-              : "Il faut être près du bateau ou à son port, localisation activée. Sans position, le signalement est vérifié par l’équipe avant publication. Votre position n’est pas enregistrée."}
+              ? tr("ui.quickReport.auPortIlFautEtre")
+              : tr("ui.quickReport.ilFautEtrePresDu")}
         </p>
       </form>
     );
 
   const trigger = (
-    <button type="button" className="bw-report-fab" aria-label="Signaler une situation">
+    <button type="button" className="bw-report-fab" aria-label={tr("ui.quickReport.signalerUneSituation")}>
       <Megaphone size={20} aria-hidden />
-      <span>Signaler</span>
+      <span>{tr("ui.quickReport.signaler")}</span>
     </button>
   );
   const title = step === "done" ? "Signalement envoyé" : "Que voyez-vous ?";
@@ -936,7 +934,7 @@ export function QuickReport({
             type="button"
             className="bw-report-fab bw-report-fab--mobile"
             aria-label={
-              nearPort ? `Signaler une situation à ${nearPort}` : "Signaler une situation"
+              nearPort ? `Signaler une situation à ${nearPort}` : tr("ui.quickReport.signalerUneSituation")
             }
             data-near={nearPort ? true : undefined}
             onClick={() => start()}
@@ -948,7 +946,7 @@ export function QuickReport({
               <SheetHeader className="text-left">
                 <SheetTitle>{title}</SheetTitle>
                 <SheetDescription className="sr-only">
-                  Signaler une situation au port ou à bord, visible par les autres voyageurs.
+                  {tr("ui.quickReport.signalerUneSituationAuPort")}
                 </SheetDescription>
               </SheetHeader>
               {body}
@@ -967,7 +965,7 @@ export function QuickReport({
           <PopoverContent side="left" align="start" sideOffset={10} className="bw-report-popover">
             <div className="bw-report-popover__head">
               <strong>{title}</strong>
-              <button type="button" aria-label="Fermer" onClick={() => setOpen(false)}>
+              <button type="button" aria-label={tr("ui.quickReport.fermer")} onClick={() => setOpen(false)}>
                 <X size={16} aria-hidden />
               </button>
             </div>

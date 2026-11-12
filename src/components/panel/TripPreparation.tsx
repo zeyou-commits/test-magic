@@ -21,6 +21,7 @@ import {
   type TripDirection,
   type Preparation,
 } from "@/lib/ferry/preparation";
+import { tr } from "@/lib/i18n";
 
 function openRoute() {
   window.sessionStorage.setItem("bledway:open-home-action", "itinerary");
@@ -100,10 +101,10 @@ export function TripPreparation({
     .map(({ label }) => label.replace(/^(Avec des?|Avec un|En) /, ""))
     .join(" · ");
   return (
-    <section className="bw-prep" aria-label="Préparer ma traversée">
+    <section className="bw-prep" aria-label={tr("ui.tripPreparation.preparerMaTraversee")}>
       <header className="bw-prep__head">
         <h3>
-          <ClipboardCheck size={17} aria-hidden /> {direction === "return" ? "Mon retour" : "Mon parcours"}
+          <ClipboardCheck size={17} aria-hidden /> {direction === "return" ? tr("ui.tripPreparation.monRetour") : tr("ui.tripPreparation.monParcours")}
         </h3>
         <strong>
           {progress.done}/{progress.total}
@@ -115,23 +116,23 @@ export function TripPreparation({
 
       {nextItem ? (
         <div className="bw-prep__next">
-          <small>Prochaine étape</small>
+          <small>{tr("ui.tripPreparation.prochaineEtape")}</small>
           <strong>{nextItem.label}</strong>
           {nextItem.tip ? <p className="bw-prep__tip">{nextItem.tip}</p> : null}
           <div>
             <button type="button" onClick={() => toggle(nextItem)}>
-              <Check size={14} aria-hidden /> C’est fait
+              <Check size={14} aria-hidden />{tr("ui.tripPreparation.cEstFait")}
             </button>
             <ItemLink item={nextItem} departureId={departureId} />
           </div>
         </div>
       ) : (
         <p className="bw-prep__next" data-complete>
-          <PartyPopper size={18} aria-hidden /> {direction === "return" ? "Tout est prêt. Bon retour !" : "Tout est prêt. Bonne traversée !"}
+          <PartyPopper size={18} aria-hidden /> {direction === "return" ? tr("ui.tripPreparation.toutEstPretBonRetour") : tr("ui.tripPreparation.toutEstPretBonneTraversee")}
         </p>
       )}
 
-      <div className="bw-prep__steps" role="tablist" aria-label="Étapes">
+      <div className="bw-prep__steps" role="tablist" aria-label={tr("ui.tripPreparation.etapes")}>
         {steps.map((phase, index) => (
           <button
             key={phase.id}
@@ -155,8 +156,7 @@ export function TripPreparation({
           <p className="bw-prep__when">{active.when}</p>
           {active.id === "eve" && seaPeak != null && seaPeak >= 1.25 ? (
             <p className="bw-prep__sea" role="note">
-              <SeaIcon peak={seaPeak} size={20} /> {seaLevel(seaPeak).label} prévue : si vous êtes sensible au
-              mal de mer, prévoyez de quoi vous soulager.
+              <SeaIcon peak={seaPeak} size={20} /> {seaLevel(seaPeak).label}{tr("ui.tripPreparation.prevueSiVousEtesSensible")}
             </p>
           ) : null}
           <ul className="bw-prep__list">
@@ -185,10 +185,10 @@ export function TripPreparation({
 
       <details className="bw-prep__trip">
         <summary>
-          <span>Mon voyage : {summary || "à pied, sans cabine"}</span>
+          <span>{tr("ui.tripPreparation.monVoyage")}{summary || tr("ui.tripPreparation.aPiedSansCabine")}</span>
           <ChevronDown size={15} aria-hidden />
         </summary>
-        <div role="group" aria-label="Mon voyage">
+        <div role="group" aria-label={tr("ui.tripPreparation.monVoyage2")}>
           {profileLabels.map(({ key, label }) => (
             <button
               key={key}
@@ -204,7 +204,7 @@ export function TripPreparation({
         </div>
       </details>
       <p className="bw-prep__note">
-        Un aide-mémoire : les règles officielles et votre billet restent la référence.
+        {tr("ui.tripPreparation.unAideMemoireLesRegles")}
       </p>
     </section>
   );

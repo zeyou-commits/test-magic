@@ -20,11 +20,11 @@ const escape = (value: string) =>
 
 function welcomeHtml(name: string) {
   const hello = name ? `Salam ${escape(name)} !` : "Salam et bienvenue !";
-  const step = (n: number, title: string, text: string) => `
+  const step = (n: number, title: string, text: string, href?: string, label?: string) => `
     <tr><td style="padding:10px 0;vertical-align:top;width:34px">
       <div style="width:26px;height:26px;border-radius:13px;background:#0e6b3b;color:#fff;font:700 14px/26px Arial,sans-serif;text-align:center">${n}</div>
     </td><td style="padding:10px 0;font:15px/1.5 Arial,sans-serif;color:#1f2a37">
-      <b>${title}</b><br/>${text}
+      <b>${title}</b><br/>${text}${href ? `<br/><a href="${SITE}${href}" style="color:#0e6b3b;font-weight:700">${label} →</a>` : ""}
     </td></tr>`;
   return `<!doctype html><html lang="fr"><body style="margin:0;background:#f4f1ea">
   <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f4f1ea;padding:24px 12px">
@@ -38,17 +38,21 @@ function welcomeHtml(name: string) {
       <tr><td style="padding:26px 24px 8px">
         <h1 style="margin:0 0 10px;font:800 24px/1.25 Arial,sans-serif;color:#0d3b4f">${hello}</h1>
         <p style="margin:0;font:15px/1.6 Arial,sans-serif;color:#1f2a37">
-          Votre compte BledWay est prêt. Ferries, ports, salons de voyageurs : tout ce qu’il faut pour
-          traverser entre l’Europe et l’Algérie sans mauvaise surprise. Voici les 3 réflexes à prendre :
+          Votre compte BledWay est prêt. Du choix de votre ferry jusqu’à l’arrivée au port, voici comment
+          BledWay vous accompagne pour traverser la Méditerranée sans mauvaise surprise :
         </p>
         <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-top:12px">
-          ${step(1, "Suivez votre traversée", "Touchez le cœur sur votre traversée : retards, reports et changements de navire vous arrivent directement.")}
-          ${step(2, "Activez les notifications", "Sur votre téléphone, acceptez les notifications de BledWay pour être prévenu même l’application fermée.")}
-          ${step(3, "Rejoignez le salon de votre bateau", "Échangez avec les autres passagers : la file au port, l’ambiance à bord, l’état de la mer.")}
+          ${step(1, "Avant de partir : trouvez et réservez", "Comparez les départs et les prix indicatifs de chaque compagnie, puis réservez directement chez elle depuis BledWay.", "/horaires", "Voir les départs")}
+          ${step(2, "Une fois réservé : suivez et préparez", "Touchez le cœur sur votre traversée et acceptez les notifications : retards, reports et changements de navire vous arrivent directement. Cochez au fur et à mesure vos papiers, la voiture et les bagages.")}
+          ${step(3, "Le jour J : signalez", "File au port, attente à l’embarquement, retard au départ : partagez en un geste ce que vous voyez sur place, et profitez de ce que signalent les autres voyageurs.")}
+          ${step(4, "À bord : le salon de votre traversée", "Échangez avec ceux qui font la même traversée : état de la mer, ambiance à bord, heure d’arrivée.")}
         </table>
       </td></tr>
       <tr><td align="center" style="padding:14px 24px 28px">
-        <a href="${SITE}/" style="display:inline-block;background:#0e6b3b;color:#ffffff;text-decoration:none;font:700 16px Arial,sans-serif;padding:14px 26px;border-radius:999px">Trouver ma traversée</a>
+        <a href="${SITE}/horaires" style="display:inline-block;background:#0e6b3b;color:#ffffff;text-decoration:none;font:700 16px Arial,sans-serif;padding:14px 26px;border-radius:999px">Trouver ma traversée</a>
+        <div style="margin-top:14px;font:14px Arial,sans-serif;color:#1f2a37">
+          Déjà réservé ? <a href="${SITE}/" style="color:#0e6b3b;font-weight:700">Suivez votre traversée sur la carte</a>
+        </div>
       </td></tr>
       <tr><td style="padding:16px 24px;background:#f7f5ef;font:12px/1.5 Arial,sans-serif;color:#6b7280">
         Vous recevez ce message une seule fois, parce que vous venez de créer un compte sur

@@ -133,7 +133,8 @@ export interface Traveller {
   dzValid?: DzValid;
 }
 
-export type DzValid = "yes" | "no" | "unknown";
+/** tight : valable au retour, mais il expire peu après (aucune règle ne fixe de marge). */
+export type DzValid = "yes" | "tight" | "no" | "unknown";
 
 export type Couple = "married" | "unmarried" | "none";
 export type KidsWith = "both" | "father" | "mother" | "other" | "alone";
@@ -238,6 +239,8 @@ export interface Task {
   consulate?: string;
   /** Les démarches à avoir faites avant celle-ci (ids). */
   needs?: string[];
+  /** Un conseil de prudence de BledWay, pas une obligation tirée d'une source. */
+  advice?: boolean;
 }
 
 /** À faire (rendez-vous, dossier) ou seulement à emporter ? */
@@ -387,6 +390,19 @@ export function tasksFor(a: Answers): Task[] {
         sources: ["be-pratique", "cons-passeport", "dz-cnibe"],
         consulate: "le renouvellement du passeport",
         needs: ["carte-consulaire"],
+      });
+    else if ((t.nat === "dz" || (t.nat === "bi" && t.dzDoc === "passeport")) && dzValid === "tight")
+      add({
+        id: "marge-passeport-dz",
+        when: "first",
+        title: "Renouveler si possible le passeport, qui expire peu après le retour",
+        detail:
+          "Il est en règle : les sources officielles demandent seulement qu'il couvre la date du retour, « et même plusieurs jours au-delà », sans fixer de marge. Le risque est un retour retardé (traversée annulée, séjour prolongé, souci de santé) : passé la date d'expiration, il faudrait le renouveler depuis l'Algérie, sans délai publié.\nSi le rendez-vous au consulat est possible avant le départ, renouvelez-le ; sinon, partez avec et gardez une copie de vos autres pièces d'identité.",
+        who,
+        sources: ["be-pratique", "cons-passeport"],
+        consulate: "le renouvellement conseillé du passeport",
+        needs: ["carte-consulaire"],
+        advice: true,
       });
     else if (
       (t.nat === "dz" || (t.nat === "bi" && t.dzDoc === "passeport")) &&

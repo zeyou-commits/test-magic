@@ -56,3 +56,15 @@ describe("le consulat seulement quand il sert", () => {
     );
   });
 });
+
+describe("passeport qui expire peu après le retour", () => {
+  it("un conseil, marqué comme tel, avec le consulat pour le renouveler", () => {
+    const a = withTraveller({ nat: "dz", dzValid: "tight" });
+    const task = tasksFor(a).find((t) => t.id === "marge-passeport-dz")!;
+    expect(task.advice).toBe(true);
+    expect(task.toConfirm).toBeUndefined();
+    expect(task.needs).toEqual(["carte-consulaire"]);
+    expect(papersSteps(a, "companion").at(-1)).toBe("home");
+    expect(tasksFor(a).some((t) => t.id === "renouveler-passeport-dz")).toBe(false);
+  });
+});

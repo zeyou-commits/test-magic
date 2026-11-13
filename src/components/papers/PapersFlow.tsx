@@ -682,7 +682,12 @@ function TravellerCard({
               onChange={(dzValid) => update({ dzValid })}
               small
               options={[
-                { value: "yes", label: "Oui" },
+                { value: "yes", label: "Oui, avec de la marge" },
+                {
+                  value: "tight",
+                  label: "Oui, mais il expire peu après le retour",
+                  hint: "Quelques jours ou semaines après",
+                },
                 { value: "no", label: "Non, il expire avant" },
                 { value: "unknown", label: "Je ne sais pas", hint: "La date est sur le passeport" },
               ]}
@@ -1129,6 +1134,11 @@ export function TaskRow({
                   {w}
                 </span>
               ))}
+              {task.advice ? (
+                <span className="rounded-full bg-sky-100 px-2 py-0.5 text-xs font-semibold text-sky-900 dark:bg-sky-900/40 dark:text-sky-100">
+                  Conseil BledWay, pas une règle
+                </span>
+              ) : null}
               {task.toConfirm ? (
                 <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-900 dark:bg-amber-900/40 dark:text-amber-100">
                   <AlertTriangle size={12} aria-hidden /> À faire confirmer

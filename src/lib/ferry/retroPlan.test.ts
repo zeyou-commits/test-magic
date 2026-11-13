@@ -30,7 +30,7 @@ describe("calendrier à rebours", () => {
     expect(list.at(-1)!.date).toBe("2027-07-01");
   });
 
-  it("un visa : les démarches longues 4 semaines avant, puis la réservation", () => {
+  it("un visa en été : les démarches longues 6 semaines avant, puis la réservation", () => {
     const answers: Answers = {
       ...defaultAnswers,
       travellers: [{ ...newTraveller("adult"), nat: "etr" }],
@@ -41,11 +41,27 @@ describe("calendrier à rebours", () => {
       today,
     );
     const weeks = list.find((m) => m.id === "weeks")!;
-    expect(weeks.date).toBe("2027-06-03");
+    expect(weeks.date).toBe("2027-05-20");
+    expect(weeks.detail).toMatch(/1 à 14 jours/);
+    expect(weeks.detail).toMatch(/haute saison.*pas un délai officiel/);
     expect(weeks.sources).toContain("amb-visa");
     expect(list.findIndex((m) => m.id === "book")).toBe(
       list.findIndex((m) => m.id === "weeks") + 1,
     );
+  });
+
+  it("hors saison : 4 semaines, sans parler de haute saison", () => {
+    const answers: Answers = {
+      ...defaultAnswers,
+      travellers: [{ ...newTraveller("adult"), nat: "etr" }],
+    };
+    const weeks = retroPlan(
+      plan({ month: "2027-10", window: null }),
+      { answers, finished: true, done: [] },
+      today,
+    ).find((m) => m.id === "weeks")!;
+    expect(weeks.date).toBe("2027-09-03");
+    expect(weeks.detail).not.toMatch(/haute saison/);
   });
 
   it("départ proche : la date limite passée est signalée", () => {

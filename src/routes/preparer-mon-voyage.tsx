@@ -45,7 +45,14 @@ import {
   type PapersStep,
 } from "@/components/papers/PapersFlow";
 import { VEHICLES, defaultTripProfile } from "@/components/panel/TripProfile";
-import { defaultAnswers, formaliteSources, tasksFor, type Answers } from "@/content/formalites";
+import {
+  consulateReasons,
+  defaultAnswers,
+  formaliteSources,
+  tasksFor,
+  type Answers,
+  type When,
+} from "@/content/formalites";
 import {
   consulatsChecked,
   MFA_REPRESENTATIONS_URL,
@@ -85,7 +92,7 @@ import {
 } from "@/lib/ferry/companion";
 import { searchItineraryAddress } from "@/lib/ferry/itinerary.functions";
 import { carPrepItems as carItems } from "@/lib/ferry/dossier";
-import { retroPlan, type Milestone } from "@/lib/ferry/retroPlan";
+import { papersMargin, papersWhy, retroPlan, type Milestone } from "@/lib/ferry/retroPlan";
 import { useReferenceData } from "@/lib/reference/useReferenceData";
 import { formatFareRange } from "@/lib/ferry/pricing";
 import { portsQuery, routesQuery } from "@/lib/ferry/queries";
@@ -942,8 +949,33 @@ function PapersStepBody({
   onDone: () => void;
   next: string;
 }) {
-  // Qui part et avec quels papiers, puis, en dernier, où l'on habite : pour trouver le consulat.
+  // Qui part et avec quels papiers ; le consulat en dernier, seulement s'il y a une démarche à y faire.
   const steps = papersSteps(papers.answers, "companion");
+  const reasons = consulateReasons(papers.answers);
+  // Les dates de la liste, tirées du premier jour de départ possible, avec leur raison.
+  const deadlines = useMemo(() => {
+    const day = earliestDay(plan);
+    const today = todayKey();
+    const visa = papers.answers.travellers.some((t) => t.nat === "etr");
+    const weeks = new Date(Date.parse(`${day}T12:00:00Z`) - papersMargin(day).days * 86_400_000)
+      .toISOString()
+      .slice(0, 10);
+    const months3 = new Date(Date.parse(`${day}T12:00:00Z`) - 90 * 86_400_000)
+      .toISOString()
+      .slice(0, 10);
+    const out: Partial<Record<When, { label: string; why: string }>> = {
+      first: { label: "Dès maintenant", why: papersWhy("first", day, visa) },
+      weeks: {
+        label: weeks < today ? "En retard : tout de suite" : `Avant le ${longDate(weeks)}`,
+        why: papersWhy("weeks", day, visa),
+      },
+      months3: {
+        label: months3 <= today ? "Dès maintenant" : `À partir du ${longDate(months3)}`,
+        why: papersWhy("months3", day, visa),
+      },
+    };
+    return out;
+  }, [plan, papers.answers.travellers]);
   const [step, setStep] = useState<PapersStep>(steps[0]!);
   const box = useRef<HTMLDivElement>(null);
   const toTop = () =>
@@ -956,6 +988,7 @@ function PapersStepBody({
         <>
           <PapersResult
             embedded
+            deadlines={deadlines}
             abroadSlot={
               <EuropeConsulateCard country={plan.country} home={plan.home?.point ?? null} />
             }
@@ -978,7 +1011,15 @@ function PapersStepBody({
       ) : (
         <PapersWizard
           state={papers}
-          homeSlot={<ResidenceQuestion papers={papers} plan={plan} patch={patch} />}
+          homeSlot={
+            <ResidenceQuestion
+              papers={papers}
+              plan={plan}
+              patch={patch}
+              title="Trouver mon consulat"
+              hint={`${reasons ? `${reasons.charAt(0).toUpperCase()}${reasons.slice(1)} se ${reasons.includes(" et ") ? "font" : "fait"} au consulat d'Algérie dont dépend votre domicile, sur rendez-vous. ` : ""}Indiquez votre ville : vous aurez son adresse, son téléphone et le lien pour prendre rendez-vous.`}
+            />
+          }
           steps={steps}
           step={steps.includes(step) ? step : steps[0]!}
           setStep={(s) => {
@@ -1955,10 +1996,6 @@ function EuropeCityField({
           ))}
         </ul>
       ) : null}
-      <p className="mt-2 text-xs text-muted-foreground">
-        Seul le nom tapé est envoyé au service de cartes OpenStreetMap (Photon), pour trouver la
-        ville.
-      </p>
     </div>
   );
 }
@@ -2020,7 +2057,7 @@ function EuropeConsulateCard({
       <p className="mt-3 text-xs text-muted-foreground">
         {result.embassyOnly
           ? "Aucun consulat n'est listé dans ce pays : renseignez-vous auprès de l'ambassade pour les démarches. "
-          : "Le poste compétent dépend de votre lieu de résidence : vérifiez sa circonscription sur son site. "}
+          : "Le plus proche est probablement le vôtre, mais c'est votre adresse qui décide : vérifiez sur son site que votre ville en dépend. "}
         Liste du{" "}
         <a
           href={MFA_REPRESENTATIONS_URL}

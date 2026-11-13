@@ -21,10 +21,12 @@ import { textLink } from "@/components/editorial/Editorial";
 import {
   FORMALITES_CHECKED,
   consulatForDepartment,
+  consulateTasks,
   defaultAnswers,
   delais,
   departmentFromPostcode,
   formaliteSources,
+  isPaperToDo,
   loadPapers,
   newTraveller,
   reassurances,
@@ -38,6 +40,7 @@ import {
   type FormaliteSourceId,
   type Task,
   type Traveller,
+  type When,
 } from "@/content/formalites";
 import { displayDate } from "@/lib/seo/site";
 
@@ -52,8 +55,8 @@ export const EmbeddedPapers = createContext(false);
 export type PapersStep = "home" | "group" | "people" | "family" | "stay";
 
 /**
- * Les questions à poser. Le compagnon connaît déjà le groupe : il part de « people » et ne demande
- * le lieu de résidence qu'à la fin, au moment de trouver le consulat.
+ * Les questions à poser. Le compagnon connaît déjà le groupe : il part de « people » et ne cherche
+ * le consulat qu'à la fin, et seulement si une démarche s'y fait.
  */
 export function papersSteps(
   a: Answers,
@@ -65,7 +68,10 @@ export function papersSteps(
     adults > 1 || kids
       ? ["home", "group", "people", "family", "stay"]
       : ["home", "group", "people", "stay"];
-  if (from === "companion") return [...all.filter((s) => s !== "home" && s !== "group"), "home"];
+  if (from === "companion") {
+    const asked = all.filter((s) => s !== "home" && s !== "group");
+    return consulateTasks(a).length ? [...asked, "home"] : asked;
+  }
   return from === "people" ? all.filter((s) => s !== "home" && s !== "group") : all;
 }
 
@@ -150,7 +156,7 @@ export function PapersWizard({
           onClick={() => (index + 1 < steps.length ? setStep(steps[index + 1]!) : onFinish())}
           className="inline-flex min-h-12 items-center gap-2 rounded-xl bg-primary px-6 text-sm font-bold text-primary-foreground hover:bg-primary/90"
         >
-          {index + 1 < steps.length ? "Continuer" : "Voir mes papiers"}{" "}
+          {index + 1 < steps.length ? "Continuer" : "Voir mon plan d'action"}{" "}
           <ArrowRight size={16} aria-hidden />
         </button>
       </div>
@@ -664,6 +670,26 @@ function TravellerCard({
           </div>
         </div>
       ) : null}
+      {t.nat === "dz" || (t.nat === "bi" && t.dzDoc === "passeport") ? (
+        <div className="mt-4">
+          <p className="text-sm font-semibold">
+            {child ? "Son" : "Votre"} passeport algérien sera-t-il encore valable au retour ?
+          </p>
+          <div className="mt-2">
+            <Options
+              label={`Passeport algérien valable au retour : ${name}`}
+              value={t.dzValid ?? "unknown"}
+              onChange={(dzValid) => update({ dzValid })}
+              small
+              options={[
+                { value: "yes", label: "Oui" },
+                { value: "no", label: "Non, il expire avant" },
+                { value: "unknown", label: "Je ne sais pas", hint: "La date est sur le passeport" },
+              ]}
+            />
+          </div>
+        </div>
+      ) : null}
       {!child && t.nat === "dz" ? (
         <div className="mt-4">
           <p className="text-sm font-semibold">
@@ -849,6 +875,7 @@ export function PapersResult({
   onEdit,
   embedded = false,
   abroadSlot,
+  deadlines = {},
 }: {
   answers: Answers;
   done: string[];
@@ -858,6 +885,8 @@ export function PapersResult({
   embedded?: boolean;
   /** Hors de France : les postes du pays de résidence, quand le compagnon le connaît. */
   abroadSlot?: ReactNode;
+  /** Dans le compagnon : la date de chaque groupe, tirée de la date de départ, et pourquoi. */
+  deadlines?: Partial<Record<When, { label: string; why: string }>>;
 }) {
   const tasks = useMemo(() => tasksFor(answers), [answers]);
   const notes = reassurances(answers);
@@ -867,6 +896,13 @@ export function PapersResult({
   const kids = answers.travellers.length - adults;
   const toggle = (id: string) =>
     setDone((d) => (d.includes(id) ? d.filter((x) => x !== id) : [...d, id]));
+  const toDo = tasks.filter(isPaperToDo);
+  const toTake = tasks.filter((t) => !isPaperToDo(t));
+  const atConsulate = tasks.filter((t) => t.consulate);
+  // La première date limite : celle du premier groupe à faire qui a une date.
+  const firstDeadline = (["weeks", "months3"] as const).find(
+    (when) => deadlines[when] && toDo.some((t) => t.when === when && !done.includes(t.id)),
+  );
 
   return (
     <section
@@ -889,7 +925,7 @@ export function PapersResult({
           {adults} adulte{adults > 1 ? "s" : ""}
           {kids ? ` · ${kids} enfant${kids > 1 ? "s" : ""}` : ""}
         </span>
-        {consulat ? (
+        {consulat && atConsulate.length ? (
           <span className="rounded-full bg-secondary px-3 py-1 font-semibold">
             {consulat.name.replace(/^Consulat (général )?d'Algérie à /, "Consulat de ")}
           </span>
@@ -901,6 +937,51 @@ export function PapersResult({
         >
           <Pencil size={14} aria-hidden /> Modifier mes réponses
         </button>
+      </div>
+
+      {/* Le bilan d'abord : combien de choses à faire, à emporter, et pour quand. */}
+      <div className="mt-4 rounded-2xl bg-primary/5 p-4 md:p-5">
+        <p className="font-display text-xl font-bold leading-snug">
+          {toDo.length
+            ? `${toDo.length} démarche${toDo.length > 1 ? "s" : ""} à faire`
+            : "Aucune démarche à faire"}
+          {" · "}
+          {toTake.length} document{toTake.length > 1 ? "s" : ""} à emporter
+        </p>
+        <ul className="mt-2 grid gap-1 text-sm">
+          {toDo.some((t) => t.when === "first" && !done.includes(t.id)) ? (
+            <li>
+              <span className="font-semibold">Dès maintenant :</span>{" "}
+              {toDo
+                .filter((t) => t.when === "first" && !done.includes(t.id))
+                .map((t) => lowerFirst(t.title))
+                .join(" ; ")}
+              .
+            </li>
+          ) : null}
+          {firstDeadline ? (
+            <li>
+              <span className="font-semibold">{deadlines[firstDeadline]!.label} :</span>{" "}
+              {toDo
+                .filter((t) => t.when === firstDeadline && !done.includes(t.id))
+                .map((t) => lowerFirst(t.title))
+                .join(" ; ")}
+              .
+            </li>
+          ) : null}
+          {atConsulate.length ? (
+            <li className="text-muted-foreground">
+              {atConsulate.length > 1
+                ? `${atConsulate.length} de ces démarches se font au consulat`
+                : "Une de ces démarches se fait au consulat"}
+              {consulat || (answers.abroad && abroadSlot)
+                ? " : son adresse et le lien pour prendre rendez-vous sont juste en dessous."
+                : " : indiquez votre ville (Modifier mes réponses) pour le trouver."}
+            </li>
+          ) : toDo.length === 0 ? (
+            <li className="text-muted-foreground">Rien à faire au consulat avant de partir.</li>
+          ) : null}
+        </ul>
       </div>
 
       <div
@@ -943,7 +1024,18 @@ export function PapersResult({
                 ) : (
                   <h2 className="font-display text-xl font-bold">{whenLabels[when].title}</h2>
                 )}
-                <p className="text-sm text-muted-foreground">{whenLabels[when].hint}</p>
+                <p className="text-sm text-muted-foreground">
+                  {deadlines[when] ? (
+                    <>
+                      <span className="font-semibold text-foreground">
+                        {deadlines[when]!.label}.{" "}
+                      </span>
+                      {deadlines[when]!.why || whenLabels[when].hint}
+                    </>
+                  ) : (
+                    whenLabels[when].hint
+                  )}
+                </p>
                 <ul className="mt-3 grid gap-2">
                   {group.map((t) => (
                     <TaskRow
@@ -951,6 +1043,10 @@ export function PapersResult({
                       task={t}
                       done={done.includes(t.id)}
                       onToggle={() => toggle(t.id)}
+                      first={(t.needs ?? [])
+                        .map((id) => tasks.find((x) => x.id === id))
+                        .filter((x): x is Task => !!x && !done.includes(x.id))
+                        .map((x) => x.title)}
                     />
                   ))}
                 </ul>
@@ -959,7 +1055,8 @@ export function PapersResult({
           })}
         </div>
         <aside className={`grid gap-4 ${embedded ? "order-1" : "lg:sticky lg:top-24"}`}>
-          {consulat ? (
+          {/* Le consulat seulement s'il y a quelque chose à y faire. */}
+          {!atConsulate.length ? null : consulat ? (
             <ConsulatCard consulat={consulat} />
           ) : answers.abroad ? (
             (abroadSlot ?? <AbroadCard />)
@@ -974,14 +1071,21 @@ export function PapersResult({
   );
 }
 
+/** « S'inscrire sur Ariane » → « s'inscrire sur Ariane » ; les sigles et noms propres restent. */
+const lowerFirst = (text: string) =>
+  /^[A-ZÀ-Ý][a-zà-ÿ']/.test(text) ? text.charAt(0).toLowerCase() + text.slice(1) : text;
+
 export function TaskRow({
   task,
   done,
   onToggle,
+  first = [],
 }: {
   task: Task;
   done: boolean;
   onToggle: () => void;
+  /** Ce qu'il faut avoir fait avant (titres), encore à faire. */
+  first?: string[];
 }) {
   const [open, setOpen] = useState(false);
   return (
@@ -1012,6 +1116,11 @@ export function TaskRow({
               {task.title}
             </span>
             <span className="mt-1.5 flex flex-wrap items-center gap-1.5">
+              {first.length && !done ? (
+                <span className="basis-full text-xs font-semibold text-amber-800 dark:text-amber-200">
+                  D'abord : {first.map(lowerFirst).join(", ")}
+                </span>
+              ) : null}
               {task.who.map((w) => (
                 <span
                   key={w}

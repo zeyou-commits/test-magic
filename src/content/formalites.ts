@@ -3,7 +3,12 @@
  * Chaque règle cite la page officielle d'où elle vient (lue le 13 novembre 2026).
  * Ce qu'aucune source officielle ne tranche est marqué « à faire confirmer », jamais affirmé.
  */
-export { consulats, consulatForDepartment, departmentFromPostcode, type Consulat } from "./consulats";
+export {
+  consulats,
+  consulatForDepartment,
+  departmentFromPostcode,
+  type Consulat,
+} from "./consulats";
 
 export const FORMALITES_CHECKED = "2026-11-13";
 /** Fin de la mesure qui dispense de visa les binationaux munis d'un document algérien. */
@@ -124,7 +129,11 @@ export interface Traveller {
   /** Homme algérien de 19 ans ou plus : service national. */
   man: boolean;
   residence: Residence;
+  /** Passeport algérien encore valable au retour (absent des anciennes réponses : « je ne sais pas »). */
+  dzValid?: DzValid;
 }
+
+export type DzValid = "yes" | "no" | "unknown";
 
 export type Couple = "married" | "unmarried" | "none";
 export type KidsWith = "both" | "father" | "mother" | "other" | "alone";
@@ -155,13 +164,25 @@ export function newTraveller(kind: Traveller["kind"]): Traveller {
     age: kind === "child" ? 8 : 30,
     man: false,
     residence: "titre",
+    dzValid: "unknown",
   };
 }
 
 export const defaultAnswers: Answers = {
   postcode: "",
   abroad: false,
-  travellers: [{ id: "adult-moi", kind: "adult", nat: "bi", dzDoc: "passeport", age: 30, man: false, residence: "titre" }],
+  travellers: [
+    {
+      id: "adult-moi",
+      kind: "adult",
+      nat: "bi",
+      dzDoc: "passeport",
+      age: 30,
+      man: false,
+      residence: "titre",
+      dzValid: "unknown",
+    },
+  ],
   couple: "none",
   transcribed: "unknown",
   kidsWith: "both",
@@ -186,10 +207,19 @@ export type When = "first" | "weeks" | "months3" | "pack" | "there" | "back";
 export const whenOrder: When[] = ["first", "weeks", "months3", "pack", "there", "back"];
 
 export const whenLabels: Record<When, { title: string; hint: string }> = {
-  first: { title: "À lancer tout de suite", hint: "Aucun délai n'est publié : plus tôt c'est lancé, mieux c'est." },
+  first: {
+    title: "À lancer tout de suite",
+    hint: "Aucun délai n'est publié : plus tôt c'est lancé, mieux c'est.",
+  },
   weeks: { title: "Plusieurs semaines avant", hint: "Avant d'acheter un billet non remboursable." },
-  months3: { title: "Dans les 3 mois avant", hint: "Ces papiers ne sont valables que peu de temps." },
-  pack: { title: "Dans la pochette du voyage", hint: "À présenter au port, à l'aller comme au retour." },
+  months3: {
+    title: "Dans les 3 mois avant",
+    hint: "Ces papiers ne sont valables que peu de temps.",
+  },
+  pack: {
+    title: "Dans la pochette du voyage",
+    hint: "À présenter au port, à l'aller comme au retour.",
+  },
   there: { title: "Sur place", hint: "Pendant le séjour en Algérie." },
   back: { title: "Pour rentrer", hint: "Le retour se prépare dès le départ." },
 };
@@ -204,7 +234,15 @@ export interface Task {
   sources: FormaliteSourceId[];
   /** Aucune source officielle ne tranche : à faire confirmer par le consulat ou la préfecture. */
   toConfirm?: boolean;
+  /** Se fait au consulat d'Algérie : ce qu'on y fait, pour dire pourquoi on cherche le consulat. */
+  consulate?: string;
+  /** Les démarches à avoir faites avant celle-ci (ids). */
+  needs?: string[];
 }
+
+/** À faire (rendez-vous, dossier) ou seulement à emporter ? */
+export const isPaperToDo = (task: Task) =>
+  task.when === "first" || task.when === "weeks" || task.when === "months3";
 
 const isMinorDz = (t: Traveller) => t.kind === "child" && t.age < 19;
 const isMinorFr = (t: Traveller) => t.kind === "child" && t.age < 18;
@@ -236,6 +274,7 @@ export function tasksFor(a: Answers): Task[] {
         "Le visa familial du conjoint étranger demande l'acte de mariage transcrit sur les registres algériens. La transcription se fait au consulat avec la pièce d'identité algérienne du conjoint algérien, l'acte de mariage original de moins de 3 mois et les actes de naissance des deux époux de moins de 3 mois. Elle précède aussi le livret de famille algérien. Aucun délai n'est publié.",
       who: algerianAdults.map(label),
       sources: ["cons-visa-familial", "cons-livret"],
+      consulate: "la transcription du mariage",
     });
 
   for (const t of all) {
@@ -247,20 +286,30 @@ export function tasksFor(a: Answers): Task[] {
       add({
         id: `visa-${t.id}`,
         when: "weeks",
-        title: spouse ? "Demander le visa familial de conjoint" : child ? "Demander son visa (un enfant aussi)" : "Demander le visa",
+        title: spouse
+          ? "Demander le visa familial de conjoint"
+          : child
+            ? "Demander son visa (un enfant aussi)"
+            : "Demander le visa",
         detail: [
           "Le visa est obligatoire. Il se demande avant le départ, au consulat d'Algérie du lieu de résidence, sur rendez-vous ; il n'y a pas de visa à l'arrivée pour un voyage individuel. Délai annoncé par l'ambassade : 1 à 14 jours.",
           "Pièces de base : formulaire, passeport valable au moins 6 mois, photo, assurance voyage, justificatif de domicile de moins de 3 mois et justificatif d'activité. Un dossier incomplet est rejeté.",
           spouse
             ? "Pour le conjoint d'un Algérien : l'acte de mariage transcrit à l'état civil algérien et la preuve de la nationalité algérienne du conjoint (carte consulaire, passeport ou carte d'identité)."
             : "",
-          child ? "Pour un mineur : un parent ou le tuteur l'accompagne au rendez-vous, avec le livret de famille ou sa copie conforme." : "",
+          child
+            ? "Pour un mineur : un parent ou le tuteur l'accompagne au rendez-vous, avec le livret de famille ou sa copie conforme."
+            : "",
           "Coût annoncé par l'ambassade pour 90 jours ou moins : 80 € à partir de 12 ans, 40 € de 6 à 12 ans, gratuit avant 6 ans, plus 30 € de frais de dossier. Vérifiez le tarif sur le site du consulat.",
         ]
           .filter(Boolean)
           .join("\n"),
         who,
-        sources: spouse ? ["fd-entree", "cons-visa-familial", "amb-visa"] : ["fd-entree", "amb-visa", "justice-algerie"],
+        sources: spouse
+          ? ["fd-entree", "cons-visa-familial", "amb-visa"]
+          : ["fd-entree", "amb-visa", "justice-algerie"],
+        consulate: "le visa",
+        ...(spouse && a.transcribed !== "yes" ? { needs: ["transcription-mariage"] } : {}),
       });
       continue;
     }
@@ -311,6 +360,7 @@ export function tasksFor(a: Answers): Task[] {
             "Avec seulement un passeport étranger et aucun document algérien, la dispense de visa des binationaux ne s'applique pas. Deux solutions : demander un visa comme un étranger, ou faire d'abord établir le passeport ou la carte d'identité algérienne. Pour une personne née en France, l'acte de naissance doit d'abord être transcrit (acte 12S), obligatoire pour le passeport biométrique.",
           who,
           sources: ["cons-binationaux", "cons-12s", "amb-visa"],
+          consulate: "le papier algérien ou le visa",
         });
 
       add({
@@ -324,15 +374,32 @@ export function tasksFor(a: Answers): Task[] {
       });
     }
 
-    if (t.nat === "dz" || (t.nat === "bi" && t.dzDoc === "passeport"))
+    // Le passeport algérien : rien à faire s'il est valable au retour, à renouveler sinon.
+    const dzValid = t.dzValid ?? "unknown";
+    if ((t.nat === "dz" || (t.nat === "bi" && t.dzDoc === "passeport")) && dzValid === "no")
+      add({
+        id: "renouveler-passeport-dz",
+        when: "first",
+        title: "Renouveler le passeport algérien",
+        detail:
+          "Il doit être valable pendant tout le séjour, et même quelques jours au-delà du retour. Le renouvellement se demande au consulat sur rendez-vous ; le passeport est fabriqué en Algérie et aucun délai n'est publié : lancez-le dès maintenant, avant d'acheter un billet non remboursable. Vérifiez sur le site du consulat qu'il est prêt avant d'aller le chercher. La carte d'identité biométrique peut aussi se demander en ligne.",
+        who,
+        sources: ["be-pratique", "cons-passeport", "dz-cnibe"],
+        consulate: "le renouvellement du passeport",
+        needs: ["carte-consulaire"],
+      });
+    else if (
+      (t.nat === "dz" || (t.nat === "bi" && t.dzDoc === "passeport")) &&
+      dzValid === "unknown"
+    )
       add({
         id: "validite-passeport-dz",
         when: "first",
-        title: "Vérifier la date d'expiration du passeport algérien",
+        title: "Regarder la date d'expiration du passeport algérien",
         detail:
-          "Il doit être valable pendant tout le séjour, et même quelques jours au-delà du retour. Le renouvellement se demande au consulat sur rendez-vous ; le passeport est fabriqué en Algérie et aucun délai n'est publié. Vérifiez sur le site du consulat qu'il est prêt avant d'aller le chercher. La carte d'identité biométrique peut aussi se demander en ligne.",
+          "Il doit être valable pendant tout le séjour, et même quelques jours au-delà du retour. S'il expire avant, il faut le renouveler au consulat, sur rendez-vous ; le passeport est fabriqué en Algérie et aucun délai n'est publié. Modifiez vos réponses une fois la date vérifiée : la liste s'adapte.",
         who,
-        sources: ["be-pratique", "cons-passeport", "dz-cnibe"],
+        sources: ["be-pratique", "cons-passeport"],
       });
 
     if (t.nat === "dz" && !child && t.residence === "fragile")
@@ -359,17 +426,6 @@ export function tasksFor(a: Answers): Task[] {
         toConfirm: true,
       });
 
-    if (!child)
-      add({
-        id: "carte-consulaire",
-        when: "first",
-        title: "Avoir sa carte consulaire à jour",
-        detail:
-          "La carte d'immatriculation consulaire est gratuite et valable 5 ans. Le consulat la demande pour presque toutes les démarches.",
-        who,
-        sources: ["cons-immat"],
-      });
-
     if (!child && t.man)
       add({
         id: "service-national",
@@ -379,13 +435,15 @@ export function tasksFor(a: Answers): Task[] {
           "Le service national est obligatoire à 19 ans révolus. Les Algériens qui vivent à l'étranger se font recenser au consulat, qui remet une attestation de recensement ; une dispense existe notamment pour soutien de famille ou raison médicale. Ce qui se passe à la sortie d'Algérie pour un homme qui n'est pas en règle n'est écrit sur aucune page consultée : demandez au consulat.",
         who,
         sources: ["cons-recensement"],
+        consulate: "le recensement du service national",
         toConfirm: true,
       });
   }
 
   /* Enfants : les autorisations dépendent de l'adulte qui les accompagne. */
   if (children.length) {
-    const withoutFather = a.kidsWith === "mother" || a.kidsWith === "other" || a.kidsWith === "alone";
+    const withoutFather =
+      a.kidsWith === "mother" || a.kidsWith === "other" || a.kidsWith === "alone";
     const dzKids = children.filter((t) => t.nat !== "etr" && isMinorDz(t));
     if (dzKids.length && withoutFather) {
       const dispensed = a.kidsWith === "mother" && a.separated && a.motherCustody;
@@ -408,6 +466,7 @@ export function tasksFor(a: Answers): Task[] {
                 "Un mineur algérien (la majorité est à 19 ans en Algérie) qui voyage sans son père la présente à la sortie d'Algérie. Elle se fait au consulat et vaut 3 mois : demandez-la dans les 3 mois avant le retour.\nPièces : pièce d'identité algérienne du parent, livret de famille, titre de séjour de l'enfant, en cas de divorce le jugement sur l'autorité parentale, et un timbre de 2 €.\nUne loi en dispense les enfants qui vivent à l'étranger avec un passeport étranger, mais la police aux frontières la demande souvent : mieux vaut l'avoir.",
               who: dzKids.map(label),
               sources: ["cons-autorisation", "be-pratique", "justice-algerie"],
+              consulate: "l'autorisation paternelle",
             },
       );
       if (dzKids.some((t) => t.age === 18))
@@ -491,7 +550,8 @@ export function tasksFor(a: Answers): Task[] {
       id: "reservation-hotel",
       when: "weeks",
       title: "La réservation d'hôtel pour le visa",
-      detail: "Pour un séjour à l'hôtel, la réservation remplace le certificat d'hébergement dans le dossier de visa.",
+      detail:
+        "Pour un séjour à l'hôtel, la réservation remplace le certificat d'hébergement dans le dossier de visa.",
       who: foreigners.map(label),
       sources: ["justice-algerie"],
     });
@@ -531,7 +591,8 @@ export function tasksFor(a: Answers): Task[] {
     id: "papiers-sur-soi",
     when: "there",
     title: "Garder ses papiers d'identité sur soi",
-    detail: "La loi algérienne s'applique aux étrangers comme aux Algériens, et il faut avoir ses papiers d'identité sur soi.",
+    detail:
+      "La loi algérienne s'applique aux étrangers comme aux Algériens, et il faut avoir ses papiers d'identité sur soi.",
     who: [],
     sources: ["be-legislation"],
   });
@@ -551,12 +612,41 @@ export function tasksFor(a: Answers): Task[] {
       id: "ariane",
       when: "weeks",
       title: "S'inscrire sur Fil d'Ariane (Français)",
-      detail: "Facultatif : le ministère des Affaires étrangères envoie ses alertes pendant le séjour.",
+      detail:
+        "Facultatif : le ministère des Affaires étrangères envoie ses alertes pendant le séjour.",
       who: [],
       sources: ["fd-entree"],
     });
 
+  // La carte consulaire n'est utile que pour une démarche au consulat (le consulat la demande) :
+  // pas de rendez-vous inutile quand tout est déjà en règle.
+  const atConsulate = tasks.some((t) => t.consulate && !t.id.startsWith("visa-"));
+  if (atConsulate && algerianAdults.length)
+    add({
+      id: "carte-consulaire",
+      when: "first",
+      title: "Avoir sa carte consulaire à jour",
+      detail:
+        "Le consulat la demande pour les démarches de cette liste. Elle est gratuite et valable 5 ans : si la vôtre est à jour, cochez simplement cette ligne.",
+      who: algerianAdults.map(label),
+      sources: ["cons-immat"],
+      consulate: "la carte consulaire",
+    });
+
   return tasks.sort((x, y) => whenOrder.indexOf(x.when) - whenOrder.indexOf(y.when));
+}
+
+/** Les démarches qui se font au consulat : sans elles, inutile de chercher le consulat. */
+export const consulateTasks = (a: Answers) => tasksFor(a).filter((t) => t.consulate);
+
+/** « le visa (Adulte 2) et le renouvellement du passeport (Vous) » */
+export function consulateReasons(a: Answers): string {
+  const reasons = consulateTasks(a)
+    .filter((t) => t.id !== "carte-consulaire")
+    .map((t) => (t.who.length ? `${t.consulate} (${t.who.join(", ")})` : t.consulate!));
+  const unique = [...new Set(reasons)];
+  if (unique.length <= 1) return unique[0] ?? "";
+  return `${unique.slice(0, -1).join(", ")} et ${unique.at(-1)}`;
 }
 
 /** Situations sans papier particulier : on le dit, pour rassurer. */
@@ -565,10 +655,15 @@ export function reassurances(a: Answers): string[] {
   const adults = a.travellers.filter((t) => t.kind === "adult");
   const kids = a.travellers.some((t) => t.kind === "child");
   if (adults.length === 1 && !kids)
-    notes.push("Vous voyagez seul : les sources officielles ne prévoient aucun papier particulier pour une personne seule, femme ou homme.");
+    notes.push(
+      "Vous voyagez seul : les sources officielles ne prévoient aucun papier particulier pour une personne seule, femme ou homme.",
+    );
   if (kids && (a.kidsWith === "both" || a.kidsWith === "father"))
-    notes.push("Les enfants voyagent avec leur père : ni autorisation paternelle, ni autorisation de sortie du territoire.");
-  if (!a.travellers.some((t) => t.nat === "etr")) notes.push("Personne n'a besoin de visa dans votre groupe.");
+    notes.push(
+      "Les enfants voyagent avec leur père : ni autorisation paternelle, ni autorisation de sortie du territoire.",
+    );
+  if (!a.travellers.some((t) => t.nat === "etr"))
+    notes.push("Personne n'a besoin de visa dans votre groupe.");
   return notes;
 }
 
@@ -584,7 +679,8 @@ export const delais: {
     demarche: "Visa (passeport étranger)",
     ou: "Consulat d'Algérie du lieu de résidence, sur rendez-vous",
     delai: "1 à 14 jours après le dépôt",
-    conseil: "Déposez la demande plusieurs semaines avant le départ, avant de payer un billet non remboursable.",
+    conseil:
+      "Déposez la demande plusieurs semaines avant le départ, avant de payer un billet non remboursable.",
     sources: ["amb-visa", "be-pratique"],
   },
   {
@@ -598,14 +694,16 @@ export const delais: {
     demarche: "Certificat d'hébergement",
     ou: "Mairie de la famille qui vous reçoit en Algérie",
     delai: "Non publié",
-    conseil: "Il doit avoir moins de 3 mois au dépôt du visa : demandez-le environ un mois avant le rendez-vous.",
+    conseil:
+      "Il doit avoir moins de 3 mois au dépôt du visa : demandez-le environ un mois avant le rendez-vous.",
     sources: ["amb-visa"],
   },
   {
     demarche: "Passeport ou carte d'identité algérienne",
     ou: "Consulat sur rendez-vous ; carte d'identité aussi en ligne",
     delai: "Non publié",
-    conseil: "Prenez rendez-vous dès que vos dates sont fixées. Pour une personne née en France, l'acte 12S passe avant.",
+    conseil:
+      "Prenez rendez-vous dès que vos dates sont fixées. Pour une personne née en France, l'acte 12S passe avant.",
     sources: ["cons-passeport", "cons-12s", "dz-cnibe"],
   },
   {

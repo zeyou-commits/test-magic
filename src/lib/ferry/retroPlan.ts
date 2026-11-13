@@ -1,7 +1,6 @@
 import {
   BINATIONAL_MEASURE_END,
   tasksFor,
-  whenLabels,
   type Answers,
   type FormaliteSourceId,
   type When,
@@ -38,6 +37,34 @@ const addDays = (day: string, n: number) => {
 };
 const later = (a: string, b: string) => (a > b ? a : b);
 
+/**
+ * La marge des démarches longues. Le seul délai publié est celui du visa (1 à 14 jours après le
+ * dépôt, ambassade) ; s'y ajoute l'attente d'un rendez-vous, qui n'est publiée nulle part.
+ * Repère BledWay : 4 semaines, 6 pour un départ en été (juin à août) ou aux fêtes de fin d'année,
+ * quand beaucoup de voyageurs font leurs démarches en même temps.
+ */
+export function papersMargin(day: string) {
+  const month = Number(day.slice(5, 7));
+  const highSeason = (month >= 6 && month <= 8) || month === 12;
+  return { days: highSeason ? 42 : 28, weeks: highSeason ? 6 : 4, highSeason };
+}
+
+/** Pourquoi cette date limite, en clair : délai publié, attente du rendez-vous, saison. */
+export function papersWhy(when: When, day: string, visa: boolean): string {
+  const { weeks, highSeason } = papersMargin(day);
+  if (when === "first")
+    return "Aucun délai n'est publié pour ces démarches (un passeport algérien est fabriqué en Algérie) : plus tôt c'est lancé, plus tôt vous pouvez réserver.";
+  if (when === "months3")
+    return "Ce papier ne vaut que 3 mois : fait trop tôt, il ne serait plus valable au retour.";
+  if (when !== "weeks") return "";
+  const season = highSeason
+    ? ` Vous partez en haute saison : BledWay compte ${weeks} semaines au lieu de 4, car beaucoup de voyageurs font leurs démarches en même temps. C'est un conseil de prudence, pas un délai officiel.`
+    : "";
+  return visa
+    ? `L'ambassade annonce 1 à 14 jours après le dépôt du dossier, sans compter l'attente d'un rendez-vous au consulat. BledWay compte donc ${highSeason ? weeks : 4} semaines avant le départ.${season}`
+    : `Aucun délai n'est publié : BledWay compte ${highSeason ? weeks : 4} semaines avant le départ pour avoir le temps d'un rendez-vous et d'un éventuel complément de dossier.${season}`;
+}
+
 /** Fin de la mesure pour les binationaux, au format AAAA-MM-JJ. */
 export const BINATIONAL_MEASURE_END_DAY = "2026-12-31";
 
@@ -72,23 +99,21 @@ export function retroPlan(
       date: today,
       lead: "now",
       title: "Les papiers à lancer",
-      detail: whenLabels.first.hint,
+      detail: papersWhy("first", day, visa),
       tasks: first,
       done: allDone(first),
     });
 
-  // « Plusieurs semaines avant » : BledWay compte 4 semaines, le visa pouvant prendre 14 jours.
+  // « Plusieurs semaines avant » : 4 semaines (6 en haute saison), le visa pouvant prendre 14 jours.
   const weeks = of("weeks");
-  const deadline = addDays(day, -28);
+  const deadline = addDays(day, -papersMargin(day).days);
   if (weeks.length)
     list.push({
       id: "weeks",
       date: deadline,
       lead: "before",
       title: "Les démarches longues",
-      detail: visa
-        ? "Repère BledWay : 4 semaines avant le départ. Le délai publié pour un visa va jusqu'à 14 jours après le dépôt, sans compter le rendez-vous."
-        : `${whenLabels.weeks.hint} Repère BledWay : 4 semaines avant le départ.`,
+      detail: papersWhy("weeks", day, visa),
       tasks: weeks,
       late: deadline < today,
       done: allDone(weeks),
@@ -119,7 +144,7 @@ export function retroPlan(
       date: later(today, addDays(day, -90)),
       lead: "from",
       title: "Les papiers de courte durée",
-      detail: whenLabels.months3.hint,
+      detail: papersWhy("months3", day, visa),
       tasks: months3,
       done: allDone(months3),
     });

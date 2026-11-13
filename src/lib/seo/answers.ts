@@ -3,7 +3,8 @@ import { PRICE_BENCHMARKS } from "@/lib/ferry/pricing";
 import { deName, formatDuration } from "@/lib/ferry/format";
 
 /** Réponses factuelles construites uniquement à partir des données publiées sur le site. */
-export type Faq = { q: string; a: string };
+/** `note` : précision affichée sous la réponse (renvoi d'astérisque), reprise dans les données structurées. */
+export type Faq = { q: string; a: string; note?: string };
 type PortFact = { id: string; slug: string; name: string; country_name: string };
 type RouteFact = {
   slug: string;
@@ -139,7 +140,8 @@ export function generalFaq(
   return [
     {
       q: "Qu'est-ce que BledWay ?",
-      a: "BledWay est le « Waze du ferry » entre l'Europe et le Maghreb, en commençant par l'Algérie (la Tunisie et le Maroc arrivent ensuite) : suivi des navires en direct, alertes en cas de retard, de report ou d'annulation, signalements et salons des voyageurs, comparaison des départs de toutes les compagnies et préparation du voyage de porte à porte. Service indépendant et gratuit, dans les deux sens : BledWay ne vend pas de billets. C'est le premier service à réunir tout cela pour les traversées entre l'Europe et le Maghreb.",
+      a: "BledWay, c'est le Waze du ferry entre l'Europe et le Maghreb*.\n• Votre navire en direct sur la carte.\n• Une alerte dès qu'un départ est retardé, reporté ou annulé.\n• Les signalements des voyageurs, au port et à bord.\n• Tous les départs de toutes les compagnies, au même endroit.\n• Votre voyage préparé de porte à porte.\nIndépendant et gratuit, BledWay ne vend pas de billets : il est de votre côté. Aucun autre service ne réunit tout cela pour traverser la Méditerranée.",
+      note: "* L'Algérie dès aujourd'hui. La Tunisie et le Maroc arrivent dans les prochains mois.",
     },
     {
       q: "Comment savoir si mon ferry pour l'Algérie est en retard ou annulé ?",

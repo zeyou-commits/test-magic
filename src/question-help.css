@@ -828,3 +828,7 @@
     min-height: 0;
   }
 }
+/* Réponses sur plusieurs lignes (accroche, puces) : les retours à la ligne sont gardés. */
+.bw-help__a > p {
+  white-space: pre-line;
+}

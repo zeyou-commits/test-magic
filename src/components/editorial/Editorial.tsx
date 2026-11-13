@@ -99,12 +99,51 @@ export function AnswerBox({ children }: { children: ReactNode }) {
   );
 }
 /** Questions visibles et balisage FAQPage : les deux viennent toujours de la même liste. */
+/** Réponse sur une ligne pour les données structurées : sans puces ni retours à la ligne. */
+function plainAnswer(item: { a: string; note?: string }) {
+  const text = item.a.replace(/\n• /g, " ").replace(/\n/g, " ");
+  return item.note ? `${text} ${item.note}` : text;
+}
+
+/** Une réponse sur plusieurs lignes : accroche en gras, lignes « • » en liste, le reste en paragraphes. */
+function FaqAnswer({ text }: { text: string }) {
+  if (!text.includes("\n")) return <p className="mt-3 leading-7 text-muted-foreground">{text}</p>;
+  const [lead, ...rest] = text.split("\n");
+  const blocks: (string | string[])[] = [];
+  for (const line of rest) {
+    if (line.startsWith("• ")) {
+      const last = blocks[blocks.length - 1];
+      if (Array.isArray(last)) last.push(line.slice(2));
+      else blocks.push([line.slice(2)]);
+    } else blocks.push(line);
+  }
+  return (
+    <div className="mt-3 space-y-3 leading-7 text-muted-foreground">
+      <p className="text-lg font-semibold leading-snug text-foreground">{lead}</p>
+      {blocks.map((block, index) =>
+        Array.isArray(block) ? (
+          <ul key={index} className="space-y-1.5">
+            {block.map((point) => (
+              <li key={point} className="flex gap-2.5">
+                <span className="mt-[0.7em] size-1.5 shrink-0 rounded-full bg-primary" aria-hidden />
+                <span>{point}</span>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p key={index}>{block}</p>
+        ),
+      )}
+    </div>
+  );
+}
+
 export function FaqSection({
   faq,
   path,
   title = "Questions fréquentes",
 }: {
-  faq: { q: string; a: string }[];
+  faq: { q: string; a: string; note?: string }[];
   path: string;
   title?: string;
 }) {
@@ -119,14 +158,15 @@ export function FaqSection({
             <summary className="cursor-pointer font-semibold focus-visible:outline-2 focus-visible:outline-primary">
               {item.q}
             </summary>
-            <p className="mt-3 leading-7 text-muted-foreground">{item.a}</p>
+            <FaqAnswer text={item.a} />
+            {item.note ? <p className="mt-2 text-sm text-muted-foreground/80">{item.note}</p> : null}
           </details>
         ))}
       </div>
     </section>
   );
 }
-export function FaqSchema({ faq, path }: { faq: { q: string; a: string }[]; path: string }) {
+export function FaqSchema({ faq, path }: { faq: { q: string; a: string; note?: string }[]; path: string }) {
   return (
     <StructuredData
       value={{
@@ -137,7 +177,7 @@ export function FaqSchema({ faq, path }: { faq: { q: string; a: string }[]; path
         mainEntity: faq.map((item) => ({
           "@type": "Question",
           name: item.q,
-          acceptedAnswer: { "@type": "Answer", text: item.a },
+          acceptedAnswer: { "@type": "Answer", text: plainAnswer(item) },
         })),
       }}
     />

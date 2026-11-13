@@ -158,7 +158,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
               logo: absoluteUrl("/pwa-icon-512.png"),
               email: seoConfig.contactEmail,
               description:
-                "BledWay est le « Waze du ferry » entre l'Europe et le Maghreb, en commençant par l'Algérie (la Tunisie et le Maroc arrivent ensuite) : suivi des navires en direct, alertes en cas de retard, de report ou d'annulation, signalements et salons des voyageurs, comparaison des départs de toutes les compagnies et préparation du voyage de porte à porte. Service indépendant et gratuit, dans les deux sens : BledWay ne vend pas de billets.",
+                "BledWay est le Waze du ferry entre l'Europe et le Maghreb : navires en direct, alertes de retard, de report ou d'annulation, signalements et salons des voyageurs, départs de toutes les compagnies et voyage préparé de porte à porte. Indépendant et gratuit, BledWay ne vend pas de billets. Disponible dès aujourd'hui pour l'Algérie ; la Tunisie et le Maroc arrivent dans les prochains mois.",
             },
             {
               "@type": "WebApplication",
@@ -173,7 +173,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
               offers: { "@type": "Offer", price: "0", priceCurrency: "EUR" },
               publisher: { "@id": absoluteUrl("/#organisation") },
               description:
-                "BledWay est le « Waze du ferry » entre l'Europe et le Maghreb, en commençant par l'Algérie (la Tunisie et le Maroc arrivent ensuite) : suivi des navires en direct, alertes en cas de retard, de report ou d'annulation, signalements et salons des voyageurs, comparaison des départs de toutes les compagnies et préparation du voyage de porte à porte. Service indépendant et gratuit, dans les deux sens : BledWay ne vend pas de billets.",
+                "BledWay est le Waze du ferry entre l'Europe et le Maghreb : navires en direct, alertes de retard, de report ou d'annulation, signalements et salons des voyageurs, départs de toutes les compagnies et voyage préparé de porte à porte. Indépendant et gratuit, BledWay ne vend pas de billets. Disponible dès aujourd'hui pour l'Algérie ; la Tunisie et le Maroc arrivent dans les prochains mois.",
               featureList: [
                 "Signalements des voyageurs en direct au port et à bord, façon Waze",
                 "Suivi des navires en mer et arrivée estimée",

@@ -1,12 +1,10 @@
-import { CONSULATS_EUROPE_CHECKED, europePosts } from "./consulatsEurope.data";
+import { CONSULATS_EUROPE_CHECKED, europePosts as bundled } from "./consulatsEurope.data";
 
 /**
  * Les postes d'Algérie dans les autres pays d'Europe (la France est détaillée par département dans
  * consulats.ts). Source : ministère algérien des Affaires étrangères ; données générées par
  * scripts/consulats-europe.mjs.
  */
-
-export { CONSULATS_EUROPE_CHECKED };
 
 export interface EuropePost {
   name: string;
@@ -23,6 +21,17 @@ export interface EuropeCountryPosts {
   name: string;
   posts: EuropePost[];
 }
+
+// Le relevé du dépôt, remplacé par la version approuvée dans l'admin dès qu'elle est chargée.
+let europePosts: EuropeCountryPosts[] = bundled;
+let checked = CONSULATS_EUROPE_CHECKED;
+
+export function setEuropePosts(list: EuropeCountryPosts[], date: string) {
+  europePosts = list;
+  checked = date;
+}
+/** La date du relevé en service. */
+export const consulatsChecked = () => checked;
 
 export const MFA_REPRESENTATIONS_URL = "https://www.mfa.gov.dz/fr/embassys-locations-list";
 

@@ -1,4 +1,4 @@
-import { holidayCalendars, VACANCES_CHECKED } from "./vacancesScolaires.data";
+import { holidayCalendars as bundled, VACANCES_CHECKED } from "./vacancesScolaires.data";
 
 /**
  * Les vacances scolaires des pays d'Europe où vivent les voyageurs : un repère pour choisir sa
@@ -6,7 +6,17 @@ import { holidayCalendars, VACANCES_CHECKED } from "./vacancesScolaires.data";
  * Données générées par scripts/vacances-scolaires.mjs (à relancer chaque année).
  */
 
-export { VACANCES_CHECKED };
+// Le relevé du dépôt, remplacé par la version approuvée dans l'admin dès qu'elle est chargée
+// (voir src/lib/reference/useReferenceData.ts).
+let holidayCalendars: HolidayCalendar[] = bundled;
+let checked = VACANCES_CHECKED;
+
+export function setHolidayCalendars(list: HolidayCalendar[], date: string) {
+  holidayCalendars = list;
+  checked = date;
+}
+/** La date du relevé en service. */
+export const vacancesChecked = () => checked;
 
 export type HolidayKind =
   | "toussaint"
@@ -88,16 +98,17 @@ const allAreas: Record<string, string> = {
 };
 
 /** Les choix du sélecteur, pays par pays. */
-export const holidayChoiceGroups = holidayCalendars.map((calendar) => ({
-  label: calendar.name,
-  options: [
-    { value: calendar.id, label: holidayChoiceLabel(calendar.id)! },
-    ...calendar.areas.map((area) => ({
-      value: `${calendar.id}:${area.id}`,
-      label: `${calendar.name} · ${area.name}${area.hint ? ` (${area.hint})` : ""}`,
-    })),
-  ],
-}));
+export const holidayChoiceGroups = () =>
+  holidayCalendars.map((calendar) => ({
+    label: calendar.name,
+    options: [
+      { value: calendar.id, label: holidayChoiceLabel(calendar.id)! },
+      ...calendar.areas.map((area) => ({
+        value: `${calendar.id}:${area.id}`,
+        label: `${calendar.name} · ${area.name}${area.hint ? ` (${area.hint})` : ""}`,
+      })),
+    ],
+  }));
 
 export type HolidaySpan = {
   kind: HolidayKind;

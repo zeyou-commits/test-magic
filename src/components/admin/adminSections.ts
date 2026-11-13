@@ -23,6 +23,7 @@ import {
   TriangleAlert,
   Newspaper,
   Ticket,
+  BookCheck,
 } from "lucide-react";
 
 /**
@@ -219,6 +220,14 @@ export const adminSections = [
     description: "Contrôlez la cohérence des informations publiées.",
     group: "Contrôles",
     icon: Database,
+  },
+  {
+    id: "reference",
+    label: "Données de référence",
+    description:
+      "Vacances scolaires et consulats en Europe : un rappel quand le relevé est à refaire, puis vous approuvez la mise à jour.",
+    group: "Contrôles",
+    icon: BookCheck,
   },
   {
     id: "health",

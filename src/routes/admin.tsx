@@ -56,6 +56,7 @@ import { CompanyBadge } from "@/components/panel/CompanyBadge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ReferenceDataAdmin, ReferenceDataReminder } from "@/components/admin/ReferenceDataAdmin";
 import {
   adminPortsQuery,
   adminRoutesQuery,
@@ -341,6 +342,9 @@ function AdminTabs() {
           <UsersAdmin />
         </TabsContent>
         <TabsContent value="overview">
+          {canUseAdminTab(roles, "reference") && (
+            <ReferenceDataReminder onOpen={() => navigateTo("reference")} />
+          )}
           {/* Téléphone : actions rapides, puis les points à régler, puis les départs à venir. */}
           {canUseAdminTab(roles, "planning") && (
             <MobileIncidentPanel
@@ -486,6 +490,9 @@ function AdminTabs() {
         </TabsContent>
         <TabsContent value="data">
           <DataAdmin />
+        </TabsContent>
+        <TabsContent value="reference">
+          <ReferenceDataAdmin />
         </TabsContent>
       </AdminWorkspace>
     </Tabs>

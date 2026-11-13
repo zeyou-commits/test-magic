@@ -26,6 +26,7 @@ export const adminTabs = [
   "vessels",
   "import",
   "data",
+  "reference",
   "health",
   "usage",
 ] as const;

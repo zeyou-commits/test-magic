@@ -47,12 +47,12 @@ import {
 import { VEHICLES, defaultTripProfile } from "@/components/panel/TripProfile";
 import { defaultAnswers, formaliteSources, tasksFor, type Answers } from "@/content/formalites";
 import {
-  CONSULATS_EUROPE_CHECKED,
+  consulatsChecked,
   MFA_REPRESENTATIONS_URL,
   europeConsulates,
 } from "@/content/consulatsEurope";
 import {
-  VACANCES_CHECKED,
+  vacancesChecked,
   defaultHolidayChoice,
   holidayChoiceGroups,
   holidaySources,
@@ -86,6 +86,7 @@ import {
 import { searchItineraryAddress } from "@/lib/ferry/itinerary.functions";
 import { carPrepItems as carItems } from "@/lib/ferry/dossier";
 import { retroPlan, type Milestone } from "@/lib/ferry/retroPlan";
+import { useReferenceData } from "@/lib/reference/useReferenceData";
 import { formatFareRange } from "@/lib/ferry/pricing";
 import { portsQuery, routesQuery } from "@/lib/ferry/queries";
 import {
@@ -333,6 +334,8 @@ function people(a: Answers) {
 }
 
 function CompanionPage() {
+  // Vacances et consulats : la version approuvée dans l'admin remplace celle du dépôt.
+  useReferenceData();
   const papers = usePapersState();
   const [plan, setPlan] = useState<CompanionPlan>(defaultPlan);
   const [loaded, setLoaded] = useState(false);
@@ -1609,7 +1612,7 @@ function WhenQuestion({
             aria-label="Calendrier des vacances scolaires"
             className="min-h-10 w-full max-w-full rounded-lg border bg-background px-2 text-sm sm:w-auto sm:max-w-xs"
           >
-            {holidayChoiceGroups.map((group) => (
+            {holidayChoiceGroups().map((group) => (
               <optgroup key={group.label} label={group.label}>
                 {group.options.map((option) => (
                   <option key={option.value} value={option.value}>
@@ -1670,7 +1673,7 @@ function WhenQuestion({
             >
               {holidaySources[calendar.source].name}
             </a>
-            , relevé le {shortDate(VACANCES_CHECKED)} {VACANCES_CHECKED.slice(0, 4)}.
+            , relevé le {shortDate(vacancesChecked())} {vacancesChecked().slice(0, 4)}.
           </p>
         ) : null}
       </div>
@@ -2027,7 +2030,7 @@ function EuropeConsulateCard({
         >
           ministère algérien des Affaires étrangères
         </a>
-        , relevée le {shortDate(CONSULATS_EUROPE_CHECKED)} {CONSULATS_EUROPE_CHECKED.slice(0, 4)}.
+        , relevée le {shortDate(consulatsChecked())} {consulatsChecked().slice(0, 4)}.
       </p>
     </div>
   );

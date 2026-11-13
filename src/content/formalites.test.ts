@@ -27,8 +27,11 @@ describe("liste des papiers", () => {
     expect(bi.some((f) => f.id === "visa")).toBe(false);
     expect(bi.some((f) => f.id === "retour-france")).toBe(true);
   });
-  it("autorisation paternelle et AST quand l'enfant part sans son père", () => {
+  it("autorisation paternelle sans le père ; AST seulement sans aucun parent", () => {
     const ids = formalitesFor({ nationality: "algerian", children: "withoutFather", married: true, stay: "hotel" }).map((f) => f.id);
-    expect(ids).toEqual(expect.arrayContaining(["autorisation-paternelle", "ast", "livret", "hotel"]));
+    expect(ids).toEqual(expect.arrayContaining(["autorisation-paternelle", "livret", "hotel"]));
+    expect(ids).not.toContain("ast");
+    const alone = formalitesFor({ nationality: "algerian", children: "alone", married: false, stay: "family" }).map((f) => f.id);
+    expect(alone).toContain("ast");
   });
 });

@@ -239,13 +239,13 @@ export function formalitesFor(profile: Profile): Formalite[] {
         "En France, à la sortie, il ne peut pas vous être exigé, même si l'enfant ne porte pas votre nom. Gardez-le quand même avec vous : il sert au consulat d'Algérie et pour prouver le lien de parenté.",
       sources: ["sp-mineur", "justice-algerie"],
     });
-    if (children === "withoutFather" || children === "alone")
+    if (children === "alone")
       list.push({
         id: "ast",
         moment: "frontiere",
         title: "Autorisation de sortie du territoire (AST) côté France",
         detail:
-          "Un mineur qui quitte la France sans l'un de ses parents présente l'AST signée par un parent, avec la copie de la pièce d'identité de ce parent. Le formulaire se remplit soi-même, sans démarche en mairie.",
+          "Un mineur qui quitte la France sans aucun de ses parents (seul ou avec un autre adulte) présente l'AST signée par un parent, avec la copie de la pièce d'identité de ce parent. Le formulaire se remplit soi-même, sans démarche en mairie.",
         sources: ["sp-mineur"],
       });
     if (children === "alone" && !algerian)

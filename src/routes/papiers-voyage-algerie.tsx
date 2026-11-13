@@ -54,7 +54,7 @@ const faq = [
   },
   {
     q: "Mon enfant algérien part sans son père : que faut-il ?",
-    a: "Une autorisation paternelle de sortie du territoire, délivrée par le consulat en présence du père et valable 3 mois. Pour quitter la France sans l'un de ses parents, il faut aussi l'autorisation de sortie du territoire (AST).",
+    a: "Une autorisation paternelle de sortie du territoire, délivrée par le consulat en présence du père et valable 3 mois. S'il quitte la France sans aucun de ses parents, il faut aussi l'autorisation de sortie du territoire (AST) ; avec sa mère, elle n'est pas nécessaire côté France.",
   },
   {
     q: "Faut-il se déclarer à la police quand on loge en famille ?",

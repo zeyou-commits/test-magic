@@ -92,9 +92,45 @@ html {
 .bw-explore-trigger:hover {
   background: #f1eee7;
 }
-.bw-desktop-nav > a.active {
+.bw-desktop-nav > a.active,
+.bw-explore-trigger[data-active] {
   color: #0e7a43;
   background: #edf6ef;
+}
+/* « Réserver » : la seule action pleine de l'en-tête. */
+.bw-desktop-nav > a.bw-book-button {
+  margin-right: 6px;
+  background: #0e7a43;
+  color: #fff;
+  box-shadow: 0 6px 16px rgba(14, 122, 67, 0.22);
+}
+.bw-desktop-nav > a.bw-book-button:hover {
+  background: #0b6638;
+}
+/* Traversée suivie : « Mon voyage » reste visible, comme le bouton central du téléphone. */
+.bw-my-trip-pill {
+  display: none;
+  min-height: 40px;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border: 1px solid #b9dcc6;
+  border-radius: 999px;
+  background: #edf6ef;
+  color: #0e7a43;
+  font-size: 14px;
+  font-weight: 700;
+}
+@media (min-width: 1024px) {
+  .bw-my-trip-pill {
+    display: inline-flex;
+  }
+}
+.bw-search-welcome__sub {
+  margin: 2px 0 0;
+  color: #5b6b78;
+  font-size: 13px;
+  line-height: 1.35;
 }
 .bw-header-actions {
   display: flex;
@@ -144,10 +180,13 @@ html {
 }
 .bw-mega-menu {
   display: grid;
-  grid-template-columns: repeat(4, minmax(170px, auto));
+  grid-template-columns: repeat(var(--bw-menu-columns, 1), minmax(200px, auto));
   gap: 6px 14px;
   padding: 14px !important;
   border-radius: 18px !important;
+}
+.bw-mega-menu[data-columns="2"] {
+  --bw-menu-columns: 2;
 }
 .bw-mega-menu__group {
   display: grid;

@@ -1,16 +1,23 @@
 import { AlertTicker } from "./AlertTicker";
-import { useEffect, useRef, type ReactNode } from "react";
-import { Link } from "@tanstack/react-router";
+import {
+  forwardRef,
+  useEffect,
+  useRef,
+  type MouseEventHandler,
+  type ReactNode,
+} from "react";
+import { Link, useRouterState } from "@tanstack/react-router";
 import { UserMenu } from "./UserMenu";
 import { QuestionButton } from "./QuestionButton";
 import { DataUnavailableNotice } from "./DataUnavailableNotice";
-import { goHome } from "@/lib/ferry/voyageTrip";
+import { goHome, openVoyage, useVoyageTrip } from "@/lib/ferry/voyageTrip";
 import { LanguageSwitcher, useT, type MessageKey } from "@/lib/i18n";
 import {
   Anchor,
   ArrowUpRight,
   BookOpen,
   Building2,
+  CalendarCheck,
   Calculator,
   Car,
   ChevronDown,
@@ -19,6 +26,7 @@ import {
   Clock,
   Info,
   Mail,
+  Map as MapIcon,
   MapPin,
   Menu,
   Newspaper,
@@ -61,51 +69,138 @@ export const navLinks = [
   { to: "/mes-dinars", labelKey: "nav.myDinars" },
 ] as const;
 
-/**
- * Le même rangement partout : volet « Explorer » sur téléphone, grand menu « Explorer » sur
- * ordinateur. Rien n'y répète la navigation principale (Carte, Départs, Route, compte).
- */
-export const menuGroups: {
+type MenuItem = {
+  to: string;
+  labelKey: MessageKey;
+  icon: LucideIcon;
+  /** Ouvre un volet de la carte d'accueil au lieu d'une page. */
+  action?: "itinerary";
+};
+type MenuFamily = {
+  id: "prepare" | "live" | "lines" | "bledway";
   titleKey: MessageKey;
-  items: { to: string; labelKey: MessageKey; icon: LucideIcon }[];
-}[] = [
+  columns: { titleKey?: MessageKey; items: MenuItem[] }[];
+  /** Absente du menu de l'ordinateur (reste en pied de page et dans le volet). */
+  sheetOnly?: boolean;
+};
+
+/**
+ * Le menu dit ce qu'on vient faire : réserver (bouton à part), préparer son voyage, suivre en
+ * direct, découvrir lignes et ports. Mêmes familles dans le menu de l'ordinateur et le volet.
+ */
+export const menuFamilies: MenuFamily[] = [
   {
-    titleKey: "menu.groupTravel",
-    items: [
-      { to: "/actualites", labelKey: "nav.news", icon: Newspaper },
-      { to: "/lignes", labelKey: "nav.lines", icon: Waypoints },
-      { to: "/ports", labelKey: "nav.ports", icon: Anchor },
-      { to: "/compagnies", labelKey: "nav.companies", icon: Building2 },
-      { to: "/bateaux", labelKey: "nav.vessels", icon: Ship },
+    id: "prepare",
+    titleKey: "menu.groupPrepareTrip",
+    columns: [
+      {
+        titleKey: "menu.groupOrganize",
+        items: [
+          { to: "/", labelKey: "menu.stepByStep", icon: RouteIcon, action: "itinerary" },
+          { to: "/voyage-algerie", labelKey: "nav.travelAlgeria", icon: MapPin },
+          { to: "/vehicules-moins-3-ans", labelKey: "nav.vehiclesUnder3", icon: Car },
+          { to: "/guide", labelKey: "nav.guide", icon: BookOpen },
+          { to: "/questions-frequentes", labelKey: "nav.faq", icon: CircleHelp },
+          { to: "/covoiturage", labelKey: "nav.carpool", icon: Users },
+        ],
+      },
+      {
+        titleKey: "menu.groupBudget",
+        items: [
+          { to: "/simulateurs", labelKey: "nav.simulators", icon: Calculator },
+          { to: "/barometre-prix", labelKey: "nav.priceBarometer", icon: TrendingUp },
+          { to: "/mes-dinars", labelKey: "nav.myDinars", icon: Wallet },
+        ],
+      },
     ],
   },
   {
-    titleKey: "menu.groupPrepare",
-    items: [
-      { to: "/guide", labelKey: "nav.guide", icon: BookOpen },
-      { to: "/questions-frequentes", labelKey: "nav.faq", icon: CircleHelp },
-      { to: "/voyage-algerie", labelKey: "nav.travelAlgeria", icon: MapPin },
-      { to: "/vehicules-moins-3-ans", labelKey: "nav.vehiclesUnder3", icon: Car },
-      { to: "/covoiturage", labelKey: "nav.carpool", icon: Users },
+    id: "live",
+    titleKey: "menu.groupLive",
+    columns: [
+      {
+        items: [
+          { to: "/", labelKey: "menu.liveMap", icon: MapIcon },
+          { to: "/horaires", labelKey: "nav.departuresArrivals", icon: Clock },
+          { to: "/actualites", labelKey: "nav.news", icon: Newspaper },
+        ],
+      },
     ],
   },
   {
-    titleKey: "menu.groupTools",
-    items: [
-      { to: "/simulateurs", labelKey: "nav.simulators", icon: Calculator },
-      { to: "/barometre-prix", labelKey: "nav.priceBarometer", icon: TrendingUp },
-      { to: "/mes-dinars", labelKey: "nav.myDinars", icon: Wallet },
+    id: "lines",
+    titleKey: "menu.groupLines",
+    columns: [
+      {
+        items: [
+          { to: "/lignes", labelKey: "nav.lines", icon: Waypoints },
+          { to: "/ports", labelKey: "nav.ports", icon: Anchor },
+          { to: "/compagnies", labelKey: "nav.companies", icon: Building2 },
+          { to: "/bateaux", labelKey: "nav.vessels", icon: Ship },
+        ],
+      },
     ],
   },
   {
+    id: "bledway",
     titleKey: "menu.groupBledway",
-    items: [
-      { to: "/a-propos", labelKey: "nav.about", icon: Info },
-      { to: "/contact", labelKey: "nav.contact", icon: Mail },
-      { to: "/methode-editoriale", labelKey: "nav.editorialMethod", icon: ScrollText },
+    sheetOnly: true,
+    columns: [
+      {
+        items: [
+          { to: "/a-propos", labelKey: "nav.about", icon: Info },
+          { to: "/contact", labelKey: "nav.contact", icon: Mail },
+          { to: "/methode-editoriale", labelKey: "nav.editorialMethod", icon: ScrollText },
+        ],
+      },
     ],
   },
 ];
+
+/** La rubrique allumée : « Suivre en direct » sur la carte d'accueil. */
+function familyIsActive(family: MenuFamily, pathname: string) {
+  return family.columns.some((column) =>
+    column.items.some((item) =>
+      item.to === "/"
+        ? pathname === "/" && !item.action
+        : pathname === item.to || pathname.startsWith(`${item.to}/`),
+    ),
+  );
+}
+
+/** Un lien du menu : une page, ou un volet de la carte d'accueil (« étape par étape »).
+ * Transmet les propriétés du menu (fermeture au clic, focus clavier) au lien lui-même. */
+const MenuItemLink = forwardRef<
+  HTMLAnchorElement,
+  {
+    item: MenuItem;
+    iconSize?: number;
+    onClick?: MouseEventHandler<HTMLAnchorElement>;
+    className?: string;
+  }
+>(function MenuItemLink({ item, iconSize = 16, onClick, className, ...rest }, ref) {
+  const t = useT();
+  const itinerary = item.action === "itinerary";
+  // Rôle, tabIndex, data-* et focus passés par le menu (Slot de Radix) : repris tels quels.
+  return (
+    <Link
+      ref={ref}
+      {...rest}
+      to={item.to}
+      activeOptions={{ exact: item.to === "/" }}
+      {...(itinerary ? { activeProps: { className: "" } } : {})}
+      onClick={(event) => {
+        onClick?.(event);
+        if (itinerary) openItineraryFromHeader();
+        else if (item.to === "/") goHome();
+      }}
+      className={`bw-menu-link${className ? ` ${className}` : ""}`}
+    >
+      <item.icon size={iconSize} aria-hidden />
+      {t(item.labelKey)}
+    </Link>
+  );
+});
 
 const footerLinks = [
   { to: "/actualites", labelKey: "nav.news" },
@@ -127,6 +222,12 @@ const footerLinks = [
   { to: "/charte", labelKey: "nav.communityCharter" },
   { to: "/conditions-utilisation", labelKey: "nav.terms" },
 ] as const;
+
+/** « Réserver » : la recherche de traversée de la carte d'accueil, d'où partent les liens de réservation. */
+function openSearchFromHeader() {
+  window.sessionStorage.setItem("bledway:open-home-action", "search");
+  if (window.location.pathname === "/") window.dispatchEvent(new Event("bledway:open-search"));
+}
 
 function openItineraryFromHeader() {
   window.sessionStorage.setItem("bledway:open-home-action", "itinerary");
@@ -155,7 +256,9 @@ export function BrandLink({ compact = false }: { compact?: boolean }) {
 
 export function SiteHeader() {
   const t = useT();
-  const primary = navLinks.filter((item) => ["/", "/horaires"].includes(item.to));
+  const pathname = useRouterState({ select: (state) => state.location.pathname });
+  // Une traversée suivie : « Mon voyage » à portée de clic, comme le bouton central du téléphone.
+  const { trip } = useVoyageTrip();
   // Hauteur réelle du bandeau (bandeau d'alertes compris), pour caler ce qui reste collé dessous.
   const headerRef = useRef<HTMLElement>(null);
   useEffect(() => {
@@ -173,66 +276,66 @@ export function SiteHeader() {
       <div className="bw-header-inner">
         <BrandLink />
         <nav aria-label={t("menu.mainNav")} className="bw-desktop-nav">
-          {primary.map((item) => (
-            <Link
-              key={item.to}
-              to={item.to}
-              activeOptions={{ exact: item.to === "/" }}
-              className="inline-flex items-center gap-1.5"
-              onClick={() => {
-                if (item.to !== "/") return;
-                window.scrollTo({ top: 0, behavior: "instant" });
-                goHome();
-              }}
-            >
-              {item.to === "/" ? (
-                <>
-                  <House size={16} aria-hidden /> {t("nav.map")}
-                </>
-              ) : (
-                <>
-                  <Clock size={16} aria-hidden /> {t("nav.departures")}
-                </>
-              )}
-            </Link>
-          ))}
           <Link
             to="/"
-            onClick={openItineraryFromHeader}
+            onClick={openSearchFromHeader}
             activeProps={{ className: "" }}
-            className="inline-flex items-center gap-1.5"
+            className="bw-book-button"
+            aria-label={t("menu.bookLabel")}
           >
-            <RouteIcon size={16} aria-hidden />
-            {t("nav.route")}
+            <CalendarCheck size={16} aria-hidden />
+            {t("menu.book")}
           </Link>
-          <DropdownMenu>
-            <DropdownMenuTrigger className="bw-explore-trigger">
-              {t("nav.explore")} <ChevronDown size={15} />
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="start" className="bw-mega-menu">
-              {menuGroups.map((group) => (
-                <div
-                  key={group.titleKey}
-                  className="bw-mega-menu__group"
-                  role="group"
-                  aria-label={t(group.titleKey)}
+          {menuFamilies
+            .filter((family) => !family.sheetOnly)
+            .map((family) => (
+              <DropdownMenu key={family.id}>
+                <DropdownMenuTrigger
+                  className="bw-explore-trigger"
+                  data-active={familyIsActive(family, pathname) || undefined}
                 >
-                  <p className="bw-menu-group-title">{t(group.titleKey)}</p>
-                  {group.items.map((item) => (
-                    <DropdownMenuItem asChild key={item.to}>
-                      <Link to={item.to} className="bw-menu-link">
-                        <item.icon size={16} aria-hidden />
-                        {t(item.labelKey)}
-                      </Link>
-                    </DropdownMenuItem>
+                  {t(family.titleKey)} <ChevronDown size={15} aria-hidden />
+                </DropdownMenuTrigger>
+                <DropdownMenuContent
+                  align="start"
+                  className="bw-mega-menu"
+                  data-columns={family.columns.length}
+                >
+                  {family.columns.map((column, index) => (
+                    <div
+                      key={column.titleKey ?? index}
+                      className="bw-mega-menu__group"
+                      role="group"
+                      aria-label={t(column.titleKey ?? family.titleKey)}
+                    >
+                      {column.titleKey ? (
+                        <p className="bw-menu-group-title">{t(column.titleKey)}</p>
+                      ) : null}
+                      {column.items.map((item) => (
+                        <DropdownMenuItem asChild key={`${item.to}-${item.labelKey}`}>
+                          <MenuItemLink item={item} />
+                        </DropdownMenuItem>
+                      ))}
+                    </div>
                   ))}
-                </div>
-              ))}
-            </DropdownMenuContent>
-          </DropdownMenu>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            ))}
         </nav>
         <div className="bw-header-actions">
           {/* Sur mobile, le compte est l'onglet « Moi » de la barre du bas. */}
+          {trip ? (
+            <Link
+              to="/"
+              search={{ voyage: 1 } as never}
+              onClick={openVoyage}
+              className="bw-my-trip-pill"
+              aria-label={t("menu.myTripLabel")}
+            >
+              <Ship size={16} aria-hidden />
+              {t("nav.myTrip")}
+            </Link>
+          ) : null}
           <QuestionButton />
           <span className="hidden md:inline-flex">
             <UserMenu compact iconOnly />
@@ -244,8 +347,18 @@ export function SiteHeader() {
             <SheetContent side="bottom" className="bw-menu-sheet">
               <SheetTitle className="bw-menu-sheet__title">{t("menu.sheetTitle")}</SheetTitle>
               <SheetDescription className="sr-only">{t("menu.sheetDescription")}</SheetDescription>
-              {/* Tablette : pas de barre du bas, la navigation principale reste ici. */}
+              {/* Tablette : pas de barre du bas, « Réserver » et la carte restent ici. */}
               <div className="bw-menu-sheet__main">
+                <SheetClose asChild>
+                  <Link
+                    to="/"
+                    onClick={openSearchFromHeader}
+                    activeProps={{ className: "" }}
+                    className="bw-menu-link"
+                  >
+                    <CalendarCheck size={16} aria-hidden /> {t("menu.book")}
+                  </Link>
+                </SheetClose>
                 <SheetClose asChild>
                   <Link
                     to="/"
@@ -253,37 +366,33 @@ export function SiteHeader() {
                     onClick={goHome}
                     className="bw-menu-link"
                   >
-                    <House size={16} aria-hidden /> {t("nav.map")}
+                    <House size={16} aria-hidden /> {t("menu.liveMap")}
                   </Link>
                 </SheetClose>
-                <SheetClose asChild>
-                  <Link to="/horaires" className="bw-menu-link">
-                    <Clock size={16} aria-hidden /> {t("nav.departures")}
-                  </Link>
-                </SheetClose>
-                <SheetClose asChild>
-                  <Link
-                    to="/"
-                    onClick={openItineraryFromHeader}
-                    activeProps={{ className: "" }}
-                    className="bw-menu-link"
-                  >
-                    <RouteIcon size={16} aria-hidden /> {t("nav.route")}
-                  </Link>
-                </SheetClose>
+                {trip ? (
+                  <SheetClose asChild>
+                    <Link
+                      to="/"
+                      search={{ voyage: 1 } as never}
+                      onClick={openVoyage}
+                      className="bw-menu-link"
+                    >
+                      <Ship size={16} aria-hidden /> {t("nav.myTrip")}
+                    </Link>
+                  </SheetClose>
+                ) : null}
               </div>
               <div className="bw-menu-sheet__groups">
-                {menuGroups.map((group) => (
-                  <section key={group.titleKey} aria-label={t(group.titleKey)}>
-                    <p className="bw-menu-group-title">{t(group.titleKey)}</p>
-                    {group.items.map((item) => (
-                      <SheetClose asChild key={item.to}>
-                        <Link to={item.to} className="bw-menu-link">
-                          <item.icon size={17} aria-hidden />
-                          {t(item.labelKey)}
-                        </Link>
-                      </SheetClose>
-                    ))}
+                {menuFamilies.map((family) => (
+                  <section key={family.id} aria-label={t(family.titleKey)}>
+                    <p className="bw-menu-group-title">{t(family.titleKey)}</p>
+                    {family.columns
+                      .flatMap((column) => column.items)
+                      .map((item) => (
+                        <SheetClose asChild key={`${item.to}-${item.labelKey}`}>
+                          <MenuItemLink item={item} iconSize={17} />
+                        </SheetClose>
+                      ))}
                   </section>
                 ))}
               </div>

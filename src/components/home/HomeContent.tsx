@@ -17,8 +17,8 @@ import { tr } from "@/lib/i18n";
 
 const questions = [
   [
-    "Est-ce que je réserve mon billet sur BledWay ?",
-    "BledWay vous aide à explorer les lignes et les départs connus. Les liens d’offres vous dirigent vers la compagnie ou le distributeur indiqué. La réservation et le paiement se font sur leur site.",
+    "Comment réserver ma traversée ?",
+    "Cliquez sur « Réserver » : choisissez votre ligne, vos dates et votre véhicule, BledWay affiche les départs connus et vous dirige vers la compagnie ou le distributeur indiqué. La réservation et le paiement se font sur leur site.",
   ],
   [
     "Les positions des navires sont-elles en temps réel ?",

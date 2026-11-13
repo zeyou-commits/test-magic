@@ -1250,7 +1250,7 @@ function Index() {
     const timer = window.setTimeout(() => {
       window.sessionStorage.removeItem("bledway:open-home-action");
       if (action === "departures") openMobileDepartures();
-      else if (action === "search") openMobileSearch();
+      else if (action === "search") openSearchFromMenu();
       else if (action === "ports") showMobilePorts();
       else if (action === "itinerary") openItinerary();
       // « Demander aux voyageurs » depuis « Une question ? » d'une autre page.
@@ -1268,6 +1268,28 @@ function Index() {
     };
     window.addEventListener("bledway:open-itinerary", open);
     return () => window.removeEventListener("bledway:open-itinerary", open);
+  });
+
+  // « Réserver » (en-tête) : la recherche de traversée, ouverte et prête à remplir, sans bascule.
+  const openSearchFromMenu = () => {
+    if (window.innerWidth >= 768)
+      document.getElementById("carte")?.scrollIntoView({ behavior: "instant" });
+    if (panelMode === "itinerary") applyItineraryChoice();
+    if (selection) handleSelect(null);
+    setPanelMode("search");
+    setActiveShortcut(null);
+    setShortcutMenuOpen(false);
+    setDesktopPanelOpen(true);
+    setPanelLevel(2);
+    window.dispatchEvent(new Event("batogo:edit-filters"));
+  };
+  useEffect(() => {
+    const open = () => {
+      window.sessionStorage.removeItem("bledway:open-home-action");
+      openSearchFromMenu();
+    };
+    window.addEventListener("bledway:open-search", open);
+    return () => window.removeEventListener("bledway:open-search", open);
   });
 
   const exploreRoute = (route: RouteLine) => {

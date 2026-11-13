@@ -11,6 +11,7 @@ import { UserMenu } from "./UserMenu";
 import { QuestionButton } from "./QuestionButton";
 import { DataUnavailableNotice } from "./DataUnavailableNotice";
 import { goHome, openVoyage, useVoyageTrip } from "@/lib/ferry/voyageTrip";
+import { refocusTriggerWithoutScroll } from "@/lib/ui/menuFocus";
 import { LanguageSwitcher, useT, type MessageKey } from "@/lib/i18n";
 import {
   Anchor,
@@ -289,7 +290,9 @@ export function SiteHeader() {
           {menuFamilies
             .filter((family) => !family.sheetOnly)
             .map((family) => (
-              <DropdownMenu key={family.id}>
+              // Non modal : un menu modal bloque le défilement en passant <body> en overflow hidden,
+              // l'en-tête collant se cale alors sur <body> et sort de l'écran (page déjà descendue).
+              <DropdownMenu key={family.id} modal={false}>
                 <DropdownMenuTrigger
                   className="bw-explore-trigger"
                   data-active={familyIsActive(family, pathname) || undefined}
@@ -300,6 +303,7 @@ export function SiteHeader() {
                   align="start"
                   className="bw-mega-menu"
                   data-columns={family.columns.length}
+                  onCloseAutoFocus={refocusTriggerWithoutScroll}
                 >
                   {family.columns.map((column, index) => (
                     <div

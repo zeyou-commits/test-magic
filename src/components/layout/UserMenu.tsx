@@ -2,6 +2,7 @@ import { CabasImg } from "@/components/CabasImg";
 import { useAuthNext } from "@/lib/authReturn";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { openVoyage } from "@/lib/ferry/voyageTrip";
+import { refocusTriggerWithoutScroll } from "@/lib/ui/menuFocus";
 import { useState } from "react";
 import { MoodBubble } from "@/components/community/MoodBubble";
 import { MoodPicker } from "@/components/community/MoodPicker";
@@ -89,7 +90,8 @@ export function UserMenu({
 
   return (
     <span className="relative inline-flex">
-      <DropdownMenu>
+      {/* Non modal, comme les menus de l'en-tête : l'en-tête collant reste en haut de l'écran. */}
+      <DropdownMenu modal={false}>
         <DropdownMenuTrigger asChild>
           <button
             type="button"
@@ -119,7 +121,11 @@ export function UserMenu({
             ) : null}
           </button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" className="w-56">
+        <DropdownMenuContent
+          align="end"
+          className="w-56"
+          onCloseAutoFocus={refocusTriggerWithoutScroll}
+        >
           <DropdownMenuLabel>
             <span className="block truncate text-sm font-semibold">{name}</span>
             <span className="block truncate text-xs font-normal text-muted-foreground">

@@ -1,5 +1,5 @@
 import { TravellerAvatar } from "@/components/community/TravellerAvatar";
-import { useEffect, useId, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Star } from "lucide-react";
 import { RateStars } from "./RateStars";
@@ -24,6 +24,25 @@ import {
 import { PhotoPicker, PhotoStrip } from "@/components/photos/Photos";
 import { photosKey, photosQuery, submitPhoto, type PreparedPhoto } from "@/lib/photos/photos";
 import { tr } from "@/lib/i18n";
+
+/**
+ * Fait défiler le volet (fiche de la carte) jusqu'à l'élément, sans faire bouger la page autour :
+ * scrollIntoView ferait aussi descendre la page d'accueil sous la carte.
+ */
+function revealInPanel(element: HTMLElement) {
+  const smooth = !window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  let box = element.parentElement;
+  while (box && box !== document.body) {
+    const style = getComputedStyle(box);
+    if (/(auto|scroll)/.test(style.overflowY) && box.scrollHeight > box.clientHeight + 4) {
+      const top = element.getBoundingClientRect().top - box.getBoundingClientRect().top;
+      box.scrollTo({ top: box.scrollTop + top - 12, behavior: smooth ? "smooth" : "auto" });
+      return;
+    }
+    box = box.parentElement;
+  }
+  element.scrollIntoView({ block: "start", behavior: smooth ? "smooth" : "auto" });
+}
 
 /** Photos d'avis : navires et ports seulement (pas les compagnies). */
 const photoKind = (kind: ReviewKind) =>
@@ -56,9 +75,18 @@ export function EntityReviews({
       photoKind(kind) ? (feed.data?.reviews ?? []).map((r) => r.id) : [],
     ),
   ).data;
+  const formRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     if (openForm) setWrite(true);
   }, [openForm]);
+  // Étoile cliquée en haut de la fiche : le formulaire s'ouvre plus bas, on y descend.
+  useEffect(() => {
+    if (!openForm) return;
+    const timer = window.setTimeout(() => {
+      if (formRef.current) revealInPanel(formRef.current);
+    }, 120);
+    return () => window.clearTimeout(timer);
+  }, [openForm, nonce]);
   useEffect(() => {
     // Une note commencée (étoile cliquée, ou avant connexion) rouvre le formulaire.
     if (window.sessionStorage.getItem(draftKey)) setWrite(true);
@@ -102,6 +130,7 @@ export function EntityReviews({
           {tr("ui.entityReviews.votreEvaluationNEstPas")}
         </p>
       ) : null}
+      <div ref={formRef} className="scroll-mt-3">
       {write ? (
         user && mine.isPending ? (
           <p role="status">{tr("ui.entityReviews.chargementDeVotreEvaluation")}</p>
@@ -126,6 +155,7 @@ export function EntityReviews({
           />
         )
       ) : null}
+      </div>
       {feed.data?.criteria && Object.keys(feed.data.criteria).length ? (
         <details className="bw-rating-detail">
           <summary>{tr("ui.entityReviews.les5Criteres")}</summary>

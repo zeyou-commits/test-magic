@@ -1230,3 +1230,68 @@
     animation: none;
   }
 }
+
+/* Rôle du compte connecté (sous « Espace équipe ») et refus d'accès expliqué. */
+.bw-admin-role {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin: -10px 12px 16px;
+  font-size: 11px;
+  color: var(--muted-foreground);
+}
+.bw-admin-role__label {
+  width: 100%;
+  font-weight: 600;
+}
+.bw-admin-role__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+.bw-admin-role__count {
+  margin-left: auto;
+}
+.bw-role-chip {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 6px;
+  padding: 1px 8px;
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.bw-role-chip--admin {
+  background: #efe9fb;
+  color: #5b3fa0;
+}
+.bw-role-chip--editor {
+  background: #e4effa;
+  color: #1d5d9b;
+}
+.bw-role-chip--moderator {
+  background: #fbeee2;
+  color: #a2531a;
+}
+.bw-role-chip--future {
+  background: transparent;
+  border: 1px dashed var(--border);
+  color: var(--muted-foreground);
+  font-weight: 600;
+}
+.bw-admin-menu .bw-admin-role {
+  margin: 0 0 12px;
+}
+.bw-admin-refused {
+  display: grid;
+  gap: 4px;
+  margin-bottom: 18px;
+  border: 1px solid #f1d7a8;
+  border-left: 4px solid #c27c0e;
+  border-radius: 12px;
+  background: #fff8ea;
+  padding: 12px 16px;
+  font-size: 14px;
+  color: #6b4300;
+}

@@ -1,253 +1,9 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
-import {
-  ArrowUpRight,
-  Bell,
-  Building2,
-  CalendarDays,
-  CalendarRange,
-  Database,
-  FileSpreadsheet,
-  Flag,
-  LayoutDashboard,
-  LineChart,
-  Radio,
-  MapPin,
-  MessageSquare,
-  Route,
-  Search,
-  Ship,
-  Star,
-  Waves,
-  Users,
-  Zap,
-  Fuel,
-  Images,
-  Smile,
-  Megaphone,
-  TriangleAlert,
-  Newspaper,
-  Menu,
-  Ticket,
-  X,
-} from "lucide-react";
+import { ArrowUpRight, Bell, LayoutDashboard, Search, Waves, Menu, X } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import { UserMenu } from "@/components/layout/UserMenu";
-
-/**
- * Groupes du menu, dans l'ordre d'affichage. Le premier (sans titre) réunit le travail
- * quotidien ; les suivants se replient pour garder le menu court.
- */
-const groups = ["", "Planning détaillé", "Réseau", "Voyageurs", "Contrôles", "Équipe"];
-const sections = [
-  {
-    id: "overview",
-    label: "Aujourd'hui",
-    description: "Ce qui demande votre attention, classé par urgence. Chaque point se règle ici.",
-    group: "",
-    icon: LayoutDashboard,
-  },
-  {
-    id: "planning",
-    label: "Traversées",
-    description: "Le planning de la semaine : une ligne par ligne, une colonne par jour.",
-    group: "",
-    icon: CalendarDays,
-  },
-  {
-    id: "vessels",
-    label: "Flotte & compagnies",
-    description:
-      "Une compagnie à gauche, ses navires à droite. Ajouter, archiver, remplacer ou fusionner un navire.",
-    group: "",
-    icon: Ship,
-  },
-  {
-    id: "import",
-    label: "Import de saison",
-    description: "Contrôlez les lignes de votre fichier avant de les publier.",
-    group: "",
-    icon: FileSpreadsheet,
-  },
-  {
-    id: "assign",
-    label: "Affectation auto",
-    description:
-      "Les règles qui choisissent le navire d'une traversée, et compagnie par compagnie : automatique, proposé ou manuel.",
-    group: "",
-    icon: Zap,
-  },
-  {
-    id: "incidents",
-    label: "Navires immobilisés",
-    description: "Source, vérification, départs concernés, messages à préparer et signalements à traiter.",
-    group: "",
-    icon: TriangleAlert,
-  },
-  {
-    id: "watch",
-    label: "Veille actualité",
-    description:
-      "Ce que Claude a repéré dans la presse et chez les compagnies : approuvez, refusez ou mettez en attente. Rien n'est appliqué sans vous.",
-    group: "",
-    icon: Newspaper,
-  },
-  {
-    id: "commercial",
-    label: "Programmes par compagnie",
-    description: "Liaisons commerciales, départs, navires et sources officielles au même endroit.",
-    group: "Planning détaillé",
-    icon: CalendarRange,
-  },
-  {
-    id: "schedules",
-    label: "Calendriers récurrents",
-    description: "Gérez les programmes et les fréquences des lignes.",
-    group: "Planning détaillé",
-    icon: CalendarRange,
-  },
-  {
-    id: "departures",
-    label: "Liste des départs",
-    description: "Retrouvez un départ par sa date et mettez à jour ses informations.",
-    group: "Planning détaillé",
-    icon: CalendarDays,
-  },
-  {
-    id: "ports",
-    label: "Ports",
-    description: "Accès, informations pratiques et points sur la carte.",
-    group: "Réseau",
-    icon: MapPin,
-  },
-  {
-    id: "routes",
-    label: "Liaisons",
-    description: "Les lignes entre les deux rives.",
-    group: "Réseau",
-    icon: Route,
-  },
-  {
-    id: "companies",
-    label: "Fiches compagnies",
-    description: "Logo, site, description, fusion des doublons et suppression des compagnies.",
-    group: "Réseau",
-    icon: Building2,
-  },
-  {
-    id: "places",
-    label: "Lieux pratiques",
-    description: "Stations-service, change, distributeurs autour des ports.",
-    group: "Réseau",
-    icon: Fuel,
-  },
-  {
-    id: "illustrations",
-    label: "Illustrations",
-    description: "Avatars, personnages, humeurs et icônes : remplacer une image ou la renommer.",
-    group: "Voyageurs",
-    icon: Images,
-  },
-  {
-    id: "library",
-    label: "Emojis et avatars",
-    description:
-      "Ajouter des emojis et avatars, créer et ordonner les thématiques, ranger chaque image.",
-    group: "Voyageurs",
-    icon: Smile,
-  },
-  {
-    id: "walletMedia",
-    label: "Mes dinars : images et voix",
-    description: "Choisissez les photos des billets et enregistrez les montants à l’oral.",
-    group: "Voyageurs",
-    icon: Images,
-  },
-  {
-    id: "flash",
-    label: "Flash info",
-    description: "Actualités et perturbations Europe ↔ Algérie, sourcées.",
-    group: "Voyageurs",
-    icon: Zap,
-  },
-  {
-    id: "signals",
-    label: "Catalogue des signalements",
-    description:
-      "Situations, choix et services proposés aux voyageurs dans « Que voyez-vous ? ».",
-    group: "Voyageurs",
-    icon: Megaphone,
-  },
-  {
-    id: "community",
-    label: "Modération voyageurs",
-    description: "Avis sur les navires et signalements en cours, à vérifier ou à clore.",
-    group: "Voyageurs",
-    icon: MessageSquare,
-  },
-  {
-    id: "tickets",
-    label: "Billets des voyageurs",
-    description: "Écarts d’horaire relevés sur les billets et agences émettrices, sans donnée personnelle.",
-    group: "Voyageurs",
-    icon: Ticket,
-  },
-  {
-    id: "reviews",
-    label: "Avis et photos",
-    description: "Relisez les avis et les photos des voyageurs avant de les rendre publics.",
-    group: "Voyageurs",
-    icon: Star,
-  },
-  {
-    id: "notifications",
-    label: "Notifications",
-    description: "Préparez, vérifiez et diffusez les ouvertures de traversées.",
-    group: "Voyageurs",
-    icon: Bell,
-  },
-  {
-    id: "alerts",
-    label: "Alertes planning",
-    description: "Les anomalies du calendrier à vérifier avant publication.",
-    group: "Contrôles",
-    icon: Flag,
-  },
-  {
-    id: "reports",
-    label: "Erreurs signalées",
-    description: "Horaires ou fiches à corriger, remontés par les voyageurs (« Signaler une erreur »).",
-    group: "Contrôles",
-    icon: TriangleAlert,
-  },
-  {
-    id: "data",
-    label: "Qualité des données",
-    description: "Contrôlez la cohérence des informations publiées.",
-    group: "Contrôles",
-    icon: Database,
-  },
-  {
-    id: "health",
-    label: "Santé technique",
-    description: "Le signal des navires et les fiches sans identifiant.",
-    group: "Contrôles",
-    icon: Radio,
-  },
-  {
-    id: "usage",
-    label: "Mesure d'usage",
-    description: "Les pages vues et ce que devient une recherche, sur 7 jours.",
-    group: "Contrôles",
-    icon: LineChart,
-  },
-  {
-    id: "users",
-    label: "Utilisateurs",
-    description: "Gérez les comptes voyageurs, les rôles et les accès de votre équipe.",
-    group: "Équipe",
-    icon: Users,
-  },
-];
+import { adminGroups as groups, adminSections as sections, sectionLabel } from "./adminSections";
+import { ROLE_CATALOG, rolesForTab, staffRoles } from "@/lib/admin/permissions";
 
 /** Téléphone : les rubriques du quotidien en bas de l'écran, le reste dans « Menu ». */
 const MOBILE_TABS: { id: string; short: string }[] = [
@@ -268,6 +24,8 @@ export function AdminWorkspace({
   canAccess = () => true,
   searchItems = [],
   onOpenItem,
+  roles = [],
+  refusedTab,
 }: {
   tab: string;
   onNavigate: (tab: string) => void;
@@ -276,6 +34,10 @@ export function AdminWorkspace({
   canAccess?: (tab: string) => boolean;
   searchItems?: AdminSearchItem[];
   onOpenItem?: (tab: string, id: string) => void;
+  /** Rôles d'équipe du compte connecté, affichés sous « Espace équipe ». */
+  roles?: readonly string[];
+  /** Rubrique demandée (lien, adresse) mais fermée à ce rôle : on explique au lieu de rediriger en silence. */
+  refusedTab?: string | undefined;
 }) {
   const [search, setSearch] = useState("");
   const [menuOpen, setMenuOpen] = useState(false);
@@ -300,7 +62,11 @@ export function AdminWorkspace({
   const foundItems =
     search.trim().length >= 2
       ? searchItems
-          .filter((item) => canAccess(item.tab) && plain(`${item.label} ${item.hint}`).includes(plain(search.trim())))
+          .filter(
+            (item) =>
+              canAccess(item.tab) &&
+              plain(`${item.label} ${item.hint}`).includes(plain(search.trim())),
+          )
           .slice(0, 8)
       : [];
   const current = sections.find((section) => section.id === tab) ?? sections[0]!;
@@ -314,6 +80,23 @@ export function AdminWorkspace({
   const menuBadge = available
     .filter((section) => !mobileTabs.some((item) => item.id === section.id))
     .reduce((sum, section) => sum + (badges[section.id] ?? 0), 0);
+  const mine = staffRoles(roles);
+  const roleBadge = mine.length ? (
+    <p className="bw-admin-role" aria-label="Votre rôle">
+      <span className="bw-admin-role__label">Votre rôle</span>
+      <span className="bw-admin-role__chips">
+        {mine.map((role) => (
+          <span key={role} className={`bw-role-chip bw-role-chip--${role}`}>
+            {ROLE_CATALOG[role].label}
+          </span>
+        ))}
+      </span>
+      <span className="bw-admin-role__count">
+        {available.length} rubrique{available.length > 1 ? "s" : ""}
+      </span>
+    </p>
+  ) : null;
+  const refusedBy = refusedTab ? rolesForTab(refusedTab) : [];
   const pick = (id: string) => {
     onNavigate(id);
     setMenuOpen(false);
@@ -425,6 +208,7 @@ export function AdminWorkspace({
           <img src="/bledway-brand-entete.webp" alt="BledWay" />
           <span>ESPACE ÉQUIPE</span>
         </Link>
+        {roleBadge}
         {menuOpen ? null : searchField}
         {menuOpen ? null : navigation}
         <div className="bw-admin-sidebar-foot">
@@ -490,6 +274,22 @@ export function AdminWorkspace({
               <ArrowUpRight className="ml-auto size-4 shrink-0" />
             </button>
           )}
+          {refusedTab && (
+            <div role="alert" className="bw-admin-refused">
+              <strong>
+                « {sectionLabel(refusedTab)} » est réservée aux{" "}
+                {[...refusedBy.filter((role) => role !== "admin"), "admin" as const]
+                  .map((role) => `${ROLE_CATALOG[role].label.toLowerCase()}s`)
+                  .join(" et aux ")}
+                .
+              </strong>
+              <span>
+                Votre rôle ({mine.map((role) => ROLE_CATALOG[role].label).join(", ")}) ne l'ouvre
+                pas. Pour y accéder, demandez à un administrateur. Vous voyez à la place «{" "}
+                {current.label} ».
+              </span>
+            </div>
+          )}
           {children}
         </main>
       </div>
@@ -535,6 +335,7 @@ export function AdminWorkspace({
               <X className="size-5" aria-hidden />
             </button>
           </header>
+          {roleBadge}
           {searchField}
           {navigation}
           <Link to="/" className="bw-admin-menu__site">

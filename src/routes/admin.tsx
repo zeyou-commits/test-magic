@@ -13,7 +13,7 @@ import { trackingTimes } from "@/lib/ferry/tracking";
 import type { Departure } from "@/lib/ferry/types";
 import { CommercialPrograms } from "@/components/admin/CommercialPrograms";
 import { UsersAdmin } from "@/components/admin/UsersAdmin";
-import { canUseAdminTab } from "@/lib/admin/permissions";
+import { canUseAdminTab, roleHome, STAFF_ROLES } from "@/lib/admin/permissions";
 import { communityQuery } from "@/lib/ferry/community";
 import { NewsAdmin, PlacesAdmin } from "@/components/admin/ContentAdmin";
 import { CommunityModeration } from "@/components/panel/CommunityModeration";
@@ -177,7 +177,7 @@ function AdminPage() {
     );
   }
 
-  if (!roles.some((role) => ["admin", "editor", "moderator"].includes(role))) {
+  if (!roles.some((role) => (STAFF_ROLES as readonly string[]).includes(role))) {
     return (
       <CenteredNote>
         <p>Cet espace est réservé à l'équipe BledWay.</p>
@@ -221,11 +221,9 @@ function AdminTabs() {
     item,
     date: planningDate,
   } = Route.useSearch();
-  const tab = canUseAdminTab(roles, requestedTab)
-    ? requestedTab
-    : roles.includes("editor")
-      ? "departures"
-      : "reviews";
+  const tab = canUseAdminTab(roles, requestedTab) ? requestedTab : roleHome(roles);
+  // « overview » est l'arrivée par défaut : ne pas présenter comme un refus ce qui n'a pas été demandé.
+  const refusedTab = tab !== requestedTab && requestedTab !== "overview" ? requestedTab : undefined;
   const navigate = Route.useNavigate();
   const navigateTo = (id: string, nextFilter?: AdminFilter) => {
     if (!canUseAdminTab(roles, id)) return;
@@ -304,6 +302,8 @@ function AdminTabs() {
         onNavigate={navigateTo}
         badges={badges}
         canAccess={(id) => canUseAdminTab(roles, id)}
+        roles={roles}
+        refusedTab={refusedTab}
         searchItems={searchItems}
         onOpenItem={openItem}
       >

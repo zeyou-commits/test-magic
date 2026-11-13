@@ -26,6 +26,9 @@ import {
   type UsersStats,
 } from "@/lib/admin/users";
 import { AdminDrawer } from "@/components/admin/AdminDrawer";
+import { RoleMatrix } from "@/components/admin/RoleMatrix";
+import { adminSections } from "@/components/admin/adminSections";
+import { ROLE_CATALOG, STAFF_ROLES, roleCanUseTab, type StaffRole } from "@/lib/admin/permissions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -36,27 +39,10 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 
-const roleLabels = { admin: "Administrateur", editor: "Éditeur", moderator: "Modérateur" };
-type Role = keyof typeof roleLabels;
-
-/** Ce que chaque rôle permet, en clair (même règle que lib/admin/permissions.ts). */
-const roleHelp: { role: Role; can: string; cannot: string }[] = [
-  {
-    role: "admin",
-    can: "Tout : planning, flotte, voyageurs, notifications, comptes et rôles.",
-    cannot: "Ne peut pas se retirer ses propres droits ; le dernier administrateur est protégé.",
-  },
-  {
-    role: "editor",
-    can: "Traversées, imports, affectation, flotte, ports, lignes, Flash info, lieux, catalogue des signalements.",
-    cannot: "Ni les comptes, ni la modération des avis, ni l'envoi de notifications.",
-  },
-  {
-    role: "moderator",
-    can: "Avis des voyageurs, modération de la communauté, erreurs signalées.",
-    cannot: "Ni le planning, ni la flotte, ni les comptes.",
-  },
-];
+const roleLabels = Object.fromEntries(
+  STAFF_ROLES.map((role) => [role, ROLE_CATALOG[role].label]),
+) as Record<StaffRole, string>;
+type Role = StaffRole;
 
 const auditText = (entry: AuditEntry) => {
   const target = entry.target ?? "un compte";
@@ -158,7 +144,9 @@ export function UsersAdmin() {
         ? "Suspendre le compte"
         : change?.action === "unban"
           ? "Réactiver le compte"
-          : "Modifier les permissions";
+          : change?.action === "role" && change.role
+            ? `${change.enabled ? "Donner" : "Retirer"} le rôle ${roleLabels[change.role as Role]}`
+            : "Modifier les permissions";
   const switchTab = (next: Tab) => {
     setTab(next);
     setPage(1);
@@ -234,22 +222,7 @@ export function UsersAdmin() {
         )}
       </div>
 
-      {tab === "team" && (
-        <section className="rounded-2xl border bg-card p-4">
-          <h2 className="text-sm font-semibold">Qui peut faire quoi</h2>
-          <div className="mt-3 grid gap-3 md:grid-cols-3">
-            {roleHelp.map((help) => (
-              <div key={help.role} className="rounded-xl border border-border p-3">
-                <p className="flex items-center gap-1.5 text-sm font-semibold">
-                  <ShieldCheck size={14} className="text-primary" /> {roleLabels[help.role]}
-                </p>
-                <p className="mt-1 text-xs leading-relaxed">{help.can}</p>
-                <p className="mt-1 text-xs leading-relaxed text-muted-foreground">{help.cannot}</p>
-              </div>
-            ))}
-          </div>
-        </section>
-      )}
+      {tab === "team" && <RoleMatrix />}
 
       {tab === "history" ? (
         <section className="rounded-2xl border bg-card p-4">
@@ -534,8 +507,20 @@ export function UsersAdmin() {
                     ? "Le compte ne pourra plus se connecter ni utiliser ses droits sur les données. Ses abonnements push et suivis seront désactivés."
                     : change.action === "unban"
                       ? "Le voyageur pourra se reconnecter. Il devra réactiver ses suivis et ses notifications."
-                      : `${change.enabled ? "Accorder" : "Retirer"} le rôle ${roleLabels[change.role as Role]}.`}
+                      : null}
               </p>
+              {change.action === "role" && change.role && (
+                <RoleChangeSummary
+                  role={change.role as Role}
+                  enabled={Boolean(change.enabled)}
+                  member={change.member}
+                  adminCount={
+                    tab === "team"
+                      ? result.data?.members.filter((m) => m.roles.includes("admin")).length
+                      : undefined
+                  }
+                />
+              )}
               {change.action === "ban" && (
                 <label className="block text-sm">
                   Durée
@@ -595,7 +580,11 @@ export function UsersAdmin() {
                     reason.trim().length < 3
                   }
                 >
-                  {mutation.isPending ? "Traitement…" : "Confirmer"}
+                  {mutation.isPending
+                    ? "Traitement…"
+                    : change.action === "role" && change.role
+                      ? `${change.enabled ? "Donner" : "Retirer"} le rôle ${roleLabels[change.role as Role]}`
+                      : "Confirmer"}
                 </Button>
               </div>
             </form>
@@ -830,5 +819,63 @@ function UserSheet({
         </div>
       ) : null}
     </AdminDrawer>
+  );
+}
+
+/** Ce que l'attribution (ou le retrait) d'un rôle ouvre ou ferme, avant de confirmer. */
+function RoleChangeSummary({
+  role,
+  enabled,
+  member,
+  adminCount,
+}: {
+  role: Role;
+  enabled: boolean;
+  member: ManagedUser;
+  adminCount: number | undefined;
+}) {
+  const others = member.roles.filter((r): r is Role => r !== role && r in roleLabels);
+  // Rubriques réellement gagnées ou perdues, compte tenu des autres rôles déjà détenus.
+  const changed = adminSections.filter(
+    (section) =>
+      roleCanUseTab(role, section.id) && !others.some((r) => roleCanUseTab(r, section.id)),
+  );
+  const name = member.display_name || member.email || "ce compte";
+  return (
+    <div className="space-y-2 text-sm">
+      <p>
+        <span className={`bw-role-chip bw-role-chip--${role}`}>{roleLabels[role]}</span>{" "}
+        {ROLE_CATALOG[role].summary}
+      </p>
+      {changed.length ? (
+        <>
+          <p>
+            {enabled
+              ? `${name} pourra ouvrir ${changed.length} rubrique${changed.length > 1 ? "s" : ""} de plus :`
+              : `${name} n'aura plus accès à ${changed.length} rubrique${changed.length > 1 ? "s" : ""} :`}
+          </p>
+          <ul className="flex flex-wrap gap-1.5">
+            {changed.map((section) => (
+              <li key={section.id} className="rounded-md border border-border px-2 py-0.5 text-xs">
+                {section.label}
+              </li>
+            ))}
+          </ul>
+        </>
+      ) : (
+        <p className="text-muted-foreground">
+          Aucune rubrique ne change : ses autres rôles ouvrent déjà les mêmes.
+        </p>
+      )}
+      {role === "admin" && enabled && (
+        <p className="rounded-lg border border-red-200 bg-red-50 p-3 text-red-900">
+          Ce compte pourra à son tour donner ou retirer des rôles, y compris le vôtre, gérer tous
+          les comptes et envoyer des notifications à tous les voyageurs.
+          {adminCount
+            ? ` Il y a déjà ${adminCount} administrateur${adminCount > 1 ? "s" : ""} dans l'équipe.`
+            : ""}
+        </p>
+      )}
+    </div>
   );
 }

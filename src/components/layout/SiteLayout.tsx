@@ -88,6 +88,7 @@ const footerLinks = [
   { to: "/vehicules-moins-3-ans", labelKey: "nav.vehiclesUnder3" },
   { to: "/voyage-algerie", labelKey: "nav.travelAlgeria" },
   { to: "/papiers-voyage-algerie", labelKey: "nav.travelPapers" },
+  { to: "/preparer-mon-voyage", labelKey: "nav.prepareCompanion" },
   { to: "/covoiturage", labelKey: "nav.carpool" },
   { to: "/bateaux", labelKey: "nav.vessels" },
   { to: "/simulateurs", labelKey: "nav.simulators" },
@@ -157,6 +158,16 @@ export function SiteHeader() {
         data-columns={family.columns.length}
         onCloseAutoFocus={refocusTriggerWithoutScroll}
       >
+        {family.lead ? (
+          <DropdownMenuItem asChild>
+            <MenuItemLink
+              item={family.lead}
+              iconSize={20}
+              hint={t(family.lead.hintKey)}
+              className="bw-menu-link--lead"
+            />
+          </DropdownMenuItem>
+        ) : null}
         {family.columns.map((column, index) => (
           <div
             key={column.titleKey ?? index}
@@ -321,6 +332,7 @@ export function SiteFooter() {
                 "/guide",
                 "/questions-frequentes",
                 "/voyage-algerie",
+                "/preparer-mon-voyage",
                 "/papiers-voyage-algerie",
                 "/simulateurs",
                 "/covoiturage",

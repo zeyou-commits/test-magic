@@ -217,6 +217,11 @@ export function TripPreparation({
           ))}
         </div>
       </details>
+      {direction === "outbound" ? (
+        <a className="bw-prep__companion" href="/preparer-mon-voyage">
+          {tr("ui.tripPreparation.toutPreparerPasAPas")} <ArrowRight size={13} aria-hidden />
+        </a>
+      ) : null}
       <p className="bw-prep__note">
         {tr("ui.tripPreparation.unAideMemoireLesRegles")}
       </p>

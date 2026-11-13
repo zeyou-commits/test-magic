@@ -241,6 +241,44 @@ html {
 .bw-menu-link--featured:focus-visible {
   background: #dcefe2;
 }
+/* Le compagnon pas à pas : l'entrée principale, sur toute la largeur du menu. */
+.bw-menu-link--lead {
+  grid-column: 1 / -1;
+  min-height: 60px;
+  padding: 10px 14px;
+  border-radius: 14px;
+  background: #0b5e34;
+  color: #fff;
+  font-weight: 800;
+}
+.bw-menu-link--lead:hover,
+.bw-menu-link--lead:focus-visible,
+.bw-menu-link--lead[data-highlighted] {
+  background: #094d2b;
+  color: #fff;
+}
+.bw-menu-link--lead svg {
+  color: #fff;
+}
+.bw-menu-link__text {
+  display: grid;
+  gap: 1px;
+  text-align: left;
+}
+.bw-menu-link__text small {
+  font-size: 12.5px;
+  font-weight: 500;
+  opacity: 0.85;
+}
+.bw-prep__companion {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 4px;
+  color: var(--primary);
+  font-size: 13px;
+  font-weight: 700;
+}
 .bw-mega-menu__group {
   display: grid;
   align-content: start;

@@ -12,6 +12,7 @@ import {
   FileText,
   Info,
   Landmark,
+  ListChecks,
   Mail,
   Map as MapIcon,
   Newspaper,
@@ -46,6 +47,8 @@ export type MenuItem = {
 export type MenuFamily = {
   id: "prepare" | "live" | "lines" | "bledway";
   titleKey: MessageKey;
+  /** L'entrée principale, au-dessus des colonnes : le compagnon pas à pas. */
+  lead?: MenuItem & { hintKey: MessageKey };
   columns: { titleKey?: MessageKey; items: MenuItem[] }[];
   /** Liens transversaux, sur une ligne sous les colonnes. */
   footer?: MenuItem[];
@@ -57,12 +60,20 @@ export const menuFamilies: MenuFamily[] = [
   {
     id: "prepare",
     titleKey: "menu.groupPrepareTrip",
+    // Le compagnon fait tout dans l'ordre ; les colonnes restent pour aller droit à un sujet.
+    lead: {
+      to: "/preparer-mon-voyage",
+      labelKey: "menu.companion",
+      hintKey: "menu.companionHint",
+      icon: ListChecks,
+      featured: true,
+    },
     // Par besoin : les papiers d'abord, puis la voiture, la route et le budget.
     columns: [
       {
         titleKey: "menu.colPapers",
         items: [
-          { to: "/papiers-voyage-algerie", labelKey: "menu.papersList", icon: FileText, featured: true },
+          { to: "/papiers-voyage-algerie", labelKey: "menu.papersList", icon: FileText },
           { to: "/guide/arrivee-algerie-port-formalites", labelKey: "menu.arrivalFormalities", icon: ShieldCheck },
         ],
       },
@@ -143,6 +154,7 @@ export const familyById = (id: MenuFamily["id"]) => menuFamilies.find((family) =
 
 /** Tous les liens d'une famille, colonnes puis ligne du bas. */
 export const familyItems = (family: MenuFamily) => [
+  ...(family.lead ? [family.lead] : []),
   ...family.columns.flatMap((column) => column.items),
   ...(family.footer ?? []),
 ];
@@ -176,8 +188,10 @@ export const MenuItemLink = forwardRef<
     iconSize?: number;
     onClick?: MouseEventHandler<HTMLAnchorElement>;
     className?: string;
+    /** Une ligne d'explication sous le libellé (l'entrée principale). */
+    hint?: string;
   }
->(function MenuItemLink({ item, iconSize = 16, onClick, className, ...rest }, ref) {
+>(function MenuItemLink({ item, iconSize = 16, onClick, className, hint, ...rest }, ref) {
   const t = useT();
   const itinerary = item.action === "itinerary";
   // Rôle, tabIndex, data-* et focus passés par le menu (Slot de Radix) : repris tels quels.
@@ -196,7 +210,14 @@ export const MenuItemLink = forwardRef<
       className={`bw-menu-link${item.featured ? " bw-menu-link--featured" : ""}${className ? ` ${className}` : ""}`}
     >
       <item.icon size={iconSize} aria-hidden />
-      {t(item.labelKey)}
+      {hint ? (
+        <span className="bw-menu-link__text">
+          {t(item.labelKey)}
+          <small>{hint}</small>
+        </span>
+      ) : (
+        t(item.labelKey)
+      )}
     </Link>
   );
 });

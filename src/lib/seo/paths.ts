@@ -8,6 +8,7 @@ export const editorialPaths = [
   "/vehicules-moins-3-ans",
   "/voyage-algerie",
   "/papiers-voyage-algerie",
+  "/preparer-mon-voyage",
   "/bateaux",
   "/covoiturage",
   "/simulateurs",

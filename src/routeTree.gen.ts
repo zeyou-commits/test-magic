@@ -34,6 +34,7 @@ import { Route as MethodeEditorialeRouteImport } from './routes/methode-editoria
 import { Route as MonVoyageRouteImport } from './routes/mon-voyage'
 import { Route as PapiersVoyageAlgerieRouteImport } from './routes/papiers-voyage-algerie'
 import { Route as PortsRouteImport } from './routes/ports'
+import { Route as PreparerMonVoyageRouteImport } from './routes/preparer-mon-voyage'
 import { Route as QuestionsFrequentesRouteImport } from './routes/questions-frequentes'
 import { Route as SimulateursRouteImport } from './routes/simulateurs'
 import { Route as SitemapMaritimeDotxmlRouteImport } from './routes/sitemap-maritime[.]xml'
@@ -188,6 +189,11 @@ const PapiersVoyageAlgerieRoute = PapiersVoyageAlgerieRouteImport.update({
 const PortsRoute = PortsRouteImport.update({
   id: '/ports',
   path: '/ports',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PreparerMonVoyageRoute = PreparerMonVoyageRouteImport.update({
+  id: '/preparer-mon-voyage',
+  path: '/preparer-mon-voyage',
   getParentRoute: () => rootRouteImport,
 } as any)
 const QuestionsFrequentesRoute = QuestionsFrequentesRouteImport.update({
@@ -367,6 +373,7 @@ export interface FileRoutesByFullPath {
   '/mon-voyage': typeof MonVoyageRoute
   '/papiers-voyage-algerie': typeof PapiersVoyageAlgerieRoute
   '/ports': typeof PortsRouteWithChildren
+  '/preparer-mon-voyage': typeof PreparerMonVoyageRoute
   '/questions-frequentes': typeof QuestionsFrequentesRoute
   '/simulateurs': typeof SimulateursRouteWithChildren
   '/sitemap-maritime.xml': typeof SitemapMaritimeDotxmlRoute
@@ -419,6 +426,7 @@ export interface FileRoutesByTo {
   '/methode-editoriale': typeof MethodeEditorialeRoute
   '/mon-voyage': typeof MonVoyageRoute
   '/papiers-voyage-algerie': typeof PapiersVoyageAlgerieRoute
+  '/preparer-mon-voyage': typeof PreparerMonVoyageRoute
   '/questions-frequentes': typeof QuestionsFrequentesRoute
   '/sitemap-maritime.xml': typeof SitemapMaritimeDotxmlRoute
   '/sitemap-pages.xml': typeof SitemapPagesDotxmlRoute
@@ -476,6 +484,7 @@ export interface FileRoutesById {
   '/mon-voyage': typeof MonVoyageRoute
   '/papiers-voyage-algerie': typeof PapiersVoyageAlgerieRoute
   '/ports': typeof PortsRouteWithChildren
+  '/preparer-mon-voyage': typeof PreparerMonVoyageRoute
   '/questions-frequentes': typeof QuestionsFrequentesRoute
   '/simulateurs': typeof SimulateursRouteWithChildren
   '/sitemap-maritime.xml': typeof SitemapMaritimeDotxmlRoute
@@ -535,6 +544,7 @@ export interface FileRouteTypes {
     | '/mon-voyage'
     | '/papiers-voyage-algerie'
     | '/ports'
+    | '/preparer-mon-voyage'
     | '/questions-frequentes'
     | '/simulateurs'
     | '/sitemap-maritime.xml'
@@ -587,6 +597,7 @@ export interface FileRouteTypes {
     | '/methode-editoriale'
     | '/mon-voyage'
     | '/papiers-voyage-algerie'
+    | '/preparer-mon-voyage'
     | '/questions-frequentes'
     | '/sitemap-maritime.xml'
     | '/sitemap-pages.xml'
@@ -643,6 +654,7 @@ export interface FileRouteTypes {
     | '/mon-voyage'
     | '/papiers-voyage-algerie'
     | '/ports'
+    | '/preparer-mon-voyage'
     | '/questions-frequentes'
     | '/simulateurs'
     | '/sitemap-maritime.xml'
@@ -701,6 +713,7 @@ export interface RootRouteChildren {
   MonVoyageRoute: typeof MonVoyageRoute
   PapiersVoyageAlgerieRoute: typeof PapiersVoyageAlgerieRoute
   PortsRoute: typeof PortsRouteWithChildren
+  PreparerMonVoyageRoute: typeof PreparerMonVoyageRoute
   QuestionsFrequentesRoute: typeof QuestionsFrequentesRoute
   SimulateursRoute: typeof SimulateursRouteWithChildren
   SitemapMaritimeDotxmlRoute: typeof SitemapMaritimeDotxmlRoute
@@ -896,6 +909,13 @@ declare module '@tanstack/react-router' {
       path: '/ports'
       fullPath: '/ports'
       preLoaderRoute: typeof PortsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/preparer-mon-voyage': {
+      id: '/preparer-mon-voyage'
+      path: '/preparer-mon-voyage'
+      fullPath: '/preparer-mon-voyage'
+      preLoaderRoute: typeof PreparerMonVoyageRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/questions-frequentes': {
@@ -1215,6 +1235,7 @@ const rootRouteChildren: RootRouteChildren = {
   MonVoyageRoute: MonVoyageRoute,
   PapiersVoyageAlgerieRoute: PapiersVoyageAlgerieRoute,
   PortsRoute: PortsRouteWithChildren,
+  PreparerMonVoyageRoute: PreparerMonVoyageRoute,
   QuestionsFrequentesRoute: QuestionsFrequentesRoute,
   SimulateursRoute: SimulateursRouteWithChildren,
   SitemapMaritimeDotxmlRoute: SitemapMaritimeDotxmlRoute,

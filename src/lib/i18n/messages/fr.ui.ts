@@ -2715,6 +2715,7 @@ export const ui = {
     monVoyage: "Mon voyage : ",
     aPiedSansCabine: "à pied, sans cabine",
     monVoyage2: "Mon voyage",
+    toutPreparerPasAPas: "Papiers, voiture, route, budget : tout préparer pas à pas",
     unAideMemoireLesRegles:
       "Un aide-mémoire : les règles officielles et votre billet restent la référence.",
   },

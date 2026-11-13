@@ -37,6 +37,7 @@ import {
 } from "@/lib/ferry/queries";
 import { buildSailings } from "@/lib/ferry/trips";
 import { calculateRoadAccess, searchItineraryAddress } from "@/lib/ferry/itinerary.functions";
+import { takeItinerarySeed } from "@/lib/ferry/companion";
 import {
   BOARDING_BUFFER_MIN,
   DISEMBARK_BUFFER_MIN,
@@ -417,6 +418,17 @@ export function ItineraryPlanner({
       }),
     [],
   );
+  // Venue du compagnon « Préparer mon voyage » : domicile, destination et mois déjà connus.
+  // Lue une seule fois : le calcul automatique part dès que les deux adresses sont là.
+  useEffect(() => {
+    const seed = takeItinerarySeed();
+    if (!seed) return;
+    if (seed.origin) setOrigin(seed.origin);
+    if (seed.originPoint) setOriginPoint(seed.originPoint);
+    if (seed.destination) setDestination(seed.destination);
+    if (seed.destinationPoint) setDestinationPoint(seed.destinationPoint);
+    if (seed.period) setPeriod(seed.period);
+  }, []);
   const [locating, setLocating] = useState(false);
   const [locationError, setLocationError] = useState<string | null>(null);
   const [vehicle, setVehicle] = useState<VehicleKind>("sedan");

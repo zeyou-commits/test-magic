@@ -49,8 +49,9 @@ const rememberAction = (action: "departures" | "search" | "ports" | "itinerary" 
 
 /**
  * La barre du bas reprend l'en-tête de l'ordinateur, dans le même ordre :
- * Préparer · Réserver · Suivre, puis les salons et « Moi ». Préparer et Suivre ouvrent
- * le même contenu que leurs menus sur ordinateur.
+ * Préparer · Réserver · Suivre, puis les salons et « Moi ». « Préparer » ouvre directement le
+ * compagnon pas à pas (les sujets un par un restent dans ses étapes et dans le menu ☰) ;
+ * « Suivre » ouvre le même contenu que son menu sur ordinateur.
  */
 export function MobileTabBar({
   className = "",
@@ -58,7 +59,6 @@ export function MobileTabBar({
   onOpenMap,
   onOpenDepartures,
   onOpenSearch,
-  onOpenItinerary,
   onOpenVoyage,
 }: MobileTabBarProps) {
   const { trip } = useVoyageTrip();
@@ -75,8 +75,6 @@ export function MobileTabBar({
     if (item.to === "/horaires" && onOpenDepartures) return onOpenDepartures;
     return undefined;
   };
-  const prepareOverride = (item: MenuItem) =>
-    item.action === "itinerary" && onOpenItinerary ? onOpenItinerary : undefined;
 
   const openSalons = () => {
     if (onHome) window.dispatchEvent(new Event(OPEN_ROOM_PICKER_EVENT));
@@ -91,13 +89,14 @@ export function MobileTabBar({
       aria-label={t("menu.mobileNav")}
       className={`pointer-events-auto flex h-[60px] w-full items-center justify-around border-t bg-background/95 px-1 pb-[env(safe-area-inset-bottom)] shadow-[0_-4px_20px_rgba(0,0,0,0.05)] backdrop-blur ${className}`}
     >
-      <FamilySheet
-        family={prepare}
-        label={t("menu.tabPrepare")}
-        icon={<ClipboardList className="size-5" aria-hidden />}
-        active={familyIsActive(prepare, pathname) || activeTab === "itinerary"}
-        override={prepareOverride}
-      />
+      <Link
+        to="/preparer-mon-voyage"
+        className={itemClass}
+        data-active={familyIsActive(prepare, pathname) || activeTab === "itinerary"}
+      >
+        <ClipboardList className="size-5" aria-hidden />
+        <span>{t("menu.tabPrepare")}</span>
+      </Link>
 
       {trip ? (
         onOpenVoyage ? (

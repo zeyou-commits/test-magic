@@ -11,20 +11,24 @@ import {
   ExternalLink,
   Info,
   Landmark,
+  Lock,
   Map as MapIcon,
   MapPin,
   Navigation,
   PartyPopper,
+  RotateCcw,
   School,
   Search,
   Ship,
   TrendingUp,
   Users,
   Wallet,
+  UserPlus,
   type LucideIcon,
 } from "lucide-react";
 import { CabasImg } from "@/components/CabasImg";
 import { SiteLayout } from "@/components/layout/SiteLayout";
+import { useAuth } from "@/hooks/useAuth";
 import { Breadcrumbs, textLink } from "@/components/editorial/Editorial";
 import {
   AbroadCard,
@@ -41,7 +45,7 @@ import {
   type PapersStep,
 } from "@/components/papers/PapersFlow";
 import { VEHICLES, defaultTripProfile } from "@/components/panel/TripProfile";
-import { formaliteSources, tasksFor, type Answers } from "@/content/formalites";
+import { defaultAnswers, formaliteSources, tasksFor, type Answers } from "@/content/formalites";
 import {
   CONSULATS_EUROPE_CHECKED,
   MFA_REPRESENTATIONS_URL,
@@ -222,7 +226,7 @@ function Welcome({ onStart }: { onStart: () => void }) {
         <div className="grid items-center gap-2 px-5 pt-6 md:grid-cols-[1.1fr_1fr] md:gap-6 md:px-10 md:py-10">
           <div>
             <p className="text-xs font-bold uppercase tracking-widest text-primary">
-              Gratuit · sans compte
+              Gratuit · aperçu sans compte
             </p>
             <h1 className="mt-2 font-display text-[1.75rem] font-bold leading-tight md:text-5xl">
               Votre voyage au bled, préparé étape par étape
@@ -334,6 +338,11 @@ function CompanionPage() {
   const [loaded, setLoaded] = useState(false);
   const [open, setOpen] = useState<CompanionStep | null>("profile");
   const navigate = useNavigate();
+  // Aperçu sans compte : la première étape (départ, groupe, voiture) et le calendrier ; la suite
+  // (papiers, consulat, route, budget, réservation) demande un compte gratuit.
+  const { user, loading: authLoading } = useAuth();
+  const locked = !user;
+  const isLocked = (step: CompanionStep | null) => locked && step !== null && step !== "profile";
 
   useEffect(() => {
     const saved = loadPlan();
@@ -402,6 +411,13 @@ function CompanionPage() {
   const allDone = doneCount === steps.length;
 
   const openStep = (step: CompanionStep | null) => {
+    if (isLocked(step)) {
+      setOpen(null);
+      requestAnimationFrame(() =>
+        document.getElementById("compte")?.scrollIntoView({ block: "center", behavior: "smooth" }),
+      );
+      return;
+    }
     setOpen(step);
     if (step)
       requestAnimationFrame(() =>
@@ -505,107 +521,116 @@ function CompanionPage() {
               {plan.done.includes("profile") ? <TripCalendar plan={plan} papers={papers} /> : null}
 
               <ol className="mt-4 grid grid-cols-1 gap-3 md:mt-6">
-                {steps.map((step, index) => (
-                  <StepCard
-                    key={step}
-                    id={step}
-                    index={index + 1}
-                    title={stepTitles[step]}
-                    summary={summaries[step]}
-                    done={plan.done.includes(step)}
-                    open={open === step}
-                    onToggle={() => openStep(open === step ? null : step)}
-                  >
-                    {step === "profile" ? (
-                      <ProfileStep
-                        papers={papers}
-                        plan={plan}
-                        patch={patch}
-                        onDone={() => {
-                          syncTravelProfile();
-                          complete("profile");
-                        }}
-                      />
-                    ) : null}
-                    {step === "papers" ? (
-                      <PapersStepBody
-                        papers={papers}
-                        plan={plan}
-                        patch={patch}
-                        onDone={() => complete("papers")}
-                        next={plan.vehicle === "none" ? "ma route" : "ma voiture"}
-                      />
-                    ) : null}
-                    {step === "car" ? (
-                      <CarStep plan={plan} patch={patch} onDone={() => complete("car")} />
-                    ) : null}
-                    {step === "route" ? (
-                      <RouteStep
-                        papers={papers}
-                        plan={plan}
-                        patch={patch}
-                        choices={choices}
-                        fromChoice={fromChoice}
-                        toPortId={toPort?.id ?? null}
-                        onItinerary={() => {
-                          syncTravelProfile();
-                          saveItinerarySeed({
-                            origin: plan.home
-                              ? plan.home.postcode
-                                ? `${plan.home.name} (${plan.home.postcode})`
-                                : plan.home.name
-                              : "",
-                            originPoint: plan.home?.point ?? null,
-                            destination: plan.destination?.label ?? "",
-                            destinationPoint: plan.destination?.point ?? null,
-                            period: plan.month,
-                          });
-                          window.sessionStorage.setItem("bledway:open-home-action", "itinerary");
-                          // La carte d'accueil s'ouvre en haut, pas à la hauteur où l'on était ici.
-                          window.scrollTo({ top: 0, behavior: "instant" });
-                          void navigate({ to: "/" });
-                        }}
-                        onDone={() => complete("route")}
-                      />
-                    ) : null}
-                    {step === "budget" ? (
-                      <BudgetStep
-                        plan={plan}
-                        answers={papers.answers}
-                        fromChoice={fromChoice}
-                        toPort={toPort}
-                        onDone={() => complete("budget")}
-                      />
-                    ) : null}
-                    {step === "book" ? (
-                      <BookStep
-                        plan={plan}
-                        answers={papers.answers}
-                        fromChoice={fromChoice}
-                        toPort={toPort}
-                        onBook={() => {
-                          syncTravelProfile();
-                          if (plan.fromPortId && plan.toPortId)
-                            saveItineraryChoice({
+                {steps.map((step, index) =>
+                  isLocked(step) ? null : (
+                    <StepCard
+                      key={step}
+                      id={step}
+                      index={index + 1}
+                      title={stepTitles[step]}
+                      summary={summaries[step]}
+                      done={plan.done.includes(step)}
+                      open={open === step && !isLocked(step)}
+                      onToggle={() => openStep(open === step ? null : step)}
+                    >
+                      {step === "profile" ? (
+                        <ProfileStep
+                          papers={papers}
+                          plan={plan}
+                          patch={patch}
+                          onDone={() => {
+                            syncTravelProfile();
+                            complete("profile");
+                          }}
+                        />
+                      ) : null}
+                      {step === "papers" ? (
+                        <PapersStepBody
+                          papers={papers}
+                          plan={plan}
+                          patch={patch}
+                          onDone={() => complete("papers")}
+                          next={plan.vehicle === "none" ? "ma route" : "ma voiture"}
+                        />
+                      ) : null}
+                      {step === "car" ? (
+                        <CarStep plan={plan} patch={patch} onDone={() => complete("car")} />
+                      ) : null}
+                      {step === "route" ? (
+                        <RouteStep
+                          papers={papers}
+                          plan={plan}
+                          patch={patch}
+                          choices={choices}
+                          fromChoice={fromChoice}
+                          toPortId={toPort?.id ?? null}
+                          onItinerary={() => {
+                            syncTravelProfile();
+                            saveItinerarySeed({
+                              origin: plan.home
+                                ? plan.home.postcode
+                                  ? `${plan.home.name} (${plan.home.postcode})`
+                                  : plan.home.name
+                                : "",
+                              originPoint: plan.home?.point ?? null,
+                              destination: plan.destination?.label ?? "",
+                              destinationPoint: plan.destination?.point ?? null,
                               period: plan.month,
-                              departurePortId: plan.fromPortId,
-                              arrivalPortId: plan.toPortId,
                             });
-                          const done = plan.done.includes("book")
-                            ? plan.done
-                            : [...plan.done, "book" as const];
-                          savePlan({ ...plan, done });
-                          // Ports, jour et voyageurs dans l'adresse : la carte ouvre directement les résultats.
-                          window.scrollTo({ top: 0, behavior: "instant" });
-                          void navigate({ href: bookingSearch(plan) });
-                        }}
-                      />
-                    ) : null}
-                  </StepCard>
-                ))}
+                            window.sessionStorage.setItem("bledway:open-home-action", "itinerary");
+                            // La carte d'accueil s'ouvre en haut, pas à la hauteur où l'on était ici.
+                            window.scrollTo({ top: 0, behavior: "instant" });
+                            void navigate({ to: "/" });
+                          }}
+                          onDone={() => complete("route")}
+                        />
+                      ) : null}
+                      {step === "budget" ? (
+                        <BudgetStep
+                          plan={plan}
+                          answers={papers.answers}
+                          fromChoice={fromChoice}
+                          toPort={toPort}
+                          onDone={() => complete("budget")}
+                        />
+                      ) : null}
+                      {step === "book" ? (
+                        <BookStep
+                          plan={plan}
+                          answers={papers.answers}
+                          fromChoice={fromChoice}
+                          toPort={toPort}
+                          onBook={() => {
+                            syncTravelProfile();
+                            if (plan.fromPortId && plan.toPortId)
+                              saveItineraryChoice({
+                                period: plan.month,
+                                departurePortId: plan.fromPortId,
+                                arrivalPortId: plan.toPortId,
+                              });
+                            const done = plan.done.includes("book")
+                              ? plan.done
+                              : [...plan.done, "book" as const];
+                            savePlan({ ...plan, done });
+                            // Ports, jour et voyageurs dans l'adresse : la carte ouvre directement les résultats.
+                            window.scrollTo({ top: 0, behavior: "instant" });
+                            void navigate({ href: bookingSearch(plan) });
+                          }}
+                        />
+                      ) : null}
+                    </StepCard>
+                  ),
+                )}
               </ol>
 
-              {allDone ? (
+              {locked && !authLoading ? (
+                <SignupGate
+                  steps={steps.filter((step) => step !== "profile")}
+                  profileDone={plan.done.includes("profile")}
+                />
+              ) : null}
+
+              {allDone && !locked ? (
                 <div id="pret" className="mt-6 rounded-2xl bg-primary/5 p-5 md:p-6">
                   <img
                     src="/illustrations/voyage/retrouvailles.webp"
@@ -632,6 +657,16 @@ function CompanionPage() {
                   </a>
                 </div>
               ) : null}
+              <ResetPreparation
+                onReset={() => {
+                  papers.setAnswers(defaultAnswers);
+                  papers.setDone([]);
+                  papers.setFinished(false);
+                  setPlan(defaultPlan());
+                  setOpen("profile");
+                  requestAnimationFrame(() => window.scrollTo({ top: 0, behavior: "smooth" }));
+                }}
+              />
             </>
           )}
         </div>
@@ -2121,6 +2156,119 @@ function TripCalendar({ plan, papers }: { plan: CompanionPlan; papers: PapersSta
           {all ? "Réduire le calendrier" : `Voir tout le calendrier (${list.length} étapes)`}
         </button>
       ) : null}
+    </section>
+  );
+}
+
+/**
+ * Tout effacer pour repartir de zéro : la date, les réponses aux papiers, les démarches voiture.
+ * Ce qui est sur le compte (billets, Mon voyage) n'est pas touché.
+ */
+function ResetPreparation({ onReset }: { onReset: () => void }) {
+  const [asking, setAsking] = useState(false);
+  if (!asking)
+    return (
+      <div className="mt-8 text-center">
+        <button
+          type="button"
+          onClick={() => setAsking(true)}
+          className="inline-flex min-h-11 items-center gap-2 rounded-xl px-4 text-sm font-semibold text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
+        >
+          <RotateCcw size={15} aria-hidden /> Recommencer ma préparation
+        </button>
+      </div>
+    );
+  return (
+    <div
+      role="alertdialog"
+      aria-labelledby="reset-titre"
+      className="mt-8 rounded-2xl border border-border bg-card p-4 md:p-5"
+    >
+      <p id="reset-titre" className="font-bold">
+        Tout recommencer ?
+      </p>
+      <p className="mt-1 text-sm text-muted-foreground">
+        La période de départ, les réponses sur les voyageurs et les papiers, les ports et les
+        démarches cochées seront effacés de ce téléphone. Vos billets et votre compte ne changent
+        pas.
+      </p>
+      <div className="mt-3 flex flex-wrap gap-2">
+        <button
+          type="button"
+          onClick={() => {
+            setAsking(false);
+            onReset();
+          }}
+          className="inline-flex min-h-11 items-center gap-2 rounded-xl bg-destructive px-4 text-sm font-bold text-destructive-foreground hover:bg-destructive/90"
+        >
+          <RotateCcw size={15} aria-hidden /> Oui, tout effacer
+        </button>
+        <button
+          type="button"
+          onClick={() => setAsking(false)}
+          className="inline-flex min-h-11 items-center rounded-xl bg-secondary px-4 text-sm font-bold hover:bg-secondary/80"
+        >
+          Garder ma préparation
+        </button>
+      </div>
+    </div>
+  );
+}
+
+/**
+ * Sans compte : on voit ce qui attend (les étapes suivantes), et on crée un compte gratuit pour
+ * continuer. Ce qui a déjà été répondu reste sur le téléphone et se retrouve au retour.
+ */
+function SignupGate({ steps, profileDone }: { steps: CompanionStep[]; profileDone: boolean }) {
+  const next = encodeURIComponent(PATH);
+  return (
+    <section
+      id="compte"
+      aria-labelledby="compte-titre"
+      className="mt-4 scroll-mt-24 rounded-2xl border-2 border-primary/30 bg-primary/5 p-4 md:p-6"
+    >
+      <h2 id="compte-titre" className="flex items-center gap-2 font-display text-xl font-bold">
+        <Lock size={20} className="text-primary" aria-hidden />
+        {profileDone ? "La suite avec un compte gratuit" : "Un compte gratuit pour la suite"}
+      </h2>
+      <p className="mt-1 text-sm text-muted-foreground">
+        {profileDone
+          ? "Votre départ et votre calendrier sont prêts. Créez votre compte pour continuer : vos réponses sont gardées."
+          : "Commencez par la première étape sans compte. Pour la suite, il faut un compte gratuit : vos réponses sont gardées."}
+      </p>
+      <ol className="mt-3 grid gap-2">
+        {steps.map((step, index) => (
+          <li
+            key={step}
+            className="flex items-center gap-3 rounded-xl bg-card/80 px-3 py-2 text-sm"
+          >
+            <StepArt step={step} size="sm" done={false} />
+            <span className="min-w-0 flex-1">
+              <span className="text-muted-foreground">{index + 2}. </span>
+              <span className="font-semibold">{stepTitles[step]}</span>
+            </span>
+            <Lock
+              size={14}
+              className="shrink-0 text-muted-foreground"
+              aria-label="Avec un compte"
+            />
+          </li>
+        ))}
+      </ol>
+      <div className="mt-4 flex flex-wrap gap-2">
+        <a
+          href={`/auth?mode=signup&next=${next}`}
+          className="inline-flex min-h-12 items-center gap-2 rounded-xl bg-primary px-5 text-sm font-bold text-primary-foreground hover:bg-primary/90"
+        >
+          <UserPlus size={16} aria-hidden /> Créer mon compte gratuit
+        </a>
+        <a
+          href={`/auth?next=${next}`}
+          className="inline-flex min-h-12 items-center rounded-xl bg-secondary px-5 text-sm font-bold hover:bg-secondary/80"
+        >
+          J'ai déjà un compte
+        </a>
+      </div>
     </section>
   );
 }

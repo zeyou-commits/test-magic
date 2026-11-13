@@ -2468,6 +2468,7 @@ export const ui = {
     onPrend: "On prend ",
     laRouteDuBled: "la route du bled",
     reservezPreparezSuivez: "Réservez, préparez et suivez votre traversée.",
+    papiersAvantBillet: "Visa, passeports, enfants : vérifier mes papiers avant d'acheter",
     preparerMaRouteJusquAu: "Préparer ma route jusqu'au port",
     routeJusquAuPort: "Route jusqu'au port",
     trouverMaTraversee: "Trouver ma traversée",

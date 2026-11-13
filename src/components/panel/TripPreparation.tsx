@@ -22,6 +22,7 @@ import {
   type Preparation,
 } from "@/lib/ferry/preparation";
 import { tr } from "@/lib/i18n";
+import { papersProgress } from "@/content/formalites";
 
 function openRoute() {
   window.sessionStorage.setItem("bledway:open-home-action", "itinerary");
@@ -29,9 +30,22 @@ function openRoute() {
   else window.location.assign("/");
 }
 
+/** « Mes papiers » : la liste faite sur la page des papiers, avec où on en est. */
+function PapersLink({ item }: { item: PrepItem }) {
+  const [progress, setProgress] = useState<{ done: number; total: number } | null>(null);
+  useEffect(() => setProgress(papersProgress()), []);
+  return (
+    <a href={item.href}>
+      {progress ? `Mes papiers : ${progress.done} sur ${progress.total}` : item.linkLabel}{" "}
+      <ArrowRight size={13} aria-hidden />
+    </a>
+  );
+}
+
 function ItemLink({ item, departureId }: { item: PrepItem; departureId?: string }) {
   // « Je vérifie mon billet » : ajouter le billet, ou le revoir.
   if (item.id === "tickets" && departureId) return <TicketAction departureId={departureId} />;
+  if (item.id === "identity" && item.href) return <PapersLink item={item} />;
   if (item.itinerary)
     return (
       <button type="button" onClick={openRoute}>

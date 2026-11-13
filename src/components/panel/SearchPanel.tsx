@@ -19,6 +19,8 @@ import {
   SlidersHorizontal,
   Users,
   X,
+  ArrowRight,
+  FileText,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -487,6 +489,12 @@ export function SearchPanel({
               </button>
             </div>
             <p className="bw-search-welcome__sub">{tr("ui.searchPanel.reservezPreparezSuivez")}</p>
+            {/* Les papiers passent avant le billet : un visa refusé ne rembourse pas la traversée. */}
+            <a href="/papiers-voyage-algerie" className="bw-search-papers">
+              <FileText className="size-4 shrink-0" aria-hidden />
+              <span>{tr("ui.searchPanel.papiersAvantBillet")}</span>
+              <ArrowRight className="size-3.5 shrink-0" aria-hidden />
+            </a>
           </div>
         ) : null}
         {/* RECHERCHE : capsule condensée façon Airbnb, formulaire guidé à la demande */}

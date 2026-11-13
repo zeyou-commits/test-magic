@@ -77,6 +77,8 @@ type MenuItem = {
   icon: LucideIcon;
   /** Ouvre un volet de la carte d'accueil au lieu d'une page. */
   action?: "itinerary";
+  /** Première chose à faire de la famille : mise en avant. */
+  featured?: boolean;
 };
 type MenuFamily = {
   id: "prepare" | "live" | "lines" | "bledway";
@@ -94,17 +96,23 @@ export const menuFamilies: MenuFamily[] = [
   {
     id: "prepare",
     titleKey: "menu.groupPrepareTrip",
+    // Dans l'ordre du voyage : les papiers avant le billet, puis la route, puis le budget.
     columns: [
       {
-        titleKey: "menu.groupOrganize",
+        titleKey: "menu.groupBeforeBooking",
+        items: [
+          { to: "/papiers-voyage-algerie", labelKey: "nav.travelPapers", icon: FileText, featured: true },
+          { to: "/vehicules-moins-3-ans", labelKey: "nav.vehiclesUnder3", icon: Car },
+          { to: "/questions-frequentes", labelKey: "nav.faq", icon: CircleHelp },
+        ],
+      },
+      {
+        titleKey: "menu.groupRoad",
         items: [
           { to: "/", labelKey: "menu.stepByStep", icon: RouteIcon, action: "itinerary" },
           { to: "/voyage-algerie", labelKey: "nav.travelAlgeria", icon: MapPin },
-          { to: "/papiers-voyage-algerie", labelKey: "nav.travelPapers", icon: FileText },
-          { to: "/vehicules-moins-3-ans", labelKey: "nav.vehiclesUnder3", icon: Car },
-          { to: "/guide", labelKey: "nav.guide", icon: BookOpen },
-          { to: "/questions-frequentes", labelKey: "nav.faq", icon: CircleHelp },
           { to: "/covoiturage", labelKey: "nav.carpool", icon: Users },
+          { to: "/guide", labelKey: "nav.guide", icon: BookOpen },
         ],
       },
       {
@@ -197,7 +205,7 @@ const MenuItemLink = forwardRef<
         if (itinerary) openItineraryFromHeader();
         else if (item.to === "/") goHome();
       }}
-      className={`bw-menu-link${className ? ` ${className}` : ""}`}
+      className={`bw-menu-link${item.featured ? " bw-menu-link--featured" : ""}${className ? ` ${className}` : ""}`}
     >
       <item.icon size={iconSize} aria-hidden />
       {t(item.labelKey)}

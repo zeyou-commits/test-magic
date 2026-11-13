@@ -55,10 +55,10 @@ export const prepItems: PrepItem[] = [
   {
     id: "identity",
     phase: "papers",
-    label: "Je vérifie les passeports",
-    tip: "Validité de chacun, visa, papiers des enfants et livret de famille.",
+    label: "Je prépare les papiers de chacun",
+    tip: "Visa, passeports, autorisation pour les enfants, livret de famille : la liste se fait en une minute.",
     href: "/papiers-voyage-algerie",
-    linkLabel: "Mes papiers",
+    linkLabel: "Faire ma liste de papiers",
     direction: "outbound",
   },
   {

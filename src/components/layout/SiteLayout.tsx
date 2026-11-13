@@ -283,11 +283,50 @@ export function SiteHeader() {
     observer.observe(header);
     return () => observer.disconnect();
   }, []);
+  const desktopFamilies = menuFamilies.filter((family) => !family.sheetOnly);
+  const renderFamily = (family: MenuFamily) => (
+    // Non modal : un menu modal bloque le défilement en passant <body> en overflow hidden,
+    // l'en-tête collant se cale alors sur <body> et sort de l'écran (page déjà descendue).
+    <DropdownMenu key={family.id} modal={false}>
+      <DropdownMenuTrigger
+        className="bw-explore-trigger"
+        data-active={familyIsActive(family, pathname) || undefined}
+      >
+        {t(family.titleKey)} <ChevronDown size={15} aria-hidden />
+      </DropdownMenuTrigger>
+      <DropdownMenuContent
+        align="start"
+        className="bw-mega-menu"
+        data-columns={family.columns.length}
+        onCloseAutoFocus={refocusTriggerWithoutScroll}
+      >
+        {family.columns.map((column, index) => (
+          <div
+            key={column.titleKey ?? index}
+            className="bw-mega-menu__group"
+            role="group"
+            aria-label={t(column.titleKey ?? family.titleKey)}
+          >
+            {column.titleKey ? (
+              <p className="bw-menu-group-title">{t(column.titleKey)}</p>
+            ) : null}
+            {column.items.map((item) => (
+              <DropdownMenuItem asChild key={`${item.to}-${item.labelKey}`}>
+                <MenuItemLink item={item} />
+              </DropdownMenuItem>
+            ))}
+          </div>
+        ))}
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
   return (
     <header className="bw-header" ref={headerRef}>
       <div className="bw-header-inner">
         <BrandLink />
         <nav aria-label={t("menu.mainNav")} className="bw-desktop-nav">
+          {/* Dans l'ordre du voyage : préparer, réserver, puis suivre. */}
+          {desktopFamilies.slice(0, 1).map(renderFamily)}
           <Link
             to="/"
             onClick={openSearchFromHeader}
@@ -298,44 +337,7 @@ export function SiteHeader() {
             <CalendarCheck size={16} aria-hidden />
             {t("menu.book")}
           </Link>
-          {menuFamilies
-            .filter((family) => !family.sheetOnly)
-            .map((family) => (
-              // Non modal : un menu modal bloque le défilement en passant <body> en overflow hidden,
-              // l'en-tête collant se cale alors sur <body> et sort de l'écran (page déjà descendue).
-              <DropdownMenu key={family.id} modal={false}>
-                <DropdownMenuTrigger
-                  className="bw-explore-trigger"
-                  data-active={familyIsActive(family, pathname) || undefined}
-                >
-                  {t(family.titleKey)} <ChevronDown size={15} aria-hidden />
-                </DropdownMenuTrigger>
-                <DropdownMenuContent
-                  align="start"
-                  className="bw-mega-menu"
-                  data-columns={family.columns.length}
-                  onCloseAutoFocus={refocusTriggerWithoutScroll}
-                >
-                  {family.columns.map((column, index) => (
-                    <div
-                      key={column.titleKey ?? index}
-                      className="bw-mega-menu__group"
-                      role="group"
-                      aria-label={t(column.titleKey ?? family.titleKey)}
-                    >
-                      {column.titleKey ? (
-                        <p className="bw-menu-group-title">{t(column.titleKey)}</p>
-                      ) : null}
-                      {column.items.map((item) => (
-                        <DropdownMenuItem asChild key={`${item.to}-${item.labelKey}`}>
-                          <MenuItemLink item={item} />
-                        </DropdownMenuItem>
-                      ))}
-                    </div>
-                  ))}
-                </DropdownMenuContent>
-              </DropdownMenu>
-            ))}
+          {desktopFamilies.slice(1).map(renderFamily)}
         </nav>
         <div className="bw-header-actions">
           {/* Sur mobile, le compte est l'onglet « Moi » de la barre du bas. */}

@@ -23,6 +23,7 @@ export const fr = {
     myDinars: "Mes dinars",
     faq: "Questions fréquentes",
     travelAlgeria: "Voyage en Algérie",
+    travelPapers: "Papiers et formalités",
     vehiclesUnder3: "Véhicules de moins de 3 ans",
     carpool: "Covoiturage",
     about: "À propos",

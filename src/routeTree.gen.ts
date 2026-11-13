@@ -32,6 +32,7 @@ import { Route as MentionsLegalesRouteImport } from './routes/mentions-legales'
 import { Route as MesDinarsRouteImport } from './routes/mes-dinars'
 import { Route as MethodeEditorialeRouteImport } from './routes/methode-editoriale'
 import { Route as MonVoyageRouteImport } from './routes/mon-voyage'
+import { Route as PapiersVoyageAlgerieRouteImport } from './routes/papiers-voyage-algerie'
 import { Route as PortsRouteImport } from './routes/ports'
 import { Route as QuestionsFrequentesRouteImport } from './routes/questions-frequentes'
 import { Route as SimulateursRouteImport } from './routes/simulateurs'
@@ -177,6 +178,11 @@ const MethodeEditorialeRoute = MethodeEditorialeRouteImport.update({
 const MonVoyageRoute = MonVoyageRouteImport.update({
   id: '/mon-voyage',
   path: '/mon-voyage',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PapiersVoyageAlgerieRoute = PapiersVoyageAlgerieRouteImport.update({
+  id: '/papiers-voyage-algerie',
+  path: '/papiers-voyage-algerie',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PortsRoute = PortsRouteImport.update({
@@ -359,6 +365,7 @@ export interface FileRoutesByFullPath {
   '/mes-dinars': typeof MesDinarsRoute
   '/methode-editoriale': typeof MethodeEditorialeRoute
   '/mon-voyage': typeof MonVoyageRoute
+  '/papiers-voyage-algerie': typeof PapiersVoyageAlgerieRoute
   '/ports': typeof PortsRouteWithChildren
   '/questions-frequentes': typeof QuestionsFrequentesRoute
   '/simulateurs': typeof SimulateursRouteWithChildren
@@ -411,6 +418,7 @@ export interface FileRoutesByTo {
   '/mes-dinars': typeof MesDinarsRoute
   '/methode-editoriale': typeof MethodeEditorialeRoute
   '/mon-voyage': typeof MonVoyageRoute
+  '/papiers-voyage-algerie': typeof PapiersVoyageAlgerieRoute
   '/questions-frequentes': typeof QuestionsFrequentesRoute
   '/sitemap-maritime.xml': typeof SitemapMaritimeDotxmlRoute
   '/sitemap-pages.xml': typeof SitemapPagesDotxmlRoute
@@ -466,6 +474,7 @@ export interface FileRoutesById {
   '/mes-dinars': typeof MesDinarsRoute
   '/methode-editoriale': typeof MethodeEditorialeRoute
   '/mon-voyage': typeof MonVoyageRoute
+  '/papiers-voyage-algerie': typeof PapiersVoyageAlgerieRoute
   '/ports': typeof PortsRouteWithChildren
   '/questions-frequentes': typeof QuestionsFrequentesRoute
   '/simulateurs': typeof SimulateursRouteWithChildren
@@ -524,6 +533,7 @@ export interface FileRouteTypes {
     | '/mes-dinars'
     | '/methode-editoriale'
     | '/mon-voyage'
+    | '/papiers-voyage-algerie'
     | '/ports'
     | '/questions-frequentes'
     | '/simulateurs'
@@ -576,6 +586,7 @@ export interface FileRouteTypes {
     | '/mes-dinars'
     | '/methode-editoriale'
     | '/mon-voyage'
+    | '/papiers-voyage-algerie'
     | '/questions-frequentes'
     | '/sitemap-maritime.xml'
     | '/sitemap-pages.xml'
@@ -630,6 +641,7 @@ export interface FileRouteTypes {
     | '/mes-dinars'
     | '/methode-editoriale'
     | '/mon-voyage'
+    | '/papiers-voyage-algerie'
     | '/ports'
     | '/questions-frequentes'
     | '/simulateurs'
@@ -687,6 +699,7 @@ export interface RootRouteChildren {
   MesDinarsRoute: typeof MesDinarsRoute
   MethodeEditorialeRoute: typeof MethodeEditorialeRoute
   MonVoyageRoute: typeof MonVoyageRoute
+  PapiersVoyageAlgerieRoute: typeof PapiersVoyageAlgerieRoute
   PortsRoute: typeof PortsRouteWithChildren
   QuestionsFrequentesRoute: typeof QuestionsFrequentesRoute
   SimulateursRoute: typeof SimulateursRouteWithChildren
@@ -869,6 +882,13 @@ declare module '@tanstack/react-router' {
       path: '/mon-voyage'
       fullPath: '/mon-voyage'
       preLoaderRoute: typeof MonVoyageRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/papiers-voyage-algerie': {
+      id: '/papiers-voyage-algerie'
+      path: '/papiers-voyage-algerie'
+      fullPath: '/papiers-voyage-algerie'
+      preLoaderRoute: typeof PapiersVoyageAlgerieRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/ports': {
@@ -1193,6 +1213,7 @@ const rootRouteChildren: RootRouteChildren = {
   MesDinarsRoute: MesDinarsRoute,
   MethodeEditorialeRoute: MethodeEditorialeRoute,
   MonVoyageRoute: MonVoyageRoute,
+  PapiersVoyageAlgerieRoute: PapiersVoyageAlgerieRoute,
   PortsRoute: PortsRouteWithChildren,
   QuestionsFrequentesRoute: QuestionsFrequentesRoute,
   SimulateursRoute: SimulateursRouteWithChildren,

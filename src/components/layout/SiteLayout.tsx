@@ -39,6 +39,7 @@ import {
   Wallet,
   Waypoints,
   type LucideIcon,
+  FileText,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -99,6 +100,7 @@ export const menuFamilies: MenuFamily[] = [
         items: [
           { to: "/", labelKey: "menu.stepByStep", icon: RouteIcon, action: "itinerary" },
           { to: "/voyage-algerie", labelKey: "nav.travelAlgeria", icon: MapPin },
+          { to: "/papiers-voyage-algerie", labelKey: "nav.travelPapers", icon: FileText },
           { to: "/vehicules-moins-3-ans", labelKey: "nav.vehiclesUnder3", icon: Car },
           { to: "/guide", labelKey: "nav.guide", icon: BookOpen },
           { to: "/questions-frequentes", labelKey: "nav.faq", icon: CircleHelp },
@@ -209,6 +211,7 @@ const footerLinks = [
   { to: "/questions-frequentes", labelKey: "nav.faq" },
   { to: "/vehicules-moins-3-ans", labelKey: "nav.vehiclesUnder3" },
   { to: "/voyage-algerie", labelKey: "nav.travelAlgeria" },
+  { to: "/papiers-voyage-algerie", labelKey: "nav.travelPapers" },
   { to: "/covoiturage", labelKey: "nav.carpool" },
   { to: "/bateaux", labelKey: "nav.vessels" },
   { to: "/simulateurs", labelKey: "nav.simulators" },
@@ -444,6 +447,7 @@ export function SiteFooter() {
                 "/guide",
                 "/questions-frequentes",
                 "/voyage-algerie",
+                "/papiers-voyage-algerie",
                 "/simulateurs",
                 "/covoiturage",
                 "/barometre-prix",

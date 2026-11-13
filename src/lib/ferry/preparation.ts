@@ -56,9 +56,9 @@ export const prepItems: PrepItem[] = [
     id: "identity",
     phase: "papers",
     label: "Je vérifie les passeports",
-    tip: "Validité de chacun, et visa si besoin.",
-    href: "/guide/arrivee-algerie-port-formalites",
-    linkLabel: "Les formalités",
+    tip: "Validité de chacun, visa, papiers des enfants et livret de famille.",
+    href: "/papiers-voyage-algerie",
+    linkLabel: "Mes papiers",
     direction: "outbound",
   },
   {

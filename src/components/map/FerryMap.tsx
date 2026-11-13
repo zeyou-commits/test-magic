@@ -574,9 +574,16 @@ export default function FerryMap({
     map.on("moveend", () => {
       // Le film du trajet pilote lui-même l'inclinaison.
       if (container.dataset["film"] || container.dataset["picking"]) return;
-      const pitch = pitchForZoom(map.getZoom());
-      if (Math.abs(map.getPitch() - pitch) > 1.5)
-        map.easeTo({ pitch, duration: cameraDuration(450) });
+      // Jamais pendant « moveend » même : quand un nouveau cadrage interrompt le mouvement,
+      // une animation lancée ici s'emboîte dans la nouvelle et laisse une image orpheline
+      // (maplibre : « this._onEaseFrame is not a function »). On attend l'image suivante,
+      // et seulement si la carte est immobile.
+      requestAnimationFrame(() => {
+        if (mapRef.current !== map || map.isMoving()) return;
+        const pitch = pitchForZoom(map.getZoom());
+        if (Math.abs(map.getPitch() - pitch) > 1.5)
+          map.easeTo({ pitch, duration: cameraDuration(450) });
+      });
     });
 
     const handleMapInteraction = () => interactRef.current?.();

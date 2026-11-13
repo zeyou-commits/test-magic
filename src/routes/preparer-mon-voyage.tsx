@@ -77,7 +77,7 @@ export const Route = createFileRoute("/preparer-mon-voyage")({
 });
 
 const stepTitles: Record<CompanionStep, string> = {
-  profile: "Mon voyage en quatre questions",
+  profile: "Mon voyage en 4 questions",
   papers: "Mes papiers",
   car: "Ma voiture",
   route: "Ma route jusqu'au port",
@@ -211,32 +211,38 @@ function CompanionPage() {
 
   return (
     <SiteLayout>
-      <Breadcrumbs items={[{ name: "Préparer mon voyage", path: PATH }]} />
+      {/* Sur téléphone, la première question doit se voir tout de suite : fil d'Ariane masqué
+          (gardé pour les moteurs), titre et avancement sur une seule ligne. */}
+      <div className="hidden md:block">
+        <Breadcrumbs items={[{ name: "Préparer mon voyage", path: PATH }]} />
+      </div>
       <EmbeddedPapers.Provider value>
-        <div className="mx-auto max-w-3xl py-6 md:py-10">
-          <p className="text-xs font-bold uppercase tracking-widest text-primary">Pas à pas</p>
-          <h1 className="mt-2 font-display text-3xl font-bold leading-tight md:text-5xl">Préparer mon voyage</h1>
-          <p className="mt-3 text-muted-foreground md:text-lg">
-            Les papiers de chacun, la voiture, la route jusqu'au port, le budget, puis la réservation :
-            tout se suit sur cette page. Vos réponses restent sur cet appareil, reprenez quand vous voulez.
+        <div className="mx-auto max-w-3xl pb-6 pt-3 md:py-10">
+          <p className="hidden text-xs font-bold uppercase tracking-widest text-primary md:block">Pas à pas</p>
+          <div className="flex items-center justify-between gap-3 md:mt-2" aria-live="polite">
+            <h1 className="font-display text-2xl font-bold leading-tight md:text-5xl">Préparer mon voyage</h1>
+            <span
+              className={`shrink-0 rounded-full px-3 py-1 text-sm font-bold ${allDone ? "bg-primary text-primary-foreground" : "bg-secondary"}`}
+            >
+              {allDone ? "Prêt" : `${doneCount}/${steps.length}`}
+              <span className="sr-only"> étapes faites</span>
+            </span>
+          </div>
+          <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-secondary" aria-hidden>
+            <div
+              className="h-full rounded-full bg-primary transition-[width] duration-500"
+              style={{ width: `${(doneCount / steps.length) * 100}%` }}
+            />
+          </div>
+          <p className="mt-2 text-sm text-muted-foreground md:mt-4 md:text-lg">
+            <span className="hidden md:inline">
+              Les papiers de chacun, la voiture, la route jusqu'au port, le budget, puis la réservation :
+              tout se suit sur cette page.{" "}
+            </span>
+            Vos réponses restent sur cet appareil.
           </p>
 
-          <div className="mt-6 rounded-xl border p-4" aria-live="polite">
-            <div className="flex items-center justify-between gap-3 text-sm font-semibold">
-              <span>
-                {doneCount} étape{doneCount > 1 ? "s" : ""} sur {steps.length}
-              </span>
-              {allDone ? <span className="text-primary">Votre voyage est prêt</span> : null}
-            </div>
-            <div className="mt-2 h-2 overflow-hidden rounded-full bg-secondary" aria-hidden>
-              <div
-                className="h-full rounded-full bg-primary transition-[width] duration-500"
-                style={{ width: `${(doneCount / steps.length) * 100}%` }}
-              />
-            </div>
-          </div>
-
-          <ol className="mt-6 grid grid-cols-1 gap-3">
+          <ol className="mt-4 grid grid-cols-1 gap-3 md:mt-6">
             {steps.map((step, index) => (
               <StepCard
                 key={step}

@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useRouterState } from "@tanstack/react-router";
 import { Download, X } from "lucide-react";
 import { isDesktopBrowser } from "./PhoneInstallCard";
 import { tr } from "@/lib/i18n";
@@ -13,6 +14,7 @@ const buildKey = "bledway:build-version";
 
 /** Invite à l'installation uniquement lorsque le navigateur le permet. */
 export function PwaInstall() {
+  const pathname = useRouterState({ select: (state) => state.location.pathname });
   const [prompt, setPrompt] = useState<InstallPromptEvent | null>(null);
   const [showIos, setShowIos] = useState(false);
   const [dismissed, setDismissed] = useState(true);
@@ -94,6 +96,8 @@ export function PwaInstall() {
     };
   }, []);
 
+  // Le compagnon pas à pas : la bannière cacherait les questions sur téléphone.
+  if (pathname === "/preparer-mon-voyage") return null;
   if (dismissed || (!prompt && !showIos && !manual)) return null;
   return (
     <aside

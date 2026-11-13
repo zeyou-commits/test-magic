@@ -64,6 +64,7 @@ export const fr = {
     tabPrepare: "Préparer",
     tabFollow: "Suivre",
     tabSalons: "Salons",
+    tabMenu: "Menu",
     groupLive: "Suivre en direct",
     groupLines: "Lignes & ports",
     book: "Réserver",

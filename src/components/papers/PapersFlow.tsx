@@ -56,7 +56,9 @@ export function papersSteps(a: Answers, from: "home" | "people" = "home"): Paper
   const adults = a.travellers.filter((t) => t.kind === "adult").length;
   const kids = a.travellers.some((t) => t.kind === "child");
   const all: PapersStep[] =
-    adults > 1 || kids ? ["home", "group", "people", "family", "stay"] : ["home", "group", "people", "stay"];
+    adults > 1 || kids
+      ? ["home", "group", "people", "family", "stay"]
+      : ["home", "group", "people", "stay"];
   return from === "people" ? all.filter((s) => s !== "home" && s !== "group") : all;
 }
 
@@ -138,7 +140,8 @@ export function PapersWizard({
           onClick={() => (index + 1 < steps.length ? setStep(steps[index + 1]!) : onFinish())}
           className="inline-flex min-h-12 items-center gap-2 rounded-xl bg-primary px-6 text-sm font-bold text-primary-foreground hover:bg-primary/90"
         >
-          {index + 1 < steps.length ? "Continuer" : "Voir mes papiers"} <ArrowRight size={16} aria-hidden />
+          {index + 1 < steps.length ? "Continuer" : "Voir mes papiers"}{" "}
+          <ArrowRight size={16} aria-hidden />
         </button>
       </div>
     </div>
@@ -154,11 +157,18 @@ export function PapersDelais() {
           <h2 id="delais" className="font-display text-xl font-bold">
             Les délais, démarche par démarche
           </h2>
-          <ChevronDown size={18} className="transition-transform group-open:rotate-180" aria-hidden />
+          <ChevronDown
+            size={18}
+            className="transition-transform group-open:rotate-180"
+            aria-hidden
+          />
         </summary>
         <div className="divide-y border-t">
           {delais.map((d) => (
-            <div key={d.demarche} className="grid gap-1 p-4 md:grid-cols-[1.2fr_1fr_0.8fr_1.6fr] md:gap-4">
+            <div
+              key={d.demarche}
+              className="grid gap-1 p-4 md:grid-cols-[1.2fr_1fr_0.8fr_1.6fr] md:gap-4"
+            >
               <p className="font-semibold">{d.demarche}</p>
               <p className="text-sm text-muted-foreground">{d.ou}</p>
               <p className="text-sm font-semibold">{d.delai}</p>
@@ -176,7 +186,15 @@ export function PapersDelais() {
 
 /* ------------------------------------------------------------------ Les questions */
 
-export function Question({ title, hint, children }: { title: string; hint?: string; children: ReactNode }) {
+export function Question({
+  title,
+  hint,
+  children,
+}: {
+  title: string;
+  hint?: string;
+  children: ReactNode;
+}) {
   const embedded = useContext(EmbeddedPapers);
   const Heading = embedded ? "h3" : "h1";
   return (
@@ -207,7 +225,11 @@ export function Options<T extends string>({
   small?: boolean;
 }) {
   return (
-    <div role="radiogroup" aria-label={label} className={`grid gap-2 ${small ? "sm:grid-cols-2" : ""}`}>
+    <div
+      role="radiogroup"
+      aria-label={label}
+      className={`grid gap-2 ${small ? "sm:grid-cols-2" : ""}`}
+    >
       {options.map((o) => {
         const on = value === o.value;
         return (
@@ -218,7 +240,9 @@ export function Options<T extends string>({
             aria-checked={on}
             onClick={() => onChange(o.value)}
             className={`flex min-h-12 items-center gap-3 rounded-xl border px-4 py-3 text-left transition-colors ${
-              on ? "border-primary bg-primary/5 ring-1 ring-primary" : "bg-background hover:border-primary/40"
+              on
+                ? "border-primary bg-primary/5 ring-1 ring-primary"
+                : "bg-background hover:border-primary/40"
             }`}
           >
             <span
@@ -229,7 +253,9 @@ export function Options<T extends string>({
             </span>
             <span>
               <span className="block font-semibold">{o.label}</span>
-              {o.hint ? <span className="mt-0.5 block text-sm text-muted-foreground">{o.hint}</span> : null}
+              {o.hint ? (
+                <span className="mt-0.5 block text-sm text-muted-foreground">{o.hint}</span>
+              ) : null}
             </span>
           </button>
         );
@@ -240,13 +266,19 @@ export function Options<T extends string>({
 
 export type StepProps = { answers: Answers; patch: (p: Partial<Answers>) => void };
 
-export function HomeStep({ answers, patch }: StepProps) {
+export function HomeStep({
+  answers,
+  patch,
+  title = "Où habitez-vous ?",
+  hint = "Toutes les démarches se font au consulat d'Algérie de votre lieu de résidence : ce n'est pas toujours le plus proche.",
+}: StepProps & { title?: string; hint?: string }) {
   const [locating, setLocating] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const consulat = consulatOf(answers);
 
   function locate() {
-    if (!navigator.geolocation) return setError("Géolocalisation indisponible : saisissez votre code postal.");
+    if (!navigator.geolocation)
+      return setError("Géolocalisation indisponible : saisissez votre code postal.");
     setLocating(true);
     setError(null);
     navigator.geolocation.getCurrentPosition(
@@ -261,7 +293,9 @@ export function HomeStep({ answers, patch }: StepProps) {
           if (!code) throw new Error("hors de France");
           patch({ postcode: code, abroad: false });
         } catch {
-          setError("Position hors de France ou introuvable. Saisissez votre code postal, ou choisissez « J'habite hors de France ».");
+          setError(
+            "Position hors de France ou introuvable. Saisissez votre code postal, ou choisissez « J'habite hors de France ».",
+          );
         } finally {
           setLocating(false);
         }
@@ -275,10 +309,7 @@ export function HomeStep({ answers, patch }: StepProps) {
   }
 
   return (
-    <Question
-      title="Où habitez-vous ?"
-      hint="Toutes les démarches se font au consulat d'Algérie de votre lieu de résidence : ce n'est pas toujours le plus proche."
-    >
+    <Question title={title} hint={hint}>
       {!answers.abroad ? (
         <div className="grid gap-3 sm:grid-cols-[1fr_auto]">
           <label>
@@ -313,7 +344,9 @@ export function HomeStep({ answers, patch }: StepProps) {
         onClick={() => patch({ abroad: !answers.abroad })}
         className="mt-4 text-sm font-semibold text-primary underline underline-offset-4"
       >
-        {answers.abroad ? "J'habite en France" : "J'habite hors de France (Belgique, Espagne, Allemagne…)"}
+        {answers.abroad
+          ? "J'habite en France"
+          : "J'habite hors de France (Belgique, Espagne, Allemagne…)"}
       </button>
       {!answers.abroad ? (
         <p className="mt-3 text-xs text-muted-foreground">
@@ -325,7 +358,19 @@ export function HomeStep({ answers, patch }: StepProps) {
   );
 }
 
-export function Counter({ label, icon, value, min, onChange }: { label: string; icon: ReactNode; value: number; min: number; onChange: (n: number) => void }) {
+export function Counter({
+  label,
+  icon,
+  value,
+  min,
+  onChange,
+}: {
+  label: string;
+  icon: ReactNode;
+  value: number;
+  min: number;
+  onChange: (n: number) => void;
+}) {
   return (
     <div className="flex items-center justify-between gap-4 rounded-xl border p-4">
       <span className="flex items-center gap-3 font-semibold">
@@ -365,15 +410,33 @@ export function GroupStep({ answers, patch }: StepProps) {
   const resize = (kind: Traveller["kind"], n: number) => {
     const same = kind === "adult" ? adults : kids;
     const others = answers.travellers.filter((t) => t.kind !== kind);
-    const list = n > same.length ? [...same, ...Array.from({ length: n - same.length }, () => newTraveller(kind))] : same.slice(0, n);
+    const list =
+      n > same.length
+        ? [...same, ...Array.from({ length: n - same.length }, () => newTraveller(kind))]
+        : same.slice(0, n);
     const travellers = kind === "adult" ? [...list, ...others] : [...others, ...list];
     patch({ travellers, ...(kind === "adult" && n === 1 ? { couple: "none" as const } : {}) });
   };
   return (
-    <Question title="Qui part ?" hint="Vous compris. Chacun peut avoir des papiers différents : on les verra un par un.">
+    <Question
+      title="Qui part ?"
+      hint="Vous compris. Chacun peut avoir des papiers différents : on les verra un par un."
+    >
       <div className="grid gap-3">
-        <Counter label="Adultes" icon={<User size={20} aria-hidden />} value={adults.length} min={1} onChange={(n) => resize("adult", n)} />
-        <Counter label="Enfants (moins de 19 ans)" icon={<Baby size={20} aria-hidden />} value={kids.length} min={0} onChange={(n) => resize("child", n)} />
+        <Counter
+          label="Adultes"
+          icon={<User size={20} aria-hidden />}
+          value={adults.length}
+          min={1}
+          onChange={(n) => resize("adult", n)}
+        />
+        <Counter
+          label="Enfants (moins de 19 ans)"
+          icon={<Baby size={20} aria-hidden />}
+          value={kids.length}
+          min={0}
+          onChange={(n) => resize("child", n)}
+        />
       </div>
       <p className="mt-3 text-sm text-muted-foreground">
         En Algérie, on est mineur jusqu'à 19 ans : comptez un jeune de 18 ans parmi les enfants.
@@ -392,14 +455,27 @@ export function PeopleStep({ answers, patch }: StepProps) {
     >
       <div className="grid gap-4">
         {answers.travellers.map((t) => (
-          <TravellerCard key={t.id} t={t} name={travellerLabel(t, answers.travellers)} update={(p) => update(t.id, p)} />
+          <TravellerCard
+            key={t.id}
+            t={t}
+            name={travellerLabel(t, answers.travellers)}
+            update={(p) => update(t.id, p)}
+          />
         ))}
       </div>
     </Question>
   );
 }
 
-function TravellerCard({ t, name, update }: { t: Traveller; name: string; update: (p: Partial<Traveller>) => void }) {
+function TravellerCard({
+  t,
+  name,
+  update,
+}: {
+  t: Traveller;
+  name: string;
+  update: (p: Partial<Traveller>) => void;
+}) {
   const child = t.kind === "child";
   return (
     <fieldset className="rounded-2xl border bg-secondary/20 p-4 md:p-5">
@@ -433,14 +509,24 @@ function TravellerCard({ t, name, update }: { t: Traveller; name: string; update
           small
           options={[
             { value: "bi", label: "Algérien et français (ou autre)", hint: "Binational" },
-            { value: "dz", label: "Algérien seulement", hint: child ? "Vit en Europe" : "Vit en Europe avec un titre de séjour" },
-            { value: "etr", label: "Pas algérien", hint: "Français, belge… sans nationalité algérienne" },
+            {
+              value: "dz",
+              label: "Algérien seulement",
+              hint: child ? "Vit en Europe" : "Vit en Europe avec un titre de séjour",
+            },
+            {
+              value: "etr",
+              label: "Pas algérien",
+              hint: "Français, belge… sans nationalité algérienne",
+            },
           ]}
         />
       </div>
       {t.nat === "bi" ? (
         <div className="mt-4">
-          <p className="text-sm font-semibold">Quel document algérien {child ? "a-t-il" : "avez-vous"} ?</p>
+          <p className="text-sm font-semibold">
+            Quel document algérien {child ? "a-t-il" : "avez-vous"} ?
+          </p>
           <div className="mt-2">
             <Options
               label={`Document algérien : ${name}`}
@@ -459,7 +545,9 @@ function TravellerCard({ t, name, update }: { t: Traveller; name: string; update
       ) : null}
       {!child && t.nat === "dz" ? (
         <div className="mt-4">
-          <p className="text-sm font-semibold">Votre titre de séjour sera-t-il encore valable au retour ?</p>
+          <p className="text-sm font-semibold">
+            Votre titre de séjour sera-t-il encore valable au retour ?
+          </p>
           <div className="mt-2">
             <Options
               label={`Titre de séjour : ${name}`}
@@ -476,7 +564,12 @@ function TravellerCard({ t, name, update }: { t: Traveller; name: string; update
       ) : null}
       {!child && t.nat !== "etr" ? (
         <label className="mt-4 flex min-h-11 cursor-pointer items-center gap-3 text-sm">
-          <input type="checkbox" checked={t.man} onChange={(e) => update({ man: e.target.checked })} className="size-5 accent-[var(--primary)]" />
+          <input
+            type="checkbox"
+            checked={t.man}
+            onChange={(e) => update({ man: e.target.checked })}
+            className="size-5 accent-[var(--primary)]"
+          />
           Homme de 19 ans ou plus (service national)
         </label>
       ) : null}
@@ -489,7 +582,10 @@ export function FamilyStep({ answers, patch }: StepProps) {
   const kids = answers.travellers.filter((t) => t.kind === "child");
   const mixed = adults.some((t) => t.nat === "etr") && adults.some((t) => t.nat !== "etr");
   return (
-    <Question title="Votre famille" hint="Le mariage et l'adulte qui accompagne les enfants changent les papiers.">
+    <Question
+      title="Votre famille"
+      hint="Le mariage et l'adulte qui accompagne les enfants changent les papiers."
+    >
       <div className="grid gap-6">
         {adults.length > 1 ? (
           <div>
@@ -542,7 +638,11 @@ export function FamilyStep({ answers, patch }: StepProps) {
                     { value: "both", label: "Leurs deux parents" },
                     { value: "father", label: "Leur père" },
                     { value: "mother", label: "Leur mère, sans le père" },
-                    { value: "other", label: "Un autre adulte", hint: "Grands-parents, oncle, tante…" },
+                    {
+                      value: "other",
+                      label: "Un autre adulte",
+                      hint: "Grands-parents, oncle, tante…",
+                    },
                     { value: "alone", label: "Seuls" },
                   ]}
                 />
@@ -554,7 +654,12 @@ export function FamilyStep({ answers, patch }: StepProps) {
                 <Options
                   label="Parents séparés"
                   value={answers.separated ? "yes" : "no"}
-                  onChange={(v) => patch({ separated: v === "yes", ...(v === "no" ? { motherCustody: false } : {}) })}
+                  onChange={(v) =>
+                    patch({
+                      separated: v === "yes",
+                      ...(v === "no" ? { motherCustody: false } : {}),
+                    })
+                  }
                   small
                   options={[
                     { value: "no", label: "Non" },
@@ -597,7 +702,11 @@ export function StayStep({ answers, patch }: StepProps) {
         options={[
           { value: "family", label: "En famille, chez des proches" },
           { value: "hotel", label: "À l'hôtel" },
-          { value: "both", label: "Les deux", hint: "Quelques nuits d'hôtel en plus de la famille" },
+          {
+            value: "both",
+            label: "Les deux",
+            hint: "Quelques nuits d'hôtel en plus de la famille",
+          },
         ]}
       />
     </Question>
@@ -632,14 +741,21 @@ export function PapersResult({
   const count = tasks.filter((t) => done.includes(t.id)).length;
   const adults = answers.travellers.filter((t) => t.kind === "adult").length;
   const kids = answers.travellers.length - adults;
-  const toggle = (id: string) => setDone((d) => (d.includes(id) ? d.filter((x) => x !== id) : [...d, id]));
+  const toggle = (id: string) =>
+    setDone((d) => (d.includes(id) ? d.filter((x) => x !== id) : [...d, id]));
 
   return (
-    <section className={embedded ? "" : "py-6 md:py-10"} aria-labelledby={embedded ? undefined : "resultat"}>
+    <section
+      className={embedded ? "" : "py-6 md:py-10"}
+      aria-labelledby={embedded ? undefined : "resultat"}
+    >
       {embedded ? null : (
         <>
           <p className="text-xs font-bold uppercase tracking-widest text-primary">Mes papiers</p>
-          <h1 id="resultat" className="mt-2 font-display text-3xl font-bold leading-tight md:text-5xl">
+          <h1
+            id="resultat"
+            className="mt-2 font-display text-3xl font-bold leading-tight md:text-5xl"
+          >
             Votre liste de papiers
           </h1>
         </>
@@ -649,13 +765,23 @@ export function PapersResult({
           {adults} adulte{adults > 1 ? "s" : ""}
           {kids ? ` · ${kids} enfant${kids > 1 ? "s" : ""}` : ""}
         </span>
-        {consulat ? <span className="rounded-full bg-secondary px-3 py-1 font-semibold">{consulat.name.replace(/^Consulat (général )?d'Algérie à /, "Consulat de ")}</span> : null}
-        <button type="button" onClick={onEdit} className="inline-flex min-h-9 items-center gap-1.5 rounded-full border px-3 font-semibold hover:bg-secondary">
+        {consulat ? (
+          <span className="rounded-full bg-secondary px-3 py-1 font-semibold">
+            {consulat.name.replace(/^Consulat (général )?d'Algérie à /, "Consulat de ")}
+          </span>
+        ) : null}
+        <button
+          type="button"
+          onClick={onEdit}
+          className="inline-flex min-h-9 items-center gap-1.5 rounded-full border px-3 font-semibold hover:bg-secondary"
+        >
           <Pencil size={14} aria-hidden /> Modifier mes réponses
         </button>
       </div>
 
-      <div className={`mt-6 grid gap-6 ${embedded ? "" : "lg:grid-cols-[minmax(0,1fr)_340px] lg:items-start"}`}>
+      <div
+        className={`mt-6 grid gap-6 ${embedded ? "" : "lg:grid-cols-[minmax(0,1fr)_340px] lg:items-start"}`}
+      >
         <div className={embedded ? "order-2" : undefined}>
           <div className="rounded-xl border p-4" aria-live="polite">
             <div className="flex items-center justify-between text-sm font-semibold">
@@ -665,7 +791,10 @@ export function PapersResult({
               {count === tasks.length ? <span className="text-primary">Tout est prêt</span> : null}
             </div>
             <div className="mt-2 h-2 overflow-hidden rounded-full bg-secondary" aria-hidden>
-              <div className="h-full rounded-full bg-primary transition-[width]" style={{ width: `${(count / Math.max(1, tasks.length)) * 100}%` }} />
+              <div
+                className="h-full rounded-full bg-primary transition-[width]"
+                style={{ width: `${(count / Math.max(1, tasks.length)) * 100}%` }}
+              />
             </div>
           </div>
 
@@ -693,7 +822,12 @@ export function PapersResult({
                 <p className="text-sm text-muted-foreground">{whenLabels[when].hint}</p>
                 <ul className="mt-3 grid gap-2">
                   {group.map((t) => (
-                    <TaskRow key={t.id} task={t} done={done.includes(t.id)} onToggle={() => toggle(t.id)} />
+                    <TaskRow
+                      key={t.id}
+                      task={t}
+                      done={done.includes(t.id)}
+                      onToggle={() => toggle(t.id)}
+                    />
                   ))}
                 </ul>
               </div>
@@ -712,10 +846,20 @@ export function PapersResult({
   );
 }
 
-export function TaskRow({ task, done, onToggle }: { task: Task; done: boolean; onToggle: () => void }) {
+export function TaskRow({
+  task,
+  done,
+  onToggle,
+}: {
+  task: Task;
+  done: boolean;
+  onToggle: () => void;
+}) {
   const [open, setOpen] = useState(false);
   return (
-    <li className={`rounded-xl border transition-colors ${done ? "bg-secondary/40" : "bg-background"}`}>
+    <li
+      className={`rounded-xl border transition-colors ${done ? "bg-secondary/40" : "bg-background"}`}
+    >
       <div className="flex items-start gap-3 p-3 md:p-4">
         <button
           type="button"
@@ -728,11 +872,23 @@ export function TaskRow({ task, done, onToggle }: { task: Task; done: boolean; o
           {done ? <Check size={16} strokeWidth={3} aria-hidden /> : null}
         </button>
         <div className="min-w-0 flex-1">
-          <button type="button" onClick={() => setOpen((o) => !o)} aria-expanded={open} className="w-full text-left">
-            <span className={`block font-semibold leading-snug ${done ? "text-muted-foreground line-through" : ""}`}>{task.title}</span>
+          <button
+            type="button"
+            onClick={() => setOpen((o) => !o)}
+            aria-expanded={open}
+            className="w-full text-left"
+          >
+            <span
+              className={`block font-semibold leading-snug ${done ? "text-muted-foreground line-through" : ""}`}
+            >
+              {task.title}
+            </span>
             <span className="mt-1.5 flex flex-wrap items-center gap-1.5">
               {task.who.map((w) => (
-                <span key={w} className="rounded-full bg-secondary px-2 py-0.5 text-xs font-semibold">
+                <span
+                  key={w}
+                  className="rounded-full bg-secondary px-2 py-0.5 text-xs font-semibold"
+                >
                   {w}
                 </span>
               ))}
@@ -755,7 +911,9 @@ export function TaskRow({ task, done, onToggle }: { task: Task; done: boolean; o
               {task.sources.length ? (
                 <SourceLinks ids={task.sources} />
               ) : (
-                <p className="text-xs font-semibold">Aucune source officielle trouvée sur ce point.</p>
+                <p className="text-xs font-semibold">
+                  Aucune source officielle trouvée sur ce point.
+                </p>
               )}
             </div>
           ) : null}
@@ -788,7 +946,13 @@ export function SourceLinks({ ids }: { ids: FormaliteSourceId[] }) {
   );
 }
 
-export function ConsulatCard({ consulat, compact = false }: { consulat: Consulat; compact?: boolean }) {
+export function ConsulatCard({
+  consulat,
+  compact = false,
+}: {
+  consulat: Consulat;
+  compact?: boolean;
+}) {
   return (
     <div className="rounded-xl border border-primary/30 bg-primary/5 p-4">
       <p className="text-xs font-bold uppercase tracking-widest text-primary">Votre consulat</p>
@@ -801,7 +965,10 @@ export function ConsulatCard({ consulat, compact = false }: { consulat: Consulat
           </p>
           <p className="mt-1 flex items-center gap-2 text-sm">
             <Phone size={16} className="shrink-0" aria-hidden />
-            <a href={`tel:+33${consulat.phone.replace(/\s/g, "").slice(1)}`} className="hover:underline">
+            <a
+              href={`tel:+33${consulat.phone.replace(/\s/g, "").slice(1)}`}
+              className="hover:underline"
+            >
               {consulat.phone}
             </a>
           </p>
@@ -825,7 +992,12 @@ export function ConsulatCard({ consulat, compact = false }: { consulat: Consulat
           </div>
           <p className="mt-3 text-xs text-muted-foreground">
             Ouvert du mardi au samedi ; passeports, cartes d'identité et visas sur rendez-vous.{" "}
-            <a href={formaliteSources["amb-consulats"].url} target="_blank" rel="noreferrer" className="underline">
+            <a
+              href={formaliteSources["amb-consulats"].url}
+              target="_blank"
+              rel="noreferrer"
+              className="underline"
+            >
               Source : ambassade d'Algérie
             </a>
           </p>
@@ -862,7 +1034,8 @@ export function Sources() {
     <section id="sources" className="mt-10 border-t pt-6">
       <h2 className="font-display text-xl font-bold">Sources officielles</h2>
       <p className="mt-2 text-sm text-muted-foreground">
-        Pages consultées le <time dateTime={FORMALITES_CHECKED}>{displayDate(FORMALITES_CHECKED)}</time>.
+        Pages consultées le{" "}
+        <time dateTime={FORMALITES_CHECKED}>{displayDate(FORMALITES_CHECKED)}</time>.
       </p>
       <ul className="mt-4 space-y-2">
         {(Object.keys(formaliteSources) as FormaliteSourceId[]).map((id) => {
@@ -872,7 +1045,9 @@ export function Sources() {
               <a href={s.url} target="_blank" rel="noreferrer" className={textLink}>
                 {s.name}
               </a>
-              {"updated" in s ? <span className="text-muted-foreground"> · {s.updated}</span> : null}
+              {"updated" in s ? (
+                <span className="text-muted-foreground"> · {s.updated}</span>
+              ) : null}
             </li>
           );
         })}

@@ -3303,3 +3303,30 @@ html {
     display: none !important;
   }
 }
+
+/* Téléphone : le compte en haut à droite, le menu ☰ dans la barre du bas. */
+.bw-header-me-slot {
+  display: none;
+}
+@media (max-width: 767px) {
+  .bw-header-actions .bw-mobile-menu {
+    display: none !important;
+  }
+  .bw-header-me-slot {
+    display: inline-flex;
+  }
+  .bw-header-me {
+    display: inline-flex;
+    min-width: 44px;
+    min-height: 44px;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 1px;
+    padding-inline: 4px;
+    color: var(--foreground);
+    font-size: 10.5px;
+    font-weight: 600;
+    line-height: 1.1;
+  }
+}

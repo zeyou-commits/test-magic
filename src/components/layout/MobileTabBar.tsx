@@ -1,26 +1,17 @@
-import type { ReactNode } from "react";
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
-import { CalendarCheck, ClipboardList, Map as MapIcon, MessagesSquare, Ship } from "lucide-react";
-import { MeTab } from "@/components/community/MeTab";
 import {
-  Sheet,
-  SheetClose,
-  SheetContent,
-  SheetDescription,
-  SheetTitle,
-  SheetTrigger,
-} from "@/components/ui/sheet";
+  CalendarCheck,
+  ClipboardList,
+  Map as MapIcon,
+  Menu,
+  MessagesSquare,
+  Ship,
+} from "lucide-react";
 import { OPEN_ROOM_PICKER_EVENT } from "@/lib/ferry/chatDemo";
-import { useVoyageTrip } from "@/lib/ferry/voyageTrip";
+import { goHome, useVoyageTrip } from "@/lib/ferry/voyageTrip";
 import { useT } from "@/lib/i18n";
-import {
-  familyById,
-  familyIsActive,
-  MenuItemLink,
-  openSearchFromHeader,
-  type MenuFamily,
-  type MenuItem,
-} from "./menu";
+import { MainMenuSheet } from "./MainMenu";
+import { familyById, familyIsActive, openSearchFromHeader } from "./menu";
 
 const itemClass =
   "flex h-full min-w-0 flex-1 flex-col items-center justify-center gap-1 whitespace-nowrap text-[11px] font-medium text-muted-foreground transition-colors hover:text-foreground data-[active=true]:text-primary [&.active]:text-primary";
@@ -69,13 +60,6 @@ export function MobileTabBar({
   const prepare = familyById("prepare");
   const live = familyById("live");
 
-  // Sur la carte d'accueil, les liens qui ouvrent un volet de la carte passent par ses commandes.
-  const liveOverride = (item: MenuItem) => {
-    if (item.to === "/" && onOpenMap) return onOpenMap;
-    if (item.to === "/horaires" && onOpenDepartures) return onOpenDepartures;
-    return undefined;
-  };
-
   const openSalons = () => {
     if (onHome) window.dispatchEvent(new Event(OPEN_ROOM_PICKER_EVENT));
     else {
@@ -113,7 +97,12 @@ export function MobileTabBar({
             <span>{t("nav.myTrip")}</span>
           </button>
         ) : (
-          <Link to="/" search={{ voyage: 1 } as never} className={bookClass} aria-label={t("menu.myTripLabel")}>
+          <Link
+            to="/"
+            search={{ voyage: 1 } as never}
+            className={bookClass}
+            aria-label={t("menu.myTripLabel")}
+          >
             <span className={`bw-tab-voyage ${bookIcon}`}>
               <Ship className="size-5" aria-hidden />
             </span>
@@ -134,7 +123,12 @@ export function MobileTabBar({
           <span>{t("menu.book")}</span>
         </button>
       ) : (
-        <Link to="/" onClick={openSearchFromHeader} className={bookClass} aria-label={t("menu.bookLabel")}>
+        <Link
+          to="/"
+          onClick={openSearchFromHeader}
+          className={bookClass}
+          aria-label={t("menu.bookLabel")}
+        >
           <span className={bookIcon}>
             <CalendarCheck className="size-5" aria-hidden />
           </span>
@@ -142,80 +136,39 @@ export function MobileTabBar({
         </Link>
       )}
 
-      <FamilySheet
-        family={live}
-        label={t("menu.tabFollow")}
-        icon={<MapIcon className="size-5" aria-hidden />}
-        active={
-          activeTab === "map" || activeTab === "departures" || (!onHome && familyIsActive(live, pathname))
-        }
-        override={liveOverride}
-      />
+      {/* « Suivre » : la carte en direct, sans sous-menu (départs et actualités y sont). */}
+      {onOpenMap ? (
+        <button
+          type="button"
+          onClick={onOpenMap}
+          data-active={activeTab === "map" || activeTab === "departures"}
+          className={itemClass}
+        >
+          <MapIcon className="size-5" aria-hidden />
+          <span>{t("menu.tabFollow")}</span>
+        </button>
+      ) : (
+        <Link
+          to="/"
+          onClick={goHome}
+          className={itemClass}
+          data-active={familyIsActive(live, pathname)}
+        >
+          <MapIcon className="size-5" aria-hidden />
+          <span>{t("menu.tabFollow")}</span>
+        </Link>
+      )}
 
       <button type="button" onClick={openSalons} className={itemClass}>
         <MessagesSquare className="size-5" aria-hidden />
         <span>{t("menu.tabSalons")}</span>
       </button>
 
-      {/* « Moi » : mon cabas et mon humeur. « Signaler » est le bouton jaune flottant de la carte. */}
-      <MeTab className={itemClass} />
+      {/* « Menu » : tout le site. Le compte (« Moi ») est en haut à droite. */}
+      <MainMenuSheet triggerClassName={itemClass} label={t("menu.open")}>
+        <Menu className="size-5" aria-hidden />
+        <span>{t("menu.tabMenu")}</span>
+      </MainMenuSheet>
     </nav>
-  );
-}
-
-/** Un onglet qui ouvre, en volet, le même contenu que le menu de l'ordinateur. */
-function FamilySheet({
-  family,
-  label,
-  icon,
-  active,
-  override,
-}: {
-  family: MenuFamily;
-  label: string;
-  icon: ReactNode;
-  active: boolean;
-  override: (item: MenuItem) => (() => void) | undefined;
-}) {
-  const t = useT();
-  const link = (item: MenuItem) => {
-    const run = override(item);
-    return (
-      <SheetClose asChild key={`${item.to}-${item.labelKey}`}>
-        {run ? (
-          <button
-            type="button"
-            onClick={run}
-            className={`bw-menu-link${item.featured ? " bw-menu-link--featured" : ""}`}
-          >
-            <item.icon size={17} aria-hidden />
-            {t(item.labelKey)}
-          </button>
-        ) : (
-          <MenuItemLink item={item} iconSize={17} />
-        )}
-      </SheetClose>
-    );
-  };
-  return (
-    <Sheet>
-      <SheetTrigger className={itemClass} data-active={active}>
-        {icon}
-        <span>{label}</span>
-      </SheetTrigger>
-      <SheetContent side="bottom" className="bw-menu-sheet bw-family-sheet">
-        <SheetTitle className="bw-menu-sheet__title">{t(family.titleKey)}</SheetTitle>
-        <SheetDescription className="sr-only">{t(family.titleKey)}</SheetDescription>
-        <div className="bw-family-sheet__columns">
-          {family.columns.map((column, index) => (
-            <section key={column.titleKey ?? index} aria-label={t(column.titleKey ?? family.titleKey)}>
-              {column.titleKey ? <p className="bw-menu-group-title">{t(column.titleKey)}</p> : null}
-              {column.items.map(link)}
-            </section>
-          ))}
-        </div>
-        {family.footer ? <div className="bw-family-sheet__footer">{family.footer.map(link)}</div> : null}
-      </SheetContent>
-    </Sheet>
   );
 }

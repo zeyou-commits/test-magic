@@ -1,13 +1,9 @@
 import { AlertTicker } from "./AlertTicker";
-import {
-  forwardRef,
-  useEffect,
-  useRef,
-  type MouseEventHandler,
-  type ReactNode,
-} from "react";
+import { forwardRef, useEffect, useRef, type MouseEventHandler, type ReactNode } from "react";
 import { Link, useRouterState } from "@tanstack/react-router";
 import { UserMenu } from "./UserMenu";
+import { MainMenuSheet } from "./MainMenu";
+import { MeTab } from "@/components/community/MeTab";
 import { QuestionButton } from "./QuestionButton";
 import { DataUnavailableNotice } from "./DataUnavailableNotice";
 import { goHome, openVoyage, useVoyageTrip } from "@/lib/ferry/voyageTrip";
@@ -175,9 +171,7 @@ export function SiteHeader() {
             role="group"
             aria-label={t(column.titleKey ?? family.titleKey)}
           >
-            {column.titleKey ? (
-              <p className="bw-menu-group-title">{t(column.titleKey)}</p>
-            ) : null}
+            {column.titleKey ? <p className="bw-menu-group-title">{t(column.titleKey)}</p> : null}
             {column.items.map((item) => (
               <DropdownMenuItem asChild key={`${item.to}-${item.labelKey}`}>
                 <MenuItemLink item={item} />
@@ -234,63 +228,13 @@ export function SiteHeader() {
           <span className="hidden md:inline-flex">
             <UserMenu compact iconOnly />
           </span>
-          <Sheet>
-            <SheetTrigger className="bw-mobile-menu bw-icon-button" aria-label={t("menu.open")}>
-              <Menu size={22} />
-            </SheetTrigger>
-            <SheetContent side="bottom" className="bw-menu-sheet">
-              <SheetTitle className="bw-menu-sheet__title">{t("menu.sheetTitle")}</SheetTitle>
-              <SheetDescription className="sr-only">{t("menu.sheetDescription")}</SheetDescription>
-              {/* Tablette : pas de barre du bas, « Réserver » et la carte restent ici. */}
-              <div className="bw-menu-sheet__main">
-                <SheetClose asChild>
-                  <Link
-                    to="/"
-                    onClick={openSearchFromHeader}
-                    activeProps={{ className: "" }}
-                    className="bw-menu-link"
-                  >
-                    <CalendarCheck size={16} aria-hidden /> {t("menu.book")}
-                  </Link>
-                </SheetClose>
-                <SheetClose asChild>
-                  <Link
-                    to="/"
-                    activeOptions={{ exact: true }}
-                    onClick={goHome}
-                    className="bw-menu-link"
-                  >
-                    <House size={16} aria-hidden /> {t("menu.liveMap")}
-                  </Link>
-                </SheetClose>
-                {trip ? (
-                  <SheetClose asChild>
-                    <Link
-                      to="/"
-                      search={{ voyage: 1 } as never}
-                      onClick={openVoyage}
-                      className="bw-menu-link"
-                    >
-                      <Ship size={16} aria-hidden /> {t("nav.myTrip")}
-                    </Link>
-                  </SheetClose>
-                ) : null}
-              </div>
-              <div className="bw-menu-sheet__groups">
-                {menuFamilies.map((family) => (
-                  <section key={family.id} aria-label={t(family.titleKey)}>
-                    <p className="bw-menu-group-title">{t(family.titleKey)}</p>
-                    {familyItems(family).map((item) => (
-                        <SheetClose asChild key={`${item.to}-${item.labelKey}`}>
-                          <MenuItemLink item={item} iconSize={17} />
-                        </SheetClose>
-                      ))}
-                  </section>
-                ))}
-              </div>
-              <LanguageSwitcher className="mt-4" />
-            </SheetContent>
-          </Sheet>
+          {/* Téléphone : le compte est ici, le menu ☰ est le dernier onglet de la barre du bas. */}
+          <span className="bw-header-me-slot">
+            <MeTab className="bw-header-me" placement="below" />
+          </span>
+          <MainMenuSheet triggerClassName="bw-mobile-menu bw-icon-button" label={t("menu.open")}>
+            <Menu size={22} />
+          </MainMenuSheet>
         </div>
       </div>
       <AlertTicker />

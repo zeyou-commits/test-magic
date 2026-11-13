@@ -19,7 +19,9 @@ import {
   TrendingUp,
   Users,
   Wallet,
+  type LucideIcon,
 } from "lucide-react";
+import { CabasImg } from "@/components/CabasImg";
 import { SiteLayout } from "@/components/layout/SiteLayout";
 import { Breadcrumbs, textLink } from "@/components/editorial/Editorial";
 import {
@@ -60,7 +62,11 @@ import { searchItineraryAddress } from "@/lib/ferry/itinerary.functions";
 import { prepItems } from "@/lib/ferry/preparation";
 import { formatFareRange } from "@/lib/ferry/pricing";
 import { portsQuery, routesQuery } from "@/lib/ferry/queries";
-import { readTravelProfile, saveItineraryChoice, saveTravelProfile } from "@/lib/ferry/travelProfile";
+import {
+  readTravelProfile,
+  saveItineraryChoice,
+  saveTravelProfile,
+} from "@/lib/ferry/travelProfile";
 import type { Port } from "@/lib/ferry/types";
 import { seoHead } from "@/lib/seo/site";
 
@@ -75,6 +81,191 @@ export const Route = createFileRoute("/preparer-mon-voyage")({
     ),
   component: CompanionPage,
 });
+
+/** Les visuels des étapes : les pictos BledWay (remplaçables dans l'admin), sinon une icône. */
+const stepArt: Record<
+  CompanionStep,
+  {
+    src?: string;
+    icon?: LucideIcon;
+    short: string;
+    benefit: string;
+    tint: string;
+    /** La scène illustrée (série « Retour au bled ») en tête de l'étape. */
+    scene: string;
+    sceneAlt: string;
+  }
+> = {
+  profile: {
+    src: "/cabas/pictos/yallah.webp",
+    short: "Profil",
+    benefit: "Qui part, avec quelle voiture, et quand.",
+    tint: "bg-[#fdf0d8]",
+    scene: "/illustrations/voyage/depart-a-laube.webp",
+    sceneAlt: "La famille charge la voiture au petit matin",
+  },
+  papers: {
+    src: "/cabas/pictos/controle.webp",
+    short: "Papiers",
+    benefit: "Visa, passeports, enfants : la liste de chacun, et votre consulat.",
+    tint: "bg-[#e5f2ea]",
+    scene: "/illustrations/voyage/billets-au-port.webp",
+    sceneAlt: "Au guichet du port, la famille présente ses papiers",
+  },
+  car: {
+    src: "/cabas/persos/voiture_504.webp",
+    short: "Voiture",
+    benefit: "Carte grise, assurance, TPD : rien d'oublié pour la douane.",
+    tint: "bg-[#e6eff7]",
+    scene: "/illustrations/voyage/dernier-sac.webp",
+    sceneAlt: "Le dernier sac entre dans le coffre de la 504",
+  },
+  route: {
+    src: "/cabas/pictos/route_longue.webp",
+    short: "Route",
+    benefit: "Le port le plus proche, et le trajet de porte à porte.",
+    tint: "bg-[#fde9e4]",
+    scene: "/illustrations/voyage/route-du-soleil.webp",
+    sceneAlt: "Pique-nique sur une aire de l'A7, direction Marseille",
+  },
+  budget: {
+    icon: Wallet,
+    short: "Budget",
+    benefit: "Le prix de la traversée selon la saison, avant de réserver.",
+    tint: "bg-[#fff3cf]",
+    scene: "/illustrations/voyage/station-essence.webp",
+    sceneAlt: "Le plein avant la route du port",
+  },
+  book: {
+    src: "/cabas/pictos/file.webp",
+    short: "Réserver",
+    benefit: "Les traversées de votre date, prêtes à comparer.",
+    tint: "bg-[#efe9fb]",
+    scene: "/illustrations/voyage/cote-en-vue.webp",
+    sceneAlt: "Sur le pont du ferry, la côte algérienne en vue",
+  },
+};
+
+function StepArt({
+  step,
+  size = "md",
+  done = false,
+}: {
+  step: CompanionStep;
+  size?: "sm" | "md";
+  done?: boolean;
+}) {
+  const art = stepArt[step];
+  const Icon = art.icon;
+  return (
+    <span
+      className={`relative grid shrink-0 place-items-center rounded-2xl ${size === "sm" ? "size-11 md:size-12" : "size-14"} ${art.tint}`}
+      aria-hidden
+    >
+      {art.src ? (
+        <CabasImg
+          src={art.src}
+          className="size-[80%] object-contain drop-shadow-sm"
+          loading="lazy"
+          decoding="async"
+        />
+      ) : Icon ? (
+        <Icon className="size-1/2 text-[#b7791f]" strokeWidth={2.2} />
+      ) : null}
+      {done ? (
+        <span className="absolute -bottom-1 -right-1 grid size-5 place-items-center rounded-full bg-primary text-primary-foreground ring-2 ring-background">
+          <Check size={12} strokeWidth={3} />
+        </span>
+      ) : null}
+    </span>
+  );
+}
+
+/** L'accueil : ce que l'outil apporte, pour qui, et un seul bouton pour commencer. */
+function Welcome({ onStart }: { onStart: () => void }) {
+  const benefits: CompanionStep[] = ["papers", "car", "route", "budget", "book"];
+  const start = (
+    <button
+      type="button"
+      onClick={onStart}
+      className="inline-flex min-h-14 w-full items-center justify-center gap-2 rounded-2xl bg-primary px-6 text-base font-bold text-primary-foreground shadow-md hover:bg-primary/90 sm:w-auto"
+    >
+      Je prépare mon voyage en Algérie <ArrowRight size={18} aria-hidden />
+    </button>
+  );
+  return (
+    <div>
+      <section className="overflow-hidden rounded-3xl bg-gradient-to-b from-[#e3f0f6] via-[#f1f6f2] to-[#fbf5ea]">
+        <div className="grid items-center gap-2 px-5 pt-6 md:grid-cols-[1.1fr_1fr] md:gap-6 md:px-10 md:py-10">
+          <div>
+            <p className="text-xs font-bold uppercase tracking-widest text-primary">
+              Gratuit · sans compte
+            </p>
+            <h1 className="mt-2 font-display text-[1.75rem] font-bold leading-tight md:text-5xl">
+              Votre voyage au bled, préparé étape par étape
+            </h1>
+            <p className="mt-3 text-muted-foreground md:text-lg">
+              Papiers, voiture, route, budget, traversée : BledWay vous guide de chez vous jusqu'au
+              port, sans rien oublier.
+            </p>
+            <div className="mt-5 hidden md:block">{start}</div>
+          </div>
+          <img
+            src="/illustrations/voyage/depart-a-laube.webp"
+            alt="Au petit matin, la famille charge la voiture pour le voyage au bled"
+            width={960}
+            height={640}
+            fetchPriority="high"
+            className="mb-5 aspect-[3/2] w-full rounded-2xl object-cover shadow-md md:mb-0"
+          />
+        </div>
+      </section>
+
+      <div className="mt-4 md:hidden">{start}</div>
+      <p className="mt-3 text-center text-sm text-muted-foreground md:text-left">
+        Environ 5 minutes · vos réponses restent sur votre téléphone · reprenez quand vous voulez
+      </p>
+      <p className="mt-2 flex flex-wrap items-center justify-center gap-2 text-sm md:justify-start">
+        <span className="text-muted-foreground">Bientôt :</span>
+        <span className="rounded-full border px-3 py-1 text-muted-foreground">Tunisie</span>
+        <span className="rounded-full border px-3 py-1 text-muted-foreground">Maroc</span>
+      </p>
+
+      <h2 className="mt-8 font-display text-xl font-bold md:text-2xl">
+        Ce que vous allez préparer
+      </h2>
+      <ol className="mt-3 grid gap-2 sm:grid-cols-2">
+        {benefits.map((step) => (
+          <li key={step} className="flex items-center gap-3 rounded-2xl border bg-card p-2 pr-3">
+            <span className="relative shrink-0">
+              <img
+                src={stepArt[step].scene}
+                alt=""
+                width={960}
+                height={640}
+                loading="lazy"
+                decoding="async"
+                className="h-20 w-28 rounded-xl object-cover"
+              />
+              <span className="absolute -bottom-1 -right-1 scale-75">
+                <StepArt step={step} size="sm" />
+              </span>
+            </span>
+            <span className="min-w-0">
+              <span className="block font-semibold">{stepTitles[step]}</span>
+              <span className="block text-sm text-muted-foreground">{stepArt[step].benefit}</span>
+            </span>
+          </li>
+        ))}
+      </ol>
+      <p className="mt-4 text-sm text-muted-foreground">
+        Chaque règle cite sa source officielle. BledWay ne vend pas de billets : la réservation se
+        fait auprès de la compagnie ou du distributeur indiqué.
+      </p>
+      <div className="mt-5">{start}</div>
+    </div>
+  );
+}
 
 const stepTitles: Record<CompanionStep, string> = {
   profile: "Mon voyage en 4 questions",
@@ -95,12 +286,19 @@ const carItems = prepItems.filter(
 );
 
 const monthName = (key: string) =>
-  new Intl.DateTimeFormat("fr-FR", { month: "long", year: "numeric" }).format(new Date(`${key}-15T12:00:00`));
+  new Intl.DateTimeFormat("fr-FR", { month: "long", year: "numeric" }).format(
+    new Date(`${key}-15T12:00:00`),
+  );
 const dayName = (key: string) =>
   new Intl.DateTimeFormat("fr-FR", { weekday: "long", day: "numeric", month: "long" }).format(
     new Date(`${key}T12:00:00`),
   );
-const shortSeason = { calme: "Basse", intermediaire: "Moyenne", forte: "Haute", pointe: "Pic" } as const;
+const shortSeason = {
+  calme: "Basse",
+  intermediaire: "Moyenne",
+  forte: "Haute",
+  pointe: "Pic",
+} as const;
 const plural = (n: number, word: string) => `${n} ${word}${n > 1 ? "s" : ""}`;
 
 function people(a: Answers) {
@@ -142,7 +340,8 @@ function CompanionPage() {
     const timer = window.setTimeout(() => {
       communeOfPostcode(code)
         .then((home) => {
-          if (!cancelled) patch({ home, ...(plan.portsChosen ? {} : { fromPortId: null, toPortId: null }) });
+          if (!cancelled)
+            patch({ home, ...(plan.portsChosen ? {} : { fromPortId: null, toPortId: null }) });
         })
         .catch(() => undefined);
     }, 300);
@@ -180,7 +379,9 @@ function CompanionPage() {
     setOpen(step);
     if (step)
       requestAnimationFrame(() =>
-        document.getElementById(`etape-${step}`)?.scrollIntoView({ block: "start", behavior: "smooth" }),
+        document
+          .getElementById(`etape-${step}`)
+          ?.scrollIntoView({ block: "start", behavior: "smooth" }),
       );
   };
   const complete = (step: CompanionStep) => {
@@ -218,137 +419,184 @@ function CompanionPage() {
       </div>
       <EmbeddedPapers.Provider value>
         <div className="mx-auto max-w-3xl pb-6 pt-3 md:py-10">
-          <p className="hidden text-xs font-bold uppercase tracking-widest text-primary md:block">Pas à pas</p>
-          <div className="flex items-center justify-between gap-3 md:mt-2" aria-live="polite">
-            <h1 className="font-display text-2xl font-bold leading-tight md:text-5xl">Préparer mon voyage</h1>
-            <span
-              className={`shrink-0 rounded-full px-3 py-1 text-sm font-bold ${allDone ? "bg-primary text-primary-foreground" : "bg-secondary"}`}
-            >
-              {allDone ? "Prêt" : `${doneCount}/${steps.length}`}
-              <span className="sr-only"> étapes faites</span>
-            </span>
-          </div>
-          <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-secondary" aria-hidden>
-            <div
-              className="h-full rounded-full bg-primary transition-[width] duration-500"
-              style={{ width: `${(doneCount / steps.length) * 100}%` }}
+          {!plan.started ? (
+            <Welcome
+              onStart={() => {
+                patch({ started: true });
+                setOpen("profile");
+                requestAnimationFrame(() => window.scrollTo({ top: 0, behavior: "smooth" }));
+              }}
             />
-          </div>
-          <p className="mt-2 text-sm text-muted-foreground md:mt-4 md:text-lg">
-            <span className="hidden md:inline">
-              Les papiers de chacun, la voiture, la route jusqu'au port, le budget, puis la réservation :
-              tout se suit sur cette page.{" "}
-            </span>
-            Vos réponses restent sur cet appareil.
-          </p>
+          ) : (
+            <>
+              <div className="flex items-center justify-between gap-3 md:mt-2" aria-live="polite">
+                <h1 className="font-display text-2xl font-bold leading-tight md:text-4xl">
+                  Préparer mon voyage
+                </h1>
+                <span
+                  className={`shrink-0 rounded-full px-3 py-1 text-sm font-bold ${allDone ? "bg-primary text-primary-foreground" : "bg-secondary"}`}
+                >
+                  {allDone ? "Prêt" : `${doneCount}/${steps.length}`}
+                  <span className="sr-only"> étapes faites</span>
+                </span>
+              </div>
+              {/* La vue d'ensemble : toutes les étapes, illustrées, toujours visibles. */}
+              <nav aria-label="Les étapes du voyage" className="mt-3">
+                <ol
+                  className="grid gap-1"
+                  style={{ gridTemplateColumns: `repeat(${steps.length}, minmax(0, 1fr))` }}
+                >
+                  {steps.map((step) => {
+                    const current = open === step;
+                    return (
+                      <li key={step}>
+                        <button
+                          type="button"
+                          onClick={() => openStep(step)}
+                          aria-current={current ? "step" : undefined}
+                          className={`flex w-full flex-col items-center gap-1 rounded-xl px-0.5 py-1.5 transition-colors ${current ? "bg-primary/10" : "hover:bg-secondary"}`}
+                        >
+                          <StepArt step={step} size="sm" done={plan.done.includes(step)} />
+                          <span
+                            className={`w-full truncate text-center text-[11px] font-semibold md:text-xs ${current ? "text-primary" : "text-muted-foreground"}`}
+                          >
+                            {stepArt[step].short}
+                          </span>
+                        </button>
+                      </li>
+                    );
+                  })}
+                </ol>
+                <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-secondary" aria-hidden>
+                  <div
+                    className="h-full rounded-full bg-primary transition-[width] duration-500"
+                    style={{ width: `${(doneCount / steps.length) * 100}%` }}
+                  />
+                </div>
+              </nav>
 
-          <ol className="mt-4 grid grid-cols-1 gap-3 md:mt-6">
-            {steps.map((step, index) => (
-              <StepCard
-                key={step}
-                id={step}
-                index={index + 1}
-                title={stepTitles[step]}
-                summary={summaries[step]}
-                done={plan.done.includes(step)}
-                open={open === step}
-                onToggle={() => openStep(open === step ? null : step)}
-              >
-                {step === "profile" ? (
-                  <ProfileStep
-                    papers={papers}
-                    plan={plan}
-                    patch={patch}
-                    onDone={() => {
-                      syncTravelProfile();
-                      complete("profile");
-                    }}
-                  />
-                ) : null}
-                {step === "papers" ? (
-                  <PapersStepBody
-                    papers={papers}
-                    onDone={() => complete("papers")}
-                    next={plan.vehicle === "none" ? "ma route" : "ma voiture"}
-                  />
-                ) : null}
-                {step === "car" ? <CarStep plan={plan} patch={patch} onDone={() => complete("car")} /> : null}
-                {step === "route" ? (
-                  <RouteStep
-                    plan={plan}
-                    patch={patch}
-                    choices={choices}
-                    fromChoice={fromChoice}
-                    toPortId={toPort?.id ?? null}
-                    onItinerary={() => {
-                      syncTravelProfile();
-                      saveItinerarySeed({
-                        origin: plan.home ? `${plan.home.name} (${plan.home.postcode})` : "",
-                        originPoint: plan.home?.point ?? null,
-                        destination: plan.destination?.label ?? "",
-                        destinationPoint: plan.destination?.point ?? null,
-                        period: plan.month,
-                      });
-                      window.sessionStorage.setItem("bledway:open-home-action", "itinerary");
-                      // La carte d'accueil s'ouvre en haut, pas à la hauteur où l'on était ici.
-                      window.scrollTo({ top: 0, behavior: "instant" });
-                      void navigate({ to: "/" });
-                    }}
-                    onDone={() => complete("route")}
-                  />
-                ) : null}
-                {step === "budget" ? (
-                  <BudgetStep
-                    plan={plan}
-                    answers={papers.answers}
-                    fromChoice={fromChoice}
-                    toPort={toPort}
-                    onDone={() => complete("budget")}
-                  />
-                ) : null}
-                {step === "book" ? (
-                  <BookStep
-                    plan={plan}
-                    answers={papers.answers}
-                    fromChoice={fromChoice}
-                    toPort={toPort}
-                    onBook={() => {
-                      syncTravelProfile();
-                      if (plan.fromPortId && plan.toPortId)
-                        saveItineraryChoice({
-                          period: plan.month,
-                          departurePortId: plan.fromPortId,
-                          arrivalPortId: plan.toPortId,
-                        });
-                      const done = plan.done.includes("book") ? plan.done : [...plan.done, "book" as const];
-                      savePlan({ ...plan, done });
-                      // Ports, jour et voyageurs dans l'adresse : la carte ouvre directement les résultats.
-                      window.scrollTo({ top: 0, behavior: "instant" });
-                      void navigate({ href: bookingSearch(plan) });
-                    }}
-                  />
-                ) : null}
-              </StepCard>
-            ))}
-          </ol>
+              <ol className="mt-4 grid grid-cols-1 gap-3 md:mt-6">
+                {steps.map((step, index) => (
+                  <StepCard
+                    key={step}
+                    id={step}
+                    index={index + 1}
+                    title={stepTitles[step]}
+                    summary={summaries[step]}
+                    done={plan.done.includes(step)}
+                    open={open === step}
+                    onToggle={() => openStep(open === step ? null : step)}
+                  >
+                    {step === "profile" ? (
+                      <ProfileStep
+                        papers={papers}
+                        plan={plan}
+                        patch={patch}
+                        onDone={() => {
+                          syncTravelProfile();
+                          complete("profile");
+                        }}
+                      />
+                    ) : null}
+                    {step === "papers" ? (
+                      <PapersStepBody
+                        papers={papers}
+                        onDone={() => complete("papers")}
+                        next={plan.vehicle === "none" ? "ma route" : "ma voiture"}
+                      />
+                    ) : null}
+                    {step === "car" ? (
+                      <CarStep plan={plan} patch={patch} onDone={() => complete("car")} />
+                    ) : null}
+                    {step === "route" ? (
+                      <RouteStep
+                        plan={plan}
+                        patch={patch}
+                        choices={choices}
+                        fromChoice={fromChoice}
+                        toPortId={toPort?.id ?? null}
+                        onItinerary={() => {
+                          syncTravelProfile();
+                          saveItinerarySeed({
+                            origin: plan.home ? `${plan.home.name} (${plan.home.postcode})` : "",
+                            originPoint: plan.home?.point ?? null,
+                            destination: plan.destination?.label ?? "",
+                            destinationPoint: plan.destination?.point ?? null,
+                            period: plan.month,
+                          });
+                          window.sessionStorage.setItem("bledway:open-home-action", "itinerary");
+                          // La carte d'accueil s'ouvre en haut, pas à la hauteur où l'on était ici.
+                          window.scrollTo({ top: 0, behavior: "instant" });
+                          void navigate({ to: "/" });
+                        }}
+                        onDone={() => complete("route")}
+                      />
+                    ) : null}
+                    {step === "budget" ? (
+                      <BudgetStep
+                        plan={plan}
+                        answers={papers.answers}
+                        fromChoice={fromChoice}
+                        toPort={toPort}
+                        onDone={() => complete("budget")}
+                      />
+                    ) : null}
+                    {step === "book" ? (
+                      <BookStep
+                        plan={plan}
+                        answers={papers.answers}
+                        fromChoice={fromChoice}
+                        toPort={toPort}
+                        onBook={() => {
+                          syncTravelProfile();
+                          if (plan.fromPortId && plan.toPortId)
+                            saveItineraryChoice({
+                              period: plan.month,
+                              departurePortId: plan.fromPortId,
+                              arrivalPortId: plan.toPortId,
+                            });
+                          const done = plan.done.includes("book")
+                            ? plan.done
+                            : [...plan.done, "book" as const];
+                          savePlan({ ...plan, done });
+                          // Ports, jour et voyageurs dans l'adresse : la carte ouvre directement les résultats.
+                          window.scrollTo({ top: 0, behavior: "instant" });
+                          void navigate({ href: bookingSearch(plan) });
+                        }}
+                      />
+                    ) : null}
+                  </StepCard>
+                ))}
+              </ol>
 
-          {allDone ? (
-            <div id="pret" className="mt-6 rounded-2xl bg-primary/5 p-5 md:p-6">
-              <p className="flex items-center gap-2 font-display text-xl font-bold">
-                <PartyPopper size={22} className="text-primary" aria-hidden /> Votre voyage est prêt
-              </p>
-              <p className="mt-2 text-muted-foreground">
-                Gardez cette page : votre liste de papiers et vos choix y restent. Le jour J, suivez votre
-                navire en direct et les signalements des voyageurs.
-              </p>
-              <a
-                href="/"
-                className="mt-4 inline-flex min-h-12 items-center gap-2 rounded-xl bg-primary px-5 text-sm font-bold text-primary-foreground hover:bg-primary/90"
-              >
-                <MapIcon size={16} aria-hidden /> Suivre en direct
-              </a>
-            </div>
-          ) : null}
+              {allDone ? (
+                <div id="pret" className="mt-6 rounded-2xl bg-primary/5 p-5 md:p-6">
+                  <img
+                    src="/illustrations/voyage/retrouvailles.webp"
+                    alt="Les retrouvailles avec la famille, au bled"
+                    width={960}
+                    height={540}
+                    loading="lazy"
+                    className="mb-4 aspect-[16/9] w-full rounded-xl object-cover"
+                  />
+                  <p className="flex items-center gap-2 font-display text-xl font-bold">
+                    <PartyPopper size={22} className="text-primary" aria-hidden /> Votre voyage est
+                    prêt
+                  </p>
+                  <p className="mt-2 text-muted-foreground">
+                    Gardez cette page : votre liste de papiers et vos choix y restent. Le jour J,
+                    suivez votre navire en direct et les signalements des voyageurs.
+                  </p>
+                  <a
+                    href="/"
+                    className="mt-4 inline-flex min-h-12 items-center gap-2 rounded-xl bg-primary px-5 text-sm font-bold text-primary-foreground hover:bg-primary/90"
+                  >
+                    <MapIcon size={16} aria-hidden /> Suivre en direct
+                  </a>
+                </div>
+              ) : null}
+            </>
+          )}
         </div>
       </EmbeddedPapers.Provider>
     </SiteLayout>
@@ -368,22 +616,34 @@ function useSummaries(
   const ready = tasks.filter((t) => papers.done.includes(t.id)).length;
   const carReady = carItems.filter((item) => plan.carDone.includes(item.id)).length;
   const line = fromChoice && toPort ? `${fromChoice.port.name} → ${toPort.name}` : null;
-  const duration = fromChoice?.lines.find((l) => l.to.id === toPort?.id)?.route.typical_duration_minutes ?? null;
-  const fare = fromChoice && toPort ? planFare(plan, fromChoice.port, toPort, { adults, children }) : null;
+  const duration =
+    fromChoice?.lines.find((l) => l.to.id === toPort?.id)?.route.typical_duration_minutes ?? null;
+  const fare =
+    fromChoice && toPort ? planFare(plan, fromChoice.port, toPort, { adults, children }) : null;
   return {
     profile: [
-      papers.answers.abroad ? "Hors de France" : plan.home?.name ?? (papers.answers.postcode || null),
-      [plural(adults, "adulte"), children ? plural(children, "enfant") : null].filter(Boolean).join(", "),
+      papers.answers.abroad
+        ? "Hors de France"
+        : (plan.home?.name ?? (papers.answers.postcode || null)),
+      [plural(adults, "adulte"), children ? plural(children, "enfant") : null]
+        .filter(Boolean)
+        .join(", "),
       plan.vehicle === "none" ? "sans voiture" : vehicle?.label.toLowerCase(),
       plan.date ? dayName(plan.date) : monthName(plan.month),
     ]
       .filter(Boolean)
       .join(" · "),
-    papers: papers.finished ? `${ready} sur ${tasks.length} papiers prêts` : "Votre liste, voyageur par voyageur",
+    papers: papers.finished
+      ? `${ready} sur ${tasks.length} papiers prêts`
+      : "Votre liste, voyageur par voyageur",
     car: `${carReady} sur ${carItems.length} faits${plan.importCar ? " · import" : ""}`,
     route: line ? `${line}${duration ? ` · ${formatDuration(duration)} de traversée` : ""}` : null,
-    budget: fare ? `${formatFareRange(fare)} l'aller · ${seasonLabels[fare.season].toLowerCase()}` : null,
-    book: line ? `${line} · ${plan.date ? dayName(plan.date) : `autour du 15 ${monthName(plan.month)}`}` : null,
+    budget: fare
+      ? `${formatFareRange(fare)} l'aller · ${seasonLabels[fare.season].toLowerCase()}`
+      : null,
+    book: line
+      ? `${line} · ${plan.date ? dayName(plan.date) : `autour du 15 ${monthName(plan.month)}`}`
+      : null,
   };
 }
 
@@ -419,34 +679,43 @@ function StepCard({
           onClick={onToggle}
           className="flex min-h-16 w-full items-center gap-3 rounded-2xl p-4 text-left md:p-5"
         >
-          <span
-            className={`grid size-9 shrink-0 place-items-center rounded-full text-sm font-bold ${
-              done
-                ? "bg-primary text-primary-foreground"
-                : open
-                  ? "bg-primary/10 text-primary ring-1 ring-primary"
-                  : "bg-secondary text-muted-foreground"
-            }`}
-            aria-hidden
-          >
-            {done ? <Check size={16} strokeWidth={3} /> : index}
-          </span>
+          <StepArt step={id} done={done} />
           <span className="min-w-0 flex-1">
-            <span className="block font-display text-lg font-bold leading-tight md:text-xl">{title}</span>
+            <span className="block text-[11px] font-bold uppercase tracking-wider text-primary">
+              Étape {index}
+            </span>
+            <span className="block font-display text-lg font-bold leading-tight md:text-xl">
+              {title}
+            </span>
             {!open && summary ? (
               <span className="mt-0.5 block truncate text-sm text-muted-foreground">{summary}</span>
             ) : null}
           </span>
           {done ? <span className="sr-only">(fait)</span> : null}
           {open ? (
-            <ChevronDown size={18} className="shrink-0 rotate-180 text-muted-foreground" aria-hidden />
+            <ChevronDown
+              size={18}
+              className="shrink-0 rotate-180 text-muted-foreground"
+              aria-hidden
+            />
           ) : (
-            <span className="shrink-0 text-sm font-semibold text-primary">{done ? "Modifier" : "Ouvrir"}</span>
+            <span className="shrink-0 text-sm font-semibold text-primary">
+              {done ? "Modifier" : "Ouvrir"}
+            </span>
           )}
         </button>
       </h2>
       {open ? (
         <div id={`contenu-${id}`} className="border-t px-4 pb-5 md:px-6">
+          <img
+            src={stepArt[id].scene}
+            alt={stepArt[id].sceneAlt}
+            width={960}
+            height={640}
+            loading="lazy"
+            decoding="async"
+            className="mt-4 h-28 w-full rounded-xl object-cover md:h-44"
+          />
           {children}
         </div>
       ) : null}
@@ -501,9 +770,12 @@ function ProfileStep({
   const box = useRef<HTMLDivElement>(null);
   const go = (next: ProfileQuestion) => {
     setQuestion(next);
-    requestAnimationFrame(() => box.current?.scrollIntoView({ block: "nearest", behavior: "smooth" }));
+    requestAnimationFrame(() =>
+      box.current?.scrollIntoView({ block: "nearest", behavior: "smooth" }),
+    );
   };
-  const next = () => (index + 1 < profileQuestions.length ? go(profileQuestions[index + 1]!) : onDone());
+  const next = () =>
+    index + 1 < profileQuestions.length ? go(profileQuestions[index + 1]!) : onDone();
 
   // Changer le groupe après avoir fait la liste : on revoit les papiers des nouveaux voyageurs.
   const papersPatch = (p: Partial<Answers>) => {
@@ -524,7 +796,12 @@ function ProfileStep({
       </p>
       {question === "home" ? (
         <>
-          <HomeStep answers={papers.answers} patch={papersPatch} />
+          <HomeStep
+            answers={papers.answers}
+            patch={papersPatch}
+            title="D'où partez-vous ?"
+            hint="Votre code postal sert à deux choses : trouver votre consulat d'Algérie, et les ports de départ les plus proches de chez vous."
+          />
           {plan.home && !papers.answers.abroad ? (
             <p className="mt-3 flex items-center gap-1.5 text-sm text-muted-foreground">
               <MapPin size={14} aria-hidden /> Départ de {plan.home.name}
@@ -534,8 +811,15 @@ function ProfileStep({
       ) : null}
       {question === "group" ? <GroupStep answers={papers.answers} patch={papersPatch} /> : null}
       {question === "vehicle" ? (
-        <Question title="Vous partez avec votre voiture ?" hint="Pour le prix de la traversée et les papiers du véhicule.">
-          <div role="radiogroup" aria-label="Véhicule" className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+        <Question
+          title="Vous partez avec votre voiture ?"
+          hint="Pour le prix de la traversée et les papiers du véhicule."
+        >
+          <div
+            role="radiogroup"
+            aria-label="Véhicule"
+            className="grid grid-cols-2 gap-2 sm:grid-cols-3"
+          >
             {VEHICLES.map(({ id, Icon, label, hint }) => {
               const on = plan.vehicle === id;
               return (
@@ -545,16 +829,27 @@ function ProfileStep({
                   role="radio"
                   aria-checked={on}
                   onClick={() => {
-                    patch({ vehicle: id, done: id === "none" ? plan.done.filter((s) => s !== "car") : plan.done });
+                    patch({
+                      vehicle: id,
+                      done: id === "none" ? plan.done.filter((s) => s !== "car") : plan.done,
+                    });
                     window.setTimeout(next, 180);
                   }}
                   className={`flex min-h-20 flex-col items-start justify-center gap-1 rounded-xl border p-3 text-left transition-colors ${
-                    on ? "border-primary bg-primary/5 ring-1 ring-primary" : "bg-background hover:border-primary/40"
+                    on
+                      ? "border-primary bg-primary/5 ring-1 ring-primary"
+                      : "bg-background hover:border-primary/40"
                   }`}
                 >
-                  <Icon size={20} className={on ? "text-primary" : "text-muted-foreground"} aria-hidden />
+                  <Icon
+                    size={20}
+                    className={on ? "text-primary" : "text-muted-foreground"}
+                    aria-hidden
+                  />
                   <span className="font-semibold">{id === "none" ? "Sans voiture" : label}</span>
-                  <span className="text-xs text-muted-foreground">{id === "none" ? "À pied à bord" : hint}</span>
+                  <span className="text-xs text-muted-foreground">
+                    {id === "none" ? "À pied à bord" : hint}
+                  </span>
                 </button>
               );
             })}
@@ -562,8 +857,15 @@ function ProfileStep({
         </Question>
       ) : null}
       {question === "when" ? (
-        <Question title="Quand partez-vous ?" hint="Le mois suffit. Les prix changent beaucoup selon la saison.">
-          <div role="radiogroup" aria-label="Mois de départ" className="grid grid-cols-3 gap-2 sm:grid-cols-4">
+        <Question
+          title="Quand partez-vous ?"
+          hint="Le mois suffit. Les prix changent beaucoup selon la saison."
+        >
+          <div
+            role="radiogroup"
+            aria-label="Mois de départ"
+            className="grid grid-cols-3 gap-2 sm:grid-cols-4"
+          >
             {months.map((m) => {
               const on = plan.month === m.key;
               return (
@@ -572,15 +874,21 @@ function ProfileStep({
                   type="button"
                   role="radio"
                   aria-checked={on}
-                  onClick={() => patch({ month: m.key, date: plan.date.startsWith(m.key) ? plan.date : "" })}
+                  onClick={() =>
+                    patch({ month: m.key, date: plan.date.startsWith(m.key) ? plan.date : "" })
+                  }
                   className={`flex min-h-14 flex-col items-center justify-center rounded-xl border px-2 py-2 text-sm transition-colors ${
-                    on ? "border-primary bg-primary/5 ring-1 ring-primary" : "bg-background hover:border-primary/40"
+                    on
+                      ? "border-primary bg-primary/5 ring-1 ring-primary"
+                      : "bg-background hover:border-primary/40"
                   }`}
                 >
                   <span className="font-semibold capitalize">
                     {m.label} {String(m.year).slice(2)}
                   </span>
-                  <span className={`mt-0.5 text-[11px] ${m.season === "pointe" || m.season === "forte" ? "text-[#c95038]" : "text-muted-foreground"}`}>
+                  <span
+                    className={`mt-0.5 text-[11px] ${m.season === "pointe" || m.season === "forte" ? "text-[#c95038]" : "text-muted-foreground"}`}
+                  >
                     {shortSeason[m.season]}
                   </span>
                 </button>
@@ -612,7 +920,10 @@ function ProfileStep({
         ) : (
           <span />
         )}
-        <NextButton label={index + 1 < profileQuestions.length ? "Continuer" : "Continuer : mes papiers"} onClick={next} />
+        <NextButton
+          label={index + 1 < profileQuestions.length ? "Continuer" : "Continuer : mes papiers"}
+          onClick={next}
+        />
       </div>
     </div>
   );
@@ -620,11 +931,22 @@ function ProfileStep({
 
 /* ------------------------------------------------------------ 2. Les papiers */
 
-function PapersStepBody({ papers, onDone, next }: { papers: PapersState; onDone: () => void; next: string }) {
+function PapersStepBody({
+  papers,
+  onDone,
+  next,
+}: {
+  papers: PapersState;
+  onDone: () => void;
+  next: string;
+}) {
   const steps = papersSteps(papers.answers, "people");
   const [step, setStep] = useState<PapersStep>(steps[0]!);
   const box = useRef<HTMLDivElement>(null);
-  const toTop = () => requestAnimationFrame(() => box.current?.scrollIntoView({ block: "start", behavior: "smooth" }));
+  const toTop = () =>
+    requestAnimationFrame(() =>
+      box.current?.scrollIntoView({ block: "start", behavior: "smooth" }),
+    );
   return (
     <div ref={box} className="scroll-mt-24 pt-4">
       {papers.finished ? (
@@ -684,7 +1006,11 @@ function CarStep({
   onDone: () => void;
 }) {
   const toggle = (id: string) =>
-    patch({ carDone: plan.carDone.includes(id) ? plan.carDone.filter((x) => x !== id) : [...plan.carDone, id] });
+    patch({
+      carDone: plan.carDone.includes(id)
+        ? plan.carDone.filter((x) => x !== id)
+        : [...plan.carDone, id],
+    });
   return (
     <div className="pt-4">
       <Question title="La voiture reste-t-elle en Algérie ?">
@@ -693,8 +1019,16 @@ function CarStep({
           value={plan.importCar ? "import" : "vacances"}
           onChange={(v) => patch({ importCar: v === "import" })}
           options={[
-            { value: "vacances", label: "Non, elle revient avec moi", hint: "Admission temporaire, le temps des vacances" },
-            { value: "import", label: "Oui, je l'importe", hint: "Véhicule de moins de 3 ans : une autre démarche" },
+            {
+              value: "vacances",
+              label: "Non, elle revient avec moi",
+              hint: "Admission temporaire, le temps des vacances",
+            },
+            {
+              value: "import",
+              label: "Oui, je l'importe",
+              hint: "Véhicule de moins de 3 ans : une autre démarche",
+            },
           ]}
         />
       </Question>
@@ -714,7 +1048,10 @@ function CarStep({
         {carItems.map((item) => {
           const done = plan.carDone.includes(item.id);
           return (
-            <li key={item.id} className={`rounded-xl border ${done ? "bg-secondary/40" : "bg-background"}`}>
+            <li
+              key={item.id}
+              className={`rounded-xl border ${done ? "bg-secondary/40" : "bg-background"}`}
+            >
               <div className="flex items-start gap-3 p-3">
                 <button
                   type="button"
@@ -723,18 +1060,28 @@ function CarStep({
                   aria-label={item.label}
                   onClick={() => toggle(item.id)}
                   className={`mt-0.5 grid size-6 shrink-0 place-items-center rounded-md border-2 ${
-                    done ? "border-primary bg-primary text-primary-foreground" : "border-muted-foreground/40"
+                    done
+                      ? "border-primary bg-primary text-primary-foreground"
+                      : "border-muted-foreground/40"
                   }`}
                 >
                   {done ? <Check size={14} strokeWidth={3} aria-hidden /> : null}
                 </button>
                 <div className="min-w-0">
-                  <p className={`font-semibold ${done ? "text-muted-foreground line-through" : ""}`}>{item.label}</p>
-                  {item.tip ? <p className="mt-0.5 text-sm text-muted-foreground">{item.tip}</p> : null}
+                  <p
+                    className={`font-semibold ${done ? "text-muted-foreground line-through" : ""}`}
+                  >
+                    {item.label}
+                  </p>
+                  {item.tip ? (
+                    <p className="mt-0.5 text-sm text-muted-foreground">{item.tip}</p>
+                  ) : null}
                   {item.href ? (
                     <a
                       href={item.href}
-                      {...(item.href.startsWith("http") ? { target: "_blank", rel: "noreferrer" } : {})}
+                      {...(item.href.startsWith("http")
+                        ? { target: "_blank", rel: "noreferrer" }
+                        : {})}
                       className={`${textLink} mt-1 inline-flex items-center gap-1 text-sm`}
                     >
                       {item.linkLabel ?? "En savoir plus"}
@@ -802,7 +1149,11 @@ function DestinationField({
       <label className="block">
         <span className="text-sm font-semibold">Où allez-vous en Algérie ? (facultatif)</span>
         <span className="relative mt-1 block">
-          <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" aria-hidden />
+          <Search
+            size={16}
+            className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"
+            aria-hidden
+          />
           <input
             value={query}
             onChange={(event) => setQuery(event.target.value)}
@@ -816,7 +1167,11 @@ function DestinationField({
       </label>
       {busy ? <p className="mt-1 text-xs text-muted-foreground">Recherche…</p> : null}
       {results.length ? (
-        <ul id="destinations" role="listbox" className="mt-1 grid overflow-hidden rounded-xl border bg-popover shadow-md">
+        <ul
+          id="destinations"
+          role="listbox"
+          className="mt-1 grid overflow-hidden rounded-xl border bg-popover shadow-md"
+        >
           {results.map((place) => (
             <li key={`${place.label}-${place.point.join(",")}`} role="option" aria-selected={false}>
               <button
@@ -864,7 +1219,10 @@ function RouteStep({
       <DestinationField
         value={plan.destination}
         onPick={(destination) => {
-          const arrival = fromChoice && !plan.portsChosen ? closestArrival(fromChoice, destination?.point ?? null) : null;
+          const arrival =
+            fromChoice && !plan.portsChosen
+              ? closestArrival(fromChoice, destination?.point ?? null)
+              : null;
           patch({ destination, ...(arrival ? { toPortId: arrival.id } : {}) });
         }}
       />
@@ -872,7 +1230,9 @@ function RouteStep({
       <h3 className="mt-6 font-display text-lg font-bold">
         {plan.home ? "Les ports les plus proches de chez vous" : "Votre port de départ"}
       </h3>
-      {!choices.length ? <p className="mt-2 text-sm text-muted-foreground">Chargement des lignes…</p> : null}
+      {!choices.length ? (
+        <p className="mt-2 text-sm text-muted-foreground">Chargement des lignes…</p>
+      ) : null}
       <div role="radiogroup" aria-label="Port de départ" className="mt-3 grid gap-2">
         {[...shown, ...(selectedHidden && fromChoice ? [fromChoice] : [])].map((choice) => {
           const on = choice.port.id === fromChoice?.port.id;
@@ -884,17 +1244,30 @@ function RouteStep({
               aria-checked={on}
               onClick={() => {
                 const arrival = closestArrival(choice, plan.destination?.point ?? null);
-                patch({ fromPortId: choice.port.id, toPortId: arrival?.id ?? null, portsChosen: true });
+                patch({
+                  fromPortId: choice.port.id,
+                  toPortId: arrival?.id ?? null,
+                  portsChosen: true,
+                });
               }}
               className={`flex min-h-14 items-center gap-3 rounded-xl border px-4 py-3 text-left transition-colors ${
-                on ? "border-primary bg-primary/5 ring-1 ring-primary" : "bg-background hover:border-primary/40"
+                on
+                  ? "border-primary bg-primary/5 ring-1 ring-primary"
+                  : "bg-background hover:border-primary/40"
               }`}
             >
-              <Ship size={18} className={on ? "text-primary" : "text-muted-foreground"} aria-hidden />
+              <Ship
+                size={18}
+                className={on ? "text-primary" : "text-muted-foreground"}
+                aria-hidden
+              />
               <span className="min-w-0 flex-1">
                 <span className="block font-semibold">
                   {choice.port.name}
-                  <span className="font-normal text-muted-foreground"> · {choice.port.country_name}</span>
+                  <span className="font-normal text-muted-foreground">
+                    {" "}
+                    · {choice.port.country_name}
+                  </span>
                 </span>
                 <span className="block truncate text-sm text-muted-foreground">
                   Vers {[...new Set(choice.lines.map((l) => l.to.name))].join(", ")}
@@ -903,7 +1276,9 @@ function RouteStep({
               {choice.km !== null ? (
                 <span className="shrink-0 text-right text-sm font-semibold">
                   ~{choice.km.toLocaleString("fr-FR")} km
-                  <span className="block text-[11px] font-normal text-muted-foreground">à vol d'oiseau</span>
+                  <span className="block text-[11px] font-normal text-muted-foreground">
+                    à vol d'oiseau
+                  </span>
                 </span>
               ) : null}
             </button>
@@ -934,7 +1309,9 @@ function RouteStep({
                   aria-checked={on}
                   onClick={() => patch({ toPortId: to.id, portsChosen: true })}
                   className={`inline-flex min-h-11 items-center gap-2 rounded-full border px-4 text-sm transition-colors ${
-                    on ? "border-primary bg-primary text-primary-foreground" : "bg-background hover:border-primary/40"
+                    on
+                      ? "border-primary bg-primary text-primary-foreground"
+                      : "bg-background hover:border-primary/40"
                   }`}
                 >
                   <span className="font-semibold">{to.name}</span>
@@ -967,13 +1344,15 @@ function RouteStep({
       </div>
       <p className="mt-2 text-xs text-muted-foreground">
         La route porte à porte s'ouvre sur la carte avec votre départ
-        {plan.destination ? ", votre arrivée" : ""} et votre mois déjà remplis : temps de route, péages et
-        traversées comparés.
+        {plan.destination ? ", votre arrivée" : ""} et votre mois déjà remplis : temps de route,
+        péages et traversées comparés.
       </p>
       <div className="mt-6">
         <NextButton label="Continuer : mon budget" onClick={onDone} />
       </div>
-      <MoreLinks links={[{ href: "/voyage-algerie", label: "Cabine, enfants, animaux : la traversée" }]} />
+      <MoreLinks
+        links={[{ href: "/voyage-algerie", label: "Cabine, enfants, animaux : la traversée" }]}
+      />
     </div>
   );
 }
@@ -997,7 +1376,9 @@ function BudgetStep({
   if (!fromChoice || !toPort)
     return (
       <div className="pt-4">
-        <p className="text-muted-foreground">Choisissez d'abord vos ports à l'étape « Ma route ».</p>
+        <p className="text-muted-foreground">
+          Choisissez d'abord vos ports à l'étape « Ma route ».
+        </p>
       </div>
     );
   const fare = planFare(plan, fromChoice.port, toPort, group);
@@ -1007,11 +1388,15 @@ function BudgetStep({
     <div className="pt-4">
       <div className="rounded-2xl border p-4 md:p-5">
         <p className="text-sm text-muted-foreground">
-          {fromChoice.port.name} → {toPort.name} · aller simple · {plan.date ? dayName(plan.date) : monthName(plan.month)}
+          {fromChoice.port.name} → {toPort.name} · aller simple ·{" "}
+          {plan.date ? dayName(plan.date) : monthName(plan.month)}
         </p>
         <p className="mt-1 font-display text-3xl font-bold md:text-4xl">{formatFareRange(fare)}</p>
         <p className="mt-1 text-sm">
-          {[plural(group.adults, "adulte"), group.children ? plural(group.children, "enfant") : null]
+          {[
+            plural(group.adults, "adulte"),
+            group.children ? plural(group.children, "enfant") : null,
+          ]
             .filter(Boolean)
             .join(", ")}
           {plan.vehicle === "none" ? ", sans voiture" : `, ${vehicle?.label.toLowerCase()}`}
@@ -1026,13 +1411,19 @@ function BudgetStep({
             <>
               Estimation à partir des prix moyens publiés par{" "}
               {fare.source ? (
-                <a href={fare.source} target="_blank" rel="noreferrer" className="underline underline-offset-2">
+                <a
+                  href={fare.source}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="underline underline-offset-2"
+                >
                   Direct Ferries
                 </a>
               ) : (
                 "Direct Ferries"
               )}{" "}
-              (septembre–octobre 2026), ajustée à la saison, aux voyageurs et au véhicule. Ce n'est pas un devis.
+              (septembre–octobre 2026), ajustée à la saison, aux voyageurs et au véhicule. Ce n'est
+              pas un devis.
             </>
           ) : (
             "Ordre de grandeur : aucun prix moyen publié pour cette ligne. Ce n'est pas un devis."
@@ -1046,13 +1437,23 @@ function BudgetStep({
         </p>
       ) : null}
       <div className="mt-4 grid gap-2 sm:grid-cols-3">
-        <a href="/barometre-prix" className="flex min-h-12 items-center gap-2 rounded-xl border px-4 text-sm font-semibold hover:bg-secondary">
+        <a
+          href="/barometre-prix"
+          className="flex min-h-12 items-center gap-2 rounded-xl border px-4 text-sm font-semibold hover:bg-secondary"
+        >
           <TrendingUp size={16} className="text-primary" aria-hidden /> Comparer les mois
         </a>
-        <a href="/simulateurs" className="flex min-h-12 items-center gap-2 rounded-xl border px-4 text-sm font-semibold hover:bg-secondary">
-          <Calculator size={16} className="text-primary" aria-hidden /> Essence, péages, tout le budget
+        <a
+          href="/simulateurs"
+          className="flex min-h-12 items-center gap-2 rounded-xl border px-4 text-sm font-semibold hover:bg-secondary"
+        >
+          <Calculator size={16} className="text-primary" aria-hidden /> Essence, péages, tout le
+          budget
         </a>
-        <a href="/mes-dinars" className="flex min-h-12 items-center gap-2 rounded-xl border px-4 text-sm font-semibold hover:bg-secondary">
+        <a
+          href="/mes-dinars"
+          className="flex min-h-12 items-center gap-2 rounded-xl border px-4 text-sm font-semibold hover:bg-secondary"
+        >
           <Wallet size={16} className="text-primary" aria-hidden /> Mes dinars, le change
         </a>
       </div>
@@ -1081,11 +1482,23 @@ function BookStep({
   const group = people(answers);
   const vehicle = VEHICLES.find((v) => v.id === plan.vehicle);
   const rows: [string, string][] = [
-    ["Traversée", fromChoice && toPort ? `${fromChoice.port.name} → ${toPort.name}` : "À choisir à l'étape « Ma route »"],
-    ["Départ", plan.date ? `${dayName(plan.date)}, ± 3 jours` : `Autour du ${dayName(planDay(plan))}, ± 3 jours`],
+    [
+      "Traversée",
+      fromChoice && toPort
+        ? `${fromChoice.port.name} → ${toPort.name}`
+        : "À choisir à l'étape « Ma route »",
+    ],
+    [
+      "Départ",
+      plan.date
+        ? `${dayName(plan.date)}, ± 3 jours`
+        : `Autour du ${dayName(planDay(plan))}, ± 3 jours`,
+    ],
     [
       "Voyageurs",
-      [plural(group.adults, "adulte"), group.children ? plural(group.children, "enfant") : null].filter(Boolean).join(", "),
+      [plural(group.adults, "adulte"), group.children ? plural(group.children, "enfant") : null]
+        .filter(Boolean)
+        .join(", "),
     ],
     ["Véhicule", plan.vehicle === "none" ? "Sans voiture" : (vehicle?.label ?? "")],
   ];
@@ -1109,8 +1522,8 @@ function BookStep({
       </button>
       <p className="mt-3 flex items-start gap-2 text-xs text-muted-foreground">
         <Landmark size={14} className="mt-0.5 shrink-0" aria-hidden />
-        BledWay ne vend pas de billets : la réservation et le paiement se font auprès de la compagnie ou
-        du distributeur indiqué.
+        BledWay ne vend pas de billets : la réservation et le paiement se font auprès de la
+        compagnie ou du distributeur indiqué.
       </p>
     </div>
   );

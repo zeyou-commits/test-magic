@@ -13,6 +13,8 @@ import type { Port, RouteLine } from "./types";
 export type CompanionStep = "profile" | "papers" | "car" | "route" | "budget" | "book";
 
 export type CompanionPlan = {
+  /** L'accueil (ce que l'outil propose, la destination) a été passé. */
+  started: boolean;
   /** Commune trouvée par le code postal : nom et centre [longitude, latitude]. */
   home: { postcode: string; name: string; point: [number, number] } | null;
   vehicle: VehicleKind;
@@ -51,6 +53,7 @@ export function nextMonths(count = 12, from = new Date()) {
 }
 
 export const defaultPlan = (): CompanionPlan => ({
+  started: false,
   home: null,
   vehicle: "sedan",
   // Par défaut, le prochain mois de juillet : le départ le plus courant, à changer d'un geste.
@@ -69,7 +72,10 @@ export function loadPlan(): CompanionPlan | null {
   if (typeof window === "undefined") return null;
   try {
     const raw = window.localStorage.getItem(COMPANION_KEY);
-    return raw ? { ...defaultPlan(), ...(JSON.parse(raw) as Partial<CompanionPlan>) } : null;
+    if (!raw) return null;
+    const saved = JSON.parse(raw) as Partial<CompanionPlan>;
+    // Un plan d'avant l'accueil : déjà commencé s'il a des étapes faites.
+    return { ...defaultPlan(), ...saved, started: saved.started ?? Boolean(saved.done?.length) };
   } catch {
     return null;
   }
@@ -99,42 +105,56 @@ export function haversineKm(a: [number, number], b: [number, number]) {
   const rad = (deg: number) => (deg * Math.PI) / 180;
   const dLat = rad(b[1] - a[1]);
   const dLon = rad(b[0] - a[0]);
-  const h = Math.sin(dLat / 2) ** 2 + Math.cos(rad(a[1])) * Math.cos(rad(b[1])) * Math.sin(dLon / 2) ** 2;
+  const h =
+    Math.sin(dLat / 2) ** 2 + Math.cos(rad(a[1])) * Math.cos(rad(b[1])) * Math.sin(dLon / 2) ** 2;
   return 2 * 6371 * Math.asin(Math.sqrt(h));
 }
 
 export type PortChoice = { port: Port; km: number | null; lines: { route: RouteLine; to: Port }[] };
 
 /** Les ports d'Europe qui ont une ligne active vers l'Algérie, du plus proche au plus loin. */
-export function departurePorts(ports: Port[], routes: RouteLine[], home: [number, number] | null): PortChoice[] {
+export function departurePorts(
+  ports: Port[],
+  routes: RouteLine[],
+  home: [number, number] | null,
+): PortChoice[] {
   const byId = new Map(ports.map((port) => [port.id, port]));
   const choices = new Map<string, PortChoice>();
   for (const route of routes) {
     const from = byId.get(route.departure_port_id);
     const to = byId.get(route.arrival_port_id);
     if (!from || !to || from.country_code === "DZ" || to.country_code !== "DZ") continue;
-    const choice =
-      choices.get(from.id) ??
-      { port: from, km: home ? Math.round(haversineKm(home, [from.longitude, from.latitude])) : null, lines: [] };
+    const choice = choices.get(from.id) ?? {
+      port: from,
+      km: home ? Math.round(haversineKm(home, [from.longitude, from.latitude])) : null,
+      lines: [],
+    };
     choice.lines.push({ route, to });
     choices.set(from.id, choice);
   }
   for (const choice of choices.values())
-    choice.lines.sort((a, b) => (a.route.typical_duration_minutes ?? 9999) - (b.route.typical_duration_minutes ?? 9999));
+    choice.lines.sort(
+      (a, b) =>
+        (a.route.typical_duration_minutes ?? 9999) - (b.route.typical_duration_minutes ?? 9999),
+    );
   return [...choices.values()].sort((a, b) =>
     a.km !== null && b.km !== null ? a.km - b.km : a.port.name.localeCompare(b.port.name, "fr"),
   );
 }
 
 /** Le port algérien le plus proche de la destination, parmi ceux que dessert le port de départ. */
-export function closestArrival(choice: PortChoice, destination: [number, number] | null): Port | null {
+export function closestArrival(
+  choice: PortChoice,
+  destination: [number, number] | null,
+): Port | null {
   if (!choice.lines.length) return null;
   if (!destination) return choice.lines[0]!.to;
   return [...choice.lines]
     .map((line) => line.to)
     .sort(
       (a, b) =>
-        haversineKm(destination, [a.longitude, a.latitude]) - haversineKm(destination, [b.longitude, b.latitude]),
+        haversineKm(destination, [a.longitude, a.latitude]) -
+        haversineKm(destination, [b.longitude, b.latitude]),
     )[0]!;
 }
 
@@ -153,7 +173,13 @@ export function planFare(
   return estimateFerryFare(sailing, {
     vehicle: plan.vehicle,
     accessories: [],
-    passengers: { adults: Math.max(1, people.adults), seniors: 0, children: people.children, babies: 0, pets: 0 },
+    passengers: {
+      adults: Math.max(1, people.adults),
+      seniors: 0,
+      children: people.children,
+      babies: 0,
+      pets: 0,
+    },
   });
 }
 
@@ -161,11 +187,19 @@ export function planFare(
 export async function communeOfPostcode(postcode: string): Promise<CompanionPlan["home"]> {
   const code = postcode.trim();
   if (!/^\d{5}$/.test(code)) return null;
-  const res = await fetch(`https://geo.api.gouv.fr/communes?codePostal=${code}&fields=nom,centre,population&format=json`);
+  const res = await fetch(
+    `https://geo.api.gouv.fr/communes?codePostal=${code}&fields=nom,centre,population&format=json`,
+  );
   if (!res.ok) return null;
-  const list = (await res.json()) as { nom: string; population?: number; centre?: { coordinates: [number, number] } }[];
+  const list = (await res.json()) as {
+    nom: string;
+    population?: number;
+    centre?: { coordinates: [number, number] };
+  }[];
   // Plusieurs communes pour un code : la plus peuplée sert de repère.
-  const best = list.filter((c) => c.centre).sort((a, b) => (b.population ?? 0) - (a.population ?? 0))[0];
+  const best = list
+    .filter((c) => c.centre)
+    .sort((a, b) => (b.population ?? 0) - (a.population ?? 0))[0];
   return best?.centre ? { postcode: code, name: best.nom, point: best.centre.coordinates } : null;
 }
 

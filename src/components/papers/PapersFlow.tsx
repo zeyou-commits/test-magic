@@ -51,14 +51,21 @@ export const EmbeddedPapers = createContext(false);
 
 export type PapersStep = "home" | "group" | "people" | "family" | "stay";
 
-/** Les questions à poser. Le compagnon connaît déjà le domicile et le groupe : il part de « people ». */
-export function papersSteps(a: Answers, from: "home" | "people" = "home"): PapersStep[] {
+/**
+ * Les questions à poser. Le compagnon connaît déjà le groupe : il part de « people » et ne demande
+ * le lieu de résidence qu'à la fin, au moment de trouver le consulat.
+ */
+export function papersSteps(
+  a: Answers,
+  from: "home" | "people" | "companion" = "home",
+): PapersStep[] {
   const adults = a.travellers.filter((t) => t.kind === "adult").length;
   const kids = a.travellers.some((t) => t.kind === "child");
   const all: PapersStep[] =
     adults > 1 || kids
       ? ["home", "group", "people", "family", "stay"]
       : ["home", "group", "people", "stay"];
+  if (from === "companion") return [...all.filter((s) => s !== "home" && s !== "group"), "home"];
   return from === "people" ? all.filter((s) => s !== "home" && s !== "group") : all;
 }
 
@@ -94,6 +101,7 @@ export function PapersWizard({
   onFinish,
   onBackFirst,
   label = "Mes papiers",
+  homeSlot,
 }: {
   state: PapersState;
   steps: PapersStep[];
@@ -103,6 +111,8 @@ export function PapersWizard({
   /** Retour depuis la première question (le compagnon revient à l'étape d'avant). */
   onBackFirst?: () => void;
   label?: string;
+  /** Le compagnon pose sa propre question de résidence (pays d'Europe, ville). */
+  homeSlot?: ReactNode;
 }) {
   const index = Math.max(0, steps.indexOf(step));
   const current = steps[index]!;
@@ -118,7 +128,7 @@ export function PapersWizard({
           style={{ width: `${((index + 1) / (steps.length + 1)) * 100}%` }}
         />
       </div>
-      {current === "home" ? <HomeStep answers={answers} patch={patch} /> : null}
+      {current === "home" ? (homeSlot ?? <HomeStep answers={answers} patch={patch} />) : null}
       {current === "group" ? <GroupStep answers={answers} patch={patch} /> : null}
       {current === "people" ? <PeopleStep answers={answers} patch={patch} /> : null}
       {current === "family" ? <FamilyStep answers={answers} patch={patch} /> : null}
@@ -272,6 +282,20 @@ export function HomeStep({
   title = "Où habitez-vous ?",
   hint = "Toutes les démarches se font au consulat d'Algérie de votre lieu de résidence : ce n'est pas toujours le plus proche.",
 }: StepProps & { title?: string; hint?: string }) {
+  return (
+    <Question title={title} hint={hint}>
+      <HomeFields answers={answers} patch={patch} />
+    </Question>
+  );
+}
+
+/** Ville en France, « Me localiser » et consulat ; le compagnon y ajoute le choix du pays. */
+export function HomeFields({
+  answers,
+  patch,
+  abroadToggle = true,
+  showConsulat = true,
+}: StepProps & { abroadToggle?: boolean; showConsulat?: boolean }) {
   const [locating, setLocating] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const consulat = consulatOf(answers);
@@ -309,21 +333,13 @@ export function HomeStep({
   }
 
   return (
-    <Question title={title} hint={hint}>
+    <>
       {!answers.abroad ? (
         <div className="grid gap-3 sm:grid-cols-[1fr_auto]">
-          <label>
-            <span className="text-sm font-semibold">Code postal</span>
-            <input
-              inputMode="numeric"
-              autoComplete="postal-code"
-              maxLength={6}
-              value={answers.postcode}
-              onChange={(e) => patch({ postcode: e.target.value })}
-              placeholder="Par exemple 13008"
-              className="mt-1 block min-h-12 w-full rounded-xl border bg-background px-4 text-lg"
-            />
-          </label>
+          <CityField
+            postcode={answers.postcode}
+            onPick={(postcode) => patch({ postcode, abroad: false })}
+          />
           <button
             type="button"
             onClick={locate}
@@ -335,26 +351,131 @@ export function HomeStep({
         </div>
       ) : null}
       {error ? <p className="mt-2 text-sm text-destructive">{error}</p> : null}
-      <div aria-live="polite" className="mt-4">
-        {consulat ? <ConsulatCard consulat={consulat} compact /> : null}
-        {answers.abroad ? <AbroadCard /> : null}
-      </div>
-      <button
-        type="button"
-        onClick={() => patch({ abroad: !answers.abroad })}
-        className="mt-4 text-sm font-semibold text-primary underline underline-offset-4"
-      >
-        {answers.abroad
-          ? "J'habite en France"
-          : "J'habite hors de France (Belgique, Espagne, Allemagne…)"}
-      </button>
+      {showConsulat ? (
+        <div aria-live="polite" className="mt-4">
+          {consulat ? <ConsulatCard consulat={consulat} compact /> : null}
+          {answers.abroad ? <AbroadCard /> : null}
+        </div>
+      ) : null}
+      {abroadToggle ? (
+        <button
+          type="button"
+          onClick={() => patch({ abroad: !answers.abroad })}
+          className="mt-4 text-sm font-semibold text-primary underline underline-offset-4"
+        >
+          {answers.abroad
+            ? "J'habite en France"
+            : "J'habite hors de France (Belgique, Espagne, Allemagne…)"}
+        </button>
+      ) : null}
       {!answers.abroad ? (
         <p className="mt-3 text-xs text-muted-foreground">
-          « Me localiser » envoie une position arrondie au service public API Géo, seulement pour
-          trouver votre code postal.
+          La ville tapée ou « Me localiser » (position arrondie) ne sont envoyés qu'au service
+          public API Géo, seulement pour trouver votre commune.
         </p>
       ) : null}
-    </Question>
+    </>
+  );
+}
+
+/** La ville ou le code postal, en France : la commune choisie donne le code postal (consulat, ports). */
+export function CityField({
+  postcode,
+  onPick,
+  label = "Votre ville ou code postal",
+}: {
+  postcode: string;
+  onPick: (postcode: string, commune?: { name: string }) => void;
+  label?: string;
+}) {
+  const [query, setQuery] = useState(postcode);
+  const [picked, setPicked] = useState<string | null>(null);
+  const [results, setResults] = useState<{ name: string; code: string; dep: string }[]>([]);
+  // Code postal venu d'ailleurs (« Me localiser », réponse enregistrée) : on l'affiche.
+  useEffect(() => {
+    if (postcode && !query.includes(postcode)) setQuery(postcode);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [postcode]);
+  useEffect(() => {
+    const q = query.trim();
+    if (/^\d{5}$/.test(q)) {
+      if (q !== postcode) onPick(q);
+      setResults([]);
+      return;
+    }
+    if (q.length < 2 || /^\d+$/.test(q) || q === picked) {
+      setResults([]);
+      return;
+    }
+    let cancelled = false;
+    const timer = window.setTimeout(() => {
+      // Service public API Géo : seul le nom tapé est envoyé.
+      fetch(
+        `https://geo.api.gouv.fr/communes?nom=${encodeURIComponent(q)}&fields=nom,codesPostaux,codeDepartement&boost=population&limit=6&format=json`,
+      )
+        .then((res) => (res.ok ? res.json() : []))
+        .then((list: { nom: string; codesPostaux?: string[]; codeDepartement?: string }[]) => {
+          if (cancelled) return;
+          setResults(
+            list
+              .filter((c) => c.codesPostaux?.length)
+              .map((c) => ({
+                name: c.nom,
+                code: c.codesPostaux![0]!,
+                dep: c.codeDepartement ?? "",
+              })),
+          );
+        })
+        .catch(() => undefined);
+    }, 250);
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timer);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [query]);
+  return (
+    <div className="relative">
+      <label className="block">
+        <span className="text-sm font-semibold">{label}</span>
+        <input
+          autoComplete="address-level2"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder="Par exemple Marseille ou 13008"
+          aria-autocomplete="list"
+          className="mt-1 block min-h-12 w-full rounded-xl border bg-background px-4 text-lg"
+        />
+      </label>
+      {results.length ? (
+        <ul
+          role="listbox"
+          className="mt-1 grid overflow-hidden rounded-xl border bg-popover shadow-md"
+        >
+          {results.map((c) => (
+            <li key={`${c.name}-${c.code}`} role="option" aria-selected={false}>
+              <button
+                type="button"
+                onClick={() => {
+                  const text = `${c.name} (${c.code})`;
+                  setPicked(text);
+                  setQuery(text);
+                  setResults([]);
+                  onPick(c.code, { name: c.name });
+                }}
+                className="flex min-h-11 w-full items-center gap-2 px-3 py-2 text-left text-sm hover:bg-secondary"
+              >
+                <MapPin size={14} className="shrink-0 text-muted-foreground" aria-hidden />
+                {c.name}
+                <span className="text-muted-foreground">
+                  {c.code} · {c.dep}
+                </span>
+              </button>
+            </li>
+          ))}
+        </ul>
+      ) : null}
+    </div>
   );
 }
 
@@ -727,6 +848,7 @@ export function PapersResult({
   setDone,
   onEdit,
   embedded = false,
+  abroadSlot,
 }: {
   answers: Answers;
   done: string[];
@@ -734,6 +856,8 @@ export function PapersResult({
   onEdit: () => void;
   /** Dans le compagnon : pas de grand titre, la fiche du consulat avant la liste. */
   embedded?: boolean;
+  /** Hors de France : les postes du pays de résidence, quand le compagnon le connaît. */
+  abroadSlot?: ReactNode;
 }) {
   const tasks = useMemo(() => tasksFor(answers), [answers]);
   const notes = reassurances(answers);
@@ -835,7 +959,11 @@ export function PapersResult({
           })}
         </div>
         <aside className={`grid gap-4 ${embedded ? "order-1" : "lg:sticky lg:top-24"}`}>
-          {consulat ? <ConsulatCard consulat={consulat} /> : answers.abroad ? <AbroadCard /> : null}
+          {consulat ? (
+            <ConsulatCard consulat={consulat} />
+          ) : answers.abroad ? (
+            (abroadSlot ?? <AbroadCard />)
+          ) : null}
           <p className="text-xs leading-relaxed text-muted-foreground">
             Sources lues le {displayDate(FORMALITES_CHECKED)}. Les règles peuvent changer : le
             consulat d'Algérie et la police aux frontières restent la référence au moment du voyage.

@@ -4,10 +4,10 @@ import type { Sailing } from "./trips";
 import type { Port, RouteLine } from "./types";
 
 /**
- * Le compagnon « Préparer mon voyage » : quatre réponses données une fois (domicile, voyageurs,
- * voiture, période), puis papiers, voiture, route, budget et réservation sur la même page.
- * Gardé sur cet appareil, repris à chaque visite. Le domicile et les voyageurs sont ceux de
- * « Mes papiers » (une seule saisie pour les deux).
+ * Le compagnon « Préparer mon voyage » : d'abord quand l'on part (une période), qui part et avec
+ * quelle voiture ; puis papiers (le lieu de résidence n'est demandé qu'au moment du consulat),
+ * voiture, route, budget et réservation sur la même page. Gardé sur cet appareil, repris à chaque
+ * visite. Le domicile et les voyageurs sont ceux de « Mes papiers » (une seule saisie pour les deux).
  */
 
 export type CompanionStep = "profile" | "papers" | "car" | "route" | "budget" | "book";
@@ -15,13 +15,19 @@ export type CompanionStep = "profile" | "papers" | "car" | "route" | "budget" | 
 export type CompanionPlan = {
   /** L'accueil (ce que l'outil propose, la destination) a été passé. */
   started: boolean;
-  /** Commune trouvée par le code postal : nom et centre [longitude, latitude]. */
+  /** Pays de résidence (code ISO) ; « other » : un pays hors de la liste. */
+  country: string;
+  /** Commune ou ville de résidence : nom et centre [longitude, latitude] ; code postal en France. */
   home: { postcode: string; name: string; point: [number, number] } | null;
   vehicle: VehicleKind;
   /** Mois de départ, AAAA-MM. */
   month: string;
   /** Jour précis, facultatif, AAAA-MM-JJ. */
   date: string;
+  /** Une période de départ (vacances scolaires, ou du… au…) ; null : le mois entier. */
+  window: { from: string; to: string } | null;
+  /** Le calendrier de vacances scolaires affiché : « FR », « FR:C », « BE:FR »… */
+  holidays: string;
   /** Où l'on va en Algérie (facultatif) : sert à l'itinéraire porte à porte. */
   destination: { label: string; point: [number, number] } | null;
   fromPortId: string | null;
@@ -54,11 +60,14 @@ export function nextMonths(count = 12, from = new Date()) {
 
 export const defaultPlan = (): CompanionPlan => ({
   started: false,
+  country: "FR",
   home: null,
   vehicle: "sedan",
   // Par défaut, le prochain mois de juillet : le départ le plus courant, à changer d'un geste.
   month: (nextMonths(12).find((m) => m.key.endsWith("-07")) ?? nextMonths(1)[0]!).key,
   date: "",
+  window: null,
+  holidays: "FR",
   destination: null,
   fromPortId: null,
   toPortId: null,
@@ -158,9 +167,53 @@ export function closestArrival(
     )[0]!;
 }
 
-/** Le jour retenu pour les prix et la recherche : le jour précis, sinon le 15 du mois. */
-export const planDay = (plan: Pick<CompanionPlan, "month" | "date">) =>
-  plan.date && plan.date.startsWith(plan.month) ? plan.date : `${plan.month}-15`;
+/** Le jour retenu pour les prix et la recherche : le jour précis, le début de la période, sinon le 15 du mois. */
+export const planDay = (
+  plan: Pick<CompanionPlan, "month" | "date"> & { window?: CompanionPlan["window"] },
+) =>
+  plan.date && plan.date.startsWith(plan.month)
+    ? plan.date
+    : (plan.window?.from ?? `${plan.month}-15`);
+
+/** Le plus tôt où l'on peut partir : les dates limites (visa, papiers) se comptent depuis ce jour. */
+export const earliestDay = (plan: Pick<CompanionPlan, "month" | "date" | "window">) =>
+  plan.date && plan.date.startsWith(plan.month)
+    ? plan.date
+    : (plan.window?.from ?? `${plan.month}-01`);
+
+const shortDay = (key: string) =>
+  new Intl.DateTimeFormat("fr-FR", { day: "numeric", month: "long" })
+    .format(new Date(`${key}T12:00:00`))
+    .replace(/^1 /, "1er ");
+
+/** « le lundi 6 juillet », « entre le 3 juillet et le 1er septembre », « en juillet 2027 ». */
+export function planWhenLabel(plan: Pick<CompanionPlan, "month" | "date" | "window">) {
+  if (plan.date && plan.date.startsWith(plan.month))
+    return `le ${new Intl.DateTimeFormat("fr-FR", { weekday: "long", day: "numeric", month: "long" }).format(new Date(`${plan.date}T12:00:00`))}`;
+  if (plan.window)
+    return `entre le ${shortDay(plan.window.from)} et le ${shortDay(plan.window.to)}`;
+  return `en ${new Intl.DateTimeFormat("fr-FR", { month: "long", year: "numeric" }).format(new Date(`${plan.month}-15T12:00:00`))}`;
+}
+
+/** Les pays de résidence proposés : la France d'abord, puis l'Europe où vivent les voyageurs. */
+export const RESIDENCE_COUNTRIES: { code: string; name: string }[] = [
+  { code: "FR", name: "France" },
+  { code: "BE", name: "Belgique" },
+  { code: "ES", name: "Espagne" },
+  { code: "IT", name: "Italie" },
+  { code: "DE", name: "Allemagne" },
+  { code: "CH", name: "Suisse" },
+  { code: "NL", name: "Pays-Bas" },
+  { code: "GB", name: "Royaume-Uni" },
+  { code: "LU", name: "Luxembourg" },
+  { code: "AT", name: "Autriche" },
+  { code: "PT", name: "Portugal" },
+  { code: "SE", name: "Suède" },
+  { code: "DK", name: "Danemark" },
+  { code: "NO", name: "Norvège" },
+  { code: "IE", name: "Irlande" },
+  { code: "other", name: "Un autre pays" },
+];
 
 export function planFare(
   plan: CompanionPlan,
@@ -249,6 +302,16 @@ export function takeItinerarySeed(): ItinerarySeed | null {
     return null;
   }
 }
+
+/** Les titres des étapes, partout où l'on parle du compagnon (page, accueil de la carte). */
+export const companionStepTitles: Record<CompanionStep, string> = {
+  profile: "Mon départ en 3 questions",
+  papers: "Mes papiers",
+  car: "Ma voiture",
+  route: "Ma route jusqu'au port",
+  budget: "Mon budget",
+  book: "Réserver ma traversée",
+};
 
 export const formatDuration = (minutes: number | null) => {
   if (!minutes) return null;

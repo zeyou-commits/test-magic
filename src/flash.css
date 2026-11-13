@@ -6943,6 +6943,37 @@ button.bw-tavatar:focus-visible {
   font-size: 12.5px;
   font-weight: 700;
 }
+/* Le déjà fait (ici ou pendant « Préparer mon voyage ») : replié sous la liste. */
+.bw-prep__done {
+  margin-top: 8px;
+}
+.bw-prep__done summary {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 36px;
+  color: #0e7a43;
+  cursor: pointer;
+  font-size: 12.5px;
+  font-weight: 700;
+  list-style: none;
+}
+.bw-prep__done summary::-webkit-details-marker {
+  display: none;
+}
+.bw-prep__done summary svg:last-child {
+  margin-left: auto;
+  transition: transform 0.2s;
+}
+.bw-prep__done[open] summary svg:last-child {
+  transform: rotate(180deg);
+}
+.bw-prep__from {
+  display: block;
+  margin: 2px 0 0 32px;
+  color: var(--muted-foreground);
+  font-size: 11.5px;
+}
 .bw-prep__trip summary {
   display: flex;
   align-items: center;

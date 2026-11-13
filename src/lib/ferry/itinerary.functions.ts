@@ -71,7 +71,7 @@ async function photonSearch(text: string, countryCode?: string): Promise<Place[]
 }
 
 export const searchItineraryAddress = createServerFn({ method: "GET" })
-  .inputValidator((input: unknown) => z.object({ query: z.string().trim().min(2).max(120), countryCode: z.enum(["DZ", "FR", "ES", "IT", "PT", "BE", "DE", "CH"]).optional() }).parse(input))
+  .inputValidator((input: unknown) => z.object({ query: z.string().trim().min(2).max(120), countryCode: z.enum(["DZ", "FR", "ES", "IT", "PT", "BE", "DE", "CH", "NL", "GB", "LU", "AT", "SE", "DK", "NO", "IE"]).optional() }).parse(input))
   .handler(async ({ data }) => photonSearch(data.query, data.countryCode));
 
 async function geocode(text: string, countryCode?: string): Promise<Place> {

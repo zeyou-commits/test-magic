@@ -23,6 +23,7 @@ import {
 } from "@/lib/ferry/preparation";
 import { tr } from "@/lib/i18n";
 import { papersProgress } from "@/content/formalites";
+import { PAPERS_ITEM_IDS, preTripDone, setPreTripItem } from "@/lib/ferry/dossier";
 
 function openRoute() {
   window.sessionStorage.setItem("bledway:open-home-action", "itinerary");
@@ -54,9 +55,41 @@ function ItemLink({ item, departureId }: { item: PrepItem; departureId?: string 
     );
   if (!item.href) return null;
   return (
-    <a href={item.href} {...(item.href.startsWith("http") ? { target: "_blank", rel: "noreferrer" } : {})}>
+    <a
+      href={item.href}
+      {...(item.href.startsWith("http") ? { target: "_blank", rel: "noreferrer" } : {})}
+    >
       {item.linkLabel} <ArrowRight size={13} aria-hidden />
     </a>
+  );
+}
+
+function PrepRow({
+  item,
+  done,
+  fromPrep = false,
+  onToggle,
+  departureId,
+}: {
+  item: PrepItem;
+  done: boolean;
+  fromPrep?: boolean;
+  onToggle: () => void;
+  departureId: string;
+}) {
+  return (
+    <li data-done={done || undefined}>
+      <label>
+        <input type="checkbox" className="sr-only" checked={done} onChange={onToggle} />
+        <span aria-hidden>{done ? <Check size={13} /> : null}</span>
+        <em>{item.label}</em>
+      </label>
+      {fromPrep ? (
+        <small className="bw-prep__from">{tr("ui.tripPreparation.faitEnPreparation")}</small>
+      ) : null}
+      {!done && item.tip ? <p className="bw-prep__tip">{item.tip}</p> : null}
+      <ItemLink item={item} departureId={departureId} />
+    </li>
   );
 }
 
@@ -94,20 +127,32 @@ export function TripPreparation({
       void client.invalidateQueries({ queryKey: preparationKey });
     },
   });
+  // Un seul dossier : ce qui a été coché dans « Préparer mon voyage » compte ici aussi.
+  const [pre, setPre] = useState<string[]>([]);
+  useEffect(() => setPre(preTripDone()), []);
+  const doneIds = [...new Set([...data.done, ...pre])];
+  const fromPrep = (id: string) => pre.includes(id) && !data.done.includes(id);
+  const isDone = (id: string) => doneIds.includes(id);
   const items = itemsFor(data.profile, direction).map((item) => itemForCompany(item, company));
-  const progress = prepProgress(data, direction);
+  const progress = prepProgress({ ...data, done: doneIds }, direction);
   const nextItem = progress.next ? itemForCompany(progress.next, company) : null;
   const steps = phases
     .map((phase) => {
       const list = items.filter((item) => item.phase === phase.id);
-      return { ...phase, list, count: list.filter((item) => data.done.includes(item.id)).length };
+      return { ...phase, list, count: list.filter((item) => isDone(item.id)).length };
     })
     .filter((phase) => phase.list.length);
   const active = steps.find((phase) => phase.id === step) ?? steps[0];
   const toggle = (item: PrepItem) => {
-    const done = data.done.includes(item.id)
-      ? data.done.filter((id) => id !== item.id)
-      : [...data.done, item.id];
+    // Les papiers suivent la liste « Mes papiers » : on la rouvre plutôt que de décocher ici.
+    if (fromPrep(item.id) && (PAPERS_ITEM_IDS as readonly string[]).includes(item.id)) {
+      window.location.assign("/preparer-mon-voyage#etape-papers");
+      return;
+    }
+    const checked = !isDone(item.id);
+    setPreTripItem(item.id, checked);
+    setPre(preTripDone());
+    const done = checked ? [...data.done, item.id] : data.done.filter((id) => id !== item.id);
     save.mutate({ ...data, done });
   };
   const summary = profileLabels
@@ -118,7 +163,10 @@ export function TripPreparation({
     <section className="bw-prep" aria-label={tr("ui.tripPreparation.preparerMaTraversee")}>
       <header className="bw-prep__head">
         <h3>
-          <ClipboardCheck size={17} aria-hidden /> {direction === "return" ? tr("ui.tripPreparation.monRetour") : tr("ui.tripPreparation.monParcours")}
+          <ClipboardCheck size={17} aria-hidden />{" "}
+          {direction === "return"
+            ? tr("ui.tripPreparation.monRetour")
+            : tr("ui.tripPreparation.monParcours")}
         </h3>
         <strong>
           {progress.done}/{progress.total}
@@ -135,14 +183,18 @@ export function TripPreparation({
           {nextItem.tip ? <p className="bw-prep__tip">{nextItem.tip}</p> : null}
           <div>
             <button type="button" onClick={() => toggle(nextItem)}>
-              <Check size={14} aria-hidden />{tr("ui.tripPreparation.cEstFait")}
+              <Check size={14} aria-hidden />
+              {tr("ui.tripPreparation.cEstFait")}
             </button>
             <ItemLink item={nextItem} departureId={departureId} />
           </div>
         </div>
       ) : (
         <p className="bw-prep__next" data-complete>
-          <PartyPopper size={18} aria-hidden /> {direction === "return" ? tr("ui.tripPreparation.toutEstPretBonRetour") : tr("ui.tripPreparation.toutEstPretBonneTraversee")}
+          <PartyPopper size={18} aria-hidden />{" "}
+          {direction === "return"
+            ? tr("ui.tripPreparation.toutEstPretBonRetour")
+            : tr("ui.tripPreparation.toutEstPretBonneTraversee")}
         </p>
       )}
 
@@ -170,36 +222,59 @@ export function TripPreparation({
           <p className="bw-prep__when">{active.when}</p>
           {active.id === "eve" && seaPeak != null && seaPeak >= 1.25 ? (
             <p className="bw-prep__sea" role="note">
-              <SeaIcon peak={seaPeak} size={20} /> {seaLevel(seaPeak).label}{tr("ui.tripPreparation.prevueSiVousEtesSensible")}
+              <SeaIcon peak={seaPeak} size={20} /> {seaLevel(seaPeak).label}
+              {tr("ui.tripPreparation.prevueSiVousEtesSensible")}
             </p>
           ) : null}
+          {/* Ce qui reste d'abord ; le déjà fait (ici ou pendant la préparation) se replie. */}
           <ul className="bw-prep__list">
-            {active.list.map((item) => {
-              const done = data.done.includes(item.id);
-              return (
-                <li key={item.id} data-done={done || undefined}>
-                  <label>
-                    <input
-                      type="checkbox"
-                      className="sr-only"
-                      checked={done}
-                      onChange={() => toggle(item)}
-                    />
-                    <span aria-hidden>{done ? <Check size={13} /> : null}</span>
-                    <em>{item.label}</em>
-                  </label>
-                  {item.tip ? <p className="bw-prep__tip">{item.tip}</p> : null}
-                  <ItemLink item={item} departureId={departureId} />
-                </li>
-              );
-            })}
+            {active.list
+              .filter((item) => !isDone(item.id))
+              .map((item) => (
+                <PrepRow
+                  key={item.id}
+                  item={item}
+                  done={false}
+                  onToggle={() => toggle(item)}
+                  departureId={departureId}
+                />
+              ))}
           </ul>
+          {active.count ? (
+            <details
+              className="bw-prep__done"
+              open={active.count === active.list.length || undefined}
+            >
+              <summary>
+                <Check size={13} aria-hidden />{" "}
+                {tr("ui.tripPreparation.dejaFait", { count: active.count })}
+                <ChevronDown size={14} aria-hidden />
+              </summary>
+              <ul className="bw-prep__list">
+                {active.list
+                  .filter((item) => isDone(item.id))
+                  .map((item) => (
+                    <PrepRow
+                      key={item.id}
+                      item={item}
+                      done
+                      fromPrep={fromPrep(item.id)}
+                      onToggle={() => toggle(item)}
+                      departureId={departureId}
+                    />
+                  ))}
+              </ul>
+            </details>
+          ) : null}
         </div>
       ) : null}
 
       <details className="bw-prep__trip">
         <summary>
-          <span>{tr("ui.tripPreparation.monVoyage")}{summary || tr("ui.tripPreparation.aPiedSansCabine")}</span>
+          <span>
+            {tr("ui.tripPreparation.monVoyage")}
+            {summary || tr("ui.tripPreparation.aPiedSansCabine")}
+          </span>
           <ChevronDown size={15} aria-hidden />
         </summary>
         <div role="group" aria-label={tr("ui.tripPreparation.monVoyage2")}>
@@ -222,9 +297,7 @@ export function TripPreparation({
           {tr("ui.tripPreparation.toutPreparerPasAPas")} <ArrowRight size={13} aria-hidden />
         </a>
       ) : null}
-      <p className="bw-prep__note">
-        {tr("ui.tripPreparation.unAideMemoireLesRegles")}
-      </p>
+      <p className="bw-prep__note">{tr("ui.tripPreparation.unAideMemoireLesRegles")}</p>
     </section>
   );
 }

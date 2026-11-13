@@ -5,6 +5,7 @@ import {
   ArrowRight,
   Calculator,
   CalendarCheck,
+  CalendarDays,
   Check,
   ChevronDown,
   ExternalLink,
@@ -14,6 +15,7 @@ import {
   MapPin,
   Navigation,
   PartyPopper,
+  School,
   Search,
   Ship,
   TrendingUp,
@@ -25,9 +27,10 @@ import { CabasImg } from "@/components/CabasImg";
 import { SiteLayout } from "@/components/layout/SiteLayout";
 import { Breadcrumbs, textLink } from "@/components/editorial/Editorial";
 import {
+  AbroadCard,
   EmbeddedPapers,
   GroupStep,
-  HomeStep,
+  HomeFields,
   Options,
   PapersResult,
   PapersWizard,
@@ -38,19 +41,37 @@ import {
   type PapersStep,
 } from "@/components/papers/PapersFlow";
 import { VEHICLES, defaultTripProfile } from "@/components/panel/TripProfile";
-import { tasksFor, type Answers } from "@/content/formalites";
+import { formaliteSources, tasksFor, type Answers } from "@/content/formalites";
+import {
+  CONSULATS_EUROPE_CHECKED,
+  MFA_REPRESENTATIONS_URL,
+  europeConsulates,
+} from "@/content/consulatsEurope";
+import {
+  VACANCES_CHECKED,
+  defaultHolidayChoice,
+  holidayChoiceGroups,
+  holidaySources,
+  holidaysBetween,
+  monthHasHolidays,
+  parseHolidayChoice,
+} from "@/content/vacancesScolaires";
 import {
   bookingSearch,
   closestArrival,
   communeOfPostcode,
+  companionStepTitles,
   companionSteps,
   defaultPlan,
   departurePorts,
+  earliestDay,
   formatDuration,
   loadPlan,
   nextMonths,
   planDay,
   planFare,
+  planWhenLabel,
+  RESIDENCE_COUNTRIES,
   saveItinerarySeed,
   savePlan,
   seasonLabels,
@@ -59,7 +80,8 @@ import {
   type PortChoice,
 } from "@/lib/ferry/companion";
 import { searchItineraryAddress } from "@/lib/ferry/itinerary.functions";
-import { prepItems } from "@/lib/ferry/preparation";
+import { carPrepItems as carItems } from "@/lib/ferry/dossier";
+import { retroPlan, type Milestone } from "@/lib/ferry/retroPlan";
 import { formatFareRange } from "@/lib/ferry/pricing";
 import { portsQuery, routesQuery } from "@/lib/ferry/queries";
 import {
@@ -98,7 +120,7 @@ const stepArt: Record<
 > = {
   profile: {
     src: "/cabas/pictos/yallah.webp",
-    short: "Profil",
+    short: "Départ",
     benefit: "Qui part, avec quelle voiture, et quand.",
     tint: "bg-[#fdf0d8]",
     scene: "/illustrations/voyage/depart-a-laube.webp",
@@ -107,7 +129,8 @@ const stepArt: Record<
   papers: {
     src: "/cabas/pictos/controle.webp",
     short: "Papiers",
-    benefit: "Visa, passeports, enfants : la liste de chacun, et votre consulat.",
+    benefit:
+      "Visa, passeports, enfants : la liste de chacun, et votre consulat, en France ou ailleurs en Europe.",
     tint: "bg-[#e5f2ea]",
     scene: "/illustrations/voyage/billets-au-port.webp",
     sceneAlt: "Au guichet du port, la famille présente ses papiers",
@@ -205,8 +228,8 @@ function Welcome({ onStart }: { onStart: () => void }) {
               Votre voyage au bled, préparé étape par étape
             </h1>
             <p className="mt-3 text-muted-foreground md:text-lg">
-              Papiers, voiture, route, budget, traversée : BledWay vous guide de chez vous jusqu'au
-              port, sans rien oublier.
+              Quand partir, papiers, voiture, route, budget, traversée : BledWay vous guide de chez
+              vous jusqu'au port, sans rien oublier. Depuis la France ou ailleurs en Europe.
             </p>
             <div className="mt-5 hidden md:block">{start}</div>
           </div>
@@ -235,6 +258,21 @@ function Welcome({ onStart }: { onStart: () => void }) {
         Ce que vous allez préparer
       </h2>
       <ol className="mt-3 grid gap-2 sm:grid-cols-2">
+        <li className="flex items-center gap-3 rounded-2xl border border-primary/30 bg-primary/5 p-2 pr-3">
+          <span
+            className="grid h-20 w-28 shrink-0 place-items-center rounded-xl bg-[#fff6e3]"
+            aria-hidden
+          >
+            <CalendarDays size={34} className="text-[#b7791f]" />
+          </span>
+          <span className="min-w-0">
+            <span className="block font-semibold">Mon calendrier</span>
+            <span className="block text-sm text-muted-foreground">
+              Votre période de départ, vacances scolaires comprises : ce qu'il faut lancer, et avant
+              quelle date.
+            </span>
+          </span>
+        </li>
         {benefits.map((step) => (
           <li key={step} className="flex items-center gap-3 rounded-2xl border bg-card p-2 pr-3">
             <span className="relative shrink-0">
@@ -267,23 +305,7 @@ function Welcome({ onStart }: { onStart: () => void }) {
   );
 }
 
-const stepTitles: Record<CompanionStep, string> = {
-  profile: "Mon voyage en 4 questions",
-  papers: "Mes papiers",
-  car: "Ma voiture",
-  route: "Ma route jusqu'au port",
-  budget: "Mon budget",
-  book: "Réserver ma traversée",
-};
-
-/** Les démarches voiture d'avant le départ, reprises de la préparation de « Mon voyage ». */
-const carItems = prepItems.filter(
-  (item) =>
-    item.only === "vehicle" &&
-    !item.itinerary &&
-    item.direction !== "return" &&
-    (item.phase === "papers" || item.phase === "bags"),
-);
+const stepTitles = companionStepTitles;
 
 const monthName = (key: string) =>
   new Intl.DateTimeFormat("fr-FR", { month: "long", year: "numeric" }).format(
@@ -326,14 +348,17 @@ function CompanionPage() {
   }, [plan, loaded]);
   const patch = (p: Partial<CompanionPlan>) => setPlan((current) => ({ ...current, ...p }));
 
-  // Le domicile de « Mes papiers » donne le point de départ de la route.
+  // Le domicile de « Mes papiers » donne le point de départ de la route (en France, par la
+  // commune ; ailleurs en Europe, la ville choisie dans le compagnon).
   const { postcode, abroad } = papers.answers;
   useEffect(() => {
-    if (!papers.loaded) return;
+    if (!papers.loaded || !loaded) return;
     if (abroad) {
-      if (plan.home) patch({ home: null });
+      if (plan.country === "FR") patch({ country: "other" });
+      if (plan.home?.postcode) patch({ home: null });
       return;
     }
+    if (plan.country !== "FR") patch({ country: "FR" });
     const code = postcode.trim();
     if (!/^\d{5}$/.test(code) || plan.home?.postcode === code) return;
     let cancelled = false;
@@ -350,7 +375,7 @@ function CompanionPage() {
       window.clearTimeout(timer);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [postcode, abroad, papers.loaded, plan.home?.postcode]);
+  }, [postcode, abroad, papers.loaded, loaded, plan.home?.postcode]);
 
   const { data: ports = [] } = useQuery(portsQuery);
   const { data: routes = [] } = useQuery(routesQuery);
@@ -363,13 +388,14 @@ function CompanionPage() {
 
   // Tant que rien n'est choisi à la main : le port le plus proche, puis l'arrivée la plus proche du bled.
   useEffect(() => {
-    if (!loaded || !choices.length) return;
+    // Sans domicile, pas de « plus proche » : on attend la ville plutôt que l'ordre alphabétique.
+    if (!loaded || !choices.length || (!plan.home && !plan.portsChosen)) return;
     if (fromChoice && toPort) return;
     const choice = fromChoice ?? choices[0]!;
     const arrival = closestArrival(choice, plan.destination?.point ?? null);
     patch({ fromPortId: choice.port.id, toPortId: arrival?.id ?? null });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [loaded, choices, fromChoice, toPort]);
+  }, [loaded, choices, fromChoice, toPort, plan.home]);
 
   const steps = companionSteps(plan);
   const doneCount = steps.filter((step) => plan.done.includes(step)).length;
@@ -475,6 +501,9 @@ function CompanionPage() {
                 </div>
               </nav>
 
+              {/* Le calendrier à rebours, dès que la période est connue. */}
+              {plan.done.includes("profile") ? <TripCalendar plan={plan} papers={papers} /> : null}
+
               <ol className="mt-4 grid grid-cols-1 gap-3 md:mt-6">
                 {steps.map((step, index) => (
                   <StepCard
@@ -501,6 +530,8 @@ function CompanionPage() {
                     {step === "papers" ? (
                       <PapersStepBody
                         papers={papers}
+                        plan={plan}
+                        patch={patch}
                         onDone={() => complete("papers")}
                         next={plan.vehicle === "none" ? "ma route" : "ma voiture"}
                       />
@@ -510,6 +541,7 @@ function CompanionPage() {
                     ) : null}
                     {step === "route" ? (
                       <RouteStep
+                        papers={papers}
                         plan={plan}
                         patch={patch}
                         choices={choices}
@@ -518,7 +550,11 @@ function CompanionPage() {
                         onItinerary={() => {
                           syncTravelProfile();
                           saveItinerarySeed({
-                            origin: plan.home ? `${plan.home.name} (${plan.home.postcode})` : "",
+                            origin: plan.home
+                              ? plan.home.postcode
+                                ? `${plan.home.name} (${plan.home.postcode})`
+                                : plan.home.name
+                              : "",
                             originPoint: plan.home?.point ?? null,
                             destination: plan.destination?.label ?? "",
                             destinationPoint: plan.destination?.point ?? null,
@@ -584,8 +620,9 @@ function CompanionPage() {
                     prêt
                   </p>
                   <p className="mt-2 text-muted-foreground">
-                    Gardez cette page : votre liste de papiers et vos choix y restent. Le jour J,
-                    suivez votre navire en direct et les signalements des voyageurs.
+                    Gardez cette page : votre calendrier, vos papiers et vos choix y restent. Une
+                    fois le billet enregistré, la suite (48 h avant, au port, à l'arrivée) continue
+                    dans « Mon voyage », avec ce que vous avez déjà coché ici.
                   </p>
                   <a
                     href="/"
@@ -622,14 +659,11 @@ function useSummaries(
     fromChoice && toPort ? planFare(plan, fromChoice.port, toPort, { adults, children }) : null;
   return {
     profile: [
-      papers.answers.abroad
-        ? "Hors de France"
-        : (plan.home?.name ?? (papers.answers.postcode || null)),
+      capitalize(planWhenLabel(plan)),
       [plural(adults, "adulte"), children ? plural(children, "enfant") : null]
         .filter(Boolean)
         .join(", "),
       plan.vehicle === "none" ? "sans voiture" : vehicle?.label.toLowerCase(),
-      plan.date ? dayName(plan.date) : monthName(plan.month),
     ]
       .filter(Boolean)
       .join(" · "),
@@ -641,9 +675,7 @@ function useSummaries(
     budget: fare
       ? `${formatFareRange(fare)} l'aller · ${seasonLabels[fare.season].toLowerCase()}`
       : null,
-    book: line
-      ? `${line} · ${plan.date ? dayName(plan.date) : `autour du 15 ${monthName(plan.month)}`}`
-      : null,
+    book: line ? `${line} · ${planWhenLabel(plan)}` : null,
   };
 }
 
@@ -750,8 +782,8 @@ function MoreLinks({ links }: { links: { href: string; label: string }[] }) {
 
 /* ------------------------------------------------------------ 1. Les quatre questions */
 
-type ProfileQuestion = "home" | "group" | "vehicle" | "when";
-const profileQuestions: ProfileQuestion[] = ["home", "group", "vehicle", "when"];
+type ProfileQuestion = "when" | "group" | "vehicle";
+const profileQuestions: ProfileQuestion[] = ["when", "group", "vehicle"];
 
 function ProfileStep({
   papers,
@@ -764,9 +796,8 @@ function ProfileStep({
   patch: (p: Partial<CompanionPlan>) => void;
   onDone: () => void;
 }) {
-  const [question, setQuestion] = useState<ProfileQuestion>("home");
+  const [question, setQuestion] = useState<ProfileQuestion>("when");
   const index = profileQuestions.indexOf(question);
-  const months = useMemo(() => nextMonths(12), []);
   const box = useRef<HTMLDivElement>(null);
   const go = (next: ProfileQuestion) => {
     setQuestion(next);
@@ -784,31 +815,12 @@ function ProfileStep({
     papers.patch(p);
   };
 
-  const today = new Date().toISOString().slice(0, 10);
-  const [year, month] = plan.month.split("-").map(Number) as [number, number];
-  const lastDay = `${plan.month}-${String(new Date(year, month, 0).getDate()).padStart(2, "0")}`;
-  const firstDay = `${plan.month}-01` < today ? today : `${plan.month}-01`;
-
   return (
     <div ref={box} className="scroll-mt-24 pt-4">
       <p className="text-xs font-bold uppercase tracking-widest text-primary">
         Question {index + 1} sur {profileQuestions.length}
       </p>
-      {question === "home" ? (
-        <>
-          <HomeStep
-            answers={papers.answers}
-            patch={papersPatch}
-            title="D'où partez-vous ?"
-            hint="Votre code postal sert à deux choses : trouver votre consulat d'Algérie, et les ports de départ les plus proches de chez vous."
-          />
-          {plan.home && !papers.answers.abroad ? (
-            <p className="mt-3 flex items-center gap-1.5 text-sm text-muted-foreground">
-              <MapPin size={14} aria-hidden /> Départ de {plan.home.name}
-            </p>
-          ) : null}
-        </>
-      ) : null}
+      {question === "when" ? <WhenQuestion plan={plan} patch={patch} /> : null}
       {question === "group" ? <GroupStep answers={papers.answers} patch={papersPatch} /> : null}
       {question === "vehicle" ? (
         <Question
@@ -856,58 +868,6 @@ function ProfileStep({
           </div>
         </Question>
       ) : null}
-      {question === "when" ? (
-        <Question
-          title="Quand partez-vous ?"
-          hint="Le mois suffit. Les prix changent beaucoup selon la saison."
-        >
-          <div
-            role="radiogroup"
-            aria-label="Mois de départ"
-            className="grid grid-cols-3 gap-2 sm:grid-cols-4"
-          >
-            {months.map((m) => {
-              const on = plan.month === m.key;
-              return (
-                <button
-                  key={m.key}
-                  type="button"
-                  role="radio"
-                  aria-checked={on}
-                  onClick={() =>
-                    patch({ month: m.key, date: plan.date.startsWith(m.key) ? plan.date : "" })
-                  }
-                  className={`flex min-h-14 flex-col items-center justify-center rounded-xl border px-2 py-2 text-sm transition-colors ${
-                    on
-                      ? "border-primary bg-primary/5 ring-1 ring-primary"
-                      : "bg-background hover:border-primary/40"
-                  }`}
-                >
-                  <span className="font-semibold capitalize">
-                    {m.label} {String(m.year).slice(2)}
-                  </span>
-                  <span
-                    className={`mt-0.5 text-[11px] ${m.season === "pointe" || m.season === "forte" ? "text-[#c95038]" : "text-muted-foreground"}`}
-                  >
-                    {shortSeason[m.season]}
-                  </span>
-                </button>
-              );
-            })}
-          </div>
-          <label className="mt-4 block max-w-xs">
-            <span className="text-sm font-semibold">Jour précis (facultatif)</span>
-            <input
-              type="date"
-              value={plan.date}
-              min={firstDay}
-              max={lastDay}
-              onChange={(event) => patch({ date: event.target.value })}
-              className="mt-1 block min-h-12 w-full rounded-xl border bg-background px-4"
-            />
-          </label>
-        </Question>
-      ) : null}
       <div className="mt-8 flex items-center justify-between gap-3">
         {index > 0 ? (
           <button
@@ -933,14 +893,19 @@ function ProfileStep({
 
 function PapersStepBody({
   papers,
+  plan,
+  patch,
   onDone,
   next,
 }: {
   papers: PapersState;
+  plan: CompanionPlan;
+  patch: (p: Partial<CompanionPlan>) => void;
   onDone: () => void;
   next: string;
 }) {
-  const steps = papersSteps(papers.answers, "people");
+  // Qui part et avec quels papiers, puis, en dernier, où l'on habite : pour trouver le consulat.
+  const steps = papersSteps(papers.answers, "companion");
   const [step, setStep] = useState<PapersStep>(steps[0]!);
   const box = useRef<HTMLDivElement>(null);
   const toTop = () =>
@@ -953,6 +918,9 @@ function PapersStepBody({
         <>
           <PapersResult
             embedded
+            abroadSlot={
+              <EuropeConsulateCard country={plan.country} home={plan.home?.point ?? null} />
+            }
             answers={papers.answers}
             done={papers.done}
             setDone={papers.setDone}
@@ -972,6 +940,7 @@ function PapersStepBody({
       ) : (
         <PapersWizard
           state={papers}
+          homeSlot={<ResidenceQuestion papers={papers} plan={plan} patch={patch} />}
           steps={steps}
           step={steps.includes(step) ? step : steps[0]!}
           setStep={(s) => {
@@ -1195,6 +1164,7 @@ function DestinationField({
 }
 
 function RouteStep({
+  papers,
   plan,
   patch,
   choices,
@@ -1203,6 +1173,7 @@ function RouteStep({
   onItinerary,
   onDone,
 }: {
+  papers: PapersState;
   plan: CompanionPlan;
   patch: (p: Partial<CompanionPlan>) => void;
   choices: PortChoice[];
@@ -1216,6 +1187,18 @@ function RouteStep({
   const selectedHidden = fromChoice && !shown.includes(fromChoice);
   return (
     <div className="pt-4">
+      {!plan.home ? (
+        <div className="mb-6 rounded-2xl bg-secondary/40 p-4">
+          <ResidenceQuestion
+            papers={papers}
+            plan={plan}
+            patch={patch}
+            title="D'où partez-vous ?"
+            hint="Pour classer les ports du plus proche au plus loin. La ville suffit."
+            showConsulate={false}
+          />
+        </div>
+      ) : null}
       <DestinationField
         value={plan.destination}
         onPick={(destination) => {
@@ -1388,8 +1371,7 @@ function BudgetStep({
     <div className="pt-4">
       <div className="rounded-2xl border p-4 md:p-5">
         <p className="text-sm text-muted-foreground">
-          {fromChoice.port.name} → {toPort.name} · aller simple ·{" "}
-          {plan.date ? dayName(plan.date) : monthName(plan.month)}
+          {fromChoice.port.name} → {toPort.name} · aller simple · départ {planWhenLabel(plan)}
         </p>
         <p className="mt-1 font-display text-3xl font-bold md:text-4xl">{formatFareRange(fare)}</p>
         <p className="mt-1 text-sm">
@@ -1490,9 +1472,11 @@ function BookStep({
     ],
     [
       "Départ",
-      plan.date
-        ? `${dayName(plan.date)}, ± 3 jours`
-        : `Autour du ${dayName(planDay(plan))}, ± 3 jours`,
+      plan.window && !plan.date
+        ? `${capitalize(planWhenLabel(plan))} · recherche autour du ${dayName(planDay(plan))}`
+        : plan.date
+          ? `${dayName(plan.date)}, ± 3 jours`
+          : `Autour du ${dayName(planDay(plan))}, ± 3 jours`,
     ],
     [
       "Voyageurs",
@@ -1526,5 +1510,617 @@ function BookStep({
         compagnie ou du distributeur indiqué.
       </p>
     </div>
+  );
+}
+
+/* ------------------------------------------------------------ Quand partir */
+
+const todayKey = () => new Date().toISOString().slice(0, 10);
+const addDaysKey = (day: string, n: number) => {
+  const d = new Date(`${day}T12:00:00Z`);
+  d.setUTCDate(d.getUTCDate() + n);
+  return d.toISOString().slice(0, 10);
+};
+const shortDate = (key: string) =>
+  new Intl.DateTimeFormat("fr-FR", { day: "numeric", month: "short" })
+    .format(new Date(`${key}T12:00:00`))
+    .replace(/^1 /, "1er ")
+    .replace(".", "");
+const longDate = (key: string) =>
+  new Intl.DateTimeFormat("fr-FR", { weekday: "long", day: "numeric", month: "long" })
+    .format(new Date(`${key}T12:00:00`))
+    .replace(/ 1 /, " 1er ");
+const capitalize = (text: string) => text.charAt(0).toUpperCase() + text.slice(1);
+
+function WhenQuestion({
+  plan,
+  patch,
+}: {
+  plan: CompanionPlan;
+  patch: (p: Partial<CompanionPlan>) => void;
+}) {
+  const months = useMemo(() => nextMonths(12), []);
+  const today = todayKey();
+  const horizon = `${months[months.length - 1]!.key}-31`;
+  const spans = useMemo(
+    () => holidaysBetween(plan.holidays, today, horizon),
+    [plan.holidays, today, horizon],
+  );
+  const { calendar } = parseHolidayChoice(plan.holidays);
+  const countdown = Math.round(
+    (Date.parse(`${earliestDay(plan)}T12:00:00`) - Date.parse(`${today}T12:00:00`)) / 86_400_000,
+  );
+  const setWindow = (from: string, to: string) =>
+    patch({
+      window: { from, to: to < from ? from : to },
+      month: from.slice(0, 7),
+      date: "",
+    });
+
+  return (
+    <Question
+      title="Quand souhaitez-vous partir ?"
+      hint="Une période suffit : vacances scolaires, un mois ou des dates. On en déduit ce qu'il faut lancer, et avant quand."
+    >
+      {/* Les vacances scolaires : France d'abord, et les autres pays d'Europe. */}
+      <div className="rounded-2xl bg-[#fff6e3] p-3 md:p-4">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <p className="flex items-center gap-2 text-sm font-bold">
+            <School size={16} className="text-[#b7791f]" aria-hidden /> Vacances scolaires
+          </p>
+          <select
+            value={plan.holidays}
+            onChange={(event) => patch({ holidays: event.target.value })}
+            aria-label="Calendrier des vacances scolaires"
+            className="min-h-10 w-full max-w-full rounded-lg border bg-background px-2 text-sm sm:w-auto sm:max-w-xs"
+          >
+            {holidayChoiceGroups.map((group) => (
+              <optgroup key={group.label} label={group.label}>
+                {group.options.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </optgroup>
+            ))}
+            <option value="none">Autre pays : pas de calendrier</option>
+          </select>
+        </div>
+        {spans.length ? (
+          <div className="-mx-1 mt-3 flex gap-2 overflow-x-auto px-1 pb-1">
+            {spans.map((span) => {
+              const from = span.start < today ? today : span.start;
+              const to = span.end ?? addDaysKey(span.start, 30);
+              const on = plan.window?.from === from && plan.window?.to === to;
+              return (
+                <button
+                  key={`${span.kind}-${span.start}`}
+                  type="button"
+                  aria-pressed={on}
+                  onClick={() => setWindow(from, to)}
+                  className={`flex shrink-0 flex-col items-start rounded-xl border px-3 py-2 text-left text-sm transition-colors ${
+                    on
+                      ? "border-primary bg-primary text-primary-foreground"
+                      : "bg-background hover:border-primary/40"
+                  }`}
+                >
+                  <span className="font-semibold">
+                    {span.label} {span.start.slice(0, 4)}
+                  </span>
+                  <span
+                    className={`text-xs ${on ? "text-primary-foreground/85" : "text-muted-foreground"}`}
+                  >
+                    {shortDate(span.start)} → {span.end ? shortDate(span.end) : "fin à venir"}
+                    {span.varies ? " · selon la zone" : ""}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        ) : (
+          <p className="mt-2 text-sm text-muted-foreground">
+            {calendar
+              ? "Pas de vacances publiées sur les 12 prochains mois pour ce calendrier."
+              : "Espagne, Italie, Royaume-Uni et autres pays : leurs vacances scolaires ne sont pas publiées en données ouvertes. Choisissez un mois ou des dates."}
+          </p>
+        )}
+        {calendar ? (
+          <p className="mt-2 text-[11px] text-muted-foreground">
+            Source :{" "}
+            <a
+              href={holidaySources[calendar.source].url}
+              target="_blank"
+              rel="noreferrer"
+              className="underline underline-offset-2"
+            >
+              {holidaySources[calendar.source].name}
+            </a>
+            , relevé le {shortDate(VACANCES_CHECKED)} {VACANCES_CHECKED.slice(0, 4)}.
+          </p>
+        ) : null}
+      </div>
+
+      <p className="mt-5 text-sm font-semibold">Ou un mois</p>
+      <div
+        role="radiogroup"
+        aria-label="Mois de départ"
+        className="mt-2 grid grid-cols-3 gap-2 sm:grid-cols-4"
+      >
+        {months.map((m) => {
+          const on = !plan.window && !plan.date && plan.month === m.key;
+          const holidays = monthHasHolidays(plan.holidays, m.key);
+          return (
+            <button
+              key={m.key}
+              type="button"
+              role="radio"
+              aria-checked={on}
+              onClick={() => patch({ month: m.key, window: null, date: "" })}
+              className={`relative flex min-h-14 flex-col items-center justify-center rounded-xl border px-2 py-2 text-sm transition-colors ${
+                on
+                  ? "border-primary bg-primary/5 ring-1 ring-primary"
+                  : "bg-background hover:border-primary/40"
+              }`}
+            >
+              <span className="font-semibold capitalize">
+                {m.label} {String(m.year).slice(2)}
+              </span>
+              <span
+                className={`mt-0.5 text-[11px] ${m.season === "pointe" || m.season === "forte" ? "text-[#c95038]" : "text-muted-foreground"}`}
+              >
+                {shortSeason[m.season]}
+              </span>
+              {holidays ? (
+                <span
+                  className="absolute right-1.5 top-1.5 size-2 rounded-full bg-[#e0a43a]"
+                  title="Vacances scolaires ce mois-ci"
+                  aria-label="vacances scolaires"
+                />
+              ) : null}
+            </button>
+          );
+        })}
+      </div>
+      <p className="mt-1 flex items-center gap-1.5 text-[11px] text-muted-foreground">
+        <span className="size-2 rounded-full bg-[#e0a43a]" aria-hidden /> vacances scolaires ·
+        saison des prix des traversées
+      </p>
+
+      <fieldset className="mt-5">
+        <legend className="text-sm font-semibold">Ou des dates précises</legend>
+        <div className="mt-2 grid grid-cols-2 gap-2 sm:max-w-md">
+          <label className="text-xs text-muted-foreground">
+            Partir à partir du
+            <input
+              type="date"
+              value={plan.window?.from ?? ""}
+              min={today}
+              onChange={(event) =>
+                event.target.value &&
+                setWindow(event.target.value, plan.window?.to ?? event.target.value)
+              }
+              className="mt-1 block min-h-12 w-full rounded-xl border bg-background px-3 text-base text-foreground"
+            />
+          </label>
+          <label className="text-xs text-muted-foreground">
+            et au plus tard le
+            <input
+              type="date"
+              value={plan.window?.to ?? ""}
+              min={plan.window?.from ?? today}
+              onChange={(event) =>
+                event.target.value &&
+                setWindow(plan.window?.from ?? event.target.value, event.target.value)
+              }
+              className="mt-1 block min-h-12 w-full rounded-xl border bg-background px-3 text-base text-foreground"
+            />
+          </label>
+        </div>
+      </fieldset>
+
+      <p
+        className="mt-5 flex items-start gap-2 rounded-xl bg-primary/5 p-3 text-sm"
+        aria-live="polite"
+      >
+        <CalendarDays size={16} className="mt-0.5 shrink-0 text-primary" aria-hidden />
+        <span>
+          Départ {planWhenLabel(plan)}
+          {countdown > 0
+            ? countdown > 60
+              ? `, dans ${Math.round(countdown / 7)} semaines : le temps de tout préparer sans stress.`
+              : countdown > 28
+                ? `, dans ${Math.round(countdown / 7)} semaines : les papiers longs sont à lancer maintenant.`
+                : `, dans ${countdown} jour${countdown > 1 ? "s" : ""} : votre calendrier montrera l'essentiel à faire tout de suite.`
+            : "."}
+        </span>
+      </p>
+    </Question>
+  );
+}
+
+/* ------------------------------------------------------------ Où vous habitez (consulat, ports) */
+
+function ResidenceQuestion({
+  papers,
+  plan,
+  patch,
+  title = "Où habitez-vous ?",
+  hint = "Pour trouver votre consulat d'Algérie, où se font vos démarches, et les ports les plus proches. La ville suffit.",
+  showConsulate = true,
+}: {
+  papers: PapersState;
+  plan: CompanionPlan;
+  patch: (p: Partial<CompanionPlan>) => void;
+  title?: string;
+  hint?: string;
+  showConsulate?: boolean;
+}) {
+  const setCountry = (code: string) => {
+    // Les vacances suivent le pays tant qu'aucune zone précise n'a été choisie.
+    const followHolidays = !plan.holidays.includes(":") || plan.holidays === "none";
+    const holidays = followHolidays ? (defaultHolidayChoice(code) ?? "none") : plan.holidays;
+    patch({
+      country: code,
+      home: null,
+      holidays,
+      ...(plan.portsChosen ? {} : { fromPortId: null, toPortId: null }),
+    });
+    papers.patch(code === "FR" ? { abroad: false } : { abroad: true, postcode: "" });
+  };
+  return (
+    <Question title={title} hint={hint}>
+      <label className="block">
+        <span className="text-sm font-semibold">Pays</span>
+        <select
+          value={plan.country}
+          onChange={(event) => setCountry(event.target.value)}
+          className="mt-1 block min-h-12 w-full rounded-xl border bg-background px-3 text-base sm:max-w-xs"
+        >
+          {RESIDENCE_COUNTRIES.map((country) => (
+            <option key={country.code} value={country.code}>
+              {country.name}
+            </option>
+          ))}
+        </select>
+      </label>
+      <div className="mt-4">
+        {plan.country === "FR" ? (
+          <HomeFields
+            answers={papers.answers}
+            patch={papers.patch}
+            abroadToggle={false}
+            showConsulat={showConsulate}
+          />
+        ) : (
+          <>
+            <EuropeCityField
+              country={plan.country}
+              value={plan.home}
+              onPick={(place) =>
+                patch({
+                  home: place ? { postcode: "", name: place.label, point: place.point } : null,
+                  ...(plan.portsChosen ? {} : { fromPortId: null, toPortId: null }),
+                })
+              }
+            />
+            {showConsulate ? (
+              <div className="mt-4">
+                <EuropeConsulateCard country={plan.country} home={plan.home?.point ?? null} />
+              </div>
+            ) : null}
+          </>
+        )}
+      </div>
+    </Question>
+  );
+}
+
+const PHOTON_COUNTRIES = [
+  "ES",
+  "IT",
+  "PT",
+  "BE",
+  "DE",
+  "CH",
+  "NL",
+  "GB",
+  "LU",
+  "AT",
+  "SE",
+  "DK",
+  "NO",
+  "IE",
+] as const;
+
+/** Une ville d'Europe (hors France) : recherche OpenStreetMap, limitée au pays choisi. */
+function EuropeCityField({
+  country,
+  value,
+  onPick,
+}: {
+  country: string;
+  value: CompanionPlan["home"];
+  onPick: (place: { label: string; point: [number, number] } | null) => void;
+}) {
+  const [query, setQuery] = useState(value?.name ?? "");
+  const [results, setResults] = useState<{ label: string; point: [number, number] }[]>([]);
+  const [busy, setBusy] = useState(false);
+  useEffect(() => {
+    const q = query.trim();
+    if (q.length < 2 || q === value?.name) {
+      setResults([]);
+      return;
+    }
+    let cancelled = false;
+    const code = (PHOTON_COUNTRIES as readonly string[]).includes(country)
+      ? (country as (typeof PHOTON_COUNTRIES)[number])
+      : undefined;
+    const timer = window.setTimeout(() => {
+      setBusy(true);
+      searchItineraryAddress({ data: { query: q, ...(code ? { countryCode: code } : {}) } })
+        .then((list) => {
+          if (!cancelled) setResults(list.slice(0, 5));
+        })
+        .catch(() => {
+          if (!cancelled) setResults([]);
+        })
+        .finally(() => {
+          if (!cancelled) setBusy(false);
+        });
+    }, 350);
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timer);
+    };
+  }, [query, country, value?.name]);
+  return (
+    <div className="relative">
+      <label className="block">
+        <span className="text-sm font-semibold">Votre ville</span>
+        <span className="relative mt-1 block">
+          <Search
+            size={16}
+            className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"
+            aria-hidden
+          />
+          <input
+            value={query}
+            onChange={(event) => setQuery(event.target.value)}
+            placeholder="Par exemple Bruxelles, Alicante, Milan"
+            autoComplete="address-level2"
+            aria-autocomplete="list"
+            className="block min-h-12 w-full rounded-xl border bg-background pl-9 pr-4 text-lg"
+          />
+        </span>
+      </label>
+      {busy ? <p className="mt-1 text-xs text-muted-foreground">Recherche…</p> : null}
+      {results.length ? (
+        <ul
+          role="listbox"
+          className="mt-1 grid overflow-hidden rounded-xl border bg-popover shadow-md"
+        >
+          {results.map((place) => (
+            <li key={`${place.label}-${place.point.join(",")}`} role="option" aria-selected={false}>
+              <button
+                type="button"
+                onClick={() => {
+                  setQuery(place.label);
+                  setResults([]);
+                  onPick(place);
+                }}
+                className="flex min-h-11 w-full items-center gap-2 px-3 py-2 text-left text-sm hover:bg-secondary"
+              >
+                <MapPin size={14} className="shrink-0 text-muted-foreground" aria-hidden />
+                {place.label}
+              </button>
+            </li>
+          ))}
+        </ul>
+      ) : null}
+      <p className="mt-2 text-xs text-muted-foreground">
+        Seul le nom tapé est envoyé au service de cartes OpenStreetMap (Photon), pour trouver la
+        ville.
+      </p>
+    </div>
+  );
+}
+
+/** Les postes d'Algérie du pays de résidence, du plus proche au plus loin. */
+function EuropeConsulateCard({
+  country,
+  home,
+}: {
+  country: string;
+  home: [number, number] | null;
+}) {
+  const result = europeConsulates(country, home);
+  if (!result || !result.posts.length) return <AbroadCard />;
+  return (
+    <div className="rounded-xl border p-4 text-sm">
+      <p className="flex items-center gap-2 font-semibold">
+        <Landmark size={16} className="text-primary" aria-hidden />
+        {result.embassyOnly
+          ? `${result.country} : l'ambassade d'Algérie`
+          : `${result.country} : ${result.posts.length > 1 ? "les consulats" : "le consulat"} d'Algérie`}
+      </p>
+      <ul className="mt-3 grid gap-3">
+        {result.posts.slice(0, 3).map((post, index) => (
+          <li key={post.name} className={index ? "border-t pt-3" : ""}>
+            <p className="font-semibold">
+              {post.name}
+              {post.km !== null ? (
+                <span className="font-normal text-muted-foreground">
+                  {" "}
+                  · ~{post.km.toLocaleString("fr-FR")} km{index === 0 ? ", le plus proche" : ""}
+                </span>
+              ) : null}
+            </p>
+            <p className="text-muted-foreground">{post.address}</p>
+            <p className="mt-1 flex flex-wrap gap-x-4 gap-y-1">
+              {post.phone ? (
+                <a
+                  href={`tel:${post.phone.split("/")[0]!.replace(/[^\d+]/g, "")}`}
+                  className={textLink}
+                >
+                  {post.phone.split("/")[0]!.trim()}
+                </a>
+              ) : null}
+              {post.site ? (
+                <a
+                  href={post.site}
+                  target="_blank"
+                  rel="noreferrer"
+                  className={`${textLink} inline-flex items-center gap-1`}
+                >
+                  Site du poste <ExternalLink size={12} aria-hidden />
+                </a>
+              ) : null}
+            </p>
+          </li>
+        ))}
+      </ul>
+      <p className="mt-3 text-xs text-muted-foreground">
+        {result.embassyOnly
+          ? "Aucun consulat n'est listé dans ce pays : renseignez-vous auprès de l'ambassade pour les démarches. "
+          : "Le poste compétent dépend de votre lieu de résidence : vérifiez sa circonscription sur son site. "}
+        Liste du{" "}
+        <a
+          href={MFA_REPRESENTATIONS_URL}
+          target="_blank"
+          rel="noreferrer"
+          className="underline underline-offset-2"
+        >
+          ministère algérien des Affaires étrangères
+        </a>
+        , relevée le {shortDate(CONSULATS_EUROPE_CHECKED)} {CONSULATS_EUROPE_CHECKED.slice(0, 4)}.
+      </p>
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------ Le calendrier à rebours */
+
+function milestoneLead(m: Milestone, plan: CompanionPlan) {
+  const today = todayKey();
+  if (m.id === "day") return capitalize(planWhenLabel(plan));
+  if (m.lead === "now" || (m.lead === "from" && m.date <= today)) return "Dès maintenant";
+  if (m.lead === "after") return "Ensuite";
+  if (m.lead === "before")
+    return m.late ? "En retard : tout de suite" : `Avant le ${longDate(m.date)}`;
+  if (m.lead === "from") return `À partir du ${longDate(m.date)}`;
+  return `Le ${longDate(m.date)}`;
+}
+
+function TripCalendar({ plan, papers }: { plan: CompanionPlan; papers: PapersState }) {
+  const [all, setAll] = useState(false);
+  const list = useMemo(
+    () =>
+      retroPlan(plan, { answers: papers.answers, finished: papers.finished, done: papers.done }),
+    [plan, papers.answers, papers.finished, papers.done],
+  );
+  const next = Math.max(
+    0,
+    list.findIndex((m) => !m.done),
+  );
+  const shown = all ? list : list.slice(next, next + 2);
+  return (
+    <section
+      aria-labelledby="mon-calendrier"
+      className="mt-4 rounded-2xl border bg-card p-4 md:p-5"
+    >
+      <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
+        <h2 id="mon-calendrier" className="flex items-center gap-2 font-display text-lg font-bold">
+          <CalendarDays size={18} className="text-primary" aria-hidden /> Mon calendrier
+        </h2>
+        <span className="text-sm text-muted-foreground">Départ {planWhenLabel(plan)}</span>
+      </div>
+      <ol className="mt-3 grid gap-4 border-l-2 border-primary/20 pl-4">
+        {shown.map((m) => (
+          <li key={m.id} className="relative">
+            <span
+              className={`absolute -left-[23px] top-0.5 grid size-3.5 place-items-center rounded-full ring-4 ring-card ${
+                m.done
+                  ? "bg-primary"
+                  : m.late
+                    ? "bg-[#c95038]"
+                    : m.tone === "warning"
+                      ? "bg-[#e0a43a]"
+                      : "bg-primary/40"
+              }`}
+              aria-hidden
+            />
+            <p
+              className={`text-[11px] font-bold uppercase tracking-wider ${m.late ? "text-[#c95038]" : m.tone === "warning" ? "text-[#b7791f]" : "text-primary"}`}
+            >
+              {milestoneLead(m, plan)}
+              {m.done ? " · fait" : ""}
+            </p>
+            <p className={`font-semibold ${m.done ? "text-muted-foreground line-through" : ""}`}>
+              {m.title}
+            </p>
+            {m.tasks.length ? (
+              <ul className="mt-1 grid gap-0.5 text-sm">
+                {m.tasks.slice(0, 4).map((task) => {
+                  const done = papers.done.includes(task.id);
+                  return (
+                    <li key={task.id} className="flex items-start gap-1.5">
+                      {done ? (
+                        <Check
+                          size={14}
+                          className="mt-0.5 shrink-0 text-primary"
+                          aria-label="fait"
+                        />
+                      ) : (
+                        <span
+                          className="mt-[7px] size-1.5 shrink-0 rounded-full bg-muted-foreground"
+                          aria-hidden
+                        />
+                      )}
+                      <span className={done ? "text-muted-foreground line-through" : ""}>
+                        {task.title}
+                      </span>
+                    </li>
+                  );
+                })}
+                {m.tasks.length > 4 ? (
+                  <li className="text-muted-foreground">
+                    et {m.tasks.length - 4} autre{m.tasks.length > 5 ? "s" : ""}
+                  </li>
+                ) : null}
+              </ul>
+            ) : null}
+            <p className="mt-1 text-sm text-muted-foreground">{m.detail}</p>
+            {m.sources?.length ? (
+              <p className="mt-1 text-xs">
+                Source :{" "}
+                {m.sources.map((id, index) => (
+                  <span key={id}>
+                    {index ? ", " : ""}
+                    <a
+                      href={formaliteSources[id].url}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="underline underline-offset-2"
+                    >
+                      {formaliteSources[id].short}
+                    </a>
+                  </span>
+                ))}
+              </p>
+            ) : null}
+          </li>
+        ))}
+      </ol>
+      {list.length > shown.length || all ? (
+        <button
+          type="button"
+          onClick={() => setAll(!all)}
+          aria-expanded={all}
+          className="mt-3 text-sm font-semibold text-primary underline underline-offset-4"
+        >
+          {all ? "Réduire le calendrier" : `Voir tout le calendrier (${list.length} étapes)`}
+        </button>
+      ) : null}
+    </section>
   );
 }

@@ -242,7 +242,8 @@ html {
   background: #dcefe2;
 }
 /* Le compagnon pas à pas : l'entrée principale, sur toute la largeur du menu. */
-.bw-menu-link--lead {
+/* Plus précis que .bw-menu-link.active : reste lisible aussi sur la page du compagnon. */
+.bw-menu-link.bw-menu-link--lead {
   grid-column: 1 / -1;
   min-height: 60px;
   padding: 10px 14px;
@@ -251,13 +252,14 @@ html {
   color: #fff;
   font-weight: 800;
 }
-.bw-menu-link--lead:hover,
-.bw-menu-link--lead:focus-visible,
-.bw-menu-link--lead[data-highlighted] {
+.bw-menu-link.bw-menu-link--lead:hover,
+.bw-menu-link.bw-menu-link--lead:focus-visible,
+.bw-menu-link.bw-menu-link--lead[data-highlighted],
+.bw-menu-link.bw-menu-link--lead.active {
   background: #094d2b;
   color: #fff;
 }
-.bw-menu-link--lead svg {
+.bw-menu-link.bw-menu-link--lead svg {
   color: #fff;
 }
 .bw-menu-link__text {

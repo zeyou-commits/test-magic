@@ -60,9 +60,9 @@ function Boat() {
         </AnswerBox>
         <section className="mt-8">
           <h2 className="font-display text-2xl font-bold">{tr("ui.pageBateauxSlug.lesReperesDuDossier")}</h2>
-          <dl className="mt-4 grid gap-px overflow-hidden rounded-xl border bg-border sm:grid-cols-2">
+          <dl className="mt-4 grid grid-cols-2 gap-px overflow-hidden rounded-xl border bg-border">
             {v.specs.map((s) => (
-              <div key={s.label} className="bg-card p-4">
+              <div key={s.label} className="bg-card p-3 sm:p-4">
                 <dt className="text-sm text-muted-foreground">{s.label}</dt>
                 <dd className="mt-1 font-display text-lg font-bold">{s.value}</dd>
               </div>

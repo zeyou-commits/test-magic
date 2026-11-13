@@ -68,7 +68,7 @@ function Boats() {
         name="Flotte des ferries Europe ↔ Algérie"
         items={vesselDossiers.map((v) => ({ name: v.name, path: `/bateaux/${v.slug}` }))}
       />
-      <h1 className="mb-5 font-display text-4xl font-extrabold tracking-tight md:text-5xl">
+      <h1 className="mb-5 font-display text-3xl font-extrabold tracking-tight sm:text-4xl md:text-5xl">
         {tr("ui.pageBateauxIndex.laFlotteEntreLEurope")}
       </h1>
       <ClampedIntro className="mb-6 max-w-3xl text-lg leading-relaxed text-muted-foreground">

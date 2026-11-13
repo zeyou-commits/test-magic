@@ -189,7 +189,7 @@ function CompagniesPage() {
         <section className="bw-co-compare" aria-label={tr("ui.pageCompagnies.comparerLesCompagnies")}>
           <h2>{tr("ui.pageCompagnies.enUnCoupDIl")}</h2>
           <div>
-            <table>
+            <table className="bw-stack-table">
               <thead>
                 <tr>
                   <th scope="col">{tr("ui.pageCompagnies.compagnie")}</th>
@@ -207,12 +207,12 @@ function CompagniesPage() {
                   return (
                     <tr key={company.id}>
                       <th scope="row">{company.name}</th>
-                      <td>{linesOf(company).length}</td>
-                      <td>{departures.data ? decimal(overview.perWeek) : "—"}</td>
-                      <td>{overview.fleet.length}</td>
-                      <td>{overview.averageAge != null ? `${overview.averageAge} ans` : "—"}</td>
-                      <td>{overview.flagship?.name ?? "—"}</td>
-                      <td>{overview.passengersMax?.toLocaleString("fr-FR") ?? "—"}</td>
+                      <td data-label={tr("ui.pageCompagnies.lignes")}>{linesOf(company).length}</td>
+                      <td data-label={tr("ui.pageCompagnies.departsSemaine")}>{departures.data ? decimal(overview.perWeek) : "—"}</td>
+                      <td data-label={tr("ui.pageCompagnies.navires")}>{overview.fleet.length}</td>
+                      <td data-label={tr("ui.pageCompagnies.ageMoyen")}>{overview.averageAge != null ? `${overview.averageAge} ans` : "—"}</td>
+                      <td data-label={tr("ui.pageCompagnies.navirePhare")}>{overview.flagship?.name ?? "—"}</td>
+                      <td data-label={tr("ui.pageCompagnies.passagers")}>{overview.passengersMax?.toLocaleString("fr-FR") ?? "—"}</td>
                     </tr>
                   );
                 })}

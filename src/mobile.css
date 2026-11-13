@@ -1,0 +1,167 @@
+/* Téléphone : lisibilité des pages pensées d'abord pour l'ordinateur.
+   Tout est sous @media (max-width: 639px) : l'affichage ordinateur et tablette ne change pas. */
+
+@media (max-width: 639px) {
+  /* Tableaux : une carte par ligne, chaque valeur précédée du nom de sa colonne. */
+  table.bw-stack-table[class] {
+    min-width: 0;
+    width: 100%;
+  }
+  table.bw-stack-table[class] thead {
+    display: none;
+  }
+  table.bw-stack-table[class] tbody,
+  table.bw-stack-table[class] tr {
+    display: block;
+  }
+  table.bw-stack-table[class] tr {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 6px 14px;
+    padding: 14px 16px;
+    border-top: 1px solid var(--border);
+  }
+  table.bw-stack-table[class] tbody tr:first-child {
+    border-top: 0;
+  }
+  table.bw-stack-table[class] th,
+  table.bw-stack-table[class] td {
+    display: block;
+    padding: 0;
+    border: 0;
+    min-width: 0;
+  }
+  table.bw-stack-table[class] th[scope="row"] {
+    grid-column: 1 / -1;
+    font-size: 15px;
+    font-weight: 700;
+  }
+  table.bw-stack-table[class] td::before {
+    content: attr(data-label);
+    display: block;
+    margin-bottom: 1px;
+    color: var(--muted-foreground);
+    font-size: 12px;
+    font-weight: 500;
+    text-transform: none;
+    letter-spacing: 0;
+  }
+  .bw-co-compare > div:has(> table.bw-stack-table) {
+    margin: 0 -20px;
+  }
+  .bw-co-compare table.bw-stack-table[class] tr {
+    padding-inline: 20px;
+  }
+}
+
+@media (max-width: 639px) {
+  /* Une cellule qui ne contient qu'un lien parle d'elle-même : pas d'intitulé, alignée sur les valeurs. */
+  table.bw-stack-table[class] tr:has(> td:nth-of-type(3)) {
+    grid-template-columns: repeat(3, minmax(0, auto));
+    justify-content: space-between;
+  }
+  table.bw-stack-table[class] td:has(> a:only-child)::before {
+    content: none;
+  }
+  table.bw-stack-table[class] td:has(> a:only-child) {
+    align-self: end;
+  }
+}
+
+@media (max-width: 639px) {
+  /* Navires : le podium tient en un écran. Une ligne par navire : photo, nom, marche. */
+  .bw-fleet ol.bw-podium {
+    gap: 10px;
+    margin: 16px 0 18px;
+  }
+  .bw-fleet ol.bw-podium > li[data-rank] {
+    display: grid;
+    grid-template-columns: 104px minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 12px;
+    text-align: left;
+  }
+  .bw-fleet ol.bw-podium > li[data-rank] .bw-podium__photo {
+    border-radius: 12px;
+  }
+  .bw-fleet ol.bw-podium > li[data-rank] .bw-podium__photo img {
+    padding: 4px;
+  }
+  .bw-fleet ol.bw-podium > li[data-rank] .bw-podium__name {
+    font-size: 15px;
+  }
+  .bw-fleet ol.bw-podium > li[data-rank] .bw-podium__step {
+    flex-direction: column;
+    gap: 2px;
+    height: auto;
+    min-width: 72px;
+    padding: 8px 10px;
+    border-radius: 12px;
+  }
+  .bw-fleet ol.bw-podium > li[data-rank] .bw-podium__step b {
+    font-size: 20px;
+  }
+  .bw-fleet ol.bw-podium > li[data-rank] .bw-podium__step strong {
+    font-size: 13px;
+  }
+}
+
+@media (max-width: 639px) {
+  /* Port : les lignes en liste serrée plutôt qu'en grosses cartes. */
+  .bw-port-lines {
+    gap: 0;
+    overflow: hidden;
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    background: var(--card);
+  }
+  .bw-port-lines > div {
+    padding: 12px 16px;
+    border: 0;
+    border-top: 1px solid var(--border);
+    border-radius: 0;
+    box-shadow: none;
+  }
+  .bw-port-lines > div:first-child {
+    border-top: 0;
+  }
+  .bw-port-lines > div h3 {
+    font-size: 15px;
+  }
+  .bw-port-lines > div p {
+    margin-top: 0;
+    font-size: 13px;
+  }
+  /* Services du port : deux colonnes. */
+  .bw-port-services {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+  }
+  .bw-port-services > div {
+    padding: 10px 12px;
+  }
+}
+
+@media (max-width: 639px) {
+  /* Pied de page : les liens légaux restent sur une ligne chacun et se touchent facilement. */
+  .bw-footer-bottom {
+    font-size: 12px;
+  }
+  .bw-footer-bottom > div {
+    flex-wrap: wrap;
+    flex-shrink: 1;
+    gap: 2px 20px;
+  }
+  .bw-footer-bottom > div > a {
+    display: inline-flex;
+    align-items: center;
+    min-height: 36px;
+    white-space: nowrap;
+  }
+  /* Étoiles de note : zone de toucher agrandie sans changer le dessin. */
+  .bw-rate__star::after {
+    content: "";
+    position: absolute;
+    inset: -10px 0;
+  }
+}

@@ -59,7 +59,7 @@ export function VesselCard({ vessel, routes, ports }: { vessel: Vessel; routes: 
           <dl className="mt-3 grid grid-cols-3 gap-2 text-xs">
             {stats.map((s) => (
               <div key={s.label} className="rounded-lg bg-muted/60 px-2 py-1.5">
-                <dt className="flex items-center gap-1 text-[10px] text-muted-foreground">
+                <dt className="flex items-center gap-1 text-[10px] text-muted-foreground max-sm:text-xs">
                   <s.icon size={13} className="text-primary" aria-hidden /> {s.label}
                 </dt>
                 <dd className="font-bold">{s.value}</dd>

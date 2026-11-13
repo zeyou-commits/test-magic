@@ -423,11 +423,11 @@ export function PageHero({
       </div>
     );
   return (
-    <div className="mx-auto max-w-3xl py-12 text-center md:py-20">
+    <div className="mx-auto max-w-3xl py-8 text-center sm:py-12 md:py-20">
       <div className="mb-4 text-xs font-bold uppercase tracking-widest text-primary">
         {overline}
       </div>
-      <h1 className="mb-6 font-display text-4xl font-extrabold tracking-tight md:text-5xl lg:text-6xl">
+      <h1 className="mb-4 font-display text-3xl font-extrabold tracking-tight sm:mb-6 sm:text-4xl md:text-5xl lg:text-6xl">
         {title}
       </h1>
       <p className="mx-auto max-w-2xl text-lg text-muted-foreground">{intro}</p>

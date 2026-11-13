@@ -110,7 +110,7 @@ function PortPage() {
         <h2 className="text-xl font-semibold">
           {tr("ui.pagePortsSlug.lignesAuDepartOuA")}{portRoutes.length})
         </h2>
-        <div className="mt-4 grid gap-4 sm:grid-cols-2">
+        <div className="bw-port-lines mt-4 grid gap-4 sm:grid-cols-2">
           {portRoutes.map((route) => (
             <Card key={route.id}>
               <Link to="/lignes/$slug" params={{ slug: route.slug }} className="block">
@@ -132,7 +132,7 @@ function PortPage() {
       {facilities.length > 0 ? (
         <section className="mt-10">
           <h2 className="text-xl font-semibold">{tr("ui.pagePortsSlug.servicesDuPort")}</h2>
-          <dl className="mt-4 grid gap-3 sm:grid-cols-2">
+          <dl className="bw-port-services mt-4 grid gap-3 sm:grid-cols-2">
             {facilities.map(([key, value]) => (
               <div key={key} className="rounded-xl bg-secondary/60 px-4 py-3">
                 <dt className="text-sm font-semibold">{facilityLabels[key] ?? key}</dt>

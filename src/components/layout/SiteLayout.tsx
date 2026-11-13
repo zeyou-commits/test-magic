@@ -12,6 +12,16 @@ import { QuestionButton } from "./QuestionButton";
 import { DataUnavailableNotice } from "./DataUnavailableNotice";
 import { goHome, openVoyage, useVoyageTrip } from "@/lib/ferry/voyageTrip";
 import { refocusTriggerWithoutScroll } from "@/lib/ui/menuFocus";
+import {
+  familyIsActive,
+  familyItems,
+  menuFamilies,
+  MenuItemLink,
+  openSearchFromHeader,
+  type MenuFamily,
+} from "./menu";
+
+export { menuFamilies } from "./menu";
 import { LanguageSwitcher, useT, type MessageKey } from "@/lib/i18n";
 import {
   Anchor,
@@ -71,148 +81,6 @@ export const navLinks = [
   { to: "/mes-dinars", labelKey: "nav.myDinars" },
 ] as const;
 
-type MenuItem = {
-  to: string;
-  labelKey: MessageKey;
-  icon: LucideIcon;
-  /** Ouvre un volet de la carte d'accueil au lieu d'une page. */
-  action?: "itinerary";
-  /** Première chose à faire de la famille : mise en avant. */
-  featured?: boolean;
-};
-type MenuFamily = {
-  id: "prepare" | "live" | "lines" | "bledway";
-  titleKey: MessageKey;
-  columns: { titleKey?: MessageKey; items: MenuItem[] }[];
-  /** Absente du menu de l'ordinateur (reste en pied de page et dans le volet). */
-  sheetOnly?: boolean;
-};
-
-/**
- * Le menu dit ce qu'on vient faire : réserver (bouton à part), préparer son voyage, suivre en
- * direct, découvrir lignes et ports. Mêmes familles dans le menu de l'ordinateur et le volet.
- */
-export const menuFamilies: MenuFamily[] = [
-  {
-    id: "prepare",
-    titleKey: "menu.groupPrepareTrip",
-    // Dans l'ordre du voyage : les papiers avant le billet, puis la route, puis le budget.
-    columns: [
-      {
-        titleKey: "menu.groupBeforeBooking",
-        items: [
-          { to: "/papiers-voyage-algerie", labelKey: "nav.travelPapers", icon: FileText, featured: true },
-          { to: "/vehicules-moins-3-ans", labelKey: "nav.vehiclesUnder3", icon: Car },
-          { to: "/questions-frequentes", labelKey: "nav.faq", icon: CircleHelp },
-        ],
-      },
-      {
-        titleKey: "menu.groupRoad",
-        items: [
-          { to: "/", labelKey: "menu.stepByStep", icon: RouteIcon, action: "itinerary" },
-          { to: "/voyage-algerie", labelKey: "nav.travelAlgeria", icon: MapPin },
-          { to: "/covoiturage", labelKey: "nav.carpool", icon: Users },
-          { to: "/guide", labelKey: "nav.guide", icon: BookOpen },
-        ],
-      },
-      {
-        titleKey: "menu.groupBudget",
-        items: [
-          { to: "/simulateurs", labelKey: "nav.simulators", icon: Calculator },
-          { to: "/barometre-prix", labelKey: "nav.priceBarometer", icon: TrendingUp },
-          { to: "/mes-dinars", labelKey: "nav.myDinars", icon: Wallet },
-        ],
-      },
-    ],
-  },
-  {
-    id: "live",
-    titleKey: "menu.groupLive",
-    columns: [
-      {
-        items: [
-          { to: "/", labelKey: "menu.liveMap", icon: MapIcon },
-          { to: "/horaires", labelKey: "nav.departuresArrivals", icon: Clock },
-          { to: "/actualites", labelKey: "nav.news", icon: Newspaper },
-        ],
-      },
-    ],
-  },
-  {
-    id: "lines",
-    titleKey: "menu.groupLines",
-    columns: [
-      {
-        items: [
-          { to: "/lignes", labelKey: "nav.lines", icon: Waypoints },
-          { to: "/ports", labelKey: "nav.ports", icon: Anchor },
-          { to: "/compagnies", labelKey: "nav.companies", icon: Building2 },
-          { to: "/bateaux", labelKey: "nav.vessels", icon: Ship },
-        ],
-      },
-    ],
-  },
-  {
-    id: "bledway",
-    titleKey: "menu.groupBledway",
-    sheetOnly: true,
-    columns: [
-      {
-        items: [
-          { to: "/a-propos", labelKey: "nav.about", icon: Info },
-          { to: "/contact", labelKey: "nav.contact", icon: Mail },
-          { to: "/methode-editoriale", labelKey: "nav.editorialMethod", icon: ScrollText },
-        ],
-      },
-    ],
-  },
-];
-
-/** La rubrique allumée : « Suivre en direct » sur la carte d'accueil. */
-function familyIsActive(family: MenuFamily, pathname: string) {
-  return family.columns.some((column) =>
-    column.items.some((item) =>
-      item.to === "/"
-        ? pathname === "/" && !item.action
-        : pathname === item.to || pathname.startsWith(`${item.to}/`),
-    ),
-  );
-}
-
-/** Un lien du menu : une page, ou un volet de la carte d'accueil (« étape par étape »).
- * Transmet les propriétés du menu (fermeture au clic, focus clavier) au lien lui-même. */
-const MenuItemLink = forwardRef<
-  HTMLAnchorElement,
-  {
-    item: MenuItem;
-    iconSize?: number;
-    onClick?: MouseEventHandler<HTMLAnchorElement>;
-    className?: string;
-  }
->(function MenuItemLink({ item, iconSize = 16, onClick, className, ...rest }, ref) {
-  const t = useT();
-  const itinerary = item.action === "itinerary";
-  // Rôle, tabIndex, data-* et focus passés par le menu (Slot de Radix) : repris tels quels.
-  return (
-    <Link
-      ref={ref}
-      {...rest}
-      to={item.to}
-      activeOptions={{ exact: item.to === "/" }}
-      {...(itinerary ? { activeProps: { className: "" } } : {})}
-      onClick={(event) => {
-        onClick?.(event);
-        if (itinerary) openItineraryFromHeader();
-        else if (item.to === "/") goHome();
-      }}
-      className={`bw-menu-link${item.featured ? " bw-menu-link--featured" : ""}${className ? ` ${className}` : ""}`}
-    >
-      <item.icon size={iconSize} aria-hidden />
-      {t(item.labelKey)}
-    </Link>
-  );
-});
-
 const footerLinks = [
   { to: "/actualites", labelKey: "nav.news" },
   { to: "/guide", labelKey: "nav.allGuides" },
@@ -234,17 +102,6 @@ const footerLinks = [
   { to: "/charte", labelKey: "nav.communityCharter" },
   { to: "/conditions-utilisation", labelKey: "nav.terms" },
 ] as const;
-
-/** « Réserver » : la recherche de traversée de la carte d'accueil, d'où partent les liens de réservation. */
-function openSearchFromHeader() {
-  window.sessionStorage.setItem("bledway:open-home-action", "search");
-  if (window.location.pathname === "/") window.dispatchEvent(new Event("bledway:open-search"));
-}
-
-function openItineraryFromHeader() {
-  window.sessionStorage.setItem("bledway:open-home-action", "itinerary");
-  if (window.location.pathname === "/") window.dispatchEvent(new Event("bledway:open-itinerary"));
-}
 
 /** Identité compacte commune à toutes les pages. */
 export function BrandLink({ compact = false }: { compact?: boolean }) {
@@ -317,6 +174,15 @@ export function SiteHeader() {
             ))}
           </div>
         ))}
+        {family.footer ? (
+          <div className="bw-mega-menu__footer">
+            {family.footer.map((item) => (
+              <DropdownMenuItem asChild key={`${item.to}-${item.labelKey}`}>
+                <MenuItemLink item={item} iconSize={15} />
+              </DropdownMenuItem>
+            ))}
+          </div>
+        ) : null}
       </DropdownMenuContent>
     </DropdownMenu>
   );
@@ -403,9 +269,7 @@ export function SiteHeader() {
                 {menuFamilies.map((family) => (
                   <section key={family.id} aria-label={t(family.titleKey)}>
                     <p className="bw-menu-group-title">{t(family.titleKey)}</p>
-                    {family.columns
-                      .flatMap((column) => column.items)
-                      .map((item) => (
+                    {familyItems(family).map((item) => (
                         <SheetClose asChild key={`${item.to}-${item.labelKey}`}>
                           <MenuItemLink item={item} iconSize={17} />
                         </SheetClose>

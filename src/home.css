@@ -212,6 +212,25 @@ html {
 .bw-mega-menu[data-columns="3"] {
   --bw-menu-columns: 3;
 }
+.bw-mega-menu[data-columns="4"] {
+  --bw-menu-columns: 4;
+  grid-template-columns: repeat(4, minmax(180px, auto));
+}
+/* Liens transversaux (tous les guides, questions) : une ligne sous les colonnes. */
+.bw-mega-menu__footer {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 8px;
+  margin-top: 4px;
+  padding-top: 8px;
+  border-top: 1px solid #e3ebe6;
+}
+.bw-mega-menu__footer .bw-menu-link {
+  min-height: 34px;
+  font-size: 13px;
+  color: #5b6b78;
+}
 /* Mes papiers : la première démarche, avant même le billet. */
 .bw-menu-link--featured {
   background: #edf6ef;
@@ -3213,3 +3232,34 @@ html {
 
 /* Voitures et voyageurs un peu plus grands : on les voit monter et descendre, même sur téléphone. */
 .bw-mf-traveller > * { transform: scale(1.35); transform-origin: 50% 100%; transform-box: fill-box; }
+
+/* Volets « Préparer » et « Suivre » de la barre du bas : le contenu des menus de l'ordinateur. */
+.bw-family-sheet__columns {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 12px;
+}
+.bw-family-sheet__columns section {
+  display: grid;
+  gap: 1px;
+}
+.bw-family-sheet__footer {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 8px;
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px solid #e3ebe6;
+}
+@media (min-width: 520px) {
+  .bw-family-sheet__columns {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+/* Téléphone : les salons ont leur onglet dans la barre du bas, la bulle flottante s'efface. */
+@media (max-width: 767px) {
+  .bw-messages-fab,
+  .bw-messages-preview {
+    display: none !important;
+  }
+}

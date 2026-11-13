@@ -486,6 +486,7 @@ export function SearchPanel({
                 <Route className="size-4" aria-hidden />
               </button>
             </div>
+            <p className="bw-search-welcome__sub">{tr("ui.searchPanel.reservezPreparezSuivez")}</p>
           </div>
         ) : null}
         {/* RECHERCHE : capsule condensée façon Airbnb, formulaire guidé à la demande */}

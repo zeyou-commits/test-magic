@@ -53,6 +53,7 @@ import { QuickReport } from "@/components/map/QuickReport";
 import { MessagesFab, VoyageSalonsPicker } from "@/components/panel/MessagesFab";
 import { OPEN_ROOM_PICKER_EVENT } from "@/lib/ferry/chatDemo";
 import { RoomInvite } from "@/components/panel/RoomInvite";
+import { enterRoom } from "@/lib/ferry/chat";
 import { afterOverlayClose, handleOverlayBack } from "@/lib/ferry/backStack";
 import { MyTripMapChip } from "@/components/panel/MyTripHero";
 import { MapSearch } from "@/components/map/MapSearch";
@@ -1258,6 +1259,17 @@ function Index() {
     }, 120);
     return () => window.clearTimeout(timer);
     // Navigation entrante : l'action enregistrée n'est lue qu'une fois au montage.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Lien d'invitation (« ?salon=1 ») : la fiche de la traversée ou du port, puis son salon ouvert.
+  useEffect(() => {
+    const params = new URLSearchParams(initialSearch);
+    const target = selectionFromUrl(initialSearch);
+    if (!params.has("salon") || !target) return;
+    if (target.type === "departure") enterRoom("crossing", target.id);
+    else if (target.type === "port") enterRoom("port", target.id);
+    // Lu une seule fois, à l'arrivée sur la page.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 

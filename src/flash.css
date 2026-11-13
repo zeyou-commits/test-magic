@@ -15762,3 +15762,168 @@ img[data-logo="dark"] {
   content: attr(data-medal);
   font-size: 16px;
 }
+
+/* Salon ouvert en grand (RoomSheet) : fenêtre centrée sur ordinateur, volet qui monte sur téléphone. */
+.bw-chat-sheet__overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  background: rgb(8 24 18 / 0.55);
+}
+.bw-chat-sheet__overlay[data-state="open"] {
+  animation: bw-chat-sheet-fade 0.2s ease-out;
+}
+.bw-chat-sheet__overlay[data-state="closed"] {
+  animation: bw-chat-sheet-fade 0.2s ease-in reverse forwards;
+}
+.bw-chat-window.bw-chat-sheet {
+  position: fixed;
+  z-index: 100;
+  top: 50%;
+  left: 50%;
+  translate: -50% -50%;
+  border: 1px solid #e3ebe6;
+  border-radius: 16px;
+  background: var(--background, #fff);
+  box-shadow: 0 24px 60px rgb(8 24 18 / 0.22);
+  outline: none;
+}
+.bw-chat-sheet[data-state="open"] {
+  animation: bw-chat-sheet-pop 0.2s ease-out;
+}
+.bw-chat-sheet[data-state="closed"] {
+  animation: bw-chat-sheet-fade 0.15s ease-in reverse forwards;
+}
+.bw-chat-sheet__grip {
+  display: none;
+}
+.bw-chat-sheet__actions {
+  position: absolute;
+  z-index: 2;
+  top: 1px;
+  right: 4px;
+  display: flex;
+  align-items: center;
+}
+.bw-chat-sheet__invite,
+.bw-chat-sheet__close {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 32px;
+  border-radius: 999px;
+  color: #0b5e34;
+  cursor: pointer;
+}
+.bw-chat-sheet__close {
+  color: var(--muted-foreground);
+}
+.bw-chat-sheet__invite:hover,
+.bw-chat-sheet__invite:focus-visible,
+.bw-chat-sheet__close:hover,
+.bw-chat-sheet__close:focus-visible {
+  background: #edf6ef;
+  outline: none;
+}
+/* Ordinateur : l'invitation et la croix prennent la place de l'ancienne croix seule. */
+.bw-chat-sheet .bw-chat__headtools {
+  right: 78px;
+}
+.bw-chat-sheet .bw-chat__head h2 {
+  padding-right: 80px;
+}
+.bw-chat-sheet .bw-chat__head[data-tools="1"] h2 {
+  padding-right: 116px;
+}
+.bw-chat-sheet .bw-chat__head[data-tools="2"] h2 {
+  padding-right: 152px;
+}
+@keyframes bw-chat-sheet-fade {
+  from {
+    opacity: 0;
+  }
+}
+@keyframes bw-chat-sheet-pop {
+  from {
+    opacity: 0;
+    scale: 0.96;
+  }
+}
+@keyframes bw-chat-sheet-up {
+  from {
+    transform: translateY(100%);
+  }
+}
+@keyframes bw-chat-sheet-down {
+  to {
+    transform: translateY(100%);
+  }
+}
+@media (max-width: 767px) {
+  /* Téléphone : un volet ancré en bas, un peu de carte visible au-dessus ; on le tire vers le bas pour le fermer. */
+  .bw-chat-window.bw-chat-sheet {
+    top: auto;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    translate: none;
+    width: 100%;
+    max-width: none;
+    height: calc(100dvh - max(28px, env(safe-area-inset-top) + 12px));
+    padding-top: 14px;
+    border: 0;
+    border-radius: 20px 20px 0 0;
+    background: #fff;
+    box-shadow: 0 -12px 40px rgb(8 24 18 / 0.2);
+    transition: transform 0.25s cubic-bezier(0.32, 0.72, 0, 1);
+  }
+  .bw-chat-sheet[data-dragging] {
+    transition: none;
+  }
+  .bw-chat-sheet[data-state="open"] {
+    animation: bw-chat-sheet-up 0.32s cubic-bezier(0.32, 0.72, 0, 1);
+  }
+  .bw-chat-sheet[data-state="closed"] {
+    animation: bw-chat-sheet-down 0.22s ease-in forwards;
+  }
+  .bw-chat-sheet__grip {
+    position: absolute;
+    top: 5px;
+    left: 50%;
+    display: block;
+    width: 40px;
+    height: 5px;
+    margin-left: -20px;
+    border-radius: 99px;
+    background: #cfd8d3;
+  }
+  /* La poignée et l'en-tête se tirent ; la conversation défile normalement. */
+  .bw-chat-sheet .bw-chat__head {
+    touch-action: none;
+  }
+  .bw-chat-sheet__actions {
+    top: 15px;
+  }
+  /* Pas de croix sur téléphone : l'icône d'invitation prend sa place, le glissé ferme. */
+  .bw-chat-sheet__close {
+    display: none;
+  }
+  .bw-chat-sheet .bw-chat__headtools {
+    right: 42px;
+  }
+  .bw-chat-sheet .bw-chat__head h2 {
+    padding-right: 44px;
+  }
+  .bw-chat-sheet .bw-chat__head[data-tools="1"] h2 {
+    padding-right: 80px;
+  }
+  .bw-chat-sheet .bw-chat__head[data-tools="2"] h2 {
+    padding-right: 116px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .bw-chat-sheet[data-state],
+  .bw-chat-sheet__overlay[data-state] {
+    animation: none;
+  }
+}

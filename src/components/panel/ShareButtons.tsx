@@ -26,7 +26,7 @@ export function whatsappUrl(text: string, url: string) {
   return `https://wa.me/?text=${encodeURIComponent(`${text}\n${url}`)}`;
 }
 
-async function copyText(text: string) {
+export async function copyText(text: string) {
   try {
     await navigator.clipboard.writeText(text);
     return true;

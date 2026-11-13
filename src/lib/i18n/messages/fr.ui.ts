@@ -2353,6 +2353,10 @@ export const ui = {
     affichageDes40PremiersDeparts:
       "Affichage des 40 premiers départs. Saisissez une date ou un nom pour chercher plus loin.",
   },
+  roomSheet: {
+    inviter: "Inviter un proche dans ce salon",
+    fermer: "Fermer le salon",
+  },
   roomInvite: {
     allerAuSalon: "Aller au salon",
     plusTard: "Plus tard",

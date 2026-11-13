@@ -25,10 +25,10 @@ import { TravellerAvatar } from "@/components/community/TravellerAvatar";
 import {
   Dialog,
   DialogClose,
-  DialogContent,
   DialogDescription,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { RoomSheet } from "./RoomSheet";
 import { useAuth } from "@/hooks/useAuth";
 import { useTravelAction } from "@/hooks/useTravelAction";
 import { supabase as typedSupabase } from "@/integrations/supabase/client";
@@ -1092,8 +1092,7 @@ export function LiveRoom({
         <MessagesSquare size={18} aria-hidden />
         {tr("ui.liveRoom.rejoindreLeSalon")}
       </button>
-      <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="bw-chat-window">
+      <RoomSheet open={open} onOpenChange={setOpen} kind={kind} room={room} title={title}>
           <LiveChat
             kind={kind}
             room={room}
@@ -1118,8 +1117,7 @@ export function LiveRoom({
             }
             staff={Boolean(feed.data?.staff)}
           />
-        </DialogContent>
-      </Dialog>
+      </RoomSheet>
     </section>
   );
 }

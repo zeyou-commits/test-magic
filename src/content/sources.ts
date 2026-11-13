@@ -3,7 +3,7 @@ export const sources: Record<string, Source> = {
   decree: {
     name: "Journal officiel algérien n° 11 du 22 février 2023, décret 23-74, pages 6–7",
     url: "https://www.joradp.dz/FTP/jo-francais/2023/F2023011.pdf",
-    note: "Texte fondateur : définition de l'âge, résidents, dossier et conformité. À confronter aux textes et instructions applicables au jour de l'opération.",
+    note: "Texte fondateur : définition de l'âge, résidents, dossier et conformité. À confronter aux textes et instructions applicables au jour de l'opération.",
   },
   customs: {
     name: "Douane algérienne — Importation de véhicules",
@@ -18,12 +18,12 @@ export const sources: Record<string, Source> = {
   boarding: {
     name: "CORSICA linea — Enregistrement et embarquement",
     url: "https://www.corsicalinea.com/informations/embarquement/",
-    note: "Consignes propres à cette compagnie ; vérifier le billet pour le départ choisi.",
+    note: "Consignes propres à cette compagnie ; vérifier le billet pour le départ choisi.",
   },
   marseille: {
     name: "CORSICA linea — Accès au port de Marseille",
     url: "https://www.corsicalinea.com/informations/embarquement/itineraire-port-marseille/",
-    note: "Accès officiels publiés par l'opérateur ; utiliser la porte figurant sur la convocation.",
+    note: "Accès officiels publiés par l'opérateur ; utiliser la porte figurant sur la convocation.",
   },
   sete: {
     name: "CORSICA linea — Accès au port de Sète",
@@ -43,12 +43,12 @@ export const sources: Record<string, Source> = {
   nicoli: {
     name: "CORSICA linea — Fiche officielle du Jean Nicoli",
     url: "https://www.corsicalinea.com/a-bord/nos-ferries/jean-nicoli/",
-    note: "Caractéristiques de la version française consultée ; capacités annoncées, sans garantie de disponibilité commerciale.",
+    note: "Caractéristiques de la version française consultée ; capacités annoncées, sans garantie de disponibilité commerciale.",
   },
   casanova: {
     name: "CORSICA linea — Fiche officielle du Danielle Casanova",
     url: "https://www.corsicalinea.com/a-bord/nos-ferries/danielle-casanova/",
-    note: "La capacité garage publiée est de 650 voitures : ne pas reprendre automatiquement les 700 voitures d'anciennes fiches.",
+    note: "La capacité garage publiée est de 650 voitures : ne pas reprendre automatiquement les 700 voitures d'anciennes fiches.",
   },
   mediterranee: {
     name: "CORSICA linea — Fiche officielle du Méditerranée",
@@ -58,7 +58,7 @@ export const sources: Record<string, Source> = {
   badji: {
     name: "OSK Design — Projet M.V. Badji Mokhtar III",
     url: "https://www.oskdesign.com/case/mv-badji-mokhatar-iii",
-    note: "Source du concepteur naval : client Algérie Ferries, projet RoPax de 2021. Ne confirme pas l'exploitation actuelle.",
+    note: "Source du concepteur naval : client Algérie Ferries, projet RoPax de 2021. Ne confirme pas l'exploitation actuelle.",
   },
   grans: {
     name: "VINCI Autoroutes — Parking de covoiturage de Grans–Salon-de-Provence",
@@ -83,6 +83,6 @@ export const sources: Record<string, Source> = {
   national: {
     name: "Point d'accès national — Base nationale des lieux de covoiturage",
     url: "https://www.data.gouv.fr/datasets/base-nationale-des-lieux-de-covoiturage",
-    note: "Référence pour enrichir et actualiser un annuaire ; les informations proviennent de contributeurs et gestionnaires multiples.",
+    note: "Référence pour enrichir et actualiser un annuaire ; les informations proviennent de contributeurs et gestionnaires multiples.",
   },
 };

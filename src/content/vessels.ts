@@ -5,7 +5,7 @@ export const vesselDossiers: VesselDossier[] = [
     name: "Jean Nicoli",
     company: "CORSICA linea",
     summary:
-      "Un navire mixte avec cabines et salons fauteuils. La fiche officielle française annonce 1 600 passagers et 600 voitures ; ces capacités ne donnent pas les places restantes sur un départ.",
+      "Un navire mixte avec cabines et salons fauteuils. La fiche officielle française annonce 1 600 passagers et 600 voitures ; ces capacités ne donnent pas les places restantes sur un départ.",
     specs: [
       { label: "Mise en service", value: "1998" },
       { label: "Longueur", value: "200,65 m" },
@@ -19,7 +19,7 @@ export const vesselDossiers: VesselDossier[] = [
         id: "confort",
         title: "Cabines, fauteuils et vie à bord",
         paragraphs: [
-          "La compagnie présente des cabines de plusieurs catégories, des salons fauteuils, des espaces de restauration, un espace enfants et un accès Wi-Fi par forfait. Vérifiez ce que votre réservation inclut : un service disponible à bord peut rester payant.",
+          "La compagnie présente des cabines de plusieurs catégories, des salons fauteuils, des espaces de restauration, un espace enfants et un accès Wi-Fi par forfait. Vérifiez ce que votre réservation inclut : un service disponible à bord peut rester payant.",
           "Pour choisir, commencez par le nombre de couchages, les sanitaires et les besoins du groupe. La capacité générale du navire ne permet pas de déduire la disponibilité d'une cabine familiale ou adaptée.",
         ],
       },

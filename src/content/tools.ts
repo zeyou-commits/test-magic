@@ -17,7 +17,7 @@ export const toolsCatalog = [
     slug: "budget-voyage",
     title: "Comparer deux budgets de voyage",
     description:
-      "Comparer deux solutions porte à porte : billet pour le groupe, route, péages, hébergement et autres dépenses.",
+      "Comparer deux solutions porte à porte : billet pour le groupe, route, péages, hébergement et autres dépenses.",
     guide: "prix-billet-ferry-algerie",
   },
   {

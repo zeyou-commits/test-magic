@@ -28,6 +28,7 @@ import {
 } from "lucide-react";
 import { goHome } from "@/lib/ferry/voyageTrip";
 import { useT, type MessageKey } from "@/lib/i18n";
+import { usePrepareUnfinished } from "@/lib/ferry/usePrepareUnfinished";
 
 /**
  * Le menu du site, partagé par l'en-tête de l'ordinateur, le volet ☰ et la barre du bas du
@@ -56,6 +57,23 @@ export type MenuFamily = {
   sheetOnly?: boolean;
 };
 
+/** Le point « ! » de « Préparer » tant que la préparation n'est pas terminée. */
+export function PrepareBadge({ className = "" }: { className?: string }) {
+  const t = useT();
+  const unfinished = usePrepareUnfinished();
+  if (!unfinished) return null;
+  return (
+    <span
+      className={`bw-prep-badge ${className}`}
+      role="img"
+      aria-label={t("menu.prepareUnfinished")}
+      title={t("menu.prepareUnfinished")}
+    >
+      !
+    </span>
+  );
+}
+
 export const menuFamilies: MenuFamily[] = [
   {
     id: "prepare",
@@ -74,14 +92,26 @@ export const menuFamilies: MenuFamily[] = [
         titleKey: "menu.colPapers",
         items: [
           { to: "/papiers-voyage-algerie", labelKey: "menu.papersList", icon: FileText },
-          { to: "/guide/arrivee-algerie-port-formalites", labelKey: "menu.arrivalFormalities", icon: ShieldCheck },
+          {
+            to: "/guide/arrivee-algerie-port-formalites",
+            labelKey: "menu.arrivalFormalities",
+            icon: ShieldCheck,
+          },
         ],
       },
       {
         titleKey: "menu.colCar",
         items: [
-          { to: "/guide/voyage-algerie-voiture-checklist", labelKey: "menu.carPapers", icon: FileCheck },
-          { to: "/guide/voiture-vacances-admission-temporaire", labelKey: "menu.temporaryAdmission", icon: Car },
+          {
+            to: "/guide/voyage-algerie-voiture-checklist",
+            labelKey: "menu.carPapers",
+            icon: FileCheck,
+          },
+          {
+            to: "/guide/voiture-vacances-admission-temporaire",
+            labelKey: "menu.temporaryAdmission",
+            icon: Car,
+          },
           { to: "/vehicules-moins-3-ans", labelKey: "menu.importCar", icon: Landmark },
         ],
       },
@@ -150,7 +180,8 @@ export const menuFamilies: MenuFamily[] = [
   },
 ];
 
-export const familyById = (id: MenuFamily["id"]) => menuFamilies.find((family) => family.id === id)!;
+export const familyById = (id: MenuFamily["id"]) =>
+  menuFamilies.find((family) => family.id === id)!;
 
 /** Tous les liens d'une famille, colonnes puis ligne du bas. */
 export const familyItems = (family: MenuFamily) => [
@@ -210,6 +241,7 @@ export const MenuItemLink = forwardRef<
       className={`bw-menu-link${item.featured ? " bw-menu-link--featured" : ""}${className ? ` ${className}` : ""}`}
     >
       <item.icon size={iconSize} aria-hidden />
+      {item.to === "/preparer-mon-voyage" ? <PrepareBadge /> : null}
       {hint ? (
         <span className="bw-menu-link__text">
           {t(item.labelKey)}

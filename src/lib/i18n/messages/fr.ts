@@ -51,6 +51,7 @@ export const fr = {
     colBudget: "Mon budget",
     papersList: "Visa, passeports, enfants",
     companion: "Tout préparer pas à pas",
+    prepareUnfinished: "Préparation à terminer",
     companionHint: "Papiers, voiture, route, budget, réservation : une seule page qui vous guide",
     arrivalFormalities: "Formalités à l'arrivée",
     carPapers: "Papiers de la voiture",

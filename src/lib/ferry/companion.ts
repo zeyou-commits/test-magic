@@ -90,6 +90,9 @@ export function loadPlan(): CompanionPlan | null {
   }
 }
 
+/** Signalé à chaque enregistrement : le repère « à terminer » du menu se met à jour. */
+export const PLAN_CHANGE_EVENT = "bledway:compagnon-change";
+
 export function savePlan(plan: CompanionPlan) {
   if (typeof window === "undefined") return;
   try {
@@ -97,6 +100,13 @@ export function savePlan(plan: CompanionPlan) {
   } catch {
     /* sans stockage, le plan reste celui de l'écran */
   }
+  window.dispatchEvent?.(new Event(PLAN_CHANGE_EVENT));
+}
+
+/** La préparation n'est pas finie : pas commencée, ou une étape reste à faire. */
+export function planUnfinished(plan: CompanionPlan | null) {
+  if (!plan?.started) return true;
+  return companionSteps(plan).some((step) => !plan.done.includes(step));
 }
 
 /** Les étapes du voyage : sans voiture, pas d'étape voiture. */

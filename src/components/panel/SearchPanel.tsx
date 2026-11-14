@@ -1,4 +1,3 @@
-import { PrepareNudge } from "./PrepareNudge";
 import { vesselCompanyIds } from "@/lib/ferry/filterSync";
 import { track } from "@/lib/usage";
 import { HomeTraffic } from "./HomeTraffic";
@@ -51,7 +50,9 @@ import {
   legSailings,
   recommendedId,
   type Sailing,
-  type TravelerType, RECOMMENDED_RULE } from "@/lib/ferry/trips";
+  type TravelerType,
+  RECOMMENDED_RULE,
+} from "@/lib/ferry/trips";
 import { diffDays } from "@/lib/ferry/schoolCalendar";
 import { TripCalendar, type CalendarField } from "./TripCalendar";
 import { dateKeyInZone } from "@/lib/ferry/time";
@@ -75,7 +76,11 @@ import {
   summarizeVehicle,
   type TripProfileValue,
 } from "./TripProfile";
-import { readTravelProfile, saveTravelProfile, TRAVEL_PROFILE_EVENT } from "@/lib/ferry/travelProfile";
+import {
+  readTravelProfile,
+  saveTravelProfile,
+  TRAVEL_PROFILE_EVENT,
+} from "@/lib/ferry/travelProfile";
 import { tr } from "@/lib/i18n";
 
 const ANY = "__any__";
@@ -150,7 +155,8 @@ export function SearchPanel({
       return;
     }
     // Seul un profil réellement modifié est gardé : le défaut n'est jamais pris pour un choix.
-    if (!readTravelProfile() && JSON.stringify(profile) === JSON.stringify(defaultTripProfile)) return;
+    if (!readTravelProfile() && JSON.stringify(profile) === JSON.stringify(defaultTripProfile))
+      return;
     saveTravelProfile(profile);
   }, [profile]);
   // Formulaire guidé ouvert tant qu'aucune recherche n'est lancée, capsule ensuite.
@@ -337,8 +343,7 @@ export function SearchPanel({
       if (route) ids.add(route.departure_port_id).add(route.arrival_port_id);
     });
     return ids;
-  }, [departures, routes],
-  );
+  }, [departures, routes]);
   const outbound = useMemo(
     () =>
       legSailings(
@@ -475,7 +480,8 @@ export function SearchPanel({
           <div className="bw-search-welcome">
             <div className="flex items-center justify-between gap-2">
               <h2>
-                {tr("ui.searchPanel.onPrend")}<strong className="bw-brand-red">{tr("ui.searchPanel.laRouteDuBled")}</strong> ?
+                {tr("ui.searchPanel.onPrend")}
+                <strong className="bw-brand-red">{tr("ui.searchPanel.laRouteDuBled")}</strong> ?
               </h2>
               <button
                 type="button"
@@ -488,8 +494,6 @@ export function SearchPanel({
               </button>
             </div>
             <p className="bw-search-welcome__sub">{tr("ui.searchPanel.reservezPreparezSuivez")}</p>
-            {/* Où en est la préparation (papiers compris) : commencer, reprendre, ou prêt. */}
-            <PrepareNudge />
           </div>
         ) : null}
         {/* RECHERCHE : capsule condensée façon Airbnb, formulaire guidé à la demande */}
@@ -540,7 +544,10 @@ export function SearchPanel({
           </section>
         ) : null}
         {!editing && (filters.companyId || filters.vesselId) ? (
-          <div className="flex flex-wrap gap-1 border-b px-4 py-2" aria-label={tr("ui.searchPanel.filtresActifs")}>
+          <div
+            className="flex flex-wrap gap-1 border-b px-4 py-2"
+            aria-label={tr("ui.searchPanel.filtresActifs")}
+          >
             {filters.companyId && (
               <button
                 type="button"
@@ -548,7 +555,9 @@ export function SearchPanel({
                 aria-label={tr("ui.searchPanel.retirerLeFiltreCompagnie")}
                 onClick={() => set({ companyId: null, vesselId: null })}
               >
-                {companies.find((c) => c.id === filters.companyId)?.name ?? tr("ui.searchPanel.compagnie")} ×
+                {companies.find((c) => c.id === filters.companyId)?.name ??
+                  tr("ui.searchPanel.compagnie")}{" "}
+                ×
               </button>
             )}
             {filters.vesselId && (
@@ -558,7 +567,9 @@ export function SearchPanel({
                 aria-label={tr("ui.searchPanel.retirerLeFiltreNavire")}
                 onClick={() => set({ vesselId: null })}
               >
-                {vessels.find((v) => v.id === filters.vesselId)?.name ?? tr("ui.searchPanel.navire")} ×
+                {vessels.find((v) => v.id === filters.vesselId)?.name ??
+                  tr("ui.searchPanel.navire")}{" "}
+                ×
               </button>
             )}
           </div>
@@ -568,14 +579,14 @@ export function SearchPanel({
           className={`scroll-mt-0 space-y-3 border-b bg-card px-4 pb-4 pt-4 md:bg-white md:px-5 ${editing ? "" : "hidden"}`}
         >
           <div className="flex items-center justify-between gap-2">
-            <span className="text-sm font-bold text-foreground">{tr("ui.searchPanel.trouverMaTraversee")}</span>
+            <span className="text-sm font-bold text-foreground">
+              {tr("ui.searchPanel.trouverMaTraversee")}
+            </span>
             <div className="flex items-center gap-1.5">
               {active ? (
                 <button
                   type="button"
-                  onClick={() =>
-                    onFiltersChange({ ...emptyFilters, roundTrip: filters.roundTrip })
-                  }
+                  onClick={() => onFiltersChange({ ...emptyFilters, roundTrip: filters.roundTrip })}
                   className="inline-flex h-9 items-center gap-1.5 rounded-full border border-border bg-card px-3 text-xs font-semibold text-muted-foreground hover:bg-secondary hover:text-foreground"
                 >
                   <RotateCcw className="size-3.5" aria-hidden />
@@ -695,7 +706,9 @@ export function SearchPanel({
                                   className={`flex min-h-12 flex-col items-start justify-center rounded-xl border px-3 py-1.5 text-left transition disabled:opacity-50 ${on ? "border-primary bg-primary/5 ring-2 ring-primary/30" : "border-border bg-card hover:border-primary/60"}`}
                                 >
                                   <span className="text-[11px] font-bold uppercase tracking-wider text-primary">
-                                    {leg === "out" ? tr("ui.searchPanel.aller") : tr("ui.searchPanel.retour")}
+                                    {leg === "out"
+                                      ? tr("ui.searchPanel.aller")
+                                      : tr("ui.searchPanel.retour")}
                                   </span>
                                   <span className="text-sm font-semibold">
                                     {value ? shortDay(value) : tr("ui.searchPanel.choisirUneDate")}
@@ -847,10 +860,12 @@ export function SearchPanel({
                 >
                   <Ship className="size-4" aria-hidden />
                   <span className="md:hidden">
-                    {tr("ui.searchPanel.voir")}{active && resultCount ? ` (${resultCount})` : ""}
+                    {tr("ui.searchPanel.voir")}
+                    {active && resultCount ? ` (${resultCount})` : ""}
                   </span>
                   <span className="max-md:hidden">
-                    {tr("ui.searchPanel.trouverMaTraversee")}{active && resultCount ? ` (${resultCount})` : ""}
+                    {tr("ui.searchPanel.trouverMaTraversee")}
+                    {active && resultCount ? ` (${resultCount})` : ""}
                   </span>
                 </button>
               )}
@@ -913,63 +928,69 @@ export function SearchPanel({
                 />
               ) : (
                 <>
-                {salesClosed && filters.date ? (
-                  <div className="mb-3">
-                    <SalesAlertForm
-                      periodLabel={salesClosed}
-                      periodStart={filters.date}
-                      periodEnd={filters.returnDate ?? filters.date}
-                      fromLabel={filters.departurePortIds.length ? fromName(filters.departurePortIds) : null}
-                      toLabel={filters.arrivalPortIds.length ? fromName(filters.arrivalPortIds) : null}
-                    />
-                  </div>
-                ) : null}
-                <ResultBlock
-                  liveByDeparture={liveByDeparture}
-                  title={
-                    hasPair
-                      ? `Aller · ${fromName(filters.departurePortIds)} → ${fromName(filters.arrivalPortIds)}`
-                      : filters.departurePortIds.length || filters.arrivalPortIds.length
-                        ? tr("ui.searchPanel.traversees")
-                        : tr("ui.searchPanel.prochainsDeparts")
-                  }
-                  subtitle={
-                    filters.roundTrip
-                      ? tr("ui.searchPanel.allersAjoutezUneDateDe")
-                      : tr("ui.searchPanel.allerSimpleHeuresLocales")
-                  }
-                  days={outDays}
-                  date={filters.date}
-                  onDate={(day) =>
-                    set({
-                      date: day,
-                      returnDate:
-                        day && filters.returnDate && filters.returnDate < day
-                          ? null
-                          : filters.returnDate,
-                    })
-                  }
-                  list={outShown}
-                  total={outList.length}
-                  recommended={outRecommended}
-                  multiDay={filters.flexDays > 0}
-                  openId={openCard?.id ?? null}
-                  onToggle={toggleCard}
-                  onHoverRoute={setHoverRouteId}
-                  onOpenVessel={(id) => onSelect({ type: "vessel", id })}
-                  onOpenRoute={(id) => onSelect({ type: "route", id })}
-                  onMore={() => setShowAllOut(true)}
-                  expanded={showAllOut || Boolean(filters.date)}
-                  emptyText="Aucun départ publié pour cette recherche. Un horaire peut manquer."
-                  reportTarget={reportTarget}
-                  reportContext={reportContext}
-                  onReportMissing={startSearch}
-                  onReset={
-                    active
-                      ? () => onFiltersChange({ ...emptyFilters, roundTrip: filters.roundTrip })
-                      : undefined
-                  }
-                />
+                  {salesClosed && filters.date ? (
+                    <div className="mb-3">
+                      <SalesAlertForm
+                        periodLabel={salesClosed}
+                        periodStart={filters.date}
+                        periodEnd={filters.returnDate ?? filters.date}
+                        fromLabel={
+                          filters.departurePortIds.length
+                            ? fromName(filters.departurePortIds)
+                            : null
+                        }
+                        toLabel={
+                          filters.arrivalPortIds.length ? fromName(filters.arrivalPortIds) : null
+                        }
+                      />
+                    </div>
+                  ) : null}
+                  <ResultBlock
+                    liveByDeparture={liveByDeparture}
+                    title={
+                      hasPair
+                        ? `Aller · ${fromName(filters.departurePortIds)} → ${fromName(filters.arrivalPortIds)}`
+                        : filters.departurePortIds.length || filters.arrivalPortIds.length
+                          ? tr("ui.searchPanel.traversees")
+                          : tr("ui.searchPanel.prochainsDeparts")
+                    }
+                    subtitle={
+                      filters.roundTrip
+                        ? tr("ui.searchPanel.allersAjoutezUneDateDe")
+                        : tr("ui.searchPanel.allerSimpleHeuresLocales")
+                    }
+                    days={outDays}
+                    date={filters.date}
+                    onDate={(day) =>
+                      set({
+                        date: day,
+                        returnDate:
+                          day && filters.returnDate && filters.returnDate < day
+                            ? null
+                            : filters.returnDate,
+                      })
+                    }
+                    list={outShown}
+                    total={outList.length}
+                    recommended={outRecommended}
+                    multiDay={filters.flexDays > 0}
+                    openId={openCard?.id ?? null}
+                    onToggle={toggleCard}
+                    onHoverRoute={setHoverRouteId}
+                    onOpenVessel={(id) => onSelect({ type: "vessel", id })}
+                    onOpenRoute={(id) => onSelect({ type: "route", id })}
+                    onMore={() => setShowAllOut(true)}
+                    expanded={showAllOut || Boolean(filters.date)}
+                    emptyText="Aucun départ publié pour cette recherche. Un horaire peut manquer."
+                    reportTarget={reportTarget}
+                    reportContext={reportContext}
+                    onReportMissing={startSearch}
+                    onReset={
+                      active
+                        ? () => onFiltersChange({ ...emptyFilters, roundTrip: filters.roundTrip })
+                        : undefined
+                    }
+                  />
                 </>
               )}
             </>
@@ -1103,7 +1124,8 @@ function ResultBlock({
               onClick={onReset}
               className="mx-auto mt-3 flex items-center gap-1.5 rounded-full border bg-card px-3 py-1.5 text-xs font-semibold text-foreground hover:bg-secondary"
             >
-              <X className="size-3.5" />{tr("ui.searchPanel.elargirLaRecherche")}
+              <X className="size-3.5" />
+              {tr("ui.searchPanel.elargirLaRecherche")}
             </button>
           ) : null}
         </div>
@@ -1133,7 +1155,9 @@ function ResultBlock({
               onClick={onMore}
               className="w-full rounded-2xl border border-dashed py-3 text-sm font-semibold text-primary transition hover:bg-primary/5"
             >
-              {tr("ui.searchPanel.voirLes")}{total - list.length}{tr("ui.searchPanel.autresDeparts")}
+              {tr("ui.searchPanel.voirLes")}
+              {total - list.length}
+              {tr("ui.searchPanel.autresDeparts")}
             </button>
           ) : null}
         </div>
@@ -1217,7 +1241,8 @@ function FilterSelect({
       </SelectTrigger>
       <SelectContent>
         <SelectItem value={ANY} textValue={label}>
-          {label}{tr("ui.searchPanel.toutes")}
+          {label}
+          {tr("ui.searchPanel.toutes")}
         </SelectItem>
         {options.map((option) => (
           <SelectItem key={option.value} value={option.value} textValue={option.label}>
@@ -1285,7 +1310,9 @@ function RoundTripSection({
           <h2 className="font-display text-base font-bold leading-tight">
             {tr("ui.searchPanel.allerRetourParLeMeme")}
           </h2>
-          <span className="text-[11px] text-muted-foreground">{tr("ui.searchPanel.heuresLocalesDesPorts")}</span>
+          <span className="text-[11px] text-muted-foreground">
+            {tr("ui.searchPanel.heuresLocalesDesPorts")}
+          </span>
         </div>
         {samePort.length ? (
           list(sorted(samePort))
@@ -1309,7 +1336,8 @@ function RoundTripSection({
       {otherPorts.length ? (
         <details className="rounded-2xl border border-dashed p-3">
           <summary className="cursor-pointer font-display text-sm font-bold">
-            {tr("ui.searchPanel.retourParUnAutrePort")}{otherPorts.length})
+            {tr("ui.searchPanel.retourParUnAutrePort")}
+            {otherPorts.length})
           </summary>
           <div className="mt-2.5">{list(sorted(otherPorts))}</div>
         </details>

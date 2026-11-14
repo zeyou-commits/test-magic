@@ -11,7 +11,7 @@ import { OPEN_ROOM_PICKER_EVENT } from "@/lib/ferry/chatDemo";
 import { goHome, useVoyageTrip } from "@/lib/ferry/voyageTrip";
 import { useT } from "@/lib/i18n";
 import { MainMenuSheet } from "./MainMenu";
-import { familyById, familyIsActive, openSearchFromHeader } from "./menu";
+import { familyById, familyIsActive, openSearchFromHeader, PrepareBadge } from "./menu";
 
 const itemClass =
   "flex h-full min-w-0 flex-1 flex-col items-center justify-center gap-1 whitespace-nowrap text-[11px] font-medium text-muted-foreground transition-colors hover:text-foreground data-[active=true]:text-primary [&.active]:text-primary";
@@ -78,7 +78,10 @@ export function MobileTabBar({
         className={itemClass}
         data-active={familyIsActive(prepare, pathname) || activeTab === "itinerary"}
       >
-        <ClipboardList className="size-5" aria-hidden />
+        <span className="relative">
+          <ClipboardList className="size-5" aria-hidden />
+          <PrepareBadge className="bw-prep-badge--corner" />
+        </span>
         <span>{t("menu.tabPrepare")}</span>
       </Link>
 

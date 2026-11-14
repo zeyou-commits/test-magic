@@ -12,6 +12,7 @@ import {
   familyIsActive,
   familyItems,
   menuFamilies,
+  PrepareBadge,
   MenuItemLink,
   openSearchFromHeader,
   type MenuFamily,
@@ -146,7 +147,9 @@ export function SiteHeader() {
         className="bw-explore-trigger"
         data-active={familyIsActive(family, pathname) || undefined}
       >
-        {t(family.titleKey)} <ChevronDown size={15} aria-hidden />
+        {t(family.titleKey)}
+        {family.id === "prepare" ? <PrepareBadge /> : null}
+        <ChevronDown size={15} aria-hidden />
       </DropdownMenuTrigger>
       <DropdownMenuContent
         align="start"

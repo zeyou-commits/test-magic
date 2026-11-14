@@ -14,6 +14,7 @@ import {
   type PersonaId,
 } from "@/lib/community/travellers";
 import { LibraryPicker } from "./LibraryPicker";
+import { EditableAvatar, focusAvatarPicker } from "./EditableAvatar";
 import { MoodPicker } from "./MoodPicker";
 import { TravellerAvatar } from "./TravellerAvatar";
 import { tr } from "@/lib/i18n";
@@ -49,7 +50,8 @@ export function MyTravellerEditor() {
   if (me.isPending)
     return (
       <p className="bw-traveller-editor__loading" role="status">
-        <LoaderCircle className="size-4 animate-spin" aria-hidden />{tr("ui.myTravellerEditor.chargement")}
+        <LoaderCircle className="size-4 animate-spin" aria-hidden />
+        {tr("ui.myTravellerEditor.chargement")}
       </p>
     );
   if (!me.data)
@@ -62,23 +64,28 @@ export function MyTravellerEditor() {
   return (
     <div className="bw-traveller-editor">
       <div className="bw-traveller-editor__preview">
-        <TravellerAvatar card={preview} size={76} moodLabel static />
+        <EditableAvatar onEdit={focusAvatarPicker}>
+          <TravellerAvatar card={preview} size={76} moodLabel static />
+        </EditableAvatar>
         <div>
           <strong>{preview.pseudo}</strong>
           <p>{tr("ui.myTravellerEditor.cEstAinsiQueLes")}</p>
           <div className="bw-traveller-editor__links">
             <button type="button" onClick={() => setMoodOpen(true)}>
               <Smile size={14} aria-hidden />{" "}
-              {me.data.mood ? tr("ui.myTravellerEditor.changerDHumeur") : tr("ui.myTravellerEditor.choisirUneHumeur")}
+              {me.data.mood
+                ? tr("ui.myTravellerEditor.changerDHumeur")
+                : tr("ui.myTravellerEditor.choisirUneHumeur")}
             </button>
             <button type="button" onClick={() => openTravellerProfile(me.data!.handle)}>
-              <Eye size={14} aria-hidden />{tr("ui.myTravellerEditor.voirMonProfilPublic")}
+              <Eye size={14} aria-hidden />
+              {tr("ui.myTravellerEditor.voirMonProfilPublic")}
             </button>
           </div>
         </div>
       </div>
 
-      <fieldset>
+      <fieldset id="mon-avatar" className="scroll-mt-20">
         <legend>{tr("ui.myTravellerEditor.votreAvatar")}</legend>
         {/* Toute la bibliothèque : personnages, humeurs, réactions, pictos, ajouts de l'équipe. */}
         <LibraryPicker
@@ -92,7 +99,11 @@ export function MyTravellerEditor() {
 
       <fieldset>
         <legend>{tr("ui.myTravellerEditor.saCouleur")}</legend>
-        <div className="bw-color-row" role="radiogroup" aria-label={tr("ui.myTravellerEditor.couleurDuFond")}>
+        <div
+          className="bw-color-row"
+          role="radiogroup"
+          aria-label={tr("ui.myTravellerEditor.couleurDuFond")}
+        >
           {(Object.keys(avatarColors) as AvatarColor[]).map((key) => (
             <button
               key={key}

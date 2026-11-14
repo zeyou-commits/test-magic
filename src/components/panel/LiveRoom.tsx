@@ -18,17 +18,13 @@ import {
   Smile,
   ThumbsUp,
   UserPlus,
+  UserRound,
   Users,
   X,
 } from "lucide-react";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { TravellerAvatar } from "@/components/community/TravellerAvatar";
-import {
-  Dialog,
-  DialogClose,
-  DialogDescription,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { Dialog, DialogClose, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import { RoomSheet } from "./RoomSheet";
 import {
   PENDING_INVITE_EVENT,
@@ -38,7 +34,11 @@ import {
 import { useAuth } from "@/hooks/useAuth";
 import { useTravelAction } from "@/hooks/useTravelAction";
 import { supabase as typedSupabase } from "@/integrations/supabase/client";
-import { myTravellerQuery, type TravellerCard } from "@/lib/community/travellers";
+import {
+  myTravellerQuery,
+  openTravellerProfile,
+  type TravellerCard,
+} from "@/lib/community/travellers";
 import { afterOverlayClose, useBackClose } from "@/lib/ferry/backStack";
 import { useMyTrip } from "@/lib/ferry/myTrip";
 import { OPEN_MY_ROOM_EVENT, OPEN_ROOM_PICKER_EVENT } from "@/lib/ferry/chatDemo";
@@ -220,7 +220,8 @@ export function RoomButton({ departureId, onOpen }: { departureId: string; onOpe
         enterRoom("crossing", departureId);
       }}
     >
-      <MessagesSquare size={15} aria-hidden />{tr("ui.liveRoom.salon")}
+      <MessagesSquare size={15} aria-hidden />
+      {tr("ui.liveRoom.salon")}
       {count ? ` · ${count === 80 ? "80+" : count} message${count > 1 ? "s" : ""}` : ""}
     </button>
   );
@@ -303,7 +304,10 @@ function LiveChat({
   // Une image de la bibliothèque s'écrit :code: dans le message.
   const addEmote = (code: string) =>
     setText((value) =>
-      `${value}${value && !value.endsWith(" ") ? " " : ""}${emoteToken(code)} `.slice(0, MAX_MESSAGE),
+      `${value}${value && !value.endsWith(" ") ? " " : ""}${emoteToken(code)} `.slice(
+        0,
+        MAX_MESSAGE,
+      ),
     );
   const met = useQuery(metQuery(kind === "crossing" ? room : "", user?.id)).data;
   const metHere = new Set(met?.here ?? []);
@@ -406,7 +410,8 @@ function LiveChat({
     mutationFn: async (id: string) => {
       const { data, error } = await supabase.rpc("bw_chat_report", { p_message: id });
       const result = data as { ok?: boolean; refused?: string } | null;
-      if (error || !result?.ok) throw new Error("Signalement non envoyé. Réessayez dans un instant.");
+      if (error || !result?.ok)
+        throw new Error("Signalement non envoyé. Réessayez dans un instant.");
       return id;
     },
     onSuccess: (id) => {
@@ -457,15 +462,15 @@ function LiveChat({
       invitedHere && inviteInfo?.open
         ? { type: "chat", label: title, invite: invitedHere.token }
         : kind === "crossing"
-        ? {
-            type: "follow",
-            kind: "departure",
-            targetId: room,
-            label: title,
-            traveller: true,
-            purpose: "voyageur",
-          }
-        : { type: "chat", label: title },
+          ? {
+              type: "follow",
+              kind: "departure",
+              targetId: room,
+              label: title,
+              traveller: true,
+              purpose: "voyageur",
+            }
+          : { type: "chat", label: title },
     );
   };
   const mute = useMutation({
@@ -550,7 +555,9 @@ function LiveChat({
             <button
               type="button"
               className="bw-chat__mail"
-              aria-label={dmUnread ? `Messages privés, ${dmUnread} non lus` : tr("ui.liveRoom.messagesPrives")}
+              aria-label={
+                dmUnread ? `Messages privés, ${dmUnread} non lus` : tr("ui.liveRoom.messagesPrives")
+              }
               onClick={() => setDmView("inbox")}
             >
               <Mail size={18} aria-hidden />
@@ -564,10 +571,14 @@ function LiveChat({
               aria-pressed={muted}
               disabled={mute.isPending}
               title={
-                muted ? tr("ui.liveRoom.reactiverLesNotificationsDeCe") : tr("ui.liveRoom.mettreCeSalonEnSourdine")
+                muted
+                  ? tr("ui.liveRoom.reactiverLesNotificationsDeCe")
+                  : tr("ui.liveRoom.mettreCeSalonEnSourdine")
               }
               aria-label={
-                muted ? tr("ui.liveRoom.reactiverLesNotificationsDeCe") : tr("ui.liveRoom.mettreCeSalonEnSourdine")
+                muted
+                  ? tr("ui.liveRoom.reactiverLesNotificationsDeCe")
+                  : tr("ui.liveRoom.mettreCeSalonEnSourdine")
               }
               onClick={() => mute.mutate()}
             >
@@ -578,7 +589,8 @@ function LiveChat({
         <DialogTitle>{title}</DialogTitle>
         <div className="bw-chat__headrow">
           <span className="bw-chat__live">
-            <i aria-hidden />{tr("ui.liveRoom.enDirect")}
+            <i aria-hidden />
+            {tr("ui.liveRoom.enDirect")}
           </span>
           <DialogDescription asChild>
             <button
@@ -587,7 +599,8 @@ function LiveChat({
               aria-expanded={showPeople}
               onClick={() => setShowPeople((value) => !value)}
             >
-              <Users size={13} aria-hidden /> {online ? `${online} en ligne` : tr("ui.liveRoom.vousEtesIci")}
+              <Users size={13} aria-hidden />{" "}
+              {online ? `${online} en ligne` : tr("ui.liveRoom.vousEtesIci")}
             </button>
           </DialogDescription>
           {kind === "crossing" ? (
@@ -598,7 +611,8 @@ function LiveChat({
                 title={tr("ui.liveRoom.uneAutreDateChoisirUn")}
                 onClick={() => leaveFor(OPEN_ROOM_PICKER_EVENT)}
               >
-                <MessagesSquare size={13} aria-hidden />{tr("ui.liveRoom.autresSalons")}
+                <MessagesSquare size={13} aria-hidden />
+                {tr("ui.liveRoom.autresSalons")}
               </button>
             </DialogClose>
           ) : null}
@@ -631,13 +645,20 @@ function LiveChat({
           ) : null}
           {met?.total ? (
             <p>
-              {tr("ui.liveRoom.vousAvezDejaCroise")}{met.total}{tr("ui.liveRoom.voyageur")}{met.total > 1 ? "s" : ""}{tr("ui.liveRoom.surBledway")}
+              {tr("ui.liveRoom.vousAvezDejaCroise")}
+              {met.total}
+              {tr("ui.liveRoom.voyageur")}
+              {met.total > 1 ? "s" : ""}
+              {tr("ui.liveRoom.surBledway")}
               {metHere.size ? `, dont ${metHere.size} sur cette traversée` : ""}.
             </p>
           ) : null}
           {online > named.length ? (
             <p>
-              {online - named.length}{tr("ui.liveRoom.visiteur")}{online - named.length > 1 ? "s" : ""}{tr("ui.liveRoom.sansCompte")}
+              {online - named.length}
+              {tr("ui.liveRoom.visiteur")}
+              {online - named.length > 1 ? "s" : ""}
+              {tr("ui.liveRoom.sansCompte")}
             </p>
           ) : null}
         </div>
@@ -661,8 +682,10 @@ function LiveChat({
           <AuthorAvatar author={BLEDWAY} size={22} />
           <div>
             <p>
-              <b className="bw-chat__welcome-who">{tr("ui.liveRoom.bledway")}</b> <StaffBadge author={BLEDWAY} />{" "}
-              {tr("ui.liveRoom.salam")}{myPseudo ? ` ${myPseudo}` : ""}{tr("ui.liveRoom.bienvenueOnSEntraideEntre")}{" "}
+              <b className="bw-chat__welcome-who">{tr("ui.liveRoom.bledway")}</b>{" "}
+              <StaffBadge author={BLEDWAY} /> {tr("ui.liveRoom.salam")}
+              {myPseudo ? ` ${myPseudo}` : ""}
+              {tr("ui.liveRoom.bienvenueOnSEntraideEntre")}{" "}
               {kind === "port"
                 ? tr("ui.liveRoom.laFileLeParkingL")
                 : tr("ui.liveRoom.laFileAuPortL")}
@@ -708,7 +731,20 @@ function LiveChat({
                 aria-expanded={selected === message.id}
                 onClick={() => setSelected(selected === message.id ? null : message.id)}
               >
-                <b>{message.me && !message.author.official ? tr("ui.liveRoom.vous") : message.author.pseudo}</b>
+                {/* Comme sur les réseaux sociaux : le pseudo ouvre le profil (le reste de la ligne, les actions). */}
+                {message.author.official ? (
+                  <b>{message.author.pseudo}</b>
+                ) : (
+                  <b
+                    className="bw-chat__who"
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      openTravellerProfile(message.author.handle);
+                    }}
+                  >
+                    {message.me ? tr("ui.liveRoom.vous") : message.author.pseudo}
+                  </b>
+                )}
                 <StaffBadge author={message.author} />
                 {/* Le badge de l'équipe dit déjà d'où vient le message. */}
                 {message.place === "staff" && !message.crossing ? null : (
@@ -719,7 +755,10 @@ function LiveChat({
                 <span data-big={onlyEmotes(message.body) || undefined}>
                   <ChatText body={message.body} mentions={message.mentions} myHandle={myHandle} />
                 </span>
-                <PhotoStrip photos={messagePhotos?.get(message.id)} label={tr("ui.liveRoom.photoDuMessage")} />
+                <PhotoStrip
+                  photos={messagePhotos?.get(message.id)}
+                  label={tr("ui.liveRoom.photoDuMessage")}
+                />
                 {metHere.has(message.author.handle) && !message.me ? (
                   <small className="bw-chat__met">{tr("ui.liveRoom.dejaCroise")}</small>
                 ) : null}
@@ -744,7 +783,8 @@ function LiveChat({
                         inputRef.current?.focus();
                       }}
                     >
-                      <Reply size={13} aria-hidden />{tr("ui.liveRoom.repondre")}
+                      <Reply size={13} aria-hidden />
+                      {tr("ui.liveRoom.repondre")}
                     </button>
                   )}
                   <button
@@ -753,8 +793,18 @@ function LiveChat({
                     disabled={react.isPending}
                     onClick={() => react.mutate(message.id)}
                   >
-                    <ThumbsUp size={13} aria-hidden />{tr("ui.liveRoom.pareilIci")}
+                    <ThumbsUp size={13} aria-hidden />
+                    {tr("ui.liveRoom.pareilIci")}
                   </button>
+                  {!message.author.official ? (
+                    <button
+                      type="button"
+                      onClick={() => openTravellerProfile(message.author.handle)}
+                    >
+                      <UserRound size={13} aria-hidden />
+                      {message.me ? "Mon profil" : "Voir le profil"}
+                    </button>
+                  ) : null}
                   {canWrite && !closed && !message.me && !message.author.official ? (
                     <button
                       type="button"
@@ -763,17 +813,23 @@ function LiveChat({
                         setSelected(null);
                       }}
                     >
-                      <AtSign size={13} aria-hidden />{tr("ui.liveRoom.mentionner")}
+                      <AtSign size={13} aria-hidden />
+                      {tr("ui.liveRoom.mentionner")}
                     </button>
                   ) : null}
                   {canDm && !message.me && !message.author.official ? (
                     <button type="button" onClick={() => setDmTo(message.author)}>
-                      <Mail size={13} aria-hidden />{tr("ui.liveRoom.messagePrive")}
+                      <Mail size={13} aria-hidden />
+                      {tr("ui.liveRoom.messagePrive")}
                     </button>
                   ) : null}
                   {user && !message.me ? (
                     confirmReport === message.id ? (
-                      <span className="bw-chat__confirm" role="group" aria-label={tr("ui.liveRoom.confirmerLeSignalement")}>
+                      <span
+                        className="bw-chat__confirm"
+                        role="group"
+                        aria-label={tr("ui.liveRoom.confirmerLeSignalement")}
+                      >
                         {tr("ui.liveRoom.signalerCeMessageAL")}
                         <button
                           type="button"
@@ -781,7 +837,9 @@ function LiveChat({
                           disabled={report.isPending}
                           onClick={() => report.mutate(message.id)}
                         >
-                          {report.isPending ? tr("ui.liveRoom.envoi") : tr("ui.liveRoom.ouiSignaler")}
+                          {report.isPending
+                            ? tr("ui.liveRoom.envoi")
+                            : tr("ui.liveRoom.ouiSignaler")}
                         </button>
                         <button type="button" onClick={() => setConfirmReport(null)}>
                           {tr("ui.liveRoom.annuler")}
@@ -789,7 +847,8 @@ function LiveChat({
                       </span>
                     ) : (
                       <button type="button" onClick={() => setConfirmReport(message.id)}>
-                        <Flag size={13} aria-hidden />{tr("ui.liveRoom.signaler")}
+                        <Flag size={13} aria-hidden />
+                        {tr("ui.liveRoom.signaler")}
                       </button>
                     )
                   ) : null}
@@ -811,14 +870,18 @@ function LiveChat({
       </ol>
       {unread ? (
         <button type="button" className="bw-chat__unread" onClick={toBottom}>
-          <ArrowDown size={14} aria-hidden /> {unread}{tr("ui.liveRoom.nouveau")}{unread > 1 ? "x" : ""}{tr("ui.liveRoom.message")}
+          <ArrowDown size={14} aria-hidden /> {unread}
+          {tr("ui.liveRoom.nouveau")}
+          {unread > 1 ? "x" : ""}
+          {tr("ui.liveRoom.message")}
           {unread > 1 ? "s" : ""}
         </button>
       ) : null}
       {notHere && onAskLine && portLines.length ? (
         <div role="alert" className="bw-chat__elsewhere">
           <p>
-            <b>{tr("ui.liveRoom.vousNEtesPasSur")}</b>{tr("ui.liveRoom.ceSalonEstReserveA")}
+            <b>{tr("ui.liveRoom.vousNEtesPasSur")}</b>
+            {tr("ui.liveRoom.ceSalonEstReserveA")}
           </p>
           <div>
             {portLines.map((item) => (
@@ -856,9 +919,7 @@ function LiveChat({
         </p>
       ) : null}
       {closed ? (
-        <p className="bw-chat__closed">
-          {tr("ui.liveRoom.ceSalonEstFermeA")}
-        </p>
+        <p className="bw-chat__closed">{tr("ui.liveRoom.ceSalonEstFermeA")}</p>
       ) : reader ? (
         <div className="bw-chat__closed bw-chat__reader">
           <p>{tr("ui.liveRoom.salonEnLectureVousSuivez")}</p>
@@ -874,7 +935,8 @@ function LiveChat({
             <p className="bw-chat__replying">
               <Reply size={13} aria-hidden />
               <span>
-                {tr("ui.liveRoom.repondreA")}<b>{replyTo.me ? tr("ui.liveRoom.vousMeme") : replyTo.author.pseudo}</b> :{" "}
+                {tr("ui.liveRoom.repondreA")}
+                <b>{replyTo.me ? tr("ui.liveRoom.vousMeme") : replyTo.author.pseudo}</b> :{" "}
                 {replyTo.body}
               </span>
               <button
@@ -972,7 +1034,9 @@ function LiveChat({
                   onClick={submit}
                 >
                   <Send size={15} aria-hidden />
-                  {send.isPending ? tr("ui.liveRoom.envoi") : tr("ui.liveRoom.envoyerAvecCettePhoto")}
+                  {send.isPending
+                    ? tr("ui.liveRoom.envoi")
+                    : tr("ui.liveRoom.envoyerAvecCettePhoto")}
                 </button>
               ) : null}
             </div>
@@ -1025,7 +1089,9 @@ function LiveChat({
               maxLength={MAX_MESSAGE}
               onChange={(event) => setText(event.target.value)}
               onFocus={nudgePin}
-              placeholder={replyTo ? tr("ui.liveRoom.votreReponse") : tr("ui.liveRoom.envoyerUnMessage")}
+              placeholder={
+                replyTo ? tr("ui.liveRoom.votreReponse") : tr("ui.liveRoom.envoyerUnMessage")
+              }
               aria-label={tr("ui.liveRoom.votreMessage")}
             />
             {text.length > MAX_MESSAGE - 40 ? <small>{MAX_MESSAGE - text.length}</small> : null}
@@ -1113,7 +1179,11 @@ export function LiveRoom({
         <ol className="bw-room__preview">
           {preview.map((message) => (
             <li key={message.id}>
-              <b>{message.me && !message.author.official ? tr("ui.liveRoom.vous") : message.author.pseudo}</b>{" "}
+              <b>
+                {message.me && !message.author.official
+                  ? tr("ui.liveRoom.vous")
+                  : message.author.pseudo}
+              </b>{" "}
               <StaffBadge author={message.author} />{" "}
               <ChatText body={message.body} size={18} mentions={message.mentions} />
             </li>
@@ -1132,31 +1202,31 @@ export function LiveRoom({
         title={title}
         canInvite={feed.data?.access === "member" || feed.data?.access === "staff"}
       >
-          <LiveChat
-            kind={kind}
-            room={room}
-            title={title}
-            moment={moment}
-            messages={messages}
-            canWrite={canWrite}
-            closed={closed}
-            people={people}
-            myHandle={card?.handle}
-            myPseudo={card?.pseudo}
-            charter={feed.data?.charter}
-            muted={Boolean(feed.data?.muted)}
-            starterContext={starterContext}
-            onAskLine={
-              onAskLine
-                ? (routeId) => {
-                    setOpen(false);
-                    afterOverlayClose(() => onAskLine(routeId));
-                  }
-                : undefined
-            }
-            staff={Boolean(feed.data?.staff)}
-            guest={feed.data?.access === "guest"}
-          />
+        <LiveChat
+          kind={kind}
+          room={room}
+          title={title}
+          moment={moment}
+          messages={messages}
+          canWrite={canWrite}
+          closed={closed}
+          people={people}
+          myHandle={card?.handle}
+          myPseudo={card?.pseudo}
+          charter={feed.data?.charter}
+          muted={Boolean(feed.data?.muted)}
+          starterContext={starterContext}
+          onAskLine={
+            onAskLine
+              ? (routeId) => {
+                  setOpen(false);
+                  afterOverlayClose(() => onAskLine(routeId));
+                }
+              : undefined
+          }
+          staff={Boolean(feed.data?.staff)}
+          guest={feed.data?.access === "guest"}
+        />
       </RoomSheet>
     </section>
   );

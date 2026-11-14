@@ -41,6 +41,7 @@ import {
 import { MoodBubble } from "./MoodBubble";
 import { MoodPicker } from "./MoodPicker";
 import { TravellerAvatar } from "./TravellerAvatar";
+import { EditableAvatar } from "./EditableAvatar";
 import { tr } from "@/lib/i18n";
 
 /** Le moment du voyage, pour proposer les bonnes humeurs : étape choisie, sinon d'après l'heure. */
@@ -145,7 +146,9 @@ function MeSheet({ open, onOpenChange }: { open: boolean; onOpenChange: (open: b
           }}
         >
           <SheetHeader className="bw-me-sheet__head">
-            <TravellerAvatar card={me} size={56} moodLabel static />
+            <EditableAvatar onEdit={() => window.location.assign("/compte#avatar")}>
+              <TravellerAvatar card={me} size={56} moodLabel static />
+            </EditableAvatar>
             <div>
               <SheetTitle>{me.pseudo}</SheetTitle>
               <SheetDescription>

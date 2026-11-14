@@ -2,6 +2,7 @@ import { MyEntityReviews } from "@/components/account/MyEntityReviews";
 import { useEffect, useState } from "react";
 import { myTravellerQuery } from "@/lib/community/travellers";
 import { TravellerAvatar } from "@/components/community/TravellerAvatar";
+import { EditableAvatar, focusAvatarPicker } from "@/components/community/EditableAvatar";
 import { MyTravellerEditor } from "@/components/community/MyTravellerEditor";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -74,6 +75,13 @@ function AccountPage() {
   useEffect(() => {
     const sync = () => {
       const hash = window.location.hash.slice(1);
+      // « #avatar » : l'onglet du profil, ouvert sur le choix de l'avatar (toucher son avatar ailleurs).
+      if (hash === "avatar") {
+        setSection("profil");
+        window.history.replaceState(null, "", "/compte#profil");
+        focusAvatarPicker();
+        return;
+      }
       setSection(["profil", "notifications", "contributions"].includes(hash) ? hash : "voyages");
     };
     sync();
@@ -99,7 +107,7 @@ function AccountPage() {
   return (
     <div className="bw-account-page">
       <header className="bw-account-header"><Link to="/" className="inline-flex items-center gap-2 text-xs font-semibold text-primary"><ArrowLeft className="size-4"/>{tr("ui.pageCompte.retourALaCarte")}</Link><img src="/bledway-brand-entete.webp" alt={tr("ui.pageCompte.bledway")} className="h-9 w-auto"/><button type="button" onClick={() => void signOut()} aria-label={tr("ui.pageCompte.seDeconnecter")} className="grid size-10 place-items-center rounded-full border border-border text-muted-foreground"><LogOut className="size-4"/></button></header>
-      <div className="bw-account-welcome"><MyCabas fallback={(profile?.display_name || user.email || "V").slice(0, 1).toUpperCase()} /><div className="min-w-0"><span className="bw-account-kicker">{tr("ui.pageCompte.monEspaceVoyageur")}</span><h1>{tr("ui.pageCompte.bonjour")}{profile?.display_name ? ` ${profile.display_name.split(" ")[0]}` : ""}.</h1><p>{tr("ui.pageCompte.lesRetrouvaillesSePreparentIci")}</p></div></div>
+      <div className="bw-account-welcome"><EditableAvatar onEdit={() => { setSection("profil"); window.history.replaceState(null, "", "/compte#profil"); focusAvatarPicker(); }}><MyCabas fallback={(profile?.display_name || user.email || "V").slice(0, 1).toUpperCase()} /></EditableAvatar><div className="min-w-0"><span className="bw-account-kicker">{tr("ui.pageCompte.monEspaceVoyageur")}</span><h1>{tr("ui.pageCompte.bonjour")}{profile?.display_name ? ` ${profile.display_name.split(" ")[0]}` : ""}.</h1><p>{tr("ui.pageCompte.lesRetrouvaillesSePreparentIci")}</p></div></div>
       <Tabs value={section} onValueChange={(value) => { setSection(value); window.history.replaceState(null, "", `/compte${value === "voyages" ? "" : `#${value}`}`); }}>
         <TabsList className="bw-account-tabs" aria-label={tr("ui.pageCompte.monEspaceVoyageur")}>
           <TabsTrigger value="voyages"><Heart className="size-4"/>{tr("ui.pageCompte.mesVoyages")}</TabsTrigger><TabsTrigger value="notifications"><Bell className="size-4"/>{tr("ui.pageCompte.notifications")}</TabsTrigger><TabsTrigger value="profil"><UserRound className="size-4"/>{tr("ui.pageCompte.monProfil")}</TabsTrigger><TabsTrigger value="contributions"><MessageSquare className="size-4"/>{tr("ui.pageCompte.contributions")}</TabsTrigger>

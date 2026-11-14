@@ -7124,6 +7124,100 @@ button.bw-tavatar:focus-visible {
 .bw-sea-chip .bw-sea-icon {
   color: var(--sea-ink);
 }
+/* Touchable : au-dessus du bouton qui couvre la carte, avec un chevron qui dit « il y a un détail ». */
+button.bw-sea-chip,
+button.bw-sea-pill,
+button.bw-sea-badge {
+  z-index: 2;
+  pointer-events: auto;
+  cursor: pointer;
+  border: 0;
+  font: inherit;
+}
+button.bw-sea-chip {
+  position: relative;
+  padding-right: 4px;
+  font-size: 11px;
+  font-weight: 700;
+}
+button.bw-sea-badge {
+  border: 1.5px solid #ffffff;
+}
+button.bw-sea-pill {
+  font-size: inherit;
+  font-weight: 700;
+}
+.bw-sea-chip__more {
+  width: 12px;
+  height: 12px;
+  margin-left: -1px;
+  opacity: 0.75;
+}
+button.bw-sea-chip:hover,
+button.bw-sea-pill:hover {
+  filter: brightness(0.95);
+}
+button.bw-sea-chip:focus-visible,
+button.bw-sea-pill:focus-visible,
+button.bw-sea-badge:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+.bw-sea-pop {
+  outline: none;
+  width: min(19rem, calc(100vw - 32px));
+  padding: 14px;
+  border-radius: 16px;
+  font-size: 13px;
+  line-height: 1.4;
+}
+.bw-sea-pop__title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  font-size: 15px;
+  font-weight: 800;
+}
+.bw-sea-pop__lead {
+  margin: 6px 0 0;
+}
+.bw-sea-pop__advice {
+  margin: 8px 0 0;
+  padding: 8px 10px;
+  border-radius: 10px;
+  background: #fff4dc;
+  color: #6b4700;
+  font-weight: 600;
+}
+.bw-sea-pop__scale {
+  display: grid;
+  gap: 2px;
+  margin: 10px 0 0;
+  padding: 0;
+  list-style: none;
+}
+.bw-sea-pop__scale li {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 4px 8px;
+  border-radius: 8px;
+  color: #5b6b78;
+}
+.bw-sea-pop__scale li small {
+  font-size: 11px;
+}
+.bw-sea-pop__scale li[aria-current] {
+  background: #e7f1f8;
+  color: #0f3f5e;
+  font-weight: 800;
+}
+.bw-sea-pop__source {
+  margin: 10px 0 0;
+  color: #6b7b88;
+  font-size: 11px;
+}
 .bw-sea-chip[data-level="moderate"] {
   --sea-ink: #b67c00;
 }
@@ -15949,4 +16043,53 @@ img[data-logo="dark"] {
 .bw-chat__guest-note svg {
   flex: none;
   margin-top: 1px;
+}
+
+/* Mon avatar modifiable : on le touche pour le changer (crayon en bas à droite). */
+.bw-avatar-edit {
+  position: relative;
+  display: inline-grid;
+  flex: none;
+  place-items: center;
+  padding: 0;
+  border: 0;
+  border-radius: 999px;
+  background: none;
+  cursor: pointer;
+}
+.bw-avatar-edit:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 3px;
+}
+.bw-avatar-edit__pen {
+  position: absolute;
+  right: -2px;
+  bottom: -2px;
+  display: grid;
+  width: 24px;
+  height: 24px;
+  place-items: center;
+  border: 2px solid #ffffff;
+  border-radius: 999px;
+  background: var(--primary);
+  box-shadow: 0 2px 6px #16324a33;
+  color: #ffffff;
+  transition: transform 0.15s ease;
+}
+.bw-avatar-edit__pen svg {
+  width: 12px;
+  height: 12px;
+}
+.bw-avatar-edit:hover .bw-avatar-edit__pen {
+  transform: scale(1.1);
+}
+
+/* Le pseudo d'un message : il ouvre le profil, comme sur les réseaux sociaux. */
+.bw-chat__who {
+  cursor: pointer;
+  border-radius: 4px;
+}
+.bw-chat__who:hover {
+  text-decoration: underline;
+  text-underline-offset: 2px;
 }

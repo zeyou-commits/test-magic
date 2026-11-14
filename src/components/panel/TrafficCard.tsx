@@ -2,6 +2,7 @@ import { VesselAlertTag } from "@/components/panel/VesselAlert";
 import { MiniFerry } from "./MiniFerry";
 import { crossingProgress, ferryLeft, replacedTime } from "@/lib/ferry/crossingProgress";
 import { SeaChip } from "./SeaForecast";
+import { DelayBadge } from "./DelayBadge";
 import { delayLabel, type LiveShip, type trackingTimes } from "@/lib/ferry/tracking";
 import { formatDateParts } from "@/lib/ferry/format";
 import { portTimeZone, dateKeyInZone } from "@/lib/ferry/time";
@@ -68,13 +69,9 @@ export function TrafficCard({
   const startDay = c.times.departure.iso
     ? dateKeyInZone(c.times.departure.iso, portTimeZone(c.from))
     : "";
-  const endDay = c.times.arrival.iso
-    ? dateKeyInZone(c.times.arrival.iso, portTimeZone(c.to))
-    : "";
+  const endDay = c.times.arrival.iso ? dateKeyInZone(c.times.arrival.iso, portTimeZone(c.to)) : "";
   const dayDelta =
-    startDay && endDay
-      ? Math.round((Date.parse(endDay) - Date.parse(startDay)) / 86_400_000)
-      : 0;
+    startDay && endDay ? Math.round((Date.parse(endDay) - Date.parse(startDay)) / 86_400_000) : 0;
   return (
     <article
       className="bw-compact-crossing !py-2"
@@ -144,9 +141,13 @@ export function TrafficCard({
             arrivalAt={progress.times.arrival.iso}
           />
           {delayLabel(progress.times) ? (
-            <b className="bw-delay-badge bw-delay-badge--compact">
-              {tr("ui.trafficCard.retarde")}{delayLabel(progress.times)}
-            </b>
+            <DelayBadge
+              label={delayLabel(progress.times)!}
+              times={progress.times}
+              fromZone={portTimeZone(c.from)}
+              toZone={portTimeZone(c.to)}
+              compact
+            />
           ) : null}
         </div>
         <div
@@ -172,13 +173,15 @@ export function TrafficCard({
         </div>
         <div className="flex justify-between text-[11px] tabular-nums">
           <span>
-            {tr("ui.trafficCard.depart")}<b>{time(c.times.departure.iso, c.from)}</b>
+            {tr("ui.trafficCard.depart")}
+            <b>{time(c.times.departure.iso, c.from)}</b>
             {replacedTime(c.times.departure) ? (
               <s className="bw-old-time">{time(replacedTime(c.times.departure), c.from)}</s>
             ) : null}
           </span>
           <span className="text-right">
-            {tr("ui.trafficCard.arrivee")}<b>{time(c.times.arrival.iso, c.to)}</b>
+            {tr("ui.trafficCard.arrivee")}
+            <b>{time(c.times.arrival.iso, c.to)}</b>
             {dayDelta > 0 && <sup className="ml-0.5 text-primary">+{dayDelta} j</sup>}
             {replacedTime(c.times.arrival) ? (
               <s className="bw-old-time">{time(replacedTime(c.times.arrival), c.to)}</s>

@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { CabasImg } from "@/components/CabasImg";
-import { moodsQuery, type MoodRow } from "@/lib/community/travellers";
+import { moodsQuery, openTravellerProfile, type MoodRow } from "@/lib/community/travellers";
 import { chatParts, emoteBank, emoteDictionary } from "@/lib/ferry/chatEmotes";
 import { MENTION_PATTERN } from "@/lib/ferry/chat";
 import { avatarsQuery } from "@/lib/community/avatars";
@@ -42,7 +42,21 @@ export function ChatText({
       <>
         {pieces.map((piece, index) =>
           index % 2 ? (
-            <b key={index} className="bw-mention" data-me={piece === myHandle || undefined}>
+            <b
+              key={index}
+              className="bw-mention"
+              data-me={piece === myHandle || undefined}
+              data-open={mentions?.[piece] ? true : undefined}
+              // Comme sur les réseaux sociaux : la @mention ouvre le profil de la personne.
+              onClick={
+                mentions?.[piece]
+                  ? (event) => {
+                      event.stopPropagation();
+                      openTravellerProfile(piece);
+                    }
+                  : undefined
+              }
+            >
               @{mentions?.[piece] ?? "voyageur"}
             </b>
           ) : piece ? (

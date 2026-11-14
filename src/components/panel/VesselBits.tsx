@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Ship } from "lucide-react";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import type { Vessel } from "@/lib/ferry/types";
 import { safeExternalUrl } from "./shared";
 import { tr } from "@/lib/i18n";
@@ -15,7 +16,10 @@ export function VesselSpecs({ vessel }: { vessel: Vessel }) {
     { label: "Longueur", value: vessel.length_meters ? `${number(vessel.length_meters)} m` : null },
     { label: "Largeur", value: vessel.beam_meters ? `${number(vessel.beam_meters)} m` : null },
     { label: "Ponts", value: vessel.deck_count },
-    { label: "Jauge brute", value: vessel.gross_tonnage ? `${number(vessel.gross_tonnage)} t` : null },
+    {
+      label: "Jauge brute",
+      value: vessel.gross_tonnage ? `${number(vessel.gross_tonnage)} t` : null,
+    },
     { label: "Mise en service", value: vessel.build_year },
     {
       label: "Vitesse",
@@ -51,10 +55,42 @@ export function VesselSpecs({ vessel }: { vessel: Vessel }) {
   ) : null;
 }
 
-export function ShipPhoto({ url, name }: { url: string | undefined; name: string }) {
+export function ShipPhoto({
+  url,
+  name,
+  zoomable = false,
+}: {
+  url: string | undefined;
+  name: string;
+  /** Un toucher agrandit la photo en plein écran (fiche du navire). */
+  zoomable?: boolean;
+}) {
   const [failed, setFailed] = useState(false);
+  const [open, setOpen] = useState(false);
+  const canZoom = zoomable && url && !failed;
   return (
     <div className="bw-ship-photo">
+      {canZoom ? (
+        <>
+          <button
+            type="button"
+            className="bw-ship-photo__zoom"
+            aria-label={`Agrandir la photo du ${name}`}
+            onClick={() => setOpen(true)}
+          />
+          <Dialog open={open} onOpenChange={setOpen}>
+            <DialogContent className="bw-photo-viewer max-w-3xl p-2">
+              <DialogTitle className="sr-only">{name}</DialogTitle>
+              <img
+                src={url}
+                alt={name}
+                referrerPolicy="no-referrer"
+                className="max-h-[80vh] w-full rounded-lg object-contain"
+              />
+            </DialogContent>
+          </Dialog>
+        </>
+      ) : null}
       <Ship size={32} aria-hidden />
       {url && !failed ? (
         <img

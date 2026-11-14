@@ -19,6 +19,7 @@ import { TrackingTimes } from "./TrackingTimes";
 
 import { MiniFerry } from "./MiniFerry";
 import { SeaChip } from "./SeaForecast";
+import { DelayBadge } from "./DelayBadge";
 import { tr } from "@/lib/i18n";
 
 export function CrossingCard({
@@ -70,35 +71,48 @@ export function CrossingCard({
       ? "Traversée annulée"
       : progress.reportedPostponed
         ? "Report ou annulation signalé"
-      : progress.reportedQuay
-        ? "Encore à quai · en retard"
-      : label && !progress.hold
-        ? label
-      : progress.times.arrival.kind === "observed"
-        ? "Arrivée constatée"
-        : progress.hold
-          ? progress.hold.fresh
-            ? "Encore à quai · en retard"
-            : "Départ à confirmer · en retard"
-          : progress.arrivalDue && progress.signal?.phase !== "sea"
-          ? "Arrivée à confirmer"
-          : stopped || awaited
-          ? `${alert?.label ?? "Navire immobilisé"}${awaited ? " · départ à confirmer" : ""}`
-          : at < Date.parse(departure.departure_at) && progress.signal?.phase !== "sea"
-            ? "Prochaine traversée"
-            : progress.signal
-              ? progress.signal.phase === "sea"
-                ? `Parti · ${atSeaLabel.toLowerCase()}`
-                : "Au port"
-              : atSeaLabel;
+        : progress.reportedQuay
+          ? "Encore à quai · en retard"
+          : label && !progress.hold
+            ? label
+            : progress.times.arrival.kind === "observed"
+              ? "Arrivée constatée"
+              : progress.hold
+                ? progress.hold.fresh
+                  ? "Encore à quai · en retard"
+                  : "Départ à confirmer · en retard"
+                : progress.arrivalDue && progress.signal?.phase !== "sea"
+                  ? "Arrivée à confirmer"
+                  : stopped || awaited
+                    ? `${alert?.label ?? "Navire immobilisé"}${awaited ? " · départ à confirmer" : ""}`
+                    : at < Date.parse(departure.departure_at) && progress.signal?.phase !== "sea"
+                      ? "Prochaine traversée"
+                      : progress.signal
+                        ? progress.signal.phase === "sea"
+                          ? `Parti · ${atSeaLabel.toLowerCase()}`
+                          : "Au port"
+                        : atSeaLabel;
   return (
     <section className="bw-crossing" aria-label={tr("ui.crossingCard.avancementDeLaTraversee")}>
       <div className="bw-crossing-top" data-alert={stopped || awaited || undefined}>
         <span>
-          {stopped || awaited ? <b className="bw-alert-mark" aria-hidden>!</b> : <Waves size={16} aria-hidden />}
+          {stopped || awaited ? (
+            <b className="bw-alert-mark" aria-hidden>
+              !
+            </b>
+          ) : (
+            <Waves size={16} aria-hidden />
+          )}
           {status}
         </span>
-        {delay ? <b className="bw-delay-badge">{tr("ui.crossingCard.retarde")}{delay}</b> : null}
+        {delay ? (
+          <DelayBadge
+            label={delay}
+            times={progress.times}
+            fromZone={portTimeZone(from)}
+            toZone={portTimeZone(to)}
+          />
+        ) : null}
         {departure.status === "cancelled" ? null : (
           <SeaChip
             departureId={departure.id}
@@ -184,10 +198,16 @@ export function CrossingCard({
         <div className="bw-crossing-metrics">
           <Navigation size={13} aria-hidden />
           {progress.signal.remainingKm !== null && progress.times.arrival.kind !== "observed" ? (
-            <span>≈ {Math.round(progress.signal.remainingKm)}{tr("ui.crossingCard.kmAParcourir")}</span>
+            <span>
+              ≈ {Math.round(progress.signal.remainingKm)}
+              {tr("ui.crossingCard.kmAParcourir")}
+            </span>
           ) : null}
           {progress.signal.position.speedKnots !== null ? (
-            <span>{progress.signal.position.speedKnots.toFixed(1)}{tr("ui.crossingCard.nUds")}</span>
+            <span>
+              {progress.signal.position.speedKnots.toFixed(1)}
+              {tr("ui.crossingCard.nUds")}
+            </span>
           ) : null}
         </div>
       ) : null}
@@ -283,9 +303,7 @@ function CrossingSteps({
         ))}
       </ol>
       {pending ? (
-        <p className="bw-crossing-steps__note">
-          {tr("ui.crossingCard.aConfirmerLHeureEst")}
-        </p>
+        <p className="bw-crossing-steps__note">{tr("ui.crossingCard.aConfirmerLHeureEst")}</p>
       ) : null}
     </div>
   );

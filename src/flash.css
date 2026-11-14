@@ -16093,3 +16093,84 @@ img[data-logo="dark"] {
   text-decoration: underline;
   text-underline-offset: 2px;
 }
+
+/* Le badge « Retardé » touchable, et son détail. */
+button.bw-delay-badge {
+  position: relative;
+  z-index: 2;
+  gap: 2px;
+  padding-right: 5px;
+  border: 0;
+  pointer-events: auto;
+  cursor: pointer;
+  font-family: inherit;
+}
+button.bw-delay-badge:hover {
+  filter: brightness(0.95);
+}
+button.bw-delay-badge:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+.bw-delay-pop__rows {
+  display: grid;
+  gap: 4px;
+  margin: 10px 0 0;
+}
+.bw-delay-pop__rows > div {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 6px 10px;
+  border-radius: 10px;
+  background: #fbf3e6;
+}
+.bw-delay-pop__rows dt {
+  font-weight: 700;
+}
+.bw-delay-pop__rows dt small {
+  display: block;
+  color: #6b7b88;
+  font-size: 11px;
+  font-weight: 500;
+}
+.bw-delay-pop__rows dd {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  margin: 0;
+}
+.bw-delay-pop__rows s {
+  color: #8a96a0;
+}
+.bw-delay-pop__rows b {
+  color: #b45309;
+  font-size: 15px;
+}
+.bw-delay-pop__rows small {
+  color: #6b7b88;
+  font-size: 10px;
+}
+
+.bw-mention[data-open] {
+  cursor: pointer;
+}
+.bw-mention[data-open]:hover {
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+/* Photo du navire : un toucher l'agrandit (sous les pastilles posées dessus). */
+.bw-ship-photo__zoom {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  border: 0;
+  background: transparent;
+  cursor: zoom-in;
+}
+.bw-ship-photo__zoom:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: -2px;
+}

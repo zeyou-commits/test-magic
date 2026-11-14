@@ -250,7 +250,7 @@ export function VesselView({
           </dl>
 
           <div className="relative">
-            <ShipPhoto key={photo?.url ?? vesselId} url={photo?.url} name={vessel.name} />
+            <ShipPhoto key={photo?.url ?? vesselId} url={photo?.url} name={vessel.name} zoomable />
             <VesselPhotoAlert vesselId={vessel.id} />
             <VesselPhotoBadge vesselId={vessel.id} />
             {departure && from && to ? (

@@ -28,6 +28,7 @@ import {
   formaliteSources,
   isPaperToDo,
   loadPapers,
+  taskSummaries,
   newTraveller,
   reassurances,
   savePapers,
@@ -957,20 +958,18 @@ export function PapersResult({
           {toDo.some((t) => t.when === "first" && !done.includes(t.id)) ? (
             <li>
               <span className="font-semibold">Dès maintenant :</span>{" "}
-              {toDo
-                .filter((t) => t.when === "first" && !done.includes(t.id))
-                .map((t) => lowerFirst(t.title))
-                .join(" ; ")}
+              {taskSummaries(toDo.filter((t) => t.when === "first" && !done.includes(t.id))).join(
+                " ; ",
+              )}
               .
             </li>
           ) : null}
           {firstDeadline ? (
             <li>
               <span className="font-semibold">{deadlines[firstDeadline]!.label} :</span>{" "}
-              {toDo
-                .filter((t) => t.when === firstDeadline && !done.includes(t.id))
-                .map((t) => lowerFirst(t.title))
-                .join(" ; ")}
+              {taskSummaries(
+                toDo.filter((t) => t.when === firstDeadline && !done.includes(t.id)),
+              ).join(" ; ")}
               .
             </li>
           ) : null}

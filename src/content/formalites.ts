@@ -203,9 +203,9 @@ export function travellerLabel(t: Traveller, all: Traveller[]): string {
 /* ------------------------------------------------------------------ Ce qu'il faut faire */
 
 /** Quand le faire : la liste se lit de haut en bas, comme un compte à rebours. */
-export type When = "first" | "weeks" | "months3" | "pack" | "there" | "back";
+export type When = "first" | "weeks" | "months3" | "lastweek" | "pack" | "there" | "back";
 
-export const whenOrder: When[] = ["first", "weeks", "months3", "pack", "there", "back"];
+export const whenOrder: When[] = ["first", "weeks", "months3", "lastweek", "pack", "there", "back"];
 
 export const whenLabels: Record<When, { title: string; hint: string }> = {
   first: {
@@ -216,6 +216,10 @@ export const whenLabels: Record<When, { title: string; hint: string }> = {
   months3: {
     title: "Dans les 3 mois avant",
     hint: "Ces papiers ne sont valables que peu de temps.",
+  },
+  lastweek: {
+    title: "La semaine d'avant",
+    hint: "Quelques minutes en ligne, une fois vos dates connues.",
   },
   pack: {
     title: "Dans la pochette du voyage",
@@ -245,7 +249,10 @@ export interface Task {
 
 /** À faire (rendez-vous, dossier) ou seulement à emporter ? */
 export const isPaperToDo = (task: Task) =>
-  task.when === "first" || task.when === "weeks" || task.when === "months3";
+  task.when === "first" ||
+  task.when === "weeks" ||
+  task.when === "months3" ||
+  task.when === "lastweek";
 
 const isMinorDz = (t: Traveller) => t.kind === "child" && t.age < 19;
 const isMinorFr = (t: Traveller) => t.kind === "child" && t.age < 18;
@@ -292,7 +299,7 @@ export function tasksFor(a: Answers): Task[] {
         title: spouse
           ? "Demander le visa familial de conjoint"
           : child
-            ? "Demander son visa (un enfant aussi)"
+            ? "Demander le visa (un enfant aussi en a besoin)"
             : "Demander le visa",
         detail: [
           "Le visa est obligatoire. Il se demande avant le départ, au consulat d'Algérie du lieu de résidence, sur rendez-vous ; il n'y a pas de visa à l'arrivée pour un voyage individuel. Délai annoncé par l'ambassade : 1 à 14 jours.",
@@ -626,7 +633,7 @@ export function tasksFor(a: Answers): Task[] {
   if (all.some((t) => t.nat !== "dz"))
     add({
       id: "ariane",
-      when: "weeks",
+      when: "lastweek",
       title: "S'inscrire sur Fil d'Ariane (Français)",
       detail:
         "Facultatif : le ministère des Affaires étrangères envoie ses alertes pendant le séjour.",
@@ -650,6 +657,24 @@ export function tasksFor(a: Answers): Task[] {
     });
 
   return tasks.sort((x, y) => whenOrder.indexOf(x.when) - whenOrder.indexOf(y.when));
+}
+
+/** Pour un résumé : les visas sur une ligne (« demander les visas (Vous, Enfant 1) »). */
+export function taskSummaries(list: Task[]): string[] {
+  const visas = list.filter((t) => t.id.startsWith("visa-"));
+  const lower = (text: string) =>
+    /^[A-ZÀ-Ý][a-zà-ÿ']/.test(text) ? text.charAt(0).toLowerCase() + text.slice(1) : text;
+  const out: string[] = [];
+  for (const t of list) {
+    if (t.id.startsWith("visa-")) {
+      if (t !== visas[0]) continue;
+      const who = [...new Set(visas.flatMap((v) => v.who))];
+      out.push(
+        `${visas.length > 1 ? "demander les visas" : "demander le visa"}${who.length ? ` (${who.join(", ")})` : ""}`,
+      );
+    } else out.push(lower(t.title));
+  }
+  return out;
 }
 
 /** Les démarches qui se font au consulat : sans elles, inutile de chercher le consulat. */

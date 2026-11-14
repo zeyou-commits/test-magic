@@ -42,8 +42,8 @@ describe("calendrier à rebours", () => {
     );
     const weeks = list.find((m) => m.id === "weeks")!;
     expect(weeks.date).toBe("2027-05-20");
-    expect(weeks.detail).toMatch(/1 à 14 jours/);
-    expect(weeks.detail).toMatch(/haute saison.*pas un délai officiel/);
+    expect(weeks.detail).toMatch(/14 jours/);
+    expect(weeks.more).toMatch(/haute saison.*pas un délai officiel/);
     expect(weeks.sources).toContain("amb-visa");
     expect(list.findIndex((m) => m.id === "book")).toBe(
       list.findIndex((m) => m.id === "weeks") + 1,
@@ -61,7 +61,7 @@ describe("calendrier à rebours", () => {
       today,
     ).find((m) => m.id === "weeks")!;
     expect(weeks.date).toBe("2027-09-03");
-    expect(weeks.detail).not.toMatch(/haute saison/);
+    expect(weeks.more).not.toMatch(/haute saison/);
   });
 
   it("départ proche : la date limite passée est signalée", () => {

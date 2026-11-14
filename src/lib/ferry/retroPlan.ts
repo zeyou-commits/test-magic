@@ -20,14 +20,28 @@ export type Milestone = {
   /** « Dès maintenant », « Avant le… », « À partir du… », « Le… », « Ensuite » (sans date). */
   lead: "now" | "before" | "from" | "on" | "after";
   title: string;
+  /** Pourquoi cette date, en une ligne. */
   detail: string;
-  /** Les papiers de ce moment (ids et titres de « Mes papiers »). */
-  tasks: { id: string; title: string }[];
-  /** La date limite est déjà passée : à faire tout de suite. */
+  /** Le détail, à ouvrir (« Pourquoi cette date ? »). */
+  more?: string;
+  /** Les papiers de ce moment, regroupés (les visas en une ligne), avec qui est concerné. */
+  tasks: MilestoneTask[];
+  /** Le délai officiel ne tient plus : à faire aujourd'hui. */
   late?: boolean;
+  /** La marge conseillée par BledWay est passée, le délai officiel tient encore. */
+  tight?: boolean;
   done?: boolean;
   tone?: "warning";
   sources?: FormaliteSourceId[];
+};
+
+export type MilestoneTask = {
+  /** Clé d'affichage. */
+  id: string;
+  /** Les lignes de « Mes papiers » regroupées ici : faite quand toutes le sont. */
+  ids: string[];
+  title: string;
+  who: string[];
 };
 
 const addDays = (day: string, n: number) => {
@@ -49,21 +63,41 @@ export function papersMargin(day: string) {
   return { days: highSeason ? 42 : 28, weeks: highSeason ? 6 : 4, highSeason };
 }
 
-/** Pourquoi cette date limite, en clair : délai publié, attente du rendez-vous, saison. */
-export function papersWhy(when: When, day: string, visa: boolean): string {
+/** Pourquoi cette date, en une ligne (short) et en détail (more). */
+export function papersWhy(when: When, day: string, visa: boolean): { short: string; more: string } {
   const { weeks, highSeason } = papersMargin(day);
+  const margin = highSeason
+    ? `BledWay conseille ${weeks} semaines de marge, car vous partez en haute saison, quand beaucoup de voyageurs font leurs démarches en même temps.`
+    : `BledWay conseille ${weeks} semaines de marge.`;
   if (when === "first")
-    return "Aucun délai n'est publié pour ces démarches (un passeport algérien est fabriqué en Algérie) : plus tôt c'est lancé, plus tôt vous pouvez réserver.";
+    return {
+      short: "Aucun délai n'est publié : plus tôt c'est lancé, plus tôt vous réservez.",
+      more: "Un passeport algérien est fabriqué en Algérie et le consulat ne publie aucun délai. Lancez ces démarches avant d'acheter un billet non remboursable.",
+    };
   if (when === "months3")
-    return "Ce papier ne vaut que 3 mois : fait trop tôt, il ne serait plus valable au retour.";
-  if (when !== "weeks") return "";
-  const season = highSeason
-    ? ` Vous partez en haute saison : BledWay compte ${weeks} semaines au lieu de 4, car beaucoup de voyageurs font leurs démarches en même temps. C'est un conseil de prudence, pas un délai officiel.`
-    : "";
+    return {
+      short: "Ce papier ne vaut que 3 mois : pas avant cette date.",
+      more: "Fait plus tôt, il ne serait plus valable au moment du retour.",
+    };
+  if (when === "lastweek")
+    return {
+      short: "Quelques minutes en ligne, une fois vos dates connues.",
+      more: "",
+    };
+  if (when !== "weeks") return { short: "", more: "" };
   return visa
-    ? `L'ambassade annonce 1 à 14 jours après le dépôt du dossier, sans compter l'attente d'un rendez-vous au consulat. BledWay compte donc ${highSeason ? weeks : 4} semaines avant le départ.${season}`
-    : `Aucun délai n'est publié : BledWay compte ${highSeason ? weeks : 4} semaines avant le départ pour avoir le temps d'un rendez-vous et d'un éventuel complément de dossier.${season}`;
+    ? {
+        short: "Un visa prend jusqu'à 14 jours après le dépôt, plus l'attente du rendez-vous.",
+        more: `Délai annoncé par l'ambassade d'Algérie : 1 à 14 jours après le dépôt du dossier. L'attente d'un rendez-vous au consulat n'est publiée nulle part. ${margin} C'est un conseil de prudence, pas un délai officiel.`,
+      }
+    : {
+        short: "Aucun délai n'est publié : gardez le temps d'un rendez-vous.",
+        more: `${margin} C'est un conseil de prudence, pas un délai officiel.`,
+      };
 }
+
+/** En dessous, même le délai publié d'un visa (14 jours) et un rendez-vous ne tiennent plus. */
+export const PAPERS_LAST_DAYS = 21;
 
 /** Fin de la mesure pour les binationaux, au format AAAA-MM-JJ. */
 export const BINATIONAL_MEASURE_END_DAY = "2026-12-31";
@@ -75,10 +109,26 @@ export function retroPlan(
 ): Milestone[] {
   const day = earliestDay(plan);
   const tasks = papers.finished ? tasksFor(papers.answers) : [];
-  const of = (when: When) =>
-    tasks.filter((t) => t.when === when).map((t) => ({ id: t.id, title: t.title }));
-  const allDone = (list: { id: string }[]) =>
-    list.length > 0 && list.every((t) => papers.done.includes(t.id));
+  // Les visas de plusieurs voyageurs tiennent sur une ligne : « Demander les visas · Adulte 2, Enfant 1 ».
+  const of = (when: When): MilestoneTask[] => {
+    const group = tasks.filter((t) => t.when === when);
+    const visas = group.filter((t) => t.id.startsWith("visa-"));
+    const rows: MilestoneTask[] = [];
+    for (const t of group) {
+      if (t.id.startsWith("visa-")) {
+        if (t !== visas[0]) continue;
+        rows.push({
+          id: "visas",
+          ids: visas.map((v) => v.id),
+          title: visas.length > 1 ? "Demander les visas" : "Demander le visa",
+          who: [...new Set(visas.flatMap((v) => v.who))],
+        });
+      } else rows.push({ id: t.id, ids: [t.id], title: t.title, who: t.who });
+    }
+    return rows;
+  };
+  const allDone = (list: MilestoneTask[]) =>
+    list.length > 0 && list.every((t) => t.ids.every((id) => papers.done.includes(id)));
   const visa = papers.finished && papers.answers.travellers.some((t) => t.nat === "etr");
   const list: Milestone[] = [];
 
@@ -99,7 +149,8 @@ export function retroPlan(
       date: today,
       lead: "now",
       title: "Les papiers à lancer",
-      detail: papersWhy("first", day, visa),
+      detail: papersWhy("first", day, visa).short,
+      more: papersWhy("first", day, visa).more,
       tasks: first,
       done: allDone(first),
     });
@@ -113,9 +164,11 @@ export function retroPlan(
       date: deadline,
       lead: "before",
       title: "Les démarches longues",
-      detail: papersWhy("weeks", day, visa),
+      detail: papersWhy("weeks", day, visa).short,
+      more: papersWhy("weeks", day, visa).more,
       tasks: weeks,
-      late: deadline < today,
+      late: addDays(day, -PAPERS_LAST_DAYS) < today,
+      tight: deadline < today && addDays(day, -PAPERS_LAST_DAYS) >= today,
       done: allDone(weeks),
       ...(visa ? { sources: ["amb-visa"] as FormaliteSourceId[] } : {}),
     });
@@ -144,7 +197,8 @@ export function retroPlan(
       date: later(today, addDays(day, -90)),
       lead: "from",
       title: "Les papiers de courte durée",
-      detail: papersWhy("months3", day, visa),
+      detail: papersWhy("months3", day, visa).short,
+      more: papersWhy("months3", day, visa).more,
       tasks: months3,
       done: allDone(months3),
     });
@@ -155,7 +209,7 @@ export function retroPlan(
     lead: "from",
     title: "Budget, valises et pochette",
     detail: `Dinars et devises, sac de traversée${plan.vehicle !== "none" ? ", révision de la voiture" : ""} ; tous les papiers à présenter au port dans une pochette.`,
-    tasks: of("pack"),
+    tasks: [...of("lastweek"), ...of("pack")],
   });
   list.push({
     id: "eve",

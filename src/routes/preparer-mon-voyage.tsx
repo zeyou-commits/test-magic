@@ -92,7 +92,13 @@ import {
 } from "@/lib/ferry/companion";
 import { searchItineraryAddress } from "@/lib/ferry/itinerary.functions";
 import { carPrepItems as carItems } from "@/lib/ferry/dossier";
-import { papersMargin, papersWhy, retroPlan, type Milestone } from "@/lib/ferry/retroPlan";
+import {
+  PAPERS_LAST_DAYS,
+  papersMargin,
+  papersWhy,
+  retroPlan,
+  type Milestone,
+} from "@/lib/ferry/retroPlan";
 import { useReferenceData } from "@/lib/reference/useReferenceData";
 import { formatFareRange } from "@/lib/ferry/pricing";
 import { portsQuery, routesQuery } from "@/lib/ferry/queries";
@@ -233,10 +239,7 @@ function Welcome({ onStart }: { onStart: () => void }) {
       <section className="overflow-hidden rounded-3xl bg-gradient-to-b from-[#e3f0f6] via-[#f1f6f2] to-[#fbf5ea]">
         <div className="grid items-center gap-2 px-5 pt-6 md:grid-cols-[1.1fr_1fr] md:gap-6 md:px-10 md:py-10">
           <div>
-            <p className="text-xs font-bold uppercase tracking-widest text-primary">
-              Gratuit · aperçu sans compte
-            </p>
-            <h1 className="mt-2 font-display text-[1.75rem] font-bold leading-tight md:text-5xl">
+            <h1 className="font-display text-[1.75rem] font-bold leading-tight md:text-5xl">
               Votre voyage au bled, préparé étape par étape
             </h1>
             <p className="mt-3 text-muted-foreground md:text-lg">
@@ -960,18 +963,28 @@ function PapersStepBody({
     const weeks = new Date(Date.parse(`${day}T12:00:00Z`) - papersMargin(day).days * 86_400_000)
       .toISOString()
       .slice(0, 10);
-    const months3 = new Date(Date.parse(`${day}T12:00:00Z`) - 90 * 86_400_000)
-      .toISOString()
-      .slice(0, 10);
+    const minus = (n: number) =>
+      new Date(Date.parse(`${day}T12:00:00Z`) - n * 86_400_000).toISOString().slice(0, 10);
+    const months3 = minus(90);
+    const lastweek = minus(7);
     const out: Partial<Record<When, { label: string; why: string }>> = {
-      first: { label: "Dès maintenant", why: papersWhy("first", day, visa) },
+      first: { label: "Dès maintenant", why: papersWhy("first", day, visa).short },
       weeks: {
-        label: weeks < today ? "En retard : tout de suite" : `Avant le ${longDate(weeks)}`,
-        why: papersWhy("weeks", day, visa),
+        label:
+          minus(PAPERS_LAST_DAYS) < today
+            ? "Aujourd'hui (délai très court)"
+            : weeks < today
+              ? "Cette semaine (marge réduite)"
+              : `Avant le ${longDate(weeks)}`,
+        why: papersWhy("weeks", day, visa).short,
       },
       months3: {
         label: months3 <= today ? "Dès maintenant" : `À partir du ${longDate(months3)}`,
-        why: papersWhy("months3", day, visa),
+        why: papersWhy("months3", day, visa).short,
+      },
+      lastweek: {
+        label: lastweek <= today ? "Dès maintenant" : `À partir du ${longDate(lastweek)}`,
+        why: papersWhy("lastweek", day, visa).short,
       },
     };
     return out;
@@ -2081,7 +2094,11 @@ function milestoneLead(m: Milestone, plan: CompanionPlan) {
   if (m.lead === "now" || (m.lead === "from" && m.date <= today)) return "Dès maintenant";
   if (m.lead === "after") return "Ensuite";
   if (m.lead === "before")
-    return m.late ? "En retard : tout de suite" : `Avant le ${longDate(m.date)}`;
+    return m.late
+      ? "Aujourd'hui (délai très court)"
+      : m.tight
+        ? "Cette semaine (marge réduite)"
+        : `Avant le ${longDate(m.date)}`;
   if (m.lead === "from") return `À partir du ${longDate(m.date)}`;
   return `Le ${longDate(m.date)}`;
 }
@@ -2118,14 +2135,14 @@ function TripCalendar({ plan, papers }: { plan: CompanionPlan; papers: PapersSta
                   ? "bg-primary"
                   : m.late
                     ? "bg-[#c95038]"
-                    : m.tone === "warning"
+                    : m.tone === "warning" || m.tight
                       ? "bg-[#e0a43a]"
                       : "bg-primary/40"
               }`}
               aria-hidden
             />
             <p
-              className={`text-[11px] font-bold uppercase tracking-wider ${m.late ? "text-[#c95038]" : m.tone === "warning" ? "text-[#b7791f]" : "text-primary"}`}
+              className={`text-[11px] font-bold uppercase tracking-wider ${m.late ? "text-[#c95038]" : m.tone === "warning" || m.tight ? "text-[#b7791f]" : "text-primary"}`}
             >
               {milestoneLead(m, plan)}
               {m.done ? " · fait" : ""}
@@ -2136,7 +2153,7 @@ function TripCalendar({ plan, papers }: { plan: CompanionPlan; papers: PapersSta
             {m.tasks.length ? (
               <ul className="mt-1 grid gap-0.5 text-sm">
                 {m.tasks.slice(0, 4).map((task) => {
-                  const done = papers.done.includes(task.id);
+                  const done = task.ids.every((id) => papers.done.includes(id));
                   return (
                     <li key={task.id} className="flex items-start gap-1.5">
                       {done ? (
@@ -2153,6 +2170,9 @@ function TripCalendar({ plan, papers }: { plan: CompanionPlan; papers: PapersSta
                       )}
                       <span className={done ? "text-muted-foreground line-through" : ""}>
                         {task.title}
+                        {task.who.length ? (
+                          <span className="text-muted-foreground"> · {task.who.join(", ")}</span>
+                        ) : null}
                       </span>
                     </li>
                   );
@@ -2164,24 +2184,38 @@ function TripCalendar({ plan, papers }: { plan: CompanionPlan; papers: PapersSta
                 ) : null}
               </ul>
             ) : null}
-            <p className="mt-1 text-sm text-muted-foreground">{m.detail}</p>
-            {m.sources?.length ? (
-              <p className="mt-1 text-xs">
-                Source :{" "}
-                {m.sources.map((id, index) => (
-                  <span key={id}>
-                    {index ? ", " : ""}
-                    <a
-                      href={formaliteSources[id].url}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="underline underline-offset-2"
-                    >
-                      {formaliteSources[id].short}
-                    </a>
-                  </span>
-                ))}
+            {m.late && m.id === "weeks" ? (
+              <p className="mt-1 text-sm font-semibold text-[#c95038]">
+                Il reste moins de 3 semaines : appelez le consulat dès aujourd'hui pour un
+                rendez-vous.
               </p>
+            ) : null}
+            <p className="mt-1 text-sm text-muted-foreground">{m.detail}</p>
+            {m.more || m.sources?.length ? (
+              <details className="mt-1 text-sm">
+                <summary className="cursor-pointer font-semibold text-primary">
+                  Pourquoi cette date ?
+                </summary>
+                {m.more ? <p className="mt-1 text-muted-foreground">{m.more}</p> : null}
+                {m.sources?.length ? (
+                  <p className="mt-1 text-xs">
+                    Source :{" "}
+                    {m.sources.map((id, index) => (
+                      <span key={id}>
+                        {index ? ", " : ""}
+                        <a
+                          href={formaliteSources[id].url}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="underline underline-offset-2"
+                        >
+                          {formaliteSources[id].short}
+                        </a>
+                      </span>
+                    ))}
+                  </p>
+                ) : null}
+              </details>
             ) : null}
           </li>
         ))}

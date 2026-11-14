@@ -3,6 +3,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { supabase as typedSupabase } from "@/integrations/supabase/client";
 import { defaultProfile } from "@/lib/ferry/preparation";
 import { preparationFromTravelProfile } from "@/lib/ferry/travelProfile";
+import { acceptRoomInvite, clearRoomInvite } from "@/lib/ferry/roomGuests";
 
 // Tables communautaires pas encore présentes dans les types générés.
 const supabase = typedSupabase as unknown as SupabaseClient;
@@ -35,7 +36,12 @@ const watchSchema = z.object({
   children: z.number().int().min(0).max(20),
 });
 /** Un message écrit avant l'inscription : rien à enregistrer d'autre que le compte. */
-const chatSchema = z.object({ type: z.literal("chat"), label: z.string().max(200) });
+const chatSchema = z.object({
+  type: z.literal("chat"),
+  label: z.string().max(200),
+  /** Invitation d'un passager : acceptée juste après l'inscription, avant l'envoi du message. */
+  invite: z.string().regex(/^[0-9a-f]{32}$/).optional(),
+});
 export const travelActionSchema = z.discriminatedUnion("type", [
   followSchema,
   watchSchema,
@@ -156,7 +162,13 @@ export async function keepOnlyTrip(userId: string, keep: string[], leg?: "outbou
 
 export async function saveTravelAction(userId: string, rawAction: TravelAction) {
   const action = travelActionSchema.parse(rawAction);
-  if (action.type === "chat") return;
+  if (action.type === "chat") {
+    if (action.invite) {
+      await acceptRoomInvite(action.invite);
+      clearRoomInvite();
+    }
+    return;
+  }
   const purpose =
     action.type === "follow"
       ? (action.purpose ?? (action.traveller ? "voyageur" : "curieux"))

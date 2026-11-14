@@ -15927,3 +15927,26 @@ img[data-logo="dark"] {
     animation: none;
   }
 }
+
+/* Invité par un passager : une mention discrète sur ses messages, et l'accueil avant l'inscription. */
+.bw-chat__line small[data-place="guest"] {
+  background: #f1ecfb;
+  color: #5b3fa0;
+}
+.bw-chat__guest-note {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin: 0 12px 6px;
+  padding: 8px 12px;
+  border: 1px solid #f1dcaa;
+  border-radius: 12px;
+  background: #fff8e8;
+  color: #5c4100;
+  font-size: 13px;
+  line-height: 1.35;
+}
+.bw-chat__guest-note svg {
+  flex: none;
+  margin-top: 1px;
+}

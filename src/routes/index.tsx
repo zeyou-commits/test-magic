@@ -54,6 +54,8 @@ import { MessagesFab, VoyageSalonsPicker } from "@/components/panel/MessagesFab"
 import { OPEN_ROOM_PICKER_EVENT } from "@/lib/ferry/chatDemo";
 import { RoomInvite } from "@/components/panel/RoomInvite";
 import { enterRoom } from "@/lib/ferry/chat";
+import { isInviteToken, rememberRoomInvite } from "@/lib/ferry/roomGuests";
+import { RoomGuestAccept } from "@/components/panel/RoomGuestAccept";
 import { afterOverlayClose, handleOverlayBack } from "@/lib/ferry/backStack";
 import { MyTripMapChip } from "@/components/panel/MyTripHero";
 import { MapSearch } from "@/components/map/MapSearch";
@@ -1262,13 +1264,18 @@ function Index() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Lien d'invitation (« ?salon=1 ») : la fiche de la traversée ou du port, puis son salon ouvert.
+  // Lien d'invitation (« ?room=1 », « ?invite=… ») : la fiche de la traversée ou du port, puis son salon ouvert.
   useEffect(() => {
     const params = new URLSearchParams(initialSearch);
     const target = selectionFromUrl(initialSearch);
-    if (!params.has("salon") || !target) return;
-    if (target.type === "departure") enterRoom("crossing", target.id);
-    else if (target.type === "port") enterRoom("port", target.id);
+    if (!target) return;
+    // Invitation personnelle d'un passager : gardée jusqu'à la connexion ou l'inscription.
+    const token = params.get("invite");
+    if (target.type === "departure" && isInviteToken(token)) rememberRoomInvite(token, target.id);
+    // « room=1 » : la fiche de la traversée ouvre déjà son salon ; « salon=1 » (anciens liens) aussi.
+    if (target.type === "departure" && params.has("salon")) enterRoom("crossing", target.id);
+    else if (target.type === "port" && (params.has("salon") || params.has("room")))
+      enterRoom("port", target.id);
     // Lu une seule fois, à l'arrivée sur la page.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -1717,6 +1724,7 @@ function Index() {
               />
             ) : null}
             <RoomInvite onSelect={(next) => handleSelectRef.current(next)} />
+            <RoomGuestAccept />
             {/* Ma traversée pas encore sur la carte : chrono flottant. */}
             {voyage ? null : (
               <MyTripMapChip fleet={fleet} onOpen={(next) => handleSelectRef.current(next)} />

@@ -26,7 +26,8 @@ export function whatsappUrl(text: string, url: string) {
   return `https://wa.me/?text=${encodeURIComponent(`${text}\n${url}`)}`;
 }
 
-export async function copyText(text: string) {
+/** Copie ; le champ de repli se pose dans la fenêtre ouverte (sinon elle reprend le focus et la copie échoue). */
+export async function copyText(text: string, container: HTMLElement = document.body) {
   try {
     await navigator.clipboard.writeText(text);
     return true;
@@ -37,7 +38,8 @@ export async function copyText(text: string) {
       field.value = text;
       field.style.position = "fixed";
       field.style.opacity = "0";
-      document.body.appendChild(field);
+      container.appendChild(field);
+      field.focus({ preventScroll: true });
       field.select();
       const ok = document.execCommand("copy");
       field.remove();

@@ -508,6 +508,12 @@ export function SearchPanel({
             <button type="button" onClick={startSearch} className="bw-search-summary">
               <Ship className="size-4 shrink-0 text-primary" aria-hidden />
               <span className="min-w-0 flex-1 leading-tight">
+                {/* Une recherche en cours affiche ses ports : on rappelle que c'est le formulaire. */}
+                {active ? (
+                  <span className="block text-[10px] font-bold uppercase tracking-wide text-primary">
+                    {tr("ui.searchPanel.trouverMaTraversee")}
+                  </span>
+                ) : null}
                 <span className="block truncate text-sm font-bold">
                   {active
                     ? `${portsLabel(filters.departurePortIds)} ${filters.roundTrip ? "⇄" : "→"} ${portsLabel(filters.arrivalPortIds)}`
@@ -870,7 +876,7 @@ export function SearchPanel({
                     {active && resultCount ? ` (${resultCount})` : ""}
                   </span>
                   <span className="max-md:hidden">
-                    {tr("ui.searchPanel.trouverMaTraversee")}
+                    Voir les traversées
                     {active && resultCount ? ` (${resultCount})` : ""}
                   </span>
                 </button>
@@ -1071,10 +1077,14 @@ function ResultBlock({
     : null;
   return (
     <div className="space-y-2.5">
-      <div className="flex items-baseline justify-between gap-2">
-        <h2 className="font-display text-base font-bold leading-tight">{title}</h2>
-        <div className="flex shrink-0 items-center gap-2">
-          <span className="text-[11px] text-muted-foreground">{subtitle}</span>
+      {/* Le titre garde toute la largeur ; la précision passe dessous (sur téléphone, un sous-titre
+          long à côté écrasait le titre mot par mot). */}
+      <div className="flex items-start justify-between gap-2">
+        <div className="min-w-0">
+          <h2 className="font-display text-base font-bold leading-tight">{title}</h2>
+          <p className="mt-0.5 text-[11px] text-muted-foreground">{subtitle}</p>
+        </div>
+        <div className="shrink-0">
           <ShareButtons compact label={tr("ui.searchPanel.partagerCetteRecherche")} />
         </div>
       </div>

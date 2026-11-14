@@ -157,7 +157,7 @@ export function generalFaq(
     },
     {
       q: "Comment comparer les ferries de toutes les compagnies ?",
-      a: "« Trouver ma traversée » rassemble sur un même écran les départs de toutes les compagnies renseignées : horaire en heure locale, durée, navire et budget estimé. La réservation se fait ensuite chez la compagnie.",
+      a: "« Réserver une traversée » rassemble sur un même écran les départs de toutes les compagnies renseignées : horaire en heure locale, durée, navire et budget estimé. La réservation se fait ensuite chez la compagnie.",
     },
     {
       q: "Peut-on échanger avec les autres passagers de sa traversée ?",

@@ -431,13 +431,17 @@ function Index() {
     },
     [vessels, allDepartures],
   );
+  // La carte en direct (aucun écran ouvert) montre tout le trafic : une recherche gardée en mémoire
+  // (ou venue de Préparer) ne filtre que l'écran « Réserver ».
+  const liveMap = panelMode === null && !selection;
+  const trafficFilters = liveMap ? emptyFilters : filters;
   const trafficFleet = useMemo(
     () =>
       fleet.filter((ship) => {
         const departure = allDepartures.find((d) => d.id === ship.departureId);
-        return departure ? matchesTraffic(departure, routes, ports, filters) : false;
+        return departure ? matchesTraffic(departure, routes, ports, trafficFilters) : false;
       }),
-    [fleet, allDepartures, routes, ports, filters],
+    [fleet, allDepartures, routes, ports, trafficFilters],
   );
   const companyContextFleet = useMemo(
     () =>
@@ -459,10 +463,15 @@ function Index() {
       fleet.filter((ship) => {
         const departure = allDepartures.find((d) => d.id === ship.departureId);
         return departure
-          ? matchesTraffic(departure, routes, ports, counterFilters(filters, companyFromShip))
+          ? matchesTraffic(
+              departure,
+              routes,
+              ports,
+              counterFilters(trafficFilters, companyFromShip),
+            )
           : false;
       }),
-    [fleet, allDepartures, routes, ports, filters, companyFromShip],
+    [fleet, allDepartures, routes, ports, trafficFilters, companyFromShip],
   );
   const atSea = useMemo(
     () => shortcutFleet.filter((ship) => ship.state === "sea"),
@@ -606,9 +615,23 @@ function Index() {
       ),
     [routes, ports, allDepartures, mapFilters, companies, vessels],
   );
+  const liveRoutes = useMemo(
+    () =>
+      filterRoutes(
+        routes,
+        ports,
+        allDepartures,
+        { ...emptyFilters, date: null },
+        {
+          companies,
+          vessels,
+        },
+      ),
+    [routes, ports, allDepartures, companies, vessels],
+  );
   const fleetVisibleRouteIds = useMemo(
     () =>
-      matchingRoutes
+      (liveMap ? liveRoutes : matchingRoutes)
         .filter(
           (route) =>
             activeShortcut !== "companies" ||
@@ -616,7 +639,7 @@ function Index() {
             route.company_ids.includes(shortcutCompanyId),
         )
         .map((route) => route.id),
-    [matchingRoutes, activeShortcut, shortcutCompanyId],
+    [liveMap, liveRoutes, matchingRoutes, activeShortcut, shortcutCompanyId],
   );
   const mapVisibleRouteIds = useMemo(
     () =>
@@ -745,6 +768,9 @@ function Index() {
       const route = routes.find((item) => item.id === focusedRouteId);
       if (route) return [route.departure_port_id, route.arrival_port_id];
     }
+    // La carte en direct (aucun écran ouvert) : vue d'ensemble, même si une recherche garde ses
+    // ports. Sinon la ligne cherchée (ou venue de Préparer) restait zoomée, sans retour au direct.
+    if (homeMode) return [];
     const from = filters.departurePortIds;
     const to = filters.arrivalPortIds;
     const ids = new Set([...from, ...to]);
@@ -768,6 +794,7 @@ function Index() {
   }, [
     mapSelection,
     focusedRouteId,
+    homeMode,
     routes,
     matchingRoutes,
     filters.companyId,
@@ -1696,6 +1723,21 @@ function Index() {
           {/* CARTE */}
           <div className="bw-map-canvas absolute inset-0 z-0 bg-[var(--sea)]">
             <DataUnavailableNotice className="absolute left-1/2 top-20 z-20 w-[min(92vw,26rem)] -translate-x-1/2" />
+            {/* Une route simulée ou une ligne mise en avant : toujours un retour d'un toucher. */}
+            {!voyage && (itineraryPreview || panelMode === "itinerary" || focusedRouteId) ? (
+              <button
+                type="button"
+                className="bw-back-live"
+                onClick={() => {
+                  if (panelMode === "itinerary") applyItineraryChoice();
+                  resetToMap();
+                  setPanelLevel(isMobile ? 0 : 1);
+                }}
+              >
+                <span className="bw-back-live__dot" aria-hidden />
+                Revenir au direct
+              </button>
+            ) : null}
             <MapStatusBar
               chips={[]}
               filters={filters}

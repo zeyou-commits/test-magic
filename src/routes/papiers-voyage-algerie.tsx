@@ -62,7 +62,10 @@ function PapersPage() {
   const state = usePapersState();
   const [step, setStep] = useState<PapersStep>("home");
   const top = useRef<HTMLDivElement>(null);
-  const toTop = () => requestAnimationFrame(() => top.current?.scrollIntoView({ block: "start", behavior: "smooth" }));
+  const toTop = () =>
+    requestAnimationFrame(() =>
+      top.current?.scrollIntoView({ block: "start", behavior: "smooth" }),
+    );
   const steps = papersSteps(state.answers);
 
   return (
@@ -97,9 +100,12 @@ function PapersPage() {
           />
           {step === "home" ? (
             <p className="mt-6 text-sm text-muted-foreground">
-              Quatre ou cinq questions, une minute. Vos réponses restent sur cet appareil. Chaque
-              règle cite sa source officielle, lue le {displayDate(FORMALITES_CHECKED)}.{" "}
-              <a href="/preparer-mon-voyage" className="font-semibold text-primary underline underline-offset-4">
+              Quatre ou cinq questions, une minute. Vos réponses restent sur cet appareil. Règles
+              relues le {displayDate(FORMALITES_CHECKED)}.{" "}
+              <a
+                href="/preparer-mon-voyage"
+                className="font-semibold text-primary underline underline-offset-4"
+              >
                 Préparer tout le voyage pas à pas
               </a>
             </p>

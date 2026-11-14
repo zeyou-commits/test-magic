@@ -351,8 +351,8 @@ function Welcome({ onStart }: { onStart: () => void }) {
         ))}
       </ol>
       <p className="mt-4 text-sm text-muted-foreground">
-        Chaque règle cite sa source officielle. BledWay ne vend pas de billets : la réservation se
-        fait auprès de la compagnie ou du distributeur indiqué.
+        BledWay ne vend pas de billets : la réservation se fait auprès de la compagnie ou du
+        distributeur indiqué.
       </p>
       <div className="mt-5">{start}</div>
     </div>

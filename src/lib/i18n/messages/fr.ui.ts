@@ -1083,7 +1083,7 @@ export const ui = {
       "Ferries Europe ↔ Maghreb : carte des traversées, lignes et départs",
     carteEtRechercheDeTraversees: "Carte et recherche de traversées",
     reduireLePanneau: "Réduire le panneau",
-    trouverMaTraversee: "Trouver ma traversée",
+    trouverMaTraversee: "Réserver une traversée",
     agrandirLePanneau: "Agrandir le panneau",
     annulee: " · Annulée",
     retourALAccueil: "Retour à l'accueil",
@@ -2480,7 +2480,7 @@ export const ui = {
     voirCalendrier: "Voir mon calendrier",
     preparerMaRouteJusquAu: "Préparer ma route jusqu'au port",
     routeJusquAuPort: "Route jusqu'au port",
-    trouverMaTraversee: "Trouver ma traversée",
+    trouverMaTraversee: "Réserver une traversée",
     modifierLaRecherche: "Modifier la recherche",
     maRouteDuBledEtape: "Ma route du bled, étape par étape",
     papiersPortTraverseeArriveeVoyez:

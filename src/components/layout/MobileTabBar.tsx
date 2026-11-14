@@ -13,13 +13,16 @@ import { useT } from "@/lib/i18n";
 import { MainMenuSheet } from "./MainMenu";
 import { familyById, familyIsActive, openSearchFromHeader, PrepareBadge } from "./menu";
 
+/**
+ * Un seul onglet en avant : celui où l'on est (vert + trait au-dessus de l'icône). Les autres,
+ * « Réserver » et « Mon voyage » compris, restent neutres. Seul `data-active` compte : un lien
+ * vers « / » serait sinon « actif » pour plusieurs onglets à la fois.
+ */
 const itemClass =
-  "flex h-full min-w-0 flex-1 flex-col items-center justify-center gap-1 whitespace-nowrap text-[11px] font-medium text-muted-foreground transition-colors hover:text-foreground data-[active=true]:text-primary [&.active]:text-primary";
-/** « Réserver » : le bouton plein, à la même place que sur l'ordinateur (après « Préparer »). */
-const bookClass =
-  "flex h-full min-w-0 flex-1 flex-col items-center justify-center gap-0.5 whitespace-nowrap text-[11px] font-bold text-primary";
-const bookIcon =
-  "grid h-8 w-12 place-items-center rounded-xl bg-primary text-primary-foreground shadow-sm";
+  "relative flex h-full min-w-0 flex-1 flex-col items-center justify-center gap-1 whitespace-nowrap text-[11px] font-medium text-muted-foreground transition-colors hover:text-foreground before:absolute before:left-1/2 before:top-0 before:h-[3px] before:w-9 before:-translate-x-1/2 before:rounded-b-full before:bg-primary before:opacity-0 before:content-[''] data-[active=true]:font-bold data-[active=true]:text-primary data-[active=true]:before:opacity-100";
+/** « Réserver » / « Mon voyage » : même style que les autres onglets. */
+const bookClass = itemClass;
+const bookIcon = "grid place-items-center";
 
 interface MobileTabBarProps {
   className?: string;

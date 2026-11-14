@@ -3499,3 +3499,37 @@ body:has(.bw-home--app) {
   text-decoration: underline;
   text-underline-offset: 3px;
 }
+
+/* « Revenir au direct » : posé sur la carte quand une route simulée ou une ligne est mise en avant. */
+.bw-back-live {
+  position: absolute;
+  top: 12px;
+  left: 50%;
+  z-index: 25;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 40px;
+  padding: 0 16px;
+  border: 0;
+  border-radius: 999px;
+  background: #ffffff;
+  box-shadow: 0 6px 20px #16324a26;
+  color: #0b5e34;
+  font-size: 14px;
+  font-weight: 800;
+  white-space: nowrap;
+  transform: translateX(-50%);
+  cursor: pointer;
+}
+.bw-back-live__dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 999px;
+  background: #16a34a;
+  box-shadow: 0 0 0 4px #16a34a33;
+}
+.bw-back-live:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}

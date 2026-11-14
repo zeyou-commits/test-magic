@@ -501,6 +501,14 @@ function CompanionPage() {
       passengers: { ...stored.passengers, adults, children },
     });
   };
+  // Le formulaire « Réserver » reprend au fil de l'eau qui part et avec quel véhicule (onglet
+  // Réserver ouvert depuis la barre du bas, pas seulement le bouton de fin de parcours).
+  const { adults: syncAdults, children: syncChildren } = people(papers.answers);
+  useEffect(() => {
+    if (!loaded || !plan.started) return;
+    syncTravelProfile();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loaded, plan.started, plan.vehicle, syncAdults, syncChildren]);
 
   const summaries = useSummaries(plan, papers, fromChoice, toPort);
 

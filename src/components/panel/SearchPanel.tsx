@@ -323,16 +323,42 @@ export function SearchPanel({
     () => buildSailings(departures, routes, ports, companies, vessels),
     [departures, routes, ports, companies, vessels],
   );
-  // Date cherchée au-delà du dernier départ publié : ventes pas encore ouvertes.
+  // Date cherchée au-delà du dernier départ publié SUR LES PORTS CHERCHÉS : ventes pas encore
+  // ouvertes. (Le dernier départ de tout le réseau masquait le cas : une autre ligne publiée plus
+  // loin suffisait à ne rien dire pour Sète → Alger.)
   const salesClosed = useMemo(() => {
     if (!filters.date || !departures.length) return null;
-    const last = departures.reduce((max, d) => (d.departure_at > max ? d.departure_at : max), "");
+    const from = new Set(filters.departurePortIds);
+    const to = new Set(filters.arrivalPortIds);
+    const byRoute = new Map(routes.map((r) => [r.id, r]));
+    const onPair = departures.filter((d) => {
+      const route = byRoute.get(d.route_id);
+      if (!route) return false;
+      const out =
+        (!from.size || from.has(route.departure_port_id)) &&
+        (!to.size || to.has(route.arrival_port_id));
+      // Aller-retour : les départs du sens inverse comptent aussi.
+      const back =
+        filters.roundTrip &&
+        (!to.size || to.has(route.departure_port_id)) &&
+        (!from.size || from.has(route.arrival_port_id));
+      return out || back;
+    });
+    const scope = onPair.length ? onPair : departures;
+    const last = scope.reduce((max, d) => (d.departure_at > max ? d.departure_at : max), "");
     if (filters.date <= last.slice(0, 10)) return null;
     const month = new Intl.DateTimeFormat("fr-FR", { month: "long", year: "numeric" }).format(
       new Date(`${filters.date}T12:00:00`),
     );
     return month;
-  }, [filters.date, departures]);
+  }, [
+    filters.date,
+    filters.departurePortIds,
+    filters.arrivalPortIds,
+    filters.roundTrip,
+    departures,
+    routes,
+  ]);
   // Ports ayant au moins un départ ou une arrivée planifiés (hors annulations).
   const scheduledPortIds = useMemo(() => {
     const byRoute = new Map(routes.map((r) => [r.id, r]));

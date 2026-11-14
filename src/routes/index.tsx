@@ -65,6 +65,7 @@ import { MapStats, type MapShortcut } from "@/components/map/MapStats";
 import { FLASH_SELECT_EVENT } from "@/components/panel/FlashCenter";
 import { FLASH_PREVIEW_EVENT } from "@/components/panel/FlashFeed";
 import { filtersFromUrl, mapStateToSearch, selectionFromUrl } from "@/lib/ferry/urlState";
+import { bookingSearch, loadPlan } from "@/lib/ferry/companion";
 import { hasActiveFilters, filterRoutes, summarizePorts } from "@/lib/ferry/filtering";
 import { portTimeZone } from "@/lib/ferry/time";
 import { portTraffic } from "@/lib/ferry/portTraffic";
@@ -1216,11 +1217,21 @@ function Index() {
     );
   };
 
+  // « Réserver » sans recherche en cours : on part de la préparation (ports et date), pour ne
+  // pas tout ressaisir. Une recherche déjà commencée n'est jamais écrasée.
+  const seedSearchFromPlan = () => {
+    if (filters.departurePortIds.length || filters.arrivalPortIds.length) return;
+    const plan = loadPlan();
+    if (!plan?.started || !plan.fromPortId || !plan.toPortId) return;
+    setFilters(filtersFromUrl(bookingSearch(plan).slice(1)));
+  };
+
   const openMobileSearch = () => {
     if (panelMode === "search" && !selection) {
       resetToMap();
       return;
     }
+    seedSearchFromPlan();
     if (panelMode === "itinerary") applyItineraryChoice();
     resetToMap();
     setPortsActive(false);
@@ -1321,6 +1332,7 @@ function Index() {
       document.getElementById("carte")?.scrollIntoView({ behavior: "instant" });
     if (panelMode === "itinerary") applyItineraryChoice();
     if (selection) handleSelect(null);
+    seedSearchFromPlan();
     setPanelMode("search");
     setActiveShortcut(null);
     setShortcutMenuOpen(false);

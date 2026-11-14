@@ -97,15 +97,9 @@ html {
   color: #0e7a43;
   background: #edf6ef;
 }
-/* « Réserver » : la seule action pleine de l'en-tête. */
+/* « Réserver » : une entrée comme les autres (seule la rubrique où l'on est passe en vert). */
 .bw-desktop-nav > a.bw-book-button {
   margin-right: 6px;
-  background: #0e7a43;
-  color: #fff;
-  box-shadow: 0 6px 16px rgba(14, 122, 67, 0.22);
-}
-.bw-desktop-nav > a.bw-book-button:hover {
-  background: #0b6638;
 }
 /* Traversée suivie : « Mon voyage » reste visible, comme le bouton central du téléphone. */
 .bw-my-trip-pill {
@@ -114,10 +108,10 @@ html {
   align-items: center;
   gap: 6px;
   padding: 8px 14px;
-  border: 1px solid #b9dcc6;
+  border: 1px solid #e1dccf;
   border-radius: 999px;
-  background: #edf6ef;
-  color: #0e7a43;
+  background: transparent;
+  color: #435566;
   font-size: 14px;
   font-weight: 700;
 }
@@ -125,6 +119,9 @@ html {
   .bw-my-trip-pill {
     display: inline-flex;
   }
+}
+.bw-my-trip-pill:hover {
+  background: #f1eee7;
 }
 .bw-search-welcome__sub {
   margin: 2px 0 0;

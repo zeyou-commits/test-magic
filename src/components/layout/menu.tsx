@@ -65,7 +65,7 @@ export function PrepareBadge({ className = "" }: { className?: string }) {
   if (!unfinished) return null;
   return (
     <span
-      className={`bw-prep-badge ${className}`}
+      className={`bw-todo-dot ${className}`}
       role="img"
       aria-label={t("menu.prepareUnfinished")}
       title={t("menu.prepareUnfinished")}

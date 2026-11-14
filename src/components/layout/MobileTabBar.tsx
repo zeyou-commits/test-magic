@@ -83,7 +83,7 @@ export function MobileTabBar({
       >
         <span className="relative">
           <ClipboardList className="size-5" aria-hidden />
-          <PrepareBadge className="bw-prep-badge--corner" />
+          <PrepareBadge className="bw-todo-dot--corner" />
         </span>
         <span>{t("menu.tabPrepare")}</span>
       </Link>

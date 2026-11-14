@@ -5,6 +5,7 @@ import { toolsCatalog } from "@/content/tools";
 import { EDITORIAL_DATE } from "./site";
 export const editorialPaths = [
   "/guide",
+  "/decouvrir",
   "/vehicules-moins-3-ans",
   "/voyage-algerie",
   "/papiers-voyage-algerie",

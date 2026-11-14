@@ -92,11 +92,10 @@ export function HomeContent({
           <h2 id="journey-title">
             {tr("ui.homeContent.leVoyageCommence")}
             <br />
-            {tr("ui.homeContent.bienAvant")}<em>{tr("ui.homeContent.leDepart")}</em>
+            {tr("ui.homeContent.bienAvant")}
+            <em>{tr("ui.homeContent.leDepart")}</em>
           </h2>
-          <p>
-            {tr("ui.homeContent.laVoitureChargeeLesRetrouvailles")}
-          </p>
+          <p>{tr("ui.homeContent.laVoitureChargeeLesRetrouvailles")}</p>
           <div className="bw-inline-note">
             <ShieldCheck size={20} />
             <span>{tr("ui.homeContent.unGuideIndependantDesInformations")}</span>
@@ -121,14 +120,16 @@ export function HomeContent({
             <h2 id="routes-title">{tr("ui.homeContent.aChaqueVoyageSaTraversee")}</h2>
           </div>
           <Link to="/lignes" className="bw-text-link">
-            {tr("ui.homeContent.toutesLesLignes")}<ArrowUpRight size={18} />
+            {tr("ui.homeContent.toutesLesLignes")}
+            <ArrowUpRight size={18} />
           </Link>
         </div>
         <div className="bw-route-layout">
           <div className="bw-coast-art">
             <JourneyArtwork />
             <span className="bw-art-caption">
-              <MapPin size={16} />{tr("ui.homeContent.lAutreRiveVousAttend")}
+              <MapPin size={16} />
+              {tr("ui.homeContent.lAutreRiveVousAttend")}
             </span>
           </div>
           <div className="bw-route-list">
@@ -166,13 +167,12 @@ export function HomeContent({
                 <h3>{tr("ui.homeContent.deuxRivesDeNombreusesPossibilites")}</h3>
                 <p>{tr("ui.homeContent.explorezLesPortsEtLes")}</p>
                 <Link to="/lignes" className="bw-text-link">
-                  {tr("ui.homeContent.explorerLesLignes")}<ArrowRight size={18} />
+                  {tr("ui.homeContent.explorerLesLignes")}
+                  <ArrowRight size={18} />
                 </Link>
               </div>
             )}
-            <p className="bw-route-note">
-              {tr("ui.homeContent.lesDepartsEtLesCompagnies")}
-            </p>
+            <p className="bw-route-note">{tr("ui.homeContent.lesDepartsEtLesCompagnies")}</p>
           </div>
         </div>
       </section>
@@ -185,9 +185,7 @@ export function HomeContent({
               <br />
               {tr("ui.homeContent.partieDuVoyage")}
             </h2>
-            <p>
-              {tr("ui.homeContent.unNomSurLeBillet")}
-            </p>
+            <p>{tr("ui.homeContent.unNomSurLeBillet")}</p>
             <Link to="/bateaux" className="bw-primary-link">
               {tr("ui.homeContent.decouvrirLesNavires")}{" "}
               <span>
@@ -195,7 +193,8 @@ export function HomeContent({
               </span>
             </Link>
             <span className="bw-data-note">
-              <Ship size={16} />{tr("ui.homeContent.sourceEtFraicheurPreciseesDans")}
+              <Ship size={16} />
+              {tr("ui.homeContent.sourceEtFraicheurPreciseesDans")}
             </span>
           </div>
           <div className="bw-vessel-art">
@@ -206,7 +205,9 @@ export function HomeContent({
               <strong>{tr("ui.homeContent.leBled")}</strong>
               <span>{tr("ui.homeContent.etLeRetour")}</span>
             </span>
-            <span className="bw-illustration-label">{tr("ui.homeContent.illustrationBledwayNavireGenerique")}</span>
+            <span className="bw-illustration-label">
+              {tr("ui.homeContent.illustrationBledwayNavireGenerique")}
+            </span>
           </div>
         </div>
       </section>
@@ -221,7 +222,8 @@ export function HomeContent({
             <h2 id="guides-title">{tr("ui.homeContent.onPrepareLesBagages")}</h2>
           </div>
           <Link to="/guide" className="bw-text-link">
-            {tr("ui.homeContent.tousLesGuides")}<ArrowUpRight size={18} />
+            {tr("ui.homeContent.tousLesGuides")}
+            <ArrowUpRight size={18} />
           </Link>
         </div>
         <div className="bw-guide-grid">
@@ -236,7 +238,8 @@ export function HomeContent({
               </h3>
               <p>{tr("ui.homeContent.billetEmbarquementCabinePreparezVotre")}</p>
               <span className="bw-text-link">
-                {tr("ui.homeContent.preparerMonDepart")}<ArrowUpRight size={18} />
+                {tr("ui.homeContent.preparerMonDepart")}
+                <ArrowUpRight size={18} />
               </span>
             </div>
           </Link>
@@ -247,11 +250,10 @@ export function HomeContent({
               </span>
               <span className="bw-eyebrow">{tr("ui.homeContent.laVoitureAussiFaitLe")}</span>
               <h3>{tr("ui.homeContent.unProjetDImportation")}</h3>
-              <p>
-                {tr("ui.homeContent.ageDuVehiculeDocumentsEt")}
-              </p>
+              <p>{tr("ui.homeContent.ageDuVehiculeDocumentsEt")}</p>
               <span className="bw-text-link">
-                {tr("ui.homeContent.comprendreLesDemarches")}<ArrowUpRight size={18} />
+                {tr("ui.homeContent.comprendreLesDemarches")}
+                <ArrowUpRight size={18} />
               </span>
             </Link>
             <Link to="/simulateurs" className="bw-guide-small bw-guide-tools">
@@ -259,7 +261,8 @@ export function HomeContent({
               <h3>{tr("ui.homeContent.unBudgetPlusClair")}</h3>
               <p>{tr("ui.homeContent.comparezVosOptionsAvecDes")}</p>
               <span className="bw-text-link">
-                {tr("ui.homeContent.ouvrirLesSimulateurs")}<ArrowUpRight size={18} />
+                {tr("ui.homeContent.ouvrirLesSimulateurs")}
+                <ArrowUpRight size={18} />
               </span>
             </Link>
           </div>
@@ -271,13 +274,16 @@ export function HomeContent({
           <p className="bw-eyebrow">{tr("ui.homeContent.avantDeLarguerLesAmarres")}</p>
           <h2 id="faq-title">{tr("ui.homeContent.onVousRepond")}</h2>
           <p>
-            {tr("ui.homeContent.encoreUneQuestion")}<br />
+            {tr("ui.homeContent.encoreUneQuestion")}
+            <br />
             <Link to="/contact" className="bw-text-link">
-              {tr("ui.homeContent.ecrivezNous")}<ArrowUpRight size={17} />
+              {tr("ui.homeContent.ecrivezNous")}
+              <ArrowUpRight size={17} />
             </Link>
             <br />
             <Link to="/questions-frequentes" className="bw-text-link">
-              {tr("ui.homeContent.toutesLesReponses")}<ArrowUpRight size={17} />
+              {tr("ui.homeContent.toutesLesReponses")}
+              <ArrowUpRight size={17} />
             </Link>
           </p>
         </div>
@@ -296,9 +302,10 @@ export function HomeContent({
       <div className="bw-container bw-final-invitation" data-reveal>
         <BookOpen size={24} strokeWidth={1.6} />
         <p>{tr("ui.homeContent.leProchainChapitreCommenceSur")}</p>
-        <a href="#carte" className="bw-text-link">
-          {tr("ui.homeContent.retourALaCarte")}<ArrowUpRight size={18} />
-        </a>
+        <Link to="/" className="bw-text-link">
+          {tr("ui.homeContent.retourALaCarte")}
+          <ArrowUpRight size={18} />
+        </Link>
       </div>
     </div>
   );

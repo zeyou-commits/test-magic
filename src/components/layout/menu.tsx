@@ -11,6 +11,7 @@ import {
   FileCheck,
   FileText,
   Info,
+  Compass,
   Landmark,
   ListChecks,
   Mail,
@@ -171,6 +172,7 @@ export const menuFamilies: MenuFamily[] = [
     columns: [
       {
         items: [
+          { to: "/decouvrir", labelKey: "nav.discover", icon: Compass },
           { to: "/a-propos", labelKey: "nav.about", icon: Info },
           { to: "/contact", labelKey: "nav.contact", icon: Mail },
           { to: "/methode-editoriale", labelKey: "nav.editorialMethod", icon: ScrollText },

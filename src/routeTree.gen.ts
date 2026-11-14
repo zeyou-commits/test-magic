@@ -23,6 +23,7 @@ import { Route as ConditionsUtilisationRouteImport } from './routes/conditions-u
 import { Route as ConfidentialiteRouteImport } from './routes/confidentialite'
 import { Route as ContactRouteImport } from './routes/contact'
 import { Route as CovoiturageRouteImport } from './routes/covoiturage'
+import { Route as DecouvrirRouteImport } from './routes/decouvrir'
 import { Route as GuideRouteImport } from './routes/guide'
 import { Route as HorairesRouteImport } from './routes/horaires'
 import { Route as LignesRouteImport } from './routes/lignes'
@@ -134,6 +135,11 @@ const ContactRoute = ContactRouteImport.update({
 const CovoiturageRoute = CovoiturageRouteImport.update({
   id: '/covoiturage',
   path: '/covoiturage',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DecouvrirRoute = DecouvrirRouteImport.update({
+  id: '/decouvrir',
+  path: '/decouvrir',
   getParentRoute: () => rootRouteImport,
 } as any)
 const GuideRoute = GuideRouteImport.update({
@@ -362,6 +368,7 @@ export interface FileRoutesByFullPath {
   '/confidentialite': typeof ConfidentialiteRoute
   '/contact': typeof ContactRoute
   '/covoiturage': typeof CovoiturageRouteWithChildren
+  '/decouvrir': typeof DecouvrirRoute
   '/guide': typeof GuideRouteWithChildren
   '/horaires': typeof HorairesRoute
   '/lignes': typeof LignesRouteWithChildren
@@ -418,6 +425,7 @@ export interface FileRoutesByTo {
   '/conditions-utilisation': typeof ConditionsUtilisationRoute
   '/confidentialite': typeof ConfidentialiteRoute
   '/contact': typeof ContactRoute
+  '/decouvrir': typeof DecouvrirRoute
   '/horaires': typeof HorairesRoute
   '/llms.txt': typeof LlmsDottxtRoute
   '/ma-bezass': typeof MaBezassRoute
@@ -473,6 +481,7 @@ export interface FileRoutesById {
   '/confidentialite': typeof ConfidentialiteRoute
   '/contact': typeof ContactRoute
   '/covoiturage': typeof CovoiturageRouteWithChildren
+  '/decouvrir': typeof DecouvrirRoute
   '/guide': typeof GuideRouteWithChildren
   '/horaires': typeof HorairesRoute
   '/lignes': typeof LignesRouteWithChildren
@@ -533,6 +542,7 @@ export interface FileRouteTypes {
     | '/confidentialite'
     | '/contact'
     | '/covoiturage'
+    | '/decouvrir'
     | '/guide'
     | '/horaires'
     | '/lignes'
@@ -589,6 +599,7 @@ export interface FileRouteTypes {
     | '/conditions-utilisation'
     | '/confidentialite'
     | '/contact'
+    | '/decouvrir'
     | '/horaires'
     | '/llms.txt'
     | '/ma-bezass'
@@ -643,6 +654,7 @@ export interface FileRouteTypes {
     | '/confidentialite'
     | '/contact'
     | '/covoiturage'
+    | '/decouvrir'
     | '/guide'
     | '/horaires'
     | '/lignes'
@@ -702,6 +714,7 @@ export interface RootRouteChildren {
   ConfidentialiteRoute: typeof ConfidentialiteRoute
   ContactRoute: typeof ContactRoute
   CovoiturageRoute: typeof CovoiturageRouteWithChildren
+  DecouvrirRoute: typeof DecouvrirRoute
   GuideRoute: typeof GuideRouteWithChildren
   HorairesRoute: typeof HorairesRoute
   LignesRoute: typeof LignesRouteWithChildren
@@ -832,6 +845,13 @@ declare module '@tanstack/react-router' {
       path: '/covoiturage'
       fullPath: '/covoiturage'
       preLoaderRoute: typeof CovoiturageRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/decouvrir': {
+      id: '/decouvrir'
+      path: '/decouvrir'
+      fullPath: '/decouvrir'
+      preLoaderRoute: typeof DecouvrirRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/guide': {
@@ -1224,6 +1244,7 @@ const rootRouteChildren: RootRouteChildren = {
   ConfidentialiteRoute: ConfidentialiteRoute,
   ContactRoute: ContactRoute,
   CovoiturageRoute: CovoiturageRouteWithChildren,
+  DecouvrirRoute: DecouvrirRoute,
   GuideRoute: GuideRouteWithChildren,
   HorairesRoute: HorairesRoute,
   LignesRoute: LignesRouteWithChildren,

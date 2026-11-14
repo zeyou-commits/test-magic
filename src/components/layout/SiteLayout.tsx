@@ -79,6 +79,7 @@ export const navLinks = [
 ] as const;
 
 const footerLinks = [
+  { to: "/decouvrir", labelKey: "nav.discover" },
   { to: "/actualites", labelKey: "nav.news" },
   { to: "/guide", labelKey: "nav.allGuides" },
   { to: "/questions-frequentes", labelKey: "nav.faq" },
@@ -296,7 +297,9 @@ export function SiteFooter() {
         <div>
           <h2>{t("footer.withYou")}</h2>
           {footerLinks
-            .filter((item) => ["/a-propos", "/contact", "/methode-editoriale"].includes(item.to))
+            .filter((item) =>
+              ["/decouvrir", "/a-propos", "/contact", "/methode-editoriale"].includes(item.to),
+            )
             .map((item) => (
               <Link key={item.to} to={item.to}>
                 {t(item.labelKey)}

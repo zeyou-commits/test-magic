@@ -1,4 +1,8 @@
-import { JOURNEY_LAYOUT_EVENT, publishFilmFrame, type JourneyLayout } from "@/lib/ferry/journeyFilm";
+import {
+  JOURNEY_LAYOUT_EVENT,
+  publishFilmFrame,
+  type JourneyLayout,
+} from "@/lib/ferry/journeyFilm";
 import { counterFilters, syncFilters, matchesTraffic } from "@/lib/ferry/filterSync";
 import { seoHead } from "@/lib/seo/site";
 import { DataUnavailableNotice } from "@/components/layout/DataUnavailableNotice";
@@ -6,9 +10,7 @@ import type React from "react";
 import {
   ChevronLeft,
   ChevronRight,
-  ArrowDown,
   ArrowLeft,
-  Compass,
   Globe2,
   MessagesSquare,
   Minus,
@@ -68,9 +70,8 @@ import { portTimeZone } from "@/lib/ferry/time";
 import { portTraffic } from "@/lib/ferry/portTraffic";
 import { buildSailings, legSailings } from "@/lib/ferry/trips";
 import { useFleet } from "@/lib/ferry/useFleet";
-import { SiteHeader, SiteFooter } from "@/components/layout/SiteLayout";
+import { SiteHeader } from "@/components/layout/SiteLayout";
 import { MobileTabBar } from "@/components/layout/MobileTabBar";
-import { HomeContent } from "@/components/home/HomeContent";
 import type { ItineraryMapPreview } from "@/lib/ferry/itinerary";
 import { toast } from "sonner";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -299,9 +300,7 @@ function Index() {
   useEffect(() => {
     if (panelLevel !== 2 || !window.matchMedia("(max-width: 767px)").matches) return;
     const background = [
-      ...document.querySelectorAll<HTMLElement>(
-        ".bw-home > .bw-header, .bw-home #preparer, .bw-home > .bw-footer, .bw-home .bw-map-canvas",
-      ),
+      ...document.querySelectorAll<HTMLElement>(".bw-home > .bw-header, .bw-home .bw-map-canvas"),
     ];
     const previous = background.map((element) => element.inert);
     background.forEach((element) => {
@@ -1330,15 +1329,13 @@ function Index() {
   };
 
   return (
-    <div className="bw-home">
+    <div className="bw-home bw-home--app">
       <a href="#contenu" className="bw-skip-link">
         {tr("ui.pageIndex.allerAuContenu")}
       </a>
       <SiteHeader />
       <main id="contenu" tabIndex={-1}>
-        <h1 className="sr-only">
-          {tr("ui.pageIndex.ferriesEuropeMaghrebCarteDes")}
-        </h1>
+        <h1 className="sr-only">{tr("ui.pageIndex.ferriesEuropeMaghrebCarteDes")}</h1>
         <section
           id="carte"
           aria-label={tr("ui.pageIndex.carteEtRechercheDeTraversees")}
@@ -1411,7 +1408,11 @@ function Index() {
               <Button
                 type="button"
                 variant="ghost"
-                aria-label={panelLevel === 2 ? tr("ui.pageIndex.reduireLePanneau") : tr("ui.pageIndex.agrandirLePanneau")}
+                aria-label={
+                  panelLevel === 2
+                    ? tr("ui.pageIndex.reduireLePanneau")
+                    : tr("ui.pageIndex.agrandirLePanneau")
+                }
                 className="flex h-5 w-full flex-none touch-none items-center justify-center rounded-none rounded-t-3xl border-b border-border/20 bg-card py-0 md:hidden"
                 onClick={cyclePanelLevel}
                 {...dragHandlers}
@@ -1515,7 +1516,9 @@ function Index() {
                                 {voyageVessel}
                               </>
                             ) : null}
-                            {voyage.summary.cancelled ? <em>{tr("ui.pageIndex.annulee")}</em> : null}
+                            {voyage.summary.cancelled ? (
+                              <em>{tr("ui.pageIndex.annulee")}</em>
+                            ) : null}
                           </small>
                         </div>
                       )}
@@ -1564,7 +1567,8 @@ function Index() {
                   <>
                     <div className="bw-voyage-aside__bar">
                       <button type="button" onClick={leaveVoyage}>
-                        <ArrowLeft size={15} aria-hidden />{tr("ui.pageIndex.retourALAccueil2")}
+                        <ArrowLeft size={15} aria-hidden />
+                        {tr("ui.pageIndex.retourALAccueil2")}
                       </button>
                       {voyage.placesEntry ?? <span>{tr("ui.pageIndex.traverseeSuivie")}</span>}
                     </div>
@@ -1620,8 +1624,16 @@ function Index() {
               type="button"
               variant="outline"
               size="icon"
-              aria-label={desktopPanelOpen ? tr("ui.pageIndex.reduireLePanneau") : tr("ui.pageIndex.developperLePanneau")}
-              title={desktopPanelOpen ? tr("ui.pageIndex.reduireLePanneau") : tr("ui.pageIndex.developperLePanneau")}
+              aria-label={
+                desktopPanelOpen
+                  ? tr("ui.pageIndex.reduireLePanneau")
+                  : tr("ui.pageIndex.developperLePanneau")
+              }
+              title={
+                desktopPanelOpen
+                  ? tr("ui.pageIndex.reduireLePanneau")
+                  : tr("ui.pageIndex.developperLePanneau")
+              }
               aria-expanded={desktopPanelOpen}
               aria-controls="map-side-panel"
               onClick={() => setDesktopPanelOpen((open) => !open)}
@@ -1855,7 +1867,10 @@ function Index() {
                     />
                   </aside>
                 ) : null}
-                <section className="bw-voyage-dock" aria-label={tr("ui.pageIndex.monVoyageEtapeParEtape")}>
+                <section
+                  className="bw-voyage-dock"
+                  aria-label={tr("ui.pageIndex.monVoyageEtapeParEtape")}
+                >
                   <header className="bw-voyage-dock__head">
                     <div className="bw-voyage-dock__title">
                       <span>{voyage.summary.heading}</span>
@@ -1864,7 +1879,8 @@ function Index() {
                     </div>
                     {voyage.summary.countdown ? (
                       <p>
-                        <b>{voyage.summary.countdown}</b>{tr("ui.pageIndex.avantLeDepart")}
+                        <b>{voyage.summary.countdown}</b>
+                        {tr("ui.pageIndex.avantLeDepart")}
                       </p>
                     ) : null}
                     {voyage.traveller && voyage.summary.total ? (
@@ -1876,7 +1892,8 @@ function Index() {
                       </p>
                     ) : null}
                     <button type="button" className="bw-voyage-dock__exit" onClick={leaveVoyage}>
-                      <ArrowLeft size={15} aria-hidden />{tr("ui.pageIndex.accueil")}
+                      <ArrowLeft size={15} aria-hidden />
+                      {tr("ui.pageIndex.accueil")}
                     </button>
                   </header>
                   <JourneyFrieze
@@ -1944,11 +1961,6 @@ function Index() {
               </Suspense>
             </ClientOnly>
           </div>
-          {voyage ? null : (
-            <a className="bw-map-scroll" href="#preparer">
-              <Compass size={16} />{tr("ui.pageIndex.etApresLaTraversee")}<ArrowDown size={16} />
-            </a>
-          )}
           {voyage ? (
             <Dialog open={salonDialog} onOpenChange={setSalonDialog}>
               <DialogContent className="bw-chat-window">
@@ -1965,9 +1977,9 @@ function Index() {
             </Dialog>
           ) : null}
         </section>
-        <HomeContent ports={ports} routes={routes} onExplore={exploreRoute} />
+        {/* Écran d'application : rien sous la carte. Le récit, les lignes, les guides et la FAQ
+            sont sur « Découvrir » (/decouvrir). */}
       </main>
-      <SiteFooter />
     </div>
   );
 }
@@ -2006,7 +2018,9 @@ function CollapsedPanelSummary({
           </span>
         </span>
         <span className="shrink-0 text-sm font-bold text-primary">
-          {nextLabel === "Ports, dates et voyageurs" ? tr("ui.pageIndex.trouver") : tr("ui.pageIndex.voir")}
+          {nextLabel === "Ports, dates et voyageurs"
+            ? tr("ui.pageIndex.trouver")
+            : tr("ui.pageIndex.voir")}
         </span>
       </span>
     </Button>

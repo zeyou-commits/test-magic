@@ -28,6 +28,7 @@ export const fr = {
     vehiclesUnder3: "Véhicules de moins de 3 ans",
     carpool: "Covoiturage",
     about: "À propos",
+    discover: "Découvrir BledWay",
     contact: "Contact",
     editorialMethod: "Méthode éditoriale",
     allGuides: "Tous les dossiers",

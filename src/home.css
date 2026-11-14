@@ -3467,3 +3467,35 @@ html {
     line-height: 1.1;
   }
 }
+
+/* L'accueil est un écran d'application, sur téléphone comme sur ordinateur : la page ne défile
+   pas, seuls les volets défilent (et leur défilement ne déborde plus sur la page). Le récit et
+   les guides sont sur /decouvrir. */
+html:has(.bw-home--app),
+body:has(.bw-home--app) {
+  height: 100%;
+  overflow: hidden;
+  overscroll-behavior: none;
+}
+.bw-home--app {
+  height: 100dvh;
+  overflow: hidden;
+}
+.bw-home--app .batogo-panel-scroll,
+.bw-home--app .bw-map-panel,
+.bw-home--app [data-radix-scroll-area-viewport] {
+  overscroll-behavior: contain;
+}
+@media (min-width: 768px) {
+  .bw-home--app .bw-map-stage {
+    /* Toute la fenêtre sous l'en-tête (bandeau compris), avec une marge en bas. */
+    height: max(360px, calc(100dvh - var(--bw-header-height, 114px) - 16px));
+  }
+}
+.bw-search-welcome__more {
+  color: #0e7a43;
+  font-weight: 700;
+  white-space: nowrap;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}

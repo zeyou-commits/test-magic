@@ -156,6 +156,39 @@ html {
   font-size: 10px;
   box-shadow: 0 0 0 2px var(--background, #fff);
 }
+/* Préparer : chaque étape glisse de côté, dans le sens du parcours. */
+@keyframes bw-wiz-next {
+  from {
+    opacity: 0;
+    transform: translateX(32px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes bw-wiz-prev {
+  from {
+    opacity: 0;
+    transform: translateX(-32px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.bw-wiz-slide--next {
+  animation: bw-wiz-next 0.32s var(--bw-ease, ease-out) both;
+}
+.bw-wiz-slide--prev {
+  animation: bw-wiz-prev 0.32s var(--bw-ease, ease-out) both;
+}
+@media (prefers-reduced-motion: reduce) {
+  .bw-wiz-slide--next,
+  .bw-wiz-slide--prev {
+    animation: none;
+  }
+}
 .bw-header-actions {
   display: flex;
   gap: 8px;

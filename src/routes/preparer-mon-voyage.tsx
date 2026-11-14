@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import {
+  ArrowLeft,
   ArrowRight,
   Bell,
   Calculator,
@@ -280,86 +281,104 @@ function StepFrieze({
   );
 }
 
-/** L'accueil : ce que l'outil apporte, pour qui, et un seul bouton pour commencer. */
+/** Les trois chapitres du parcours, annoncés à l'accueil et rappelés à chaque étape. */
+const chapters: {
+  title: string;
+  hint: string;
+  icon: LucideIcon;
+  steps: CompanionStep[];
+}[] = [
+  {
+    title: "Vous et votre départ",
+    hint: "Quand vous partez, qui part, avec quelle voiture.",
+    icon: Users,
+    steps: ["profile"],
+  },
+  {
+    title: "Vos papiers et votre voiture",
+    hint: "La liste de chacun, avec les dates à tenir.",
+    icon: FileText,
+    steps: ["papers", "car"],
+  },
+  {
+    title: "Votre route, votre budget, votre billet",
+    hint: "Les ports les plus adaptés, le coût, la réservation.",
+    icon: RouteIcon,
+    steps: ["route", "budget", "book"],
+  },
+];
+const chapterOf = (step: CompanionStep) =>
+  Math.max(
+    0,
+    chapters.findIndex((chapter) => chapter.steps.includes(step)),
+  );
+
+/** L'accueil : pourquoi on pose des questions, les 3 chapitres, et un seul bouton. */
 function Welcome({ onStart }: { onStart: () => void }) {
-  const benefits: CompanionStep[] = ["papers", "car", "route", "budget", "book"];
   const start = (
     <button
       type="button"
       onClick={onStart}
       className="inline-flex min-h-14 w-full items-center justify-center gap-2 rounded-2xl bg-primary px-6 text-base font-bold text-primary-foreground shadow-md hover:bg-primary/90 sm:w-auto"
     >
-      Je prépare mon voyage en Algérie <ArrowRight size={18} aria-hidden />
+      Commencer <ArrowRight size={18} aria-hidden />
     </button>
   );
   return (
     <div>
-      {/* L'envie d'abord : l'Algérie en photos, puis ce que l'outil apporte. */}
+      {/* L'envie d'abord : l'Algérie en photos, puis comment on va vous aider. */}
       <AlgeriaCarousel />
       <h1 className="mt-5 font-display text-[1.75rem] font-bold leading-tight md:mt-7 md:text-5xl">
-        Votre voyage au bled, préparé étape par étape
+        Votre voyage au bled, préparé pas à pas
       </h1>
       <p className="mt-3 text-muted-foreground md:text-lg">
-        Quand partir, papiers, voiture, route, budget, traversée : BledWay vous guide de chez vous
-        jusqu'au port, sans rien oublier. Depuis la France ou ailleurs en Europe.
+        Pour vous aider vraiment, BledWay a besoin d'en savoir un peu plus sur vous et sur votre
+        voyage. Une question à la fois, en trois chapitres : à la fin, vous avez vos papiers, vos
+        dates, votre route et votre budget.
       </p>
+      <ol className="mt-5 grid gap-2 md:grid-cols-3">
+        {chapters.map((chapter, index) => {
+          const Icon = chapter.icon;
+          return (
+            <li key={chapter.title} className="flex gap-3 rounded-2xl border bg-card p-3 md:block">
+              <span className="relative shrink-0 md:block">
+                <img
+                  src={stepArt[chapter.steps[0]!].scene}
+                  alt=""
+                  width={960}
+                  height={640}
+                  loading="lazy"
+                  decoding="async"
+                  className="h-20 w-24 rounded-xl object-cover md:h-28 md:w-full"
+                />
+                <span className="absolute -bottom-2 -right-2 grid size-8 place-items-center rounded-full bg-primary text-sm font-bold text-primary-foreground ring-2 ring-card md:left-2 md:right-auto md:top-2 md:bottom-auto">
+                  {index + 1}
+                </span>
+              </span>
+              <span className="min-w-0 md:mt-3 md:block">
+                <span className="flex items-center gap-1.5 font-semibold">
+                  <Icon size={16} className="shrink-0 text-primary" aria-hidden />
+                  {chapter.title}
+                </span>
+                <span className="mt-0.5 block text-sm text-muted-foreground">{chapter.hint}</span>
+              </span>
+            </li>
+          );
+        })}
+      </ol>
       <div className="mt-5">{start}</div>
       <p className="mt-3 text-center text-sm text-muted-foreground md:text-left">
-        Environ 5 minutes · vos réponses restent sur votre téléphone · reprenez quand vous voulez
+        Environ 5 minutes · modifiable à tout moment · vos réponses restent sur votre téléphone
       </p>
       <p className="mt-2 flex flex-wrap items-center justify-center gap-2 text-sm md:justify-start">
         <span className="text-muted-foreground">Bientôt :</span>
         <span className="rounded-full border px-3 py-1 text-muted-foreground">Tunisie</span>
         <span className="rounded-full border px-3 py-1 text-muted-foreground">Maroc</span>
       </p>
-
-      <h2 className="mt-8 font-display text-xl font-bold md:text-2xl">
-        Ce que vous allez préparer
-      </h2>
-      <ol className="mt-3 grid gap-2 sm:grid-cols-2">
-        <li className="flex items-center gap-3 rounded-2xl border border-primary/30 bg-primary/5 p-2 pr-3">
-          <span
-            className="grid h-20 w-28 shrink-0 place-items-center rounded-xl bg-[#fff6e3]"
-            aria-hidden
-          >
-            <CalendarDays size={34} className="text-[#b7791f]" />
-          </span>
-          <span className="min-w-0">
-            <span className="block font-semibold">Mon calendrier</span>
-            <span className="block text-sm text-muted-foreground">
-              Votre période de départ, vacances scolaires comprises : ce qu'il faut lancer, et avant
-              quelle date.
-            </span>
-          </span>
-        </li>
-        {benefits.map((step) => (
-          <li key={step} className="flex items-center gap-3 rounded-2xl border bg-card p-2 pr-3">
-            <span className="relative shrink-0">
-              <img
-                src={stepArt[step].scene}
-                alt=""
-                width={960}
-                height={640}
-                loading="lazy"
-                decoding="async"
-                className="h-20 w-28 rounded-xl object-cover"
-              />
-              <span className="absolute -bottom-1 -right-1 scale-75">
-                <StepArt step={step} size="sm" />
-              </span>
-            </span>
-            <span className="min-w-0">
-              <span className="block font-semibold">{stepTitles[step]}</span>
-              <span className="block text-sm text-muted-foreground">{stepArt[step].benefit}</span>
-            </span>
-          </li>
-        ))}
-      </ol>
       <p className="mt-4 text-sm text-muted-foreground">
         BledWay ne vend pas de billets : la réservation se fait auprès de la compagnie ou du
         distributeur indiqué.
       </p>
-      <div className="mt-5">{start}</div>
     </div>
   );
 }
@@ -490,10 +509,7 @@ function CompanionPage() {
     const after = order.slice(order.indexOf(step) + 1).find((s) => !done.includes(s));
     const next = after ?? order.find((s) => !done.includes(s)) ?? null;
     openStep(next);
-    if (!next)
-      requestAnimationFrame(() =>
-        document.getElementById("pret")?.scrollIntoView({ block: "center", behavior: "smooth" }),
-      );
+    if (!next) requestAnimationFrame(() => window.scrollTo({ top: 0, behavior: "smooth" }));
   };
 
   // Le profil de voyage sert aussi à la recherche et à l'itinéraire de la carte.
@@ -517,6 +533,93 @@ function CompanionPage() {
 
   const summaries = useSummaries(plan, papers, fromChoice, toPort);
   useDeadlineSync(user?.id ?? null, plan, papers, loaded && papers.loaded);
+
+  const nextStep = steps.find((step) => !plan.done.includes(step) && !isLocked(step)) ?? null;
+  const stepBody = (step: CompanionStep) => (
+    <>
+      {step === "profile" ? (
+        <ProfileStep
+          papers={papers}
+          plan={plan}
+          patch={patch}
+          onDone={() => {
+            syncTravelProfile();
+            complete("profile");
+          }}
+        />
+      ) : null}
+      {step === "papers" ? (
+        <PapersStepBody
+          papers={papers}
+          plan={plan}
+          patch={patch}
+          onDone={() => complete("papers")}
+          next={plan.vehicle === "none" ? "ma route" : "ma voiture"}
+        />
+      ) : null}
+      {step === "car" ? <CarStep plan={plan} patch={patch} onDone={() => complete("car")} /> : null}
+      {step === "route" ? (
+        <RouteStep
+          papers={papers}
+          plan={plan}
+          patch={patch}
+          choices={choices}
+          fromChoice={fromChoice}
+          toPortId={toPort?.id ?? null}
+          onItinerary={() => {
+            syncTravelProfile();
+            saveItinerarySeed({
+              origin: plan.home
+                ? plan.home.postcode
+                  ? `${plan.home.name} (${plan.home.postcode})`
+                  : plan.home.name
+                : "",
+              originPoint: plan.home?.point ?? null,
+              destination: plan.destination?.label ?? "",
+              destinationPoint: plan.destination?.point ?? null,
+              period: plan.month,
+            });
+            window.sessionStorage.setItem("bledway:open-home-action", "itinerary");
+            // La carte d'accueil s'ouvre en haut, pas à la hauteur où l'on était ici.
+            window.scrollTo({ top: 0, behavior: "instant" });
+            void navigate({ to: "/" });
+          }}
+          onDone={() => complete("route")}
+        />
+      ) : null}
+      {step === "budget" ? (
+        <BudgetStep
+          plan={plan}
+          answers={papers.answers}
+          fromChoice={fromChoice}
+          toPort={toPort}
+          onDone={() => complete("budget")}
+        />
+      ) : null}
+      {step === "book" ? (
+        <BookStep
+          plan={plan}
+          answers={papers.answers}
+          fromChoice={fromChoice}
+          toPort={toPort}
+          onBook={() => {
+            syncTravelProfile();
+            if (plan.fromPortId && plan.toPortId)
+              saveItineraryChoice({
+                period: plan.month,
+                departurePortId: plan.fromPortId,
+                arrivalPortId: plan.toPortId,
+              });
+            const done = plan.done.includes("book") ? plan.done : [...plan.done, "book" as const];
+            savePlan({ ...plan, done });
+            // Ports, jour et voyageurs dans l'adresse : la carte ouvre directement les résultats.
+            window.scrollTo({ top: 0, behavior: "instant" });
+            void navigate({ href: bookingSearch(plan) });
+          }}
+        />
+      ) : null}
+    </>
+  );
 
   return (
     <SiteLayout>
@@ -557,113 +660,71 @@ function CompanionPage() {
                 onOpen={openStep}
               />
 
-              {/* Ce qu'il reste à faire, dès que la période est connue (le calendrier complet s'ouvre dessous). */}
-              {plan.done.includes("profile") ? (
-                <PlanTodo plan={plan} papers={papers} onOpenStep={openStep} />
-              ) : null}
-
-              <ol className="mt-4 grid grid-cols-1 gap-3 md:mt-6">
-                {steps.map((step, index) =>
-                  isLocked(step) ? null : (
-                    <StepCard
-                      key={step}
-                      id={step}
-                      index={index + 1}
-                      title={stepTitles[step]}
-                      summary={summaries[step]}
-                      done={plan.done.includes(step)}
-                      open={open === step && !isLocked(step)}
-                      onToggle={() => openStep(open === step ? null : step)}
+              {open === null ? (
+                <>
+                  {!allDone && !locked && nextStep ? (
+                    <button
+                      type="button"
+                      onClick={() => openStep(nextStep)}
+                      className="mt-4 flex w-full items-center gap-3 rounded-2xl bg-primary p-4 text-left text-primary-foreground shadow-md"
                     >
-                      {step === "profile" ? (
-                        <ProfileStep
-                          papers={papers}
-                          plan={plan}
-                          patch={patch}
-                          onDone={() => {
-                            syncTravelProfile();
-                            complete("profile");
-                          }}
-                        />
-                      ) : null}
-                      {step === "papers" ? (
-                        <PapersStepBody
-                          papers={papers}
-                          plan={plan}
-                          patch={patch}
-                          onDone={() => complete("papers")}
-                          next={plan.vehicle === "none" ? "ma route" : "ma voiture"}
-                        />
-                      ) : null}
-                      {step === "car" ? (
-                        <CarStep plan={plan} patch={patch} onDone={() => complete("car")} />
-                      ) : null}
-                      {step === "route" ? (
-                        <RouteStep
-                          papers={papers}
-                          plan={plan}
-                          patch={patch}
-                          choices={choices}
-                          fromChoice={fromChoice}
-                          toPortId={toPort?.id ?? null}
-                          onItinerary={() => {
-                            syncTravelProfile();
-                            saveItinerarySeed({
-                              origin: plan.home
-                                ? plan.home.postcode
-                                  ? `${plan.home.name} (${plan.home.postcode})`
-                                  : plan.home.name
-                                : "",
-                              originPoint: plan.home?.point ?? null,
-                              destination: plan.destination?.label ?? "",
-                              destinationPoint: plan.destination?.point ?? null,
-                              period: plan.month,
-                            });
-                            window.sessionStorage.setItem("bledway:open-home-action", "itinerary");
-                            // La carte d'accueil s'ouvre en haut, pas à la hauteur où l'on était ici.
-                            window.scrollTo({ top: 0, behavior: "instant" });
-                            void navigate({ to: "/" });
-                          }}
-                          onDone={() => complete("route")}
-                        />
-                      ) : null}
-                      {step === "budget" ? (
-                        <BudgetStep
-                          plan={plan}
-                          answers={papers.answers}
-                          fromChoice={fromChoice}
-                          toPort={toPort}
-                          onDone={() => complete("budget")}
-                        />
-                      ) : null}
-                      {step === "book" ? (
-                        <BookStep
-                          plan={plan}
-                          answers={papers.answers}
-                          fromChoice={fromChoice}
-                          toPort={toPort}
-                          onBook={() => {
-                            syncTravelProfile();
-                            if (plan.fromPortId && plan.toPortId)
-                              saveItineraryChoice({
-                                period: plan.month,
-                                departurePortId: plan.fromPortId,
-                                arrivalPortId: plan.toPortId,
-                              });
-                            const done = plan.done.includes("book")
-                              ? plan.done
-                              : [...plan.done, "book" as const];
-                            savePlan({ ...plan, done });
-                            // Ports, jour et voyageurs dans l'adresse : la carte ouvre directement les résultats.
-                            window.scrollTo({ top: 0, behavior: "instant" });
-                            void navigate({ href: bookingSearch(plan) });
-                          }}
-                        />
-                      ) : null}
-                    </StepCard>
-                  ),
-                )}
-              </ol>
+                      <StepArt step={nextStep} />
+                      <span className="min-w-0 flex-1">
+                        <span className="block text-xs font-bold uppercase tracking-wider opacity-80">
+                          Reprendre ma préparation
+                        </span>
+                        <span className="block font-display text-lg font-bold leading-tight">
+                          {stepTitles[nextStep]}
+                        </span>
+                      </span>
+                      <ArrowRight size={20} aria-hidden />
+                    </button>
+                  ) : null}
+                  {allDone && !locked ? (
+                    <ReadyDashboard
+                      plan={plan}
+                      papers={papers}
+                      summaries={summaries}
+                      onOpenStep={openStep}
+                    />
+                  ) : null}
+                  {plan.done.includes("profile") ? (
+                    <PlanTodo plan={plan} papers={papers} onOpenStep={openStep} />
+                  ) : null}
+                  <h2 className="mt-6 font-display text-lg font-bold">Mes étapes</h2>
+                  <ol className="mt-2 grid grid-cols-1 gap-2">
+                    {steps.map((step, index) =>
+                      isLocked(step) ? null : (
+                        <StepCard
+                          key={step}
+                          id={step}
+                          index={index + 1}
+                          title={stepTitles[step]}
+                          summary={summaries[step]}
+                          done={plan.done.includes(step)}
+                          open={false}
+                          onToggle={() => openStep(step)}
+                        >
+                          {null}
+                        </StepCard>
+                      ),
+                    )}
+                  </ol>
+                </>
+              ) : (
+                <StepWizard
+                  step={open}
+                  steps={steps.filter((step) => !isLocked(step))}
+                  done={plan.done}
+                  onOpen={openStep}
+                  onOverview={() => {
+                    setOpen(null);
+                    requestAnimationFrame(() => window.scrollTo({ top: 0, behavior: "smooth" }));
+                  }}
+                >
+                  {stepBody(open)}
+                </StepWizard>
+              )}
 
               {locked && !authLoading ? (
                 <SignupGate
@@ -672,14 +733,6 @@ function CompanionPage() {
                 />
               ) : null}
 
-              {allDone && !locked ? (
-                <ReadyDashboard
-                  plan={plan}
-                  papers={papers}
-                  summaries={summaries}
-                  onOpenStep={openStep}
-                />
-              ) : null}
               <div className="mt-8">
                 <AlgeriaCarousel />
               </div>
@@ -738,6 +791,114 @@ function useSummaries(
       : null,
     book: line ? `${line} · ${planWhenLabel(plan)}` : null,
   };
+}
+
+/**
+ * Une étape à la fois, qui glisse de côté : le chapitre, où l'on en est, et de quoi revenir,
+ * passer ou retrouver la vue d'ensemble. Chaque étape passe seule à la suivante une fois finie.
+ */
+function StepWizard({
+  step,
+  steps,
+  done,
+  onOpen,
+  onOverview,
+  children,
+}: {
+  step: CompanionStep;
+  steps: CompanionStep[];
+  done: CompanionStep[];
+  onOpen: (step: CompanionStep) => void;
+  onOverview: () => void;
+  children: ReactNode;
+}) {
+  const index = Math.max(0, steps.indexOf(step));
+  const previous = useRef(index);
+  const direction = index >= previous.current ? "next" : "prev";
+  useEffect(() => {
+    previous.current = index;
+  }, [index]);
+  const chapter = chapterOf(step);
+  const before = steps[index - 1] ?? null;
+  const after = steps[index + 1] ?? null;
+  return (
+    <section
+      id={`etape-${step}`}
+      aria-labelledby="etape-titre"
+      className="mt-4 scroll-mt-24 overflow-hidden"
+    >
+      <div className="flex items-center justify-between gap-3">
+        <p className="text-xs font-bold uppercase tracking-wider text-primary">
+          Chapitre {chapter + 1} sur {chapters.length} · {chapters[chapter]!.title}
+        </p>
+        <button
+          type="button"
+          onClick={onOverview}
+          className="shrink-0 text-sm font-semibold text-muted-foreground underline underline-offset-4 hover:text-foreground"
+        >
+          Vue d'ensemble
+        </button>
+      </div>
+      <div className="mt-2 flex gap-1" aria-hidden>
+        {steps.map((item) => (
+          <span
+            key={item}
+            className={`h-1.5 flex-1 rounded-full transition-colors ${
+              item === step ? "bg-primary" : done.includes(item) ? "bg-primary/50" : "bg-border"
+            }`}
+          />
+        ))}
+      </div>
+      <div
+        key={step}
+        className={`bw-wiz-slide bw-wiz-slide--${direction} mt-4 rounded-2xl border bg-card px-4 pb-5 pt-4 shadow-sm md:px-6`}
+      >
+        <div className="flex items-center gap-3">
+          <StepArt step={step} done={done.includes(step)} />
+          <div className="min-w-0">
+            <p className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
+              Étape {index + 1} sur {steps.length}
+            </p>
+            <h2 id="etape-titre" className="font-display text-xl font-bold leading-tight">
+              {stepTitles[step]}
+            </h2>
+          </div>
+        </div>
+        <img
+          src={stepArt[step].scene}
+          alt={stepArt[step].sceneAlt}
+          width={960}
+          height={640}
+          loading="lazy"
+          decoding="async"
+          className="mt-4 h-28 w-full rounded-xl object-cover md:h-44"
+        />
+        {children}
+      </div>
+      <div className="mt-3 flex items-center justify-between gap-3 text-sm">
+        {before ? (
+          <button
+            type="button"
+            onClick={() => onOpen(before)}
+            className="inline-flex min-h-11 items-center gap-1 rounded-xl px-3 font-semibold hover:bg-secondary"
+          >
+            <ArrowLeft size={16} aria-hidden /> {stepArt[before].short}
+          </button>
+        ) : (
+          <span />
+        )}
+        {after ? (
+          <button
+            type="button"
+            onClick={() => onOpen(after)}
+            className="inline-flex min-h-11 items-center gap-1 rounded-xl px-3 font-semibold text-muted-foreground hover:bg-secondary"
+          >
+            Passer cette étape <ArrowRight size={16} aria-hidden />
+          </button>
+        ) : null}
+      </div>
+    </section>
+  );
 }
 
 function StepCard({
@@ -1288,6 +1449,8 @@ function RouteStep({
   onDone: () => void;
 }) {
   const [all, setAll] = useState(false);
+  // La sélection par atout d'abord ; la liste complète des ports reste à portée de main.
+  const [manual, setManual] = useState(false);
   const shown = all ? choices : choices.slice(0, 3);
   const selectedHidden = fromChoice && !shown.includes(fromChoice);
   return (
@@ -1315,106 +1478,6 @@ function RouteStep({
         }}
       />
 
-      <h3 className="mt-6 font-display text-lg font-bold">
-        {plan.home ? "Les ports les plus proches de chez vous" : "Votre port de départ"}
-      </h3>
-      {!choices.length ? (
-        <p className="mt-2 text-sm text-muted-foreground">Chargement des lignes…</p>
-      ) : null}
-      <div role="radiogroup" aria-label="Port de départ" className="mt-3 grid gap-2">
-        {[...shown, ...(selectedHidden && fromChoice ? [fromChoice] : [])].map((choice) => {
-          const on = choice.port.id === fromChoice?.port.id;
-          return (
-            <button
-              key={choice.port.id}
-              type="button"
-              role="radio"
-              aria-checked={on}
-              onClick={() => {
-                const arrival = closestArrival(choice, plan.destination?.point ?? null);
-                patch({
-                  fromPortId: choice.port.id,
-                  toPortId: arrival?.id ?? null,
-                  portsChosen: true,
-                });
-              }}
-              className={`flex min-h-14 items-center gap-3 rounded-xl border px-4 py-3 text-left transition-colors ${
-                on
-                  ? "border-primary bg-primary/5 ring-1 ring-primary"
-                  : "bg-background hover:border-primary/40"
-              }`}
-            >
-              <Ship
-                size={18}
-                className={on ? "text-primary" : "text-muted-foreground"}
-                aria-hidden
-              />
-              <span className="min-w-0 flex-1">
-                <span className="block font-semibold">
-                  {choice.port.name}
-                  <span className="font-normal text-muted-foreground">
-                    {" "}
-                    · {choice.port.country_name}
-                  </span>
-                </span>
-                <span className="block truncate text-sm text-muted-foreground">
-                  Vers {[...new Set(choice.lines.map((l) => l.to.name))].join(", ")}
-                </span>
-              </span>
-              {choice.km !== null ? (
-                <span className="shrink-0 text-right text-sm font-semibold">
-                  ~{choice.km.toLocaleString("fr-FR")} km
-                  <span className="block text-[11px] font-normal text-muted-foreground">
-                    à vol d'oiseau
-                  </span>
-                </span>
-              ) : null}
-            </button>
-          );
-        })}
-      </div>
-      {choices.length > 3 ? (
-        <button
-          type="button"
-          onClick={() => setAll(!all)}
-          className="mt-2 text-sm font-semibold text-primary underline underline-offset-4"
-        >
-          {all ? "Moins de ports" : `Voir les ${choices.length} ports de départ`}
-        </button>
-      ) : null}
-
-      {fromChoice ? (
-        <>
-          <h3 className="mt-6 font-display text-lg font-bold">Votre port d'arrivée</h3>
-          <div role="radiogroup" aria-label="Port d'arrivée" className="mt-3 flex flex-wrap gap-2">
-            {fromChoice.lines.map(({ route, to }) => {
-              const on = to.id === toPortId;
-              return (
-                <button
-                  key={route.id}
-                  type="button"
-                  role="radio"
-                  aria-checked={on}
-                  onClick={() => patch({ toPortId: to.id, portsChosen: true })}
-                  className={`inline-flex min-h-11 items-center gap-2 rounded-full border px-4 text-sm transition-colors ${
-                    on
-                      ? "border-primary bg-primary text-primary-foreground"
-                      : "bg-background hover:border-primary/40"
-                  }`}
-                >
-                  <span className="font-semibold">{to.name}</span>
-                  {route.typical_duration_minutes ? (
-                    <span className={on ? "text-primary-foreground/80" : "text-muted-foreground"}>
-                      {formatDuration(route.typical_duration_minutes)}
-                    </span>
-                  ) : null}
-                </button>
-              );
-            })}
-          </div>
-        </>
-      ) : null}
-
       <RouteTop3
         plan={plan}
         adults={people(papers.answers).adults}
@@ -1422,6 +1485,130 @@ function RouteStep({
         onPickPorts={(fromPortId, toPortId) => patch({ fromPortId, toPortId, portsChosen: true })}
         onMore={onItinerary}
       />
+      {plan.home ? (
+        <button
+          type="button"
+          onClick={() => setManual(!manual)}
+          aria-expanded={manual}
+          className="mt-3 inline-flex items-center gap-1.5 text-sm font-semibold text-primary underline underline-offset-4"
+        >
+          {manual ? "Masquer la liste des ports" : "Choisir mes ports à la main"}
+          <ChevronDown
+            size={15}
+            aria-hidden
+            className={`transition-transform ${manual ? "rotate-180" : ""}`}
+          />
+        </button>
+      ) : null}
+      {!plan.home || manual ? (
+        <>
+          <h3 className="mt-6 font-display text-lg font-bold">
+            {plan.home ? "Tous les ports, du plus proche au plus loin" : "Votre port de départ"}
+          </h3>
+          {!choices.length ? (
+            <p className="mt-2 text-sm text-muted-foreground">Chargement des lignes…</p>
+          ) : null}
+          <div role="radiogroup" aria-label="Port de départ" className="mt-3 grid gap-2">
+            {[...shown, ...(selectedHidden && fromChoice ? [fromChoice] : [])].map((choice) => {
+              const on = choice.port.id === fromChoice?.port.id;
+              return (
+                <button
+                  key={choice.port.id}
+                  type="button"
+                  role="radio"
+                  aria-checked={on}
+                  onClick={() => {
+                    const arrival = closestArrival(choice, plan.destination?.point ?? null);
+                    patch({
+                      fromPortId: choice.port.id,
+                      toPortId: arrival?.id ?? null,
+                      portsChosen: true,
+                    });
+                  }}
+                  className={`flex min-h-14 items-center gap-3 rounded-xl border px-4 py-3 text-left transition-colors ${
+                    on
+                      ? "border-primary bg-primary/5 ring-1 ring-primary"
+                      : "bg-background hover:border-primary/40"
+                  }`}
+                >
+                  <Ship
+                    size={18}
+                    className={on ? "text-primary" : "text-muted-foreground"}
+                    aria-hidden
+                  />
+                  <span className="min-w-0 flex-1">
+                    <span className="block font-semibold">
+                      {choice.port.name}
+                      <span className="font-normal text-muted-foreground">
+                        {" "}
+                        · {choice.port.country_name}
+                      </span>
+                    </span>
+                    <span className="block truncate text-sm text-muted-foreground">
+                      Vers {[...new Set(choice.lines.map((l) => l.to.name))].join(", ")}
+                    </span>
+                  </span>
+                  {choice.km !== null ? (
+                    <span className="shrink-0 text-right text-sm font-semibold">
+                      ~{choice.km.toLocaleString("fr-FR")} km
+                      <span className="block text-[11px] font-normal text-muted-foreground">
+                        à vol d'oiseau
+                      </span>
+                    </span>
+                  ) : null}
+                </button>
+              );
+            })}
+          </div>
+          {choices.length > 3 ? (
+            <button
+              type="button"
+              onClick={() => setAll(!all)}
+              className="mt-2 text-sm font-semibold text-primary underline underline-offset-4"
+            >
+              {all ? "Moins de ports" : `Voir les ${choices.length} ports de départ`}
+            </button>
+          ) : null}
+
+          {fromChoice ? (
+            <>
+              <h3 className="mt-6 font-display text-lg font-bold">Votre port d'arrivée</h3>
+              <div
+                role="radiogroup"
+                aria-label="Port d'arrivée"
+                className="mt-3 flex flex-wrap gap-2"
+              >
+                {fromChoice.lines.map(({ route, to }) => {
+                  const on = to.id === toPortId;
+                  return (
+                    <button
+                      key={route.id}
+                      type="button"
+                      role="radio"
+                      aria-checked={on}
+                      onClick={() => patch({ toPortId: to.id, portsChosen: true })}
+                      className={`inline-flex min-h-11 items-center gap-2 rounded-full border px-4 text-sm transition-colors ${
+                        on
+                          ? "border-primary bg-primary text-primary-foreground"
+                          : "bg-background hover:border-primary/40"
+                      }`}
+                    >
+                      <span className="font-semibold">{to.name}</span>
+                      {route.typical_duration_minutes ? (
+                        <span
+                          className={on ? "text-primary-foreground/80" : "text-muted-foreground"}
+                        >
+                          {formatDuration(route.typical_duration_minutes)}
+                        </span>
+                      ) : null}
+                    </button>
+                  );
+                })}
+              </div>
+            </>
+          ) : null}
+        </>
+      ) : null}
       <a
         href="/covoiturage"
         className="mt-2 inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl border px-4 text-sm font-semibold hover:bg-secondary"

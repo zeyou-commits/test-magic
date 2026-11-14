@@ -46,6 +46,41 @@ function travelDays(plan: CompanionPlan) {
   return { from: `${plan.month}-01`, to: `${plan.month}-31` };
 }
 
+export type Asset = "balance" | "trip" | "sea" | "road" | "cheap";
+export const assetLabels: Record<Asset, string> = {
+  balance: "Notre conseil",
+  trip: "Voyage le plus court",
+  sea: "Traversée la plus courte",
+  road: "Route la plus courte jusqu'au port",
+  cheap: "Le moins cher",
+};
+
+/**
+ * Notre sélection : le trajet conseillé, puis le gagnant de chaque atout (voyage, traversée,
+ * route, prix). Un trajet qui gagne plusieurs atouts n'apparaît qu'une fois, avec ses badges.
+ */
+export function selectionByAsset(pool: ItineraryOption[], limit = 4) {
+  const leader = pool[0];
+  if (!leader) return [];
+  const best = (value: (option: ItineraryOption) => number) =>
+    [...pool].sort((a, b) => value(a) - value(b))[0]!;
+  const winners: [Asset, ItineraryOption][] = [
+    ["balance", leader],
+    ["trip", best((option) => option.totalMinutes)],
+    ["sea", best((option) => option.sailing.durationMin ?? Infinity)],
+    ["road", best((option) => option.originRoad.distanceKm)],
+    ["cheap", best((option) => option.totalEuro)],
+  ];
+  const picked: { option: ItineraryOption; assets: Asset[] }[] = [];
+  for (const [asset, option] of winners) {
+    if (pool.length < 2 && asset !== "balance") continue;
+    const found = picked.find((item) => item.option === option);
+    if (found) found.assets.push(asset);
+    else picked.push({ option, assets: [asset] });
+  }
+  return picked.slice(0, limit);
+}
+
 /**
  * Les trois meilleurs trajets porte à porte, calculés sans quitter « Préparer » :
  * le même calcul que l'itinéraire de la carte, montré comme un fil d'étapes daté.
@@ -183,7 +218,7 @@ export function RouteTop3({
     const sorted = distinctItineraries([...real, ...simulated], "recommended", children);
     // Les vrais départs d'abord : une simulation ne passe jamais devant un horaire publié.
     const dated = sorted.filter((option) => !option.sailing.isSimulation);
-    return [...dated, ...sorted.filter((option) => option.sailing.isSimulation)].slice(0, 3);
+    return selectionByAsset(dated.length ? dated : sorted);
   }, [
     road.data,
     sailings,
@@ -215,16 +250,16 @@ export function RouteTop3({
   const monthLabel = new Intl.DateTimeFormat("fr-FR", { month: "long", year: "numeric" }).format(
     new Date(`${plan.month}-15T12:00:00Z`),
   );
-  const shownId = openId ?? top[0]?.sailing.departure.id ?? null;
+  const shownId = openId ?? top[0]?.option.sailing.departure.id ?? null;
 
   return (
     <section aria-labelledby="top3-title" className="mt-6">
       <h3 id="top3-title" className="font-display text-lg font-bold">
-        Vos 3 meilleurs trajets porte à porte
+        Notre sélection depuis {plan.home.name}
       </h3>
       <p className="mt-1 text-sm text-muted-foreground">
-        De {plan.home.name} à {destinationLabel} : route, traversée et dernière route, avec les
-        heures.
+        Les ports les plus adaptés pour aller jusqu'à {destinationLabel}, chacun avec son atout.
+        Touchez-en un pour voir le voyage heure par heure.
       </p>
       {road.isPending ? (
         <ol className="mt-3 grid gap-2" aria-busy="true">
@@ -249,10 +284,11 @@ export function RouteTop3({
         </p>
       ) : (
         <ol className="mt-3 grid gap-2">
-          {top.map((option, rank) => (
+          {top.map(({ option, assets }, rank) => (
             <RouteCard
               key={option.sailing.departure.id}
               option={option}
+              assets={assets}
               rank={rank}
               open={option.sailing.departure.id === shownId}
               chosen={
@@ -287,6 +323,7 @@ export function RouteTop3({
 
 function RouteCard({
   option,
+  assets,
   rank,
   open,
   chosen,
@@ -296,6 +333,7 @@ function RouteCard({
   onPick,
 }: {
   option: ItineraryOption;
+  assets: Asset[];
   rank: number;
   open: boolean;
   chosen: boolean;
@@ -357,10 +395,9 @@ function RouteCard({
       text: destination,
     },
   ];
-  const medal = ["🥇", "🥈", "🥉"][rank] ?? `${rank + 1}`;
   return (
     <li
-      className={`rounded-2xl border bg-background shadow-sm ${open ? "border-primary ring-2 ring-primary/15" : ""}`}
+      className={`rounded-2xl border bg-background shadow-sm ${open ? "border-primary ring-2 ring-primary/15" : rank === 0 ? "border-primary/60" : ""}`}
     >
       <button
         type="button"
@@ -368,20 +405,28 @@ function RouteCard({
         onClick={onToggle}
         className="flex w-full items-center gap-3 p-3 text-left"
       >
-        <span className="text-xl leading-none" aria-hidden>
-          {medal}
-        </span>
         <span className="min-w-0 flex-1">
-          {rank === 0 ? (
-            <span className="block text-[11px] font-extrabold uppercase tracking-wide text-primary">
-              Notre conseil
-            </span>
-          ) : null}
+          <span className="mb-1 flex flex-wrap gap-1">
+            {assets.map((asset) => (
+              <span
+                key={asset}
+                className={`rounded-lg px-2 py-0.5 text-[11px] font-bold leading-tight ${
+                  asset === "balance"
+                    ? "bg-primary text-primary-foreground"
+                    : "bg-primary/10 text-primary"
+                }`}
+              >
+                {assetLabels[asset]}
+              </span>
+            ))}
+          </span>
           <strong className="block truncate text-[15px] leading-tight">
             {option.sailing.from.name} → {option.sailing.to.name}
           </strong>
           <span className="block text-xs text-muted-foreground">
-            {formatDuration(option.totalMinutes)} de porte à porte
+            {formatDuration(option.totalMinutes)} de porte à porte ·{" "}
+            {formatDuration(option.sailing.durationMin ?? 0)} de mer ·{" "}
+            {Math.round(option.originRoad.distanceKm)} km jusqu'au port
             {simulated ? " · horaires pas encore publiés" : ""}
           </span>
         </span>

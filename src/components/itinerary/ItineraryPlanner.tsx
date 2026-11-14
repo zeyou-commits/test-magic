@@ -45,7 +45,9 @@ import {
   buildSimulatedSailings,
   compareItineraries,
   distinctItineraries,
+  formatDayTime,
   gapLabel,
+  pauseNote,
   legWithPauses,
   TIE_MIN,
   type ItineraryMapPreview,
@@ -117,28 +119,7 @@ const seasonColor = {
   pointe: "bg-[#c95038]",
 } as const;
 
-/** « mer. 4 nov. à 07:30 », dans le fuseau du lieu. */
-function formatDayTime(ms: number, timeZone: string) {
-  const parts = new Intl.DateTimeFormat("fr-FR", {
-    weekday: "short",
-    day: "numeric",
-    month: "short",
-    hour: "2-digit",
-    minute: "2-digit",
-    timeZone,
-  }).formatToParts(new Date(ms));
-  const get = (type: string) => parts.find((part) => part.type === type)?.value ?? "";
-  return `${get("weekday")} ${get("day")} ${get("month")} à ${get("hour")}:${get("minute")}`;
-}
-
 const DEMO_LOOP_MS = 30_000;
-
-/** Les pauses sont comptées dans les heures affichées. */
-function pauseNote(driveMin: number) {
-  const pauses = drivingPauses(driveMin);
-  if (!pauses) return "";
-  return ` · ${pauses} pause${pauses > 1 ? "s" : ""} de ${PAUSE_MIN} min comprise${pauses > 1 ? "s" : ""}`;
-}
 
 function formatDuration(minutes: number) {
   return `${Math.floor(minutes / 60)} h${minutes % 60 ? ` ${(minutes % 60).toString().padStart(2, "0")}` : ""}`;

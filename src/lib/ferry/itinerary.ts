@@ -77,6 +77,27 @@ export function legWithPauses(driveMin: number) {
   return driveMin + drivingPauses(driveMin) * PAUSE_MIN;
 }
 
+/** Les pauses sont comptées dans les heures affichées. */
+export function pauseNote(driveMin: number) {
+  const pauses = drivingPauses(driveMin);
+  if (!pauses) return "";
+  return ` · ${pauses} pause${pauses > 1 ? "s" : ""} de ${PAUSE_MIN} min comprise${pauses > 1 ? "s" : ""}`;
+}
+
+/** « mer. 4 nov. à 07:30 », dans le fuseau du lieu. */
+export function formatDayTime(ms: number, timeZone: string) {
+  const parts = new Intl.DateTimeFormat("fr-FR", {
+    weekday: "short",
+    day: "numeric",
+    month: "short",
+    hour: "2-digit",
+    minute: "2-digit",
+    timeZone,
+  }).formatToParts(new Date(ms));
+  const get = (type: string) => parts.find((part) => part.type === type)?.value ?? "";
+  return `${get("weekday")} ${get("day")} ${get("month")} à ${get("hour")}:${get("minute")}`;
+}
+
 /** Un repère par liaison pour comparer les ports lorsqu'aucun horaire n'est publié.
  * Le 15 du mois ne représente pas un départ réservable.
  */

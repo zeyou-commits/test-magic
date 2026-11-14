@@ -16,7 +16,6 @@ import {
   Lock,
   Map as MapIcon,
   MapPin,
-  Navigation,
   PartyPopper,
   RotateCcw,
   Route as RouteIcon,
@@ -31,6 +30,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { AlgeriaCarousel } from "@/components/prepare/AlgeriaCarousel";
+import { RouteTop3 } from "@/components/prepare/RouteTop3";
 import { SiteLayout } from "@/components/layout/SiteLayout";
 import { useAuth } from "@/hooks/useAuth";
 import { Breadcrumbs, textLink } from "@/components/editorial/Editorial";
@@ -1423,26 +1423,19 @@ function RouteStep({
         </>
       ) : null}
 
-      <div className="mt-6 grid gap-2 sm:grid-cols-2">
-        <button
-          type="button"
-          onClick={onItinerary}
-          className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl border-2 border-primary px-4 text-sm font-bold text-primary hover:bg-primary/5"
-        >
-          <Navigation size={16} aria-hidden /> Calculer ma route porte à porte
-        </button>
-        <a
-          href="/covoiturage"
-          className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl border px-4 text-sm font-semibold hover:bg-secondary"
-        >
-          <Users size={16} aria-hidden /> Covoiturage jusqu'au port
-        </a>
-      </div>
-      <p className="mt-2 text-xs text-muted-foreground">
-        La route porte à porte s'ouvre sur la carte avec votre départ
-        {plan.destination ? ", votre arrivée" : ""} et votre mois déjà remplis : temps de route,
-        péages et traversées comparés.
-      </p>
+      <RouteTop3
+        plan={plan}
+        adults={people(papers.answers).adults}
+        children={people(papers.answers).children}
+        onPickPorts={(fromPortId, toPortId) => patch({ fromPortId, toPortId, portsChosen: true })}
+        onMore={onItinerary}
+      />
+      <a
+        href="/covoiturage"
+        className="mt-2 inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl border px-4 text-sm font-semibold hover:bg-secondary"
+      >
+        <Users size={16} aria-hidden /> Covoiturage jusqu'au port
+      </a>
       <div className="mt-6">
         <NextButton label="Continuer : mon budget" onClick={onDone} />
       </div>

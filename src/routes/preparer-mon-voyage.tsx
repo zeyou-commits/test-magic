@@ -35,6 +35,7 @@ import {
 import { AlgeriaCarousel } from "@/components/prepare/AlgeriaCarousel";
 import { RouteTop3 } from "@/components/prepare/RouteTop3";
 import { WizardFrame, WizardNav, useWizardScreen } from "@/components/prepare/WizardFrame";
+import { PapersQuestions, paperQuestions } from "@/components/papers/PapersQuestions";
 import { PushStatusLine } from "@/components/panel/PushStatusLine";
 import { SiteLayout } from "@/components/layout/SiteLayout";
 import { useAuth } from "@/hooks/useAuth";
@@ -1049,11 +1050,10 @@ function PapersStepBody({
     };
     return out;
   }, [plan, papers.answers.travellers]);
-  const [step, setStep] = useState<PapersStep>(steps[0]!);
-  useWizardScreen(
-    papers.finished ? steps.length : Math.max(0, steps.indexOf(step)),
-    steps.length + 1,
-  );
+  // Où reprendre les questions : au début (« Modifier ») ou à la dernière (« Retour »).
+  const [resume, setResume] = useState<"last" | 0>(0);
+  const questions = paperQuestions(papers.answers, steps).length;
+  useWizardScreen(questions, questions + 1, undefined, papers.finished);
   const box = useRef<HTMLDivElement>(null);
   const toTop = () =>
     requestAnimationFrame(() =>
@@ -1074,7 +1074,7 @@ function PapersStepBody({
             setDone={papers.setDone}
             onEdit={() => {
               papers.setFinished(false);
-              setStep(steps[0]!);
+              setResume(0);
               toTop();
             }}
           />
@@ -1085,7 +1085,7 @@ function PapersStepBody({
             <WizardNav
               back={() => {
                 papers.setFinished(false);
-                setStep(steps[steps.length - 1]!);
+                setResume("last");
                 toTop();
               }}
               next={{ label: `Continuer : ${next}`, onClick: onDone }}
@@ -1093,7 +1093,8 @@ function PapersStepBody({
           </div>
         </>
       ) : (
-        <PapersWizard
+        <PapersQuestions
+          start={resume}
           state={papers}
           homeSlot={
             <ResidenceQuestion
@@ -1105,11 +1106,6 @@ function PapersStepBody({
             />
           }
           steps={steps}
-          step={steps.includes(step) ? step : steps[0]!}
-          setStep={(s) => {
-            setStep(s);
-            toTop();
-          }}
           onFinish={() => {
             papers.setFinished(true);
             toTop();

@@ -28,12 +28,12 @@ const WizardCtx = createContext<Ctx | null>(null);
 export const useInWizard = () => useContext(WizardCtx) !== null;
 
 /** Une étape annonce sa question en cours : « question 2 sur 4 · Qui part ». */
-export function useWizardScreen(index: number, total: number, label?: string) {
+export function useWizardScreen(index: number, total: number, label?: string, active = true) {
   const ctx = useContext(WizardCtx);
   const report = ctx?.report;
   useEffect(() => {
-    report?.({ index, total, label });
-  }, [report, index, total, label]);
+    if (active) report?.({ index, total, label });
+  }, [report, index, total, label, active]);
 }
 
 /** Les boutons de l'écran : dans la barre du bas du guide, toujours visibles (sinon à leur place). */

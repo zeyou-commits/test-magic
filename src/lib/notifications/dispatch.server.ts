@@ -771,6 +771,38 @@ export async function dispatchPush(
     }
   }
 
+  // « Préparer mon voyage » : une échéance arrivée sans case cochée donne un rappel (compte, push,
+  // e-mail). Un seul par date ; une échéance déplacée redonne droit à un rappel.
+  if (!options.onlyOpenings && !options.messageId) {
+    const today = new Date(now).toISOString().slice(0, 10);
+    const since = new Date(now - 14 * 24 * HOUR).toISOString().slice(0, 10);
+    const query = db
+      .from("bw_prepare_deadlines")
+      .select("user_id,key,title,who,due_day")
+      .eq("done", false)
+      .is("reminded_at", null)
+      .lte("due_day", today)
+      .gte("due_day", since);
+    const due = await (onlyUser ? query.in("user_id", onlyUser) : query).limit(1000);
+    // Table pas encore créée (migration à appliquer) : on n'empêche pas les autres envois.
+    if (due.error && due.error.code !== "42P01" && due.error.code !== "PGRST205") throw due.error;
+    for (const row of due.data ?? []) {
+      await deliver(row.user_id, null, {
+        key: `prepare-deadline:${row.key}:${row.due_day}`,
+        category: "reminders",
+        title: `Rappel : ${row.title}`,
+        body: `${row.who ? `Pour ${row.who}. ` : ""}La date conseillée est arrivée et la case n'est pas cochée. Déjà fait ? Cochez-la dans « Préparer mon voyage ».`,
+        url: "/preparer-mon-voyage#a-faire",
+      });
+      const marked = await db
+        .from("bw_prepare_deadlines")
+        .update({ reminded_at: new Date(now).toISOString() })
+        .eq("user_id", row.user_id)
+        .eq("key", row.key);
+      if (marked.error) throw marked.error;
+    }
+  }
+
   const campaigns =
     options.messageId || options.userId
       ? { data: [], error: null }

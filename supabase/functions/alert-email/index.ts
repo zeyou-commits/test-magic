@@ -1,5 +1,6 @@
 // E-mail d'annulation ou de report : envoyé à chaque compte prévenu par un message de l'équipe
 // « annulation » ou « nouvel horaire ». Les retards ne partent pas par e-mail.
+// Aussi : les rappels d'échéance de « Préparer mon voyage » (modèle « deadline », 14/11/2026).
 // Appelée par la base (pg_net) dès que la file bw_alert_emails se remplit, secret des tâches.
 // Envoi par Resend (lots de 100) depuis contact@bledway.com. Secret Supabase requis : RESEND_API_KEY.
 import { createClient, type SupabaseClient } from "npm:@supabase/supabase-js@2";
@@ -14,7 +15,7 @@ const FROM = "BledWay <contact@bledway.com>";
 
 type Item = {
   id: string;
-  template: "cancel" | "reschedule";
+  template: "cancel" | "reschedule" | "deadline";
   email: string;
   name: string;
   title: string;
@@ -36,8 +37,16 @@ function link(url: string | null) {
 
 function alertHtml(item: Item) {
   const cancel = item.template === "cancel";
-  const badge = cancel ? "Traversée annulée" : "Nouvel horaire";
-  const color = cancel ? "#b42318" : "#b54708";
+  const deadline = item.template === "deadline";
+  const badge = deadline ? "Rappel de préparation" : cancel ? "Traversée annulée" : "Nouvel horaire";
+  const color = deadline ? "#0e6b3b" : cancel ? "#b42318" : "#b54708";
+  const button = deadline ? "Voir ma préparation" : "Voir ma traversée";
+  const why = deadline
+    ? "vous préparez votre voyage sur"
+    : "vous suivez cette traversée sur";
+  const stop = deadline
+    ? "Pour ne plus recevoir ces rappels, coupez « Rappels » dans Mon compte, rubrique Notifications."
+    : "Pour ne plus être prévenu, retirez le suivi de la traversée depuis votre espace.";
   const hello = item.name ? `Bonjour ${escape(item.name)},` : "Bonjour,";
   return `<!doctype html><html lang="fr"><body style="margin:0;background:#f4f1ea">
   <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f4f1ea;padding:24px 12px">
@@ -54,20 +63,20 @@ function alertHtml(item: Item) {
         <p style="margin:0;font:15px/1.6 Arial,sans-serif;color:#1f2a37">${escape(item.body)}</p>
       </td></tr>
       <tr><td align="center" style="padding:20px 24px 26px">
-        <a href="${link(item.url)}" style="display:inline-block;background:#0e6b3b;color:#ffffff;text-decoration:none;font:700 16px Arial,sans-serif;padding:14px 26px;border-radius:999px">Voir ma traversée</a>
+        <a href="${link(item.url)}" style="display:inline-block;background:#0e6b3b;color:#ffffff;text-decoration:none;font:700 16px Arial,sans-serif;padding:14px 26px;border-radius:999px">${button}</a>
       </td></tr>
       <tr><td style="padding:16px 24px;background:#f7f5ef;font:12px/1.5 Arial,sans-serif;color:#6b7280">
-        Vous recevez cet e-mail parce que vous suivez cette traversée sur
+        Vous recevez cet e-mail parce que ${why}
         <a href="${SITE}" style="color:#0e6b3b">bledway.com</a>. BledWay est un service d’information
-        indépendant : confirmez toujours auprès de la compagnie. Pour ne plus être prévenu, retirez le
-        suivi de la traversée depuis votre espace.
+        indépendant : confirmez toujours auprès de la compagnie ou du consulat. ${stop}
       </td></tr>
     </table>
   </td></tr></table></body></html>`;
 }
 
 function alertText(item: Item) {
-  return `${item.title}\n\n${item.body}\n\nVoir ma traversée : ${link(item.url)}\n\nBledWay est un service d’information indépendant : confirmez toujours auprès de la compagnie.`;
+  const label = item.template === "deadline" ? "Voir ma préparation" : "Voir ma traversée";
+  return `${item.title}\n\n${item.body}\n\n${label} : ${link(item.url)}\n\nBledWay est un service d’information indépendant : confirmez toujours auprès de la compagnie.`;
 }
 
 Deno.serve(async (request) => {
@@ -95,7 +104,7 @@ Deno.serve(async (request) => {
         items.map((item) => ({
           from: FROM,
           to: [item.email],
-          subject: `${item.template === "cancel" ? "⚠️ " : "🕒 "}${item.title}`,
+          subject: `${item.template === "cancel" ? "⚠️ " : item.template === "deadline" ? "📝 " : "🕒 "}${item.title}`,
           html: alertHtml(item),
           text: alertText(item),
           reply_to: "contact@bledway.com",

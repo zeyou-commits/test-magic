@@ -3,6 +3,7 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import {
   ArrowRight,
+  Bell,
   Calculator,
   CalendarCheck,
   CalendarDays,
@@ -13,6 +14,7 @@ import {
   FileText,
   Info,
   Landmark,
+  ListChecks,
   Lock,
   Map as MapIcon,
   MapPin,
@@ -31,8 +33,11 @@ import {
 } from "lucide-react";
 import { AlgeriaCarousel } from "@/components/prepare/AlgeriaCarousel";
 import { RouteTop3 } from "@/components/prepare/RouteTop3";
+import { PushStatusLine } from "@/components/panel/PushStatusLine";
 import { SiteLayout } from "@/components/layout/SiteLayout";
 import { useAuth } from "@/hooks/useAuth";
+import type { SupabaseClient } from "@supabase/supabase-js";
+import { supabase } from "@/integrations/supabase/client";
 import { Breadcrumbs, textLink } from "@/components/editorial/Editorial";
 import {
   AbroadCard,
@@ -511,6 +516,7 @@ function CompanionPage() {
   }, [loaded, plan.started, plan.vehicle, syncAdults, syncChildren]);
 
   const summaries = useSummaries(plan, papers, fromChoice, toPort);
+  useDeadlineSync(user?.id ?? null, plan, papers, loaded && papers.loaded);
 
   return (
     <SiteLayout>
@@ -551,8 +557,10 @@ function CompanionPage() {
                 onOpen={openStep}
               />
 
-              {/* Le calendrier à rebours, dès que la période est connue. */}
-              {plan.done.includes("profile") ? <TripCalendar plan={plan} papers={papers} /> : null}
+              {/* Ce qu'il reste à faire, dès que la période est connue (le calendrier complet s'ouvre dessous). */}
+              {plan.done.includes("profile") ? (
+                <PlanTodo plan={plan} papers={papers} onOpenStep={openStep} />
+              ) : null}
 
               <ol className="mt-4 grid grid-cols-1 gap-3 md:mt-6">
                 {steps.map((step, index) =>
@@ -665,32 +673,16 @@ function CompanionPage() {
               ) : null}
 
               {allDone && !locked ? (
-                <div id="pret" className="mt-6 rounded-2xl bg-primary/5 p-5 md:p-6">
-                  <img
-                    src="/illustrations/voyage/retrouvailles.webp"
-                    alt="Les retrouvailles avec la famille, au bled"
-                    width={960}
-                    height={540}
-                    loading="lazy"
-                    className="mb-4 aspect-[16/9] w-full rounded-xl object-cover"
-                  />
-                  <p className="flex items-center gap-2 font-display text-xl font-bold">
-                    <PartyPopper size={22} className="text-primary" aria-hidden /> Votre voyage est
-                    prêt
-                  </p>
-                  <p className="mt-2 text-muted-foreground">
-                    Gardez cette page : votre calendrier, vos papiers et vos choix y restent. Une
-                    fois le billet enregistré, la suite (48 h avant, au port, à l'arrivée) continue
-                    dans « Mon voyage », avec ce que vous avez déjà coché ici.
-                  </p>
-                  <a
-                    href="/"
-                    className="mt-4 inline-flex min-h-12 items-center gap-2 rounded-xl bg-primary px-5 text-sm font-bold text-primary-foreground hover:bg-primary/90"
-                  >
-                    <MapIcon size={16} aria-hidden /> Suivre en direct
-                  </a>
-                </div>
+                <ReadyDashboard
+                  plan={plan}
+                  papers={papers}
+                  summaries={summaries}
+                  onOpenStep={openStep}
+                />
               ) : null}
+              <div className="mt-8">
+                <AlgeriaCarousel />
+              </div>
               <ResetPreparation
                 onReset={() => {
                   papers.setAnswers(defaultAnswers);
@@ -2272,133 +2264,483 @@ function milestoneLead(m: Milestone, plan: CompanionPlan) {
   return `Le ${longDate(m.date)}`;
 }
 
-function TripCalendar({ plan, papers }: { plan: CompanionPlan; papers: PapersState }) {
-  const [all, setAll] = useState(false);
+/** Une action de la liste « À faire » : un papier à cocher, ou une étape à ouvrir. */
+type TodoRow = {
+  key: string;
+  title: string;
+  who: string[];
+  ids: string[];
+  step: CompanionStep | null;
+  done: boolean;
+  m: Milestone;
+};
+
+/** Ce qu'il y a à faire, tiré du calendrier : les papiers datés, la liste et la réservation. */
+function todoRows(list: Milestone[], doneIds: string[]) {
+  const rows: TodoRow[] = [];
+  const know: Milestone[] = [];
+  for (const m of list) {
+    if (m.tone === "warning") know.push(m);
+    else if (m.tasks.length)
+      for (const task of m.tasks)
+        rows.push({
+          key: `${m.id}:${task.id}`,
+          title: task.title,
+          who: task.who,
+          ids: task.ids,
+          step: null,
+          done: task.ids.every((id) => doneIds.includes(id)),
+          m,
+        });
+    else if (m.id === "papers" || m.id === "book")
+      rows.push({
+        key: m.id,
+        title: m.title,
+        who: [],
+        ids: [],
+        step: m.id,
+        done: Boolean(m.done),
+        m,
+      });
+  }
+  return { todo: rows.filter((row) => !row.done), done: rows.filter((row) => row.done), know };
+}
+
+const lowerFirst = (text: string) => text.charAt(0).toLowerCase() + text.slice(1);
+
+function usePlanTodo(plan: CompanionPlan, papers: PapersState) {
   const list = useMemo(
     () =>
       retroPlan(plan, { answers: papers.answers, finished: papers.finished, done: papers.done }),
     [plan, papers.answers, papers.finished, papers.done],
   );
-  const next = Math.max(
-    0,
-    list.findIndex((m) => !m.done),
-  );
-  const shown = all ? list : list.slice(next, next + 2);
+  return { list, ...todoRows(list, papers.done) };
+}
+
+/**
+ * Les échéances datées (« Avant le … ») recopiées sur le compte : l'envoi quotidien rappelle,
+ * par alerte et par e-mail, celles dont la case n'est pas cochée à la date. Sans compte, rien ne part.
+ */
+function useDeadlineSync(
+  userId: string | null,
+  plan: CompanionPlan,
+  papers: PapersState,
+  ready: boolean,
+) {
+  const rows = useMemo(() => {
+    if (!plan.started || !papers.finished) return [];
+    const list = retroPlan(plan, {
+      answers: papers.answers,
+      finished: papers.finished,
+      done: papers.done,
+    });
+    const { todo, done } = todoRows(list, papers.done);
+    return [...todo, ...done]
+      .filter((row) => row.m.lead === "before" && row.ids.length)
+      .map((row) => ({
+        key: row.key,
+        title: row.title,
+        who: row.who.join(", "),
+        due_day: row.m.date,
+        done: row.done,
+      }));
+  }, [plan, papers.answers, papers.finished, papers.done]);
+  const signature = JSON.stringify(rows);
+  useEffect(() => {
+    if (!userId || !ready) return;
+    const timer = window.setTimeout(() => {
+      const db = supabase as unknown as SupabaseClient;
+      void (async () => {
+        try {
+          if (rows.length)
+            await db.from("bw_prepare_deadlines").upsert(
+              rows.map((row) => ({ user_id: userId, ...row })),
+              { onConflict: "user_id,key" },
+            );
+          const keep = rows.map((row) => `"${row.key}"`).join(",");
+          const stale = db.from("bw_prepare_deadlines").delete().eq("user_id", userId);
+          await (keep ? stale.not("key", "in", `(${keep})`) : stale);
+        } catch {
+          /* Les rappels sont un plus : la préparation reste sur l'appareil. */
+        }
+      })();
+    }, 1500);
+    return () => window.clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [userId, ready, signature]);
+}
+
+/** « 2 actions à faire · la prochaine avant le 6 novembre » */
+function todoSummary(todo: TodoRow[], plan: CompanionPlan) {
+  if (!todo.length) return "Rien à faire pour l'instant : tout est coché.";
+  return `${todo.length} action${todo.length > 1 ? "s" : ""} à faire · la prochaine ${lowerFirst(milestoneLead(todo[0]!.m, plan))}`;
+}
+
+function PlanTodo({
+  plan,
+  papers,
+  onOpenStep,
+}: {
+  plan: CompanionPlan;
+  papers: PapersState;
+  onOpenStep: (step: CompanionStep) => void;
+}) {
+  const [calendar, setCalendar] = useState(false);
+  const [more, setMore] = useState(false);
+  const { list, todo, done, know } = usePlanTodo(plan, papers);
+  const shown = more ? todo : todo.slice(0, 4);
+  const toggle = (row: TodoRow) =>
+    papers.setDone((current) =>
+      row.done
+        ? current.filter((id) => !row.ids.includes(id))
+        : [...new Set([...current, ...row.ids])],
+    );
   return (
-    <section
-      aria-labelledby="mon-calendrier"
-      className="mt-4 rounded-2xl border bg-card p-4 md:p-5"
-    >
-      <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
-        <h2 id="mon-calendrier" className="flex items-center gap-2 font-display text-lg font-bold">
-          <CalendarDays size={18} className="text-primary" aria-hidden /> Mon calendrier
-        </h2>
-        <span className="text-sm text-muted-foreground">Départ {planWhenLabel(plan)}</span>
-      </div>
-      <ol className="mt-3 grid gap-4 border-l-2 border-primary/20 pl-4">
-        {shown.map((m) => (
-          <li key={m.id} className="relative">
-            <span
-              className={`absolute -left-[23px] top-0.5 grid size-3.5 place-items-center rounded-full ring-4 ring-card ${
-                m.done
-                  ? "bg-primary"
-                  : m.late
-                    ? "bg-[#c95038]"
-                    : m.tone === "warning" || m.tight
-                      ? "bg-[#e0a43a]"
-                      : "bg-primary/40"
-              }`}
-              aria-hidden
+    <section aria-labelledby="a-faire" className="mt-4 rounded-2xl border bg-card p-4 md:p-5">
+      <h2 id="a-faire" className="flex items-center gap-2 font-display text-lg font-bold">
+        <ListChecks size={19} className="text-primary" aria-hidden /> À faire
+      </h2>
+      <p className="mt-0.5 text-sm text-muted-foreground">{todoSummary(todo, plan)}</p>
+      {todo.length ? (
+        <ul className="mt-3 grid gap-2">
+          {shown.map((row) => (
+            <TodoItem
+              key={row.key}
+              row={row}
+              plan={plan}
+              onToggle={toggle}
+              onOpenStep={onOpenStep}
             />
-            <p
-              className={`text-[11px] font-bold uppercase tracking-wider ${m.late ? "text-[#c95038]" : m.tone === "warning" || m.tight ? "text-[#b7791f]" : "text-primary"}`}
-            >
-              {milestoneLead(m, plan)}
-              {m.done ? " · fait" : ""}
-            </p>
-            <p className={`font-semibold ${m.done ? "text-muted-foreground line-through" : ""}`}>
-              {m.title}
-            </p>
-            {m.tasks.length ? (
-              <ul className="mt-1 grid gap-0.5 text-sm">
-                {m.tasks.slice(0, 4).map((task) => {
-                  const done = task.ids.every((id) => papers.done.includes(id));
-                  return (
-                    <li key={task.id} className="flex items-start gap-1.5">
-                      {done ? (
-                        <Check
-                          size={14}
-                          className="mt-0.5 shrink-0 text-primary"
-                          aria-label="fait"
-                        />
-                      ) : (
-                        <span
-                          className="mt-[7px] size-1.5 shrink-0 rounded-full bg-muted-foreground"
-                          aria-hidden
-                        />
-                      )}
-                      <span className={done ? "text-muted-foreground line-through" : ""}>
-                        {task.title}
-                        {task.who.length ? (
-                          <span className="text-muted-foreground"> · {task.who.join(", ")}</span>
-                        ) : null}
-                      </span>
-                    </li>
-                  );
-                })}
-                {m.tasks.length > 4 ? (
-                  <li className="text-muted-foreground">
-                    et {m.tasks.length - 4} autre{m.tasks.length > 5 ? "s" : ""}
-                  </li>
-                ) : null}
-              </ul>
-            ) : null}
-            {m.late && m.id === "weeks" ? (
-              <p className="mt-1 text-sm font-semibold text-[#c95038]">
-                Il reste moins de 3 semaines : appelez le consulat dès aujourd'hui pour un
-                rendez-vous.
-              </p>
-            ) : null}
-            <p className="mt-1 text-sm text-muted-foreground">{m.detail}</p>
-            {m.more || m.sources?.length ? (
-              <details className="mt-1 text-sm">
-                <summary className="cursor-pointer font-semibold text-primary">
-                  Pourquoi cette date ?
-                </summary>
-                {m.more ? <p className="mt-1 text-muted-foreground">{m.more}</p> : null}
-                {m.sources?.length ? (
-                  <p className="mt-1 text-xs">
-                    Source :{" "}
-                    {m.sources.map((id, index) => (
-                      <span key={id}>
-                        {index ? ", " : ""}
-                        <a
-                          href={formaliteSources[id].url}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="underline underline-offset-2"
-                        >
-                          {formaliteSources[id].short}
-                        </a>
-                      </span>
-                    ))}
-                  </p>
-                ) : null}
-              </details>
-            ) : null}
-          </li>
-        ))}
-      </ol>
-      {list.length > shown.length || all ? (
+          ))}
+        </ul>
+      ) : null}
+      {todo.length > 4 ? (
         <button
           type="button"
-          onClick={() => setAll(!all)}
-          aria-expanded={all}
-          className="mt-3 text-sm font-semibold text-primary underline underline-offset-4"
+          onClick={() => setMore(!more)}
+          aria-expanded={more}
+          className="mt-2 text-sm font-semibold text-primary underline underline-offset-4"
         >
-          {all ? "Réduire le calendrier" : `Voir tout le calendrier (${list.length} étapes)`}
+          {more ? "Moins d'actions" : `Voir les ${todo.length - 4} autres actions`}
         </button>
       ) : null}
+      {done.length ? (
+        <details className="group mt-3">
+          <summary className="inline-flex cursor-pointer list-none items-center gap-1 text-sm font-semibold text-muted-foreground [&::-webkit-details-marker]:hidden">
+            {done.length} faite{done.length > 1 ? "s" : ""}
+            <ChevronDown
+              size={15}
+              aria-hidden
+              className="transition-transform group-open:rotate-180"
+            />
+          </summary>
+          <ul className="mt-2 grid gap-2">
+            {done.map((row) => (
+              <TodoItem
+                key={row.key}
+                row={row}
+                plan={plan}
+                onToggle={toggle}
+                onOpenStep={onOpenStep}
+              />
+            ))}
+          </ul>
+        </details>
+      ) : null}
+      {know.length ? (
+        <div className="mt-4 rounded-xl border border-[#e0a43a]/50 bg-[#fdf6e7] p-3">
+          <p className="text-[11px] font-bold uppercase tracking-wider text-[#b7791f]">À savoir</p>
+          {know.map((m) => (
+            <div key={m.id} className="mt-1">
+              <p className="text-sm font-semibold">{m.title}</p>
+              <p className="text-sm text-muted-foreground">{m.detail}</p>
+              <Sources ids={m.sources} />
+            </div>
+          ))}
+        </div>
+      ) : null}
+      <button
+        type="button"
+        onClick={() => setCalendar(!calendar)}
+        aria-expanded={calendar}
+        className="mt-4 inline-flex items-center gap-1.5 text-sm font-semibold text-primary underline underline-offset-4"
+      >
+        <CalendarDays size={15} aria-hidden />
+        {calendar ? "Masquer le calendrier complet" : "Voir le calendrier complet"}
+      </button>
+      {calendar ? <FullCalendar list={list} plan={plan} doneIds={papers.done} /> : null}
+    </section>
+  );
+}
+
+function Sources({ ids }: { ids?: Milestone["sources"] }) {
+  if (!ids?.length) return null;
+  return (
+    <p className="mt-1 text-xs">
+      Source :{" "}
+      {ids.map((id, index) => (
+        <span key={id}>
+          {index ? ", " : ""}
+          <a
+            href={formaliteSources[id].url}
+            target="_blank"
+            rel="noreferrer"
+            className="underline underline-offset-2"
+          >
+            {formaliteSources[id].short}
+          </a>
+        </span>
+      ))}
+    </p>
+  );
+}
+
+function TodoItem({
+  row,
+  plan,
+  onToggle,
+  onOpenStep,
+}: {
+  row: TodoRow;
+  plan: CompanionPlan;
+  onToggle: (row: TodoRow) => void;
+  onOpenStep: (step: CompanionStep) => void;
+}) {
+  const [why, setWhy] = useState(false);
+  const { m } = row;
+  const tone = row.done
+    ? "text-muted-foreground"
+    : m.late
+      ? "text-[#c95038]"
+      : m.tight
+        ? "text-[#b7791f]"
+        : "text-primary";
+  return (
+    <li className="rounded-xl border bg-background px-3 py-2.5">
+      <div className="flex items-start gap-3">
+        {row.step ? (
+          <span
+            className="mt-0.5 grid size-6 shrink-0 place-items-center rounded-full bg-primary/10 text-primary"
+            aria-hidden
+          >
+            <ArrowRight size={14} />
+          </span>
+        ) : (
+          <button
+            type="button"
+            role="checkbox"
+            aria-checked={row.done}
+            aria-label={`${row.title} : ${row.done ? "fait" : "à faire"}`}
+            onClick={() => onToggle(row)}
+            className={`mt-0.5 grid size-6 shrink-0 place-items-center rounded-md border-2 transition-colors ${
+              row.done
+                ? "border-primary bg-primary text-primary-foreground"
+                : "border-muted-foreground/50 bg-background"
+            }`}
+          >
+            {row.done ? <Check size={14} aria-hidden /> : null}
+          </button>
+        )}
+        <div className="min-w-0 flex-1">
+          <p className="font-semibold leading-snug">
+            {row.title}
+            {row.who.length ? (
+              <span className="font-normal text-muted-foreground"> · {row.who.join(", ")}</span>
+            ) : null}
+          </p>
+          <p className={`text-xs font-bold ${tone}`}>
+            {row.done ? "Fait" : milestoneLead(m, plan)}
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={() => setWhy(!why)}
+          aria-expanded={why}
+          aria-label="Pourquoi cette date ?"
+          className="grid size-8 shrink-0 place-items-center rounded-full text-muted-foreground hover:bg-secondary hover:text-foreground"
+        >
+          <Info size={16} aria-hidden />
+        </button>
+      </div>
+      {why ? (
+        <div className="mt-2 rounded-lg bg-secondary/50 p-2.5 text-sm text-muted-foreground">
+          <p>{m.detail}</p>
+          {m.more ? <p className="mt-1">{m.more}</p> : null}
+          <Sources ids={m.sources} />
+        </div>
+      ) : null}
+      {row.step && !row.done ? (
+        <button
+          type="button"
+          onClick={() => onOpenStep(row.step!)}
+          className="mt-2 inline-flex min-h-10 w-full items-center justify-center gap-2 rounded-lg bg-primary px-3 text-sm font-bold text-primary-foreground"
+        >
+          {row.step === "papers" ? "Faire ma liste de papiers" : "Réserver ma traversée"}
+        </button>
+      ) : null}
+    </li>
+  );
+}
+
+/** Le calendrier à rebours en entier : toutes les dates, d'aujourd'hui au départ. */
+function FullCalendar({
+  list,
+  plan,
+  doneIds,
+}: {
+  list: Milestone[];
+  plan: CompanionPlan;
+  doneIds: string[];
+}) {
+  return (
+    <ol className="mt-3 grid gap-4 border-l-2 border-primary/20 pl-4">
+      {list.map((m) => (
+        <li key={m.id} className="relative">
+          <span
+            className={`absolute -left-[23px] top-0.5 size-3.5 rounded-full ring-4 ring-card ${
+              m.done
+                ? "bg-primary"
+                : m.late
+                  ? "bg-[#c95038]"
+                  : m.tone === "warning" || m.tight
+                    ? "bg-[#e0a43a]"
+                    : "bg-primary/40"
+            }`}
+            aria-hidden
+          />
+          <p
+            className={`text-[11px] font-bold uppercase tracking-wider ${m.late ? "text-[#c95038]" : m.tone === "warning" || m.tight ? "text-[#b7791f]" : "text-primary"}`}
+          >
+            {milestoneLead(m, plan)}
+            {m.done ? " · fait" : ""}
+          </p>
+          <p className="font-semibold">{m.title}</p>
+          {m.tasks.length ? (
+            <ul className="mt-1 grid gap-0.5 text-sm">
+              {m.tasks.map((task) => {
+                const done = task.ids.every((id) => doneIds.includes(id));
+                return (
+                  <li key={task.id} className="flex items-start gap-1.5">
+                    {done ? (
+                      <Check size={14} className="mt-0.5 shrink-0 text-primary" aria-label="fait" />
+                    ) : (
+                      <span
+                        className="mt-[7px] size-1.5 shrink-0 rounded-full bg-muted-foreground"
+                        aria-hidden
+                      />
+                    )}
+                    <span>
+                      {task.title}
+                      {task.who.length ? (
+                        <span className="text-muted-foreground"> · {task.who.join(", ")}</span>
+                      ) : null}
+                    </span>
+                  </li>
+                );
+              })}
+            </ul>
+          ) : null}
+          <p className="mt-1 text-sm text-muted-foreground">{m.detail}</p>
+        </li>
+      ))}
+    </ol>
+  );
+}
+
+/** La fin du parcours : ce qu'il reste à faire, le voyage en un coup d'œil, et les rappels. */
+function ReadyDashboard({
+  plan,
+  papers,
+  summaries,
+  onOpenStep,
+}: {
+  plan: CompanionPlan;
+  papers: PapersState;
+  summaries: Record<CompanionStep, string | null>;
+  onOpenStep: (step: CompanionStep) => void;
+}) {
+  const { todo } = usePlanTodo(plan, papers);
+  const tiles: { label: string; value: string | null; step: CompanionStep }[] = [
+    { label: "Ma traversée", value: summaries.book, step: "book" },
+    { label: "Mes papiers", value: summaries.papers, step: "papers" },
+    { label: "Mon budget", value: summaries.budget, step: "budget" },
+  ];
+  return (
+    <section
+      id="pret"
+      aria-labelledby="pret-titre"
+      className="mt-6 rounded-2xl bg-primary/5 p-5 md:p-6"
+    >
+      <img
+        src="/illustrations/voyage/retrouvailles.webp"
+        alt="Les retrouvailles avec la famille, au bled"
+        width={960}
+        height={540}
+        loading="lazy"
+        className="mb-4 aspect-[16/9] w-full rounded-xl object-cover"
+      />
+      <h2 id="pret-titre" className="flex items-center gap-2 font-display text-xl font-bold">
+        <PartyPopper size={22} className="text-primary" aria-hidden /> Votre voyage est prêt
+      </h2>
+      <button
+        type="button"
+        onClick={() =>
+          document.getElementById("a-faire")?.scrollIntoView({ block: "start", behavior: "smooth" })
+        }
+        className={`mt-4 flex w-full items-center gap-3 rounded-xl border bg-background p-3 text-left ${todo.length ? "border-primary" : ""}`}
+      >
+        <ListChecks size={20} className="shrink-0 text-primary" aria-hidden />
+        <span className="min-w-0 flex-1">
+          <span className="block font-semibold">
+            {todo.length ? "Il reste des actions" : "Toutes les actions sont faites"}
+          </span>
+          <span className="block text-sm text-muted-foreground">{todoSummary(todo, plan)}</span>
+        </span>
+        {todo.length ? (
+          <ArrowRight size={16} className="shrink-0 text-primary" aria-hidden />
+        ) : null}
+      </button>
+      <div className="mt-2 grid gap-2 sm:grid-cols-3">
+        {tiles.map((tile) =>
+          tile.value ? (
+            <button
+              key={tile.step}
+              type="button"
+              onClick={() => onOpenStep(tile.step)}
+              className="rounded-xl border bg-background p-3 text-left hover:border-primary/40"
+            >
+              <span className="block text-[11px] font-bold uppercase tracking-wider text-primary">
+                {tile.label}
+              </span>
+              <span className="mt-0.5 block text-sm font-semibold">{tile.value}</span>
+            </button>
+          ) : null,
+        )}
+      </div>
+      <div className="mt-4 rounded-xl border bg-background p-3">
+        <p className="flex items-center gap-2 font-semibold">
+          <Bell size={17} className="text-primary" aria-hidden /> Être prévenu avant chaque échéance
+        </p>
+        <p className="mt-1 text-sm text-muted-foreground">
+          Si une action n'est pas cochée à sa date, BledWay vous envoie un rappel : une alerte sur
+          cet appareil et un e-mail. Vous les réglez dans{" "}
+          <a href="/compte" className={textLink}>
+            Mon compte
+          </a>
+          .
+        </p>
+        <PushStatusLine />
+      </div>
+      <p className="mt-4 text-sm text-muted-foreground">
+        Une fois le billet enregistré, la suite (48 h avant, au port, à l'arrivée) continue dans «
+        Mon voyage », avec ce que vous avez déjà coché ici.
+      </p>
+      <a
+        href="/"
+        className="mt-3 inline-flex min-h-12 items-center gap-2 rounded-xl bg-primary px-5 text-sm font-bold text-primary-foreground hover:bg-primary/90"
+      >
+        <MapIcon size={16} aria-hidden /> Suivre en direct
+      </a>
     </section>
   );
 }

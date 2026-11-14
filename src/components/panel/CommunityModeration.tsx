@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { alertLabel, useSignalCatalog } from "@/lib/ferry/community";
 import { ReviewAuthor, useReviewAuthors } from "@/components/admin/ReviewAuthor";
 import { tr } from "@/lib/i18n";
+import { ObservationCard, ObservationHistory, useObservationContext, type Observation } from "@/components/admin/ObservationReview";
 
 export function CommunityModeration() {
   const { user } = useAuth();
@@ -29,20 +30,68 @@ export function CommunityModeration() {
       const read = (columns: string) =>
         supabase.from("bw_report_anomalies").select(columns)
           .eq("status", "pending").order("created_at", { ascending: false }).limit(100);
-      let { data, error } = await read("id,vessel_id,port_id,departure_id,category,detail,reason,status,created_at");
-      if (error) ({ data, error } = await read("id,vessel_id,departure_id,category,detail,reason,status,created_at"));
+      const base = "id,user_id,vessel_id,departure_id,category,detail,delay_minutes,reason,status,created_at";
+      let { data, error } = await read(`${base},port_id`);
+      if (error) ({ data, error } = await read(base));
       if (error) throw error;
-      return data as unknown as { id: string; vessel_id: string | null; port_id?: string | null; departure_id: string | null; category: string; detail: string | null; reason: string; status: string; created_at: string }[];
+      return data as unknown as Observation[];
     },
     retry: false,
   });
+  // Trace : les dernières décisions (qui, quand, laquelle) ; colonnes ajoutées par le script du 02/01/2027.
+  const decided = useQuery({
+    queryKey: ["admin", "report-anomalies", "decided"],
+    queryFn: async () => {
+      const read = (columns: string) =>
+        supabase.from("bw_report_anomalies").select(columns)
+          .neq("status", "pending").order("handled_at", { ascending: false, nullsFirst: false }).limit(15);
+      const base = "id,user_id,vessel_id,port_id,departure_id,category,detail,delay_minutes,reason,status,created_at,handled_at";
+      let { data, error } = await read(`${base},handled_by,decision`);
+      if (error) ({ data, error } = await read(base));
+      if (error) throw error;
+      return data as unknown as Observation[];
+    },
+    retry: false,
+  });
+  const pendingIds = (anomalies.data ?? []).map((item) => item.id);
+  const decidedIds = (decided.data ?? []).filter((row) => row.handled_by).map((row) => row.id);
+  const context = useObservationContext([...pendingIds, ...decidedIds]);
+  // Sans le script : historique de l'auteur calculé à partir des observations seulement.
+  const authorIds = [...new Set((anomalies.data ?? []).map((item) => item.user_id).filter(Boolean))] as string[];
+  const fallbackHistory = useQuery({
+    queryKey: ["admin", "report-anomalies", "authors", authorIds.sort().join(",")],
+    enabled: authorIds.length > 0 && context.isError,
+    queryFn: async () => {
+      const { data, error } = await supabase.from("bw_report_anomalies")
+        .select("id,user_id,status").in("user_id", authorIds).limit(1000);
+      if (error) throw error;
+      return data as { id: string; user_id: string; status: string }[];
+    },
+  });
+  const historyOf = (item: Observation) => {
+    if (!fallbackHistory.data) return undefined;
+    const others = fallbackHistory.data.filter((row) => row.user_id === item.user_id && row.id !== item.id);
+    return {
+      total: others.length,
+      handled: others.filter((row) => row.status === "handled").length,
+      dismissed: others.filter((row) => row.status === "dismissed").length,
+      pending: others.filter((row) => row.status === "pending").length,
+    };
+  };
+  const placeOf = (item: Observation) =>
+    item.port_id
+      ? `Port de ${ports.find((p) => p.id === item.port_id)?.name ?? "?"}`
+      : (vessels.find((v) => v.id === item.vessel_id)?.name ?? tr("ui.communityModeration.bateau"));
   const triage = useMutation({
     mutationFn: async ({ id, status }: { id: string; status: "handled" | "dismissed" }) => {
       const { error } = await supabase.from("bw_report_anomalies")
         .update({ status, handled_at: new Date().toISOString() }).eq("id", id);
       if (error) throw error;
     },
-    onSuccess: () => void client.invalidateQueries({ queryKey: ["admin", "report-anomalies"] }),
+    onSuccess: () => {
+      void client.invalidateQueries({ queryKey: ["admin", "report-anomalies"] });
+      void client.invalidateQueries({ queryKey: ["admin", "anomaly-context"] });
+    },
   });
   const publish = useMutation({
     mutationFn: async (id: string) => {
@@ -99,24 +148,21 @@ export function CommunityModeration() {
         {anomalies.data?.length === 0 ? <p>{tr("ui.communityModeration.aucuneObservationAVerifier")}</p> : null}
         <ul className="space-y-3">
           {anomalies.data?.map((item) => (
-            <li key={item.id} className="rounded-xl border bg-card p-4">
-              <strong>
-                {item.port_id
-                  ? `Port de ${ports.find((p) => p.id === item.port_id)?.name ?? "?"}`
-                  : (vessels.find((v) => v.id === item.vessel_id)?.name ?? tr("ui.communityModeration.bateau"))}{" "}
-                · {item.category}
-              </strong>
-              <p className="text-sm">{item.detail ? `${item.detail} · ` : ""}{item.reason}</p>
-              <p className="text-xs text-muted-foreground">{new Date(item.created_at).toLocaleString("fr-FR")}</p>
-              <div className="mt-3 flex flex-wrap gap-2">
-                {item.departure_id ? <a className="text-sm underline" href={`/?select=departure&id=${item.departure_id}`}>{tr("ui.communityModeration.voirLaTraversee")}</a> : null}
-                <Button size="sm" disabled={publish.isPending || (!item.departure_id && !item.port_id)} onClick={() => publish.mutate(item.id)}>{tr("ui.communityModeration.validerEtPublier")}</Button>
-                <Button size="sm" variant="outline" disabled={triage.isPending} onClick={() => triage.mutate({ id: item.id, status: "handled" })}>{tr("ui.communityModeration.traite")}</Button>
-                <Button size="sm" variant="outline" disabled={triage.isPending} onClick={() => triage.mutate({ id: item.id, status: "dismissed" })}>{tr("ui.communityModeration.ecarter")}</Button>
-              </div>
-            </li>
+            <ObservationCard
+              key={item.id}
+              item={item}
+              place={placeOf(item)}
+              context={context.data?.[item.id]}
+              contextMissing={context.isError}
+              fallbackHistory={historyOf(item)}
+              busy={publish.isPending || triage.isPending}
+              canPublish={Boolean(item.departure_id || item.port_id)}
+              onPublish={() => publish.mutate(item.id)}
+              onTriage={(status) => triage.mutate({ id: item.id, status })}
+            />
           ))}
         </ul>
+        <ObservationHistory rows={decided.data ?? []} placeOf={placeOf} context={context.data} />
         {triage.isError ? <p role="alert">{tr("ui.communityModeration.laMiseAJourA")}</p> : null}
         {publish.isError ? <p role="alert">{publish.error.message}</p> : null}
       </section>

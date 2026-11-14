@@ -28,6 +28,8 @@ export type CompanionPlan = {
   window: { from: string; to: string } | null;
   /** Le calendrier de vacances scolaires affiché : « FR », « FR:C », « BE:FR »… */
   holidays: string;
+  /** Le départ se cale sur les vacances scolaires : on montre leur calendrier (non par défaut). */
+  schoolHolidays: boolean;
   /** Où l'on va en Algérie (facultatif) : sert à l'itinéraire porte à porte. */
   destination: { label: string; point: [number, number] } | null;
   fromPortId: string | null;
@@ -68,6 +70,7 @@ export const defaultPlan = (): CompanionPlan => ({
   date: "",
   window: null,
   holidays: "FR",
+  schoolHolidays: false,
   destination: null,
   fromPortId: null,
   toPortId: null,

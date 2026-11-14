@@ -16174,3 +16174,412 @@ button.bw-delay-badge:focus-visible {
   outline: 2px solid var(--primary);
   outline-offset: -2px;
 }
+
+/* Préparer mon voyage : l'Algérie en photos qui défilent (glissé du doigt, pause au survol). */
+.bw-algeria {
+  position: relative;
+  overflow: hidden;
+  border-radius: 24px;
+  background: #16324a;
+  box-shadow: 0 18px 40px -22px #16324a99;
+}
+.bw-algeria__track {
+  display: flex;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  scrollbar-width: none;
+  overscroll-behavior-x: contain;
+}
+.bw-algeria__track::-webkit-scrollbar {
+  display: none;
+}
+.bw-algeria__slide {
+  position: relative;
+  flex: 0 0 100%;
+  margin: 0;
+  overflow: hidden;
+  aspect-ratio: 4 / 3;
+  scroll-snap-align: start;
+  scroll-snap-stop: always;
+}
+@media (min-width: 768px) {
+  .bw-algeria__slide {
+    aspect-ratio: 16 / 9;
+  }
+}
+.bw-algeria__slide img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transform: scale(1.04);
+  transition: transform 6s ease-out;
+}
+/* Un très léger zoom sur la photo affichée : l'image vit sans distraire. */
+.bw-algeria__slide[data-active] img {
+  transform: scale(1.12);
+}
+.bw-algeria__slide::after {
+  content: "";
+  position: absolute;
+  inset: 45% 0 0;
+  background: linear-gradient(180deg, #0b1d2c00, #0b1d2cd9);
+  pointer-events: none;
+}
+.bw-algeria__slide figcaption {
+  position: absolute;
+  z-index: 1;
+  left: 18px;
+  right: 18px;
+  bottom: 40px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  color: #ffffff;
+  text-shadow: 0 1px 8px #0b1d2c80;
+}
+.bw-algeria__place {
+  font-size: 11.5px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #ffd98a;
+}
+.bw-algeria__title {
+  font-family: var(--font-display, inherit);
+  font-size: 1.35rem;
+  font-weight: 700;
+  line-height: 1.15;
+}
+@media (min-width: 768px) {
+  .bw-algeria__slide figcaption {
+    left: 28px;
+    bottom: 46px;
+  }
+  .bw-algeria__title {
+    font-size: 1.9rem;
+  }
+}
+.bw-algeria__credit {
+  position: absolute;
+  z-index: 1;
+  right: 10px;
+  top: 10px;
+  max-width: 70%;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: #0b1d2c8c;
+  color: #ffffffd9;
+  font-size: 10px;
+  line-height: 1.5;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.bw-algeria__credit a {
+  color: inherit;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.bw-algeria__nav {
+  position: absolute;
+  z-index: 2;
+  top: 50%;
+  display: none;
+  width: 40px;
+  height: 40px;
+  place-items: center;
+  margin-top: -20px;
+  border: 0;
+  border-radius: 999px;
+  background: #ffffffe6;
+  color: #16324a;
+  box-shadow: 0 4px 14px -4px #0b1d2c80;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+.bw-algeria__nav[data-side="prev"] {
+  left: 12px;
+}
+.bw-algeria__nav[data-side="next"] {
+  right: 12px;
+}
+@media (pointer: fine) {
+  .bw-algeria__nav {
+    display: grid;
+  }
+  .bw-algeria:hover .bw-algeria__nav,
+  .bw-algeria__nav:focus-visible {
+    opacity: 1;
+  }
+}
+.bw-algeria__dots {
+  position: absolute;
+  z-index: 2;
+  left: 18px;
+  bottom: 16px;
+  display: flex;
+  gap: 5px;
+}
+@media (min-width: 768px) {
+  .bw-algeria__dots {
+    left: 28px;
+    bottom: 20px;
+  }
+}
+.bw-algeria__dots button {
+  position: relative;
+  width: 7px;
+  height: 7px;
+  padding: 0;
+  overflow: hidden;
+  border: 0;
+  border-radius: 999px;
+  background: #ffffff73;
+  cursor: pointer;
+  transition: width 0.3s ease;
+}
+/* Le point de la photo affichée s'allonge et se remplit au rythme du défilement. */
+.bw-algeria__dots button[aria-current] {
+  width: 26px;
+  background: #ffffff;
+}
+.bw-algeria__dots button[data-running] {
+  background: #ffffff59;
+}
+.bw-algeria__dots span {
+  position: absolute;
+  inset: 0;
+  background: #ffffff;
+  transform-origin: left;
+  animation: bw-algeria-fill linear forwards;
+}
+@keyframes bw-algeria-fill {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .bw-algeria__slide img,
+  .bw-algeria__slide[data-active] img {
+    transform: none;
+    transition: none;
+  }
+}
+
+/* Préparer mon voyage : la frise des étapes, dans le style de celle de « Mon voyage ». */
+.bw-prep-frieze {
+  padding: 4px 6px 8px;
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  background: #ffffff;
+}
+.bw-prep-frieze ol {
+  display: grid;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.bw-prep-frieze li {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  min-width: 0;
+}
+.bw-prep-frieze__bar {
+  position: absolute;
+  top: 41px;
+  left: 50%;
+  width: 100%;
+  height: 3px;
+  border-radius: 999px;
+  background: #ddd8c9;
+}
+.bw-prep-frieze__bar[data-done] {
+  background: #0e7a43;
+}
+.bw-prep-frieze button {
+  position: relative;
+  display: flex;
+  width: 100%;
+  min-width: 0;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 22px 2px 2px;
+  border: 0;
+  background: none;
+  color: #16324a;
+  font: inherit;
+  text-align: center;
+  cursor: pointer;
+}
+.bw-prep-frieze button:focus-visible {
+  outline: 2px solid #0e7a43;
+  outline-offset: 2px;
+  border-radius: 12px;
+}
+.bw-prep-frieze__here {
+  position: absolute;
+  z-index: 2;
+  top: 0;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: #16324a;
+  color: #ffffff;
+  font-size: 10px;
+  font-weight: 800;
+  line-height: 1.2;
+  white-space: nowrap;
+  box-shadow: 0 3px 8px -2px #16324a59;
+}
+.bw-prep-frieze__here::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: -3px;
+  width: 6px;
+  height: 6px;
+  background: inherit;
+  transform: translateX(-50%) rotate(45deg);
+}
+.bw-prep-frieze__dot {
+  position: relative;
+  display: grid;
+  width: 38px;
+  height: 38px;
+  place-items: center;
+  border: 2px solid #cfc8b6;
+  border-radius: 999px;
+  background: #ffffff;
+  color: #4b5a55;
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
+}
+.bw-prep-frieze li[data-done] .bw-prep-frieze__dot {
+  border-color: #0e7a43;
+  background: #0e7a43;
+  color: #ffffff;
+}
+.bw-prep-frieze li[data-current] .bw-prep-frieze__dot {
+  border-color: #16324a;
+  background: #16324a;
+  color: #ffd98a;
+  transform: scale(1.12);
+  box-shadow: 0 0 0 4px #ffd98a66;
+}
+.bw-prep-frieze li[data-locked] .bw-prep-frieze__dot {
+  border-style: dashed;
+  color: #8a948f;
+}
+.bw-prep-frieze__lock {
+  position: absolute;
+  right: -5px;
+  bottom: -4px;
+  display: grid;
+  width: 17px;
+  height: 17px;
+  place-items: center;
+  border-radius: 999px;
+  background: #f1ecdf;
+  color: #5d6b66;
+  box-shadow: 0 0 0 2px #ffffff;
+}
+.bw-prep-frieze button:hover .bw-prep-frieze__dot {
+  transform: scale(1.08);
+}
+.bw-prep-frieze li[data-current] button:hover .bw-prep-frieze__dot {
+  transform: scale(1.12);
+}
+.bw-prep-frieze strong {
+  max-width: 100%;
+  overflow: hidden;
+  font-size: 11px;
+  letter-spacing: -0.01em;
+  line-height: 1.2;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.bw-prep-frieze li[data-current] strong {
+  color: #0e7a43;
+}
+.bw-prep-frieze small {
+  display: none;
+  color: #5d6b66;
+  font-size: 11px;
+}
+@media (min-width: 640px) {
+  .bw-prep-frieze {
+    padding: 6px 12px 10px;
+  }
+  .bw-prep-frieze__bar {
+    top: 44px;
+  }
+  .bw-prep-frieze__dot {
+    width: 44px;
+    height: 44px;
+  }
+  .bw-prep-frieze strong {
+    font-size: 12.5px;
+  }
+  .bw-prep-frieze small {
+    display: block;
+  }
+}
+
+/* L'icône d'étape en tête de chaque carte : même pastille que la frise. */
+.bw-prep-badge {
+  position: relative;
+  display: grid;
+  flex-shrink: 0;
+  place-items: center;
+  border: 2px solid #cfc8b6;
+  border-radius: 999px;
+  background: #ffffff;
+  color: #16324a;
+}
+.bw-prep-badge[data-done] {
+  border-color: #0e7a43;
+  background: #0e7a43;
+  color: #ffffff;
+}
+
+/* Interrupteur (vacances scolaires) */
+.bw-switch {
+  position: relative;
+  display: inline-flex;
+  width: 46px;
+  height: 28px;
+  flex-shrink: 0;
+  border: 0;
+  border-radius: 999px;
+  background: #cfc8b6;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+.bw-switch::after {
+  content: "";
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 22px;
+  height: 22px;
+  border-radius: 999px;
+  background: #ffffff;
+  box-shadow: 0 1px 3px #0b1d2c40;
+  transition: transform 0.2s ease;
+}
+.bw-switch[aria-checked="true"] {
+  background: #0e7a43;
+}
+.bw-switch[aria-checked="true"]::after {
+  transform: translateX(18px);
+}
+.bw-switch:focus-visible {
+  outline: 2px solid #0e7a43;
+  outline-offset: 2px;
+}

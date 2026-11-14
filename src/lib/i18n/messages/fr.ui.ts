@@ -2449,9 +2449,12 @@ export const ui = {
     arriveeVers: "Arrivée vers",
   },
   salesAlertForm: {
-    lesVentesPour: "Les ventes pour ",
-    neSontPasEncoreOuvertes: " ne sont pas encore ouvertes.",
-    soyezPrevenuDesLOuverture: "Soyez prévenu dès l'ouverture des billets par les compagnies.",
+    lesVentesPour: "Les compagnies n'ont pas encore ouvert la vente pour ",
+    neSontPasEncoreOuvertes: ".",
+    publieJusquAu: "Leurs horaires sont publiés jusqu'au ",
+    publieJusquAuFin: " : après, aucun départ ne peut encore être réservé.",
+    soyezPrevenuDesLOuverture:
+      "Laissez votre e-mail : on vous prévient dès que les billets sont en vente.",
     demandeTransmiseALEquipe: " Demande transmise à l'équipe pour cette période.",
     votreEMail: "Votre e-mail",
     votreAdresseEMail: "Votre adresse e-mail",

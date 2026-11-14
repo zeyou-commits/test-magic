@@ -7,12 +7,15 @@ import { useAuth } from "@/hooks/useAuth";
 /** Message « pas encore programmé » + inscription à l'alerte d'ouverture des ventes. */
 export function SalesAlertForm({
   periodLabel,
+  publishedUntil = null,
   periodStart,
   periodEnd,
   fromLabel,
   toLabel,
 }: {
   periodLabel: string;
+  /** Dernier jour publié par les compagnies sur cette ligne (AAAA-MM-JJ). */
+  publishedUntil?: string | null;
   periodStart: string;
   periodEnd: string;
   fromLabel?: string | null;
@@ -48,6 +51,17 @@ export function SalesAlertForm({
           {tr("ui.salesAlertForm.lesVentesPour")}
           {periodLabel}
           {tr("ui.salesAlertForm.neSontPasEncoreOuvertes")}
+          {publishedUntil ? (
+            <span className="mt-0.5 block text-xs font-normal text-foreground/80">
+              {tr("ui.salesAlertForm.publieJusquAu")}
+              {new Intl.DateTimeFormat("fr-FR", {
+                day: "numeric",
+                month: "long",
+                year: "numeric",
+              }).format(new Date(`${publishedUntil}T12:00:00`))}
+              {tr("ui.salesAlertForm.publieJusquAuFin")}
+            </span>
+          ) : null}
           <span className="mt-0.5 block text-xs font-normal text-muted-foreground">
             {tr("ui.salesAlertForm.soyezPrevenuDesLOuverture")}
           </span>

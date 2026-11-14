@@ -37,7 +37,8 @@ import {
 } from "@/lib/ferry/queries";
 import { buildSailings } from "@/lib/ferry/trips";
 import { calculateRoadAccess, searchItineraryAddress } from "@/lib/ferry/itinerary.functions";
-import { takeItinerarySeed } from "@/lib/ferry/companion";
+import { SalesAlertForm } from "@/components/panel/SalesAlertForm";
+import { loadPlan, takeItinerarySeed, type ItinerarySeed } from "@/lib/ferry/companion";
 import {
   BOARDING_BUFFER_MIN,
   DISEMBARK_BUFFER_MIN,
@@ -118,6 +119,19 @@ const seasonColor = {
   forte: "bg-[#e78339]",
   pointe: "bg-[#c95038]",
 } as const;
+
+/** Ce que « Préparer mon voyage » sait déjà, pour ne pas le redemander ici. */
+function seedFromPlan(): ItinerarySeed | null {
+  const plan = loadPlan();
+  if (!plan?.started || !plan.home) return null;
+  return {
+    origin: plan.home.postcode ? `${plan.home.name} (${plan.home.postcode})` : plan.home.name,
+    originPoint: plan.home.point,
+    destination: plan.destination?.label ?? "",
+    destinationPoint: plan.destination?.point ?? null,
+    period: plan.month,
+  };
+}
 
 const DEMO_LOOP_MS = 30_000;
 
@@ -402,7 +416,8 @@ export function ItineraryPlanner({
   // Venue du compagnon « Préparer mon voyage » : domicile, destination et mois déjà connus.
   // Lue une seule fois : le calcul automatique part dès que les deux adresses sont là.
   useEffect(() => {
-    const seed = takeItinerarySeed();
+    // Ouvert depuis le menu : on reprend aussi la préparation en cours (domicile, bled, mois).
+    const seed = takeItinerarySeed() ?? seedFromPlan();
     if (!seed) return;
     if (seed.origin) setOrigin(seed.origin);
     if (seed.originPoint) setOriginPoint(seed.originPoint);
@@ -1921,6 +1936,16 @@ export function ItineraryPlanner({
                           : `Aucune date publiée pour ${periodLabel} : durées et prix estimés.`}
                       </p>
                     </div>
+                    {dated ? null : (
+                      // Mois pas encore en vente : l'alerte d'ouverture, comme dans « Réserver ».
+                      <SalesAlertForm
+                        periodLabel={periodLabel}
+                        periodStart={`${period}-01`}
+                        periodEnd={`${period}-28`}
+                        fromLabel={podium[0]?.sailing.from.name ?? null}
+                        toLabel={podium[0]?.sailing.to.name ?? null}
+                      />
+                    )}
                     <ol className="grid gap-2">{podium.map((option, rank) => card(option, rank))}</ol>
                     <button
                       type="button"

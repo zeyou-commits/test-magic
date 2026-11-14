@@ -350,7 +350,7 @@ export function SearchPanel({
     const month = new Intl.DateTimeFormat("fr-FR", { month: "long", year: "numeric" }).format(
       new Date(`${filters.date}T12:00:00`),
     );
-    return month;
+    return { month, last: last.slice(0, 10) };
   }, [
     filters.date,
     filters.departurePortIds,
@@ -473,6 +473,19 @@ export function SearchPanel({
 
   const active = hasActiveFilters(filters);
   const fromName = (ids: string[]) => ports.find((port) => port.id === ids[0])?.name ?? "";
+  const salesAlert =
+    salesClosed && filters.date ? (
+      <SalesAlertForm
+        periodLabel={salesClosed.month}
+        publishedUntil={salesClosed.last || null}
+        periodStart={filters.date}
+        periodEnd={filters.returnDate ?? filters.date}
+        fromLabel={
+          filters.departurePortIds.length ? fromName(filters.departurePortIds) : null
+        }
+        toLabel={filters.arrivalPortIds.length ? fromName(filters.arrivalPortIds) : null}
+      />
+    ) : null;
   const reportRoute = routes.find(
     (route) =>
       route.status === "active" &&
@@ -718,6 +731,8 @@ export function SearchPanel({
           <StepLabel open={step === 2} onOpen={() => setStep(2)} summary={datesLabel}>
             {tr("ui.searchPanel.quandPartezVous")}
           </StepLabel>
+          {/* Date pas encore en vente : on le dit tout de suite, avec l'alerte d'ouverture. */}
+          {salesAlert ? <div className="mb-2">{salesAlert}</div> : null}
           <div className={step === 2 ? "-mt-1" : "hidden"}>
             <TripCalendar
               {...(isDesktop
@@ -966,23 +981,7 @@ export function SearchPanel({
                 />
               ) : (
                 <>
-                  {salesClosed && filters.date ? (
-                    <div className="mb-3">
-                      <SalesAlertForm
-                        periodLabel={salesClosed}
-                        periodStart={filters.date}
-                        periodEnd={filters.returnDate ?? filters.date}
-                        fromLabel={
-                          filters.departurePortIds.length
-                            ? fromName(filters.departurePortIds)
-                            : null
-                        }
-                        toLabel={
-                          filters.arrivalPortIds.length ? fromName(filters.arrivalPortIds) : null
-                        }
-                      />
-                    </div>
-                  ) : null}
+                  {salesAlert ? <div className="mb-3">{salesAlert}</div> : null}
                   <ResultBlock
                     liveByDeparture={liveByDeparture}
                     title={

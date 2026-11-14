@@ -34,6 +34,7 @@ import {
 } from "lucide-react";
 import { AlgeriaCarousel } from "@/components/prepare/AlgeriaCarousel";
 import { RouteTop3 } from "@/components/prepare/RouteTop3";
+import { WizardFrame, WizardNav, useWizardScreen } from "@/components/prepare/WizardFrame";
 import { PushStatusLine } from "@/components/panel/PushStatusLine";
 import { SiteLayout } from "@/components/layout/SiteLayout";
 import { useAuth } from "@/hooks/useAuth";
@@ -425,7 +426,11 @@ function CompanionPage() {
     const travel = readTravelProfile();
     const start = saved ?? { ...defaultPlan(), ...(travel ? { vehicle: travel.vehicle } : {}) };
     setPlan(start);
-    setOpen(companionSteps(start).find((step) => !start.done.includes(step)) ?? null);
+    setOpen(
+      start.done.length
+        ? null
+        : (companionSteps(start).find((step) => !start.done.includes(step)) ?? null),
+    );
     setLoaded(true);
   }, []);
   useEffect(() => {
@@ -535,6 +540,8 @@ function CompanionPage() {
   useDeadlineSync(user?.id ?? null, plan, papers, loaded && papers.loaded);
 
   const nextStep = steps.find((step) => !plan.done.includes(step) && !isLocked(step)) ?? null;
+  const wizSteps = steps.filter((step) => !isLocked(step));
+  const inWizard = open !== null && wizSteps.includes(open);
   const stepBody = (step: CompanionStep) => (
     <>
       {step === "profile" ? (
@@ -660,7 +667,7 @@ function CompanionPage() {
                 onOpen={openStep}
               />
 
-              {open === null ? (
+              {!inWizard || open === null ? (
                 <>
                   {!allDone && !locked && nextStep ? (
                     <button
@@ -712,18 +719,24 @@ function CompanionPage() {
                   </ol>
                 </>
               ) : (
-                <StepWizard
-                  step={open}
-                  steps={steps.filter((step) => !isLocked(step))}
-                  done={plan.done}
-                  onOpen={openStep}
-                  onOverview={() => {
+                <WizardFrame
+                  steps={wizSteps.map((step) => ({
+                    key: step,
+                    short: stepArt[step].short,
+                    title: stepTitles[step],
+                    icon: stepArt[step].icon,
+                    done: plan.done.includes(step),
+                  }))}
+                  current={Math.max(0, wizSteps.indexOf(open))}
+                  chapter={`Chapitre ${chapterOf(open) + 1} · ${chapters[chapterOf(open)]!.title}`}
+                  onOpen={(index) => openStep(wizSteps[index]!)}
+                  onClose={() => {
                     setOpen(null);
-                    requestAnimationFrame(() => window.scrollTo({ top: 0, behavior: "smooth" }));
+                    requestAnimationFrame(() => window.scrollTo({ top: 0, behavior: "instant" }));
                   }}
                 >
                   {stepBody(open)}
-                </StepWizard>
+                </WizardFrame>
               )}
 
               {locked && !authLoading ? (
@@ -791,114 +804,6 @@ function useSummaries(
       : null,
     book: line ? `${line} · ${planWhenLabel(plan)}` : null,
   };
-}
-
-/**
- * Une étape à la fois, qui glisse de côté : le chapitre, où l'on en est, et de quoi revenir,
- * passer ou retrouver la vue d'ensemble. Chaque étape passe seule à la suivante une fois finie.
- */
-function StepWizard({
-  step,
-  steps,
-  done,
-  onOpen,
-  onOverview,
-  children,
-}: {
-  step: CompanionStep;
-  steps: CompanionStep[];
-  done: CompanionStep[];
-  onOpen: (step: CompanionStep) => void;
-  onOverview: () => void;
-  children: ReactNode;
-}) {
-  const index = Math.max(0, steps.indexOf(step));
-  const previous = useRef(index);
-  const direction = index >= previous.current ? "next" : "prev";
-  useEffect(() => {
-    previous.current = index;
-  }, [index]);
-  const chapter = chapterOf(step);
-  const before = steps[index - 1] ?? null;
-  const after = steps[index + 1] ?? null;
-  return (
-    <section
-      id={`etape-${step}`}
-      aria-labelledby="etape-titre"
-      className="mt-4 scroll-mt-24 overflow-hidden"
-    >
-      <div className="flex items-center justify-between gap-3">
-        <p className="text-xs font-bold uppercase tracking-wider text-primary">
-          Chapitre {chapter + 1} sur {chapters.length} · {chapters[chapter]!.title}
-        </p>
-        <button
-          type="button"
-          onClick={onOverview}
-          className="shrink-0 text-sm font-semibold text-muted-foreground underline underline-offset-4 hover:text-foreground"
-        >
-          Vue d'ensemble
-        </button>
-      </div>
-      <div className="mt-2 flex gap-1" aria-hidden>
-        {steps.map((item) => (
-          <span
-            key={item}
-            className={`h-1.5 flex-1 rounded-full transition-colors ${
-              item === step ? "bg-primary" : done.includes(item) ? "bg-primary/50" : "bg-border"
-            }`}
-          />
-        ))}
-      </div>
-      <div
-        key={step}
-        className={`bw-wiz-slide bw-wiz-slide--${direction} mt-4 rounded-2xl border bg-card px-4 pb-5 pt-4 shadow-sm md:px-6`}
-      >
-        <div className="flex items-center gap-3">
-          <StepArt step={step} done={done.includes(step)} />
-          <div className="min-w-0">
-            <p className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
-              Étape {index + 1} sur {steps.length}
-            </p>
-            <h2 id="etape-titre" className="font-display text-xl font-bold leading-tight">
-              {stepTitles[step]}
-            </h2>
-          </div>
-        </div>
-        <img
-          src={stepArt[step].scene}
-          alt={stepArt[step].sceneAlt}
-          width={960}
-          height={640}
-          loading="lazy"
-          decoding="async"
-          className="mt-4 h-28 w-full rounded-xl object-cover md:h-44"
-        />
-        {children}
-      </div>
-      <div className="mt-3 flex items-center justify-between gap-3 text-sm">
-        {before ? (
-          <button
-            type="button"
-            onClick={() => onOpen(before)}
-            className="inline-flex min-h-11 items-center gap-1 rounded-xl px-3 font-semibold hover:bg-secondary"
-          >
-            <ArrowLeft size={16} aria-hidden /> {stepArt[before].short}
-          </button>
-        ) : (
-          <span />
-        )}
-        {after ? (
-          <button
-            type="button"
-            onClick={() => onOpen(after)}
-            className="inline-flex min-h-11 items-center gap-1 rounded-xl px-3 font-semibold text-muted-foreground hover:bg-secondary"
-          >
-            Passer cette étape <ArrowRight size={16} aria-hidden />
-          </button>
-        ) : null}
-      </div>
-    </section>
-  );
 }
 
 function StepCard({
@@ -977,16 +882,9 @@ function StepCard({
   );
 }
 
+/** Le bouton d'action de l'écran : dans la barre du bas du guide, toujours visible. */
 function NextButton({ label, onClick }: { label: string; onClick: () => void }) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className="inline-flex min-h-12 items-center gap-2 rounded-xl bg-primary px-6 text-sm font-bold text-primary-foreground hover:bg-primary/90"
-    >
-      {label} <ArrowRight size={16} aria-hidden />
-    </button>
-  );
+  return <WizardNav next={{ label, onClick }} />;
 }
 
 function MoreLinks({ links }: { links: { href: string; label: string }[] }) {
@@ -1020,6 +918,7 @@ function ProfileStep({
 }) {
   const [question, setQuestion] = useState<ProfileQuestion>("when");
   const index = profileQuestions.indexOf(question);
+  useWizardScreen(index, profileQuestions.length);
   const box = useRef<HTMLDivElement>(null);
   const go = (next: ProfileQuestion) => {
     setQuestion(next);
@@ -1039,9 +938,6 @@ function ProfileStep({
 
   return (
     <div ref={box} className="scroll-mt-24 pt-4">
-      <p className="text-xs font-bold uppercase tracking-widest text-primary">
-        Question {index + 1} sur {profileQuestions.length}
-      </p>
       {question === "when" ? <WhenQuestion plan={plan} patch={patch} /> : null}
       {question === "group" ? <GroupStep answers={papers.answers} patch={papersPatch} /> : null}
       {question === "vehicle" ? (
@@ -1090,23 +986,13 @@ function ProfileStep({
           </div>
         </Question>
       ) : null}
-      <div className="mt-8 flex items-center justify-between gap-3">
-        {index > 0 ? (
-          <button
-            type="button"
-            onClick={() => go(profileQuestions[index - 1]!)}
-            className="inline-flex min-h-12 items-center rounded-xl px-4 text-sm font-semibold hover:bg-secondary"
-          >
-            Retour
-          </button>
-        ) : (
-          <span />
-        )}
-        <NextButton
-          label={index + 1 < profileQuestions.length ? "Continuer" : "Continuer : mes papiers"}
-          onClick={next}
-        />
-      </div>
+      <WizardNav
+        back={index > 0 ? () => go(profileQuestions[index - 1]!) : undefined}
+        next={{
+          label: index + 1 < profileQuestions.length ? "Continuer" : "Continuer : mes papiers",
+          onClick: next,
+        }}
+      />
     </div>
   );
 }
@@ -1164,6 +1050,10 @@ function PapersStepBody({
     return out;
   }, [plan, papers.answers.travellers]);
   const [step, setStep] = useState<PapersStep>(steps[0]!);
+  useWizardScreen(
+    papers.finished ? steps.length : Math.max(0, steps.indexOf(step)),
+    steps.length + 1,
+  );
   const box = useRef<HTMLDivElement>(null);
   const toTop = () =>
     requestAnimationFrame(() =>
@@ -1192,7 +1082,14 @@ function PapersStepBody({
             Pas besoin de tout cocher maintenant : la liste reste ici et dans « Mon voyage ».
           </p>
           <div className="mt-4">
-            <NextButton label={`Continuer : ${next}`} onClick={onDone} />
+            <WizardNav
+              back={() => {
+                papers.setFinished(false);
+                setStep(steps[steps.length - 1]!);
+                toTop();
+              }}
+              next={{ label: `Continuer : ${next}`, onClick: onDone }}
+            />
           </div>
         </>
       ) : (
@@ -1246,92 +1143,108 @@ function CarStep({
         ? plan.carDone.filter((x) => x !== id)
         : [...plan.carDone, id],
     });
+  const [screen, setScreen] = useState(0);
+  useWizardScreen(screen, 2);
   return (
     <div className="pt-4">
-      <Question title="La voiture reste-t-elle en Algérie ?">
-        <Options
-          label="Séjour de la voiture"
-          value={plan.importCar ? "import" : "vacances"}
-          onChange={(v) => patch({ importCar: v === "import" })}
-          options={[
-            {
-              value: "vacances",
-              label: "Non, elle revient avec moi",
-              hint: "Admission temporaire, le temps des vacances",
-            },
-            {
-              value: "import",
-              label: "Oui, je l'importe",
-              hint: "Véhicule de moins de 3 ans : une autre démarche",
-            },
-          ]}
-        />
-      </Question>
-      {plan.importCar ? (
-        <p className="mt-4 flex items-start gap-2 rounded-xl bg-primary/5 p-3 text-sm">
-          <Info size={16} className="mt-0.5 shrink-0 text-primary" aria-hidden />
-          <span>
-            L'importation suit ses propres conditions, différentes de l'admission temporaire.{" "}
-            <a href="/vehicules-moins-3-ans" className={textLink}>
-              Les conditions pour importer une voiture
-            </a>
-          </span>
-        </p>
-      ) : null}
-      <h3 className="mt-6 font-display text-lg font-bold">Avant de partir</h3>
-      <ul className="mt-3 grid gap-2">
-        {carItems.map((item) => {
-          const done = plan.carDone.includes(item.id);
-          return (
-            <li
-              key={item.id}
-              className={`rounded-xl border ${done ? "bg-secondary/40" : "bg-background"}`}
-            >
-              <div className="flex items-start gap-3 p-3">
-                <button
-                  type="button"
-                  role="checkbox"
-                  aria-checked={done}
-                  aria-label={item.label}
-                  onClick={() => toggle(item.id)}
-                  className={`mt-0.5 grid size-6 shrink-0 place-items-center rounded-md border-2 ${
-                    done
-                      ? "border-primary bg-primary text-primary-foreground"
-                      : "border-muted-foreground/40"
-                  }`}
+      {screen === 0 ? (
+        <>
+          <Question title="La voiture reste-t-elle en Algérie ?">
+            <Options
+              label="Séjour de la voiture"
+              value={plan.importCar ? "import" : "vacances"}
+              onChange={(v) => {
+                patch({ importCar: v === "import" });
+                if (v === "vacances") window.setTimeout(() => setScreen(1), 220);
+              }}
+              options={[
+                {
+                  value: "vacances",
+                  label: "Non, elle revient avec moi",
+                  hint: "Admission temporaire, le temps des vacances",
+                },
+                {
+                  value: "import",
+                  label: "Oui, je l'importe",
+                  hint: "Véhicule de moins de 3 ans : une autre démarche",
+                },
+              ]}
+            />
+          </Question>
+          {plan.importCar ? (
+            <p className="mt-4 flex items-start gap-2 rounded-xl bg-primary/5 p-3 text-sm">
+              <Info size={16} className="mt-0.5 shrink-0 text-primary" aria-hidden />
+              <span>
+                L'importation suit ses propres conditions, différentes de l'admission temporaire.{" "}
+                <a href="/vehicules-moins-3-ans" className={textLink}>
+                  Les conditions pour importer une voiture
+                </a>
+              </span>
+            </p>
+          ) : null}
+          <WizardNav next={{ label: "Continuer", onClick: () => setScreen(1) }} />
+        </>
+      ) : (
+        <>
+          <h3 className="mt-4 font-display text-xl font-bold">Avant de partir</h3>
+          <ul className="mt-3 grid gap-2">
+            {carItems.map((item) => {
+              const done = plan.carDone.includes(item.id);
+              return (
+                <li
+                  key={item.id}
+                  className={`rounded-xl border ${done ? "bg-secondary/40" : "bg-background"}`}
                 >
-                  {done ? <Check size={14} strokeWidth={3} aria-hidden /> : null}
-                </button>
-                <div className="min-w-0">
-                  <p
-                    className={`font-semibold ${done ? "text-muted-foreground line-through" : ""}`}
-                  >
-                    {item.label}
-                  </p>
-                  {item.tip ? (
-                    <p className="mt-0.5 text-sm text-muted-foreground">{item.tip}</p>
-                  ) : null}
-                  {item.href ? (
-                    <a
-                      href={item.href}
-                      {...(item.href.startsWith("http")
-                        ? { target: "_blank", rel: "noreferrer" }
-                        : {})}
-                      className={`${textLink} mt-1 inline-flex items-center gap-1 text-sm`}
+                  <div className="flex items-start gap-3 p-3">
+                    <button
+                      type="button"
+                      role="checkbox"
+                      aria-checked={done}
+                      aria-label={item.label}
+                      onClick={() => toggle(item.id)}
+                      className={`mt-0.5 grid size-6 shrink-0 place-items-center rounded-md border-2 ${
+                        done
+                          ? "border-primary bg-primary text-primary-foreground"
+                          : "border-muted-foreground/40"
+                      }`}
                     >
-                      {item.linkLabel ?? "En savoir plus"}
-                      {item.href.startsWith("http") ? <ExternalLink size={12} aria-hidden /> : null}
-                    </a>
-                  ) : null}
-                </div>
-              </div>
-            </li>
-          );
-        })}
-      </ul>
-      <div className="mt-6">
-        <NextButton label="Continuer : ma route" onClick={onDone} />
-      </div>
+                      {done ? <Check size={14} strokeWidth={3} aria-hidden /> : null}
+                    </button>
+                    <div className="min-w-0">
+                      <p
+                        className={`font-semibold ${done ? "text-muted-foreground line-through" : ""}`}
+                      >
+                        {item.label}
+                      </p>
+                      {item.tip ? (
+                        <p className="mt-0.5 text-sm text-muted-foreground">{item.tip}</p>
+                      ) : null}
+                      {item.href ? (
+                        <a
+                          href={item.href}
+                          {...(item.href.startsWith("http")
+                            ? { target: "_blank", rel: "noreferrer" }
+                            : {})}
+                          className={`${textLink} mt-1 inline-flex items-center gap-1 text-sm`}
+                        >
+                          {item.linkLabel ?? "En savoir plus"}
+                          {item.href.startsWith("http") ? (
+                            <ExternalLink size={12} aria-hidden />
+                          ) : null}
+                        </a>
+                      ) : null}
+                    </div>
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
+          <WizardNav
+            back={() => setScreen(0)}
+            next={{ label: "Continuer : ma route", onClick: onDone }}
+          />
+        </>
+      )}
       <MoreLinks
         links={[
           { href: "/guide/voyage-algerie-voiture-checklist", label: "La checklist voiture" },
@@ -1781,14 +1694,14 @@ function BookStep({
           </div>
         ))}
       </dl>
-      <button
-        type="button"
-        onClick={onBook}
-        disabled={!fromChoice || !toPort}
-        className="mt-4 inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-primary px-6 text-sm font-bold text-primary-foreground hover:bg-primary/90 disabled:opacity-50 sm:w-auto"
-      >
-        <CalendarCheck size={16} aria-hidden /> Voir les traversées et réserver
-      </button>
+      <WizardNav
+        next={{
+          label: "Voir les traversées",
+          onClick: onBook,
+          disabled: !fromChoice || !toPort,
+          icon: CalendarCheck,
+        }}
+      />
       <p className="mt-3 flex items-start gap-2 text-xs text-muted-foreground">
         <Landmark size={14} className="mt-0.5 shrink-0" aria-hidden />
         BledWay ne vend pas de billets : la réservation et le paiement se font auprès de la

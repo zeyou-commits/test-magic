@@ -18,6 +18,7 @@ import {
   User,
 } from "lucide-react";
 import { textLink } from "@/components/editorial/Editorial";
+import { WizardNav, useInWizard } from "@/components/prepare/WizardFrame";
 import {
   FORMALITES_CHECKED,
   consulatForDepartment,
@@ -124,43 +125,35 @@ export function PapersWizard({
   const index = Math.max(0, steps.indexOf(step));
   const current = steps[index]!;
   const { answers, patch } = state;
+  // Dans le guide plein écran, le fil du haut dit déjà où l'on en est.
+  const inWizard = useInWizard();
   return (
     <div>
-      <p className="text-xs font-bold uppercase tracking-widest text-primary">
-        {label} · question {index + 1} sur {steps.length}
-      </p>
-      <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-secondary" aria-hidden>
-        <div
-          className="h-full rounded-full bg-primary transition-[width] duration-300"
-          style={{ width: `${((index + 1) / (steps.length + 1)) * 100}%` }}
-        />
-      </div>
+      {inWizard ? null : (
+        <>
+          <p className="text-xs font-bold uppercase tracking-widest text-primary">
+            {label} · question {index + 1} sur {steps.length}
+          </p>
+          <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-secondary" aria-hidden>
+            <div
+              className="h-full rounded-full bg-primary transition-[width] duration-300"
+              style={{ width: `${((index + 1) / (steps.length + 1)) * 100}%` }}
+            />
+          </div>
+        </>
+      )}
       {current === "home" ? (homeSlot ?? <HomeStep answers={answers} patch={patch} />) : null}
       {current === "group" ? <GroupStep answers={answers} patch={patch} /> : null}
       {current === "people" ? <PeopleStep answers={answers} patch={patch} /> : null}
       {current === "family" ? <FamilyStep answers={answers} patch={patch} /> : null}
       {current === "stay" ? <StayStep answers={answers} patch={patch} /> : null}
-      <div className="mt-8 flex items-center justify-between gap-3">
-        {index > 0 || onBackFirst ? (
-          <button
-            type="button"
-            onClick={() => (index > 0 ? setStep(steps[index - 1]!) : onBackFirst?.())}
-            className="inline-flex min-h-12 items-center gap-2 rounded-xl px-4 text-sm font-semibold hover:bg-secondary"
-          >
-            <ArrowLeft size={16} aria-hidden /> Retour
-          </button>
-        ) : (
-          <span />
-        )}
-        <button
-          type="button"
-          onClick={() => (index + 1 < steps.length ? setStep(steps[index + 1]!) : onFinish())}
-          className="inline-flex min-h-12 items-center gap-2 rounded-xl bg-primary px-6 text-sm font-bold text-primary-foreground hover:bg-primary/90"
-        >
-          {index + 1 < steps.length ? "Continuer" : "Voir mon plan d'action"}{" "}
-          <ArrowRight size={16} aria-hidden />
-        </button>
-      </div>
+      <WizardNav
+        back={index > 0 ? () => setStep(steps[index - 1]!) : onBackFirst}
+        next={{
+          label: index + 1 < steps.length ? "Continuer" : "Voir mon plan d'action",
+          onClick: () => (index + 1 < steps.length ? setStep(steps[index + 1]!) : onFinish()),
+        }}
+      />
     </div>
   );
 }

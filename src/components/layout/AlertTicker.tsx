@@ -12,6 +12,7 @@ import { useTravelAction } from "@/hooks/useTravelAction";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { tr } from "@/lib/i18n";
+import { encodeDismiss, isDismissed } from "@/lib/ferry/tickerRules";
 
 const DISMISSED_KEY = "bledway:alert-ticker-dismissed";
 const RAIL_DISMISSED_KEY = "bledway:news-rail-dismissed";
@@ -44,7 +45,7 @@ function readDismissed(key = DISMISSED_KEY) {
  * (navire suivi ou de leur traversée) et sur une ligne discrète pour les autres, perturbations de
  * moins de 48 h en ambre s'il n'y a pas d'alerte.
  * En dessous ou à côté, le fil d'actualités défile sur fond sombre : deux niveaux, deux allures.
- * Absent s'il n'y a rien. Fermé, il revient à la prochaine information.
+ * Absent s'il n'y a rien. Fermé, il revient à la prochaine information, ou au plus tard le lendemain.
  */
 export function AlertTicker() {
   const onNewsPages = useRouterState({
@@ -162,8 +163,8 @@ function AlertTickerBar() {
     )
     .slice(0, 8);
   const railVersion = rail.map((item) => item.id).join("|");
-  const showAlerts = alerts.length > 0 && dismissed !== version;
-  const showRail = rail.length > 0 && railDismissed !== railVersion;
+  const showAlerts = alerts.length > 0 && !isDismissed(dismissed, version, Date.now());
+  const showRail = rail.length > 0 && !isDismissed(railDismissed, railVersion, Date.now());
   // Données reçues (ou en erreur) et préférences lues : on sait si le bandeau s'affiche.
   const settled =
     ready && newsResult.status !== "pending" && incidentsResult.status !== "pending";
@@ -213,9 +214,10 @@ function AlertTickerBar() {
             .map((item) => `n-${item.id}`),
           true,
         );
-        setDismissed(version);
+        const stamp = encodeDismiss(version, Date.now());
+        setDismissed(stamp);
         try {
-          window.localStorage.setItem(DISMISSED_KEY, version);
+          window.localStorage.setItem(DISMISSED_KEY, stamp);
         } catch {
           /* sans stockage, le bandeau reviendra au prochain chargement */
         }
@@ -387,9 +389,10 @@ function AlertTickerBar() {
             aria-label={tr("ui.alertTicker.masquerLeFilDActualites")}
             onClick={() => {
               if (merged) dismissAlerts();
-              setRailDismissed(railVersion);
+              const stamp = encodeDismiss(railVersion, Date.now());
+              setRailDismissed(stamp);
               try {
-                window.localStorage.setItem(RAIL_DISMISSED_KEY, railVersion);
+                window.localStorage.setItem(RAIL_DISMISSED_KEY, stamp);
               } catch {
                 /* sans stockage, le fil reviendra au prochain chargement */
               }

@@ -1,3 +1,4 @@
+import { crossingNewsExpired } from "./tickerRules";
 import { useEffect, useState } from "react";
 import { queryOptions } from "@tanstack/react-query";
 import { z } from "zod";
@@ -90,7 +91,7 @@ export const newsQuery = queryOptions({
       throw new Error("Le flash info est momentanément indisponible.");
     }
     const now = Date.now();
-    return z
+    const current = z
       .array(newsSchema)
       .parse(data)
       .filter(
@@ -99,6 +100,17 @@ export const newsQuery = queryOptions({
           (!item.ends_at || Date.parse(item.ends_at) > now) &&
           !looksInternal(`${item.title} ${item.summary}`),
       );
+    // Une info rattachée à des traversées (« traversée avancée au 11 novembre ») n'est plus
+    // d'actualité une fois ces traversées passées. Sans réponse, on garde tout.
+    const ids = [...new Set(current.flatMap((item) => item.departure_ids))];
+    if (!ids.length) return current;
+    const { data: rows } = await supabase
+      .from("departures")
+      .select("id, departure_at, arrival_at")
+      .in("id", ids);
+    if (!rows) return current;
+    const times = new Map(rows.map((row) => [row.id, row]));
+    return current.filter((item) => !crossingNewsExpired(item, times, now));
   },
   staleTime: 60_000,
   refetchInterval: 5 * 60_000,

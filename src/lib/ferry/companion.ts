@@ -26,6 +26,10 @@ export type CompanionPlan = {
   date: string;
   /** Une période de départ (vacances scolaires, ou du… au…) ; null : le mois entier. */
   window: { from: string; to: string } | null;
+  /** Le retour, choisi dans le même calendrier que « Réserver » (facultatif). */
+  returnDate?: string | null;
+  /** La souplesse sur le jour d'aller (± jours), comme dans « Réserver ». */
+  flexDays?: number;
   /** Le calendrier de vacances scolaires affiché : « FR », « FR:C », « BE:FR »… */
   holidays: string;
   /** Le départ se cale sur les vacances scolaires : on montre leur calendrier (non par défaut). */

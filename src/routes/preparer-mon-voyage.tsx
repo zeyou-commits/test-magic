@@ -34,6 +34,8 @@ import {
 } from "lucide-react";
 import { AlgeriaCarousel } from "@/components/prepare/AlgeriaCarousel";
 import { RouteTop3 } from "@/components/prepare/RouteTop3";
+import { TripCalendar, type CalendarField } from "@/components/panel/TripCalendar";
+import { buildSailings, daysWithSailings, legSailings } from "@/lib/ferry/trips";
 import { WizardFrame, WizardNav, useWizardScreen } from "@/components/prepare/WizardFrame";
 import { PapersQuestions, paperQuestions } from "@/components/papers/PapersQuestions";
 import { PushStatusLine } from "@/components/panel/PushStatusLine";
@@ -113,7 +115,13 @@ import {
 } from "@/lib/ferry/retroPlan";
 import { useReferenceData } from "@/lib/reference/useReferenceData";
 import { formatFareRange, priceSeason } from "@/lib/ferry/pricing";
-import { portsQuery, routesQuery } from "@/lib/ferry/queries";
+import {
+  companiesQuery,
+  portsQuery,
+  routesQuery,
+  upcomingDeparturesQuery,
+  vesselsQuery,
+} from "@/lib/ferry/queries";
 import {
   readTravelProfile,
   saveItineraryChoice,
@@ -1770,112 +1778,118 @@ function WhenQuestion({
   onHolidays: () => void;
 }) {
   const today = todayKey();
-  const holidaysOn = plan.schoolHolidays;
-  const { calendar, area } = parseHolidayChoice(plan.holidays);
-  const zone = calendar?.areas.find((z) => z.id === area)?.name ?? null;
+  // Le même calendrier que « Réserver » : jours avec départs, aller et retour, zones de vacances.
+  const { data: ports = [] } = useQuery(portsQuery);
+  const { data: routes = [] } = useQuery(routesQuery);
+  const { data: companies = [] } = useQuery(companiesQuery);
+  const { data: vessels = [] } = useQuery(vesselsQuery);
+  const { data: departures = [] } = useQuery(upcomingDeparturesQuery());
+  const all = useMemo(
+    () => buildSailings(departures, routes, ports, companies, vessels),
+    [departures, routes, ports, companies, vessels],
+  );
+  const from = plan.fromPortId ? [plan.fromPortId] : [];
+  const to = plan.toPortId ? [plan.toPortId] : [];
+  const outDays = useMemo(
+    () =>
+      new Map(
+        daysWithSailings(legSailings(all, from, to), today, 1000).map((d) => [d.day, d.count]),
+      ),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [all, plan.fromPortId, plan.toPortId, today],
+  );
+  const backDays = useMemo(
+    () =>
+      new Map(
+        daysWithSailings(
+          legSailings(all, to, from, null, null, "dz-eu"),
+          plan.date || today,
+          1000,
+        ).map((d) => [d.day, d.count]),
+      ),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [all, plan.fromPortId, plan.toPortId, plan.date, today],
+  );
+  const pairLabel =
+    plan.fromPortId && plan.toPortId
+      ? `${ports.find((x) => x.id === plan.fromPortId)?.name ?? ""} → ${ports.find((x) => x.id === plan.toPortId)?.name ?? ""}`
+      : null;
+  const [field, setField] = useState<CalendarField>("out");
+  const [holidaysOn, setHolidaysOn] = useState(false);
+  const flex = plan.flexDays ?? 0;
+  const windowOf = (day: string, days: number) =>
+    days
+      ? {
+          from: addDaysKey(day, -days) < today ? today : addDaysKey(day, -days),
+          to: addDaysKey(day, days),
+        }
+      : null;
   const countdown = Math.round(
     (Date.parse(`${earliestDay(plan)}T12:00:00`) - Date.parse(`${today}T12:00:00`)) / 86_400_000,
   );
-  const setWindow = (from: string, to: string) =>
-    patch({
-      window: { from, to: to < from ? from : to },
-      month: from.slice(0, 7),
-      date: "",
-    });
-  const toggleHolidays = () => {
-    if (holidaysOn) {
-      patch({ schoolHolidays: false });
-      return;
-    }
-    // Le calendrier du pays de résidence par défaut, s'il est publié.
-    const start =
-      plan.holidays && plan.holidays !== "none"
-        ? plan.holidays
-        : (defaultHolidayChoice(plan.country) ?? "FR");
-    patch({ schoolHolidays: true, holidays: start });
-    window.setTimeout(onHolidays, 240);
-  };
-  const from = plan.window?.from ?? "";
-  const to = plan.window?.to ?? "";
 
   return (
     <Question
       title="Quand souhaitez-vous partir ?"
-      hint="Une fourchette suffit : on en déduit ce qu'il faut lancer, et avant quand."
+      hint="Touchez votre jour d'aller, puis votre retour. Les points verts : des départs déjà publiés."
     >
-      <div className="grid grid-cols-2 gap-3">
-        <label className="block min-w-0 text-sm font-semibold">
-          Partir à partir du
-          <input
-            type="date"
-            value={from}
-            min={today}
-            onChange={(event) =>
-              event.target.value && setWindow(event.target.value, to || event.target.value)
-            }
-            className="mt-1 block min-h-12 w-full min-w-0 rounded-xl border bg-background px-3 text-base font-normal"
-          />
-          <SeasonTag day={from} />
-        </label>
-        <label className="block min-w-0 text-sm font-semibold">
-          Et au plus tard le
-          <input
-            type="date"
-            value={to}
-            min={from || today}
-            onChange={(event) =>
-              event.target.value && setWindow(from || event.target.value, event.target.value)
-            }
-            className="mt-1 block min-h-12 w-full min-w-0 rounded-xl border bg-background px-3 text-base font-normal"
-          />
-          <SeasonTag day={to} />
-        </label>
+      {/* Sur ordinateur, le calendrier garde la taille de celui de « Réserver ». */}
+      <div className="md:max-w-[420px]">
+        <TripCalendar
+          inline
+          open
+          onOpenChange={() => {}}
+          holidaysOn={holidaysOn}
+          onHolidaysChange={setHolidaysOn}
+          field={field}
+          onFieldChange={setField}
+          roundTrip
+          date={plan.date || null}
+          returnDate={plan.returnDate ?? null}
+          flexDays={flex}
+          outDays={outDays}
+          backDays={backDays}
+          pairLabel={pairLabel}
+          today={today}
+          onChange={(change) => {
+            const date = change.date === undefined ? plan.date : (change.date ?? "");
+            const days = change.flexDays ?? flex;
+            patch({
+              date,
+              ...(date
+                ? { month: date.slice(0, 7), window: windowOf(date, days) }
+                : { window: null }),
+              ...(change.returnDate !== undefined ? { returnDate: change.returnDate } : {}),
+              ...(change.flexDays !== undefined ? { flexDays: change.flexDays } : {}),
+              schoolHolidays: false,
+            });
+          }}
+        />
       </div>
-      <p className="mt-2 text-xs text-muted-foreground">
-        Basse saison, saison moyenne, haute saison, pic de l'été : la saison fait le prix des
-        traversées.
-      </p>
-
-      {/* Les vacances scolaires : leur choix a son propre écran, juste après. */}
-      <div
-        className={`mt-5 rounded-2xl border p-3 md:p-4 ${holidaysOn ? "border-[#e0a43a]/50 bg-[#fff8ea]" : "bg-background"}`}
+      {plan.date ? (
+        <p className="mt-3 flex flex-wrap items-center gap-2 text-sm">
+          <span className="font-semibold">Aller {shortDate(plan.date)}</span>
+          <SeasonTag day={plan.date} />
+          {plan.returnDate ? (
+            <>
+              <span className="font-semibold">· Retour {shortDate(plan.returnDate)}</span>
+              <SeasonTag day={plan.returnDate} />
+            </>
+          ) : null}
+        </p>
+      ) : null}
+      <button
+        type="button"
+        onClick={() => {
+          patch({ schoolHolidays: true });
+          window.setTimeout(onHolidays, 120);
+        }}
+        className="mt-3 inline-flex min-h-10 items-center gap-1.5 text-sm font-semibold text-primary"
       >
-        <div className="flex items-center justify-between gap-3">
-          <span className="flex min-w-0 items-center gap-2.5">
-            <School size={18} className="shrink-0 text-[#b7791f]" aria-hidden />
-            <span className="min-w-0">
-              <span id="vacances-label" className="block text-sm font-bold">
-                Pendant les vacances scolaires
-              </span>
-              <span className="block text-xs text-muted-foreground">
-                {holidaysOn
-                  ? `${calendar?.name ?? "Autre pays"}${zone ? ` · ${zone}` : ""}`
-                  : "On vous propose les dates de vos vacances"}
-              </span>
-            </span>
-          </span>
-          <button
-            type="button"
-            role="switch"
-            aria-checked={holidaysOn}
-            aria-labelledby="vacances-label"
-            onClick={toggleHolidays}
-            className="bw-switch"
-          />
-        </div>
-        {holidaysOn ? (
-          <button
-            type="button"
-            onClick={onHolidays}
-            className="mt-2 inline-flex min-h-10 items-center gap-1 text-sm font-semibold text-primary"
-          >
-            Choisir mes vacances <ArrowRight size={14} aria-hidden />
-          </button>
-        ) : null}
-      </div>
-
+        <School size={15} aria-hidden /> Vacances scolaires hors de France (Belgique, Espagne…)
+      </button>
       <p
-        className="mt-4 flex items-start gap-2 rounded-xl bg-primary/5 p-3 text-sm"
+        className="mt-3 flex items-start gap-2 rounded-xl bg-primary/5 p-3 text-sm"
         aria-live="polite"
       >
         <CalendarDays size={16} className="mt-0.5 shrink-0 text-primary" aria-hidden />

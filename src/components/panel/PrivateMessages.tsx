@@ -20,6 +20,7 @@ import {
   type DmThread,
 } from "@/lib/ferry/privateMessages";
 import { tr } from "@/lib/i18n";
+import { canAutoFocus } from "@/lib/utils";
 
 const MAX = 200;
 const INTROS = ["Bonjour, je peux vous poser une question ?", "Il vous reste de la place ?"];
@@ -89,7 +90,7 @@ export function DmRequest({
         }}
       >
         <input
-          autoFocus
+          autoFocus={canAutoFocus()}
           value={text}
           maxLength={MAX}
           onChange={(event) => setText(event.target.value)}

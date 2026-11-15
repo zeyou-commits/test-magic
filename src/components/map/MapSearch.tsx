@@ -24,6 +24,7 @@ import type { FleetShip } from "@/lib/ferry/fleet";
 import { useMyTrip } from "@/lib/ferry/myTrip";
 import type { RouteLine, Selection } from "@/lib/ferry/types";
 import { useT, type MessageKey } from "@/lib/i18n";
+import { canAutoFocus, keepKeyboardClosedOnTouch } from "@/lib/utils";
 
 // Table communautaire pas encore présente dans les types générés.
 const db = typedSupabase as unknown as SupabaseClient;
@@ -147,15 +148,15 @@ export function MapSearch({
         <span className="max-md:hidden">{t("map.search.short")}</span>
       </button>
       <Dialog open={open} onOpenChange={(next) => (next ? setOpen(true) : close())}>
-        <DialogContent className="top-0 flex h-dvh max-w-none translate-y-0 flex-col gap-3 rounded-none sm:top-[12%] sm:h-auto sm:max-h-[76dvh] sm:max-w-lg sm:rounded-2xl">
+        <DialogContent onOpenAutoFocus={keepKeyboardClosedOnTouch} className="top-0 flex h-dvh max-w-none translate-y-0 flex-col gap-3 rounded-none sm:top-[12%] sm:h-auto sm:max-h-[76dvh] sm:max-w-lg sm:rounded-2xl">
           <DialogHeader className="text-left">
             <DialogTitle>{t("map.search.title")}</DialogTitle>
             <DialogDescription>{t("map.search.description")}</DialogDescription>
           </DialogHeader>
-          <label className="flex min-h-11 items-center gap-2 rounded-xl border border-input px-3">
+          <label className="flex min-h-11 items-center gap-2 rounded-xl border border-input px-3 focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/25">
             <Search className="size-4 text-muted-foreground" aria-hidden />
             <input
-              autoFocus
+              autoFocus={canAutoFocus()}
               type="search"
               value={term}
               onChange={(event) => setTerm(event.target.value)}

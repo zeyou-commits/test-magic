@@ -47,6 +47,7 @@ import {
 } from "@/lib/tickets/tickets";
 import { TicketCamera } from "./TicketCamera";
 import { tr } from "@/lib/i18n";
+import { useDraftGuard } from "@/components/layout/DraftGuard";
 
 type Step = "choose" | "camera" | "reading" | "review" | "saved";
 
@@ -108,6 +109,8 @@ export function TicketImport({
   // Un billet par passager : plusieurs fichiers choisis d'un coup, lus et enregistrés à la suite.
   const [queue, setQueue] = useState<File[]>([]);
   const [batch, setBatch] = useState({ index: 0, total: 0 });
+  // Billet lu ou en cours de vérification : on ne le perd pas d'un geste.
+  const { guardClose, guardDialog } = useDraftGuard(open && (step === "reading" || step === "review"));
   const reset = () => {
     setPastOk(false);
     setPastAlert(false);
@@ -324,6 +327,7 @@ export function TicketImport({
 
   return (
     <>
+    {guardDialog}
     <AlertDialog open={pastAlert} onOpenChange={setPastAlert}>
       <AlertDialogContent>
         <AlertDialogTitle>{tr("ui.ticketImport.ceBilletEstPourUne")}</AlertDialogTitle>
@@ -347,8 +351,11 @@ export function TicketImport({
     <Dialog
       open={open}
       onOpenChange={(value) => {
+        if (!value) return guardClose(() => {
+          onOpenChange(false);
+          if (step === "saved") onSaved?.();
+        });
         onOpenChange(value);
-        if (!value && step === "saved") onSaved?.();
       }}
     >
       <DialogContent className="bw-ticket-dialog">

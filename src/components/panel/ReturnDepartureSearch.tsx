@@ -40,12 +40,12 @@ export function ReturnDepartureSearch({ departureId, selectedId, onChoose, disab
     {outboundAt ? <div className="bw-return-weeks" role="group" aria-label={tr("ui.returnDepartureSearch.dureeDuSejour")}>
       {WEEKS.map((item) => <button key={item.days} type="button" aria-pressed={!date && after === item.days} onClick={() => { setDate(""); setAfter(item.days); }}>{item.label}</button>)}
     </div> : null}
-    {anyPort ? <label className="flex min-h-10 items-center gap-2 rounded-lg border bg-background px-3 text-sm">
+    {anyPort ? <label className="flex min-h-10 items-center gap-2 rounded-lg border bg-background px-3 text-sm focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/25">
       <Search size={16} className="shrink-0 text-primary" aria-hidden />
       <span className="sr-only">{tr("ui.returnDepartureSearch.rechercherUnRetourParPort")}</span>
       <input type="search" value={search} onChange={(event) => setSearch(event.target.value)} placeholder={tr("ui.returnDepartureSearch.portCompagnieOuNavire")} className="min-w-0 flex-1 bg-transparent py-2 outline-none" autoComplete="off" />
     </label> : null}
-    <label className="flex min-h-10 items-center gap-2 rounded-lg border bg-background px-3 text-sm">
+    <label className="flex min-h-10 items-center gap-2 rounded-lg border bg-background px-3 text-sm focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/25">
       <CalendarDays size={16} className="shrink-0 text-primary" aria-hidden />
       <span className="text-xs text-muted-foreground">{outboundAt ? tr("ui.returnDepartureSearch.autreDate") : tr("ui.returnDepartureSearch.dateDuRetour")}</span>
       <input type="date" value={date} onChange={(event) => setDate(event.target.value)} className="min-w-0 flex-1 bg-transparent py-2 text-right outline-none" />

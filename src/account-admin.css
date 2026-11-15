@@ -1295,3 +1295,9 @@
   font-size: 14px;
   color: #6b4300;
 }
+
+/* Repère clavier : le cadre de la recherche s'éclaire quand le champ est actif. */
+.bw-admin-search:focus-within {
+  border-color: #0e7a43;
+  box-shadow: 0 0 0 3px #0e7a4322;
+}

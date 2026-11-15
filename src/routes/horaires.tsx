@@ -333,7 +333,7 @@ function BoardPage() {
         </div>
 
         <div className="mt-4 flex flex-wrap items-center gap-2">
-          <label className="flex min-h-11 min-w-[240px] flex-1 items-center gap-2 rounded-xl border border-border bg-card px-3">
+          <label className="flex min-h-11 min-w-[240px] flex-1 items-center gap-2 rounded-xl border border-border bg-card px-3 focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/25">
             <Search size={16} className="shrink-0 text-primary" aria-hidden />
             <span className="sr-only">{tr("ui.pageHoraires.rechercherUnPortUnNavire")}</span>
             <input

@@ -6,6 +6,7 @@ import { QuestionHelp } from "@/components/questions/QuestionHelp";
 import { afterOverlayClose } from "@/lib/ferry/backStack";
 import { OPEN_ROOM_PICKER_EVENT } from "@/lib/ferry/chatDemo";
 import { tr } from "@/lib/i18n";
+import { canAutoFocus, keepKeyboardClosedOnTouch } from "@/lib/utils";
 
 /** « Demander aux voyageurs » depuis une autre page : la carte ouvre la liste des salons en arrivant. */
 export const HOME_ACTION_KEY = "bledway:open-home-action";
@@ -42,7 +43,7 @@ export function QuestionButton() {
         <CircleHelp size={21} aria-hidden />
       </button>
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="bw-room-picker bw-room-picker--questions max-w-none">
+        <DialogContent onOpenAutoFocus={keepKeyboardClosedOnTouch} className="bw-room-picker bw-room-picker--questions max-w-none">
           <DialogHeader>
             <DialogTitle>{tr("ui.questionButton.uneQuestion")}</DialogTitle>
             <p className="bw-room-picker__intro">
@@ -52,7 +53,7 @@ export function QuestionButton() {
           <div className="bw-room-picker__help">
             <QuestionHelp
               bare
-              autoFocus
+              autoFocus={canAutoFocus()}
               onAskTravellers={askTravellers}
               travellersHint="Choisissez votre traversée : ses voyageurs répondent dans le salon."
             />

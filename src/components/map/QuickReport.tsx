@@ -6,6 +6,7 @@ import { ArrowLeft, Check, LocateFixed, MapPin, Megaphone, X } from "lucide-reac
 import { supabase as typedSupabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useDraftGuard } from "@/components/layout/DraftGuard";
 import {
   availableSituations,
   communityKey,
@@ -235,6 +236,9 @@ export function QuickReport({
   const [photoResult, setPhotoResult] = useState<string | null>(null);
   // Équipe : « Voir au-delà de 7 jours » dans la liste des traversées.
   const [beyond, setBeyond] = useState(false);
+  // Des photos jointes et pas encore envoyées : fermer d'un geste demande confirmation.
+  const { guardClose, guardDialog } = useDraftGuard(open && step !== "done" && photos.length > 0);
+  const closeReport = () => guardClose(() => setOpen(false));
 
   const vessels = fleet.filter(
     (ship, index) =>
@@ -941,7 +945,7 @@ export function QuickReport({
           >
             <Megaphone size={22} aria-hidden />
           </button>
-          <Sheet open={open} onOpenChange={setOpen}>
+          <Sheet open={open} onOpenChange={(next) => (next ? setOpen(true) : closeReport())}>
             <SheetContent side="bottom" className="bw-report-sheet">
               <SheetHeader className="text-left">
                 <SheetTitle>{title}</SheetTitle>
@@ -958,14 +962,14 @@ export function QuickReport({
           open={open}
           onOpenChange={(next) => {
             if (next) start();
-            else setOpen(false);
+            else closeReport();
           }}
         >
           <PopoverTrigger asChild>{trigger}</PopoverTrigger>
           <PopoverContent side="left" align="start" sideOffset={10} className="bw-report-popover">
             <div className="bw-report-popover__head">
               <strong>{title}</strong>
-              <button type="button" aria-label={tr("ui.quickReport.fermer")} onClick={() => setOpen(false)}>
+              <button type="button" aria-label={tr("ui.quickReport.fermer")} onClick={closeReport}>
                 <X size={16} aria-hidden />
               </button>
             </div>
@@ -975,6 +979,7 @@ export function QuickReport({
       )}
       {/* Sur ordinateur, les salons se rangent sous Signaler. */}
       {isMobile ? null : children}
+      {guardDialog}
     </div>
   );
 }

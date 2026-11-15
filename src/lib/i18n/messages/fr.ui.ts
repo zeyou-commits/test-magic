@@ -2879,6 +2879,12 @@ export const ui = {
     estIlParti: " est-il parti ?",
     connectezVousPourRepondre: "Connectez-vous pour répondre",
   },
+  draftGuard: {
+    titre: "Abandonner votre saisie ?",
+    explication: "Ce que vous avez rempli n'est pas encore enregistré. Si vous partez maintenant, il faudra tout recommencer.",
+    continuer: "Continuer ma saisie",
+    abandonner: "Abandonner",
+  },
   shared: {
     reserverSurLeSite: "Réserver sur le site ",
     nouvelOnglet: "(nouvel onglet)",

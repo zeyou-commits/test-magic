@@ -112,7 +112,7 @@ import {
   type Milestone,
 } from "@/lib/ferry/retroPlan";
 import { useReferenceData } from "@/lib/reference/useReferenceData";
-import { formatFareRange } from "@/lib/ferry/pricing";
+import { formatFareRange, priceSeason } from "@/lib/ferry/pricing";
 import { portsQuery, routesQuery } from "@/lib/ferry/queries";
 import {
   readTravelProfile,
@@ -731,6 +731,14 @@ function CompanionPage() {
                   current={Math.max(0, wizSteps.indexOf(open))}
                   chapter={`Chapitre ${chapterOf(open) + 1} · ${chapters[chapterOf(open)]!.title}`}
                   onOpen={(index) => openStep(wizSteps[index]!)}
+                  onSkip={() => {
+                    const after = wizSteps[wizSteps.indexOf(open) + 1];
+                    if (after) openStep(after);
+                    else {
+                      setOpen(null);
+                      requestAnimationFrame(() => window.scrollTo({ top: 0, behavior: "instant" }));
+                    }
+                  }}
                   onClose={() => {
                     setOpen(null);
                     requestAnimationFrame(() => window.scrollTo({ top: 0, behavior: "instant" }));
@@ -903,8 +911,7 @@ function MoreLinks({ links }: { links: { href: string; label: string }[] }) {
 
 /* ------------------------------------------------------------ 1. Les quatre questions */
 
-type ProfileQuestion = "when" | "group" | "vehicle";
-const profileQuestions: ProfileQuestion[] = ["when", "group", "vehicle"];
+type ProfileQuestion = "when" | "holidays" | "group" | "vehicle";
 
 function ProfileStep({
   papers,
@@ -918,7 +925,13 @@ function ProfileStep({
   onDone: () => void;
 }) {
   const [question, setQuestion] = useState<ProfileQuestion>("when");
-  const index = profileQuestions.indexOf(question);
+  const profileQuestions: ProfileQuestion[] = [
+    "when",
+    ...(plan.schoolHolidays ? (["holidays"] as const) : []),
+    "group",
+    "vehicle",
+  ];
+  const index = Math.max(0, profileQuestions.indexOf(question));
   useWizardScreen(index, profileQuestions.length);
   const box = useRef<HTMLDivElement>(null);
   const go = (next: ProfileQuestion) => {
@@ -939,7 +952,12 @@ function ProfileStep({
 
   return (
     <div ref={box} className="scroll-mt-24 pt-4">
-      {question === "when" ? <WhenQuestion plan={plan} patch={patch} /> : null}
+      {question === "when" ? (
+        <WhenQuestion plan={plan} patch={patch} onHolidays={() => go("holidays")} />
+      ) : null}
+      {question === "holidays" ? (
+        <HolidaysQuestion plan={plan} patch={patch} onPicked={() => window.setTimeout(next, 240)} />
+      ) : null}
       {question === "group" ? <GroupStep answers={papers.answers} patch={papersPatch} /> : null}
       {question === "vehicle" ? (
         <Question
@@ -1726,24 +1744,35 @@ const longDate = (key: string) =>
     .replace(/ 1 /, " 1er ");
 const capitalize = (text: string) => text.charAt(0).toUpperCase() + text.slice(1);
 
+function SeasonTag({ day }: { day: string }) {
+  if (!day) return null;
+  const season = priceSeason(day);
+  const tone =
+    season === "pointe" || season === "forte"
+      ? "bg-[#c95038]/10 text-[#b0412b]"
+      : season === "intermediaire"
+        ? "bg-[#e0a43a]/15 text-[#8a5d0c]"
+        : "bg-primary/10 text-primary";
+  return (
+    <span className={`mt-1.5 inline-flex rounded-full px-2 py-0.5 text-[11px] font-bold ${tone}`}>
+      {seasonLabels[season]}
+    </span>
+  );
+}
+
 function WhenQuestion({
   plan,
   patch,
+  onHolidays,
 }: {
   plan: CompanionPlan;
   patch: (p: Partial<CompanionPlan>) => void;
+  onHolidays: () => void;
 }) {
-  const months = useMemo(() => nextMonths(12), []);
   const today = todayKey();
-  const horizon = `${months[months.length - 1]!.key}-31`;
   const holidaysOn = plan.schoolHolidays;
-  const spans = useMemo(
-    () => (holidaysOn ? holidaysBetween(plan.holidays, today, horizon) : []),
-    [holidaysOn, plan.holidays, today, horizon],
-  );
   const { calendar, area } = parseHolidayChoice(plan.holidays);
-  const countries = useMemo(() => holidayChoiceGroups(), []);
-  const [datesOpen, setDatesOpen] = useState(() => Boolean(plan.window) && !plan.schoolHolidays);
+  const zone = calendar?.areas.find((z) => z.id === area)?.name ?? null;
   const countdown = Math.round(
     (Date.parse(`${earliestDay(plan)}T12:00:00`) - Date.parse(`${today}T12:00:00`)) / 86_400_000,
   );
@@ -1764,64 +1793,50 @@ function WhenQuestion({
         ? plan.holidays
         : (defaultHolidayChoice(plan.country) ?? "FR");
     patch({ schoolHolidays: true, holidays: start });
+    window.setTimeout(onHolidays, 240);
   };
-  const chip = (on: boolean) =>
-    `min-h-10 rounded-full border px-3 text-sm font-semibold transition-colors sm:min-h-11 sm:px-4 ${
-      on
-        ? "border-primary bg-primary text-primary-foreground"
-        : "bg-background hover:border-primary/40"
-    }`;
+  const from = plan.window?.from ?? "";
+  const to = plan.window?.to ?? "";
 
   return (
     <Question
       title="Quand souhaitez-vous partir ?"
-      hint="Un mois suffit : on en déduit ce qu'il faut lancer, et avant quand."
+      hint="Une fourchette suffit : on en déduit ce qu'il faut lancer, et avant quand."
     >
-      <div
-        role="radiogroup"
-        aria-label="Mois de départ"
-        className="grid grid-cols-3 gap-2 sm:grid-cols-4"
-      >
-        {months.map((m) => {
-          const on = !plan.window && !plan.date && plan.month === m.key;
-          const holidays = holidaysOn && monthHasHolidays(plan.holidays, m.key);
-          return (
-            <button
-              key={m.key}
-              type="button"
-              role="radio"
-              aria-checked={on}
-              onClick={() => patch({ month: m.key, window: null, date: "" })}
-              className={`relative flex min-h-14 flex-col items-center justify-center rounded-xl border px-2 py-2 text-sm transition-colors ${
-                on
-                  ? "border-primary bg-primary/5 ring-1 ring-primary"
-                  : "bg-background hover:border-primary/40"
-              }`}
-            >
-              <span className="font-semibold capitalize">
-                {m.label} {String(m.year).slice(2)}
-              </span>
-              <span
-                className={`mt-0.5 text-[11px] ${m.season === "pointe" || m.season === "forte" ? "text-[#c95038]" : "text-muted-foreground"}`}
-              >
-                {shortSeason[m.season]}
-              </span>
-              {holidays ? (
-                <span
-                  className="absolute right-1.5 top-1.5 size-2 rounded-full bg-[#e0a43a]"
-                  title="Vacances scolaires ce mois-ci"
-                  aria-label="vacances scolaires"
-                />
-              ) : null}
-            </button>
-          );
-        })}
+      <div className="grid grid-cols-2 gap-3">
+        <label className="block min-w-0 text-sm font-semibold">
+          Partir à partir du
+          <input
+            type="date"
+            value={from}
+            min={today}
+            onChange={(event) =>
+              event.target.value && setWindow(event.target.value, to || event.target.value)
+            }
+            className="mt-1 block min-h-12 w-full min-w-0 rounded-xl border bg-background px-3 text-base font-normal"
+          />
+          <SeasonTag day={from} />
+        </label>
+        <label className="block min-w-0 text-sm font-semibold">
+          Et au plus tard le
+          <input
+            type="date"
+            value={to}
+            min={from || today}
+            onChange={(event) =>
+              event.target.value && setWindow(from || event.target.value, event.target.value)
+            }
+            className="mt-1 block min-h-12 w-full min-w-0 rounded-xl border bg-background px-3 text-base font-normal"
+          />
+          <SeasonTag day={to} />
+        </label>
       </div>
-      <p className="mt-1 text-[11px] text-muted-foreground">
-        Sous chaque mois : la saison des prix des traversées.
+      <p className="mt-2 text-xs text-muted-foreground">
+        Basse saison, saison moyenne, haute saison, pic de l'été : la saison fait le prix des
+        traversées.
       </p>
 
-      {/* Les vacances scolaires : seulement si on le demande, pays puis zone. */}
+      {/* Les vacances scolaires : leur choix a son propre écran, juste après. */}
       <div
         className={`mt-5 rounded-2xl border p-3 md:p-4 ${holidaysOn ? "border-[#e0a43a]/50 bg-[#fff8ea]" : "bg-background"}`}
       >
@@ -1833,7 +1848,9 @@ function WhenQuestion({
                 Pendant les vacances scolaires
               </span>
               <span className="block text-xs text-muted-foreground">
-                Pour voir les dates de vos vacances
+                {holidaysOn
+                  ? `${calendar?.name ?? "Autre pays"}${zone ? ` · ${zone}` : ""}`
+                  : "On vous propose les dates de vos vacances"}
               </span>
             </span>
           </span>
@@ -1846,229 +1863,19 @@ function WhenQuestion({
             className="bw-switch"
           />
         </div>
-
         {holidaysOn ? (
-          <div className="mt-4 border-t border-[#e0a43a]/30 pt-4">
-            <p className="text-sm font-semibold">Le pays de l'école</p>
-            <div
-              role="radiogroup"
-              aria-label="Pays de l'école"
-              className="mt-2 flex flex-wrap gap-1.5 sm:gap-2"
-            >
-              {countries.map((country) => {
-                const id = country.options[0]!.value;
-                const on = calendar?.id === id;
-                return (
-                  <button
-                    key={id}
-                    type="button"
-                    role="radio"
-                    aria-checked={on}
-                    onClick={() => patch({ holidays: id })}
-                    className={chip(on)}
-                  >
-                    {country.label}
-                  </button>
-                );
-              })}
-              <button
-                type="button"
-                role="radio"
-                aria-checked={!calendar}
-                onClick={() => patch({ holidays: "none" })}
-                className={chip(!calendar)}
-              >
-                Autre pays
-              </button>
-            </div>
-
-            {calendar && calendar.areas.length ? (
-              <div className="mt-4">
-                <p className="text-sm font-semibold">
-                  {calendar.areaLabel ? capitalize(calendar.areaLabel) : "Zone"}
-                </p>
-                {calendar.areas.length <= 6 ? (
-                  <div
-                    role="radiogroup"
-                    aria-label={calendar.areaLabel ?? "Zone"}
-                    className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-3"
-                  >
-                    {calendar.areas.map((zone) => {
-                      const on = area === zone.id;
-                      return (
-                        <button
-                          key={zone.id}
-                          type="button"
-                          role="radio"
-                          aria-checked={on}
-                          onClick={() => patch({ holidays: `${calendar.id}:${zone.id}` })}
-                          className={`flex min-h-12 flex-col items-start justify-center rounded-xl border px-3 py-2 text-left text-sm transition-colors ${
-                            on
-                              ? "border-primary bg-primary/5 ring-1 ring-primary"
-                              : "bg-background hover:border-primary/40"
-                          }`}
-                        >
-                          <span className="font-semibold">{zone.name}</span>
-                          {zone.hint ? (
-                            <span className="line-clamp-1 text-[11px] text-muted-foreground">
-                              {zone.hint}
-                            </span>
-                          ) : null}
-                        </button>
-                      );
-                    })}
-                    <button
-                      type="button"
-                      role="radio"
-                      aria-checked={!area}
-                      onClick={() => patch({ holidays: calendar.id })}
-                      className={`flex min-h-12 items-center rounded-xl border px-3 py-2 text-left text-sm font-semibold transition-colors ${
-                        !area
-                          ? "border-primary bg-primary/5 ring-1 ring-primary"
-                          : "bg-background hover:border-primary/40"
-                      }`}
-                    >
-                      Je ne sais pas
-                    </button>
-                  </div>
-                ) : (
-                  <select
-                    value={area ?? ""}
-                    onChange={(event) =>
-                      patch({
-                        holidays: event.target.value
-                          ? `${calendar.id}:${event.target.value}`
-                          : calendar.id,
-                      })
-                    }
-                    aria-label={calendar.areaLabel ?? "Zone"}
-                    className="mt-2 block min-h-12 w-full rounded-xl border bg-background px-3 text-base sm:max-w-xs"
-                  >
-                    <option value="">Je ne sais pas</option>
-                    {calendar.areas.map((zone) => (
-                      <option key={zone.id} value={zone.id}>
-                        {zone.name}
-                      </option>
-                    ))}
-                  </select>
-                )}
-              </div>
-            ) : null}
-
-            {calendar ? (
-              spans.length ? (
-                <>
-                  <p className="mt-4 text-sm font-semibold">Vos vacances</p>
-                  <div className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-3">
-                    {spans.map((span) => {
-                      const from = span.start < today ? today : span.start;
-                      const to = span.end ?? addDaysKey(span.start, 30);
-                      const on = plan.window?.from === from && plan.window?.to === to;
-                      return (
-                        <button
-                          key={`${span.kind}-${span.start}`}
-                          type="button"
-                          aria-pressed={on}
-                          onClick={() => setWindow(from, to)}
-                          className={`flex min-h-14 flex-col items-start justify-center rounded-xl border px-3 py-2 text-left text-sm transition-colors ${
-                            on
-                              ? "border-primary bg-primary text-primary-foreground"
-                              : "bg-background hover:border-primary/40"
-                          }`}
-                        >
-                          <span className="font-semibold">
-                            {span.label} {span.start.slice(0, 4)}
-                          </span>
-                          <span
-                            className={`text-xs ${on ? "text-primary-foreground/85" : "text-muted-foreground"}`}
-                          >
-                            {shortDate(span.start)} → {span.end ? shortDate(span.end) : "à venir"}
-                            {span.varies ? " · selon la zone" : ""}
-                          </span>
-                        </button>
-                      );
-                    })}
-                  </div>
-                </>
-              ) : (
-                <p className="mt-4 text-sm text-muted-foreground">
-                  Pas de vacances publiées sur les 12 prochains mois pour ce calendrier.
-                </p>
-              )
-            ) : (
-              <p className="mt-4 text-sm text-muted-foreground">
-                Les vacances des autres pays ne sont pas publiées en données ouvertes : choisissez
-                un mois ci-dessus, ou des dates précises.
-              </p>
-            )}
-            {calendar ? (
-              <p className="mt-3 text-[11px] text-muted-foreground">
-                Source :{" "}
-                <a
-                  href={holidaySources[calendar.source].url}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="underline underline-offset-2"
-                >
-                  {holidaySources[calendar.source].name}
-                </a>
-                , relevé le {shortDate(vacancesChecked())} {vacancesChecked().slice(0, 4)}.
-              </p>
-            ) : null}
-          </div>
-        ) : null}
-      </div>
-
-      {/* Les dates précises : repliées, pour qui les connaît déjà. */}
-      <div className="mt-4">
-        <button
-          type="button"
-          aria-expanded={datesOpen}
-          aria-controls="dates-precises"
-          onClick={() => setDatesOpen((value) => !value)}
-          className="inline-flex min-h-11 items-center gap-1.5 text-sm font-semibold text-primary"
-        >
-          <CalendarDays size={16} aria-hidden /> J'ai des dates précises
-          <ChevronDown
-            size={16}
-            className={`transition-transform ${datesOpen ? "rotate-180" : ""}`}
-            aria-hidden
-          />
-        </button>
-        {datesOpen ? (
-          <div id="dates-precises" className="mt-2 grid grid-cols-2 gap-2 sm:max-w-md">
-            <label className="text-xs text-muted-foreground">
-              Partir à partir du
-              <input
-                type="date"
-                value={plan.window?.from ?? ""}
-                min={today}
-                onChange={(event) =>
-                  event.target.value &&
-                  setWindow(event.target.value, plan.window?.to ?? event.target.value)
-                }
-                className="mt-1 block min-h-12 w-full rounded-xl border bg-background px-3 text-base text-foreground"
-              />
-            </label>
-            <label className="text-xs text-muted-foreground">
-              et au plus tard le
-              <input
-                type="date"
-                value={plan.window?.to ?? ""}
-                min={plan.window?.from ?? today}
-                onChange={(event) =>
-                  event.target.value &&
-                  setWindow(plan.window?.from ?? event.target.value, event.target.value)
-                }
-                className="mt-1 block min-h-12 w-full rounded-xl border bg-background px-3 text-base text-foreground"
-              />
-            </label>
-          </div>
+          <button
+            type="button"
+            onClick={onHolidays}
+            className="mt-2 inline-flex min-h-10 items-center gap-1 text-sm font-semibold text-primary"
+          >
+            Choisir mes vacances <ArrowRight size={14} aria-hidden />
+          </button>
         ) : null}
       </div>
 
       <p
-        className="mt-5 flex items-start gap-2 rounded-xl bg-primary/5 p-3 text-sm"
+        className="mt-4 flex items-start gap-2 rounded-xl bg-primary/5 p-3 text-sm"
         aria-live="polite"
       >
         <CalendarDays size={16} className="mt-0.5 shrink-0 text-primary" aria-hidden />
@@ -2079,10 +1886,218 @@ function WhenQuestion({
               ? `, dans ${Math.round(countdown / 7)} semaines : le temps de tout préparer sans stress.`
               : countdown > 28
                 ? `, dans ${Math.round(countdown / 7)} semaines : les papiers longs sont à lancer maintenant.`
-                : `, dans ${countdown} jour${countdown > 1 ? "s" : ""} : votre calendrier montrera l'essentiel à faire tout de suite.`
+                : `, dans ${countdown} jour${countdown > 1 ? "s" : ""} : l'essentiel est à faire tout de suite.`
             : "."}
         </span>
       </p>
+    </Question>
+  );
+}
+
+/** Les vacances scolaires : le pays de l'école, la zone, puis les vacances (qui remplissent les dates). */
+function HolidaysQuestion({
+  plan,
+  patch,
+  onPicked,
+}: {
+  plan: CompanionPlan;
+  patch: (p: Partial<CompanionPlan>) => void;
+  onPicked: () => void;
+}) {
+  const today = todayKey();
+  const horizon = addDaysKey(today, 365);
+  const spans = useMemo(
+    () => holidaysBetween(plan.holidays, today, horizon),
+    [plan.holidays, today, horizon],
+  );
+  const { calendar, area } = parseHolidayChoice(plan.holidays);
+  const countries = useMemo(() => holidayChoiceGroups(), []);
+  const setWindow = (from: string, to: string) =>
+    patch({
+      window: { from, to: to < from ? from : to },
+      month: from.slice(0, 7),
+      date: "",
+    });
+  const chip = (on: boolean) =>
+    `min-h-10 rounded-full border px-3 text-sm font-semibold transition-colors sm:min-h-11 sm:px-4 ${
+      on
+        ? "border-primary bg-primary text-primary-foreground"
+        : "bg-background hover:border-primary/40"
+    }`;
+  return (
+    <Question
+      title="Vos vacances scolaires"
+      hint="Le pays de l'école, la zone, puis vos vacances : les dates se remplissent toutes seules."
+    >
+      <p className="text-sm font-semibold">Le pays de l'école</p>
+      <div
+        role="radiogroup"
+        aria-label="Pays de l'école"
+        className="mt-2 flex flex-wrap gap-1.5 sm:gap-2"
+      >
+        {countries.map((country) => {
+          const id = country.options[0]!.value;
+          const on = calendar?.id === id;
+          return (
+            <button
+              key={id}
+              type="button"
+              role="radio"
+              aria-checked={on}
+              onClick={() => patch({ holidays: id })}
+              className={chip(on)}
+            >
+              {country.label}
+            </button>
+          );
+        })}
+        <button
+          type="button"
+          role="radio"
+          aria-checked={!calendar}
+          onClick={() => patch({ holidays: "none" })}
+          className={chip(!calendar)}
+        >
+          Autre pays
+        </button>
+      </div>
+
+      {calendar && calendar.areas.length ? (
+        <div className="mt-4">
+          <p className="text-sm font-semibold">
+            {calendar.areaLabel ? capitalize(calendar.areaLabel) : "Zone"}
+          </p>
+          {calendar.areas.length <= 6 ? (
+            <div
+              role="radiogroup"
+              aria-label={calendar.areaLabel ?? "Zone"}
+              className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-3"
+            >
+              {calendar.areas.map((zone) => {
+                const on = area === zone.id;
+                return (
+                  <button
+                    key={zone.id}
+                    type="button"
+                    role="radio"
+                    aria-checked={on}
+                    onClick={() => patch({ holidays: `${calendar.id}:${zone.id}` })}
+                    className={`flex min-h-12 flex-col items-start justify-center rounded-xl border px-3 py-2 text-left text-sm transition-colors ${
+                      on
+                        ? "border-primary bg-primary/5 ring-1 ring-primary"
+                        : "bg-background hover:border-primary/40"
+                    }`}
+                  >
+                    <span className="font-semibold">{zone.name}</span>
+                    {zone.hint ? (
+                      <span className="line-clamp-1 text-[11px] text-muted-foreground">
+                        {zone.hint}
+                      </span>
+                    ) : null}
+                  </button>
+                );
+              })}
+              <button
+                type="button"
+                role="radio"
+                aria-checked={!area}
+                onClick={() => patch({ holidays: calendar.id })}
+                className={`flex min-h-12 items-center rounded-xl border px-3 py-2 text-left text-sm font-semibold transition-colors ${
+                  !area
+                    ? "border-primary bg-primary/5 ring-1 ring-primary"
+                    : "bg-background hover:border-primary/40"
+                }`}
+              >
+                Je ne sais pas
+              </button>
+            </div>
+          ) : (
+            <select
+              value={area ?? ""}
+              onChange={(event) =>
+                patch({
+                  holidays: event.target.value
+                    ? `${calendar.id}:${event.target.value}`
+                    : calendar.id,
+                })
+              }
+              aria-label={calendar.areaLabel ?? "Zone"}
+              className="mt-2 block min-h-12 w-full rounded-xl border bg-background px-3 text-base sm:max-w-xs"
+            >
+              <option value="">Je ne sais pas</option>
+              {calendar.areas.map((zone) => (
+                <option key={zone.id} value={zone.id}>
+                  {zone.name}
+                </option>
+              ))}
+            </select>
+          )}
+        </div>
+      ) : null}
+
+      {calendar ? (
+        spans.length ? (
+          <>
+            <p className="mt-4 text-sm font-semibold">Vos vacances</p>
+            <div className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-3">
+              {spans.map((span) => {
+                const from = span.start < today ? today : span.start;
+                const to = span.end ?? addDaysKey(span.start, 30);
+                const on = plan.window?.from === from && plan.window?.to === to;
+                return (
+                  <button
+                    key={`${span.kind}-${span.start}`}
+                    type="button"
+                    aria-pressed={on}
+                    onClick={() => {
+                      setWindow(from, to);
+                      onPicked();
+                    }}
+                    className={`flex min-h-14 flex-col items-start justify-center rounded-xl border px-3 py-2 text-left text-sm transition-colors ${
+                      on
+                        ? "border-primary bg-primary text-primary-foreground"
+                        : "bg-background hover:border-primary/40"
+                    }`}
+                  >
+                    <span className="font-semibold">
+                      {span.label} {span.start.slice(0, 4)}
+                    </span>
+                    <span
+                      className={`text-xs ${on ? "text-primary-foreground/85" : "text-muted-foreground"}`}
+                    >
+                      {shortDate(span.start)} → {span.end ? shortDate(span.end) : "à venir"}
+                      {span.varies ? " · selon la zone" : ""}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          </>
+        ) : (
+          <p className="mt-4 text-sm text-muted-foreground">
+            Pas de vacances publiées sur les 12 prochains mois pour ce calendrier.
+          </p>
+        )
+      ) : (
+        <p className="mt-4 text-sm text-muted-foreground">
+          Les vacances des autres pays ne sont pas publiées en données ouvertes : revenez à l'écran
+          d'avant et indiquez vos dates.
+        </p>
+      )}
+      {calendar ? (
+        <p className="mt-3 text-[11px] text-muted-foreground">
+          Source :{" "}
+          <a
+            href={holidaySources[calendar.source].url}
+            target="_blank"
+            rel="noreferrer"
+            className="underline underline-offset-2"
+          >
+            {holidaySources[calendar.source].name}
+          </a>
+          , relevé le {shortDate(vacancesChecked())} {vacancesChecked().slice(0, 4)}.
+        </p>
+      ) : null}
     </Question>
   );
 }

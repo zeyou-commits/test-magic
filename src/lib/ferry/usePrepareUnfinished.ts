@@ -7,9 +7,14 @@ import { COMPANION_KEY, loadPlan, PLAN_CHANGE_EVENT, planUnfinished } from "./co
  * onglet).
  */
 export function usePrepareUnfinished() {
-  const [unfinished, setUnfinished] = useState(false);
+  return usePrepareStatus() === "todo";
+}
+
+/** « todo » : à terminer ; « done » : tout est prêt ; null au rendu serveur. */
+export function usePrepareStatus() {
+  const [status, setStatus] = useState<"todo" | "done" | null>(null);
   useEffect(() => {
-    const read = () => setUnfinished(planUnfinished(loadPlan()));
+    const read = () => setStatus(planUnfinished(loadPlan()) ? "todo" : "done");
     read();
     const onStorage = (event: StorageEvent) => {
       if (event.key === null || event.key === COMPANION_KEY) read();
@@ -21,5 +26,5 @@ export function usePrepareUnfinished() {
       window.removeEventListener("storage", onStorage);
     };
   }, []);
-  return unfinished;
+  return status;
 }

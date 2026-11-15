@@ -131,10 +131,17 @@ export interface Traveller {
   residence: Residence;
   /** Passeport algérien encore valable au retour (absent des anciennes réponses : « je ne sais pas »). */
   dzValid?: DzValid;
+  /** Binational avec un passeport algérien valide : part-il avec, ou avec l'autre passeport seul ? */
+  dzTravel?: DzTravel;
 }
 
 /** tight : valable au retour, mais il expire peu après (aucune règle ne fixe de marge). */
 export type DzValid = "yes" | "tight" | "no" | "unknown";
+export type DzTravel = "dz" | "foreign";
+
+/** Voyage avec le passeport algérien : sa validité compte (Algérien, ou binational qui part avec). */
+export const travelsWithDzPassport = (t: Traveller) =>
+  t.nat === "dz" || (t.nat === "bi" && t.dzDoc === "passeport" && t.dzTravel !== "foreign");
 
 export type Couple = "married" | "unmarried" | "none";
 export type KidsWith = "both" | "father" | "mother" | "other" | "alone";
@@ -192,12 +199,12 @@ export const defaultAnswers: Answers = {
   stay: "family",
 };
 
-/** « Vous », « Adulte 2 », « Enfant 1 »… */
+/** « Vous », « Adulte 2 », « Mineur 1 »… */
 export function travellerLabel(t: Traveller, all: Traveller[]): string {
   const same = all.filter((x) => x.kind === t.kind);
   const n = same.findIndex((x) => x.id === t.id) + 1;
   if (t.kind === "adult") return n === 1 ? "Vous" : `Adulte ${n}`;
-  return `Enfant ${n}`;
+  return `Mineur ${n}`;
 }
 
 /* ------------------------------------------------------------------ Ce qu'il faut faire */
@@ -326,7 +333,16 @@ export function tasksFor(a: Answers): Task[] {
 
     /* Binational : avec quel document algérien ? */
     if (t.nat === "bi") {
-      if (t.dzDoc === "passeport")
+      if (t.dzDoc === "passeport" && t.dzTravel === "foreign")
+        add({
+          id: "entree-passeport-etranger-seul",
+          when: "first",
+          title: "Avec le passeport étranger seul : prendre la carte d'identité algérienne",
+          detail: `Le passeport algérien valide reste le document prévu pour entrer et sortir. Si vous partez seulement avec le passeport étranger, la dispense de visa des binationaux (jusqu'au ${BINATIONAL_MEASURE_END}) demande de présenter avec lui la carte d'identité biométrique algérienne, même expirée, ou à défaut un passeport biométrique algérien expiré. Le consulat ne cite pas le passeport algérien valide dans cette mesure : sans carte d'identité, emportez-le, ou vérifiez auprès du consulat. Sans aucun de ces documents, il faut un visa. Les mêmes documents sont demandés à la sortie.`,
+          who,
+          sources: ["cons-binationaux", "be-pratique"],
+        });
+      else if (t.dzDoc === "passeport")
         add({
           id: "entree-passeport-dz",
           when: "pack",
@@ -386,7 +402,7 @@ export function tasksFor(a: Answers): Task[] {
 
     // Le passeport algérien : rien à faire s'il est valable au retour, à renouveler sinon.
     const dzValid = t.dzValid ?? "unknown";
-    if ((t.nat === "dz" || (t.nat === "bi" && t.dzDoc === "passeport")) && dzValid === "no")
+    if (travelsWithDzPassport(t) && dzValid === "no")
       add({
         id: "renouveler-passeport-dz",
         when: "first",
@@ -398,7 +414,7 @@ export function tasksFor(a: Answers): Task[] {
         consulate: "le renouvellement du passeport",
         needs: ["carte-consulaire"],
       });
-    else if ((t.nat === "dz" || (t.nat === "bi" && t.dzDoc === "passeport")) && dzValid === "tight")
+    else if (travelsWithDzPassport(t) && dzValid === "tight")
       add({
         id: "marge-passeport-dz",
         when: "first",
@@ -412,7 +428,7 @@ export function tasksFor(a: Answers): Task[] {
         advice: true,
       });
     else if (
-      (t.nat === "dz" || (t.nat === "bi" && t.dzDoc === "passeport")) &&
+      travelsWithDzPassport(t) &&
       dzValid === "unknown"
     )
       add({

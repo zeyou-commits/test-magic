@@ -29,7 +29,7 @@ import {
 } from "lucide-react";
 import { goHome } from "@/lib/ferry/voyageTrip";
 import { useT, type MessageKey } from "@/lib/i18n";
-import { usePrepareUnfinished } from "@/lib/ferry/usePrepareUnfinished";
+import { usePrepareStatus } from "@/lib/ferry/usePrepareUnfinished";
 
 /**
  * Le menu du site, partagé par l'en-tête de l'ordinateur, le volet ☰ et la barre du bas du
@@ -58,11 +58,22 @@ export type MenuFamily = {
   sheetOnly?: boolean;
 };
 
-/** Le point « ! » de « Préparer » tant que la préparation n'est pas terminée. */
+/** Le point de « Préparer » : « ! » tant que la préparation n'est pas terminée, ✓ une fois prête. */
 export function PrepareBadge({ className = "" }: { className?: string }) {
   const t = useT();
-  const unfinished = usePrepareUnfinished();
-  if (!unfinished) return null;
+  const status = usePrepareStatus();
+  if (!status) return null;
+  if (status === "done")
+    return (
+      <span
+        className={`bw-todo-dot bw-todo-dot--done ${className}`}
+        role="img"
+        aria-label={t("menu.prepareDone")}
+        title={t("menu.prepareDone")}
+      >
+        ✓
+      </span>
+    );
   return (
     <span
       className={`bw-todo-dot ${className}`}

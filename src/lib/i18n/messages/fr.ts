@@ -53,6 +53,7 @@ export const fr = {
     papersList: "Visa, passeports, enfants",
     companion: "Tout préparer pas à pas",
     prepareUnfinished: "Préparation à terminer",
+    prepareDone: "Préparation terminée",
     companionHint: "Papiers, voiture, route, budget, réservation : une seule page qui vous guide",
     arrivalFormalities: "Formalités à l'arrivée",
     carPapers: "Papiers de la voiture",

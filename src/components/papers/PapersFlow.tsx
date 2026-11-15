@@ -35,6 +35,7 @@ import {
   savePapers,
   tasksFor,
   travellerLabel,
+  travelsWithDzPassport,
   whenLabels,
   whenOrder,
   type Answers,
@@ -552,7 +553,7 @@ export function GroupStep({ answers, patch }: StepProps) {
           onChange={(n) => resize("adult", n)}
         />
         <Counter
-          label="Enfants (moins de 19 ans)"
+          label="Mineurs (moins de 19 ans)"
           icon={<Baby size={20} aria-hidden />}
           value={kids.length}
           min={0}
@@ -664,7 +665,30 @@ function TravellerCard({
           </div>
         </div>
       ) : null}
-      {t.nat === "dz" || (t.nat === "bi" && t.dzDoc === "passeport") ? (
+      {t.nat === "bi" && t.dzDoc === "passeport" ? (
+        <div className="mt-4">
+          <p className="text-sm font-semibold">
+            Avec quel passeport {child ? "part-il" : "partez-vous"} ?
+          </p>
+          <div className="mt-2">
+            <Options
+              label={`Passeport du voyage : ${name}`}
+              value={t.dzTravel ?? "dz"}
+              onChange={(dzTravel) => update({ dzTravel })}
+              small
+              options={[
+                {
+                  value: "dz",
+                  label: "Avec le passeport algérien",
+                  hint: "Et l'autre passeport aussi",
+                },
+                { value: "foreign", label: "Avec le passeport étranger seulement" },
+              ]}
+            />
+          </div>
+        </div>
+      ) : null}
+      {travelsWithDzPassport(t) ? (
         <div className="mt-4">
           <p className="text-sm font-semibold">
             {child ? "Son" : "Votre"} passeport algérien sera-t-il encore valable au retour ?
@@ -716,7 +740,7 @@ function TravellerCard({
             onChange={(e) => update({ man: e.target.checked })}
             className="size-5 accent-[var(--primary)]"
           />
-          Homme de 19 ans ou plus (service national)
+          Un homme (service national)
         </label>
       ) : null}
     </fieldset>

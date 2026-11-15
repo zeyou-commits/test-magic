@@ -105,6 +105,7 @@ export function WizardFrame({
   chapter,
   onOpen,
   onClose,
+  onSkip,
   children,
 }: {
   steps: WizardStepInfo[];
@@ -112,6 +113,8 @@ export function WizardFrame({
   chapter: string;
   onOpen: (index: number) => void;
   onClose: () => void;
+  /** Ignorer l'étape : on passe à la suivante sans la marquer faite. */
+  onSkip?: () => void;
   children: ReactNode;
 }) {
   const [dock, setDock] = useState<HTMLElement | null>(null);
@@ -255,11 +258,22 @@ export function WizardFrame({
               >
                 {step.title}
               </h2>
-              {shown && shown.total > 1 ? (
-                <span className="shrink-0 text-xs font-semibold text-muted-foreground">
-                  {shown.index + 1} / {shown.total}
-                </span>
-              ) : null}
+              <span className="flex shrink-0 items-center gap-2 text-xs font-semibold text-muted-foreground">
+                {shown && shown.total > 1 ? (
+                  <span>
+                    {shown.index + 1} / {shown.total}
+                  </span>
+                ) : null}
+                {onSkip ? (
+                  <button
+                    type="button"
+                    onClick={onSkip}
+                    className="inline-flex min-h-8 items-center gap-0.5 rounded-full border px-2.5 hover:bg-secondary"
+                  >
+                    Passer l'étape <ArrowRight size={12} aria-hidden />
+                  </button>
+                ) : null}
+              </span>
             </div>
             {shown && shown.total > 1 ? (
               <div className="mt-2 flex gap-1" aria-hidden>

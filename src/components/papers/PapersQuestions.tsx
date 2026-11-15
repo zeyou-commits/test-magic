@@ -1,6 +1,11 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { Baby, User } from "lucide-react";
-import { travellerLabel, type Answers, type Traveller } from "@/content/formalites";
+import {
+  travellerLabel,
+  travelsWithDzPassport,
+  type Answers,
+  type Traveller,
+} from "@/content/formalites";
 import { WizardNav, useWizardScreen } from "@/components/prepare/WizardFrame";
 import {
   GroupStep,
@@ -17,7 +22,7 @@ import {
  * voyageur par voyageur. Une réponse à choix fait passer d'elle-même à la suivante.
  */
 
-type TravellerQ = "age" | "nat" | "dzDoc" | "dzValid" | "residence" | "man";
+type TravellerQ = "age" | "nat" | "dzDoc" | "dzTravel" | "dzValid" | "residence" | "man";
 type FamilyQ = "couple" | "transcribed" | "kidsWith" | "separated" | "custody";
 export type PaperQ =
   | { kind: "step"; step: PapersStep }
@@ -37,10 +42,12 @@ export function paperQuestions(a: Answers, steps: PapersStep[]): PaperQ[] {
         const add = (q: TravellerQ) => out.push({ kind: "traveller", q, id: t.id });
         if (child) add("age");
         add("nat");
-        if (t.nat === "bi") add("dzDoc");
-        if (t.nat === "dz" || (t.nat === "bi" && t.dzDoc === "passeport")) add("dzValid");
-        if (!child && t.nat === "dz") add("residence");
+        // Un adulte a déjà 19 ans ou plus : seul le sexe compte pour le service national.
         if (!child && t.nat !== "etr") add("man");
+        if (t.nat === "bi") add("dzDoc");
+        if (t.nat === "bi" && t.dzDoc === "passeport") add("dzTravel");
+        if (travelsWithDzPassport(t)) add("dzValid");
+        if (!child && t.nat === "dz") add("residence");
       }
     } else if (step === "family") {
       const adults = a.travellers.filter((t) => t.kind === "adult");
@@ -58,7 +65,7 @@ export function paperQuestions(a: Answers, steps: PapersStep[]): PaperQ[] {
   return out;
 }
 
-/** À qui s'adresse la question : « Vous », « Enfant 1 »… */
+/** À qui s'adresse la question : « Vous », « Mineur 1 »… */
 function Who({ t, all }: { t: Traveller; all: Traveller[] }) {
   const Icon = t.kind === "child" ? Baby : User;
   return (
@@ -203,6 +210,29 @@ export function PapersQuestions({
           </Question>
         </>
       );
+    if (q.q === "dzTravel")
+      body = (
+        <>
+          {who}
+          <Question
+            title={me ? "Avec quel passeport partez-vous ?" : "Avec quel passeport part-il ?"}
+            hint="À l'entrée en Algérie, un binational est traité comme un Algérien."
+          >
+            {choice("Passeport du voyage", t.dzTravel ?? "dz", (dzTravel) => update({ dzTravel }), [
+              {
+                value: "dz",
+                label: "Avec le passeport algérien",
+                hint: "Et l'autre passeport aussi",
+              },
+              {
+                value: "foreign",
+                label: "Avec le passeport français (ou autre) seulement",
+                hint: "Le passeport algérien reste à la maison",
+              },
+            ])}
+          </Question>
+        </>
+      );
     if (q.q === "dzValid")
       body = (
         <>
@@ -247,12 +277,12 @@ export function PapersQuestions({
         <>
           {who}
           <Question
-            title="Un homme de 19 ans ou plus ?"
-            hint="Le service national algérien peut demander un papier en plus."
+            title={me ? "Vous êtes…" : "C'est…"}
+            hint="Les hommes algériens ont des obligations de service national : un papier peut être demandé."
           >
-            {choice("Service national", t.man ? "yes" : "no", (v) => update({ man: v === "yes" }), [
-              { value: "yes", label: "Oui" },
-              { value: "no", label: "Non" },
+            {choice("Homme ou femme", t.man ? "yes" : "no", (v) => update({ man: v === "yes" }), [
+              { value: "yes", label: "Un homme" },
+              { value: "no", label: "Une femme" },
             ])}
           </Question>
         </>

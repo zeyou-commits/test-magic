@@ -146,6 +146,9 @@ html {
   line-height: 1;
 }
 /* Sur l'icône de la barre du bas : petite pastille en haut à droite, sans pousser l'icône. */
+.bw-todo-dot--done {
+  background: var(--primary, #157a45);
+}
 .bw-todo-dot--corner {
   position: absolute;
   top: -4px;

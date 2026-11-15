@@ -80,6 +80,7 @@ export function MobileTabBar({
       <Link
         to="/preparer-mon-voyage"
         className={itemClass}
+        data-tour="prepare"
         data-active={familyIsActive(prepare, pathname) || activeTab === "itinerary"}
       >
         <span className="relative">

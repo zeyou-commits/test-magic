@@ -201,7 +201,7 @@ export function SiteHeader() {
         <BrandLink />
         <nav aria-label={t("menu.mainNav")} className="bw-desktop-nav" data-tour="nav">
           {/* Dans l'ordre du voyage : préparer, réserver, puis suivre. */}
-          {desktopFamilies.slice(0, 1).map(renderFamily)}
+          <span className="inline-flex" data-tour="prepare">{desktopFamilies.slice(0, 1).map(renderFamily)}</span>
           <Link
             to="/"
             onClick={openSearchFromHeader}

@@ -195,37 +195,28 @@ export const fr = {
     },
   },
   tour: {
-    welcome: {
-      title: "Bienvenue sur BledWay",
-      body: "Toutes les traversées vers l'Algérie, les navires en direct et l'avis des voyageurs, au même endroit. Le tour prend 30 secondes.",
-    },
-    filters: {
-      title: "Mon navire est-il à l'heure ?",
-      body: "Ces boutons trient la carte : navires en mer, navires à quai, ports, phares. Le chiffre dit combien il y en a. La loupe trouve un navire ou un port ; touchez un navire pour voir son arrivée estimée.",
-    },
-    salons: {
-      title: "Comment ça se passe au port ?",
-      body: "Dans les salons, les voyageurs de la même traversée racontent en direct la file d'attente, les retards et les formalités. Posez votre question, quelqu'un sur place vous répond.",
-    },
-    nav: {
-      title: "Trois temps pour votre voyage",
-      body: "Préparer : vos papiers et votre calendrier (la pastille « ! » signale ce qui reste à faire). Réserver : comparer les traversées. Direct : la carte en temps réel.",
-    },
-    profile: {
-      title: "Gardez tout au même endroit",
-      body: "Un compte gratuit pour suivre vos traversées, recevoir les alertes de retard et retrouver vos salons sur tous vos appareils.",
+    prepare: {
+      title: "Salut tonton, on prépare la route ?",
+      body: "Papiers, dates, consulat : je te fais la liste.",
+      action: "Allez !",
     },
     book: {
-      title: "Quand partir, et à quel prix ?",
-      body: "Comparez les départs de toutes les compagnies : dates, durée, navire et budget estimé.",
+      title: "Les cabas sont prêts ? On réserve.",
+      body: "Toutes les compagnies, les prix, les horaires.",
+      action: "Vas-y",
     },
-    start: "Faire le tour",
-    later: "Plus tard",
-    next: "Suivant",
-    previous: "Précédent",
-    done: "Voir les départs",
-    skip: "Quitter",
-    progress: "{current} sur {total}",
+    follow: {
+      title: "Allez, montez, on y va !",
+      body: "Ton navire en direct sur la carte, et les cousins au port te disent tout.",
+      action: "Yallah",
+    },
+    bye: {
+      title: "Bonne route tonton 🌊",
+      body: "Je reste garée là. Touche-moi si t'as besoin.",
+    },
+    skip: "Ranger la 504",
+    hide: "Ne plus afficher la 504",
+    progress: "Étape {current} sur {total}",
     replay: "Revoir la visite guidée",
   },
   language: {

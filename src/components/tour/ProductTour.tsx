@@ -17,6 +17,7 @@ import {
 const SEEN_KEY = TOUR_STORAGE_PREFIX + WELCOME_TOUR_ID;
 /** Laisse la carte et l'en-tête se poser avant d'éclairer quoi que ce soit. */
 const AUTO_START_DELAY_MS = 2500;
+const MAP_WAIT_MS = 15000;
 
 function readSeen(): boolean {
   try {
@@ -67,6 +68,8 @@ export function ProductTour() {
       }
       const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
       const total = resolved.length;
+      const offset = resolved[0]?.element === null ? 1 : 0;
+      const steps = total - offset;
       const root = document.documentElement;
       root.setAttribute("data-tour-active", "true");
 
@@ -84,28 +87,58 @@ export function ProductTour() {
         popoverClass: "bw-tour",
         showButtons: ["next", "previous", "close"],
         disableActiveInteraction: true,
-        steps: resolved.map(({ step, element }, index) => ({
-          element,
-          popover: {
-            title: tr(step.title),
-            description: tr(step.body),
-            showProgress: total > 1,
-            progressText: tr("tour.progress", { current: index + 1, total }),
-            // Driver.js donne la priorité au texte de l'étape : la dernière dit « C'est parti ».
-            nextBtnText: index === total - 1 ? tr("tour.done") : tr("tour.next"),
-            prevBtnText: tr("tour.previous"),
-            closeBtnLabel: tr("tour.skip"),
-          },
-        })),
-        // Un vrai bouton « Quitter » en toutes lettres, à gauche, en plus de la croix.
-        onPopoverRender: (popover) => {
-          if (popover.footer.querySelector(".bw-tour__skip")) return;
-          const skip = document.createElement("button");
-          skip.type = "button";
-          skip.className = "bw-tour__skip";
-          skip.textContent = tr("tour.skip");
-          skip.addEventListener("click", () => tour.destroy());
-          popover.footer.prepend(skip);
+        steps: resolved.map(({ step, element }, index) => {
+          const welcome = element === null;
+          const last = index === total - 1;
+          // L'accueil ne compte pas dans « 1 sur 5 » : on numérote les étapes qui montrent quelque chose.
+          const shown = welcome ? 0 : index + 1 - offset;
+          return {
+            ...(element ? { element } : {}),
+            popover: {
+              title: tr(step.title),
+              description: tr(step.body),
+              ...(welcome ? { popoverClass: "bw-tour bw-tour--welcome" } : {}),
+              // Accueil : pas de « Précédent » (rien avant) ; ailleurs les trois boutons.
+              showButtons: welcome || index === 0 ? ["next", "close"] : ["next", "previous", "close"],
+              showProgress: !welcome && steps > 1,
+              progressText: tr("tour.progress", { current: shown, total: steps }),
+              // Driver.js donne la priorité au texte de l'étape.
+              nextBtnText: welcome ? tr("tour.start") : last ? tr("tour.done") : tr("tour.next"),
+              prevBtnText: tr("tour.previous"),
+              closeBtnLabel: tr("tour.skip"),
+              // La fin mène à une action : la visite se ferme et la recherche de traversée s'ouvre.
+              ...(last && element
+                ? {
+                    onNextClick: () => {
+                      tour.destroy();
+                      element.click();
+                    },
+                  }
+                : {}),
+            },
+          };
+        }),
+        // Un vrai bouton en toutes lettres, à gauche, en plus de la croix (« Plus tard » à l'accueil).
+        // La dernière bulle n'en a pas : son bouton principal est long, la croix suffit.
+        onPopoverRender: (popover, { state }) => {
+          const index = state.activeIndex ?? 0;
+          popover.footer.querySelector(".bw-tour__skip")?.remove();
+          // « 2 sur 5 » sous le texte : le pied de bulle garde ses boutons sur une seule ligne.
+          popover.wrapper.querySelector(".bw-tour__progress")?.remove();
+          if (resolved[index]?.element !== null && steps > 1) {
+            const progress = document.createElement("p");
+            progress.className = "bw-tour__progress";
+            progress.textContent = popover.progress.textContent;
+            popover.description.after(progress);
+          }
+          if (index !== total - 1) {
+            const skip = document.createElement("button");
+            skip.type = "button";
+            skip.className = "bw-tour__skip";
+            skip.textContent = resolved[index]?.element === null ? tr("tour.later") : tr("tour.skip");
+            skip.addEventListener("click", () => tour.destroy());
+            popover.footer.prepend(skip);
+          }
           // Driver.js pose le focus sur la croix ; on le met sur le bouton principal, sans anneau au toucher.
           window.setTimeout(() => popover.nextButton.focus({ preventScroll: true, focusVisible: false } as FocusOptions), 0);
         },
@@ -123,10 +156,22 @@ export function ProductTour() {
 
     let timer: number | undefined;
     if (!readSeen() && pathname === "/") {
-      timer = window.setTimeout(() => {
+      const started = Date.now();
+      let mapSeenAt: number | null = null;
+      const tryStart = () => {
+        if (cancelled) return;
+        // On attend la carte (15 s au plus) : le visiteur voit d'abord BledWay, puis la bulle d'accueil.
+        // Une seconde et demie de plus après la carte : le fond a le temps de se dessiner.
+        const canvasAt = document.querySelector(".maplibregl-canvas") ? (mapSeenAt ??= Date.now()) : null;
+        const mapReady = canvasAt !== null && Date.now() - canvasAt >= 1500;
+        if (!mapReady && Date.now() - started < MAP_WAIT_MS) {
+          timer = window.setTimeout(tryStart, 500);
+          return;
+        }
         const count = resolveSteps(WELCOME_TOUR, candidates, isVisible).length;
         if (shouldAutoStart({ seen: readSeen(), pathname: window.location.pathname, stepCount: count })) void run();
-      }, AUTO_START_DELAY_MS);
+      };
+      timer = window.setTimeout(tryStart, AUTO_START_DELAY_MS);
     }
 
     return () => {

@@ -114,9 +114,50 @@
   border-width: 7px;
 }
 
-/* Pendant la visite, les fenêtres flottantes se taisent pour ne pas masquer la zone éclairée. */
+/* Pendant la visite, les fenêtres flottantes et les bulles « Exemple » se taisent : le visiteur ne doit pas les prendre pour du réel. */
 html[data-tour-active] .bw-pwa-install,
 html[data-tour-active] .bw-phone-install,
-html[data-tour-active] .bw-messages-preview {
+html[data-tour-active] .bw-messages-preview,
+html[data-tour-active] .bw-map-bubble,
+html[data-tour-active] .bw-map-bubble-source,
+html[data-tour-active] .bw-film-vehicle {
   visibility: hidden;
+}
+
+/* Boutons sur une seule ligne : le texte à gauche, les boutons à droite. */
+.driver-popover.bw-tour .driver-popover-footer {
+  flex-wrap: nowrap;
+}
+.driver-popover.bw-tour .driver-popover-progress-text {
+  display: none !important;
+}
+.driver-popover.bw-tour .bw-tour__progress {
+  margin-top: 10px;
+  color: #8a958f;
+  font-size: 12.5px;
+  font-weight: 600;
+}
+.driver-popover.bw-tour .driver-popover-navigation-btns {
+  flex-wrap: nowrap;
+}
+.driver-popover.bw-tour .driver-popover-footer-btn {
+  white-space: nowrap;
+}
+@media (max-width: 380px) {
+  .driver-popover.bw-tour .driver-popover-footer-btn {
+    padding: 0 14px;
+  }
+}
+
+/* Bulle d'accueil : au centre, un peu plus grande, bouton principal pleine largeur. */
+.driver-popover.bw-tour.bw-tour--welcome {
+  width: min(380px, calc(100vw - 32px));
+  padding: 24px 22px 18px;
+  text-align: left;
+}
+.driver-popover.bw-tour.bw-tour--welcome .driver-popover-title {
+  font-size: 22px;
+}
+.driver-popover.bw-tour.bw-tour--welcome .driver-popover-description {
+  font-size: 16px;
 }

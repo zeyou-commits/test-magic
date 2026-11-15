@@ -195,29 +195,35 @@ export const fr = {
     },
   },
   tour: {
-    book: {
-      title: "Réservez votre traversée",
-      body: "Tous les départs de toutes les compagnies au même endroit, avec la durée, le navire et le budget estimé.",
+    welcome: {
+      title: "Bienvenue sur BledWay",
+      body: "Toutes les traversées vers l'Algérie, les navires en direct et l'avis des voyageurs, au même endroit. Le tour prend 30 secondes.",
     },
     filters: {
-      title: "Filtrez la carte",
-      body: "Navires en mer, à quai, ports, phares : touchez une icône pour ne voir que ce qui vous intéresse. La loupe trouve un port ou un navire.",
+      title: "Mon navire est-il à l'heure ?",
+      body: "Ces boutons trient la carte : navires en mer, navires à quai, ports, phares. Le chiffre dit combien il y en a. La loupe trouve un navire ou un port ; touchez un navire pour voir son arrivée estimée.",
     },
     salons: {
-      title: "Les salons des voyageurs",
-      body: "Une question, une file au port, un retard ? Échangez avec ceux qui font la même traversée que vous.",
+      title: "Comment ça se passe au port ?",
+      body: "Dans les salons, les voyageurs de la même traversée racontent en direct la file d'attente, les retards et les formalités. Posez votre question, quelqu'un sur place vous répond.",
     },
     nav: {
-      title: "Votre voyage, étape par étape",
-      body: "La navigation suit votre voyage : les papiers avant le départ, la traversée à réserver, puis votre navire en direct.",
+      title: "Trois temps pour votre voyage",
+      body: "Préparer : vos papiers et votre calendrier (la pastille « ! » signale ce qui reste à faire). Réserver : comparer les traversées. Direct : la carte en temps réel.",
     },
     profile: {
-      title: "Votre espace",
-      body: "Vos traversées suivies, vos alertes et vos salons, retrouvés sur tous vos appareils.",
+      title: "Gardez tout au même endroit",
+      body: "Un compte gratuit pour suivre vos traversées, recevoir les alertes de retard et retrouver vos salons sur tous vos appareils.",
     },
+    book: {
+      title: "Quand partir, et à quel prix ?",
+      body: "Comparez les départs de toutes les compagnies : dates, durée, navire et budget estimé.",
+    },
+    start: "Faire le tour",
+    later: "Plus tard",
     next: "Suivant",
     previous: "Précédent",
-    done: "C'est parti",
+    done: "Voir les départs",
     skip: "Quitter",
     progress: "{current} sur {total}",
     replay: "Revoir la visite guidée",

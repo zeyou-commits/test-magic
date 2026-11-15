@@ -254,6 +254,16 @@ export interface Task {
   advice?: boolean;
 }
 
+/**
+ * Dans le bilan : une démarche (un geste à faire : demander, renouveler, s'inscrire), un document
+ * à préparer (« Le certificat… », « La réservation… »), ou un conseil à garder en tête.
+ */
+export function paperKind(task: Task): "step" | "document" | "tip" {
+  if (task.advice || task.id === "chambres-separees" || task.id === "majorite-19") return "tip";
+  if (task.id.startsWith("visa-")) return "step";
+  return /^(Le|La|Les|L'|Un|Une|Ses|Son|Sa) /.test(task.title) ? "document" : "step";
+}
+
 /** À faire (rendez-vous, dossier) ou seulement à emporter ? */
 export const isPaperToDo = (task: Task) =>
   task.when === "first" ||

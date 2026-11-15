@@ -3,6 +3,11 @@ import type { ReactNode } from "react";
 import {
   AlertTriangle,
   ArrowLeft,
+  Briefcase,
+  CalendarDays,
+  ClipboardList,
+  FileText,
+  Lightbulb,
   ArrowRight,
   Baby,
   Check,
@@ -28,6 +33,7 @@ import {
   departmentFromPostcode,
   formaliteSources,
   isPaperToDo,
+  paperKind,
   loadPapers,
   taskSummaries,
   newTraveller,
@@ -911,7 +917,9 @@ export function PapersResult({
   /** Dans le compagnon : la date de chaque groupe, tirée de la date de départ, et pourquoi. */
   deadlines?: Partial<Record<When, { label: string; why: string }>>;
 }) {
-  const tasks = useMemo(() => tasksFor(answers), [answers]);
+  const all = useMemo(() => tasksFor(answers), [answers]);
+  // Les conseils ont leur encart « Bon à savoir » : la liste à cocher garde les vraies tâches.
+  const tasks = useMemo(() => all.filter((t) => paperKind(t) !== "tip"), [all]);
   const notes = reassurances(answers);
   const consulat = consulatOf(answers);
   const count = tasks.filter((t) => done.includes(t.id)).length;
@@ -922,6 +930,8 @@ export function PapersResult({
   const toDo = tasks.filter(isPaperToDo);
   const toTake = tasks.filter((t) => !isPaperToDo(t));
   const atConsulate = tasks.filter((t) => t.consulate);
+  const consulateVisas = atConsulate.filter((t) => t.id.startsWith("visa-")).length;
+  const consulateCount = atConsulate.length - Math.max(0, consulateVisas - 1);
   // La première date limite : celle du premier groupe à faire qui a une date.
   const firstDeadline = (["weeks", "months3"] as const).find(
     (when) => deadlines[when] && toDo.some((t) => t.when === when && !done.includes(t.id)),
@@ -962,48 +972,25 @@ export function PapersResult({
         </button>
       </div>
 
-      {/* Le bilan d'abord : combien de choses à faire, à emporter, et pour quand. */}
-      <div className="mt-4 rounded-2xl bg-primary/5 p-4 md:p-5">
-        <p className="font-display text-xl font-bold leading-snug">
-          {toDo.length
-            ? `${toDo.length} démarche${toDo.length > 1 ? "s" : ""} à faire`
-            : "Aucune démarche à faire"}
-          {" · "}
-          {toTake.length} document{toTake.length > 1 ? "s" : ""} à emporter
-        </p>
-        <ul className="mt-2 grid gap-1 text-sm">
-          {toDo.some((t) => t.when === "first" && !done.includes(t.id)) ? (
-            <li>
-              <span className="font-semibold">Dès maintenant :</span>{" "}
-              {taskSummaries(toDo.filter((t) => t.when === "first" && !done.includes(t.id))).join(
-                " ; ",
-              )}
-              .
-            </li>
-          ) : null}
-          {firstDeadline ? (
-            <li>
-              <span className="font-semibold">{deadlines[firstDeadline]!.label} :</span>{" "}
-              {taskSummaries(
-                toDo.filter((t) => t.when === firstDeadline && !done.includes(t.id)),
-              ).join(" ; ")}
-              .
-            </li>
-          ) : null}
-          {atConsulate.length ? (
-            <li className="text-muted-foreground">
-              {atConsulate.length > 1
-                ? `${atConsulate.length} de ces démarches se font au consulat`
-                : "Une de ces démarches se fait au consulat"}
-              {consulat || (answers.abroad && abroadSlot)
-                ? " : son adresse et le lien pour prendre rendez-vous sont juste en dessous."
-                : " : indiquez votre ville (Modifier mes réponses) pour le trouver."}
-            </li>
-          ) : toDo.length === 0 ? (
-            <li className="text-muted-foreground">Rien à faire au consulat avant de partir.</li>
-          ) : null}
-        </ul>
-      </div>
+      {/* Le bilan d'abord, en trois blocs : les démarches, les documents, les conseils. */}
+      <PlanSummary
+        tasks={all}
+        done={done}
+        deadlines={deadlines}
+        consulateLine={
+          atConsulate.length
+            ? `${
+                consulateCount > 1
+                  ? `${consulateCount} démarches se font au consulat`
+                  : "Une démarche se fait au consulat"
+              }${
+                consulat || (answers.abroad && abroadSlot)
+                  ? " : son adresse et le lien pour prendre rendez-vous sont juste en dessous."
+                  : " : indiquez votre ville (Modifier mes réponses) pour le trouver."
+              }`
+            : null
+        }
+      />
 
       <div
         className={`mt-6 grid gap-6 ${embedded ? "" : "lg:grid-cols-[minmax(0,1fr)_340px] lg:items-start"}`}
@@ -1089,6 +1076,157 @@ export function PapersResult({
         </aside>
       </div>
     </section>
+  );
+}
+
+/** Une échéance en étiquette : rouge si c'est maintenant, ambre sinon. */
+function DeadlineTag({ label, urgent }: { label: string; urgent: boolean }) {
+  return (
+    <span
+      className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-bold ${
+        urgent ? "bg-[#c95038]/12 text-[#b0412b]" : "bg-[#e0a43a]/18 text-[#8a5d0c]"
+      }`}
+    >
+      <CalendarDays size={13} aria-hidden /> {label}
+    </span>
+  );
+}
+
+/** Les tâches d'un bloc, regroupées par échéance ; les visas de plusieurs voyageurs sur une ligne. */
+function SummaryGroups({
+  list,
+  deadlines,
+}: {
+  list: Task[];
+  deadlines: Partial<Record<When, { label: string; why: string }>>;
+}) {
+  const groups = (["first", "weeks", "months3", "lastweek"] as const)
+    .map((when) => ({ when, items: list.filter((t) => t.when === when) }))
+    .filter((group) => group.items.length);
+  return (
+    <div className="mt-3 grid gap-3">
+      {groups.map(({ when, items }) => {
+        const label =
+          when === "first" ? "Dès maintenant" : (deadlines[when]?.label ?? whenLabels[when].title);
+        const urgent = when === "first" || /Aujourd|semaine|maintenant/i.test(label);
+        const visas = items.filter((t) => t.id.startsWith("visa-"));
+        const rows = [
+          ...(visas.length
+            ? [
+                {
+                  id: "visas",
+                  title: visas.length > 1 ? "Demander les visas" : visas[0]!.title,
+                  who: [...new Set(visas.flatMap((v) => v.who))],
+                },
+              ]
+            : []),
+          ...items.filter((t) => !t.id.startsWith("visa-")),
+        ];
+        return (
+          <div key={when}>
+            <DeadlineTag label={label} urgent={urgent} />
+            <ul className="mt-2 grid gap-1.5">
+              {rows.map((row) => (
+                <li key={row.id} className="flex items-start gap-2 text-sm">
+                  <span
+                    className="mt-1.5 size-1.5 shrink-0 rounded-full bg-foreground/60"
+                    aria-hidden
+                  />
+                  <span>
+                    <span className="font-semibold">{row.title}</span>
+                    {row.who.length ? (
+                      <span className="text-muted-foreground"> · {row.who.join(", ")}</span>
+                    ) : null}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+/** Le bilan : démarches, documents à préparer, conseils à part ; chaque échéance bien visible. */
+function PlanSummary({
+  tasks,
+  done,
+  deadlines,
+  consulateLine,
+}: {
+  tasks: Task[];
+  done: string[];
+  deadlines: Partial<Record<When, { label: string; why: string }>>;
+  consulateLine: string | null;
+}) {
+  const open = tasks.filter((t) => isPaperToDo(t) && !done.includes(t.id));
+  const steps = open.filter((t) => paperKind(t) === "step");
+  const documents = open.filter((t) => paperKind(t) === "document");
+  const tips = tasks.filter((t) => isPaperToDo(t) && paperKind(t) === "tip");
+  const toTake = tasks.filter((t) => !isPaperToDo(t) && paperKind(t) !== "tip");
+  // Les visas de plusieurs voyageurs comptent pour une démarche, comme dans la liste.
+  const visas = steps.filter((t) => t.id.startsWith("visa-")).length;
+  const stepCount = steps.length - Math.max(0, visas - 1);
+  return (
+    <div className="mt-4 grid gap-3">
+      <div className="rounded-2xl border bg-card p-4 md:p-5">
+        <h3 className="flex items-center gap-2 font-display text-lg font-bold">
+          <ClipboardList size={18} className="text-primary" aria-hidden />
+          {stepCount
+            ? `${stepCount} démarche${stepCount > 1 ? "s" : ""} à faire`
+            : "Aucune démarche à faire"}
+        </h3>
+        {steps.length ? <SummaryGroups list={steps} deadlines={deadlines} /> : null}
+        {consulateLine ? (
+          <p className="mt-3 flex items-start gap-2 text-xs text-muted-foreground">
+            <MapPin size={13} className="mt-0.5 shrink-0" aria-hidden /> {consulateLine}
+          </p>
+        ) : null}
+      </div>
+      {documents.length ? (
+        <div className="rounded-2xl border bg-card p-4 md:p-5">
+          <h3 className="flex items-center gap-2 font-display text-lg font-bold">
+            <FileText size={18} className="text-primary" aria-hidden />
+            {documents.length} document{documents.length > 1 ? "s" : ""} à préparer
+          </h3>
+          <SummaryGroups list={documents} deadlines={deadlines} />
+        </div>
+      ) : null}
+      {tips.length ? (
+        <div className="rounded-2xl border border-[#e0a43a]/40 bg-[#fff8ea] p-4 md:p-5">
+          <h3 className="flex items-center gap-2 font-display text-base font-bold">
+            <Lightbulb size={17} className="text-[#b7791f]" aria-hidden /> Bon à savoir
+          </h3>
+          <ul className="mt-2 grid gap-1.5 text-sm">
+            {tips.map((t) => (
+              <li key={t.id}>
+                <details className="group">
+                  <summary className="cursor-pointer list-none">
+                    <span className="font-semibold">{t.title}</span>
+                    {t.who.length ? (
+                      <span className="text-muted-foreground"> · {t.who.join(", ")}</span>
+                    ) : null}
+                    <span className="ml-1 text-xs font-semibold text-[#8a5d0c] underline underline-offset-2 group-open:hidden">
+                      Pourquoi ?
+                    </span>
+                  </summary>
+                  <p className="mt-1 whitespace-pre-line text-muted-foreground">{t.detail}</p>
+                  <SourceLinks ids={t.sources} />
+                </details>
+              </li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
+      {toTake.length ? (
+        <p className="flex items-center gap-2 px-1 text-sm text-muted-foreground">
+          <Briefcase size={15} aria-hidden />
+          Et {toTake.length} point{toTake.length > 1 ? "s" : ""} pour le voyage lui-même (à
+          emporter, sur place, au retour) : tout est dans la liste juste en dessous.
+        </p>
+      ) : null}
+    </div>
   );
 }
 

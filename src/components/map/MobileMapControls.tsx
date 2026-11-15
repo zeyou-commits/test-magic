@@ -1,3 +1,5 @@
+import { Bw504Button, Bw504Note } from "@/components/companion/Bw504Note";
+import { closeMatches } from "@/lib/companion/reasons";
 import { ArrowLeft, ArrowRight, ArrowLeftRight, Check, MapPin, Search, X } from "lucide-react";
 import { useMemo, useState } from "react";
 import { Link } from "@tanstack/react-router";
@@ -341,9 +343,30 @@ export function MobileMapControls({
               </section>
             ))}
             {!groups.length ? (
-              <p className="py-10 text-center text-sm text-muted-foreground">
-                {t("map.picker.noPort")}
-              </p>
+              <div className="py-4">
+                {(() => {
+                  const close = closeMatches(query, candidates, (port) => port.name);
+                  return (
+                    <Bw504Note
+                      tone="stuck"
+                      title={close.length ? `Tu voulais dire ${close[0]!.name} ?` : t("map.picker.noPort")}
+                      actions={
+                        close.length ? (
+                          close.map((port) => (
+                            <Bw504Button key={port.id} primary={port === close[0]} onClick={() => setQuery(port.name)}>
+                              {port.name}
+                            </Bw504Button>
+                          ))
+                        ) : (
+                          <Bw504Button onClick={() => setQuery("")}>Voir tous les ports</Bw504Button>
+                        )
+                      }
+                    >
+                      {close.length ? null : "Essaie le nom de la ville."}
+                    </Bw504Note>
+                  );
+                })()}
+              </div>
             ) : null}
           </div>
 

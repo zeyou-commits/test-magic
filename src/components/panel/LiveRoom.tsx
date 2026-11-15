@@ -1,3 +1,4 @@
+import { Bw504Note } from "@/components/companion/Bw504Note";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { PinnedInfo } from "./PinnedInfo";
 import { track } from "@/lib/usage";
@@ -702,7 +703,11 @@ function LiveChat({
           </div>
         </li>
         {lines.length ? null : (
-          <li className="bw-chat__hello">{tr("ui.liveRoom.soyezLePremierOuLa")}</li>
+          <li className="bw-chat__hello">
+            <Bw504Note tone="start" title="C'est calme ici pour l'instant">
+              Sois le premier à dire comment ça se passe : file au port, embarquement, ambiance à bord.
+            </Bw504Note>
+          </li>
         )}
         {lines.map((message) => (
           <li

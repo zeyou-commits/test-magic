@@ -13,7 +13,6 @@ import {
   Map as MapIcon,
   MessagesSquare,
   Ship,
-  Sparkles,
   UserRound,
   Waypoints,
   X,
@@ -33,7 +32,6 @@ import {
   openSearchFromHeader,
   type MenuFamily,
 } from "./menu";
-import { startProductTour } from "@/components/tour/ProductTour";
 
 type Level = MenuFamily["id"] | "account";
 
@@ -300,18 +298,6 @@ function RootLevel({
           <LogIn size={18} aria-hidden /> {tr("ui.userMenu.seConnecter")}
         </Link>
       )}
-
-      {/* La visite éclaire des éléments de l'écran : on laisse le volet se refermer d'abord. */}
-      <button
-        type="button"
-        className="bw-menu-link"
-        onClick={() => {
-          onNavigate();
-          window.setTimeout(startProductTour, 400);
-        }}
-      >
-        <Sparkles size={18} aria-hidden /> {t("tour.replay")}
-      </button>
 
       {menuFamilies
         .filter((family) => !["prepare", "live", "lines"].includes(family.id))

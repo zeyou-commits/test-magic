@@ -25,6 +25,8 @@ import { useMyTrip } from "@/lib/ferry/myTrip";
 import type { RouteLine, Selection } from "@/lib/ferry/types";
 import { useT, type MessageKey } from "@/lib/i18n";
 import { canAutoFocus, keepKeyboardClosedOnTouch } from "@/lib/utils";
+import { Bw504Button, Bw504Note } from "@/components/companion/Bw504Note";
+import { closeMatches } from "@/lib/companion/reasons";
 
 // Table communautaire pas encore présente dans les types générés.
 const db = typedSupabase as unknown as SupabaseClient;
@@ -218,9 +220,33 @@ export function MapSearch({
                 ) : null}
               </>
             ) : !results.length ? (
-              <p className="p-3 text-sm text-muted-foreground">
-                {t("map.search.noMatch", { term: term.trim() })}
-              </p>
+              <div className="p-1">
+                {(() => {
+                  const names = [
+                    ...vessels.filter((v) => v.status === "active").map((v) => v.name),
+                    ...companies.map((c) => c.name),
+                    ...ports.map((p) => p.name),
+                  ];
+                  const close = closeMatches(term, [...new Set(names)], (name) => name);
+                  return (
+                    <Bw504Note
+                      tone="stuck"
+                      title={
+                        close.length
+                          ? `Je le trouve pas… c'est ${close[0]} ?`
+                          : t("map.search.noMatch", { term: term.trim() })
+                      }
+                      actions={close.map((name, index) => (
+                        <Bw504Button key={name} primary={index === 0} onClick={() => setTerm(name)}>
+                          {name}
+                        </Bw504Button>
+                      ))}
+                    >
+                      Tape le nom du navire, de la compagnie ou d'un port : je te montre les bateaux.
+                    </Bw504Note>
+                  );
+                })()}
+              </div>
             ) : null}
             {(["vessel", "company", "port", "route"] as const).map((kind) => {
               const group = results.filter((r) => r.kind === kind);

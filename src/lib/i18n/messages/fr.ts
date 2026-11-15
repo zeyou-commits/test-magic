@@ -194,31 +194,6 @@ export const fr = {
       companyToConfirm: "Compagnie à confirmer",
     },
   },
-  tour: {
-    prepare: {
-      title: "Salut tonton, on prépare la route ?",
-      body: "Papiers, dates, consulat : je te fais la liste.",
-      action: "Allez !",
-    },
-    book: {
-      title: "Les cabas sont prêts ? On réserve.",
-      body: "Toutes les compagnies, les prix, les horaires.",
-      action: "Vas-y",
-    },
-    follow: {
-      title: "Allez, montez, on y va !",
-      body: "Ton navire en direct sur la carte, et les cousins au port te disent tout.",
-      action: "Yallah",
-    },
-    bye: {
-      title: "Bonne route tonton 🌊",
-      body: "Je reste garée là. Touche-moi si t'as besoin.",
-    },
-    skip: "Ranger la 504",
-    hide: "Ne plus afficher la 504",
-    progress: "Étape {current} sur {total}",
-    replay: "Revoir la visite guidée",
-  },
   language: {
     label: "Langue",
     fr: "Français",

@@ -14,6 +14,8 @@ import {
 } from "@/lib/ferry/filtering";
 import type { Port, RouteLine } from "@/lib/ferry/types";
 import { tr } from "@/lib/i18n";
+import { Bw504Button, Bw504Note } from "@/components/companion/Bw504Note";
+import { closeMatches } from "@/lib/companion/reasons";
 
 interface PortMultiPickerProps {
   /** « departure » : ports de départ ; « arrival » : ports d'arrivée. */
@@ -174,7 +176,12 @@ export function PortMultiPicker({
         </span>
       </button>
       {groups.length === 0 ? (
-        <p className="p-4 text-center text-sm text-muted-foreground">{tr("ui.portFilters.aucunPortTrouve")}</p>
+        <PortTypo
+          search={search}
+          ports={countryFilter ? ports.filter((p) => countryFilter(p.country_code)) : ports}
+          onPick={setSearch}
+          fallback={tr("ui.portFilters.aucunPortTrouve")}
+        />
       ) : (
         <div
           className={`flex min-w-0 flex-col gap-2.5 pr-0.5 ${inline ? "" : "min-h-0 overflow-y-auto"}`}
@@ -367,5 +374,39 @@ export function PortMultiPicker({
         {body}
       </PopoverContent>
     </Popover>
+  );
+}
+
+/** Recherche de port vide : la 504 propose les noms proches au lieu d'un « aucun port » sec. */
+function PortTypo({
+  search,
+  ports,
+  onPick,
+  fallback,
+}: {
+  search: string;
+  ports: Port[];
+  onPick: (name: string) => void;
+  fallback: string;
+}) {
+  const close = closeMatches(search, ports, (port) => port.name);
+  return (
+    <div className="p-2">
+      <Bw504Note
+        tone="stuck"
+        title={close.length ? `Tu voulais dire ${close[0]!.name} ?` : "Je ne connais pas ce port"}
+        actions={
+          close.length
+            ? close.map((port) => (
+                <Bw504Button key={port.id} primary={port === close[0]} onClick={() => onPick(port.name)}>
+                  {port.name}
+                </Bw504Button>
+              ))
+            : <Bw504Button onClick={() => onPick("")}>Voir tous les ports</Bw504Button>
+        }
+      >
+        {close.length ? null : `${fallback} Essaie le nom de la ville.`}
+      </Bw504Note>
+    </div>
   );
 }

@@ -82,6 +82,13 @@ import {
   TRAVEL_PROFILE_EVENT,
 } from "@/lib/ferry/travelProfile";
 import { tr } from "@/lib/i18n";
+import { Bw504Button, Bw504Note } from "@/components/companion/Bw504Note";
+import {
+  explainNoSailing,
+  weekdayList,
+  weekdayName,
+  type NoSailingReason,
+} from "@/lib/companion/reasons";
 
 const ANY = "__any__";
 const PAGE = 4;
@@ -486,6 +493,17 @@ export function SearchPanel({
         toLabel={filters.arrivalPortIds.length ? fromName(filters.arrivalPortIds) : null}
       />
     ) : null;
+  // Pourquoi rien ? La 504 ne donne une raison que si les données la prouvent.
+  const noSailingReason = useMemo(() => {
+    const found = explainNoSailing({
+      date: filters.date,
+      availableDays: [...outAvailability.keys()],
+      publishedUntil: salesClosed?.last || null,
+    });
+    // Le rythme d'une ligne n'a de sens que pour un couple de ports et une date exacte.
+    if (found.kind === "notThatDay" && (!hasPair || filters.flexDays > 0)) return { kind: "unknown" } as const;
+    return found;
+  }, [filters.date, filters.flexDays, outAvailability, salesClosed, hasPair]);
   const reportRoute = routes.find(
     (route) =>
       route.status === "active" &&
@@ -1019,6 +1037,7 @@ export function SearchPanel({
                     onMore={() => setShowAllOut(true)}
                     expanded={showAllOut || Boolean(filters.date)}
                     emptyText="Aucun départ publié pour cette recherche. Un horaire peut manquer."
+                    reason={noSailingReason}
                     reportTarget={reportTarget}
                     reportContext={reportContext}
                     onReportMissing={startSearch}
@@ -1064,6 +1083,7 @@ function ResultBlock({
   onMore,
   expanded,
   emptyText,
+  reason,
   onReset,
   reportTarget,
   reportContext,
@@ -1088,6 +1108,7 @@ function ResultBlock({
   onMore: () => void;
   expanded: boolean;
   emptyText: string;
+  reason: NoSailingReason;
   onReset?: (() => void) | undefined;
   reportTarget: { type: "route" | "port"; id: string } | null;
   reportContext: string;
@@ -1115,61 +1136,52 @@ function ResultBlock({
       </div>
       <DayStrip days={days} value={date} onChange={onDate} allLabel="Tous" />
       {list.length === 0 ? (
-        <div className="rounded-2xl border border-dashed p-5 text-center text-sm text-muted-foreground">
-          {emptyText}
-          <div className="mt-3">
-            {reportTarget ? (
-              <ReportButton
-                targetType={reportTarget.type}
-                targetId={reportTarget.id}
-                label={tr("ui.searchPanel.signalerUnHoraireManquant")}
-                initialDetails={reportContext}
-                initialReason="missing_info"
-              />
-            ) : (
-              <button
-                type="button"
-                onClick={onReportMissing}
-                className="rounded-full border bg-card px-3 py-1.5 text-xs font-semibold text-primary hover:bg-secondary"
-              >
-                {tr("ui.searchPanel.choisirDesPortsPourSignaler")}
-              </button>
-            )}
-          </div>
-          {near && (near.before || near.after) ? (
-            <div className="mt-3 flex flex-wrap items-center justify-center gap-2">
-              {[near.before, near.after].map((item) =>
-                item ? (
-                  <button
-                    key={item.day}
-                    type="button"
-                    onClick={() => onDate(item.day)}
-                    className="rounded-full border bg-card px-3 py-1.5 text-xs font-semibold text-foreground hover:bg-secondary"
-                  >
-                    {item.day < date! ? "←" : ""}{" "}
-                    {new Date(`${item.day}T00:00:00Z`).toLocaleDateString("fr-FR", {
-                      weekday: "short",
-                      day: "numeric",
-                      month: "short",
-                      timeZone: "UTC",
-                    })}{" "}
-                    {item.day > date! ? "→" : ""}
-                  </button>
-                ) : null,
-              )}
-            </div>
-          ) : null}
-          {onReset ? (
-            <button
-              type="button"
-              onClick={onReset}
-              className="mx-auto mt-3 flex items-center gap-1.5 rounded-full border bg-card px-3 py-1.5 text-xs font-semibold text-foreground hover:bg-secondary"
-            >
-              <X className="size-3.5" />
-              {tr("ui.searchPanel.elargirLaRecherche")}
-            </button>
-          ) : null}
-        </div>
+        <Bw504Note
+          tone="stuck"
+          title={reasonTitle(reason, date)}
+          actions={
+            <>
+              {near
+                ? [near.before, near.after].map((item) =>
+                    item ? (
+                      <Bw504Button key={item.day} primary onClick={() => onDate(item.day)}>
+                        {item.day < date! ? "← " : ""}
+                        {new Date(`${item.day}T00:00:00Z`).toLocaleDateString("fr-FR", {
+                          weekday: "short",
+                          day: "numeric",
+                          month: "short",
+                          timeZone: "UTC",
+                        })}
+                        {item.day > date! ? " →" : ""}
+                      </Bw504Button>
+                    ) : null,
+                  )
+                : null}
+              {onReset ? (
+                <Bw504Button onClick={onReset}>{tr("ui.searchPanel.elargirLaRecherche")}</Bw504Button>
+              ) : null}
+              {reason.kind === "unknown" ? (
+                reportTarget ? (
+                  <span className="bw-504note__report">
+                    <ReportButton
+                      targetType={reportTarget.type}
+                      targetId={reportTarget.id}
+                      label={tr("ui.searchPanel.signalerUnHoraireManquant")}
+                      initialDetails={reportContext}
+                      initialReason="missing_info"
+                    />
+                  </span>
+                ) : (
+                  <Bw504Button onClick={onReportMissing}>
+                    {tr("ui.searchPanel.choisirDesPortsPourSignaler")}
+                  </Bw504Button>
+                )
+              ) : null}
+            </>
+          }
+        >
+          {reasonBody(reason, emptyText)}
+        </Bw504Note>
       ) : (
         <div className="space-y-2">
           {recommended && list.some((sailing) => sailing.departure.id === recommended) ? (
@@ -1427,4 +1439,33 @@ function StepLabel({
       <span className="min-w-0 truncate text-xs font-bold text-foreground">{summary}</span>
     </button>
   );
+}
+
+/** Titre de la 504 selon la raison prouvée par les données. */
+function reasonTitle(reason: NoSailingReason, date: string | null) {
+  switch (reason.kind) {
+    case "soldOut":
+      return reason.count > 1 ? "Les bateaux de ce jour-là sont complets" : "Le bateau de ce jour-là est complet";
+    case "notPublished":
+      return "Les horaires ne sont pas encore sortis";
+    case "notThatDay":
+      return `Pas de bateau le ${date ? weekdayName(date) : "jour choisi"} sur cette ligne`;
+    default:
+      return "Je n'ai rien trouvé, et je ne sais pas pourquoi";
+  }
+}
+
+function reasonBody(reason: NoSailingReason, fallback: string) {
+  switch (reason.kind) {
+    case "soldOut":
+      return "Plus de place à bord. Regarde les jours d'à côté, ça part souvent mieux.";
+    case "notPublished":
+      return `Les compagnies ont publié leurs départs jusqu'au ${new Date(
+        `${reason.publishedUntil}T00:00:00Z`,
+      ).toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric", timeZone: "UTC" })}. Active l'alerte : je te préviens dès que ça sort.`;
+    case "notThatDay":
+      return `Elle part le ${weekdayList(reason.weekdays)} : prends le jour le plus proche.`;
+    default:
+      return `${fallback} Vérifie chez la compagnie, et dis-le-moi si tu trouves.`;
+  }
 }

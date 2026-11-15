@@ -1,6 +1,7 @@
 import {
   BINATIONAL_MEASURE_END,
   tasksFor,
+  paperKind,
   type Answers,
   type FormaliteSourceId,
   type When,
@@ -108,7 +109,10 @@ export function retroPlan(
   today = new Date().toISOString().slice(0, 10),
 ): Milestone[] {
   const day = earliestDay(plan);
-  const tasks = papers.finished ? tasksFor(papers.answers) : [];
+  // Les conseils restent dans « Bon à savoir » de Mes papiers : ici, seulement ce qui se fait.
+  const tasks = papers.finished
+    ? tasksFor(papers.answers).filter((t) => paperKind(t) !== "tip")
+    : [];
   // Les visas de plusieurs voyageurs tiennent sur une ligne : « Demander les visas · Adulte 2, Enfant 1 ».
   const of = (when: When): MilestoneTask[] => {
     const group = tasks.filter((t) => t.when === when);

@@ -46,13 +46,13 @@ function travelDays(plan: CompanionPlan) {
   return { from: `${plan.month}-01`, to: `${plan.month}-31` };
 }
 
-export type Asset = "balance" | "trip" | "sea" | "road" | "cheap";
+// Le prix a son étape (Budget) : la route compare les durées, portion par portion.
+export type Asset = "balance" | "trip" | "sea" | "road";
 export const assetLabels: Record<Asset, string> = {
   balance: "Notre conseil",
   trip: "Voyage le plus court",
   sea: "Traversée la plus courte",
   road: "Route la plus courte jusqu'au port",
-  cheap: "Le moins cher",
 };
 
 /**
@@ -69,7 +69,6 @@ export function selectionByAsset(pool: ItineraryOption[], limit = 4) {
     ["trip", best((option) => option.totalMinutes)],
     ["sea", best((option) => option.sailing.durationMin ?? Infinity)],
     ["road", best((option) => option.originRoad.distanceKm)],
-    ["cheap", best((option) => option.totalEuro)],
   ];
   const picked: { option: ItineraryOption; assets: Asset[] }[] = [];
   for (const [asset, option] of winners) {
@@ -403,44 +402,73 @@ function RouteCard({
         type="button"
         aria-expanded={open}
         onClick={onToggle}
-        className="flex w-full items-center gap-3 p-3 text-left"
+        className="block w-full p-3 text-left"
       >
-        <span className="min-w-0 flex-1">
-          <span className="mb-1 flex flex-wrap gap-1">
-            {assets.map((asset) => (
-              <span
-                key={asset}
-                className={`rounded-lg px-2 py-0.5 text-[11px] font-bold leading-tight ${
-                  asset === "balance"
-                    ? "bg-primary text-primary-foreground"
-                    : "bg-primary/10 text-primary"
-                }`}
-              >
-                {assetLabels[asset]}
+        <span className="flex items-center gap-3">
+          <span className="min-w-0 flex-1">
+            <span className="mb-1 flex flex-wrap gap-1">
+              {assets.map((asset) => (
+                <span
+                  key={asset}
+                  className={`rounded-lg px-2 py-0.5 text-[11px] font-bold leading-tight ${
+                    asset === "balance"
+                      ? "bg-primary text-primary-foreground"
+                      : "bg-primary/10 text-primary"
+                  }`}
+                >
+                  {assetLabels[asset]}
+                </span>
+              ))}
+            </span>
+            <strong className="block truncate text-[15px] leading-tight">
+              {option.sailing.from.name} → {option.sailing.to.name}
+            </strong>
+          </span>
+          <span className="shrink-0 self-start text-right">
+            <strong className="block text-[15px] tabular-nums">
+              {formatDuration(option.totalMinutes)}
+            </strong>
+            <span className="block text-[10px] text-muted-foreground">porte à porte</span>
+          </span>
+          <ChevronDown
+            size={16}
+            aria-hidden
+            className={`shrink-0 text-muted-foreground transition-transform ${open ? "rotate-180" : ""}`}
+          />
+        </span>
+        {/* Les trois portions du voyage, chacune avec sa durée. */}
+        <span className="mt-2.5 grid grid-cols-3 gap-1.5">
+          {[
+            {
+              icon: "🚗",
+              time: option.originRoad.durationMin,
+              text: `${Math.round(option.originRoad.distanceKm)} km jusqu'à ${option.sailing.from.name}`,
+            },
+            { icon: "⛴️", time: option.sailing.durationMin ?? 0, text: "de traversée" },
+            {
+              icon: "🚗",
+              time: option.destinationRoad.durationMin,
+              text: `${Math.round(option.destinationRoad.distanceKm)} km jusqu'à ${destination}`,
+            },
+          ].map((leg, index) => (
+            <span
+              key={index}
+              className={`min-w-0 rounded-lg px-2 py-1.5 ${index === 1 ? "bg-[#e6f0f7]" : "bg-secondary/70"}`}
+            >
+              <span className="flex items-center gap-1 whitespace-nowrap text-sm font-bold tabular-nums">
+                <span aria-hidden>{leg.icon}</span> {formatDuration(leg.time)}
               </span>
-            ))}
-          </span>
-          <strong className="block truncate text-[15px] leading-tight">
-            {option.sailing.from.name} → {option.sailing.to.name}
-          </strong>
-          <span className="block text-xs text-muted-foreground">
-            {formatDuration(option.totalMinutes)} de porte à porte ·{" "}
-            {formatDuration(option.sailing.durationMin ?? 0)} de mer ·{" "}
-            {Math.round(option.originRoad.distanceKm)} km jusqu'au port
-            {simulated ? " · horaires pas encore publiés" : ""}
-          </span>
+              <span className="mt-0.5 block text-[11px] leading-tight text-muted-foreground">
+                {leg.text}
+              </span>
+            </span>
+          ))}
         </span>
-        <span className="shrink-0 text-right">
-          <strong className="block text-[15px] tabular-nums">
-            ≈ {numberFormat.format(option.totalEuro)} €
-          </strong>
-          <span className="block text-[10px] text-muted-foreground">route + ferry</span>
-        </span>
-        <ChevronDown
-          size={16}
-          aria-hidden
-          className={`shrink-0 text-muted-foreground transition-transform ${open ? "rotate-180" : ""}`}
-        />
+        {simulated ? (
+          <span className="mt-1 block text-[11px] text-muted-foreground">
+            Horaires pas encore publiés : heures estimées.
+          </span>
+        ) : null}
       </button>
       {open ? (
         <div className="border-t px-3 pb-3 pt-3">

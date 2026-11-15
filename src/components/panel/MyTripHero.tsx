@@ -1,6 +1,7 @@
+import { Bw504Button, Bw504Note } from "@/components/companion/Bw504Note";
 import { CabasImg } from "@/components/CabasImg";
 import { crossingProgress, ferryLeft, replacedTime } from "@/lib/ferry/crossingProgress";
-import { delayLabel, reportedCrossing } from "@/lib/ferry/tracking";
+import { delayLabel, formatAge, reportedCrossing } from "@/lib/ferry/tracking";
 import { MiniFerry } from "./MiniFerry";
 import { useLiveShips } from "@/lib/ferry/useLiveShips";
 import { VesselAlertTag } from "@/components/panel/VesselAlert";
@@ -435,6 +436,31 @@ export function MyTripHero({
         {tr("ui.myTripHero.maRouteDuBledEtape")}<ArrowRight size={14} aria-hidden />
       </Link>
       )}
+      {phase.phase === "arrived" && arrivedForSure && !held ? (
+        <Bw504Note
+          tone="win"
+          className="mt-3"
+          title={trip.to?.country_code === "DZ" ? "Pouet pouet ! Bien arrivés au bled 🎉" : "Pouet pouet ! Bien rentrés 🎉"}
+          actions={
+            trip.to?.country_code === "DZ" ? (
+              <Bw504Button primary onClick={() => window.location.assign("/preparer-mon-voyage")}>
+                Préparer le retour
+              </Bw504Button>
+            ) : undefined
+          }
+        >
+          {`${trip.vessel?.name ?? "Le navire"} est à quai à ${trip.to?.name ?? "l'arrivée"}.`}
+          {trip.to?.country_code === "DZ" ? " Bonnes vacances, tonton." : " Bon retour à la maison."}
+        </Bw504Note>
+      ) : tracking && progress?.trust === "aged" && progress.scene === "sea" && progress.signalAgeMinutes != null ? (
+        <Bw504Note
+          tone="stuck"
+          className="mt-3"
+          title={`Le navire ne donne plus sa position depuis ${formatAge(progress.signalAgeMinutes).replace(/^il y a /, "")}`}
+        >
+          C'est normal au large, loin des antennes. En attendant, j'estime sa route d'après l'horaire.
+        </Bw504Note>
+      ) : null}
       {closingIn !== null ? (
         <p className="bw-mytrip-hero__closing" role="status">
           {tr("ui.myTripHero.voyageTermineCetteFicheSe")}{" "}

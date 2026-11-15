@@ -1,3 +1,4 @@
+import { Bw504Button, Bw504Note } from "@/components/companion/Bw504Note";
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
@@ -338,6 +339,9 @@ function Welcome({ onStart }: { onStart: () => void }) {
     <div>
       {/* L'envie d'abord : l'Algérie en photos, puis comment on va vous aider. */}
       <AlgeriaCarousel />
+      <Bw504Note className="mt-4" title="Salut tonton ! On charge la 504 ?">
+        Je t'aide à tout préparer, avec des rappels pour ne rien oublier.
+      </Bw504Note>
       <h1 className="mt-5 font-display text-[1.75rem] font-bold leading-tight md:mt-7 md:text-5xl">
         Votre voyage au bled, préparé pas à pas
       </h1>
@@ -695,6 +699,20 @@ function CompanionPage() {
                       </span>
                       <ArrowRight size={20} aria-hidden />
                     </button>
+                  ) : null}
+                  {allDone && !locked ? (
+                    <Bw504Note
+                      tone="win"
+                      className="mt-4"
+                      title="La 504 est chargée 🧳"
+                      actions={
+                        <Bw504Button primary onClick={() => void navigate({ href: bookingSearch(plan) })}>
+                          Comparer les traversées
+                        </Bw504Button>
+                      }
+                    >
+                      Tout est prêt. Reste le bateau : je te montre les traversées à tes dates.
+                    </Bw504Note>
                   ) : null}
                   {allDone && !locked ? (
                     <ReadyDashboard
@@ -2941,11 +2959,17 @@ function SignupGate({ steps, profileDone }: { steps: CompanionStep[]; profileDon
         <Lock size={20} className="text-primary" aria-hidden />
         {profileDone ? "La suite avec un compte gratuit" : "Un compte gratuit pour la suite"}
       </h2>
-      <p className="mt-1 text-sm text-muted-foreground">
-        {profileDone
-          ? "Votre départ et votre calendrier sont prêts. Créez votre compte pour continuer : vos réponses sont gardées."
-          : "Commencez par la première étape sans compte. Pour la suite, il faut un compte gratuit : vos réponses sont gardées."}
-      </p>
+      {profileDone ? (
+        <Bw504Note className="mt-2" title="Ton départ est prêt, on garde tout ?">
+          Sans compte, tes réponses restent sur ce téléphone et je ne peux pas t'envoyer de rappels.
+        </Bw504Note>
+      ) : null}
+      {profileDone ? null : (
+        <p className="mt-1 text-sm text-muted-foreground">
+          Commencez par la première étape sans compte. Pour la suite, il faut un compte gratuit : vos
+          réponses sont gardées.
+        </p>
+      )}
       <ol className="mt-3 grid gap-2">
         {steps.map((step, index) => (
           <li

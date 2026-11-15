@@ -1,3 +1,4 @@
+import { BookingReturnNote } from "@/components/companion/BookingReturnNote";
 import { vesselCompanyIds } from "@/lib/ferry/filterSync";
 import { track } from "@/lib/usage";
 import { HomeTraffic } from "./HomeTraffic";
@@ -983,6 +984,7 @@ export function SearchPanel({
                   <option value="duration">{tr("ui.searchPanel.duree")}</option>
                 </select>
               </label>
+              <BookingReturnNote className="mb-3" />
               {showTrips ? (
                 <RoundTripSection
                   trips={roundTrips}

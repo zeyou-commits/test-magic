@@ -1,3 +1,4 @@
+import { markBookingLeave } from "@/lib/companion/bookingReturn";
 import { VesselAlertTag } from "@/components/panel/VesselAlert";
 import { useVesselAlert } from "@/lib/ferry/vesselAlerts";
 import { track } from "@/lib/usage";
@@ -296,7 +297,10 @@ export function RoundTripCard({
           href={bookHref}
           target="_blank"
           rel="noopener noreferrer"
-          onClick={() => track("booking_click", bookSite)}
+          onClick={() => {
+            track("booking_click", bookSite);
+            markBookingLeave(bookSite);
+          }}
           title={tr("ui.roundTripCard.tarifMoyenIndicatifAllerRetour")}
           className="ml-auto inline-flex h-8 shrink-0 items-center gap-1 rounded-full bg-cta px-3 text-xs font-semibold tabular-nums text-cta-foreground shadow-sm transition hover:brightness-110 active:scale-95"
         >

@@ -1,3 +1,4 @@
+import { markBookingLeave } from "@/lib/companion/bookingReturn";
 import { isTowardsSouth } from "@/lib/ferry/markets";
 import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import { createPortal } from "react-dom";
@@ -1907,6 +1908,7 @@ export function ItineraryPlanner({
                                 href={bookingUrl(option.sailing, profile)}
                                 target="_blank"
                                 rel="noreferrer"
+                                onClick={() => markBookingLeave(bookingSite(option.sailing))}
                                 className="inline-flex min-h-10 w-full items-center justify-center gap-2 rounded-xl border border-primary bg-white px-4 text-sm font-bold text-primary"
                               >
                                 {tr("ui.itineraryPlanner.reserverSur")}{bookingSite(option.sailing)} <ArrowRight className="size-4" aria-hidden />

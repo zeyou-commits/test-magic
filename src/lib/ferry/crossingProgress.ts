@@ -148,6 +148,8 @@ export function crossingProgress(
     times,
     trust: shownTrust,
     trustLabel: trustLabel(shownTrust, signal?.ageMinutes ?? null),
+    /** Âge du dernier signal du navire (minutes), s'il en a envoyé un. */
+    signalAgeMinutes: signal?.ageMinutes ?? null,
     arrivalDue,
     ratio: ratio === null ? null : Math.max(0, Math.min(1, ratio)),
     source: hold

@@ -1,3 +1,4 @@
+import { Bw504Button, Bw504Note } from "@/components/companion/Bw504Note";
 import {
   JOURNEY_LAYOUT_EVENT,
   publishFilmFrame,
@@ -378,14 +379,38 @@ function Index() {
   useEffect(() => {
     if (!voyageOn || !voyageReady || hasVoyageTrip) return;
     setVoyageOn(false);
-    toast("Aucune traversée suivie pour l'instant", {
-      description:
-        "Suivez votre traversée, ou celle d'un proche : elle s'affichera ici, étape par étape.",
-      action: {
-        label: "Simuler mon trajet",
-        onClick: () => window.dispatchEvent(new Event("bledway:open-itinerary")),
-      },
-    });
+    // La 504 dit quoi faire : ajouter son billet, ou simuler le trajet en attendant.
+    toast.custom(
+      (id) => (
+        <Bw504Note
+          title="Pas encore de traversée ici"
+          actions={
+            <>
+              <Bw504Button
+                primary
+                onClick={() => {
+                  toast.dismiss(id);
+                  window.location.assign("/compte");
+                }}
+              >
+                Ajouter mon billet
+              </Bw504Button>
+              <Bw504Button
+                onClick={() => {
+                  toast.dismiss(id);
+                  window.dispatchEvent(new Event("bledway:open-itinerary"));
+                }}
+              >
+                Simuler mon trajet
+              </Bw504Button>
+            </>
+          }
+        >
+          Ajoute ton billet, ou suis celui d'un proche : je suis le navire et je te préviens s'il y a du retard.
+        </Bw504Note>
+      ),
+      { duration: 9000 },
+    );
   }, [voyageOn, voyageReady, hasVoyageTrip]);
   // Des tableaux stables pour la carte : elle ne recadre que si l'étape change vraiment.
   const voyageFitKey = voyage?.mapProps.fitPortIds.join("|") ?? "";

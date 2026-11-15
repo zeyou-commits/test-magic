@@ -1,3 +1,4 @@
+import { markBookingLeave } from "@/lib/companion/bookingReturn";
 import { VesselAlertTag } from "@/components/panel/VesselAlert";
 import { useVesselAlert } from "@/lib/ferry/vesselAlerts";
 import { track } from "@/lib/usage";
@@ -210,7 +211,10 @@ export function SailingCard({
             href={href}
             target="_blank"
             rel="noopener noreferrer"
-            onClick={() => track("booking_click", sailing.company?.name)}
+            onClick={() => {
+              track("booking_click", sailing.company?.name);
+              markBookingLeave(bookingSite(sailing));
+            }}
             className="ml-auto inline-flex h-8 shrink-0 items-center gap-1 rounded-full bg-cta px-3 md:ml-0 text-xs font-semibold text-cta-foreground shadow-sm transition hover:brightness-110 active:scale-95"
             title={`Voir l’offre sur ${bookingSite(sailing)} · budget estimé ${formatEuro(fare.amount)} (${formatFareRange(fare)})`}
           >
@@ -338,6 +342,7 @@ export function SailingDetail({
             href={bookingHref}
             target="_blank"
             rel="noopener noreferrer"
+            onClick={() => markBookingLeave(bookingSite(sailing))}
             className="ml-auto inline-flex h-8 items-center gap-1 rounded-full bg-cta px-3 font-semibold text-cta-foreground shadow-sm transition hover:brightness-110 active:scale-95"
           >
             {tr("ui.sailingCard.voirLOffre")}<ArrowUpRight className="size-3.5" aria-hidden />

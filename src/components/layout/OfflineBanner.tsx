@@ -1,7 +1,5 @@
 import { useEffect, useState } from "react";
-import { WifiOff } from "lucide-react";
 import { offlineSavedAt } from "@/lib/offline";
-import { tr } from "@/lib/i18n";
 
 /** Sans réseau (en mer, au port) : on dit d'où viennent les informations affichées. */
 export function OfflineBanner() {
@@ -26,10 +24,11 @@ export function OfflineBanner() {
     : null;
   return (
     <div className="bw-offline-banner" role="status">
-      <WifiOff size={15} aria-hidden />
+      <img src="/cabas/persos/voiture_504.webp" alt="" width={26} height={26} className="shrink-0" />
       <span>
-        <b>{tr("ui.offlineBanner.horsLigne")}</b>
-        {time ? ` : votre voyage tel qu’enregistré à ${time}.` : "."}{tr("ui.offlineBanner.ilSeMetAJour")}
+        <b>Pas de réseau, pas de panique.</b>{" "}
+        {time ? `Ton voyage est là, tel qu’enregistré à ${time}. ` : "Ton voyage est gardé sur le téléphone. "}
+        Ça se remet à jour dès que ça capte.
       </span>
     </div>
   );

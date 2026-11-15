@@ -210,7 +210,7 @@ export function MapStats({
       {/* Raccourcis empilés à la verticale, icône au-dessus du nombre : colonne étroite, sans
           libellé (le nom complet reste lu par les lecteurs d'écran et affiché au survol).
           Mobile : à gauche, sous la légende, pour dégager l'est de la carte (ports italiens). */}
-      <div className="flex w-max flex-col items-stretch md:ml-auto gap-0.5 rounded-2xl border border-border bg-background/95 p-1 shadow-md backdrop-blur md:shadow-lg">
+      <div data-tour="filters" className="flex w-max flex-col items-stretch md:ml-auto gap-0.5 rounded-2xl border border-border bg-background/95 p-1 shadow-md backdrop-blur md:shadow-lg">
         {search ? <div className="border-b border-border pb-0.5">{search}</div> : null}
         {shortcuts.map(({ id, label, title, count, icon }) => (
           <button

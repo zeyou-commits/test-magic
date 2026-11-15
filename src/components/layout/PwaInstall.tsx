@@ -101,7 +101,7 @@ export function PwaInstall() {
   if (dismissed || (!prompt && !showIos && !manual)) return null;
   return (
     <aside
-      className="fixed bottom-20 left-4 right-4 z-[90] mx-auto max-w-sm rounded-2xl border border-primary/15 bg-card p-4 shadow-2xl md:bottom-5 md:left-auto md:right-5"
+      className="bw-pwa-install fixed bottom-20 left-4 right-4 z-[90] mx-auto max-w-sm rounded-2xl border border-primary/15 bg-card p-4 shadow-2xl md:bottom-5 md:left-auto md:right-5"
       aria-label={tr("ui.pwaInstall.installerBledway")}
     >
       <div className="flex items-start gap-3">

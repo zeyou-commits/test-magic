@@ -73,6 +73,7 @@ export function MobileTabBar({
 
   return (
     <nav
+      data-tour="nav"
       aria-label={t("menu.mobileNav")}
       className={`pointer-events-auto flex h-[60px] w-full items-center justify-around border-t bg-background/95 px-1 pb-[env(safe-area-inset-bottom)] shadow-[0_-4px_20px_rgba(0,0,0,0.05)] backdrop-blur ${className}`}
     >
@@ -121,6 +122,7 @@ export function MobileTabBar({
           onClick={onOpenSearch}
           data-active={activeTab === "search"}
           className={bookClass}
+          data-tour="book"
           aria-label={t("menu.bookLabel")}
         >
           <span className={bookIcon}>
@@ -133,6 +135,7 @@ export function MobileTabBar({
           to="/"
           onClick={openSearchFromHeader}
           className={bookClass}
+          data-tour="book"
           aria-label={t("menu.bookLabel")}
         >
           <span className={bookIcon}>
@@ -165,7 +168,7 @@ export function MobileTabBar({
         </Link>
       )}
 
-      <button type="button" onClick={openSalons} className={itemClass}>
+      <button type="button" onClick={openSalons} className={itemClass} data-tour="salons">
         <MessagesSquare className="size-5" aria-hidden />
         <span>{t("menu.tabSalons")}</span>
       </button>

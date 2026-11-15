@@ -199,7 +199,7 @@ export function SiteHeader() {
     <header className="bw-header" ref={headerRef}>
       <div className="bw-header-inner">
         <BrandLink />
-        <nav aria-label={t("menu.mainNav")} className="bw-desktop-nav">
+        <nav aria-label={t("menu.mainNav")} className="bw-desktop-nav" data-tour="nav">
           {/* Dans l'ordre du voyage : préparer, réserver, puis suivre. */}
           {desktopFamilies.slice(0, 1).map(renderFamily)}
           <Link
@@ -207,6 +207,7 @@ export function SiteHeader() {
             onClick={openSearchFromHeader}
             activeProps={{ className: "" }}
             className="bw-book-button"
+            data-tour="book"
             aria-label={t("menu.bookLabel")}
           >
             <CalendarCheck size={16} aria-hidden />
@@ -229,11 +230,11 @@ export function SiteHeader() {
             </Link>
           ) : null}
           <QuestionButton />
-          <span className="hidden md:inline-flex">
+          <span className="hidden md:inline-flex" data-tour="profile">
             <UserMenu compact iconOnly />
           </span>
           {/* Téléphone : le compte est ici, le menu ☰ est le dernier onglet de la barre du bas. */}
-          <span className="bw-header-me-slot">
+          <span className="bw-header-me-slot" data-tour="profile">
             <MeTab className="bw-header-me" placement="below" />
           </span>
           <MainMenuSheet triggerClassName="bw-mobile-menu bw-icon-button" label={t("menu.open")}>

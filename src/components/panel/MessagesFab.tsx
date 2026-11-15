@@ -80,6 +80,7 @@ export function MessagesFab({ onSelect }: { onSelect: (selection: Selection) => 
       <button
         type="button"
         className="bw-messages-fab"
+        data-tour="salons"
         aria-label={count ? `Salons, ${count} messages` : tr("ui.messagesFab.salons")}
         onClick={() => openMine()}
       >

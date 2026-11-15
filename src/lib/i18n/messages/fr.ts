@@ -194,6 +194,34 @@ export const fr = {
       companyToConfirm: "Compagnie à confirmer",
     },
   },
+  tour: {
+    book: {
+      title: "Réservez votre traversée",
+      body: "Tous les départs de toutes les compagnies au même endroit, avec la durée, le navire et le budget estimé.",
+    },
+    filters: {
+      title: "Filtrez la carte",
+      body: "Navires en mer, à quai, ports, phares : touchez une icône pour ne voir que ce qui vous intéresse. La loupe trouve un port ou un navire.",
+    },
+    salons: {
+      title: "Les salons des voyageurs",
+      body: "Une question, une file au port, un retard ? Échangez avec ceux qui font la même traversée que vous.",
+    },
+    nav: {
+      title: "Votre voyage, étape par étape",
+      body: "La navigation suit votre voyage : les papiers avant le départ, la traversée à réserver, puis votre navire en direct.",
+    },
+    profile: {
+      title: "Votre espace",
+      body: "Vos traversées suivies, vos alertes et vos salons, retrouvés sur tous vos appareils.",
+    },
+    next: "Suivant",
+    previous: "Précédent",
+    done: "C'est parti",
+    skip: "Quitter",
+    progress: "{current} sur {total}",
+    replay: "Revoir la visite guidée",
+  },
   language: {
     label: "Langue",
     fr: "Français",

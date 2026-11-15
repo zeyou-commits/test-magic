@@ -8,6 +8,7 @@
 @import "./route-preview.css";
 @import "./entity.css";
 @import "./mobile.css";
+@import "./tour.css";
 
 @custom-variant dark (&:is(.dark *));
 

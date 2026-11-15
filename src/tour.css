@@ -1,0 +1,122 @@
+/* Visite guidée : bulle Driver.js aux couleurs de BledWay. Fond blanc (la flèche de Driver.js est blanche). */
+@import "driver.js/dist/driver.css";
+
+.driver-popover.bw-tour {
+  min-width: 0;
+  width: min(340px, calc(100vw - 32px));
+  max-width: none;
+  padding: 18px 18px 14px;
+  border-radius: 18px;
+  background: #ffffff;
+  color: #16324a;
+  font-family: var(--font-sans);
+  box-shadow: 0 18px 50px rgba(11, 31, 46, 0.35);
+}
+.driver-popover.bw-tour .driver-popover-title {
+  padding-right: 28px;
+  font-family: var(--font-display);
+  font-size: 18px;
+  font-weight: 800;
+  line-height: 1.25;
+}
+.driver-popover.bw-tour .driver-popover-description {
+  margin-top: 6px;
+  color: #4b5a55;
+  font-size: 15px;
+  line-height: 1.5;
+}
+.driver-popover.bw-tour .driver-popover-close-btn {
+  top: 8px;
+  right: 8px;
+  width: 36px;
+  height: 36px;
+  border-radius: 999px;
+  color: #8a958f;
+  font-size: 22px;
+}
+.driver-popover.bw-tour .driver-popover-close-btn:hover {
+  color: #16324a;
+  background: #f1efe8;
+}
+.driver-popover.bw-tour .driver-popover-footer {
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 16px;
+}
+/* « 1 sur 3 » au-dessus des boutons, pour que « Quitter » et « Suivant » restent bien séparés. */
+.driver-popover.bw-tour .driver-popover-progress-text {
+  order: -1;
+  flex-basis: 100%;
+  color: #8a958f;
+  font-size: 12.5px;
+  font-weight: 600;
+}
+.driver-popover.bw-tour .driver-popover-navigation-btns {
+  flex-grow: 0;
+  margin-left: auto;
+}
+.driver-popover.bw-tour .driver-popover-footer-btn,
+.driver-popover.bw-tour .bw-tour__skip {
+  all: unset;
+  box-sizing: border-box;
+  display: inline-flex;
+  min-height: 44px;
+  align-items: center;
+  justify-content: center;
+  padding: 0 18px;
+  border-radius: 12px;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.driver-popover.bw-tour .driver-popover-next-btn {
+  background: #0e7a43;
+  color: #ffffff;
+  text-shadow: none;
+}
+.driver-popover.bw-tour .driver-popover-next-btn:hover,
+.driver-popover.bw-tour .driver-popover-next-btn:focus-visible {
+  background: #0b6638;
+}
+.driver-popover.bw-tour .driver-popover-navigation-btns {
+  gap: 8px;
+}
+.driver-popover.bw-tour .driver-popover-navigation-btns button + button {
+  margin-left: 0;
+}
+.driver-popover.bw-tour .driver-popover-prev-btn {
+  border: 1px solid #d9d4c7;
+  background: #ffffff;
+  color: #16324a;
+}
+.driver-popover.bw-tour .driver-popover-prev-btn:hover {
+  background: #f1efe8;
+}
+/* Première étape : pas de « Précédent » grisé, il disparaît. */
+.driver-popover.bw-tour .driver-popover-prev-btn.driver-popover-btn-disabled {
+  display: none;
+}
+.driver-popover.bw-tour .bw-tour__skip {
+  padding: 0 10px;
+  color: #4b5a55;
+  font-weight: 600;
+}
+.driver-popover.bw-tour .bw-tour__skip:hover,
+.driver-popover.bw-tour .bw-tour__skip:focus-visible {
+  color: #16324a;
+  background: #f1efe8;
+}
+.driver-popover.bw-tour :focus-visible {
+  outline: 2px solid #0e7a43;
+  outline-offset: 2px;
+}
+.driver-popover.bw-tour .driver-popover-arrow {
+  border-width: 7px;
+}
+
+/* Pendant la visite, les fenêtres flottantes se taisent pour ne pas masquer la zone éclairée. */
+html[data-tour-active] .bw-pwa-install,
+html[data-tour-active] .bw-phone-install,
+html[data-tour-active] .bw-messages-preview {
+  visibility: hidden;
+}

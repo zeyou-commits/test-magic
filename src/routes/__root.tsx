@@ -28,6 +28,7 @@ import { MobileTabBar } from "@/components/layout/MobileTabBar";
 import { SiteHeader } from "@/components/layout/SiteLayout";
 import { TravelActionProvider } from "@/components/auth/TravelActionProvider";
 import { tr } from "@/lib/i18n";
+import { ProductTour } from "@/components/tour/ProductTour";
 
 function NotFoundComponent() {
   return (
@@ -264,6 +265,7 @@ function RootComponent() {
             )}
             <OfflineBanner />
             <PwaInstall />
+            {/^\/admin(\/|$)/.test(pathname) ? null : <ProductTour />}
             <LocationHelp />
             <ProfileHost />
             <Toaster />

@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type CSSProperties } from "react";
 import { createPortal } from "react-dom";
 import { RecapPreview, type PreviewRow } from "./RecapPreview";
+import { Scene, type SceneKey } from "./IntroScenes";
 import {
   ArrowLeft,
   ArrowRight,
@@ -10,7 +11,6 @@ import {
   PencilLine,
   Route as RouteIcon,
   Smartphone,
-  Users,
   Wallet,
   type LucideIcon,
 } from "lucide-react";
@@ -21,9 +21,8 @@ type Slide = {
   title: string;
   text: string;
   chips: { label: string; icon?: LucideIcon }[];
-  /** Une scène du voyage ; sans scène, la diapo montre le récap d'exemple. */
-  scene?: { src: string; alt: string };
-  icon?: LucideIcon;
+  /** La scène animée de la diapo ; sans scène, la diapo montre le récap d'exemple. */
+  scene?: SceneKey;
 };
 
 const slides: Slide[] = [
@@ -32,7 +31,7 @@ const slides: Slide[] = [
     eyebrow: "Préparer mon voyage",
     title: "On fait connaissance ?",
     text: "Quelques questions, une à la fois, et BledWay prépare tout votre voyage au bled.",
-    scene: { src: "/illustrations/voyage/retrouvailles.webp", alt: "La famille réunie à l'arrivée au bled" },
+    scene: "bonjour",
     chips: [
       { label: "5 min", icon: Clock3 },
       { label: "Modifiable", icon: PencilLine },
@@ -44,8 +43,7 @@ const slides: Slide[] = [
     eyebrow: "Chapitre 1 sur 3",
     title: "Vous et votre départ",
     text: "Quand vous partez, qui part, et avec quelle voiture.",
-    scene: { src: "/illustrations/voyage/depart-a-laube.webp", alt: "La voiture chargée qui part à l'aube" },
-    icon: Users,
+    scene: "depart",
     chips: [{ label: "Dates" }, { label: "Voyageurs" }, { label: "Véhicule" }],
   },
   {
@@ -53,8 +51,7 @@ const slides: Slide[] = [
     eyebrow: "Chapitre 2 sur 3",
     title: "Vos papiers et votre voiture",
     text: "La liste de chacun, avec les dates à tenir pour être prêt à temps.",
-    scene: { src: "/illustrations/voyage/billets-au-port.webp", alt: "Les billets et les passeports prêts au port" },
-    icon: FileText,
+    scene: "papiers",
     chips: [{ label: "Passeports" }, { label: "Visas" }, { label: "Voiture" }],
   },
   {
@@ -62,8 +59,7 @@ const slides: Slide[] = [
     eyebrow: "Chapitre 3 sur 3",
     title: "Votre route et votre budget",
     text: "Les ports les plus adaptés, ce que coûte le voyage, puis le billet.",
-    scene: { src: "/illustrations/voyage/route-du-soleil.webp", alt: "La route du soleil vers le port" },
-    icon: RouteIcon,
+    scene: "route",
     chips: [{ label: "Ports" }, { label: "Budget" }, { label: "Billet" }],
   },
   {
@@ -186,7 +182,6 @@ export function PrepareIntro({ onBack, onGo }: { onBack: () => void; onGo: () =>
           onTouchStart={() => setAuto(false)}
         >
           {slides.map((slide, i) => {
-            const Icon = slide.icon;
             const Heading = i === 0 ? "h1" : "h2";
             return (
               <section
@@ -197,14 +192,7 @@ export function PrepareIntro({ onBack, onGo }: { onBack: () => void; onGo: () =>
                 aria-roledescription="diapo"
               >
                 {slide.scene ? (
-                  <figure className="bw-onb__art">
-                    <img src={slide.scene.src} alt={slide.scene.alt} draggable={false} />
-                    {Icon ? (
-                      <span className="bw-onb__badge" aria-hidden>
-                        <Icon size={20} />
-                      </span>
-                    ) : null}
-                  </figure>
+                  <Scene name={slide.scene} />
                 ) : (
                   <div className="bw-onb__recap">
                     <RecapPreview

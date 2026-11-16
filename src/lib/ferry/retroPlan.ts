@@ -146,7 +146,7 @@ export function papersDeadlines(
 export const BINATIONAL_MEASURE_END_DAY = "2026-12-31";
 
 export function retroPlan(
-  plan: Pick<CompanionPlan, "month" | "date" | "window" | "vehicle" | "done">,
+  plan: Pick<CompanionPlan, "month" | "date" | "window" | "vehicle" | "done" | "ticket">,
   papers: { answers: Answers; finished: boolean; done: string[] },
   today = new Date().toISOString().slice(0, 10),
 ): Milestone[] {
@@ -241,7 +241,7 @@ export function retroPlan(
           : "Dès que les démarches longues sont lancées : un papier qui manque ne rembourse pas un billet non remboursable."
         : "Vos papiers ne demandent pas de délai particulier : vous pouvez réserver dès que la période est fixée.",
     tasks: [],
-    done: plan.done.includes("book"),
+    done: Boolean(plan.ticket),
   });
 
   const months3 = of("months3");

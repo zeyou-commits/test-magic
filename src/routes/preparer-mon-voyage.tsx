@@ -428,13 +428,18 @@ function CompanionPage() {
   const locked = !user;
   const isLocked = (step: CompanionStep | null) => locked && step !== null && step !== "profile";
 
+  // L'étape demandée dans l'adresse (?etape=papers, retour de connexion ou de la page à partager),
+  // lue une seule fois : l'adresse est nettoyée juste après, et l'effet peut repasser.
+  const askedStep = useRef<string | null | undefined>(undefined);
   useEffect(() => {
     const saved = loadPlan();
     const travel = readTravelProfile();
     const start = saved ?? { ...defaultPlan(), ...(travel ? { vehicle: travel.vehicle } : {}) };
     setPlan(start);
     // Retour depuis la page à partager : on revient sur l'étape d'où l'on venait (son récap).
-    const asked = new URLSearchParams(window.location.search).get("etape");
+    if (askedStep.current === undefined)
+      askedStep.current = new URLSearchParams(window.location.search).get("etape");
+    const asked = askedStep.current;
     const wanted = companionSteps(start).find((step) => step === asked);
     setOpen(
       wanted ??
@@ -442,7 +447,7 @@ function CompanionPage() {
           ? null
           : (companionSteps(start).find((step) => !start.done.includes(step)) ?? null)),
     );
-    if (wanted) window.history.replaceState(null, "", window.location.pathname);
+    if (wanted) window.history.replaceState(window.history.state, "", window.location.pathname);
     setLoaded(true);
   }, []);
   useEffect(() => {
@@ -500,9 +505,15 @@ function CompanionPage() {
   }, [loaded, choices, fromChoice, toPort, plan.home]);
 
   const steps = companionSteps(plan);
-  const doneCount = steps.filter((step) => plan.done.includes(step)).length;
-  const allDone = doneCount === steps.length;
-  // Le voyage est prêt et l'on est sur le tableau : place au récap global.
+  // Une route parcourue sans ports reste « à compléter » : on le dit, on ne bloque rien.
+  // « Fait » = le voyageur l'a validée ET elle contient quelque chose.
+  const isEmpty = (step: CompanionStep) => step === "route" && !(fromChoice && toPort);
+  const isDone = (step: CompanionStep) => plan.done.includes(step) && !isEmpty(step);
+  const doneSteps = steps.filter(isDone);
+  const doneCount = doneSteps.length;
+  const completeAll = doneCount === steps.length;
+  // Toutes les étapes parcourues : place au récap global (les vides y restent signalées).
+  const allDone = steps.every((step) => plan.done.includes(step));
   const ready = allDone && !locked;
 
   const openStep = (step: CompanionStep | null) => {
@@ -562,7 +573,7 @@ function CompanionPage() {
   const summaries = useSummaries(plan, papers, fromChoice, toPort);
   useDeadlineSync(user?.id ?? null, plan, papers, loaded && papers.loaded);
 
-  const nextStep = steps.find((step) => !plan.done.includes(step) && !isLocked(step)) ?? null;
+  const nextStep = steps.find((step) => !isDone(step) && !isLocked(step)) ?? null;
   const wizSteps = steps.filter((step) => !isLocked(step));
   const inWizard = open !== null && wizSteps.includes(open);
   const stepAfter = (step: CompanionStep) => steps[steps.indexOf(step) + 1] ?? null;
@@ -644,6 +655,7 @@ function CompanionPage() {
           toPort={toPort}
           onSee={goBooking}
           onBudget={() => openStep("budget")}
+          onTicket={(ticket) => patch({ ticket })}
           onFinish={() => {
             if (!plan.done.includes("book")) patch({ done: [...plan.done, "book"] });
             setOpen(null);
@@ -738,9 +750,9 @@ function CompanionPage() {
                   Préparer mon voyage
                 </h1>
                 <span
-                  className={`shrink-0 rounded-full px-3 py-1 text-sm font-bold ${allDone ? "bg-primary text-primary-foreground" : "bg-secondary"}`}
+                  className={`shrink-0 rounded-full px-3 py-1 text-sm font-bold ${completeAll ? "bg-primary text-primary-foreground" : "bg-secondary"}`}
                 >
-                  {allDone ? "Prêt" : `${doneCount}/${steps.length}`}
+                  {completeAll ? "Récap complet" : `${doneCount}/${steps.length}`}
                   <span className="sr-only"> étapes faites</span>
                 </span>
               </div>
@@ -749,7 +761,7 @@ function CompanionPage() {
                 <StepFrieze
                   steps={steps}
                   open={open}
-                  done={plan.done}
+                  done={doneSteps}
                   locked={isLocked}
                   onOpen={openStep}
                   hasRecap={hasRecap}
@@ -809,8 +821,12 @@ function CompanionPage() {
                               id={step}
                               index={index + 1}
                               title={stepTitles[step]}
-                              summary={summaries[step]}
-                              done={plan.done.includes(step)}
+                              summary={
+                                isEmpty(step) && plan.done.includes(step)
+                                  ? "À compléter : choisissez vos ports"
+                                  : summaries[step]
+                              }
+                              done={isDone(step)}
                               open={false}
                               onToggle={() => openStep(step)}
                             >
@@ -829,7 +845,7 @@ function CompanionPage() {
                     short: stepArt[step].short,
                     title: stepTitles[step],
                     icon: stepArt[step].icon,
-                    done: plan.done.includes(step),
+                    done: isDone(step),
                     recap: hasRecap(step),
                   }))}
                   current={Math.max(0, wizSteps.indexOf(open))}
@@ -893,6 +909,13 @@ function useSummaries(
     fromChoice?.lines.find((l) => l.to.id === toPort?.id)?.route.typical_duration_minutes ?? null;
   const fare =
     fromChoice && toPort ? planFare(plan, fromChoice.port, toPort, { adults, children }) : null;
+  const back =
+    fromChoice && toPort && plan.returnDate
+      ? planFare({ ...plan, date: plan.returnDate, window: null }, fromChoice.port, toPort, {
+          adults,
+          children,
+        })
+      : null;
   return {
     profile: [
       capitalize(planWhenLabel(plan)),
@@ -912,9 +935,13 @@ function useSummaries(
     car: `${carReady} sur ${carItems.length} faits${plan.importCar ? " · import" : ""}`,
     route: line ? `${line}${duration ? ` · ${formatDuration(duration)} de traversée` : ""}` : null,
     budget: fare
-      ? `${formatFareRange(fare)} l'aller · ${seasonLabels[fare.season].toLowerCase()}`
+      ? back
+        ? `${formatFareRange({ ...fare, low: fare.low + back.low, high: fare.high + back.high })} les traversées aller et retour`
+        : `${formatFareRange(fare)} l'aller · ${seasonLabels[fare.season].toLowerCase()}`
       : null,
-    book: line ? `${line} · ${planWhenLabel(plan)}` : null,
+    book: line
+      ? `${line} · ${planWhenLabel(plan)} · ${plan.ticket ? "billet pris" : "billet à prendre"}`
+      : null,
   };
 }
 
@@ -1628,6 +1655,7 @@ function RouteStep({
         adults={people(papers.answers).adults}
         children={people(papers.answers).children}
         onPickPorts={(fromPortId, toPortId) => patch({ fromPortId, toPortId, portsChosen: true })}
+        onRecommend={(fromPortId, toPortId) => patch({ fromPortId, toPortId })}
       />
 
       <div className="bw-route__acts">
@@ -1793,13 +1821,13 @@ function BudgetStep({
               <Bw504Button primary onClick={onOpenRoute}>
                 Choisir mes ports
               </Bw504Button>
-              <Bw504Button onClick={onDone}>Pas besoin de budget</Bw504Button>
             </>
           }
         >
-          Le prix dépend du port de départ et d'arrivée. Choisis-les en un geste, ou passe cette
-          étape : elle ne restera pas marquée à faire.
+          Le prix dépend du port de départ et d'arrivée. Choisis-les en un geste, ou continue sans
+          budget : c'est toi qui décides.
         </Bw504Note>
+        <NextButton label="Continuer sans budget" onClick={onDone} />
       </div>
     );
   const fare = planFare(plan, fromChoice.port, toPort, group);
@@ -1807,9 +1835,18 @@ function BudgetStep({
   const hot = fare.season === "pointe" || fare.season === "forte";
   return (
     <div className="pt-4">
-      <div className="rounded-2xl border p-4 md:p-5">
+      <TripBudget
+        plan={plan}
+        fromChoice={fromChoice}
+        toPort={toPort}
+        people={group}
+        onDetail={() =>
+          document.getElementById("budget-aller")?.scrollIntoView({ block: "start", behavior: "smooth" })
+        }
+      />
+      <div id="budget-aller" className="mt-3 scroll-mt-4 rounded-2xl border p-4 md:p-5">
         <p className="text-sm text-muted-foreground">
-          {fromChoice.port.name} → {toPort.name} · aller simple · départ {planWhenLabel(plan)}
+          Le détail de l'aller · {fromChoice.port.name} → {toPort.name} · départ {planWhenLabel(plan)}
         </p>
         <p className="mt-1 font-display text-3xl font-bold md:text-4xl">{formatFareRange(fare)}</p>
         <p className="mt-1 text-sm">
@@ -1893,6 +1930,7 @@ function BookStep({
   toPort,
   onSee,
   onBudget,
+  onTicket,
   onFinish,
 }: {
   plan: CompanionPlan;
@@ -1901,6 +1939,7 @@ function BookStep({
   toPort: Port | null;
   onSee: () => void;
   onBudget: () => void;
+  onTicket: (ticket: boolean) => void;
   onFinish: () => void;
 }) {
   const group = people(answers);
@@ -1952,6 +1991,20 @@ function BookStep({
           toName={toPort?.name ?? null}
           onSee={onSee}
         />
+        <label className="flex min-h-12 cursor-pointer items-center gap-3 rounded-2xl border p-4 text-sm font-semibold">
+          <input
+            type="checkbox"
+            className="size-5 accent-[var(--primary)]"
+            checked={Boolean(plan.ticket)}
+            onChange={(event) => onTicket(event.target.checked)}
+          />
+          <span>
+            J'ai mon billet
+            <span className="block text-xs font-normal text-muted-foreground">
+              À cocher quand vous l'avez : la ligne « Réserver » de votre liste passe alors à fait.
+            </span>
+          </span>
+        </label>
       </div>
       <WizardNav next={{ label: "Voir mon récap", onClick: onFinish, icon: ListChecks }} />
       <p className="mt-3 flex items-start gap-2 text-xs text-muted-foreground">
@@ -2077,6 +2130,8 @@ function WhenQuestion({
           backDays={backDays}
           pairLabel={pairLabel}
           today={today}
+          // Le calendrier s'ouvre sur la période annoncée sous lui, pas sur le mois en cours.
+          initialDay={earliestDay(plan)}
           onChange={(change) => {
             const date = change.date === undefined ? plan.date : (change.date ?? "");
             const days = change.flexDays ?? flex;
@@ -3015,7 +3070,7 @@ function ReadyDashboard({
   return (
     <section id="pret" aria-labelledby="pret-titre" className="bw-ready mt-4">
       <h2 id="pret-titre" className="sr-only">
-        Votre voyage est prêt
+        Votre récap est prêt
       </h2>
       {/* Le fil du voyage : chaque ligne rouvre son étape. */}
       <div className="bw-ready__recap">
@@ -3045,7 +3100,7 @@ function ReadyDashboard({
       <Bw504Note
         tone="win"
         className="mt-3"
-        title="Votre voyage est prêt"
+        title="Votre récap est prêt"
         actions={
           <Bw504Button primary onClick={onShare}>
             Partager · PDF
@@ -3166,7 +3221,8 @@ function PrepTools({ canShare, onReset }: { canShare: boolean; onReset: () => vo
  * continuer. Ce qui a déjà été répondu reste sur le téléphone et se retrouve au retour.
  */
 function SignupGate({ steps, profileDone }: { steps: CompanionStep[]; profileDone: boolean }) {
-  const next = encodeURIComponent(PATH);
+  // Après la connexion : droit sur l'étape suivante, pas sur le tableau.
+  const next = encodeURIComponent(profileDone ? `${PATH}?etape=papers` : PATH);
   return (
     <section
       id="compte"
@@ -3178,14 +3234,15 @@ function SignupGate({ steps, profileDone }: { steps: CompanionStep[]; profileDon
         {profileDone ? "La suite avec un compte gratuit" : "Un compte gratuit pour la suite"}
       </h2>
       {profileDone ? (
-        <Bw504Note className="mt-2" title="Ton départ est prêt, on garde tout ?">
-          Sans compte, tes réponses restent sur ce téléphone et je ne peux pas t'envoyer de rappels.
+        <Bw504Note className="mt-2" title="Ton départ est noté, on continue ?">
+          Avec un compte gratuit : tes papiers, ta route, ton budget, et mes rappels. Tes réponses
+          restent sur ce téléphone.
         </Bw504Note>
       ) : null}
       {profileDone ? null : (
         <p className="mt-1 text-sm text-muted-foreground">
-          Commencez par la première étape sans compte. Pour la suite, il faut un compte gratuit :
-          vos réponses sont gardées.
+          Commencez par la première étape sans compte. Pour la suite, il faut un compte gratuit ;
+          vos réponses restent sur cet appareil.
         </p>
       )}
       <ol className="mt-3 grid gap-2">

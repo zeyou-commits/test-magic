@@ -92,11 +92,14 @@ export function RouteTop3({
   adults,
   children,
   onPickPorts,
+  onRecommend,
 }: {
   plan: CompanionPlan;
   adults: number;
   children: number;
   onPickPorts: (fromPortId: string, toPortId: string) => void;
+  /** Le trajet conseillé, tant que le voyageur n'a rien choisi lui-même. */
+  onRecommend?: (fromPortId: string, toPortId: string) => void;
 }) {
   const { data: ports = [] } = useQuery(portsQuery);
   const { data: routes = [] } = useQuery(routesQuery);
@@ -231,6 +234,16 @@ export function RouteTop3({
     days.from,
     days.to,
   ]);
+  // Rien de choisi à la main : la case cochée est celle du conseil, pas le port le plus proche.
+  const advised = top[0]?.option.sailing;
+  const advisedFrom = advised?.from.id;
+  const advisedTo = advised?.to.id;
+  useEffect(() => {
+    if (plan.portsChosen || !advisedFrom || !advisedTo) return;
+    if (plan.fromPortId === advisedFrom && plan.toPortId === advisedTo) return;
+    onRecommend?.(advisedFrom, advisedTo);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [advisedFrom, advisedTo, plan.portsChosen, plan.fromPortId, plan.toPortId]);
   const [openId, setOpenId] = useState<string | null>(null);
   // Un nouveau calcul lancé par le voyageur (ville, destination) : on l'amène sous ses yeux.
   const section = useRef<HTMLElement>(null);

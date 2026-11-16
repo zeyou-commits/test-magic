@@ -43,6 +43,8 @@ interface TripCalendarProps {
   /** « Marseille → Alger » quand un trajet précis est choisi. */
   pairLabel: string | null;
   today: string;
+  /** Sans date choisie : le jour à montrer à l'ouverture (la période annoncée), sinon aujourd'hui. */
+  initialDay?: string | null;
   onChange: (patch: {
     date?: string | null;
     returnDate?: string | null;
@@ -112,6 +114,7 @@ export function TripCalendar({
   estimatedDays,
   pairLabel,
   today,
+  initialDay = null,
   onChange,
   holidaysOn,
   onHolidaysChange,
@@ -120,7 +123,9 @@ export function TripCalendar({
   side = "bottom",
 }: TripCalendarProps) {
   const [zones, setZones] = useState<SchoolZone[]>([]);
-  const [month, setMonth] = useState<Date>(() => keyToDate(date ?? today));
+  const [month, setMonth] = useState<Date>(() =>
+    keyToDate(date ?? (initialDay && initialDay > today ? initialDay : today)),
+  );
   const [note, setNote] = useState<string | null>(null);
   const isMobile = useIsMobile();
   // Deux mois côte à côte seulement quand la carte a la place (volet + 640 px).
@@ -290,7 +295,8 @@ export function TripCalendar({
   // On amène à l'écran le mois de la date en cours (aller, puis retour).
   useEffect(() => {
     if (!stacked || !open) return;
-    const target = keyToDate((field === "ret" ? (returnDate ?? date) : date) ?? today);
+    const fallback = initialDay && initialDay > today ? initialDay : today;
+    const target = keyToDate((field === "ret" ? (returnDate ?? date) : date) ?? fallback);
     const index =
       (target.getFullYear() - firstMonth.getFullYear()) * 12 +
       target.getMonth() -

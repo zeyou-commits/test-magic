@@ -30,6 +30,8 @@ export type CompanionPlan = {
   returnDate?: string | null;
   /** La souplesse sur le jour d'aller (± jours), comme dans « Réserver ». */
   flexDays?: number;
+  /** « J'ai mon billet » : coché par le voyageur, jamais déduit ni vérifié. */
+  ticket?: boolean;
   /** Le calendrier de vacances scolaires affiché : « FR », « FR:C », « BE:FR »… */
   holidays: string;
   /** Le départ se cale sur les vacances scolaires : on montre leur calendrier (non par défaut). */

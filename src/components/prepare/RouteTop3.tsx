@@ -27,9 +27,9 @@ import { defaultTripProfile } from "@/components/panel/TripProfile";
 import { formatDuration, type CompanionPlan } from "@/lib/ferry/companion";
 
 /** Repères de coût routier (mêmes valeurs par défaut que l'itinéraire de la carte). */
-const FUEL_L_PER_100 = 7;
-const FUEL_EURO_PER_L = 1.8;
-const TOLL_EURO_PER_KM = 0.06;
+export const FUEL_L_PER_100 = 7;
+export const FUEL_EURO_PER_L = 1.8;
+export const TOLL_EURO_PER_KM = 0.06;
 
 const numberFormat = new Intl.NumberFormat("fr-FR");
 
@@ -40,7 +40,7 @@ const addDays = (day: string, days: number) => {
 };
 
 /** Les jours où l'on cherche un départ : la période choisie, sinon le jour ±3, sinon le mois. */
-function travelDays(plan: CompanionPlan) {
+export function travelDays(plan: CompanionPlan) {
   if (plan.window) return { from: plan.window.from, to: plan.window.to };
   if (plan.date) return { from: addDays(plan.date, -3), to: addDays(plan.date, 3) };
   return { from: `${plan.month}-01`, to: `${plan.month}-31` };

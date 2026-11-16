@@ -1745,3 +1745,42 @@
   .bw-sc__char, .bw-sc__bub, .bw-sc__doc, .bw-sc__say, .bw-sc__car, .bw-sc__mini { opacity: 1; transform: none; }
   .bw-sc__path path { opacity: 0.7; }
 }
+
+/* ───────── Fin du parcours : budget estimé et traversées de la période ───────── */
+.bw-tbudget {
+  padding: 14px 16px; border: 1px solid color-mix(in oklab, #b7791f 30%, var(--border)); border-radius: 18px;
+  background: linear-gradient(160deg, color-mix(in oklab, #f6c445 12%, var(--card)), var(--card) 70%);
+}
+.bw-tbudget__head {
+  display: flex; align-items: center; gap: 6px; font-size: 0.72rem; font-weight: 800; letter-spacing: 0.06em;
+  text-transform: uppercase; color: #a86a07;
+}
+.bw-tbudget__total {
+  margin-top: 2px; font-family: var(--font-display, inherit); font-size: 1.75rem; font-weight: 800; line-height: 1.15;
+  font-variant-numeric: tabular-nums; letter-spacing: -0.01em;
+}
+.bw-tbudget dl { display: grid; gap: 4px; margin: 10px 0 0; padding-top: 10px; border-top: 1px dashed color-mix(in oklab, #b7791f 30%, var(--border)); }
+.bw-tbudget dl > div { display: flex; justify-content: space-between; gap: 12px; font-size: 0.875rem; }
+.bw-tbudget dt { color: var(--muted-foreground); }
+.bw-tbudget dd { font-weight: 700; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.bw-tbudget__note { margin-top: 8px; font-size: 0.75rem; color: var(--muted-foreground); }
+.bw-tbudget__note button { font-weight: 700; color: var(--primary); text-decoration: underline; text-underline-offset: 3px; }
+.dark .bw-tbudget__head { color: #e5ad55; }
+
+.bw-outlook { padding: 14px 16px; border: 1px solid var(--border); border-radius: 18px; background: var(--card); }
+.bw-outlook > h3 { margin-bottom: 8px; font-family: var(--font-display, inherit); font-size: 1rem; font-weight: 800; }
+.bw-outlook__line { display: flex; align-items: flex-start; gap: 8px; font-size: 0.9rem; line-height: 1.4; }
+.bw-outlook__line > svg { flex: none; margin-top: 2px; }
+.bw-outlook__line[data-tone="ok"] > svg { color: var(--primary); }
+.bw-outlook__line[data-tone="warn"] > svg { color: #b7791f; }
+.bw-outlook__days { display: flex; flex-wrap: wrap; gap: 6px; margin: 10px 0 0; padding: 0; list-style: none; }
+.bw-outlook__days > li {
+  padding: 4px 10px; border-radius: 999px; background: color-mix(in oklab, var(--primary) 10%, transparent);
+  color: var(--primary); font-size: 0.8rem; font-weight: 700;
+}
+.bw-outlook__see {
+  display: inline-flex; min-height: 44px; margin-top: 12px; align-items: center; gap: 8px; padding: 0 16px; border-radius: 12px;
+  background: var(--primary); color: var(--primary-foreground); font-size: 0.875rem; font-weight: 700;
+}
+.bw-outlook__more { display: flex; margin-top: 10px; align-items: flex-start; gap: 6px; font-size: 0.8rem; color: var(--muted-foreground); }
+.bw-outlook__more > svg { flex: none; margin-top: 2px; }

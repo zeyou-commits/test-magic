@@ -140,6 +140,7 @@ import {
 import type { Port } from "@/lib/ferry/types";
 import { seoHead } from "@/lib/seo/site";
 import { SearchBox, splitPlace } from "@/components/SearchBox";
+import { SailingsOutlook, TripBudget } from "@/components/prepare/TripOutlook";
 import { SharePreparation } from "@/components/prepare/SharePreparation";
 import { PrepareIntro } from "@/components/prepare/PrepareIntro";
 import { ConfirmChange } from "@/components/prepare/ConfirmChange";
@@ -501,6 +502,8 @@ function CompanionPage() {
   const steps = companionSteps(plan);
   const doneCount = steps.filter((step) => plan.done.includes(step)).length;
   const allDone = doneCount === steps.length;
+  // Le voyage est prêt et l'on est sur le tableau : place au récap global.
+  const ready = allDone && !locked;
 
   const openStep = (step: CompanionStep | null) => {
     if (isLocked(step)) {
@@ -639,19 +642,12 @@ function CompanionPage() {
           answers={papers.answers}
           fromChoice={fromChoice}
           toPort={toPort}
-          onBook={() => {
-            syncTravelProfile();
-            if (plan.fromPortId && plan.toPortId)
-              saveItineraryChoice({
-                period: plan.month,
-                departurePortId: plan.fromPortId,
-                arrivalPortId: plan.toPortId,
-              });
-            const done = plan.done.includes("book") ? plan.done : [...plan.done, "book" as const];
-            savePlan({ ...plan, done });
-            // Ports, jour et voyageurs dans l'adresse : la carte ouvre directement les résultats.
-            window.scrollTo({ top: 0, behavior: "instant" });
-            void navigate({ href: bookingSearch(plan) });
+          onSee={goBooking}
+          onBudget={() => openStep("budget")}
+          onFinish={() => {
+            if (!plan.done.includes("book")) patch({ done: [...plan.done, "book"] });
+            setOpen(null);
+            requestAnimationFrame(() => window.scrollTo({ top: 0, behavior: "instant" }));
           }}
         />
       ) : null}
@@ -665,6 +661,19 @@ function CompanionPage() {
     Route: "route",
     Budget: "budget",
     Billet: "book",
+  };
+  // Vers « Réserver », seulement si le voyageur le demande : ports, jour et voyageurs dans
+  // l'adresse, la carte ouvre directement les résultats.
+  const goBooking = () => {
+    syncTravelProfile();
+    if (plan.fromPortId && plan.toPortId)
+      saveItineraryChoice({
+        period: plan.month,
+        departurePortId: plan.fromPortId,
+        arrivalPortId: plan.toPortId,
+      });
+    window.scrollTo({ top: 0, behavior: "instant" });
+    void navigate({ href: bookingSearch(plan) });
   };
   const resetAll = () => {
     papers.setAnswers(defaultAnswers);
@@ -735,19 +744,24 @@ function CompanionPage() {
                   <span className="sr-only"> étapes faites</span>
                 </span>
               </div>
-              {/* La vue d'ensemble : toutes les étapes, reliées, toujours visibles. */}
-              <StepFrieze
-                steps={steps}
-                open={open}
-                done={plan.done}
-                locked={isLocked}
-                onOpen={openStep}
-                hasRecap={hasRecap}
-              />
+              {/* La vue d'ensemble : toutes les étapes, reliées. Une fois prêt, le récap la remplace. */}
+              {ready ? null : (
+                <StepFrieze
+                  steps={steps}
+                  open={open}
+                  done={plan.done}
+                  locked={isLocked}
+                  onOpen={openStep}
+                  hasRecap={hasRecap}
+                />
+              )}
 
               {!inWizard || open === null ? (
                 <>
-                  <PrepTools canShare={plan.done.includes("profile")} onReset={resetAll} />
+                  <PrepTools
+                    canShare={!ready && plan.done.includes("profile")}
+                    onReset={resetAll}
+                  />
                   {!allDone && !locked && nextStep ? (
                     <button
                       type="button"
@@ -774,33 +788,39 @@ function CompanionPage() {
                         ...row,
                         onClick: () => openStep(rowStep[row.label] ?? "profile"),
                       }))}
+                      fromChoice={fromChoice}
+                      toPort={toPort}
                       onOpenStep={openStep}
-                      onBook={() => void navigate({ href: bookingSearch(plan) })}
+                      onBook={goBooking}
                       onShare={() => void navigate({ to: "/ma-preparation" })}
                     />
                   ) : null}
                   {plan.done.includes("profile") ? (
                     <PlanTodo plan={plan} papers={papers} onOpenStep={openStep} />
                   ) : null}
-                  <h2 className="mt-6 font-display text-lg font-bold">Mes étapes</h2>
-                  <ol className="mt-2 grid grid-cols-1 gap-2">
-                    {steps.map((step, index) =>
-                      isLocked(step) ? null : (
-                        <StepCard
-                          key={step}
-                          id={step}
-                          index={index + 1}
-                          title={stepTitles[step]}
-                          summary={summaries[step]}
-                          done={plan.done.includes(step)}
-                          open={false}
-                          onToggle={() => openStep(step)}
-                        >
-                          {null}
-                        </StepCard>
-                      ),
-                    )}
-                  </ol>
+                  {ready ? null : (
+                    <>
+                      <h2 className="mt-6 font-display text-lg font-bold">Mes étapes</h2>
+                      <ol className="mt-2 grid grid-cols-1 gap-2">
+                        {steps.map((step, index) =>
+                          isLocked(step) ? null : (
+                            <StepCard
+                              key={step}
+                              id={step}
+                              index={index + 1}
+                              title={stepTitles[step]}
+                              summary={summaries[step]}
+                              done={plan.done.includes(step)}
+                              open={false}
+                              onToggle={() => openStep(step)}
+                            >
+                              {null}
+                            </StepCard>
+                          ),
+                        )}
+                      </ol>
+                    </>
+                  )}
                 </>
               ) : (
                 <WizardFrame
@@ -1871,13 +1891,17 @@ function BookStep({
   answers,
   fromChoice,
   toPort,
-  onBook,
+  onSee,
+  onBudget,
+  onFinish,
 }: {
   plan: CompanionPlan;
   answers: Answers;
   fromChoice: PortChoice | null;
   toPort: Port | null;
-  onBook: () => void;
+  onSee: () => void;
+  onBudget: () => void;
+  onFinish: () => void;
 }) {
   const group = people(answers);
   const vehicle = VEHICLES.find((v) => v.id === plan.vehicle);
@@ -1914,14 +1938,22 @@ function BookStep({
           </div>
         ))}
       </dl>
-      <WizardNav
-        next={{
-          label: "Voir les traversées",
-          onClick: onBook,
-          disabled: !fromChoice || !toPort,
-          icon: CalendarCheck,
-        }}
-      />
+      <div className="mt-4 grid gap-3">
+        <TripBudget
+          plan={plan}
+          fromChoice={fromChoice}
+          toPort={toPort}
+          people={group}
+          onDetail={onBudget}
+        />
+        <SailingsOutlook
+          plan={plan}
+          fromName={fromChoice?.port.name ?? null}
+          toName={toPort?.name ?? null}
+          onSee={onSee}
+        />
+      </div>
+      <WizardNav next={{ label: "Voir mon récap", onClick: onFinish, icon: ListChecks }} />
       <p className="mt-3 flex items-start gap-2 text-xs text-muted-foreground">
         <Landmark size={14} className="mt-0.5 shrink-0" aria-hidden />
         BledWay ne vend pas de billets : la réservation et le paiement se font auprès de la
@@ -2951,6 +2983,8 @@ function ReadyDashboard({
   plan,
   papers,
   rows,
+  fromChoice,
+  toPort,
   onOpenStep,
   onBook,
   onShare,
@@ -2958,6 +2992,8 @@ function ReadyDashboard({
   plan: CompanionPlan;
   papers: PapersState;
   rows: PreviewRow[];
+  fromChoice: PortChoice | null;
+  toPort: Port | null;
   onOpenStep: (step: CompanionStep) => void;
   onBook: () => void;
   onShare: () => void;
@@ -2979,20 +3015,10 @@ function ReadyDashboard({
     : "Votre voyage au bled";
   return (
     <section id="pret" aria-labelledby="pret-titre" className="bw-ready mt-4">
-      <Bw504Note
-        tone="win"
-        title={<span id="pret-titre">Votre voyage est prêt</span>}
-        actions={
-          <>
-            <Bw504Button primary onClick={onBook}>
-              Comparer les traversées
-            </Bw504Button>
-            <Bw504Button onClick={onShare}>Partager · PDF</Bw504Button>
-          </>
-        }
-      >
-        Voici tout votre voyage sur une seule page. Touchez une ligne pour la revoir.
-      </Bw504Note>
+      <h2 id="pret-titre" className="sr-only">
+        Votre voyage est prêt
+      </h2>
+      {/* Le fil du voyage : chaque ligne rouvre son étape. */}
       <div className="bw-ready__recap">
         <RecapPreview
           title={title}
@@ -3008,6 +3034,35 @@ function ReadyDashboard({
         deadlines={deadlines}
         onPick={() => onOpenStep("papers")}
       />
+      <div className="mt-3">
+        <TripBudget
+          plan={plan}
+          fromChoice={fromChoice}
+          toPort={toPort}
+          people={people(papers.answers)}
+          onDetail={() => onOpenStep("budget")}
+        />
+      </div>
+      <Bw504Note
+        tone="win"
+        className="mt-3"
+        title="Votre voyage est prêt"
+        actions={
+          <Bw504Button primary onClick={onShare}>
+            Partager · PDF
+          </Bw504Button>
+        }
+      >
+        Envoyez-le à la famille ou imprimez-le. Touchez une ligne du récap pour la revoir.
+      </Bw504Note>
+      <div className="mt-3">
+        <SailingsOutlook
+          plan={plan}
+          fromName={fromChoice?.port.name ?? null}
+          toName={toPort?.name ?? null}
+          onSee={onBook}
+        />
+      </div>
       <button
         type="button"
         onClick={() =>

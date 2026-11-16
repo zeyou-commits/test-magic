@@ -8,7 +8,7 @@ import {
   type ReactNode,
 } from "react";
 import { createPortal } from "react-dom";
-import { ArrowLeft, ArrowRight, Check, X, type LucideIcon } from "lucide-react";
+import { ArrowLeft, ArrowRight, Check, FileText, type LucideIcon } from "lucide-react";
 
 /**
  * Le guide plein écran de « Préparer mon voyage » : le fil des étapes reste en haut, les boutons
@@ -20,6 +20,8 @@ export type WizardScreen = { index: number; total: number; label?: string | unde
 type Ctx = {
   dock: HTMLElement | null;
   back: (() => void) | null;
+  /** Le nom court de l'étape d'avant : le bouton dit où il mène (« ← Départ »). */
+  backLabel: string | null;
   report: (screen: WizardScreen) => void;
 };
 const WizardCtx = createContext<Ctx | null>(null);
@@ -47,6 +49,8 @@ export function WizardNav({
 }) {
   const ctx = useContext(WizardCtx);
   const onBack = back === undefined ? (ctx?.back ?? null) : back;
+  // Dans l'étape : « Précédent » ; à son début : le nom de l'étape d'avant.
+  const backText = back === undefined && ctx?.backLabel ? ctx.backLabel : "Précédent";
   const Icon = next?.icon;
   const bar = (
     <div className="flex items-center justify-between gap-3">
@@ -55,9 +59,10 @@ export function WizardNav({
           type="button"
           data-wiz-back
           onClick={onBack}
+          aria-label={back === undefined && ctx?.backLabel ? `Revenir à l'étape ${ctx.backLabel}` : "Question précédente"}
           className="inline-flex min-h-12 items-center gap-2 rounded-xl px-3 text-sm font-semibold hover:bg-secondary"
         >
-          <ArrowLeft size={16} aria-hidden /> Retour
+          <ArrowLeft size={16} aria-hidden /> {backText}
         </button>
       ) : (
         <span />
@@ -87,6 +92,8 @@ export type WizardStepInfo = {
   title: string;
   icon: LucideIcon;
   done: boolean;
+  /** Étape faite qui a un récap à revoir : petit badge « document » sur son rond. */
+  recap?: boolean;
 };
 
 /** Un ascendant qui défile de côté : le geste lui appartient, pas au guide. */
@@ -123,6 +130,7 @@ export function WizardFrame({
   const report = useCallback((s: WizardScreen) => setScreen({ ...s, step: step.key }), [step.key]);
   const shown = screen?.step === step.key ? screen : null;
   const back = current > 0 ? () => onOpen(current - 1) : null;
+  const backLabel = current > 0 ? steps[current - 1]!.short : null;
 
   // La page derrière ne défile plus : seul l'écran de la question bouge.
   useEffect(() => {
@@ -182,7 +190,7 @@ export function WizardFrame({
   };
 
   return (
-    <WizardCtx.Provider value={{ dock, back, report }}>
+    <WizardCtx.Provider value={{ dock, back, backLabel, report }}>
       <div
         role="dialog"
         aria-modal="true"
@@ -192,18 +200,18 @@ export function WizardFrame({
       >
         <header className="shrink-0 border-b bg-card/95 shadow-sm backdrop-blur">
           <div className="mx-auto w-full max-w-2xl px-4 pb-3 pt-[max(0.75rem,env(safe-area-inset-top))]">
+            {/* Sortir du guide : toujours en haut à gauche, jamais confondu avec « Précédent ». */}
             <div className="flex items-center justify-between gap-3">
-              <p className="min-w-0 text-[11px] font-bold uppercase leading-tight tracking-wider text-primary">
-                {chapter}
-              </p>
               <button
                 type="button"
                 onClick={onClose}
-                aria-label="Quitter le guide : vue d'ensemble"
-                className="inline-flex min-h-9 shrink-0 items-center gap-1 rounded-full px-2 text-sm font-semibold text-muted-foreground hover:bg-secondary"
+                className="-ml-2 inline-flex min-h-9 shrink-0 items-center gap-1.5 rounded-full px-2 text-sm font-semibold text-foreground hover:bg-secondary"
               >
-                Vue d'ensemble <X size={16} aria-hidden />
+                <ArrowLeft size={16} aria-hidden /> Préparer mon voyage
               </button>
+              <p className="min-w-0 truncate text-right text-[11px] font-bold uppercase leading-tight tracking-wider text-primary">
+                {chapter}
+              </p>
             </div>
             {/* Le fil : où l'on en est, toujours sous les yeux. */}
             <nav aria-label="Les étapes du voyage" className="mt-2">
@@ -226,11 +234,11 @@ export function WizardFrame({
                         type="button"
                         onClick={() => onOpen(index)}
                         aria-current={here ? "step" : undefined}
-                        aria-label={`${item.title}${item.done ? " · fait" : ""}`}
+                        aria-label={`${item.title}${item.done ? " · fait" : ""}${item.recap && item.done ? " · récap disponible" : ""}`}
                         className="flex flex-col items-center gap-1"
                       >
                         <span
-                          className={`grid size-8 place-items-center rounded-full border-2 transition-all ${
+                          className={`relative grid size-8 place-items-center rounded-full border-2 transition-all ${
                             here
                               ? "scale-110 border-primary bg-primary text-primary-foreground ring-4 ring-primary/20"
                               : item.done
@@ -239,6 +247,11 @@ export function WizardFrame({
                           }`}
                         >
                           <Icon size={15} strokeWidth={item.done && !here ? 3 : 2} aria-hidden />
+                          {item.recap && item.done && !here ? (
+                            <span className="bw-recap-badge" aria-hidden>
+                              <FileText size={9} strokeWidth={2.5} />
+                            </span>
+                          ) : null}
                         </span>
                         <span
                           className={`text-[10px] leading-none md:text-xs ${here ? "font-bold text-foreground" : "text-muted-foreground"}`}

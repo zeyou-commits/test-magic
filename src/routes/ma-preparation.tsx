@@ -254,6 +254,11 @@ function SharePanel({ prep, title }: { prep: SharedPreparation; title: string })
 }
 
 function OnePage({ prep, mine }: { prep: SharedPreparation; mine: boolean }) {
+  // Venu du récap des papiers : le retour y ramène directement.
+  const [fromRecap, setFromRecap] = useState(false);
+  useEffect(() => {
+    setFromRecap(new URLSearchParams(window.location.search).get("retour") === "papiers");
+  }, []);
   const answers = useMemo(() => answersOf(prep), [prep]);
   const tasks = useMemo(() => tasksFor(answers), [answers]);
   const names = answers.travellers.map((t) => travellerLabel(t, answers.travellers));
@@ -286,9 +291,9 @@ function OnePage({ prep, mine }: { prep: SharedPreparation; mine: boolean }) {
   return (
     <div className="bw-onepage-wrap">
       <div className="bw-onepage__bar" role="toolbar" aria-label="Actions">
-        <Link to="/preparer-mon-voyage" className="bw-onepage__back">
-          {mine ? "← Revenir à ma préparation" : "Préparer mon propre voyage"}
-        </Link>
+        <a href={mine && fromRecap ? "/preparer-mon-voyage?etape=papers" : "/preparer-mon-voyage"} className="bw-onepage__back">
+          {mine ? (fromRecap ? "← Revenir au récap des papiers" : "← Revenir à ma préparation") : "Préparer mon propre voyage"}
+        </a>
         <button type="button" onClick={() => window.print()} className="bw-onepage__btn bw-onepage__btn--main">
           <Download size={16} aria-hidden /> PDF
         </button>

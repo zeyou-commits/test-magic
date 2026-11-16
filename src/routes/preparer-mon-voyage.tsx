@@ -21,6 +21,7 @@ import {
   Map as MapIcon,
   MapPin,
   PartyPopper,
+  Pencil,
   RotateCcw,
   Route as RouteIcon,
   School,
@@ -56,6 +57,7 @@ import {
   Question,
   papersSteps,
   usePapersState,
+  type EditTarget,
   type PapersState,
   type PapersStep,
 } from "@/components/papers/PapersFlow";
@@ -65,6 +67,7 @@ import {
   defaultAnswers,
   formaliteSources,
   tasksFor,
+  travellerLabel,
   type Answers,
   type When,
 } from "@/content/formalites";
@@ -133,6 +136,7 @@ import type { Port } from "@/lib/ferry/types";
 import { seoHead } from "@/lib/seo/site";
 import { SharePreparation } from "@/components/prepare/SharePreparation";
 import { PrepareIntro } from "@/components/prepare/PrepareIntro";
+import { ConfirmChange } from "@/components/prepare/ConfirmChange";
 
 const PATH = "/preparer-mon-voyage";
 
@@ -233,12 +237,15 @@ function StepFrieze({
   done,
   locked,
   onOpen,
+  hasRecap,
 }: {
   steps: CompanionStep[];
   open: CompanionStep | null;
   done: CompanionStep[];
   locked: (step: CompanionStep) => boolean;
   onOpen: (step: CompanionStep) => void;
+  /** Étape faite qui a un récap : petit badge « document » sur son rond. */
+  hasRecap: (step: CompanionStep) => boolean;
 }) {
   return (
     <nav aria-label="Les étapes du voyage" className="bw-prep-frieze mt-3">
@@ -269,7 +276,7 @@ function StepFrieze({
                 type="button"
                 onClick={() => onOpen(step)}
                 aria-current={current ? "step" : undefined}
-                aria-label={`${stepTitles[step]} · ${sub}`}
+                aria-label={`${stepTitles[step]} · ${sub}${isDone && hasRecap(step) ? " · voir le récap" : ""}`}
               >
                 {current ? <b className="bw-prep-frieze__here">Ici</b> : null}
                 <span className="bw-prep-frieze__dot">
@@ -281,6 +288,10 @@ function StepFrieze({
                   {isLocked && !isDone ? (
                     <span className="bw-prep-frieze__lock">
                       <Lock size={10} aria-hidden />
+                    </span>
+                  ) : isDone && !current && hasRecap(step) ? (
+                    <span className="bw-recap-badge bw-recap-badge--lg" aria-hidden>
+                      <FileText size={10} strokeWidth={2.5} />
                     </span>
                   ) : null}
                 </span>
@@ -402,6 +413,8 @@ function CompanionPage() {
   const [plan, setPlan] = useState<CompanionPlan>(defaultPlan);
   const [loaded, setLoaded] = useState(false);
   const [open, setOpen] = useState<CompanionStep | null>("profile");
+  // Une étape déjà validée s'ouvre en lecture ; elle ne repasse en questions qu'après « Modifier ».
+  const [editing, setEditing] = useState<CompanionStep[]>([]);
   const navigate = useNavigate();
   // Aperçu sans compte : la première étape (départ, groupe, voiture) et le calendrier ; la suite
   // (papiers, consulat, route, budget, réservation) demande un compte gratuit.
@@ -414,11 +427,16 @@ function CompanionPage() {
     const travel = readTravelProfile();
     const start = saved ?? { ...defaultPlan(), ...(travel ? { vehicle: travel.vehicle } : {}) };
     setPlan(start);
+    // Retour depuis la page à partager : on revient sur l'étape d'où l'on venait (son récap).
+    const asked = new URLSearchParams(window.location.search).get("etape");
+    const wanted = companionSteps(start).find((step) => step === asked);
     setOpen(
-      start.done.length
-        ? null
-        : (companionSteps(start).find((step) => !start.done.includes(step)) ?? null),
+      wanted ??
+        (start.done.length
+          ? null
+          : (companionSteps(start).find((step) => !start.done.includes(step)) ?? null)),
     );
+    if (wanted) window.history.replaceState(null, "", window.location.pathname);
     setLoaded(true);
   }, []);
   useEffect(() => {
@@ -488,6 +506,7 @@ function CompanionPage() {
       return;
     }
     setOpen(step);
+    setEditing([]);
     if (step)
       requestAnimationFrame(() =>
         document
@@ -496,6 +515,7 @@ function CompanionPage() {
       );
   };
   const complete = (step: CompanionStep) => {
+    setEditing((list) => list.filter((s) => s !== step));
     const done = plan.done.includes(step) ? plan.done : [...plan.done, step];
     patch({ done });
     const order = companionSteps(plan);
@@ -530,9 +550,19 @@ function CompanionPage() {
   const nextStep = steps.find((step) => !plan.done.includes(step) && !isLocked(step)) ?? null;
   const wizSteps = steps.filter((step) => !isLocked(step));
   const inWizard = open !== null && wizSteps.includes(open);
+  const stepAfter = (step: CompanionStep) => steps[steps.indexOf(step) + 1] ?? null;
+  const hasRecap = (step: CompanionStep) =>
+    step === "profile" || (step === "papers" && papers.finished);
   const stepBody = (step: CompanionStep) => (
     <>
-      {step === "profile" ? (
+      {step === "profile" && plan.done.includes("profile") && !editing.includes("profile") ? (
+        <ProfileReview
+          plan={plan}
+          answers={papers.answers}
+          onEdit={() => setEditing(["profile"])}
+          onNext={() => openStep(stepAfter("profile"))}
+        />
+      ) : step === "profile" ? (
         <ProfileStep
           papers={papers}
           plan={plan}
@@ -654,10 +684,14 @@ function CompanionPage() {
                 done={plan.done}
                 locked={isLocked}
                 onOpen={openStep}
+                hasRecap={hasRecap}
               />
 
               {!inWizard || open === null ? (
                 <>
+                  {plan.started && plan.done.includes("profile") ? (
+                    <SharePreparation />
+                  ) : null}
                   {!allDone && !locked && nextStep ? (
                     <button
                       type="button"
@@ -701,7 +735,6 @@ function CompanionPage() {
                   {plan.done.includes("profile") ? (
                     <PlanTodo plan={plan} papers={papers} onOpenStep={openStep} />
                   ) : null}
-                  {plan.started ? <SharePreparation /> : null}
                   <h2 className="mt-6 font-display text-lg font-bold">Mes étapes</h2>
                   <ol className="mt-2 grid grid-cols-1 gap-2">
                     {steps.map((step, index) =>
@@ -730,18 +763,19 @@ function CompanionPage() {
                     title: stepTitles[step],
                     icon: stepArt[step].icon,
                     done: plan.done.includes(step),
+                    recap: hasRecap(step),
                   }))}
                   current={Math.max(0, wizSteps.indexOf(open))}
                   chapter={`Chapitre ${chapterOf(open) + 1} · ${chapters[chapterOf(open)]!.title}`}
                   onOpen={(index) => openStep(wizSteps[index]!)}
-                  onSkip={() => {
+                  {...(plan.done.includes(open) ? {} : { onSkip: () => {
                     const after = wizSteps[wizSteps.indexOf(open) + 1];
                     if (after) openStep(after);
                     else {
                       setOpen(null);
                       requestAnimationFrame(() => window.scrollTo({ top: 0, behavior: "instant" }));
                     }
-                  }}
+                  } })}
                   onClose={() => {
                     setOpen(null);
                     requestAnimationFrame(() => window.scrollTo({ top: 0, behavior: "instant" }));
@@ -871,7 +905,7 @@ function StepCard({
             />
           ) : (
             <span className="shrink-0 text-sm font-semibold text-primary">
-              {done ? "Modifier" : "Ouvrir"}
+              {done ? "Revoir" : "Ouvrir"}
             </span>
           )}
         </button>
@@ -1019,6 +1053,84 @@ function ProfileStep({
   );
 }
 
+/**
+ * Le départ déjà validé : ce qui a été dit, en lecture. « Modifier » demande confirmation, car la
+ * date et les voyageurs font les échéances et la liste de papiers.
+ */
+function ProfileReview({
+  plan,
+  answers,
+  onEdit,
+  onNext,
+}: {
+  plan: CompanionPlan;
+  answers: Answers;
+  onEdit: () => void;
+  onNext: () => void;
+}) {
+  const [asking, setAsking] = useState(false);
+  useWizardScreen(0, 1);
+  const { adults, children } = people(answers);
+  const named = answers.travellers.filter((t) => t.name?.trim());
+  const vehicle = VEHICLES.find((v) => v.id === plan.vehicle);
+  const rows: { icon: LucideIcon; label: string; value: string }[] = [
+    { icon: CalendarDays, label: "Départ", value: capitalize(planWhenLabel(plan)) },
+    {
+      icon: Users,
+      label: "Voyageurs",
+      value: named.length
+        ? answers.travellers.map((t) => travellerLabel(t, answers.travellers)).join(", ")
+        : [plural(adults, "adulte"), children ? plural(children, "enfant") : null]
+            .filter(Boolean)
+            .join(", "),
+    },
+    {
+      icon: Car,
+      label: "Véhicule",
+      value: plan.vehicle === "none" ? "Sans voiture" : (vehicle?.label ?? "—"),
+    },
+  ];
+  return (
+    <div className="pt-4">
+      <Bw504Note tone="win" title="C'est noté, cette étape est faite">
+        Voici ce que vous m'avez dit. Tout reste modifiable, mais je vous demanderai confirmation :
+        la date et les voyageurs servent à calculer vos échéances et votre liste de papiers.
+      </Bw504Note>
+      <dl className="bw-review mt-4">
+        {rows.map(({ icon: Icon, label, value }) => (
+          <div key={label}>
+            <dt>
+              <Icon size={15} aria-hidden /> {label}
+            </dt>
+            <dd>{value}</dd>
+          </div>
+        ))}
+      </dl>
+      <button
+        type="button"
+        onClick={() => setAsking(true)}
+        className="mt-3 inline-flex min-h-11 items-center gap-2 rounded-xl border px-4 text-sm font-semibold hover:bg-secondary"
+      >
+        <Pencil size={15} aria-hidden /> Modifier le départ
+      </button>
+      {asking ? (
+        <ConfirmChange
+          title="On modifie le départ ?"
+          onCancel={() => setAsking(false)}
+          onConfirm={() => {
+            setAsking(false);
+            onEdit();
+          }}
+        >
+          Changer la date ou les voyageurs change vos échéances et votre liste de papiers : je les
+          recalcule. Ce que vous avez déjà coché reste coché.
+        </ConfirmChange>
+      ) : null}
+      <WizardNav next={{ label: "Continuer : mes papiers", onClick: onNext }} />
+    </div>
+  );
+}
+
 /* ------------------------------------------------------------ 2. Les papiers */
 
 function PapersStepBody({
@@ -1047,8 +1159,15 @@ function PapersStepBody({
       ),
     [plan, papers.answers.travellers],
   );
-  // Où reprendre les questions : au début (« Modifier ») ou à la dernière (« Retour »).
+  // Où reprendre les questions : la partie choisie dans « Modifier ».
   const [resume, setResume] = useState<"last" | number>(0);
+  // Une modification qui change la liste (voyageurs, papiers, famille, séjour) se confirme.
+  const [asking, setAsking] = useState<EditTarget | "all" | null>(null);
+  const editAt = (target: EditTarget | "all") => {
+    setResume(target === "all" ? 0 : questionIndexFor(paperQuestions(papers.answers, steps), target));
+    papers.setFinished(false);
+    toTop();
+  };
   const questions = paperQuestions(papers.answers, steps).length;
   useWizardScreen(questions, questions + 1, undefined, papers.finished);
   const box = useRef<HTMLDivElement>(null);
@@ -1069,31 +1188,31 @@ function PapersStepBody({
             answers={papers.answers}
             patch={papers.patch}
             departure={plan.date || plan.window?.from || null}
-            onEditAt={(target) => {
-              setResume(questionIndexFor(paperQuestions(papers.answers, steps), target));
-              papers.setFinished(false);
-              toTop();
-            }}
+            onEditAt={(target) => (target.kind === "names" ? editAt(target) : setAsking(target))}
             done={papers.done}
             setDone={papers.setDone}
-            onEdit={() => {
-              papers.setFinished(false);
-              setResume(0);
-              toTop();
-            }}
+            onEdit={() => setAsking("all")}
           />
+          {asking ? (
+            <ConfirmChange
+              title="On modifie vos papiers ?"
+              onCancel={() => setAsking(null)}
+              onConfirm={() => {
+                const target = asking;
+                setAsking(null);
+                editAt(target);
+              }}
+            >
+              Changer un voyageur, ses papiers, la famille ou le séjour peut changer la liste : je la
+              recalcule à la fin des questions. Ce que vous avez déjà coché reste coché si la démarche
+              existe toujours.
+            </ConfirmChange>
+          ) : null}
           <p className="mt-6 text-sm text-muted-foreground">
             Pas besoin de tout cocher maintenant : la liste reste ici et dans « Mon voyage ».
           </p>
           <div className="mt-4">
-            <WizardNav
-              back={() => {
-                papers.setFinished(false);
-                setResume("last");
-                toTop();
-              }}
-              next={{ label: `Continuer : ${next}`, onClick: onDone }}
-            />
+            <WizardNav next={{ label: `Continuer : ${next}`, onClick: onDone }} />
           </div>
         </>
       ) : (

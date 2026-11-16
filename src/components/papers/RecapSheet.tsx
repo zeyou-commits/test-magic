@@ -205,7 +205,7 @@ export function RecapSheet({
         </div>
         <div className="bw-recap__actions">
           {editSlot}
-          <Link to="/ma-preparation" className="bw-recap__hbtn">
+          <Link to="/ma-preparation" search={{ retour: "papiers" } as never} className="bw-recap__hbtn">
             <Share2 size={14} aria-hidden /> Partager · PDF
           </Link>
         </div>

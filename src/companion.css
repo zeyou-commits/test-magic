@@ -1063,3 +1063,48 @@
 @media (prefers-reduced-motion: reduce) {
   .bw-recap-sheet__panel, .bw-recap-sheet__scrim, .bw-recap__check[aria-checked="true"] > span { animation: none !important; }
 }
+
+/* Badge « récap disponible » au coin d'une étape faite (frises de la vue d'ensemble et du guide). */
+.bw-recap-badge {
+  position: absolute;
+  right: -4px;
+  bottom: -3px;
+  display: grid;
+  width: 15px;
+  height: 15px;
+  place-items: center;
+  border-radius: 999px;
+  background: #fff;
+  color: #0e7a43;
+  box-shadow: 0 0 0 1.5px #0e7a43, 0 1px 3px rgb(0 0 0 / 0.18);
+  pointer-events: none;
+}
+.bw-recap-badge--lg { right: -5px; bottom: -4px; width: 18px; height: 18px; }
+.dark .bw-recap-badge { background: #10251b; color: #4fc187; box-shadow: 0 0 0 1.5px #4fc187; }
+
+/* Confirmation avant de modifier une étape validée. */
+.bw-confirm { padding-bottom: max(18px, env(safe-area-inset-bottom)); }
+.bw-confirm > .bw-504-note, .bw-confirm > div:not(.bw-confirm__acts) { margin-top: 6px; }
+.bw-confirm__acts { display: flex; flex-direction: column-reverse; gap: 10px; margin-top: 16px; }
+.bw-confirm__no {
+  min-height: 48px;
+  border-radius: 16px;
+  border: 1px solid var(--border);
+  background: var(--card);
+  font-weight: 700;
+}
+.bw-confirm__no:hover { background: var(--secondary); }
+@media (min-width: 720px) {
+  .bw-confirm { padding-bottom: 22px; }
+  .bw-confirm__acts { flex-direction: row; justify-content: flex-end; }
+  .bw-confirm__acts > * { width: auto; min-width: 160px; padding: 0 20px; }
+}
+
+/* Étape faite relue : ce qui a été dit. */
+.bw-review { display: grid; gap: 1px; overflow: hidden; border-radius: 16px; border: 1px solid var(--border); background: var(--border); }
+.bw-review > div { display: grid; grid-template-columns: 8.5rem 1fr; gap: 12px; padding: 12px 14px; background: var(--card); }
+.bw-review dt { display: inline-flex; align-items: center; gap: 7px; color: var(--muted-foreground); font-size: 0.85rem; font-weight: 600; }
+.bw-review dd { font-weight: 700; overflow-wrap: anywhere; }
+@media (max-width: 420px) {
+  .bw-review > div { grid-template-columns: 1fr; gap: 2px; }
+}

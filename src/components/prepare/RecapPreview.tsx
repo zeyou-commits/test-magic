@@ -8,6 +8,8 @@ export type PreviewRow = {
   value: string | null;
   /** Le chapitre (0, 1, 2) qui remplit cette ligne. */
   chapter: number;
+  /** Dans le récap de fin : la ligne ouvre son étape. */
+  onClick?: () => void;
 };
 
 /**
@@ -91,6 +93,14 @@ export function RecapPreview({
               ) : (
                 <span className="bw-rprev__bar" aria-hidden />
               )}
+              {row.onClick ? (
+                <button
+                  type="button"
+                  className="bw-rprev__hit"
+                  onClick={row.onClick}
+                  aria-label={`Ouvrir : ${row.label}`}
+                />
+              ) : null}
             </li>
           );
         })}

@@ -138,7 +138,8 @@ import { SharePreparation } from "@/components/prepare/SharePreparation";
 import { PrepareIntro } from "@/components/prepare/PrepareIntro";
 import { ConfirmChange } from "@/components/prepare/ConfirmChange";
 import { ChapterBreak } from "@/components/prepare/ChapterBreak";
-import type { PreviewRow } from "@/components/prepare/RecapPreview";
+import { RecapPreview, type PreviewRow } from "@/components/prepare/RecapPreview";
+import { PaperKpis } from "@/components/papers/RecapSheet";
 
 const PATH = "/preparer-mon-voyage";
 
@@ -659,6 +660,14 @@ function CompanionPage() {
     </>
   );
 
+  const rowStep: Record<string, CompanionStep> = {
+    Départ: "profile",
+    Papiers: "papers",
+    Voiture: "papers",
+    Route: "route",
+    Budget: "budget",
+    Billet: "book",
+  };
   const previewRows: PreviewRow[] = [
     { icon: CalendarDays, label: "Départ", value: summaries.profile, chapter: 0 },
     { icon: FileText, label: "Papiers", value: summaries.papers, chapter: 1 },
@@ -753,25 +762,16 @@ function CompanionPage() {
                     </button>
                   ) : null}
                   {allDone && !locked ? (
-                    <Bw504Note
-                      tone="win"
-                      className="mt-4"
-                      title="La 504 est chargée 🧳"
-                      actions={
-                        <Bw504Button primary onClick={() => void navigate({ href: bookingSearch(plan) })}>
-                          Comparer les traversées
-                        </Bw504Button>
-                      }
-                    >
-                      Tout est prêt. Reste le bateau : je te montre les traversées à tes dates.
-                    </Bw504Note>
-                  ) : null}
-                  {allDone && !locked ? (
                     <ReadyDashboard
                       plan={plan}
                       papers={papers}
-                      summaries={summaries}
+                      rows={previewRows.map((row) => ({
+                        ...row,
+                        onClick: () => openStep(rowStep[row.label] ?? "profile"),
+                      }))}
                       onOpenStep={openStep}
+                      onBook={() => void navigate({ href: bookingSearch(plan) })}
+                      onShare={() => void navigate({ to: "/ma-preparation" })}
                     />
                   ) : null}
                   {plan.done.includes("profile") ? (
@@ -1233,7 +1233,7 @@ function PapersStepBody({
             answers={papers.answers}
             patch={papers.patch}
             departure={plan.date || plan.window?.from || null}
-            onEditAt={(target) => (target.kind === "names" ? editAt(target) : setAsking(target))}
+            onEditAt={(target) => setAsking(target)}
             done={papers.done}
             setDone={papers.setDone}
             onEdit={() => setAsking("all")}
@@ -2037,12 +2037,13 @@ function WhenQuestion({
   return (
     <Question
       title="Quand souhaitez-vous partir ?"
-      hint="L'aller, puis le retour. Point vert : un départ déjà publié."
+      hint="Touchez l'aller, puis le retour."
     >
       {/* Sur ordinateur, le calendrier garde la taille de celui de « Réserver ». */}
       <div className="md:max-w-[420px]">
         <TripCalendar
           inline
+          paged
           open
           onOpenChange={() => {}}
           holidaysOn={holidaysOn}
@@ -2072,18 +2073,6 @@ function WhenQuestion({
           }}
         />
       </div>
-      {plan.date ? (
-        <p className="mt-3 flex flex-wrap items-center gap-2 text-sm">
-          <span className="font-semibold">Aller {shortDate(plan.date)}</span>
-          <SeasonTag day={plan.date} />
-          {plan.returnDate ? (
-            <>
-              <span className="font-semibold">· Retour {shortDate(plan.returnDate)}</span>
-              <SeasonTag day={plan.returnDate} />
-            </>
-          ) : null}
-        </p>
-      ) : null}
       <button
         type="button"
         onClick={() => {
@@ -2108,6 +2097,12 @@ function WhenQuestion({
                 ? `, dans ${Math.round(countdown / 7)} semaines : les papiers longs sont à lancer maintenant.`
                 : `, dans ${countdown} jour${countdown > 1 ? "s" : ""} : l'essentiel est à faire tout de suite.`
             : "."}
+          {plan.date ? (
+            <span className="mt-1.5 flex flex-wrap items-center gap-1.5">
+              <SeasonTag day={plan.date} />
+              {plan.returnDate ? <SeasonTag day={plan.returnDate} /> : null}
+            </span>
+          ) : null}
         </span>
       </p>
       <div className="mt-4">
@@ -2906,13 +2901,13 @@ function TodoItem({
         : "text-primary";
   return (
     <li
-      className="bw-todo-item rounded-xl border bg-background px-3 py-2.5"
+      className="bw-todo-item rounded-xl border bg-background px-2.5 py-2"
       data-urgency={row.done ? undefined : urgency}
     >
-      <div className="flex items-start gap-3">
+      <div className="flex items-start gap-2.5">
         {row.step ? (
           <span
-            className="mt-0.5 grid size-6 shrink-0 place-items-center rounded-full bg-primary/10 text-primary"
+            className="mt-px grid size-5 shrink-0 place-items-center rounded-full bg-primary/10 text-primary"
             aria-hidden
           >
             <ArrowRight size={14} />
@@ -2924,22 +2919,20 @@ function TodoItem({
             aria-checked={row.done}
             aria-label={`${row.title} : ${row.done ? "fait" : "à faire"}`}
             onClick={() => onToggle(row)}
-            className={`mt-0.5 grid size-6 shrink-0 place-items-center rounded-md border-2 transition-colors ${
+            className={`mt-px grid size-5 shrink-0 place-items-center rounded-[5px] border-2 transition-colors ${
               row.done
                 ? "border-primary bg-primary text-primary-foreground"
                 : "border-muted-foreground/50 bg-background"
             }`}
           >
-            {row.done ? <Check size={14} aria-hidden /> : null}
+            {row.done ? <Check size={12} aria-hidden /> : null}
           </button>
         )}
         <div className="min-w-0 flex-1">
-          <p className="font-semibold leading-snug">
-            {row.title}
-            {row.who.length ? (
-              <span className="font-normal text-muted-foreground"> · {row.who.join(", ")}</span>
-            ) : null}
-          </p>
+          <p className="text-sm font-semibold leading-snug">{row.title}</p>
+          {row.who.length ? (
+            <p className="text-xs text-muted-foreground">{row.who.join(", ")}</p>
+          ) : null}
           {inLine && !row.done ? null : (
             <p className={`text-xs font-bold ${tone}`}>
               {row.done ? "Fait" : milestoneLead(m, plan)}
@@ -2976,47 +2969,77 @@ function TodoItem({
   );
 }
 
-/** La fin du parcours : ce qu'il reste à faire, le voyage en un coup d'œil, et les rappels. */
+/**
+ * La fin du parcours : le récap global, celui promis au démarrage (même présentation), rempli.
+ * Chaque ligne rouvre son étape ; les chiffres des papiers mènent au détail ; puis les rappels.
+ */
 function ReadyDashboard({
   plan,
   papers,
-  summaries,
+  rows,
   onOpenStep,
+  onBook,
+  onShare,
 }: {
   plan: CompanionPlan;
   papers: PapersState;
-  summaries: Record<CompanionStep, string | null>;
+  rows: PreviewRow[];
   onOpenStep: (step: CompanionStep) => void;
+  onBook: () => void;
+  onShare: () => void;
 }) {
   const { todo } = usePlanTodo(plan, papers);
-  const tiles: { label: string; value: string | null; step: CompanionStep }[] = [
-    { label: "Ma traversée", value: summaries.book, step: "book" },
-    { label: "Mes papiers", value: summaries.papers, step: "papers" },
-    { label: "Mon budget", value: summaries.budget, step: "budget" },
-  ];
+  const tasks = useMemo(() => tasksFor(papers.answers), [papers.answers]);
+  const deadlines = useMemo(
+    () =>
+      papersDeadlines(
+        earliestDay(plan),
+        papers.answers.travellers.some((t) => t.nat === "etr"),
+        todayKey(),
+      ),
+    [plan, papers.answers.travellers],
+  );
+  const named = papers.answers.travellers.filter((t) => t.name?.trim()).map((t) => t.name!.trim());
+  const title = named.length
+    ? `Le voyage de ${named.length > 1 ? `${named.slice(0, -1).join(", ")} et ${named.at(-1)}` : named[0]}`
+    : "Votre voyage au bled";
   return (
-    <section
-      id="pret"
-      aria-labelledby="pret-titre"
-      className="mt-6 rounded-2xl bg-primary/5 p-5 md:p-6"
-    >
-      <img
-        src="/illustrations/voyage/retrouvailles.webp"
-        alt="Les retrouvailles avec la famille, au bled"
-        width={960}
-        height={540}
-        loading="lazy"
-        className="mb-4 aspect-[16/9] w-full rounded-xl object-cover"
+    <section id="pret" aria-labelledby="pret-titre" className="bw-ready mt-4">
+      <Bw504Note
+        tone="win"
+        title={<span id="pret-titre">Votre voyage est prêt</span>}
+        actions={
+          <>
+            <Bw504Button primary onClick={onBook}>
+              Comparer les traversées
+            </Bw504Button>
+            <Bw504Button onClick={onShare}>Partager · PDF</Bw504Button>
+          </>
+        }
+      >
+        Voici tout votre voyage sur une seule page. Touchez une ligne pour la revoir.
+      </Bw504Note>
+      <div className="bw-ready__recap">
+        <RecapPreview
+          title={title}
+          subtitle={planWhenLabel(plan)}
+          rows={rows}
+          filled={3}
+          fresh={null}
+        />
+      </div>
+      <PaperKpis
+        tasks={tasks}
+        done={papers.done}
+        deadlines={deadlines}
+        onPick={() => onOpenStep("papers")}
       />
-      <h2 id="pret-titre" className="flex items-center gap-2 font-display text-xl font-bold">
-        <PartyPopper size={22} className="text-primary" aria-hidden /> Votre voyage est prêt
-      </h2>
       <button
         type="button"
         onClick={() =>
           document.getElementById("a-faire")?.scrollIntoView({ block: "start", behavior: "smooth" })
         }
-        className={`mt-4 flex w-full items-center gap-3 rounded-xl border bg-background p-3 text-left ${todo.length ? "border-primary" : ""}`}
+        className={`mt-3 flex w-full items-center gap-3 rounded-xl border bg-background p-3 text-left ${todo.length ? "border-primary" : ""}`}
       >
         <ListChecks size={20} className="shrink-0 text-primary" aria-hidden />
         <span className="min-w-0 flex-1">
@@ -3029,23 +3052,6 @@ function ReadyDashboard({
           <ArrowRight size={16} className="shrink-0 text-primary" aria-hidden />
         ) : null}
       </button>
-      <div className="mt-2 grid gap-2 sm:grid-cols-3">
-        {tiles.map((tile) =>
-          tile.value ? (
-            <button
-              key={tile.step}
-              type="button"
-              onClick={() => onOpenStep(tile.step)}
-              className="rounded-xl border bg-background p-3 text-left hover:border-primary/40"
-            >
-              <span className="block text-[11px] font-bold uppercase tracking-wider text-primary">
-                {tile.label}
-              </span>
-              <span className="mt-0.5 block text-sm font-semibold">{tile.value}</span>
-            </button>
-          ) : null,
-        )}
-      </div>
       <div className="mt-4 rounded-xl border bg-background p-3">
         <p className="flex items-center gap-2 font-semibold">
           <Bell size={17} className="text-primary" aria-hidden /> Être prévenu avant chaque échéance

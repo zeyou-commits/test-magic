@@ -163,6 +163,8 @@ export interface Traveller {
   dzValid?: DzValid;
   /** Binational avec un passeport algérien valide : part-il avec, ou avec l'autre passeport seul ? */
   dzTravel?: DzTravel;
+  /** Tous les papiers algériens qu'il a (on peut en avoir plusieurs) ; dzDoc en est déduit. */
+  dzHas?: DzHas[];
 }
 
 /**
@@ -206,6 +208,37 @@ export const dzChoices: { value: DzChoice; label: string; hint?: string }[] = [
   { value: "passeportExpire", label: "Passeport algérien expiré" },
   { value: "aucun", label: "Aucun document algérien" },
 ];
+
+/** Les papiers algériens qu'un binational peut avoir, plusieurs à la fois. */
+export type DzHas = "passeport" | "cnibe" | "passeportExpire";
+export const dzHasOptions: { value: DzHas; label: string; hint?: string }[] = [
+  { value: "passeport", label: "Un passeport algérien valide" },
+  { value: "cnibe", label: "Une carte d'identité algérienne", hint: "Biométrique, même expirée" },
+  { value: "passeportExpire", label: "Un passeport algérien expiré", hint: "Biométrique" },
+];
+/** Les papiers cochés ; pour d'anciennes réponses, on part du document retenu. */
+export const dzHasOf = (t: Traveller): DzHas[] =>
+  t.dzHas ?? (t.dzDoc === "aucun" ? [] : [t.dzDoc]);
+/**
+ * Des papiers cochés et du passeport emporté, on déduit le document qui compte à la frontière :
+ * le passeport algérien s'il part avec ; sinon, la carte d'identité, puis le passeport expiré
+ * (la mesure des binationaux les accepte avec le passeport étranger, dans cet ordre).
+ */
+export function fromDzHas(has: DzHas[], travel: DzTravel): Pick<Traveller, "dzHas" | "dzDoc" | "dzTravel"> {
+  const valid = has.includes("passeport");
+  const dzTravel: DzTravel = valid ? travel : "dz";
+  const dzDoc: DzDoc =
+    valid && travel === "dz"
+      ? "passeport"
+      : has.includes("cnibe")
+        ? "cnibe"
+        : valid
+          ? "passeport"
+          : has.includes("passeportExpire")
+            ? "passeportExpire"
+            : "aucun";
+  return { dzHas: has, dzDoc, dzTravel };
+}
 
 /** tight : valable au retour, mais il expire peu après (aucune règle ne fixe de marge). */
 export type DzValid = "yes" | "tight" | "no" | "unknown";

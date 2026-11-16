@@ -25,8 +25,7 @@ import {
   Users,
 } from "lucide-react";
 import { textLink } from "@/components/editorial/Editorial";
-import { BwKnow } from "@/components/companion/Bw504Note";
-import { genderFromName } from "@/lib/papers/genderFromName";
+import { Bw504Note, BwKnow } from "@/components/companion/Bw504Note";
 import { WizardNav, useInWizard } from "@/components/prepare/WizardFrame";
 import {
   FORMALITES_CHECKED,
@@ -49,9 +48,9 @@ import {
   travelsWithDzPassport,
   ageBandOf,
   ageBands,
-  dzChoiceOf,
-  dzChoices,
-  fromDzChoice,
+  dzHasOf,
+  dzHasOptions,
+  fromDzHas,
   whenLabels,
   whenOrder,
   type Answers,
@@ -295,6 +294,152 @@ export function Options<T extends string>({
 }
 
 export type StepProps = { answers: Answers; patch: (p: Partial<Answers>) => void };
+
+/**
+ * Les papiers algériens d'un binational : on coche tout ce qu'il a (on en a souvent plusieurs),
+ * puis, s'il a un passeport valide, avec lequel il part. Le document qui compte en est déduit.
+ */
+export function DzDocsField({
+  t,
+  me,
+  name,
+  onChange,
+  compact = false,
+}: {
+  t: Traveller;
+  me: boolean;
+  name: string;
+  onChange: (p: Partial<Traveller>) => void;
+  compact?: boolean;
+}) {
+  const has = dzHasOf(t);
+  const travel = t.dzTravel ?? "dz";
+  const none = t.dzHas ? has.length === 0 : t.dzDoc === "aucun";
+  const toggle = (value: (typeof has)[number]) => {
+    const next = has.includes(value) ? has.filter((v) => v !== value) : [...has, value];
+    onChange(fromDzHas(next, travel));
+  };
+  const box = (on: boolean) => (
+    <span
+      className={`grid size-5 shrink-0 place-items-center rounded-md border-2 ${on ? "border-primary bg-primary text-primary-foreground" : "border-muted-foreground/40"}`}
+      aria-hidden
+    >
+      {on ? <Check size={12} strokeWidth={3} /> : null}
+    </span>
+  );
+  const row = (on: boolean) =>
+    `flex ${compact ? "min-h-11 py-2" : "min-h-12 py-3"} items-center gap-3 rounded-xl border px-4 text-left transition-colors ${
+      on ? "border-primary bg-primary/5 ring-1 ring-primary" : "bg-background hover:border-primary/40"
+    }`;
+  return (
+    <div className="grid gap-4">
+      <div role="group" aria-label={`Papiers algériens : ${name}`} className="grid gap-2">
+        {dzHasOptions.map((option) => {
+          const on = has.includes(option.value);
+          return (
+            <button
+              key={option.value}
+              type="button"
+              role="checkbox"
+              aria-checked={on}
+              onClick={() => toggle(option.value)}
+              className={row(on)}
+            >
+              {box(on)}
+              <span>
+                <span className="block font-semibold">{option.label}</span>
+                {option.hint ? (
+                  <span className="mt-0.5 block text-sm text-muted-foreground">{option.hint}</span>
+                ) : null}
+              </span>
+            </button>
+          );
+        })}
+        <button
+          type="button"
+          role="checkbox"
+          aria-checked={none}
+          onClick={() => onChange(fromDzHas([], "dz"))}
+          className={row(none)}
+        >
+          {box(none)}
+          <span className="block font-semibold">Aucun papier algérien</span>
+        </button>
+      </div>
+      {has.includes("passeport") ? (
+        <div>
+          <p className="font-semibold">
+            {me ? "Pour ce voyage, vous partez avec :" : "Pour ce voyage, départ avec :"}
+          </p>
+          <div className="mt-2">
+            <Options
+              label={`Passeport du voyage : ${name}`}
+              value={travel}
+              onChange={(dzTravel) => onChange(fromDzHas(has, dzTravel))}
+              small={compact}
+              options={[
+                { value: "dz", label: "Le passeport algérien", hint: "Et l'autre passeport aussi" },
+                {
+                  value: "foreign",
+                  label: "Le passeport français (ou autre) seulement",
+                  hint: "Le passeport algérien reste à la maison",
+                },
+              ]}
+            />
+          </div>
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+/**
+ * Les prénoms, facultatifs : on les ajoute quand on veut, depuis le récap ou avant le PDF, pour
+ * lire « pour Sarah » plutôt que « Adulte 2 ». Ils restent sur l'appareil.
+ */
+export function NamesEditor({
+  travellers,
+  onChange,
+}: {
+  travellers: Traveller[];
+  onChange: (travellers: Traveller[]) => void;
+}) {
+  return (
+    <div className="bw-names">
+      {travellers.map((x, i) => {
+        const fallback = travellerLabel({ ...x, name: "" }, travellers);
+        const Icon = x.kind === "child" ? Baby : User;
+        return (
+          <label key={x.id} className="bw-names__row">
+            <span className="bw-names__icon">
+              <Icon size={15} aria-hidden />
+            </span>
+            <span className="min-w-0 flex-1">
+              <small>
+                {fallback}
+                {x.kind === "adult" && i === 0 ? " (vous)" : ""}
+              </small>
+              <input
+                type="text"
+                value={x.name ?? ""}
+                onChange={(e) =>
+                  onChange(
+                    travellers.map((y) =>
+                      y.id === x.id ? { ...y, name: e.target.value.slice(0, 24) } : y,
+                    ),
+                  )
+                }
+                placeholder={i === 0 ? "Votre prénom" : "Prénom"}
+                autoComplete={i === 0 ? "given-name" : "off"}
+                enterKeyHint="next"
+              />
+            </span>
+          </label>
+        );
+      })}
+    </div>
+  );
+}
 
 export function HomeStep({
   answers,
@@ -648,9 +793,7 @@ function TravellerCard({
           type="text"
           value={t.name ?? ""}
           onChange={(e) => {
-            const value = e.target.value.slice(0, 24);
-            const guess = child ? null : genderFromName(value);
-            update({ name: value, ...(guess ? { man: guess === "m" } : {}) });
+            update({ name: e.target.value.slice(0, 24) });
           }}
           placeholder="Sarah, Hamid…"
           className="min-h-10 min-w-0 flex-1 rounded-xl border bg-background px-3"
@@ -680,16 +823,10 @@ function TravellerCard({
       {t.nat === "bi" ? (
         <div className="mt-4">
           <p className="text-sm font-semibold">
-            Quel document algérien {child ? "a-t-il, et avec quoi part-il" : "avez-vous, et avec quoi partez-vous"} ?
+            {child ? "Ses papiers algériens" : "Vos papiers algériens"} (cochez tout ce qui existe)
           </p>
           <div className="mt-2">
-            <Options
-              label={`Document algérien et passeport du voyage : ${name}`}
-              value={dzChoiceOf(t)}
-              onChange={(v) => update(fromDzChoice(v))}
-              small
-              options={dzChoices}
-            />
+            <DzDocsField t={t} me={!child} name={name} onChange={update} compact />
           </div>
         </div>
       ) : null}
@@ -884,6 +1021,12 @@ export function StayStep({ answers, patch }: StepProps) {
           },
         ]}
       />
+      <div className="mt-4">
+        <Bw504Note title="Pourquoi le logement ?">
+          Pour un visa, on prouve où l'on dort : le certificat d'hébergement de la famille, ou la
+          réservation d'hôtel. Pour un couple marié, le livret de famille sert aussi à l'hôtel.
+        </Bw504Note>
+      </div>
     </Question>
   );
 }
@@ -951,6 +1094,11 @@ export function PapersResult({
     : "Votre liste, voyageur par voyageur";
   const toggle = (id: string) =>
     setDone((d) => (d.includes(id) ? d.filter((x) => x !== id) : [...d, id]));
+  // Les prénoms se donnent ici, quand on veut : ils ne prennent plus un écran du parcours.
+  const [naming, setNaming] = useState(false);
+  const named = answers.travellers.some((t) => t.name?.trim());
+  const pickEdit = (target: EditTarget) =>
+    target.kind === "names" && patch ? setNaming(true) : onEditAt?.(target);
   const toDo = tasks.filter(isPaperToDo);
   const toTake = tasks.filter((t) => !isPaperToDo(t));
   const atConsulate = tasks.filter((t) => t.consulate);
@@ -978,6 +1126,23 @@ export function PapersResult({
           </h1>
         </>
       )}
+      {patch && naming ? (
+        <div className="bw-names-card">
+          <p className="bw-names-card__title">Les prénoms sur votre récap</p>
+          <NamesEditor travellers={answers.travellers} onChange={(travellers) => patch({ travellers })} />
+          <button type="button" onClick={() => setNaming(false)} className="bw-names-card__ok">
+            <Check size={15} aria-hidden /> C'est bon
+          </button>
+        </div>
+      ) : patch && !named && answers.travellers.length > 1 ? (
+        <button type="button" onClick={() => setNaming(true)} className="bw-names-hint">
+          <Pencil size={15} aria-hidden />
+          <span>
+            <b>Personnaliser le récap</b>
+            Ajoutez les prénoms : « pour Sarah » plutôt que « Adulte 2 ».
+          </span>
+        </button>
+      ) : null}
       <RecapSheet
         tasks={all}
         notes={notes}
@@ -1007,7 +1172,7 @@ export function PapersResult({
         }
         editSlot={
           onEditAt ? (
-            <EditMenu answers={answers} onPick={onEditAt} triggerClassName="bw-recap__hbtn" />
+            <EditMenu answers={answers} onPick={pickEdit} triggerClassName="bw-recap__hbtn" />
           ) : (
             <button type="button" onClick={onEdit} className="bw-recap__hbtn">
               <Pencil size={14} aria-hidden /> Modifier

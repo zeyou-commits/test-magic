@@ -5,7 +5,9 @@ import {
   defaultAnswers,
   dzChoiceOf,
   dzChoices,
+  dzHasOf,
   fromDzChoice,
+  fromDzHas,
   newTraveller,
   tasksFor,
   visaCost,
@@ -66,5 +68,27 @@ describe("service national", () => {
   });
   it("recensé : l'attestation dans la pochette", () => {
     expect(ids(man("bi", "ok"))).toContain("service-national-papier");
+  });
+});
+
+describe("plusieurs papiers algériens", () => {
+  it("part avec le passeport algérien : c'est lui qui compte", () => {
+    expect(fromDzHas(["passeport", "cnibe"], "dz")).toMatchObject({ dzDoc: "passeport", dzTravel: "dz" });
+  });
+  it("passeport étranger seul, avec la carte d'identité : la mesure des binationaux", () => {
+    const t = { ...newTraveller("adult"), nat: "bi" as const, ...fromDzHas(["passeport", "cnibe"], "foreign") };
+    expect(t.dzDoc).toBe("cnibe");
+    expect(tasksFor({ ...defaultAnswers, travellers: [t] }).map((x) => x.id)).toContain("entree-mesure-cnibe");
+  });
+  it("passeport étranger seul, sans carte : l'alerte du passeport laissé", () => {
+    expect(fromDzHas(["passeport"], "foreign")).toMatchObject({ dzDoc: "passeport", dzTravel: "foreign" });
+  });
+  it("sans passeport valide : la carte passe avant le passeport expiré", () => {
+    expect(fromDzHas(["passeportExpire", "cnibe"], "foreign")).toMatchObject({ dzDoc: "cnibe", dzTravel: "dz" });
+    expect(fromDzHas([], "dz").dzDoc).toBe("aucun");
+  });
+  it("reprend les anciennes réponses", () => {
+    expect(dzHasOf({ ...newTraveller("adult"), dzDoc: "cnibe" })).toEqual(["cnibe"]);
+    expect(dzHasOf({ ...newTraveller("adult"), dzDoc: "aucun" })).toEqual([]);
   });
 });

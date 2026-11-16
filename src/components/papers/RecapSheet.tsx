@@ -62,6 +62,63 @@ function dueLabel(when: When, deadlines: Deadlines) {
 const isUrgent = (when: When, label: string) =>
   when === "first" || /maintenant|aujourd|cette semaine|dépassé|retard/i.test(label);
 
+/**
+ * Les chiffres du récap, en tête : l'urgent d'abord, puis une tuile par rubrique. Chaque tuile
+ * mène à son détail.
+ */
+export function PaperKpis({
+  tasks,
+  done,
+  deadlines,
+  onPick,
+}: {
+  tasks: Task[];
+  done: string[];
+  deadlines: Deadlines;
+  onPick: (category: PlanCategory | "urgent") => void;
+}) {
+  const left = (category: PlanCategory) =>
+    tasks.filter(
+      (t) => planCategory(t) === category && (!isCheckable(category) || !done.includes(t.id)),
+    );
+  const urgent = tasks.filter(
+    (t) =>
+      (planCategory(t) === "steps" || planCategory(t) === "documents") &&
+      !done.includes(t.id) &&
+      isUrgent(t.when, dueLabel(t.when, deadlines)),
+  ).length;
+  const tiles: { key: PlanCategory | "urgent"; n: number; label: string; icon: LucideIcon }[] = [
+    ...(urgent
+      ? [{ key: "urgent" as const, n: urgent, label: urgent > 1 ? "urgentes : à faire dès maintenant" : "urgente : à faire dès maintenant", icon: AlertTriangle }]
+      : []),
+    { key: "steps", n: left("steps").length, label: "démarches", icon: ClipboardList },
+    { key: "documents", n: left("documents").length, label: "documents à préparer", icon: FileText },
+    { key: "pack", n: left("pack").length, label: "à emporter le jour J", icon: Luggage },
+    { key: "attention", n: left("attention").length, label: "points d'attention", icon: Info },
+  ];
+  return (
+    <div className="bw-kpis" role="list" aria-label="Le récap en chiffres">
+      {tiles.map((tile) => {
+        const Icon = tile.icon;
+        return (
+          <button
+            key={tile.key}
+            type="button"
+            role="listitem"
+            data-kpi={tile.key}
+            data-zero={tile.n === 0 || undefined}
+            onClick={() => onPick(tile.key)}
+          >
+            <Icon size={14} aria-hidden />
+            <b>{tile.n}</b>
+            <span>{tile.label}</span>
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
 const shortConsulat = (name: string) =>
   name.replace(/^Consulat (général )?d'Algérie à /, "Consulat de ");
 
@@ -275,6 +332,20 @@ export function RecapSheet({
         ) : null}
       </dl>
 
+      <PaperKpis
+        tasks={tasks}
+        done={done}
+        deadlines={deadlines}
+        onPick={(key) => {
+          const block = document.getElementById(`recap-${key === "urgent" ? "steps" : key}`);
+          if (!block) return;
+          block.scrollIntoView({ behavior: "smooth", block: "start" });
+          block.classList.remove("is-flash");
+          void block.offsetWidth;
+          block.classList.add("is-flash");
+        }}
+      />
+
       {travellers.length > 2 ? (
         <div className="bw-recap__who" role="radiogroup" aria-label="Voir ce qui concerne">
           {filters.map((filter) => (
@@ -307,7 +378,12 @@ export function RecapSheet({
             ? [...items.filter((i) => !isDone(i)), ...items.filter((i) => isDone(i))]
             : items;
           return (
-            <section key={category} className="bw-recap__block" data-cat={category}>
+            <section
+              key={category}
+              id={`recap-${category}`}
+              className="bw-recap__block"
+              data-cat={category}
+            >
               <h3>
                 <Icon size={16} aria-hidden /> {planCategoryLabels[category].title}
                 <span

@@ -3,9 +3,6 @@ import { Baby, User } from "lucide-react";
 import {
   ageBandOf,
   ageBands,
-  dzChoiceOf,
-  dzChoices,
-  fromDzChoice,
   travellerLabel,
   travelsWithDzPassport,
   type Answers,
@@ -14,8 +11,8 @@ import {
 } from "@/content/formalites";
 import { Bw504Note } from "@/components/companion/Bw504Note";
 import { WizardNav, useWizardScreen } from "@/components/prepare/WizardFrame";
-import { genderFromName } from "@/lib/papers/genderFromName";
 import {
+  DzDocsField,
   GroupStep,
   HomeStep,
   Options,
@@ -67,8 +64,7 @@ export function paperQuestions(a: Answers, steps: PapersStep[]): PaperQ[] {
   const out: PaperQ[] = [];
   for (const step of steps) {
     if (step === "people") {
-      // D'abord les prénoms (facultatifs) : la suite parle de Sarah ou Hamid, pas d'« Adulte 2 ».
-      out.push({ kind: "names" });
+      // Les prénoms ne prennent plus d'écran : ils se donnent dans le récap, ou avant le PDF.
       for (const t of a.travellers) {
         const child = t.kind === "child";
         const add = (q: TravellerQ) => out.push({ kind: "traveller", q, id: t.id });
@@ -188,52 +184,16 @@ export function PapersQuestions({
     options: { value: T; label: string; hint?: string }[],
   ) => <Options label={label} value={value} onChange={onChange} options={options} />;
 
+  // Le « pourquoi » d'une question : sous les réponses, dit par la 504.
+  const why = (title: string, text: ReactNode) => (
+    <div className="mt-4">
+      <Bw504Note title={title}>{text}</Bw504Note>
+    </div>
+  );
+
   let body: ReactNode = null;
   if (q.kind === "names") {
-    const rename = (id: string, name: string) =>
-      patch({
-        travellers: answers.travellers.map((x) => {
-          if (x.id !== id) return x;
-          // Le prénom présélectionne homme ou femme ; la question suivante reste modifiable.
-          const guess = x.kind === "adult" ? genderFromName(name) : null;
-          return { ...x, name: name.slice(0, 24), ...(guess ? { man: guess === "m" } : {}) };
-        }),
-      });
-    body = (
-      <Question
-        title={answers.travellers.length > 1 ? "Comment s'appellent les voyageurs ?" : "Quel est votre prénom ?"}
-        hint="Facultatif. Votre liste dira « pour Sarah », « pour Hamid » : plus simple à partager avec la famille. Les prénoms restent sur votre téléphone."
-      >
-        <div className="grid gap-2.5">
-          {answers.travellers.map((x, i) => {
-            const fallback = travellerLabel({ ...x, name: "" }, answers.travellers);
-            const Icon = x.kind === "child" ? Baby : User;
-            return (
-              <label key={x.id} className="flex items-center gap-3 rounded-xl border bg-background px-3 py-2.5 focus-within:border-primary focus-within:ring-1 focus-within:ring-primary">
-                <span className="grid size-9 shrink-0 place-items-center rounded-full bg-primary/10 text-primary">
-                  <Icon size={17} aria-hidden />
-                </span>
-                <span className="min-w-0 flex-1">
-                  <span className="block text-[11px] font-bold uppercase tracking-wide text-muted-foreground">
-                    {fallback}
-                    {x.kind === "child" ? "" : i === 0 ? " (vous)" : ""}
-                  </span>
-                  <input
-                    type="text"
-                    value={x.name ?? ""}
-                    onChange={(e) => rename(x.id, e.target.value)}
-                    placeholder={i === 0 ? "Votre prénom" : "Prénom"}
-                    autoComplete={i === 0 ? "given-name" : "off"}
-                    enterKeyHint="next"
-                    className="mt-0.5 w-full bg-transparent text-base font-semibold outline-none placeholder:font-normal placeholder:text-muted-foreground/60"
-                  />
-                </span>
-              </label>
-            );
-          })}
-        </div>
-      </Question>
-    );
+    body = null;
   } else if (q.kind === "step") {
     if (q.step === "home") body = homeSlot ?? <HomeStep answers={answers} patch={patch} />;
     else if (q.step === "group") body = <GroupStep answers={answers} patch={patch} />;
@@ -253,7 +213,7 @@ export function PapersQuestions({
       body = (
         <>
           {who}
-          <Question title="Quel âge aura-t-il le jour du départ ?">
+          <Question title="Quel sera son âge le jour du départ ?">
             {choice(
               "Âge le jour du départ",
               String(ageBandOf(t.age).age),
@@ -264,13 +224,10 @@ export function PapersQuestions({
                 ...("hint" in band ? { hint: band.hint } : {}),
               })),
             )}
-            <div className="mt-4">
-              <Bw504Note title="Pourquoi je demande l'âge ?">
-                Il change les papiers : le prix du visa (gratuit avant 6 ans, moins cher avant 12),
-                l'entrée avec le passeport étranger pour les binationaux de 15 ans ou moins, et à 18
-                ans un jeune est majeur en France mais encore mineur en Algérie, jusqu'à 19 ans.
-              </Bw504Note>
-            </div>
+            {why(
+              "Pourquoi l'âge ?",
+              "Il change les papiers : le prix du visa (gratuit avant 6 ans, moins cher avant 12 ans), l'entrée des binationaux de 15 ans ou moins avec le passeport étranger, et à 18 ans on est majeur en France mais encore mineur en Algérie, jusqu'à 19 ans.",
+            )}
           </Question>
         </>
       );
@@ -280,7 +237,6 @@ export function PapersQuestions({
           {who}
           <Question
             title={me ? "Quelle est votre nationalité ?" : "Quelle est sa nationalité ?"}
-            hint="La nationalité décide presque tout : visa ou non, et quels documents algériens."
           >
             {choice("Nationalité", t.nat, (nat) => update({ nat }), [
               { value: "bi", label: "Algérien et français (ou autre)", hint: "Binational" },
@@ -295,6 +251,10 @@ export function PapersQuestions({
                 hint: "Français, belge… sans nationalité algérienne",
               },
             ])}
+            {why(
+              "Pourquoi la nationalité ?",
+              "C'est elle qui décide presque tout : s'il faut un visa, et quels papiers algériens présenter à la frontière.",
+            )}
           </Question>
         </>
       );
@@ -303,40 +263,23 @@ export function PapersQuestions({
         <>
           {who}
           <Question
-            title={
-              me
-                ? "Quel document algérien avez-vous, et avec quoi partez-vous ?"
-                : "Quel document algérien a-t-il, et avec quoi part-il ?"
-            }
-            hint="À l'entrée en Algérie, un binational est traité comme un Algérien : son document algérien décide des papiers."
+            title={me ? "Quels papiers algériens avez-vous ?" : "Quels sont ses papiers algériens ?"}
+            hint="Cochez tout ce qui existe, même expiré."
           >
-            {choice("Document algérien et passeport du voyage", dzChoiceOf(t), (v) =>
-              update(fromDzChoice(v)),
-              dzChoices,
+            <DzDocsField
+              t={t}
+              me={me}
+              name={travellerLabel(t, answers.travellers)}
+              onChange={(p) =>
+                patch({
+                  travellers: answers.travellers.map((x) => (x.id === t.id ? { ...x, ...p } : x)),
+                })
+              }
+            />
+            {why(
+              "Pourquoi tous les papiers ?",
+              "En Algérie, un binational est traité comme un Algérien : ce sont ses papiers algériens qui disent s'il lui faut un visa. Avec le passeport étranger seul, la carte d'identité algérienne, même expirée, évite le visa jusqu'au 31 décembre 2026.",
             )}
-          </Question>
-        </>
-      );
-    if (q.q === "dzTravel")
-      body = (
-        <>
-          {who}
-          <Question
-            title={me ? "Avec quel passeport partez-vous ?" : "Avec quel passeport part-il ?"}
-            hint="À l'entrée en Algérie, un binational est traité comme un Algérien."
-          >
-            {choice("Passeport du voyage", t.dzTravel ?? "dz", (dzTravel) => update({ dzTravel }), [
-              {
-                value: "dz",
-                label: "Avec le passeport algérien",
-                hint: "Et l'autre passeport aussi",
-              },
-              {
-                value: "foreign",
-                label: "Avec le passeport français (ou autre) seulement",
-                hint: "Le passeport algérien reste à la maison",
-              },
-            ])}
           </Question>
         </>
       );
@@ -346,6 +289,7 @@ export function PapersQuestions({
           {who}
           <Question
             title={`${me ? "Votre" : "Son"} passeport algérien sera-t-il encore valable au retour ?`}
+            hint="La date de fin est sur la page de la photo."
           >
             {choice(
               "Passeport valable au retour",
@@ -359,8 +303,12 @@ export function PapersQuestions({
                   hint: "Quelques jours ou semaines après",
                 },
                 { value: "no", label: "Non, il expire avant" },
-                { value: "unknown", label: "Je ne sais pas", hint: "La date est sur le passeport" },
+                { value: "unknown", label: "Je ne sais pas" },
               ],
+            )}
+            {why(
+              "Pourquoi le retour ?",
+              "C'est avec ce passeport qu'on ressort d'Algérie. S'il expire pendant le séjour, le retour se complique : mieux vaut le renouveler avant de partir.",
             )}
           </Question>
         </>
@@ -376,6 +324,10 @@ export function PapersQuestions({
               { value: "titre", label: "Oui" },
               { value: "fragile", label: "Non, ou j'ai un récépissé" },
             ])}
+            {why(
+              "Pourquoi le titre de séjour ?",
+              "Pour revenir en France, un Algérien présente son titre de séjour à la frontière. S'il n'est plus valable au retour, je vous dis quoi faire avant de partir.",
+            )}
           </Question>
         </>
       );
@@ -418,13 +370,12 @@ export function PapersQuestions({
                 { value: "unknown", label: "Je ne sais pas" },
               ],
             )}
-            <div className="mt-4">
-              <Bw504Note title="Pourquoi cette question ?">
-                {t.nat === "bi"
-                  ? "Un homme algérien a des obligations de service national dès 19 ans. Pour un franco-algérien, l'accord de 1983 fait compter le service choisi en France : je vous dis si vous êtes en règle, ou quoi faire."
-                  : "Un homme algérien a des obligations de service national dès 19 ans. La preuve (recensement ou dispense) peut être demandée à la sortie d'Algérie : je l'ajoute à la pochette, ou la démarche à votre liste."}
-              </Bw504Note>
-            </div>
+            {why(
+              "Pourquoi le service national ?",
+              t.nat === "bi"
+                ? "Un homme algérien a des obligations de service national dès 19 ans. Pour un franco-algérien, l'accord de 1983 fait compter le service choisi en France : je vous dis si vous êtes en règle, ou quoi faire."
+                : "Un homme algérien a des obligations de service national dès 19 ans. La preuve (recensement ou dispense) peut être demandée à la sortie d'Algérie : je l'ajoute à la pochette, ou la démarche à votre liste.",
+            )}
           </Question>
         </>
       );
@@ -433,13 +384,16 @@ export function PapersQuestions({
         <>
           {who}
           <Question
-            title={me ? "Vous êtes…" : "C'est…"}
-            hint="Les hommes algériens ont des obligations de service national : un papier peut être demandé."
+            title={me ? "Vous êtes un homme ou une femme ?" : "Un homme ou une femme ?"}
           >
             {choice("Homme ou femme", t.man ? "yes" : "no", (v) => update({ man: v === "yes" }), [
               { value: "yes", label: "Un homme" },
               { value: "no", label: "Une femme" },
             ])}
+            {why(
+              "Pourquoi je le demande ?",
+              "Un homme algérien a des obligations de service national dès 19 ans : une preuve peut lui être demandée à la sortie d'Algérie. Je vérifie s'il en faut une.",
+            )}
           </Question>
         </>
       );
@@ -447,34 +401,39 @@ export function PapersQuestions({
     if (q.q === "couple")
       body = (
         <Question
-          title="Deux des adultes forment-ils un couple ?"
-          hint="Le mariage peut changer les papiers."
+          title="Deux des adultes sont-ils en couple ?"
         >
           {choice("Couple", answers.couple, (couple) => set({ couple }), [
             { value: "married", label: "Oui, mariés" },
-            { value: "unmarried", label: "Oui, pas mariés" },
+            { value: "unmarried", label: "Oui, sans être mariés" },
             { value: "none", label: "Non" },
           ])}
+          {why(
+            "Pourquoi le couple ?",
+            "Le mariage change les papiers : marié à un Algérien, un conjoint étranger peut demander le visa familial de conjoint.",
+          )}
         </Question>
       );
     if (q.q === "transcribed")
       body = (
         <Question
           title="Le mariage est-il transcrit à l'état civil algérien ?"
-          hint="Le visa du conjoint étranger en dépend."
         >
           {choice("Mariage transcrit", answers.transcribed, (transcribed) => set({ transcribed }), [
             { value: "yes", label: "Oui" },
             { value: "no", label: "Non" },
             { value: "unknown", label: "Je ne sais pas" },
           ])}
+          {why(
+            "Pourquoi la transcription ?",
+            "Le visa familial de conjoint en dépend. Si elle n'est pas faite, je l'ajoute à vos démarches, en premier.",
+          )}
         </Question>
       );
     if (q.q === "kidsWith")
       body = (
         <Question
           title="Avec qui voyagent les enfants ?"
-          hint="L'adulte qui les accompagne change les papiers."
         >
           {choice("Les enfants voyagent avec", answers.kidsWith, (kidsWith) => set({ kidsWith }), [
             { value: "both", label: "Leurs deux parents" },
@@ -483,6 +442,10 @@ export function PapersQuestions({
             { value: "other", label: "Un autre adulte", hint: "Grands-parents, oncle, tante…" },
             { value: "alone", label: "Seuls" },
           ])}
+          {why(
+            "Pourquoi l'accompagnant ?",
+            "Un mineur qui part sans l'un de ses parents a besoin de papiers en plus, comme l'autorisation paternelle de sortie : je vous dis lesquels.",
+          )}
         </Question>
       );
     if (q.q === "separated")
@@ -510,6 +473,10 @@ export function PapersQuestions({
               { value: "yes", label: "Oui, par jugement" },
               { value: "no", label: "Non, ou pas de jugement" },
             ],
+          )}
+          {why(
+            "Pourquoi la garde ?",
+            "Si les enfants partent avec leur mère, le jugement qui lui confie la garde remplace l'autorisation paternelle : il part alors dans la pochette du voyage.",
           )}
         </Question>
       );

@@ -194,7 +194,15 @@ export function retroPlan(
       id: "first",
       date: today,
       lead: "now",
-      title: "Les papiers à lancer",
+      // « Regarder la date d'expiration » se vérifie, il ne se lance pas : le titre suit le contenu.
+      title: (() => {
+        const checks = first.filter((t) => /^(Regarder|Vérifier|Avoir)/.test(t.title)).length;
+        return checks === first.length
+          ? "Les papiers à vérifier"
+          : checks
+            ? "Les papiers à vérifier ou à lancer"
+            : "Les papiers à lancer";
+      })(),
       detail: papersWhy("first", day, visa).short,
       more: papersWhy("first", day, visa).more,
       tasks: first,

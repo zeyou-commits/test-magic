@@ -13,6 +13,7 @@ import {
   Luggage,
   Mail,
   MapPin,
+  Pencil,
   Share2,
   Ship,
   Users,
@@ -27,8 +28,10 @@ import {
   whenLabels,
   whenOrder,
   type Task,
+  type Traveller,
   type When,
 } from "@/content/formalites";
+import { NamesEditor } from "@/components/papers/PapersFlow";
 import { consulatForDepartment, departmentFromPostcode } from "@/content/consulats";
 import { portsQuery } from "@/lib/ferry/queries";
 import { papersDeadlines } from "@/lib/ferry/retroPlan";
@@ -136,7 +139,19 @@ function SharedPreparationPage() {
     savePapers({ ...saved, answers: { ...saved.answers, postcode, abroad: false } });
     setOwn(currentPreparation());
   };
-  return <OnePage prep={prep} mine={!shareId} {...(shareId ? {} : { onPostcode: savePostcode })} />;
+  const saveNames = (travellers: Traveller[]) => {
+    const saved = loadPapers();
+    if (!saved) return;
+    savePapers({ ...saved, answers: { ...saved.answers, travellers } });
+    setOwn(currentPreparation());
+  };
+  return (
+    <OnePage
+      prep={prep}
+      mine={!shareId}
+      {...(shareId ? {} : { onPostcode: savePostcode, onNames: saveNames })}
+    />
+  );
 }
 
 function Empty({
@@ -340,11 +355,14 @@ function OnePage({
   prep,
   mine,
   onPostcode,
+  onNames,
 }: {
   prep: SharedPreparation;
   mine: boolean;
   onPostcode?: (postcode: string) => void;
+  onNames?: (travellers: Traveller[]) => void;
 }) {
+  const [naming, setNaming] = useState(false);
   // Venu du récap des papiers : le retour y ramène directement.
   const [fromRecap, setFromRecap] = useState(false);
   useEffect(() => {
@@ -381,10 +399,15 @@ function OnePage({
     .filter((t) => t.kind === "child")
     .map((t) => travellerLabel(t, answers.travellers));
 
-  const groups = planCategoryOrder.map((category) => ({
-    category,
-    items: tasks.filter((t) => planCategory(t) === category),
-  }));
+  // Les démarches et documents vivent dans la frise, datés ; dessous, ce qui part dans la
+  // pochette et les points d'attention. Chaque ligne n'apparaît qu'une fois sur la feuille.
+  const dated = (t: Task) => ["steps", "documents"].includes(planCategory(t));
+  const groups = planCategoryOrder
+    .filter((category) => category === "pack" || category === "attention")
+    .map((category) => ({
+      category,
+      items: tasks.filter((t) => planCategory(t) === category),
+    }));
   const toDo = tasks.filter((t) => ["steps", "documents"].includes(planCategory(t))).length;
   const toTake = tasks.filter((t) => planCategory(t) === "pack").length;
   const fees = totalCost(tasks);
@@ -409,6 +432,28 @@ function OnePage({
           onPrint={() => window.print()}
           inputRef={askRef}
         />
+      ) : null}
+      {mine && onNames && answers.travellers.length > 1 ? (
+        naming ? (
+          <div className="bw-onepage__names">
+            <p className="bw-onepage__ask-title">Les prénoms sur la feuille</p>
+            <NamesEditor travellers={answers.travellers} onChange={onNames} />
+            <button
+              type="button"
+              onClick={() => setNaming(false)}
+              className="bw-onepage__btn bw-onepage__btn--main mt-3"
+            >
+              <Check size={16} aria-hidden /> C'est bon
+            </button>
+          </div>
+        ) : (
+          <button type="button" onClick={() => setNaming(true)} className="bw-onepage__nameshint">
+            <Pencil size={15} aria-hidden />
+            {named.length
+              ? "Modifier les prénoms de la feuille"
+              : "Mettre les prénoms sur la feuille (facultatif)"}
+          </button>
+        )
       ) : null}
       {mine ? (
         <SharePanel
@@ -490,7 +535,9 @@ function OnePage({
         </dl>
 
         <Frise
-          tasks={tasks}
+          tasks={tasks.filter(dated)}
+          packCount={tasks.filter((t) => planCategory(t) === "pack").length}
+          childNames={childNames}
           done={prep.done}
           due={due}
           departure={
@@ -560,17 +607,21 @@ function OnePage({
 }
 
 /**
- * La frise du PDF : un moment par ligne, dans l'ordre du voyage, avec sa date et ses démarches
- * en court. Le départ et le retour s'y placent comme des jalons.
+ * La frise du PDF : les démarches et documents à préparer, dans l'ordre des dates, cochables.
+ * Le départ et le retour s'y placent comme des jalons ; la pochette est détaillée dessous.
  */
 function Frise({
   tasks,
+  packCount,
+  childNames,
   done,
   due,
   departure,
   back,
 }: {
   tasks: Task[];
+  packCount: number;
+  childNames: string[];
   done: string[];
   due: (when: When) => string;
   departure: string | null;
@@ -579,29 +630,33 @@ function Frise({
   type Node = { key: string; lead: string; tag?: string; items: Task[]; milestone?: boolean };
   const nodes: Node[] = [];
   const fixed: Partial<Record<When, string>> = { pack: "Le jour du départ", there: "Sur place", back: "Pour rentrer" };
+  const goNode: Node | null = departure
+    ? {
+        key: "go",
+        lead: departure,
+        tag: packCount ? `Départ · ${packCount} papier${packCount > 1 ? "s" : ""} dans la pochette` : "Départ",
+        items: [],
+        milestone: true,
+      }
+    : null;
   for (const when of whenOrder) {
-    if (when === "there" && departure)
-      nodes.push({ key: "go", lead: departure, tag: "Départ", items: [], milestone: true });
+    if (when === "pack" && goNode) nodes.push(goNode);
     if (when === "back" && back)
       nodes.push({ key: "ret", lead: back, tag: "Retour", items: [], milestone: true });
-    const items = tasks.filter((t) => t.when === when && planCategory(t) !== "attention");
+    const items = tasks.filter((t) => t.when === when);
     if (!items.length) continue;
-    const lead = fixed[when] ?? due(when);
-    nodes.push({ key: when, lead, tag: whenLabels[when].title, items });
+    nodes.push({ key: when, lead: fixed[when] ?? due(when), tag: whenLabels[when].title, items });
   }
-  if (departure && !nodes.some((n) => n.key === "go"))
-    nodes.push({ key: "go", lead: departure, tag: "Départ", items: [], milestone: true });
-  if (nodes.length < 2) return null;
+  if (goNode && !nodes.includes(goNode)) nodes.push(goNode);
+  if (!nodes.some((n) => n.items.length)) return null;
   return (
-    <section className="bw-onepage__frise" aria-label="Le calendrier">
+    <section className="bw-onepage__frise" aria-label="Le calendrier des démarches">
       <h2>
-        <CalendarDays size={15} aria-hidden /> Le calendrier
+        <CalendarDays size={15} aria-hidden /> Le calendrier des démarches
       </h2>
       <ol>
         {nodes.map((node) => {
           const finished = node.items.length > 0 && node.items.every((t) => done.includes(t.id));
-          const shown = node.items.slice(0, 2).map((t) => t.title);
-          const more = node.items.length - shown.length;
           return (
             <li
               key={node.key}
@@ -612,17 +667,24 @@ function Frise({
                 {finished ? "✓" : ""}
               </span>
               <b>{node.lead}</b>
-              <span>
-                {node.milestone ? (
+              {node.milestone ? (
+                <span>
                   <em>{node.tag}</em>
-                ) : (
-                  <>
-                    {node.tag && node.tag !== node.lead ? <em>{node.tag}</em> : null}
-                    {shown.join(" · ")}
-                    {more > 0 ? ` · et ${more} autre${more > 1 ? "s" : ""}` : ""}
-                  </>
-                )}
-              </span>
+                </span>
+              ) : (
+                <ul className="bw-onepage__frise-items">
+                  {node.items.map((task) => (
+                    <Row
+                      key={task.id}
+                      task={task}
+                      checkable
+                      who={groupWho(task.who, childNames)}
+                      done={done.includes(task.id)}
+                      due={null}
+                    />
+                  ))}
+                </ul>
+              )}
             </li>
           );
         })}

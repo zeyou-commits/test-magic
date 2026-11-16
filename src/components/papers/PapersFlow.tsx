@@ -25,6 +25,7 @@ import {
   Users,
 } from "lucide-react";
 import { textLink } from "@/components/editorial/Editorial";
+import { SearchBox } from "@/components/SearchBox";
 import { Bw504Note, BwKnow } from "@/components/companion/Bw504Note";
 import { WizardNav, useInWizard } from "@/components/prepare/WizardFrame";
 import {
@@ -556,6 +557,8 @@ export function CityField({
   const [query, setQuery] = useState(postcode);
   const [picked, setPicked] = useState<string | null>(null);
   const [results, setResults] = useState<{ name: string; code: string; dep: string }[]>([]);
+  const [busy, setBusy] = useState(false);
+  const [searched, setSearched] = useState(false);
   // Code postal venu d'ailleurs (« Me localiser », réponse enregistrée) : on l'affiche.
   useEffect(() => {
     if (postcode && !query.includes(postcode)) setQuery(postcode);
@@ -568,12 +571,14 @@ export function CityField({
       setResults([]);
       return;
     }
+    setSearched(false);
     if (q.length < 2 || /^\d+$/.test(q) || q === picked) {
       setResults([]);
       return;
     }
     let cancelled = false;
     const timer = window.setTimeout(() => {
+      setBusy(true);
       // Service public API Géo : seul le nom tapé est envoyé.
       fetch(
         `https://geo.api.gouv.fr/communes?nom=${encodeURIComponent(q)}&fields=nom,codesPostaux,codeDepartement&boost=population&limit=6&format=json`,
@@ -591,7 +596,12 @@ export function CityField({
               })),
           );
         })
-        .catch(() => undefined);
+        .catch(() => undefined)
+        .finally(() => {
+          if (cancelled) return;
+          setBusy(false);
+          setSearched(true);
+        });
     }, 250);
     return () => {
       cancelled = true;
@@ -599,48 +609,32 @@ export function CityField({
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [query]);
+  const q = query.trim();
   return (
-    <div className="relative">
-      <label className="block">
-        <span className="text-sm font-semibold">{label}</span>
-        <input
-          autoComplete="address-level2"
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          placeholder="Par exemple Marseille ou 13008"
-          aria-autocomplete="list"
-          className="mt-1 block min-h-12 w-full rounded-xl border bg-background px-4 text-lg"
-        />
-      </label>
-      {results.length ? (
-        <ul
-          role="listbox"
-          className="mt-1 grid overflow-hidden rounded-xl border bg-popover shadow-md"
-        >
-          {results.map((c) => (
-            <li key={`${c.name}-${c.code}`} role="option" aria-selected={false}>
-              <button
-                type="button"
-                onClick={() => {
-                  const text = `${c.name} (${c.code})`;
-                  setPicked(text);
-                  setQuery(text);
-                  setResults([]);
-                  onPick(c.code, { name: c.name });
-                }}
-                className="flex min-h-11 w-full items-center gap-2 px-3 py-2 text-left text-sm hover:bg-secondary"
-              >
-                <MapPin size={14} className="shrink-0 text-muted-foreground" aria-hidden />
-                {c.name}
-                <span className="text-muted-foreground">
-                  {c.code} · {c.dep}
-                </span>
-              </button>
-            </li>
-          ))}
-        </ul>
-      ) : null}
-    </div>
+    <SearchBox
+      id="ville-france"
+      label={label}
+      value={query}
+      onChange={setQuery}
+      placeholder="Par exemple Marseille ou 13008"
+      autoComplete="address-level2"
+      large
+      busy={busy}
+      picked={q === picked || (/^\d{5}$/.test(q) && q === postcode)}
+      searched={searched}
+      hits={results.map((c) => ({
+        key: `${c.name}-${c.code}`,
+        title: c.name,
+        sub: `${c.code}${c.dep ? ` · département ${c.dep}` : ""}`,
+        onPick: () => {
+          const text = `${c.name} (${c.code})`;
+          setPicked(text);
+          setQuery(text);
+          setResults([]);
+          onPick(c.code, { name: c.name });
+        },
+      }))}
+    />
   );
 }
 

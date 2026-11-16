@@ -59,7 +59,11 @@ export function WizardNav({
           type="button"
           data-wiz-back
           onClick={onBack}
-          aria-label={back === undefined && ctx?.backLabel ? `Revenir à l'étape ${ctx.backLabel}` : "Question précédente"}
+          aria-label={
+            back === undefined && ctx?.backLabel
+              ? `Revenir à l'étape ${ctx.backLabel}`
+              : "Question précédente"
+          }
           className="inline-flex min-h-12 items-center gap-2 rounded-xl px-3 text-sm font-semibold hover:bg-secondary"
         >
           <ArrowLeft size={16} aria-hidden /> {backText}
@@ -145,6 +149,25 @@ export function WizardFrame({
     };
   }, []);
 
+  // Clavier ouvert sur Android : Chrome ne réduit plus la page, la barre du bas passerait
+  // dessous. Le guide prend alors la hauteur vraiment visible : les boutons restent au-dessus.
+  const [visible, setVisible] = useState<{ height: number; top: number } | null>(null);
+  useEffect(() => {
+    const vv = window.visualViewport;
+    if (!vv) return;
+    const update = () =>
+      setVisible(
+        vv.height < window.innerHeight - 60 ? { height: vv.height, top: vv.offsetTop } : null,
+      );
+    update();
+    vv.addEventListener("resize", update);
+    vv.addEventListener("scroll", update);
+    return () => {
+      vv.removeEventListener("resize", update);
+      vv.removeEventListener("scroll", update);
+    };
+  }, []);
+
   // Chaque nouvel écran arrive de côté, dans le sens de la marche, et repart du haut.
   const main = useRef<HTMLDivElement>(null);
   const content = useRef<HTMLDivElement>(null);
@@ -196,7 +219,11 @@ export function WizardFrame({
         aria-modal="true"
         aria-labelledby="wiz-title"
         className="fixed inset-0 z-[80] flex flex-col bg-background"
-        style={{ height: "100dvh" }}
+        style={
+          visible
+            ? { height: `${visible.height}px`, top: `${visible.top}px`, bottom: "auto" }
+            : { height: "100dvh" }
+        }
       >
         <header className="shrink-0 border-b bg-card/95 shadow-sm backdrop-blur">
           <div className="mx-auto w-full max-w-2xl px-4 pb-3 pt-[max(0.75rem,env(safe-area-inset-top))]">
@@ -213,58 +240,65 @@ export function WizardFrame({
                 {chapter}
               </p>
             </div>
-            {/* Le fil : où l'on en est, toujours sous les yeux. */}
-            <nav aria-label="Les étapes du voyage" className="mt-2">
-              <ol
-                className="relative grid"
-                style={{ gridTemplateColumns: `repeat(${steps.length}, minmax(0,1fr))` }}
-              >
-                <span className="absolute left-[8%] right-[8%] top-4 h-0.5 bg-border" aria-hidden />
-                <span
-                  className="absolute left-[8%] top-4 h-0.5 bg-primary transition-[width] duration-500"
-                  style={{ width: `${(current / Math.max(1, steps.length - 1)) * 84}%` }}
-                  aria-hidden
-                />
-                {steps.map((item, index) => {
-                  const here = index === current;
-                  const Icon = item.done && !here ? Check : item.icon;
-                  return (
-                    <li key={item.key} className="relative flex justify-center">
-                      <button
-                        type="button"
-                        onClick={() => onOpen(index)}
-                        aria-current={here ? "step" : undefined}
-                        aria-label={`${item.title}${item.done ? " · fait" : ""}${item.recap && item.done ? " · récap disponible" : ""}`}
-                        className="flex flex-col items-center gap-1"
-                      >
-                        <span
-                          className={`relative grid size-8 place-items-center rounded-full border-2 transition-all ${
-                            here
-                              ? "scale-110 border-primary bg-primary text-primary-foreground ring-4 ring-primary/20"
-                              : item.done
-                                ? "border-primary bg-primary text-primary-foreground"
-                                : "border-border bg-background text-muted-foreground"
-                          }`}
+            {/* Le fil : où l'on en est, toujours sous les yeux (inutile avec une seule étape). */}
+            {steps.length > 1 ? (
+              <nav aria-label="Les étapes du voyage" className="mt-2">
+                <ol
+                  className="relative grid"
+                  style={{ gridTemplateColumns: `repeat(${steps.length}, minmax(0,1fr))` }}
+                >
+                  <span
+                    className="absolute left-[8%] right-[8%] top-4 h-0.5 bg-border"
+                    aria-hidden
+                  />
+                  <span
+                    className="absolute left-[8%] top-4 h-0.5 bg-primary transition-[width] duration-500"
+                    style={{ width: `${(current / Math.max(1, steps.length - 1)) * 84}%` }}
+                    aria-hidden
+                  />
+                  {steps.map((item, index) => {
+                    const here = index === current;
+                    const Icon = item.done && !here ? Check : item.icon;
+                    return (
+                      <li key={item.key} className="relative flex justify-center">
+                        <button
+                          type="button"
+                          onClick={() => onOpen(index)}
+                          aria-current={here ? "step" : undefined}
+                          aria-label={`${item.title}${item.done ? " · fait" : ""}${item.recap && item.done ? " · récap disponible" : ""}`}
+                          className="flex flex-col items-center gap-1"
                         >
-                          <Icon size={15} strokeWidth={item.done && !here ? 3 : 2} aria-hidden />
-                          {item.recap && item.done && !here ? (
-                            <span className="bw-recap-badge" aria-hidden>
-                              <FileText size={9} strokeWidth={2.5} />
-                            </span>
-                          ) : null}
-                        </span>
-                        <span
-                          className={`text-[10px] leading-none md:text-xs ${here ? "font-bold text-foreground" : "text-muted-foreground"}`}
-                        >
-                          {item.short}
-                        </span>
-                      </button>
-                    </li>
-                  );
-                })}
-              </ol>
-            </nav>
-            <div className="mt-3 flex items-end justify-between gap-3">
+                          <span
+                            className={`relative grid size-8 place-items-center rounded-full border-2 transition-all ${
+                              here
+                                ? "scale-110 border-primary bg-primary text-primary-foreground ring-4 ring-primary/20"
+                                : item.done
+                                  ? "border-primary bg-primary text-primary-foreground"
+                                  : "border-border bg-background text-muted-foreground"
+                            }`}
+                          >
+                            <Icon size={15} strokeWidth={item.done && !here ? 3 : 2} aria-hidden />
+                            {item.recap && item.done && !here ? (
+                              <span className="bw-recap-badge" aria-hidden>
+                                <FileText size={9} strokeWidth={2.5} />
+                              </span>
+                            ) : null}
+                          </span>
+                          <span
+                            className={`text-[10px] leading-none md:text-xs ${here ? "font-bold text-foreground" : "text-muted-foreground"}`}
+                          >
+                            {item.short}
+                          </span>
+                        </button>
+                      </li>
+                    );
+                  })}
+                </ol>
+              </nav>
+            ) : null}
+            <div
+              className={`${steps.length > 1 ? "mt-3" : "mt-2"} flex items-end justify-between gap-3`}
+            >
               <h2
                 id="wiz-title"
                 className="min-w-0 font-display text-lg font-bold leading-tight md:text-xl"

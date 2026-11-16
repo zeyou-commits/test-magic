@@ -1,6 +1,6 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Check, ChevronDown } from "lucide-react";
+import { Check, ChevronDown, Loader2 } from "lucide-react";
 import { isTowardsSouth } from "@/lib/ferry/markets";
 import {
   companiesQuery,
@@ -229,6 +229,19 @@ export function RouteTop3({
     days.to,
   ]);
   const [openId, setOpenId] = useState<string | null>(null);
+  // Un nouveau calcul lancé par le voyageur (ville, destination) : on l'amène sous ses yeux.
+  const section = useRef<HTMLElement>(null);
+  const seen = useRef(false);
+  useEffect(() => {
+    if (!seen.current) {
+      seen.current = true;
+      return;
+    }
+    if (!road.isFetching) return;
+    const box = section.current?.getBoundingClientRect();
+    if (box && (box.top < 0 || box.top > window.innerHeight * 0.6))
+      section.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }, [road.isFetching]);
 
   if (!plan.home) return null;
   if (!destinationPoint)
@@ -245,17 +258,13 @@ export function RouteTop3({
   const estimated = top.some(({ option }) => option.sailing.isSimulation);
 
   return (
-    <section aria-labelledby="top3-title" className="bw-route__top">
+    <section ref={section} aria-labelledby="top3-title" className="bw-route__top scroll-mt-4">
       <h3 id="top3-title" className="bw-route__h">
         {top.length > 1 ? `Vos ${top.length} meilleurs trajets` : "Votre trajet"}
         <span>porte à porte · {monthLabel}</span>
       </h3>
-      {road.isPending ? (
-        <ol className="grid gap-2" aria-busy="true">
-          {[0, 1, 2].map((index) => (
-            <li key={index} className="h-[104px] animate-pulse rounded-2xl bg-secondary/60" />
-          ))}
-        </ol>
+      {road.isPending || (road.isFetching && !top.length) ? (
+        <RouteLoading month={monthLabel} destination={destinationLabel} />
       ) : road.isError ? (
         <p className="bw-route__empty">
           Le calcul de la route n'a pas abouti.{" "}
@@ -436,12 +445,7 @@ function RouteCard({
           ))}
         </span>
       </button>
-      <button
-        type="button"
-        aria-expanded={open}
-        onClick={onToggle}
-        className="bw-rcard__more"
-      >
+      <button type="button" aria-expanded={open} onClick={onToggle} className="bw-rcard__more">
         {open ? "Masquer le détail" : "Heure par heure"}
         <ChevronDown
           size={14}
@@ -466,5 +470,56 @@ function RouteCard({
         </ol>
       ) : null}
     </li>
+  );
+}
+
+const loadingSteps = (month: string, destination: string) => [
+  {
+    title: "Je trace la route jusqu'aux ports",
+    sub: "Les ports de France, d'Espagne et d'Italie à votre portée",
+  },
+  {
+    title: `Je regarde les traversées de ${month}`,
+    sub: "Horaires publiés, sinon les habitudes de chaque ligne",
+  },
+  {
+    title: "Je compte l'attente et la dernière route",
+    sub: destination
+      ? `Du port d'arrivée jusqu'à ${destination}`
+      : "Du port d'arrivée jusqu'au bled",
+  },
+];
+
+/** Pendant le calcul : la voiture roule, la mer bouge, et la 504 dit ce qu'elle fait. */
+function RouteLoading({ month, destination }: { month: string; destination: string }) {
+  const steps = loadingSteps(month, destination);
+  const [step, setStep] = useState(0);
+  useEffect(() => {
+    const id = window.setInterval(
+      () => setStep((current) => Math.min(current + 1, steps.length - 1)),
+      1600,
+    );
+    return () => window.clearInterval(id);
+  }, [steps.length]);
+  const now = steps[step]!;
+  return (
+    <div className="bw-rload" role="status" aria-live="polite" aria-busy="true">
+      <div className="bw-rload__track" aria-hidden>
+        <i data-kind="road" />
+        <i data-kind="sea" />
+        <i data-kind="road" />
+        <span className="bw-rload__car">🚗</span>
+      </div>
+      <p className="bw-rload__msg">
+        <Loader2 size={16} className="shrink-0 animate-spin text-primary" aria-hidden />
+        <span>
+          {now.title}…<small>{now.sub}</small>
+        </span>
+      </p>
+      <div className="bw-rload__ghost" aria-hidden>
+        <span />
+        <span />
+      </div>
+    </div>
   );
 }

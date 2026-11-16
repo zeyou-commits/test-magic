@@ -237,9 +237,9 @@ export function retroPlan(
       ? "Après la liste des papiers : un visa refusé ne rembourse pas un billet non remboursable."
       : weeks.length
         ? visa
-          ? "Dès que les démarches longues sont lancées : un visa refusé ne rembourse pas un billet non remboursable."
-          : "Dès que les démarches longues sont lancées : un papier qui manque ne rembourse pas un billet non remboursable."
-        : "Vos papiers ne demandent pas de délai particulier : vous pouvez réserver dès que la période est fixée.",
+          ? "Dès que les démarches longues sont lancées : un visa refusé ne rembourse pas un billet non remboursable."
+          : "Dès que les démarches longues sont lancées : un papier qui manque ne rembourse pas un billet non remboursable."
+        : "Vos papiers ne demandent pas de délai particulier : vous pouvez réserver dès que la période est fixée.",
     tasks: [],
     done: plan.done.includes("book"),
   });

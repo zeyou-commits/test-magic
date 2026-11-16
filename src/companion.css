@@ -1270,7 +1270,7 @@
 .bw-todo-legend > span::before { content: ""; width: 9px; height: 9px; border-radius: 99px; background: var(--u); }
 .bw-todo-legend > [data-urgency="soon"] { --u: #e0a43a; }
 .bw-todo-legend > [data-urgency="late"] { --u: #c95038; }
-.bw-todo-line { position: relative; display: grid; gap: 18px; margin: 14px 0 0; padding: 0 0 0 26px; list-style: none; }
+.bw-todo-line { position: relative; display: grid; gap: 16px; margin: 12px 0 0; padding: 0 0 0 24px; list-style: none; }
 .bw-todo-line::before {
   content: ""; position: absolute; left: 8px; top: 6px; bottom: 6px; width: 2px; border-radius: 2px;
   background: color-mix(in oklab, var(--primary) 18%, transparent);
@@ -1280,7 +1280,7 @@
 .bw-todo-line > li[data-urgency="late"] { --u: #c95038; }
 .bw-todo-line > li[data-urgency="done"] { --u: var(--muted-foreground); }
 .bw-todo-line__dot {
-  position: absolute; left: -26px; top: 1px; display: grid; width: 18px; height: 18px; place-items: center;
+  position: absolute; left: -24px; top: 1px; display: grid; width: 18px; height: 18px; place-items: center;
   border-radius: 99px; border: 3px solid var(--card); background: var(--u); color: #fff;
   box-shadow: 0 0 0 1.5px color-mix(in oklab, var(--u) 45%, transparent);
 }
@@ -1454,3 +1454,178 @@
 @media (min-width: 640px) { .bw-kpis { grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); } }
 /* « À faire » : le titre du moment reste au-dessus de ses lignes à cocher. */
 .bw-todo-line__title { font-size: 1.02rem; }
+
+/* Les actions d'un moment : des lignes simples, pas des boîtes dans la boîte. */
+.bw-todo-rows { display: grid; margin: 6px 0 0; padding: 0; list-style: none; }
+.bw-todo-row { padding: 7px 0; }
+.bw-todo-row + .bw-todo-row { border-top: 1px solid color-mix(in oklab, var(--border) 70%, transparent); }
+.bw-todo-row:first-child { padding-top: 4px; }
+
+/* Partager et recommencer : en haut, à portée de pouce, sans prendre de place. */
+.bw-prep-tools { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; margin-top: 10px; }
+.bw-prep-tools__reset {
+  display: inline-flex; min-height: 36px; align-items: center; gap: 6px; padding: 0 12px;
+  border: 1px solid var(--border); border-radius: 999px; font-size: 0.875rem; font-weight: 600; color: var(--muted-foreground);
+}
+.bw-prep-tools__reset:hover, .bw-prep-tools__reset[aria-expanded="true"] { color: var(--foreground); background: var(--secondary); }
+.bw-prep-reset {
+  margin-top: 8px; padding: 12px 14px; border: 1px solid color-mix(in oklab, var(--destructive) 30%, var(--border));
+  border-radius: 16px; background: color-mix(in oklab, var(--destructive) 4%, var(--card));
+}
+
+/* ───────── Démarrage en diapos : elles glissent de côté, comme des stories ───────── */
+.bw-onb .bw-prepintro__top { gap: 12px; }
+.bw-onb__bars { display: flex; flex: 1; gap: 5px; min-width: 0; }
+.bw-onb__bars > button { position: relative; flex: 1; height: 24px; }
+.bw-onb__bars > button::before,
+.bw-onb__bars i {
+  content: ""; position: absolute; left: 0; right: 0; top: 50%; height: 4px; margin-top: -2px; border-radius: 99px;
+}
+.bw-onb__bars > button::before { background: color-mix(in oklab, var(--primary) 16%, transparent); }
+.bw-onb__bars i { right: auto; width: 0; background: var(--primary); }
+.bw-onb__bars [data-state] i { width: 100%; }
+.bw-onb__bars [data-auto] i { width: 0; animation: bw-onb-fill linear forwards; }
+@keyframes bw-onb-fill { to { width: 100%; } }
+.bw-onb__skip {
+  min-width: 52px; min-height: 36px; padding: 0 4px; font-size: 0.875rem; font-weight: 700; color: var(--muted-foreground);
+  text-align: right;
+}
+.bw-onb__skip:hover { color: var(--foreground); }
+
+.bw-onb__track {
+  display: flex; flex: 1; min-height: 0; overflow-x: auto; overflow-y: hidden;
+  scroll-snap-type: x mandatory; overscroll-behavior-x: contain; scrollbar-width: none;
+}
+.bw-onb__track::-webkit-scrollbar { display: none; }
+.bw-onb__slide {
+  display: flex; flex: 0 0 100%; flex-direction: column; justify-content: flex-start; gap: clamp(14px, 3dvh, 26px);
+  min-width: 0; padding: clamp(10px, 7dvh, 64px) 22px 10px; overflow-y: auto; scroll-snap-align: start; scroll-snap-stop: always;
+}
+.bw-onb__art {
+  position: relative; width: 100%; aspect-ratio: 3 / 2; max-height: 40dvh; margin: 0; overflow: hidden; border-radius: 26px;
+  background: color-mix(in oklab, var(--primary) 10%, var(--card));
+  box-shadow: 0 18px 40px -18px rgb(8 50 34 / 0.45);
+}
+.bw-onb__art img {
+  width: 100%; height: 100%; object-fit: cover; transform: scale(1.12) translateX(6%);
+  transition: transform 1.1s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.bw-onb__slide[data-on] .bw-onb__art img { transform: scale(1.02); animation: bw-onb-drift 9s ease-out 1.1s both; }
+@keyframes bw-onb-drift { from { transform: scale(1.02); } to { transform: scale(1.08) translateX(-2%); } }
+.bw-onb__badge {
+  position: absolute; left: 14px; bottom: 14px; display: grid; width: 46px; height: 46px; place-items: center;
+  border-radius: 15px; color: #fff; background: linear-gradient(135deg, #0b4a32, #0e7a43);
+  box-shadow: 0 8px 18px rgb(8 50 34 / 0.35), inset 0 1px 0 rgb(255 255 255 / 0.2);
+}
+.bw-onb__recap { width: 100%; }
+.bw-onb__recap .bw-rprev { max-width: none; }
+
+/* Le texte arrive de côté, élément par élément, quand sa diapo devient visible. */
+.bw-onb__txt > *, .bw-onb__txt li {
+  opacity: 0; transform: translateX(28px);
+  transition: opacity 0.45s ease, transform 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+  transition-delay: calc(var(--d, 0ms) + 120ms);
+}
+.bw-onb__slide[data-on] .bw-onb__txt > *, .bw-onb__slide[data-on] .bw-onb__txt li { opacity: 1; transform: none; }
+.bw-onb__txt > small {
+  display: block; font-size: 12px; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: var(--primary);
+}
+.bw-onb__txt h1, .bw-onb__txt h2 {
+  margin: 4px 0 0; font-family: var(--font-display, inherit); font-size: clamp(1.6rem, 4dvh, 2.25rem);
+  font-weight: 800; line-height: 1.08; letter-spacing: -0.02em;
+}
+.bw-onb__txt p { margin: 8px 0 0; font-size: 1rem; line-height: 1.45; color: var(--muted-foreground); }
+.bw-onb__txt ul { display: flex; flex-wrap: wrap; gap: 6px; margin: 14px 0 0; padding: 0; list-style: none; opacity: 1; transform: none; }
+.bw-onb__txt li {
+  display: inline-flex; align-items: center; gap: 5px; padding: 5px 11px; border-radius: 999px;
+  background: color-mix(in oklab, var(--primary) 10%, transparent); color: var(--primary); font-size: 0.82rem; font-weight: 700;
+}
+.bw-onb .bw-prepintro__foot { padding-top: 10px; }
+.bw-onb__start { animation: bw-onb-pulse 1.8s ease-in-out 0.6s 2; }
+@keyframes bw-onb-pulse { 50% { box-shadow: 0 10px 24px rgb(8 50 34 / 0.28), 0 0 0 6px color-mix(in oklab, var(--primary) 22%, transparent); } }
+@media (min-width: 768px) {
+  .bw-onb__slide { padding: 10px 28px; }
+  .bw-onb__art { max-height: 46dvh; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .bw-onb__art img, .bw-onb__slide[data-on] .bw-onb__art img { transform: none; animation: none; transition: none; }
+  .bw-onb__txt > *, .bw-onb__txt li { opacity: 1; transform: none; transition: none; }
+  .bw-onb__start { animation: none; }
+}
+/* Sur PC : une carte centrée, les diapos défilent à l'intérieur. */
+@media (min-width: 900px) and (min-height: 600px) {
+  .bw-onb .bw-prepintro__frame {
+    display: flex; flex-direction: column; width: min(560px, 100%); height: min(780px, calc(100dvh - 64px));
+    padding: 22px 8px 26px;
+  }
+  .bw-onb .bw-prepintro__top { padding: 0 18px 6px; }
+  .bw-onb .bw-prepintro__foot { max-width: none; padding: 10px 28px 0; }
+  .bw-onb__txt h1 { font-size: 2.4rem; }
+}
+
+/* ───────── Champ de recherche d'un lieu : le même partout (France, Europe, bled) ───────── */
+.bw-searchbox { position: relative; }
+.bw-searchbox__label { display: block; font-size: 0.875rem; font-weight: 700; }
+.bw-searchbox__hint { margin-top: 2px; font-size: 0.8rem; color: var(--muted-foreground); }
+.bw-searchbox__field {
+  display: flex; min-height: 48px; margin-top: 6px; align-items: center; gap: 8px; padding: 0 6px 0 12px;
+  border: 1px solid var(--input); border-radius: 14px; background: var(--background);
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+.bw-searchbox__field:focus-within { border-color: var(--primary); box-shadow: 0 0 0 3px color-mix(in oklab, var(--primary) 22%, transparent); }
+.bw-searchbox__field[data-picked] { border-color: color-mix(in oklab, var(--primary) 55%, var(--border)); background: color-mix(in oklab, var(--primary) 4%, var(--background)); }
+.bw-searchbox__icon { display: grid; flex: none; place-items: center; color: var(--muted-foreground); }
+.bw-searchbox__field[data-picked] .bw-searchbox__icon, .bw-searchbox__field:focus-within .bw-searchbox__icon { color: var(--primary); }
+.bw-searchbox__field input { min-width: 0; flex: 1; height: 46px; background: transparent; font-size: 1rem; outline: none; }
+.bw-searchbox[data-large] .bw-searchbox__field input { font-size: 1.05rem; }
+.bw-searchbox__field input::-webkit-search-cancel-button { display: none; }
+.bw-searchbox__field input::placeholder { color: color-mix(in oklab, var(--muted-foreground) 75%, transparent); }
+.bw-searchbox__clear {
+  display: grid; flex: none; width: 34px; height: 34px; place-items: center; border-radius: 99px; color: var(--muted-foreground);
+}
+.bw-searchbox__clear:hover { background: var(--secondary); color: var(--foreground); }
+.bw-searchbox__list {
+  display: grid; margin: 6px 0 0; padding: 4px; list-style: none; overflow: hidden;
+  border: 1px solid var(--border); border-radius: 14px; background: var(--popover, var(--card));
+  box-shadow: 0 14px 30px -12px rgb(8 50 34 / 0.25); animation: bw-searchbox-in 0.18s ease-out;
+}
+@keyframes bw-searchbox-in { from { opacity: 0; transform: translateY(-4px); } }
+.bw-searchbox__list button {
+  display: flex; width: 100%; min-height: 48px; align-items: center; gap: 10px; padding: 6px 8px; border-radius: 10px; text-align: left;
+}
+.bw-searchbox__list button:hover, .bw-searchbox__list button:focus-visible { background: var(--secondary); outline: none; }
+.bw-searchbox__pin {
+  display: grid; flex: none; width: 30px; height: 30px; place-items: center; border-radius: 99px;
+  background: color-mix(in oklab, var(--primary) 10%, transparent); color: var(--primary);
+}
+.bw-searchbox__list b { display: block; font-size: 0.95rem; font-weight: 700; line-height: 1.2; }
+.bw-searchbox__list small { display: block; overflow: hidden; font-size: 0.78rem; color: var(--muted-foreground); text-overflow: ellipsis; white-space: nowrap; }
+.bw-searchbox__none { margin-top: 6px; font-size: 0.82rem; color: var(--muted-foreground); }
+
+/* ───────── Calcul des trajets : on voit que ça travaille ───────── */
+.bw-rload {
+  padding: 14px; border: 1px solid color-mix(in oklab, var(--primary) 22%, var(--border)); border-radius: 18px;
+  background: color-mix(in oklab, var(--primary) 4%, var(--card));
+}
+.bw-rload__track { position: relative; display: flex; height: 34px; align-items: center; }
+.bw-rload__track > i { height: 6px; border-radius: 99px; }
+.bw-rload__track > i[data-kind="road"] { flex: 1.2; background: repeating-linear-gradient(90deg, #c9b98d 0 10px, transparent 10px 16px); }
+.bw-rload__track > i[data-kind="sea"] { flex: 2; margin: 0 4px; background: repeating-linear-gradient(90deg, #6ea8e8 0 6px, #a9cdf2 6px 12px); background-size: 24px 100%; animation: bw-rload-waves 1s linear infinite; }
+@keyframes bw-rload-waves { to { background-position: 24px 0; } }
+.bw-rload__car {
+  position: absolute; top: 50%; left: 0; margin-top: -15px; font-size: 22px; line-height: 30px;
+  animation: bw-rload-drive 3.2s cubic-bezier(0.45, 0, 0.55, 1) infinite;
+}
+@keyframes bw-rload-drive { 0% { left: 0; } 100% { left: calc(100% - 26px); } }
+.bw-rload__msg { display: flex; margin-top: 8px; align-items: center; gap: 8px; font-size: 0.9rem; font-weight: 700; }
+.bw-rload__msg small { display: block; font-weight: 500; color: var(--muted-foreground); }
+.bw-rload__ghost { display: grid; gap: 8px; margin-top: 12px; }
+.bw-rload__ghost > span {
+  height: 76px; border-radius: 16px;
+  background: linear-gradient(100deg, var(--secondary) 30%, color-mix(in oklab, var(--secondary) 40%, var(--card)) 50%, var(--secondary) 70%);
+  background-size: 300% 100%; animation: bw-rload-shine 1.4s ease-in-out infinite;
+}
+@keyframes bw-rload-shine { from { background-position: 100% 0; } to { background-position: 0 0; } }
+@media (prefers-reduced-motion: reduce) {
+  .bw-rload__car, .bw-rload__track > i, .bw-rload__ghost > span { animation: none; }
+}

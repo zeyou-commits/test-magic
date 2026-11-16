@@ -23,6 +23,7 @@ import {
   PartyPopper,
   Pencil,
   RotateCcw,
+  Loader2,
   Route as RouteIcon,
   School,
   Search,
@@ -39,7 +40,11 @@ import { RouteTop3 } from "@/components/prepare/RouteTop3";
 import { TripCalendar, type CalendarField } from "@/components/panel/TripCalendar";
 import { buildSailings, daysWithSailings, legSailings } from "@/lib/ferry/trips";
 import { WizardFrame, WizardNav, useWizardScreen } from "@/components/prepare/WizardFrame";
-import { PapersQuestions, paperQuestions, questionIndexFor } from "@/components/papers/PapersQuestions";
+import {
+  PapersQuestions,
+  paperQuestions,
+  questionIndexFor,
+} from "@/components/papers/PapersQuestions";
 import { PushStatusLine } from "@/components/panel/PushStatusLine";
 import { SiteLayout } from "@/components/layout/SiteLayout";
 import { useAuth } from "@/hooks/useAuth";
@@ -134,6 +139,7 @@ import {
 } from "@/lib/ferry/travelProfile";
 import type { Port } from "@/lib/ferry/types";
 import { seoHead } from "@/lib/seo/site";
+import { SearchBox, splitPlace } from "@/components/SearchBox";
 import { SharePreparation } from "@/components/prepare/SharePreparation";
 import { PrepareIntro } from "@/components/prepare/PrepareIntro";
 import { ConfirmChange } from "@/components/prepare/ConfirmChange";
@@ -348,13 +354,7 @@ const chapterOf = (step: CompanionStep) =>
  */
 function Welcome({ onStart }: { onStart: () => void }) {
   const [intro, setIntro] = useState(false);
-  if (intro)
-    return (
-      <PrepareIntro
-        onBack={() => setIntro(false)}
-        onGo={onStart}
-      />
-    );
+  if (intro) return <PrepareIntro onBack={() => setIntro(false)} onGo={onStart} />;
   return (
     <div>
       <AlgeriaCarousel />
@@ -419,9 +419,7 @@ function CompanionPage() {
   // Une étape déjà validée s'ouvre en lecture ; elle ne repasse en questions qu'après « Modifier ».
   const [editing, setEditing] = useState<CompanionStep[]>([]);
   // Fin d'un chapitre (première fois) : le fil du parcours revient avant la suite.
-  const [pause, setPause] = useState<{ finished: number; next: CompanionStep | null } | null>(
-    null,
-  );
+  const [pause, setPause] = useState<{ finished: number; next: CompanionStep | null } | null>(null);
   const navigate = useNavigate();
   // Aperçu sans compte : la première étape (départ, groupe, voiture) et le calendrier ; la suite
   // (papiers, consulat, route, budget, réservation) demande un compte gratuit.
@@ -668,6 +666,14 @@ function CompanionPage() {
     Budget: "budget",
     Billet: "book",
   };
+  const resetAll = () => {
+    papers.setAnswers(defaultAnswers);
+    papers.setDone([]);
+    papers.setFinished(false);
+    setPlan(defaultPlan());
+    setOpen("profile");
+    requestAnimationFrame(() => window.scrollTo({ top: 0, behavior: "smooth" }));
+  };
   const previewRows: PreviewRow[] = [
     { icon: CalendarDays, label: "Départ", value: summaries.profile, chapter: 0 },
     { icon: FileText, label: "Papiers", value: summaries.papers, chapter: 1 },
@@ -696,7 +702,8 @@ function CompanionPage() {
             const target = pause.next;
             setPause(null);
             openStep(target);
-            if (!target) requestAnimationFrame(() => window.scrollTo({ top: 0, behavior: "smooth" }));
+            if (!target)
+              requestAnimationFrame(() => window.scrollTo({ top: 0, behavior: "smooth" }));
           }}
         />
       ) : null}
@@ -740,21 +747,19 @@ function CompanionPage() {
 
               {!inWizard || open === null ? (
                 <>
-                  {plan.started && plan.done.includes("profile") ? (
-                    <SharePreparation />
-                  ) : null}
+                  <PrepTools canShare={plan.done.includes("profile")} onReset={resetAll} />
                   {!allDone && !locked && nextStep ? (
                     <button
                       type="button"
                       onClick={() => openStep(nextStep)}
-                      className="mt-4 flex w-full items-center gap-3 rounded-2xl bg-primary p-4 text-left text-primary-foreground shadow-md"
+                      className="mt-3 flex w-full items-center gap-3 rounded-2xl bg-primary px-3.5 py-3 text-left text-primary-foreground shadow-md"
                     >
-                      <StepArt step={nextStep} />
+                      <StepArt step={nextStep} size="sm" />
                       <span className="min-w-0 flex-1">
-                        <span className="block text-xs font-bold uppercase tracking-wider opacity-80">
+                        <span className="block text-[11px] font-bold uppercase tracking-wider opacity-80">
                           Reprendre ma préparation
                         </span>
-                        <span className="block font-display text-lg font-bold leading-tight">
+                        <span className="block font-display text-base font-bold leading-tight">
                           {stepTitles[nextStep]}
                         </span>
                       </span>
@@ -810,14 +815,20 @@ function CompanionPage() {
                   current={Math.max(0, wizSteps.indexOf(open))}
                   chapter={`Chapitre ${chapterOf(open) + 1} · ${chapters[chapterOf(open)]!.title}`}
                   onOpen={(index) => openStep(wizSteps[index]!)}
-                  {...(plan.done.includes(open) ? {} : { onSkip: () => {
-                    const after = wizSteps[wizSteps.indexOf(open) + 1];
-                    if (after) openStep(after);
-                    else {
-                      setOpen(null);
-                      requestAnimationFrame(() => window.scrollTo({ top: 0, behavior: "instant" }));
-                    }
-                  } })}
+                  {...(plan.done.includes(open)
+                    ? {}
+                    : {
+                        onSkip: () => {
+                          const after = wizSteps[wizSteps.indexOf(open) + 1];
+                          if (after) openStep(after);
+                          else {
+                            setOpen(null);
+                            requestAnimationFrame(() =>
+                              window.scrollTo({ top: 0, behavior: "instant" }),
+                            );
+                          }
+                        },
+                      })}
                   onClose={() => {
                     setOpen(null);
                     requestAnimationFrame(() => window.scrollTo({ top: 0, behavior: "instant" }));
@@ -837,16 +848,6 @@ function CompanionPage() {
               <div className="mt-8">
                 <AlgeriaCarousel />
               </div>
-              <ResetPreparation
-                onReset={() => {
-                  papers.setAnswers(defaultAnswers);
-                  papers.setDone([]);
-                  papers.setFinished(false);
-                  setPlan(defaultPlan());
-                  setOpen("profile");
-                  requestAnimationFrame(() => window.scrollTo({ top: 0, behavior: "smooth" }));
-                }}
-              />
             </>
           )}
         </div>
@@ -1209,7 +1210,9 @@ function PapersStepBody({
   // Une modification qui change la liste (voyageurs, papiers, famille, séjour) se confirme.
   const [asking, setAsking] = useState<EditTarget | "all" | null>(null);
   const editAt = (target: EditTarget | "all") => {
-    setResume(target === "all" ? 0 : questionIndexFor(paperQuestions(papers.answers, steps), target));
+    setResume(
+      target === "all" ? 0 : questionIndexFor(paperQuestions(papers.answers, steps), target),
+    );
     papers.setFinished(false);
     toTop();
   };
@@ -1248,9 +1251,9 @@ function PapersStepBody({
                 editAt(target);
               }}
             >
-              Changer un voyageur, ses papiers, la famille ou le séjour peut changer la liste : je la
-              recalcule à la fin des questions. Ce que vous avez déjà coché reste coché si la démarche
-              existe toujours.
+              Changer un voyageur, ses papiers, la famille ou le séjour peut changer la liste : je
+              la recalcule à la fin des questions. Ce que vous avez déjà coché reste coché si la
+              démarche existe toujours.
             </ConfirmChange>
           ) : null}
           {plan.vehicle !== "none" ? <CarPapers plan={plan} patch={patch} /> : null}
@@ -1324,87 +1327,85 @@ function CarPapers({
       <div className="mt-3">
         <p className="mb-2 text-sm font-semibold">Elle reste en Algérie ?</p>
         <Options
-              label="La voiture reste-t-elle en Algérie ?"
-              value={plan.importCar ? "import" : "vacances"}
-              onChange={(v) => patch({ importCar: v === "import" })}
-              small
-              options={[
-                {
-                  value: "vacances",
-                  label: "Non, elle revient avec moi",
-                  hint: "Admission temporaire, le temps des vacances",
-                },
-                {
-                  value: "import",
-                  label: "Oui, je l'importe",
-                  hint: "Véhicule de moins de 3 ans : une autre démarche",
-                },
-              ]}
-            />
+          label="La voiture reste-t-elle en Algérie ?"
+          value={plan.importCar ? "import" : "vacances"}
+          onChange={(v) => patch({ importCar: v === "import" })}
+          small
+          options={[
+            {
+              value: "vacances",
+              label: "Non, elle revient avec moi",
+              hint: "Admission temporaire, le temps des vacances",
+            },
+            {
+              value: "import",
+              label: "Oui, je l'importe",
+              hint: "Véhicule de moins de 3 ans : une autre démarche",
+            },
+          ]}
+        />
       </div>
-          {plan.importCar ? (
-            <p className="mt-4 flex items-start gap-2 rounded-xl bg-primary/5 p-3 text-sm">
-              <Info size={16} className="mt-0.5 shrink-0 text-primary" aria-hidden />
-              <span>
-                L'importation suit ses propres conditions, différentes de l'admission temporaire.{" "}
-                <a href="/vehicules-moins-3-ans" className={textLink}>
-                  Les conditions pour importer une voiture
-                </a>
-              </span>
-            </p>
-          ) : null}
-          <ul className="mt-3 grid gap-2">
-            {carItems.map((item) => {
-              const done = plan.carDone.includes(item.id);
-              return (
-                <li
-                  key={item.id}
-                  className={`rounded-xl border ${done ? "bg-secondary/40" : "bg-background"}`}
+      {plan.importCar ? (
+        <p className="mt-4 flex items-start gap-2 rounded-xl bg-primary/5 p-3 text-sm">
+          <Info size={16} className="mt-0.5 shrink-0 text-primary" aria-hidden />
+          <span>
+            L'importation suit ses propres conditions, différentes de l'admission temporaire.{" "}
+            <a href="/vehicules-moins-3-ans" className={textLink}>
+              Les conditions pour importer une voiture
+            </a>
+          </span>
+        </p>
+      ) : null}
+      <ul className="mt-3 grid gap-2">
+        {carItems.map((item) => {
+          const done = plan.carDone.includes(item.id);
+          return (
+            <li
+              key={item.id}
+              className={`rounded-xl border ${done ? "bg-secondary/40" : "bg-background"}`}
+            >
+              <div className="flex items-start gap-3 p-3">
+                <button
+                  type="button"
+                  role="checkbox"
+                  aria-checked={done}
+                  aria-label={item.label}
+                  onClick={() => toggle(item.id)}
+                  className={`mt-0.5 grid size-6 shrink-0 place-items-center rounded-md border-2 ${
+                    done
+                      ? "border-primary bg-primary text-primary-foreground"
+                      : "border-muted-foreground/40"
+                  }`}
                 >
-                  <div className="flex items-start gap-3 p-3">
-                    <button
-                      type="button"
-                      role="checkbox"
-                      aria-checked={done}
-                      aria-label={item.label}
-                      onClick={() => toggle(item.id)}
-                      className={`mt-0.5 grid size-6 shrink-0 place-items-center rounded-md border-2 ${
-                        done
-                          ? "border-primary bg-primary text-primary-foreground"
-                          : "border-muted-foreground/40"
-                      }`}
+                  {done ? <Check size={14} strokeWidth={3} aria-hidden /> : null}
+                </button>
+                <div className="min-w-0">
+                  <p
+                    className={`font-semibold ${done ? "text-muted-foreground line-through" : ""}`}
+                  >
+                    {item.label}
+                  </p>
+                  {item.tip ? (
+                    <p className="mt-0.5 text-sm text-muted-foreground">{item.tip}</p>
+                  ) : null}
+                  {item.href ? (
+                    <a
+                      href={item.href}
+                      {...(item.href.startsWith("http")
+                        ? { target: "_blank", rel: "noreferrer" }
+                        : {})}
+                      className={`${textLink} mt-1 inline-flex items-center gap-1 text-sm`}
                     >
-                      {done ? <Check size={14} strokeWidth={3} aria-hidden /> : null}
-                    </button>
-                    <div className="min-w-0">
-                      <p
-                        className={`font-semibold ${done ? "text-muted-foreground line-through" : ""}`}
-                      >
-                        {item.label}
-                      </p>
-                      {item.tip ? (
-                        <p className="mt-0.5 text-sm text-muted-foreground">{item.tip}</p>
-                      ) : null}
-                      {item.href ? (
-                        <a
-                          href={item.href}
-                          {...(item.href.startsWith("http")
-                            ? { target: "_blank", rel: "noreferrer" }
-                            : {})}
-                          className={`${textLink} mt-1 inline-flex items-center gap-1 text-sm`}
-                        >
-                          {item.linkLabel ?? "En savoir plus"}
-                          {item.href.startsWith("http") ? (
-                            <ExternalLink size={12} aria-hidden />
-                          ) : null}
-                        </a>
-                      ) : null}
-                    </div>
-                  </div>
-                </li>
-              );
-            })}
-          </ul>
+                      {item.linkLabel ?? "En savoir plus"}
+                      {item.href.startsWith("http") ? <ExternalLink size={12} aria-hidden /> : null}
+                    </a>
+                  ) : null}
+                </div>
+              </div>
+            </li>
+          );
+        })}
+      </ul>
       <MoreLinks
         links={[
           { href: "/guide/voyage-algerie-voiture-checklist", label: "La checklist voiture" },
@@ -1427,12 +1428,15 @@ function DestinationField({
   const [query, setQuery] = useState(value?.label ?? "");
   const [results, setResults] = useState<{ label: string; point: [number, number] }[]>([]);
   const [busy, setBusy] = useState(false);
+  const [searched, setSearched] = useState(false);
   useEffect(() => {
     const q = query.trim();
     if (q.length < 2 || q === value?.label) {
       setResults([]);
+      setSearched(false);
       return;
     }
+    setSearched(false);
     let cancelled = false;
     const timer = window.setTimeout(() => {
       setBusy(true);
@@ -1444,7 +1448,9 @@ function DestinationField({
           if (!cancelled) setResults([]);
         })
         .finally(() => {
-          if (!cancelled) setBusy(false);
+          if (cancelled) return;
+          setBusy(false);
+          setSearched(true);
         });
     }, 350);
     return () => {
@@ -1453,52 +1459,29 @@ function DestinationField({
     };
   }, [query, value?.label]);
   return (
-    <div className="relative">
-      <label className="block">
-        <span className="text-sm font-semibold">Où allez-vous en Algérie ? (facultatif)</span>
-        <span className="relative mt-1 block">
-          <Search
-            size={16}
-            className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"
-            aria-hidden
-          />
-          <input
-            value={query}
-            onChange={(event) => setQuery(event.target.value)}
-            placeholder="Ville ou quartier, par exemple Tizi Ouzou"
-            autoComplete="off"
-            aria-autocomplete="list"
-            aria-controls="destinations"
-            className="block min-h-12 w-full rounded-xl border bg-background pl-9 pr-4"
-          />
-        </span>
-      </label>
-      {busy ? <p className="mt-1 text-xs text-muted-foreground">Recherche…</p> : null}
-      {results.length ? (
-        <ul
-          id="destinations"
-          role="listbox"
-          className="mt-1 grid overflow-hidden rounded-xl border bg-popover shadow-md"
-        >
-          {results.map((place) => (
-            <li key={`${place.label}-${place.point.join(",")}`} role="option" aria-selected={false}>
-              <button
-                type="button"
-                onClick={() => {
-                  setQuery(place.label);
-                  setResults([]);
-                  onPick(place);
-                }}
-                className="flex min-h-11 w-full items-center gap-2 px-3 py-2 text-left text-sm hover:bg-secondary"
-              >
-                <MapPin size={14} className="shrink-0 text-muted-foreground" aria-hidden />
-                {place.label}
-              </button>
-            </li>
-          ))}
-        </ul>
-      ) : null}
-    </div>
+    <SearchBox
+      id="ville-bled"
+      label={"Où allez-vous en Algérie ? (facultatif)"}
+      value={query}
+      onChange={(text) => {
+        setQuery(text);
+        if (!text.trim()) onPick(null);
+      }}
+      placeholder={"Ville ou quartier, par exemple Tizi Ouzou"}
+      autoComplete={"off"}
+      busy={busy}
+      picked={Boolean(query.trim()) && query === value?.label}
+      searched={searched}
+      hits={results.map((place) => ({
+        key: `${place.label}-${place.point.join(",")}`,
+        ...splitPlace(place.label, "Algérie"),
+        onPick: () => {
+          setQuery(place.label);
+          setResults([]);
+          onPick(place);
+        },
+      }))}
+    />
   );
 }
 
@@ -1557,6 +1540,15 @@ function RouteStep({
               hint="Pour calculer vos trajets porte à porte. La ville suffit."
               showConsulate={false}
             />
+            {/^\d{5}$/.test(papers.answers.postcode.trim()) ? (
+              <p
+                className="mt-3 flex items-center gap-2 text-sm font-semibold text-primary"
+                role="status"
+              >
+                <Loader2 size={15} className="animate-spin" aria-hidden /> Je place votre ville sur
+                la carte…
+              </p>
+            ) : null}
           </div>
           {destinationField}
         </>
@@ -1605,8 +1597,8 @@ function RouteStep({
           ) : null}
           {edit === "dest" ? <div className="bw-trip__edit">{destinationField}</div> : null}
           <Bw504Note title="Pourquoi pas juste le port le plus proche ?" className="mt-3">
-            Il n'est pas toujours le plus rapide : je compte la route, l'attente au port et la
-            mer, jusqu'{plan.destination ? `à ${plan.destination.label}` : "à l'arrivée"}.
+            Il n'est pas toujours le plus rapide : je compte la route, l'attente au port et la mer,
+            jusqu'{plan.destination ? `à ${plan.destination.label}` : "à l'arrivée"}.
           </Bw504Note>
         </>
       )}
@@ -2035,15 +2027,11 @@ function WhenQuestion({
   );
 
   return (
-    <Question
-      title="Quand souhaitez-vous partir ?"
-      hint="Touchez l'aller, puis le retour."
-    >
+    <Question title="Quand souhaitez-vous partir ?">
       {/* Sur ordinateur, le calendrier garde la taille de celui de « Réserver ». */}
       <div className="md:max-w-[420px]">
         <TripCalendar
           inline
-          paged
           open
           onOpenChange={() => {}}
           holidaysOn={holidaysOn}
@@ -2431,12 +2419,15 @@ function EuropeCityField({
   const [query, setQuery] = useState(value?.name ?? "");
   const [results, setResults] = useState<{ label: string; point: [number, number] }[]>([]);
   const [busy, setBusy] = useState(false);
+  const [searched, setSearched] = useState(false);
   useEffect(() => {
     const q = query.trim();
     if (q.length < 2 || q === value?.name) {
       setResults([]);
+      setSearched(false);
       return;
     }
+    setSearched(false);
     let cancelled = false;
     const code = (PHOTON_COUNTRIES as readonly string[]).includes(country)
       ? (country as (typeof PHOTON_COUNTRIES)[number])
@@ -2451,7 +2442,9 @@ function EuropeCityField({
           if (!cancelled) setResults([]);
         })
         .finally(() => {
-          if (!cancelled) setBusy(false);
+          if (cancelled) return;
+          setBusy(false);
+          setSearched(true);
         });
     }, 350);
     return () => {
@@ -2460,50 +2453,29 @@ function EuropeCityField({
     };
   }, [query, country, value?.name]);
   return (
-    <div className="relative">
-      <label className="block">
-        <span className="text-sm font-semibold">Votre ville</span>
-        <span className="relative mt-1 block">
-          <Search
-            size={16}
-            className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"
-            aria-hidden
-          />
-          <input
-            value={query}
-            onChange={(event) => setQuery(event.target.value)}
-            placeholder="Par exemple Bruxelles, Alicante, Milan"
-            autoComplete="address-level2"
-            aria-autocomplete="list"
-            className="block min-h-12 w-full rounded-xl border bg-background pl-9 pr-4 text-lg"
-          />
-        </span>
-      </label>
-      {busy ? <p className="mt-1 text-xs text-muted-foreground">Recherche…</p> : null}
-      {results.length ? (
-        <ul
-          role="listbox"
-          className="mt-1 grid overflow-hidden rounded-xl border bg-popover shadow-md"
-        >
-          {results.map((place) => (
-            <li key={`${place.label}-${place.point.join(",")}`} role="option" aria-selected={false}>
-              <button
-                type="button"
-                onClick={() => {
-                  setQuery(place.label);
-                  setResults([]);
-                  onPick(place);
-                }}
-                className="flex min-h-11 w-full items-center gap-2 px-3 py-2 text-left text-sm hover:bg-secondary"
-              >
-                <MapPin size={14} className="shrink-0 text-muted-foreground" aria-hidden />
-                {place.label}
-              </button>
-            </li>
-          ))}
-        </ul>
-      ) : null}
-    </div>
+    <SearchBox
+      id="ville-europe"
+      label={"Votre ville"}
+      value={query}
+      onChange={(text) => {
+        setQuery(text);
+        if (!text.trim()) onPick(null);
+      }}
+      placeholder={"Par exemple Bruxelles, Alicante, Milan"}
+      autoComplete={"address-level2"}
+      busy={busy}
+      picked={Boolean(query.trim()) && query === value?.name}
+      searched={searched}
+      hits={results.map((place) => ({
+        key: `${place.label}-${place.point.join(",")}`,
+        ...splitPlace(place.label, undefined),
+        onPick: () => {
+          setQuery(place.label);
+          setResults([]);
+          onPick(place);
+        },
+      }))}
+    />
   );
 }
 
@@ -2760,7 +2732,7 @@ function PlanTodo({
         : [...new Set([...current, ...row.ids])],
     );
   return (
-    <section aria-labelledby="a-faire" className="mt-4 rounded-2xl border bg-card p-4 md:p-5">
+    <section aria-labelledby="a-faire" className="mt-4 rounded-2xl border bg-card p-3.5 md:p-5">
       <h2 id="a-faire" className="flex items-center gap-2 font-display text-lg font-bold">
         <ListChecks size={19} className="text-primary" aria-hidden /> À faire
       </h2>
@@ -2793,15 +2765,17 @@ function PlanTodo({
                     <button
                       type="button"
                       onClick={() => onOpenStep(mine[0]!.step!)}
-                      className="mt-2 inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl bg-primary px-4 text-sm font-bold text-primary-foreground sm:w-auto"
+                      className="mt-2 inline-flex min-h-10 items-center gap-2 rounded-xl bg-primary px-4 text-sm font-bold text-primary-foreground"
                     >
-                      {mine[0]!.step === "papers" ? "Faire ma liste de papiers" : "Réserver ma traversée"}
+                      {mine[0]!.step === "papers"
+                        ? "Faire ma liste de papiers"
+                        : "Réserver ma traversée"}
                       <ArrowRight size={15} aria-hidden />
                     </button>
                   )}
                 </>
               ) : mine.length ? (
-                <ul className="mt-2 grid gap-2">
+                <ul className="bw-todo-rows">
                   {mine.map((row) => (
                     <TodoItem
                       key={row.key}
@@ -2827,9 +2801,7 @@ function PlanTodo({
           aria-expanded={showDone}
           className="mt-3 inline-flex items-center gap-1 text-sm font-semibold text-muted-foreground"
         >
-          {showDone
-            ? "Masquer ce qui est fait"
-            : `Voir ce qui est fait (${finished.length})`}
+          {showDone ? "Masquer ce qui est fait" : `Voir ce qui est fait (${finished.length})`}
           <ChevronDown
             size={15}
             aria-hidden
@@ -2901,7 +2873,9 @@ function TodoItem({
         : "text-primary";
   return (
     <li
-      className="bw-todo-item rounded-xl border bg-background px-2.5 py-2"
+      className={
+        inLine ? "bw-todo-row" : "bw-todo-item rounded-xl border bg-background px-2.5 py-2"
+      }
       data-urgency={row.done ? undefined : urgency}
     >
       <div className="flex items-start gap-2.5">
@@ -2944,9 +2918,9 @@ function TodoItem({
           onClick={() => setWhy(!why)}
           aria-expanded={why}
           aria-label="Pourquoi cette date ?"
-          className="grid size-8 shrink-0 place-items-center rounded-full text-muted-foreground hover:bg-secondary hover:text-foreground"
+          className="-my-1 -mr-1 grid size-7 shrink-0 place-items-center rounded-full text-muted-foreground hover:bg-secondary hover:text-foreground"
         >
-          <Info size={16} aria-hidden />
+          <Info size={15} aria-hidden />
         </button>
       </div>
       {why ? (
@@ -3081,57 +3055,55 @@ function ReadyDashboard({
 }
 
 /**
- * Tout effacer pour repartir de zéro : la date, les réponses aux papiers, les démarches voiture.
- * Ce qui est sur le compte (billets, Mon voyage) n'est pas touché.
+ * Les outils de la préparation, en haut, toujours au même endroit : partager (lien ou PDF) et
+ * tout recommencer. Effacer demande une confirmation sur place ; le compte et les billets restent.
  */
-function ResetPreparation({ onReset }: { onReset: () => void }) {
+function PrepTools({ canShare, onReset }: { canShare: boolean; onReset: () => void }) {
   const [asking, setAsking] = useState(false);
-  if (!asking)
-    return (
-      <div className="mt-8 text-center">
-        <button
-          type="button"
-          onClick={() => setAsking(true)}
-          className="inline-flex min-h-11 items-center gap-2 rounded-xl px-4 text-sm font-semibold text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
-        >
-          <RotateCcw size={15} aria-hidden /> Recommencer ma préparation
-        </button>
-      </div>
-    );
   return (
-    <div
-      role="alertdialog"
-      aria-labelledby="reset-titre"
-      className="mt-8 rounded-2xl border border-border bg-card p-4 md:p-5"
-    >
-      <p id="reset-titre" className="font-bold">
-        Tout recommencer ?
-      </p>
-      <p className="mt-1 text-sm text-muted-foreground">
-        La période de départ, les réponses sur les voyageurs et les papiers, les ports et les
-        démarches cochées seront effacés de ce téléphone. Vos billets et votre compte ne changent
-        pas.
-      </p>
-      <div className="mt-3 flex flex-wrap gap-2">
+    <>
+      <div className="bw-prep-tools">
+        {canShare ? <SharePreparation compact /> : null}
         <button
           type="button"
-          onClick={() => {
-            setAsking(false);
-            onReset();
-          }}
-          className="inline-flex min-h-11 items-center gap-2 rounded-xl bg-destructive px-4 text-sm font-bold text-destructive-foreground hover:bg-destructive/90"
+          onClick={() => setAsking(!asking)}
+          aria-expanded={asking}
+          className="bw-prep-tools__reset"
         >
-          <RotateCcw size={15} aria-hidden /> Oui, tout effacer
-        </button>
-        <button
-          type="button"
-          onClick={() => setAsking(false)}
-          className="inline-flex min-h-11 items-center rounded-xl bg-secondary px-4 text-sm font-bold hover:bg-secondary/80"
-        >
-          Garder ma préparation
+          <RotateCcw size={14} aria-hidden /> Recommencer
         </button>
       </div>
-    </div>
+      {asking ? (
+        <div role="alertdialog" aria-labelledby="reset-titre" className="bw-prep-reset">
+          <p id="reset-titre" className="font-bold">
+            Tout recommencer ?
+          </p>
+          <p className="mt-0.5 text-sm text-muted-foreground">
+            Les dates, les voyageurs, les papiers, les ports et ce qui est coché seront effacés de
+            cet appareil. Votre compte et vos billets ne changent pas.
+          </p>
+          <div className="mt-3 flex flex-wrap gap-2">
+            <button
+              type="button"
+              onClick={() => {
+                setAsking(false);
+                onReset();
+              }}
+              className="inline-flex min-h-10 items-center gap-2 rounded-xl bg-destructive px-4 text-sm font-bold text-destructive-foreground hover:bg-destructive/90"
+            >
+              <RotateCcw size={15} aria-hidden /> Oui, tout effacer
+            </button>
+            <button
+              type="button"
+              onClick={() => setAsking(false)}
+              className="inline-flex min-h-10 items-center rounded-xl bg-secondary px-4 text-sm font-bold hover:bg-secondary/80"
+            >
+              Annuler
+            </button>
+          </div>
+        </div>
+      ) : null}
+    </>
   );
 }
 
@@ -3158,8 +3130,8 @@ function SignupGate({ steps, profileDone }: { steps: CompanionStep[]; profileDon
       ) : null}
       {profileDone ? null : (
         <p className="mt-1 text-sm text-muted-foreground">
-          Commencez par la première étape sans compte. Pour la suite, il faut un compte gratuit : vos
-          réponses sont gardées.
+          Commencez par la première étape sans compte. Pour la suite, il faut un compte gratuit :
+          vos réponses sont gardées.
         </p>
       )}
       <ol className="mt-3 grid gap-2">

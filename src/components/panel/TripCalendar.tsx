@@ -56,8 +56,6 @@ interface TripCalendarProps {
   anchor?: ReactNode;
   /** Affiché directement dans le panneau, sans fenêtre superposée. */
   inline?: boolean;
-  /** Un mois à la fois (flèches, glisser), même sur téléphone : pour un écran qui a autre chose à dire. */
-  paged?: boolean;
   /** Fenêtre ordinateur : à droite du volet (sur la carte) plutôt qu'en dessous. */
   side?: "bottom" | "right";
 }
@@ -119,7 +117,6 @@ export function TripCalendar({
   onHolidaysChange,
   anchor,
   inline = false,
-  paged = false,
   side = "bottom",
 }: TripCalendarProps) {
   const [zones, setZones] = useState<SchoolZone[]>([]);
@@ -228,7 +225,7 @@ export function TripCalendar({
   const unpublished = (key: string) => (lastAvailable ? key > lastAvailable : activeDays.size === 0);
 
   // Mobile, dans le volet : les mois défilent les uns sous les autres (plus de flèches).
-  const stacked = inline && isMobile && !paged;
+  const stacked = inline && isMobile;
   const firstMonth = keyToDate(today);
   const monthCount = Math.min(
     12,
@@ -435,7 +432,7 @@ export function TripCalendar({
   );
   const bodyBlock = (
     <>
-      <div className={`flex gap-2 ${paged ? "flex-row items-center" : "flex-col items-stretch md:flex-row md:items-center"}`}>
+      <div className="flex flex-row items-center gap-2">
         <span className="shrink-0 text-[11px] font-semibold text-muted-foreground">{tr("ui.tripCalendar.souplesse")}</span>
         <div
           className="flex flex-1 rounded-full bg-muted/60 p-0.5 md:flex-none"

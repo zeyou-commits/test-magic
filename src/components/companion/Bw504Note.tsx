@@ -31,6 +31,22 @@ export function Bw504Note({
   );
 }
 
+/**
+ * « Bon à savoir » : une règle ou un conseil donné en passant, porté par la petite 504, pour qu'il
+ * ne se perde pas dans un simple texte gris.
+ */
+export function BwKnow({ children, className = "" }: { children: ReactNode; className?: string }) {
+  return (
+    <aside className={`bw-know ${className}`}>
+      <img src="/cabas/persos/voiture_504.webp" alt="" width={34} height={34} className="bw-know__car" />
+      <p>
+        <b>Bon à savoir</b>
+        {children}
+      </p>
+    </aside>
+  );
+}
+
 /** Bouton jaune principal ou bouton secondaire translucide de la 504. */
 export function Bw504Button({
   primary = false,

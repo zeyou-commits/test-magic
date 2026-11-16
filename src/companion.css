@@ -405,3 +405,34 @@
   .bw-prepintro,
   .bw-prepintro__in { animation: none; }
 }
+
+/* « Bon à savoir » porté par la petite 504. */
+.bw-know {
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr);
+  gap: 10px;
+  align-items: center;
+  padding: 10px 12px;
+  border-radius: 14px;
+  border: 1px solid color-mix(in oklab, #f6c445 55%, transparent);
+  background: color-mix(in oklab, #f6c445 13%, var(--card));
+}
+.bw-know__car {
+  width: 34px;
+  height: auto;
+  filter: drop-shadow(0 2px 2px rgb(0 0 0 / 0.2));
+}
+.bw-know p {
+  margin: 0;
+  font-size: 0.9rem;
+  line-height: 1.4;
+  color: var(--foreground);
+}
+.bw-know b {
+  display: block;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #8a5a00;
+}

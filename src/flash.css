@@ -183,7 +183,8 @@
 
 /* Bulle au clic : résumé des signalements ; la toucher ouvre la fiche. */
 .bw-signal-bubble {
-  z-index: 7;
+  /* Au-dessus des pastilles de messages (8) et des navires. */
+  z-index: 20;
 }
 .bw-signal-bubble .maplibregl-popup-content {
   padding: 0;

@@ -75,6 +75,7 @@ function PapersPage() {
       {state.finished ? (
         <PapersResult
           answers={state.answers}
+          patch={state.patch}
           done={state.done}
           setDone={state.setDone}
           onEdit={() => {

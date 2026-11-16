@@ -299,8 +299,9 @@ export function useChatPins(
           const marker = new Marker({ element: box, anchor: "bottom-left", offset: [place.offset[0] - 14, place.offset[1]] })
             .setLngLat(place.at)
             .addTo(map);
-          // Au-dessus des noms de ports, sous les fiches et volets.
-          marker.getElement().style.zIndex = "900";
+          // Au-dessus des navires et des noms de ports, mais toujours sous une fiche ouverte
+          // (fiche navire 20, info-bulles 100 et plus).
+          marker.getElement().style.zIndex = "8";
           entry = { marker, el, sig: "" };
           markers.set(group.key, entry);
         }

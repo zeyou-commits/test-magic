@@ -7,6 +7,7 @@ import {
   type Traveller,
 } from "@/content/formalites";
 import { WizardNav, useWizardScreen } from "@/components/prepare/WizardFrame";
+import { genderFromName } from "@/lib/papers/genderFromName";
 import {
   GroupStep,
   HomeStep,
@@ -22,7 +23,7 @@ import {
  * voyageur par voyageur. Une réponse à choix fait passer d'elle-même à la suivante.
  */
 
-type TravellerQ = "age" | "nat" | "dzDoc" | "dzTravel" | "dzValid" | "residence" | "man";
+type TravellerQ = "age" | "nat" | "dzDoc" | "dzTravel" | "dzValid" | "residence" | "man" | "sn";
 type FamilyQ = "couple" | "transcribed" | "kidsWith" | "separated" | "custody";
 export type PaperQ =
   | { kind: "step"; step: PapersStep }
@@ -53,6 +54,7 @@ export function paperQuestions(a: Answers, steps: PapersStep[]): PaperQ[] {
         add("nat");
         // Un adulte a déjà 19 ans ou plus : seul le sexe compte pour le service national.
         if (!child && t.nat !== "etr") add("man");
+        if (!child && t.nat !== "etr" && t.man) add("sn");
         if (t.nat === "bi") add("dzDoc");
         if (t.nat === "bi" && t.dzDoc === "passeport") add("dzTravel");
         if (travelsWithDzPassport(t)) add("dzValid");
@@ -146,7 +148,12 @@ export function PapersQuestions({
   if (q.kind === "names") {
     const rename = (id: string, name: string) =>
       patch({
-        travellers: answers.travellers.map((x) => (x.id === id ? { ...x, name: name.slice(0, 24) } : x)),
+        travellers: answers.travellers.map((x) => {
+          if (x.id !== id) return x;
+          // Le prénom présélectionne homme ou femme ; la question suivante reste modifiable.
+          const guess = x.kind === "adult" ? genderFromName(name) : null;
+          return { ...x, name: name.slice(0, 24), ...(guess ? { man: guess === "m" } : {}) };
+        }),
       });
     body = (
       <Question
@@ -317,6 +324,23 @@ export function PapersQuestions({
             {choice("Titre de séjour", t.residence, (residence) => update({ residence }), [
               { value: "titre", label: "Oui" },
               { value: "fragile", label: "Non, ou j'ai un récépissé" },
+            ])}
+          </Question>
+        </>
+      );
+    if (q.q === "sn")
+      body = (
+        <>
+          {who}
+          <Question
+            title={me ? "Êtes-vous en règle avec le service national ?" : "Est-il en règle avec le service national ?"}
+            hint="Recensé au consulat, ou dispensé : la preuve part dans la pochette. Sinon, c'est une démarche à faire avant le départ."
+          >
+            {choice("Service national", t.sn ?? "unknown", (sn) => update({ sn }), [
+              { value: "ok", label: "Oui, recensé", hint: "Attestation ou carte de service national" },
+              { value: "exempt", label: "Oui, dispensé", hint: "Attestation de dispense" },
+              { value: "todo", label: "Non, pas encore" },
+              { value: "unknown", label: "Je ne sais pas" },
             ])}
           </Question>
         </>

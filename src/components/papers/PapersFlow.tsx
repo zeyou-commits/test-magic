@@ -23,6 +23,8 @@ import {
   User,
 } from "lucide-react";
 import { textLink } from "@/components/editorial/Editorial";
+import { BwKnow } from "@/components/companion/Bw504Note";
+import { genderFromName } from "@/lib/papers/genderFromName";
 import { WizardNav, useInWizard } from "@/components/prepare/WizardFrame";
 import {
   FORMALITES_CHECKED,
@@ -81,7 +83,8 @@ export function papersSteps(
       : ["home", "group", "people", "stay"];
   if (from === "companion") {
     const asked = all.filter((s) => s !== "home" && s !== "group");
-    return consulateTasks(a).length ? [...asked, "home"] : asked;
+    // Le consulat ne s'interroge plus à part : il s'affiche dans chaque démarche qui le demande.
+    return asked;
   }
   return from === "people" ? all.filter((s) => s !== "home" && s !== "group") : all;
 }
@@ -568,9 +571,9 @@ export function GroupStep({ answers, patch }: StepProps) {
           onChange={(n) => resize("child", n)}
         />
       </div>
-      <p className="mt-3 text-sm text-muted-foreground">
+      <BwKnow className="mt-4">
         En Algérie, on est mineur jusqu'à 19 ans : comptez un jeune de 18 ans parmi les enfants.
-      </p>
+      </BwKnow>
     </Question>
   );
 }
@@ -636,7 +639,11 @@ function TravellerCard({
         <input
           type="text"
           value={t.name ?? ""}
-          onChange={(e) => update({ name: e.target.value.slice(0, 24) })}
+          onChange={(e) => {
+            const value = e.target.value.slice(0, 24);
+            const guess = child ? null : genderFromName(value);
+            update({ name: value, ...(guess ? { man: guess === "m" } : {}) });
+          }}
           placeholder="Sarah, Hamid…"
           className="min-h-10 min-w-0 flex-1 rounded-xl border bg-background px-3"
         />
@@ -917,8 +924,11 @@ export function PapersResult({
   embedded = false,
   abroadSlot,
   deadlines = {},
+  patch,
 }: {
   answers: Answers;
+  /** Pour trouver le consulat depuis la liste (ville), sans revenir aux questions. */
+  patch?: (p: Partial<Answers>) => void;
   done: string[];
   setDone: (fn: (d: string[]) => string[]) => void;
   onEdit: () => void;
@@ -992,6 +1002,11 @@ export function PapersResult({
         onToggle={toggle}
         travellers={answers.travellers.map((t) => travellerLabel(t, answers.travellers))}
         deadlines={deadlines}
+        taskExtra={(task) =>
+          task.consulate ? (
+            <ConsulateWhere consulat={consulat} answers={answers} patch={patch} abroadSlot={abroadSlot} />
+          ) : null
+        }
         consulateLine={
           atConsulate.length
             ? `${
@@ -1107,10 +1122,13 @@ export function TaskRow({
   onToggle,
   first = [],
   due,
+  extra,
 }: {
   task: Task;
   done: boolean;
   onToggle: () => void;
+  /** Sous le titre : où faire la démarche (le consulat détecté, ou de quoi le trouver). */
+  extra?: ReactNode;
   /** Échéance affichée en étiquette devant les voyageurs (bilan en rubriques). */
   due?: ReactNode;
   /** Ce qu'il faut avoir fait avant (titres), encore à faire. */
@@ -1175,6 +1193,7 @@ export function TaskRow({
               </span>
             </span>
           </button>
+          {extra && !done ? <div className="mt-3">{extra}</div> : null}
           {open ? (
             <div className="mt-3 space-y-2 text-sm leading-relaxed text-muted-foreground">
               {task.detail.split("\n").map((p) => (
@@ -1215,6 +1234,41 @@ export function SourceLinks({ ids }: { ids: FormaliteSourceId[] }) {
         </a>
       ))}
     </p>
+  );
+}
+
+/**
+ * Dans la démarche elle-même (le visa d'Anne, le recensement de Youssef) : où la faire. Le consulat
+ * détecté avec son adresse et le rendez-vous ; sinon, la ville à indiquer sur place.
+ */
+function ConsulateWhere({
+  consulat,
+  answers,
+  patch,
+  abroadSlot,
+}: {
+  consulat: Consulat | null;
+  answers: Answers;
+  patch?: ((p: Partial<Answers>) => void) | undefined;
+  abroadSlot?: ReactNode;
+}) {
+  if (consulat) return <ConsulatCard consulat={consulat} compact />;
+  if (answers.abroad) return abroadSlot ? <>{abroadSlot}</> : null;
+  return (
+    <div className="rounded-xl border border-dashed border-primary/40 bg-primary/5 p-3">
+      <p className="flex items-center gap-1.5 text-sm font-bold">
+        <MapPin size={15} className="text-primary" aria-hidden /> Où faire cette démarche ?
+      </p>
+      <p className="mt-1 text-xs text-muted-foreground">
+        Au consulat d'Algérie dont dépend votre domicile. Indiquez votre ville : son adresse et le lien
+        de rendez-vous s'affichent ici.
+      </p>
+      {patch ? (
+        <div className="mt-2">
+          <HomeFields answers={answers} patch={patch} showConsulat={false} />
+        </div>
+      ) : null}
+    </div>
   );
 }
 

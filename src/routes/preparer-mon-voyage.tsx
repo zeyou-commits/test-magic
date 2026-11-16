@@ -589,6 +589,7 @@ function CompanionPage() {
           fromChoice={fromChoice}
           toPort={toPort}
           onDone={() => complete("budget")}
+          onOpenRoute={() => openStep("route")}
         />
       ) : null}
       {step === "book" ? (
@@ -1066,6 +1067,7 @@ function PapersStepBody({
               <EuropeConsulateCard country={plan.country} home={plan.home?.point ?? null} />
             }
             answers={papers.answers}
+            patch={papers.patch}
             done={papers.done}
             setDone={papers.setDone}
             onEdit={() => {
@@ -1538,20 +1540,36 @@ function BudgetStep({
   fromChoice,
   toPort,
   onDone,
+  onOpenRoute,
 }: {
   plan: CompanionPlan;
   answers: Answers;
   fromChoice: PortChoice | null;
   toPort: Port | null;
   onDone: () => void;
+  onOpenRoute: () => void;
 }) {
   const group = people(answers);
+  // Sans ports, pas de prix à estimer : on le dit avec la 504, et on laisse choisir les ports tout
+  // de suite ou passer le budget sans que l'étape reste « à faire ».
   if (!fromChoice || !toPort)
     return (
       <div className="pt-4">
-        <p className="text-muted-foreground">
-          Choisissez d'abord vos ports à l'étape « Ma route ».
-        </p>
+        <Bw504Note
+          tone="stuck"
+          title="Il me manque tes ports pour chiffrer"
+          actions={
+            <>
+              <Bw504Button primary onClick={onOpenRoute}>
+                Choisir mes ports
+              </Bw504Button>
+              <Bw504Button onClick={onDone}>Pas besoin de budget</Bw504Button>
+            </>
+          }
+        >
+          Le prix dépend du port de départ et d'arrivée. Choisis-les en un geste, ou passe cette
+          étape : elle ne restera pas marquée à faire.
+        </Bw504Note>
       </div>
     );
   const fare = planFare(plan, fromChoice.port, toPort, group);

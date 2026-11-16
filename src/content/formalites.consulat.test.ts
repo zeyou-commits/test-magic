@@ -27,7 +27,8 @@ describe("le consulat seulement quand il sert", () => {
     const renew = tasksFor(a).find((t) => t.id === "renouveler-passeport-dz")!;
     expect(renew.needs).toEqual(["carte-consulaire"]);
     expect(tasksFor(a).some((t) => t.id === "carte-consulaire")).toBe(true);
-    expect(papersSteps(a, "companion").at(-1)).toBe("home");
+    // Le consulat s'affiche dans la démarche du récap, plus en écran à part.
+    expect(papersSteps(a, "companion")).not.toContain("home");
     expect(consulateReasons(a)).toBe("le renouvellement du passeport (Vous)");
   });
 
@@ -64,7 +65,8 @@ describe("passeport qui expire peu après le retour", () => {
     expect(task.advice).toBe(true);
     expect(task.toConfirm).toBeUndefined();
     expect(task.needs).toEqual(["carte-consulaire"]);
-    expect(papersSteps(a, "companion").at(-1)).toBe("home");
+    // Le consulat s'affiche dans la démarche du récap, plus en écran à part.
+    expect(papersSteps(a, "companion")).not.toContain("home");
     expect(tasksFor(a).some((t) => t.id === "renouveler-passeport-dz")).toBe(false);
   });
 });

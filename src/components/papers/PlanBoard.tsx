@@ -47,6 +47,7 @@ export function PlanBoard({
   deadlines,
   travellers,
   consulateLine,
+  taskExtra,
 }: {
   tasks: Task[];
   done: string[];
@@ -55,6 +56,8 @@ export function PlanBoard({
   /** Noms affichés des voyageurs (prénoms ou « Vous », « Adulte 2 »…). */
   travellers: string[];
   consulateLine: string | null;
+  /** Ce qui s'ajoute à une démarche (le consulat où la faire). */
+  taskExtra?: (task: Task) => ReactNode;
 }) {
   const [who, setWho] = useState<string | null>(null);
   const [open, setOpen] = useState<PlanCategory | null>(null);
@@ -162,6 +165,7 @@ export function PlanBoard({
                   task={task}
                   done={done.includes(task.id)}
                   onToggle={() => onToggle(task.id)}
+                  extra={taskExtra?.(task)}
                   due={open === "pack" ? undefined : <DueTag label={dueLabel(task.when, deadlines)} />}
                 />
               ))}

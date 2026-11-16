@@ -140,12 +140,16 @@ export interface Traveller {
   age: number;
   /** Homme algérien de 19 ans ou plus : service national. */
   man: boolean;
+  /** Service national : recensé ou dispensé (attestation à emporter), à faire, ou ne sait pas. */
+  sn?: SnStatus;
   residence: Residence;
   /** Passeport algérien encore valable au retour (absent des anciennes réponses : « je ne sais pas »). */
   dzValid?: DzValid;
   /** Binational avec un passeport algérien valide : part-il avec, ou avec l'autre passeport seul ? */
   dzTravel?: DzTravel;
 }
+
+export type SnStatus = "ok" | "exempt" | "todo" | "unknown";
 
 /** tight : valable au retour, mais il expire peu après (aucune règle ne fixe de marge). */
 export type DzValid = "yes" | "tight" | "no" | "unknown";
@@ -489,7 +493,20 @@ export function tasksFor(a: Answers): Task[] {
         toConfirm: true,
       });
 
-    if (!child && t.man)
+    if (!child && t.man && (t.sn === "ok" || t.sn === "exempt"))
+      add({
+        id: "service-national-papier",
+        when: "pack",
+        title:
+          t.sn === "exempt"
+            ? "L'attestation de dispense du service national"
+            : "L'attestation de recensement (ou la carte de service national)",
+        detail:
+          "Vous êtes en règle : gardez la preuve avec le passeport, elle peut être demandée à la sortie d'Algérie. Une copie dans le téléphone ne remplace pas l'original.",
+        who,
+        sources: ["cons-recensement"],
+      });
+    else if (!child && t.man)
       add({
         id: "service-national",
         when: "first",

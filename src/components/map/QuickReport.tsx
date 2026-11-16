@@ -571,7 +571,7 @@ export function QuickReport({
       </div>
     </section>
   );
-  const groups = [group("port", "Au port"), group("vessel", "Le bateau")];
+  const groups = [group("port", "Au port"), group("vessel", "Le navire")];
   if (draft.focus === "vessel") groups.reverse();
 
   let body: ReactNode;

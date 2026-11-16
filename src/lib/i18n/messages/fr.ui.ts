@@ -426,7 +426,7 @@ export const ui = {
   },
   journeyFrieze: {
     cliquezSurLEtapePuis:
-      "Cliquez sur l'étape, puis « J'y suis » pour dire où vous en êtes (dès la veille du départ).",
+      "Touchez l'étape, puis « J'y suis » pour dire où vous en êtes (dès la veille du départ).",
   },
   routePreview: {
     ceQueVousObtenez: "Ce que vous obtenez",
@@ -541,7 +541,7 @@ export const ui = {
     bienAvant: "bien avant ",
     leDepart: "le départ.",
     laVoitureChargeeLesRetrouvailles:
-      "La voiture chargée, les retrouvailles en tête, la mer devant soi. BledWay rassemble les repères utiles pour préparer votre traversée, depuis l'Europe comme depuis l'Algérie.",
+      "La voiture chargée, les retrouvailles en tête, la mer devant soi. BledWay vous aide à préparer, réserver et suivre votre traversée, depuis l'Europe comme depuis l'Algérie.",
     unGuideIndependantDesInformations: "Un guide indépendant. Des informations expliquées.",
     illustrationDeDunesDUn: "Illustration de dunes, d'un dromadaire et de la mer à l'horizon",
     laTraverseeNEstQue: "La traversée n'est que le début du voyage.",
@@ -1080,7 +1080,7 @@ export const ui = {
   pageIndex: {
     allerAuContenu: "Aller au contenu",
     ferriesEuropeMaghrebCarteDes:
-      "Ferries Europe ↔ Maghreb : carte des traversées, lignes et départs",
+      "Ferry Europe ↔ Algérie : préparez, réservez et suivez votre traversée",
     carteEtRechercheDeTraversees: "Carte et recherche de traversées",
     reduireLePanneau: "Réduire le panneau",
     trouverMaTraversee: "Réserver une traversée",
@@ -1639,7 +1639,7 @@ export const ui = {
     aPropos: "À propos",
     bledwayLaRouteDuBled: "BledWay, la route du bled rendue lisible",
     uneCarteUniquePourComprendre:
-      "Une carte unique pour comprendre en quelques secondes comment traverser entre l'Europe et l'Algérie, et savoir où en est votre navire.",
+      "Préparez, réservez et suivez votre traversée vers l'Algérie : une carte unique pour comprendre comment traverser, et savoir où en est votre navire.",
     ceQueVousYTrouvez: "Ce que vous y trouvez",
     dOuViennentLesInformations: "D'où viennent les informations",
     lesProgrammesPubliesParLes:
@@ -1694,7 +1694,7 @@ export const ui = {
     choisirLePort: "Choisir le port…",
     recherche: "Recherche…",
     meLocaliser: "Me localiser",
-    bateau: "Bateau",
+    bateau: "Navire",
     choisirLeNavire: "Choisir le navire…",
     tousLesBateaux: "Tous les navires",
     enMer: "en mer",
@@ -1756,7 +1756,7 @@ export const ui = {
       "File indisponible : appliquez la migration des signalements par traversée.",
     chargement: "Chargement…",
     aucuneObservationAVerifier: "Aucune observation à vérifier.",
-    bateau: "Bateau",
+    bateau: "Navire",
     voirLaTraversee: "Voir la traversée",
     validerEtPublier: "Valider et publier",
     traite: "Traité",

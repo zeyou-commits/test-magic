@@ -28,7 +28,7 @@ export const Route = createFileRoute("/bateaux/$slug")({
           `/bateaux/${v.slug}`,
         )
       : {
-          meta: [{ title: "Bateau introuvable | BledWay" }, { name: "robots", content: "noindex" }],
+          meta: [{ title: "Navire introuvable | BledWay" }, { name: "robots", content: "noindex" }],
         },
   component: Boat,
 });
@@ -48,7 +48,7 @@ function Boat() {
       />
       <Breadcrumbs
         items={[
-          { name: "Bateaux", path: "/bateaux" },
+          { name: "Navires", path: "/bateaux" },
           { name: v.name, path: `/bateaux/${v.slug}` },
         ]}
       />

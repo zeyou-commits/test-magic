@@ -1317,7 +1317,7 @@ export default function FerryMap({
         fleetPickerRef.current?.remove();
         const card = document.createElement("div");
         card.setAttribute("role", "dialog");
-        card.setAttribute("aria-label", "Choisir un bateau");
+        card.setAttribute("aria-label", "Choisir un navire");
         card.className = "min-w-48 space-y-1 p-1";
         const heading = document.createElement("strong");
         heading.textContent = `${members.length} navires à proximité`;

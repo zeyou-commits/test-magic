@@ -2,6 +2,7 @@ import { seoHead } from "@/lib/seo/site";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Card, PageHero, SiteLayout } from "@/components/layout/SiteLayout";
 import { tr } from "@/lib/i18n";
+import { TICKETING } from "@/lib/seo/pitch";
 
 const title = "À propos de BledWay, la carte des ferries Europe ↔ Algérie";
 const description =
@@ -15,7 +16,7 @@ export const Route = createFileRoute("/a-propos")({
 const PILLARS = [
   {
     title: "Informer d'abord",
-    text: "Nous ne vendons pas de billets. Nous rassemblons et présentons clairement les ports, lignes, durées et départs, toutes compagnies confondues.",
+    text: TICKETING.aboutPillar,
   },
   {
     title: "Avec les voyageurs",
@@ -29,16 +30,16 @@ const PILLARS = [
 
 const STEPS = [
   {
-    title: "Trouver",
-    text: "Toutes les traversées sur une seule carte, avec les durées, les jours de départ et les prix indicatifs.",
+    title: "Préparer",
+    text: "Les papiers de chacun, la voiture, le trajet de porte à porte, l'heure de départ conseillée et la check-list du voyage.",
   },
   {
-    title: "Préparer",
-    text: "Le trajet de porte à porte, l'heure de départ conseillée, les papiers et la check-list du voyage.",
+    title: "Réserver",
+    text: `Toutes les traversées de toutes les compagnies sur une seule carte, avec les durées, les jours de départ et les prix indicatifs. ${TICKETING.aboutStep}`,
   },
   {
     title: "Suivre",
-    text: "Le bateau en direct, l'embarquement, les retards, l'état de la mer, et le salon des voyageurs de la traversée.",
+    text: "Le navire en direct, l'embarquement, les retards, l'état de la mer, et le salon des voyageurs de la traversée.",
   },
   {
     title: "Partager",

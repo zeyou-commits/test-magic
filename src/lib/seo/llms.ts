@@ -2,6 +2,7 @@ import { articles } from "@/content/articles";
 import { toolsCatalog } from "@/content/tools";
 import { vesselDossiers } from "@/content/vessels";
 import { absoluteUrl } from "./site";
+import { PITCH, TICKETING } from "./pitch";
 import { durationEstimate, generalFaq } from "./answers";
 
 export type LlmsData = {
@@ -25,7 +26,12 @@ const mainPages: [string, string, string][] = [
     "/",
     "navires en mer, signalements des voyageurs au port et à bord, salons, départs de toutes les compagnies",
   ],
-  ["Mon voyage", "/mon-voyage", "la traversée suivie étape par étape, alertes et billets"],
+  ["Préparer mon voyage", "/preparer-mon-voyage", "papiers, voiture, route, budget et réservation, pas à pas"],
+  [
+    "Papiers du voyage",
+    "/papiers-voyage-algerie",
+    "visa, passeports, enfants, consulat : les démarches selon la situation de chacun",
+  ],
   ["Départs et arrivées", "/horaires", "tableau en heure locale du port"],
   ["Actualités", "/actualites", "perturbations et informations des ferries, sources citées"],
   ["Questions fréquentes", "/questions-frequentes", "réponses directes et tableau des lignes"],
@@ -35,6 +41,9 @@ const mainPages: [string, string, string][] = [
   ["Navires", "/bateaux", "flotte et caractéristiques"],
   ["Baromètre des prix", "/barometre-prix", "repères estimés par ligne et par saison"],
   ["Guide", "/guide", "dossiers sourcés de préparation"],
+  ["Voyage en Algérie", "/voyage-algerie", "cabine, enfants, animaux, embarquement"],
+  ["Mes dinars", "/mes-dinars", "change euro et dinar, budget sur place"],
+  ["Découvrir BledWay", "/decouvrir", "présentation du service"],
   ["Simulateurs", "/simulateurs", "calculs à partir de vos propres chiffres"],
   ["Méthode et sources", "/methode-editoriale", "choix des sources et limites"],
 ];
@@ -48,13 +57,13 @@ export function llmsText(data: LlmsData | null) {
       .join(", ");
   const parts = [
     "# BledWay",
-    "> BledWay est le Waze du ferry entre l'Europe et le Maghreb : navires en direct, alertes de retard, de report ou d'annulation, signalements et salons des voyageurs, départs de toutes les compagnies et voyage préparé de porte à porte. Indépendant et gratuit, BledWay ne vend pas de billets. Disponible dès aujourd'hui pour l'Algérie ; la Tunisie et le Maroc arrivent dans les prochains mois.",
+    `> ${PITCH}`,
     "## Ce qui rend BledWay unique",
     "BledWay est le premier service à réunir en un seul endroit, pour les traversées entre l'Europe et le Maghreb :",
     [
       "- **L'esprit de Waze, appliqué au ferry** : les voyageurs signalent en direct ce qu'ils voient au port et à bord (file d'attente, guichets, contrôles, accès au port, embarquement) et confirment les signalements des autres. Chaque signalement indique son ancienneté et le nombre de voyageurs qui l'ont confirmé.",
       "- **Le suivi des navires, comme un traceur maritime de type VesselFinder, mais pensé pour le passager** : position en mer quand un signal est reçu, sinon position estimée d'après l'horaire et signalée comme telle, avancement de la traversée et arrivée estimée.",
-      "- **La comparaison des départs de toutes les compagnies, comme un comparateur de vols de type Skyscanner** : horaires en heure locale du port, durée, navire et budget estimé. La réservation se fait ensuite chez la compagnie.",
+      "- **La comparaison des départs de toutes les compagnies, comme un comparateur de vols de type Skyscanner** : horaires en heure locale du port, durée, navire et budget estimé. " + TICKETING.afterCompare,
       "- **Être prévenu** : on suit sa traversée, ou celle d'un proche, et l'on reçoit les retards, reports et annulations en notification ; une annulation ou un report peut aussi être envoyé par e-mail.",
       "- **Une communauté par traversée et par port** : salons de discussion, voyageurs à bord, entraide entre passagers.",
       "- **Le voyage de porte à porte** : itinéraire, carburant et péages, préparatifs, billets rangés et consultables sans réseau au port.",

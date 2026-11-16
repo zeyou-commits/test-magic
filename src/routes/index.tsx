@@ -6,6 +6,7 @@ import {
 } from "@/lib/ferry/journeyFilm";
 import { counterFilters, syncFilters, matchesTraffic } from "@/lib/ferry/filterSync";
 import { seoHead } from "@/lib/seo/site";
+import { PROMISE } from "@/lib/seo/pitch";
 import { DataUnavailableNotice } from "@/components/layout/DataUnavailableNotice";
 import type React from "react";
 import {
@@ -102,8 +103,8 @@ export const Route = createFileRoute("/")({
   },
   head: () =>
     seoHead(
-      "BledWay — le Waze du ferry Europe–Maghreb, en direct",
-      "Le Waze du ferry Europe–Maghreb, dès aujourd'hui vers l'Algérie : navires en direct, retards, annulations, signalements au port, toutes les compagnies.",
+      "BledWay — le Waze du ferry vers l'Algérie, en direct",
+      `${PROMISE}. Le Waze du ferry Europe–Maghreb : navires en direct, retards, signalements, toutes les compagnies.`,
       "/",
     ),
   component: Index,

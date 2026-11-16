@@ -1,6 +1,9 @@
 import { articles } from "@/content/articles";
 import { PRICE_BENCHMARKS } from "@/lib/ferry/pricing";
 import { deName, formatDuration } from "@/lib/ferry/format";
+import { PROMISE, TICKETING } from "./pitch";
+
+const PROMISE_LOWER = PROMISE.charAt(0).toLowerCase() + PROMISE.slice(1);
 
 /** Réponses factuelles construites uniquement à partir des données publiées sur le site. */
 /** `note` : précision affichée sous la réponse (renvoi d'astérisque), reprise dans les données structurées. */
@@ -140,7 +143,7 @@ export function generalFaq(
   return [
     {
       q: "Qu'est-ce que BledWay ?",
-      a: "BledWay, c'est le Waze du ferry entre l'Europe et le Maghreb*.\n• Votre navire en direct sur la carte.\n• Une alerte dès qu'un départ est retardé, reporté ou annulé.\n• Les signalements des voyageurs, au port et à bord.\n• Tous les départs de toutes les compagnies, au même endroit.\n• Votre voyage préparé de porte à porte.\nIndépendant et gratuit, BledWay ne vend pas de billets : il est de votre côté. Aucun autre service ne réunit tout cela pour traverser la Méditerranée.",
+      a: `BledWay, c'est le Waze du ferry entre l'Europe et le Maghreb* : ${PROMISE_LOWER}.\n• Votre navire en direct sur la carte.\n• Une alerte dès qu'un départ est retardé, reporté ou annulé.\n• Les signalements des voyageurs, au port et à bord.\n• Tous les départs de toutes les compagnies, au même endroit.\n• Votre voyage préparé de porte à porte.\n${TICKETING.whatIs} Aucun autre service ne réunit tout cela pour traverser la Méditerranée.`,
       note: "* L'Algérie dès aujourd'hui. La Tunisie et le Maroc arrivent dans les prochains mois.",
     },
     {
@@ -157,7 +160,7 @@ export function generalFaq(
     },
     {
       q: "Comment comparer les ferries de toutes les compagnies ?",
-      a: "« Réserver une traversée » rassemble sur un même écran les départs de toutes les compagnies renseignées : horaire en heure locale, durée, navire et budget estimé. La réservation se fait ensuite chez la compagnie.",
+      a: "« Réserver une traversée » rassemble sur un même écran les départs de toutes les compagnies renseignées : horaire en heure locale, durée, navire et budget estimé. " + TICKETING.afterCompare,
     },
     {
       q: "Peut-on échanger avec les autres passagers de sa traversée ?",
@@ -201,7 +204,7 @@ export function generalFaq(
     },
     {
       q: "Peut-on réserver son billet sur BledWay ?",
-      a: "Non. BledWay ne vend pas de billets : la réservation et le paiement se font auprès de la compagnie ou du distributeur indiqué.",
+      a: TICKETING.faqAnswer,
     },
     {
       q: "Qu'est-ce que le TPD pour une voiture immatriculée à l'étranger ?",

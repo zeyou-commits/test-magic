@@ -81,7 +81,7 @@ export function FollowButton({
         type: "follow",
         kind,
         targetId,
-        label: label ?? (kind === "vessel" ? "Votre bateau" : kind === "company" ? "Cette compagnie" : "Votre traversée"),
+        label: label ?? (kind === "vessel" ? "Votre navire" : kind === "company" ? "Cette compagnie" : "Votre traversée"),
         // Suivre une compagnie ne crée aucun voyage : pas de question « vous voyagez ? ».
         ...(kind === "company" ? { traveller: false, purpose: "curieux" as const } : {}),
       });
@@ -122,7 +122,7 @@ export function FollowButton({
         aria-pressed={Boolean(follow?.active)}
         aria-label={
           iconOnly
-            ? `${follow?.active ? "Ne plus suivre" : "Suivre"} ${label ?? (kind === "vessel" ? "ce bateau" : kind === "company" ? "cette compagnie" : "cette traversée")}`
+            ? `${follow?.active ? "Ne plus suivre" : "Suivre"} ${label ?? (kind === "vessel" ? "ce navire" : kind === "company" ? "cette compagnie" : "cette traversée")}`
             : undefined
         }
         title={iconOnly ? (follow?.active ? tr("ui.followButton.suiviActive") : kind === "company" ? tr("ui.followButton.suivreCetteCompagnie") : kind === "departure" ? tr("ui.followButton.suivreCetteTraversee") : tr("ui.followButton.suivreCeBateau")) : undefined}

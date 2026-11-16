@@ -335,7 +335,7 @@ function AuthPage() {
                 <p className="mt-1">
                   {linkIssue
                     ? "Les liens de confirmation ne sont valables qu'une heure. Si vous avez déjà confirmé, connectez-vous simplement ; sinon, recevez un nouveau lien."
-                    : "Cliquez sur le lien reçu par e-mail pour activer votre compte. Vous ne le trouvez plus, ou il a expiré ?"}
+                    : "Ouvrez le lien reçu par e-mail pour activer votre compte. Vous ne le trouvez plus, ou il a expiré ?"}
                 </p>
               )}
               {!(mode === "forgot" && linkIssue) ? (

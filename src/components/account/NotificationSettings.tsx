@@ -23,7 +23,7 @@ const options = [
   },
   {
     key: "community",
-    label: "Actualités de mes bateaux",
+    label: "Actualités de mes navires",
     description: "Signalements et nouveaux avis des voyageurs sur les navires suivis.",
     icon: MessageSquare,
   },

@@ -79,7 +79,7 @@ export const fr = {
     open: "Ouvrir le menu",
     close: "Fermer le menu",
     back: "Retour au menu",
-    salons: "Salons de discussion",
+    salons: "Discussions",
     mainNav: "Navigation principale",
     mobileNav: "Navigation mobile",
     myTripLabel: "Mon voyage, étape par étape",

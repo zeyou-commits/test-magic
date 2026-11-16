@@ -54,7 +54,7 @@ export function FollowCenter({ userId }: { userId: string }) {
         <div className="bw-account-filter" role="group" aria-label={tr("ui.followCenter.filtrerMesSuivis")}>
           {[
             { id: "all", label: "Tout" },
-            { id: "vessel", label: "Bateaux" },
+            { id: "vessel", label: "Navires" },
             { id: "departure", label: "Traversées" },
             { id: "company", label: "Compagnies" },
             { id: "opening", label: "Alertes" },

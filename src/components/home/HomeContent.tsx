@@ -14,11 +14,12 @@ import type { Port, RouteLine } from "@/lib/ferry/types";
 import { JourneyArtwork } from "./JourneyArtwork";
 import { FaqSchema } from "@/components/editorial/Editorial";
 import { tr } from "@/lib/i18n";
+import { TICKETING } from "@/lib/seo/pitch";
 
 const questions = [
   [
     "Comment réserver ma traversée ?",
-    "Cliquez sur « Réserver » : choisissez votre ligne, vos dates et votre véhicule, BledWay affiche les départs connus et vous dirige vers la compagnie ou le distributeur indiqué. La réservation et le paiement se font sur leur site.",
+    `Touchez « Réserver » : choisissez votre ligne, vos dates et votre véhicule. ${TICKETING.howToBook}`,
   ],
   [
     "Les positions des navires sont-elles en temps réel ?",

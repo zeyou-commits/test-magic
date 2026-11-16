@@ -139,6 +139,7 @@ import {
 } from "@/lib/ferry/travelProfile";
 import type { Port } from "@/lib/ferry/types";
 import { seoHead } from "@/lib/seo/site";
+import { TICKETING } from "@/lib/seo/pitch";
 import { SearchBox, splitPlace } from "@/components/SearchBox";
 import { SailingsOutlook, TripBudget } from "@/components/prepare/TripOutlook";
 import { SharePreparation } from "@/components/prepare/SharePreparation";
@@ -380,8 +381,7 @@ function Welcome({ onStart }: { onStart: () => void }) {
         <span className="rounded-full border px-3 py-1 text-muted-foreground">Maroc</span>
       </p>
       <p className="mt-4 text-sm text-muted-foreground">
-        BledWay ne vend pas de billets : la réservation se fait auprès de la compagnie ou du
-        distributeur indiqué.
+        {TICKETING.short}
       </p>
     </div>
   );
@@ -1956,8 +1956,7 @@ function BookStep({
       <WizardNav next={{ label: "Voir mon récap", onClick: onFinish, icon: ListChecks }} />
       <p className="mt-3 flex items-start gap-2 text-xs text-muted-foreground">
         <Landmark size={14} className="mt-0.5 shrink-0" aria-hidden />
-        BledWay ne vend pas de billets : la réservation et le paiement se font auprès de la
-        compagnie ou du distributeur indiqué.
+        {TICKETING.shortPayment}
       </p>
     </div>
   );

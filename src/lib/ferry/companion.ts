@@ -117,9 +117,12 @@ export function planUnfinished(plan: CompanionPlan | null) {
 }
 
 /** Les étapes du voyage : sans voiture, pas d'étape voiture. */
-export function companionSteps(plan: Pick<CompanionPlan, "vehicle">): CompanionStep[] {
-  const steps: CompanionStep[] = ["profile", "papers", "car", "route", "budget", "book"];
-  return plan.vehicle === "none" ? steps.filter((step) => step !== "car") : steps;
+/**
+ * Les étapes du guide. Les papiers de la voiture font partie de « Mes papiers » (même liste, mêmes
+ * dates) : « car » n'est plus une étape à part, il reste dans le type pour les anciennes préparations.
+ */
+export function companionSteps(_plan: Pick<CompanionPlan, "vehicle">): CompanionStep[] {
+  return ["profile", "papers", "route", "budget", "book"];
 }
 
 export function nextOpenStep(plan: CompanionPlan): CompanionStep | null {

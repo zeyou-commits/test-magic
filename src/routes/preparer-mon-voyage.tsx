@@ -325,7 +325,7 @@ const chapters: {
     title: "Vos papiers et votre voiture",
     hint: "La liste de chacun, avec les dates à tenir.",
     icon: FileText,
-    steps: ["papers", "car"],
+    steps: ["papers"],
   },
   {
     title: "Votre route, votre budget, votre billet",
@@ -592,10 +592,9 @@ function CompanionPage() {
           plan={plan}
           patch={patch}
           onDone={() => complete("papers")}
-          next={plan.vehicle === "none" ? "ma route" : "ma voiture"}
+          next="ma route"
         />
       ) : null}
-      {step === "car" ? <CarStep plan={plan} patch={patch} onDone={() => complete("car")} /> : null}
       {step === "route" ? (
         <RouteStep
           papers={papers}
@@ -883,8 +882,11 @@ function useSummaries(
     ]
       .filter(Boolean)
       .join(" · "),
+    // Les papiers de la voiture comptent avec ceux des voyageurs.
     papers: papers.finished
-      ? `${ready} sur ${tasks.length} papiers prêts`
+      ? plan.vehicle === "none"
+        ? `${ready} sur ${tasks.length} papiers prêts`
+        : `${ready + carReady} sur ${tasks.length + carItems.length} papiers prêts, voiture comprise`
       : "Votre liste, voyageur par voyageur",
     car: `${carReady} sur ${carItems.length} faits${plan.importCar ? " · import" : ""}`,
     route: line ? `${line}${duration ? ` · ${formatDuration(duration)} de traversée` : ""}` : null,
@@ -1251,6 +1253,7 @@ function PapersStepBody({
               existe toujours.
             </ConfirmChange>
           ) : null}
+          {plan.vehicle !== "none" ? <CarPapers plan={plan} patch={patch} /> : null}
           <p className="mt-6 text-sm text-muted-foreground">
             Pas besoin de tout cocher maintenant : la liste reste ici et dans « Mon voyage ».
           </p>
@@ -1290,14 +1293,16 @@ function PapersStepBody({
 
 /* ------------------------------------------------------------ 3. La voiture */
 
-function CarStep({
+/**
+ * Les papiers de la voiture, à la suite de ceux des voyageurs dans « Mes papiers » : même liste,
+ * cochée au même endroit, et reprise dans « Mon voyage ».
+ */
+function CarPapers({
   plan,
   patch,
-  onDone,
 }: {
   plan: CompanionPlan;
   patch: (p: Partial<CompanionPlan>) => void;
-  onDone: () => void;
 }) {
   const toggle = (id: string) =>
     patch({
@@ -1305,20 +1310,24 @@ function CarStep({
         ? plan.carDone.filter((x) => x !== id)
         : [...plan.carDone, id],
     });
-  const [screen, setScreen] = useState(0);
-  useWizardScreen(screen, 2);
+  const ready = carItems.filter((item) => plan.carDone.includes(item.id)).length;
   return (
-    <div className="pt-4">
-      {screen === 0 ? (
-        <>
-          <Question title="La voiture reste-t-elle en Algérie ?">
-            <Options
-              label="Séjour de la voiture"
+    <section aria-labelledby="papiers-voiture" className="bw-carpapers mt-6">
+      <div className="flex items-center justify-between gap-3">
+        <h3 id="papiers-voiture" className="flex items-center gap-2 font-display text-xl font-bold">
+          <Car size={19} className="text-primary" aria-hidden /> La voiture
+        </h3>
+        <span className="text-sm font-semibold text-muted-foreground">
+          {ready} sur {carItems.length}
+        </span>
+      </div>
+      <div className="mt-3">
+        <p className="mb-2 text-sm font-semibold">Elle reste en Algérie ?</p>
+        <Options
+              label="La voiture reste-t-elle en Algérie ?"
               value={plan.importCar ? "import" : "vacances"}
-              onChange={(v) => {
-                patch({ importCar: v === "import" });
-                if (v === "vacances") window.setTimeout(() => setScreen(1), 220);
-              }}
+              onChange={(v) => patch({ importCar: v === "import" })}
+              small
               options={[
                 {
                   value: "vacances",
@@ -1332,7 +1341,7 @@ function CarStep({
                 },
               ]}
             />
-          </Question>
+      </div>
           {plan.importCar ? (
             <p className="mt-4 flex items-start gap-2 rounded-xl bg-primary/5 p-3 text-sm">
               <Info size={16} className="mt-0.5 shrink-0 text-primary" aria-hidden />
@@ -1344,11 +1353,6 @@ function CarStep({
               </span>
             </p>
           ) : null}
-          <WizardNav next={{ label: "Continuer", onClick: () => setScreen(1) }} />
-        </>
-      ) : (
-        <>
-          <h3 className="mt-4 font-display text-xl font-bold">Avant de partir</h3>
           <ul className="mt-3 grid gap-2">
             {carItems.map((item) => {
               const done = plan.carDone.includes(item.id);
@@ -1401,19 +1405,13 @@ function CarStep({
               );
             })}
           </ul>
-          <WizardNav
-            back={() => setScreen(0)}
-            next={{ label: "Continuer : ma route", onClick: onDone }}
-          />
-        </>
-      )}
       <MoreLinks
         links={[
           { href: "/guide/voyage-algerie-voiture-checklist", label: "La checklist voiture" },
           { href: "/guide/voiture-vacances-admission-temporaire", label: "L'admission temporaire" },
         ]}
       />
-    </div>
+    </section>
   );
 }
 
@@ -2673,38 +2671,21 @@ function urgencyOf(m: Milestone): Urgency {
   if (m.tight || m.lead === "now" || m.date <= soon) return "soon";
   return "later";
 }
-const urgencyText: Record<Urgency, string> = {
-  late: "Urgent",
-  soon: "Bientôt",
-  later: "Plus tard",
-};
-const urgencyRank: Record<Urgency, number> = { late: 0, soon: 1, later: 2 };
 
-/** Les familles d'actions, dans l'ordre du voyage. */
-type TodoGroupId = "papers" | "book" | "bags";
-const todoGroups: { id: TodoGroupId; title: string; icon: LucideIcon; why: string }[] = [
-  {
-    id: "papers",
-    title: "Papiers",
-    icon: stepArt.papers.icon,
-    why: "Les démarches de « Mes papiers », datées à partir de votre départ.",
-  },
-  {
-    id: "book",
-    title: "Traversée",
-    icon: stepArt.book.icon,
-    why: "La réservation vient après les démarches longues : un papier refusé ne rembourse pas un billet.",
-  },
-  {
-    id: "bags",
-    title: "Avant de partir",
-    icon: ListChecks,
-    why: "Ce qui se fait la dernière semaine : en ligne, puis la pochette du port.",
-  },
-];
-const groupOf = (row: TodoRow): TodoGroupId =>
-  row.m.id === "book" ? "book" : row.m.id === "bags" ? "bags" : "papers";
+/** La famille d'un moment du calendrier, affichée en étiquette. */
+const nodeGroup = (m: Milestone): string =>
+  m.id === "book"
+    ? "Traversée"
+    : m.id === "bags"
+      ? "Avant de partir"
+      : m.id === "eve" || m.id === "day"
+        ? "Le voyage"
+        : "Papiers";
 
+/**
+ * « À faire » en une seule frise, dans l'ordre des dates : chaque moment porte sa couleur
+ * d'urgence, son étiquette (Papiers, Traversée…) et ses actions à cocher sur place.
+ */
 function PlanTodo({
   plan,
   papers,
@@ -2714,24 +2695,17 @@ function PlanTodo({
   papers: PapersState;
   onOpenStep: (step: CompanionStep) => void;
 }) {
-  const [view, setView] = useState<"list" | "calendar">("list");
+  const [showDone, setShowDone] = useState(false);
   const { list, todo, done, know } = usePlanTodo(plan, papers);
-  const groups = todoGroups
-    .map((group) => {
-      const rows = todo.filter((row) => groupOf(row) === group.id);
-      const worst = rows.reduce<Urgency>(
-        (acc, row) => (urgencyRank[urgencyOf(row.m)] < urgencyRank[acc] ? urgencyOf(row.m) : acc),
-        "later",
-      );
-      return { ...group, rows, worst };
-    })
-    .filter((group) => group.rows.length);
-  // Ouvert d'office : ce qui presse ; à défaut, la première famille.
-  const pressing = groups.filter((group) => group.worst !== "later").map((group) => group.id);
-  const [openGroups, setOpenGroups] = useState<TodoGroupId[] | null>(null);
-  const opened = openGroups ?? (pressing.length ? pressing : groups.slice(0, 1).map((g) => g.id));
-  const flip = (id: TodoGroupId) =>
-    setOpenGroups(opened.includes(id) ? opened.filter((g) => g !== id) : [...opened, id]);
+  const rows = [...todo, ...done];
+  const rowsOf = (m: Milestone) => rows.filter((row) => row.m.id === m.id);
+  const nodes = list.filter((m) => m.tone !== "warning");
+  const nodeDone = (m: Milestone) => {
+    const mine = rowsOf(m);
+    return mine.length ? mine.every((row) => row.done) : Boolean(m.done);
+  };
+  const finished = nodes.filter(nodeDone);
+  const shown = showDone ? nodes : nodes.filter((m) => !nodeDone(m));
   const toggle = (row: TodoRow) =>
     papers.setDone((current) =>
       row.done
@@ -2740,97 +2714,81 @@ function PlanTodo({
     );
   return (
     <section aria-labelledby="a-faire" className="mt-4 rounded-2xl border bg-card p-4 md:p-5">
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <h2 id="a-faire" className="flex items-center gap-2 font-display text-lg font-bold">
-          <ListChecks size={19} className="text-primary" aria-hidden /> À faire
-        </h2>
-        <div className="bw-todo-switch" role="group" aria-label="Affichage">
-          <button type="button" aria-pressed={view === "list"} onClick={() => setView("list")}>
-            <ListChecks size={14} aria-hidden /> Par étape
-          </button>
-          <button
-            type="button"
-            aria-pressed={view === "calendar"}
-            onClick={() => setView("calendar")}
-          >
-            <CalendarDays size={14} aria-hidden /> Calendrier
-          </button>
-        </div>
-      </div>
+      <h2 id="a-faire" className="flex items-center gap-2 font-display text-lg font-bold">
+        <ListChecks size={19} className="text-primary" aria-hidden /> À faire
+      </h2>
       <p className="mt-0.5 text-sm text-muted-foreground">{todoSummary(todo, plan)}</p>
-      {view === "calendar" ? (
-        <FullCalendar list={list} plan={plan} doneIds={papers.done} />
-      ) : null}
-      {view === "list" && groups.length ? (
-        <div className="mt-3 grid gap-2">
-          {groups.map((group) => {
-            const isOpen = opened.includes(group.id);
-            const Icon = group.icon;
-            return (
-              <div key={group.id} className="bw-todo-group" data-urgency={group.worst}>
-                <button
-                  type="button"
-                  className="bw-todo-group__head"
-                  aria-expanded={isOpen}
-                  onClick={() => flip(group.id)}
-                >
-                  <span className="bw-todo-group__icon" aria-hidden>
-                    <Icon size={17} />
-                  </span>
-                  <span className="min-w-0 flex-1 text-left">
-                    <strong>{group.title}</strong>
-                    <small>
-                      {group.rows.length} action{group.rows.length > 1 ? "s" : ""}
-                    </small>
-                  </span>
-                  <span className="bw-urgency" data-urgency={group.worst}>
-                    {urgencyText[group.worst]}
-                  </span>
-                  <ChevronDown size={17} aria-hidden className="bw-todo-group__chev" />
-                </button>
-                {isOpen ? (
-                  <div className="bw-todo-group__body">
-                    <p className="text-xs text-muted-foreground">{group.why}</p>
-                    <ul className="mt-2 grid gap-2">
-                      {group.rows.map((row) => (
-                        <TodoItem
-                          key={row.key}
-                          row={row}
-                          plan={plan}
-                          onToggle={toggle}
-                          onOpenStep={onOpenStep}
-                        />
-                      ))}
-                    </ul>
-                  </div>
-                ) : null}
-              </div>
-            );
-          })}
-        </div>
-      ) : null}
-      {view === "list" && done.length ? (
-        <details className="group mt-3">
-          <summary className="inline-flex cursor-pointer list-none items-center gap-1 text-sm font-semibold text-muted-foreground [&::-webkit-details-marker]:hidden">
-            {done.length} faite{done.length > 1 ? "s" : ""}
-            <ChevronDown
-              size={15}
-              aria-hidden
-              className="transition-transform group-open:rotate-180"
-            />
-          </summary>
-          <ul className="mt-2 grid gap-2">
-            {done.map((row) => (
-              <TodoItem
-                key={row.key}
-                row={row}
-                plan={plan}
-                onToggle={toggle}
-                onOpenStep={onOpenStep}
-              />
-            ))}
-          </ul>
-        </details>
+      <p className="bw-todo-legend" aria-hidden>
+        <span data-urgency="late">Urgent</span>
+        <span data-urgency="soon">Bientôt</span>
+        <span data-urgency="later">Plus tard</span>
+      </p>
+      <ol className="bw-todo-line">
+        {shown.map((m) => {
+          const mine = rowsOf(m);
+          const isDone = nodeDone(m);
+          const urgency = isDone ? "done" : urgencyOf(m);
+          return (
+            <li key={m.id} data-urgency={urgency}>
+              <span className="bw-todo-line__dot" aria-hidden>
+                {isDone ? <Check size={11} strokeWidth={3} /> : null}
+              </span>
+              <p className="bw-todo-line__lead">
+                {milestoneLead(m, plan)}
+                {isDone ? " · fait" : ""}
+                <span className="bw-todo-line__tag">{nodeGroup(m)}</span>
+              </p>
+              <p className="bw-todo-line__title">{m.title}</p>
+              {mine.length === 1 && mine[0]!.step ? (
+                <>
+                  <p className="mt-0.5 text-sm text-muted-foreground">{m.detail}</p>
+                  {mine[0]!.done ? null : (
+                    <button
+                      type="button"
+                      onClick={() => onOpenStep(mine[0]!.step!)}
+                      className="mt-2 inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl bg-primary px-4 text-sm font-bold text-primary-foreground sm:w-auto"
+                    >
+                      {mine[0]!.step === "papers" ? "Faire ma liste de papiers" : "Réserver ma traversée"}
+                      <ArrowRight size={15} aria-hidden />
+                    </button>
+                  )}
+                </>
+              ) : mine.length ? (
+                <ul className="mt-2 grid gap-2">
+                  {mine.map((row) => (
+                    <TodoItem
+                      key={row.key}
+                      row={row}
+                      plan={plan}
+                      onToggle={toggle}
+                      onOpenStep={onOpenStep}
+                      inLine
+                    />
+                  ))}
+                </ul>
+              ) : (
+                <p className="mt-0.5 text-sm text-muted-foreground">{m.detail}</p>
+              )}
+            </li>
+          );
+        })}
+      </ol>
+      {finished.length ? (
+        <button
+          type="button"
+          onClick={() => setShowDone(!showDone)}
+          aria-expanded={showDone}
+          className="mt-3 inline-flex items-center gap-1 text-sm font-semibold text-muted-foreground"
+        >
+          {showDone
+            ? "Masquer ce qui est fait"
+            : `Voir ce qui est fait (${finished.length})`}
+          <ChevronDown
+            size={15}
+            aria-hidden
+            className={`transition-transform ${showDone ? "rotate-180" : ""}`}
+          />
+        </button>
       ) : null}
       {know.length ? (
         <div className="mt-4 rounded-xl border border-[#e0a43a]/50 bg-[#fdf6e7] p-3">
@@ -2875,11 +2833,14 @@ function TodoItem({
   plan,
   onToggle,
   onOpenStep,
+  inLine = false,
 }: {
   row: TodoRow;
   plan: CompanionPlan;
   onToggle: (row: TodoRow) => void;
   onOpenStep: (step: CompanionStep) => void;
+  /** Dans la frise : la date est déjà dite par le moment, on ne la répète pas. */
+  inLine?: boolean;
 }) {
   const [why, setWhy] = useState(false);
   const { m } = row;
@@ -2927,9 +2888,11 @@ function TodoItem({
               <span className="font-normal text-muted-foreground"> · {row.who.join(", ")}</span>
             ) : null}
           </p>
-          <p className={`text-xs font-bold ${tone}`}>
-            {row.done ? "Fait" : milestoneLead(m, plan)}
-          </p>
+          {inLine && !row.done ? null : (
+            <p className={`text-xs font-bold ${tone}`}>
+              {row.done ? "Fait" : milestoneLead(m, plan)}
+            </p>
+          )}
         </div>
         <button
           type="button"
@@ -2958,71 +2921,6 @@ function TodoItem({
         </button>
       ) : null}
     </li>
-  );
-}
-
-/** Le calendrier à rebours en entier : toutes les dates, d'aujourd'hui au départ. */
-function FullCalendar({
-  list,
-  plan,
-  doneIds,
-}: {
-  list: Milestone[];
-  plan: CompanionPlan;
-  doneIds: string[];
-}) {
-  return (
-    <ol className="bw-fullcal mt-3 grid gap-4 border-l-2 border-primary/20 pl-4">
-      {list.map((m) => (
-        <li key={m.id} className="relative">
-          <span
-            className={`absolute -left-[23px] top-0.5 size-3.5 rounded-full ring-4 ring-card ${
-              m.done
-                ? "bg-primary"
-                : m.late
-                  ? "bg-[#c95038]"
-                  : m.tone === "warning" || m.tight
-                    ? "bg-[#e0a43a]"
-                    : "bg-primary/40"
-            }`}
-            aria-hidden
-          />
-          <p
-            className={`text-[11px] font-bold uppercase tracking-wider ${m.late ? "text-[#c95038]" : m.tone === "warning" || m.tight ? "text-[#b7791f]" : "text-primary"}`}
-          >
-            {milestoneLead(m, plan)}
-            {m.done ? " · fait" : ""}
-          </p>
-          <p className="font-semibold">{m.title}</p>
-          {m.tasks.length ? (
-            <ul className="mt-1 grid gap-0.5 text-sm">
-              {m.tasks.map((task) => {
-                const done = task.ids.every((id) => doneIds.includes(id));
-                return (
-                  <li key={task.id} className="flex items-start gap-1.5">
-                    {done ? (
-                      <Check size={14} className="mt-0.5 shrink-0 text-primary" aria-label="fait" />
-                    ) : (
-                      <span
-                        className="mt-[7px] size-1.5 shrink-0 rounded-full bg-muted-foreground"
-                        aria-hidden
-                      />
-                    )}
-                    <span>
-                      {task.title}
-                      {task.who.length ? (
-                        <span className="text-muted-foreground"> · {task.who.join(", ")}</span>
-                      ) : null}
-                    </span>
-                  </li>
-                );
-              })}
-            </ul>
-          ) : null}
-          <p className="mt-1 text-sm text-muted-foreground">{m.detail}</p>
-        </li>
-      ))}
-    </ol>
   );
 }
 

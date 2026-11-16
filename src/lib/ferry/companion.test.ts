@@ -55,9 +55,9 @@ describe("compagnon : préparer mon voyage", () => {
     expect(closestArrival(mrs!, null)?.id).toBe("alg");
   });
 
-  it("sans voiture, pas d'étape voiture", () => {
+  it("la voiture est dans « Mes papiers », pas dans une étape à part", () => {
     expect(companionSteps({ vehicle: "none" })).not.toContain("car");
-    expect(companionSteps({ vehicle: "sedan" })).toContain("car");
+    expect(companionSteps({ vehicle: "sedan" })).toEqual(["profile", "papers", "route", "budget", "book"]);
   });
 
   it("prépare la recherche : ports, jour et ± 3 jours", () => {

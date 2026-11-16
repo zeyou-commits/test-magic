@@ -326,67 +326,97 @@ const chapterOf = (step: CompanionStep) =>
     chapters.findIndex((chapter) => chapter.steps.includes(step)),
   );
 
-/** L'accueil : pourquoi on pose des questions, les 3 chapitres, et un seul bouton. */
+/**
+ * L'accueil en deux temps. D'abord l'envie : l'Algérie en photos, et la 504 qui propose de charger
+ * la voiture — c'est elle le bouton, visible sans faire défiler. Puis, une fois lancé : pourquoi
+ * BledWay pose des questions, les trois chapitres, et « C'est parti ».
+ */
 function Welcome({ onStart }: { onStart: () => void }) {
-  const start = (
-    <button
-      type="button"
-      onClick={onStart}
-      className="inline-flex min-h-14 w-full items-center justify-center gap-2 rounded-2xl bg-primary px-6 text-base font-bold text-primary-foreground shadow-md hover:bg-primary/90 sm:w-auto"
-    >
-      Commencer <ArrowRight size={18} aria-hidden />
-    </button>
-  );
+  const [intro, setIntro] = useState(false);
+  if (intro)
+    return (
+      <div className="bw-prep-intro">
+        <button
+          type="button"
+          onClick={() => {
+            setIntro(false);
+            requestAnimationFrame(() => window.scrollTo({ top: 0, behavior: "instant" }));
+          }}
+          className="text-sm font-semibold text-muted-foreground hover:text-foreground"
+        >
+          ← Retour
+        </button>
+        <h1 className="mt-2 font-display text-[1.75rem] font-bold leading-tight md:text-5xl">
+          Votre voyage au bled, préparé pas à pas
+        </h1>
+        <p className="mt-3 text-muted-foreground md:text-lg">
+          Pour vous aider vraiment, BledWay a besoin d'en savoir un peu plus sur vous et sur votre
+          voyage. Une question à la fois, en trois chapitres : à la fin, vous avez vos papiers, vos
+          dates, votre route et votre budget.
+        </p>
+        <ol className="mt-5 grid gap-2 md:grid-cols-3">
+          {chapters.map((chapter, index) => {
+            const Icon = chapter.icon;
+            return (
+              <li key={chapter.title} className="flex gap-3 rounded-2xl border bg-card p-3 md:block">
+                <span className="relative shrink-0 md:block">
+                  <img
+                    src={stepArt[chapter.steps[0]!].scene}
+                    alt=""
+                    width={960}
+                    height={640}
+                    decoding="async"
+                    className="h-16 w-20 rounded-xl object-cover md:h-28 md:w-full"
+                  />
+                  <span className="absolute -bottom-2 -right-2 grid size-7 place-items-center rounded-full bg-primary text-sm font-bold text-primary-foreground ring-2 ring-card md:left-2 md:right-auto md:top-2 md:bottom-auto">
+                    {index + 1}
+                  </span>
+                </span>
+                <span className="min-w-0 md:mt-3 md:block">
+                  <span className="flex items-center gap-1.5 font-semibold">
+                    <Icon size={16} className="shrink-0 text-primary" aria-hidden />
+                    {chapter.title}
+                  </span>
+                  <span className="mt-0.5 block text-sm text-muted-foreground">{chapter.hint}</span>
+                </span>
+              </li>
+            );
+          })}
+        </ol>
+        <p className="mt-4 text-center text-sm text-muted-foreground md:text-left">
+          Environ 5 minutes · modifiable à tout moment · vos réponses restent sur votre téléphone
+        </p>
+        {/* Sur téléphone, le bouton reste visible au-dessus de la barre du bas. */}
+        <div className="bw-prep-intro__go">
+          <button
+            type="button"
+            onClick={onStart}
+            className="inline-flex min-h-14 w-full items-center justify-center gap-2 rounded-2xl bg-primary px-6 text-base font-bold text-primary-foreground shadow-md hover:bg-primary/90 md:w-auto"
+          >
+            C'est parti <ArrowRight size={18} aria-hidden />
+          </button>
+        </div>
+      </div>
+    );
   return (
     <div>
-      {/* L'envie d'abord : l'Algérie en photos, puis comment on va vous aider. */}
       <AlgeriaCarousel />
-      <Bw504Note className="mt-4" title="Salut tonton ! On charge la 504 ?">
-        Je t'aide à tout préparer, avec des rappels pour ne rien oublier.
-      </Bw504Note>
-      <h1 className="mt-5 font-display text-[1.75rem] font-bold leading-tight md:mt-7 md:text-5xl">
-        Votre voyage au bled, préparé pas à pas
-      </h1>
-      <p className="mt-3 text-muted-foreground md:text-lg">
-        Pour vous aider vraiment, BledWay a besoin d'en savoir un peu plus sur vous et sur votre
-        voyage. Une question à la fois, en trois chapitres : à la fin, vous avez vos papiers, vos
-        dates, votre route et votre budget.
-      </p>
-      <ol className="mt-5 grid gap-2 md:grid-cols-3">
-        {chapters.map((chapter, index) => {
-          const Icon = chapter.icon;
-          return (
-            <li key={chapter.title} className="flex gap-3 rounded-2xl border bg-card p-3 md:block">
-              <span className="relative shrink-0 md:block">
-                <img
-                  src={stepArt[chapter.steps[0]!].scene}
-                  alt=""
-                  width={960}
-                  height={640}
-                  loading="lazy"
-                  decoding="async"
-                  className="h-20 w-24 rounded-xl object-cover md:h-28 md:w-full"
-                />
-                <span className="absolute -bottom-2 -right-2 grid size-8 place-items-center rounded-full bg-primary text-sm font-bold text-primary-foreground ring-2 ring-card md:left-2 md:right-auto md:top-2 md:bottom-auto">
-                  {index + 1}
-                </span>
-              </span>
-              <span className="min-w-0 md:mt-3 md:block">
-                <span className="flex items-center gap-1.5 font-semibold">
-                  <Icon size={16} className="shrink-0 text-primary" aria-hidden />
-                  {chapter.title}
-                </span>
-                <span className="mt-0.5 block text-sm text-muted-foreground">{chapter.hint}</span>
-              </span>
-            </li>
-          );
-        })}
-      </ol>
-      <div className="mt-5">{start}</div>
-      <p className="mt-3 text-center text-sm text-muted-foreground md:text-left">
-        Environ 5 minutes · modifiable à tout moment · vos réponses restent sur votre téléphone
-      </p>
-      <p className="mt-2 flex flex-wrap items-center justify-center gap-2 text-sm md:justify-start">
+      <button
+        type="button"
+        onClick={() => {
+          setIntro(true);
+          requestAnimationFrame(() => window.scrollTo({ top: 0, behavior: "instant" }));
+        }}
+        className="bw-prep-start mt-4"
+      >
+        <Bw504Note title="Salut tonton ! On charge la 504 ?">
+          Je t'aide à tout préparer, avec des rappels pour ne rien oublier.
+          <span className="bw-prep-start__cta">
+            Commencer <ArrowRight size={16} aria-hidden />
+          </span>
+        </Bw504Note>
+      </button>
+      <p className="mt-3 flex flex-wrap items-center justify-center gap-2 text-sm md:justify-start">
         <span className="text-muted-foreground">Bientôt :</span>
         <span className="rounded-full border px-3 py-1 text-muted-foreground">Tunisie</span>
         <span className="rounded-full border px-3 py-1 text-muted-foreground">Maroc</span>

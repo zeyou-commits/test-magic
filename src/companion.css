@@ -164,3 +164,44 @@
 .bw-salescal__list li { padding: 0.4rem 0.6rem; }
 .bw-salescal__list b { display: inline; font-size: 0.78rem; }
 .bw-salescal__list small { display: block; font-size: 0.66rem; }
+
+/* Accueil de Préparer : la carte de la 504 est le bouton « Commencer ». */
+.bw-prep-start {
+  display: block;
+  width: 100%;
+  border-radius: 18px;
+  text-align: left;
+  transition: transform 0.15s ease;
+}
+.bw-prep-start:active { transform: scale(0.985); }
+.bw-prep-start:focus-visible { outline: 3px solid #f6c445; outline-offset: 3px; }
+.bw-prep-start .bw-504note { grid-template-columns: 64px minmax(0, 1fr); padding: 14px; }
+.bw-prep-start .bw-504note__car { width: 64px; }
+.bw-prep-start .bw-504note__title { font-size: 17px; }
+.bw-prep-start .bw-504note__body { font-size: 14px; }
+.bw-prep-start__cta {
+  display: flex;
+  width: fit-content;
+  align-items: center;
+  gap: 6px;
+  margin-top: 10px;
+  min-height: 40px;
+  padding: 8px 16px;
+  border-radius: 999px;
+  background: #f6c445;
+  color: #3a2a00;
+  font-size: 15px;
+  font-weight: 800;
+}
+.bw-prep-start:hover .bw-prep-start__cta { background: #ffd35e; }
+/* Écran « pourquoi ces questions » : le bouton reste au-dessus de la barre du bas. */
+.bw-prep-intro__go {
+  position: sticky;
+  bottom: calc(68px + env(safe-area-inset-bottom));
+  margin-top: 16px;
+  padding: 8px 0;
+  background: linear-gradient(to top, var(--background) 70%, transparent);
+}
+@media (min-width: 768px) {
+  .bw-prep-intro__go { position: static; background: none; padding: 0; }
+}

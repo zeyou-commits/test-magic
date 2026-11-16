@@ -6,6 +6,8 @@ import { useQuery } from "@tanstack/react-query";
 import {
   Anchor,
   ArrowRight,
+  ArrowUpRight,
+  CalendarDays,
   Car,
   ChevronDown,
   CarFront,
@@ -95,6 +97,23 @@ import {
   type ItineraryChoice,
 } from "@/lib/ferry/travelProfile";
 import { SimulationJourney } from "@/components/journey/SimulationJourney";
+import {
+  CostBar,
+  DayTimeline,
+  TripBar,
+  crossesNight,
+  durationText,
+  nightSpans,
+  shortDay,
+  timeLabel,
+  type TripSegment,
+  type TripStep,
+} from "./TripParts";
+
+/** « Toulouse (31000) » → « Toulouse », « Tadjena, Algérie » → « Tadjena ». */
+const placeName = (label: string) => label.split(/[,(]/)[0]!.trim() || label;
+/** « de Sète », « d'Alicante ». */
+const ofPlace = (name: string) => (/^[aeiouyàâéèêîôû]/i.test(name) ? `d'${name}` : `de ${name}`);
 import { tr } from "@/lib/i18n";
 
 type RoadAccess = Awaited<ReturnType<typeof calculateRoadAccess>>;
@@ -278,7 +297,7 @@ function AddressField({
       >
         <span className="min-w-0 flex-1">
           <label
-            className="block text-[11px] font-semibold uppercase tracking-wide text-muted-foreground"
+            className="block text-xs font-semibold uppercase tracking-wide text-muted-foreground"
             htmlFor={`itinerary-${countryCode ?? "origin"}`}
           >
             {label}
@@ -484,7 +503,8 @@ export function ItineraryPlanner({
   // Les deux adresses choisies : le voyage se calcule seul, puis de nouveau à chaque réglage changé.
   const lastAutoKey = useRef("");
   // Résultats : la carte dépliée (« Voir le détail ») et la liste des autres trajets.
-  const [openDetail, setOpenDetail] = useState<string | null>(null);
+  // Résultats : les trajets en cartes, ou côte à côte (« Comparer »).
+  const [resultsView, setResultsView] = useState<"cards" | "compare">("cards");
   const [showOthers, setShowOthers] = useState(false);
   const [hoveredId, setHoveredId] = useState<string | null>(null);
   // Un trajet touché sur la carte (bulle ou tracé gris) devient le trajet choisi.
@@ -1332,20 +1352,32 @@ export function ItineraryPlanner({
       ) : null}
       <div hidden={cinema}>
       <div className="sticky top-0 z-10 flex items-center justify-between gap-2 border-b border-border bg-card px-4 py-3 md:bg-white md:px-5">
-        <h2 className="min-w-0 truncate font-display text-base font-bold tracking-tight text-foreground">
-          <span className="sr-only">{tr("ui.itineraryPlanner.trajetPorteAPorte")}</span>{tr("ui.itineraryPlanner.deChezVousJusquAu")}
-        </h2>
-        {/* Simulation faite : le voyage se lance d'ici, même volet replié (sans repasser par le bas). */}
-        {roadAccess && !filtersOpen && selected ? (
-          <button
-            type="button"
-            onClick={launchFilm}
-            aria-label={tr("ui.itineraryPlanner.voirMonVoyageSurLa")}
-            className="ml-auto inline-flex h-9 shrink-0 items-center gap-1.5 rounded-full bg-primary px-3.5 text-xs font-bold text-primary-foreground shadow-md transition hover:opacity-90"
-          >
-            <Play className="size-3.5" aria-hidden />{tr("ui.itineraryPlanner.voirSurLaCarte")}
-          </button>
-        ) : null}
+        {roadAccess && !filtersOpen ? (
+          // Simulation faite : l'en-tête est la recherche elle-même, à modifier d'un toucher.
+          <>
+            <h2 className="min-w-0 flex-1">
+              <span className="sr-only">{tr("ui.itineraryPlanner.trajetPorteAPorte")}{"\u00a0: "}</span>
+              <span className="block truncate text-base font-bold leading-tight tracking-tight text-foreground">
+                {placeName(roadAccess.origin)} → {placeName(roadAccess.destination)}
+              </span>
+              <span className="block truncate text-xs font-normal text-muted-foreground">
+                {periodLabel} · {whoSummary}
+              </span>
+            </h2>
+            <button
+              type="button"
+              onClick={() => setFiltersOpen(true)}
+              aria-label="Modifier la recherche"
+              className="inline-flex size-10 shrink-0 items-center justify-center rounded-xl border border-border bg-white text-primary"
+            >
+              <SlidersHorizontal className="size-4" aria-hidden />
+            </button>
+          </>
+        ) : (
+          <h2 className="min-w-0 truncate font-display text-base font-bold tracking-tight text-foreground">
+            <span className="sr-only">{tr("ui.itineraryPlanner.trajetPorteAPorte")}</span>{tr("ui.itineraryPlanner.deChezVousJusquAu")}
+          </h2>
+        )}
         {/* Pas de ✕ : on replie le volet par sa poignée ; quitter Route passe par la barre du bas. */}
       </div>
       <form
@@ -1415,7 +1447,7 @@ export function ItineraryPlanner({
             )}
           </button>
           {!loading && (!origin.trim() || !destination.trim()) ? (
-            <p className="-mt-1 text-center text-[11px] text-muted-foreground">
+            <p className="-mt-1 text-center text-xs text-muted-foreground">
               {tr("ui.itineraryPlanner.indiquezDOuVousPartez")}
             </p>
           ) : null}
@@ -1439,7 +1471,7 @@ export function ItineraryPlanner({
         {refine === "when" ? (
           <div className="rounded-2xl border border-border bg-card p-3 text-sm shadow-sm">
             <fieldset className="min-w-0">
-              <legend className="text-[11px] font-bold uppercase tracking-wider text-primary">
+              <legend className="text-xs font-bold uppercase tracking-wider text-primary">
                 {tr("ui.itineraryPlanner.periodeDeDepart")}{" "}
                 <span className="font-normal text-muted-foreground">
                   · {months[0]?.key.slice(0, 4)}–{months[11]?.key.slice(0, 4)}
@@ -1456,7 +1488,7 @@ export function ItineraryPlanner({
                     aria-label={`${month.label} ${month.key.slice(0, 4)} : saison ${seasonLabel[month.season].toLowerCase()}`}
                     aria-pressed={period === month.key}
                     onClick={() => setPeriod(month.key)}
-                    className={`flex min-w-0 flex-col items-center justify-end gap-1 rounded-lg border px-0.5 py-1.5 text-[10px] font-semibold ${period === month.key ? "border-primary bg-primary/10 text-primary" : "border-border bg-white text-muted-foreground"}`}
+                    className={`flex min-w-0 flex-col items-center justify-end gap-1 rounded-lg border px-0.5 py-1.5 text-xs font-semibold ${period === month.key ? "border-primary bg-primary/10 text-primary" : "border-border bg-white text-muted-foreground"}`}
                   >
                     <span
                       className={`w-4 rounded-t-sm ${seasonHeight[month.season]} ${seasonColor[month.season]}`}
@@ -1466,7 +1498,7 @@ export function ItineraryPlanner({
                   </button>
                 ))}
               </div>
-              <div className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-[10px] text-muted-foreground">
+              <div className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground">
                 {(["calme", "intermediaire", "forte", "pointe"] as const).map((season) => (
                   <span key={season} className="inline-flex items-center gap-1">
                     <span className={`size-2 rounded-full ${seasonColor[season]}`} />
@@ -1494,7 +1526,7 @@ export function ItineraryPlanner({
           <div className="grid gap-3 text-sm">
             <fieldset className="min-w-0 rounded-2xl border border-border bg-card p-3 shadow-sm">
               <legend className="sr-only">{tr("ui.itineraryPlanner.voyageurs")}</legend>
-              <p className="mb-2 text-[11px] font-bold uppercase tracking-wider text-primary">
+              <p className="mb-2 text-xs font-bold uppercase tracking-wider text-primary">
                 {tr("ui.itineraryPlanner.voyageurs")}
               </p>
               <div className="grid min-w-0 grid-cols-1 gap-1.5 min-[360px]:grid-cols-2">
@@ -1504,7 +1536,7 @@ export function ItineraryPlanner({
             </fieldset>
             <fieldset className="min-w-0 rounded-2xl border border-border bg-card p-3 shadow-sm">
               <legend className="sr-only">{tr("ui.itineraryPlanner.votreVoiture")}</legend>
-              <p className="mb-2 text-[11px] font-bold uppercase tracking-wider text-primary">
+              <p className="mb-2 text-xs font-bold uppercase tracking-wider text-primary">
                 {tr("ui.itineraryPlanner.vehicule")}
               </p>
               <div
@@ -1519,7 +1551,7 @@ export function ItineraryPlanner({
                     aria-pressed={vehicle === id}
                     title={hint}
                     onClick={() => setVehicle(id)}
-                    className={`flex min-h-11 min-w-0 items-center justify-center gap-1 rounded-xl border px-1 py-1.5 text-center text-[11px] font-semibold leading-tight transition-colors ${vehicle === id ? "border-primary bg-primary text-white" : "border-border bg-white text-foreground hover:border-primary/50"}`}
+                    className={`flex min-h-11 min-w-0 items-center justify-center gap-1 rounded-xl border px-1 py-1.5 text-center text-xs font-semibold leading-tight transition-colors ${vehicle === id ? "border-primary bg-primary text-white" : "border-border bg-white text-foreground hover:border-primary/50"}`}
                   >
                     <Icon className="size-3.5 shrink-0" aria-hidden />
                     <span>{label}</span>
@@ -1567,7 +1599,7 @@ export function ItineraryPlanner({
             </fieldset>
           </div>
         ) : null}
-        <p className="text-[11px] leading-snug text-muted-foreground">
+        <p className="text-xs leading-snug text-muted-foreground">
           {tr("ui.itineraryPlanner.laCarteMontreUnExemple")}
         </p>
         {error && (
@@ -1588,19 +1620,7 @@ export function ItineraryPlanner({
         />
       ) : null}
       {roadAccess && !filtersOpen && (
-        <div className="grid gap-3 p-3 sm:p-4">
-          <div className="flex items-center gap-2">
-            <p className="min-w-0 flex-1 truncate text-xs text-muted-foreground">
-              {roadAccess.origin} → {roadAccess.destination}
-            </p>
-            <button
-              type="button"
-              onClick={() => setFiltersOpen(true)}
-              className="inline-flex min-h-8 shrink-0 items-center gap-1 rounded-lg border border-border px-2 text-xs font-semibold text-primary"
-            >
-              <SlidersHorizontal className="size-3.5" aria-hidden />{tr("ui.itineraryPlanner.modifier")}
-            </button>
-          </div>
+        <div className="bw-trips grid gap-3 p-3 sm:p-4">
           {!selected ? (
             <p className="rounded-xl bg-secondary p-3 text-sm">
               {tr("ui.itineraryPlanner.aucuneLigneConnuePourComparer")}
@@ -1610,9 +1630,10 @@ export function ItineraryPlanner({
               {(() => {
                 // Le classement : notre conseil d'abord (même règle que « Trouver ma traversée »).
                 const pool = realOptions.length ? realOptions : sorted;
+                type Option = (typeof pool)[number];
                 const podium = pool.slice(0, 3);
                 const others = pool.slice(3);
-                const best = (value: (option: (typeof pool)[number]) => number) =>
+                const best = (value: (option: Option) => number) =>
                   [...pool].sort((a, b) => value(a) - value(b))[0];
                 const earliest = best((option) => (dated ? option.arrivalAt : option.totalMinutes));
                 const cheapest = best((option) => option.totalEuro);
@@ -1627,299 +1648,163 @@ export function ItineraryPlanner({
                   if (!list.some((company) => company.id === sailing.company!.id)) list.push(sailing.company);
                   companiesByLine.set(key, list);
                 }
-                const lineCompanies = (option: (typeof pool)[number]) => {
-                  const list = [...(companiesByLine.get(`${option.sailing.from.id}|${option.sailing.to.id}`) ?? [])];
-                  const own = option.sailing.company;
-                  if (own && !list.some((company) => company.id === own.id)) list.unshift(own);
-                  // La compagnie de ce départ d'abord.
-                  return list.sort((a, b) => Number(b.id === own?.id) - Number(a.id === own?.id));
-                };
+                const otherCompanies = (option: Option) =>
+                  (companiesByLine.get(`${option.sailing.from.id}|${option.sailing.to.id}`) ?? []).filter(
+                    (company) => company.id !== option.sailing.company?.id,
+                  );
                 const leader = podium[0]!;
-                const zoneFrom = (option: (typeof pool)[number]) => portTimeZone(option.sailing.from);
-                const zoneTo = (option: (typeof pool)[number]) => portTimeZone(option.sailing.to);
-                const when = (option: (typeof pool)[number], at: number, arrival = false) =>
-                  option.sailing.isSimulation
-                    ? at === option.leaveHomeAt
-                      ? `Date à confirmer en ${periodLabel}`
-                      : `≈ ${formatDuration(Math.round((at - option.leaveHomeAt) / 60_000))} après le départ`
-                    : formatDayTime(at, arrival ? zoneTo(option) : zoneFrom(option));
-                const badgesOf = (option: (typeof pool)[number]) => {
-                  const list: { icon: string; text: string }[] = [];
-                  if (pool.length > 1 && option === shortest)
-                    list.push({ icon: "⌛", text: "Le voyage le plus court" });
-                  if (pool.length > 1 && dated && option === earliest && option !== shortest)
-                    list.push({ icon: "⏱", text: "Au bled le plus tôt" });
-                  if (pool.length > 1 && option === cheapest) list.push({ icon: "💶", text: "Le moins cher" });
-                  if (pool.length > 1 && option === leastDriving)
-                    list.push({ icon: "🚗", text: "Le moins de volant" });
-                  return list;
+                const zoneFrom = (option: Option) => portTimeZone(option.sailing.from);
+                const zoneTo = (option: Option) => portTimeZone(option.sailing.to);
+                // Les instants clés d'un trajet : maison, port, départ du navire, arrivée, sortie du port, bled.
+                const timesOf = (option: Option) => {
+                  const port = option.leaveHomeAt + legWithPauses(option.originRoad.durationMin) * 60_000;
+                  const sail = Math.max(port, Date.parse(option.sailing.departure.departure_at));
+                  const land = option.sailing.departure.arrival_at
+                    ? Date.parse(option.sailing.departure.arrival_at)
+                    : sail + (option.sailing.durationMin ?? 0) * 60_000;
+                  const out = land + DISEMBARK_BUFFER_MIN * 60_000;
+                  return { home: option.leaveHomeAt, port, sail, land, out, end: option.arrivalAt };
                 };
-                const versusLeader = (option: (typeof pool)[number]) => {
+                const sim = (option: Option) => option.sailing.isSimulation;
+                const nightDrive = (option: Option) => {
+                  if (sim(option)) return null;
+                  const t = timesOf(option);
+                  const legs: [number, number, string][] = [
+                    [t.home, t.port, zoneFrom(option)],
+                    [t.out, t.end, zoneTo(option)],
+                  ];
+                  for (const [start, end, zone] of legs) {
+                    const span = nightSpans(start, end, zone).find((night) => night.to - night.from > 20);
+                    if (span) return timeLabel(start + span.from * 60_000, zone);
+                  }
+                  return null;
+                };
+                const atoutOf = (option: Option) => {
+                  if (pool.length < 2) return null;
+                  if (option === cheapest) return "Le moins cher";
+                  if (option === shortest) return "Le plus court";
+                  if (dated && option === earliest) return "Au bled le plus tôt";
+                  if (option === leastDriving) return "Le moins de volant";
+                  return null;
+                };
+                const versusLeader = (option: Option) => {
                   if (option === leader) return "";
                   const parts: string[] = [];
                   // On compare la durée du voyage (pas l'arrivée : chacun part à une date différente).
                   const longer = option.totalMinutes - leader.totalMinutes;
                   if (Math.abs(longer) >= TIE_MIN)
-                    parts.push(
-                      `voyage ${gapLabel(Math.abs(longer)).replace("+", "")} ${longer > 0 ? "plus long" : "plus court"}`,
-                    );
+                    parts.push(`${durationText(Math.abs(longer))} ${longer > 0 ? "de plus" : "de moins"}`);
                   const euro = Math.round(option.totalEuro - leader.totalEuro);
                   if (Math.abs(euro) >= 10) parts.push(euro > 0 ? `${euro} € de plus` : `${-euro} € de moins`);
                   const km = Math.round(option.roadKm - leader.roadKm);
                   if (Math.abs(km) >= 50) parts.push(km > 0 ? `${km} km de route en plus` : `${-km} km de route en moins`);
-                  return parts.length ? `Par rapport à notre conseil : ${parts.join(", ")}.` : "Presque identique à notre conseil.";
-                };
-                const stepsOf = (option: (typeof pool)[number]) => {
-                  const port = option.leaveHomeAt + legWithPauses(option.originRoad.durationMin) * 60_000;
-                  const sail = Date.parse(option.sailing.departure.departure_at);
-                  const land = option.sailing.departure.arrival_at
-                    ? Date.parse(option.sailing.departure.arrival_at)
-                    : sail + (option.sailing.durationMin ?? 0) * 60_000;
-                  const out = land + DISEMBARK_BUFFER_MIN * 60_000;
-                  return [
-                    {
-                      icon: "🏠",
-                      at: when(option, option.leaveHomeAt),
-                      title: "Départ de chez vous",
-                      text: `${Math.round(option.originRoad.distanceKm)} km, ${formatDuration(option.originRoad.durationMin)} jusqu'à ${option.sailing.from.name}${pauseNote(option.originRoad.durationMin)}`,
-                    },
-                    {
-                      icon: "⚓",
-                      at: when(option, port),
-                      title: `Au port de ${option.sailing.from.name}`,
-                      text: `${BOARDING_BUFFER_MIN / 60} h de marge avant le départ : l'heure de convocation de votre billet fait foi`,
-                    },
-                    {
-                      icon: "🚢",
-                      at: when(option, sail),
-                      title: `Traversée${option.sailing.company ? ` avec ${option.sailing.company.name}` : ""}`,
-                      text: `${formatDuration(option.sailing.durationMin ?? 0)} de mer jusqu'à ${option.sailing.to.name}${option.sailing.isSimulation ? " (durée estimée)" : ""}`,
-                    },
-                    {
-                      icon: "🛃",
-                      at: when(option, land, true),
-                      title: `Arrivée à ${option.sailing.to.name}`,
-                      text: `Débarquement, contrôles et sortie du port : ${DISEMBARK_BUFFER_MIN / 60} h de marge`,
-                    },
-                    {
-                      icon: "🛣️",
-                      at: when(option, out, true),
-                      title: "La dernière route",
-                      text: `${Math.round(option.destinationRoad.distanceKm)} km, ${formatDuration(option.destinationRoad.durationMin)}${pauseNote(option.destinationRoad.durationMin)}`,
-                    },
-                    {
-                      icon: "🏁",
-                      at: when(option, option.arrivalAt, true),
-                      title: "Bien arrivé au bled",
-                      text: roadAccess.destination,
-                    },
-                  ];
+                  const night = nightDrive(option);
+                  if (night && !nightDrive(leader)) parts.push(`un départ de nuit à ${night}`);
+                  return parts.length
+                    ? `Par rapport à notre conseil : ${parts.join(", ")}.`
+                    : "Presque identique à notre conseil.";
                 };
                 // Pourquoi c'est notre conseil, dit avec ses vrais atouts.
                 const leaderReason =
                   pool.length < 2
                     ? `${formatDuration(leader.totalMinutes)} de porte à porte.`
                     : leader === shortest && leader === cheapest
-                      ? `Le plus court et le moins cher : ${formatDuration(leader.totalMinutes)} de porte à porte.`
+                      ? "Notre conseil : le plus court et le moins cher."
                       : leader === shortest
-                        ? `Le voyage le plus court (${formatDuration(leader.totalMinutes)} de porte à porte), à un horaire confortable.`
+                        ? "Notre conseil : le voyage le plus court, à un horaire confortable."
                         : leader === cheapest
-                          ? `Le moins cher, pour ${formatDuration(leader.totalMinutes)} de porte à porte.`
-                          : `Le meilleur équilibre entre durée (${formatDuration(leader.totalMinutes)}), horaire et prix.`;
-                const card = (option: (typeof pool)[number], rank: number) => {
-                  const id = option.sailing.departure.id;
-                  const on = id === selected.sailing.departure.id;
-                  const open = openDetail === id;
-                  const medal = ["🥇", "🥈", "🥉"][rank] ?? `${rank + 1}`;
-                  const badges = badgesOf(option);
-                  return (
-                    <li
-                      key={id}
-                      className={`rounded-2xl border bg-white shadow-sm transition ${on ? "border-primary ring-2 ring-primary/15" : "border-border"}`}
-                    >
-                      <button
-                        type="button"
-                        aria-pressed={on}
-                        onMouseEnter={() => setHoveredId(id)}
-                        onMouseLeave={() => setHoveredId(null)}
-                        onClick={() => setSelectedId(id)}
-                        className="grid w-full gap-1.5 p-3 text-left"
-                      >
-                        <span className="flex items-center justify-between gap-2">
-                          <span className="flex min-w-0 items-center gap-2">
-                            <span className="text-xl leading-none" aria-hidden>
-                              {medal}
-                            </span>
-                            <span className="min-w-0">
-                              {rank === 0 ? (
-                                <span className="block text-[11px] font-extrabold uppercase tracking-wide text-primary">
-                                  {tr("ui.itineraryPlanner.notreConseil2")}
-                                </span>
-                              ) : null}
-                              <strong className="block truncate text-[15px] leading-tight">
-                                {option.sailing.from.name} → {option.sailing.to.name}
-                              </strong>
-                            </span>
-                          </span>
-                          <span className="shrink-0 text-right">
-                            <strong className="block text-[15px] tabular-nums">
-                              ≈ {numberFormat.format(option.totalEuro)} €
-                            </strong>
-                            <span className="block text-[10px] text-muted-foreground">{tr("ui.itineraryPlanner.routeFerry")}</span>
-                          </span>
-                        </span>
-                        {lineCompanies(option).length ? (
-                          <span className="grid gap-1">
-                            <span className="text-[10px] font-bold uppercase tracking-wide text-muted-foreground">
-                              {lineCompanies(option).length > 1 ? tr("ui.itineraryPlanner.compagniesSurCetteLigne") : tr("ui.itineraryPlanner.compagnie")}
-                            </span>
-                            <span className="flex flex-wrap gap-1.5">
-                              {lineCompanies(option)
-                                .slice(0, 4)
-                                .map((company) => {
-                                  const own = company.id === option.sailing.company?.id;
-                                  return (
-                                    <span
-                                      key={company.id}
-                                      className={`inline-flex min-h-8 items-center gap-1.5 rounded-full border px-2 py-0.5 text-[11px] font-semibold ${own ? "border-primary/40 bg-primary/5 text-foreground" : "border-border bg-white text-muted-foreground"}`}
-                                    >
-                                      <CompanyBadge name={company.name} logoUrl={company.logo_url} size={22} />
-                                      <span className="max-w-[9.5rem] truncate">{company.name}</span>
-                                      {own && option.sailing.vessel ? (
-                                        <span className="font-normal text-muted-foreground">
-                                          · {option.sailing.vessel.name}
-                                        </span>
-                                      ) : null}
-                                    </span>
-                                  );
-                                })}
-                            </span>
-                          </span>
-                        ) : null}
-                        <span className="grid grid-cols-2 gap-1.5">
-                          <span className="rounded-xl bg-secondary/70 px-2.5 py-1.5">
-                            <span className="block text-[10px] font-bold uppercase tracking-wide text-muted-foreground">
-                              {tr("ui.itineraryPlanner.vousPartez")}
-                            </span>
-                            <span className="block text-xs font-bold leading-snug">
-                              {when(option, option.leaveHomeAt)}
-                            </span>
-                          </span>
-                          <span className="rounded-xl bg-secondary/70 px-2.5 py-1.5">
-                            <span className="block text-[10px] font-bold uppercase tracking-wide text-muted-foreground">
-                              {tr("ui.itineraryPlanner.auBled")}
-                            </span>
-                            <span className="block text-xs font-bold leading-snug">
-                              {when(option, option.arrivalAt, true)}
-                            </span>
-                          </span>
-                        </span>
-                        {badges.length ? (
-                          <span className="flex flex-wrap gap-1">
-                            {badges.map((badge) => (
-                              <span
-                                key={badge.text}
-                                className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-[11px] font-semibold text-primary"
-                              >
-                                <span aria-hidden>{badge.icon}</span>
-                                {badge.text}
-                              </span>
-                            ))}
-                          </span>
-                        ) : null}
-                        <span className="text-[11px] leading-snug text-muted-foreground">
-                          {rank === 0 ? leaderReason : versusLeader(option)}{" "}
-                          {Math.round(option.roadKm)}{tr("ui.itineraryPlanner.kmDeRouteAuTotal")}
-                        </span>
-                        {vesselAlerts.has(option.sailing.vessel?.id ?? "") ? (
-                          <span role="alert" className="text-xs font-semibold text-warning-foreground">
-                            {tr("ui.itineraryPlanner.departAConfirmerAupresDe")}
-                          </span>
-                        ) : null}
-                      </button>
-                      <button
-                        type="button"
-                        aria-expanded={open}
-                        onClick={() => {
-                          setSelectedId(id);
-                          setOpenDetail(open ? null : id);
-                        }}
-                        className="flex w-full items-center justify-center gap-1 border-t border-border py-2 text-xs font-bold text-primary"
-                      >
-                        {open ? tr("ui.itineraryPlanner.masquerLeDetail") : tr("ui.itineraryPlanner.voirLeDetailDuVoyage")}
-                        <ChevronDown className={`size-3.5 transition-transform ${open ? "rotate-180" : ""}`} aria-hidden />
-                      </button>
-                      {open ? (
-                        <div className="grid gap-2 border-t border-border px-3 pb-3 pt-2">
-                          <ol className="relative grid gap-2 before:absolute before:bottom-3 before:left-[13px] before:top-3 before:w-px before:bg-border">
-                            {stepsOf(option).map((step) => (
-                              <li key={step.title} className="relative grid grid-cols-[28px_minmax(0,1fr)] gap-2">
-                                <span
-                                  className="z-[1] grid size-7 place-items-center rounded-full border border-border bg-white text-sm"
-                                  aria-hidden
-                                >
-                                  {step.icon}
-                                </span>
-                                <span className="min-w-0">
-                                  <span className="flex flex-wrap items-baseline justify-between gap-x-2">
-                                    <strong className="text-xs">{step.title}</strong>
-                                    <span className="text-[11px] font-bold tabular-nums text-primary">{step.at}</span>
-                                  </span>
-                                  <span className="block text-[11px] leading-snug text-muted-foreground">
-                                    {step.text}
-                                  </span>
-                                </span>
-                              </li>
-                            ))}
-                          </ol>
-                          <p className="rounded-xl bg-secondary/60 px-3 py-2 text-[11px] text-muted-foreground">
-                            {tr("ui.itineraryPlanner.route")}{numberFormat.format(option.roadEuro)}{tr("ui.itineraryPlanner.carburantEtPeagesFerryEt")}{numberFormat.format(option.ferryEuro)}{tr("ui.itineraryPlanner.fourchette")}{" "}
-                            {formatFareRange(estimateFerryFare(option.sailing, profile))}
-                          </p>
-                          {option.sailing.to.country_code?.toUpperCase() === "DZ" ? (
-                            // Arrivée en Algérie : le budget sur place, route jusqu'à la maison comprise.
-                            <a
-                              href={`/mes-dinars?plan=1&km=${Math.round(option.destinationRoad.distanceKm)}&adults=${adults}&children=${children}`}
-                              className="inline-flex min-h-10 w-full items-center justify-center gap-2 rounded-xl bg-secondary px-4 text-sm font-bold text-primary"
-                            >
-                              <WalletIcon className="size-4" aria-hidden />{tr("ui.itineraryPlanner.prevoirMesDinarsAuBled")}
-                            </a>
-                          ) : null}
-                          <div className="grid gap-1.5">
-                            {option.sailing.isSimulation ? null : (
-                              <a
-                                href={bookingUrl(option.sailing, profile)}
-                                target="_blank"
-                                rel="noreferrer"
-                                onClick={() => markBookingLeave(bookingSite(option.sailing))}
-                                className="inline-flex min-h-10 w-full items-center justify-center gap-2 rounded-xl border border-primary bg-white px-4 text-sm font-bold text-primary"
-                              >
-                                {tr("ui.itineraryPlanner.reserverSur")}{bookingSite(option.sailing)} <ArrowRight className="size-4" aria-hidden />
-                              </a>
-                            )}
-                            <a
-                              href={`/horaires?from=${option.sailing.from.id}&to=${option.sailing.to.id}&month=${period}`}
-                              className="text-center text-xs font-semibold text-primary underline underline-offset-2"
-                            >
-                              {option.sailing.isSimulation ? tr("ui.itineraryPlanner.voirLesHorairesPublies") : tr("ui.itineraryPlanner.voirLesAutresDatesDe")}
-                            </a>
-                          </div>
+                          ? `Notre conseil : le moins cher${nightDrive(leader) ? "" : ", sans route de nuit"}.`
+                          : "Notre conseil : le meilleur équilibre entre durée, horaire et prix.";
+                const option = selected;
+                const t = timesOf(option);
+                const dayOf = (at: number, zone: string) => (sim(option) ? `Date à confirmer` : shortDay(at, zone));
+                const rankOf = (item: Option) => pool.indexOf(item);
+                const selectedRank = rankOf(option);
+                const seaNight = !sim(option) && crossesNight(t.sail, t.land, zoneFrom(option), 120);
+                const nights = sim(option)
+                  ? 0
+                  : nightSpans(t.home, t.end, zoneFrom(option)).filter((span) => span.to - span.from > 120).length;
+                const steps: TripStep[] = [
+                  {
+                    kind: "home",
+                    at: t.home,
+                    zone: zoneFrom(option),
+                    title: "Départ de chez vous",
+                    text: `${Math.round(option.originRoad.distanceKm)} km jusqu'à ${option.sailing.from.name}`,
+                    note: `${formatDuration(option.originRoad.durationMin)} de route${pauseNote(option.originRoad.durationMin)}`,
+                  },
+                  {
+                    kind: "port",
+                    at: t.port,
+                    zone: zoneFrom(option),
+                    title: `Au port ${ofPlace(option.sailing.from.name)}`,
+                    text: `${BOARDING_BUFFER_MIN / 60} h avant le départ. L'heure de convocation du billet fait foi.`,
+                  },
+                  {
+                    kind: "sea",
+                    at: t.sail,
+                    zone: zoneFrom(option),
+                    title: "Départ du navire",
+                    text: `${option.sailing.company?.name ?? "Traversée"}${option.sailing.vessel ? ` · ${option.sailing.vessel.name}` : ""} · ${formatDuration(option.sailing.durationMin ?? 0)} de mer${sim(option) ? " (durée estimée)" : ""}`,
+                    ...(seaNight ? { note: "Nuit à bord : cabine ou fauteuil" } : {}),
+                  },
+                  {
+                    kind: "land",
+                    at: t.land,
+                    zone: zoneTo(option),
+                    title: `Arrivée à ${option.sailing.to.name}`,
+                    text: `Débarquement, police et douane : comptez ${DISEMBARK_BUFFER_MIN / 60} h.`,
+                  },
+                  {
+                    kind: "road",
+                    at: t.out,
+                    zone: zoneTo(option),
+                    title: "La dernière route",
+                    text: `${Math.round(option.destinationRoad.distanceKm)} km jusqu'à ${placeName(roadAccess.destination)}`,
+                    note: `${formatDuration(option.destinationRoad.durationMin)} de route${pauseNote(option.destinationRoad.durationMin)}`,
+                  },
+                  { kind: "done", at: t.end, zone: zoneTo(option), title: "Au bled", text: roadAccess.destination },
+                ];
+                const segments: TripSegment[] = [
+                  { kind: "road", minutes: (t.port - t.home) / 60_000 },
+                  { kind: "wait", minutes: (t.sail - t.port) / 60_000 },
+                  { kind: "sea", minutes: (t.land - t.sail) / 60_000 },
+                  { kind: "wait", minutes: (t.out - t.land) / 60_000 },
+                  { kind: "road", minutes: (t.end - t.out) / 60_000 },
+                ];
+                const companies = otherCompanies(option);
+                const choose = (item: Option) => setSelectedId(item.sailing.departure.id);
+                const compareRows: { label: string; value: (item: Option) => string; score?: (item: Option) => number }[] = [
+                  { label: "Départ", value: (item) => (sim(item) ? "À confirmer" : `${shortDay(item.leaveHomeAt, zoneFrom(item))} ${timeLabel(item.leaveHomeAt, zoneFrom(item))}`) },
+                  { label: "Au bled", value: (item) => (sim(item) ? `≈ ${formatDuration(item.totalMinutes)}` : `${shortDay(item.arrivalAt, zoneTo(item))} ${timeLabel(item.arrivalAt, zoneTo(item))}`) },
+                  { label: "Porte à porte", value: (item) => formatDuration(item.totalMinutes), score: (item) => item.totalMinutes },
+                  { label: "Prix estimé", value: (item) => `${numberFormat.format(item.totalEuro)} €`, score: (item) => item.totalEuro },
+                  { label: "Au volant", value: (item) => `${Math.round(item.roadKm)} km`, score: (item) => item.roadKm },
+                  { label: "Route de nuit", value: (item) => nightDrive(item) ?? "Non", score: (item) => (nightDrive(item) ? 1 : 0) },
+                ];
+                return (
+                  <div className="grid gap-4">
+                    <div className="flex items-end justify-between gap-2">
+                      <div className="min-w-0">
+                        <h3 className="text-base font-bold leading-tight">
+                          {podium.length > 1 ? `Vos ${podium.length} meilleurs trajets` : tr("ui.itineraryPlanner.votreTrajet")}
+                        </h3>
+                        <p className="text-xs text-muted-foreground">
+                          {dated
+                            ? `${periodLabel}, en partant au plus tôt`
+                            : `Aucune date publiée pour ${periodLabel} : durées et prix estimés`}
+                        </p>
+                      </div>
+                      {podium.length > 1 ? (
+                        <div className="bw-seg" role="group" aria-label="Affichage des trajets">
+                          <button type="button" aria-pressed={resultsView === "cards"} onClick={() => setResultsView("cards")}>
+                            Trajets
+                          </button>
+                          <button type="button" aria-pressed={resultsView === "compare"} onClick={() => setResultsView("compare")}>
+                            Comparer
+                          </button>
                         </div>
                       ) : null}
-                    </li>
-                  );
-                };
-                return (
-                  <div className="grid gap-2.5">
-                    <div>
-                      <h3 className="font-display text-lg font-bold leading-tight">
-                        {podium.length > 1 ? `Vos ${podium.length} meilleurs trajets` : tr("ui.itineraryPlanner.votreTrajet")}
-                      </h3>
-                      <p className="text-[11px] leading-snug text-muted-foreground">
-                        {dated
-                          ? `Pour ${periodLabel}, en partant au plus tôt. Touchez un trajet pour le voir sur la carte.`
-                          : `Aucune date publiée pour ${periodLabel} : durées et prix estimés.`}
-                      </p>
                     </div>
                     {dated ? null : (
                       // Mois pas encore en vente : l'alerte d'ouverture, comme dans « Réserver ».
@@ -1931,37 +1816,229 @@ export function ItineraryPlanner({
                         toLabel={podium[0]?.sailing.to.name ?? null}
                       />
                     )}
-                    <ol className="grid gap-2">{podium.map((option, rank) => card(option, rank))}</ol>
-                    <button
-                      type="button"
-                      onClick={launchFilm}
-                      className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-primary px-4 font-bold text-primary-foreground shadow-md transition hover:opacity-90"
-                    >
-                      <Play className="size-4" aria-hidden />{tr("ui.itineraryPlanner.voirCeVoyageSurLa")}
-                    </button>
+                    {resultsView === "compare" && podium.length > 1 ? (
+                      <div className="bw-compare">
+                        <table>
+                          <thead>
+                            <tr>
+                              <th scope="col"><span className="sr-only">Critère</span></th>
+                              {podium.map((item, rank) => (
+                                <th key={item.sailing.departure.id} scope="col" data-on={item === option ? "true" : undefined}>
+                                  <button type="button" onClick={() => choose(item)} aria-pressed={item === option}>
+                                    <span className="bw-rank">{rank + 1}</span>
+                                    <span>{item.sailing.from.name}</span>
+                                    <span>→ {item.sailing.to.name}</span>
+                                  </button>
+                                </th>
+                              ))}
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {compareRows.map((row) => {
+                              const scores = row.score ? podium.map(row.score) : [];
+                              const min = scores.length ? Math.min(...scores) : null;
+                              const bestIndex = min !== null && scores.filter((s) => s === min).length === 1 ? scores.indexOf(min) : -1;
+                              return (
+                                <tr key={row.label}>
+                                  <th scope="row">{row.label}</th>
+                                  {podium.map((item, index) => (
+                                    <td
+                                      key={item.sailing.departure.id}
+                                      data-on={item === option ? "true" : undefined}
+                                      data-best={index === bestIndex ? "true" : undefined}
+                                      data-warn={row.label === "Route de nuit" && nightDrive(item) ? "true" : undefined}
+                                    >
+                                      {row.value(item)}
+                                    </td>
+                                  ))}
+                                </tr>
+                              );
+                            })}
+                          </tbody>
+                        </table>
+                      </div>
+                    ) : (
+                      <ol className="bw-tripcards" aria-label="Choisir un trajet">
+                        {podium.map((item, rank) => {
+                          const on = item === option;
+                          const atout = atoutOf(item);
+                          const night = nightDrive(item);
+                          return (
+                            <li key={item.sailing.departure.id}>
+                              <button
+                                type="button"
+                                aria-pressed={on}
+                                onMouseEnter={() => setHoveredId(item.sailing.departure.id)}
+                                onMouseLeave={() => setHoveredId(null)}
+                                onClick={() => choose(item)}
+                                className="bw-tripcard"
+                              >
+                                <span className="bw-tripcard__top">
+                                  <span className="bw-rank">{rank + 1}</span>
+                                  {rank === 0 ? "Notre conseil" : item.sailing.company?.name ?? "Trajet"}
+                                </span>
+                                <strong className="bw-tripcard__line">
+                                  {item.sailing.from.name} → {item.sailing.to.name}
+                                </strong>
+                                <span className="bw-tripcard__nums">
+                                  <b>{formatDuration(item.totalMinutes)}</b>
+                                  <span>≈ {numberFormat.format(item.totalEuro)} €</span>
+                                </span>
+                                {night && !atout ? (
+                                  <span className="bw-tag" data-tone="warn">Départ de nuit</span>
+                                ) : atout ? (
+                                  <span className="bw-tag">{atout}</span>
+                                ) : null}
+                              </button>
+                            </li>
+                          );
+                        })}
+                      </ol>
+                    )}
                     {others.length ? (
-                      <button
-                        type="button"
-                        aria-expanded={showOthers}
-                        onClick={() => setShowOthers((value) => !value)}
-                        className="inline-flex min-h-11 w-full items-center justify-center gap-1.5 rounded-xl border border-border bg-white text-sm font-bold text-foreground"
-                      >
-                        {showOthers ? tr("ui.itineraryPlanner.masquerLesAutresTrajets") : `Autres trajets (${others.length})`}
-                        <ChevronDown className={`size-4 transition-transform ${showOthers ? "rotate-180" : ""}`} aria-hidden />
-                      </button>
+                      <details className="bw-others">
+                        <summary>Autres trajets ({others.length})</summary>
+                        <ol>
+                          {others.map((item, index) => (
+                            <li key={item.sailing.departure.id}>
+                              <button type="button" aria-pressed={item === option} onClick={() => choose(item)}>
+                                <span className="bw-rank">{index + 4}</span>
+                                <span className="min-w-0 flex-1 truncate">
+                                  {item.sailing.from.name} → {item.sailing.to.name}
+                                </span>
+                                <span className="tabular-nums">{formatDuration(item.totalMinutes)}</span>
+                                <span className="tabular-nums text-muted-foreground">≈ {numberFormat.format(item.totalEuro)} €</span>
+                              </button>
+                            </li>
+                          ))}
+                        </ol>
+                      </details>
                     ) : null}
-                    {showOthers && others.length ? (
-                      <ol className="grid gap-2">{others.map((option, index) => card(option, index + 3))}</ol>
-                    ) : null}
-                    {compared.length > 1 ? (
-                      <button
-                        type="button"
-                        onClick={racing ? () => setRacing(false) : startRace}
-                        className="justify-self-center text-xs font-semibold text-primary underline underline-offset-2"
-                      >
-                        {racing ? tr("ui.itineraryPlanner.arreterLaComparaison") : tr("ui.itineraryPlanner.comparerCesTrajetsEnFilm")}
-                      </button>
-                    ) : null}
+
+                    {/* La fiche du trajet choisi : l'essentiel d'abord, puis le fil de route, le coût, les compagnies. */}
+                    <article className="bw-tripsheet" aria-label={`Trajet ${option.sailing.from.name} → ${option.sailing.to.name}`}>
+                      <div className="bw-tripsheet__ends">
+                        <div>
+                          <small>Vous partez</small>
+                          <b>{sim(option) ? "—" : timeLabel(t.home, zoneFrom(option))}</b>
+                          <span>{dayOf(t.home, zoneFrom(option))}</span>
+                        </div>
+                        <div className="bw-tripsheet__mid">
+                          <span>{formatDuration(option.totalMinutes)}</span>
+                          <i aria-hidden />
+                          <span>{nights ? `${nights} nuit${nights > 1 ? "s" : ""}` : "porte à porte"}</span>
+                        </div>
+                        <div className="text-right">
+                          <small>Au bled</small>
+                          <b>{sim(option) ? "—" : timeLabel(t.end, zoneTo(option))}</b>
+                          <span>{dayOf(t.end, zoneTo(option))}</span>
+                        </div>
+                      </div>
+                      <TripBar segments={segments} start={t.home} zone={zoneFrom(option)} showNights={!sim(option)} />
+                      <p className="bw-tripsheet__why" data-tone={selectedRank === 0 ? "best" : undefined}>
+                        {selectedRank === 0 ? <Sparkles className="size-4" aria-hidden /> : <Info className="size-4" aria-hidden />}
+                        <span>{selectedRank === 0 ? leaderReason : selectedRank > 0 ? versusLeader(option) : "Trajet estimé, sans date publiée."}</span>
+                      </p>
+                      {vesselAlerts.has(option.sailing.vessel?.id ?? "") ? (
+                        <p role="alert" className="text-sm font-semibold text-warning-foreground">
+                          {tr("ui.itineraryPlanner.departAConfirmerAupresDe")}
+                        </p>
+                      ) : null}
+
+                      <section className="grid gap-2">
+                        <h4 className="bw-tripsheet__h">Votre fil de route</h4>
+                        <DayTimeline steps={steps} dated={!sim(option)} start={t.home} />
+                      </section>
+
+                      <section className="grid gap-2">
+                        <h4 className="bw-tripsheet__h">Ce que ça coûte</h4>
+                        <CostBar
+                          road={option.roadEuro}
+                          ferry={option.ferryEuro}
+                          range={formatFareRange(estimateFerryFare(option.sailing, profile))}
+                        />
+                      </section>
+
+                      {option.sailing.company ? (
+                        <section className="grid gap-2">
+                          <h4 className="bw-tripsheet__h">Compagnies</h4>
+                          <div className="bw-company">
+                            <CompanyBadge name={option.sailing.company.name} logoUrl={option.sailing.company.logo_url} size={32} />
+                            <span className="min-w-0 flex-1">
+                              <b>{option.sailing.company.name}</b>
+                              <span>{sim(option) ? "Ligne desservie" : `Ce départ · ${timeLabel(t.sail, zoneFrom(option))}, ${shortDay(t.sail, zoneFrom(option))}`}</span>
+                            </span>
+                          </div>
+                          {companies.slice(0, 3).map((company) => (
+                            <div key={company.id} className="bw-company">
+                              <CompanyBadge name={company.name} logoUrl={company.logo_url} size={32} />
+                              <span className="min-w-0 flex-1">
+                                <b>{company.name}</b>
+                                <span>Aussi sur {option.sailing.from.name} → {option.sailing.to.name}</span>
+                              </span>
+                              <a
+                                href={`/horaires?from=${option.sailing.from.id}&to=${option.sailing.to.id}&month=${period}`}
+                                className="shrink-0 text-sm font-bold text-primary"
+                              >
+                                Ses dates
+                              </a>
+                            </div>
+                          ))}
+                        </section>
+                      ) : null}
+
+                      <div className="bw-tools">
+                        <button type="button" onClick={launchFilm}>
+                          <Play className="size-5" aria-hidden />
+                          Voir en film
+                        </button>
+                        <a href={`/horaires?from=${option.sailing.from.id}&to=${option.sailing.to.id}&month=${period}`}>
+                          <CalendarDays className="size-5" aria-hidden />
+                          {sim(option) ? "Horaires publiés" : "Autres dates"}
+                        </a>
+                        {option.sailing.to.country_code?.toUpperCase() === "DZ" ? (
+                          <a href={`/mes-dinars?plan=1&km=${Math.round(option.destinationRoad.distanceKm)}&adults=${adults}&children=${children}`}>
+                            <WalletIcon className="size-5" aria-hidden />
+                            Mes dinars
+                          </a>
+                        ) : null}
+                      </div>
+                      {compared.length > 1 ? (
+                        <button
+                          type="button"
+                          onClick={racing ? () => setRacing(false) : startRace}
+                          className="justify-self-center text-sm font-semibold text-primary underline underline-offset-2"
+                        >
+                          {racing ? tr("ui.itineraryPlanner.arreterLaComparaison") : tr("ui.itineraryPlanner.comparerCesTrajetsEnFilm")}
+                        </button>
+                      ) : null}
+                    </article>
+
+                    {/* L'action principale, toujours sous la main : le prix et la réservation. */}
+                    <div className="bw-tripfoot">
+                      <span className="bw-tripfoot__price">
+                        <b>≈ {numberFormat.format(option.totalEuro)} €</b>
+                        <span>route + ferry</span>
+                      </span>
+                      {sim(option) ? (
+                        <a
+                          href={`/horaires?from=${option.sailing.from.id}&to=${option.sailing.to.id}&month=${period}`}
+                          className="bw-tripfoot__cta"
+                        >
+                          Voir les horaires <ArrowRight className="size-4" aria-hidden />
+                        </a>
+                      ) : (
+                        <a
+                          href={bookingUrl(option.sailing, profile)}
+                          target="_blank"
+                          rel="noreferrer"
+                          onClick={() => markBookingLeave(bookingSite(option.sailing))}
+                          className="bw-tripfoot__cta"
+                        >
+                          Réserver chez {bookingSite(option.sailing)} <ArrowUpRight className="size-4" aria-hidden />
+                        </a>
+                      )}
+                    </div>
                   </div>
                 );
               })()}
@@ -2004,7 +2081,7 @@ export function ItineraryPlanner({
                 </div>
               ) : null}
 
-              {film ? (
+              {film && (playing || minute > 0) ? (
                 <SimulationJourney
                   film={film}
                   minute={minute}
@@ -2025,7 +2102,7 @@ export function ItineraryPlanner({
               {estimatedChoices.length > 0 ? (
                 <div className="rounded-xl bg-secondary p-3">
                   <p className="text-xs font-bold">{tr("ui.itineraryPlanner.pasEncoreDeDatePubliee")}</p>
-                  <p className="mt-0.5 text-[11px] text-muted-foreground">
+                  <p className="mt-0.5 text-xs text-muted-foreground">
                     {tr("ui.itineraryPlanner.lignesEtPrixEstimesSans")}{periodLabel}.
                   </p>
                   <div className="mt-2 grid gap-1">
@@ -2078,11 +2155,11 @@ export function ItineraryPlanner({
             </div>
           )}
           {geometryNote && (
-            <p role="status" className="text-[11px] text-muted-foreground">
+            <p role="status" className="text-xs text-muted-foreground">
               {geometryNote}
             </p>
           )}
-          <details className="text-[11px] text-muted-foreground">
+          <details className="text-xs text-muted-foreground">
             <summary className="cursor-pointer">
               {tr("ui.itineraryPlanner.commentSontEstimesLesTrajets")}
             </summary>

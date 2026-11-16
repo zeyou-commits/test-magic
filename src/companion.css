@@ -238,7 +238,7 @@
   min-height: 0;
   display: flex;
   flex-direction: column;
-  justify-content: center;
+  justify-content: safe center;
   gap: clamp(12px, 2.6dvh, 22px);
   width: 100%;
   max-width: 34rem;
@@ -333,7 +333,7 @@
   padding: 0;
   list-style: none;
 }
-.bw-prepintro__result li {
+.bw-prepintro__result > ul > li {
   display: inline-flex;
   align-items: center;
   gap: 4px;
@@ -1146,3 +1146,108 @@
 .dark .bw-todo-group[data-urgency="soon"], .dark .bw-urgency[data-urgency="soon"] { --u: #e5ad55; }
 .dark .bw-todo-group[data-urgency="late"], .dark .bw-urgency[data-urgency="late"] { --u: #ef7f68; }
 @media (prefers-reduced-motion: reduce) { .bw-todo-group__chev { transition: none; } }
+
+/* ───────── Le récap en miniature (démarrage et fin de chapitre) ───────── */
+.bw-rprev {
+  position: relative;
+  margin: 0;
+  overflow: visible;
+  border-radius: 18px;
+  border: 1px solid color-mix(in oklab, var(--primary) 18%, transparent);
+  background: var(--card);
+  box-shadow: 0 14px 34px rgb(8 50 34 / 0.12);
+}
+.bw-rprev__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 17px 17px 0 0;
+  background: linear-gradient(135deg, #0b4a32, #0e7a43);
+  color: #fff;
+}
+.bw-rprev__head small {
+  display: inline-flex; align-items: center; gap: 4px;
+  font-size: 10px; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: #a7f3d0;
+}
+.bw-rprev__head b { display: block; font-size: 0.95rem; font-weight: 800; line-height: 1.2; }
+.bw-rprev__head span > span { display: block; font-size: 0.75rem; color: rgb(255 255 255 / 0.78); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.bw-rprev__ring { flex-shrink: 0; width: 38px; height: 38px; transform: rotate(-90deg); }
+.bw-rprev__ring circle { fill: none; stroke-width: 4; stroke: rgb(255 255 255 / 0.2); }
+.bw-rprev__ring .bw-rprev__arc {
+  stroke: #f6c445; stroke-linecap: round; stroke-dasharray: 1;
+  stroke-dashoffset: var(--to);
+  animation: bw-rprev-ring var(--end) cubic-bezier(0.4, 0, 0.2, 1) 0.25s both;
+}
+@keyframes bw-rprev-ring { from { stroke-dashoffset: var(--from); } to { stroke-dashoffset: var(--to); } }
+
+.bw-rprev__rows { position: relative; display: grid; gap: 2px; margin: 0; padding: 8px 12px 10px; list-style: none; }
+.bw-rprev__rows::before {
+  content: ""; position: absolute; left: 20.5px; top: 18px; bottom: 18px; width: 2px;
+  background: color-mix(in oklab, var(--primary) 18%, transparent);
+}
+.bw-rprev__rows > li {
+  position: relative;
+  display: grid;
+  grid-template-columns: 18px 16px auto minmax(0, 1fr);
+  align-items: center;
+  gap: 7px;
+  min-height: 28px;
+  font-size: 0.8rem;
+}
+.bw-rprev__dot {
+  z-index: 1; display: grid; width: 18px; height: 18px; place-items: center; border-radius: 999px;
+  border: 2px solid color-mix(in oklab, var(--foreground) 18%, transparent); background: var(--card); color: #fff;
+}
+.bw-rprev__rows > li[data-state="done"] .bw-rprev__dot { border-color: #0e7a43; background: #0e7a43; }
+.bw-rprev__icon { color: var(--muted-foreground); }
+.bw-rprev__label { font-weight: 700; white-space: nowrap; }
+.bw-rprev__value { min-width: 0; color: var(--muted-foreground); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-align: right; }
+.bw-rprev__bar { justify-self: end; width: min(100%, 92px); height: 7px; border-radius: 99px; background: color-mix(in oklab, var(--foreground) 8%, transparent); }
+.bw-rprev__rows > li.is-fresh .bw-rprev__dot { animation: bw-rprev-dot 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) var(--d) both; }
+.bw-rprev__rows > li.is-fresh .bw-rprev__value { animation: bw-rprev-value 0.45s ease-out var(--d) both; }
+.bw-rprev__rows > li.is-fresh { animation: bw-rprev-row 0.9s ease-out var(--d) both; }
+@keyframes bw-rprev-dot {
+  from { transform: scale(0.4); background: var(--card); border-color: color-mix(in oklab, var(--foreground) 18%, transparent); }
+  to { transform: none; }
+}
+@keyframes bw-rprev-value { from { opacity: 0; transform: translateX(-6px); } to { opacity: 1; transform: none; } }
+@keyframes bw-rprev-row {
+  0% { background: transparent; }
+  30% { background: color-mix(in oklab, var(--primary) 10%, transparent); }
+  100% { background: transparent; }
+}
+.bw-rprev__rows > li.is-fresh { border-radius: 8px; margin: 0 -6px; padding: 0 6px; }
+.bw-rprev__share {
+  position: absolute; right: 10px; bottom: -12px;
+  display: inline-flex; align-items: center; gap: 5px; padding: 5px 10px;
+  border-radius: 999px; background: #f6c445; color: #3b2a05; font-size: 0.72rem; font-weight: 800;
+  box-shadow: 0 6px 14px rgb(0 0 0 / 0.16);
+  animation: bw-rprev-pop 0.45s cubic-bezier(0.34, 1.56, 0.64, 1) calc(var(--end) + 0.35s) both;
+}
+@keyframes bw-rprev-pop { from { opacity: 0; transform: translateY(6px) scale(0.7); } to { opacity: 1; transform: none; } }
+.dark .bw-rprev { box-shadow: 0 14px 34px rgb(0 0 0 / 0.4); }
+@media (prefers-reduced-motion: reduce) {
+  .bw-rprev *, .bw-rprev__rows > li { animation: none !important; }
+}
+/* Démarrage : l'aperçu remplace les pastilles ; il cède la place quand l'écran est très bas. */
+.bw-prepintro__preview { padding-bottom: 10px; }
+@media (max-height: 900px) and (max-width: 899px) {
+  .bw-prepintro__steps li span > span { display: none; }
+}
+@media (max-height: 640px) and (max-width: 899px) {
+  .bw-prepintro__preview { display: none; }
+}
+
+/* ───────── Fin de chapitre : où on en est, ce qui vient ───────── */
+.bw-chapbreak .bw-prepintro__steps > li[data-state="done"] .bw-prepintro__dot { background: #0e7a43; color: #fff; }
+.bw-chapbreak .bw-prepintro__steps > li[data-state="next"] .bw-prepintro__dot {
+  box-shadow: 0 0 0 4px color-mix(in oklab, var(--primary) 20%, transparent);
+}
+.bw-chapbreak .bw-prepintro__steps > li[data-state="later"] { opacity: 0.55; }
+.bw-chapbreak .bw-prepintro__steps > li.is-fresh .bw-prepintro__dot { animation: bw-rprev-dot 0.45s cubic-bezier(0.34, 1.56, 0.64, 1) 0.25s both; }
+.bw-chapbreak h1 { font-size: clamp(1.5rem, 3.6dvh, 2.1rem); }
+@media (min-width: 900px) and (min-height: 600px) {
+  .bw-chapbreak h1 { font-size: 2.3rem; }
+}

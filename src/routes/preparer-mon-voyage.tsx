@@ -137,6 +137,8 @@ import { seoHead } from "@/lib/seo/site";
 import { SharePreparation } from "@/components/prepare/SharePreparation";
 import { PrepareIntro } from "@/components/prepare/PrepareIntro";
 import { ConfirmChange } from "@/components/prepare/ConfirmChange";
+import { ChapterBreak } from "@/components/prepare/ChapterBreak";
+import type { PreviewRow } from "@/components/prepare/RecapPreview";
 
 const PATH = "/preparer-mon-voyage";
 
@@ -415,6 +417,10 @@ function CompanionPage() {
   const [open, setOpen] = useState<CompanionStep | null>("profile");
   // Une étape déjà validée s'ouvre en lecture ; elle ne repasse en questions qu'après « Modifier ».
   const [editing, setEditing] = useState<CompanionStep[]>([]);
+  // Fin d'un chapitre (première fois) : le fil du parcours revient avant la suite.
+  const [pause, setPause] = useState<{ finished: number; next: CompanionStep | null } | null>(
+    null,
+  );
   const navigate = useNavigate();
   // Aperçu sans compte : la première étape (départ, groupe, voiture) et le calendrier ; la suite
   // (papiers, consulat, route, budget, réservation) demande un compte gratuit.
@@ -521,6 +527,13 @@ function CompanionPage() {
     const order = companionSteps(plan);
     const after = order.slice(order.indexOf(step) + 1).find((s) => !done.includes(s));
     const next = after ?? order.find((s) => !done.includes(s)) ?? null;
+    const finished = chapterOf(step);
+    const firstTime = !plan.done.includes(step);
+    const chapterOver = !next || chapterOf(next) !== finished;
+    if (firstTime && chapterOver && !isLocked(next)) {
+      setPause({ finished, next });
+      return;
+    }
     openStep(next);
     if (!next) requestAnimationFrame(() => window.scrollTo({ top: 0, behavior: "smooth" }));
   };
@@ -647,8 +660,38 @@ function CompanionPage() {
     </>
   );
 
+  const previewRows: PreviewRow[] = [
+    { icon: CalendarDays, label: "Départ", value: summaries.profile, chapter: 0 },
+    { icon: FileText, label: "Papiers", value: summaries.papers, chapter: 1 },
+    ...(steps.includes("car")
+      ? [{ icon: Car, label: "Voiture", value: summaries.car, chapter: 1 }]
+      : []),
+    { icon: RouteIcon, label: "Route", value: summaries.route, chapter: 2 },
+    { icon: Wallet, label: "Budget", value: summaries.budget, chapter: 2 },
+    { icon: Ticket, label: "Billet", value: summaries.book, chapter: 2 },
+  ];
   return (
     <SiteLayout>
+      {pause ? (
+        <ChapterBreak
+          finished={pause.finished}
+          chapters={chapters}
+          rows={previewRows}
+          title="Votre voyage"
+          subtitle="Il se complète à chaque chapitre"
+          minutes={pause.finished === 0 ? 3 : 2}
+          onBack={() => {
+            setPause(null);
+            openStep(null);
+          }}
+          onGo={() => {
+            const target = pause.next;
+            setPause(null);
+            openStep(target);
+            if (!target) requestAnimationFrame(() => window.scrollTo({ top: 0, behavior: "smooth" }));
+          }}
+        />
+      ) : null}
       {/* Sur téléphone, la première question doit se voir tout de suite : fil d'Ariane masqué
           (gardé pour les moteurs), titre et avancement sur une seule ligne. */}
       <div className="hidden md:block">

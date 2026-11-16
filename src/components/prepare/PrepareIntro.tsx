@@ -1,10 +1,12 @@
 import { useEffect, type CSSProperties } from "react";
 import { createPortal } from "react-dom";
+import { RecapPreview, type PreviewRow } from "./RecapPreview";
 import {
   ArrowLeft,
   ArrowRight,
-  Check,
+  CalendarDays,
   Clock3,
+  Wallet,
   FileText,
   PencilLine,
   Route as RouteIcon,
@@ -26,7 +28,13 @@ const chapters: { title: string; hint: string; icon: LucideIcon }[] = [
     icon: RouteIcon,
   },
 ];
-const outcomes = ["Papiers", "Dates", "Route", "Budget"];
+// Un voyage d'exemple, annoncé comme tel : c'est la forme du récap, pas des chiffres promis.
+const exampleRows: PreviewRow[] = [
+  { icon: CalendarDays, label: "Départ", value: "12 juillet · 2 adultes, 1 enfant", chapter: 0 },
+  { icon: FileText, label: "Papiers", value: "3 visas avant le 31 mai", chapter: 1 },
+  { icon: RouteIcon, label: "Route", value: "Marseille → Alger", chapter: 2 },
+  { icon: Wallet, label: "Budget", value: "estimé pour juillet", chapter: 2 },
+];
 
 /**
  * Juste après « Commencer » : pourquoi BledWay pose des questions et ce qui attend le voyageur.
@@ -91,15 +99,17 @@ export function PrepareIntro({ onBack, onGo }: { onBack: () => void; onGo: () =>
             })}
           </ol>
 
-          <div className="bw-prepintro__result bw-prepintro__in" style={step(5)}>
-            <span>À la fin, vous avez</span>
-            <ul>
-              {outcomes.map((item) => (
-                <li key={item}>
-                  <Check size={13} aria-hidden /> {item}
-                </li>
-              ))}
-            </ul>
+          <div className="bw-prepintro__result bw-prepintro__preview bw-prepintro__in" style={step(5)}>
+            <span>À la fin, votre récap à partager</span>
+            <RecapPreview
+              example
+              share
+              title="Le voyage de la famille"
+              subtitle="Pour Anne, Marc et Sami"
+              rows={exampleRows}
+              filled={3}
+              fresh="all"
+            />
           </div>
         </div>
 

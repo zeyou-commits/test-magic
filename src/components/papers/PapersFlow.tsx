@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useMemo, useState } from "react";
+import { createContext, useContext, useEffect, useMemo, useRef, useState } from "react";
 import type { ReactNode } from "react";
 import {
   AlertTriangle,
@@ -57,7 +57,7 @@ import {
   type When,
 } from "@/content/formalites";
 import { displayDate } from "@/lib/seo/site";
-import { PlanBoard } from "@/components/papers/PlanBoard";
+import { RecapSheet } from "@/components/papers/RecapSheet";
 import { SharePreparation } from "@/components/prepare/SharePreparation";
 
 /**
@@ -956,6 +956,22 @@ export function PapersResult({
   const count = tasks.filter((t) => done.includes(t.id)).length;
   const adults = answers.travellers.filter((t) => t.kind === "adult").length;
   const kids = answers.travellers.length - adults;
+  const names = answers.travellers.map((t) => travellerLabel(t, answers.travellers));
+  const childNames = answers.travellers
+    .filter((t) => t.kind === "child")
+    .map((t) => travellerLabel(t, answers.travellers));
+  // « Pour Anne, Marc et les 3 enfants » quand les prénoms sont donnés.
+  const adultNames = answers.travellers
+    .filter((t) => t.kind === "adult" && t.name?.trim())
+    .map((t) => t.name!.trim());
+  const namedKids = answers.travellers.filter((t) => t.kind === "child" && t.name?.trim());
+  const people = [
+    ...adultNames,
+    ...(kids === 1 && namedKids.length ? [namedKids[0]!.name!.trim()] : kids ? [`les ${kids} enfants`] : []),
+  ];
+  const recapTitle = adultNames.length
+    ? `Pour ${people.length > 1 ? `${people.slice(0, -1).join(", ")} et ${people.at(-1)}` : people[0]}`
+    : "Votre liste, voyageur par voyageur";
   const toggle = (id: string) =>
     setDone((d) => (d.includes(id) ? d.filter((x) => x !== id) : [...d, id]));
   const toDo = tasks.filter(isPaperToDo);
@@ -985,56 +1001,17 @@ export function PapersResult({
           </h1>
         </>
       )}
-      {/* Une seule ligne de contexte, puis deux actions côte à côte. */}
-      <p className={`${embedded ? "" : "mt-4 "}bw-plan__context`}>
-        <span>
-          <Users size={14} aria-hidden /> {adults} adulte{adults > 1 ? "s" : ""}
-          {kids ? ` · ${kids} enfant${kids > 1 ? "s" : ""}` : ""}
-        </span>
-        {departure ? (
-          <span>
-            <CalendarDays size={14} aria-hidden /> Départ le{" "}
-            {new Intl.DateTimeFormat("fr-FR", { day: "numeric", month: "long" }).format(
-              new Date(`${departure}T12:00:00`),
-            )}
-          </span>
-        ) : null}
-        {fees ? (
-          <span>
-            <Euro size={14} aria-hidden /> Frais connus : {fees} €
-          </span>
-        ) : null}
-        {consulat && atConsulate.length ? (
-          <span>
-            <MapPin size={14} aria-hidden />{" "}
-            {consulat.name.replace(/^Consulat (général )?d'Algérie à /, "Consulat de ")}
-          </span>
-        ) : null}
-      </p>
-      <div className="mt-2 flex flex-wrap items-center gap-2 text-sm">
-        {onEditAt ? (
-          <EditMenu answers={answers} onPick={onEditAt} />
-        ) : (
-          <button
-            type="button"
-            onClick={onEdit}
-            className="inline-flex min-h-9 items-center gap-1.5 rounded-full border px-3 font-semibold hover:bg-secondary"
-          >
-            <Pencil size={14} aria-hidden /> Modifier
-          </button>
-        )}
-        <SharePreparation compact />
-      </div>
-
-      {/* Le bilan d'abord, en quatre rubriques cliquables, filtrables par voyageur. */}
-      <PlanBoard
+      <RecapSheet
         tasks={all}
+        notes={notes}
         done={done}
         onToggle={toggle}
-        travellers={answers.travellers.map((t) => travellerLabel(t, answers.travellers))}
-        childNames={answers.travellers
-          .filter((t) => t.kind === "child")
-          .map((t) => travellerLabel(t, answers.travellers))}
+        onSetMany={(ids, value) =>
+          setDone((d) => (value ? [...new Set([...d, ...ids])] : d.filter((x) => !ids.includes(x))))
+        }
+        deadlines={deadlines}
+        travellers={names}
+        childNames={childNames}
         coupleNames={
           answers.couple !== "none"
             ? answers.travellers
@@ -1043,113 +1020,25 @@ export function PapersResult({
                 .map((t) => travellerLabel(t, answers.travellers))
             : []
         }
-        deadlines={deadlines}
-        taskExtra={(task) =>
-          task.consulate ? (
-            <ConsulateWhere consulat={consulat} answers={answers} patch={patch} abroadSlot={abroadSlot} />
-          ) : null
+        title={recapTitle}
+        adults={adults}
+        kids={kids}
+        departure={departure ?? null}
+        consulat={consulat}
+        consulateSlot={
+          <ConsulateWhere consulat={consulat} answers={answers} patch={patch} abroadSlot={abroadSlot} />
         }
-        consulateLine={
-          atConsulate.length
-            ? `${
-                consulateCount > 1
-                  ? `${consulateCount} démarches se font au consulat`
-                  : "Une démarche se fait au consulat"
-              }${
-                consulat || (answers.abroad && abroadSlot)
-                  ? " : son adresse et le lien pour prendre rendez-vous sont juste en dessous."
-                  : " : indiquez votre ville (Modifier mes réponses) pour le trouver."
-              }`
-            : null
+        editSlot={
+          onEditAt ? (
+            <EditMenu answers={answers} onPick={onEditAt} triggerClassName="bw-recap__hbtn" />
+          ) : (
+            <button type="button" onClick={onEdit} className="bw-recap__hbtn">
+              <Pencil size={14} aria-hidden /> Modifier
+            </button>
+          )
         }
+        checkedOn={displayDate(FORMALITES_CHECKED)}
       />
-
-      <div
-        className={`mt-6 grid gap-6 ${embedded ? "" : "lg:grid-cols-[minmax(0,1fr)_340px] lg:items-start"}`}
-      >
-        <div className={embedded ? "order-2" : undefined}>
-          <div className="rounded-xl border p-4" aria-live="polite">
-            <div className="flex items-center justify-between text-sm font-semibold">
-              <span>
-                {count} sur {tasks.length} fait{count > 1 ? "s" : ""}
-              </span>
-              {count === tasks.length ? <span className="text-primary">Tout est prêt</span> : null}
-            </div>
-            <div className="mt-2 h-2 overflow-hidden rounded-full bg-secondary" aria-hidden>
-              <div
-                className="h-full rounded-full bg-primary transition-[width]"
-                style={{ width: `${(count / Math.max(1, tasks.length)) * 100}%` }}
-              />
-            </div>
-          </div>
-
-          {notes.length ? (
-            <ul className="mt-4 grid gap-2">
-              {notes.map((n) => (
-                <li key={n} className="flex items-start gap-2 rounded-xl bg-primary/5 p-3 text-sm">
-                  <Info size={16} className="mt-0.5 shrink-0 text-primary" aria-hidden />
-                  {n}
-                </li>
-              ))}
-            </ul>
-          ) : null}
-
-          <details className="bw-plan__all mt-4">
-            <summary>Toute la liste, dans l'ordre du calendrier ({tasks.length})</summary>
-          {whenOrder.map((when) => {
-            const group = tasks.filter((t) => t.when === when);
-            if (!group.length) return null;
-            return (
-              <div key={when} className="mt-6">
-                {embedded ? (
-                  <h4 className="font-display text-lg font-bold">{whenLabels[when].title}</h4>
-                ) : (
-                  <h2 className="font-display text-xl font-bold">{whenLabels[when].title}</h2>
-                )}
-                <p className="text-sm text-muted-foreground">
-                  {deadlines[when] ? (
-                    <>
-                      <span className="font-semibold text-foreground">
-                        {deadlines[when]!.label}.{" "}
-                      </span>
-                      {deadlines[when]!.why || whenLabels[when].hint}
-                    </>
-                  ) : (
-                    whenLabels[when].hint
-                  )}
-                </p>
-                <ul className="mt-3 grid gap-2">
-                  {group.map((t) => (
-                    <TaskRow
-                      key={t.id}
-                      task={t}
-                      done={done.includes(t.id)}
-                      onToggle={() => toggle(t.id)}
-                      first={(t.needs ?? [])
-                        .map((id) => tasks.find((x) => x.id === id))
-                        .filter((x): x is Task => !!x && !done.includes(x.id))
-                        .map((x) => x.title)}
-                    />
-                  ))}
-                </ul>
-              </div>
-            );
-          })}
-          </details>
-        </div>
-        <aside className={`grid gap-4 ${embedded ? "order-1" : "lg:sticky lg:top-24"}`}>
-          {/* Le consulat seulement s'il y a quelque chose à y faire. */}
-          {!atConsulate.length ? null : consulat ? (
-            <ConsulatCard consulat={consulat} />
-          ) : answers.abroad ? (
-            (abroadSlot ?? <AbroadCard />)
-          ) : null}
-          <p className="text-xs leading-relaxed text-muted-foreground">
-            Sources lues le {displayDate(FORMALITES_CHECKED)}. Les règles peuvent changer : le
-            consulat d'Algérie et la police aux frontières restent la référence au moment du voyage.
-          </p>
-        </aside>
-      </div>
     </section>
   );
 }
@@ -1291,8 +1180,30 @@ export type EditTarget =
   | { kind: "stay" };
 
 /** « Modifier » : on choisit quoi (les prénoms, un voyageur, la famille, le séjour). */
-function EditMenu({ answers, onPick }: { answers: Answers; onPick: (target: EditTarget) => void }) {
+function EditMenu({
+  answers,
+  onPick,
+  triggerClassName,
+}: {
+  answers: Answers;
+  onPick: (target: EditTarget) => void;
+  triggerClassName?: string;
+}) {
   const [open, setOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!open) return;
+    const away = (event: PointerEvent) => {
+      if (!menuRef.current?.contains(event.target as Node)) setOpen(false);
+    };
+    const esc = (event: KeyboardEvent) => event.key === "Escape" && setOpen(false);
+    document.addEventListener("pointerdown", away);
+    document.addEventListener("keydown", esc);
+    return () => {
+      document.removeEventListener("pointerdown", away);
+      document.removeEventListener("keydown", esc);
+    };
+  }, [open]);
   const items: { label: string; target: EditTarget }[] = [
     { label: "Les prénoms", target: { kind: "names" } },
     ...answers.travellers.map((t) => ({
@@ -1303,12 +1214,16 @@ function EditMenu({ answers, onPick }: { answers: Answers; onPick: (target: Edit
     { label: "Le séjour", target: { kind: "stay" } },
   ];
   return (
-    <div className="relative">
+    <div className="relative" ref={menuRef}>
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}
         aria-expanded={open}
-        className="inline-flex min-h-9 items-center gap-1.5 rounded-full border px-3 font-semibold hover:bg-secondary"
+        aria-haspopup="menu"
+        className={
+          triggerClassName ??
+          "inline-flex min-h-9 items-center gap-1.5 rounded-full border px-3 font-semibold hover:bg-secondary"
+        }
       >
         <Pencil size={14} aria-hidden /> Modifier
         <ChevronDown size={14} className={open ? "rotate-180" : ""} aria-hidden />
@@ -1339,7 +1254,7 @@ function EditMenu({ answers, onPick }: { answers: Answers; onPick: (target: Edit
  * Dans la démarche elle-même (le visa d'Anne, le recensement de Youssef) : où la faire. Le consulat
  * détecté avec son adresse et le rendez-vous ; sinon, la ville à indiquer sur place.
  */
-function ConsulateWhere({
+export function ConsulateWhere({
   consulat,
   answers,
   patch,

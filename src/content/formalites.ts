@@ -678,7 +678,7 @@ export function tasksFor(a: Answers): Task[] {
   add({
     id: "devises",
     when: "pack",
-    title: "Devises : déclarer à partir de 1 000 € par personne",
+    title: "Devises : déclarer à partir de 1 000 € par personne",
     detail:
       "Qui : chaque voyageur, adulte ou enfant, Algérien (résident ou non), binational ou Français. Le seuil se compte par personne, pas par famille.\nEn Algérie : à l'entrée comme à la sortie, les billets et chèques en devises sont à déclarer à la douane dès l'équivalent de 1 000 €. L'entrée n'est pas plafonnée si elle est déclarée. Gardez la déclaration d'entrée : elle permet de ressortir les devises non dépensées.\nLes dinars : 10 000 DA au plus, et seulement pour les résidents en Algérie.\nEn France (Union européenne) : à déclarer dès 10 000 € par personne, avant de passer la frontière (en ligne sur DALIA ou au bureau de douane du port).\nLes risques : en France, une amende jusqu'à la moitié de la somme non déclarée, et l'argent peut être retenu. En Algérie, des devises non déclarées peuvent être saisies : c'est une infraction à la réglementation des changes.",
     who: [],

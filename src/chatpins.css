@@ -1,0 +1,232 @@
+/* Messages sur la carte : une pastille par lieu, l'aperçu au zoom, le fil au toucher. */
+.bw-chat-pin {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  height: 30px;
+  min-width: 30px;
+  max-width: 230px;
+  padding: 0;
+  border: 0;
+  border-radius: 15px 15px 15px 5px;
+  background: #0e7a43;
+  color: #fff;
+  font: inherit;
+  cursor: pointer;
+  box-shadow:
+    0 4px 10px rgb(8 50 34 / 0.35),
+    0 0 0 2px #fff;
+  transition: transform 0.15s ease;
+}
+.bw-chat-pin:hover,
+.bw-chat-pin:focus-visible {
+  transform: translateY(-2px);
+  outline: none;
+}
+.bw-chat-pin[data-active="true"] {
+  box-shadow:
+    0 0 0 4px #f6c445,
+    0 4px 10px rgb(8 50 34 / 0.35);
+}
+.bw-chat-pin__icon {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+}
+.bw-chat-pin__count {
+  position: absolute;
+  top: -8px;
+  right: -12px;
+  min-width: 20px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: 999px;
+  background: #f6c445;
+  color: #3a2a00;
+  font-size: 11px;
+  font-weight: 800;
+  line-height: 18px;
+  text-align: center;
+  box-shadow: 0 0 0 2px #fff;
+}
+.bw-chat-pin[data-fresh="true"]::after {
+  content: "";
+  position: absolute;
+  inset: -6px;
+  border-radius: inherit;
+  border: 2px solid #0e7a43;
+  animation: bw-chat-ping 1.8s ease-out infinite;
+  pointer-events: none;
+}
+@keyframes bw-chat-ping {
+  from {
+    opacity: 0.8;
+    transform: scale(0.85);
+  }
+  to {
+    opacity: 0;
+    transform: scale(1.45);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .bw-chat-pin[data-fresh="true"]::after {
+    animation: none;
+    opacity: 0.6;
+  }
+}
+/* Au zoom : la pastille s'ouvre en une ligne blanche, l'icône reste devant. */
+.bw-chat-pin[data-peek="true"] {
+  padding-right: 14px;
+  background: #fff;
+  color: #16324a;
+  border-radius: 999px;
+  box-shadow:
+    0 6px 16px rgb(22 50 74 / 0.22),
+    0 0 0 2px #fff;
+}
+.bw-chat-pin[data-peek="true"] .bw-chat-pin__icon {
+  width: 24px;
+  height: 24px;
+  margin-left: 3px;
+  border-radius: 50%;
+  background: #0e7a43;
+  color: #fff;
+}
+.bw-chat-pin__peek {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 12px;
+  line-height: 1.2;
+}
+.bw-chat-pin__peek b {
+  font-weight: 800;
+}
+
+/* Le fil du lieu. */
+.bw-pin-sheet {
+  position: absolute;
+  z-index: 1000;
+  /* PC : à droite, à côté des boutons de la carte, loin du panneau de gauche. */
+  right: 76px;
+  bottom: 24px;
+  width: min(380px, calc(100% - 92px));
+  padding: 12px 14px 14px;
+  border-radius: 22px;
+  background: #fff;
+  color: #16324a;
+  box-shadow: 0 -6px 30px rgb(22 50 74 / 0.25);
+  animation: bw-pin-sheet-in 0.22s ease-out both;
+}
+@media (max-width: 639px) {
+  .bw-pin-sheet {
+    left: 10px;
+    right: 10px;
+    width: auto;
+    bottom: calc(var(--bw-pin-sheet-inset, 0px) + 76px);
+  }
+}
+@keyframes bw-pin-sheet-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+}
+.bw-pin-sheet__head {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+.bw-pin-sheet__head p {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  column-gap: 8px;
+}
+.bw-pin-sheet__head b {
+  font-size: 15.5px;
+  font-weight: 800;
+}
+.bw-pin-sheet__head small {
+  font-size: 12px;
+  font-weight: 600;
+  color: #6b7a74;
+}
+.bw-pin-sheet__close {
+  flex: none;
+  width: 32px;
+  height: 32px;
+  margin: -4px -4px 0 0;
+  border: 0;
+  border-radius: 50%;
+  background: #f2efe7;
+  color: #16324a;
+  font-size: 13px;
+  cursor: pointer;
+}
+.bw-pin-sheet ul {
+  list-style: none;
+  margin: 10px 0 0;
+  padding: 0;
+  display: grid;
+  gap: 9px;
+}
+.bw-pin-sheet li {
+  display: grid;
+  grid-template-columns: 30px 1fr;
+  gap: 9px;
+  font-size: 13px;
+  line-height: 1.35;
+}
+.bw-pin-sheet li img {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  object-fit: cover;
+  background: #e3f3ea;
+}
+.bw-pin-sheet li > span {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.bw-pin-sheet li b {
+  font-weight: 800;
+}
+.bw-pin-sheet li small {
+  margin-left: 5px;
+  color: #6b7a74;
+}
+.bw-pin-sheet li span span {
+  display: block;
+}
+.bw-pin-sheet__actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+}
+.bw-pin-sheet__actions button {
+  flex: 1;
+  min-height: 42px;
+  padding: 8px 10px;
+  border: 0;
+  border-radius: 12px;
+  font: inherit;
+  font-size: 13.5px;
+  font-weight: 800;
+  cursor: pointer;
+}
+.bw-pin-sheet__main {
+  background: #0e7a43;
+  color: #fff;
+}
+.bw-pin-sheet__second {
+  background: #f2efe7;
+  color: #16324a;
+}

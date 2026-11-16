@@ -9,6 +9,7 @@
 @import "./entity.css";
 @import "./mobile.css";
 @import "./companion.css";
+@import "./chatpins.css";
 
 @custom-variant dark (&:is(.dark *));
 

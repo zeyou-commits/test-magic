@@ -3,7 +3,7 @@ import { useTravelMarkers } from "./useTravelMarkers";
 import { bringTooltipToFront } from "./tooltipStack";
 import { usePresenceMarkers } from "./usePresenceMarkers";
 import { useMyTripMarker } from "./useMyTripMarker";
-import { useChatBubbles } from "./useChatBubbles";
+import { useChatPins } from "./useChatPins";
 import { useJourneyFilm } from "./useJourneyFilm";
 import { useEffect, useRef, useState } from "react";
 import {
@@ -458,8 +458,8 @@ export default function FerryMap({
   usePresenceMarkers(mapRef, mapReady, ports, fleet, onSelect, onOpenPanel);
   useMyTripMarker(mapRef, mapReady, fleet, onSelect, onOpenPanel);
   const isMobile = useIsMobile();
-  // Une bulle des salons à la fois ; jamais quand une fiche ou un trajet occupe l'écran.
-  useChatBubbles(
+  // Les salons en pastilles (une par navire ou port) ; le fil se referme quand une fiche occupe l'écran.
+  useChatPins(
     mapRef,
     mapReady,
     fleet,
@@ -467,6 +467,7 @@ export default function FerryMap({
     routes,
     Boolean(selection || itineraryPreview || (isMobile && mobileBottomInset > 260)),
     onSelect,
+    isMobile ? mobileBottomInset : 0,
   );
   // Mobile : un tap sur un port n'ouvre que la bulle ; le volet s'ouvre via « Voir la fiche du port ».
   const [tipPortId, setTipPortId] = useState<string | null>(null);

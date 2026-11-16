@@ -1,9 +1,10 @@
-import { useEffect, useMemo, useState, type FormEvent } from "react";
+import { useEffect, useMemo, useRef, useState, type FormEvent, type RefObject } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import {
   AlertTriangle,
   CalendarDays,
+  Check,
   Car,
   ClipboardList,
   Download,
@@ -18,14 +19,17 @@ import {
 } from "lucide-react";
 import {
   FORMALITES_CHECKED,
+  loadPapers,
+  savePapers,
   tasksFor,
   totalCost,
   travellerLabel,
   whenLabels,
+  whenOrder,
   type Task,
   type When,
 } from "@/content/formalites";
-import { consulatForDepartment } from "@/content/consulats";
+import { consulatForDepartment, departmentFromPostcode } from "@/content/consulats";
 import { portsQuery } from "@/lib/ferry/queries";
 import { papersDeadlines } from "@/lib/ferry/retroPlan";
 import { VEHICLES } from "@/components/panel/TripProfile";
@@ -125,7 +129,14 @@ function SharedPreparationPage() {
         cta={{ href: "/preparer-mon-voyage", label: "Préparer mon voyage" }}
       />
     );
-  return <OnePage prep={prep} mine={!shareId} />;
+  // Sa propre préparation : un code postal ajouté ici est retenu dans « Mes papiers ».
+  const savePostcode = (postcode: string) => {
+    const saved = loadPapers();
+    if (!saved) return;
+    savePapers({ ...saved, answers: { ...saved.answers, postcode, abroad: false } });
+    setOwn(currentPreparation());
+  };
+  return <OnePage prep={prep} mine={!shareId} {...(shareId ? {} : { onPostcode: savePostcode })} />;
 }
 
 function Empty({
@@ -257,7 +268,83 @@ function SharePanel({ prep, title }: { prep: SharedPreparation; title: string })
   );
 }
 
-function OnePage({ prep, mine }: { prep: SharedPreparation; mine: boolean }) {
+/**
+ * Avant de partager ou d'imprimer : si une démarche passe par le consulat et qu'on ne sait pas
+ * lequel, on le demande ici, en un code postal, pour qu'il figure sur la feuille.
+ */
+function ConsulateAsk({
+  nudged,
+  onPostcode,
+  onPrint,
+  inputRef,
+}: {
+  nudged: boolean;
+  onPostcode: (postcode: string) => void;
+  onPrint: () => void;
+  inputRef: RefObject<HTMLInputElement | null>;
+}) {
+  const [value, setValue] = useState("");
+  const department = departmentFromPostcode(value);
+  const found = department ? consulatForDepartment(department) : null;
+  return (
+    <form
+      className="bw-onepage__ask"
+      data-nudged={nudged || undefined}
+      onSubmit={(event) => {
+        event.preventDefault();
+        if (found) onPostcode(value.replace(/\s/g, ""));
+      }}
+    >
+      <img src="/cabas/persos/voiture_504.webp" alt="" width={48} height={48} />
+      <div className="min-w-0">
+        <p className="bw-onepage__ask-title">
+          {nudged ? "Une seconde avant le PDF : votre consulat ?" : "Votre consulat manque sur la feuille"}
+        </p>
+        <p className="bw-onepage__ask-text">
+          Des démarches se font au consulat d'Algérie. Votre code postal suffit pour mettre son
+          adresse et son lien de rendez-vous sur le PDF.
+        </p>
+        <span className="bw-onepage__sharerow">
+          <input
+            ref={inputRef}
+            inputMode="numeric"
+            autoComplete="postal-code"
+            maxLength={5}
+            placeholder="Code postal, par exemple 13001"
+            aria-label="Code postal"
+            value={value}
+            onChange={(event) => setValue(event.target.value)}
+          />
+          <button type="submit" disabled={!found} className="bw-onepage__btn bw-onepage__btn--main">
+            <Check size={16} aria-hidden /> Ajouter
+          </button>
+        </span>
+        {found ? (
+          <small className="bw-onepage__ask-found">
+            <MapPin size={13} aria-hidden /> {found.name}
+          </small>
+        ) : department ? (
+          <small className="bw-onepage__ask-found">Pas de consulat trouvé pour ce code postal.</small>
+        ) : null}
+        {nudged ? (
+          <button type="button" onClick={onPrint} className="bw-onepage__ask-skip">
+            Imprimer sans le consulat
+          </button>
+        ) : null}
+      </div>
+    </form>
+  );
+}
+
+function OnePage({
+  prep,
+  mine,
+  onPostcode,
+}: {
+  prep: SharedPreparation;
+  mine: boolean;
+  onPostcode?: (postcode: string) => void;
+}) {
   // Venu du récap des papiers : le retour y ramène directement.
   const [fromRecap, setFromRecap] = useState(false);
   useEffect(() => {
@@ -277,6 +364,19 @@ function OnePage({ prep, mine }: { prep: SharedPreparation; mine: boolean }) {
   );
   const consulat = prep.answers.department ? consulatForDepartment(prep.answers.department) : null;
   const atConsulate = tasks.some((t) => t.consulate);
+  // Hors de France, le consulat se choisit dans Préparer : on ne demande ici qu'un code postal.
+  const askConsulate = Boolean(mine && onPostcode && atConsulate && !consulat && !answers.abroad);
+  const [nudged, setNudged] = useState(false);
+  const askRef = useRef<HTMLInputElement | null>(null);
+  const print = () => {
+    if (askConsulate && !nudged) {
+      setNudged(true);
+      askRef.current?.scrollIntoView({ block: "center", behavior: "smooth" });
+      askRef.current?.focus({ preventScroll: true });
+      return;
+    }
+    window.print();
+  };
   const childNames = answers.travellers
     .filter((t) => t.kind === "child")
     .map((t) => travellerLabel(t, answers.travellers));
@@ -298,10 +398,18 @@ function OnePage({ prep, mine }: { prep: SharedPreparation; mine: boolean }) {
         <a href={mine && fromRecap ? "/preparer-mon-voyage?etape=papers" : "/preparer-mon-voyage"} className="bw-onepage__back">
           {mine ? (fromRecap ? "← Revenir au récap des papiers" : "← Revenir à ma préparation") : "Préparer mon propre voyage"}
         </a>
-        <button type="button" onClick={() => window.print()} className="bw-onepage__btn bw-onepage__btn--main">
+        <button type="button" onClick={print} className="bw-onepage__btn bw-onepage__btn--main">
           <Download size={16} aria-hidden /> PDF
         </button>
       </div>
+      {askConsulate && onPostcode ? (
+        <ConsulateAsk
+          nudged={nudged}
+          onPostcode={onPostcode}
+          onPrint={() => window.print()}
+          inputRef={askRef}
+        />
+      ) : null}
       {mine ? (
         <SharePanel
           prep={prep}
@@ -381,6 +489,22 @@ function OnePage({ prep, mine }: { prep: SharedPreparation; mine: boolean }) {
           ) : null}
         </dl>
 
+        <Frise
+          tasks={tasks}
+          done={prep.done}
+          due={due}
+          departure={
+            trip?.date
+              ? dayLabel(trip.date)
+              : trip?.month
+                ? new Intl.DateTimeFormat("fr-FR", { month: "long", year: "numeric" }).format(
+                    new Date(`${trip.month}-15T12:00:00`),
+                  )
+                : null
+          }
+          back={trip?.returnDate ? dayLabel(trip.returnDate) : null}
+        />
+
         <div className="bw-onepage__grid">
           {groups.map(({ category, items }) => {
             const Icon = icons[category];
@@ -432,6 +556,78 @@ function OnePage({ prep, mine }: { prep: SharedPreparation; mine: boolean }) {
         </footer>
       </article>
     </div>
+  );
+}
+
+/**
+ * La frise du PDF : un moment par ligne, dans l'ordre du voyage, avec sa date et ses démarches
+ * en court. Le départ et le retour s'y placent comme des jalons.
+ */
+function Frise({
+  tasks,
+  done,
+  due,
+  departure,
+  back,
+}: {
+  tasks: Task[];
+  done: string[];
+  due: (when: When) => string;
+  departure: string | null;
+  back: string | null;
+}) {
+  type Node = { key: string; lead: string; tag?: string; items: Task[]; milestone?: boolean };
+  const nodes: Node[] = [];
+  const fixed: Partial<Record<When, string>> = { pack: "Le jour du départ", there: "Sur place", back: "Pour rentrer" };
+  for (const when of whenOrder) {
+    if (when === "there" && departure)
+      nodes.push({ key: "go", lead: departure, tag: "Départ", items: [], milestone: true });
+    if (when === "back" && back)
+      nodes.push({ key: "ret", lead: back, tag: "Retour", items: [], milestone: true });
+    const items = tasks.filter((t) => t.when === when && planCategory(t) !== "attention");
+    if (!items.length) continue;
+    const lead = fixed[when] ?? due(when);
+    nodes.push({ key: when, lead, tag: whenLabels[when].title, items });
+  }
+  if (departure && !nodes.some((n) => n.key === "go"))
+    nodes.push({ key: "go", lead: departure, tag: "Départ", items: [], milestone: true });
+  if (nodes.length < 2) return null;
+  return (
+    <section className="bw-onepage__frise" aria-label="Le calendrier">
+      <h2>
+        <CalendarDays size={15} aria-hidden /> Le calendrier
+      </h2>
+      <ol>
+        {nodes.map((node) => {
+          const finished = node.items.length > 0 && node.items.every((t) => done.includes(t.id));
+          const shown = node.items.slice(0, 2).map((t) => t.title);
+          const more = node.items.length - shown.length;
+          return (
+            <li
+              key={node.key}
+              data-milestone={node.milestone || undefined}
+              data-done={finished || undefined}
+            >
+              <span className="bw-onepage__frise-dot" aria-hidden>
+                {finished ? "✓" : ""}
+              </span>
+              <b>{node.lead}</b>
+              <span>
+                {node.milestone ? (
+                  <em>{node.tag}</em>
+                ) : (
+                  <>
+                    {node.tag && node.tag !== node.lead ? <em>{node.tag}</em> : null}
+                    {shown.join(" · ")}
+                    {more > 0 ? ` · et ${more} autre${more > 1 ? "s" : ""}` : ""}
+                  </>
+                )}
+              </span>
+            </li>
+          );
+        })}
+      </ol>
+    </section>
   );
 }
 

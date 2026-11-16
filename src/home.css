@@ -4039,3 +4039,50 @@ body:has(.bw-home--app) {
   .bw-onepage__head .bw-onepage__logo { grid-column: 1 / -1; height: 2rem; }
   .bw-onepage__head h1 { overflow-wrap: anywhere; }
 }
+
+/* Lot 4 : le consulat demandé avant le PDF, et la frise datée sur la feuille. */
+.bw-onepage__ask {
+  display: grid; grid-template-columns: 48px minmax(0, 1fr); gap: 0.75rem; align-items: start;
+  max-width: 60rem; margin: 0 auto 0.75rem; padding: 0.9rem 1rem; border: 1px solid #e0a43a; border-radius: 1rem;
+  background: #fdf6e7; transition: box-shadow 0.2s;
+}
+.bw-onepage__ask[data-nudged] { box-shadow: 0 0 0 3px rgb(224 164 58 / 0.35); }
+.bw-onepage__ask img { width: 48px; height: 48px; object-fit: contain; }
+.bw-onepage__ask-title { font-weight: 800; line-height: 1.25; }
+.bw-onepage__ask-text { margin: 0.15rem 0 0.6rem; font-size: 0.85rem; color: #5d6b66; }
+.bw-onepage__ask input {
+  min-height: 2.6rem; padding: 0 0.75rem; border: 1px solid #d8cfbe; border-radius: 0.7rem; background: #fff; font-size: 1rem;
+}
+.bw-onepage__ask .bw-onepage__btn:disabled { opacity: 0.5; }
+.bw-onepage__ask-found { display: flex; align-items: center; gap: 0.3rem; margin-top: 0.4rem; font-size: 0.8rem; font-weight: 700; color: #157a43; }
+.bw-onepage__ask-skip { margin-top: 0.5rem; font-size: 0.8rem; font-weight: 700; color: #5d6b66; text-decoration: underline; }
+@media print { .bw-onepage__ask { display: none !important; } }
+
+.bw-onepage__frise { padding: 0.75rem 1.25rem 0; }
+.bw-onepage__frise h2 { display: flex; align-items: center; gap: 0.35rem; margin-bottom: 0.4rem; font-size: 0.72rem; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; color: #157a43; }
+.bw-onepage__frise ol { position: relative; display: grid; gap: 0.3rem; margin: 0; padding: 0 0 0 1.25rem; list-style: none; }
+.bw-onepage__frise ol::before { content: ""; position: absolute; left: 0.42rem; top: 0.45rem; bottom: 0.45rem; width: 2px; background: #cfe3d6; }
+.bw-onepage__frise li { position: relative; display: grid; grid-template-columns: 9.5rem minmax(0, 1fr); gap: 0.6rem; align-items: baseline; font-size: 0.78rem; line-height: 1.3; }
+.bw-onepage__frise-dot {
+  position: absolute; left: -1.25rem; top: 0.12rem; display: grid; width: 0.9rem; height: 0.9rem; place-items: center;
+  border: 2px solid #157a43; border-radius: 99px; background: #fff; color: #fff; font-size: 0.5rem; font-weight: 900;
+}
+.bw-onepage__frise li[data-done] .bw-onepage__frise-dot { background: #157a43; }
+.bw-onepage__frise li[data-milestone] .bw-onepage__frise-dot { border-color: #1d5fa8; background: #1d5fa8; box-shadow: inset 0 0 0 2px #fff; }
+.bw-onepage__frise li > b { font-weight: 800; color: #14231b; }
+.bw-onepage__frise li[data-milestone] > b { color: #1d5fa8; }
+.bw-onepage__frise li > span { min-width: 0; color: #3e4c45; }
+.bw-onepage__frise em { margin-right: 0.35rem; font-style: normal; font-weight: 700; color: #5b6b62; }
+.bw-onepage__frise em::after { content: " :"; }
+.bw-onepage__frise li[data-milestone] em { color: #1d5fa8; }
+.bw-onepage__frise li[data-milestone] em::after { content: ""; }
+.bw-onepage__frise li[data-done] > span { color: #7b8a82; text-decoration: line-through; }
+@media (max-width: 520px) {
+  .bw-onepage__frise { padding: 0.75rem 1rem 0; }
+  .bw-onepage__frise li { grid-template-columns: minmax(0, 1fr); gap: 0; }
+}
+@media print {
+  .bw-onepage__frise { padding: 2mm 4mm 0; break-inside: avoid; }
+  .bw-onepage__frise li { font-size: 8pt; grid-template-columns: 38mm minmax(0, 1fr); }
+  .bw-onepage__frise-dot { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+}

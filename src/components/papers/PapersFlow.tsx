@@ -47,6 +47,11 @@ import {
   totalCost,
   travellerLabel,
   travelsWithDzPassport,
+  ageBandOf,
+  ageBands,
+  dzChoiceOf,
+  dzChoices,
+  fromDzChoice,
   whenLabels,
   whenOrder,
   type Answers,
@@ -624,13 +629,13 @@ function TravellerCard({
           <label className="flex items-center gap-2 text-sm font-semibold">
             Âge
             <select
-              value={t.age}
+              value={ageBandOf(t.age).age}
               onChange={(e) => update({ age: Number(e.target.value) })}
               className="min-h-11 rounded-xl border bg-background px-3"
             >
-              {Array.from({ length: 19 }, (_, i) => (
-                <option key={i} value={i}>
-                  {i === 0 ? "moins d'1 an" : `${i} ans`}
+              {ageBands.map((band) => (
+                <option key={band.age} value={band.age}>
+                  {band.label}
                 </option>
               ))}
             </select>
@@ -675,43 +680,15 @@ function TravellerCard({
       {t.nat === "bi" ? (
         <div className="mt-4">
           <p className="text-sm font-semibold">
-            Quel document algérien {child ? "a-t-il" : "avez-vous"} ?
+            Quel document algérien {child ? "a-t-il, et avec quoi part-il" : "avez-vous, et avec quoi partez-vous"} ?
           </p>
           <div className="mt-2">
             <Options
-              label={`Document algérien : ${name}`}
-              value={t.dzDoc}
-              onChange={(dzDoc) => update({ dzDoc })}
+              label={`Document algérien et passeport du voyage : ${name}`}
+              value={dzChoiceOf(t)}
+              onChange={(v) => update(fromDzChoice(v))}
               small
-              options={[
-                { value: "passeport", label: "Un passeport algérien valide" },
-                { value: "cnibe", label: "Une carte d'identité algérienne", hint: "Même expirée" },
-                { value: "passeportExpire", label: "Un passeport algérien expiré" },
-                { value: "aucun", label: "Aucun document algérien" },
-              ]}
-            />
-          </div>
-        </div>
-      ) : null}
-      {t.nat === "bi" && t.dzDoc === "passeport" ? (
-        <div className="mt-4">
-          <p className="text-sm font-semibold">
-            Avec quel passeport {child ? "part-il" : "partez-vous"} ?
-          </p>
-          <div className="mt-2">
-            <Options
-              label={`Passeport du voyage : ${name}`}
-              value={t.dzTravel ?? "dz"}
-              onChange={(dzTravel) => update({ dzTravel })}
-              small
-              options={[
-                {
-                  value: "dz",
-                  label: "Avec le passeport algérien",
-                  hint: "Et l'autre passeport aussi",
-                },
-                { value: "foreign", label: "Avec le passeport étranger seulement" },
-              ]}
+              options={dzChoices}
             />
           </div>
         </div>

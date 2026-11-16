@@ -1,11 +1,18 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { Baby, User } from "lucide-react";
 import {
+  ageBandOf,
+  ageBands,
+  dzChoiceOf,
+  dzChoices,
+  fromDzChoice,
   travellerLabel,
   travelsWithDzPassport,
   type Answers,
+  type SnStatus,
   type Traveller,
 } from "@/content/formalites";
+import { Bw504Note } from "@/components/companion/Bw504Note";
 import { WizardNav, useWizardScreen } from "@/components/prepare/WizardFrame";
 import { genderFromName } from "@/lib/papers/genderFromName";
 import {
@@ -70,8 +77,8 @@ export function paperQuestions(a: Answers, steps: PapersStep[]): PaperQ[] {
         // Un adulte a déjà 19 ans ou plus : seul le sexe compte pour le service national.
         if (!child && t.nat !== "etr") add("man");
         if (!child && t.nat !== "etr" && t.man) add("sn");
+        // Document algérien et passeport du voyage : une seule question.
         if (t.nat === "bi") add("dzDoc");
-        if (t.nat === "bi" && t.dzDoc === "passeport") add("dzTravel");
         if (travelsWithDzPassport(t)) add("dzValid");
         if (!child && t.nat === "dz") add("residence");
       }
@@ -246,28 +253,23 @@ export function PapersQuestions({
       body = (
         <>
           {who}
-          <Question title="Quel est son âge ?" hint="Au moment du voyage.">
-            <div
-              role="radiogroup"
-              aria-label="Âge"
-              className="grid grid-cols-4 gap-2 sm:grid-cols-5"
-            >
-              {Array.from({ length: 19 }, (_, age) => (
-                <button
-                  key={age}
-                  type="button"
-                  role="radio"
-                  aria-checked={t.age === age}
-                  onClick={() => update({ age })}
-                  className={`min-h-12 rounded-xl border px-2 text-sm font-semibold transition-colors ${
-                    t.age === age
-                      ? "border-primary bg-primary/5 ring-1 ring-primary"
-                      : "bg-background hover:border-primary/40"
-                  }`}
-                >
-                  {age === 0 ? "< 1 an" : `${age} an${age > 1 ? "s" : ""}`}
-                </button>
-              ))}
+          <Question title="Quel âge aura-t-il le jour du départ ?">
+            {choice(
+              "Âge le jour du départ",
+              String(ageBandOf(t.age).age),
+              (v) => update({ age: Number(v) }),
+              ageBands.map((band) => ({
+                value: String(band.age),
+                label: band.label,
+                ...("hint" in band ? { hint: band.hint } : {}),
+              })),
+            )}
+            <div className="mt-4">
+              <Bw504Note title="Pourquoi je demande l'âge ?">
+                Il change les papiers : le prix du visa (gratuit avant 6 ans, moins cher avant 12),
+                l'entrée avec le passeport étranger pour les binationaux de 15 ans ou moins, et à 18
+                ans un jeune est majeur en France mais encore mineur en Algérie, jusqu'à 19 ans.
+              </Bw504Note>
             </div>
           </Question>
         </>
@@ -301,14 +303,17 @@ export function PapersQuestions({
         <>
           {who}
           <Question
-            title={me ? "Quel document algérien avez-vous ?" : "Quel est son document algérien ?"}
+            title={
+              me
+                ? "Quel document algérien avez-vous, et avec quoi partez-vous ?"
+                : "Quel document algérien a-t-il, et avec quoi part-il ?"
+            }
+            hint="À l'entrée en Algérie, un binational est traité comme un Algérien : son document algérien décide des papiers."
           >
-            {choice("Document algérien", t.dzDoc, (dzDoc) => update({ dzDoc }), [
-              { value: "passeport", label: "Un passeport algérien valide" },
-              { value: "cnibe", label: "Une carte d'identité algérienne", hint: "Même expirée" },
-              { value: "passeportExpire", label: "Un passeport algérien expiré" },
-              { value: "aucun", label: "Aucun document algérien" },
-            ])}
+            {choice("Document algérien et passeport du voyage", dzChoiceOf(t), (v) =>
+              update(fromDzChoice(v)),
+              dzChoices,
+            )}
           </Question>
         </>
       );
@@ -379,15 +384,47 @@ export function PapersQuestions({
         <>
           {who}
           <Question
-            title={me ? "Êtes-vous en règle avec le service national ?" : "Est-il en règle avec le service national ?"}
-            hint="Recensé au consulat, ou dispensé : la preuve part dans la pochette. Sinon, c'est une démarche à faire avant le départ."
+            title={
+              me
+                ? "Où en êtes-vous avec le service national algérien ?"
+                : "Où en est-il avec le service national algérien ?"
+            }
           >
-            {choice("Service national", t.sn ?? "unknown", (sn) => update({ sn }), [
-              { value: "ok", label: "Oui, recensé", hint: "Attestation ou carte de service national" },
-              { value: "exempt", label: "Oui, dispensé", hint: "Attestation de dispense" },
-              { value: "todo", label: "Non, pas encore" },
-              { value: "unknown", label: "Je ne sais pas" },
-            ])}
+            {choice<SnStatus>(
+              "Service national",
+              t.sn === "exempt" ? "ok" : (t.sn ?? "unknown"),
+              (sn) => update({ sn }),
+              [
+                {
+                  value: "ok",
+                  label: "Recensé ou dispensé au consulat",
+                  hint: "Attestation de recensement, carte ou dispense",
+                },
+                ...(t.nat === "bi"
+                  ? [
+                      {
+                        value: "option" as const,
+                        label: "Déclaration d'option pour la France",
+                        hint: "Faite à la préfecture, entre 16 et 25 ans",
+                      },
+                      {
+                        value: "jdc" as const,
+                        label: "J'ai fait la JDC en France",
+                        hint: "Journée défense et citoyenneté (ex-JAPD)",
+                      },
+                    ]
+                  : []),
+                { value: "todo", label: "Rien de fait" },
+                { value: "unknown", label: "Je ne sais pas" },
+              ],
+            )}
+            <div className="mt-4">
+              <Bw504Note title="Pourquoi cette question ?">
+                {t.nat === "bi"
+                  ? "Un homme algérien a des obligations de service national dès 19 ans. Pour un franco-algérien, l'accord de 1983 fait compter le service choisi en France : je vous dis si vous êtes en règle, ou quoi faire."
+                  : "Un homme algérien a des obligations de service national dès 19 ans. La preuve (recensement ou dispense) peut être demandée à la sortie d'Algérie : je l'ajoute à la pochette, ou la démarche à votre liste."}
+              </Bw504Note>
+            </div>
           </Question>
         </>
       );

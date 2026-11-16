@@ -67,6 +67,22 @@ export const formaliteSources = {
     short: "Consulat d'Algérie",
     url: "https://consulat-paris-algerie.fr/service-national/recensement/",
   },
+  "accord-1983": {
+    name: "Accord franco-algérien du 11 octobre 1983 relatif aux obligations du service national (texte publié par la préfecture de l'Isère)",
+    short: "Accord franco-algérien de 1983",
+    url: "https://www.isere.gouv.fr/content/download/48620/336533/file/Accord%20Franco-Alg%C3%A9rien_11-10-83.pdf",
+  },
+  "pref-accord-sn": {
+    name: "Préfecture de l'Eure : accord franco-algérien sur le service national",
+    short: "Préfecture de l'Eure",
+    url: "https://www.eure.gouv.fr/Demarches/Accord-franco-algerien-sur-le-service-national",
+    updated: "mise à jour du 10 décembre 2025",
+  },
+  "cons-binationaux-sn": {
+    name: "Consulat d'Algérie à Créteil : dossier des binationaux pour le service national",
+    short: "Consulat d'Algérie",
+    url: "https://consulat-creteil-algerie.fr/procedure-de-dispense-ou-dexemption/",
+  },
   "cons-passeport": {
     name: "Consulat d'Algérie à Montpellier : passeport biométrique",
     short: "Consulat d'Algérie",
@@ -149,7 +165,47 @@ export interface Traveller {
   dzTravel?: DzTravel;
 }
 
-export type SnStatus = "ok" | "exempt" | "todo" | "unknown";
+/**
+ * ok / exempt : recensé ou dispensé au consulat · option : déclaration d'option pour la France
+ * (article 2 de l'accord de 1983) · jdc : JDC faite en France, pas encore présentée au consulat.
+ */
+export type SnStatus = "ok" | "exempt" | "option" | "jdc" | "todo" | "unknown";
+
+/**
+ * L'âge des enfants en tranches : seuls ces seuils changent quelque chose (prix du visa à 6 et
+ * 12 ans, mesure des binationaux jusqu'à 15 ans, majorité à 18 ans en France et 19 en Algérie).
+ * L'âge retenu dans chaque tranche sert aux calculs.
+ */
+export const ageBands = [
+  { age: 3, label: "Moins de 6 ans", max: 5 },
+  { age: 8, label: "6 à 11 ans", max: 11 },
+  { age: 13, label: "12 à 15 ans", max: 15 },
+  { age: 16, label: "16 ou 17 ans", max: 17 },
+  { age: 18, label: "18 ans", max: 18, hint: "Majeur en France, encore mineur en Algérie" },
+] as const;
+export const ageBandOf = (age: number) => ageBands.find((band) => age <= band.max) ?? ageBands[4];
+
+/** Document algérien et passeport du voyage, en une seule réponse. */
+export type DzChoice = "dzPass" | "foreignPass" | "cnibe" | "passeportExpire" | "aucun";
+export const dzChoiceOf = (t: Traveller): DzChoice =>
+  t.dzDoc === "passeport" ? (t.dzTravel === "foreign" ? "foreignPass" : "dzPass") : t.dzDoc;
+export const fromDzChoice = (choice: DzChoice): Pick<Traveller, "dzDoc" | "dzTravel"> =>
+  choice === "dzPass"
+    ? { dzDoc: "passeport", dzTravel: "dz" }
+    : choice === "foreignPass"
+      ? { dzDoc: "passeport", dzTravel: "foreign" }
+      : { dzDoc: choice, dzTravel: "dz" };
+export const dzChoices: { value: DzChoice; label: string; hint?: string }[] = [
+  { value: "dzPass", label: "Passeport algérien valide", hint: "Emporté pour le voyage, avec l'autre passeport" },
+  {
+    value: "foreignPass",
+    label: "Passeport algérien valide, laissé à la maison",
+    hint: "Départ avec le passeport français (ou autre) seulement",
+  },
+  { value: "cnibe", label: "Carte d'identité algérienne seulement", hint: "Même expirée" },
+  { value: "passeportExpire", label: "Passeport algérien expiré" },
+  { value: "aucun", label: "Aucun document algérien" },
+];
 
 /** tight : valable au retour, mais il expire peu après (aucune règle ne fixe de marge). */
 export type DzValid = "yes" | "tight" | "no" | "unknown";
@@ -507,7 +563,33 @@ export function tasksFor(a: Answers): Task[] {
         toConfirm: true,
       });
 
-    if (!child && t.man && (t.sn === "ok" || t.sn === "exempt"))
+    const otherNat =
+      "L'accord de 1983 ne vaut qu'entre la France et l'Algérie : pour une autre nationalité, aucun texte consulté ne dit si son service militaire compte en Algérie. Demandez au consulat.";
+    if (!child && t.man && t.nat === "bi" && t.sn === "option")
+      add({
+        id: "service-national-option",
+        when: "pack",
+        title: "La copie certifiée de votre déclaration d'option",
+        detail:
+          "Vous êtes en règle : l'accord franco-algérien de 1983 reconnaît le service national choisi en France. La copie certifiée remise par la préfecture justifie votre situation vis-à-vis de l'Algérie (article 2) : gardez-la avec le passeport.\n" +
+          otherNat,
+        who,
+        sources: ["accord-1983", "pref-accord-sn"],
+      });
+    else if (!child && t.man && t.nat === "bi" && t.sn === "jdc")
+      add({
+        id: "service-national-jdc",
+        when: "first",
+        title: "Faire reconnaître votre JDC au consulat",
+        detail:
+          "À régulariser : la JDC compte, mais le consulat ne le sait pas tant que vous ne l'avez pas prouvé.\n1. Demandez le certificat des services (article 3 de l'accord de 1983) au centre du service national dont vous dépendez.\n2. Déposez au consulat le dossier des binationaux : certificat des services ou déclaration d'option, actes de naissance, carte consulaire, carte d'identité française, photos.\nLe consulat ne dit pas ce qu'il remet en retour : gardez une copie du dossier déposé dans la pochette.\n" +
+          otherNat,
+        who,
+        sources: ["accord-1983", "pref-accord-sn", "cons-binationaux-sn"],
+        consulate: "le dossier service national des binationaux",
+        toConfirm: true,
+      });
+    else if (!child && t.man && (t.sn === "ok" || t.sn === "exempt"))
       add({
         id: "service-national-papier",
         when: "pack",
@@ -526,9 +608,16 @@ export function tasksFor(a: Answers): Task[] {
         when: "first",
         title: "Être en règle avec le service national",
         detail:
-          "Le service national est obligatoire à 19 ans révolus. Les Algériens qui vivent à l'étranger se font recenser au consulat, qui remet une attestation de recensement ; une dispense existe notamment pour soutien de famille ou raison médicale. Ce qui se passe à la sortie d'Algérie pour un homme qui n'est pas en règle n'est écrit sur aucune page consultée : demandez au consulat.",
+          "Le service national est obligatoire à 19 ans révolus. Les Algériens qui vivent à l'étranger se font recenser au consulat, qui remet une attestation de recensement ; une dispense existe notamment pour soutien de famille ou raison médicale. Ce qui se passe à la sortie d'Algérie pour un homme qui n'est pas en règle n'est écrit sur aucune page consultée : demandez au consulat." +
+          (t.nat === "bi"
+            ? "\nBinational franco-algérien : la JDC ou une déclaration d'option faite en France comptent (accord de 1983). Demandez le certificat des services au centre du service national, puis déposez-le au consulat.\n" +
+              otherNat
+            : ""),
         who,
-        sources: ["cons-recensement"],
+        sources:
+          t.nat === "bi"
+            ? ["cons-recensement", "accord-1983", "cons-binationaux-sn"]
+            : ["cons-recensement"],
         consulate: "le recensement du service national",
         toConfirm: true,
       });

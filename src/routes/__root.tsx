@@ -6,7 +6,6 @@ import { ProfileHost } from "@/components/community/ProfileHost";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import {
   Outlet,
-  Link,
   createRootRouteWithContext,
   HeadContent,
   Scripts,
@@ -29,24 +28,32 @@ import { MobileTabBar } from "@/components/layout/MobileTabBar";
 import { SiteHeader } from "@/components/layout/SiteLayout";
 import { TravelActionProvider } from "@/components/auth/TravelActionProvider";
 import { tr } from "@/lib/i18n";
+import { Bw504Button, Bw504Note } from "@/components/companion/Bw504Note";
 
 function NotFoundComponent() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
       <div className="max-w-md text-center">
-        <h1 className="text-7xl font-bold text-foreground">404</h1>
-        <h2 className="mt-4 text-xl font-semibold text-foreground">{tr("ui.pageRoot.pageIntrouvable")}</h2>
-        <p className="mt-2 text-sm text-muted-foreground">
-          {tr("ui.pageRoot.laPageDemandeeNExiste")}
-        </p>
-        <div className="mt-6">
-          <Link
-            to="/"
-            className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
-          >
-            {tr("ui.pageRoot.retourALaCarte")}
-          </Link>
-        </div>
+        <p className="text-sm font-bold uppercase tracking-wider text-muted-foreground">Erreur 404</p>
+        <h1 className="mt-1 text-2xl font-semibold text-foreground">{tr("ui.pageRoot.pageIntrouvable")}</h1>
+        {/* La raison est sûre : l'adresse ne mène à aucune page. La 504 propose deux sorties. */}
+        <Bw504Note
+          tone="stuck"
+          className="mt-5 text-left"
+          title="J'ai pris la mauvaise sortie"
+          actions={
+            <>
+              <Bw504Button primary onClick={() => window.location.assign("/")}>
+                {tr("ui.pageRoot.retourALaCarte")}
+              </Bw504Button>
+              <Bw504Button onClick={() => window.location.assign("/preparer-mon-voyage")}>
+                Préparer mon voyage
+              </Bw504Button>
+            </>
+          }
+        >
+          Cette page n'existe pas, ou elle a changé d'adresse. On repart d'un endroit connu ?
+        </Bw504Note>
       </div>
     </div>
   );
@@ -82,25 +89,26 @@ function ErrorComponent({ error }: ErrorComponentProps) {
         <h1 className="text-xl font-semibold tracking-tight text-foreground">
           {tr("ui.pageRoot.cettePageNAPas")}
         </h1>
-        <p className="mt-2 text-sm text-muted-foreground">
+        {/* Deux cas seulement sont sûrs : une mise à jour du site, ou « un problème » sans plus. */}
+        <Bw504Note
+          tone="stuck"
+          className="mt-5 text-left"
+          title={assetLoadError ? "Le site vient d'être mis à jour" : "J'ai calé sur cette page"}
+          actions={
+            <>
+              <Bw504Button primary onClick={() => window.location.reload()}>
+                {tr("ui.pageRoot.reessayer")}
+              </Bw504Button>
+              <Bw504Button onClick={() => window.location.assign("/")}>
+                {tr("ui.pageRoot.retourALaCarte")}
+              </Bw504Button>
+            </>
+          }
+        >
           {assetLoadError
-            ? tr("ui.pageRoot.uneMiseAJourA")
-            : tr("ui.pageRoot.unProblemeEstSurvenuVous")}
-        </p>
-        <div className="mt-6 flex flex-wrap justify-center gap-2">
-          <button
-            onClick={() => window.location.reload()}
-            className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
-          >
-            {tr("ui.pageRoot.reessayer")}
-          </button>
-          <a
-            href="/"
-            className="inline-flex items-center justify-center rounded-md border border-input bg-background px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-accent"
-          >
-            {tr("ui.pageRoot.retourALaCarte")}
-          </a>
-        </div>
+            ? "Recharge la page : tu auras la dernière version."
+            : "Je ne sais pas encore pourquoi, l'équipe est prévenue. Réessaie, ou repars de la carte."}
+        </Bw504Note>
       </div>
     </div>
   );

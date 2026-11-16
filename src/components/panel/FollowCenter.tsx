@@ -17,6 +17,7 @@ import { useTravelAction } from "@/hooks/useTravelAction";
 import { useTravelFollows } from "@/hooks/useTravelFollows";
 import { useMyJourneys } from "@/lib/ferry/journey";
 import { tr } from "@/lib/i18n";
+import { Bw504Button, Bw504Note } from "@/components/companion/Bw504Note";
 
 export function FollowCenter({ userId }: { userId: string }) {
   const [filter, setFilter] = useState("all");
@@ -86,16 +87,18 @@ export function FollowCenter({ userId }: { userId: string }) {
             </button>
           </p>
         ) : empty ? (
-          <div className="bw-account-empty">
-            <Ship className="size-8 text-primary" />
-            <h3>{tr("ui.followCenter.votreProchainVoyageCommenceIci")}</h3>
-            <p>
-              {tr("ui.followCenter.surUneFicheNavireOu")}
-            </p>
-            <a href="/" className="bw-action-primary">
-              {tr("ui.followCenter.explorerLaCarte")}<ArrowUpRight className="size-4" />
-            </a>
-          </div>
+          <Bw504Note
+            className="mt-4"
+            title="Ton prochain voyage commence ici"
+            actions={
+              <Bw504Button primary onClick={() => window.location.assign("/")}>
+                Explorer la carte
+              </Bw504Button>
+            }
+          >
+            Sur la fiche d'un navire ou d'une traversée, touche le cœur « Suivre » : je regroupe
+            ici tout ce qui le concerne.
+          </Bw504Note>
         ) : (
           <div className="mt-4 grid gap-3 md:grid-cols-2">
             {(filter === "all" || filter === "departure") && journeyRows.map((journey) => <article key={journey.id} className="bw-follow-card md:col-span-2">

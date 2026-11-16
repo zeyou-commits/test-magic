@@ -1265,6 +1265,12 @@ function PapersStepBody({
   };
   const questions = paperQuestions(papers.answers, steps).length;
   useWizardScreen(questions, questions + 1, undefined, papers.finished);
+  // Tout ce que la liste demande est coché par le voyageur, voiture comprise s'il en a une.
+  const paperTasks = useMemo(() => tasksFor(papers.answers), [papers.answers]);
+  const allPapersTicked =
+    paperTasks.length > 0 &&
+    paperTasks.every((task) => papers.done.includes(task.id)) &&
+    (plan.vehicle === "none" || carItems.every((item) => plan.carDone.includes(item.id)));
   const box = useRef<HTMLDivElement>(null);
   const toTop = () =>
     requestAnimationFrame(() =>
@@ -1304,9 +1310,16 @@ function PapersStepBody({
             </ConfirmChange>
           ) : null}
           {plan.vehicle !== "none" ? <CarPapers plan={plan} patch={patch} /> : null}
-          <p className="mt-6 text-sm text-muted-foreground">
-            Pas besoin de tout cocher maintenant : la liste reste ici et dans « Mon voyage ».
-          </p>
+          {allPapersTicked ? (
+            <Bw504Note tone="win" className="mt-6" title="Tout est coché, bravo !">
+              Range tes papiers dans la pochette du voyage. Ta liste reste ici et dans « Mon
+              voyage ».
+            </Bw504Note>
+          ) : (
+            <p className="mt-6 text-sm text-muted-foreground">
+              Pas besoin de tout cocher maintenant : la liste reste ici et dans « Mon voyage ».
+            </p>
+          )}
           <div className="mt-4">
             <WizardNav next={{ label: `Continuer : ${next}`, onClick: onDone }} />
           </div>
@@ -2005,6 +2018,20 @@ function BookStep({
             </span>
           </span>
         </label>
+        {plan.ticket ? (
+          <Bw504Note
+            tone="win"
+            title="Billet en poche !"
+            actions={
+              <Bw504Button primary onClick={() => window.location.assign("/compte")}>
+                Ajouter mon billet
+              </Bw504Button>
+            }
+          >
+            Ajoute-le à ton compte : je garde un œil sur ton navire et, avec les notifications, je
+            te préviens d'un retard signalé.
+          </Bw504Note>
+        ) : null}
       </div>
       <WizardNav next={{ label: "Voir mon récap", onClick: onFinish, icon: ListChecks }} />
       <p className="mt-3 flex items-start gap-2 text-xs text-muted-foreground">

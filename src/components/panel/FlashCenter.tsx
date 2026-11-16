@@ -21,6 +21,7 @@ import { isDesktopBrowser, isInstalledApp, PhoneInstallCard } from "@/components
 import { FlashFeed, isCriticalCard, useFlashCards } from "./FlashFeed";
 import { noticeLook } from "./NoticeFocus";
 import { tr } from "@/lib/i18n";
+import { Bw504Note } from "@/components/companion/Bw504Note";
 
 // Notifications personnelles (table bw_notifications), absentes des types générés.
 const supabase = typedSupabase as unknown as SupabaseClient;
@@ -93,9 +94,9 @@ function NoticeList({ userId, notices }: { userId: string; notices: Notice[] }) 
   }
   if (!notices.length)
     return (
-      <p className="bw-flash-empty">
-        {tr("ui.flashCenter.rienDeNouveauLesInformations")}
-      </p>
+      <Bw504Note className="my-3" title="Rien de nouveau pour l'instant">
+        Les nouvelles des traversées que tu suis arriveront ici.
+      </Bw504Note>
     );
   // Une alerte non lue passe devant le reste ; sinon, du plus récent au plus ancien.
   const rank = (notice: Notice) =>

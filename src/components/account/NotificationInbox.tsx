@@ -5,6 +5,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { supabase as typedSupabase } from "@/integrations/supabase/client";
 import { noticeHref } from "@/lib/notifications/noticeStyle";
 import { tr } from "@/lib/i18n";
+import { Bw504Note } from "@/components/companion/Bw504Note";
 
 // Tables communautaires pas encore présentes dans les types générés.
 const supabase = typedSupabase as unknown as SupabaseClient;
@@ -58,9 +59,9 @@ export function NotificationInbox({ userId }: { userId: string }) {
           </button>
         </p>
       ) : !notices.data.length ? (
-        <p className="py-5 text-sm text-muted-foreground">
-          {tr("ui.notificationInbox.rienDeNouveauPourLe")}
-        </p>
+        <Bw504Note className="my-3" title="Rien de nouveau pour l'instant">
+          Les nouvelles des navires et des traversées que tu suis arriveront ici.
+        </Bw504Note>
       ) : (
         <div className="divide-y divide-border">
           {notices.data.map((notice) => (

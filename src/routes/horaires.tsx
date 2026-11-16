@@ -3,6 +3,7 @@ import { ClientOnly, createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useSuspenseQuery } from "@tanstack/react-query";
 import { ArrowRight, Map as MapIcon, Search, Share2, Ship, X } from "lucide-react";
 import { DataUnavailableNotice } from "@/components/layout/DataUnavailableNotice";
+import { Bw504Button, Bw504Note } from "@/components/companion/Bw504Note";
 import { SiteFooter, SiteHeader } from "@/components/layout/SiteLayout";
 import { CompanyBadge } from "@/components/panel/CompanyBadge";
 import { FollowButton } from "@/components/panel/FollowButton";
@@ -94,6 +95,107 @@ export const Route = createFileRoute("/horaires")({
   head: () => seoHead(title, description, "/horaires"),
   component: BoardPage,
 });
+
+type EmptyWhy =
+  | { kind: "term" }
+  | { kind: "company" }
+  | { kind: "notPublished"; until: string }
+  | { kind: "otherDay"; next: { dayKey: string; at: string; zone: string } }
+  | { kind: "unknown" };
+
+/** Tableau vide : la raison prouvée par les données et une sortie, dites par la 504. */
+function EmptyBoard({
+  why,
+  term,
+  onClearTerm,
+  onAllCompanies,
+  onDay,
+  onClear,
+}: {
+  why: EmptyWhy;
+  term: string;
+  onClearTerm: () => void;
+  onAllCompanies: () => void;
+  onDay: (day: string) => void;
+  onClear: () => void;
+}) {
+  if (why.kind === "term")
+    return (
+      <Bw504Note
+        tone="stuck"
+        title={`Rien ne correspond à « ${term} »`}
+        actions={
+          <Bw504Button primary onClick={onClearTerm}>
+            Effacer la recherche
+          </Bw504Button>
+        }
+      >
+        Avec les autres filtres, il y a des départs : c'est le mot cherché qui les cache.
+      </Bw504Note>
+    );
+  if (why.kind === "company")
+    return (
+      <Bw504Note
+        tone="stuck"
+        title="Pas de départ pour ce choix"
+        actions={
+          <Bw504Button primary onClick={onAllCompanies}>
+            Toutes les compagnies
+          </Bw504Button>
+        }
+      >
+        D'autres compagnies partent avec ces filtres.
+      </Bw504Note>
+    );
+  if (why.kind === "notPublished")
+    return (
+      <Bw504Note
+        tone="stuck"
+        title="Les horaires ne sont pas encore sortis"
+        actions={
+          <Bw504Button primary onClick={onClear}>
+            Tout effacer
+          </Bw504Button>
+        }
+      >
+        Avec ces filtres, les départs publiés vont jusqu'au{" "}
+        {new Date(why.until)
+          .toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" })
+          .replace(/^1 /, "1er ")}
+        . Reviens
+        plus tard pour cette date.
+      </Bw504Note>
+    );
+  if (why.kind === "otherDay")
+    return (
+      <Bw504Note
+        tone="stuck"
+        title="Pas de départ à cette date"
+        actions={
+          <Bw504Button primary onClick={() => onDay(why.next.dayKey)}>
+            {capitalizeFirst(formatShortDay(why.next.at, why.next.zone))}
+          </Bw504Button>
+        }
+      >
+        Avec les mêmes filtres, le prochain départ publié est le{" "}
+        {formatShortDay(why.next.at, why.next.zone)}.
+      </Bw504Note>
+    );
+  return (
+    <Bw504Note
+      tone="stuck"
+      title="Je n'ai rien trouvé, et je ne sais pas pourquoi"
+      actions={
+        <Bw504Button primary onClick={onClear}>
+          Tout effacer
+        </Bw504Button>
+      }
+    >
+      {tr("ui.pageHoraires.aucuneTraverseePublieePourCes")} Un horaire peut manquer : vérifie chez
+      la compagnie.
+    </Bw504Note>
+  );
+}
 
 const toneClass: Record<BoardStatus["tone"], string> = {
   alert: "bg-red-700 text-white",
@@ -223,30 +325,48 @@ function BoardPage() {
 
   const today = (zone: string, plus = 0) =>
     dateKeyInZone(new Date(now + plus * 86_400_000).toISOString(), zone);
-  const matchesExceptCompany = ({ sailing, zone, dayKey }: Row) => {
+  const matchesExceptCompany = ({ sailing, zone, dayKey }: Row, ignoreWhen = false, ignoreTerm = false) => {
     const { from, to, company, vessel } = sailing;
     const isDz = (code: string) => code === "DZ";
     if (search.from && from.id !== search.from) return false;
     if (search.to && to.id !== search.to) return false;
-    if (search.month && !dayKey.startsWith(search.month)) return false;
+    if (!ignoreWhen && search.month && !dayKey.startsWith(search.month)) return false;
     if (search.dir === "toAlgeria" && !(isDz(to.country_code) && !isDz(from.country_code)))
       return false;
     if (search.dir === "fromAlgeria" && !(isDz(from.country_code) && !isDz(to.country_code)))
       return false;
-    if (!inPeriod(dayKey, search.period, today(zone), today(zone, 1), today(zone, 7))) return false;
-    const words = norm(term.trim());
+    if (
+      !ignoreWhen &&
+      !inPeriod(dayKey, search.period, today(zone), today(zone, 1), today(zone, 7))
+    )
+      return false;
+    const words = ignoreTerm ? "" : norm(term.trim());
     return (
       !words ||
       norm(`${from.name} ${to.name} ${vessel?.name ?? ""} ${company?.name ?? ""}`).includes(words)
     );
   };
-  const base = all.filter(matchesExceptCompany);
-  const rows = base.filter(
-    ({ sailing }) =>
-      (!search.company || sailing.company?.id === search.company) &&
-      (!search.vessel || sailing.vessel?.id === search.vessel) &&
-      (!search.route || sailing.route.id === search.route),
-  );
+  const base = all.filter((row) => matchesExceptCompany(row));
+  const ownFilters = ({ sailing }: Row) =>
+    (!search.company || sailing.company?.id === search.company) &&
+    (!search.vessel || sailing.vessel?.id === search.vessel) &&
+    (!search.route || sailing.route.id === search.route);
+  const rows = base.filter(ownFilters);
+  // Rien ne s'affiche : la 504 dit ce que les données prouvent, dans cet ordre, sinon qu'elle ne sait pas.
+  const emptyWhy = ((): EmptyWhy | null => {
+    if (rows.length) return null;
+    if (term.trim() && all.some((row) => matchesExceptCompany(row, false, true) && ownFilters(row)))
+      return { kind: "term" };
+    if ((search.company || search.vessel || search.route) && base.length) return { kind: "company" };
+    if (search.period || search.month) {
+      const anyDate = all.filter((row) => matchesExceptCompany(row, true) && ownFilters(row));
+      const last = anyDate.at(-1);
+      const asked = search.period && DAY.test(search.period) ? search.period : null;
+      if (asked && last && asked > last.dayKey) return { kind: "notPublished", until: last.at };
+      if (anyDate[0]) return { kind: "otherDay", next: anyDate[0] };
+    }
+    return { kind: "unknown" };
+  })();
 
   const counts = new Map<string, { company: Company; count: number }>();
   for (const { sailing } of base) {
@@ -558,10 +678,19 @@ function BoardPage() {
               {rows.length} {arrivals ? tr("ui.pageHoraires.arrivee") : tr("ui.pageHoraires.depart")}
               {rows.length > 1 ? "s" : ""}{tr("ui.pageHoraires.prixIndicatifsPour2Adultes")}
             </p>
-            {rows.length === 0 ? (
-              <p className="px-4 py-8 text-center text-sm text-muted-foreground">
-                {tr("ui.pageHoraires.aucuneTraverseePublieePourCes")}
-              </p>
+            {emptyWhy ? (
+              <div className="p-4">
+                <EmptyBoard
+                  why={emptyWhy}
+                  term={term.trim()}
+                  onClearTerm={() => setTerm("")}
+                  onAllCompanies={() =>
+                    update({ company: undefined, vessel: undefined, route: undefined })
+                  }
+                  onDay={(day) => update({ period: day, month: undefined })}
+                  onClear={clear}
+                />
+              </div>
             ) : null}
             <ul>
               {rows.slice(0, visible).map((row) => {

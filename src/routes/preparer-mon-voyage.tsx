@@ -1524,64 +1524,127 @@ function RouteStep({
   const [all, setAll] = useState(false);
   // La sélection par atout d'abord ; la liste complète des ports reste à portée de main.
   const [manual, setManual] = useState(false);
+  // Le départ et l'arrivée tiennent sur une bande ; on ne rouvre leur champ que pour les changer.
+  const [edit, setEdit] = useState<"home" | "dest" | null>(null);
   const shown = all ? choices : choices.slice(0, 3);
   const selectedHidden = fromChoice && !shown.includes(fromChoice);
+  const destinationField = (
+    <DestinationField
+      value={plan.destination}
+      onPick={(destination) => {
+        const arrival =
+          fromChoice && !plan.portsChosen
+            ? closestArrival(fromChoice, destination?.point ?? null)
+            : null;
+        patch({ destination, ...(arrival ? { toPortId: arrival.id } : {}) });
+        if (destination) setEdit(null);
+      }}
+    />
+  );
+  const arrivalName = choices
+    .flatMap((choice) => choice.lines.map((line) => line.to))
+    .find((port) => port.id === toPortId)?.name;
   return (
-    <div className="pt-4">
+    <div className="bw-route pt-3">
       {!plan.home ? (
-        <div className="mb-6 rounded-2xl bg-secondary/40 p-4">
-          <ResidenceQuestion
-            papers={papers}
-            plan={plan}
-            patch={patch}
-            title="D'où partez-vous ?"
-            hint="Pour classer les ports du plus proche au plus loin. La ville suffit."
-            showConsulate={false}
-          />
-        </div>
-      ) : null}
-      <DestinationField
-        value={plan.destination}
-        onPick={(destination) => {
-          const arrival =
-            fromChoice && !plan.portsChosen
-              ? closestArrival(fromChoice, destination?.point ?? null)
-              : null;
-          patch({ destination, ...(arrival ? { toPortId: arrival.id } : {}) });
-        }}
-      />
+        <>
+          <div className="mb-4 rounded-2xl bg-secondary/40 p-4">
+            <ResidenceQuestion
+              papers={papers}
+              plan={plan}
+              patch={patch}
+              title="D'où partez-vous ?"
+              hint="Pour calculer vos trajets porte à porte. La ville suffit."
+              showConsulate={false}
+            />
+          </div>
+          {destinationField}
+        </>
+      ) : (
+        <>
+          <div className="bw-trip">
+            <button
+              type="button"
+              className="bw-trip__end"
+              aria-expanded={edit === "home"}
+              onClick={() => setEdit(edit === "home" ? null : "home")}
+            >
+              <small>Départ</small>
+              <b>{plan.home.name}</b>
+              <Pencil size={13} aria-hidden />
+            </button>
+            <span className="bw-trip__sea" aria-hidden>
+              <Ship size={16} />
+            </span>
+            <button
+              type="button"
+              className="bw-trip__end"
+              data-empty={!plan.destination || undefined}
+              aria-expanded={edit === "dest"}
+              onClick={() => setEdit(edit === "dest" ? null : "dest")}
+            >
+              <small>Au bled</small>
+              <b>{plan.destination?.label ?? arrivalName ?? "Ajouter ma ville"}</b>
+              <Pencil size={13} aria-hidden />
+            </button>
+          </div>
+          {edit === "home" ? (
+            <div className="bw-trip__edit">
+              <ResidenceQuestion
+                papers={papers}
+                plan={plan}
+                patch={patch}
+                title="D'où partez-vous ?"
+                hint="La ville suffit."
+                showConsulate={false}
+              />
+              <button type="button" onClick={() => setEdit(null)} className="bw-trip__ok">
+                <Check size={15} aria-hidden /> C'est bon
+              </button>
+            </div>
+          ) : null}
+          {edit === "dest" ? <div className="bw-trip__edit">{destinationField}</div> : null}
+          <Bw504Note title="Pourquoi pas juste le port le plus proche ?" className="mt-3">
+            Il n'est pas toujours le plus rapide : je compte la route, l'attente au port et la
+            mer, jusqu'{plan.destination ? `à ${plan.destination.label}` : "à l'arrivée"}.
+          </Bw504Note>
+        </>
+      )}
 
       <RouteTop3
         plan={plan}
         adults={people(papers.answers).adults}
         children={people(papers.answers).children}
         onPickPorts={(fromPortId, toPortId) => patch({ fromPortId, toPortId, portsChosen: true })}
-        onMore={onItinerary}
       />
-      {plan.home ? (
-        <button
-          type="button"
-          onClick={() => setManual(!manual)}
-          aria-expanded={manual}
-          className="mt-3 inline-flex items-center gap-1.5 text-sm font-semibold text-primary underline underline-offset-4"
-        >
-          {manual ? "Masquer la liste des ports" : "Choisir mes ports à la main"}
-          <ChevronDown
-            size={15}
-            aria-hidden
-            className={`transition-transform ${manual ? "rotate-180" : ""}`}
-          />
+
+      <div className="bw-route__acts">
+        <button type="button" onClick={onItinerary}>
+          <MapIcon size={18} aria-hidden />
+          <b>Sur la carte</b>
+          <small>Autres dates, péages</small>
         </button>
-      ) : null}
-      {!plan.home || manual ? (
-        <>
-          <h3 className="mt-6 font-display text-lg font-bold">
+        <button type="button" onClick={() => setManual(!manual)} aria-expanded={manual}>
+          <Ship size={18} aria-hidden />
+          <b>Autres ports</b>
+          <small>{manual ? "Masquer la liste" : "Choisir à la main"}</small>
+        </button>
+        <a href="/covoiturage">
+          <Users size={18} aria-hidden />
+          <b>Covoiturage</b>
+          <small>Jusqu'au port</small>
+        </a>
+      </div>
+
+      {manual ? (
+        <div className="bw-route__manual">
+          <h3 className="font-display text-base font-bold">
             {plan.home ? "Tous les ports, du plus proche au plus loin" : "Votre port de départ"}
           </h3>
           {!choices.length ? (
             <p className="mt-2 text-sm text-muted-foreground">Chargement des lignes…</p>
           ) : null}
-          <div role="radiogroup" aria-label="Port de départ" className="mt-3 grid gap-2">
+          <div role="radiogroup" aria-label="Port de départ" className="mt-2 grid gap-1.5">
             {[...shown, ...(selectedHidden && fromChoice ? [fromChoice] : [])].map((choice) => {
               const on = choice.port.id === fromChoice?.port.id;
               return (
@@ -1598,35 +1661,32 @@ function RouteStep({
                       portsChosen: true,
                     });
                   }}
-                  className={`flex min-h-14 items-center gap-3 rounded-xl border px-4 py-3 text-left transition-colors ${
+                  className={`flex min-h-12 items-center gap-3 rounded-xl border px-3 py-2 text-left transition-colors ${
                     on
                       ? "border-primary bg-primary/5 ring-1 ring-primary"
                       : "bg-background hover:border-primary/40"
                   }`}
                 >
                   <Ship
-                    size={18}
+                    size={16}
                     className={on ? "text-primary" : "text-muted-foreground"}
                     aria-hidden
                   />
                   <span className="min-w-0 flex-1">
-                    <span className="block font-semibold">
+                    <span className="block text-sm font-semibold">
                       {choice.port.name}
                       <span className="font-normal text-muted-foreground">
                         {" "}
                         · {choice.port.country_name}
                       </span>
                     </span>
-                    <span className="block truncate text-sm text-muted-foreground">
+                    <span className="block truncate text-xs text-muted-foreground">
                       Vers {[...new Set(choice.lines.map((l) => l.to.name))].join(", ")}
                     </span>
                   </span>
                   {choice.km !== null ? (
-                    <span className="shrink-0 text-right text-sm font-semibold">
+                    <span className="shrink-0 text-right text-xs font-semibold tabular-nums">
                       ~{choice.km.toLocaleString("fr-FR")} km
-                      <span className="block text-[11px] font-normal text-muted-foreground">
-                        à vol d'oiseau
-                      </span>
                     </span>
                   ) : null}
                 </button>
@@ -1645,11 +1705,11 @@ function RouteStep({
 
           {fromChoice ? (
             <>
-              <h3 className="mt-6 font-display text-lg font-bold">Votre port d'arrivée</h3>
+              <h3 className="mt-4 font-display text-base font-bold">Votre port d'arrivée</h3>
               <div
                 role="radiogroup"
                 aria-label="Port d'arrivée"
-                className="mt-3 flex flex-wrap gap-2"
+                className="mt-2 flex flex-wrap gap-2"
               >
                 {fromChoice.lines.map(({ route, to }) => {
                   const on = to.id === toPortId;
@@ -1680,17 +1740,9 @@ function RouteStep({
               </div>
             </>
           ) : null}
-        </>
+        </div>
       ) : null}
-      <a
-        href="/covoiturage"
-        className="mt-2 inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl border px-4 text-sm font-semibold hover:bg-secondary"
-      >
-        <Users size={16} aria-hidden /> Covoiturage jusqu'au port
-      </a>
-      <div className="mt-6">
-        <NextButton label="Continuer : mon budget" onClick={onDone} />
-      </div>
+      <NextButton label="Continuer : mon budget" onClick={onDone} />
       <MoreLinks
         links={[{ href: "/voyage-algerie", label: "Cabine, enfants, animaux : la traversée" }]}
       />

@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { ChevronDown, Map as MapIcon, Navigation } from "lucide-react";
+import { Check, ChevronDown } from "lucide-react";
 import { isTowardsSouth } from "@/lib/ferry/markets";
 import {
   companiesQuery,
@@ -89,13 +89,11 @@ export function RouteTop3({
   adults,
   children,
   onPickPorts,
-  onMore,
 }: {
   plan: CompanionPlan;
   adults: number;
   children: number;
   onPickPorts: (fromPortId: string, toPortId: string) => void;
-  onMore: () => void;
 }) {
   const { data: ports = [] } = useQuery(portsQuery);
   const { data: routes = [] } = useQuery(routesQuery);
@@ -232,16 +230,11 @@ export function RouteTop3({
   ]);
   const [openId, setOpenId] = useState<string | null>(null);
 
-  if (!plan.home)
-    return (
-      <p className="mt-6 rounded-xl bg-secondary/50 p-3 text-sm text-muted-foreground">
-        Indiquez d'où vous partez pour voir vos trajets porte à porte.
-      </p>
-    );
+  if (!plan.home) return null;
   if (!destinationPoint)
     return (
-      <p className="mt-6 rounded-xl bg-secondary/50 p-3 text-sm text-muted-foreground">
-        Choisissez votre port d'arrivée (ou votre ville au bled) pour voir vos trajets porte à
+      <p className="bw-route__empty">
+        Ajoutez votre ville au bled, ou choisissez un port d'arrivée, pour voir vos trajets porte à
         porte.
       </p>
     );
@@ -249,25 +242,22 @@ export function RouteTop3({
   const monthLabel = new Intl.DateTimeFormat("fr-FR", { month: "long", year: "numeric" }).format(
     new Date(`${plan.month}-15T12:00:00Z`),
   );
-  const shownId = openId ?? top[0]?.option.sailing.departure.id ?? null;
+  const estimated = top.some(({ option }) => option.sailing.isSimulation);
 
   return (
-    <section aria-labelledby="top3-title" className="mt-6">
-      <h3 id="top3-title" className="font-display text-lg font-bold">
-        Notre sélection depuis {plan.home.name}
+    <section aria-labelledby="top3-title" className="bw-route__top">
+      <h3 id="top3-title" className="bw-route__h">
+        {top.length > 1 ? `Vos ${top.length} meilleurs trajets` : "Votre trajet"}
+        <span>porte à porte · {monthLabel}</span>
       </h3>
-      <p className="mt-1 text-sm text-muted-foreground">
-        Les ports les plus adaptés pour aller jusqu'à {destinationLabel}, chacun avec son atout.
-        Touchez-en un pour voir le voyage heure par heure.
-      </p>
       {road.isPending ? (
-        <ol className="mt-3 grid gap-2" aria-busy="true">
+        <ol className="grid gap-2" aria-busy="true">
           {[0, 1, 2].map((index) => (
-            <li key={index} className="h-16 animate-pulse rounded-2xl bg-secondary/60" />
+            <li key={index} className="h-[104px] animate-pulse rounded-2xl bg-secondary/60" />
           ))}
         </ol>
       ) : road.isError ? (
-        <p className="mt-3 rounded-xl bg-secondary p-3 text-sm">
+        <p className="bw-route__empty">
           Le calcul de la route n'a pas abouti.{" "}
           <button
             type="button"
@@ -278,18 +268,17 @@ export function RouteTop3({
           </button>
         </p>
       ) : !top.length ? (
-        <p className="mt-3 rounded-xl bg-secondary p-3 text-sm">
+        <p className="bw-route__empty">
           Aucune traversée atteignable sur cette période. Voyez les autres dates sur la carte.
         </p>
       ) : (
-        <ol className="mt-3 grid gap-2">
-          {top.map(({ option, assets }, rank) => (
+        <ol className="grid gap-2">
+          {top.map(({ option, assets }) => (
             <RouteCard
               key={option.sailing.departure.id}
               option={option}
               assets={assets}
-              rank={rank}
-              open={option.sailing.departure.id === shownId}
+              open={option.sailing.departure.id === openId}
               chosen={
                 option.sailing.from.id === plan.fromPortId && option.sailing.to.id === plan.toPortId
               }
@@ -297,7 +286,7 @@ export function RouteTop3({
               destination={road.data?.destination ?? destinationLabel}
               onToggle={() =>
                 setOpenId(
-                  option.sailing.departure.id === shownId ? "none" : option.sailing.departure.id,
+                  option.sailing.departure.id === openId ? null : option.sailing.departure.id,
                 )
               }
               onPick={() => onPickPorts(option.sailing.from.id, option.sailing.to.id)}
@@ -305,17 +294,11 @@ export function RouteTop3({
           ))}
         </ol>
       )}
-      <button
-        type="button"
-        onClick={onMore}
-        className="mt-3 inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-xl border-2 border-primary px-4 text-sm font-bold text-primary hover:bg-primary/5"
-      >
-        <MapIcon size={16} aria-hidden /> Voir plus : la simulation sur la carte
-      </button>
-      <p className="mt-2 text-xs text-muted-foreground">
-        La carte s'ouvre avec votre départ, votre arrivée et votre période déjà remplis : autres
-        dates, péages, carburant et la route animée.
-      </p>
+      {estimated ? (
+        <p className="bw-route__note">
+          Horaires pas encore publiés pour cette période : heures et durées estimées.
+        </p>
+      ) : null}
     </section>
   );
 }
@@ -323,7 +306,6 @@ export function RouteTop3({
 function RouteCard({
   option,
   assets,
-  rank,
   open,
   chosen,
   monthLabel,
@@ -333,7 +315,6 @@ function RouteCard({
 }: {
   option: ItineraryOption;
   assets: Asset[];
-  rank: number;
   open: boolean;
   chosen: boolean;
   monthLabel: string;
@@ -394,122 +375,95 @@ function RouteCard({
       text: destination,
     },
   ];
+  // Les trois portions à l'échelle : on voit d'un coup d'œil où passe le temps.
+  const legs = [
+    {
+      kind: "road",
+      icon: "🚗",
+      time: option.originRoad.durationMin,
+      sub: `${Math.round(option.originRoad.distanceKm)} km`,
+    },
+    { kind: "sea", icon: "⛴️", time: option.sailing.durationMin ?? 0, sub: "en mer" },
+    {
+      kind: "road",
+      icon: "🚗",
+      time: option.destinationRoad.durationMin,
+      sub: `${Math.round(option.destinationRoad.distanceKm)} km`,
+    },
+  ];
+  const sum = legs.reduce((total, leg) => total + leg.time, 0) || 1;
   return (
-    <li
-      className={`rounded-2xl border bg-background shadow-sm ${open ? "border-primary ring-2 ring-primary/15" : rank === 0 ? "border-primary/60" : ""}`}
-    >
-      <button
-        type="button"
-        aria-expanded={open}
-        onClick={onToggle}
-        className="block w-full p-3 text-left"
-      >
-        <span className="flex items-center gap-3">
+    <li className="bw-rcard" data-chosen={chosen || undefined} data-open={open || undefined}>
+      <button type="button" aria-pressed={chosen} onClick={onPick} className="bw-rcard__main">
+        <span className="bw-rcard__head">
+          <span className="bw-rcard__pick" aria-hidden>
+            {chosen ? <Check size={13} strokeWidth={3.5} /> : null}
+          </span>
           <span className="min-w-0 flex-1">
-            <span className="mb-1 flex flex-wrap gap-1">
+            <span className="bw-rcard__badges">
               {assets.map((asset) => (
-                <span
-                  key={asset}
-                  className={`rounded-lg px-2 py-0.5 text-[11px] font-bold leading-tight ${
-                    asset === "balance"
-                      ? "bg-primary text-primary-foreground"
-                      : "bg-primary/10 text-primary"
-                  }`}
-                >
+                <span key={asset} data-asset={asset}>
                   {assetLabels[asset]}
                 </span>
               ))}
             </span>
-            <strong className="block truncate text-[15px] leading-tight">
+            <strong className="bw-rcard__name">
               {option.sailing.from.name} → {option.sailing.to.name}
             </strong>
           </span>
-          <span className="shrink-0 self-start text-right">
-            <strong className="block text-[15px] tabular-nums">
-              {formatDuration(option.totalMinutes)}
-            </strong>
-            <span className="block text-[10px] text-muted-foreground">porte à porte</span>
+          <span className="bw-rcard__total">
+            <strong>{formatDuration(option.totalMinutes)}</strong>
+            <span>porte à porte</span>
           </span>
-          <ChevronDown
-            size={16}
-            aria-hidden
-            className={`shrink-0 text-muted-foreground transition-transform ${open ? "rotate-180" : ""}`}
-          />
         </span>
-        {/* Les trois portions du voyage, chacune avec sa durée. */}
-        <span className="mt-2.5 grid grid-cols-3 gap-1.5">
-          {[
-            {
-              icon: "🚗",
-              time: option.originRoad.durationMin,
-              text: `${Math.round(option.originRoad.distanceKm)} km jusqu'à ${option.sailing.from.name}`,
-            },
-            { icon: "⛴️", time: option.sailing.durationMin ?? 0, text: "de traversée" },
-            {
-              icon: "🚗",
-              time: option.destinationRoad.durationMin,
-              text: `${Math.round(option.destinationRoad.distanceKm)} km jusqu'à ${destination}`,
-            },
-          ].map((leg, index) => (
-            <span
+        <span className="bw-rcard__bar" aria-hidden>
+          {legs.map((leg, index) => (
+            <i
               key={index}
-              className={`min-w-0 rounded-lg px-2 py-1.5 ${index === 1 ? "bg-[#e6f0f7]" : "bg-secondary/70"}`}
-            >
-              <span className="flex items-center gap-1 whitespace-nowrap text-sm font-bold tabular-nums">
+              data-kind={leg.kind}
+              style={{ flexGrow: Math.max(leg.time / sum, 0.08) }}
+            />
+          ))}
+        </span>
+        <span className="bw-rcard__legs">
+          {legs.map((leg, index) => (
+            <span key={index} data-kind={leg.kind}>
+              <b>
                 <span aria-hidden>{leg.icon}</span> {formatDuration(leg.time)}
-              </span>
-              <span className="mt-0.5 block text-[11px] leading-tight text-muted-foreground">
-                {leg.text}
-              </span>
+              </b>
+              <small>{leg.sub}</small>
             </span>
           ))}
         </span>
-        {simulated ? (
-          <span className="mt-1 block text-[11px] text-muted-foreground">
-            Horaires pas encore publiés : heures estimées.
-          </span>
-        ) : null}
+      </button>
+      <button
+        type="button"
+        aria-expanded={open}
+        onClick={onToggle}
+        className="bw-rcard__more"
+      >
+        {open ? "Masquer le détail" : "Heure par heure"}
+        <ChevronDown
+          size={14}
+          aria-hidden
+          className={`transition-transform ${open ? "rotate-180" : ""}`}
+        />
       </button>
       {open ? (
-        <div className="border-t px-3 pb-3 pt-3">
-          <ol className="relative grid gap-3 before:absolute before:bottom-3 before:left-[13px] before:top-3 before:w-px before:bg-border before:content-['']">
-            {steps.map((step) => (
-              <li key={step.title} className="relative grid grid-cols-[28px_minmax(0,1fr)] gap-2">
-                <span
-                  className="z-[1] grid size-7 place-items-center rounded-full border bg-background text-sm"
-                  aria-hidden
-                >
-                  {step.icon}
+        <ol className="bw-rcard__steps">
+          {steps.map((step) => (
+            <li key={step.title}>
+              <span aria-hidden>{step.icon}</span>
+              <span className="min-w-0">
+                <span className="flex flex-wrap items-baseline justify-between gap-x-2">
+                  <strong>{step.title}</strong>
+                  <em>{step.at}</em>
                 </span>
-                <span className="min-w-0">
-                  <span className="flex flex-wrap items-baseline justify-between gap-x-2">
-                    <strong className="text-xs">{step.title}</strong>
-                    <span className="text-[11px] font-bold tabular-nums text-primary">
-                      {step.at}
-                    </span>
-                  </span>
-                  <span className="block text-[11px] leading-snug text-muted-foreground">
-                    {step.text}
-                  </span>
-                </span>
-              </li>
-            ))}
-          </ol>
-          {chosen ? (
-            <p className="mt-3 text-center text-xs font-semibold text-primary">
-              Ce sont vos ports choisis.
-            </p>
-          ) : (
-            <button
-              type="button"
-              onClick={onPick}
-              className="mt-3 inline-flex min-h-10 w-full items-center justify-center gap-2 rounded-xl bg-primary px-4 text-sm font-bold text-primary-foreground"
-            >
-              <Navigation size={15} aria-hidden /> Choisir {option.sailing.from.name} →{" "}
-              {option.sailing.to.name}
-            </button>
-          )}
-        </div>
+                <small>{step.text}</small>
+              </span>
+            </li>
+          ))}
+        </ol>
       ) : null}
     </li>
   );

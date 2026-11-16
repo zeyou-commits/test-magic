@@ -2614,6 +2614,47 @@ function todoSummary(todo: TodoRow[], plan: CompanionPlan) {
   return `${todo.length} action${todo.length > 1 ? "s" : ""} à faire · la prochaine ${lowerFirst(milestoneLead(todo[0]!.m, plan))}`;
 }
 
+/** Le degré d'urgence d'une action : en retard, bientôt (sous 15 jours ou à lancer), plus tard. */
+type Urgency = "late" | "soon" | "later";
+function urgencyOf(m: Milestone): Urgency {
+  if (m.late) return "late";
+  if (m.lead === "after") return "later";
+  const soon = new Date(Date.now() + 14 * 86_400_000).toISOString().slice(0, 10);
+  if (m.tight || m.lead === "now" || m.date <= soon) return "soon";
+  return "later";
+}
+const urgencyText: Record<Urgency, string> = {
+  late: "Urgent",
+  soon: "Bientôt",
+  later: "Plus tard",
+};
+const urgencyRank: Record<Urgency, number> = { late: 0, soon: 1, later: 2 };
+
+/** Les familles d'actions, dans l'ordre du voyage. */
+type TodoGroupId = "papers" | "book" | "bags";
+const todoGroups: { id: TodoGroupId; title: string; icon: LucideIcon; why: string }[] = [
+  {
+    id: "papers",
+    title: "Papiers",
+    icon: stepArt.papers.icon,
+    why: "Les démarches de « Mes papiers », datées à partir de votre départ.",
+  },
+  {
+    id: "book",
+    title: "Traversée",
+    icon: stepArt.book.icon,
+    why: "La réservation vient après les démarches longues : un papier refusé ne rembourse pas un billet.",
+  },
+  {
+    id: "bags",
+    title: "Avant de partir",
+    icon: ListChecks,
+    why: "Ce qui se fait la dernière semaine : en ligne, puis la pochette du port.",
+  },
+];
+const groupOf = (row: TodoRow): TodoGroupId =>
+  row.m.id === "book" ? "book" : row.m.id === "bags" ? "bags" : "papers";
+
 function PlanTodo({
   plan,
   papers,
@@ -2623,10 +2664,24 @@ function PlanTodo({
   papers: PapersState;
   onOpenStep: (step: CompanionStep) => void;
 }) {
-  const [calendar, setCalendar] = useState(false);
-  const [more, setMore] = useState(false);
+  const [view, setView] = useState<"list" | "calendar">("list");
   const { list, todo, done, know } = usePlanTodo(plan, papers);
-  const shown = more ? todo : todo.slice(0, 4);
+  const groups = todoGroups
+    .map((group) => {
+      const rows = todo.filter((row) => groupOf(row) === group.id);
+      const worst = rows.reduce<Urgency>(
+        (acc, row) => (urgencyRank[urgencyOf(row.m)] < urgencyRank[acc] ? urgencyOf(row.m) : acc),
+        "later",
+      );
+      return { ...group, rows, worst };
+    })
+    .filter((group) => group.rows.length);
+  // Ouvert d'office : ce qui presse ; à défaut, la première famille.
+  const pressing = groups.filter((group) => group.worst !== "later").map((group) => group.id);
+  const [openGroups, setOpenGroups] = useState<TodoGroupId[] | null>(null);
+  const opened = openGroups ?? (pressing.length ? pressing : groups.slice(0, 1).map((g) => g.id));
+  const flip = (id: TodoGroupId) =>
+    setOpenGroups(opened.includes(id) ? opened.filter((g) => g !== id) : [...opened, id]);
   const toggle = (row: TodoRow) =>
     papers.setDone((current) =>
       row.done
@@ -2635,34 +2690,76 @@ function PlanTodo({
     );
   return (
     <section aria-labelledby="a-faire" className="mt-4 rounded-2xl border bg-card p-4 md:p-5">
-      <h2 id="a-faire" className="flex items-center gap-2 font-display text-lg font-bold">
-        <ListChecks size={19} className="text-primary" aria-hidden /> À faire
-      </h2>
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <h2 id="a-faire" className="flex items-center gap-2 font-display text-lg font-bold">
+          <ListChecks size={19} className="text-primary" aria-hidden /> À faire
+        </h2>
+        <div className="bw-todo-switch" role="group" aria-label="Affichage">
+          <button type="button" aria-pressed={view === "list"} onClick={() => setView("list")}>
+            <ListChecks size={14} aria-hidden /> Par étape
+          </button>
+          <button
+            type="button"
+            aria-pressed={view === "calendar"}
+            onClick={() => setView("calendar")}
+          >
+            <CalendarDays size={14} aria-hidden /> Calendrier
+          </button>
+        </div>
+      </div>
       <p className="mt-0.5 text-sm text-muted-foreground">{todoSummary(todo, plan)}</p>
-      {todo.length ? (
-        <ul className="mt-3 grid gap-2">
-          {shown.map((row) => (
-            <TodoItem
-              key={row.key}
-              row={row}
-              plan={plan}
-              onToggle={toggle}
-              onOpenStep={onOpenStep}
-            />
-          ))}
-        </ul>
+      {view === "calendar" ? (
+        <FullCalendar list={list} plan={plan} doneIds={papers.done} />
       ) : null}
-      {todo.length > 4 ? (
-        <button
-          type="button"
-          onClick={() => setMore(!more)}
-          aria-expanded={more}
-          className="mt-2 text-sm font-semibold text-primary underline underline-offset-4"
-        >
-          {more ? "Moins d'actions" : `Voir les ${todo.length - 4} autres actions`}
-        </button>
+      {view === "list" && groups.length ? (
+        <div className="mt-3 grid gap-2">
+          {groups.map((group) => {
+            const isOpen = opened.includes(group.id);
+            const Icon = group.icon;
+            return (
+              <div key={group.id} className="bw-todo-group" data-urgency={group.worst}>
+                <button
+                  type="button"
+                  className="bw-todo-group__head"
+                  aria-expanded={isOpen}
+                  onClick={() => flip(group.id)}
+                >
+                  <span className="bw-todo-group__icon" aria-hidden>
+                    <Icon size={17} />
+                  </span>
+                  <span className="min-w-0 flex-1 text-left">
+                    <strong>{group.title}</strong>
+                    <small>
+                      {group.rows.length} action{group.rows.length > 1 ? "s" : ""}
+                    </small>
+                  </span>
+                  <span className="bw-urgency" data-urgency={group.worst}>
+                    {urgencyText[group.worst]}
+                  </span>
+                  <ChevronDown size={17} aria-hidden className="bw-todo-group__chev" />
+                </button>
+                {isOpen ? (
+                  <div className="bw-todo-group__body">
+                    <p className="text-xs text-muted-foreground">{group.why}</p>
+                    <ul className="mt-2 grid gap-2">
+                      {group.rows.map((row) => (
+                        <TodoItem
+                          key={row.key}
+                          row={row}
+                          plan={plan}
+                          onToggle={toggle}
+                          onOpenStep={onOpenStep}
+                        />
+                      ))}
+                    </ul>
+                  </div>
+                ) : null}
+              </div>
+            );
+          })}
+        </div>
       ) : null}
-      {done.length ? (
+      {view === "list" && done.length ? (
         <details className="group mt-3">
           <summary className="inline-flex cursor-pointer list-none items-center gap-1 text-sm font-semibold text-muted-foreground [&::-webkit-details-marker]:hidden">
             {done.length} faite{done.length > 1 ? "s" : ""}
@@ -2697,16 +2794,6 @@ function PlanTodo({
           ))}
         </div>
       ) : null}
-      <button
-        type="button"
-        onClick={() => setCalendar(!calendar)}
-        aria-expanded={calendar}
-        className="mt-4 inline-flex items-center gap-1.5 text-sm font-semibold text-primary underline underline-offset-4"
-      >
-        <CalendarDays size={15} aria-hidden />
-        {calendar ? "Masquer le calendrier complet" : "Voir le calendrier complet"}
-      </button>
-      {calendar ? <FullCalendar list={list} plan={plan} doneIds={papers.done} /> : null}
     </section>
   );
 }
@@ -2746,15 +2833,19 @@ function TodoItem({
 }) {
   const [why, setWhy] = useState(false);
   const { m } = row;
+  const urgency = urgencyOf(m);
   const tone = row.done
     ? "text-muted-foreground"
-    : m.late
+    : urgency === "late"
       ? "text-[#c95038]"
-      : m.tight
+      : urgency === "soon"
         ? "text-[#b7791f]"
         : "text-primary";
   return (
-    <li className="rounded-xl border bg-background px-3 py-2.5">
+    <li
+      className="bw-todo-item rounded-xl border bg-background px-3 py-2.5"
+      data-urgency={row.done ? undefined : urgency}
+    >
       <div className="flex items-start gap-3">
         {row.step ? (
           <span
@@ -2831,7 +2922,7 @@ function FullCalendar({
   doneIds: string[];
 }) {
   return (
-    <ol className="mt-3 grid gap-4 border-l-2 border-primary/20 pl-4">
+    <ol className="bw-fullcal mt-3 grid gap-4 border-l-2 border-primary/20 pl-4">
       {list.map((m) => (
         <li key={m.id} className="relative">
           <span

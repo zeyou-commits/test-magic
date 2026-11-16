@@ -24,7 +24,7 @@ export const avatarKinds: Record<AvatarKind, string> = {
   other: "Ajoutés par l'équipe",
 };
 
-/** Sans le script : les 15 personnages d'avant, comme aujourd'hui. */
+/** Sans le script : les 14 personnages (la 504 est réservée à la mascotte). */
 const fallback: AvatarRow[] = personas.map((persona, index) => ({
   id: persona.id,
   label: persona.name,

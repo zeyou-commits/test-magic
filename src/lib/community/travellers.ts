@@ -5,11 +5,13 @@ import { supabase as typedSupabase } from "@/integrations/supabase/client";
 // Fonctions de la communauté pas encore présentes dans les types générés.
 const db = typedSupabase as unknown as SupabaseClient;
 
-/** Les nouveaux avatars d'abord, puis les 12 cabas personnages (banque BledWay). */
+/**
+ * Les nouveaux avatars d'abord, puis les 12 cabas personnages (banque BledWay). La 504 n'en fait
+ * plus partie : c'est la mascotte du site, un voyageur ne prend pas son visage (17/11/2026).
+ */
 export const personas = [
   { id: "jeune_degrade", name: "Le dégradé" },
   { id: "fille_bled", name: "La fille du bled" },
-  { id: "voiture_504", name: "La 504" },
   { id: "jeddi", name: "Jeddi" },
   { id: "jedda", name: "Jedda" },
   { id: "papa", name: "Papa" },

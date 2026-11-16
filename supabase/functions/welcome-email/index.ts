@@ -2,6 +2,7 @@
 // e-mail : au clic sur le lien de confirmation). Déclenché par la base (pg_net), secret des tâches
 // planifiées. Envoi par Resend depuis contact@bledway.com (domaine vérifié chez Resend).
 // Secrets Supabase requis : RESEND_API_KEY.
+// Voix : la 504 parle au tu, comme dans ses bulles sur le site (décision du 17/11/2026).
 import { createClient, type SupabaseClient } from "npm:@supabase/supabase-js@2";
 
 declare const Deno: {
@@ -37,26 +38,31 @@ function welcomeHtml(name: string) {
       </td></tr>
       <tr><td style="padding:26px 24px 8px">
         <h1 style="margin:0 0 10px;font:800 24px/1.25 Arial,sans-serif;color:#0d3b4f">${hello}</h1>
-        <p style="margin:0;font:15px/1.6 Arial,sans-serif;color:#1f2a37">
-          Votre compte BledWay est prêt. Du choix de votre ferry jusqu’à l’arrivée au port, voici comment
-          BledWay vous accompagne pour traverser la Méditerranée sans mauvaise surprise :
-        </p>
+        <table role="presentation" cellpadding="0" cellspacing="0"><tr>
+          <td style="vertical-align:middle;padding-right:12px">
+            <img src="${SITE}/email/voiture_504.png" width="72" height="72" alt="" style="display:block"/>
+          </td>
+          <td style="vertical-align:middle;font:15px/1.6 Arial,sans-serif;color:#1f2a37">
+            Moi, c’est la 504. Ton compte BledWay est prêt : du choix du ferry jusqu’à l’arrivée au port,
+            voici comment on fait la route ensemble, sans mauvaise surprise.
+          </td>
+        </tr></table>
         <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-top:12px">
-          ${step(1, "Avant de partir : trouvez et réservez", "Comparez les départs et les prix indicatifs de chaque compagnie, puis réservez directement chez elle depuis BledWay.", "/horaires", "Voir les départs")}
-          ${step(2, "Une fois réservé : suivez et préparez", "Touchez le cœur sur votre traversée et acceptez les notifications : retards, reports et changements de navire vous arrivent directement. Cochez au fur et à mesure vos papiers, la voiture et les bagages.")}
-          ${step(3, "Le jour J : signalez", "File au port, attente à l’embarquement, retard au départ : partagez en un geste ce que vous voyez sur place, et profitez de ce que signalent les autres voyageurs.")}
-          ${step(4, "À bord : le salon de votre traversée", "Échangez avec ceux qui font la même traversée : état de la mer, ambiance à bord, heure d’arrivée.")}
+          ${step(1, "Avant de partir : trouve et réserve", "Compare les départs et les prix indicatifs de chaque compagnie, puis réserve directement chez elle depuis BledWay.", "/horaires", "Voir les départs")}
+          ${step(2, "Une fois réservé : suis et prépare", "Touche le cœur sur ta traversée et accepte les notifications : je te préviens des retards, reports et changements de navire signalés. Coche au fur et à mesure tes papiers, la voiture et les bagages.")}
+          ${step(3, "Le jour J : signale", "File au port, attente à l’embarquement, retard au départ : partage en un geste ce que tu vois sur place, et profite de ce que signalent les autres voyageurs.")}
+          ${step(4, "À bord : le salon de ta traversée", "Échange avec ceux qui font la même traversée : état de la mer, ambiance à bord, heure d’arrivée.")}
         </table>
       </td></tr>
       <tr><td align="center" style="padding:14px 24px 28px">
         <a href="${SITE}/horaires" style="display:inline-block;background:#0e6b3b;color:#ffffff;text-decoration:none;font:700 16px Arial,sans-serif;padding:14px 26px;border-radius:999px">Trouver ma traversée</a>
         <div style="margin-top:14px;font:14px Arial,sans-serif;color:#1f2a37">
-          Déjà réservé ? <a href="${SITE}/" style="color:#0e6b3b;font-weight:700">Suivez votre traversée sur la carte</a>
+          Déjà réservé ? <a href="${SITE}/" style="color:#0e6b3b;font-weight:700">Suis ta traversée sur la carte</a>
         </div>
       </td></tr>
       <tr><td style="padding:16px 24px;background:#f7f5ef;font:12px/1.5 Arial,sans-serif;color:#6b7280">
-        Vous recevez ce message une seule fois, parce que vous venez de créer un compte sur
-        <a href="${SITE}" style="color:#0e6b3b">bledway.com</a>. Bonne route, et à bientôt sur le bateau !
+        Tu reçois ce message une seule fois, parce que tu viens de créer un compte sur
+        <a href="${SITE}" style="color:#0e6b3b">bledway.com</a>. Bonne route, et à bientôt sur le navire !
       </td></tr>
     </table>
   </td></tr></table></body></html>`;

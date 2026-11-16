@@ -74,10 +74,9 @@ function readable(file: string) {
 export const illustrationSlots: IllustrationSlot[] = [
   ...[1, 2, 3, 4, 5, 6].map((n) => slot("avatars", `avatar-${n}`, `Avatar ${n}`)),
   ...Object.entries(STATUTS).map(([file, name]) => slot("statuts", file, name)),
-  // La voiture 504 est aussi l'image du trajet porte à porte : elle ne se remplace pas ici.
-  ...personas
-    .filter((persona) => persona.id !== "voiture_504")
-    .map((persona) => slot("persos", `persos/${persona.id}`, persona.name)),
+  // La voiture 504 (mascotte, image du trajet porte à porte) n'est plus dans « personas » : elle
+  // ne se remplace pas ici.
+  ...personas.map((persona) => slot("persos", `persos/${persona.id}`, persona.name)),
   ...cabasImages
     .filter((src) => src.includes("/humeurs/"))
     .map((src) => {

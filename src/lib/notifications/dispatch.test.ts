@@ -693,7 +693,7 @@ describe("Remerciements", () => {
     expect(notices).toHaveLength(1);
     expect(notices[0]).toMatchObject({
       user_id: "user",
-      body: expect.stringContaining("et 1 autre vous remercient"),
+      body: expect.stringContaining("et 1 autre te remercient"),
     });
     await dispatchPush();
     expect(
@@ -806,7 +806,7 @@ describe("Alertes d'ouverture des ventes", () => {
     expect(sent).toHaveLength(1);
     expect(sent[0]).toMatchObject({
       event_key: "sales-opening:alert:b",
-      title: "Compagnie B a ouvert ses ventes pour vos dates",
+      title: "Compagnie B a ouvert ses ventes pour tes dates",
       url: "/?from=fr&to=dz&date=2030-07-15",
     });
     expect(mock.tables["sales_alerts"]![0]).toMatchObject({ notified_companies: ["b"], closed_at: null });

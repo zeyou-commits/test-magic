@@ -176,11 +176,11 @@ async function notifyFeedback(deliver: Deliver, now: number) {
         category: "community",
         title:
           kind === "confirmed"
-            ? "Votre signalement est confirmé"
-            : "Du nouveau sur votre signalement",
+            ? "Ton signalement est confirmé"
+            : "Du nouveau sur ton signalement",
         body:
           kind === "confirmed"
-            ? `${count} voyageur${count > 1 ? "s ont" : " a"} confirmé votre signalement. Merci !`
+            ? `${count} voyageur${count > 1 ? "s ont" : " a"} confirmé ton signalement. Merci !`
             : `${count} voyageur${count > 1 ? "s indiquent" : " indique"} que ce n'est plus le cas.`,
         url: "/compte#contributions",
       });
@@ -345,7 +345,7 @@ async function notifyFeedback(deliver: Deliver, now: number) {
         await deliver(userId, null, {
           key: `news:${item.id}`,
           category: "reminders",
-          title: "Actualité de votre traversée",
+          title: "Du nouveau sur ta traversée",
           body: item.title,
           url: newsPath(item),
         });
@@ -370,8 +370,8 @@ async function notifyFeedback(deliver: Deliver, now: number) {
       await deliver(request.user_id, null, {
         key: `help-reply:${request.id}`,
         category: "community",
-        title: "Quelqu'un vient vous aider",
-        body: "Un voyageur a répondu à votre demande et se rend au point de rendez-vous.",
+        title: "Quelqu'un vient t'aider",
+        body: "Un voyageur a répondu à ta demande et se rend au point de rendez-vous.",
         url: `/?select=departure&id=${request.scope_id}&help=${request.id}`,
       });
     }
@@ -401,9 +401,9 @@ async function notifyFeedback(deliver: Deliver, now: number) {
         category: "community",
         title:
           request.need === "medical"
-            ? "SOS médical sur votre traversée"
+            ? "SOS médical sur ta traversée"
             : "Un voyageur demande de l'aide",
-        body: `Sur votre traversée : ${HELP_NEEDS[request.need] ?? "besoin d'aide"}. Ouvrez la fiche pour voir le point de rendez-vous.`,
+        body: `Sur ta traversée : ${HELP_NEEDS[request.need] ?? "besoin d'aide"}. Ouvre la fiche pour voir le point de rendez-vous.`,
         url: `/?select=departure&id=${request.scope_id}&help=${request.id}`,
       });
     }
@@ -677,8 +677,8 @@ export async function dispatchPush(
             category: "reminders",
             title: `${from?.name ?? "Départ"} → ${to?.name ?? "arrivée"} · départ dans ${remainingLabel(remaining)}`,
             body: personalTrip
-              ? `Présentation à ${from?.name ?? "votre port"} : ${portTime} en véhicule, ${footTime} à pied${next.presentation_minutes == null ? " (repères indicatifs : 4 h avant en véhicule, 3 h à pied)" : " (consigne renseignée)"}. Vérifiez votre billet et vos préparatifs encore ouverts.`
-              : "Retrouvez les horaires et les changements publiés pour cette traversée.",
+              ? `Présentation à ${from?.name ?? "ton port"} : ${portTime} en véhicule, ${footTime} à pied${next.presentation_minutes == null ? " (repères indicatifs : 4 h avant en véhicule, 3 h à pied)" : " (consigne renseignée)"}. Vérifie ton billet et tes préparatifs encore ouverts.`
+              : "Retrouve les horaires et les changements publiés pour cette traversée.",
             url: `/?select=departure&id=${next.id}`,
           });
         }
@@ -710,13 +710,13 @@ export async function dispatchPush(
               signal.detail === "access_moved"
                 ? `${port!.name} · l’entrée habituelle du port a changé`
                 : `${port!.name} · accès au port fermé ou dévié`,
-            body: `Signalé sur place par un voyageur${late.includes(signal) ? ` ${ago(signal.created_at, now)}` : ""}. Prévoyez de la marge et vérifiez auprès de la compagnie.`,
+            body: `Signalé sur place par un voyageur${late.includes(signal) ? ` ${ago(signal.created_at, now)}` : ""}. Prévois de la marge et vérifie auprès de la compagnie.`,
             url: `/?select=port&id=${port!.id}&signal=${signal.id}`,
           });
       }
       const vesselId = follow.target_kind === "vessel" ? follow.target_id : next?.vessel_id;
       if (!vesselId) continue;
-      const vesselName = vesselById.get(vesselId)?.name ?? "Votre bateau";
+      const vesselName = vesselById.get(vesselId)?.name ?? "Ton navire";
       const vesselSignals = signals.filter(
         (signal) =>
           signal.target_kind === "vessel" &&
@@ -765,8 +765,8 @@ export async function dispatchPush(
             category: "community",
             title: `${vesselName} · ${topic}`,
             body: lateSignals.includes(signal)
-              ? `Signalé par un voyageur ${ago(signal.created_at, now)}, toujours d’actualité. Consultez la fiche et vérifiez auprès de la compagnie.`
-              : "Un voyageur a publié un signalement. Consultez la fiche et vérifiez auprès de la compagnie.",
+              ? `Signalé par un voyageur ${ago(signal.created_at, now)}, toujours d’actualité. Ouvre la fiche et vérifie auprès de la compagnie.`
+              : "Un voyageur a publié un signalement. Ouvre la fiche et vérifie auprès de la compagnie.",
             url: `/?select=vessel&id=${vesselId}&signal=${signal.id}`,
           });
         }
@@ -838,7 +838,7 @@ export async function dispatchPush(
         key: `prepare-deadline:${row.key}:${row.due_day}`,
         category: "reminders",
         title: `Rappel : ${row.title}`,
-        body: `${row.who ? `Pour ${row.who}. ` : ""}La date conseillée est arrivée et la case n'est pas cochée. Déjà fait ? Cochez-la dans « Préparer mon voyage ».`,
+        body: `${row.who ? `Pour ${row.who}. ` : ""}Je te le rappelle : la date conseillée est arrivée et la case n'est pas cochée. Déjà fait ? Coche-la dans « Préparer mon voyage ».`,
         url: "/preparer-mon-voyage#a-faire",
       });
       const marked = await db
@@ -904,8 +904,8 @@ export async function dispatchPush(
         await deliver(alert.user_id, null, {
           key: `sales-opening:${alert.id}:${company.id}`,
           category: "openings",
-          title: `${company.name ?? "La compagnie"} a ouvert ses ventes pour vos dates`,
-          body: `Les traversées ${trip ? `${trip} ` : ""}${dates} sont maintenant publiées par la compagnie, avec leurs vrais horaires. Comparez-les avant que les places partent.`,
+          title: `${company.name ?? "La compagnie"} a ouvert ses ventes pour tes dates`,
+          body: `Les traversées ${trip ? `${trip} ` : ""}${dates} sont maintenant publiées par la compagnie, avec leurs vrais horaires. Compare-les avant que les places partent.`,
           url: context.path?.startsWith("/") && !context.path.startsWith("//") ? context.path : "/",
         });
         notified.push(company.id);
@@ -992,7 +992,7 @@ export async function dispatchPush(
         key: `opening:${watch.id}`,
         category: "openings",
         title: `${from.name} → ${to.name} : les traversées sont publiées`,
-        body: `Des départs sont disponibles en ${month}. Retrouvez votre parcours ${watch.origin_label} → ${watch.destination_label} et comparez les traversées.`,
+        body: `Des départs sont disponibles en ${month}. Retrouve ton parcours ${watch.origin_label} → ${watch.destination_label} et compare les traversées.`,
         url: `/horaires?from=${route.departure_port_id}&to=${route.arrival_port_id}&month=${campaign.period_month.slice(0, 7)}`,
       });
     const updated = await db
@@ -1041,7 +1041,7 @@ export async function dispatchPush(
           key: `opening:${watch.id}`,
           category: "openings",
           title: `${from.name} → ${to.name} : les traversées sont déjà publiées`,
-          body: `Des départs sont disponibles en ${month}. Retrouvez votre parcours ${watch.origin_label} → ${watch.destination_label} et comparez les traversées.`,
+          body: `Des départs sont disponibles en ${month}. Retrouve ton parcours ${watch.origin_label} → ${watch.destination_label} et compare les traversées.`,
           url: `/horaires?from=${route.departure_port_id}&to=${route.arrival_port_id}&month=${String(campaign.period_month).slice(0, 7)}`,
         });
     }
@@ -1109,10 +1109,10 @@ export async function dispatchPush(
         await deliver(author, null, {
           key: `thanks:${author}:${day}`,
           category: "community",
-          title: "Merci pour vos infos ❤",
+          title: "Merci pour tes infos ❤",
           body: others
-            ? `${names[0]} et ${others} autre${others > 1 ? "s" : ""} vous remercient pour votre aide.`
-            : `${names[0]} vous remercie pour votre aide.`,
+            ? `${names[0]} et ${others} autre${others > 1 ? "s" : ""} te remercient pour ton aide.`
+            : `${names[0]} te remercie pour ton aide.`,
           url: "/compte#contributions",
         });
       }

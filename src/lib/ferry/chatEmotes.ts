@@ -92,7 +92,10 @@ const FILE_EMOTES: [string, string][] = [
   ["a_tata_houria", "/cabas/persos/tata_houria.webp"],
   ["a_voiture_504", "/cabas/persos/voiture_504.webp"],
 ];
+// Noms qui ne se déduisent pas du fichier : la mascotte s'appelle « La 504 » partout.
+const LABELS: Record<string, string> = { a_voiture_504: "La 504" };
 const labelOf = (code: string) =>
+  LABELS[code] ??
   code
     .replace(/^[a-z]_(\d+_)?/, "")
     .replace(/_/g, " ")

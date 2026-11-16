@@ -2,6 +2,8 @@
 // « annulation » ou « nouvel horaire ». Les retards ne partent pas par e-mail.
 // Aussi : les rappels d'échéance de « Préparer mon voyage » (modèle « deadline », 14/11/2026) et
 // l'ouverture des ventes d'une compagnie pour les dates d'une alerte (modèle « opening », 16/11/2026).
+// Voix (17/11/2026) : rappels et ouvertures viennent de la 504, au tu ; annulations et nouveaux
+// horaires sont des messages de l'équipe, au vous (les compagnies parleront ainsi à leur tour).
 // Appelée par la base (pg_net) dès que la file bw_alert_emails se remplit, secret des tâches.
 // Envoi par Resend (lots de 100) depuis contact@bledway.com. Secret Supabase requis : RESEND_API_KEY.
 import { createClient, type SupabaseClient } from "npm:@supabase/supabase-js@2";
@@ -49,17 +51,23 @@ function alertHtml(item: Item) {
         : "Nouvel horaire";
   const color = deadline || opening ? "#0e6b3b" : cancel ? "#b42318" : "#b54708";
   const button = opening ? "Voir les traversées" : deadline ? "Voir ma préparation" : "Voir ma traversée";
+  const tu = deadline || opening;
   const why = opening
-    ? "vous avez demandé à être prévenu de l’ouverture des ventes sur"
+    ? "Tu reçois cet e-mail parce que tu as demandé une alerte d’ouverture des ventes sur"
     : deadline
-      ? "vous préparez votre voyage sur"
-      : "vous suivez cette traversée sur";
+      ? "Tu reçois cet e-mail parce que tu prépares ton voyage sur"
+      : "Vous recevez cet e-mail parce que vous suivez cette traversée sur";
   const stop = opening
-    ? "Pour ne plus recevoir ces alertes, coupez « Ouverture des traversées » dans Mon compte, rubrique Notifications."
+    ? "Pour ne plus recevoir ces alertes, coupe « Ouverture des traversées » dans Mon compte, rubrique Notifications."
     : deadline
-      ? "Pour ne plus recevoir ces rappels, coupez « Rappels » dans Mon compte, rubrique Notifications."
+      ? "Pour ne plus recevoir ces rappels, coupe « Rappels » dans Mon compte, rubrique Notifications."
       : "Pour ne plus être prévenu, retirez le suivi de la traversée depuis votre espace.";
-  const hello = item.name ? `Bonjour ${escape(item.name)},` : "Bonjour,";
+  const confirm = tu
+    ? "confirme toujours auprès de la compagnie ou du consulat."
+    : "confirmez toujours auprès de la compagnie ou du consulat.";
+  const hello = tu
+    ? item.name ? `Salam ${escape(item.name)} !` : "Salam !"
+    : item.name ? `Bonjour ${escape(item.name)},` : "Bonjour,";
   return `<!doctype html><html lang="fr"><body style="margin:0;background:#f4f1ea">
   <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f4f1ea;padding:24px 12px">
   <tr><td align="center">
@@ -78,9 +86,9 @@ function alertHtml(item: Item) {
         <a href="${link(item.url)}" style="display:inline-block;background:#0e6b3b;color:#ffffff;text-decoration:none;font:700 16px Arial,sans-serif;padding:14px 26px;border-radius:999px">${button}</a>
       </td></tr>
       <tr><td style="padding:16px 24px;background:#f7f5ef;font:12px/1.5 Arial,sans-serif;color:#6b7280">
-        Vous recevez cet e-mail parce que ${why}
+        ${why}
         <a href="${SITE}" style="color:#0e6b3b">bledway.com</a>. BledWay est un service d’information
-        indépendant : confirmez toujours auprès de la compagnie ou du consulat. ${stop}
+        indépendant : ${confirm} ${stop}
       </td></tr>
     </table>
   </td></tr></table></body></html>`;
@@ -93,7 +101,8 @@ function alertText(item: Item) {
       : item.template === "deadline"
         ? "Voir ma préparation"
         : "Voir ma traversée";
-  return `${item.title}\n\n${item.body}\n\n${label} : ${link(item.url)}\n\nBledWay est un service d’information indépendant : confirmez toujours auprès de la compagnie.`;
+  const confirm = item.template === "opening" || item.template === "deadline" ? "confirme" : "confirmez";
+  return `${item.title}\n\n${item.body}\n\n${label} : ${link(item.url)}\n\nBledWay est un service d’information indépendant : ${confirm} toujours auprès de la compagnie.`;
 }
 
 Deno.serve(async (request) => {

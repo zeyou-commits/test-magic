@@ -202,6 +202,10 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
         rel: "stylesheet",
         href: appCss,
       },
+      // Google choisit parmi les icônes déclarées et préfère les grandes : la pastille bleue existe donc
+      // aussi en 192 et 512 px, à côté de l'icône iPhone crème. Les onglets gardent le favicon de 64 px.
+      { rel: "icon", href: "/favicon-512.png?v=504p", type: "image/png", sizes: "512x512" },
+      { rel: "icon", href: "/favicon-192.png?v=504p", type: "image/png", sizes: "192x192" },
       { rel: "icon", href: "/favicon.ico?v=504p", type: "image/x-icon", sizes: "any" },
       { rel: "icon", href: "/favicon-64.png?v=504p", type: "image/png", sizes: "64x64" },
       { rel: "manifest", href: "/manifest.webmanifest" },

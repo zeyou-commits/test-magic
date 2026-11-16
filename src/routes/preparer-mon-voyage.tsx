@@ -1987,7 +1987,7 @@ function WhenQuestion({
   return (
     <Question
       title="Quand souhaitez-vous partir ?"
-      hint="Touchez votre jour d'aller, puis votre retour. Les points verts : des départs déjà publiés."
+      hint="L'aller, puis le retour. Point vert : un départ déjà publié."
     >
       {/* Sur ordinateur, le calendrier garde la taille de celui de « Réserver ». */}
       <div className="md:max-w-[420px]">
@@ -2060,6 +2060,13 @@ function WhenQuestion({
             : "."}
         </span>
       </p>
+      <div className="mt-4">
+        <Bw504Note title="Pourquoi la date d'abord ?">
+          Tout part de là : je compte à rebours vos démarches (un visa demande plusieurs semaines),
+          je vous montre les départs publiés pour ces jours-là et je vous préviens en haute saison,
+          quand les places et les rendez-vous partent vite.
+        </Bw504Note>
+      </div>
     </Question>
   );
 }

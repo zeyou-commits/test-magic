@@ -4015,6 +4015,14 @@ body:has(.bw-home--app) {
   font-size: 0.85rem;
 }
 .bw-onepage__sharebox small { color: #b42318; }
+/* Rien ne dépasse de la case, même avec une grande police sur téléphone. */
+.bw-onepage__sharebox { grid-template-columns: minmax(0, 1fr); }
+.bw-onepage__sharebox > * { min-width: 0; }
+.bw-onepage__sharebox small.bw-onepage__sharehint { display: block; color: #5d6b66; font-weight: 500; font-size: 0.85rem; }
+.bw-onepage__sharerow { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+.bw-onepage__sharerow input { flex: 1 1 12rem; width: 0; }
+.bw-onepage__sharerow .bw-onepage__btn { flex: 0 0 auto; justify-content: center; }
+@media (max-width: 380px) { .bw-onepage__sharerow .bw-onepage__btn { flex: 1 1 100%; } }
 .bw-onepage__score small + small { display: block; margin-top: 0.15rem; opacity: 0.8; }
 @media print { .bw-onepage__sharebox { display: none !important; } }
 
@@ -4024,3 +4032,10 @@ body:has(.bw-home--app) {
 .bw-onepage__consulat svg { display: inline; vertical-align: -2px; margin-right: 0.25rem; }
 .bw-onepage__score small { white-space: nowrap; }
 .bw-onepage__score { flex-shrink: 0; }
+
+/* Téléphone : le logo au-dessus, le titre sur toute la largeur, le compteur à droite. */
+@media screen and (max-width: 520px) {
+  .bw-onepage__head { display: grid; grid-template-columns: minmax(0, 1fr) auto; row-gap: 0.6rem; }
+  .bw-onepage__head .bw-onepage__logo { grid-column: 1 / -1; height: 2rem; }
+  .bw-onepage__head h1 { overflow-wrap: anywhere; }
+}

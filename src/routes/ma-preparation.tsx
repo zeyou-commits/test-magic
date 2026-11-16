@@ -228,9 +228,13 @@ function SharePanel({ prep, title }: { prep: SharedPreparation; title: string })
   return (
     <form className="bw-onepage__sharebox" onSubmit={submit}>
       <label htmlFor="share-emails">
-        <Lock size={15} aria-hidden /> Partager avec (seules ces adresses pourront l'ouvrir)
+        <Lock size={15} className="shrink-0" aria-hidden />
+        <span>
+          Partager avec
+          <small className="bw-onepage__sharehint">Seules ces adresses pourront l'ouvrir</small>
+        </span>
       </label>
-      <span className="flex gap-2">
+      <span className="bw-onepage__sharerow">
         <input
           id="share-emails"
           type="text"

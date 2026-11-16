@@ -325,7 +325,7 @@ export const companionStepTitles: Record<CompanionStep, string> = {
   profile: "Mon départ en 3 questions",
   papers: "Mes papiers",
   car: "Ma voiture",
-  route: "Ma route jusqu'au port",
+  route: "Ma route jusqu'à destination",
   budget: "Mon budget",
   book: "Réserver ma traversée",
 };

@@ -1251,3 +1251,12 @@
 @media (min-width: 900px) and (min-height: 600px) {
   .bw-chapbreak h1 { font-size: 2.3rem; }
 }
+
+/* Grande police ou petit écran : le milieu défile, il ne passe jamais sous le bouton. */
+.bw-prepintro__body { overflow-y: auto; overscroll-behavior: contain; }
+.bw-prepintro__foot { position: relative; z-index: 1; }
+@media (max-width: 899px) {
+  .bw-chapbreak .bw-prepintro__lead { display: none; }
+  .bw-chapbreak .bw-prepintro__steps { gap: 10px; }
+  .bw-chapbreak .bw-prepintro__steps > li[data-state="done"] b { font-size: 0.95rem; }
+}

@@ -1595,33 +1595,34 @@ export default function FerryMap({
     if (placeChoicesRef.current) map.off("moveend", placeChoicesRef.current);
     placeChoicesRef.current = null;
     if (itineraryPreview?.choices?.length) {
-      // Une bulle par trajet, posée sur SA traversée : « 🥈 Alicante → Oran » puis « 34 h 25 · 808 € »,
-      // pointe vers le tracé. Le trajet choisi d'abord, puis le podium, puis les autres.
+      // Une pastille numérotée par trajet du podium (1, 2, 3, comme la liste), posée sur SA traversée.
+      // Seul le trajet choisi déplie sa ligne et sa durée : le détail vit dans le volet, pas sur la carte.
       const ordered = [...itineraryPreview.choices].sort(
         (a, b) => (a.priority ?? 99) - (b.priority ?? 99),
       );
-      const bubbles = ordered.map((choice) => {
+      const pins = ordered.map((choice) => {
         const element = document.createElement("button");
         element.type = "button";
         element.setAttribute(
           "aria-label",
-          `${choice.selected ? "Trajet choisi" : "Choisir ce trajet"} : ${choice.title}, ${choice.detail}`,
+          `${choice.selected ? "Trajet choisi" : "Choisir ce trajet"} : ${choice.rank ? `n° ${choice.rank}, ` : ""}${choice.title}, ${choice.detail}`,
         );
-        element.className = "bw-route-choice in-data-[film=true]:hidden";
+        element.className = "bw-route-pin in-data-[film=true]:hidden";
         element.dataset["selected"] = choice.selected ? "true" : "";
-        const route = document.createElement("strong");
-        route.textContent = `${choice.medal ? `${choice.medal} ` : ""}${choice.title}`;
-        const detail = document.createElement("span");
-        detail.textContent = choice.detail;
-        // Version courte : la médaille passe devant la durée et le prix.
-        if (choice.medal) detail.dataset["medal"] = `${choice.medal} `;
-        element.append(route, detail);
+        const number = document.createElement("b");
+        number.textContent = choice.rank ? String(choice.rank) : "";
+        element.append(number);
+        if (choice.selected) {
+          const label = document.createElement("span");
+          label.textContent = `${choice.title} · ${choice.detail.split(" · ")[0]}`;
+          element.append(label);
+        }
         element.addEventListener("click", (event) => {
           event.stopPropagation();
           window.dispatchEvent(new CustomEvent(ITINERARY_CHOOSE_EVENT, { detail: choice.id }));
         });
-        const marker = new Marker({ element, anchor: "bottom" }).setLngLat(choice.point).addTo(map);
-        marker.getElement().style.zIndex = choice.selected ? "7" : String(6 - Math.min(3, choice.priority ?? 3));
+        const marker = new Marker({ element, anchor: "center" }).setLngLat(choice.point).addTo(map);
+        marker.getElement().style.zIndex = choice.selected ? "7" : "6";
         choiceMarkersRef.current.push(marker);
         return { choice, element, marker };
       });
@@ -1632,76 +1633,23 @@ export default function FerryMap({
           a.left < b.right + 4 && b.left < a.right + 4 && a.top < b.bottom + 4 && b.top < a.bottom + 4;
         const width = map.getContainer().clientWidth;
         const height = map.getContainer().clientHeight;
-        const fractions = [0.5, 0.42, 0.58, 0.34, 0.66, 0.26, 0.74, 0.18, 0.82, 0.12, 0.88];
-        // Où poser une bulle : sur sa traversée, au-dessus ou au-dessous, centrée ou décalée.
-        const tryPlace = (choice: (typeof bubbles)[number]["choice"], element: HTMLElement) => {
-          const w = element.offsetWidth || 150;
-          const h = (element.offsetHeight || 40) + 8;
+        const fractions = [0.5, 0.42, 0.58, 0.34, 0.66, 0.26, 0.74, 0.18, 0.82];
+        // Sur la traversée, au premier endroit libre et dans l'écran ; sinon au moins mauvais endroit.
+        for (const { choice, element, marker } of pins) {
+          const w = element.offsetWidth || 28;
+          const h = element.offsetHeight || 28;
           const path = choice.path?.length ? choice.path : [choice.point];
-          let best: { at: [number, number]; box: Box; hits: number; dx: number; below: boolean } | null = null;
+          let best: { at: [number, number]; box: Box; score: number } | null = null;
           for (const fraction of fractions) {
             const at = path[Math.min(path.length - 1, Math.round(fraction * (path.length - 1)))]!;
             const p = map.project(at);
-            for (const below of [false, true])
-              for (const dx of [0, -w * 0.36, w * 0.36]) {
-                const top = below ? p.y + 8 : p.y - h;
-                const box = { left: p.x + dx - w / 2, right: p.x + dx + w / 2, top, bottom: top + h };
-                const outside = box.left < 0 || box.right > width || box.top < 0 || box.bottom > height;
-                const hits = taken.filter((other) => overlap(box, other)).length + (outside ? 0.5 : 0);
-                if (!best || hits < best.hits) best = { at, box, hits, dx, below };
-                if (hits === 0) return best;
-              }
-          }
-          return best;
-        };
-        // Si le podium manque déjà de place, les autres trajets restent des points (jamais à ses dépens).
-        let crowded = false;
-        for (const { choice, element, marker } of bubbles) {
-          const podium = (choice.priority ?? 99) <= 3;
-          element.dataset["mode"] = "bubble";
-          let best = crowded && !podium ? null : tryPlace(choice, element);
-          if (!best && !podium) {
-            const path = choice.path?.length ? choice.path : [choice.point];
-            element.dataset["mode"] = "dot";
-            element.style.removeProperty("--tail-x");
-            delete element.dataset["below"];
-            marker.setOffset([0, 0]);
-            marker.setLngLat(path[Math.round((path.length - 1) / 2)]!);
-            continue;
-          }
-          if (best && best.hits >= 1 && podium && !choice.selected) {
-            // Plus de place : la version courte (médaille, durée, prix), puis on réessaie.
-            element.dataset["mode"] = "compact";
-            crowded = true;
-            best = tryPlace(choice, element);
+            const box = { left: p.x - w / 2, right: p.x + w / 2, top: p.y - h / 2, bottom: p.y + h / 2 };
+            const outside = box.left < 4 || box.right > width - 4 || box.top < 4 || box.bottom > height - 4;
+            const score = taken.filter((other) => overlap(box, other)).length + (outside ? 0.5 : 0);
+            if (!best || score < best.score) best = { at, box, score };
+            if (score === 0) break;
           }
           if (!best) continue;
-          if (best.hits >= 1 && podium && !choice.selected) {
-            // Toujours pas de place : une pastille ronde avec la médaille, sur sa traversée.
-            const path = choice.path?.length ? choice.path : [choice.point];
-            element.dataset["mode"] = "medal";
-            element.style.removeProperty("--tail-x");
-            delete element.dataset["below"];
-            marker.setOffset([0, 0]);
-            marker.setLngLat(path[Math.round((path.length - 1) / 2)]!);
-            continue;
-          }
-          if (best.hits >= 1 && !podium) {
-            // Pas de place sans chevaucher : un petit point sur la traversée, qu'on touche pour la choisir.
-            const path = choice.path?.length ? choice.path : [choice.point];
-            element.dataset["mode"] = "dot";
-            element.style.removeProperty("--tail-x");
-            delete element.dataset["below"];
-            marker.setOffset([0, 0]);
-            marker.setLngLat(path[Math.round((path.length - 1) / 2)]!);
-            continue;
-          }
-          const w = element.offsetWidth || 150;
-          const h = (element.offsetHeight || 40) + 8;
-          element.dataset["below"] = best.below ? "true" : "";
-          // La pointe reste sur le tracé même quand la bulle est décalée sur le côté.
-          element.style.setProperty("--tail-x", `${Math.round(w / 2 - best.dx)}px`);
-          marker.setOffset([best.dx, best.below ? h + 8 : 0]);
           marker.setLngLat(best.at);
           taken.push(best.box);
         }

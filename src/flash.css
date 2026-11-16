@@ -16584,3 +16584,85 @@ button.bw-delay-badge:focus-visible {
   outline: 2px solid #0e7a43;
   outline-offset: 2px;
 }
+/* Simulateur porte à porte : une pastille numérotée par trajet du podium (1, 2, 3 comme la liste).
+   Seul le trajet choisi déplie sa ligne et sa durée ; le détail vit dans le volet. */
+.bw-route-pin {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 30px;
+  min-width: 30px;
+  padding: 0 4px;
+  border: 1.5px solid #ffffff;
+  border-radius: 999px;
+  background: #ffffff;
+  color: #16324a;
+  font: inherit;
+  white-space: nowrap;
+  box-shadow: 0 3px 10px rgba(18, 48, 63, 0.25);
+  cursor: pointer;
+  transition: transform 0.15s ease;
+}
+.bw-route-pin:hover {
+  transform: scale(1.06);
+}
+.bw-route-pin b {
+  display: grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #16324a;
+  color: #ffffff;
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 1;
+}
+.bw-route-pin b:empty {
+  display: none;
+}
+.bw-route-pin span {
+  font-size: 12px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.bw-route-pin[data-selected="true"] {
+  padding-right: 11px;
+  border-color: #0e7a43;
+  background: #0e7a43;
+  color: #ffffff;
+}
+.bw-route-pin[data-selected="true"] b {
+  background: #ffffff;
+  color: #0e7a43;
+}
+.bw-route-pin[data-selected="true"] b:empty + span {
+  padding-left: 7px;
+}
+.bw-route-pin:focus-visible {
+  outline: 2px solid #1e5b7a;
+  outline-offset: 2px;
+}
+/* Pendant la comparaison des trajets, discussions et signalements se taisent sur la carte. */
+.bw-map-canvas[data-trips="quiet"] :is(.bw-chat-pin, .bw-pin-sheet, .bw-signal-pin, .bw-signal-bubble, .bw-presence-pin) {
+  display: none !important;
+}
+.bw-trips-social {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 36px;
+  padding: 0 12px;
+  border: 1px solid #dcded8;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.95);
+  color: #5d6b78;
+  font-size: 12.5px;
+  font-weight: 600;
+  box-shadow: 0 2px 8px rgba(22, 50, 74, 0.08);
+  backdrop-filter: blur(6px);
+}
+.bw-trips-social[aria-pressed="true"] {
+  border-color: #0e7a43;
+  color: #0e7a43;
+}

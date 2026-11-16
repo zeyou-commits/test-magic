@@ -18,6 +18,7 @@ import {
   Play,
   Plus,
   Ship,
+  MessageCircle,
   Sparkles,
   Wallet,
   X,
@@ -643,8 +644,10 @@ export function ItineraryPlanner({
     const alternatives: [number, number][][] = [];
     const alternativeIds: string[] = [];
     const seen = new Set([`${previewed.sailing.from.id}|${previewed.sailing.to.id}`]);
-    // Une bulle par trajet, posée au milieu de sa traversée : médaille, durée et prix.
+    // Une pastille numérotée par trajet du podium, posée sur sa traversée : la carte montre
+    // exactement les trajets de la liste « Vos 3 meilleurs trajets », dans le même ordre.
     const rankPool = realOptions.length ? realOptions : sorted;
+    const podium = rankPool.slice(0, 3);
     const bubble = (option: (typeof sorted)[number], chosen: boolean) => {
       const arc = routeArc(option.sailing.from, option.sailing.to);
       const rank = rankPool.indexOf(option);
@@ -654,13 +657,14 @@ export function ItineraryPlanner({
         path: arc,
         priority: chosen ? 0 : rank >= 0 ? rank + 1 : 99,
         medal: ["🥇", "🥈", "🥉"][rank] ?? "",
+        rank: rank >= 0 && rank < 3 ? rank + 1 : undefined,
         title: `${option.sailing.from.name} → ${option.sailing.to.name}`,
         detail: `${formatDuration(option.totalMinutes)} · ${numberFormat.format(option.totalEuro)} €`,
         selected: chosen,
       };
     };
     const choices = [bubble(previewed, true)];
-    for (const option of sorted.slice(0, 6)) {
+    for (const option of podium) {
       const pair = `${option.sailing.from.id}|${option.sailing.to.id}`;
       if (seen.has(pair)) continue;
       seen.add(pair);
@@ -1221,52 +1225,31 @@ export function ItineraryPlanner({
   useEffect(() => {
     setMapLayer(document.querySelector<HTMLElement>(".bw-map-canvas"));
   }, []);
-  const recapPool = realOptions.length ? realOptions : sorted;
-  const recapRank = selected ? recapPool.indexOf(selected) : -1;
+  // Pendant la comparaison, la carte ne montre que les trajets : discussions et signalements
+  // se taisent (ils restent à un toucher, par l'interrupteur « Discussions »).
+  const [showSocial, setShowSocial] = useState(false);
+  const tripsOnMap = Boolean(mapLayer && active && roadAccess && !filtersOpen && selected && !cinema);
+  const quietMap = tripsOnMap && !showSocial;
+  useEffect(() => {
+    if (!mapLayer) return;
+    if (quietMap) mapLayer.dataset["trips"] = "quiet";
+    else delete mapLayer.dataset["trips"];
+    return () => {
+      delete mapLayer.dataset["trips"];
+    };
+  }, [mapLayer, quietMap]);
   const mapRecap =
-    mapLayer && active && roadAccess && !filtersOpen && selected && !cinema
+    tripsOnMap && mapLayer
       ? createPortal(
-          <div
-            className="pointer-events-auto absolute left-14 right-3 top-3 z-30 max-w-[20rem] rounded-2xl border border-border bg-white/95 p-2.5 shadow-lg backdrop-blur md:hidden"
-            role="status"
-            aria-label={tr("ui.itineraryPlanner.trajetChoisi")}
+          <button
+            type="button"
+            aria-pressed={showSocial}
+            onClick={() => setShowSocial((value) => !value)}
+            className="bw-trips-social pointer-events-auto absolute right-3 top-16 z-30"
           >
-            <div className="flex items-start justify-between gap-2">
-              <div className="min-w-0">
-                <p className="text-[10px] font-extrabold uppercase tracking-wide text-primary">
-                  {recapRank === 0 ? tr("ui.itineraryPlanner.notreConseil") : recapRank > 0 && recapRank < 3 ? `${["🥇", "🥈", "🥉"][recapRank]} Trajet choisi` : tr("ui.itineraryPlanner.trajetChoisi")}
-                </p>
-                <p className="truncate text-sm font-bold leading-tight">
-                  {selected.sailing.from.name} → {selected.sailing.to.name}
-                </p>
-              </div>
-              <p className="shrink-0 text-right">
-                <strong className="block text-sm tabular-nums">≈ {numberFormat.format(selected.totalEuro)} €</strong>
-                <span className="block text-[10px] text-muted-foreground">{formatDuration(selected.totalMinutes)}</span>
-              </p>
-            </div>
-            {selected.sailing.company ? (
-              <p className="mt-1 flex items-center gap-1.5 text-[11px] text-muted-foreground">
-                <CompanyBadge
-                  name={selected.sailing.company.name}
-                  logoUrl={selected.sailing.company.logo_url}
-                  size={16}
-                />
-                <span className="truncate">{selected.sailing.company.name}</span>
-              </p>
-            ) : null}
-            <p className="mt-1 text-[11px] font-semibold leading-snug">
-              🏠{" "}
-              {selected.sailing.isSimulation
-                ? `Date à confirmer en ${periodLabel}`
-                : formatDayTime(selected.leaveHomeAt, portTimeZone(selected.sailing.from))}{" "}
-              → 🏁{" "}
-              {selected.sailing.isSimulation
-                ? `≈ ${formatDuration(selected.totalMinutes)}`
-                : formatDayTime(selected.arrivalAt, portTimeZone(selected.sailing.to))}
-            </p>
-            <p className="mt-0.5 text-[10px] text-muted-foreground">{tr("ui.itineraryPlanner.touchezUneBullePourChanger")}</p>
-          </div>,
+            <MessageCircle className="size-4" aria-hidden />
+            {showSocial ? "Masquer les discussions" : "Discussions"}
+          </button>,
           mapLayer,
         )
       : null;

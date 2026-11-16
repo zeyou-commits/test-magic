@@ -36,6 +36,8 @@ export interface ItineraryMapChoice {
   /** 0 pour le trajet choisi, puis le rang (podium d'abord) : ordre de placement des bulles. */
   priority?: number;
   medal: string;
+  /** Rang dans « Vos 3 meilleurs trajets » (1 à 3) : le numéro de la pastille sur la carte. */
+  rank?: number | undefined;
   title: string;
   detail: string;
   selected: boolean;

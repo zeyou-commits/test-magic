@@ -1,15 +1,17 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { Baby, User } from "lucide-react";
 import {
+  BINATIONAL_MEASURE_END,
   ageBandOf,
   ageBands,
   travellerLabel,
   travelsWithDzPassport,
   type Answers,
+  type FormaliteSourceId,
   type SnStatus,
   type Traveller,
 } from "@/content/formalites";
-import { Bw504Note } from "@/components/companion/Bw504Note";
+import { Bw504Note, BwKnow } from "@/components/companion/Bw504Note";
 import { WizardNav, useWizardScreen } from "@/components/prepare/WizardFrame";
 import {
   DzDocsField,
@@ -17,6 +19,7 @@ import {
   HomeStep,
   Options,
   Question,
+  SourceLinks,
   StayStep,
   type EditTarget,
   type PapersState,
@@ -184,10 +187,16 @@ export function PapersQuestions({
     options: { value: T; label: string; hint?: string }[],
   ) => <Options label={label} value={value} onChange={onChange} options={options} />;
 
-  // Le « pourquoi » d'une question : sous les réponses, dit par la 504.
-  const why = (title: string, text: ReactNode) => (
-    <div className="mt-4">
+  // Le « pourquoi » d'une question : sous les réponses, dit par la 504. La règle de droit qui le
+  // justifie n'est pas dans sa bulle : elle va dans « Bon à savoir », avec sa source officielle.
+  const why = (
+    title: string,
+    text: ReactNode,
+    rule?: { text: ReactNode; sources: FormaliteSourceId[] },
+  ) => (
+    <div className="mt-4 grid gap-3">
       <Bw504Note title={title}>{text}</Bw504Note>
+      {rule ? <BwKnow source={<SourceLinks ids={rule.sources} />}>{rule.text}</BwKnow> : null}
     </div>
   );
 
@@ -226,7 +235,11 @@ export function PapersQuestions({
             )}
             {why(
               "Pourquoi l'âge ?",
-              "Il change les papiers : le prix du visa (gratuit avant 6 ans, moins cher avant 12 ans), l'entrée des binationaux de 15 ans ou moins avec le passeport étranger, et à 18 ans on est majeur en France mais encore mineur en Algérie, jusqu'à 19 ans.",
+              "Selon l'âge, je n'ajoute pas les mêmes papiers à ta liste.",
+              {
+                text: `Le visa est gratuit avant 6 ans et moins cher avant 12 ans. Jusqu'au ${BINATIONAL_MEASURE_END}, un binational de 15 ans ou moins peut entrer avec son passeport étranger, sous conditions. Majeur en France à 18 ans, on reste mineur en Algérie jusqu'à 19 ans.`,
+                sources: ["amb-visa", "cons-binationaux", "justice-algerie"],
+              },
             )}
           </Question>
         </>
@@ -278,7 +291,11 @@ export function PapersQuestions({
             />
             {why(
               "Pourquoi tous les papiers ?",
-              "En Algérie, un binational est traité comme un Algérien : ce sont ses papiers algériens qui disent s'il lui faut un visa. Avec le passeport étranger seul, la carte d'identité algérienne, même expirée, évite le visa jusqu'au 31 décembre 2026.",
+              "Ce sont les papiers algériens, même expirés, qui me disent si un visa est nécessaire.",
+              {
+                text: `En Algérie, un binational est traité comme un Algérien. Avec le passeport étranger seul, la carte d'identité algérienne, même expirée, évite le visa jusqu'au ${BINATIONAL_MEASURE_END}.`,
+                sources: ["cons-binationaux", "be-pratique"],
+              },
             )}
           </Question>
         </>
@@ -308,7 +325,11 @@ export function PapersQuestions({
             )}
             {why(
               "Pourquoi le retour ?",
-              "C'est avec ce passeport qu'on ressort d'Algérie. S'il expire pendant le séjour, le retour se complique : mieux vaut le renouveler avant de partir.",
+              "C'est avec ce passeport qu'on ressort d'Algérie : je regarde s'il tient jusqu'au retour, sinon je te dis quoi faire avant de partir.",
+              {
+                text: "Le passeport algérien doit couvrir la date du retour, et même plusieurs jours au-delà.",
+                sources: ["be-pratique", "cons-passeport"],
+              },
             )}
           </Question>
         </>
@@ -326,7 +347,7 @@ export function PapersQuestions({
             ])}
             {why(
               "Pourquoi le titre de séjour ?",
-              "Pour revenir en France, un Algérien présente son titre de séjour à la frontière. S'il n'est plus valable au retour, je te dis quoi faire avant de partir.",
+              "Je regarde s'il couvre le retour en France. Sinon, je te dis quoi faire avant de partir.",
             )}
           </Question>
         </>
@@ -372,9 +393,13 @@ export function PapersQuestions({
             )}
             {why(
               "Pourquoi le service national ?",
+              "Selon ta réponse, je mets la preuve dans la pochette du voyage, ou la démarche dans ta liste.",
               t.nat === "bi"
-                ? "Un homme algérien a des obligations de service national dès 19 ans. Pour un franco-algérien, l'accord de 1983 fait compter le service choisi en France : je te dis si c'est en règle, ou quoi faire."
-                : "Un homme algérien a des obligations de service national dès 19 ans. La preuve (recensement ou dispense) peut être demandée à la sortie d'Algérie : je l'ajoute à la pochette, ou la démarche à ta liste.",
+                ? {
+                    text: "Pour un franco-algérien, l'accord franco-algérien de 1983 fait compter le service national choisi en France (JDC ou déclaration d'option).",
+                    sources: ["accord-1983", "pref-accord-sn"],
+                  }
+                : undefined,
             )}
           </Question>
         </>
@@ -392,7 +417,11 @@ export function PapersQuestions({
             ])}
             {why(
               "Pourquoi je le demande ?",
-              "Un homme algérien a des obligations de service national dès 19 ans : une preuve peut lui être demandée à la sortie d'Algérie. Je vérifie s'il en faut une.",
+              "Pour savoir si le service national algérien entre en jeu. Si oui, je regarde quelle preuve emporter.",
+              {
+                text: "Le service national est obligatoire pour un homme algérien de 19 ans révolus. Une preuve (recensement ou dispense) peut être demandée à la sortie d'Algérie.",
+                sources: ["cons-recensement"],
+              },
             )}
           </Question>
         </>
@@ -410,7 +439,11 @@ export function PapersQuestions({
           ])}
           {why(
             "Pourquoi le couple ?",
-            "Le mariage change les papiers : marié à un Algérien, un conjoint étranger peut demander le visa familial de conjoint.",
+            "Un mariage peut changer les papiers d'un conjoint qui n'est pas algérien : je regarde lesquels.",
+            {
+              text: "Marié à un Algérien, un conjoint étranger peut demander le visa familial de conjoint.",
+              sources: ["cons-visa-familial"],
+            },
           )}
         </Question>
       );
@@ -426,7 +459,11 @@ export function PapersQuestions({
           ])}
           {why(
             "Pourquoi la transcription ?",
-            "Le visa familial de conjoint en dépend. Si elle n'est pas faite, je l'ajoute à tes démarches, en premier.",
+            "Si elle n'est pas faite, je l'ajoute à tes démarches, en premier.",
+            {
+              text: "Le visa familial de conjoint demande l'acte de mariage transcrit à l'état civil algérien.",
+              sources: ["cons-visa-familial"],
+            },
           )}
         </Question>
       );
@@ -444,7 +481,11 @@ export function PapersQuestions({
           ])}
           {why(
             "Pourquoi l'accompagnant ?",
-            "Un mineur qui part sans l'un de ses parents a besoin de papiers en plus, comme l'autorisation paternelle de sortie : je te dis lesquels.",
+            "Selon l'adulte qui part avec eux, je te dis quels papiers ajouter.",
+            {
+              text: "Un mineur algérien qui voyage sans son père présente une autorisation paternelle à la sortie d'Algérie. Elle se fait au consulat.",
+              sources: ["cons-autorisation", "justice-algerie"],
+            },
           )}
         </Question>
       );
@@ -476,7 +517,11 @@ export function PapersQuestions({
           )}
           {why(
             "Pourquoi la garde ?",
-            "Si les enfants partent avec leur mère, le jugement qui lui confie la garde remplace l'autorisation paternelle : il part alors dans la pochette du voyage.",
+            "Selon ta réponse, je mets dans la pochette du voyage le jugement de garde ou l'autorisation paternelle.",
+            {
+              text: "Les enfants de parents séparés ou divorcés dont la mère a la garde sont dispensés de l'autorisation paternelle : on emporte le jugement qui fixe la garde.",
+              sources: ["cons-autorisation"],
+            },
           )}
         </Question>
       );

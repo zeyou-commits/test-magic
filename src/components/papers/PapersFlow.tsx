@@ -718,7 +718,10 @@ export function GroupStep({ answers, patch }: StepProps) {
           onChange={(n) => resize("child", n)}
         />
       </div>
-      <BwKnow className="mt-4">
+      <BwKnow
+        className="mt-4"
+        source={<SourceLinks ids={["justice-algerie", "be-pratique"]} />}
+      >
         En Algérie, on est mineur jusqu'à 19 ans : compte un jeune de 18 ans parmi les enfants.
       </BwKnow>
     </Question>
@@ -1015,11 +1018,22 @@ export function StayStep({ answers, patch }: StepProps) {
           },
         ]}
       />
-      <div className="mt-4">
+      <div className="mt-4 grid gap-3">
         <Bw504Note title="Pourquoi le logement ?">
-          Pour un visa, on prouve où l'on dort : le certificat d'hébergement de la famille, ou la
-          réservation d'hôtel. Pour un couple marié, le livret de famille sert aussi à l'hôtel.
+          Selon ta réponse, je mets dans ta liste le bon justificatif pour le visa, et le livret
+          de famille si vous êtes un couple marié.
         </Bw504Note>
+        <BwKnow
+          source={
+            <SourceLinks
+              ids={["amb-visa", "cons-visa-familial", "justice-algerie", "be-legislation"]}
+            />
+          }
+        >
+          Pour un visa, on prouve où l'on dort : le certificat d'hébergement de la famille, ou la
+          réservation d'hôtel. Certains hôtels ne mettent un couple dans la même chambre que sur
+          preuve du mariage.
+        </BwKnow>
       </div>
     </Question>
   );

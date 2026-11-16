@@ -33,16 +33,28 @@ export function Bw504Note({
 
 /**
  * « Bon à savoir » : une règle ou un conseil donné en passant, porté par la petite 504, pour qu'il
- * ne se perde pas dans un simple texte gris.
+ * ne se perde pas dans un simple texte gris. Une règle de droit vient ici, avec sa source
+ * (`source`), jamais dans la bulle de la 504.
  */
-export function BwKnow({ children, className = "" }: { children: ReactNode; className?: string }) {
+export function BwKnow({
+  children,
+  source,
+  className = "",
+}: {
+  children: ReactNode;
+  source?: ReactNode;
+  className?: string;
+}) {
   return (
     <aside className={`bw-know ${className}`}>
       <img src="/cabas/persos/voiture_504.webp" alt="" width={34} height={34} className="bw-know__car" />
-      <p>
-        <b>Bon à savoir</b>
-        {children}
-      </p>
+      <div className="min-w-0">
+        <p>
+          <b>Bon à savoir</b>
+          {children}
+        </p>
+        {source ? <div className="bw-know__src">{source}</div> : null}
+      </div>
     </aside>
   );
 }

@@ -428,6 +428,10 @@
   line-height: 1.4;
   color: var(--foreground);
 }
+.bw-know .bw-know__src > p {
+  margin-top: 4px;
+  font-size: 0.75rem;
+}
 .bw-know b {
   display: block;
   font-size: 0.72rem;

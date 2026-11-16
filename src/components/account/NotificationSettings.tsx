@@ -30,7 +30,7 @@ const options = [
   {
     key: "openings",
     label: "Ouverture des traversées",
-    description: "Les lignes et périodes que vous suivez, après vérification par notre équipe.",
+    description: "Les lignes et périodes que vous suivez, et l’ouverture des ventes des compagnies pour vos dates.",
     icon: BellRing,
   },
 ] as const;

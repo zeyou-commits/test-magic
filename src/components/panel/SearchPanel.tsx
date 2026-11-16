@@ -521,6 +521,8 @@ export function SearchPanel({
       returnDate={filters.roundTrip ? filters.returnDate : null}
       fromLabel={filters.departurePortIds.length ? fromName(filters.departurePortIds) : null}
       toLabel={filters.arrivalPortIds.length ? fromName(filters.arrivalPortIds) : null}
+      fromIds={filters.departurePortIds}
+      toIds={filters.arrivalPortIds}
     />
   ) : null;
   // Aller-retour sans résultat : pourquoi (aller d'abord, puis retour), et les jours les plus proches.

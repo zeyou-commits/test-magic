@@ -1,6 +1,7 @@
 // E-mail d'annulation ou de report : envoyé à chaque compte prévenu par un message de l'équipe
 // « annulation » ou « nouvel horaire ». Les retards ne partent pas par e-mail.
-// Aussi : les rappels d'échéance de « Préparer mon voyage » (modèle « deadline », 14/11/2026).
+// Aussi : les rappels d'échéance de « Préparer mon voyage » (modèle « deadline », 14/11/2026) et
+// l'ouverture des ventes d'une compagnie pour les dates d'une alerte (modèle « opening », 16/11/2026).
 // Appelée par la base (pg_net) dès que la file bw_alert_emails se remplit, secret des tâches.
 // Envoi par Resend (lots de 100) depuis contact@bledway.com. Secret Supabase requis : RESEND_API_KEY.
 import { createClient, type SupabaseClient } from "npm:@supabase/supabase-js@2";
@@ -15,7 +16,7 @@ const FROM = "BledWay <contact@bledway.com>";
 
 type Item = {
   id: string;
-  template: "cancel" | "reschedule" | "deadline";
+  template: "cancel" | "reschedule" | "deadline" | "opening";
   email: string;
   name: string;
   title: string;
@@ -38,15 +39,26 @@ function link(url: string | null) {
 function alertHtml(item: Item) {
   const cancel = item.template === "cancel";
   const deadline = item.template === "deadline";
-  const badge = deadline ? "Rappel de préparation" : cancel ? "Traversée annulée" : "Nouvel horaire";
-  const color = deadline ? "#0e6b3b" : cancel ? "#b42318" : "#b54708";
-  const button = deadline ? "Voir ma préparation" : "Voir ma traversée";
-  const why = deadline
-    ? "vous préparez votre voyage sur"
-    : "vous suivez cette traversée sur";
-  const stop = deadline
-    ? "Pour ne plus recevoir ces rappels, coupez « Rappels » dans Mon compte, rubrique Notifications."
-    : "Pour ne plus être prévenu, retirez le suivi de la traversée depuis votre espace.";
+  const opening = item.template === "opening";
+  const badge = opening
+    ? "Ventes ouvertes"
+    : deadline
+      ? "Rappel de préparation"
+      : cancel
+        ? "Traversée annulée"
+        : "Nouvel horaire";
+  const color = deadline || opening ? "#0e6b3b" : cancel ? "#b42318" : "#b54708";
+  const button = opening ? "Voir les traversées" : deadline ? "Voir ma préparation" : "Voir ma traversée";
+  const why = opening
+    ? "vous avez demandé à être prévenu de l’ouverture des ventes sur"
+    : deadline
+      ? "vous préparez votre voyage sur"
+      : "vous suivez cette traversée sur";
+  const stop = opening
+    ? "Pour ne plus recevoir ces alertes, coupez « Ouverture des traversées » dans Mon compte, rubrique Notifications."
+    : deadline
+      ? "Pour ne plus recevoir ces rappels, coupez « Rappels » dans Mon compte, rubrique Notifications."
+      : "Pour ne plus être prévenu, retirez le suivi de la traversée depuis votre espace.";
   const hello = item.name ? `Bonjour ${escape(item.name)},` : "Bonjour,";
   return `<!doctype html><html lang="fr"><body style="margin:0;background:#f4f1ea">
   <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f4f1ea;padding:24px 12px">
@@ -75,7 +87,12 @@ function alertHtml(item: Item) {
 }
 
 function alertText(item: Item) {
-  const label = item.template === "deadline" ? "Voir ma préparation" : "Voir ma traversée";
+  const label =
+    item.template === "opening"
+      ? "Voir les traversées"
+      : item.template === "deadline"
+        ? "Voir ma préparation"
+        : "Voir ma traversée";
   return `${item.title}\n\n${item.body}\n\n${label} : ${link(item.url)}\n\nBledWay est un service d’information indépendant : confirmez toujours auprès de la compagnie.`;
 }
 
@@ -104,7 +121,7 @@ Deno.serve(async (request) => {
         items.map((item) => ({
           from: FROM,
           to: [item.email],
-          subject: `${item.template === "cancel" ? "⚠️ " : item.template === "deadline" ? "📝 " : "🕒 "}${item.title}`,
+          subject: `${item.template === "cancel" ? "⚠️ " : item.template === "deadline" ? "📝 " : item.template === "opening" ? "🎟️ " : "🕒 "}${item.title}`,
           html: alertHtml(item),
           text: alertText(item),
           reply_to: "contact@bledway.com",

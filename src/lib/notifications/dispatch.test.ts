@@ -25,7 +25,15 @@ vi.mock("@/integrations/supabase/client.server", () => {
         return builder;
       },
       eq: (key: string, value: unknown) => {
-        filters.push((row) => row[key] === value);
+        // « colonne->>clé » : un champ d'un objet JSON.
+        const [column, field] = key.split("->>");
+        filters.push((row) =>
+          field ? (row[column!] as Record<string, unknown> | null)?.[field] === value : row[key] === value,
+        );
+        return builder;
+      },
+      not: (key: string, _op: string, value: unknown) => {
+        filters.push((row) => (row[key] ?? null) !== value);
         return builder;
       },
       neq: (key: string, value: unknown) => {
@@ -56,9 +64,11 @@ vi.mock("@/integrations/supabase/client.server", () => {
         filters.push((row) => (row[key] as typeof value) < value);
         return builder;
       },
-      or: () => {
-        filters.push(
-          (row) => !row["leased_until"] || String(row["leased_until"]) < new Date().toISOString(),
+      or: (expression?: string) => {
+        filters.push((row) =>
+          expression?.includes("schedule_id")
+            ? !row["schedule_id"] || row["reliability"] === "verified"
+            : !row["leased_until"] || String(row["leased_until"]) < new Date().toISOString(),
         );
         return builder;
       },
@@ -756,5 +766,63 @@ describe("Proches d'un voyageur", () => {
     expect(
       mock.tables["bw_notifications"]!.filter((n) => String(n["event_key"]).startsWith("relative-arrived:")),
     ).toHaveLength(0);
+  });
+});
+
+describe("Alertes d'ouverture des ventes", () => {
+  const alert = () => ({
+    id: "alert",
+    user_id: "user",
+    from_label: "Sète",
+    to_label: "Béjaïa",
+    period_start: "2030-07-15",
+    period_end: "2030-07-15",
+    closed_at: null,
+    notified_companies: [] as string[],
+    journey_context: {
+      kind: "sales-opening",
+      fromIds: ["fr"],
+      toIds: ["dz"],
+      roundTrip: false,
+      path: "/?from=fr&to=dz&date=2030-07-15",
+      companies: [
+        { id: "a", name: "Compagnie A" },
+        { id: "b", name: "Compagnie B" },
+      ],
+    },
+  });
+  beforeEach(() => {
+    mock.tables["bw_notification_campaigns"] = [];
+    mock.tables["sales_alerts"] = [alert()];
+    mock.tables["departures"] = [
+      // A : seulement le calendrier théorique à cette date ; B : un vrai départ publié.
+      { id: "est", route_id: "route", company_id: "a", departure_at: "2030-07-15T20:00:00Z", status: "scheduled", is_demo: false, schedule_id: "rot", reliability: "estimated" },
+      { id: "pub", route_id: "route", company_id: "b", departure_at: "2030-07-15T20:00:00Z", status: "scheduled", is_demo: false, schedule_id: null, reliability: "published" },
+    ];
+  });
+  it("annonce une compagnie dès qu'elle publie un départ commercial à la date, pas avant", async () => {
+    await dispatchPush();
+    const sent = mock.tables["bw_notifications"]!.filter((n) => String(n["event_key"]).startsWith("sales-opening:"));
+    expect(sent).toHaveLength(1);
+    expect(sent[0]).toMatchObject({
+      event_key: "sales-opening:alert:b",
+      title: "Compagnie B a ouvert ses ventes pour vos dates",
+      url: "/?from=fr&to=dz&date=2030-07-15",
+    });
+    expect(mock.tables["sales_alerts"]![0]).toMatchObject({ notified_companies: ["b"], closed_at: null });
+    // A confirme enfin son départ : annoncée à son tour, et l'alerte se ferme.
+    mock.tables["departures"]![0]!["reliability"] = "verified";
+    await dispatchPush();
+    expect(mock.tables["sales_alerts"]![0]!["notified_companies"]).toEqual(["b", "a"]);
+    expect(mock.tables["sales_alerts"]![0]!["closed_at"]).toBeTruthy();
+    expect(
+      mock.tables["bw_notifications"]!.filter((n) => String(n["event_key"]).startsWith("sales-opening:")),
+    ).toHaveLength(2);
+  });
+  it("ferme sans rien envoyer une alerte dont les dates sont passées", async () => {
+    mock.tables["sales_alerts"] = [{ ...alert(), period_start: "2020-01-01", period_end: "2020-01-02" }];
+    await dispatchPush();
+    expect(mock.tables["bw_notifications"]!.some((n) => String(n["event_key"]).startsWith("sales-opening:"))).toBe(false);
+    expect(mock.tables["sales_alerts"]![0]!["closed_at"]).toBeTruthy();
   });
 });

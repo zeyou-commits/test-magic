@@ -23,12 +23,17 @@ export function SalesCalendarNote({
   returnDate,
   fromLabel,
   toLabel,
+  fromIds = [],
+  toIds = [],
 }: {
   calendars: CompanyCalendar[];
   date: string;
   returnDate?: string | null;
   fromLabel?: string | null;
   toLabel?: string | null;
+  /** Ports cherchés : l'envoi quotidien vérifie l'ouverture des ventes sur ces liaisons. */
+  fromIds?: string[];
+  toIds?: string[];
 }) {
   const waiting = calendars.filter((item) => !item.coversDates);
   const { user } = useAuth();
@@ -58,6 +63,11 @@ export function SalesCalendarNote({
       journey_context: {
         kind: "sales-opening",
         userId: user.id,
+        fromIds,
+        toIds,
+        roundTrip: Boolean(returnDate),
+        // La recherche à rouvrir depuis l'alerte (chemin du site seulement).
+        path: `${window.location.pathname}${window.location.search}`.slice(0, 500),
         companies: chosen.map((item) => ({
           id: item.companyId,
           name: item.name,

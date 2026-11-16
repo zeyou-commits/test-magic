@@ -23,6 +23,53 @@ import {
 import { queueAdminMessages } from "./messages.server";
 import { noticeHref, noticeKind } from "./noticeStyle";
 
+type SalesAlertRow = {
+  id: string;
+  user_id: string;
+  from_label: string | null;
+  to_label: string | null;
+  period_start: string | null;
+  period_end: string | null;
+  notified_companies: string[];
+  journey_context: {
+    fromIds?: string[];
+    toIds?: string[];
+    roundTrip?: boolean;
+    path?: string;
+    companies?: { id: string; name?: string }[];
+  } | null;
+};
+const salesDay = (key: string) =>
+  new Date(`${key}T12:00:00Z`).toLocaleDateString("fr-FR", {
+    day: "numeric",
+    month: "long",
+    timeZone: "UTC",
+  });
+/**
+ * Liaisons de l'alerte : les ports cherchés, dans les deux sens pour un aller-retour. Sans ports
+ * enregistrés (null), toute publication de la compagnie compte.
+ */
+export function salesAlertRoutes(
+  routes: { id: string; departure_port_id: string; arrival_port_id: string }[],
+  context: { fromIds?: string[]; toIds?: string[]; roundTrip?: boolean },
+): string[] | null {
+  const from = new Set(context.fromIds ?? []);
+  const to = new Set(context.toIds ?? []);
+  if (!from.size && !to.size) return null;
+  const ids = routes
+    .filter((route) => {
+      const out =
+        (!from.size || from.has(route.departure_port_id)) && (!to.size || to.has(route.arrival_port_id));
+      const back =
+        Boolean(context.roundTrip) &&
+        (!to.size || to.has(route.departure_port_id)) &&
+        (!from.size || from.has(route.arrival_port_id));
+      return out || back;
+    })
+    .map((route) => route.id);
+  return ids.length ? ids : null;
+}
+
 type Notice = {
   key: string;
   title: string;
@@ -799,6 +846,76 @@ export async function dispatchPush(
         .update({ reminded_at: new Date(now).toISOString() })
         .eq("user_id", row.user_id)
         .eq("key", row.key);
+      if (marked.error) throw marked.error;
+    }
+  }
+
+  // Ouverture des ventes : une compagnie choisie dans l'alerte publie enfin un départ commercial
+  // (pas « Estimé ») à la date la plus tardive demandée. Une annonce par compagnie (compte, push,
+  // e-mail) ; l'alerte se ferme quand toutes sont annoncées ou que les dates sont passées.
+  if (!options.onlyOpenings && !options.messageId) {
+    const today = new Date(now).toISOString().slice(0, 10);
+    const query = db
+      .from("sales_alerts")
+      .select("id,user_id,from_label,to_label,period_start,period_end,journey_context,notified_companies")
+      .is("closed_at", null)
+      .not("user_id", "is", null)
+      .eq("journey_context->>kind", "sales-opening");
+    const open = await (onlyUser ? query.in("user_id", onlyUser) : query).limit(1000);
+    // Colonnes pas encore créées (migration à appliquer) : on n'empêche pas les autres envois.
+    if (open.error && !["42703", "42P01", "PGRST204", "PGRST205"].includes(open.error.code ?? ""))
+      throw open.error;
+    for (const alert of (open.data ?? []) as SalesAlertRow[]) {
+      const context = alert.journey_context ?? {};
+      const last = [alert.period_start, alert.period_end].filter(Boolean).sort().at(-1) ?? null;
+      const wanted = (context.companies ?? []).filter(
+        (company) => company?.id && !alert.notified_companies.includes(company.id),
+      );
+      if (!last || last < today || !wanted.length) {
+        const closed = await db
+          .from("sales_alerts")
+          .update({ closed_at: new Date(now).toISOString() })
+          .eq("id", alert.id);
+        if (closed.error) throw closed.error;
+        continue;
+      }
+      const routeIds = salesAlertRoutes(routes, context);
+      const since = zonedTimeToUtc(last, "00:00", "Europe/Paris").toISOString();
+      const notified = [...alert.notified_companies];
+      for (const company of wanted) {
+        let published = db
+          .from("departures")
+          .select("id")
+          .eq("company_id", company.id)
+          .gte("departure_at", since)
+          .neq("status", "cancelled")
+          .eq("is_demo", false)
+          .or("schedule_id.is.null,reliability.eq.verified")
+          .limit(1);
+        if (routeIds) published = published.in("route_id", routeIds);
+        const found = await published;
+        if (found.error) throw found.error;
+        if (!found.data?.length) continue;
+        const trip = alert.from_label && alert.to_label ? `${alert.from_label} → ${alert.to_label}` : null;
+        const dates =
+          alert.period_end && alert.period_end !== alert.period_start
+            ? `du ${salesDay(alert.period_start ?? last)} au ${salesDay(alert.period_end)}`
+            : `du ${salesDay(last)}`;
+        await deliver(alert.user_id, null, {
+          key: `sales-opening:${alert.id}:${company.id}`,
+          category: "openings",
+          title: `${company.name ?? "La compagnie"} a ouvert ses ventes pour vos dates`,
+          body: `Les traversées ${trip ? `${trip} ` : ""}${dates} sont maintenant publiées par la compagnie, avec leurs vrais horaires. Comparez-les avant que les places partent.`,
+          url: context.path?.startsWith("/") && !context.path.startsWith("//") ? context.path : "/",
+        });
+        notified.push(company.id);
+      }
+      if (notified.length === alert.notified_companies.length) continue;
+      const allDone = (context.companies ?? []).every((company) => !company?.id || notified.includes(company.id));
+      const marked = await db
+        .from("sales_alerts")
+        .update({ notified_companies: notified, closed_at: allDone ? new Date(now).toISOString() : null })
+        .eq("id", alert.id);
       if (marked.error) throw marked.error;
     }
   }

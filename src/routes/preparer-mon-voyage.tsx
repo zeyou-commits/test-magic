@@ -132,6 +132,7 @@ import {
 import type { Port } from "@/lib/ferry/types";
 import { seoHead } from "@/lib/seo/site";
 import { SharePreparation } from "@/components/prepare/SharePreparation";
+import { PrepareIntro } from "@/components/prepare/PrepareIntro";
 
 const PATH = "/preparer-mon-voyage";
 
@@ -328,75 +329,17 @@ const chapterOf = (step: CompanionStep) =>
 
 /**
  * L'accueil en deux temps. D'abord l'envie : l'Algérie en photos, et la 504 qui propose de charger
- * la voiture — c'est elle le bouton, visible sans faire défiler. Puis, une fois lancé : pourquoi
- * BledWay pose des questions, les trois chapitres, et « C'est parti ».
+ * la voiture — c'est elle le bouton, visible sans faire défiler. Puis, une fois lancé, un écran
+ * plein (PrepareIntro) : pourquoi BledWay pose des questions, les trois chapitres, « C'est parti ».
  */
 function Welcome({ onStart }: { onStart: () => void }) {
   const [intro, setIntro] = useState(false);
   if (intro)
     return (
-      <div className="bw-prep-intro">
-        <button
-          type="button"
-          onClick={() => {
-            setIntro(false);
-            requestAnimationFrame(() => window.scrollTo({ top: 0, behavior: "instant" }));
-          }}
-          className="text-sm font-semibold text-muted-foreground hover:text-foreground"
-        >
-          ← Retour
-        </button>
-        <h1 className="mt-2 font-display text-[1.75rem] font-bold leading-tight md:text-5xl">
-          Votre voyage au bled, préparé pas à pas
-        </h1>
-        <p className="mt-3 text-muted-foreground md:text-lg">
-          Pour vous aider vraiment, BledWay a besoin d'en savoir un peu plus sur vous et sur votre
-          voyage. Une question à la fois, en trois chapitres : à la fin, vous avez vos papiers, vos
-          dates, votre route et votre budget.
-        </p>
-        <ol className="mt-5 grid gap-2 md:grid-cols-3">
-          {chapters.map((chapter, index) => {
-            const Icon = chapter.icon;
-            return (
-              <li key={chapter.title} className="flex gap-3 rounded-2xl border bg-card p-3 md:block">
-                <span className="relative shrink-0 md:block">
-                  <img
-                    src={stepArt[chapter.steps[0]!].scene}
-                    alt=""
-                    width={960}
-                    height={640}
-                    decoding="async"
-                    className="h-16 w-20 rounded-xl object-cover md:h-28 md:w-full"
-                  />
-                  <span className="absolute -bottom-2 -right-2 grid size-7 place-items-center rounded-full bg-primary text-sm font-bold text-primary-foreground ring-2 ring-card md:left-2 md:right-auto md:top-2 md:bottom-auto">
-                    {index + 1}
-                  </span>
-                </span>
-                <span className="min-w-0 md:mt-3 md:block">
-                  <span className="flex items-center gap-1.5 font-semibold">
-                    <Icon size={16} className="shrink-0 text-primary" aria-hidden />
-                    {chapter.title}
-                  </span>
-                  <span className="mt-0.5 block text-sm text-muted-foreground">{chapter.hint}</span>
-                </span>
-              </li>
-            );
-          })}
-        </ol>
-        <p className="mt-4 text-center text-sm text-muted-foreground md:text-left">
-          Environ 5 minutes · modifiable à tout moment · vos réponses restent sur votre téléphone
-        </p>
-        {/* Sur téléphone, le bouton reste visible au-dessus de la barre du bas. */}
-        <div className="bw-prep-intro__go">
-          <button
-            type="button"
-            onClick={onStart}
-            className="inline-flex min-h-14 w-full items-center justify-center gap-2 rounded-2xl bg-primary px-6 text-base font-bold text-primary-foreground shadow-md hover:bg-primary/90 md:w-auto"
-          >
-            C'est parti <ArrowRight size={18} aria-hidden />
-          </button>
-        </div>
-      </div>
+      <PrepareIntro
+        onBack={() => setIntro(false)}
+        onGo={onStart}
+      />
     );
   return (
     <div>

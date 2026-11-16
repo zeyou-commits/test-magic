@@ -194,14 +194,214 @@
   font-weight: 800;
 }
 .bw-prep-start:hover .bw-prep-start__cta { background: #ffd35e; }
-/* Écran « pourquoi ces questions » : le bouton reste au-dessus de la barre du bas. */
-.bw-prep-intro__go {
-  position: sticky;
-  bottom: calc(68px + env(safe-area-inset-bottom));
-  margin-top: 16px;
-  padding: 8px 0;
-  background: linear-gradient(to top, var(--background) 70%, transparent);
+
+/* Écran « pourquoi ces questions » : plein écran, sans défilement, entrée en cascade. */
+.bw-prepintro {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  padding: env(safe-area-inset-top) 0 env(safe-area-inset-bottom);
+  background:
+    radial-gradient(120% 60% at 100% 0%, color-mix(in oklab, var(--primary) 16%, transparent), transparent 60%),
+    radial-gradient(90% 50% at 0% 100%, color-mix(in oklab, #f6c445 14%, transparent), transparent 65%),
+    var(--background);
+  color: var(--foreground);
 }
-@media (min-width: 768px) {
-  .bw-prep-intro__go { position: static; background: none; padding: 0; }
+.bw-prepintro__top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px 0;
+}
+.bw-prepintro__back {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 999px;
+  background: color-mix(in oklab, var(--foreground) 6%, transparent);
+  transition: background 0.2s;
+}
+.bw-prepintro__back:hover { background: color-mix(in oklab, var(--foreground) 11%, transparent); }
+.bw-prepintro__eyebrow {
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--primary);
+}
+.bw-prepintro__body {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: clamp(12px, 2.6dvh, 22px);
+  width: 100%;
+  max-width: 34rem;
+  margin: 0 auto;
+  padding: 8px 22px;
+}
+.bw-prepintro h1 {
+  margin: 0;
+  font-family: var(--font-display, inherit);
+  font-size: clamp(1.75rem, 4.2dvh, 2.4rem);
+  font-weight: 800;
+  line-height: 1.08;
+  letter-spacing: -0.02em;
+}
+.bw-prepintro__lead {
+  margin: -4px 0 0;
+  font-size: clamp(0.95rem, 2.1dvh, 1.05rem);
+  line-height: 1.45;
+  color: var(--muted-foreground);
+}
+.bw-prepintro__steps {
+  position: relative;
+  display: grid;
+  gap: clamp(10px, 2dvh, 16px);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+/* Le fil qui relie les trois chapitres. */
+.bw-prepintro__steps::before {
+  content: "";
+  position: absolute;
+  left: 21px;
+  top: 22px;
+  bottom: 22px;
+  width: 2px;
+  border-radius: 2px;
+  background: linear-gradient(var(--primary), color-mix(in oklab, var(--primary) 15%, transparent));
+}
+.bw-prepintro__steps > li {
+  position: relative;
+  display: grid;
+  grid-template-columns: 44px minmax(0, 1fr);
+  gap: 14px;
+  align-items: center;
+}
+.bw-prepintro__dot {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 14px;
+  color: #fff;
+  background: linear-gradient(135deg, #0b4a32, #0e7a43);
+  box-shadow: 0 6px 16px rgb(8 50 34 / 0.25), inset 0 1px 0 rgb(255 255 255 / 0.18);
+}
+.bw-prepintro__steps small {
+  display: block;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--primary);
+}
+.bw-prepintro__steps b {
+  display: block;
+  font-size: 1.02rem;
+  line-height: 1.25;
+}
+.bw-prepintro__steps li span > span {
+  display: block;
+  font-size: 0.88rem;
+  color: var(--muted-foreground);
+}
+.bw-prepintro__result {
+  display: grid;
+  gap: 8px;
+  padding: 12px 14px;
+  border-radius: 16px;
+  border: 1px solid color-mix(in oklab, var(--primary) 22%, transparent);
+  background: color-mix(in oklab, var(--card) 80%, transparent);
+  backdrop-filter: blur(8px);
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+.bw-prepintro__result ul {
+  display: grid;
+  grid-template-columns: repeat(4, auto);
+  justify-content: start;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.bw-prepintro__result li {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 9px;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  background: color-mix(in oklab, var(--primary) 12%, transparent);
+  color: var(--primary);
+  font-weight: 700;
+}
+.bw-prepintro__foot {
+  width: 100%;
+  max-width: 34rem;
+  margin: 0 auto;
+  padding: 6px 18px 14px;
+}
+.bw-prepintro__meta {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 4px 14px;
+  margin: 0 0 10px;
+  font-size: 12.5px;
+  color: var(--muted-foreground);
+}
+.bw-prepintro__meta span { display: inline-flex; align-items: center; gap: 5px; }
+.bw-prepintro__go {
+  display: flex;
+  width: 100%;
+  min-height: 56px;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border-radius: 18px;
+  background: linear-gradient(135deg, #0b4a32, #0e7a43);
+  color: #fff;
+  font-size: 1.05rem;
+  font-weight: 800;
+  box-shadow: 0 10px 24px rgb(8 50 34 / 0.28);
+  transition: transform 0.15s ease, box-shadow 0.2s ease;
+}
+.bw-prepintro__go:hover { box-shadow: 0 12px 28px rgb(8 50 34 / 0.36); }
+.bw-prepintro__go:active { transform: scale(0.98); }
+.bw-prepintro__go:focus-visible,
+.bw-prepintro__back:focus-visible { outline: 3px solid #f6c445; outline-offset: 3px; }
+@keyframes bw-prepintro-in {
+  from { opacity: 0; transform: translateY(14px); }
+  to { opacity: 1; transform: none; }
+}
+.bw-prepintro { animation: bw-prepintro-fade 0.25s ease-out both; }
+@keyframes bw-prepintro-fade { from { opacity: 0; } to { opacity: 1; } }
+.bw-prepintro__in {
+  animation: bw-prepintro-in 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation-delay: calc(var(--i, 0) * 70ms + 60ms);
+}
+/* Très petits écrans : on resserre plutôt que de faire défiler. */
+@media (max-width: 400px) {
+  .bw-prepintro__result ul { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-height: 700px) {
+  .bw-prepintro__lead { display: none; }
+  .bw-prepintro__steps li span > span { display: none; }
+  .bw-prepintro__meta span:last-child { display: none; }
+}
+@media (max-height: 560px) {
+  .bw-prepintro__result { display: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .bw-prepintro,
+  .bw-prepintro__in { animation: none; }
 }

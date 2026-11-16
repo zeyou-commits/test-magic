@@ -38,6 +38,8 @@ interface TripCalendarProps {
   /** Jours (AAAA-MM-JJ) avec au moins un départ, et leur nombre : aller, puis retour. */
   outDays: Map<string, number>;
   backDays: Map<string, number>;
+  /** Jours dont tous les départs sont estimés (calendrier théorique, pas encore en vente). */
+  estimatedDays?: Set<string>;
   /** « Marseille → Alger » quand un trajet précis est choisi. */
   pairLabel: string | null;
   today: string;
@@ -107,6 +109,7 @@ export function TripCalendar({
   flexDays,
   outDays,
   backDays,
+  estimatedDays,
   pairLabel,
   today,
   onChange,
@@ -552,6 +555,7 @@ export function TripCalendar({
           }}
           modifiers={{
             avail: (day) => activeDays.has(dateToKey(day)),
+            estimated: (day) => Boolean(estimatedDays?.has(dateToKey(day))),
             unpublished: (day) => {
               const key = dateToKey(day);
               return key >= today && unpublished(key);
@@ -572,6 +576,7 @@ export function TripCalendar({
           }}
           modifiersClassNames={{
             avail: "batogo-day-avail",
+            estimated: "batogo-day-estimated",
             unpublished: "batogo-day-unpublished",
             zoneA: "batogo-zone-a",
             zoneB: "batogo-zone-b",
@@ -595,6 +600,13 @@ export function TripCalendar({
 
       {note ? (
         <p className="rounded-xl bg-primary/10 px-3 py-2 text-xs text-primary">{note}</p>
+      ) : null}
+      {estimatedDays?.size ? (
+        <p className="flex items-center gap-2 rounded-xl bg-warning/10 px-3 py-2 text-[11px] leading-snug text-foreground/80">
+          <span className="batogo-legend-estimated" aria-hidden />
+          Point creux : calendrier théorique (rotation habituelle du navire), pas encore en vente.
+          Plein : départ en vente.
+        </p>
       ) : null}
       {unpublishedPick ? (
         <p className="rounded-xl bg-warning/15 px-3 py-2 text-xs text-warning-foreground">

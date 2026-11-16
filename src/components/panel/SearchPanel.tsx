@@ -15,7 +15,6 @@ import {
   ListChecks,
   RotateCcw,
   Search,
-  Route,
   Ship,
   SlidersHorizontal,
   Users,
@@ -60,7 +59,8 @@ import { dateKeyInZone } from "@/lib/ferry/time";
 import { useLiveShips } from "@/lib/ferry/useLiveShips";
 import type { LiveShip } from "@/lib/ferry/tracking";
 import { PortMultiPicker } from "./PortFilters";
-import { SalesAlertForm } from "./SalesAlertForm";
+import { SalesCalendarNote } from "@/components/companion/SalesCalendarNote";
+import { companyCalendars, isEstimatedDeparture } from "@/lib/companion/salesCalendar";
 import { isNorthShore, isSouthShore } from "@/lib/ferry/markets";
 import { CompanyBadge } from "./CompanyBadge";
 import { RoundTripCard } from "./RoundTripCard";
@@ -352,7 +352,8 @@ export function SearchPanel({
         (!from.size || from.has(route.arrival_port_id));
       return out || back;
     });
-    const scope = onPair.length ? onPair : departures;
+    // Seul le calendrier commercial compte : la rotation estimée n'est pas encore en vente.
+    const scope = (onPair.length ? onPair : departures).filter((d) => !isEstimatedDeparture(d));
     const last = scope.reduce((max, d) => (d.departure_at > max ? d.departure_at : max), "");
     if (filters.date <= last.slice(0, 10)) return null;
     const month = new Intl.DateTimeFormat("fr-FR", { month: "long", year: "numeric" }).format(
@@ -447,6 +448,21 @@ export function SearchPanel({
     [inbound, filters.date, today],
   );
 
+  // Jours où tous les départs d'un sens sont estimés : le calendrier les montre en point creux.
+  const estimatedDays = useMemo(() => {
+    const days = new Set<string>();
+    for (const leg of [outbound, inbound]) {
+      const byDay = new Map<string, boolean>();
+      leg.forEach((sailing) => {
+        const estimated = isEstimatedDeparture(sailing.departure);
+        byDay.set(sailing.dayKey, (byDay.get(sailing.dayKey) ?? true) && estimated);
+      });
+      byDay.forEach((all, day) => {
+        if (all) days.add(day);
+      });
+    }
+    return days;
+  }, [outbound, inbound]);
   const [sortBy, setSortBy] = useState<SortBy>("date");
   // Date d'aller « intelligente » : jour exact, ou fenêtre de ± N jours si la souplesse est activée.
   const outList = filters.date
@@ -481,19 +497,57 @@ export function SearchPanel({
 
   const active = hasActiveFilters(filters);
   const fromName = (ids: string[]) => ports.find((port) => port.id === ids[0])?.name ?? "";
-  const salesAlert =
-    salesClosed && filters.date ? (
-      <SalesAlertForm
-        periodLabel={salesClosed.month}
-        publishedUntil={salesClosed.last || null}
-        periodStart={filters.date}
-        periodEnd={filters.returnDate ?? filters.date}
-        fromLabel={
-          filters.departurePortIds.length ? fromName(filters.departurePortIds) : null
-        }
-        toLabel={filters.arrivalPortIds.length ? fromName(filters.arrivalPortIds) : null}
-      />
-    ) : null;
+  // Calendrier de vente de chaque compagnie sur ces ports : jusqu'où c'est en vente, et au-delà le
+  // calendrier théorique (rotation habituelle, « Estimé »), avec l'alerte d'ouverture par compagnie.
+  const calendars = useMemo(
+    () =>
+      filters.date
+        ? companyCalendars({
+            departures,
+            routes,
+            companies,
+            fromIds: filters.departurePortIds,
+            toIds: filters.arrivalPortIds,
+            roundTrip: filters.roundTrip,
+            dates: [filters.date, filters.roundTrip ? filters.returnDate : null],
+          })
+        : [],
+    [departures, routes, companies, filters.date, filters.returnDate, filters.roundTrip, filters.departurePortIds, filters.arrivalPortIds],
+  );
+  const salesAlert = filters.date ? (
+    <SalesCalendarNote
+      calendars={calendars}
+      date={filters.date}
+      returnDate={filters.roundTrip ? filters.returnDate : null}
+      fromLabel={filters.departurePortIds.length ? fromName(filters.departurePortIds) : null}
+      toLabel={filters.arrivalPortIds.length ? fromName(filters.arrivalPortIds) : null}
+    />
+  ) : null;
+  // Aller-retour sans résultat : pourquoi (aller d'abord, puis retour), et les jours les plus proches.
+  const roundTripHelp = useMemo(() => {
+    const nearest = (days: string[], target: string | null) => {
+      if (!target) return { before: null, after: null };
+      const sorted = [...days].sort();
+      return {
+        before: [...sorted].reverse().find((day) => day < target) ?? null,
+        after: sorted.find((day) => day > target) ?? null,
+      };
+    };
+    const outDaysAll = [...outAvailability.keys()];
+    const backDaysAll = [...backAvailability.keys()];
+    const outOk = filters.date ? outAvailability.has(filters.date) : true;
+    const reason = explainNoSailing({
+      date: outOk ? filters.returnDate : filters.date,
+      availableDays: outOk ? backDaysAll : outDaysAll,
+      publishedUntil: salesClosed?.last || null,
+    });
+    return {
+      leg: outOk ? ("retour" as const) : ("aller" as const),
+      reason: reason.kind === "notThatDay" && !hasPair ? ({ kind: "unknown" } as const) : reason,
+      out: outOk ? { before: null, after: null } : nearest(outDaysAll, filters.date),
+      back: nearest(backDaysAll, filters.returnDate),
+    };
+  }, [outAvailability, backAvailability, filters.date, filters.returnDate, salesClosed, hasPair]);
   // Pourquoi rien ? La 504 ne donne une raison que si les données la prouvent.
   const noSailingReason = useMemo(() => {
     const found = explainNoSailing({
@@ -534,34 +588,8 @@ export function SearchPanel({
   return (
     <FareProfileContext.Provider value={profile}>
       <div className="flex flex-col">
-        {!editing && homeMode ? (
-          <div className="bw-search-welcome">
-            <div className="flex items-center justify-between gap-2">
-              <h2>
-                {tr("ui.searchPanel.onPrend")}
-                <strong className="bw-brand-red">{tr("ui.searchPanel.laRouteDuBled")}</strong> ?
-              </h2>
-              <button
-                type="button"
-                onClick={onOpenItinerary}
-                aria-label={tr("ui.searchPanel.preparerMaRouteJusquAu")}
-                title={tr("ui.searchPanel.routeJusquAuPort")}
-                className="grid size-9 shrink-0 place-items-center rounded-xl border border-primary/20 bg-white text-primary hover:bg-primary/5"
-              >
-                <Route className="size-4" aria-hidden />
-              </button>
-            </div>
-            <p className="bw-search-welcome__sub">
-              {tr("ui.searchPanel.reservezPreparezSuivez")}{" "}
-              {/* Le récit, les lignes, les guides et la FAQ : leur propre page, pas sous la carte. */}
-              <a href="/decouvrir" className="bw-search-welcome__more">
-                Découvrir BledWay
-              </a>
-            </p>
-          </div>
-        ) : null}
         {/* RECHERCHE : capsule condensée façon Airbnb, formulaire guidé à la demande */}
-        {!editing ? (
+        {!editing && !homeMode ? (
           <section className="border-b px-3 py-2.5 md:px-5">
             <button type="button" onClick={startSearch} className="bw-search-summary">
               <Ship className="size-4 shrink-0 text-primary" aria-hidden />
@@ -588,7 +616,9 @@ export function SearchPanel({
               <span className="sr-only">{tr("ui.searchPanel.modifierLaRecherche")}</span>
             </button>
             {/* Nouveau visiteur : la valeur de la route du bled, avant de rien demander. */}
-            {onOpenItinerary && !trip ? (
+            {/* Réserver : la préparation pas à pas a son onglet ; on ne la rappelle qu'avant la
+                première recherche, jamais par-dessus des résultats. */}
+            {onOpenItinerary && !trip && !active ? (
               <button
                 type="button"
                 onClick={() => {
@@ -808,6 +838,7 @@ export function SearchPanel({
               returnDate={filters.returnDate}
               flexDays={filters.flexDays}
               outDays={outAvailability}
+              estimatedDays={estimatedDays}
               backDays={backAvailability}
               pairLabel={
                 hasPair
@@ -986,7 +1017,16 @@ export function SearchPanel({
               </label>
               <BookingReturnNote className="mb-3" />
               {showTrips ? (
+                <>
+                {/* Des résultats : l'encart explique d'abord les « Estimé ». Rien : la 504 d'abord. */}
+                {salesAlert && roundTrips.main.some((trip) => trip.mirror) ? (
+                  <div className="mb-3">{salesAlert}</div>
+                ) : null}
                 <RoundTripSection
+                  help={roundTripHelp}
+                  dateLabel={{ out: filters.date, back: filters.returnDate }}
+                  flexDays={filters.flexDays}
+                  onDates={(patch) => set(patch)}
                   trips={roundTrips}
                   sortBy={sortBy}
                   onOpenVessel={(id) => onSelect({ type: "vessel", id })}
@@ -999,9 +1039,13 @@ export function SearchPanel({
                   reportTarget={reportTarget}
                   reportContext={reportContext}
                 />
+                {salesAlert && !roundTrips.main.some((trip) => trip.mirror) ? (
+                  <div className="mt-3">{salesAlert}</div>
+                ) : null}
+                </>
               ) : (
                 <>
-                  {salesAlert ? <div className="mb-3">{salesAlert}</div> : null}
+                  {salesAlert && outList.length ? <div className="mb-3">{salesAlert}</div> : null}
                   <ResultBlock
                     liveByDeparture={liveByDeparture}
                     title={
@@ -1049,6 +1093,7 @@ export function SearchPanel({
                         : undefined
                     }
                   />
+                  {salesAlert && !outList.length ? <div className="mt-3">{salesAlert}</div> : null}
                 </>
               )}
             </>
@@ -1312,7 +1357,18 @@ function FilterSelect({
   );
 }
 
+type RoundTripHelp = {
+  leg: "aller" | "retour";
+  reason: NoSailingReason;
+  out: { before: string | null; after: string | null };
+  back: { before: string | null; after: string | null };
+};
+
 function RoundTripSection({
+  help,
+  dateLabel,
+  flexDays,
+  onDates,
   trips,
   sortBy,
   onOpenVessel,
@@ -1322,6 +1378,10 @@ function RoundTripSection({
   reportTarget,
   reportContext,
 }: {
+  help: RoundTripHelp;
+  dateLabel: { out: string | null; back: string | null };
+  flexDays: number;
+  onDates: (patch: Partial<Filters>) => void;
   trips: { main: RoundTrip[]; alternatives: RoundTrip[] };
   sortBy: SortBy;
   onOpenVessel: (id: string) => void;
@@ -1372,20 +1432,58 @@ function RoundTripSection({
         {samePort.length ? (
           list(sorted(samePort))
         ) : (
-          <div className="rounded-2xl border border-dashed p-5 text-center text-sm text-muted-foreground">
-            {tr("ui.searchPanel.aucunAllerRetourConnuPar")}
-            {reportTarget && (
-              <div className="mt-3">
-                <ReportButton
-                  targetType={reportTarget.type}
-                  targetId={reportTarget.id}
-                  label={tr("ui.searchPanel.signalerUnHoraireManquant")}
-                  initialDetails={reportContext}
-                  initialReason="missing_info"
-                />
-              </div>
-            )}
-          </div>
+          <Bw504Note
+            tone="stuck"
+            title={
+              help.reason.kind === "unknown"
+                ? `Pas d'aller-retour par le même port à ces dates`
+                : `${help.leg === "aller" ? "Aller" : "Retour"} : ${reasonTitle(help.reason, help.leg === "aller" ? dateLabel.out : dateLabel.back).toLowerCase()}`
+            }
+            actions={
+              <>
+                {help.leg === "aller"
+                  ? [help.out.before, help.out.after].map((day) =>
+                      day ? (
+                        <Bw504Button key={`o${day}`} primary onClick={() => onDates({ date: day })}>
+                          Aller {fmtShort(day, true)}
+                        </Bw504Button>
+                      ) : null,
+                    )
+                  : null}
+                {[help.back.before, help.back.after].map((day) =>
+                  day && (!dateLabel.out || day >= dateLabel.out) ? (
+                    <Bw504Button
+                      key={`b${day}`}
+                      primary={help.leg === "retour"}
+                      onClick={() => onDates({ returnDate: day })}
+                    >
+                      Retour {fmtShort(day, true)}
+                    </Bw504Button>
+                  ) : null,
+                )}
+                {flexDays < 3 ? (
+                  <Bw504Button onClick={() => onDates({ flexDays: 3 })}>± 3 jours</Bw504Button>
+                ) : null}
+                {help.reason.kind === "unknown" && reportTarget ? (
+                  <span className="bw-504note__report">
+                    <ReportButton
+                      targetType={reportTarget.type}
+                      targetId={reportTarget.id}
+                      label={tr("ui.searchPanel.signalerUnHoraireManquant")}
+                      initialDetails={reportContext}
+                      initialReason="missing_info"
+                    />
+                  </span>
+                ) : null}
+              </>
+            }
+          >
+            {help.reason.kind === "unknown"
+              ? otherPorts.length
+                ? "Des retours existent par un autre port : regarde juste en dessous, ou décale tes dates."
+                : "Aucun départ connu ne colle à ces deux dates. Décale un peu l'aller ou le retour, ça part souvent mieux."
+              : reasonBody(help.reason, "")}
+          </Bw504Note>
         )}
       </div>
       {otherPorts.length ? (

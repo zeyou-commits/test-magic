@@ -27,16 +27,25 @@ type FamilyQ = "couple" | "transcribed" | "kidsWith" | "separated" | "custody";
 export type PaperQ =
   | { kind: "step"; step: PapersStep }
   | { kind: "traveller"; q: TravellerQ; id: string }
-  | { kind: "family"; q: FamilyQ };
+  | { kind: "family"; q: FamilyQ }
+  | { kind: "names" };
 
 const keyOf = (q: PaperQ) =>
-  q.kind === "step" ? q.step : q.kind === "family" ? q.q : `${q.id}:${q.q}`;
+  q.kind === "names"
+    ? "names"
+    : q.kind === "step"
+      ? q.step
+      : q.kind === "family"
+        ? q.q
+        : `${q.id}:${q.q}`;
 
 /** Les questions qui se posent vraiment, d'après les réponses déjà données. */
 export function paperQuestions(a: Answers, steps: PapersStep[]): PaperQ[] {
   const out: PaperQ[] = [];
   for (const step of steps) {
     if (step === "people") {
+      // D'abord les prénoms (facultatifs) : la suite parle de Sarah ou Hamid, pas d'« Adulte 2 ».
+      out.push({ kind: "names" });
       for (const t of a.travellers) {
         const child = t.kind === "child";
         const add = (q: TravellerQ) => out.push({ kind: "traveller", q, id: t.id });
@@ -134,7 +143,47 @@ export function PapersQuestions({
   ) => <Options label={label} value={value} onChange={onChange} options={options} />;
 
   let body: ReactNode = null;
-  if (q.kind === "step") {
+  if (q.kind === "names") {
+    const rename = (id: string, name: string) =>
+      patch({
+        travellers: answers.travellers.map((x) => (x.id === id ? { ...x, name: name.slice(0, 24) } : x)),
+      });
+    body = (
+      <Question
+        title={answers.travellers.length > 1 ? "Comment s'appellent les voyageurs ?" : "Quel est votre prénom ?"}
+        hint="Facultatif. Votre liste dira « pour Sarah », « pour Hamid » : plus simple à partager avec la famille. Les prénoms restent sur votre téléphone."
+      >
+        <div className="grid gap-2.5">
+          {answers.travellers.map((x, i) => {
+            const fallback = travellerLabel({ ...x, name: "" }, answers.travellers);
+            const Icon = x.kind === "child" ? Baby : User;
+            return (
+              <label key={x.id} className="flex items-center gap-3 rounded-xl border bg-background px-3 py-2.5 focus-within:border-primary focus-within:ring-1 focus-within:ring-primary">
+                <span className="grid size-9 shrink-0 place-items-center rounded-full bg-primary/10 text-primary">
+                  <Icon size={17} aria-hidden />
+                </span>
+                <span className="min-w-0 flex-1">
+                  <span className="block text-[11px] font-bold uppercase tracking-wide text-muted-foreground">
+                    {fallback}
+                    {x.kind === "child" ? "" : i === 0 ? " (vous)" : ""}
+                  </span>
+                  <input
+                    type="text"
+                    value={x.name ?? ""}
+                    onChange={(e) => rename(x.id, e.target.value)}
+                    placeholder={i === 0 ? "Votre prénom" : "Prénom"}
+                    autoComplete={i === 0 ? "given-name" : "off"}
+                    enterKeyHint="next"
+                    className="mt-0.5 w-full bg-transparent text-base font-semibold outline-none placeholder:font-normal placeholder:text-muted-foreground/60"
+                  />
+                </span>
+              </label>
+            );
+          })}
+        </div>
+      </Question>
+    );
+  } else if (q.kind === "step") {
     if (q.step === "home") body = homeSlot ?? <HomeStep answers={answers} patch={patch} />;
     else if (q.step === "group") body = <GroupStep answers={answers} patch={patch} />;
     else if (q.step === "stay") body = <StayStep answers={answers} patch={(p) => set(p)} />;

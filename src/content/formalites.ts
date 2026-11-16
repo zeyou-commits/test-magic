@@ -100,6 +100,16 @@ export const formaliteSources = {
     url: "https://www.justice.fr/fiche/documents-francais-se-rendre-algerie",
     updated: "mise à jour du 11 octobre 2024",
   },
+  "dz-devises": {
+    name: "Ministère algérien des Affaires étrangères : dépliant des douanes sur les devises (2025)",
+    short: "Douanes algériennes",
+    url: "https://embsofia.mfa.gov.dz/media/embsofia/files/pdf/depliant_se_monnaie_2025_fr.pdf",
+  },
+  "fr-argent-liquide": {
+    name: "Douane française : obligation déclarative d'argent liquide",
+    short: "Douane française",
+    url: "https://www.douane.gouv.fr/fiche/obligation-declarative-dargent-liquide",
+  },
   "sp-mineur": {
     name: "Service-Public.fr : documents d'un mineur qui voyage à l'étranger",
     short: "Service-Public.fr",
@@ -121,6 +131,8 @@ export type Residence = "titre" | "fragile";
 
 export interface Traveller {
   id: string;
+  /** Prénom donné par l'utilisateur (facultatif) : « Sarah » plutôt que « Adulte 2 ». */
+  name?: string;
   kind: "adult" | "child";
   nat: Nat;
   dzDoc: DzDoc;
@@ -199,8 +211,10 @@ export const defaultAnswers: Answers = {
   stay: "family",
 };
 
-/** « Vous », « Adulte 2 », « Mineur 1 »… */
+/** Le prénom s'il a été donné, sinon « Vous », « Adulte 2 », « Mineur 1 »… */
 export function travellerLabel(t: Traveller, all: Traveller[]): string {
+  const name = t.name?.trim();
+  if (name) return name;
   const same = all.filter((x) => x.kind === t.kind);
   const n = same.findIndex((x) => x.id === t.id) + 1;
   if (t.kind === "adult") return n === 1 ? "Vous" : `Adulte ${n}`;
@@ -604,19 +618,21 @@ export function tasksFor(a: Answers): Task[] {
       who: foreigners.map(label),
       sources: ["justice-algerie"],
     });
-  if (a.stay !== "family" && adults.length >= 2 && a.couple !== "none")
+  /* Couple marié : le livret de famille prouve le mariage, à l'hôtel comme au consulat. */
+  if (adults.length >= 2 && a.couple === "married")
+    add({
+      id: "livret",
+      when: "pack",
+      title: "Le livret de famille",
+      detail:
+        "Couple marié : emportez-le (ou un extrait d'acte de mariage récent). Il prouve le mariage : certains hôtels n'acceptent un couple dans la même chambre que sur cette preuve, et le consulat d'Algérie le demande pour toute démarche de famille." +
+        (children.length ? " Avec des enfants, il prouve aussi le lien de parenté à chaque contrôle." : ""),
+      who: [],
+      sources: ["be-legislation", "cons-livret"],
+    });
+  if (a.stay !== "family" && adults.length >= 2 && a.couple === "unmarried")
     add(
-      a.couple === "married"
-        ? {
-            id: "acte-mariage",
-            when: "pack",
-            title: "Un extrait d'acte de mariage pour l'hôtel",
-            detail:
-              "Certains hôtels n'acceptent un couple dans la même chambre que s'il est marié : emportez un extrait d'acte de mariage.",
-            who: [],
-            sources: ["be-legislation"],
-          }
-        : {
+      {
             id: "chambres-separees",
             when: "weeks",
             title: "Couple non marié : demander à l'hôtel avant de réserver",
@@ -630,11 +646,11 @@ export function tasksFor(a: Answers): Task[] {
   add({
     id: "devises",
     when: "pack",
-    title: "Déclarer ses devises à partir de 1 000 €",
+    title: "Devises : déclarer à partir de 1 000 € par personne",
     detail:
-      "À l'entrée comme à la sortie, les billets et moyens de paiement en devises sont à déclarer à la douane à partir de l'équivalent de 1 000 €. Seuls les résidents peuvent emporter ou rapporter des dinars, dans la limite de 10 000 DA.",
+      "Qui : chaque voyageur, adulte ou enfant, Algérien (résident ou non), binational ou Français. Le seuil se compte par personne, pas par famille.\nEn Algérie : à l'entrée comme à la sortie, les billets et chèques en devises sont à déclarer à la douane dès l'équivalent de 1 000 €. L'entrée n'est pas plafonnée si elle est déclarée. Gardez la déclaration d'entrée : elle permet de ressortir les devises non dépensées.\nLes dinars : 10 000 DA au plus, et seulement pour les résidents en Algérie.\nEn France (Union européenne) : à déclarer dès 10 000 € par personne, avant de passer la frontière (en ligne sur DALIA ou au bureau de douane du port).\nLes risques : en France, une amende jusqu'à la moitié de la somme non déclarée, et l'argent peut être retenu. En Algérie, des devises non déclarées peuvent être saisies : c'est une infraction à la réglementation des changes.",
     who: [],
-    sources: ["fd-entree"],
+    sources: ["dz-devises", "fr-argent-liquide", "fd-entree"],
   });
   add({
     id: "papiers-sur-soi",

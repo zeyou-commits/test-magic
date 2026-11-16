@@ -2,7 +2,7 @@ import { VesselAlertTag } from "@/components/panel/VesselAlert";
 import { matchesTraffic } from "@/lib/ferry/filterSync";
 import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Ship, ArrowDownLeft, ArrowUpRight, MapPin } from "lucide-react";
+import { Anchor, ArrowDownLeft, ArrowUpRight, MapPin } from "lucide-react";
 import { TrafficCard } from "./TrafficCard";
 import {
   companiesQuery,
@@ -17,7 +17,7 @@ import { useLiveShips } from "@/lib/ferry/useLiveShips";
 import { SeaChip } from "./SeaForecast";
 import { trackingTimes } from "@/lib/ferry/tracking";
 import { formatDateParts } from "@/lib/ferry/format";
-import { portTimeZone } from "@/lib/ferry/time";
+import { dateKeyInZone, portTimeZone } from "@/lib/ferry/time";
 import { emptyFilters, type Filters, type Selection } from "@/lib/ferry/types";
 import { CompanyBadge } from "./CompanyBadge";
 import { MyTripsShortcut } from "./MyTrip";
@@ -90,6 +90,40 @@ export function HomeTraffic({
   // Ma traversée est déjà suivie dans son bloc, en tête : pas de doublon dans la liste.
   const sailing = allSailing.filter((c) => c.departure.id !== trip?.departure.id);
   const mineSailing = sailing.length !== allSailing.length;
+  // À quai : les navires identifiés amarrés (signal AIS ou horaire), avec leur prochain départ.
+  const docked = fleet
+    .filter((ship) => ship.state === "docked" && ship.vesselId)
+    .map((ship) => {
+      const crossing = crossings.find((c) => c.departure.id === ship.departureId);
+      const port = ports.find((p) => p.id === ship.portId);
+      const vessel = vessels.find((v) => v.id === ship.vesselId);
+      const company = companies.find((c) => c.id === (vessel?.company_id ?? crossing?.departure.company_id));
+      const leaves =
+        crossing && crossing.from.id === ship.portId && crossing.times.departure.iso
+          ? Date.parse(crossing.times.departure.iso) > now
+            ? crossing
+            : null
+          : null;
+      return {
+        ship,
+        port,
+        company,
+        next: leaves
+          ? {
+              to: `vers ${leaves.to.name}`,
+              time: (() => {
+                const zone = portTimeZone(leaves.from);
+                const parts = formatDateParts(leaves.times.departure.iso!, zone);
+                const sameDay =
+                  dateKeyInZone(leaves.times.departure.iso!, zone) === dateKeyInZone(new Date(now).toISOString(), zone);
+                return sameDay ? parts.time : `${parts.shortDate} ${parts.time}`;
+              })(),
+            }
+          : null,
+        sortKey: leaves ? Date.parse(leaves.times.departure.iso!) : Infinity,
+      };
+    })
+    .sort((a, b) => a.sortKey - b.sortKey);
   const events = crossings
     .flatMap((c) => [
       { ...c, kind: "departure" as const, iso: c.times.departure.iso, port: c.from },
@@ -106,9 +140,21 @@ export function HomeTraffic({
       <MyTripsShortcut onSelect={onSelect} />
       {mineSailing && !sailing.length ? null : (
       <section aria-label={tr("ui.homeTraffic.traverseesEnNavigation")}>
-        <h2 className="mb-2 flex items-center gap-2 text-sm font-bold">
-          <Ship size={16} aria-hidden /> {mineSailing ? tr("ui.homeTraffic.autresNaviresEnRoute") : tr("ui.homeTraffic.enNavigation")}{" "}
-          <span className="text-xs font-normal text-muted-foreground">{sailing.length || ""}</span>
+        {/* Le direct commence par ce qui bouge : combien de navires sont en mer, maintenant. */}
+        <h2 className="bw-live-head">
+          <span className="bw-live-head__dot" aria-hidden />
+          {mineSailing
+            ? tr("ui.homeTraffic.autresNaviresEnRoute")
+            : allSailing.length === 0
+              ? isPending
+                ? tr("ui.homeTraffic.chargementDesTraversees")
+                : tr("ui.homeTraffic.aucunNavireEnMer")
+              : tr(
+                  allSailing.length > 1
+                    ? "ui.homeTraffic.naviresEnMerPluriel"
+                    : "ui.homeTraffic.naviresEnMer",
+                  { count: allSailing.length },
+                )}
         </h2>
         {sailing.length ? (
           sailing.map((c) => (
@@ -119,17 +165,59 @@ export function HomeTraffic({
               {...(onPreview ? { onPreview } : {})}
             />
           ))
-        ) : (
-          <p className="text-xs text-muted-foreground">
-            {isPending
-              ? tr("ui.homeTraffic.chargementDesTraversees")
-              : tr("ui.homeTraffic.aucuneTraverseeEnNavigationConnue")}
-          </p>
-        )}
+        ) : null}
       </section>
       )}
+      {docked.length ? (
+        <section className="mt-4" aria-label={tr("ui.homeTraffic.naviresAQuai")}>
+          <h2 className="bw-live-head bw-live-head--quay">
+            <Anchor size={15} aria-hidden /> {tr("ui.homeTraffic.naviresAQuai")}
+            <span className="bw-live-head__count">{docked.length}</span>
+          </h2>
+          <ul className="bw-quay-list">
+            {docked.map((d) => (
+              <li key={d.ship.id}>
+                <button
+                  type="button"
+                  className="bw-quay-row"
+                  onClick={() =>
+                    onSelect(
+                      d.ship.vesselId
+                        ? { type: "vessel", id: d.ship.vesselId }
+                        : { type: "departure", id: d.ship.departureId },
+                    )
+                  }
+                  {...previewEvents({
+                    routeId: d.ship.routeId,
+                    ...(d.ship.vesselId ? { vesselId: d.ship.vesselId } : {}),
+                  })}
+                >
+                  <CompanyBadge
+                    name={d.company?.name ?? "Compagnie à confirmer"}
+                    logoUrl={d.company?.logo_url ?? null}
+                    size={30}
+                  />
+                  <span className="min-w-0 flex-1 leading-tight">
+                    <strong className="block truncate text-[13px]">{d.ship.name}</strong>
+                    <small className="block truncate text-[11px] text-muted-foreground">
+                      {d.ship.ashore ? "Immobilisé · " : "À quai · "}
+                      {d.port?.name ?? "port à confirmer"}
+                    </small>
+                  </span>
+                  {d.next ? (
+                    <span className="bw-quay-row__next">
+                      <small>{d.next.to}</small>
+                      <b>{d.next.time}</b>
+                    </span>
+                  ) : null}
+                </button>
+              </li>
+            ))}
+          </ul>
+        </section>
+      ) : null}
       <section className="mt-4" aria-label={tr("ui.homeTraffic.prochainsDepartsEtArrivees")}>
-        <h2 className="mb-2 text-sm font-bold">Départs & arrivées</h2>
+        <h2 className="mb-2 text-sm font-bold">{tr("ui.homeTraffic.prochainsDeparts")}</h2>
         <div className="mb-2 flex rounded-xl bg-secondary p-1" aria-label={tr("ui.homeTraffic.filtrerLesMouvements")}>
           {(
             [

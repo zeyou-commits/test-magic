@@ -97,7 +97,7 @@ export function PwaInstall() {
   }, []);
 
   // Le compagnon pas à pas : la bannière cacherait les questions sur téléphone.
-  if (pathname === "/preparer-mon-voyage") return null;
+  if (pathname === "/preparer-mon-voyage" || pathname === "/ma-preparation") return null;
   if (dismissed || (!prompt && !showIos && !manual)) return null;
   return (
     <aside

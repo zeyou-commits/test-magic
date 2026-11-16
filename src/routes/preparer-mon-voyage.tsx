@@ -109,6 +109,7 @@ import { searchItineraryAddress } from "@/lib/ferry/itinerary.functions";
 import { carPrepItems as carItems } from "@/lib/ferry/dossier";
 import {
   PAPERS_LAST_DAYS,
+  papersDeadlines,
   papersMargin,
   papersWhy,
   retroPlan,
@@ -130,6 +131,7 @@ import {
 } from "@/lib/ferry/travelProfile";
 import type { Port } from "@/lib/ferry/types";
 import { seoHead } from "@/lib/seo/site";
+import { SharePreparation } from "@/components/prepare/SharePreparation";
 
 const PATH = "/preparer-mon-voyage";
 
@@ -725,6 +727,7 @@ function CompanionPage() {
                   {plan.done.includes("profile") ? (
                     <PlanTodo plan={plan} papers={papers} onOpenStep={openStep} />
                   ) : null}
+                  {plan.started ? <SharePreparation /> : null}
                   <h2 className="mt-6 font-display text-lg font-bold">Mes étapes</h2>
                   <ol className="mt-2 grid grid-cols-1 gap-2">
                     {steps.map((step, index) =>
@@ -1061,39 +1064,15 @@ function PapersStepBody({
   const steps = papersSteps(papers.answers, "companion");
   const reasons = consulateReasons(papers.answers);
   // Les dates de la liste, tirées du premier jour de départ possible, avec leur raison.
-  const deadlines = useMemo(() => {
-    const day = earliestDay(plan);
-    const today = todayKey();
-    const visa = papers.answers.travellers.some((t) => t.nat === "etr");
-    const weeks = new Date(Date.parse(`${day}T12:00:00Z`) - papersMargin(day).days * 86_400_000)
-      .toISOString()
-      .slice(0, 10);
-    const minus = (n: number) =>
-      new Date(Date.parse(`${day}T12:00:00Z`) - n * 86_400_000).toISOString().slice(0, 10);
-    const months3 = minus(90);
-    const lastweek = minus(7);
-    const out: Partial<Record<When, { label: string; why: string }>> = {
-      first: { label: "Dès maintenant", why: papersWhy("first", day, visa).short },
-      weeks: {
-        label:
-          minus(PAPERS_LAST_DAYS) < today
-            ? "Aujourd'hui (délai très court)"
-            : weeks < today
-              ? "Cette semaine (marge réduite)"
-              : `Avant le ${longDate(weeks)}`,
-        why: papersWhy("weeks", day, visa).short,
-      },
-      months3: {
-        label: months3 <= today ? "Dès maintenant" : `À partir du ${longDate(months3)}`,
-        why: papersWhy("months3", day, visa).short,
-      },
-      lastweek: {
-        label: lastweek <= today ? "Dès maintenant" : `À partir du ${longDate(lastweek)}`,
-        why: papersWhy("lastweek", day, visa).short,
-      },
-    };
-    return out;
-  }, [plan, papers.answers.travellers]);
+  const deadlines = useMemo(
+    () =>
+      papersDeadlines(
+        earliestDay(plan),
+        papers.answers.travellers.some((t) => t.nat === "etr"),
+        todayKey(),
+      ),
+    [plan, papers.answers.travellers],
+  );
   // Où reprendre les questions : au début (« Modifier ») ou à la dernière (« Retour »).
   const [resume, setResume] = useState<"last" | 0>(0);
   const questions = paperQuestions(papers.answers, steps).length;

@@ -52,6 +52,8 @@ import {
   type When,
 } from "@/content/formalites";
 import { displayDate } from "@/lib/seo/site";
+import { PlanBoard } from "@/components/papers/PlanBoard";
+import { SharePreparation } from "@/components/prepare/SharePreparation";
 
 /**
  * Le parcours « Mes papiers » : questions, liste à cocher, consulat. Seul sur la page des
@@ -629,6 +631,16 @@ function TravellerCard({
           </label>
         ) : null}
       </div>
+      <label className="mt-2 flex items-center gap-2 text-sm">
+        <span className="font-semibold text-muted-foreground">Prénom (facultatif)</span>
+        <input
+          type="text"
+          value={t.name ?? ""}
+          onChange={(e) => update({ name: e.target.value.slice(0, 24) })}
+          placeholder="Sarah, Hamid…"
+          className="min-h-10 min-w-0 flex-1 rounded-xl border bg-background px-3"
+        />
+      </label>
       <div className="mt-3">
         <Options
           label={`Nationalité : ${name}`}
@@ -970,12 +982,15 @@ export function PapersResult({
         >
           <Pencil size={14} aria-hidden /> Modifier mes réponses
         </button>
+        <SharePreparation compact />
       </div>
 
-      {/* Le bilan d'abord, en trois blocs : les démarches, les documents, les conseils. */}
-      <PlanSummary
+      {/* Le bilan d'abord, en quatre rubriques cliquables, filtrables par voyageur. */}
+      <PlanBoard
         tasks={all}
         done={done}
+        onToggle={toggle}
+        travellers={answers.travellers.map((t) => travellerLabel(t, answers.travellers))}
         deadlines={deadlines}
         consulateLine={
           atConsulate.length
@@ -1022,11 +1037,13 @@ export function PapersResult({
             </ul>
           ) : null}
 
+          <details className="bw-plan__all mt-4">
+            <summary>Toute la liste, dans l'ordre du calendrier ({tasks.length})</summary>
           {whenOrder.map((when) => {
             const group = tasks.filter((t) => t.when === when);
             if (!group.length) return null;
             return (
-              <div key={when} className="mt-8">
+              <div key={when} className="mt-6">
                 {embedded ? (
                   <h4 className="font-display text-lg font-bold">{whenLabels[when].title}</h4>
                 ) : (
@@ -1061,6 +1078,7 @@ export function PapersResult({
               </div>
             );
           })}
+          </details>
         </div>
         <aside className={`grid gap-4 ${embedded ? "order-1" : "lg:sticky lg:top-24"}`}>
           {/* Le consulat seulement s'il y a quelque chose à y faire. */}
@@ -1079,157 +1097,6 @@ export function PapersResult({
   );
 }
 
-/** Une échéance en étiquette : rouge si c'est maintenant, ambre sinon. */
-function DeadlineTag({ label, urgent }: { label: string; urgent: boolean }) {
-  return (
-    <span
-      className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-bold ${
-        urgent ? "bg-[#c95038]/12 text-[#b0412b]" : "bg-[#e0a43a]/18 text-[#8a5d0c]"
-      }`}
-    >
-      <CalendarDays size={13} aria-hidden /> {label}
-    </span>
-  );
-}
-
-/** Les tâches d'un bloc, regroupées par échéance ; les visas de plusieurs voyageurs sur une ligne. */
-function SummaryGroups({
-  list,
-  deadlines,
-}: {
-  list: Task[];
-  deadlines: Partial<Record<When, { label: string; why: string }>>;
-}) {
-  const groups = (["first", "weeks", "months3", "lastweek"] as const)
-    .map((when) => ({ when, items: list.filter((t) => t.when === when) }))
-    .filter((group) => group.items.length);
-  return (
-    <div className="mt-3 grid gap-3">
-      {groups.map(({ when, items }) => {
-        const label =
-          when === "first" ? "Dès maintenant" : (deadlines[when]?.label ?? whenLabels[when].title);
-        const urgent = when === "first" || /Aujourd|semaine|maintenant/i.test(label);
-        const visas = items.filter((t) => t.id.startsWith("visa-"));
-        const rows = [
-          ...(visas.length
-            ? [
-                {
-                  id: "visas",
-                  title: visas.length > 1 ? "Demander les visas" : visas[0]!.title,
-                  who: [...new Set(visas.flatMap((v) => v.who))],
-                },
-              ]
-            : []),
-          ...items.filter((t) => !t.id.startsWith("visa-")),
-        ];
-        return (
-          <div key={when}>
-            <DeadlineTag label={label} urgent={urgent} />
-            <ul className="mt-2 grid gap-1.5">
-              {rows.map((row) => (
-                <li key={row.id} className="flex items-start gap-2 text-sm">
-                  <span
-                    className="mt-1.5 size-1.5 shrink-0 rounded-full bg-foreground/60"
-                    aria-hidden
-                  />
-                  <span>
-                    <span className="font-semibold">{row.title}</span>
-                    {row.who.length ? (
-                      <span className="text-muted-foreground"> · {row.who.join(", ")}</span>
-                    ) : null}
-                  </span>
-                </li>
-              ))}
-            </ul>
-          </div>
-        );
-      })}
-    </div>
-  );
-}
-
-/** Le bilan : démarches, documents à préparer, conseils à part ; chaque échéance bien visible. */
-function PlanSummary({
-  tasks,
-  done,
-  deadlines,
-  consulateLine,
-}: {
-  tasks: Task[];
-  done: string[];
-  deadlines: Partial<Record<When, { label: string; why: string }>>;
-  consulateLine: string | null;
-}) {
-  const open = tasks.filter((t) => isPaperToDo(t) && !done.includes(t.id));
-  const steps = open.filter((t) => paperKind(t) === "step");
-  const documents = open.filter((t) => paperKind(t) === "document");
-  const tips = tasks.filter((t) => isPaperToDo(t) && paperKind(t) === "tip");
-  const toTake = tasks.filter((t) => !isPaperToDo(t) && paperKind(t) !== "tip");
-  // Les visas de plusieurs voyageurs comptent pour une démarche, comme dans la liste.
-  const visas = steps.filter((t) => t.id.startsWith("visa-")).length;
-  const stepCount = steps.length - Math.max(0, visas - 1);
-  return (
-    <div className="mt-4 grid gap-3">
-      <div className="rounded-2xl border bg-card p-4 md:p-5">
-        <h3 className="flex items-center gap-2 font-display text-lg font-bold">
-          <ClipboardList size={18} className="text-primary" aria-hidden />
-          {stepCount
-            ? `${stepCount} démarche${stepCount > 1 ? "s" : ""} à faire`
-            : "Aucune démarche à faire"}
-        </h3>
-        {steps.length ? <SummaryGroups list={steps} deadlines={deadlines} /> : null}
-        {consulateLine ? (
-          <p className="mt-3 flex items-start gap-2 text-xs text-muted-foreground">
-            <MapPin size={13} className="mt-0.5 shrink-0" aria-hidden /> {consulateLine}
-          </p>
-        ) : null}
-      </div>
-      {documents.length ? (
-        <div className="rounded-2xl border bg-card p-4 md:p-5">
-          <h3 className="flex items-center gap-2 font-display text-lg font-bold">
-            <FileText size={18} className="text-primary" aria-hidden />
-            {documents.length} document{documents.length > 1 ? "s" : ""} à préparer
-          </h3>
-          <SummaryGroups list={documents} deadlines={deadlines} />
-        </div>
-      ) : null}
-      {tips.length ? (
-        <div className="rounded-2xl border border-[#e0a43a]/40 bg-[#fff8ea] p-4 md:p-5">
-          <h3 className="flex items-center gap-2 font-display text-base font-bold">
-            <Lightbulb size={17} className="text-[#b7791f]" aria-hidden /> Bon à savoir
-          </h3>
-          <ul className="mt-2 grid gap-1.5 text-sm">
-            {tips.map((t) => (
-              <li key={t.id}>
-                <details className="group">
-                  <summary className="cursor-pointer list-none">
-                    <span className="font-semibold">{t.title}</span>
-                    {t.who.length ? (
-                      <span className="text-muted-foreground"> · {t.who.join(", ")}</span>
-                    ) : null}
-                    <span className="ml-1 text-xs font-semibold text-[#8a5d0c] underline underline-offset-2 group-open:hidden">
-                      Pourquoi ?
-                    </span>
-                  </summary>
-                  <p className="mt-1 whitespace-pre-line text-muted-foreground">{t.detail}</p>
-                  <SourceLinks ids={t.sources} />
-                </details>
-              </li>
-            ))}
-          </ul>
-        </div>
-      ) : null}
-      {toTake.length ? (
-        <p className="flex items-center gap-2 px-1 text-sm text-muted-foreground">
-          <Briefcase size={15} aria-hidden />
-          Et {toTake.length} point{toTake.length > 1 ? "s" : ""} pour le voyage lui-même (à
-          emporter, sur place, au retour) : tout est dans la liste juste en dessous.
-        </p>
-      ) : null}
-    </div>
-  );
-}
-
 /** « S'inscrire sur Ariane » → « s'inscrire sur Ariane » ; les sigles et noms propres restent. */
 const lowerFirst = (text: string) =>
   /^[A-ZÀ-Ý][a-zà-ÿ']/.test(text) ? text.charAt(0).toLowerCase() + text.slice(1) : text;
@@ -1239,10 +1106,13 @@ export function TaskRow({
   done,
   onToggle,
   first = [],
+  due,
 }: {
   task: Task;
   done: boolean;
   onToggle: () => void;
+  /** Échéance affichée en étiquette devant les voyageurs (bilan en rubriques). */
+  due?: ReactNode;
   /** Ce qu'il faut avoir fait avant (titres), encore à faire. */
   first?: string[];
 }) {
@@ -1275,6 +1145,7 @@ export function TaskRow({
               {task.title}
             </span>
             <span className="mt-1.5 flex flex-wrap items-center gap-1.5">
+              {due}
               {first.length && !done ? (
                 <span className="basis-full text-xs font-semibold text-amber-800 dark:text-amber-200">
                   D'abord : {first.map(lowerFirst).join(", ")}

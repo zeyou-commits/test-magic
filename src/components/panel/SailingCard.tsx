@@ -112,6 +112,14 @@ export function SailingCard({
               departureAt={departure.departure_at}
               arrivalAt={departure.arrival_at}
             />
+            {departure.schedule_id && departure.reliability !== "verified" ? (
+              <span
+                className="inline-flex items-center gap-1 rounded-full bg-warning/15 px-2 py-0.5 font-semibold text-warning-foreground"
+                title="Calendrier théorique : la rotation habituelle du navire, pas encore mise en vente par la compagnie."
+              >
+                Estimé
+              </span>
+            ) : null}
             {recommended ? (
               <span
                 className="inline-flex items-center gap-1 rounded-full bg-success/15 px-2 py-0.5 font-semibold text-success"

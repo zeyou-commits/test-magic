@@ -100,6 +100,48 @@ export function papersWhy(when: When, day: string, visa: boolean): { short: stri
 /** En dessous, même le délai publié d'un visa (14 jours) et un rendez-vous ne tiennent plus. */
 export const PAPERS_LAST_DAYS = 21;
 
+const deadlineDate = (key: string) =>
+  new Intl.DateTimeFormat("fr-FR", { weekday: "long", day: "numeric", month: "long" })
+    .format(new Date(`${key}T12:00:00`))
+    .replace(/ 1 /, " 1er ");
+
+/**
+ * Les échéances de « Mes papiers », tirées du premier jour de départ possible, avec leur raison.
+ * Partagées par le guide et la page de préparation partagée.
+ */
+export function papersDeadlines(
+  day: string,
+  visa: boolean,
+  today = new Date().toISOString().slice(0, 10),
+): Partial<Record<When, { label: string; why: string }>> {
+  const minus = (n: number) =>
+    new Date(Date.parse(`${day}T12:00:00Z`) - n * 86_400_000).toISOString().slice(0, 10);
+  const weeks = minus(papersMargin(day).days);
+  const months3 = minus(90);
+  const lastweek = minus(7);
+  return {
+    first: { label: "Dès maintenant", why: papersWhy("first", day, visa).short },
+    weeks: {
+      label:
+        minus(PAPERS_LAST_DAYS) < today
+          ? "Aujourd'hui (délai très court)"
+          : weeks < today
+            ? "Cette semaine (marge réduite)"
+            : `Avant le ${deadlineDate(weeks)}`,
+      why: papersWhy("weeks", day, visa).short,
+    },
+    months3: {
+      label: months3 <= today ? "Dès maintenant" : `À partir du ${deadlineDate(months3)}`,
+      why: papersWhy("months3", day, visa).short,
+    },
+    lastweek: {
+      label: lastweek <= today ? "Dès maintenant" : `À partir du ${deadlineDate(lastweek)}`,
+      why: papersWhy("lastweek", day, visa).short,
+    },
+  };
+}
+
+
 /** Fin de la mesure pour les binationaux, au format AAAA-MM-JJ. */
 export const BINATIONAL_MEASURE_END_DAY = "2026-12-31";
 

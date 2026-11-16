@@ -29,6 +29,7 @@ import { Route as HorairesRouteImport } from './routes/horaires'
 import { Route as LignesRouteImport } from './routes/lignes'
 import { Route as LlmsDottxtRouteImport } from './routes/llms[.]txt'
 import { Route as MaBezassRouteImport } from './routes/ma-bezass'
+import { Route as MaPreparationRouteImport } from './routes/ma-preparation'
 import { Route as MentionsLegalesRouteImport } from './routes/mentions-legales'
 import { Route as MesDinarsRouteImport } from './routes/mes-dinars'
 import { Route as MethodeEditorialeRouteImport } from './routes/methode-editoriale'
@@ -165,6 +166,11 @@ const LlmsDottxtRoute = LlmsDottxtRouteImport.update({
 const MaBezassRoute = MaBezassRouteImport.update({
   id: '/ma-bezass',
   path: '/ma-bezass',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MaPreparationRoute = MaPreparationRouteImport.update({
+  id: '/ma-preparation',
+  path: '/ma-preparation',
   getParentRoute: () => rootRouteImport,
 } as any)
 const MentionsLegalesRoute = MentionsLegalesRouteImport.update({
@@ -374,6 +380,7 @@ export interface FileRoutesByFullPath {
   '/lignes': typeof LignesRouteWithChildren
   '/llms.txt': typeof LlmsDottxtRoute
   '/ma-bezass': typeof MaBezassRoute
+  '/ma-preparation': typeof MaPreparationRoute
   '/mentions-legales': typeof MentionsLegalesRoute
   '/mes-dinars': typeof MesDinarsRoute
   '/methode-editoriale': typeof MethodeEditorialeRoute
@@ -429,6 +436,7 @@ export interface FileRoutesByTo {
   '/horaires': typeof HorairesRoute
   '/llms.txt': typeof LlmsDottxtRoute
   '/ma-bezass': typeof MaBezassRoute
+  '/ma-preparation': typeof MaPreparationRoute
   '/mentions-legales': typeof MentionsLegalesRoute
   '/mes-dinars': typeof MesDinarsRoute
   '/methode-editoriale': typeof MethodeEditorialeRoute
@@ -487,6 +495,7 @@ export interface FileRoutesById {
   '/lignes': typeof LignesRouteWithChildren
   '/llms.txt': typeof LlmsDottxtRoute
   '/ma-bezass': typeof MaBezassRoute
+  '/ma-preparation': typeof MaPreparationRoute
   '/mentions-legales': typeof MentionsLegalesRoute
   '/mes-dinars': typeof MesDinarsRoute
   '/methode-editoriale': typeof MethodeEditorialeRoute
@@ -548,6 +557,7 @@ export interface FileRouteTypes {
     | '/lignes'
     | '/llms.txt'
     | '/ma-bezass'
+    | '/ma-preparation'
     | '/mentions-legales'
     | '/mes-dinars'
     | '/methode-editoriale'
@@ -603,6 +613,7 @@ export interface FileRouteTypes {
     | '/horaires'
     | '/llms.txt'
     | '/ma-bezass'
+    | '/ma-preparation'
     | '/mentions-legales'
     | '/mes-dinars'
     | '/methode-editoriale'
@@ -660,6 +671,7 @@ export interface FileRouteTypes {
     | '/lignes'
     | '/llms.txt'
     | '/ma-bezass'
+    | '/ma-preparation'
     | '/mentions-legales'
     | '/mes-dinars'
     | '/methode-editoriale'
@@ -720,6 +732,7 @@ export interface RootRouteChildren {
   LignesRoute: typeof LignesRouteWithChildren
   LlmsDottxtRoute: typeof LlmsDottxtRoute
   MaBezassRoute: typeof MaBezassRoute
+  MaPreparationRoute: typeof MaPreparationRoute
   MentionsLegalesRoute: typeof MentionsLegalesRoute
   MesDinarsRoute: typeof MesDinarsRoute
   MethodeEditorialeRoute: typeof MethodeEditorialeRoute
@@ -887,6 +900,13 @@ declare module '@tanstack/react-router' {
       path: '/ma-bezass'
       fullPath: '/ma-bezass'
       preLoaderRoute: typeof MaBezassRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/ma-preparation': {
+      id: '/ma-preparation'
+      path: '/ma-preparation'
+      fullPath: '/ma-preparation'
+      preLoaderRoute: typeof MaPreparationRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/mentions-legales': {
@@ -1250,6 +1270,7 @@ const rootRouteChildren: RootRouteChildren = {
   LignesRoute: LignesRouteWithChildren,
   LlmsDottxtRoute: LlmsDottxtRoute,
   MaBezassRoute: MaBezassRoute,
+  MaPreparationRoute: MaPreparationRoute,
   MentionsLegalesRoute: MentionsLegalesRoute,
   MesDinarsRoute: MesDinarsRoute,
   MethodeEditorialeRoute: MethodeEditorialeRoute,

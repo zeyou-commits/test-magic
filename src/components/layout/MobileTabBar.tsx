@@ -121,7 +121,7 @@ export function MobileTabBar({
         <button
           type="button"
           onClick={onOpenSearch}
-          data-active={activeTab === "search"}
+          data-active={activeTab === "search" || activeTab === "departures"}
           className={bookClass}
           data-tour="book"
           aria-label={t("menu.bookLabel")}
@@ -151,7 +151,7 @@ export function MobileTabBar({
         <button
           type="button"
           onClick={onOpenMap}
-          data-active={activeTab === "map" || activeTab === "departures"}
+          data-active={activeTab === "map"}
           className={itemClass}
         >
           <MapIcon className="size-5" aria-hidden />

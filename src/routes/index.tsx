@@ -407,7 +407,8 @@ function Index() {
             </>
           }
         >
-          Ajoute ton billet, ou suis celui d'un proche : je suis le navire et je te préviens s'il y a du retard.
+          Ajoute ton billet, ou suis celui d'un proche : je garde un œil sur le navire et, avec les
+          notifications, je te préviens d'un retard signalé.
         </Bw504Note>
       ),
       { duration: 9000 },

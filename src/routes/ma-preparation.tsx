@@ -313,10 +313,10 @@ function ConsulateAsk({
       <img src="/cabas/persos/voiture_504.webp" alt="" width={48} height={48} />
       <div className="min-w-0">
         <p className="bw-onepage__ask-title">
-          {nudged ? "Une seconde avant le PDF : votre consulat ?" : "Votre consulat manque sur la feuille"}
+          {nudged ? "Une seconde avant le PDF : ton consulat ?" : "Ton consulat manque sur la feuille"}
         </p>
         <p className="bw-onepage__ask-text">
-          Des démarches se font au consulat d'Algérie. Votre code postal suffit pour mettre son
+          Des démarches se font au consulat d'Algérie. Ton code postal suffit pour mettre son
           adresse et son lien de rendez-vous sur le PDF.
         </p>
         <span className="bw-onepage__sharerow">

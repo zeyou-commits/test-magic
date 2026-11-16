@@ -1186,8 +1186,8 @@ function ProfileReview({
   return (
     <div className="pt-4">
       <Bw504Note tone="win" title="C'est noté, cette étape est faite">
-        Voici ce que vous m'avez dit. Tout reste modifiable, mais je vous demanderai confirmation :
-        la date et les voyageurs servent à calculer vos échéances et votre liste de papiers.
+        Voici ce que tu m'as dit. Tout reste modifiable, mais je te demanderai confirmation : la
+        date et les voyageurs servent à calculer tes échéances et ta liste de papiers.
       </Bw504Note>
       <dl className="bw-review mt-4">
         {rows.map(({ icon: Icon, label, value }) => (
@@ -1215,8 +1215,8 @@ function ProfileReview({
             onEdit();
           }}
         >
-          Changer la date ou les voyageurs change vos échéances et votre liste de papiers : je les
-          recalcule. Ce que vous avez déjà coché reste coché.
+          Changer la date ou les voyageurs change tes échéances et ta liste de papiers : je les
+          recalcule. Ce que tu as déjà coché reste coché.
         </ConfirmChange>
       ) : null}
       <WizardNav next={{ label: "Continuer : mes papiers", onClick: onNext }} />
@@ -1290,7 +1290,7 @@ function PapersStepBody({
           />
           {asking ? (
             <ConfirmChange
-              title="On modifie vos papiers ?"
+              title="On modifie tes papiers ?"
               onCancel={() => setAsking(null)}
               onConfirm={() => {
                 const target = asking;
@@ -1299,7 +1299,7 @@ function PapersStepBody({
               }}
             >
               Changer un voyageur, ses papiers, la famille ou le séjour peut changer la liste : je
-              la recalcule à la fin des questions. Ce que vous avez déjà coché reste coché si la
+              la recalcule à la fin des questions. Ce que tu as déjà coché reste coché si la
               démarche existe toujours.
             </ConfirmChange>
           ) : null}
@@ -2181,9 +2181,9 @@ function WhenQuestion({
       </p>
       <div className="mt-4">
         <Bw504Note title="Pourquoi la date d'abord ?">
-          Tout part de là : je compte à rebours vos démarches (un visa demande plusieurs semaines),
-          je vous montre les départs publiés pour ces jours-là et je vous préviens en haute saison,
-          quand les places et les rendez-vous partent vite.
+          Tout part de là : je compte à rebours tes démarches (un visa demande plusieurs semaines),
+          je te montre les départs publiés pour ces jours-là et je te signale la haute saison, quand
+          les places et les rendez-vous partent vite.
         </Bw504Note>
       </div>
     </Question>
@@ -3100,14 +3100,14 @@ function ReadyDashboard({
       <Bw504Note
         tone="win"
         className="mt-3"
-        title="Votre récap est prêt"
+        title="Ton récap est prêt"
         actions={
           <Bw504Button primary onClick={onShare}>
             Partager · PDF
           </Bw504Button>
         }
       >
-        Envoyez-le à la famille ou imprimez-le. Touchez une ligne du récap pour la revoir.
+        Envoie-le à la famille ou imprime-le. Touche une ligne du récap pour la revoir.
       </Bw504Note>
       <div className="mt-3">
         <SailingsOutlook

@@ -705,7 +705,7 @@ function LiveChat({
         {lines.length ? null : (
           <li className="bw-chat__hello">
             <Bw504Note tone="start" title="C'est calme ici pour l'instant">
-              Sois le premier à dire comment ça se passe : file au port, embarquement, ambiance à bord.
+              Lance la discussion : file au port, embarquement, ambiance à bord.
             </Bw504Note>
           </li>
         )}

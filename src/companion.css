@@ -1084,7 +1084,7 @@
 
 /* Confirmation avant de modifier une étape validée. */
 .bw-confirm { padding-bottom: max(18px, env(safe-area-inset-bottom)); }
-.bw-confirm > .bw-504-note, .bw-confirm > div:not(.bw-confirm__acts) { margin-top: 6px; }
+.bw-confirm > .bw-504note, .bw-confirm > div:not(.bw-confirm__acts) { margin-top: 6px; }
 .bw-confirm__acts { display: flex; flex-direction: column-reverse; gap: 10px; margin-top: 16px; }
 .bw-confirm__no {
   min-height: 48px;
@@ -1598,6 +1598,7 @@
   position: absolute; top: 50%; left: 0; margin-top: -15px; font-size: 22px; line-height: 30px;
   animation: bw-rload-drive 3.2s cubic-bezier(0.45, 0, 0.55, 1) infinite;
 }
+img.bw-rload__car { width: 30px; height: 30px; object-fit: contain; scale: -1 1; /* nez devant, vers la droite */ }
 @keyframes bw-rload-drive { 0% { left: 0; } 100% { left: calc(100% - 26px); } }
 .bw-rload__msg { display: flex; margin-top: 8px; align-items: center; gap: 8px; font-size: 0.9rem; font-weight: 700; }
 .bw-rload__msg small { display: block; font-weight: 500; color: var(--muted-foreground); }

@@ -242,7 +242,7 @@ export function MapSearch({
                         </Bw504Button>
                       ))}
                     >
-                      Tape le nom du navire, de la compagnie ou d'un port : je te montre les bateaux.
+                      Tape le nom du navire, de la compagnie ou d'un port : je te montre les navires.
                     </Bw504Note>
                   );
                 })()}

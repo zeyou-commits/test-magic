@@ -1717,12 +1717,12 @@ function reasonTitle(reason: NoSailingReason, date: string | null) {
   switch (reason.kind) {
     case "soldOut":
       return reason.count > 1
-        ? "Les bateaux de ce jour-là sont complets"
-        : "Le bateau de ce jour-là est complet";
+        ? "Les navires de ce jour-là sont complets"
+        : "Le navire de ce jour-là est complet";
     case "notPublished":
       return "Les horaires ne sont pas encore sortis";
     case "notThatDay":
-      return `Pas de bateau le ${date ? weekdayName(date) : "jour choisi"} sur cette ligne`;
+      return `Aucun navire le ${date ? weekdayName(date) : "jour choisi"} sur cette ligne`;
     default:
       return "Je n'ai rien trouvé, et je ne sais pas pourquoi";
   }
@@ -1731,7 +1731,7 @@ function reasonTitle(reason: NoSailingReason, date: string | null) {
 function reasonBody(reason: NoSailingReason, fallback: string) {
   switch (reason.kind) {
     case "soldOut":
-      return "Plus de place à bord. Regarde les jours d'à côté, ça part souvent mieux.";
+      return "Plus de place à bord. Regarde les jours d'à côté.";
     case "notPublished":
       return `Les compagnies ont publié leurs départs jusqu'au ${new Date(
         `${reason.publishedUntil}T00:00:00Z`,

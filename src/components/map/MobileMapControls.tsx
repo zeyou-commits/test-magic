@@ -349,7 +349,7 @@ export function MobileMapControls({
                   return (
                     <Bw504Note
                       tone="stuck"
-                      title={close.length ? `Tu voulais dire ${close[0]!.name} ?` : t("map.picker.noPort")}
+                      title={close.length ? `Tu voulais dire ${close[0]!.name} ?` : "Je ne connais pas ce port"}
                       actions={
                         close.length ? (
                           close.map((port) => (

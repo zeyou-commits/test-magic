@@ -719,7 +719,7 @@ export function GroupStep({ answers, patch }: StepProps) {
         />
       </div>
       <BwKnow className="mt-4">
-        En Algérie, on est mineur jusqu'à 19 ans : comptez un jeune de 18 ans parmi les enfants.
+        En Algérie, on est mineur jusqu'à 19 ans : compte un jeune de 18 ans parmi les enfants.
       </BwKnow>
     </Question>
   );

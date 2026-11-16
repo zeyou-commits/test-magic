@@ -326,7 +326,7 @@ export function PapersQuestions({
             ])}
             {why(
               "Pourquoi le titre de séjour ?",
-              "Pour revenir en France, un Algérien présente son titre de séjour à la frontière. S'il n'est plus valable au retour, je vous dis quoi faire avant de partir.",
+              "Pour revenir en France, un Algérien présente son titre de séjour à la frontière. S'il n'est plus valable au retour, je te dis quoi faire avant de partir.",
             )}
           </Question>
         </>
@@ -373,8 +373,8 @@ export function PapersQuestions({
             {why(
               "Pourquoi le service national ?",
               t.nat === "bi"
-                ? "Un homme algérien a des obligations de service national dès 19 ans. Pour un franco-algérien, l'accord de 1983 fait compter le service choisi en France : je vous dis si vous êtes en règle, ou quoi faire."
-                : "Un homme algérien a des obligations de service national dès 19 ans. La preuve (recensement ou dispense) peut être demandée à la sortie d'Algérie : je l'ajoute à la pochette, ou la démarche à votre liste.",
+                ? "Un homme algérien a des obligations de service national dès 19 ans. Pour un franco-algérien, l'accord de 1983 fait compter le service choisi en France : je te dis si c'est en règle, ou quoi faire."
+                : "Un homme algérien a des obligations de service national dès 19 ans. La preuve (recensement ou dispense) peut être demandée à la sortie d'Algérie : je l'ajoute à la pochette, ou la démarche à ta liste.",
             )}
           </Question>
         </>
@@ -426,7 +426,7 @@ export function PapersQuestions({
           ])}
           {why(
             "Pourquoi la transcription ?",
-            "Le visa familial de conjoint en dépend. Si elle n'est pas faite, je l'ajoute à vos démarches, en premier.",
+            "Le visa familial de conjoint en dépend. Si elle n'est pas faite, je l'ajoute à tes démarches, en premier.",
           )}
         </Question>
       );
@@ -444,7 +444,7 @@ export function PapersQuestions({
           ])}
           {why(
             "Pourquoi l'accompagnant ?",
-            "Un mineur qui part sans l'un de ses parents a besoin de papiers en plus, comme l'autorisation paternelle de sortie : je vous dis lesquels.",
+            "Un mineur qui part sans l'un de ses parents a besoin de papiers en plus, comme l'autorisation paternelle de sortie : je te dis lesquels.",
           )}
         </Question>
       );

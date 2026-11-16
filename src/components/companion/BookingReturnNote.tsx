@@ -9,7 +9,12 @@ export function BookingReturnNote({ className = "" }: { className?: string }) {
     <Bw504Note
       tone="win"
       className={className}
-      title={`T'as pris ton billet sur ${back.site} ?`}
+      // Site inconnu : « sur la compagnie » sonnait faux.
+      title={
+        back.site === "la compagnie"
+          ? "T'as pris ton billet ?"
+          : `T'as pris ton billet sur ${back.site} ?`
+      }
       actions={
         <>
           <Bw504Button
@@ -25,7 +30,8 @@ export function BookingReturnNote({ className = "" }: { className?: string }) {
         </>
       }
     >
-      Ajoute-le : je suis ton navire et je te préviens s'il y a du retard.
+      Ajoute-le : je garde un œil sur ton navire et, avec les notifications, je te préviens d'un
+      retard signalé.
     </Bw504Note>
   );
 }

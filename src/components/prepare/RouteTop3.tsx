@@ -492,7 +492,7 @@ function RouteCard({
 const loadingSteps = (month: string, destination: string) => [
   {
     title: "Je trace la route jusqu'aux ports",
-    sub: "Les ports de France, d'Espagne et d'Italie à votre portée",
+    sub: "Les ports de France, d'Espagne et d'Italie à ta portée",
   },
   {
     title: `Je regarde les traversées de ${month}`,
@@ -524,7 +524,7 @@ function RouteLoading({ month, destination }: { month: string; destination: stri
         <i data-kind="road" />
         <i data-kind="sea" />
         <i data-kind="road" />
-        <span className="bw-rload__car">🚗</span>
+        <img className="bw-rload__car" src="/cabas/persos/voiture_504.webp" alt="" width={30} height={30} />
       </div>
       <p className="bw-rload__msg">
         <Loader2 size={16} className="shrink-0 animate-spin text-primary" aria-hidden />

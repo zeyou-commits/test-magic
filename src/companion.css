@@ -1798,3 +1798,6 @@
 .bw-alts__line { grid-column: 1; font-size: 0.875rem; font-weight: 700; }
 .bw-alts__meta { grid-column: 1; font-size: 0.75rem; color: var(--muted-foreground); font-variant-numeric: tabular-nums; }
 .bw-alts button > svg { grid-column: 2; grid-row: 1 / span 2; }
+.bw-alts__road { grid-column: 1; font-size: 0.75rem; font-weight: 600; color: var(--primary); }
+.bw-alts__road[data-more] { color: #a86a07; }
+.dark .bw-alts__road[data-more] { color: #e5ad55; }

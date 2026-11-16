@@ -24,12 +24,15 @@ import {
 import { estimateFare } from "@/lib/ferry/pricing";
 import { portTimeZone } from "@/lib/ferry/time";
 import { defaultTripProfile } from "@/components/panel/TripProfile";
-import { formatDuration, type CompanionPlan } from "@/lib/ferry/companion";
+import {
+  formatDuration,
+  FUEL_EURO_PER_L,
+  FUEL_L_PER_100,
+  TOLL_EURO_PER_KM,
+  type CompanionPlan,
+} from "@/lib/ferry/companion";
 
-/** Repères de coût routier (mêmes valeurs par défaut que l'itinéraire de la carte). */
-export const FUEL_L_PER_100 = 7;
-export const FUEL_EURO_PER_L = 1.8;
-export const TOLL_EURO_PER_KM = 0.06;
+export { FUEL_EURO_PER_L, FUEL_L_PER_100, TOLL_EURO_PER_KM };
 
 const numberFormat = new Intl.NumberFormat("fr-FR");
 

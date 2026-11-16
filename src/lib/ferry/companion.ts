@@ -129,6 +129,25 @@ export function nextOpenStep(plan: CompanionPlan): CompanionStep | null {
   return companionSteps(plan).find((step) => !plan.done.includes(step)) ?? null;
 }
 
+/** Repères de coût routier (mêmes valeurs par défaut que l'itinéraire de la carte). */
+export const FUEL_L_PER_100 = 7;
+export const FUEL_EURO_PER_L = 1.8;
+export const TOLL_EURO_PER_KM = 0.06;
+
+/**
+ * La route jusqu'à un port, estimée : la distance à vol d'oiseau allongée d'un quart, et son coût
+ * en voiture (essence, et péages en France). Une estimation pour comparer des ports, pas un trajet.
+ */
+export function roadToPort(
+  from: [number, number],
+  port: { longitude: number; latitude: number },
+  tolls: boolean,
+) {
+  const km = haversineKm(from, [port.longitude, port.latitude]) * 1.25;
+  const euros = km * ((FUEL_L_PER_100 / 100) * FUEL_EURO_PER_L + (tolls ? TOLL_EURO_PER_KM : 0));
+  return { km, euros };
+}
+
 /** Distance à vol d'oiseau, en kilomètres. */
 export function haversineKm(a: [number, number], b: [number, number]) {
   const rad = (deg: number) => (deg * Math.PI) / 180;

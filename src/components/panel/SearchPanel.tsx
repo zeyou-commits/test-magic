@@ -38,7 +38,7 @@ import {
   upcomingDeparturesQuery,
   vesselsQuery,
 } from "@/lib/ferry/queries";
-import { emptyFilters, type Filters, type Selection } from "@/lib/ferry/types";
+import { emptyFilters, type Filters, type Port, type Selection } from "@/lib/ferry/types";
 import {
   hasActiveFilters,
   swapDirection,
@@ -55,6 +55,7 @@ import {
   RECOMMENDED_RULE,
 } from "@/lib/ferry/trips";
 import { addDaysKey, diffDays } from "@/lib/ferry/schoolCalendar";
+import { loadPlan, roadToPort, type CompanionPlan } from "@/lib/ferry/companion";
 import { TripCalendar, type CalendarField } from "./TripCalendar";
 import { dateKeyInZone } from "@/lib/ferry/time";
 import { useLiveShips } from "@/lib/ferry/useLiveShips";
@@ -328,6 +329,9 @@ export function SearchPanel({
   const today = dateKeyInZone(new Date(), "Europe/Paris");
   const set = (patch: Partial<Filters>) => onFiltersChange({ ...filters, ...patch });
 
+  // Le voyage de « Préparer » : d'où l'on part et où l'on va, pour comparer les ports porte à porte.
+  const [prepared, setPrepared] = useState<CompanionPlan | null>(null);
+  useEffect(() => setPrepared(loadPlan()), []);
   const all = useMemo(
     () => buildSailings(departures, routes, ports, companies, vessels),
     [departures, routes, ports, companies, vessels],
@@ -502,9 +506,30 @@ export function SearchPanel({
     const to = new Set(filters.arrivalPortIds);
     const searchedFrom = ports.find((port) => from.has(port.id));
     const fromShore = searchedFrom ? isNorthShore(searchedFrom.country_code) : null;
+    // La route en plus (ou en moins) par rapport au port cherché : depuis chez soi pour un autre
+    // port de départ, jusqu'à la destination au bled pour un autre port d'arrivée.
+    const home = prepared?.home?.point ?? null;
+    const bled = prepared?.destination?.point ?? null;
+    const tolls = prepared?.country === "FR";
+    const searchedTo = ports.find((port) => to.has(port.id));
+    const extraRoad = (kind: "from" | "to", port: Port) => {
+      const origin = kind === "from" ? home : bled;
+      const searched = kind === "from" ? searchedFrom : searchedTo;
+      if (!origin || !searched) return null;
+      const there = roadToPort(origin, port, kind === "from" && tolls);
+      const usual = roadToPort(origin, searched, kind === "from" && tolls);
+      return { km: there.km - usual.km, euros: there.euros - usual.euros };
+    };
     const groups = new Map<
       string,
-      { kind: "from" | "to"; portId: string; label: string; count: number; fare: number }
+      {
+        kind: "from" | "to";
+        portId: string;
+        label: string;
+        count: number;
+        fare: number;
+        road: { km: number; euros: number } | null;
+      }
     >();
     for (const sailing of all) {
       if (sailing.departure.status === "cancelled") continue;
@@ -530,9 +555,15 @@ export function SearchPanel({
           label: `${sailing.from.name} → ${sailing.to.name}`,
           count: 1,
           fare,
+          road: extraRoad(kind, kind === "from" ? sailing.from : sailing.to),
         });
     }
-    return [...groups.values()].sort((a, b) => a.fare - b.fare).slice(0, 4);
+    // Rangées au coût porte à porte : la traversée, plus la route en plus côté Europe (au bled,
+    // seulement les kilomètres : le prix de l'essence y est trop différent pour l'additionner).
+    const cost = (item: { kind: "from" | "to"; fare: number; road: { euros: number } | null }) =>
+      item.fare +
+      (item.kind === "from" && item.road && profile.vehicle !== "none" ? item.road.euros : 0);
+    return [...groups.values()].sort((a, b) => cost(a) - cost(b)).slice(0, 4);
   }, [
     all,
     filters.date,
@@ -542,6 +573,7 @@ export function SearchPanel({
     hasPair,
     ports,
     profile,
+    prepared,
   ]);
   const alternativesBlock = alternatives.length ? (
     <section className="bw-alts" aria-labelledby="alts-titre">
@@ -561,9 +593,14 @@ export function SearchPanel({
             >
               <span className="bw-alts__line">{item.label}</span>
               <span className="bw-alts__meta">
-                {item.count} départ{item.count > 1 ? "s" : ""} · dès ≈{" "}
+                {item.count} départ{item.count > 1 ? "s" : ""} · traversée dès ≈{" "}
                 {formatEuro(item.fare).replace("~", "")}
               </span>
+              {item.road && Math.abs(item.road.km) >= 30 ? (
+                <span className="bw-alts__road" data-more={item.road.km > 0 ? "" : undefined}>
+                  {roadLabel(item.kind, item.road, profile.vehicle !== "none")}
+                </span>
+              ) : null}
               <ArrowRight className="size-4 shrink-0 text-primary" aria-hidden />
             </button>
           </li>
@@ -1217,6 +1254,19 @@ export function SearchPanel({
 }
 
 type SortBy = "date" | "price" | "duration";
+
+const roundKm = (km: number) => (Math.round(Math.abs(km) / 10) * 10).toLocaleString("fr-FR");
+const roundEuros = (euros: number) =>
+  (Math.round(Math.abs(euros) / 10) * 10).toLocaleString("fr-FR");
+/** « 1 010 km de route en plus depuis chez vous (≈ 190 €) », ou en moins. */
+function roadLabel(kind: "from" | "to", road: { km: number; euros: number }, byCar: boolean) {
+  const more = road.km > 0;
+  const where = kind === "from" ? "depuis chez vous" : "jusqu'à votre destination";
+  // Insécables : « + ≈ 80 € » et « + 420 km » ne se coupent pas en fin de ligne.
+  const cost =
+    kind === "from" && byCar ? ` (${more ? "+" : "−"} ≈ ${roundEuros(road.euros)} €)` : "";
+  return `${more ? "+" : "−"} ${roundKm(road.km)} km de route ${where}${cost}`;
+}
 
 const bySailing = (sortBy: SortBy, profile: TripProfileValue) => (a: Sailing, b: Sailing) =>
   sortBy === "price"

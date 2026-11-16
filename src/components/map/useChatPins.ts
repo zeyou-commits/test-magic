@@ -258,10 +258,13 @@ export function useChatPins(
         text.append(who, ` ${shortBody(group.messages[0].body, 60)}`);
         el.append(text);
       }
-      const count = document.createElement("span");
-      count.className = "bw-chat-pin__count";
-      count.textContent = countLabel(group.count);
-      el.append(count);
+      // Un seul message : pas de « +1 », la pastille suffit.
+      if (group.count > 1) {
+        const count = document.createElement("span");
+        count.className = "bw-chat-pin__count";
+        count.textContent = countLabel(group.count);
+        el.append(count);
+      }
       el.dataset["peek"] = peek ? "true" : "false";
       if (isFresh(group.last_at, Date.now())) el.dataset["fresh"] = "true";
       else delete el.dataset["fresh"];
@@ -296,7 +299,7 @@ export function useChatPins(
           el.className = "bw-chat-pin";
           const box = document.createElement("div");
           box.append(el);
-          const marker = new Marker({ element: box, anchor: "bottom-left", offset: [place.offset[0] - 14, place.offset[1]] })
+          const marker = new Marker({ element: box, anchor: "bottom-left", offset: [place.offset[0] - 8, place.offset[1]] })
             .setLngLat(place.at)
             .addTo(map);
           // Au-dessus des navires et des noms de ports, mais toujours sous une fiche ouverte
@@ -307,7 +310,7 @@ export function useChatPins(
         }
         const current = entry;
         current.marker.setLngLat(place.at);
-        current.marker.setOffset([place.offset[0] - 14, place.offset[1]]);
+        current.marker.setOffset([place.offset[0] - 8, place.offset[1]]);
         if (current.sig !== sig) {
           render(current.el, group, peek);
           current.sig = sig;

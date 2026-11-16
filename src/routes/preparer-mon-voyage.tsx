@@ -38,7 +38,7 @@ import { RouteTop3 } from "@/components/prepare/RouteTop3";
 import { TripCalendar, type CalendarField } from "@/components/panel/TripCalendar";
 import { buildSailings, daysWithSailings, legSailings } from "@/lib/ferry/trips";
 import { WizardFrame, WizardNav, useWizardScreen } from "@/components/prepare/WizardFrame";
-import { PapersQuestions, paperQuestions } from "@/components/papers/PapersQuestions";
+import { PapersQuestions, paperQuestions, questionIndexFor } from "@/components/papers/PapersQuestions";
 import { PushStatusLine } from "@/components/panel/PushStatusLine";
 import { SiteLayout } from "@/components/layout/SiteLayout";
 import { useAuth } from "@/hooks/useAuth";
@@ -1048,7 +1048,7 @@ function PapersStepBody({
     [plan, papers.answers.travellers],
   );
   // Où reprendre les questions : au début (« Modifier ») ou à la dernière (« Retour »).
-  const [resume, setResume] = useState<"last" | 0>(0);
+  const [resume, setResume] = useState<"last" | number>(0);
   const questions = paperQuestions(papers.answers, steps).length;
   useWizardScreen(questions, questions + 1, undefined, papers.finished);
   const box = useRef<HTMLDivElement>(null);
@@ -1068,6 +1068,12 @@ function PapersStepBody({
             }
             answers={papers.answers}
             patch={papers.patch}
+            departure={plan.date || plan.window?.from || null}
+            onEditAt={(target) => {
+              setResume(questionIndexFor(paperQuestions(papers.answers, steps), target));
+              papers.setFinished(false);
+              toTop();
+            }}
             done={papers.done}
             setDone={papers.setDone}
             onEdit={() => {

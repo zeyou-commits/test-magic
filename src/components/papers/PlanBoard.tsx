@@ -13,6 +13,7 @@ import {
 import { whenLabels, whenOrder, type Task, type When } from "@/content/formalites";
 import {
   concerns,
+  groupWho,
   isCheckable,
   planCategory,
   planCategoryLabels,
@@ -20,6 +21,9 @@ import {
   type PlanCategory,
 } from "@/lib/papers/planCategories";
 import { SourceLinks, TaskRow } from "@/components/papers/PapersFlow";
+
+const COUPLE = "\u0000couple";
+const KIDS = "\u0000enfants";
 
 const icons: Record<PlanCategory, ReactNode> = {
   steps: <ClipboardList size={20} aria-hidden />,
@@ -48,6 +52,8 @@ export function PlanBoard({
   travellers,
   consulateLine,
   taskExtra,
+  childNames = [],
+  coupleNames = [],
 }: {
   tasks: Task[];
   done: string[];
@@ -58,18 +64,38 @@ export function PlanBoard({
   consulateLine: string | null;
   /** Ce qui s'ajoute à une démarche (le consulat où la faire). */
   taskExtra?: (task: Task) => ReactNode;
+  /** Pour regrouper « Les 3 enfants » et proposer le filtre « Les enfants ». */
+  childNames?: string[];
+  /** Les deux adultes du couple : filtre « Le couple ». */
+  coupleNames?: string[];
 }) {
   const [who, setWho] = useState<string | null>(null);
   const [open, setOpen] = useState<PlanCategory | null>(null);
   const panelRef = useRef<HTMLDivElement>(null);
   const byCategory = useMemo(() => {
     const map = new Map<PlanCategory, Task[]>(planCategoryOrder.map((c) => [c, []]));
+    // Filtres de groupe : « Le couple », « Les enfants » ; sinon un voyageur, ou tout le monde.
+    const inGroup = (task: Task, names: string[]) =>
+      task.who.length === 0 || task.who.some((name) => names.includes(name));
     tasks
-      .filter((task) => concerns(task, who))
+      .filter((task) =>
+        who === COUPLE
+          ? inGroup(task, coupleNames)
+          : who === KIDS
+            ? inGroup(task, childNames)
+            : concerns(task, who),
+      )
       .sort((a, b) => whenOrder.indexOf(a.when) - whenOrder.indexOf(b.when))
       .forEach((task) => map.get(planCategory(task))!.push(task));
     return map;
-  }, [tasks, who]);
+  }, [tasks, who, coupleNames, childNames]);
+  const filters: { value: string | null; label: string }[] = [
+    { value: null, label: "Tout le monde" },
+    ...(coupleNames.length === 2 ? [{ value: COUPLE, label: "Le couple" }] : []),
+    ...(childNames.length > 1 ? [{ value: KIDS, label: "Les enfants" }] : []),
+    ...travellers.map((name) => ({ value: name, label: name })),
+  ];
+  const shown = (task: Task) => ({ ...task, who: groupWho(task.who, childNames) });
 
   const choose = (category: PlanCategory) => {
     const next = open === category ? null : category;
@@ -86,15 +112,15 @@ export function PlanBoard({
       {travellers.length > 1 ? (
         <div className="bw-plan__who" role="radiogroup" aria-label="Voir ce qui concerne">
           <Users size={15} className="shrink-0 text-muted-foreground" aria-hidden />
-          {[null, ...travellers].map((name) => (
+          {filters.map((filter) => (
             <button
-              key={name ?? "all"}
+              key={filter.value ?? "all"}
               type="button"
               role="radio"
-              aria-checked={who === name}
-              onClick={() => setWho(name)}
+              aria-checked={who === filter.value}
+              onClick={() => setWho(filter.value)}
             >
-              {name ?? "Tout le monde"}
+              {filter.label}
             </button>
           ))}
         </div>
@@ -162,7 +188,7 @@ export function PlanBoard({
               {byCategory.get(open)!.map((task) => (
                 <TaskRow
                   key={task.id}
-                  task={task}
+                  task={shown(task)}
                   done={done.includes(task.id)}
                   onToggle={() => onToggle(task.id)}
                   extra={taskExtra?.(task)}
@@ -173,7 +199,7 @@ export function PlanBoard({
           ) : (
             <ul className="mt-3 grid gap-2">
               {byCategory.get(open)!.map((task) => (
-                <AttentionRow key={task.id} task={task} />
+                <AttentionRow key={task.id} task={shown(task)} />
               ))}
             </ul>
           )}

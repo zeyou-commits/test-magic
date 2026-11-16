@@ -436,3 +436,120 @@
   text-transform: uppercase;
   color: #8a5a00;
 }
+
+/* Mini fil d'Ariane d'un voyageur dans les questions : une pastille par question. */
+.bw-who-steps { display: inline-flex; align-items: center; gap: 4px; }
+.bw-who-steps i {
+  width: 14px;
+  height: 5px;
+  border-radius: 999px;
+  background: color-mix(in oklab, var(--primary) 18%, transparent);
+  transition: background 0.25s ease, width 0.25s ease;
+}
+.bw-who-steps i[data-on] { background: var(--primary); }
+.bw-who-steps small { margin-left: 4px; font-size: 12px; font-weight: 700; color: var(--muted-foreground); }
+
+/* Bilan des papiers : une ligne de contexte, et le menu « Modifier ». */
+.bw-plan__context {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 14px;
+  margin: 0;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+.bw-plan__context span { display: inline-flex; align-items: center; gap: 5px; }
+.bw-plan__context svg { color: var(--primary); }
+.bw-plan__editmenu {
+  position: absolute;
+  z-index: 30;
+  top: calc(100% + 6px);
+  left: 0;
+  min-width: 13rem;
+  margin: 0;
+  padding: 6px;
+  list-style: none;
+  border-radius: 14px;
+  border: 1px solid var(--border);
+  background: var(--card);
+  box-shadow: 0 12px 30px rgb(0 0 0 / 0.14);
+}
+.bw-plan__editmenu button {
+  display: block;
+  width: 100%;
+  padding: 9px 12px;
+  border-radius: 10px;
+  text-align: left;
+  font-weight: 600;
+}
+.bw-plan__editmenu button:hover { background: var(--secondary); }
+
+/* Coût d'une démarche (tarif officiel) */
+.bw-cost-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  border-radius: 999px;
+  background: color-mix(in oklab, #10b981 14%, transparent);
+  color: #065f46;
+  padding: 0.125rem 0.5rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+.dark .bw-cost-chip {
+  color: #a7f3d0;
+}
+
+/* « Avant de commencer » : le cadre suit la page sur téléphone… */
+.bw-prepintro__frame {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+/* … et devient une carte en deux colonnes sur PC : rien collé au bord, pas de vide. */
+@media (min-width: 900px) and (min-height: 600px) {
+  .bw-prepintro {
+    justify-content: center;
+    align-items: center;
+    padding: 32px;
+  }
+  .bw-prepintro__frame {
+    flex: none;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    grid-template-areas:
+      "top top"
+      "title steps"
+      "lead steps"
+      "result steps"
+      "foot steps";
+    grid-template-rows: auto auto auto auto 1fr;
+    column-gap: 56px;
+    row-gap: 18px;
+    width: min(980px, 100%);
+    padding: 26px 40px 36px;
+    border-radius: 28px;
+    border: 1px solid color-mix(in oklab, var(--primary) 16%, transparent);
+    background: color-mix(in oklab, var(--card) 88%, transparent);
+    backdrop-filter: blur(10px);
+    box-shadow: 0 30px 80px rgb(8 50 34 / 0.14);
+  }
+  .bw-prepintro__body { display: contents; }
+  .bw-prepintro__top { grid-area: top; padding: 0 0 6px; }
+  .bw-prepintro h1 { grid-area: title; align-self: end; font-size: 2.7rem; }
+  .bw-prepintro__lead { grid-area: lead; margin: 0; font-size: 1.08rem; }
+  .bw-prepintro__result { grid-area: result; }
+  .bw-prepintro__steps {
+    grid-area: steps;
+    align-self: center;
+    gap: 22px;
+    padding: 26px 24px;
+    border-radius: 22px;
+    background: color-mix(in oklab, var(--primary) 6%, transparent);
+  }
+  .bw-prepintro__steps::before { left: 45px; top: 48px; bottom: 48px; }
+  .bw-prepintro__steps li span > span { display: block; }
+  .bw-prepintro__foot { grid-area: foot; align-self: end; max-width: none; padding: 6px 0 0; }
+  .bw-prepintro__meta { justify-content: flex-start; }
+}

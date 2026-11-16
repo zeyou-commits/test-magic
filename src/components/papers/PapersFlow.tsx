@@ -5,6 +5,7 @@ import {
   ArrowLeft,
   Briefcase,
   CalendarDays,
+  Euro,
   ClipboardList,
   FileText,
   Lightbulb,
@@ -21,6 +22,7 @@ import {
   Phone,
   Plus,
   User,
+  Users,
 } from "lucide-react";
 import { textLink } from "@/components/editorial/Editorial";
 import { BwKnow } from "@/components/companion/Bw504Note";
@@ -42,6 +44,7 @@ import {
   reassurances,
   savePapers,
   tasksFor,
+  totalCost,
   travellerLabel,
   travelsWithDzPassport,
   whenLabels,
@@ -925,8 +928,14 @@ export function PapersResult({
   abroadSlot,
   deadlines = {},
   patch,
+  departure,
+  onEditAt,
 }: {
   answers: Answers;
+  /** Jour de départ souhaité (AAAA-MM-JJ), rappelé en tête du bilan. */
+  departure?: string | null;
+  /** « Modifier » : reprendre à la bonne question plutôt qu'au début. */
+  onEditAt?: (target: EditTarget) => void;
   /** Pour trouver le consulat depuis la liste (ville), sans revenir aux questions. */
   patch?: (p: Partial<Answers>) => void;
   done: string[];
@@ -952,6 +961,7 @@ export function PapersResult({
   const toDo = tasks.filter(isPaperToDo);
   const toTake = tasks.filter((t) => !isPaperToDo(t));
   const atConsulate = tasks.filter((t) => t.consulate);
+  const fees = totalCost(tasks);
   const consulateVisas = atConsulate.filter((t) => t.id.startsWith("visa-")).length;
   const consulateCount = atConsulate.length - Math.max(0, consulateVisas - 1);
   // La première date limite : celle du premier groupe à faire qui a une date.
@@ -975,23 +985,44 @@ export function PapersResult({
           </h1>
         </>
       )}
-      <div className={`${embedded ? "" : "mt-4 "}flex flex-wrap items-center gap-2 text-sm`}>
-        <span className="rounded-full bg-secondary px-3 py-1 font-semibold">
-          {adults} adulte{adults > 1 ? "s" : ""}
+      {/* Une seule ligne de contexte, puis deux actions côte à côte. */}
+      <p className={`${embedded ? "" : "mt-4 "}bw-plan__context`}>
+        <span>
+          <Users size={14} aria-hidden /> {adults} adulte{adults > 1 ? "s" : ""}
           {kids ? ` · ${kids} enfant${kids > 1 ? "s" : ""}` : ""}
         </span>
+        {departure ? (
+          <span>
+            <CalendarDays size={14} aria-hidden /> Départ le{" "}
+            {new Intl.DateTimeFormat("fr-FR", { day: "numeric", month: "long" }).format(
+              new Date(`${departure}T12:00:00`),
+            )}
+          </span>
+        ) : null}
+        {fees ? (
+          <span>
+            <Euro size={14} aria-hidden /> Frais connus : {fees} €
+          </span>
+        ) : null}
         {consulat && atConsulate.length ? (
-          <span className="rounded-full bg-secondary px-3 py-1 font-semibold">
+          <span>
+            <MapPin size={14} aria-hidden />{" "}
             {consulat.name.replace(/^Consulat (général )?d'Algérie à /, "Consulat de ")}
           </span>
         ) : null}
-        <button
-          type="button"
-          onClick={onEdit}
-          className="inline-flex min-h-9 items-center gap-1.5 rounded-full border px-3 font-semibold hover:bg-secondary"
-        >
-          <Pencil size={14} aria-hidden /> Modifier mes réponses
-        </button>
+      </p>
+      <div className="mt-2 flex flex-wrap items-center gap-2 text-sm">
+        {onEditAt ? (
+          <EditMenu answers={answers} onPick={onEditAt} />
+        ) : (
+          <button
+            type="button"
+            onClick={onEdit}
+            className="inline-flex min-h-9 items-center gap-1.5 rounded-full border px-3 font-semibold hover:bg-secondary"
+          >
+            <Pencil size={14} aria-hidden /> Modifier
+          </button>
+        )}
         <SharePreparation compact />
       </div>
 
@@ -1001,6 +1032,17 @@ export function PapersResult({
         done={done}
         onToggle={toggle}
         travellers={answers.travellers.map((t) => travellerLabel(t, answers.travellers))}
+        childNames={answers.travellers
+          .filter((t) => t.kind === "child")
+          .map((t) => travellerLabel(t, answers.travellers))}
+        coupleNames={
+          answers.couple !== "none"
+            ? answers.travellers
+                .filter((t) => t.kind === "adult")
+                .slice(0, 2)
+                .map((t) => travellerLabel(t, answers.travellers))
+            : []
+        }
         deadlines={deadlines}
         taskExtra={(task) =>
           task.consulate ? (
@@ -1177,6 +1219,11 @@ export function TaskRow({
                   {w}
                 </span>
               ))}
+              {task.cost ? (
+                <span className="bw-cost-chip">
+                  <Euro size={12} aria-hidden /> {task.cost.label}
+                </span>
+              ) : null}
               {task.advice ? (
                 <span className="rounded-full bg-sky-100 px-2 py-0.5 text-xs font-semibold text-sky-900 dark:bg-sky-900/40 dark:text-sky-100">
                   Conseil BledWay, pas une règle
@@ -1234,6 +1281,57 @@ export function SourceLinks({ ids }: { ids: FormaliteSourceId[] }) {
         </a>
       ))}
     </p>
+  );
+}
+
+export type EditTarget =
+  | { kind: "names" }
+  | { kind: "traveller"; id: string }
+  | { kind: "family" }
+  | { kind: "stay" };
+
+/** « Modifier » : on choisit quoi (les prénoms, un voyageur, la famille, le séjour). */
+function EditMenu({ answers, onPick }: { answers: Answers; onPick: (target: EditTarget) => void }) {
+  const [open, setOpen] = useState(false);
+  const items: { label: string; target: EditTarget }[] = [
+    { label: "Les prénoms", target: { kind: "names" } },
+    ...answers.travellers.map((t) => ({
+      label: travellerLabel(t, answers.travellers),
+      target: { kind: "traveller", id: t.id } as EditTarget,
+    })),
+    ...(answers.travellers.length > 1 ? [{ label: "Couple et enfants", target: { kind: "family" } as EditTarget }] : []),
+    { label: "Le séjour", target: { kind: "stay" } },
+  ];
+  return (
+    <div className="relative">
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        aria-expanded={open}
+        className="inline-flex min-h-9 items-center gap-1.5 rounded-full border px-3 font-semibold hover:bg-secondary"
+      >
+        <Pencil size={14} aria-hidden /> Modifier
+        <ChevronDown size={14} className={open ? "rotate-180" : ""} aria-hidden />
+      </button>
+      {open ? (
+        <ul className="bw-plan__editmenu" role="menu">
+          {items.map((item) => (
+            <li key={item.label}>
+              <button
+                type="button"
+                role="menuitem"
+                onClick={() => {
+                  setOpen(false);
+                  onPick(item.target);
+                }}
+              >
+                {item.label}
+              </button>
+            </li>
+          ))}
+        </ul>
+      ) : null}
+    </div>
   );
 }
 
@@ -1300,13 +1398,25 @@ export function ConsulatCard({
           </p>
           <div className="mt-3 flex flex-wrap gap-2">
             <a
-              href={consulat.site}
+              href={consulat.rdv ?? consulat.site}
               target="_blank"
               rel="noreferrer"
               className="inline-flex min-h-11 items-center gap-2 rounded-xl bg-primary px-4 text-sm font-semibold text-primary-foreground hover:bg-primary/90"
             >
-              Site et rendez-vous <ExternalLink size={14} aria-hidden />
+              <CalendarDays size={15} aria-hidden />
+              {consulat.rdv ? "Prendre rendez-vous" : "Site et rendez-vous"}{" "}
+              <ExternalLink size={14} aria-hidden />
             </a>
+            {consulat.rdv ? (
+              <a
+                href={consulat.site}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex min-h-11 items-center gap-2 rounded-xl border bg-background px-4 text-sm font-semibold hover:bg-secondary"
+              >
+                Site du consulat <ExternalLink size={14} aria-hidden />
+              </a>
+            ) : null}
             <a
               href={`https://www.openstreetmap.org/search?query=${encodeURIComponent(consulat.address)}`}
               target="_blank"
@@ -1329,7 +1439,19 @@ export function ConsulatCard({
           </p>
         </>
       ) : (
-        <p className="mt-1 text-sm text-muted-foreground">{consulat.address}</p>
+        <>
+          <p className="mt-1 text-sm text-muted-foreground">{consulat.address}</p>
+          <a
+            href={consulat.rdv ?? consulat.site}
+            target="_blank"
+            rel="noreferrer"
+            className="mt-2 inline-flex min-h-10 items-center gap-1.5 rounded-xl bg-primary px-3 text-sm font-semibold text-primary-foreground hover:bg-primary/90"
+          >
+            <CalendarDays size={15} aria-hidden />
+            {consulat.rdv ? "Prendre rendez-vous" : "Site du consulat (rendez-vous)"}
+            <ExternalLink size={13} aria-hidden />
+          </a>
+        </>
       )}
     </div>
   );

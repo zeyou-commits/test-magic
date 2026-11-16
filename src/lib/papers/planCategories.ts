@@ -54,3 +54,13 @@ export const concerns = (task: Task, who: string | null) =>
 
 /** Une rubrique se coche (démarches, documents, pochette) ; les points d'attention se lisent. */
 export const isCheckable = (category: PlanCategory) => category !== "attention";
+
+/**
+ * Une démarche identique pour tous les enfants : « Les 3 enfants » plutôt que trois prénoms.
+ * Les adultes restent nommés.
+ */
+export function groupWho(who: string[], childNames: string[]): string[] {
+  if (childNames.length < 2 || !childNames.every((name) => who.includes(name))) return who;
+  const label = childNames.length === 2 ? "Les 2 enfants" : `Les ${childNames.length} enfants`;
+  return [...who.filter((name) => !childNames.includes(name)), label];
+}

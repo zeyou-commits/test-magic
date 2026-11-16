@@ -1,12 +1,14 @@
 import type { Answers } from "@/content/formalites";
+import type { SupabaseClient } from "@supabase/supabase-js";
+import { supabase } from "@/integrations/supabase/client";
 import { departmentFromPostcode } from "@/content/consulats";
 import { loadPapers } from "@/content/formalites";
 import { loadPlan, type CompanionPlan } from "@/lib/ferry/companion";
 
 /**
- * La préparation partagée tient tout entière dans le lien, après le « # » : rien n'est envoyé ni
- * stocké sur un serveur (le navigateur n'envoie jamais cette partie de l'adresse). Le code postal
- * est réduit au département, assez pour trouver le consulat.
+ * Une préparation partagée est rangée côté serveur (bw_prep_shares) sous un identifiant court :
+ * seuls son auteur et les comptes dont l'adresse e-mail a été invitée peuvent la lire. Le code
+ * postal est réduit au département, assez pour trouver le consulat.
  */
 export interface SharedPreparation {
   v: 1;
@@ -50,36 +52,25 @@ export function currentPreparation(): SharedPreparation | null {
   };
 }
 
-function toBase64Url(text: string) {
-  const bytes = new TextEncoder().encode(text);
-  let binary = "";
-  bytes.forEach((b) => (binary += String.fromCharCode(b)));
-  return btoa(binary).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+// Table pas encore dans les types générés.
+const shares = () => (supabase as unknown as SupabaseClient).from("bw_prep_shares");
+
+/** Range la préparation pour ces adresses ; renvoie le lien court à envoyer. */
+export async function createShare(prep: SharedPreparation, emails: string[]) {
+  const { data, error } = await shares()
+    .insert({ data: prep, emails })
+    .select("id")
+    .single();
+  if (error) throw error;
+  return `${window.location.origin}/ma-preparation?s=${(data as { id: string }).id}`;
 }
 
-function fromBase64Url(text: string) {
-  const padded = text.replace(/-/g, "+").replace(/_/g, "/");
-  const binary = atob(padded + "===".slice((padded.length + 3) % 4));
-  return new TextDecoder().decode(Uint8Array.from(binary, (c) => c.charCodeAt(0)));
-}
-
-export function encodePreparation(prep: SharedPreparation) {
-  return toBase64Url(JSON.stringify(prep));
-}
-
-export function decodePreparation(hash: string): SharedPreparation | null {
-  const raw = new URLSearchParams(hash.replace(/^#/, "")).get("p");
-  if (!raw) return null;
-  try {
-    const value = JSON.parse(fromBase64Url(raw)) as SharedPreparation;
-    return value?.v === 1 && value.answers?.travellers?.length ? value : null;
-  } catch {
-    return null;
-  }
-}
-
-export function shareUrl(prep: SharedPreparation) {
-  return `${window.location.origin}/ma-preparation#p=${encodePreparation(prep)}`;
+/** La préparation partagée, si le compte connecté y a droit (auteur ou adresse invitée). */
+export async function loadShare(id: string): Promise<SharedPreparation | null> {
+  const { data, error } = await shares().select("data").eq("id", id).maybeSingle();
+  if (error) throw error;
+  const value = (data as { data: SharedPreparation } | null)?.data;
+  return value?.v === 1 && value.answers?.travellers?.length ? value : null;
 }
 
 /** Les réponses complètes que tasksFor attend, à partir d'une préparation partagée. */

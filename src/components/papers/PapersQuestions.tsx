@@ -14,6 +14,7 @@ import {
   Options,
   Question,
   StayStep,
+  type EditTarget,
   type PapersState,
   type PapersStep,
 } from "@/components/papers/PapersFlow";
@@ -39,6 +40,20 @@ const keyOf = (q: PaperQ) =>
       : q.kind === "family"
         ? q.q
         : `${q.id}:${q.q}`;
+
+/** La première question d'une partie à modifier (prénoms, un voyageur, la famille, le séjour). */
+export function questionIndexFor(list: PaperQ[], target: EditTarget): number {
+  const index = list.findIndex((q) =>
+    target.kind === "names"
+      ? q.kind === "names"
+      : target.kind === "traveller"
+        ? q.kind === "traveller" && q.id === target.id
+        : target.kind === "family"
+          ? q.kind === "family"
+          : q.kind === "step" && q.step === "stay",
+  );
+  return Math.max(0, index);
+}
 
 /** Les questions qui se posent vraiment, d'après les réponses déjà données. */
 export function paperQuestions(a: Answers, steps: PapersStep[]): PaperQ[] {
@@ -77,12 +92,34 @@ export function paperQuestions(a: Answers, steps: PapersStep[]): PaperQ[] {
 }
 
 /** À qui s'adresse la question : « Vous », « Mineur 1 »… */
-function Who({ t, all }: { t: Traveller; all: Traveller[] }) {
+function Who({
+  t,
+  all,
+  step = 0,
+  total = 0,
+}: {
+  t: Traveller;
+  all: Traveller[];
+  step?: number;
+  total?: number;
+}) {
   const Icon = t.kind === "child" ? Baby : User;
   return (
-    <p className="mt-4 inline-flex items-center gap-2 rounded-full bg-primary/10 px-3 py-1 text-sm font-bold text-primary">
-      <Icon size={15} aria-hidden /> {travellerLabel(t, all)}
-    </p>
+    <div className="mt-4 flex flex-wrap items-center gap-2">
+      <p className="inline-flex items-center gap-2 rounded-full bg-primary/10 px-3 py-1 text-sm font-bold text-primary">
+        <Icon size={15} aria-hidden /> {travellerLabel(t, all)}
+      </p>
+      {total > 1 ? (
+        <span className="bw-who-steps" aria-label={`Question ${step} sur ${total} pour ce voyageur`}>
+          {Array.from({ length: total }, (_, i) => (
+            <i key={i} data-on={i < step || undefined} />
+          ))}
+          <small>
+            {step}/{total}
+          </small>
+        </span>
+      ) : null}
+    </div>
   );
 }
 
@@ -195,7 +232,16 @@ export function PapersQuestions({
     else if (q.step === "group") body = <GroupStep answers={answers} patch={patch} />;
     else if (q.step === "stay") body = <StayStep answers={answers} patch={(p) => set(p)} />;
   } else if (q.kind === "traveller" && t) {
-    const who = <Who t={t} all={answers.travellers} />;
+    // Mini fil d'Ariane du voyageur : « Youssef · 2 sur 4 », pour savoir combien il en reste.
+    const mine = list.filter((item) => item.kind === "traveller" && item.id === t.id);
+    const who = (
+      <Who
+        t={t}
+        all={answers.travellers}
+        step={mine.findIndex((item) => item === q) + 1}
+        total={mine.length}
+      />
+    );
     if (q.q === "age")
       body = (
         <>

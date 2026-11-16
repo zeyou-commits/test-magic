@@ -270,6 +270,18 @@ export interface Task {
   needs?: string[];
   /** Un conseil de prudence de BledWay, pas une obligation tirée d'une source. */
   advice?: boolean;
+  /** Ce que coûte la démarche, d'après la source officielle (eur : pour le total). */
+  cost?: { label: string; eur: number };
+}
+
+/** Le total des frais connus (visas…), pour l'annoncer en tête du bilan. */
+export const totalCost = (tasks: Task[]) => tasks.reduce((sum, t) => sum + (t.cost?.eur ?? 0), 0);
+
+/** Tarif de l'ambassade pour un visa de 90 jours ou moins, selon l'âge, plus 30 € de frais de dossier. */
+export function visaCost(age: number): { label: string; eur: number } {
+  if (age < 6) return { label: "Visa gratuit · 30 € de dossier", eur: 30 };
+  if (age < 12) return { label: "40 € + 30 € de dossier", eur: 70 };
+  return { label: "80 € + 30 € de dossier", eur: 110 };
 }
 
 /**
@@ -345,7 +357,8 @@ export function tasksFor(a: Answers): Task[] {
           child
             ? "Pour un mineur : un parent ou le tuteur l'accompagne au rendez-vous, avec le livret de famille ou sa copie conforme."
             : "",
-          "Coût annoncé par l'ambassade pour 90 jours ou moins : 80 € à partir de 12 ans, 40 € de 6 à 12 ans, gratuit avant 6 ans, plus 30 € de frais de dossier. Vérifiez le tarif sur le site du consulat.",
+          "Coût annoncé par l'ambassade pour 90 jours ou moins : 80 € à partir de 12 ans, 40 € de 6 à 12 ans, gratuit avant 6 ans, plus 30 € de frais de dossier. Une taxe, dont le montant n'est pas publié, se règle au retrait du visa. Vérifiez le tarif sur le site du consulat.",
+          "Quel visa demander ? Il se choisit selon le motif : familial (certificat d'hébergement d'un proche), touristique (hébergement, hôtel ou agence de voyage), affaires, études ou travail. Il permet un séjour de 1 ou de 3 mois, avec une seule entrée ou des entrées multiples. Pour des vacances au bled, un visa de 90 jours ou moins suffit ; au-delà de 90 jours de validité (allers-retours sur plusieurs mois), l'ambassade annonce 100 €. Pour rester plus longtemps une fois sur place, la prolongation se demande au bureau des étrangers de la wilaya, avant la fin du visa.",
         ]
           .filter(Boolean)
           .join("\n"),
@@ -354,6 +367,7 @@ export function tasksFor(a: Answers): Task[] {
           ? ["fd-entree", "cons-visa-familial", "amb-visa"]
           : ["fd-entree", "amb-visa", "justice-algerie"],
         consulate: "le visa",
+        cost: visaCost(t.age),
         ...(spouse && a.transcribed !== "yes" ? { needs: ["transcription-mariage"] } : {}),
       });
       continue;
@@ -571,6 +585,7 @@ export function tasksFor(a: Answers): Task[] {
           "Un mineur qui quitte la France sans aucun de ses parents présente l'AST signée par un parent, avec la copie de la pièce d'identité de ce parent. Le formulaire se remplit soi-même.",
         who: frMinors.map(label),
         sources: ["sp-mineur"],
+        cost: { label: "Gratuit", eur: 0 },
       });
     const etrKids = children.filter((t) => t.nat === "etr");
     if (etrKids.length && (a.kidsWith === "other" || a.kidsWith === "alone"))
@@ -698,6 +713,7 @@ export function tasksFor(a: Answers): Task[] {
         "Facultatif : le ministère des Affaires étrangères envoie ses alertes pendant le séjour.",
       who: [],
       sources: ["fd-entree"],
+      cost: { label: "Gratuit", eur: 0 },
     });
 
   // La carte consulaire n'est utile que pour une démarche au consulat (le consulat la demande) :

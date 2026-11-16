@@ -288,7 +288,9 @@ export function bookingSearch(plan: CompanionPlan) {
   const params = new URLSearchParams();
   if (plan.fromPortId) params.set("from", plan.fromPortId);
   if (plan.toPortId) params.set("to", plan.toPortId);
-  params.set("date", planDay(plan));
+  const day = planDay(plan);
+  params.set("date", day);
+  if (plan.date && plan.returnDate && plan.returnDate > day) params.set("ret", plan.returnDate);
   params.set("flex", "3");
   return `/?${params.toString()}`;
 }

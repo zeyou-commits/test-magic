@@ -13,14 +13,15 @@ import {
   Ship,
   Sparkles,
 } from "lucide-react";
-import {
-  formatDuration,
-  capitalizeFirst,
-  formatShortDay,
-} from "@/lib/ferry/format";
+import { formatDuration, capitalizeFirst, formatShortDay } from "@/lib/ferry/format";
 import { relativeDay, type Sailing } from "@/lib/ferry/trips";
 import { bookingSite, bookingUrl } from "@/lib/ferry/booking";
-import { formatAge, formatDelay, TRUSTED_SIGNAL_MINUTES, type LiveShip } from "@/lib/ferry/tracking";
+import {
+  formatAge,
+  formatDelay,
+  TRUSTED_SIGNAL_MINUTES,
+  type LiveShip,
+} from "@/lib/ferry/tracking";
 import { wallTimeInZone, zoneLabel } from "@/lib/ferry/time";
 import { ReportButton } from "./ReportButton";
 import { FollowButton } from "./FollowButton";
@@ -28,7 +29,12 @@ import { FLASH_SELECT_EVENT } from "./FlashCenter";
 import { SeaChip } from "./SeaForecast";
 import { ShareButtons } from "./ShareButtons";
 import { CompanyBadge } from "./CompanyBadge";
-import { estimateFerryFare, formatEuro, formatFareRange, useFareProfile } from "@/lib/ferry/pricing";
+import {
+  estimateFerryFare,
+  formatEuro,
+  formatFareRange,
+  useFareProfile,
+} from "@/lib/ferry/pricing";
 import { RECOMMENDED_RULE } from "@/lib/ferry/trips";
 import { tr } from "@/lib/i18n";
 
@@ -125,7 +131,8 @@ export function SailingCard({
                 className="inline-flex items-center gap-1 rounded-full bg-success/15 px-2 py-0.5 font-semibold text-success"
                 title={RECOMMENDED_RULE}
               >
-                <Sparkles className="size-3" aria-hidden />{tr("ui.sailingCard.recommande")}
+                <Sparkles className="size-3" aria-hidden />
+                {tr("ui.sailingCard.recommande")}
               </span>
             ) : null}
             {overnight ? (
@@ -133,7 +140,8 @@ export function SailingCard({
                 className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 font-semibold text-primary"
                 title={tr("ui.sailingCard.departEnSoireeOuDe")}
               >
-                <Moon className="size-3" aria-hidden />{tr("ui.sailingCard.nuit")}
+                <Moon className="size-3" aria-hidden />
+                {tr("ui.sailingCard.nuit")}
               </span>
             ) : null}
             <ChevronDown
@@ -204,15 +212,16 @@ export function SailingCard({
             {tr("ui.sailingCard.departAConfirmerAupresDe")}
           </span>
         ) : (
-        <a
-          href={`/simulateurs/budget-voyage?ticket=${Math.round(fare.amount)}`}
-          title={tr("ui.sailingCard.budgetPorteAPorteRoute")}
-          aria-label={tr("ui.sailingCard.calculerLeBudgetPorteA")}
-          // Sur téléphone, la ligne n'a pas la place : logo, prix et favori suffisent.
-          className="ml-auto hidden h-8 shrink-0 items-center gap-1 rounded-full border border-border bg-card px-2.5 text-xs font-semibold text-primary hover:bg-secondary md:inline-flex"
-        >
-          <Calculator className="size-3.5" aria-hidden />{tr("ui.sailingCard.budget")}
-        </a>
+          <a
+            href={`/simulateurs/budget-voyage?ticket=${Math.round(fare.amount)}`}
+            title={tr("ui.sailingCard.budgetPorteAPorteRoute")}
+            aria-label={tr("ui.sailingCard.calculerLeBudgetPorteA")}
+            // Sur téléphone, la ligne n'a pas la place : logo, prix et favori suffisent.
+            className="ml-auto hidden h-8 shrink-0 items-center gap-1 rounded-full border border-border bg-card px-2.5 text-xs font-semibold text-primary hover:bg-secondary md:inline-flex"
+          >
+            <Calculator className="size-3.5" aria-hidden />
+            {tr("ui.sailingCard.budget")}
+          </a>
         )}
         {href && !alert ? (
           <a
@@ -228,7 +237,11 @@ export function SailingCard({
           >
             <span className="tabular-nums">≈ {formatEuro(fare.amount)}</span>
             <ArrowUpRight className="size-3.5" aria-hidden />
-            <span className="sr-only">{tr("ui.sailingCard.sur")}{bookingSite(sailing)}{tr("ui.sailingCard.nouvelOnglet")}</span>
+            <span className="sr-only">
+              {tr("ui.sailingCard.sur")}
+              {bookingSite(sailing)}
+              {tr("ui.sailingCard.nouvelOnglet")}
+            </span>
           </a>
         ) : null}
         {/* Suivre sans déplier : le cœur, comme dans la liste du trafic. */}
@@ -307,7 +320,9 @@ export function SailingDetail({
           >
             <Ship className="size-3.5" aria-hidden /> {sailing.vessel.name}
             <VesselAlertTag vesselId={sailing.vessel.id} />
-            <span className="font-normal text-muted-foreground">{tr("ui.sailingCard.fichePhoto")}</span>
+            <span className="font-normal text-muted-foreground">
+              {tr("ui.sailingCard.fichePhoto")}
+            </span>
           </button>
         ) : null}
       </div>
@@ -325,22 +340,32 @@ export function SailingDetail({
             if (window.location.pathname !== "/") return;
             event.preventDefault();
             window.dispatchEvent(
-              new CustomEvent(FLASH_SELECT_EVENT, { detail: { type: "departure", id: departure.id } }),
+              new CustomEvent(FLASH_SELECT_EVENT, {
+                detail: { type: "departure", id: departure.id },
+              }),
             );
           }}
           className="inline-flex h-8 items-center gap-1 rounded-full bg-primary px-3 font-semibold text-primary-foreground hover:brightness-110"
         >
-          {tr("ui.sailingCard.voirLaTraversee")}<ChevronRight className="size-3.5" aria-hidden />
+          {tr("ui.sailingCard.voirLaTraversee")}
+          <ChevronRight className="size-3.5" aria-hidden />
         </a>
         <button
           type="button"
           onClick={() => onOpenRoute(sailing.route.id)}
           className="inline-flex h-8 items-center gap-1 rounded-full border border-border px-3 font-semibold hover:bg-secondary"
         >
-          {tr("ui.sailingCard.ficheDeLaLigne")}<ChevronRight className="size-3.5" aria-hidden />
+          {tr("ui.sailingCard.ficheDeLaLigne")}
+          <ChevronRight className="size-3.5" aria-hidden />
         </button>
         <ReportButton targetType="departure" targetId={departure.id} />
-        <FollowButton kind="departure" targetId={departure.id} compact label={`${sailing.from.name} → ${sailing.to.name}`} demo={Boolean(departure.is_demo)} />
+        <FollowButton
+          kind="departure"
+          targetId={departure.id}
+          compact
+          label={`${sailing.from.name} → ${sailing.to.name}`}
+          demo={Boolean(departure.is_demo)}
+        />
         <ShareButtons
           title={`${sailing.from.name} → ${sailing.to.name}`}
           text={`⛴️ ${sailing.from.name} → ${sailing.to.name} · ${formatShortDay(departure.departure_at, sailing.fromZone)} · départ ${sailing.depTime}${sailing.arrTime ? `, arrivée ${sailing.arrTime}${sailing.arrDayOffset > 0 ? ` (+${sailing.arrDayOffset} j)` : ""}` : ""} (heures locales)${sailing.company ? ` · ${sailing.company.name}` : ""}\nVérifiez auprès de la compagnie. Via BledWay`}
@@ -353,7 +378,8 @@ export function SailingDetail({
             onClick={() => markBookingLeave(bookingSite(sailing))}
             className="ml-auto inline-flex h-8 items-center gap-1 rounded-full bg-cta px-3 font-semibold text-cta-foreground shadow-sm transition hover:brightness-110 active:scale-95"
           >
-            {tr("ui.sailingCard.voirLOffre")}<ArrowUpRight className="size-3.5" aria-hidden />
+            {tr("ui.sailingCard.voirLOffre")}
+            <ArrowUpRight className="size-3.5" aria-hidden />
           </a>
         ) : null}
       </div>
@@ -375,7 +401,12 @@ function Fact({ label, value, hint }: { label: string; value: string; hint?: str
 
 const weekdayFmt = new Intl.DateTimeFormat("fr-FR", { weekday: "short", timeZone: "UTC" });
 const monthFmt = new Intl.DateTimeFormat("fr-FR", { month: "short", timeZone: "UTC" });
-const fullDayFmt = new Intl.DateTimeFormat("fr-FR", { weekday: "long", day: "numeric", month: "long", timeZone: "UTC" });
+const fullDayFmt = new Intl.DateTimeFormat("fr-FR", {
+  weekday: "long",
+  day: "numeric",
+  month: "long",
+  timeZone: "UTC",
+});
 
 /** Frise de dates défilable au doigt, à la molette horizontale ou par glissement de souris. */
 export function DayStrip({
@@ -383,11 +414,14 @@ export function DayStrip({
   value,
   onChange,
   allLabel = "Tous",
+  range = null,
 }: {
   days: { day: string; count: number }[];
   value: string | null;
   onChange: (day: string | null) => void;
   allLabel?: string;
+  /** Les jours couverts par la recherche (date ± souplesse) : surlignés, et la frise s'y place. */
+  range?: { from: string; to: string } | null;
 }) {
   const railRef = useRef<HTMLDivElement>(null);
   const dragRef = useRef<{ x: number; left: number; moved: boolean } | null>(null);
@@ -405,31 +439,52 @@ export function DayStrip({
     const observer = new ResizeObserver(update);
     observer.observe(element);
     element.addEventListener("scroll", update, { passive: true });
-    return () => { observer.disconnect(); element.removeEventListener("scroll", update); };
+    return () => {
+      observer.disconnect();
+      element.removeEventListener("scroll", update);
+    };
   }, [days.length]);
   // Le jour choisi depuis le calendrier reste visible dans la frise.
   useEffect(() => {
-    if (!value) return;
+    // Une plage cherchée (date ± souplesse) : la frise montre son premier jour, pas seulement la date.
+    const anchor = range
+      ? (days.find((item) => item.day >= range.from)?.day ?? null)
+      : days.some((item) => item.day === value)
+        ? value
+        : null;
+    if (!anchor) return;
     const rail = railRef.current;
-    const index = days.findIndex((item) => item.day === value);
+    const index = days.findIndex((item) => item.day === anchor);
     const target = index < 0 ? null : rail?.children.item(index + 1);
     if (!(target instanceof HTMLElement) || !rail) return;
     const left = target.offsetLeft - rail.offsetLeft;
-    if (left < rail.scrollLeft || left + target.offsetWidth > rail.scrollLeft + rail.clientWidth)
+    if (
+      range ||
+      left < rail.scrollLeft ||
+      left + target.offsetWidth > rail.scrollLeft + rail.clientWidth
+    )
       rail.scrollTo({ left: Math.max(0, left - 8), behavior: "smooth" });
-  }, [value, days]);
+    // Les bornes, pas l'objet : un nouvel objet à chaque rendu ramènerait la frise sans cesse.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [value, days, range?.from, range?.to]);
 
   if (days.length === 0) return null;
   const arrow =
     "grid size-7 shrink-0 place-items-center rounded-full border bg-card text-muted-foreground transition hover:bg-secondary disabled:pointer-events-none disabled:opacity-30";
 
   return (
-    <div className="flex w-full min-w-0 items-center gap-1" aria-label={tr("ui.sailingCard.joursAvecDepart")}>
+    <div
+      className="flex w-full min-w-0 items-center gap-1"
+      aria-label={tr("ui.sailingCard.joursAvecDepart")}
+    >
       <button
         type="button"
         className={arrow}
         disabled={!canScroll.left}
-        onClick={() => { const rail = railRef.current; rail?.scrollBy({ left: -rail.clientWidth * 0.8, behavior: "smooth" }); }}
+        onClick={() => {
+          const rail = railRef.current;
+          rail?.scrollBy({ left: -rail.clientWidth * 0.8, behavior: "smooth" });
+        }}
         aria-label={tr("ui.sailingCard.datesPrecedentes")}
         title={tr("ui.sailingCard.datesPrecedentes")}
       >
@@ -442,7 +497,11 @@ export function DayStrip({
         aria-label={tr("ui.sailingCard.choisirUnJourDeDepart")}
         onPointerDown={(event) => {
           if (event.pointerType !== "mouse" || event.button !== 0) return;
-          dragRef.current = { x: event.clientX, left: event.currentTarget.scrollLeft, moved: false };
+          dragRef.current = {
+            x: event.clientX,
+            left: event.currentTarget.scrollLeft,
+            moved: false,
+          };
         }}
         onPointerMove={(event) => {
           const drag = dragRef.current;
@@ -450,10 +509,20 @@ export function DayStrip({
           if (Math.abs(event.clientX - drag.x) > 5) drag.moved = true;
           if (drag.moved) event.currentTarget.scrollLeft = drag.left - (event.clientX - drag.x);
         }}
-        onPointerUp={() => { window.setTimeout(() => { dragRef.current = null; }, 0); }}
-        onPointerCancel={() => { dragRef.current = null; }}
+        onPointerUp={() => {
+          window.setTimeout(() => {
+            dragRef.current = null;
+          }, 0);
+        }}
+        onPointerCancel={() => {
+          dragRef.current = null;
+        }}
         onClickCapture={(event) => {
-          if (dragRef.current?.moved) { event.preventDefault(); event.stopPropagation(); dragRef.current = null; }
+          if (dragRef.current?.moved) {
+            event.preventDefault();
+            event.stopPropagation();
+            dragRef.current = null;
+          }
         }}
       >
         <button
@@ -468,6 +537,7 @@ export function DayStrip({
         {days.map(({ day, count }) => {
           const date = new Date(`${day}T00:00:00Z`);
           const active = value === day;
+          const inRange = !active && range !== null && day >= range.from && day <= range.to;
           return (
             <button
               key={day}
@@ -477,13 +547,21 @@ export function DayStrip({
               aria-label={`${fullDayFmt.format(date)}, ${count} départ${count > 1 ? "s" : ""}`}
               onClick={() => onChange(active ? null : day)}
               title={`${count} départ${count > 1 ? "s" : ""}`}
-              className={`flex h-12 min-w-14 shrink-0 flex-col items-center justify-center rounded-xl border px-0.5 leading-none transition ${active ? "border-primary bg-primary text-primary-foreground" : "border-border bg-card hover:bg-secondary"}`}
+              className={`relative flex h-12 min-w-14 shrink-0 flex-col items-center justify-center rounded-xl border px-0.5 leading-none transition ${active ? "border-primary bg-primary text-primary-foreground" : inRange ? "border-primary/50 bg-primary/10" : "border-border bg-card hover:bg-secondary"}`}
             >
-              <span className="flex items-center justify-center gap-0.5 whitespace-nowrap">
-                <span className={`text-[9px] font-semibold uppercase ${active ? "text-primary-foreground/80" : "text-muted-foreground"}`}>
-                  {weekdayFmt.format(date).replace(".", "")}
+              {/* Plusieurs départs ce jour-là : un compteur en coin, qui ne pousse pas le jour. */}
+              {count > 1 ? (
+                <span
+                  className={`absolute right-0.5 top-0.5 grid min-w-3.5 place-items-center rounded-full px-0.5 text-[9px] font-bold leading-[14px] ${active ? "bg-cta text-cta-foreground" : "bg-primary text-primary-foreground"}`}
+                  aria-hidden
+                >
+                  {count}
                 </span>
-                {count > 1 ? <span className={`grid min-w-3.5 place-items-center rounded-full px-0.5 text-[9px] font-bold ${active ? "bg-cta text-cta-foreground" : "bg-primary text-primary-foreground"}`}>{count}</span> : null}
+              ) : null}
+              <span
+                className={`whitespace-nowrap text-[9px] font-semibold uppercase ${active ? "text-primary-foreground/80" : "text-muted-foreground"}`}
+              >
+                {weekdayFmt.format(date).replace(".", "")}
               </span>
               <span className="font-display text-sm font-bold">{date.getUTCDate()}</span>
               <span
@@ -499,7 +577,10 @@ export function DayStrip({
         type="button"
         className={arrow}
         disabled={!canScroll.right}
-        onClick={() => { const rail = railRef.current; rail?.scrollBy({ left: rail.clientWidth * 0.8, behavior: "smooth" }); }}
+        onClick={() => {
+          const rail = railRef.current;
+          rail?.scrollBy({ left: rail.clientWidth * 0.8, behavior: "smooth" });
+        }}
         aria-label={tr("ui.sailingCard.datesSuivantes")}
         title={tr("ui.sailingCard.datesSuivantes")}
       >
@@ -528,8 +609,14 @@ export function LiveStrip({ live, arrivalZone }: { live: LiveShip; arrivalZone: 
           />
         </span>
         <span className="truncate">
-          {atSea ? (fresh ? tr("ui.sailingCard.enMer") : tr("ui.sailingCard.enMerEstime")) : tr("ui.sailingCard.auPort")}
-          {fresh && live.position.speedKnots ? ` · ${Math.round(live.position.speedKnots)} nœuds` : ""}
+          {atSea
+            ? fresh
+              ? tr("ui.sailingCard.enMer")
+              : tr("ui.sailingCard.enMerEstime")
+            : tr("ui.sailingCard.auPort")}
+          {fresh && live.position.speedKnots
+            ? ` · ${Math.round(live.position.speedKnots)} nœuds`
+            : ""}
         </span>
       </span>
       <span className="shrink-0 text-right text-muted-foreground">

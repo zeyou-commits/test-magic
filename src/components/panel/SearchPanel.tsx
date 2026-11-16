@@ -8,6 +8,7 @@ import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { useQuery } from "@tanstack/react-query";
 import {
   ArrowLeftRight,
+  ArrowRight,
   Backpack,
   CalendarDays,
   ChevronDown,
@@ -53,7 +54,7 @@ import {
   type TravelerType,
   RECOMMENDED_RULE,
 } from "@/lib/ferry/trips";
-import { diffDays } from "@/lib/ferry/schoolCalendar";
+import { addDaysKey, diffDays } from "@/lib/ferry/schoolCalendar";
 import { TripCalendar, type CalendarField } from "./TripCalendar";
 import { dateKeyInZone } from "@/lib/ferry/time";
 import { useLiveShips } from "@/lib/ferry/useLiveShips";
@@ -64,7 +65,7 @@ import { companyCalendars, isEstimatedDeparture } from "@/lib/companion/salesCal
 import { isNorthShore, isSouthShore } from "@/lib/ferry/markets";
 import { CompanyBadge } from "./CompanyBadge";
 import { RoundTripCard } from "./RoundTripCard";
-import { estimateFare, FareProfileContext, useFareProfile } from "@/lib/ferry/pricing";
+import { estimateFare, FareProfileContext, formatEuro, useFareProfile } from "@/lib/ferry/pricing";
 import { buildRoundTrips, type RoundTrip } from "@/lib/ferry/roundTrips";
 import { DayStrip, SailingCard } from "./SailingCard";
 import { ShareButtons } from "./ShareButtons";
@@ -477,6 +478,99 @@ export function SearchPanel({
   // Même règle que l'itinéraire : durée, horaire confortable, et un prix nettement plus bas l'emporte.
   const fareOf = (sailing: Sailing) => estimateFare(sailing, profile);
   const outRecommended = filters.date ? recommendedId(outList, traveler, fareOf) : null;
+  // La frise de dates d'une recherche datée : deux semaines de part et d'autre, pas six mois.
+  const stripDays = useMemo(() => {
+    if (!filters.date) return outDays;
+    const date = filters.date;
+    return [...outAvailability.entries()]
+      .map(([day, count]) => ({ day, count }))
+      .filter((item) => Math.abs(diffDays(date, item.day)) <= 14)
+      .sort((a, b) => a.day.localeCompare(b.day));
+  }, [filters.date, outDays, outAvailability]);
+  const stripRange = filters.date
+    ? {
+        from: addDaysKey(filters.date, -filters.flexDays),
+        to: addDaysKey(filters.date, filters.flexDays),
+      }
+    : null;
+  // Les autres possibilités sur les mêmes jours : partir d'un autre port, ou arriver ailleurs.
+  const alternatives = useMemo(() => {
+    if (!filters.date || !hasPair) return [];
+    const date = filters.date;
+    const span = Math.max(3, filters.flexDays);
+    const from = new Set(filters.departurePortIds);
+    const to = new Set(filters.arrivalPortIds);
+    const searchedFrom = ports.find((port) => from.has(port.id));
+    const fromShore = searchedFrom ? isNorthShore(searchedFrom.country_code) : null;
+    const groups = new Map<
+      string,
+      { kind: "from" | "to"; portId: string; label: string; count: number; fare: number }
+    >();
+    for (const sailing of all) {
+      if (sailing.departure.status === "cancelled") continue;
+      if (Math.abs(diffDays(date, sailing.dayKey)) > span) continue;
+      const otherFrom = !from.has(sailing.from.id) && to.has(sailing.to.id);
+      const otherTo = from.has(sailing.from.id) && !to.has(sailing.to.id);
+      if (!otherFrom && !otherTo) continue;
+      // Même rive que la recherche : un autre port d'Europe, ou un autre port d'Algérie.
+      if (otherFrom && fromShore !== null && isNorthShore(sailing.from.country_code) !== fromShore)
+        continue;
+      const kind = otherFrom ? "from" : "to";
+      const portId = otherFrom ? sailing.from.id : sailing.to.id;
+      const key = `${kind}:${portId}`;
+      const fare = estimateFare(sailing, profile);
+      const current = groups.get(key);
+      if (current) {
+        current.count += 1;
+        current.fare = Math.min(current.fare, fare);
+      } else
+        groups.set(key, {
+          kind,
+          portId,
+          label: `${sailing.from.name} → ${sailing.to.name}`,
+          count: 1,
+          fare,
+        });
+    }
+    return [...groups.values()].sort((a, b) => a.fare - b.fare).slice(0, 4);
+  }, [
+    all,
+    filters.date,
+    filters.flexDays,
+    filters.departurePortIds,
+    filters.arrivalPortIds,
+    hasPair,
+    ports,
+    profile,
+  ]);
+  const alternativesBlock = alternatives.length ? (
+    <section className="bw-alts" aria-labelledby="alts-titre">
+      <h3 id="alts-titre">Autres possibilités sur ces jours-là</h3>
+      <ul>
+        {alternatives.map((item) => (
+          <li key={`${item.kind}:${item.portId}`}>
+            <button
+              type="button"
+              onClick={() =>
+                set(
+                  item.kind === "from"
+                    ? { departurePortIds: [item.portId] }
+                    : { arrivalPortIds: [item.portId] },
+                )
+              }
+            >
+              <span className="bw-alts__line">{item.label}</span>
+              <span className="bw-alts__meta">
+                {item.count} départ{item.count > 1 ? "s" : ""} · dès ≈{" "}
+                {formatEuro(item.fare).replace("~", "")}
+              </span>
+              <ArrowRight className="size-4 shrink-0 text-primary" aria-hidden />
+            </button>
+          </li>
+        ))}
+      </ul>
+    </section>
+  ) : null;
   const backRecommended = filters.returnDate ? recommendedId(backList, traveler, fareOf) : null;
 
   const roundTrips = useMemo(
@@ -512,7 +606,16 @@ export function SearchPanel({
             dates: [filters.date, filters.roundTrip ? filters.returnDate : null],
           })
         : [],
-    [departures, routes, companies, filters.date, filters.returnDate, filters.roundTrip, filters.departurePortIds, filters.arrivalPortIds],
+    [
+      departures,
+      routes,
+      companies,
+      filters.date,
+      filters.returnDate,
+      filters.roundTrip,
+      filters.departurePortIds,
+      filters.arrivalPortIds,
+    ],
   );
   const salesAlert = filters.date ? (
     <SalesCalendarNote
@@ -558,7 +661,8 @@ export function SearchPanel({
       publishedUntil: salesClosed?.last || null,
     });
     // Le rythme d'une ligne n'a de sens que pour un couple de ports et une date exacte.
-    if (found.kind === "notThatDay" && (!hasPair || filters.flexDays > 0)) return { kind: "unknown" } as const;
+    if (found.kind === "notThatDay" && (!hasPair || filters.flexDays > 0))
+      return { kind: "unknown" } as const;
     return found;
   }, [filters.date, filters.flexDays, outAvailability, salesClosed, hasPair]);
   const reportRoute = routes.find(
@@ -1020,30 +1124,31 @@ export function SearchPanel({
               <BookingReturnNote className="mb-3" />
               {showTrips ? (
                 <>
-                {/* Des résultats : l'encart explique d'abord les « Estimé ». Rien : la 504 d'abord. */}
-                {salesAlert && roundTrips.main.some((trip) => trip.mirror) ? (
-                  <div className="mb-3">{salesAlert}</div>
-                ) : null}
-                <RoundTripSection
-                  help={roundTripHelp}
-                  dateLabel={{ out: filters.date, back: filters.returnDate }}
-                  flexDays={filters.flexDays}
-                  onDates={(patch) => set(patch)}
-                  trips={roundTrips}
-                  sortBy={sortBy}
-                  onOpenVessel={(id) => onSelect({ type: "vessel", id })}
-                  onOpenRoute={(id) => onSelect({ type: "route", id })}
-                  onHoverRoute={setHoverRouteId}
-                  onFocusRoute={(routeId) => {
-                    setOpenCard(routeId ? { id: routeId, routeId } : null);
-                    onFocusRoute?.(routeId);
-                  }}
-                  reportTarget={reportTarget}
-                  reportContext={reportContext}
-                />
-                {salesAlert && !roundTrips.main.some((trip) => trip.mirror) ? (
-                  <div className="mt-3">{salesAlert}</div>
-                ) : null}
+                  {/* Des résultats : l'encart explique d'abord les « Estimé ». Rien : la 504 d'abord. */}
+                  {salesAlert && roundTrips.main.some((trip) => trip.mirror) ? (
+                    <div className="mb-3">{salesAlert}</div>
+                  ) : null}
+                  <RoundTripSection
+                    help={roundTripHelp}
+                    dateLabel={{ out: filters.date, back: filters.returnDate }}
+                    flexDays={filters.flexDays}
+                    onDates={(patch) => set(patch)}
+                    trips={roundTrips}
+                    sortBy={sortBy}
+                    onOpenVessel={(id) => onSelect({ type: "vessel", id })}
+                    onOpenRoute={(id) => onSelect({ type: "route", id })}
+                    onHoverRoute={setHoverRouteId}
+                    onFocusRoute={(routeId) => {
+                      setOpenCard(routeId ? { id: routeId, routeId } : null);
+                      onFocusRoute?.(routeId);
+                    }}
+                    reportTarget={reportTarget}
+                    reportContext={reportContext}
+                  />
+                  {salesAlert && !roundTrips.main.some((trip) => trip.mirror) ? (
+                    <div className="mt-3">{salesAlert}</div>
+                  ) : null}
+                  {alternativesBlock}
                 </>
               ) : (
                 <>
@@ -1062,7 +1167,8 @@ export function SearchPanel({
                         ? tr("ui.searchPanel.allersAjoutezUneDateDe")
                         : tr("ui.searchPanel.allerSimpleHeuresLocales")
                     }
-                    days={outDays}
+                    days={stripDays}
+                    range={filters.flexDays > 0 ? stripRange : null}
                     date={filters.date}
                     onDate={(day) =>
                       set({
@@ -1086,6 +1192,7 @@ export function SearchPanel({
                     expanded={showAllOut || Boolean(filters.date)}
                     emptyText="Aucun départ publié pour cette recherche. Un horaire peut manquer."
                     reason={noSailingReason}
+                    notice={noSailingReason.kind === "notPublished" ? salesAlert : null}
                     reportTarget={reportTarget}
                     reportContext={reportContext}
                     onReportMissing={startSearch}
@@ -1095,7 +1202,10 @@ export function SearchPanel({
                         : undefined
                     }
                   />
-                  {salesAlert && !outList.length ? <div className="mt-3">{salesAlert}</div> : null}
+                  {salesAlert && !outList.length && noSailingReason.kind !== "notPublished" ? (
+                    <div className="mt-3">{salesAlert}</div>
+                  ) : null}
+                  {alternativesBlock}
                 </>
               )}
             </>
@@ -1133,6 +1243,8 @@ function ResultBlock({
   expanded,
   emptyText,
   reason,
+  notice = null,
+  range = null,
   onReset,
   reportTarget,
   reportContext,
@@ -1158,6 +1270,9 @@ function ResultBlock({
   expanded: boolean;
   emptyText: string;
   reason: NoSailingReason;
+  /** L'encart qui explique déjà le vide (ventes pas encore ouvertes) : il remplace la 504. */
+  notice?: ReactNode;
+  range?: { from: string; to: string } | null;
   onReset?: (() => void) | undefined;
   reportTarget: { type: "route" | "port"; id: string } | null;
   reportContext: string;
@@ -1183,8 +1298,10 @@ function ResultBlock({
           <ShareButtons compact label={tr("ui.searchPanel.partagerCetteRecherche")} />
         </div>
       </div>
-      <DayStrip days={days} value={date} onChange={onDate} allLabel="Tous" />
-      {list.length === 0 ? (
+      <DayStrip days={days} value={date} onChange={onDate} allLabel="Tous" range={range} />
+      {list.length === 0 && notice ? (
+        notice
+      ) : list.length === 0 ? (
         <Bw504Note
           tone="stuck"
           title={reasonTitle(reason, date)}
@@ -1207,7 +1324,9 @@ function ResultBlock({
                   )
                 : null}
               {onReset ? (
-                <Bw504Button onClick={onReset}>{tr("ui.searchPanel.elargirLaRecherche")}</Bw504Button>
+                <Bw504Button onClick={onReset}>
+                  {tr("ui.searchPanel.elargirLaRecherche")}
+                </Bw504Button>
               ) : null}
               {reason.kind === "unknown" ? (
                 reportTarget ? (
@@ -1547,7 +1666,9 @@ function StepLabel({
 function reasonTitle(reason: NoSailingReason, date: string | null) {
   switch (reason.kind) {
     case "soldOut":
-      return reason.count > 1 ? "Les bateaux de ce jour-là sont complets" : "Le bateau de ce jour-là est complet";
+      return reason.count > 1
+        ? "Les bateaux de ce jour-là sont complets"
+        : "Le bateau de ce jour-là est complet";
     case "notPublished":
       return "Les horaires ne sont pas encore sortis";
     case "notThatDay":
@@ -1564,7 +1685,12 @@ function reasonBody(reason: NoSailingReason, fallback: string) {
     case "notPublished":
       return `Les compagnies ont publié leurs départs jusqu'au ${new Date(
         `${reason.publishedUntil}T00:00:00Z`,
-      ).toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric", timeZone: "UTC" })}. Active l'alerte : je te préviens dès que ça sort.`;
+      ).toLocaleDateString("fr-FR", {
+        day: "numeric",
+        month: "long",
+        year: "numeric",
+        timeZone: "UTC",
+      })}. Active l'alerte : je te préviens dès que ça sort.`;
     case "notThatDay":
       return `Elle part le ${weekdayList(reason.weekdays)} : prends le jour le plus proche.`;
     default:

@@ -177,7 +177,7 @@ export const adminSections: AdminSectionDef[] = [
     id: "companyRequests",
     label: "Demandes des compagnies",
     description:
-      "Changements de traversée et annonces envoyés par les compagnies, à appliquer, valider ou refuser.",
+      "Changements de traversée, annonces, réponses aux avis, fiches et photos envoyés par les compagnies.",
     group: "Réseau",
     short: "Demandes",
     icon: ClipboardList,

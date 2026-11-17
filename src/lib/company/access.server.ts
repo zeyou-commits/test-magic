@@ -4,6 +4,13 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
 import { verifyAdminSession } from "@/lib/admin/session.server";
 import type { Audience, AudiencePreview } from "@/lib/notifications/messages";
+import {
+  DESK_FAILURES,
+  DESK_STAFF_ACTIONS,
+  companyDeskActions,
+  handleCompanyDesk,
+  isDeskAction,
+} from "./desk.server";
 
 /**
  * Accès professionnels des compagnies : une seule entrée serveur pour les deux côtés.
@@ -11,6 +18,8 @@ import type { Audience, AudiencePreview } from "@/lib/notifications/messages";
  * - Équipe BledWay (administrateurs) : actions « admin_* ».
  * - Lot 2 : demandes de changement de traversée et annonces aux passagers, soumises par la
  *   compagnie (niveau Opérations) puis relues par BledWay (« queue », « *_decide »).
+ * - Lot 3 (desk.server.ts) : réponses aux avis et signalements, fiche publique, photos,
+ *   responsable de compagnie.
  * L'identité vient uniquement du jeton vérifié auprès de Supabase Auth ; un identifiant de
  * compte envoyé par le navigateur n'est jamais lu. La base refait tous les contrôles
  * (fonctions bw_company_*, exécutables seulement par le serveur).
@@ -93,6 +102,7 @@ export const companyAccessSchema = z.discriminatedUnion("action", [
     /** Nombre de destinataires montré à la personne qui valide : il doit être encore exact. */
     confirmCount: z.number().int().min(0).optional(),
   }),
+  ...companyDeskActions,
 ]);
 export type CompanyAccessInput = z.infer<typeof companyAccessSchema>;
 
@@ -127,6 +137,7 @@ const FAILURES: Record<string, { status: number; error: string }> = {
     status: 409,
     error: "Personne ne suit cette traversée pour l'instant : aucun message ne peut partir.",
   },
+  ...DESK_FAILURES,
 };
 
 /** Ciblage unique des annonces : les personnes qui suivent cette traversée, rien d'autre. */
@@ -154,6 +165,7 @@ const STAFF_ACTIONS: Partial<Record<string, Database["public"]["Enums"]["app_rol
   request_decide: ["admin", "editor"],
   announce_check: ["admin"],
   announce_decide: ["admin"],
+  ...DESK_STAFF_ACTIONS,
 };
 
 export const hashInviteToken = (token: string) => createHash("sha256").update(token).digest("hex");
@@ -230,11 +242,32 @@ export async function handleCompanyAccess(
     };
   };
 
+  if (isDeskAction(input))
+    return handleCompanyDesk(input, {
+      me,
+      db: db as unknown as SupabaseClient,
+      origin: new URL(request.url).origin,
+      call,
+      respond,
+      newToken,
+      hashToken: hashInviteToken,
+    });
+
   let result;
   switch (input.action) {
-    case "me":
+    case "me": {
       result = await call("bw_company_my_access", { _user: me });
+      if (result.response) return result.response;
+      // Lot 3 : marque les compagnies dont ce compte est responsable (ignoré si non installé).
+      const managed = await rpc("bw_company_my_manager", { _user: me }).catch(() => null);
+      const ids = Array.isArray(managed?.data) ? (managed.data as string[]) : [];
+      if (Array.isArray(result.data))
+        result.data = (result.data as { companyId: string }[]).map((c) => ({
+          ...c,
+          manager: ids.includes(c.companyId),
+        }));
       break;
+    }
     case "team":
       result = await call("bw_company_team", { _user: me, _company: input.companyId });
       break;

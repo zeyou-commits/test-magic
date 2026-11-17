@@ -31,7 +31,7 @@ const editorial = new Set([
   "health",
   "tickets",
 ]);
-const moderation = new Set(["reviews", "community", "reports"]);
+const moderation = new Set(["reviews", "community", "reports", "companyRequests"]);
 
 export const ROLE_CATALOG: Record<
   StaffRole,

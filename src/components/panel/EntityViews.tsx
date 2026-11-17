@@ -1,6 +1,7 @@
 import { FollowButton } from "./FollowButton";
 import { PlaceReactions } from "./PlaceReactions";
 import { CompanyContacts } from "./CompanyContacts";
+import { CompanyGallery } from "./CompanyPublic";
 import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { ExternalLink, Ship, CalendarDays } from "lucide-react";
@@ -105,6 +106,7 @@ export function CompanyView({
         </div>
       </dl>
       {company.description ? <p className="bw-company-description">{company.description}</p> : null}
+      <CompanyGallery companyId={companyId} companyName={company.name} />
       {site ? (
         <a className="bw-company-site" href={site} target="_blank" rel="noopener noreferrer">
           {tr("ui.entityViews.siteOfficiel")}<ExternalLink size={15} aria-hidden />

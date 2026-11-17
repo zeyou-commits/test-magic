@@ -24,6 +24,8 @@ import {
 import { PhotoPicker, PhotoStrip } from "@/components/photos/Photos";
 import { photosKey, photosQuery, submitPhoto, type PreparedPhoto } from "@/lib/photos/photos";
 import { tr } from "@/lib/i18n";
+import { CompanyReplyNote } from "./CompanyPublic";
+import { companyRepliesQuery } from "@/lib/company/publicDesk";
 
 /**
  * Fait défiler le volet (fiche de la carte) jusqu'à l'élément, sans faire bouger la page autour :
@@ -75,6 +77,11 @@ export function EntityReviews({
       photoKind(kind) ? (feed.data?.reviews ?? []).map((r) => r.id) : [],
     ),
   ).data;
+  // Réponses publiées des compagnies (avis sur une compagnie ou un navire).
+  const replies = useQuery({
+    ...companyRepliesQuery("entity_review", (feed.data?.reviews ?? []).map((r) => r.id)),
+    enabled: kind !== "port" && Boolean(feed.data?.reviews.length),
+  }).data;
   const formRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     if (openForm) setWrite(true);
@@ -199,6 +206,7 @@ export function EntityReviews({
                   ))}
                 </dl>
               </details>
+              <CompanyReplyNote reply={replies?.get(r.id)} />
             </li>
           ))}
         </ul>

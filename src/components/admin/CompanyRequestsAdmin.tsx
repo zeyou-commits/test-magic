@@ -48,7 +48,12 @@ export function useCompanyQueue(enabled = true) {
   return useQuery({
     queryKey: companyAccessKeys.queue(user?.id ?? ""),
     queryFn: () => companyAccessRequest<CompanyQueue>({ action: "queue" }),
-    enabled: Boolean(user) && enabled && canUseAdminTab(roles, "companyRequests"),
+    // Demandes et annonces : administrateurs et éditeurs (les modérateurs relisent le lot 3).
+    enabled:
+      Boolean(user) &&
+      enabled &&
+      canUseAdminTab(roles, "companyRequests") &&
+      roles.some((role) => role === "admin" || role === "editor"),
     staleTime: 20_000,
     refetchInterval: 60_000,
     retry: false,
@@ -68,7 +73,7 @@ type Filter = "pending" | "done";
  * annonces envoyés par les compagnies, à appliquer, valider ou refuser. Les urgents en premier.
  */
 export function CompanyRequestsAdmin() {
-  const { isAdmin } = useAuth();
+  const { isAdmin, roles } = useAuth();
   const queue = useCompanyQueue();
   const { data: routes = [] } = useQuery(routesQuery);
   const { data: ports = [] } = useQuery(portsQuery);
@@ -84,6 +89,7 @@ export function CompanyRequestsAdmin() {
   const vesselName = (id: string | null) =>
     vessels.find((vessel) => vessel.id === id)?.name ?? "navire à confirmer";
 
+  if (!roles.some((role) => role === "admin" || role === "editor")) return null;
   if (queue.isPending) return <p className="bo-empty">Chargement des demandes…</p>;
   if (queue.isError)
     return (

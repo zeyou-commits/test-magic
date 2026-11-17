@@ -1814,6 +1814,15 @@ export const ui = {
       "Selon les horaires publiés. Les places se vérifient auprès de la compagnie.",
     aucunAutreDepartPublieDans: "Aucun autre départ publié dans les 7 jours autour de cette date.",
   },
+  companyVoice: {
+    reponseDe: "Réponse de {company}",
+    photosTitre: "Photos de {company}",
+    photosNavire: "Photos du navire",
+    photosLegende: "Photos fournies par la compagnie, relues par BledWay.",
+    photoSuivante: "Photo suivante",
+    photoPrecedente: "Photo précédente",
+    agrandir: "Agrandir la photo : {caption}",
+  },
   entityReviews: {
     avisDesVoyageurs: "Avis des voyageurs",
     lectureDesAvis: "Lecture des avis…",

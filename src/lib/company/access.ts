@@ -30,6 +30,8 @@ export interface MyCompanyAccess {
   spaceStatus: "active" | "suspended";
   /** Calculé par la base : compte actif, accès actif, espace ouvert. */
   usable: boolean;
+  /** Lot 3 : responsable de la compagnie (outils d'équipe). */
+  manager?: boolean;
 }
 
 export interface TeamMate {

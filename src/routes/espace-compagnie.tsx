@@ -6,7 +6,6 @@ import {
   Building2,
   CalendarDays,
   ClipboardList,
-  ExternalLink,
   Gauge,
   Megaphone,
   MessageSquare,
@@ -30,6 +29,14 @@ import {
   useCompanyActivity,
   type DeskContext,
 } from "@/components/company/CompanyDesk";
+import {
+  CompanyManagerPanel,
+  CompanyProfileTab,
+  CompanyReviewsTab,
+  CompanySignalsTab,
+  useCompanyFeedback,
+  type VoiceContext,
+} from "@/components/company/CompanyVoice";
 import { CompanyBadge } from "@/components/panel/CompanyBadge";
 import { useAuth } from "@/hooks/useAuth";
 import { STAFF_ROLES } from "@/lib/admin/permissions";
@@ -125,7 +132,7 @@ const SECTIONS: ShellSection[] = [
     id: "reviews",
     label: "Avis des voyageurs",
     short: "Avis",
-    description: "Les notes publiées sur votre compagnie, critère par critère.",
+    description: "Les avis publiés sur votre compagnie et vos navires, et vos réponses.",
     group: "Voyageurs",
     icon: Star,
   },
@@ -133,7 +140,7 @@ const SECTIONS: ShellSection[] = [
     id: "signals",
     label: "Signalements en direct",
     short: "En direct",
-    description: "Ce que les voyageurs signalent en ce moment sur vos navires.",
+    description: "Ce que les voyageurs signalent sur vos navires : répondre ou contester.",
     group: "Voyageurs",
     icon: Radio,
   },
@@ -148,7 +155,7 @@ const SECTIONS: ShellSection[] = [
   {
     id: "profile",
     label: "Ma fiche",
-    description: "Ce que les voyageurs voient de votre compagnie : logo, site, contacts.",
+    description: "Ce que les voyageurs voient de votre compagnie : contacts, présentation, photos.",
     group: "Communication",
     icon: Building2,
   },
@@ -285,6 +292,7 @@ function CompanySpace({ allowed }: { allowed: MyCompanyAccess[] | null }) {
     : companies.filter((item) => item.status === "active" && !item.is_demo);
   const company = active.find((item) => item.id === c) ?? active[0];
   const level = allowed?.find((item) => item.companyId === company?.id)?.level;
+  const manager = Boolean(allowed?.find((item) => item.companyId === company?.id)?.manager);
   const team = useQuery({
     queryKey: companyAccessKeys.team(user?.id ?? "", company?.id ?? ""),
     queryFn: () => companyAccessRequest<TeamMate[]>({ action: "team", companyId: company!.id }),
@@ -336,6 +344,27 @@ function CompanySpace({ allowed }: { allowed: MyCompanyAccess[] | null }) {
   const inReview =
     (activity.data?.requests ?? []).filter((item) => item.status === "submitted").length +
     (activity.data?.announcements ?? []).filter((item) => item.status === "submitted").length;
+  const voice: VoiceContext | null = company
+    ? {
+        companyId: company.id,
+        companyName: company.name,
+        canAct,
+        when: (iso) => `${dayFmt.format(new Date(iso))} à ${hourFmt.format(new Date(iso))}`,
+      }
+    : null;
+  // Avis sans réponse, pour le badge de la rubrique (seulement si on peut répondre).
+  const feedback = useCompanyFeedback(company?.id ?? "", Boolean(company) && canAct);
+  const unanswered = canAct
+    ? (feedback.data?.reviews ?? []).filter(
+        (review) =>
+          !(feedback.data?.replies ?? []).some(
+            (reply) =>
+              reply.targetId === review.id &&
+              reply.kind === "reply" &&
+              !["withdrawn", "replaced"].includes(reply.status),
+          ),
+      ).length
+    : 0;
   const desk: DeskContext | null = company
     ? {
         companyId: company.id,
@@ -442,7 +471,6 @@ function CompanySpace({ allowed }: { allowed: MyCompanyAccess[] | null }) {
   ) : (
     <p className="bo-empty">Aucun signalement en cours sur vos navires.</p>
   );
-  const soon = <span className="bo-soon">À valider ensemble</span>;
 
   return (
     <BackofficeShell
@@ -474,7 +502,7 @@ function CompanySpace({ allowed }: { allowed: MyCompanyAccess[] | null }) {
       sections={SECTIONS}
       tab={SECTIONS.some((section) => section.id === tab) ? tab : "home"}
       onNavigate={go}
-      badges={{ signals: alerts.length, requests: inReview }}
+      badges={{ signals: alerts.length, requests: inReview, reviews: unanswered }}
       notice={
         allowed ? (
           <div className="bo-notice" data-tone="info" role="note">
@@ -484,9 +512,8 @@ function CompanySpace({ allowed }: { allowed: MyCompanyAccess[] | null }) {
             </strong>
             <span>
               {canAct
-                ? "Vos demandes de changement et vos annonces sont relues par BledWay avant d'être appliquées ou envoyées."
-                : "Vous suivez les traversées, les demandes et les annonces de votre compagnie. Le niveau Opérations permet d'en envoyer."}{" "}
-              Répondre aux avis arrive dans une prochaine version.
+                ? "Vos demandes, annonces, réponses aux avis, corrections de fiche et photos sont relues par BledWay avant d'être appliquées ou publiées."
+                : "Vous suivez les traversées, les demandes, les annonces et les avis de votre compagnie. Le niveau Opérations permet d'agir."}
             </span>
           </div>
         ) : (
@@ -503,46 +530,53 @@ function CompanySpace({ allowed }: { allowed: MyCompanyAccess[] | null }) {
       {!company || !overview ? (
         <p className="bo-empty">Chargement de la compagnie…</p>
       ) : tab === "team" ? (
-        <section className="bo-card">
-          <h2>
-            <UserRound aria-hidden /> Accès à l'espace {company.name}
-            <small>attribués par BledWay</small>
-          </h2>
-          {team.isPending ? (
-            <p className="bo-empty">Chargement de l'équipe…</p>
-          ) : team.isError ? (
-            <p className="bo-empty">
-              {!refused
-                ? (team.error as Error).message
-                : allowed
-                  ? "Votre accès a changé. Rechargez la page."
-                  : "Dans l'équipe BledWay, seuls les administrateurs voient les accès."}
+        <div className="grid gap-3.5">
+          <section className="bo-card">
+            <h2>
+              <UserRound aria-hidden /> Accès à l'espace {company.name}
+              <small>attribués par BledWay</small>
+            </h2>
+            {team.isPending ? (
+              <p className="bo-empty">Chargement de l'équipe…</p>
+            ) : team.isError ? (
+              <p className="bo-empty">
+                {!refused
+                  ? (team.error as Error).message
+                  : allowed
+                    ? "Votre accès a changé. Rechargez la page."
+                    : "Dans l'équipe BledWay, seuls les administrateurs voient les accès."}
+              </p>
+            ) : team.data.length ? (
+              <ul className="bo-rows">
+                {team.data.map((mate, index) => (
+                  <li key={`${mate.name}-${index}`}>
+                    <span>
+                      <strong>
+                        {mate.name}
+                        {mate.you ? " (vous)" : ""}
+                      </strong>
+                      <small>Depuis le {dayFmt.format(new Date(mate.since))}</small>
+                    </span>
+                    <em
+                      className="bo-pill"
+                      data-tone={mate.level === "operations" ? undefined : "mute"}
+                    >
+                      {LEVEL_CATALOG[mate.level].label}
+                    </em>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="bo-empty">Aucun collaborateur n'a encore d'accès.</p>
+            )}
+            <p className="bo-lead">
+              {manager
+                ? "Vous êtes responsable : gérez vos collaborateurs ci-dessous."
+                : "Pour ajouter ou retirer une personne, écrivez au responsable de votre compagnie ou à votre interlocuteur BledWay."}
             </p>
-          ) : team.data.length ? (
-            <ul className="bo-rows">
-              {team.data.map((mate, index) => (
-                <li key={`${mate.name}-${index}`}>
-                  <span>
-                    <strong>
-                      {mate.name}
-                      {mate.you ? " (vous)" : ""}
-                    </strong>
-                    <small>Depuis le {dayFmt.format(new Date(mate.since))}</small>
-                  </span>
-                  <em className="bo-pill" data-tone={mate.level === "operations" ? undefined : "mute"}>
-                    {LEVEL_CATALOG[mate.level].label}
-                  </em>
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <p className="bo-empty">Aucun collaborateur n'a encore d'accès.</p>
-          )}
-          <p className="bo-lead">
-            Pour ajouter ou retirer une personne, écrivez à votre interlocuteur BledWay. BledWay
-            vérifie chaque demande.
-          </p>
-        </section>
+          </section>
+          {manager && voice ? <CompanyManagerPanel ctx={voice} /> : null}
+        </div>
       ) : tab === "crossings" ? (
         <section className="bo-card">
           <h2>
@@ -627,68 +661,20 @@ function CompanySpace({ allowed }: { allowed: MyCompanyAccess[] | null }) {
           })}
           {fleet.length ? null : <p className="bo-empty">Aucun navire en service.</p>}
         </div>
-      ) : tab === "reviews" ? (
-        <section className="bo-card">
-          <h2>
-            <Star aria-hidden />{" "}
-            {reviews.data?.count
-              ? `${reviewNumber(reviews.data.average ?? 0)}/5 sur ${reviews.data.count} avis`
-              : "Avis des voyageurs"}
-            <small>Répondre à un avis {soon}</small>
-          </h2>
-          {reviewBars}
-        </section>
-      ) : tab === "signals" ? (
-        <section className="bo-card">
-          <h2>
-            <Radio aria-hidden /> En ce moment
-            <small>Confirmer ou démentir {soon}</small>
-          </h2>
-          {signalRows}
-        </section>
+      ) : tab === "reviews" && voice ? (
+        <CompanyReviewsTab ctx={voice} summary={reviewBars} />
+      ) : tab === "signals" && voice ? (
+        <CompanySignalsTab ctx={voice} live={signalRows} />
       ) : tab === "announce" && desk ? (
         <div className="grid gap-3.5">
           <CompanyAnnouncementsTab ctx={desk} />
         </div>
-      ) : tab === "profile" ? (
-        <section className="bo-card">
-          <h2>
-            <Building2 aria-hidden /> {company.name}
-            <small>Proposer une correction {soon}</small>
-          </h2>
-          <dl className="bo-facts bo-facts--wide">
-            <div>
-              <dt>Logo</dt>
-              <dd>
-                <CompanyBadge name={company.name} logoUrl={company.logo_url} size={44} />
-              </dd>
-            </div>
-            <div>
-              <dt>Site</dt>
-              <dd>{company.website_url ?? "Non renseigné"}</dd>
-            </div>
-            <div>
-              <dt>Réservation</dt>
-              <dd>{company.booking_url ?? "Non renseigné"}</dd>
-            </div>
-            <div>
-              <dt>Contact voyageurs</dt>
-              <dd>{company.contact_url ?? company.phone ?? "Non renseigné"}</dd>
-            </div>
-            <div>
-              <dt>Présentation</dt>
-              <dd>{company.description ?? "Non renseignée"}</dd>
-            </div>
-          </dl>
-          <a
-            className="bo-link"
-            href={`/compagnies/${company.slug}`}
-            target="_blank"
-            rel="noreferrer"
-          >
-            Voir la fiche publique <ExternalLink aria-hidden />
-          </a>
-        </section>
+      ) : tab === "profile" && voice ? (
+        <CompanyProfileTab
+          ctx={voice}
+          logo={<CompanyBadge name={company.name} logoUrl={company.logo_url} size={44} />}
+          publicHref={`/?select=company&id=${company.id}`}
+        />
       ) : (
         <>
           <div className="bo-hello">

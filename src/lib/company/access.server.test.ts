@@ -78,7 +78,7 @@ describe("Accès professionnels côté serveur", () => {
     const response = await call({ action: "me", userId: AGENT_TWO, _user: AGENT_TWO });
     expect(response.status).toBe(200);
     expect(mocks.rpc).toHaveBeenCalledWith("bw_company_my_access", { _user: OPS_ONE });
-    expect(await response.json()).toEqual([{ companyId: COMPANY_ONE }]);
+    expect(await response.json()).toEqual([{ companyId: COMPANY_ONE, manager: false }]);
   });
 
   it("compte sans rattachement : aucune compagnie", async () => {

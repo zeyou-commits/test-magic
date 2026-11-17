@@ -42,6 +42,8 @@ import { SignalAvatars } from "./SignalAvatars";
 import { PhotoStrip } from "@/components/photos/Photos";
 import { photosQuery } from "@/lib/photos/photos";
 import { SituationBadge, SituationIcon } from "./SituationIcon";
+import { CompanyReplyNote } from "./CompanyPublic";
+import { companyRepliesQuery } from "@/lib/company/publicDesk";
 import { tr } from "@/lib/i18n";
 
 /** Picto d'une situation (nom conservé pour les écrans existants). */
@@ -105,6 +107,13 @@ export function TravelSignals({
     photosQuery(
       "report",
       kind === "port" ? (feed.data?.alerts ?? []).map((alert) => alert.id) : [],
+    ),
+  ).data;
+  // Réponses publiées de la compagnie sous les signalements d'un navire.
+  const alertReplies = useQuery(
+    companyRepliesQuery(
+      "alert",
+      kind === "vessel" ? (feed.data?.alerts ?? []).map((alert) => alert.id) : [],
     ),
   ).data;
   // Pastille touchée sur la carte : la fiche s'ouvre cadrée sur ce signalement.
@@ -256,6 +265,7 @@ export function TravelSignals({
                     </span>
                   </small>
                   <PhotoStrip photos={reportPhotos?.get(alert.id)} label={tr("ui.travelCommunity.photoDuSignalement")} />
+                  <CompanyReplyNote reply={alertReplies?.get(alert.id)} />
                   {done === alert.id && !mutation.isPending ? (
                     <small className="bw-community-success" role="status">
                       <Check size={13} aria-hidden />{tr("ui.travelCommunity.merciCEstPrisEn")}
@@ -369,6 +379,12 @@ export function VesselReviews({
     "vessel_review",
     (feed.data?.reviews ?? []).filter((r) => r.status === "published").map((r) => r.id),
   );
+  const companyReplies = useQuery(
+    companyRepliesQuery(
+      "vessel_review",
+      (feed.data?.reviews ?? []).filter((r) => r.status === "published").map((r) => r.id),
+    ),
+  ).data;
   if (feed.data === null) return null;
   if (!feed.data)
     return feed.isPending ? (
@@ -482,6 +498,7 @@ export function VesselReviews({
               counts={reviewAuthors.counts}
               own={Boolean(review.own)}
             />
+            <CompanyReplyNote reply={companyReplies?.get(review.id)} />
           </li>
         ))}
       </ul>

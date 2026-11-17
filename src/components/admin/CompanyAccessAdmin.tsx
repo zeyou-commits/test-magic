@@ -55,6 +55,14 @@ export function CompanyAccessAdmin({
     staleTime: 0,
     retry: false,
   });
+  // Lot 3 : responsables désignés (liste vide si le script du lot 3 n'est pas installé).
+  const managers = useQuery({
+    queryKey: ["company-access", user?.id ?? "", "managers", companyId],
+    queryFn: () => companyAccessRequest<string[]>({ action: "admin_managers", companyId }),
+    enabled: Boolean(user),
+    staleTime: 0,
+    retry: false,
+  });
   const [email, setEmail] = useState("");
   const [level, setLevel] = useState<CompanyLevel>("read");
   const [verification, setVerification] = useState("");
@@ -278,6 +286,37 @@ export function CompanyAccessAdmin({
                         >
                           Retirer
                         </Button>
+                        {managers.data?.includes(m.id) ? (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            disabled={act.isPending}
+                            onClick={() => {
+                              if (window.confirm(`Retirer le rôle de responsable à ${who} ?`))
+                                act.mutate({ action: "admin_manager", memberId: m.id, on: false });
+                            }}
+                          >
+                            Responsable · retirer ce rôle
+                          </Button>
+                        ) : managers.data && m.status === "active" && m.level === "operations" ? (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            disabled={act.isPending}
+                            onClick={() => {
+                              if (
+                                window.confirm(
+                                  `Désigner ${who} responsable de ${companyName} ?
+
+Il pourra inviter des collaborateurs, changer leur niveau, les suspendre ou retirer leur accès. Chaque action est enregistrée.`,
+                                )
+                              )
+                                act.mutate({ action: "admin_manager", memberId: m.id, on: true });
+                            }}
+                          >
+                            Désigner responsable
+                          </Button>
+                        ) : null}
                       </div>
                     </li>
                   );

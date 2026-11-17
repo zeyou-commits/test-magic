@@ -52,6 +52,7 @@ import { ReportButton } from "./ReportButton";
 import { ShipPhoto, VesselSpecs } from "./VesselBits";
 import { VesselIdentity, VesselPhotoBadge } from "./VesselFacts";
 import { TripStatusPicker, VesselPresence } from "./TripPresence";
+import { CompanyGallery } from "./CompanyPublic";
 import { tr } from "@/lib/i18n";
 
 function useShipData(exactDepartureId?: string) {
@@ -444,6 +445,7 @@ export function VesselView({
             {vessel.description ? <p>{vessel.description}</p> : null}
             <VesselIdentity vesselId={vessel.id} />
             <VesselSpecs vessel={vessel} />
+            <CompanyGallery vesselId={vessel.id} />
             {communityAvailable ? (
               <div className="bw-community-invite">
                 <Users size={25} aria-hidden />

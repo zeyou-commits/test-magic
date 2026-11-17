@@ -47,6 +47,7 @@ import {
 import { AdminDrawer, AdminListToolbar, matches } from "@/components/admin/AdminDrawer";
 import { SignalsAdmin } from "@/components/admin/SignalsAdmin";
 import { CompaniesAdmin } from "@/components/admin/CompaniesAdmin";
+import { CompanyRequestsAdmin, useCompanyQueueCount } from "@/components/admin/CompanyRequestsAdmin";
 import { PushDiagnostic } from "@/components/admin/PushDiagnostic";
 import { MessageCenter } from "@/components/admin/MessageComposer";
 import { storeMessagePrefill, type MessagePrefill } from "@/lib/notifications/messages";
@@ -293,7 +294,9 @@ function AdminTabs() {
       }),
     [queryClient],
   );
+  const companyRequests = useCompanyQueueCount();
   const badges = {
+    companyRequests,
     notifications:
       notificationOverview.data?.campaigns.filter((campaign) =>
         ["pending", "approved"].includes(campaign.status),
@@ -440,6 +443,9 @@ function AdminTabs() {
         </TabsContent>
         <TabsContent value="companies">
           <CompaniesAdmin itemId={tab === "companies" ? item : undefined} />
+        </TabsContent>
+        <TabsContent value="companyRequests">
+          <CompanyRequestsAdmin />
         </TabsContent>
         <TabsContent value="planning">
           {/* Téléphone : la liste complète des prochains départs ; le planning reste sur ordinateur. */}

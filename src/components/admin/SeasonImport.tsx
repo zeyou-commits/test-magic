@@ -797,6 +797,26 @@ export function SeasonImport() {
                 }${c.fields.includes("status") ? ` · statut ${c.before.status} → ${c.after.status}` : ""}`,
             )}
           />
+          {step.diff.kept.length > 0 && (
+            <div className="rounded-xl border border-sky-200 bg-sky-50 p-4">
+              <DiffList
+                title="Conservées : modifiées par la compagnie et validées par BledWay"
+                items={step.diff.kept.map(
+                  (k) =>
+                    `${routeLabel(k.before.route_id)} · ${localWhen(k.before)} · ${
+                      k.after
+                        ? `le fichier indique ${localWhen(k.after)}`
+                        : "absente du fichier"
+                    }`,
+                )}
+                bare
+              />
+              <p className="mt-2 text-xs text-muted-foreground">
+                L'import ne les modifie pas et ne les annule pas. Pour changer l'une d'elles,
+                modifiez-la à la main dans « Liste des départs ».
+              </p>
+            </div>
+          )}
           {step.diff.missing.length > 0 && (
             <div className="rounded-xl border border-amber-200 bg-amber-50 p-4">
               <DiffList

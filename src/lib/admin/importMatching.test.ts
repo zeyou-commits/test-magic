@@ -177,5 +177,33 @@ describe("diffImport", () => {
     expect(diff.added.map((d) => d.line)).toEqual([5]);
     expect(diff.repeated.map((d) => d.line)).toEqual([6]);
     expect(diff.missing.map((d) => d.id)).toEqual(["gone"]);
+    expect(diff.kept).toEqual([]);
+  });
+
+  it("n'écrase ni n'annule un départ modifié par la compagnie et validé par BledWay", () => {
+    const company = { source_name: "Compagnie — Cie Un (validé par BledWay)" };
+    const diff = diffImport(
+      [
+        row(2, "2026-11-02T10:00:00Z", { vessel_id: "ancien" }),
+        row(3, "2026-11-03T10:00:00Z"),
+        row(4, "2026-11-08T10:00:00Z", { vessel_id: "v2" }),
+      ],
+      [
+        pub("navire-change", "2026-11-02T10:00:00Z", { vessel_id: "nouveau", ...company }),
+        pub("retarde", "2026-11-03T11:30:00Z", { status: "modified", ...company }),
+        pub("absente", "2026-11-06T10:00:00Z", company),
+        pub("annulee", "2026-11-07T10:00:00Z", { status: "cancelled", ...company }),
+        pub("import", "2026-11-08T10:00:00Z", { source_name: "Fichier saison" }),
+      ],
+      scope,
+    );
+    expect(diff.kept.map((k) => [k.before.id, k.after?.line ?? null])).toEqual([
+      ["navire-change", 2],
+      ["retarde", 3],
+      ["absente", null],
+    ]);
+    expect(diff.changed.map((c) => c.before.id)).toEqual(["import"]);
+    expect(diff.missing).toEqual([]);
+    expect(diff.added).toEqual([]);
   });
 });

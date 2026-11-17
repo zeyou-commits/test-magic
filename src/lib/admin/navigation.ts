@@ -19,6 +19,7 @@ export const adminTabs = [
   "library",
   "walletMedia",
   "companies",
+  "companyRequests",
   "departures",
   "schedules",
   "ports",

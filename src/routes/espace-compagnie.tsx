@@ -1,10 +1,11 @@
-import { useEffect, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQueries, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Anchor,
   Building2,
   CalendarDays,
+  ClipboardList,
   ExternalLink,
   Gauge,
   Megaphone,
@@ -12,7 +13,6 @@ import {
   PenSquare,
   Radio,
   Route as RouteIcon,
-  Send,
   Ship,
   Star,
   UserRound,
@@ -23,6 +23,13 @@ import {
   type ShellSection,
   type ShellSpace,
 } from "@/components/admin/BackofficeShell";
+import {
+  ChangeRequestForm,
+  CompanyAnnouncementsTab,
+  CompanyRequestsTab,
+  useCompanyActivity,
+  type DeskContext,
+} from "@/components/company/CompanyDesk";
 import { CompanyBadge } from "@/components/panel/CompanyBadge";
 import { useAuth } from "@/hooks/useAuth";
 import { STAFF_ROLES } from "@/lib/admin/permissions";
@@ -44,6 +51,7 @@ import {
   vesselsQuery,
 } from "@/lib/ferry/queries";
 import { reviewCriteria, reviewNumber } from "@/lib/ferry/reviewCriteria";
+import { routeArrivalTimeZone, routeDepartureTimeZone } from "@/lib/ferry/time";
 import type { Departure } from "@/lib/ferry/types";
 
 type Search = { c?: string; tab?: string };
@@ -98,6 +106,15 @@ const SECTIONS: ShellSection[] = [
     icon: RouteIcon,
   },
   {
+    id: "requests",
+    label: "Mes demandes",
+    short: "Demandes",
+    description:
+      "Retards, nouveaux horaires, changements de navire et annulations envoyés à BledWay, et leur suite.",
+    group: "Traversées",
+    icon: ClipboardList,
+  },
+  {
     id: "fleet",
     label: "Ma flotte",
     description: "Vos navires en service, leurs capacités et leur note voyageurs.",
@@ -123,7 +140,8 @@ const SECTIONS: ShellSection[] = [
   {
     id: "announce",
     label: "Annonces",
-    description: "Prévenir les voyageurs d'une traversée : retard, changement de navire, consigne.",
+    description:
+      "Prévenir les voyageurs d'une traversée : retard, changement de navire, consigne. Relu par BledWay.",
     group: "Communication",
     icon: Megaphone,
   },
@@ -307,12 +325,39 @@ function CompanySpace({ allowed }: { allowed: MyCompanyAccess[] | null }) {
     vessels.find((vessel) => vessel.id === id)?.name ?? "Navire à confirmer";
   const go = (next: string) =>
     void navigate({ search: { ...(company ? { c: company.id } : {}), tab: next } });
+  // Niveau Opérations confirmé par le serveur ; l'aperçu de l'équipe BledWay ne soumet rien.
+  const canAct = Boolean(allowed) && level === "operations";
+  const [changing, setChanging] = useState<string | null>(null);
+  const changingDeparture = mine.find((item) => item.id === changing);
+  const activity = useCompanyActivity(
+    company?.id ?? "",
+    Boolean(company) && ["home", "requests", "announce", "crossings"].includes(tab),
+  );
+  const inReview =
+    (activity.data?.requests ?? []).filter((item) => item.status === "submitted").length +
+    (activity.data?.announcements ?? []).filter((item) => item.status === "submitted").length;
+  const desk: DeskContext | null = company
+    ? {
+        companyId: company.id,
+        companyName: company.name,
+        canAct,
+        departures: mine,
+        fleet: fleet.map((vessel) => ({ id: vessel.id, name: vessel.name })),
+        lineOf,
+        vesselName,
+        zonesOf: (routeId) => ({
+          departure: routeDepartureTimeZone(routeId, routes, ports),
+          arrival: routeArrivalTimeZone(routeId, routes, ports),
+        }),
+        when: (iso) => `${dayFmt.format(new Date(iso))} à ${hourFmt.format(new Date(iso))}`,
+      }
+    : null;
 
-  const crossingRows = (rows: Departure[]) =>
+  const crossingRows = (rows: Departure[], withAction = false) =>
     rows.length ? (
       <ul className="bo-rows">
         {rows.map((item) => (
-          <li key={item.id}>
+          <li key={item.id} className={withAction ? "flex-wrap" : undefined}>
             <time dateTime={item.departure_at}>
               <b>{hourFmt.format(new Date(item.departure_at))}</b>
               {dayFmt.format(new Date(item.departure_at))}
@@ -324,6 +369,26 @@ function CompanySpace({ allowed }: { allowed: MyCompanyAccess[] | null }) {
             <em className="bo-pill" data-tone={STATUS[item.status].tone}>
               {STATUS[item.status].label}
             </em>
+            {withAction && canAct && item.status !== "cancelled" ? (
+              <button
+                type="button"
+                className="bo-link min-h-10"
+                aria-expanded={changing === item.id}
+                aria-label={`Signaler un changement : ${lineOf(item.route_id)}, ${dayFmt.format(new Date(item.departure_at))} à ${hourFmt.format(new Date(item.departure_at))}`}
+                onClick={() => setChanging(changing === item.id ? null : item.id)}
+              >
+                Signaler un changement
+              </button>
+            ) : null}
+            {withAction && changing === item.id && desk && changingDeparture ? (
+              <div className="w-full basis-full">
+                <ChangeRequestForm
+                  ctx={desk}
+                  departure={changingDeparture}
+                  onClose={() => setChanging(null)}
+                />
+              </div>
+            ) : null}
           </li>
         ))}
       </ul>
@@ -409,7 +474,7 @@ function CompanySpace({ allowed }: { allowed: MyCompanyAccess[] | null }) {
       sections={SECTIONS}
       tab={SECTIONS.some((section) => section.id === tab) ? tab : "home"}
       onNavigate={go}
-      badges={{ signals: alerts.length }}
+      badges={{ signals: alerts.length, requests: inReview }}
       notice={
         allowed ? (
           <div className="bo-notice" data-tone="info" role="note">
@@ -418,8 +483,10 @@ function CompanySpace({ allowed }: { allowed: MyCompanyAccess[] | null }) {
               BledWay.
             </strong>
             <span>
-              Modifier une traversée, prévenir vos passagers et répondre aux avis arrivent dans une
-              prochaine version, avec relecture par BledWay.
+              {canAct
+                ? "Vos demandes de changement et vos annonces sont relues par BledWay avant d'être appliquées ou envoyées."
+                : "Vous suivez les traversées, les demandes et les annonces de votre compagnie. Le niveau Opérations permet d'en envoyer."}{" "}
+              Répondre aux avis arrive dans une prochaine version.
             </span>
           </div>
         ) : (
@@ -480,10 +547,22 @@ function CompanySpace({ allowed }: { allowed: MyCompanyAccess[] | null }) {
         <section className="bo-card">
           <h2>
             <CalendarDays aria-hidden /> {mine.length} traversée{mine.length > 1 ? "s" : ""} à venir
-            <small>Signaler un changement {soon}</small>
+            <small>
+              <button type="button" className="bo-link" onClick={() => go("requests")}>
+                Mes demandes{inReview ? ` (${inReview} en relecture)` : ""}
+              </button>
+            </small>
           </h2>
-          {crossingRows(mine)}
+          {canAct ? (
+            <p className="bo-lead mb-2">
+              Un retard, un nouvel horaire, un autre navire ou une annulation ? Choisissez « Signaler
+              un changement » sur la traversée. BledWay relit puis applique.
+            </p>
+          ) : null}
+          {crossingRows(mine, true)}
         </section>
+      ) : tab === "requests" && desk ? (
+        <CompanyRequestsTab ctx={desk} />
       ) : tab === "lines" ? (
         <section className="bo-card">
           <h2>
@@ -567,33 +646,10 @@ function CompanySpace({ allowed }: { allowed: MyCompanyAccess[] | null }) {
           </h2>
           {signalRows}
         </section>
-      ) : tab === "announce" ? (
-        <section className="bo-card">
-          <h2>
-            <Megaphone aria-hidden /> Prévenir vos passagers {soon}
-          </h2>
-          <p className="bo-lead">
-            L'idée : vous choisissez une traversée, un motif (retard, changement de navire, consigne
-            d'embarquement) et votre message part aux voyageurs qui la suivent, avec la mention «
-            Information de la compagnie ». BledWay relit avant l'envoi, ou non : c'est un des points
-            à décider.
-          </p>
-          <div className="bo-mock" aria-hidden>
-            <span>Traversée</span>
-            <p>
-              {mine[0]
-                ? `${lineOf(mine[0].route_id)} · ${dayFmt.format(new Date(mine[0].departure_at))}`
-                : "—"}
-            </p>
-            <span>Motif</span>
-            <p>Retard · Changement de navire · Consigne · Autre</p>
-            <span>Message</span>
-            <p>Votre message aux voyageurs…</p>
-            <button type="button" disabled>
-              <Send /> Envoyer aux voyageurs
-            </button>
-          </div>
-        </section>
+      ) : tab === "announce" && desk ? (
+        <div className="grid gap-3.5">
+          <CompanyAnnouncementsTab ctx={desk} />
+        </div>
       ) : tab === "profile" ? (
         <section className="bo-card">
           <h2>

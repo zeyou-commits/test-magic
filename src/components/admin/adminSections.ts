@@ -3,6 +3,7 @@ import {
   Building2,
   CalendarDays,
   CalendarRange,
+  ClipboardList,
   Database,
   FileSpreadsheet,
   Flag,
@@ -171,6 +172,15 @@ export const adminSections: AdminSectionDef[] = [
     group: "Réseau",
     short: "Compagnies",
     icon: Building2,
+  },
+  {
+    id: "companyRequests",
+    label: "Demandes des compagnies",
+    description:
+      "Changements de traversée et annonces envoyés par les compagnies, à appliquer, valider ou refuser.",
+    group: "Réseau",
+    short: "Demandes",
+    icon: ClipboardList,
   },
   {
     id: "ports",

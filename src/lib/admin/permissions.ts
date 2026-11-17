@@ -19,6 +19,7 @@ const editorial = new Set([
   "ports",
   "routes",
   "companies",
+  "companyRequests",
   "alerts",
   "data",
   "flash",

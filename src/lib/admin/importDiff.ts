@@ -38,7 +38,17 @@ export type ImportDiff = {
   missing: PublishedDeparture[];
   /** Lignes du fichier en double (même liaison, compagnie et heure). */
   repeated: ImportedDeparture[];
+  /**
+   * Départs modifiés par la compagnie et validés par BledWay : le fichier ne les écrase pas et
+   * ne les annule pas. `after` : ce que proposait le fichier (null s'il ne les contient plus).
+   */
+  kept: { before: PublishedDeparture; after: ImportedDeparture | null }[];
 };
+
+/** Source écrite par la base quand BledWay applique une demande de la compagnie. */
+export const COMPANY_SOURCE_PREFIX = "Compagnie — ";
+export const isCompanyValidated = (departure: Pick<PublishedDeparture, "source_name">) =>
+  Boolean(departure.source_name?.startsWith(COMPANY_SOURCE_PREFIX));
 
 /** Un horaire publié aussi proche du fichier est considéré comme le même départ, déplacé. */
 export const MOVED_WINDOW_MINUTES = 180;
@@ -57,7 +67,14 @@ export function diffImport(
       at(d.departure_at) <= at(scope.to),
   );
   const used = new Set<string>();
-  const diff: ImportDiff = { added: [], changed: [], unchanged: [], missing: [], repeated: [] };
+  const diff: ImportDiff = {
+    added: [],
+    changed: [],
+    unchanged: [],
+    missing: [],
+    repeated: [],
+    kept: [],
+  };
   const seen = new Set<string>();
   const pending: ImportedDeparture[] = [];
 
@@ -82,7 +99,8 @@ export function diffImport(
     }
     used.add(exact.id);
     const fields = changedFields(exact, row);
-    if (fields.length) diff.changed.push({ before: exact, after: row, fields });
+    if (fields.length && isCompanyValidated(exact)) diff.kept.push({ before: exact, after: row });
+    else if (fields.length) diff.changed.push({ before: exact, after: row, fields });
     else diff.unchanged.push({ before: exact, after: row });
   }
 
@@ -106,10 +124,16 @@ export function diffImport(
       continue;
     }
     used.add(near.id);
-    diff.changed.push({ before: near, after: row, fields: ["time", ...changedFields(near, row)] });
+    if (isCompanyValidated(near)) diff.kept.push({ before: near, after: row });
+    else
+      diff.changed.push({ before: near, after: row, fields: ["time", ...changedFields(near, row)] });
   }
 
-  diff.missing = inScope.filter((d) => !used.has(d.id) && d.status !== "cancelled");
+  for (const d of inScope) {
+    if (used.has(d.id) || d.status === "cancelled") continue;
+    if (isCompanyValidated(d)) diff.kept.push({ before: d, after: null });
+    else diff.missing.push(d);
+  }
   return diff;
 }
 

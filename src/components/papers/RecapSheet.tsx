@@ -234,7 +234,7 @@ export function RecapSheet({
   ];
 
   return (
-    <div className="bw-recap">
+    <div className="bw-recap bw-recap--papers">
       <header className="bw-recap__head">
         <div className="min-w-0 flex-1">
           <p className="bw-recap__kicker">Vos papiers pour le voyage</p>

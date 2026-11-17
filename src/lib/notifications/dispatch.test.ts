@@ -48,6 +48,11 @@ vi.mock("@/integrations/supabase/client.server", () => {
         filters.push((row) => (row[key] ?? null) === value);
         return builder;
       },
+      // Motif « préfixe% », le seul utilisé.
+      like: (key: string, pattern: string) => {
+        filters.push((row) => String(row[key] ?? "").startsWith(pattern.replace(/%$/, "")));
+        return builder;
+      },
       gte: (key: string, value: string | number) => {
         filters.push((row) => (row[key] as typeof value) >= value);
         return builder;
@@ -699,6 +704,33 @@ describe("Remerciements", () => {
     expect(
       mock.tables["bw_notifications"]!.filter((n) => String(n["event_key"]).startsWith("thanks:")),
     ).toHaveLength(1);
+  });
+
+  it("pousse sur le téléphone le retour de modération posé par la base, une seule fois", async () => {
+    mock.tables["bw_notifications"] = [
+      {
+        id: "decision",
+        user_id: "user",
+        event_key: "moderation:entity:avis:published",
+        title: "Votre avis est publié",
+        body: "Jean Nicoli : merci.",
+        url: "/compte#contributions",
+        created_at: new Date().toISOString(),
+        read_at: null,
+        pushed_at: null,
+      },
+    ];
+    mock.tables["bw_push_deliveries"] = [];
+    await dispatchPush();
+    expect(
+      mock.tables["bw_notifications"]!.filter((n) =>
+        String(n["event_key"]).startsWith("moderation:"),
+      ),
+    ).toHaveLength(1);
+    const queued = mock.tables["bw_push_deliveries"]!.filter(
+      (row) => row["notification_id"] === "decision",
+    );
+    expect(queued.length).toBeGreaterThan(0);
   });
 });
 

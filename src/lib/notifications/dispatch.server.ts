@@ -151,6 +151,28 @@ async function notifyFeedback(deliver: Deliver, now: number) {
     return error ? [] : ((data ?? []) as T[]);
   };
 
+  // Décision de l'équipe sur un avis ou un signalement : la base pose la ligne dans la cloche
+  // (trigger bw_moderation_feedback), l'envoi la pousse une fois sur le téléphone de l'auteur.
+  const decisions = await read<{ user_id: string; event_key: string; title: string; body: string; url: string }>(
+    db
+      .from("bw_notifications")
+      .select("user_id,event_key,title,body,url")
+      .like("event_key", "moderation:%")
+      .is("pushed_at", null)
+      .is("read_at", null)
+      .gte("created_at", since)
+      .limit(500),
+  );
+  for (const decision of decisions) {
+    await deliver(decision.user_id, null, {
+      key: decision.event_key,
+      category: "community",
+      title: decision.title,
+      body: decision.body,
+      url: decision.url,
+    });
+  }
+
   for (const [table, kind] of [
     ["bw_alert_confirmations", "confirmed"],
     ["bw_alert_denials", "denied"],

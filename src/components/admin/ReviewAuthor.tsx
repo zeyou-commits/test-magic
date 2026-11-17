@@ -7,12 +7,26 @@ import { openTravellerProfile, type TravellerCard } from "@/lib/community/travel
 // Fonction du script « avis_profil_auteur », pas encore dans les types générés.
 const supabase = typedSupabase as unknown as SupabaseClient;
 
-export type ReviewKind = "port_review" | "vessel_review" | "entity_review";
-type AuthorInfo = { card: TravellerCard; joined_at: string; reviews: number; hidden: number };
+export type ReviewKind = "port_review" | "vessel_review" | "entity_review" | "alert";
+type AuthorInfo = {
+  card: TravellerCard;
+  joined_at: string | null;
+  reviews: number;
+  hidden: number;
+  /** Signalements déjà faits (script du 07/01/2027). */
+  alerts?: number;
+};
+/** Où en est la recherche des auteurs : pour dire « indisponible » plutôt que ne rien afficher. */
+export type AuthorLookup = "loading" | "failed" | "done";
 
 /** Les auteurs des avis à relire (équipe seulement) ; vide tant que le script n'est pas passé. */
 export function useReviewAuthors(kind: ReviewKind, ids: string[]) {
-  return useQuery({
+  return useReviewAuthorsQuery(kind, ids).data;
+}
+
+/** Les mêmes auteurs, avec l'état de la recherche. */
+export function useReviewAuthorsQuery(kind: ReviewKind, ids: string[]) {
+  const query = useQuery({
     queryKey: ["admin", "review-authors", kind, [...ids].sort().join(",")],
     enabled: ids.length > 0,
     retry: false,
@@ -25,20 +39,38 @@ export function useReviewAuthors(kind: ReviewKind, ids: string[]) {
       if (error) throw new Error(error.message);
       return (data ?? {}) as Record<string, AuthorInfo>;
     },
-  }).data;
+  });
+  const lookup: AuthorLookup = query.isError ? "failed" : query.data ? "done" : "loading";
+  return { data: query.data, lookup };
 }
 
 /** « Qui a noté » : avatar, pseudo, ancienneté et avis déjà donnés, pour juger d'un coup d'œil. */
-export function ReviewAuthor({ info }: { info: AuthorInfo | undefined }) {
-  if (!info) return null;
-  const since = new Date(info.joined_at).toLocaleDateString("fr-FR", {
-    month: "long",
-    year: "numeric",
-  });
+export function ReviewAuthor({
+  info,
+  lookup,
+}: {
+  info: AuthorInfo | undefined;
+  /** Sans cet état, rien ne s'affiche tant que l'auteur n'est pas connu (comportement d'origine). */
+  lookup?: AuthorLookup | undefined;
+}) {
+  if (!info) {
+    if (!lookup || lookup === "loading") return null;
+    return (
+      <p className="mt-2 text-xs text-muted-foreground">
+        {lookup === "failed"
+          ? "Auteur indisponible pour le moment (droits de modération ou script de base à passer)."
+          : "Auteur : compte supprimé ou contribution sans compte."}
+      </p>
+    );
+  }
+  const since = info.joined_at
+    ? new Date(info.joined_at).toLocaleDateString("fr-FR", { month: "long", year: "numeric" })
+    : null;
   return (
     <div className="mt-2 flex items-center gap-2 text-xs text-muted-foreground">
       <TravellerAvatar card={info.card} size={28} static />
       <span>
+        Par{" "}
         <button
           type="button"
           className="font-semibold text-foreground underline-offset-2 hover:underline"
@@ -46,8 +78,16 @@ export function ReviewAuthor({ info }: { info: AuthorInfo | undefined }) {
         >
           {info.card.pseudo}
         </button>{" "}
-        · membre depuis {since} · {info.reviews} avis
-        {info.hidden ? <b className="text-red-700"> dont {info.hidden} masqué{info.hidden > 1 ? "s" : ""}</b> : null}
+        {since ? ` · membre depuis ${since}` : ""} · {info.reviews} avis
+        {info.alerts !== undefined
+          ? ` · ${info.alerts} signalement${info.alerts > 1 ? "s" : ""}`
+          : ""}
+        {info.hidden ? (
+          <b className="text-red-700">
+            {" "}
+            dont {info.hidden} masqué{info.hidden > 1 ? "s" : ""}
+          </b>
+        ) : null}
       </span>
     </div>
   );

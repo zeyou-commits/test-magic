@@ -258,6 +258,9 @@ export function moodsFor(moods: MoodRow[], moment: string | null) {
 
 /** Ouvrir le profil public d'un voyageur depuis n'importe quel écran. */
 export const OPEN_PROFILE_EVENT = "bledway:open-profile";
-export function openTravellerProfile(handle: string) {
-  window.dispatchEvent(new CustomEvent(OPEN_PROFILE_EVENT, { detail: { handle } }));
+/** `departureId` : la traversée du salon d'où l'on ouvre la fiche (pour proposer le message privé). */
+export function openTravellerProfile(handle: string, departureId?: string) {
+  window.dispatchEvent(
+    new CustomEvent(OPEN_PROFILE_EVENT, { detail: { handle, departureId: departureId ?? null } }),
+  );
 }

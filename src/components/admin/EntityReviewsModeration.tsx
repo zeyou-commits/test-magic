@@ -5,7 +5,7 @@ import { companiesQuery, portsQuery, vesselsQuery } from "@/lib/ferry/queries";
 import { reviewCriteria, reviewScore } from "@/lib/ferry/reviewCriteria";
 import { Button } from "@/components/ui/button";
 import { reviewNumber } from "@/lib/ferry/reviewCriteria";
-import { ReviewAuthor, useReviewAuthors } from "./ReviewAuthor";
+import { ReviewAuthor, useReviewAuthorsQuery } from "./ReviewAuthor";
 
 export function EntityReviewsModeration({ pendingOnly = false }: { pendingOnly?: boolean }) {
   const [status, setStatus] = useState("pending");
@@ -37,7 +37,7 @@ export function EntityReviewsModeration({ pendingOnly = false }: { pendingOnly?:
     retry: false,
   });
   // Qui a noté : profil de l’auteur pour chaque avis affiché (équipe seulement).
-  const authors = useReviewAuthors(
+  const authors = useReviewAuthorsQuery(
     "entity_review",
     (query.data?.rows ?? []).map((r) => r.id),
   );
@@ -91,10 +91,11 @@ export function EntityReviewsModeration({ pendingOnly = false }: { pendingOnly?:
         <>
           <p className="text-sm text-muted-foreground">
             {query.data.total} évaluation(s). Une modification reste privée jusqu’à sa publication.
+            L’auteur est prévenu de votre décision (publier ou masquer) dans ses notifications.
           </p>
           <ul className="space-y-3">
             {query.data.rows.map((r) => {
-              const author = authors?.[r.id];
+              const author = authors.data?.[r.id];
               const name =
                 (r.target_kind === "port"
                   ? ports
@@ -107,7 +108,7 @@ export function EntityReviewsModeration({ pendingOnly = false }: { pendingOnly?:
                   <strong>
                     {name} · {reviewNumber(reviewScore(r.target_kind, r.scores) ?? 0)}/5
                   </strong>
-                  <ReviewAuthor info={author} />
+                  <ReviewAuthor info={author} lookup={authors.lookup} />
                   <p className="text-xs text-muted-foreground">
                     {r.target_kind === "port"
                       ? "Port"

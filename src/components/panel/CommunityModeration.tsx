@@ -9,7 +9,7 @@ import { communityKey, communityQuery } from "@/lib/ferry/community";
 import { vesselsQuery, portsQuery } from "@/lib/ferry/queries";
 import { Button } from "@/components/ui/button";
 import { alertLabel, useSignalCatalog } from "@/lib/ferry/community";
-import { ReviewAuthor, useReviewAuthors } from "@/components/admin/ReviewAuthor";
+import { ReviewAuthor, useReviewAuthorsQuery } from "@/components/admin/ReviewAuthor";
 import { tr } from "@/lib/i18n";
 import { ObservationCard, ObservationHistory, useObservationContext, type Observation } from "@/components/admin/ObservationReview";
 
@@ -18,9 +18,14 @@ export function CommunityModeration() {
   useSignalCatalog();
   const client = useQueryClient();
   const feed = useQuery(communityQuery(undefined, undefined, true, user?.id));
-  const vesselAuthors = useReviewAuthors(
+  const vesselAuthors = useReviewAuthorsQuery(
     "vessel_review",
     (feed.data?.reviews ?? []).map((review) => review.id),
+  );
+  // Qui a fait chaque signalement actif (équipe seulement ; script du 07/01/2027).
+  const alertAuthors = useReviewAuthorsQuery(
+    "alert",
+    (feed.data?.alerts ?? []).map((alert) => alert.id),
   );
   const { data: vessels = [] } = useQuery(vesselsQuery);
   const { data: ports = [] } = useQuery(portsQuery);
@@ -187,7 +192,7 @@ export function CommunityModeration() {
                       : tr("ui.communityModeration.masque")}
                 </span>
               </div>
-              <ReviewAuthor info={vesselAuthors?.[r.id]} />
+              <ReviewAuthor info={vesselAuthors.data?.[r.id]} lookup={vesselAuthors.lookup} />
               <p className="my-3 whitespace-pre-wrap break-words text-sm">{r.comment}</p>
               <div className="flex gap-2">
                 <Button
@@ -227,6 +232,10 @@ export function CommunityModeration() {
                   {alertLabel(a)} · {1 + a.confirmations}{tr("ui.communityModeration.voyageurS")}
                   {a.validated ? tr("ui.communityModeration.valideParLEquipe") : ""}
                 </p>
+                <ReviewAuthor
+                  info={alertAuthors.data?.[a.id]}
+                  lookup={alertAuthors.lookup === "done" ? "done" : undefined}
+                />
               </div>
               <div className="flex gap-2">
                 {a.validated ? null : (

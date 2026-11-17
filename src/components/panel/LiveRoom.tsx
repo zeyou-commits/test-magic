@@ -9,6 +9,7 @@ import {
   Bell,
   BellOff,
   Camera,
+  CheckCheck,
   CircleHelp,
   CornerDownRight,
   Flag,
@@ -17,7 +18,6 @@ import {
   Reply,
   Send,
   Smile,
-  ThumbsUp,
   UserPlus,
   UserRound,
   Users,
@@ -71,6 +71,16 @@ import { AuthorAvatar, StaffBadge, StaffTools, type ChatAuthor } from "./StaffCh
 import { PHOTO_ACCEPT, PhotoPicker, PhotoStrip } from "@/components/photos/Photos";
 import { photosKey, photosQuery, sendChatPhoto, type PreparedPhoto } from "@/lib/photos/photos";
 import { tr } from "@/lib/i18n";
+import {
+  applyReaction,
+  chatReactionsQuery,
+  REACTIONS,
+  reactionEmoji,
+  reactorsQuery,
+  setChatReaction,
+  type ReactionCode,
+  type ReactionMap,
+} from "@/lib/ferry/chatReactions";
 
 const supabase = typedSupabase as unknown as SupabaseClient;
 export const MAX_MESSAGE = 200;
@@ -407,6 +417,42 @@ function LiveChat({
     },
     onSuccess: refresh,
   });
+  // Réactions : affichées dès le toucher, puis confirmées par le serveur (et le direct).
+  const emojiQuery = chatReactionsQuery(
+    kind,
+    room,
+    messages.map((message) => message.id),
+    user?.id,
+  );
+  const emoji = useQuery(emojiQuery).data;
+  const [whoFor, setWhoFor] = useState<string | null>(null);
+  const reactors = useQuery(reactorsQuery(whoFor));
+  const emote = useMutation({
+    mutationFn: ({ id, code }: { id: string; code: ReactionCode }) => setChatReaction(id, code),
+    onMutate: async ({ id, code }) => {
+      await client.cancelQueries({ queryKey: emojiQuery.queryKey });
+      const before = client.getQueryData<ReactionMap | null>(emojiQuery.queryKey);
+      client.setQueryData<ReactionMap | null>(emojiQuery.queryKey, (map) =>
+        applyReaction(map, id, code),
+      );
+      return { before };
+    },
+    onError: (_error, _input, context) => {
+      if (context) client.setQueryData(emojiQuery.queryKey, context.before);
+    },
+    onSettled: () => {
+      void client.invalidateQueries({ queryKey: emojiQuery.queryKey });
+      void client.invalidateQueries({ queryKey: ["bw-chat-reactors"] });
+    },
+  });
+  // Réagir demande un compte : sans compte, on passe par l'inscription habituelle.
+  const reactTo = (id: string, code: ReactionCode) => {
+    if (!user) {
+      request({ type: "chat", label: title });
+      return;
+    }
+    emote.mutate({ id, code });
+  };
   const report = useMutation({
     mutationFn: async (id: string) => {
       const { data, error } = await supabase.rpc("bw_chat_report", { p_message: id });
@@ -478,7 +524,9 @@ function LiveChat({
     mutationFn: () => muteRoom(kind, room, !muted),
     onSuccess: refresh,
   });
-  const problem = send.error ?? react.error ?? report.error ?? mute.error;
+  // La fiche profil sait depuis quelle traversée on l'ouvre : elle peut proposer le message privé.
+  const showProfile = (handle: string) => openTravellerProfile(handle, canDm ? room : undefined);
+  const problem = send.error ?? react.error ?? emote.error ?? report.error ?? mute.error;
   // Qui peut être mentionné : les auteurs du salon et les présents, sauf soi et le compte officiel.
   const mentionable = [
     ...new Map(
@@ -735,6 +783,12 @@ function LiveChat({
                 className="bw-chat__line"
                 aria-expanded={selected === message.id}
                 onClick={() => setSelected(selected === message.id ? null : message.id)}
+                onDoubleClick={() => {
+                  // Comme sur les réseaux sociaux : deux touchers rapides = un cœur.
+                  if (emoji === null || emoji?.[message.id]?.mine === "love") return;
+                  reactTo(message.id, "love");
+                  setSelected(null);
+                }}
               >
                 {/* Comme sur les réseaux sociaux : le pseudo ouvre le profil (le reste de la ligne, les actions). */}
                 {message.author.official ? (
@@ -744,7 +798,7 @@ function LiveChat({
                     className="bw-chat__who"
                     onClick={(event) => {
                       event.stopPropagation();
-                      openTravellerProfile(message.author.handle);
+                      showProfile(message.author.handle);
                     }}
                   >
                     {message.me ? tr("ui.liveRoom.vous") : message.author.pseudo}
@@ -769,12 +823,79 @@ function LiveChat({
                 ) : null}
                 {message.same ? (
                   <em>
-                    <ThumbsUp size={11} aria-hidden /> {message.same}
+                    <CheckCheck size={11} aria-hidden /> {message.same}
                   </em>
                 ) : null}
               </button>
+              {emoji?.[message.id] && Object.keys(emoji[message.id]!.counts).length ? (
+                <p className="bw-chat__reacts">
+                  {REACTIONS.filter((item) => emoji[message.id]!.counts[item.code]).map((item) => (
+                    <button
+                      key={item.code}
+                      type="button"
+                      aria-pressed={emoji[message.id]!.mine === item.code}
+                      aria-label={`${item.label} : ${emoji[message.id]!.counts[item.code]}`}
+                      title={item.label}
+                      onClick={() => reactTo(message.id, item.code)}
+                    >
+                      <span aria-hidden>{item.emoji}</span>
+                      {emoji[message.id]!.counts[item.code]}
+                    </button>
+                  ))}
+                  <button
+                    type="button"
+                    className="bw-chat__reacts-who"
+                    aria-expanded={whoFor === message.id}
+                    aria-label="Voir qui a réagi"
+                    title="Voir qui a réagi"
+                    onClick={() => setWhoFor(whoFor === message.id ? null : message.id)}
+                  >
+                    <Users size={12} aria-hidden />
+                  </button>
+                </p>
+              ) : null}
+              {whoFor === message.id ? (
+                <ul className="bw-chat__reactors" aria-label="Qui a réagi">
+                  {reactors.isPending ? <li role="status">Chargement…</li> : null}
+                  {reactors.isError ? <li role="alert">Liste indisponible.</li> : null}
+                  {reactors.data?.map((person) => (
+                    <li key={person.card.handle}>
+                      <button type="button" onClick={() => showProfile(person.card.handle)}>
+                        <TravellerAvatar card={person.card} size={22} mood={false} static />
+                        {person.me ? "Vous" : person.card.pseudo}
+                        <span aria-hidden>{reactionEmoji(person.emoji)}</span>
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              ) : null}
               {selected === message.id ? (
                 <div className="bw-chat__tools">
+                  {emoji === null ? null : (
+                    <span className="bw-chat__reactrow">
+                      <span
+                        className="bw-chat__reactbar"
+                        role="group"
+                        aria-label="Réagir à ce message"
+                      >
+                        {REACTIONS.map((item) => (
+                          <button
+                            key={item.code}
+                            type="button"
+                            aria-pressed={emoji?.[message.id]?.mine === item.code}
+                            aria-label={item.label}
+                            title={item.label}
+                            onClick={() => {
+                              reactTo(message.id, item.code);
+                              setSelected(null);
+                            }}
+                          >
+                            {item.emoji}
+                          </button>
+                        ))}
+                      </span>
+                    </span>
+                  )}
                   <time dateTime={message.created_at}>
                     {time(message.created_at)}
                     {message.edited ? tr("ui.liveRoom.modifie") : ""}
@@ -798,14 +919,11 @@ function LiveChat({
                     disabled={react.isPending}
                     onClick={() => react.mutate(message.id)}
                   >
-                    <ThumbsUp size={13} aria-hidden />
+                    <CheckCheck size={13} aria-hidden />
                     {tr("ui.liveRoom.pareilIci")}
                   </button>
                   {!message.author.official ? (
-                    <button
-                      type="button"
-                      onClick={() => openTravellerProfile(message.author.handle)}
-                    >
+                    <button type="button" onClick={() => showProfile(message.author.handle)}>
                       <UserRound size={13} aria-hidden />
                       {message.me ? "Mon profil" : "Voir le profil"}
                     </button>

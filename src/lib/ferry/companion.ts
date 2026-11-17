@@ -71,7 +71,8 @@ export const defaultPlan = (): CompanionPlan => ({
   country: "FR",
   home: null,
   vehicle: "sedan",
-  // Par défaut, le prochain mois de juillet : le départ le plus courant, à changer d'un geste.
+  // Mois de secours des calculs tant qu'aucune date n'est choisie (le départ le plus courant).
+  // Il ne s'affiche jamais : sans date, on lit « date à choisir ».
   month: (nextMonths(12).find((m) => m.key.endsWith("-07")) ?? nextMonths(1)[0]!).key,
   date: "",
   window: null,
@@ -227,13 +228,20 @@ const shortDay = (key: string) =>
     .format(new Date(`${key}T12:00:00`))
     .replace(/^1 /, "1er ");
 
-/** « le lundi 6 juillet », « entre le 3 juillet et le 1er septembre », « en juillet 2027 ». */
+/** Le voyageur a choisi un jour ou une période (sinon, `month` n'est qu'un mois de secours). */
+export const planHasWhen = (plan: Pick<CompanionPlan, "month" | "date" | "window">) =>
+  Boolean((plan.date && plan.date.startsWith(plan.month)) || plan.window);
+
+/**
+ * « le lundi 6 juillet », « entre le 3 juillet et le 1er septembre », sinon « date à choisir » :
+ * le mois de secours des calculs (juillet) ne s'affiche jamais comme un choix.
+ */
 export function planWhenLabel(plan: Pick<CompanionPlan, "month" | "date" | "window">) {
   if (plan.date && plan.date.startsWith(plan.month))
     return `le ${new Intl.DateTimeFormat("fr-FR", { weekday: "long", day: "numeric", month: "long" }).format(new Date(`${plan.date}T12:00:00`))}`;
   if (plan.window)
     return `entre le ${shortDay(plan.window.from)} et le ${shortDay(plan.window.to)}`;
-  return `en ${new Intl.DateTimeFormat("fr-FR", { month: "long", year: "numeric" }).format(new Date(`${plan.month}-15T12:00:00`))}`;
+  return "date à choisir";
 }
 
 /** Les pays de résidence proposés : la France d'abord, puis l'Europe où vivent les voyageurs. */

@@ -12,6 +12,7 @@ import { buildSailings, daysWithSailings, legSailings } from "@/lib/ferry/trips"
 import { formatFareRange } from "@/lib/ferry/pricing";
 import {
   planFare,
+  planHasWhen,
   planWhenLabel,
   type CompanionPlan,
   type PortChoice,
@@ -153,7 +154,8 @@ export function SailingsOutlook({
   onSee: () => void;
 }) {
   const { loading, span, inSpan, near, until } = useLineOutlook(plan);
-  if (!fromName || !toName) return null;
+  // Sans date choisie, pas de « départs publiés » sur un mois que le voyageur n'a pas donné.
+  if (!fromName || !toName || !planHasWhen(plan)) return null;
   // La recherche couvre le jour ± 3 : on le dit, plutôt qu'un seul jour.
   const period =
     plan.date && !plan.window

@@ -28,6 +28,7 @@ import {
   formatDuration,
   FUEL_EURO_PER_L,
   FUEL_L_PER_100,
+  planHasWhen,
   TOLL_EURO_PER_KM,
   type CompanionPlan,
 } from "@/lib/ferry/companion";
@@ -268,9 +269,12 @@ export function RouteTop3({
       </p>
     );
 
-  const monthLabel = new Intl.DateTimeFormat("fr-FR", { month: "long", year: "numeric" }).format(
-    new Date(`${plan.month}-15T12:00:00Z`),
-  );
+  // Sans date choisie, le mois de secours sert au calcul mais ne s'affiche pas.
+  const monthLabel = planHasWhen(plan)
+    ? new Intl.DateTimeFormat("fr-FR", { month: "long", year: "numeric" }).format(
+        new Date(`${plan.month}-15T12:00:00Z`),
+      )
+    : "date à choisir";
   const estimated = top.some(({ option }) => option.sailing.isSimulation);
 
   return (
@@ -353,7 +357,9 @@ function RouteCard({
   const when = (at: number, arrival = false) =>
     simulated
       ? at === option.leaveHomeAt
-        ? `Date à confirmer en ${monthLabel}`
+        ? monthLabel === "date à choisir"
+          ? "Date à choisir"
+          : `Date à confirmer en ${monthLabel}`
         : `≈ ${formatDuration(Math.round((at - option.leaveHomeAt) / 60_000))} après le départ`
       : formatDayTime(at, arrival ? toZone : fromZone);
   const atPort = option.leaveHomeAt + legWithPauses(option.originRoad.durationMin) * 60_000;
@@ -495,7 +501,7 @@ const loadingSteps = (month: string, destination: string) => [
     sub: "Les ports de France, d'Espagne et d'Italie à ta portée",
   },
   {
-    title: `Je regarde les traversées de ${month}`,
+    title: month === "date à choisir" ? "Je regarde les traversées" : `Je regarde les traversées de ${month}`,
     sub: "Horaires publiés, sinon les habitudes de chaque ligne",
   },
   {

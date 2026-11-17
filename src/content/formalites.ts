@@ -361,11 +361,17 @@ export interface Task {
   advice?: boolean;
   /** Ce que coûte la démarche, d'après la source officielle (eur : pour le total). */
   cost?: { label: string; eur: number };
-  /** Où le faire, quand c'est un service en ligne et pas une source officielle. */
-  link?: { label: string; href: string };
+  /**
+   * Où le faire, quand c'est un service en ligne et pas une source officielle. `setting` : le
+   * lien suit un réglage de l'admin (celui-ci n'est que la valeur de secours).
+   */
+  link?: { label: string; href: string; setting?: "hotel_booking" };
 }
 
-/** Le site proposé pour réserver un hôtel en Algérie (à changer ici seulement). */
+/**
+ * Le site proposé pour réserver un hôtel en Algérie. Modifiable dans l'admin (Données de
+ * référence) ; cette valeur sert tant que le réglage n'est pas lu, ou s'il est invalide.
+ */
 export const HOTEL_BOOKING_LINK = {
   label: "Chercher un hôtel sur Booking.com",
   href: "https://www.booking.com/country/dz.fr.html",
@@ -779,7 +785,7 @@ export function tasksFor(a: Answers): Task[] {
         "Pour un séjour à l'hôtel, la réservation remplace le certificat d'hébergement dans le dossier de visa.",
       who: foreigners.map(label),
       sources: ["justice-algerie"],
-      link: HOTEL_BOOKING_LINK,
+      link: { ...HOTEL_BOOKING_LINK, setting: "hotel_booking" },
     });
   /* Couple marié : le livret de famille prouve le mariage, à l'hôtel comme au consulat. */
   if (adults.length >= 2 && a.couple === "married")

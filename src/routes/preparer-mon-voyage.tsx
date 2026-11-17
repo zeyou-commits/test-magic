@@ -1867,7 +1867,8 @@ function BudgetStep({
       />
       <div id="budget-aller" className="mt-3 scroll-mt-4 rounded-2xl border p-4 md:p-5">
         <p className="text-sm text-muted-foreground">
-          Le détail de l'aller · {fromChoice.port.name} → {toPort.name} · départ {planWhenLabel(plan)}
+          Le détail de l'aller · {fromChoice.port.name} → {toPort.name} ·{" "}
+          {capitalize(planWhenLabel(plan))}
         </p>
         <p className="mt-1 font-display text-3xl font-bold md:text-4xl">{formatFareRange(fare)}</p>
         <p className="mt-1 text-sm">
@@ -1978,7 +1979,7 @@ function BookStep({
         ? `${capitalize(planWhenLabel(plan))} · recherche autour du ${dayName(planDay(plan))}`
         : plan.date
           ? `${dayName(plan.date)}, ± 3 jours`
-          : `Autour du ${dayName(planDay(plan))}, ± 3 jours`,
+          : "Date à choisir",
     ],
     [
       "Voyageurs",
@@ -3119,7 +3120,7 @@ function ReadyDashboard({
       <div className="bw-ready__recap">
         <RecapPreview
           title={title}
-          subtitle={planWhenLabel(plan)}
+          subtitle={capitalize(planWhenLabel(plan))}
           rows={rows}
           filled={3}
           fresh={null}

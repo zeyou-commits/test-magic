@@ -31,6 +31,7 @@ import {
   type PlanCategory,
 } from "@/lib/papers/planCategories";
 import { SourceLinks } from "@/components/papers/PapersFlow";
+import { TaskLink } from "@/components/papers/TaskLink";
 
 const icons: Record<PlanCategory, LucideIcon> = {
   steps: ClipboardList,
@@ -680,11 +681,7 @@ function DetailSheet({
               <p key={p}>{p}</p>
             ))}
           </div>
-          {task.link ? (
-            <a href={task.link.href} target="_blank" rel="noreferrer" className="bw-task-link">
-              {task.link.label} <ExternalLink size={13} aria-hidden />
-            </a>
-          ) : null}
+          {task.link ? <TaskLink link={task.link} /> : null}
           {task.sources.length ? (
             <SourceLinks ids={[...new Set(item.tasks.flatMap((t) => t.sources))]} />
           ) : (

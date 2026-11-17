@@ -63,6 +63,7 @@ import {
 } from "@/content/formalites";
 import { displayDate } from "@/lib/seo/site";
 import { RecapSheet } from "@/components/papers/RecapSheet";
+import { TaskLink } from "@/components/papers/TaskLink";
 import { SharePreparation } from "@/components/prepare/SharePreparation";
 
 /**
@@ -1289,16 +1290,7 @@ export function TaskRow({
               {task.detail.split("\n").map((p) => (
                 <p key={p}>{p}</p>
               ))}
-              {task.link ? (
-                <a
-                  href={task.link.href}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="bw-task-link"
-                >
-                  {task.link.label} <ExternalLink size={13} aria-hidden />
-                </a>
-              ) : null}
+              {task.link ? <TaskLink link={task.link} /> : null}
               {task.sources.length ? (
                 <SourceLinks ids={task.sources} />
               ) : (

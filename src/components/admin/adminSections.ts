@@ -301,7 +301,7 @@ export const adminSections: AdminSectionDef[] = [
     id: "reference",
     label: "Données de référence",
     description:
-      "Vacances scolaires et consulats en Europe : un rappel quand le relevé est à refaire, puis vous approuvez la mise à jour.",
+      "Vacances scolaires et consulats en Europe : un rappel quand le relevé est à refaire, puis vous approuvez la mise à jour. Et le lien hôtel proposé dans Préparer.",
     group: "Réglages",
     short: "Référence",
     icon: BookCheck,

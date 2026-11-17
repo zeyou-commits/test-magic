@@ -63,6 +63,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ReferenceDataAdmin, ReferenceDataReminder } from "@/components/admin/ReferenceDataAdmin";
+import { HotelLinkAdmin } from "@/components/admin/HotelLinkAdmin";
 import {
   adminPortsQuery,
   adminRoutesQuery,
@@ -500,6 +501,9 @@ function AdminTabs() {
         </TabsContent>
         <TabsContent value="reference">
           <ReferenceDataAdmin />
+          <div className="mt-6">
+            <HotelLinkAdmin />
+          </div>
         </TabsContent>
       </AdminWorkspace>
     </Tabs>

@@ -15,6 +15,10 @@ describe("période de départ", () => {
     expect(planWhenLabel(p)).toBe("entre le 3 juillet et le 31 août");
     expect(earliestDay(plan({ month: "2027-07", window: null }))).toBe("2027-07-01");
   });
+  it("sans date choisie, le mois de secours ne s'affiche pas", () => {
+    expect(planWhenLabel(plan({ month: "2027-07", date: "", window: null }))).toBe("date à choisir");
+    expect(planWhenLabel(plan({ month: "2026-12", date: "2026-12-17" }))).toBe("le jeudi 17 décembre");
+  });
 });
 
 describe("calendrier à rebours", () => {

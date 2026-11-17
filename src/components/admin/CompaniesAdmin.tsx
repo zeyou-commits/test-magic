@@ -9,7 +9,9 @@ import type { Company } from "@/lib/ferry/types";
 import { CompanyBadge } from "@/components/panel/CompanyBadge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { useAuth } from "@/hooks/useAuth";
 import { AdminDrawer, AdminListToolbar, matches } from "./AdminDrawer";
+import { CompanyAccessAdmin } from "./CompanyAccessAdmin";
 
 // Fonctions de fusion (script du 31/10), absentes des types générés.
 const supabase = typedSupabase as unknown as SupabaseClient;
@@ -202,6 +204,7 @@ function CompanyEditor({
   onClose: () => void;
 }) {
   const client = useQueryClient();
+  const { isAdmin } = useAuth();
   const [name, setName] = useState(company?.name ?? "");
   const [logo, setLogo] = useState(company?.logo_url ?? "");
   const [site, setSite] = useState(company?.website_url ?? "");
@@ -381,6 +384,10 @@ function CompanyEditor({
           Description
           <Input value={description} onChange={(e) => setDescription(e.target.value)} />
         </label>
+
+        {company && isAdmin ? (
+          <CompanyAccessAdmin companyId={company.id} companyName={company.name} />
+        ) : null}
 
         {company ? (
           <section className="grid gap-3 rounded-xl border border-border p-3">

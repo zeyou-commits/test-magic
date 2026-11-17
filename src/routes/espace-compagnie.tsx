@@ -1,5 +1,6 @@
+import { useEffect, type ReactNode } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useQueries, useQuery } from "@tanstack/react-query";
+import { useQueries, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Anchor,
   Building2,
@@ -14,6 +15,7 @@ import {
   Send,
   Ship,
   Star,
+  UserRound,
   Users,
 } from "lucide-react";
 import {
@@ -24,6 +26,13 @@ import {
 import { CompanyBadge } from "@/components/panel/CompanyBadge";
 import { useAuth } from "@/hooks/useAuth";
 import { STAFF_ROLES } from "@/lib/admin/permissions";
+import {
+  companyAccessKeys,
+  companyAccessRequest,
+  LEVEL_CATALOG,
+  type MyCompanyAccess,
+  type TeamMate,
+} from "@/lib/company/access";
 import { alertLabel, communityQuery, useSignalCatalog } from "@/lib/ferry/community";
 import { companyOverview } from "@/lib/ferry/companyOverview";
 import { entityReviewsQuery } from "@/lib/ferry/entityReviews";
@@ -63,6 +72,14 @@ const SECTIONS: ShellSection[] = [
     description: "Vos prochaines traversées, vos navires et ce que disent les voyageurs.",
     group: "Pilotage",
     icon: Gauge,
+  },
+  {
+    id: "team",
+    label: "Mon équipe",
+    short: "Équipe",
+    description: "Les personnes de votre compagnie qui ont accès à cet espace, et leur niveau.",
+    group: "Pilotage",
+    icon: UserRound,
   },
   {
     id: "crossings",
@@ -136,38 +153,133 @@ const STATUS: Record<Departure["status"], { label: string; tone?: string }> = {
   cancelled: { label: "Annulée", tone: "bad" },
 };
 
-function CompanySpacePage() {
-  const { user, roles, loading } = useAuth();
-  const staff = roles.some((role) => (STAFF_ROLES as readonly string[]).includes(role));
-  if (loading) return <p className="bo-empty p-6">Chargement…</p>;
-  if (!user || !staff)
-    return (
-      <div className="mx-auto max-w-lg p-8 text-center">
-        <h1 className="text-xl font-bold">Espace compagnie</h1>
-        <p className="mt-2 text-sm text-muted-foreground">
-          Cet espace est en préparation avec les compagnies partenaires. Pour l'instant, seule
-          l'équipe BledWay peut le consulter.
-        </p>
-        <Link to="/" className="bw-action-secondary mt-4 inline-flex">
+function Gate({
+  title = "Espace compagnie",
+  children,
+  action,
+}: {
+  title?: string;
+  children: ReactNode;
+  action?: ReactNode;
+}) {
+  return (
+    <div className="mx-auto max-w-lg p-8 text-center" role="status">
+      <h1 className="text-xl font-bold">{title}</h1>
+      <div className="mt-2 grid gap-2 text-sm text-muted-foreground">{children}</div>
+      <div className="mt-4 flex flex-wrap justify-center gap-2">
+        {action}
+        <Link to="/" className="bw-action-secondary inline-flex">
           Retour au site
         </Link>
       </div>
-    );
-  return <CompanySpace />;
+    </div>
+  );
 }
 
-function CompanySpace() {
+function CompanySpacePage() {
+  const { user, roles, loading } = useAuth();
+  const staff = roles.some((role) => (STAFF_ROLES as readonly string[]).includes(role));
+  // L'accès est relu auprès du serveur à chaque retour sur la page et chaque minute :
+  // une suspension s'applique sans attendre une nouvelle connexion.
+  const access = useQuery({
+    queryKey: companyAccessKeys.me(user?.id ?? ""),
+    queryFn: () => companyAccessRequest<MyCompanyAccess[]>({ action: "me" }),
+    enabled: Boolean(user) && !staff && !loading,
+    staleTime: 0,
+    refetchInterval: 60_000,
+    retry: false,
+  });
+  if (loading) return <p className="bo-empty p-6">Chargement…</p>;
+  if (!user)
+    return (
+      <Gate
+        action={
+          <a href="/auth?next=%2Fespace-compagnie" className="bw-action-primary inline-flex">
+            Se connecter
+          </a>
+        }
+      >
+        <p>Connectez-vous avec le compte qui a reçu l'invitation de BledWay.</p>
+      </Gate>
+    );
+  if (staff) return <CompanySpace allowed={null} />;
+  if (access.isPending) return <p className="bo-empty p-6">Vérification de votre accès…</p>;
+  if (access.isError)
+    return (
+      <Gate
+        action={
+          <button type="button" className="bw-action-primary inline-flex" onClick={() => void access.refetch()}>
+            Réessayer
+          </button>
+        }
+      >
+        <p>Votre accès n'a pas pu être vérifié. {(access.error as Error).message}</p>
+      </Gate>
+    );
+  const usable = access.data.filter((item) => item.usable);
+  if (!usable.length) {
+    const suspended = access.data.find((item) => item.status === "suspended");
+    const closed = access.data.find((item) => item.spaceStatus === "suspended");
+    return (
+      <Gate>
+        {suspended ? (
+          <p>
+            Votre accès à l'espace de {suspended.name} est suspendu. Contactez votre interlocuteur
+            BledWay.
+          </p>
+        ) : closed ? (
+          <p>L'espace de {closed.name} est suspendu par BledWay pour le moment.</p>
+        ) : (
+          <>
+            <p>Votre compte n'a pas d'accès à un espace compagnie.</p>
+            <p>
+              Si votre compagnie travaille avec BledWay, demandez une invitation à votre
+              interlocuteur. Vous avez reçu un lien ? Ouvrez-le avec ce compte.
+            </p>
+          </>
+        )}
+      </Gate>
+    );
+  }
+  return <CompanySpace allowed={usable} />;
+}
+
+/**
+ * `allowed` : compagnies ouvertes à ce compte, confirmées par le serveur (null = équipe BledWay,
+ * aperçu de toutes les compagnies). Le paramètre `c` de l'adresse n'est qu'une préférence.
+ */
+function CompanySpace({ allowed }: { allowed: MyCompanyAccess[] | null }) {
   useSignalCatalog();
+  const { user } = useAuth();
   const { c, tab = "home" } = Route.useSearch();
   const navigate = Route.useNavigate();
-  const { data: companies = [] } = useQuery(companiesQuery);
+  const { data: allCompanies = [] } = useQuery(companiesQuery);
+  const companies = allowed
+    ? allCompanies.filter((item) => allowed.some((access) => access.companyId === item.id))
+    : allCompanies;
   const { data: vessels = [] } = useQuery(vesselsQuery);
   const { data: routes = [] } = useQuery(routesQuery);
   const { data: ports = [] } = useQuery(portsQuery);
   const departures = useQuery(upcomingDeparturesQuery());
   const feed = useQuery(communityQuery());
-  const active = companies.filter((item) => item.status === "active" && !item.is_demo);
+  const active = allowed
+    ? companies
+    : companies.filter((item) => item.status === "active" && !item.is_demo);
   const company = active.find((item) => item.id === c) ?? active[0];
+  const level = allowed?.find((item) => item.companyId === company?.id)?.level;
+  const team = useQuery({
+    queryKey: companyAccessKeys.team(user?.id ?? "", company?.id ?? ""),
+    queryFn: () => companyAccessRequest<TeamMate[]>({ action: "team", companyId: company!.id }),
+    enabled: Boolean(user && company) && tab === "team",
+    staleTime: 0,
+    retry: false,
+  });
+  const queryClient = useQueryClient();
+  const refused = (team.error as { status?: number } | null)?.status === 403;
+  useEffect(() => {
+    // Accès suspendu ou retiré entre deux écrans : on relit aussitôt l'accès du compte.
+    if (refused && user) void queryClient.invalidateQueries({ queryKey: companyAccessKeys.me(user.id) });
+  }, [refused, user, queryClient]);
   const reviews = useQuery({
     ...entityReviewsQuery("company", company?.id ?? ""),
     enabled: Boolean(company),
@@ -272,19 +384,26 @@ function CompanySpace() {
       kind="company"
       brandLabel="Espace compagnie"
       brandSub={
-        <label className="bo-company-pick">
-          <span>Compagnie affichée</span>
-          <select
-            value={company?.id ?? ""}
-            onChange={(event) => void navigate({ search: { c: event.target.value, tab } })}
-          >
-            {active.map((item) => (
-              <option key={item.id} value={item.id}>
-                {item.name}
-              </option>
-            ))}
-          </select>
-        </label>
+        active.length > 1 ? (
+          <label className="bo-company-pick">
+            <span>Compagnie affichée</span>
+            <select
+              value={company?.id ?? ""}
+              onChange={(event) => void navigate({ search: { c: event.target.value, tab } })}
+            >
+              {active.map((item) => (
+                <option key={item.id} value={item.id}>
+                  {item.name}
+                </option>
+              ))}
+            </select>
+          </label>
+        ) : (
+          <span className="bo-company-pick">
+            <span>Compagnie</span>
+            <strong>{company?.name ?? "…"}</strong>
+          </span>
+        )
       }
       spaces={SPACES}
       sections={SECTIONS}
@@ -292,17 +411,71 @@ function CompanySpace() {
       onNavigate={go}
       badges={{ signals: alerts.length }}
       notice={
-        <div className="bo-notice" data-tone="info" role="note">
-          <strong>Aperçu réservé à l'équipe BledWay : proposition à valider.</strong>
-          <span>
-            Les chiffres sont réels (données publiées). Rien n'est modifiable par une compagnie tant
-            que les droits ne sont pas décidés.
-          </span>
-        </div>
+        allowed ? (
+          <div className="bo-notice" data-tone="info" role="note">
+            <strong>
+              Votre accès : {level ? LEVEL_CATALOG[level].label : "Lecture"}. Données publiées sur
+              BledWay.
+            </strong>
+            <span>
+              Modifier une traversée, prévenir vos passagers et répondre aux avis arrivent dans une
+              prochaine version, avec relecture par BledWay.
+            </span>
+          </div>
+        ) : (
+          <div className="bo-notice" data-tone="info" role="note">
+            <strong>Aperçu de l'équipe BledWay : toutes les compagnies.</strong>
+            <span>
+              Un collaborateur de compagnie ne voit que la sienne. Les accès se gèrent dans Espace
+              équipe → Réseau → Compagnies.
+            </span>
+          </div>
+        )
       }
     >
       {!company || !overview ? (
         <p className="bo-empty">Chargement de la compagnie…</p>
+      ) : tab === "team" ? (
+        <section className="bo-card">
+          <h2>
+            <UserRound aria-hidden /> Accès à l'espace {company.name}
+            <small>attribués par BledWay</small>
+          </h2>
+          {team.isPending ? (
+            <p className="bo-empty">Chargement de l'équipe…</p>
+          ) : team.isError ? (
+            <p className="bo-empty">
+              {!refused
+                ? (team.error as Error).message
+                : allowed
+                  ? "Votre accès a changé. Rechargez la page."
+                  : "Dans l'équipe BledWay, seuls les administrateurs voient les accès."}
+            </p>
+          ) : team.data.length ? (
+            <ul className="bo-rows">
+              {team.data.map((mate, index) => (
+                <li key={`${mate.name}-${index}`}>
+                  <span>
+                    <strong>
+                      {mate.name}
+                      {mate.you ? " (vous)" : ""}
+                    </strong>
+                    <small>Depuis le {dayFmt.format(new Date(mate.since))}</small>
+                  </span>
+                  <em className="bo-pill" data-tone={mate.level === "operations" ? undefined : "mute"}>
+                    {LEVEL_CATALOG[mate.level].label}
+                  </em>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="bo-empty">Aucun collaborateur n'a encore d'accès.</p>
+          )}
+          <p className="bo-lead">
+            Pour ajouter ou retirer une personne, écrivez à votre interlocuteur BledWay. BledWay
+            vérifie chaque demande.
+          </p>
+        </section>
       ) : tab === "crossings" ? (
         <section className="bo-card">
           <h2>

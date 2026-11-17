@@ -166,7 +166,8 @@ export const adminSections: AdminSectionDef[] = [
   {
     id: "companies",
     label: "Fiches compagnies",
-    description: "Logo, site, description, fusion des doublons et suppression des compagnies.",
+    description:
+      "Logo, site, description, accès professionnels, fusion des doublons et suppression des compagnies.",
     group: "Réseau",
     short: "Compagnies",
     icon: Building2,

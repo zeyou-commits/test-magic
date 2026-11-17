@@ -39,6 +39,7 @@ import { Route as PapiersVoyageAlgerieRouteImport } from './routes/papiers-voyag
 import { Route as PortsRouteImport } from './routes/ports'
 import { Route as PreparerMonVoyageRouteImport } from './routes/preparer-mon-voyage'
 import { Route as QuestionsFrequentesRouteImport } from './routes/questions-frequentes'
+import { Route as RejoindreCompagnieRouteImport } from './routes/rejoindre-compagnie'
 import { Route as SimulateursRouteImport } from './routes/simulateurs'
 import { Route as SitemapMaritimeDotxmlRouteImport } from './routes/sitemap-maritime[.]xml'
 import { Route as SitemapPagesDotxmlRouteImport } from './routes/sitemap-pages[.]xml'
@@ -49,6 +50,7 @@ import { Route as ActualitesIndexRouteImport } from './routes/actualites.index'
 import { Route as ActualitesSlugRouteImport } from './routes/actualites.$slug'
 import { Route as ApiAdminUsersRouteImport } from './routes/api.admin-users'
 import { Route as ApiAisRefreshRouteImport } from './routes/api.ais-refresh'
+import { Route as ApiCompanyAccessRouteImport } from './routes/api.company-access'
 import { Route as ApiFxTickerRouteImport } from './routes/api.fx-ticker'
 import { Route as ApiPhotosPurgeRouteImport } from './routes/api.photos-purge'
 import { Route as ApiPushAdminRouteImport } from './routes/api.push-admin'
@@ -219,6 +221,11 @@ const QuestionsFrequentesRoute = QuestionsFrequentesRouteImport.update({
   path: '/questions-frequentes',
   getParentRoute: () => rootRouteImport,
 } as any)
+const RejoindreCompagnieRoute = RejoindreCompagnieRouteImport.update({
+  id: '/rejoindre-compagnie',
+  path: '/rejoindre-compagnie',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SimulateursRoute = SimulateursRouteImport.update({
   id: '/simulateurs',
   path: '/simulateurs',
@@ -267,6 +274,11 @@ const ApiAdminUsersRoute = ApiAdminUsersRouteImport.update({
 const ApiAisRefreshRoute = ApiAisRefreshRouteImport.update({
   id: '/api/ais-refresh',
   path: '/api/ais-refresh',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiCompanyAccessRoute = ApiCompanyAccessRouteImport.update({
+  id: '/api/company-access',
+  path: '/api/company-access',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiFxTickerRoute = ApiFxTickerRouteImport.update({
@@ -396,6 +408,7 @@ export interface FileRoutesByFullPath {
   '/ports': typeof PortsRouteWithChildren
   '/preparer-mon-voyage': typeof PreparerMonVoyageRoute
   '/questions-frequentes': typeof QuestionsFrequentesRoute
+  '/rejoindre-compagnie': typeof RejoindreCompagnieRoute
   '/simulateurs': typeof SimulateursRouteWithChildren
   '/sitemap-maritime.xml': typeof SitemapMaritimeDotxmlRoute
   '/sitemap-pages.xml': typeof SitemapPagesDotxmlRoute
@@ -405,6 +418,7 @@ export interface FileRoutesByFullPath {
   '/actualites/$slug': typeof ActualitesSlugRoute
   '/api/admin-users': typeof ApiAdminUsersRoute
   '/api/ais-refresh': typeof ApiAisRefreshRoute
+  '/api/company-access': typeof ApiCompanyAccessRoute
   '/api/fx-ticker': typeof ApiFxTickerRoute
   '/api/photos-purge': typeof ApiPhotosPurgeRoute
   '/api/push-admin': typeof ApiPushAdminRoute
@@ -452,6 +466,7 @@ export interface FileRoutesByTo {
   '/papiers-voyage-algerie': typeof PapiersVoyageAlgerieRoute
   '/preparer-mon-voyage': typeof PreparerMonVoyageRoute
   '/questions-frequentes': typeof QuestionsFrequentesRoute
+  '/rejoindre-compagnie': typeof RejoindreCompagnieRoute
   '/sitemap-maritime.xml': typeof SitemapMaritimeDotxmlRoute
   '/sitemap-pages.xml': typeof SitemapPagesDotxmlRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
@@ -460,6 +475,7 @@ export interface FileRoutesByTo {
   '/actualites/$slug': typeof ActualitesSlugRoute
   '/api/admin-users': typeof ApiAdminUsersRoute
   '/api/ais-refresh': typeof ApiAisRefreshRoute
+  '/api/company-access': typeof ApiCompanyAccessRoute
   '/api/fx-ticker': typeof ApiFxTickerRoute
   '/api/photos-purge': typeof ApiPhotosPurgeRoute
   '/api/push-admin': typeof ApiPushAdminRoute
@@ -513,6 +529,7 @@ export interface FileRoutesById {
   '/ports': typeof PortsRouteWithChildren
   '/preparer-mon-voyage': typeof PreparerMonVoyageRoute
   '/questions-frequentes': typeof QuestionsFrequentesRoute
+  '/rejoindre-compagnie': typeof RejoindreCompagnieRoute
   '/simulateurs': typeof SimulateursRouteWithChildren
   '/sitemap-maritime.xml': typeof SitemapMaritimeDotxmlRoute
   '/sitemap-pages.xml': typeof SitemapPagesDotxmlRoute
@@ -522,6 +539,7 @@ export interface FileRoutesById {
   '/actualites/$slug': typeof ActualitesSlugRoute
   '/api/admin-users': typeof ApiAdminUsersRoute
   '/api/ais-refresh': typeof ApiAisRefreshRoute
+  '/api/company-access': typeof ApiCompanyAccessRoute
   '/api/fx-ticker': typeof ApiFxTickerRoute
   '/api/photos-purge': typeof ApiPhotosPurgeRoute
   '/api/push-admin': typeof ApiPushAdminRoute
@@ -576,6 +594,7 @@ export interface FileRouteTypes {
     | '/ports'
     | '/preparer-mon-voyage'
     | '/questions-frequentes'
+    | '/rejoindre-compagnie'
     | '/simulateurs'
     | '/sitemap-maritime.xml'
     | '/sitemap-pages.xml'
@@ -585,6 +604,7 @@ export interface FileRouteTypes {
     | '/actualites/$slug'
     | '/api/admin-users'
     | '/api/ais-refresh'
+    | '/api/company-access'
     | '/api/fx-ticker'
     | '/api/photos-purge'
     | '/api/push-admin'
@@ -632,6 +652,7 @@ export interface FileRouteTypes {
     | '/papiers-voyage-algerie'
     | '/preparer-mon-voyage'
     | '/questions-frequentes'
+    | '/rejoindre-compagnie'
     | '/sitemap-maritime.xml'
     | '/sitemap-pages.xml'
     | '/sitemap.xml'
@@ -640,6 +661,7 @@ export interface FileRouteTypes {
     | '/actualites/$slug'
     | '/api/admin-users'
     | '/api/ais-refresh'
+    | '/api/company-access'
     | '/api/fx-ticker'
     | '/api/photos-purge'
     | '/api/push-admin'
@@ -692,6 +714,7 @@ export interface FileRouteTypes {
     | '/ports'
     | '/preparer-mon-voyage'
     | '/questions-frequentes'
+    | '/rejoindre-compagnie'
     | '/simulateurs'
     | '/sitemap-maritime.xml'
     | '/sitemap-pages.xml'
@@ -701,6 +724,7 @@ export interface FileRouteTypes {
     | '/actualites/$slug'
     | '/api/admin-users'
     | '/api/ais-refresh'
+    | '/api/company-access'
     | '/api/fx-ticker'
     | '/api/photos-purge'
     | '/api/push-admin'
@@ -754,6 +778,7 @@ export interface RootRouteChildren {
   PortsRoute: typeof PortsRouteWithChildren
   PreparerMonVoyageRoute: typeof PreparerMonVoyageRoute
   QuestionsFrequentesRoute: typeof QuestionsFrequentesRoute
+  RejoindreCompagnieRoute: typeof RejoindreCompagnieRoute
   SimulateursRoute: typeof SimulateursRouteWithChildren
   SitemapMaritimeDotxmlRoute: typeof SitemapMaritimeDotxmlRoute
   SitemapPagesDotxmlRoute: typeof SitemapPagesDotxmlRoute
@@ -763,6 +788,7 @@ export interface RootRouteChildren {
   ActualitesSlugRoute: typeof ActualitesSlugRoute
   ApiAdminUsersRoute: typeof ApiAdminUsersRoute
   ApiAisRefreshRoute: typeof ApiAisRefreshRoute
+  ApiCompanyAccessRoute: typeof ApiCompanyAccessRoute
   ApiFxTickerRoute: typeof ApiFxTickerRoute
   ApiPhotosPurgeRoute: typeof ApiPhotosPurgeRoute
   ApiPushAdminRoute: typeof ApiPushAdminRoute
@@ -985,6 +1011,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof QuestionsFrequentesRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/rejoindre-compagnie': {
+      id: '/rejoindre-compagnie'
+      path: '/rejoindre-compagnie'
+      fullPath: '/rejoindre-compagnie'
+      preLoaderRoute: typeof RejoindreCompagnieRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/simulateurs': {
       id: '/simulateurs'
       path: '/simulateurs'
@@ -1053,6 +1086,13 @@ declare module '@tanstack/react-router' {
       path: '/api/ais-refresh'
       fullPath: '/api/ais-refresh'
       preLoaderRoute: typeof ApiAisRefreshRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/company-access': {
+      id: '/api/company-access'
+      path: '/api/company-access'
+      fullPath: '/api/company-access'
+      preLoaderRoute: typeof ApiCompanyAccessRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/fx-ticker': {
@@ -1300,6 +1340,7 @@ const rootRouteChildren: RootRouteChildren = {
   PortsRoute: PortsRouteWithChildren,
   PreparerMonVoyageRoute: PreparerMonVoyageRoute,
   QuestionsFrequentesRoute: QuestionsFrequentesRoute,
+  RejoindreCompagnieRoute: RejoindreCompagnieRoute,
   SimulateursRoute: SimulateursRouteWithChildren,
   SitemapMaritimeDotxmlRoute: SitemapMaritimeDotxmlRoute,
   SitemapPagesDotxmlRoute: SitemapPagesDotxmlRoute,
@@ -1309,6 +1350,7 @@ const rootRouteChildren: RootRouteChildren = {
   ActualitesSlugRoute: ActualitesSlugRoute,
   ApiAdminUsersRoute: ApiAdminUsersRoute,
   ApiAisRefreshRoute: ApiAisRefreshRoute,
+  ApiCompanyAccessRoute: ApiCompanyAccessRoute,
   ApiFxTickerRoute: ApiFxTickerRoute,
   ApiPhotosPurgeRoute: ApiPhotosPurgeRoute,
   ApiPushAdminRoute: ApiPushAdminRoute,

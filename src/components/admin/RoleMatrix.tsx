@@ -86,7 +86,10 @@ export function RoleMatrix() {
             {role.label}
           </span>
         ))}
-        <span>vues externes en préparation, pas encore attribuables.</span>
+        <span>
+          vues externes en préparation. Les accès des compagnies s'attribuent déjà depuis leur fiche
+          (Réseau → Compagnies).
+        </span>
       </div>
     </section>
   );

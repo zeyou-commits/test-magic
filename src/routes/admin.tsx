@@ -38,6 +38,7 @@ import { AssignSettings } from "@/components/admin/AssignSettings";
 import { IncidentsAdmin } from "@/components/admin/IncidentsAdmin";
 import { useAdminCounts } from "@/hooks/useAdminCounts";
 import { AdminWorkspace, type AdminSearchItem } from "@/components/admin/AdminWorkspace";
+import { AdminHome } from "@/components/admin/AdminHome";
 import { AdminDrawer, AdminListToolbar, matches } from "@/components/admin/AdminDrawer";
 import { SignalsAdmin } from "@/components/admin/SignalsAdmin";
 import { CompaniesAdmin } from "@/components/admin/CompaniesAdmin";
@@ -342,6 +343,7 @@ function AdminTabs() {
           <UsersAdmin />
         </TabsContent>
         <TabsContent value="overview">
+          <AdminHome onNavigate={navigateTo} can={(id) => canUseAdminTab(roles, id)} />
           {canUseAdminTab(roles, "reference") && (
             <ReferenceDataReminder onOpen={() => navigateTo("reference")} />
           )}

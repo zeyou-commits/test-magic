@@ -24,6 +24,7 @@ import { Route as ConfidentialiteRouteImport } from './routes/confidentialite'
 import { Route as ContactRouteImport } from './routes/contact'
 import { Route as CovoiturageRouteImport } from './routes/covoiturage'
 import { Route as DecouvrirRouteImport } from './routes/decouvrir'
+import { Route as EspaceCompagnieRouteImport } from './routes/espace-compagnie'
 import { Route as GuideRouteImport } from './routes/guide'
 import { Route as HorairesRouteImport } from './routes/horaires'
 import { Route as LignesRouteImport } from './routes/lignes'
@@ -141,6 +142,11 @@ const CovoiturageRoute = CovoiturageRouteImport.update({
 const DecouvrirRoute = DecouvrirRouteImport.update({
   id: '/decouvrir',
   path: '/decouvrir',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const EspaceCompagnieRoute = EspaceCompagnieRouteImport.update({
+  id: '/espace-compagnie',
+  path: '/espace-compagnie',
   getParentRoute: () => rootRouteImport,
 } as any)
 const GuideRoute = GuideRouteImport.update({
@@ -375,6 +381,7 @@ export interface FileRoutesByFullPath {
   '/contact': typeof ContactRoute
   '/covoiturage': typeof CovoiturageRouteWithChildren
   '/decouvrir': typeof DecouvrirRoute
+  '/espace-compagnie': typeof EspaceCompagnieRoute
   '/guide': typeof GuideRouteWithChildren
   '/horaires': typeof HorairesRoute
   '/lignes': typeof LignesRouteWithChildren
@@ -433,6 +440,7 @@ export interface FileRoutesByTo {
   '/confidentialite': typeof ConfidentialiteRoute
   '/contact': typeof ContactRoute
   '/decouvrir': typeof DecouvrirRoute
+  '/espace-compagnie': typeof EspaceCompagnieRoute
   '/horaires': typeof HorairesRoute
   '/llms.txt': typeof LlmsDottxtRoute
   '/ma-bezass': typeof MaBezassRoute
@@ -490,6 +498,7 @@ export interface FileRoutesById {
   '/contact': typeof ContactRoute
   '/covoiturage': typeof CovoiturageRouteWithChildren
   '/decouvrir': typeof DecouvrirRoute
+  '/espace-compagnie': typeof EspaceCompagnieRoute
   '/guide': typeof GuideRouteWithChildren
   '/horaires': typeof HorairesRoute
   '/lignes': typeof LignesRouteWithChildren
@@ -552,6 +561,7 @@ export interface FileRouteTypes {
     | '/contact'
     | '/covoiturage'
     | '/decouvrir'
+    | '/espace-compagnie'
     | '/guide'
     | '/horaires'
     | '/lignes'
@@ -610,6 +620,7 @@ export interface FileRouteTypes {
     | '/confidentialite'
     | '/contact'
     | '/decouvrir'
+    | '/espace-compagnie'
     | '/horaires'
     | '/llms.txt'
     | '/ma-bezass'
@@ -666,6 +677,7 @@ export interface FileRouteTypes {
     | '/contact'
     | '/covoiturage'
     | '/decouvrir'
+    | '/espace-compagnie'
     | '/guide'
     | '/horaires'
     | '/lignes'
@@ -727,6 +739,7 @@ export interface RootRouteChildren {
   ContactRoute: typeof ContactRoute
   CovoiturageRoute: typeof CovoiturageRouteWithChildren
   DecouvrirRoute: typeof DecouvrirRoute
+  EspaceCompagnieRoute: typeof EspaceCompagnieRoute
   GuideRoute: typeof GuideRouteWithChildren
   HorairesRoute: typeof HorairesRoute
   LignesRoute: typeof LignesRouteWithChildren
@@ -865,6 +878,13 @@ declare module '@tanstack/react-router' {
       path: '/decouvrir'
       fullPath: '/decouvrir'
       preLoaderRoute: typeof DecouvrirRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/espace-compagnie': {
+      id: '/espace-compagnie'
+      path: '/espace-compagnie'
+      fullPath: '/espace-compagnie'
+      preLoaderRoute: typeof EspaceCompagnieRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/guide': {
@@ -1265,6 +1285,7 @@ const rootRouteChildren: RootRouteChildren = {
   ContactRoute: ContactRoute,
   CovoiturageRoute: CovoiturageRouteWithChildren,
   DecouvrirRoute: DecouvrirRoute,
+  EspaceCompagnieRoute: EspaceCompagnieRoute,
   GuideRoute: GuideRouteWithChildren,
   HorairesRoute: HorairesRoute,
   LignesRoute: LignesRouteWithChildren,

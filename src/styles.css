@@ -10,6 +10,7 @@
 @import "./mobile.css";
 @import "./companion.css";
 @import "./chatpins.css";
+@import "./backoffice.css";
 
 @custom-variant dark (&:is(.dark *));
 

@@ -1269,3 +1269,274 @@ a.bo-kpi:hover {
 .bo-card > .bo-link {
   margin-top: 14px;
 }
+
+/* ── Intérieur des rubriques : une seule façon de présenter les listes (lot 2, 17/11/2026) ── */
+.bo-status {
+  display: inline-flex;
+  align-items: center;
+  min-height: 22px;
+  margin-left: 6px;
+  padding: 0 9px;
+  border-radius: 999px;
+  background: #eef1ef;
+  color: var(--bo-muted);
+  font-size: 11.5px;
+  font-style: normal;
+  font-weight: 750;
+  white-space: nowrap;
+  vertical-align: middle;
+}
+.bo-status[data-tone="ok"] {
+  background: #e3f4ea;
+  color: var(--bo-accent-ink);
+}
+.bo-status[data-tone="todo"] {
+  background: #ffe2d8;
+  color: #b3391a;
+}
+.bo-status[data-tone="warn"] {
+  background: #fff1d0;
+  color: #8a5a00;
+}
+.bo-status[data-tone="bad"] {
+  background: #fde3e3;
+  color: #a12626;
+}
+.bo-mod {
+  margin-bottom: 22px;
+  padding: 18px 20px;
+  border: 1px solid var(--bo-line);
+  border-radius: 18px;
+  background: var(--bo-card);
+}
+.bo-mod__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px 16px;
+  margin-bottom: 12px;
+}
+.bo-mod__head h2 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 17px;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+}
+.bo-mod__head h2 b {
+  display: inline-grid;
+  place-items: center;
+  min-width: 24px;
+  height: 24px;
+  padding: 0 8px;
+  border-radius: 999px;
+  background: #ff6b4a;
+  color: #ffffff;
+  font-size: 12px;
+  font-weight: 800;
+}
+.bo-mod__head h2 b[data-empty] {
+  background: #e3f4ea;
+  color: var(--bo-accent-ink);
+}
+.bo-mod__head p {
+  max-width: 72ch;
+  margin-top: 3px;
+  color: var(--bo-muted);
+  font-size: 13px;
+  line-height: 1.5;
+}
+.bo-mod__empty {
+  padding: 14px 2px 4px;
+  color: var(--bo-muted);
+  font-size: 13.5px;
+}
+.bo-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  padding: 3px;
+  border-radius: 999px;
+  background: #eef2ef;
+}
+.bo-chips button {
+  min-height: 34px;
+  padding: 0 13px;
+  border-radius: 999px;
+  color: var(--bo-muted);
+  font-size: 13px;
+  font-weight: 700;
+  transition:
+    background 120ms,
+    color 120ms;
+}
+.bo-chips button[aria-pressed="true"] {
+  background: #ffffff;
+  box-shadow: 0 1px 3px rgb(16 35 27 / 0.14);
+  color: var(--bo-ink);
+}
+.bo-modlist {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.bo-modcard {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  padding: 14px 16px;
+  border: 1px solid var(--bo-line);
+  border-left: 4px solid #d5ddd8;
+  border-radius: 14px;
+  background: #ffffff;
+  transition: box-shadow 140ms ease;
+}
+.bo-modcard:hover {
+  box-shadow: 0 6px 18px rgb(16 35 27 / 0.07);
+}
+.bo-modcard[data-status="pending"],
+.bo-modcard[data-status="active"] {
+  border-left-color: #ff8a5c;
+}
+.bo-modcard[data-status="published"],
+.bo-modcard[data-status="validated"],
+.bo-modcard[data-status="approved"] {
+  border-left-color: var(--bo-accent);
+}
+.bo-modcard__body {
+  flex: 1;
+  min-width: 0;
+}
+.bo-modcard__title {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 2px;
+  font-size: 15px;
+}
+.bo-modcard__title strong {
+  overflow-wrap: anywhere;
+  font-weight: 750;
+}
+.bo-modcard__meta {
+  margin-top: 2px;
+  color: var(--bo-muted);
+  font-size: 12.5px;
+}
+.bo-modcard__content {
+  margin-top: 10px;
+  overflow-wrap: anywhere;
+  font-size: 14px;
+  line-height: 1.5;
+}
+.bo-modcard__actions {
+  display: flex;
+  flex: none;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.bo-scores {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 4px 18px;
+  margin: 0;
+  font-size: 13.5px;
+}
+.bo-scores > div {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 3px 0;
+  border-bottom: 1px dashed #e6ebe7;
+}
+.bo-scores dt {
+  color: var(--bo-muted);
+}
+.bo-scores dd {
+  margin: 0;
+  font-weight: 750;
+  font-variant-numeric: tabular-nums;
+}
+.bo-pager {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  margin-top: 14px;
+  color: var(--bo-muted);
+  font-size: 13px;
+}
+/* Les panneaux et les listes existants prennent le même habit, sans toucher à leur contenu. */
+.bo-page .bw-admin-surface {
+  border-color: var(--bo-line);
+  border-radius: 18px;
+  box-shadow: none;
+}
+.bo-page ul.divide-y > li {
+  margin: 0 -8px;
+  padding-right: 8px;
+  padding-left: 8px;
+  border-radius: 10px;
+  transition: background 120ms;
+}
+.bo-page ul.divide-y > li:hover {
+  background: #f6f9f7;
+}
+.bo-page :is(input:not([type="checkbox"], [type="radio"], [type="range"], [type="file"]), select) {
+  min-height: 40px;
+  border-radius: 10px;
+}
+.bo-page :is(input, select, textarea):focus-visible {
+  outline: 2px solid var(--bo-accent);
+  outline-offset: 1px;
+}
+.bo-page .bw-admin-segment {
+  max-width: 100%;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.bo-page section > h2.text-lg,
+.bo-page > div > h2.text-lg {
+  font-size: 17px;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+}
+@media (max-width: 767px) {
+  .bo-mod {
+    margin-right: -4px;
+    margin-left: -4px;
+    padding: 14px;
+  }
+  .bo-modcard {
+    flex-direction: column;
+    gap: 12px;
+    padding: 14px;
+  }
+  .bo-modcard__actions {
+    width: 100%;
+  }
+  .bo-modcard__actions > * {
+    flex: 1 1 0;
+    min-height: 44px;
+  }
+  .bo-chips {
+    width: 100%;
+    overflow-x: auto;
+    flex-wrap: nowrap;
+    scrollbar-width: none;
+  }
+  .bo-chips button {
+    flex: 1 0 auto;
+    min-height: 40px;
+  }
+}
+/* Téléphone : dans une ligne de liste, le texte garde toute la largeur ; les boutons passent dessous. */
+@media (max-width: 767px) {
+  .bo-page li.flex.flex-wrap > .min-w-0.flex-1 {
+    flex-basis: 100%;
+  }
+}

@@ -39,6 +39,11 @@ import { IncidentsAdmin } from "@/components/admin/IncidentsAdmin";
 import { useAdminCounts } from "@/hooks/useAdminCounts";
 import { AdminWorkspace, type AdminSearchItem } from "@/components/admin/AdminWorkspace";
 import { AdminHome } from "@/components/admin/AdminHome";
+import {
+  ModerationCard,
+  ModerationSection,
+  moderationEmpty,
+} from "@/components/admin/ModerationCard";
 import { AdminDrawer, AdminListToolbar, matches } from "@/components/admin/AdminDrawer";
 import { SignalsAdmin } from "@/components/admin/SignalsAdmin";
 import { CompaniesAdmin } from "@/components/admin/CompaniesAdmin";
@@ -615,66 +620,65 @@ function ReviewsModeration({
   const portName = (id: string) => ports.find((port) => port.id === id)?.name ?? "—";
 
   return (
-    <Panel>
+    <ModerationSection
+      title="Avis sur les ports"
+      count={reviews.filter((review) => review.status === "pending").length}
+      hint="Le commentaire libre d’un voyageur sur un port. Publier le rend visible sur la fiche du port."
+    >
       {pendingOnly && (
         <AdminFilterNotice label="Avis ports en attente de modération" onClear={onClearFilter} />
       )}
       {isLoading ? (
-        <p className="text-sm text-muted-foreground">Chargement…</p>
+        moderationEmpty("Chargement…")
       ) : reviews.length === 0 ? (
-        <p className="text-sm text-muted-foreground">Aucun avis à traiter.</p>
+        moderationEmpty("Aucun avis de port à traiter.")
       ) : (
-        <ul className="divide-y divide-border">
+        <ul className="bo-modlist">
           {reviews.map((review) => (
-            <li key={review.id} className="flex flex-wrap items-start gap-3 py-3">
-              <div className="min-w-0 flex-1">
-                <p className="text-sm font-medium">
-                  {portName(review.port_id)}
-                  <span className="ml-2 rounded-full bg-secondary px-2 py-0.5 text-xs font-semibold">
-                    {reviewStatusLabel[review.status] ?? review.status}
-                  </span>
-                  <span className="ml-2 text-xs font-normal text-muted-foreground">
-                    {new Date(review.created_at).toLocaleDateString("fr-FR")}
-                  </span>
-                </p>
-                <p className="mt-1 text-sm text-muted-foreground">
-                  {review.comment ?? "(sans commentaire)"}
-                </p>
-                <ReviewAuthor info={portAuthors?.[review.id]} />
-              </div>
-              <div className="flex gap-2">
-                <Button
-                  size="sm"
-                  disabled={update.isPending || review.status === "published"}
-                  onClick={() => update.mutate({ id: review.id, status: "published" })}
-                >
-                  Publier
-                </Button>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  disabled={update.isPending || review.status === "hidden"}
-                  onClick={() => update.mutate({ id: review.id, status: "hidden" })}
-                >
-                  Masquer
-                </Button>
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  disabled={update.isPending || review.status === "rejected"}
-                  onClick={() => {
-                    if (confirmAction("Refuser cet avis ? Il ne sera pas publié."))
-                      update.mutate({ id: review.id, status: "rejected" });
-                  }}
-                >
-                  Refuser
-                </Button>
-              </div>
-            </li>
+            <ModerationCard
+              key={review.id}
+              title={portName(review.port_id)}
+              status={review.status}
+              statusLabel={reviewStatusLabel[review.status]}
+              meta={`Port · ${new Date(review.created_at).toLocaleDateString("fr-FR")}`}
+              author={<ReviewAuthor info={portAuthors?.[review.id]} />}
+              actions={
+                <>
+                  <Button
+                    size="sm"
+                    disabled={update.isPending || review.status === "published"}
+                    onClick={() => update.mutate({ id: review.id, status: "published" })}
+                  >
+                    Publier
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    disabled={update.isPending || review.status === "hidden"}
+                    onClick={() => update.mutate({ id: review.id, status: "hidden" })}
+                  >
+                    Masquer
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    disabled={update.isPending || review.status === "rejected"}
+                    onClick={() => {
+                      if (confirmAction("Refuser cet avis ? Il ne sera pas publié."))
+                        update.mutate({ id: review.id, status: "rejected" });
+                    }}
+                  >
+                    Refuser
+                  </Button>
+                </>
+              }
+            >
+              {review.comment ?? "(sans commentaire)"}
+            </ModerationCard>
           ))}
         </ul>
       )}
-    </Panel>
+    </ModerationSection>
   );
 }
 
@@ -1247,9 +1251,25 @@ function DeparturesAdmin({
                     ? `${portName(route.departure_port_id)} → ${portName(route.arrival_port_id)}`
                     : "—"}
                   {company ? ` · ${company.name}` : ""}
-                  {vessel ? ` · ${vessel.name}` : " · Navire à affecter"} ·{" "}
-                  {formatDuration(departure.duration_minutes)} ·{" "}
-                  {departureStatusLabel[departure.status] ?? departure.status}
+                  {vessel ? ` · ${vessel.name}` : ""} ·{" "}
+                  {formatDuration(departure.duration_minutes)}{" "}
+                  <em
+                    className="bo-status"
+                    data-tone={
+                      departure.status === "cancelled"
+                        ? "bad"
+                        : departure.status === "modified"
+                          ? "warn"
+                          : "ok"
+                    }
+                  >
+                    {departureStatusLabel[departure.status] ?? departure.status}
+                  </em>
+                  {vessel ? null : (
+                    <em className="bo-status" data-tone="todo">
+                      Sans navire
+                    </em>
+                  )}
                 </p>
               </div>
               <div className="flex flex-wrap gap-2">

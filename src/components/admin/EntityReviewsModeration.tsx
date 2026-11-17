@@ -6,9 +6,10 @@ import { reviewCriteria, reviewScore } from "@/lib/ferry/reviewCriteria";
 import { Button } from "@/components/ui/button";
 import { reviewNumber } from "@/lib/ferry/reviewCriteria";
 import { ReviewAuthor, useReviewAuthorsQuery } from "./ReviewAuthor";
+import { ModerationCard, ModerationSection, moderationEmpty, StatusFilter } from "./ModerationCard";
 
 export function EntityReviewsModeration({ pendingOnly = false }: { pendingOnly?: boolean }) {
-  const [status, setStatus] = useState("pending");
+  const [status, setStatus] = useState<"pending" | "published" | "hidden" | "all">("pending");
   const [page, setPage] = useState(0);
   const client = useQueryClient();
   const filter = pendingOnly ? "pending" : status;
@@ -55,47 +56,48 @@ export function EntityReviewsModeration({ pendingOnly = false }: { pendingOnly?:
       void client.invalidateQueries({ queryKey: ["bw-travellers"] });
     },
   });
+  const KIND = { port: "Port", vessel: "Navire", company: "Compagnie" } as const;
   return (
-    <section className="mb-8 space-y-4">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <h2 className="text-lg font-semibold">Avis guidés · ports, navires et compagnies</h2>
-        {!pendingOnly ? (
-          <label>
-            Afficher{" "}
-            <select
-              className="rounded-lg border p-2"
-              value={status}
-              onChange={(e) => {
-                setStatus(e.target.value);
-                setPage(0);
-              }}
-            >
-              <option value="pending">À vérifier</option>
-              <option value="published">Publiés</option>
-              <option value="hidden">Masqués</option>
-              <option value="all">Tous</option>
-            </select>
-          </label>
-        ) : null}
-      </div>
+    <ModerationSection
+      title="Avis guidés"
+      count={filter === "pending" ? query.data?.total : undefined}
+      hint="Ports, navires et compagnies, notés critère par critère. Une modification reste privée jusqu’à sa publication ; l’auteur est prévenu de votre décision."
+      toolbar={
+        pendingOnly ? null : (
+          <StatusFilter
+            label="Avis affichés"
+            value={status}
+            onChange={(value) => {
+              setStatus(value);
+              setPage(0);
+            }}
+            options={[
+              { value: "pending", label: "À vérifier" },
+              { value: "published", label: "Publiés" },
+              { value: "hidden", label: "Masqués" },
+              { value: "all", label: "Tous" },
+            ]}
+          />
+        )
+      }
+    >
       {query.isPending ? (
-        <p role="status">Chargement des évaluations…</p>
+        <p role="status" className="bo-mod__empty">
+          Chargement des évaluations…
+        </p>
       ) : query.isError ? (
-        <p role="alert">
+        <p role="alert" className="bo-mod__empty">
           {query.error.message}{" "}
-          <button type="button" onClick={() => void query.refetch()}>
+          <button type="button" className="bo-link" onClick={() => void query.refetch()}>
             Réessayer
           </button>
         </p>
+      ) : !query.data.rows.length ? (
+        moderationEmpty(filter === "pending" ? "Aucun avis guidé à vérifier." : "Aucun avis ici.")
       ) : (
         <>
-          <p className="text-sm text-muted-foreground">
-            {query.data.total} évaluation(s). Une modification reste privée jusqu’à sa publication.
-            L’auteur est prévenu de votre décision (publier ou masquer) dans ses notifications.
-          </p>
-          <ul className="space-y-3">
+          <ul className="bo-modlist">
             {query.data.rows.map((r) => {
-              const author = authors.data?.[r.id];
               const name =
                 (r.target_kind === "port"
                   ? ports
@@ -104,75 +106,74 @@ export function EntityReviewsModeration({ pendingOnly = false }: { pendingOnly?:
                     : companies
                 ).find((x) => x.id === r.target_id)?.name ?? "Fiche indisponible";
               return (
-                <li className="rounded-xl border p-4" key={r.id}>
-                  <strong>
-                    {name} · {reviewNumber(reviewScore(r.target_kind, r.scores) ?? 0)}/5
-                  </strong>
-                  <ReviewAuthor info={author} lookup={authors.lookup} />
-                  <p className="text-xs text-muted-foreground">
-                    {r.target_kind === "port"
-                      ? "Port"
-                      : r.target_kind === "vessel"
-                        ? "Navire"
-                        : "Compagnie"}{" "}
-                    · {new Date(r.updated_at).toLocaleString("fr-FR")} ·{" "}
-                    {r.status === "pending"
-                      ? "À vérifier"
-                      : r.status === "published"
-                        ? "Publié"
-                        : "Masqué"}
-                  </p>
-                  <dl className="my-3 text-sm">
+                <ModerationCard
+                  key={r.id}
+                  title={`${name} · ${reviewNumber(reviewScore(r.target_kind, r.scores) ?? 0)}/5`}
+                  status={r.status}
+                  meta={`${KIND[r.target_kind]} · ${new Date(r.updated_at).toLocaleString("fr-FR", { dateStyle: "short", timeStyle: "short" })}`}
+                  author={<ReviewAuthor info={authors.data?.[r.id]} lookup={authors.lookup} />}
+                  actions={
+                    <>
+                      <Button
+                        size="sm"
+                        disabled={action.isPending || r.status === "published"}
+                        onClick={() => action.mutate({ id: r.id, status: "published" })}
+                      >
+                        Publier
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        disabled={action.isPending || r.status === "hidden"}
+                        onClick={() => action.mutate({ id: r.id, status: "hidden" })}
+                      >
+                        Masquer
+                      </Button>
+                    </>
+                  }
+                >
+                  <dl className="bo-scores">
                     {reviewCriteria[r.target_kind].map((c) => (
-                      <div key={c.code} className="flex justify-between gap-3">
+                      <div key={c.code}>
                         <dt>{c.label}</dt>
-                        <dd>{r.scores[c.code] ? `${r.scores[c.code]}/5` : "Non utilisé"}</dd>
+                        <dd>{r.scores[c.code] ? `${r.scores[c.code]}/5` : "—"}</dd>
                       </div>
                     ))}
                   </dl>
-                  <div className="flex gap-2">
-                    <Button
-                      size="sm"
-                      disabled={action.isPending || r.status === "published"}
-                      onClick={() => action.mutate({ id: r.id, status: "published" })}
-                    >
-                      Publier
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      disabled={action.isPending || r.status === "hidden"}
-                      onClick={() => action.mutate({ id: r.id, status: "hidden" })}
-                    >
-                      Masquer
-                    </Button>
-                  </div>
-                </li>
+                </ModerationCard>
               );
             })}
           </ul>
-          <div className="flex items-center gap-3">
-            <Button
-              size="sm"
-              variant="outline"
-              disabled={!page}
-              onClick={() => setPage((p) => p - 1)}
-            >
-              Précédent
-            </Button>
-            <span>Page {page + 1}</span>
-            <Button
-              size="sm"
-              variant="outline"
-              disabled={(page + 1) * 20 >= query.data.total}
-              onClick={() => setPage((p) => p + 1)}
-            >
-              Suivant
-            </Button>
-          </div>
+          {query.data.total > 20 ? (
+            <div className="bo-pager">
+              <Button
+                size="sm"
+                variant="outline"
+                disabled={!page}
+                onClick={() => setPage((p) => p - 1)}
+              >
+                Précédent
+              </Button>
+              <span>
+                Page {page + 1} sur {Math.ceil(query.data.total / 20)}
+              </span>
+              <Button
+                size="sm"
+                variant="outline"
+                disabled={(page + 1) * 20 >= query.data.total}
+                onClick={() => setPage((p) => p + 1)}
+              >
+                Suivant
+              </Button>
+            </div>
+          ) : null}
         </>
       )}
-      {action.isError ? <p role="alert">{action.error.message}</p> : null}
-    </section>
+      {action.isError ? (
+        <p role="alert" className="bo-mod__empty">
+          {action.error.message}
+        </p>
+      ) : null}
+    </ModerationSection>
   );
 }

@@ -11,6 +11,11 @@ import { Button } from "@/components/ui/button";
 import { alertLabel, useSignalCatalog } from "@/lib/ferry/community";
 import { ReviewAuthor, useReviewAuthorsQuery } from "@/components/admin/ReviewAuthor";
 import { tr } from "@/lib/i18n";
+import {
+  ModerationCard,
+  ModerationSection,
+  moderationEmpty,
+} from "@/components/admin/ModerationCard";
 import { ObservationCard, ObservationHistory, useObservationContext, type Observation } from "@/components/admin/ObservationReview";
 
 export function CommunityModeration() {
@@ -171,95 +176,98 @@ export function CommunityModeration() {
         {triage.isError ? <p role="alert">{tr("ui.communityModeration.laMiseAJourA")}</p> : null}
         {publish.isError ? <p role="alert">{publish.error.message}</p> : null}
       </section>
-      <section>
-        <h2 className="text-lg font-semibold">{tr("ui.communityModeration.avisNaviresModeration")}</h2>
-        <p className="mb-4 text-sm text-muted-foreground">
-          {tr("ui.communityModeration.lesContributionsRestentPriveesJusqu")}
-        </p>
-        {!feed.data.reviews.length ? <p>{tr("ui.communityModeration.aucunAvisRecu")}</p> : null}
-        <ul className="space-y-3">
-          {feed.data.reviews.map((r) => (
-            <li key={r.id} className="rounded-xl border bg-card p-4">
-              <div className="flex flex-wrap justify-between gap-2">
-                <strong>
-                  {vessels.find((v) => v.id === r.vessel_id)?.name ?? tr("ui.communityModeration.navire")} · {r.score}/5
-                </strong>
-                <span className="text-sm">
-                  {r.status === "pending"
-                    ? tr("ui.communityModeration.aRelire")
-                    : r.status === "published"
-                      ? tr("ui.communityModeration.publie")
-                      : tr("ui.communityModeration.masque")}
-                </span>
-              </div>
-              <ReviewAuthor info={vesselAuthors.data?.[r.id]} lookup={vesselAuthors.lookup} />
-              <p className="my-3 whitespace-pre-wrap break-words text-sm">{r.comment}</p>
-              <div className="flex gap-2">
-                <Button
-                  size="sm"
-                  disabled={action.isPending || r.status === "published"}
-                  onClick={() => action.mutate({ type: "review", id: r.id, status: "published" })}
-                >
-                  {tr("ui.communityModeration.publier")}
-                </Button>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  disabled={action.isPending || r.status === "hidden"}
-                  onClick={() => action.mutate({ type: "review", id: r.id, status: "hidden" })}
-                >
-                  {tr("ui.communityModeration.masquer")}
-                </Button>
-              </div>
-            </li>
-          ))}
-        </ul>
-      </section>
-      <section>
-        <h2 className="mb-3 text-lg font-semibold">{tr("ui.communityModeration.informationsVoyageursActives")}</h2>
-        {!feed.data.alerts.length ? <p>{tr("ui.communityModeration.aucunSignalementActif")}</p> : null}
-        <ul className="space-y-3">
-          {feed.data.alerts.map((a) => (
-            <li
-              key={a.id}
-              className="flex flex-wrap items-center justify-between gap-3 rounded-xl border p-4"
-            >
-              <div>
-                <strong>
-                  {[...vessels, ...ports].find((e) => e.id === a.target_id)?.name ?? a.target_kind}
-                </strong>
-                <p className="text-sm">
-                  {alertLabel(a)} · {1 + a.confirmations}{tr("ui.communityModeration.voyageurS")}
-                  {a.validated ? tr("ui.communityModeration.valideParLEquipe") : ""}
-                </p>
-                <ReviewAuthor
-                  info={alertAuthors.data?.[a.id]}
-                  lookup={alertAuthors.lookup === "done" ? "done" : undefined}
-                />
-              </div>
-              <div className="flex gap-2">
-                {a.validated ? null : (
-                  <Button
-                    size="sm"
-                    disabled={action.isPending}
-                    onClick={() => action.mutate({ type: "alert", id: a.id, verdict: "validate" })}
-                  >
-                    {tr("ui.communityModeration.valider")}
-                  </Button>
-                )}
-                <Button
-                  size="sm"
-                  variant="outline"
-                  disabled={action.isPending}
-                  onClick={() => action.mutate({ type: "alert", id: a.id, verdict: "resolve" })}
-                >
-                  {tr("ui.communityModeration.retirer")}
-                </Button>
-              </div>
-            </li>
-          ))}
-        </ul>
-      </section>
+      <ModerationSection
+        title="Avis sur les navires"
+        count={feed.data.reviews.filter((r) => r.status === "pending").length}
+        hint={tr("ui.communityModeration.lesContributionsRestentPriveesJusqu")}
+      >
+        {!feed.data.reviews.length ? (
+          moderationEmpty(tr("ui.communityModeration.aucunAvisRecu"))
+        ) : (
+          <ul className="bo-modlist">
+            {feed.data.reviews.map((r) => (
+              <ModerationCard
+                key={r.id}
+                title={`${vessels.find((v) => v.id === r.vessel_id)?.name ?? tr("ui.communityModeration.navire")} · ${r.score}/5`}
+                status={r.status}
+                meta="Navire"
+                author={
+                  <ReviewAuthor info={vesselAuthors.data?.[r.id]} lookup={vesselAuthors.lookup} />
+                }
+                actions={
+                  <>
+                    <Button
+                      size="sm"
+                      disabled={action.isPending || r.status === "published"}
+                      onClick={() => action.mutate({ type: "review", id: r.id, status: "published" })}
+                    >
+                      {tr("ui.communityModeration.publier")}
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      disabled={action.isPending || r.status === "hidden"}
+                      onClick={() => action.mutate({ type: "review", id: r.id, status: "hidden" })}
+                    >
+                      {tr("ui.communityModeration.masquer")}
+                    </Button>
+                  </>
+                }
+              >
+                <span className="whitespace-pre-wrap break-words">{r.comment}</span>
+              </ModerationCard>
+            ))}
+          </ul>
+        )}
+      </ModerationSection>
+      <ModerationSection
+        title={tr("ui.communityModeration.informationsVoyageursActives")}
+        hint="Les signalements visibles en ce moment sur la carte. Valider les marque comme vérifiés ; retirer les fait disparaître."
+      >
+        {!feed.data.alerts.length ? (
+          moderationEmpty(tr("ui.communityModeration.aucunSignalementActif"))
+        ) : (
+          <ul className="bo-modlist">
+            {feed.data.alerts.map((a) => (
+              <ModerationCard
+                key={a.id}
+                title={
+                  [...vessels, ...ports].find((e) => e.id === a.target_id)?.name ?? a.target_kind
+                }
+                status={a.validated ? "validated" : "active"}
+                meta={`${alertLabel(a)} · ${1 + a.confirmations}${tr("ui.communityModeration.voyageurS")}`}
+                author={
+                  <ReviewAuthor
+                    info={alertAuthors.data?.[a.id]}
+                    lookup={alertAuthors.lookup === "done" ? "done" : undefined}
+                  />
+                }
+                actions={
+                  <>
+                    {a.validated ? null : (
+                      <Button
+                        size="sm"
+                        disabled={action.isPending}
+                        onClick={() => action.mutate({ type: "alert", id: a.id, verdict: "validate" })}
+                      >
+                        {tr("ui.communityModeration.valider")}
+                      </Button>
+                    )}
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      disabled={action.isPending}
+                      onClick={() => action.mutate({ type: "alert", id: a.id, verdict: "resolve" })}
+                    >
+                      {tr("ui.communityModeration.retirer")}
+                    </Button>
+                  </>
+                }
+              />
+            ))}
+          </ul>
+        )}
+      </ModerationSection>
       {action.isError ? <p role="alert">{action.error.message}</p> : null}
     </div>
   );

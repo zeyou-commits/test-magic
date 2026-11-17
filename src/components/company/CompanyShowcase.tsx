@@ -11,6 +11,8 @@ import {
   Megaphone,
   MessageSquareReply,
   MessagesSquare,
+  Pause,
+  Play,
   Scale,
   Send,
   ShieldCheck,
@@ -117,6 +119,105 @@ function Phone({ src, alt, eager = false }: { src: string; alt: string; eager?: 
   );
 }
 
+/** Durée d'affichage de chaque écran dans le téléphone de l'accroche. */
+const SLIDE_MS = 4500;
+
+/**
+ * Téléphone de l'accroche : les 4 écrans défilent en fondu, avec un onglet par écran et une
+ * barre de progression. La barre pilote le défilement : elle s'arrête au survol et
+ * avec le bouton pause, et n'avance pas si le système demande moins d'animations.
+ */
+function HeroPhone() {
+  const [active, setActive] = useState(0);
+  const [hovered, setHovered] = useState(false);
+  const [stopped, setStopped] = useState(false);
+  const paused = hovered || stopped;
+  const current = PASSENGERS[active]!;
+  const next = () => setActive((i) => (i + 1) % PASSENGERS.length);
+  return (
+    <div
+      className="mx-auto grid w-full max-w-[19rem] gap-4"
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+    >
+      <style>{`@keyframes bw-hero-fill{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+@media (prefers-reduced-motion:reduce){.bw-hero-fill{animation:none!important;transform:scaleX(1)}.bw-hero-shot{transition:none!important}}`}</style>
+      <div className="overflow-hidden rounded-[1.75rem] border-[6px] border-[#0c1f33] bg-[#0c1f33] shadow-[0_24px_60px_-20px_rgb(0_0_0/0.6)] ring-1 ring-white/10">
+        <div className="relative aspect-[1/2] w-full overflow-hidden rounded-[1.3rem] bg-white">
+          {PASSENGERS.map((item, i) => (
+            <img
+              key={item.image}
+              src={item.image}
+              alt={i === active ? item.alt : ""}
+              aria-hidden={i === active ? undefined : true}
+              width={390}
+              height={780}
+              loading="eager"
+              className={`bw-hero-shot absolute inset-0 size-full object-cover object-top transition-[opacity,transform] duration-700 ease-out ${
+                i === active ? "scale-100 opacity-100" : "scale-[1.04] opacity-0"
+              }`}
+            />
+          ))}
+        </div>
+      </div>
+      <div className="flex items-center gap-2">
+        <div
+          className="grid flex-1 grid-cols-4 gap-1.5"
+          role="group"
+          aria-label="Écrans de l'appli"
+        >
+          {PASSENGERS.map((item, i) => (
+            <button
+              key={item.title}
+              type="button"
+              onClick={() => setActive(i)}
+              aria-pressed={i === active}
+              className={`group grid gap-1.5 rounded-lg px-0.5 pb-1 pt-1.5 text-[11.5px] font-bold transition-colors ${
+                i === active ? "text-white" : "text-white/55 hover:text-white/85"
+              }`}
+            >
+              <span className="flex flex-col items-center gap-1 leading-none">
+                <item.icon className="size-4" aria-hidden />
+                {item.title}
+              </span>
+              <span className="h-[3px] overflow-hidden rounded-full bg-white/20">
+                {i === active ? (
+                  <span
+                    key={`${active}-${i}`}
+                    className="bw-hero-fill block h-full origin-left rounded-full bg-[#f6c445]"
+                    style={{
+                      animation: `bw-hero-fill ${SLIDE_MS}ms linear forwards`,
+                      animationPlayState: paused ? "paused" : "running",
+                    }}
+                    onAnimationEnd={next}
+                  />
+                ) : i < active ? (
+                  <span className="block h-full rounded-full bg-white/45" />
+                ) : null}
+              </span>
+            </button>
+          ))}
+        </div>
+        <button
+          type="button"
+          onClick={() => setStopped((s) => !s)}
+          className="grid size-7 flex-none place-items-center rounded-full border border-white/25 text-white/80 hover:bg-white/10"
+          aria-label={stopped ? "Reprendre le défilement" : "Mettre le défilement en pause"}
+        >
+          {stopped ? (
+            <Play className="size-3" aria-hidden />
+          ) : (
+            <Pause className="size-3" aria-hidden />
+          )}
+        </button>
+      </div>
+      <p className="min-h-[3.75rem] text-center text-[13px] leading-relaxed text-white/75">
+        {current.text}
+      </p>
+    </div>
+  );
+}
+
 function Section({
   id,
   eyebrow,
@@ -160,9 +261,13 @@ export function CompanyShowcase({
             className="flex min-w-0 items-center gap-2.5"
             aria-label="BledWay, retour au site"
           >
-            <span className="grid size-10 flex-none place-items-center rounded-xl bg-white">
-              <img src="/favicon-192.png" alt="" width={34} height={34} className="size-[34px]" />
-            </span>
+            <img
+              src="/favicon-192.png"
+              alt=""
+              width={40}
+              height={40}
+              className="size-10 flex-none rounded-xl shadow-[0_0_0_1px_rgb(255_255_255/0.22),0_4px_14px_rgb(0_0_0/0.25)]"
+            />
             <span className="grid leading-tight">
               <strong className="text-base font-extrabold">BledWay</strong>
               <span className="text-[10.5px] font-extrabold uppercase tracking-[.09em] text-[#f6c445]">
@@ -232,7 +337,7 @@ export function CompanyShowcase({
               </div>
             </div>
             <div className="hidden md:block">
-              <Phone src="/images/espace-compagnie/suivre.webp" alt={PASSENGERS[2]!.alt} eager />
+              <HeroPhone />
             </div>
           </div>
         </section>

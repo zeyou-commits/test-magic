@@ -625,9 +625,13 @@ function ProStory() {
   return (
     <div className="bw-auth-story relative flex flex-col justify-between gap-8 overflow-hidden bg-[linear-gradient(160deg,#0c1f33_0%,#12304d_70%,#17466c_100%)] text-white">
       <div className="relative z-10 flex items-center gap-2.5">
-        <span className="grid size-10 flex-none place-items-center rounded-xl bg-white">
-          <img src="/favicon-192.png" alt="" width={34} height={34} className="size-[34px]" />
-        </span>
+        <img
+          src="/favicon-192.png"
+          alt=""
+          width={40}
+          height={40}
+          className="size-10 flex-none rounded-xl shadow-[0_0_0_1px_rgb(255_255_255/0.22),0_4px_14px_rgb(0_0_0/0.25)]"
+        />
         <span className="grid leading-tight">
           <strong className="text-base font-extrabold">BledWay</strong>
           <span className="text-[10.5px] font-extrabold uppercase tracking-[.09em] text-[#f6c445]">

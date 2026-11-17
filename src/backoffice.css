@@ -79,13 +79,15 @@
   height: 40px;
   overflow: hidden;
   border-radius: 12px;
-  background: #ffffff;
-  box-shadow: 0 4px 14px rgb(0 0 0 / 0.25);
+  box-shadow:
+    0 0 0 1px rgb(255 255 255 / 0.22),
+    0 4px 14px rgb(0 0 0 / 0.25);
 }
 .bo-brand__logo img {
-  width: 34px;
-  height: 34px;
-  object-fit: contain;
+  display: block;
+  width: 40px;
+  height: 40px;
+  object-fit: cover;
 }
 .bo-brand p {
   display: grid;

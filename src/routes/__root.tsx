@@ -241,6 +241,16 @@ function RootShell({ children }: { children: ReactNode }) {
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
   const pathname = useRouterState({ select: (state) => state.location.pathname });
+  // Connexion venue de l'espace compagnie : ni bandeau ni barre du site voyageurs.
+  const proAuth = useRouterState({
+    select: (state) => {
+      const next = String((state.location.search as Record<string, unknown>)["next"] ?? "");
+      return (
+        state.location.pathname === "/auth" &&
+        (next.startsWith("/espace-compagnie") || next.startsWith("/rejoindre-compagnie"))
+      );
+    },
+  });
   useEffect(() => {
     track("page_view");
   }, [pathname]);
@@ -264,20 +274,20 @@ function RootComponent() {
             {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
             {/* Pages à l'en-tête propre : le bandeau général reste présent sur PC. Les espaces de
                 travail (équipe, compagnie) ont leur propre cadre, sans le bandeau du site. */}
-            {/^\/(compte|auth)(\/|$)/.test(pathname) ? (
+            {/^\/(compte|auth)(\/|$)/.test(pathname) && !proAuth ? (
               <div className="bw-global-header hidden md:block">
                 <SiteHeader />
               </div>
             ) : null}
             <Outlet />
             {/* La carte a sa propre barre, reliée à ses volets ; l'espace équipe a la sienne. */}
-            {pathname === "/" || /^\/(admin|espace-compagnie)(\/|$)/.test(pathname) ? null : (
+            {pathname === "/" || proAuth || /^\/(admin|espace-compagnie)(\/|$)/.test(pathname) ? null : (
               <div className="bw-global-tabs fixed bottom-0 left-0 right-0 z-[70] md:hidden">
                 <MobileTabBar className="h-[calc(3.5rem+env(safe-area-inset-bottom))] pb-[env(safe-area-inset-bottom)]" />
               </div>
             )}
             <OfflineBanner />
-            <PwaInstall />
+            {proAuth || /^\/(espace-compagnie|rejoindre-compagnie)(\/|$)/.test(pathname) ? null : <PwaInstall />}
             <LocationHelp />
             <ProfileHost />
             <Toaster />

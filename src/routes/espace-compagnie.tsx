@@ -37,6 +37,7 @@ import {
   useCompanyFeedback,
   type VoiceContext,
 } from "@/components/company/CompanyVoice";
+import { CompanyShowcase } from "@/components/company/CompanyShowcase";
 import { CompanyBadge } from "@/components/panel/CompanyBadge";
 import { useAuth } from "@/hooks/useAuth";
 import { STAFF_ROLES } from "@/lib/admin/permissions";
@@ -215,18 +216,8 @@ function CompanySpacePage() {
     retry: false,
   });
   if (loading) return <p className="bo-empty p-6">Chargement…</p>;
-  if (!user)
-    return (
-      <Gate
-        action={
-          <a href="/auth?next=%2Fespace-compagnie" className="bw-action-primary inline-flex">
-            Se connecter
-          </a>
-        }
-      >
-        <p>Connectez-vous avec le compte qui a reçu l'invitation de BledWay.</p>
-      </Gate>
-    );
+  // Personne connectée : page d'accueil professionnelle, avec les deux portes.
+  if (!user) return <CompanyShowcase />;
   if (staff) return <CompanySpace allowed={null} />;
   if (access.isPending) return <p className="bo-empty p-6">Vérification de votre accès…</p>;
   if (access.isError)
@@ -245,6 +236,8 @@ function CompanySpacePage() {
   if (!usable.length) {
     const suspended = access.data.find((item) => item.status === "suspended");
     const closed = access.data.find((item) => item.spaceStatus === "suspended");
+    // Aucun accès en cours : la page d'accueil professionnelle, avec la demande d'accès.
+    if (!suspended && !closed) return <CompanyShowcase signedInEmail={user.email ?? null} />;
     return (
       <Gate>
         {suspended ? (
@@ -252,16 +245,8 @@ function CompanySpacePage() {
             Votre accès à l'espace de {suspended.name} est suspendu. Contactez votre interlocuteur
             BledWay.
           </p>
-        ) : closed ? (
-          <p>L'espace de {closed.name} est suspendu par BledWay pour le moment.</p>
         ) : (
-          <>
-            <p>Votre compte n'a pas d'accès à un espace compagnie.</p>
-            <p>
-              Si votre compagnie travaille avec BledWay, demandez une invitation à votre
-              interlocuteur. Vous avez reçu un lien ? Ouvrez-le avec ce compte.
-            </p>
-          </>
+          <p>L'espace de {closed!.name} est suspendu par BledWay pour le moment.</p>
         )}
       </Gate>
     );

@@ -51,6 +51,7 @@ import { Route as ActualitesSlugRouteImport } from './routes/actualites.$slug'
 import { Route as ApiAdminUsersRouteImport } from './routes/api.admin-users'
 import { Route as ApiAisRefreshRouteImport } from './routes/api.ais-refresh'
 import { Route as ApiCompanyAccessRouteImport } from './routes/api.company-access'
+import { Route as ApiCompanyAccessRequestRouteImport } from './routes/api.company-access-request'
 import { Route as ApiFxTickerRouteImport } from './routes/api.fx-ticker'
 import { Route as ApiPhotosPurgeRouteImport } from './routes/api.photos-purge'
 import { Route as ApiPushAdminRouteImport } from './routes/api.push-admin'
@@ -281,6 +282,11 @@ const ApiCompanyAccessRoute = ApiCompanyAccessRouteImport.update({
   path: '/api/company-access',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiCompanyAccessRequestRoute = ApiCompanyAccessRequestRouteImport.update({
+  id: '/api/company-access-request',
+  path: '/api/company-access-request',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiFxTickerRoute = ApiFxTickerRouteImport.update({
   id: '/api/fx-ticker',
   path: '/api/fx-ticker',
@@ -419,6 +425,7 @@ export interface FileRoutesByFullPath {
   '/api/admin-users': typeof ApiAdminUsersRoute
   '/api/ais-refresh': typeof ApiAisRefreshRoute
   '/api/company-access': typeof ApiCompanyAccessRoute
+  '/api/company-access-request': typeof ApiCompanyAccessRequestRoute
   '/api/fx-ticker': typeof ApiFxTickerRoute
   '/api/photos-purge': typeof ApiPhotosPurgeRoute
   '/api/push-admin': typeof ApiPushAdminRoute
@@ -476,6 +483,7 @@ export interface FileRoutesByTo {
   '/api/admin-users': typeof ApiAdminUsersRoute
   '/api/ais-refresh': typeof ApiAisRefreshRoute
   '/api/company-access': typeof ApiCompanyAccessRoute
+  '/api/company-access-request': typeof ApiCompanyAccessRequestRoute
   '/api/fx-ticker': typeof ApiFxTickerRoute
   '/api/photos-purge': typeof ApiPhotosPurgeRoute
   '/api/push-admin': typeof ApiPushAdminRoute
@@ -540,6 +548,7 @@ export interface FileRoutesById {
   '/api/admin-users': typeof ApiAdminUsersRoute
   '/api/ais-refresh': typeof ApiAisRefreshRoute
   '/api/company-access': typeof ApiCompanyAccessRoute
+  '/api/company-access-request': typeof ApiCompanyAccessRequestRoute
   '/api/fx-ticker': typeof ApiFxTickerRoute
   '/api/photos-purge': typeof ApiPhotosPurgeRoute
   '/api/push-admin': typeof ApiPushAdminRoute
@@ -605,6 +614,7 @@ export interface FileRouteTypes {
     | '/api/admin-users'
     | '/api/ais-refresh'
     | '/api/company-access'
+    | '/api/company-access-request'
     | '/api/fx-ticker'
     | '/api/photos-purge'
     | '/api/push-admin'
@@ -662,6 +672,7 @@ export interface FileRouteTypes {
     | '/api/admin-users'
     | '/api/ais-refresh'
     | '/api/company-access'
+    | '/api/company-access-request'
     | '/api/fx-ticker'
     | '/api/photos-purge'
     | '/api/push-admin'
@@ -725,6 +736,7 @@ export interface FileRouteTypes {
     | '/api/admin-users'
     | '/api/ais-refresh'
     | '/api/company-access'
+    | '/api/company-access-request'
     | '/api/fx-ticker'
     | '/api/photos-purge'
     | '/api/push-admin'
@@ -789,6 +801,7 @@ export interface RootRouteChildren {
   ApiAdminUsersRoute: typeof ApiAdminUsersRoute
   ApiAisRefreshRoute: typeof ApiAisRefreshRoute
   ApiCompanyAccessRoute: typeof ApiCompanyAccessRoute
+  ApiCompanyAccessRequestRoute: typeof ApiCompanyAccessRequestRoute
   ApiFxTickerRoute: typeof ApiFxTickerRoute
   ApiPhotosPurgeRoute: typeof ApiPhotosPurgeRoute
   ApiPushAdminRoute: typeof ApiPushAdminRoute
@@ -1095,6 +1108,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiCompanyAccessRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/company-access-request': {
+      id: '/api/company-access-request'
+      path: '/api/company-access-request'
+      fullPath: '/api/company-access-request'
+      preLoaderRoute: typeof ApiCompanyAccessRequestRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/fx-ticker': {
       id: '/api/fx-ticker'
       path: '/api/fx-ticker'
@@ -1351,6 +1371,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiAdminUsersRoute: ApiAdminUsersRoute,
   ApiAisRefreshRoute: ApiAisRefreshRoute,
   ApiCompanyAccessRoute: ApiCompanyAccessRoute,
+  ApiCompanyAccessRequestRoute: ApiCompanyAccessRequestRoute,
   ApiFxTickerRoute: ApiFxTickerRoute,
   ApiPhotosPurgeRoute: ApiPhotosPurgeRoute,
   ApiPushAdminRoute: ApiPushAdminRoute,

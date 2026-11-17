@@ -75,6 +75,10 @@ function AuthPage() {
     !requestedNext.startsWith("/auth")
       ? requestedNext
       : "/";
+  // Venue de l'espace compagnie : même connexion, habillage professionnel.
+  const pro = next.startsWith("/espace-compagnie") || next.startsWith("/rejoindre-compagnie");
+  // Une invitation peut demander de créer son compte ; l'accès direct, jamais.
+  const proSignup = next.startsWith("/rejoindre-compagnie");
   const [mode, setMode] = useState<Mode>(() =>
     typeof window !== "undefined" &&
     new URLSearchParams(window.location.search).get("mode") === "reset"
@@ -234,7 +238,7 @@ function AuthPage() {
   return (
     <div className="bw-auth-page relative bg-background text-foreground">
       <div className="bw-auth-layout relative grid w-full border border-border bg-card lg:grid-cols-[.9fr_1.1fr]">
-        <div className="bw-auth-story relative flex flex-col overflow-hidden bg-[#e5efed]">
+        {pro ? <ProStory /> : <div className="bw-auth-story relative flex flex-col overflow-hidden bg-[#e5efed]">
           <div className="relative z-10">
             <img
               src="/bledway-brand-entete.webp"
@@ -258,17 +262,17 @@ function AuthPage() {
               <ShieldCheck size={17} />{tr("ui.pageAuth.compteSecurise")}
             </div>
           </div>
-        </div>
+        </div>}
         <div className="bw-auth-form w-full">
           <div className="bw-auth-back mb-5 flex items-center justify-between">
             <Link
-              to="/"
+              to={pro ? "/espace-compagnie" : "/"}
               className="inline-flex text-sm font-medium text-muted-foreground hover:text-foreground"
             >
-              {tr("ui.pageAuth.backToMap")}
+              {pro ? "← Espace compagnie" : tr("ui.pageAuth.backToMap")}
             </Link>
           </div>
-          {mode === "signin" || mode === "signup" ? (
+          {(mode === "signin" || mode === "signup") && (!pro || proSignup) ? (
             <div
               className="mb-5 grid grid-cols-2 rounded-xl bg-secondary p-1"
               aria-label={tr("ui.pageAuth.connexionOuInscription")}
@@ -294,7 +298,7 @@ function AuthPage() {
               </button>
             </div>
           ) : null}
-          <h1 className="bw-auth-title mb-2 font-display text-3xl font-bold tracking-tight">{titles[mode]}</h1>
+          <h1 className="bw-auth-title mb-2 font-display text-3xl font-bold tracking-tight">{pro && mode === "signin" ? "Connexion à l'espace compagnie" : titles[mode]}</h1>
           <p className="bw-auth-lead mb-5 text-sm leading-relaxed text-muted-foreground">
             {mode === "forgot"
               ? tr("ui.pageAuth.indiquezVotreEMailNous")
@@ -302,7 +306,9 @@ function AuthPage() {
                 ? tr("ui.pageAuth.choisissezVotreNouveauMotDe")
                 : mode === "signup"
                   ? tr("ui.pageAuth.unProfilEnQuelquesInstants")
-                  : tr("ui.pageAuth.heureuxDeVousRevoirReprenez")}
+                  : pro
+                    ? "Utilisez le compte qui a reçu l'invitation de BledWay."
+                    : tr("ui.pageAuth.heureuxDeVousRevoirReprenez")}
           </p>
 
           {((linkIssue && mode !== "signup") || (unconfirmed && mode === "signin")) &&
@@ -579,6 +585,14 @@ function AuthPage() {
           )}
 
 
+          {pro && !proSignup && mode === "signin" ? (
+            <a
+              href="/espace-compagnie#demande"
+              className="bw-auth-switch mt-6 block w-full text-center text-sm font-medium text-muted-foreground hover:text-primary hover:underline"
+            >
+              Pas encore d'accès ? Demander un accès pour votre compagnie
+            </a>
+          ) : (
           <button
             type="button"
             onClick={() => {
@@ -594,10 +608,50 @@ function AuthPage() {
                 ? tr("ui.pageAuth.dejaInscritSeConnecter")
                 : tr("ui.pageAuth.retourALaConnexion")}
           </button>
+          )}
+          {pro ? null : (
           <p className="bw-auth-note mt-7 text-center text-xs leading-relaxed text-muted-foreground">
             {tr("ui.pageAuth.vosAvisAidentLesVoyageurs")}
           </p>
+          )}
         </div>
+      </div>
+    </div>
+  );
+}
+
+/** Panneau de gauche quand on vient de l'espace compagnie : sobre, aux couleurs de l'espace. */
+function ProStory() {
+  return (
+    <div className="bw-auth-story relative flex flex-col justify-between gap-8 overflow-hidden bg-[linear-gradient(160deg,#0c1f33_0%,#12304d_70%,#17466c_100%)] text-white">
+      <div className="relative z-10 flex items-center gap-2.5">
+        <span className="grid size-10 flex-none place-items-center rounded-xl bg-white">
+          <img src="/favicon-192.png" alt="" width={34} height={34} className="size-[34px]" />
+        </span>
+        <span className="grid leading-tight">
+          <strong className="text-base font-extrabold">BledWay</strong>
+          <span className="text-[10.5px] font-extrabold uppercase tracking-[.09em] text-[#f6c445]">
+            Espace compagnie
+          </span>
+        </span>
+      </div>
+      {/* Sur téléphone, le panneau est réduit à un bandeau : seul le logo y tient. */}
+      <div className="relative z-10 hidden lg:block">
+        <h2 className="font-display text-2xl font-bold leading-tight">
+          Votre compagnie, au plus près de ses passagers.
+        </h2>
+        <ul className="mt-4 grid gap-2 text-sm text-white/85">
+          {[
+            "Horaires, annonces et réponses relus par BledWay",
+            "Un compte nominatif par collaborateur",
+            "Accès sur invitation uniquement",
+          ].map((item) => (
+            <li key={item} className="flex items-start gap-2">
+              <ShieldCheck size={17} className="mt-0.5 flex-none text-[#f6c445]" aria-hidden />
+              {item}
+            </li>
+          ))}
+        </ul>
       </div>
     </div>
   );

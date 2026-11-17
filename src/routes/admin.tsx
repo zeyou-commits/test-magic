@@ -49,6 +49,7 @@ import { SignalsAdmin } from "@/components/admin/SignalsAdmin";
 import { CompaniesAdmin } from "@/components/admin/CompaniesAdmin";
 import { CompanyRequestsAdmin, useCompanyQueueCount } from "@/components/admin/CompanyRequestsAdmin";
 import { CompanyDeskAdmin, useDeskQueueCount } from "@/components/admin/CompanyDeskAdmin";
+import { CompanyAccessRequestsAdmin, useAccessRequestsCount } from "@/components/admin/CompanyAccessRequestsAdmin";
 import { PushDiagnostic } from "@/components/admin/PushDiagnostic";
 import { MessageCenter } from "@/components/admin/MessageComposer";
 import { storeMessagePrefill, type MessagePrefill } from "@/lib/notifications/messages";
@@ -295,7 +296,7 @@ function AdminTabs() {
       }),
     [queryClient],
   );
-  const companyRequests = useCompanyQueueCount() + useDeskQueueCount();
+  const companyRequests = useCompanyQueueCount() + useDeskQueueCount() + useAccessRequestsCount();
   const badges = {
     companyRequests,
     notifications:
@@ -448,6 +449,7 @@ function AdminTabs() {
         <TabsContent value="companyRequests">
           <CompanyRequestsAdmin />
           <CompanyDeskAdmin />
+          <CompanyAccessRequestsAdmin />
         </TabsContent>
         <TabsContent value="planning">
           {/* Téléphone : la liste complète des prochains départs ; le planning reste sur ordinateur. */}

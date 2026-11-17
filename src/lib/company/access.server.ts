@@ -61,6 +61,14 @@ export const companyAccessSchema = z.discriminatedUnion("action", [
     status: z.enum(["active", "suspended"]),
     reason: reason.optional(),
   }),
+  // Demandes d'accès reçues depuis la page d'accueil professionnelle.
+  z.object({ action: z.literal("admin_access_requests") }),
+  z.object({
+    action: z.literal("admin_access_request_decide"),
+    id: uuid,
+    status: z.enum(["new", "contacted", "invited", "declined", "spam"]),
+    note: reason.optional(),
+  }),
   // Lot 2, côté compagnie.
   z.object({ action: z.literal("activity"), companyId: uuid }),
   z.object({
@@ -319,6 +327,17 @@ export async function handleCompanyAccess(
         _company: input.companyId,
         _status: input.status,
         _reason: input.reason ?? null,
+      });
+      break;
+    case "admin_access_requests":
+      result = await call("bw_company_access_requests_list", { _actor: me });
+      break;
+    case "admin_access_request_decide":
+      result = await call("bw_company_access_request_decide", {
+        _actor: me,
+        _id: input.id,
+        _status: input.status,
+        _note: input.note ?? null,
       });
       break;
     case "activity":
